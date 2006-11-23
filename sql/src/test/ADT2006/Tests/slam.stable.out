@@ -270,19 +270,19 @@ Over..
 % name_inspector,	name_doctor # name
 % varchar,	varchar # type
 % 23,	26 # length
-[ "P.C. Neil",	"Dr. Llewellyn"	]
-[ "Inspector Edmund Reid",	"Dr. Timothy Robert Killeen"	]
 [ "Inspector Edmund Reid",	"Dr. George Baxter Phillips"	]
-[ "Sir Robert Anderson",	"Dr. George Baxter Phillips"	]
+[ "Inspector Edmund Reid",	"Dr. Timothy Robert Killeen"	]
 [ "James Monro",	"Dr. George Baxter Phillips"	]
+[ "P.C. Neil",	"Dr. Llewellyn"	]
 [ "Sir Melville Macnaghten",	"Cornoer Wynne E. Baxter"	]
+[ "Sir Robert Anderson",	"Dr. George Baxter Phillips"	]
 % sys.jtr_victim,	sys.jtr_victim,	sys.jtr_victim,	sys.jtr_victim # table_name
 % name,	eyes,	hair,	features # name
 % varchar,	varchar,	varchar,	clob # type
 % 42,	10,	23,	484 # length
-[ "Mary Ann Walker",	"brown",	"brown hair turning grey",	"five front teeth missing (Rumbelow); two bottom-one top\n\t\t\t\tfront (Fido), her teeth are slightly discoloured. She is\n\t\t\t\tdescribed as having small, delicate features with high\n\t\t\t\tcheekbones and grey eyes. She has a small scar on her\n\t\t\t\tforehead from a childhood injury.  She is described by\n\t\t\t\tEmily Holland as \"a very clean woman who always seemed\n\t\t\t\tto keep to herself.\" The doctor at the post mortem\n\t\t\t\tremarked on the cleanliness of her thighs.  She is also\n\t\t\t\tan alcoholic."	]
 [ "Annie Chapman",	"blue",	"dark brown, wavy",	"Pallid complexion, excellent teeth (possibly two missing in lower jaw), strongly built (stout), thick nose"	]
 [ "Elisabeth Stride",	"light gray",	"curly dark brown",	"pale complexion, all the teeth in her lower left jaw were missing"	]
+[ "Mary Ann Walker",	"brown",	"brown hair turning grey",	"five front teeth missing (Rumbelow); two bottom-one top\n\t\t\t\tfront (Fido), her teeth are slightly discoloured. She is\n\t\t\t\tdescribed as having small, delicate features with high\n\t\t\t\tcheekbones and grey eyes. She has a small scar on her\n\t\t\t\tforehead from a childhood injury.  She is described by\n\t\t\t\tEmily Holland as \"a very clean woman who always seemed\n\t\t\t\tto keep to herself.\" The doctor at the post mortem\n\t\t\t\tremarked on the cleanliness of her thighs.  She is also\n\t\t\t\tan alcoholic."	]
 [ "Pinchin Street Murder, possibly Lydia Hart",	"",	"",	"body, missing both head and legs"	]
 % sys.jtr_victim,	sys.jtr_victim # table_name
 % eyes,	times # name

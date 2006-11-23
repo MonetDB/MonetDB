@@ -290,10 +290,10 @@ SELECT v.name, sp.name, sp.picture FROM Jtr_scene sc INNER JOIN Jtr_victim v ON 
 SELECT i.name, count(si.scene_id) AS times FROM Jtr_inspector i LEFT OUTER JOIN Jtr_scene_inspectors si ON i.name = si.inspector GROUP BY i.name ORDER BY times desc;
 
 
-SELECT i.name AS name_inspector, d.name AS name_doctor FROM Jtr_scene s INNER JOIN Jtr_scene_inspectors si ON si.scene_id = s.scene_id  INNER JOIN Jtr_scene_doctors sd ON sd.scene_id = s.scene_id INNER JOIN Jtr_inspector i ON si.inspector = i.name INNER JOIN Jtr_doctor d ON sd.doctor = d.name;
+SELECT i.name AS name_inspector, d.name AS name_doctor FROM Jtr_scene s INNER JOIN Jtr_scene_inspectors si ON si.scene_id = s.scene_id  INNER JOIN Jtr_scene_doctors sd ON sd.scene_id = s.scene_id INNER JOIN Jtr_inspector i ON si.inspector = i.name INNER JOIN Jtr_doctor d ON sd.doctor = d.name ORDER BY name_inspector, name_doctor;
 
 
-SELECT name, eyes, hair, features from Jtr_victim WHERE features LIKE '%missing%';
+SELECT name, eyes, hair, features from Jtr_victim WHERE features LIKE '%missing%' ORDER BY name, eyes, hair, features;
 
 
 SELECT eyes, count(name) AS times FROM Jtr_victim WHERE NOT eyes = '' GROUP BY eyes ORDER BY times desc;
