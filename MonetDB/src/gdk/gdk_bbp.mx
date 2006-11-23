@@ -1200,7 +1200,7 @@ Only real bats without memory references can be unloaded.
 @{
 @h
 #define BBPswappable(b) ((b) && BBP_refs((b)->batCacheid) == 0)
-#define BBPtrimmable(b) (BBPswappable(b) && VIEWparent(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
+#define BBPtrimmable(b) (BBPswappable(b) && b->batParentid == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
 
 #endif /* _GDK_BBP_H_ */
 @- 
