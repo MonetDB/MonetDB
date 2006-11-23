@@ -176,7 +176,7 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	return GDK_FAIL;
 }
 
-int
+str
 pcre_select(BAT **res, str pattern, BAT *strs)
 {
 	(void) res, (void) pattern;
@@ -185,7 +185,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	return GDK_FAIL;
 }
 
-int
+str
 pcre_uselect(BAT **res, str pattern, BAT *strs)
 {
 	(void) res, (void) pattern;
@@ -229,27 +229,26 @@ pcre_exit(void)
 {
 }
 
-int
+str
 pcre_match(bit *ret, str val, str pat)
 {
 	(void) ret;
 	(void) val;
 	(void) pat;
-	GDKerror("pcre_match() not available as required version of libpcre was not found by configure.\n");
-	return GDK_FAIL;
+	return throwException(MALEXCEPTION, "pcre_match", "not available as required version of libpcre was not found by configure.\n");
 }
 
-int
+str
 pcre_patindex(int *ret, str val, str pat)
 {
 	(void) ret;
 	(void) val;
 	(void) pat;
-	GDKerror("pcre_patindexmatch() not available as required version of libpcre was not found by configure.\n");
-	return GDK_FAIL;
+	return throwException(MALEXCEPTION, "pcre_patindexmatch", "not available as required version of libpcre was not found by configure.\n");
 }
 #else
 
+#include <pcre.h>
 #define m2p(p) (pcre*)(((sht*)p)+1)
 #define p2m(p) (pcre*)(((sht*)p)-1)
 
@@ -280,8 +279,8 @@ pcre_compile_wrap(pcre ** res, str pattern)
 	int errpos = 0;
 
 	if ((r = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
- 		GDKerror("pcre_compile() failed with\n'%s'\nat %d in\n'%s'.\n",
- 			err_p, errpos, pattern);
+		GDKerror("pcre_compile() failed with\n'%s'\nat %d in\n'%s'.\n",
+			err_p, errpos, pattern);
 		return GDK_FAIL;
 	}
 	*(pcre **) res = p2m(r);
@@ -299,7 +298,7 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	return GDK_SUCCEED;
 }
 
-int
+str
 pcre_select(BAT **res, str pattern, BAT *strs)
 {
 	const char err[BUFSIZ], *err_p = err;
@@ -313,9 +312,8 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
 	if ((re = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_select: pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
+		return throwException(MALEXCEPTION, "pcre_select", "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
-		return GDK_FAIL;
 	}
 	BATloop(strs, p, q) {
 		str s = BUNtail(strs, p);
@@ -327,10 +325,10 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	my_pcre_free(re);
 	*res = r;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int
+str
 pcre_uselect(BAT **res, str pattern, BAT *strs)
 {
 	const char err[BUFSIZ], *err_p = err;
@@ -344,9 +342,8 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
 	if ((re = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
+		return throwException(MALEXCEPTION, "pcre_uselect", "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
-		return GDK_FAIL;
 	}
 	BATloop(strs, p, q) {
 		str s = BUNtail(strs, p);
@@ -358,7 +355,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	my_pcre_free(re);
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	*res = r;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 #define MAX_NR_CAPTURES  1024 /* Maximal number of captured substrings in one original string */
@@ -391,7 +388,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 		} else if (flags[i] == 'x') {
 			compile_options |= PCRE_EXTENDED;
 		} else {
-			GDKerror("pcre_replace: \"flags\" contains invalid character '%c'\n", flags[i]);
+			GDKerror("pcre_replace: unsupported flag character '%c'\n", flags[i]);
 			return GDK_FAIL;
 		}
 	}
@@ -604,34 +601,57 @@ pcre_exit(void)
 {
 }
 
-int
-pcre_match(bit *ret, str val, str pat)
+str
+pcre_match_with_flags(int *ret, str val, str pat, str flags)
 {
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
+    int options = PCRE_UTF8, i;
 	pcre *re;
 
-	if ((re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL){
-		GDKerror("pcre.match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
-		return GDK_FAIL;
+	for (i = 0; i < (int)strlen(flags); i++) {
+		if (flags[i] == 'i') {
+			options |= PCRE_CASELESS;
+		} else if (flags[i] == 'm') {
+			options |= PCRE_MULTILINE;
+		} else if (flags[i] == 's') {
+			options |= PCRE_DOTALL;
+		} else if (flags[i] == 'x') {
+			options |= PCRE_EXTENDED;
+		} else {
+			return throwException(MALEXCEPTION, "pcre_match", "unsupported flag character '%c'\n", flags[i]);
+		}
 	}
-	*ret = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0) >= 0;
-	return GDK_SUCCEED;
-}
 
-int
-pcre_patindex(int *ret, str val, str pat)
-{
-	const char err[BUFSIZ], *err_p = err;
-	int errpos = 0;
-	pcre *re;
-	
-	if ((re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre.match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
-		return GDK_FAIL;
+	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) {
+		return throwException(MALEXCEPTION, "pcre_match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
 	}
 	*ret = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
+}
+
+str
+pcre_match(bit *ret, str val, str pat)
+{
+	str msg;
+	int errpos = 0;
+
+	if ((msg = pcre_match_with_flags(&errpos, val, pat, "")) != MAL_SUCCEED) 
+		return msg;
+
+	if (errpos >= 0)
+		*ret = TRUE;
+	else if (errpos == -1)
+		*ret = FALSE;
+	else 
+		return throwException(MALEXCEPTION, "pcre_match", "Matching of regular expression (%s) failed with %d", pat, errpos);
+	return msg;
+}
+
+str
+pcre_patindex(int *ret, str val, str pat)
+{
+	return pcre_match_with_flags(ret, val, pat, "");
 }
 #endif
 
@@ -861,38 +881,23 @@ PCREselect(int *res, str *pattern, int *bid)
 	(void) bid;
 	return throwMessage("pcre.select", "Library missing");
 #else
-	BAT *bn, *strs;
-	const char err[BUFSIZ], *err_p = err;
-	int errpos = 0;
-	BUN p, q;
-	pcre *re = NULL;
+	BAT *bn = NULL, *strs;
+	str msg;
 
 	if ((strs = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("pcre.select", "Cannot access descriptor");
 	}
 
-	if (strs->htype == TYPE_void)
-		bn = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
-	else
-		bn = BATnew(strs->htype, TYPE_str, BATcount(strs));
-	re = pcre_compile(*pattern, PCRE_UTF8, &err_p, &errpos, NULL);
-	if (re == NULL)
-		return throwMessage("pcre.select", "Pcre compile of pattern failed\n");
+	if ((msg = pcre_select(&bn, *pattern, strs)) != MAL_SUCCEED) {
+		BBPunfix(strs->batCacheid);
+		return msg;
+	}  
 
-	BATloop(strs, p, q) {
-		str s = BUNtail(strs, p);
-
-		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(bn, BUNhead(strs, p), s, FALSE);
-		}
-	}
-	my_pcre_free(re);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
 #endif
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -904,61 +909,35 @@ PCREuselect(int *res, str *pattern, int *bid)
 	(void) bid;
 	return throwMessage("pcre.select", "Library missing");
 #else
-	BAT *bn, *strs;
-	const char err[BUFSIZ], *err_p = err;
-	int errpos = 0;
-	BUN p, q;
-	pcre *re = NULL;
-	oid o = oid_nil;
+	BAT *bn = NULL, *strs;
+	str msg;
 
 	if ((strs = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("pcre.select", "Cannot access descriptor");
 	}
-	if (strs->htype == TYPE_void)
-		bn = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
-	else
-		bn = BATnew(strs->htype, TYPE_void, BATcount(strs));
-	re = pcre_compile(*pattern, PCRE_UTF8, &err_p, &errpos, NULL);
-	if (re == NULL) {
+
+	if ((msg = pcre_uselect(&bn, *pattern, strs)) != MAL_SUCCEED) {
 		BBPunfix(strs->batCacheid);
-		throwMessage("pcre.select", "Pcre compile of pattern failed");
-		return GDK_FAIL;
-	}
+		return msg;
+	}  
 
-	BATloop(strs, p, q) {
-		str s = BUNtail(strs, p);
-
-		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			ptr h = BUNhead(strs, p);
-			bunfastins(bn, h, &o);
-		}
-	}
-bunins_failed:
-	my_pcre_free(re);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
-	return MAL_SUCCEED;
+	return msg;
 #endif
 }
 
 str
 PCREmatch(bit *ret, str *val, str *pat)
 {
-	if (pcre_match(ret, *val, *pat) == GDK_FAIL) {
-		return throwMessage("pcre.match", "Match failed");
-	}
-	return MAL_SUCCEED;
+	return pcre_match(ret, *val, *pat);
 }
 
 str
 PCREpatindex(int *ret, str *val, str *pat)
 {
-	if (pcre_patindex(ret, *val, *pat) == GDK_FAIL) {
-		return throwMessage("pcre.patindex", "PATINDEX failed");
-	}
-	return MAL_SUCCEED;
+	return pcre_patindex(ret, *val, *pat);
 }
 
 str
