@@ -43,6 +43,9 @@
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
 
+#define NO_TRIGGER 0
+#define IS_TRIGGER 1
+
 #define ROLE_PUBLIC   1
 #define ROLE_SYSADMIN 2
 #define USER_MONETDB  3
@@ -467,6 +470,7 @@ extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
 
 extern node *list_find_name(list *l, char *name);
+extern node *list_find_id(list *l, int id);
 
 extern node *find_sql_key_node(sql_table *t, char *kname);
 extern sql_key *find_sql_key(sql_table *t, char *kname);

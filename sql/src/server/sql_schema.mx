@@ -141,7 +141,7 @@ sql_insert_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	n = n->next;
 	inserts[4] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(grantable));
 	stmt_destroy(pts);
-	res = sql_insert(sql, pt, inserts, 5, 0);
+	res = sql_insert(sql, pt, inserts, 5, 0, NULL);
 	cleanup_stmts(inserts, 5);
 	return res;
 }
@@ -361,7 +361,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(obj_id), cmp_equal));
 
 	s = stmt_mark(stmt_reverse(s), 0);
-	s = sql_delete(sql, ptv, pt, s, 0);
+	s = sql_delete(sql, ptv, pt, s, 0, NULL);
 	scope_close(scp);
 	return s;
 }
@@ -523,12 +523,13 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
 	stmt *sq = NULL;
-	list *col_l = NULL, *func_l= NULL, *view_id_l = NULL;
+	list *col_l = NULL, *func_l= NULL, *view_id_l = NULL, *called_tri = NULL;
 	scope *scp = scope_open(NULL);
 	sql_trigger *trigger;
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
+	int trigger_id;
 
 	int event = (trigger_event->token == SQL_INSERT)?0:
 			  (trigger_event->token == SQL_DELETE)?1:2;
@@ -550,11 +551,19 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", table_name);
 	if (isView(t)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
-
+	
+	
 	trigger = mvc_create_trigger(sql, t, tname, time, orientation, event, old_name,
 			new_name, condition, statement);
+	trigger_id = trigger->base.id;	
+	called_tri = list_create((fdestroy) NULL);
+	called_tri = list_append(called_tri, &trigger_id);
+
+	sq = scope_sqlparse(sql, scp, statement, called_tri);
 	
-	sq = scope_sqlparse(sql, scp, statement);
+	list_destroy(called_tri);
+
+	
 	if (sq) {
 		col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
 		func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);

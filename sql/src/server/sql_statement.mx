@@ -891,6 +891,9 @@ stmt_list_dependencies(stmt *s, int depend_type)
 			}
 			break;
 		case st_table_clear:
+			if(depend_type == TRIGGER_DEPENDENCY) {
+				dep_list = list_append(dep_list, &(s->op1.tval->base.id));
+			}
 			break;
 		case st_bat:
 			if (depend_type == COLUMN_DEPENDENCY) {

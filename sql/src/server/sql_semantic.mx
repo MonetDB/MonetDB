@@ -31,7 +31,7 @@
 
 #define create_string_list() list_create((fdestroy)&GDKfree)
 
-extern stmt *semantic(mvc *sql, scope *scp, symbol *sym);
+extern stmt *semantic(mvc *sql, scope *scp, symbol *sym, list* called_tri);
 
 extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
@@ -58,7 +58,7 @@ extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 extern stmt *sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
 extern stmt *scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
 extern stmt *sqlparse_intern(mvc *m, char *query, modes_t mode);
-extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query);
+extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query, list *called_tri);
 
 extern stmt *first_subset(stmt *subset);
 
@@ -241,7 +241,7 @@ qname_table(dlist *qname)
 }
 
 stmt *
-scope_sqlparse(mvc *m, scope *scp, char *query)
+scope_sqlparse(mvc *m, scope *scp, char *query, list *called_tri)
 {
 	mvc o = *m;
 	stmt *sq;
@@ -274,7 +274,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 	m->errstr[ERRSIZE-1] = '\0';
 
 	(void) sqlparse(m);	/* blindly ignore errors */
-	sq = semantic(m, scp, m->sym);
+	sq = semantic(m, scp, m->sym, called_tri);
 
 	GDKfree(query);
 	GDKfree(b);
@@ -344,7 +344,7 @@ sqlparse_intern(mvc *m, char *query, modes_t mode)
 		   psm (so for mode m_execute) we use semantic
 		*/
 		if (mode == m_execute)
-			sq = semantic(m, NULL, m->sym);
+			sq = semantic(m, NULL, m->sym, NULL);
 		else {
 			exp_kind ek = {type_value, card_relation, TRUE};
 			sq = scope_subquery(m, NULL, m->sym, ek);
@@ -1026,7 +1026,7 @@ char *symbol2string(mvc *sql, symbol *se)
 
 
 stmt *
-semantic(mvc *sql, scope *scp, symbol *s)
+semantic(mvc *sql, scope *scp, symbol *s, list* called_tri)
 {
 	stmt *res = NULL;
 
@@ -1074,7 +1074,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
-		return updates(sql, scp, s);
+		return updates(sql, scp, s, called_tri);
 
 	case SQL_SELECT:
 	case SQL_JOIN:
@@ -1098,7 +1098,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
-			stmt *st = semantic(sql, scp, sym);
+			stmt *st = semantic(sql, scp, sym, NULL);
 
 			if (!st) {
 				list_destroy(l);

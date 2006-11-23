@@ -42,6 +42,22 @@ list_find_name(list *l, char *name)
 	return NULL;
 }
 
+node *
+list_find_id(list *l, int id)
+{
+	node *n;
+
+	if (l)
+		for (n = l->h; n; n = n->next) {
+
+			/* check if ids match */
+			if (id == *(int *) n->data) {
+				return n;
+			}
+		}
+	return NULL;
+}
+
 
 node *
 find_sql_key_node(sql_table *t, char *kname)
