@@ -834,7 +834,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 				/* ok defined */
 			} else 
 			if( (s = getVarScope(mb,l) ) ==0 ) {
-					GDKerror("'%s' may not be used before being set in %s[%d]\n",
+					GDKerror("'%s' may not be used before being initialized in %s[%d]\n",
 						getVarName(mb,l), nme,pc);
 						mb->errors++;
 			} else 
