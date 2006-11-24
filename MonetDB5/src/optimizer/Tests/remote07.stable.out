@@ -61,8 +61,8 @@ function user.main():void;	# 0  (main:void)
 end main;	# 21  
 !ERROR: MALexception:mserver.rpc:!ERROR: 'algebra.select' undefined in user.main[1] e:any := algebra.select(d:any, low:int, _6:int)
 !ERROR: 'aggr.count' undefined in user.main[2] i:any := aggr.count(d:any)
-!ERROR: 'd' may not be used before being set in main[1]
-!ERROR: 'd' may not be used before being set in main[2]
+!ERROR: 'd' may not be used before being initialized in main[1]
+!ERROR: 'd' may not be used before being initialized in main[2]
 
 # 15:27:54 >  
 # 15:27:54 >  Done.

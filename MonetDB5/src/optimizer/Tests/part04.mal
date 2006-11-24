@@ -37,6 +37,14 @@ partitions.dump();
 # two sinks. A naive translation will produce
 # a double nested loop
 function qry(a:bat[:void,:int], b:bat[:void,:int]);
+	io.print("a partition");
+	zz:= algebra.select(a,0,10);
+	io.print(zz);
+
+	io.print("b partition");
+	yy:= algebra.select(b,0,10);
+	io.print(yy);
+
 	io.print("experiment 3");
 	c:= algebra.select(a,0,10);
 	m:= bat.mirror(c);

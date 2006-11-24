@@ -58,28 +58,40 @@ stdout of test 'part04` in directory 'src/optimizer` itself:
 #	io.print(j);
 #end qry;
 function user.qry(a:bat[:void,:int],b:bat[:void,:int]):void;	# 0  (qry:void)<-(a:bat[:void,:int])(b:bat[:void,:int])
-    io.print("experiment 3");	# 1 IOprint_val (_3:int)<-(_4:str)
-    c := algebra.select(a,0,10);	# 2 ALGselect (c:bat[:oid,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
-    m := bat.mirror(c);	# 3 BKCmirror (m:bat[:oid,:oid])<-(c:bat[:oid,:int])
-    j := algebra.join(m,b);	# 4 ALGjoin (j:bat[:oid,:int])<-(m:bat[:oid,:oid])(b:bat[:void,:int])
-    io.print(j);	# 5 IOprint_val (_10:int)<-(j:bat[:oid,:int])
-end qry;	# 6  
+    io.print("a partition");	# 1 IOprint_val (_3:int)<-(_4:str)
+    zz := algebra.select(a,0,10);	# 2 ALGselect (zz:bat[:oid,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
+    io.print(zz);	# 3 IOprint_val (_8:int)<-(zz:bat[:oid,:int])
+    io.print("b partition");	# 4 IOprint_val (_9:int)<-(_10:str)
+    yy := algebra.select(b,0,10);	# 5 ALGselect (yy:bat[:oid,:int])<-(b:bat[:void,:int])(_6:int)(_7:int)
+    io.print(yy);	# 6 IOprint_val (_12:int)<-(yy:bat[:oid,:int])
+    io.print("experiment 3");	# 7 IOprint_val (_13:int)<-(_14:str)
+    c := algebra.select(a,0,10);	# 8 ALGselect (c:bat[:oid,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
+    m := bat.mirror(c);	# 9 BKCmirror (m:bat[:oid,:oid])<-(c:bat[:oid,:int])
+    j := algebra.join(m,b);	# 10 ALGjoin (j:bat[:oid,:int])<-(m:bat[:oid,:oid])(b:bat[:void,:int])
+    io.print(j);	# 11 IOprint_val (_18:int)<-(j:bat[:oid,:int])
+end qry;	# 12  
 #
 #optimizer.partitionedQuery("user","qry");
 #mdb.list("user","qry");
 #io.print("run experiment");
 #user.qry(a1,b1);
 #
-start first=1 last=5 
-replace first=2 last=5 
-variable replacement 'a' instructions 2-5  lifespan 2-2
-first=9 last=9 
-first=10 last=9 
-start first=1 last=8 
-replace first=5 last=6 
-variable replacement 'b' instructions 5-6  lifespan 5-5
-first=10 last=12 
-first=13 last=12 
+start first=1 last=11 
+replace first=2 last=3 
+variable replacement 'a' instructions 2-3  lifespan 2-8
+first=7 last=15 
+replace first=11 last=14 
+variable replacement 'a' instructions 11-14  lifespan 2-11
+first=18 last=18 
+first=19 last=18 
+start first=1 last=17 
+replace first=8 last=9 
+variable replacement 'b' instructions 8-9  lifespan 8-14
+first=13 last=21 
+replace first=17 last=18 
+variable replacement 'b' instructions 17-18  lifespan 8-17
+first=22 last=24 
+first=25 last=24 
 function user.main():void;	# 0  (main:void)
 #testing the partition optimizer 	# 1  (_1:str)
     a1 := bat.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_3:void)(_4:int)
@@ -126,20 +138,32 @@ ptop=6 plimit=1024
 [4] bid=10 pid=11 f=10, l=20 prv=3 nxt=5 cap=-1
 [5] bid=10 pid=12 f=20, l=30 prv=4 nxt=-1 cap=-1
 function user.qry(a:bat[:void,:int],b:bat[:void,:int]):void;
+    io.print("a partition");
+barrier (_19,_20):= partitions.newIterator(a);
+    zz := algebra.select(_20,0,10);
+    io.print(zz);
+    redo (_19,_20):= partitions.hasMoreElements(a);
+exit (_19,_20);
+    io.print("b partition");
+barrier (_23,_24):= partitions.newIterator(b);
+    yy := algebra.select(_24,0,10);
+    io.print(yy);
+    redo (_23,_24):= partitions.hasMoreElements(b);
+exit (_23,_24);
     io.print("experiment 3");
-barrier (_11,_12):= partitions.newIterator(a);
-    c := algebra.select(_12,0,10);
+barrier (_21,_22):= partitions.newIterator(a);
+    c := algebra.select(_22,0,10);
     m := bat.mirror(c);
-barrier (_13,_14):= partitions.newIterator(b);
-    j := algebra.join(m,_14);
+barrier (_25,_26):= partitions.newIterator(b);
+    j := algebra.join(m,_26);
     io.print(j);
-    redo (_13,_14):= partitions.hasMoreElements(b);
-exit (_13,_14);
-    redo (_11,_12):= partitions.hasMoreElements(a);
-exit (_11,_12);
+    redo (_25,_26):= partitions.hasMoreElements(b);
+exit (_25,_26);
+    redo (_21,_22):= partitions.hasMoreElements(a);
+exit (_21,_22);
 end qry;
 [ "run experiment" ]
-[ "experiment 3" ]
+[ "a partition" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -182,10 +206,21 @@ end qry;
 [ 27@0,	  7	  ]
 [ 28@0,	  8	  ]
 [ 29@0,	  9	  ]
+[ "b partition" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -214,6 +249,51 @@ end qry;
 [ 27@0,	  7	  ]
 [ 28@0,	  8	  ]
 [ 29@0,	  9	  ]
+[ "experiment 3" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 10@0,	  0	  ]
+[ 11@0,	  1	  ]
+[ 12@0,	  2	  ]
+[ 13@0,	  3	  ]
+[ 14@0,	  4	  ]
+[ 15@0,	  5	  ]
+[ 16@0,	  6	  ]
+[ 17@0,	  7	  ]
+[ 18@0,	  8	  ]
+[ 19@0,	  9	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
 #-----------------#
 # h	t	  # name
 # void	int	  # type

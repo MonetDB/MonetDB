@@ -34,7 +34,7 @@ function user.main():void;	# 0  (main:void)
     mserver.rpc(mid,"io.print(d);");	# 8 SERVERquery (_13:void)<-(mid:int)(_14:str)
     io.print("done");	# 9 IOprint_val (_15:int)<-(_16:str)
 end main;	# 10  
-!ERROR: MALexception:mserver.query:!ERROR: 'd' may not be used before being set in main[1]
+!ERROR: MALexception:mserver.query:!ERROR: 'd' may not be used before being initialized in main[1]
 
 # 15:27:53 >  
 # 15:27:53 >  Done.
