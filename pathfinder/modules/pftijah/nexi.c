@@ -218,9 +218,14 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   andcomb_set = FALSE;
   
     /* structure initialization */
-    txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
-    img_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMI));
-    rel_feedback = calloc(MAX_QUERIES, sizeof(struct_RF));
+    /* 
+       r.aly@ewi.utwente.nl (2006-11-24): 
+       bad hack (2*) because of this function writes behind the allocated space 
+       and code ist not understood
+    */
+    txt_retr_model = calloc(2*MAX_QUERIES, sizeof(struct_RMT));
+    img_retr_model = calloc(2*MAX_QUERIES, sizeof(struct_RMI));
+    rel_feedback = calloc(2*MAX_QUERIES, sizeof(struct_RF));
 
     /*** Set default configuration values here: ***/
     
