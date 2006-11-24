@@ -52,7 +52,7 @@ function user.main():void;	# 0  (main:void)
     bat.insert(m,10@0:oid,"ten");	# 3 BKCinsert_bun (_5:void)<-(m:bat[:oid,:str])(_6:oid)(_7:str)
     bat.insert(m,20@0:oid,"twenty");	# 4 BKCinsert_bun (_8:void)<-(m:bat[:oid,:str])(_9:oid)(_10:str)
     user.dir();	# 5  (_11:void)
-    _16 := bat.new(nil:oid,nil);	# 6 CMDBATnew (_16:bat[:oid,:BAT])<-(_17:oid)(_18:BAT)
+    _16 := bat.new(nil:oid,nil:BAT);	# 6 CMDBATnew (_16:bat[:oid,:BAT])<-(_17:oid)(_18:BAT)
 barrier (_20,_21,_22):= bat.newIterator(m);	# 7 CHPbunIterator (_20:lng)(_21:oid)(_22:str)<-(m:bat[:oid,:str]) jump 14
     _24 := user.createBAT(_22);	# 8  (_24:BAT)<-(_22:str)
     bat.insert(_16,_21,_24);	# 9 BKCinsert_bun (_25:void)<-(_16:bat[:oid,:BAT])(_21:oid)(_24:BAT)

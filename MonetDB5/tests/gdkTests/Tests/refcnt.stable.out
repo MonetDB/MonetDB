@@ -184,7 +184,7 @@ function user.main():void;	# 0  (main:void)
     bat.insert(m,20@0:oid,"twenty");	# 46 BKCinsert_bun (_52:void)<-(m:bat[:oid,:str])(_53:oid)(_54:str)
 #VAR res := [createBAT](i); 	# 47  (_55:str)
     io.print("do multiplex");	# 48 IOprint_val (_56:int)<-(_57:str)
-    _78 := bat.new(nil:oid,nil);	# 49 CMDBATnew (_78:bat[:oid,:BAT])<-(_79:oid)(_80:BAT)
+    _78 := bat.new(nil:oid,nil:BAT);	# 49 CMDBATnew (_78:bat[:oid,:BAT])<-(_79:oid)(_80:BAT)
 barrier (_82,_83,_84):= bat.newIterator(m);	# 50 CHPbunIterator (_82:lng)(_83:oid)(_84:str)<-(m:bat[:oid,:str]) jump 57
     _86 := user.createBAT(_84);	# 51  (_86:BAT)<-(_84:str)
     bat.insert(_78,_83,_86);	# 52 BKCinsert_bun (_87:void)<-(_78:bat[:oid,:BAT])(_83:oid)(_86:BAT)
