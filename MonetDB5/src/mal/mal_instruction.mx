@@ -1013,9 +1013,9 @@ location of a temporary variable should be flagged as an error.
 		int j;
         i= atol(name+1);
         /* quick test validity*/
-        if( i< mb->vtop-1 && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
+        if( i< mb->vtop && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
             return i;
-		for(j=0; j< mb->vtop-1; j++)
+		for(j=0; j< mb->vtop; j++)
 			if( getVarTmp(mb,j)== i && isTmpVar(mb,j)) return j;
         return -1;
     } 
