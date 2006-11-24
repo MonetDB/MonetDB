@@ -369,6 +369,44 @@ public class MonetConnection implements Connection {
 			case 6:
 				response = username + ":" + password + ":" + language;
 				response += ":blocked" + ":" + database;
+
+				monet.write(response + "\n");
+
+				// We need to send the server our byte order.  Java by
+				// itself uses network order.
+				// A short with value 1234 will be sent to indicate our
+				// byte-order.
+				/*
+				short x = 1234;
+				byte high = (byte)(x >>> 8);	// = 0x04
+				byte low = (byte)x;				// = 0xD2
+				*/
+				final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
+				monet.write(bigEndian);
+				monet.flush();
+
+				// now read the byte-order of the server
+				byte[] byteorder = new byte[2];
+				if (monet.read(byteorder) != 2)
+					throw new SQLException("The server sent an incomplete byte-order sequence");
+				if (byteorder[0] == (byte)0x04) {
+					// set our connection to big-endian mode
+					monet.setByteOrder(ByteOrder.BIG_ENDIAN);
+				} else if (byteorder[0] == (byte)0xD2) {
+					// set our connection to litte-endian mode
+					monet.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+				} else if (byteorder[0] == '!') {
+					// we have an error message, try to read a reasonable
+					// chunk and spit it out
+					byte[] buf = new byte[1024];
+					int len = monet.read(buf);
+					monet.disconnect();
+					throw new SQLException(new String(byteorder, 1, 1, "UTF-8") +
+							new String(buf, 0, len, "UTF-8"));
+				} else {
+					// we have something else then a handshake here
+					throw new SQLException("The server sent an invalid byte-order sequence");
+				}
 			break;
 			case 7:
 				// proto 7 (finally) uses the challenge and works with a
@@ -423,11 +461,10 @@ public class MonetConnection implements Connection {
 				response += username + ":" + pwhash + ":" + language;
 				response += ":" + database;
 
+				monet.write(response + "\n");
+				monet.flush();
 			break;
 		}
-
-		monet.write(response + "\n");
-		monet.flush();
 	}
 
 	/**
