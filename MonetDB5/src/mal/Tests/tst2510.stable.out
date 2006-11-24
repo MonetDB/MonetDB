@@ -35,8 +35,8 @@ exit always;	# 5  (always:bit)
 #exit MALexception; 	# 8  (_7:str)
     return tryme := false;	# 9  (tryme:bit)<-(_8:bit)
 end tryme;	# 10  
-!ERROR: 'b' may not be used before being set in tryme[1]
-#tryme();    # shouldn;t hang when you forget the exception
+!ERROR: 'b' may not be used before being initialized in tryme[1]
+#user.tryme();    # shouldn;t hang when you forget the exception
 #
 function user.main():void;	# 0  (main:void)
 # A exception in a factory should terminate it  	# 1  (_1:str)

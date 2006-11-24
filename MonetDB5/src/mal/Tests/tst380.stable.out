@@ -80,23 +80,25 @@ function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     b8:bat[:int,:lng]  := bbp.getCount();	# 10 CMDbbpCount (b8:bat[:int,:lng])
     bCount := algebra.join(brev,b8);	# 11 ALGjoin (bCount:bat[:str,:lng])<-(brev:bat[:str,:int])(b8:bat[:int,:lng])
     bat.setColumn(bCount,"count");	# 12 BKCsetColumn (_15:void)<-(bCount:bat[:str,:lng])(_16:str)
-    b7:bat[:int,:int]  := bbp.getHeat();	# 13 CMDbbpHeat (b7:bat[:int,:int])
-    bHeat := algebra.join(brev,b7);	# 14 ALGjoin (bHeat:bat[:str,:int])<-(brev:bat[:str,:int])(b7:bat[:int,:int])
-    bat.setColumn(bHeat,"heat");	# 15 BKCsetColumn (_19:void)<-(bHeat:bat[:str,:int])(_20:str)
-    b3:bat[:int,:str]  := bbp.getDirty();	# 16 CMDbbpDirty (b3:bat[:int,:str])
-    bDirty := algebra.join(brev,b3);	# 17 ALGjoin (bDirty:bat[:str,:str])<-(brev:bat[:str,:int])(b3:bat[:int,:str])
-    bat.setColumn(bDirty,"dirty");	# 18 BKCsetColumn (_23:void)<-(bDirty:bat[:str,:str])(_24:str)
-    b4:bat[:int,:str]  := bbp.getStatus();	# 19 CMDbbpStatus (b4:bat[:int,:str])
-    bStatus := algebra.join(brev,b4);	# 20 ALGjoin (bStatus:bat[:str,:str])<-(brev:bat[:str,:int])(b4:bat[:int,:str])
-    bat.setColumn(bStatus,"status");	# 21 BKCsetColumn (_27:void)<-(bStatus:bat[:str,:str])(_28:str)
-    b5:bat[:int,:str]  := bbp.getKind();	# 22 CMDbbpKind (b5:bat[:int,:str])
-    bKind := algebra.join(brev,b5);	# 23 ALGjoin (bKind:bat[:str,:str])<-(brev:bat[:str,:int])(b5:bat[:int,:str])
-    bat.setColumn(bKind,"kind");	# 24 BKCsetColumn (_31:void)<-(bKind:bat[:str,:str])(_32:str)
-    b6:bat[:int,:int]  := bbp.getRefCount();	# 25 CMDbbpRefCount (b6:bat[:int,:int])
-    bRef := algebra.join(brev,b6);	# 26 ALGjoin (bRef:bat[:str,:int])<-(brev:bat[:str,:int])(b6:bat[:int,:int])
-    bat.setColumn(bRef,"refCount");	# 27 BKCsetColumn (_35:void)<-(bRef:bat[:str,:int])(_36:str)
-    io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	# 28 IOttable (_37:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bHeat:bat[:str,:int])(bDirty:bat[:str,:str])(bStatus:bat[:str,:str])(bKind:bat[:str,:str])(bRef:bat[:str,:int])
-end dir;	# 29  
+#debug flag setting dependent 	# 13  (_17:str)
+#	b7:bat[:int,:int] := bbp.getHeat(); 	# 14  (_18:str)
+#	bHeat:= algebra.join(brev,b7); 	# 15  (_19:str)
+#	bat.setColumn(bHeat,"heat"); 	# 16  (_20:str)
+#	b3:bat[:int,:str] := bbp.getDirty(); 	# 17  (_21:str)
+#	bDirty:= algebra.join(brev,b3); 	# 18  (_22:str)
+#	bat.setColumn(bDirty,"dirty"); 	# 19  (_23:str)
+#	b4:bat[:int,:str] := bbp.getStatus(); 	# 20  (_24:str)
+#	bStatus:= algebra.join(brev,b4); 	# 21  (_25:str)
+#	bat.setColumn(bStatus,"status"); 	# 22  (_26:str)
+    b5:bat[:int,:str]  := bbp.getKind();	# 23 CMDbbpKind (b5:bat[:int,:str])
+    bKind := algebra.join(brev,b5);	# 24 ALGjoin (bKind:bat[:str,:str])<-(brev:bat[:str,:int])(b5:bat[:int,:str])
+    bat.setColumn(bKind,"kind");	# 25 BKCsetColumn (_29:void)<-(bKind:bat[:str,:str])(_30:str)
+    b6:bat[:int,:int]  := bbp.getRefCount();	# 26 CMDbbpRefCount (b6:bat[:int,:int])
+    bRef := algebra.join(brev,b6);	# 27 ALGjoin (bRef:bat[:str,:int])<-(brev:bat[:str,:int])(b6:bat[:int,:int])
+    bat.setColumn(bRef,"refCount");	# 28 BKCsetColumn (_33:void)<-(bRef:bat[:str,:int])(_34:str)
+#	io.table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef); 	# 29  (_35:str)
+    io.table(brev,bm,bHead,bTail,bCount,bKind,bRef);	# 30 IOttable (_36:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bKind:bat[:str,:str])(bRef:bat[:str,:int])
+end dir;	# 31  
 #
 #function dir(s:str):void;
 #	t:= bbp.getNames();
@@ -135,28 +137,28 @@ function user.main():void;	# 0  (main:void)
     user.dir("simple");	# 11  (_15:void)<-(_16:str)
 end main;	# 12  
 [ "Get first directory" ]
-#---------------------------------------------------------------------------------------------------------------------------------#
-# bbp	t			htype	ttype		count	heat	dirty		status	kind		refCount		  # name
-# int	str			str	str		lng	int	str		str	str		int		  # type
-#---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  33,	  156,	  "dirty",	  "load", "transient",	  1		  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  157,	  "dirty",	  "load", "transient",	  1		  ]
-[ 3,	  "timezones",		  "str",  "timezone",	  24,	  158,	  "dirty",	  "load", "transient",	  1		  ]
-[ 4,	  "M5system_auth_user",	  "oid",  "str",	  1,	  81,	  "clean",	  "load", "persistent",	  1		  ]
-[ 5,	  "M5system_auth_passwd", "oid",  "str",	  1,	  82,	  "clean",	  "load", "persistent",	  1		  ]
-[ 6,	  "M5system_auth_scen",	  "oid",  "str",	  0,	  83,	  "dirty",	  "load", "persistent",	  1		  ]
-[ 7,	  "simplemind",		  "int",  "int",	  0,	  165,	  "dirty",	  "load", "transient",	  0		  ]
+#-------------------------------------------------------------------------------------------------#
+# bbp	h			htype	ttype		count	kind		refCount		  # name
+# int	str			str	str		lng	str		int		  # type
+#-------------------------------------------------------------------------------------------------#
+[ 1,	  "monet_environment",	  "str",  "str",	  33,	  "transient",	  1		  ]
+[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  "transient",	  1		  ]
+[ 3,	  "timezones",		  "str",  "timezone",	  24,	  "transient",	  1		  ]
+[ 4,	  "M5system_auth_user",	  "oid",  "str",	  1,	  "persistent",	  1		  ]
+[ 5,	  "M5system_auth_passwd", "oid",  "str",	  1,	  "persistent",	  1		  ]
+[ 6,	  "M5system_auth_scen",	  "oid",  "str",	  0,	  "persistent",	  1		  ]
+[ 7,	  "simplemind",		  "int",  "int",	  0,	  "transient",	  0		  ]
 [ "Get second directory" ]
 #-------------------------#
 # h	t		  # name
 # int	str		  # type
 #-------------------------#
 [ 7,	  "simplemind"	  ]
-#-----------------------------------------------------------------------------------------------------------------#
-# h	t		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
-# int	str		str	str	lng	int	str		str	str		int		  # type
-#-----------------------------------------------------------------------------------------------------------------#
-[ 7,	  "simplemind",	  "int",  "int",  0,	  211,	  "dirty",	  "load", "transient",	  0		  ]
+#---------------------------------------------------------------------------------#
+# h	h		htype	ttype	count	kind		refCount		  # name
+# int	str		str	str	lng	str		int		  # type
+#---------------------------------------------------------------------------------#
+[ 7,	  "simplemind",	  "int",  "int",  0,	  "transient",	  0		  ]
 
 # 18:09:04 >  
 # 18:09:04 >  Done.

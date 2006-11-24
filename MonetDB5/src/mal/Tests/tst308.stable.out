@@ -21,7 +21,7 @@ stdout of test 'tst308` in directory 'src/mal` itself:
 #exit NotDefinedException;
 #
 !ERROR: barrier 'NotDefinedException' should be of type bit, str or number in main[3]
-!ERROR: 'NotDefineException' may not be used before being set in main[5]
+!ERROR: 'NotDefineException' may not be used before being initialized in main[5]
 function user.main():void;	# 0  (main:void)
 # exception variables are implicitly defined 	# 1  (_1:str)
 # by the catch statement. 	# 2  (_2:str)

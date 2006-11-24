@@ -72,14 +72,14 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 !ERROR: barrier 'FT' should be of type bit, str or number in main[30]
 !ERROR: barrier 'FTE' should be of type bit, str or number in main[33]
 !ERROR: barrier 'FS' should be of type bit, str or number in main[36]
-!ERROR: 'batoperatie' may not be used before being set in main[2]
-!ERROR: 'b' may not be used before being set in main[3]
-!ERROR: 'b' may not be used before being set in main[10]
-!ERROR: 'b' may not be used before being set in main[11]
-!ERROR: 'b' may not be used before being set in main[12]
-!ERROR: 'entry_or_exittest' may not be used before being set in main[17]
-!ERROR: 'booleanexpr' may not be used before being set in main[30]
-!ERROR: 'booleanexpr' may not be used before being set in main[33]
+!ERROR: 'batoperatie' may not be used before being initialized in main[2]
+!ERROR: 'b' may not be used before being initialized in main[3]
+!ERROR: 'b' may not be used before being initialized in main[10]
+!ERROR: 'b' may not be used before being initialized in main[11]
+!ERROR: 'b' may not be used before being initialized in main[12]
+!ERROR: 'entry_or_exittest' may not be used before being initialized in main[17]
+!ERROR: 'booleanexpr' may not be used before being initialized in main[30]
+!ERROR: 'booleanexpr' may not be used before being initialized in main[33]
 function user.main():void;	# 0  (main:void)
 # A collection of forloops, which should not execute 	# 1  (_2:str)
 barrier H := batoperatie;	# 2  (H:any)<-(batoperatie:any) jump 6

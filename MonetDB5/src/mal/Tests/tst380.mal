@@ -25,17 +25,18 @@ function dir(b:bat[:int,:str]):void;
 	bCount:= algebra.join(brev,b8);
 	bat.setColumn(bCount,"count");
 
-	b7:bat[:int,:int] := bbp.getHeat();
-	bHeat:= algebra.join(brev,b7);
-	bat.setColumn(bHeat,"heat");
+#debug flag setting dependent
+#	b7:bat[:int,:int] := bbp.getHeat();
+#	bHeat:= algebra.join(brev,b7);
+#	bat.setColumn(bHeat,"heat");
 
-	b3:bat[:int,:str] := bbp.getDirty();
-	bDirty:= algebra.join(brev,b3);
-	bat.setColumn(bDirty,"dirty");
+#	b3:bat[:int,:str] := bbp.getDirty();
+#	bDirty:= algebra.join(brev,b3);
+#	bat.setColumn(bDirty,"dirty");
 
-	b4:bat[:int,:str] := bbp.getStatus();
-	bStatus:= algebra.join(brev,b4);
-	bat.setColumn(bStatus,"status");
+#	b4:bat[:int,:str] := bbp.getStatus();
+#	bStatus:= algebra.join(brev,b4);
+#	bat.setColumn(bStatus,"status");
 
 	b5:bat[:int,:str] := bbp.getKind();
 	bKind:= algebra.join(brev,b5);
@@ -45,7 +46,8 @@ function dir(b:bat[:int,:str]):void;
 	bRef:= algebra.join(brev,b6);
 	bat.setColumn(bRef,"refCount");
 
-	io.table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
+#	io.table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
+	io.table(brev, bm, bHead,bTail,bCount, bKind,bRef);
 end dir;
 
 function dir(s:str):void;
