@@ -41,11 +41,13 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
 			return throwMessage("optimizer.@1",buf);
 		}
-		if( s->def->errors == 0)
-			actions= OPT@1Implementation(s->def,0,p);
-	} else
-		if( mb->errors == 0)
-			actions= OPT@1Implementation(mb,stk,p);
+		mb = s->def;
+		stk= 0;
+	} 
+	if( mb->errors )
+		return MAL_SUCCEED;
+	addtoMalBlkHistory(mb);
+	actions= OPT@1Implementation(mb,stk,p);
     optimizerCheck(mb, "optimizer.@1", actions, GDKusec() - clk,@2);
 	return MAL_SUCCEED;
 }

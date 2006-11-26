@@ -141,6 +141,8 @@ ESevaluate(MalBlkPtr mb, char *empty)
 		p = old[i];
 
 		pushInstruction(mb,p);
+		if( p->token == ENDsymbol)
+			break;
 		for(j=0; j<p->argc; j++)
 			p->argv[j]= alias[getArg(p,j)];
 @-

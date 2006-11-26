@@ -108,6 +108,11 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p= getInstrPtr(mb,i);
 
 		se = p->token == ENDsymbol;
+		if( se){
+			mb->stmt[j] = p;
+			j++;
+			break;
+		}
 		if( p->token != NOOPsymbol)
 		for (k = 0; k < p->retc; k++)
 			if( isVarUsed(mb,getArg(p,k)) ){
@@ -115,7 +120,7 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				break;
 			} 
 
-		if (se || hasSideEffects(p, FALSE)) {
+		if (se || hasSideEffects(p, FALSE) ){
 			mb->stmt[j] = p;
 			j++;
 		} else {

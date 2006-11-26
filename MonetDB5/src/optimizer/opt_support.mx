@@ -445,6 +445,7 @@ comment "Handle simple replacements";
 #include "mal.h"
 #include "mal_function.h"
 #include "mal_scenario.h"
+#include "mal_builder.h"
 
 /* #define DEBUG_OPT_OPTIMIZER     show partial result */
 
@@ -571,7 +572,13 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 		if( flag & OPT_CHECK_SPAN) setLifespan(mb);
 	}
 	if( cntxt->debugOptimizer){
-		optimizerDebug(mb, name, actions, usec);
+		/* keep the actions take as post block comments */
+		char buf[BUFSIZ];
+		InstrPtr p= getInstrPtr(mb,mb->stop-1);
+		sprintf(buf,"actions=%d time=" LLFMT " usec %s",actions,usec,name);
+		if( p->token == REMsymbol)
+			removeInstruction(mb,p);
+		newComment(mb,buf);
 		if (mb->errors) {
 			showErrors();
 			stream_printf(GDKout, "Optimizer %s failed\n", name);
