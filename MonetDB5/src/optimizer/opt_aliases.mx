@@ -134,6 +134,8 @@ OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		} else
 			OPTremap(p,alias);
 	}
+	for(i=k; i<limit; i++)
+		mb->stmt[i]= NULL;
 	mb->stop= k;
 	return actions;
 }
