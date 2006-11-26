@@ -323,7 +323,10 @@ MDBsetTimer(int *ret, bit *flag)
 	Client cntxt = MCgetClient();
 
 	(void) ret;
-	cntxt->timerFlag =  *flag;
+	if( *flag)
+		cntxt->flags |= timerFlag;
+	else
+		cntxt->flags &= ~timerFlag;
 	cntxt->timer= GDKusec();
 	return MAL_SUCCEED;
 }
@@ -334,7 +337,10 @@ MDBsetFlow(int *ret, bit *flag)
 	Client cntxt = MCgetClient();
 
 	(void) ret;
-	cntxt->flowFlag =  *flag;
+	if( *flag)
+		cntxt->flags |= flowFlag;
+	else
+		cntxt->flags &= ~flowFlag;
 	return MAL_SUCCEED;
 }
 
@@ -344,17 +350,23 @@ MDBsetMemory(int *ret, bit *flag)
 	Client cntxt = MCgetClient();
 	(void) ret;
 
-	cntxt->memoryFlag = *flag;
+	if( *flag)
+		cntxt->flags |= memoryFlag;
+	else
+		cntxt->flags &= ~memoryFlag;
 	return MAL_SUCCEED;
 }
 
 str
-MDBsetIO(int *ret, bit *format)
+MDBsetIO(int *ret, bit *flag)
 {
 	Client cntxt = MCgetClient();
 	(void) ret;
 
-	cntxt->ioFlag = *format;
+	if( *flag)
+		cntxt->flags |= ioFlag;
+	else
+		cntxt->flags &= ~ioFlag;
 	return MAL_SUCCEED;
 }
 
