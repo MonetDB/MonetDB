@@ -422,7 +422,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 #endif
 	@:performanceVariables@
 
-	if( cntxt->timerFlag)
+	if( cntxt->flags & timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
 	oldMemory.arena= 0;
 		
@@ -606,7 +606,7 @@ arguments.
 	for(n=0, i= startpc+1; i<stoppc; i++,n++)
 		addMALflowStep(flow,n,pending, mb,stk,getInstrPtr(mb,i));
 
-	if( cntxt->timerFlag)
+	if( cntxt->flags & timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
 	oldMemory.arena= 0;
 @-
@@ -1517,10 +1517,11 @@ See @url{The MAL Profiler} for more details.
 #endif
 
 @= timingHndlr
-if( cntxt->timerFlag && stk->cmd != 't' && stk->cmd != 'C'){
-	stream_printf(cntxt->fdout,"#%6d usec",GDKusec()-cntxt->timer);
+if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
+	if( cntxt->flags & timerFlag)
+		stream_printf(cntxt->fdout,"#%6d usec",GDKusec()-cntxt->timer);
 #ifdef HAVE_SYS_RESOURCE_H
-	if( cntxt->ioFlag){
+	if( cntxt-> flags & ioFlag){
 		getrusage(RUSAGE_SELF, &cntxt->resource);
 		if(	cntxt->resource.ru_inblock - oldinblock 
 		 ||	cntxt->resource.ru_oublock - oldoublock ) {
@@ -1531,21 +1532,23 @@ if( cntxt->timerFlag && stk->cmd != 't' && stk->cmd != 'C'){
 		}
 	}
 #endif
-	if( cntxt->memoryFlag){
+	if( cntxt->flags & memoryFlag){
 		cntxt->memory= MT_mallinfo();
 		if( cntxt->memory.arena- oldMemory.arena > 0)
 			stream_printf(cntxt->fdout,"# %6d bytes",
 				cntxt->memory.arena-oldMemory.arena );
 	}
-	if( cntxt->flowFlag){
+	if( cntxt->flags & flowFlag){
 		/* calculate the read/write byte flow */
 		stream_printf(cntxt->fdout,"# ");
 		getVolume(cntxt,mb,stk,pci,0);
 		getVolume(cntxt,mb,stk,pci,1);
 		/* getVolume(cntxt,mb,stk,pci,2);*/
 	}
-	printTraceCall(cntxt,mb,stk,stkpc);
-	cntxt->timer = GDKusec();
+	if( cntxt->flags & timerFlag){
+		printTraceCall(cntxt,mb,stk,stkpc);
+		cntxt->timer = GDKusec();
+	}
 }
 @-
 For performance evaluation it is handy to know the 
@@ -1556,7 +1559,6 @@ depends on the operation.
 void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd){
 	int i, limit, vol=0;
 	BAT *b;
-	str tag;
 
 	(void) mb;
 	limit= rd ==0? pci->retc: pci->argc;
@@ -1568,16 +1570,15 @@ void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd){
 		vol += BATcount(b) * BUNsize(b);
 		BBPunfix(b->batCacheid);
 	}
-	tag= (rd==0?"w": (rd==1?"r":""));
 	if( vol <1024)
-		stream_printf(cntxt->fdout,"%3dB%s",vol,tag);
+		stream_printf(cntxt->fdout,"%3d",vol);
 	else
 	if( vol <1024*1024)
-		stream_printf(cntxt->fdout,"%3dK%s",vol/1024,tag);
+		stream_printf(cntxt->fdout,"%3dK",vol/1024);
 	else
 	if( vol <1024* 1024*1024)
-		stream_printf(cntxt->fdout,"%3dM%s",vol/1024/1024,tag);
+		stream_printf(cntxt->fdout,"%3dM",vol/1024/1024);
 	else
-		stream_printf(cntxt->fdout,"%3dG%s",vol/1024/1024/1024,tag);
+		stream_printf(cntxt->fdout,"%3dG",vol/1024/1024/1024);
 }
 @}

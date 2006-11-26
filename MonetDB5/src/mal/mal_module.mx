@@ -405,7 +405,7 @@ Symbol findSymbolInModule(Module v, str fcn){
 }
 Symbol findMALSymbol(str mod, str fcn){
 	Module v;
-	v= findModule(mal_scope, mod);
+	v= findModule(mal_scope, getName(mod,strlen(mod)) );
 	return findSymbolInModule(v,fcn);
 }
 int displayModule(stream *f, Module v, str fcn, int listing){

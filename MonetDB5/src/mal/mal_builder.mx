@@ -36,6 +36,7 @@ mal_export InstrPtr newStmt1(MalBlkPtr mb, str module, char *name);
 mal_export InstrPtr newStmt2(MalBlkPtr mb, str module, char *name);
 mal_export InstrPtr newStmtId(MalBlkPtr mb, char *id, char *module, char *name);
 mal_export InstrPtr newAssignment(MalBlkPtr mb);
+mal_export InstrPtr newComment(MalBlkPtr mb, const char *val);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 mal_export InstrPtr pushWrd(MalBlkPtr mb, InstrPtr q, wrd val);
@@ -114,6 +115,22 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 
 	setModuleId(q, putName(mod, strlen(mod)));
 	setFunctionId(q, putName(fcn, strlen(fcn)));
+	return q;
+}
+
+InstrPtr
+newComment(MalBlkPtr mb, const char *val)
+{
+	InstrPtr q = newInstruction(NULL,REMsymbol);
+	ValRecord cst;
+
+	cst.vtype= TYPE_str;
+	cst.val.sval= GDKstrdup(val);
+	cst.len= strlen(cst.val.sval);
+	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
+	/* mark the constant for not being copied to the stack */
+	isConstant(mb,getArg(q,0)) = - isConstant(mb,getArg(q,0));
+	pushInstruction(mb, q);
 	return q;
 }
 

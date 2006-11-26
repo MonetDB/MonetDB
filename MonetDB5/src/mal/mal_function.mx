@@ -995,7 +995,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	for (k = p->retc; k < p->argc; k++) {
 		showOutFlow(mb, 0, p->argv[k], f);
 	}
-	for (i = 1; i < mb->stop - 1; i++) {
+	for (i = 1; i < mb->stop ; i++) {
 		p = getInstrPtr(mb, i);
 		showFlowDetails(mb, stk, p, i, f);
 

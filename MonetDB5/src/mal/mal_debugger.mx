@@ -27,6 +27,8 @@ assess its behavior.
 @menu
 * Program Debugging ::
 * Handling Breakpoints::
+* Profile Switches::
+* Program Inspection::
 * Runtime Inspection::
 @end menu
 @node Program Debugging, Handling Breakpoints, The MAL Debugger, The MAL Debugger
@@ -39,7 +41,7 @@ An illustrative session elicits the functionality offered.
 >function test(i:int):str;
 >	io.print(i);
 >	i:= i*2;
->	b:= bbp.new(:int,:int);
+>	b:= bat.new(:int,:int);
 >	bat.insert(b,1,i);
 >	io.print(b);
 >	return test:= "ok";
@@ -59,37 +61,42 @@ An overview of the available commands is readily available.
 >mdb.start();
 #mdb !end main;
 mdb>help
-next       -- Advance to next statement
-continue   -- Continue program being debugged
-break      -- set breakpoint on current instruction
-break <var>    -- break on assignment to <var>
-delete <var>   -- remove break point <var>
-debug <mask>   -- set the runtime debugging mask
-step       -- advance to next MAL instruction
-module     -- display the module signatures
-finish     -- finish current call
-flow		-- trace memory flow
-io		-- trace io flow
-exit       -- terminate current call
-quit       -- turn off debugging
-list <fcn> -- list current program block
-List <fcn> -- list with type information
-var  <fcn>  -- print symbol table for module
-optimizer <idx>  -- display program after optimizer step
-optimizer <file> <idx>  -- safe program after optimizer step on a file
-print <var>    -- display value of a variable
-print <var> <cnt>[<first>] -- display BAT chunk
-info <var>     -- display bat variable properties
-run        -- restart current procedure
-where      -- print stack trace
-down       -- go down the stack
-up         -- go up the stack
-timer      -- produce micro-second response time
-memory     -- produce memory consumption data
-io         -- produce page activity trace
-help       -- this message
+	next             -- Advance to next statement
+	continue         -- Continue program being debugged
+	catch            -- Catch the next exception 
+	break [<var>]    -- set breakpoint on current instruction or <var>
+	delete [<var>]   -- remove break/trace point <var>
+	debug <int>      -- set kernel debugging mask
+	dot [<int>] [<file>]  -- generate the dependency graph
+	step             -- advance to next MAL instruction
+	module           -- display a module signatures
+	atom             -- show atom list
+	finish           -- finish current call
+	exit             -- terminate executionr
+	quit             -- turn off debugging
+	list <obj>       -- list current program block
+	List <obj>       -- list with type information
+	var  <obj>       -- print symbol table for module
+	optimizer <obj>  -- display program after optimizer step
+	print <var>      -- display value of a variable
+	print <var> <cnt>[<first>] -- display BAT chunk
+	info <var>       -- display bat variable properties
+	run              -- restart current procedure
+	where            -- print stack trace
+	down             -- go down the stack
+	up               -- go up the stack
+	trace <var>      -- trace assignment to variables
+	set {timer,flow,io,memory} -- set trace switches
+	unset            -- turn off switches
+	help             -- this message
 mdb>
 @end example
+
+The term @code{<obj>} is an abbreviation for a 
+MAL operation @code{<mod>.<fcn>}, optionally extended with
+a version number, i.e. @code{[<nr>]).
+The @code{var} denotes a variable in the current stack frame.
+Debugger commands may be abbreviated.
 
 We walk our way through a debugging session, highlighting the
 effects of the debugger commands.
@@ -111,9 +118,7 @@ end main;       # 2
 @end example
 The user module is the default place for function defined at
 the console. The modules loaded can be shown typeing the
-command 'modules' or 'module'(or 'm'  for short). 
-The former merely enumerates the module names, the latter also shows 
-the names of the function in each.
+command 'module' (or 'm'  for short). 
 The function signatures become visible using the module and optionally
 the function name.
 @example
@@ -145,12 +150,11 @@ mdb>
 [ 1 ]
 #    i := calc.*(i,2);
 mdb>
-#    b := bbp.new(:int,:int);
+#    b := bat.new(:int,:int);
 mdb>
 @end example
-The last instruction show is ready to be executed, which means
-the calculation has already been finished. The value assigned
-to a variable can be
+The last instruction shown is ready to be executed, which means
+the calculation has already been finished. The result can be
 shown using a print statement, which contains the location of
 the variable on the stack frame, its name, its value and type.
 The complete stack frame becomes visible with 'values' ('v')
@@ -179,14 +183,12 @@ can be obtained using the 'info' ('i') command.
 A sample of the BAT content can be printed passing tuple indices, e.g.
 'print b 10 10' prints the second batch of ten tuples.
 
-@node Handling Breakpoints, Runtime Inspection, Program Debugging, The MAL Debugger
+@node Handling Breakpoints, Profile Switches, Program Debugging, The MAL Debugger
 @+ Handling Breakpoints
 A powerful mechanism for debugging a program is to set breakpoints
 during the debugging session.
 The breakpoints are designated by a target variable name,
-a [module.]operator name, or a MAL line number (#<number>).
-As soon as the variable recieves a new value  or the operation
-is called the debugger is activated.
+a [module.]function name, or a MAL line number (#<number>).
 
 The snippet below illustrates the reaction to set a break point
 on assignment to variable 'i'. 
@@ -213,10 +215,96 @@ A list of all remaining breakpoints is obtained with @code{breakpoints}.
 
 The interpreter can be instructed to call the debugger as soon as an exception
 is raised. Simply add the instruction @code{mdb.setCatch(true)}.
-@node Runtime Inspection, The MAL Profiler, Handling Breakpoints,  The MAL Debugger
+
+@node Profile Switches, Program Inspection, Handling Breakpoints,  The MAL Debugger
+@+ Profile Switches
+Switches control the level of detail output shown while debugging
+or tracing program execution.
+They are toggled with the @code{set} and @code{unset} command.
+The following switches are currently supported:
+@table @code
+@item timer
+activates a listing of all instructions being executed.
+It is measured in wall-clock time.
+@item flow
+shows the total byte size of all BAT target results and input arguments.
+It is a good indicator on the amount of data being processed.
+@item memory
+keeps track on growing memory needs.
+@item io
+keeps track on the amount of physical IO
+and is used to detect operators consuming excessive amounts of space.
+@end table
+
+The snippet below shows setting the @code{memory} and @code{timer}
+switch. The switches take effect at the next instruction.
+@example
+mdb>set timer
+mdb>set flow
+mdb>c
+[ 3 ]
+#    26 usec#   0  0#    io.print(i=3)
+#     6 usec#   0  0#    i := calc.*(i=6, _3=2)
+#    10 usec#   0  0#    b := bat.new(_5=0, _6=0)
+#     7 usec#   0  8#    bat.insert(b=<tmp_167>bat[:int,:int]{1}, _8=1, i=6)
+#-----------------#
+# h     t         # name
+# int   int       # type
+#-----------------#
+[ 1,      6       ]
+#    41 usec#   0  8#    io.print(b=<tmp_167>bat[:int,:int]{1})
+#     7 usec#   0  0#    return test := "ok";
+#   211 usec#   0  0#    user.test(_2=3)
+
+@end example
+@node Program Inspection, The MAL Profiler, Profile Switches,  The MAL Debugger
+@+ Program Inspection 
+The debugger commands available for inspection of the program and
+symbol tables are:
+@table @code
+@item list (List) [<mod>.<fcn>['['<nr>']']]
+A listing of the current MAL block, or one designated
+by the <mod>.<fcn> is produced.
+The @code{[<nr>]) extension provides access to an element
+in the MAL block history.
+The alternative name 'List' also produces the type information.
+@item optimizer  [<mod>.<fcn>['['<nr>']']]
+Gives an overview of the optimizer actions in the history of the MAL block.
+Intermediate results can be accessed using the list command.
+@item atoms
+Lists the atoms currently known
+@item modules [<mod>]
+Lists the modules currently known. An optional <mod> argument
+produces a list of all signatures within the module identified.
+@item dot [<mod>.<fcn>['['<nr>']']] [<file>]
+A dataflow diagram can be produced using the @code{dot} command.
+It expects a function identifier with an optional history index
+and produces a file for the Linux program @code{dot},
+which can produce a nice, multi-page graph to illustrate plan
+complexity.
+@end table
+
+@begin example
+mdb>dot user.test
+@end example;
+This example produces the @code{user-tst.dot} in the current
+working directory. The program call
+@begin example
+dot -Tps user-tst-0.dot -o user-tst-0.ps
+@end example
+creates a postscript file with the graphs. With the Adobe reader professional
+you can break it up into multiple pages. An alternative
+is the program available from 
+ @code{http://www.tug.org/tex-archive/support/poster/poster.c}
+The result is shown in the figure below:
+
+Since the flow graphs become rather complex, an optional variable
+list limits its size.[TODO]
+
+@node Runtime Inspection, The MAL Profiler, Program Inspection,  The MAL Debugger
 @+ Runtime Inspection and Reflection
 Part of the debugger functionality can also be used directly with
-MAL instructions.
+MAL instructions. 
 The execution trace of a snippet of code can be visualized 
 encapsulation with @code{mdb.setTrace(true)} and @code{mdb.setTrace(false)}.
 Likewise, the performance can be monitored with the command @code{mdb.setTimer(on/off)}.
@@ -228,7 +316,7 @@ the test case.
 >	mdb.setTrace(true);
 >	io.print(i);
 >	i:= i*2;
->	b:= bbp.new(:int,:int);
+>	b:= bat.new(:int,:int);
 >	bat.insert(b,1,i);
 >	io.print(b);
 >	mdb.setTrace(false);
@@ -239,7 +327,7 @@ the test case.
 [ 1 ]
 #    io.print(i=1)
 #    i := calc.*(i=2, _5=2)
-#    b := bbp.new(_7=0, _8=0)
+#    b := bat.new(_7=0, _8=0)
 #    bat.insert(b=<tmp_1226>, _10=1, i=2)
 #-----------------#
 # h     t         # name
@@ -251,11 +339,9 @@ the test case.
 >
 @end example
 
-The commands mdb.setTimer() toggle the performance traceing flag. 
-The argument is an integer to designate the action, i.e.
-0 turns off the tracer otherwise it turns it on.
-
-The primary output of the timer is statistics in micro-seconds,
+The command @code{mdb.setTimer()} toggles the performance traceing flag. 
+The argument is a boolen to designate its state. 
+The primary output of the timer switch is statistics in micro-seconds,
 the memory tracer shows the arena increment, and the IO tracer
 shows in- and out-blocks.
 The time spent on preparing the trace information is excluded
@@ -263,15 +349,14 @@ from the report.
 For more detailed timing information the Linux
 tool @emph{valgrind} may be of help.
 
-The routines mdb.setMemory(), and mdb.setIO() extend the timer
-trace with an overview of the changes in the memory usage and
-IO activity.
+The routines @code{mdb.setFlow()}, @code{mdb.setMemory()}, and @code{mdb.setIO()} 
+(de-)activate the other switches.
 @example
 >function test(i:int):str;
 >	mdb.setTimer(true);
 >	io.print(i);
 >	i:= i*2;
->	b:= bbp.new(:int,:int);
+>	b:= bat.new(:int,:int);
 >	bat.insert(b,1,i);
 >	io.print(b);
 >	mdb.setTimer(false);
@@ -282,7 +367,7 @@ IO activity.
 [ 1 ]
 #    43 usec#    io.print(i=1)
 #     5 usec#    i := calc.*(i=2, _5=2)
-#    24 usec#    b := bbp.new(_7=0, _8=0)
+#    24 usec#    b := bat.new(_7=0, _8=0)
 #    10 usec#    bat.insert(b=<tmp_1226>, _10=1, i=2)
 #-----------------#
 # h     t         # name
@@ -363,8 +448,6 @@ mal_export void printBBPinfo(stream *out);
 mal_export void resetOptimizerDebugger(void);
 mal_export void optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec);
 mal_export str optimizeMALBlock(MalBlkPtr mb);
-mal_export void showOptimizerStep(str fnme, int i, int flg);
-mal_export void showOptimizerHistory(void);
 mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
@@ -391,15 +474,6 @@ Each client has its own breakpoint administration, kept in a global table.
 Although a little space consumptive, it is the easiest to maintain
 and much less expensive as reserving debugger space in each instruction.
 @c
-#define MAXSTEPS 64
-struct {
-	str title;
-	int actions;
-	lng usec;
-	MalBlkPtr mb;
-} optimizerHistory[MAXSTEPS];
-static int optTop;
-
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
 char
@@ -615,8 +689,8 @@ call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				strcat(msg,tpe);
 				GDKfree(tpe);
 			}
-			/* in timer mode we show more details */
-			if( cntxt->timerFlag && isaBatType(v->type)){
+			/* in performance monitoring mode we show more details */
+			if( cntxt->flags && isaBatType(v->type)){
 				str tpe= getTypeName(v->type);
 				BAT *b;
 				strcat(msg,tpe);
@@ -673,6 +747,45 @@ The prompt string sent to the user indicates the debugger mode.
 #define MDBstatus(X) if(cntxt->fdout) \
 	stream_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
 
+static MalBlkPtr
+mdbLocateMalBlk(MalBlkPtr mb, str b, stream *out){
+	MalBlkPtr m=mb;
+	char *h=0;
+	int idx=0;
+
+	if( *b == '['){
+		idx= atoi(b+1);
+		return getMalBlkHistory(mb,idx);
+	} else
+	if( isdigit((int) *b)){
+		return getMalBlkHistory(mb,atoi(b));
+	} else
+	if (*b != 0) {
+		char *fcnname = strchr(b, '.');
+		Symbol fsym;
+		if (fcnname == NULL ) {
+			stream_printf(out, "<mod>.<fcn>[<nr>] expected\n", b);
+			return NULL;
+		}
+		*fcnname = 0;
+		fcnname++;
+		if( (h= strchr(fcnname,'[')) ){
+			*h=0; idx= atoi(h+1);
+		} 
+		fsym= findMALSymbol(b,fcnname);
+		if (fsym == 0) {
+			stream_printf(out, "'%s.%s' not found\n", b,fcnname);
+			return NULL;
+		}
+		m= fsym->def;
+	} 
+	if( m->history== NULL){
+		stream_printf(out,"No history available\n");
+		return NULL;
+	} 
+	return m;
+}
+
 void
 mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
@@ -718,16 +831,16 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			m = 0;
 			break;
 		case 'a':
-			if (strncmp("atoms", b, 5) == 0)
+			if (strncmp("atom", b, 1) == 0)
 				showAtoms(out);
 			break;
 		case 'c':
-			if (strncmp("catch", b, 5) == 0) {
+			if (strncmp("catch", b, 3) == 0) {
 				/* catch the next exception */
 				stk->cmd = 'C';
 				break;
 			}
-			if (strncmp("call", b, 4) == 0) {
+			if (strncmp("call", b, 3) == 0) {
 				GDKerror("call instruction not yet implemented\n");
 				break;
 			}
@@ -736,7 +849,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			m = 0;
 			break;
 		case 'h':
-			mdbHelp(out);
+			if (strncmp("help", b, 2) == 0) 
+				mdbHelp(out);
 			break;
 		case 'e':
 		{
@@ -759,27 +873,63 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			for (su = stk; su; su = su->up)
 				su->cmd = 0;
 			cntxt->itrace = 0;
-			cntxt->timerFlag = 0;
+			cntxt->flags = 0;
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
 			return;
 		}
 		case 'f':	/* finish */
-			if( strncmp("flow",b,4) == 0){
-				skipWord(cntxt, b);
-				cntxt->flowFlag = (sht) atol(b);
-				break;
-			}
 		case 'n':	/* next */
 		case 's':	/* step */
-			if (strncmp("scenarios", b, 3) == 0) {
+			if (strncmp("scenarios", b, 9) == 0) {
 				showAllScenarios(out);
+				continue;
 			} else if (strncmp("scenario", b, 3) == 0) {
 				showScenarioByName(out, cntxt->scenario);
+				continue;
 			} else if (strncmp("scope", b, 3) == 0) {
+				/* used to inspect the identifier distribution */
 				showModuleStatistics(out, cntxt->nspace);
-				break;
+				continue;
+			} else if (strncmp("set", b, 3) == 0) {
+				skipWord(cntxt, b);
+				skipBlanc(cntxt, b);
+				if( strncmp("flow",b,1) == 0)
+					cntxt->flags |= flowFlag;
+				if( strncmp("memory",b,1) == 0){
+					cntxt->flags |= memoryFlag;
+					cntxt->memory= MT_mallinfo();
+					stream_printf(out,"arena %d ordblks %d smblks %d "
+						" hblkhd %d hblks %d fsmblks %d uordblks %d\n",
+						cntxt->memory.arena,
+						cntxt->memory.ordblks,
+						cntxt->memory.smblks,
+						cntxt->memory.hblkhd,
+						cntxt->memory.hblks,
+						cntxt->memory.fsmblks,
+						cntxt->memory.uordblks
+					);
+				}
+				if (strncmp("timer", b, 1) == 0) {
+					cntxt->flags |= timerFlag;
+					cntxt->timer = GDKusec();
+					stk->cmd = 0;
+				}
+				if (strncmp("io", b, 1) == 0) {
+					cntxt->flags |=ioFlag ;
+#ifdef HAVE_SYS_RESOURCE_H
+					getrusage(RUSAGE_SELF, &cntxt->resource);
+					stream_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" 
+									" minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", 
+									cntxt->resource.ru_maxrss, cntxt->resource.ru_ixrss, 
+									cntxt->resource.ru_idrss, cntxt->resource.ru_isrss,
+									cntxt->resource.ru_minflt, cntxt->resource.ru_majflt, 
+									cntxt->resource.ru_nswap, cntxt->resource.ru_inblock, 
+									cntxt->resource.ru_oublock);
+#endif
+				}
+				continue;
 			}
 			stk->cmd = *b;
 			m = 0;
@@ -791,28 +941,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			Symbol fs;
 			int i;
 
-			if (strncmp("modules", b, 7) == 0) {
-				showModules(out, cntxt->nspace);
-				continue;
-			}
-			if( strncmp("memory",b,6) == 0){
-				skipWord(cntxt, b);
-				cntxt->memoryFlag = (sht) atol(b);
-				cntxt->memory= MT_mallinfo();
-				stream_printf(out,"arena %d ordblks %d smblks %d "
-					" hblkhd %d hblks %d fsmblks %d uordblks %d\n",
-					cntxt->memory.arena,
-					cntxt->memory.ordblks,
-					cntxt->memory.smblks,
-					cntxt->memory.hblkhd,
-					cntxt->memory.hblks,
-					cntxt->memory.fsmblks,
-					cntxt->memory.uordblks
-				);
-				continue;
-			}
-
 			skipWord(cntxt, b);
+			skipBlanc(cntxt,b);
 			if (*b) {
 				modname = b;
 				fcnname = strchr(b, '.');
@@ -837,7 +967,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					}
 				}
 				continue;
-			}
+			} else
+				showModules(out, cntxt->nspace);
 		}
 			break;
 		case 'T':	/* debug type resolver for a function call */
@@ -858,18 +989,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				if ( (w= strchr(b, '\n')) )
 					*w = 0;
 				mdbSetBreakRequest(cntxt, mb, b, 't');
-			} else
-			if (strncmp("timer", b, 5) == 0) {
-				skipWord(cntxt, b);
-				switch( *b){
-				case '0': cntxt->timerFlag = 0; break;
-				case '1': cntxt->timerFlag = 1; break;
-				default: cntxt->timerFlag = ! cntxt->timerFlag;
-				}
-				if( cntxt->timer == 0)
-					cntxt->timer = GDKusec();
-				stk->cmd = 0;
-			}
+			} 
 			break;
 		case 'v':	/* show the symbol table and bindings */
 		case 'V':{
@@ -989,29 +1109,29 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if( strncmp(b, "dot", 3) == 0){
 				/* produce the dot file for graphical display */
 				/* its argument is the optimizer level followed by filename*/
-				MalBlkPtr mdot=mb;
-				int idx =0;
+				MalBlkPtr mdot;
 				char fname[2*PATHLENGTH]="";
+				char name[PATHLENGTH];
 
 				skipWord(cntxt, b);
-				if( isdigit((int) *b)){
-					idx = atoi(b);
-					stream_printf(out,"#dot uses plan %d\n",idx);
-					if (idx < optTop && optimizerHistory[idx].mb) 
-						mdot= optimizerHistory[idx].mb;
-					else {
-						stream_printf(out,"#No MAL plan\n");
-						break;
-					}
-					skipWord(cntxt, b);
-				}
+				skipBlanc(cntxt, b);
+				mdot= mdbLocateMalBlk(mb,b,out);
+				if( mdot == NULL)
+					mdot= mb;
+				/* optional file */
+				snprintf(name,PATHLENGTH,"/%s-%s.dot",
+					getModuleId(getInstrPtr(mdot,0)),
+					getFunctionId(getInstrPtr(mdot,0)));
+				if( *b == 0){
+					strcat(fname,name+1);
+				} else
 				if( cntxt->cwd && *b !='/'){
 					strcpy(fname,cntxt->cwd);
-					strcat(fname,"/");
-				} 
-				strcat(fname,b);
+					strcat(fname,name);
+				} else 
+					strcat(fname,name+1);
 				stream_printf(out,"#dot to %s\n",fname);
-				showFlowGraph(mdot,stk,fname);
+				showFlowGraph(mdot,0,fname);
 				break;
 			}
 			skipWord(cntxt, b);
@@ -1028,16 +1148,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			int i;
 			char *t;
 
-			if (strncmp("io", b, 2) == 0) {
-				skipWord(cntxt, b);
-				cntxt->ioFlag = (sht) atol(b);
-#ifdef HAVE_SYS_RESOURCE_H
-				getrusage(RUSAGE_SELF, &cntxt->resource);
-				stream_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" " minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", cntxt->resource.ru_maxrss, cntxt->resource.ru_ixrss, cntxt->resource.ru_idrss, cntxt->resource.ru_isrss,
-					      cntxt->resource.ru_minflt, cntxt->resource.ru_majflt, cntxt->resource.ru_nswap, cntxt->resource.ru_inblock, cntxt->resource.ru_oublock);
-#endif
-				continue;
-			}
 			/* the user wants information about variables */
 			if( *b == 'I'){
 				skipWord(cntxt, b);
@@ -1102,6 +1212,19 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			dumpNamespaceStatistics(out, 1);
 			break;
 		case 'u':
+			if( strncmp("unset",b,5)){
+				skipWord(cntxt, b);
+				skipBlanc(cntxt, b);
+				if( strncmp("flow",b,1) == 0)
+					cntxt->flags &= ~flowFlag;
+				if( strncmp("memory",b,1) == 0)
+					cntxt->flags &= ~memoryFlag;
+				if (strncmp("timer", b, 1) == 0)
+					cntxt->flags &= ~timerFlag;
+				if (strncmp("io", b, 1) == 0) 
+					cntxt->flags &= ~ioFlag;
+				continue;
+			}
 			if (stk->up == NULL)
 				break;
 			stream_printf(out, "%s go up the stack\n", "#mdb ");
@@ -1129,22 +1252,23 @@ table using the 'module.function' name. The default is to list all
 signatures satisfying the pattern.
 @c
 		case 'L':
-		case 'l':	/* list the current code block */
+		case 'l':	/* list the current MAL block or module */
 		{
-			str modname, fcnname;
 			Module fsym;
 			Symbol fs;
 			int i, lstng;
 
-			lstng = /* listing | */ (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR | LIST_MAL_PROPS);
+			lstng= (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR | LIST_MAL_PROPS);
+			skipWord(cntxt, b);
 			skipWord(cntxt, b);
 			if (*b != 0) {
-				modname = b;
-				fcnname = strchr(b, '.');
-				if (fcnname == NULL) {
-					fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+				MalBlkPtr m= mdbLocateMalBlk(mb,b,out);
+				if( m == NULL && !strchr(b,'.') && 
+					!strchr(b,'[') && !isdigit((int)*b)){
+					/* optionally dump the complete module */
+					fsym = findModule(cntxt->nspace, putName(b, strlen(b)));
 					if (fsym == 0) {
-						stream_printf(out, "%s module not found\n", modname);
+						stream_printf(out, "'%s' not found\n", b);
 						continue;
 					}
 					for (i = 0; i < MAXSCOPE; i++) {
@@ -1156,44 +1280,23 @@ signatures satisfying the pattern.
 					}
 					continue;
 				}
-				*fcnname = 0;
-				fcnname++;
-				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
-				if (fsym == 0) {
-					stream_printf(out, "%s module not found\n", modname);
-					continue;
-				}
-				/* display the overloaded symbol definition */
-				if (displayModule(out, fsym, fcnname, lstng) == 0) {
-					stream_printf(out, "%sSymbol '%s.%s' not found\n", "#mdb ", modname, fcnname);
-				}
-			} else {
+				printFunction(out, m, lstng);
+			} else 
 				printFunction(out, mb, lstng);
-			}
 			continue;
 		}
 		case 'o':
 		case 'O':	/* optimizer steps */
 		{
-			int flg = *b == 'o' ? LIST_MAL_INSTR | LIST_MAL_PROPS : LIST_MAL_ALL;
-			int idx;
-
+			MalBlkPtr mdot=mb;
 			skipWord(cntxt, b);
+			skipBlanc(cntxt, b);
 			if (*b) {
-				if( !isdigit(*b) ){
-					char fname[1024],*f = fname;
-					/* dump to file */
-					while(!isspace(*b) && f< fname+1022) *f++= *b++;
-					*f= 0;
-					skipWord(cntxt,b);
-					idx = atoi(b);
-					showOptimizerStep(fname, idx, flg);
-				} else {
-					idx = atoi(b);
-					showOptimizerStep(NULL, idx, flg);
-				}
+				mdot=mdbLocateMalBlk(mb,b,out);
+				if(mdot != NULL)
+					showMalBlkHistory(mdot);
 			} else
-				showOptimizerHistory();
+				showMalBlkHistory(mb);
 			break;
 		}
 		case 'r':	/* reset program counter */
@@ -1251,7 +1354,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	if( mdbSessionActive== 0) return;
 	showErrors();
-	if (cntxt->timerFlag)
+	if (cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 	mdbSessionActive= 0; /* for name completion */
 }
@@ -1587,37 +1690,34 @@ Some utilities for the debugger
 void
 mdbHelp(stream *f)
 {
-	stream_printf(f, "next       -- Advance to next statement\n");
-	stream_printf(f, "continue   -- Continue program being debugged\n");
-	stream_printf(f, "catch      -- Catch the next exception \n");
-	stream_printf(f, "break      -- set breakpoint on current instruction\n");
-	stream_printf(f, "break <var>    -- break on assignment to <var>\n");
-	stream_printf(f, "delete <var>   -- remove break/trace point <var>\n");
-	stream_printf(f, "debug <int>    -- set kernel debugging mask\n");
-	stream_printf(f, "dot [<int>] file  -- generate the dependency graph\n");
-	stream_printf(f, "step       -- advance to next MAL instruction\n");
-	stream_printf(f, "modules    -- show module list\n");
-	stream_printf(f, "module     -- display a module signatures\n");
-	stream_printf(f, "atoms      -- show atom list\n");
-	stream_printf(f, "finish     -- finish current call\n");
-	stream_printf(f, "exit       -- terminate executionr\n");
-	stream_printf(f, "quit       -- turn off debugging\n");
-	stream_printf(f, "list <fcn> -- list current program block\n");
-	stream_printf(f, "List <fcn> -- list with type information\n");
-	stream_printf(f, "var  <fcn>  -- print symbol table for module\n");
-	stream_printf(f, "optimizer <idx>  -- display program after optimizer step\n");
-	stream_printf(f, "print <var>    -- display value of a variable\n");
+	stream_printf(f, "next             -- Advance to next statement\n");
+	stream_printf(f, "continue         -- Continue program being debugged\n");
+	stream_printf(f, "catch            -- Catch the next exception \n");
+	stream_printf(f, "break [<var>]    -- set breakpoint on current instruction or <var>\n");
+	stream_printf(f, "delete [<var>]   -- remove break/trace point <var>\n");
+	stream_printf(f, "debug <int>      -- set kernel debugging mask\n");
+	stream_printf(f, "dot [<int>] [<file>]  -- generate the dependency graph\n");
+	stream_printf(f, "step             -- advance to next MAL instruction\n");
+	stream_printf(f, "module           -- display a module signatures\n");
+	stream_printf(f, "atom             -- show atom list\n");
+	stream_printf(f, "finish           -- finish current call\n");
+	stream_printf(f, "exit             -- terminate executionr\n");
+	stream_printf(f, "quit             -- turn off debugging\n");
+	stream_printf(f, "list <obj>       -- list current program block\n");
+	stream_printf(f, "List <obj>       -- list with type information\n");
+	stream_printf(f, "var  <obj>       -- print symbol table for module\n");
+	stream_printf(f, "optimizer <obj>  -- display program after optimizer step\n");
+	stream_printf(f, "print <var>      -- display value of a variable\n");
 	stream_printf(f, "print <var> <cnt>[<first>] -- display BAT chunk\n");
-	stream_printf(f, "info <var>     -- display bat variable properties\n");
-	stream_printf(f, "run        -- restart current procedure\n");
-	stream_printf(f, "where      -- print stack trace\n");
-	stream_printf(f, "down       -- go down the stack\n");
-	stream_printf(f, "up         -- go up the stack\n");
-	stream_printf(f, "timer {0,1}-- produce micro-second response time [default=0]\n");
-	stream_printf(f, "trace <var>-- trace assignment to variables\n");
-	stream_printf(f, "io         -- produce page activity trace \n");
-	stream_printf(f, "flow       -- produce memory flow trace \n");
-	stream_printf(f, "help       -- this message\n");
+	stream_printf(f, "info <var>       -- display bat variable properties\n");
+	stream_printf(f, "run              -- restart current procedure\n");
+	stream_printf(f, "where            -- print stack trace\n");
+	stream_printf(f, "down             -- go down the stack\n");
+	stream_printf(f, "up               -- go up the stack\n");
+	stream_printf(f, "trace <var>      -- trace assignment to variables\n");
+	stream_printf(f, "set {timer,flow,io,memory} -- set trace switches\n");
+	stream_printf(f, "unset            -- turn off switches\n");
+	stream_printf(f, "help             -- this message\n");
 }
 
 @+ Optimizer debugging
@@ -1626,9 +1726,8 @@ need to check individual steps. Two options come to mind. If in
 debug mode we could stop after each optimizer action for inspection.
 Alternatively, we keep a history of all MAL program versions for
 aposteriori analysis.
-
 The latter is implemented first.
-@{
+
 A global stack is used for simplity, later we may have to
 make it thread safe by assigning it to a client record.
 @c
@@ -1645,89 +1744,6 @@ debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci)
 		removeInstruction(mb, pci);
 	return MAL_SUCCEED;
-}
-
-void
-optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec)
-{
-	if (optTop + 1 == MAXSTEPS){
-		/* drop oldest */
-		int i;
-		if( optimizerHistory[0].title)
-			GDKfree(optimizerHistory[0].title);
-		if( optimizerHistory[0].mb)
-			freeMalBlk(optimizerHistory[0].mb);
-		for(i=0;i<optTop; i++){
-		optimizerHistory[i].title = optimizerHistory[i+1].title;
-		optimizerHistory[i].actions = optimizerHistory[i+1].actions;
-		optimizerHistory[i].usec = optimizerHistory[i+1].usec;
-		optimizerHistory[i].mb = optimizerHistory[i+1].mb;
-		}
-		optTop--;
-	}
-	optimizerHistory[optTop].title = GDKstrdup(name);
-	optimizerHistory[optTop].actions = actions;
-	optimizerHistory[optTop].usec = usec;
-	if( actions)
-		optimizerHistory[optTop].mb = copyMalBlk(mb);
-	optTop++;
-}
-
-void
-resetOptimizerDebugger()
-{
-	int i;
-
-	if (optTop) {
-		/* garbage collect */
-		for (i = 0; i < optTop; i++) {
-			if( optimizerHistory[i].mb)
-				freeMalBlk(optimizerHistory[i].mb);
-			GDKfree(optimizerHistory[i].title);
-		}
-	}
-	optTop = 0;
-}
-
-void
-showOptimizerStep(str fnme, int i, int flg)
-{
-	stream *out;
-	if( fnme == 0 || *fnme== 0)
-		out= GDKout;
-	else {
-		out= open_wastream(fnme);
-		if( out == NULL){
-			stream_printf(GDKout,"Could not create file '%s'\n",fnme);
-			return;
-		}
-		stream_printf(GDKout,"Result saved on '%s'\n",fnme);
-	}
-	if (i < optTop && optimizerHistory[i].mb) {
-		stream_printf(out, "#result after %s\n", optimizerHistory[i].title);
-		printFunction(out, optimizerHistory[i].mb, flg);
-		if(fnme) stream_close(out);
-	}
-}
-void
-showOptimizerHistory()
-{
-	int i;
-	stream *fd = GDKout;
-
-	for (i = 0; i < optTop; i++)
-		if( optimizerHistory[i].mb)
-			stream_printf(fd, "[%d] %s  %s.%s\tactions=%2d time " LLFMT " usec\n",
-				i, optimizerHistory[i].title,
-				getModuleId(getInstrPtr(optimizerHistory[i].mb,0)),
-				getFunctionId(getInstrPtr(optimizerHistory[i].mb,0)),
-				optimizerHistory[i].actions, 
-				optimizerHistory[i].usec);
-		else
-			stream_printf(fd, "[%d] %s  \t\tactions=%2d time " LLFMT " usec\n",
-				i, optimizerHistory[i].title,
-				optimizerHistory[i].actions, 
-				optimizerHistory[i].usec);
 }
 
 @}

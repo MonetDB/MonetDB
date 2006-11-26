@@ -397,6 +397,7 @@ typedef struct MALBLK {
 	int typefixed;		/* no undetermined instruction */
 	int flowfixed;		/* all flow instructions are fixed */
 	ProfPtr profiler;
+	struct MALBLK *history;/* of optimizer actions */
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -470,6 +471,9 @@ mal_export void newMalBlkStmt(MalBlkPtr mb, int maxstmts);
 mal_export void prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr);
+mal_export void addtoMalBlkHistory(MalBlkPtr mb);
+mal_export void showMalBlkHistory(MalBlkPtr mb);
+mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb,int idx);
 mal_export void expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void trimMalBlk(MalBlkPtr mb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
@@ -521,7 +525,6 @@ mal_export void promptInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg)
 mal_export str instruction2str(MalBlkPtr mb, InstrPtr p, int hidden);
 mal_export str function2str(MalBlkPtr mb, int flg);
 mal_export void pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.c */
-
 /* Utility macros to inspect an instruction */
 #define functionStart(X) ((X)->token == FUNCTIONsymbol || \
               (X)->token == COMMANDsymbol || \
@@ -624,6 +627,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->errors = 0;
 	mb->props = NULL;
 	mb->alternative = NULL;
+	mb->history = NULL;
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
 	mb->profiler = NULL;
@@ -662,6 +666,8 @@ freeMalBlk(MalBlkPtr mb)
 	GDKfree(mb->var);
 	mb->var = 0;
 
+	if( mb->history)
+		freeMalBlk(mb->history);
 	if (mb->binding)
 		GDKfree(mb->binding);
 	mb->binding = 0;
@@ -692,6 +698,7 @@ copyMalBlk(MalBlkPtr old)
 		GDKfatal("newMalBlk:could not get storage\n");
 	mb->props = old->props;
 	mb->alternative = old->alternative;
+	mb->history = NULL;
 	mb->var = (VarPtr *) GDKmalloc(sizeof(VarPtr) * old->vsize);
 
 	if (mb->var == NULL)
@@ -728,6 +735,21 @@ copyMalBlk(MalBlkPtr old)
 	return mb;
 }
 
+void
+addtoMalBlkHistory(MalBlkPtr mb){
+	(void) mb;
+	MalBlkPtr cpy;
+	cpy= copyMalBlk(mb);
+	cpy->alternative= NULL;
+	cpy->history= mb->history;
+	mb->history= cpy;
+}
+MalBlkPtr
+getMalBlkHistory(MalBlkPtr mb, int idx){
+	while( mb && idx-- > 0)
+		mb= mb->history;
+	return mb;
+}
 @-
 The MalBlk structures potentially consume a lot a of space, because it
 is not possible to precisely estimate the default sizes of the var and stmt
@@ -822,7 +844,7 @@ newInstruction(MalBlkPtr mb, int kind)
 	InstrPtr p = NULL;
 	int space;
 
-	if (mb) {
+	if (mb && mb->stop <mb->ssize) {
 		p = mb->stmt[mb->stop];
 
 		if (p && p->maxarg < MAXARG)
@@ -2511,4 +2533,23 @@ printSignature(stream *fd, Symbol s, int flg)
 	GDKfree(txt);
 }
 
+void showMalBlkHistory(MalBlkPtr mb)
+{
+	MalBlkPtr m=mb;
+	InstrPtr p,sig;
+	int j=0;
+	str msg;
+
+	sig = getInstrPtr(mb,0);
+	while(m){
+		p= getInstrPtr(m,m->stop-1);
+		if( p->token == REMsymbol){
+			msg= instruction2str(m,p, FALSE);
+			stream_printf(GDKout,"%s.%s[%2d] %s\n", 
+				getModuleId(sig), getFunctionId(sig),j++,msg+3);
+			GDKfree(msg);
+		}
+		m= m->history;
+	}
+}
 @}
