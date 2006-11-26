@@ -18,12 +18,48 @@
 
 PWD=`pwd`
 SQL="MapiClient -lsql -umonetdb -Pmonetdb"
+SQL1="MapiClient -lsql -uuser_test -Ppass"
 
 #Generate Data...
 
 #Bulk-Load into SQL server...
 
+echo After Before 
+$SQL < after_before_triggers.sql
+echo done
+
+echo cascaded triggers
+$SQL < cascaded_triggers.sql
+echo done
+
 echo Recursive triggers
 $SQL < recursive_triggers.sql
 echo done
+
+echo referency clause new
+$SQL < referency_clause_new.sql
+echo done
+
+echo referency clause old
+$SQL < referency_clause_old.sql
+echo done
+
+echo trigger action
+$SQL < trigger_action.sql
+echo done
+
+echo trigger activation
+$SQL < trigger_activation.sql
+echo done
+
+echo trigger schema operations
+$SQL < trigger_schema_operations
+echo done
+
+echo trigger owner
+$SQL < trigger_owner_create.sql
+$SQL1 < trigger_owner.sql
+$SQL < trigger_owner_drop.sql
+echo done
+
 

@@ -18,12 +18,15 @@
 
 PWD=`pwd`
 SQL="MapiClient -lsql -umonetdb -Pmonetdb -h $HOST -p $MAPIPORT"
+SQL1="MapiClient -lsql -uuser_test -Ppass -h $HOST -p $MAPIPORT"
 
 #Generate Data...
 
 #Bulk-Load into SQL server...
 
-echo Recursive triggers
-$SQL < ${RELSRCDIR}/../recursive_triggers.sql
+echo trigger owner
+$SQL < ${RELSRCDIR}/../trigger_owner_create.sql
+$SQL < ${RELSRCDIR}/../trigger_owner.sql
+$SQL < ${RELSRCDIR}/../trigger_owner_drop.sql
 echo done
 
