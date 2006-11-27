@@ -2216,7 +2216,7 @@ mapi_start_talking(Mapi mid)
 			 */
 			hash = malloc(sizeof(char) * (/*{plain}*/7 +
 						strlen(mid->password) + strlen(chal) + 1));
-			sprintf(hash, "%s%s", mid->password, chal);
+			sprintf(hash, "{plain}%s%s", mid->password, chal);
 		}
 		/* could use else here, but below looks cleaner */
 		if (hash == NULL) {
