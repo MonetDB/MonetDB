@@ -1250,18 +1250,19 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 	SERVERsessions[i].key= ++sessionkey;
 	mal_unset_lock(mal_contextLock,"SERVERconnect");
 
-	if( ssl)
-	mid= mapi_connect_ssl(*host, *port, *username, *password, *lang, NULL);
+	if (ssl)
+		mid = mapi_connect_ssl(*host, *port, *username, *password, *lang, NULL);
 	else
-	mid= mapi_connect(*host, *port, *username, *password, *lang, NULL);
-	if( mapi_error(mid) ){
+		mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
+
+	if (mapi_error(mid)) {
 		str err = mapi_error_str(mid);
 		if (err == NULL)
 			err = "(no reason given)";
 		if (err[0] == '!')
 			err = err + 1;
 		SERVERsessions[i].c = NULL;
-		throwMalf("mserver.connect","Could not connect: %s", err);
+		throwMalf("mserver.connect", "Could not connect: %s", err);
 	}
 
 #ifdef MAPI_TEST
