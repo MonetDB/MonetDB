@@ -405,10 +405,10 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
             /* undecided */
             dom1 = 0;
     }
-    /* if we haven't found a leaf then bail out */
-    if (!dom1)
-        PFoops (OOPS_FATAL,
-                "domain relationship is incorrect");
+    /* If we still stay undecided just report no
+       common super domain. The only consequence is
+       that we then might detect less subdomain
+       relationships. */
 
     return dom1;
 }
