@@ -155,6 +155,10 @@ la_op_wire2 (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
  */
 PFla_op_t * PFla_dummy (PFla_op_t *n)
 {
+    /* always create the dummy node as otherwise
+       the general optimization will relabel quite
+       a long time. */
+    /*
     assert (n);
     switch (n->kind)
     {
@@ -166,6 +170,7 @@ PFla_op_t * PFla_dummy (PFla_op_t *n)
         case la_proxy:
         case la_proxy_base:
         {
+    */
             PFla_op_t *ret = la_op_wire1 (la_dummy, n);
 
             ret->schema.count = n->schema.count;
@@ -177,11 +182,13 @@ PFla_op_t * PFla_dummy (PFla_op_t *n)
                 ret->schema.items[i] = n->schema.items[i];
 
             return ret;
+    /*
         }
         
         default:
             return n;
     }
+    */
 }
 
 
@@ -1314,7 +1321,7 @@ PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
     /* set number of schema items in the result schema
      * (partitioning attribute plus result attribute)
      */
-    ret->schema.count = 2;
+    ret->schema.count = part ? 2 : 1;
 
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
@@ -1329,7 +1336,7 @@ PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
             ret->schema.items[0].name = res;
             c1 = true;
         }
-        if (part == n->schema.items[i].name) {
+        if (part && part == n->schema.items[i].name) {
             ret->schema.items[1] = n->schema.items[i];
             c2 = true;
         }
@@ -1342,7 +1349,7 @@ PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
                 PFatt_str (att));
 
     /* did we find attribute 'part'? */
-    if (!c2 && part != att_NULL)
+    if (part && !c2)
         PFoops (OOPS_FATAL,
                 "partitioning attribute `%s' referenced in aggregation "
                 "function not found",
