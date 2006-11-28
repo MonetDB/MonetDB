@@ -574,6 +574,10 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 				mapi_disconnect(monetdb);
 				goto err;
 			}
+			/* in XQuery mode, we request "tabular" seq mode */
+			if (strcmp(language, "xquery") == 0) {
+				mapi_output(monetdb, "seq");
+			}
 
 			/* hash it up */
 			Z_TYPE(new_le) = le_plink;

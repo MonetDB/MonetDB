@@ -406,11 +406,11 @@ HEAPdelete(Heap *h, str o, str ext)
 {
 	char ext2[64];
 
-	if (h->size <= 0 || h->copied) {
-		return 0;
+	if (h->size <= 0) {
+                return 0;
 	}
 	if (h->base) {
-		if (h->storage & STORE_MMAP) {
+		if (h->copied == 0 && h->storage & STORE_MMAP) {
 			/* truncate file, so OS does not try to flush dirty data in mmap to file that is deleted anyway */
 			int ret, fd = GDKfdlocate(h->filename, "rb+", NULL);
 			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
@@ -423,6 +423,9 @@ HEAPdelete(Heap *h, str o, str ext)
 		}
 		HEAPfree(h);
 	}
+	if (h->copied) {
+            return 0;
+        }
 	strcpy(ext2, ext);
 	strcat(ext2, ".priv");
 	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0)?0:-1;
