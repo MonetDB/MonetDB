@@ -64,6 +64,7 @@ typedef void *(*fmap) (void *data, void *clientdata);
 
 extern node *list_find(list *l, void *key, fcmp cmp);
 extern list *list_select(list *l, void *key, fcmp cmp, fdup dup);
+extern list *list_order(list *l, fcmp cmp, fdup dup);
 extern list *list_distinct(list *l, fcmp cmp, fdup dup);
 extern void *list_reduce(list *l, freduce red, fdup dup);
 extern list *list_map(list *l, void *data, fmap f);

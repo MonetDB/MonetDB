@@ -631,36 +631,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_union:
 			dump_2(sql, s, "kunion", nr);
 			break;
-		case st_reljoin:{
-			node *ln = NULL, *rn = NULL;
-			buf = NEW_ARRAY(char, BUFSIZ + 1);
-
-			if (list_length(s->op1.lval) == 1) {
-				int l = backend_dumpstmt_(s->op1.lval->h->data, nr, sql);
-				int r = backend_dumpstmt_(s->op2.lval->h->data, nr, sql);
-
-				len = snprintf(buf, BUFSIZ, "var s%d := join(s%d,reverse(s%d));\n", -s->nr, l, r);
-			} else {
-				char x = '(';
-
-				len = snprintf(buf, BUFSIZ, "var s%d := ds_link", -s->nr);
-				for (ln = s->op1.lval->h, rn = s->op2.lval->h; ln && rn; ln = ln->next, rn = rn->next) {
-					int l = backend_dumpstmt_(ln->data, nr, sql);
-					int r = backend_dumpstmt_(rn->data, nr, sql);
-
-					len += snprintf(buf + len, BUFSIZ - len, "%c s%d, s%d", x, l, r);
-					x = ',';
-				}
-				len += snprintf(buf + len, BUFSIZ - len, " );\n");
-			}
-			dump(sql, buf, len, -s->nr);
-			_DELETE(buf);
-			for (ln = s->op1.lval->h, rn = s->op2.lval->h; ln && rn; ln = ln->next, rn = rn->next) {
-				backend_dump_nil(sql, ln->data);
-				backend_dump_nil(sql, rn->data);
-			}
-			break;
-		}
 		case st_outerjoin:
 		case st_join:{
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
@@ -1108,10 +1078,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_exception:{
-			int l,r,res = 0;
+			int l,r;
 	
-			if (s->op4.stval)
-				res = backend_dumpstmt_(s->op4.stval, nr, sql);
 			l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			r = backend_dumpstmt_(s->op2.stval, nr, sql);
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
@@ -1121,8 +1089,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);
 			backend_dump_nil(sql, s->op2.stval);
-			if (res)
-				s->nr = -res;
 			break;
 		}
 		case st_alias: {
@@ -1451,6 +1417,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		} 	break;
 
 			/* should not appear here */
+		case st_reljoin:
 		case st_relselect:
 		case st_intersect:
 			/* todo */
