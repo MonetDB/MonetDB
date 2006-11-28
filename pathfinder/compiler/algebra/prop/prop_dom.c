@@ -236,7 +236,10 @@ bool
 PFprop_disjdom (const PFprop_t *p, dom_t a, dom_t b)
 {
     assert (p);
-    assert (p->disjdoms);
+    
+    /* In case no properties are inferred and this function 
+       is called we are just restrictive and return no match */
+    if (!p->disjdoms) return false;
 
     if (a == b)
         return false;
@@ -265,7 +268,10 @@ PFprop_subdom (const PFprop_t *prop, dom_t in_subdom, dom_t in_dom)
     dom_t subdom, dom, subitem;
 
     assert (prop);
-    assert (prop->subdoms);
+
+    /* In case no properties are inferred and this function 
+       is called we are just restrictive and return no match */
+    if (!prop->subdoms) return false;
 
     /* check trivial case of identity */
     if (in_subdom == in_dom)
