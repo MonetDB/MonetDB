@@ -1,6 +1,6 @@
-<foo>
-    <hello>
-        <world>
-        </world>
-    </hello>
-</foo>
+<hello lang="en" x="y">
+  <foo>text of node foo<bar>text of node bar</bar></foo>
+  <!-- a comment node -->
+  <?action beeeep?>
+  <world/>
+</hello>

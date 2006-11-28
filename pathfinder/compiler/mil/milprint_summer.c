@@ -162,6 +162,7 @@ static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c);
 static int
 var_is_used (PFvar_t *v, PFcnode_t *e);
+int PFqueryType(PFcnode_t *c);
 
 /* tests type equality (not only structural 'PFty_eq' 
    and without hierarchy 'PFty_subtype' */
@@ -6224,15 +6225,24 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
  * @param f the Stream the MIL code is printed to
  * @param cur_level the level of the for-scope
  * @param counter the actual offset of saved variables
- * @param dsts the destinations of RPC calls
+ * @param xrpc the core node containing all information we need
+ *
+ *              xrpc (query type)
+ *             /    \
+ *            URI (FunctionCall)->sem.apply.fun
+ *                   |
+ *                  args
+ *
  * @param apply the function application information
  * @param args the head of the argument list
  */
 static void
-translateXRPCCall (opt_t *f, int cur_level, int counter, 
-        PFcnode_t *dsts, PFapply_t apply, PFcnode_t *args)
+translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
-    int i = 0, rc = NORMAL;
+    int i = 0, rc = NORMAL, qTpe = PFqueryType(xrpc);
+    PFcnode_t *dsts = L(xrpc);
+    PFapply_t apply = R(xrpc)->sem.apply;
+    PFcnode_t *args = RD(xrpc);
 
     if (apply.fun->builtin){
         milprintf(f,
@@ -6355,7 +6365,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter,
             "  fun_vid%03u := ([-](fun_vid%03u.[lng](), fun_base%03u)).[oid]();\n"
             "  var res := doLoopLiftedRPC(genType,\n"
             "                             \"%s\", \"%s\", \"%s\",\n"
-            "                             iterc_total, %d,\n"
+            "                             %d, %d, iterc_total,\n"
             "                             ws, rpc_dsts,\n"
             "                             fun_vid%03u, fun_iter%03u,\n"
             "                             fun_item%03u, fun_kind%03u,\n"
@@ -6375,8 +6385,8 @@ translateXRPCCall (opt_t *f, int cur_level, int counter,
             "  }\n"
             "} # end of XRPC function call\n",
         counter, counter, counter,
-        apply.fun->qname.ns.uri, apply.fun->atURI,
-        apply.fun->qname.loc,    apply.fun->arity,
+        apply.fun->qname.ns.uri, apply.fun->atURI, apply.fun->qname.loc,    
+        qTpe, apply.fun->arity,
         counter, counter, counter, counter);
 }
 
@@ -8684,8 +8694,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
              *                   |
              *                  args
              */
-            translateXRPCCall(f, cur_level, counter, L(c),
-                    R(c)->sem.apply, RD(c));
+            translateXRPCCall(f, cur_level, counter, c);
             rc = NORMAL;
             break;
         case c_orderby:

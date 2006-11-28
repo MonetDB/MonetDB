@@ -35,7 +35,7 @@ declare function xrpcfun:returnAncestorOrSelf($v as xs:anyNode*)
 declare function xrpcfun:returnChild($v as xs:anyNode*)
     as xs:anyNode*
 {
-    $v/child::node()
+    $v/child::*
 };
 
 declare function xrpcfun:returnDescendant($v as xs:anyNode*)
@@ -97,3 +97,6 @@ declare function xrpcfun:echoVoidWithParams($v1 as xs:string*,
 {
     ()
 };
+
+declare updating function xrpcfun:insertNode($n as xs:anyNode*)
+{ do insert $n into exactly-one(doc("hello.xml")//world) };
