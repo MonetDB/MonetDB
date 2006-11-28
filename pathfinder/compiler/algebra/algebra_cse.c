@@ -425,7 +425,7 @@ la_cse (PFla_op_t *n)
         return n;
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++) {
-        if (n->child[i]->kind == la_dummy)
+        while (n->child[i]->kind == la_dummy)
             n->child[i] = n->child[i]->child[0];
 
         n->child[i] = la_cse (n->child[i]);
