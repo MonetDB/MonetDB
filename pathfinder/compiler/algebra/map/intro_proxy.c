@@ -1390,7 +1390,8 @@ intro_dup_scjoin (PFla_op_t *root,
         join_att = proxy_entry->sem.eqjoin.att2;
         scjoin   = L(proxy_entry);
         cur      = R(proxy_entry);
-    } else if (LL(proxy_entry)->kind == la_scjoin) {
+    } else if (L(proxy_entry)->kind == la_project &&
+               LL(proxy_entry)->kind == la_scjoin) {
         join_att = proxy_entry->sem.eqjoin.att2;
         proj     =  L(proxy_entry);
         scjoin   = LL(proxy_entry);
@@ -1399,12 +1400,15 @@ intro_dup_scjoin (PFla_op_t *root,
         join_att = proxy_entry->sem.eqjoin.att1;
         scjoin   = R(proxy_entry);
         cur      = L(proxy_entry);
-    } else {
+    } else if (R(proxy_entry)->kind == la_project &&
+               RL(proxy_entry)->kind == la_scjoin) {
         join_att = proxy_entry->sem.eqjoin.att1;
         proj     =  R(proxy_entry);
         scjoin   = RL(proxy_entry);
         cur      =  L(proxy_entry);
-    }
+    } else
+        PFoops (OOPS_FATAL, "Proxy pattern does not match");
+    
 
     /* prepare projection list for the mapping projection */
     proj_list = PFmalloc (proxy_entry->schema.count * sizeof (PFalg_proj_t));
