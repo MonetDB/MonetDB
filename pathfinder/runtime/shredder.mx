@@ -440,6 +440,7 @@ static int
 shredBAT_extend(shredBAT *sb, 
                 size_t newsize)
 {
+    shredBAT_setcount(sb, sb->size);
     sb->size = newsize;
     if (sb->bat->ttype == TYPE_void) {
         return GDK_SUCCEED;
