@@ -143,12 +143,12 @@ PFcore_nil (void)
  * maximum size of variable name
  */
 #define VNAME_DOT "dot"
-#define VNAME_MAX sizeof (VNAME_DOT "_000")
+#define VNAME_MAX sizeof (VNAME_DOT "_0000")
 
 /**
  * Generate a new (unique) variable. This unique name is created by
  * incrementing a number that is appended to the variable name.  A
- * prefix may be given that may not be longer than 3 characters. If no
+ * prefix may be given that may not be longer than 4 characters. If no
  * prefix is given (by passing 0), the default `v' is used. The
  * namespace for the newly created variable is the internal Pathfinder
  * namespace `pf:...' (PFns_pf).
@@ -167,14 +167,14 @@ PFcore_new_var (char *prefix)
     char                vname[VNAME_MAX];
     int                 l;
 
-    /* prefix may not exceed 3 characters */
+    /* prefix may not exceed 4 characters */
     assert (!prefix || strlen (prefix) < sizeof (VNAME_DOT));
 
     /* construct new var name */
     if (prefix)
-        l = snprintf (vname, VNAME_MAX, "%3s_%03u", prefix, core_vars);
+        l = snprintf (vname, VNAME_MAX, "%3s_%04u", prefix, core_vars);
     else
-        l = snprintf (vname, VNAME_MAX, "v_%03u", core_vars);
+        l = snprintf (vname, VNAME_MAX, "v_%04u", core_vars);
     
     /* warn if we needed to truncate the variable name
      * (this does not affect the correct core mapping but may
