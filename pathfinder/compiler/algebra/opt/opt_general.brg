@@ -419,8 +419,12 @@ reduce (PFla_op_t *p, int goalnt)
                     ret = PFla_attach (ret, R(p)->schema.items[i].name,
                                        R(p)->sem.lit_tbl.tuples[0].atoms[i]);
                 *p = *(ret);
+                SEEN(p) = false;
+                relabel (p, kids);
                 break;
-            } 
+            }
+            break;
+
         /* Rel:    cross (lit_tbl, Rel) */
         case 6:
             /* replace cross product with a literal table that contains
@@ -432,8 +436,11 @@ reduce (PFla_op_t *p, int goalnt)
                     ret = PFla_attach (ret, L(p)->schema.items[i].name,
                                        L(p)->sem.lit_tbl.tuples[0].atoms[i]);
                 *p = *(ret);
+                SEEN(p) = false;
+                relabel (p, kids);
                 break;
             } 
+            break;
 
         /* Rel:    project (Rel) */
         case 10:
@@ -455,6 +462,10 @@ reduce (PFla_op_t *p, int goalnt)
 
             if (!renamed && L(p)->schema.count == p->schema.count) {
                 *p = *PFla_dummy (L(p));
+                SEEN(p) = false;
+                /* relabeling will be expensive 
+                   if there is no real dummy node */
+                relabel (p, kids);
                 break;
             }
         }   break;
@@ -645,6 +656,12 @@ reduce (PFla_op_t *p, int goalnt)
                           p->sem.select.att, PFalg_lit_bln (true));
                 SEEN(p) = false;
                 SEEN(L(p)) = false;
+                /* relabel does not know that left and right are already
+                   labeled correctly and thus would relabel the *complete*
+                   subTREE! To avoid this make sure that kids contains the
+                   references to left and right */
+                kids[0] = left;
+                kids[1] = right;
                 relabel (p, kids);
                 break;
             } else {
@@ -695,6 +712,12 @@ reduce (PFla_op_t *p, int goalnt)
                 SEEN(p) = false;
                 SEEN(L(p)) = false;
                 SEEN(LL(p)) = false;
+                /* relabel does not know that left and right are already
+                   labeled correctly and thus would relabel the *complete*
+                   subTREE! To avoid this make sure that kids contains the
+                   references to left and right */
+                kids[0] = left;
+                kids[1] = right;
                 relabel (p, kids);
                 break;
             }
@@ -704,6 +727,10 @@ reduce (PFla_op_t *p, int goalnt)
         case 21:
             /* return right child */
             *p = *PFla_dummy (R(p));
+            SEEN(p) = false;
+            /* relabeling will be expensive 
+               if there is no real dummy node */
+            relabel (p, kids);
             break;
 
         /* Rel:    disjunion (Rel, EmptyRel) */
@@ -712,86 +739,20 @@ reduce (PFla_op_t *p, int goalnt)
         case 25:
             /* return left child */
             *p = *PFla_dummy (L(p));
+            SEEN(p) = false;
+            /* relabeling will be expensive 
+               if there is no real dummy node */
+            relabel (p, kids);
             break;
-
-        /* Rel:    distinct (Rel) */
-        case 26:
-        /* Remove unnecessary nested distinct operations.
-           Because of the many versions of this pattern
-           we do not check it with burg. */
-        {
-            PFla_op_t *proj = NULL, *lp = NULL, *rp = NULL,
-                      *op, *res = NULL;
-            PFalg_att_t latt, ratt;                
-
-            op = L(p);
-            if (op->kind == la_project) {
-                proj = op;
-                op = L(op);
-            }
-            if (op->kind == la_distinct)
-                res = L(op);
-            else if (op->kind == la_eqjoin) {
-                if (L(op)->kind == la_distinct &&
-                    L(op)->schema.count == 1) {
-                    rp = LL(op);
-                    lp = R(op);
-                    latt = op->sem.eqjoin.att2;
-                    ratt = op->sem.eqjoin.att1;
-                }
-                else if (L(op)->kind == la_project &&
-                    LL(op)->kind == la_distinct &&
-                    LL(op)->schema.count == 1 &&
-                    L(op)->schema.count == 1) {
-                    rp = PFla_project_ (LLL(op), 1, L(op)->sem.proj.items);
-                    SEEN(rp) = false;
-                    lp = R(op);
-                    latt = op->sem.eqjoin.att2;
-                    ratt = op->sem.eqjoin.att1;
-                }
-                else if (R(op)->kind == la_distinct &&
-                    R(op)->schema.count == 1) {
-                    rp = RL(op);
-                    lp = L(op);
-                    latt = op->sem.eqjoin.att1;
-                    ratt = op->sem.eqjoin.att2;
-                }
-                else if (R(op)->kind == la_project &&
-                    RL(op)->kind == la_distinct &&
-                    RL(op)->schema.count == 1 &&
-                    R(op)->schema.count == 1) {
-                    rp = PFla_project_ (RLL(op), 1, R(op)->sem.proj.items);
-                    SEEN(rp) = false;
-                    lp = L(op);
-                    latt = op->sem.eqjoin.att1;
-                    ratt = op->sem.eqjoin.att2;
-                }
-                
-                if (lp) {
-                    res = PFla_eqjoin (lp, rp, latt, ratt);
-                    SEEN(res) = false;
-                }
-            }
-                
-            if (res) {
-                if (proj) {
-                    res = PFla_project_ (res, 
-                                         proj->sem.proj.count,
-                                         proj->sem.proj.items);
-                    SEEN(res) = false;
-                }
-            
-                *p = *PFla_distinct (res);
-                SEEN(p) = false;
-                relabel (p, kids);
-                break;
-            }
-        } break;
 
         /* Rel:    distinct (scjoin (Frag, Rel)) */
         case 27:
             /* return left child */
             *p = *PFla_dummy (L(p));
+            SEEN(p) = false;
+            /* relabeling will be expensive 
+               if there is no real dummy node */
+            relabel (p, kids);
             break;
 
         /* Rel:    rownum (Rel) */
@@ -1123,6 +1084,8 @@ reduce (PFla_op_t *p, int goalnt)
         case 200:
         /* EmptyRel:    string_join (EmptyRel, Rel) */
         case 201:
+        /* EmptyRel:    dummy (EmptyRel) */
+        case 202:
             break;
 
         default:
@@ -1177,14 +1140,14 @@ changed_label (PFla_op_t *p,  PFla_op_t **kids)
 }
 
 /* Relabel node p if it is not contained in kids. */
-static void
-relabel (PFla_op_t *p,  PFla_op_t **kids)
+static unsigned int
+relabel_worker (PFla_op_t *p,  PFla_op_t **kids, unsigned int counter)
 {
     unsigned int i;
 
     for (i = 0; i < MAX_KIDS; i++) {
         if (kids[i] && p == kids[i] && STATE_LABEL(p))
-            return;
+            return counter;
     }
 
     /* Relabel p's children. */
@@ -1192,7 +1155,7 @@ relabel (PFla_op_t *p,  PFla_op_t **kids)
         STATE_LABEL(p) = PFopt_general_state (OP_LABEL(p), 0, 0);
     }
     else if (L(p) && !R(p)) {
-        relabel (L(p), kids);
+        counter = relabel_worker (L(p), kids, counter);
         STATE_LABEL(p) = PFopt_general_state (OP_LABEL(p),
                                          STATE_LABEL(L(p)),
                                          0);
@@ -1200,7 +1163,7 @@ relabel (PFla_op_t *p,  PFla_op_t **kids)
         CHILD_STATE_LABEL(p, 0) = STATE_LABEL(L(p));
     }
     else if (!L(p) && R(p)) {
-        relabel (R(p), kids);
+        counter = relabel_worker (R(p), kids, counter);
         STATE_LABEL(p) = PFopt_general_state (OP_LABEL(p),
                                          STATE_LABEL(R(p)),
                                          0);
@@ -1208,8 +1171,8 @@ relabel (PFla_op_t *p,  PFla_op_t **kids)
         CHILD_STATE_LABEL(p, 1) = STATE_LABEL(R(p));
     }
     else {
-        relabel (L(p), kids);
-        relabel (R(p), kids);
+        counter = relabel_worker (L(p), kids, counter);
+        counter = relabel_worker (R(p), kids, counter);
         STATE_LABEL(p) = PFopt_general_state (OP_LABEL(p),
                                          STATE_LABEL(L(p)),
                                          STATE_LABEL(R(p)));
@@ -1219,6 +1182,30 @@ relabel (PFla_op_t *p,  PFla_op_t **kids)
     }
 
     assert (STATE_LABEL (p));
+
+    assert (counter <= 50 && 
+            "tree relabeling in general optimization phase " &&
+            "might escape pattern boundaries");
+
+    return counter + 1;
+}
+
+static void
+relabel (PFla_op_t *p,  PFla_op_t **kids)
+{
+    unsigned int counter = 0;
+
+    counter = relabel_worker (p, kids, counter);
+
+    /* relabel might relabel the complete DAG (looking at it as
+       a tree) if it does not stop at the kids. Here we assume
+       that no rewritten pattern has more than 50 nodes. If this
+       warning occurs make sure that every relabel call finds the
+       boundaries stored in kids. */
+    if (counter > 50)
+        PFinfo (OOPS_WARNING,
+                "tree relabeling in general optimization phase "
+                "might escape pattern boundaries");
 }
 
 /* Attach node labels in a DAG walk bottom-up */
