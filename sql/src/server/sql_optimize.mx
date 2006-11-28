@@ -160,11 +160,25 @@ select_count(stmt *s)
 		   /* before the reduce we need to scan */
 			return -1;
 		else
-			return select_count(s->op1.stval) + 3;	/* point */
+			return select_count(s->op1.stval) + 4;	/* point */
 	case st_select2: case st_uselect2:
 		return select_count(s->op1.stval) + 2;		/* range */
 	case st_idxbat:
 		return 100;	/* we want join indices first */
+	case st_unop:
+	case st_convert:
+		if (s->nrcols > 0)
+			return select_count(s->op1.stval) - 1;
+		return 0;
+	case st_binop:
+		if (s->nrcols > 0)
+			return select_count(s->op1.stval) +
+			       select_count(s->op2.stval) - 1;
+		return 0;
+	case st_Nop:
+		/* also scans cost time */
+		if (s->nrcols > 0)
+			return -5;
 	case st_bat: 
 	case st_pivot:
 	case st_aggr:
@@ -173,9 +187,6 @@ select_count(stmt *s)
 	case st_append:
 	case st_diff:
 	case st_union:
-	case st_unop:
-	case st_binop:
-	case st_Nop:
 		return 0;
 	default:
 #ifndef NDEBUG
@@ -198,6 +209,14 @@ stmt_smallest(stmt *h, stmt *key)
 		stmt_destroy(h);
 		return key;
 	}
+}
+
+static int 
+stmt_cmp(stmt *s1, stmt *s2)
+{
+	int h1 = select_count(s1);
+	int h2 = select_count(s2);
+	return h1-h2;
 }
 
 static int
@@ -728,7 +747,10 @@ push_selects_down(mvc *c, list *con)
 		rsel = create_stmt_list();
 		for (n = dsels->h; n; n = n->next) {
 			list *esels = list_select(sels, n->data, (fcmp) &stmt_cmp_head_tail, (fdup) &stmt_dup);
-			stmt *sel = stmt_relselect(esels);
+			list *osels = list_order(esels, (fcmp) &stmt_cmp, (fdup) &stmt_dup);
+			stmt *sel = stmt_relselect(osels);
+
+			list_destroy(esels);
 
 			/* TODO check for primary/foreign key selects */
 			list_append(rsel, sel);
@@ -1096,22 +1118,62 @@ set2pivot(mvc *c, list *l)
 	return stmt_list(pivots);
 }
 
-/* list of stmt's containing filter steps are transformed into a pivot table */
+/* two kinds of filters (list of stmts (st_set) or list of lists (st_sets)) */
 static stmt *
-filter_pivots(list *pivots, list *filters)
+filter_pivots(list *pivots, stmt *filters)
 {
-	stmt *filter = list_reduce(filters, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
-	list *nl = create_stmt_list();
-	node *n;
+	if (filters->type == st_set) {
+		stmt *filter = list_reduce(filters->op1.lval, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
+		list *nl = create_stmt_list();
+		node *n;
 
-	for (n = pivots->h; n; n = n->next) {
-		stmt *p = stmt_dup(n->data);
-		stmt *np = stmt_semijoin(p, stmt_dup(filter));
+		for (n = pivots->h; n; n = n->next) {
+			stmt *p = stmt_dup(n->data);
+			stmt *np = stmt_semijoin(p, stmt_dup(filter));
 
-		list_append(nl, np);
+			list_append(nl, np);
+		}
+		stmt_destroy(filter);
+		return stmt_list(nl);
+	} else { /* this only handle one common case (filter on same 
+			relation result) */
+		/* union(filter(pivots,f1), filter(pivots,f2)) */
+		node *m;
+		list *nl = create_stmt_list();
+
+		m = filters->op1.lval->h; 
+		if (m) {
+			list *f = m->data;
+			stmt *filter = list_reduce(f, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
+			node *n;
+
+			for (n = pivots->h; n; n = n->next) {
+				stmt *p = stmt_dup(n->data);
+				stmt *np = stmt_semijoin(p, stmt_dup(filter));
+
+				list_append(nl, np);
+			}
+			stmt_destroy(filter);
+		}
+	
+		for (m = m->next; m; m = m->next) {
+			list *f = m->data, *nnl = create_stmt_list();
+			stmt *filter = list_reduce(f, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
+			node *n, *o;
+
+			for (n = pivots->h, o = nl->h; n && o; n = n->next, o = o->next) {
+				stmt *q = stmt_dup(o->data);
+				stmt *p = stmt_dup(n->data);
+				stmt *np = stmt_semijoin(p, stmt_dup(filter));
+
+				list_append(nnl, stmt_union(q, np));
+			}
+			list_destroy(nl);
+			nl = nnl;
+			stmt_destroy(filter);
+		}
+		return stmt_list(nl);
 	}
-	stmt_destroy(filter);
-	return stmt_list(nl);
 }
 
 /* The group code is needed for double elimination.
@@ -1410,7 +1472,7 @@ optimize(mvc *c, stmt *s)
 			if (!ptable_statements(s))
 				return parent;
 			/* filter statements */
-			f = filter_pivots(parent->op1.lval, ptable_statements(s)->op1.lval);
+			f = filter_pivots(parent->op1.lval, ptable_statements(s));
 			stmt_destroy(parent);
 			np = optimize(c, f);
 			stmt_destroy(f);

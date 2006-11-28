@@ -172,7 +172,7 @@ typedef struct group {
 
 extern const char *st_type2string(st_type type);
 
-extern int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp);
+extern int stmt2dot(stmt *s, int i, char *fn);
 
 extern stmt *stmt_none(void);
 extern stmt *stmt_sql(char *query);
@@ -250,7 +250,7 @@ extern stmt *stmt_replace(stmt *c, stmt *values);
 extern stmt *stmt_table_clear(sql_table *t);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
-extern stmt *stmt_exception(stmt *res, stmt *cond, char *errstr, int errcode);
+extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
 
 extern stmt *stmt_const(stmt *s, stmt *val);
 
@@ -623,15 +623,6 @@ stmt_destroy(stmt *s)
 		case st_if:
 		case st_return:
 		case st_assign:
-
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			break;
-
 		case st_exception:
 
 			if (s->op1.stval)
@@ -640,8 +631,6 @@ stmt_destroy(stmt *s)
 				stmt_destroy(s->op2.stval);
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
-			if (s->op4.stval)
-				stmt_destroy(s->op4.stval);
 			break;
 
 		case st_set:
@@ -846,15 +835,6 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_if:
 		case st_return:
 		case st_assign:
-
-			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
-			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
-			if (s->op3.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
-			break;
-
 		case st_exception:
 
 			if (s->op1.stval)
@@ -863,8 +843,6 @@ stmt_list_dependencies(stmt *s, int depend_type)
 				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			if (s->op3.stval)
 				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
-			if (s->op4.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op4.stval, depend_type), (fdup)NULL);
 			break;
 
 		case st_set:
@@ -1769,7 +1747,7 @@ stmt_pivot(stmt *base, stmt *ptable)
 	s->h = stmt_dup(ptable);	/* the ptable is the new base table */
 	s->t = stmt_dup(base);	/* pivots have oid's in the tail */
 	s->nrcols = 2;
-	list_append(ptable_pivots(ptable), s);
+	list_append(ptable_pivots(ptable), s /* no dup since ptable points to pivot and vs*/);
 	return s;
 }
 
@@ -1822,7 +1800,7 @@ stmt_table_clear(sql_table *t)
 }
 
 stmt *
-stmt_exception(stmt *res, stmt *cond, char *errstr, int errcode)
+stmt_exception(stmt *cond, char *errstr, int errcode)
 {
 	stmt *s = stmt_create(st_exception);
 
@@ -1830,14 +1808,6 @@ stmt_exception(stmt *res, stmt *cond, char *errstr, int errcode)
 	s->op2.stval = stmt_atom_string(errstr);
 	s->op3.stval = stmt_atom_int(errcode);
 	s->nrcols = 0;
-	if (res) {
-		s->op4.stval = res;
-		s->key = res->key;
-		s->nrcols = res->nrcols;
-		s->aggr = res->aggr;
-		s->h = stmt_dup(res->h);
-		s->t = stmt_dup(res->t);
-	}
 	return s;
 }
 
@@ -2019,11 +1989,6 @@ tail_type(stmt *st)
 		   ie should be 'oid' */
 		return head_type(st->op2.lval->h->data);
 
-	case st_exception:
-		if (st->op4.stval)
-			return tail_type(st->op4.stval);
-		return NULL;
-
 	case st_diff:
 	case st_filter:
 	case st_select:
@@ -2082,6 +2047,8 @@ tail_type(stmt *st)
 	case st_var:
 		if (st->op2.typeval.type)
 			return &st->op2.typeval;
+		/* fall through */
+	case st_exception:
 		return NULL;
 	case st_table:
 		return sql_bind_localtype("bat");
@@ -2467,7 +2434,8 @@ stmt *stmt_assign(char *varname, stmt *val, int level)
 	return s;
 }
 
-int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
+static int 
+stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 {
 	node *n,*m;
 	int j,k;
@@ -2477,27 +2445,35 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		s->optimized = --(*i);
 		fprintf(fp,"id%d[label=\"%s\\n",
 			-(s->optimized), st_type2string(s->type));
+/*
 		if (s->ref.refcnt)
 			fprintf(fp," refcnt=%d", s->ref.refcnt);
 		if (s->nrcols)
 			fprintf(fp," nrcols=%d", (int)s->nrcols);
+*/
 		if (s->key)
 			fprintf(fp," key=%d", (int)s->key);
 		if (s->aggr)
 			fprintf(fp," aggr=%d", (int)s->aggr);
 		if (s->flag)
 			fprintf(fp," flag=%d", (int)s->flag);
-		if (s->nr)
-			fprintf(fp," nr=%d", (int)s->nr);
+
+		switch (s->type) {
+		case st_bat:
+			fprintf(fp," column='%s'", s->op1.cval->base.name);
+			break;
+		case st_atom:
+			if (s->op1.aval) 
+				fprintf(fp," value='%s'", 
+					atom2string(s->op1.aval));
+			break;
+		case st_op: case st_unop: case st_binop: case st_Nop:
+			fprintf(fp," func='%s'", s->op4.funcval->func->base.name);
+			break;
+		default:
+			break;
+		}
 		fprintf(fp," \\n");
-		if (s->op1.ival)
-			fprintf(fp," op1=%d", (int)s->op1.ival);
-		if (s->op2.ival)
-			fprintf(fp," op2=%d", (int)s->op2.ival);
-		if (s->op3.ival)
-			fprintf(fp," op3=%d", (int)s->op3.ival);
-		if (s->op4.ival)
-			fprintf(fp," op4=%d", (int)s->op4.ival);
 		fprintf(fp,"\" ];\n");		
 
 		switch (s->type) {
@@ -2522,15 +2498,29 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			break;
 
 		case st_set: case st_list:
-		case st_ptable:
 			if (s->op1.lval)
 			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
 				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
 					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
+
+
+			break;
+
+		case st_ptable:
+			/* 
+				do not headlable the pivots as could be unused
+				and therefor allready freed
+
+			if (s->op1.lval)
+			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
+				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
+					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
+				do not print the parent of the ptable 
 			if (s->op2.lval) 
 			    for (j=1, n=s->op2.lval->h; n; n=n->next, j++)
 				fprintf(fp, "id%d -> id%d [headlabel=\"2.%d\"];\n",
 					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
+			*/
 			if (s->op3.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
 					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
@@ -2544,6 +2534,10 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 				fprintf(fp,"var_%s[label=\"var '%s'\",shape=ellipse];\n", s->op1.sval, s->op1.sval);
 				fprintf(fp, "var_%s -> id%d [headlabel=\"1\"];\n",
 					s->op1.sval, -(s->optimized));
+			} else {
+				fprintf(fp,"var_%d[label=\"var '%d'\",shape=ellipse];\n", s->flag, s->flag);
+				fprintf(fp, "var_%d -> id%d [headlabel=\"1\"];\n",
+					s->flag, -(s->optimized));
 			}
 			break;
 
@@ -2555,14 +2549,6 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 				s->op1.tval->base.name, -(s->optimized));
 			break;
 			
-		case st_bat:
-			fprintf(fp,"column_%s[label=\"column '%s'\",shape=ellipse];\n", s->op1.cval->base.name, s->op1.cval->base.name);
-			fprintf(fp, "column_%s -> id%d [headlabel=\"1\"];\n",
-				s->op1.cval->base.name, -(s->optimized));
-			fprintf(fp, "table_%s -> column_%s;\n",
-				s->op1.cval->t->base.name, s->op1.cval->base.name);
-			break;
-
 		case st_idxbat:
 			fprintf(fp,"index_%s[label=\"index '%s'\",shape=ellipse];\n", s->op1.idxval->base.name, s->op1.idxval->base.name);
 			fprintf(fp, "index_%s -> id%d [headlabel=\"1\"];\n",
@@ -2572,67 +2558,17 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_none:
 			break;
 
-		/* special cases */
-		case st_temp:
-			if (s->op1.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-			break;
-
-		case st_aggr:
-			if (s->op1.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-	/*
-			sql_subaggr_destroy(s->op4.aggrval);
-	*/
-			break;
-
 		case st_convert:
 			if (s->op1.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
 					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			fprintf(fp,"func_convert[label=\"func 'convert'\",shape=ellipse];\n" );
-			fprintf(fp, "func_convert -> id%d [headlabel=\"4\"];\n",
-				-(s->optimized));
 			break;
 
+		/* large group with only up till 3 operants */ 
+		case st_column:
+		case st_temp:
+		case st_aggr:
 		case st_op: case st_unop: case st_binop: case st_Nop:
-			if (s->op1.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-			fprintf(fp,"func_%s[label=\"func '%s'\",shape=ellipse];\n", s->op4.funcval->func->base.name, s->op4.funcval->func->base.name);
-			fprintf(fp, "func_%s -> id%d [headlabel=\"4\"];\n",
-				s->op4.funcval->func->base.name, -(s->optimized));
-			break;
-
-		case st_atom:
-			if (s->op1.aval) {
-				fprintf(fp,"id%d[label=\"'%s'\",share=octagon];\n", -(--(*i)), atom2string(s->op1.aval));
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					-(*i), -(s->optimized));
-			}
-			break;
-
-
 		case st_diff: case st_intersect: case st_union:
 		case st_join: case st_outerjoin:
 		case st_derive:
@@ -2643,8 +2579,6 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_pivot:
 	  	case st_rs_column:
 		case st_sql:
-
-		/* simple case of statements of only statements */
 
 		case st_const: case st_mark: case st_gen_group:
 		case st_reverse: case st_mirror:
@@ -2668,11 +2602,14 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			if (s->op3.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
 					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-			if (s->op4.stval) 
+			if (s->type == st_bulkinsert && s->op4.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"4\"];\n",
 					stmt_stmt2dot(s->op4.stval, l, i, fp), -(s->optimized));
 			break;
 
+		case st_atom:
+		case st_bat:
+			break;
 		default:
 			printf("! TODO: stmt_stmt2dot(%u=%s) !\n",s->type,st_type2string(s->type));
 			assert(0);
@@ -2687,3 +2624,21 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 
 	return -(s->optimized);
 }
+
+int 
+stmt2dot(stmt *s, int i, char *fn)
+{
+	FILE *fp = fopen(fn, "w");
+	if (fp) {
+		int res = 0; 
+
+		i *= -10;
+		fprintf(fp, "\ndigraph %d {\nnode[shape=box,fontname=Helvetica];\nedge[labelfontname=Helvetica,labelfontcolor=red];\n", i);
+		res = stmt_stmt2dot(s, i, &i, fp);
+		fprintf(fp, "}\n");
+		fclose(fp);
+		return res;
+	}
+	return -1;
+}
+

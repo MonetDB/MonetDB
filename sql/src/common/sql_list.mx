@@ -233,6 +233,29 @@ list_select(list *l, void *key, fcmp cmp, fdup dup)
 	return res;
 }
 
+/* order the list based on the compare function cmp */
+list * 
+list_order(list *l, fcmp cmp, fdup dup)
+{
+	list *res = list_create(l->destroy);
+	node *m, *n = NULL;
+
+	/* use simple insert sort */
+	for (n = l->h; n; n = n->next) {
+		int append = 1;
+		for (m = res->h; m; m = m->next) {
+			if (cmp(n->data, m->data) > 0) {
+				list_append_before(res, m, dup(n->data));
+				append = 0;
+			}
+		}
+		if (append)
+			list_append(res, dup(n->data));
+	}
+	return res;
+}
+
+
 list *
 list_distinct(list *l, fcmp cmp, fdup dup)
 {
