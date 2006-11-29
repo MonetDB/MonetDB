@@ -834,6 +834,22 @@ reduce (PFla_op_t *p, int goalnt)
             }
             break;
 
+        /* Rel:    type_assert (Rel) */
+        case 55:
+            /* throw out type_assert if it is not needed anymore */
+            for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                if (p->sem.type.att == L(p)->schema.items[i].name) {
+                    if (p->sem.type.ty == L(p)->schema.items[i].type) {
+                        *p = *PFla_dummy (L(p));
+                        SEEN(p) = false;
+                        /* relabeling will be expensive 
+                           if there is no real dummy node */
+                        relabel (p, kids);
+                    }
+                    break;
+                }
+            break;
+            
         /* Rel:    cast (cast (Rel)) */
         case 56:
         /* Rel:    cast (project (cast (Rel))) */
