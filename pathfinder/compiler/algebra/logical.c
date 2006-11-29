@@ -1621,6 +1621,29 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
                 "attribute `%s' referenced in type_assertion not found",
                 PFatt_str (att));
 
+    /* if we statically know that the type assertion would yield 
+       an empty type we can replace it by an empty table */
+    if (!assert_ty) {
+        /* instantiate the new algebra operator node */
+        ret = la_op_leaf (la_empty_tbl);
+
+        /* set its schema */
+        ret->schema.count = n->schema.count;
+        ret->schema.items
+            = PFmalloc (n->schema.count * sizeof (PFalg_schema_t));
+        
+        for (i = 0; i < n->schema.count; i++)
+            if (att == n->schema.items[i].name)
+            {
+                ret->schema.items[i].name = att;
+                ret->schema.items[i].type = ty;
+            }
+            else
+                ret->schema.items[i] = n->schema.items[i];
+
+        return ret;    
+    }
+        
     /* create new type test node */
     ret = la_op_wire1 (la_type_assert, n);
 
