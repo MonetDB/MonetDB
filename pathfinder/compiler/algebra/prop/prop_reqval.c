@@ -40,6 +40,7 @@
 #include "oops.h"
 #include "mem.h"
 
+
 /*
  * Easily access subtree-parts.
  */
@@ -47,6 +48,8 @@
 #define L(p) ((p)->child[0])
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
+
+#define SEEN(p) ((p)->bit_dag)
 
 /**
  * Test if @a attr is in the list of required value columns
@@ -94,37 +97,48 @@ diff (PFalg_att_t a, PFalg_att_t b)
 static void
 prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
 {
-    PFalg_att_t overlap;
     reqval_t rv;
     assert (n);
 
-    /* merge value columns */
-
-    /* First treat all columns that are required by both parents 
-       and check wether their values collide. */
-    if ((overlap = n->prop->reqvals.name & reqvals.name)) {
-        unsigned int bit_shift = 1;
-        while (bit_shift <= overlap) {
-            /* if the values of column that is required by both
-               parents do not match remove this column from the
-               list of required value columns */
-            if (bit_shift & overlap &&
-                ((bit_shift & reqvals.val) !=
-                 (bit_shift & n->prop->reqvals.val))) {
-                /* remove entry from both lists */
-                n->prop->reqvals.name = diff (n->prop->reqvals.name,
-                                              bit_shift);
-                n->prop->reqvals.val = diff (n->prop->reqvals.val,
-                                             bit_shift);
-                reqvals.name = diff (reqvals.name, bit_shift);
-                reqvals.val = diff (reqvals.val, bit_shift);
+    /* make sure that relations that require all values
+       overrule any decision */
+    if (SEEN(n) && !reqvals.name)
+        n->prop->reqvals = (reqval_t) { .name = 0, .val = 0 };
+        
+    /* in all calls (except the first) we ensure that 
+       we already have required value columns */
+    if (SEEN(n) && n->prop->reqvals.name) {
+        /* Check if both parents look for required values 
+           in the same columns and then resolve the possible
+           conflicts */
+        if (n->prop->reqvals.name == reqvals.name) {
+            PFalg_att_t  overlap   = reqvals.name;
+            unsigned int bit_shift = 1;
+            
+            while (bit_shift <= overlap) {
+                /* if the values of column that is required by both
+                   parents do not match remove this column from the
+                   list of required value columns */
+                if (bit_shift & overlap &&
+                    ((bit_shift & reqvals.val) !=
+                     (bit_shift & n->prop->reqvals.val))) {
+                    /* remove entry from the list */
+                    n->prop->reqvals.name = diff (n->prop->reqvals.name,
+                                                  bit_shift);
+                    n->prop->reqvals.val = diff (n->prop->reqvals.val,
+                                                 bit_shift);
+                }
+                bit_shift <<= 1;
             }
-            bit_shift <<= 1;
-        }
+        } else
+            n->prop->reqvals = (reqval_t) { .name = 0, .val = 0 };
     }
-    /* Then all remaining columns can be merged without conflict */
-    n->prop->reqvals.name = union_ (n->prop->reqvals.name, reqvals.name);
-    n->prop->reqvals.val = union_ (n->prop->reqvals.val, reqvals.val);
+ 
+    /* in the first call we use the required values of the caller */
+    if (!SEEN(n)) {
+        n->prop->reqvals = reqvals;
+        SEEN(n) = true;
+    }
 
     /* nothing to do if we haven't collected
        all incoming required values lists of that node */
@@ -384,7 +398,7 @@ prop_infer (PFla_op_t *n)
     n->state_label++;
 
     /* nothing to do if we already visited that node */
-    if (n->bit_dag)
+    if (SEEN(n))
         return;
     /* otherwise initialize edge counter (first occurrence) */
     else
@@ -394,7 +408,7 @@ prop_infer (PFla_op_t *n)
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         prop_infer (n->child[i]);
 
-    n->bit_dag = true;
+    SEEN(n) = true;
 
     /* reset reqvals property */
     n->prop->reqvals.name = 0;
@@ -415,6 +429,7 @@ PFprop_infer_reqval (PFla_op_t *root) {
 
     /* second run infers reqvals property */
     prop_infer_reqvals (root, init);
+    PFla_dag_reset (root);
 }
 
 
