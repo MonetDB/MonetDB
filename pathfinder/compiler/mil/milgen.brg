@@ -3085,14 +3085,26 @@ reduce (PFpa_op_t * p, int goalnt)
                         execute (
                             assgn (var (offset->name),
                                    msearch (v_cast, lit_str (":"))),
+                            if_ (exist (reverse (var (offset->name)),
+                                        cast (implty (aat_str), nil ())),
+                                 error (lit_str ("err:FORG0001.")),
+                                 nop ()),
                             assgn (var (prefix->name),
                                    mstring2 (v_cast,
                                              lit_int (0),
                                              var (offset->name))),
+                            if_ (exist (reverse (var (prefix->name)),
+                                        cast (implty (aat_str), nil ())),
+                                 error (lit_str ("err:FORG0001.")),
+                                 nop ()),
                             assgn (var (local->name),
                                    mstring (v_cast,
                                             madd (lit_int (1),
-                                                  var (offset->name)))));
+                                                  var (offset->name)))),
+                            if_ (exist (reverse (var (local->name)),
+                                        cast (implty (aat_str), nil ())),
+                                 error (lit_str ("err:FORG0001.")),
+                                 nop ()));
 
                         /* add_qnames changes the working set 
                            in 'var (PF_MIL_VAR_WS)' as side effect */
@@ -3147,6 +3159,11 @@ reduce (PFpa_op_t * p, int goalnt)
 
                             parts++;
                         }
+                    execute (
+                        if_ (exist (reverse (var (v->name)),
+                                    cast (implty (p->sem.cast.ty), nil ())),
+                             error (lit_str ("err:FORG0001.")),
+                             nop ()));
                 }
 
                 if (L(p)->schema.items[i].name == p->sem.cast.att &&
