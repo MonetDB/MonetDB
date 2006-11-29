@@ -542,6 +542,24 @@ infer_const (PFla_op_t *n)
                                             n->sem.type.att)).val.int_));
             break;
 
+        case la_type:
+            for (unsigned int i = 0; i < n->schema.count; i++) {
+                if (n->sem.type.att == n->schema.items[i].name) {
+                    if (n->sem.type.ty == n->schema.items[i].type)
+                        PFprop_mark_const (
+                                n->prop,
+                                n->sem.type.res,
+                                PFalg_lit_bln (true));
+                    else if (!(n->sem.type.ty & n->schema.items[i].type))
+                        PFprop_mark_const (
+                                n->prop,
+                                n->sem.type.res,
+                                PFalg_lit_bln (false));
+                    break;
+                }
+            }  
+            break;
+
         case la_scjoin:
             if (PFprop_const (R(n)->prop, n->sem.scjoin.iter))
                 PFprop_mark_const (
@@ -614,7 +632,6 @@ infer_const (PFla_op_t *n)
         case la_num_neg:
         case la_rownum:
         case la_number:
-        case la_type:
         case la_type_assert:
         case la_dup_scjoin:
         case la_doc_access:
