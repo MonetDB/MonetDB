@@ -1063,7 +1063,18 @@ reduce (PFcnode_t * p, int goalnt)
         case 51:
             if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
                 PFoops (OOPS_TYPECHECK,
+                        "err:XPTY0004: "
                         "casting is only allowed to an atomic type");
+
+            /* check for occurrence indicator + */
+            if (PFty_subtype (TY(R(p)), PFty_plus (PFty_item ())) &&
+                !PFty_subtype (TY(R(p)), PFty_item ()))
+                PFoops (OOPS_TYPECHECK, "err:XPTY0004");
+
+            /* check for occurrence indicator ? */
+            if (PFty_subtype (TY(L(p)), PFty_item ()) &&
+                !PFty_subtype (TY(R(p)), PFty_item ()))
+                PFoops (OOPS_TYPECHECK, "err:XPTY0004");
 
             TY(p) = TY(L(p));
             break;
