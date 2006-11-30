@@ -94,7 +94,7 @@ mdb>
 
 The term @code{<obj>} is an abbreviation for a 
 MAL operation @code{<mod>.<fcn>}, optionally extended with
-a version number, i.e. @code{[<nr>]).
+a version number, i.e. @code{[<nr>]}.
 The @code{var} denotes a variable in the current stack frame.
 Debugger commands may be abbreviated.
 
@@ -265,7 +265,7 @@ symbol tables are:
 @item list (List) [<mod>.<fcn>['['<nr>']']]
 A listing of the current MAL block, or one designated
 by the <mod>.<fcn> is produced.
-The @code{[<nr>]) extension provides access to an element
+The @code{[<nr>]} extension provides access to an element
 in the MAL block history.
 The alternative name 'List' also produces the type information.
 @item optimizer  [<mod>.<fcn>['['<nr>']']]
@@ -284,12 +284,12 @@ which can produce a nice, multi-page graph to illustrate plan
 complexity.
 @end table
 
-@begin example
+@example
 mdb>dot user.test
-@end example;
+@end example
 This example produces the @code{user-tst.dot} in the current
 working directory. The program call
-@begin example
+@example
 dot -Tps user-tst-0.dot -o user-tst-0.ps
 @end example
 creates a postscript file with the graphs. With the Adobe reader professional
