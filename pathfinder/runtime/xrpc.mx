@@ -284,7 +284,8 @@ PROC doLoopLiftedRPC(
         var time_milClntSeria := msec();
 
         # get iteration numbers for this destination
-        var iter_dst := rpc_dsts.ord_uselect($t).mirror();
+        var iter_dst := [oid](rpc_dsts.ord_uselect($t).reverse());
+            iter_dst := iter_dst.reverse().mirror();
 
         # retrieve the frag of fun_vid, fun_iter, fun_item and fun_kind
         # for this iteration.
@@ -298,9 +299,8 @@ PROC doLoopLiftedRPC(
         var fun_kind_dst := indices.fetchjoin(fun_kind).tmark(0@0);
 
         # renumber the iters, starting from 1
-        iter_dst     := iter_dst.mark(0@0);
         fun_iter_dst := fun_iter_dst.leftjoin(iter_dst.mark(1@0));
-        fun_iter_dst := fun_iter_dst.tmark(0@0);
+        fun_iter_dst := [oid](fun_iter_dst.tmark(0@0));
 
         var local_name := "rpc_res_00" + str(int($h)+1);
         var rpc_oid;
