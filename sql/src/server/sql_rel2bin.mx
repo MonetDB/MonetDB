@@ -731,15 +731,27 @@ reljoin( mvc *sql, list *l1, list *l2 )
 	return res;
 }
 
-/* push this select through the statement s */
+/* push the semijoin of (select,s) through the select statement (select) */
 stmt *
 push_semijoin( stmt *select, stmt *s )
 {
+	if (select->type == st_unop) 
+		return push_semijoin(stmt_dup(select->op1.stval), s);
+	if (select->type == st_binop) {
+		stmt *op1 = stmt_dup(select->op1.stval);
+		stmt *op2 = stmt_dup(select->op2.stval);
+		if (op1->nrcols) 
+			op1 = push_semijoin(op1, stmt_dup(s));
+		if (op2->nrcols) 
+			op2 = push_semijoin(op2, stmt_dup(s));
+		stmt_destroy(s);
+		return stmt_binop(op1, op2, sql_dup_func(select->op4.funcval));
+	}
 	if (select->type != st_select2 && select->type != st_uselect2 &&
 	    select->type != st_select && select->type != st_uselect) 
-		return stmt_semijoin(s, stmt_dup(select));
+		return stmt_semijoin(stmt_dup(select), s);
 
-	s = stmt_semijoin(stmt_dup(select->op1.stval), s);
+	s = push_semijoin(stmt_dup(select->op1.stval), s);
 	if (select->type == st_select2) 
 		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
 
@@ -766,7 +778,7 @@ find_unique( stmt *s, void *v)
 	stmt *c = head_column(s);
 
 	(void)v;
-	if (c && c->op1.cval->unique == 1)
+	if (c && c->type == st_bat && c->op1.cval->unique == 1)
 		return 0;
 	return -1;
 }

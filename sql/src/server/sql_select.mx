@@ -57,6 +57,7 @@ extern stmt *selects(mvc *sql, scope *scp, symbol *sym);
 extern stmt *sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek);
 extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
 extern stmt *flat_subquery(mvc *sql, symbol *sq);
+extern stmt *sql_reorder(stmt *order, stmt *s);
 
 extern stmt *sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd);
 extern stmt *sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f);
@@ -3289,6 +3290,34 @@ query_orderby(mvc *sql, symbol *orderby, stmt *s)
 	return cur;
 }
 
+stmt *
+sql_reorder(stmt *order, stmt *s) 
+{
+	list *l = create_stmt_list();
+	node *n;
+	/* we need to keep the order by column, to propagate the sort property*/
+	stmt *x = order->op1.stval;
+	stmt *o = order;
+
+	order = stmt_mark(stmt_reverse(order), 0);
+	for (n = s->op1.lval->h; n; n = n->next) {
+		stmt *sc = n->data;
+		char *cname = column_name(sc);
+		char *tname = table_name(sc);
+
+		if (sc != x)
+			sc = stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_dup(order), stmt_dup(sc), cmp_equal)), 1));
+		else	/* order by column */
+			sc = stmt_mark(stmt_dup(o), 0);
+		sc = stmt_alias(sc, tname, cname );
+		list_append(l, sc);
+		
+	}
+	stmt_destroy(s);
+	stmt_destroy(order);
+	return stmt_list(l);
+}
+
 /* find the special 'row' column */
 static stmt *
 find_base_row( stmt *subset, int aggr )
@@ -3798,19 +3827,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 	if (s && order && !scp->p) { /* toplevel */
 		return stmt_ordered(order, s);
 	} else if (s && order && scp->p && ek.card == card_relation) {
-		list *l = create_stmt_list();
-		node *n;
-
-		for (n = s->op1.lval->h; n; n = n->next) {
-			stmt *sc = stmt_dup(n->data);
-
-			list_append(l, stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_mark(stmt_reverse(stmt_dup(order)), 0), sc, cmp_equal)
-							       ), 1))
-			    );
-		}
-		stmt_destroy(s);
-		stmt_destroy(order);
-		s = stmt_list(l);
+		s = sql_reorder(order, s);
 	}
 	return s;
 }
