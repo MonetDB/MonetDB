@@ -339,10 +339,12 @@ def am_scripts(fd, var, scripts, am):
         else:
             fd.write("script_%s: %s\n" % (script, script))
         fd.write("\tchmod a+x $<\n")
+
         if sd == "$(sysconfdir)":
             fd.write("install-exec-local-%s: %s\n" % (script, script))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t$(INSTALL) $(INSTALL_BACKUP) $< $(DESTDIR)%s/%s\n\n" % (sd, script))
+            fd.write("\tchmod a-x $(DESTDIR)%s/%s\n" % (sd, script))
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         else:
