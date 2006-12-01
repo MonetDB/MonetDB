@@ -182,7 +182,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	(void) res, (void) pattern;
 	(void) strs;
 
-	return GDK_FAIL;
+	return throwException(MALEXCEPTION, "pcre_select", "not available as required version of libpcre was not found by configure.\n");
 }
 
 str
@@ -191,7 +191,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	(void) res, (void) pattern;
 	(void) strs;
 
-	return GDK_FAIL;
+	return throwException(MALEXCEPTION, "pcre_uselect", "not available as required version of libpcre was not found by configure.\n");
 }
 
 int
