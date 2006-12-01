@@ -137,9 +137,7 @@ comment "refine the ordering of a tail-ordered BAT by sub-ordering on the
 @+ Group Aggregate operations
 
 This module also contains some efficient aggregate functions over
-groups that compute their
-result in one scan, rather than in the iterative manner of the generic
-MIL aggr_ implementations.
+groups that compute their result in one scan.
 
 For the groups we assume a bat structure where the head indicates the group
 and the tail contains the group elements. This leads to the situation that
@@ -436,15 +434,35 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 	BUN p, q, r;
 	BAT *map = NULL;
 	declare_@3
+#ifdef MKspeedup
+	size_t idx;
+#endif
 
 	map_init_@5(map,hash,mask,entry,mapsize);
 	if (map == NULL)
 		return NULL;
 
 	/* core hash grouping algorithm */
+#ifdef MKspeedup
+/* MK: Experimental code. Should be triggered when you attempt
+to consume a lot of your physical memory. First indication, a factor 2.
+*/
+		(void) q;
+
+        if( BATprepareHash(BATmirror(b))){
+            stream_printf(GDKout,"#M5 IO group join\n");
+            for( idx=0; idx< b->thash->mask; idx++)
+            for( xx=b->thash->hash[idx]; xx != HASH_MAX; xx= b->thash->link[xx]){
+		declare_@4
+		ptr tcur;
+		p= BUNptr(b,xx);
+		tcur = BUN@2(b,p);
+
+#else
 	BATloopFast(b, p, q, xx) {
 		declare_@4
 		ptr tcur = BUN@2(b,p);
+#endif
 
 		/* hash-lookup of 'tcur' in map */
 		hash_t c = HASH_@1(tcur);
@@ -475,6 +493,10 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 			*dst++ = *(oid*) BUNhead(b,p);
 		*dst++ = m?zz:e->gid;
 	}
+#ifdef MKspeedup
+	BATsort(BATmirror(bn));
+	}
+#endif
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
@@ -1968,5 +1990,4 @@ str GRPwindowsum_@1(int *retval, int *bid, int  *size){
 @:windowsum(lng,lng)@
 @:windowsum(flt,dbl)@
 @:windowsum(dbl,dbl)@
-
 @}
