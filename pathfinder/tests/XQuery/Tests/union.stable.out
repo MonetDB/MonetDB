@@ -22,7 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><author><last>Stevens</last><first>W.</first></author><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/></XQueryResult>
+<XQueryResult><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/><author><last>Stevens</last><first>W.</first></author></XQueryResult>
 
 # 01:50:33 >  
 # 01:50:33 >  Done.
