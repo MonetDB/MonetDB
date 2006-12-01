@@ -9,6 +9,6 @@ set MOD_PATH=%sqldir%\src\backends\monet5\.libs;%sqldir%\src\backends\monet5;%mo
 
 set PATH=%MOD_PATH%;%monetdbdir%\bin;%monetdbdir%\lib;%PATH%
 
-"%monetdbdir%\bin\mserver5.exe" "--config=%monetdbdir%\etc\MonetDB5.conf" --set "monet_mod_path=%MOD_PATH%" %*
+"%monetdbdir%\bin\mserver5.exe" "--config=%monetdbdir%\etc\monetdb5.conf" --set "monet_mod_path=%MOD_PATH%" %*
 
 endlocal
