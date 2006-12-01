@@ -1920,7 +1920,7 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 			min -= r->hseqbase;
 			max -= r->hseqbase;
 		}
-		return BATslice(cpy, min, 1+max-min);
+		return BATslice(cpy, min, 1+max);
 	}
 	base = BUNindex(r, BUNfirst(r));
 	end = base + BATcount(r);
