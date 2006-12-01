@@ -737,7 +737,6 @@ copyMalBlk(MalBlkPtr old)
 
 void
 addtoMalBlkHistory(MalBlkPtr mb){
-	(void) mb;
 	MalBlkPtr cpy;
 	cpy= copyMalBlk(mb);
 	cpy->alternative= NULL;
