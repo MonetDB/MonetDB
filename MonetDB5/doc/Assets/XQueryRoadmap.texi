@@ -1,5 +1,0 @@
-@subsection XQuery Roadmap
-The XQuery compiler is currently only available on MonetDB Version 4.
-It is based on the @url{http://pathfinder-xquery.org,Pathfinder} 
-compiler project.
-
