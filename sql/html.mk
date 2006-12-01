@@ -17,24 +17,9 @@
 # make rules to generate sql's documentation
 
 # entry point
-docs: $(prefix)/doc/SQLsessionDemo.html \
-	$(prefix)/doc/SQLfeatures/SQLfeatures.html \
+docs: \
 	$(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html \
 	$(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows/index.html
-
-$(prefix)/doc/SQLsessionDemo.html:	$(top_srcdir)/SQLsessionDemo.html
-	-@mkdir -p $(prefix)/doc
-	cp $< $@
-
-$(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures.tex
-	-@mkdir -p $(prefix)/doc/SQLfeatures
-	cp $< $@
-
-$(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures.tex
-	(cd $(prefix)/doc/SQLfeatures; latex SQLfeatures.tex; latex SQLfeatures.tex)
-
-$(prefix)/doc/SQLfeatures/SQLfeatures.html:	$(prefix)/doc/SQLfeatures/SQLfeatures.aux
-	(cd $(prefix); latex2html -ascii_mode -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex -noinfo)
 
 $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html: $(top_srcdir)/HowToStart-SQL
 	mkdir -p $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix
