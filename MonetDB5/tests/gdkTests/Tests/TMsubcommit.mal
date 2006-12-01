@@ -1,4 +1,5 @@
-mdb.setDebug(19);
+#turn the debugger on to see details
+#mdb.setDebug(19);
 
 b:=bat.new(:int,:int);
 bat.insert(b,1,2);

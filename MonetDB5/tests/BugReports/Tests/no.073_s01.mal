@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,15 +8,15 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("var ab:=bat(\"ab\");");
+#	io.print("var ab:=bat(\"ab\");");
 	ab := bbp.new("ab");
-#	mil.line("var ba:=bat(\"ba\");");
+#	io.print("var ba:=bat(\"ba\");");
 	ba := bbp.new("ba");
-#	mil.line("ab.print();");
+#	io.print("ab.print();");
 	aa_a := bat.print(ab);
-#	mil.line("ba.print();");
+#	io.print("ba.print();");
 	ba_a := bat.print(ba);
-#	mil.line("ab.print();");
+#	io.print("ab.print();");
 	ca_a := bat.print(ab);
-#	mil.line("quit();");
+#	io.print("quit();");
 	da_a := clients.quit();

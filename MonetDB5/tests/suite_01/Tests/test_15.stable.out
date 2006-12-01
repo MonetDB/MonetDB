@@ -65,68 +65,67 @@ stdout of test 'test_15` in directory 'tests/suite_01` itself:
 #
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
-#include mil; 	# 2  (_2:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 3  (_3:str)
-#Predefined code segment 	# 4  (_4:str)
-#The compiler can not guarantee an accurate compilation, 	# 5  (_5:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 6  (_6:str)
-#A few guidelines to maximize usefullness. 	# 7  (_7:str)
-#- make the type of variables explicit, in particular 'nil' 	# 8  (_8:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 9  (_9:str)
-#use the "mil_schema" for additional support routines 	# 10  (_10:str)
-#	mil.line("setoid(oid(20000000));"); 	# 11  (_11:str)
-    aa_a := calc.oid(20000000);	# 12 CALCint2oid (aa_a:oid)<-(_13:int)
-    ba_a := calc.setoid(aa_a);	# 13 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");"); 	# 14  (_15:str)
-    ca_a := transaction.commit();	# 15 TRNglobal_commit (ca_a:bit)
-    da_a := io.printf("#~BeginVariableOutput~#\n");	# 16 IOprint_str (da_a:int)<-(_18:str)
-    ea_a := status.ioStatistics();	# 17 SYSioStatistics (ea_a:bat[:str,:int])
-    fa_a := io.print(ea_a);	# 18 IOprint_val (fa_a:int)<-(ea_a:bat[:str,:int])
-    ga_a := io.printf("#~EndVariableOutput~#\n");	# 19 IOprint_str (ga_a:int)<-(_22:str)
-#	mil.line("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();"); 	# 20  (_23:str)
-    ha_a := transaction.commit();	# 21 TRNglobal_commit (ha_a:bit)
-    ia_a := transaction.commit();	# 22 TRNglobal_commit (ia_a:bit)
-    ja_a := transaction.commit();	# 23 TRNglobal_commit (ja_a:bit)
-    ka_a := transaction.commit();	# 24 TRNglobal_commit (ka_a:bit)
-    la_a := transaction.commit();	# 25 TRNglobal_commit (la_a:bit)
-    ma_a := transaction.commit();	# 26 TRNglobal_commit (ma_a:bit)
-    na_a := transaction.commit();	# 27 TRNglobal_commit (na_a:bit)
-    oa_a := transaction.commit();	# 28 TRNglobal_commit (oa_a:bit)
-#	mil.line("transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();"); 	# 29  (_32:str)
-    pa_a := transaction.commit();	# 30 TRNglobal_commit (pa_a:bit)
-    qa_a := transaction.commit();	# 31 TRNglobal_commit (qa_a:bit)
-    ra_a := transaction.commit();	# 32 TRNglobal_commit (ra_a:bit)
-    sa_a := transaction.commit();	# 33 TRNglobal_commit (sa_a:bit)
-    ta_a := transaction.commit();	# 34 TRNglobal_commit (ta_a:bit)
-    ua_a := transaction.commit();	# 35 TRNglobal_commit (ua_a:bit)
-    va_a := transaction.commit();	# 36 TRNglobal_commit (va_a:bit)
-    wa_a := transaction.commit();	# 37 TRNglobal_commit (wa_a:bit)
-#	mil.line("transaction.commit(); commit(); commit(); commit(); "); 	# 38  (_41:str)
-    xa_a := transaction.commit();	# 39 TRNglobal_commit (xa_a:bit)
-    ya_a := transaction.commit();	# 40 TRNglobal_commit (ya_a:bit)
-    ab_a := transaction.commit();	# 41 TRNglobal_commit (ab_a:bit)
-    bb_a := transaction.commit();	# 42 TRNglobal_commit (bb_a:bit)
-#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");"); 	# 43  (_46:str)
-    cb_a := io.printf("#~BeginVariableOutput~#\n");	# 44 IOprint_str (cb_a:int)<-(_18:str)
-    db_a := status.ioStatistics();	# 45 SYSioStatistics (db_a:bat[:str,:int])
-    eb_a := io.print(db_a);	# 46 IOprint_val (eb_a:int)<-(db_a:bat[:str,:int])
-    fb_a := io.printf("#~EndVariableOutput~#\n");	# 47 IOprint_str (fb_a:int)<-(_22:str)
-#	mil.line("quit();"); 	# 48  (_51:str)
-    gb_a := clients.quit();	# 49 CLTquitDefault (gb_a:void)
-end main;	# 50  
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
+#Predefined code segment 	# 3  (_3:str)
+#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
+#A few guidelines to maximize usefullness. 	# 6  (_6:str)
+#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
+#use the "mil_schema" for additional support routines 	# 9  (_9:str)
+#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
+    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
+    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+#	io.print("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");"); 	# 13  (_14:str)
+    ca_a := transaction.commit();	# 14 TRNglobal_commit (ca_a:bit)
+    da_a := io.printf("#~BeginVariableOutput~#\n");	# 15 IOprint_str (da_a:int)<-(_17:str)
+    ea_a := status.ioStatistics();	# 16 SYSioStatistics (ea_a:bat[:str,:int])
+    fa_a := io.print(ea_a);	# 17 IOprint_val (fa_a:int)<-(ea_a:bat[:str,:int])
+    ga_a := io.printf("#~EndVariableOutput~#\n");	# 18 IOprint_str (ga_a:int)<-(_21:str)
+#	io.print("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();"); 	# 19  (_22:str)
+    ha_a := transaction.commit();	# 20 TRNglobal_commit (ha_a:bit)
+    ia_a := transaction.commit();	# 21 TRNglobal_commit (ia_a:bit)
+    ja_a := transaction.commit();	# 22 TRNglobal_commit (ja_a:bit)
+    ka_a := transaction.commit();	# 23 TRNglobal_commit (ka_a:bit)
+    la_a := transaction.commit();	# 24 TRNglobal_commit (la_a:bit)
+    ma_a := transaction.commit();	# 25 TRNglobal_commit (ma_a:bit)
+    na_a := transaction.commit();	# 26 TRNglobal_commit (na_a:bit)
+    oa_a := transaction.commit();	# 27 TRNglobal_commit (oa_a:bit)
+#	io.print("transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();"); 	# 28  (_31:str)
+    pa_a := transaction.commit();	# 29 TRNglobal_commit (pa_a:bit)
+    qa_a := transaction.commit();	# 30 TRNglobal_commit (qa_a:bit)
+    ra_a := transaction.commit();	# 31 TRNglobal_commit (ra_a:bit)
+    sa_a := transaction.commit();	# 32 TRNglobal_commit (sa_a:bit)
+    ta_a := transaction.commit();	# 33 TRNglobal_commit (ta_a:bit)
+    ua_a := transaction.commit();	# 34 TRNglobal_commit (ua_a:bit)
+    va_a := transaction.commit();	# 35 TRNglobal_commit (va_a:bit)
+    wa_a := transaction.commit();	# 36 TRNglobal_commit (wa_a:bit)
+#	io.print("transaction.commit(); commit(); commit(); commit(); "); 	# 37  (_40:str)
+    xa_a := transaction.commit();	# 38 TRNglobal_commit (xa_a:bit)
+    ya_a := transaction.commit();	# 39 TRNglobal_commit (ya_a:bit)
+    ab_a := transaction.commit();	# 40 TRNglobal_commit (ab_a:bit)
+    bb_a := transaction.commit();	# 41 TRNglobal_commit (bb_a:bit)
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");"); 	# 42  (_45:str)
+    cb_a := io.printf("#~BeginVariableOutput~#\n");	# 43 IOprint_str (cb_a:int)<-(_17:str)
+    db_a := status.ioStatistics();	# 44 SYSioStatistics (db_a:bat[:str,:int])
+    eb_a := io.print(db_a);	# 45 IOprint_val (eb_a:int)<-(db_a:bat[:str,:int])
+    fb_a := io.printf("#~EndVariableOutput~#\n");	# 46 IOprint_str (fb_a:int)<-(_21:str)
+#	io.print("quit();"); 	# 47  (_50:str)
+    gb_a := clients.quit();	# 48 CLTquitDefault (gb_a:void)
+end main;	# 49  
 #~BeginVariableOutput~#
 #-------------------------#
 # gdk		io	  # name
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2406	  ]
+[ "minflt",	  2479	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  8	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  3	  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -138,13 +137,13 @@ end main;	# 50
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2422	  ]
+[ "minflt",	  2493	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  9	  ]
+[ "nvcsw",	  3	  ]
+[ "ninvcsw",	  3	  ]
 #~EndVariableOutput~#
 #quit();
 

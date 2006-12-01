@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,37 +8,37 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(20000000));");
+#	io.print("setoid(oid(20000000));");
 	aa_a := calc.oid(20000000);
 	ba_a := setoid(aa_a);
-#	mil.line("#split w in twee tabellen\n");
+#	io.print("#split w in twee tabellen\n");
 	docid := bbp.new(nil:void,nil:oid);
-#	mil.line("var tid := bbp.new( void, str );");
+#	io.print("var tid := bbp.new( void, str );");
 	tid := bbp.new(nil:void,nil:str);
-#	mil.line("docid := w.mark(nil).reverse();");
+#	io.print("docid := w.mark(nil).reverse();");
 	w:= mil.take("w");
 	ca_a := mark(w,nil);
 	docid := bat.reverse(ca_a);
-#	mil.line("docid.print();");
+#	io.print("docid.print();");
 	da_a := bat.print(docid);
-#	mil.line("tid := w.reverse().mark(nil).reverse();");
+#	io.print("tid := w.reverse().mark(nil).reverse();");
 	ea_a := bat.reverse(w);
 	fa_a := mark(ea_a,nil);
 	tid := bat.reverse(fa_a);
-#	mil.line("tid.print();");
+#	io.print("tid.print();");
 	ga_a := bat.print(tid);
-#	mil.line("docid.seqbase( 1000@0 );");
+#	io.print("docid.seqbase( 1000@0 );");
 	ha_a := bat.setSequenceBase(docid,1000@0);
-#	mil.line("docid.print();");
+#	io.print("docid.print();");
 	ia_a := bat.print(docid);
-#	mil.line("tid.seqbase( 1000@0 );");
+#	io.print("tid.seqbase( 1000@0 );");
 	ja_a := bat.setSequenceBase(tid,1000@0);
-#	mil.line("tid.print();");
+#	io.print("tid.print();");
 	ka_a := bat.print(tid);
-#	mil.line("CTgroup( docid, tid ).print();");
+#	io.print("CTgroup( docid, tid ).print();");
 	la_a := group(docid,tid);
 	ma_a := bat.print(la_a);
-#	mil.line("quit();");
+#	io.print("quit();");
 	na_a := clients.quit();
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #Identifer 'CTgroup' mapped to 'group'

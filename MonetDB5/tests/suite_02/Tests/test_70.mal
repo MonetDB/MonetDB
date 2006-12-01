@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil_scenario;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,42 +8,42 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(2000000));");
+#	io.print("setoid(oid(2000000));");
 	aa_a := oid(2000000);
 	ba_a := setoid(aa_a);
-#	mil.line("#test correct decisions in the join operation.\n");
+#	io.print("#test correct decisions in the join operation.\n");
 	k100_unique1 := new("k100_unique1");
-#	mil.line("var t:= k100_unique1.select(10,10);");
+#	io.print("var t:= k100_unique1.select(10,10);");
 	t := select(k100_unique1,10,10);
-#	mil.line("t.count().print(); k100_unique1.count().print();");
+#	io.print("t.count().print(); k100_unique1.count().print();");
 	ca_a := count(t);
 	da_a := print(ca_a);
 	ea_a := count(k100_unique1);
 	fa_a := print(ea_a);
-#	mil.line("var u:= t.copy();");
+#	io.print("var u:= t.copy();");
 	u := copy(t);
-#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu.print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); cpu.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ga_a := printf("#~BeginVariableOutput~#\n");
 	cpu:= mil.take("cpu");
 	ha_a := print(cpu);
 	ia_a := printf("#~EndVariableOutput~#\n");
-#	mil.line("var z:= t.reverse().join(k100_unique1);");
+#	io.print("var z:= t.reverse().join(k100_unique1);");
 	ja_a := reverse(t);
 	z := join(ja_a,k100_unique1);
-#	mil.line("z.print();");
+#	io.print("z.print();");
 	ka_a := print(z);
-#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu.print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); cpu.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	la_a := printf("#~BeginVariableOutput~#\n");
 	ma_a := print(cpu);
 	na_a := printf("#~EndVariableOutput~#\n");
-#	mil.line("z:= k100_unique1.reverse().join(u);");
+#	io.print("z:= k100_unique1.reverse().join(u);");
 	oa_a := reverse(k100_unique1);
 	z := join(oa_a,u);
-#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu.print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); cpu.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	pa_a := printf("#~BeginVariableOutput~#\n");
 	qa_a := print(cpu);
 	ra_a := printf("#~EndVariableOutput~#\n");
-#	mil.line("z.print();");
+#	io.print("z.print();");
 	sa_a := print(z);
-#	mil.line("quit();");
+#	io.print("quit();");
 	ta_a := quit();

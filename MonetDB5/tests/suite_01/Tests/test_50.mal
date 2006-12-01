@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,30 +8,30 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(20000000));");
+#	io.print("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#	mil.line("#advanced features BATs as primitives.\n");
-#	mil.line("var c:= new(int,bat);");
+#	io.print("#advanced features BATs as primitives.\n");
+#	io.print("var c:= new(int,bat);");
 	c := new(nil:int,:bat[:any$1,:any$2]);
-#	mil.line("#c.insert(1,gdk_cpu_stat);\n");
+#	io.print("#c.insert(1,gdk_cpu_stat);\n");
 	cpu:= mil.take("cpu");
 	ca_a := insert(c,1,cpu);
-#	mil.line("c.insert(2,c);");
+#	io.print("c.insert(2,c);");
 	da_a := insert(c,2,c);
-#	mil.line("c.print();");
+#	io.print("c.print();");
 	ea_a := print(c);
-#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); c.find(1).print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); c.find(1).print(); printf(\"#~EndVariableOutput~#\\n\");");
 	fa_a := printf("#~BeginVariableOutput~#\n");
 	ga_a := find(c,1);
 	ha_a := print(ga_a);
 	ia_a := printf("#~EndVariableOutput~#\n");
-#	mil.line("c.print();");
+#	io.print("c.print();");
 	ja_a := print(c);
-#	mil.line("c.find(2).print();");
+#	io.print("c.find(2).print();");
 	ka_a := find(c,2);
 	la_a := print(ka_a);
-#	mil.line("c.print();");
+#	io.print("c.print();");
 	ma_a := print(c);
-#	mil.line("quit();");
+#	io.print("quit();");
 	na_a := quit();

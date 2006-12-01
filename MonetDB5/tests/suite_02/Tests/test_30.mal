@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil_scenario;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,19 +8,19 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(2000000));");
+#	io.print("setoid(oid(2000000));");
 	aa_a := oid(2000000);
 	ba_a := setoid(aa_a);
-#	mil.line("# load a few wisconsin tables and produce histograms\n");
+#	io.print("# load a few wisconsin tables and produce histograms\n");
 	W10k_evenOnePercent := new("W10k_evenOnePercent");
-#	mil.line("var W10k_tenPercent := bat(\"W10k_tenPercent\");");
+#	io.print("var W10k_tenPercent := bat(\"W10k_tenPercent\");");
 	W10k_tenPercent := new("W10k_tenPercent");
-#	mil.line("var h1:= W10k_evenOnePercent.histogram();");
+#	io.print("var h1:= W10k_evenOnePercent.histogram();");
 	h1 := histogram(W10k_evenOnePercent);
-#	mil.line("h1.sort().print();");
+#	io.print("h1.sort().print();");
 	ca_a := sort(h1);
 	da_a := print(ca_a);
-#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); cpu().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ea_a := printf("#~BeginVariableOutput~#\n");
 	fa_a := cpu();
 	ga_a := print(fa_a);
@@ -34,12 +33,12 @@
 	na_a := io();
 	oa_a := print(na_a);
 	pa_a := printf("#~EndVariableOutput~#\n");
-#	mil.line("var h2:= W10k_tenPercent.histogram();");
+#	io.print("var h2:= W10k_tenPercent.histogram();");
 	h2 := histogram(W10k_tenPercent);
-#	mil.line("h2.sort().print();");
+#	io.print("h2.sort().print();");
 	qa_a := sort(h2);
 	ra_a := print(qa_a);
-#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); cpu().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	sa_a := printf("#~BeginVariableOutput~#\n");
 	ta_a := cpu();
 	ua_a := print(ta_a);
@@ -52,6 +51,6 @@
 	cb_a := io();
 	db_a := print(cb_a);
 	eb_a := printf("#~EndVariableOutput~#\n");
-#	mil.line("quit();");
+#	io.print("quit();");
 	fb_a := quit();
 #Identifer 'memory' mapped to 'status.memStatistics'

@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,21 +8,21 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("# Date:\t\t2002-11-22 16:58\n");
-#	mil.line("# Category: \tNone\n");
-#	mil.line("# Group: \tNone\n");
-#	mil.line("# Status: \tOpen\n");
-#	mil.line("# Resolution: \tNone\n");
-#	mil.line("# Priority: \t5\n");
-#	mil.line("# Submitted By: Maurice van Keulen (mvankeulen)\n");
-#	mil.line("# Assigned to: \tNobody/Anonymous (nobody)\n");
-#	mil.line("# Summary: \tRefcount warnings in \"varval\"\n");
-#	mil.line("#\n");
-#	mil.line("# Initial Comment:\n");
-#	mil.line("# The \"varval\"-function apparently contains a bug\n");
-#	mil.line("# regarding reference counting. See example below:\n");
-#	mil.line("");
+#	io.print("# Date:\t\t2002-11-22 16:58\n");
+#	io.print("# Category: \tNone\n");
+#	io.print("# Group: \tNone\n");
+#	io.print("# Status: \tOpen\n");
+#	io.print("# Resolution: \tNone\n");
+#	io.print("# Priority: \t5\n");
+#	io.print("# Submitted By: Maurice van Keulen (mvankeulen)\n");
+#	io.print("# Assigned to: \tNobody/Anonymous (nobody)\n");
+#	io.print("# Summary: \tRefcount warnings in \"varval\"\n");
+#	io.print("#\n");
+#	io.print("# Initial Comment:\n");
+#	io.print("# The \"varval\"-function apparently contains a bug\n");
+#	io.print("# regarding reference counting. See example below:\n");
+#	io.print("");
 	bar := bat.new(nil:int,nil:int);
-#	mil.line("var bar:=new(int,int);");
+#	io.print("var bar:=new(int,int);");
 	aa_a := user.varval("bar");
 	ba_a := io.print(aa_a);

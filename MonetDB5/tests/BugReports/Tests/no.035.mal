@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,34 +8,34 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("# >Number:         35\n");
-#	mil.line("# >Category:       Monet_SGI\n");
-#	mil.line("# >Synopsis:       BATloop semantics\n");
-#	mil.line("# >Confidential:   no\n");
-#	mil.line("# >Severity:       serious\n");
-#	mil.line("# >Priority:       high\n");
-#	mil.line("# >Responsible:    mk\n");
-#	mil.line("# >State:          feedback\n");
-#	mil.line("# >Class:          sw-bug\n");
-#	mil.line("# >Submitter-Id:   unknown\n");
-#	mil.line("# >Arrival-Date:   Tue Sep 30 20:45:03 1997\n");
-#	mil.line("# >Originator:     mk\n");
-#	mil.line("# >Organization:\n");
-#	mil.line("# >Release:        970101\n");
-#	mil.line("# >Environment:\n");
-#	mil.line("# SGI\n");
-#	mil.line("# >Description:\n");
-#	mil.line("# Since yesterday the semantics has changed\?\n");
-#	mil.line("# > b:= view_bbp_name;\n");
-#	mil.line("# > b@batloop(){ printf(\"%s\\n\",$t);}\n");
-#	mil.line("# !ERROR: interpret: no matching iterator to 'batloop(bat[int,str], ptr)'.\n");
-#	mil.line("var b:= view_bbp_name();");
+#	io.print("# >Number:         35\n");
+#	io.print("# >Category:       Monet_SGI\n");
+#	io.print("# >Synopsis:       BATloop semantics\n");
+#	io.print("# >Confidential:   no\n");
+#	io.print("# >Severity:       serious\n");
+#	io.print("# >Priority:       high\n");
+#	io.print("# >Responsible:    mk\n");
+#	io.print("# >State:          feedback\n");
+#	io.print("# >Class:          sw-bug\n");
+#	io.print("# >Submitter-Id:   unknown\n");
+#	io.print("# >Arrival-Date:   Tue Sep 30 20:45:03 1997\n");
+#	io.print("# >Originator:     mk\n");
+#	io.print("# >Organization:\n");
+#	io.print("# >Release:        970101\n");
+#	io.print("# >Environment:\n");
+#	io.print("# SGI\n");
+#	io.print("# >Description:\n");
+#	io.print("# Since yesterday the semantics has changed\?\n");
+#	io.print("# > b:= view_bbp_name;\n");
+#	io.print("# > b@batloop(){ printf(\"%s\\n\",$t);}\n");
+#	io.print("# !ERROR: interpret: no matching iterator to 'batloop(bat[int,str], ptr)'.\n");
+#	io.print("var b:= view_bbp_name();");
 	b := bbp.getNames());
-#	mil.line("b@batloop(){ printf(\"%s\\n\",$t);}");
+#	io.print("b@batloop(){ printf(\"%s\\n\",$t);}");
 barrier	(aa_a,aa_aH,aa_aT) := newIterator(b);
 	ba_a := printf("%s\n",aa_aT);
 redo	(aa_a,aa_aH,aa_aT) := hasMoreElements(b);
 exit	(aa_a,aa_aH,aa_aT) ;
-#	mil.line("quit();");
+#	io.print("quit();");
 	ca_a := clients.quit();
 #Identifer 'view_bbp_name' mapped to 'bbp.getNames()'

@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,12 +8,12 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("PROC crash() : void");
+#	io.print("PROC crash() : void");
 function crash():void;
 
-#	mil.line("\tprint($t);\n");
+#	io.print("\tprint($t);\n");
 	unknown:= mil.take("unknown");
 	aa_a := io.print(unknown);
 end crash;
-#	mil.line("crash();");
+#	io.print("crash();");
 	ba_a := user.crash();

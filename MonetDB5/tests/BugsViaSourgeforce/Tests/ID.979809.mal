@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,67 +8,67 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("var cwd := getenv(\"TSTTRGDIR\");");
+#	io.print("var cwd := getenv(\"TSTTRGDIR\");");
 	cwd := getenv("TSTTRGDIR");
-#	mil.line("var word_file := sprintf(\"%s/ID.979809.txt\", cwd);");
+#	io.print("var word_file := sprintf(\"%s/ID.979809.txt\", cwd);");
 	word_file := sprintf("%s/ID.979809.txt",cwd);
-#	mil.line("var word_table:= new(oid,str);");
+#	io.print("var word_table:= new(oid,str);");
 	word_table := new(nil:oid,nil:str);
-#	mil.line("word_table.import(word_file);");
+#	io.print("word_table.import(word_file);");
 	aa_a := import(word_table,word_file);
-#	mil.line("print(\"selecting 'nil' words. The result should be 2\");");
+#	io.print("print(\"selecting 'nil' words. The result should be 2\");");
 	ba_a := print("selecting 'nil' words. The result should be 2");
-#	mil.line("word_table.select(\"nil\").count().print();    # should be 2 and it is 0");
+#	io.print("word_table.select(\"nil\").count().print();    # should be 2 and it is 0");
 	ca_a := select(word_table,"nil");
 	da_a := count(ca_a);
 	ea_a := print(da_a);
-#	mil.line("# should be 2 and it is 0\n");
-#	mil.line("print(\"selecting nil values. The result should be 0\");");
+#	io.print("# should be 2 and it is 0\n");
+#	io.print("print(\"selecting nil values. The result should be 0\");");
 	fa_a := print("selecting nil values. The result should be 0");
-#	mil.line("word_table.select(str(nil)).count().print();    # should be 1 and it is 3");
+#	io.print("word_table.select(str(nil)).count().print();    # should be 1 and it is 3");
 	ga_a := str(nil);
 	ha_a := select(word_table,ga_a);
 	ia_a := count(ha_a);
 	ja_a := print(ia_a);
-#	mil.line("# should be 1 and it is 3\n");
-#	mil.line("print(\"the table imported\");");
+#	io.print("# should be 1 and it is 3\n");
+#	io.print("print(\"the table imported\");");
 	ka_a := print("the table imported");
-#	mil.line("word_table.print();    # the \"nil\" words are converted to nil values     ");
+#	io.print("word_table.print();    # the \"nil\" words are converted to nil values     ");
 	la_a := print(word_table);
-#	mil.line("# the \"nil\" words are converted to nil values     \n");
-#	mil.line("var names := new(void,str).seqbase(0@0);");
+#	io.print("# the \"nil\" words are converted to nil values     \n");
+#	io.print("var names := new(void,str).seqbase(0@0);");
 	ma_a := new(nil:void,nil:str);
 	names := bat.setSequenceBase(ma_a,0@0);
-#	mil.line("names.insert(oid(nil),\"one\");");
+#	io.print("names.insert(oid(nil),\"one\");");
 	na_a := oid(nil);
 	oa_a := insert(names,na_a,"one");
-#	mil.line("names.insert(oid(nil),\"two\");");
+#	io.print("names.insert(oid(nil),\"two\");");
 	pa_a := oid(nil);
 	qa_a := insert(names,pa_a,"two");
-#	mil.line("var seps := new(void,str).seqbase(0@0);");
+#	io.print("var seps := new(void,str).seqbase(0@0);");
 	ra_a := new(nil:void,nil:str);
 	seps := bat.setSequenceBase(ra_a,0@0);
-#	mil.line("seps.insert(oid(nil),\",\");");
+#	io.print("seps.insert(oid(nil),\",\");");
 	sa_a := oid(nil);
 	ta_a := insert(seps,sa_a,",");
-#	mil.line("seps.insert(oid(nil),\"\\n\");");
+#	io.print("seps.insert(oid(nil),\"\\n\");");
 	ua_a := oid(nil);
 	va_a := insert(seps,ua_a,"\n");
-#	mil.line("var types := new(void,str).seqbase(0@0);");
+#	io.print("var types := new(void,str).seqbase(0@0);");
 	wa_a := new(nil:void,nil:str);
 	types := bat.setSequenceBase(wa_a,0@0);
-#	mil.line("types.insert(oid(nil),\"oid\");");
+#	io.print("types.insert(oid(nil),\"oid\");");
 	xa_a := oid(nil);
 	ya_a := insert(types,xa_a,"oid");
-#	mil.line("types.insert(oid(nil),\"str\");");
+#	io.print("types.insert(oid(nil),\"str\");");
 	ab_a := oid(nil);
 	bb_a := insert(types,ab_a,"str");
-#	mil.line("var bats := load( names, seps, types, word_file, -1);");
+#	io.print("var bats := load( names, seps, types, word_file, -1);");
 	bats := load(names,seps,types,word_file,-1);
-#	mil.line("print(bats.find(\"one\"),bats.find(\"two\"));");
+#	io.print("print(bats.find(\"one\"),bats.find(\"two\"));");
 	cb_a := find(bats,"one");
 	db_a := find(bats,"two");
 	eb_a := print(cb_a,db_a);
-#	mil.line("quit();");
+#	io.print("quit();");
 	fb_a := quit();
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase'

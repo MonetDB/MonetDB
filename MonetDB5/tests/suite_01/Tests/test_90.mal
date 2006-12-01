@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,20 +8,20 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(20000000));");
+#	io.print("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#	mil.line("# This test at some point caused Monet to hang and\n");
-#	mil.line("# it did not present the error messages at the proper line.\n");
-#	mil.line("# It forgot to echo the input line.\n");
-#	mil.line("#var 34;\n");
+#	io.print("# This test at some point caused Monet to hang and\n");
+#	io.print("# it did not present the error messages at the proper line.\n");
+#	io.print("# It forgot to echo the input line.\n");
+#	io.print("#var 34;\n");
 	ca_a := alarm.time();
 	da_a := print(ca_a);
-#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); time().print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); time().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ea_a := printf("#~BeginVariableOutput~#\n");
 	fa_a := alarm.time();
 	ga_a := print(fa_a);
 	ha_a := printf("#~EndVariableOutput~#\n");
-#	mil.line("quit();");
+#	io.print("quit();");
 	ia_a := quit();
 #Identifer 'time' mapped to 'alarm.time'

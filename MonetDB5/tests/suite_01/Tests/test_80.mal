@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,21 +8,21 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(20000000));");
+#	io.print("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#	mil.line("#exercise simple loop\n");
+#	io.print("#exercise simple loop\n");
 	bats:= mil.take("bats");
 barrier	(ca_a,ca_aH,ca_aT) := newIterator(bats);
-#	mil.line("\tprint(\"enter\");");
+#	io.print("\tprint(\"enter\");");
 	da_a := print("enter");
-#	mil.line("        var tmp := bats.select($2);");
+#	io.print("        var tmp := bats.select($2);");
 	ea_a := mil.getVarTemp($2);
 	tmp := select(bats,ea_a);
-#	mil.line("        tmp.print();");
+#	io.print("        tmp.print();");
 	fa_a := print(tmp);
 redo	(ca_a,ca_aH,ca_aT) := hasMoreElements(bats);
 exit	(ca_a,ca_aH,ca_aT) ;
-#	mil.line("quit();");
+#	io.print("quit();");
 	ga_a := quit();
 print("test dropped: variable argument list ");

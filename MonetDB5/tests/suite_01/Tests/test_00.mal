@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,17 +8,17 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(20000000));");
+#	io.print("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#	mil.line("#problem: Monet -prelude fatal sometimes leaves a monet thread behind.\n");
+#	io.print("#problem: Monet -prelude fatal sometimes leaves a monet thread behind.\n");
 	b := new(nil:int,nil:str,0);
-#	mil.line("var bn:= fragment(b,1,5,str(nil),str(nil));");
+#	io.print("var bn:= fragment(b,1,5,str(nil),str(nil));");
 	ca_a := str(nil);
 	da_a := str(nil);
 	bn := fragment(b,1,5,ca_a,da_a);
-#	mil.line("print(bn);");
+#	io.print("print(bn);");
 	ea_a := print(bn);
-#	mil.line("quit();");
+#	io.print("quit();");
 	fa_a := quit();
 print("test dropped: it uses 4.4. catalogues");

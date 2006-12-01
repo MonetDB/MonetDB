@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,60 +8,60 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("var a:=new(void,int);");
+#	io.print("var a:=new(void,int);");
 	a := new(nil:void,nil:int);
-#	mil.line("a.insert(nil,1);");
+#	io.print("a.insert(nil,1);");
 	aa_a := insert(a,nil,1);
-#	mil.line("a.insert(nil,2);");
+#	io.print("a.insert(nil,2);");
 	ba_a := insert(a,nil,2);
-#	mil.line("a.print();");
+#	io.print("a.print();");
 	ca_a := print(a);
-#	mil.line("var b:=new(oid,int);");
+#	io.print("var b:=new(oid,int);");
 	b := new(nil:oid,nil:int);
-#	mil.line("b.insert(3@0,3);");
+#	io.print("b.insert(3@0,3);");
 	da_a := insert(b,3@0,3);
-#	mil.line("b.insert(4@0,4);");
+#	io.print("b.insert(4@0,4);");
 	ea_a := insert(b,4@0,4);
-#	mil.line("b.print();");
+#	io.print("b.print();");
 	fa_a := print(b);
-#	mil.line("var c:=a.copy().access(BAT_WRITE);;");
+#	io.print("var c:=a.copy().access(BAT_WRITE);;");
 	BAT_WRITE:= mil.take("BAT_WRITE");
 	ga_a := copy(a);
 	c := access(ga_a,BAT_WRITE);
-#	mil.line("c.print();");
+#	io.print("c.print();");
 	ha_a := print(c);
-#	mil.line("var d:=c.insert(b);");
+#	io.print("var d:=c.insert(b);");
 	d := insert(c,b);
-#	mil.line("d.print();");
+#	io.print("d.print();");
 	ia_a := print(d);
-#	mil.line("a.seqbase(0@0);");
+#	io.print("a.seqbase(0@0);");
 	ja_a := bat.setSequenceBase(a,0@0);
-#	mil.line("a.print();");
+#	io.print("a.print();");
 	ka_a := print(a);
-#	mil.line("c:=a.copy().access(BAT_WRITE);");
+#	io.print("c:=a.copy().access(BAT_WRITE);");
 	la_a := copy(a);
 	c := access(la_a,BAT_WRITE);
-#	mil.line("c.print();");
+#	io.print("c.print();");
 	ma_a := print(c);
-#	mil.line("d:=c.insert(b);");
+#	io.print("d:=c.insert(b);");
 	d := insert(c,b);
-#	mil.line("d.print();");
+#	io.print("d.print();");
 	na_a := print(d);
-#	mil.line("b:=new(oid,int);");
+#	io.print("b:=new(oid,int);");
 	b := new(nil:oid,nil:int);
-#	mil.line("b.insert(2@0,3);");
+#	io.print("b.insert(2@0,3);");
 	oa_a := insert(b,2@0,3);
-#	mil.line("b.insert(4@0,4);");
+#	io.print("b.insert(4@0,4);");
 	pa_a := insert(b,4@0,4);
-#	mil.line("b.print();");
+#	io.print("b.print();");
 	qa_a := print(b);
-#	mil.line("c:=a.copy().access(BAT_WRITE);");
+#	io.print("c:=a.copy().access(BAT_WRITE);");
 	ra_a := copy(a);
 	c := access(ra_a,BAT_WRITE);
-#	mil.line("c.print();");
+#	io.print("c.print();");
 	sa_a := print(c);
-#	mil.line("d:=c.insert(b);");
+#	io.print("d:=c.insert(b);");
 	d := insert(c,b);
-#	mil.line("d.print();");
+#	io.print("d.print();");
 	ta_a := print(d);
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase'

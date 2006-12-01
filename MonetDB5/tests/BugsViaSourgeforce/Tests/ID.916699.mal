@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,12 +8,12 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("## integers from -25 to 24\n");
+#	io.print("## integers from -25 to 24\n");
 	aa_a := new(nil:void,nil:int,50);
 	a := bat.setSequenceBase(aa_a,0@0);
-#	mil.line("var i := -25;");
+#	io.print("var i := -25;");
 	i := -25;
-#	mil.line("while(i < 25) a.insert(nil, (i :+= 1));");
+#	io.print("while(i < 25) a.insert(nil, (i :+= 1));");
 barrier	ba_a := true;
 barrier	ca_a := <(i,25);
 !ERROR: "while(i < 25) a.insert(nil, (i :+= 1));"

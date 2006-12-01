@@ -1,5 +1,4 @@
 # Monet Mil to Mal compiler
-#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,50 +8,50 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(20000000));");
+#	io.print("setoid(oid(20000000));");
 	aa_a := calc.oid(20000000);
 	ba_a := calc.setoid(aa_a);
-#	mil.line("#test mark and number primitives\n");
-#	mil.line("var b:= bat.new(str,int);");
+#	io.print("#test mark and number primitives\n");
+#	io.print("var b:= bat.new(str,int);");
 	b := bat.new(nil:str,nil:int);
-#	mil.line("b.insert(\"the\",1);");
+#	io.print("b.insert(\"the\",1);");
 	ca_a := bat.insert(b,"the",1);
-#	mil.line("b.insert(\"quick\",20);");
+#	io.print("b.insert(\"quick\",20);");
 	da_a := bat.insert(b,"quick",20);
-#	mil.line("b.insert(\"brown\",30);");
+#	io.print("b.insert(\"brown\",30);");
 	ea_a := bat.insert(b,"brown",30);
-#	mil.line("b.insert(\"fox\",40);");
+#	io.print("b.insert(\"fox\",40);");
 	fa_a := bat.insert(b,"fox",40);
-#	mil.line("b.insert(\"jumps\",50);");
+#	io.print("b.insert(\"jumps\",50);");
 	ga_a := bat.insert(b,"jumps",50);
-#	mil.line("b.insert(\"over\",60);");
+#	io.print("b.insert(\"over\",60);");
 	ha_a := bat.insert(b,"over",60);
-#	mil.line("b.insert(\"lazy\",70);");
+#	io.print("b.insert(\"lazy\",70);");
 	ia_a := bat.insert(b,"lazy",70);
-#	mil.line("b.insert(\"dog\",80);");
+#	io.print("b.insert(\"dog\",80);");
 	ja_a := bat.insert(b,"dog",80);
-#	mil.line("b.insert(str(nil),90);");
+#	io.print("b.insert(str(nil),90);");
 	ka_a := calc.str(nil);
 	la_a := bat.insert(b,ka_a,90);
-#	mil.line("b.insert(\".\",100);");
+#	io.print("b.insert(\".\",100);");
 	ma_a := bat.insert(b,".",100);
-#	mil.line("b.insert(\"\",int(nil));");
+#	io.print("b.insert(\"\",int(nil));");
 	na_a := calc.int(nil);
 	oa_a := bat.insert(b,"",na_a);
-#	mil.line("b.insert(str(nil),int(nil));");
+#	io.print("b.insert(str(nil),int(nil));");
 	pa_a := calc.str(nil);
 	qa_a := calc.int(nil);
 	ra_a := bat.insert(b,pa_a,qa_a);
-#	mil.line("b.print();");
+#	io.print("b.print();");
 	sa_a := io.print(b);
-#	mil.line("var c:= mark(b,oid(20000050));");
+#	io.print("var c:= mark(b,oid(20000050));");
 	ta_a := calc.oid(20000050);
 	c := algebra.markT(b,ta_a);
-#	mil.line("print(c);");
+#	io.print("print(c);");
 	ua_a := io.print(c);
-#	mil.line("var d:=number(b);");
+#	io.print("var d:=number(b);");
 	d := algebra.number(b);
-#	mil.line("print(d);");
+#	io.print("print(d);");
 	va_a := io.print(d);
-#	mil.line("quit();");
+#	io.print("quit();");
 	wa_a := clients.quit();
