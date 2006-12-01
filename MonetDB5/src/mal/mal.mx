@@ -218,7 +218,7 @@ as well as in user defined module implementations.
 
 @+ Monet Calling Options
 The number of invocation arguments is kept to a minimum.
-See the MonetDB5.conf file for additional system variable settings
+See the monetdb5.conf file for additional system variable settings
 @
 @h
 #define MAXSCRIPT 64

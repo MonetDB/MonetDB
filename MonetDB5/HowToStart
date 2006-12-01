@@ -296,7 +296,7 @@ Running MonetDB with valgrind on Linux
 
 In case you intend (or need) to run MonetDB with the memory debugging and
 profiling tool "valgrind", you need to take care of the following steps:
- - set option "gdk_alloc_map" to "no" (in MonetDB5.conf: "gdk_alloc_map=no",
+ - set option "gdk_alloc_map" to "no" (in monetdb5.conf: "gdk_alloc_map=no",
    resp. on the Mserver's commandline: "--set gdk_alloc_map=no")
  - tell valgrind to use 8-byte alignment ("valgrind --alignment=8"), hence:
    "valgrind --alignment=8 Mserver --set gdk_alloc_map=no ..."

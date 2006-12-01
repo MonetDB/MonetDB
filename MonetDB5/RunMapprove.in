@@ -19,4 +19,4 @@ type -a @PYTHON@
 # execute the script
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec @PYTHON@ "${builddir}/src/testing/Mapprove.py" -5 --config="${builddir}/conf/MonetDB5.conf" --TSTTRGBASE="${builddir}" "${@--r}"
+exec @PYTHON@ "${builddir}/src/testing/Mapprove.py" -5 --config="${builddir}/conf/monetdb5.conf" --TSTTRGBASE="${builddir}" "${@--r}"

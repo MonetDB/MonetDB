@@ -170,7 +170,7 @@ function start_mserver()
 	# make sure the configuration file is in place
 	if [ ! -f $1/.monetdb.conf ]
 	then
-			cp $MONET5_PREFIX/etc/MonetDB5.conf $1/.monetdb.conf
+			cp $MONET5_PREFIX/etc/monetdb5.conf $1/.monetdb.conf
 	fi
 	pid=`getPID $1`
 	#echo "start server $1 $pid"
@@ -319,7 +319,7 @@ function create_database ()
 		if [ "$answer" = "yes" ]
 		then
 			mkdir $1
-			cp $MONET5_PREFIX/etc/MonetDB5.conf $1/.monetdb.conf
+			cp $MONET5_PREFIX/etc/monetdb5.conf $1/.monetdb.conf
 			echo "include sql;sql.start();" > $1/.mserver5.dbinit
 			echo "Database '$1' initialized for SQL sessionsi."
 			return
@@ -328,7 +328,7 @@ function create_database ()
 		if [ "$answer" = "yes" ]
 		then
 			mkdir $1
-			cp $MONET5_PREFIX/etc/MonetDB5.conf $1/.monetdb.conf
+			cp $MONET5_PREFIX/etc/monetdb5.conf $1/.monetdb.conf
 			echo "Database '$1' initialized"
 			echo ""
 			echo "To accept SQL sessions in the future start the server"

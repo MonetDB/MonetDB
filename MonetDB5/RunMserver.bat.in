@@ -8,6 +8,6 @@ set MOD_PATH=%builddir%\src\applications\datacell\.libs;%builddir%\src\compiler\
 set PATH=%builddir%\src\tools;%PATH%
 set PATH=%MOD_PATH%;%builddir%\src\mal;%PATH%
 
-"%builddir%\src\tools\mserver5.exe" "--config=%builddir%\conf\MonetDB5.conf" --set "monet_mod_path=%MOD_PATH%" %*
+"%builddir%\src\tools\mserver5.exe" "--config=%builddir%\conf\monetdb5.conf" --set "monet_mod_path=%MOD_PATH%" %*
 
 endlocal

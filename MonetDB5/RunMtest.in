@@ -72,4 +72,4 @@ type -a @PYTHON@
 
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
-exec Mtest.py -5 --monet_mod_path="${MOD_PATH}" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --config="${builddir}/conf/MonetDB5.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" "${@--r}"
+exec Mtest.py -5 --monet_mod_path="${MOD_PATH}" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --config="${builddir}/conf/monetdb5.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" "${@--r}"

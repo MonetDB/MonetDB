@@ -16,6 +16,6 @@ set PATH=%builddir%\src\common;%builddir%\src\gdk;%builddir%\src\mapi\clients\C;
 REM execute Mapprove.py in the source directory
 cd %srcdir%
 
-call python "%builddir%\src\testing\Mapprove.py" -5 "--config=%builddir%\conf\MonetDB5.conf" "--TSTTRGBASE=%builddir%" %*
+call python "%builddir%\src\testing\Mapprove.py" -5 "--config=%builddir%\conf\monetdb5.conf" "--TSTTRGBASE=%builddir%" %*
 
 :end

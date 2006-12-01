@@ -76,7 +76,7 @@ prints a character:
 
 On Linux, the malloc library appears to be using anonymous virtual memory, 
 which goes undetected.  If you want to see all your memory in the map, 
-lower the gdk_mmap threshold in MonetDB5.conf to a low value (say 64KB).
+lower the gdk_mmap threshold in monetdb5.conf to a low value (say 64KB).
 @-
 @mal
 command vmStatistics(minsize:lng) :bat[:str,:lng] 
