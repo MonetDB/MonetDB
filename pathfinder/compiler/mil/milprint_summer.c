@@ -8951,11 +8951,11 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
 static int
 expandable (PFcnode_t *c)
 {
-    if (strcmp(LL(c)->sem.var->qname.ns.prefix, "#pf")) return 0; 
 #ifdef HAVE_PFTIJAH
     if (!noTijahFun(LR(c)) return 0;
 #endif
-    if (noConstructor(LR(c))) return 1;
+    if (strcmp(LL(c)->sem.var->qname.ns.prefix, "#pf") == 0) 
+        if (noConstructor(LR(c))) return 1;
     return noForBetween(LL(c)->sem.var, R(c));
 }
 
