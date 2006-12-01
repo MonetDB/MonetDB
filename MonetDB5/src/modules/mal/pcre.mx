@@ -896,8 +896,8 @@ PCREselect(int *res, str *pattern, int *bid)
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
-#endif
 	return msg;
+#endif
 }
 
 str
