@@ -107,10 +107,10 @@ xquery("mapi-dm"        ,query , 0).printf();
 #
 xquery("seq"            ,query , 0).printf();
 &1 0 10 1 10
-# xquery_result	# table_name
-# xml	# name
-# varchar	# type
-# 60	# length
+% xquery_result	# table_name
+% xml	# name
+% varchar	# type
+% 60	# length
 [ "1"	]
 [ "2.300000"	]
 [ "attribute attr { val }"	]
