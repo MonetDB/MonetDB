@@ -68,12 +68,13 @@ stderr of test 'ID.1267018.swallowed_error_messages-1` in directory 'tests/BugsV
 # 19:00:38 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=54507 ID.1267018.swallowed_error_messages-1.xq
 # 19:00:38 >  
 
-MAPI  = monetdb@localhost:30643
+MAPI  = monetdb@localhost:35921
 QUERY = doc("abcdef.xml")
 ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
         !ERROR: [shred_url]: first error was:
         !ERROR: shred: cannot stat `abcdef.xml': No such file or directory
         !ERROR: CMDshred_url: operation failed.
+        !ERROR: interpret_params: leftfetchjoin(param 2): evaluation error.
 
 # 19:00:38 >  
 # 19:00:38 >  Done.
