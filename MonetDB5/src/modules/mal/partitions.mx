@@ -32,9 +32,9 @@ The following MAL program illustrates the snippet of actions needed:
 @example
 	bpm.open();
 	Ralias:= bpm.deposit("myversion",R);
-	R1:= bpm.partition(Ralias,nil:oid,100:oid,nil:int,nil:int);
-	R2:= bpm.partition(Ralias,101:oid,200:oid,nil:int,nil:int);
-	R3:= bpm.partition(Ralias,201:oid,nil:oid,nil:int,nil:int);
+	R1:= bpm.rangePartition(Ralias,nil:oid,100:oid,nil:int,nil:int);
+	R2:= bpm.rangePartition(Ralias,101:oid,200:oid,nil:int,nil:int);
+	R3:= bpm.rangePartition(Ralias,201:oid,nil:oid,nil:int,nil:int);
 	bpm.close();
 @end example
 The command @code{pbm.deposit} accepts any BAT and
@@ -52,7 +52,21 @@ not be destroyed, because its identity is the handle to access
 the partitions later on. The call @code{bpm.disgard(R)} removes all
 the partitions.
 
-The partition manager supports hash-based partitioning on oids
+The partition manager supports hash-based partitioning.
+It accepts two arguments, which denote the number of hash buckets
+on the head and tail respectively.
+@example
+	bpm.open();
+	Ralias:= bpm.deposit("myHashVersion",R);
+	bpm.hashPartition(Ralias,5,2);
+	bpm.close();
+@end example
+This example leads to 10 partitions.
+Repartition automatically occurs when a new hash size is given.
+
+It should not come as a surprise, that a combination of
+hashing and range is also provided using the
+commands @code{bpm.hashRangePartition()} and @code{bpm.rangeHashPartition()}.
 
 @- Using partitions
 The partitioned BAT can be used in two ways. A query plan can be
@@ -98,8 +112,8 @@ the range information again visible in
 the intermediate plan. This can be used by optimizers
 for symbolic evaluation.
 @example
-@bpm.open();
-	Ralias:= bpm.take("myversion"); # get the partition alias
+	bpm.open();
+	Ralias:bat[:void,:int]:= bpm.take("myversion"); # get the partition alias
 	R0:= bpm.take(Ralias, 0@0, 100@0, nil:int,nil:int); 
 	tu:= algebra.select(R0,0,100);
 	R1:= bpm.take(Ralias, 101@0, 200@0, nil:int,nil:int); 
@@ -121,7 +135,7 @@ Once the transaction is commited, the updates are propagated
 (in parallel) to all partitions.
 @example
 	bpm.open();
-	R := bpm.take("myversion"); # get the partition alias
+	R:bat[:void,:int] := bpm.take("myversion"); # get the partition alias
 	bpm.insert(R, Rinsert);	# handle pending inserts
 	bpm.delete(R, Rdelete);	# handle pending deletes
 	bpm.close();
