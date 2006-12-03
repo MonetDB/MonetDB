@@ -486,13 +486,6 @@ tablet_export str TABnextPage(int *ret);
 tablet_export str TABprevPage(int *ret);
 tablet_export str TABgetPage(int *ret, int *pnr);
 tablet_export str TABgetPageCnt(int *ret);
-tablet_export int init_tablet(int *debug);
-tablet_export int tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *nr);
-tablet_export int tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void
-**s, int *nr);
-tablet_export int tablet_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *
-nr);
-tablet_export int tablet_output(BAT *order, BAT *seps, BAT *bats, void **s);
 tablet_export str CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, int *nr);
 tablet_export str CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids, str
 *filename, int *nr);
@@ -1741,15 +1734,7 @@ TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s)
 	return ~(size_t) 0;
 }
 
-int
-init_tablet(int *debug)
-{
-	tablet_debug = *debug;
-
-	return GDK_SUCCEED;
-}
-
-int
+static void
 tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 {
 	size_t nr = ~(size_t)0;
@@ -1757,13 +1742,8 @@ tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 	if (*N >= 0)
 		nr = *N;
 	*bats = TABLETload(names, seps, types, datafile, nr);
-	if (*bats) {
-		return GDK_SUCCEED;
-	} else {
-		return GDK_FAIL;
-	}
 }
-int
+static void
 tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void **s, int *N)
 {
 	bstream *b = NULL;
@@ -1773,25 +1753,18 @@ tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void **s, int *N)
 		nr = *N;
 	*bats = TABLETinput(names, seps, types, b = bstream_create(*(stream **) s, SIZE), NULL, nr);
 	bstream_destroy(b);
-	if (*bats) {
-		return GDK_SUCCEED;
-	} else {
-		return GDK_FAIL;
-	}
 }
 
-int
+void
 tablet_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *nr)
 {
 	TABLETdump(names, seps, bats, datafile, *nr);
-	return GDK_SUCCEED;
 }
 
-int
+static void
 tablet_output(BAT *order, BAT *seps, BAT *bats, void **s)
 {
-	size_t res = TABLEToutput(order, seps, bats, *(stream **) s);
-	return ((res == ~(size_t) 0) ? GDK_FAIL : GDK_SUCCEED);
+	(void) TABLEToutput(order, seps, bats, *(stream **) s);
 }
 
 @+ MAL interface
@@ -1889,6 +1862,7 @@ str
 CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s)
 {
 	BAT *names, *seps, *bats;
+	(void) ret;
 
 	if ((names = BATdescriptor(*nameid)) == NULL) {
 		return throwMessage("tablet.output", "BAT missing");
@@ -1902,7 +1876,7 @@ CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s)
 		BBPunfix(seps->batCacheid);
 		return throwMessage("tablet.output", "BAT missing");
 	}
-	*ret = tablet_output(names, seps, bats, s);
+	tablet_output(names, seps, bats, s);
 	BBPunfix(names->batCacheid);
 	BBPunfix(seps->batCacheid);
 	BBPunfix(bats->batCacheid);

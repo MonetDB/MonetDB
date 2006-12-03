@@ -85,103 +85,8 @@ transaction_export str TRNsub_commit(int *ret, int *bid);
 transaction_export str TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-transaction_export str TRNtrans_prev(int *ret, int *bid);
-transaction_export str TRNtrans_alpha(int *ret, int *bid);
-transaction_export str TRNtrans_delta(int *ret, int *bid);
 transaction_export str TRNsubcommit(int *ret, int *bid);
 
-int
-global_sync(bit *ret)
-{
-	*ret = BBPsync(BBPsize, NULL)?FALSE:TRUE;
-	return GDK_SUCCEED;
-}
-
-int
-global_commit(bit *ret)
-{
-	*ret = TMcommit()?FALSE:TRUE;
-	return GDK_SUCCEED;
-}
-
-int
-global_abort(bit *ret)
-{
-	*ret = TMabort()?FALSE:TRUE;
-	return GDK_SUCCEED;
-}
-
-int 
-global_subcommit(bit* ret, BAT *bl)
-{
-	*ret = TMsubcommit(bl)?FALSE:TRUE;
-	return GDK_SUCCEED;
-}
-
-int
-trans_alpha(BAT **retval, BAT *b)
-{
-	*retval = BATalpha(b);
-	return retval ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-trans_delta(BAT **retval, BAT *b)
-{
-	*retval = BATdelta(b);
-	return retval ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-trans_prev(BAT **retval, BAT *b)
-{
-	*retval = BATprev(b);
-	return retval ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-trans_commit(BAT *b, ...)
-{
-	va_list ap;
-
-	va_start(ap, b);
-	do {
-		BATcommit(b);
-	} while ((b = va_arg(ap, BAT *)) != 0);
-
-	va_end(ap);
-	return GDK_SUCCEED;
-}
-
-int
-trans_abort(BAT *b, ...)
-{
-	va_list ap;
-
-	va_start(ap, b);
-	do {
-		BATundo(b);
-		if (b->batPersistence == PERSISTENT)
-			BBPsave(b);
-	} while ((b = va_arg(ap, BAT *)) != 0);
-
-	va_end(ap);
-	return GDK_SUCCEED;
-}
-
-int
-trans_clean(BAT *b, ...)
-{
-	va_list ap;
-
-	va_start(ap, b);
-	do {
-		BATfakeCommit(b);
-	} while ((b = va_arg(ap, BAT *)) != 0);
-
-	va_end(ap);
-	return GDK_SUCCEED;
-}
 @
 @include prelude.mx
 @- Wrappers
@@ -234,7 +139,7 @@ TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 
 		if (b)
-			BATclear(b);
+			BATfakeCommit(b);
 		else
 			return throwMessage("trans_commit", "BAT not accessible");
 		BBPunfix(b->batCacheid);
@@ -291,7 +196,7 @@ TRNtrans_prev(int *ret, int *bid)
 	b= BATdescriptor(*bid);
 	if (b  == NULL) 
 		return throwMessage("transaction.prev", "Cannot access descriptor");
-	trans_prev(&bn,b);
+	bn = BATprev(b);
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
