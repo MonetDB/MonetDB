@@ -540,8 +540,16 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	char *statement = triggered_action->h->next->next->data.sval;
 	
 	if (opt_ref) {
-		old_name = opt_ref->h->data.sval;
-		new_name = opt_ref->h->next->data.sval;
+		dnode *dl = opt_ref->h;
+		for ( ; dl; dl = dl->next) {
+			/* list (new(1)/old(0)), char */
+			char *n = dl->data.lval->h->next->data.sval;
+
+			if (!dl->data.lval->h->data.ival) 
+				old_name = n;
+			else
+				new_name = n;
+		}
 	}
 	if (!schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
@@ -1467,8 +1475,16 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		sql_table *t = NULL; 
 
 		sq = scope_subquery(sql, NULL, subquery, ek);
+		/* make sure we get a list of ordered columns */
+		if (sq && sq->type == st_ordered) {
+			stmt *order = stmt_dup(sq->op1.stval);
+			stmt *s = stmt_dup(sq->op2.stval);
+			stmt_destroy(sq);
+			sq = sql_reorder(order, s);
+		}
 		if (!sq)
 			return NULL;
+
 		/* create table */
 		t = mvc_create_table(sql, s, name, 0, temp, commit_action, -1);
 		as_subquery(sql, t, sq, column_spec);

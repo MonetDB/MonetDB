@@ -2012,10 +2012,15 @@ old_or_new_values_alias_list:
        
 old_or_new_values_alias:
 	/* is really a correlation name */
-       OLD opt_row table_name 	{ $$ = append_symbol(append_int(L(), 0), $3); }
- |  sqlNEW opt_row table_name 	{ $$ = append_symbol(append_int(L(), 1), $3); }
- |     OLD TABLE table_name 	{ $$ = append_symbol(append_int(L(), 0), $3); }
- |  sqlNEW TABLE table_name 	{ $$ = append_symbol(append_int(L(), 1), $3); }
+       OLD opt_row opt_as ident	{ $$ = append_string(append_int(L(), 0), $4); }
+ |  sqlNEW opt_row opt_as ident	{ $$ = append_string(append_int(L(), 1), $4); }
+ |     OLD TABLE opt_as ident 	{ $$ = append_string(append_int(L(), 0), $4); }
+ |  sqlNEW TABLE opt_as ident 	{ $$ = append_string(append_int(L(), 1), $4); }
+ ;
+
+opt_as:
+    /* empty */
+ |  AS
  ;
 
 opt_row:
