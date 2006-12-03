@@ -22,19 +22,19 @@ Over..
 # 17:05:54 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-    <hello>
-        <world>
-        </world>
-    </hello>
- 
-    <hello>
-        <world>
-        </world>
-    </hello>
-</XQueryResult>
+<XQueryResult><hello x="y" lang="en">
+  <foo>text of node foo<bar>text of node bar</bar></foo>
+  <!-- a comment node -->
+  <?action beeeep?>
+  <world/>
+</hello><hello x="y" lang="en">
+  <foo>text of node foo<bar>text of node bar</bar></foo>
+  <!-- a comment node -->
+  <?action beeeep?>
+  <world/>
+</hello></XQueryResult>
 
-# 17:05:54 >  
-# 17:05:54 >  Done.
-# 17:05:54 >  
+# 16:20:04 >  
+# 16:20:04 >  Done.
+# 16:20:04 >  
 

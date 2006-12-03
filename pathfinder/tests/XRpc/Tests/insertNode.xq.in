@@ -1,0 +1,3 @@
+import module namespace tf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
+
+execute at { "localhost" } { tf:insertNode(<a/>) }

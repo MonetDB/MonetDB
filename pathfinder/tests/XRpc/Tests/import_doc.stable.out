@@ -14,8 +14,10 @@ module("unix");
 
 var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/XRpc/Tests";
 
-shred_doc(TSTSRCDIR + "/" + "hello.xml", "hello.xml");
-# Shredded XML doc("hello.xml"), total time after commit=0.65s
+shred_doc(TSTSRCDIR + "/" + "hello.xml", "hello.xml", "xrpc-docs", 25LL);
+# shredding with holes: pagesize=65536, #fillsize=49152
+# Elapsed time = 001ms 029us [068us/node]
+# Shredded 1 XML document (hello.xml), total time after commit=0.060s
 
 commit();
 quit();

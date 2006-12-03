@@ -162,6 +162,7 @@ static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c);
 static int
 var_is_used (PFvar_t *v, PFcnode_t *e);
+int PFqueryType(PFcnode_t *c);
 
 /* tests type equality (not only structural 'PFty_eq' 
    and without hierarchy 'PFty_subtype' */
@@ -1287,24 +1288,23 @@ expand (opt_t *f, int cur_level)
             "expOid := nil;\n"
             "var iter_expOid := expOid_iter.reverse();\n"
             "expOid_iter := nil;\n"
-            "var oidMap_expOid := outer%03u.leftjoin(iter_expOid);\n",
+            "var oidMap_expOid := outer%03u.chk_order().leftjoin(iter_expOid.chk_order());\n",
             cur_level);
 
     /* if we don't have a stable sort, we should be sure, that the
        mapping relation is refined on the tail */
     milprintf(f,
-            "# FIXME: refine needed to make "
-            "'outer%03u.leftjoin(iter_expOid)' a stable join\n"
-            "var temp_sort := oidMap_expOid.hmark(0@0)"
+            "if (not(ordered(reverse(outer%03u)) and ordered(iter_expOid) and ordered(reverse(iter_expOid)))) {\n"
+            "  var temp_sort := oidMap_expOid.hmark(0@0)"
                                           ".CTrefine(oidMap_expOid.tmark(0@0))"
                                           ".mirror();\n"
-            "oidMap_expOid := temp_sort.leftfetchjoin("
+            "  oidMap_expOid := temp_sort.leftfetchjoin("
                                         "oidMap_expOid.hmark(0@0))"
                                       ".reverse()"
                                               ".leftfetchjoin("
                                                 "oidMap_expOid.tmark(0@0))\n;"
-            "temp_sort := nil;\n",
-            cur_level);
+            "}\n",
+            cur_level, cur_level);
    
     milprintf(f,
             "iter_expOid := nil;\n"
@@ -1381,7 +1381,7 @@ mapBack (opt_t *f, int cur_level)
             "var iter_oidMap := inner%03u.reverse();\n",
             cur_level);
     milprintf(f,
-            "var oid_oidMap := iter.leftfetchjoin(iter_oidMap);\n"
+            "var oid_oidMap := iter.leftjoin(iter_oidMap).tmark(0@0);\n"
             "iter_oidMap := nil;\n"
             "iter := oid_oidMap.leftfetchjoin(outer%03u);\n",
             cur_level);
@@ -1525,9 +1525,10 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
     milprintf(f, "iter := selected.mirror().join(iter%03u);\n", bool_res);
     milprintf(f, "iter := iter.tmark(0@0);\n");
     milprintf(f, "outer%03u := iter;\n", cur_level);
-    milprintf(f, "order_%03u := outer%03u.leftfetchjoin(inner%03u.reverse())"
+    milprintf(f, "var inner := inner%03u.tsort();\n", cur_level-1);
+    milprintf(f, "order_%03u := outer%03u.leftfetchjoin(inner.hmark(min(inner)))"
                                         ".leftfetchjoin(order_%03u);\n",
-              cur_level, cur_level, cur_level-1,cur_level-1);
+              cur_level, cur_level, cur_level-1);
     milprintf(f, "iter := iter.mark(1@0);\n");
     milprintf(f, "inner%03u := iter;\n", cur_level);
     milprintf(f, "loop%03u := inner%03u;\n", cur_level, cur_level);
@@ -5816,9 +5817,10 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                     fst_res);
         } else {
             milprintf(f,
-                    "match_outer%03u := iter.leftfetchjoin(inner%03u.reverse())"
+                    "var inner := inner%03u.tsort();\n"
+                    "match_outer%03u := iter.leftfetchjoin(inner.hmark(min(inner)))"
                                            ".leftfetchjoin(outer%03u);\n",
-                    fst_res, cur_level, cur_level);
+                    cur_level, fst_res, cur_level);
         }
 
         milprintf(f,
@@ -6144,11 +6146,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 
     /* pushdown stuff */
     milprintf(f,
-            "# order_fst isn't needed until now\n"
-            "# (cannot be pushed below the theta-join due to the 'iter := fst_iter;' hereafter)\n"
-            "# var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse());\n"
-            "%s",
-            cur_level, order_snd);
+            "# order_fst isn't needed until now\n%s", order_snd);
 
     /* shortcut to speed up xmark query11 */
     if (res->kind == c_var && res->sem.var == LLL(snd)->sem.var)
@@ -6224,15 +6222,24 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
  * @param f the Stream the MIL code is printed to
  * @param cur_level the level of the for-scope
  * @param counter the actual offset of saved variables
- * @param dsts the destinations of RPC calls
+ * @param xrpc the core node containing all information we need
+ *
+ *              xrpc (query type)
+ *             /    \
+ *            URI (FunctionCall)->sem.apply.fun
+ *                   |
+ *                  args
+ *
  * @param apply the function application information
  * @param args the head of the argument list
  */
 static void
-translateXRPCCall (opt_t *f, int cur_level, int counter, 
-        PFcnode_t *dsts, PFapply_t apply, PFcnode_t *args)
+translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
-    int i = 0, rc = NORMAL;
+    int i = 0, rc = NORMAL, qTpe = PFqueryType(xrpc);
+    PFcnode_t *dsts = L(xrpc);
+    PFapply_t apply = R(xrpc)->sem.apply;
+    PFcnode_t *args = RD(xrpc);
 
     if (apply.fun->builtin){
         milprintf(f,
@@ -6355,7 +6362,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter,
             "  fun_vid%03u := ([-](fun_vid%03u.[lng](), fun_base%03u)).[oid]();\n"
             "  var res := doLoopLiftedRPC(genType,\n"
             "                             \"%s\", \"%s\", \"%s\",\n"
-            "                             iterc_total, %d,\n"
+            "                             %d, %d, iterc_total,\n"
             "                             ws, rpc_dsts,\n"
             "                             fun_vid%03u, fun_iter%03u,\n"
             "                             fun_item%03u, fun_kind%03u,\n"
@@ -6375,8 +6382,8 @@ translateXRPCCall (opt_t *f, int cur_level, int counter,
             "  }\n"
             "} # end of XRPC function call\n",
         counter, counter, counter,
-        apply.fun->qname.ns.uri, apply.fun->atURI,
-        apply.fun->qname.loc,    apply.fun->arity,
+        apply.fun->qname.ns.uri, apply.fun->atURI, apply.fun->qname.loc,    
+        qTpe, apply.fun->arity,
         counter, counter, counter, counter);
 }
 
@@ -6710,7 +6717,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         rc = translate2MIL (f, code, cur_level, counter, L(args));
         milprintf(f,
-                "if (iter.tunique().count() != loop%03u.count()) "
+                "var cnt := iter.tunique().count();\n"
+                "if ((cnt != loop%03u.count()) or (cnt != ipik.count()))"
                 "{ ERROR (\"err:FORG0005: function fn:exactly-one expects "
                 "exactly one value.\"); }\n",
                 cur_level);
@@ -6720,7 +6728,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         rc = translate2MIL (f, code, cur_level, counter, L(args));
         milprintf(f,
-                "if (iter.tunique().count() != iter.count()) "
+                "if (iter.tunique().count() != ipik.count()) "
                 "{ ERROR (\"err:FORG0003: function fn:zero-or-one expects "
                 "at most one value.\"); }\n");
         return rc;
@@ -8683,8 +8691,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
              *                   |
              *                  args
              */
-            translateXRPCCall(f, cur_level, counter, L(c),
-                    R(c)->sem.apply, RD(c));
+            translateXRPCCall(f, cur_level, counter, c);
             rc = NORMAL;
             break;
         case c_orderby:
@@ -8713,13 +8720,17 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     "sorting := sorting.CTrefine(pos);\n"
                     "ipik := sorting.hmark(0@0);\n"
                     "sorting := nil;\n"
-                    "iter := ipik.leftfetchjoin(iter);\n"
+                    "inner%03d := inner%03d.leftjoin(reverse(ipik.leftfetchjoin(iter))).tmark(0@0);\n"
+                    "iter := ipik.mark(1@0);\n"
+                    "inner%03d := inner%03d.leftfetchjoin(iter);\n"
+                    "loop%03d := iter;\n"
                     "pos := ipik.leftfetchjoin(pos);\n"
                     "item%s := ipik.leftfetchjoin(item%s);\n"
                     "kind := ipik.leftfetchjoin(kind);\n"
                     "} # end of order_by\n",
                     counter, counter, cur_level,
                     counter, counter,
+                    cur_level, cur_level, cur_level, cur_level, cur_level,
                     kind_str(rc), 
                     kind_str(rc));
             break;
@@ -8907,17 +8918,14 @@ noTijahFun (PFcnode_t *c)
 static int
 noForBetween (PFvar_t *v, PFcnode_t *c)
 {
-    int i, j;
+    int i;
     if (c->kind == c_for)
     {
-        if (noForBetween (v, LR(c)) == 1)
-                return 1;
-        else if (var_is_used (v, R(c)))
+        if (noForBetween (v, LR(c)) == 0)
                 return 0;
-        else return 2;
+        if (var_is_used (v, R(c)))
+                return 0;
     }
-    else if (c->kind == c_var && c->sem.var == v)
-        return 1;
     else if (c->kind == c_apply &&
              !PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_pf,"join")))
     {
@@ -8926,9 +8934,9 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
     } 
     else
         for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
-            if ((j = noForBetween (v, c->child[i])) < 2)
-                return j;
-    return 2;
+            if (noForBetween (v, c->child[i]) == 0)
+                return 0;
+    return 1;
 }
                                                                                                                                                              
 /**
@@ -8942,12 +8950,11 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
 static int
 expandable (PFcnode_t *c)
 {
-    if (noConstructor(LR(c)) 
 #ifdef HAVE_PFTIJAH
-	    && noTijahFun(LR(c))
+    if (!noTijahFun(LR(c)) return 0;
 #endif
-        )
-	return 1;
+    if (strcmp(LL(c)->sem.var->qname.ns.prefix, "#pf") == 0) 
+        if (noConstructor(LR(c))) return 1;
     return noForBetween(LL(c)->sem.var, R(c));
 }
 
@@ -9108,7 +9115,7 @@ simplifyCoreTree (PFcnode_t *c)
                added everywhere. To avoid multiple calls
                of simplifyCoreTree for one subtree do
                this test separately before all others. */
-            else if (var_is_used (LL(c)->sem.var, R(c)) == 1 && expandable (c))
+            else if (var_is_used (LL(c)->sem.var, R(c)) == 1 && expandable (c) )
             {
                 replace_var (LL(c)->sem.var, LR(c), R(c));
                 *c = *(R(c));
@@ -9177,7 +9184,7 @@ simplifyCoreTree (PFcnode_t *c)
                       positional variable - it would get screwed up by
                       the nesting.
             */
-            if (LR(c)->kind == c_for && LLR(c)->kind != c_var)
+            if (LR(c)->kind == c_for && LLR(c)->kind != c_var && R(c)->kind != c_let && R(c)->kind != c_orderby)
             {
                 PFcnode_t *c_old = PFmalloc (sizeof (PFcnode_t));
                 *c_old = *c;

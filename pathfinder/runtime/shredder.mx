@@ -1448,7 +1448,7 @@ shredder_create(char *location,
             sb->abortSize = BATcount(sb->bat);
             if (sb->def->tailType == TYPE_str) {
                 sb->heapSize = sb->bat->theap->free;
-                if (!GDK_ELIMDOUBLES(sb->bat->theap)) {
+                if (GDK_ELIMDOUBLES(sb->bat->theap)) {
                     sb->heapBackup = GDKmalloc(GDK_STRHASHTABLE*sizeof(var_t));
                     if (!sb->heapBackup) {
                         GDKerror("shredder_create: malloc failure\n");
@@ -1468,7 +1468,7 @@ shredder_create(char *location,
             if ((i == PRE_NID || i == NID_RID || i == MAP_PID) && pageFree) {
                 tt = TYPE_oid;
             }
-            sb->bat = BATnew(ht, tt, BATTINY);
+            sb->bat = BATnew(ht, tt, (sb->def->sizeFact * shredCtx->estSize));
             if (tt == TYPE_void) BATseqbase(BATmirror(sb->bat), 0);
             BATseqbase(sb->bat, 0);
         }
@@ -1478,11 +1478,10 @@ shredder_create(char *location,
         }
 
         /* make sure the bat is at least as big as its leader (that is later used to check overflow) */
-        oid est_size = shredBAT_newsize(sb, BATcount(sb->bat) + (sb->def->sizeFact * shredCtx->estSize));
         oid tab_size = shredCtx->dstBAT[sb->def->table].size;
-        if (est_size < tab_size) est_size = tab_size;
-        if (sb->size < est_size && !shredBAT_extend(sb, est_size)) {
-            return shredder_free(shredCtx, 0);
+        if (sb->size < tab_size) {
+            sb->size = BATcount(sb->bat);
+            if (!shredBAT_extend(sb, tab_size)) return shredder_free(shredCtx, 0);
         }
         sb->cast.voidCAST =(void*)BUNfirst(sb->bat);
     }
@@ -1682,7 +1681,6 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
                 return GDK_FAIL;
             }
         }
-        BATsetaccess(docBAT, BAT_READ);
     }
     return GDK_SUCCEED; 
 }
@@ -1734,9 +1732,6 @@ shred(BAT *docBAT,
     /* start timer */
     start = GDKusec();
 
-    if (coll_lock) {
-        MT_lock_set(coll_lock, "shredder_start"); 
-    }
 
     /* compute amount of free nodes per block from a percentage(opt string param) */
     size_t pageFree = percentage;
@@ -1761,6 +1756,10 @@ shred(BAT *docBAT,
         location = "<input buffer>";
     } else {
         location = "<input stream>";
+    }
+
+    if (coll_lock) {
+        MT_lock_set(coll_lock, "shredder_start"); 
     }
 
     /* shred it */

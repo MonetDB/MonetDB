@@ -257,8 +257,9 @@ PROC doLoopLiftedRPC(
         str rpc_module,
         str rpc_uri,
         str rpc_method,
-        lng iterc_total,
+        int funType,
         int arity,
+        lng iterc_total,
         BAT[void, BAT] ws,
         BAT[oid, str] rpc_dsts,
         BAT[void, oid] fun_vid,
@@ -283,7 +284,8 @@ PROC doLoopLiftedRPC(
         var time_milClntSeria := msec();
 
         # get iteration numbers for this destination
-        var iter_dst := rpc_dsts.ord_uselect($t).mirror();
+        var iter_dst := [oid](rpc_dsts.ord_uselect($t).reverse());
+            iter_dst := iter_dst.reverse().mirror();
 
         # retrieve the frag of fun_vid, fun_iter, fun_item and fun_kind
         # for this iteration.
@@ -297,9 +299,8 @@ PROC doLoopLiftedRPC(
         var fun_kind_dst := indices.fetchjoin(fun_kind).tmark(0@0);
 
         # renumber the iters, starting from 1
-        iter_dst     := iter_dst.mark(0@0);
         fun_iter_dst := fun_iter_dst.leftjoin(iter_dst.mark(1@0));
-        fun_iter_dst := fun_iter_dst.tmark(0@0);
+        fun_iter_dst := [oid](fun_iter_dst.tmark(0@0));
 
         var local_name := "rpc_res_00" + str(int($h)+1);
         var rpc_oid;
@@ -333,17 +334,29 @@ PROC doLoopLiftedRPC(
     }
     lock_destroy(mylock);
 
+
+    var res_iter := bat(void,oid).seqbase(0@0);
+    var res_item := bat(void,oid).seqbase(0@0);
+    var res_kind := bat(void,int).seqbase(0@0);
+    var res_bats := bat(void,bat,4).seqbase(0@0);
+
+    if (funType = 1){
+        # Called function is an updating function, so no results to
+        # retrieve
+        res_bats.append(res_iter).append(res_item).append(res_kind);
+        return res_bats.access(BAT_READ);
+    }
+
     # retrieve results for this destination, and map the results back to
     # the original iteration number
     var proc_res := [get_rpc_res](rpc_results.tmark(0@0), rpc_results.hmark(0@0), 
                                   const ws, const int_values, const dbl_values, 
                                   const str_values);
-    var res_iter := proc_res.[fetch](0).[leftfetchjoin](rpc_iter);
-    var res_item := proc_res.[fetch](1);
-    var res_kind := proc_res.[fetch](2);
+    res_iter := proc_res.[fetch](0).[leftfetchjoin](rpc_iter);
+    res_item := proc_res.[fetch](1);
+    res_kind := proc_res.[fetch](2);
 
     # initialize res_bat with the results for the first destination 
-    var res_bats := bat(void,bat,3).seqbase(0@0);
     res_bats.append(res_iter.fetch(0));
     res_bats.append(res_item.fetch(0));
     res_bats.append(res_kind.fetch(0));

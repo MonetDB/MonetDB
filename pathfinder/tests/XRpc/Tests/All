@@ -19,3 +19,5 @@ returnParent
 returnPreceding
 returnPrecedingSibling
 returnSelf
+
+insertNode

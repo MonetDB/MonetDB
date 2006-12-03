@@ -30,6 +30,7 @@ xquery("count(doc(\"shred_err01.xml\")//a)").printf();
 !ERROR: [shred_url]: first error was:
 !ERROR: shred: cannot stat `shred_err01.xml': No such file or directory
 !ERROR: CMDshred_url: operation failed.
+
 !ERROR: interpret: no matching MIL operator to 'printf(void)'.
 !MAYBE YOU MEAN:
 !	printf(str, ..any..) : void
