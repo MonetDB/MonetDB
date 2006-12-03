@@ -50,17 +50,17 @@ end random;	# 9
 function user.main():void;	# 0  (main:void)
 # The prototypical factory construct 	# 1  (_1:str)
     r1 := user.random(1);	# 2  (r1:int)<-(_3:int)
-    io.print(r1);	# 3 IOprint_val (_4:int)<-(r1:int)
+    io.print(r1);	# 3 IOprint_val (_4:void)<-(r1:int)
     r2 := user.random(34);	# 4  (r2:int)<-(_6:int)
-    io.print(r2);	# 5 IOprint_val (_7:int)<-(r2:int)
+    io.print(r2);	# 5 IOprint_val (_7:void)<-(r2:int)
     r2 := user.random(2);	# 6  (r2:int)<-(_8:int)
-    io.print(r2);	# 7 IOprint_val (_9:int)<-(r2:int)
+    io.print(r2);	# 7 IOprint_val (_9:void)<-(r2:int)
     r2 := user.random(2);	# 8  (r2:int)<-(_8:int)
-    io.print(r2);	# 9 IOprint_val (_10:int)<-(r2:int)
+    io.print(r2);	# 9 IOprint_val (_10:void)<-(r2:int)
     r2 := user.random(2);	# 10  (r2:int)<-(_8:int)
-    io.print(r2);	# 11 IOprint_val (_11:int)<-(r2:int)
+    io.print(r2);	# 11 IOprint_val (_11:void)<-(r2:int)
     r2 := user.random(2);	# 12  (r2:int)<-(_8:int)
-    io.print(r2);	# 13 IOprint_val (_12:int)<-(r2:int)
+    io.print(r2);	# 13 IOprint_val (_12:void)<-(r2:int)
 end main;	# 14  
 [ 125 ]
 [ 15625 ]

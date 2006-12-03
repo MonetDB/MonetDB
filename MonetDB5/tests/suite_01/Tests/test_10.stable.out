@@ -57,7 +57,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";"); 	# 17  (_20:str)
     c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";	# 18  (c:str)<-(_22:str)
 #	io.print("c.print();"); 	# 19  (_23:str)
-    ca_a := io.print(c);	# 20 IOprint_val (ca_a:int)<-(c:str)
+    ca_a := io.print(c);	# 20 IOprint_val (ca_a:void)<-(c:str)
 #	io.print("quit();"); 	# 21  (_25:str)
     da_a := clients.quit();	# 22 CLTquitDefault (da_a:void)
 end main;	# 23  

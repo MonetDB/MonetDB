@@ -47,8 +47,8 @@ exit c;	# 7  (c:bit)
 barrier c := calc.not(B);	# 8 CALCunarybitNOT (c:bit)<-(B:bit) jump 10
     A := 2;	# 9  (A:int)<-(_17:int)
 exit c;	# 10  (c:bit)
-    io.print(A);	# 11 IOprint_val (_19:int)<-(A:int)
-    io.print(D);	# 12 IOprint_val (_20:int)<-(D:int)
+    io.print(A);	# 11 IOprint_val (_19:void)<-(A:int)
+    io.print(D);	# 12 IOprint_val (_20:void)<-(D:int)
 end main;	# 13  
 [ 1 ]
 [ 3 ]

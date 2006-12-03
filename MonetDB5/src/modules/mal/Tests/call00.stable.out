@@ -26,10 +26,10 @@ stdout of test 'call00` in directory 'src/modules/mal` itself:
 #end tst;
 function user.tst(i:int,s:str):bit;	# 0  (tst:bit)<-(i:int)(s:str)
     j := calc.+(i,1);	# 1 CALCbinaryADDintint (j:int)<-(i:int)(_4:int)
-    io.print(j);	# 2 IOprint_val (_5:int)<-(j:int)
+    io.print(j);	# 2 IOprint_val (_5:void)<-(j:int)
 # ignore comments 	# 3  (_6:str)
     format := "hello %s\n";	# 4  (format:str)<-(_8:str)
-    io.printf(format,s);	# 5 IOprint_formatted_str (_9:int)<-(format:str)(s:str)
+    io.printf(format,s);	# 5 IOprint_formatted_str (_9:void)<-(format:str)(s:str)
     return tst := true;	# 6  (tst:bit)<-(_10:bit)
 end tst;	# 7  
 ## there should be only one definition
@@ -53,15 +53,15 @@ function user.main():void;	# 0  (main:void)
 # it can be shipped for remote execution. 	# 3  (_3:str)
 # there should be only one definition 	# 4  (_4:str)
     d := inspect.getSignature("user","tst");	# 5 INSPECTgetSignature (d:bat[:str,:str])<-(_6:str)(_7:str)
-    io.print(d);	# 6 IOprint_val (_8:int)<-(d:bat[:str,:str])
+    io.print(d);	# 6 IOprint_val (_8:void)<-(d:bat[:str,:str])
     user.tst(1,"world");	# 7  (_9:bit)<-(_10:int)(_11:str)
     m := inspect.getSource("user","tst");	# 8 INSPECTgetSource (m:str)<-(_6:str)(_7:str)
-    io.print(m);	# 9 IOprint_val (_13:int)<-(m:str)
+    io.print(m);	# 9 IOprint_val (_13:void)<-(m:str)
 #Call the string derived from definition 	# 10  (_14:str)
     language.call(m);	# 11 CMDcallString (_15:void)<-(m:str)
 # now we should have two definitions 	# 12  (_16:str)
     d := inspect.getSignature("user","tst");	# 13 INSPECTgetSignature (d:bat[:str,:str])<-(_6:str)(_7:str)
-    io.print(d);	# 14 IOprint_val (_17:int)<-(d:bat[:str,:str])
+    io.print(d);	# 14 IOprint_val (_17:void)<-(d:bat[:str,:str])
 end main;	# 15  
 #-----------------------------------------#
 # view		input			  # name

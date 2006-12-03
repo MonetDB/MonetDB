@@ -40,10 +40,10 @@ function user.main():void;	# 0  (main:void)
     bat.append(b,6);	# 9 BKCappend_val_wrap (_15:void)<-(b:bat[:void,:int])(_16:int)
     bat.append(b,7);	# 10 BKCappend_val_wrap (_17:void)<-(b:bat[:void,:int])(_18:int)
     bat.append(b,8);	# 11 BKCappend_val_wrap (_19:void)<-(b:bat[:void,:int])(_20:int)
-    io.print(a);	# 12 IOprint_val (_21:int)<-(a:bat[:void,:int])
-    io.print(b);	# 13 IOprint_val (_22:int)<-(b:bat[:void,:int])
+    io.print(a);	# 12 IOprint_val (_21:void)<-(a:bat[:void,:int])
+    io.print(b);	# 13 IOprint_val (_22:void)<-(b:bat[:void,:int])
     g := array.product(a,b);	# 14 ARRAYproduct (g:bat[:int,:int])<-(a:bat[:void,:int])(b:bat[:void,:int])
-    io.print(g);	# 15 IOprint_val (_24:int)<-(g:bat[:int,:int])
+    io.print(g);	# 15 IOprint_val (_24:void)<-(g:bat[:int,:int])
 end main;	# 16  
 #-----------------#
 # h	tmp_13	  # name

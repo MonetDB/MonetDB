@@ -49,13 +49,13 @@ function user.main():void;	# 0  (main:void)
 # The prototypical factory construct 	# 1  (_1:str)
 # test factory return and restart 	# 2  (_2:str)
     r1 := user.random(1);	# 3  (r1:int)<-(_4:int)
-    io.print(r1);	# 4 IOprint_val (_5:int)<-(r1:int)
+    io.print(r1);	# 4 IOprint_val (_5:void)<-(r1:int)
     r2 := user.random(1);	# 5  (r2:int)<-(_4:int)
-    io.print(r2);	# 6 IOprint_val (_7:int)<-(r2:int)
+    io.print(r2);	# 6 IOprint_val (_7:void)<-(r2:int)
     r2 := user.random(1);	# 7  (r2:int)<-(_4:int)
-    io.print(r2);	# 8 IOprint_val (_8:int)<-(r2:int)
+    io.print(r2);	# 8 IOprint_val (_8:void)<-(r2:int)
     r2 := user.random(1);	# 9  (r2:int)<-(_4:int)
-    io.print(r2);	# 10 IOprint_val (_9:int)<-(r2:int)
+    io.print(r2);	# 10 IOprint_val (_9:void)<-(r2:int)
 end main;	# 11  
 [ 125 ]
 [ 15625 ]

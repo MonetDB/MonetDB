@@ -26,13 +26,13 @@ stdout of test 'tst037` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # testing pattern matching against strings 	# 1  (_1:str)
     b := pcre.match("Hello world","Hello");	# 2 PCREmatch (b:bit)<-(_3:str)(_4:str)
-    io.print(b);	# 3 IOprint_val (_5:int)<-(b:bit)
+    io.print(b);	# 3 IOprint_val (_5:void)<-(b:bit)
     b := pcre.match("Hello world",".*lo.*");	# 4 PCREmatch (b:bit)<-(_3:str)(_6:str)
-    io.print(b);	# 5 IOprint_val (_7:int)<-(b:bit)
+    io.print(b);	# 5 IOprint_val (_7:void)<-(b:bit)
     b := pcre.match("Hello world","^lo.*or");	# 6 PCREmatch (b:bit)<-(_3:str)(_8:str)
-    io.print(b);	# 7 IOprint_val (_9:int)<-(b:bit)
+    io.print(b);	# 7 IOprint_val (_9:void)<-(b:bit)
     b := pcre.match("Hello world","[ABHW]");	# 8 PCREmatch (b:bit)<-(_3:str)(_10:str)
-    io.print(b);	# 9 IOprint_val (_11:int)<-(b:bit)
+    io.print(b);	# 9 IOprint_val (_11:void)<-(b:bit)
 end main;	# 10  
 [ true ]
 [ true ]

@@ -30,7 +30,7 @@ function user.main():void;	# 0  (main:void)
 # the generator optimizer 	# 1  (_1:str)
 # The flow graph has complex nesting of loops 	# 2  (_2:str)
     mdb.list();	# 3 MDBlist (_3:void)
-    io.print("start");	# 4 IOprint_val (_6:int)<-(_7:str)
+    io.print("start");	# 4 IOprint_val (_6:void)<-(_7:str)
 barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 5 PBMnewIterator (c:bat[:void,:int])<-(_5:str) jump 14
     cr := bat.reverse(c);	# 6 BKCreverse (cr:bat[:int,:void])<-(c:bat[:void,:int])
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (b:bat[:void,:int])<-(_5:str) jump 12
@@ -41,7 +41,7 @@ barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (
 exit b:bat[:void,:int] ;	# 12  (b:bat[:void,:int])
     redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 13 PBMgetNextElement (c:bat[:void,:int])<-(_5:str) jump 6
 exit c:bat[:void,:int] ;	# 14  (c:bat[:void,:int])
-    io.print("finished");	# 15 IOprint_val (_17:int)<-(_18:str)
+    io.print("finished");	# 15 IOprint_val (_17:void)<-(_18:str)
 end main;	# 16  
 function user.main():void;
 # the generator optimizer 

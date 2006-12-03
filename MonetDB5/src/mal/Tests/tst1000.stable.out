@@ -28,9 +28,9 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,1,2);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_6:int)
     bat.setName(b,"mybat");	# 4 BKCsetName (_7:void)<-(b:bat[:int,:int])(_8:str)
     c := bbp.bind("mybat");	# 5 CMDbbpbind (c:bat[:any,:any])<-(_8:str)
-    io.print(c);	# 6 IOprint_val (_10:int)<-(c:bat[:any,:any])
+    io.print(c);	# 6 IOprint_val (_10:void)<-(c:bat[:any,:any])
     x := bbp.getNames();	# 7 CMDbbpNames (x:bat[:int,:str])
-    io.print(x);	# 8 IOprint_val (_12:int)<-(x:bat[:int,:str])
+    io.print(x);	# 8 IOprint_val (_12:void)<-(x:bat[:int,:str])
 end main;	# 9  
 #-----------------#
 # h	mybat	  # name

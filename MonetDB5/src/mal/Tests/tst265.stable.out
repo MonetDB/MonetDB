@@ -46,12 +46,12 @@ function user.main():void;	# 0  (main:void)
     bat.append(b,7);	# 10 BKCappend_val_wrap (_19:void)<-(b:bat[:void,:int])(_20:int)
     bat.append(b,8);	# 11 BKCappend_val_wrap (_21:void)<-(b:bat[:void,:int])(_22:int)
     bat.append(b,9);	# 12 BKCappend_val_wrap (_23:void)<-(b:bat[:void,:int])(_24:int)
-    io.print(b);	# 13 IOprint_val (_25:int)<-(b:bat[:void,:int])
+    io.print(b);	# 13 IOprint_val (_25:void)<-(b:bat[:void,:int])
     g := group.sum(b,3);	# 14 GRPwindowsum_int (g:bat[:void,:int])<-(b:bat[:void,:int])(_12:int)
-    io.print(g);	# 15 IOprint_val (_27:int)<-(g:bat[:void,:int])
+    io.print(g);	# 15 IOprint_val (_27:void)<-(g:bat[:void,:int])
 # and use a sliding window 	# 16  (_28:str)
     g := group.sum(b,3,1);	# 17 GRPslidingsum_int (g:bat[:void,:int])<-(b:bat[:void,:int])(_12:int)(_8:int)
-    io.print(g);	# 18 IOprint_val (_29:int)<-(g:bat[:void,:int])
+    io.print(g);	# 18 IOprint_val (_29:void)<-(g:bat[:void,:int])
 end main;	# 19  
 #-----------------#
 # h	tmp_13	  # name

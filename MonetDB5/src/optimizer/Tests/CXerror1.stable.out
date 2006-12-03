@@ -49,7 +49,7 @@ function user.f1():void;	# 0  (f1:void)
 # if it exists, print it 	# 10  (_14:str)
 barrier ifb := xxx_3;	# 11  (ifb:bit)<-(xxx_3:bit) jump 14
     a := bbp.bind("xxx");	# 12 CMDbbpbind (a:bat[:any,:any])<-(_6:str)
-    io.print(a);	# 13 IOprint_val (_17:int)<-(a:bat[:any,:any])
+    io.print(a);	# 13 IOprint_val (_17:void)<-(a:bat[:any,:any])
 exit ifb;	# 14  (ifb:bit)
 # remove it 	# 15  (_18:str)
     b := bbp.bind("xxx");	# 16 CMDbbpbind (b:bat[:any,:any])<-(_6:str)

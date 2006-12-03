@@ -37,10 +37,10 @@ barrier z := true;	# 2  (z:bit)<-(_3:bit) jump 4
 exit z;	# 4  (z:bit)
 barrier i := 1;	# 5  (i:int)<-(_6:int) jump 15
     i := calc.+(i,1);	# 6 CALCbinaryADDintint (i:int)<-(i:int)(_6:int)
-    io.print(i);	# 7 IOprint_val (_7:int)<-(i:int)
+    io.print(i);	# 7 IOprint_val (_7:void)<-(i:int)
 barrier t := calc.>(i,3);	# 8 CALCcompGTintint (t:bit)<-(i:int)(_9:int) jump 13
 # new envelop 	# 9  (_10:str)
-    io.print("leave loop");	# 10 IOprint_val (_11:int)<-(_12:str)
+    io.print("leave loop");	# 10 IOprint_val (_11:void)<-(_12:str)
     leave i;	# 11  (i:int) jump 15
 # leave outer envelop 	# 12  ($17:str)
 exit t;	# 13  (t:bit)

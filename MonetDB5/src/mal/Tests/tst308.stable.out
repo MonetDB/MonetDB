@@ -26,8 +26,8 @@ function user.main():void;	# 0  (main:void)
 # exception variables are implicitly defined 	# 1  (_1:str)
 # by the catch statement. 	# 2  (_2:str)
 catch NotDefinedException;	# 3  (NotDefinedException:any) jump 6
-    io.print("Shouldn't do this");	# 4 IOprint_val (_4:int)<-(_5:str)
-    io.print(NotDefineException);	# 5 IOprint_val (_6:int)<-(NotDefineException:any)
+    io.print("Shouldn't do this");	# 4 IOprint_val (_4:void)<-(_5:str)
+    io.print(NotDefineException);	# 5 IOprint_val (_6:void)<-(NotDefineException:any)
 exit NotDefinedException;	# 6  (NotDefinedException:any)
 end main;	# 7  
 

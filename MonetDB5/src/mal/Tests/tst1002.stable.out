@@ -30,10 +30,10 @@ function user.main():void;	# 0  (main:void)
 # the temporary bat produced in tst1000 should not exist anymore 	# 2  (_2:str)
     bbp.open();	# 3 CMDbbpopen (_3:void)
     c := bbp.take("myfirstbat");	# 4 CMDbbptake (c:bat[:any,:any])<-(_5:str)
-    io.print(c);	# 5 IOprint_val (_6:int)<-(c:bat[:any,:any])
+    io.print(c);	# 5 IOprint_val (_6:void)<-(c:bat[:any,:any])
     bbp.close();	# 6 CMDbbpclose (_7:void)
 catch MALexception:str ;	# 7  (MALexception:str) jump 9
-    io.printf(MALexception);	# 8 IOprint_str (_9:int)<-(MALexception:str)
+    io.printf(MALexception);	# 8 IOprint_str (_9:void)<-(MALexception:str)
 exit MALexception:str ;	# 9  (MALexception:str)
 end main;	# 10  
 MALexception:user.main[4]:bbp.take:failed to take object from box

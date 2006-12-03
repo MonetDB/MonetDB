@@ -43,9 +43,9 @@ end random;	# 9
 function user.main():void;	# 0  (main:void)
 # The prototypical factory construct 	# 1  (_1:str)
     r1 := user.random(1);	# 2  (r1:int)<-(_3:int)
-    io.print(r1);	# 3 IOprint_val (_4:int)<-(r1:int)
+    io.print(r1);	# 3 IOprint_val (_4:void)<-(r1:int)
     r2 := user.random(1);	# 4  (r2:int)<-(_3:int)
-    io.print(r2);	# 5 IOprint_val (_6:int)<-(r2:int)
+    io.print(r2);	# 5 IOprint_val (_6:void)<-(r2:int)
 end main;	# 6  
 [ 125 ]
 [ 15625 ]

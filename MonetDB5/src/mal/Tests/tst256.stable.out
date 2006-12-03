@@ -45,13 +45,13 @@ function user.main():void;	# 0  (main:void)
     err := bat.insert(b,7,49);	# 10 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_18:int)(_19:int)
     err := bat.insert(b,8,64);	# 11 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_20:int)(_21:int)
     err := bat.insert(b,n0,81);	# 12 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(_22:int)
-    io.print(b);	# 13 IOprint_val (_23:int)<-(b:bat[:int,:int])
+    io.print(b);	# 13 IOprint_val (_23:void)<-(b:bat[:int,:int])
     mx := aggr.max(b);	# 14 ALGmax_int (mx:int)<-(b:bat[:int,:int])
-    io.print(mx);	# 15 IOprint_val (_25:int)<-(mx:int)
+    io.print(mx);	# 15 IOprint_val (_25:void)<-(mx:int)
     mi := aggr.min(b);	# 16 ALGmin_int (mi:int)<-(b:bat[:int,:int])
-    io.print(mi);	# 17 IOprint_val (_27:int)<-(mi:int)
+    io.print(mi);	# 17 IOprint_val (_27:void)<-(mi:int)
     cr := aggr.cardinality(b);	# 18 ALGcard (cr:lng)<-(b:bat[:int,:int])
-    io.print(cr);	# 19 IOprint_val (_29:int)<-(cr:lng)
+    io.print(cr);	# 19 IOprint_val (_29:void)<-(cr:lng)
 end main;	# 20  
 #-----------------#
 # h	tmp_4	  # name

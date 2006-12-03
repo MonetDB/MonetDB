@@ -299,7 +299,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print(""); 	# 121  (_76:str)
     bn := user.tst(b1);	# 122  (bn:bat[:int,:int])<-(b1:bat[:int,:int])
 #	io.print("var bn := tst(b1);  "); 	# 123  (_89:str)
-    ha_a := io.print(bn);	# 124 IOprint_val (ha_a:int)<-(bn:bat[:int,:int])
+    ha_a := io.print(bn);	# 124 IOprint_val (ha_a:void)<-(bn:bat[:int,:int])
 #	io.print(""); 	# 125  (_76:str)
     ia_a := clients.quit();	# 126 CLTquitDefault (ia_a:void)
 end main;	# 127  

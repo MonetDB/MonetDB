@@ -26,19 +26,19 @@ stdout of test 'tst450` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 #testing the inspect module for help information 	# 1  (_2:str)
     a := inspect.getAtomNames();	# 2 INSPECTatom_names (a:bat[:int,:str])
-    io.print(a);	# 3 IOprint_val (_3:int)<-(a:bat[:int,:str])
+    io.print(a);	# 3 IOprint_val (_3:void)<-(a:bat[:int,:str])
     m := inspect.getModule();	# 4 INSPECTgetAllModules (m:bat[:void,:str])
     mr := bat.reverse(m);	# 5 BKCreverse (mr:bat[:str,:void])<-(m:bat[:void,:str])
     m1 := algebra.kunique(mr);	# 6 ALGkunique (m1:bat[:str,:void])<-(mr:bat[:str,:void])
     z := algebra.project(m1);	# 7 ALGprojectNIL (z:bat[:str,:void])<-(m1:bat[:str,:void])
     zs := algebra.sortHT(z);	# 8 ALGhtsort (zs:bat[:str,:void])<-(z:bat[:str,:void])
-    io.print(zs);	# 9 IOprint_val (_9:int)<-(zs:bat[:str,:void])
+    io.print(zs);	# 9 IOprint_val (_9:void)<-(zs:bat[:str,:void])
     stmt := inspect.getDefinition("algebra","select");	# 10 INSPECTgetDefinition (stmt:bat[:str,:str])<-(_11:str)(_12:str)
     sig := inspect.getSignature("algebra","select");	# 11 INSPECTgetSignature (sig:bat[:str,:str])<-(_11:str)(_12:str)
     n := manual.search("insert");	# 12 MANUALsearch (n:void)<-(_15:str)
-    io.print(n);	# 13 IOprint_val (_16:int)<-(n:void)
+    io.print(n);	# 13 IOprint_val (_16:void)<-(n:void)
     d := inspect.getDefinition("inspect","dir");	# 14 INSPECTgetDefinition (d:bat[:str,:str])<-(_18:str)(_19:str)
-    io.print(d);	# 15 IOprint_val (_20:int)<-(d:bat[:str,:str])
+    io.print(d);	# 15 IOprint_val (_20:void)<-(d:bat[:str,:str])
 end main;	# 16  
 #-------------------------#
 # view	atom		  # name
@@ -431,7 +431,7 @@ command crackers.sizeCrackerInsertions(b:bat[:any_1,:sht]):void address CRKsizeC
 command crackers.sizeCrackerInsertions(b:bat[:any_1,:chr]):void address CRKsizeCrackerInsertions;
 #Get the size of the pending insertions of the cracker BAT of b
 
-command io.import{unsafe}(b:bat[:any_1,:any_2],filepath:str):bit address IOimport;
+command io.import(b:bat[:any_1,:any_2],filepath:str):bat[:any_1,:any_2] address IOimport;
 #Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 #parameter BAT. You have to create it! Its signature must match the dump,
 #else parsing errors will occur and FALSE is returned.

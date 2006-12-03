@@ -24,7 +24,7 @@ function user.dir():void;	# 0  (dir:void)
     d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:int,:int])
     dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:int,:int])
     dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:int,:str])
-    io.print(dn,d,dl);	# 4 IOtable (_4:int)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+    io.print(dn,d,dl);	# 4 IOtable (_4:void)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
 end dir;	# 5  
 #
 #
@@ -36,7 +36,7 @@ end dir;	# 5
 #end tmp1;
 function user.tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (tmp1:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
     tmp1 := algebra.copy(b);	# 1 ALGcopy (tmp1:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
-    io.print("inside tmp1");	# 2 IOprint_val (_2:int)<-(_3:str)
+    io.print("inside tmp1");	# 2 IOprint_val (_2:void)<-(_3:str)
     user.dir();	# 3  (_4:void)
     return tmp1;	# 4  (tmp1:bat[:any_1,:any_2])
 end tmp1;	# 5  

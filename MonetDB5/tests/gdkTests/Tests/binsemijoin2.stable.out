@@ -67,12 +67,12 @@ barrier go := calc.<(i,200);	# 15 CALCcompLTintint (go:bit)<-(i:int)(_17:int) ju
     i := calc.+(i,1);	# 19 CALCbinaryADDintint (i:int)<-(i:int)(_16:int)
     redo go := calc.<(i,200);	# 20 CALCcompLTintint (go:bit)<-(i:int)(_17:int) jump 16
 exit go;	# 21  (go:bit)
-    io.print(left);	# 22 IOprint_val (_23:int)<-(left:bat[:void,:oid])
-    io.print(right);	# 23 IOprint_val (_24:int)<-(right:bat[:oid,:void])
+    io.print(left);	# 22 IOprint_val (_23:void)<-(left:bat[:void,:oid])
+    io.print(right);	# 23 IOprint_val (_24:void)<-(right:bat[:oid,:void])
     bat.order(right);	# 24 BKCorder (_25:bat[:oid,:void])<-(right:bat[:oid,:void])
-    io.print(right);	# 25 IOprint_val (_26:int)<-(right:bat[:oid,:void])
+    io.print(right);	# 25 IOprint_val (_26:void)<-(right:bat[:oid,:void])
     z := algebra.semijoin(left,right);	# 26 ALGsemijoin (z:bat[:oid,:oid])<-(left:bat[:void,:oid])(right:bat[:oid,:void])
-    io.print(z);	# 27 IOprint_val (_28:int)<-(z:bat[:oid,:oid])
+    io.print(z);	# 27 IOprint_val (_28:void)<-(z:bat[:oid,:oid])
 end main;	# 28  
 #-----------------#
 # h	t	  # name

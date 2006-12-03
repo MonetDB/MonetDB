@@ -28,13 +28,13 @@ stdout of test 'inspect00` in directory 'src/modules/mal` itself:
 #end tst;
 function user.tst():void;	# 0  (tst:void)
     i := mdb.getStackDepth();	# 1 MDBStkDepth (i:int)
-    io.printf("stack depth %d\n",i);	# 2 IOprint_formatted_int (_2:int)<-(_3:str)(i:int)
+    io.printf("stack depth %d\n",i);	# 2 IOprint_formatted_int (_2:void)<-(_3:str)(i:int)
     t := mdb.getStackTrace();	# 3 MDBStkTrace (t:bat[:void,:str])
-    io.print(t);	# 4 IOprint_val (_5:int)<-(t:bat[:void,:str])
+    io.print(t);	# 4 IOprint_val (_5:void)<-(t:bat[:void,:str])
     b0 := mdb.getStackFrame(0);	# 5 MDBgetStackFrameN (b0:bat[:str,:str])<-(_7:int)
-    io.print(b0);	# 6 IOprint_val (_8:int)<-(b0:bat[:str,:str])
+    io.print(b0);	# 6 IOprint_val (_8:void)<-(b0:bat[:str,:str])
     b1 := mdb.getStackFrame(1);	# 7 MDBgetStackFrameN (b1:bat[:str,:str])<-(_10:int)
-    io.print(b1);	# 8 IOprint_val (_11:int)<-(b1:bat[:str,:str])
+    io.print(b1);	# 8 IOprint_val (_11:void)<-(b1:bat[:str,:str])
 # next one is illegal 	# 9  (_12:str)
     b1 := mdb.getStackFrame(2);	# 10 MDBgetStackFrameN (b1:bat[:str,:str])<-(_13:int)
 end tst;	# 11  
@@ -58,16 +58,16 @@ stack depth 2
 #-----------------------------------------#
 [ "tst",  "0@0"				  ]
 [ "i",	  "2"				  ]
-[ "_2",	  "0"				  ]
+[ "_2",	  "0@0"				  ]
 [ "_3",	  "\"stack depth %d\\n\""	  ]
 [ "t",	  "<view_stk_trace>"		  ]
-[ "_5",	  "0"				  ]
+[ "_5",	  "0@0"				  ]
 [ "b0",	  "<view_stk_frame>"		  ]
 [ "_7",	  "0"				  ]
-[ "_8",	  "0"				  ]
+[ "_8",	  "0@0"				  ]
 [ "b1",	  "nil"				  ]
 [ "_10",  "1"				  ]
-[ "_11",  "0"				  ]
+[ "_11",  "0@0"				  ]
 [ "_12",  "nil"				  ]
 [ "_13",  "2"				  ]
 #-----------------#

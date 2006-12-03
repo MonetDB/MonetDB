@@ -22,7 +22,7 @@ In real-life database applications the BATs tend to grow beyond
 the memory size. This leads to a heavy IO dominated behavior,
 which can partly be avoided by breaking up the query into a sequence
 of subqueries using a map-reduce strategy.
-The BAT partition manager (BPM) module is designed to 
+The BAT partition manager (BPT) module is designed to 
 support this strategy using range- and hash-partitioning.
 
 Consider we want to reorganize R:bat[:void,:int] into three range partitions,
@@ -124,7 +124,7 @@ for symbolic evaluation.
 	tu:= algebra.union(tu,t2);
 @end example
 
-The select operation could be overloaded in the BPM to
+The select operation could be overloaded in the BPT to
 improve processing further.
 
 - Partition management
@@ -149,74 +149,74 @@ BEWARE, it is not protected against concurrent access yet.
 module partitions;
 
 command open():void
-address BPMopen
+address BPTopen
 comment "Locate and open the partition box";
 command close():void
-address BPMclose
+address BPTclose
 comment "Save and close the partition box ";
 command destroy():void
-address BPMdestroy
+address BPTdestroy
 comment "Destroy the partition box";
 
 command take(idx:int):bat[:void,:any_1]
-address BPMtake
+address BPTtake
 comment "Take a partition from the box";
 
 command deposit(b:bat[:void,:any_1]) :void
-address BPMdeposit
+address BPTdeposit
 comment "Enter a new BAT into the partition box";
 command deposit(b:bat[:void,:any_1],p:bat[:void,:any_1]) :void
-address BPMdeposit2
+address BPTdeposit2
 comment "Enter a new partition to a group into the partition box";
 command deposit(b:str,p:str,cap:int) :void
-address BPMdepositPartition
+address BPTdepositPartition
 comment "Enter a new BAT into the partition box";
 
 pattern releaseAll():void
-address BPMreleaseAll
+address BPTreleaseAll
 comment "Release all partitions in the box";
 pattern release(b:bat[:void,:any_1]) :void
-address BPMrelease
+address BPTrelease
 comment "Release a single BAT with its partitions from the  box";
 
 pattern toString(idx:int):str
-address BPMtoString
+address BPTtoString
 comment "Get the string representation of an element in the box";
 
 command discard(name:bat[:void,:any_1]) :void
-address BPMdiscard
+address BPTdiscard
 comment "Release a BAT variable from the box";
 
 command newIterator()(:int)
-address BPMnewIteratorBase
+address BPTnewIteratorBase
 comment "Create an iterator over the partition box";
 command hasMoreElements()(:int)
-address BPMhasMoreElementsBase
+address BPThasMoreElementsBase
 comment "Locate next element in the partition box";
 
 command newIterator(b:bat[:void,:any_1]) (:int,:bat[:void,:any_1])
-address BPMnewIterator
+address BPTnewIterator
 comment "Create an iterator over the BAT partitions.";
 
 command newIterator(b:bat[:void,:any_1],first:oid,last:oid)
 		(:int,:bat[:void,:any_1])
-address BPMnewIteratorRng
+address BPTnewIteratorRng
 comment "Create an iterator over the BAT partitions.";
 
 command hasMoreElements(b:bat[:void,:any_1]) (:int, :bat[:void,:any_1])
-address BPMhasMoreElements
+address BPThasMoreElements
 comment "Localize the next partition for processing.";
 
 command hasMoreElements(b:bat[:void,:any_1],first:oid,last:oid) (:int, :bat[:void,:any_1])
-address BPMhasMoreElementsRng
+address BPThasMoreElementsRng
 comment "Localize the next partition for processing.";
 
 command getLastPartition(b:bat[:void,:any_1]):bat[:void,:any_1]
-address BPMgetLastPartition
+address BPTgetLastPartition
 comment "Obtain the last partition for update";
 
 command getRange(b:bat[:void,:any_1])(first:oid,last:oid)
-address BPMgetRange
+address BPTgetRange
 comment "Obtain the oid range for a partition";
 
 @-
@@ -232,40 +232,40 @@ a new bat is allocated.
 
 @mal
 command setCapacity(b:bat[:void,:any_1], s:int):void
-address BPMsetCapacity
+address BPTsetCapacity
 comment "Limit the content of all remaining BATs";
 
 command insert(b:bat[:void,:any_1],h:void,t:any_1):bat[:void,:any_1]
-address BPMinsert
+address BPTinsert
 comment "Add a tuple to the last partition";
 command insert(b:bat[:void,:any_1],t:any_1):bat[:void,:any_1]
-address BPMinsert_void_bun
+address BPTinsert_void_bun
 comment "Add a tuple to the last partition";
 
 command insert(b:bat[:void,:any_1],p:bat[:void,:any_1]):bat[:void,:any_1]
-address BPMinsertBAT
+address BPTinsertBAT
 comment "Add a BAT as a partition to the end of the list.";
 
 command delete(b:bat[:void,:any_1],h:oid):bat[:void,:any_1]
-address BPMdelete_oid
+address BPTdelete_oid
 comment "Delete a tuple from the BAT group";
 
 command delete(b:bat[:void,:any_1],p:bat[:void,:any_1]):bat[:void,:any_1]
-address BPMdeleteBAT
+address BPTdeleteBAT
 comment "Delete a BAT from the partition";
 
 command compress(b:bat[:void,:any_1]):bat[:void,:any_1]
-address BPMcompress
+address BPTcompress
 comment "Compress the group to remove oid holes";
 
 command dump()
-address BPMdump;
+address BPTdump;
 
 command prelude()
-address BPMprelude;
+address BPTprelude;
 
 command epilogue()
-address BPMepilogue;
+address BPTepilogue;
 
 partitions.prelude();
 @-
@@ -281,8 +281,8 @@ The datastructures for the partition table are dynamic arrays
 indexed by an integer, which is also returned to the environment
 as a handle.
 @h
-#ifndef _MAL_BPM
-#define _MAL_BPM
+#ifndef _MAL_BPT
+#define _MAL_BPT
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -303,41 +303,41 @@ as a handle.
 #define partitions_export extern
 #endif
 
-partitions_export int BPMfindGrp(int bid);
-partitions_export void BPMresize(int size);
-partitions_export str BPMdump(void);
-partitions_export str BPMprelude(int *ret);
-partitions_export str BPMepilogue(int *ret);
-partitions_export str BPMopen(void);
-partitions_export str BPMclose(void);
-partitions_export str BPMdestroy(void);
-partitions_export str BPMtake(int *ret, int *idx);
-partitions_export int BPMfindGrp(int bid);
-partitions_export int BPMfindPartition(int bid, int pid);
-partitions_export str BPMdeposit(int *ret, int *bid);
-partitions_export str BPMdeposit2(int *ret, int *bid, int *pid);
-partitions_export str BPMdepositPartition(int *ret, str *bnme, str *pnme, int *cap);
-partitions_export str BPMgetRange(oid *first, oid *last, int *bid);
-partitions_export str BPMgetLastPartition(int *ret, int *bid);
-partitions_export str BPMdiscard(int *ret, int *bid);
-partitions_export str BPMdiscardAll(int *ret);
-partitions_export str BPMtoString(int *ret, int *bid);
-partitions_export str BPMreleaseAll(int *ret, int *bid);
-partitions_export str BPMrelease(int *ret, int *bid);
-partitions_export str BPMnewIteratorBase(int *ret);
-partitions_export str BPMhasMoreElementsBase(int *ret);
-partitions_export str BPMnewIterator(int *res, int *pid, int *bid);
-partitions_export str BPMnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *
+partitions_export int BPTfindGrp(int bid);
+partitions_export void BPTresize(int size);
+partitions_export str BPTdump(void);
+partitions_export str BPTprelude(int *ret);
+partitions_export str BPTepilogue(int *ret);
+partitions_export str BPTopen(void);
+partitions_export str BPTclose(void);
+partitions_export str BPTdestroy(void);
+partitions_export str BPTtake(int *ret, int *idx);
+partitions_export int BPTfindGrp(int bid);
+partitions_export int BPTfindPartition(int bid, int pid);
+partitions_export str BPTdeposit(int *ret, int *bid);
+partitions_export str BPTdeposit2(int *ret, int *bid, int *pid);
+partitions_export str BPTdepositPartition(int *ret, str *bnme, str *pnme, int *cap);
+partitions_export str BPTgetRange(oid *first, oid *last, int *bid);
+partitions_export str BPTgetLastPartition(int *ret, int *bid);
+partitions_export str BPTdiscard(int *ret, int *bid);
+partitions_export str BPTdiscardAll(int *ret);
+partitions_export str BPTtoString(int *ret, int *bid);
+partitions_export str BPTreleaseAll(int *ret, int *bid);
+partitions_export str BPTrelease(int *ret, int *bid);
+partitions_export str BPTnewIteratorBase(int *ret);
+partitions_export str BPThasMoreElementsBase(int *ret);
+partitions_export str BPTnewIterator(int *res, int *pid, int *bid);
+partitions_export str BPTnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *
 last);
-partitions_export str BPMhasMoreElements(int *res, int *pid, int *bid);
-partitions_export str BPMhasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last);
-partitions_export str BPMsetCapacity(int *ret, int *bid, int *val);
-partitions_export str BPMinsert_void_bun(int *ret, int *bid, ptr val);
-partitions_export str BPMinsert(int *ret, int *bid, ptr h, ptr t);
-partitions_export str BPMinsertBAT(int *ret, int *bid, int *bnid);
-partitions_export str BPMdelete_oid(int *ret, int *bid, oid *h);
-partitions_export str BPMcompress(int *ret, int *bid);
-partitions_export str BPMdeleteBAT(int *ret, int *bid, int *bnid);
+partitions_export str BPThasMoreElements(int *res, int *pid, int *bid);
+partitions_export str BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last);
+partitions_export str BPTsetCapacity(int *ret, int *bid, int *val);
+partitions_export str BPTinsert_void_bun(int *ret, int *bid, ptr val);
+partitions_export str BPTinsert(int *ret, int *bid, ptr h, ptr t);
+partitions_export str BPTinsertBAT(int *ret, int *bid, int *bnid);
+partitions_export str BPTdelete_oid(int *ret, int *bid, oid *h);
+partitions_export str BPTcompress(int *ret, int *bid);
+partitions_export str BPTdeleteBAT(int *ret, int *bid, int *bnid);
 
 typedef struct {
 	bat bid;		/* group bat identifier */
@@ -354,7 +354,7 @@ static int ptop, plimit;
 
 #define INCREMENT 1024
 void
-BPMresize(int size)
+BPTresize(int size)
 {
 	Partition *p;
 
@@ -362,7 +362,7 @@ BPMresize(int size)
 	p = GDKmalloc(size * sizeof(Partition));
 	if (partitions) {
 		if (ptop > size)
-			GDKfatal("assertion error in BPMresize");
+			GDKfatal("assertion error in BPTresize");
 		memcpy(p, partitions, sizeof(Partition) * ptop);
 		GDKfree(partitions);
 	}
@@ -375,7 +375,7 @@ BPMresize(int size)
 }
 
 static void
-BPMfree()
+BPTfree()
 {
 	if (partitions) {
 		GDKfree(partitions);
@@ -384,7 +384,7 @@ BPMfree()
 }
 
 str
-BPMdump()
+BPTdump()
 {
 	stream *fd = GDKout;
 	int i;
@@ -401,7 +401,7 @@ This should later be added or being provided by the BAT
 access.
 @c
 str
-BPMprelude(int *ret)
+BPTprelude(int *ret)
 {
 	Box box;
 
@@ -409,15 +409,15 @@ BPMprelude(int *ret)
 	box = openBox("partitions");
 	if (box == 0)
 		return throwMessage("partitions.prelude", "Failed to open box");
-	BPMresize(INCREMENT);
+	BPTresize(INCREMENT);
 	return MAL_SUCCEED;
 }
 
 str
-BPMepilogue(int *ret)
+BPTepilogue(int *ret)
 {
 	*ret = closeBox("partitions", 0);
-	BPMfree();
+	BPTfree();
 	if (*ret != 0)
 		return throwMessage("partitions.prelude", "Failed to open box");
 	return MAL_SUCCEED;
@@ -425,7 +425,7 @@ BPMepilogue(int *ret)
 
 
 str
-BPMopen()
+BPTopen()
 {
 	if (openBox("partitions") != 0)
 		return MAL_SUCCEED;
@@ -433,7 +433,7 @@ BPMopen()
 }
 
 str
-BPMclose()
+BPTclose()
 {
 	stream *f;
 	str boxfile, boxfilebak;
@@ -460,14 +460,14 @@ BPMclose()
 }
 
 str
-BPMdestroy()
+BPTdestroy()
 {
 	destroyBox("partitions");
 	return MAL_SUCCEED;
 }
 
 str
-BPMtake(int *ret, int *idx)
+BPTtake(int *ret, int *idx)
 {
 	if (*idx < 0 || *idx >= ptop)
 		return throwMessage("partitions.take", "Index out of range");
@@ -480,7 +480,7 @@ BPMtake(int *ret, int *idx)
 Administration of new partitions.
 @c
 int
-BPMfindGrp(int bid)
+BPTfindGrp(int bid)
 {
 	int i;
 
@@ -494,7 +494,7 @@ BPMfindGrp(int bid)
 }
 
 int
-BPMfindPartition(int bid, int pid)
+BPTfindPartition(int bid, int pid)
 {
 	int i;
 
@@ -505,7 +505,7 @@ BPMfindPartition(int bid, int pid)
 }
 
 str
-BPMdeposit(int *ret, int *bid)
+BPTdeposit(int *ret, int *bid)
 {
 	int idx, i;
 	BAT *b;
@@ -513,11 +513,11 @@ BPMdeposit(int *ret, int *bid)
 	b = BATdescriptor(*bid);
 	if (b == NULL)
 		return throwMessage("partitions.deposit", "Can not access descriptor");
-	idx = BPMfindGrp(*bid);
+	idx = BPTfindGrp(*bid);
 	if (idx != -1)
 		return throwMessage("partitions.deposit", "Duplicate group definition");
 	if (ptop == plimit)
-		BPMresize(plimit + INCREMENT);
+		BPTresize(plimit + INCREMENT);
 	for (i = 0; i <= ptop; i++)
 		if (partitions[i].bid == -1)
 			break;
@@ -540,7 +540,7 @@ BPMdeposit(int *ret, int *bid)
 }
 
 str
-BPMdeposit2(int *ret, int *bid, int *pid)
+BPTdeposit2(int *ret, int *bid, int *pid)
 {
 	int idx, i;
 	BAT *b;
@@ -549,7 +549,7 @@ BPMdeposit2(int *ret, int *bid, int *pid)
 	if (b == NULL)
 		return throwMessage("partitions.deposit", "Can not access descriptor");
 
-	idx = BPMfindGrp(*bid);
+	idx = BPTfindGrp(*bid);
 	if (idx == -1) {
 		BBPunfix(b->batCacheid);
 		return throwMessage("partitions.deposit", "BAT group unknown");
@@ -563,7 +563,7 @@ BPMdeposit2(int *ret, int *bid, int *pid)
 	}
 
 	if (ptop == plimit)
-		BPMresize(plimit + INCREMENT);
+		BPTresize(plimit + INCREMENT);
 	for (i = 0; i <= ptop; i++)
 		if (partitions[i].bid == -1)
 			break;
@@ -586,7 +586,7 @@ BPMdeposit2(int *ret, int *bid, int *pid)
 }
 
 str
-BPMdepositPartition(int *ret, str *bnme, str *pnme, int *cap)
+BPTdepositPartition(int *ret, str *bnme, str *pnme, int *cap)
 {
 	BAT *b, *bn;
 	str msg;
@@ -607,13 +607,13 @@ BPMdepositPartition(int *ret, str *bnme, str *pnme, int *cap)
 		BBPunfix(b->batCacheid);
 		return throwMessage("partitions.deposit", "Can not access descriptor");
 	}
-	msg = BPMdeposit2(ret, &b->batCacheid, &bn->batCacheid);
+	msg = BPTdeposit2(ret, &b->batCacheid, &bn->batCacheid);
 	if (msg) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
 		return msg;
 	}
-	idx = BPMfindPartition(b->batCacheid, bn->batCacheid);
+	idx = BPTfindPartition(b->batCacheid, bn->batCacheid);
 	partitions[idx].first = bn->hseqbase;
 	partitions[idx].last = bn->hseqbase + BATcount(bn) - 1;
 	partitions[idx].cap = *cap;
@@ -623,7 +623,7 @@ BPMdepositPartition(int *ret, str *bnme, str *pnme, int *cap)
 }
 
 str
-BPMgetRange(oid *first, oid *last, int *bid)
+BPTgetRange(oid *first, oid *last, int *bid)
 {
 	int i;
 
@@ -637,7 +637,7 @@ BPMgetRange(oid *first, oid *last, int *bid)
 }
 
 str
-BPMgetLastPartition(int *ret, int *bid)
+BPTgetLastPartition(int *ret, int *bid)
 {
 	int i;
 
@@ -650,7 +650,7 @@ BPMgetLastPartition(int *ret, int *bid)
 }
 
 str
-BPMdiscard(int *ret, int *bid)
+BPTdiscard(int *ret, int *bid)
 {
 	int i;
 
@@ -664,17 +664,17 @@ BPMdiscard(int *ret, int *bid)
 }
 
 str
-BPMdiscardAll(int *ret)
+BPTdiscardAll(int *ret)
 {
 	GDKfree(partitions);
 	partitions = 0;
-	BPMresize(INCREMENT);
+	BPTresize(INCREMENT);
 	(void) ret;
 	return MAL_SUCCEED;
 }
 
 str
-BPMtoString(int *ret, int *bid)
+BPTtoString(int *ret, int *bid)
 {
 	(void) ret;
 	(void) bid;
@@ -682,7 +682,7 @@ BPMtoString(int *ret, int *bid)
 }
 
 str
-BPMreleaseAll(int *ret, int *bid)
+BPTreleaseAll(int *ret, int *bid)
 {
 	(void) ret;
 	(void) bid;
@@ -690,7 +690,7 @@ BPMreleaseAll(int *ret, int *bid)
 }
 
 str
-BPMrelease(int *ret, int *bid)
+BPTrelease(int *ret, int *bid)
 {
 	(void) ret;
 	(void) bid;
@@ -706,7 +706,7 @@ The number of elements in the chunk is limited by the granule
 size.
 @c
 str
-BPMnewIteratorBase(int *ret)
+BPTnewIteratorBase(int *ret)
 {
 	*ret = 0;
 	if (*ret == ptop)
@@ -715,7 +715,7 @@ BPMnewIteratorBase(int *ret)
 }
 
 str
-BPMhasMoreElementsBase(int *ret)
+BPThasMoreElementsBase(int *ret)
 {
 	do {
 		*ret = *ret + 1;
@@ -728,7 +728,7 @@ BPMhasMoreElementsBase(int *ret)
 }
 
 str
-BPMnewIterator(int *res, int *pid, int *bid)
+BPTnewIterator(int *res, int *pid, int *bid)
 {
 	int i;
 
@@ -743,7 +743,7 @@ BPMnewIterator(int *res, int *pid, int *bid)
 }
 
 str
-BPMnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *last)
+BPTnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *last)
 {
 	int i;
 
@@ -758,7 +758,7 @@ BPMnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *last)
 }
 
 str
-BPMhasMoreElements(int *res, int *pid, int *bid)
+BPThasMoreElements(int *res, int *pid, int *bid)
 {
 	if (partitions[*res].next != 0 && partitions[*res].bid == *bid) {
 		*res = partitions[*res].next;
@@ -772,7 +772,7 @@ BPMhasMoreElements(int *res, int *pid, int *bid)
 }
 
 str
-BPMhasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last)
+BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last)
 {
 	int i;
 
@@ -791,7 +791,7 @@ BPMhasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last)
 Data management of the partitioned BATs.
 @c
 static int
-BPMgetlastindex(int bid)
+BPTgetlastindex(int bid)
 {
 	int i;
 
@@ -801,7 +801,7 @@ BPMgetlastindex(int bid)
 	return -1;
 }
 static int
-BPMgetfirstindex(int bid)
+BPTgetfirstindex(int bid)
 {
 	int i;
 
@@ -854,12 +854,12 @@ addPartition(int idx)
 }
 
 str
-BPMsetCapacity(int *ret, int *bid, int *val)
+BPTsetCapacity(int *ret, int *bid, int *val)
 {
 	int i;
 
 	(void) ret;
-	i = BPMgetlastindex(*bid);
+	i = BPTgetlastindex(*bid);
 	if (i >= 0) {
 		partitions[i].cap = *val;
 		return MAL_SUCCEED;
@@ -868,11 +868,11 @@ BPMsetCapacity(int *ret, int *bid, int *val)
 }
 
 str
-BPMinsert_void_bun(int *ret, int *bid, ptr val)
+BPTinsert_void_bun(int *ret, int *bid, ptr val)
 {
 	int i;
 
-	i = BPMgetlastindex(*bid);
+	i = BPTgetlastindex(*bid);
 	if (i >= 0) {
 		if (partitions[i].cap != -1 && partitions[i].cap < getpartitionsize(i))
 			i = addPartition(i);
@@ -884,11 +884,11 @@ BPMinsert_void_bun(int *ret, int *bid, ptr val)
 }
 
 str
-BPMinsert(int *ret, int *bid, ptr h, ptr t)
+BPTinsert(int *ret, int *bid, ptr h, ptr t)
 {
 	int i;
 
-	i = BPMgetlastindex(*bid);
+	i = BPTgetlastindex(*bid);
 	if (i >= 0) {
 		if (partitions[i].cap != -1 && partitions[i].cap <= getpartitionsize(i))
 			i = addPartition(i);
@@ -899,7 +899,7 @@ BPMinsert(int *ret, int *bid, ptr h, ptr t)
 }
 
 str
-BPMinsertBAT(int *ret, int *bid, int *bnid)
+BPTinsertBAT(int *ret, int *bid, int *bnid)
 {
 	(void) ret;
 	(void) bid;
@@ -912,11 +912,11 @@ A deletion over a BAT group may create holes between the groups comprising,
 which is solved by upgrading the hbase of the descriptors.
 @c
 str
-BPMdelete_oid(int *ret, int *bid, oid *h)
+BPTdelete_oid(int *ret, int *bid, oid *h)
 {
 	int i;
 
-	i = BPMgetlastindex(*bid);
+	i = BPTgetlastindex(*bid);
 	if (i < 0)
 		return throwMessage("partitions.delete", "BAT group not found");
 
@@ -930,14 +930,14 @@ BPMdelete_oid(int *ret, int *bid, oid *h)
 }
 
 str
-BPMcompress(int *ret, int *bid)
+BPTcompress(int *ret, int *bid)
 {
 	BAT *b;
 	int i;
 	oid o = 0;
 
 	(void) ret;
-	i = BPMgetfirstindex(*bid);
+	i = BPTgetfirstindex(*bid);
 	if (i < 0)
 		return throwMessage("partitions.commpress", "BAT group not found");
 	b = BATdescriptor(i);
@@ -956,13 +956,13 @@ BPMcompress(int *ret, int *bid)
 }
 
 str
-BPMdeleteBAT(int *ret, int *bid, int *bnid)
+BPTdeleteBAT(int *ret, int *bid, int *bnid)
 {
 	int i;
 	BAT *b;
 
 	(void) ret;
-	i = BPMgetlastindex(*bid);
+	i = BPTgetlastindex(*bid);
 	for (; i >= 0; i = partitions[i].prev) {
 		if (partitions[i].pid == *bnid) {
 			/* remove a complete BAT */

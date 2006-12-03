@@ -39,8 +39,8 @@ function user.main():void;	# 0  (main:void)
     Y := bat.new(:int,:int);	# 4 CMDBATnew (Y:bat[:int,:int])<-(_3:int)(_3:int)
     bat.insert(Y,2,2);	# 5 BKCinsert_bun (_7:void)<-(Y:bat[:int,:int])(_8:int)(_8:int)
     (x,y):= user.swap(X,Y);	# 6  (x:str)(y:bat[:int,:int])<-(X:bat[:int,:int])(Y:bat[:int,:int])
-    io.print(x);	# 7 IOprint_val (_11:int)<-(x:str)
-    io.print(y);	# 8 IOprint_val (_12:int)<-(y:bat[:int,:int])
+    io.print(x);	# 7 IOprint_val (_11:void)<-(x:str)
+    io.print(y);	# 8 IOprint_val (_12:void)<-(y:bat[:int,:int])
 end main;	# 9  
 [ "done" ]
 #-----------------#

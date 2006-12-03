@@ -40,7 +40,7 @@ function user.main():void;	# 0  (main:void)
 #- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
 #- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
 #print("hello"); 	# 9  (_9:str)
-    aa_a := io.print("hello");	# 10 IOprint_val (aa_a:int)<-(_11:str)
+    aa_a := io.print("hello");	# 10 IOprint_val (aa_a:void)<-(_11:str)
 end main;	# 11  
 [ "hello" ]
 

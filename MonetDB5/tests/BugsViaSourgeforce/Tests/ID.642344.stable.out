@@ -70,7 +70,7 @@ function user.main():void;	# 0  (main:void)
     bar := bat.new(nil:int,nil:int);	# 24 CMDBATnew (bar:bat[:int,:int])<-(_25:int)(_25:int)
 #	io.print("var bar:=new(int,int);"); 	# 25  (_26:str)
     aa_a := user.varval("bar");	# 26  unknown (aa_a:any)<-(_28:str)
-    ba_a := io.print(aa_a);	# 27 IOprint_val (ba_a:int)<-(aa_a:any)
+    ba_a := io.print(aa_a);	# 27 IOprint_val (ba_a:void)<-(aa_a:any)
 end main;	# 28  
 
 # 07:27:17 >  

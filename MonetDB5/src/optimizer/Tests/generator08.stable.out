@@ -34,7 +34,7 @@ function user.main():void;	# 0  (main:void)
 # it requires the result of the select to be accumulated 	# 3  (_3:str)
 # because there is a blocking instruction inbetween 	# 4  (_4:str)
     mdb.list();	# 5 MDBlist (_5:void)
-    io.print("start");	# 6 IOprint_val (_6:int)<-(_7:str)
+    io.print("start");	# 6 IOprint_val (_6:void)<-(_7:str)
     low := 0;	# 7  (low:int)<-(_13:int)
     high := 3;	# 8  (high:int)<-(_15:int)
     i := 0;	# 9  (i:int)<-(_13:int)
@@ -46,9 +46,9 @@ barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 11 PBMnewIterator 
     pbm.deposit("pbat_s",s);	# 15 PBMdepositIndexed (_33:void)<-(_31:str)(s:bat[:oid,:int])
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 16 PBMgetNextElement (b:bat[:void,:int])<-(_9:str) jump 12
 exit b:bat[:void,:int] ;	# 17  (b:bat[:void,:int])
-    io.print("Result is:");	# 18 IOprint_val (_18:int)<-(_19:str)
-    io.print(i);	# 19 IOprint_val (_20:int)<-(i:int)
-    io.print("go-on");	# 20 IOprint_val (_21:int)<-(_22:str)
+    io.print("Result is:");	# 18 IOprint_val (_18:void)<-(_19:str)
+    io.print(i);	# 19 IOprint_val (_20:void)<-(i:int)
+    io.print("go-on");	# 20 IOprint_val (_21:void)<-(_22:str)
 barrier s := pbm.newIterator("pbat_s");	# 21 PBMnewIterator (s:bat[:oid,:int])<-(_31:str) jump 34
     t := algebra.select(s,low,high);	# 22 ALGselect (t:bat[:oid,:int])<-(s:bat[:oid,:int])(low:int)(high:int)
 barrier a:bat[:void,:int]  := pbm.newIterator("Areas");	# 23 PBMnewIterator (a:bat[:void,:int])<-(_11:str) jump 32
@@ -63,8 +63,8 @@ exit b:bat[:void,:int] ;	# 30  (b:bat[:void,:int])
 exit a:bat[:void,:int] ;	# 32  (a:bat[:void,:int])
     redo s := pbm.getNextElement("pbat_s");	# 33 PBMgetNextElement (s:bat[:oid,:int])<-(_31:str) jump 22
 exit s;	# 34  (s:bat[:oid,:int])
-    io.print(c);	# 35 IOprint_val (_27:int)<-(c:int)
-    io.print("finished");	# 36 IOprint_val (_28:int)<-(_29:str)
+    io.print(c);	# 35 IOprint_val (_27:void)<-(c:int)
+    io.print("finished");	# 36 IOprint_val (_28:void)<-(_29:str)
     pbm.discard("pbat_s");	# 37 PBMdiscard (_34:void)<-(_31:str)
 end main;	# 38  
 function user.main():void;

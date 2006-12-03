@@ -27,7 +27,7 @@ function user.main():void;	# 0  (main:void)
     bat.setSequenceBase(t,0@0);	# 3 BKCsetSequenceBase (_5:bat[:void,:str])<-(t:bat[:void,:str])(_6:oid)
     bat.append(t,"hello world");	# 4 BKCappend_val_wrap (_7:void)<-(t:bat[:void,:str])(_8:str)
     bat.append(t,"sleep well");	# 5 BKCappend_val_wrap (_9:void)<-(t:bat[:void,:str])(_10:str)
-    io.print(t);	# 6 IOprint_val (_11:int)<-(t:bat[:void,:str])
+    io.print(t);	# 6 IOprint_val (_11:void)<-(t:bat[:void,:str])
     _17 := bat.new(nil:void,nil:bit);	# 7 CMDBATnew (_17:bat[:void,:bit])<-(_18:void)(_19:bit)
     _20 := bat.setSequenceBase(_17,0@0);	# 8 BKCsetSequenceBase (_20:bat[:void,:bit])<-(_17:bat[:void,:bit])(_6:oid)
 barrier (_22,_23,_24):= bat.newIterator(t);	# 9 CHPbunIterator (_22:lng)(_23:oid)(_24:str)<-(t:bat[:void,:str]) jump 16
@@ -40,7 +40,7 @@ exit MALexception:str ;	# 15  (MALexception:str)
 exit (_22,_23,_24);	# 16  (_22:lng)(_23:oid)(_24:str)
     b:bat[:void,:bit]  := _20;	# 17  (b:bat[:void,:bit])<-(_20:bat[:void,:bit])
     bat.setSequenceBase(b,0@0);	# 18 BKCsetSequenceBase (_15:bat[:void,:bit])<-(b:bat[:void,:bit])(_6:oid)
-    io.print(b);	# 19 IOprint_val (_16:int)<-(b:bat[:void,:bit])
+    io.print(b);	# 19 IOprint_val (_16:void)<-(b:bat[:void,:bit])
 end main;	# 20  
 #-------------------------#
 # h	tmp_13		  # name

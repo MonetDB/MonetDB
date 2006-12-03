@@ -77,7 +77,7 @@ stdout of test 'no.161` in directory 'tests/BugReports` itself:
 function user.test_inner(in:str):void;	# 0  (test_inner:void)<-(in:str)
 #	mil.line("   printf(\"test_inner.in: %s\\n\",str(in));"); 	# 1  (_2:str)
     ca_a := calc.str(in);	# 2 CALCstr2str (ca_a:str)<-(in:str)
-    da_a := io.printf("test_inner.in: %s\n",ca_a);	# 3 IOprint_formatted_str (da_a:int)<-(_5:str)(ca_a:str)
+    da_a := io.printf("test_inner.in: %s\n",ca_a);	# 3 IOprint_formatted_str (da_a:void)<-(_5:str)(ca_a:str)
 end test_inner;	# 4  
 ##	mil.line("PROC test_outer(any in) : void {");
 #function test_outer(in:any_1):void;

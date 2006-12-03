@@ -29,8 +29,8 @@ function user.sample(nme:str,val:any_1):bit;	# 0  (sample:bit)<-(nme:str)(val:an
 #find a BAT 	# 3  (_7:str)
     h := algebra.select(b,val,val);	# 4 ALGselect (h:bat[:oid,:any])<-(b:bat[:any,:any])(val:any_1)(val:any_1)
     t := aggr.count(h);	# 5 ALGcount_bat (t:int)<-(h:bat[:oid,:any])
-    x := io.print(t);	# 6 IOprint_val (x:int)<-(t:int)
-    y := io.print(val);	# 7 IOprint_val (y:int)<-(val:any_1)
+    x := io.print(t);	# 6 IOprint_val (x:void)<-(t:int)
+    y := io.print(val);	# 7 IOprint_val (y:void)<-(val:any_1)
     return sample := true;	# 8  (sample:bit)<-(_12:bit)
 end sample;	# 9  
 #

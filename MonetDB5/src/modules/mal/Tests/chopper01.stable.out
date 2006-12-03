@@ -56,12 +56,12 @@ function user.main():void;	# 0  (main:void)
     nb_a := bat.insert(t,6,mb_a);	# 13 BKCinsert_bun (nb_a:void)<-(t:bat[:int,:url])(_27:int)(mb_a:url)
     ob_a := url.url("http://robotics.stanford.edu/icons/ ");	# 14 URLnew (ob_a:url)<-(_29:str)
     pb_a := bat.insert(t,7,ob_a);	# 15 BKCinsert_bun (pb_a:void)<-(t:bat[:int,:url])(_31:int)(ob_a:url)
-    qb_a := io.print("build a table finished");	# 16 IOprint_val (qb_a:int)<-(_33:str)
-    io.print(t);	# 17 IOprint_val (_34:int)<-(t:bat[:int,:url])
+    qb_a := io.print("build a table finished");	# 16 IOprint_val (qb_a:void)<-(_33:str)
+    io.print(t);	# 17 IOprint_val (_34:void)<-(t:bat[:int,:url])
     rb := bat.new(:int,:url);	# 18 CMDBATnew (rb:bat[:int,:url])<-(_2:int)(_3:url)
-    io.print("start loop");	# 19 IOprint_val (_36:int)<-(_37:str)
+    io.print("start loop");	# 19 IOprint_val (_36:void)<-(_37:str)
 barrier (mloop:lng ,h:int ,B2:url ):= bat.newIterator(t);	# 20 CHPbunIterator (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 23
-    io.print(B2);	# 21 IOprint_val (_41:int)<-(B2:url)
+    io.print(B2);	# 21 IOprint_val (_41:void)<-(B2:url)
     redo (mloop:lng ,h:int ,B2:url ):= bat.hasMoreElements(t);	# 22 CHPbunHasMoreElements (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 21
 exit mloop:lng ;	# 23  (mloop:lng)
 end main;	# 24  

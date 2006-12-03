@@ -33,7 +33,7 @@ function user.main():void;	# 0  (main:void)
     z := algebra.markT(rr,o);	# 6 ALGtmark (z:bat[:int,:void])<-(rr:bat[:int,:int])(o:oid)
     t := r;	# 7  (t:bat[:int,:int])<-(r:bat[:int,:int])
     k := 23:int;	# 8  (k:int)<-(_14:int)
-    io.print(t);	# 9 IOprint_val (_15:int)<-(t:bat[:int,:int])
+    io.print(t);	# 9 IOprint_val (_15:void)<-(t:bat[:int,:int])
 end main;	# 10  
 #-----------------#
 # h	t	  # name

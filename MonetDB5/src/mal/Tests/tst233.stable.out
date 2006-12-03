@@ -24,7 +24,7 @@ function user.dir():void;	# 0  (dir:void)
     d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:int,:int])
     dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:int,:int])
     dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:int,:str])
-    io.print(dn,d,dl);	# 4 IOtable (_4:int)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+    io.print(dn,d,dl);	# 4 IOtable (_4:void)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
 end dir;	# 5  
 #
 #

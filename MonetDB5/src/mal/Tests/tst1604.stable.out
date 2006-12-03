@@ -24,7 +24,7 @@ function user.main():void;	# 0  (main:void)
     t := bat.new(:int,:str);	# 2 CMDBATnew (t:bat[:int,:str])<-(_3:int)(_4:str)
     bat.setColumn(t,"first");	# 3 BKCsetColumn (_5:void)<-(t:bat[:int,:str])(_6:str)
     u := bat.new(:int,:str);	# 4 CMDBATnew (u:bat[:int,:str])<-(_3:int)(_8:str)
-    io.print(t,u);	# 5 IOtable (_9:int)<-(t:bat[:int,:str])(u:bat[:int,:str])
+    io.print(t,u);	# 5 IOtable (_9:void)<-(t:bat[:int,:str])(u:bat[:int,:str])
 end main;	# 6  
 #-------------------------#
 # h	first	tmp_5	  # name

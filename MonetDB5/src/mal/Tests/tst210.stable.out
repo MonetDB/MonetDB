@@ -25,10 +25,10 @@ function user.main():void;	# 0  (main:void)
 # simple renaming of a bat; 	# 1  (_1:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
     bat.insert(b,1,1);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_5:int)
-    io.print(b);	# 4 IOprint_val (_6:int)<-(b:bat[:int,:int])
+    io.print(b);	# 4 IOprint_val (_6:void)<-(b:bat[:int,:int])
     bat.setName(b,"myhome");	# 5 BKCsetName (_7:void)<-(b:bat[:int,:int])(_8:str)
     bat.setColumn(b,"first","last");	# 6 BKCsetColumns (_9:void)<-(b:bat[:int,:int])(_10:str)(_11:str)
-    io.print(b);	# 7 IOprint_val (_12:int)<-(b:bat[:int,:int])
+    io.print(b);	# 7 IOprint_val (_12:void)<-(b:bat[:int,:int])
 end main;	# 8  
 #-----------------#
 # h	tmp_4	  # name

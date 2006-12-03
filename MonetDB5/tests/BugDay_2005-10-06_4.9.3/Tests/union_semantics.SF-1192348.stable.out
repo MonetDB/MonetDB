@@ -29,7 +29,7 @@ function user.main():void;	# 0  (main:void)
     bat.insert(y,1@0,3);	# 5 BKCinsert_bun (_11:void)<-(y:bat[:oid,:int])(_9:oid)(_12:int)
     bat.insert(y,2@0,4);	# 6 BKCinsert_bun (_13:void)<-(y:bat[:oid,:int])(_14:oid)(_15:int)
     u := algebra.kunion(x,y);	# 7 ALGkunion (u:bat[:oid,:int])<-(x:bat[:oid,:int])(y:bat[:oid,:int])
-    io.print(u);	# 8 IOprint_val (_17:int)<-(u:bat[:oid,:int])
+    io.print(u);	# 8 IOprint_val (_17:void)<-(u:bat[:oid,:int])
 end main;	# 9  
 #-----------------#
 # h	t	  # name

@@ -75,7 +75,7 @@ function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     bRef := algebra.join(brev,bref);	# 27 ALGjoin (bRef:bat[:str,:int])<-(brev:bat[:str,:int])(bref:bat[:int,:int])
     bat.setColumn(bRef,"refcnt");	# 28 BKCsetColumn (_32:void)<-(bRef:bat[:str,:int])(_33:str)
 #	io.table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef); 	# 29  (_34:str)
-    io.table(brev,bm,bHead,bTail,bCount,bKind,bRef);	# 30 IOttable (_35:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bKind:bat[:str,:str])(bRef:bat[:str,:int])
+    io.table(brev,bm,bHead,bTail,bCount,bKind,bRef);	# 30 IOttable (_35:void)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bKind:bat[:str,:str])(bRef:bat[:str,:int])
 end dir;	# 31  
 #
 #function dir(s:str):void;
@@ -86,10 +86,10 @@ end dir;	# 31
 #	user.dir(tn);
 #end dir;
 function user.dir(s:str):void;	# 0  (dir:void)<-(s:str)
-    io.print("Search directory by name");	# 1 IOprint_val (_2:int)<-(_3:str)
+    io.print("Search directory by name");	# 1 IOprint_val (_2:void)<-(_3:str)
     t := bbp.getNames();	# 2 CMDbbpNames (t:bat[:int,:str])
     tn := algebra.like(t,s);	# 3 ALGlike (tn:bat[:int,:str])<-(t:bat[:int,:str])(s:str)
-    io.print(tn);	# 4 IOprint_val (_6:int)<-(tn:bat[:int,:str])
+    io.print(tn);	# 4 IOprint_val (_6:void)<-(tn:bat[:int,:str])
     user.dir(tn);	# 5  (_7:void)<-(tn:bat[:int,:str])
 end dir;	# 6  
 #io.print("start test");
@@ -105,7 +105,7 @@ end dir;	# 6
 function user.main():void;	# 0  (main:void)
 #inspection of the runtime setting 	# 1  (_1:str)
 #it uses the dynamic type analysis scheme 	# 2  (_2:str)
-    io.print("start test");	# 3 IOprint_val (_3:int)<-(_4:str)
+    io.print("start test");	# 3 IOprint_val (_3:void)<-(_4:str)
     b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
     bat.setName(b,"simplemind");	# 5 BKCsetName (_7:void)<-(b:bat[:int,:int])(_8:str)
     z := bbp.getNames();	# 6 CMDbbpNames (z:bat[:int,:str])

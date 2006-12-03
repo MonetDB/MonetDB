@@ -26,7 +26,7 @@ function user.main():void;	# 0  (main:void)
     z := bat.new(:int,:int);	# 3 CMDBATnew (z:bat[:int,:int])<-(_4:int)(_4:int)
     b := calc.getBATidentifier(z);	# 4 CALCbat2batid (b:BAT)<-(z:bat[:int,:int])
     bat.insert(b,1,2);	# 5  unknown (_6:any)<-(b:BAT)(_7:int)(_8:int)
-    io.print(b);	# 6 IOprint_val (_9:int)<-(b:BAT)
+    io.print(b);	# 6 IOprint_val (_9:void)<-(b:BAT)
 end main;	# 7  
 
 # 15:26:49 >  

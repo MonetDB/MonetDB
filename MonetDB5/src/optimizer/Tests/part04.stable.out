@@ -58,17 +58,17 @@ stdout of test 'part04` in directory 'src/optimizer` itself:
 #	io.print(j);
 #end qry;
 function user.qry(a:bat[:void,:int],b:bat[:void,:int]):void;	# 0  (qry:void)<-(a:bat[:void,:int])(b:bat[:void,:int])
-    io.print("a partition");	# 1 IOprint_val (_3:int)<-(_4:str)
+    io.print("a partition");	# 1 IOprint_val (_3:void)<-(_4:str)
     zz := algebra.select(a,0,10);	# 2 ALGselect (zz:bat[:oid,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
-    io.print(zz);	# 3 IOprint_val (_8:int)<-(zz:bat[:oid,:int])
-    io.print("b partition");	# 4 IOprint_val (_9:int)<-(_10:str)
+    io.print(zz);	# 3 IOprint_val (_8:void)<-(zz:bat[:oid,:int])
+    io.print("b partition");	# 4 IOprint_val (_9:void)<-(_10:str)
     yy := algebra.select(b,0,10);	# 5 ALGselect (yy:bat[:oid,:int])<-(b:bat[:void,:int])(_6:int)(_7:int)
-    io.print(yy);	# 6 IOprint_val (_12:int)<-(yy:bat[:oid,:int])
-    io.print("experiment 3");	# 7 IOprint_val (_13:int)<-(_14:str)
+    io.print(yy);	# 6 IOprint_val (_12:void)<-(yy:bat[:oid,:int])
+    io.print("experiment 3");	# 7 IOprint_val (_13:void)<-(_14:str)
     c := algebra.select(a,0,10);	# 8 ALGselect (c:bat[:oid,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
     m := bat.mirror(c);	# 9 BKCmirror (m:bat[:oid,:oid])<-(c:bat[:oid,:int])
     j := algebra.join(m,b);	# 10 ALGjoin (j:bat[:oid,:int])<-(m:bat[:oid,:oid])(b:bat[:void,:int])
-    io.print(j);	# 11 IOprint_val (_18:int)<-(j:bat[:oid,:int])
+    io.print(j);	# 11 IOprint_val (_18:void)<-(j:bat[:oid,:int])
 end qry;	# 12  
 #
 #optimizer.partitionedQuery("user","qry");
@@ -127,7 +127,7 @@ exit (go,i);	# 22  (go:bit)(i:int)
 # two sinks. A naive translation will produce 	# 32  (_39:str)
 # a double nested loop 	# 33  (_40:str)
     mdb.list("user","qry");	# 34 MDBlist3 (_44:void)<-(_42:str)(_43:str)
-    io.print("run experiment");	# 35 IOprint_val (_45:int)<-(_46:str)
+    io.print("run experiment");	# 35 IOprint_val (_45:void)<-(_46:str)
     user.qry(a1,b1);	# 36  (_47:void)<-(a1:bat[:void,:int])(b1:bat[:void,:int])
 end main;	# 37  
 ptop=6 plimit=1024

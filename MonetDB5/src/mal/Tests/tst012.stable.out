@@ -33,18 +33,18 @@ function user.main():void;	# 0  (main:void)
 # simple loop with controlled redo 	# 1  (_1:str)
     i := 0;	# 2  (i:int)<-(_3:int)
 barrier j := calc.<(i,3);	# 3 CALCcompLTintint (j:bit)<-(i:int)(_5:int) jump 7
-    io.print(i);	# 4 IOprint_val (_6:int)<-(i:int)
+    io.print(i);	# 4 IOprint_val (_6:void)<-(i:int)
     i := calc.+(i,1);	# 5 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
     redo j := calc.<(i,3);	# 6 CALCcompLTintint (j:bit)<-(i:int)(_5:int) jump 4
 exit j;	# 7  (j:bit)
-    io.print("first loop done");	# 8 IOprint_val (_8:int)<-(_9:str)
+    io.print("first loop done");	# 8 IOprint_val (_8:void)<-(_9:str)
     i := 0;	# 9  (i:int)<-(_3:int)
 barrier j := calc.<(i,3);	# 10 CALCcompLTintint (j:bit)<-(i:int)(_5:int) jump 14
-    io.print(i);	# 11 IOprint_val (_10:int)<-(i:int)
+    io.print(i);	# 11 IOprint_val (_10:void)<-(i:int)
     i := calc.+(i,1);	# 12 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
     redo j := calc.<(i,3);	# 13 CALCcompLTintint (j:bit)<-(i:int)(_5:int) jump 11
 exit j;	# 14  (j:bit)
-    io.print("second loop done");	# 15 IOprint_val (_11:int)<-(_12:str)
+    io.print("second loop done");	# 15 IOprint_val (_11:void)<-(_12:str)
 end main;	# 16  
 [ 0 ]
 [ 1 ]

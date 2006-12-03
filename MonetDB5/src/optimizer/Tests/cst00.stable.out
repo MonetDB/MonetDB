@@ -26,11 +26,11 @@ stdout of test 'cst00` in directory 'src/optimizer` itself:
 #
 function user.main():void;	# 0  (main:void)
 # testing simple constantExpression optimizations 	# 1  (_1:str)
-    io.print(2);	# 2 IOprint_val (_4:int)<-(a:int)
-    io.print(2);	# 3 IOprint_val (_7:int)<-(_6:int)
-    io.print(6);	# 4 IOprint_val (_10:int)<-(c:int)
-    io.print(6);	# 5 IOprint_val (_12:int)<-(d:flt)
-    io.print(-0.279415488);	# 6 IOprint_val (_14:int)<-(e:flt)
+    io.print(2);	# 2 IOprint_val (_4:void)<-(a:int)
+    io.print(2);	# 3 IOprint_val (_7:void)<-(_6:int)
+    io.print(6);	# 4 IOprint_val (_10:void)<-(c:int)
+    io.print(6);	# 5 IOprint_val (_12:void)<-(d:flt)
+    io.print(-0.279415488);	# 6 IOprint_val (_14:void)<-(e:flt)
     mdb.list();	# 7 MDBlist (_17:void)
 end main;	# 8  
 [ 2 ]

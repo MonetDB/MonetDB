@@ -45,7 +45,7 @@ barrier (go,i):= language.newRange(0);	# 6 RNGnewRange_int (go:bit)(i:int)<-(_12
 exit (go,i);	# 9  (go:bit)(i:int)
     partitions.dump();	# 10 BPTdump (_16:void)
 barrier (k,b):= partitions.newIterator(a1);	# 11 BPTnewIterator (k:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 14
-    io.print(b);	# 12 IOprint_val (_19:int)<-(b:bat[:void,:int])
+    io.print(b);	# 12 IOprint_val (_19:void)<-(b:bat[:void,:int])
     redo (k,b):= partitions.hasMoreElements(a1);	# 13 BPThasMoreElements (k:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 12
 exit (k,b);	# 14  (k:int)(b:bat[:void,:int])
 # add it 	# 15  (_22:str)

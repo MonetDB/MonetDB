@@ -28,7 +28,7 @@ function user.main():void;	# 0  (main:void)
 # caused a problem when executed in interactve mode 	# 2  (_2:str)
     RKA := bat.new(:int,:int,1048576);	# 3 CMDBATnewint (RKA:bat[:int,:int])<-(_4:int)(_4:int)(_5:int)
     bat.insert(RKA,1:int,360:int);	# 4 BKCinsert_bun (_6:void)<-(RKA:bat[:int,:int])(_7:int)(_8:int)
-    io.print(RKA);	# 5 IOprint_val (_9:int)<-(RKA:bat[:int,:int])
+    io.print(RKA);	# 5 IOprint_val (_9:void)<-(RKA:bat[:int,:int])
 #the next one should fail 	# 6  (_10:str)
     bat.setWriteMode(RKB);	# 7  unknown (_11:any)<-(RKB:any)
 end main;	# 8  

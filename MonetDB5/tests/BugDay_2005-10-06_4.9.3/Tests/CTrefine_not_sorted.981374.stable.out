@@ -37,7 +37,7 @@ function user.main():void;	# 0  (main:void)
     vu_fid0 := algebra.markT(var_usage,1000@0);	# 10 ALGtmark (vu_fid0:bat[:oid,:void])<-(var_usage:bat[:oid,:oid])(_11:oid)
     vu_fid := bat.reverse(vu_fid0);	# 11 BKCreverse (vu_fid:bat[:void,:oid])<-(vu_fid0:bat[:oid,:void])
     sorting := group.refine(vu_fid,vu_vid);	# 12 GRPrefine (sorting:bat[:void,:oid])<-(vu_fid:bat[:void,:oid])(vu_vid:bat[:void,:oid])
-    io.print(sorting);	# 13 IOprint_val (_16:int)<-(sorting:bat[:void,:oid])
+    io.print(sorting);	# 13 IOprint_val (_16:void)<-(sorting:bat[:void,:oid])
 end main;	# 14  
 #-----------------#
 # h	t	  # name

@@ -37,9 +37,9 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,4,"false");	# 7 BKCinsert_bun (_15:void)<-(b:bat[:int,:str])(_16:int)(_17:str)
     bat.insert(b,5,"");	# 8 BKCinsert_bun (_18:void)<-(b:bat[:int,:str])(_19:int)(_20:str)
     bat.insert(b,6,nil:str);	# 9 BKCinsert_bun (_21:void)<-(b:bat[:int,:str])(_22:int)(_23:str)
-    io.print(b);	# 10 IOprint_val (_24:int)<-(b:bat[:int,:str])
+    io.print(b);	# 10 IOprint_val (_24:void)<-(b:bat[:int,:str])
     bc := batcalc.bit(b);	# 11 CMDconvert_str_bit (bc:bat[:int,:bit])<-(b:bat[:int,:str])
-    io.print(bc);	# 12 IOprint_val (_26:int)<-(bc:bat[:int,:bit])
+    io.print(bc);	# 12 IOprint_val (_26:void)<-(bc:bat[:int,:bit])
 end main;	# 13  
 #-------------------------#
 # h	t		  # name

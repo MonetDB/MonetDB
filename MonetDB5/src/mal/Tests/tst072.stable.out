@@ -20,8 +20,8 @@ stdout of test 'tst072` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # parsing operations with multi-assignments 	# 1  (_1:str)
     (c,d):= ("hello","world");	# 2  (c:str)(d:str)<-(_4:str)(_5:str)
-    io.print(c);	# 3 IOprint_val (_6:int)<-(c:str)
-    io.print(d);	# 4 IOprint_val (_7:int)<-(d:str)
+    io.print(c);	# 3 IOprint_val (_6:void)<-(c:str)
+    io.print(d);	# 4 IOprint_val (_7:void)<-(d:str)
 end main;	# 5  
 [ "hello" ]
 [ "world" ]

@@ -45,15 +45,15 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,2@0,3@0);	# 9 BKCinsert_bun (_14:void)<-(b:bat[:oid,:oid])(_9:oid)(_11:oid)
     bat.insert(b,3@0,nil:oid);	# 10 BKCinsert_bun (_15:void)<-(b:bat[:oid,:oid])(_11:oid)(_16:oid)
     bat.insert(b,3@0,1@0);	# 11 BKCinsert_bun (_17:void)<-(b:bat[:oid,:oid])(_11:oid)(_7:oid)
-    io.print(b);	# 12 IOprint_val (_18:int)<-(b:bat[:oid,:oid])
-    ma_a := io.printf("#~BeginVariableOutput~#\n");	# 13 IOprint_str (ma_a:int)<-(_20:str)
+    io.print(b);	# 12 IOprint_val (_18:void)<-(b:bat[:oid,:oid])
+    ma_a := io.printf("#~BeginVariableOutput~#\n");	# 13 IOprint_str (ma_a:void)<-(_20:str)
     na_a := bat.info(b);	# 14 BKCinfo (na_a:bat[:str,:str])<-(b:bat[:oid,:oid])
-    oa_a := io.print(na_a);	# 15 IOprint_val (oa_a:int)<-(na_a:bat[:str,:str])
-    pa_a := io.printf("#~EndVariableOutput~#\n");	# 16 IOprint_str (pa_a:int)<-(_24:str)
+    oa_a := io.print(na_a);	# 15 IOprint_val (oa_a:void)<-(na_a:bat[:str,:str])
+    pa_a := io.printf("#~EndVariableOutput~#\n");	# 16 IOprint_str (pa_a:void)<-(_24:str)
     g := group.min(b);	# 17 GRPmin_oid_oid (g:bat[:oid,:oid])<-(b:bat[:oid,:oid])
-    io.print(g);	# 18 IOprint_val (_26:int)<-(g:bat[:oid,:oid])
+    io.print(g);	# 18 IOprint_val (_26:void)<-(g:bat[:oid,:oid])
     h := group.max(b);	# 19 GRPmax_oid_oid (h:bat[:oid,:oid])<-(b:bat[:oid,:oid])
-    io.print(h);	# 20 IOprint_val (_28:int)<-(h:bat[:oid,:oid])
+    io.print(h);	# 20 IOprint_val (_28:void)<-(h:bat[:oid,:oid])
 end main;	# 21  
 #-----------------#
 # h	t	  # name
@@ -73,7 +73,7 @@ end main;	# 21
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "20749"	  ]
+[ "version",		  "25105"	  ]
 [ "batId",		  "tmp_7"	  ]
 [ "batCacheid",		  "7"		  ]
 [ "batParentid",	  "0"		  ]
@@ -118,9 +118,9 @@ end main;	# 21
 [ "batDeleted",		  "0"		  ]
 [ "batFirst",		  "0"		  ]
 [ "top",		  "9"		  ]
-[ "batStamp",		  "5"		  ]
-[ "lastUsed",		  "168"		  ]
-[ "curStamp",		  "6"		  ]
+[ "batStamp",		  "4"		  ]
+[ "lastUsed",		  "167"		  ]
+[ "curStamp",		  "5"		  ]
 [ "batCopiedtodisk",	  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]
 [ "batDirtybuns",	  "clean"	  ]

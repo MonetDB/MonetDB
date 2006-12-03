@@ -35,7 +35,7 @@ barrier (v,i):= language.newRange(0:lng);	# 5 RNGnewRange_lng (v:bit)(i:lng)<-(_
     bat.insert(b,i,i);	# 6 BKCinsert_bun (_10:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
     redo (v,i):= language.nextElement(1:lng,10:lng);	# 7 RNGnextElement_lng (v:bit)(i:lng)<-(_11:lng)(_12:lng) jump 6
 exit (v,i);	# 8  (v:bit)(i:lng)
-    io.print(b);	# 9 IOprint_val (_13:int)<-(b:bat[:lng,:lng])
+    io.print(b);	# 9 IOprint_val (_13:void)<-(b:bat[:lng,:lng])
     c := 1;	# 10  (c:int)<-(_15:int)
     _19 := bat.new(nil:lng,nil:lng);	# 11 CMDBATnew (_19:bat[:lng,:lng])<-(_20:lng)(_20:lng)
 barrier (_22,_23,_24):= bat.newIterator(b);	# 12 CHPbunIterator (_22:lng)(_23:lng)(_24:lng)<-(b:bat[:lng,:lng]) jump 19
@@ -47,7 +47,7 @@ catch MALexception:str ;	# 16  (MALexception:str) jump 18
 exit MALexception:str ;	# 18  (MALexception:str)
 exit (_22,_23,_24);	# 19  (_22:lng)(_23:lng)(_24:lng)
     xz:bat[:lng,:lng]  := _19;	# 20  (xz:bat[:lng,:lng])<-(_19:bat[:lng,:lng])
-    io.print(xz);	# 21 IOprint_val (_18:int)<-(xz:bat[:lng,:lng])
+    io.print(xz);	# 21 IOprint_val (_18:void)<-(xz:bat[:lng,:lng])
 end main;	# 22  
 #-----------------#
 # h	tmp_4	  # name

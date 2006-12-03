@@ -47,9 +47,9 @@ function user.main():void;	# 0  (main:void)
     err := bat.insert(b,9,n0);	# 12 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_21:int)(n0:int)
     err := bat.insert(b,n0,n0);	# 13 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
     err := bat.insert(b,n0,81);	# 14 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(_22:int)
-    io.print(b);	# 15 IOprint_val (_23:int)<-(b:bat[:int,:int])
+    io.print(b);	# 15 IOprint_val (_23:void)<-(b:bat[:int,:int])
     algebra.topN(b,9);	# 16 ALGtopN (_24:bat[:int,:int])<-(b:bat[:int,:int])(_25:lng)
-    io.print(b);	# 17 IOprint_val (_26:int)<-(b:bat[:int,:int])
+    io.print(b);	# 17 IOprint_val (_26:void)<-(b:bat[:int,:int])
 end main;	# 18  
 #-----------------#
 # h	t	  # name

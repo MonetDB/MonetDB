@@ -29,12 +29,12 @@ function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     bat.insert(b,1,4);	# 5 BKCinsert_bun (_9:void)<-(b:bat[:int,:int])(_4:int)(_10:int)
     bat.insert(b,2,9);	# 6 BKCinsert_bun (_11:void)<-(b:bat[:int,:int])(_5:int)(_12:int)
-    io.print(a,b);	# 7 IOtable (_13:int)<-(a:bat[:int,:int])(b:bat[:int,:int])
+    io.print(a,b);	# 7 IOtable (_13:void)<-(a:bat[:int,:int])(b:bat[:int,:int])
     b := bat.new(:int,:int);	# 8 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     bat.insert(b,nil:int,nil:int);	# 9 BKCinsert_bun (_14:void)<-(b:bat[:int,:int])(_15:int)(_15:int)
     bat.insert(b,1,4);	# 10 BKCinsert_bun (_16:void)<-(b:bat[:int,:int])(_4:int)(_10:int)
     bat.insert(b,2,9);	# 11 BKCinsert_bun (_17:void)<-(b:bat[:int,:int])(_5:int)(_12:int)
-    io.print(a,b);	# 12 IOtable (_18:int)<-(a:bat[:int,:int])(b:bat[:int,:int])
+    io.print(a,b);	# 12 IOtable (_18:void)<-(a:bat[:int,:int])(b:bat[:int,:int])
 end main;	# 13  
 #-------------------------#
 # h	t	t	  # name

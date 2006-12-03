@@ -62,12 +62,12 @@ barrier (go,i):= language.newRange(0);	# 8 RNGnewRange_int (go:bit)(i:int)<-(_15
     bat.append(a3,i);	# 11 BKCappend_val_wrap (_18:void)<-(a3:bat[:void,:int])(i:int)
     redo (go,i):= language.nextElement(1,10);	# 12 RNGnextElement_int (go:bit)(i:int)<-(_19:int)(_20:int) jump 9
 exit (go,i);	# 13  (go:bit)(i:int)
-    io.print(a1);	# 14 IOprint_val (_21:int)<-(a1:bat[:void,:int])
-    io.print(a2);	# 15 IOprint_val (_22:int)<-(a2:bat[:void,:int])
-    io.print(a3);	# 16 IOprint_val (_23:int)<-(a3:bat[:void,:int])
+    io.print(a1);	# 14 IOprint_val (_21:void)<-(a1:bat[:void,:int])
+    io.print(a2);	# 15 IOprint_val (_22:void)<-(a2:bat[:void,:int])
+    io.print(a3);	# 16 IOprint_val (_23:void)<-(a3:bat[:void,:int])
 # add the stuff to the BPT and dump it 	# 17  (_24:str)
 barrier idx := partitions.newIterator();	# 18 BPTnewIteratorBase (idx:int) jump 21
-    io.print(idx);	# 19 IOprint_val (_26:int)<-(idx:int)
+    io.print(idx);	# 19 IOprint_val (_26:void)<-(idx:int)
     redo idx := partitions.hasMoreElements();	# 20 BPThasMoreElementsBase (idx:int) jump 19
 exit idx;	# 21  (idx:int)
 # now really add it 	# 22  (_27:str)
@@ -76,9 +76,9 @@ exit idx;	# 21  (idx:int)
     partitions.deposit(a1,a3);	# 25 BPTdeposit2 (_30:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
     partitions.dump();	# 26 BPTdump (_31:void)
 barrier idx := partitions.newIterator();	# 27 BPTnewIteratorBase (idx:int) jump 32
-    io.print(idx);	# 28 IOprint_val (_32:int)<-(idx:int)
+    io.print(idx);	# 28 IOprint_val (_32:void)<-(idx:int)
     b := partitions.take(idx);	# 29 BPTtake (b:bat[:void,:any])<-(idx:int)
-    io.print(b);	# 30 IOprint_val (_34:int)<-(b:bat[:void,:any])
+    io.print(b);	# 30 IOprint_val (_34:void)<-(b:bat[:void,:any])
     redo idx := partitions.hasMoreElements();	# 31 BPThasMoreElementsBase (idx:int) jump 28
 exit idx;	# 32  (idx:int)
 end main;	# 33  

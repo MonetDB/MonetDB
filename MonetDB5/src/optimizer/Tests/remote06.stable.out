@@ -32,7 +32,7 @@ function user.main():void;	# 0  (main:void)
     mid := mserver.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal");	# 6 SERVERreconnectAlias (mid:int)<-(_8:str)(_9:str)(port:int)(_10:str)(_10:str)(_11:str)
 #mserver.trace(mid,1); 	# 7  (_12:str)
     mserver.rpc(mid,"io.print(d);");	# 8 SERVERquery (_13:void)<-(mid:int)(_14:str)
-    io.print("done");	# 9 IOprint_val (_15:int)<-(_16:str)
+    io.print("done");	# 9 IOprint_val (_15:void)<-(_16:str)
 end main;	# 10  
 !ERROR: MALexception:mserver.query:!ERROR: 'd' may not be used before being initialized in main[1]
 

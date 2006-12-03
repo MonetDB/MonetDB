@@ -57,9 +57,9 @@ stdout of test 'part02` in directory 'src/optimizer` itself:
 #	io.print(j);
 #end qry;
 function user.qry(a:bat[:void,:int],b:bat[:int,:void]):void;	# 0  (qry:void)<-(a:bat[:void,:int])(b:bat[:int,:void])
-    io.print("experiment 3");	# 1 IOprint_val (_3:int)<-(_4:str)
+    io.print("experiment 3");	# 1 IOprint_val (_3:void)<-(_4:str)
     j := algebra.join(a,b);	# 2 ALGjoin (j:bat[:void,:oid])<-(a:bat[:void,:int])(b:bat[:int,:void])
-    io.print(j);	# 3 IOprint_val (_6:int)<-(j:bat[:void,:oid])
+    io.print(j);	# 3 IOprint_val (_6:void)<-(j:bat[:void,:oid])
 end qry;	# 4  
 #
 #optimizer.partitionedQuery("user","qry");
@@ -108,7 +108,7 @@ exit (go,i);	# 22  (go:bit)(i:int)
 # two sinks. A naive translation will produce 	# 32  (_39:str)
 # a double nested loop 	# 33  (_40:str)
     mdb.list("user","qry");	# 34 MDBlist3 (_44:void)<-(_42:str)(_43:str)
-    io.print("run experiment");	# 35 IOprint_val (_45:int)<-(_46:str)
+    io.print("run experiment");	# 35 IOprint_val (_45:void)<-(_46:str)
     br := bat.reverse(b1);	# 36 BKCreverse (br:bat[:int,:void])<-(b1:bat[:void,:int])
     user.qry(a1,br);	# 37  (_48:void)<-(a1:bat[:void,:int])(br:bat[:int,:void])
 end main;	# 38  

@@ -21,7 +21,7 @@ function user.main():void;	# 0  (main:void)
 #propagate INT exception 	# 1  (_1:str)
 # (you should be able to pass it upwards though) 	# 2  (_2:str)
     raise IllegalAccess := 1234;	# 3  (IllegalAccess:int)<-(_4:int)
-    io.print("should not come here\n");	# 4 IOprint_val (_5:int)<-(_6:str)
+    io.print("should not come here\n");	# 4 IOprint_val (_5:void)<-(_6:str)
 end main;	# 5  
 !ERROR: IllegalAccess:user.main[3]:Exception raised
 !ERROR: IllegalAccess:user.main[5]:Exception not catched

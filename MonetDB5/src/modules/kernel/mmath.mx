@@ -328,9 +328,10 @@ MNisinf(double x)
 #endif /* HAVE_FPCLASSIFY */
 
 #include "mal.h"
-mmath_export int math_unary_FINITE(bit *res, dbl *a);
-mmath_export int math_unary_ISNAN(bit *res, dbl *a);
-mmath_export int math_unary_ISINF(int *res, dbl *a);
+#include "mal_exception.h"
+mmath_export str math_unary_FINITE(bit *res, dbl *a);
+mmath_export str math_unary_ISNAN(bit *res, dbl *a);
+mmath_export str math_unary_ISINF(int *res, dbl *a);
 
 @:unop(_ACOS,acos)@
 @:unop(_ASIN,asin)@
@@ -357,7 +358,7 @@ mmath_export int math_unary_ISINF(int *res, dbl *a);
 @:binop(_FMOD,fmod)@
 
 @= unop
-int
+str
 math_unary@1(dbl *res , dbl *a )
 {
 #ifdef DEBUG
@@ -368,29 +369,21 @@ math_unary@1(dbl *res , dbl *a )
 	} else {
 		errno = 0;
 		@2_unary( a, res );
-		if (errno == EDOM) {
-			GDKerror("Negative argument is not allowed");
-			return GDK_FAIL;
-		}
-		if (errno == ERANGE) {
-			GDKerror("Range error");
-			return GDK_FAIL;
-		}
-		if (MNisnan(*res)) {
-			GDKerror("Negative argument is not allowed");
-			return GDK_FAIL;
-		}
-		if (!MNfinite(*res)) {
-			GDKerror("Range error");
-			return GDK_FAIL;
-		}
+		if (errno == EDOM)
+			return throwMessage("mmath.@1","Negative argument is not allowed");
+		if (errno == ERANGE)
+			return throwMessage("mmath.@1","Range error");
+		if (MNisnan(*res))
+			return throwMessage("mmath.@1","Negative argument is not allowed");
+		if (!MNfinite(*res))
+			return throwMessage("mmath.@1","Range error");
 	}
-	return(GDK_SUCCEED);
+	return MAL_SUCCEED;
 }
 @
 
 @= binop
-int
+str
 math_binary@1(dbl *res, dbl *a, dbl *b )
 {
 #ifdef DEBUG
@@ -401,12 +394,12 @@ math_binary@1(dbl *res, dbl *a, dbl *b )
 	} else {
 		@2_binary( a, b, res);
 	}
-	return(GDK_SUCCEED);
+	return MAL_SUCCEED;
 }
 @
 
 @c
-int
+str
 math_binary_ROUND(dbl *res, dbl *x, int *y)
 {
 	if (*x == dbl_nil || *y == int_nil) {
@@ -428,10 +421,10 @@ math_binary_ROUND(dbl *res, dbl *x, int *y)
 		*res = tmp;
 	}
 
-	return (GDK_SUCCEED);
+	return MAL_SUCCEED;
 }
 
-int
+str
 math_unary_ISNAN(bit *res, dbl *a)
 {
 #ifdef DEBUG
@@ -442,10 +435,10 @@ math_unary_ISNAN(bit *res, dbl *a)
 	} else {
 		*res = MNisnan(*a);
 	}
-	return (GDK_SUCCEED);
+	return MAL_SUCCEED;
 }
 
-int
+str
 math_unary_ISINF(int *res, dbl *a)
 {
 #ifdef DEBUG
@@ -460,10 +453,10 @@ math_unary_ISINF(int *res, dbl *a)
 			*res = 0;
 		}
 	}
-	return (GDK_SUCCEED);
+	return MAL_SUCCEED;
 }
 
-int
+str
 math_unary_FINITE(bit *res, dbl *a)
 {
 #ifdef DEBUG
@@ -474,7 +467,7 @@ math_unary_FINITE(bit *res, dbl *a)
 	} else {
 		*res = MNfinite(*a);
 	}
-	return (GDK_SUCCEED);
+	return MAL_SUCCEED;
 }
 
 @- Wrapping
@@ -486,15 +479,16 @@ str MATHunary@1@3(@3 *res , @3 *a ) {
 #ifdef DEBUG
 		printf( "MATHunary@1@3\n");
 #endif
-   dbl tmp1,tmp2;
-   if (*a == @3_nil) {
+	dbl tmp1,tmp2;
+	str msg= MAL_SUCCEED;
+	if (*a == @3_nil) {
 		*res = @3_nil;
-   } else {
+	} else {
 		tmp1= *a;
 		@2_unary( &tmp1, &tmp2 );
 		*res = (@3) tmp2;
-   }
-   return MAL_SUCCEED;
+	}
+   return msg;
 }
 
 @-
@@ -542,7 +536,6 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
 
 	*res = (@1) tmp;
   }
-
   return MAL_SUCCEED;
 }
 @c
@@ -577,24 +570,21 @@ mmath_export str MATHunary_ISNAN(bit *res, dbl *a);
 str
 MATHunary_ISNAN(bit *res, dbl *a)
 {
-	math_unary_ISNAN(res, a);
-	return MAL_SUCCEED;
+	return math_unary_ISNAN(res, a);
 }
 
 mmath_export str MATHunary_ISINF(int *res, dbl *a);
 str
 MATHunary_ISINF(int *res, dbl *a)
 {
-	math_unary_ISINF(res, a);
-	return MAL_SUCCEED;
+	return math_unary_ISINF(res, a);
 }
 
 mmath_export str MATHunary_FINITE(bit *res, dbl *a);
 str
 MATHunary_FINITE(bit *res, dbl *a)
 {
-	math_unary_FINITE(res, a);
-	return MAL_SUCCEED;
+	return math_unary_FINITE(res, a);
 }
 
 mmath_export str MATHrandint(int *res);
@@ -614,4 +604,3 @@ MATHsrandint(int *seed)
 }
 
 @}
-

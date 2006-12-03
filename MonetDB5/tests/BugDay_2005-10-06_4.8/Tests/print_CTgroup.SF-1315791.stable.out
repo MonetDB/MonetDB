@@ -22,7 +22,7 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,nil:void,0);	# 3 BKCinsert_bun (_5:void)<-(b:bat[:void,:int])(_6:void)(_7:int)
     bat.setSequenceBase(b,0@0);	# 4 BKCsetSequenceBase (_8:bat[:void,:int])<-(b:bat[:void,:int])(_9:oid)
     (histo,grp):= group.new(b);	# 5 GRPgroup (histo:bat[:void,:int])(grp:bat[:void,:oid])<-(b:bat[:void,:int])
-    io.print(grp);	# 6 IOprint_val (_12:int)<-(grp:bat[:void,:oid])
+    io.print(grp);	# 6 IOprint_val (_12:void)<-(grp:bat[:void,:oid])
 end main;	# 7  
 #-----------------#
 # h	t	  # name

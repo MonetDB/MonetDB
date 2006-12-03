@@ -42,11 +42,11 @@ function user.main():void;	# 0  (main:void)
     c := batcalc.+(b,6);	# 9 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_13:int)
     c := batcalc.+(b,7);	# 10 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_14:int)
     c := batcalc.+(b,8);	# 11 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_15:int)
-    io.print(c);	# 12 IOprint_val (_16:int)<-(c:bat[:int,:int])
+    io.print(c);	# 12 IOprint_val (_16:void)<-(c:bat[:int,:int])
     d := bbp.getRefCount();	# 13 CMDbbpRefCount (d:bat[:int,:int])
     dl := bbp.getLRefCount();	# 14 CMDbbpLRefCount (dl:bat[:int,:int])
     dn := bbp.getNames();	# 15 CMDbbpNames (dn:bat[:int,:str])
-    io.print(dn,d,dl);	# 16 IOtable (_20:int)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+    io.print(dn,d,dl);	# 16 IOtable (_20:void)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
 end main;	# 17  
 #-----------------#
 # h	tmp_5	  # name

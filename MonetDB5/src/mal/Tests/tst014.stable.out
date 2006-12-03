@@ -25,7 +25,7 @@ function user.main():void;	# 0  (main:void)
     i := 1;	# 2  (i:int)<-(_3:int)
 barrier b := calc.==(i,1);	# 3 CALCcompEQintint (b:bit)<-(i:int)(_3:int) jump 7
     i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_3:int)
-    io.print(i);	# 5 IOprint_val (_5:int)<-(i:int)
+    io.print(i);	# 5 IOprint_val (_5:void)<-(i:int)
     redo b := calc.<(i,3);	# 6 CALCcompLTintint (b:bit)<-(i:int)(_6:int) jump 4
 exit b;	# 7  (b:bit)
 end main;	# 8  

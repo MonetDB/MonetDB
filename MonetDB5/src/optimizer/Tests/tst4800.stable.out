@@ -68,8 +68,8 @@ function user.f3():void;	# 0  (f3:void)
     top := t22;	# 23  (top:bat[:void,:lng])<-(t22:bat[:void,:lng])
     bat_0 := array.grid(64,64,1,0);	# 24 ARRAYgrid_int (bat_0:bat[:void,:int])<-(_5:int)(_5:int)(_6:int)(_7:int)
     bat_1 := array.grid(1,64,64,0);	# 25 ARRAYgrid_int (bat_1:bat[:void,:int])<-(_6:int)(_5:int)(_5:int)(_7:int)
-    io.table(bat_0,bat_1,top);	# 26 IOttable (_32:int)<-(bat_0:bat[:void,:int])(bat_1:bat[:void,:int])(top:bat[:void,:lng])
-#       io.table(bat_0,bat_1,top); 	# 27  (_34:str)
+    io.table(bat_0,bat_1,top);	# 26 IOttable (_32:void)<-(bat_0:bat[:void,:int])(bat_1:bat[:void,:int])(top:bat[:void,:lng])
+#       io.table(bat_0,bat_1,top); 	# 27  (_33:str)
 end f3;	# 28  
 #	optimizer.expressionAccumulation("user","f3");
 #	mdb.list("user","f3");

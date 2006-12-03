@@ -54,7 +54,7 @@ barrier (w,h,t):= bat.newIterator(b);	# 10 CHPbunIterator (w:lng)(h:lng)(t:lng)<
 catch GDKerror;	# 16  (GDKerror:any) jump 17
 exit GDKerror;	# 17  (GDKerror:any)
 exit w;	# 18  (w:lng)
-    io.print(d);	# 19 IOprint_val (_20:int)<-(d:bat[:lng,:lng])
+    io.print(d);	# 19 IOprint_val (_20:void)<-(d:bat[:lng,:lng])
 end main;	# 20  
 #-----------------#
 # h	tmp_6	  # name

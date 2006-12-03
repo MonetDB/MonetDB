@@ -39,9 +39,9 @@ function user.main():void;	# 0  (main:void)
     d0 := calc.dbl(1);	# 8 CALCflt2dbl (d0:dbl)<-(_14:flt)
     d1 := calc.dbl(2);	# 9 CALCflt2dbl (d1:dbl)<-(_16:flt)
     z := calc.<(d0,2:dbl);	# 10 CALCcompLTdbldbl (z:bit)<-(d0:dbl)(_18:dbl)
-    io.print(z);	# 11 IOprint_val (_19:int)<-(z:bit)
+    io.print(z);	# 11 IOprint_val (_19:void)<-(z:bit)
     z := calc.<(d1,2:dbl);	# 12 CALCcompLTdbldbl (z:bit)<-(d1:dbl)(_18:dbl)
-    io.print(z);	# 13 IOprint_val (_20:int)<-(z:bit)
+    io.print(z);	# 13 IOprint_val (_20:void)<-(z:bit)
 end main;	# 14  
 [ true ]
 [ false ]

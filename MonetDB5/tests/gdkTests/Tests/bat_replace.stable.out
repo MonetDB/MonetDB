@@ -25,7 +25,7 @@ function user.main():void;	# 0  (main:void)
     bat.append(a,1@0);	# 3 BKCappend_val_wrap (_6:void)<-(a:bat[:void,:oid])(_7:oid)
 # this used to give the error BATpropcheck: BAT tmp_XX is dense but not key!? 	# 4  (_8:str)
     bat.replace(a,0@0,2@0);	# 5 BKCreplace_bun (_9:void)<-(a:bat[:void,:oid])(_5:oid)(_10:oid)
-    io.print(a);	# 6 IOprint_val (_11:int)<-(a:bat[:void,:oid])
+    io.print(a);	# 6 IOprint_val (_11:void)<-(a:bat[:void,:oid])
 end main;	# 7  
 #-----------------#
 # h	t	  # name

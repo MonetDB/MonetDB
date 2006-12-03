@@ -180,7 +180,7 @@ function user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t97 := array.grid(1,100,1,0);	# 80 ARRAYgrid_int (t97:bat[:void,:int])<-(_92:int)(_101:int)(_92:int)(_93:int)
     t98 := aggr.sum(t94,t96,t97);	# 81 AX3aggrX3_sum3_dbl_dbl (t98:bat[:void,:dbl])<-(t94:bat[:void,:dbl])(t96:bat[:void,:oid])(t97:bat[:void,:int])
     top := t98;	# 82  (top:bat[:void,:dbl])<-(t98:bat[:void,:dbl])
-    io.table(t97,top);	# 83 IOttable (_115:int)<-(t97:bat[:void,:int])(top:bat[:void,:dbl])
+    io.table(t97,top);	# 83 IOttable (_115:void)<-(t97:bat[:void,:int])(top:bat[:void,:dbl])
 end f1;	# 84  
 #	optimizer.expressionAccumulation("user","f1"); 
 #	optimizer.garbageCollector("user","f1");

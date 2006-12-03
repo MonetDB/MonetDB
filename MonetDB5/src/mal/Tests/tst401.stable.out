@@ -22,7 +22,7 @@ stdout of test 'tst401` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # testing the simple iterators on builtin types 	# 1  (_1:str)
 barrier (v1,i):= language.newRange(0:flt);	# 2 RNGnewRange_flt (v1:bit)(i:flt)<-(_4:flt) jump 6
-    io.print(i);	# 3 IOprint_val (_5:int)<-(i:flt)
+    io.print(i);	# 3 IOprint_val (_5:void)<-(i:flt)
     v := "do something";	# 4  (v:str)<-(_7:str)
     redo (v1,i):= language.nextElement(1.29999995:flt,2.5:flt);	# 5 RNGnextElement_flt (v1:bit)(i:flt)<-(_8:flt)(_9:flt) jump 3
 exit (v1,i);	# 6  (v1:bit)(i:flt)

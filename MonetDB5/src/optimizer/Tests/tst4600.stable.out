@@ -24,7 +24,7 @@ stdout of test 'tst4600` in directory 'src/optimizer` itself:
 function user.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
     i := 0;	# 1  (i:int)<-(_3:int)
 barrier j := calc.<(i,lim);	# 2 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 6
-    io.print("Welcome");	# 3 IOprint_val (_5:int)<-(_6:str)
+    io.print("Welcome");	# 3 IOprint_val (_5:void)<-(_6:str)
     i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
     redo j := calc.<(i,lim);	# 5 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 3
 exit j;	# 6  (j:bit)
@@ -38,10 +38,10 @@ end welcome;	# 7
 #
 function user.main():void;	# 0  (main:void)
 # the first test for macro expansions and inversions 	# 1  (_1:str)
-    io.print("test expansion");	# 2 IOprint_val (_5:int)<-(_6:str)
+    io.print("test expansion");	# 2 IOprint_val (_5:void)<-(_6:str)
     _12 := 0;	# 3  (_12:int)<-(_13:int)
 barrier _14 := calc.<(_12,2);	# 4 CALCcompLTintint (_14:bit)<-(_12:int)(_8:int) jump 8
-    io.print("Welcome");	# 5 IOprint_val (_15:int)<-(_16:str)
+    io.print("Welcome");	# 5 IOprint_val (_15:void)<-(_16:str)
     _12 := calc.+(_12,1);	# 6 CALCbinaryADDintint (_12:int)<-(_12:int)(_17:int)
     redo _14 := calc.<(_12,2);	# 7 CALCcompLTintint (_14:bit)<-(_12:int)(_8:int) jump 5
 exit _14;	# 8  (_14:bit)

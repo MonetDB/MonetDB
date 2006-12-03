@@ -23,15 +23,15 @@ stdout of test 'return_types_of_head_and_tail.SF-701641` in directory 'tests/Bug
 function user.main():void;	# 0  (main:void)
     x := bat.new(:oid,:int);	# 1 CMDBATnew (x:bat[:oid,:int])<-(_2:oid)(_3:int)
     (ht,tt):= inspect.getType(x);	# 2 INSPECTtypeName (ht:str)(tt:str)<-(x:bat[:oid,:int])
-    io.print(ht);	# 3 IOprint_val (_6:int)<-(ht:str)
-    io.print(tt);	# 4 IOprint_val (_7:int)<-(tt:str)
+    io.print(ht);	# 3 IOprint_val (_6:void)<-(ht:str)
+    io.print(tt);	# 4 IOprint_val (_7:void)<-(tt:str)
     hi := inspect.getTypeIndex(ht);	# 5 INSPECTtypeIndex (hi:int)<-(ht:str)
-    io.print(hi);	# 6 IOprint_val (_9:int)<-(hi:int)
+    io.print(hi);	# 6 IOprint_val (_9:void)<-(hi:int)
     hs := inspect.getTypeName(hi);	# 7 INSPECTtypename (hs:str)<-(hi:int)
-    io.print(hs);	# 8 IOprint_val (_11:int)<-(hs:str)
+    io.print(hs);	# 8 IOprint_val (_11:void)<-(hs:str)
     s := "hello";	# 9  (s:str)<-(_13:str)
     st := inspect.getType(s);	# 10 INSPECTtypeName (st:str)<-(s:str)
-    io.print(st);	# 11 IOprint_val (_15:int)<-(st:str)
+    io.print(st);	# 11 IOprint_val (_15:void)<-(st:str)
 end main;	# 12  
 [ "oid" ]
 [ "int" ]

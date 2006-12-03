@@ -40,14 +40,14 @@ function user.main():void;	# 0  (main:void)
     tzone_bat := bat.new(:oid,:timezone);	# 12 CMDBATnew (tzone_bat:bat[:oid,:timezone])<-(_23:oid)(_24:timezone)
     i8 := 8@0;	# 13  (i8:oid)<-(_26:oid)
 # don;t use 08@0 	# 14  (_27:str)
-    io.print(i8);	# 15 IOprint_val (_28:int)<-(i8:oid)
+    io.print(i8);	# 15 IOprint_val (_28:void)<-(i8:oid)
 # don;t use 09@0 	# 16  (_29:str)
     i9 := 9@0;	# 17  (i9:oid)<-(_31:oid)
-    io.print(i9);	# 18 IOprint_val (_32:int)<-(i9:oid)
+    io.print(i9);	# 18 IOprint_val (_32:void)<-(i9:oid)
     bd_a := bat.insert(tzone_bat,8@0,tzone_08);	# 19 BKCinsert_bun (bd_a:void)<-(tzone_bat:bat[:oid,:timezone])(_26:oid)(tzone_08:timezone)
     cd_a := bat.insert(tzone_bat,9@0,tzone_09);	# 20 BKCinsert_bun (cd_a:void)<-(tzone_bat:bat[:oid,:timezone])(_31:oid)(tzone_09:timezone)
     bat.setColumn(tzone_bat,"timezone");	# 21 BKCsetColumn (_35:void)<-(tzone_bat:bat[:oid,:timezone])(_36:str)
-    jd_a := io.print(tzone_bat);	# 22 IOprint_val (jd_a:int)<-(tzone_bat:bat[:oid,:timezone])
+    jd_a := io.print(tzone_bat);	# 22 IOprint_val (jd_a:void)<-(tzone_bat:bat[:oid,:timezone])
 end main;	# 23  
 [ 8@0 ]
 [ 9@0 ]

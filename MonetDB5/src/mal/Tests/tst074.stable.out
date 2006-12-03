@@ -26,7 +26,7 @@ end swap;	# 2
 function user.main():void;	# 0  (main:void)
 # parsing operations with multi-assignments 	# 1  (_1:str)
     x := user.swap("world hello");	# 2  (x:str)<-(_3:str)
-    io.print(x);	# 3 IOprint_val (_4:int)<-(x:str)
+    io.print(x);	# 3 IOprint_val (_4:void)<-(x:str)
 end main;	# 4  
 [ "world hello" ]
 

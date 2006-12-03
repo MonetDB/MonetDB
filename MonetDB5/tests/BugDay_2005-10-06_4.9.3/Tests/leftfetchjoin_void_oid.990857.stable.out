@@ -36,7 +36,7 @@ function user.main():void;	# 0  (main:void)
     b := batcalc.int(b1);	# 8 CMDconvert_void_oid_int (b:bat[:void,:int])<-(b1:bat[:void,:oid])
     z := algebra.leftfetchjoin(a,b);	# 9 ALGleftfetchjoin (z:bat[:void,:int])<-(a:bat[:void,:oid])(b:bat[:void,:int])
     i := bat.info(z);	# 10 BKCinfo (i:bat[:str,:str])<-(z:bat[:void,:int])
-    io.print(i);	# 11 IOprint_val (_13:int)<-(i:bat[:str,:str])
+    io.print(i);	# 11 IOprint_val (_13:void)<-(i:bat[:str,:str])
 end main;	# 12  
 #-----------------------------------------#
 # h			t		  # name

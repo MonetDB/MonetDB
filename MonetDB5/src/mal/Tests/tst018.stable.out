@@ -30,13 +30,13 @@ function user.main():void;	# 0  (main:void)
 # handling assignments of 'nil'; 	# 1  (_1:str)
     i := 23;	# 2  (i:int)<-(_3:int)
     i := nil:int;	# 3  (i:int)<-(_13:int)
-    io.print(i);	# 4 IOprint_val (_5:int)<-(i:int)
+    io.print(i);	# 4 IOprint_val (_5:void)<-(i:int)
     b := bat.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_8:int)
     b := nil;	# 6  (b:bat[:int,:int])<-(_14:BAT)
-    io.print(b);	# 7 IOprint_val (_9:int)<-(b:bat[:int,:int])
+    io.print(b);	# 7 IOprint_val (_9:void)<-(b:bat[:int,:int])
     s := "hello";	# 8  (s:str)<-(_11:str)
     s := nil:str;	# 9  (s:str)<-(_15:str)
-    io.print(s);	# 10 IOprint_val (_12:int)<-(s:str)
+    io.print(s);	# 10 IOprint_val (_12:void)<-(s:str)
 end main;	# 11  
 [ nil ]
 [ nil ]

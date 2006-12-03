@@ -28,7 +28,7 @@ end l;	# 2
 function user.main():void;	# 0  (main:void)
 # testing definition of new atom type based on ptr 	# 1  (_2:str)
     z := mytype.l();	# 2  (z:mytype)
-    io.print(z);	# 3 IOprint_val (_3:int)<-(z:mytype)
+    io.print(z);	# 3 IOprint_val (_3:void)<-(z:mytype)
 end main;	# 4  
 [ 0 ]
 #

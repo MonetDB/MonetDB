@@ -34,7 +34,7 @@ barrier b1;	# 6  (b1:bit) jump 9
     s2 := s1;	# 7  (s2:str)<-(s1:str)
     s1 := "bye";	# 8  (s1:str)<-(_8:str)
 exit b1;	# 9  (b1:bit)
-    io.print(s1);	# 10 IOprint_val (_9:int)<-(s1:str)
+    io.print(s1);	# 10 IOprint_val (_9:void)<-(s1:str)
 end main;	# 11  
 [ "bye" ]
 

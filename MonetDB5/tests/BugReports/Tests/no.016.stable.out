@@ -87,7 +87,7 @@ function user.main():void;	# 0  (main:void)
     a := bat.new(nil:int,nil:int);	# 31 CMDBATnew (a:bat[:int,:int])<-(_32:int)(_32:int)
 #	io.print("a.sample(1).print();"); 	# 32  (_33:str)
     aa_a := algebra.sample(a,1);	# 33 ALGsample (aa_a:bat[:int,:int])<-(a:bat[:int,:int])(_35:int)
-    ba_a := io.print(aa_a);	# 34 IOprint_val (ba_a:int)<-(aa_a:bat[:int,:int])
+    ba_a := io.print(aa_a);	# 34 IOprint_val (ba_a:void)<-(aa_a:bat[:int,:int])
 #	io.print("quit();"); 	# 35  (_37:str)
     ca_a := clients.quit();	# 36 CLTquitDefault (ca_a:void)
 end main;	# 37  

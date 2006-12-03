@@ -42,15 +42,15 @@ barrier (chk,c):= bat.newIterator(b,size);	# 2 CHPnewChunkIterator (chk:lng)(c:b
 exit (chk,c);	# 5  (chk:lng)(c:bat[:void,:lng])
     t1 := alarm.usec();	# 6 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 7 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#chopped at %d",size);	# 8 IOprint_formatted_lng (_12:int)<-(_13:str)(size:lng)
-    io.printf(" %d",d0);	# 9 IOprint_formatted_lng (_14:int)<-(_15:str)(d0:lng)
+    io.printf("#chopped at %d",size);	# 8 IOprint_formatted_lng (_12:void)<-(_13:str)(size:lng)
+    io.printf(" %d",d0);	# 9 IOprint_formatted_lng (_14:void)<-(_15:str)(d0:lng)
     d0 := calc.-(d0,base);	# 10 CALCbinarySUBlnglng (d0:lng)<-(d0:lng)(base:lng)
-    io.printf(" %d ",d0);	# 11 IOprint_formatted_lng (_16:int)<-(_17:str)(d0:lng)
+    io.printf(" %d ",d0);	# 11 IOprint_formatted_lng (_16:void)<-(_17:str)(d0:lng)
     i := calc./(1000000:lng,size);	# 12 CALCbinarycheckDIVlnglng (i:lng)<-(_19:lng)(size:lng)
     if := calc.flt(i);	# 13 CALClng2flt (if:flt)<-(i:lng)
     df := calc.flt(d0);	# 14 CALClng2flt (df:flt)<-(d0:lng)
     f := calc./(df,if);	# 15 CALCbinarycheckDIVfltflt (f:flt)<-(df:flt)(if:flt)
-    io.printf(" at %f usec\n",f);	# 16 IOprint_formatted_flt (_23:int)<-(_24:str)(f:flt)
+    io.printf(" at %f usec\n",f);	# 16 IOprint_formatted_flt (_23:void)<-(_24:str)(f:flt)
 end choptest;	# 17  
 #
 #b:= new(:void,:lng);
@@ -90,7 +90,7 @@ barrier doit := true;	# 11  (doit:bit)<-(_17:bit) jump 13
 exit doit;	# 13  (doit:bit)
     t1 := alarm.usec();	# 14 ALARMusec (t1:lng)
     base := calc.-(t1,t0);	# 15 CALCbinarySUBlnglng (base:lng)<-(t1:lng)(t0:lng)
-    io.printf("#select direct %d usec\n",base);	# 16 IOprint_formatted_lng (_23:int)<-(_24:str)(base:lng)
+    io.printf("#select direct %d usec\n",base);	# 16 IOprint_formatted_lng (_23:void)<-(_24:str)(base:lng)
     user.choptest(b,100000:lng,base);	# 17  (_25:void)<-(b:bat[:void,:lng])(_26:lng)(base:lng)
     user.choptest(b,10000:lng,base);	# 18  (_27:void)<-(b:bat[:void,:lng])(_28:lng)(base:lng)
     user.choptest(b,1000:lng,base);	# 19  (_29:void)<-(b:bat[:void,:lng])(_30:lng)(base:lng)

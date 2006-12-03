@@ -34,10 +34,10 @@ end swap;	# 4
 function user.main():void;	# 0  (main:void)
 # parsing operations with multi-assignments 	# 1  (_1:str)
     (x,y):= user.swap(1,2);	# 2  (x:int)(y:int)<-(_4:int)(_5:int)
-    io.print(x);	# 3 IOprint_val (_6:int)<-(x:int)
-    io.print(y);	# 4 IOprint_val (_7:int)<-(y:int)
+    io.print(x);	# 3 IOprint_val (_6:void)<-(x:int)
+    io.print(y);	# 4 IOprint_val (_7:void)<-(y:int)
     a := user.swap(3,4);	# 5  unknown (a:any)<-(_9:int)(_10:int)
-    io.print(a);	# 6 IOprint_val (_11:int)<-(a:any)
+    io.print(a);	# 6 IOprint_val (_11:void)<-(a:any)
 end main;	# 7  
 
 # 07:58:49 >  

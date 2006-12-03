@@ -11,50 +11,50 @@ stdout of test 'tst1501` in directory 'src/mal` itself:
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#	x := new(:oid,:chr);
-#	de_a := insert(x,1@0,'a');
-#	ee_a := insert(x,2@0,'a');
-#	fe_a := insert(x,3@0,'b');
-#	ge_a := insert(x,4@0,'b');
-#	he_a := insert(x,5@0,'b');
-#	ie_a := insert(x,6@0,'b');
-#	je_a := insert(x,7@0,'c');
-#	ke_a := insert(x,8@0,'c');
+# Visit http://monetdb.cwi.nl/ for further information
+#	x := bat.new(:oid,:chr);
+#	de_a := bat.insert(x,1@0,'a');
+#	ee_a := bat.insert(x,2@0,'a');
+#	fe_a := bat.insert(x,3@0,'b');
+#	ge_a := bat.insert(x,4@0,'b');
+#	he_a := bat.insert(x,5@0,'b');
+#	ie_a := bat.insert(x,6@0,'b');
+#	je_a := bat.insert(x,7@0,'c');
+#	ke_a := bat.insert(x,8@0,'c');
 #
-#	y := new(:oid,:dbl);
-#	le_a := dbl(1.0);
-#	me_a := insert(y,1@0,le_a);
-#	ne_a := dbl(2.0);
-#	oe_a := insert(y,2@0,ne_a);
-#	pe_a := dbl(2.0);
-#	qe_a := insert(y,3@0,pe_a);
-#	re_a := dbl(2.0);
-#	se_a := insert(y,4@0,re_a);
-#	te_a := dbl(2.0);
-#	ue_a := insert(y,5@0,te_a);
-#	ve_a := dbl(3.0);
-#	we_a := insert(y,6@0,ve_a);
-#	xe_a := dbl(1.0);
-#	ye_a := insert(y,7@0,xe_a);
-#	af_a := dbl(1.0);
-#	bf_a := insert(y,8@0,af_a);
+#	y := bat.new(:oid,:dbl);
+#	le_a := calc.dbl(1.0);
+#	me_a := bat.insert(y,1@0,le_a);
+#	ne_a := calc.dbl(2.0);
+#	oe_a := bat.insert(y,2@0,ne_a);
+#	pe_a := calc.dbl(2.0);
+#	qe_a := bat.insert(y,3@0,pe_a);
+#	re_a := calc.dbl(2.0);
+#	se_a := bat.insert(y,4@0,re_a);
+#	te_a := calc.dbl(2.0);
+#	ue_a := bat.insert(y,5@0,te_a);
+#	ve_a := calc.dbl(3.0);
+#	we_a := bat.insert(y,6@0,ve_a);
+#	xe_a := calc.dbl(1.0);
+#	ye_a := bat.insert(y,7@0,xe_a);
+#	af_a := calc.dbl(1.0);
+#	bf_a := bat.insert(y,8@0,af_a);
 #
-#	z := new(:oid,:str);
-#	cf_a := insert(z,1@0,"c");
-#	df_a := insert(z,2@0,"a");
-#	ef_a := insert(z,3@0,"b");
-#	ff_a := insert(z,4@0,"c");
-#	gf_a := insert(z,5@0,"a");
-#	hf_a := insert(z,6@0,"a");
-#	if_a := insert(z,7@0,"c");
-#	jf_a := insert(z,8@0,"a");
-#o:= mirror(x);
-#print(x,y);
-#table(o,y);
-#table(o,x,y);
-#print(x,y,z);
-#table(o,x,y,z);
+#	z := bat.new(:oid,:str);
+#	cf_a := bat.insert(z,1@0,"c");
+#	df_a := bat.insert(z,2@0,"a");
+#	ef_a := bat.insert(z,3@0,"b");
+#	ff_a := bat.insert(z,4@0,"c");
+#	gf_a := bat.insert(z,5@0,"a");
+#	hf_a := bat.insert(z,6@0,"a");
+#	if_a := bat.insert(z,7@0,"c");
+#	jf_a := bat.insert(z,8@0,"a");
+#o:= bat.mirror(x);
+#io.print(x,y);
+#io.table(o,y);
+#io.table(o,x,y);
+#io.print(x,y,z);
+#io.table(o,x,y,z);
 #
 #
 function user.main():void;	# 0  (main:void)
@@ -94,14 +94,14 @@ function user.main():void;	# 0  (main:void)
     if_a := bat.insert(z,7@0,"c");	# 34 BKCinsert_bun (if_a:void)<-(z:bat[:oid,:str])(_62:oid)(_48:str)
     jf_a := bat.insert(z,8@0,"a");	# 35 BKCinsert_bun (jf_a:void)<-(z:bat[:oid,:str])(_64:oid)(_51:str)
     o := bat.mirror(x);	# 36 BKCmirror (o:bat[:oid,:oid])<-(x:bat[:oid,:chr])
-    io.print(x,y);	# 37 IOtable (_66:int)<-(x:bat[:oid,:chr])(y:bat[:oid,:dbl])
-    io.table(o,y);	# 38 IOttable (_67:int)<-(o:bat[:oid,:oid])(y:bat[:oid,:dbl])
-    io.table(o,x,y);	# 39 IOttable (_68:int)<-(o:bat[:oid,:oid])(x:bat[:oid,:chr])(y:bat[:oid,:dbl])
-    io.print(x,y,z);	# 40 IOtable (_69:int)<-(x:bat[:oid,:chr])(y:bat[:oid,:dbl])(z:bat[:oid,:str])
-    io.table(o,x,y,z);	# 41 IOttable (_70:int)<-(o:bat[:oid,:oid])(x:bat[:oid,:chr])(y:bat[:oid,:dbl])(z:bat[:oid,:str])
+    io.print(x,y);	# 37 IOtable (_66:void)<-(x:bat[:oid,:chr])(y:bat[:oid,:dbl])
+    io.table(o,y);	# 38 IOttable (_67:void)<-(o:bat[:oid,:oid])(y:bat[:oid,:dbl])
+    io.table(o,x,y);	# 39 IOttable (_68:void)<-(o:bat[:oid,:oid])(x:bat[:oid,:chr])(y:bat[:oid,:dbl])
+    io.print(x,y,z);	# 40 IOtable (_69:void)<-(x:bat[:oid,:chr])(y:bat[:oid,:dbl])(z:bat[:oid,:str])
+    io.table(o,x,y,z);	# 41 IOttable (_70:void)<-(o:bat[:oid,:oid])(x:bat[:oid,:chr])(y:bat[:oid,:dbl])(z:bat[:oid,:str])
 end main;	# 42  
 #-------------------------#
-# h	tmp_4	tmp_5	  # name
+# h	t	t	  # name
 # oid	chr	dbl	  # type
 #-------------------------#
 [ 1@0,	  'a',	  1	  ]
@@ -113,7 +113,7 @@ end main;	# 42
 [ 7@0,	  'c',	  1	  ]
 [ 8@0,	  'c',	  1	  ]
 #-----------------#
-# tmp_8	tmp_5	  # name
+# t	t	  # name
 # oid	dbl	  # type
 #-----------------#
 [ 1@0,	  1	  ]
@@ -125,7 +125,7 @@ end main;	# 42
 [ 7@0,	  1	  ]
 [ 8@0,	  1	  ]
 #-------------------------#
-# tmp_8	tmp_4	tmp_5	  # name
+# t	t	t	  # name
 # oid	chr	dbl	  # type
 #-------------------------#
 [ 1@0,	  'a',	  1	  ]
@@ -137,7 +137,7 @@ end main;	# 42
 [ 7@0,	  'c',	  1	  ]
 [ 8@0,	  'c',	  1	  ]
 #---------------------------------#
-# h	tmp_4	tmp_5	tmp_6	  # name
+# h	t	t	t	  # name
 # oid	chr	dbl	str	  # type
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]
@@ -149,7 +149,7 @@ end main;	# 42
 [ 7@0,	  'c',	  1,	  "c"	  ]
 [ 8@0,	  'c',	  1,	  "a"	  ]
 #---------------------------------#
-# tmp_8	tmp_4	tmp_5	tmp_6	  # name
+# t	t	t	t	  # name
 # oid	chr	dbl	str	  # type
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]
@@ -160,6 +160,8 @@ end main;	# 42
 [ 6@0,	  'b',	  3,	  "a"	  ]
 [ 7@0,	  'c',	  1,	  "c"	  ]
 [ 8@0,	  'c',	  1,	  "a"	  ]
+
+
 
 # 07:59:06 >  
 # 07:59:06 >  Done.

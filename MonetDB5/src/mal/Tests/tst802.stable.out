@@ -32,9 +32,9 @@ function user.main():void;	# 0  (main:void)
     z := bat.new(:int,:int);	# 2 CMDBATnew (z:bat[:int,:int])<-(_3:int)(_3:int)
     b := nil:BAT;	# 3  (b:BAT)<-(_5:BAT)
     b := z;	# 4  (b:BAT)<-(z:bat[:int,:int])
-    io.print(b);	# 5 IOprint_val (_6:int)<-(b:BAT)
+    io.print(b);	# 5 IOprint_val (_6:void)<-(b:BAT)
     c := user.tst(b);	# 6  (c:BAT)<-(b:BAT)
-    io.print(c);	# 7 IOprint_val (_8:int)<-(c:BAT)
+    io.print(c);	# 7 IOprint_val (_8:void)<-(c:BAT)
 end main;	# 8  
 [ <tmp_7> ]
 [ <tmp_7> ]

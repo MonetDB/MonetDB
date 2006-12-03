@@ -94,13 +94,13 @@ function user.main():void;	# 0  (main:void)
     hf_a := bat.insert(z,6@0,"a");	# 33 BKCinsert_bun (hf_a:void)<-(z:bat[:oid,:str])(_60:oid)(_51:str)
     bat.insert(z,7@0,"c");	# 34 BKCinsert_bun (_61:void)<-(z:bat[:oid,:str])(_62:oid)(_48:str)
     bat.insert(z,8@0,"a");	# 35 BKCinsert_bun (_63:void)<-(z:bat[:oid,:str])(_64:oid)(_51:str)
-    io.print("sort x");	# 36 IOprint_val (_65:int)<-(_66:str)
+    io.print("sort x");	# 36 IOprint_val (_65:void)<-(_66:str)
     xs := algebra.sort(x);	# 37 ALGhsort (xs:bat[:oid,:chr])<-(x:bat[:oid,:chr])
-    io.print(xs);	# 38 IOprint_val (_68:int)<-(xs:bat[:oid,:chr])
-    io.print("hsort xrev");	# 39 IOprint_val (_69:int)<-(_70:str)
+    io.print(xs);	# 38 IOprint_val (_68:void)<-(xs:bat[:oid,:chr])
+    io.print("hsort xrev");	# 39 IOprint_val (_69:void)<-(_70:str)
     xrev := bat.reverse(x);	# 40 BKCreverse (xrev:bat[:chr,:oid])<-(x:bat[:oid,:chr])
     xsrev := algebra.sort(xrev);	# 41 ALGhsort (xsrev:bat[:chr,:oid])<-(xrev:bat[:chr,:oid])
-    io.print(xsrev);	# 42 IOprint_val (_73:int)<-(xsrev:bat[:chr,:oid])
+    io.print(xsrev);	# 42 IOprint_val (_73:void)<-(xsrev:bat[:chr,:oid])
 end main;	# 43  
 [ "sort x" ]
 #-----------------#

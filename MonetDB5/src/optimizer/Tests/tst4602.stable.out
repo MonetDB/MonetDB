@@ -26,7 +26,7 @@ stdout of test 'tst4602` in directory 'src/optimizer` itself:
 function user.welcome(lim:int):int;	# 0  (welcome:int)<-(lim:int)
     i := 0;	# 1  (i:int)<-(_3:int)
 barrier j := calc.<(i,lim);	# 2 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 7
-    io.print("Welcome");	# 3 IOprint_val (_5:int)<-(_6:str)
+    io.print("Welcome");	# 3 IOprint_val (_5:void)<-(_6:str)
     i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
     redo j := calc.<(i,lim);	# 5 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 3
     return i;	# 6  (i:int)

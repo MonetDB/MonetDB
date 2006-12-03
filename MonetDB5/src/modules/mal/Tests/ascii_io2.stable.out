@@ -70,15 +70,15 @@ barrier correct := calc.!=(targetdir,"");	# 18 CALCcompNEQstrstr (correct:bit)<-
     targetdir := calc.+(targetdir,"/");	# 19 CALCstrConcat (targetdir:str)<-(targetdir:str)(_28:str)
 exit correct;	# 20  (correct:bit)
     datafile := calc.+(targetdir,"ascii_io2.load");	# 21 CALCstrConcat (datafile:str)<-(targetdir:str)(_30:str)
-    io.printf("#source:%s\n",datafile);	# 22 IOprint_formatted_str (_31:int)<-(_32:str)(datafile:str)
+    io.printf("#source:%s\n",datafile);	# 22 IOprint_formatted_str (_31:void)<-(_32:str)(datafile:str)
     idxbat := tablet.load(namebat,sepbat,typebat,datafile,len);	# 23 CMDtablet_load (idxbat:bat[:str,:BAT])<-(namebat:bat[:void,:str])(sepbat:bat[:void,:str])(typebat:bat[:void,:str])(datafile:str)(len:int)
-    io.print(idxbat);	# 24 IOprint_val (_34:int)<-(idxbat:bat[:str,:BAT])
+    io.print(idxbat);	# 24 IOprint_val (_34:void)<-(idxbat:bat[:str,:BAT])
     i1 := algebra.fetch(idxbat,0);	# 25 ALGfetchint (i1:BAT)<-(idxbat:bat[:str,:BAT])(_36:int)
     b1 := bbp.find(i1);	# 26 CMDbbpbindindex (b1:bat[:any,:any])<-(i1:BAT)
-    io.print(b1);	# 27 IOprint_val (_38:int)<-(b1:bat[:any,:any])
+    io.print(b1);	# 27 IOprint_val (_38:void)<-(b1:bat[:any,:any])
     i2 := algebra.fetch(idxbat,1);	# 28 ALGfetchint (i2:BAT)<-(idxbat:bat[:str,:BAT])(_40:int)
     b2 := bbp.find(i2);	# 29 CMDbbpbindindex (b2:bat[:any,:any])<-(i2:BAT)
-    io.print(b2);	# 30 IOprint_val (_42:int)<-(b2:bat[:any,:any])
+    io.print(b2);	# 30 IOprint_val (_42:void)<-(b2:bat[:any,:any])
 end main;	# 31  
 #source:/ufs/mk/monet5/Linux/mTests/src/modules/mal/ascii_io2.load
 #---------------------------------#

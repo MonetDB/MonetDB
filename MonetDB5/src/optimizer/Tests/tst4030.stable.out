@@ -37,12 +37,12 @@ function user.main():void;	# 0  (main:void)
     bat.insert(r,8,4);	# 6 BKCinsert_bun (_13:void)<-(r:bat[:int,:int])(_14:int)(_15:int)
     s := algebra.select(r,0,5);	# 7 ALGselect (s:bat[:int,:int])<-(r:bat[:int,:int])(_17:int)(_5:int)
 # equal to a copy 	# 8  (_18:str)
-    io.print(s);	# 9 IOprint_val (_19:int)<-(s:bat[:int,:int])
+    io.print(s);	# 9 IOprint_val (_19:void)<-(s:bat[:int,:int])
     t := algebra.select(r,0,3);	# 10 ALGselect (t:bat[:int,:int])<-(r:bat[:int,:int])(_17:int)(_12:int)
 #print(t); 	# 11  (_21:str)
 # reuse t 	# 12  (_23:str)
-    io.print(t);	# 13 IOprint_val (_24:int)<-(t:bat[:int,:int])
-    io.print("done");	# 14 IOprint_val (_25:int)<-(_26:str)
+    io.print(t);	# 13 IOprint_val (_24:void)<-(t:bat[:int,:int])
+    io.print("done");	# 14 IOprint_val (_25:void)<-(_26:str)
 end main;	# 15  
 #-----------------#
 # h	t	  # name

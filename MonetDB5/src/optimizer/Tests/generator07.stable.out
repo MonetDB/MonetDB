@@ -32,7 +32,7 @@ function user.main():void;	# 0  (main:void)
 # The algebraic expression blocks the iterator 	# 3  (_3:str)
 # This can be avoided by normalizing the MAL block first. 	# 4  (_4:str)
     mdb.list();	# 5 MDBlist (_5:void)
-    io.print("start");	# 6 IOprint_val (_6:int)<-(_7:str)
+    io.print("start");	# 6 IOprint_val (_6:void)<-(_7:str)
     low := 0;	# 7  (low:int)<-(_11:int)
     high := 3;	# 8  (high:int)<-(_13:int)
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 9 PBMnewIterator (b:bat[:void,:int])<-(_9:str) jump 13
@@ -45,7 +45,7 @@ barrier s := pbm.newIterator("pbat_s");	# 15 PBMnewIterator (s:bat[:oid,:int])<-
     t := algebra.select(s,low,high);	# 16 ALGselect (t:bat[:oid,:int])<-(s:bat[:oid,:int])(low:int)(high:int)
     redo s := pbm.getNextElement("pbat_s");	# 17 PBMgetNextElement (s:bat[:oid,:int])<-(_20:str) jump 16
 exit s;	# 18  (s:bat[:oid,:int])
-    io.print("finished");	# 19 IOprint_val (_17:int)<-(_18:str)
+    io.print("finished");	# 19 IOprint_val (_17:void)<-(_18:str)
     pbm.discard("pbat_s");	# 20 PBMdiscard (_22:void)<-(_20:str)
 end main;	# 21  
 function user.main():void;

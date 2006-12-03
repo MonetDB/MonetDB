@@ -61,7 +61,7 @@ function user.main():void;	# 0  (main:void)
     fa_a := algebra.markT(ea_a,0@0);	# 20 ALGtmark (fa_a:bat[:int,:void])<-(ea_a:bat[:int,:void])(_26:oid)
     x := bat.reverse(fa_a);	# 21 BKCreverse (x:bat[:void,:int])<-(fa_a:bat[:int,:void])
 #	io.print("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);"); 	# 22  (_27:str)
-    ga_a := io.table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);	# 23 IOttable (ga_a:int)<-(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])
+    ga_a := io.table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);	# 23 IOttable (ga_a:void)<-(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])
 end main;	# 24  
 #---------------------------------------------------------------------------------------------------------------------------------#
 # h	h	h	h	h	h	h	h	h	h	h	h	h	h	h	h	  # name

@@ -55,10 +55,10 @@ stdout of test 'part01` in directory 'src/optimizer` itself:
 #	io.print(b);
 #end qry;
 function user.qry(a:bat[:void,:any_1],b:bat[:void,:any_2]):void;	# 0  (qry:void)<-(a:bat[:void,:any_1])(b:bat[:void,:any_2])
-    io.print("experiment 2");	# 1 IOprint_val (_3:int)<-(_4:str)
-    io.print(b);	# 2 IOprint_val (_5:int)<-(b:bat[:void,:any_2])
-    io.print(a);	# 3 IOprint_val (_6:int)<-(a:bat[:void,:any_1])
-    io.print(b);	# 4 IOprint_val (_7:int)<-(b:bat[:void,:any_2])
+    io.print("experiment 2");	# 1 IOprint_val (_3:void)<-(_4:str)
+    io.print(b);	# 2 IOprint_val (_5:void)<-(b:bat[:void,:any_2])
+    io.print(a);	# 3 IOprint_val (_6:void)<-(a:bat[:void,:any_1])
+    io.print(b);	# 4 IOprint_val (_7:void)<-(b:bat[:void,:any_2])
 end qry;	# 5  
 #
 #optimizer.partitionedQuery("user","qry");
@@ -114,7 +114,7 @@ exit (go,i);	# 22  (go:bit)(i:int)
 # two sinks. A naive translation will produce 	# 32  (_39:str)
 # a double nested loop 	# 33  (_40:str)
     mdb.list("user","qry");	# 34 MDBlist3 (_44:void)<-(_42:str)(_43:str)
-    io.print("run experiment");	# 35 IOprint_val (_45:int)<-(_46:str)
+    io.print("run experiment");	# 35 IOprint_val (_45:void)<-(_46:str)
     user.qry(a1,b1);	# 36  (_47:void)<-(a1:bat[:void,:int])(b1:bat[:void,:int])
 end main;	# 37  
 ptop=6 plimit=1024

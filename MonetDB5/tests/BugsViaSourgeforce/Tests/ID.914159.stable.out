@@ -33,7 +33,7 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 function user.crash():void;	# 0  (crash:void)
 #	mil.line("\tprint($t);\n"); 	# 1  (_1:str)
     unknown := mil.take("unknown");	# 2  unknown (unknown:any)<-(_3:str)
-    aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:int)<-(unknown:any)
+    aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:void)<-(unknown:any)
 end crash;	# 4  
 !ERROR: 'mil.take' undefined in user.crash[2] unknown:any := mil.take(_3:str)
 ##	mil.line("crash();");

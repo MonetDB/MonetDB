@@ -25,7 +25,7 @@ function user.dir():void;	# 0  (dir:void)
     d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:int,:int])
     dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:int,:int])
     dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:int,:str])
-    io.print(dn,d,dl);	# 4 IOtable (_4:int)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+    io.print(dn,d,dl);	# 4 IOtable (_4:void)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
 end dir;	# 5  
 #
 #function createBAT(name:str):bat;
@@ -56,7 +56,7 @@ function user.main():void;	# 0  (main:void)
 # same reference scheme. 	# 2  (_2:str)
     user.dir();	# 3  (_3:void)
     d := user.createBAT("one");	# 4  (d:BAT)<-(_5:str)
-    io.print(d);	# 5 IOprint_val (_6:int)<-(d:BAT)
+    io.print(d);	# 5 IOprint_val (_6:void)<-(d:BAT)
 # bat d should have 1 lref 	# 6  (_7:str)
     user.dir();	# 7  (_8:void)
 end main;	# 8  

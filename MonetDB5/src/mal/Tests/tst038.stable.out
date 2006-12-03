@@ -36,7 +36,7 @@ function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_3:int)(_4:str)
 #The call to tst2 fails at runtime 	# 3  (_5:str)
     user.tst2(b);	# 4  unknown (_6:void)<-(b:bat[:int,:str])
-    io.print("shouldn't come here\n");	# 5 IOprint_val (_7:int)<-(_8:str)
+    io.print("shouldn't come here\n");	# 5 IOprint_val (_7:void)<-(_8:str)
 end main;	# 6  
 
 # 07:58:43 >  

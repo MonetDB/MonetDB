@@ -28,8 +28,8 @@ function user.sample(nme:str,val:any_1):bit;	# 0  (sample:bit)<-(nme:str)(val:an
 #find a bat 	# 2  (_5:str)
     h := algebra.select(b,val,val);	# 3  (h:any)<-(b:bat[:str,:str])(val:any_1)(val:any_1)
     t := aggr.count(h);	# 4  (t:any)<-(h:any)
-    x := io.print(t);	# 5 IOprint_val (x:int)<-(t:any)
-    y := io.print(val);	# 6 IOprint_val (y:int)<-(val:any_1)
+    x := io.print(t);	# 5 IOprint_val (x:void)<-(t:any)
+    y := io.print(val);	# 6 IOprint_val (y:void)<-(val:any_1)
     return sample := true;	# 7  (sample:bit)<-(_9:bit)
 end sample;	# 8  
 #user.sample("hello","world");

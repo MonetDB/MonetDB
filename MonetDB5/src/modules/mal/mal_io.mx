@@ -44,11 +44,11 @@ command stdout():streams
 address io_stdout
 comment "return the output stream for the database client";
 
-pattern print{unsafe}(val:any_1,lst:any...):int 
+pattern print(val:any_1,lst:any...):void 
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern print{unsafe}(b1:bat[:any_1,:any]...):int 
+pattern print(b1:bat[:any_1,:any]...):void 
 address IOtable
 comment "BATs are printed with '#' for legend 
 	lines, and the BUNs on seperate lines 
@@ -58,68 +58,68 @@ comment "BATs are printed with '#' for legend
 	print() performs an implicit natural 
 	join, producing a multi attribute table.";
 
-pattern ftable{unsafe}( filep:streams, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):int
+pattern ftable( filep:streams, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):void
 address IOftable 
 comment "Print an n-ary table to a file.";
 
-pattern print{unsafe}(order:int,b:bat[:any_1,:any], b2:bat[:any_1,:any]...):int
+pattern print(order:int,b:bat[:any_1,:any], b2:bat[:any_1,:any]...):void
 address IOotable
 comment "The same as normal table print, but 
 	enforces to use the order of BAT 
 	number [1..argc] to do the printing.";
 
-pattern table{unsafe}(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
+pattern table(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):void 
 address IOttable
 comment "Print an n-ary table. Like print, but does not print oid column";
 
-pattern table{unsafe}(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
+pattern table(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):void 
 address IOtotable
 comment "Print an n-ary table.";
-pattern ftable{unsafe}(fp:streams, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...)
+pattern ftable(fp:streams, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...):void
 address IOfotable 
 comment "Print an n-ary table to a file.";
 
-pattern print{unsafe}(val:any_1):int 
+pattern print(val:any_1):void 
 address IOprint_val
 comment "Print a MAL value tuple .";
-pattern print{unsafe}(val:bat[:any_1,:any_2]):int 
+pattern print(val:bat[:any_1,:any_2]):void 
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern prompt{unsafe}(val:any_1):int 
+pattern prompt(val:any_1):void 
 address IOprompt_val
 comment "Print a MAL value without brackets.";
-pattern printft{unsafe}(val:any_1):int 
+pattern printft(val:any_1):void 
 address IOprint_ft
 comment "Select default format ";
 
-command printf{unsafe}(format:str,val:bit):int
+command printf(format:str,val:bit):void
 address IOprint_formatted_bit;
-command printf{unsafe}(format:str,val:chr):int
+command printf(format:str,val:chr):void
 address IOprint_formatted_chr;
-command printf{unsafe}(format:str,val:int):int
+command printf(format:str,val:int):void
 address IOprint_formatted_int;
-command printf{unsafe}(format:str,val:sht):int
+command printf(format:str,val:sht):void
 address IOprint_formatted_sht;
-command printf{unsafe}(format:str,val:oid):int
+command printf(format:str,val:oid):void
 address IOprint_oid;
-command printf{unsafe}(format:str,val:lng):int
+command printf(format:str,val:lng):void
 address IOprint_formatted_lng;
-command printf{unsafe}(format:str,val:flt):int
+command printf(format:str,val:flt):void
 address IOprint_formatted_flt;
-command printf{unsafe}(format:str,val:dbl):int
+command printf(format:str,val:dbl):void
 address IOprint_formatted_dbl;
-command printf{unsafe}(val:str):int
+command printf(val:str):void
 address IOprint_str;
-command printf{unsafe}(format:str,val:str):int
+command printf(format:str,val:str):void
 address IOprint_formatted_str;
 
-command export{unsafe}(b:bat[:any_1,:any_2], filepath:str):bit  
+command export(b:bat[:any_1,:any_2], filepath:str):bit  
 address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
  is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
 
-command import{unsafe}(b:bat[:any_1,:any_2], filepath:str) :bit 
+command import(b:bat[:any_1,:any_2], filepath:str) :bat[:any_1,:any_2] 
 address IOimport
 comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
  parameter BAT. You have to create it! Its signature must match the dump,
@@ -815,8 +815,7 @@ Parse the line, and insert a BUN.
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
 		if (*p == 0) {
 			char msg[BUFSIZ];
-			*ret = FALSE;
-			BBPunfix(b->batCacheid);
+			BBPunfix(*ret=b->batCacheid);
 			snprintf(msg,BUFSIZ,"error in input %s",buf);
 			return throwMessage( "io.import", msg);
 		}
@@ -846,8 +845,7 @@ Cleanup and exit. Return the filled BAT.
 		GDKfree(t);
 	GDKfree(buf);
 	MT_munmap(base, end - base);
-	*ret = TRUE;
-	BBPkeepref(b->batCacheid);
+	BBPkeepref(*ret= b->batCacheid);
 	return MAL_SUCCEED;
 }
 

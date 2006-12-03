@@ -56,17 +56,17 @@ barrier (k,v):= language.newRange(0:int);	# 3 RNGnewRange_int (k:bit)(v:int)<-(_
     redo (k,v):= language.nextElement(1:int,100:int);	# 5 RNGnextElement_int (k:bit)(v:int)<-(_8:int)(_9:int) jump 4
 exit (k,v);	# 6  (k:bit)(v:int)
     i := aggr.count(b);	# 7 ALGcount_bat (i:int)<-(b:bat[:int,:int])
-    io.print(i);	# 8 IOprint_val (_11:int)<-(i:int)
+    io.print(i);	# 8 IOprint_val (_11:void)<-(i:int)
     c := algebra.select(b,0:int,9:int);	# 9 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_13:int)
     i := aggr.count(c);	# 10 ALGcount_bat (i:int)<-(c:bat[:int,:int])
-    io.print(i);	# 11 IOprint_val (_14:int)<-(i:int)
+    io.print(i);	# 11 IOprint_val (_14:void)<-(i:int)
     d := algebra.select(b,0:int,49:int);	# 12 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_16:int)
     i := aggr.count(d);	# 13 ALGcount_bat (i:int)<-(d:bat[:int,:int])
-    io.print(i);	# 14 IOprint_val (_17:int)<-(i:int)
+    io.print(i);	# 14 IOprint_val (_17:void)<-(i:int)
 #to be detected by join inversion 	# 15  (_21:str)
     zz := algebra.joinPath(b,c,d);	# 16  (zz:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(d:bat[:int,:int])
     i := aggr.count(zz);	# 17 ALGcount_bat (i:int)<-(zz:bat[:int,:int])
-    io.print(i);	# 18 IOprint_val (_24:int)<-(i:int)
+    io.print(i);	# 18 IOprint_val (_24:void)<-(i:int)
     mdb.list();	# 19 MDBlist (_25:void)
 [ 100 ]
 [ 10 ]

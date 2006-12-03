@@ -35,13 +35,13 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,1,1);	# 4 BKCinsert_bun (_5:void)<-(b:bat[:int,:int])(_6:int)(_6:int)
     bat.insert(b,2,4);	# 5 BKCinsert_bun (_7:void)<-(b:bat[:int,:int])(_8:int)(_9:int)
     bat.insert(b,3,9);	# 6 BKCinsert_bun (_10:void)<-(b:bat[:int,:int])(_11:int)(_12:int)
-    io.print(b);	# 7 IOprint_val (_13:int)<-(b:bat[:int,:int])
+    io.print(b);	# 7 IOprint_val (_13:void)<-(b:bat[:int,:int])
     br := bat.reverse(b);	# 8 BKCreverse (br:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(br);	# 9 IOprint_val (_15:int)<-(br:bat[:int,:int])
+    io.print(br);	# 9 IOprint_val (_15:void)<-(br:bat[:int,:int])
     l0 := algebra.copy(b);	# 10 ALGcopy (l0:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(l0);	# 11 IOprint_val (_17:int)<-(l0:bat[:int,:int])
+    io.print(l0);	# 11 IOprint_val (_17:void)<-(l0:bat[:int,:int])
     l1 := algebra.copy(br);	# 12 ALGcopy (l1:bat[:int,:int])<-(br:bat[:int,:int])
-    io.print(l1);	# 13 IOprint_val (_19:int)<-(l1:bat[:int,:int])
+    io.print(l1);	# 13 IOprint_val (_19:void)<-(l1:bat[:int,:int])
 end main;	# 14  
 #-----------------#
 # h	tmp_4	  # name

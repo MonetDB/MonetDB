@@ -97,7 +97,7 @@ function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     bRef := algebra.join(brev,b6);	# 27 ALGjoin (bRef:bat[:str,:int])<-(brev:bat[:str,:int])(b6:bat[:int,:int])
     bat.setColumn(bRef,"refCount");	# 28 BKCsetColumn (_33:void)<-(bRef:bat[:str,:int])(_34:str)
 #	io.table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef); 	# 29  (_35:str)
-    io.table(brev,bm,bHead,bTail,bCount,bKind,bRef);	# 30 IOttable (_36:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bKind:bat[:str,:str])(bRef:bat[:str,:int])
+    io.table(brev,bm,bHead,bTail,bCount,bKind,bRef);	# 30 IOttable (_36:void)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bKind:bat[:str,:str])(bRef:bat[:str,:int])
 end dir;	# 31  
 #
 #function dir(s:str):void;
@@ -109,7 +109,7 @@ end dir;	# 31
 function user.dir(s:str):void;	# 0  (dir:void)<-(s:str)
     t := bbp.getNames();	# 1 CMDbbpNames (t:bat[:int,:str])
     tn := algebra.like(t,s);	# 2 ALGlike (tn:bat[:int,:str])<-(t:bat[:int,:str])(s:str)
-    io.print(tn);	# 3 IOprint_val (_4:int)<-(tn:bat[:int,:str])
+    io.print(tn);	# 3 IOprint_val (_4:void)<-(tn:bat[:int,:str])
     user.dir(tn);	# 4  (_5:void)<-(tn:bat[:int,:str])
 end dir;	# 5  
 #b:= bat.new(:int,:int);
@@ -131,9 +131,9 @@ function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
     bat.setName(b,"simplemind");	# 6 BKCsetName (_7:void)<-(b:bat[:int,:int])(_8:str)
     z := bbp.getNames();	# 7 CMDbbpNames (z:bat[:int,:str])
-    io.print("Get first directory");	# 8 IOprint_val (_10:int)<-(_11:str)
+    io.print("Get first directory");	# 8 IOprint_val (_10:void)<-(_11:str)
     user.dir(z);	# 9  (_12:void)<-(z:bat[:int,:str])
-    io.print("Get second directory");	# 10 IOprint_val (_13:int)<-(_14:str)
+    io.print("Get second directory");	# 10 IOprint_val (_13:void)<-(_14:str)
     user.dir("simple");	# 11  (_15:void)<-(_16:str)
 end main;	# 12  
 [ "Get first directory" ]

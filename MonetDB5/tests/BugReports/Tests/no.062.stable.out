@@ -170,7 +170,7 @@ function user.main():void;	# 0  (main:void)
     ha_a := calc.+(-1,1);	# 74 CALCbinaryADDintint (ha_a:int)<-(_66:int)(_62:int)
     ia_a := bat.insert(t,ha_a,0);	# 75 BKCinsert_bun (ia_a:void)<-(t:bat[:int,:int])(ha_a:int)(_59:int)
 #	io.print("print(t);"); 	# 76  (_71:str)
-    ja_a := io.print(t);	# 77 IOprint_val (ja_a:int)<-(t:bat[:int,:int])
+    ja_a := io.print(t);	# 77 IOprint_val (ja_a:void)<-(t:bat[:int,:int])
 #	io.print("# alles zover is goed\n"); 	# 78  (_73:str)
 end main;	# 79  
 #-----------------#

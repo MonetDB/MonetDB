@@ -25,9 +25,9 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,1,"io.print(1);");	# 2 BKCinsert_bun (_4:void)<-(b:bat[:int,:str])(_5:int)(_6:str)
     bat.insert(b,2,"io.print(\"hello\");");	# 3 BKCinsert_bun (_7:void)<-(b:bat[:int,:str])(_8:int)(_9:str)
     bat.insert(b,3,"s:=\"goodbye\";io.print(s);");	# 4 BKCinsert_bun (_10:void)<-(b:bat[:int,:str])(_11:int)(_12:str)
-    io.print(b);	# 5 IOprint_val (_13:int)<-(b:bat[:int,:str])
+    io.print(b);	# 5 IOprint_val (_13:void)<-(b:bat[:int,:str])
     s := algebra.fetch(b,2);	# 6 ALGfetchint (s:str)<-(b:bat[:int,:str])(_8:int)
-    io.printf("%s\n",s);	# 7 IOprint_formatted_str (_15:int)<-(_16:str)(s:str)
+    io.printf("%s\n",s);	# 7 IOprint_formatted_str (_15:void)<-(_16:str)(s:str)
 end main;	# 8  
 #-----------------------------------------#
 # h	t				  # name

@@ -69,10 +69,10 @@ function user.main():void;	# 0  (main:void)
 #focussed on integers 	# 13  (_20:str)
 #it includes insertions,deletions,selections, and joins. 	# 14  (_21:str)
     b := bat.new(:int,:int);	# 15 CMDBATnew (b:bat[:int,:int])<-(_23:int)(_24:int)
-    io.printf("#~BeginVariableOutput~#\n");	# 16 IOprint_str (_25:int)<-(_26:str)
+    io.printf("#~BeginVariableOutput~#\n");	# 16 IOprint_str (_25:void)<-(_26:str)
     binfo := bat.info(b);	# 17 BKCinfo (binfo:bat[:str,:str])<-(b:bat[:int,:int])
-    io.print(binfo);	# 18 IOprint_val (_28:int)<-(binfo:bat[:str,:str])
-    io.printf("#~EndVariableOutput~#\n");	# 19 IOprint_str (_29:int)<-(_30:str)
+    io.print(binfo);	# 18 IOprint_val (_28:void)<-(binfo:bat[:str,:str])
+    io.printf("#~EndVariableOutput~#\n");	# 19 IOprint_str (_29:void)<-(_30:str)
     profiler.start();	# 20 CMDstartProfiler (_31:void)
     err := bat.insert(b,1,15);	# 21 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_33:int)(_34:int)
     err := bat.insert(b,2,4);	# 22 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_35:int)(_36:int)
@@ -86,8 +86,8 @@ function user.main():void;	# 0  (main:void)
     err := bat.insert(b,9,n0);	# 30 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_49:int)(n0:int)
     err := bat.insert(b,n0,n0);	# 31 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
     err := bat.insert(b,n0,81);	# 32 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(_50:int)
-    io.print(b);	# 33 IOprint_val (_51:int)<-(b:bat[:int,:int])
-    io.print(b,b,b);	# 34 IOtable (_52:int)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
+    io.print(b);	# 33 IOprint_val (_51:void)<-(b:bat[:int,:int])
+    io.print(b,b,b);	# 34 IOtable (_52:void)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
     profiler.stop();	# 35 CMDstopProfiler (_53:void)
     profiler.closeStream();	# 36 CMDcloseProfilerStream (_54:void)
     profiler.cleanup();	# 37 CMDcleanup (_55:void)
@@ -97,7 +97,7 @@ end main;	# 38
 # h				tmp_5		  # name
 # str				str		  # type
 #-----------------------------------------#
-[ "version",		  "20749"	  ]
+[ "version",		  "25105"	  ]
 [ "batId",		  "tmp_7"	  ]
 [ "batCacheid",		  "7"		  ]
 [ "batParentid",		  "0"		  ]
@@ -116,7 +116,7 @@ end main;	# 38
 [ "hident",			  "h"		  ]
 [ "hdense",			  "0"		  ]
 [ "hseqbase",			  "0@0"		  ]
-[ "hkey",			  "0"		  ]
+[ "hkey",		  "1"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
 [ "halign",			  "20000000"	  ]
@@ -129,7 +129,7 @@ end main;	# 38
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "0@0"		  ]
 [ "tsorted",		  "65"		  ]
-[ "tkey",			  "0"		  ]
+[ "tkey",		  "1"		  ]
 [ "tloc",			  "4"		  ]
 [ "tvarsized",			  "0"		  ]
 [ "talign",			  "20000001"	  ]

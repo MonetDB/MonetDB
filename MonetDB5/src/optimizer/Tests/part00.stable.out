@@ -37,8 +37,8 @@ stdout of test 'part00` in directory 'src/optimizer` itself:
 #function qry(a:bat[:void,:any$1]);
 #end qry;
 function user.qry(a:bat[:void,:any_1]):void;	# 0  (qry:void)<-(a:bat[:void,:any_1])
-    io.print("hello");	# 1 IOprint_val (_2:int)<-(_3:str)
-    io.print(a);	# 2 IOprint_val (_4:int)<-(a:bat[:void,:any_1])
+    io.print("hello");	# 1 IOprint_val (_2:void)<-(_3:str)
+    io.print(a);	# 2 IOprint_val (_4:void)<-(a:bat[:void,:any_1])
 end qry;	# 3  
 #
 #optimizer.partitionedQuery("user","qry");
@@ -71,7 +71,7 @@ exit (go,i);	# 13  (go:bit)(i:int)
     partitions.deposit(a1,a3);	# 17 BPTdeposit2 (_24:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
     partitions.dump();	# 18 BPTdump (_25:void)
     mdb.list("user","qry");	# 19 MDBlist3 (_29:void)<-(_27:str)(_28:str)
-    io.print("run experiment");	# 20 IOprint_val (_30:int)<-(_31:str)
+    io.print("run experiment");	# 20 IOprint_val (_30:void)<-(_31:str)
     user.qry(a1);	# 21  (_32:void)<-(a1:bat[:void,:int])
 end main;	# 22  
 ptop=3 plimit=1024

@@ -23,7 +23,7 @@ function user.main():void;	# 0  (main:void)
     z := bat.new(:int,:int);	# 2 CMDBATnew (z:bat[:int,:int])<-(_3:int)(_3:int)
     b := bat.new(:int,:BAT);	# 3 CMDBATnew (b:bat[:int,:BAT])<-(_3:int)(_5:BAT)
     bat.insert(b,1,z);	# 4 BKCinsert_bun (_6:void)<-(b:bat[:int,:BAT])(_7:int)(z:bat[:int,:int])
-    io.print(b);	# 5 IOprint_val (_8:int)<-(b:bat[:int,:BAT])
+    io.print(b);	# 5 IOprint_val (_8:void)<-(b:bat[:int,:BAT])
 end main;	# 6  
 #-------------------------#
 # h	t		  # name

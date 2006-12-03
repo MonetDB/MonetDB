@@ -17,7 +17,7 @@ stdout of test 'tst907` in directory 'src/mal` itself:
 #	return base;
 #end one;
 function user.one(base:int):int;	# 0  (one:int)<-(base:int)
-    io.print(base);	# 1 IOprint_val (_2:int)<-(base:int)
+    io.print(base);	# 1 IOprint_val (_2:void)<-(base:int)
     return base;	# 2  (base:int)
 end one;	# 3  
 #
@@ -26,7 +26,7 @@ end one;	# 3
 #	return base;
 #end three;
 function user.three(base:int,x:int,y:int):int;	# 0  (three:int)<-(base:int)(x:int)(y:int)
-    io.print(base);	# 1 IOprint_val (_4:int)<-(base:int)
+    io.print(base);	# 1 IOprint_val (_4:void)<-(base:int)
     return base;	# 2  (base:int)
 end three;	# 3  
 #function pow(base:int,raise:int):int;
@@ -64,7 +64,7 @@ function user.main():void;	# 0  (main:void)
     p := user.pow(1,2);	# 3  (p:int)<-(_2:int)(_4:int)
     b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_9:int)
     bat.insert(b,1,1);	# 5 BKCinsert_bun (_10:void)<-(b:bat[:int,:int])(_2:int)(_2:int)
-    io.print("do multiplex three test");	# 6 IOprint_val (_11:int)<-(_12:str)
+    io.print("do multiplex three test");	# 6 IOprint_val (_11:void)<-(_12:str)
     _22 := bat.new(nil:int,nil:int);	# 7 CMDBATnew (_22:bat[:int,:int])<-(_23:int)(_23:int)
 barrier (_25,_26,_27):= bat.newIterator(b);	# 8 CHPbunIterator (_25:lng)(_26:int)(_27:int)<-(b:bat[:int,:int]) jump 15
     _29 := user.three(_27,2,3);	# 9  (_29:int)<-(_27:int)(_4:int)(_5:int)
@@ -75,7 +75,7 @@ catch MALexception:str ;	# 12  (MALexception:str) jump 14
 exit MALexception:str ;	# 14  (MALexception:str)
 exit (_25,_26,_27);	# 15  (_25:lng)(_26:int)(_27:int)
     z:bat[:int,:int]  := _22;	# 16  (z:bat[:int,:int])<-(_22:bat[:int,:int])
-    io.print("do multiplex one test");	# 17 IOprint_val (_15:int)<-(_16:str)
+    io.print("do multiplex one test");	# 17 IOprint_val (_15:void)<-(_16:str)
     _36 := bat.new(nil:int,nil:int);	# 18 CMDBATnew (_36:bat[:int,:int])<-(_23:int)(_23:int)
 barrier (_38,_39,_40):= bat.newIterator(b);	# 19 CHPbunIterator (_38:lng)(_39:int)(_40:int)<-(b:bat[:int,:int]) jump 26
     _42 := user.one(_40);	# 20  (_42:int)<-(_40:int)
@@ -86,7 +86,7 @@ catch MALexception:str ;	# 23  (MALexception:str) jump 25
 exit MALexception:str ;	# 25  (MALexception:str)
 exit (_38,_39,_40);	# 26  (_38:lng)(_39:int)(_40:int)
     z:bat[:int,:int]  := _36;	# 27  (z:bat[:int,:int])<-(_36:bat[:int,:int])
-    io.print("do multiplex pow test");	# 28 IOprint_val (_18:int)<-(_19:str)
+    io.print("do multiplex pow test");	# 28 IOprint_val (_18:void)<-(_19:str)
     _49 := bat.new(nil:int,nil:int);	# 29 CMDBATnew (_49:bat[:int,:int])<-(_23:int)(_23:int)
 barrier (_51,_52,_53):= bat.newIterator(b);	# 30 CHPbunIterator (_51:lng)(_52:int)(_53:int)<-(b:bat[:int,:int]) jump 37
     _55 := user.pow(_53,2);	# 31  (_55:int)<-(_53:int)(_4:int)
@@ -97,7 +97,7 @@ catch MALexception:str ;	# 34  (MALexception:str) jump 36
 exit MALexception:str ;	# 36  (MALexception:str)
 exit (_51,_52,_53);	# 37  (_51:lng)(_52:int)(_53:int)
     z:bat[:int,:int]  := _49;	# 38  (z:bat[:int,:int])<-(_49:bat[:int,:int])
-    io.print(z);	# 39 IOprint_val (_21:int)<-(z:bat[:int,:int])
+    io.print(z);	# 39 IOprint_val (_21:void)<-(z:bat[:int,:int])
 end main;	# 40  
 [ 1 ]
 [ 1 ]

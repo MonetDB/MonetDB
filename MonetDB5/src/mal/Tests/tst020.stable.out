@@ -39,7 +39,7 @@ end pl;	# 9
 function user.main():void;	# 0  (main:void)
     a := "hello";	# 1  (a:str)<-(_2:str)
     z := user.pl(a);	# 2  (z:void)<-(a:str)
-    io.print("done");	# 3 IOprint_val (_4:int)<-(_5:str)
+    io.print("done");	# 3 IOprint_val (_4:void)<-(_5:str)
 end main;	# 4  
 [ "done" ]
 

@@ -23,7 +23,7 @@ function user.dir():void;	# 0  (dir:void)
     d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:int,:int])
     dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:int,:int])
     dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:int,:str])
-    io.print(dn,d,dl);	# 4 IOtable (_4:int)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+    io.print(dn,d,dl);	# 4 IOtable (_4:void)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
 end dir;	# 5  
 #
 #function createBAT(name:str):bat;
@@ -63,7 +63,7 @@ exit MALexception:str ;	# 13  (MALexception:str)
 exit (_20,_21,_22);	# 14  (_20:lng)(_21:oid)(_22:str)
     r:bat[:oid,:BAT]  := _16;	# 15  (r:bat[:oid,:BAT])<-(_16:bat[:oid,:BAT])
     user.dir();	# 16  (_14:void)
-    io.print(r);	# 17 IOprint_val (_15:int)<-(r:bat[:oid,:BAT])
+    io.print(r);	# 17 IOprint_val (_15:void)<-(r:bat[:oid,:BAT])
 end main;	# 18  
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name

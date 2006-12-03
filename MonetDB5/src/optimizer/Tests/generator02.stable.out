@@ -30,7 +30,7 @@ function user.main():void;	# 0  (main:void)
 # the generator optimizer 	# 1  (_1:str)
 # The flow graph becomes a little more complex  	# 2  (_2:str)
     mdb.list();	# 3 MDBlist (_3:void)
-    io.print("start");	# 4 IOprint_val (_4:int)<-(_5:str)
+    io.print("start");	# 4 IOprint_val (_4:void)<-(_5:str)
     low := 0;	# 5  (low:int)<-(_9:int)
     high := 3;	# 6  (high:int)<-(_11:int)
     c := 0;	# 7  (c:int)<-(_9:int)
@@ -40,8 +40,8 @@ barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (
     c := calc.+(c,_19);	# 11 CALCbinaryADDintint (c:int)<-(c:int)(_19:int)
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 12 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 9
 exit b:bat[:void,:int] ;	# 13  (b:bat[:void,:int])
-    io.print(c);	# 14 IOprint_val (_14:int)<-(c:int)
-    io.print("finished");	# 15 IOprint_val (_15:int)<-(_16:str)
+    io.print(c);	# 14 IOprint_val (_14:void)<-(c:int)
+    io.print("finished");	# 15 IOprint_val (_15:void)<-(_16:str)
 end main;	# 16  
 function user.main():void;
 # the generator optimizer 

@@ -35,7 +35,7 @@ function user.main():void;	# 0  (main:void)
     w:bat[:int,:int]{dense=true,sorted=true}  := bat.new(:int,:int);	# 4 CMDBATnew (w:bat[:int,:int])<-(_4:int)(_4:int)
     w:bat[:int,:int]{dense=true,sorted=true}  := bat.new(:int,:int);	# 5 CMDBATnew (w:bat[:int,:int])<-(_4:int)(_4:int)
     y:int{sorted=true}  := algebra.sort(w);	# 6  unknown (y:int)<-(w:bat[:int,:int])
-    io.print(1);	# 7 IOprint_val (_7:int)<-(_8:int)
+    io.print(1);	# 7 IOprint_val (_7:void)<-(_8:int)
     y:int{sorted=true}  := algebra.sort(w);	# 8  unknown (y:int)<-(w:bat[:int,:int])
 end main;	# 9  
 

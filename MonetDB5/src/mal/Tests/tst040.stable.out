@@ -31,11 +31,11 @@ function user.main():void;	# 0  (main:void)
     i := true;	# 6  (i:bit)<-(_10:bit)
 # test for coercion errors 	# 7  (_11:str)
     x0 := 1:int;	# 8  (x0:int)<-(_13:int)
-    io.print(x0);	# 9 IOprint_val (_14:int)<-(x0:int)
+    io.print(x0);	# 9 IOprint_val (_14:void)<-(x0:int)
     x1 := 3:int;	# 10  (x1:int)<-(_16:int)
-    io.print(x1);	# 11 IOprint_val (_17:int)<-(x1:int)
+    io.print(x1);	# 11 IOprint_val (_17:void)<-(x1:int)
     x2 := "3":str;	# 12  (x2:str)<-(_19:str)
-    io.print(x2);	# 13 IOprint_val (_20:int)<-(x2:str)
+    io.print(x2);	# 13 IOprint_val (_20:void)<-(x2:str)
 end main;	# 14  
 [ 1 ]
 [ 3 ]

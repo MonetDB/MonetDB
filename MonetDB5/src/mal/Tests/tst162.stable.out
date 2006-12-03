@@ -28,7 +28,7 @@ function user.main():void;	# 0  (main:void)
 # testing definition of new atom type based on ptr 	# 1  (_2:str)
 # this definition caused an error 	# 2  (_4:str)
     z := strtype.l();	# 3  (z:strtype)
-    io.print(z);	# 4 IOprint_val (_4:int)<-(z:strtype)
+    io.print(z);	# 4 IOprint_val (_4:void)<-(z:strtype)
 end main;	# 5  
 [ 0 ]
 #

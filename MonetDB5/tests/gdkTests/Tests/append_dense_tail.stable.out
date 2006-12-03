@@ -5,6 +5,8 @@ stdout of test 'append_dense_tail` in directory 'tests/gdkTests` itself:
 # 09:01:01 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=31140 --set monet_prompt= --trace --dbname=mTests_tests_gdkTests  append_dense_tail.mal < /dev/null
 # 09:01:01 >  
 
+
+
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -52,7 +54,7 @@ function user.main():void;	# 0  (main:void)
     bat.append(b,0@0);	# 11 BKCappend_val_wrap (_15:void)<-(b:bat[:void,:oid])(_6:oid)
 # append the latter to the former 	# 12  (_16:str)
     bat.append(a,b);	# 13 BKCappend_wrap (_17:void)<-(a:bat[:void,:oid])(b:bat[:void,:oid])
-    io.print(a);	# 14 IOprint_val (_18:int)<-(a:bat[:void,:oid])
+    io.print(a);	# 14 IOprint_val (_18:void)<-(a:bat[:void,:oid])
 # check important properties 	# 15  (_19:str)
     f := bat.new(:void,:str);	# 16 CMDBATnew (f:bat[:void,:str])<-(_3:void)(_21:str)
     bat.append(f,"hseqbase");	# 17 BKCappend_val_wrap (_22:void)<-(f:bat[:void,:str])(_23:str)
@@ -63,7 +65,7 @@ function user.main():void;	# 0  (main:void)
     fm := bat.mirror(fr);	# 22 BKCmirror (fm:bat[:str,:str])<-(fr:bat[:str,:void])
     i := bat.info(a);	# 23 BKCinfo (i:bat[:str,:str])<-(a:bat[:void,:oid])
     j := algebra.join(fm,i);	# 24 ALGjoin (j:bat[:str,:str])<-(fm:bat[:str,:str])(i:bat[:str,:str])
-    io.print(j);	# 25 IOprint_val (_34:int)<-(j:bat[:str,:str])
+    io.print(j);	# 25 IOprint_val (_34:void)<-(j:bat[:str,:str])
 end main;	# 26  
 #-----------------#
 # h	t	  # name

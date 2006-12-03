@@ -61,8 +61,8 @@ exit (go,i);	# 13  (go:bit)(i:int)
     partitions.dump();	# 18 BPTdump (_25:void)
 #retrieve a range 	# 19  (_26:str)
 barrier (idx,b):= partitions.newIterator(a1);	# 20 BPTnewIterator (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 24
-    io.print(idx);	# 21 IOprint_val (_29:int)<-(idx:int)
-    io.print(b);	# 22 IOprint_val (_30:int)<-(b:bat[:void,:int])
+    io.print(idx);	# 21 IOprint_val (_29:void)<-(idx:int)
+    io.print(b);	# 22 IOprint_val (_30:void)<-(b:bat[:void,:int])
     redo (idx,b):= partitions.hasMoreElements(a1);	# 23 BPThasMoreElements (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 21
 exit (idx,b);	# 24  (idx:int)(b:bat[:void,:int])
 end main;	# 25  

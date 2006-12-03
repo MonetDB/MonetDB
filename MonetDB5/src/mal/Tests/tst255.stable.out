@@ -29,9 +29,9 @@ function user.main():void;	# 0  (main:void)
     bat.append(z1,0);	# 4 BKCappend_val_wrap (_7:void)<-(z1:bat[:void,:int])(_8:int)
     bat.append(z1,1);	# 5 BKCappend_val_wrap (_9:void)<-(z1:bat[:void,:int])(_10:int)
     bat.append(z1,2);	# 6 BKCappend_val_wrap (_11:void)<-(z1:bat[:void,:int])(_12:int)
-    io.print(z1);	# 7 IOprint_val (_13:int)<-(z1:bat[:void,:int])
+    io.print(z1);	# 7 IOprint_val (_13:void)<-(z1:bat[:void,:int])
     o := batcalc.oid(z1);	# 8 CMDconvert_void_int_oid (o:bat[:void,:oid])<-(z1:bat[:void,:int])
-    io.print(o);	# 9 IOprint_val (_15:int)<-(o:bat[:void,:oid])
+    io.print(o);	# 9 IOprint_val (_15:void)<-(o:bat[:void,:oid])
 end main;	# 10  
 #-----------------#
 # h	tmp_4	  # name

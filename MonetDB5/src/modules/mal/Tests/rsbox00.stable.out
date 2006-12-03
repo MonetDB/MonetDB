@@ -90,21 +90,21 @@ function user.main():void;	# 0  (main:void)
     resultset.populateColumn(rs,1:int,b1);	# 19 RSpopulateColumn (_37:resultset)<-(rs:resultset)(_5:int)(b1:bat[:void,:str])
     resultset.populateColumn(rs,2:int,b2);	# 20 RSpopulateColumn (_38:resultset)<-(rs:resultset)(_7:int)(b2:bat[:void,:int])
     resultset.writeNextPart(rs);	# 21 RSwriteNextPart (_39:int)<-(rs:resultset)
-    io.print("Before any cleanup:");	# 22 IOprint_val (_40:int)<-(_41:str)
+    io.print("Before any cleanup:");	# 22 IOprint_val (_40:void)<-(_41:str)
 barrier (v,res):= rsbox.newIterator();	# 23 RSBiterator (v:lng)(res:resultset) jump 26
-    io.print(res);	# 24 IOprint_val (_44:int)<-(res:resultset)
+    io.print(res);	# 24 IOprint_val (_44:void)<-(res:resultset)
     redo (v,res):= rsbox.hasMoreElements();	# 25 RSBhasMoreElements (v:lng)(res:resultset) jump 24
 exit v;	# 26  (v:lng)
     rsbox.release(rs);	# 27 RSBdelete (_45:void)<-(rs:resultset)
-    io.print("After release of 'myid':");	# 28 IOprint_val (_46:int)<-(_47:str)
+    io.print("After release of 'myid':");	# 28 IOprint_val (_46:void)<-(_47:str)
 barrier (v,res):= rsbox.newIterator();	# 29 RSBiterator (v:lng)(res:resultset) jump 32
-    io.print(res);	# 30 IOprint_val (_48:int)<-(res:resultset)
+    io.print(res);	# 30 IOprint_val (_48:void)<-(res:resultset)
     redo (v,res):= rsbox.hasMoreElements();	# 31 RSBhasMoreElements (v:lng)(res:resultset) jump 30
 exit v;	# 32  (v:lng)
     rsbox.releaseAll();	# 33 RSBreleaseAll (_49:void)
-    io.print("After a releaseAll:");	# 34 IOprint_val (_50:int)<-(_51:str)
+    io.print("After a releaseAll:");	# 34 IOprint_val (_50:void)<-(_51:str)
 barrier (v,res):= rsbox.newIterator();	# 35 RSBiterator (v:lng)(res:resultset) jump 38
-    io.print(res);	# 36 IOprint_val (_52:int)<-(res:resultset)
+    io.print(res);	# 36 IOprint_val (_52:void)<-(res:resultset)
     redo (v,res):= rsbox.hasMoreElements();	# 37 RSBhasMoreElements (v:lng)(res:resultset) jump 36
 exit v;	# 38  (v:lng)
 # we did not open, it so why close it? 	# 39  (_53:str)

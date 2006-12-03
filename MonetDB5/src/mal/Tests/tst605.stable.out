@@ -42,11 +42,11 @@ function user.main():void;	# 0  (main:void)
 #	dd:str:= const.take(distribution); 	# 8  (_12:str)
 #	bb:bat[void,str] := const.take(environment); 	# 9  (_13:str)
 # how to obtain a copy of all objects in a space? 	# 10  (_14:str)
-    io.print("Contents of the 'const' box");	# 11 IOprint_val (_15:int)<-(_16:str)
+    io.print("Contents of the 'const' box");	# 11 IOprint_val (_15:void)<-(_16:str)
 barrier (b,nme):= const.newIterator();	# 12 CSTnewIterator (b:lng)(nme:str) jump 17
-    io.printf("# %s=",nme);	# 13 IOprint_formatted_str (_19:int)<-(_20:str)(nme:str)
+    io.printf("# %s=",nme);	# 13 IOprint_formatted_str (_19:void)<-(_20:str)(nme:str)
     val:str  := const.toString(nme);	# 14 CSTtoString (val:str)<-(nme:str)
-    io.printf("%s\n",val);	# 15 IOprint_formatted_str (_22:int)<-(_23:str)(val:str)
+    io.printf("%s\n",val);	# 15 IOprint_formatted_str (_22:void)<-(_23:str)(val:str)
     redo (b,nme):= const.hasMoreElements();	# 16 CSThasMoreElements (b:lng)(nme:str) jump 13
 exit b;	# 17  (b:lng)
 end main;	# 18  
