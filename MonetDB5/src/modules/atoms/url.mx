@@ -558,9 +558,8 @@ url_getQueryArg(BAT **retval, url t)
 
 	if (t == 0)
 		return throwMessage("url.getQueryArg","url missing");
-	if (unescape_str(&unescapedval, t) == GDK_FAIL)
+	if (unescape_str(&unescapedval, t) != MAL_SUCCEED)
 		return throwMessage("url.getQueryArg","failure to unescape");
-		return GDK_FAIL;
 
 	t = strchr(unescapedval, '?');
 	if (t == 0)
