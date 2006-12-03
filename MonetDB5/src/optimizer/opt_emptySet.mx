@@ -36,7 +36,7 @@ For example, consider the following MAL test
 @verbatim
     V1 := bat.new(:void,:int);
     V7 := bat.new(:void,:int);
-    V10{rows=0} := bat.new(:int,:void);
+    V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:void);
     V11 := bat.reverse(V10);
     V12 := algebra.kdifference(V7,V11);
     V16 := algebra.markH(V12);
@@ -51,8 +51,8 @@ by the following code snippet.
 @example
     V1 := bat.new(:void,:int);
     V7 := bat.new(:void,:int);
-    V10{rows=0} := bat.new(:int,:void);
-    V11{rows=0} := bat.new(:void,:int);
+    V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:void);
+    V11@verb{ { }rows=0@verb{ } } := bat.new(:void,:int);
     V12 := V7;
     V16 := algebra.markH(V12);
     V17 := algebra.join(V16,V7);
