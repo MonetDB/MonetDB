@@ -30,7 +30,7 @@ end test;	# 3
 !ERROR: Error in cloned function
 !ERROR: function user.test(b:bat[:any,:str],c:str):void;	# 0  (test:void)<-(b:bat[:any,:str])(c:str)
 !ERROR:     k := calc.+(1,c);	# 1  unknown (k:any)<-(_4:int)(c:str)
-
+!ERROR:     io.print(k);	# 2 IOprint_val (_5:void)<-(k:any)
 !ERROR: end test;	# 3  
 !ERROR: 'user.test' undefined in user.main[4] _6:void := user.test(c:bat[:int,:str], _7:str)
 function user.main():void;	# 0  (main:void)
