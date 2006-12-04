@@ -17,12 +17,22 @@ quit();
 
 Over..
 
-# 14:37:18 >  
-# 14:37:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31055  < temp2.sql
-# 14:37:18 >  
+# 15:17:44 >  
+# 15:17:44 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31784  < temp2.sql
+# 15:17:44 >  
 
+% .,	. # table_name
+% single_value,	count_ # name
+% char,	int # type
+% 9,	3 # length
+[ "transient",	537	]
+% .,	. # table_name
+% single_value,	count_ # name
+% char,	int # type
+% 10,	3 # length
+[ "persistent",	201	]
 
-# 14:37:18 >  
-# 14:37:18 >  Done.
-# 14:37:18 >  
+# 15:17:44 >  
+# 15:17:44 >  Done.
+# 15:17:44 >  
 

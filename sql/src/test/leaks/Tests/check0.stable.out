@@ -9,50 +9,235 @@ stdout of test 'check0` in directory 'src/test/leaks` itself:
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-# simplified version of ls(): we don't want all columns
-module(xtables);
 
-var nme := view_bbp_name();
-var prs := nme.semijoin(view_bbp_kind().select("pers"));
-var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
-prs.access(BAT_WRITE); prs.col_name("name"); prs.replace(rev);
+printf("\nReady.\n");
 
-var cnt := [oid](view_bbp_count().semijoin(prs.mirror()).col_name("count").reverse().sort()).reverse();
-var htpe := [oid](view_bbp_htype().semijoin(prs.join(nme.reverse())).col_name("htype").reverse()).reverse();
-var ttpe := [oid](view_bbp_ttype().semijoin(prs.join(nme.reverse())).col_name("ttype").reverse()).reverse();
-
-var order := CTrefine(cnt, htpe);
-order := CTrefine(order, ttpe);
-
-table(1, order, htpe, ttpe, cnt);
-#---------------------------------#
-# t	h	h	h	  # name
-# oid	str	str	lng	  # type
-#---------------------------------#
-[ 1@0,	  "int",  "lng",  2	  ]
-[ 2@0,	  "int",  "int",  14	  ]
-[ 3@0,	  "int",  "str",  284	  ]
-[ 4@0,	  "void", "bit",  1212	  ]
-[ 4@0,	  "void", "bit",  1212	  ]
-[ 5@0,	  "void", "int",  1212	  ]
-[ 5@0,	  "void", "int",  1212	  ]
-[ 6@0,	  "void", "str",  1212	  ]
-[ 6@0,	  "void", "str",  1212	  ]
-[ 6@0,	  "void", "str",  1212	  ]
-[ 7@0,	  "void", "int",  3327	  ]
-[ 7@0,	  "void", "int",  3327	  ]
-[ 7@0,	  "void", "int",  3327	  ]
-[ 7@0,	  "void", "int",  3327	  ]
-[ 7@0,	  "void", "int",  3327	  ]
-[ 8@0,	  "void", "str",  3327	  ]
-[ 8@0,	  "void", "str",  3327	  ]
-printf("transient %d\n", view_bbp_kind().select("trans").count());
-transient 0
-printf("persistent %d\n", view_bbp_kind().select("pers").count());
-persistent 17
+Ready.
 quit();
 
-# 11:28:50 >  
-# 11:28:50 >  Done.
-# 11:28:50 >  
+Over..
+
+# 15:15:26 >  
+# 15:15:26 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38554  < check0.sql
+# 15:15:26 >  
+
+% .bbp,	.bbp,	.bbp # table_name
+% htype,	ttype,	count # name
+% int,	int,	bigint # type
+% 10,	7,	4 # length
+[ "int",	"int",	0	]
+[ "int",	"lng",	2	]
+[ "int",	"str",	284	]
+[ "oid",	"bit",	0	]
+[ "oid",	"bit",	0	]
+[ "oid",	"bit",	0	]
+[ "oid",	"bit",	0	]
+[ "oid",	"bit",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"sht",	0	]
+[ "oid",	"sht",	0	]
+[ "oid",	"sht",	0	]
+[ "oid",	"sht",	0	]
+[ "oid",	"sht",	0	]
+[ "oid",	"sht",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "void",	"bit",	0	]
+[ "void",	"bit",	29	]
+[ "void",	"bit",	172	]
+[ "void",	"bit",	1213	]
+[ "void",	"bit",	1213	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	0	]
+[ "void",	"int",	1	]
+[ "void",	"int",	2	]
+[ "void",	"int",	2	]
+[ "void",	"int",	2	]
+[ "void",	"int",	3	]
+[ "void",	"int",	3	]
+[ "void",	"int",	14	]
+[ "void",	"int",	14	]
+[ "void",	"int",	14	]
+[ "void",	"int",	14	]
+[ "void",	"int",	14	]
+[ "void",	"int",	22	]
+[ "void",	"int",	22	]
+[ "void",	"int",	22	]
+[ "void",	"int",	22	]
+[ "void",	"int",	22	]
+[ "void",	"int",	22	]
+[ "void",	"int",	29	]
+[ "void",	"int",	29	]
+[ "void",	"int",	172	]
+[ "void",	"int",	172	]
+[ "void",	"int",	172	]
+[ "void",	"int",	172	]
+[ "void",	"int",	172	]
+[ "void",	"int",	1213	]
+[ "void",	"int",	1213	]
+[ "void",	"int",	3328	]
+[ "void",	"int",	3328	]
+[ "void",	"int",	3328	]
+[ "void",	"int",	3328	]
+[ "void",	"int",	3328	]
+[ "void",	"lng",	0	]
+[ "void",	"lng",	0	]
+[ "void",	"lng",	0	]
+[ "void",	"lng",	0	]
+[ "void",	"lng",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"oid",	0	]
+[ "void",	"sht",	0	]
+[ "void",	"sht",	0	]
+[ "void",	"sht",	0	]
+[ "void",	"sht",	0	]
+[ "void",	"sht",	29	]
+[ "void",	"sht",	29	]
+[ "void",	"str",	0	]
+[ "void",	"str",	0	]
+[ "void",	"str",	0	]
+[ "void",	"str",	0	]
+[ "void",	"str",	0	]
+[ "void",	"str",	0	]
+[ "void",	"str",	0	]
+[ "void",	"str",	0	]
+[ "void",	"str",	0	]
+[ "void",	"str",	1	]
+[ "void",	"str",	1	]
+[ "void",	"str",	1	]
+[ "void",	"str",	2	]
+[ "void",	"str",	3	]
+[ "void",	"str",	22	]
+[ "void",	"str",	22	]
+[ "void",	"str",	29	]
+[ "void",	"str",	29	]
+[ "void",	"str",	172	]
+[ "void",	"str",	172	]
+[ "void",	"str",	172	]
+[ "void",	"str",	1213	]
+[ "void",	"str",	1213	]
+[ "void",	"str",	1213	]
+[ "void",	"str",	3328	]
+[ "void",	"str",	3328	]
+% .,	. # table_name
+% single_value,	count_ # name
+% char,	int # type
+% 9,	3 # length
+[ "transient",	534	]
+% .,	. # table_name
+% single_value,	count_ # name
+% char,	int # type
+% 10,	3 # length
+[ "persistent",	201	]
+
+# 15:15:26 >  
+# 15:15:26 >  Done.
+# 15:15:26 >  
 
