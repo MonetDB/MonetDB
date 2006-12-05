@@ -97,7 +97,7 @@ malLoadScript(str name, bstream **fdin)
 	fd = malOpenSource(name);
 	if (stream_errnr(fd) == OPEN_ERROR) {
 		stream_destroy(fd);
-		return throwException(MALEXCEPTION, "malInclude", "could not open file: %s\n", name);
+		throwMalf("malInclude", "could not open file: %s", name);
 	}
 	*fdin = bstream_create(fd, 128 * BLOCK);
 	if( bstream_next(*fdin) < 0)	
@@ -220,7 +220,6 @@ mal_export str evalFile(Client c, str fname, int listing);
 str
 evalFile(Client c, str fname, int listing){
 	@:restoreState@
-	str s;
 	stream *fd;
 
 	c->yycur = 0;
@@ -234,8 +233,7 @@ evalFile(Client c, str fname, int listing){
 	fd = malOpenSource(fname);
 	if (stream_errnr(fd) == OPEN_ERROR) {
 		stream_destroy(fd);
-		s= throwException(MALEXCEPTION, "malInclude", "could not open file: %s\n", fname);
-		if( s) stream_printf(c->fdout, "#WARNING: %s\n",s);
+		stream_printf(c->fdout, "#WARNING: could not open file: %s", fname);
 	} else {
 		c->fdin = bstream_create(fd, 128 * BLOCK);
 		MSinitClientPrg(c,"user","main");	/* re-initialize context */

@@ -124,31 +124,46 @@ mal_export str	appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
 mal_export str	locateException(MalBlkPtr mb, int pc, str oldmsg);
 mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
 
-#define MALEXCEPTION "MALexception"
 #define throwMessage(Fcn,Msg)   throwException(MALEXCEPTION,Fcn,"%s",Msg)
 /* Fabian's convenience `tools' */
 #define throw(TPE, FCN, MSG) \
 	return(throwException(TPE, FCN, "%s", MSG))
-#define throwf \
-	return throwException
+#define throw1f(TPE, FCN, FMT, ARG) \
+	return(throwException(TPE, FCN, FMT, ARG))
 #define rethrow(FCN, TMP, PRV) \
 	if ((TMP = PRV) != MAL_SUCCEED) return(TMP);
 #define throwIllArg(FCN, MSG) \
 	throw("IllegalArgumentException", FCN, MSG);
-#define throwIllArgf(FCN, FMT, ...) \
-	throwf("IllegalArgumentException", FCN, FMT , ## __VA_ARGS__);
 #define throwOutOfBnds(FCN, MSG) \
 	throw("OutOfBoundsException", FCN, MSG);
-#define throwOutOfBndsf(FCN, FMT, ...) \
-	throwf("OutOfBoundsException", FCN, FMT , ## __VA_ARGS__);
 #define throwIO(FCN, MSG) \
 	throw("IOException", FCN, MSG);
-#define throwIOf(FCN, FMT, ...) \
-	throwf("IOException", FCN, FMT , ## __VA_ARGS__);
 #define throwMal(FCN, MSG) \
 	throw(MALEXCEPTION, FCN, MSG);
-#define throwMalf(FCN, FMT, ...) \
-	throwf(MALEXCEPTION, FCN, FMT , ## __VA_ARGS__);
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+# define throwIllArgf(FCN, FMT, ...) \
+	return(throwException("IllegalArgumentException", FCN, FMT , ## __VA_ARGS__));
+# define throwOutOfBndsf(FCN, FMT, ...) \
+	return(throwException("OutOfBoundsException", FCN, FMT , ## __VA_ARGS__));
+# define throwIOf(FCN, FMT, ...) \
+	return(throwException("IOException", FCN, FMT , ## __VA_ARGS__));
+# define throwMalf(FCN, FMT, ...) \
+	return(throwException(MALEXCEPTION, FCN, FMT , ## __VA_ARGS__));
+#else /* no variadic macro support */
+mal_export str throwIllArgException(str fcn, char *format, ...);
+# define throwIllArgf \
+	return throwIllArgException
+mal_export str throwOutOfBndsException(str fcn, char *format, ...);
+# define throwOutOfBndsf \
+	return throwOutOfBndsException
+mal_export str throwIOException(str fcn, char *format, ...);
+# define throwIOf \
+	return throwIOException
+mal_export str throwMalException(str fcn, char *format, ...);
+# define throwMalf \
+	return throwMalException
+#endif
 
 #endif /*  _MAL_EXCEPTION_H*/
 
@@ -196,18 +211,21 @@ an erroneous situation. It takes the name of MAL exception name
 to be raised.
 @c
 /*VARARGS*/
-str throwException(str nme, str fcn, char *format, ...){
+str throwException(str nme, str fcn, char *format, ...) {
+@= exceptionGeneration
 	char message[GDKMAXERRLEN];
-	int len = strlen(MALexception)+1;
+	int len;
 	va_list ap;
 
-	sprintf(message,"%s:%s:",nme,fcn);
-	len = strlen(message);
+	len = snprintf(message, GDKMAXERRLEN - 1, "%s:%s:", @1, fcn);
 	va_start(ap, format);
-	vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap);
+	len += vsnprintf(message + len, GDKMAXERRLEN - 1 - len, format, ap);
 	va_end(ap);
+	message[len] = '\0';
 
 	return GDKstrdup(message);
+@c
+	@:exceptionGeneration(nme)@
 }
 
 str raiseException(MalBlkPtr mb, int pc, str name, str msg){
@@ -218,5 +236,18 @@ void showException(MalBlkPtr mb, int pc, str name, str msg){
 	n= raiseException(mb,pc,name,msg);
 	GDKerror(n);
 	GDKfree(n);
+}
+
+str throwIllArgException(str fcn, char *format, ...) {
+	@:exceptionGeneration("IllegalArgumentException")@
+}
+str throwOutOfBndsException(str fcn, char *format, ...) {
+	@:exceptionGeneration("OutOfBoundsException")@
+}
+str throwIOException(str fcn, char *format, ...) {
+	@:exceptionGeneration("IOException")@
+}
+str throwMalException(str fcn, char *format, ...) {
+	@:exceptionGeneration(MALEXCEPTION)@
 }
 @}

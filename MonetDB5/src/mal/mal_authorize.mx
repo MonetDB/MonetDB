@@ -79,7 +79,7 @@ mal_export str AUTHgetHashAlgorithms(str *ret);
 
 /* convenience macros */
 #define throwIC(X, Y) throw("InvalidCredentialsException", X, Y);
-#define throwICf(X, Y, A) throwf("InvalidCredentialsException", X, Y, A);
+#define throwICf(X, Y, A) throw1f("InvalidCredentialsException", X, Y, A);
 
 #endif /* _MAL_AUTHORIZE_H */
 @-

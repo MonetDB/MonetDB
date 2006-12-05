@@ -668,11 +668,11 @@ limited.
 					"Exception not catched", ret);
 		} else {
 			if(stk->stk[stkexception].vtype== TYPE_str) {
-				ret= appendException(mb,mb->stop-1,MALexception, 
+				ret= appendException(mb,mb->stop-1,MALEXCEPTION, 
 						"Exception not catched", 
 						stk->stk[stkexception].val.sval);
 			} else {
-				ret= appendException(mb,mb->stop-1,MALexception, 
+				ret= appendException(mb,mb->stop-1,MALEXCEPTION, 
 						"Exception not catched", "");
 			}
 		}
@@ -1084,7 +1084,7 @@ the bind(namespace, batname, mode) operation. [todo]
 			(ptr) getArgReference(stk,pci,8)); 
 			 break;
 	default:
-		ret= raiseException(mb,stkpc,MALexception,
+		ret= raiseException(mb,stkpc,MALEXCEPTION,
 				"too many arguments for command call\n");
 	}
 	@:restoreTarget@
@@ -1093,7 +1093,7 @@ the bind(namespace, batname, mode) operation. [todo]
 @-
 @= patterncall
 	if( pci->fcn== NULL)
-		ret= raiseException(mb,stkpc,MALexception,
+		ret= raiseException(mb,stkpc,MALEXCEPTION,
 				"address of pattern missing\n");
 	else {
 		@:safeTarget@
@@ -1121,7 +1121,7 @@ call to the factory manager.
 Factory calls should deal with the reference counting.
 @= factorycall
 	if( pci->blk== NULL)
-		ret= raiseException(mb,stkpc,MALexception,
+		ret= raiseException(mb,stkpc,MALEXCEPTION,
 				"reference to MAL function missing\n");
 	else
 		ret= runFactory(cntxt,pci->blk,mb,stk,pci);

@@ -322,7 +322,7 @@ rsbox_export int RStoString(str *retval, int *len, ptr handle);
 
 /* convenience macros */
 #define throwRS(X, Y) throw("ResultSetException", X, Y);
-#define throwRSf(X, Y, A) throwf("ResultSetException", X, Y, A);
+#define throwRSf(X, Y, A) throw1f("ResultSetException", X, Y, A);
 #define resolveHandle(X, Y) \
 	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp);
 
