@@ -127,31 +127,12 @@ mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
 #define MALEXCEPTION "MALexception"
 #define throwMessage(Fcn,Msg)   throwException(MALEXCEPTION,Fcn,"%s",Msg)
 /* Fabian's convenience `tools' */
-#ifdef USE_NICE_N_SHINY_EXCEPTIONS
-mal_export str  createException(str name, str func, str file, int line, char *format, ...);
-mal_export str  stackException(str prev, str func, str file, int line);
-mal_export str  getBasename(const str in);
-#define throw(TPE, FCN, MSG) \
-	return(createException(TPE, FCN, getBasename(__FILE__), __LINE__, "%s", MSG));
-#define throwf(TPE, FCN, FMT, ARG) \
-	return(createException(TPE, FCN, getBasename(__FILE__), __LINE__, FMT, ARG));
-#define throwf2(TPE, FCN, FMT, ARG1, ARG2) \
-	return(createException(TPE, FCN, getBasename(__FILE__), __LINE__, FMT, ARG1, ARG2));
-#define throwf3(TPE, FCN, FMT, ARG1, ARG2, ARG3) \
-	return(createException(TPE, FCN, getBasename(__FILE__), __LINE__, FMT, ARG1, ARG2, ARG3));
-#define rethrow(FCN, TMP, PRV) \
-	if ((TMP = stackException(PRV, FCN, getBasename(__FILE__), __LINE__)) != MAL_SUCCEED) { \
-		GDKfree(PRV); \
-		return(TMP); \
-	}
-#else /* no shiny exceptions */
 #define throw(TPE, FCN, MSG) \
 	return(throwException(TPE, FCN, "%s", MSG))
-#define throwf(TPE, FCN, FMT, ...) \
-	return(throwException(TPE, FCN, FMT , ## __VA_ARGS__))
+#define throwf \
+	return throwException
 #define rethrow(FCN, TMP, PRV) \
 	if ((TMP = PRV) != MAL_SUCCEED) return(TMP);
-#endif
 #define throwIllArg(FCN, MSG) \
 	throw("IllegalArgumentException", FCN, MSG);
 #define throwIllArgf(FCN, FMT, ...) \
@@ -227,57 +208,6 @@ str throwException(str nme, str fcn, char *format, ...){
 	va_end(ap);
 
 	return GDKstrdup(message);
-}
-
-/**
- * Creates a new exception using the given name, message, function,
- * location and line number.
- */
-str createException(str name, str func, str file, int line, char *format, ...) {
-	char message[GDKMAXERRLEN];
-	int len;
-	va_list ap;
-
-	snprintf(message, GDKMAXERRLEN, "%s: ", name);
-	len = strlen(message);
-	va_start(ap, format);
-	len += vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap);
-	va_end(ap);
-	snprintf(message + len, GDKMAXERRLEN - (len + 2), "\n    at %s(%s:%d)", func, file, line);
-
-	return GDKstrdup(message);
-}
-
-/**
- * Appends the given function, file and line number a previous
- * exception.  If the message is empty (MAL_SUCCEED), the same message
- * is returned immediately.
- */
-str stackException(str prev, str func, str file, int line) {
-	char message[GDKMAXERRLEN];
-	char *bt;
-
-	/* don't do anything if the previous message was no Exception */
-	if (prev == MAL_SUCCEED) return(prev);
-
-	/* find the point where the backtrace starts */
-	bt = strstr(prev, "\n    at");
-	if (bt == NULL) bt = "";
-	*bt++ = '\0';
-	sprintf(message, "%s\n    at %s(%s:%d)\n%s", prev, func, file, line, bt);
-
-	return(GDKstrdup(message));
-}
-
-/**
- * Returns the basename of the given string.  The basename is
- * interpreted as the part of the input string after the last '/'
- * character, or the full string if no '/' is found.
- */
-str getBasename(const str in) {
-	int i = strlen(in);
-	for (; i >= 0 && in[i] != '/'; i--);
-	return(in + i + 1);
 }
 
 str raiseException(MalBlkPtr mb, int pc, str name, str msg){
