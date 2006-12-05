@@ -1011,40 +1011,6 @@ fail:;
 #endif /* HAVE_OPENSSL */
 }
 
-static int
-stream_read_until(str *res, stream *S, str stop)
-{
-	stream *s = *(stream **) S;
-	int slen = strlen(stop);
-	int len = 0;
-	char buf[BUFSIZ + 1], *start = buf;
-
-	while (stream_read(s, start, 1, 1) > 0) {
-		if (start - buf >= slen - 1 && strncmp(start - slen + 1, stop, slen) == 0) {
-/*
-				start = start-slen+1;
-*/
-			start++;
-			break;
-		}
-		start++;
-	}
-
-	if (stream_errnr(s))
-		return -1;
-
-	len = start - buf;
-	if (len > 0) {
-		*res = NEW_ARRAY(char, len + 1);
-
-		buf[len] = '\0';
-		memcpy(*res, buf, len + 1);
-	} else {
-		*res = GDKstrdup("");
-	}
-	return 0;
-}
-
 @- Wrappers
 The MonetDB Version 5 wrappers are collected here
 The latest port known to gain access is stored
