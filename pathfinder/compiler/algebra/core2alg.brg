@@ -1374,11 +1374,6 @@ reduce (PFcnode_t * p, int goalnt)
                 else
                     atom.special = amm_max;
 
-                if (p->sem.mode.dir == p_desc)
-                    PFoops (OOPS_FATAL,
-                            "algebra translation does not "
-                            "support reverse sorting");
-
                 sort_attr = disjunion (
                                 project (cast (A(L(p)).rel, 
                                                att_cast, att_item, algty),
@@ -1391,6 +1386,11 @@ reduce (PFcnode_t * p, int goalnt)
                                                  proj (att_iter, att_iter))),
                                     att_item, atom));
             }
+
+            if (p->sem.mode.dir == p_desc)
+                PFoops (OOPS_FATAL,
+                        "algebra translation does not "
+                        "support reverse sorting");
 
             /* extend the backmapping relation map with
              * (a) position information of the for-loop input sequence and
