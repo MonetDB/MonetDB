@@ -1,0 +1,3 @@
+module(pftijah);
+
+tj_global_remove();

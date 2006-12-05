@@ -1,0 +1,27 @@
+<strip>
+  <panel id="d1">
+    <dat>19930216</dat>
+    <speech>
+      <character>Pointy-Haired Boss</character>
+      <bubble>Speed is the key to success.</bubble>
+    </speech>
+  </panel>
+  <panel id="d2">
+    <dat>19940216</dat>
+    <speech>
+      <character>Dilbert</character>
+      <bubble>Is it okay to do things wrong if we're really, really fast?</bubble>
+    </speech>
+  </panel>
+  <panel id="d3">
+    <dat>19950631</dat>
+    <speech>
+      <character>Pointy-Haired Boss</character>
+      <bubble>Um... No.</bubble>
+    </speech>
+    <speech>
+      <character>Wally</character>
+      <bubble>Now I'm all confused. Thank you very much, boss.</bubble>
+    </speech>
+  </panel>
+</strip>

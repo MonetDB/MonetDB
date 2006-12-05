@@ -1,4 +1,4 @@
-stdout of test 'load` in directory 'modules/pftijah` itself:
+stdout of test 'load` in directory '.` itself:
 
 
 # 14:49:41 >  
@@ -35,6 +35,9 @@ mods@batloop(){
 	loaded();
 }
 loading module 'pftijah'
+
+
+
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type

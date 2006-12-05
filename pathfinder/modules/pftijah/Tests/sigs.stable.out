@@ -1,4 +1,4 @@
-stdout of test 'sigs` in directory 'modules/pftijah` itself:
+stdout of test 'sigs` in directory '.` itself:
 
 
 # 14:49:43 >  
@@ -19,7 +19,10 @@ mods@batloop(){
 	drop($t);
 }
 module 'pftijah'
-#-----------------#
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # signature	  # name
 # str		  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -30,8 +33,8 @@ module 'pftijah'
 [ "run_tijah_query(BAT[str,str], BAT[void,oid], str) : BAT[oid,dbl]"													  ]
 [ "serialize_tijah_opt(BAT[void,BAT], int, BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[str,str]"	  ]
 [ "tijah_tokenize(str) : str"																		  ]
-[ "tj_add2collection(BAT[oid,BAT], BAT[oid,BAT], str, str) : void"													  ]
-[ "tj_add2collection_index(BAT[oid,BAT], str) : void"															  ]
+[ "tj_add2collection(BAT[oid,BAT], BAT[oid,BAT], str, str) : BAT[void,BAT]"												  ]
+[ "tj_add2collection_index(BAT[oid,BAT], str) : BAT[void,BAT]"														  ]
 [ "tj_normalizeTerm(str, str) : str"																	  ]
 
 quit();
