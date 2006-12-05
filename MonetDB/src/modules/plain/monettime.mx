@@ -472,7 +472,7 @@ One day we should introduce the concept of locale, and hook here.
 	"parse the old duration format and return an (estimated) number of days."
 # time
 .COMMAND msec() : lng = CMDmsec;
-	"get time of day in msec since 1-1-1970."
+	"get time of day in milliseconds since 1-1-1970."
 
 
 .PRELUDE = monettime_prelude;
