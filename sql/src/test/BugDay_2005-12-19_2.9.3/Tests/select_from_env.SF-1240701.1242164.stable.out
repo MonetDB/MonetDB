@@ -49,13 +49,13 @@ Over..
 [ "mapi_clients"	]
 [ "sql_debug"	]
 [ "sql_logdir"	]
+[ "xquery_logdir"	]
 [ "gdk_embedded"	]
 [ "mapi_open"	]
 [ "pf_httpd_port"	]
 [ "xquery_output"	]
 [ "xquery_cacheMB"	]
 [ "xquery_procMB"	]
-[ "xquery_logdir"	]
 [ "monet_cwd"	]
 
 # 13:22:15 >  
