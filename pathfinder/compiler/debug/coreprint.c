@@ -198,6 +198,11 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
         L2 (c_id[n->kind], n->sem.tru ? "stable" : "");
         break;
 
+    case c_orderspecs:
+        L2 (c_id[n->kind],
+            n->sem.mode.dir == p_desc ? "descending" :"ascending");
+        break;
+
     default:          
         L (c_id[n->kind]);
         break;
