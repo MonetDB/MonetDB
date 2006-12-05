@@ -147,31 +147,27 @@ mal_export str  getBasename(const str in);
 #else /* no shiny exceptions */
 #define throw(TPE, FCN, MSG) \
 	return(throwException(TPE, FCN, "%s", MSG))
-#define throwf(TPE, FCN, FMT, ARG) \
-	return(throwException(TPE, FCN, FMT, ARG))
-#define throwf2(TPE, FCN, FMT, ARG1, ARG2) \
-	return(throwException(TPE, FCN, FMT, ARG1, ARG2))
-#define throwf3(TPE, FCN, FMT, ARG1, ARG2, ARG3) \
-	return(throwException(TPE, FCN, FMT, ARG1, ARG2, ARG3))
+#define throwf(TPE, FCN, FMT, ...) \
+	return(throwException(TPE, FCN, FMT , ## __VA_ARGS__))
 #define rethrow(FCN, TMP, PRV) \
 	if ((TMP = PRV) != MAL_SUCCEED) return(TMP);
 #endif
 #define throwIllArg(FCN, MSG) \
 	throw("IllegalArgumentException", FCN, MSG);
-#define throwIllArgf(FCN, FMT, ARG) \
-	throwf("IllegalArgumentException", FCN, FMT, ARG);
+#define throwIllArgf(FCN, FMT, ...) \
+	throwf("IllegalArgumentException", FCN, FMT , ## __VA_ARGS__);
 #define throwOutOfBnds(FCN, MSG) \
 	throw("OutOfBoundsException", FCN, MSG);
-#define throwOutOfBndsf(FCN, FMT, ARG) \
-	throwf("OutOfBoundsException", FCN, FMT, ARG);
+#define throwOutOfBndsf(FCN, FMT, ...) \
+	throwf("OutOfBoundsException", FCN, FMT , ## __VA_ARGS__);
 #define throwIO(FCN, MSG) \
 	throw("IOException", FCN, MSG);
-#define throwIOf(FCN, FMT, ARG) \
-	throwf("IOException", FCN, FMT, ARG);
+#define throwIOf(FCN, FMT, ...) \
+	throwf("IOException", FCN, FMT , ## __VA_ARGS__);
 #define throwMal(FCN, MSG) \
 	throw(MALEXCEPTION, FCN, MSG);
-#define throwMalf(FCN, FMT, ARG) \
-	throwf(MALEXCEPTION, FCN, FMT, ARG);
+#define throwMalf(FCN, FMT, ...) \
+	throwf(MALEXCEPTION, FCN, FMT , ## __VA_ARGS__);
 
 #endif /*  _MAL_EXCEPTION_H*/
 
