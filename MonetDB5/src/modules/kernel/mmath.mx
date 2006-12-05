@@ -115,6 +115,8 @@ address MATHunary_EXPdbl
 comment "The exp(x) function returns the value of e (the base of 
         natural logarithms) raised to the power of x.";
 
+command log(x:flt)   	  :flt 
+address MATHunary_LOGflt;
 command log(x:dbl)   	  :dbl 
 address MATHunary_LOGdbl
 comment "The log(x) function returns the natural logarithm of x.";
