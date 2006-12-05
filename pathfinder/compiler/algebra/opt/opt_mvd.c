@@ -388,7 +388,7 @@ opt_mvd (PFla_op_t *p)
             unsigned int count1 = 0, count2 = 0;
 
             /* create first projection list */
-            proj_list1 = PFmalloc (LL(p)->schema.count *
+            proj_list1 = PFmalloc (p->schema.count *
                                    sizeof (*(proj_list1)));
 
             for (unsigned int i = 0; i < LL(p)->schema.count; i++)
@@ -396,11 +396,10 @@ opt_mvd (PFla_op_t *p)
                     if (LL(p)->schema.items[i].name 
                         == p->sem.proj.items[j].old) {
                         proj_list1[count1++] = p->sem.proj.items[j];
-                        break;
                     }
 
             /* create second projection list */
-            proj_list2 = PFmalloc (LR(p)->schema.count *
+            proj_list2 = PFmalloc (p->schema.count *
                                    sizeof (*(proj_list1)));
 
             for (unsigned int i = 0; i < LR(p)->schema.count; i++)
@@ -408,7 +407,6 @@ opt_mvd (PFla_op_t *p)
                     if (LR(p)->schema.items[i].name 
                         == p->sem.proj.items[j].old) {
                         proj_list2[count2++] = p->sem.proj.items[j];
-                        break;
                     }
 
             /* Ensure that both arguments add at least one column to
