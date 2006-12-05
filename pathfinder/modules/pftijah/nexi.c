@@ -55,6 +55,7 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
 #endif
   /* */
   MILPRINTF(MILOUT, "#\n# Generated NEXI MIL by Pathfinder-PFTIJAH package \n#\n\n");
+  MILPRINTF(MILOUT, "module(pftijah);\n");
   MILPRINTF(MILOUT, "{\n");
   /* */
   parserCtx->tjCtx     = NULL; /* INCOMPLETE, should be filled here */
