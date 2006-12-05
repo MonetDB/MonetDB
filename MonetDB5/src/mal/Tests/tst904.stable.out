@@ -42,9 +42,9 @@ barrier (_22,_23,_24):= bat.newIterator(b);	# 12 CHPbunIterator (_22:lng)(_23:ln
     _26 := calc.+(_24,c);	# 13 CALCbinaryADDlngint (_26:lng)<-(_24:lng)(c:int)
     bat.insert(_19,_23,_26);	# 14 BKCinsert_bun (_27:void)<-(_19:bat[:lng,:lng])(_23:lng)(_26:lng)
     redo (_22,_23,_24):= bat.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_22:lng)(_23:lng)(_24:lng)<-(b:bat[:lng,:lng]) jump 13
-catch MALexception:str ;	# 16  (MALexception:str) jump 18
+catch MALException:str ;	# 16  (MALException:str) jump 18
     redo (_22,_23,_24):= bat.hasMoreElements(b);	# 17 CHPbunHasMoreElements (_22:lng)(_23:lng)(_24:lng)<-(b:bat[:lng,:lng]) jump 13
-exit MALexception:str ;	# 18  (MALexception:str)
+exit MALException:str ;	# 18  (MALException:str)
 exit (_22,_23,_24);	# 19  (_22:lng)(_23:lng)(_24:lng)
     xz:bat[:lng,:lng]  := _19;	# 20  (xz:bat[:lng,:lng])<-(_19:bat[:lng,:lng])
     io.print(xz);	# 21 IOprint_val (_18:void)<-(xz:bat[:lng,:lng])

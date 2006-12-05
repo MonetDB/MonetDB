@@ -20,9 +20,9 @@ stdout of test 'tst1004` in directory 'src/mal` itself:
 #insert(b,1,2);
 #bbp.deposit("myfirstbat",b);
 #c:= bbp.take("myfirstbat");
-#catch MALexception;
-#	print(MALexception);
-#exit MALexception;
+#catch MALException;
+#	print(MALException);
+#exit MALException;
 #print("FIRST ROUND");
 #print(c);
 #bbp.close();
@@ -33,9 +33,9 @@ stdout of test 'tst1004` in directory 'src/mal` itself:
 #y:=bbp.getObjects();
 #print(y);
 #v:= bbp.take("myfirstbat");
-#catch MALexception;
-#	print(MALexception);
-#exit MALexception;
+#catch MALException;
+#	print(MALException);
+#exit MALException;
 #print("got myfirstbat?");
 #print(v);
 #x:= bbp.getNames();
@@ -50,9 +50,9 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,1,2);	# 5 BKCinsert_bun (_7:void)<-(b:bat[:int,:int])(_8:int)(_9:int)
     bbp.deposit("myfirstbat",b);	# 6 CMDbbpdeposit (_10:void)<-(_11:str)(b:bat[:int,:int])
     c := bbp.take("myfirstbat");	# 7 CMDbbptake (c:bat[:any,:any])<-(_11:str)
-catch MALexception;	# 8  (MALexception:any) jump 10
-    io.print(MALexception);	# 9 IOprint_val (_14:void)<-(MALexception:any)
-exit MALexception;	# 10  (MALexception:any)
+catch MALException;	# 8  (MALException:any) jump 10
+    io.print(MALException);	# 9 IOprint_val (_14:void)<-(MALException:any)
+exit MALException;	# 10  (MALException:any)
     io.print("FIRST ROUND");	# 11 IOprint_val (_15:void)<-(_16:str)
     io.print(c);	# 12 IOprint_val (_17:void)<-(c:bat[:any,:any])
     bbp.close();	# 13 CMDbbpclose (_18:void)
@@ -63,9 +63,9 @@ exit MALexception;	# 10  (MALexception:any)
     y := bbp.getObjects();	# 18 CMDbbpGetObjects (y:bat[:int,:str])
     io.print(y);	# 19 IOprint_val (_25:void)<-(y:bat[:int,:str])
     v := bbp.take("myfirstbat");	# 20 CMDbbptake (v:bat[:any,:any])<-(_11:str)
-catch MALexception;	# 21  (MALexception:any) jump 23
-    io.print(MALexception);	# 22 IOprint_val (_27:void)<-(MALexception:any)
-exit MALexception;	# 23  (MALexception:any)
+catch MALException;	# 21  (MALException:any) jump 23
+    io.print(MALException);	# 22 IOprint_val (_27:void)<-(MALException:any)
+exit MALException;	# 23  (MALException:any)
     io.print("got myfirstbat?");	# 24 IOprint_val (_28:void)<-(_29:str)
     io.print(v);	# 25 IOprint_val (_30:void)<-(v:bat[:any,:any])
     x := bbp.getNames();	# 26 CMDbbpNames (x:bat[:int,:str])

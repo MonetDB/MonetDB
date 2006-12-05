@@ -28,18 +28,18 @@ stdout of test 'tst1005` in directory 'src/mal` itself:
 ## the temporary bats of the user
 #bbp.open();
 #v:= bbp.take("myfirstbat");
-#catch MALexception;
-#	print(MALexception);
-#exit MALexception;
+#catch MALException;
+#	print(MALException);
+#exit MALException;
 #print("v");
 #print(v);
 #x:= bbp.getObjects();
 #print("getObjects");
 #print(x);
 #bbp.close();
-##catch MALexception;
-#	#print(MALexception);
-##exit MALexception;
+##catch MALException;
+#	#print(MALException);
+##exit MALException;
 ##print("done");
 #
 function user.main():void;	# 0  (main:void)
@@ -56,21 +56,21 @@ function user.main():void;	# 0  (main:void)
 # the temporary bats of the user 	# 11  (_16:str)
     bbp.open();	# 12 CMDbbpopen (_17:void)
     v := bbp.take("myfirstbat");	# 13 CMDbbptake (v:bat[:any,:any])<-(_12:str)
-catch MALexception:str ;	# 14  (MALexception:str) jump 16
-    io.printf(MALexception);	# 15 IOprint_str (_20:void)<-(MALexception:str)
-exit MALexception:str ;	# 16  (MALexception:str)
+catch MALException:str ;	# 14  (MALException:str) jump 16
+    io.printf(MALException);	# 15 IOprint_str (_20:void)<-(MALException:str)
+exit MALException:str ;	# 16  (MALException:str)
     io.print("v");	# 17 IOprint_val (_21:void)<-(_22:str)
     io.print(v);	# 18 IOprint_val (_23:void)<-(v:bat[:any,:any])
     x := bbp.getObjects();	# 19 CMDbbpGetObjects (x:bat[:int,:str])
     io.print("getObjects");	# 20 IOprint_val (_25:void)<-(_26:str)
     io.print(x);	# 21 IOprint_val (_27:void)<-(x:bat[:int,:str])
     bbp.close();	# 22 CMDbbpclose (_28:void)
-#catch MALexception; 	# 23  (_29:str)
-#io.print(MALexception); 	# 24  (_30:str)
-#exit MALexception; 	# 25  (_31:str)
+#catch MALException; 	# 23  (_29:str)
+#io.print(MALException); 	# 24  (_30:str)
+#exit MALException; 	# 25  (_31:str)
 #io.print("done"); 	# 26  (_32:str)
 end main;	# 27  
-MALexception:user.main[7]:bbp.bind:failed to locate object in box
+MALException:user.main[7]:bbp.bind:failed to locate object in box
 [ "v" ]
 [ nil ]
 [ "getObjects" ]

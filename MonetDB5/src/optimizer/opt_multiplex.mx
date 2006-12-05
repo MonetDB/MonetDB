@@ -224,7 +224,7 @@ find the actual arguments at the proper place of the callee.
 
 /* catch   MALexception and ignore them  and replace value with nil*/
 	q = newInstruction(mb,CATCHsymbol);
-	k = newVariable(mb, GDKstrdup("MALexception"), TYPE_str);
+	k = newVariable(mb, GDKstrdup(MALEXCEPTION), TYPE_str);
 	getVar(mb,k)->isudftype = 1;
 	pushReturn(mb, q, k);
 	pushInstruction(mb, q);

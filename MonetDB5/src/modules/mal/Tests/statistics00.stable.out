@@ -27,17 +27,17 @@ stdout of test 'statistics00` in directory 'src/modules/mal` itself:
 #
 #m:= statistics.getMin("dummy");
 #io.print(m);
-#catch MALexception:str;
-#	io.print(MALexception);
+#catch MALException:str;
+#	io.print(MALException);
 #	io.print("could not get minimum from dummy");
-#exit MALexception;
+#exit MALException;
 #
 #mx:= statistics.getMax("dummy");
 #io.print(mx);
-#catch MALexception:str;
-#	io.print(MALexception);
+#catch MALException:str;
+#	io.print(MALException);
 #	io.print("could not get maximum from dummy");
-#exit MALexception;
+#exit MALException;
 #
 #
 #statistics.dump();
@@ -54,16 +54,16 @@ function user.main():void;	# 0  (main:void)
     statistics.update();	# 9 STATupdate (_13:void)
     m := statistics.getMin("dummy");	# 10 STATgetMin (m:lng)<-(_8:str)
     io.print(m);	# 11 IOprint_val (_15:void)<-(m:lng)
-catch MALexception:str ;	# 12  (MALexception:str) jump 15
-    io.print(MALexception);	# 13 IOprint_val (_17:void)<-(MALexception:str)
+catch MALException:str ;	# 12  (MALException:str) jump 15
+    io.print(MALException);	# 13 IOprint_val (_17:void)<-(MALException:str)
     io.print("could not get minimum from dummy");	# 14 IOprint_val (_18:void)<-(_19:str)
-exit MALexception:str ;	# 15  (MALexception:str)
+exit MALException:str ;	# 15  (MALException:str)
     mx := statistics.getMax("dummy");	# 16 STATgetMax (mx:lng)<-(_8:str)
     io.print(mx);	# 17 IOprint_val (_21:void)<-(mx:lng)
-catch MALexception:str ;	# 18  (MALexception:str) jump 21
-    io.print(MALexception);	# 19 IOprint_val (_22:void)<-(MALexception:str)
+catch MALException:str ;	# 18  (MALException:str) jump 21
+    io.print(MALException);	# 19 IOprint_val (_22:void)<-(MALException:str)
     io.print("could not get maximum from dummy");	# 20 IOprint_val (_23:void)<-(_24:str)
-exit MALexception:str ;	# 21  (MALexception:str)
+exit MALException:str ;	# 21  (MALException:str)
     statistics.discard("dummy");	# 22 STATdiscard (_25:void)<-(_8:str)
     statistics.dump();	# 23 STATdump (_26:void)
 end main;	# 24  

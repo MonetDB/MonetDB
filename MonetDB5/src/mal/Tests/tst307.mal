@@ -3,6 +3,6 @@
 b:= bat.new(:int,:int);
 z:= algebra.find(b,0);
 io.print("should not come here anymore");
-catch MALexception;
+catch MALException;
 	io.print("catched the exception");
-exit MALexception;
+exit MALException;

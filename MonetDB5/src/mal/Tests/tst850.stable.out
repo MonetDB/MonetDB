@@ -34,9 +34,9 @@ barrier (_22,_23,_24):= bat.newIterator(t);	# 9 CHPbunIterator (_22:lng)(_23:oid
     _26 := str.startsWith(_24,"");	# 10 STRPrefix (_26:bit)<-(_24:str)(_14:str)
     bat.insert(_20,_23,_26);	# 11 BKCinsert_bun (_27:void)<-(_20:bat[:void,:bit])(_23:oid)(_26:bit)
     redo (_22,_23,_24):= bat.hasMoreElements(t);	# 12 CHPbunHasMoreElements (_22:lng)(_23:oid)(_24:str)<-(t:bat[:void,:str]) jump 10
-catch MALexception:str ;	# 13  (MALexception:str) jump 15
+catch MALException:str ;	# 13  (MALException:str) jump 15
     redo (_22,_23,_24):= bat.hasMoreElements(t);	# 14 CHPbunHasMoreElements (_22:lng)(_23:oid)(_24:str)<-(t:bat[:void,:str]) jump 10
-exit MALexception:str ;	# 15  (MALexception:str)
+exit MALException:str ;	# 15  (MALException:str)
 exit (_22,_23,_24);	# 16  (_22:lng)(_23:oid)(_24:str)
     b:bat[:void,:bit]  := _20;	# 17  (b:bat[:void,:bit])<-(_20:bat[:void,:bit])
     bat.setSequenceBase(b,0@0);	# 18 BKCsetSequenceBase (_15:bat[:void,:bit])<-(b:bat[:void,:bit])(_6:oid)

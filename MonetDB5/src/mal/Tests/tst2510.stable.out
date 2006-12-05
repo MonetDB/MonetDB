@@ -20,9 +20,9 @@ stdout of test 'tst2510` in directory 'src/mal` itself:
 #    yield a;
 #    redo always;
 #exit always;
-##catch MALexception;
+##catch MALException;
 #    #print("exception");
-##exit MALexception;
+##exit MALException;
 #end tryme;
 factory user.tryme():bit;	# 0  (tryme:bit)
     bat.setWriteMode(b);	# 1 BKCsetWriteMode (_1:bat[:any,:any])<-(b:bat[:any_1,:any_2])
@@ -30,9 +30,9 @@ barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 5
     yield always;	# 3  (always:bit)
     redo always;	# 4  (always:bit) jump 3
 exit always;	# 5  (always:bit)
-#catch MALexception; 	# 6  (_5:str)
+#catch MALException; 	# 6  (_5:str)
 #print("exception"); 	# 7  (_6:str)
-#exit MALexception; 	# 8  (_7:str)
+#exit MALException; 	# 8  (_7:str)
     return tryme := false;	# 9  (tryme:bit)<-(_8:bit)
 end tryme;	# 10  
 !ERROR: 'b' may not be used before being initialized in tryme[1]
@@ -43,7 +43,7 @@ function user.main():void;	# 0  (main:void)
     user.tryme();	# 2  (_2:bit)
 # shouldn;t hang when you forget the exception 	# 3  (_3:str)
 end main;	# 4  
-!ERROR: MALexception:factory.call:Factory contains errors
+!ERROR: MALException:factory.call:Factory contains errors
 
 # 08:01:07 >  
 # 08:01:07 >  Done.

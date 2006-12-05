@@ -29,9 +29,9 @@ stdout of test 'tst232` in directory 'src/mal` itself:
 #
 #	bbp.destroy(b);
 #	i:= getRefCount(b);
-#catch MALexception;
+#catch MALException;
 #	print("bat was destroyed");
-#exit MALexception;
+#exit MALException;
 #
 function user.main():void;	# 0  (main:void)
 # a test checking BAT reference counting under various situations 	# 1  (_1:str)
@@ -49,9 +49,9 @@ function user.main():void;	# 0  (main:void)
     io.printf("lrefcount =%d\n",j);	# 13 IOprint_formatted_int (_17:void)<-(_11:str)(j:int)
     bbp.destroy(b);	# 14 CMDbbpdestroyBAT1 (_18:void)<-(b:bat[:int,:str])
     i := bbp.getRefCount(b);	# 15 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-catch MALexception;	# 16  (MALexception:any) jump 18
+catch MALException;	# 16  (MALException:any) jump 18
     io.print("bat was destroyed");	# 17 IOprint_val (_20:void)<-(_21:str)
-exit MALexception;	# 18  (MALexception:any)
+exit MALException;	# 18  (MALException:any)
 end main;	# 19  
 refcount =1
 lrefcount =1

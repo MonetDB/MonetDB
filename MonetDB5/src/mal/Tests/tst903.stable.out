@@ -244,9 +244,9 @@ barrier (_92,_93,_94):= bat.newIterator(b);	# 111 CHPbunIterator (_92:lng)(_93:o
     _98 := calc.+(_94,_96);	# 113 CALCbinaryADDlnglng (_98:lng)<-(_94:lng)(_96:lng)
     bat.insert(_89,_93,_98);	# 114 BKCinsert_bun (_99:void)<-(_89:bat[:void,:lng])(_93:oid)(_98:lng)
     redo (_92,_93,_94):= bat.hasMoreElements(b);	# 115 CHPbunHasMoreElements (_92:lng)(_93:oid)(_94:lng)<-(b:bat[:void,:lng]) jump 112
-catch MALexception:str ;	# 116  (MALexception:str) jump 118
+catch MALException:str ;	# 116  (MALException:str) jump 118
     redo (_92,_93,_94):= bat.hasMoreElements(b);	# 117 CHPbunHasMoreElements (_92:lng)(_93:oid)(_94:lng)<-(b:bat[:void,:lng]) jump 112
-exit MALexception:str ;	# 118  (MALexception:str)
+exit MALException:str ;	# 118  (MALException:str)
 exit (_92,_93,_94);	# 119  (_92:lng)(_93:oid)(_94:lng)
     x:bat[:void,:lng]  := _89;	# 120  (x:bat[:void,:lng])<-(_89:bat[:void,:lng])
     t1 := alarm.usec();	# 121 ALARMusec (t1:lng)

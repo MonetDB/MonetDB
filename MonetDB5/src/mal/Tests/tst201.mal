@@ -59,9 +59,9 @@
 ## This should cause an error
 	v27:= algebra.find(b,"cat");
 	v28:= io.print(v27);
-catch MALexception;
-	io.print(MALexception);
-exit  MALexception;
+catch MALException;
+	io.print(MALException);
+exit  MALException;
 #b.find("cat").print;
 #
 ## Can we bat.delete them and re-insert them later on

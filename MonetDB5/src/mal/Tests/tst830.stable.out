@@ -55,9 +55,9 @@ function user.main():void;	# 0  (main:void)
     bat.insert(scens,"mal",nil:void);	# 4 BKCinsert_bun (_8:void)<-(scens:bat[:str,:void])(_9:str)(_7:void)
 # this should fail, the monetdb user is already there 	# 5  (_10:str)
     id := clients.addUser("monetdb","Pmonetdb",scens);	# 6 CLTaddUser (id:oid)<-(_12:str)(_13:str)(scens:bat[:str,:void])
-catch MALexception:str ;	# 7  (MALexception:str) jump 9
-    io.printf(MALexception);	# 8 IOprint_str (_15:void)<-(MALexception:str)
-exit MALexception:str ;	# 9  (MALexception:str)
+catch MALException:str ;	# 7  (MALException:str) jump 9
+    io.printf(MALException);	# 8 IOprint_str (_15:void)<-(MALException:str)
+exit MALException:str ;	# 9  (MALException:str)
 # should print 0@1 or something 	# 10  (_16:str)
     id := clients.addUser("test","test",scens);	# 11 CLTaddUser (id:oid)<-(_17:str)(_17:str)(scens:bat[:str,:void])
     io.print(id);	# 12 IOprint_val (_18:void)<-(id:oid)
@@ -83,16 +83,16 @@ exit MALexception:str ;	# 9  (MALexception:str)
     clients.removeScenario("test","sql");	# 32 CLTremoveScenario (_37:void)<-(_17:str)(_6:str)
 # this one should fail: it's not there 	# 33  (_38:str)
     clients.removeScenario("test","mil");	# 34 CLTremoveScenario (_39:void)<-(_17:str)(_40:str)
-catch MALexception:str ;	# 35  (MALexception:str) jump 37
-    io.printf(MALexception);	# 36 IOprint_str (_41:void)<-(MALexception:str)
-exit MALexception:str ;	# 37  (MALexception:str)
+catch MALException:str ;	# 35  (MALException:str) jump 37
+    io.printf(MALException);	# 36 IOprint_str (_41:void)<-(MALException:str)
+exit MALException:str ;	# 37  (MALException:str)
 # and add a scenario again 	# 38  (_42:str)
     clients.addScenario("test","mal");	# 39 CLTaddScenario (_43:void)<-(_17:str)(_9:str)
 # do it again, see what happens (should fail) 	# 40  (_44:str)
     clients.addScenario("test","mal");	# 41 CLTaddScenario (_45:void)<-(_17:str)(_46:str)
-catch MALexception:str ;	# 42  (MALexception:str) jump 44
-    io.printf(MALexception);	# 43 IOprint_str (_47:void)<-(MALexception:str)
-exit MALexception:str ;	# 44  (MALexception:str)
+catch MALException:str ;	# 42  (MALException:str) jump 44
+    io.printf(MALException);	# 43 IOprint_str (_47:void)<-(MALException:str)
+exit MALException:str ;	# 44  (MALException:str)
 # forcefully set the password of the user test 	# 45  (_48:str)
     clients.setPassword("test","newpass");	# 46 CLTsetPassword (_49:void)<-(_17:str)(_50:str)
 # now try to set the password for ourself, should fail 	# 47  (_51:str)
@@ -125,7 +125,7 @@ catch InvalidCredentialsException:str ;	# 73  (InvalidCredentialsException:str) 
     io.printf(InvalidCredentialsException);	# 74 IOprint_str (_74:void)<-(InvalidCredentialsException:str)
 exit InvalidCredentialsException:str ;	# 75  (InvalidCredentialsException:str)
 end main;	# 76  
-MALexception:user.main[6]:addUser:user 'monetdb' already exists
+MALException:user.main[6]:addUser:user 'monetdb' already exists
 [ 1@0 ]
 [ 2@0 ]
 #-------------------------#
@@ -148,8 +148,8 @@ MALexception:user.main[6]:addUser:user 'monetdb' already exists
 #-------------------------#
 [ 0@0,	  "monetdb"	  ]
 [ 1@0,	  "test"	  ]
-MALexception:user.main[34]:removeScenario:scenario 'mil' not found for user
-MALexception:user.main[39]:addScenario:scenario 'mal' already exists for user
+MALException:user.main[34]:removeScenario:scenario 'mil' not found for user
+MALException:user.main[39]:addScenario:scenario 'mal' already exists for user
 InvalidCredentialsException:user.main[48]:setPassword:The administrator cannot set its own password, use changePassword instead
 InvalidCredentialsException:user.main[53]:changePassword:Access denied
 InvalidCredentialsException:user.main[60]:checkCredentials:Invalid credentials for user 'monetdb'

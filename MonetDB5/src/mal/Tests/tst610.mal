@@ -24,9 +24,9 @@ io.print(t);
 bbp.release(t);
 user.refs();
 io.print(t);
-catch MALexception;
+catch MALException;
 io.print("BAT was released");
-exit MALexception;
+exit MALException;
 # the bat is still visible, because the destroy only
 # marks it for deletion at the end of session or
 # when the reference counters drop to zero
@@ -37,12 +37,12 @@ user.refs();
 bbp.destroy(t,true);
 user.refs();
 io.print(t);
-catch MALexception;
+catch MALException;
 io.print("BAT was destroyed");
-exit MALexception;
+exit MALException;
 z:bat[:any_1,:any_2]:= bbp.bind("tasks");
 io.print(z);
 #it is not in the box anymore either
-catch MALexception;
+catch MALException;
 io.print("BAT was removed from the box");
-exit MALexception;
+exit MALException;

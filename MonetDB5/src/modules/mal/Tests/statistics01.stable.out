@@ -22,20 +22,20 @@ stdout of test 'statistics01` in directory 'src/modules/mal` itself:
 #io.print(b);
 #l:= statistics.getCount("timezones");
 #io.print(l);
-#catch MALexception:str;
+#catch MALException:str;
 #	io.print("could not get count from timezones");
-#exit MALexception;
+#exit MALException;
 #m:= statistics.getMin("timezones");
-#catch MALexception:str;
+#catch MALException:str;
 #	io.print("could not get minimum from timezones");
-#exit MALexception;
+#exit MALException;
 #io.print(m);
 #h:= statistics.getHistogram("timezones");
-#catch MALexception:str;
+#catch MALException:str;
 #	io.print("could not get histogram from timezones");
-#	io.print(MALexception);
+#	io.print(MALException);
 #	h:= bat.new(:oid,:int);
-#exit MALexception;
+#exit MALException;
 #io.print("histogram");
 #io.print(h);
 #hc:= aggr.count(h);
@@ -59,20 +59,20 @@ function user.main():void;	# 0  (main:void)
     io.print(b);	# 8 IOprint_val (_8:void)<-(b:bat[:int,:str])
     l := statistics.getCount("timezones");	# 9 STATgetCount (l:lng)<-(_3:str)
     io.print(l);	# 10 IOprint_val (_10:void)<-(l:lng)
-catch MALexception:str ;	# 11  (MALexception:str) jump 13
+catch MALException:str ;	# 11  (MALException:str) jump 13
     io.print("could not get count from timezones");	# 12 IOprint_val (_12:void)<-(_13:str)
-exit MALexception:str ;	# 13  (MALexception:str)
+exit MALException:str ;	# 13  (MALException:str)
     m := statistics.getMin("timezones");	# 14 STATgetMin (m:lng)<-(_3:str)
-catch MALexception:str ;	# 15  (MALexception:str) jump 17
+catch MALException:str ;	# 15  (MALException:str) jump 17
     io.print("could not get minimum from timezones");	# 16 IOprint_val (_15:void)<-(_16:str)
-exit MALexception:str ;	# 17  (MALexception:str)
+exit MALException:str ;	# 17  (MALException:str)
     io.print(m);	# 18 IOprint_val (_17:void)<-(m:lng)
     h := statistics.getHistogram("timezones");	# 19 STATgetHistogram (h:bat[:any,:any])<-(_3:str)
-catch MALexception:str ;	# 20  (MALexception:str) jump 24
+catch MALException:str ;	# 20  (MALException:str) jump 24
     io.print("could not get histogram from timezones");	# 21 IOprint_val (_19:void)<-(_20:str)
-    io.print(MALexception);	# 22 IOprint_val (_21:void)<-(MALexception:str)
+    io.print(MALException);	# 22 IOprint_val (_21:void)<-(MALException:str)
     h := bat.new(:oid,:int);	# 23 CMDBATnew (h:bat[:any,:any])<-(_22:oid)(_23:int)
-exit MALexception:str ;	# 24  (MALexception:str)
+exit MALException:str ;	# 24  (MALException:str)
     io.print("histogram");	# 25 IOprint_val (_24:void)<-(_25:str)
     io.print(h);	# 26 IOprint_val (_26:void)<-(h:bat[:any,:any])
     hc := aggr.count(h);	# 27 ALGcount_bat (hc:int)<-(h:bat[:any,:any])
