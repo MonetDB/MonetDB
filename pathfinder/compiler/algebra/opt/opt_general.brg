@@ -978,6 +978,12 @@ reduce (PFla_op_t *p, int goalnt)
                                    p->sem.scjoin.iter, R(p)->sem.scjoin.item,
                                    p->sem.scjoin.item_res);
                 SEEN(p) = false;
+                /* relabel does not know that the left and the right children
+                   are already labeled correctly and thus would relabel 
+                   the *complete* subTREE! To avoid this make sure that kids
+                   contains the correct references */
+                kids[0] = L(p);
+                kids[1] = R(p);
                 relabel (p, kids);
                 break;
             }
