@@ -124,7 +124,7 @@ checkpoint_dir=${prefix}/var/MonetDB5/chkpnt
 
 # Monet Application Interface Section
 #====================================
-mapi_port=50000			#default port to address a mserver
+mapi_port=0			#default port to address a mserver
 
 # SQL Interface Section
 #====================================

@@ -578,7 +578,7 @@ SERVERlistenThread(int *Sock)
 		doChallenge(cmd, msgsock);
 	} while (1);
 error:
-	return throwMessage("mserver.listen", msg);
+	throwIO("mserver.listen", msg);
 }
 
 /**
@@ -638,43 +638,58 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		usockfile = GDKstrdup(*Usockfile);
 #else
 		usockfile = NULL;
-		return throwMessage("SERVERlisten","Unix domain sockets are not supported\n");
+		throwIO("mserver.listen", "Unix domain sockets are not supported");
 #endif
 	}
 	maxusers = *Maxusers;
 	cmd = Cmd ? GDKstrdup(*Cmd) : NULL;
 
-	port = (port ? port : SERVERPORT);
 	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
-	if (port <= 0 && usockfile == NULL)
-		return throwMessage("mserver.listen", "No port or socket file specified");
+	if (port < 0 && usockfile == NULL)
+		throwIO("mserver.listen", "No port or socket file specified");
 
-	if (port > 0) {
+	if (port >= 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock < 0)
-			return throwMessage("mserver.listen", "Creation of stream socket failed");
-@-
-Set server port and allow network connections from any workstation.
-Bind the socket to the server port.
-The port id should be obtained from the Homes file.
-@c
-		server.sin_family = AF_INET;
-		server.sin_addr.s_addr = INADDR_ANY;
-		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-		for (i = 0; i < 8; i++)
-			server.sin_zero[i] = 0;
+			throwIOf("mserver.listen",
+					"Creation of stream socket failedi: %s",
+					strerror(errno));
+
+		/* In auto-sensing mode, start at the default */
+		/* FIXME: should be configurable via the config file */
+		if (*Port == 0)
+			port = SERVERPORT;
 
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
+		server.sin_family = AF_INET;
+		/* FIXME: this should be configurable via the config file */
+		server.sin_addr.s_addr = INADDR_ANY;
+		for (i = 0; i < 8; i++)
+			server.sin_zero[i] = 0;
 		length = (SOCKLEN) sizeof(server);
-		if (bind(sock, (SOCKPTR) & server, length) < 0)
-			return throwMessage("mserver.listen", "Binding to stream socket failed");
-@-
-Get the new information for the server socket and start listening.
-@c
-		if (getsockname(sock, (SOCKPTR) & server, &length) < 0)
-			return throwMessage("mserver.listen", "Failed getting socket name");
+
+		do {
+			server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
+			if (bind(sock, (SOCKPTR) &server, length) < 0) {
+				/* FIXME: this should come from the config file */
+				if (errno == EADDRINUSE && *Port == 0 && port < 60000) {
+					port++;
+					continue;
+				}
+				throwIOf("mserver.listen",
+						"Binding to stream socket port %d failed: %s",
+						port, strerror(errno));
+			} else {
+				break;
+			}
+		} while (1);
+
+		if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
+			throwIOf("mserver.listen",
+					"Failed getting socket name: %s",
+					strerror(errno));
 		listen(sock, maxusers);
 	}
 #ifdef HAVE_SYS_UN_H
@@ -682,7 +697,9 @@ Get the new information for the server socket and start listening.
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock < 0) {
 			unlink(usockfile);
-			return throwMessage("mserver.listen", "Creation of Unix socket failed");
+			throwIOf("mserver.listen",
+					"Creation of Unix socket failed: %s",
+					strerror(errno));
 		}
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
@@ -690,7 +707,9 @@ Get the new information for the server socket and start listening.
 		length = (SOCKLEN) sizeof(userver);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
-			return throwMessage("mserver.listen", "Binding to Unix socket file failed");
+			throwIOf("mserver.listen",
+					"Binding to Unix socket file %s failed: %s",
+					usockfile, strerror(errno));
 		}
 		listen(usock, maxusers);
 	}
@@ -703,7 +722,7 @@ Get the new information for the server socket and start listening.
 	*Sock = sock;
 
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
-		return throwMessage("mserver.listen", "Starting thread failed");
+		throwMal("mserver.listen", "Starting thread failed");
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
@@ -1000,14 +1019,14 @@ fail:;
 		SSL_CTX_free(ctx);
 	if (cmd)
 		GDKfree(cmd);
-	return throwMessage("mserver.listenSSL", msg);
+	throwIO("mserver.listenSSL", msg);
 #else
 	(void) Port;
 	(void) Maxusers;
 	(void) keyfile;
 	(void) certfile;
 	(void) cmd;
-	return throwMessage("mserver.listenSSL", "No SSL support\n");
+	throwMal("mserver.listenSSL", "No SSL support");
 #endif /* HAVE_OPENSSL */
 }
 
@@ -1026,10 +1045,8 @@ SERVERlisten_default(int *ret)
 
 	(void) ret;
 	p = GDKgetenv("mapi_port");
-	if( p )
-		port = (int) strtol(p,NULL,10);
-	if( port == 0)
-		return throwMessage("mserver.listen","Illegal port");
+	if (p)
+		port = (int) strtol(p, NULL, 10);
 	return SERVERlisten(&port, 0, &maxusers, 0);
 }
 
@@ -1124,8 +1141,7 @@ SERVERclient(int *res, stream **In, stream **Out)
 		stream_read(fdin, user, 1, 1);
 	}
 	if (stream_errnr(fdin)) {
-		return throwException(MALEXCEPTION, "SERVERclient",
-			"fdin write problems\n");
+		throwIO("SERVERclient", "fdin write problems");
 	}
 	*user = 0;
 	/* in embedded mode we allow just one client */
@@ -1210,7 +1226,7 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 
 	if( i==MAXSESSIONS){
 		mal_unset_lock(mal_contextLock,"SERVERconnect");
-		return throwMessage("mserver.connect","Too many sessions");
+		throwIO("mserver.connect", "Too many sessions");
 	}
 	SERVERsessions[i].c= MCgetClient();
 	SERVERsessions[i].key= ++sessionkey;
@@ -1228,7 +1244,7 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 		if (err[0] == '!')
 			err = err + 1;
 		SERVERsessions[i].c = NULL;
-		throwMalf("mserver.connect", "Could not connect: %s", err);
+		throwIOf("mserver.connect", "Could not connect: %s", err);
 	}
 
 #ifdef MAPI_TEST
@@ -1236,9 +1252,6 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 #endif
 	SERVERsessions[i].mid= mid;
 	*key = SERVERsessions[i].key;
-#ifdef MAPI_TEST_RG
-	mapi_trace_log(mid,"/tmp/romuloGhosts");
-#endif
 	return MAL_SUCCEED;
 }
 str
@@ -1314,7 +1327,7 @@ SERVERlookup(int *ret, str *dbalias)
 		*ret= SERVERsessions[i].key; 
 		return MAL_SUCCEED;
 	}
-	return throwMessage("mserver.lookup","Could not find database connection");
+	throwMal("mserver.lookup", "Could not find database connection");
 }
 str
 SERVERtrace(int *ret, int *key, int *flag){
