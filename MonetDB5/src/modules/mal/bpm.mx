@@ -67,6 +67,9 @@ It should not come as a surprise, that a combination of
 hashing and range is also provided using the
 commands @code{bpm.hashRangePartition()} and @code{bpm.rangeHashPartition()}.
 
+The design is based on the assumption that partitions
+are reasonably large. This helps to limit plan explosion.
+(or the scheduler becomes should step in)
 @- Using partitions
 The partitioned BAT can be used in two ways. A query plan can be
 rewritten into a generator over the partitions, or it can be
@@ -91,7 +94,7 @@ exit (idx,b);
 
 The partitioned BATs are particularly useful during query
 optimization. However, it only works if the BAT identifier
-can be determined at compiler time. For SQL it can be simply looked up in
+can be determined at compile time. For SQL it can be simply looked up in
 the catalog as part of the preparatory optimizer step.
 The same problem handled by an optimizer produces the plan:
 @example
@@ -109,20 +112,31 @@ The same problem handled by an optimizer produces the plan:
 
 A more interesting version is to make
 the range information again visible in
-the intermediate plan. This can be used by optimizers
-for symbolic evaluation.
+the intermediate plan. 
+This code could be derived using a bpm
+optimizer, which simply looks up the partitions
+and prepare the iteration task list.
 @example
 	bpm.open();
-	R:= bpm.take("myversion",:bat[:void,:int]);
-	R0:= bpm.take(R, 0@0, 100@0, nil:int,nil:int); 
-	tu:= algebra.select(R0,0,100);
-	R1:= bpm.take(R, 101@0, 200@0, nil:int,nil:int); 
-	t1:= algebra.select(R1,0,100);
-	tu:= algebra.union(tu,t1);
-	R2:= bpm.take(R, 201@0, nil:oid, nil:int,nil:int); 
-	t2:= algebra.select(R2,0,100);
-	tu:= algebra.union(tu,t2);
+	R:= bpm.take("myversion",:bat[:void,:int]); # get the partition alias
+	optimizer.pbm();
+	T:= algebra.select(R,0,100);
 @end example
+is translated into 
+@example
+	bpm.open();
+	Ralias:= bpm.take("myversion",:bat[:void,:int]);
+	R0:= bpm.take(Ralias, 0@0, 100@0, nil:int,nil:int); 
+	R1:= bpm.take(Ralias, 101@0, 200@0, nil:int,nil:int); 
+	R2:= bpm.take(Ralias, 201@0, nil:oid, nil:int,nil:int); 
+	R:= mat.new(R0,R1,R2);
+@end example
+It is up to the @code{mat} optimizer to decide about
+about plan expansion or iteration.
+
+A decision should be made over what happens if you
+take out a fragment dat does not align with what
+it known. For now, it generates an exception.
 
 @- Partition selection
 The select operation can be overloaded in the BPM to
@@ -131,7 +145,7 @@ improve processing further. For example, the operation
 	t := bpm.select(Ralias,0,100);
 @end example
 extracts portions of all three partitions and creates 
-a partitioned result BAT. 
+a non-partitioned result BAT. 
 There is no information on the partitions involved in this operation
 for the optimizer.
 
@@ -146,19 +160,22 @@ Once the transaction is commited, the updates are propagated
 	R := bpm.take("myversion",:bat[:void,:int]); # get the partition alias
 	bpm.insert(R, Rinsert);	# handle pending inserts
 	bpm.delete(R, Rdelete);	# handle pending deletes
-	bpm.deposit(R, Rinsert);# handle pending inserts
+	bpm.deposit(R, Rinsert);# handle pending inserts and forget content 
 	bpm.close();
 @end example
 
 The @code{bpm.deposit(R,Rinsert)} takes over the content
-of the bat Rinsert, leaving a null BAT behind.
+of the bat Rinsert, leaving an empty BAT behind.
 This does not hold for the insert and delete cases.
 
 @- Partitioned results
 In many situations, you would like to keep the partial results
 as a partitioned BAT again.
-The easiest solution is to create a partitioned BAT first,
-whose partiotions are empty. Subsequently, we insert the
+The easiest solution is to remember the partitions of temporaries 
+during optimization, e.g. as properties of all fragment variables.
+
+However, a persistent partitioned BAT can also be created first,
+whose partitions are empty. Subsequently, we insert the
 temporary results. 
 Depending on the fragmentation criteria, pieces may align
 with the pieces known, or lead to a redistribution of the
@@ -189,12 +206,23 @@ The rationale for this approach is that re-distribution
 of temporary results are hidden behind the pbm interface.
 The only decision that should be taken by the optimizer is
 the fragmentation criteria for the temporary results.
-If you align the fragments of the target, it means
 
-A disadvantage of the scheme is that we don't know much
-about plan sizes. That is where a scheduler may step in
-and reorganize the plan based on the new fragmentation
-situation.
+For temporary results the range bounds need not be
+stored in the bpm. Instead, the mat approach could
+be used to reduce the plan size.
+@example
+	bpm.open();
+	Ralias:= bpm.take("myversion",:bat[:void,:int]); # get the partition alias
+	R0:= bpm.take(Ralias, 0@0, 100@0, nil:int,nil:int); 
+	T0{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:=algebra.select(R0,0,100);
+
+	R1:= bpm.take(Ralias, 101@0, 200@0, nil:int,nil:int); 
+	T1{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:=algebra.select(R1,0,100);
+
+	R2:= bpm.take(Ralias, 201@0, nil:oid, nil:int,nil:int); 
+	T2{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:=algebra.select(R2,0,100);
+	R:= mat.new(T0,T1,T2);
+@end example
 
 The lifetime of a partitioned table is inherited from its components. 
 How to detect that a temporary BAT is removed from the BBP?
@@ -215,9 +243,15 @@ command destroy():void
 address PBMdestroy
 comment "Destroy the BAT partition box";
 
-
 command deposit(nme:str,b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address PBMdeposit
+comment "Turn an existing BAT into a MAT";
+
+command insert(nme:str,b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address PBMinsert
+comment "Turn an existing BAT into a MAT";
+command delete(nme:str,b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address PBMdelete
 comment "Turn an existing BAT into a MAT";
 
 @-
