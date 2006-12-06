@@ -338,19 +338,18 @@ def am_scripts(fd, var, scripts, am):
             fd.write("script_%s: %s lib_%s.la\n" % (script, script, script[:-4]))
         else:
             fd.write("script_%s: %s\n" % (script, script))
-        fd.write("\tchmod a+x $<\n")
 
         if sd == "$(sysconfdir)":
             fd.write("install-exec-local-%s: %s\n" % (script, script))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t$(INSTALL) $(INSTALL_BACKUP) $< $(DESTDIR)%s/%s\n\n" % (sd, script))
-            fd.write("\tchmod a-x $(DESTDIR)%s/%s\n" % (sd, script))
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         else:
             fd.write("install-exec-local-%s: %s\n" % (script, script))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, script))
+            fd.write("\tchmod a+x $<\n")
             fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd, script))
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
