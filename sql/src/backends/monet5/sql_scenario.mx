@@ -1224,7 +1224,7 @@ environment.
 	}
 
 cleanup_engine:
-    	if (msg) {
+	if (msg) {
 		if (strcmp(msg, "MALException:mal.assert:emptySet") == 0) {
 			resetMalBlk( c->curprg->def, 1);
 			/* resetInstructions(c->curprg->def, 1);*/
@@ -1233,10 +1233,10 @@ cleanup_engine:
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
 		} else
-        		GDKerror(msg);
-        	showErrors();
+			GDKerror(msg);
+		showErrors();
 		m->session->status = -10;
-    	}
+	}
 	be->q = NULL;
 	sqlcleanup(be->mvc, 0);
 	resetMalBlk( c->curprg->def, 1);
