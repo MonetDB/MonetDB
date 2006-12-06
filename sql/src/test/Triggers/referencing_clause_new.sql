@@ -1,4 +1,3 @@
---this test only tests the sintax
 --the semantic should also be tested after the syntax test
 
 create table t1 (id int, name varchar(1024));
@@ -55,12 +54,13 @@ create trigger test4
 	after insert on t1 referencing new new_row
 	for each row insert into t1 values(3, 'insert_new_row');
 
+insert into t1 values(69, 'amsterdam');
 
 insert into t1 values(20, 'monet');
 
 select * from t1;
 
-delete from t1 where id >1;
+delete from t1 where id > -1;
 
 drop trigger test1;
 drop trigger test2;
