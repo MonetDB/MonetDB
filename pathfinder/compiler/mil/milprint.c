@@ -1312,7 +1312,7 @@ print_literal (PFmil_t * n)
 
         /* literal : DblLiteral */
         case m_lit_dbl:
-            milprintf ("dbl(%g)", n->sem.d);
+            milprintf ("dbl(%gLL)", n->sem.d);
             break;
 
         /* literal : BitLiteral */
