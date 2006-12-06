@@ -3398,6 +3398,7 @@ end main;	# 11
 [ "log10",				  "command",	  "mmath",	  "(x:dbl):dbl ",													  "MATHunary_LOG10dbl;"				  ]
 [ "log10",				  "command",	  "mmath",	  "(x:flt):flt ",													  "MATHunary_LOG10flt;"				  ]
 [ "log",				  "command",	  "mmath",	  "(x:dbl):dbl ",													  "MATHunary_LOGdbl;"				  ]
+[ "log",				  "command",	  "mmath",	  "(x:flt):flt ",													  "MATHunary_LOGflt;"				  ]
 [ "pi",					  "function",	  "mmath",	  "():dbl;",														  "nil"						  ]
 [ "pow",				  "command",	  "mmath",	  "(x:dbl,y:dbl):dbl ",													  "MATHbinary_POWdbl;"				  ]
 [ "pow",				  "command",	  "mmath",	  "(x:flt,y:flt):flt ",													  "MATHbinary_POWflt;"				  ]
