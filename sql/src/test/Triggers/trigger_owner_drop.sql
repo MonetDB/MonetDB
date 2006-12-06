@@ -1,6 +1,6 @@
 --test the owner restriction for triggers
 
-create trigger test2 on t2
+create trigger test2 after insert on t2
 	insert into t1 values(12);
 
 drop trigger test1;

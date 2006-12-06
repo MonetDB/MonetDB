@@ -2,6 +2,7 @@
 --the semantic should also be tested after the syntax test
 
 create table t1 (id int, name varchar(1024));
+create table t2 (id int);
 
 insert into t1 values(10, 'monetdb');
 insert into t1 values(20, 'monet');
@@ -13,7 +14,7 @@ create trigger test1
 
 create trigger test2
 	before update on t1
-	select name from t1 where id = 10;
+	select id into t2 where id = 10;
 
 create trigger test3
 	after update on t1
@@ -40,3 +41,4 @@ alter table t1 drop constraint t1_constraint;
 
 --Cleanup
 drop table t1;
+drop table t2;

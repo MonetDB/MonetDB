@@ -29,7 +29,7 @@ update t1 set name = 'mo' where id = 10;
 
 select * from t1;
 
-delete from t1 where id >1;
+delete from t1 where id >-1;
 
 drop trigger test1;
 drop trigger test2;
@@ -38,7 +38,6 @@ drop trigger test4;
 
 --test when the trigger event is INSERT
 insert into t1 values(10, 'monetdb');
-insert into t1 values(20, 'monet');
 
 create trigger test1
 	after insert on t1 referencing new row as new_row
@@ -56,6 +55,8 @@ create trigger test4
 	after insert on t1 referencing new new_row
 	for each row insert into t1 values(3, 'insert_new_row');
 
+
+insert into t1 values(20, 'monet');
 
 select * from t1;
 
@@ -89,9 +90,9 @@ create trigger test4
 	for each row insert into t1 values(3, 'delete_new_row');
 
 
-select * from t1;
-
 delete from t1 where id >1;
+
+select * from t1;
 
 drop trigger test1;
 drop trigger test2;
