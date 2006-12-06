@@ -880,7 +880,7 @@ the commit tremendously complicated.
 		} else if (t_ <= TYPE_lng) {				\
 			*(lng *) (P3) = *(lng *) (P4);			\
 		} else if (t_ == TYPE_str) {				\
-			if (strPut(P2, (var_t *) (P3), (str) (P4)) == 0) \
+			if (strPut(P2, (var_t *) (P3), (str) (P4)) == 0)\
 				goto bunins_failed;			\
 		} else if (t_) {					\
 			if (BATatoms[t_].atomPut) {			\
@@ -1819,9 +1819,9 @@ we have to take corrective action to ensure that str(nil) is the smallest value 
 #define GDK_STRNIL(s)    ((s) == NULL || *(chr*) (s) == GDK_chr_min)
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-			  (*(unsigned char*)(l) < *(unsigned char*)(r))?-1: \
-			  (*(unsigned char*)(l) > *(unsigned char*)(r))?1: \
-			  strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
+                          (*(unsigned char*)(l) < *(unsigned char*)(r))?-1: \
+                          (*(unsigned char*)(l) > *(unsigned char*)(r))?1: \
+                          strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
 @c
 int
 strNil(str s)
@@ -2027,7 +2027,7 @@ strPut(Heap *h, var_t *dst, str v)
 			/* if there is reserved space, first use the reserved space */
 			newsize = MIN(newsize, h->maxsize);
 		}
-		if (HEAPextend(h, h->storage, newsize) < 0) {
+		if (HEAPextend(h, newsize) < 0) {
 			return 0;
 		}
 	}

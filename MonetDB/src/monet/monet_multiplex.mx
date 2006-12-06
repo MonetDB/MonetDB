@@ -1840,7 +1840,7 @@ call and we have the additional knowledge (through the atom heap trick) that:
 	if (batbuns->free >= batbuns->size) {
 		int ret;
 		DELTAsave(nested);
-		ret = HEAPextend(batbuns, batbuns->storage, batbuns->size*2);
+		ret = HEAPextend(batbuns, batbuns->size*2);
 		DELTAload(nested);
 		if (ret < 0)
 			goto bunins_failed;
