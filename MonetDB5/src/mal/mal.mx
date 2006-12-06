@@ -322,6 +322,7 @@ mal_export void mal_exit(void);
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
 #include "mal_client.h"
+#include "mal_sabaoth.h"
 
 MT_Lock     mal_contextLock;
 @-
@@ -377,13 +378,15 @@ memory leakage problems later on.
 @c
 void mal_exit(void){
 	Client cntxt = mal_clients;
+	int t = 0;
+	str err;
 #ifdef MALprofiler
 	stream *f;
 	profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));
 	close_stream(f);
 #endif
 	/* early exit to solve random crashes, needs work */
-	MT_global_exit(0);
+/*	MT_global_exit(0); */
 
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
@@ -409,6 +412,18 @@ void mal_exit(void){
 		(void) stream_close(cntxt->fdout);
 		(void) stream_destroy(cntxt->fdout);
 	}
+
+	/* deregister everything that was registered, ignore errors */
+	if ((err = SABAOTHwildRetreat(&t)) != MAL_SUCCEED) {
+		fprintf(stderr, "!%s", err);
+		GDKfree(err);
+	}
+	/* the server will now be shut down */
+	if ((err = SABAOTHregisterStop(&t)) != MAL_SUCCEED) {
+		fprintf(stderr, "!%s", err);
+		GDKfree(err);
+	}
+
 /*	GDKexit(0);  */
 	MT_global_exit(0);
 }

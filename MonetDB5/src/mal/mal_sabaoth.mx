@@ -201,16 +201,22 @@ str SABAOTHregisterStart(int *ret) {
 	 */
 
 	FILE *f;
+	char path[PATHLENGTH + 1];
 	(void)ret;
 
-	if ((f = fopen(UPLOGFILE, "a")) != NULL) {
+	/* monetdb_home MUST have a default value! */
+	snprintf(path, PATHLENGTH, "%s/%s/%s",
+			GDKgetenv("gdk_dbfarm"),
+			GDKgetenv("gdk_dbname"),
+			UPLOGFILE);
+	if ((f = fopen(path, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, SZFMT "\t", (size_t)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throwIOf("sabaoth.registerStart", "unable to open file %s", UPLOGFILE);
+	throwIOf("sabaoth.registerStart", "unable to open file %s", path);
 }
 
 @h
@@ -229,16 +235,21 @@ str SABAOTHregisterStop(int *ret) {
 	 */
 
 	FILE *f;
+	char path[PATHLENGTH + 1];
 	(void)ret;
 
-	if ((f = fopen(UPLOGFILE, "a")) != NULL) {
+	snprintf(path, PATHLENGTH, "%s/%s/%s",
+			GDKgetenv("gdk_dbfarm"),
+			GDKgetenv("gdk_dbname"),
+			UPLOGFILE);
+	if ((f = fopen(path, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, SZFMT "\n", (size_t)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throwIOf("sabaoth.registerStop", "unable to open file %s", UPLOGFILE);
+	throwIOf("sabaoth.registerStop", "unable to open file %s", path);
 }
 
 @h
@@ -270,7 +281,6 @@ typedef struct Ssabdb {
 
 mal_export str SABAOTHgetStatus(sabdb** ret, str dbname);
 @c
-#define UPLOG ".uplog"
 /**
  */
 str SABAOTHgetStatus(sabdb** ret, str dbname) {

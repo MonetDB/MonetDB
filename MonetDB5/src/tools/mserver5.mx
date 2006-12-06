@@ -457,6 +457,15 @@ faster system start.
 #endif
 	if (monet_init(set, setlen) == 0 || mal_init())
 		return 0;
+
+	/* From this point, the server should exit cleanly.  Discussion:
+	 * even earlier?  Sabaoth here registers the server has started up. */
+	if ((err = SABAOTHregisterStart(&i)) != MAL_SUCCEED) {
+		/* throw the error at the user, but don't die */
+		fprintf(stderr, "!%s\n", err);
+		GDKfree(err);
+	}
+
 	{
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
@@ -521,11 +530,10 @@ the configuration file.
 			MT_sleep_ms(5000);
 	} else
 		MSserveClient(mal_clients);
-	mal_exit();
 
-	/* deregister everything that was registered, ignore errors */
-	if ((err = SABAOTHwildRetreat(&i)) != MAL_SUCCEED)
-		GDKfree(err);
+	/* mal_exit calls MT_global_exit, so statements after this call will
+	 * never get reached */
+	mal_exit();
 
 	return 0;
 }
