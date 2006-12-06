@@ -8951,7 +8951,7 @@ static int
 expandable (PFcnode_t *c)
 {
 #ifdef HAVE_PFTIJAH
-    if (!noTijahFun(LR(c)) return 0;
+    if (!noTijahFun(LR(c))) return 0;
 #endif
     if (strcmp(LL(c)->sem.var->qname.ns.prefix, "#pf") == 0) 
         if (noConstructor(LR(c))) return 1;
