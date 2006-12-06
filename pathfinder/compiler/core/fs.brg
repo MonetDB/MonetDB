@@ -2509,7 +2509,7 @@ reduce (PFpnode_t * p, int goalnt)
              *       let $v2 := e2 return
              *         let $v3 :=
              *           typeswitch ($v2)
-             *             case numeric return
+             *             case $v8 as numeric return
              *               typeswitch ($v2)
              *                 case $v4 as xs:integer
              *                   return fn:eq ($v4, $fs:position)
@@ -2518,7 +2518,7 @@ reduce (PFpnode_t * p, int goalnt)
              *                 case $v6 as xs:double
              *                   return fn:eq ($v6, $fs:position)
              *                 default return   (: should actually not happen :)
-             *                   let $v7 := $v2 cast as xs:double return
+             *                   let $v7 := $v8 cast as xs:double return
              *                     fn:eq ($v7, $fs:position)
              *             default return ebv ($v2)
              *           return
@@ -2539,6 +2539,7 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *v5 = new_var (NULL);
             PFvar_t *v6 = new_var (NULL);
             PFvar_t *v7 = new_var (NULL);
+            PFvar_t *v8 = new_var (NULL);
             PFvar_t *dot;
             PFvar_t *position;
             PFvar_t *last;
@@ -2562,81 +2563,102 @@ reduce (PFpnode_t * p, int goalnt)
             /* compile predicate expression in this new context */
             reduce (kids[1], nts[1]);
 
-            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
-                    flwr (let (letbind (var (fs_last), 
-                                       APPLY (count, var (v1))), nil ()),
-                      flwr (for_ (forbind (forvars (var (fs_dot),
-                                                    var (fs_position)),
-                                           var (v1)), nil ()),
-                        flwr (let (letbind (var (v2), C(R(p))), nil ()),
-                          flwr (let (
-                            letbind (
-                              var (v3),
-                              typeswitch (
-                                var (v2),
-                                cases (
-                                  case_ (
-                                    seqtype (PFty_numeric ()),
-                                    typeswitch (
-                                      var (v2),
-                                      cases (
-                                        case_ (
-                                          seqtype (PFty_xs_integer ()),
-                                          flwr (let (
-                                            letbind (var (v4),
+            C(p) = flwr (
+                     let (letbind (var (v1), C(L(p))), nil ()),
+                     flwr (
+                       let (letbind (var (fs_last), 
+                                     APPLY (count, var (v1))), nil ()),
+                       flwr (
+                         for_ (forbind (forvars (var (fs_dot),
+                                                 var (fs_position)),
+                                        var (v1)), nil ()),
+                         flwr (
+                           let (letbind (var (v2), C(R(p))), nil ()),
+                           flwr (
+                             let (
+                               letbind (
+                                 var (v3),
+                                 typeswitch (
+                                   var (v2),
+                                   cases (
+                                     case_ (
+                                       seqtype (PFty_numeric ()),
+                                       flwr (
+                                         let (letbind (var (v8),
+                                                       seqcast (
+                                                         seqtype (
+                                                           PFty_numeric ()),
+                                                       var (v2))), nil ()),
+                                         typeswitch (
+                                           var (v2),
+                                           cases (
+                                             case_ (
+                                               seqtype (PFty_xs_integer ()),
+                                               flwr (
+                                                 let (
+                                                   letbind (
+                                                     var (v4),
                                                      seqcast (
                                                        seqtype (
-                                                           PFty_xs_integer()),
+                                                         PFty_xs_integer()),
                                                        var (v2))), nil ()),
-                                            APPLY (op_eq, var (v4),
-                                                   var (fs_position)))),
-                                        default_ (
-                                          typeswitch (
-                                            var (v2),
-                                            cases (
-                                              case_ (
-                                                seqtype (PFty_xs_decimal ()),
-                                                flwr (let (
-                                                  letbind (
-                                                    var (v5),
-                                                    seqcast (
-                                                      seqtype (
-                                                            PFty_xs_decimal ()),
-                                                      var (v2))), nil ()),
-                                                  APPLY (op_eq, var (v5),
-                                                         var (fs_position)))),
-                                              default_ (
-                                                typeswitch (
-                                                  var (v2),
-                                                  cases (
-                                                    case_ (
-                                                      seqtype (
-                                                        PFty_xs_double ()),
-                                                      flwr (let (
-                                                        letbind (
-                                                          var (v6),
-                                                          seqcast (
-                                                            seqtype (
-                                                              PFty_xs_double()),
-                                                            var (v2))), nil ()),
-                                                        APPLY (op_eq, var (v6),
-                                                               var (fs_position)
-                                                               ))),
-                                                    default_ (
-                                                      flwr (let (
-                                                        letbind (
-                                                          var (v7),
-                                                          cast (
-                                                            seqtype (
-                                                              PFty_xs_double()),
-                                                            var (v2))), nil ()),
-                                                        APPLY (op_eq,
-                                                               var (v7),
-                                                               var (fs_position)
-                                                            )))))))))))),
-                                  default_ (ebv (var (v2)))))), nil ()),
-                            if_ (
-                              var (v3),
+                                                 APPLY (op_eq, var (v4),
+                                                        var (fs_position)))),
+                                             default_ (
+                                         /* <------ */
+                                         typeswitch (
+                                           var (v2),
+                                           cases (
+                                             case_ (
+                                               seqtype (PFty_xs_decimal ()),
+                                               flwr (
+                                                 let (
+                                                   letbind (
+                                                     var (v5),
+                                                     seqcast (
+                                                       seqtype (
+                                                         PFty_xs_decimal ()),
+                                                       var (v2))), nil ()),
+                                                 APPLY (op_eq, var (v5),
+                                                        var (fs_position)))),
+                                             default_ (
+                                         /* <------ */
+                                         typeswitch (
+                                           var (v2),
+                                           cases (
+                                             case_ (
+                                               seqtype (PFty_xs_double ()),
+                                               flwr (
+                                                 let (
+                                                   letbind (
+                                                     var (v6),
+                                                     seqcast (
+                                                       seqtype (
+                                                         PFty_xs_double()),
+                                                       var (v2))), nil ()),
+                                                 APPLY (op_eq, var (v6),
+                                                        var (fs_position)))),
+                                             default_ (
+                                         /* <------ */
+                                         flwr (
+                                           let (
+                                             letbind (
+                                               var (v7),
+                                               cast (seqtype (PFty_xs_double()),
+                                                     var (v8))), nil ()),
+                                           APPLY (op_eq,
+                                                  var (v7),
+                                                  var (fs_position)))
+                                         /* ------> */
+                                                      )))
+                                         /* ------> */
+                                                      )))
+                                         /* ------> */
+                                                      )))
+                                       )
+                                     ),
+                                   default_ (ebv (var (v2)))))), nil ()),
+                             if_ (var (v3),
                               then_else (var (fs_dot), empty ())))))));
 
             /* restore context items */
