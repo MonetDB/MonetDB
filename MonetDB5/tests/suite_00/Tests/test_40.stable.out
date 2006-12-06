@@ -181,7 +181,7 @@ end main;	# 74
 [ 0 ]
 #b.fetch(-1).print();
 !ERROR: CMDposition: item not found
-!ERROR: MALexception:algebra.fetch: idx out of range
+!ERROR: MALException:algebra.fetch: idx out of range
 #
 
 # 00:12:28 >  

@@ -189,9 +189,9 @@ barrier (_82,_83,_84):= bat.newIterator(m);	# 50 CHPbunIterator (_82:lng)(_83:oi
     _86 := user.createBAT(_84);	# 51  (_86:BAT)<-(_84:str)
     bat.insert(_78,_83,_86);	# 52 BKCinsert_bun (_87:void)<-(_78:bat[:oid,:BAT])(_83:oid)(_86:BAT)
     redo (_82,_83,_84):= bat.hasMoreElements(m);	# 53 CHPbunHasMoreElements (_82:lng)(_83:oid)(_84:str)<-(m:bat[:oid,:str]) jump 51
-catch MALexception:str ;	# 54  (MALexception:str) jump 56
+catch MALException:str ;	# 54  (MALException:str) jump 56
     redo (_82,_83,_84):= bat.hasMoreElements(m);	# 55 CHPbunHasMoreElements (_82:lng)(_83:oid)(_84:str)<-(m:bat[:oid,:str]) jump 51
-exit MALexception:str ;	# 56  (MALexception:str)
+exit MALException:str ;	# 56  (MALException:str)
 exit (_82,_83,_84);	# 57  (_82:lng)(_83:oid)(_84:str)
     r:bat[:oid,:BAT]  := _78;	# 58  (r:bat[:oid,:BAT])<-(_78:bat[:oid,:BAT])
     io.print(r);	# 59 IOprint_val (_60:void)<-(r:bat[:oid,:BAT])

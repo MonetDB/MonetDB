@@ -109,9 +109,9 @@ barrier (_50,_51,_52):= bat.newIterator(l2);	# 24 CHPbunIterator (_50:lng)(_51:o
     _56 := calc.+(_52,_54);	# 26 CALCbinaryADDintint (_56:int)<-(_52:int)(_54:int)
     bat.insert(_46,_51,_56);	# 27 BKCinsert_bun (_57:void)<-(_46:bat[:oid,:int])(_51:oid)(_56:int)
     redo (_50,_51,_52):= bat.hasMoreElements(l2);	# 28 CHPbunHasMoreElements (_50:lng)(_51:oid)(_52:int)<-(l2:bat[:oid,:int]) jump 25
-catch MALexception:str ;	# 29  (MALexception:str) jump 31
+catch MALException:str ;	# 29  (MALException:str) jump 31
     redo (_50,_51,_52):= bat.hasMoreElements(l2);	# 30 CHPbunHasMoreElements (_50:lng)(_51:oid)(_52:int)<-(l2:bat[:oid,:int]) jump 25
-exit MALexception:str ;	# 31  (MALexception:str)
+exit MALException:str ;	# 31  (MALException:str)
 exit (_50,_51,_52);	# 32  (_50:lng)(_51:oid)(_52:int)
     z:bat[:oid,:int]  := _46;	# 33  (z:bat[:oid,:int])<-(_46:bat[:oid,:int])
     c := aggr.count(z);	# 34 ALGcount_bat (c:int)<-(z:bat[:oid,:int])
@@ -129,9 +129,9 @@ barrier (_65,_66,_67):= bat.newIterator(nr);	# 44 CHPbunIterator (_65:lng)(_66:o
     _71 := calc.+(_67,_69);	# 46 CALCbinaryADDintint (_71:int)<-(_67:int)(_69:int)
     bat.insert(_63,_66,_71);	# 47 BKCinsert_bun (_72:void)<-(_63:bat[:oid,:int])(_66:oid)(_71:int)
     redo (_65,_66,_67):= bat.hasMoreElements(nr);	# 48 CHPbunHasMoreElements (_65:lng)(_66:oid)(_67:int)<-(nr:bat[:oid,:int]) jump 45
-catch MALexception:str ;	# 49  (MALexception:str) jump 51
+catch MALException:str ;	# 49  (MALException:str) jump 51
     redo (_65,_66,_67):= bat.hasMoreElements(nr);	# 50 CHPbunHasMoreElements (_65:lng)(_66:oid)(_67:int)<-(nr:bat[:oid,:int]) jump 45
-exit MALexception:str ;	# 51  (MALexception:str)
+exit MALException:str ;	# 51  (MALException:str)
 exit (_65,_66,_67);	# 52  (_65:lng)(_66:oid)(_67:int)
     z:bat[:oid,:int]  := _63;	# 53  (z:bat[:oid,:int])<-(_63:bat[:oid,:int])
     c := aggr.count(z);	# 54 ALGcount_bat (c:int)<-(z:bat[:oid,:int])
