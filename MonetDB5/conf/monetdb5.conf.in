@@ -2,7 +2,7 @@
 
 # The configuration file is an integral part of a database store
 # and aimed to initialize the server and service components.
-# This startup file is read by the GDK kernel to set system wide parameters. 
+# This startup file is read by the GDK kernel to set system wide parameters.
 
 # It may be inspected by application/scripts for specific settings,
 # but such client side configurations are better packed in their
@@ -20,7 +20,7 @@ exec_prefix=@exec_prefix@
 # All databases are stored as a directory under the directory
 # given below.  Use this value to change the overall location
 # of your data.
-gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm	
+gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 
 # MonetDB can only handle one database at a time.  You can specify
 # the name of the database to use below.  Note that you can use
@@ -53,7 +53,7 @@ gdk_embedded=no
 
 # You can enable debug for specific parts.  By default debug is
 # switched off.
-gdk_debug=0	
+gdk_debug=0
 # possible values: (can be a combination of)
 #       1 = thread-specific debug output
 #       2 = property enforcing on new BATs
@@ -82,13 +82,13 @@ gdk_debug=0
 
 # Monet Section
 #==============
-# monet_admin=adm			#administrator user name 
-# Prompt when using MAL interface 
+# monet_admin=adm			#administrator user name
+# Prompt when using MAL interface
 # monet_prompt=>
 # Where do the MonetDB modules reside? The second path is for windows dlls.
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@@PATHSEP@@libdir@@DIRSEP@@PACKAGE@@DIRSEP@lib@PATHSEP@@libdir@@DIRSEP@@PACKAGE@@DIRSEP@bin
 # Start mserver in daemon mode, or start with MAL interactive interface?
-monet_daemon=no	
+monet_daemon=no
 # Display version and copyright information upon startup?
 monet_welcome=yes
 # Where is the file that stores the secret key to unlock the password
@@ -101,7 +101,7 @@ monet_welcome=yes
 
 # Mguardian section
 #====================================
-delay=120		#waiting between pinging the server 
+delay=120		#waiting between pinging the server
 # if the guardian process is running, it will automatically
 # restart the server upon failuer and sent an email to the owner
 
@@ -135,7 +135,7 @@ sql_debug=0
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
 # it should be different directory as used for xquery!
-sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@sql_logs 
+sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@sql_logs
 
 # XQuery Interface Section
 #=========================
