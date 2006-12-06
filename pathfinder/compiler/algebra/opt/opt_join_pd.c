@@ -330,9 +330,9 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         /   \          /   \           /   \
                        |X|   1        |X|   1         #     2
                       /   \    and   /   \     into   |
-                      #    2        #     2          |X|_1 
-                      |             |               /   \
-                      3             3              3     1
+                      #    2        2     #          |X|_1 
+                      |                   |         /   \
+                      3                   3        3     1
     
                    whenever possible (e.g., only if no columns references
                    are missing). 
@@ -351,101 +351,171 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                    For all other directly following equi-joins
                    we discard any rewriting. */
                 
-                if (PFprop_subdom (lp->prop,
-                                   PFprop_dom (lp->prop, latt),
-                                   PFprop_dom (lp->prop, 
-                                               lp->sem.eqjoin_unq.res))
+                /* make sure that we have a key join 
+                   (a rewrite thus does not change the cardinality) */
+                if (!PFprop_key (rp->prop, ratt)
                     ||
-                    PFprop_subdom (lp->prop,
-                                   PFprop_dom (lp->prop,
-                                               lp->sem.eqjoin_unq.res),
-                                   PFprop_dom (lp->prop, latt)))
+                    !PFprop_subdom (lp->prop,
+                                    PFprop_dom (lp->prop, latt),
+                                    PFprop_dom (rp->prop, ratt)))
                     break;
 
                 if (L(lp)->kind == la_number &&
-                    L(lp)->sem.number.attname == lp->sem.eqjoin_unq.att1) {
-                    /* ensure that column of upper eqjoin is not created on the
-                       other side */
-                    unsigned int i;
-                    PFla_op_t *new_number;
-                    PFalg_proj_t *proj = PFmalloc (L(lp)->schema.count *
-                                                   sizeof (PFalg_proj_t));
+                    L(lp)->sem.number.attname == lp->sem.eqjoin_unq.att1 &&
+                    lp->sem.eqjoin_unq.res != latt) {
+                    unsigned int  i;
+                    PFla_op_t    *new_number, *new_p;
+                    PFalg_proj_t *proj,
+                                 *top_proj = NULL;
+                    PFalg_att_t   cur;
 
+                    /* ensure that column of the upper eqjoin 
+                       is not created on the other side */
                     for (i = 0; i < L(lp)->schema.count; i++)
                         if (L(lp)->schema.items[i].name == latt)
                             break;
                     if (i == L(lp)->schema.count)
                         break;
 
-                    for (i = 0; i < L(lp)->schema.count; i++)
-                        if (L(lp)->schema.items[i].name != latt)
-                            proj[i] = PFalg_proj (L(lp)->schema.items[i].name,
-                                                  L(lp)->schema.items[i].name);
+                    /* replace the number operator by a projection
+                       that holds the same schema as the old number
+                       operator */
+                    proj = PFmalloc (L(lp)->schema.count *
+                                     sizeof (PFalg_proj_t));
+                    for (i = 0; i < L(lp)->schema.count; i++) {
+                        cur = L(lp)->schema.items[i].name;
+                        if (cur == latt)
+                            /* make sure the column names stay the same */
+                            proj[i] = PFalg_proj (latt, p->sem.eqjoin_unq.res);
                         else
-                            proj[i] = PFalg_proj (L(lp)->schema.items[i].name,
-                                                  p->sem.eqjoin_unq.res);
+                            proj[i] = PFalg_proj (cur, cur);
+                    }
 
+                    /* push down upper join underneath the number
+                       operator */
                     new_number = number (
                                      eqjoin_unq (LL(lp), rp,
                                                  latt, ratt,
                                                  p->sem.eqjoin_unq.res),
                                      L(lp)->sem.number.attname,
                                      L(lp)->sem.number.part);
+                    /* remember a reference to that join */
+                    next_join = L(new_number);
 
-                    *L(lp) = *PFla_project_ (new_number, 
+                    /* replace the old number operator by a projection
+                       that refers to the new number operator */
+                    *L(lp) = *PFla_project_ (new_number,
                                              L(lp)->schema.count,
                                              proj);
 
-                    *p = *eqjoin_unq (new_number, R(lp),
-                                      lp->sem.eqjoin_unq.att1,
-                                      lp->sem.eqjoin_unq.att2,
-                                      lp->sem.eqjoin_unq.res);
-                    
-                    next_join = LL(p);
-                    *(PFla_op_t **) PFarray_add (clean_up_list) = R(p);
+                    /* rebuild the originally lower join operator */
+                    new_p = eqjoin_unq (new_number, R(lp),
+                                        lp->sem.eqjoin_unq.att1,
+                                        lp->sem.eqjoin_unq.att2,
+                                        lp->sem.eqjoin_unq.res);
+
+                    /* remember to clean up the parts that cannot be
+                       visited anymore by the rewritten join */
+                    *(PFla_op_t **) PFarray_add (clean_up_list) = R(lp);
+
+                    /* As the new projection (that replaced the number
+                       operator) refers to the 'latt' column (and this
+                       column may only appear above the pattern if it
+                       corresponds to the result of the originally
+                       upper join) we need to make sure that it is
+                       removed if it would introduce a new column name */
+                    if (latt != p->sem.eqjoin_unq.res) {
+                        top_proj = PFmalloc (p->schema.count *
+                                             sizeof (PFalg_proj_t));
+                        for (i = 0; i < p->schema.count; i++) {
+                            cur = p->schema.items[i].name;
+                             top_proj[i] = PFalg_proj (cur, cur);
+                        }
+                        new_p = PFla_project_ (new_p,
+                                               p->schema.count,
+                                               top_proj);
+                    }
+
+                    *p = *new_p;
                     break;    
                 }
                 if (R(lp)->kind == la_number &&
-                    R(lp)->sem.number.attname == lp->sem.eqjoin_unq.att2) {
-                    /* ensure that column of upper eqjoin is not created on the
-                       other side */
-                    unsigned int i;
-                    PFla_op_t *new_number;
-                    PFalg_proj_t *proj = PFmalloc (R(lp)->schema.count *
-                                                   sizeof (PFalg_proj_t));
+                    R(lp)->sem.number.attname == lp->sem.eqjoin_unq.att1 &&
+                    lp->sem.eqjoin_unq.res != latt) {
+                    unsigned int  i;
+                    PFla_op_t    *new_number, *new_p;
+                    PFalg_proj_t *proj,
+                                 *top_proj = NULL;
+                    PFalg_att_t   cur;
 
+                    /* ensure that column of the upper eqjoin 
+                       is not created on the other side */
                     for (i = 0; i < R(lp)->schema.count; i++)
                         if (R(lp)->schema.items[i].name == latt)
                             break;
                     if (i == R(lp)->schema.count)
                         break;
 
-                    for (i = 0; i < R(lp)->schema.count; i++)
-                        if (R(lp)->schema.items[i].name != latt)
-                            proj[i] = PFalg_proj (R(lp)->schema.items[i].name,
-                                                  R(lp)->schema.items[i].name);
+                    /* replace the number operator by a projection
+                       that holds the same schema as the old number
+                       operator */
+                    proj = PFmalloc (R(lp)->schema.count *
+                                     sizeof (PFalg_proj_t));
+                    for (i = 0; i < R(lp)->schema.count; i++) {
+                        cur = R(lp)->schema.items[i].name;
+                        if (cur == latt)
+                            /* make sure the column names stay the same */
+                            proj[i] = PFalg_proj (latt, p->sem.eqjoin_unq.res);
                         else
-                            proj[i] = PFalg_proj (R(lp)->schema.items[i].name,
-                                                  p->sem.eqjoin_unq.res);
+                            proj[i] = PFalg_proj (cur, cur);
+                    }
 
+                    /* push down upper join underneath the number
+                       operator */
                     new_number = number (
                                      eqjoin_unq (RL(lp), rp,
                                                  latt, ratt,
                                                  p->sem.eqjoin_unq.res),
                                      R(lp)->sem.number.attname,
                                      R(lp)->sem.number.part);
+                    /* remember a reference to that join */
+                    next_join = L(new_number);
 
+                    /* replace the old number operator by a projection
+                       that refers to the new number operator */
                     *R(lp) = *PFla_project_ (new_number,
                                              R(lp)->schema.count,
                                              proj);
 
-                    *p = *eqjoin_unq (new_number, L(lp),
-                                      lp->sem.eqjoin_unq.att2,
-                                      lp->sem.eqjoin_unq.att1,
-                                      lp->sem.eqjoin_unq.res);
-                    
-                    next_join = LL(p);
-                    *(PFla_op_t **) PFarray_add (clean_up_list) = R(p);
+                    /* rebuild the originally lower join operator */
+                    new_p = eqjoin_unq (new_number, L(lp),
+                                        lp->sem.eqjoin_unq.att1,
+                                        lp->sem.eqjoin_unq.att2,
+                                        lp->sem.eqjoin_unq.res);
+
+                    /* remember to clean up the parts that cannot be
+                       visited anymore by the rewritten join */
+                    *(PFla_op_t **) PFarray_add (clean_up_list) = L(lp);
+
+                    /* As the new projection (that replaced the number
+                       operator) refers to the 'latt' column (and this
+                       column may only appear above the pattern if it
+                       corresponds to the result of the originally
+                       upper join) we need to make sure that it is
+                       removed if it would introduce a new column name */
+                    if (latt != p->sem.eqjoin_unq.res) {
+                        top_proj = PFmalloc (p->schema.count *
+                                             sizeof (PFalg_proj_t));
+                        for (i = 0; i < p->schema.count; i++) {
+                            cur = p->schema.items[i].name;
+                             top_proj[i] = PFalg_proj (cur, cur);
+                        }
+                        new_p = PFla_project_ (new_p,
+                                               p->schema.count,
+                                               top_proj);
+                    }
+
+                    *p = *new_p;
                     break;    
                 }
 
