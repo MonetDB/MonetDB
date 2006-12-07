@@ -97,13 +97,13 @@ typedef unsigned short PFalg_type_t;
 
 /** atomic algebra values */
 union PFalg_atom_val_t {
-    nat        nat_;    /**< value for natural number atoms (#aat_nat) */
-    int        int_;    /**< value for integer atoms (#aat_int) */
-    char      *str;     /**< value for string and untyped atoms (#aat_str)  */
-    float      dec_;     /**< value for decimal atoms (#aat_dec) */
-    double     dbl;     /**< value for double atoms (#aat_dbl) */
-    bool       bln;     /**< value for boolean atoms (#aat_bln) */
-    PFqname_t  qname;
+    nat           nat_;    /**< value for natural number atoms (#aat_nat) */
+    long long int int_;    /**< value for integer atoms (#aat_int) */
+    char         *str;     /**< value for string and untyped atoms (#aat_str)  */
+    float         dec_;     /**< value for decimal atoms (#aat_dec) */
+    double        dbl;     /**< value for double atoms (#aat_dbl) */
+    bool          bln;     /**< value for boolean atoms (#aat_bln) */
+    PFqname_t     qname;
 };
 /** algebra values */
 typedef union PFalg_atom_val_t PFalg_atom_val_t;

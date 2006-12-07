@@ -252,7 +252,7 @@ literal (PFalg_atom_t a)
             break;
 
         case aat_int:
-            PFarray_printf (s, "%i", a.val.int_);
+            PFarray_printf (s, "%lld", a.val.int_);
             break;
             
         case aat_str:
@@ -304,7 +304,7 @@ xml_literal (PFalg_atom_t a)
            a.val.nat_);
     else if (a.type == aat_int)
         PFarray_printf (
-           s, "<value type=\"%s\">%i</value>",
+           s, "<value type=\"%s\">%lld</value>",
            atomtype[a.type],
            a.val.int_);
     else if (a.type == aat_str || a.type == aat_uA)
