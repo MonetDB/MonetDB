@@ -159,8 +159,10 @@ monet_hello(opt *set, int setlen)
 		printf("# MonetDB Server v%s\n", GDKgetenv("gdk_version"));
 		printf("# Copyright (c) 1993-2006 CWI, all rights reserved\n");
 		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
+#ifdef MONET_GLOBAL_DEBUG
 		printf("# config:%s\n", GDKgetenv("config"));
 		printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
+#endif
 		printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
 		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 	}
