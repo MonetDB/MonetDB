@@ -142,7 +142,6 @@ PFqname_str (PFqname_t qn)
     /* NULL prefix indicates wildcard ns -> print a star */
     if (! qn.ns.prefix) {
         ns = PFstrdup ("*:");
-        fprintf (stderr, "uri: %s, loc: %s\n", qn.ns.uri, qn.loc);
     }
 
     else
