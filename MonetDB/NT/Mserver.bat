@@ -32,7 +32,8 @@ if "%APPDATA%" == "" goto skip
 set MONETDBDIR=%APPDATA%\MonetDB
 
 set MONETDBFARM="--dbfarm=%MONETDBDIR%\dbfarm"
-set SQLLOGDIR=--set "sql_logdir=%MONETDBDIR%\log"
+set SQLLOGDIR=--set "sql_logdir=%MONETDBDIR%\sql_logs"
+set XQUERYLOGDIR=--set "xquery_logdir=%MONETDBDIR%\xquery_logs"
 
 if exist "%MONETDBDIR%" goto skip
 

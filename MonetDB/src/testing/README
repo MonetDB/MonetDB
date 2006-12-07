@@ -277,7 +277,7 @@ have changed since my proposal.
 	setMONETDB_MOD_PATH	"--set monet_mod_path=$MONETDB_MOD_PATH"	(if --monet_mod_path=<pathlist> is used)
 	setGDK_DBFARM	"--set gdk_dbfarm=$GDK_DBFARM"	(if --dbfarm=<path> is used)
 	setSQL_LOGDIR	"--set sql_logdir=$SQL_LOGDIR"	(if --sql_logdir=<path> is used)
-	setXQUERY_LOGDIR	"--set xquery_logdir=$SQL_LOGDIR"	(if --xquery_logdir=<path> is used)
+	setXQUERY_LOGDIR	"--set xquery_logdir=$XQUERY_LOGDIR"	(if --xquery_logdir=<path> is used)
 
 
 - For each directory, Mtest.py creates a database $TSTDB in $GDK_DBFARM
