@@ -142,6 +142,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		}
 		GDKfree(of);
 	}
+	h->newstorage = h->storage;
 	return (h->base == NULL) ? -1 : 0;
 }
 
@@ -162,7 +163,7 @@ The other way is to just save the mmap-ed heap, free it and reload it.
 @{
 @c
 int
-HEAPextend(Heap *h, int newmode, size_t size)
+HEAPextend(Heap *h, size_t size)
 {
 	char nme[PATHLENGTH], *ext = NULL;
 
@@ -185,7 +186,7 @@ HEAPextend(Heap *h, int newmode, size_t size)
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
 		int can_mmap = (h->filename && size >= GDK_mem_bigsize);
-		int must_mmap = can_mmap && (size >= GDK_vm_minsize || (newmode & STORE_MMAP));
+		int must_mmap = can_mmap && (size >= GDK_vm_minsize || (h->newstorage & STORE_MMAP));
 		h->size = size;
 
 		if (can_mmap) {
@@ -360,6 +361,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	if (h->base == NULL) {
 		return -1;	/* file could  not be read satisfactorily */
 	}
+	h->newstorage = h->storage;
 	h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	sprintf(h->filename, "%s.%s", nme, ext);
 
@@ -430,6 +432,20 @@ HEAPdelete(Heap *h, str o, str ext)
 	strcat(ext2, ".priv");
 	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0)?0:-1;
 }
+
+int HEAPwarm(Heap *h) 
+{
+	int bogus_result = 0;
+	if (h->storage & STORE_MMAP) {
+		/* touch the heap sequentially */
+                int *cur = (int*) h->base;
+                int *lim = (int*) (h->base + h->free) - 4096;
+		for(; cur<lim; cur+=4096) /* try to schedule 4 parallel memory accesses */
+			bogus_result += cur[0] + cur[1024] + cur[2048] + cur[3072];
+	}
+	return bogus_result;
+}
+
 
 @}
 @- HEAPvmsize
@@ -692,7 +708,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		   // Double the size of the heap.
 		   // TUNE: increase heap by diffent amount.
 		 */
-		if (HEAPextend(heap, heap->storage, newsize) < 0)
+		if (HEAPextend(heap, newsize) < 0)
 			return 0;
 		heap->free = newsize;
 		hheader = HEAP_index(heap, 0, HEADER);

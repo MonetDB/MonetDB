@@ -374,7 +374,7 @@ malloc.
 	heap_size = BUNsize(b) * newcap; 
 
 	DELTAsave(b);
-	ret = HEAPextend(b->batBuns, b->batMapdirty?b->batMapbuns:b->batBuns->storage, heap_size);
+	ret = HEAPextend(b->batBuns, heap_size);
 	DELTAload(b);
 	if (ret < 0)
 		return NULL;
@@ -944,6 +944,9 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 			return NULL;
 	} else {
 		size_t i;
+		size_t hsize = 0, tsize = 0;
+		if (b->hhash && b->hheap) hsize = b->hheap->size;
+		if (b->thash && b->theap) tsize = b->theap->size;
 
 		ALIGNins(b, "BUNins", force);
 		b->batDirty = 1;
@@ -1059,9 +1062,11 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 		 */
 		if (b->hhash) {
 			HASHins(b->hhash, (hash_t) i, h);
+			if (hsize && hsize != b->hheap->size) HEAPwarm(b->hheap);
 		}
 		if (b->thash) {
 			HASHins(b->thash, (hash_t) i, t);
+			if (tsize && tsize != b->theap->size) HEAPwarm(b->theap);
 		}
 	}
 	return b;
@@ -1103,6 +1108,9 @@ BUNappend(BAT *b, ptr t, bit force)
 	ptr h = NULL;
 	oid id = 0;
 	int countonly;
+	size_t hsize = 0, tsize = 0;
+	if (b->hhash && b->hheap) hsize = b->hheap->size;
+	if (b->thash && b->theap) tsize = b->theap->size;
 
 	BATcheck(b, "BUNappend");
 	bm = BBP_cache(-b->batCacheid);
@@ -1228,9 +1236,11 @@ BUNappend(BAT *b, ptr t, bit force)
 	 */
 	if (b->hhash && h) {
 		HASHins(b->hhash, (hash_t) i, h);
+		if (hsize && hsize != b->hheap->size) HEAPwarm(b->hheap);
 	}
 	if (b->thash) {
 		HASHins(b->thash, (hash_t) i, t);
+		if (tsize && tsize != b->theap->size) HEAPwarm(b->theap);
 	}
 	return b;
       bunins_failed:
@@ -1494,7 +1504,9 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 
 		ALIGNinp(b, "BUNreplace", force);	/* zap alignment info */
 		if (b->tvarsized) {
+                        size_t tsize = b->theap->size;
 			@:uncommit_replace(var)@
+			if (b->thash && tsize != b->theap->size) HEAPwarm(b->theap); 
 		} else {
 			@:uncommit_replace(loc)@
 		}
@@ -1969,6 +1981,9 @@ BATmmap(BAT *b, int bns, int hhp, int thp )
 	b->batMapbuns = bns;
 	b->batMaphheap = hhp;
 	b->batMaptheap = thp;
+	if (b->batBuns) b->batBuns->newstorage = bns;
+	if (b->hheap) b->hheap->newstorage = hhp;
+	if (b->theap) b->theap->newstorage = thp;
 	b->batDirtydesc = 1;
 	return 0;
 }

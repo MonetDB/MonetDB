@@ -652,9 +652,9 @@ typedef struct {
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
 	BUN base;		/* base pointer in memory. */
-	char storage;		/* storage status. */
+	char storage;		/* storage mode (mmap/malloc). */
 	bit copied;		/* a copy of an existing map. */
-	chr padding;		/* not used. */
+	chr newstorage;		/* new desired storage mode at re-allocation. */
 	str filename;		/* file containing image of the heap */
 } Heap;
 
@@ -1014,7 +1014,7 @@ they can either be stored on disk, loaded into memory, or memory mapped.
  HEAPfree (Heap *h);
 @item int
 @tab
- HEAPextend (Heap *h, int newmode, size_t size);
+ HEAPextend (Heap *h, size_t size);
 @item int
 @tab
  HEAPload (Heap *h, str nme,ext, int trunc);
@@ -1027,6 +1027,9 @@ they can either be stored on disk, loaded into memory, or memory mapped.
 @item int
 @tab
  HEAPdelete (Heap *dst, str o, str ext);
+@tab
+ HEAPwarm (Heap *h);
+@item int
 @end multitable
 
 @
@@ -1036,10 +1039,11 @@ they isolate you from the different ways heaps can be accessed.
 @h
 gdk_export int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
 gdk_export int HEAPfree(Heap *h);
-gdk_export int HEAPextend(Heap *h, int newmode, size_t size);
+gdk_export int HEAPextend(Heap *h, size_t size);
 gdk_export int HEAPload(Heap *h, str nme, str ext, int trunc);
 gdk_export int HEAPsave(Heap *h, str nme, str ext);
 gdk_export int HEAPcopy(Heap *dst, Heap *src);
+gdk_export int HEAPwarm(Heap *h);
 gdk_export size_t HEAPsubcopy(Heap *dst, Heap *src, size_t size, size_t offset);
 gdk_export int HEAPdelete(Heap *h, str o, str ext);
 gdk_export size_t HEAPvmsize(Heap *h);
@@ -2803,12 +2807,14 @@ head column of `b'). The 'hb' is an integer index, pointing out the
 `hb'-th BUN. You should translate this index with @%BUNptr(b,hb)@ to
 obtain a BUN from the iteration variable.
 @h
+#define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
+
 #define HASHloop(b, h, hb, v)						\
 	for (hb = h->hash[HASHprobe(h, v)]; hb != HASH_MAX; hb = h->link[hb])	\
 		if (ATOMcmp(h->type, v, BUNhead(b, BUNptr(b, hb))) == 0)
 #define HASHloop_str(b,	h, hb, v)					\
 	for (hb = h->hash[strHash(v)&h->mask]; hb != HASH_MAX; hb = h->link[hb])	\
-		if (strcmp(v, BUNhvar(b, BUNptr(b, hb))) == 0)
+		if (GDK_STREQ(v, BUNhvar(b, BUNptr(b, hb))))
 @-
 For string search, we can optimize if the string heap has eliminated
 all doubles. This is the case when not too many different strings are
