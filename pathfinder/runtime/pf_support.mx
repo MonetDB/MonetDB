@@ -2103,7 +2103,8 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     var anc_newsize := ancestor_rid.leftjoin(ws.fetch(RID_SIZE_UPDATE).find(cont));
     var anc_mstsize := ancestor_rid.leftjoin(ws.fetch(_RID_SIZE).find(cont));
     var anc_updsize := [+]([-](anc_newsize, anc_oldsize), anc_mstsize);
-    ws.fetch(RID_SIZE_UPDATE).find(cont).myupdate(anc_updsize);
+    var rid_updsize := reverse(ancestor_rid).leftfetchjoin(anc_updsize);
+    ws.fetch(RID_SIZE_UPDATE).find(cont).myupdate(rid_updsize);
   }
 
   # log all changes
