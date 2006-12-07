@@ -228,10 +228,10 @@ stream.
 	.BUILTIN sql_variables() : ptr = sql_variables;
 		"return the table with session variables"
 
-	.BUILTIN dump_cache() : ptr = dump_cache;
+	.BUILTIN dump_cache() : void = dump_cache;
 		"dump the query cache"
 
-	.BUILTIN dump_opt_stats() : ptr = dump_opt_stats;
+	.BUILTIN dump_opt_stats() : void = dump_opt_stats;
 		"dump the optimizer rewrite statistics"
 
 	.COMMAND zero_or_one( BAT[any,any::1] b) : any::1 = zero_or_one; "if b contains exactly one value return this. Incase of more raise an exception else return nil"
@@ -1315,6 +1315,24 @@ proc sql_environment() : BAT[str,BAT] {
 	b.insert("value", e.reverse().mark(0@0).reverse());
 	return b;
 }
+
+proc bbp() : BAT[str,BAT] {
+	var b := new(str,bat,12);
+	b.insert("id", view_bbp_name().hmark(0@0)); 
+	b.insert("name", view_bbp_name().tmark(0@0));
+	b.insert("htype", view_bbp_htype().tmark(0@0));
+	b.insert("ttype", view_bbp_ttype().tmark(0@0));
+	b.insert("count", view_bbp_count().tmark(0@0));
+	b.insert("refcnt", view_bbp_refcnt().tmark(0@0));
+	b.insert("lrefcnt", view_bbp_lrefcnt().tmark(0@0));
+	b.insert("location", view_bbp_location().tmark(0@0));
+	b.insert("heat", view_bbp_heat().tmark(0@0));
+	b.insert("dirty", view_bbp_dirty().tmark(0@0));
+	b.insert("status", view_bbp_status().tmark(0@0));
+	b.insert("kind", view_bbp_kind().tmark(0@0));
+	return b;
+}
+
 
 proc daytime ( lng s ) : daytime {
 	return add(daytime(0), s*lng(1000));
