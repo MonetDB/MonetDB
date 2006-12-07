@@ -51,8 +51,8 @@
 
 .BUILTIN xquery(mode str, xquery str, is_url bit) : str = CMDxquery;
  "xquery execution. parameters: mode, query, is_url (optional)
- usage:  var result := xquery(\"xml\", \"1+1\", false); printf(result);
- or:  printf(xquery(\"xml\", \"1+1\"));"
+ usage:  var result := xquery(\"xml\", \"1+1\", false); printf(\"%s\",result);
+ or:  printf(\"%s\",xquery(\"xml\", \"1+1\"));"
 
 .COMMAND xquery_start_query_cache(lng maxsize) : void = CMDxquery_start_query_cache; 
  "Cached xquery clients use the query plan cache (also flushes the cache when called). if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"

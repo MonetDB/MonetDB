@@ -38,7 +38,7 @@ xquery("mapi-dm"        ,query , 0).printf();
 
 # data model in tabular representation
 #
-xquery("seq"            ,query , 0).printf();
+printf("%s",xquery("seq"            ,query , 0));
 
 xquery("seq"            ,query , 0).print();
 
