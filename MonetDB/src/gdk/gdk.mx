@@ -2808,7 +2808,7 @@ head column of `b'). The 'hb' is an integer index, pointing out the
 `hb'-th BUN. You should translate this index with @%BUNptr(b,hb)@ to
 obtain a BUN from the iteration variable.
 @h
-#define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(((char*) (l))+1,((char*) (r))+1))
+#define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
 
 #define HASHloop(b, h, hb, v)						\
 	for (hb = h->hash[HASHprobe(h, v)]; hb != HASH_MAX; hb = h->link[hb])	\
