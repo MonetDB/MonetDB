@@ -54,8 +54,6 @@ create trigger test4
 	after insert on t1 referencing new new_row
 	for each row insert into t1 values(3, 'insert_new_row');
 
-insert into t1 values(69, 'amsterdam');
-
 insert into t1 values(20, 'monet');
 
 select * from t1;
