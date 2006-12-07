@@ -1,3 +1,10 @@
+# tests related to bug reports should be called
+# <descriptive-name>.SF-<bug-report-id>[.<ext>]
+# and should go to
+# ../../BugTracker/Tests/
+# i.e.
+# .../pathfinder/tests/BugTracker/Tests/
+
 # first test loads default XMark document from benchmarks/XMark/Tests/auctionG.xml
 # used by other tests in this directory
 auctionG_xml
