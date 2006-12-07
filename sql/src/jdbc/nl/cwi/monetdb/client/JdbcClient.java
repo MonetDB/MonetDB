@@ -33,7 +33,7 @@ import java.net.*;
  * of JDBC only.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.1
+ * @version 1.2
  */
 
 public class JdbcClient {
@@ -422,26 +422,11 @@ copts.produceHelpMessage()
 			if (hasFile) {
 				String tmp = copts.getOption("file").getArgument();
 				int batchSize = 0;
-				// figure out whether it is an URL
 				try {
-					URL u = new URL(tmp);
-					HttpURLConnection.setFollowRedirects(true);
-					HttpURLConnection con =
-						(HttpURLConnection)u.openConnection();
-					con.setRequestMethod("GET");
-					String ct = con.getContentType();
-					if ("application/x-gzip".equals(ct)) {
-						// open gzip stream
-						in = new BufferedReader(new InputStreamReader(
-							new GZIPInputStream(con.getInputStream())));
-					} else {
-						// text/plain otherwise just attempt to read as is
-						in = new BufferedReader(new InputStreamReader(
-							con.getInputStream()));
-					}
-				} catch (MalformedURLException e) {
-					// probably a real file, open it
-					in = new BufferedReader(new FileReader(tmp));
+					in = getReader(tmp);
+				} catch (Exception e) {
+					System.err.println("Error: " + e.getMessage());
+					System.exit(-1);
 				}
 
 				// check for batch mode
@@ -494,6 +479,60 @@ copts.produceHelpMessage()
 			}
 			System.exit(-1);
 		}
+	}
+
+	/**
+	 * Tries to interpret the given String as URL or file.  Returns the
+	 * assigned BufferedReader, or throws an Exception if the given
+	 * string couldn't be identified as a valid URL or file.
+	 *
+	 * @param uri URL or filename as String
+	 * @return a BufferedReader for the uri
+	 * @throws Exception if uri cannot be identified as a valid URL or
+	 *         file
+	 */
+	static BufferedReader getReader(String uri) throws Exception {
+		BufferedReader ret = null;
+		URL u = null;
+
+		// Try and parse as URL first
+		try {
+			u = new URL(uri);
+		} catch (MalformedURLException e) {
+			// no URL, try as file
+			try {
+				ret = new BufferedReader(new FileReader(uri));
+			} catch (FileNotFoundException fnfe) {
+				// the message is descriptive enough, adds "(No such file
+				// or directory)" itself.
+				throw new Exception(fnfe.getMessage());
+			}
+		}
+
+		if (ret == null) try {
+			HttpURLConnection.setFollowRedirects(true);
+			HttpURLConnection con =
+				(HttpURLConnection)u.openConnection();
+			con.setRequestMethod("GET");
+			String ct = con.getContentType();
+			if ("application/x-gzip".equals(ct)) {
+				// open gzip stream
+				ret = new BufferedReader(new InputStreamReader(
+							new GZIPInputStream(con.getInputStream())));
+			} else {
+				// text/plain otherwise just attempt to read as is
+				ret = new BufferedReader(new InputStreamReader(
+							con.getInputStream()));
+			}
+		} catch (IOException e) {
+			// failed to open the url
+			throw new Exception("No such host: " + e.getMessage());
+		} catch (Exception e) {
+			// this is an exception that comes from deep ...
+			throw new Exception("Invalid URL: " + e.getMessage());
+		}
+
+		return(ret);
 	}
 
 	/**
@@ -597,6 +636,8 @@ copts.produceHelpMessage()
 						out.println("\\h      this help screen");
 						out.println("\\d      list available tables and views");
 						out.println("\\d<obj> describes the given table or view");
+						out.println("\\l<uri> executes the contents of the given file or URL");
+						out.println("\\i<uri> batch executes the inserts from the given file or URL");
 					} else if (dbmd != null && qp.getQuery().startsWith("\\d")) {
 						try {
 							String object = qp.getQuery().substring(2).trim().toLowerCase();
@@ -662,6 +703,34 @@ copts.produceHelpMessage()
 						} catch (SQLException e) {
 							out.flush();
 							System.err.println("Error: " + e.getMessage());
+						}
+					} else if (dbmd != null && (
+							qp.getQuery().startsWith("\\l") ||
+							qp.getQuery().startsWith("\\i")))
+					{
+						String object = qp.getQuery().substring(2).trim();
+						if (scolonterm && object.endsWith(";"))
+							object = object.substring(0, object.length() - 1);
+						if (object.equals("")) {
+							System.err.println("Usage: '" + qp.getQuery().substring(0, 2) + "<uri>' where <uri> is a file or URL");
+						} else {
+							// temporarily redirect input from in
+							BufferedReader console = in;
+							try {
+								in = getReader(object);
+								if (qp.getQuery().startsWith("\\l")) {
+									processInteractive(
+										true, doEcho, scolonterm, user);
+								} else {
+									processBatch(0);
+								}
+							} catch (Exception e) {
+								out.flush();
+								System.err.println("Error: " + e.getMessage());
+							} finally {
+								// put back in redirection
+								in = console;
+							}
 						}
 					} else {
 						doProcess = true;
