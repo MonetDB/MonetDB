@@ -462,7 +462,7 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 	dst->U.buns.base = NULL;
 	dst->U.buns.storage = (char) src.U.buns.storage;
 	dst->U.buns.copied = FALSE;
-	dst->U.buns.padding = 0;
+	dst->U.buns.newstorage = 0;
 	dst->U.buns.filename = NULL;
 
 	dst->U.deleted = src.U.deleted;
@@ -483,7 +483,7 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 		dst->H.vheap->base = NULL;
 		dst->H.vheap->storage = (char) src.H.heap.storage;
 		dst->H.vheap->copied = FALSE;
-		dst->H.vheap->padding = 0;
+		dst->H.vheap->newstorage = 0;
 		dst->H.vheap->filename = NULL;
 	}
 	dst->H.heapdirty = 0;
@@ -506,7 +506,7 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 		dst->T.vheap->base = NULL;
 		dst->T.vheap->storage = (char) src.T.heap.storage;
 		dst->T.vheap->copied = FALSE;
-		dst->T.vheap->padding = 0;
+		dst->T.vheap->newstorage = 0;
 		dst->T.vheap->filename = NULL;
 	}
 	dst->T.heapdirty = 0;
