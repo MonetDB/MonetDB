@@ -22,7 +22,7 @@ set PYTHONPATH=@MONETDB_PREFIX@\share\MonetDB\python
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call python "@MONETDB_PREFIX@\bin\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--SQL_PREFIX=%builddir%\src\tools" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\log" %*
+call python "@MONETDB_PREFIX@\bin\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--SQL_PREFIX=%builddir%\src\tools" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" %*
 
 popd
 endlocal

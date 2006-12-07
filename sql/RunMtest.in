@@ -65,4 +65,4 @@ cd "$srcdir"
 # if the environment variable MTEST_AT is set (value does not matter),
 # pass the --at flag to Mtest.py so that it uses the at command as a
 # watchdog.
-exec Mtest.py --monet_mod_path="$MOD_PATH" --SQL_PREFIX="${builddir}/src/tools" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" ${MTEST_AT+--at} "${@--r}"
+exec Mtest.py --monet_mod_path="$MOD_PATH" --SQL_PREFIX="${builddir}/src/tools" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" ${MTEST_AT+--at} "${@--r}"
