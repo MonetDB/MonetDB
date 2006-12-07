@@ -33,5 +33,8 @@ cat load.sql | sed -e s+PWD+$PWD+ | $SQL
 
 $SQL < VOCquery.sql
 
+echo Manual examples
+$SQL < VOCmanual_examples.sql
+
 #Cleanup
 $SQL < VOCdrop.sql
