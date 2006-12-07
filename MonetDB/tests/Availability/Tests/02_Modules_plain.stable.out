@@ -966,7 +966,7 @@ Module: "monettime"
 [ "month",			  "PROC:      ",  "month(timestamp) : int",												  "not available"											  ]
 [ "monthname",			  "COMMAND:   ",  "monthname(int) : str",												  "Returns month name from a number between [1-12], str(nil) otherwise (!DS2.2)."			  ]
 [ "monthnum",			  "COMMAND:   ",  "monthnum(str) : int",												  "Returns month number [1-12] from a string; or nil if does not match any (!DS2.2)."			  ]
-[ "msec",			  "COMMAND:   ",  "msec() : lng",													  "get time of day in msec since 1-1-1970."								  ]
+[ "msec",			  "COMMAND:   ",  "msec() : lng",													  "get time of day in milliseconds since 1-1-1970."							  ]
 [ "msecs",			  "PROC:      ",  "msecs(int, int, int, int, int) : lng",										  "not available"											  ]
 [ "olddate",			  "COMMAND:   ",  "olddate(str) : date",												  "create a date from the old instant format."								  ]
 [ "oldduration",		  "COMMAND:   ",  "oldduration(str) : int",												  "parse the old duration format and return an (estimated) number of days."				  ]
