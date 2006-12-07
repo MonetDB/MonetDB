@@ -530,7 +530,7 @@ static oid getPreSize(tjCtx* tjCtx) {
 static int setPreSize(tjCtx* tjCtx, oid newSize) {
 	char buff[16];
 
-	sprintf(buff,"%d",newSize);
+	sprintf(buff,OIDFMT,newSize);
 	if ( !replaceCollParam(tjCtx, "_last_tijahPre", (str)buff) )
 	    return 0;
 	return 1;

@@ -2039,6 +2039,7 @@ PROC tj_finalize(str collName) : void
 	bat("tj_" + collName + "_size1").access(BAT_READ);
 	bat("tj_" + collName + "_pfpre").access(BAT_READ);
 	bat("tj_" + collName + "_fragments").access(BAT_READ);
+	# incomplete, batloop here
 	bat("tj_" + collName + "_tid1").mmap(1);
 	bat("tj_" + collName + "_size1").mmap(1);
 	bat("tj_" + collName + "_pfpre").mmap(1);
@@ -2102,6 +2103,7 @@ PROC tj_buildIRindex(str collName) : void :=
         tmp := tmp.reverse().sort();
 	var termindex := tmp.mark(0@0).reverse().offsetindex(bat("tj_globalTerms").count() + 1);
 	var terms := tmp.reverse().mark(0@0).reverse();
+	# create _TermIndex and _Terms here
 	termindex.persists(true).bbpname("tj_" + collName + "_TermIndex");
 	terms.persists(true).bbpname("tj_" + collName + "_Terms");
 	tmp := nil;
@@ -2113,10 +2115,12 @@ PROC tj_buildIRindex(str collName) : void :=
 	terms := nil;
 	commit();
 	
+	# incomplete, use fragmentation here, merge union ??
 	tmp := bat("tj_" + collName + "_tid1").semijoin(bat("tj_" + collName + "_pfpre"));
         tmp := tmp.reverse().sort();
 	var tagindex := tmp.mark(0@0).reverse().offsetindex(bat("tj_globalTags").count() + 1);
 	var tags := tmp.reverse().mark(0@0).reverse();
+	# create _Tags and _Tagindex here
 	tagindex.persists(true).bbpname("tj_" + collName + "_TagIndex");
 	tags.persists(true).bbpname("tj_" + collName + "_Tags");
 	tmp := nil;
