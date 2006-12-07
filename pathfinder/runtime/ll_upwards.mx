@@ -203,7 +203,6 @@ ll_upwards_@1(                            /* OUTPUT: */
         } else if (context[cur].pre <= stack[depth-1] + pre_size[stack[depth-1]]) {
 
             /* not in the branch that is on the stack => pop it */
-            pre = stack[--depth]; 
             oid off = pre;
             int budget = PF_SIBLING_PROBES;
             int cnt = 0;
