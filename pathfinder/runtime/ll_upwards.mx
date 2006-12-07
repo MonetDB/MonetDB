@@ -169,7 +169,6 @@ ll_upwards_@1(                            /* OUTPUT: */
    (void) result_size;
    (void) min_iter;
    (void) iter_stack;
-   (void) pre_level;
 
     /* we perform a forwards scan with skipping, that carries out an *optimal* 
      * depth-first DOM tree traversal (where we visit nodes only if needed)
@@ -201,8 +200,6 @@ ll_upwards_@1(                            /* OUTPUT: */
 
 	
         } else if (context[cur].pre <= stack[depth-1] + pre_size[stack[depth-1]]) {
-
-            /* not in the branch that is on the stack => pop it */
             oid off = pre;
             int budget = PF_SIBLING_PROBES;
             int cnt = 0;
@@ -215,9 +212,9 @@ ll_upwards_@1(                            /* OUTPUT: */
                     oid old = pre;
                     pre = speculate_skip(pre, context[cur].pre, pre-off, budget, pre_size, pre_level); 
                     if (pre == old) { 
-                         off = pre; budget += budget; /* skip failed: wait longer next time */
+			budget += budget; /* skip failed: wait longer next time */
                     }
-                    cnt = 0;
+                    off = pre; cnt = 0;
                 }
             }
         } else {
@@ -230,7 +227,7 @@ ll_upwards_@1(                            /* OUTPUT: */
 }
 
 @c
-#define PF_SIBLING_PROBES 32
+#define PF_SIBLING_PROBES 64
 
 /* If an XML is regularly structured (contains "list" or "table" like data) such that we have
  * a subtree with very many siblings, the upwards steps will have to touch all the preceding
@@ -244,6 +241,7 @@ ll_upwards_@1(                            /* OUTPUT: */
  */
 static oid
 speculate_skip(oid pre, oid dst, oid skip, int budget, unsigned int* pre_size, unsigned char* pre_level) {
+    skip = skip << 6;
     if (pre + skip < dst) {
         oid cur = skipholes(pre+skip, pre_size);
         int cnt = 0, depth = pre_level[pre];
@@ -251,8 +249,8 @@ speculate_skip(oid pre, oid dst, oid skip, int budget, unsigned int* pre_size, u
             if (pre_level[cur] == depth) {
                 pre = cur; /* we found a sibling, without seeing all intermediate siblings!! */
                 /* now go for more.. double skip distance, speculation budget */
-                skip += skip; 
-                budget += budget;
+                skip += skip; skip += skip; 
+                budget += budget; budget += budget;
                 cur += skip; 
                 cnt = 0;
                 if (cur >= dst) break;
@@ -260,7 +258,7 @@ speculate_skip(oid pre, oid dst, oid skip, int budget, unsigned int* pre_size, u
                 cur += pre_size[cur] + 1; /* skip over this deeper node */
             }
             cur = skipholes(cur, pre_size);
-            if ((cnt += 2) >= budget) return pre; /* could not find it quickly */
+            if (cnt++ >= budget) return pre; /* could not find it quickly */
         }
     }
     return pre;
