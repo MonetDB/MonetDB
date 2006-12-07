@@ -815,7 +815,7 @@ map2NODE_interface (opt_t *f)
 
             /* get the attributes of the subtree copy elements */
             "{ # create attribute subtree copies\n"
-            "var temp_attr := mvaljoin( mposjoin(res_item, res_cont, ws.fetch(PRE_NID)), res_cont, ws.fetch(ATTR_OWN));\n"
+            "var temp_attr := get_attr_own(ws, mposjoin(res_item, res_cont, ws.fetch(PRE_NID)), res_cont);\n"
             "var oid_attr := temp_attr.tmark(0@0);\n"
             "var oid_cont;\n"
             "if (is_constant(res_cont)) {\n"
@@ -1126,7 +1126,7 @@ translateVar (opt_t *f, int cur_level, PFvar_t *v)
     milprintf(f, "var vid := v_vid%03u.ord_uselect(%i@0);\n", 
             cur_level, f->module_base + v->vid);
     milprintf(f, "vid := vid.hmark(0@0);\n");
-    milprintf(f, "iter := vid.leftfetchjoin(v_iter%03u);\n", cur_level);
+    milprintf(f, "iter := vid.leftfetchjoin(v_iter%03u).assert_order();\n", cur_level);
     milprintf(f, "pos := vid.leftfetchjoin(v_pos%03u);\n", cur_level);
     milprintf(f, "item := vid.leftfetchjoin(v_item%03u);\n", cur_level);
     milprintf(f, "kind := vid.leftfetchjoin(v_kind%03u);\n", cur_level);
@@ -1896,7 +1896,7 @@ loop_liftedSCJ (opt_t *f,
             "var oid_iter := iter;\n"
             "var oid_item := item.materialize(ipik);\n"
             "var oid_cont := kind.get_container();\n"
-            "var temp1 := mvaljoin ( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(ATTR_OWN));\n"
+            "var temp1 := get_attr_own (ws, mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont);\n"
             "oid_item := nil;\n"
             "oid_cont := temp1.hmark(0@0).leftfetchjoin(oid_cont);\n"
             "var oid_attr := temp1.tmark(0@0);\n"
@@ -2799,7 +2799,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var oid_preNew := content_preNew_preOld.hmark(0@0);\n"
                 "content_preNew_preOld := nil;\n"
                 "var oid_cont := oid_preNew.leftfetchjoin(preNew_cont);\n"
-                "var temp_attr := mvaljoin( mposjoin(oid_preOld, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(ATTR_OWN));\n"
+                "var temp_attr := get_attr_own(ws, mposjoin(oid_preOld, oid_cont, ws.fetch(PRE_NID)), oid_cont);\n"
                 "oid_preOld := nil;\n"
                 "var oid_attr := temp_attr.tmark(0@0);\n"
                 "oid_cont := temp_attr.reverse().leftfetchjoin(oid_cont);\n"

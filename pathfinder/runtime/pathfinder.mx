@@ -184,7 +184,7 @@ if (standoff) {
 #
 # The working set can have multiple documents open. Those multiple documents
 # may stem from a single, or multiple collections. The code is optimized to deal
-# with huge numers of (small) documents from s single collection efficiently. 
+# with huge numers of (small) documents from a single collection efficiently. 
 #
 # Each open collection has a corresponding container in the working set,
 # administered in a table:
@@ -224,7 +224,28 @@ if (standoff) {
 # view when they are loaded instead). Their function is to allow shallow copying 
 # in the transient document container.  i.e. for the transient container, these 
 # bats are not views, and their CONT values refer to other containers.
-
+#
+# We turned out to have a performance issue for accessing attributes of
+# a node: due to isolation, hash-table indices on ATTR_OWN get lost after
+# each query.  For this purpose, two extra working-set entries appeared:
+# - ATTR_OWN_SHARED    BAT[void,BAT[void,oid]] 
+# - ATTR_OWN_PRIVATE   BAT[void,BAT[void,oid]] 
+#
+# Attributes are modified in the following way:
+# - added attributes are append-only
+# - removed attributes have their owner nid set to nil 
+#
+# This pattern can be exploited by sharing an out-of-date copy of ATTR_OWN
+# as an index structure; such that a hash table on it can be re-used by multiple 
+# queries. This is ATTR_OWN_SHARED. The slice of ATTR_OWN of missing tuples 
+# (i.e. those appended after the copy was taken) is denominated ATTR_OWN_PRIVATE. 
+#
+# The PROC get_attr_own() (pf_support.mx) finds the attributes of a number 
+# of nodes (NIDs), by consulting ATTR_OWN_SHARED (with hash table!) and 
+# ATTR_OWN_PRIVATE separately. The results from ATTR_OWN_SHARED must be 
+# re-checked in ATTR_OWN to filter out deleted attributes.
+#
+# ATTR_OWN_SHARED is stored as a runtime index structure in RT_ATTR_OWN.
 
 @- ws definition
 
@@ -278,41 +299,43 @@ concurrent updates.
 @:ws_@1(QN_NID_DEL,        25, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(QN_NID_INS,        26, void, bat, void,  oid, PRE_BASE)@
 
-@:ws_@1(PID_MAP,           27, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(PRE_CONT,          28, void, void,void,  oid, PRE_BASE)@
-@:ws_@1(ATTR_CONT,         29, void, void,void,  oid, PRE_BASE)@
-@:ws_@1(OPEN_NAME,         30, void, str, void, void, oid_nil)@
-@:ws_@1(OPEN_DOCID,        31, void, oid, void, void, oid_nil)@
-@:ws_@1(OPEN_CONT,         32, void, oid, void, void, oid_nil)@
-@:ws_@1(CONT_COLL,         33, void, oid, void, void, oid_nil)@
-@:ws_@1(CONT_NAME,         34, void, str, void, void, oid_nil)@
-@:ws_@1(CONT_RUNTIME,      35, void, bat, void, void, oid_nil)@
-@:ws_@1(CONT_LOCKED,       36, void, lock,void, void, oid_nil)@
+@:ws_@1(PRE_CONT,          27, void, void,void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_CONT,         28, void, void,void,  oid, PRE_BASE)@
+@:ws_@1(PID_MAP,           29, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_OWN_PRIVATE,  30, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_OWN_SHARED,   31, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(OPEN_NAME,         32, void, str, void, void, oid_nil)@
+@:ws_@1(OPEN_DOCID,        33, void, oid, void, void, oid_nil)@
+@:ws_@1(OPEN_CONT,         34, void, oid, void, void, oid_nil)@
+@:ws_@1(CONT_COLL,         35, void, oid, void, void, oid_nil)@
+@:ws_@1(CONT_NAME,         36, void, str, void, void, oid_nil)@
+@:ws_@1(CONT_RUNTIME,      37, void, bat, void, void, oid_nil)@
+@:ws_@1(CONT_LOCKED,       38, void, lock,void, void, oid_nil)@
 
-@:ws_@1(_MAP_PID,          37, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_SIZE,         38, void, bat, void,  int, PRE_BASE)@
-@:ws_@1(_RID_LEVEL,        39, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_PROP,         40, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_KIND,         41, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_NID,          42, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_NID_RID,          43, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_FRAG_ROOT,        44, void, bat,  oid,  oid, oid_nil)@
-@:ws_@1(_QN_HISTOGRAM,     45, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX_URI_LOC,46, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI_LOC,       47, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX,        48, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI,           49, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_LOC,           50, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TEXT,        51, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_COM,         52, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_INS,         53, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TGT,         54, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_VAL,         55, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_ID_NID,           56, void, bat,  str,  oid, oid_nil)@
-@:ws_@1(_IDREF_NID,        57, void, bat,  str,  oid, oid_nil)@
-@:ws_@1(_ATTR_OWN,         58, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_QN,          59, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_PROP,        60, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_MAP_PID,          39, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_SIZE,         40, void, bat, void,  int, PRE_BASE)@
+@:ws_@1(_RID_LEVEL,        41, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_PROP,         42, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_KIND,         43, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_NID,          44, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_NID_RID,          45, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_FRAG_ROOT,        46, void, bat,  oid,  oid, oid_nil)@
+@:ws_@1(_QN_HISTOGRAM,     47, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX_URI_LOC,48, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI_LOC,       49, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX,        50, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI,           51, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_LOC,           52, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TEXT,        53, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_COM,         54, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_INS,         55, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TGT,         56, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_VAL,         57, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_ID_NID,           58, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(_IDREF_NID,        59, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(_ATTR_OWN,         60, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_QN,          61, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_PROP,        62, void, bat, void,  oid, PRE_BASE)@
 @-
 The bottom segment are the master copies of the top segment.
 The middle segment is private to the query.
@@ -322,7 +345,7 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 BEWARE: the logger version number below needs to be incremented whenever the working set schema is changed.
 
 @= ws_decl
-@:ws_@1_decl(WS_SIZE, 61)@
+@:ws_@1_decl(WS_SIZE, 63)@
 @:ws_@1_decl(QNAME,    2)@
 @:ws_@1_decl(BOOL,     3)@
 @:ws_@1_decl(INT,      4)@
@@ -359,21 +382,22 @@ const WS               := 0@0; # first container in ws = transient doc container
 const PRE_BASE         := 0@0; # all our PRE bats start at 0 (the super-root)
 const TEMP_DOC         := 0@0; # doc/coll key that is never used for persistent docs
 const DOCID_MIN        := 1000000000@0; # persistent doc-ids start here
-const DOCID_MAX        := 2000000000@0; # and end here
+const DOCID_MAX        := 2000000000@0; # and end here (so we have 1G of them)
 const WS_MAXID         := 1LL << 62;
 
 # slots in the col_runtime bats
-const RT_LOCK_FREELIST := 0;
-const RT_NID_FREELIST  := 1;
-const RT_PAGE_WS       := 2;
-const RT_ATTR_WS       := 3;
-const RT_QN_NID        := 4;
-const RT_QN_NID_INS    := 5;
-const RT_QN_NID_DEL    := 6;
-const RT_QN_NID_UNQ    := 7;
-const RT_REGION_PRE    := 8;
-const RT_REGION_START  := 9;
-const RT_REGION_END    := 10;
+const RT_LOCK_FREELIST := 0; # free page ids
+const RT_NID_FREELIST  := 1; # free nids 
+const RT_PAGE_WS       := 2; # pages modified by transactions 
+const RT_ATTR_WS       := 3; # attributes modified by transactions
+const RT_ATTR_OWN      := 4; # a shared (old) ATTR_OWN bat with hash-table on OWN
+const RT_QN_NID        := 5; # qn-nid nsloc index, with hash-table on QN
+const RT_QN_NID_INS    := 6; # qn-nid nsloc index: extra items
+const RT_QN_NID_DEL    := 7; # qn-nid nsloc index: deleted items
+const RT_QN_NID_UNQ    := 8; # qn-nid nsloc index: subset of indexed qns (small)
+const RT_REGION_PRE    := 9;
+const RT_REGION_START  := 10;
+const RT_REGION_END    := 11;
 
 const WSID_UPDATE := (3LL << 30);
 const WSID_EXCLUSIVE := (1LL << 31);
@@ -726,7 +750,7 @@ bats of a collection. This is required when:
   note that in a commit, first all locks of all documents must be acquired
   (in ascending order - to prevent deadlock), then all changes commited. 
 
-Similar to the short_doc PROC naming convention, __X() PROCs, i.e.
+Similar to the short_lock PROC naming convention, __X() PROCs, i.e.
 with double underscore are those that execute while holding a collection
 lock.
 
@@ -747,9 +771,9 @@ by shred operations.
 This "shred-lock" thus protects the process of making the data bats longer.
 As such, also the insert operations that allocate a new page (ws_newpage) 
 or a new set of NIDs (ws_newnids) must acquire this lock. These two operations
-always request a karger batch of (pages, NIDs) in one go, adding them to a 
+always request a larger batch of (pages, NIDs) in one go, adding them to a 
 free-list. Thus, many insert actions will actually not need to take the 
-shred-lock (as they can get theire new pages/NIds from a freelist).
+shred-lock (as they can get their new pages/NIDs from a freelist).
 
 @- deleting documents 
 
@@ -763,7 +787,8 @@ Deleting documents is separated in two phases, where the setting
 to nil of the name is the critical part. This action does not throw
 away any data, so can be easily rolled back. A single query can
 delete many documents and shred many new ones, but should commit
-actomically. If some action fails, everything is rolled back.
+atomically. If some action fails, everything is rolled back.
+The "doc_undo" meta bat is used for determining what has to be rolled back.
 
 After a succesful document management query, empty document collections 
 are pruned. That is, they are removed from the meta-tables, and 
@@ -774,6 +799,8 @@ set to nil, or will shred a new document into the now empty collection).
 Those collections are not pruned, but when the transaction that
 blocked it finishes, it retries empty collection pruning in its 
 ws_destroy() sequence.
+The "collection_zombie" bat is used for to trigger collection pruning
+when such transactions finish.
 
 @- collection pins and ws-IDs
 
@@ -809,7 +836,7 @@ oids (the other tables, qn_* and prop_* are append-only so
 never cause any conflicts).
 
 (note that for structural updates in a page, all pages containing 
- ancestors (whoise size field will be affected by the update) 
+ ancestors (whose size field will be affected by the update) 
  are *not* considered modified. Concurrent ancestor size-changes 
  are compensated at commit time by keeping track of the difference 
  in size, caused by a transaction, rather than absolute values.)
@@ -836,17 +863,17 @@ However, for shredding, we use checkpoints. A partial checkpoint
 causes certain BATs to be saved to disk; all WAL entries for that BAT
 before the subcommit time can be ignored.
 
-Besides, there is a checkpoint background thread in the logger, that 
+Additionally, there is a checkpoint background thread in the logger, that 
 performs periodical checkpoints, and flushes the old logfiles.  
 
 
 @+ Query types
 
-Besides read-only queries, there are two other typed: updaing
+Besides read-only queries, there are two other types: updating
 queries (that rely on a WAL commit) and documnent management
 queries that shred/delete documents (and rely on a checkpoint).
 
-Because of their relience on different commit mechanism, updating
+Because of their reliance on different commit mechanism, updating
 queries cannot do document management. Otherwise we would not be
 able to provide an atomic commit. 
 
@@ -865,7 +892,7 @@ An update query goes through the following phases:
     Also, while the update tape is played, all (intended or direct)
     updates are logged in the WAL.
 (3) ws_precommit(). The main function is conflict detection:
-    it will trigger a MIL ERROR, which will result in an abort.
+    this will trigger a MIL ERROR, which will result in an abort.
     In case of no error, ws_precommit() isolates all concurrent
     transactions from the intended updates (VM shadow paging).
     ws_precommit() also obtains the coll_lock of an affected
@@ -1002,7 +1029,7 @@ PROC ws_new(oid id,
             int ttp, 
             oid seq) : BAT[void,any]
 {
-    if ((ttp != void) and (int(id) < _RID_SIZE)) { # a bat of bats (persistent or view)
+    if ((ttp != void) and (int(id) < PID_MAP)) { # a bat of bats (persistent or view)
         var b := bat(htp,ttp,10000);
         if (not(isnil(seq))) b.seqbase(seq); 
         return bat(void,bat).seqbase(PRE_BASE).append(b);
@@ -1014,7 +1041,10 @@ PROC ws_create(int update) : BAT[void,bat]
 {
     # only instantiates the default views of the ws-bats (not the master bats)
     var ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
-    ws.fetch(PID_MAP).fetch(WS).append(ws.fetch(MAP_PID).fetch(WS));
+    ws.fetch(PID_MAP).append(ws.fetch(MAP_PID).fetch(WS));
+    ws.fetch(_MAP_PID).append(ws.fetch(MAP_PID).fetch(WS));
+    ws.fetch(ATTR_OWN_SHARED).append(empty_bat);
+    ws.fetch(ATTR_OWN_PRIVATE).append(ws.fetch(ATTR_OWN).fetch(WS));
 
     # the temporary document container has some bogus values here
     ws.fetch(CONT_COLL).seqbase(0@0).insert(0@0,oid_nil);
@@ -1154,8 +1184,9 @@ PROC __ws_opencoll(BAT[void,bat] ws,
     mirror(ws_dsk).leftfetchjoin(ws).[append](dsk);
 
     # initialize runtime on first load (this involves full table scans and may cost)
-    var idx, ins, del;
+    var idx, ins, del, own;
     if (count(runtime) > RT_QN_NID) {
+        own := runtime.fetch(RT_ATTR_OWN);
         idx := runtime.fetch(RT_QN_NID);
         ins := runtime.fetch(RT_QN_NID_INS);
         del := runtime.fetch(RT_QN_NID_DEL);
@@ -1171,6 +1202,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         idx := __runtime_index(coll_oid, nid, knd, prp, unq, 1@0, isolate);
         ins := empty_bat;
         del := empty_bat;
+        own := empty_bat;
         if (runtime != empty_runtime) { # a non temporary document
             var free_nids := empty_bat;
             if (isolate) { # new writable empty bats
@@ -1182,11 +1214,14 @@ PROC __ws_opencoll(BAT[void,bat] ws,
                 del := bat(oid,oid);
                 page_ws := bat(oid,lng);
                 attr_ws := bat(oid,lng);
+                own := ws.fetch(ATTR_OWN).fetch(cont).copy(); 
+                reverse(own).accbuild("hash");
             }
             # insert new index
             runtime.insert(lock_nil,free_nids);
             runtime.insert(lock_nil,page_ws);
             runtime.insert(lock_nil,attr_ws);
+            runtime.insert(lock_nil,own);
             runtime.insert(lock_nil,idx);
             runtime.insert(lock_nil,ins);
             runtime.insert(lock_nil,del);
@@ -1199,6 +1234,10 @@ PROC __ws_opencoll(BAT[void,bat] ws,
             runtime.insert(lock_nil,unq);
         }
     }
+    # for accessing ATTR_OWN, we split it in an old (shared, hash-indexed) and new part.
+    ws.fetch(ATTR_OWN_SHARED).append(own);
+    ws.fetch(ATTR_OWN_PRIVATE).append(ws.fetch(ATTR_OWN).fetch(cont).slice(count(own),int_nil));
+
     if (isolate) { # copy ins/del for isolation
         ins := ins.copy().access(BAT_WRITE);
         del := del.copy().access(BAT_WRITE);
@@ -1668,7 +1707,6 @@ PROC _ws_coll_isolate(BAT[void,bat] ws,
     attr_prop.isolate(modified_attr, false);
 }
 
-
 PROC ws_precommit(BAT[void,BAT] ws,
                   oid cont,
                   BAT[void,oid] modified_page,
@@ -1713,10 +1751,10 @@ PROC ws_precommit(BAT[void,BAT] ws,
     lock_unset(pf_short);
     if (isnil(err)) {
         if (other_ws.count() > 0) {
-            err := CATCH([_ws_coll_isolate](other_ws, colname, 
-                                            const ancestor_nid, 
-                                            const modified_nid, 
-                                            const modified_page, 
+            err := CATCH([_ws_coll_isolate](other_ws, colname,
+                                            const ancestor_nid,
+                                            const modified_nid,
+                                            const modified_page,
                                             const modified_attr));
         }
     }
@@ -2260,7 +2298,7 @@ PROC _shred_doc_cleanup(lng wsid, bit cleanup) : BAT[any,any]
 {
     doc_undo.delete(doc_undo.select(wsid));
     if (cleanup) return _collection_cleanup(); # garbage collect empty collections
-    return empty_bat;
+    return new(str,str);
 }
 
 PROC shred_doc_base(BAT[void,str] commitBAT,
@@ -2313,15 +2351,6 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
 	}
         commitBAT.insert([bbpname](docBAT.tmark(oid_nil)));
     }
-    # checkpoint the new bats
-    if (pf_checkpoint(commitBAT)) {
-        # remove the in-memory undo log; and trim collection
-        lock_set(pf_short);
-        err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
-        lock_unset(pf_short);
-        if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
-    }
-
     if (count(newcoll) > 0) {
         lock_set(pf_wal);
         log_trans_start(pf_logger);
@@ -2329,6 +2358,15 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         [log_bat_persists](pf_logger, [bat](newcoll), newcoll);
         log_trans_end(pf_logger);
         lock_unset(pf_wal);
+    }
+
+    # checkpoint the new bats
+    if (pf_checkpoint(commitBAT)) {
+        # remove the in-memory undo log; and trim collection
+        lock_set(pf_short);
+        err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
+        lock_unset(pf_short);
+        if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
     }
 }
 

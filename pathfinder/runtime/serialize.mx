@@ -1028,34 +1028,58 @@ process_@1attr (XqueryCtx* ctx, int cont, oid id)
  */
 static bool
 process_node_attr (XqueryCtx* ctx, int cont, oid pre) {
+    BAT *pre_nid, *attr_own_shr, *attr_own_prv, *attr_own_chk;
     hash_t idx;
-    oid base, nid = oid_nil;
+    oid base, nid = oid_nil, *attr_own;
     BUN p, r;
-    BAT *b;
     
     /* translate pre value into nid value */
-    getWsBAT(b, ctx,cont,PRE_NID);
-    BUNfndVOID(p, b, &pre);
+    getWsBAT(pre_nid, ctx,cont,PRE_NID);
+    BUNfndVOID(p, pre_nid, &pre);
     if ( p ) {
-        nid = *(oid*)BUNtail(b,p);
+        nid = *(oid*)BUNtail(pre_nid,p);
     } else {
         fatal_err(ctx,"process_node_attr: "SZFMT" not within ["SZFMT","SZFMT"]", 
-                  (size_t)pre, (size_t)(*(oid*)BUNhead(b,BUNfirst(b))), 
-                  (size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
+                  (size_t)pre, (size_t)(*(oid*)BUNhead(pre_nid,BUNfirst(pre_nid))), 
+                  (size_t)(*(oid*)BUNhead(pre_nid,BUNlast(pre_nid)-BUNsize(pre_nid))));
         return PROBLEM;
     }
 
-    /* look up all the attribute ids for a given nid */
-    getWsBAT(b, ctx, cont, ATTR_OWN);
-    base = b->hseqbase - BUNindex(b, BUNfirst(b));
-    b = BATmirror(b);
-    if (BATprepareHash(b)) {
+    /* look up all the attribute ids for a given nid 
+     * for updatable bats, we had to create a hash table for each serialization (query).
+     * the solution is to use an out-of-date shared attr_own bat with a hash table
+     * in conjunction with a (presumably small) private new part.
+     */
+
+    /* first probe the private (i.e. last) part of the attr table */
+    getWsBAT(attr_own_prv, ctx, cont, ATTR_OWN_PRIVATE);
+    base = attr_own_prv->hseqbase - BUNindex(attr_own_prv, BUNfirst(attr_own_prv));
+    attr_own_prv = BATmirror(attr_own_prv);
+    if (BATprepareHash(attr_own_prv)) {
         fatal_err(ctx,"process_node_attr: hash table creation\n");
         return PROBLEM;
     }
-    HASHloop_oid(b, b->hhash, idx, (ptr)&nid, r) {
+    HASHloop_oid(attr_own_prv, attr_own_prv->hhash, idx, (ptr)&nid, r) {
         oid id = base + idx;
         if ( ! process_attr (ctx, cont, id) )
+            return PROBLEM;
+    }
+
+    /* then check the old shared part that has a hash table. 
+     * results need to be checked against the current version and nils filtered out.
+     */
+    getWsBAT(attr_own_chk, ctx, cont, ATTR_OWN);
+    getWsBAT(attr_own_shr, ctx, cont, ATTR_OWN_SHARED);
+    base = attr_own_shr->hseqbase - BUNindex(attr_own_shr, BUNfirst(attr_own_shr));
+    attr_own = ((oid*) BUNfirst(attr_own_chk)) - base;
+    attr_own_shr = BATmirror(attr_own_shr);
+    if (BATprepareHash(attr_own_shr)) {
+        fatal_err(ctx,"process_node_attr: hash table creation\n");
+        return PROBLEM;
+    }
+    HASHloop_oid(attr_own_shr, attr_own_shr->hhash, idx, (ptr)&nid, r) {
+        oid id = base + idx;
+        if ( attr_own[id] != oid_nil && !process_attr (ctx, cont, id) )
             return PROBLEM;
     }
     return SUCCESS;

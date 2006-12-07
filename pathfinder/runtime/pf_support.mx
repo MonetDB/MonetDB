@@ -635,6 +635,17 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
         return result.access(BAT_READ).tmark(seqbase);
 }
 
+PROC get_attr_own(BAT[void,bat] ws, any nids, any cont) : BAT[oid,oid]
+{
+    var private := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_PRIVATE));
+    var shared := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_SHARED));
+    var hshared := shared.hmark(0@0);
+    var tshared := shared.tmark(0@0);
+    var result := mposjoin(tshared, hshared.leftfetchjoin(cont), ws.fetch(ATTR_OWN)).ord_select(oid_nil,oid_nil);
+    return reverse(reverse(result).leftfetchjoin(hshared)).access(BAT_WRITE).insert(private).access(BAT_READ);
+}
+
+
 PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
             BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
             BAT[void,dbl] dec_values, BAT[void,str] str_values) : void
@@ -2118,28 +2129,28 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     var rid_kind := ws.fetch(_RID_KIND).find(cont);
     var rid_prop := ws.fetch(_RID_PROP).find(cont);
     var rid_nid := ws.fetch(_RID_NID).find(cont);
-    log_delta(pf_logger, ws.fetch(MAP_PID_UPDATE).find(cont).order(), ws.fetch(_MAP_PID).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(RID_SIZE_UPDATE).find(cont).order(), rid_size.bbpname());
-    log_delta(pf_logger, ws.fetch(RID_LEVEL_UPDATE).find(cont).order(), rid_level.bbpname());
-    log_delta(pf_logger, ws.fetch(RID_KIND_UPDATE).find(cont).order(), rid_kind.bbpname());
-    log_delta(pf_logger, ws.fetch(RID_PROP_UPDATE).find(cont).order(), rid_prop.bbpname());
-    log_delta(pf_logger, ws.fetch(RID_NID_UPDATE).find(cont).order(), rid_nid.bbpname());
-    log_delta(pf_logger, ws.fetch(NID_RID_UPDATE).find(cont).order(), ws.fetch(_NID_RID).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(ATTR_QN_UPDATE).find(cont).order(), ws.fetch(_ATTR_QN).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(ATTR_PROP_UPDATE).find(cont).order(), ws.fetch(_ATTR_PROP).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(ATTR_OWN_UPDATE).find(cont).order(), ws.fetch(_ATTR_OWN).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(PROP_VAL_UPDATE).find(cont).order(), ws.fetch(_PROP_VAL).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(PROP_TEXT_UPDATE).find(cont).order(), ws.fetch(_PROP_TEXT).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(PROP_COM_UPDATE).find(cont).order(), ws.fetch(_PROP_COM).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(PROP_INS_UPDATE).find(cont).order(), ws.fetch(_PROP_INS).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(PROP_TGT_UPDATE).find(cont).order(), ws.fetch(_PROP_TGT).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(QN_LOC_UPDATE).find(cont).order(), ws.fetch(_QN_LOC).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(QN_URI_UPDATE).find(cont).order(), ws.fetch(_QN_URI).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(QN_PREFIX_UPDATE).find(cont).order(), ws.fetch(_QN_PREFIX).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(QN_URI_LOC_UPDATE).find(cont).order(), ws.fetch(_QN_URI_LOC).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(QN_PREFIX_URI_LOC_UPDATE).find(cont).order(), ws.fetch(_QN_PREFIX_URI_LOC).find(cont).bbpname());
-    log_delta(pf_logger, ws.fetch(QN_HISTOGRAM_UPDATE).find(cont).order(), ws.fetch(_QN_HISTOGRAM).find(cont).bbpname());
-    var new_page := ws.fetch(NEW_PAGE).reverse().uselect(cont).sort();
+    log_delta(pf_logger, ws.fetch(MAP_PID_UPDATE).find(cont), ws.fetch(_MAP_PID).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(RID_SIZE_UPDATE).find(cont), rid_size.bbpname());
+    log_delta(pf_logger, ws.fetch(RID_LEVEL_UPDATE).find(cont), rid_level.bbpname());
+    log_delta(pf_logger, ws.fetch(RID_KIND_UPDATE).find(cont), rid_kind.bbpname());
+    log_delta(pf_logger, ws.fetch(RID_PROP_UPDATE).find(cont), rid_prop.bbpname());
+    log_delta(pf_logger, ws.fetch(RID_NID_UPDATE).find(cont), rid_nid.bbpname());
+    log_delta(pf_logger, ws.fetch(NID_RID_UPDATE).find(cont), ws.fetch(_NID_RID).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(ATTR_QN_UPDATE).find(cont), ws.fetch(_ATTR_QN).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(ATTR_PROP_UPDATE).find(cont), ws.fetch(_ATTR_PROP).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(ATTR_OWN_UPDATE).find(cont), ws.fetch(_ATTR_OWN).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_VAL_UPDATE).find(cont), ws.fetch(_PROP_VAL).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_TEXT_UPDATE).find(cont), ws.fetch(_PROP_TEXT).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_COM_UPDATE).find(cont), ws.fetch(_PROP_COM).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_INS_UPDATE).find(cont), ws.fetch(_PROP_INS).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_TGT_UPDATE).find(cont), ws.fetch(_PROP_TGT).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_LOC_UPDATE).find(cont), ws.fetch(_QN_LOC).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_URI_UPDATE).find(cont), ws.fetch(_QN_URI).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_PREFIX_UPDATE).find(cont), ws.fetch(_QN_PREFIX).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_URI_LOC_UPDATE).find(cont), ws.fetch(_QN_URI_LOC).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_PREFIX_URI_LOC_UPDATE).find(cont), ws.fetch(_QN_PREFIX_URI_LOC).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_HISTOGRAM_UPDATE).find(cont), ws.fetch(_QN_HISTOGRAM).find(cont).bbpname());
+    var new_page := ws.fetch(NEW_PAGE).reverse().ord_uselect(cont).sort();
     new_page@batloop() {
       var start := oid(lng($h) << REMAP_PAGE_BITS);
       var end := oid(lng(start) + REMAP_PAGE_MASK);
