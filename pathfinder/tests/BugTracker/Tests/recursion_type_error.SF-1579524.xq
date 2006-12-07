@@ -1,9 +1,9 @@
-declare function recursiveActor($destinations as xs:string*, $actor as xs:string) as node()
+declare function recursiveActor($destinations as xs:string*, $actor as xs:string) as node()*
 {
 let $db := <film><filmName>x</filmName><actorName>Sean Connery</actorName></film>
 let $val := $db//filmName[../actorName=$actor]
 let $cnt := count($destinations)
-let $pos := ($cnt / 2) cast as xs:integer
+let $pos := ($cnt div 2) cast as xs:integer
 let $dsts1 := subsequence($destinations, 1, $pos)
 let $dsts2 := subsequence($destinations, $pos+1)
 return
