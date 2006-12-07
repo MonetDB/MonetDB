@@ -634,7 +634,8 @@ copts.produceHelpMessage()
 						out.println("Available commands:");
 						out.println("\\q      quits this program");
 						out.println("\\h      this help screen");
-						out.println("\\d      list available tables and views");
+						if (dbmd != null)
+							out.println("\\d      list available tables and views");
 						out.println("\\d<obj> describes the given table or view");
 						out.println("\\l<uri> executes the contents of the given file or URL");
 						out.println("\\i<uri> batch executes the inserts from the given file or URL");
@@ -704,9 +705,8 @@ copts.produceHelpMessage()
 							out.flush();
 							System.err.println("Error: " + e.getMessage());
 						}
-					} else if (dbmd != null && (
-							qp.getQuery().startsWith("\\l") ||
-							qp.getQuery().startsWith("\\i")))
+					} else if (qp.getQuery().startsWith("\\l") ||
+							qp.getQuery().startsWith("\\i"))
 					{
 						String object = qp.getQuery().substring(2).trim();
 						if (scolonterm && object.endsWith(";"))
