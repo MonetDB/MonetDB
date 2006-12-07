@@ -333,7 +333,7 @@ returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.
 @= ll_upwards
 .COMMAND ll_@1(BAT[oid,oid] iter,
                    BAT[oid,oid] ctx,
-                   BAT[oid,int] pre_size): BAT[oid,oid] = PFll_@1;
+                   BAT[oid,int] pre_size, BAT[oid,chr] pre_level): BAT[oid,oid] = PFll_@1;
 "PARAMETERS:
 BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
@@ -1116,7 +1116,8 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
 {
     # "order" is not (yet?) used, here.
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
-    var res := ll_@1(iter.chk_order(), ctx.chk_order(), pre_sizes);
+    var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
+    var res := ll_@1(iter.chk_order(), ctx.chk_order(), pre_sizes, pre_levels);
     return new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 }
 @
@@ -1677,7 +1678,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
       }
       if (nid_rid.exist(from_nid)) {
         # it's an old node, we can use ll_ancestor to find ancestors
-        ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(swizzle(nid_rid.find(from_nid), map_pid)), pre_size));
+        ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(swizzle(nid_rid.find(from_nid), map_pid)), pre_size, pre_level));
         ancestors_nid := ancestors_oldpre.join(pre_nid);
         ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
         ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
@@ -2103,7 +2104,8 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     var anc_newsize := ancestor_rid.leftjoin(ws.fetch(RID_SIZE_UPDATE).find(cont));
     var anc_mstsize := ancestor_rid.leftjoin(ws.fetch(_RID_SIZE).find(cont));
     var anc_updsize := [+]([-](anc_newsize, anc_oldsize), anc_mstsize);
-    ws.fetch(RID_SIZE_UPDATE).find(cont).myupdate(anc_updsize);
+    var rid_updsize := reverse(ancestor_rid).leftfetchjoin(anc_updsize);
+    ws.fetch(RID_SIZE_UPDATE).find(cont).myupdate(rid_updsize);
   }
 
   # log all changes
@@ -2116,7 +2118,7 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     var rid_kind := ws.fetch(_RID_KIND).find(cont);
     var rid_prop := ws.fetch(_RID_PROP).find(cont);
     var rid_nid := ws.fetch(_RID_NID).find(cont);
-    log_delta(pf_logger, ws.fetch(MAP_PID_UPDATE).find(cont), ws.fetch(_MAP_PID).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(MAP_PID_UPDATE).find(cont).order(), ws.fetch(_MAP_PID).find(cont).bbpname());
     log_delta(pf_logger, ws.fetch(RID_SIZE_UPDATE).find(cont).order(), rid_size.bbpname());
     log_delta(pf_logger, ws.fetch(RID_LEVEL_UPDATE).find(cont).order(), rid_level.bbpname());
     log_delta(pf_logger, ws.fetch(RID_KIND_UPDATE).find(cont).order(), rid_kind.bbpname());
@@ -2710,7 +2712,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           # yet consistent with the new situation, that is not a
           # problem, since we're only looking at sizes of data before
           # the insertion point.
-          var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor_or_self(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(docinsertafter_oldpre), pre_size));
+          var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor_or_self(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(docinsertafter_oldpre), pre_size, pre_level));
           var ancestors_nid := ancestors_oldpre.join(pre_nid);
           var ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
           var ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
@@ -2803,7 +2805,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
 
         {
           # the document collection node (0@0) is ancestor to everybody but not returned by ll_ancestor
-          var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor_or_self(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(docinsertafter_oldpre), pre_size));
+          var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor_or_self(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(docinsertafter_oldpre), pre_size, pre_level));
           var ancestors_nid := ancestors_oldpre.join(pre_nid);
           var ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
           var ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);

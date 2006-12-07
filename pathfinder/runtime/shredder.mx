@@ -1402,6 +1402,7 @@ shredder_create(char *location,
         shredBAT *sb = &shredCtx->dstBAT[i];
         sb->def = &shredbatdef[i];
         sb->dupl = 0;
+        sb->size = 0;
 
         if (shredCtx->incremental) {
             /* be very picky with the BATs in docBAT: check, check and check  */
@@ -1468,7 +1469,7 @@ shredder_create(char *location,
             if ((i == PRE_NID || i == NID_RID || i == MAP_PID) && pageFree) {
                 tt = TYPE_oid;
             }
-            sb->bat = BATnew(ht, tt, (sb->def->sizeFact * shredCtx->estSize));
+            sb->bat = BATnew(ht, tt, BATTINY);
             if (tt == TYPE_void) BATseqbase(BATmirror(sb->bat), 0);
             BATseqbase(sb->bat, 0);
         }
@@ -1477,9 +1478,14 @@ shredder_create(char *location,
             return shredder_free(shredCtx,0);
         }
 
-        /* make sure the bat is at least as big as its leader (that is later used to check overflow) */
+        /* estimate the tab_size (i.e. the size of the leader) if not yet done */
         oid tab_size = shredCtx->dstBAT[sb->def->table].size;
-        if (sb->size < tab_size) {
+        if (tab_size == 0) {
+            tab_size = BATcount(sb->bat) + (sb->def->sizeFact * shredCtx->estSize);
+        }
+        /* make sure the bat is at least as big as its leader (that is later used to check overflow) */
+        oid cur_size = ((sb->bat->batBuns->base + sb->bat->batBuns->size) - BUNfirst(sb->bat))/BUNsize(sb->bat);
+        if (cur_size < tab_size) {
             sb->size = BATcount(sb->bat);
             if (!shredBAT_extend(sb, tab_size)) return shredder_free(shredCtx, 0);
         }

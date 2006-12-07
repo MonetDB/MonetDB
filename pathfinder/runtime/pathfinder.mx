@@ -51,8 +51,8 @@
 
 .BUILTIN xquery(mode str, xquery str, is_url bit) : str = CMDxquery;
  "xquery execution. parameters: mode, query, is_url (optional)
- usage:  var result := xquery(\"xml\", \"1+1\", false); printf(result);
- or:  printf(xquery(\"xml\", \"1+1\"));"
+ usage:  var result := xquery(\"xml\", \"1+1\", false); printf(\"%s\",result);
+ or:  printf(\"%s\",xquery(\"xml\", \"1+1\"));"
 
 .COMMAND xquery_start_query_cache(lng maxsize) : void = CMDxquery_start_query_cache; 
  "Cached xquery clients use the query plan cache (also flushes the cache when called). if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
@@ -627,6 +627,7 @@ PROC _collection_cleanup() : BAT[str,str]
             collection_name.delete(coll_oid); 
             collection_size.delete(coll_oid);
             commitBAT.insert([+](str(int(coll_oid)), ws_dsk.reverse().mirror()));
+            commitBAT.insert("_qn_nid", +(str(int(coll_oid)), "_qn_nid"));
          } else {
             # recall the ws-ids that blocked deletion of a collection 
             collection_zombie.append([abs](reverse(project(users,$h))));
@@ -650,7 +651,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
             log_trans_end(pf_logger);
             lock_unset(pf_wal);
         }
-        delBAT.kdiff(reverse(logger_bats))@batloop() {
+        delBAT@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
         }
         pf_checkpoint(commitBAT);
@@ -906,7 +907,7 @@ highly "conflicting" query loads avoid putting the system in "thrashing" mode.
 
 @- Document Management Queries 
 A read-only query executes the following phases:
-(0) ws_create(false)
+(0) ws_create(3)
 (1) query execution. this produces an statement tape.
 (2) ordering and playing the statement tape for each kind of 
     statement (first del_doc, then add_doc).
@@ -916,7 +917,7 @@ A read-only query executes the following phases:
 
 @- Read-only Queries 
 A read-only query just executes the following phases:
-(0) ws_create(false)
+(0) ws_create(0)
 (1) query execution. 
 (2) ws_destroy()
 
@@ -957,6 +958,7 @@ PROC _shredlock_unset(str colname,
     var shred_lock := colname_shredlock.find(colname);
     lock_unset(shred_lock);
     colname_pins.delete(colname, -(wsid));
+    colname_shredlock.delete(colname, shred_lock);
 }
 
 PROC coll_lock_set(BAT[void,bat] ws, 
@@ -1166,7 +1168,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         var unq := ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd)));
         var page_ws := empty_bat;
         var attr_ws := empty_bat;
-        idx := __runtime_index(nid, knd, prp, unq, 0@0, isolate);
+        idx := __runtime_index(coll_oid, nid, knd, prp, unq, 1@0, isolate);
         ins := empty_bat;
         del := empty_bat;
         if (runtime != empty_runtime) { # a non temporary document
@@ -1369,24 +1371,36 @@ PROC _runtime_get(str colname) : BAT[lock,bat]
 # double-underscore __X() means we must have the RT_LOCK_FREELIST of this collection
 
 # this computes a new QN_NID index for a suffix of the PRE-table
-PROC __runtime_index(BAT[void,oid] nid, 
+PROC __runtime_index(oid coll_oid,
+                     BAT[void,oid] nid, 
                      BAT[void,chr] knd, 
                      BAT[void,oid] prp, 
-                     BAT[oid,void]  unq, 
+                     BAT[oid,void] unq, 
                      oid pre, bit updatable) : BAT[oid,oid] 
 {
+    # look if we have it already (readonly case)
+    var nme := str(lng(coll_oid)) + "_qn_nid";
+    if (not(updatable)) { 
+        var b, err := CATCH(b := reverse(reverse(bat(nme))));
+        if (isnil(err)) return b;
+    }
+
     # compute the index bat for all nodes of the document from 'pre' on
         knd := knd.reverse().ord_select(pre,oid_nil).reverse(); # limit to a certain pre-range
     var idx := knd.ord_uselect(ELEMENT).mirror();   # get [pre,pre] (some false non-ELEM hits)
         idx := idx.leftfetchjoin(prp);              # get [pre,qn], in pre-order
         idx := reverse(idx.leftjoin(unq.mirror())); # get [qn,pre], in pre-order
         idx := idx.leftfetchjoin(nid);              # [qn,nid] still in pre-order
-    if (updatable) 
+    if (updatable) { 
         (idx := idx.access(BAT_WRITE)).accbuild("hash");
-    else
+    } else {
         idx := idx.ssort().access(BAT_READ);        # [qn,nid] now lexico-ordered (thanks to stable-sort)
+        idx.rename(nme).mmap(1).persists(true);
+        if (pre = 1@0) CATCH(pf_checkpoint(bat(void,str).append(nme))); # immediate commit
+    }
     return idx; # [qn,nid]
 }
+
 
 # worker function to handle inserts and deletes in the index
 PROC __runtime_maintain(lng wsid, 
@@ -1414,7 +1428,7 @@ PROC __runtime_maintain(lng wsid,
     }
     # store the new size in the UNQ seqbase
     runtime.fetch(RT_QN_NID_UNQ).reverse().seqbase(oid(totsize));
-    
+
     # mark the region index invalid
     # for now, we don't try to maintain it over updates
     # any subsequent queries need to first recreate the index
@@ -1428,17 +1442,41 @@ PROC __runtime_maintain(lng wsid,
 # used by shred: incremental shred on an already index document must maintain it (i.e. add new nodes)
 PROC __runtime_addchunk(lng wsid, 
                         str colname, 
+                        oid coll_oid, 
                         BAT[lock,bat] runtime, 
                         BAT[void,oid] nid, 
                         BAT[void,chr] knd, 
                         BAT[void,oid] prp, 
                         oid pre,
-                        bit updatable) : void 
+                        bit updatable) : str 
 {
-    if (count(runtime) > RT_QN_NID) { # only maintain if the index is instantiated now anyway
-        var idx := __runtime_index(nid, knd, prp, runtime.fetch(RT_QN_NID_UNQ), pre, updatable);
-        __runtime_maintain(wsid, colname, runtime, idx, empty_bat, empty_bat);
+    var maintain := (count(runtime) > RT_QN_NID);
+    var commitbat := str(lng(coll_oid)) + "_qn_nid";
+    var unq := empty_bat; 
+
+    if (updatable) {
+        # if updatable index exists, we must maintain it
+        if (maintain) unq := runtime.fetch(RT_QN_NID_UNQ);
+        commitbat := str_nil; # no new persistent bats 
+    } else if (pre = 0@0) { 
+        # first shred (readonly) automatically creates persistent sorted index
+        var cnt := bat(str(lng(coll_oid)) + "_qn_histogram");
+        unq := ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd)));
+    } else if (maintain) {
+        # incremental readonly shred with existing indices: deactivate them
+        var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+        runtime.delete().insert(coll_lock,empty_bat);
+        CATCH(bat(commitbat).persists(false).rename(commitbat :+= "_old")); # delete idx in commit
+    } else {
+        commitbat := str_nil; # incremental readonly shred, but no index to delete
     }
+    if (int(unq) != int(empty_bat)) {
+        # compute a (partial) [qn,nid] inverted list, and insert in into the index
+        var idx := __runtime_index(coll_oid, nid, knd, prp, unq, pre, updatable);
+        if (updatable)  
+            __runtime_maintain(wsid, colname, runtime, idx, empty_bat, empty_bat);
+    }
+    return commitbat;
 }
 
 
@@ -2001,12 +2039,17 @@ PROC ws_opendoc(BAT[void,BAT] ws,
     var idx_cont := idx_open.leftfetchjoin(ws.fetch(OPEN_CONT));
     var idx_doc  := idx_open.leftfetchjoin(ws.fetch(OPEN_DOCID));
     var idx_root := idx_cont.project(oid_nil).access(BAT_WRITE);
-    tunique(idx_cont)@batloop() {
+    kunique(reverse(idx_cont))@batloop() {
         var frag_root  := ws.fetch(FRAG_ROOT).fetch($h);
         var nid_rid    := ws.fetch(NID_RID).fetch($h);
         var map_pid    := ws.fetch(MAP_PID).fetch($h);
-        var selidx_nid := mirror(idx_cont.ord_uselect($h)).leftfetchjoin(idx_doc).leftjoin(frag_root);
-        idx_root.replace(selidx_nid.leftfetchjoin(nid_rid).[swizzle](map_pid));
+        var selidx_rid := mirror(idx_cont.ord_uselect($h)).leftfetchjoin(idx_doc).leftjoin(frag_root).outerjoin(nid_rid);
+
+        # we may find a doc in an already open coll, that was not there when we first opened it (concurrent incremental shred)
+        if (selidx_rid.texist(oid_nil)) # unknown root nid will lead to rid=nil
+            ERROR("ws_opendoc(collection %s was added to the repository concurrently.", idx_names.find($t));
+       
+        idx_root.replace(selidx_rid.[swizzle](map_pid));
     }
     return reverse(idx_root).leftfetchjoin(idx_cont);
 }
@@ -2117,6 +2160,7 @@ PROC _shred_into_docBAT(BAT[str,bat] docBAT,
 # finish the master bats while holding the collection lock
 PROC __shred_into_docBAT(BAT[str,bat] docBAT, 
                          str colname, 
+                         oid coll_oid, 
                          oid docid_base, 
                          BAT[lock,bat] runtime,
                          oid pre, 
@@ -2128,8 +2172,10 @@ PROC __shred_into_docBAT(BAT[str,bat] docBAT,
     root_frag.replace(root_frag.ord_uselect(TEMP_DOC).mark(docid_base), true);
 
     # index the new document(s)
-    if (runtime != empty_runtime) 
-      __runtime_addchunk(wsid, colname, runtime, docBAT.fetch(PRE_NID), docBAT.fetch(PRE_KIND), docBAT.fetch(PRE_PROP), pre, updatable);
+    if (runtime != empty_runtime) {
+        var commitbat := __runtime_addchunk(wsid, colname, coll_oid, runtime, docBAT.fetch(PRE_NID), docBAT.fetch(PRE_KIND), docBAT.fetch(PRE_PROP), pre, updatable);
+        if (not(isnil(commitbat))) docBAT.insert(commitbat, bat(commitbat)); 
+    }
 }
 
 
@@ -2180,7 +2226,7 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
     # finish the shred (set doc_oids in FRAG_ROOT, and maintain the nsloc index)
     var protect := not(isnil(coll_lock));
     if (protect) lock_set(coll_lock); # never lock a collection inside the short lock
-    err := CATCH(__shred_into_docBAT(docBAT, colname, docid_base, runtime, pre, >(pageFree,0LL), wsid));
+    err := CATCH(__shred_into_docBAT(docBAT, colname, coll_oid, docid_base, runtime, pre, >(pageFree,0LL), wsid));
     if (protect) lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
 
@@ -2252,9 +2298,8 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
 
         if (isnil(coll_oid)) {
             docBAT := bat(str,bat,count(idx)); # new collection
-        } else {
-            docBAT := [bat]([+](str(int(coll_oid)), ws_dsk).reverse().mirror()); # append to existing 
-
+        } else { # append to existing 
+            docBAT := [bat]([+](str(int(coll_oid)), ws_dsk).reverse().mirror()).access(BAT_WRITE); 
         }
         # now shred all documents for one collection
         shred_into_docBAT(docBAT, 

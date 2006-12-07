@@ -354,12 +354,12 @@ PFns_eq (PFns_t ns1, PFns_t ns2)
  * At the same time, we remove such namespace declaration attributes here.
  *
  * @param c  owning element content node
- * @param cc parent of owning element content node
  */
 static void
-collect_xmlns (PFpnode_t *c, PFpnode_t **cc)
+collect_xmlns (PFpnode_t *c)
 {
     PFpnode_t *a;
+    PFpnode_t *next = R(c);
 
     assert (c);
   
@@ -409,8 +409,13 @@ collect_xmlns (PFpnode_t *c, PFpnode_t **cc)
                                                .uri    = RL(a)->sem.str });
 
                             /* finally remove this NS declaration attribute */
-                            assert (cc);
-                            *cc = R(c);
+                            *c = *R(c);
+                            
+                            /*
+                             * visit the "same" node again in the next
+                             * iteration (we have just overwritten it)
+                             */
+                            next = c;
                         }
                         else
                             PFoops_loc (OOPS_BADNS, L(a)->loc,
@@ -475,8 +480,13 @@ collect_xmlns (PFpnode_t *c, PFpnode_t **cc)
                             }
 
                             /* finally remove this NS declaration attribute */
-                            assert (cc);
-                            *cc = R(c);
+                            *c = *R(c);
+
+                            /*
+                             * visit the "same" node again in the next
+                             * iteration (we have just overwritten it)
+                             */
+                            next = c;
                         }
                     }
                 }
@@ -487,7 +497,7 @@ collect_xmlns (PFpnode_t *c, PFpnode_t **cc)
             return;
     }
 
-    collect_xmlns (R(c), &(R(c)));
+    collect_xmlns (next);
 }
 
 /**
@@ -839,7 +849,7 @@ ns_resolve (PFpnode_t *n)
             PFns_map_t *old_ns = copy_ns_env (stat_known_ns);
 
             assert (R(n));
-            collect_xmlns (R(n), &(R(n)));
+            collect_xmlns (R(n));
 
             /*
              * if element comes with a literal tag name resolve NS usage,

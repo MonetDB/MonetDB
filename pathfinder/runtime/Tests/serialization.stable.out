@@ -65,6 +65,7 @@ xquery("xml-noheader"   ,query , 0).printf();
 
 # does not work for xml-typed mode
 xquery("xml-noroot"     ,query , 0).printf();
+<?xml version="1.0" encoding="utf-8"?>
 1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
 
 # does not work for xml-typed mode
@@ -105,9 +106,9 @@ xquery("mapi-dm"        ,query , 0).printf();
 
 # data model in tabular representation
 #
-xquery("seq"            ,query , 0).printf();
+printf("%s",xquery("seq"            ,query , 0));
 &1 0 10 1 10
-% xquery_result	# table_name
+% xquery.result	# table_name
 % xml	# name
 % varchar	# type
 % 60	# length

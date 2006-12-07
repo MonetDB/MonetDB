@@ -153,6 +153,7 @@ ll_upwards_@1(                            /* OUTPUT: */
         oid* bounds, oid** iter_stack,    /* - per iter bound */ 
                                           /* DOCUMENT: */
         unsigned int* pre_size,           /* - pre_size column */
+        unsigned char* pre_level,         /* - pre_level column */
         oid limit,                        /* - valid range of pre ids in the document */
                                           /* INPUT: */
         oid min_iter,                     /* - minimum iter */      
@@ -168,6 +169,7 @@ ll_upwards_@1(                            /* OUTPUT: */
    (void) result_size;
    (void) min_iter;
    (void) iter_stack;
+   (void) pre_level;
 
     /* we perform a forwards scan with skipping, that carries out an *optimal* 
      * depth-first DOM tree traversal (where we visit nodes only if needed)
@@ -197,12 +199,27 @@ ll_upwards_@1(                            /* OUTPUT: */
   	    if (pre > limit) break; /* SANITY */
             root = pre;
 
+	
         } else if (context[cur].pre <= stack[depth-1] + pre_size[stack[depth-1]]) {
 
-            /* none of the above, but next context node is in the descendants of the parent */
-            pre = skipholes(pre + pre_size[pre] + 1, pre_size); /* go to the next sibling */
-  	    if (pre > limit) break; /* SANITY */
+            /* not in the branch that is on the stack => pop it */
+            oid off = pre;
+            int budget = PF_SIBLING_PROBES;
+            int cnt = 0;
 
+            /* in the branch that is on the stack, but in some sibling that we need to find */
+            while(pre + pre_size[pre] < context[cur].pre) {
+                pre = skipholes(pre + pre_size[pre] + 1, pre_size); /* skip from sibling to sibling */
+  	        if (pre > limit) break; /* SANITY */
+  	        if (++cnt == budget) {
+                    oid old = pre;
+                    pre = speculate_skip(pre, context[cur].pre, pre-off, budget, pre_size, pre_level); 
+                    if (pre == old) { 
+                         off = pre; budget += budget; /* skip failed: wait longer next time */
+                    }
+                    cnt = 0;
+                }
+            }
         } else {
 
             /* pop the stack */
@@ -213,6 +230,42 @@ ll_upwards_@1(                            /* OUTPUT: */
 }
 
 @c
+#define PF_SIBLING_PROBES 32
+
+/* If an XML is regularly structured (contains "list" or "table" like data) such that we have
+ * a subtree with very many siblings, the upwards steps will have to touch all the preceding
+ * siblings, if some context node is in that subtree. In some trees, there may be O(N) preceding
+ * siblings. Given that the expected parent/ancestor result for such trees is very small (<= O(log(N))), 
+ * this is far from optimal.
+ *
+ * Thus, we added code that after traversing some number of siblings, speculatively tries
+ * to skip siblings. To recognize such speculative siblings, we also need the level column.
+ * We take care not to waste more time speculating than we already did traversing preceding siblings. 
+ */
+static oid
+speculate_skip(oid pre, oid dst, oid skip, int budget, unsigned int* pre_size, unsigned char* pre_level) {
+    if (pre + skip < dst) {
+        oid cur = skipholes(pre+skip, pre_size);
+        int cnt = 0, depth = pre_level[pre];
+        while(cur < dst) {
+            if (pre_level[cur] == depth) {
+                pre = cur; /* we found a sibling, without seeing all intermediate siblings!! */
+                /* now go for more.. double skip distance, speculation budget */
+                skip += skip; 
+                budget += budget;
+                cur += skip; 
+                cnt = 0;
+                if (cur >= dst) break;
+            } else {
+                cur += pre_size[cur] + 1; /* skip over this deeper node */
+            }
+            cur = skipholes(cur, pre_size);
+            if ((cnt += 2) >= budget) return pre; /* could not find it quickly */
+        }
+    }
+    return pre;
+}
+
 @:upwards_core(parent)@
 @:upwards_core(ancestor_cnt)@
 @:upwards_core(ancestor_gen)@
@@ -225,6 +278,7 @@ ll_upwards(               /* RESULT: */
         BAT *ctx_bat,     /* - [void,oid] bat, synced with iter_bat */
                           /* DOCUMENT: */
         BAT *size_bat,    /* - [void,int] bat, doc representation with holes */ 
+        BAT *level_bat,   /* - [void,chr] bat, doc representation with holes */ 
         str axis) 
 { 
     oid killed = (axis == LL_UPWARDS_ANCESTOR_SELF)?oid_nil:1; /* 1=root of first fragment */
@@ -232,6 +286,7 @@ ll_upwards(               /* RESULT: */
     oid i=0, k = BUNsize(iter_bat), n = BUNsize(ctx_bat), m = BATcount(ctx_bat);
     BUN p = BUNfirst(iter_bat), q = BUNlast(iter_bat), r = BUNfirst(ctx_bat);
     unsigned int *pre_size = (unsigned int*) BUNfirst(size_bat);
+    unsigned char *pre_level = (unsigned char*) BUNfirst(level_bat);
     duple *context, *context_result, *prune;
     int status = GDK_FAIL;
     BAT *bn = NULL;
@@ -242,6 +297,10 @@ ll_upwards(               /* RESULT: */
     }
     if (BUNsize(size_bat) != sizeof(int) || size_bat->hseqbase || !BAThdense(size_bat)) {
         GDKerror("%s: illegal size bat passed in.\n", axis);
+        return status;
+    }
+    if (BUNsize(level_bat) != sizeof(chr) || level_bat->hseqbase || !BAThdense(level_bat)) {
+        GDKerror("%s: illegal level bat passed in.\n", axis);
         return status;
     }
 
@@ -351,7 +410,7 @@ ll_upwards(               /* RESULT: */
                 if (ll_upwards_parent(
                     context_result = (duple*) BUNfirst(bn), n, 
                     bounds, iter_stack+1, 
-                    pre_size,
+                    pre_size, pre_level,
                     BATcount(size_bat), 
                     min_iter, context, n))
                 {
@@ -378,7 +437,7 @@ ll_upwards(               /* RESULT: */
         if (ll_upwards_ancestor_cnt(
                  context_result, n, 
                  bounds, NULL,
-                 pre_size,
+                 pre_size, pre_level,
                  BATcount(size_bat), 
                  min_iter, context, n))
         {
@@ -418,7 +477,7 @@ ll_upwards(               /* RESULT: */
 		if (ll_upwards_ancestor_gen(
                         context_result, m,
                         (oid*) BUNfirst(bn), NULL, /* HACK, pass result as bounds */ 
-                        pre_size,
+                        pre_size, pre_level,
                         BATcount(size_bat), 
                         min_iter, context, n)) 
                 {
@@ -452,16 +511,16 @@ ll_upwards(               /* RESULT: */
 }
 
 int
-PFll_parent(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size) { 
-    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, LL_UPWARDS_PARENT);
+PFll_parent(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *pre_level) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, pre_level, LL_UPWARDS_PARENT);
 }
 
 int
-PFll_ancestor(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size) { 
-    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, LL_UPWARDS_ANCESTOR);
+PFll_ancestor(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *pre_level) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, pre_level, LL_UPWARDS_ANCESTOR);
 }
 
 int
-PFll_ancestor_or_self(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size) { 
-    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, LL_UPWARDS_ANCESTOR_SELF);
+PFll_ancestor_or_self(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *pre_level) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, pre_level, LL_UPWARDS_ANCESTOR_SELF);
 }
