@@ -77,7 +77,7 @@ QUERY = let $items := fn:subsequence(fn:doc("test1280519.xml")//Asset, 1, 100)
           where $asset/TrackNr = 1
           return <Result><Album> { $album/Title }
         </Album><Track> { $asset/Title } </Track></Result>
-ERROR = !type error: casting is only allowed to an atomic type
+ERROR = !type error: err:XPTY0004: casting is only allowed to an atomic type
         !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/semantics/typecheck.brg (reduce), line 1038
 
 # 16:05:49 >  
