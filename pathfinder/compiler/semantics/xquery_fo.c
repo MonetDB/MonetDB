@@ -301,7 +301,8 @@ PFfun_xquery_fo ()
       { .ns = PFns_fn, .loc = "exists",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ()) },
-            .ret_ty = PFty_xs_boolean () } } }
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_fn_exists }
     , /* fn:not (boolean) as boolean  (F&O 7.3.1) */
       { .ns = PFns_fn, .loc = "not",
         .arity = 1, .sig_count = 1, .sigs = { {

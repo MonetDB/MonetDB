@@ -1869,6 +1869,47 @@ PFbui_fn_empty (const PFla_op_t *loop __attribute__((unused)),
 }
 
 /**
+ * Algebra implementation for <code>fn:exists(item*)</code>.
+ *
+ *            env,loop,delta: e1 => (q1, delta1)
+ *  ---------------------------------------------------------------------
+ *             env,loop,delta: fn:exists (e1) =>
+ * (
+ *  / //                      itm\     /                        itm\\    pos \
+ * | || dist (proj_iter q1) X --- | U | (loop \ proj_iter q1) X --- || X ---  |
+ *  \ \\                      tru/     \                        fal//     1  /
+ * ,
+ *  delta1
+ * )
+ */
+struct PFla_pair_t
+PFbui_fn_exists (const PFla_op_t *loop __attribute__((unused)),
+                 bool ordering,
+                 struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    return (struct PFla_pair_t) {
+	.rel = attach (
+               disjunion (
+                   attach (
+                       distinct (project (args[0].rel,
+                                 proj (att_iter, att_iter))),
+                       att_item, lit_bln (true)),
+                   attach (
+                       difference (
+                           loop,
+                           project (args[0].rel,
+                                    proj (att_iter, att_iter))),
+                       att_item, lit_bln (false))),
+               att_pos, lit_nat (1)),
+	.frag = PFla_empty_set ()};
+}
+
+/**
  * Algebra implementation for op:is-same-node (node?, node?)
  * @see bin_arith()
  */
