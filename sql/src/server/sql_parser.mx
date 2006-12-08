@@ -352,6 +352,7 @@ int yydebug=1;
 	trigger_event
 	opt_when
 	procedure_statement
+	trigger_procedure_statement
 	if_opt_else
 	func_data_type
 
@@ -439,6 +440,7 @@ int yydebug=1;
 	old_or_new_values_alias
 	triggered_statement
 	procedure_statement_list
+	trigger_procedure_statement_list
 	argument_list
 	when_statements
 	when_search_statements
@@ -1715,6 +1717,12 @@ procedure_statement_list:
     procedure_statement SCOLON 	{ $$ = append_symbol($1,$2);}
  ;
 
+trigger_procedure_statement_list:
+    /* empty*/ 	 { $$ = L(); }
+ |  trigger_procedure_statement_list 
+    trigger_procedure_statement SCOLON 	{ $$ = append_symbol($1,$2);}
+ ;
+
 procedure_statement:
 	transaction_statement
     |	update_statement
@@ -1724,6 +1732,17 @@ procedure_statement:
     | 	create_statement
     |	drop_statement
     |	alter_statement
+    |   declare_statement
+    |   set_statement
+    |	control_statement
+    |   select_statement_single_row
+    ;
+
+trigger_procedure_statement:
+	transaction_statement
+    |	update_statement
+    | 	grant
+    | 	revoke
     |   declare_statement
     |   set_statement
     |	control_statement
@@ -2055,13 +2074,13 @@ row_or_statement:
 
 opt_when:
     /* empty */ 			{ $$ = NULL; }
- |  WHEN '(' search_condition ')' 	{ $$ = $3; }
+ |  WHEN  search_condition  	{ $$ = $2; }
  ;
 
 triggered_statement:
-    procedure_statement		{ $$ = append_symbol(L(), $1); }
+    trigger_procedure_statement		{ $$ = append_symbol(L(), $1); }
  |  BEGIN ATOMIC 
-    procedure_statement_list 
+    trigger_procedure_statement_list 
     END 			{ $$ = $3; }
  ;
 
