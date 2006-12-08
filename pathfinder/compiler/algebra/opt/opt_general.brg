@@ -273,11 +273,13 @@ EmptyRel:    seqty1 (EmptyRel)                    = 165  (0);
 EmptyRel:    all (EmptyRel)                       = 166  (0);
 EmptyRel:    scjoin (Frag, EmptyRel)              = 170  (0);
 EmptyRel:    doc_access (Frag, EmptyRel)          = 171  (0);
+
+EmptyRel:    roots_ (doc_tbl (EmptyRel))          = 180  (0);
 EmptyRel:    roots_ (element (Frag, 
                               element_tag (EmptyRel,
-                                          Rel)))  = 180  (0);
+                                          Rel)))  = 181  (0);
 EmptyRel:    roots_ (attribute (EmptyRel))        = 182  (0);
-EmptyRel:    roots_ (textnode (EmptyRel))         = 184  (0);
+EmptyRel:    roots_ (textnode (EmptyRel))         = 183  (0);
 EmptyRel:    roots_ (comment (EmptyRel))          = 185  (0);
 EmptyRel:    roots_ (processi (EmptyRel))         = 186  (0);
 EmptyRel:    roots_ (merge_adjacent (Frag,                   
@@ -757,6 +759,9 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    rownum (Rel) */
         case 50:
+#if 0 
+/* this is only allowed if the numbers do not matter */
+
             /* replace rownum by projection if it only contains one
                sort (and no partioning) criterion that is of type nat */ 
             if (!p->sem.rownum.part &&
@@ -787,6 +792,7 @@ reduce (PFla_op_t *p, int goalnt)
                         break;
                     }
                 }
+#endif
             break;
 
         /* Rel:    number (number (Rel)) */
@@ -1088,12 +1094,14 @@ reduce (PFla_op_t *p, int goalnt)
         case 170:
         /* EmptyRel:    doc_access (Frag, EmptyRel) */
         case 171:
-        /* EmptyRel:    roots_ (element (Frag, element_tag (EmptyRel, Rel))) */
+        /* EmptyRel:    roots_ (doc_tbl (EmptyRel)) */
         case 180:
+        /* EmptyRel:    roots_ (element (Frag, element_tag (EmptyRel, Rel))) */
+        case 181:
         /* EmptyRel:    roots_ (attribute (EmptyRel)) */
         case 182:
         /* EmptyRel:    roots_ (textnode (EmptyRel)) */
-        case 184:
+        case 183:
         /* EmptyRel:    roots_ (comment (EmptyRel)) */
         case 185:
         /* EmptyRel:    roots_ (processi (EmptyRel)) */
