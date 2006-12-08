@@ -12,16 +12,20 @@ where $pt/@partid eq $pl/@partid
 return
   do delete $pl
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-list.xml\")
 ").printf();
 fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-tree.xml\")
 ").printf();
 fflush(stdout());
+fflush(stderr());
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");

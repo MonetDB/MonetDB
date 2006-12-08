@@ -25,6 +25,8 @@ shred_doc(TSTSRCDIR+"/part-tree.xml", "part-tree.xml", "Parts", 9LL);
 xquery("xml","
 do delete doc(\"part-tree.xml\")//part
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-list.xml\")
@@ -43,6 +45,7 @@ fflush(stdout());
   <part name="wheel" partof="10" partid="12"/>
   <part name="canoe" partid="20"/>
 </partlist></XQueryResult>
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-tree.xml\")
@@ -54,6 +57,7 @@ fflush(stdout());
     
     
 </parttree></XQueryResult>
+fflush(stderr());
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");

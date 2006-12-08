@@ -12,16 +12,20 @@ let $next := max(doc(\"part-tree.xml\")//@partid) + 1
        into 
        exactly-one(for $p in doc(\"part-tree.xml\")//part where $p/@partid=0 and $p/@name=\"car\" return $p)
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-list.xml\")
 ").printf();
 fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-tree.xml\")
 ").printf();
 fflush(stdout());
+fflush(stderr());
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");

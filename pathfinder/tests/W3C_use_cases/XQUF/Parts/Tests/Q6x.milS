@@ -13,16 +13,20 @@ for $p in ($parent, $descendants)
 return 
   do replace value of exactly-one($p/@partid) with $i*1000+$p/@partid
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-list.xml\")
 ").printf();
 fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-tree.xml\")
 ").printf();
 fflush(stdout());
+fflush(stderr());
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");
