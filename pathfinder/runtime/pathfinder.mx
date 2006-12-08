@@ -667,6 +667,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
     if (bit(cnt)) {
         var commitBAT := bat(void,str,cnt);
         var logger_delBAT := logger_bats.join(delBAT);
+        # first remove the bats under control off the logger 
         if (logger_delBAT.count() > 0) {
             lock_set(pf_wal);
             log_trans_start(pf_logger);
@@ -675,7 +676,8 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
             log_trans_end(pf_logger);
             lock_unset(pf_wal);
         }
-        delBAT@batloop() {
+        # now remove those not under control off the logger 
+        delBAT.kdiff(reverse(logger_bats))@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
         }
         pf_checkpoint(commitBAT);
@@ -2366,7 +2368,7 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         lock_set(pf_short);
         err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
         lock_unset(pf_short);
-        if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
+        if (not(isnil(err))) CATCH(collection_cleanup(commitBAT)); 
     }
 }
 
