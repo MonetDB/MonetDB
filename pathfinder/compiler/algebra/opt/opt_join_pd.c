@@ -555,7 +555,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         left = L(lp);
                         l_join_col = lp->sem.eqjoin_unq.att1;
                         r_join_col = lp->sem.eqjoin_unq.att2;
-                    } else if (LL(lp) == rp) {
+                    } else if (L(lp)->kind == la_project && LL(lp) == rp) {
                         proj = L(lp);
                         left = R(lp);
                         l_join_col = lp->sem.eqjoin_unq.att2;
