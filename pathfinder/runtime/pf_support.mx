@@ -639,10 +639,25 @@ PROC get_attr_own(BAT[void,bat] ws, any nids, any cont) : BAT[oid,oid]
 {
     var private := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_PRIVATE));
     var shared := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_SHARED));
+    var cnt_p := count(int(private));
+    var cnt_s := count(int(shared));
+    if (cnt_s = 0LL) {
+        # private is all we got.
+        return private;
+    }
     var hshared := shared.hmark(0@0);
     var tshared := shared.tmark(0@0);
-    var result := mposjoin(tshared, hshared.leftfetchjoin(cont), ws.fetch(ATTR_OWN)).ord_select(oid_nil,oid_nil);
-    return reverse(reverse(result).leftfetchjoin(hshared)).access(BAT_WRITE).insert(private).access(BAT_READ);
+    shared := shared.fetch(mposjoin(tshared, hshared.leftfetchjoin(cont), ws.fetch(ATTR_OWN)).ord_uselect(oid_nil,oid_nil));
+    cnt_s := count(int(shared));
+    if (cnt_s = 0LL) {
+        # private is all we got.
+        return private;
+    }
+    if (cnt_p = 0LL) {
+        # shared is all we got.
+        return shared;
+    }
+    return bat(oid,oid,cnt_p + cnt_s).insert(shared).insert(private).access(BAT_READ);
 }
 
 
@@ -5160,7 +5175,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
     /* check result size */
     if (BATcount(pre) > BATcount(bn)) {
 		GDKerror("mposjoin: missing matches. The result requires the "
-                 "same number of tuples as the first two input arguments.");
+                 "same number of tuples as the first two input arguments: "SZFMT" < "SZFMT".", BATcount(bn), BATcount(pre));
 		@:mpos_free_batlist@
 		return GDK_FAIL;
 	}
