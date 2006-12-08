@@ -444,7 +444,7 @@ log_read_updates(logger *logger, trans *tr, logformat *l, char *name)
 				void *h = rh(hv, logger->log, 1);
 				void *t = rt(tv, logger->log, 1);
 
-				if (!h && !t) {
+				if (!h || !t) {
 					res = LOG_ERR;
 					break;
 				}
