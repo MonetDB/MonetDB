@@ -1497,7 +1497,7 @@ sql_delete_triggers(mvc *sql, sql_table *t, stmt *deletes, list *l, list *called
 		int trigger_id = trigger->base.id;
 
 		if (trigger->event == 1 && 
-		   (called_tri && list_find_id(called_tri, trigger_id))) {
+		   (!called_tri || !list_find_id(called_tri, trigger_id))) {
 			scope *scp = scope_open(NULL);
 			stmt *s = NULL;
 	
