@@ -345,6 +345,11 @@ static PFla_op_t *type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop);
 static PFarray_t *fun_args = NULL;
 
 /**
+ * Stack recording the active user-defined functions
+ */
+static PFarray_t *fun_active = NULL;
+
+/**
  * Reducer function. This is the heart of this source file. It
  * contains all the action code for the above burg patterns.
  */
@@ -1935,8 +1940,23 @@ reduce (PFcnode_t * p, int goalnt)
                                 
                 fun_args = old_fun_args;
 
+                /* check active user-defined functions */
+                for (unsigned int i = 0; i < PFarray_last (fun_active); i++)
+                    if (*((PFcnode_t **) PFarray_at (fun_active, i)) ==
+                        p->sem.apply.fun->core)
+                        PFoops (OOPS_FATAL, 
+                                "Algebra implementation cannot cope "
+                                "with recursive functions yet.");
+
+                /* add function to the active ones */ 
+                *((PFcnode_t **) PFarray_add (fun_active)) =
+                    p->sem.apply.fun->core;
+
                 /* (3) Invoke compilation of the function body. */
                 reduce (p->sem.apply.fun->core, 1);
+
+                /* remove function from the active ones */
+                PFarray_del (fun_active);
 
                 A(p) = A(p->sem.apply.fun->core);
             }
@@ -2560,6 +2580,9 @@ PFcore2alg (PFcnode_t *r)
 
     /* Pointer to array of function parameter values */
     fun_args = NULL;
+
+    /* Initialize stack recording the active user-defined functions */
+    fun_active = PFarray (sizeof (PFcnode_t *));
 
     /* label the core tree bottom up */
     PFcore2alg_label (r);
