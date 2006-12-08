@@ -3132,7 +3132,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 else if (L(p)->schema.items[i].name == p->sem.cast.att) {
 
                     unsigned int   parts = 0;
-
+                    mvar_t        *bln_tmp = NULL;
                     v = new_var (p->refctr);
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -3142,6 +3142,74 @@ reduce (PFpa_op_t * p, int goalnt)
 
                             if (t == p->sem.cast.ty)
                                 casted = VAR (L(p)->env, p->sem.cast.att, t);
+                            
+                            else if ((t == aat_str || t == aat_uA) &&
+                                     p->sem.cast.ty == aat_bln) {
+                                /* The cast from string or untypedAtomic
+                                   to boolean is only allowed for a few
+                                   values. Here the values are checked and
+                                   the respective result is returned. */
+                                mvar_t *true_values;
+                                mvar_t *false_values = new_var (1);
+
+                                bln_tmp = new_var (1);
+                                true_values = bln_tmp;
+
+                                /* collect all strings that map to 'true' */
+                                execute (assgn (var (true_values->name),
+                                                meq (VAR (L(p)->env, 
+                                                          p->sem.cast.att,
+                                                          t),
+                                                     lit_str("true"))),
+                                         assgn (var (true_values->name),
+                                                mor (var (true_values->name),
+                                                     meq (VAR (L(p)->env, 
+                                                               p->sem.cast.att,
+                                                               t),
+                                                          lit_str("1")))),
+                                /* collect all strings that map to 'false' */
+                                         assgn (var (false_values->name),
+                                                meq (VAR (L(p)->env, 
+                                                          p->sem.cast.att,
+                                                          t),
+                                                     lit_str("false"))),
+                                         assgn (var (false_values->name),
+                                                mor (var (false_values->name),
+                                                     meq (VAR (L(p)->env, 
+                                                               p->sem.cast.att,
+                                                               t),
+                                                          lit_str("0")))),
+                                /* generate an error message for all other 
+                                   strings */
+                                         if_ (
+                                             exist (
+                                                 reverse (
+                                                     mor (
+                                                         var (
+                                                             true_values->name),
+                                                         var (
+                                                             false_values->name)
+                                                         )),
+                                                 lit_bit (false)),
+                                             
+                                             error (
+                                                 t == aat_uA
+                                                 ? lit_str ("err:FORG0001. "
+                                                            "casting from "
+                                                            "untypedAtomic "
+                                                            "to boolean "
+                                                            "failed.")
+                                                 : lit_str ("err:FORG0001. "
+                                                            "casting from "
+                                                            "string to "
+                                                            "boolean failed.")
+                                                 ),
+                                             nop ()));
+                                
+                                casted = var (true_values->name);
+                                /* note: casted == bln_tmp */
+                                unpin (false_values, 1);
+                            }
                             else
                                 casted
                                     = mcast (
@@ -3158,6 +3226,11 @@ reduce (PFpa_op_t * p, int goalnt)
                                 execute (assgn (var (v->name), casted));
 
                             parts++;
+
+                            /* Unpin the temporary variable 
+                               bln_tmp if it has been pinned. */
+                            if (bln_tmp)
+                                unpin (bln_tmp, 1);
                         }
                     execute (
                         if_ (exist (reverse (var (v->name)),
