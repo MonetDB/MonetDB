@@ -21,30 +21,30 @@ create trigger test3
 	for each statement insert into t1 values(2, 'update_statement');
 
 create trigger test4
-	after update on t1
+	after update on t1 referencing new row as new_row
 	for each row insert into t1 values(2, 'update_row');
 
 create trigger test5
 	after update on t1
-	for each statment 
+	for each statement 
 	when id >0 insert into t1 values(2, 'update_when_statement_true');
 
 --tes WHEN clause
 
 create trigger test6
-	after update on t1
+	after update on t1 referencing new row as new_row
 	for each row 
-	when id >0 insert into t1 values(2, 'update_when_row_true');
+	when new_row.id >0 insert into t1 values(2, 'update_when_row_true');
 
 create trigger test7
 	after update on t1
-	for each statment 
+	for each statement 
 	when id >1000 insert into t1 values(2, 'update_when_statement_false');
 
 create trigger test8
-	after update on t1
+	after update on t1 referencing new row as new_row
 	for each row 
-	when id >1000 insert into t1 values(2, 'update_when_row_false');
+	when new_row.id >1000 insert into t1 values(2, 'update_when_row_false');
 
 update t1 set name = 'mo' where id = 10;
 
@@ -67,25 +67,25 @@ insert into t1 values(20, 'monet');
 create trigger test1
 	after update on t1
 	BEGIN ATOMIC
-		insert into t1(1,'first_insertion');
-		insert into t1(2,'second_insertion';
+		insert into t1 values(1,'first_insertion');
+		insert into t1 values(2,'second_insertion';
 	END;
 
 create trigger test2
 	after update on t1
-	insert into t1(3,'third_insertion');
-	insert into t1(4,'fourth_insertion';
+	insert into t1 values(3,'third_insertion');
+	insert into t1 values(4,'fourth_insertion';
 
 create trigger test3
 	after update on t1
 	BEGIN ATOMIC
-		insert into t1(5,'fifth_insertion');
+		insert into t1 values(5,'fifth_insertion');
 	END;
 
 create trigger test4
 	after update on t1
 	BEGIN ATOMIC
-		insert into t1(1,'first_insertion');
+		insert into t1 values(1,'first_insertion');
 		insert into t2(2,'second_insertion';
 	END;
 
