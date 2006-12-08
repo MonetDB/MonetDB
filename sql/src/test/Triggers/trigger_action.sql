@@ -59,10 +59,12 @@ drop trigger test4;
 drop trigger test5;
 drop trigger test6;
 drop trigger test7;
+drop trigger test8;
 
 --Test ACTION BODY
 insert into t1 values(10, 'monetdb');
 insert into t1 values(20, 'monet');
+
 
 create trigger test1
 	after update on t1
@@ -86,7 +88,7 @@ create trigger test4
 	after update on t1
 	BEGIN ATOMIC
 		insert into t1 values(1,'first_insertion');
-		insert into t2 values(2,'second_insertion');
+		insert into t1 values(2,'second_insertion');
 	END;
 
 select * from t1;

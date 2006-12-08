@@ -65,69 +65,69 @@ stderr of test 'triggers_schema_operations` in directory 'src/test/Triggers` its
 # 14:01:52 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32415  < triggers_schema_operations.sql
 # 14:01:52 >  
 
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = create trigger test1
 ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test1
         !	after update on t1
         !	create"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = drop trigger test1;
 ERROR = !DROP TRIGGER: unknown trigger test1
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = create trigger test1
 ERROR = !syntax error, unexpected DROP, expecting WHILE in: "create trigger test1
         !	after update on t1
         !	drop"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = drop trigger test1;
 ERROR = !DROP TRIGGER: unknown trigger test1
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = create trigger test1
 ERROR = !syntax error, unexpected ALTER, expecting WHILE in: "create trigger test1
         !	after update on t1
         !	alter"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = create trigger test2
 ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test2
         !	after update on t1
         !	create"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = create trigger test3
 ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test3
         !	after update on t1
         !	create"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = create trigger test4
 ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test4
         !	after update on t1
         !	create"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = else return false;
 ERROR = !syntax error, unexpected ELSE in: "else"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = end if;
 ERROR = !syntax error, unexpected END in: "end"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = END;
 ERROR = !syntax error, unexpected END in: "end"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = create trigger test5
 ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test5
         !	after update on t1
         !	create"
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = drop trigger test1;
 ERROR = !DROP TRIGGER: unknown trigger test1
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = drop trigger test2;
 ERROR = !DROP TRIGGER: unknown trigger test2
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = drop trigger test3;
 ERROR = !DROP TRIGGER: unknown trigger test3
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = drop trigger test4;
 ERROR = !DROP TRIGGER: unknown trigger test4
-MAPI  = monetdb@localhost:32415
+MAPI  = monetdb@localhost:30661
 QUERY = drop trigger test5;
 ERROR = !DROP TRIGGER: unknown trigger test5
 

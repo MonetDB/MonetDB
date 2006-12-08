@@ -23,30 +23,30 @@ Over..
 
 [ 1	]
 [ 1	]
-% sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 1,	0,	1,	0,	1,	5,	1,	1 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 0 # length
 [ 1	]
-% sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 4,	2,	4,	1,	1,	5,	1,	1 # length
-[ 4757,	"t2",	4560,	NULL,	0,	false,	0,	0	]
-% sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 1,	0,	1,	0,	1,	5,	1,	1 # length
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	sql,	aggr,	schema_id # name
-% int,	varchar,	varchar,	varchar,	boolean,	boolean,	int # type
-% 1,	0,	0,	0,	5,	5,	1 # length
-% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
-% id,	table_id,	type,	name # name
-% int,	int,	int,	varchar # type
-% 1,	1,	1,	0 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "t2"	]
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.idxs # table_name
+% name # name
+% varchar # type
+% 0 # length
 
-# 14:01:52 >  
-# 14:01:52 >  Done.
-# 14:01:52 >  
+# 14:11:38 >  
+# 14:11:38 >  Done.
+# 14:11:38 >  
 

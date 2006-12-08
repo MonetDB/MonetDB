@@ -10,7 +10,7 @@ create trigger test1
 
 update t1 set name = 'mo' where id = 1;
 
-select * from tables where name = 't2';
+select name from tables where name = 't2';
 
 drop trigger test1;
 
@@ -22,7 +22,7 @@ create trigger test1
 
 update t1 set name = 'mo' where id = 1;
 
-select * from tables where name = 't2';
+select name from tables where name = 't2';
 
 drop trigger test1;
 
@@ -55,11 +55,11 @@ create trigger test5
 	after update on t1
 	create index id_index on t2(id);
 
-select * from tables where name = 'v1';
+select name from tables where name = 'v1';
 
-select * from functions where name = 'f1';
+select name from functions where name = 'f1';
 
-select * from idxs where name = 'id_index';
+select name from idxs where name = 'id_index';
 
 drop trigger test1;
 drop trigger test2;

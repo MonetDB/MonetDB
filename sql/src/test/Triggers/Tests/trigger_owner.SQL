@@ -26,7 +26,7 @@ SQL1="MapiClient -lsql -uuser_test -Ppass -h $HOST -p $MAPIPORT"
 
 echo trigger owner
 $SQL < ${RELSRCDIR}/../trigger_owner_create.sql
-$SQL < ${RELSRCDIR}/../trigger_owner.sql
+$SQL1 < ${RELSRCDIR}/../trigger_owner.sql
 $SQL < ${RELSRCDIR}/../trigger_owner_drop.sql
 echo done
 
