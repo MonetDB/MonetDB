@@ -1534,6 +1534,32 @@ specific (PFfun_t *fn, PFcnode_t *args)
         return *PFty_simplify (PFty_prime (PFty_defn (TY(L(args)))));
     }
 
+    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "union"))) {
+        PFty_t seq_type = PFty_seq (PFty_defn (TY(L(args))),
+                                    PFty_defn (TY(RL(args))));
+        return *PFty_simplify (
+                    (PFty_quantifier (seq_type))
+                        (PFty_prime (seq_type)));
+    }
+
+    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "intersect"))) {
+        PFty_t seq_type = PFty_seq (PFty_defn (TY(L(args))),
+                                    PFty_defn (TY(RL(args))));
+        return *PFty_simplify (
+                    PFty_opt (
+                        (PFty_quantifier (seq_type))
+                            (PFty_prime (seq_type))));
+    }
+    
+    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "except"))) {
+        PFty_t left_type = PFty_defn (TY(L(args)));
+        return *PFty_simplify (
+                    PFty_opt (
+                        (PFty_quantifier (left_type))
+                            (PFty_prime (left_type))));
+    }
+
+
     if (fn->sig_count > 1) {
 	 /* special handing for functions with multiple signatures,
 	  * but one implementation ("dynamic overloading")
