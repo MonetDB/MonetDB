@@ -113,6 +113,7 @@
                  | 'text_constr (' expr ',' expr ')'        <m_text_constr>
                  | 'add_qname (' ex ',' ex ',' ex ',' ex ')'<m_add_qname>
                  | 'add_qnames(' ex ',' ex ',' ex ',' ex ')'<m_add_qnames>
+                 | 'check_qnames (' expression ')'          <m_chk_qnames>
                  | 'sc_desc (' ex ',' ex ',' ex ',' ex ')'  <m_sc_desc>
                  | 'merged_adjacent_text_nodes
                              (' ex ',' ex ',' ex ',' ex ')' <m_merge_adjacent>
@@ -247,6 +248,7 @@ static char *ID[] = {
     , [m_text_constr]  = "text_constr"
     , [m_add_qname]    = "add_qname"
     , [m_add_qnames]   = "add_qnames"
+    , [m_chk_qnames]   = "invalid_qname"
 
     , [m_llscj_anc]              = "loop_lifted_ancestor_step"
     , [m_llscj_anc_elem]         = "loop_lifted_ancestor_step_with_kind_test"
@@ -582,7 +584,7 @@ print_statement (PFmil_t * n)
         /* statement: 'ERROR(' expression ')' */
         case m_error:
             milprintf ("%s (", ID[n->kind]);
-            print_expression (n->child[0]);
+            print_args (n->child[0]);
             milprintf (")");
             break;
 
@@ -735,6 +737,8 @@ print_expression (PFmil_t * n)
         case m_ctextend:
         /* expression '.get_fragment ()' */
         case m_get_fragment:
+        /* 'invalid_qname (' expression ')' */
+        case m_chk_qnames:
         /* expression '.assert_order ()' */
         case m_assert_order:
         /* expression '.chk_order ()' */

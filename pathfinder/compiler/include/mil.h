@@ -333,6 +333,8 @@ enum PFmil_kind_t {
 
     , m_add_qnames   /**< add_qnames() function (Pathfinder runtime) */
 
+    , m_chk_qnames   /**< invalid_qname() function (Pathfinder runtime) */
+
     , m_print        /**< MIL print() function */
     
     , m_col_name     /**< assign BAT column name (for debugging only) */
@@ -1178,6 +1180,7 @@ PFmil_t * PFmil_add_qname (const PFmil_t *, const PFmil_t *,
                            const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_add_qnames (const PFmil_t *, const PFmil_t *,
                             const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_check_qnames (const PFmil_t *);
 
 PFmil_t * PFmil_declare (const PFmil_t *);
 

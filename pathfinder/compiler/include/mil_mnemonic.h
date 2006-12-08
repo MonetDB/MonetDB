@@ -294,6 +294,7 @@
 #define textnode(a,b) PFmil_textnode ((a), (b))
 #define add_qname(a,b,c,d) PFmil_add_qname ((a), (b), (c), (d))
 #define add_qnames(a,b,c,d) PFmil_add_qnames ((a), (b), (c), (d))
+#define check_qnames(a) PFmil_check_qnames ((a))
 
 /** Multiplexed search() function `[search](a,b)' */
 #define msearch(a,b) PFmil_msearch ((a), (b))

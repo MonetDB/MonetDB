@@ -3072,39 +3072,34 @@ reduce (PFpa_op_t * p, int goalnt)
                          || L(p)->schema.items[i].type & aat_uA)
                     {
                         PFmil_t *str = NULL;
-                        mvar_t  *offset = new_var (1);
-                        mvar_t  *prefix = new_var (1);
-                        mvar_t  *local  = new_var (1);
-                        PFmil_t *v_cast = 
+                        mvar_t  *offset  = new_var (1);
+                        mvar_t  *prefix  = new_var (1);
+                        mvar_t  *local   = new_var (1);
+                        mvar_t  *err_str = new_var (1);
+                        PFmil_t *v_cast  = 
                                      VAR (L(p)->env, p->sem.cast.att,
                                           L(p)->schema.items[i].type);
 
                         /* split up strings using ``:'' as delimiter */
-                        /* FIXME: currently we don't check names and
-                                  we don't retrieve the URI */
+                        /* FIXME: currently we we don't retrieve the URI */
                         execute (
+                            assgn (var (err_str->name),
+                                   check_qnames (v_cast)),
+                            if_ (not (isnil (var (err_str->name))),
+                                 error (arg (lit_str ("err:FORG0001. "
+                                                      "illegal QName '%s'."),
+                                             var (err_str->name))),
+                                 nop ()),
                             assgn (var (offset->name),
                                    msearch (v_cast, lit_str (":"))),
-                            if_ (exist (reverse (var (offset->name)),
-                                        cast (implty (aat_str), nil ())),
-                                 error (lit_str ("err:FORG0001.")),
-                                 nop ()),
                             assgn (var (prefix->name),
                                    mstring2 (v_cast,
                                              lit_int (0),
                                              var (offset->name))),
-                            if_ (exist (reverse (var (prefix->name)),
-                                        cast (implty (aat_str), nil ())),
-                                 error (lit_str ("err:FORG0001.")),
-                                 nop ()),
                             assgn (var (local->name),
                                    mstring (v_cast,
                                             madd (lit_int (1),
-                                                  var (offset->name)))),
-                            if_ (exist (reverse (var (local->name)),
-                                        cast (implty (aat_str), nil ())),
-                                 error (lit_str ("err:FORG0001.")),
-                                 nop ()));
+                                                  var (offset->name)))));
 
                         /* add_qnames changes the working set 
                            in 'var (PF_MIL_VAR_WS)' as side effect */
@@ -3127,6 +3122,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         unpin (offset, 1);
                         unpin (prefix, 1);
                         unpin (local, 1);
+                        unpin (err_str, 1);
                     }
                 }
                 else if (L(p)->schema.items[i].name == p->sem.cast.att) {

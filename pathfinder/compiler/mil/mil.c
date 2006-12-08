@@ -2041,6 +2041,12 @@ PFmil_add_qnames (const PFmil_t *prefix, const PFmil_t *uri,
     return wire4 (m_add_qnames, prefix, uri, local, ws);
 }
 
+PFmil_t *
+PFmil_check_qnames (const PFmil_t *str)
+{
+    return wire1 (m_chk_qnames, str);
+}
+
 
 PFmil_t *
 PFmil_declare (const PFmil_t *v)
