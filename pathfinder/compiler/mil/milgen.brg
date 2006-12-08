@@ -4910,7 +4910,8 @@ bin_comp (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
 
     if (ty & ~aat_node) {
         assert (ty == aat_int || ty == aat_dec ||
-                ty == aat_dbl || ty == aat_str);
+                ty == aat_dbl || ty == aat_str ||
+                ty == aat_bln);
         bin_op (op, p, ty, aat_bln);
     } else if (ty == aat_pnode) {
         node_comp (op, p);
@@ -4993,7 +4994,7 @@ bin_comp_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
     PFalg_simple_type_t  ty = type_of (L(p), p->sem.bin_atom.att1);
 
     assert (ty == aat_int || ty == aat_dec || ty == aat_dbl ||
-            ty == aat_str || ty == aat_nat);
+            ty == aat_str || ty == aat_nat || ty == aat_bln);
     assert (ty == p->sem.bin_atom.att2.type);
 
     bin_op_atom (op, p, ty, aat_bln);
