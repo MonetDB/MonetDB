@@ -288,6 +288,9 @@ case "$host_os" in
 	if test -s /etc/fedora-release ; then
 		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
 			| sed 's|^.*\(Fedora\) Core.* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+	elif test -s /etc/centos-release ; then
+		LINUX_DIST="`cat /etc/centos-release | head -n1 \
+			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
 	elif test -s /etc/redhat-release ; then
 		LINUX_DIST="`cat /etc/redhat-release | head -n1 \
 			| sed 's|^.*\(Red\) \(Hat\).* Linux *\([[A-Z]]*\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1\2:\4\3|' \
