@@ -2978,7 +2978,8 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      type (Rel) */
         case 74:
         {
-            mvar_t              *res = new_var (p->refctr);
+            mvar_t             *res = new_var (p->refctr);
+            PFalg_simple_type_t input_ty = 0; 
 
             /* and put the result into p's environment */
             env_add (p->env, p->sem.type.res, aat_bln, res);
@@ -2991,9 +2992,24 @@ reduce (PFpa_op_t * p, int goalnt)
                 env_add (p->env, entry.att, entry.ty, entry.mvar);
 
                 pin (entry.mvar, p->refctr);
+
+                /* collect the types of the 'type' column */
+                if (entry.att == p->sem.type.att)
+                    input_ty = entry.ty | input_ty;
             }
-            /* we have one simple type */
-            if (p->sem.type.ty == aat_node)
+            
+            if (!(p->sem.type.ty & input_ty))
+                /* cope with the case that our schema does not provide
+                   the type represented by p->sem.type.ty */
+                execute (
+                    assgn (var (res->name),
+                           project (var (env_at (L(p)->env, 0).mvar->name),
+                                    lit_bit (false))));
+            
+            else if (p->sem.type.ty == aat_node &&
+                     input_ty & aat_pre &&
+                     input_ty & aat_attr)
+                /* both pre values and attributes are available and allowed */
                 execute (
                     assgn (var (res->name),
                            mor (
@@ -3003,19 +3019,29 @@ reduce (PFpa_op_t * p, int goalnt)
                                mnot (misnil (VAR (L(p)->env,
                                              p->sem.type.att,
                                              aat_attr))))));
-            else if (p->sem.type.ty == aat_pnode)
+            
+            else if (p->sem.type.ty == aat_pnode ||
+                     (p->sem.type.ty == aat_node &&
+                      input_ty & aat_pre))
+                /* pre values are available and allowed */
                 execute (
                     assgn (var (res->name),
                            mnot (misnil (VAR (L(p)->env,
                                          p->sem.type.att,
                                          aat_pre)))));
-            else if (p->sem.type.ty == aat_anode)
+            
+            else if (p->sem.type.ty == aat_anode ||
+                     (p->sem.type.ty == aat_node &&
+                      input_ty & aat_attr))
+                /* attributes are available and allowed */
                 execute (
                     assgn (var (res->name),
                            mnot (misnil (VAR (L(p)->env,
                                          p->sem.type.att,
                                          aat_attr)))));
+            
             else
+                /* we have one simple type */
                 execute (
                     assgn (var (res->name),
                            mnot (misnil (VAR (L(p)->env,
