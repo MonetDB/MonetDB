@@ -68,13 +68,13 @@ create trigger test1
 	after update on t1
 	BEGIN ATOMIC
 		insert into t1 values(1,'first_insertion');
-		insert into t1 values(2,'second_insertion';
+		insert into t1 values(2,'second_insertion');
 	END;
 
 create trigger test2
 	after update on t1
 	insert into t1 values(3,'third_insertion');
-	insert into t1 values(4,'fourth_insertion';
+	insert into t1 values(4,'fourth_insertion');
 
 create trigger test3
 	after update on t1
@@ -86,7 +86,7 @@ create trigger test4
 	after update on t1
 	BEGIN ATOMIC
 		insert into t1 values(1,'first_insertion');
-		insert into t2(2,'second_insertion';
+		insert into t2 values(2,'second_insertion');
 	END;
 
 select * from t1;

@@ -14,7 +14,7 @@ create trigger test1
 
 create trigger test2
 	before update on t1
-	select id into t2 where id = 10;
+	select id into t2 from t1 where id = 10;
 
 create trigger test3
 	after update on t1
@@ -29,6 +29,8 @@ ALTER TABLE t1 add CONSTRAINT t1_constraint PRIMARY KEY(id);
 update t1 set name = 'mo' where id = 10;
 
 select * from t1;
+
+select * from t2;
 
 delete from t1 where id >1;
 
