@@ -1575,23 +1575,48 @@ reduce (PFpnode_t * p, int goalnt)
              * let $v1 := some $a in e1 satisfies
              *              let $v2 := e2 return not ($v2) return
              *   not ($v1)
+             *
+             * ==
+             *
+             * let $v2 := some $a in e1 satisfies
+             *              let $v4 := e2 
+             *              return let $v3 := boolean ($v4)
+             *                     return not ($v3)
+             * return let $v1 := boolean ($v2)
+             *        return not ($v1)
+             *
+             * (As not() uses boolean() to ensure that all items are
+             *  present and we only want to support the more specific
+             *  variant of not() we introduce additional calls 
+             *  to boolean().)
              */
-            PFvar_t *v1     = new_var (NULL);
-            PFvar_t *v2     = new_var (NULL);
-            PFfun_t *fn_not = function (PFqname (PFns_fn, "not"));
+            PFvar_t *v1      = new_var (NULL);
+            PFvar_t *v2      = new_var (NULL);
+            PFvar_t *v3      = new_var (NULL);
+            PFvar_t *v4      = new_var (NULL);
+            PFfun_t *fn_not  = function (PFqname (PFns_fn, "not"));
+            PFfun_t *fn_bool = function (PFqname (PFns_fn, "boolean"));
 
             C(p) = flwr (let (
-                             letbind (var (v1), 
-                                      some (
-                                          C(LLLLL(p)),
-                                          C(LLR(p)),
-                                          flwr (let (letbind (var (v2),
-                                                              C(R(p))),
-                                                     nil ()),
-                                                APPLY (fn_not, 
-                                                       (var (v2)))))),
+                             letbind (
+                                 var (v2), 
+                                 some (
+                                     C(LLLLL(p)),
+                                     C(LLR(p)),
+                                     flwr (let (letbind (var (v4), C(R(p))),
+                                                nil ()),
+                                           flwr (let (letbind (
+                                                          var (v3),
+                                                          APPLY (fn_bool,
+                                                                 var (v4))),
+                                                      nil ()),
+                                                 APPLY (fn_not, 
+                                                        var (v3)))))),
                              nil ()),
-                         APPLY (fn_not, (var (v1))));
+                         flwr (let (letbind (var (v1),
+                                             APPLY (fn_bool, var (v2))),
+                                    nil ()),
+                               APPLY (fn_not, (var (v1)))));
 
         } break;
 
@@ -1616,31 +1641,60 @@ reduce (PFpnode_t * p, int goalnt)
              *     let $a := proof ($v3, t, seqcast (t, $v3)) return
              *       let $v2 := e2 return not ($v2) return
              *   not ($v1)
+             *
+             * ==
+             *
+             * let $v2 := some $v5 in e1 satisfies
+             *              let $a := proof ($v5, t, seqcast (t, $v5))
+             *              return let $v4 := e2 
+             *                     return let $v3 := boolean ($v4)
+             *                            return not ($v3)
+             * return let $v1 := boolean ($v2)
+             *        return not ($v1)
+             *
+             * (As not() uses boolean() to ensure that all items are
+             *  present and we only want to support the more specific
+             *  variant of not() we introduce additional calls 
+             *  to boolean().)
              */
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
             PFvar_t *v3 = new_var (NULL);
+            PFvar_t *v4 = new_var (NULL);
+            PFvar_t *v5 = new_var (NULL);
             PFfun_t *fn_not   = function (PFqname (PFns_fn, "not"));
+            PFfun_t *fn_bool = function (PFqname (PFns_fn, "boolean"));
 
             C(p) = flwr (let (letbind (
-                                  var (v1), 
+                                  var (v2), 
                                   some (
-                                      var (v3),
+                                      var (v5),
                                       C(LLR(p)),
                                       flwr (let (
                                                 letbind (
                                                     C(LLLLL(p)),
-                                                    proof (subty (var (v3),
+                                                    proof (subty (var (v5),
                                                                   C(LLLLR(p))),
                                                            seqcast (C(LLLLR(p)),
-                                                                    var (v3)))),
+                                                                    var (v5)))),
                                                 nil ()),
-                                            flwr (let (letbind (var (v2), 
+                                            flwr (let (letbind (var (v4), 
                                                                 C(R(p))),
                                                        nil ()),
-                                                  APPLY (fn_not, var (v2)))))),
+                                                  flwr (
+                                                      let (
+                                                          letbind (
+                                                              var (v3), 
+                                                              APPLY (fn_bool,
+                                                                     var (v4))),
+                                                          nil ()),
+                                                      APPLY (fn_not, var (v3)))
+                                            )))),
                               nil ()),
-                          APPLY (fn_not, (var (v1))));
+                          flwr (let (letbind (var (v1), 
+                                              APPLY (fn_bool, var (v2))),
+                                     nil ()),
+                                APPLY (fn_not, (var (v1)))));
 
         } break;
 
