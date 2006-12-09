@@ -128,12 +128,6 @@ BATins(BAT *b, BAT *n, bit force)
 			fastpath = 0;
 	}
 
-	if (b->hhash && 2 * b->hhash->mask < BATcount(b) + BATcount(n)) {
-		HASHremove(b);
-	}
-	if (b->thash && 2 * b->thash->mask < BATcount(b) + BATcount(n)) {
-		HASHremove(BATmirror(b));
-	}
 	if (b->hhash == NULL && b->hkey & BOUND2BTRUE) {
 		BAThash(b, BATcount(b) + BATcount(n));
 	}
