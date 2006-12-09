@@ -37,17 +37,17 @@ barrier (v,i):= language.newRange(0:lng);	# 5 RNGnewRange_lng (v:bit)(i:lng)<-(_
 exit (v,i);	# 8  (v:bit)(i:lng)
     io.print(b);	# 9 IOprint_val (_13:void)<-(b:bat[:lng,:lng])
     c := 1;	# 10  (c:int)<-(_15:int)
-    _19 := bat.new(nil:lng,nil:lng);	# 11 CMDBATnew (_19:bat[:lng,:lng])<-(_20:lng)(_20:lng)
-barrier (_22,_23,_24):= bat.newIterator(b);	# 12 CHPbunIterator (_22:lng)(_23:lng)(_24:lng)<-(b:bat[:lng,:lng]) jump 19
-    _26 := calc.+(_24,c);	# 13 CALCbinaryADDlngint (_26:lng)<-(_24:lng)(c:int)
-    bat.insert(_19,_23,_26);	# 14 BKCinsert_bun (_27:void)<-(_19:bat[:lng,:lng])(_23:lng)(_26:lng)
-    redo (_22,_23,_24):= bat.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_22:lng)(_23:lng)(_24:lng)<-(b:bat[:lng,:lng]) jump 13
+    _20 := bat.new(nil:lng,nil:lng);	# 11 CMDBATnew (_20:bat[:lng,:lng])<-(_21:lng)(_21:lng)
+barrier (_23,_24,_25):= bat.newIterator(b);	# 12 CHPbunIterator (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 19
+    _27 := calc.+(_25,c);	# 13 CALCbinaryADDlngint (_27:lng)<-(_25:lng)(c:int)
+    bat.insert(_20,_24,_27);	# 14 BKCinsert_bun (_28:void)<-(_20:bat[:lng,:lng])(_24:lng)(_27:lng)
+    redo (_23,_24,_25):= bat.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 13
 catch MALException:str ;	# 16  (MALException:str) jump 18
-    redo (_22,_23,_24):= bat.hasMoreElements(b);	# 17 CHPbunHasMoreElements (_22:lng)(_23:lng)(_24:lng)<-(b:bat[:lng,:lng]) jump 13
+    redo (_23,_24,_25):= bat.hasMoreElements(b);	# 17 CHPbunHasMoreElements (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 13
 exit MALException:str ;	# 18  (MALException:str)
-exit (_22,_23,_24);	# 19  (_22:lng)(_23:lng)(_24:lng)
-    xz:bat[:lng,:lng]  := _19;	# 20  (xz:bat[:lng,:lng])<-(_19:bat[:lng,:lng])
-    io.print(xz);	# 21 IOprint_val (_18:void)<-(xz:bat[:lng,:lng])
+exit (_23,_24,_25);	# 19  (_23:lng)(_24:lng)(_25:lng)
+    xz:bat[:lng,:lng]  := _20;	# 20  (xz:bat[:lng,:lng])<-(_20:bat[:lng,:lng])
+    io.print(xz);	# 21 IOprint_val (_19:void)<-(xz:bat[:lng,:lng])
 end main;	# 22  
 #-----------------#
 # h	tmp_4	  # name

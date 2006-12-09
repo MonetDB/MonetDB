@@ -28,18 +28,18 @@ barrier (v,i):= language.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_
     redo (v,i):= language.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_8:lng)(_9:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
     c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    _14 := bat.new(nil:lng,nil:lng);	# 8 CMDBATnew (_14:bat[:lng,:lng])<-(_15:lng)(_15:lng)
-barrier (_17,_18,_19):= bat.newIterator(b);	# 9 CHPbunIterator (_17:lng)(_18:lng)(_19:lng)<-(b:bat[:lng,:lng]) jump 17
-    _21 := algebra.find(c,_18);	# 10 ALGfind (_21:lng)<-(c:bat[:lng,:lng])(_18:lng)
-    _23 := calc.+(_19,_21);	# 11 CALCbinaryADDlnglng (_23:lng)<-(_19:lng)(_21:lng)
-    bat.insert(_14,_18,_23);	# 12 BKCinsert_bun (_24:void)<-(_14:bat[:lng,:lng])(_18:lng)(_23:lng)
-    redo (_17,_18,_19):= bat.hasMoreElements(b);	# 13 CHPbunHasMoreElements (_17:lng)(_18:lng)(_19:lng)<-(b:bat[:lng,:lng]) jump 10
+    _15 := bat.new(nil:lng,nil:lng);	# 8 CMDBATnew (_15:bat[:lng,:lng])<-(_16:lng)(_16:lng)
+barrier (_18,_19,_20):= bat.newIterator(b);	# 9 CHPbunIterator (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 17
+    _22 := algebra.find(c,_19);	# 10 ALGfind (_22:lng)<-(c:bat[:lng,:lng])(_19:lng)
+    _24 := calc.+(_20,_22);	# 11 CALCbinaryADDlnglng (_24:lng)<-(_20:lng)(_22:lng)
+    bat.insert(_15,_19,_24);	# 12 BKCinsert_bun (_25:void)<-(_15:bat[:lng,:lng])(_19:lng)(_24:lng)
+    redo (_18,_19,_20):= bat.hasMoreElements(b);	# 13 CHPbunHasMoreElements (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 10
 catch MALException:str ;	# 14  (MALException:str) jump 16
-    redo (_17,_18,_19):= bat.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_17:lng)(_18:lng)(_19:lng)<-(b:bat[:lng,:lng]) jump 10
+    redo (_18,_19,_20):= bat.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 10
 exit MALException:str ;	# 16  (MALException:str)
-exit (_17,_18,_19);	# 17  (_17:lng)(_18:lng)(_19:lng)
-    x:bat[:lng,:lng]  := _14;	# 18  (x:bat[:lng,:lng])<-(_14:bat[:lng,:lng])
-    io.print(x);	# 19 IOprint_val (_13:void)<-(x:bat[:lng,:lng])
+exit (_18,_19,_20);	# 17  (_18:lng)(_19:lng)(_20:lng)
+    x:bat[:lng,:lng]  := _15;	# 18  (x:bat[:lng,:lng])<-(_15:bat[:lng,:lng])
+    io.print(x);	# 19 IOprint_val (_14:void)<-(x:bat[:lng,:lng])
 end main;	# 20  
 #-----------------#
 # h	tmp_6	  # name

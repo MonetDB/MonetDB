@@ -107,7 +107,7 @@ cnt:= aggr.count(s);
 io.printf(" count %d\n",cnt);
 cnt:= aggr.count(z9);
 t0:= alarm.usec();
-x:bat[:void,:lng]:= optimizer.multiplex("calc.+",b,c);
+x:bat[:void,:lng]:= optimizer.multiplex("calc","+",b,c);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#optimizer.multiplex(+) %d\n",d0);

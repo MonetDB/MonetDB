@@ -59,16 +59,16 @@ mtime.timezone_local(lzone);
 ## test the operations on rules
 	ma_a := bat.setColumn(rule_bat,"rule");
 #io.print(rule_bat.bat.setColumn("rule"),
-	na_a:bat[:str,:int] := optimizer.multiplex("mtime.month",rule_bat);
+	na_a:bat[:str,:int] := optimizer.multiplex("mtime","month",rule_bat);
 	oa_a := bat.setColumn(na_a,"month");
 #      [month](rule_bat).bat.setColumn("month"),
-	pa_a:bat[:str,:int] := optimizer.multiplex("mtime.weekday",rule_bat);
+	pa_a:bat[:str,:int] := optimizer.multiplex("mtime","weekday",rule_bat);
 	qa_a := bat.setColumn(pa_a,"weekday");
 #      [weekday](rule_bat).bat.setColumn("weekday"),
-	ra_a:bat[:str,:int] := optimizer.multiplex("mtime.day",rule_bat);
+	ra_a:bat[:str,:int] := optimizer.multiplex("mtime","day",rule_bat);
 	sa_a := bat.setColumn(ra_a,"day");
 #      [day](rule_bat).bat.setColumn("day"),
-	ta_a:bat[:str,:int] := optimizer.multiplex("mtime.minutes",rule_bat);
+	ta_a:bat[:str,:int] := optimizer.multiplex("mtime","minutes",rule_bat);
 	ua_a := bat.setColumn(ta_a,"minutes");
 io.print("rule_bat,na_a,pa_a,ra_a,ta_a");
 	va_a := io.print(rule_bat,na_a,pa_a,ra_a,ta_a);
@@ -76,28 +76,28 @@ io.print("rule_bat,na_a,pa_a,ra_a,ta_a");
 #
 	bat.setColumn(rule_bat,"rule");
 #io.print(rule_bat.bat.setColumn("rule"),
-	xa_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,2001);
+	xa_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,2001);
 	ya_a := bat.setColumn(xa_a,"2001");
 #      [compute](rule_bat, 2001).bat.setColumn("2001"),
-	ab_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,2001);
-	bb_a:bat[:str,:int] := optimizer.multiplex("mtime.dayofweek",ab_a);
-	cb_a:bat[:str,:str] := optimizer.multiplex("mtime.dayname",bb_a);
+	ab_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,2001);
+	bb_a:bat[:str,:int] := optimizer.multiplex("mtime","dayofweek",ab_a);
+	cb_a:bat[:str,:str] := optimizer.multiplex("mtime","dayname",bb_a);
 	bat.setColumn(cb_a,"2001");
 #      [dayname]([dayofweek]([compute](rule_bat, 2001))).bat.setColumn("2001"),
-	eb_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,1999);
+	eb_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,1999);
 	bat.setColumn(eb_a,"1999");
 #      [compute](rule_bat, 1999).bat.setColumn("1999"),
-	gb_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,1999);
-	hb_a:bat[:str,:int] := optimizer.multiplex("mtime.dayofweek",gb_a);
-	ib_a:bat[:str,:str] := optimizer.multiplex("mtime.dayname",hb_a);
+	gb_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,1999);
+	hb_a:bat[:str,:int] := optimizer.multiplex("mtime","dayofweek",gb_a);
+	ib_a:bat[:str,:str] := optimizer.multiplex("mtime","dayname",hb_a);
 	bat.setColumn(ib_a,"1999");
 #      [dayname]([dayofweek]([compute](rule_bat, 1999))).bat.setColumn("1999"),
-	kb_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,1992);
+	kb_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,1992);
 	bat.setColumn(kb_a,"1992");
 #      [compute](rule_bat, 1992).bat.setColumn("1992"),
-	mb_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,1992);
-	nb_a:bat[:str,:int] := optimizer.multiplex("mtime.dayofweek",mb_a);
-	ob_a:bat[:str,:str] := optimizer.multiplex("mtime.dayname",nb_a);
+	mb_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,1992);
+	nb_a:bat[:str,:int] := optimizer.multiplex("mtime","dayofweek",mb_a);
+	ob_a:bat[:str,:str] := optimizer.multiplex("mtime","dayname",nb_a);
 	bat.setColumn(ob_a,"1992");
 io.print("rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a");
 	qb_a := io.print(rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a);
@@ -105,28 +105,28 @@ io.print("rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a");
 #
 	rb_a := bat.setColumn(rule_bat,"rule");
 #io.print(rule_bat.bat.setColumn("rule"),
-	sb_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,1572);
+	sb_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,1572);
 	tb_a := bat.setColumn(sb_a,"1572");
 #      [compute](rule_bat, 1572).bat.setColumn("1572"),
-	ub_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,1572);
-	vb_a:bat[:str,:int] := optimizer.multiplex("mtime.dayofweek",ub_a);
-	wb_a:bat[:str,:str] := optimizer.multiplex("mtime.dayname",vb_a);
+	ub_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,1572);
+	vb_a:bat[:str,:int] := optimizer.multiplex("mtime","dayofweek",ub_a);
+	wb_a:bat[:str,:str] := optimizer.multiplex("mtime","dayname",vb_a);
 	xb_a := bat.setColumn(wb_a,"1572");
 #      [dayname]([dayofweek]([compute](rule_bat, 1572))).bat.setColumn("1572"),
-	yb_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,1);
+	yb_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,1);
 	ac_a := bat.setColumn(yb_a,"1");
 #      [compute](rule_bat, 1).bat.setColumn("1"),
-	bc_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,1);
-	cc_a:bat[:str,:int] := optimizer.multiplex("mtime.dayofweek",bc_a);
-	dc_a:bat[:str,:str] := optimizer.multiplex("mtime.dayname",cc_a);
+	bc_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,1);
+	cc_a:bat[:str,:int] := optimizer.multiplex("mtime","dayofweek",bc_a);
+	dc_a:bat[:str,:str] := optimizer.multiplex("mtime","dayname",cc_a);
 	ec_a := bat.setColumn(dc_a,"1");
 #      [dayname]([dayofweek]([compute](rule_bat, 1))).bat.setColumn("1"),
-	fc_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,-2000);
+	fc_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,-2000);
 	gc_a := bat.setColumn(fc_a,"-2000");
 #      [compute](rule_bat, -2000).bat.setColumn("-2000"),
-	hc_a:bat[:str,:date] := optimizer.multiplex("mtime.compute",rule_bat,-2000);
-	ic_a:bat[:str,:int] := optimizer.multiplex("mtime.dayofweek",hc_a);
-	jc_a:bat[:str,:str] := optimizer.multiplex("mtime.dayname",ic_a);
+	hc_a:bat[:str,:date] := optimizer.multiplex("mtime","compute",rule_bat,-2000);
+	ic_a:bat[:str,:int] := optimizer.multiplex("mtime","dayofweek",hc_a);
+	jc_a:bat[:str,:str] := optimizer.multiplex("mtime","dayname",ic_a);
 	kc_a := bat.setColumn(jc_a,"-2000");
 io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 	lc_a := io.print(rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a);
@@ -211,13 +211,13 @@ io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 io.print("tzone_bat");
 	io.print(tzone_bat);
 #io.print(tzone_bat.bat.setColumn("tzone"));
-	kd_a:bat[:oid,:int] := optimizer.multiplex("mtime.minutes",tzone_bat);
+	kd_a:bat[:oid,:int] := optimizer.multiplex("mtime","minutes",tzone_bat);
 	bat.setColumn(kd_a,"minutes");
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"),
-	md_a:bat[:oid,:zrule] := optimizer.multiplex("mtime.start_dst",tzone_bat);
+	md_a:bat[:oid,:zrule] := optimizer.multiplex("mtime","start_dst",tzone_bat);
 	bat.setColumn(md_a,"start_dst");
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"),
-	od_a:bat[:oid,:zrule] := optimizer.multiplex("mtime.end_dst",tzone_bat);
+	od_a:bat[:oid,:zrule] := optimizer.multiplex("mtime","end_dst",tzone_bat);
 	bat.setColumn(od_a,"end_dst");
 io.print("print(kd_a,md_a,od_a)");
 	qd_a := io.print(kd_a,md_a,od_a);
@@ -305,34 +305,34 @@ io.print("print(kd_a,md_a,od_a)");
 ## test the operations on dates
 	ne_a := bat.setColumn(date_bat,"date");
 #io.print(date_bat.bat.setColumn("date"),
-	oe_a:bat[:oid,:int] := optimizer.multiplex("mtime.year",date_bat);
+	oe_a:bat[:oid,:int] := optimizer.multiplex("mtime","year",date_bat);
 	pe_a := bat.setColumn(oe_a,"year");
 #      [year](date_bat).bat.setColumn("year"),
-	qe_a:bat[:oid,:int] := optimizer.multiplex("mtime.day",date_bat);
+	qe_a:bat[:oid,:int] := optimizer.multiplex("mtime","day",date_bat);
 	re_a := bat.setColumn(qe_a,"day");
 #      [day](date_bat).bat.setColumn("day"),
-	se_a:bat[:oid,:int] := optimizer.multiplex("mtime.month",date_bat);
-	te_a:bat[:oid,:str] := optimizer.multiplex("mtime.monthname",se_a);
+	se_a:bat[:oid,:int] := optimizer.multiplex("mtime","month",date_bat);
+	te_a:bat[:oid,:str] := optimizer.multiplex("mtime","monthname",se_a);
 	ue_a := bat.setColumn(te_a,"monthname");
 #      [monthname]([month](date_bat)).bat.setColumn("monthname"),
-	ve_a:bat[:oid,:int] := optimizer.multiplex("mtime.month",date_bat);
-	we_a:bat[:oid,:str] := optimizer.multiplex("mtime.monthname",ve_a);
-	xe_a:bat[:oid,:int] := optimizer.multiplex("mtime.monthnum",we_a);
+	ve_a:bat[:oid,:int] := optimizer.multiplex("mtime","month",date_bat);
+	we_a:bat[:oid,:str] := optimizer.multiplex("mtime","monthname",ve_a);
+	xe_a:bat[:oid,:int] := optimizer.multiplex("mtime","monthnum",we_a);
 	ye_a := bat.setColumn(xe_a,"monthnum");
 	io.print("print(date_bat,oe_a,qe_a,te_a,xe_a)");
 	af_a := io.print(date_bat,oe_a,qe_a,te_a,xe_a);
 #      [monthnum]([monthname]([month](date_bat))).bat.setColumn("monthnum"));
 #
-	date_addyears:bat[:oid,:date]:= optimizer.multiplex("mtime.addyears",date_bat,-100);
+	date_addyears:bat[:oid,:date]:= optimizer.multiplex("mtime","addyears",date_bat,-100);
 #var date_addyears := [addyears](date_bat, -100);
-	date_addmonths:bat[:oid,:date]:= optimizer.multiplex("mtime.addmonths",date_bat,1);
+	date_addmonths:bat[:oid,:date]:= optimizer.multiplex("mtime","addmonths",date_bat,1);
 #var date_addmonths := [addmonths](date_bat, 1);
 #
 	bat.setColumn(date_bat,"date");
 #io.print(date_bat.bat.setColumn("date"),
 	bat.setColumn(date_addyears,"min100y");
 #      date_addyears.bat.setColumn("min100y"),
-	df_a:bat[:oid,:int] := optimizer.multiplex("mtime.diff",date_addyears,date_bat);
+	df_a:bat[:oid,:int] := optimizer.multiplex("mtime","diff",date_addyears,date_bat);
 	bat.setColumn(df_a,"diff");
 	io.print("print(date_bat,date_addyears,df_a)");
 	ff_a := io.print(date_bat,date_addyears,df_a);
@@ -342,7 +342,7 @@ io.print("print(kd_a,md_a,od_a)");
 #io.print(date_bat.bat.setColumn("date"),
 	bat.setColumn(date_addmonths,"plus1m");
 #      date_addmonths.bat.setColumn("plus1m"),
-	if_a:bat[:oid,:int] := optimizer.multiplex("mtime.diff",date_addmonths,date_bat);
+	if_a:bat[:oid,:int] := optimizer.multiplex("mtime","diff",date_addmonths,date_bat);
 	bat.setColumn(if_a,"diff");
 	io.print(" print(date_bat,date_addmonths,if_a)");
 	kf_a := io.print(date_bat,date_addmonths,if_a);
@@ -367,19 +367,19 @@ exit	lf_a;
 #}
 	rf_a := bat.setColumn(date_seq,"date");
 #io.print(date_seq.bat.setColumn("date"),
-	sf_a:bat[:int,:int] := optimizer.multiplex("mtime.weekofyear",date_seq);
+	sf_a:bat[:int,:int] := optimizer.multiplex("mtime","weekofyear",date_seq);
 	tf_a := bat.setColumn(sf_a,"weekofyear");
 #      [weekofyear](date_seq).bat.setColumn("weekofyear"),
-	uf_a:bat[:int,:int] := optimizer.multiplex("mtime.dayofweek",date_seq);
-	vf_a:bat[:int,:str] := optimizer.multiplex("mtime.dayname",uf_a);
+	uf_a:bat[:int,:int] := optimizer.multiplex("mtime","dayofweek",date_seq);
+	vf_a:bat[:int,:str] := optimizer.multiplex("mtime","dayname",uf_a);
 	wf_a := bat.setColumn(vf_a,"dayofweek");
 #      [dayname]([dayofweek](date_seq)).bat.setColumn("dayofweek"),
-	xf_a:bat[:int,:int] := optimizer.multiplex("mtime.dayofweek",date_seq);
-	yf_a:bat[:int,:str] := optimizer.multiplex("mtime.dayname",xf_a);
-	ag_a:bat[:int,:int] := optimizer.multiplex("mtime.daynum",yf_a);
+	xf_a:bat[:int,:int] := optimizer.multiplex("mtime","dayofweek",date_seq);
+	yf_a:bat[:int,:str] := optimizer.multiplex("mtime","dayname",xf_a);
+	ag_a:bat[:int,:int] := optimizer.multiplex("mtime","daynum",yf_a);
 	bg_a := bat.setColumn(ag_a,"num");
 #      [daynum]([dayname]([dayofweek](date_seq))).bat.setColumn("num"),
-	cg_a:bat[:int,:int] := optimizer.multiplex("mtime.dayofyear",date_seq);
+	cg_a:bat[:int,:int] := optimizer.multiplex("mtime","dayofyear",date_seq);
 	dg_a := bat.setColumn(cg_a,"dayofyear");
 io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);
@@ -463,16 +463,16 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 #
 	bat.setColumn(daytime_bat,"daytime");
 #io.print(daytime_bat.bat.setColumn("daytime"),
-	bh_a:bat[:oid,:int] := optimizer.multiplex("mtime.hours",daytime_bat);
+	bh_a:bat[:oid,:int] := optimizer.multiplex("mtime","hours",daytime_bat);
 	bat.setColumn(bh_a,"hours");
 #      [hours](daytime_bat).bat.setColumn("hours"),
-	dh_a:bat[:oid,:int] := optimizer.multiplex("mtime.minutes",daytime_bat);
+	dh_a:bat[:oid,:int] := optimizer.multiplex("mtime","minutes",daytime_bat);
 	bat.setColumn(dh_a,"minutes");
 #      [minutes](daytime_bat).bat.setColumn("minutes"),
-	fh_a:bat[:oid,:int] := optimizer.multiplex("mtime.seconds",daytime_bat);
+	fh_a:bat[:oid,:int] := optimizer.multiplex("mtime","seconds",daytime_bat);
 	bat.setColumn(fh_a,"seconds");
 #      [seconds](daytime_bat).bat.setColumn("seconds"),
-	hh_a:bat[:oid,:int] := optimizer.multiplex("mtime.milliseconds",daytime_bat);
+	hh_a:bat[:oid,:int] := optimizer.multiplex("mtime","milliseconds",daytime_bat);
 	bat.setColumn(hh_a,"milliseconds");
 io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	jh_a := io.print(daytime_bat,bh_a,dh_a,fh_a,hh_a);
@@ -483,7 +483,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 ##line 719 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
 ## create timestamps in bulk from the above bats with dates, daytimes and tzones
 # Skipped due to coercion implication
-	kh_a:bat[:oid,:timestamp] := optimizer.multiplex("mtime.timestamp",date_bat,daytime_bat,tzone_bat);
+	kh_a:bat[:oid,:timestamp] := optimizer.multiplex("mtime","timestamp",date_bat,daytime_bat,tzone_bat);
 	timestamp_bat:=kh_a; bat.setWriteMode(kh_a);
 #var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE);
 ## KILL
@@ -493,10 +493,10 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 ## test the timestamp operations
 	bat.setColumn(timestamp_bat,"timestamp");
 #io.print(timestamp_bat.bat.setColumn("timestamp"),
-	mh_a:bat[:oid,:date] := optimizer.multiplex("mtime.date",timestamp_bat,tzone_bat);
+	mh_a:bat[:oid,:date] := optimizer.multiplex("mtime","date",timestamp_bat,tzone_bat);
 	bat.setColumn(mh_a,"date");
 #      [date](timestamp_bat,tzone_bat).bat.setColumn("date"),
-	oh_a:bat[:oid,:daytime] := optimizer.multiplex("mtime.daytime",timestamp_bat,tzone_bat);
+	oh_a:bat[:oid,:daytime] := optimizer.multiplex("mtime","daytime",timestamp_bat,tzone_bat);
 	bat.setColumn(oh_a,"daytime");
 	io.print("print(timestamp_bat,mh_a,oh_a)");
 	io.print(timestamp_bat,mh_a,oh_a);
@@ -508,18 +508,18 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	io.print("print(timezones)");
 	io.print(timezones);
 	sh_a:timezone := algebra.find(timezones,"Wake Island");
-	th_a:bat[:oid,:date] := optimizer.multiplex("mtime.date",timestamp_bat,sh_a);
+	th_a:bat[:oid,:date] := optimizer.multiplex("mtime","date",timestamp_bat,sh_a);
 	bat.setColumn(th_a,"Wake Island");
 #      [date](timestamp_bat,algebra.find(timezones,"Wake Island")).bat.setColumn("Wake Island"),
 	vh_a:timezone := algebra.find(timezones,"Wake Island");
-	wh_a:bat[:oid,:daytime] := optimizer.multiplex("mtime.daytime",timestamp_bat,vh_a);
+	wh_a:bat[:oid,:daytime] := optimizer.multiplex("mtime","daytime",timestamp_bat,vh_a);
 #      [daytime](timestamp_bat,algebra.find(timezones,"Wake Island")),
 	xh_a:timezone := algebra.find(timezones,"American Samoa");
-	yh_a:bat[:oid,:date] := optimizer.multiplex("mtime.date",timestamp_bat,xh_a);
+	yh_a:bat[:oid,:date] := optimizer.multiplex("mtime","date",timestamp_bat,xh_a);
 	ai_a := bat.setColumn(yh_a,"American Samoa");
 #      [date](timestamp_bat,algebra.find(timezones,"American Samoa")).bat.setColumn("American Samoa"),
 	bi_a:timezone := algebra.find(timezones,"American Samoa");
-	ci_a:bat[:oid,:daytime] := optimizer.multiplex("mtime.daytime",timestamp_bat,bi_a);
+	ci_a:bat[:oid,:daytime] := optimizer.multiplex("mtime","daytime",timestamp_bat,bi_a);
 	io.print("print(timestamp_bat,th_a,wh_a,yh_a,ci_a)");
 	di_a := io.print(timestamp_bat,th_a,wh_a,yh_a,ci_a);
 #      [daytime](timestamp_bat,algebra.find(timezones,"American Samoa")));
@@ -528,11 +528,11 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	fi_a := calc.*(60,ei_a);
 	gi_a := calc.*(23,fi_a);
 	hi_a := calc.lng(gi_a);
-	timestamp_plus:bat[:oid,:timestamp] := optimizer.multiplex("mtime.add",timestamp_bat,hi_a);
+	timestamp_plus:bat[:oid,:timestamp] := optimizer.multiplex("mtime","add",timestamp_bat,hi_a);
 #var timestamp_plus := [add](timestamp_bat, calc.lng(23*60*60*1000));
 	ii_a := calc.*(-60,1000);
 	ji_a := calc.lng(ii_a);
-	timestamp_minus:bat[:oid,:timestamp] := optimizer.multiplex("mtime.add",timestamp_bat,ji_a);
+	timestamp_minus:bat[:oid,:timestamp] := optimizer.multiplex("mtime","add",timestamp_bat,ji_a);
 #var timestamp_minus := [add](timestamp_bat, calc.lng(-60*1000));
 #
 	ki_a := bat.setColumn(timestamp_bat,"timestamp");
@@ -541,7 +541,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #	timestamp_plus.bat.setColumn("plus23"),
 	mi_a := bat.setColumn(timestamp_minus,"min1");
 #	timestamp_minus.bat.setColumn("min1"),
-	ni_a:bat[:oid,:lng] := optimizer.multiplex("mtime.diff",timestamp_plus,timestamp_minus);
+	ni_a:bat[:oid,:lng] := optimizer.multiplex("mtime","diff",timestamp_plus,timestamp_minus);
 	oi_a := calc.*(60,1000);
 	pi_a := calc.*(60,oi_a);
 	qi_a := calc.lng(pi_a);
@@ -552,28 +552,28 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #	[/]([diff](timestamp_plus, timestamp_minus),calc.lng(60*60*1000)).bat.setColumn("diff"));
 #
 	ui_a:timezone := algebra.find(timezones,"West/Europe");
-	timestamp_eur:bat[:int,:timestamp]:= optimizer.multiplex("mtime.timestamp",date_seq,daytime_00,ui_a);
+	timestamp_eur:bat[:int,:timestamp]:= optimizer.multiplex("mtime","timestamp",date_seq,daytime_00,ui_a);
 #var timestamp_eur := [timestamp](date_seq, daytime_00, algebra.find(timezones,"West/Europe"));
 	vi_a:timezone := algebra.find(timezones,"Andes/Brazil");
-	timestamp_bra:bat[:int,:timestamp]:= optimizer.multiplex("mtime.timestamp",date_seq,daytime_00,vi_a);
+	timestamp_bra:bat[:int,:timestamp]:= optimizer.multiplex("mtime","timestamp",date_seq,daytime_00,vi_a);
 #var timestamp_bra := [timestamp](date_seq, daytime_00, algebra.find(timezones,"Andes/Brazil"));
 #
 	wi_a := bat.setColumn(date_seq,"date");
 #io.print(date_seq.bat.setColumn("date"), 
-	xi_a:bat[:int,:int] := optimizer.multiplex("mtime.dayofweek",date_seq);
-	yi_a:bat[:int,:str] := optimizer.multiplex("mtime.dayname",xi_a);
+	xi_a:bat[:int,:int] := optimizer.multiplex("mtime","dayofweek",date_seq);
+	yi_a:bat[:int,:str] := optimizer.multiplex("mtime","dayname",xi_a);
 	aj_a := bat.setColumn(yi_a,"day");
 #	[dayname]([dayofweek](date_seq)).bat.setColumn("day"),
 	bj_a := bat.setColumn(timestamp_eur,"West/Europe");
 #	timestamp_eur.bat.setColumn("West/Europe"),
 	cj_a:timezone := algebra.find(timezones,"West/Europe");
-	dj_a:bat[:int,:bit] := optimizer.multiplex("mtime.dst",timestamp_eur,cj_a);
+	dj_a:bat[:int,:bit] := optimizer.multiplex("mtime","dst",timestamp_eur,cj_a);
 	ej_a := bat.setColumn(dj_a,"dst");
 #	[dst](timestamp_eur,algebra.find(timezones,"West/Europe")).bat.setColumn("dst"),
 	fj_a := bat.setColumn(timestamp_bra,"Andes/Brazil");
 #	timestamp_bra.bat.setColumn("Andes/Brazil"),
 	gj_a:timezone := algebra.find(timezones,"Andes/Brazil");
-	hj_a:bat[:int,:bit] := optimizer.multiplex("mtime.dst",timestamp_bra,gj_a);
+	hj_a:bat[:int,:bit] := optimizer.multiplex("mtime","dst",timestamp_bra,gj_a);
 	ij_a := bat.setColumn(hj_a,"dst");
 	io.print("print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a)");
 	jj_a := io.print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a);

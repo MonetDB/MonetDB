@@ -237,26 +237,26 @@ exit (go,i);	# 9  (go:bit)(i:lng)
     io.printf(" count %d\n",cnt);	# 106 IOprint_formatted_int (_79:void)<-(_74:str)(cnt:int)
     cnt := aggr.count(z9);	# 107 ALGcount_bat (cnt:int)<-(z9:bat[:oid,:lng])
     t0 := alarm.usec();	# 108 ALARMusec (t0:lng)
-    _86 := bat.new(nil:void,nil:lng);	# 109 CMDBATnew (_86:bat[:void,:lng])<-(_87:void)(_88:lng)
-    _89 := bat.setSequenceBase(_86,0@0);	# 110 BKCsetSequenceBase (_89:bat[:void,:lng])<-(_86:bat[:void,:lng])(_90:oid)
-barrier (_92,_93,_94):= bat.newIterator(b);	# 111 CHPbunIterator (_92:lng)(_93:oid)(_94:lng)<-(b:bat[:void,:lng]) jump 119
-    _96 := algebra.find(c,_93);	# 112 ALGfind (_96:lng)<-(c:bat[:void,:lng])(_93:oid)
-    _98 := calc.+(_94,_96);	# 113 CALCbinaryADDlnglng (_98:lng)<-(_94:lng)(_96:lng)
-    bat.insert(_89,_93,_98);	# 114 BKCinsert_bun (_99:void)<-(_89:bat[:void,:lng])(_93:oid)(_98:lng)
-    redo (_92,_93,_94):= bat.hasMoreElements(b);	# 115 CHPbunHasMoreElements (_92:lng)(_93:oid)(_94:lng)<-(b:bat[:void,:lng]) jump 112
+    _87 := bat.new(nil:void,nil:lng);	# 109 CMDBATnew (_87:bat[:void,:lng])<-(_88:void)(_89:lng)
+    _90 := bat.setSequenceBase(_87,0@0);	# 110 BKCsetSequenceBase (_90:bat[:void,:lng])<-(_87:bat[:void,:lng])(_91:oid)
+barrier (_93,_94,_95):= bat.newIterator(b);	# 111 CHPbunIterator (_93:lng)(_94:oid)(_95:lng)<-(b:bat[:void,:lng]) jump 119
+    _97 := algebra.find(c,_94);	# 112 ALGfind (_97:lng)<-(c:bat[:void,:lng])(_94:oid)
+    _99 := calc.+(_95,_97);	# 113 CALCbinaryADDlnglng (_99:lng)<-(_95:lng)(_97:lng)
+    bat.insert(_90,_94,_99);	# 114 BKCinsert_bun (_100:void)<-(_90:bat[:void,:lng])(_94:oid)(_99:lng)
+    redo (_93,_94,_95):= bat.hasMoreElements(b);	# 115 CHPbunHasMoreElements (_93:lng)(_94:oid)(_95:lng)<-(b:bat[:void,:lng]) jump 112
 catch MALException:str ;	# 116  (MALException:str) jump 118
-    redo (_92,_93,_94):= bat.hasMoreElements(b);	# 117 CHPbunHasMoreElements (_92:lng)(_93:oid)(_94:lng)<-(b:bat[:void,:lng]) jump 112
+    redo (_93,_94,_95):= bat.hasMoreElements(b);	# 117 CHPbunHasMoreElements (_93:lng)(_94:oid)(_95:lng)<-(b:bat[:void,:lng]) jump 112
 exit MALException:str ;	# 118  (MALException:str)
-exit (_92,_93,_94);	# 119  (_92:lng)(_93:oid)(_94:lng)
-    x:bat[:void,:lng]  := _89;	# 120  (x:bat[:void,:lng])<-(_89:bat[:void,:lng])
+exit (_93,_94,_95);	# 119  (_93:lng)(_94:oid)(_95:lng)
+    x:bat[:void,:lng]  := _90;	# 120  (x:bat[:void,:lng])<-(_90:bat[:void,:lng])
     t1 := alarm.usec();	# 121 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 122 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#optimizer.multiplex(+) %d\n",d0);	# 123 IOprint_formatted_lng (_82:void)<-(_83:str)(d0:lng)
+    io.printf("#optimizer.multiplex(+) %d\n",d0);	# 123 IOprint_formatted_lng (_83:void)<-(_84:str)(d0:lng)
     t0 := alarm.usec();	# 124 ALARMusec (t0:lng)
     x:bat[:void,:lng]  := batcalc.+(b,c);	# 125 CMDbatADD_lng_lng_lng (x:bat[:void,:lng])<-(b:bat[:void,:lng])(c:bat[:void,:lng])
     t1 := alarm.usec();	# 126 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 127 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#batcalc.+() %d\n",d0);	# 128 IOprint_formatted_lng (_84:void)<-(_85:str)(d0:lng)
+    io.printf("#batcalc.+() %d\n",d0);	# 128 IOprint_formatted_lng (_85:void)<-(_86:str)(d0:lng)
 end main;	# 129  
 #loop 411001
 #copy 32396#count 1000000
