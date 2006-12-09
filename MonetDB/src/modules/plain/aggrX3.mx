@@ -1174,7 +1174,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 
 		w = offset + v;
 		@8 {
-			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
+			oid *h = (oid*) BUNtail(g, BUNptr(g, w));
 
 			@3(r, bn, (oid*)h);
 			if (r) {
@@ -1250,7 +1250,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 
 		w = offset + v;
 		@8 {
-			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
+			oid *h = (oid*) BUNtail(g, BUNptr(g, w));
 
 			@3(r, bn, (oid*)h);
 			if (r) {
@@ -1325,7 +1325,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 
 		w = offset + v;
 		if (w >= base && w < end) {
-			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
+			oid *h = (oid*) BUNtail(g, BUNptr(g, w));
 
 			@3(r, bn, (oid*)h);
 			if (r) {
@@ -1724,7 +1724,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 		w = offset + v;
 		if (w >= base && w < end) {
-			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
+			oid *h = (oid*) BUNtail(g, BUNptr(g, w));
 
 			@3(r, bn, (oid*)h);
 			if (r) {
@@ -1786,7 +1786,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 		w = offset + v;
 		if (w >= base && w < end) {
-			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
+			oid *h = (oid*) BUNtail(g, BUNptr(g, w));
 
 			@3(r, bn, (oid*)h);
 			if (r) {
@@ -2044,7 +2044,7 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 		w = offset + v;
 		if (w >= base && w < end) {
-			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
+			oid *h = (oid*) BUNtail(g, BUNptr(g, w));
 
 			@3(r, bn, (oid*)h);
 			if (r) {
