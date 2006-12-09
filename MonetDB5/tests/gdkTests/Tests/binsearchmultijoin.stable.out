@@ -103,41 +103,41 @@ function user.main():void;	# 0  (main:void)
     r := bat.new(:oid,:int);	# 20 CMDBATnew (r:bat[:oid,:int])<-(_25:oid)(_26:int)
     bat.insert(r,1@0:oid,1);	# 21 BKCinsert_bun (_27:void)<-(r:bat[:oid,:int])(_14:oid)(_28:int)
     bat.insert(r,0@0:oid,2);	# 22 BKCinsert_bun (_29:void)<-(r:bat[:oid,:int])(_12:oid)(_30:int)
-    _46 := bat.new(nil:oid,nil:int);	# 23 CMDBATnew (_46:bat[:oid,:int])<-(_47:oid)(_48:int)
-barrier (_50,_51,_52):= bat.newIterator(l2);	# 24 CHPbunIterator (_50:lng)(_51:oid)(_52:int)<-(l2:bat[:oid,:int]) jump 32
-    _54 := algebra.find(r,_51);	# 25 ALGfind (_54:int)<-(r:bat[:oid,:int])(_51:oid)
-    _56 := calc.+(_52,_54);	# 26 CALCbinaryADDintint (_56:int)<-(_52:int)(_54:int)
-    bat.insert(_46,_51,_56);	# 27 BKCinsert_bun (_57:void)<-(_46:bat[:oid,:int])(_51:oid)(_56:int)
-    redo (_50,_51,_52):= bat.hasMoreElements(l2);	# 28 CHPbunHasMoreElements (_50:lng)(_51:oid)(_52:int)<-(l2:bat[:oid,:int]) jump 25
+    _47 := bat.new(nil:oid,nil:int);	# 23 CMDBATnew (_47:bat[:oid,:int])<-(_48:oid)(_49:int)
+barrier (_51,_52,_53):= bat.newIterator(l2);	# 24 CHPbunIterator (_51:lng)(_52:oid)(_53:int)<-(l2:bat[:oid,:int]) jump 32
+    _55 := algebra.find(r,_52);	# 25 ALGfind (_55:int)<-(r:bat[:oid,:int])(_52:oid)
+    _57 := calc.+(_53,_55);	# 26 CALCbinaryADDintint (_57:int)<-(_53:int)(_55:int)
+    bat.insert(_47,_52,_57);	# 27 BKCinsert_bun (_58:void)<-(_47:bat[:oid,:int])(_52:oid)(_57:int)
+    redo (_51,_52,_53):= bat.hasMoreElements(l2);	# 28 CHPbunHasMoreElements (_51:lng)(_52:oid)(_53:int)<-(l2:bat[:oid,:int]) jump 25
 catch MALException:str ;	# 29  (MALException:str) jump 31
-    redo (_50,_51,_52):= bat.hasMoreElements(l2);	# 30 CHPbunHasMoreElements (_50:lng)(_51:oid)(_52:int)<-(l2:bat[:oid,:int]) jump 25
+    redo (_51,_52,_53):= bat.hasMoreElements(l2);	# 30 CHPbunHasMoreElements (_51:lng)(_52:oid)(_53:int)<-(l2:bat[:oid,:int]) jump 25
 exit MALException:str ;	# 31  (MALException:str)
-exit (_50,_51,_52);	# 32  (_50:lng)(_51:oid)(_52:int)
-    z:bat[:oid,:int]  := _46;	# 33  (z:bat[:oid,:int])<-(_46:bat[:oid,:int])
+exit (_51,_52,_53);	# 32  (_51:lng)(_52:oid)(_53:int)
+    z:bat[:oid,:int]  := _47;	# 33  (z:bat[:oid,:int])<-(_47:bat[:oid,:int])
     c := aggr.count(z);	# 34 ALGcount_bat (c:int)<-(z:bat[:oid,:int])
-    io.print(c);	# 35 IOprint_val (_34:void)<-(c:int)
-# the other case when binsearch is chosen, is if r is sorted, 	# 36  (_35:str)
-# but l.count() > 40*r.count(): 	# 37  (_36:str)
-    n81 := user.Nseq(81);	# 38  (n81:bat[:void,:int])<-(_38:int)
+    io.print(c);	# 35 IOprint_val (_35:void)<-(c:int)
+# the other case when binsearch is chosen, is if r is sorted, 	# 36  (_36:str)
+# but l.count() > 40*r.count(): 	# 37  (_37:str)
+    n81 := user.Nseq(81);	# 38  (n81:bat[:void,:int])<-(_39:int)
     n81r := bat.reverse(n81);	# 39 BKCreverse (n81r:bat[:int,:void])<-(n81:bat[:void,:int])
     n81p := algebra.project(n81r,0@0:oid);	# 40 CMDBBPproject (n81p:bat[:int,:oid])<-(n81r:bat[:int,:void])(_12:oid)
     nr := bat.reverse(n81p);	# 41 BKCreverse (nr:bat[:oid,:int])<-(n81p:bat[:int,:oid])
     rs := algebra.sort(r);	# 42 ALGhsort (rs:bat[:oid,:int])<-(r:bat[:oid,:int])
-    _63 := bat.new(nil:oid,nil:int);	# 43 CMDBATnew (_63:bat[:oid,:int])<-(_47:oid)(_48:int)
-barrier (_65,_66,_67):= bat.newIterator(nr);	# 44 CHPbunIterator (_65:lng)(_66:oid)(_67:int)<-(nr:bat[:oid,:int]) jump 52
-    _69 := algebra.find(rs,_66);	# 45 ALGfind (_69:int)<-(rs:bat[:oid,:int])(_66:oid)
-    _71 := calc.+(_67,_69);	# 46 CALCbinaryADDintint (_71:int)<-(_67:int)(_69:int)
-    bat.insert(_63,_66,_71);	# 47 BKCinsert_bun (_72:void)<-(_63:bat[:oid,:int])(_66:oid)(_71:int)
-    redo (_65,_66,_67):= bat.hasMoreElements(nr);	# 48 CHPbunHasMoreElements (_65:lng)(_66:oid)(_67:int)<-(nr:bat[:oid,:int]) jump 45
+    _64 := bat.new(nil:oid,nil:int);	# 43 CMDBATnew (_64:bat[:oid,:int])<-(_48:oid)(_49:int)
+barrier (_66,_67,_68):= bat.newIterator(nr);	# 44 CHPbunIterator (_66:lng)(_67:oid)(_68:int)<-(nr:bat[:oid,:int]) jump 52
+    _70 := algebra.find(rs,_67);	# 45 ALGfind (_70:int)<-(rs:bat[:oid,:int])(_67:oid)
+    _72 := calc.+(_68,_70);	# 46 CALCbinaryADDintint (_72:int)<-(_68:int)(_70:int)
+    bat.insert(_64,_67,_72);	# 47 BKCinsert_bun (_73:void)<-(_64:bat[:oid,:int])(_67:oid)(_72:int)
+    redo (_66,_67,_68):= bat.hasMoreElements(nr);	# 48 CHPbunHasMoreElements (_66:lng)(_67:oid)(_68:int)<-(nr:bat[:oid,:int]) jump 45
 catch MALException:str ;	# 49  (MALException:str) jump 51
-    redo (_65,_66,_67):= bat.hasMoreElements(nr);	# 50 CHPbunHasMoreElements (_65:lng)(_66:oid)(_67:int)<-(nr:bat[:oid,:int]) jump 45
+    redo (_66,_67,_68):= bat.hasMoreElements(nr);	# 50 CHPbunHasMoreElements (_66:lng)(_67:oid)(_68:int)<-(nr:bat[:oid,:int]) jump 45
 exit MALException:str ;	# 51  (MALException:str)
-exit (_65,_66,_67);	# 52  (_65:lng)(_66:oid)(_67:int)
-    z:bat[:oid,:int]  := _63;	# 53  (z:bat[:oid,:int])<-(_63:bat[:oid,:int])
+exit (_66,_67,_68);	# 52  (_66:lng)(_67:oid)(_68:int)
+    z:bat[:oid,:int]  := _64;	# 53  (z:bat[:oid,:int])<-(_64:bat[:oid,:int])
     c := aggr.count(z);	# 54 ALGcount_bat (c:int)<-(z:bat[:oid,:int])
-    io.print(c);	# 55 IOprint_val (_43:void)<-(c:int)
-#[+](Nseq(81).reverse().project(oid(0)).reverse(),r.sort()).count().print(); 	# 56  (_44:str)
-    clients.quit();	# 57 CLTquitDefault (_45:void)
+    io.print(c);	# 55 IOprint_val (_44:void)<-(c:int)
+#[+](Nseq(81).reverse().project(oid(0)).reverse(),r.sort()).count().print(); 	# 56  (_45:str)
+    clients.quit();	# 57 CLTquitDefault (_46:void)
 end main;	# 58  
 #-----------------#
 # t	h	  # name

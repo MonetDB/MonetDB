@@ -76,7 +76,7 @@ bat.insert(m,10:oid,"ten");
 bat.insert(m,20:oid,"twenty");
 #VAR res := [createBAT](i);
 io.print("do multiplex");
-r:bat[:oid,:bat]:= optimizer.multiplex("user.createBAT",m);
+r:bat[:oid,:bat]:= optimizer.multiplex("user","createBAT",m);
 io.print(r);
 #tmp();
 io.print("done multiplex");
