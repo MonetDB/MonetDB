@@ -68,19 +68,3 @@
 #
 doc:
 	cd $(top_srcdir) ; doc/gen_doc.sh
-
-#
-# Stefan's automated test system uses `make docs', not `make doc'.
-# Make him happy as well.
-#
-docs: \
-	$(prefix)/doc/MonetDB/GetGoing/Setup/XQuery/Unix/index.html \
-	$(prefix)/doc/MonetDB/GetGoing/Setup/XQuery/Windows/index.html
-
-$(prefix)/doc/MonetDB/GetGoing/Setup/XQuery/Unix/index.html: $(top_srcdir)/HowToStart-PF
-	mkdir -p $(prefix)/doc/MonetDB/GetGoing/Setup/XQuery/Unix
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-PF > $(prefix)/doc/MonetDB/GetGoing/Setup/XQuery/Unix/index.html
-
-$(prefix)/doc/MonetDB/GetGoing/Setup/XQuery/Windows/index.html: $(top_srcdir)/HowToStart-MinGW.txt
-	mkdir -p $(prefix)/doc/MonetDB/GetGoing/Setup/XQuery/Windows
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW.txt > $(prefix)/doc/MonetDB/GetGoing/Setup/XQuery/Windows/index.html

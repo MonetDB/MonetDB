@@ -21,8 +21,6 @@ BuildRequires: MonetDB-devel libxml2-devel
 
 %define comp_cc @CC@
 
-%define builddoc 0
-
 # groups of related archs
 %define all_x86 i386 i586 i686
 
@@ -46,15 +44,6 @@ Group: System
 Add the MonetDB devel description here
 Requires: %{name}-server
 Requires: MonetDB-devel
-
-%if %{builddoc}
-%package docu
-Summary: MonetDB XQuery documentation package 
-Group: System 
-
-%description docu
-Add the MonetDB documentaion description here
-%endif
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -95,18 +84,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/*.mil
 %{prefix}/bin/Mbeddedxq
 %{_libdir}/libembeddedxq.*
+%{_datadir}/doc/%{name}-%{version}/*
 
 %files devel
 %defattr(-,monetdb,monetdb) 
 %{prefix}/include/pathfinder/*.h
-
-%if %{builddoc}
-%files docu
-%defattr(-,monetdb,monetdb) 
-%{prefix}/share/MonetDB/docs/pathfinder/*.html
-%{prefix}/share/MonetDB/docs/pathfinder/*.pdf
-%{prefix}/share/MonetDB/docs/pathfinder/*.ps
-%{prefix}/share/MonetDB/docs/pathfinder/*/*.html
-%{prefix}/share/MonetDB/docs/pathfinder/*/*.pdf
-%{prefix}/share/MonetDB/docs/pathfinder/*/*.ps
-%endif

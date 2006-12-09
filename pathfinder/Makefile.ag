@@ -26,11 +26,21 @@ SUBDIRS = conf compiler MONET4?runtime MONET5?runtime5 modules src
 
 EXTRA_DIST = rules.mk extra.mk RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
-		MonetDB-XQuery.spec.in MonetDB-XQuery.spec rpm.mk.in \
-		HowToStart-PF HowToStart-MinGW.txt
+		MonetDB-XQuery.spec.in MonetDB-XQuery.spec rpm.mk.in 
 EXTRA_DIST_DIR = NT tests
 
 EXTRA_HEADERS = pf_config.h
+
+scripts_txt = {
+	SOURCES = HowToStart-MinGW.txt
+	DIR = datadir/doc/MonetDB-XQuery-${VERSION}
+}
+
+scripts_docs = {
+	EXT = ""
+	SOURCES = HowToStart-PF 
+	DIR = datadir/doc/MonetDB-XQuery-${VERSION}
+}
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
