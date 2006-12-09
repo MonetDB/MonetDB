@@ -86,7 +86,7 @@ mdb>help
 	down             -- go down the stack
 	up               -- go up the stack
 	trace <var>      -- trace assignment to variables
-	set {timer,flow,io,memory} -- set trace switches
+	set @verb{ { }timer,flow,io,memory@verb{ } } -- set trace switches
 	unset            -- turn off switches
 	help             -- this message
 mdb>
@@ -246,18 +246,18 @@ mdb>c
 #    26 usec#   0  0#    io.print(i=3)
 #     6 usec#   0  0#    i := calc.*(i=6, _3=2)
 #    10 usec#   0  0#    b := bat.new(_5=0, _6=0)
-#     7 usec#   0  8#    bat.insert(b=<tmp_167>bat[:int,:int]{1}, _8=1, i=6)
+#     7 usec#   0  8#    bat.insert(b=<tmp_167>bat[:int,:int]@verb{ { }1@verb{ } }, _8=1, i=6)
 #-----------------#
 # h     t         # name
 # int   int       # type
 #-----------------#
 [ 1,      6       ]
-#    41 usec#   0  8#    io.print(b=<tmp_167>bat[:int,:int]{1})
+#    41 usec#   0  8#    io.print(b=<tmp_167>bat[:int,:int]@verb{ { }1@verb{ } })
 #     7 usec#   0  0#    return test := "ok";
 #   211 usec#   0  0#    user.test(_2=3)
 
 @end example
-@node Program Inspection, The MAL Profiler, Profile Switches,  The MAL Debugger
+@node Program Inspection, Runtime Inspection, Profile Switches,  The MAL Debugger
 @+ Program Inspection 
 The debugger commands available for inspection of the program and
 symbol tables are:
@@ -1259,7 +1259,6 @@ signatures satisfying the pattern.
 			int i, lstng;
 
 			lstng= (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR | LIST_MAL_PROPS);
-			skipWord(cntxt, b);
 			skipWord(cntxt, b);
 			if (*b != 0) {
 				MalBlkPtr m= mdbLocateMalBlk(mb,b,out);
