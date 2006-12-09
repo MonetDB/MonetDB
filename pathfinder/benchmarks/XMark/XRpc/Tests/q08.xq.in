@@ -1,4 +1,4 @@
-import module namespace xrpc = "http://www.monetdb.nl/xmark/"
-                    at "$TSTSRCDIR/xmark.xq";
+import module namespace xrpc = "http://www.cwi.nl/~boncz/xmark/opt/"
+                    at "$TSTSRCBASE/benchmarks/XMark/opt/XQ/Tests/xmark.xq";
 
 execute at {"localhost"} {xrpc:q08("auctionG.xml")}
