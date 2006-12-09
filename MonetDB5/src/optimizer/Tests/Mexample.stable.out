@@ -20,31 +20,31 @@ stdout of test 'Mexample` in directory 'src/optimizer` itself:
 function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     bat.insert(b,1,1);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_4:int)
-    _8 := bat.new(nil:int,nil:int);	# 3 CMDBATnew (_8:bat[:int,:int])<-(_9:int)(_9:int)
-barrier (_11,_12,_13):= bat.newIterator(b);	# 4 CHPbunIterator (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 11
-    _15 := calc.+(_13,1);	# 5 CALCbinaryADDintint (_15:int)<-(_13:int)(_4:int)
-    bat.insert(_8,_12,_15);	# 6 BKCinsert_bun (_16:void)<-(_8:bat[:int,:int])(_12:int)(_15:int)
-    redo (_11,_12,_13):= bat.hasMoreElements(b);	# 7 CHPbunHasMoreElements (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 5
+    _9 := bat.new(nil:int,nil:int);	# 3 CMDBATnew (_9:bat[:int,:int])<-(_10:int)(_10:int)
+barrier (_12,_13,_14):= bat.newIterator(b);	# 4 CHPbunIterator (_12:lng)(_13:int)(_14:int)<-(b:bat[:int,:int]) jump 11
+    _16 := calc.+(_14,1);	# 5 CALCbinaryADDintint (_16:int)<-(_14:int)(_4:int)
+    bat.insert(_9,_13,_16);	# 6 BKCinsert_bun (_17:void)<-(_9:bat[:int,:int])(_13:int)(_16:int)
+    redo (_12,_13,_14):= bat.hasMoreElements(b);	# 7 CHPbunHasMoreElements (_12:lng)(_13:int)(_14:int)<-(b:bat[:int,:int]) jump 5
 catch MALException:str ;	# 8  (MALException:str) jump 10
-    redo (_11,_12,_13):= bat.hasMoreElements(b);	# 9 CHPbunHasMoreElements (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 5
+    redo (_12,_13,_14):= bat.hasMoreElements(b);	# 9 CHPbunHasMoreElements (_12:lng)(_13:int)(_14:int)<-(b:bat[:int,:int]) jump 5
 exit MALException:str ;	# 10  (MALException:str)
-exit (_11,_12,_13);	# 11  (_11:lng)(_12:int)(_13:int)
-    c:bat[:int,:int]  := _8;	# 12  (c:bat[:int,:int])<-(_8:bat[:int,:int])
-    mdb.list();	# 13 MDBlist (_7:void)
+exit (_12,_13,_14);	# 11  (_12:lng)(_13:int)(_14:int)
+    c:bat[:int,:int]  := _9;	# 12  (c:bat[:int,:int])<-(_9:bat[:int,:int])
+    mdb.list();	# 13 MDBlist (_8:void)
 end main;	# 14  
 function user.main():void;
     b := bat.new(:int,:int);
     bat.insert(b,1,1);
-    _8 := bat.new(nil:int,nil:int);
-barrier (_11,_12,_13):= bat.newIterator(b);
-    _15 := calc.+(_13,1);
-    bat.insert(_8,_12,_15);
-    redo (_11,_12,_13):= bat.hasMoreElements(b);
+    _9 := bat.new(nil:int,nil:int);
+barrier (_12,_13,_14):= bat.newIterator(b);
+    _16 := calc.+(_14,1);
+    bat.insert(_9,_13,_16);
+    redo (_12,_13,_14):= bat.hasMoreElements(b);
 catch MALException:str ;
-    redo (_11,_12,_13):= bat.hasMoreElements(b);
+    redo (_12,_13,_14):= bat.hasMoreElements(b);
 exit MALException:str ;
-exit (_11,_12,_13);
-    c:bat[:int,:int]  := _8;
+exit (_12,_13,_14);
+    c:bat[:int,:int]  := _9;
     mdb.list();
 end main;
 
