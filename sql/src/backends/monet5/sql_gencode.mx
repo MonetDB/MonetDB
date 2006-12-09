@@ -217,17 +217,11 @@ Some utility routines to generate code
 The equality operator in MAL is '==' instead of '='.
 @c
 str
-convertMultiplexOperator(str mod, str op)
+convertMultiplexOperator(str op)
 {
-	char buf[128];
-
 	if (strcmp(op, "=") == 0)
-		return _strdup("calc.==");
-	buf[0] = 0;
-	strcat(buf,mod);
-	strcat(buf,".");
-	strcat(buf,op);
-	return _strdup(buf);
+		return _strdup("==");
+	return op;
 }
 
 str
@@ -288,7 +282,8 @@ multiplex1(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, in
 		q = newStmt(mb, "optimizer","multiplex");
 		setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));
 		freezeVarType(mb,getArg(q,0));
-		q = pushStr(mb, q, convertMultiplexOperator(mod, name));
+		q = pushStr(mb, q, mod);
+		q = pushStr(mb, q, convertMultiplexOperator(name));
 		q = pushArgument(mb, q, o1);
 	}
 	return q;
@@ -321,7 +316,8 @@ dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1
 		q = newStmt(mb, "optimizer","multiplex");
 		setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));
 		freezeVarType(mb,getArg(q,0));
-		q = pushStr(mb, q, convertMultiplexOperator(mod, name));
+		q = pushStr(mb, q, mod);
+		q = pushStr(mb, q, convertMultiplexOperator(name));
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	}
@@ -333,7 +329,7 @@ multiplexN(MalBlkPtr mb, char *name)
 {
 	InstrPtr q = NULL;
 
-	if (strcmp(name,"calc.rotate_xor_hash") == 0) {
+	if (strcmp(name,"rotate_xor_hash") == 0) {
 		q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
 	} 
 	return q;
@@ -1119,7 +1115,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt(mb, "optimizer","multiplex");
 				setVarType(mb,getArg(q,0), newBatType(TYPE_void,type));
 				freezeVarType(mb,getArg(q,0));
-				q = pushStr(mb, q, convertMultiplexOperator("calc",convert));
+				q = pushStr(mb, q, "calc");
+				q = pushStr(mb, q, convertMultiplexOperator(convert));
 			} else {
 				q = newStmt1(mb, batcalcRef, convert);
 			}
@@ -1200,13 +1197,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (!special) {
 					q= dump_multiplex(mb,mod,convertOperator(fimp),l,r,tail_type(s->op2.stval)->type->localtype, s->op4.funcval->func->res.type->localtype);
 				} else {
-					fimp = convertMultiplexOperator(mod,fimp);
 					q = multiplexN(mb,fimp);
 					q = newStmt(mb, "optimizer","multiplex");
 					setVarType(mb,getArg(q,0), 
 						newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
 					freezeVarType(mb,getArg(q,0));
-					q = pushStr(mb, q, fimp);
+					q = pushStr(mb, q, mod);
+					q = pushStr(mb, q, convertMultiplexOperator(fimp));
 					q = pushArgument(mb, q, l);
 					q = pushInt(mb, q, tpe->digits);
 					q = pushInt(mb, q, tpe->scale);
@@ -1236,13 +1233,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->nrcols) {
-				fimp = convertMultiplexOperator(mod,fimp);
+				fimp = convertMultiplexOperator(fimp);
 				q = multiplexN(mb,fimp);
 				if (!q) {
 					q = newStmt(mb, "optimizer","multiplex");
 					setVarType(mb,getArg(q,0), 
 						newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
 					freezeVarType(mb,getArg(q,0));
+					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
 				} else {
 					setVarType(mb,getArg(q,0), 

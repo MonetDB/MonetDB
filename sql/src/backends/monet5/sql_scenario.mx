@@ -248,7 +248,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	@:SQLglobal("current_schema", schema)@
 	@:SQLglobal("current_user", user)@
 	@:SQLglobal("current_role", user)@
-	@:SQLglobal("optimizer", "on")@
+	@:SQLglobal("optimizer", defaultPlan)@
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -319,7 +319,6 @@ SQLinitClient(Client c)
 	c->fdin->eof = 1;       /* force prompt on first iteration */
 
 	initSQLreferences();
-
 	return MAL_SUCCEED;
 }
 

@@ -89,6 +89,8 @@ str.iconv
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
+sql5_export void initSQLOptimizer();
+sql5_export str defaultPlan;
 
 #endif /* _SQL_OPTIMIZER_H_ */
 
@@ -360,7 +362,25 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 	memcpy((char*)(mb->stmt+n),(char*)rest, sizeof(InstrPtr)*rtop);
 	optimizerCheck(mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
 }
-
+@-
+The optimizers applied are taken from a list managed with
+the SQL set optimizer statement. The default list has been
+tested extensively and should provide overall good performance.
+@c
+str defaultPlan=
+	"costModel,"
+	"coercions,"
+	"emptySet,"
+	/* "joinselect," */
+	"modes,"
+	"aliases,"
+	"commonTerms,"
+	"accumulators,"
+	"joinPath,"
+	"deadcode,"
+	"reduce,"
+	"garbageCollector,"
+	/* "crackers" */;
 
 void
 addQueryToCache(Client c)
@@ -400,6 +420,8 @@ to allow inspection.
 		return;
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
+	if( optimizer == 0 ) 
+		optimizer= defaultPlan;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	if( optimizer)
 		stream_printf(c->fdout,"optimizer=%s\n",optimizer);
@@ -412,32 +434,16 @@ And before we actually execute the program, we should
 expand the macros (unless this has already been taken
 care of.
 @c
-	if( optimizer == 0 || strcmp(optimizer,"on")==0){
-		if (c->debug)
-			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-		/* if there are no updates, do the emptySet optimizer */
-		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb); 
-		OPTcostModel(mb,0,0); /* propagate costs */
-		OPTcoercion(mb,0,0);	/* coercions */
-		OPTemptySet(mb,0,0);    /* remove empty results */
-		/* OPTjoinselect(mb,0,0);	combine join+select call */
-		OPTmodes(mb,0,0);	/* reduce number of BAT copies */
-
-		OPTaliases(mb, 0, 0);	/* alias removal */
-		OPTcommonTerms(mb,0,0);	/* common terms */
-		OPTaccumulators(mb,0,0);/* safe space by overwriting bats */
-		OPTjoinPath(mb,0,0);    /* combine join sequences */
-		OPTdeadcode(mb, 0, 0);	/* dead code removal */
-		OPTreduce(mb,0,0);	/* reduce stack space */
-		OPTgarbageCollector(mb,0,0);	/* free BAT space quickly */
-
-		/* FXoptimizer(mb, 0, 0);	 factory code */
-		/* OPTcrack(mb,0,0); too early !!*/
-	} else if( optimizer && strcmp(optimizer,"off")==0 ){
+	if( strcmp(optimizer,"off")==0 ){
 		/* no optimization needed */
-	} else if( optimizer ){
-		/* the optimizer control is a comma separated list of names */
+		OPTmultiplex(mb,0,0);	/* always perform multiplex expansions */
+	} else {
+		/* the optimizer control is a semicolon separated list of names */
+		str optimizers[256], base;
+		int top=0,i;
 		char *nxt, *nme;
+
+		base= optimizer=  GDKstrdup(optimizer);
 		while(optimizer && *optimizer )
 		{
 			nxt= strchr(optimizer,',');
@@ -448,18 +454,27 @@ care of.
 			if( (nme = getName(optimizer,strlen(optimizer))) == 0) {
 				GDKerror("optimizer '%s' does not exist\n",optimizer);
 				mb->errors++;
-			} else{
-				InstrPtr call;
-				call=  newFcnCall(mb,getName("optimizer",9),nme);
-				typeChecker(c->nspace, mb,call,TRUE);
-			}
+			} else
+			if( top<256)
+				optimizers[top++] =nme; 
 			optimizer =nxt;
 		} 
+		GDKfree(base);
+
+		/* add the optimizers to the query plan */
+		for(i=0;i<top; i++) {
+			InstrPtr p;
+			p=  newFcnCall(mb,getName("optimizer",9),optimizers[i]);
+			typeChecker(c->nspace, mb,p,TRUE);
+		}
+
+		/* time to execute the optimizers */
 		if( c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
+		SQLgetStatistics((mvc *) c->state[OPTIMIZE],mb);
 		optimizeMALBlock(mb);
+		OPTmultiplex(mb,0,0);	/* always perform multiplex expansions */
 	}
-	OPTmultiplex(mb,0,0);	/* multiplex expansions */
 }
 
 @-

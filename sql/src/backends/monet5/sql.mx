@@ -182,7 +182,7 @@ command affectedRows(nr:lng, w:str) :void
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
-pattern exportValue(qtype:int, tname:str, name:str, typename:str, digits:int, scale:int, eclass:int, val:any_1, w:str)
+pattern exportValue(qtype:int, tname:str, name:str, typename:str, digits:int, scale:int, eclass:int, val:any_1, w:str):void
 address mvc_export_value_wrap 
 comment "export a single value onto the stream s";
 
