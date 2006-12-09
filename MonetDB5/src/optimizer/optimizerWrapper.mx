@@ -24,7 +24,16 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	optimizerInit();
 	if( p )
 		removeInstruction(mb, p);
-	if( p && p->argc > 1){
+	if( p && p->argc > 1 && getFunctionId(p) != multiplexRef){
+		if( getArgType(mb,p,1) != TYPE_str ||
+			getArgType(mb,p,2) != TYPE_str ||
+			!isConstant(mb,getArg(p,1)) ||
+			!isConstant(mb,getArg(p,2))
+		) {
+			char buf[1024];
+			snprintf(buf,1024, "Optimizer requires constant string arguments\n");
+			return throwMessage("optimizer.@1",buf);
+		}
 		if( stk != 0){
 			modnme= (str)getArgValue(stk,p,1);
 			fcnnme= (str)getArgValue(stk,p,2);

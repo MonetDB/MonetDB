@@ -113,6 +113,8 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		se = p->token == ENDsymbol;
 		if( se){
 			pushInstruction(mb,p);
+			for(i++; i<limit; i++)
+				pushInstruction(mb,old[i]);
 			break;
 		}
 		if( p->token != NOOPsymbol)

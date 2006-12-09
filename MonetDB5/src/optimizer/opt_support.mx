@@ -597,6 +597,7 @@ optimizeMALBlock(MalBlkPtr mb)
 	int pc, qot = 0;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
+	InstrPtr *optimizers= alloca(sizeof(InstrPtr)*256);
 
 #ifdef DEBUG_OPT_OPTIMIZER
 	int oldstop = mb->stop;
@@ -606,24 +607,26 @@ optimizeMALBlock(MalBlkPtr mb)
 	/* assume the type and flow have been checked already */
 	do {
 		qot = 0;
-		for (pc = 0; pc < mb->stop; pc++) {
+		for (pc = 0; pc < mb->stop && qot<256; pc++) {
 			p = getInstrPtr(mb, pc);
-			if (getModuleId(p) && getModuleId(p) == optimizerRef) {
-				qot++;
-				if (p->fcn)
-					/* all optimizers should behave like patterns */
-					/* However, we don;t have a stack now */
-					msg = (str) (*p->fcn) (mb, 0, p);
-				else
-					msg = throwMessage("optimizer", "Implementation missing");
-				if (msg) {
-					GDKerror(msg);
-					showErrors();
-					return msg;
-				}
-				pc--;
-			}
+			if (getModuleId(p) == optimizerRef && p->fcn) 
+				optimizers[qot++]= p;
 		}
+		/* we collected all optimizers known so far */
+		for( pc=0; pc<qot; pc++)
+			if (optimizers[pc]->fcn)
+				/* all optimizers should behave like patterns */
+				/* However, we don;t have a stack now */
+				msg = (str) (*optimizers[pc]->fcn) (mb, 0, optimizers[pc]);
+			else {
+				msg = throwMessage("optimizer", "Implementation missing");
+				printInstruction(GDKout,mb,optimizers[pc],LIST_MAL_ALL);
+			}
+			if (msg) {
+				GDKerror(msg);
+				showErrors();
+				return msg;
+			}
 	} while (qot && cnt++ < 64);
 #ifdef DEBUG_OPT_OPTIMIZER
 	stream_printf(GDKout, "Optimizer effect %d -> %d instructions\n", 
@@ -987,7 +990,6 @@ of simple SQL rewrites using the module name as the discriminator.
 * Strength Reduction::
 * Costmodels::
 * Variable Stack Reduction::
-* Query Execution Plans::
 @end menu
 @{
 @-
@@ -1015,6 +1017,7 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == bstreamsRef ||
 		getModuleId(p) == bstreamsRef ||
 		getModuleId(p) == mdbRef ||
+		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||
 		getModuleId(p) == alarmRef)
