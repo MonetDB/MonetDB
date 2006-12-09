@@ -17,8 +17,7 @@
 SUBDIRS = conf src 
 EXTRA_DIST = rules.mk RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
-		MonetDB-SQL.spec.in MonetDB-SQL.spec mknife.gif \
-		SQLfeatures.tex HowToStart-SQL HowToStart-SQL-Win32.txt \
+		MonetDB-SQL.spec.in MonetDB-SQL.spec \
 		rpm.mk.in RunMserver.bat.in
 EXTRA_DIST_DIR = NT
 
@@ -30,10 +29,22 @@ headers_pc = {
 	DIR = libdir/pkgconfig
 }
 
-#doc_sql = {
-#	DIR = datadir/MonetDB/docs/SQL
-#	SOURCES = SQLfeatures.tex mknife.gif
-#}
+scripts_txt = {
+	SOURCES = HowToStart-SQL-Win32.txt dump-restore.txt 
+	DIR = datadir/doc/MonetDB-SQL-${VERSION}
+}
+
+scripts_html = {
+	SOURCES = dump-restore.html
+	DIR = datadir/doc/MonetDB-SQL-${VERSION}
+}
+
+scripts_docs = {
+	EXT = ""
+	SOURCES = HowToStart-SQL HowToStart-SQL-Win32.txt \
+		dump-restore.txt dump-restore.html
+	DIR = datadir/doc/MonetDB-SQL-${VERSION}
+}
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

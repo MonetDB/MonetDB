@@ -23,7 +23,6 @@ BuildRequires: MonetDB-devel
 %{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %define comp_cc @CC@
-%define builddoc 0
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -64,12 +63,6 @@ Group: System
 Summary: MonetDB SQL development package 
 Group: System 
 
-%if %{builddoc}
-%package docu
-Summary: MonetDB SQL documentation package 
-Group: System 
-%endif
-
 %description
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -102,11 +95,6 @@ Requires: MonetDB-server
 Add the MonetDB devel description here
 Requires: %{name}-server
 Requires: MonetDB-devel
-
-%if %{builddoc}
-%description docu
-Add the MonetDB documentaion description here
-%endif
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -166,6 +154,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql.*
 %{_libdir}/MonetDB/lib/lib_sql_server*
 %{_libdir}/MonetDB/*.mil
+%{_datadir}/doc/%{name}-%{version}/*
 
 %files devel
 %defattr(-,monetdb,monetdb) 
@@ -173,14 +162,3 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/include/sql/*.h
 %{_libdir}/sql/Tests/*
 %{_libdir}/pkgconfig/MonetDB-SQL.pc
-
-%if %{builddoc}
-%files docu
-%defattr(-,monetdb,monetdb) 
-%{prefix}/share/MonetDB/docs/SQL/*.html
-%{prefix}/share/MonetDB/docs/SQL/*.pdf
-%{prefix}/share/MonetDB/docs/SQL/*.ps
-%{prefix}/share/MonetDB/docs/SQL/*/*.html
-%{prefix}/share/MonetDB/docs/SQL/*/*.pdf
-%{prefix}/share/MonetDB/docs/SQL/*/*.ps
-%endif
