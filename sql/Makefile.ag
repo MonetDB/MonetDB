@@ -41,8 +41,7 @@ scripts_html = {
 
 scripts_docs = {
 	EXT = ""
-	SOURCES = HowToStart-SQL HowToStart-SQL-Win32.txt \
-		dump-restore.txt dump-restore.html
+	SOURCES = HowToStart-SQL 
 	DIR = datadir/doc/MonetDB-SQL-${VERSION}
 }
 
