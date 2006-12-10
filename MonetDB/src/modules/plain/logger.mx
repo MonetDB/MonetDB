@@ -444,7 +444,7 @@ log_read_updates(logger *logger, trans *tr, logformat *l, char *name)
 				void *h = rh(hv, logger->log, 1);
 				void *t = rt(tv, logger->log, 1);
 
-				if (!h && !t) {
+				if (!h || !t) {
 					res = LOG_ERR;
 					break;
 				}
@@ -608,15 +608,13 @@ la_bat_create(logger *logger, logaction *la)
 static void
 log_read_use(logger *logger, trans *tr, logformat *l, char *name)
 {
-	log_bid bid = logger_find_bat(logger, name);
-	if (bid && l->nr == bid) {
-		tr_grow(tr);
-		tr->changes[tr->nr].type = LOG_USE;
-		tr->changes[tr->nr].nr = l->nr;
-		tr->changes[tr->nr].name = GDKstrdup(name);
-		tr->changes[tr->nr].b = NULL;
-		tr->nr++;
-	}
+	(void)logger;
+	tr_grow(tr);
+	tr->changes[tr->nr].type = LOG_USE;
+	tr->changes[tr->nr].nr = l->nr;
+	tr->changes[tr->nr].name = GDKstrdup(name);
+	tr->changes[tr->nr].b = NULL;
+	tr->nr++;
 }
 
 static void
@@ -624,6 +622,7 @@ la_bat_use(logger *logger, logaction *la )
 {
 	log_bid bid = la->nr;
 	BAT *b = BATdescriptor(bid);
+
 	if (!b) {
 		GDKerror("logger could not use bat (" OIDFMT ") for %s\n", 
 			bid, la->name);
@@ -1534,6 +1533,8 @@ bm_commit(logger *logger)
 		BAT *b = BATdescriptor(bid);
 
 		BATmode(b, PERSISTENT);
+		if (BATcount(b) > REMAP_PAGE_MAXSIZE)
+        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 		logbat_destroy(b);
 	}
 	if (bm_subcommit(logger->catalog, logger->catalog) != 0)  
