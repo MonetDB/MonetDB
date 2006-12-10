@@ -90,6 +90,7 @@ end main;	# 16
 [ "bbp",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "box",	  nil	  ]
+[ "bpm",	  nil	  ]
 [ "bstream",	  nil	  ]
 [ "calc",	  nil	  ]
 [ "clients",	  nil	  ]
@@ -178,6 +179,9 @@ command bat.setKey(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] address BKC
 #entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 
 #function does not automatically eliminate duplicates. 
 #Use b := b.kunique;
+
+command bpm.insert(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]):void address BPMinsert;
+#Insert elements into the BAT partitions
 
 command crackers.insertionsBOnNeedGraduallyRipple(b:bat[:any_1,:date],c:bat[:any_1,:date]):void address CRKmergeInsertionsB_OnNeedGraduallyRipple;
 #Keep the insertions bat separatelly and merge only what is needed using the ripple strategy if a relevant query arrives in the future
