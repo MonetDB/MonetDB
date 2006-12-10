@@ -1523,7 +1523,7 @@ PROC __runtime_addchunk(lng wsid,
 
 
 PROC __runtime_lookup(BAT[lock,bat] runtime,
-                      BAT[oid,oid] qn_ids) : bat[void,oid] 
+                      BAT[oid,oid] qn_ids) : bat[oid,void] 
 {
     var res, valid := false;
     if (count(runtime) > RT_QN_NID) { 
@@ -1533,7 +1533,7 @@ PROC __runtime_lookup(BAT[lock,bat] runtime,
             var qn_id := qn_ids.fetch(0);
             valid := runtime.fetch(RT_QN_NID_UNQ).exist(qn_id);
             if (valid) {
-                res := idx.select(qn_id);
+                res := idx.select(qn_id).assert_order();
                 ins := runtime.fetch(RT_QN_NID_INS).select(qn_id);
                 del := runtime.fetch(RT_QN_NID_DEL).select(qn_id);
              }
@@ -1551,7 +1551,7 @@ PROC __runtime_lookup(BAT[lock,bat] runtime,
         } 
     }
     if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
-    return res;
+    return sort(res);
 }
 
 PROC __runtime_newpage(BAT[lock,bat] runtime) : oid 

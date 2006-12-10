@@ -1272,8 +1272,6 @@ if (postfilter) {
                 	    cands := cands.leftfetchjoin(nid_rid);
                 	    cands := cands.[swizzle](map_pid); 
                 	    cands := cands.tsort(); 
-                        } else {
-                	    cands.assert_order(); 
                         }
 	                if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
                                 var min_cand := min(cands);
