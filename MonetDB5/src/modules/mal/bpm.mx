@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f bpm
-@v 0.2
+@v 0.3
 @a M.L.Kersten
 @* BAT Partition Manager
 In real-life database applications the BATs tend to grow beyond
@@ -41,12 +41,14 @@ The following MAL program illustrates the snippet of actions needed:
 The command @code{bpm.deposit} registers a BAT as one to be partitioned.
 The side effect is that R is empty after this call.
 The remainder are the partition definitions based
-of slices from the table using a simple range condition.
+on slices from the table using a simple range condition.
 The BAT partitions share the persistency properties.
 
 Beware that now there are four components R, R1, R2, and R3.
 The BAT R is is turned into an empty bat, its content is
 taken over by the @code{bpm} and broken into pieces.
+The partitioned version is referenced with a BAT variable
+initialized with the @code{take} operation.
 The call @code{bpm.discard(Ralias)} removes all partitions.
 
 The partition manager also supports hash-based partitioning.
@@ -68,11 +70,12 @@ commands @code{bpm.hashRangePartition()} and @code{bpm.rangeHashPartition()}.
 
 The design is based on the assumption that partitions
 are reasonably large. This helps to limit plan explosion.
-(or the scheduler becomes should step in)
+(or a scheduler should step in)
 @- Using partitions
 The partitioned BAT can be used in two ways. A query plan can be
 rewritten into a generator over the partitions, or it can be
-used by optimizers to derived all subqueries first.
+used by optimizers to derived all subqueries first for
+symbolic evaluation.
 
 The former is illustrated with the snippet to select part of
 a partitioned BAT. In this example we collect the partial
@@ -228,7 +231,10 @@ command destroy():void
 address BPMdestroy
 comment "Destroy the BAT partition box";
 
-command deposit(nme:bat[:any_1,:any_2],b:bat[:any_1,:any_2]) :void
+command deposit(nme:str,b:bat[:any_1,:any_2]) :void
+address BPMdepositName
+comment "Create a new partitioned BAT by name";
+command deposit(alias:bat[:any_1,:any_2],b:bat[:any_1,:any_2]) :void
 address BPMdeposit
 comment "Enter the content of a BAT into a partitioned one.
 The side effice is that the argument BAT is empty afterwards.";
@@ -239,7 +245,7 @@ If the alias BAT denotes an existing partition, it is
 further broken into pieces.
 @mal
 command rangePartition(pb:bat[:any_1,:any_2], 
-		ll:any_1, lh:any_1, rl:any_2, rh:any_2):bat[:any_1,:any_2]
+		ll:any_1, lh:any_1, rl:any_2, rh:any_2):void
 address BPMrange
 comment "Create a range partition on a BAT";
 command hashPartition(pb:bat[:any_1,:any_2], slots:int):void
@@ -253,6 +259,10 @@ command hashRangePartition(pb:bat[:any_1,:any_2],
 		slots:int, rl:any_2, lh:any_2):void
 address BPMhashRange
 comment "Create a range and hash index partition on a BAT";
+
+command take(pb:str, b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address BPMtake
+comment "Retrieve the alias for a partitioned BAT";
 
 command take(pb:bat[:any_1,:any_2],
 		ll:any_1, lh:any_1, slot:int):bat[:any_1,:any_2]
@@ -291,9 +301,9 @@ command getNames():bat[:void,:str]
 address BPMgetNames
 comment "Retrieve the names of all known partitioned BATs";
 
-command discard(name:str) :void
+command discard(alias:bat[:any_1,:any_2]) :void
 address BPMdiscard
-comment "Release a MAT variable from the box";
+comment "Release a partitioned BAT from the box";
 
 command newIterator()(:int,:str)
 address BPMnewIteratorBase
@@ -308,7 +318,7 @@ the components of a single partitioned BAT.
 Wherever possible skipping elements that don't qualify
 the bounds given for the head.
 @mal
-command newIterator(grp:bat[:any_1,:any_2):bat[:any_1,:any_2]
+command newIterator(grp:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMnewIterator
 comment "Create an iterator over the BAT partitions.";
 
@@ -322,7 +332,7 @@ command newIterator(pb:bat[:any_1,:any_2], first:oid,last:oid,
 address BPMnewIteratorRng4
 comment "Create an iterator over the BAT partitions.";
 
-command hasMoreElements(grp:bat[:any_1,:any_2]) :bat[:any_2,:any_1]
+command hasMoreElements(grp:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMhasMoreElements
 comment "Localize the next partition for processing.";
 
@@ -336,6 +346,8 @@ command getDimension(b:bat[:any_1,:any_2])(first:any_1,last:any_1,
 address BPMgetDimension
 comment "Obtain the partition boundary values.";
 
+command dump(alias:bat[:any_1,:any_2])
+address BPMdumpAlias;
 command dump()
 address BPMdump;
 
@@ -350,6 +362,7 @@ bpm.prelude();
 @{
 BEWARE, it is not protected against concurrent access yet.
 
+@include ../kernel/kprelude.mx
 @+ BAT Partition Manager Implementation
 The implementation is organized around a shared box, which should
 be saved between session. It is up to other layers to ensure that BATs
@@ -375,18 +388,20 @@ The internal data structure is used as a cache for improved access.
 #endif
 
 bpm_export str BPMopen();
-bpm_export str BPMclose();
-bpm_export str BPMdestroy();
-bpm_export str BPMdeposit(int *ret, int *bid);
+bpm_export str BPMclose(int *ret);
+bpm_export str BPMdestroy(int *ret);
+bpm_export str BPMdepositName(int *ret, str *nme, int *src);
+bpm_export str BPMdeposit(int *ret, int *bid, int *src);
 
 bpm_export str BPMrange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th);
 bpm_export str BPMhash(int *ret, int *bid, int *hslots, int *tslots);
-bpm_export str BPMrangeHash(int *ret, int *bid, ptr *hl ptr *hh, int *tslots);
+bpm_export str BPMrangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots);
 bpm_export str BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th);
 
+bpm_export str BPMtake(int *ret, str *nme);
 bpm_export str BPMtakeRange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th);
 bpm_export str BPMtakeHash(int *ret, int *bid, int *hslots, int *tslots);
-bpm_export str BPMtakeRangeHash(int *ret, int *bid, ptr *hl ptr *hh, int *tslots);
+bpm_export str BPMtakeRangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots);
 bpm_export str BPMtakeHashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th);
 
 bpm_export str BPMtakePartition(int *ret, int *bid, int *idx);
@@ -395,8 +410,8 @@ bpm_export str BPMinsert(int *ret, int *bid, int *ins);
 bpm_export str BPMdelete(int *ret, int *bid, int *del);
 bpm_export str BPMreplace(int *ret, int *bid, int *ins, int *del);
 
-bpm_export str BPMgetNames(int bid);
-bpm_export str BPMdiscard(int *ret, str *pd);
+bpm_export str BPMgetNames(int *bid);
+bpm_export str BPMdiscard(int *ret, int *bid);
 
 bpm_export str BPMnewIteratorBase(int *ret, str *grp);
 bpm_export str BPMhasMoreElementsBase(int *ret, str *nme);
@@ -411,330 +426,297 @@ bpm_export str BPMhasMoreElementsRng(int *res, int *grp, ptr *first, ptr *last);
 bpm_export str BPMhasMoreElementsRng4(int *res, int *grp, ptr *first, ptr *last,
 	ptr *vlow, ptr *vhgh);
 
-bpm_export str BPMgetDimension(int *res, int *bid, ptr *first, ptr *last,
-	ptr *vlow, ptr *vhgh);
-bpm_export str BPMdump();
+bpm_export str BPMgetDimension(ptr *first, ptr *last,
+	ptr *vlow, ptr *vhgh, int *bid);
+bpm_export str BPMdump(int *ret);
+bpm_export str BPMdumpAlias(int *ret, int *bid);
 bpm_export str BPMprelude(int *ret);
 bpm_export str BPMepilogue(int *ret);
 #endif
 @-
-The partition manager uses its private catalog of persistent BATs.
-Each partitioned BAT is reference incremented to assure the base
-table can always be retrieved.
-The catalog is protected with the mal_contextLock.
+The partition manager uses its private memory mapped catalog of persistent BATs.
+The handle returned is a BAT that represents the whole group.
+They are further administered  by type
 @c
 #include "bpm.h"
 
-static BAT *bpmName;	/* bat[:bat,:str] */
-static BAT *bpmGrp;		/* bat[:bat,:bat] */
-static BAT *bpmTailLow[TYPE_any]; /*bat[:bat,:type_i]
-static BAT *bpmTailHigh[TYPE_any]; /*bat[:bat,:type_i]
-static BAT *bpmHeadLow[TYPE_any]; /*bat[:bat,:type_i]
-static BAT *bpmHeadHigh[TYPE_any]; /*bat[:bat,:type_i]
-static BAT *bpmHeadSlots; /*bat[:bat,:int]
-static BAT *bpmTailSlots; /*bat[:bat,:int]
-
-str
-BPMdump()
-{
-	stream *fd = GDKout;
-	ptr p,q;
-	BATloop(bpmName,p,q){
-		str nme= (str) BUNtail(bpmName,p);
-		stream_printf(fd,"MAT %s",nme);
-		/* localize MAT details */
-		stream_printf(fd,"\n");
-	}
-	return MAL_SUCCEED;
-}
+static BAT *bpmName;		/* bat[:bat,:str] */
+static BAT *bpmPartition;	/* bat[:bat,:bat] */
+static BAT *bpmHeadLow[TYPE_any]; /*bat[:bat,:type_i] */
+static BAT *bpmHeadHigh[TYPE_any]; /*bat[:bat,:type_i] */
+static BAT *bpmTailLow[TYPE_any]; /*bat[:bat,:type_i] */
+static BAT *bpmTailHigh[TYPE_any]; /*bat[:bat,:type_i] */
+static BAT *bpmHeadSlots; /*bat[:bat,:int] */
+static BAT *bpmTailSlots; /*bat[:bat,:int] */
 
 @- Box administration
 The box currently does not carry any client protection.
 This should later be added or being provided by the BAT access.
+
+@= openCat
 @c
 str
-BPMprelude(int *ret)
+BPMopen()
 {
 	int i;
-	/* bind all global variables */
+
+	if( bpmName )
+		return MAL_SUCCEED;
+
+	/* open all BATs available in the catalog */
     mal_set_lock(mal_contextLock, "bpm");
-	bpmName = BBPbind("bpmName");
-	bpmGrp= BBPbind("bpmGrp");
-	bpmHeadSlots= BBPbind("bpmHeadSlots");
-	bpmTailSlots= BBPbind("bpmTailSlots");
-	for( i= 0; i< TYPE_any; i++){
+	bpmName= BATdescriptor(BBPindex("bpmName"));
+	if( bpmName == NULL)
+		return throwMessage("bpm.open", "failed to access bpmName");
+	bpmPartition= BATdescriptor(BBPindex("bpmPartition"));
+	if( bpmPartition == NULL)
+		return throwMessage("bpm.open", "failed to access bpmName");
+	bpmHeadSlots= BATdescriptor(BBPindex("bpmHeadSlots"));
+	if( bpmHeadSlots == NULL)
+		return throwMessage("bpm.open", "failed to access bpmHeadSlots");
+	bpmTailSlots= BATdescriptor(BBPindex("bpmTailSlots"));
+	if( bpmTailSlots == NULL)
+		return throwMessage("bpm.open", "failed to access bpmTailSlots");
+
+	for(i=0; i< GDKatomcnt; i++){
 		char buf[PATHLENGTH];
-		snprintf(buf,PATHLENGTH,"bpmTailLow_%d",i);
-		bpmTailLow[i]= BATdescriptor(BBPindex(buf));
-		snprintf(buf,PATHLENGTH,"bpmHeadLow_%d",i);
+		snprintf(buf,PATHLENGTH,"pbmHeadLow_%i",i);
 		bpmHeadLow[i]= BATdescriptor(BBPindex(buf));
-		snprintf(buf,PATHLENGTH,"bpmTailHead_%d",i);
-		bpmTailHead[i]= BATdescriptor(BBPindex(buf));
-		snprintf(buf,PATHLENGTH,"bpmHeadHead_%d",i);
-		bpmHeadHead[i]= BATdescriptor(BBPindex(buf));
+		snprintf(buf,PATHLENGTH,"pbmHeadHigh%i",i);
+		bpmHeadHigh[i]= BATdescriptor(BBPindex(buf));
+		snprintf(buf,PATHLENGTH,"pbmTailLow_%i",i);
+		bpmTailLow[i]= BATdescriptor(BBPindex(buf));
+		snprintf(buf,PATHLENGTH,"pbmTailHigh%i",i);
+		bpmTailHigh[i]= BATdescriptor(BBPindex(buf));
 	}
     mal_unset_lock(mal_contextLock, "bpm");
 	return MAL_SUCCEED;
 }
-@-
-In the epilogue phase we should discard any temporary MAT.
-@c
-str
-BPMepilogue(int *ret)
-{
-	*ret = closeBox("partitions", 0);
-	BPMfree();
-	if (*ret != 0)
-		return throwMessage("bpm.prelude", "failed to open box");
-	return MAL_SUCCEED;
-}
-
 
 str
-BPMopen()
-{
-	if (openBox("bpm") != 0)
-		return MAL_SUCCEED;
-	return throwMessage("bpm.open", "failed to open bpm box");
-}
-
-str
-BPMclose()
-{
-	stream *f;
-	str boxfile, boxfilebak;
-	Box box;
-	BAT *b;
-	int i;
-
-	box = openBox("bpm");
-	f = prepareSaveBox(box, &boxfile, &boxfilebak);
-	if (f != NULL) {
-		/* save the info */
-		for (i = 0; i < ptop; i++)
-			if (partitions[i].bid != -1) {
-				b = (BAT *) BBPgetdesc(partitions[i].bid);
-				if (b && b->batPersistence & PERSISTENT)
-					stream_printf(f, "bpm.deposit(\"%s\",\"%s\",%d);\n", 
-						partitions[i].grp,
-						partitions[i].elm,
-						partitions[i].bid);
-			}
-		stream_close(f);
-		GDKfree(boxfile);
-		GDKfree(boxfilebak);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-BPMdestroy()
-{
-	destroyBox("partitions");
-	return MAL_SUCCEED;
-}
-@-
-Taking out a BAT should be protective, i.e. check for their existence.
-Taking out a MAT leads to a forced union before returning.
-The intend is to use an optimizer to avoid this if possible.
-@c
-str
-BPMtake(int *ret, str *grp, str *elm)
-{
-	BAT *b;
-	int i;
-	for( i=0; i< plimit; i++)
-	if( partitions[i].grp &&
-		 strcmp(partitions[i].grp, *grp)== 0 &&
-		strcmp(partitions[i].elm, *elm)== 0) 
-		break;
-	if( i== plimit )
-		return throwMessage("bpm.take", "MAT partition not found");
-	b= BBPdescriptor(partitions[i].bid);
-	if( b== NULL)
-		return throwMessage("bpm.take", "MAT partition not accessible");
-	*ret = partitions[i].bid;
-	BBPkeepref(*ret);
-	return MAL_SUCCEED;
-}
-str
-BPMtakePartition(int *ret, str *grp, int *idx)
-{
-	BAT *b;
-	int i;
-	i= BPMfindMAT(*grp);
-	if( i< 0)
-		return throwMessage("bpm.take","MAT not found");
-	for( ; i>=0 && *idx>0; i= partitions[i].next)
-		*idx= *idx-1;
-	if( i< 0)
-		return throwMessage("bpm.take","MAT component not found");
-	b= BBPdescriptor(partitions[i].bid);
-	if( b== NULL)
-		return throwMessage("bpm.take", "MAT partition not accessible");
-	*ret = partitions[i].bid;
-	BBPkeepref(*ret);
-	return MAL_SUCCEED;
-}
-@-
-Administration of new partitions.
-@c
-int
-BPMfindGrp(int bid)
-{
-	return -1;
-}
-
-@-
-Find the header of a group
-@c
-int
-BPMfindMAT(str grp)
-{
-	return -1;
-}
-int
-BPMfindMATcomponent(str grp, str elm)
-{
-	return -1;
-}
-
-str
-BPMdeposit(int *ret, str *grp, str *elm, int *bid)
-{
-	int idx, i,j;
-	BAT *b;
-
-	i= BPMfindMATcomponent(*grp,*elm);
-	if( i >=0 )
-		return throwMessage("bpm.deposit", "MAT component already known");
-	b = BATdescriptor(*bid);
-	if (b == NULL)
-		return throwMessage("bpm.deposit", "Can not access descriptor");
-	idx = BPMfindMAT(*grp);
-	if (ptop == plimit)
-		BPMresize(plimit + INCREMENT);
-	for (i = 0; i <= ptop; i++)
-		if (partitions[i].bid == -1)
-			break;
-	partitions[i].grp = GDKstrdup(*grp);
-	partitions[i].elm = GDKstrdup(*elm);
-	partitions[i].bid = *bid;
-	partitions[i].first = b->hseqbase;
-	partitions[i].last = b->hseqbase + BATcount(b);
-	partitions[i].prev = -1;
-	partitions[i].next = -1;
-	if (i >= ptop) {
-		ptop = i + 1;
-		partitions[ptop].bid = -1;
-		partitions[ptop].next = -1;
-		partitions[ptop].prev = -1;
-	}
-	if( idx >=0){
-		for(j=idx; partitions[j].next>=0; j= partitions[j].next) ;
-		partitions[j].next = i;
-		partitions[i].prev = j;
-	}
-	BBPunfix(*bid);
-	(void) ret;
-	return MAL_SUCCEED;
-}
-
-str
-BPMdepositByName(int *ret, str *grp, str *elm)
-{
-	int idx;
-	BAT *b;
-
-	idx= BPMfindMATcomponent(*grp,*elm);
-	if( idx >=0 )
-		return throwMessage("bpm.deposit", "MAT already known");
-	b = BATdescriptor(partitions[idx].bid);
-	if (b == NULL)
-		return throwMessage("bpm.deposit", "Can not access descriptor");
-
-	BPMdeposit(ret,grp,elm,&partitions[idx].bid);
-	BBPunfix(partitions[idx].bid);
-	(void) ret;
-	return MAL_SUCCEED;
-}
-
-str
-BPMgetRange(oid *first, oid *last, int *bid)
-{
-	int i;
-
-	for (i = 0; i < ptop; i++)
-		if (partitions[i].bid == *bid) {
-			*first = partitions[i].first;
-			*last = partitions[i].last;
-			return MAL_SUCCEED;
-		}
-	return throwMessage("bpm.getRange", "MAT not known");
-}
-
-str
-BPMgetLast(int *ret, str *grp)
-{
-	int i;
-
-	i= BPMfindMAT(*grp);
-	if( i < 0)
-		return throwMessage("bpm.getLast", "MAT not known");
-	for (; partitions[i].next>=0 ; i= partitions[i].next)
-		;
-	*ret = partitions[i].bid;
-	return MAL_SUCCEED;
-}
-
-str
-BPMdiscard(int *ret, str *grp)
-{
-	int i;
-
-	for (i = 0; i<ptop; i++)
-	if(	partitions[i].grp &&
-		strcmp(partitions[i].grp, *grp)== 0 )
-			BPMfreePartition(i);
-	(void) ret;
-	return MAL_SUCCEED;
-}
-
-str
-BPMdiscardAll(int *ret)
-{
-	int i;
-	for(i=0; i<ptop; i++)
-	if( partitions[i].grp)
-			BPMfreePartition(i);
-	GDKfree(partitions);
-	partitions = 0;
-	plimit = -1;
-	BPMresize(INCREMENT);
-	(void) ret;
-	return MAL_SUCCEED;
-}
-
-@-
-releasing the MAT does not remove its components.
-@c
-str
-BPMreleaseAll(int *ret, int *bid)
+BPMclose(int *ret)
 {
 	(void) ret;
+	/* save the catalog using a subtransaction */
+	return throwMessage("bpm.close","NYI");
+}
+
+str
+BPMdestroy(int *ret)
+{
+	(void) ret;
+	/* re-initialize the partition table */
+	return throwMessage("bpm.destroy","NYI");
+}
+
+str
+BPMdepositName(int *ret, str *nme, int *src)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(src,b,"bpm.deposit");
+	/* test for duplicate names */
+	/* a nil-nil range partition*/
+	(void) nme;
+	(void) b;
+	*ret= 0;
+	return throwMessage("bpm.deposit","NYI");
+}
+str
+BPMdeposit(int *ret, int *bid, int *src)
+{
+	BAT *b, *bn;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.deposit");
+	@:getBATdescriptor(src,bn,"bpm.deposit");
+	/* Distribued content of src to alias */
+	(void) b;
+	(void) bn;
+	*ret= 0;
+	return throwMessage("bpm.deposit","NYI");
+}
+
+str
+BPMrange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.range")@
+	/* determine the partitioning scheme */
+	(void) hl;
+	(void) hh;
+	(void) tl;
+	(void) th;
+	*ret= 0;
+	return throwMessage("bpm.range","NYI");
+}
+str
+BPMhash(int *ret, int *bid, int *hslots, int *tslots)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.hash")@
+	/* get hash slot administration */
+	(void) hslots;
+	(void) tslots;
+	*ret= 0;
+	return throwMessage("bpm.hash","NYI");
+}
+str
+BPMrangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.rangeHash")@
+	/* partition into two direction */
+	(void) hl;
+	(void) hh;
+	(void) tslots;
+	*ret= 0;
+	return throwMessage("bpm.rangeHash","NYI");
+}
+str
+BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.hashRange")@
+	/* partition into two direction */
+	(void) hslots;
+	(void) tl;
+	(void) th;
+	*ret= 0;
+	return throwMessage("bpm.hashRange","NYI");
+}
+@-
+Takeing out partitions.
+@c
+str
+BPMtake(int *ret, str *nme)
+{
+	BPMopen();
+	(void) nme;
+	*ret =0;
+	return throwMessage("bpm.take","NYI");
+}
+str
+BPMtakeRange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.take");
+	(void) hl;
+	(void) hh;
+	(void) tl;
+	(void) th;
+	*ret =0;
+	return throwMessage("bpm.take","NYI");
+}
+
+str
+BPMtakeHash(int *ret, int *bid, int *hslots, int *tslots)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.take");
+	(void) hslots;
+	(void) tslots;
+	*ret =0;
+	return throwMessage("bpm.take","NYI");
+}
+
+str
+BPMtakeRangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.take");
+	(void) hl;
+	(void) hh;
+	(void) tslots;
+	*ret =0;
+	return throwMessage("bpm.take","NYI");
+}
+
+str
+BPMtakeHashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.take");
+	(void) tl;
+	(void) th;
+	(void) hslots;
+	*ret =0;
+	return throwMessage("bpm.take","NYI");
+}
+
+str
+BPMtakePartition(int *ret, int *bid, int *idx)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.take")@
+	(void) idx;
+	*ret =0;
+	return throwMessage("bpm.take","NYI");
+}
+@- Updates
+@c
+str
+BPMinsert(int *ret, int *bid, int *ins)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.insert")@
+	/* distributed the content */
+	(void) ins;
+	*ret= 0;
+	return throwMessage("bpm.insert","NYI");
+}
+
+str
+BPMdelete(int *ret, int *bid, int *del)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.delete")@
+	/* delete some information from the partitions */
+	(void) del;
+	*ret= 0;
+	return throwMessage("bpm.delete","NYI");
+}
+
+str
+BPMreplace(int *ret, int *bid, int *ins, int *del)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.insert")@
+	/* replace values */
+	(void) ins;
+	(void) del;
+	*ret= 0;
+	return throwMessage("bpm.replace","NYI");
+}
+
+str
+BPMgetNames(int *ret)
+{
+	BPMopen();
+	*ret =0;
+	return throwMessage("bpm.getNames","NYI");
+}
+
+str
+BPMdiscard(int *ret, int *bid)
+{
+	BPMopen();
 	(void) bid;
-	return throwMessage("bpm.release", "not yet implemented");
+	*ret =0;
+	return throwMessage("bpm.discard","NYI");
 }
-
-str
-BPMdiscardComponent(int *ret, str *grp, int *bid)
-{
-	(void) ret;
-	(void) bid;
-	(void) grp;
-	return throwMessage("bpm.release", "not yet implemented");
-}
-@-
+@- Iterations
 We start with the large chunk iterator.
 The definition of the control statements require the same
 control variables, which means that the BATview is accessible
@@ -743,89 +725,141 @@ The number of elements in the chunk is limited by the granule
 size.
 @c
 str
-BPMnewIteratorBase(int *ret, str *grp, str *elm)
+BPMnewIteratorBase(int *ret, str *nme)
 {
+	(void) nme;
 	*ret = 0;
-	if (*ret == ptop)
-		*ret = -1;
-	else {
-		*grp= GDKstrdup(partitions[0].grp);
-		*elm= GDKstrdup(partitions[0].elm);
+	return throwMessage("bpm.newIterator","NYI");
+}
+
+str
+BPMhasMoreElementsBase(int *ret, str *nme)
+{
+	(void) nme;
+	*ret = 0;
+	return throwMessage("bpm.hasMoreElements","NYI");
+}
+
+@-
+Iterations over partitioned BATs can be valued constrainted.
+@c
+str
+BPMnewIterator(int *ret, int *bid)
+{
+	(void) bid;
+	*ret = 0;
+	return throwMessage("bpm.newIterator","NYI");
+}
+
+str
+BPMnewIteratorRng(int *ret, int *bid, ptr *first, ptr *last)
+{
+	(void) first;
+	(void) last;
+	(void) bid;
+	*ret = 0;
+	return throwMessage("bpm.newIterator","NYI");
+}
+
+
+str
+BPMnewIteratorRng4(int *ret, int *bid, ptr *first, ptr *last,
+	ptr *vlow, ptr *vhgh)
+{
+	(void) first;
+	(void) last;
+	(void) vlow;
+	(void) vhgh;
+	(void) bid;
+	*ret = 0;
+	return throwMessage("bpm.newIterator","NYI");
+}
+
+str
+BPMhasMoreElements(int *ret, int *bid)
+{
+	(void) bid;
+	*ret = 0;
+	return throwMessage("bpm.hasMoreElements","NYI");
+}
+
+str
+BPMhasMoreElementsRng(int *ret, int *bid, ptr *first, ptr *last)
+{
+	(void) first;
+	(void) last;
+	(void) bid;
+	*ret = 0;
+	return throwMessage("bpm.hasMoreElements","NYI");
+}
+
+
+str
+BPMhasMoreElementsRng4(int *ret, int *bid, ptr *first, ptr *last,
+	ptr *vlow, ptr *vhgh)
+{
+	(void) first;
+	(void) last;
+	(void) vlow;
+	(void) vhgh;
+	(void) bid;
+	*ret = 0;
+	return throwMessage("bpm.hasMoreElements","NYI");
+}
+
+str
+BPMgetDimension(ptr *first, ptr *last, ptr *vlow, ptr *vhgh, int *bid)
+{
+	(void) first;
+	(void) last;
+	(void) vlow;
+	(void) vhgh;
+	(void) bid;
+	return throwMessage("bpm.getDimension","NYI");
+}
+
+str
+BPMdump(int *ret)
+{
+	stream *fd = GDKout;
+	ptr p,q;
+	BATloop(bpmName,p,q){
+		str nme= (str) BUNtail(bpmName,p);
+		stream_printf(fd,"[ \"%s\"",nme);
+		/* localize partition details */
+		stream_printf(fd,"]\n");
 	}
-	return MAL_SUCCEED;
+	(void) ret;
+	return throwMessage("bpm.dump","NYI");
+}
+str
+BPMdumpAlias(int *ret, int *bid)
+{
+	(void) ret;
+	(void) bid;
+	return throwMessage("bpm.dump","NYI");
 }
 
+@c
 str
-BPMhasMoreElementsBase(int *ret, str *nme, str *elm)
+BPMprelude(int *ret)
 {
-	do {
-		*ret = *ret + 1;
-		if (*ret >= ptop) {
-			*ret = -1;
-			return MAL_SUCCEED;
-		}
-		*nme= GDKstrdup(partitions[*ret].grp);
-		*elm= GDKstrdup(partitions[*ret].elm);
-	} while (partitions[*ret].bid == -1);
-	return MAL_SUCCEED;
-}
-
-str
-BPMnewIterator(int *res, str *grp)
-{
-	int idx;
-
-	idx= BPMfindMAT(*grp);
-	if(idx<0)
-		return throwMessage("bpm.newIterator","Could not find MAT");
-	*res = partitions[idx].bid;
-	BBPincref(*res, TRUE);
-	return MAL_SUCCEED;
-}
-
-str
-BPMnewIteratorRng(int *res, str *grp, oid *first, oid *last)
-{
-	int i;
-
-	i= BPMfindMAT(*grp);
-	if( i<0)
-		return throwMessage("bpm.newIterator","Could not find MAT");
-	for (; i>=0 ; i= partitions[i].next)
-	if (!(partitions[i].last < *first || partitions[i].first > *last)) {
-			*res = partitions[i].bid;
-			BBPincref(*res, TRUE);
-		}
-	return MAL_SUCCEED;
-}
-
-str
-BPMhasMoreElements(int *res, str *grp)
-{
-	int i;
-	for(i=0; i<ptop; i++)
-	if( partitions[i].bid == *res &&
-		partitions[i].grp &&
-		strcmp(partitions[i].grp,*grp)== 0){
-		*res= partitions[i].bid;
-		BBPincref(*res, TRUE);
-		return MAL_SUCCEED;
+    mal_set_lock(mal_contextLock, "bpm.prelude");
+	bpmName= BATdescriptor(BBPindex("bpmName"));
+	if( bpmName == NULL){
+		/* initialize the bpm catalog */
 	}
-	*res = -1;
+	*ret =0;
+    mal_unset_lock(mal_contextLock, "bpm.prelude");
+	return MAL_SUCCEED;
+}
+@-
+In the epilogue phase we should discard any temporary MAT.
+@c
+str
+BPMepilogue(int *ret)
+{
+	*ret =0;
 	return MAL_SUCCEED;
 }
 
-str
-BPMhasMoreElementsRng(int *res, str *grp, oid *first, oid *last)
-{
-	int i;
-	for(i= BPMfindMAT(*grp); i>=0 ; i = partitions[i].next)
-		if( !(partitions[i].last < *first || partitions[i].first > *last)) {
-			*res = partitions[i].bid;
-			BBPincref(*res, TRUE);
-			return MAL_SUCCEED;
-		}
-	*res = -1;
-	return MAL_SUCCEED;
-}
-@}

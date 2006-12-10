@@ -89,8 +89,9 @@ include factory;
 include const; 
 include bbp;
 include box; 
-include pbm;
+include pbm; # experimental
 include mat;
+include bpm; # the real partition handler
 include inspect;
 include manual;
 include language;
