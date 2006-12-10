@@ -3842,32 +3842,20 @@ selects(mvc *sql, scope *scp, symbol *s)
 	case SQL_SELECT: {
 		exp_kind ek = {type_value, card_relation, TRUE};
 		ret = scope_subquery(sql, scp, s, ek);
-		/* add output stmt */
-		if (!scp && ret)
-			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 	} 	break;
 	case SQL_JOIN:
 		ret = sql_join(sql, scp, s);
-		/* add output stmt */
-		if (!scp && ret)
-			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_CROSS:
 		ret = sql_cross(sql, scp, s);
-		/* add output stmt */
-		if (!scp && ret)
-			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
 		ret = sql_setop(sql, scp, s);
-		/* add output stmt */
-		if (!scp && ret)
-			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 

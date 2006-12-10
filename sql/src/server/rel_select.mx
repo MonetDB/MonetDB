@@ -2753,7 +2753,7 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname)
 				f->res.scale = t->scale;
 			}
 			return exp_unop(e, f);
-		/*
+		/* 
 		} else {
 			stmt *res;
 			sql_arg *a = f->func->ops->h->data;

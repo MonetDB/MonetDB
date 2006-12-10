@@ -132,7 +132,7 @@ sql_symbol2stmt(mvc *c)
 			} else {
 				c->session->status = 0;
 				printf("# falling back to direct mode \n");
-				s = semantic(c, NULL, c->sym, NULL);
+				s = output_semantic(c, NULL, c->sym);
 			}
 		} else {
 			r = rel_optimizer(c, r);
@@ -150,7 +150,7 @@ sql_symbol2stmt(mvc *c)
 		}
 	}  else {
 		/*printf("# semantic binary algebra\n");*/
-		s = semantic(c, NULL, c->sym, NULL);
+		s = output_semantic(c, NULL, c->sym);
 	}
 
 	if (s){

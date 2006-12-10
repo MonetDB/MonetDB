@@ -1606,16 +1606,12 @@ like_table:
  ;
 
 view_def:
-    create VIEW qname opt_column_commalist
-    AS			{ mvc *m = (mvc*)parm;
-			  m->scanner.as = m->scanner.yycur; }
-    view_as
-    opt_with_check_option
+    create VIEW qname opt_column_commalist AS view_as opt_with_check_option
 	{  dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, $4);
-	  append_symbol(l, $7);
-	  append_int(l, $8);
+	  append_symbol(l, $6);
+	  append_int(l, $7);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
   ;
@@ -2048,19 +2044,12 @@ opt_row:
  ;
 
 triggered_action:
-    opt_for_each
-    opt_when
-		{ mvc *m = (mvc*)parm;
-		  m->scanner.as = m->scanner.yysval;
-		}
-    triggered_statement
-		{ mvc *sql = (mvc*)parm;
-		  char *s = QUERY(sql->scanner) + sql->scanner.as;
-    		  $$ = L();
-		  append_int($$, $1);
-		  append_symbol($$, $2);
-		  append_string($$, sa_strdup(SA, s ));
-		}
+    opt_for_each opt_when triggered_statement
+	{ $$ = L();
+	  append_int($$, $1);
+	  append_symbol($$, $2);
+	  append_list($$, $3);
+	}
 
 opt_for_each:
     /* default for each statement */ 	{ $$ = 1; }
@@ -2078,7 +2067,8 @@ opt_when:
  ;
 
 triggered_statement:
-    trigger_procedure_statement		{ $$ = append_symbol(L(), $1); }
+    trigger_procedure_statement		
+				{ $$ = append_symbol(L(), $1); }
  |  BEGIN ATOMIC 
     trigger_procedure_statement_list 
     END 			{ $$ = $3; }

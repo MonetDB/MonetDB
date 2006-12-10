@@ -43,6 +43,7 @@ extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, 
 #include "sql_select.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
+#include "sql_psm.h"
 
 static void
 list_append_stmt(list *l, stmt *s)
@@ -141,7 +142,7 @@ sql_insert_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	n = n->next;
 	inserts[4] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(grantable));
 	stmt_destroy(pts);
-	res = sql_insert(sql, pt, inserts, 5, 0, NULL);
+	res = sql_insert(sql, pt, inserts, 5, 0);
 	cleanup_stmts(inserts, 5);
 	return res;
 }
@@ -361,7 +362,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(obj_id), cmp_equal));
 
 	s = stmt_mark(stmt_reverse(s), 0);
-	s = sql_delete(sql, ptv, pt, s, 0, NULL);
+	s = sql_delete(sql, ptv, pt, s, 0);
 	scope_close(scp);
 	return s;
 }
@@ -523,13 +524,13 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
 	stmt *sq = NULL;
-	list *col_l = NULL, *func_l= NULL, *view_id_l = NULL, *called_tri = NULL;
+	list *col_l = NULL, *func_l= NULL, *view_id_l = NULL;
 	scope *scp = scope_open(NULL);
 	sql_trigger *trigger;
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
-	int trigger_id;
+	int instantiate = (sql->mode == m_execute);
 
 	int event = (trigger_event->token == SQL_INSERT)?0:
 			  (trigger_event->token == SQL_DELETE)?1:2;
@@ -537,7 +538,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	char *old_name = NULL, *new_name = NULL; 
 	int orientation = triggered_action->h->data.ival;
 	char *condition = triggered_action->h->next->data.sval;
-	char *statement = triggered_action->h->next->next->data.sval;
+	dlist *stmts = triggered_action->h->next->next->data.lval;
 	
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -551,28 +552,25 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 				new_name = n;
 		}
 	}
-	if (!schema_privs(sql->role_id, ss)) 
+	if (!instantiate && !schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	if (mvc_bind_trigger(sql, ss, tname ))
+	if ((trigger = mvc_bind_trigger(sql, ss, tname )) != NULL && !instantiate) 
 		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", tname);
-	if (!(t = mvc_bind_table(sql, ss, table_name)))
+	
+	if (!instantiate && !(t = mvc_bind_table(sql, ss, table_name)))
 		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", table_name);
-	if (isView(t)) 
+	if (!instantiate && isView(t)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
 	
 	
-	trigger = mvc_create_trigger(sql, t, tname, time, orientation, event, old_name,
-			new_name, condition, statement);
-	trigger_id = trigger->base.id;	
-	called_tri = list_create((fdestroy) NULL);
-	called_tri = list_append(called_tri, &trigger_id);
-
-	sq = scope_sqlparse(sql, scp, statement, called_tri);
+	if (!instantiate) {
+		char *q = QUERY(sql->scanner);
+		trigger = mvc_create_trigger(sql, t, tname, time, orientation, 
+			event, old_name, new_name, condition, q);
+	}
+	sq = sequential_block(sql, scp, NULL, stmts, NULL);
 	
-	list_destroy(called_tri);
-
-	
-	if (sq) {
+	if (sq && !instantiate) {
 		col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
 		func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
 		view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
@@ -587,10 +585,12 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		stmt_destroy(sq);
 	}
 	scope_close(scp);
-
 	
 	/* todo trigger_columns */
 	(void)columns;
+
+	if (instantiate)
+		return sq;
 	return stmt_none();
 }
 
@@ -644,7 +644,9 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
+	sql_table *t = NULL;
 	list * id_l = NULL;
+	int instantiate = (sql->mode == m_execute);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
@@ -654,16 +656,15 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 
 	(void) check;		/* Stefan: unused!? */
 
-	if (mvc_bind_table(sql, s, name)) {
+	if ((t = mvc_bind_table(sql, s, name)) != NULL && !instantiate) {
 		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!instantiate && !schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
 		exp_kind ek = {type_value, card_relation, TRUE};
 		stmt *sq = NULL;
-		int len = 0;
-		char *subquery = NULL;
 		sql_table *t = NULL;
+		char *q = QUERY(sql->scanner);
 
 		if (query->token == SQL_SELECT) {
 			SelectNode *sn = (SelectNode *) query;
@@ -677,26 +678,19 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		sq = scope_subquery(sql, NULL, query, ek );
 		if (!sq)
 			return NULL;
-		if (sql->scanner.view_end) {
-			char *q = QUERY(sql->scanner) + sql->scanner.as;
-			len = sql->scanner.view_end - sql->scanner.as;
-			subquery = NEW_ARRAY(char,len+2);
-			strncpy(subquery, q, len);
-			subquery[sql->scanner.view_end - sql->scanner.as] = ';';
-			subquery[sql->scanner.view_end - sql->scanner.as+1] = 0;
-		} else {
-			subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
+
+		if (!instantiate) {
+			t = mvc_create_view(sql, s, name, q, 0);
+			as_subquery( sql, t, sq, column_spec );
 		}
-		t = mvc_create_view(sql, s, name, subquery, 0);
-		_DELETE(subquery);
-		as_subquery( sql, t, sq, column_spec );
-		if (sq) {
+		if (!instantiate && sq) {
 			id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
 			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
 			list_destroy(id_l);
+			stmt_destroy(sq);
+			return stmt_none();
 		}
-		stmt_destroy(sq);
-		return stmt_none();
+		return sq;
 	}
 	return NULL;
 }
@@ -1167,7 +1161,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "select %s;", cs->def);
-				sq = sqlparse_intern(sql, buf, sql->mode);
+				sq = scope_sqlparse(sql, NULL, buf, sql->mode);
 				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
 					cond_stmt_destroy(sq);
 					return NULL;

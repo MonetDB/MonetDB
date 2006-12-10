@@ -31,7 +31,8 @@
 
 #define create_string_list() list_create((fdestroy)&GDKfree)
 
-extern stmt *semantic(mvc *sql, scope *scp, symbol *sym, list* called_tri);
+extern stmt *semantic(mvc *sql, scope *scp, symbol *sym);
+extern stmt *output_semantic(mvc *sql, scope *scp, symbol *s);
 
 extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
@@ -57,8 +58,7 @@ extern stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
 extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
 extern stmt *sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
 extern stmt *scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
-extern stmt *sqlparse_intern(mvc *m, char *query, modes_t mode);
-extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query, list *called_tri);
+extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode);
 
 extern stmt *first_subset(stmt *subset);
 
@@ -241,63 +241,7 @@ qname_table(dlist *qname)
 }
 
 stmt *
-scope_sqlparse(mvc *m, scope *scp, char *query, list *called_tri)
-{
-	mvc o = *m;
-	stmt *sq;
-	buffer *b;
-	char *n;
-	int len = _strlen(query);
-	stream *buf;
-
-	m->qc = NULL;
-
-	m->cache = 0;
-
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	n = GDKmalloc(len + 1 + 1);
-	strncpy(n, query, len);
-	query = n;
-	query[len] = '\n';
-	query[len+1] = 0;
-	len++;
-	buffer_init(b, query, len);
-	buf = buffer_rastream(b, "sqlstatement");
-	scanner_init( &m->scanner, bstream_create(buf, b->len), NULL);
-	m->scanner.mode = LINE_1; 
-	bstream_next(m->scanner.rs);
-
-	m->params = NULL;
-	m->argc = 0;
-	m->sym = NULL;
-	m->errstr[0] = '\0';
-	m->errstr[ERRSIZE-1] = '\0';
-
-	(void) sqlparse(m);	/* blindly ignore errors */
-	sq = semantic(m, scp, m->sym, called_tri);
-
-	GDKfree(query);
-	GDKfree(b);
-	bstream_destroy(m->scanner.rs);
-	stream_destroy(buf);
-
-	m->sym = NULL;
-	if (m->session->status || m->errstr[0]) {
-		int status = m->session->status;
-		char errstr[ERRSIZE];
-
-		strcpy(errstr, m->errstr);
-		*m = o;
-		m->session->status = status;
-		strcpy(m->errstr, errstr);
-	} else {
-		*m = o;
-	}
-	return sq;
-}
-
-stmt *
-sqlparse_intern(mvc *m, char *query, modes_t mode)
+scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode)
 {
 	mvc o = *m;
 	stmt *sq = NULL;
@@ -341,13 +285,12 @@ sqlparse_intern(mvc *m, char *query, modes_t mode)
 				"internal query: %s", query);
 	} else {
 		/* should use scope_subquery, but that doesn't handle
-		   psm (so for mode m_execute) we use semantic
-		*/
+		   psm (so for mode m_execute) we use semantic */
 		if (mode == m_execute)
-			sq = semantic(m, NULL, m->sym, NULL);
+			sq = semantic(m, scp, m->sym);
 		else {
 			exp_kind ek = {type_value, card_relation, TRUE};
-			sq = scope_subquery(m, NULL, m->sym, ek);
+			sq = scope_subquery(m, scp, m->sym, ek);
 		}
 	}
 
@@ -402,7 +345,7 @@ scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int acc
 
 	if (isView(t)) {
 
-		stmt *sq = sqlparse_intern(sql, t->query, m_normal);
+		stmt *sq = scope_sqlparse(sql, NULL, t->query, m_execute);
 
 		if (!sq)
 			return NULL;
@@ -1026,7 +969,7 @@ char *symbol2string(mvc *sql, symbol *se)
 
 
 stmt *
-semantic(mvc *sql, scope *scp, symbol *s, list* called_tri)
+semantic(mvc *sql, scope *scp, symbol *s)
 {
 	stmt *res = NULL;
 
@@ -1074,7 +1017,7 @@ semantic(mvc *sql, scope *scp, symbol *s, list* called_tri)
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
-		return updates(sql, scp, s, called_tri);
+		return updates(sql, scp, s);
 
 	case SQL_SELECT:
 	case SQL_JOIN:
@@ -1098,7 +1041,7 @@ semantic(mvc *sql, scope *scp, symbol *s, list* called_tri)
 
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
-			stmt *st = semantic(sql, scp, sym, NULL);
+			stmt *st = semantic(sql, scp, sym);
 
 			if (!st) {
 				list_destroy(l);
@@ -1113,4 +1056,17 @@ semantic(mvc *sql, scope *scp, symbol *s, list* called_tri)
 		return sql_error(sql, 01, "sql_stmt symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
 	return res;
+}
+
+stmt *
+output_semantic(mvc *sql, scope *scp, symbol *s)
+{
+	stmt *ret = semantic(sql, scp, s);
+	if (ret) {
+		if (sql->type == Q_TABLE) {
+			if (!scp && ret)
+				ret = stmt_output(ret);
+		}
+	}
+	return ret;
 }

@@ -726,7 +726,7 @@ The former comes with readline functionality.
 #endif
 	    }
 	}
-	if (!go || (strncmp(CURRENT(c), "quit", 4) == 0)) {
+	if (!go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHING;
 		return NULL;

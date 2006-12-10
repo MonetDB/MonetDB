@@ -25,8 +25,12 @@
 #include <sql_list.h>
 #include "sql_symbol.h"
 #include "sql_statement.h"
+#include "sql_scope.h"
 
 extern stmt *psm(mvc *sql, symbol *sym);
+
+extern stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *blk, char *opt_name);
+
 
 #endif /* _SQL_PSM_H_ */
 @c
@@ -36,8 +40,6 @@ extern stmt *psm(mvc *sql, symbol *sym);
 #include "sql_updates.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
-
-static stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *blk, char *opt_name);
 
 /* SET variable = value */
 
@@ -356,7 +358,7 @@ psm_return( mvc *sql, scope *scp, sql_subtype *restype, symbol *return_sym )
 	return stmt_return(res);
 }
 
-static stmt *
+stmt *
 sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *opt_label) 
 {
 	list *l=0;
@@ -404,7 +406,7 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 		case SQL_INSERT:
 		case SQL_UPDATE:
 		case SQL_DELETE:
-			res = updates(sql, scp, s, NULL);
+			res = updates(sql, scp, s);
 			break;
 		default:
 			res = sql_error(sql, 01, 
