@@ -1705,7 +1705,7 @@ backend_create_func(backend *be, sql_func *f)
 		return;
 	f->sql++;
 	be = backend_create(c, 0);
-	s = sqlparse_intern(c, f->imp, m_execute);
+	s = scope_sqlparse(c, NULL, f->imp, m_execute);
 	if (s) {
 		stmt *opt;
 		opt = optimize(c, s);
