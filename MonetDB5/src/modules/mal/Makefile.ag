@@ -14,7 +14,7 @@ LIBS = {
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx mat.mx \
-		sabaoth.mx radix.mx
+		sabaoth.mx radix.mx bpm.mx
 		#datacell.mx 
 
 	HEADERS = h 
@@ -152,7 +152,7 @@ scripts_mal = {
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		rsbox.mx urlbox.mx statistics.mx transaction.mx \
 		partitions.mx pbm.mx mserver.mx sabaoth.mx \
-		radix.mx
+		radix.mx bpm.mx
 	#datacell.mx 
 }
 
