@@ -29,6 +29,8 @@ where $pt/@partid eq $pl/@partid
 return 
   do delete $pl
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-list.xml\")
@@ -47,6 +49,7 @@ fflush(stdout());
   <part name="wheel" partof="10" partid="12"/>
   <part name="canoe" partid="20"/>
 </partlist></XQueryResult>
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-tree.xml\")
@@ -69,6 +72,7 @@ fflush(stdout());
     </part>
     <part name="canoe" partid="20"/>
 </parttree></XQueryResult>
+fflush(stderr());
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");

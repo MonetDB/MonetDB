@@ -30,6 +30,8 @@ for $p in ($parent, $descendants)
 return 
   do replace value of exactly-one($p/@partid) with $i*1000+$p/@partid
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-list.xml\")
@@ -48,6 +50,7 @@ fflush(stdout());
   <part name="wheel" partof="10" partid="12"/>
   <part name="canoe" partid="20"/>
 </partlist></XQueryResult>
+fflush(stderr());
 
 xquery("xml","
 doc(\"part-tree.xml\")
@@ -70,6 +73,7 @@ fflush(stdout());
     </part>
     <part name="canoe" partid="3020"/>
 </parttree></XQueryResult>
+fflush(stderr());
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");

@@ -667,6 +667,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
     if (bit(cnt)) {
         var commitBAT := bat(void,str,cnt);
         var logger_delBAT := logger_bats.join(delBAT);
+        # first remove the bats under control off the logger 
         if (logger_delBAT.count() > 0) {
             lock_set(pf_wal);
             log_trans_start(pf_logger);
@@ -675,7 +676,8 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
             log_trans_end(pf_logger);
             lock_unset(pf_wal);
         }
-        delBAT@batloop() {
+        # now remove those not under control off the logger 
+        delBAT.kdiff(reverse(logger_bats))@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
         }
         pf_checkpoint(commitBAT);
@@ -1431,7 +1433,7 @@ PROC __runtime_index(oid coll_oid,
         idx := reverse(idx.leftjoin(unq.mirror())); # get [qn,pre], in pre-order
         idx := idx.leftfetchjoin(nid);              # [qn,nid] still in pre-order
     if (updatable) { 
-        (idx := idx.access(BAT_WRITE)).accbuild("hash");
+        (idx := bat(oid, oid, (count(idx)*4)/3).insert(idx)).accbuild("hash");
     } else {
         idx := idx.ssort().access(BAT_READ);        # [qn,nid] now lexico-ordered (thanks to stable-sort)
         idx.rename(nme).mmap(1).persists(true);
@@ -1447,6 +1449,7 @@ PROC __runtime_maintain(lng wsid,
                         BAT[lock,bat] runtime, 
                         BAT[oid,oid] ins, 
                         BAT[oid,oid] del,
+                        BAT[void,oid] newqns,
                         BAT[void,oid] delpages) : void
 {
     var others := colname_pins.reverse().ord_uselect(colname).access(BAT_WRITE).delete(wsid);
@@ -1460,13 +1463,13 @@ PROC __runtime_maintain(lng wsid,
         ins := runtime.fetch(RT_QN_NID_INS).insert(ins);
         del := runtime.fetch(RT_QN_NID_DEL).insert(del);
         var idx := runtime.fetch(RT_QN_NID);
-        idx.insert(ins).deleteBuns(del);
+        idx.insert(ins).deleteBuns(del).accbuild("hash");
         ins.delete();
         del.delete();
         totsize := batsize(idx);
     }
     # store the new size in the UNQ seqbase
-    runtime.fetch(RT_QN_NID_UNQ).reverse().seqbase(oid(totsize));
+    runtime.fetch(RT_QN_NID_UNQ).reverse().append(newqns, true).seqbase(oid(totsize));
 
     # mark the region index invalid
     # for now, we don't try to maintain it over updates
@@ -1513,14 +1516,14 @@ PROC __runtime_addchunk(lng wsid,
         # compute a (partial) [qn,nid] inverted list, and insert in into the index
         var idx := __runtime_index(coll_oid, nid, knd, prp, unq, pre, updatable);
         if (updatable)  
-            __runtime_maintain(wsid, colname, runtime, idx, empty_bat, empty_bat);
+            __runtime_maintain(wsid, colname, runtime, idx, empty_bat, empty_bat, empty_bat);
     }
     return commitbat;
 }
 
 
 PROC __runtime_lookup(BAT[lock,bat] runtime,
-                      BAT[oid,oid] qn_ids) : bat[void,oid] 
+                      BAT[oid,oid] qn_ids) : bat[oid,void] 
 {
     var res, valid := false;
     if (count(runtime) > RT_QN_NID) { 
@@ -1528,23 +1531,27 @@ PROC __runtime_lookup(BAT[lock,bat] runtime,
         var ins, del, idx := runtime.fetch(RT_QN_NID).reverse();
         if (count(qn_ids) = 1) {
             var qn_id := qn_ids.fetch(0);
-            res := idx.select(qn_id);
-            ins := runtime.fetch(RT_QN_NID_INS).select(qn_id);
-            del := runtime.fetch(RT_QN_NID_DEL).select(qn_id);
-            valid := bit(count(res) + count(ins) + count(del));
+            valid := runtime.fetch(RT_QN_NID_UNQ).exist(qn_id);
+            if (valid) {
+                res := idx.select(qn_id).assert_order();
+                ins := runtime.fetch(RT_QN_NID_INS).select(qn_id);
+                del := runtime.fetch(RT_QN_NID_DEL).select(qn_id);
+             }
         } else {
-            res := idx.join(qn_ids);
-            ins := runtime.fetch(RT_QN_NID_INS).join(qn_ids);
-            del := runtime.fetch(RT_QN_NID_DEL).join(qn_ids);
-            valid := (count(qn_ids.tdiff(res).tdiff(ins).tdiff(del)) = 0);
+            valid := (count(qn_ids.kdiff(runtime.fetch(RT_QN_NID_UNQ))) = 0);
+            if (valid) {
+                res := idx.join(qn_ids);
+                ins := runtime.fetch(RT_QN_NID_INS).join(qn_ids);
+                del := runtime.fetch(RT_QN_NID_DEL).join(qn_ids);
+            }
         }
-        if (bit(count(ins) + count(del))) {
+        if (valid and bit(count(ins) + count(del))) {
             # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
             res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
         } 
     }
     if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
-    return res;
+    return sort(res);
 }
 
 PROC __runtime_newpage(BAT[lock,bat] runtime) : oid 
@@ -1768,13 +1775,14 @@ PROC ws_postcommit(BAT[void,BAT] ws,
                    oid cont,  
                    BAT[oid,oid] ins, 
                    BAT[oid,oid] del,
+                   BAT[void,oid] newqns,
                    BAT[void,oid] delpages) : void 
 {
     var colname := ws.fetch(CONT_NAME).fetch(cont);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
 
     # maintain the index while holding the collection lock
-    var err := CATCH(__runtime_maintain(ws_id(ws), colname, runtime, ins, del, delpages));
+    var err := CATCH(__runtime_maintain(ws_id(ws), colname, runtime, ins, del, newqns, delpages));
     if (not(isnil(err))) ERROR(err);
 
     coll_lock_unset(ws, cont); # release X-access to the masters (after the commit phase)
@@ -2366,7 +2374,7 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         lock_set(pf_short);
         err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
         lock_unset(pf_short);
-        if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
+        if (not(isnil(err))) CATCH(collection_cleanup(commitBAT)); 
     }
 }
 

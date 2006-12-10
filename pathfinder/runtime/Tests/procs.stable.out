@@ -151,6 +151,7 @@ procs();
 [ "following_sibling(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"								  ]
 [ "fopen(str, str) : Stream"																  ]
 [ "fputs(str, Stream) : void"																  ]
+[ "get_attr_own(BAT[void,BAT], any, any) : BAT[oid,oid]"																					  ]
 [ "get_container(BAT[oid,int]) : BAT[oid,oid]"														  ]
 [ "get_container(BAT[void,int]) : BAT[void,oid]"													  ]
 [ "get_container(int) : oid"																  ]

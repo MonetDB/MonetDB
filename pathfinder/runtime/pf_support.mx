@@ -639,10 +639,25 @@ PROC get_attr_own(BAT[void,bat] ws, any nids, any cont) : BAT[oid,oid]
 {
     var private := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_PRIVATE));
     var shared := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_SHARED));
+    var cnt_p := count(int(private));
+    var cnt_s := count(int(shared));
+    if (cnt_s = 0LL) {
+        # private is all we got.
+        return private;
+    }
     var hshared := shared.hmark(0@0);
     var tshared := shared.tmark(0@0);
-    var result := mposjoin(tshared, hshared.leftfetchjoin(cont), ws.fetch(ATTR_OWN)).ord_select(oid_nil,oid_nil);
-    return reverse(reverse(result).leftfetchjoin(hshared)).access(BAT_WRITE).insert(private).access(BAT_READ);
+    shared := shared.fetch(mposjoin(tshared, hshared.leftfetchjoin(cont), ws.fetch(ATTR_OWN)).ord_uselect(oid_nil,oid_nil));
+    cnt_s := count(int(shared));
+    if (cnt_s = 0LL) {
+        # private is all we got.
+        return private;
+    }
+    if (cnt_p = 0LL) {
+        # shared is all we got.
+        return shared;
+    }
+    return bat(oid,oid,cnt_p + cnt_s).insert(shared).insert(private).access(BAT_READ);
 }
 
 
@@ -1257,8 +1272,6 @@ if (postfilter) {
                 	    cands := cands.leftfetchjoin(nid_rid);
                 	    cands := cands.[swizzle](map_pid); 
                 	    cands := cands.tsort(); 
-                        } else {
-                	    cands.assert_order(); 
                         }
 	                if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
                                 var min_cand := min(cands);
@@ -1449,12 +1462,13 @@ const UPDATE_REPLACE := 7LL;
 PROC myupdate(bat[any::1,any::2] oldbat, bat[any::1,any::2] newbat) : bat[any::1,any::2]
 {
   if (oldbat.htype() = void) {
-    newbat := newbat.sort();
     var replvals := newbat.reverse().select(oid_nil, oid(lng(oldbat.seqbase()) + oldbat.count()), true, false).reverse();
     var newvals := newbat.reverse().ord_select(oid(lng(oldbat.seqbase()) + oldbat.count()), oid_nil).reverse();
     oldbat := oldbat.replace(replvals, true);
+    newvals := newvals.chk_order().sort();
     oldbat := oldbat.append(newvals, true);
   } else {
+    if (ordered(oldbat)) newbat.chk_order().order();
     var newvals := kdiff(newbat, oldbat);
     var replvals := kdiff(newbat, newvals);
     oldbat := oldbat.replace(replvals, true).insert(newvals);
@@ -2081,47 +2095,22 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   }
 
   var texts := ws.fetch(UPDATED_TEXT);
-  fix_consecutive_texts(ws, texts);
+  #fix_consecutive_texts(ws, texts);
 
   # get containers in the order in which we must commit them ([COLL_ID,CONT])
   var cont_order := affected_conts.reverse().mirror().leftfetchjoin(ws.fetch(CONT_COLL)).reverse().sort();
 
-  # acquire locks by calling ws_precommit (must be done in the correct order)
-  cont_order@batloop() {
-    var cont := $t;
-    var modified_attr := ws.fetch(MODIFIED_ATTR).reverse().uselect(cont).hmark(0@0); # [i,ATID]
-    var modified_nid := ws.fetch(MODIFIED_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
-    var ancestor_nid := ws.fetch(ANCESTOR_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
-    var modified_page := ws.fetch(MODIFIED_PAGE).reverse().uselect(cont).hmark(0@0); # [i,PGID]
-
-    # add ancestor nids on modified pages to modified nids list and remove them from ancestor nids list
-    var ancestor_rid := ancestor_nid.join(ws.fetch(NID_RID).find(cont)); # [i,RID]
-    modified_nid := modified_nid.access(BAT_WRITE).reverse().key(true).reverse();
-    var new_ancestor_nid := new(void, oid);
-    modified_page@batloop() {
-      var start := oid(lng($t) << REMAP_PAGE_BITS);
-      var end := oid(lng(start) + REMAP_PAGE_MASK);
-      var rids := ancestor_rid.reverse().select(start, end).reverse();
-      modified_nid.append(rids.mirror().join(ancestor_nid));
-      new_ancestor_nid.append(tdiff(ancestor_nid, rids.mirror().join(ancestor_nid)));
-    }
-    ancestor_nid := new_ancestor_nid.tmark(0@0);
-
-    ws_precommit(ws, cont, modified_page, ancestor_nid, modified_nid, modified_attr);
-
-    var ancestor_rid := ancestor_nid.leftjoin(ws.fetch(NID_RID).find(cont));
-    var anc_oldsize := [swizzle](ancestor_rid, ws.fetch(MAP_PID).find(cont)).join(ws.fetch(PRE_SIZE).find(cont));
-    ancestor_rid.access(BAT_WRITE).replace(ancestor_nid.join(ws.fetch(NID_RID_UPDATE).find(cont)));
-    var anc_newsize := ancestor_rid.leftjoin(ws.fetch(RID_SIZE_UPDATE).find(cont));
-    var anc_mstsize := ancestor_rid.leftjoin(ws.fetch(_RID_SIZE).find(cont));
-    var anc_updsize := [+]([-](anc_newsize, anc_oldsize), anc_mstsize);
-    var rid_updsize := reverse(ancestor_rid).leftfetchjoin(anc_updsize);
-    ws.fetch(RID_SIZE_UPDATE).find(cont).myupdate(rid_updsize);
-  }
-
-  # log all changes
+  # log all changes and apply them
   lock_set(pf_wal);
   log_trans_start(pf_logger);
+  var err := CATCH(do_log_commit_updates(ws, cont_order));
+  lock_unset(pf_wal);
+  if (not(isnil(err))) ERROR(err);
+}
+
+PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
+{
+  # first do the main logging work without the collection locks
   cont_order@batloop() {
     var cont := $t;
     var rid_size := ws.fetch(_RID_SIZE).find(cont);
@@ -2161,9 +2150,52 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
       log_delta(pf_logger, rid_nid.reverse().select(start, end).reverse(), rid_nid.bbpname());
     }
   }
-  log_trans_end(pf_logger);
-  lock_unset(pf_wal);
 
+  # acquire collection locks by calling ws_precommit (must be done in the correct order)
+  cont_order@batloop() {
+    var cont := $t;
+
+    # conflict detection: find out which attrs, nids and pages were modified
+    var modified_attr := ws.fetch(MODIFIED_ATTR).reverse().uselect(cont).hmark(0@0); # [i,ATID]
+    var modified_nid := ws.fetch(MODIFIED_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
+    var ancestor_nid := ws.fetch(ANCESTOR_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
+    var modified_page := ws.fetch(MODIFIED_PAGE).reverse().uselect(cont).hmark(0@0); # [i,PGID]
+
+    # add ancestor nids on modified pages to modified nids list and remove them from ancestor nids list
+    var ancestor_rid := ancestor_nid.join(ws.fetch(NID_RID).find(cont)); # [i,RID]
+    modified_nid := modified_nid.access(BAT_WRITE).reverse().key(true).reverse();
+    var new_ancestor_nid := new(void, oid);
+    modified_page@batloop() {
+      var start := oid(lng($t) << REMAP_PAGE_BITS);
+      var end := oid(lng(start) + REMAP_PAGE_MASK);
+      var rids := ancestor_rid.reverse().select(start, end).reverse();
+      modified_nid.append(rids.mirror().join(ancestor_nid));
+      new_ancestor_nid.append(tdiff(ancestor_nid, rids.mirror().join(ancestor_nid)));
+    }
+    ancestor_nid := new_ancestor_nid.tmark(0@0);
+
+#modified_page.col_name("modified_page").print();
+#ancestor_nid.col_name("ancestor_nid").print();
+#modified_nid.col_name("modified_nid").print();
+#modified_attr.col_name("modified_attr").print();
+
+    # ws_precommit gives an ERROR if a conflicting transaction has committed already
+    ws_precommit(ws, cont, modified_page, ancestor_nid, modified_nid, modified_attr);
+
+    # compute the size-delta on the ancestors of modified nodes, and apply those to the recent masters (and LOG it) 
+    var ancestor_rid := ancestor_nid.leftjoin(ws.fetch(NID_RID).find(cont));
+    var anc_oldsize := [swizzle](ancestor_rid, ws.fetch(MAP_PID).find(cont)).join(ws.fetch(PRE_SIZE).find(cont));
+    ancestor_rid.access(BAT_WRITE).replace(ancestor_nid.join(ws.fetch(NID_RID_UPDATE).find(cont)));
+    var anc_newsize := ancestor_rid.leftjoin(ws.fetch(RID_SIZE_UPDATE).find(cont));
+    var anc_mstsize := ancestor_rid.leftjoin(ws.fetch(_RID_SIZE).find(cont));
+    var anc_updsize := [+]([-](anc_newsize, anc_oldsize), anc_mstsize);
+    var rid_updsize := reverse(ancestor_rid).leftfetchjoin(anc_updsize);
+    log_delta(pf_logger, rid_updsize, ws.fetch(_RID_SIZE).find(cont).bbpname()); # only log action that must be done inside the commit
+    ws.fetch(RID_SIZE_UPDATE).find(cont).myupdate(rid_updsize);
+  }
+  log_trans_end(pf_logger); # write commit record in WAL: this is the commit point!
+
+  # apply the logged changes to the masters
   cont_order@batloop() {
     var cont := $t;
     ws.fetch(_MAP_PID).find(cont).access(BAT_WRITE).delete().myupdate(ws.fetch(MAP_PID_UPDATE).find(cont));
@@ -2178,9 +2210,13 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     ws.fetch(_ATTR_OWN).find(cont).myupdate(ws.fetch(ATTR_OWN_UPDATE).find(cont));
   }
 
+  # ws_postcommit maintains the indices and releases the collection lock
   cont_order@batloop() {
     var cont := $t;
-    ws_postcommit(ws, cont, ws.fetch(NID_QN_INS_UPDATE).find(cont).reverse(), ws.fetch(NID_QN_DEL_UPDATE).find(cont).reverse(), empty_bat);
+    ws_postcommit(ws, cont, 
+                  ws.fetch(NID_QN_INS_UPDATE).find(cont).reverse(), 
+                  ws.fetch(NID_QN_DEL_UPDATE).find(cont).reverse(), 
+                  ws.fetch(QN_URI_UPDATE).find(cont).hmark(0@0), empty_bat);
   }
 }
 
@@ -2537,8 +2573,14 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           # docinsertafter_oldpre may point to a hole, so back track to a non-hole
           # item; this uses the original (unmodified) document
           var pre_kind := ws.fetch(PRE_KIND).find(doccont);
-          if (isnil(pre_kind.find(docinsertafter_oldpre))) {
-            docinsertafter_oldpre := pre_kind.reverse().select(oid_nil, docinsertafter_oldpre, true, false).reverse().uselect(chr_nil, chr_nil).reverse().max();
+          var cur := docinsertafter_oldpre;
+          var ret := pre_kind.find(cur);
+          while (isnil(ret)) {
+            # look for non-empty nodes in semi-bulk fashion
+            var lim := cur;
+            cur := oid(max(0LL, lng(cur) - lng(REMAP_PAGE_SIZE)));
+            ret := pre_kind.reverse().ord_select(cur, lim).reverse().ord_select(chr_nil,chr_nil).reverse().max();
+            docinsertafter_oldpre := ret;
           }
         }
 
@@ -5160,7 +5202,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
     /* check result size */
     if (BATcount(pre) > BATcount(bn)) {
 		GDKerror("mposjoin: missing matches. The result requires the "
-                 "same number of tuples as the first two input arguments.");
+                 "same number of tuples as the first two input arguments: "SZFMT" < "SZFMT".", BATcount(bn), BATcount(pre));
 		@:mpos_free_batlist@
 		return GDK_FAIL;
 	}

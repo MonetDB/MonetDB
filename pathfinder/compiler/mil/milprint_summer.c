@@ -11107,9 +11107,9 @@ const char* PFdocbatMIL(void) {
            "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
            PF_STOPMIL_END("Print ")
 #define PF_STOPMIL_UPDATE PF_STOPMIL_START\
-           "  play_update_tape(ws, item, kind, int_values, str_values);\n" PF_STOPMIL_END("Update")
+           "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")
 #define PF_STOPMIL_DOCMGT PF_STOPMIL_START\
-           "  play_doc_tape(ws, item, kind, int_values, str_values);\n" PF_STOPMIL_END("Update")
+           "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")
 #define PF_STOPMIL_END(LASTPHASE) \
            " });\n"\
            " ws_destroy(ws);\n"\

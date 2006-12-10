@@ -12,7 +12,7 @@ stdout of test 'import_doc` in directory 'benchmarks/XMark/XRpc` itself:
 module("pathfinder");
 module("unix");
 
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/benchmarks/XMark/XRpc/Tests";
+var TSTSRCDIR := getenv("TSTSRCBASE") + "/benchmarks/XMark/Tests";
 
 shred_doc(TSTSRCDIR + "/" + "auctionG.xml", "auctionG.xml");
 # Shredded XML doc("auctionG.xml"), total time after commit=0.65s
