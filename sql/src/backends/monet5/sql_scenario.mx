@@ -1224,7 +1224,7 @@ environment.
 
 cleanup_engine:
 	if (msg) {
-		if (strcmp(msg, "MALException:mal.assert:emptySet") == 0) {
+		if (strcmp(msg, "MALexception:mal.assert:emptySet") == 0) {
 			resetMalBlk( c->curprg->def, 1);
 			/* resetInstructions(c->curprg->def, 1);*/
 			freeVariables(c->curprg->def, c->glb, be->vtop);
