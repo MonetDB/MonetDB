@@ -1,61 +1,19 @@
 stdout of test 'Dependencies` in directory 'src/test/Dependencies` itself:
 
 
-# 23:01:45 >  
-# 23:01:45 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/sql_logs" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/xquery_logs" --set mapi_port=39017 --set monet_prompt= --trace "--dbname=mTests_src_test_Dependencies" --dbinit='include sql;' ; echo ; echo Over..
-# 23:01:45 >  
+# 21:36:42 >  
+# 21:36:42 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/monetdb4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/lib:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/sql_logs" --set "xquery_logdir=something" --set mapi_port=35748 --set monet_prompt= --trace "--dbname=mTests_src_test_Dependencies" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 21:36:42 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf
-# dbfarm:/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm
-# dbname:mTests_src_test_Dependencies
-# Visit http://monetdb.cwi.nl/ for further information
+# Monet Database Server V4.15.0
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
 
 Ready.
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
-= TODO: select_count(convert)
+quit();
 
 Over..
 
@@ -67,7 +25,7 @@ Dependencies between User and Schema
 done
 done
 Dependencies between database objects
-% sys.s,	.u,	. # table_name
+% sys.s,	sys.u,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 4,	10,	8 # length
@@ -173,7 +131,7 @@ Dependencies between database objects
 [ "t1_id_pkey",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 done
 Cleanup
-% sys.s,	.u,	. # table_name
+% sys.s,	sys.u,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 3,	7,	8 # length
