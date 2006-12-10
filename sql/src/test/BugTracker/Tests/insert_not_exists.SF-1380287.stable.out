@@ -29,7 +29,7 @@ Over..
 % . # table_name
 % single_value # name
 % char # type
-% 15 # length
+% 14 # length
 [ "filling kwTemp"	]
 [ 1	]
 [ 1	]
@@ -100,13 +100,13 @@ Over..
 % . # table_name
 % single_value # name
 % char # type
-% 31 # length
+% 27 # length
 [ "filling s4_kwm from kwmTemp"	]
 [ 20	]
 % . # table_name
 % single_value # name
 % char # type
-% 31 # length
+% 27 # length
 [ "dropping kwmTemp"	]
 % .,	sys. # table_name
 % single_value,	count_ # name

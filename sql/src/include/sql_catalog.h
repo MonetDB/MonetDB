@@ -438,6 +438,7 @@ typedef struct sql_trans {
 	int rtime;
 	int wtime;
 	int schema_number;	/* schema timestamp */
+	int previous_schema_nr;	/* previous schema timestamp */
 	int schema_updates;	/* set on schema changes */
 	int status;		/* status of the last query */
 
