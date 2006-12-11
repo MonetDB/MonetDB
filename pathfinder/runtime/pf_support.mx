@@ -2167,7 +2167,7 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
 
     # conflict detection: find out which attrs, nids and pages were modified
     var modified_attr := ws.fetch(MODIFIED_ATTR).reverse().uselect(cont).hmark(0@0); # [i,ATID]
-    var modified_nid := ws.fetch(MODIFIED_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
+    var modified_nid := ws.fetch(MODIFIED_NID).reverse().uselect(cont).hmark(0@0).access(BAT_WRITE); # [i,NID]
     var ancestor_nid := ws.fetch(ANCESTOR_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
     var modified_page := ws.fetch(MODIFIED_PAGE).reverse().uselect(cont).hmark(0@0); # [i,PGID]
 
@@ -2178,7 +2178,7 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
       var start := oid(lng($t) << REMAP_PAGE_BITS);
       var end := oid(lng(start) + REMAP_PAGE_MASK);
       var rids := ancestor_rid.reverse().select(start, end).reverse();
-      modified_nid.reverse().accbuild("hash");
+      modified_nid.reverse().key(true).accbuild("hash");
       modified_nid.append(rids.mirror().join(ancestor_nid).[wrd]().[>>](OID_PAGE_BITS));
       new_ancestor_nid.append(tdiff(ancestor_nid, rids.mirror().join(ancestor_nid)));
     }
