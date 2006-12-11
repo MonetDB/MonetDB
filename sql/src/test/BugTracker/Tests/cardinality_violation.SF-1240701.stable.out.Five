@@ -1,0 +1,27 @@
+stdout of test 'cardinality_violation.SF-1240701` in directory 'src/test/BugTracker` itself:
+
+
+# 15:14:42 >  
+# 15:14:42 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5/lib:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5/lib:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/xquery_logs" --set mapi_port=37495 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit='include sql;' ; echo ; echo Over..
+# 15:14:42 >  
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_BugTracker
+# Visit http://monetdb.cwi.nl/ for further information
+#MALException:malInclude:could not open file: bpm
+
+Ready.
+
+Over..
+
+# 12:47:43 >  
+# 12:47:43 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < cardinality_violation.SF-1240701.sql
+# 12:47:43 >  
+
+
+# 12:47:43 >  
+# 12:47:43 >  Done.
+# 12:47:43 >  
+
