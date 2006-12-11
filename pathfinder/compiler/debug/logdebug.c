@@ -1110,8 +1110,6 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
 
                 if (PFprop_set (n->prop))
                     PFarray_printf (xml, "      <duplicates allowed=\"yes\"/>\n");
-                else
-                    PFarray_printf (xml, "      <duplicates allowed=\"no\"/>\n");
 
                 all = true;
             }
