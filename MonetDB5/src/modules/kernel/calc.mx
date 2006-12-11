@@ -102,6 +102,7 @@ module calc;
 	@:mal_isnil(lng)@
 	@:mal_isnil(dbl)@
 	@:mal_isnil(str)@
+	@:mal_isnil(bat)@
 command isnil(v:void) :bit 
 address CALCisnil_void
 comment "is a value nil?";
