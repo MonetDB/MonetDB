@@ -150,7 +150,7 @@ scripts_mal = {
 		inspect.mx manual.mx crackers.mx mal_io.mx \
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
-		rsbox.mx urlbox.mx statistics.mx transaction.mx \
+		urlbox.mx statistics.mx transaction.mx \
 		partitions.mx pbm.mx mserver.mx sabaoth.mx \
 		radix.mx bpm.mx
 	#datacell.mx 
