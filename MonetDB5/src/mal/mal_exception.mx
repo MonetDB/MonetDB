@@ -148,6 +148,7 @@ enum exception {
 mal_export str	createException(enum exception, str, str, ...);
 mal_export str	createScriptException(MalBlkPtr, int, enum exception, str, str, ...);
 mal_export enum exception	getExceptionType(str);
+mal_export str	getExceptionPlace(str);
 mal_export str	getExceptionMessage(str);
 mal_export str	exceptionToString(enum exception);
 
@@ -271,14 +272,41 @@ getExceptionType(str exception)
 }
 
 /**
+ * Returns the location the exception was raised, if known.  It depends
+ * on the how the exception was created, what the location looks like.
+ * The returned string is mallocced with GDKmalloc, and hence needs to
+ * be GDKfreed.
+ */
+str
+getExceptionPlace(str exception)
+{
+	str ret;
+	str s, t;
+
+	if ((s = strchr(exception, ':')) != NULL &&
+			(t = strchr(s + 1, ':')) != NULL)
+	{
+		*t = '\0';
+		ret = GDKstrdup(s + 1);
+		*t = ':';
+		return(ret);
+	} else {
+		return(GDKstrdup("(unknown)"));
+	}
+}
+
+/**
  * Returns the informational message of the exception given.
  */
 str
 getExceptionMessage(str exception)
 {
-	str s;
+	str s, t;
 
 	if ((s = strchr(exception, ':')) != NULL) {
+		/* skip the place, if there */
+		if ((t = strchr(s + 1, ':')) != NULL)
+			s = t;
 		return(s + 1);
 	} else {
 		return(exception);
