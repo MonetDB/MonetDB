@@ -159,42 +159,42 @@ str
 MALassertBit(int *ret, bit *val, str *msg){
 	(void) ret;
 	if( *val == 0 || *val == bit_nil)
-		return throwMessage("mal.assert",*msg);
+		throw(MAL, "mal.assert",*msg);
 	return MAL_SUCCEED;
 }
 str
 MALassertInt(int *ret, int *val, str *msg){
 	(void) ret;
 	if( *val == 0 || *val == int_nil)
-		return throwMessage("mal.assert",*msg);
+		throw(MAL, "mal.assert",*msg);
 	return MAL_SUCCEED;
 }
 str
 MALassertLng(int *ret, lng *val, str *msg){
 	(void) ret;
 	if( *val == 0 || *val == lng_nil)
-		return throwMessage("mal.assert",*msg);
+		throw(MAL, "mal.assert",*msg);
 	return MAL_SUCCEED;
 }
 str
 MALassertSht(int *ret, sht *val, str *msg){
 	(void) ret;
 	if( *val == 0 || *val == sht_nil)
-		return throwMessage("mal.assert",*msg);
+		throw(MAL, "mal.assert",*msg);
 	return MAL_SUCCEED;
 }
 str
 MALassertOid(int *ret, oid *val, str *msg){
 	(void) ret;
 	if( *val == oid_nil)
-		return throwMessage("mal.assert",*msg);
+		throw(MAL, "mal.assert",*msg);
 	return MAL_SUCCEED;
 }
 str
 MALassertStr(int *ret, str *val, str *msg){
 	(void) ret;
 	if( *val == str_nil)
-		return throwMessage("mal.assert",*msg);
+		throw(MAL, "mal.assert",*msg);
 	return MAL_SUCCEED;
 }
 
@@ -203,7 +203,7 @@ MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void) stk;
 	(void) p;
-	return throwMessage("mal.assert","Command not yet available");
+	throw(MAL, "mal.assert","Command not yet available");
 }
 
 
@@ -287,10 +287,10 @@ CMDevalFile(int *ret, str *fnme)
 
 	(void) ret;		/* fool compiler */
 	if (s == 0) {
-		return throwMessage("mal.setCwd", "File name missing\n");
+		throw(MAL, "mal.setCwd", "File name missing\n");
 	}
 	if (strlen(s) + strlen(c->cwd) + 2 >= 1024) {
-		return throwMessage("mal.setCwd", "Evaluation buffer too small\n");
+		throw(MAL, "mal.setCwd", "Evaluation buffer too small\n");
 	}
 	buffer[0] = 0;
 
@@ -313,7 +313,7 @@ CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	return throwMessage("mal.call", "Not yet implemented");
+	throw(MAL, "mal.call", "Not yet implemented");
 }
 
 str
@@ -322,7 +322,7 @@ CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	return throwMessage("mal.include", "Not yet implemented");
+	throw(MAL, "mal.include", "Not yet implemented");
 }
 
 str

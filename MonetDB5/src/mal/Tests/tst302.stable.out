@@ -5,11 +5,11 @@ stdout of test 'tst302` in directory 'src/mal` itself:
 # 08:01:15 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst302.mal </dev/null
 # 08:01:15 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ##propagate INT exception
@@ -20,12 +20,11 @@ stdout of test 'tst302` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 #propagate INT exception 	# 1  (_1:str)
 # (you should be able to pass it upwards though) 	# 2  (_2:str)
-    raise IllegalAccess := 1234;	# 3  (IllegalAccess:int)<-(_4:int)
+    raise PermissionDeniedException := 1234;	# 3  (PermissionDeniedException:int)<-(_4:int)
     io.print("should not come here\n");	# 4 IOprint_val (_5:void)<-(_6:str)
 end main;	# 5  
-!ERROR: IllegalAccess:user.main[3]:Exception raised
-!ERROR: IllegalAccess:user.main[5]:Exception not catched
-#
+!ERROR: PermissionDeniedException:user.main[3]:Exception raised
+!ERROR: PermissionDeniedException:user.main[5]:Exception not catched
 
 # 08:01:15 >  
 # 08:01:15 >  Done.

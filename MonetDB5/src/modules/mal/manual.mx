@@ -117,7 +117,7 @@ MANUALcreate(int *ret, str *fname, str *mod, int *recursive)
 	(void) ret;		/* fool compiler */
 	fs = open_wastream(*fname);
 	if (fs == NULL)
-		return throwMessage("manual.create", "Could not open file\n");
+		throw(MAL, "manual.create", "Could not open file\n");
 	dumpManualHeader(fs);
 	dumpManual(fs, findModule(MCgetClient()->nspace, putName(*mod, strlen(*mod))), *recursive);
 	dumpManualFooter(fs);

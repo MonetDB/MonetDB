@@ -512,19 +512,19 @@ str
 MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 	BAT *hn, *b, *bn=0;
 	if ((hn = BATdescriptor(*hid)) == NULL) {
-        return throwMessage("mkey.bulk_rotate_xor_hash", 
+        throw(MAL, "mkey.bulk_rotate_xor_hash", 
 		"Cannot access descriptor");
     }
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPreleaseref(hn->batCacheid);
-        return throwMessage("mkey.bulk_rotate_xor_hash", 
+        throw(MAL, "mkey.bulk_rotate_xor_hash", 
 		"Cannot access descriptor");
     }
 
 	if( CMDbulk_rotate_xor_hash(&bn,hn,nbits,b) == GDK_FAIL){
 		BBPreleaseref(hn->batCacheid);
 		BBPreleaseref(b->batCacheid);
-        return throwMessage("mkey.bulk_rotate_xor_hash", "command failed");
+        throw(MAL, "mkey.bulk_rotate_xor_hash", "command failed");
 	}
 	BBPreleaseref(hn->batCacheid);
 	BBPreleaseref(b->batCacheid);

@@ -120,7 +120,7 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 	size_t cnt, first;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chop.newChunkIterator", "Cannot access descriptor");
+		throw(MAL, "chop.newChunkIterator", "Cannot access descriptor");
 	}
 	cnt = BATcount(b);
 	first = BUNindex(b, BUNfirst(b));
@@ -149,11 +149,11 @@ CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule)
 	size_t i;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chop.newChunkMoreElements", "Cannot access descriptor");
+		throw(MAL, "chop.newChunkMoreElements", "Cannot access descriptor");
 	}
 	if ((view = BATdescriptor(*vid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("chop.newChunkMoreElements", "Cannot access 'vid' descriptor");
+		throw(MAL, "chop.newChunkMoreElements", "Cannot access 'vid' descriptor");
 	}
 	i = (size_t) (*res + BATcount(view));
 	if (i >= BUNindex(b, BUNlast(b))) {
@@ -197,7 +197,7 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = (int *) getArgReference(stk, pci, 3);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chop.newChunkMoreElements", "Cannot access 'bid' descriptor");
+		throw(MAL, "chop.newChunkMoreElements", "Cannot access 'bid' descriptor");
 	}
 
 	if (BATcount(b) == 0) {
@@ -237,7 +237,7 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = (bat *) getArgReference(stk, pci, 3);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chop.newChunkMoreElements", "Cannot access 'bid' descriptor");
+		throw(MAL, "chop.newChunkMoreElements", "Cannot access 'bid' descriptor");
 	}
 
 	/* get head = ... tail = ... */
@@ -287,12 +287,12 @@ CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	head = &stk->stk[pci->argv[0]];
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chop.getHead", "Cannot access 'bid' descriptor");
+		throw(MAL, "chop.getHead", "Cannot access 'bid' descriptor");
 	}
 	limit = BUNindex(b, BUNlast(b));
 	if (*cursor < 0 || *cursor >= limit) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("mal.getHead", "range error");
+		throw(MAL, "mal.getHead", "range error");
 	}
 
 	/* get head = ... */
@@ -321,12 +321,12 @@ CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tail = &stk->stk[pci->argv[0]];
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chop.getTail", "Cannot access 'bid' descriptor");
+		throw(MAL, "chop.getTail", "Cannot access 'bid' descriptor");
 	}
 	limit = BUNindex(b, BUNlast(b));
 	if (*cursor < 0 || *cursor >= limit) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("mal.getTail", "range error");
+		throw(OUTOFBNDS, "mal.getTail", "range error: %d", *cursor);
 	}
 
 	/* get tail = ... */

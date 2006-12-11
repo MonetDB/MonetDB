@@ -1314,7 +1314,7 @@ CRKprintAVLTree_int(int *k, int *bid){
                 fprintf(stderr, " the crack index does not exist \n");
 
 	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL)
-                return throwMessage("crackers.CRKprintAVLTree_int", "Cannot access cracker index");
+                throw(MAL, "crackers.CRKprintAVLTree_int", "Cannot access cracker index");
 
         zz = BUNsize(c);
         idxFirst = BUNfirst(c);
@@ -1776,7 +1776,7 @@ CRKmakeAVLIndex_@1(int *k, int *bid)
 
 	(void) k;
         if ((b = BATdescriptor(*bid)) == NULL)
-		return throwMessage("crackers.make AVL index", "Cannot access descriptor");
+		throw(MAL, "crackers.make AVL index", "Cannot access descriptor");
 
 	indexPos = newAVLIndex_@1(*bid);
 	cur = BUNfirst(b);
@@ -1806,13 +1806,13 @@ CRKInsertAVLIndex_@1(int *k, int *bid, int *uid)
 	(void) k;
 	indexPos = existsAVLIndex(*bid);
 	if (indexPos == -1)	
-		return throwMessage("crackers.insert AVL index", "No AVL index present for this BAT");
+		throw(MAL, "crackers.insert AVL index", "No AVL index present for this BAT");
 
         if ((b = BATdescriptor(*bid)) == NULL)
-		return throwMessage("crackers.insert AVL index", "Cannot access descriptor");
+		throw(MAL, "crackers.insert AVL index", "Cannot access descriptor");
 
         if ((u = BATdescriptor(*uid)) == NULL)
-		return throwMessage("crackers.insert AVL index", "Cannot access update descriptor");
+		throw(MAL, "crackers.insert AVL index", "Cannot access update descriptor");
 
 	cur = BUNfirst(u);
 	last = BUNlast(u);
@@ -1868,10 +1868,10 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 
 	indexPos = existsAVLIndex(*bid);
         if (indexPos == -1)
-                return throwMessage("crackers.insert AVL index", "No AVL index present for this BAT");
+                throw(MAL, "crackers.insert AVL index", "No AVL index present for this BAT");
 	
         if ((b = BATdescriptor(*bid)) == NULL)
-		return throwMessage("crackers.insert AVL index", "Cannot access descriptor");
+		throw(MAL, "crackers.insert AVL index", "Cannot access descriptor");
 
 	result = BATnew(TYPE_oid, TYPE_@1, (*(@1*)hgh-*(@1*)low)*2);
 
@@ -1977,14 +1977,14 @@ CRKdeleteFromAVL_@1(int *k, int *bid, int *uid){
 	
 	indexPos = existsAVLIndex(*bid);
         if (indexPos == -1)
-                return throwMessage("crackers.delete from AVL index", "No AVL index present for this BAT");
+                throw(MAL, "crackers.delete from AVL index", "No AVL index present for this BAT");
 
         if ((b = BATdescriptor(*bid)) == NULL)
-                return throwMessage("crackers.delete from AVL index", "Cannot access descriptor");
+                throw(MAL, "crackers.delete from AVL index", "Cannot access descriptor");
 
 
 	if ((u = BATdescriptor(*uid)) == NULL)
-                return throwMessage("crackers.delete from AVL index", "Cannot access deletions BAT");
+                throw(MAL, "crackers.delete from AVL index", "Cannot access deletions BAT");
 
         if (BATcount(u) == 0){
                 BBPunfix(u->batCacheid);
@@ -2687,7 +2687,7 @@ CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid)
 	lng pos;
 
         if ((b = BATdescriptor(*bid)) == NULL) {
-                return throwMessage("crackers.crack_zeroOrdered", "Cannot access descriptor");
+                throw(MAL, "crackers.crack_zeroOrdered", "Cannot access descriptor");
         }
 
         msg = CRKcrackOrderedZero_LE_@1(b,*mid, 0, BATcount(b)-1,&pos);
@@ -2706,7 +2706,7 @@ CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid)
 	str msg;
 
         if ((b = BATdescriptor(*bid)) == NULL) {
-                return throwMessage("crackers.crack_oneOrdered", "Cannot access descriptor");
+                throw(MAL, "crackers.crack_oneOrdered", "Cannot access descriptor");
         }
 
 	msg = CRKcrackOrderedThree_LE_RE_@1(b,*mid,*mid, 0, BATcount(b)-1);
@@ -2722,9 +2722,9 @@ CRKcrackOrderedTwo_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	BAT *b;
 
 	if (*(@1 *) low > *(@1 *) hgh)
-		return throwMessage("crackers.crack_twoOrdered", "illegal range");
+		throw(MAL, "crackers.crack_twoOrdered", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_twoOrdered", "Cannot access descriptor");
+		throw(MAL, "crackers.crack_twoOrdered", "Cannot access descriptor");
 	}
 
 	BBPkeepref(b->batCacheid);
@@ -2741,7 +2741,7 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	lng posl,posh;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_threeOrdered", "Cannot access descriptor");
+		throw(MAL, "crackers.crack_threeOrdered", "Cannot access descriptor");
 	}
 
         msg = CRKcrackOrderedThreeL_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1,&posl, &posh);
@@ -2766,11 +2766,11 @@ CRKcrackUnorderedZero_@1 (int *res, int *bid, @1 *mid)
 	lng pos;
 
         if ((b = BATdescriptor(*bid)) == NULL)
-                return throwMessage("crackers.crack_zeroUnordered", "Cannot access descriptor");
+                throw(MAL, "crackers.crack_zeroUnordered", "Cannot access descriptor");
 
         /* set bounds for the iterator */
         if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
-                return throwMessage("crackers.crack_zeroUnordered", "Need more clever mapping ");
+                throw(MAL, "crackers.crack_zeroUnordered", "Need more clever mapping ");
 
         msg = CRKcrackUnorderedZero_LE_@1( b, *mid,(size_t) 0, BATcount(b)-1, &pos);
 
@@ -2788,13 +2788,13 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	lng posl, posh;
 
         if (*(@1 *) low > *(@1 *) hgh)
-                return throwMessage("crackers.crack_threeUnordered", "illegal range");
+                throw(MAL, "crackers.crack_threeUnordered", "illegal range");
         if ((b = BATdescriptor(*bid)) == NULL)
-                return throwMessage("crackers.crack_threeUnordered", "Cannot access descriptor");
+                throw(MAL, "crackers.crack_threeUnordered", "Cannot access descriptor");
 
         /* set bounds for the iterator */
         if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
-                return throwMessage("crackers.crack_threeUnordered", "Need more clever mapping ");
+                throw(MAL, "crackers.crack_threeUnordered", "Need more clever mapping ");
 
         msg = CRKcrackUnorderedThree_LO_RE_@1( b, *low, *hgh, 0, BATcount(b)-1,&posl, &posh);
 
@@ -2822,7 +2822,7 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	/* initialization */
 	*res = FALSE;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.@2crack_validate", "Cannot access descriptor");
+		throw(MAL, "crackers.@2crack_validate", "Cannot access descriptor");
 	}
 
 	bs = BUNsize(b);
@@ -2833,7 +2833,7 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @= validate_init_2
 	if (low > hgh) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("crackers.@2crack_validate", "illegal range");
+		throw(MAL, "crackers.@2crack_validate", "illegal range");
 	}
 @
 @= validate_checkUnordered
@@ -2869,7 +2869,7 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		BBPunfix(w->batCacheid);
 		BBPunfix(c->batCacheid);
 		BBPunfix(b->batCacheid);
-		return throwMessage("crackers.@2crack_validate", "Invalid crack");
+		throw(MAL, "crackers.@2crack_validate", "Invalid crack");
 	}
 	assert(bn == lst_bn);
 	assert(count[0] == count[1] + count[2] + count[3] + count[4] + count[5]);
@@ -3029,11 +3029,11 @@ appendCrackerBAT(int * bid, int * new){
 		}
 
         if ((c = BATdescriptor(TreeIndex[position].cbid)) == NULL)
-                return throwMessage("bat.append", "Cannot access descriptor");
+                throw(MAL, "bat.append", "Cannot access descriptor");
 
         if ((u = BATdescriptor(*new)) == NULL) {
                 BBPreleaseref(c->batCacheid);
-                return throwMessage("bat.append", "Cannot access descriptor");
+                throw(MAL, "bat.append", "Cannot access descriptor");
         }
 	
 	if (BATcount(u) == 0) {
@@ -3103,7 +3103,7 @@ struct tempBATNode{
 		}
 
         if ((u = BATdescriptor(*new)) == NULL)
-                return throwMessage("crackers.mergeInsertions_@1", "Cannot access insertions BAT");
+                throw(MAL, "crackers.mergeInsertions_@1", "Cannot access insertions BAT");
 
 	/* abort if there are no insertions to merge */	
 	insertions = BATcount(u);
@@ -3113,12 +3113,12 @@ struct tempBATNode{
 	}
 	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL){
 		BBPunfix(u->batCacheid);
-		return throwMessage("crackers.mergeInsertions_@1", "Cannot access cracker index");
+		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker index");
 	}
 	if ((b = BATdescriptor(TreeIndex[position].cbid)) == NULL){
 		BBPunfix(u->batCacheid);
 		BBPunfix(c->batCacheid);
-		return throwMessage("crackers.mergeInsertions_@1", "Cannot access cracker BAT");
+		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker BAT");
 	}
 
 	/* sort in place the insertions bat */
@@ -3141,7 +3141,7 @@ struct tempBATNode{
                 if (ncap > grows)
                         grows = ncap;
                 if (BATextend(b, grows) == NULL)
-                        return throwMessage("crackers.mergeInsertions_@1", "Failed to make room for the new values");
+                        throw(MAL, "crackers.mergeInsertions_@1", "Failed to make room for the new values");
         }
 	
 	temp = GDKmalloc(sizeof(struct tempBATNode));
@@ -3385,7 +3385,7 @@ lng TotalSearchAVL = 0;
 	}
 
         if ((u = BATdescriptor(*new)) == NULL)
-                return throwMessage("crackers.mergeInsertions_@1", "Cannot access insertions BAT");
+                throw(MAL, "crackers.mergeInsertions_@1", "Cannot access insertions BAT");
 
 	/* abort if there are no insertions to merge */	
 	if (BATcount(u) == 0) {
@@ -3395,12 +3395,12 @@ lng TotalSearchAVL = 0;
 
 	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL){
 		BBPunfix(u->batCacheid);
-		return throwMessage("crackers.mergeInsertions_@1", "Cannot access cracker index");
+		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker index");
 	}
 	if ((b = BATdescriptor(TreeIndex[position].cbid)) == NULL){
 		BBPunfix(u->batCacheid);
 		BBPunfix(c->batCacheid);
-		return throwMessage("crackers.mergeInsertions_@1", "Cannot access cracker BAT");
+		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker BAT");
 	}
 	if (endPosition == -1)
 		endPosition = BATcount(u) - 1;
@@ -3428,7 +3428,7 @@ lng TotalSearchAVL = 0;
                 if (ncap > grows)
                         grows = ncap;
                 if (BATextend(b, grows) == NULL)
-                        return throwMessage("crackers.mergeInsertions_@1", "Failed to make room for the new values");
+                        throw(MAL, "crackers.mergeInsertions_@1", "Failed to make room for the new values");
         }
 	
 	insh 	 = BUNhloc(u, insFirst + endPosition*xx);
@@ -3633,7 +3633,7 @@ movements += remainingIns;
 		}
 
         if ((u = BATdescriptor(*del)) == NULL)
-                return throwMessage("crackers.mergeDeletions_@1", "Cannot access insertions BAT");
+                throw(MAL, "crackers.mergeDeletions_@1", "Cannot access insertions BAT");
 
 	/* abort if there are no deletions to merge */	
 	if (BATcount(u) == 0) {
@@ -3643,12 +3643,12 @@ movements += remainingIns;
 
 	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL){
 		BBPunfix(u->batCacheid);
-		return throwMessage("crackers.mergeDeletions_@1", "Cannot access cracker index");
+		throw(MAL, "crackers.mergeDeletions_@1", "Cannot access cracker index");
 	}
 	if ((b = BATdescriptor(TreeIndex[position].cbid)) == NULL){
 		BBPunfix(u->batCacheid);
 		BBPunfix(c->batCacheid);
-		return throwMessage("crackers.mergeDeletions_@1", "Cannot access cracker BAT");
+		throw(MAL, "crackers.mergeDeletions_@1", "Cannot access cracker BAT");
 	}
 
 	if (endPosition == -1)
@@ -3921,7 +3921,7 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 	(void) k;
 
 	if ((u = BATdescriptor(*new)) == NULL)
-		return throwMessage("crackers.mergeInsertions_PartiallyForget_@1", "Cannot access insertions");
+		throw(MAL, "crackers.mergeInsertions_PartiallyForget_@1", "Cannot access insertions");
 
 	if (BATcount(u) == 0)
 		return MAL_SUCCEED;
@@ -3936,7 +3936,7 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 
 	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL){
                 BBPunfix(u->batCacheid);
-                return throwMessage("crackers.CRKmergeInsertions_PartiallyForget_@1", "Cannot access cracker index");
+                throw(MAL, "crackers.CRKmergeInsertions_PartiallyForget_@1", "Cannot access cracker index");
         }
 
 	/* get the min value */
@@ -4333,7 +4333,7 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 		}
 
         if ((u = BATdescriptor(*del)) == NULL)
-                return throwMessage("crackers.mergeDeletions_@1", "Cannot access insertions BAT");
+                throw(MAL, "crackers.mergeDeletions_@1", "Cannot access insertions BAT");
 
 	/* abort if there are no deletions to merge */	
 	if (BATcount(u) == 0) {
@@ -4343,12 +4343,12 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 
 	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL){
 		BBPunfix(u->batCacheid);
-		return throwMessage("crackers.mergeDeletions_@1", "Cannot access cracker index");
+		throw(MAL, "crackers.mergeDeletions_@1", "Cannot access cracker index");
 	}
 	if ((b = BATdescriptor(TreeIndex[position].cbid)) == NULL){
 		BBPunfix(u->batCacheid);
 		BBPunfix(c->batCacheid);
-		return throwMessage("crackers.mergeDeletions_@1", "Cannot access cracker BAT");
+		throw(MAL, "crackers.mergeDeletions_@1", "Cannot access cracker BAT");
 	}
 
 	if (endPosition == -1)
@@ -4531,12 +4531,12 @@ CRKextendCrackerBAT(int *k, int *bid, lng positions){
 	(void) k;
 
 	if (position == -1)
-                return throwMessage("crackers.CRKextendCrackerBAT", "Cannot find cracker index");
+                throw(MAL, "crackers.CRKextendCrackerBAT", "Cannot find cracker index");
 	if ((b = BATdescriptor(TreeIndex[position].cbid)) == NULL)
-                return throwMessage("crackers.CRKextendCrackerBAT", "Cannot access cracker BAT");
+                throw(MAL, "crackers.CRKextendCrackerBAT", "Cannot access cracker BAT");
 
 	if (BATextend(b, positions) == NULL)
-                return throwMessage("crackers.CRKextendCrackerBAT", "Failed to extend the cracker BAT");	
+                throw(MAL, "crackers.CRKextendCrackerBAT", "Failed to extend the cracker BAT");	
 	
 	BBPunfix(b->batCacheid);
 
@@ -4548,14 +4548,14 @@ appendInsertions(int *new, int position){
 	BAT *u, *c;
 
        	if ((u = BATdescriptor(*new)) == NULL)
-      		 return throwMessage("crackers.appendInsertions", "Cannot access insertions BAT");
+      		 throw(MAL, "crackers.appendInsertions", "Cannot access insertions BAT");
 	if (TreeIndex[position].iid < 0 ){
 		BATmode(u,PERSISTENT);
 		TreeIndex[position].iid = u->batCacheid;
 		BBPkeepref(u->batCacheid);
 	} else {
        		if ((c = BATdescriptor(TreeIndex[position].iid)) == NULL)
-      		 	return throwMessage("crackers.appendInsertions", "Cannot access cracker insertions BAT");
+      		 	throw(MAL, "crackers.appendInsertions", "Cannot access cracker insertions BAT");
         	BATappend(c, u, TRUE);
 		BBPunfix(c->batCacheid);
 		BBPunfix(u->batCacheid);
@@ -4569,14 +4569,14 @@ appendDeletions(int *del, int position){
 	BAT *u, *c;
 
        	if ((u = BATdescriptor(*del)) == NULL)
-      		 return throwMessage("crackers.appendDeletions", "Cannot access deletions BAT");
+      		 throw(MAL, "crackers.appendDeletions", "Cannot access deletions BAT");
 	if (TreeIndex[position].did < 0 ){
 		BATmode(u,PERSISTENT);
 		TreeIndex[position].did = u->batCacheid;
 		BBPkeepref(u->batCacheid);
 	} else {
        		if ((c = BATdescriptor(TreeIndex[position].did)) == NULL)
-      		 	return throwMessage("crackers.appendDeletions", "Cannot access cracker deletions BAT");
+      		 	throw(MAL, "crackers.appendDeletions", "Cannot access cracker deletions BAT");
         	BATappend(c, u, TRUE);
 		BBPunfix(c->batCacheid);
 		BBPunfix(u->batCacheid);
@@ -4603,7 +4603,7 @@ CRKmergeInsertionsB_OnNeed@1(int *k, int *bid, int *new){
         (void) k;
 
 	if (position == -1)
-		return throwMessage("crackers.CRKmergeInsertionsB_OnNeed@1", "Cannot find cracker index");
+		throw(MAL, "crackers.CRKmergeInsertionsB_OnNeed@1", "Cannot find cracker index");
 
 	appendInsertions(new,position);
 	TreeIndex[position].mergeInsertions = @2;
@@ -4620,7 +4620,7 @@ CRKmergeInsertions_OnNeed@1(int *k, int *bid, int *new, bit *deleteNodes){
         (void) k;
 
 	if (position == -1)
-		return throwMessage("crackers.CRKmergeInsertions_OnNeed@1", "Cannot find cracker index");
+		throw(MAL, "crackers.CRKmergeInsertions_OnNeed@1", "Cannot find cracker index");
 
 	appendInsertions(new,position);
 	TreeIndex[position].mergeInsertions = @2;
@@ -4637,7 +4637,7 @@ CRKmergeDeletions_OnNeed@1(int *k, int *bid, int *del){
         (void) k;
 
 	if (position == -1)
-		return throwMessage("crackers.CRKmergeDeletions_OnNeed@1", "Cannot find cracker index");
+		throw(MAL, "crackers.CRKmergeDeletions_OnNeed@1", "Cannot find cracker index");
 
 	appendDeletions(del,position);
 	TreeIndex[position].mergeDeletions = @2;
@@ -4671,10 +4671,10 @@ verifyCrackerIndex_@1(int *bid){
 		}
 
 	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL)
-		return throwMessage("crackers.mergeInsertions_@1", "Cannot access cracker index");
+		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker index");
 	if ((b = BATdescriptor(TreeIndex[position].cbid)) == NULL){
 		BBPunfix(c->batCacheid);
-		return throwMessage("crackers.mergeInsertions_@1", "Cannot access cracker BAT");
+		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker BAT");
 	}
 	
 	xx = BUNsize(b);
@@ -5434,7 +5434,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	BUN idxFirst;
 	
 	if (@2_GT(low,hgh,@3@1))
-		return throwMessage("crackers.crack", "illegal range");
+		throw(MAL, "crackers.crack", "illegal range");
 	
 	if (*inclusiveHgh == TRUE) HBound = FALSE;
 	else	HBound = TRUE; 				
@@ -5446,7 +5446,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	   if necessary materialize the head of the bat */
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
 		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		if ( bo->htype == TYPE_void)
 			b = BATmaterializeh(b,BATcount(b));
@@ -5461,7 +5461,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 		m = newTreeIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 		/* Since the index is empty we know we have to crack
 		   anyway so crack in three pieces cl-ch */
@@ -5498,11 +5498,11 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	
 		/* Take the index of the bat */
 		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access cracker index");
+			throw(MAL, "crackers.crackRange", "Cannot access cracker index");
 
 		/* Take the copy of the bat for which we maintain the index */
 		if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access cracker BAT");
+			throw(MAL, "crackers.crackRange", "Cannot access cracker BAT");
 	
 		posl = BUNindex(b,BUNfirst(b));
 		posh = BUNindex(b,BUNlast(b)-BUNsize(b));
@@ -5515,24 +5515,24 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	/* deal with pending insertions if any */
 	if (TreeIndex[m].mergeInsertions >= 0){
 		str msg = selectMergeInsertionsPart_@1(bid, low, inclusiveLow, hgh, inclusiveHgh, m);
-                if (msg != NULL)
-                        throwMessage("crackers.crackRange",msg);
+                if (msg != NULL) /* could use rethrow macro -- Fabian */
+                        throw(MAL, "crackers.crackRange",msg);
 	}
 		
 	/* deal with pending deletions if any */
 	if (TreeIndex[m].mergeDeletions >= 0){
 		str msg = selectMergeDeletionsPart_@1(bid, low, inclusiveLow, hgh, inclusiveHgh, &rippledDeletions, m);
 		if (msg != NULL)
-			throwMessage("crackers.crackRange",msg);
+			throw(MAL, "crackers.crackRange",msg);
 	}
 
 	/* Take the index of the bat */
 	if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	/* Take the copy of the bat for which we maintain the index */
 	if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(b);
 	zz = BUNsize(c);
@@ -5664,7 +5664,7 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	   if necessary materialize the head of the bat */
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
 		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		if ( bo->htype == TYPE_void)
 			b = BATmaterializeh(b,BATcount(b));
@@ -5679,7 +5679,7 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 		m = newTreeIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 		cl2 = BUNindex(b,BUNfirst(b));
 		ch2 = BUNindex(b,BUNlast(b)-BUNsize(b));
@@ -5699,11 +5699,11 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	
 		/* Take the index of the bat */
 		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 		/* Take the copy of the bat for which we maintain the index */
 		if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 	
 		cl2 = BUNindex(b,BUNfirst(b));
 		ch2 = BUNindex(b,BUNlast(b)-BUNsize(b));
@@ -5718,11 +5718,11 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 
 	/* Take the index of the bat */
 	if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	/* Take the copy of the bat for which we maintain the index */
 	if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(c);
 
@@ -5774,7 +5774,7 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 	   if necessary materialize the head of the bat */
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
 		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		if ( bo->htype == TYPE_void)
 			b = BATmaterializeh(b,BATcount(b));
@@ -5789,7 +5789,7 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 		m = newTreeIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 		cl1 = BUNindex(b,BUNfirst(b));
 		ch1 = BUNindex(b,BUNlast(b)-BUNsize(b));
@@ -5809,11 +5809,11 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 	
 		/* Take the index of the bat */
 		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 		/* Take the copy of the bat for which we maintain the index */
 		if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 	
 		cl1 = BUNindex(b,BUNfirst(b));
 		ch1 = BUNindex(b,BUNlast(b)-BUNsize(b));
@@ -5828,11 +5828,11 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 
 	/* Take the index of the bat */
 	if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	/* Take the copy of the bat for which we maintain the index */
 	if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(c);
 
@@ -5890,7 +5890,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	BAT *n=NULL;
 	*/
 	if (@2_GT(low,hgh,@3@1))
-		return throwMessage("crackers.crack", "illegal range");
+		throw(MAL, "crackers.crack", "illegal range");
 
 	m = existsIndex(*bid);
 	/* if this is the first time we select something from this bat,
@@ -5900,7 +5900,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		/*firstCrack = 1;
 		int resMmap,mode=STORE_MMAP;*/
 		if ((bo = BATdescriptor(*bid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
 		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		if ( bo->htype == TYPE_void)
 			b = BATmaterializeh(b,BATcount(b));
@@ -5927,7 +5927,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		m = newIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(Index[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 		/* Since the index is empty we know we have to crack
 		   anyway so crack in three pieces cl-ch */
@@ -5957,11 +5957,11 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 
 	/* Take the index of the bat */
 	if ((c = BATdescriptor(Index[m].cid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	/* Take the copy of the bat for which we maintain the index */
 	if ((b = BATdescriptor(Index[m].cbid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(c);
 
@@ -6049,7 +6049,7 @@ CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	   if necessary materialize the head of the bat */
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
 		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		b = BATmaterializeh(b,BATcount(b));
 		b->hsorted = FALSE;
@@ -6063,7 +6063,7 @@ CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 		m = newIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(Index[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 		/* Since the index is empty we know we have to crack
 		   anyway so crack in two pieces cl-ch */
@@ -6082,11 +6082,11 @@ CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 		we search the index to find where the high falls */
 
 	if ((c = BATdescriptor(Index[m].cid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	/* Take the copy of the bat for which we maintain the index */
 	if ((b = BATdescriptor(Index[m].cbid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(c);
 
@@ -6141,7 +6141,7 @@ CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 	   if necessary materialize the head of the bat */
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
 		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		b = BATmaterializeh(b,BATcount(b));
 		b->hsorted = FALSE;
@@ -6155,7 +6155,7 @@ CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 		m = newIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(Index[m].cid)) == NULL)
-			return throwMessage("crackers.crackRange", "Cannot access crack index");
+			throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 		/* Since the index is empty we know we have to crack
 		   anyway so crack in two pieces cl-ch */
@@ -6174,11 +6174,11 @@ CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 		we search the index to find where the high falls */
 
 	if ((c = BATdescriptor(Index[m].cid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	/* Take the copy of the bat for which we maintain the index */
 	if ((b = BATdescriptor(Index[m].cbid)) == NULL)
-		return throwMessage("crackers.crackRange", "Cannot access crack index");
+		throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(c);
 
@@ -6230,7 +6230,7 @@ CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit 
 			return CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
 	}
 
-       	return throwMessage("crackers.CRKselectBounds_@1", "case not handled");
+       	throw(MAL, "crackers.CRKselectBounds_@1", "case not handled");
 }
 
 crackers_export str CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
@@ -6253,7 +6253,7 @@ CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit
 			return CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
 	}
 
-        return throwMessage("crackers.CRKuselectBounds_@1", "case not handled");
+        throw(MAL, "crackers.CRKuselectBounds_@1", "case not handled");
 }
 
 crackers_export str CRKselectValue_@1(int *vid, int *bid, @1 *value);
@@ -6449,18 +6449,18 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 	BAT *l, *r;
 
 	if ((l = BATdescriptor(*left)) == NULL) {
-        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
+        	throw(MAL, "crackers.crackJoinSelect", "Cannot access descriptor");
         }
 
 	if ((r = BATdescriptor(*right)) == NULL) {
 		BBPunfix(*left);
-        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
+        	throw(MAL, "crackers.crackJoinSelect", "Cannot access descriptor");
         }
 
 	if (!BAThdense(r)) {
 		BBPunfix(*left);
 		BBPunfix(*right);
-		return throwMessage("crackers.crackJoinSelect", "right BAT must have a dense head");
+		throw(MAL, "crackers.crackJoinSelect", "right BAT must have a dense head");
 	}
 
 	if (BATcount(l) == 0 || BATcount(r) == 0){
@@ -6507,7 +6507,7 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
                 	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
 	}
-        return throwMessage("crackers.crackJoinSelect", "case not handled");
+        throw(MAL, "crackers.crackJoinSelect", "case not handled");
 }
 @
 

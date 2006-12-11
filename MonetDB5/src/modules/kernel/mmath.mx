@@ -372,13 +372,13 @@ math_unary@1(dbl *res , dbl *a )
 		errno = 0;
 		@2_unary( a, res );
 		if (errno == EDOM)
-			return throwMessage("mmath.@1","Negative argument is not allowed");
+			throw(MAL, "mmath.@1","Negative argument is not allowed");
 		if (errno == ERANGE)
-			return throwMessage("mmath.@1","Range error");
+			throw(MAL, "mmath.@1","Range error");
 		if (MNisnan(*res))
-			return throwMessage("mmath.@1","Negative argument is not allowed");
+			throw(MAL, "mmath.@1","Negative argument is not allowed");
 		if (!MNfinite(*res))
-			return throwMessage("mmath.@1","Range error");
+			throw(MAL, "mmath.@1","Range error");
 	}
 	return MAL_SUCCEED;
 }

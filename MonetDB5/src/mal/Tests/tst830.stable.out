@@ -148,8 +148,8 @@ MALException:user.main[6]:addUser:user 'monetdb' already exists
 #-------------------------#
 [ 0@0,	  "monetdb"	  ]
 [ 1@0,	  "test"	  ]
-MALException:user.main[34]:removeScenario:scenario 'mil' not found for user
-MALException:user.main[39]:addScenario:scenario 'mal' already exists for user
+MALException:user.main[34]:removeScenario:scenario 'mil' not found for user 'test'
+MALException:user.main[39]:addScenario:scenario 'mal' already exists for user 'test'
 InvalidCredentialsException:user.main[48]:setPassword:The administrator cannot set its own password, use changePassword instead
 InvalidCredentialsException:user.main[53]:changePassword:Access denied
 InvalidCredentialsException:user.main[60]:checkCredentials:Invalid credentials for user 'monetdb'

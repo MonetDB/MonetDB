@@ -305,9 +305,6 @@ mal_export void mal_exit(void);
 #define LIST_MAL_PROPS  8       /* show optimizer properties */
 #define LIST_MAL_ALL    (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_PROPS )
 
-#define MAL_SUCCEED ((str) 0) /* apparently no error */
-#define MALEXCEPTION "MALException"
-
 #define STRUCT_ALIGNED
 
 #ifndef MAXPATHLEN

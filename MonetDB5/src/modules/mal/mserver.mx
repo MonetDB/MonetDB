@@ -578,7 +578,7 @@ SERVERlistenThread(int *Sock)
 		doChallenge(cmd, msgsock);
 	} while (1);
 error:
-	throwIO("mserver.listen", msg);
+	throw(IO, "mserver.listen", msg);
 }
 
 /**
@@ -638,7 +638,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		usockfile = GDKstrdup(*Usockfile);
 #else
 		usockfile = NULL;
-		throwIO("mserver.listen", "Unix domain sockets are not supported");
+		throw(IO, "mserver.listen", "Unix domain sockets are not supported");
 #endif
 	}
 	maxusers = *Maxusers;
@@ -647,12 +647,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
 	if (port < 0 && usockfile == NULL)
-		throwIO("mserver.listen", "No port or socket file specified");
+		throw(IO, "mserver.listen", "No port or socket file specified");
 
 	if (port >= 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock < 0)
-			throwIOf("mserver.listen",
+			throw(IO, "mserver.listen",
 					"Creation of stream socket failedi: %s",
 					strerror(errno));
 
@@ -678,7 +678,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 					port++;
 					continue;
 				}
-				throwIOf("mserver.listen",
+				throw(IO, "mserver.listen",
 						"Binding to stream socket port %d failed: %s",
 						port, strerror(errno));
 			} else {
@@ -687,7 +687,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		} while (1);
 
 		if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
-			throwIOf("mserver.listen",
+			throw(IO, "mserver.listen",
 					"Failed getting socket name: %s",
 					strerror(errno));
 		listen(sock, maxusers);
@@ -697,7 +697,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock < 0) {
 			unlink(usockfile);
-			throwIOf("mserver.listen",
+			throw(IO, "mserver.listen",
 					"Creation of Unix socket failed: %s",
 					strerror(errno));
 		}
@@ -707,7 +707,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		length = (SOCKLEN) sizeof(userver);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
-			throwIOf("mserver.listen",
+			throw(IO, "mserver.listen",
 					"Binding to Unix socket file %s failed: %s",
 					usockfile, strerror(errno));
 		}
@@ -722,7 +722,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	*Sock = sock;
 
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
-		throwMal("mserver.listen", "Starting thread failed");
+		throw(MAL, "mserver.listen", "Starting thread failed");
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
@@ -1019,14 +1019,14 @@ fail:;
 		SSL_CTX_free(ctx);
 	if (cmd)
 		GDKfree(cmd);
-	throwIO("mserver.listenSSL", msg);
+	throw(IO, "mserver.listenSSL", msg);
 #else
 	(void) Port;
 	(void) Maxusers;
 	(void) keyfile;
 	(void) certfile;
 	(void) cmd;
-	throwMal("mserver.listenSSL", "No SSL support");
+	throw(MAL, "mserver.listenSSL", "No SSL support");
 #endif /* HAVE_OPENSSL */
 }
 
@@ -1141,7 +1141,7 @@ SERVERclient(int *res, stream **In, stream **Out)
 		stream_read(fdin, user, 1, 1);
 	}
 	if (stream_errnr(fdin)) {
-		throwIO("SERVERclient", "fdin write problems");
+		throw(IO, "SERVERclient", "fdin write problems");
 	}
 	*user = 0;
 	/* in embedded mode we allow just one client */
@@ -1196,10 +1196,10 @@ dump and inspect the sessions table.
 	
 @= catchErrors
 	if( mapi_error(mid) == -4 && hdl && mapi_result_error(hdl) ){
-		return throwMessage("@1", mapi_result_error(hdl));
+		throw(MAL, "@1", mapi_result_error(hdl));
 	}
 	if( mapi_error(mid) )
-		return throwMessage("@1",
+		throw(MAL, "@1",
 			mapi_result_error(SERVERsessions[i].hdl));
 @c
 #define MAXSESSIONS 32
@@ -1226,7 +1226,7 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 
 	if( i==MAXSESSIONS){
 		mal_unset_lock(mal_contextLock,"SERVERconnect");
-		throwIO("mserver.connect", "Too many sessions");
+		throw(IO, "mserver.connect", "Too many sessions");
 	}
 	SERVERsessions[i].c= MCgetClient();
 	SERVERsessions[i].key= ++sessionkey;
@@ -1244,7 +1244,7 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 		if (err[0] == '!')
 			err = err + 1;
 		SERVERsessions[i].c = NULL;
-		throwIOf("mserver.connect", "Could not connect: %s", err);
+		throw(IO, "mserver.connect", "Could not connect: %s", err);
 	}
 
 #ifdef MAPI_TEST
@@ -1303,7 +1303,7 @@ SERVERreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *p
  if( SERVERsessions[i].c &&
      SERVERsessions[i].key== @1 ) break;
  if( i== MAXSESSIONS)
-	return throwMessage("mserver.@2","Access violation,"
+	throw(MAL, "mserver.@2","Access violation,"
 		" could not find matching session descriptor");
   mid= SERVERsessions[i].mid;
   (void) mid; /* silence compilers */
@@ -1327,7 +1327,7 @@ SERVERlookup(int *ret, str *dbalias)
 		*ret= SERVERsessions[i].key; 
 		return MAL_SUCCEED;
 	}
-	throwMal("mserver.lookup", "Could not find database connection");
+	throw(MAL, "mserver.lookup", "Could not find database connection");
 }
 str
 SERVERtrace(int *ret, int *key, int *flag){
@@ -1405,7 +1405,7 @@ SERVERquery_handle(int *ret, int *key, str *qry){
 str
 SERVERquery_array(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
 	(void) mb; (void) stk; (void) pc;
-	return throwMessage("mserver.query_array","not yet implemented");
+	throw(MAL, "mserver.query_array","not yet implemented");
 }
 str 
 SERVERprepare(int *ret, int *key, str *qry){
@@ -1416,7 +1416,7 @@ SERVERprepare(int *ret, int *key, str *qry){
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_prepare(mid, *qry);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.prepare",
+		throw(MAL, "mserver.prepare",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1428,7 +1428,7 @@ SERVERexecute(int *ret, int *key){
 	@:accessTest(*key,execute)@
 	mapi_execute(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.execute",
+		throw(MAL, "mserver.execute",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1440,7 +1440,7 @@ SERVERfinish(int *ret, int *key){
 	@:accessTest(*key,finish)@
 	mapi_finish(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.finish",
+		throw(MAL, "mserver.finish",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1452,7 +1452,7 @@ SERVERget_row_count(int *ret, int *key){
 	@:accessTest(*key,get_row_count)@
 	*ret= mapi_get_row_count(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.get_row_count",
+		throw(MAL, "mserver.get_row_count",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1463,7 +1463,7 @@ SERVERget_field_count(int *ret, int *key){
 	@:accessTest(*key,get_field_count)@
 	*ret= mapi_get_field_count(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.get_field_count",
+		throw(MAL, "mserver.get_field_count",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1500,7 +1500,7 @@ SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= GDKstrdup(fld? fld: str_nil);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.fetch_field_str",
+		throw(MAL, "mserver.fetch_field_str",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1513,7 +1513,7 @@ SERVERfetch_field_int(int *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? (int) atol(fld): int_nil;
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.fetch_field_int",
+		throw(MAL, "mserver.fetch_field_int",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1526,7 +1526,7 @@ SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? atol(fld): lng_nil;
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.fetch_field_lng",
+		throw(MAL, "mserver.fetch_field_lng",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1539,7 +1539,7 @@ SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? (sht) atol(fld): sht_nil;
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.fetch_field",
+		throw(MAL, "mserver.fetch_field",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1550,7 +1550,7 @@ SERVERfetch_field_void(oid *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	(void) fnr;
 	*ret = oid_nil;
-	return throwMessage("mserver.fetch_field_void","defaults to nil");
+	throw(MAL, "mserver.fetch_field_void","defaults to nil");
 }
 str 
 SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
@@ -1560,7 +1560,7 @@ SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.fetch_field_oid",
+		throw(MAL, "mserver.fetch_field_oid",
 			mapi_result_error(SERVERsessions[i].hdl));
 	if(fld==0 || strcmp(fld,"nil")==0)
 		*(oid*) ret= void_nil;
@@ -1575,7 +1575,7 @@ SERVERfetch_field_chr(chr *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.fetch_field_chr",
+		throw(MAL, "mserver.fetch_field_chr",
 			mapi_result_error(SERVERsessions[i].hdl));
 	if(fld==0 || strcmp(fld,"nil")==0)
 		*(chr*) ret= chr_nil;
@@ -1590,7 +1590,7 @@ SERVERfetch_line(str *ret, int *key){
 	@:accessTest(*key,fetch_line)@
 	fld= mapi_fetch_line(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.fetch_line",
+		throw(MAL, "mserver.fetch_line",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= GDKstrdup(fld? fld:str_nil);
 	return MAL_SUCCEED;
@@ -1602,7 +1602,7 @@ SERVERnext_result(int *ret, int *key){
 	@:accessTest(*key,next_result)@
 	mapi_next_result(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.next_result",
+		throw(MAL, "mserver.next_result",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= *key;
 	return MAL_SUCCEED;
@@ -1614,7 +1614,7 @@ SERVERfetch_reset(int *ret, int *key){
 	@:accessTest(*key,fetch_reset)@
 	mapi_fetch_reset(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		return throwMessage("mserver.fetch_reset",
+		throw(MAL, "mserver.fetch_reset",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= *key;
 	return MAL_SUCCEED;
@@ -1635,7 +1635,7 @@ SERVERfetch_field_bat(int *bid, int *key){
 		if( mapi_error(mid) ) {
 			*bid = b->batCacheid;
 			BBPkeepref(*bid);
-			return throwMessage("mserver.fetch_field_bat",
+			throw(MAL, "mserver.fetch_field_bat",
 				mapi_result_error(SERVERsessions[i].hdl));
 		}
 		BUNins(b,&o,fld, FALSE);
@@ -1805,7 +1805,7 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					&stk->stk[getArg(pci,j)]);
 				break;
 			default:
-				return throwMessage("mapi.rpc",
+				throw(MAL, "mapi.rpc",
 						"Missing type implementation ");
 			/* all the other basic types come here */
 			}
@@ -1813,7 +1813,7 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		i++;
 	}
 	if( i>1)
-		return throwMessage("mapi.rpc","Too many answers");
+		throw(MAL, "mapi.rpc","Too many answers");
 	return MAL_SUCCEED;
 }
 @-
@@ -1893,7 +1893,7 @@ SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	switch( (tpe=getArgType(mb,pci, pci->retc+2)) ){
 	case TYPE_bat:
 	case TYPE_ptr:
-		return throwMessage("mserver.glue","Unsupported type");
+		throw(MAL, "mserver.glue","Unsupported type");
         case TYPE_str:
                 snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
                 break;
@@ -1922,7 +1922,7 @@ SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	switch( (tpe=getArgType(mb,pci, pci->retc+1)) ){
 	case TYPE_bat:
 	case TYPE_ptr:
-		return throwMessage("mserver.glue","Unsupported type");
+		throw(MAL, "mserver.glue","Unsupported type");
         case TYPE_str:
                 snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
                 break;

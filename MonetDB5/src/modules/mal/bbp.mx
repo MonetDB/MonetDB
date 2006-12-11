@@ -245,7 +245,7 @@ to a named box. The bbp box is automatically opened.
 	if(box == 0 )\
 		box= openBox("bbp");\
 	if( box ==0) \
-		return throwMessage("bbp." X,"box is not open");
+		throw(MAL, "bbp." X,"box is not open");
 
 
 str
@@ -256,7 +256,7 @@ CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;		/* fool compiler */
 	if (openBox("bbp"))
 		return MAL_SUCCEED;
-	return throwMessage("bbp.prelude", "failed to open box");
+	throw(MAL, "bbp.prelude", "failed to open box");
 }
 
 @- Operator implementation
@@ -269,7 +269,7 @@ CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;		/* fool compiler */
 	if (openBox("bbp") != 0)
 		return MAL_SUCCEED;
-	return throwMessage("bbp.open", "failed to open box");
+	throw(MAL, "bbp.open", "failed to open box");
 }
 
 str
@@ -280,7 +280,7 @@ CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;		/* fool compiler */
 	if (closeBox("bbp", TRUE) == 0)
 		return MAL_SUCCEED;
-	return throwMessage("bbp.close", "failed to close 'bbp' box");
+	throw(MAL, "bbp.close", "failed to close 'bbp' box");
 }
 
 str
@@ -293,7 +293,7 @@ CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;		/* fool compiler */
 	OpenBox("destroy");
 	if (MCgetClient() != mal_clients)
-		return throwMessage("bbp.destroy", "not allowed to destroy 'bbp' box");
+		throw(MAL, "bbp.destroy", "not allowed to destroy 'bbp' box");
 	destroyBox("bbp");
 	return MAL_SUCCEED;
 }
@@ -316,11 +316,11 @@ CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("deposit");
 	name = (str) getArgValue(stk, pci, 1);
 	if (isIdentifier(name) < 0 )
-		return throwMessage("bbp.deposit", "identifier expected");
+		throw(MAL, "bbp.deposit", "identifier expected");
 	v = &stk->stk[getArg(pci, 2)];
 	flg = findVariable(box->sym, name) >= 0;
 	if (depositBox(box, name, v))
-		return throwMessage("bbp.deposit", "failed to deposit into box");
+		throw(MAL, "bbp.deposit", "failed to deposit into box");
 	if (!flg)
 		BBPincref(v->val.bval, TRUE);
 	return MAL_SUCCEED;
@@ -337,9 +337,9 @@ CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	loc = (str) getArgValue(stk, pci, 2);
 	if (isIdentifier(name) < 0)
-		return throwMessage("bbp.bind", "identifier expected");
+		throw(MAL, "bbp.bind", "identifier expected");
 	if (bindBAT(box, name, loc))
-		return throwMessage("bbp.bind", "failed to bind name ");
+		throw(MAL, "bbp.bind", "failed to bind name ");
 	return MAL_SUCCEED;
 }
 
@@ -356,7 +356,7 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lhs = &stk->stk[getArg(pci, 0)];
 	name = (str) getArgValue(stk, pci, 1);
 	if (isIdentifier(name) < 0)
-		return throwMessage("bbp.bind", "identifier expected");
+		throw(MAL, "bbp.bind", "identifier expected");
 	box = findBox("bbp");
 	if (box && (i = findVariable(box->sym, name)) >= 0) {
 		rhs = &box->val->stk[i];
@@ -366,24 +366,24 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			b = (BAT *) BBPgetdesc(lhs->val.bval);
 			if (b == NULL)
-				return throwMessage("bbp.bind", "can not access descriptor");
+				throw(MAL, "bbp.bind", "can not access descriptor");
 			BBPincref(b->batCacheid, TRUE);
 		}
 		return MAL_SUCCEED;
 	}
 	i = BBPindex(name);
 	if (i == 0)
-		return throwMessage("bbp.bind", "failed to locate object in box");
+		throw(MAL, "bbp.bind", "failed to locate object in box");
 	/* make sure you load the descriptors and heaps */
 	b = (BAT *) BATdescriptor(i);
 	if (b == 0)
 		/* Simple ignore the binding if you can;t find the bat */
-		return throwMessage("bbp.bind", "failed to find object in box");
+		throw(MAL, "bbp.bind", "failed to find object in box");
 	/* make sure we are not dealing with an about to be deleted bat */
 	if( BBP_refs(b->batCacheid) == 1 &&
 		BBP_lrefs(b->batCacheid) == 0){
 		BBPunfix(i);
-		return throwMessage("bbp.bind", "failed to find object in box");
+		throw(MAL, "bbp.bind", "failed to find object in box");
 	}
 
 	BBPincref(b->batCacheid, TRUE);
@@ -409,7 +409,7 @@ CMDbbpfind3(int *ret, str *nme)
 		}
 	}
 	BBPunlock("CMDbbpfind3");
-	return throwMessage("bbp.find","BAT not found");
+	throw(MAL, "bbp.find","BAT not found");
 }
 str
 CMDbbpfind2(int *ret, str *hnme, str *tnme)
@@ -432,7 +432,7 @@ CMDbbpfind2(int *ret, str *hnme, str *tnme)
 		BBPreleaseref(i);
 	}
 	BBPunlock("CMDbbpfind2");
-	return throwMessage("bbp.find","BAT not found");
+	throw(MAL, "bbp.find","BAT not found");
 }
 str
 CMDbbpbindindex(int *ret, int *bid)
@@ -440,10 +440,10 @@ CMDbbpbindindex(int *ret, int *bid)
 	BAT *b;
 
 	if ( *bid  == bat_nil)
-		return throwMessage("bbp.bind", "can not access descriptor");
+		throw(MAL, "bbp.bind", "can not access descriptor");
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
-		return throwMessage("bbp.bind", "can not access descriptor");
+		throw(MAL, "bbp.bind", "can not access descriptor");
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -467,9 +467,9 @@ CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("take");
 	name = (str) getArgValue(stk, pci, 1);
 	if (isIdentifier(name)< 0)
-		return throwMessage("bbp.take", "identifier expected");
+		throw(MAL, "bbp.take", "identifier expected");
 	if (strstr(name, "M5system_auth") == name)
-		return throwMessage("bbp.take", "access denied");
+		throw(MAL, "bbp.take", "access denied");
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0))) {
 		int bid = BBPindex(name);
@@ -480,7 +480,7 @@ CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v->val.ival = bid;
 			BBPincref(bid, TRUE);
 		} else
-			return throwMessage("bbp.take", "failed to take object from box");
+			throw(MAL, "bbp.take", "failed to take object from box");
 	}
 	/* make a private copy for this client session */
 	/* use the cheapest copy method */
@@ -540,13 +540,13 @@ CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("release");
 	bid = (int *) getArgValue(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bbp.garbage", "Cannot access descriptor");
+		throw(MAL, "bbp.garbage", "Cannot access descriptor");
 	}
 
 	b->batDirty= FALSE;
 	if (BBP_lrefs(*bid) == 0) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("bbp.garbage", "Bat already gone");
+		throw(MAL, "bbp.garbage", "Bat already gone");
 	}
 	if (BBP_lrefs(*bid) == 2 && b->batPersistence == PERSISTENT) {
 		/* release BAT from pool altogether */
@@ -615,7 +615,7 @@ CMDbbpReleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	releaseAllBox(box);
 	/* merge the updates with the master copies */
 	/* printf("bbp.releaseAll not yet fully implemented\n"); */
-	return throwMessage("bbp.commit","Not yet available");
+	throw(MAL, "bbp.commit","Not yet available");
 }
 
 str
@@ -628,7 +628,7 @@ CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("discard");
 	name = (str) getArgValue(stk, pci, 1);
 	if (discardBox(box, name))
-		return throwMessage("bbp.discard", "failed to discard object ");
+		throw(MAL, "bbp.discard", "failed to discard object ");
 	/*printf("bbp.discard not yet fully implemented\n"); */
 	return MAL_SUCCEED;
 }
@@ -646,11 +646,11 @@ CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str) getArgValue(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		return throwMessage("bbp.toString", "failed to take value from box");
+		throw(MAL, "bbp.toString", "failed to take value from box");
 	v = &box->val->stk[i];
 	garbageElement(&stk->stk[getArg(pci, 0)]);
 	if (VALconvert(TYPE_str, v) == ILLEGALVALUE)
-		return throwMessage("bbp.toString", "illegal value conversion");
+		throw(MAL, "bbp.toString", "illegal value conversion");
 	VALcopy(&stk->stk[getArg(pci, 0)], v);
 	return MAL_SUCCEED;
 }
@@ -667,7 +667,7 @@ CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cursor = (lng *) getArgValue(stk, pci, 0);
 	v = &stk->stk[getArg(pci, 1)];
 	if (nextBoxElement(box, cursor, v))
-		return throwMessage("bbp.iterator", "failed");
+		throw(MAL, "bbp.iterator", "failed");
 	return MAL_SUCCEED;
 }
 
@@ -704,7 +704,7 @@ CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("getObjects");
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
-		return throwMessage("bbp.getObjects", "Cannot create BAT");
+		throw(MAL, "bbp.getObjects", "Cannot create BAT");
 	for (i = 0; i < box->sym->vtop; i++) {
 		v = &box->val->stk[i];
 		BUNins(b, &v->val.bval, getVarName(box->sym, i), FALSE);
@@ -724,7 +724,7 @@ CMDbbpNames(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpNames", "failed to create BAT");
+		throw(MAL, "catalog.bbpNames", "failed to create BAT");
 
 	BBPlock("CMDbbpNames");
 	for (i = 1; i < BBPsize; i++)
@@ -759,7 +759,7 @@ CMDbbpRNames(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
-		return throwMessage("bbp.getRNames", "failed to create BAT");
+		throw(MAL, "bbp.getRNames", "failed to create BAT");
 
 	BBPlock("CMDbbpRNames");
 	for (i = 1; i < BBPsize; i++)
@@ -784,7 +784,7 @@ CMDbbpCount(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_lng, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpCount", "failed to create BAT");
+		throw(MAL, "catalog.bbpCount", "failed to create BAT");
 
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
@@ -813,7 +813,7 @@ CMDbbpLocation(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpLocation", "failed to create BAT");
+		throw(MAL, "catalog.bbpLocation", "failed to create BAT");
 
 	BBPlock("CMDbbpLocation");
 	for (i = 1; i < BBPsize; i++)
@@ -839,7 +839,7 @@ CMDbbpHeat(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_int, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpHeat", "failed to create BAT");
+		throw(MAL, "catalog.bbpHeat", "failed to create BAT");
 
 	BBPlock("CMDbbpHeat");
 	for (i = 1; i < BBPsize; i++)
@@ -871,7 +871,7 @@ CMDbbpDirty(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpDirty", "failed to create BAT");
+		throw(MAL, "catalog.bbpDirty", "failed to create BAT");
 
 	BBPlock("CMDbbpDirty");
 	for (i = 1; i < BBPsize; i++)
@@ -898,7 +898,7 @@ CMDbbpStatus(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpStatus", "failed to create BAT");
+		throw(MAL, "catalog.bbpStatus", "failed to create BAT");
 
 	BBPlock("CMDbbpStatus");
 	for (i = 1; i < BBPsize; i++)
@@ -922,7 +922,7 @@ CMDbbpKind(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpKind", "failed to create BAT");
+		throw(MAL, "catalog.bbpKind", "failed to create BAT");
 
 	BBPlock("CMDbbpKind");
 	for (i = 1; i < BBPsize; i++)
@@ -951,7 +951,7 @@ CMDbbpRefCount(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_int, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpRefCount", "failed to create BAT");
+		throw(MAL, "catalog.bbpRefCount", "failed to create BAT");
 
 	BBPlock("CMDbbpRefCount");
 	for (i = 1; i < BBPsize; i++)
@@ -974,7 +974,7 @@ CMDbbpLRefCount(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_int, BBPsize);
 	if (b == 0)
-		return throwMessage("catalog.bbpLRefCount", "failed to create BAT");
+		throw(MAL, "catalog.bbpLRefCount", "failed to create BAT");
 
 	BBPlock("CMDbbpLRefCount");
 	for (i = 1; i < BBPsize; i++)
@@ -995,7 +995,7 @@ CMDgetBATrefcnt(int *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bbp.getRefCount", "Cannot access descriptor");
+		throw(MAL, "bbp.getRefCount", "Cannot access descriptor");
 	}
 	*res = BBP_refs(b->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -1008,7 +1008,7 @@ CMDgetBATlrefcnt(int *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bbp.getLRefCount", "Cannot access descriptor");
+		throw(MAL, "bbp.getLRefCount", "Cannot access descriptor");
 	}
 	*res = BBP_lrefs(b->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -1025,7 +1025,7 @@ str CMDbbp@2( int *ret){
 
 	b= BATnew(TYPE_int,TYPE_str,BBPsize);
 	if (b == 0) 
-		return throwMessage("catalog.bbp@2", "failed to create BAT");
+		throw(MAL, "catalog.bbp@2", "failed to create BAT");
 
 	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
 	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
@@ -1053,7 +1053,7 @@ CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *(int *) getArgValue(stk, pci, 2);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
-		return throwMessage("bbp.unpack", "Cannot access descriptor");
+		throw(MAL, "bbp.unpack", "Cannot access descriptor");
 	}
 
 	head = &stk->stk[pci->argv[0]];
@@ -1081,7 +1081,7 @@ CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = (int *) getArgReference(stk, pci, 0);
 
 	if (ht == TYPE_any || tt == TYPE_any)
-		return throwMessage("bbp.new", "Explicit type required");
+		throw(MAL, "bbp.new", "Explicit type required");
 	if (isaBatType(ht))
 		ht = TYPE_bat;
 	if (isaBatType(tt))

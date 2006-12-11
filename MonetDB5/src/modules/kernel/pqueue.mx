@@ -627,7 +627,7 @@ str
 PQinit(int *ret, int *bid, int *maxsize){
 	BAT *b,*bn;
 	if( (b= BATdescriptor(*bid)) == NULL)
-		return throwMessage("pqueue.init","Could not access BAT");
+		throw(MAL, "pqueue.init","Could not access BAT");
 	pqueue_init(&bn,b,maxsize);
 	*ret = bn->batCacheid;
 	BBPkeepref(b->batCacheid);
@@ -641,7 +641,7 @@ str
 PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL)
-		return throwMessage("pqueue.enqueue","Could not access BAT");
+		throw(MAL, "pqueue.enqueue","Could not access BAT");
 	pqueue_enqueue_@1@2(b,idx,el);
 	(void) ret;
 	return MAL_SUCCEED;
@@ -652,7 +652,7 @@ str
 PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL)
-		return throwMessage("pqueue.init","Could not access BAT");
+		throw(MAL, "pqueue.init","Could not access BAT");
 	pqueue_topreplace_@1@2(b,idx,el);
 	(void) ret;
 	return MAL_SUCCEED;
@@ -664,7 +664,7 @@ str
 PQmovedowntop_@1@2(int *ret, int *bid){
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL)
-		return throwMessage("pqueue.movedowntop","Could not access BAT");
+		throw(MAL, "pqueue.movedowntop","Could not access BAT");
 	pqueue_movedowntop_@1@2(b);
 	(void) ret;
 	return MAL_SUCCEED;
@@ -675,9 +675,9 @@ str
 PQdequeue_@1@2(int *ret, int *bid){
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL)
-		return throwMessage("pqueue.init","Could not access BAT");
+		throw(MAL, "pqueue.init","Could not access BAT");
 	if( pqueue_dequeue_@1@2(b) == GDK_FAIL)
-		return throwMessage("pqueue.dequeue","Cannot dequeue from empty queue");
+		throw(MAL, "pqueue.dequeue","Cannot dequeue from empty queue");
 	(void) ret;
 	return MAL_SUCCEED;
 }
@@ -687,7 +687,7 @@ str
 PQtopn_void@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn;
 	if( (b= BATdescriptor(*bid)) == NULL)
-		return throwMessage("pqueue.topN","Could not access BAT");
+		throw(MAL, "pqueue.topN","Could not access BAT");
 	if (b->htype == TYPE_void)
 		pqueue_topn_void@1@2(&bn,b,N);
 	else
@@ -699,14 +699,14 @@ PQtopn_void@1@2(int *ret, int *bid, int *N){
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("pqueue.topN","Failed to create BAT");
+	throw(MAL, "pqueue.topN","Failed to create BAT");
 }
 pqueue_export str PQtopn_@1@2(int *ret, int *bid, int *N);
 str
 PQtopn_@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn;
 	if( (b= BATdescriptor(*bid)) == NULL)
-		return throwMessage("pqueue.topN","Could not access BAT");
+		throw(MAL, "pqueue.topN","Could not access BAT");
 	if (b->htype == TYPE_void)
 		pqueue_topn_void@1@2(&bn,b,N);
 	else
@@ -718,7 +718,7 @@ PQtopn_@1@2(int *ret, int *bid, int *N){
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("pqueue.topN","Failed to create BAT");
+	throw(MAL, "pqueue.topN","Failed to create BAT");
 }
 @= PQminmax1
  @:PQimpl1(@1,min)@
@@ -754,12 +754,12 @@ str  PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         if( p->argc != 4 || 
 	    getArgType(mb,p,1) != TYPE_bat || 
 	    getArgType(mb,p,2) != TYPE_oid) 
-		return throwMessage("enqueue_@1", "type mismatch\n");
+		throw(MAL, "enqueue_@1", "type mismatch\n");
 	tpe = getArgType(mb,p,3);
 
 	h = BATdescriptor(*(bat*) getArgReference(stk,p,1));
 	if (!h)
-		return throwMessage("enqueue_@1", "BAT range error\n");
+		throw(MAL, "enqueue_@1", "BAT range error\n");
 	idx = (oid*) getArgReference(stk,p,2);
 	el = (ptr) getArgReference(stk,p,3);
 		
@@ -779,12 +779,12 @@ str  PQtopreplace_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         if( p->argc != 4 || 
 	    getArgType(mb,p,1) != TYPE_bat || 
 	    getArgType(mb,p,2) != TYPE_oid) 
-		return throwMessage("topreplace_@1", "type mismatch\n");
+		throw(MAL, "topreplace_@1", "type mismatch\n");
 	tpe = getArgType(mb,p,3);
 
 	h = BATdescriptor(*(bat*) getArgReference(stk,p,1));
 	if (!h)
-		return throwMessage("topreplace_@1", "BAT range error\n");
+		throw(MAL, "topreplace_@1", "BAT range error\n");
 	idx = (oid*) getArgReference(stk,p,2);
 	el = (ptr) getArgReference(stk,p,3);
 		

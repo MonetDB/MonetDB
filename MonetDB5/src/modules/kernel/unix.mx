@@ -39,7 +39,8 @@ comment "Set the environment variable string.";
 The remainder is a straight forward mapping to the underlying
 facilities
 @c
-#include <mal.h>
+#include "mal.h"
+#include "mal_exception.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>

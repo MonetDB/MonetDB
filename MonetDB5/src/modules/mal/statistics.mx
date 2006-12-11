@@ -337,10 +337,10 @@ STATdrop(str nme)
 	int idx;
 
 	if(STAT_id_inuse ==0) 
-		return throwMessage("statistics.drop","Statistics not initialized");
+		throw(MAL, "statistics.drop","Statistics not initialized");
 	p = BUNfnd(BATmirror(STAT_id_nme), nme);
 	if (p == 0)
-		return throwMessage("statistics.drop", "BAT not enrolled");
+		throw(MAL, "statistics.drop", "BAT not enrolled");
 	idx = *(int *) BUNhead(STAT_id_nme,p);
 	BUNdelHead(STAT_id_nme, &idx, FALSE);
 	BUNdelHead(STAT_id_expire, &idx, FALSE);
@@ -437,7 +437,7 @@ STATforceUpdate(int *ret, str *nme)
 	if(STAT_id_inuse ==0) return MAL_SUCCEED;
 	b = BATdescriptor(idx = BBPindex(*nme));
 	if (b == 0)
-		return throwMessage("statistics.forceUpdate", "Could not find BAT");
+		throw(MAL, "statistics.forceUpdate", "Could not find BAT");
 	p = BUNfnd(STAT_id_nme, &idx);
 	if (p)
 		BUNdelete(STAT_id_nme, p, FALSE);
@@ -529,7 +529,7 @@ The content of this box my only be changed by the Administrator.
 	authorize(X); \
 	box= findBox("statistics"); \
 	if( box ==0) \
-	return throwMessage("statistics."X,"Box is not open");
+	throw(MAL, "statistics."X,"Box is not open");
 
 str
 STATprelude(int *ret)
@@ -538,7 +538,7 @@ STATprelude(int *ret)
 
 	box = openBox("statistics");
 	if (box == 0)
-		return throwMessage("statistics.prelude", "Failed to open box");
+		throw(MAL, "statistics.prelude", "Failed to open box");
 	STATinit();
 	STATupdate(ret);
 	return MAL_SUCCEED;
@@ -567,7 +567,7 @@ STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	authorize("open");
 	if (openBox("statistics") != 0)
 		return msg;
-	return throwMessage("statistics.open", "Failed to open statistics box");
+	throw(MAL, "statistics.open", "Failed to open statistics box");
 }
 
 str
@@ -579,7 +579,7 @@ STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	authorize("close");
 	if (closeBox("statistics", TRUE) == 0)
 		return MAL_SUCCEED;
-	return throwMessage("statistics.close", "Failed to close box");
+	throw(MAL, "statistics.close", "Failed to close box");
 }
 
 str
@@ -611,14 +611,14 @@ STATdepositStr(int *ret, str *nme)
 
 	b = BATdescriptor(idx = BBPindex(*nme));
 	if (b == NULL)
-		return throwMessage("statistics.deposit", "BAT unknown");
+		throw(MAL, "statistics.deposit", "BAT unknown");
 	OpenBox("deposit");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if( p) return MAL_SUCCEED;
 	val.val.bval = idx;
 	val.vtype = TYPE_bat;
 	if (depositBox(box, *nme, &val))
-		return throwMessage("statistics.deposit", "Failed to deposit object  into box");
+		throw(MAL, "statistics.deposit", "Failed to deposit object  into box");
 	bnme = BATgetId(b);
 	return STATenroll(ret, &bnme);
 }
@@ -631,7 +631,7 @@ STATdeposit(int *ret, int *bid)
 	str msg;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("statistics.deposit", "Cannot access descriptor");
+		throw(MAL, "statistics.deposit", "Cannot access descriptor");
 	}
 
 	OpenBox("deposit");
@@ -652,7 +652,7 @@ STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgName(mb, pci, 1);
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		return throwMessage("statistics.take", "Failed to take object from box");
+		throw(MAL, "statistics.take", "Failed to take object from box");
 	return MAL_SUCCEED;
 }
 
@@ -665,7 +665,7 @@ STATrelease(int *ret, int *bid)
 	(void) ret;
 	OpenBox("release");
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("statistics.release", "Cannot access descriptor");
+		throw(MAL, "statistics.release", "Cannot access descriptor");
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -682,7 +682,7 @@ STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("release");
 	name = (str) getArgName(mb, pci, 1);
 	if (releaseBox(box, name))
-		return throwMessage("statistics.release", "Failed to release object from box");
+		throw(MAL, "statistics.release", "Failed to release object from box");
 	return MAL_SUCCEED;
 }
 
@@ -728,7 +728,7 @@ STATdiscard2(int *ret, int *bid)
 	(void) ret;
 	OpenBox("discard");
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("statistics.discard", "Cannot access descriptor");
+		throw(MAL, "statistics.discard", "Cannot access descriptor");
 	}
 
 	msg = STATdrop(BATgetId(b));
@@ -749,7 +749,7 @@ STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str) getArgValue(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		return throwMessage("statistics.toString", "Failed to take object from box");
+		throw(MAL, "statistics.toString", "Failed to take object from box");
 
 	v = &box->val->stk[i];
 	if (v->vtype == TYPE_str)
@@ -757,7 +757,7 @@ STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
 	if (s == NULL)
-		return throwMessage("statistics.toString", "Illegal value");
+		throw(MAL, "statistics.toString", "Illegal value");
 	VALset(&stk->stk[getArg(pci, 0)], TYPE_str, s);
 	return MAL_SUCCEED;
 }
@@ -823,11 +823,11 @@ STATget@1(lng *ret, str *nme){
 	OpenBox("get@1");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if( p == NULL)
-		return throwMessage("statistics.get@1","Object not known");
+		throw(MAL, "statistics.get@1","Object not known");
 	i= *(int*) BUNhead(STAT_id_nme,p);
 	p= BUNfnd(STAT_id_@2, &i );
 	if( p == NULL)
-		return throwMessage("statistics.get@1","Not known");
+		throw(MAL, "statistics.get@1","Not known");
 	*ret = *(lng*)BUNtail(STAT_id_@2,p);
 	return MAL_SUCCEED;
 }
@@ -849,14 +849,14 @@ STATgetHistogram(int *ret, str *nme)
 	OpenBox("getHistogram");
 	p = BUNfnd(BATmirror(STAT_id_nme), *nme);
 	if (p == NULL)
-		return throwMessage("statistics.getHistogram", "BAT not known");
+		throw(MAL, "statistics.getHistogram", "BAT not known");
 	i= *(int*) BUNhead(STAT_id_nme,p);
 	p = BUNfnd(STAT_id_histogram, &i);
 	if (p == NULL)
-		return throwMessage("statistics.getHistogram", "Histogram not known");
+		throw(MAL, "statistics.getHistogram", "Histogram not known");
 	i = BBPindex((str) BUNtail(STAT_id_histogram, p));
 	if (i == 0)
-		return throwMessage("statistics.getHistogram", "Histogram disappeared");
+		throw(MAL, "statistics.getHistogram", "Histogram disappeared");
 	h = BATdescriptor(i);
 	BBPincref(*ret = h->batCacheid, TRUE);
 	return MAL_SUCCEED;

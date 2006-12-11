@@ -34,9 +34,8 @@ function user.main():void;	# 0  (main:void)
     user.myException();	# 3  (_3:void)
     io.print("should not come here");	# 4 IOprint_val (_4:void)<-(_5:str)
 end main;	# 5  
-!ERROR: IllegalAccess:user.myException[1]:new exception
-!ERROR: IllegalAccess:user.myException[3]:Exception not catched
-#
+!ERROR: MALException:user.myException[1]:new exception
+!ERROR: MALException:user.myException[3]:Exception not catched
 
 # 08:01:17 >  
 # 08:01:17 >  Done.

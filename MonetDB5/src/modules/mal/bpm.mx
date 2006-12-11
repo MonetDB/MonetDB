@@ -467,16 +467,16 @@ BPMopen()
     mal_set_lock(mal_contextLock, "bpm");
 	bpmName= BATdescriptor(BBPindex("bpmName"));
 	if( bpmName == NULL)
-		return throwMessage("bpm.open", "failed to access bpmName");
+		throw(MAL, "bpm.open", "failed to access bpmName");
 	bpmPartition= BATdescriptor(BBPindex("bpmPartition"));
 	if( bpmPartition == NULL)
-		return throwMessage("bpm.open", "failed to access bpmName");
+		throw(MAL, "bpm.open", "failed to access bpmName");
 	bpmHeadSlots= BATdescriptor(BBPindex("bpmHeadSlots"));
 	if( bpmHeadSlots == NULL)
-		return throwMessage("bpm.open", "failed to access bpmHeadSlots");
+		throw(MAL, "bpm.open", "failed to access bpmHeadSlots");
 	bpmTailSlots= BATdescriptor(BBPindex("bpmTailSlots"));
 	if( bpmTailSlots == NULL)
-		return throwMessage("bpm.open", "failed to access bpmTailSlots");
+		throw(MAL, "bpm.open", "failed to access bpmTailSlots");
 
 	for(i=0; i< GDKatomcnt; i++){
 		char buf[PATHLENGTH];
@@ -498,7 +498,7 @@ BPMclose(int *ret)
 {
 	(void) ret;
 	/* save the catalog using a subtransaction */
-	return throwMessage("bpm.close","NYI");
+	throw(MAL, "bpm.close","NYI");
 }
 
 str
@@ -506,7 +506,7 @@ BPMdestroy(int *ret)
 {
 	(void) ret;
 	/* re-initialize the partition table */
-	return throwMessage("bpm.destroy","NYI");
+	throw(MAL, "bpm.destroy","NYI");
 }
 
 str
@@ -520,7 +520,7 @@ BPMdepositName(int *ret, str *nme, int *src)
 	(void) nme;
 	(void) b;
 	*ret= 0;
-	return throwMessage("bpm.deposit","NYI");
+	throw(MAL, "bpm.deposit","NYI");
 }
 str
 BPMdeposit(int *ret, int *bid, int *src)
@@ -533,7 +533,7 @@ BPMdeposit(int *ret, int *bid, int *src)
 	(void) b;
 	(void) bn;
 	*ret= 0;
-	return throwMessage("bpm.deposit","NYI");
+	throw(MAL, "bpm.deposit","NYI");
 }
 
 str
@@ -548,7 +548,7 @@ BPMrange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 	(void) tl;
 	(void) th;
 	*ret= 0;
-	return throwMessage("bpm.range","NYI");
+	throw(MAL, "bpm.range","NYI");
 }
 str
 BPMhash(int *ret, int *bid, int *hslots, int *tslots)
@@ -560,7 +560,7 @@ BPMhash(int *ret, int *bid, int *hslots, int *tslots)
 	(void) hslots;
 	(void) tslots;
 	*ret= 0;
-	return throwMessage("bpm.hash","NYI");
+	throw(MAL, "bpm.hash","NYI");
 }
 str
 BPMrangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
@@ -573,7 +573,7 @@ BPMrangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
 	(void) hh;
 	(void) tslots;
 	*ret= 0;
-	return throwMessage("bpm.rangeHash","NYI");
+	throw(MAL, "bpm.rangeHash","NYI");
 }
 str
 BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
@@ -586,7 +586,7 @@ BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
 	(void) tl;
 	(void) th;
 	*ret= 0;
-	return throwMessage("bpm.hashRange","NYI");
+	throw(MAL, "bpm.hashRange","NYI");
 }
 @-
 Takeing out partitions.
@@ -597,7 +597,7 @@ BPMtake(int *ret, str *nme)
 	BPMopen();
 	(void) nme;
 	*ret =0;
-	return throwMessage("bpm.take","NYI");
+	throw(MAL, "bpm.take","NYI");
 }
 str
 BPMtakeRange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
@@ -610,7 +610,7 @@ BPMtakeRange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 	(void) tl;
 	(void) th;
 	*ret =0;
-	return throwMessage("bpm.take","NYI");
+	throw(MAL, "bpm.take","NYI");
 }
 
 str
@@ -622,7 +622,7 @@ BPMtakeHash(int *ret, int *bid, int *hslots, int *tslots)
 	(void) hslots;
 	(void) tslots;
 	*ret =0;
-	return throwMessage("bpm.take","NYI");
+	throw(MAL, "bpm.take","NYI");
 }
 
 str
@@ -635,7 +635,7 @@ BPMtakeRangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
 	(void) hh;
 	(void) tslots;
 	*ret =0;
-	return throwMessage("bpm.take","NYI");
+	throw(MAL, "bpm.take","NYI");
 }
 
 str
@@ -648,7 +648,7 @@ BPMtakeHashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
 	(void) th;
 	(void) hslots;
 	*ret =0;
-	return throwMessage("bpm.take","NYI");
+	throw(MAL, "bpm.take","NYI");
 }
 
 str
@@ -659,7 +659,7 @@ BPMtakePartition(int *ret, int *bid, int *idx)
 	@:getBATdescriptor(bid,b,"bpm.take")@
 	(void) idx;
 	*ret =0;
-	return throwMessage("bpm.take","NYI");
+	throw(MAL, "bpm.take","NYI");
 }
 @- Updates
 @c
@@ -672,7 +672,7 @@ BPMinsert(int *ret, int *bid, int *ins)
 	/* distributed the content */
 	(void) ins;
 	*ret= 0;
-	return throwMessage("bpm.insert","NYI");
+	throw(MAL, "bpm.insert","NYI");
 }
 
 str
@@ -684,7 +684,7 @@ BPMdelete(int *ret, int *bid, int *del)
 	/* delete some information from the partitions */
 	(void) del;
 	*ret= 0;
-	return throwMessage("bpm.delete","NYI");
+	throw(MAL, "bpm.delete","NYI");
 }
 
 str
@@ -697,7 +697,7 @@ BPMreplace(int *ret, int *bid, int *ins, int *del)
 	(void) ins;
 	(void) del;
 	*ret= 0;
-	return throwMessage("bpm.replace","NYI");
+	throw(MAL, "bpm.replace","NYI");
 }
 
 str
@@ -705,7 +705,7 @@ BPMgetNames(int *ret)
 {
 	BPMopen();
 	*ret =0;
-	return throwMessage("bpm.getNames","NYI");
+	throw(MAL, "bpm.getNames","NYI");
 }
 
 str
@@ -714,7 +714,7 @@ BPMdiscard(int *ret, int *bid)
 	BPMopen();
 	(void) bid;
 	*ret =0;
-	return throwMessage("bpm.discard","NYI");
+	throw(MAL, "bpm.discard","NYI");
 }
 @- Iterations
 We start with the large chunk iterator.
@@ -729,7 +729,7 @@ BPMnewIteratorBase(int *ret, str *nme)
 {
 	(void) nme;
 	*ret = 0;
-	return throwMessage("bpm.newIterator","NYI");
+	throw(MAL, "bpm.newIterator","NYI");
 }
 
 str
@@ -737,7 +737,7 @@ BPMhasMoreElementsBase(int *ret, str *nme)
 {
 	(void) nme;
 	*ret = 0;
-	return throwMessage("bpm.hasMoreElements","NYI");
+	throw(MAL, "bpm.hasMoreElements","NYI");
 }
 
 @-
@@ -748,7 +748,7 @@ BPMnewIterator(int *ret, int *bid)
 {
 	(void) bid;
 	*ret = 0;
-	return throwMessage("bpm.newIterator","NYI");
+	throw(MAL, "bpm.newIterator","NYI");
 }
 
 str
@@ -758,7 +758,7 @@ BPMnewIteratorRng(int *ret, int *bid, ptr *first, ptr *last)
 	(void) last;
 	(void) bid;
 	*ret = 0;
-	return throwMessage("bpm.newIterator","NYI");
+	throw(MAL, "bpm.newIterator","NYI");
 }
 
 
@@ -772,7 +772,7 @@ BPMnewIteratorRng4(int *ret, int *bid, ptr *first, ptr *last,
 	(void) vhgh;
 	(void) bid;
 	*ret = 0;
-	return throwMessage("bpm.newIterator","NYI");
+	throw(MAL, "bpm.newIterator","NYI");
 }
 
 str
@@ -780,7 +780,7 @@ BPMhasMoreElements(int *ret, int *bid)
 {
 	(void) bid;
 	*ret = 0;
-	return throwMessage("bpm.hasMoreElements","NYI");
+	throw(MAL, "bpm.hasMoreElements","NYI");
 }
 
 str
@@ -790,7 +790,7 @@ BPMhasMoreElementsRng(int *ret, int *bid, ptr *first, ptr *last)
 	(void) last;
 	(void) bid;
 	*ret = 0;
-	return throwMessage("bpm.hasMoreElements","NYI");
+	throw(MAL, "bpm.hasMoreElements","NYI");
 }
 
 
@@ -804,7 +804,7 @@ BPMhasMoreElementsRng4(int *ret, int *bid, ptr *first, ptr *last,
 	(void) vhgh;
 	(void) bid;
 	*ret = 0;
-	return throwMessage("bpm.hasMoreElements","NYI");
+	throw(MAL, "bpm.hasMoreElements","NYI");
 }
 
 str
@@ -815,7 +815,7 @@ BPMgetDimension(ptr *first, ptr *last, ptr *vlow, ptr *vhgh, int *bid)
 	(void) vlow;
 	(void) vhgh;
 	(void) bid;
-	return throwMessage("bpm.getDimension","NYI");
+	throw(MAL, "bpm.getDimension","NYI");
 }
 
 str
@@ -830,14 +830,14 @@ BPMdump(int *ret)
 		stream_printf(fd,"]\n");
 	}
 	(void) ret;
-	return throwMessage("bpm.dump","NYI");
+	throw(MAL, "bpm.dump","NYI");
 }
 str
 BPMdumpAlias(int *ret, int *bid)
 {
 	(void) ret;
 	(void) bid;
-	return throwMessage("bpm.dump","NYI");
+	throw(MAL, "bpm.dump","NYI");
 }
 
 @c

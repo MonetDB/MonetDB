@@ -68,7 +68,7 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = (ptr *) getArgReference(stk, pci, 2);
 	tt = getArgType(mb, pci, 2);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bbp.project", "Cannot access descriptor");
+		throw(MAL, "bbp.project", "Cannot access descriptor");
 	}
 
 	if (tt >= TYPE_str) {
@@ -84,5 +84,5 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("bbp.project", "Cannot create the constant BAT");
+	throw(MAL, "bbp.project", "Cannot create the constant BAT");
 }

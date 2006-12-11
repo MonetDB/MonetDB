@@ -61,6 +61,6 @@ CemptySet(int *k, int *bid)
 		cnt = BATcount(b);
 	BBPunfix(b->batCacheid);
 	if (cnt) 
-		return throwMessage("mal.assert","emptySet");
+		throw(ASSERT, "mal.assert", "emptySet");
         return MAL_SUCCEED;
 }

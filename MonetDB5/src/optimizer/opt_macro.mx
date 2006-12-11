@@ -320,7 +320,7 @@ MACROvalidate(MalBlkPtr mb)
 		retseen = p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol;
 	}
 	if (retseen && i != mb->stop - 1)
-		return throwMessage("optimizer.MACROvalidate", "RETURN statement is not the last one");
+		throw(MAL, "optimizer.MACROvalidate", "RETURN statement is not the last one");
 	return MAL_SUCCEED;
 }
 
@@ -347,13 +347,13 @@ MACROprocessor(MalBlkPtr mb, Symbol t)
 			printf("Hit, replace macro call %s\n", t->name);
 #endif
 			if (i == last)
-				return throwMessage("optimizer.MACROoptimizer", "duplicate macro expansion");
+				throw(MAL, "optimizer.MACROoptimizer", "duplicate macro expansion");
 
 			last = i;
 			i = inlineMALblock(mb, i, t->def);
 			cnt++;
 			if (cnt > MAXEXPANSION)
-				return throwMessage("optimizer.MACROoptimizer", "too many macro expansions");
+				throw(MAL, "optimizer.MACROoptimizer", "too many macro expansions");
 		}
 	}
 	return msg;

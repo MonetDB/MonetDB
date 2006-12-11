@@ -393,7 +393,7 @@ MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL)
-		return throwMessage("mdb.inspect", "Could not find function");
+		throw(MAL, "mdb.inspect", "Could not find function");
 	return runMALDebugger(s);
 }
 
@@ -448,7 +448,7 @@ MDBgetStackFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 
 	if (b == 0)
-		return throwMessage("mdb.getStackFrame", "Failed to create BAT");
+		throw(MAL, "mdb.getStackFrame", "Failed to create BAT");
 	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, m, s, 0);
 }
@@ -461,7 +461,7 @@ MDBgetStackFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	n = *(int *) getArgReference(s, p, 1);
 	if (n < 0 || n >= getStkDepth(s))
-		return throwMessage("mdb.getStackFrame", "Illegal depth.");
+		throw(MAL, "mdb.getStackFrame", "Illegal depth.");
 	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, m, s, n);
 }
@@ -593,7 +593,7 @@ MDBgetDefinition(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
 	if (b == 0)
-		return throwMessage("mdb.getDefinition", "Failed to create BAT");
+		throw(MAL, "mdb.getDefinition", "Failed to create BAT");
 
 	for (i = 0; i < m->stop; i++) {
 		ps = instruction2str(m, getInstrPtr(m, i), 1);
@@ -613,7 +613,7 @@ MDBgetExceptionVariable(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		return throwMessage("mdb.getExceptionVariable", "Could not find it");
+		throw(MAL, "mdb.getExceptionVariable", "Could not find it");
 
 	*tail = 0;
 	*ret = GDKstrdup(*msg);
@@ -628,10 +628,10 @@ MDBgetExceptionContext(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		return throwMessage("mdb.getExceptionContext", "Could not find it");
+		throw(MAL, "mdb.getExceptionContext", "Could not find it");
 	tail2 = strchr(tail + 1, ':');
 	if (tail2 == 0)
-		return throwMessage("mdb.getExceptionContext", "Could not find it");
+		throw(MAL, "mdb.getExceptionContext", "Could not find it");
 
 	*tail2 = 0;
 	*ret = GDKstrdup(tail + 1);
@@ -646,10 +646,10 @@ MDBgetExceptionReason(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		return throwMessage("mdb.getExceptionReason", "Could not find it");
+		throw(MAL, "mdb.getExceptionReason", "Could not find it");
 	tail = strchr(tail + 1, ':');
 	if (tail == 0)
-		return throwMessage("mdb.getExceptionReason", "Could not find it");
+		throw(MAL, "mdb.getExceptionReason", "Could not find it");
 
 	*ret = GDKstrdup(tail + 1);
 	return MAL_SUCCEED;
@@ -684,7 +684,7 @@ MDBshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL) {
 		char buf[1024];
 		snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
-		return throwMessage("mdb.dot", buf);
+		throw(MAL, "mdb.dot", buf);
 	}
 	showFlowGraph(s->def, stk, fname);
 	return MAL_SUCCEED;

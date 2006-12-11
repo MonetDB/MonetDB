@@ -1550,7 +1550,7 @@ logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, str *dbname, i
 		*(logger**)L = l;
 		return MAL_SUCCEED;
 	}
-	return throwMessage("logger.create", "failed");
+	throw(MAL, "logger.create", "failed");
 }
 
 str
@@ -1561,7 +1561,7 @@ logger_destroy_wrap( logger *L )
 		logger_destroy(l);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("logger.destroy", "failed");
+	throw(MAL, "logger.destroy", "failed");
 }
 
 int 

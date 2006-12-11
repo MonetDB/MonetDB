@@ -92,7 +92,8 @@ err:= print(v1);
 @h
 #ifndef __BLOB_H__
 #define __BLOB_H__
-#include <mal.h>
+#include "mal.h"
+#include "mal_exception.h"
 
 typedef struct blob {
 	size_t nitems;

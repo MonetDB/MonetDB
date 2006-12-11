@@ -21,7 +21,7 @@
 @{
 @= tstBat
 if( bn== NULL) {*ret= 0;
-	return throwMessage("batcalc.@1", "can not create bat");}
+	throw(MAL, "batcalc.@1", "can not create bat");}
 
 @+ Scientific routines
 The mmath functions are also overloaded to provide for
@@ -104,11 +104,11 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 	@2 *o,*p,*q;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("batcalc.@1", "Cannot access descriptor");
+		throw(MAL, "batcalc.@1", "Cannot access descriptor");
 	}
 	if( BUNsize(b) != sizeof(@2)){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("batcalc.@1","Unexpected type");
+		throw(MAL, "batcalc.@1","Unexpected type");
 	}
 
 	bn= BATMATHresult(b, TYPE_dbl);
@@ -134,11 +134,11 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 	@2 *o,*p,*q;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("batcalc.@1", "Cannot access descriptor");
+		throw(MAL, "batcalc.@1", "Cannot access descriptor");
 	}
 	if( BUNsize(b) != sizeof(@2)){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("batcalc.@1","Unexpected type");
+		throw(MAL, "batcalc.@1","Unexpected type");
 	}
 
 	bn= BATMATHresult(b, TYPE_dbl);

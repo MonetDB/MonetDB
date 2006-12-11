@@ -222,6 +222,7 @@ str.STRprelude();
 #define __string_H__
 #include <gdk.h>
 #include "mal.h"
+#include "mal_exception.h"
 #include "ctype.h"
 
 #ifdef WIN32

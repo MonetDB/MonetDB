@@ -1181,7 +1181,7 @@ Recall that we only support void- and oid- typed heads.
 This is captured as a runtime check in the implementation.
 @= chkHeader
 	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
-		return throwMessage("group.@2", "(v)oid head required\n");
+		throw(MAL, "group.@2", "(v)oid head required\n");
 @c
 group_export str GRPprelude(void);
 str
@@ -1200,12 +1200,12 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 	BAT *result, *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("group.group", "Cannot access descriptor");
+		throw(MAL, "group.group", "Cannot access descriptor");
 	}
 
 	result = BATgroup(b, *start, *incr, *grpsize);
 	if (result == 0)
-		return throwMessage("GRPgroup0", "Failed to group");
+		throw(MAL, "GRPgroup0", "Failed to group");
 	*ret = result->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1220,7 +1220,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	BAT *histo = 0, *b, *bn = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("group.group", "Cannot access descriptor");
+		throw(MAL, "group.group", "Cannot access descriptor");
 	}
 	if (BATcount(b) > 1024*1024 &&
 	    (b->ttype == TYPE_int || b->ttype == TYPE_lng)) { 
@@ -1258,7 +1258,7 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	BAT *histo = 0, *b, *bn = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("group.group", "Cannot access descriptor");
+		throw(MAL, "group.group", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPgroup)@
 	CTgroup_custom(&bn, &histo, b, N, rng);
@@ -1276,25 +1276,25 @@ GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 	BAT *bn = NULL, *histo = NULL;
 
 	if ((ct_map = BATdescriptor(*ct_mapid)) == NULL) {
-		return throwMessage("group.derive", "Cannot access descriptor");
+		throw(MAL, "group.derive", "Cannot access descriptor");
 	}
 	@:chkHeader(ct_map,GRPderive)@
 	if ((ct_histo = BATdescriptor(*ct_histoid)) == NULL) {
 		BBPreleaseref(ct_map->batCacheid);
-		return throwMessage("group.derive", "Cannot access descriptor");
+		throw(MAL, "group.derive", "Cannot access descriptor");
 	}
 	@:chkHeader(ct_histo,GRPderive)@
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPreleaseref(ct_map->batCacheid);
 		BBPreleaseref(ct_histo->batCacheid);
-		return throwMessage("group.derive", "Cannot access descriptor");
+		throw(MAL, "group.derive", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPderive)@
 	if( derive(&histo, &bn, ct_histo, ct_map, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(ct_map->batCacheid);
 		BBPreleaseref(ct_histo->batCacheid);
-		return throwMessage("group.derive","Could not derive group");
+		throw(MAL, "group.derive","Could not derive group");
 	}
 
 	*mid = bn->batCacheid;
@@ -1313,21 +1313,21 @@ GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
 	BAT *bn;
 
 	if ((sel = BATdescriptor(*selid)) == NULL) {
-		return throwMessage("group.subhisto", "Cannot access descriptor");
+		throw(MAL, "group.subhisto", "Cannot access descriptor");
 	}
 	if ((grp = BATdescriptor(*grpid)) == NULL) {
 		BBPreleaseref(sel->batCacheid);
-		return throwMessage("group.subhisto", "Cannot access descriptor");
+		throw(MAL, "group.subhisto", "Cannot access descriptor");
 	}
 	@:chkHeader(grp,GRPsubhisto)@
 	if ((dom = BATdescriptor(*domid)) == NULL) {
-		return throwMessage("group.subhisto", "Cannot access descriptor");
+		throw(MAL, "group.subhisto", "Cannot access descriptor");
 	}
 
 	if ((dom = BATdescriptor(*domid)) == NULL) {
 		BBPreleaseref(sel->batCacheid);
 		BBPreleaseref(grp->batCacheid);
-		return throwMessage("group.subhisto", "Cannot access descriptor");
+		throw(MAL, "group.subhisto", "Cannot access descriptor");
 	}
 	CTsubhisto(&bn, sel, grp, dom);
 	*retid = bn->batCacheid;
@@ -1346,12 +1346,12 @@ GRPrefine(int *retid, int *bid, int *aid)
 	BAT *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("group.refine", "Cannot access descriptor");
+		throw(MAL, "group.refine", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPrefine)@
 	if ((a = BATdescriptor(*aid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("group.refine", "Cannot access descriptor");
+		throw(MAL, "group.refine", "Cannot access descriptor");
 	}
 	@:chkHeader(a,GRPrefine)@
 
@@ -1371,12 +1371,12 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 	BAT *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("group.refine", "Cannot access descriptor");
+		throw(MAL, "group.refine", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPrefine_rev)@
 	if ((a = BATdescriptor(*aid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("group.refine", "Cannot access descriptor");
+		throw(MAL, "group.refine", "Cannot access descriptor");
 	}
 	@:chkHeader(a,GRPrefine_rev)@
 
@@ -1524,13 +1524,13 @@ str GRPsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
 
 		(void) ignore_nils; /* fool compiler */
 		if( (b= BATdescriptor(*bid)) == NULL ){
-			return throwMessage("group.sum", "Cannot access descriptor");
+			throw(MAL, "group.sum", "Cannot access descriptor");
 		}
 
 		@:chkHeader(b,GRPsum_@1)@
 		if( (e= BATdescriptor(*eid)) == NULL ){
 			BBPreleaseref(b->batCacheid);
-			return throwMessage("group.sum", "Cannot access descriptor");
+			throw(MAL, "group.sum", "Cannot access descriptor");
 		}
 		@:chkHeader(e,GRPsum_@1)@
 		/* init: set all sums to zero */
@@ -1579,12 +1579,12 @@ str GRPavg_@1(int *retval, int *bid,int  *eid){
 		BUN p, q, r;
 
 		if( (b= BATdescriptor(*bid)) == NULL ){
-			return throwMessage("group.@1", "Cannot access descriptor");
+			throw(MAL, "group.@1", "Cannot access descriptor");
 		}
 		@:chkHeader(b,GRPsum_@1)@
 		if( (e= BATdescriptor(*eid)) == NULL ){
 			BBPreleaseref(b->batCacheid);
-			return throwMessage("group.@1", "Cannot access descriptor");
+			throw(MAL, "group.@1", "Cannot access descriptor");
 		}
 		@:chkHeader(e,GRPsum_@1)@
 		/* init sums and counts to zero */
@@ -1649,13 +1649,13 @@ str GRP@1(int *retval, int *bid,int  *eid){
 		BUN p, q, r;
 
 		if( (b= BATdescriptor(*bid)) == NULL ){
-			return throwMessage("group.@1", "Cannot access descriptor");
+			throw(MAL, "group.@1", "Cannot access descriptor");
 		}
 
 		@:chkHeader(b,GRP@1)@
 		if( (e= BATdescriptor(*eid)) == NULL ){
 			BBPreleaseref(b->batCacheid);
-			return throwMessage("group.@1", "Cannot access descriptor");
+			throw(MAL, "group.@1", "Cannot access descriptor");
 		}
 		@:chkHeader(e,GRP@1)@
 
@@ -1717,13 +1717,13 @@ str GRP@1_oid_@2(int *retval, int *bid){
 		BUN p, q;
 
 		if( (b= BATdescriptor(*bid)) == NULL ){
-			return throwMessage("group.@1", "Cannot access descriptor");
+			throw(MAL, "group.@1", "Cannot access descriptor");
 		}
 		/* use expensive operation when the BAT is not ordered on the head */
 		if( !(b->hsorted&1) ){
 			/* determine groups first */
 			BBPreleaseref(b->batCacheid);
-			return throwMessage("group","not yet implemented");
+			throw(MAL, "group","not yet implemented");
 		}
 
 		@:chkHeader(b,GRP@1_oid_@2)@
@@ -1816,13 +1816,13 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	ptr bt_nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("group.count", "Cannot access descriptor");
+		throw(MAL, "group.count", "Cannot access descriptor");
 	}
 
 	@:chkHeader(b,GRPaggr_count)@
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("group.count", "Cannot access descriptor");
+		throw(MAL, "group.count", "Cannot access descriptor");
 	}
 	@:chkHeader(e,GRPaggr_count)@
 
@@ -1895,13 +1895,13 @@ GRPsize(int *retval, int *bid, int *eid)
 	int xx;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("group.size", "Cannot access descriptor");
+		throw(MAL, "group.size", "Cannot access descriptor");
 	}
 
 	@:chkHeader(b,GRPsize)@
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("group.size", "Cannot access descriptor");
+		throw(MAL, "group.size", "Cannot access descriptor");
 	}
 	@:chkHeader(e,GRPsize)@
 
@@ -1945,11 +1945,11 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift){
 		int xx,i;
 
 		if( *shift <=0){
-			return throwMessage("group.sum", "Illegal shift value");
+			throw(MAL, "group.sum", "Illegal shift value");
 		}
 			
 		if( (b= BATdescriptor(*bid)) == NULL ){
-			return throwMessage("group.sum", "Cannot access descriptor");
+			throw(MAL, "group.sum", "Cannot access descriptor");
 		}
 		@:chkHeader(b,GRPwindowsum_@1)@
 

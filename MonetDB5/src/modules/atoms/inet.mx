@@ -133,13 +133,13 @@ INETfromString(str src, int *len, inet **retval)
 			parse = strtol(src + last, &endptr, 10);
 			if (*endptr != '\0') {
 				/* this is for the cat his violin
-				throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
+				throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
 				*/
 				goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 			}
 			if (parse > 255 || parse < 0) {
 				/* this is for the cat his violin
-				throwMalf("inet.fromStr", "Illegal quad value: %d", parse);
+				throw(PARSE, "inet.fromStr", "Illegal quad value: %d", parse);
 				*/
 				goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 			}
@@ -185,14 +185,14 @@ INETfromString(str src, int *len, inet **retval)
 	parse = strtol(src + last, &endptr, 10);
 	if (*endptr != '\0') {
 		/* this is for the cat his violin
-		throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
+		throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
 		*/
 		goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 	}
 	if (type == 3) {
 		if (parse > 255 || parse < 0) {
 			/* this is for the cat his violin
-			throwMalf("inet.fromStr", "Illegal quad value: %d", parse);
+			throw(PARSE, "inet.fromStr", "Illegal quad value: %d", parse);
 			*/
 			goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 		}
@@ -202,14 +202,14 @@ INETfromString(str src, int *len, inet **retval)
 	} else if (type == 4) {
 		if (parse < 0 || parse > 32) {
 			/* this is for the cat his violin
-			throwMalf("inet.fromStr", "Illegal mask value: %d", parse);
+			throw(PARSE, "inet.fromStr", "Illegal mask value: %d", parse);
 			*/
 			goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 		}
 		(*retval)->mask = (unsigned char) parse;
 	} else {
 		/* this is for the cat his violin
-		   throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
+		   throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
 		   */
 		goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 	}
@@ -269,7 +269,7 @@ INETnew(inet *retval, str *in)
 
 	pos = INETfromString(*in, &len, &retval);
 	if (len == 0)
-		throwMalf("inet.new", "Error while parsing at char %d", pos + 1);
+		throw(PARSE, "inet.new", "Error while parsing at char %d", pos + 1);
 
 	return (MAL_SUCCEED);
 }
@@ -672,7 +672,7 @@ str
 INETsetmasklen(inet * retval, inet * val, int *mask)
 {
 	if (*mask < 0 || *mask > 32)
-		throwMalf("inet.setmask", "Illegal netmask length value: %d", *mask);
+		throw(ILLARG, "inet.setmask", "Illegal netmask length value: %d", *mask);
 
 	*retval = *val;
 	if (!in_isnil(val))

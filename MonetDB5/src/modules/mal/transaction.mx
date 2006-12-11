@@ -119,7 +119,7 @@ TRNsubcommit(int *ret, int *bid)
 	BAT *b;
 	b= BATdescriptor(*bid);
 	if( b == NULL)
-		return throwMessage("transaction.subcommit","BAT with commit list missing");
+		throw(MAL, "transaction.subcommit","BAT with commit list missing");
 	*ret = TMsubcommit(b)?FALSE:TRUE;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -135,13 +135,13 @@ TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			return throwMessage("transaction.commit", "Cannot access descriptor");
+			throw(MAL, "transaction.commit", "Cannot access descriptor");
 		}
 
 		if (b)
 			BATfakeCommit(b);
 		else
-			return throwMessage("trans_commit", "BAT not accessible");
+			throw(MAL, "trans_commit", "BAT not accessible");
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -157,12 +157,12 @@ TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			return throwMessage("transaction.abort", "Cannot access descriptor");
+			throw(MAL, "transaction.abort", "Cannot access descriptor");
 		}
 		if (b)
 			BATundo(b);
 		else
-			return throwMessage("transaction.abort", "BAT not accessible");
+			throw(MAL, "transaction.abort", "BAT not accessible");
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -178,12 +178,12 @@ TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			return throwMessage("transaction.commit", "Cannot access descriptor");
+			throw(MAL, "transaction.commit", "Cannot access descriptor");
 		}
 		if (b)
 			BATcommit(b);
 		else
-			return throwMessage("transaction.commit", "BAT not accessible");
+			throw(MAL, "transaction.commit", "BAT not accessible");
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -195,7 +195,7 @@ TRNtrans_prev(int *ret, int *bid)
 	BAT *b,*bn= NULL;
 	b= BATdescriptor(*bid);
 	if (b  == NULL) 
-		return throwMessage("transaction.prev", "Cannot access descriptor");
+		throw(MAL, "transaction.prev", "Cannot access descriptor");
 	bn = BATprev(b);
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);

@@ -322,7 +322,7 @@ streams_export str stream_open_@1wrap( Stream *S, str *filename );
 str stream_open_@1wrap( Stream *S, str *filename ){
 	if( stream_open_@1(S, *filename)== GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("streams.open","Could not open file");
+	throw(IO, "streams.open", "Could not open file");
 }
 @}
 @c
@@ -349,7 +349,7 @@ streams_export str stream_socket_@1wrap( Stream *S, int *socket, str *name );
 str stream_socket_@1wrap( Stream *S, int *socket, str *name ){
 	if( stream_socket_@1(S,socket,*name) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("streams.socket","Could not open socket");
+	throw(IO, "streams.socket","Could not open socket");
 }
 @c
 @:open_socketwrap(rstream)@
@@ -363,7 +363,7 @@ stream_write_stringwrap(int *ret, Stream *S, str *data)
 	(void) ret;
 	if (stream_write_string(S, *data) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("streams.writeStr", "Failed to write string");
+	throw(IO, "streams.writeStr", "Failed to write string");
 }
 
 str
@@ -372,7 +372,7 @@ stream_writeIntwrap(int *ret, Stream *S, int *data)
 	(void) ret;
 	if (stream_writeInt_wrap(S, data) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("streams.writeInt", "Failed to write int");
+	throw(IO, "streams.writeInt", "Failed to write int");
 }
 
 str
@@ -380,7 +380,7 @@ stream_readIntwrap(int *ret, Stream *S)
 {
 	if (stream_readInt_wrap(ret, S) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("streams.readInt", "Failed to read int");
+	throw(IO, "streams.readInt", "Failed to read int");
 }
 
 str
@@ -388,7 +388,7 @@ stream_read_stringwrap(str *res, Stream *s)
 {
 	if (stream_read_string(res, s) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("streams.readStr", "Failed to read string");
+	throw(IO, "streams.readStr", "Failed to read string");
 }
 
 str
@@ -397,7 +397,7 @@ stream_flush_streamwrap(int *ret, Stream *s)
 	(void) ret;
 	if (stream_flush_stream(s) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("streams.flush", "Failed to flush a stream");
+	throw(IO, "streams.flush", "Failed to flush a stream");
 }
 
 str
@@ -406,7 +406,7 @@ stream_close_streamwrap(int *ret, Stream *s)
 	(void) ret;
 	if (stream_close_stream(s) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("streams.close", "Failed to close a stream");
+	throw(IO, "streams.close", "Failed to close a stream");
 }
 
 str
@@ -414,7 +414,7 @@ open_block_streamwrap(Stream *S, Stream *is)
 {
 	if (open_block_stream(S, is) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("bstreams.open", "Failed to open a blocked stream");
+	throw(IO, "bstreams.open", "Failed to open a blocked stream");
 }
 
 str
@@ -422,7 +422,7 @@ bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 {
 	if (bstream_create_wrap(Bs, S, bufsize) == GDK_SUCCEED)
 		return MAL_SUCCEED;
-	return throwMessage("bstreams.create", "Failed to create a blocked stream");
+	throw(IO, "bstreams.create", "Failed to create a blocked stream");
 }
 
 str

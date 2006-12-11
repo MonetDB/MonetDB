@@ -61,13 +61,13 @@ comment "Compare a bat of @1 against a singleton";
 
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-		return throwMessage("batstr." Z, "Cannot access descriptor");
+		throw(MAL, "batstr." Z, "Cannot access descriptor");
 #define prepareOperand2(X,Y,A,B,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-		return throwMessage("batstr." Z, "Cannot access descriptor"); \
+		throw(MAL, "batstr." Z, "Cannot access descriptor"); \
 	if( (A= BATdescriptor(*B)) == NULL ){\
 		BBPreleaseref(X->batCacheid); \
-		return throwMessage("batstr."Z, "Cannot access descriptor"); \
+		throw(MAL, "batstr."Z, "Cannot access descriptor"); \
 	}
 #define prepareResult(X,Y,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
@@ -75,7 +75,7 @@ comment "Compare a bat of @1 against a singleton";
 		BATseqbase(X, Y->hseqbase); \
 	if( X == NULL){ \
 		BBPreleaseref(Y->batCacheid); \
-		return throwMessage("batstr." Z, "no space available "); \
+		throw(MAL, "batstr." Z, "no space available "); \
 	} \
 	X->hsorted=Y->hsorted; \
 	X->tsorted=0; 
@@ -86,7 +86,7 @@ comment "Compare a bat of @1 against a singleton";
 	if( X == NULL){ \
 		BBPreleaseref(Y->batCacheid); \
 		BBPreleaseref(A->batCacheid); \
-		return throwMessage("batstr." Z, "no space available "); \
+		throw(MAL, "batstr." Z, "no space available "); \
 	} \
 	X->hsorted=Y->hsorted; \
 	X->tsorted=0; 
@@ -101,7 +101,7 @@ head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
-	return throwMessage("batcalc.@3", "requires bats of identical size");
+	throw(MAL, "batcalc.@3", "requires bats of identical size");
 
 @= implDef
 batmtime_export str MTIME@1bat_@2(int *ret, int *l, int *r);
@@ -120,7 +120,7 @@ str MTIME@1bat_@3(int *ret, int *l, int *r)
 		BBPreleaseref(right->batCacheid);
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(bn->batCacheid);
-		return throwMessage("batmtime.@3","Unexpected input type");
+		throw(MAL, "batmtime.@3","Unexpected input type");
 	}
 
 	o = (@1*)BUNtail(left,BUNfirst(left));
@@ -146,7 +146,7 @@ str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst)
 	prepareOperand(left,l,"batcalc.@2");
 	prepareResult(bn,left,TYPE_bit,"batcalc.@2");
 	if( BUNsize(left) != sizeof(@1))
-		return throwMessage("batmtime.@3","Unexpected input type");
+		throw(MAL, "batmtime.@3","Unexpected input type");
 
 	p = (@1*)BUNtail(left,BUNfirst(left));
 	q = (@1*)BUNtail(left,BUNlast(left));

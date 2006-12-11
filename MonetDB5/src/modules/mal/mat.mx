@@ -106,11 +106,11 @@ MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	bn= BATnew(getHeadType(tpe),getTailType(tpe), 0);
 	if( bn == NULL)
-		return throwMessage("mat.pack","Could not allocate storage");
+		throw(MAL, "mat.pack","Could not allocate storage");
 	for(i=1; i<p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
-			return throwMessage("mat.pack","Could not access component");
+			throw(MAL, "mat.pack","Could not access component");
 		BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}

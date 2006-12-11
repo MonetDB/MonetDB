@@ -34,9 +34,8 @@ exit IllegalAccess;	# 8  (IllegalAccess:str)
     io.print("should not be done");	# 9 IOprint_val (_11:void)<-(_12:str)
 end main;	# 10  
 catched an exception
-!ERROR: IllegalAccess:user.main[6]:a second exception raised
-!ERROR: IllegalAccess:user.main[10]:Exception not catched
-#
+!ERROR: MALException:user.main[6]:a second exception raised
+!ERROR: MALException:user.main[10]:Exception not catched
 
 # 08:01:15 >  
 # 08:01:15 >  Done.

@@ -619,7 +619,7 @@ optimizeMALBlock(MalBlkPtr mb)
 				/* However, we don;t have a stack now */
 				msg = (str) (*optimizers[pc]->fcn) (mb, 0, optimizers[pc]);
 			else {
-				msg = throwMessage("optimizer", "Implementation missing");
+				msg = createException(MAL, "optimizer", "Implementation missing");
 				printInstruction(GDKout,mb,optimizers[pc],LIST_MAL_ALL);
 			}
 			if (msg) {
@@ -633,7 +633,7 @@ optimizeMALBlock(MalBlkPtr mb)
 			oldstop, mb->stop);
 #endif
 	if (cnt >= 64)
-		return throwMessage("optimizer.MALoptimizer", "too many optimization cycles\n");
+		throw(MAL, "optimizer.MALoptimizer", "too many optimization cycles\n");
 	return 0;
 }
 

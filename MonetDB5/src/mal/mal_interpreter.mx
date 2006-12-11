@@ -202,13 +202,10 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	InstrPtr pci=0;
 	str ret;
 
-	if( mb->errors){
-		char buf[2*PATHLENGTH];
+	if (mb->errors) {
 		showErrors();
-		sprintf(buf, "'%s.%s' contains errors\n",
-			getModName(mb),getFcnName(mb));
-		if( cntxt->itrace == 0 ) /* permit debugger analysis */
-			return raiseException(mb,0,"SyntaxError",buf);
+		if (cntxt->itrace == 0) /* permit debugger analysis */
+			return createScriptException(mb, 0, SYNTAX, NULL, "Syntax error in script");
 	}
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
@@ -392,7 +389,7 @@ all arguments and return values.
 	case PATcall:
 	case CMDcall:
 	default:
-		return throwMessage("mal.interpreter",
+		throw(MAL, "mal.interpreter",
 				"Non-supported call the MAL interpreter");
 	}
 	return MAL_SUCCEED;
@@ -662,18 +659,18 @@ limited.
 @-
 @= MALwrapup
 	if( stkexception >= 0) {
-		if( ret ) {
-			ret= appendException(mb,mb->stop-1,
-					getVarName(mb,stkexception),
-					"Exception not catched", ret);
+		if (ret) {
+			ret = createScriptException(mb, mb->stop-1,
+					getExceptionType(getVarName(mb,stkexception)),
+					ret, "Exception not catched");
 		} else {
-			if(stk->stk[stkexception].vtype== TYPE_str) {
-				ret= appendException(mb,mb->stop-1,MALEXCEPTION, 
-						"Exception not catched", 
-						stk->stk[stkexception].val.sval);
+			if (stk->stk[stkexception].vtype == TYPE_str) {
+				ret = createScriptException(mb, mb->stop-1, MAL,
+						stk->stk[stkexception].val.sval,
+						"Exception not catched");
 			} else {
-				ret= appendException(mb,mb->stop-1,MALEXCEPTION, 
-						"Exception not catched", "");
+				ret = createScriptException(mb, mb->stop-1, MAL,
+						NULL, "Exception not catched");
 			}
 		}
 	}
@@ -689,9 +686,9 @@ of by limiting the depth of a function calls.
 @= safeguardStack
 /* Expensive? 70 msec for 1M calls another solution is needed.*/
 	if (stk->stkdepth > 50 * 1024 && THRhighwater()) {
-		GDKerror("interpret: running out of "
-				"physical stack space!\n");
-		return raiseException(mb,0,"Interpreter","Stack overflow");
+		GDKerror("interpret: running out of physical stack space!");
+		return createScriptException(mb, 0, STKOF, "Interpreter", NULL,
+				"stack depth: %d", stk->stkdepth);
 	}
 
 @+ The interpreter loop
@@ -814,14 +811,14 @@ switch(pci->barrier){
 		break;
 	case RAISEsymbol:
 		stkexception = getDestVar(pci);
-		if( getVarType(mb, getDestVar(pci))== TYPE_str){
-			ret= raiseException(mb, stkpc, 
-					getVarName(mb, getDestVar(pci)), 
-					stk->stk[getDestVar(pci)].val.sval);
+		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
+			ret = createScriptException(mb, stkpc,
+					getExceptionType(getVarName(mb, getDestVar(pci))),
+					NULL, "%s", stk->stk[getDestVar(pci)].val.sval);
 		} else
-			ret= raiseException(mb,stkpc, 
-					getVarName(mb, getDestVar(pci)), 
-					"Exception raised\n");
+			ret = createScriptException(mb, stkpc,
+					getExceptionType(getVarName(mb, getDestVar(pci))),
+					NULL, "Exception raised");
 		@:skipToCatch(stkexception)@
 			break;
 	case YIELDsymbol: /* to be defined */
@@ -1006,7 +1003,7 @@ the bind(namespace, batname, mode) operation. [todo]
 					strcpy(cntxt->errbuf,oldmsg);
 					GDKfree(oldmsg);
 				}
-				return throwMessage("mal.propertyCheck","Errors found");
+				throw(MAL, "mal.propertyCheck", "Errors found");
 			}
 			if( oldmsg){
 				*cntxt->errbuf = *oldmsg;
@@ -1084,8 +1081,8 @@ the bind(namespace, batname, mode) operation. [todo]
 			(ptr) getArgReference(stk,pci,8)); 
 			 break;
 	default:
-		ret= raiseException(mb,stkpc,MALEXCEPTION,
-				"too many arguments for command call\n");
+		ret = createScriptException(mb, stkpc, MAL, NULL,
+				"too many arguments for command call");
 	}
 	@:restoreTarget@
 	@:exceptionHndlr@
@@ -1093,8 +1090,8 @@ the bind(namespace, batname, mode) operation. [todo]
 @-
 @= patterncall
 	if( pci->fcn== NULL)
-		ret= raiseException(mb,stkpc,MALEXCEPTION,
-				"address of pattern missing\n");
+		ret = createScriptException(mb, stkpc, MAL, NULL,
+				"address of pattern missing");
 	else {
 		@:safeTarget@
 		ret = (str) (*pci->fcn)(mb,stk,pci);
@@ -1121,8 +1118,8 @@ call to the factory manager.
 Factory calls should deal with the reference counting.
 @= factorycall
 	if( pci->blk== NULL)
-		ret= raiseException(mb,stkpc,MALEXCEPTION,
-				"reference to MAL function missing\n");
+		ret = createScriptException(mb, stkpc, MAL, NULL,
+				"reference to MAL function missing");
 	else
 		ret= runFactory(cntxt,pci->blk,mb,stk,pci);
 	@:exceptionHndlr@
@@ -1177,9 +1174,9 @@ labeled statemtent. This might be optimized later.
 				stkpc= pci->jump; 
 			break;
 		default:
-			ret= raiseException(mb,stkpc,
-					getVarName(mb, getDestVar(pci)), 
-					"Unknown barrier type\n");
+			ret = createScriptException(mb, stkpc, MAL, NULL,
+					"%s: Unknown barrier type",
+					getVarName(mb, getDestVar(pci)));
 	}
 }
 
@@ -1288,24 +1285,16 @@ if( ret != MAL_SUCCEED ) {
 			continue;
 		}
 	}
-	if(ret ) msg= strchr(ret,':');
-	if( msg) {
+	msg = strchr(ret,':');
+	if(msg) {
 		*msg= 0;
 		symid = findVariableLength(mb,ret,msg-ret);
 		*msg=':';
 	} else {
-		if( ret == MAL_SUCCEED){
-			if( cntxt->errbuf){
-				ret= msg= GDKstrdup(cntxt->errbuf);
-				*cntxt->errbuf= 0;
-			} else ret= msg = GDKstrdup("unspecified error\n");
-			symid = findVariable(mb,"GDKerror");
-		} else {
-			stkexception = getDestVar(pci);
-			stkpc++;
-			@:endProfile@
-			continue;
-		}
+		stkexception = getDestVar(pci);
+		stkpc++;
+		@:endProfile@
+		continue;
 	}
 	stkexception = symid; 
 	if( symid == -1){
@@ -1321,7 +1310,8 @@ if( ret != MAL_SUCCEED ) {
 		if( getVarType(mb,symid) == TYPE_any)
 			setVarType(mb, symid, TYPE_str);
 		v->vtype = TYPE_str;
-		v->val.pval= GDKstrdup(locateException(mb,stkpc,ret));
+		v->val.pval= createScriptException(mb, stkpc,
+				getExceptionType(ret), NULL, getExceptionMessage(ret));
 		v->len= strlen(v->val.pval);
 		GDKfree(ret);
 		ret = 0;
@@ -1336,12 +1326,11 @@ assured that the type associated with a destination variable
 is in line with the result of an operation or exceoption.
 @c
 str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
-	char buf[2*PATHLENGTH];
 	if( v->type ==tpe) return 0;
 	if( v->type == TYPE_any) return 0;
-	sprintf(buf,"variable '%s' has already type %s (!=%s)\n",
+	return createScriptException(mb, pc, TYPE, NULL,
+			"variable '%s' has already type %s (!=%s)",
 			v->name, getTypeName(v->type), getTypeName(tpe));
-	return raiseException(mb,pc, "typeException",buf);
 }
 
 @}

@@ -441,12 +441,15 @@ This piece of code may be shared by the separate binder
 			if( getSignature(s)->fcn)
 				p->fcn = getSignature(s)->fcn;
 			break;
-		default:
-			showException(mb,getPC(mb,p),"MALresolve",
-					"unexpected token type\n");
+		default: {
+			str err = createScriptException(mb, getPC(mb, p), MAL, NULL,
+					"MALresolve: unexpected token type");
+			GDKerror(err);
+			GDKfree(err);
 			mb->errors++;
 			return -3;
 		}
+		} /* retarded indenting */
 		p->blk = s->def;
 	}
 @-
@@ -592,17 +595,17 @@ because they may be resolved as part of the calling sequence.
 void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent){
 	str n1;
 	str n2;
-	char buf[1024];
-	int i;
+	str err;
 
-	if( !silent) {
+	if (!silent) {
 		n1 = getTypeName(lhs);
 		n2 = getTypeName(rhs);
-		snprintf(buf,1024,"type mismatch %s := ",n1);
-		i= strlen(buf);
-		snprintf(buf+i,1024-i,"%s\n",n2);
-		showException(mb, getPC(mb,p),"MALresolve",buf);
-		GDKfree(n1); GDKfree(n2);
+		err = createScriptException(mb, getPC(mb, p), MAL, NULL,
+				"MALresolve: type mismatch %s := %s", n1, n2);
+		GDKerror(err);
+		GDKfree(n1);
+		GDKfree(n2);
+		GDKfree(err);
 		mb->errors++;
 	}
 	p->typechk= TYPE_UNKNOWN;

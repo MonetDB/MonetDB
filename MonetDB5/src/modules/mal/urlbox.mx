@@ -156,7 +156,7 @@ URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(prelude)@
 	box = openBox("urlbox");
 	if (box == 0)
-		return throwMessage("urlbox.prelude", "failed to open box");
+		throw(MAL, "urlbox.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	for(depth=0; depth<MAXURLDEPTH; depth++) {
 		urlBAT[depth]=0;
@@ -176,7 +176,7 @@ URLBOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(open)@
 	if (openBox("urlbox") != 0)
 		return MAL_SUCCEED;
-	return throwMessage("urlbox.open", "failed to open box");
+	throw(MAL, "urlbox.open", "failed to open box");
 }
 
 str
@@ -188,7 +188,7 @@ URLBOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(close)@
 	if (closeBox("urlbox", TRUE) == 0)
 		return MAL_SUCCEED;
-	return throwMessage("urlbox.close", "failed to close box");
+	throw(MAL, "urlbox.close", "failed to close box");
 }
 
 str
@@ -211,7 +211,7 @@ to a named box.
 	@:authorize(@1)@
 	box= findBox("urlbox");
 	if( box ==0) 
-	return throwMessage("urlbox.@1","box is not open");
+	throw(MAL, "urlbox.@1","box is not open");
 @-
 The real work starts here. We have to insert an URL.
 @c
@@ -308,10 +308,10 @@ URLBOXdepositFile(int *r, str *fnme){
 	/* later, handle directory separator */
 	fs= open_rastream(buf);
 	if( fs == NULL || stream_errnr(fs) ) 
-		return throwMessage("urlbox.deposit","File not accessible");
+		throw(MAL, "urlbox.deposit","File not accessible");
 	bs= bstream_create(fs,SIZE);
 	if( bs == NULL) 
-		return throwMessage("urlbox.deposit","Buffered file not available");
+		throw(MAL, "urlbox.deposit","Buffered file not available");
 	while( bstream_read(bs,bs->size-(bs->len-bs->pos)) != 0 &&
 		!stream_errnr(bs->s) ){
 		s= bs->buf;
@@ -351,7 +351,7 @@ URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	url = (str) getArgValue(stk, pci, 1);
 	if( strlen(url) <2048)
 		strcpy(tuple,url);
-	else return throwMessage("urlbox.deposit","url too long");
+	else throw(MAL, "urlbox.deposit","url too long");
 	return URLBOXinsert(url);
 }
 
@@ -381,7 +381,7 @@ URLBOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(release)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (releaseBox(box, name))
-		return throwMessage("urlbox.release", "failed to release object from box");
+		throw(MAL, "urlbox.release", "failed to release object from box");
 	return MAL_SUCCEED;
 }
 str
@@ -395,7 +395,7 @@ URLBOXreleaseOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(release)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (releaseBox(box, name))
-		return throwMessage("urlbox.release", "failed to release object from box");
+		throw(MAL, "urlbox.release", "failed to release object from box");
 	return MAL_SUCCEED;
 }
 
@@ -422,7 +422,7 @@ URLBOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (discardBox(box, name) == 0)
-		return throwMessage("urlbox.discard", "failed to discard object from box");
+		throw(MAL, "urlbox.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
 }
 str
@@ -435,7 +435,7 @@ URLBOXdiscardOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (discardBox(box, name) == 0)
-		return throwMessage("urlbox.discard", "failed to discard object from box");
+		throw(MAL, "urlbox.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
 }
 str
@@ -448,7 +448,7 @@ URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (discardBox(box, name) == 0)
-		return throwMessage("urlbox.discard", "failed to discard object from box");
+		throw(MAL, "urlbox.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
 }
 
@@ -465,7 +465,7 @@ URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str) getArgValue(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		return throwMessage("urlbox.toString", "failed to take object from box");
+		throw(MAL, "urlbox.toString", "failed to take object from box");
 
 	v = &box->val->stk[i];
 	if (v->vtype == TYPE_str)
@@ -473,7 +473,7 @@ URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
 	if (s == NULL)
-		return throwMessage("urlbox.toString", "illegal value");
+		throw(MAL, "urlbox.toString", "illegal value");
 	VALset(&stk->stk[getArg(pci, 0)], TYPE_str, s);
 	return MAL_SUCCEED;
 }
@@ -511,7 +511,7 @@ URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 URLBOXgetLevel(int *r, int *level){
 	if( *level < 0 || *level >= urlDepth)
-		return throwMessage("urlbox.getLevel","Illegal level");
+		throw(MAL, "urlbox.getLevel","Illegal level");
 	*r = urlBAT[*level]->batCacheid;
 	BBPincref(*r,TRUE);
 	return MAL_SUCCEED;
@@ -523,7 +523,7 @@ URLBOXgetNames(int *r){
 	int i;
 	b= BATnew(TYPE_int,TYPE_str, urlDepth+1);
 	if( b== NULL)
-		return throwMessage("urlbox.getNames","Could not create table");
+		throw(MAL, "urlbox.getNames","Could not create table");
 	for(i=0; i<urlDepth; i++){
 		BUNins(b,&i, BBPname(urlBAT[i]->batCacheid), FALSE);
 	}
@@ -539,7 +539,7 @@ URLBOXgetCount(int *r){
 
 	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
 	if( b== NULL)
-		return throwMessage("urlbox.getNames","Could not create table");
+		throw(MAL, "urlbox.getNames","Could not create table");
 	for(i=0; i<urlDepth; i++){
 		cnt = (lng) BATcount(urlBAT[i]);
 		BUNins(b,&i, &cnt, FALSE);
@@ -556,7 +556,7 @@ URLBOXgetCardinality(int *r){
 
 	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
 	if( b== NULL)
-		return throwMessage("urlbox.getNames","Could not create table");
+		throw(MAL, "urlbox.getNames","Could not create table");
 	for(i=0; i<urlDepth; i++){
 		bn = (BAT *) BATkunique(BATmirror(urlBAT[i]));
 		cnt = (lng) BATcount(bn);
@@ -580,7 +580,7 @@ URLBOXgetSize(int *r){
 
 	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
 	if( b== NULL)
-		return throwMessage("urlbox.getNames","Could not create table");
+		throw(MAL, "urlbox.getNames","Could not create table");
 	for(i=0; i<urlDepth; i++){
 		bn= urlBAT[i];
 		size = ROUND_UP(sizeof(BATstore), blksize);

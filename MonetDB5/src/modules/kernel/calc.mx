@@ -937,11 +937,11 @@ CALCswitchbit(MalBlkPtr mb, MalStkPtr stk, InstrPtr P)
 	int t2 = getArgType(mb, P, 3);
 
 	if (t1 != t2)
-		return throwMessage("ifthenelse", "types should match\n");
+		throw(MAL, "ifthenelse", "types should match\n");
 
 	if (b == bit_nil) {
 		p = ATOMnilptr(t1);
-		return throwMessage("ifthenelse", "cannot switch on nil value\n");
+		throw(MAL, "ifthenelse", "cannot switch on nil value\n");
 	} else if (b) {
 		p = getArgReference(stk,P,2);
 	} else {
@@ -1221,7 +1221,7 @@ str CALCunarycheck@3@1(@3 *res , @3 *a ) {
 	printf( "CALCunary@3@1\n");
 #endif
 	if (*a == 0 ){
-		return throwMessage("calc.@3", "Illegal reference");
+		throw(MAL, "calc.@3", "Illegal reference");
 	} else if ( *a == @3_nil) {
 		*res = @3_nil;
 	} else {
@@ -1262,7 +1262,7 @@ str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
 	printf( "CALCbinarycheck@1@3@4\n");
 #endif
    if (*b == 0) {
-	return throwMessage("calc.@2", @7);
+	throw(MAL, "calc.@2", @7);
    } else if (*a == @3_nil || *b == @4_nil) {
 	*res = @5_nil;
    } else {
@@ -1519,7 +1519,7 @@ CALCbat2batid(bat *ret, int *bid)
 	}
 	b = BATdescriptor(*bid);
 	if (b == 0)
-		throwMessage("calc.getBAT", "Bat does not exist");
+		throw(MAL, "calc.getBAT", "Bat does not exist");
 	*ret = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1537,7 +1537,7 @@ CALCbatid2bat(int *bid, int *ret)
 	}
 	b = BATdescriptor(*ret);
 	if (b == 0)
-		return throwMessage("calc.:bat", "Bat does not exist");
+		throw(MAL, "calc.:bat", "Bat does not exist");
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
@@ -1593,7 +1593,7 @@ shtFromlngImpl(sht *res, lng *val)
 {
 	/* perform a range check !! */
 	if (*val < 0 || *val > 255)
-		return throwMessage("calc.coercion", "error lng->sht");
+		throw(MAL, "calc.coercion", "error lng->sht");
 	*res = (sht) *val;
 	return MAL_SUCCEED;
 }
@@ -1604,7 +1604,7 @@ shtFromintImpl(sht *res, int *val)
 {
 	/* perform a range check !! */
 	if (*val < 0 || *val > 255)
-		return throwMessage("calc.coercion", "error int->sht");
+		throw(MAL, "calc.coercion", "error int->sht");
 	*res = *val;
 	return MAL_SUCCEED;
 }

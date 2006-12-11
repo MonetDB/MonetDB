@@ -82,7 +82,7 @@ head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
-	return throwMessage("batcalc.@3", "requires bats of identical size");
+	throw(MAL, "batcalc.@3", "requires bats of identical size");
 @= wrapup
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
     *ret= bn->batCacheid;
@@ -114,7 +114,7 @@ CMDifThen_@1(int *ret, int *bid, int *tid) {
 		bn= BATnew(b->htype,TYPE_@1,BATcount(b));
 	}
 	if( bn == 0 )
-		return throwMessage("batcalc.ifThen","Can not create BAT");
+		throw(MAL, "batcalc.ifThen","Can not create BAT");
 	bn->hsorted= b->hsorted;
 	bn->tsorted= b->tsorted;
 
@@ -142,7 +142,7 @@ str CMDifThenCst_@1(int *ret, int *bid, @1 *tid){
 	else
 		bn= BATnew(b->htype,TYPE_@1,BATcount(b));
 	if( bn == 0 )
-		return throwMessage("batcalc.ifThen","Can not create BAT");
+		throw(MAL, "batcalc.ifThen","Can not create BAT");
 	bn->hsorted= b->hsorted;
 	bn->tsorted= b->tsorted;
 

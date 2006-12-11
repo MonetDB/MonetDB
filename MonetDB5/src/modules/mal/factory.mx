@@ -102,14 +102,14 @@ FCTgetPlants(int *ret)
 	b = BATnew(TYPE_str, TYPE_str, 256);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(factory,name,plant)@
-	return throwMessage("factory.getPlants", "not yet implemented");
+	throw(MAL, "factory.getPlants", "not yet implemented");
 }
 
 str
 FCTgetCaller(int *ret)
 {
 	(void) ret;
-	return throwMessage("factory.getCaller", "not yet implemented");
+	throw(MAL, "factory.getCaller", "not yet implemented");
 }
 
 str
@@ -121,21 +121,21 @@ FCTgetOwners(int *ret)
 	b = BATnew(TYPE_int, TYPE_str, 256);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(factory,plantid,location)@
-	return throwMessage("factory.getOwner", "not yet implemented");
+	throw(MAL, "factory.getOwner", "not yet implemented");
 }
 
 str
 FCTgetTimeStampIn(int *ret)
 {
 	(void) ret;
-	return throwMessage("factory.getTimeStampIn", "not yet implemented");
+	throw(MAL, "factory.getTimeStampIn", "not yet implemented");
 }
 
 str
 FCTgetTimeStampOut(int *ret)
 {
 	(void) ret;
-	return throwMessage("factory.getTimeStampOut", "not yet implemented");
+	throw(MAL, "factory.getTimeStampOut", "not yet implemented");
 }
 
 str
@@ -143,7 +143,7 @@ FCTsetLocation(int *ret, str *loc)
 {
 	(void) ret;
 	(void) loc;
-	return throwMessage("factory.setLocation", "not yet implemented");
+	throw(MAL, "factory.setLocation", "not yet implemented");
 }
 
 str
@@ -155,7 +155,7 @@ FCTgetLocations(int *ret)
 	b = BATnew(TYPE_int, TYPE_str, 256);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(factory,plantid,location)@
-	return throwMessage("factory.getLocations", "not yet implemented");
+	throw(MAL, "factory.getLocations", "not yet implemented");
 }
 
 str
@@ -166,7 +166,7 @@ FCTshutdown(int *ret, str *mod, str *fcn)
 	(void) ret;
 	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == NULL)
-		return throwMessage("factory.shutdown", "Factory not found");
+		throw(MAL, "factory.shutdown", "Factory not found");
 	shutdownFactory(s->def);
 	return MAL_SUCCEED;
 }

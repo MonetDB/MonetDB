@@ -122,13 +122,13 @@ comment	"Extracts Cb(blue color) component from a color atom";
 
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-		return throwMessage("batstr." Z, "Cannot access descriptor");
+		throw(MAL, "batstr." Z, "Cannot access descriptor");
 #define prepareOperand2(X,Y,A,B,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-		return throwMessage("batstr." Z, "Cannot access descriptor"); \
+		throw(MAL, "batstr." Z, "Cannot access descriptor"); \
 	if( (A= BATdescriptor(*B)) == NULL ){\
 		BBPreleaseref(X->batCacheid); \
-		return throwMessage("batstr."Z, "Cannot access descriptor"); \
+		throw(MAL, "batstr."Z, "Cannot access descriptor"); \
 	}
 #define prepareResult(X,Y,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
@@ -136,7 +136,7 @@ comment	"Extracts Cb(blue color) component from a color atom";
 		BATseqbase(X, Y->hseqbase); \
 	if( X == NULL){ \
 		BBPreleaseref(Y->batCacheid); \
-		return throwMessage("batstr." Z, "no space available "); \
+		throw(MAL, "batstr." Z, "no space available "); \
 	} \
 	X->hsorted=Y->hsorted; \
 	X->tsorted=0; 
@@ -170,7 +170,7 @@ str CLRbat@1(int *ret, int *l)
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
-	return throwMessage("batstr.==", "bunins failed");
+	throw(MAL, "batstr.==", "bunins failed");
 }
 
 @c
@@ -208,10 +208,10 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 	prepareOperand(b,l,"@1");
 	b2= BATdescriptor(*bid2);
 	if(b2== NULL) 
-		return throwMessage("batcolor.@1","can not access BAT");
+		throw(MAL, "batcolor.@1","can not access BAT");
 	b3= BATdescriptor(*bid3);
 	if(b3== NULL) 
-		return throwMessage("batcolor.@1","can not access BAT");
+		throw(MAL, "batcolor.@1","can not access BAT");
 	prepareResult(bn,b,getTypeIndex("@4",-1,TYPE_int),"@1");
 
 	p2= BUNfirst(b2);
@@ -235,7 +235,7 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
-	return throwMessage("batstr.==", "bunins failed");
+	throw(MAL, "batstr.==", "bunins failed");
 }
 @c
 @:BATwalk3(Hsv,CLRhsv,flt,color)@

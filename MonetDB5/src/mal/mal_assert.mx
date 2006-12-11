@@ -48,6 +48,6 @@ str
 MALassert(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb; (void) stk; (void) p;
 	/* well, implement the evaluator */
-	return throwMessage("mal.assert","Not yet implemented");
+	throw(ASSERT, "mal.assert", "Not yet implemented");
 }
 @}

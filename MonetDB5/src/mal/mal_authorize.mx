@@ -77,10 +77,6 @@ comma separated list offered by the server through the challenge
 @h
 mal_export str AUTHgetHashAlgorithms(str *ret);
 
-/* convenience macros */
-#define throwIC(X, Y) throw("InvalidCredentialsException", X, Y);
-#define throwICf(X, Y, A) throw1f("InvalidCredentialsException", X, Y, A);
-
 #endif /* _MAL_AUTHORIZE_H */
 @-
 @c
@@ -123,7 +119,7 @@ AUTHrequireAdmin() {
 		str tmp;
 		
 		rethrow("requireAdmin", tmp, AUTHresolveUser(&user, &id));
-		throwICf("requireAdmin", "Access denied for user '%s'", user)
+		throw(INVCRED, "requireAdmin", "Access denied for user '%s'", user);
 	}
 
 	return(MAL_SUCCEED);
@@ -146,7 +142,7 @@ AUTHrequireAdminOrUser(str *username) {
 
 	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, &id));
 	if (username == NULL || *username == NULL || strcmp(*username, user) != 0) {
-		throwICf("requireAdminOrUser", "Access denied for user '%s'", user);
+		throw(INVCRED, "requireAdminOrUser", "Access denied for user '%s'", user);
 	}
 
 	return(MAL_SUCCEED);
@@ -195,7 +191,7 @@ AUTHinitTables() {
 	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			throwMal("initTables", "could not allocate user table");
+			throw(MAL, "initTables", "could not allocate user table");
 
 		BATkey(BATmirror(b), TRUE);
 		BBPrename(BBPcacheid(b), "M5system_auth_user");
@@ -212,7 +208,7 @@ AUTHinitTables() {
 	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			throwMal("initTables", "could not allocate password table");
+			throw(MAL, "initTables", "could not allocate password table");
 
 		BBPrename(BBPcacheid(b), "M5system_auth_passwd");
 		BATmode(b, PERSISTENT);
@@ -228,7 +224,7 @@ AUTHinitTables() {
 	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			throwMal("initTables", "could not allocate scenario table");
+			throw(MAL, "initTables", "could not allocate scenario table");
 
 		BATkey(b, TRUE);
 		BBPrename(BBPcacheid(b), "M5system_auth_scen");
@@ -251,7 +247,7 @@ AUTHinitTables() {
 
 		rethrow("initTables", tmp, AUTHaddUser(&uid, &user, &pass, &b));
 		if (uid != 0)
-			throwMal("initTables", "authorisation BATs not empty, but they were just created !?!?!?");
+			throw(MAL, "initTables", "authorisation BATs not empty, but they were just created !?!?!?");
 		AUTHcommit();
 	}
 
@@ -302,12 +298,12 @@ AUTHcheckCredentials(
 	assert(scen);
 
 	if (*username == NULL || strNil(*username))
-		throwIC("checkCredentials", "Invalid credentials for unknown user");
+		throw(INVCRED, "checkCredentials", "Invalid credentials for unknown user");
 
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL) {
 		/* DO NOT reveal that the user doesn't exist here! */
-		throwICf("checkCredentials", "Invalid credentials for user '%s'",
+		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	}
 	id = (oid*)(BUNhead(user, p));
@@ -317,7 +313,7 @@ AUTHcheckCredentials(
 	 */
 	if (*passwd == NULL || strNil(*passwd)) {
 		/* DO NOT reveal that the password is NULL here! */
-		throwICf("checkCredentials", "Invalid credentials for user '%s'",
+		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	}
 
@@ -333,7 +329,7 @@ AUTHcheckCredentials(
 	/* and now we have it, compare it to what was given to us */
 	if (strcmp(*passwd, hash) != 0) {
 		/* of course we DO NOT print the password here */
-		throwICf("checkCredentials", "Invalid credentials for user '%s'",
+		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	}
 
@@ -344,7 +340,7 @@ AUTHcheckCredentials(
 	if (b && BATcount(b) > 0) {
 		if (*scenario == NULL || strNil(*scenario)) {
 			/* of course we DO NOT tell the exact reason here again */
-			throwICf("checkCredentials", "Invalid credentials for user '%s'",
+			throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
 					*username);
 		}
 
@@ -360,7 +356,7 @@ AUTHcheckCredentials(
 		}
 
 		/* uh oh... that we made it till here means it's wrong */
-		throwICf("checkCredentials", "Invalid credentials for user '%s'",
+		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	} else {
 		/* no scenario restriction applies, so everything is good */
@@ -390,14 +386,14 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	
 	/* some pre-condition checks */
 	if (*username == NULL || strNil(*username))
-		throwIllArg("addUser", "username cannot be nil");
+		throw(ILLARG, "addUser", "username cannot be nil");
 	if (*passwd == NULL || strNil(*passwd))
-		throwIllArg("addUser", "password cannot be nil");
+		throw(ILLARG, "addUser", "password cannot be nil");
 
 	/* ensure that the username is not already there */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p != NULL)
-		throwMalf("addUser", "user '%s' already exists", *username);
+		throw(MAL, "addUser", "user '%s' already exists", *username);
 	
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
@@ -414,12 +410,12 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 		if (b == NULL) {
 			BATundo(user);
 			BATundo(pass);
-			throwIllArg("addUser", "invalid BAT!");
+			throw(ILLARG, "addUser", "invalid BAT!");
 		}
 		if (b->htype != TYPE_str) {
 			BATundo(user);
 			BATundo(pass);
-			throwIllArg("addUser", "BAT should have str head");
+			throw(ILLARG, "addUser", "BAT should have str head");
 		}
 
 		/* associate scenarios given in the BAT with the user */
@@ -456,17 +452,17 @@ AUTHremoveUser(str *username) {
 
 	/* pre-condition check */
 	if (*username == NULL || strNil(*username))
-		throwIllArg("removeUser", "username cannot be nil");
+		throw(ILLARG, "removeUser", "username cannot be nil");
 
 	/* ensure that the username exists */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL)
-		throwMalf("removeUser", "no such user: '%s'", *username);
+		throw(MAL, "removeUser", "no such user: '%s'", *username);
 	id = *(oid*)(BUNhead(user, p));
 
 	/* find the name of the administrator and see if it equals username */
 	if (id == MCgetClient()->user)
-		throwMal("removeUser", "cannot remove yourself");
+		throw(MAL, "removeUser", "cannot remove yourself");
 
 	/* now, we got the oid, start removing the related tuples */
 	b = BATmirror(BATselect(BATmirror(user), &id, &id));
@@ -498,18 +494,18 @@ AUTHchangeUsername(str *olduser, str *newuser) {
 
 	/* precondition checks */
 	if (*olduser == NULL || strNil(*olduser))
-		throwIllArg("changeUsername", "old username should not be nil");
+		throw(ILLARG, "changeUsername", "old username should not be nil");
 	if (*newuser == NULL || strNil(*newuser))
-		throwIllArg("changeUsername", "new username should not be nil");
+		throw(ILLARG, "changeUsername", "new username should not be nil");
 
 	/* see if the olduser is valid */
 	p = BUNfnd(BATmirror(user), *olduser);
 	if (p == NULL)
-		throwMalf("changeUsername", "user '%s' does not exist", *olduser);
+		throw(MAL, "changeUsername", "user '%s' does not exist", *olduser);
 	/* ... and if the newuser is not there yet */
 	q = BUNfnd(BATmirror(user), *newuser);
 	if (q != NULL)
-		throwMalf("changeUsername", "user '%s' already exists", *newuser);
+		throw(MAL, "changeUsername", "user '%s' already exists", *newuser);
 
 	/* ok, just do it! (with force, because sql makes view over it) */
 	BUNinplace(BATmirror(user), p, *newuser, BUNhead(user, p), TRUE);
@@ -532,9 +528,9 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 
 	/* precondition checks */
 	if (*oldpass == NULL || strNil(*oldpass))
-		throwIllArg("changePassword", "old password should not be nil");
+		throw(ILLARG, "changePassword", "old password should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
-		throwIllArg("changePassword", "password should not be nil");
+		throw(ILLARG, "changePassword", "password should not be nil");
 
 	/* check the old password */
 	id = MCgetClient()->user;
@@ -543,7 +539,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	tmp = BUNtail(pass, p);
 	assert (tmp != NULL);
 	if (strcmp(tmp, *oldpass) != 0)
-		throwIC("changePassword", "Access denied");
+		throw(INVCRED, "changePassword", "Access denied");
 
 	/* cypher the password */
 	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
@@ -571,9 +567,9 @@ AUTHsetPassword(str *username, str *passwd) {
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
-		throwIllArg("setPassword", "username should not be nil");
+		throw(ILLARG, "setPassword", "username should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
-		throwIllArg("setPassword", "password should not be nil");
+		throw(ILLARG, "setPassword", "password should not be nil");
 
 	id = MCgetClient()->user;
 	/* find the name of the administrator and see if it equals username */
@@ -582,12 +578,12 @@ AUTHsetPassword(str *username, str *passwd) {
 	tmp = BUNtail(user, p);
 	assert (tmp != NULL);
 	if (strcmp(tmp, *username) == 0)
-		throwIC("setPassword", "The administrator cannot set its own password, use changePassword instead");
+		throw(INVCRED, "setPassword", "The administrator cannot set its own password, use changePassword instead");
 
 	/* see if the user is valid */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL)
-		throwMalf("setPassword", "no such user '%s'", *username);
+		throw(MAL, "setPassword", "no such user '%s'", *username);
 	id = *(oid*)BUNhead(user, p);
 
 	/* cypher the password */
@@ -618,23 +614,23 @@ AUTHaddScenario(str *username, str *scenario) {
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
-		throwIllArg("addScenario", "username should not be nil");
+		throw(ILLARG, "addScenario", "username should not be nil");
 	if (*scenario == NULL || strNil(*scenario))
-		throwIllArg("addScenario", "scenario should not be nil");
+		throw(ILLARG, "addScenario", "scenario should not be nil");
 
 	/* see if the user is valid */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL)
-		throwMalf("addScenario", "user '%s' does not exist", *username);
+		throw(MAL, "addScenario", "user '%s' does not exist", *username);
 	id = (oid*)BUNhead(user, p);
 
 	/* see if this scenario is not already there */
 	b = BATselect(BATmirror(scen), id, id);
 	b = BATselect(BATmirror(b), *scenario, *scenario);
 	if (BATcount(b) == 1)
-		throwMalf("addScenario", "scenario '%s' already exists for user", *scenario);
+		throw(MAL, "addScenario", "scenario '%s' already exists for user '%s'", *scenario, *username);
 	if (BATcount(b) > 1)
-		throwMalf("addScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
+		throw(MAL, "addScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* add the scenario for this user, use force as sql makes view over it */
 	BUNins(scen, BUNhead(user, p), *scenario, TRUE);
@@ -659,23 +655,23 @@ AUTHremoveScenario(str *username, str *scenario) {
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
-		throwIllArg("removeScenario", "username should not be nil");
+		throw(ILLARG, "removeScenario", "username should not be nil");
 	if (*scenario == NULL || strNil(*scenario))
-		throwIllArg("removeScenario", "scenario should not be nil");
+		throw(ILLARG, "removeScenario", "scenario should not be nil");
 
 	/* see if the user is valid */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL)
-		throwMalf("removeScenario", "user '%s' does not exist", *username);
+		throw(MAL, "removeScenario", "user '%s' does not exist", *username);
 	id = (oid*)BUNhead(user, p);
 
 	/* see if the scenario is valid for this user */
 	b = BATselect(BATmirror(scen), id, id);
 	b = BATselect(BATmirror(b), *scenario, *scenario);
 	if (BATcount(b) == 0)
-		throwMalf("removeScenario", "scenario '%s' not found for user", *scenario);
+		throw(MAL, "removeScenario", "scenario '%s' not found for user '%s'", *scenario, *username);
 	if (BATcount(b) > 1)
-		throwMalf("removeScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
+		throw(MAL, "removeScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* ok, remove it */
 	BATdel(scen, BATmirror(b), TRUE);
@@ -696,11 +692,11 @@ AUTHresolveUser(str *username, oid *uid) {
 	BUN p;
 
 	if (uid == NULL || *uid == oid_nil)
-		throwIllArg("resolveUser", "userid should not be nil");
+		throw(ILLARG, "resolveUser", "userid should not be nil");
 	
 	p = BUNfnd(user, uid);
 	if (p == NULL)
-		throwMalf("resolveUser", "No such user with id: " OIDFMT, *uid);
+		throw(MAL, "resolveUser", "No such user with id: " OIDFMT, *uid);
 
 	assert (username != NULL);
 
@@ -747,9 +743,9 @@ AUTHgetUsers(bat *ret, bat *scenarios) {
 	if (*scenarios != bat_nil) {
 		b = BATdescriptor(*scenarios);
 		if (b == NULL)
-			throwIllArg("getUsers", "invalid BAT!");
+			throw(ILLARG, "getUsers", "invalid BAT!");
 		if (b->htype != TYPE_str)
-			throwIllArg("getUsers", "BAT should have str head");
+			throw(ILLARG, "getUsers", "BAT should have str head");
 
 		if (BATcount(b) == 0) {
 			/* we can simply copy the whole users table, as there is no
@@ -810,7 +806,7 @@ AUTHunlockVault(str *password) {
 	rethrow("unlockVault", tmp, AUTHrequireAdmin());
 
 	if (password == NULL || strNil(*password))
-		throwIllArg("unlockVault", "password should not be nil");
+		throw(ILLARG, "unlockVault", "password should not be nil");
 
 	/* even though I think this function should be called only once, it
 	 * is not of real extra efforts to avoid a mem-leak if it is used
@@ -852,7 +848,7 @@ AUTHdecypherValue(str *ret, str *value) {
 	int keylen = 0;
 
 	if (vaultKey == NULL)
-		throwMal("decypherValue", "The vault is still locked!");
+		throw(MAL, "decypherValue", "The vault is still locked!");
 
 	keylen = strlen(vaultKey);
 
@@ -891,7 +887,7 @@ AUTHcypherValue(str *ret, str *value) {
 	int keylen = 0;
 
 	if (vaultKey == NULL)
-		throwMal("decypherValue", "The vault is still locked!");
+		throw(MAL, "decypherValue", "The vault is still locked!");
 
 	keylen = strlen(vaultKey);
 
@@ -1034,7 +1030,7 @@ AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
 		return(MAL_SUCCEED);
 #endif
 	} else {
-		throwMalf("hashPassword", "unsupported hash type: '%s'", algo);
+		throw(MAL, "hashPassword", "unsupported hash type: '%s'", algo);
 	}
 }
 @}

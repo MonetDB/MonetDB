@@ -108,7 +108,7 @@ BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	if (openBox(name) != 0)
 		return MAL_SUCCEED;
-	return throwMessage("box.open", "failed to open box");
+	throw(MAL, "box.open", "failed to open box");
 }
 
 str
@@ -120,7 +120,7 @@ BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	if (closeBox(name, FALSE) == 0)
 		return MAL_SUCCEED;
-	return throwMessage("box.close", "failed to close box");
+	throw(MAL, "box.close", "failed to close box");
 }
 
 str
@@ -143,7 +143,7 @@ to a named box.
 	name = (str) getArgValue(stk,pci,1);
 	box= findBox(name);
 	if( box ==0) 
-	return throwMessage("box.@1","box is not open");
+	throw(MAL, "box.@1","box is not open");
 @-
 @c
 str
@@ -158,7 +158,7 @@ BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 2);
 	v = &stk->stk[getArg(pci, 3)];
 	if (depositBox(box, name, v))
-		return throwMessage("box.deposit", "failed to deposit into box");
+		throw(MAL, "box.deposit", "failed to deposit into box");
 	return MAL_SUCCEED;
 }
 
@@ -173,7 +173,7 @@ BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 2);
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		return throwMessage("box.take", "failed to take object from box");
+		throw(MAL, "box.take", "failed to take object from box");
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -213,7 +213,7 @@ BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 2);
 	if (discardBox(box, name))
-		return throwMessage("box.discard", "failed to discard object from box");
+		throw(MAL, "box.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
 }
 

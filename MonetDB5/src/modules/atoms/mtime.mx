@@ -789,7 +789,8 @@ of the calendar).
 #define _MONETTIME_H_
 
 #include <gdk.h>
-#include <mal.h>
+#include "mal.h"
+#include "mal_exception.h"
 
 #ifdef WIN32
 #ifndef LIBMTIME
@@ -2851,18 +2852,18 @@ MTIMEprelude()
 	/* here we should initialize the time box as well */
 	box = openBox("time");
 	if (box == 0)
-		return throwMessage("time.prelude", "failed to open box");
+		throw(MAL, "time.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
 		BAT *tzbat = BATnew(TYPE_str, ATOMindex("timezone"), 30);
 
 		if (tzbat == NULL)
-			return throwMessage("time.prelude", "failed to create box");
+			throw(MAL, "time.prelude", "failed to create box");
 		BBPrename(tzbat->batCacheid, "timezones");
 		timezones = tzbat;
 		newVariable(box->sym, GDKstrdup("timezones"), newBatType(TYPE_str, ATOMindex("timezone")));
 		if (bindBAT(box, "timezones", "timezones")) {
-			return throwMessage("time.prelude", "could not bind timezones");
+			throw(MAL, "time.prelude", "could not bind timezones");
 		}
 		vr.vtype = ATOMindex("timezone");
 		@:TIMEZONES("Wake Island", 12 * 60)@
@@ -3795,7 +3796,7 @@ str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 	BUN p,q;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("bbp.get@1", "Cannot access descriptor");
+		 throw(MAL, "bbp.get@1", "Cannot access descriptor");
 	}
 
 

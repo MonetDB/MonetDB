@@ -361,7 +361,7 @@ PBMprelude(int *ret)
 	(void) ret;
 	box = openBox("partitions");
 	if (box == 0)
-		return throwMessage("pbm.prelude", "failed to open box");
+		throw(MAL, "pbm.prelude", "failed to open box");
 	PBMresize(INCREMENT);
 	return MAL_SUCCEED;
 }
@@ -372,7 +372,7 @@ PBMepilogue(int *ret)
 	*ret = closeBox("partitions", 0);
 	PBMfree();
 	if (*ret != 0)
-		return throwMessage("pbm.prelude", "failed to open box");
+		throw(MAL, "pbm.prelude", "failed to open box");
 	return MAL_SUCCEED;
 }
 
@@ -383,7 +383,7 @@ PBMopen(int *ret)
 	(void)* ret;
 	if (openBox("pbm") != 0)
 		return MAL_SUCCEED;
-	return throwMessage("pbm.open", "failed to open pbm box");
+	throw(MAL, "pbm.open", "failed to open pbm box");
 }
 
 str
@@ -435,10 +435,10 @@ PBMtakeComplete(int *ret, str *grp)
 	int i;
 	i = PBMfindPBAT(*grp);
 	if( i<0)
-		return throwMessage("pbm.take","PBAT not found");
+		throw(MAL, "pbm.take","PBAT not found");
 	b= BBPdescriptor(partitions[i].bid);
 	if( b== NULL)
-		return throwMessage("pbm.take", "PBAT partition not accessible");
+		throw(MAL, "pbm.take", "PBAT partition not accessible");
 	bn= BATcopy(b, b->htype, b->ttype, TRUE);
 	BBPunfix(b->batCacheid);
 
@@ -447,7 +447,7 @@ PBMtakeComplete(int *ret, str *grp)
 		if( b== NULL){
 			BBPdecref(bn->batCacheid, TRUE);
 			BBPunfix(bn->batCacheid);
-			return throwMessage("pbm.take", "PBAT partition not accessible");
+			throw(MAL, "pbm.take", "PBAT partition not accessible");
 		}
 		BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
@@ -467,10 +467,10 @@ PBMtake(int *ret, str *grp, str *elm)
 		strcmp(partitions[i].elm, *elm)== 0) 
 		break;
 	if( i== plimit )
-		return throwMessage("pbm.take", "PBAT partition not found");
+		throw(MAL, "pbm.take", "PBAT partition not found");
 	b= BBPdescriptor(partitions[i].bid);
 	if( b== NULL)
-		return throwMessage("pbm.take", "PBAT partition not accessible");
+		throw(MAL, "pbm.take", "PBAT partition not accessible");
 	*ret = partitions[i].bid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -482,14 +482,14 @@ PBMtakeIndexed(int *ret, str *grp, int *idx)
 	int i;
 	i= PBMfindPBAT(*grp);
 	if( i< 0)
-		return throwMessage("pbm.take","PBAT not found");
+		throw(MAL, "pbm.take","PBAT not found");
 	for( ; i>=0 && *idx>0; i= partitions[i].next)
 		*idx= *idx-1;
 	if( i< 0)
-		return throwMessage("pbm.take","PBAT component not found");
+		throw(MAL, "pbm.take","PBAT component not found");
 	b= BBPdescriptor(partitions[i].bid);
 	if( b== NULL)
-		return throwMessage("pbm.take", "PBAT partition not accessible");
+		throw(MAL, "pbm.take", "PBAT partition not accessible");
 	*ret = partitions[i].bid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -501,7 +501,7 @@ PBMgetComponents(int *ret, str *grp)
 	int i;
 	b= BATnew(TYPE_str,TYPE_str, oid_nil);
 	if( b==NULL)
-		return throwMessage("pbm.getComponents", "Could not create BAT");
+		throw(MAL, "pbm.getComponents", "Could not create BAT");
 	for( i= PBMfindPBAT(*grp); i>=0;  i= partitions[i].next)
 		BUNins(b,grp, partitions[i].elm, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -516,7 +516,7 @@ PBMgetNames(int *ret)
 	int i;
 	b= BATnew(TYPE_str,TYPE_str, oid_nil);
 	if( b==NULL)
-		return throwMessage("pbm.getNames", "Could not create BAT");
+		throw(MAL, "pbm.getNames", "Could not create BAT");
 	for( i= 0; i<ptop;  i++)
 	if( partitions[i].grp )
 		BUNins(b,partitions[i].grp, partitions[i].elm, FALSE);
@@ -579,11 +579,11 @@ PBMdeposit(int *ret, str *grp, str *elm, int *bid)
 	if( elm){
 		i= PBMfindPBATcomponent(*grp,*elm);
 		if( i >=0 )
-			return throwMessage("pbm.deposit", "PBAT component already known");
+			throw(MAL, "pbm.deposit", "PBAT component already known");
 	}
 	b = BATdescriptor(*bid);
 	if (b == NULL)
-		return throwMessage("pbm.deposit", "Can not access descriptor");
+		throw(MAL, "pbm.deposit", "Can not access descriptor");
 	idx = PBMfindPBAT(*grp);
 	if (ptop == plimit)
 		PBMresize(plimit + INCREMENT);
@@ -627,11 +627,11 @@ PBMdepositByName(int *ret, str *grp, str *elm, str *nme)
 
 	idx= PBMfindPBATcomponent(*grp,*elm);
 	if( idx >=0 )
-		return throwMessage("pbm.deposit", "PBAT already known");
+		throw(MAL, "pbm.deposit", "PBAT already known");
 	idx= BBPindex(*nme);
 	b = BATdescriptor(idx);
 	if (b == NULL)
-		return throwMessage("pbm.deposit", "Can not access descriptor");
+		throw(MAL, "pbm.deposit", "Can not access descriptor");
 
 	PBMdeposit(ret,grp,elm,&idx);
 	BBPunfix(idx);
@@ -650,7 +650,7 @@ PBMgetRange(oid *first, oid *last, int *bid)
 			*last = partitions[i].hmax.val.oval;
 			return MAL_SUCCEED;
 		}
-	return throwMessage("pbm.getRange", "PBAT not known");
+	throw(MAL, "pbm.getRange", "PBAT not known");
 }
 
 str
@@ -660,7 +660,7 @@ PBMgetLast(int *ret, str *grp)
 
 	i= PBMfindPBAT(*grp);
 	if( i < 0)
-		return throwMessage("pbm.getLast", "PBAT not known");
+		throw(MAL, "pbm.getLast", "PBAT not known");
 	for (; partitions[i].next>=0 ; i= partitions[i].next)
 		;
 	*ret = partitions[i].bid;
@@ -703,7 +703,7 @@ PBMreleaseAll(int *ret, int *bid)
 {
 	(void) ret;
 	(void) bid;
-	return throwMessage("pbm.release", "not yet implemented");
+	throw(MAL, "pbm.release", "not yet implemented");
 }
 
 str
@@ -712,7 +712,7 @@ PBMdiscardComponent(int *ret, str *grp, int *bid)
 	(void) ret;
 	(void) bid;
 	(void) grp;
-	return throwMessage("pbm.release", "not yet implemented");
+	throw(MAL, "pbm.release", "not yet implemented");
 }
 @-
 We start with the large chunk iterator.
@@ -742,7 +742,7 @@ PBMnewIterator(int *res, str *grp)
 
 	idx= PBMfindPBAT(*grp);
 	if(idx<0)
-		return throwMessage("pbm.newIterator","Could not find PBAT");
+		throw(MAL, "pbm.newIterator","Could not find PBAT");
 	*res = partitions[idx].bid;
 	BBPincref(*res, TRUE);
 	return MAL_SUCCEED;
@@ -755,7 +755,7 @@ PBMnewIteratorRng(int *res, str *grp, oid *first, oid *last)
 
 	i= PBMfindPBAT(*grp);
 	if( i<0)
-		return throwMessage("pbm.newIterator","Could not find PBAT");
+		throw(MAL, "pbm.newIterator","Could not find PBAT");
 	for (; i>=0 ; i= partitions[i].next)
 	if (!(partitions[i].hmax.val.oval < *first || 
 		  partitions[i].hmin.val.oval > *last)) {
@@ -806,15 +806,15 @@ PBMcompress(int *ret, str *grp)
 	(void) ret;
 	i = PBMfindPBAT(*grp);
 	if (i < 0)
-		return throwMessage("pbm.commpress", "PBAT not found");
+		throw(MAL, "pbm.commpress", "PBAT not found");
 	b = BATdescriptor(partitions[i].bid);
 	if (b == 0)
-		return throwMessage("pbm.commpress", "BAT group not found");
+		throw(MAL, "pbm.commpress", "BAT group not found");
 	for (; i >= 0; i = partitions[i].next) {
 		partitions[i].hmin.val.oval = o;
 		b = BATdescriptor(partitions[i].bid);
 		if (b == 0)
-			return throwMessage("pbm.compress", "Internal error in BAT group");
+			throw(MAL, "pbm.compress", "Internal error in BAT group");
 		b->hseqbase = partitions[i].hmin.val.oval;
 		o = partitions[i].hmax.val.oval += BATcount(b) - 1;
 		BBPunfix(b->batCacheid);

@@ -259,7 +259,7 @@ initScenario(Client c, Scenario s)
 		} else {
 			char buf[BUFSIZ];
 			snprintf(buf,BUFSIZ,"%s.init",s->language);
-			msg = throwMessage(buf,"Scenario not initialized"); 
+			msg = createException(MAL, buf, "Scenario not initialized"); 
 		}
 	}
 	/* does the return below unset the lock? */
@@ -453,11 +453,9 @@ setScenario(Client c, str nme)
 	Scenario scen = scenarioRec;
 
 	scen = findScenario(nme);
-	if (scen == NULL) {
-		char msg[256];
-		snprintf(msg,256,"Scenario '%s' not initialized\n",nme);
-		return throwMessage("setScenario", msg);
-	}
+	if (scen == NULL)
+		throw(MAL, "setScenario", "Scenario '%s' not initialized", nme);
+
 	if (c->scenario) {
 		c->oldscenario = c->scenario;
 		for (i = 0; i < 7; i++) {

@@ -166,6 +166,7 @@ color_export str CLRprintf2(int *ret, str *form, color *c);
 #endif
 @c
 #include "mal.h"
+#include "mal_exception.h"
 #include <math.h>
 #include "color.h"
 

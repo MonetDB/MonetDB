@@ -48,6 +48,7 @@ comment "Overloaded atom function";
 @* Implementation
 @c
 #include <gdk.h>
+#include "mal_exception.h"
 typedef ptr lock;
 typedef ptr monet_lock;
 

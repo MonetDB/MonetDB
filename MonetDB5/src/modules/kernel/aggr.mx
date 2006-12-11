@@ -2165,11 +2165,11 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	BAT *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("bbp.sum", "Cannot access descriptor");
+		throw(MAL, "bbp.sum", "Cannot access descriptor");
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("bbp.sum", "Cannot access descriptor");
+		throw(MAL, "bbp.sum", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_sum_@1_@3(&bn,b,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -2181,7 +2181,7 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
-	return throwMessage("aggrX3_sum.@4","GDKerror");
+	throw(MAL, "aggrX3_sum.@4","GDKerror");
 }
 @-
 
@@ -2191,11 +2191,11 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("bbp.prod", "Cannot access descriptor");
+		throw(MAL, "bbp.prod", "Cannot access descriptor");
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("bbp.prod", "Cannot access descriptor");
+		throw(MAL, "bbp.prod", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_prod_@1_@3(&bn,b,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -2207,7 +2207,7 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
-	return throwMessage("aggrX3_sum.@4","GDKerror");
+	throw(MAL, "aggrX3_sum.@4","GDKerror");
 }
 @-
 @= AX3sumprod
@@ -2234,11 +2234,11 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_avg_@1(&bn,b,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -2250,7 +2250,7 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
-	return throwMessage("aggrX3_avg.@1","GDKerror");
+	throw(MAL, "aggrX3_avg.@1","GDKerror");
 }
 @c
 @:AX3arithavg(sht,loc)@
@@ -2266,11 +2266,11 @@ aggr_export str AX3aggrX3_@1(int *ret, int *bid, int *eid);
 str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	BAT *b, *e, *bn;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 
 	if( CMDaggrX3_@1(&bn,b,e) == GDK_SUCCEED){
@@ -2283,7 +2283,7 @@ str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
-	return throwMessage("aggrX3_@1","GDKerror");
+	throw(MAL, "aggrX3_@1","GDKerror");
 }
 @c
 @:AX3extreme(min,<)@
@@ -2298,11 +2298,11 @@ AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
 	BAT *b, *e, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 
 	if (CMDaggrX3_count(&bn, b, e, ignore_nils) == GDK_SUCCEED) {
@@ -2315,7 +2315,7 @@ AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
-	return throwMessage("aggrX3_count", "GDKerror");
+	throw(MAL, "aggrX3_count", "GDKerror");
 }
 
 @- Size
@@ -2328,11 +2328,11 @@ AX3aggrX3_size(int *retid, int *bid, int *eid)
 	BAT *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if (CMDaggrX3_size(&bn, b, e) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
@@ -2344,7 +2344,7 @@ AX3aggrX3_size(int *retid, int *bid, int *eid)
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
-	return throwMessage("aggrX3_size", "GDKerror");
+	throw(MAL, "aggrX3_size", "GDKerror");
 }
 
 @- Sum & Average & Prod	
@@ -2355,16 +2355,16 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BAT *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_sum3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -2378,7 +2378,7 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	BBPreleaseref(g->batCacheid);
-	return throwMessage("aggrX3_sum3","GDKerror");
+	throw(MAL, "aggrX3_sum3","GDKerror");
 }
 @-
 @= AX3prod3
@@ -2387,17 +2387,16 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g, *e;
 	BAT *bn;
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("aggr.avg", "Cannot access descriptor");
-	}
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_prod3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -2411,7 +2410,7 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	BBPreleaseref(g->batCacheid);
-	return throwMessage("aggrX3_prod3","GDKerror");
+	throw(MAL, "aggrX3_prod3","GDKerror");
 }
 @-
 @= AX3sumprod3
@@ -2437,16 +2436,16 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	BAT *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_avg3_@1(&bn,b,g,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -2460,7 +2459,7 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	BBPreleaseref(g->batCacheid);
-	return throwMessage("aggrX3_prod3","GDKerror");
+	throw(MAL, "aggrX3_prod3","GDKerror");
 }
 @c
 @:AX3arithavg3(sht,loc)@
@@ -2477,16 +2476,16 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e, *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("aggr.avg", "Cannot access descriptor");
+		throw(MAL, "aggr.avg", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_@13(&bn,b,g,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -2500,7 +2499,7 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	BBPreleaseref(g->batCacheid);
-	return throwMessage("aggrX3_prod3","GDKerror");
+	throw(MAL, "aggrX3_prod3","GDKerror");
 }
 @c
 @:AX3extreme3(min,<)@
@@ -2514,16 +2513,16 @@ AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 	BAT *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bbp.count", "Cannot access descriptor");
+		throw(MAL, "bbp.count", "Cannot access descriptor");
 	}
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("bbp.count", "Cannot access descriptor");
+		throw(MAL, "bbp.count", "Cannot access descriptor");
 	}
 	if ((g = BATdescriptor(*gid)) == NULL) {
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("bbp.count", "Cannot access descriptor");
+		throw(MAL, "bbp.count", "Cannot access descriptor");
 	}
 	if (CMDaggrX3_count3(&bn, b, g, e, ignore_nils) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
@@ -2537,7 +2536,7 @@ AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	BBPreleaseref(g->batCacheid);
-	return throwMessage("aggrX3_prod3", "GDKerror");
+	throw(MAL, "aggrX3_prod3", "GDKerror");
 }
 @-
 The remainder contains the few MIL proc translations 

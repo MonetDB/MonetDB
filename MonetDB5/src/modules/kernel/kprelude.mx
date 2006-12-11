@@ -3,11 +3,11 @@ The Mx macros below are used in many places throughout the code base.
 
 @= getBATdescriptor
 	if( (@2= BATdescriptor(*@1)) == NULL ){ @4;
-		 return throwMessage(@3, "cannot access descriptor");
+		 throw(MAL, @3, "cannot access descriptor");
    }
 @= tstBAT
 if( bn== NULL) {*ret= 0;
-    return throwMessage(@1, "can not create bat");}
+    throw(MAL, @1, "can not create bat");}
 
 @= resultBAT
     if (BAThvoid(b)) {
@@ -17,7 +17,7 @@ if( bn== NULL) {*ret= 0;
         bn = BATnew(b->htype, TYPE_@1, BATcount(b));
 	if( bn== NULL) {
 		@3
-		return throwMessage(@2, "can not create bat");
+		throw(MAL, @2, "can not create bat");
 	}
     bn->hsorted = b->hsorted;
     bn->tsorted = b->tsorted;

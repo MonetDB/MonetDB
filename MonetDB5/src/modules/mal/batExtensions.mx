@@ -126,7 +126,7 @@ to a named box. The bbp box is automatically opened.
 	if(box == 0 )\
 		box= openBox("bbp");\
 	if( box ==0) \
-		return throwMessage("bbp." X,"box is not open");
+		throw(MAL, "bbp." X,"box is not open");
 
 
 @- Operator implementation
@@ -145,7 +145,7 @@ CMDBATsetGarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	bid = (int *) getArgValue(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		return throwMessage("bbp.setGarbage", "Cannot access descriptor");
+		throw(MAL, "bbp.setGarbage", "Cannot access descriptor");
 
 	b->batDirty= FALSE;
 	BBPunfix(b->batCacheid);
@@ -161,7 +161,7 @@ CMDBATflush(int *ret, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		return throwMessage("bbp.flush", "Cannot access descriptor");
+		throw(MAL, "bbp.flush", "Cannot access descriptor");
 
 	/* use memory advice to release the BAT */
 	/* TO BE PROVIDED */
@@ -179,7 +179,7 @@ CMDBATreduce(int *ret, int *bid)
 	int old= GDKdebug;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		return throwMessage("bbp.reduce", "Cannot access descriptor");
+		throw(MAL, "bbp.reduce", "Cannot access descriptor");
 
 	/* reduce memory footprint by dropping hashes 
 	of non-persistent bats */
@@ -213,7 +213,7 @@ CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	bid = *(int *) getArgReference(s, p, 3);
 	if ((b = BATdescriptor(bid)) == NULL) {
-		return throwMessage("bbp.new", "Cannot access descriptor");
+		throw(MAL, "bbp.new", "Cannot access descriptor");
 	}
 	res = (int *) getArgReference(s, p, 0);
 	ht = getArgType(m, p, 1);
@@ -237,7 +237,7 @@ CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		cap = *(lng*) getArgReference(s, p, 3);
 
 	if (ht == TYPE_any || tt == TYPE_any)
-		return throwMessage("bbp.new", "Explicit type required");
+		throw(MAL, "bbp.new", "Explicit type required");
 	if (isaBatType(ht))
 		ht = TYPE_bat;
 	if (isaBatType(tt))
@@ -259,7 +259,7 @@ CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	res = (int *) getArgReference(s, p, 0);
 	bid = *(int *) getArgReference(s, p, 1);
 	if ((b = BATdescriptor(bid)) == NULL) {
-		return throwMessage("bbp.new", "Cannot access descriptor");
+		throw(MAL, "bbp.new", "Cannot access descriptor");
 	}
 
 	if (bid > 0) {
@@ -296,7 +296,7 @@ CMDBATderivedByName(int *ret, str *nme)
 
 	bid = BBPindex(*nme);
 	if (bid <= 0 || (bn = BATdescriptor(bid)) == 0)
-		return throwMessage("bbp.new", "Referenced BAT not found");
+		throw(MAL, "bbp.new", "Referenced BAT not found");
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(bid);
 	return MAL_SUCCEED;
@@ -330,7 +330,7 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = (ptr *) getArgReference(stk, pci, 2);
 	tt = getArgType(mb, pci, 2);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bbp.project", "Cannot access descriptor");
+		throw(MAL, "bbp.project", "Cannot access descriptor");
 	}
 
 	if (tt >= TYPE_str) {
@@ -346,7 +346,7 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("bbp.project", "Cannot create the constant BAT");
+	throw(MAL, "bbp.project", "Cannot create the constant BAT");
 }
 
 str
@@ -355,7 +355,7 @@ CMDBBPprojectNil(int *ret, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bbp.project", "Cannot access descriptor");
+		throw(MAL, "bbp.project", "Cannot access descriptor");
 	}
 
 	bn = BATconst(b, TYPE_void, (ptr) &int_nil);
@@ -365,7 +365,7 @@ CMDBBPprojectNil(int *ret, int *bid)
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("bbp.project", "Cannot create the constant BAT");
+	throw(MAL, "bbp.project", "Cannot create the constant BAT");
 }
 
 str
@@ -379,7 +379,7 @@ CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *(int *) getArgValue(stk, pci, 2);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
-		return throwMessage("bbp.unpack", "Cannot access descriptor");
+		throw(MAL, "bbp.unpack", "Cannot access descriptor");
 	}
 
 	head = &stk->stk[pci->argv[0]];
@@ -407,7 +407,7 @@ CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = (int *) getArgReference(stk, pci, 0);
 
 	if (ht == TYPE_any || tt == TYPE_any)
-		return throwMessage("bbp.new", "Explicit type required");
+		throw(MAL, "bbp.new", "Explicit type required");
 	if (isaBatType(ht))
 		ht = TYPE_bat;
 	if (isaBatType(tt))

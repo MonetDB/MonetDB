@@ -218,7 +218,7 @@ profiler_export str CMDcleanup(int *ret);
 
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \
-	return throwMessage("profiler." X,\
+	throw(MAL, "profiler." X,\
 	":Monet not compiled for performance monitoring");
 
 
@@ -393,7 +393,7 @@ CMDgetTrace(int *res, str *ev)
 		BBPincref(*res = bn->batCacheid, TRUE);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("getTrace", "Failed to find event profile");
+	throw(MAL, "getTrace", "Failed to find event profile");
 }
 
 str

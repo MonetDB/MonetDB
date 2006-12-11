@@ -147,7 +147,7 @@ typedef struct {
 typedef FILE *fstream;
 
 #define fileCheck(fp) if (!fp) \
-	return throwMessage( "io.@1","Incorrect file pointer");
+	throw(MAL,  "io.@1","Incorrect file pointer");
 
 #ifdef WIN32
 #ifndef LIBMAL_IO
@@ -260,7 +260,7 @@ IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl,
 		}
 		b = BATdescriptor(*(int *) val);
 		if (b == NULL) {
-			return throwMessage("io.print", "Could not access descriptor");
+			throw(MAL, "io.print", "Could not access descriptor");
 		}
 		if (nobat) {
 			if (hd)
@@ -353,12 +353,12 @@ IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int orde
 		tpe = getArgType(mb, pci, i);
 		val = (ptr) getArgReference(stk, pci, i);
 		if (!isaBatType(tpe))
-			return throwMessage("io.table", "BAT expected");
+			throw(MAL, "io.table", "BAT expected");
 		b = BATdescriptor(*(int *) val);
 		if (b == NULL) {
 			for (k = 0; k < nbats; k++)
 				BBPunfix(piv[k]->batCacheid);
-			return throwMessage("io.table", "Could not access descriptor");
+			throw(MAL, "io.table", "Could not access descriptor");
 		}
 		piv[nbats++] = b;
 	}
@@ -495,7 +495,7 @@ This to simplify error handling
 			newformat[i++]='@1';
 			newformat[i]=0;
 			if(*c!= '@1') 
-			return throwMessage("io.print", "Format limitation");
+			throw(MAL, "io.print", "Format limitation");
 			else  stream_printf(fd,newformat,@2);
 		} else stream_printf(fd,"%c",*c);
 	}
@@ -511,9 +511,9 @@ str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	/* TODO: check format properly !!! including sizes */
 	format= *(str *)fmt;
 	if( format== NULL || format== str_nil) 
-		return throwMessage("io.print", "Format missing");
+		throw(MAL, "io.print", "Format missing");
 	if( formatMarker(format)!=1) 
-		return throwMessage("io.print", "Too many %%");
+		throw(MAL, "io.print", "Too many %%");
 
 	if( *s == @1_nil) 
 		return IOprint_formatted_nil(fd,* (str*) fmt, '@2');
@@ -614,9 +614,9 @@ IOprint_formatted_str(int *ret, ptr fmt, str *s)
 	/* TODO: check format properly !!! including sizes */
 	format = *(str *) fmt;
 	if (format == NULL)
-		return throwMessage("io.print", "Format missing");
+		throw(MAL, "io.print", "Format missing");
 	if (formatMarker(format) != 1)
-		return throwMessage("io.print", "Too many %%");
+		throw(MAL, "io.print", "Too many %%");
 
 	if (strNil(*s))
 		return IOprint_formatted_nil(fd, *(str *) fmt, 's');
@@ -635,9 +635,9 @@ IOprint_oid(int *ret, ptr fmt, oid *s)
 	format = *(str *) fmt;
 
 	if (format == NULL)
-		return throwMessage("io.print", "Format missing");
+		throw(MAL, "io.print", "Format missing");
 	if (formatMarker(format) != 1)
-		return throwMessage("io.print", "Too many %%");
+		throw(MAL, "io.print", "Too many %%");
 
 	if (*s == oid_nil)
 		msg = GDKstrdup("nil");
@@ -648,7 +648,7 @@ IOprint_oid(int *ret, ptr fmt, oid *s)
 	@:formatConversion(s,msg)@
 	GDKfree(msg);
 	if (*ret == EOF)
-		return throwMessage("io.print", "End-of-file encountered");
+		throw(MAL, "io.print", "End-of-file encountered");
 	return MAL_SUCCEED;
 }
 
@@ -663,9 +663,9 @@ IOprint_formatted_bit(int *ret, ptr fmt, bit *s)
 	/* TODO: check format properly !!! including sizes */
 	format = *(str *) fmt;
 	if (format == NULL)
-		return throwMessage("io.print", "Format missing");
+		throw(MAL, "io.print", "Format missing");
 	if (formatMarker(format) != 1)
-		return throwMessage("io.print", "Too many %%");
+		throw(MAL, "io.print", "Too many %%");
 
 	if (*s == bit_nil)
 		return IOprint_formatted_nil(fd, *(str *) fmt, 's');
@@ -675,7 +675,7 @@ IOprint_formatted_bit(int *ret, ptr fmt, bit *s)
 		msg = "false";
 	@:formatConversion(s,msg)@
 	if (*ret == EOF)
-		return throwMessage("io.print", "End-of-file encountered");
+		throw(MAL, "io.print", "End-of-file encountered");
 	return MAL_SUCCEED;
 }
 
@@ -701,11 +701,11 @@ IOexport(int *ret, int *bid, str *fnme)
 	stream *s = open_wastream(*fnme);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("io.export", "Cannot access descriptor");
+		throw(MAL, "io.export", "Cannot access descriptor");
 	}
 	if (s == NULL || stream_errnr(s)) {
 		*ret = FALSE;
-		return throwMessage("io.export", "Could not open file");
+		throw(MAL, "io.export", "Could not open file");
 	}
 	BATprintf(s, b);
 	stream_close(s);
@@ -733,7 +733,7 @@ IOimport(int *ret, int *bid, str *fnme)
 	FILE *fp = fopen(*fnme, "r");
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("io.import", "Cannot access descriptor");
+		throw(MAL, "io.import", "Cannot access descriptor");
 	}
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
@@ -742,30 +742,30 @@ Open the file. Memory map it to minimize buffering problems.
 @c
 	if (fp == NULL) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("io.import", "Could not open file");
+		throw(MAL, "io.import", "Could not open file");
 	} else {
 		int fn;
 		struct stat st;
 
 		if ((fn = fileno(fp)) <= 0) {
 			BBPunfix(b->batCacheid);
-			return throwMessage("io.import", "Fileno fails");
+			throw(MAL, "io.import", "Fileno fails");
 		}
 		if (fstat(fn, &st) != 0) {
 			BBPunfix(b->batCacheid);
-			return throwMessage("io.imports", "Fstat fails");
+			throw(MAL, "io.imports", "Fstat fails");
 		}
 
 		(void) fclose(fp);
 		if (st.st_size <= 0) {
 			BBPunfix(b->batCacheid);
-			return throwMessage("io.imports", "File is empty or fstat broken");
+			throw(MAL, "io.imports", "File is empty or fstat broken");
 		}
 		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size, NULL);
 		end = cur + st.st_size;
 		if (cur == (char *) -1) {
 			BBPunfix(b->batCacheid);
-			return throwMessage("io.mport", "MT_mmap failed");
+			throw(MAL, "io.mport", "MT_mmap failed");
 		}
 
 	}
@@ -817,7 +817,7 @@ Parse the line, and insert a BUN.
 			char msg[BUFSIZ];
 			BBPunfix(*ret=b->batCacheid);
 			snprintf(msg,BUFSIZ,"error in input %s",buf);
-			return throwMessage( "io.import", msg);
+			throw(MAL,  "io.import", msg);
 		}
 		p += @1(p, @3, @4);
 @c

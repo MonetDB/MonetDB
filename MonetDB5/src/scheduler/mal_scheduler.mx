@@ -244,7 +244,7 @@ schedulerMALBlock(MalBlkPtr mb)
 	}
 #endif
 	if (cnt >= 64)
-		return throwMessage("scheduler.MALscheduler", "too many optimization cycles\n");
+		throw(MAL, "scheduler.MALscheduler", "too many optimization cycles\n");
 	return MAL_SUCCEED;
 }
 
@@ -281,7 +281,7 @@ RUNisolate(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) stk;
 	if (cntxt->backup)
-		return throwMessage("scheduler.isolation", "no space for backup");
+		throw(MAL, "scheduler.isolation", "no space for backup");
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg->def = copyMalBlk(mb);
 	removeInstruction(cntxt->curprg->def, p);

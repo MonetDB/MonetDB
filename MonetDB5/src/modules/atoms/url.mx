@@ -197,7 +197,7 @@ url_getAnchor(str *retval,	/* put string: pointer to char here. */
 	str s, d;
 
 	if (Str1 == 0)
-		return throwMessage("url.getAnchor","url missing");
+		throw(ILLARG, "url.getAnchor", "url missing");
 	s = strchr(Str1, '#');
 	if (s == 0) 
 		s= (str) str_nil;
@@ -217,7 +217,7 @@ url_getBasename(str *retval, url t)
 	str d = 0, s;
 
 	if (t == 0)
-		return throwMessage("url.getBasename","url missing");
+		throw(ILLARG, "url.getBasename", "url missing");
 	s = strrchr(t, '/');
 	if (s)
 		s++;
@@ -243,7 +243,7 @@ url_getContent(str *retval,	/* put string: pointer to char here. */
 {
 	/* TODO: getContent should not return a string */
 	if (!Str1)
-		return throwMessage("url.getContent","url missing");
+		throw(ILLARG, "url.getContent", "url missing");
 	strcpy(*retval, "functions not implemented");
 	return MAL_SUCCEED;
 }
@@ -256,7 +256,7 @@ url_getContext(str *retval, url Str1)
 	str s, d;
 
 	if (Str1 == 0)
-		return throwMessage("url.getContext","url missing");
+		throw(ILLARG, "url.getContext", "url missing");
 
 	s = strstr(Str1, "://");
 	if (s)
@@ -286,7 +286,7 @@ url_getDirectory(BAT **retval,	/* put pointer to BAT[int,str] record here. */
 	BAT *b = NULL;
 
 	if (t == 0)
-		return throwMessage("url.getDirectory","url missing");
+		throw(ILLARG, "url.getDirectory", "url missing");
 
 	while (*t && *t != ':')
 		t++;
@@ -301,7 +301,7 @@ url_getDirectory(BAT **retval,	/* put pointer to BAT[int,str] record here. */
 		t++;
 	b = BATnew(TYPE_int, TYPE_str, 40);
 	if (b == 0)
-		return throwMessage("url.getDirectory","could not create BAT");
+		throw(MAL, "url.getDirectory", "could not create BAT");
 
 	s = buf;
 	for (t++; *t; t++) {
@@ -316,7 +316,7 @@ url_getDirectory(BAT **retval,	/* put pointer to BAT[int,str] record here. */
 		}
 		*s++ = *t;
 		if (i++ == 1023)
-			return throwMessage("url_getDirectory","server name too long\n");
+			throw(PARSE, "url.getDirectory","server name too long");
 	}
 getDir_done:
 	@:Pseudo(dir,name)@
@@ -336,7 +336,7 @@ URLgetDomain(str *retval, str *u)
 	*retval = 0;
 	s = (str)str_nil;
 	if (t == 0)
-		return throwMessage("url.getDomain","domain missing");
+		throw(ILLARG, "url.getDomain", "domain missing");
 	while (*t && *t != ':')
 		t++;
 	t++;
@@ -355,7 +355,7 @@ URLgetDomain(str *retval, str *u)
 			break;
 		*b++ = *t;
 		if (i++ == 1023)
-			return throwMessage("url_getDomain","server name too long\n");
+			throw(PARSE, "url.getDomain", "server name too long\n");
 	}
 	*b = 0;
 	if (d)
@@ -376,7 +376,7 @@ url_getExtension(str *retval, url t)
 	str d = 0, s;
 
 	if (t == 0)
-		return throwMessage("url.getExtension","url missing");
+		throw(ILLARG, "url.getExtension", "url missing");
 	s = strrchr(t, '/');
 	if (s) {
 		s++;
@@ -402,7 +402,7 @@ url_getFile(str *retval, url t)
 	str d = 0, s;
 
 	if (t == 0)
-		return throwMessage("url.getFile","url missing");
+		throw(ILLARG, "url.getFile", "url missing");
 	s = strrchr(t, '/');
 	if (s)
 		s++;
@@ -429,7 +429,7 @@ url_getHost(str *retval,	/* is GDKfree needed ? */
 
 	s = (str)str_nil;
 	if (t == 0)
-		return throwMessage("url.getHost","url missing");
+		throw(ILLARG, "url.getHost", "url missing");
 	while (*t && *t != ':')
 		t++;
 	t++;
@@ -443,10 +443,8 @@ url_getHost(str *retval,	/* is GDKfree needed ? */
 	s = buf;
 	for (; *t && *t != '/'; t++) {
 		*b++ = *t;
-		if (i++ == 1023) {
-			return throwMessage("url_getHosterver","server name too long\n");
-			break;
-		}
+		if (i++ == 1023)
+			throw(PARSE, "url.getHost", "server name too long");
 	}
 	*b = 0;
 getHost_done:
@@ -468,7 +466,7 @@ url_getPort(str *retval, url t)
 	int i = 0;
 
 	if (t == 0)
-		return throwMessage("url.getPort","url missing");
+		throw(ILLARG, "url.getPort", "url missing");
 	s = (str)str_nil;
 	while (*t && *t != ':')
 		t++;
@@ -485,7 +483,7 @@ url_getPort(str *retval, url t)
 			d = b;
 		*b++ = *t;
 		if (i++ == 1023)
-			return throwMessage("url_getPort","server name too long\n");
+			throw(PARSE, "url.getPort", "server name too long");
 	}
 	*b = 0;
 	if (d)
@@ -511,12 +509,12 @@ url_getProtocol(str *retval,	/* put string: pointer to char here. */
 	int i = 0;
 
 	if (t == 0)
-		return throwMessage("url.getProtocol","url missing");
+		throw(ILLARG, "url.getProtocol", "url missing");
 	b = buf;
 	for (; *t && *t != ':'; t++) {
 		*b++ = *t;
 		if (i++ == 1023)
-			return throwMessage("url_getProtocol","server name too long\n");
+			throw(PARSE, "url_getProtocol", "server name too long");
 	}
 	*b = 0;
 	d = (char*) GDKmalloc(strlen(buf) + 1);
@@ -532,7 +530,7 @@ url_getQuery(str *retval, url Str1)
 	char *s, *d;
 
 	if (Str1 == 0)
-		return throwMessage("url.getQuery","url missing");
+		throw(ILLARG, "url.getQuery", "url missing");
 	s = strchr(Str1, '?');
 	if (s == 0) 
 		s= (str) str_nil;
@@ -557,20 +555,20 @@ url_getQueryArg(BAT **retval, url t)
 	BAT *b;
 
 	if (t == 0)
-		return throwMessage("url.getQueryArg","url missing");
+		throw(ILLARG, "url.getQueryArg", "url missing");
 	if (unescape_str(&unescapedval, t) != MAL_SUCCEED)
-		return throwMessage("url.getQueryArg","failure to unescape");
+		throw(MAL, "url.getQueryArg", "failure to unescape");
 
 	t = strchr(unescapedval, '?');
 	if (t == 0)
-		return throwMessage("url.getQueryArg","variable missing");
+		throw(ILLARG, "url.getQueryArg", "variable missing");
 	t++;
 
 	b = BATnew(TYPE_str, TYPE_str, 40);
 	if (b == 0)
-		return throwMessage("url.getQueryArg","could not create BAT");
+		throw(MAL, "url.getQueryArg","could not create BAT");
 	if (strlen(t) > 1023)
-		return throwMessage("url.getQueryArg","string too long");
+		throw(PARSE, "url.getQueryArg", "string too long");
 	strcpy(query, t);
 
 	for (; query[0] != '\0';) {
@@ -595,7 +593,7 @@ url_getRobotURL(str *retval,	/* put string: pointer to char here. */
 	int i = 0;
 
 	if (t == 0)
-		return throwMessage("url.getRobotURL","url missing");
+		throw(ILLARG, "url.getRobotURL", "url missing");
 	b = buf;
 	while (*t && *t != ':')
 		*b++ = *t++;
@@ -608,9 +606,8 @@ url_getRobotURL(str *retval,	/* put string: pointer to char here. */
 	*b++ = *t++;
 	for (; *t && *t != '/'; t++) {
 		*b++ = *t;
-		if (i++ == 1000) {
-			return throwMessage("url_getRobot","server name too long\n");
-		}
+		if (i++ == 1000)
+			throw(PARSE, "url.getRobot", "server name too long");
 	}
 	strcpy(b, "/robots.txt");
 getRobot_done:
@@ -638,7 +635,7 @@ url_getUser(str *retval, url t)
 	int i = 0;
 
 	if (t == 0)
-		return throwMessage("url.getUser","url missing");
+		throw(ILLARG, "url.getUser", "url missing");
 	s = (str)str_nil;
 	while (*t && *t != ':')
 		t++;
@@ -659,7 +656,7 @@ url_getUser(str *retval, url t)
 		for (; *t && *t != '/'; t++) {
 			*b++ = *t;
 			if (i++ == 1023)
-				return throwMessage("url_getUser","server name too long\n");
+				throw(PARSE, "url.getUser", "server name too long");
 		}
 		*b = 0;
 	}
@@ -680,7 +677,7 @@ url_isaURL(bit *retval,		/* put return atom here. */
 {
 	(void) retval;
 	if (Str1 == 0)
-		return throwMessage("url.isaURL","url missing");
+		throw(ILLARG, "url.isaURL", "url missing");
 
 	if (strlen(Str1) == 0)
 		*retval = FALSE;
@@ -719,10 +716,10 @@ escape_str(str *retval, str s)
 	str res;
 
 	if (!s)
-		return throwMessage("url.escape","url missing");
+		throw(ILLARG, "url.escape", "url missing");
 
 	if (!( res = (str) GDKmalloc( strlen(s) * 3 ) ))
-		return throwMessage("url.escape","malloc failed");
+		throw(MAL, "url.escape", "malloc failed");
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
         if (needEscape(s[x])){
             if (s[x] == ' '){
@@ -751,11 +748,11 @@ unescape_str(str *retval, str s)
     str res;
 
     if (!s)
-		return throwMessage("url.escape","ul missing");
+		throw(ILLARG, "url.escape", "url missing");
 
     res = (str) GDKmalloc(strlen(s));
     if (!res)
-		return throwMessage("url.unescape","malloc failed");
+		throw(MAL, "url.unescape", "malloc failed");
 
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
 		if (s[x] == '%') {
@@ -938,7 +935,7 @@ URLgetContent(str *retval, str *Str1)
 {
 	(void) Str1;		/* fool compiler */
 	*retval = 0;
-	return throwMessage("url.getContent", "not yet implemented");
+	throw(MAL, "url.getContent", "not yet implemented");
 }
 
 str
@@ -952,7 +949,7 @@ URLgetDirectory(int *ret, str *tv)
 {
 	(void) ret;
 	(void) tv;
-	return throwMessage("url.getDirectory", "not yet available");
+	throw(MAL, "url.getDirectory", "not yet available");
 /* this operation requres a BAT context, should be defined elsewhere
 	url_getDirectory(ret, *tv);
 */
@@ -1006,7 +1003,7 @@ URLgetQueryArg(int *ret, str *tv)
 {
 	(void) ret;
 	(void) tv;
-	return throwMessage("url.getQueryArg", "Not yet implemented");
+	throw(MAL, "url.getQueryArg", "Not yet implemented");
 /*
 	url_getQueryArg(ret,*tv);
 	return MAL_SUCCEED;
@@ -1032,8 +1029,8 @@ URLisaURL(bit *retval, str *tv)
 	(void) retval;
 	(void) tv;		/* fool compiler */
 	if (tv == 0)
-		return throwMessage("url.isaURL", "no string");
-	return throwMessage("url.isaURL", "not yet implemented");
+		throw(ILLARG, "url.isaURL", "no string");
+	throw(MAL, "url.isaURL", "not yet implemented");
 }
 
 str

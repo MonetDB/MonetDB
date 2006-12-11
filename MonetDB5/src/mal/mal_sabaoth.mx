@@ -78,7 +78,7 @@ str SABAOTHmarchScenario(int *ret, str *lang) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throwIOf("sabaoth.marchScenario", "unable to open file %s", SCENARIOFILE);
+	throw(IO, "sabaoth.marchScenario", "unable to open file %s", SCENARIOFILE);
 }
 
 @h
@@ -137,11 +137,11 @@ str SABAOTHretreatScenario(int *ret, str *lang) {
 		} else { /* some error */
 			str err = strerror(errno);
 			(void)fclose(f);
-			throwIOf("sabaoth.retreatScenario",
+			throw(IO, "sabaoth.retreatScenario",
 					"error while reading from file: %s", err);
 		}
 	}
-	throwIOf("sabaoth.retreatScenario", "unable to open file %s", SCENARIOFILE);
+	throw(IO, "sabaoth.retreatScenario", "unable to open file %s", SCENARIOFILE);
 }
 
 @h
@@ -164,7 +164,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throwIOf("sabaoth.marchConnection",
+	throw(IO, "sabaoth.marchConnection",
 			"unable to open file %s", CONNECTIONFILE);
 }
 
@@ -216,7 +216,7 @@ str SABAOTHregisterStart(int *ret) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throwIOf("sabaoth.registerStart", "unable to open file %s", path);
+	throw(IO, "sabaoth.registerStart", "unable to open file %s", path);
 }
 
 @h
@@ -249,7 +249,7 @@ str SABAOTHregisterStop(int *ret) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throwIOf("sabaoth.registerStop", "unable to open file %s", path);
+	throw(IO, "sabaoth.registerStop", "unable to open file %s", path);
 }
 
 @h

@@ -471,7 +471,7 @@ mccGenerate(MalBlkPtr mb)
 			getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
 	f = open_wastream(buf);
 	if (f == NULL)
-		return throwMessage("optimizer.MCcompiler", "Could not access file");
+		throw(IO, "optimizer.MCcompiler", "Could not access file");
 	mccInit(f, mb);
 	mccVariables(f, mb);
 	mccBody(f, mb);

@@ -41,6 +41,7 @@ comment "Destroy a semaphore";
 @* Implementation
 @c
 #include <gdk.h>
+#include "mal_exception.h"
 typedef ptr sema;
 typedef ptr monet_sema;
 

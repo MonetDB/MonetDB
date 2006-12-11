@@ -576,7 +576,7 @@ TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TABheader(mb, stk, pci);
 	t = tableReports[rnr];
 	if (!isBATVector(t))
-		return throwMessage("tablet.print", "Only aligned BATs expected");
+		throw(MAL, "tablet.print", "Only aligned BATs expected");
 	else {
 		t->pageLimit = 20;
 		t->firstrow = t->lastrow = 0;
@@ -595,7 +595,7 @@ TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TABheader(mb, stk, pci);
 	t = tableReports[rnr];
 	if (!isScalarVector(t))
-		return throwMessage("tablet.print", "Only scalars expected");
+		throw(MAL, "tablet.print", "Only scalars expected");
 	else
 		TABshowRow(t);
 	if (t->tbotbrk == 0) {
@@ -619,7 +619,7 @@ TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else
 		stream_write(t->fd, t->ttopbrk, 1, strlen(t->ttopbrk));
 	if (!isBATVector(t))
-		return throwMessage("tablet.print", "Only aligned BATs expected");
+		throw(MAL, "tablet.print", "Only aligned BATs expected");
 	else {
 		t->pageLimit = 20;
 		t->firstrow = t->lastrow = 0;
@@ -636,7 +636,7 @@ TABsetProperties(int *ret, str *prop)
 
 	(void) ret;		/* fool compiler */
 	if (tableReports[rnr] == 0)
-		return throwMessage("tablet.properties", "Format definition missing");
+		throw(MAL, "tablet.properties", "Format definition missing");
 	CLEAR(tableReports[rnr]->properties);
 	tableReports[rnr]->properties = !strNil(*prop) ? GDKstrdup(*prop) : 0;
 	return MAL_SUCCEED;
@@ -648,7 +648,7 @@ TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	return throwMessage("tablet.report", "Not yet implemented");
+	throw(MAL, "tablet.report", "Not yet implemented");
 }
 
 str
@@ -659,7 +659,7 @@ TABfinishReport(int *ret)
 
 	(void) ret;		/* fool compiler */
 	if (tableReports[rnr] == 0)
-		return throwMessage("tablet.finish", "Header information missing");
+		throw(MAL, "tablet.finish", "Header information missing");
 	clearTable(tableReports[rnr]);
 	GDKfree(tableReports[rnr]);
 	tableReports[rnr] = 0;
@@ -675,7 +675,7 @@ TABsetStream(int *ret, stream **s)
 
 	(void) ret;		/* fool compiler */
 	if (tableReports[rnr] == 0)
-		return throwMessage("tablet.setStream", "Header information missing");
+		throw(MAL, "tablet.setStream", "Header information missing");
 	tableReports[rnr]->fd = *s;
 	return MAL_SUCCEED;
 }
@@ -689,7 +689,7 @@ TABsetPivot(int *ret, int *bid)
 
 	(void) ret;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("tablet.setPivot", "Pivot BAT missing");
+		throw(MAL, "tablet.setPivot", "Pivot BAT missing");
 	}
 
 	tableReports[rnr]->pivot = b;
@@ -705,7 +705,7 @@ TABsetDelimiter(int *ret, str *sep)
 
 	(void) ret;		/* fool compiler */
 	if (tableReports[rnr] == 0)
-		return throwMessage("tablet.setDelimiters", "Header information missing");
+		throw(MAL, "tablet.setDelimiters", "Header information missing");
 	tableReports[rnr]->sep = !strNil(*sep) ? GDKstrdup(*sep) : 0;
 	return MAL_SUCCEED;
 }
@@ -716,7 +716,7 @@ TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	return throwMessage("tablet.setColumn", "Not yet implemented");
+	throw(MAL, "tablet.setColumn", "Not yet implemented");
 }
 
 str
@@ -817,7 +817,7 @@ TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec)
 	(void) ret;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
 	if (*prec > *scale)
-		return throwMessage("tablet.setColumnDecimal", "Illegal range");
+		throw(MAL, "tablet.setColumnDecimal", "Illegal range");
 	tableReports[rnr]->columns[*idx].precision = *prec;
 	tableReports[rnr]->columns[*idx].scale = *scale;
 	return MAL_SUCCEED;
@@ -827,28 +827,28 @@ str
 TABfirstPage(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.firstPage", "Not yet implemented");
+	throw(MAL, "tablet.firstPage", "Not yet implemented");
 }
 
 str
 TABlastPage(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.lastPage", "Not yet implemented");
+	throw(MAL, "tablet.lastPage", "Not yet implemented");
 }
 
 str
 TABnextPage(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.nextPage", "Not yet implemented");
+	throw(MAL, "tablet.nextPage", "Not yet implemented");
 }
 
 str
 TABprevPage(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.prevPage", "Not yet implemented");
+	throw(MAL, "tablet.prevPage", "Not yet implemented");
 }
 
 str
@@ -856,14 +856,14 @@ TABgetPage(int *ret, int *pnr)
 {
 	(void) ret;
 	(void) pnr;		/* fool compiler */
-	return throwMessage("tablet.getPage", "Not yet implemented");
+	throw(MAL, "tablet.getPage", "Not yet implemented");
 }
 
 str
 TABgetPageCnt(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.getPageCnt", "Not yet implemented");
+	throw(MAL, "tablet.getPageCnt", "Not yet implemented");
 }
 
 static ptr
@@ -1775,21 +1775,21 @@ CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, in
 	BAT *names, *seps, *types, *bn;
 
 	if ((names = BATdescriptor(*nameid)) == NULL) {
-		return throwMessage("tablet.load", "BAT missing");
+		throw(MAL, "tablet.load", "BAT missing");
 	}
 	if ((seps = BATdescriptor(*sepid)) == NULL) {
 		BBPunfix(names->batCacheid);
-		return throwMessage("tablet.load", "BAT missing");
+		throw(MAL, "tablet.load", "BAT missing");
 	}
 	if ((types = BATdescriptor(*typeid)) == NULL) {
 		BBPunfix(names->batCacheid);
 		BBPunfix(seps->batCacheid);
-		return throwMessage("tablet.load", "BAT missing");
+		throw(MAL, "tablet.load", "BAT missing");
 	}
 
 	tablet_load(&bn, names, seps, types, *filename, nr);
 	if (bn == NULL)
-		return throwMessage("tablet.load", "Failed to load");
+		throw(MAL, "tablet.load", "Failed to load");
 	BBPincref(*ret, TRUE);
 	*ret = bn->batCacheid;
 	BBPunfix(names->batCacheid);
@@ -1806,16 +1806,16 @@ CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids, str *filename, int 
 	(void) ret;
 
 	if ((names = BATdescriptor(*nameid)) == NULL) {
-		return throwMessage("tablet.dump", "BAT missing");
+		throw(MAL, "tablet.dump", "BAT missing");
 	}
 	if ((seps = BATdescriptor(*sepid)) == NULL) {
 		BBPunfix(names->batCacheid);
-		return throwMessage("tablet.dump", "BAT missing");
+		throw(MAL, "tablet.dump", "BAT missing");
 	}
 	if ((bats = BATdescriptor(*bids)) == NULL) {
 		BBPunfix(names->batCacheid);
 		BBPunfix(seps->batCacheid);
-		return throwMessage("tablet.dump", "BAT missing");
+		throw(MAL, "tablet.dump", "BAT missing");
 	}
 
 	tablet_dump(names, seps, bats, *filename, nr);
@@ -1831,16 +1831,16 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 	BAT *names, *seps, *types, *bn;
 
 	if ((names = BATdescriptor(*nameid)) == NULL) {
-		return throwMessage("tablet.load", "BAT missing");
+		throw(MAL, "tablet.load", "BAT missing");
 	}
 	if ((seps = BATdescriptor(*sepid)) == NULL) {
 		BBPunfix(names->batCacheid);
-		return throwMessage("tablet.load", "BAT missing");
+		throw(MAL, "tablet.load", "BAT missing");
 	}
 	if ((types = BATdescriptor(*typeid)) == NULL) {
 		BBPunfix(names->batCacheid);
 		BBPunfix(seps->batCacheid);
-		return throwMessage("tablet.load", "BAT missing");
+		throw(MAL, "tablet.load", "BAT missing");
 	}
 
 	tablet_input(&bn, names, seps, types, (void **) s, nr);
@@ -1848,7 +1848,7 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 		BBPunfix(names->batCacheid);
 		BBPunfix(seps->batCacheid);
 		BBPunfix(types->batCacheid);
-		return throwMessage("tablet.load", "Failed to load");
+		throw(MAL, "tablet.load", "Failed to load");
 	}
 	BBPincref(*ret, TRUE);
 	*ret = bn->batCacheid;
@@ -1865,16 +1865,16 @@ CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s)
 	(void) ret;
 
 	if ((names = BATdescriptor(*nameid)) == NULL) {
-		return throwMessage("tablet.output", "BAT missing");
+		throw(MAL, "tablet.output", "BAT missing");
 	}
 	if ((seps = BATdescriptor(*sepid)) == NULL) {
 		BBPunfix(names->batCacheid);
-		return throwMessage("tablet.output", "BAT missing");
+		throw(MAL, "tablet.output", "BAT missing");
 	}
 	if ((bats = BATdescriptor(*bids)) == NULL) {
 		BBPunfix(names->batCacheid);
 		BBPunfix(seps->batCacheid);
-		return throwMessage("tablet.output", "BAT missing");
+		throw(MAL, "tablet.output", "BAT missing");
 	}
 	tablet_output(names, seps, bats, s);
 	BBPunfix(names->batCacheid);
@@ -2035,7 +2035,7 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 		int bid = *(int *) val;
 
 		if ((b = BATdescriptor(bid)) == NULL) {
-			return throwMessage("tablet.bindVariable", "Cannot access descriptor");
+			throw(MAL, "tablet.bindVariable", "Cannot access descriptor");
 		}
 
 		c->c = b;

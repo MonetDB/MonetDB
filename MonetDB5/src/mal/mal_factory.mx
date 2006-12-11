@@ -352,10 +352,10 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 		/* initialize a new plant using the owner policy */
 		pl = newPlant(mb);
 		if (pl == NULL)
-			return throwMessage("factory.new", "No factory space left");
+			throw(MAL, "factory.new", "No factory space left");
 	}
 	if (pl->location)
-		return throwMessage("factory.new", "No remote access allowed");
+		throw(INVCRED, "factory.new", "No remote access allowed");
 
 @-
 We have found a factory to process the request.
@@ -387,7 +387,7 @@ Let's call it as a synchronous action, without concern on parallelism.
 			BBPincref(lhs->val.br.id, TRUE);
 	}
 	if (mb->errors)
-		return throwMessage("factory.call", "Factory contains errors");
+		throw(MAL, "factory.call", "Factory contains errors");
 	if (firstcall )
 		msg = runMAL(cntxt, mb, 1, 0, pl->stk, 0);
 	else {
@@ -419,7 +419,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		/* first call? prepare the factory */
 		pl = newPlant(mb);
 		if (pl == NULL)
-			return throwMessage("factory.call", "No factory space left");
+			throw(MAL, "factory.call", "No factory space left");
 		/* remember context, which does not exist. */
 		pl->client = cntxt;
 		pl->caller = 0;
@@ -554,7 +554,7 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 		pl->env = NULL;
 		return MAL_SUCCEED;
 	}
-	return throwMessage("factory.yield", "No factory found");
+	throw(MAL, "factory.yield", "No factory found");
 }
 
 @-
@@ -613,8 +613,9 @@ shutdownFactoryByName(Module m, str nme){
 			if( strcmp(nme, getFunctionId(p)) != 0) continue;
 			s = findSymbolInModule(m, getName(nme,strlen(nme)) );
 			if (s == NULL){
-				return throwMessage("factory.remove", 
-					"Internal error, sql_cache entry missing");
+				throw(MAL, "factory.remove", 
+					"Internal error, sql_cache entry '%s' missing",
+					getName(nme, strlen(nme)));
 			}
 			stk = pl->stk;
 			MSresetVariables(pl->factory, stk, 0);

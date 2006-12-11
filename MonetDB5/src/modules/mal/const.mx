@@ -147,7 +147,7 @@ CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(prelude)@
 	box = openBox("const");
 	if (box == 0)
-		return throwMessage("const.prelude", "failed to open box");
+		throw(MAL, "const.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
 		char u[24 + 1];
@@ -182,7 +182,7 @@ CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(open)@
 	if (openBox("const") != 0)
 		return MAL_SUCCEED;
-	return throwMessage("const.open", "failed to open box");
+	throw(MAL, "const.open", "failed to open box");
 }
 
 str
@@ -194,7 +194,7 @@ CSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(close)@
 	if (closeBox("const", TRUE) == 0)
 		return MAL_SUCCEED;
-	return throwMessage("const.close", "failed to close box");
+	throw(MAL, "const.close", "failed to close box");
 }
 
 str
@@ -217,7 +217,7 @@ to a named box.
 	@:authorize(@1)@
 	box= findBox("const");
 	if( box ==0) 
-	return throwMessage("const.@1","box is not open");
+	throw(MAL, "const.@1","box is not open");
 @-
 @c
 str
@@ -231,7 +231,7 @@ CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	v = &stk->stk[getArg(pci, 2)];
 	if (depositBox(box, name, v))
-		return throwMessage("const.deposit", "failed to deposit into box");
+		throw(MAL, "const.deposit", "failed to deposit into box");
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -247,7 +247,7 @@ CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		return throwMessage("const.take", "failed to take object from box");
+		throw(MAL, "const.take", "failed to take object from box");
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -263,7 +263,7 @@ CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(release)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (releaseBox(box, name))
-		return throwMessage("const.release", "failed to release object from box");
+		throw(MAL, "const.release", "failed to release object from box");
 	return MAL_SUCCEED;
 }
 
@@ -290,7 +290,7 @@ CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (discardBox(box, name) == 0)
-		return throwMessage("const.discard", "failed to discard object from box");
+		throw(MAL, "const.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
 }
 
@@ -307,7 +307,7 @@ CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str) getArgValue(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		return throwMessage("const.toString", "failed to take object from box");
+		throw(MAL, "const.toString", "failed to take object from box");
 
 	v = &box->val->stk[i];
 	if (v->vtype == TYPE_str)
@@ -315,7 +315,7 @@ CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
 	if (s == NULL)
-		return throwMessage("const.toString", "illegal value");
+		throw(MAL, "const.toString", "illegal value");
 	VALset(&stk->stk[getArg(pci, 0)], TYPE_str, s);
 	return MAL_SUCCEED;
 }

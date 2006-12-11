@@ -228,7 +228,7 @@ CLTInfo(int *ret)
 	char s[26];
 
 	if (b == 0)
-		return throwMessage("clients.info", "failed to create BAT");
+		throw(MAL, "clients.info", "failed to create BAT");
 
 	BUNins(b, "user", local_itoa((int)c->user), FALSE);
 	BUNins(b, "password", "", FALSE); /* FIXME: get rid of this */
@@ -256,7 +256,7 @@ CLTLogin(int *ret)
 	char s[26];
 
 	if (b == 0)
-		return throwMessage("clients.getLogins", "failed to create BAT");
+		throw(MAL, "clients.getLogins", "failed to create BAT");
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil) {
@@ -279,7 +279,7 @@ CLTusers(int *ret)
 	int i;
 
 	if (b == 0)
-		return throwMessage("clients.users", "failed to create BAT");
+		throw(MAL, "clients.users", "failed to create BAT");
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil)
@@ -319,7 +319,7 @@ CLTexit(int *ret)
 
 	(void) ret;		/* fool compiler */
 	c->mode = FINISHING;
-	return throwMessage("client.exit", "Exit session with soft error");
+	throw(MAL, "client.exit", "Exit session with soft error");
 }
 str
 CLTquit(int *ret, int *timeout)
@@ -328,7 +328,7 @@ CLTquit(int *ret, int *timeout)
 
 	(void) ret;		/* fool compiler */
 	if( c != mal_clients )
-		return throwMessage("client.quit", 
+		throw(MAL, "client.quit", 
 			"Server not stopped from console.");
 	MCshutdown(c, *timeout);
 	return MAL_SUCCEED;

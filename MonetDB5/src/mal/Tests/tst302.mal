@@ -1,4 +1,4 @@
 #propagate INT exception
 # (you should be able to pass it upwards though)
-raise	IllegalAccess := 1234;
+raise	PermissionDeniedException := 1234;
 	io.print("should not come here\n");

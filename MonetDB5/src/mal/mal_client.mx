@@ -746,15 +746,15 @@ And killing the administrator this way is prohibited.
 str MCstopClientIndex(Client c, int id)
 {
 	if( ! isAdministrator(c))
-		return throwMessage("stop","Only permitted from server console");
+		throw(PERMD, "stop","Only permitted from server console");
 	if( id<=0 || id>=MAL_MAXCLIENTS || mal_clients[id].mode==FREECLIENT)
-		return throwMessage("stop","Illegal client index");
+		throw(MAL, "stop","Illegal client index");
 	MCkillClient(mal_clients+id, PROCESSTIMEOUT);
 	return MAL_SUCCEED;
 }
 str MCstopClient(Client c, oid which){
 	if( ! isAdministrator(c))
-		return throwMessage("stop","Only permitted from server console");
+		throw(PERMD, "stop","Only permitted from server console");
 
 	mal_set_lock(mal_contextLock, "stopClient");
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
@@ -765,7 +765,7 @@ str MCstopClient(Client c, oid which){
 		}
 	}
 	mal_unset_lock(mal_contextLock, "stopClient");
-	return throwMessage("stop","Illegal client name");
+	throw(ILLARG, "stop","Illegal client name");
 }
 @}
 @-

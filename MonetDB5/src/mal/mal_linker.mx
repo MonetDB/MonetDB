@@ -251,7 +251,6 @@ loadLibrary(str filename)
 {
 	int mode = RTLD_NOW | RTLD_GLOBAL;
 	char nme[MAXPATHLEN];
-	char errbuf[1024];
 	void *handle = NULL;
 	str fullname, s;
 	int idx;
@@ -290,13 +289,15 @@ Use the search path provided in the configuration file
 		errmsg = dlerror();
 		if (!errmsg) 
 			errmsg = "(no error from dlerror())";
-		snprintf(errbuf, 1024, "%s: loader error %s", filename, errmsg);
 #ifdef DEBUG_MAL_LINKER2
+		{
+		char errbuf[1024];
+		snprintf(errbuf, 1024, "%s: loader error %s", filename, errmsg);
 		stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastfile, filename, fullname, errbuf);
+		}
 #endif
 		GDKfree(fullname);
-		return (str) throwException("loaderException", 
-					"loadLibrary", errbuf);
+		throw(LOADER, "loadLibrary", "%s: loader error %s", filename, errmsg);
 	}
 #ifdef DEBUG_MAL_LINKER2
 	stream_printf(GDKout, "load[%d]:%s %s:succeeded\n", lastfile, filename, fullname);

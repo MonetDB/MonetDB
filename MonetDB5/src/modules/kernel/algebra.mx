@@ -1848,7 +1848,7 @@ algebra_export str ALGsum_@1_@2(@2* res, int *bid) ;
 str ALGsum_@1_@2(@2* res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("algebra.sum", "Cannot access descriptor");
+		 throw(MAL, "algebra.sum", "Cannot access descriptor");
 	}
 
 	CMDsum_@1_@2(res,b);
@@ -1861,7 +1861,7 @@ algebra_export str ALGprod_@1_@2(@2* res, int *bid) ;
 str ALGprod_@1_@2(@2* res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("algebra.prod", "Cannot access descriptor");
+		 throw(MAL, "algebra.prod", "Cannot access descriptor");
 	}
 	CMDprod_@1_@2(res,b);
 	BBPreleaseref(b->batCacheid);
@@ -1893,7 +1893,7 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 str ALGavg_@1(dbl *res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("algebra.prod", "Cannot access descriptor");
+		 throw(MAL, "algebra.prod", "Cannot access descriptor");
 	}
 	CMDavg_@1(res,b);
 	BBPreleaseref(b->batCacheid);
@@ -1911,27 +1911,27 @@ algebra_export str ALGmin_@1(@1* res, int *bid) ;
 str ALGmin_@1(@1* res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("algebra.min", "Cannot access descriptor");
+		 throw(MAL, "algebra.min", "Cannot access descriptor");
 	}
 	if( CMDmin_@1(res,b)) {
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.min", "GDKerror");
+	throw(MAL, "algebra.min", "GDKerror");
 }
 algebra_export str ALGmax_@1(@1* res, int *bid) ;
 str ALGmax_@1(@1* res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("algebra.min", "Cannot access descriptor");
+		 throw(MAL, "algebra.min", "Cannot access descriptor");
 	}
 	if( CMDmax_@1(res,b)) {
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.max", "GDKerror");
+	throw(MAL, "algebra.max", "GDKerror");
 }
 @c
 @:ALGaggregate_implementation(sht)@
@@ -1947,14 +1947,14 @@ ALGminany(ptr result, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.min", "Cannot access descriptor");
+		throw(MAL, "algebra.min", "Cannot access descriptor");
 	}
 	if (CMDminany(result, b) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.min", "GDKerror");
+	throw(MAL, "algebra.min", "GDKerror");
 }
 
 algebra_export str ALGmaxany(ptr result, int *bid);
@@ -1964,14 +1964,14 @@ ALGmaxany(ptr result, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.min", "Cannot access descriptor");
+		throw(MAL, "algebra.min", "Cannot access descriptor");
 	}
 	if (CMDmaxany(result, b) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.max", "GDKerror");
+	throw(MAL, "algebra.max", "GDKerror");
 }
 
 
@@ -1983,7 +1983,7 @@ ALGtopN(int *res, int *bid, lng *top)
 
 	b = BATdescriptor(*bid);
 	if (b == NULL) {
-		return throwMessage("algebra.top", "Cannot access descriptor");
+		throw(MAL, "algebra.top", "Cannot access descriptor");
 	}
 	/* TOP N works inplace, ie deletes ... */
 	(void) BATtopN(b, (size_t) *top);
@@ -1999,11 +1999,11 @@ ALGgroupby(int *res, int *bid)
 
 	b = BATdescriptor(*bid);
 	if (b == NULL) {
-		return throwMessage("algebra.groupby", "Cannot access descriptor");
+		throw(MAL, "algebra.groupby", "Cannot access descriptor");
 	}
 	if( CMDgen_group(&bn,b) == GDK_FAIL){
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("algebra.groupby","unknown error");
+		throw(MAL, "algebra.groupby","unknown error");
 	}
 	if( bn){
 		*res = bn->batCacheid;
@@ -2021,11 +2021,11 @@ ALGcard(lng *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.card", "Cannot access descriptor");
+		throw(MAL, "algebra.card", "Cannot access descriptor");
 	}
 	bn = (BAT *) BATkunique(BATmirror(b));
 	if (bn == NULL) {
-		return throwMessage("algebra.card", "GDKerror");
+		throw(MAL, "algebra.card", "GDKerror");
 	}
 	*result = BATcount(bn);
 	BBPunfix(bn->batCacheid);
@@ -2040,7 +2040,7 @@ ALGBATminimum(ptr *result, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.min", "Cannot access descriptor");
+		throw(MAL, "algebra.min", "Cannot access descriptor");
 	}
 	BATmin(b, result);
 	BBPreleaseref(b->batCacheid);
@@ -2054,7 +2054,7 @@ ALGBATmaximum(ptr *result, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.max", "Cannot access descriptor");
+		throw(MAL, "algebra.max", "Cannot access descriptor");
 	}
 	BATmax(b, result);
 	BBPreleaseref(b->batCacheid);
@@ -2068,7 +2068,7 @@ ALGselect1(int *result, int *bid, ptr value)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.select", "Cannot access descriptor");
+		throw(MAL, "algebra.select", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,value)@
 	CMDselect1(&bn, b, value);
@@ -2079,7 +2079,7 @@ ALGselect1(int *result, int *bid, ptr value)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.select", "GDKerror");
+	throw(MAL, "algebra.select", "GDKerror");
 }
 
 algebra_export str ALGselect1Head(int *result, int *bid, ptr value);
@@ -2089,7 +2089,7 @@ ALGselect1Head(int *result, int *bid, ptr value)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.select", "Cannot access descriptor");
+		throw(MAL, "algebra.select", "Cannot access descriptor");
 	}
 	b = BATmirror(b);
 	@:derefStr(b,t,value)@
@@ -2102,7 +2102,7 @@ ALGselect1Head(int *result, int *bid, ptr value)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.select", "GDKerror");
+	throw(MAL, "algebra.select", "GDKerror");
 }
 
 algebra_export str ALGuselect1(int *result, int *bid, ptr value);
@@ -2112,7 +2112,7 @@ ALGuselect1(int *result, int *bid, ptr value)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.uselect", "Cannot access descriptor");
+		throw(MAL, "algebra.uselect", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,value)@
 	CMDuselect1(&bn, b, value);
@@ -2123,7 +2123,7 @@ ALGuselect1(int *result, int *bid, ptr value)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.uselect", "GDKerror");
+	throw(MAL, "algebra.uselect", "GDKerror");
 }
 
 algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
@@ -2133,7 +2133,7 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.select", "Cannot access descriptor");
+		throw(MAL, "algebra.select", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
@@ -2145,7 +2145,7 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.select", "GDKerror");
+	throw(MAL, "algebra.select", "GDKerror");
 }
 
 algebra_export str ALGselectNotNil(int *result, int *bid);
@@ -2157,7 +2157,7 @@ ALGselectNotNil(int *result, int *bid)
 	bit bound=FALSE;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		return throwMessage("algebra.selectNotNil", "Cannot access descriptor");
+		throw(MAL, "algebra.selectNotNil", "Cannot access descriptor");
 
 	if( BATcount_no_nil(b) != BATcount(b) ){
 		low=high= ATOMnilptr(b->ttype);
@@ -2169,7 +2169,7 @@ ALGselectNotNil(int *result, int *bid)
 			BBPkeepref(*result);
 			return MAL_SUCCEED;
 		}
-		return throwMessage("algebra.select", "GDKerror");
+		throw(MAL, "algebra.select", "GDKerror");
 	}
 	/* just pass on the result */
 	*result = b->batCacheid;
@@ -2184,7 +2184,7 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.select", "Cannot access descriptor");
+		throw(MAL, "algebra.select", "Cannot access descriptor");
 	}
 	b = BATmirror(b);
 	@:derefStr(b,t,low)@
@@ -2198,7 +2198,7 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.select", "GDKerror");
+	throw(MAL, "algebra.select", "GDKerror");
 }
 
 algebra_export str ALGuselect(int *result, int *bid, ptr low, ptr high);
@@ -2208,7 +2208,7 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.uselect", "Cannot access descriptor");
+		throw(MAL, "algebra.uselect", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
@@ -2220,7 +2220,7 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.uselect", "GDKerror");
+	throw(MAL, "algebra.uselect", "GDKerror");
 }
 
 algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
@@ -2230,7 +2230,7 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.select", "Cannot access descriptor");
+		throw(MAL, "algebra.select", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
@@ -2242,7 +2242,7 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.select", "GDKerror");
+	throw(MAL, "algebra.select", "GDKerror");
 }
 
 algebra_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
@@ -2252,7 +2252,7 @@ ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.select", "Cannot access descriptor");
+		throw(MAL, "algebra.select", "Cannot access descriptor");
 	}
 	b = BATmirror(b);
 	@:derefStr(b,t,low)@
@@ -2266,7 +2266,7 @@ ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.select", "GDKerror");
+	throw(MAL, "algebra.select", "GDKerror");
 }
 
 algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
@@ -2276,7 +2276,7 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.select", "Cannot access descriptor");
+		throw(MAL, "algebra.select", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
@@ -2288,7 +2288,7 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.uselect", "GDKerror");
+	throw(MAL, "algebra.uselect", "GDKerror");
 }
 
 algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
@@ -2298,7 +2298,7 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.fragment", "Cannot access descriptor");
+		throw(MAL, "algebra.fragment", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,hlow);@
 	@:derefStr(b,h,hhigh);@
@@ -2312,7 +2312,7 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.fragment", "GDKerror");
+	throw(MAL, "algebra.fragment", "GDKerror");
 }
 
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
@@ -2322,17 +2322,17 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 	BAT *left, *right, *bn = NULL;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.thetajoin", "Cannot access descriptor");
+		throw(MAL, "algebra.thetajoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.thetajoin", "Cannot access descriptor");
+		throw(MAL, "algebra.thetajoin", "Cannot access descriptor");
 	}
 	if( *opc == -3 ){
 		/* The NE case is not supported in the kernel */
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(right->batCacheid);
-		return throwMessage("algebra.thetajoin", "theta <> not yet supported");
+		throw(MAL, "algebra.thetajoin", "theta <> not yet supported");
 	} 
 	CMDthetajoin(&bn, left, right, opc, estimate);
 	BBPreleaseref(left->batCacheid);
@@ -2343,7 +2343,7 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.thetajoin", "GDKerror");
+	throw(MAL, "algebra.thetajoin", "GDKerror");
 }
 
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
@@ -2360,11 +2360,11 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 	BAT *left, *right, *bn = NULL;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.bandjoin", "Cannot access descriptor");
+		throw(MAL, "algebra.bandjoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.bandjoin", "Cannot access descriptor");
+		throw(MAL, "algebra.bandjoin", "Cannot access descriptor");
 	}
 	CMDbandjoin(&bn, left, right, minus, plus);
 	BBPreleaseref(left->batCacheid);
@@ -2375,7 +2375,7 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.bandjoin", "GDKerror");
+	throw(MAL, "algebra.bandjoin", "GDKerror");
 }
 
 @-
@@ -2385,7 +2385,7 @@ algebra_export str ALG@1(int *result, int *bid);
 str ALG@1(int *result, int *bid) {
 	BAT *b,*bn;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("algebra.@1", "Cannot access descriptor");
+		throw(MAL, "algebra.@1", "Cannot access descriptor");
 	}
 	CMD@1(&bn,b);
 	BBPreleaseref(b->batCacheid);
@@ -2395,14 +2395,14 @@ str ALG@1(int *result, int *bid) {
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.@1", "GDKerror");
+	throw(MAL, "algebra.@1", "GDKerror");
 }
 @= ALGunaryint
 algebra_export str ALG@1(int *result, int *bid);
 str ALG@1(int *result, int *bid) {
 	BAT *b,*bn= NULL;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("algebra.@1", "Cannot access descriptor");
+		throw(MAL, "algebra.@1", "Cannot access descriptor");
 	}
 	CMD@1(&bn,b);
 	BBPreleaseref(b->batCacheid);
@@ -2419,17 +2419,17 @@ algebra_export str ALG@1(int *result, int *lid, int *rid) ;
 str ALG@1(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn= NULL;
 	if( (left= BATdescriptor(*lid)) == NULL ){
-		return throwMessage("algebra.@1", "Cannot access descriptor");
+		throw(MAL, "algebra.@1", "Cannot access descriptor");
 	}
 	if( (right= BATdescriptor(*rid)) == NULL ){
 		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.@1", "Cannot access descriptor");
+		throw(MAL, "algebra.@1", "Cannot access descriptor");
 	}
 	if( CMD@1(&bn,left, right) == GDK_FAIL){
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(right->batCacheid);
 		if( bn) BBPunfix(bn->batCacheid);
-		return throwMessage("algebra.@1", "GDKerror");
+		throw(MAL, "algebra.@1", "GDKerror");
 	}
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
@@ -2439,14 +2439,14 @@ str ALG@1(int *result, int *lid, int *rid) {
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.@1", "GDKerror");
+	throw(MAL, "algebra.@1", "GDKerror");
 }
 @= ALGbinaryint
 algebra_export str ALG@1(int *result, int* bid, int *param) ;
 str ALG@1(int *result, int* bid, int *param) {
 	BAT *b, *bn= NULL;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("algebra.@1", "Cannot access descriptor");
+		throw(MAL, "algebra.@1", "Cannot access descriptor");
 	}
 	CMD@1(&bn,b, param);
 	BBPreleaseref(b->batCacheid);
@@ -2456,24 +2456,24 @@ str ALG@1(int *result, int* bid, int *param) {
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.@1", "GDKerror");
+	throw(MAL, "algebra.@1", "GDKerror");
 }
 @= ALGbinaryestimate
 algebra_export str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate);
 str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	BAT *left, *right,*bn=NULL;
 	if( (left= BATdescriptor(*lid)) == NULL ){
-		return throwMessage("algebra.@1", "Cannot access descriptor");
+		throw(MAL, "algebra.@1", "Cannot access descriptor");
 	}
 	if( (right= BATdescriptor(*rid)) == NULL ){
 		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.@1", "Cannot access descriptor");
+		throw(MAL, "algebra.@1", "Cannot access descriptor");
 	}
 	if( CMD@1(&bn,left, right, estimate) == GDK_FAIL){
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(right->batCacheid);
 		if( bn) BBPunfix(bn->batCacheid);
-		return throwMessage("algebra.@1", "GDKerror");
+		throw(MAL, "algebra.@1", "GDKerror");
 	}
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
@@ -2483,7 +2483,7 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.@1", "GDKerror");
+	throw(MAL, "algebra.@1", "GDKerror");
 }
 algebra_export str ALG@1(int *result, int* lid, int *rid);
 str ALG@1(int *result, int* lid, int *rid) {
@@ -2522,7 +2522,7 @@ ALGtunique(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.tunique", "Cannot access descriptor");
+		throw(MAL, "algebra.tunique", "Cannot access descriptor");
 	}
 	CMDkunique(&bn, BATmirror(b));
 	BBPreleaseref(b->batCacheid);
@@ -2533,7 +2533,7 @@ ALGtunique(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.tunique", "GDKerror");
+	throw(MAL, "algebra.tunique", "GDKerror");
 }
 
 algebra_export str ALGtsort(int *result, int *bid);
@@ -2543,7 +2543,7 @@ ALGtsort(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.tsort", "Cannot access descriptor");
+		throw(MAL, "algebra.tsort", "Cannot access descriptor");
 	}
 	CMDsort(&bn, BATmirror(b));
 	BBPreleaseref(b->batCacheid);
@@ -2554,7 +2554,7 @@ ALGtsort(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.tsort", "GDKerror");
+	throw(MAL, "algebra.tsort", "GDKerror");
 }
 algebra_export str ALGtsort_rev(int *result, int *bid);
 str
@@ -2563,7 +2563,7 @@ ALGtsort_rev(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.tsort", "Cannot access descriptor");
+		throw(MAL, "algebra.tsort", "Cannot access descriptor");
 	}
 	CMDsort_rev(&bn, BATmirror(b));
 	BBPreleaseref(b->batCacheid);
@@ -2574,7 +2574,7 @@ ALGtsort_rev(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.tsort", "GDKerror");
+	throw(MAL, "algebra.tsort", "GDKerror");
 }
 
 algebra_export str ALGhsort(int *result, int *bid);
@@ -2584,7 +2584,7 @@ ALGhsort(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.hsort", "Cannot access descriptor");
+		throw(MAL, "algebra.hsort", "Cannot access descriptor");
 	}
 	CMDsort(&bn, b);
 	BBPreleaseref(b->batCacheid);
@@ -2594,7 +2594,7 @@ ALGhsort(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.hsort", "GDKerror");
+	throw(MAL, "algebra.hsort", "GDKerror");
 }
 
 algebra_export str ALGhsort_rev(int *result, int *bid);
@@ -2604,7 +2604,7 @@ ALGhsort_rev(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.tsort", "Cannot access descriptor");
+		throw(MAL, "algebra.tsort", "Cannot access descriptor");
 	}
 	CMDsort_rev(&bn, b);
 	BBPreleaseref(b->batCacheid);
@@ -2614,7 +2614,7 @@ ALGhsort_rev(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.tsort", "GDKerror");
+	throw(MAL, "algebra.tsort", "GDKerror");
 }
 algebra_export str ALGhtsort(int *result, int *lid);
 str
@@ -2623,7 +2623,7 @@ ALGhtsort(int *result, int *lid)
 	BAT *b, *bm = NULL, *bn = NULL;
 
 	if ((b = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.htsort", "Cannot access descriptor");
+		throw(MAL, "algebra.htsort", "Cannot access descriptor");
 	}
 	CMDtsort(&bm, b);
 	BBPreleaseref(b->batCacheid);
@@ -2636,9 +2636,9 @@ ALGhtsort(int *result, int *lid)
 			BBPkeepref(*result);
 			return MAL_SUCCEED;
 		}
-		return throwMessage("algebra.htsort", "GDKerror: ssort failed");
+		throw(MAL, "algebra.htsort", "GDKerror: ssort failed");
 	}
-	return throwMessage("algebra.htsort", "GDKerror: tsort failed");
+	throw(MAL, "algebra.htsort", "GDKerror: tsort failed");
 }
 
 algebra_export str ALGthsort(int *result, int *lid);
@@ -2648,7 +2648,7 @@ ALGthsort(int *result, int *lid)
 	BAT *b, *bm = NULL, *bn = NULL;
 
 	if ((b = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.thsort", "Cannot access descriptor");
+		throw(MAL, "algebra.thsort", "Cannot access descriptor");
 	}
 	CMDtsort(&bm, BATmirror(b));
 	BBPreleaseref(b->batCacheid);
@@ -2662,9 +2662,9 @@ ALGthsort(int *result, int *lid)
 			BBPkeepref(*result);
 			return MAL_SUCCEED;
 		}
-		return throwMessage("algebra.thsort", "GDKerror: ssort failed");
+		throw(MAL, "algebra.thsort", "GDKerror: ssort failed");
 	}
-	return throwMessage("algebra.thsort", "GDKerror: tsort failed");
+	throw(MAL, "algebra.thsort", "GDKerror: tsort failed");
 }
 
 algebra_export str ALGssort(int *result, int *bid);
@@ -2674,7 +2674,7 @@ ALGssort(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.ssort", "Cannot access descriptor");
+		throw(MAL, "algebra.ssort", "Cannot access descriptor");
 	}
 	CMDssort(&bn, b);
 	BBPreleaseref(b->batCacheid);
@@ -2684,7 +2684,7 @@ ALGssort(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.ssort", "GDKerror");
+	throw(MAL, "algebra.ssort", "GDKerror");
 }
 
 algebra_export str ALGssort_rev(int *result, int *bid);
@@ -2694,7 +2694,7 @@ ALGssort_rev(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.ssort_rev", "Cannot access descriptor");
+		throw(MAL, "algebra.ssort_rev", "Cannot access descriptor");
 	}
 	CMDssort_rev(&bn, b);
 	BBPreleaseref(b->batCacheid);
@@ -2704,7 +2704,7 @@ ALGssort_rev(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.ssort_rev", "GDKerror");
+	throw(MAL, "algebra.ssort_rev", "GDKerror");
 }
 
 algebra_export str ALGrevert(int *result, int *bid);
@@ -2714,7 +2714,7 @@ ALGrevert(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.revert", "Cannot access descriptor");
+		throw(MAL, "algebra.revert", "Cannot access descriptor");
 	}
 	bn = BATcopy(b, b->htype, b->ttype, TRUE);
 	BBPreleaseref(b->batCacheid);
@@ -2732,7 +2732,7 @@ ALGcount_bat(int *result, int *bid)
 	size_t cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("aggr.count", "Cannot access descriptor");
+		throw(MAL, "aggr.count", "Cannot access descriptor");
 	}
 	cnt = (int)  BATcount(b);
 	*result = cnt;
@@ -2748,7 +2748,7 @@ ALGcount_nil(int *result, int *bid, bit *ignore_nils)
 	size_t cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("aggr.count", "Cannot access descriptor");
+		throw(MAL, "aggr.count", "Cannot access descriptor");
 	}
 	if (*ignore_nils)
 		cnt = BATcount_no_nil(b);
@@ -2775,7 +2775,7 @@ ALGtmark(int *result, int *bid, oid *base)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.markT", "Cannot access descriptor");
+		throw(MAL, "algebra.markT", "Cannot access descriptor");
 	}
 	if (CMDmark(&bn, b, base) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
@@ -2785,7 +2785,7 @@ ALGtmark(int *result, int *bid, oid *base)
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.markT", "marking group failed");
+	throw(MAL, "algebra.markT", "marking group failed");
 }
 
 algebra_export str ALGtmark_default(int *result, int *bid);
@@ -2804,7 +2804,7 @@ ALGmarkHead(int *result, int *bid, oid *base)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.markH", "Cannot access descriptor");
+		throw(MAL, "algebra.markH", "Cannot access descriptor");
 	}
 	/* M5's markH is semantically identical with M4/GDK's tmark */
 	/* (Don't ask me why; wasn't my decision. Stefan.) */
@@ -2816,7 +2816,7 @@ ALGmarkHead(int *result, int *bid, oid *base)
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.markH", "marking group failed");
+	throw(MAL, "algebra.markH", "marking group failed");
 }
 
 algebra_export str ALGmarkHead_default(int *result, int *bid);
@@ -2835,7 +2835,7 @@ ALGhashsplit(int *result, int *bid, int *nfrag)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.hashsplit", "Cannot access descriptor");
+		throw(MAL, "algebra.hashsplit", "Cannot access descriptor");
 	}
 	CMDhashsplit(&bn, b, nfrag);
 	BBPreleaseref(b->batCacheid);
@@ -2845,7 +2845,7 @@ ALGhashsplit(int *result, int *bid, int *nfrag)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.hashsplit", "GDKerror");
+	throw(MAL, "algebra.hashsplit", "GDKerror");
 }
 
 algebra_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
@@ -2855,7 +2855,7 @@ ALGuhashsplit(int *result, int *bid, int *nfrag)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.uhashsplit", "Cannot access descriptor");
+		throw(MAL, "algebra.uhashsplit", "Cannot access descriptor");
 	}
 	CMDuhashsplit(&bn, b, nfrag);
 	BBPreleaseref(b->batCacheid);
@@ -2865,7 +2865,7 @@ ALGuhashsplit(int *result, int *bid, int *nfrag)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.uhashsplit", "GDKerror");
+	throw(MAL, "algebra.uhashsplit", "GDKerror");
 }
 
 algebra_export str ALGrangesplit(int *result, int *bid, int *nfrag);
@@ -2875,7 +2875,7 @@ ALGrangesplit(int *result, int *bid, int *nfrag)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.rangesplit", "Cannot access descriptor");
+		throw(MAL, "algebra.rangesplit", "Cannot access descriptor");
 	}
 	CMDrangesplit(&bn, b, nfrag);
 	BBPreleaseref(b->batCacheid);
@@ -2885,7 +2885,7 @@ ALGrangesplit(int *result, int *bid, int *nfrag)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.rangesplit", "GDKerror");
+	throw(MAL, "algebra.rangesplit", "GDKerror");
 }
 
 algebra_export str ALGurangesplit(int *result, int *bid, int *nfrag);
@@ -2895,7 +2895,7 @@ ALGurangesplit(int *result, int *bid, int *nfrag)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.urangesplit", "Cannot access descriptor");
+		throw(MAL, "algebra.urangesplit", "Cannot access descriptor");
 	}
 	CMDurangesplit(&bn, b, nfrag);
 	BBPreleaseref(b->batCacheid);
@@ -2905,7 +2905,7 @@ ALGurangesplit(int *result, int *bid, int *nfrag)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.urangesplit", "GDKerror");
+	throw(MAL, "algebra.urangesplit", "GDKerror");
 }
 
 algebra_export str ALGhistogram_rev(int *result, int *bid);
@@ -2915,7 +2915,7 @@ ALGhistogram_rev(int *result, int *bid)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.histogram", "Cannot access descriptor");
+		throw(MAL, "algebra.histogram", "Cannot access descriptor");
 	}
 	CMDhistogram(&bn, b);
 	BBPreleaseref(b->batCacheid);
@@ -2926,7 +2926,7 @@ ALGhistogram_rev(int *result, int *bid)
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.histogram", "GDKerror");
+	throw(MAL, "algebra.histogram", "GDKerror");
 }
 
 algebra_export str ALGlike(int *ret, int *bid, str *k);
@@ -2936,7 +2936,7 @@ ALGlike(int *ret, int *bid, str *k)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.like", "Cannot access descriptor");
+		throw(MAL, "algebra.like", "Cannot access descriptor");
 	}
 	CMDlike(&bn, b, *k);
 	BBPreleaseref(b->batCacheid);
@@ -2946,7 +2946,7 @@ ALGlike(int *ret, int *bid, str *k)
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.like", "GDKerror");
+	throw(MAL, "algebra.like", "GDKerror");
 }
 
 algebra_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
@@ -2956,7 +2956,7 @@ ALGslice(int *ret, bat *bid, lng *start, lng *end)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.slice", "Cannot access descriptor");
+		throw(MAL, "algebra.slice", "Cannot access descriptor");
 	}
 	CMDslice(&bn, b, start, end);
 	BBPreleaseref(b->batCacheid);
@@ -2966,7 +2966,7 @@ ALGslice(int *ret, bat *bid, lng *start, lng *end)
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.slice", "GDKerror");
+	throw(MAL, "algebra.slice", "GDKerror");
 }
 
 algebra_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);
@@ -2988,7 +2988,7 @@ ALGposition(int *retval, int *bid, ptr val)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.position", "Cannot access descriptor");
+		throw(MAL, "algebra.position", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,val)@
 	CMDposition(retval, b, val);
@@ -3003,7 +3003,7 @@ ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.position", "Cannot access descriptor");
+		throw(MAL, "algebra.position", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,val)@
 	@:derefStr(b,t,tval)@
@@ -3019,7 +3019,7 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 	lng i = *pos;
 
 	if ((i < 0) || (i >= (lng) BATcount(b)))
-		return throwMessage("algebra.fetch", " idx out of range");
+		throw(MAL, "algebra.fetch", " idx out of range");
 	i += BUNindex(b, BUNfirst(b));
 	@:putTailALG(BUNptr(b,i))@
 
@@ -3062,7 +3062,7 @@ ALGfetch(ptr ret, int *bid, lng *pos)
 	str msg;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.fetch", "Cannot access descriptor");
+		throw(MAL, "algebra.fetch", "Cannot access descriptor");
 	}
 	msg = doALGfetch(ret, b, pos);
 	BBPreleaseref(b->batCacheid);
@@ -3095,11 +3095,11 @@ ALGfetchbat(int *ret, int *bid, int *sid)
 	BAT *b, *s, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.fetch", "Cannot access descriptor");
+		throw(MAL, "algebra.fetch", "Cannot access descriptor");
 	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("algebra.fetch", "Cannot access descriptor");
+		throw(MAL, "algebra.fetch", "Cannot access descriptor");
 	}
 
 	bn = BATfetch(b, s);
@@ -3111,7 +3111,7 @@ ALGfetchbat(int *ret, int *bid, int *sid)
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.fetchbat", "GDKerror");
+	throw(MAL, "algebra.fetchbat", "GDKerror");
 
 }
 
@@ -3122,7 +3122,7 @@ ALGexist(bit *ret, int *bid, ptr val)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.exist", "Cannot access descriptor");
+		throw(MAL, "algebra.exist", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,val)@
 	CMDexist(ret, b, val);
@@ -3137,7 +3137,7 @@ ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.exist", "Cannot access descriptor");
+		throw(MAL, "algebra.exist", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,val)@
 	@:derefStr(b,t,tval)@
@@ -3153,12 +3153,12 @@ ALGfind(ptr ret, int *bid, ptr val)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.find", "Cannot access descriptor");
+		throw(MAL, "algebra.find", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,val)@
 	if (CMDfind(ret, b, val) == GDK_FAIL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("algebra.find", "can not find element");
+		throw(MAL, "algebra.find", "can not find element");
 	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -3173,11 +3173,11 @@ ALGhashjoin(int *result, int *lid, int *rid)
 	int lsize, rsize;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.hashjoin", "Cannot access descriptor");
+		throw(MAL, "algebra.hashjoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.hashjoin", "Cannot access descriptor");
+		throw(MAL, "algebra.hashjoin", "Cannot access descriptor");
 	}
 
 	lsize = left->batBuns->size + (left->hheap ? left->hheap->size : 0) + (left->theap ? left->theap->size : 0);
@@ -3196,7 +3196,7 @@ ALGhashjoin(int *result, int *lid, int *rid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.hashjoin", "can not perform a hashjoin");
+	throw(MAL, "algebra.hashjoin", "can not perform a hashjoin");
 }
 
 algebra_export str ALGmergejoin(int *result, int *lid, int *rid);
@@ -3206,17 +3206,17 @@ ALGmergejoin(int *result, int *lid, int *rid)
 	BAT *left, *right, *bn;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.mergejoin", "Cannot access descriptor");
+		throw(MAL, "algebra.mergejoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.mergejoin", "Cannot access descriptor");
+		throw(MAL, "algebra.mergejoin", "Cannot access descriptor");
 	}
 	if (!((BATtordered(left) & 1) || (BAThordered(right) & 1)))
-		return throwMessage("algebra.mergejoin", "neither left nor right bat is ordered.\n");
+		throw(MAL, "algebra.mergejoin", "neither left nor right bat is ordered.\n");
 
 	if ((left->ttype == TYPE_void) || (right->htype == TYPE_void))
-		return throwMessage("algebra.mergejoin", "Cannot perform mergejoin on void fields.\n");
+		throw(MAL, "algebra.mergejoin", "Cannot perform mergejoin on void fields.\n");
 	bn = BATmergejoin(left, right, oid_nil);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
@@ -3226,7 +3226,7 @@ ALGmergejoin(int *result, int *lid, int *rid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.mergejoin", "can not perform a mergejoin");
+	throw(MAL, "algebra.mergejoin", "can not perform a mergejoin");
 }
 
 algebra_export str ALGindexjoin(int *result, int *lid, int *rid);
@@ -3236,11 +3236,11 @@ ALGindexjoin(int *result, int *lid, int *rid)
 	BAT *left, *right, *bn;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.indexjoin", "Cannot access descriptor");
+		throw(MAL, "algebra.indexjoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.indexjoin", "Cannot access descriptor");
+		throw(MAL, "algebra.indexjoin", "Cannot access descriptor");
 	}
 
 	bn = BATthetajoin(left, right, JOIN_EQ, oid_nil);
@@ -3252,7 +3252,7 @@ ALGindexjoin(int *result, int *lid, int *rid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.indexjoin", "can not perform a indexjoin");
+	throw(MAL, "algebra.indexjoin", "can not perform a indexjoin");
 }
 
 str
@@ -3261,7 +3261,7 @@ ALGprojectNIL(int *ret, int *bid)
     BAT *b, *bn;
 
     if ((b = BATdescriptor(*bid)) == NULL) {
-        return throwMessage("algebra.project", "Cannot access descriptor");
+        throw(MAL, "algebra.project", "Cannot access descriptor");
     }
 
     bn = BATconst(b, TYPE_void, (ptr) &int_nil);
@@ -3271,7 +3271,7 @@ ALGprojectNIL(int *ret, int *bid)
         BBPkeepref(bn->batCacheid);
         return MAL_SUCCEED;
     }
-    return throwMessage("algebra.project", "Cannot create the constant BAT");
+    throw(MAL, "algebra.project", "Cannot create the constant BAT");
 }
 
 @-
@@ -3359,7 +3359,7 @@ ALGmaterialize(int *ret, int *bid)
 	if( b->htype == TYPE_void){
 		bn= BATmaterialize(b, BATcount(b));
 		if( bn == NULL)
-			return throwMessage("batcalc.materialize", "Materialization failed");
+			throw(MAL, "batcalc.materialize", "Materialization failed");
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
 	} else 
