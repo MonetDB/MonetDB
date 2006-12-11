@@ -188,7 +188,7 @@ SQLinit(Client c)
 	MTIMEtimezone(&tz, &gmt);
 	(void) tz;
 	if (mvc_init(FALSE, 0) < 0) 
-		return throwMessage("SQLinit", "Catalogue initialization failed");
+		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
 	SQLinitialized = TRUE;
@@ -203,7 +203,7 @@ SQLexit(Client c)
 #endif
 	(void) c;		/* not used */
 	if( SQLinitialized == FALSE)
-		return throwMessage("SQLexit", "Catalogue not available\n");
+		throw(SQL, "SQLexit", "Catalogue not available");
 	return MAL_SUCCEED;
 }
 
@@ -297,7 +297,7 @@ SQLinitClient(Client c)
 		schema = monet5_user_get_def_schema(m, c->user);
 		if (!schema) {
 			_DELETE(schema);
-			throwMal("SQLinitClient", "schema authorization error");
+			throw(PERMD, "SQLinitClient", "schema authorization error");
 		}
 		_DELETE(schema);
 
@@ -330,7 +330,7 @@ SQLexitClient(Client c)
 	stream_printf(GDKout, "#SQLexitClient\n");
 #endif
 	if (SQLinitialized == FALSE) {
-		return throwMessage("SQLinitClient", "Catalogue not available\n");
+		throw(SQL, "SQLinitClient", "Catalogue not available");
 	}
 	if ((backend *) c->state[PARSER] && (mvc *) c->state[OPTIMIZE]) {
 		m= (mvc *) c->state[OPTIMIZE];
@@ -424,7 +424,7 @@ SQLstatementIntern(str *expr, str nme, int execute)
 		sql = ((backend *) c->state[PARSER]);
 	}
 	if (msg)
-		return throwMessage("SQLstatement", "Catalogue not available\n");
+		throw(SQL, "SQLstatement", "Catalogue not available");
 
 	initSQLreferences();
 	m = sql->mvc;
@@ -466,9 +466,9 @@ System has been prepared to parse it and generate code
 		if (!err)
 			err = mvc_status(m);
 		if( m->errstr)
-			msg = throwMessage("SQLparser", m->errstr);
+			msg = createException(PARSE, "SQLparser", m->errstr);
 		 else 
-			msg = throwMessage("SQLparser", "Parser errors\n");
+			msg = createException(PARSE, "SQLparser", "Parser errors");
 		*m->errstr = 0;
 		sqlcleanup(m, err);
 		goto endofcompile;
@@ -488,8 +488,8 @@ We don;t search the cache for a previous incarnation yet.
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "%s\n", m->errstr);
 			if( m->errstr)
-				msg = throwMessage("SQLparser", m->errstr);
-			else msg = throwMessage("SQLparser", "Semantic errors\n");
+				msg = createException(PARSE, "SQLparser", m->errstr);
+			else msg = createException(PARSE, "SQLparser", "Semantic errors");
 			*m->errstr = 0;
 			sqlcleanup(m, err);
 			/* restore the state */
@@ -801,7 +801,7 @@ SQLparser(Client c)
 	be = ((backend *) c->state[PARSER]);
 	if (be == 0) {
 		GDKerror("SQL state descriptor missing\n");
-		return throwMessage("SQLparser", "State decriptor missing\n");
+		throw(SQL, "SQLparser", "State descriptor missing");
 	}
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
@@ -856,9 +856,9 @@ SQLparser(Client c)
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
 				if (commit && mvc_commit(m, 0, NULL)< 0)
-					return throwMessage("SQLparser", "Xauto_commit (commit) failed\n");
+					throw(SQL, "SQLparser", "Xauto_commit (commit) failed");
 				else if (!commit && mvc_rollback(m, 0, NULL) < 0)
-					return throwMessage("SQLparser", "Xauto_commit (rollback) failed\n");
+					throw(SQL, "SQLparser", "Xauto_commit (rollback) failed");
 			}
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
@@ -873,10 +873,10 @@ SQLparser(Client c)
 			c->mode = FINISHING;
 			return NULL;
 		}
-		return throwMessage("SQLparser", "Unrecognized X command\n");
+		throw(SQL, "SQLparser", "Unrecognized X command");
 	} 
 	if (be->language != 'S' ) {
-		return throwMessage("SQLparser", "Unrecognized language prefix\n");
+		throw(SQL, "SQLparser", "Unrecognized language prefix");
 	}
 
 	if( be->mvc->mode== m_profile )
@@ -895,7 +895,7 @@ SQLparser(Client c)
 		if (!err && m->scanner.started) /* repeat old errors, with a parsed query */
 			err = mvc_status(m);
 		if (err) {
-			msg = throwMessage("SQLparser", m->errstr);
+			msg = createException(PARSE, "SQLparser", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 		}
 		sqlcleanup(m, err);
@@ -931,7 +931,7 @@ produce code.
 		s = sql_symbol2stmt(m, m->sym);
 
 		if (s==0 || (err = mvc_status(m))) {
-			msg = throwMessage("SQLparser", m->errstr);
+			msg = createException(PARSE, "SQLparser", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
 			goto finalize;
@@ -1023,7 +1023,7 @@ query block.
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
-			msg = throwMessage("SQLparser", "Semantic errors\n");
+			msg = createException(PARSE, "SQLparser", "Semantic errors");
 		}
 	}
 @-
@@ -1176,7 +1176,7 @@ SQLengineIntern(Client c, backend *be)
 	}
 	if (c->curprg->def->errors){
 		sqlcleanup(be->mvc, 0);
-		return throwMessage("SQLengine", "Program contains errors\n");
+		throw(SQL, "SQLengine", "Program contains errors");
 	}
 #ifdef SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#Ready to execute SQL statement\n");
@@ -1224,7 +1224,9 @@ environment.
 
 cleanup_engine:
 	if (msg) {
-		if (strcmp(msg, "MALException:mal.assert:emptySet") == 0) {
+		if (getExceptionType(msg) == ASSERT &&
+				strcmp(getExceptionMessage(msg), "emptySet") == 0)
+		{
 			resetMalBlk( c->curprg->def, 1);
 			/* resetInstructions(c->curprg->def, 1);*/
 			freeVariables(c->curprg->def, c->glb, be->vtop);
@@ -1283,7 +1285,7 @@ SQLrecompile(Client c, backend *be)
 		resetMalBlk(c->curprg->def, oldstop);
 		freeVariables(c->curprg->def, c->glb, oldvtop);
 		c->curprg->def->errors = 0;
-		return throwMessage("SQLrecompile", "Semantic errors\n");
+		throw(SQL, "SQLrecompile", "Semantic errors");
 	}
 	return SQLengineIntern(c, be);
 }
@@ -1304,7 +1306,7 @@ SQLassert(int *ret, bit *flg, str *msg)
 {
 	(void) ret;
 	if (*flg)
-		return throwException("SQLerror", "assert", *msg);
+		throw(ASSERT, "assert", *msg);
 	return MAL_SUCCEED;
 }
 
@@ -1313,7 +1315,7 @@ SQLassertInt(int *ret, int *flg, str *msg)
 {
 	(void) ret;
 	if (*flg)
-		return throwException("SQLerror", "assert", *msg);
+		throw(ASSERT, "assert", *msg);
 	return MAL_SUCCEED;
 }
 
@@ -1322,6 +1324,6 @@ SQLassertLng(int *ret, lng *flg, str *msg)
 {
 	(void) ret;
 	if (*flg)
-		return throwException("SQLerror", "assert", *msg);
+		throw(ASSERT, "assert", *msg);
 	return MAL_SUCCEED;
 }

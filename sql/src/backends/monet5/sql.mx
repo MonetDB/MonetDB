@@ -859,9 +859,9 @@ getContext(mvc **c, backend **b )
 	Client _client = MCgetClient();
 
 	if (_client == NULL ) 
-		return throwMessage("mvc","Can not access client record");
+		throw(SQL, "mvc","Can not access client record");
 	if (_client->state[PARSER] == NULL || _client->state[OPTIMIZE] == NULL)
-		return throwMessage("mvc","PARSER not initialized\n");
+		throw(SQL, "mvc","PARSER not initialized");
 	*c = ((mvc *) _client ->state[OPTIMIZE]); 
 	if (b)
 		*b = ((backend*) _client->state[PARSER]);
@@ -905,17 +905,17 @@ setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (mtype < 0 || mtype >= 255)
-		return throwMessage("sql.setVariable", "failed");
+		throw(SQL, "sql.setVariable", "failed");
 	src = &stk->stk[getArg(pci, 2)];
 	if (stack_find_var(m, varname)) {
 		stack_set_var(m, varname, src);
 	} else {
 		char buf[BUFSIZ];
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		return throwMessage("sql.setVariable", buf);
+		throw(SQL, "sql.setVariable", buf);
 	}
 	if (sql_update_var(m, varname) != GDK_SUCCEED)
-		return throwException(MALEXCEPTION, "sql.setVariable", "error");
+		throw(SQL, "sql.setVariable", "error");
 	return MAL_SUCCEED;
 }
 
@@ -933,12 +933,12 @@ getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (mtype < 0 || mtype >= 255)
-		return throwMessage("sql.getVariable", "failed");
+		throw(SQL, "sql.getVariable", "failed");
 	src = stack_get_var(m, varname);
 	if (!src) {
 		char buf[BUFSIZ];
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		return throwMessage("sql.getVariable", buf);
+		throw(SQL, "sql.getVariable", buf);
 	}
 	dst = &stk->stk[getArg(pci, 0)];
 	VALcopy(dst,src);
@@ -984,7 +984,7 @@ mvc_next_value(lng *res, str *seqname)
 		if (seq && seq_next_value(seq, res))
 			return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION, "sql.next_value", "error");
+	throw(SQL, "sql.next_value", "error");
 }
 
 str
@@ -1005,7 +1005,7 @@ mvc_restart_seq(lng *res, str *seqname, lng *start)
 			return MAL_SUCCEED;
 		}
 	}
-	return throwException(MALEXCEPTION, "sql.restart", "error");
+	throw(SQL, "sql.restart", "error");
 }
 
 
@@ -1100,7 +1100,7 @@ mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
 		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION, "mvc_bind", "error");
+	throw(SQL, "mvc_bind", "error");
 }
 
 str
@@ -1111,7 +1111,7 @@ mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *
 	str msg = getContext(&m, NULL);
 
 	if( (I= BATdescriptor(*ins)) == NULL)
-		return throwMessage("sql.append","Cannot access descriptor");
+		throw(SQL, "sql.append","Cannot access descriptor");
 
 	if (msg)
 		return msg;
@@ -1121,7 +1121,7 @@ mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *
 		BBPkeepref( *bid = B->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION, "mvc_append", "error");
+	throw(SQL, "mvc_append", "error");
 }
 
 @-
@@ -1133,7 +1133,7 @@ access the BAT descriptor.
 @= chkIdentifier
 	/* generate exception if string is not an identifier */
 	if( isIdentifier(@1))
-		return throwMessage( "@4","identifier expected");
+		throw(SQL,  "@4","identifier expected");
 @= Pseudo
 	if (BBPindex("@1_@2_@3") <= 0)
 		BATname(b, "@1_@2_@3");
@@ -1152,12 +1152,12 @@ mvc_bind_single_wrap(int *ret, int *bid, str *name)
 	ptr p;
 
 	if( (bn= BATdescriptor(*bid)) == NULL)
-		return throwMessage("sql.bind","Cannot access descriptor");
+		throw(SQL, "sql.bind","Cannot access descriptor");
 
 	p = BUNfnd(bn, *name);
 	r = *(int *) BUNtail(bn, p);
 	if( (b= BATdescriptor(r)) == NULL)
-		return throwMessage("sql.bind","Cannot access descriptor");
+		throw(SQL, "sql.bind","Cannot access descriptor");
 	BBPkeepref(*ret= b->batCacheid);
 	BBPunfix( bn->batCacheid);
 	return MAL_SUCCEED;
@@ -1177,7 +1177,7 @@ mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access)
 		BBPkeepref( *ret = b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION, "mvc_bind_dbat_wrap", "error");
+	throw(SQL, "mvc_bind_dbat_wrap", "error");
 }
 
 str
@@ -1194,7 +1194,7 @@ mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access)
 		BBPkeepref( *ret = b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION, "mvc_bind_idxbat_wrap", "error");
+	throw(SQL, "mvc_bind_idxbat_wrap", "error");
 }
 
 str
@@ -1205,7 +1205,7 @@ mvc_append_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access
 	str msg = getContext(&m, NULL);
 
 	if( (I= BATdescriptor(*ins)) == NULL)
-		return throwMessage("sql.append_idxbat","Cannot access descriptor");
+		throw(SQL, "sql.append_idxbat","Cannot access descriptor");
 
 	if (msg)
 		return msg;
@@ -1215,7 +1215,7 @@ mvc_append_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access
 		BBPkeepref( *bid = B->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION, "mvc_append_idxbat", "error");
+	throw(SQL, "mvc_append_idxbat", "error");
 }
 
 
@@ -1253,7 +1253,7 @@ mvc_result_row_wrap(int *res_id, int *nr_cols, int *qtype, int *o)
 	(void)o; /* dummy order */
 	*res_id = mvc_result_row(m, *nr_cols, *qtype); 
 	if (*res_id < 0)
-		return throwMessage("sql.resultSet", "failed");
+		throw(SQL, "sql.resultSet", "failed");
 	return MAL_SUCCEED;
 }
 
@@ -1268,11 +1268,11 @@ mvc_result_table_wrap(int *res_id, int *nr_cols, int *qtype, bat *order_bid)
 	if (msg)
 		return msg;
         if ((order = BATdescriptor(*order_bid)) == NULL ) {
-                return throwMessage("sql.resultSet", "Cannot access descriptor");
+                throw(SQL, "sql.resultSet", "Cannot access descriptor");
         }
 	*res_id = mvc_result_table(m, *nr_cols, *qtype, order);
 	if (*res_id < 0)
-		res= throwMessage("sql.resultSet", "failed");
+		res= createException(SQL, "sql.resultSet", "failed");
 	BBPunfix(order->batCacheid);
 	return res;
 }
@@ -1290,10 +1290,10 @@ mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *di
 	if (msg)
 		return msg;
         if( (b = BATdescriptor(*bid)) == NULL ){
-                return throwMessage("sql.rsColumn", "Cannot access descriptor");
+                throw(SQL, "sql.rsColumn", "Cannot access descriptor");
         }
 	if (mvc_result_column(m, *tn, *name, *type, *digits, *scale, b)) 
-		res = throwMessage("sql.rsColumn", "failed");
+		res = createException(SQL, "sql.rsColumn", "failed");
 	BBPunfix(b->batCacheid);
 	return res;
 }
@@ -1309,7 +1309,7 @@ mvc_result_value_@1(int *ret, int *rs, str *tn, str *name, str *type, int *digit
 	if (msg)
 		return msg;
 	if (mvc_result_value(m, *tn, *name, *type, *digits, *scale, (ptr) val, TYPE_@1))
-		return throwMessage("sql.rsColumn", "failed");
+		throw(SQL, "sql.rsColumn", "failed");
 	return MAL_SUCCEED;
 }
 @-
@@ -1342,7 +1342,7 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMvarsized(mtype)) 
 		p = *(ptr*)p;
 	if (mvc_result_value(m, *tn, *cn, *type, *digits, *scale, p, mtype))
-		return throwMessage("sql.rsColumn", "failed");
+		throw(SQL, "sql.rsColumn", "failed");
 	return MAL_SUCCEED;
 }
 
@@ -1357,7 +1357,7 @@ mvc_affected_rows_wrap(int *r, lng *nr, str *w)
 		return msg;
 	c->type = Q_UPDATE;
 	if (mvc_export_affrows(c, b->out, *nr, *w)) {
-		return throwMessage("sql.affectedRows", "failed");
+		throw(SQL, "sql.affectedRows", "failed");
 	}
 	(void)r;
 	return NULL;
@@ -1380,7 +1380,7 @@ mvc_export_result_wrap(int *ret, int *res_id, str *w)
 	if (msg)
 		return msg;
 	if (mvc_export_result(c, b->out, *res_id, *w)) {
-		return throwMessage("sql.exportResult", "failed");
+		throw(SQL, "sql.exportResult", "failed");
 	}
 	(void)ret;
 	return NULL;
@@ -1396,7 +1396,7 @@ mvc_export_operation_wrap(int *ret, str *w)
 	if (msg)
 		return msg;
 	if (mvc_export_operation(c, b->out, *w)) {
-		return throwMessage("sql.exportOperation", "failed");
+		throw(SQL, "sql.exportOperation", "failed");
 	}
 	(void)ret;
 	return NULL;
@@ -1426,7 +1426,7 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMvarsized(mtype)) 
 		p = *(ptr*)p;
 	if (mvc_export_value(c, b->out, *qtype, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, *w) != SQL_OK)
-		return throwMessage("sql.exportValue", "failed");
+		throw(SQL, "sql.exportValue", "failed");
 	return MAL_SUCCEED;
 }
 
@@ -1441,7 +1441,7 @@ mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, in
 		return msg;
 	b = mvc_import_table(m, *s, *tname, *sep, *rsep, *sz);
 	if (!b)
-		return throwMessage("importTable", "failed to import table");
+		throw(SQL, "importTable", "failed to import table");
 	*res = b->batCacheid;
 	BBPincref( *res, TRUE);
 	BBPunfix(*res);
@@ -1456,7 +1456,7 @@ zero_or_one(ptr ret, int *bid)
 	ptr p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("zero_or_one", "Cannot access descriptor");
+		throw(SQL, "zero_or_one", "Cannot access descriptor");
 	}
 	c = BATcount(b);
 	if (c == 0) {
@@ -1468,7 +1468,7 @@ zero_or_one(ptr ret, int *bid)
 
 		p = NULL;
                 snprintf(buf, BUFSIZ, "cardinality violation (%d>1)", c);
-		return throwMessage("zero_or_one", buf);
+		throw(SQL, "zero_or_one", buf);
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMvarsized(b->ttype)) {
@@ -1498,7 +1498,7 @@ str not_unique(bit *ret, int* bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("not_unique", "Cannot access descriptor");
+		throw(SQL, "not_unique", "Cannot access descriptor");
 	}
 
 	*ret = FALSE;
@@ -1521,7 +1521,7 @@ str not_unique(bit *ret, int* bid)
 		}
 	} else {
 		BBPunfix(b->batCacheid);
-		return throwMessage("not_unique", "input should be sorted");
+		throw(SQL, "not_unique", "input should be sorted");
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1535,13 +1535,13 @@ voidbathash_wrap(int *res, int *bid )
 	int *r, *f;
 
 	if( (b = BATdescriptor(*bid)) == NULL ){
-		return throwMessage("bathash", "Cannot access descriptor");
+		throw(SQL, "bathash", "Cannot access descriptor");
 	}
 
 	dst= BATnew(TYPE_void,TYPE_int, BATcount(b));
 	if (!dst) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("bathash", "can not create bat");
+		throw(SQL, "bathash", "can not create bat");
 	}
 	BATseqbase(dst, b->hseqbase);
 
@@ -1581,13 +1581,13 @@ bathash_wrap(int *res, int *bid )
 	hash_t (*hash)(ptr v); 
 
 	if( (b = BATdescriptor(*bid)) == NULL ){
-		return throwMessage("bathash", "Cannot access descriptor");
+		throw(SQL, "bathash", "Cannot access descriptor");
 	}
 
 	dst= BATnew(TYPE_oid,TYPE_int, BATcount(b));
 	if (!dst) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("bathash", "can not create bat");
+		throw(SQL, "bathash", "can not create bat");
 	}
 
 	hash = BATatoms[b->ttype].atomHash;
@@ -1730,7 +1730,7 @@ str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 	lng value = 0;
 
 	if (!dot) {
-		return throwException(MALEXCEPTION, "@1", 
+		throw(SQL, "@1", 
 			"\"%s\" is no decimal value (doesn't contain a '.')", *val);
 	}
 		
@@ -1754,8 +1754,8 @@ str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 		digits -= d;
 	}
 	if (digits > *d) {
-		return throwException(MALEXCEPTION,"@1", 
-		     "decimal (%s) doesn't have format (%d,%d)", *val, *d, *sc);
+		throw(SQL,"@1", 
+		     "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 	}
 	*res = (@1) value;
 	return MAL_SUCCEED;
@@ -1806,8 +1806,8 @@ str_2_@1( @1 *res, str *val )
 		char buf[BUFSIZ];
 		if (p)
 			GDKfree(p);
-                snprintf(buf, BUFSIZ,"conversion of string '%s' failed\n",*val);
-		return throwMessage("@1", buf);
+                snprintf(buf, BUFSIZ,"conversion of string '%s' failed",*val);
+		throw(SQL, "@1", buf);
 	}
 	*res = *(@1*)p;
 	if (p)
@@ -1876,7 +1876,7 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (len > 0 && sz > len) {
 		GDKfree(r);
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), p) != 0) {
-			return throwException(MALEXCEPTION, "str_cast", "value too long for type (var)char(%d)\n", len);
+			throw(SQL, "str_cast", "value too long for type (var)char(%d)", len);
 		} else {
 			*res = GDKstrdup(str_nil);
 			return MAL_SUCCEED;
@@ -1918,8 +1918,8 @@ str @2_2_@1( @1 *res, @2 *v )
 		*res = (@1)val;
 		return(MAL_SUCCEED);
 	} else {
-		return throwException(MALEXCEPTION,"convert",
-			"value (" LLFMT ") exceeds limits of type @1\n", val);
+		throw(SQL, "convert",
+			"value (" LLFMT ") exceeds limits of type @1", val);
 	}
 }
 @c
@@ -1969,8 +1969,8 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	/* rounding is allowed */
 	inlen += (s2-s1);
 	if (p && inlen > p) {
-		return(throwException(MALEXCEPTION,"convert",
-			"too many digits (%d > %d)\n", inlen, p));
+		throw(SQL, "convert",
+			"too many digits (%d > %d)", inlen, p);
 	}
 
 	/* since the @1 type is bigger than or equal to the @2 type, it will
@@ -2031,8 +2031,8 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 		inlen++;
 	/* rounding is allowed */
 	if (p && inlen > p) {
-		return(throwException(MALEXCEPTION,"convert",
-			"too many digits (%d > %d)\n", inlen, p));
+		throw(SQL, "convert",
+			"too many digits (%d > %d)", inlen, p);
 	}
 	*res = r;
 	return MAL_SUCCEED;
@@ -2087,8 +2087,8 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	/* rounding is allowed */
 	inlen += (s2-s1);
 	if (p && inlen > p) {
-		return(throwException(MALEXCEPTION,"convert",
-			"too many digits (%d > %d)\n", inlen, p));
+		throw(SQL, "convert",
+			"too many digits (%d > %d)", inlen, p);
 	}
 
 	/* since the @1 type is bigger than or equal to the @2 type, it will
@@ -2137,8 +2137,8 @@ str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 		*res = (@1)val;
 		return MAL_SUCCEED;
 	} else {
-		return throwException(MALEXCEPTION,"convert",
-			"value (" LLFMT ") exceeds limits of type @1\n", val);
+		throw(SQL, "convert",
+			"value (" LLFMT ") exceeds limits of type @1", val);
 	}
 }
 
@@ -2160,8 +2160,8 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	/* rounding is allowed */
 	inlen += (s2-s1);
 	if (p && inlen > p) {
-		return(throwException(MALEXCEPTION,"@2_2_@1",
-			"too many digits (%d > %d)\n", inlen, p));
+		throw(SQL, "@2_2_@1",
+			"too many digits (%d > %d)", inlen, p);
 	}
 
 	if(s2 > s1) 
@@ -2174,8 +2174,8 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 		*res = (@1)val;
 		return MAL_SUCCEED;
 	} else {
-		return throwException(MALEXCEPTION,"convert",
-			"value (" LLFMT ") exceeds limits of type @1\n", val);
+		throw(SQL, "convert",
+			"value (" LLFMT ") exceeds limits of type @1", val);
 	}
 }
 
@@ -2194,8 +2194,8 @@ month_interval_str( int *ret, str *s, int *ek, int *sk ){
 	lng res;
 
 	if (interval_from_str( *s, *sk, *ek, &res ) < 0)
-		return throwException(MALEXCEPTION,"calc.month_interval",
-			"wrong format (%s)\n", *s);
+		throw(SQL, "calc.month_interval",
+			"wrong format (%s)", *s);
 	*ret = res;
 	return NULL;
 }
@@ -2204,8 +2204,8 @@ str
 second_interval_str( lng *res, str *s, int *ek, int *sk ){
 
 	if (interval_from_str( *s, *sk, *ek, res ) < 0)
-		return throwException(MALEXCEPTION,"calc.second_interval",
-			"wrong format (%s)\n", *s);
+		throw(SQL, "calc.second_interval",
+			"wrong format (%s)", *s);
 	return NULL;
 }
 
@@ -2221,7 +2221,7 @@ month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
 	case imonth:
 		break;
 	default:
-		return throwMessage("calc.month_interval","illegal argument");
+		throw(ILLARG, "calc.month_interval","illegal argument");
 	}
 	*ret = r;
 	return MAL_SUCCEED;
@@ -2241,7 +2241,7 @@ second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 	case isec:
 		break;
 	default:
-		return throwMessage("calc.month_interval","illegal argument");
+		throw(ILLARG, "calc.month_interval","illegal argument");
 	}
 	*res = r;
 	return MAL_SUCCEED;

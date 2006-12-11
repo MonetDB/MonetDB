@@ -80,7 +80,7 @@ SQLCacheExists(bit *res, str *nme)
 	scope = findModule(c->nspace, putName("sql_cache",9));
 
 	if (scope == NULL)
-		return throwMessage("sql_cache.exists", "internal error, sql_cache missing\n");
+		throw(MAL, "sql_cache.exists", "internal error, sql_cache missing\n");
 	s = findSymbolInModule(scope, *nme);
 	*res = s != NULL;
 	return MAL_SUCCEED;
@@ -95,12 +95,12 @@ SQLCacheGetDefinition(int *ret, str *nme)
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
 	if (b == 0)
-		return throwMessage("sql_cache.getDefinition", "failed to create BAT");
+		throw(MAL, "sql_cache.getDefinition", "failed to create BAT");
 
 	scope = findModule(c->nspace, putName("sql_cache",9));
 
 	if (scope == NULL)
-		return throwMessage("sql_cache.getDefinition", "internal error, sql_cache missing\n");
+		throw(MAL, "sql_cache.getDefinition", "internal error, sql_cache missing\n");
 	s = findSymbolInModule(scope, *nme);
 
 	if (s) {
@@ -133,10 +133,10 @@ SQLCacheRemove(int *ret, str *nme)
 	scope = findModule(c->nspace, putName("sql_cache",9));
 
 	if (scope == NULL)
-		return throwMessage("sql_cache.remove", "internal error, sql_cache missing\n");
+		throw(MAL, "sql_cache.remove", "internal error, sql_cache missing\n");
 	s= findSymbolInModule(scope, *nme);
 	if (s == NULL)
-		return throwMessage("sql_cache.remove", "internal error, symbol missing\n");
+		throw(MAL, "sql_cache.remove", "internal error, symbol missing\n");
 	if( getInstrPtr(s->def,0)->token == FACTORYsymbol)
 		shutdownFactoryByName(scope, *nme);
 	else
