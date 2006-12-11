@@ -17,13 +17,15 @@ quit();
 
 Over..
 
-# 21:53:57 >  
-# 21:53:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36125 recursion_type_error.SF-1579524.xq
-# 21:53:57 >  
+# 00:03:48 >  
+# 00:03:48 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35145 recursion_type_error.SF-1579524.xq
+# 00:03:48 >  
 
-! correct/expected stable ouptut has not been provided, yet !
+<?xml version="1.0" encoding="utf-8"?>
+= Stable output still needs to be validated ... volunteers?
+<XQueryResult><filmName>x</filmName><filmName>x</filmName><filmName>x</filmName><filmName>x</filmName><filmName>x</filmName><filmName>x</filmName><filmName>x</filmName></XQueryResult>
 
-# 21:53:58 >  
-# 21:53:58 >  Done.
-# 21:53:58 >  
+# 00:03:49 >  
+# 00:03:49 >  Done.
+# 00:03:49 >  
 
