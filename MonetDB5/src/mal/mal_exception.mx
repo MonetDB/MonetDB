@@ -134,7 +134,8 @@ enum exception {
 	LOADER,
 	PARSE,
 	ARITH,
-	PERMD
+	PERMD,
+	SQL
 };
 
 #define MAL_SUCCEED ((str) 0) /* no error */
@@ -170,6 +171,7 @@ static char *exceptionNames[] = {
 /*10 */	"ParseException",
 /*11 */	"ArithmeticException",
 /*12 */	"PermissionDeniedException",
+/*13 */	"SQLException",
 /*EOE*/	NULL
 };
 
