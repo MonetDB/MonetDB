@@ -371,42 +371,45 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		 *   the uplog
 		 */
 		snprintf(buf, PATHLENGTH, ".gdk_lock");
-		fd = open(buf, O_EXCL | O_RDWR);
-		if (fd < 0) {
-			/* the file doesn't exist, so no Mserver running */
+		fd = MT_lockf(buf, F_TLOCK, 4, 1);
+		if (fd == -2) {
+			/* Locking failed; this can be because the lockfile couldn't
+			 * be created.  Probably there is no Mserver running for
+			 * that case also.
+			 */
 			sdb->state = SABdbInactive;
+		} else if (fd == -1) {
+			/* lock denied, so Mserver is running */
+			sdb->state = SABdbRunning;
 		} else {
-			/* we could just open the file in write mode, see if we can
-			 * lock it */
-			/* the offset and len (4 resp. 1) are hardcoded from gdk */
-			if (lseek(fd, 4, SEEK_SET) == 4) {
-				if (lockf(fd, F_TLOCK, 1) == 0) {
-					/* lock succeed, check for a crash in the uplog */
-					if ((f = fopen(buf, "r")) != NULL) {
-						(void)fseek(f, -1, SEEK_END);
-						if (fread(data, 1, 1, f) != 1) {
-							/* the log is corrupt/wrong, assume no crash */
-							sdb->state = SABdbInactive;
-						} else if (data[0] == '\n') {
-							sdb->state = SABdbInactive;
-						} else { /* should be \t */
-							sdb->state = SABdbCrashed;
-						}
-						(void)fclose(f);
-					} else {
-						/* no uplog file? assume no crash */
-						sdb->state = SABdbInactive;
-					}
-				} else {
-					/* lock denied, so Mserver is running */
-					sdb->state = SABdbRunning;
+			char *log = alloca(sizeof(char) * (PATHLENGTH + 1));
+			log[PATHLENGTH] = '\0';
+
+			/* locking succeed, check for a crash in the uplog */
+			close(fd);
+
+			snprintf(log, PATHLENGTH, "%s/%s/%s",
+					GDKgetenv("gdk_dbfarm"),
+					GDKgetenv("gdk_dbname"),
+					UPLOGFILE);
+			if ((f = fopen(log, "r")) != NULL) {
+				(void)fseek(f, -1, SEEK_END);
+				if (fread(data, 1, 1, f) != 1) {
+					/* the log is corrupt/wrong, assume no crash */
+					sdb->state = SABdbInactive;
+				} else if (data[0] == '\n') {
+					sdb->state = SABdbInactive;
+				} else { /* should be \t */
+					sdb->state = SABdbCrashed;
 				}
+				(void)fclose(f);
 			} else {
-				/* could not jump to 4th byte, so it probably is not a
-				 * real lock */
+				/* no uplog file? assume no crash */
 				sdb->state = SABdbInactive;
 			}
-			close(fd);
+			fd = MT_lockf(buf, F_ULOCK, 4, 1);
+			if (fd >= 0)
+				close(fd);
 		}
 	}
 	(void) closedir(d);
