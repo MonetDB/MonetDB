@@ -1756,8 +1756,9 @@ lockf(int fd, int cmd, off_t len)
 	return fcntl(fd, cmd == F_TLOCK ? F_SETLKW : F_SETLK, &l);
 }
 #endif
-/* return -1 when locking failed,
- * return -2 when the lock file could not be opened/created */
+/* returns -1 when locking failed,
+ * returns -2 when the lock file could not be opened/created
+ * returns the (open) file descriptor to the file otherwise */
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
@@ -1765,8 +1766,16 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 
 	if (fd < 0)
 		return -2;
-	if (lseek(fd, off, SEEK_SET) == off)
-		ret = (lockf(fd, mode, len) == 0) ? 1 : -1;
+
+	if (lseek(fd, off, SEEK_SET) == off) {
+		if (lockf(fd, mode, len) == 0) {
+			ret = fd;
+		} else {
+			close(fd);
+		}
+	} else {
+		close(fd);
+	}
 	/* do not close else we lose the lock we want */
 	return ret;
 }
@@ -1875,10 +1884,11 @@ MT_vmrealloc(void *v, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t 
 	return a;
 }
 
+/* see contract of unix MT_lockf */
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
-	int ret = 1, illegalmode = 0;
+	int ret = 1, illegalmode = 0, fd = -1;
 	OVERLAPPED ov;
 	OSVERSIONINFO os;
 	HANDLE fh = CreateFile(filename,
@@ -1896,7 +1906,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 #endif
 
 	if (fh == NULL) {
-		return -1;
+		return -2;
 	}
 	if (mode == F_ULOCK) {
 		if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
@@ -1914,7 +1924,19 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 	if (illegalmode) {
 		SetLastError(ERROR_INVALID_DATA);
 	}
-	return ret ? 0 : -1;
+	if (ret != 0) {
+		fd = open(filename, O_CREAT | O_RDWR, 0662);
+		if (fd < 0) {
+			/* this is nasty, but I "trust" windows that it in this case
+			 * also cannot open the file into a filehandle any more, so
+			 * unlocking is in vain. */
+			return -2;
+		} else {
+			return fd;
+		}
+	} else {
+		return -1;
+	}
 }
 
 void
