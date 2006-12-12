@@ -284,14 +284,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode)
 		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
 				"internal query: %s", query);
 	} else {
-		/* should use scope_subquery, but that doesn't handle
-		   psm (so for mode m_execute) we use semantic */
-		if (mode == m_execute)
-			sq = semantic(m, scp, m->sym);
-		else {
-			exp_kind ek = {type_value, card_relation, TRUE};
-			sq = scope_subquery(m, scp, m->sym, ek);
-		}
+		sq = semantic(m, scp, m->sym);
 	}
 
 	GDKfree(query);
