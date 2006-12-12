@@ -1756,14 +1756,15 @@ lockf(int fd, int cmd, off_t len)
 	return fcntl(fd, cmd == F_TLOCK ? F_SETLKW : F_SETLK, &l);
 }
 #endif
-/* return -1 when locking failed */
+/* return -1 when locking failed,
+ * return -2 when the lock file could not be opened/created */
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
 	int ret = -1, fd = open(filename, O_CREAT | O_RDWR, 0662);
 
 	if (fd < 0)
-		return fd;
+		return -2;
 	if (lseek(fd, off, SEEK_SET) == off)
 		ret = (lockf(fd, mode, len) == 0) ? 1 : -1;
 	/* do not close else we lose the lock we want */
