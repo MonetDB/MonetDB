@@ -668,9 +668,21 @@ reduce (PFcnode_t * p, int goalnt)
              *  env, loop: empty => ------+-----+------ , 0
              * 
              */
+            PFalg_schema_t schema;
+            schema.count = 3;
+            schema.items = PFmalloc (3 * sizeof (PFalg_schema_t));
+
+            /* We know that iter and pos would have type nat.
+               For item on the other side we have no type. */
+            schema.items[0].name = att_iter;
+            schema.items[0].type = aat_nat;
+            schema.items[1].name = att_pos;
+            schema.items[1].type = aat_nat;
+            schema.items[2].name = att_item;
+            schema.items[2].type = 0;
+            
             A(p) = (struct  PFla_pair_t) {
-                     .rel = PFla_empty_tbl (
-                                attlist (att_iter, att_pos, att_item)),
+                     .rel = PFla_empty_tbl_ (schema),
                      .frag = PFla_empty_set () };
         } break;
 
