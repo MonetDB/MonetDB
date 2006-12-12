@@ -68,12 +68,12 @@ stderr of test 'set_types.SF-932360` in directory 'src/test/BugDay_2005-10-06_2.
 # 14:30:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46462  < set_types.SF-932360.sql
 # 14:30:11 >  
 
-MAPI  = monetdb@localhost:45029
+MAPI  = monetdb@localhost:33290
 QUERY = set current_timezone = 60;
-ERROR = !ERROR: calc.month_interval: illegal argument
-MAPI  = monetdb@localhost:45029
+ERROR = !ERROR: IllegalArgumentException:calc.month_interval:illegal argument
+MAPI  = monetdb@localhost:33290
 QUERY = set current_timezone = 0;
-ERROR = !ERROR: calc.month_interval: illegal argument
+ERROR = !ERROR: IllegalArgumentException:calc.month_interval:illegal argument
 
 # 14:30:12 >  
 # 14:30:12 >  Done.
