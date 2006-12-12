@@ -71,6 +71,16 @@ commands @code{bpm.hashRangePartition()} and @code{bpm.rangeHashPartition()}.
 The design is based on the assumption that partitions
 are reasonably large. This helps to limit plan explosion.
 (or a scheduler should step in)
+
+@- Derived partitioning
+A relational front-end would benefit from derived horizontal
+fragmentation. It would enable grouping together related
+fragments on the same site. 
+Assume a relation R(A,B) which is already partitioned on A
+the derived fragmentation on the oid head is enforced with
+@example
+bpm.derivedPartition(B,A);
+@end example
 @- Using partitions
 The partitioned BAT can be used in two ways. A query plan can be
 rewritten into a generator over the partitions, or it can be
@@ -259,6 +269,9 @@ command hashRangePartition(pb:bat[:any_1,:any_2],
 		slots:int, rl:any_2, lh:any_2):void
 address BPMhashRange
 comment "Create a range and hash index partition on a BAT";
+command derivedPartition(pb:bat[:any_1,:any_2], src:bat[:any_1,:any_3]):void
+address BPMderived
+comment "Create a derived fragmentation over the head using src.";
 
 command take(pb:str, b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMtake
@@ -397,6 +410,7 @@ bpm_export str BPMrange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th);
 bpm_export str BPMhash(int *ret, int *bid, int *hslots, int *tslots);
 bpm_export str BPMrangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots);
 bpm_export str BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th);
+bpm_export str BPMderived(int *ret, int *bid, int *src);
 
 bpm_export str BPMtake(int *ret, str *nme);
 bpm_export str BPMtakeRange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th);
@@ -587,6 +601,17 @@ BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
 	(void) th;
 	*ret= 0;
 	throw(MAL, "bpm.hashRange","NYI");
+}
+str
+BPMderived(int *ret, int *bid, int *src)
+{
+	BAT *b;
+	BPMopen();
+	@:getBATdescriptor(bid,b,"bpm.derived")@
+	/* partition into two direction */
+	(void) src;
+	*ret= 0;
+	throw(MAL, "bpm.derived","NYI");
 }
 @-
 Takeing out partitions.
