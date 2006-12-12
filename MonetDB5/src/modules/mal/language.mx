@@ -110,7 +110,6 @@ comment "Merge the instructions stored in the
 #ifndef _LANGUAGE_H
 #define _LANGUAGE_H
 #include "mal.h"
-#include "mal_assert.h"
 #include "mal_module.h"
 #include "mal_session.h"
 #include "mal_resolve.h"
