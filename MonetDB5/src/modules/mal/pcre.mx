@@ -212,7 +212,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	(void) pattern;
 	(void) replacement;
 	(void) flags;
-	return throwMessagge("pcre_replace_bat","not available as required version of libpcre was not found by configure.\n");
+	throw(MAL, "pcre_replace_bat","not available as required version of libpcre was not found by configure.");
 }
 
 str 
