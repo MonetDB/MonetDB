@@ -7334,7 +7334,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "if (iter%03u.count() != loop%03u.count())\n"
                 "{ # add zero values needed for fn:sum\n"
                 "var difference := loop%03u.tdiff(iter%03u)"
-                                           ".mirror()"
+                                           ".reverse().mirror()"
                                            ".leftjoin(reverse(iter));\n"
                 "var zeros := difference.tmark(0@0).leftfetchjoin(item%s);\n"
                 "difference := difference.hmark(0@0);\n"
