@@ -232,7 +232,7 @@ test = (
 norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(ERROR = !| *!|)(syntax|parse)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',						# 01: 5
     r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\..*)\n',							# 02: 3
-    r'^(ERROR =|       )( !ERROR: )(SQLerror:assert:|MALException:)([^:]+)(: *)([^ ].*)\n',							# 03: 6
+    r'^(ERROR =|       )( !ERROR: )(SQLException:assert:|SQLException:|MALException:)([^:]+)(: *)([^ ].*)\n',							# 03: 6
     r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*)\n',										# 04: 3
     r'^(ERROR: I/O warning : failed to load external entity ")(.*)(".*)\n',									# 05: 3
     r'^(ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt\(")(.*)("\) failed.*)\n',								# 06: 3
