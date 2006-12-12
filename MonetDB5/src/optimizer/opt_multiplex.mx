@@ -51,10 +51,10 @@ barrier (_11,_12,_13):= bat.newIterator(b);
     _15 := calc.+(_13,1);
     bat.insert(_8,_12,_15);
     redo (_11,_12,_13):= bat.hasMoreElements(b);
-catch MALexception;
+catch MALException;
 	#ignore any error
     redo (_11,_12,_13):= bat.hasMoreElements(b);
-exit MALexception;
+exit MALException;
 exit (_11,_12,_13);
     c := _8;
 @end verbatim
@@ -215,7 +215,7 @@ find the actual arguments at the proper place of the callee.
 	pushReturn(mb, q, tvar);
 	pushArgument(mb, q, iter);
 
-/* catch   MALexception and ignore them  and replace value with nil*/
+/* catch   MALException and ignore them  and replace value with nil*/
 	q = newInstruction(mb,CATCHsymbol);
 	k = newVariable(mb, GDKstrdup(exceptionToString(MAL)), TYPE_str);
 	getVar(mb,k)->isudftype = 1;

@@ -87,7 +87,7 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 16  
 #setoid(oid(20000000));
 #test1.print();
-!ERROR: MALexception:mil.take:failed to take 'test1' from box
+!ERROR: MALException:mil.take:failed to take 'test1' from box
 >
 # 17:31:26 >  
 # 17:31:26 >  Done.
