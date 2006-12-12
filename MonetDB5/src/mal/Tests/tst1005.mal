@@ -13,7 +13,7 @@ bbp.close();
 bbp.open();
 v:= bbp.take("myfirstbat");
 catch MALException:str;
-	io.printf(MALException);
+	io.printf("%s\n",MALException);
 exit MALException;
 io.print("v");
 io.print(v);

@@ -6,5 +6,5 @@ c:= bbp.take("myfirstbat");
 io.print(c);
 bbp.close();
 catch MALException:str;
-	io.printf(MALException);
+	io.printf("%s\n",MALException);
 exit MALException;

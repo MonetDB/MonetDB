@@ -33,10 +33,10 @@ function user.main():void;	# 0  (main:void)
     io.print(c);	# 5 IOprint_val (_6:void)<-(c:bat[:any,:any])
     bbp.close();	# 6 CMDbbpclose (_7:void)
 catch MALException:str ;	# 7  (MALException:str) jump 9
-    io.printf(MALException);	# 8 IOprint_str (_9:void)<-(MALException:str)
+    io.printf("%s\n",MALException);	# 8 IOprint_formatted_str (_9:void)<-(_10:str)(MALException:str)
 exit MALException:str ;	# 9  (MALException:str)
 end main;	# 10  
-MALException:user.main[4]:bbp.take:failed to take object from box
+MALException:bbp.take:failed to take object from box
 
 # 07:58:52 >  
 # 07:58:52 >  Done.

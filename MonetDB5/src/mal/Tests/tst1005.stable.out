@@ -57,20 +57,20 @@ function user.main():void;	# 0  (main:void)
     bbp.open();	# 12 CMDbbpopen (_17:void)
     v := bbp.take("myfirstbat");	# 13 CMDbbptake (v:bat[:any,:any])<-(_12:str)
 catch MALException:str ;	# 14  (MALException:str) jump 16
-    io.printf(MALException);	# 15 IOprint_str (_20:void)<-(MALException:str)
+    io.printf("%s\n",MALException);	# 15 IOprint_formatted_str (_20:void)<-(_21:str)(MALException:str)
 exit MALException:str ;	# 16  (MALException:str)
-    io.print("v");	# 17 IOprint_val (_21:void)<-(_22:str)
-    io.print(v);	# 18 IOprint_val (_23:void)<-(v:bat[:any,:any])
+    io.print("v");	# 17 IOprint_val (_22:void)<-(_23:str)
+    io.print(v);	# 18 IOprint_val (_24:void)<-(v:bat[:any,:any])
     x := bbp.getObjects();	# 19 CMDbbpGetObjects (x:bat[:int,:str])
-    io.print("getObjects");	# 20 IOprint_val (_25:void)<-(_26:str)
-    io.print(x);	# 21 IOprint_val (_27:void)<-(x:bat[:int,:str])
-    bbp.close();	# 22 CMDbbpclose (_28:void)
-#catch MALException; 	# 23  (_29:str)
-#io.print(MALException); 	# 24  (_30:str)
-#exit MALException; 	# 25  (_31:str)
-#io.print("done"); 	# 26  (_32:str)
+    io.print("getObjects");	# 20 IOprint_val (_26:void)<-(_27:str)
+    io.print(x);	# 21 IOprint_val (_28:void)<-(x:bat[:int,:str])
+    bbp.close();	# 22 CMDbbpclose (_29:void)
+#catch MALException:str; 	# 23  (_30:str)
+#io.printf(MALException); 	# 24  (_31:str)
+#exit MALException; 	# 25  (_32:str)
+#io.print("done"); 	# 26  (_33:str)
 end main;	# 27  
-MALException:user.main[7]:bbp.bind:failed to locate object in box
+MALException:bbp.bind:failed to locate object in box
 [ "v" ]
 [ nil ]
 [ "getObjects" ]
