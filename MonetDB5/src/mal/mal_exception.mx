@@ -91,7 +91,7 @@ and concludes with specific information needed to interpret
 and handle the exception.
 
 For example, the exception string 
-@code{ 'MALexception:Admin.main[2]:address of function missing'}
+@code{ 'MALException:Admin.main[2]:address of function missing'}
 denotes an exception raised while typechecking a MAL program.
 
 The exceptions captured within the kernel are marked as 'GDKerror'.
@@ -127,7 +127,7 @@ enum exception {
 	OUTOFBNDS,
 	IO,
 	INVCRED,
-	ASSERT,
+	OPTIMIZER,
 	STKOF,
 	SYNTAX,
 	TYPE,
@@ -164,7 +164,7 @@ static char *exceptionNames[] = {
 /* 2 */	"OutOfBoundsException",
 /* 3 */	"IOException",
 /* 4 */	"InvalidCredentialsException",
-/* 5 */	"AssertionException",
+/* 5 */	"OptimizerException",
 /* 6 */	"StackOverflowException",
 /* 7 */	"SyntaxException",
 /* 8 */	"TypeException",
