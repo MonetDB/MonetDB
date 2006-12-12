@@ -1224,17 +1224,16 @@ environment.
 
 cleanup_engine:
 	if (msg) {
-		if (getExceptionType(msg) == ASSERT &&
-				strcmp(getExceptionMessage(msg), "emptySet") == 0)
-		{
+		if (getExceptionType(msg) == OPTIMIZER) {
 			resetMalBlk( c->curprg->def, 1);
 			/* resetInstructions(c->curprg->def, 1);*/
 			freeVariables(c->curprg->def, c->glb, be->vtop);
 			be->language = oldlang;
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
-		} else
+		} else {
 			GDKerror(msg);
+		}
 		showErrors();
 		m->session->status = -10;
 	}
@@ -1306,7 +1305,7 @@ SQLassert(int *ret, bit *flg, str *msg)
 {
 	(void) ret;
 	if (*flg)
-		throw(ASSERT, "assert", *msg);
+		throw(SQL, "assert", *msg);
 	return MAL_SUCCEED;
 }
 
@@ -1315,7 +1314,7 @@ SQLassertInt(int *ret, int *flg, str *msg)
 {
 	(void) ret;
 	if (*flg)
-		throw(ASSERT, "assert", *msg);
+		throw(SQL, "assert", *msg);
 	return MAL_SUCCEED;
 }
 
@@ -1324,6 +1323,6 @@ SQLassertLng(int *ret, lng *flg, str *msg)
 {
 	(void) ret;
 	if (*flg)
-		throw(ASSERT, "assert", *msg);
+		throw(SQL, "assert", *msg);
 	return MAL_SUCCEED;
 }
