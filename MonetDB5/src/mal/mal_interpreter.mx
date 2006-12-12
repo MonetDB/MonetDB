@@ -660,16 +660,19 @@ limited.
 @= MALwrapup
 	if( exceptionVar >= 0) {
 		if (ret) {
-			ret = createScriptException(mb, exceptionPC,
+			char *err= alloca(100+strlen(ret));
+			strcpy(err,"Exception not catched\n");
+			strcat(err,ret);
+			ret = createScriptException(mb, mb->stop-1,
 					getExceptionType(getVarName(mb,exceptionVar)),
-					ret, "Exception not catched");
+					NULL,err);
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
-				ret = createScriptException(mb, exceptionPC, MAL,
+				ret = createScriptException(mb, mb->stop-1, MAL,
 						stk->stk[exceptionVar].val.sval,
 						"Exception not catched");
 			} else {
-				ret = createScriptException(mb, exceptionPC, MAL,
+				ret = createScriptException(mb, mb->stop-1, MAL,
 						NULL, "Exception not catched");
 			}
 		}
@@ -814,13 +817,11 @@ switch(pci->barrier){
 		exceptionPC = stkpc;
 		exceptionVar = getDestVar(pci);
 		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
-			ret = createScriptException(mb, stkpc,
-					getExceptionType(getVarName(mb, getDestVar(pci))),
-					NULL, "%s", stk->stk[getDestVar(pci)].val.sval);
+			ret = createScriptException(mb, stkpc, MAL, NULL,
+				stk->stk[getDestVar(pci)].val.sval);
 		} else
-			ret = createScriptException(mb, stkpc,
-					getExceptionType(getVarName(mb, getDestVar(pci))),
-					NULL, "Exception raised");
+			ret = createScriptException(mb, stkpc, MAL, NULL,
+					"Exception raised");
 		@:skipToCatch(exceptionVar)@
 			break;
 	case YIELDsymbol: /* to be defined */
@@ -1312,9 +1313,8 @@ if( ret != MAL_SUCCEED ) {
 		if( getVarType(mb,exceptionVar) == TYPE_any)
 			setVarType(mb, exceptionVar, TYPE_str);
 		v->vtype = TYPE_str;
-		v->val.pval= GDKstrdup(ret);
+		v->val.pval= ret;
 		v->len= strlen(v->val.pval);
-		GDKfree(ret);
 		ret = 0;
 	} else GDKfree(nxt);
 	/* position yourself at the catch instruction for further decisions */
