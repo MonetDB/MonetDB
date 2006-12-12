@@ -164,15 +164,17 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 		char *cn = column_name(c);
 		char *ntn = sql_escape_ident(tn);
 		char *nsn = sql_escape_ident(sn);
-		char *ncn = sql_escape_ident(cn);
 		char *fqtn = alloca(sizeof(char) * (strlen(nsn) + 1 + strlen(ntn) + 1));
 
-		sprintf(fqtn, "%s.%s", nsn, ntn);
+		fqtn[0]=0;
+		strcat(fqtn, nsn);
+		strcat(fqtn, ".");
+		strcat(fqtn, ntn);
 
 		q = newStmt1(mb, sqlRef, "rsColumn");
 		q = pushArgument(mb, q, s->nr);
 		q = pushStr(mb, q, fqtn);
-		q = pushStr(mb, q, ncn);
+		q = pushStr(mb, q, cn);
 		q = pushStr(mb, q, t->type->sqlname);
 		q = pushInt(mb, q, t->digits);
 		q = pushInt(mb, q, t->scale);
@@ -184,7 +186,6 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 		_DELETE(cn);
 		_DELETE(ntn);
 		_DELETE(nsn);
-		_DELETE(ncn);
 	}
 }
 
@@ -1589,16 +1590,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					char *cn = column_name(c);
 					char *ntn = sql_escape_ident(tn);
 					char *nsn = sql_escape_ident(sn);
-					char *ncn = sql_escape_ident(cn);
 					char *fqtn = alloca(sizeof(char) * (strlen(nsn) + 1 + strlen(ntn) + 1));
 
-					sprintf(fqtn, "%s.%s", nsn, ntn);
-
+					fqtn[0]=0;
+					strcat(fqtn, nsn);
+					strcat(fqtn, ".");
+					strcat(fqtn, ntn);
 					q = newStmt2(mb, sqlRef, exportValueRef);
 					s->nr = getDestVar(q);
 					q = pushInt(mb, q, sql->mvc->type);
 					q = pushStr(mb, q, fqtn);
-					q = pushStr(mb, q, ncn);
+					q = pushStr(mb, q, cn);
 					q = pushStr(mb, q, t->type->sqlname);
 					q = pushInt(mb, q, t->digits);
 					q = pushInt(mb, q, t->scale);
@@ -1612,7 +1614,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					_DELETE(cn);
 					_DELETE(ntn);
 					_DELETE(nsn);
-					_DELETE(ncn);
 					break;
 				}
 				if (n) {
