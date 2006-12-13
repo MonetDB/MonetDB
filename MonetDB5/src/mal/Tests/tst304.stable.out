@@ -5,8 +5,6 @@ stdout of test 'tst304` in directory 'src/mal` itself:
 # 08:01:16 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst304.mal </dev/null
 # 08:01:16 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -38,9 +36,9 @@ function user.main():void;	# 0  (main:void)
     user.myException();	# 3  (_3:void)
     io.print("should not come here");	# 4 IOprint_val (_4:void)<-(_5:str)
 #exception block; 	# 5  (_6:str)
-catch PermissionDeniedException;	# 6  (PermissionDeniedException:any) jump 8
+catch PermissionDeniedException:str ;	# 6  (PermissionDeniedException:str) jump 8
     io.printf("catched IllegalAccess\n");	# 7 IOprint_str (_8:void)<-(_9:str)
-exit PermissionDeniedException;	# 8  (PermissionDeniedException:any)
+exit PermissionDeniedException:str ;	# 8  (PermissionDeniedException:str)
     io.print("done");	# 9 IOprint_val (_10:void)<-(_11:str)
 end main;	# 10  
 catched IllegalAccess
