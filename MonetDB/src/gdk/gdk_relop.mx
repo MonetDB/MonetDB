@@ -840,7 +840,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			l = BATselect(l, &r_lo, &r_hi);	/* sorted, so it will be a slice */
 			if (l == NULL)
 				return NULL;
-			if (BATcount(l) == 0) {
+			lcount = BATcount(l);
+			if (lcount == 0) {
 				if (l != l_orig) {
 					BBPreclaim(l);	/* was created as a temporary (slice) select on l */
 				}
