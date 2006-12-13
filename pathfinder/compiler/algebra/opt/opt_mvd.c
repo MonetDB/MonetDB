@@ -349,6 +349,8 @@ opt_mvd (PFla_op_t *p)
         break;
 
     case la_eqjoin_unq:
+        break;
+
     case la_eqjoin:
         /* Move the independent expression (the one without
            join attribute) up the DAG. */
@@ -363,9 +365,8 @@ opt_mvd (PFla_op_t *p)
                                                  p->sem.eqjoin.att2)));
 
             modified = true;
+            break;
 
-            /* allow also rewrite for the right argument */
-            p = R(p);
         }
         if (is_cross (R(p))) {
             if (att_present (RL(p), p->sem.eqjoin.att2))
@@ -378,6 +379,7 @@ opt_mvd (PFla_op_t *p)
                                                  p->sem.eqjoin.att2)));
 
             modified = true;
+            break;
         }
         break;
 
@@ -1412,7 +1414,7 @@ opt_mvd (PFla_op_t *p)
         cross_changes = 0;
         
     /* discard the subtree with directly following cross products */
-    if (cross_changes == max_cross_changes)
+    if (cross_changes >= max_cross_changes)
         modified = false;
 
     return modified;
