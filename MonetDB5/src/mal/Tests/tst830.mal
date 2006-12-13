@@ -7,7 +7,7 @@
 	# this should fail, the monetdb user is already there
 	id := clients.addUser("monetdb", "Pmonetdb", scens);
 catch MALException:str;
-	io.printf(MALException);
+	io.printf("%s\n",MALException);
 exit MALException;
 
 	# should print 0@1 or something
@@ -41,7 +41,8 @@ exit MALException;
 	# this one should fail: it's not there
 	clients.removeScenario("test", "mil");
 catch MALException:str;
-	io.printf(MALException);
+	io.printf("%s\n",MALException);
+	MALException:= nil:str;
 exit MALException;
 
 	# and add a scenario again
@@ -49,7 +50,8 @@ exit MALException;
 	# do it again, see what happens (should fail)
 	clients.addScenario("test", "mal");
 catch MALException:str;
-	io.printf(MALException);
+	io.printf("%s\n",MALException);
+	MALException:= nil:str;
 exit MALException;
 
 	# forcefully set the password of the user test
@@ -65,23 +67,28 @@ exit InvalidCredentialsException;
 	# try it again, should fail...
 	clients.changePassword("monetdb", "newdb");
 catch InvalidCredentialsException:str;
-	io.printf(InvalidCredentialsException);
+	io.printf("%s\n",InvalidCredentialsException);
+	InvalidCredentialsException:= nil:str;
 exit InvalidCredentialsException;
 
 	# all should fail
 	clients.checkPermission("monetdb","Pmonetdb","sql");
 catch InvalidCredentialsException:str;
-	io.printf(InvalidCredentialsException);
+	io.printf("%s\n",InvalidCredentialsException);
+	InvalidCredentialsException:= nil:str;
 exit InvalidCredentialsException;
 	clients.checkPermission("monetdb","x","sql");
 catch InvalidCredentialsException:str;
-	io.printf(InvalidCredentialsException);
+	io.printf("%s\n",InvalidCredentialsException);
+	InvalidCredentialsException:= nil:str;
 exit InvalidCredentialsException;
 	clients.checkPermission("monetdb","Pmonetdb","x");
 catch InvalidCredentialsException:str;
-	io.printf(InvalidCredentialsException);
+	io.printf("%s\n",InvalidCredentialsException);
+	InvalidCredentialsException:= nil:str;
 exit InvalidCredentialsException;
 	clients.checkPermission("x","Pmonetdb","sql");
 catch InvalidCredentialsException:str;
-	io.printf(InvalidCredentialsException);
+	io.printf("%s\n",InvalidCredentialsException);
+	InvalidCredentialsException:= nil:str;
 exit InvalidCredentialsException;
