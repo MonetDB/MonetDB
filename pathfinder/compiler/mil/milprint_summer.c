@@ -3557,7 +3557,8 @@ translateCast (opt_t *f,
     } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_double ()))) {
         rcode = (code)?DBL:NORMAL;
         translateCast2DBL (f, rcode, rc, input_type);
-    } else if (PFty_subtype (cast_type, PFty_star (PFty_untypedAtomic ()))) {
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_QName ())) ||
+               PFty_subtype (cast_type, PFty_star (PFty_untypedAtomic ()))) {
         rcode = (code)?U_A:NORMAL;
         translateCast2STR (f, rcode, rc, input_type);
     } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_string ()))) {
