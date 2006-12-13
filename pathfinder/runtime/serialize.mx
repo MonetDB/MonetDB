@@ -1108,6 +1108,16 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
             continue;
         }
     
+        /* print end element */
+        while( moreTags(ctx) && pre > topSF(ctx)->limit ) {
+            if ( !ctx->driverFun->handle_endElement(
+                                      ctx,
+                                      topPrefix(ctx),
+                                      topName(ctx)) )
+                return PROBLEM;
+            popTag(ctx);
+        }
+
         /* get container and value reference */
         if ( pre_cont ) {
             findTailValue(res,ctx,pre_cont,pre);
@@ -1205,15 +1215,6 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
                            "Unknow kind %d IN xquery_node_print",
                            (int)kind);
                 return PROBLEM;
-        }
-        /* print end element */
-        while( moreTags(ctx) && pre >= topSF(ctx)->limit ) {
-            if ( !ctx->driverFun->handle_endElement(
-                                      ctx,
-                                      topPrefix(ctx),
-                                      topName(ctx)) )
-                return PROBLEM;
-            popTag(ctx);
         }
         pre++;
     } while (pre <= to);
