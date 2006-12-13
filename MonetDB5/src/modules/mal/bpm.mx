@@ -400,7 +400,7 @@ The internal data structure is used as a cache for improved access.
 #define bpm_export extern
 #endif
 
-bpm_export str BPMopen();
+bpm_export str BPMopen(void);
 bpm_export str BPMclose(int *ret);
 bpm_export str BPMdestroy(int *ret);
 bpm_export str BPMdepositName(int *ret, str *nme, int *src);
@@ -557,6 +557,7 @@ BPMrange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.range")@
 	/* determine the partitioning scheme */
+	(void) b;
 	(void) hl;
 	(void) hh;
 	(void) tl;
@@ -571,6 +572,7 @@ BPMhash(int *ret, int *bid, int *hslots, int *tslots)
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.hash")@
 	/* get hash slot administration */
+	(void) b;
 	(void) hslots;
 	(void) tslots;
 	*ret= 0;
@@ -583,6 +585,7 @@ BPMrangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.rangeHash")@
 	/* partition into two direction */
+	(void) b;
 	(void) hl;
 	(void) hh;
 	(void) tslots;
@@ -596,6 +599,7 @@ BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.hashRange")@
 	/* partition into two direction */
+	(void) b;
 	(void) hslots;
 	(void) tl;
 	(void) th;
@@ -609,6 +613,7 @@ BPMderived(int *ret, int *bid, int *src)
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.derived")@
 	/* partition into two direction */
+	(void) b;
 	(void) src;
 	*ret= 0;
 	throw(MAL, "bpm.derived","NYI");
@@ -630,6 +635,7 @@ BPMtakeRange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 	BAT *b;
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.take");
+	(void) b;
 	(void) hl;
 	(void) hh;
 	(void) tl;
@@ -644,6 +650,7 @@ BPMtakeHash(int *ret, int *bid, int *hslots, int *tslots)
 	BAT *b;
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.take");
+	(void) b;
 	(void) hslots;
 	(void) tslots;
 	*ret =0;
@@ -656,6 +663,7 @@ BPMtakeRangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
 	BAT *b;
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.take");
+	(void) b;
 	(void) hl;
 	(void) hh;
 	(void) tslots;
@@ -669,6 +677,7 @@ BPMtakeHashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
 	BAT *b;
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.take");
+	(void) b;
 	(void) tl;
 	(void) th;
 	(void) hslots;
@@ -682,6 +691,7 @@ BPMtakePartition(int *ret, int *bid, int *idx)
 	BAT *b;
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.take")@
+	(void) b;
 	(void) idx;
 	*ret =0;
 	throw(MAL, "bpm.take","NYI");
@@ -695,6 +705,7 @@ BPMinsert(int *ret, int *bid, int *ins)
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.insert")@
 	/* distributed the content */
+	(void) b;
 	(void) ins;
 	*ret= 0;
 	throw(MAL, "bpm.insert","NYI");
@@ -707,6 +718,7 @@ BPMdelete(int *ret, int *bid, int *del)
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.delete")@
 	/* delete some information from the partitions */
+	(void) b;
 	(void) del;
 	*ret= 0;
 	throw(MAL, "bpm.delete","NYI");
@@ -719,6 +731,7 @@ BPMreplace(int *ret, int *bid, int *ins, int *del)
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.insert")@
 	/* replace values */
+	(void) b;
 	(void) ins;
 	(void) del;
 	*ret= 0;
@@ -884,6 +897,14 @@ In the epilogue phase we should discard any temporary MAT.
 str
 BPMepilogue(int *ret)
 {
+	/* TODO: Make sure these are used. This is needed by icc only. And 
+	   should be removed once the implementation matures.
+	 */
+	(void)bpmHeadLow[0];
+	(void)bpmHeadHigh[0];
+	(void)bpmTailLow[0];
+	(void)bpmTailHigh[0];
+
 	*ret =0;
 	return MAL_SUCCEED;
 }
