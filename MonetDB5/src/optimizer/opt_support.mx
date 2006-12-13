@@ -566,8 +566,8 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 {
 	Client cntxt = MCgetClient();
 	if( actions > 0){
-		if( flag & OPT_CHECK_FLOW) chkFlow(mb);
 		if( flag & OPT_CHECK_TYPES) chkTypes(cntxt->nspace, mb);
+		if( flag & OPT_CHECK_FLOW) chkFlow(mb);
 		if( flag & OPT_CHECK_DECL) chkDeclarations(mb, TRUE);
 		if( flag & OPT_CHECK_SPAN) setLifespan(mb);
 	}
