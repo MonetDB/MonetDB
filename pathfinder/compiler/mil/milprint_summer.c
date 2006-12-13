@@ -7702,12 +7702,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "iter := merge.fetch(3);\n"
                   "ipik := item;\n");
         return NORMAL;
-    }        
+    }
     else if (PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsFirst")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsLast")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"insertBefore")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"insertAfter")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"replaceValue")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_upd,"replaceElementContent")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"rename")) == 0)
     {
         char *func = PFqname_loc(fnQname);
@@ -7723,6 +7724,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             update_cmd = "UPDATE_INSERT_AFTER";
         else if (strcmp(func, "replaceValue") == 0) {
             update_cmd = "UPDATE_REPLACE";
+            arg = "str";
+        } else if (strcmp(func, "replaceElementContent") == 0) {
+            update_cmd = "UPDATE_REPLACECONTENT";
             arg = "str";
         } else if (strcmp(func, "rename") == 0) {
             update_cmd = "UPDATE_RENAME";
