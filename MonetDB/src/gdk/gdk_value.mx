@@ -678,6 +678,8 @@ VALconvert(int typ, ValPtr t)
 		VALclear(t);
 	/* and finally copy the result */
 	*t = dst;
+	/* make sure we return the correct type (not the storage type) */
+	t->vtype = typ;
 	return p == ILLEGALVALUE ? p : 	VALptr(t);
 }
 
