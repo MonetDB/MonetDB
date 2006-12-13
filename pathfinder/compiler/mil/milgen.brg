@@ -1818,6 +1818,7 @@ reduce (PFpa_op_t * p, int goalnt)
              */
             PFalg_simple_type_t lty = type_of (L(p), p->sem.eqjoin.att1);
             PFalg_simple_type_t rty = type_of (R(p), p->sem.eqjoin.att2);
+            PFalg_simple_type_t t = 0;
             mvar_t *l = NULL;
             mvar_t *r = NULL;
             mvar_t *tmp1 = new_var (1);
@@ -1825,13 +1826,17 @@ reduce (PFpa_op_t * p, int goalnt)
 
             assert (lty == rty);
 
-            for (PFalg_simple_type_t t = 1; t; t <<= 1) {
-                if (t == lty && t == rty) {
+            for (t = 1; t; t <<= 1) {
+                if (t & lty && t & rty) {
                     l = env_mvar_unsafe (L(p)->env, p->sem.eqjoin.att1, t);
                     r = env_mvar_unsafe (R(p)->env, p->sem.eqjoin.att2, t);
                     break;
                 }
             }
+
+            if (t != lty || t != rty)
+                PFoops (OOPS_FATAL, 
+                        "multi-predicate joins are not supported yet");
 
             if (!l || !r)
                 PFoops (OOPS_FATAL, "incompatible types in Join");
@@ -2412,10 +2417,12 @@ reduce (PFpa_op_t * p, int goalnt)
                                      PFord_order_at (p->sem.sort_distinct.ord,
                                                      i))) {
                         if (!initialized) {
-                            first_sort_var = env_mvar (rel->env,
-                                                       PFord_order_at (
-                                                           p->sem.sort_distinct.ord, i),
-                                                       t);
+                            first_sort_var = env_mvar (
+                                                 rel->env,
+                                                 PFord_order_at (
+                                                     p->sem.sort_distinct.ord,
+                                                     i),
+                                                 t);
                             execute (
                                 assgn (
                                     var (v->name),
@@ -2502,9 +2509,9 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      std_sort (Rel) */
         case 33:
         {
-            unsigned int count          = 0;
-            mvar_t      *v              = new_var (1);
-            mvar_t      *first_sort_var = NULL;
+            bool    initialized    = false;
+            mvar_t *v              = new_var (1);
+            mvar_t *first_sort_var = NULL;
 
             for (unsigned int i = 0;
                     i < PFord_count (p->sem.sortby.required); i++)
@@ -2512,19 +2519,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     if (t & type_of (L(p),
                                      PFord_order_at (p->sem.sortby.required,
                                                      i))) {
-                        if (count) {
-                            execute (
-                                assgn (
-                                    var (v->name),
-                                    ctrefine (
-                                        var (v->name),
-                                        VAR (L(p)->env,
-                                             PFord_order_at (
-                                                 p->sem.sortby.required,
-                                                 i),
-                                             t))));
-                        }
-                        else {
+                        if (!initialized) {
                             first_sort_var = env_mvar (
                                                  L(p)->env,
                                                  PFord_order_at (
@@ -2540,8 +2535,20 @@ reduce (PFpa_op_t * p, int goalnt)
                                             reverse (
                                                 var (first_sort_var->name))
                                             ))));
+                            initialized = true;
                         }
-                        count++;
+                        else {
+                            execute (
+                                assgn (
+                                    var (v->name),
+                                    ctrefine (
+                                        var (v->name),
+                                        VAR (L(p)->env,
+                                             PFord_order_at (
+                                                 p->sem.sortby.required,
+                                                 i),
+                                             t))));
+                        }
                     }
 
             /* handle the case that a sort does nothing */
@@ -2590,15 +2597,15 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      refine_sort (Rel) */
         case 34:
         {
-            mvar_t  *v = new_var (1);
-            bool     initialized = false;
+            bool         initialized = false;
+            mvar_t      *v           = new_var (1);
+            unsigned int i, j;
 
             /*
              * Create a MonetDB grp object according to the already
              * existing order.
              */
-            for (unsigned int i = 0;
-                    i < PFord_count (p->sem.sortby.existing); i++) {
+            for (i = 0; i < PFord_count (p->sem.sortby.existing); i++) {
                 for (PFalg_simple_type_t t = 1; t; t <<= 1) {
                     if (t & type_of (L(p),
                                      PFord_order_at (p->sem.sortby.existing,
@@ -2608,10 +2615,10 @@ reduce (PFpa_op_t * p, int goalnt)
                                 assgn (
                                     var (v->name),
                                     VAR (L(p)->env,
-                                    PFord_order_at (p->sem
-                                                      .sortby
-                                                      .existing, i),
-                                    t)));
+                                         PFord_order_at (p->sem
+                                                           .sortby
+                                                           .existing, i),
+                                         t)));
                             initialized = true;
                         }
                         else {
@@ -2633,7 +2640,7 @@ reduce (PFpa_op_t * p, int goalnt)
             /*
              * Now do the remaining sorting
              */
-            for (unsigned int i = PFord_count (p->sem.sortby.existing);
+            for (i = PFord_count (p->sem.sortby.existing);
                     i < PFord_count (p->sem.sortby.required); i++) {
                 /*
                  * Be careful to implement document order on
@@ -2675,26 +2682,39 @@ reduce (PFpa_op_t * p, int goalnt)
                 assgn (var (v->name),
                        reverse (mark (var (v->name), lit_oid (0)))));
 
-            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
-                 mvar_t *a = new_var (p->refctr);
-
-                 execute (
-                      assgn (var (a->name),
-                             leftjoin (
-                                  var (v->name),
-                                  var (env_at (L(p)->env, i).mvar->name))),
-                      /* because leftjoin does not know that we have 
-                         exactly one match for each tuple in v,
-                         we need to make the heads void ourselves */
-                      assgn (var (a->name),
-                             reverse (mark (reverse (var (a->name)),
-                                            lit_oid (0))))
-                      );
-
-                 env_add (p->env,
-                          env_at (L(p)->env, i).att,
-                          env_at (L(p)->env, i).ty,
-                          a);
+            for (i = 0; i < env_count (L(p)->env); i++) {
+                /* all columns that ensure the already existing order
+                   stay unchanged. */
+                for (j = 0; j < PFord_count (p->sem.sortby.existing); j++)
+                    if (PFord_order_at (p->sem.sortby.existing, j) ==
+                        env_at (L(p)->env, i).att) {
+                        env_t entry = env_at (L(p)->env, i);
+                        env_add (p->env, entry.att, entry.ty, entry.mvar);
+                        pin (entry.mvar, p->refctr);
+                        break;
+                    }
+                
+                /* adjust the ordering for :wall other columns */
+                if (j == PFord_count (p->sem.sortby.existing)) {
+                    mvar_t *a = new_var (p->refctr);
+                 
+                    execute (
+                        assgn (var (a->name),
+                               leftjoin (
+                                    var (v->name),
+                                    var (env_at (L(p)->env, i).mvar->name))),
+                        /* because leftjoin does not know that we have 
+                           exactly one match for each tuple in v,
+                           we need to make the heads void ourselves */
+                        assgn (var (a->name),
+                               reverse (mark (reverse (var (a->name)),
+                                              lit_oid (0)))));
+                 
+                    env_add (p->env,
+                             env_at (L(p)->env, i).att,
+                             env_at (L(p)->env, i).ty,
+                             a);
+                }
             }
 
             unpin (v, 1);
@@ -3251,8 +3271,10 @@ reduce (PFpa_op_t * p, int goalnt)
 
                             /* Unpin the temporary variable 
                                bln_tmp if it has been pinned. */
-                            if (bln_tmp)
+                            if (bln_tmp) {
                                 unpin (bln_tmp, 1);
+                                bln_tmp = NULL;
+                            }
                         }
                     execute (
                         if_ (exist (reverse (var (v->name)),
