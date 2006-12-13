@@ -171,31 +171,20 @@ int PFqueryType(PFcnode_t *c);
 /**
  * Test if two types are castable into each other
  *
- * @param t1 the type from which it is casted
- * @param t2 the type to which it is casted
+ * @param input_type the type from which it is casted
+ * @param cast_type the type to which it is casted
  * @return the result of the castable test
  */
 static bool
-castable (PFty_t t1, PFty_t t2)
+castable (PFty_t input_type, PFty_t cast_type)
 {
-    t2 = PFty_defn (t2);
-
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-    /* don't cast seqcast which are not valid (choice) or 
-       are non necessary cast introduced during translation (atomic) */
-    if (t2.type == ty_choice ||
-        t2.type == ty_atomic || /* avoid problems with ty_atomic */
-        (t2.type == ty_opt && ((PFty_child (t2)).type == ty_choice ||
-                               (PFty_child (t2)).type == ty_atomic)))
-        return false;
-    /* handle aggregates with sequences within an iteration */
-    else if (t2.type == ty_star)
-        return (PFty_subtype (t2, PFty_star (PFty_atomic ())) &&
-                PFty_subtype (t1, PFty_star (PFty_atomic ())));
-    else
-#endif
-        return (PFty_subtype (t1, PFty_opt (PFty_atomic ())) &&
-                PFty_subtype (t2, PFty_opt (PFty_atomic ())));
+    return ((PFty_subtype (cast_type, PFty_opt (PFty_xs_boolean ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_xs_integer ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_xs_decimal ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_xs_double ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_untypedAtomic ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_xs_string ()))) &&
+             PFty_subtype (input_type, PFty_opt (PFty_atomic ())));
 }
 
 /* (return) code, which holds the 
@@ -3190,7 +3179,7 @@ static void
 testCastComplete (opt_t *f, int cur_level, PFty_t type_)
 {
     milprintf(f,
-            "if (iter.count() != loop%03u.count())\n"
+            "if (iter.tunique().count() != loop%03u.count())\n"
             "{    ERROR(\"err:XPTY0004: cast to '%s' does not allow empty sequences to be casted.\"); }\n",
             cur_level, PFty_str (type_));
 }
@@ -3548,22 +3537,7 @@ translateCast (opt_t *f,
 
     PFty_t cast_type = PFty_defn (L(c)->sem.type);
     PFty_t input_type = PFty_defn (TY(R(c)));
-    int cast_optional = 0;
      
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-#else
-    (void) code; (void) rc;
-#endif
-
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-    if (cast_type.type == ty_opt ||
-        cast_type.type == ty_star)
-    {
-        cast_type = PFty_child (cast_type);
-        cast_optional = 1;
-    }
-#endif
-
     input_type = PFty_prime(input_type);
 
     milprintf(f,
@@ -3571,44 +3545,31 @@ translateCast (opt_t *f,
             PFty_str(PFty_defn (TY(R(c)))),
             PFty_str(PFty_defn (L(c)->sem.type)));
 
-    switch (cast_type.type)
-    {
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-        case ty_boolean:
-            rcode = NORMAL;
-            translateCast2BOOL (f, rcode, rc, input_type);
-            break;
-        case ty_integer:
-            rcode = (code)?INT:NORMAL;
-            translateCast2INT (f, rcode, rc, input_type);
-            break;
-        case ty_decimal:
-            rcode = (code)?DEC:NORMAL;
-            translateCast2DEC (f, rcode, rc, input_type);
-            break;
-        case ty_double:
-            rcode = (code)?DBL:NORMAL;
-            translateCast2DBL (f, rcode, rc, input_type);
-            break;
-        case ty_untypedAtomic:
-        case ty_qname:
-            rcode = (code)?U_A:NORMAL;
-            translateCast2STR (f, rcode, rc, input_type);
-            break;
-        case ty_string:
-            rcode = (code)?STR:NORMAL;
-            translateCast2STR (f, rcode, rc, input_type);
-            break;
-#endif
-        default:
-            PFoops (OOPS_TYPECHECK,
-                    "can't cast type '%s' to type '%s'",
-                    PFty_str(TY(R(c))),
-                    PFty_str(L(c)->sem.type));
-            break;
-    }
+    if (PFty_subtype (cast_type, PFty_star (PFty_xs_boolean ()))) {
+        rcode = NORMAL;
+        translateCast2BOOL (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_integer ()))) {
+        rcode = (code)?INT:NORMAL;
+        translateCast2INT (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_decimal ()))) {
+        rcode = (code)?DEC:NORMAL;
+        translateCast2DEC (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_double ()))) {
+        rcode = (code)?DBL:NORMAL;
+        translateCast2DBL (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_untypedAtomic ()))) {
+        rcode = (code)?U_A:NORMAL;
+        translateCast2STR (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_string ()))) {
+        rcode = (code)?STR:NORMAL;
+        translateCast2STR (f, rcode, rc, input_type);
+    } else
+        PFoops (OOPS_TYPECHECK,
+                "can't cast type '%s' to type '%s'",
+                PFty_str(TY(R(c))),
+                PFty_str(L(c)->sem.type));
 
-    if (!cast_optional)
+    if (PFty_subtype (cast_type, PFty_plus (PFty_item ())))
         testCastComplete (f, cur_level, cast_type);
 
     milprintf(f,
@@ -4609,13 +4570,6 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 
     rcode = (code)?STR:NORMAL;
 
-    /* avoid problems because of optional type 
-       (it is handled by the last part, which adds empty strings) */
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-    if (input_type.type == ty_opt)
-        input_type = PFty_child (input_type);
-#endif
-
     if (PFty_subtype (PFty_node(),input_type))
     {
         translate2MIL (f, NORMAL, cur_level, counter, c);
@@ -4642,7 +4596,7 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         rc = translate2MIL (f, code, cur_level, counter, c);
     }
 
-    translateCast2STR (f, rcode, rc, input_type);
+    translateCast2STR (f, rcode, rc, PFty_prime (input_type));
     add_empty_strings (f, rcode, cur_level);
     milprintf(f,
         "iter := loop%03u.tmark(0@0);\n"
