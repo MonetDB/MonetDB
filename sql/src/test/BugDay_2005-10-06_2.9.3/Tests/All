@@ -53,5 +53,5 @@ var_char_cast_truncate.SF-1150907
 foreign_key_null.SF-1164646
 select_not_true.SF-1314945
 create_view_with_check_options.SF-1314951
-slow_counting_1.SF-923709.sql
-slow_counting_2.SF-923709.sql
+slow_counting_1.SF-923709
+slow_counting_2.SF-923709
