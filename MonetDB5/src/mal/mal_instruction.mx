@@ -966,6 +966,7 @@ removeInstruction(MalBlkPtr mb, InstrPtr p)
 	mb->stmt[i] = p;
 
 	/* freeInstruction(p); */
+	memset((char*)p, 0, sizeof(*p));
 }
 
 void
