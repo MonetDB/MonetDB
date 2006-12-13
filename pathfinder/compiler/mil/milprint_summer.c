@@ -4667,7 +4667,7 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
  */
 static int
 translateAggregates (opt_t *f, int code, int rc,
-                     PFfun_t *fun, PFcnode_t *args, char *op, int cur_level)
+                     PFfun_t *fun, PFcnode_t *args, char *op)
 {
     assert (fun->sig_count == 1);
     int ic = get_kind(PFty_prime(PFty_defn(TY(L(args)))));
@@ -4678,14 +4678,14 @@ translateAggregates (opt_t *f, int code, int rc,
     milprintf(f,
             "if (ipik.count() != 0) { # fn:%s\n"
             "var iter_grp  := iter.materialize(ipik);\n"
-            "var iter_aggr := {%s}(item%s, iter_grp, reverse(loop%03u)).tmark(0@0);\n"
-            "iter := loop%03u.tmark(0@0);\n"
+            "iter := iter_grp.tunique();\n"
+            "var iter_aggr := {%s}(item%s, iter_grp, iter).tmark(0@0);\n"
+            "iter := iter.hmark(0@0);\n"
             "ipik := iter;\n"
             "pos := 1@0;\n"
             "kind := %s;\n",
             op, 
-            op, (rc)?kind_str(rc):val_join(ic), cur_level, 
- 	    cur_level,
+            op, (rc)?kind_str(rc):val_join(ic),
             t_co.mil_cast);
 
     if (code)
@@ -7283,17 +7283,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"avg")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        return translateAggregates (f, code, rc, fun, args, "avg", cur_level);
+        return translateAggregates (f, code, rc, fun, args, "avg");
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"max")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        return translateAggregates (f, code, rc, fun, args, "max", cur_level);
+        return translateAggregates (f, code, rc, fun, args, "max");
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"min")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        return translateAggregates (f, code, rc, fun, args, "min", cur_level);
+        return translateAggregates (f, code, rc, fun, args, "min");
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"sum")))
     {
@@ -7303,7 +7303,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         item_ext = kind_str(rcode);
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        rc = translateAggregates (f, VALUES, rc, fun, args, "sum", cur_level);
+        rc = translateAggregates (f, VALUES, rc, fun, args, "sum");
         if (rc == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_ext, val_join(rcode));
@@ -7313,26 +7313,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         if (fun->arity == 2)
         {
-
             rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
             if (rc == NORMAL)
             {
                 milprintf(f, "item%s := item%s;\n", item_ext, val_join(rcode));
             }
-            milprintf(f, 
-                    "if (iter.count() != loop%03u.count())\n"
-                    "{ # add 0 for missing zero values in fn:sum\n"
-                    "var difference := reverse(loop%03u.tdiff(iter));\n"
-                    "difference := difference.hmark(0@0);\n"
-                    "var res_mu := merged_union(iter, difference, item%s, %s(0));\n"
-                    "iter := loop%03u;\n"
-                    "item%s := res_mu.fetch(1);\n" /* CONST? */
-                    "}\n",
-                    cur_level, 
-                    cur_level,
-                    item_ext, t_co.mil_type,
-                    cur_level,
-                    item_ext);
         }
         else
         {
@@ -7347,16 +7332,18 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var item_result;\n"
                 "if (iter%03u.count() != loop%03u.count())\n"
                 "{ # add zero values needed for fn:sum\n"
-                "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
+                "var difference := loop%03u.tdiff(iter%03u)"
+                                           ".reverse().mirror()"
+                                           ".leftjoin(reverse(iter));\n"
+                "var zeros := difference.tmark(0@0).leftfetchjoin(item%s);\n"
                 "difference := difference.hmark(0@0);\n"
-                "var zeros := difference.leftfetchjoin(iter.reverse())"
-                                       ".leftfetchjoin(item%s);\n"
                 "var res_mu := merged_union(iter%03u, difference, item%s%03u, zeros);\n"
+                "iter := res_mu.fetch(0);\n"
                 "item_result := res_mu.fetch(1);\n" /* CONST? */
                 "} else {\n"
+                "iter := iter%03u;\n"
                 "item_result := item%s%03u;\n"
                 "}\n"
-                "iter := loop%03u;\n"
                 "ipik := iter;\n"
                 "pos := 1@0;\n"
                 "kind := %s;\n",
@@ -7365,8 +7352,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 item_ext,
                 counter,
                 item_ext, counter,
+                counter,
                 item_ext, counter,
-                cur_level,
                 t_co.mil_cast);
 
         if (code)

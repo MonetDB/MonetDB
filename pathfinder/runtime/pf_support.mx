@@ -425,6 +425,7 @@ module("lock");
 # global constants using in the MIL translation
 const empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);
 const EMPTY_STRING := 0@0;
+const OID_PAGE_BITS := isnil(lng(1LL << 32).oid()).ifthenelse(10,9);
 const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);
 const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
@@ -557,7 +558,7 @@ PROC replace_root(BAT[void,oid] result, BAT[oid,oid] frag_item, BAT[oid,oid] fra
         var delta := 100000 / count(frag_frag); # generate 100K intermediate tuples max
         var cur := 0, end := count(frag_item);
         while(cur < end) {
-                result.replace(leftthetajoin(frag_item.slice(cur, cur+delta), frag_frag, GE).{max}());
+                result.replace(leftthetajoin(frag_item.slice(cur, cur+delta), frag_frag, GE).{max}(), true);
                 cur :+= delta + 1;
         }
 }
@@ -626,7 +627,7 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
                         attr_item := attr_item.mirror().leftfetchjoin(item);
                         attr_item := attr_item.leftfetchjoin(ws.fetch(ATTR_OWN).fetch($h));
                         attr_item := attr_item.leftfetchjoin(nid_rid).[swizzle](map_pid);
-                        result.replace(attr_item);
+                        result.replace(attr_item, true);
                 }
                 var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
                 replace_root(result, frag_item, mirror(reverse(frag_root)));
@@ -1468,7 +1469,7 @@ PROC myupdate(bat[any::1,any::2] oldbat, bat[any::1,any::2] newbat) : bat[any::1
     newvals := newvals.chk_order().sort();
     oldbat := oldbat.append(newvals, true);
   } else {
-    if (ordered(oldbat)) newbat.chk_order().order();
+    if (ordered(oldbat)) newbat := newbat.chk_order().sort();
     var newvals := kdiff(newbat, oldbat);
     var replvals := kdiff(newbat, newvals);
     oldbat := oldbat.replace(replvals, true).insert(newvals);
@@ -1486,7 +1487,7 @@ PROC myupdate(bat[any::1,any::2] oldbat, any::1 key, any::2 val) : bat[any::1,an
     # therefore we check whether the key already exists and do a
     # replace if it does
     if (oldbat.exist(key)) {
-      oldbat.replace(key, val);
+      oldbat.replace(key, val, true);
     } else {
       oldbat.insert(key, val);
     }
@@ -1893,7 +1894,8 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     var update_nid := update_data.select(oid_nil, oid_nil).reverse();
     var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(cont);
     nid_rid_update.myupdate(update_nid);
-    modified_nid.insert(update_nid.project(cont).reverse());
+    modified_nid.reverse().accbuild("hash");
+    modified_nid.insert(update_nid.project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
   }
 }
 ADDHELP("movedata", "sjoerd", "Oct 4 2005",
@@ -1951,11 +1953,19 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   ws.append(new(oid,oid).set(true)); # UPDATED_TEXT
   ws.append(new(oid,bat).key(true)); # NID_QN_INS_UPDATE
   ws.append(new(oid,bat).key(true)); # NID_QN_DEL_UPDATE
-  ws.append(new(oid,oid).set(true)); # MODIFIED_NID
+  ws.append(new(oid,wrd).set(true)); # MODIFIED_NID
   ws.append(new(oid,oid).set(true)); # ANCESTOR_NID
   ws.append(new(oid,oid).set(true)); # MODIFIED_ATTR
   ws.append(new(oid,oid).set(true)); # MODIFIED_PAGE
   ws.append(new(oid,oid).set(true)); # NEW_PAGE
+
+  # set-wise unique bats, but better build the hash table on tail (head=cont != selective)
+  ws.fetch(MODIFIED_NID).reverse().accbuild("hash");
+  ws.fetch(ANCESTOR_NID).reverse().accbuild("hash");
+  ws.fetch(MODIFIED_ATTR).reverse().accbuild("hash");
+  ws.fetch(MODIFIED_PAGE).reverse().accbuild("hash");
+  ws.fetch(NEW_PAGE).reverse().accbuild("hash");
+
   affected_conts@batloop() {
     ws.fetch(MAP_PID_UPDATE).insert($t, ws.fetch(MAP_PID).find($t).copy().access(BAT_WRITE).key(true));
     ws.fetch(RID_SIZE_UPDATE).insert($t, new(oid,int).key(true));
@@ -2157,19 +2167,19 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
 
     # conflict detection: find out which attrs, nids and pages were modified
     var modified_attr := ws.fetch(MODIFIED_ATTR).reverse().uselect(cont).hmark(0@0); # [i,ATID]
-    var modified_nid := ws.fetch(MODIFIED_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
+    var modified_nid := ws.fetch(MODIFIED_NID).reverse().uselect(cont).hmark(0@0).access(BAT_WRITE); # [i,NID]
     var ancestor_nid := ws.fetch(ANCESTOR_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
     var modified_page := ws.fetch(MODIFIED_PAGE).reverse().uselect(cont).hmark(0@0); # [i,PGID]
 
     # add ancestor nids on modified pages to modified nids list and remove them from ancestor nids list
     var ancestor_rid := ancestor_nid.join(ws.fetch(NID_RID).find(cont)); # [i,RID]
-    modified_nid := modified_nid.access(BAT_WRITE).reverse().key(true).reverse();
     var new_ancestor_nid := new(void, oid);
     modified_page@batloop() {
       var start := oid(lng($t) << REMAP_PAGE_BITS);
       var end := oid(lng(start) + REMAP_PAGE_MASK);
       var rids := ancestor_rid.reverse().select(start, end).reverse();
-      modified_nid.append(rids.mirror().join(ancestor_nid));
+      modified_nid.reverse().key(true).accbuild("hash");
+      modified_nid.append(rids.mirror().join(ancestor_nid).[wrd]().[>>](OID_PAGE_BITS));
       new_ancestor_nid.append(tdiff(ancestor_nid, rids.mirror().join(ancestor_nid)));
     }
     ancestor_nid := new_ancestor_nid.tmark(0@0);
@@ -2180,7 +2190,7 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
 #modified_attr.col_name("modified_attr").print();
 
     # ws_precommit gives an ERROR if a conflicting transaction has committed already
-    ws_precommit(ws, cont, modified_page, ancestor_nid, modified_nid, modified_attr);
+    ws_precommit(ws, cont, modified_page, ancestor_nid, [oid]([<<](modified_nid, OID_PAGE_BITS)), modified_attr);
 
     # compute the size-delta on the ancestors of modified nodes, and apply those to the recent masters (and LOG it) 
     var ancestor_rid := ancestor_nid.leftjoin(ws.fetch(NID_RID).find(cont));
@@ -2275,11 +2285,12 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       var pre_nid := ws.fetch(PRE_NID).find(cont);
       {
         var modified_nid := ws.fetch(MODIFIED_NID);
-        modified_nid.insert(epres.join(pre_nid).reverse().project(cont).reverse());
+        modified_nid.reverse().accbuild("hash");
+        modified_nid.insert(epres.join(pre_nid).reverse().project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
       }
       {
         var modified_page := ws.fetch(MODIFIED_PAGE);
-        modified_page.insert(reverse(project(tunique([oid]([>>]([lng](erids), REMAP_PAGE_BITS))), cont)));
+        modified_page.insert(reverse(project(tunique([oid]([>>]([wrd](erids), REMAP_PAGE_BITS))), cont)));
       }
       if (eelem.count() > 0) {
         var eqn := eelem.leftjoin(update_rename); # [i,newQName]
@@ -2365,12 +2376,13 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
       }
       {
         var modified_nid := ws.fetch(MODIFIED_NID);
-        modified_nid.insert(epres.join(pre_nid).reverse().project(cont).reverse());
+        modified_nid.reverse().accbuild("hash");
+        modified_nid.insert(epres.join(pre_nid).reverse().project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
       }
       var erids := [swizzle](epres, pid_map); # [i,RID]
       {
         var modified_page := ws.fetch(MODIFIED_PAGE);
-        modified_page.insert(reverse(project(tunique([oid]([>>]([lng](erids), REMAP_PAGE_BITS))), cont)));
+        modified_page.insert(reverse(project(tunique([oid]([>>]([wrd](erids), REMAP_PAGE_BITS))), cont)));
       }
       if (etext.count() > 0) {
         var elval := etext.leftjoin(update_replace); # [i,update_replace]
@@ -2393,7 +2405,7 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
           var etgt := props.leftjoin(prop_tgt); # [i,tgt]
           var elvalid := add_pi_bulk(ws, cont, etgt, eins); # [i,new PROPID]
           var upd := epi.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
-          rid_prop_update.replace(upd);
+          rid_prop_update.replace(upd, true);
           epi := epi.kdiff(props); # only do the remaining ones
         }
         if (epi.count() > 0) {
@@ -2652,7 +2664,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           if ((holeatend = 0) and (datasize > int(REMAP_PAGE_SIZE / 2))) {
             # insert new pages before current
             newpages := newpages.seqbase(pageno);
-            map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid_nil, true, true)), npages)));
+            map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid_nil, true, true)), npages)), true);
             map_pid_update.myupdate(newpages.reverse());
             docinsertafter_rid := antiswizzle(docinsertafter_newpre, map_pid_update);
             docinsertbefore_rid := antiswizzle(docinsertbefore_newpre, map_pid_update);
@@ -2664,13 +2676,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           } else {
             # insert new pages after current
             newpages := newpages.seqbase(oid(lng(pageno) + 1));
-            map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid_nil, false, true)), npages)));
+            map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid_nil, false, true)), npages)), true);
             map_pid_update.myupdate(newpages.reverse());
             # we need to copy the data at the end to the end of the last new page
             cpstart := docinsertbefore_rid;
             cpsize := datasize;
             var pgstart := oid(lng(lastpage) << REMAP_PAGE_BITS);
-            cpwhere := oid(lng(pgstart) + (((insertsize - datasize) - holeatend) and REMAP_PAGE_MASK));
+            cpwhere := oid(int(pgstart) + (((insertsize - datasize) - holeatend) and int(REMAP_PAGE_MASK)));
 
             if (cpwhere > pgstart) {
               # fix up hole at start of last page since it doesn't
@@ -2680,7 +2692,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               update_hole := [nilor]([-](update_hole.project(int(cpwhere) - 1), [int](update_hole.mirror())), int_nil);
               rid_size.replace(update_hole, true);
             }
-            newholeatend := int((lng(cpwhere) + cpsize) and REMAP_PAGE_MASK);
+            newholeatend := (int(cpwhere) + cpsize) and int(REMAP_PAGE_MASK);
           }
 
           # move data after insert point to end of last inserted page
@@ -2711,7 +2723,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               rid_nid_data := rid_nid_data.copy().access(BAT_WRITE).key(true).myupdate(rid_nid_update_data);
               rid_size_data := rid_size_data.copy().access(BAT_WRITE).key(true).myupdate(rid_size_update_data);
               # all these moved nodes are modified
-              modified_nid.insert(rid_nid_data.select(oid_nil, oid_nil).reverse().project(doccont).reverse());
+              modified_nid.reverse().accbuild("hash");
+              modified_nid.insert(rid_nid_data.select(oid_nil, oid_nil).reverse().project(doccont).reverse().[wrd]().[>>](OID_PAGE_BITS));
             } else {
               var cpend := oid((lng(cpstart) + cpsize) - 1);
               rid_size_data := rid_size.reverse().select(cpstart, cpend).reverse();
@@ -2724,8 +2737,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             if (holeatend != newholeatend) {
               # Adjust sizes of moved data that point beyond the end of it.
               var rid_end_data := [+]([int](rid_size_data.mirror()), [niland](rid_size_data, INT_MAX));
-              var past_end := rid_end_data.uselect(oid(lng(cpstart) + cpsize), oid_nil);
-              rid_size_data.replace([nilplus](past_end.mirror().join(rid_size_data), newholeatend - holeatend));
+              var past_end := rid_end_data.uselect(int(cpstart) + cpsize, int_nil);
+              rid_size_data.replace([nilplus](past_end.mirror().join(rid_size_data), newholeatend - holeatend), true);
             }
             rid_size.replace(rid_size_data.tmark(cpwhere), true);
             rid_level.replace(rid_level_data.tmark(cpwhere), true);
@@ -2768,12 +2781,12 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor_or_self(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(docinsertafter_oldpre), pre_size, pre_level));
           var ancestors_nid := ancestors_oldpre.join(pre_nid);
           var ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
-          var ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
+          var ancestors_newpre := [swizzle](ancestors_newrid, [oid](map_pid_update));
           var ancestors_size := ancestors_oldpre.join(pre_size).access(BAT_WRITE).myupdate(ancestors_newrid.join(rid_size_update));
           # now figure out which ancestors *end* at the hole
           var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size));
 
-          var new_sizes := new(oid, int); # collect new sizes until we apply
+          var new_size := new(oid, int); # collect new sizes until we apply
           # select those that start before and end inside the moved data
           var indata := ancestors_end.uselect(docinsertbefore_newpre, oid(lng(docinsertbefore_newpre) + datasize), true, false);
           if (indata.count() > 0) {
@@ -2861,7 +2874,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor_or_self(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(docinsertafter_oldpre), pre_size, pre_level));
           var ancestors_nid := ancestors_oldpre.join(pre_nid);
           var ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
-          var ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
+          var ancestors_newpre := [swizzle](ancestors_newrid, [oid](map_pid_update));
           var ancestors_size := ancestors_oldpre.join(pre_size).access(BAT_WRITE).myupdate(ancestors_newrid.join(rid_size_update));
           # now figure out which ancestors *end* at the hole
           var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size)).uselect(docinsertafter_newpre).mirror();
@@ -3355,7 +3368,8 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
             }
             var nid_rid_updates := rid_nid_page.select(oid_nil, oid_nil).reverse().project(oid_nil);
             nid_rid_update := myupdate(nid_rid_update, nid_rid_updates);
-            modified_nid.insert(nid_rid_update.project(cont).reverse());
+            modified_nid.reverse().accbuild("hash");
+            modified_nid.insert(nid_rid_update.project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
 
             size :-= pgsize + 1;
             pre := oid((lng(pre) + pgsize) + 1);

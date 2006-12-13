@@ -1147,7 +1147,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
 {
     # get map, pre and mem from the master bats
     var dsk := docBAT.tmark(oid(_MAP_PID));
-    var map_pid := dsk.fetch(MAP_PID);
+    var map_pid := copy(dsk.fetch(MAP_PID));
     var pid_map := map_pid;
     var pre, mem, isolate := (ttype(map_pid) = oid);
     
@@ -1463,7 +1463,15 @@ PROC __runtime_maintain(lng wsid,
         ins := runtime.fetch(RT_QN_NID_INS).insert(ins);
         del := runtime.fetch(RT_QN_NID_DEL).insert(del);
         var idx := runtime.fetch(RT_QN_NID);
-        idx.insert(ins).deleteBuns(del).accbuild("hash");
+        idx.insert(ins);
+        if (count(del) > 1024) { 
+           # workaround: hash maintenance in MonetDB is *not* cheap
+           var stay := reverse(reverse(idx).kdiff(reverse(del))); 
+           idx.delete().insert(stay);
+        } else {
+           idx.delete(del);
+        }
+        idx.accbuild("hash");
         ins.delete();
         del.delete();
         totsize := batsize(idx);
@@ -1561,7 +1569,7 @@ PROC __runtime_newpage(BAT[lock,bat] runtime) : oid
     
     # re-use a page from the list; or -if empty- append a new page
     if (i > 0) {
-        last_pid := reverse(free_pages).fetch(i - 1);
+        var last_pid := reverse(free_pages).fetch(i - 1);
         free_pages.delete(last_pid);
         return last_pid;
     }
@@ -1843,7 +1851,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
                 rid_kind.append(empty_page_chr, true);
                 rid_prop.append(empty_page_oid, true);
                 rid_nid.append(empty_page_oid, true);
-                map_pid.append(oid_nil); # add page as unused to map_pid
+                map_pid.append(oid_nil,true); # add page as unused to map_pid
                 new_pid :+= 1;
             }
 
@@ -4467,7 +4475,7 @@ xquery_client_engine(mapi_client *fc )
                 xquery_client_end(ctx, NULL); 
                 return;
             }
-            if (n == 0)
+            if (n == 0 || p[curlen] == 0)
                 break;
 
             curlen += n;

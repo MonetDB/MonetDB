@@ -3,7 +3,7 @@ declare function depthKO($x as node()) as xs:integer
 let $m := max(for $c in $x/child::node() return
 depthKO($c))
 return
-if ($m) then 1+$m else 1
+if ($m) then 1 + exactly-one ($m) else 1
 };
 
 declare function depthOK($x as node()) as xs:integer
@@ -11,7 +11,7 @@ declare function depthOK($x as node()) as xs:integer
 let $m := max(for $c in $x/child::node() return
 depthOK($c))
 return
-if (count($m) gt 0) then 1+$m else 1
+if (count($m) gt 0) then 1 + exactly-one ($m) else 1
 };
 
 (
