@@ -27,7 +27,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <XQueryResult><hello x="y" lang="en">
   <foo>text of node foo<bar>text of node bar</bar></foo>
   <!-- a comment node -->
-  <?action beeeep?>
+  <?pi action=beep?>
   <world><a/></world>
 </hello></XQueryResult>
 ws_destroy(ws);

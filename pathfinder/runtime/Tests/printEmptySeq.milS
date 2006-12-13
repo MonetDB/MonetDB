@@ -4,8 +4,4 @@ xquery("xml", "()", 0).printf();
 
 xquery("xml-mapi", "()", 0).printf();
 
-xquery("xml-soap", "()", 0).printf();
-
-xquery("xml-soap", "()", 0).printf();
-
 xquery("null", "()", 0).printf();

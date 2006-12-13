@@ -1,5 +1,6 @@
 module(pathfinder);
 module(pf_standoff);
-module(xrpc);
+module(xrpc_server);
+module(xrpc_client);
 procs();
 quit();

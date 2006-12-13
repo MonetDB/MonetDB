@@ -7,14 +7,10 @@ var query := "(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodeki
 #
 xquery("xml"            ,query , 0).printf();
 
-xquery("xml-soap"       ,query , 0).printf();
-
 xquery("xml-typed"      ,query , 0).printf();
 
 # ... and their corresponding mapi variants
 xquery("mapi-xml"       ,query , 0).printf();
-
-xquery("mapi-xml-soap"  ,query , 0).printf();
 
 xquery("mapi-xml-typed" ,query , 0).printf();
 

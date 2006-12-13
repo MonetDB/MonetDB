@@ -417,6 +417,9 @@ struct serializeFunStruct saxSerializeFun = {
     sax_init,
     null_cleanup,
 
+    null_startSerialize,
+    null_endSerialize,
+
     sax_handle_startDocument,
     sax_handle_endDocument,
     sax_handle_startElement,

@@ -34,8 +34,10 @@
 
 #include "serialize.h"
 
-bool null_init (XqueryCtx *ctx, char *args, char *restag);
+bool null_init (XqueryCtx *ctx, char *args, char *restag, char *resprefix);
 bool null_cleanup (XqueryCtx *ctx);
+bool null_startSerialize (XqueryCtx *ctx);
+bool null_endSerialize (XqueryCtx *ctx);
 bool null_handle_startDocument (XqueryCtx* ctx);
 bool null_handle_endDocument (XqueryCtx* ctx);
 bool null_handle_startElement (XqueryCtx* ctx, str prefix, str name, oid pre);
@@ -73,11 +75,12 @@ bool null_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2);
  * NULL driver initialization function
  */
 bool
-null_init (XqueryCtx *ctx, char *args, char *restag)
+null_init (XqueryCtx *ctx, char *args, char *restag, char *resprefix)
 {
     (void) ctx;
     (void) args;
     (void) restag;
+    (void) resprefix;
     ctx->driverWs = NULL; /* driverWs not used */
     return SUCCESS;
 }
@@ -87,6 +90,24 @@ null_init (XqueryCtx *ctx, char *args, char *restag)
  */
 bool
 null_cleanup (XqueryCtx *ctx)
+{
+    (void) ctx;
+    return SUCCESS;
+}
+
+/**
+ * NULL driver start serialize function
+ */
+bool null_startSerialize (XqueryCtx *ctx)
+{
+    (void) ctx;
+    return SUCCESS;
+}
+
+/**
+ * NULL driver end serialize function
+ */
+bool null_endSerialize (XqueryCtx *ctx)
 {
     (void) ctx;
     return SUCCESS;
@@ -341,6 +362,9 @@ struct serializeFunStruct nullSerializeFun = {
     "null",
     null_init,
     null_cleanup,
+
+    null_startSerialize,
+    null_endSerialize,
 
     null_handle_startDocument,
     null_handle_endDocument,

@@ -6191,7 +6191,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 static void
 translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
-    int i = 0, rc = NORMAL, qTpe = PFqueryType(xrpc);
+    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 1 ? 1 : 0;
     PFcnode_t *dsts = L(xrpc);
     PFapply_t apply = R(xrpc)->sem.apply;
     PFcnode_t *args = RD(xrpc);
@@ -6309,7 +6309,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
      * message node: (item=0@0, kind=~cont)
      */
     milprintf(f, 
-            "  \nmodule(\"xrpc\");\n"
+            "  \nmodule(\"xrpc_client\");\n"
             "  var iterc_total := count(int(rpc_iter));\n"
             /* remove the base number of fun_vid-s, in XRPC request
              * message, we need the offsets of each non-empty
@@ -6338,7 +6338,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "} # end of XRPC function call\n",
         counter, counter, counter,
         apply.fun->qname.ns.uri, apply.fun->atURI, apply.fun->qname.loc,    
-        qTpe, apply.fun->arity,
+        updCall, apply.fun->arity,
         counter, counter, counter, counter);
 }
 

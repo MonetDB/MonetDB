@@ -19,14 +19,6 @@ xquery("xml-mapi", "()", 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
 =<XQueryResult></XQueryResult>
 
-xquery("xml-soap", "()", 0).printf();
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult></XQueryResult>
-
-xquery("xml-soap", "()", 0).printf();
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult></XQueryResult>
-
 xquery("null", "()", 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult></XQueryResult>

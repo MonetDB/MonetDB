@@ -1,0 +1,35 @@
+stdout of test 'echoAll` in directory 'tests/XRpc` itself:
+
+
+# 11:13:03 >  
+# 11:13:03 >  Mtimeout -timeout 180 Mserver "--config=/net/andorea/export/scratch1/zhang/monet/dev/G.64.64.d.debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/andorea/export/scratch1/zhang/monet/dev/G.64.64.d.debug/lib/MonetDB:/net/andorea/export/scratch1/zhang/monet/dev/G.64.64.d.debug/lib/MonetDB/lib:/net/andorea/export/scratch1/zhang/monet/dev/G.64.64.d.debug/lib/MonetDB/bin" --set "gdk_dbfarm=/net/andorea/export/scratch1/zhang/monet/dev/G.64.64.d.debug/var/MonetDB/dbfarm" --set "sql_logdir=/net/andorea/export/scratch1/zhang/monet/dev/G.64.64.d.debug/var/MonetDB/sql_logs" --set "xquery_logdir=/net/andorea/export/scratch1/zhang/monet/dev/G.64.64.d.debug/var/MonetDB/xquery_logs" --set mapi_port=30808 --set monet_prompt= --trace "--dbname=mTests_tests_XRpc" --dbinit=" module(pathfinder);" echoAll.prologue ; echo ; echo Over..
+# 11:13:03 >  
+
+# Monet Database Server V4.14.0
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 11:13:04 >  
+# 11:13:04 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30808 echoAll.xq
+# 11:13:04 >  
+
+# Elapsed time = 001ms 038us [173us/node]
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult lang="en" x="y"><foo><bar/></foo>a text node
+<!-- a comment node --><?pi action=beep?><hallo lang="nl">
+  <allemaal/>
+</hallo>
+</XQueryResult>
+
+# 11:13:04 >  
+# 11:13:04 >  Done.
+# 11:13:04 >  
+

@@ -98,5 +98,8 @@ declare function xrpcfun:echoVoidWithParams($v1 as xs:string*,
     ()
 };
 
+declare function xrpcfun:echoAll($n as xs:anyType*) as xs:anyType*
+{ $n };
+
 declare updating function xrpcfun:insertNode($n as xs:anyNode*)
 { do insert $n into exactly-one(doc("hello.xml")//world) };

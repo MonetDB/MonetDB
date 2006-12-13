@@ -88,20 +88,27 @@ lib__pathfinder = {
                 $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
 }
 
-lib__xrpc = {
+lib__xrpc_client = {
+        DIR = libdir/MonetDB
+        SOURCES = xrpc_client.mx
+        LIBS = \
+			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
+			   $(MONETDB_LIBS) -lbat -lmonet -lstream -lpthread \
+			   $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io
+}
+
+lib__xrpc_server = {
         DIR = libdir/MonetDB
         SOURCES = \
-                shttpd.c shttpd.h \
-                xrpc.mx
-
+				  shttpd.c shttpd.h \
+				  xrpc_server.mx
         LIBS = \
-                   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-                   $(MONETDB_LIBS) -lbat -lmonet -lstream -lpthread \
-                   $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io
+			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
+			   $(MONETDB_LIBS) -lbat -lmonet -lstream -lpthread \
+			   $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io
 }
 
 scripts_mil = {
         DIR = libdir/MonetDB
-        SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xrpc.mx
+        SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xrpc_client.mx xrpc_server.mx
 }
-
