@@ -370,7 +370,6 @@ ASCIIstrFrStr(ascii_io *c, char *s, char *e)
 		c->data = GDKrealloc(c->data,len); 
 	}
 
-	assert(s <= e);
 	if (s == e) {
 		*(char*)c->data = 0;
 	} else if (GDKstrFromStr(c->data, (unsigned char *) s, e - s) < 0) {
@@ -382,18 +381,23 @@ ASCIIstrFrStr(ascii_io *c, char *s, char *e)
 ptr *
 ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
-	ptr *res = NULL;
 	ascii_io *c = extra;
 
 	if (s == NULL || (!(type == TYPE_str && quote) && strcmp(s, "nil") == 0)) {
-		res = (ptr *) ATOMnil(type);
+        	ptr src = ATOMnilptr(type);
+        	int len = ATOMlen(ATOMtype(type), src);
+
+		if (c->len < len) {
+			c->len = len;
+			c->data = GDKrealloc(c->data,len); 
+		}
+        	memcpy(c->data, src, len);
 	} else if (type == TYPE_str) {
 		return ASCIIstrFrStr(c, s, e);
 	} else {
 		(void) (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
-		res = c->data;
 	}
-	return res;
+	return c->data;
 }
 
 int
