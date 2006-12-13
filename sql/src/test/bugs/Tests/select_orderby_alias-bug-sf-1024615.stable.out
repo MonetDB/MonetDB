@@ -1,19 +1,19 @@
 stdout of test 'select_orderby_alias-bug-sf-1024615` in directory 'src/test/bugs` itself:
 
 
-# 15:32:01 >  
-# 15:32:01 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/sql_logs" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/xquery_logs" --set mapi_port=39571 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit='include sql;' ; echo ; echo Over..
-# 15:32:01 >  
+# 15:59:06 >  
+# 15:59:06 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=33709 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 15:59:06 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf
-# dbfarm:/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm
-# dbname:mTests_src_test_bugs
-# Visit http://monetdb.cwi.nl/ for further information
+# Monet Database Server V4.14.0
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -21,11 +21,11 @@ Over..
 # 15:32:01 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=39571  < select_orderby_alias-bug-sf-1024615.sql
 # 15:32:01 >  
 
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
 % id,	table_id,	type,	name,	rkey,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary,	id,	name,	authorization,	owner # name
 % int,	int,	int,	varchar,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	0,	1,	1 # length
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
 % id,	table_id,	type,	name,	rkey,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary,	id,	name,	authorization,	owner # name
 % int,	int,	int,	varchar,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	0,	1,	1 # length

@@ -48,7 +48,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% t920585.a,	t920585.a,	t920585.a,	t920585.a,	t920585.a,	.a # table_name
+% t920585.a,	t920585.a,	t920585.a,	t920585.a,	t920585.a,	t920585.a # table_name
 % name,	query,	istable,	system,	commit_action,	temporary # name
 % varchar,	varchar,	boolean,	boolean,	smallint,	smallint # type
 % 12,	222,	5,	5,	1,	1 # length

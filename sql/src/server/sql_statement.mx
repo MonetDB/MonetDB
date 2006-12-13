@@ -2333,7 +2333,6 @@ schema_name(stmt *st)
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
-	case st_column:
 	case st_union:
 	case st_append:
 	case st_mark:
@@ -2362,6 +2361,10 @@ schema_name(stmt *st)
 		return schema_name(st->op1.stval);
 	case st_bat:
 		return _strdup(st->op1.cval->t->s->base.name);
+	case st_column:
+		if (st->op4.tval)
+			return _strdup(st->op4.tval->s->base.name);
+		return schema_name(st->op1.stval);
 	case st_atom:
 		return NULL;
 	case st_var:
