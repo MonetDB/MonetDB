@@ -74,12 +74,6 @@ include batstr;
 include batcolor;
 
 @-
-Awareness support (and start with a clean record)
-@mal
-include sabaoth;
-sabaoth.wildRetreat();
-
-@-
 MAL related extensions
 @mal
 include clients;
@@ -141,8 +135,6 @@ include opt_joinselect;
 include opt_remoteQueries;
 include crackers; 
 
-# publish mal existence
-sabaoth.marchScenario("mal":str);
 @-
 In practice, we have to introduce different startup for each
 client group or database.

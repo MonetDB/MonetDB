@@ -460,12 +460,28 @@ faster system start.
 	if (monet_init(set, setlen) == 0 || mal_init())
 		return 0;
 
+	/* configure sabaoth to use the right dbfarm and active database */
+	SABAOTHinit(GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
+	/* wipe out all cruft, if left over */
+	if ((err = SABAOTHwildRetreat(&i)) != MAL_SUCCEED) {
+		/* just swallow the error */
+		GDKfree(err);
+	}
 	/* From this point, the server should exit cleanly.  Discussion:
 	 * even earlier?  Sabaoth here registers the server has started up. */
 	if ((err = SABAOTHregisterStart(&i)) != MAL_SUCCEED) {
 		/* throw the error at the user, but don't die */
 		fprintf(stderr, "!%s\n", err);
 		GDKfree(err);
+	}
+	{
+		str lang = "mal";
+		/* we inited mal before, so publish its existence */
+		if ((err = SABAOTHmarchScenario(&i, &lang)) != MAL_SUCCEED) {
+			/* throw the error at the user, but don't die */
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
 	}
 
 	{
