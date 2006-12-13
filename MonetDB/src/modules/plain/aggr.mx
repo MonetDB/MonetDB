@@ -1039,7 +1039,7 @@ CMDsize(wrd *ret, BAT *b)
 	{
 		int any = tpe;	/* name chosen for convenience in atom macros */
 		switch(ATOMstorage(any)) {
-#ifdef NOEXPAND_CHR
+#ifndef NOEXPAND_CHR
 		case TYPE_chr:
 			@:card_bound_tpe(simple,loc,chr,@1)@
 #endif
