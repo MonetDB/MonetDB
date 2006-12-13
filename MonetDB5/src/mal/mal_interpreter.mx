@@ -425,6 +425,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		
 	stkpc = startpc;
 	exceptionVar = exceptionPC = -1;
+	(void)exceptionPC; /* TODO maybe we should use this variable somewhere*/
 	while(stkpc < mb->stop && stkpc != stoppc ){
 		pci = getInstrPtr(mb,stkpc);
 		if( stk->cmd  ) {
@@ -613,6 +614,7 @@ the eligible instructions. [TODO]
 	/* select the first eligible instruction */
 	stkpc= -1;
 	exceptionPC = exceptionVar = -1;
+	(void)exceptionPC; /* TODO maybe we should use this variable somewhere*/
 	while( ++stkpc < n ){
 		nxtMALflowStep(flow, stkpc,n,mb);
 		pci = flow[stkpc].p;
