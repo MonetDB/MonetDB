@@ -624,10 +624,10 @@ infer_dom (PFla_op_t *n, unsigned int id)
                             union_dom = dom1;
                         else if (PFprop_subdom (n->prop, dom1, dom2) ||
                                  dom2 == EMPTYDOM)
-                            union_dom = dom1;
+                            union_dom = dom2;
                         else if (PFprop_subdom (n->prop, dom2, dom1) ||
                                  dom1 == EMPTYDOM)
-                            union_dom = dom2;
+                            union_dom = dom1;
                         else {
                             union_dom = id++;
                             /* add an edge to the new domain from the
