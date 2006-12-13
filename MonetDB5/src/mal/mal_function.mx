@@ -257,6 +257,7 @@ void chkFlow(MalBlkPtr mb)
 				){
 			    GDKerror("barrier '%s' should be of type bit, str or number in %s[%d]\n",
 			    getVarName(mb, v), getFcnName(mb), i);
+					mb->errors++;
 			}
 			btop++;
 			if( p->typechk != TYPE_RESOLVED) fixed =0;
