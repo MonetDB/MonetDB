@@ -246,12 +246,12 @@ getExceptionType(str exception)
 {
 	enum exception ret = MAL;
 	str s;
-	int i;
+	enum exception i;
 
 	if ((s = strchr(exception, ':')) != NULL)
 		*s = '\0';
 
-	for (i = 0; exceptionNames[i] != NULL; i++) {
+	for (i = MAL; exceptionNames[i] != NULL; i++) {
 		if (strcmp(exceptionNames[i], exception) == 0) {
 			ret = i;
 			break;
