@@ -49,12 +49,12 @@ function user.main():void;	# 0  (main:void)
 #setPersistent(c); 	# 12  (_17:str)
     io.print(c);	# 13 IOprint_val (_18:void)<-(c:bat[:int,:str])
     io.printf("catched anything?\n");	# 14 IOprint_str (_19:void)<-(_20:str)
-catch GDKerror;	# 15  (GDKerror:any) jump 17
+catch GDKerror:str ;	# 15  (GDKerror:str) jump 17
     io.printf("Catched the renaming exception\n");	# 16 IOprint_str (_22:void)<-(_23:str)
-exit GDKerror;	# 17  (GDKerror:any)
-#get rid of it again 	# 18  ($32:str)
-#destroy(b); 	# 19  ($34:str)
-#destroy(c); 	# 20  ($36:str)
+exit GDKerror:str ;	# 17  (GDKerror:str)
+#get rid of it again 	# 18  (_24:str)
+#destroy(b); 	# 19  (_25:str)
+#destroy(c); 	# 20  (_26:str)
 end main;	# 21  
 #-----------------#
 # first	second	  # name

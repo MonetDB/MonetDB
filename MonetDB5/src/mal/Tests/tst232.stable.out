@@ -49,9 +49,9 @@ function user.main():void;	# 0  (main:void)
     io.printf("lrefcount =%d\n",j);	# 13 IOprint_formatted_int (_17:void)<-(_11:str)(j:int)
     bbp.destroy(b);	# 14 CMDbbpdestroyBAT1 (_18:void)<-(b:bat[:int,:str])
     i := bbp.getRefCount(b);	# 15 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-catch MALException;	# 16  (MALException:any) jump 18
+catch MALException:str ;	# 16  (MALException:str) jump 18
     io.print("bat was destroyed");	# 17 IOprint_val (_20:void)<-(_21:str)
-exit MALException;	# 18  (MALException:any)
+exit MALException:str ;	# 18  (MALException:str)
 end main;	# 19  
 refcount =1
 lrefcount =1

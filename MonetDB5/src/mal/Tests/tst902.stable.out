@@ -51,8 +51,8 @@ barrier (w,h,t):= bat.newIterator(b);	# 10 CHPbunIterator (w:lng)(h:lng)(t:lng)<
     t := calc.+(B1,B2);	# 13 CALCbinaryADDlnglng (t:lng)<-(B1:lng)(B2:lng)
     bat.insert(d,h,t);	# 14 BKCinsert_bun (_18:void)<-(d:bat[:lng,:lng])(h:lng)(t:lng)
     redo (w,h,t):= bat.hasMoreElements(b);	# 15 CHPbunHasMoreElements (w:lng)(h:lng)(t:lng)<-(b:bat[:lng,:lng]) jump 11
-catch GDKerror;	# 16  (GDKerror:any) jump 17
-exit GDKerror;	# 17  (GDKerror:any)
+catch GDKerror:str ;	# 16  (GDKerror:str) jump 17
+exit GDKerror:str ;	# 17  (GDKerror:str)
 exit w;	# 18  (w:lng)
     io.print(d);	# 19 IOprint_val (_20:void)<-(d:bat[:lng,:lng])
 end main;	# 20  

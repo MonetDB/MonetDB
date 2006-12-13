@@ -15,6 +15,6 @@
 
 	bbp.destroy(b);
 	i:= bbp.getRefCount(b);
-catch MALException;
+catch MALException:str;
 	io.print("bat was destroyed");
 exit MALException;

@@ -24,7 +24,7 @@ io.print(t);
 bbp.release(t);
 user.refs();
 io.print(t);
-catch MALException;
+catch MALException:str;
 io.print("BAT was released");
 exit MALException;
 # the bat is still visible, because the destroy only
@@ -37,12 +37,12 @@ user.refs();
 bbp.destroy(t,true);
 user.refs();
 io.print(t);
-catch MALException;
+catch MALException:str;
 io.print("BAT was destroyed");
 exit MALException;
 z:bat[:any_1,:any_2]:= bbp.bind("tasks");
 io.print(z);
 #it is not in the box anymore either
-catch MALException;
+catch MALException:str;
 io.print("BAT was removed from the box");
 exit MALException;

@@ -87,9 +87,9 @@ function user.main():void;	# 0  (main:void)
     bbp.release(t);	# 17 CMDbbpreleaseBAT (_20:void)<-(t:bat[:any,:any])
     user.refs();	# 18  (_21:void)
     io.print(t);	# 19 IOprint_val (_22:void)<-(t:bat[:any,:any])
-catch MALException;	# 20  (MALException:any) jump 22
+catch MALException:str ;	# 20  (MALException:str) jump 22
     io.print("BAT was released");	# 21 IOprint_val (_24:void)<-(_25:str)
-exit MALException;	# 22  (MALException:any)
+exit MALException:str ;	# 22  (MALException:str)
 # the bat is still visible, because the destroy only 	# 23  (_26:str)
 # marks it for deletion at the end of session or 	# 24  (_27:str)
 # when the reference counters drop to zero 	# 25  (_28:str)
@@ -100,15 +100,15 @@ exit MALException;	# 22  (MALException:any)
     bbp.destroy(t,true);	# 30 CMDbbpdestroyBAT (_32:void)<-(t:bat[:any,:any])(_12:bit)
     user.refs();	# 31  (_33:void)
     io.print(t);	# 32 IOprint_val (_34:void)<-(t:bat[:any,:any])
-catch MALException;	# 33  (MALException:any) jump 35
+catch MALException:str ;	# 33  (MALException:str) jump 35
     io.print("BAT was destroyed");	# 34 IOprint_val (_35:void)<-(_36:str)
-exit MALException;	# 35  (MALException:any)
+exit MALException:str ;	# 35  (MALException:str)
     z:bat[:any,:any]  := bbp.bind("tasks");	# 36 CMDbbpbind (z:bat[:any,:any])<-(_10:str)
     io.print(z);	# 37 IOprint_val (_38:void)<-(z:bat[:any,:any])
 #it is not in the box anymore either 	# 38  (_39:str)
-catch MALException;	# 39  (MALException:any) jump 41
+catch MALException:str ;	# 39  (MALException:str) jump 41
     io.print("BAT was removed from the box");	# 40 IOprint_val (_40:void)<-(_41:str)
-exit MALException;	# 41  (MALException:any)
+exit MALException:str ;	# 41  (MALException:str)
 end main;	# 42  
 [ "open box" ]
 #---------------------------------------------------------#

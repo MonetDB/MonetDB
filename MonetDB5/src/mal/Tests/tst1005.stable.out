@@ -65,11 +65,7 @@ exit MALException:str ;	# 16  (MALException:str)
     io.print("getObjects");	# 20 IOprint_val (_26:void)<-(_27:str)
     io.print(x);	# 21 IOprint_val (_28:void)<-(x:bat[:int,:str])
     bbp.close();	# 22 CMDbbpclose (_29:void)
-#catch MALException:str; 	# 23  (_30:str)
-#io.printf(MALException); 	# 24  (_31:str)
-#exit MALException; 	# 25  (_32:str)
-#io.print("done"); 	# 26  (_33:str)
-end main;	# 27  
+end main;	# 23  
 MALException:bbp.bind:failed to locate object in box
 [ "v" ]
 [ nil ]

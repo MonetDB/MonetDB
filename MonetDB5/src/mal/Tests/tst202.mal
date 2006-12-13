@@ -13,7 +13,7 @@
 	#setPersistent(c);
 	io.print(c);
 	io.printf("catched anything?\n");
-catch GDKerror;
+catch GDKerror:str;
 	io.printf("Catched the renaming exception\n");
 exit  GDKerror;
 #get rid of it again

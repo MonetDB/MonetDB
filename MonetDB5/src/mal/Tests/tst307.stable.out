@@ -26,9 +26,9 @@ function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
     z := algebra.find(b,0);	# 3 ALGfind (z:int)<-(b:bat[:int,:int])(_5:int)
     io.print("should not come here anymore");	# 4 IOprint_val (_6:void)<-(_7:str)
-catch MALException;	# 5  (MALException:any) jump 7
+catch MALException:str ;	# 5  (MALException:str) jump 7
     io.print("catched the exception");	# 6 IOprint_val (_9:void)<-(_10:str)
-exit MALException;	# 7  (MALException:any)
+exit MALException:str ;	# 7  (MALException:str)
 end main;	# 8  
 [ "catched the exception" ]
 

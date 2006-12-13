@@ -19,7 +19,7 @@ barrier (mloop,m):=language.newRange(0:lng);
         cr := user.pow(B2,B3);
         bat.append(resB,cr); 
         redo (mloop,m) :=language.nextElement(1:lng,l);    
-catch   MALException;  
+catch   MALException:str;  
 exit    MALException; 
 exit    (mloop,m) ;  
         return resB;    

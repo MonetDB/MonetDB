@@ -2,6 +2,6 @@
 
 	i:= 1;
 	io.print(i);
-catch 	GDKerror;
+catch 	GDKerror:str;
 	io.printf("GDKerror, do something\n");
 exit	GDKerror;

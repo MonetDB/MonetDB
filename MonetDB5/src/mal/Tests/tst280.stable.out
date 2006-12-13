@@ -60,12 +60,11 @@ barrier (mloop,m):= language.newRange(0:lng);	# 7 RNGnewRange_lng (mloop:bit)(m:
     cr := user.pow(B2,B3);	# 13  (cr:int)<-(B2:int)(B3:int)
     bat.append(resB,cr);	# 14 BKCappend_val_wrap (_25:void)<-(resB:bat[:void,:int])(cr:int)
     redo (mloop,m):= language.nextElement(1:lng,l);	# 15 RNGnextElement_lng (mloop:bit)(m:lng)<-(_26:lng)(l:lng) jump 8
-catch MALException;	# 16  (MALException:any) jump 17
-exit MALException;	# 17  (MALException:any)
+catch MALException:str ;	# 16  (MALException:str) jump 17
+exit MALException:str ;	# 17  (MALException:str)
 exit (mloop,m);	# 18  (mloop:bit)(m:lng)
     return resB;	# 19  (resB:bat[:void,:int])
 end tst;	# 20  
-!ERROR: barrier 'MALException' should be of type bit, str or number in tst[16]
 #
 #	b := new(:void,:int);
 #	setSequenceBase(b,0@0);

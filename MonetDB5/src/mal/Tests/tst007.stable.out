@@ -66,12 +66,6 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 !ERROR: 'chop.head' undefined in user.main[11] H:any := chop.head(b:any)
 !ERROR: 'chop.nextElement' undefined in user.main[12] v:any := chop.nextElement(b:any)
 !ERROR: 'batcalc.not' undefined in user.main[36] FS:any := batcalc.not(FTE:any)
-!ERROR: barrier 'H' should be of type bit, str or number in main[2]
-!ERROR: barrier 'L' should be of type bit, str or number in main[10]
-!ERROR: barrier 'M' should be of type bit, str or number in main[17]
-!ERROR: barrier 'FT' should be of type bit, str or number in main[30]
-!ERROR: barrier 'FTE' should be of type bit, str or number in main[33]
-!ERROR: barrier 'FS' should be of type bit, str or number in main[36]
 !ERROR: 'batoperatie' may not be used before being initialized in main[2]
 !ERROR: 'b' may not be used before being initialized in main[3]
 !ERROR: 'b' may not be used before being initialized in main[10]

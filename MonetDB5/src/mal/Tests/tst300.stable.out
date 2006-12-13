@@ -23,12 +23,12 @@ stdout of test 'tst300` in directory 'src/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 # Exception identifiers can be introduced at any place 	# 1  (_1:str)
-    raise myNewException := "new exception";	# 2  (myNewException:str)<-(_3:str)
+    raise myNewException:str  := "new exception";	# 2  (myNewException:str)<-(_3:str)
     io.printf("should not come here\n");	# 3 IOprint_str (_4:void)<-(_5:str)
 #exception block; 	# 4  (_6:str)
-catch myNewException;	# 5  (myNewException:str) jump 7
+catch myNewException:str ;	# 5  (myNewException:str) jump 7
     io.printf("catched exception\n");	# 6 IOprint_str (_7:void)<-(_8:str)
-exit myNewException;	# 7  (myNewException:str)
+exit myNewException:str ;	# 7  (myNewException:str)
 end main;	# 8  
 catched exception
 

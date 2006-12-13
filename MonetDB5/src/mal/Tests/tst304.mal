@@ -9,7 +9,7 @@ end myException;
 	user.myException();
 	io.print("should not come here");
 #exception block;
-catch	PermissionDeniedException;
+catch	PermissionDeniedException:str;
 	io.printf("catched IllegalAccess\n");
 exit	PermissionDeniedException;
 	io.print("done");

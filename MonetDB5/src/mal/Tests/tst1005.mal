@@ -21,7 +21,3 @@ x:= bbp.getObjects();
 io.print("getObjects");
 io.print(x);
 bbp.close();
-#catch MALException:str;
-	#io.printf(MALException);
-#exit MALException;
-#io.print("done");

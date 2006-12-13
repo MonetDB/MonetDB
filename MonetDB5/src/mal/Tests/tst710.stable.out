@@ -24,9 +24,9 @@ function user.main():void;	# 0  (main:void)
 # testing ommission of target variable 	# 1  (_1:str)
     i := 1;	# 2  (i:int)<-(_3:int)
     io.print(i);	# 3 IOprint_val (_4:void)<-(i:int)
-catch GDKerror;	# 4  (GDKerror:any) jump 6
+catch GDKerror:str ;	# 4  (GDKerror:str) jump 6
     io.printf("GDKerror, do something\n");	# 5 IOprint_str (_6:void)<-(_7:str)
-exit GDKerror;	# 6  (GDKerror:any)
+exit GDKerror:str ;	# 6  (GDKerror:str)
 end main;	# 7  
 [ 1 ]
 

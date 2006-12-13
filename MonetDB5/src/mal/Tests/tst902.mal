@@ -15,7 +15,7 @@ barrier (w,h,t):= bat.newIterator(b);
 	t:= B1+B2;
 	bat.insert(d,h,t);
 	redo (w,h,t):= bat.hasMoreElements(b);
-catch 	GDKerror;
+catch 	GDKerror:str;
 exit	GDKerror;
 exit w;
 io.print(d);

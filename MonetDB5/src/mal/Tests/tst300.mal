@@ -3,6 +3,6 @@
 	raise myNewException:= "new exception";
 	io.printf("should not come here\n");
 #exception block;
-catch	myNewException;
+catch	myNewException:str;
 	io.printf("catched exception\n");
 exit	myNewException;

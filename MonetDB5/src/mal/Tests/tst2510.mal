@@ -6,7 +6,7 @@ barrier always:= true;
     yield always;
     redo always;
 exit always;
-#catch MALException;
+#catch MALException:str;
     #print("exception");
 #exit MALException;
 	return tryme:= false;
