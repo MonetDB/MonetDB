@@ -1702,9 +1702,12 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
       } else {
         from_nid := rid_nid.find(from_rid);
       }
-      if (nid_rid.exist(from_nid)) {
+      var oldpre := oid_nil;
+      if (nid_rid.exist(from_nid))
+         oldpre := swizzle(nid_rid.find(from_nid), map_pid);
+      if (not(isnil(oldpre))) {
         # it's an old node, we can use ll_ancestor to find ancestors
-        ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(swizzle(nid_rid.find(from_nid), map_pid)), pre_size, pre_level));
+        ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(oldpre), pre_size, pre_level));
         ancestors_nid := ancestors_oldpre.join(pre_nid);
         ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
         ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
@@ -2058,7 +2061,7 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
       var update_insert_node_kind := [oid]([+]([lng](insert_update.mirror()), 2)).leftfetchjoin(kind);
 
       # UPDATE_INSERT_LAST and UPDATE_INSERT_BEFORE commands must be executed in reverse order
-      var order := insert_update.ord_uselect(UPDATE_INSERT_LAST, UPDATE_INSERT_BEFORE).mark(0@0);
+      var order := insert_update.ord_uselect(UPDATE_INSERT_LAST, UPDATE_INSERT_BEFORE).copy().mark(0@0);
       if (order.count() > 0) {
         update_node_item.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(update_node_item).access(BAT_WRITE).revert().tmark(0@0)));
         update_node_kind.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(update_node_kind).access(BAT_WRITE).revert().tmark(0@0)));
