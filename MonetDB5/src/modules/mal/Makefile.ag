@@ -13,7 +13,7 @@ LIBS = {
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  pbm.mx \
-		rsbox.mx urlbox.mx mat.mx \
+		urlbox.mx mat.mx \
 		sabaoth.mx radix.mx bpm.mx
 		#datacell.mx 
 

@@ -674,7 +674,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 			server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 			if (bind(sock, (SOCKPTR) &server, length) < 0) {
 				/* FIXME: this should come from the config file */
-				if (errno == EADDRINUSE && *Port == 0 && port < 60000) {
+				if (
+#ifdef EADDRINUSE
+errno == EADDRINUSE &&
+#else ifdef WSAEADDRINUSE 
+errno == WSAEADDRINUSE &&
+#endif
+ 					*Port == 0 && port < 60000) {
 					port++;
 					continue;
 				}
