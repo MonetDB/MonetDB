@@ -157,7 +157,8 @@ MALException:addUser:user 'monetdb' already exists
 [ 1@0,	  "test"	  ]
 MALException:removeScenario:scenario 'mil' not found for user 'test'
 MALException:addScenario:scenario 'mal' already exists for user 'test'
-InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword insteadInvalidCredentialsException:changePassword:Access denied
+InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
+InvalidCredentialsException:changePassword:Access denied
 InvalidCredentialsException:checkCredentials:Invalid credentials for user 'monetdb'
 InvalidCredentialsException:checkCredentials:Invalid credentials for user 'monetdb'
 InvalidCredentialsException:checkCredentials:Invalid credentials for user 'monetdb'
