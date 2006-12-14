@@ -31,18 +31,18 @@ headers_pc = {
 
 scripts_txt = {
 	SOURCES = HowToStart-SQL-Win32.txt dump-restore.txt 
-	DIR = datadir/doc/MonetDB-SQL-${VERSION}
+	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
 }
 
 scripts_html = {
 	SOURCES = dump-restore.html
-	DIR = datadir/doc/MonetDB-SQL-${VERSION}
+	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
 }
 
 scripts_docs = {
 	EXT = ""
 	SOURCES = HowToStart-SQL 
-	DIR = datadir/doc/MonetDB-SQL-${VERSION}
+	DIR = datadir/doc/MonetDB-SQL-$(VERSION)
 }
 
 TESTS = RunMtest
