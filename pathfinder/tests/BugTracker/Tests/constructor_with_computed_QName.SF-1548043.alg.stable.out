@@ -14,6 +14,8 @@ stdout of test 'constructor_with_computed_QName.SF-1548043.alg` in directory 'te
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a>42</a></XQueryResult>
 
 # 18:28:15 >  
 # 18:28:15 >  Done.
