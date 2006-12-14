@@ -628,6 +628,90 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     modified = true;
                     *(PFla_op_t **) PFarray_add (clean_up_list) = left;
                     *(PFla_op_t **) PFarray_add (clean_up_list) = rp;
+                    break;
+                }
+
+                /* Key joins that use different join columns than 
+                   the join underneath have some potential and are
+                   thus pushed down */
+                if (lp->sem.eqjoin_unq.res != latt) {
+                    PFla_op_t *res = NULL;
+                    /* there is only one way to move this join */
+                    if (PFprop_ocol (L(lp), latt) &&
+                        !PFprop_ocol (R(lp), latt)) {
+                        res = eqjoin_unq (
+                                  eqjoin_unq (
+                                      L(lp),
+                                      rp,
+                                      latt,
+                                      ratt,
+                                      p->sem.eqjoin_unq.res), 
+                                  R(lp),
+                                  lp->sem.eqjoin_unq.att1,
+                                  lp->sem.eqjoin_unq.att2,
+                                  lp->sem.eqjoin_unq.res);
+                        next_join = L(res);
+                    }
+                    /* there is only one way to move this join */
+                    else if (!PFprop_ocol (L(lp), latt) &&
+                             PFprop_ocol (R(lp), latt)) {
+                        res = eqjoin_unq (
+                                  L(lp),
+                                  eqjoin_unq (
+                                      R(lp),
+                                      rp,
+                                      latt,
+                                      ratt,
+                                      p->sem.eqjoin_unq.res), 
+                                  lp->sem.eqjoin_unq.att1,
+                                  lp->sem.eqjoin_unq.att2,
+                                  lp->sem.eqjoin_unq.res);
+                        next_join = R(res);
+                    }
+                    else
+                        break;
+                    
+                    assert (res);
+                    
+                    /* In case both join columns of the lower join
+                       are visible on top of it we have to introduce
+                       a projection that makes the second join column
+                       visible again after the join has pruned it. */
+                    if ((PFprop_ocol (rp, lp->sem.eqjoin_unq.att1) &&
+                         lp->sem.eqjoin_unq.att1 != 
+                         lp->sem.eqjoin_unq.res) ||
+                        (PFprop_ocol (rp, lp->sem.eqjoin_unq.att2) &&
+                         lp->sem.eqjoin_unq.att2 != 
+                         lp->sem.eqjoin_unq.res)) {
+                        PFalg_proj_t *proj = PFmalloc (
+                                                 (res->schema.count + 1) *
+                                                 sizeof (PFalg_proj_t));
+                        unsigned int count = 0;
+                        for (unsigned int i = 0; i < res->schema.count; i++) {
+                            PFalg_att_t cur = res->schema.items[i].name;
+                            if (cur == lp->sem.eqjoin_unq.res) {
+                                proj[count++] = PFalg_proj (
+                                                    lp->sem.eqjoin_unq.att1, 
+                                                    lp->sem.eqjoin_unq.res);
+                                proj[count++] = PFalg_proj (
+                                                    lp->sem.eqjoin_unq.att2,
+                                                    lp->sem.eqjoin_unq.res);
+                            } else
+                                proj[count++] = PFalg_proj (cur, cur);
+                        }
+                        *p = *PFla_project_ (res, count, proj);
+                    }
+                    else
+                        *p = *res;
+                    
+                    /* Make sure that this rewrite only reports
+                       a modification if this rewrite wasn't
+                       the only one. Otherwise we might end up
+                       in an infinite loop. */
+                    modified = join_pushdown_worker (next_join, 
+                                                     clean_up_list);
+                    next_join = NULL;
+        
                 }
                 break;
 
@@ -653,19 +737,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             {
                 bool renamed = false;
                 
-                /* ensure that the equi-joins are key joins and
-                   not fake cross products */
-                if ((!PFprop_key (lp->prop, latt) ||
-                     !PFprop_subdom (lp->prop,
-                                     PFprop_dom (rp->prop, ratt),
-                                     PFprop_dom (lp->prop, latt)))
-                    &&
-                    (!PFprop_key (rp->prop, ratt) ||
-                     !PFprop_subdom (rp->prop,
-                                     PFprop_dom (lp->prop, latt),
-                                     PFprop_dom (rp->prop, ratt))))
-                    break;
-                    
                 /* check for renaming */
                 for (unsigned int i = 0; i < lp->sem.proj.count; i++)
                     renamed = renamed || 
@@ -714,7 +785,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                           proj_list));
                     next_join = L(p);
                 }
-                else if (L(lp) == rp) {
+                else if (L(lp) == rp && PFprop_key (rp->prop, ratt)) {
                     unsigned int i;
                     PFalg_proj_t proj;
                     bool same_join_col = false;
