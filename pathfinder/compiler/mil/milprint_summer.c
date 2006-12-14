@@ -10597,8 +10597,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     unsigned int i;
     int fid, act_fid, vid;
     PFcnode_t *args, *fst, *snd, *res, *fid_node;
-    int fst_nested, snd_nested, j;
-    PFarray_t *new_way;
+    int fst_nested, snd_nested;
 
     if (c->kind == c_var) 
     {
@@ -10717,36 +10716,21 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
                     "can't cope with global variables as "
                     "thetajoin input within user-defined function calls.");
     
-        if (fst_nested & ~UDF_LEV)
-        {
-            fst_nested = (int) PFarray_last (way);
-        }
-
-        if (snd_nested & ~UDF_LEV)
-        {
-            snd_nested = (int) PFarray_last (way) - 1;
-        }
-
         /* save current fid */
         act_fid = *(int *) PFarray_at (counter, ACT_FID);
 
-        /* get the number of fst_nested scopes 
-           for the first join argument */
-        new_way = PFarray (sizeof (int)); 
-        for (j = 0; j < fst_nested; j++)
-        {
-           *(int *) PFarray_add (new_way) = *(int *) PFarray_at (way, j);
-        }
-        counter = get_var_usage (f, fst, new_way, counter);
+        counter = get_var_usage (f, fst, way, counter);
 
-        /* get the number of snd_nested scopes 
-           for the first second argument */
-        new_way = PFarray (sizeof (int)); 
-        for (j = 0; j < snd_nested; j++)
-        {
-           *(int *) PFarray_add (new_way) = *(int *) PFarray_at (way, j);
-        }
-        counter = get_var_usage (f, snd, new_way, counter);
+        if (PFarray_last (way)) {
+            /* remove the inner most for loop and get
+               the variables for the second argument */
+            fid = *(int *) PFarray_top (way);
+            PFarray_del (way);
+            counter = get_var_usage (f, snd, way, counter);
+            /* restore the list of for ids */
+            *(int *) PFarray_add (way) = fid;
+        } else
+            counter = get_var_usage (f, snd, way, counter);
 
         /* create new fid for resulting scope */
         (*(int *) PFarray_at (counter, FID))++;
