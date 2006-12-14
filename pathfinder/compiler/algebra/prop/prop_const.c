@@ -494,6 +494,7 @@ infer_const (PFla_op_t *n)
                     PFalg_lit_bln (!PFprop_const_val (
                                         n->prop,
                                         n->sem.unary.att).val.bln));
+            break;
 
         case la_avg:
         case la_max:
