@@ -790,8 +790,15 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
     /* see if both operands have same number of attributes */
     if (n1->schema.count != n2->schema.count)
         PFoops (OOPS_FATAL,
-                "Schema of two arguments of set operation (union, "
-                "difference, intersect) do not match");
+                "Schema of two arguments of set operation (%s) "
+                "do not match. (%i #cols != %i #cols)",
+                kind == la_disjunion
+                ? "union"
+                : kind == la_intersect
+                  ? "intersect"
+                  : "difference",
+                n1->schema.count,
+                n2->schema.count);
 
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count;
@@ -1130,7 +1137,9 @@ compar_op (PFla_op_kind_t kind, const PFla_op_t *n,
                 "not found", PFatt_str (att2));
 
     /* make sure both attributes are of the same type */
-    assert (n->schema.items[ix1].type == n->schema.items[ix2].type);
+    assert (n->schema.items[ix1].type == n->schema.items[ix2].type ||
+            (n->schema.items[ix1].type & aat_node &&
+             n->schema.items[ix2].type & aat_node));
 
     /* create new binary operator node */
     ret = la_op_wire1 (kind, n);
