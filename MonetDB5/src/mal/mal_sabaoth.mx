@@ -100,8 +100,8 @@ void SABAOTHinit(str dbfarm, str dbname) {
 	if (_sabaoth_internal_dbname != NULL)
 		free(_sabaoth_internal_dbname);
 
-	len = strlen(dbfarm);
-	_sabaoth_internal_dbfarm = malloc(sizeof(char) * (len + 1));
+	len = strlen(dbfarm) + 1;
+	_sabaoth_internal_dbfarm = malloc(sizeof(char) * (len));
 	memcpy(_sabaoth_internal_dbfarm, dbfarm, len);
 	_sabaoth_internal_dbfarm[len] = '\0';
 	/* remove trailing slashes */
@@ -113,8 +113,8 @@ void SABAOTHinit(str dbfarm, str dbname) {
 	if (dbname == NULL) {
 		_sabaoth_internal_dbname = NULL;
 	} else {
-		len = strlen(dbname);
-		_sabaoth_internal_dbname = malloc(sizeof(char) * (len + 1));
+		len = strlen(dbname) + 1;
+		_sabaoth_internal_dbname = malloc(sizeof(char) * (len));
 		memcpy(_sabaoth_internal_dbname, dbname, len);
 		_sabaoth_internal_dbname[len] = '\0';
 	}
