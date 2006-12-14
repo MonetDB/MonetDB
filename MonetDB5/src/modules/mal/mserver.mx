@@ -677,8 +677,10 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 				if (
 #ifdef EADDRINUSE
 errno == EADDRINUSE &&
-#else ifdef WSAEADDRINUSE 
+#else 
+#ifdef WSAEADDRINUSE 
 errno == WSAEADDRINUSE &&
+#endif
 #endif
  					*Port == 0 && port < 60000) {
 					port++;
