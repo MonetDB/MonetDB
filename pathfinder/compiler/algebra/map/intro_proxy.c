@@ -76,6 +76,20 @@
  */
 
 /**
+ * replace_reference replaces the references to the @a old node by
+ * the reference to the @a new one. As a side effect @a ref_list
+ * is modified.
+ */
+static void
+replace_reference (PFarray_t *ref_list, PFla_op_t *old, PFla_op_t *new)
+{
+    for (unsigned int i = 0; i < PFarray_last (ref_list); i++)
+        if (*(PFla_op_t **) PFarray_at (ref_list, i) == old) {
+            *(PFla_op_t **) PFarray_at (ref_list, i) = new;
+        }
+}
+        
+/**
  * join_resolve_conflict_worker tries to cope with the
  * remaining conflicting nodes. It accepts operators of
  * whose cardinality is the same as the one of the equi-join
@@ -94,7 +108,8 @@ join_resolve_conflict_worker (PFla_op_t *p,
                               PFla_op_t *rp,
                               PFalg_att_t latt,
                               PFalg_att_t ratt,
-                              PFarray_t *conflict_list)
+                              PFarray_t *conflict_list,
+                              PFarray_t *exit_refs)
 {
     PFla_op_t *node;
     bool remove, rp_ref = false, rlp_ref = false;
@@ -134,6 +149,11 @@ join_resolve_conflict_worker (PFla_op_t *p,
                                        rp->schema.items[i].name);
 
         *p  = *PFla_eqjoin (lp, PFla_distinct (L(rp)), latt, ratt);
+        
+        /* make sure the exit reference is adjusted
+           before the node is overwritten */
+        replace_reference (exit_refs, rp, R(p));
+
         *rp = *PFla_project_ (p, count, proj_list);
         return true;
     }
@@ -156,6 +176,11 @@ join_resolve_conflict_worker (PFla_op_t *p,
                             PFla_project_ (L(rp), count, proj_list1),
                             latt,
                             ratt);
+        
+        /* make sure the exit reference is adjusted
+           before the node is overwritten */
+        replace_reference (exit_refs, rp, R(p));
+
         *rp = *PFla_project_ (p, count, proj_list2);
         return true;
     }
@@ -180,6 +205,12 @@ join_resolve_conflict_worker (PFla_op_t *p,
                                     PFla_distinct (L(L(rp))),
                                     1, proj_list),
                             latt, ratt);
+        
+        /* make sure the exit references are adjusted
+           before the node is overwritten */
+        replace_reference (exit_refs, rlp, RL(p));
+        replace_reference (exit_refs, rp, R(p));
+
         *rlp = *PFla_project_ (p, 1, proj_listD);
         *rp = *PFla_project_ (p, 1, proj_listP);
         return true;
@@ -211,7 +242,8 @@ join_resolve_conflict_worker (PFla_op_t *p,
 static int
 join_resolve_conflicts (PFla_op_t *proxy_entry,
                         PFla_op_t *proxy_exit,
-                        PFarray_t *conflict_list)
+                        PFarray_t *conflict_list,
+                        PFarray_t *exit_refs)
 {
     PFla_op_t *node, *p;
     int leaf_ref = PROXY_ONLY;
@@ -269,12 +301,14 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
         consistent = join_resolve_conflict_worker (p, L(p), R(p),
                                                    p->sem.eqjoin.att1,
                                                    p->sem.eqjoin.att2,
-                                                   conflict_list);
+                                                   conflict_list,
+                                                   exit_refs);
         if (! consistent) return CONFLICT;
         consistent = join_resolve_conflict_worker (p, R(p), L(p),
                                                    p->sem.eqjoin.att2,
                                                    p->sem.eqjoin.att1,
-                                                   conflict_list);
+                                                   conflict_list,
+                                                   exit_refs);
         if (! consistent) return CONFLICT;
     }
     else if (PFprop_subdom (p->prop,
@@ -285,7 +319,8 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
         consistent = join_resolve_conflict_worker (p, L(p), R(p),
                                                    p->sem.eqjoin.att1,
                                                    p->sem.eqjoin.att2,
-                                                   conflict_list);
+                                                   conflict_list,
+                                                   exit_refs);
         if (! consistent) return CONFLICT;
     }
     else if (PFprop_subdom (p->prop,
@@ -296,7 +331,8 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
         consistent = join_resolve_conflict_worker (p, R(p), L(p),
                                                    p->sem.eqjoin.att2,
                                                    p->sem.eqjoin.att1,
-                                                   conflict_list);
+                                                   conflict_list,
+                                                   exit_refs);
         if (! consistent) return CONFLICT;
     }
 
@@ -613,12 +649,15 @@ modify_semijoin_proxy (PFla_op_t *root,
     PFla_op_t *lp, *rp, *lproject = NULL, *rproject = NULL,
               *num1, *num2, *number, *new_number;
 
-    (void) exit_refs;
-
     /* do not introduce proxy if some conflicts remain */
     if (!(leaf_ref = join_resolve_conflicts (proxy_entry,
                                              proxy_exit,
-                                             conflict_list)))
+                                             conflict_list,
+                                             /* as we might also rewrite nodes
+                                                referencing the exit we have
+                                                to update the exit_refs list 
+                                                as well */
+                                             exit_refs)))
         return false;
 
     /* If the proxy exit is referenced from outside the proxy as well
@@ -1683,7 +1722,12 @@ generate_join_proxy (PFla_op_t *root,
     /* skip proxy generation if some conflicts cannot be resolved */
     if (!join_resolve_conflicts (proxy_entry,
                                  proxy_exit,
-                                 conflict_list))
+                                 conflict_list,
+                                 /* as we might also rewrite nodes
+                                    referencing the exit we have
+                                    to update the exit_refs list 
+                                    as well */
+                                 exit_refs))
         return false;
 
     /* Discard proxies with rownum operators as these would probably never
