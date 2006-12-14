@@ -56,7 +56,7 @@ static str getFarmPath(str *ret, size_t size, str extra) {
 	if (extra == NULL) {
 		snprintf(*ret, size, "%s", _sabaoth_internal_dbfarm);
 	} else {
-		snprintf(*ret, size, "%s/%s", _sabaoth_internal_dbfarm, extra);
+		snprintf(*ret, size, "%s%c%s", _sabaoth_internal_dbfarm, DIR_SEP, extra);
 	}
 
 	return(MAL_SUCCEED);
@@ -69,13 +69,16 @@ static str getDBPath(str *ret, size_t size, str extra) {
 		throw(MAL, "sabaoth.assert", "Cannot use this function when no database is active");
 
 	if (extra == NULL) {
-		snprintf(*ret, size, "%s/%s",
+		snprintf(*ret, size, "%s%c%s",
 				_sabaoth_internal_dbfarm,
+				DIR_SEP,
 				_sabaoth_internal_dbname);
 	} else {
-		snprintf(*ret, size, "%s/%s/%s",
+		snprintf(*ret, size, "%s%c%s%c%s",
 				_sabaoth_internal_dbfarm,
+				DIR_SEP,
 				_sabaoth_internal_dbname,
+				DIR_SEP,
 				extra);
 	}
 
@@ -103,7 +106,6 @@ void SABAOTHinit(str dbfarm, str dbname) {
 	len = strlen(dbfarm) + 1;
 	_sabaoth_internal_dbfarm = malloc(sizeof(char) * (len));
 	memcpy(_sabaoth_internal_dbfarm, dbfarm, len);
-	_sabaoth_internal_dbfarm[len] = '\0';
 	/* remove trailing slashes */
 	while (len > 0 && _sabaoth_internal_dbfarm[len - 1] == '/') {
 		_sabaoth_internal_dbfarm[len - 1] = '\0';
@@ -116,7 +118,6 @@ void SABAOTHinit(str dbfarm, str dbname) {
 		len = strlen(dbname) + 1;
 		_sabaoth_internal_dbname = malloc(sizeof(char) * (len));
 		memcpy(_sabaoth_internal_dbname, dbname, len);
-		_sabaoth_internal_dbname[len] = '\0';
 	}
 }
 
