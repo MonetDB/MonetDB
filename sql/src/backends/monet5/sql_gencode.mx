@@ -652,7 +652,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					op = ">=";
 					break;
 				default:
-					GDKerror("Unknown operator");
+					showException(SQL,"Unknown operator");
 				}
 
 				/* multiplex needs equal heads */
@@ -800,7 +800,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushNil(mb, q, tail_type(s)->type->localtype);
 					break;
 				default:
-					GDKerror("SQL2MAL: error impossible\n");
+					showException(SQL,"SQL2MAL: error impossible\n");
 				}
 			}
 			s->nr = getDestVar(q);
@@ -968,7 +968,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				break;
 			}
 			default:
-				GDKerror("SQL2MAL: error impossible\n");
+				showException(SQL,"SQL2MAL: error impossible\n");
 			}
 			s->nr = getDestVar(q);
 			break;

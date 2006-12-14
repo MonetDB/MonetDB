@@ -373,13 +373,13 @@ str defaultPlan=
 	/* "joinselect," */
 	"modes,"
 	"aliases,"
+	"crackers," 
 	"commonTerms,"
 	"accumulators,"
 	"joinPath,"
 	"deadcode,"
 	"reduce,"
-	"garbageCollector,"
-	/* "crackers" */;
+	"garbageCollector,";
 
 void
 addQueryToCache(Client c)
@@ -451,7 +451,7 @@ care of.
 				nxt++;
 			}
 			if( (nme = getName(optimizer,strlen(optimizer))) == 0) {
-				GDKerror("optimizer '%s' does not exist\n",optimizer);
+				showException(SQL,"optimizer '%s' does not exist\n",optimizer);
 				mb->errors++;
 			} else
 			if( top<256)

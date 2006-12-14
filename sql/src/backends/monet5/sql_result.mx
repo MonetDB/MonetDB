@@ -301,7 +301,7 @@ bat_max_@1length(BAT *b)
 	}
 	for (i = 0; i < (t->digits-t->scale) && *s != '.' && *s; i++, s++) {
 		if (!*s || *s < '0' || *s > '9') {
-			GDKerror("decimal wrong format (%s)", p);
+			showException(SQL,"decimal wrong format (%s)", p);
 			return NULL;
 		}
 		res *= 10;
@@ -314,13 +314,13 @@ bat_max_@1length(BAT *b)
 	}
 	if (*s) {
 		if (*s != '.') {
-			GDKerror("decimal wrong format (%s)", p);
+			showException(SQL,"decimal wrong format (%s)", p);
 			return NULL;
 		}
 		s++;
 		for( i = 0; *s && i < t->scale; i++, s++) {
 			if (*s < '0' || *s > '9') {
-				GDKerror("decimal wrong format (%s)", p);
+				showException(SQL,"decimal wrong format (%s)", p);
 				return NULL;
 			}
 			res *= 10;
@@ -331,7 +331,7 @@ bat_max_@1length(BAT *b)
 		}
 	}
 	if (*s) {
-		GDKerror("decimal wrong format (%s)", p);
+		showException(SQL,"decimal wrong format (%s)", p);
 		return NULL;
 	}
 	r = (@1*)GDKmalloc(sizeof(@1));
@@ -439,12 +439,12 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 	Column *fmt;
 
 	if (!t) {
-		GDKerror("table %s not found\n", tname);
+		showException(SQL,"table %s not found\n", tname);
 		m->type = -1;
 		return NULL;
 	}
 	if (!bs ||stream_errnr(bs->s)) {
-		GDKerror("stream not open %d\n", stream_errnr(bs->s));
+		showException(SQL,"stream not open %d\n", stream_errnr(bs->s));
 
 		m->type = -1;
 		return NULL;
