@@ -232,9 +232,9 @@ function user.main():void;	# 0  (main:void)
 ## This should cause an error 	# 55  (_81:str)
     v27 := algebra.find(b,"cat");	# 56 ALGfind (v27:int)<-(b:bat[:str,:int])(_83:str)
     v28 := io.print(v27);	# 57 IOprint_val (v28:void)<-(v27:int)
-catch MALException;	# 58  (MALException:any) jump 60
-    io.print(MALException);	# 59 IOprint_val (_86:void)<-(MALException:any)
-exit MALException;	# 60  (MALException:any)
+catch MALException:str ;	# 58  (MALException:str) jump 60
+    io.print(MALException);	# 59 IOprint_val (_86:void)<-(MALException:str)
+exit MALException:str ;	# 60  (MALException:str)
 #b.find("cat").print; 	# 61  (_87:str)
 ## Can we bat.delete them and re-insert them later on 	# 62  (_88:str)
     v29 := bat.delete(b,"fox",4);	# 63 BKCdelete_bun (v29:void)<-(b:bat[:str,:int])(_74:str)(_90:int)

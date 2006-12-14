@@ -3019,7 +3019,7 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 	lng i = *pos;
 
 	if ((i < 0) || (i >= (lng) BATcount(b)))
-		throw(MAL, "algebra.fetch", " idx out of range");
+		throw(MAL, "algebra.fetch", " idx out of range\n");
 	i += BUNindex(b, BUNfirst(b));
 	@:putTailALG(BUNptr(b,i))@
 

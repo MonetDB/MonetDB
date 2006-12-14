@@ -1802,22 +1802,22 @@ str parseError(Client cntxt, str msg)
 			*s++ = '%'; 
 		*s++ = *t;
 	}
-	*s++ = '\n';
-	*s++ = '!';
+	*s++= '\n';
+	*s = 0;
+	showException(SYNTAX, buf);
 	/* produce the position marker*/
-	i = position(cntxt) + strlen(GDKERROR)-1;
+	s= buf;
+	i = position(cntxt) -1;
 	for(; i > 0; i--) {
 	   *s++ = ((l && *(l+1) && *l++ != '\t'))?' ':'\t';
 	}
 	*s++ = '^'; 
 	*s = 0;
 
-	if (msg == 0)
-		msg = "can't help you here, sorry.\n";
-	if( strlen(msg)+strlen(buf) < 1020)
+	if( msg && strlen(msg)+strlen(buf) < 1020)
 		snprintf(s,1020,"%s", msg);
 	skipToEnd(cntxt);
-	GDKerror(buf);
+	showException(SYNTAX, buf);
 	return 0;
 }
 @}

@@ -89,7 +89,7 @@ stdout of test 'ID.1024615` in directory 'tests/BugsViaSourgeforce` itself:
 #	ib_a := io.print(hb_a);
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #
-!ERROR: 'mil.take' undefined in user.main[18] BAT_WRITE:any := mil.take(_21:str)
+!ERROR: TypeException: user.main[18]: 'mil.take' undefined in: BAT_WRITE:any := mil.take(_21:str)
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)

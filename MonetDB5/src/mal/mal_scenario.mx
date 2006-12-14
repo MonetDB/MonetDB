@@ -180,6 +180,7 @@ mal_export void updateScenario(str nme, MALfcn fcn);
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_client.h"
 #include "mal_authorize.h"
+#include "mal_exception.h"
 
 struct SCENARIO scenarioRec[MAXSCEN] = {
 	{"mal", "mal",
@@ -220,7 +221,7 @@ getFreeScenario()
 		;
 
 	if (i == MAXSCEN) {
-		GDKerror("freeScenario:no scenario space left; adjust & recompile");
+		showException(MAL,"freeScenario:no scenario space left; adjust & recompile");
 	} else {
 		scen = scenarioRec + i;
 	}

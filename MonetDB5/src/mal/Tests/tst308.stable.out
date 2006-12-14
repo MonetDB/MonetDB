@@ -20,7 +20,7 @@ stdout of test 'tst308` in directory 'src/mal` itself:
 #	io.print(NotDefineException);
 #exit NotDefinedException;
 #
-!ERROR: 'NotDefineException' may not be used before being initialized in main[5]
+!ERROR: TypeException: user.main[5]: 'NotDefineException' may not be used before being initialized
 function user.main():void;	# 0  (main:void)
 # exception variables are implicitly defined 	# 1  (_1:str)
 # by the catch statement. 	# 2  (_2:str)

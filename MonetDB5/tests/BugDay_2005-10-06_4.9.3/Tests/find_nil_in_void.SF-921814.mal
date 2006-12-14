@@ -4,7 +4,7 @@ bat.append(b,"zero");
 io.print(b);
 z:= algebra.find(b,0:oid);
 zs:=str.str(z);
-catch MALException;
+catch MALException:str;
 	zs:= nil:str;
 exit MALException;
 io.printf("oid(0) -> %s\n",zs);

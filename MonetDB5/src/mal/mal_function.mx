@@ -128,8 +128,6 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
 				for(; s; s= s->peer)
 				if( getSignature(s)->fcn == p->fcn) return s;
 		}
-
-	GDKerror("getFunctionSymbol:internal error\n");
 	return 0;
 } 
 @-
@@ -226,7 +224,8 @@ void chkFlow(MalBlkPtr mb)
 		case BARRIERsymbol:
 		case CATCHsymbol:
 			if(btop== DEPTH){
-			    GDKerror("Too many nested MAL blocks\n");
+			    showScriptException(mb,i,SYNTAX,
+					"Too many nested MAL blocks\n");
 			    mb->errors++;
 			    return;
 			}
@@ -236,9 +235,10 @@ void chkFlow(MalBlkPtr mb)
 
 			for(j=btop-1;j>=0;j--)
 			if( v==var[j]){
-			    GDKerror("recursive %s[%d] shields %s[%d]\n",
-			        getVarName(mb,v), pc[j],
-			        getFcnName(mb),pc[i]);
+			    showScriptException(mb,i,SYNTAX,
+					"recursive %s[%d] shields %s[%d]\n",
+						getVarName(mb,v), pc[j],
+						getFcnName(mb),pc[i]);
 			    mb->errors++;
 			    return;
 			}
@@ -254,8 +254,9 @@ void chkFlow(MalBlkPtr mb)
 			    getVarType(mb,v) != TYPE_bte && 
 			    getVarType(mb,v) != TYPE_wrd 
 				){
-			    GDKerror("barrier '%s' should be of type bit, str or number in %s[%d]\n",
-					getVarName(mb, v), getFcnName(mb), i);
+			    showScriptException(mb,i,TYPE,
+					"barrier '%s' should be of type bit, str or number\n",
+					getVarName(mb, v));
 					mb->errors++;
 			}
 			btop++;
@@ -265,14 +266,14 @@ void chkFlow(MalBlkPtr mb)
 			v= getDestVar(p);
 			if( btop>0 && var[btop-1] != v){
 			    mb->errors++;
-			    GDKerror("exit-label '%s' doesnot match '%s' in %s[%d]\n",
-			    getVarName(mb,v),
-			    getVarName(mb,var[btop-1]),
-			    getFcnName(mb),i);
+			    showScriptException(mb,i,SYNTAX,
+					"exit-label '%s' doesnot match '%s'\n",
+					getVarName(mb,v), getVarName(mb,var[btop-1]));
 			}
 			if(btop==0){
-			    GDKerror("exit-label '%s' without begin-label in %s[%d]\n",
-			    getVarName(mb,v), getFcnName(mb),i);
+			    showScriptException(mb,i,SYNTAX,
+					"exit-label '%s' without begin-label\n",
+					getVarName(mb,v));
 			    mb->errors++;
 			    continue;
 			}
@@ -301,8 +302,9 @@ void chkFlow(MalBlkPtr mb)
 			for(j=btop-1;j>=0;j--)
 			if( var[j]==v) break;
 			if(j<0){
-			    GDKerror("label '%s' not in guarded block in %s[%d]\n",
-			    getVarName(mb,v),getFcnName(mb),i);
+				str nme= getVarName(mb,v);
+			    showScriptException(mb,i,SYNTAX,
+					"label '%s' not in guarded block\n",nme);
 			    mb->errors++;
 			} else
 			if( p->typechk != TYPE_RESOLVED) fixed =0;
@@ -310,22 +312,24 @@ void chkFlow(MalBlkPtr mb)
 		case YIELDsymbol:
 			{ InstrPtr ps= getInstrPtr(mb,0);
 			if( ps->token != FACTORYsymbol){
-			    GDKerror("yield misplaced\n!");
+			    showScriptException(mb,i,SYNTAX,"yield misplaced\n!");
 			    mb->errors++;
 			} }
 		case RETURNsymbol:
 			{   InstrPtr ps= getInstrPtr(mb,0);
-			    int i;
+			    int e;
 			    if( ps->retc != p->retc){
-			        GDKerror("invalid return target\n!");
+			        showScriptException(mb,i,SYNTAX,
+						"invalid return target\n!");
 			        mb->errors++;
 			    } else
 			    if(ps->typechk == TYPE_RESOLVED)
-			    for(i=0;i<p->retc; i++){
-	                if( resolveType(getArgType(mb,ps,i),getArgType(mb,p,i)) <0 ){
-	                    GDKerror("%s type mismatch at type %d\n",
+			    for(e=0;e<p->retc; e++){
+	                if( resolveType(getArgType(mb,ps,e),getArgType(mb,p,e)) <0 ){
+	                    showScriptException(mb,i,TYPE,
+							"%s type mismatch at type %d\n",
 	                        (p->barrier==RETURNsymbol?"RETURN":"YIELD"),
-			                                getArgType(mb,p,i));
+			                                getArgType(mb,p,e));
 	                    mb->errors++;
 	                }
 	            }
@@ -345,7 +349,7 @@ void chkFlow(MalBlkPtr mb)
 					/* do nothing */
 				} else if( i) {
 					str msg=instruction2str(mb,p,TRUE);
-					GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
+					showScriptException(mb,i,SYNTAX,"signature misplaced\n!%s\n",msg);
 					GDKfree(msg);
 					mb->errors++;
 				}
@@ -353,27 +357,28 @@ void chkFlow(MalBlkPtr mb)
 		}
 	}
 	if( lastInstruction < mb->stop-1 ){
-		GDKerror("SYNTAX ERROR: instructions after END \n");
+		showScriptException(mb,lastInstruction,SYNTAX,
+			"instructions after END \n");
 #ifdef DEBUG_MAL_FCN
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 		mb->errors++;
 	}
 	for(btop--; btop>=0;btop--){
-		GDKerror("begin '%s' without exit in %s[%d]\n",
-			getVarName(mb,var[btop]),getFcnName(mb),i);
+		showScriptException(mb,lastInstruction, SYNTAX,
+			"begin '%s' without exit in %s[%d]\n",
+				getVarName(mb,var[btop]),getFcnName(mb),i);
 		mb->errors++;
 	}
 	p= getInstrPtr(mb,0);
 	if( !isaSignature(p)){
-		GDKerror("SYNTAX ERROR: signature missing\n");
+		showScriptException(mb,0,SYNTAX,"signature missing\n");
 		mb->errors++;
 	}
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
 			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
-			GDKerror("RETURN missing in %s.%s\n", 
-				getModuleId(p), getFunctionId(p));
+			showScriptException(mb,0,SYNTAX,"RETURN missing\n");
 			mb->errors++;
 		}
 	}
@@ -614,12 +619,10 @@ printFunction(GDKout, new->def, LIST_MAL_ALL);
 	if(proc->def->errors == 0) {
 		chkProgram(scope,new->def);
 		if( new->def->errors){
-			str err;
-			GDKerror("Error in cloned function\n");
-			err= function2str(new->def,LIST_MAL_ALL);
-			GDKerror("%s",err);
-			GDKfree(err);
-			showErrors();
+			showScriptException(new->def,0,MAL,"Error in cloned function\n");
+#ifdef DEBUG_MAL_FCN
+			printFunction(GDKout,new->def, LIST_MAL_ALL);
+#endif
 		}
 	}
 #ifdef DEBUG_CLONE
@@ -807,7 +810,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		getVarDepth(mb,i)=0;
 		getVarScope(mb,i)=0;
 		if( mb->var[i]->name == 0 && !isTmpVar(mb,i)){
-			GDKerror("Name missing in variable %d\n",i);
+			showScriptException(mb,0,TYPE,"Name missing in variable %d\n",i);
 			mb->errors++;
 		}
 	}
@@ -820,7 +823,8 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	}
 	/* and the function name as well */
 	if( getFunctionId(p) == NULL){
-		GDKerror("Function name missing in signature\n");
+		showScriptException(mb,0, TYPE,
+			"Function name missing in signature\n");
 		return;
 	}
 	nme= getFunctionId(p);
@@ -835,13 +839,15 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 				/* ok defined */
 			} else 
 			if( (s = getVarScope(mb,l) ) ==0 ) {
-					GDKerror("'%s' may not be used before being initialized in %s[%d]\n",
-						getVarName(mb,l), nme,pc);
+					showScriptException(mb,pc,TYPE,
+						"'%s' may not be used before being initialized\n", 
+						getVarName(mb,l));
 						mb->errors++;
 			} else 
 			if( getVarDepth(mb,l) >= top){
-						GDKerror("'%s' may not be used before being set in %s[%d]\n",
-							getVarName(mb,l), nme,pc);
+						showScriptException(mb,pc,TYPE,
+							"'%s' may not be used before being set in %s[%d]\n",
+							getVarName(mb,l));
 						mb->errors++;
 			}
 			assert( isTmpVar(mb,l) < mb->vtop);
@@ -852,7 +858,8 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			if( getVarScope(mb, l) == 0){
 				if( (p->barrier== RETURNsymbol || p->barrier== YIELDsymbol) &&
 					getVarType(mb,l) != TYPE_void  && p->retc==p->argc){
-			            GDKerror("'%s' returns before being initialized",
+			            showScriptException(mb,pc,TYPE,
+							"'%s' returns before being initialized",
 							getVarName(mb,l));
 						mb->errors++;
 				}
@@ -864,8 +871,9 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			    for( i=0; i< top; i++)
 			    if( blks[i] == s ) break;
 			    if( i< top && blks[i]!= s && !isTmpVar(mb, l)){
-			            GDKerror("'%s' used outside declaration scope in %s[%d]\n",
-			            getVarName(mb,l), nme,pc);
+			            showScriptException(mb,pc,TYPE,
+							"'%s' used outside declaration\n",
+							getVarName(mb,l));
 			        mb->errors++;
 			    }
 			}
@@ -877,7 +885,8 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 					blks[top]= blkId;
 					blks[++top]= 0;
 				} else {
-					GDKerror("too deeply nested  MAL program\n");
+					showScriptException(mb,pc,SYNTAX,
+						"too deeply nested  MAL program\n");
 					mb->errors++;
 					return;
 				}

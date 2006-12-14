@@ -14,13 +14,13 @@ stdout of test 'tst102` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 ## the calls are wrong, they violate the type constraint
 #command + (L:any_1, R:any_1):any_1 
-!ERROR: address of 'user.addIntInt' not found
+!ERROR: MALException: : address of 'user.addIntInt' not found
 command user.+(L:any_1,R:any_1):any_1 address addIntInt;	# 0  dynamic (+:any_1)<-(L:any_1)(R:any_1)
 #
 #a:=1+"hello";
 #b:=3.5+1;
 #
-!ERROR: 'calc.+' undefined in user.main[2] a:any := calc.+(_3:int, _4:str)
+!ERROR: TypeException: user.main[2]: 'calc.+' undefined in: a:any := calc.+(_3:int, _4:str)
 function user.main():void;	# 0  (main:void)
 # the calls are wrong, they violate the type constraint 	# 1  (_1:str)
     a := calc.+(1,"hello");	# 2  unknown (a:any)<-(_3:int)(_4:str)

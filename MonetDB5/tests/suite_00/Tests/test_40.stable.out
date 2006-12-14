@@ -179,10 +179,8 @@ end main;	# 74
 [ 9,	  nil	  ]
 ## errors\n
 [ 0 ]
-#b.fetch(-1).print();
+!ERROR: MALException: : MALException:algebra.fetch: idx out of range
 !ERROR: CMDposition: item not found
-!ERROR: MALException:algebra.fetch: idx out of range
-#
 
 # 00:12:28 >  
 # 00:12:28 >  Done.

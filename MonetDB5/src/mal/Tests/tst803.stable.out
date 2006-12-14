@@ -19,7 +19,7 @@ stdout of test 'tst803` in directory 'src/mal` itself:
 #bat.insert(b,1,2);
 #io.print(b);
 #
-!ERROR: 'bat.insert' undefined in user.main[5] _6:any := bat.insert(b:BAT, _7:int, _8:int)
+!ERROR: TypeException: user.main[5]: 'bat.insert' undefined in: _6:any := bat.insert(b:BAT, _7:int, _8:int)
 function user.main():void;	# 0  (main:void)
 # you can not insert against an arbitrary BAT identifier 	# 1  (_1:str)
 # because you don't know its type. 	# 2  (_2:str)

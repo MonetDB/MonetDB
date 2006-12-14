@@ -266,15 +266,13 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("ESoptimizer called, collect empty sets and process them\n");
+	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 	for (i = 0; i < mb->vtop; i++) {
 		ps = getVarProperties(mb, i);
 		if ( (rows= (int*) getPropertyValue(ps, "rows"))   && *rows == 0) {
 #ifdef DEBUG_OPT_EMPTYSET
-	if( k == 0)
 		stream_printf(GDKout, "START emptyset optimizer %d", i);
-	else
-		stream_printf(GDKout, ",%d ", i);
 #endif
 			empty[i] = 1;
 		} 

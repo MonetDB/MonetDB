@@ -13,11 +13,11 @@ stdout of test 'tst008` in directory 'src/mal` itself:
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 #i:=32;
-#printi;
-#print(i);
+#io.printi;
+!ERROR: SyntaxException: : io.printi;
+!ERROR: SyntaxException: :         ^'(' expected
+#io.print(i);
 #
-!ERROR: io.printi;
-!                ^'(' expected
 function user.main():void;	# 0  (main:void)
     i := 32;	# 1  unknown (i:any)<-(_2:int)
     io.printi();	# 2  unknown (_3:any)

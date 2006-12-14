@@ -623,7 +623,7 @@ optimizeMALBlock(MalBlkPtr mb)
 				printInstruction(GDKout,mb,optimizers[pc],LIST_MAL_ALL);
 			}
 			if (msg) {
-				GDKerror(msg);
+				showException(MAL,msg);
 				showErrors();
 				return msg;
 			}

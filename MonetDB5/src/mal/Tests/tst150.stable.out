@@ -13,7 +13,7 @@ stdout of test 'tst150` in directory 'src/mal` itself:
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 #command user.lookup(nme:str):bat[:str,:str] 
-!ERROR: address of 'user.CMDlookup' not found
+!ERROR: MALException: : address of 'user.CMDlookup' not found
 command user.lookup(nme:str):bat[:str,:str] address CMDlookup;	# 0  (lookup:bat[:str,:str])<-(nme:str)
 #function sample(nme:str, val:any):bit;
 #   b := lookup(nme); #find a bat
@@ -35,8 +35,8 @@ end sample;	# 8
 #user.sample("hello","world");
 #user.sample("hello",1);
 #
-!ERROR: 'user.sample' undefined in user.main[1] _1:bit := user.sample(_2:str, _3:str)
-!ERROR: 'user.sample' undefined in user.main[2] _4:bit := user.sample(_2:str, _5:int)
+!ERROR: TypeException: user.main[1]: 'user.sample' undefined in: _1:bit := user.sample(_2:str, _3:str)
+!ERROR: TypeException: user.main[2]: 'user.sample' undefined in: _4:bit := user.sample(_2:str, _5:int)
 function user.main():void;	# 0  (main:void)
     user.sample("hello","world");	# 1  unknown (_1:bit)<-(_2:str)(_3:str)
     user.sample("hello",1);	# 2  unknown (_4:bit)<-(_2:str)(_5:int)

@@ -224,10 +224,9 @@ being called.
 	if( mbcaller== NULL && env != NULL){
 		stk = env;
 		if( mb != stk->blk) 
-			GDKerror("runMAL:misalignment of symbols\n");
-		if( mb->vtop > stk->stksize) {
-			GDKerror("stack too small");
-		}
+			showScriptException(mb,0,MAL,"runMAL:misalignment of symbols\n");
+		if( mb->vtop > stk->stksize)
+			showScriptException(mb,0,MAL,"stack too small\n");
 		pci= pcicaller;
 	} else {
 		newStack(stk,mb->vsize);
@@ -691,7 +690,8 @@ of by limiting the depth of a function calls.
 @= safeguardStack
 /* Expensive? 70 msec for 1M calls another solution is needed.*/
 	if (stk->stkdepth > 50 * 1024 && THRhighwater()) {
-		GDKerror("interpret: running out of physical stack space!");
+		showScriptException(mb,0,MAL,
+			"interpret: running out of physical stack space!\n");
 		return createScriptException(mb, 0, STKOF, "Interpreter", NULL,
 				"stack depth: %d", stk->stkdepth);
 	}
@@ -1228,8 +1228,8 @@ jumps are re-established.
 Calling a built-in or user-defined routine may lead to an error, a
 cached status message to be dealt with in MAL, or as an error status in Mapi.
 @{
-[there are about 55 GDKerror calls in gdk, 91 in monet, and 167 in 
-the modules/plain/*.  The number of fatal errors is 26,7, 2, respectively.]
+[there are about 55 GDKerror calls in gdk and 167 in 
+the modules/plain/*.  The number of fatal errors is 26, 2, respectively.]
 @}
 
 To improve error handling in MAL, an exception handling

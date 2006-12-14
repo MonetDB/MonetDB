@@ -31,14 +31,14 @@ properties, e.g. the size of the the BATs being accessed.
 
 To set the stage, consider the following MAL snippet
 @example
-	r:= select(R, 0, 100000);
-	s:= select(S, 0, 200000);
-	t:= select(s, 0,30);
-	p:= prod(r,s);
-	u:= f("something");
-	w:= +(p,4);
-	v:= sum(w);
-barrier z:= count(p);
+	r:= algebra.select(R, 0, 100000);
+	s:= algebra.select(S, 0, 200000);
+	t:= algebra.select(s, 0,30);
+	p:= algebra.prod(r,s);
+	u:= main.f("something");
+	w:= calc.+(p,4);
+	v:= algebra.sum(w);
+barrier z:= algebra.count(p);
 	...
 @end example
 Assume that after this block p is not used anymore.

@@ -15,14 +15,14 @@ stdout of test 'tst106` in directory 'src/mal` itself:
 ## check in-compatible polmorphic types
 #
 #command f(a:any_1,b:any_2, c:any_1) :bat[:any_1, :any_2] 
-!ERROR: address of 'user.f' not found
+!ERROR: MALException: : address of 'user.f' not found
 command user.f(a:any_1,b:any_2,c:any_1):bat[:any_1,:any_2] address f;	# 0  dynamic (f:bat[:any_1,:any_2])<-(a:any_1)(b:any_2)(c:any_1)
 #
 #b:= f(1,2,"help");
 #a:= f(1,2,1);
 #
-!ERROR: 'user.f' undefined in user.main[2] b:any := user.f(_3:int, _4:int, _5:str)
-!ERROR: 'user.f' undefined in user.main[3] a:bat[:int,:int] := user.f(_3:int, _4:int, _3:int)
+!ERROR: TypeException: user.main[2]: 'user.f' undefined in: b:any := user.f(_3:int, _4:int, _5:str)
+!ERROR: TypeException: user.main[3]: 'user.f' undefined in: a:bat[:int,:int] := user.f(_3:int, _4:int, _3:int)
 function user.main():void;	# 0  (main:void)
 # check in-compatible polmorphic types 	# 1  (_1:str)
     b := user.f(1,2,"help");	# 2  unknown (b:any)<-(_3:int)(_4:int)(_5:str)

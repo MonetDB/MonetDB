@@ -70,7 +70,7 @@ They are marked as unsafe.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/* #define DEBUG_OPT_REDUCE     show partial result */
+/* #define DEBUG_OPT_ALIASES      show partial result */
 
 opt_export int OPTaliasStep(MalBlkPtr mb, int pc);
 #endif

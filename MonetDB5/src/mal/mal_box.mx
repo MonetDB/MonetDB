@@ -286,7 +286,7 @@ newBox(str name)
 		}
 	mal_unset_lock(mal_contextLock, "newBox");
 	if (i == MAXSPACES)
-		GDKerror("too many boxes\n");
+		showException(MAL,"too many boxes\n");
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "succeeded at %d\n", i);
 #endif
@@ -596,14 +596,14 @@ boxFileName(Box box, str backup)
 
 	snprintf(boxfile, PATHLENGTH, "%s%c%s%cbox", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
 	if (mkdir(boxfile, 0755) < 0 && errno != EEXIST) {
-		GDKerror("boxFileName:can not create box directory\n");
+		showException(MAL,"boxFileName:can not create box directory\n");
 		return NULL;
 	}
 	i = strlen(boxfile);
 	if (backup) {
 		snprintf(boxfile + i, PATHLENGTH - i, "%c%s", DIR_SEP, backup);
 		if (mkdir(boxfile, 0755) < 0 && errno != EEXIST) {
-			GDKerror("boxFileName:can not create box directory\n");
+			showException(MAL,"boxFileName:can not create box directory\n");
 			return NULL;
 		}
 		i += strlen(backup) + 1;
@@ -624,14 +624,14 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	*boxfilebak = boxFileName(box, "backup");
 
 	if (*boxfile == 0) {
-		GDKerror("saveBox:can not determine box file\n");
+		showException(MAL,"saveBox:can not determine box file\n");
 		return 0;
 	}
 	if (access(*boxfile,R_OK)==0 && rename(*boxfile, *boxfilebak)) {
 #ifdef DEBUG_MAL_BOX
 		stream_printf(GDKout, "saveBox:can not rename %s\n", boxfile);
 #endif
-		GDKerror("saveBox:can not rename backup\n");
+		showException(MAL,"saveBox:can not rename backup\n");
 		GDKfree(*boxfile); *boxfile = NULL;
 		GDKfree(*boxfilebak); *boxfilebak = NULL;
 		return 0;
@@ -645,7 +645,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	if (f != NULL)
 		chmod(*boxfile, (S_IRUSR | S_IWUSR));
 	else
-		GDKerror("saveBox:can not create box file\n");
+		showException(MAL,"saveBox:can not create box file\n");
 	if (f == NULL) {
 		GDKfree(*boxfile); *boxfile= NULL;
 		GDKfree(*boxfilebak); *boxfilebak= NULL;
@@ -738,7 +738,7 @@ void
 printSomeBox(stream *fd, int k)
 {
 	if (box[k] == 0) {
-		GDKerror("printSomeBox:illegal space id\n");
+		showException(MAL,"printSomeBox:illegal space id\n");
 	} else
 		printBox(fd, box[k]);
 }

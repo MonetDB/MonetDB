@@ -17,8 +17,8 @@ stdout of test 'tst003` in directory 'src/mal` itself:
 #a:=b;	#b not yet defined
 #b:=c;	#c undefined
 #
-!ERROR: 'b' may not be used before being initialized in main[2]
-!ERROR: 'c' may not be used before being initialized in main[4]
+!ERROR: TypeException: user.main[2]: 'b' may not be used before being initialized
+!ERROR: TypeException: user.main[4]: 'c' may not be used before being initialized
 function user.main():void;	# 0  (main:void)
 # test illegal variable use 	# 1  (_2:str)
     a := b;	# 2  (a:any)<-(b:any)

@@ -121,6 +121,7 @@ if( idcmp(@1,name) || pci->argc != 1)
 @c
 #include "mal_atom.h"
 #include "mal_namespace.h"
+#include "mal_exception.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -283,15 +284,15 @@ void malAtomDefinition(str name, int tpe){
 	int i;
 
 	if(strlen(name) >= IDLENGTH){
-		GDKerror("Atom name '%s' too long\n", name);
+		showException(SYNTAX,"Atom name '%s' too long\n", name);
 		return;
 	}
 	if( ATOMindex(name)>=0){
-		GDKerror("Redefinition of atom '%s'\n", name);
+		showException(TYPE,"Redefinition of atom '%s'\n", name);
 		return;
 	}
 	if( tpe<0 || tpe >=GDKatomcnt){
-		GDKerror("Undefined atom inheritance '%s'\n", name);
+		showException(TYPE,"Undefined atom inheritance '%s'\n", name);
 		return;
 	}
 #ifdef MAL_ATOM_DEBUG
@@ -341,7 +342,7 @@ int malAtomArray(int tpe, int size){
 	snprintf(name+i,IDLENGTH-i,"%d", size);
 	GDKfree(nme);
 	if(strlen(name) >= IDLENGTH){
-		GDKerror("Atom name '%s' too long\n", name);
+		showException(SYNTAX,"Atom name '%s' too long\n", name);
 		return -1;  /* ERROR! */
 	}
 #ifdef MAL_ATOM_DEBUG

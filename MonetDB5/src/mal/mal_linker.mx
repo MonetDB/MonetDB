@@ -176,7 +176,7 @@ loaded files and try to resolve the functionname again.
 			return adr; /* found it */
 	}
 	if( !silent)
-		GDKerror("address of '%s.%s' not found\n", 
+		showException(MAL,"address of '%s.%s' not found\n", 
 			(modnme?modnme:"<unknown>"), fcnname);
 	return NULL;
 }
@@ -305,7 +305,7 @@ Use the search path provided in the configuration file
 
 	mal_set_lock(mal_contextLock, "loadModule");
 	if (lastfile == maxfiles) {
-		GDKerror("loadModule:internal error, too many modules loaded\n");
+		showException(MAL,"loadModule:internal error, too many modules loaded\n");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
 		filesLoaded[lastfile].fullname = fullname;

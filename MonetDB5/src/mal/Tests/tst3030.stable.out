@@ -26,8 +26,8 @@ end newsemijoin;	# 2
 #io.print(1);
 #y:int{sorted=true}:= algebra.sort(w);
 #
-!ERROR: 'algebra.sort' undefined in user.main[6] y:int := algebra.sort(w:bat[:int,:int])
-!ERROR: 'algebra.sort' undefined in user.main[8] y:int := algebra.sort(w:bat[:int,:int])
+!ERROR: TypeException: user.main[6]: 'algebra.sort' undefined in: y:int := algebra.sort(w:bat[:int,:int])
+!ERROR: TypeException: user.main[8]: 'algebra.sort' undefined in: y:int := algebra.sort(w:bat[:int,:int])
 function user.main():void;	# 0  (main:void)
 #Parsing properties and keeping them around 	# 1  (_1:str)
 # note the use of the first parameter to obtain property set 	# 2  (_2:str)

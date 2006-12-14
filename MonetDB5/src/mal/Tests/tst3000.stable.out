@@ -46,9 +46,8 @@ function user.main():void;	# 0  (main:void)
 # k:= "whatever"; {k.blah:=true;k.freeze:=true;} 	# 15  (_23:str)
 # n:= bat.new(int,int);{n.cost:=12;} 	# 16  (_24:str)
 end main;	# 17  
-!ERROR: MALException:bbp.take:failed to take object from box
-
-# 08:01:13 >  
-# 08:01:13 >  Done.
-# 08:01:13 >  
+!ERROR: MALException: : MALException:bbp.take:failed to take object from box
+# 17:40:16 >  
+# 17:40:16 >  Done.
+# 17:40:16 >  
 

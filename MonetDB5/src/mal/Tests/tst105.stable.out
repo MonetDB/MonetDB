@@ -17,15 +17,15 @@ stdout of test 'tst105` in directory 'src/mal` itself:
 #
 #module bat2;
 #command new(h:any_1,t:any_2) :bat[:any_1, :any_2] 
-!ERROR: address of 'bat2.GDKbatnew' not found
+!ERROR: MALException: : address of 'bat2.GDKbatnew' not found
 command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;	# 0  dynamic (new:bat[:any_1,:any_2])<-(h:any_1)(t:any_2)
 #
 #a:= bat2.new(:str,:int);
 #b:= bat2.new(:str,:int);
 #c:= new(:str,:int);
 #
-!ERROR: 'bat2.new' undefined in bat2.main[3] a:bat[:str,:int] := bat2.new(_4:str, _5:int)
-!ERROR: 'bat2.new' undefined in bat2.main[4] b:bat[:str,:int] := bat2.new(_7:str, _5:int)
+!ERROR: TypeException: user.main[3]: 'bat2.new' undefined in: a:bat[:str,:int] := bat2.new(_4:str, _5:int)
+!ERROR: TypeException: user.main[4]: 'bat2.new' undefined in: b:bat[:str,:int] := bat2.new(_7:str, _5:int)
 function user.main():void;	# 0  (main:void)
 # check propagation of type variables over bats 	# 1  (_1:str)
 # can be checked after bat module has been added 	# 2  (_2:str)

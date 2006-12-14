@@ -33,6 +33,16 @@
   amount of data traffic.
 
 *MonetDB 5.0 (Dec 2006)
+ 
+  14 Dec 2006; Martin Kersten <mlkersten>; OPEN
+  Align the 
+
+  13 Dec 2006; Martin Kersten <mlkersten>; CLOSED
+  Resolved errors in flow checking.
+
+  10 Dec 2006; Fabian Groggen <mlkersten>; CLOSED
+  Stratify  exception handling syntax.
+
   9 Dec 2006; Martin Kersten <mlkersten>; CLOSED
   The SQL optimizer allows for a better control
   over the optimizer sequence.

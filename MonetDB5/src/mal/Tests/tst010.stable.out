@@ -48,6 +48,16 @@ stdout of test 'tst010` in directory 'src/mal` itself:
 #barrier  unfinished:= 1;
 #	f:=1;
 #end;
+!ERROR: SyntaxException: user.main[5]: label 'Z' not in guarded block
+!ERROR: SyntaxException: user.main[9]: label 'L' not in guarded block
+!ERROR: SyntaxException: user.main[11]: label 'X' not in guarded block
+!ERROR: SyntaxException: user.main[13]: label 'A' not in guarded block
+!ERROR: SyntaxException: user.main[16]: label 'L' not in guarded block
+!ERROR: SyntaxException: user.main[19]: label 'L' not in guarded block
+!ERROR: SyntaxException: user.main[29]: exit-label 'B' doesnot match 'A'
+!ERROR: SyntaxException: user.main[31]: exit-label 'F' without begin-label
+!ERROR: SyntaxException: user.main[41]: exit-label 'A' without begin-label
+!ERROR: SyntaxException: user.main[44]: begin 'unfinished' without exit in main[45]
 function user.main():void;	# 0  (main:void)
 # syntax analysis test for guarded blocks, redo's and leave's 	# 1  (_1:str)
 # forcefully end the block, because the parser counts barrier/exit pairs 	# 2  (_2:str)
@@ -93,16 +103,6 @@ exit A;	# 41  (A:int)
 barrier unfinished := 1;	# 42  (unfinished:int)<-(_4:int)
     f := 1;	# 43  (f:int)<-(_4:int)
 end main;	# 44  
-!ERROR: label 'Z' not in guarded block in main[5]
-!ERROR: label 'L' not in guarded block in main[9]
-!ERROR: label 'X' not in guarded block in main[11]
-!ERROR: label 'A' not in guarded block in main[13]
-!ERROR: label 'L' not in guarded block in main[16]
-!ERROR: label 'L' not in guarded block in main[19]
-!ERROR: exit-label 'B' doesnot match 'A' in main[29]
-!ERROR: exit-label 'F' without begin-label in main[31]
-!ERROR: exit-label 'A' without begin-label in main[41]
-!ERROR: begin 'unfinished' without exit in main[45]
 #
 function user.main():void;	# 0  (main:void)
 # syntax analysis test for guarded blocks, redo's and leave's 	# 1  (_1:str)

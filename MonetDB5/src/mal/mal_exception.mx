@@ -147,6 +147,8 @@ enum exception {
 
 mal_export str	createException(enum exception, str, str, ...);
 mal_export str	createScriptException(MalBlkPtr, int, enum exception, str, str, ...);
+mal_export void	showException(enum exception, str, ...);
+mal_export void	showScriptException(MalBlkPtr, int, enum exception, str, ...);
 mal_export enum exception	getExceptionType(str);
 mal_export str	getExceptionPlace(str);
 mal_export str	getExceptionMessage(str);
@@ -237,6 +239,54 @@ createScriptException(MalBlkPtr mb, int pc, enum exception type, str prev, str f
 }
 
 /**
+ * Dump an error message using the exception structure
+ * using the primary console.
+*/
+void
+showScriptException(MalBlkPtr mb, int pc, enum exception type, str format, ...)
+{
+	char buf[GDKMAXERRLEN];
+	size_t i;
+	str s, fcn;
+	va_list ap;
+
+	s = mb ? getModName(mb) : "unknown";
+	fcn = mb ? getFcnName(mb) : "unknown";
+	i = 0;
+
+	i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "!ERROR: %s: %s.%s[%d]: ",
+			exceptionNames[type], s, fcn, pc);
+	va_start(ap, format);
+	i += vsnprintf(buf + i, GDKMAXERRLEN - 1 - i, format, ap);
+	va_end(ap);
+	if(buf[i-1]!= '\n')
+		buf[i++]= '\n';
+	buf[i] = '\0';
+	stream_printf(GDKout,buf);
+}
+
+void
+showException(enum exception type, str format, ...)
+{
+	char buf[GDKMAXERRLEN];
+	size_t i;
+	va_list ap;
+
+	i = 0;
+
+	i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "!ERROR: %s: : ",
+			exceptionNames[type]);
+	va_start(ap, format);
+	i += vsnprintf(buf + i, GDKMAXERRLEN - 1 - i, format, ap);
+	va_end(ap);
+	if(buf[i-1]!= '\n')
+		buf[i++]= '\n';
+	buf[i] = '\0';
+	buf[i] = '\0';
+	stream_printf(GDKout,buf);
+}
+
+/**
  * Returns the exception number for the given exception string.  If no
  * exception could be found in the string, MAL is returned indicating a
  * generic MALException.
@@ -316,5 +366,4 @@ exceptionToString(enum exception e)
 {
 	return(exceptionNames[e]);
 }
-
 @}

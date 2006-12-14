@@ -13,6 +13,7 @@ actions taken, i.e. number of succesful changes to the code.
 opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= wrapOptimizer
+/* #define _DEBUG_OPTIMIZER_*/
 str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;
 	str fcnnme;
@@ -24,7 +25,14 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	optimizerInit();
 	if( p )
 		removeInstruction(mb, p);
+#ifdef _DEBUG_OPTIMIZER_
+	stream_printf(GDKout,"apply @1\n");
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
 	if( p && p->argc > 1 && getFunctionId(p) != multiplexRef){
+#ifdef _DEBUG_OPTIMIZER_
+		stream_printf(GDKout,"locate function @1\n");
+#endif
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
 			!isConstant(mb,getArg(p,1)) ||
@@ -50,6 +58,9 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
 			throw(MAL, "optimizer.@1",buf);
 		}
+#ifdef _DEBUG_OPTIMIZER_
+		stream_printf(GDKout,"@1 %s %d\n",modnme,fcnnme);
+#endif
 		mb = s->def;
 		stk= 0;
 	} 
@@ -57,6 +68,10 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		return MAL_SUCCEED;
 	addtoMalBlkHistory(mb);
 	actions= OPT@1Implementation(mb,stk,p);
+#ifdef _DEBUG_OPTIMIZER_
+	stream_printf(GDKout,"finished @1 %d\n",actions);
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
     optimizerCheck(mb, "optimizer.@1", actions, GDKusec() - clk,@2);
 	return MAL_SUCCEED;
 }

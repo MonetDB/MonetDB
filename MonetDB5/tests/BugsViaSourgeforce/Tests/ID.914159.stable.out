@@ -30,13 +30,13 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 #	unknown:= mil.take("unknown");
 #	aa_a := io.print(unknown);
 #end crash;
+!ERROR: TypeException: user.crash[2]: 'mil.take' undefined in: unknown:any := mil.take(_3:str)
 function user.crash():void;	# 0  (crash:void)
 #	mil.line("\tprint($t);\n"); 	# 1  (_1:str)
     unknown := mil.take("unknown");	# 2  unknown (unknown:any)<-(_3:str)
     aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:void)<-(unknown:any)
 end crash;	# 4  
-!ERROR: 'mil.take' undefined in user.crash[2] unknown:any := mil.take(_3:str)
-##	mil.line("crash();");
+##	io.print("crash();");
 #	ba_a := user.crash();
 #
 function user.main():void;	# 0  (main:void)
@@ -53,9 +53,8 @@ function user.main():void;	# 0  (main:void)
 #	io.print("crash();"); 	# 11  (_11:str)
     ba_a := user.crash();	# 12  (ba_a:void)
 end main;	# 13  
-!ERROR: SyntaxException:user.crash[0]:Syntax error in script
-
-# 07:27:17 >  
-# 07:27:17 >  Done.
-# 07:27:17 >  
+!ERROR: MALException: : SyntaxException:user.crash[0]:Syntax error in script
+# 18:04:19 >  
+# 18:04:19 >  Done.
+# 18:04:19 >  
 

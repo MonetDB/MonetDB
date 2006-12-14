@@ -48,9 +48,9 @@ function user.main():void;	# 0  (main:void)
     io.print(b);	# 4 IOprint_val (_8:void)<-(b:bat[:void,:str])
     z := algebra.find(b,0@0:oid);	# 5 ALGfind (z:str)<-(b:bat[:void,:str])(_10:oid)
     zs := str.str(z);	# 6 STRtostr (zs:str)<-(z:str)
-catch MALException;	# 7  (MALException:any) jump 9
+catch MALException:str ;	# 7  (MALException:str) jump 9
     zs := nil:str;	# 8  (zs:str)<-(_13:str)
-exit MALException;	# 9  (MALException:any)
+exit MALException:str ;	# 9  (MALException:str)
     io.printf("oid(0) -> %s\n",zs);	# 10 IOprint_formatted_str (_14:void)<-(_15:str)(zs:str)
     z := algebra.find(b,nil:oid);	# 11 ALGfind (z:str)<-(b:bat[:void,:str])(_16:oid)
     zs := str.str(z);	# 12 STRtostr (zs:str)<-(z:str)
@@ -60,15 +60,15 @@ exit MALException;	# 9  (MALException:any)
     io.print(b);	# 16 IOprint_val (_21:void)<-(b:bat[:void,:str])
     z := algebra.find(b,0@0:oid);	# 17 ALGfind (z:str)<-(b:bat[:void,:str])(_10:oid)
     zs := str.str(z);	# 18 STRtostr (zs:str)<-(z:str)
-catch MALException;	# 19  (MALException:any) jump 21
+catch MALException:str ;	# 19  (MALException:str) jump 21
     zs := nil:str;	# 20  (zs:str)<-(_13:str)
-exit MALException;	# 21  (MALException:any)
+exit MALException:str ;	# 21  (MALException:str)
     io.printf("oid(0) -> %s\n",zs);	# 22 IOprint_formatted_str (_22:void)<-(_15:str)(zs:str)
     z := algebra.find(b,nil:oid);	# 23 ALGfind (z:str)<-(b:bat[:void,:str])(_16:oid)
     zs := str.str(z);	# 24 STRtostr (zs:str)<-(z:str)
-catch MALException;	# 25  (MALException:any) jump 27
+catch MALException:str ;	# 25  (MALException:str) jump 27
     zs := nil:str;	# 26  (zs:str)<-(_13:str)
-exit MALException;	# 27  (MALException:any)
+exit MALException:str ;	# 27  (MALException:str)
     io.printf("oid(nil) -> %s\n",zs);	# 28 IOprint_formatted_str (_23:void)<-(_18:str)(zs:str)
 end main;	# 29  
 #-----------------#

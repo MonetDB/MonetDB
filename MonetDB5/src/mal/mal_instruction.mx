@@ -546,6 +546,7 @@ mal_export void batAfterCall(ValPtr v, ValPtr bak);
 #include "mal_instruction.h"
 #include "mal_function.h"	/* for getPC() */
 #include "mal_utils.h"
+#include "mal_exception.h"
 
 Symbol
 newSymbol(str nme, int kind)
@@ -1250,7 +1251,7 @@ cheap to perform a linear search to a variable or constant.
         /*printf("generate new variable block %d\n",s);*/
         if( new== NULL ){
             mb->errors++;
-            GDKerror("newMalBlk:no storage left\n");
+            showScriptException(mb,0,MAL,"newMalBlk:no storage left\n");
             return mb->vtop;
         }
         memcpy((char*)new, (char*)mb->var, sizeof(VarPtr) * mb->vtop);
@@ -1271,10 +1272,12 @@ newVariable(MalBlkPtr mb, str name, malType type)
 
 		/* test validity */
 		if (i > mb->vtop) {
-			GDKerror("newVariable:variable %s mis-aligned\n", name);
+			showScriptException(mb,0,MAL,
+				"newVariable:variable %s mis-aligned\n", name);
 			mb->errors++;
 		} else if (i < mb->vtop ) {
-			GDKerror("'%s' overwrites %s\n", name, getVarName(mb, i));
+			showScriptException(mb,0,MAL,
+				"'%s' overwrites %s\n", name, getVarName(mb, i));
 			mb->errors++;
 		}
 	}
@@ -1519,7 +1522,7 @@ convertConstant(malType type, ValPtr vr)
 
 		ATOMfromstr(type, &d, &ll, vr->val.sval);
 		if (d == NULL) {
-			GDKerror("newConstant:Parse error in '%s'", vr->val.sval);
+			showException(SYNTAX,"Parse error in '%s'", vr->val.sval);
 			VALset(vr, type, ATOMnilptr(type));
 			return 1;
 		}
@@ -1527,7 +1530,7 @@ convertConstant(malType type, ValPtr vr)
 		if (ATOMextern(type) == 0)
 			GDKfree(d);
 #else
-		GDKerror("newConstants:missing implementation\n");
+		showException(SYNTAX,"newConstants:missing implementation\n");
 #endif
 		return vr->vtype != type;
 	}
@@ -1620,7 +1623,7 @@ end.
 		/* see if an atomFromStr() function is available */
 		if (BATatoms[type].atomFromStr == 0) {
 			s = getTypeName(type);
-			GDKerror("newConstant:no string coercion for '%s'", s);
+			showException(SYNTAX,"no string coercion for '%s'", s);
 			GDKfree(s);
 			break;
 		}
@@ -1642,7 +1645,7 @@ end.
 			/* and try to parse it from string as the desired type */
 			ATOMfromstr(type, &d, &ll, w);
 			if (d == 0) {
-				GDKerror("newConstant:Parse error in '%s'", w);
+				showException(SYNTAX,"Parse error in '%s'", w);
 				VALset(vr, type, ATOMnilptr(type));
 				GDKfree(w);
 				return 1;
@@ -1655,7 +1658,7 @@ end.
 #ifdef STRUCT_ALIGNED
 			ATOMfromstr(type, &d, &ll, vr->val.sval);
 			if (d == NULL) {
-				GDKerror("newConstant:Parse error in '%s'", vr->val.sval);
+				showException(SYNTAX,"Parse error in '%s'", vr->val.sval);
 				VALset(vr, type, ATOMnilptr(type));
 				return 1;
 			}
@@ -1663,7 +1666,7 @@ end.
 			if (ATOMextern(type) == 0)
 				GDKfree(d);
 #else
-			GDKerror("newConstants:missing implementation\n");
+			showException(SYNTAX,"newConstants:missing implementation\n");
 #endif
 		}
 	}
@@ -1717,7 +1720,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			str ft,tt;
 			ft= getTypeName(otype);
 			tt= getTypeName(type);
-			GDKerror("parser:constant coercion error from %s to %s\n", ft,tt);
+			showException(SYNTAX, "constant coercion error from %s to %s\n", ft,tt);
 			GDKfree(ft);
 			GDKfree(tt);
 			mb->errors++;
@@ -1933,7 +1936,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 
 		if (newblk == NULL) {
 			mb->errors++;
-			GDKerror("pushInstruction:no storage left\n");
+			showException(MAL,"pushInstruction:no storage left\n");
 			return;
 		}
 		memcpy(newblk, mb->stmt, mb->stop * sizeof(InstrPtr));
@@ -2034,6 +2037,8 @@ recognizedCall(MalBlkPtr mb, InstrPtr p, str s)
 	int i;
 	str tpe;
 
+	if( p->retc > 1)
+		*s++= '(';
 	for (i = 0; i < p->retc; i++)
 		if (p->argv[i] >= 0) {
 			str nme;
@@ -2048,6 +2053,8 @@ recognizedCall(MalBlkPtr mb, InstrPtr p, str s)
 			advance(s);
 			GDKfree(tpe);
 		}
+	if( p->retc > 1)
+		*s++= ')';
 	sprintf(s," := %s.%s(", getModuleId(p),getFunctionId(p));
 	advance(s);
 	for (i = p->retc; i < p->argc; i++)

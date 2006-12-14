@@ -78,6 +78,7 @@ resolved, it is marked TYPE_DYNAMIC otherwise.
 
 #include "mal_exception.h"
 #include "mal_function.h"
+#include "mal_exception.h"
 
 /*
 #define DEBUG_MAL_RESOLVE 1 
@@ -442,10 +443,8 @@ This piece of code may be shared by the separate binder
 				p->fcn = getSignature(s)->fcn;
 			break;
 		default: {
-			str err = createScriptException(mb, getPC(mb, p), MAL, NULL,
-					"MALresolve: unexpected token type");
-			GDKerror(err);
-			GDKfree(err);
+			showScriptException(mb, getPC(mb, p), MAL, 
+					"MALresolve: unexpected token type\n");
 			mb->errors++;
 			return -3;
 		}
@@ -485,15 +484,8 @@ that we found an instruction with the proper arguments, but that clashes
 with one of the target variables.
 @c
 	if( foundbutwrong && !silent){
-		if(m->name)
-			GDKerror("type conflict in assignment of %s.%s\n", m->name,getFunctionId(p));
-		else {
-			str err;
-			GDKerror("type conflict in assignment of %s\n", getFunctionId(p));
-			err= instruction2str(mb,p,0);
-			GDKerror(err);
-			GDKfree(err);
-		}
+		showScriptException(mb, getPC(mb, p), TYPE,
+			"type conflict in assignment\n");
 	}
 	return -3;
 }
@@ -595,17 +587,14 @@ because they may be resolved as part of the calling sequence.
 void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent){
 	str n1;
 	str n2;
-	str err;
 
 	if (!silent) {
 		n1 = getTypeName(lhs);
 		n2 = getTypeName(rhs);
-		err = createScriptException(mb, getPC(mb, p), MAL, NULL,
-				"MALresolve: type mismatch %s := %s", n1, n2);
-		GDKerror(err);
+		showScriptException(mb, getPC(mb, p), TYPE, 
+				"type mismatch %s := %s\n", n1, n2);
 		GDKfree(n1);
 		GDKfree(n2);
-		GDKfree(err);
 		mb->errors++;
 	}
 	p->typechk= TYPE_UNKNOWN;
@@ -682,11 +671,10 @@ In those cases, the detailed analysis is performed upon an actual call.
 				char errsig[BUFSIZ];
 
 				recognizedCall(mb,p,errsig);
-				snprintf(errmsg,BUFSIZ,"'%s%s%s' undefined in %s.%s[%d] %s\n", 
+				snprintf(errmsg,BUFSIZ,"'%s%s%s' undefined in: %s\n", 
 					(getModuleId(p)?getModuleId(p):""), (getModuleId(p)?".":""),
-					getFunctionId(p), (scope?scope->name:"<unknown>"),
-					getFunctionId(getInstrPtr(mb,0)),getPC(mb,p), errsig);
-				GDKerror(errmsg);
+					getFunctionId(p), errsig);
+				showScriptException(mb,getPC(mb,p),TYPE, errmsg);
 			}
 			p->typechk= TYPE_UNKNOWN;
 		} else p->typechk= TYPE_RESOLVED;
@@ -700,7 +688,8 @@ variables.
 @c
 	if( getFunctionId(p) ) return;
 	if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
-		GDKerror("Multiple assignment mismatch\n");
+		showScriptException( mb, getPC(mb,p), TYPE,
+			"Multiple assignment mismatch\n");
 		mb->errors++;
 	} else
 		p->typechk= TYPE_RESOLVED;
@@ -811,15 +800,6 @@ hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.
 Also check general conformaty of the ML block structure.
 It should start with a signature and finish with and ENDsymbol
-@c
-int chkProgramIdentifier(MalBlkPtr mb, str nme, int tpe){
-	if( ATOMindex(nme)>0) return TRUE;
-	if( tpe!= TYPE_str ){
-		GDKerror("TYPE ERROR:mod/fcn should be a string\n");
-		mb->errors++;
-	}
-	return FALSE;
-}
 @-
 Type checking a program is limited to those instructions that are
 not resolved yet. Once the program is completely checked, further calls

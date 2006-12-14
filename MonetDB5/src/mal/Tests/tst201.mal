@@ -59,7 +59,7 @@
 ## This should cause an error
 	v27:= algebra.find(b,"cat");
 	v28:= io.print(v27);
-catch MALException;
+catch MALException:str;
 	io.print(MALException);
 exit  MALException;
 #b.find("cat").print;

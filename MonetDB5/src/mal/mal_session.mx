@@ -366,7 +366,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 
 	GDKfree(command);
 	if (MT_create_thread(&p, MSserveClient, (void *) c) < 0) {
-		GDKerror("initClient: can not fork new client\n");
+		showException(MAL,"initClient: can not fork new client\n");
 		return;
 	}
 }
@@ -479,7 +479,7 @@ The scenarios are run until we finally close the last one.
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
 	if (msg) {
-		GDKerror("could not initialize default scenario\n");
+		showException(MAL, "could not initialize default scenario\n");
 		c->mode = FINISHING + 1;
 	} else
 		do {
@@ -668,7 +668,7 @@ and marking all non-temporary variables as being (potentially) used.
 	else
 		msg = MAL_SUCCEED;
 	if (msg) {
-		GDKerror(msg);
+		showException(MAL,msg);
 		if (!c->listing)
 			printFunction(c->fdout, c->curprg->def, c->listing);
 		showErrors();

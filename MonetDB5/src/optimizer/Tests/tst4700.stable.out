@@ -230,7 +230,7 @@ end tst903;	# 104
 #
 #Mcc.compile("user","tst903");
 #
-!ERROR: 'Mcc.compile' undefined in user.main[4] _4:any := Mcc.compile(_5:str, _6:str)
+!ERROR: TypeException: user.main[4]: 'Mcc.compile' undefined in: _4:any := Mcc.compile(_5:str, _6:str)
 function user.main():void;	# 0  (main:void)
 # The first MAL compiler test 	# 1  (_1:str)
 # the result is retained in MCCtst903.c 	# 2  (_2:str)
