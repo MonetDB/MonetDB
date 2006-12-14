@@ -244,14 +244,13 @@ void chkFlow(MalBlkPtr mb)
 			}
 
 			if( getVarType(mb,v) != TYPE_bit && 
-			 /*   getVarType(mb,v)!= TYPE_any &&*/
 			    getVarType(mb,v) != TYPE_int &&
 			    getVarType(mb,v) != TYPE_str && 
-			    getVarType(mb,v)!= TYPE_lng && 
-			    getVarType(mb,v)!= TYPE_oid && 
+			    getVarType(mb,v) != TYPE_lng && 
+			    getVarType(mb,v) != TYPE_oid && 
 			    getVarType(mb,v) != TYPE_sht && 
 			    !isaBatType(getVarType(mb,v)) &&
-			    getVarType(mb,v)!= TYPE_chr && 
+			    getVarType(mb,v) != TYPE_chr && 
 			    getVarType(mb,v) != TYPE_bte && 
 			    getVarType(mb,v) != TYPE_wrd 
 				){
