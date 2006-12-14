@@ -76,6 +76,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_builder.h"
 #include <bat/res_table.h>
 #include "mal_namespace.h"
+#include "mal_sabaoth.h"
 #include "mal_debugger.h"
 #include "bat5.h"
 #include <mtime.h>
@@ -132,6 +133,7 @@ SQLsession(str *ret)
 str
 SQLprelude(void)
 {
+	int res = 0;
 	Scenario s = getFreeScenario();
 	if (!s)
 		return NULL; /* should be an error */
@@ -146,20 +148,24 @@ SQLprelude(void)
 	/* s->optimizer = "SQLoptimizer";
 	 * s->tactics = .. */
 	s->engine = "SQLengine";
-	return MAL_SUCCEED;
+	return SABAOTHmarchScenario(&res, &s->name);
 }
 
 str
 SQLepilogue(void)
 {
+	int res = 0;
+	char *s = "sql";
+
 	if( SQLinitialized){
-		/*mvc_exit(); 
+		/*
+		mvc_exit(); 
 		SQLinitialized= FALSE;
 		*/
 	}
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	return MAL_SUCCEED;
+	return SABAOTHretreatScenario(&res, &s);
 }
 
 str

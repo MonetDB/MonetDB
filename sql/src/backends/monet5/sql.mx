@@ -505,9 +505,6 @@ address SQLepilogue;
 include sql_cache;
 sql.prelude();
 
-# publish existence of SQL
-sabaoth.marchScenario("sql":str);
-
 @h
 #ifndef _SQL_H
 #define _SQL_H
