@@ -49,13 +49,12 @@ static int
 OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, *old;
-	int i, limit;
+	int i, limit, actions=0;
 
 #ifdef DEBUG_OPT_CRACK
 	printf("Crack optimizer started\n");
 #endif
-	(void) stk;
-	(void) pci;
+	(void) stk; (void) pci;
 	
 	limit = mb->stop;
 	old = mb->stmt;
@@ -68,7 +67,8 @@ OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		/* find and replace algebra select commands with crack select ones*/
 
-		if (match2(p, batRef, newRef)){  
+		if (match2(p, batRef, newRef) ||
+			match2(p, sqlRef, bindRef)){  
 				/* add a property can be cracked to every base relation */
 
 			if ( getTailType(mb->var[getArg(p,0)]->type)!=TYPE_int &&
@@ -77,57 +77,31 @@ OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_flt &&
 			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_sht &&
 			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_chr ) 
-				
-				continue;
-				
-        		if (mb->var[getArg(p,0)]->props == 0)
-                		mb->var[getArg(p,0)]->props = newPropertySet();
-			setProperty(mb->var[getArg(p,0)]->props,"canBeCracked","=", TYPE_int, &i);
-		}
-		if (match2(p, sqlRef, bindRef)){  
-				/* add a property can be cracked to every base relation */
+					continue;
 
-			if ( getTailType(mb->var[getArg(p,0)]->type)!=TYPE_int &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_dbl &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_lng &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_flt &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_sht &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_chr ) 
+			if (getModuleId(p)== sqlRef &&
+				mb->var[getArg(p,4)]->value.val.ival != 0 ) continue;		
 				
-				continue;
-			if (mb->var[getArg(p,4)]->value.val.ival != 0 ) continue;		
-        		if (mb->var[getArg(p,0)]->props == 0)
-                		mb->var[getArg(p,0)]->props = newPropertySet();
-			setProperty(mb->var[getArg(p,0)]->props,"canBeCracked","=", TYPE_int, &i);
+			setArgProperty(mb,p,0,"canBeCracked","=", TYPE_int, &i);
+			actions++;
 		}
 		if (match2(p, batRef, setWriteModeRef)){ /* propagete the canBeCracked property */
 
-			if(fndProperty(mb->var[getArg(p,1)]->props,"canBeCracked")){
-        			if (mb->var[getArg(p,0)]->props == 0)
-                			mb->var[getArg(p,0)]->props = newPropertySet();
-				setProperty(mb->var[getArg(p,0)]->props,"canBeCracked","=", TYPE_int, &i);
+			if(fndArgProperty(mb,p,1,"canBeCracked")){
+				setArgProperty(mb,p,0,"canBeCracked","=", TYPE_int, &i);
+			actions++;
 			}
 		}
-		if (match2(p, algebraRef, selectRef)){ /* replace the algebra select with the crackers instruction iff the operation is on a base relation */
-
-			if(fndProperty(mb->var[getArg(p,1)]->props,"canBeCracked")){
-
-	        	        setModuleId(p,putName("crackers",8));
-			}
+		if (match2(p, algebraRef, selectRef) ||
+			match2(p, algebraRef, uselectRef)){ 
+				if(fndArgProperty(mb,p,1,"canBeCracked"))
+						setModuleId(p,putName("crackers",8));
+			actions++;
 		}
-		if (match2(p, algebraRef, uselectRef)){ /* replace the algebra uselect with the crackers instruction iff the operation is on a base relation */
-
-                        if(fndProperty(mb->var[getArg(p,1)]->props,"canBeCracked")){
-
-                                setModuleId(p,putName("crackers",8));
-                        }
-                }
-
 		if (p == pci) 
 			removeInstruction(mb, p);
-
 	}
-	return 1;
+	return actions;
 }
 @include optimizerWrapper.mx
 @h

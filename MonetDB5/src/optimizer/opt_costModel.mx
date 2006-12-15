@@ -104,7 +104,7 @@ The cost formula are repetative
 		if( c2 == NULL) continue;
 		k= (@3);
 		fixPropertySet(mb, getArg(p,@4));
-		setProperty(getProps(getArg(p,@4)),"rows","=", TYPE_int, &k);
+		setProperty(getProps(mb,getArg(p,@4)),"rows","=", TYPE_int, &k);
 #ifdef DEBUG_OPT_COSTMODEL
 		stream_printf(GDKout,"COST of @1 @2 into @4: %d\n",k);
 		printInstruction(GDKout,mb,p,0);
@@ -255,7 +255,7 @@ an initially empty insertion BAT.
 				c1 = getVarRows(getArg(p,1));
 				if( c1 != NULL){
 					fixPropertySet(mb, getArg(p,0));
-					setProperty(getProps(getArg(p,0)),"rows","=", TYPE_int,c1);
+					setProperty(getProps(mb,getArg(p,0)),"rows","=", TYPE_int,c1);
 				}
 		}
 	}
