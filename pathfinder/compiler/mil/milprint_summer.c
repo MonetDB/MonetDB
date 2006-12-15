@@ -171,31 +171,20 @@ int PFqueryType(PFcnode_t *c);
 /**
  * Test if two types are castable into each other
  *
- * @param t1 the type from which it is casted
- * @param t2 the type to which it is casted
+ * @param input_type the type from which it is casted
+ * @param cast_type the type to which it is casted
  * @return the result of the castable test
  */
 static bool
-castable (PFty_t t1, PFty_t t2)
+castable (PFty_t input_type, PFty_t cast_type)
 {
-    t2 = PFty_defn (t2);
-
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-    /* don't cast seqcast which are not valid (choice) or 
-       are non necessary cast introduced during translation (atomic) */
-    if (t2.type == ty_choice ||
-        t2.type == ty_atomic || /* avoid problems with ty_atomic */
-        (t2.type == ty_opt && ((PFty_child (t2)).type == ty_choice ||
-                               (PFty_child (t2)).type == ty_atomic)))
-        return false;
-    /* handle aggregates with sequences within an iteration */
-    else if (t2.type == ty_star)
-        return (PFty_subtype (t2, PFty_star (PFty_atomic ())) &&
-                PFty_subtype (t1, PFty_star (PFty_atomic ())));
-    else
-#endif
-        return (PFty_subtype (t1, PFty_opt (PFty_atomic ())) &&
-                PFty_subtype (t2, PFty_opt (PFty_atomic ())));
+    return ((PFty_subtype (cast_type, PFty_opt (PFty_xs_boolean ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_xs_integer ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_xs_decimal ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_xs_double ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_untypedAtomic ())) ||
+             PFty_subtype (cast_type, PFty_opt (PFty_xs_string ()))) &&
+             PFty_subtype (input_type, PFty_opt (PFty_atomic ())));
 }
 
 /* (return) code, which holds the 
@@ -3190,7 +3179,7 @@ static void
 testCastComplete (opt_t *f, int cur_level, PFty_t type_)
 {
     milprintf(f,
-            "if (iter.count() != loop%03u.count())\n"
+            "if (iter.tunique().count() != loop%03u.count())\n"
             "{    ERROR(\"err:XPTY0004: cast to '%s' does not allow empty sequences to be casted.\"); }\n",
             cur_level, PFty_str (type_));
 }
@@ -3548,22 +3537,7 @@ translateCast (opt_t *f,
 
     PFty_t cast_type = PFty_defn (L(c)->sem.type);
     PFty_t input_type = PFty_defn (TY(R(c)));
-    int cast_optional = 0;
      
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-#else
-    (void) code; (void) rc;
-#endif
-
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-    if (cast_type.type == ty_opt ||
-        cast_type.type == ty_star)
-    {
-        cast_type = PFty_child (cast_type);
-        cast_optional = 1;
-    }
-#endif
-
     input_type = PFty_prime(input_type);
 
     milprintf(f,
@@ -3571,44 +3545,32 @@ translateCast (opt_t *f,
             PFty_str(PFty_defn (TY(R(c)))),
             PFty_str(PFty_defn (L(c)->sem.type)));
 
-    switch (cast_type.type)
-    {
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-        case ty_boolean:
-            rcode = NORMAL;
-            translateCast2BOOL (f, rcode, rc, input_type);
-            break;
-        case ty_integer:
-            rcode = (code)?INT:NORMAL;
-            translateCast2INT (f, rcode, rc, input_type);
-            break;
-        case ty_decimal:
-            rcode = (code)?DEC:NORMAL;
-            translateCast2DEC (f, rcode, rc, input_type);
-            break;
-        case ty_double:
-            rcode = (code)?DBL:NORMAL;
-            translateCast2DBL (f, rcode, rc, input_type);
-            break;
-        case ty_untypedAtomic:
-        case ty_qname:
-            rcode = (code)?U_A:NORMAL;
-            translateCast2STR (f, rcode, rc, input_type);
-            break;
-        case ty_string:
-            rcode = (code)?STR:NORMAL;
-            translateCast2STR (f, rcode, rc, input_type);
-            break;
-#endif
-        default:
-            PFoops (OOPS_TYPECHECK,
-                    "can't cast type '%s' to type '%s'",
-                    PFty_str(TY(R(c))),
-                    PFty_str(L(c)->sem.type));
-            break;
-    }
+    if (PFty_subtype (cast_type, PFty_star (PFty_xs_boolean ()))) {
+        rcode = NORMAL;
+        translateCast2BOOL (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_integer ()))) {
+        rcode = (code)?INT:NORMAL;
+        translateCast2INT (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_decimal ()))) {
+        rcode = (code)?DEC:NORMAL;
+        translateCast2DEC (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_double ()))) {
+        rcode = (code)?DBL:NORMAL;
+        translateCast2DBL (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_QName ())) ||
+               PFty_subtype (cast_type, PFty_star (PFty_untypedAtomic ()))) {
+        rcode = (code)?U_A:NORMAL;
+        translateCast2STR (f, rcode, rc, input_type);
+    } else if (PFty_subtype (cast_type, PFty_star (PFty_xs_string ()))) {
+        rcode = (code)?STR:NORMAL;
+        translateCast2STR (f, rcode, rc, input_type);
+    } else
+        PFoops (OOPS_TYPECHECK,
+                "can't cast type '%s' to type '%s'",
+                PFty_str(TY(R(c))),
+                PFty_str(L(c)->sem.type));
 
-    if (!cast_optional)
+    if (PFty_subtype (cast_type, PFty_plus (PFty_item ())))
         testCastComplete (f, cur_level, cast_type);
 
     milprintf(f,
@@ -4609,13 +4571,6 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 
     rcode = (code)?STR:NORMAL;
 
-    /* avoid problems because of optional type 
-       (it is handled by the last part, which adds empty strings) */
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-    if (input_type.type == ty_opt)
-        input_type = PFty_child (input_type);
-#endif
-
     if (PFty_subtype (PFty_node(),input_type))
     {
         translate2MIL (f, NORMAL, cur_level, counter, c);
@@ -4642,7 +4597,7 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         rc = translate2MIL (f, code, cur_level, counter, c);
     }
 
-    translateCast2STR (f, rcode, rc, input_type);
+    translateCast2STR (f, rcode, rc, PFty_prime (input_type));
     add_empty_strings (f, rcode, cur_level);
     milprintf(f,
         "iter := loop%03u.tmark(0@0);\n"
@@ -6236,7 +6191,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 static void
 translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
-    int i = 0, rc = NORMAL, qTpe = PFqueryType(xrpc);
+    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 1 ? 1 : 0;
     PFcnode_t *dsts = L(xrpc);
     PFapply_t apply = R(xrpc)->sem.apply;
     PFcnode_t *args = RD(xrpc);
@@ -6354,7 +6309,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
      * message node: (item=0@0, kind=~cont)
      */
     milprintf(f, 
-            "  \nmodule(\"xrpc\");\n"
+            "  \nmodule(\"xrpc_client\");\n"
             "  var iterc_total := count(int(rpc_iter));\n"
             /* remove the base number of fun_vid-s, in XRPC request
              * message, we need the offsets of each non-empty
@@ -6383,7 +6338,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "} # end of XRPC function call\n",
         counter, counter, counter,
         apply.fun->qname.ns.uri, apply.fun->atURI, apply.fun->qname.loc,    
-        qTpe, apply.fun->arity,
+        updCall, apply.fun->arity,
         counter, counter, counter, counter);
 }
 
@@ -7746,12 +7701,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "iter := merge.fetch(3);\n"
                   "ipik := item;\n");
         return NORMAL;
-    }        
+    }
     else if (PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsFirst")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsLast")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"insertBefore")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"insertAfter")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"replaceValue")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_upd,"replaceElementContent")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"rename")) == 0)
     {
         char *func = PFqname_loc(fnQname);
@@ -7767,6 +7723,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             update_cmd = "UPDATE_INSERT_AFTER";
         else if (strcmp(func, "replaceValue") == 0) {
             update_cmd = "UPDATE_REPLACE";
+            arg = "str";
+        } else if (strcmp(func, "replaceElementContent") == 0) {
+            update_cmd = "UPDATE_REPLACECONTENT";
             arg = "str";
         } else if (strcmp(func, "rename") == 0) {
             update_cmd = "UPDATE_RENAME";
@@ -10637,8 +10596,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     unsigned int i;
     int fid, act_fid, vid;
     PFcnode_t *args, *fst, *snd, *res, *fid_node;
-    int fst_nested, snd_nested, j;
-    PFarray_t *new_way;
+    int fst_nested, snd_nested;
 
     if (c->kind == c_var) 
     {
@@ -10757,36 +10715,21 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
                     "can't cope with global variables as "
                     "thetajoin input within user-defined function calls.");
     
-        if (fst_nested & ~UDF_LEV)
-        {
-            fst_nested = (int) PFarray_last (way);
-        }
-
-        if (snd_nested & ~UDF_LEV)
-        {
-            snd_nested = (int) PFarray_last (way) - 1;
-        }
-
         /* save current fid */
         act_fid = *(int *) PFarray_at (counter, ACT_FID);
 
-        /* get the number of fst_nested scopes 
-           for the first join argument */
-        new_way = PFarray (sizeof (int)); 
-        for (j = 0; j < fst_nested; j++)
-        {
-           *(int *) PFarray_add (new_way) = *(int *) PFarray_at (way, j);
-        }
-        counter = get_var_usage (f, fst, new_way, counter);
+        counter = get_var_usage (f, fst, way, counter);
 
-        /* get the number of snd_nested scopes 
-           for the first second argument */
-        new_way = PFarray (sizeof (int)); 
-        for (j = 0; j < snd_nested; j++)
-        {
-           *(int *) PFarray_add (new_way) = *(int *) PFarray_at (way, j);
-        }
-        counter = get_var_usage (f, snd, new_way, counter);
+        if (PFarray_last (way)) {
+            /* remove the inner most for loop and get
+               the variables for the second argument */
+            fid = *(int *) PFarray_top (way);
+            PFarray_del (way);
+            counter = get_var_usage (f, snd, way, counter);
+            /* restore the list of for ids */
+            *(int *) PFarray_add (way) = fid;
+        } else
+            counter = get_var_usage (f, snd, way, counter);
 
         /* create new fid for resulting scope */
         (*(int *) PFarray_at (counter, FID))++;

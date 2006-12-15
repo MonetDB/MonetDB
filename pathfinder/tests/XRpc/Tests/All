@@ -2,6 +2,7 @@ import_doc
 add_dbl
 add_int
 concatStr
+echoAll
 echoVoid
 emptySeq1
 emptySeq2

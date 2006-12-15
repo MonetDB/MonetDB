@@ -29,6 +29,5 @@ following-sibling
 preceding-sibling
 printEmptySeq
 printTypedMode
-printTypedMode-soap
 namespaces
 serialization

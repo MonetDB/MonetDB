@@ -97,9 +97,9 @@
 #define MODE_MAPI      (1 << 3)
 #define MODE_SEQ       (1 << 4)
 #define MODE_NO_ROOT   (1 << 5)
-#define MODE_NO_HEADER (1 << 6)
+#define MODE_NO_HEADER (1 << 6) /* without the line <?xml ...?> */
 #define MODE_TYPED     (1 << 7)
-#define MODE_SOAP      (1 << 8)
+#define MODE_XRPC      (1 << 8)
 
 struct XmlNsFrame; /* forward */
 typedef struct XmlNsFrame {
@@ -162,10 +162,15 @@ typedef struct XqueryCtx {
 typedef struct serializeFunStruct {
     const char* name;
     /* the initialization handler */
-    bool (*init)(XqueryCtx* ctx, char* args, char* restag);
+    bool (*init)(XqueryCtx* ctx, char* args, char* restag, char* resprefix);
     /* the clean up handler */
     bool (*cleanup)(XqueryCtx* ctx);
 
+    /* handleers of start/end of serialization.  These functions are
+     * only executed _once_ for every serialization. */
+    bool (*handle_startSerialize)(XqueryCtx* ctx);
+    bool (*handle_endSerialize)(XqueryCtx* ctx);
+    
     /* the (part of) document handler functions */
     bool (*handle_startDocument)(XqueryCtx* ctx);
     bool (*handle_endDocument)(XqueryCtx* ctx);
@@ -214,8 +219,8 @@ extern struct serializeFunStruct
     mapi_xmlSerializeFun,
     typed_xmlSerializeFun,
     mapi_typed_xmlSerializeFun,
-    soap_xmlSerializeFun,
-    mapi_soap_xmlSerializeFun,
+    xrpc_xmlSerializeFun,
+    mapi_xrpc_xmlSerializeFun,
     seqSerializeFun;
 
 pf_support_export int
@@ -253,6 +258,23 @@ xquery_print_doc_DRIVER (
 /* hack to allow direct calls in serialize_pftijah_options.mx */
 int 
 xquery_print_result_DRIVER (
+    str                 mode,
+    serializeFunStruct *driverFun, /* unused */
+    char               *driverArg, /* unused */
+    BAT                *ws,
+    size_t              niters,
+    BAT                *loop,
+    BAT                *iter,
+    BAT                *item, 
+    BAT                *kind,
+    BAT                *intVAL,
+    BAT                *dblVAL,
+    BAT                *strVAL);
+
+/* hack to allow direct calls in xrpc_client.mx */
+int 
+xquery_print_result_driver (
+    Stream              fp,
     str                 mode,
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
@@ -966,22 +988,22 @@ readWsValue (XqueryCtx* ctx, int contID, int batID, oid oid_index)
     if ( mr ) {
         if ( mr->fake_prj)
           return mr->fake_prj;
-     else {
-         BAT* b = mr->bat;
+        else {
+            BAT* b = mr->bat;
 
             if (b->batCount) {
-                 BUN _bun = NULL;
-                 BUNfndVOID(_bun, b, &oid_index);
-                 if (_bun == NULL) {
-                     idxTVerror1(ctx,b,oid_index);
-               return NULL;
-           }
-                 return BUNtail(b,_bun);
+                BUN _bun = NULL;
+                BUNfndVOID(_bun, b, &oid_index);
+                if (_bun == NULL) {
+                    idxTVerror1(ctx,b,oid_index);
+                    return NULL;
+                }
+                return BUNtail(b,_bun);
             } else {
-                 idxTVerror2(ctx,b);
-           return NULL;
-         }
-     }
+                idxTVerror2(ctx,b);
+                return NULL;
+            }
+        }
     }
     return NULL;
 }
@@ -1108,6 +1130,16 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
             continue;
         }
     
+        /* print end element */
+        while( moreTags(ctx) && pre > topSF(ctx)->limit ) {
+            if ( !ctx->driverFun->handle_endElement(
+                                      ctx,
+                                      topPrefix(ctx),
+                                      topName(ctx)) )
+                return PROBLEM;
+            popTag(ctx);
+        }
+
         /* get container and value reference */
         if ( pre_cont ) {
             findTailValue(res,ctx,pre_cont,pre);
@@ -1206,15 +1238,6 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
                            (int)kind);
                 return PROBLEM;
         }
-        /* print end element */
-        while( moreTags(ctx) && pre >= topSF(ctx)->limit ) {
-            if ( !ctx->driverFun->handle_endElement(
-                                      ctx,
-                                      topPrefix(ctx),
-                                      topName(ctx)) )
-                return PROBLEM;
-            popTag(ctx);
-        }
         pre++;
     } while (pre <= to);
 
@@ -1254,7 +1277,8 @@ createWsContext (XqueryCtx*        ctx,
                  Stream            fp)
 {
     char *restag = NULL;
-    
+    char *resprefix = NULL;
+
     memset(ctx, 0, sizeof(XqueryCtx));
 
     /* set the output stream */
@@ -1300,10 +1324,18 @@ createWsContext (XqueryCtx*        ctx,
 
         /* we may wrap each item in an element
            specifying its type */
-        if (match(mode, "soap"))
-            ctx->modes = ctx->modes | MODE_SOAP;
-        else if (match(mode, "typed"))
+        if (match(mode, "xrpc")) {
+            resprefix = "xrpc";
+            ctx->modes = ctx->modes | MODE_XRPC;
+            /* in "XRPC" mode, the line "<?xml ...?>" is printed by
+             * handle_startSerialize() and we do not want to get this
+             * line printed twice, so when "XRPC" mode is used,
+             * "NO_HEADER" mode should also be used. */
+            ctx->modes = ctx->modes | MODE_NO_HEADER;
+        } else if (match(mode, "typed")) {
+            resprefix = "result";
             ctx->modes = ctx->modes | MODE_TYPED;
+        }
     }
     /* list seq mode before dm mode as it might be used a subclass */
     else if (match(mode, "seq"))
@@ -1356,12 +1388,12 @@ createWsContext (XqueryCtx*        ctx,
     else if ( ctx->modes & MODE_XML ) {
         if ( ctx->modes & MODE_MAPI &&  ctx->modes & MODE_TYPED )
             ctx->driverFun = & mapi_typed_xmlSerializeFun;
-        else if ( ctx->modes & MODE_MAPI && ctx->modes & MODE_SOAP )
-            ctx->driverFun = & mapi_soap_xmlSerializeFun;
+        else if ( ctx->modes & MODE_MAPI && ctx->modes & MODE_XRPC )
+            ctx->driverFun = & mapi_xrpc_xmlSerializeFun;
         else if ( ctx->modes & MODE_TYPED )
             ctx->driverFun = & typed_xmlSerializeFun;
-        else if ( ctx->modes & MODE_SOAP )
-            ctx->driverFun = & soap_xmlSerializeFun;
+        else if ( ctx->modes & MODE_XRPC )
+            ctx->driverFun = & xrpc_xmlSerializeFun;
         else if ( ctx->modes & MODE_MAPI )
             ctx->driverFun = & mapi_xmlSerializeFun;
         else
@@ -1370,7 +1402,7 @@ createWsContext (XqueryCtx*        ctx,
     else
         return PROBLEM;
     
-    if ( !ctx->driverFun->init(ctx, driverArg, restag) )
+    if ( !ctx->driverFun->init(ctx, driverArg, restag, resprefix) )
         return PROBLEM;
 
     return SUCCESS;
@@ -1514,7 +1546,7 @@ lookup_bun (BAT *b, oid offset)
  * Arguments are
  * mode: e.g. "xml", "sax", "seq", "dm", ("noroot", "typed")
  * ws : the working set
- * max_iter : often 1@0. we can also print multiple iters for soap or debugging
+ * max_iter : often 1@0. we can also print multiple iters for XRPC or debugging
  * item/item/kind : sequence result BATs (iter as a constant bat)
  * intVAL,dblVAL,strVAL : BATSs containing the values of seq elements
  * remainder BATs: contains the data for the document nodes
@@ -1563,6 +1595,11 @@ xquery_print_result_driver (
     else
         fun_k = lookup_bun;
 
+    /* Start of serialization, print everything that should only be
+     * printed once every serialization. */
+    if ( !ctx->driverFun->handle_startSerialize(ctx) )
+        return GDK_FAIL;
+
     /* loop over the iterations (usually only 1) */
     for(yy=0; yy < niters; yy++, curcnt += buncnt, maxcnt -= buncnt) {
         oid cur_iter = *(oid*) BUNhead(
@@ -1607,9 +1644,11 @@ xquery_print_result_driver (
 
         /* some serialization modes may print all attributes up front
            (here xml and sax mode, where xml mode is not typed) */
-        if (ctx->modes & (MODE_XML | MODE_SAX) && !(ctx->modes & MODE_TYPED) &&
+        if (ctx->modes & (MODE_XML | MODE_SAX) && 
+            /* TYPED and XRPC modes take care of attribute themselves */
+            !(ctx->modes & MODE_TYPED) && !(ctx->modes & MODE_XRPC) &&
             /* forget top-level attributes if we have no root nodes */
-            !(ctx->modes & (MODE_NO_ROOT))) {
+            !(ctx->modes & (MODE_NO_ROOT)) ) {
 
             /* scan of all attributes here and generate the appropriate
                calls to connect them to the head tag of the result document */
@@ -1667,7 +1706,8 @@ xquery_print_result_driver (
                     /* print attributes for all modes that were skipped
                        before */
                     if (!(ctx->modes & (MODE_XML | MODE_SAX)) ||
-                        (ctx->modes & MODE_TYPED)) {
+                        (ctx->modes & MODE_TYPED) ||
+                        (ctx->modes & MODE_XRPC)) {
                         cont = XTRACT_CONT(cmbn_cont_kind);
                         if ( !process_top_attr (ctx, cont, valoid) )
                             return GDK_FAIL;
@@ -1783,6 +1823,11 @@ xquery_print_result_driver (
         /* end of item sequence callback */
         if ( !ctx->driverFun->seqEnd(ctx) ) return GDK_FAIL;
     } 
+
+    /* End of serialization, print everything that should only be
+     * printed once every serialization. */
+    if ( !ctx->driverFun->handle_endSerialize(ctx) )
+        return GDK_FAIL;
     
     if ( !disposeWsContext(ctx) )
         return GDK_FAIL;

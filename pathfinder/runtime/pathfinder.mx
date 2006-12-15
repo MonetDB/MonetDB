@@ -425,13 +425,13 @@ const PROP_TEXT_UPDATE := PROP_VAL_UPDATE + 1;
 const PROP_COM_UPDATE := PROP_TEXT_UPDATE + 1;
 const PROP_INS_UPDATE := PROP_COM_UPDATE + 1;
 const PROP_TGT_UPDATE := PROP_INS_UPDATE + 1;
-const QN_LOC_UPDATE := PROP_TGT_UPDATE + 1;
-const QN_URI_UPDATE := QN_LOC_UPDATE + 1;
-const QN_PREFIX_UPDATE := QN_URI_UPDATE + 1;
-const QN_URI_LOC_UPDATE := QN_PREFIX_UPDATE + 1;
-const QN_PREFIX_URI_LOC_UPDATE := QN_URI_LOC_UPDATE + 1;
-const QN_HISTOGRAM_UPDATE := QN_PREFIX_URI_LOC_UPDATE + 1;
-const UPDATED_TEXT := QN_HISTOGRAM_UPDATE + 1;
+const QN_HISTOGRAM_UPDATE := PROP_TGT_UPDATE + 1;
+const QN_PREFIX_URI_LOC_UPDATE := QN_HISTOGRAM_UPDATE + 1;
+const QN_URI_LOC_UPDATE := QN_PREFIX_URI_LOC_UPDATE + 1;
+const QN_PREFIX_UPDATE := QN_URI_LOC_UPDATE + 1;
+const QN_URI_UPDATE := QN_PREFIX_UPDATE + 1;
+const QN_LOC_UPDATE := QN_URI_UPDATE + 1;
+const UPDATED_TEXT := QN_LOC_UPDATE + 1;
 const NID_QN_INS_UPDATE := UPDATED_TEXT + 1; # note, NID_QN and not QN_NID
 const NID_QN_DEL_UPDATE := NID_QN_INS_UPDATE + 1;
 const MODIFIED_NID := NID_QN_DEL_UPDATE + 1;
@@ -2751,13 +2751,13 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
  */
 pathfinder_export char *
 xquery_method(stream *out, 
-              int rpctiming,
+              int timing,
               char* module, 
               char* uri, 
               char *method, 
-              int argc, 
-              int itercnt, 
-              int** argcnt, 
+              lng argc, 
+              lng itercnt, 
+              lng** argcnt, 
               str* argtpe, 
               str* argval, 
               BAT* shredBAT);
@@ -2774,30 +2774,63 @@ typedef struct {
     int parent;
     int monet_tpe;
     int kind;
-    char* name;
+    char *prefix_loc;
+    char *loc;
 } xquery_type;
 
 #define DOCBAT (ELEM | (1<<6))
-#define XQUERY_TYPES 15
-#define XQUERY_ABSTRACT 6
+#define XQUERY_TYPES 20
+#define XQUERY_ABSTRACT 8
 
+/**
+ * We define the following hierarchy for the XQuery types
+ *
+ *                     item
+ *                      |
+ *                  xs:anyType
+ *                      |
+ *    -------------------------------------
+ *    |                                   |
+ * anyNode                        xs:anySimpleType
+ *    |                                   |
+ *  node                          xs:anyAtomicType
+ *    |                             | 
+ *    |- attribute                  |- xs:untypedAtomic
+ *    |- comment                    |- xs:double
+ *    |- document                   |    |
+ *    |- element                    |    |- xs:float
+ *    |- processing-instruction     |    |- xs:decimal
+ *    \_ text                       |         |
+ *                                  |         \_ xs:integer
+ *                                  |
+ *                                  |- xs:string
+ *                                  |- xs:boolean
+ *                                  \_ xs:anyURI
+ */
 xquery_type xquery_types[XQUERY_TYPES+1] =
-{ {  5, TYPE_bit, BOOL,   "xs:boolean"  },  
-  {  2, TYPE_lng, INT,    "xs:integer" },
-  {  4, TYPE_dbl, DEC,    "xs:decimal" },
-  {  4, TYPE_dbl, DBL,    "xs:float" },
-  {  5, TYPE_dbl, DBL,    "xs:double" },
-  {  7, TYPE_str, STR,    "xs:string" },
-  {  8, TYPE_str, STR,    "xs:untypedAtomic" },
-  {  8, TYPE_str, STR,    "xdt:anyAtomicType" },
-  {  9, TYPE_str, STR,    "xs:anySimpleType" },
-  { 14, TYPE_str, STR,    "xs:anyType" },
-  { 14, TYPE_str, STR,    "xdt:untypedAny" },
-  { 13, TYPE_oid, DOCBAT, "xs:anyElement" },
-  { 13, TYPE_oid, DOCBAT, "xs:anyAttribute" },
-  { 14, TYPE_oid, DOCBAT, "xs:anyNode" },
-  { 15, TYPE_oid, DOCBAT, "xs:anyItem" },
-  {  0, TYPE_oid, DOCBAT, "illegal type" } };
+{/*  0 */ {  8, TYPE_bit, BOOL,   "xs:boolean",        "boolean"},
+ /*  1 */ {  2, TYPE_lng, INT,    "xs:integer",        "integer"},
+ /*  2 */ {  4, TYPE_dbl, DEC,    "xs:decimal",        "decimal"},
+ /*  3 */ {  4, TYPE_dbl, DBL,    "xs:float",          "float"},
+ /*  4 */ {  8, TYPE_dbl, DBL,    "xs:double",         "double"},
+ /*  5 */ {  8, TYPE_str, STR,    "xs:anyURI",         "anyURI"},
+ /*  6 */ {  8, TYPE_str, STR,    "xs:string",         "string"},
+ /*  7 */ {  8, TYPE_str, STR,    "xs:untypedAtomic",  "untypedAtomic"},
+ /*  8 */ {  9, TYPE_str, STR,    "xdt:anyAtomicType", "anyAtomicType"},
+ /*  9 */ { 18, TYPE_str, STR,    "xs:anySimpleType",  "anySimpleType"},
+
+ /* 10 */ { 16, TYPE_oid, 97, "xs:attribute",      "attribute"},
+ /* 11 */ { 16, TYPE_oid, DOCBAT, "xs:comment",        "comment"},
+ /* 12 */ { 16, TYPE_oid, DOCBAT, "xs:document",       "document"},
+ /* 13 */ { 16, TYPE_oid, DOCBAT, "xs:element",        "element"},
+ /* 14 */ { 16, TYPE_oid, DOCBAT, "xs:processing-instruction", "processing-instruction"},
+ /* 15 */ { 16, TYPE_oid, DOCBAT, "xs:text",           "text"},
+ /* 16 */ { 17, TYPE_oid, DOCBAT, "xs:node",           "node"},
+ /* 17 */ { 18, TYPE_oid, DOCBAT, "xs:anyNode",        "anyNode"},
+ /* FIXME: maybe "anyType" should be put after "anySimpleType" */
+ /* 18 */ { 19, TYPE_str, STR,    "xs:anyType",        "anyType"},
+ /* 19 */ { 20, TYPE_oid, DOCBAT, "xs:item",           "item"},
+ /* 20 */ {  0, TYPE_oid, DOCBAT, NULL,                "illegal type", } };
 
 /*
  * return xquery type number, given a type string
@@ -2807,7 +2840,7 @@ xquery_typenr(char* tpe)
 {
     int i;
     for(i=0; i<XQUERY_TYPES; i++) 
-        if (strcmp(tpe, xquery_types[i].name) == 0) break;
+        if (strcmp(tpe, xquery_types[i].prefix_loc) == 0) break;
     return i;
 }
 
@@ -3316,9 +3349,6 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
 @= seqbase
     BATseqbase(ctx->@1, @2);
     if (ctx->mode&XQ_DEBUG) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
-@= bunins
-    if (BUNins(ctx->@1, @2, @3, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
-    if (ctx->mode&XQ_DEBUG) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
 @= bunappend
     if (BUNappend(ctx->@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (ctx->mode&XQ_DEBUG) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @4 @5 ");\n", @3 @2);
@@ -3333,9 +3363,9 @@ xquery_function_call(xquery_client *ctx,
                      lng usec, 
                      char *ns, 
                      char *method, 
-                     int argc, 
-                     int itercnt, 
-                     int** argcnt, 
+                     lng argc, 
+                     lng itercnt, 
+                     lng** argcnt, 
                      char** argtpe, 
                      char** argval, 
                      BAT *shredBAT) 
@@ -3442,7 +3472,7 @@ xquery_function_call(xquery_client *ctx,
             }
             for(k=0; k<argcnt[j][i]; k++,l++) {
                 int t = xquery_typenr(argtpe[l]);
-                char c;
+                char *c;
 
                 /* 'hack': perform simple atomic casts using Monet's ATOMfromstr */
                 if (fun->sig->tpe[i] < XQUERY_ABSTRACT)
@@ -3450,7 +3480,7 @@ xquery_function_call(xquery_client *ctx,
                 /* it is doubtful how well pathfinder supports other
                  * casts and what we should do here in those cases.
                  */
-                c = xquery_types[t].name[3];
+                c = xquery_types[t].loc;
 
                 if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
                     return "xquery_function_call: illegal parameter value.\n";
@@ -3458,15 +3488,20 @@ xquery_function_call(xquery_client *ctx,
                 @:bunappend(fun_vid000, &vid, (size_t) *(oid*), SZFMT, "@0")@
                 @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0")@
                 @:bunappend(fun_kind000, &xquery_types[t].kind, *(int*), "%d")@
-                if (c == 'i') { /* xs:integer */
+                if ( (strcmp(c, "boolean") == 0) ||
+                     (strcmp(c, "integer") == 0) ) {
                     @:bunappend(int_values, ctx->val, *(lng*), LLFMT, "LL")@
                     item = *(oid*) BUNhead(ctx->int_values, BUNfnd(BATmirror(ctx->int_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
-                } else if (c == 'd') { /* xs:double or xs:decimal */
+                } else if ( (strcmp(c, "decimal") == 0) ||
+                            (strcmp(c, "float") == 0)   ||
+                            (strcmp(c, "double") == 0) ) {
                     @:bunappend(dbl_values, ctx->val, *(dbl*), "%g")@
                     item = *(oid*) BUNhead(ctx->dbl_values, BUNfnd(BATmirror(ctx->dbl_values), ctx->val));
                     @:bunappend(fun_item000, &item , (size_t) *(oid*), SZFMT, "@0")@
-                } else if (c == 's') { /* xs:string */
+                } else if ( (strcmp(c, "string") == 0) ||
+                            (strcmp(c, "untypedAtomic") == 0)   ||
+                            (strcmp(c, "anyAtomicType") == 0) ) {
                     @:bunappend(str_values, ctx->val, (str), "\"%s\"")@
                     item = *(oid*) BUNhead(ctx->str_values, BUNfnd(BATmirror(ctx->str_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
@@ -4258,7 +4293,8 @@ xquery_prepare(xquery_client *ctx,
         } else {
             /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq" */
             p = xquery_parse_space(p+6);
-            if ( strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) {
+            if ( (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) ||
+                 (strncmp(p, "rpc-module", 10) == 0 && ISSPACE(p[10])) ){
                 len = p[0] == 'm' ? 6 : 10;
                 p = xquery_parse_space(p+len);
                 if (strncmp(p, "namespace", 9) == 0 && ISSPACE(p[9])) {
@@ -4303,7 +4339,7 @@ xquery_prepare(xquery_client *ctx,
                     err = "xquery_prepare: missing ';' after module import.\n";
                 }
             } else {
-                err = xquery_too_complex; /* we understand only no other imports than module */
+                err = xquery_too_complex; /* we understand no other imports than module */
                 break;
             }
         }
@@ -4326,10 +4362,10 @@ xquery_prepare(xquery_client *ctx,
         if (*p != '(' || ((locend-loc) == 2 && loc[0] == 'i' && loc[1] == 'f')) {
             err = xquery_too_complex; /* this was not a function call, but an if-statement */
         } else {
-            int cnt[MAXPARAMS];
+            lng cnt[MAXPARAMS];
             char* tpe[MAXPARAMS];
             char* param[MAXPARAMS];
-            int argc = 0;
+            lng argc = 0;
     
             /* e.g. ns:function(1,2,3) */
             p = xquery_parse_space(p+1);
@@ -4379,7 +4415,7 @@ xquery_prepare(xquery_client *ctx,
                     err = "xquery_prepare: unexpected characters after ';'.\n";
                 } else {
                     /* all set: make the call */
-                    int* cnt_ptr = cnt;    
+                    lng* cnt_ptr = cnt;
                     char nsbak = *nsend, locbak = *locend;
                     *nsend = 0; *locend = 0;
                     err = xquery_function_call(ctx, usec, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
@@ -4677,8 +4713,8 @@ CMDxquery(Cntxt stk,
     xquery_client_free_(ctx);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
     if (err) {
-	GDKerror((err==xquery_nondescriptive_error)?res->val.sval:err);
-	VALclear(res);
+        GDKerror((err==xquery_nondescriptive_error)?res->val.sval:err);
+        VALclear(res);
         return GDK_FAIL;
     } 
     /* stream_printf(GDKout,"RES = %s\n",res->val.sval); */
@@ -4690,13 +4726,13 @@ CMDxquery(Cntxt stk,
  */  
 char*
 xquery_method(stream *out,
-              int rpctiming,
+              int timing,
               char* module,
               char* uri,
               char *method,
-              int argc,
-              int itercnt,
-              int** argcnt,
+              lng argc,
+              lng itercnt,
+              lng** argcnt,
               str* argtpe,
               str* argval,
               BAT* shredBAT)
@@ -4704,7 +4740,7 @@ xquery_method(stream *out,
     lng usec = GDKusec();
     MT_Id XQthread_id = THRgettid(), old_tid;
     Thread XQthread = THRget(XQthread_id), old_thread;
-    char *err, *ns = "fn", *mode = "xml-noheader-soap-root-iter";
+    char *err, *ns = "fn", *mode = "xml-noheader-xrpc";
     stream *s = NULL;
     mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
     xquery_client *ctx;
@@ -4716,8 +4752,8 @@ xquery_method(stream *out,
     ctx->fderr = GDKerr;
     ctx->mode = 0;
 
-    if (rpctiming){
-        mode = "timing-rpcdtime-xml-noheader-soap-root-iter";
+    if (timing){
+        mode = "timing-xml-noheader-xrpc";
     }
     err = xquery_change_genType(ctx, mode);
     if (err) return err;
@@ -4727,7 +4763,7 @@ xquery_method(stream *out,
     mc->t = XQthread_id;
     mc->thread = XQthread;
     monetSetChannel(XQthread, GDKin, out);
-    if (argc > 1000) {
+    if (argc >= 1000) {
         /* hack: pass argc+1000 and you get debug output */
         s = open_wstream("/tmp/xrpc.mil");
         char *prologue = (char*) PFinitMIL();

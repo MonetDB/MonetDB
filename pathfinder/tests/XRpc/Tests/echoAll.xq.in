@@ -1,0 +1,11 @@
+import module namespace xrpc = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
+
+let $doc1 := doc("hello.xml"),
+    $doc2 := doc("$TSTSRCDIR/hello2.xml"),
+    $plist := ( element foo { <bar/> },
+                text { "a text node" },
+                $doc1/*/comment(),
+                $doc1/*/processing-instruction(),
+                $doc1/*/attribute::*,
+                $doc2)
+return execute at {"localhost"} { xrpc:echoAll($plist)}

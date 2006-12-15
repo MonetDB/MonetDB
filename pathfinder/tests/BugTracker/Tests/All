@@ -61,6 +61,8 @@ inserting_multiple_elements.SF-1590583
 collection-naming.SF-1590782
 if-condition_testing_empty_sequence.SF-1589820
 update_error.SF-1579510
+path_steps_with_name_tests_on_transsient_nodes.SF-1610247.alg
+add_qnames.SF-1611353.alg
 corrupt-attributelist.SF-1483706.create_doc
 corrupt-attributelist.SF-1483706.shred_doc
 corrupt-attributelist.SF-1483706.cache_doc

@@ -1,7 +1,13 @@
 loaded();
-printf("loading module '%s'\n","xrpc");
-module(xrpc);
+printf("loading module '%s'\n","xrpc_server");
+module(xrpc_server);
 loaded();
-printf("dropping module '%s'\n","xrpc");
-drop("xrpc");
+printf("dropping module '%s'\n","xrpc_server");
+drop("xrpc_server");
+loaded();
+printf("loading module '%s'\n","xrpc_client");
+module(xrpc_client);
+loaded();
+printf("dropping module '%s'\n","xrpc_client");
+drop("xrpc_client");
 loaded();

@@ -164,9 +164,10 @@ emit_SAX_event (XqueryCtx *ctx, char* eventName, char* val, int escaped)
  * Default driver initialization function
  */
 static bool
-sax_init (XqueryCtx* ctx, char* args, char *restag)
+sax_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix)
 {
     (void) args;
+    (void) resprefix;
     ctx->driverWs = (void *) restag; /* store result tag */
     sax_init_isspecial();
 
@@ -411,6 +412,9 @@ struct serializeFunStruct saxSerializeFun = {
     "sax",
     sax_init,
     null_cleanup,
+
+    null_startSerialize,
+    null_endSerialize,
 
     sax_handle_startDocument,
     sax_handle_endDocument,

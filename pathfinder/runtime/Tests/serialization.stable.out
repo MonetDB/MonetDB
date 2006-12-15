@@ -20,18 +20,6 @@ xquery("xml"            ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
-xquery("xml-soap"       ,query , 0).printf();
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult attr="val"><xs:integer>1</xs:integer>
-<xs:double>2.300000</xs:double>
-<xs:double>30.000000</xs:double>
-<xs:string>string</xs:string>
-<xs:anyNode><elem>text<!--comment--><?pi_tgt pi_data?></elem></xs:anyNode>
-<xs:anyNode><elem>text<!--comment--><?pi_tgt pi_data?></elem></xs:anyNode>
-<xs:anyNode>text</xs:anyNode>
-<xs:anyNode><!--comment--></xs:anyNode>
-<xs:anyNode><?pi_tgt pi_data?></xs:anyNode></XQueryResult>
-
 xquery("xml-typed"      ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
 <result:sequence xmlns:result="http://monetdb.cwi.nl/XQuery/results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:attribute attr="val"/><result:atomic-value xsi:type="xs:double">30.000000</result:atomic-value><result:atomic-value xsi:type="xs:string">string</result:atomic-value><result:document><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:document><result:element><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:element><result:text>text</result:text><result:comment><!--comment--></result:comment><result:processing-instruction><?pi_tgt pi_data?></result:processing-instruction></result:sequence>
@@ -40,18 +28,6 @@ xquery("xml-typed"      ,query , 0).printf();
 xquery("mapi-xml"       ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
 =<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
-
-xquery("mapi-xml-soap"  ,query , 0).printf();
-=<?xml version="1.0" encoding="utf-8"?>
-=<XQueryResult attr="val"><xs:integer>1</xs:integer>
-=<xs:double>2.300000</xs:double>
-=<xs:double>30.000000</xs:double>
-=<xs:string>string</xs:string>
-=<xs:anyNode><elem>text<!--comment--><?pi_tgt pi_data?></elem></xs:anyNode>
-=<xs:anyNode><elem>text<!--comment--><?pi_tgt pi_data?></elem></xs:anyNode>
-=<xs:anyNode>text</xs:anyNode>
-=<xs:anyNode><!--comment--></xs:anyNode>
-=<xs:anyNode><?pi_tgt pi_data?></xs:anyNode></XQueryResult>
 
 xquery("mapi-xml-typed" ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>

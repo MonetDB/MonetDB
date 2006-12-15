@@ -1658,6 +1658,13 @@ PFfun_xquery_fo ()
                                    PFty_xdt_untypedAtomic () },
             .ret_ty = PFty_stmt () } } }
 
+    , /* upd:replaceElementContent (element(), text()?) as stmt */
+      { .ns = PFns_upd, .loc = "replaceElementContent",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t []) { PFty_xs_anyElement (),
+                                    PFty_opt (PFty_text ()) },
+            .ret_ty = PFty_stmt () } } }
+
     ,  /* pf:add-doc (string, string) as docmgmt */
       { .ns = PFns_lib, .loc = "add-doc",
         .arity = 2, .sig_count = 1, .sigs = { {

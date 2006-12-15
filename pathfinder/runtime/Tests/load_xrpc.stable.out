@@ -22,9 +22,9 @@ loaded();
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-printf("loading module '%s'\n","xrpc");
-loading module 'xrpc'
-module(xrpc);
+printf("loading module '%s'\n","xrpc_server");
+loading module 'xrpc_server'
+module(xrpc_server);
 loaded();
 #---------------------------------#
 # module		usage_count	  # name
@@ -53,11 +53,72 @@ loaded();
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "url",	  1		  ]
-[ "xrpc",	  1		  ]
+[ "xrpc_server",  1		  ]
 [ "xtables",	  2		  ]
-printf("dropping module '%s'\n","xrpc");
-dropping module 'xrpc'
-drop("xrpc");
+printf("dropping module '%s'\n","xrpc_server");
+dropping module 'xrpc_server'
+drop("xrpc_server");
+loaded();
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  2		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  2		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  2		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+printf("loading module '%s'\n","xrpc_client");
+loading module 'xrpc_client'
+module(xrpc_client);
+loaded();
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  2		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  2		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  1		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mapi",	  1		  ]
+[ "mmath",	  2		  ]
+[ "monettime",	  3		  ]
+[ "pathfinder",	  1		  ]
+[ "pcre",	  2		  ]
+[ "pf_support",	  2		  ]
+[ "str",	  1		  ]
+[ "streams",	  3		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "url",	  1		  ]
+[ "xrpc_client",  1		  ]
+[ "xtables",	  2		  ]
+printf("dropping module '%s'\n","xrpc_client");
+dropping module 'xrpc_client'
+drop("xrpc_client");
 loaded();
 #---------------------------------#
 # module		usage_count	  # name

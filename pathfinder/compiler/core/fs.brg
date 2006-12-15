@@ -3546,10 +3546,7 @@ reduce (PFpnode_t * p, int goalnt)
                  * 2. The <TargetExpr> must evaluate to a single node.
                  *
                  * 3. If <TargetExpr> evaluates to an element node,
-                 *
-                 *    (a) delete all of its children and
-                 *    (b) insert a new text node containing <ExprSingle>
-                 *        as its content.
+                 *    generate the update primitive upd:relaceElementContent()
                  *
                  * 4. If <TargetExpr> evaluates to an attribute, text, or
                  *    processing-instruction node, replace their content
@@ -3567,11 +3564,7 @@ reduce (PFpnode_t * p, int goalnt)
                  *   typeswitch ($target)
                  *     case $e as xs:anyElement return
                  *       let $textnode := text { $step1 }
-                 *       let $clist $e/child::node()
-                 *       let $v1 := for $v in $clist return upd:delete($v)
-                 *       let $v2 := upd:insert ($e, $textnode)
-                 *       return
-                 *         ($v1, $v2)
+                 *       return upd:replaceElementContent ($e, $textnode)
                  *     case $a as xs:anyAttribute return
                  *       upd:replaceValue ($a, $step1)
                  *     case $t as text() return
@@ -3589,21 +3582,16 @@ reduce (PFpnode_t * p, int goalnt)
                 PFvar_t *target   = new_var (NULL);
                 PFvar_t *e        = new_var (NULL);
                 PFvar_t *textnode = new_var (NULL);
-                PFvar_t *v        = new_var (NULL);
                 PFvar_t *a        = new_var (NULL);
                 PFvar_t *t        = new_var (NULL);
                 PFvar_t *pi       = new_var (NULL);
                 PFvar_t *c        = new_var (NULL);
-                PFvar_t *clist    = new_var (NULL);
-                PFvar_t *v1       = new_var (NULL);
-                PFvar_t *v2       = new_var (NULL);
 
                 PFfun_t *is2uA
                     = function (PFqname (PFns_pf,
                                          "item-sequence-to-untypedAtomic"));
-                PFfun_t *delete  = function (PFqname (PFns_upd, "delete"));
-                PFfun_t *insert
-                    = function (PFqname (PFns_upd, "insertIntoAsLast"));
+                PFfun_t *replCont
+                    = function (PFqname (PFns_upd, "replaceElementContent"));
                 PFfun_t *replace
                     = function (PFqname (PFns_upd, "replaceValue"));
                 PFfun_t *error   = function (PFqname (PFns_fn, "error"));
@@ -3630,28 +3618,9 @@ reduce (PFpnode_t * p, int goalnt)
                                         let (letbind (var (textnode),
                                                       constr (p_text,
                                                               var (step1))),
-                                        let (letbind (
-                                                var (clist),
-                                                locsteps (
-                                                    step (
-                                                        p_child,
-                                                        seqtype (PFty_node ())),
-                                                    var (e))),
-                                        let (letbind (var (v1),
-                                                flwr (
-                                                    for_ (
-                                                        forbind (
-                                                            forvars (
-                                                                var (v),
-                                                                nil ()),
-                                                            var (clist)),
-                                                        nil ()),
-                                                    APPLY (delete, var (v)))),
-                                        let (letbind (var (v2),
-                                                APPLY (insert,
-                                                       var (e), var(textnode))),
-                                        nil ()))))),
-                                        seq (var (v1), var (v2)))),
+                                        nil ())),
+                                        APPLY (replCont, var (e),
+                                               var (textnode)))),
                             default_ (typeswitch (var (target), cases (
                                 case_ (
                                     seqtype (PFty_xs_anyAttribute ()),

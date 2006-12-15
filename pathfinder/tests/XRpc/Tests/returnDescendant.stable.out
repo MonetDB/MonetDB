@@ -25,22 +25,22 @@ Over..
 <XQueryResult><hello x="y" lang="en">
   <foo>text of node foo<bar>text of node bar</bar></foo>
   <!-- a comment node -->
-  <?action beeeep?>
+  <?pi action=beep?>
   <world/>
 </hello>
   <foo>text of node foo<bar>text of node bar</bar></foo>text of node foo<bar>text of node bar</bar>text of node bar
   <!-- a comment node -->
-  <?action beeeep?>
+  <?pi action=beep?>
   <world/>
 <hello x="y" lang="en">
   <foo>text of node foo<bar>text of node bar</bar></foo>
   <!-- a comment node -->
-  <?action beeeep?>
+  <?pi action=beep?>
   <world/>
 </hello>
   <foo>text of node foo<bar>text of node bar</bar></foo>text of node foo<bar>text of node bar</bar>text of node bar
   <!-- a comment node -->
-  <?action beeeep?>
+  <?pi action=beep?>
   <world/>
 </XQueryResult>
 

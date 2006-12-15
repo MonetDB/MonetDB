@@ -2921,6 +2921,7 @@ PFparse (char *input, PFpnode_t **r)
     
     /* we don't explicitly ask for modules */
     module_only = false;
+    current_uri = NULL;
 
 #ifdef ENABLE_MILPRINT_SUMMER
     module_base = 0;

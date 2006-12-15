@@ -1,0 +1,796 @@
+@ Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Original Code has initially been developed by the Database &
+@' Information Systems Group at the University of Konstanz, Germany and
+@' is now maintained by the Database Systems Group at the Technische
+@' Universitaet Muenchen, Germany.  Portions created by the University of
+@' Konstanz and the Technische Universitaet Muenchen are Copyright (C)
+@' 2000-2005 University of Konstanz and (C) 2005-2006 Technische
+@' Universitaet Muenchen, respectively.  All Rights Reserved.
+@'
+@' $Id$
+@'
+
+@f xrpc_server
+@a Ying Zhang
+
+@t MIL primitives for XRPC server
+
+@* Introduction
+This module provides new MIL primitives for the server side support of
+remote XQuery execution using HTTP connection on top of MonetDB for the
+"AmbientDB" project.
+@
+@* Module Definition
+@m
+.MODULE xrpc_server;
+
+.USE pathfinder;
+.USE pf_support;
+.USE url;
+
+@- HTTP server function(s)
+@m
+.COMMAND httpd_start(int port, str option) : void = CMDhttpd_start;
+"Start the HTTP server for RPC calls on the specified port."
+
+.END xrpc_server;
+
+@mil
+PROC rpcd_start(int port, str options) : void {
+    fork(httpd_start(port, options));
+}
+ADDHELP("rpcd_start", "zhang", "November 2005",
+"PARAMETER:\n\
+int: port number\n\
+str: options, currently, only \"timing\"\n\
+DESCRIPTION:\n\
+Start XRPC receiver on the specified port",
+"xrpc_server");
+
+PROC rpcd_start(int port) : void {
+    fork(httpd_start(port, ""));
+}
+ADDHELP("rpcd_start", "zhang", "November 2005",
+"PARAMETER:\n\
+int: port number\n\
+DESCRIPTION:\n\
+Start XRPC receiver on the specified port",
+"xrpc_server");
+
+PROC rpcd_start() : void {
+    rpcd_start( int(monet_environment.find("pf_httpd_port")), "");
+}
+ADDHELP("rpcd_start", "zhang", "November 2005",
+"DESCRIPTION:\n\
+Start XPRC receiver on the default port as specified in \
+\"monet_environment\" by \"pf_httpd_port\"",
+"xrpc_server");
+
+@h
+#ifndef XRPC_SERVER_H
+#define XRPC_SERVER_H
+
+#include "pathfinder.h"
+
+#include <gdk.h>
+#include <stream.h>
+#include <time.h>
+
+#ifdef _WIN32   /* Windows specific */
+    #include <winsock.h>
+    #define snprintf _snprintf
+    #ifndef __MINGW32__
+        #pragma comment(lib, "ws2_32")
+    #endif
+    #define sleep(s) Sleep(1000*(s))
+#else           /* UNIX specific */
+    #include <sys/select.h>
+    #include <sys/types.h>	/* used by socket */
+    #include <sys/socket.h>
+    #include <unistd.h>
+    #include <errno.h>
+    #include <ctype.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "pf_support.h"
+#include "shredder.h"
+#include "serialize.h"
+#include "shttpd.h"
+
+#define MAXPARAMS       32
+#define HTTPD_FUNC      "/xrpc"
+#define ERR404          "404 Bad Request"
+#define ERR500          "500 Internal Server Error"
+#define OUT_OF_MEM      "Internal Receiver Error: out-of memory"
+#define NOT_WELL_FORMED "Request XML message not well-formed"
+
+/* TODO: why don't we define this in pathfinder.mx??? */
+#define ELEMENT         0
+#define TEXT            1
+#define COMMENT         2
+#define PI              3
+#define DOCUMENT        4
+#define COLLECTION      5
+
+#define SOAP_NS  "http://www.w3.org/2003/05/soap-envelope"
+#define XRPC_NS  "http://monetdb.cwi.nl/XQuery"
+#define XRPC_LOC "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
+#define XS_NS    "http://www.w3.org/2001/XMLSchema"
+#define XSI_NS   "http://www.w3.org/2001/XMLSchema-instance"
+
+/* To prevent starting the HTTP server twice */
+int rpcd_running = 0;
+int timing = 0;
+
+#endif /* XQUERY_RPC_H */
+
+@c
+#include "xrpc_server.h"
+
+#define clean_up(s, argcnt, argtpe, argval, iterc, nr_args) {       \
+    lng i = 0;                                                      \
+                                                                    \
+    stream_close(s); stream_destroy(s);                             \
+    if(argcnt){                                                     \
+        for(i = 0; i < iterc; i++) GDKfree(argcnt[i]);              \
+        GDKfree(argcnt);                                            \
+    }                                                               \
+    if(argtpe){                                                     \
+        for(i = 0; i < nr_args; i++) GDKfree(argtpe[i]);            \
+        GDKfree(argtpe);                                            \
+    }                                                               \
+    if(argval){                                                     \
+        for(i = 0; i < nr_args; i++) GDKfree(argval[i]);            \
+        GDKfree(argval);                                            \
+    }                                                               \
+}
+
+#define send_err(out, header, http_err, soap_err, err_reason) {     \
+    if (header)                                                     \
+        stream_printf(out, "HTTP/1.1 %s\r\n"                        \
+                "Content-Type: application/soap+xml; "              \
+                "charset=\"utf-8\"\r\n\r\n"                         \
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"      \
+                "<env:Envelope xmlns:env=\"%s\"><env:Body>",        \
+                http_err, SOAP_NS);                                 \
+    stream_printf(out, "<env:Fault>"                                \
+            "<env:Code><env:Value>%s</env:Value></env:Code>"        \
+            "<env:Reason><env:Text xml:lang=\"en\">%s</env:Text>"   \
+            "</env:Reason></env:Fault></env:Body></env:Envelope>",  \
+            soap_err, err_reason);                                  \
+}
+
+/**
+ * Retrieves the request message from the connection and shred it to
+ * BATs.
+ *
+ * @return BATs containing the shredded request message, or
+ *         NULL if an error has occurred.
+ */
+static BAT*
+request2bat(struct shttpd_callback_arg *arg, stream *out)
+{
+    char *strptr = NULL, *req_msg = NULL;
+    lng percentage = 0;
+    BAT *shredBAT = NULL;
+
+    /* Remove the first line of the message, which containing
+     * "<?xml...?>", so that the message we pass to CMDshred2bats starts
+     * directly with <env:Envelope ...> */
+    req_msg = shttpd_get_msg(arg);
+    strptr  = req_msg + 7; /* strlen("<?xml...?>") >= 7 */
+    if ( (strstr(req_msg, "<?xml") != req_msg) ||
+         (strptr = strchr(strptr, (int)'<')) == NULL ) {
+        send_err(out, 1, ERR404, "env:Sender", NOT_WELL_FORMED);
+        return NULL;
+    }
+
+    if(!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))){
+        send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
+        return NULL;
+    }
+
+    if (CMDshred_str(shredBAT, strptr, &percentage, NULL) == GDK_FAIL) {
+        BBPreclaim(shredBAT);
+        send_err(out, 1, ERR404, "env:Sender", NOT_WELL_FORMED);
+        return NULL;
+    }
+
+    return shredBAT;
+}
+
+/**
+ * Calculate the number of *nodes* which has the name "node_name" and
+ * are within the range 'start_pre' and 'end_pre' (inclusive).
+ *
+ * @return the number of nodes found
+ */
+static int
+count_node(char *node_name, char *ns, oid start_pre, oid end_pre,
+        oid *pre_prop, char *pre_kind, BAT *qn_loc)
+{
+    /* TODO: check if the namespace of 'node_name' matches given
+     * namespace 'ns' */
+    (void)ns;
+
+    int nr = 0;
+    oid i;
+
+    for (i = start_pre; i <= end_pre; i++) {
+        if (pre_kind[i] == ELEMENT) {
+            char *qname = BUNtail(qn_loc,
+                            BUNfnd(qn_loc, &(pre_prop[i])));
+            if (strcmp(qname, node_name) == 0)
+                nr++;
+        }
+    }
+    return nr;
+}
+
+/**
+ * Find the 'pre' value of the first node between 'start_pre' and
+ * 'end_pre' (inclusive), which kind is 'elem_kind'.
+ *
+ * @return the 'pre' value of this node, or
+ *         0 if such node can not be found.
+ */
+static oid
+get_elem_pre(oid start_pre, oid end_pre, char elem_kind, char *pre_kind)
+{
+    oid i;
+
+    for (i = start_pre; i <= end_pre; i++) {
+        if (pre_kind[i] == elem_kind)
+            return i;
+    }
+    return 0;
+}
+
+/**
+ * Given a 'node_name', find the 'pre' value of the first node between
+ * 'start_pre' and 'end_pre' (inclusive), which kind is 'elem_kind'.
+ * 
+ * @return the 'pre' value of this node, or
+ *         0 if such node can not be found.
+ */
+static oid
+get_elem_pre_by_name(char *node_name, char *ns, oid start_pre,
+        oid end_pre, char elem_kind, oid *pre_prop, char *pre_kind,
+        BAT *qn_loc)
+{
+    /* TODO: check if the namespace of 'node_name' matches given
+     * namespace 'ns' */
+    (void)ns;
+
+    oid i;
+
+    for (i = start_pre; i <= end_pre; i++) {
+        if (pre_kind[i] == elem_kind) {
+            char *qname = BUNtail(qn_loc,
+                            BUNfnd(qn_loc, &(pre_prop[i])));
+            if (strcmp(qname, node_name) == 0)
+                return i;
+        }
+    }
+    return 0;
+}
+
+/**
+ * Find the value of the attribute 'attr_name', which is owned by the
+ * node with the given 'pre' value.
+ *
+ * NB: DO NOT free the string returned by this function, because it is
+ *     not copied!!!
+ *
+ * @return The value of the attribute 'attr_name', or
+ *         NULL if attribute with such name was not found.
+ */
+static char*
+get_attr_val(char *attr_name, char *ns, oid pre, size_t nattrs,
+        oid *attr_own, oid *attr_qn, oid *attr_prop, BAT *qn_loc,
+        BAT *prop_val)
+{
+    /* TODO: check if the namespace of 'attr_name' matches given
+     * namespace 'ns' */
+    (void)ns;
+
+    oid qn = oid_nil ;
+    size_t i = 0;
+    int first = 0;
+
+    /* BUNfnd finds value in the head column, so we need to reverse the
+     * 'qn_loc' BAT with BATmirror which actually does BATreverse. */
+    BUN p = BUNfnd(BATmirror(qn_loc), attr_name);
+    if (!p) return NULL;
+
+    /* Get the 'qn' of 'attr_name' */
+    qn = *(oid*) BUNhead(qn_loc, p);
+
+    /* try to find the attribute value */
+    for (i = 0; i < nattrs; i++) {
+        if (attr_own[i] > pre) return NULL;
+        if (attr_own[i] == pre && attr_qn[i] == qn) {
+                first = BUNindex(prop_val, BUNfirst(prop_val)) +
+                            attr_prop[i];
+                return (char*) BUNtail(prop_val,
+                                BUNptr(prop_val, first));
+        }
+    }
+    return NULL;
+}
+
+/**
+ * Given the pre value of a type node, return the name of the type node
+ * as a string in the form 'prefix:loc'.
+ *
+ * TODO: maybe we should return 'ns:loc' instead.
+ *
+ * NB: the return value of this function, if not NULL, should be freed.
+ *
+ * @return the name of the type node, or
+ *         NULL if anything went wrong.
+ */
+static char*
+get_type(oid tpe_node_pre, oid *pre_prop, BAT *qn_loc, BAT *qn_prefix)
+{
+    (void)qn_prefix;
+
+    char *loc = NULL, *prefix = NULL, *res = NULL;
+    int l_len = 0, p_len = 0;
+
+    loc = (char*)BUNtail(qn_loc,
+                    BUNptr(qn_loc, pre_prop[tpe_node_pre]));
+
+    /* TODO: find the namespace of 'loc' */
+    if(strcmp(loc, "atomic-value") == 0){
+        prefix = "xrpc";
+    } else {
+        prefix = "xs";
+    }
+
+    l_len = strlen(loc);
+    p_len = strlen(prefix);
+
+    if(!(res = GDKmalloc(p_len + l_len + 2)))
+        return NULL;
+
+    strncpy(res, prefix, p_len);
+    res[p_len]=':';
+    strncpy((res + p_len + 1), loc, l_len);
+    res[p_len+l_len+1] = '\0';
+    return res;
+}
+
+/**
+ * The XRPC server callback function.
+ *
+ * @return GDK_SUCCEED, or
+ *         GDK_FAIL if an error has occurred.
+ */
+static int
+handle_rpc_request(struct shttpd_callback_arg *arg)
+{
+    char errstr[1024], *module = NULL, *location = NULL, *method = NULL;
+    int sock = -1, k = 0;
+    stream *out = NULL;
+    lng i = 0, j = 0, time_servDeSeria = 0;
+
+    BAT *shredBAT = NULL,  *frag_root = NULL, *pre_size = NULL;
+    BAT *pre_level = NULL, *pre_kind = NULL,  *pre_prop = NULL;
+    BAT *qn_loc   = NULL,  *qn_prefix = NULL;
+    BAT *prop_val = NULL,  *prop_text = NULL;
+    BAT *attr_own = NULL,  *attr_qn = NULL, *attr_prop = NULL;
+    /* Arrays holding the Tail values of some of the BATs above. */
+    int   *pre_sizeT = NULL;
+    char  *pre_levelT = NULL, *pre_kindT = NULL;
+    char  *text_base = NULL; /* text base of prop_text tail values */
+    oid   *attr_ownT = NULL, *attr_qnT = NULL, *attr_propT = NULL;
+    oid   *pre_propT = NULL;
+    var_t *prop_textT = NULL;
+    lng    nattrs = 0;
+
+    oid pre = 0, last_pre = 0, val_node_pre = 0;
+    oid seq_node_pre = 0,  call_node_pre = 0,  tpe_node_pre = 0;
+    lng seq_node_size = 0, call_node_size = 0, tpe_node_size = 0;
+
+    lng iterc = 0, argc = 0, nr_args = 0, max_args = GDK_int_max;
+    lng **argcnt = NULL; /* argcnt[iterc][argc] */
+    str *argtpe = NULL, *argval = NULL;
+    
+    /* We need to clean up the pre_size, pre_level, pre_prop and
+     * pre_kind values between two node values, to prevent that
+     * a node value is treated as part of the message */
+    oid start_invalidate = 0; /* indicates from which node we should
+                                 start with invalidation */
+    char level_diff = 0; /* indicates how many levels each pre_level
+                            value of a node should be reduced. */
+
+    THRnew(MT_getpid(), "rpc_req_handler"); /* register this thread */
+
+    /* Create our own output stream for further data transfer. */
+    sock = shttpd_get_socket(arg);
+    if (!(out = socket_wastream(sock, "rpc_response"))) {
+        GDKerror("handle_rpc_request: failed to create "
+                "socket_wastream for socket %d", sock);
+        close(sock);
+        return GDK_FAIL;
+    }
+
+    /* Start timing ServerDeSerialisation */
+    time_servDeSeria = GDKusec();
+
+    if(!(shredBAT = request2bat(arg, out))){
+        stream_close(out); stream_destroy(out);
+        return GDK_FAIL;
+    }
+    
+    i = BUNindex(shredBAT,BUNfirst(shredBAT));
+    pre_size   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PRE_SIZE) ));
+    pre_level  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PRE_LEVEL)));
+    pre_prop   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PRE_PROP) ));
+    pre_kind   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PRE_KIND) ));
+    prop_text  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_TEXT)));
+    text_base  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_TEXT)))->theap->base;
+    prop_val   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_VAL) ));
+    qn_loc     = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_LOC)   ));
+    qn_prefix  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_PREFIX)));
+    frag_root  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+FRAG_ROOT)));
+    attr_own   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_OWN) ));
+    attr_qn    = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_QN)  ));
+    attr_prop  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_PROP)));
+
+    pre_sizeT  = (int*)  BUNfirst(pre_size);
+    pre_levelT = (char*) BUNfirst(pre_level);
+    pre_propT  = (oid*)  BUNfirst(pre_prop);
+    pre_kindT  = (char*) BUNfirst(pre_kind);
+    prop_textT = (var_t*)BUNfirst(prop_text);
+    attr_ownT  = (oid*)  BUNfirst(attr_own);
+    attr_qnT   = (oid*)  BUNfirst(attr_qn);
+    attr_propT = (oid*)  BUNfirst(attr_prop);
+
+    pre_level  = BATsetaccess(pre_level, BAT_WRITE);
+    frag_root  = BATsetaccess(frag_root, BAT_APPEND);
+    nattrs     = BATcount(attr_prop);
+    last_pre   = (oid)pre_sizeT[0]; /* last 'pre' number, save it before
+                                       it is overwritten. */
+
+    /* There are at least two nodes before "request", namely "Envelope"
+     * and "Body" (a "Header" node is optional). There are at least one
+     * node after "request", namely "sequence". */
+    if (!(pre = get_elem_pre_by_name("request", XRPC_NS, 2,
+                    (last_pre - 1), ELEMENT, pre_propT, pre_kindT,
+                    qn_loc))) {
+        send_err(out, 1, ERR404, "env:Sender",
+                "\"request\" node not found");
+        stream_close(out); stream_destroy(out);
+        return GDK_FAIL;
+    }
+
+    if (!(module = get_attr_val("module", XRPC_NS, pre, nattrs,
+                    attr_ownT, attr_qnT, attr_propT, qn_loc, prop_val)))
+    {
+        send_err(out, 1, ERR404, "env:Sender",
+                "\"module\" attribute not found");
+        stream_close(out); stream_destroy(out);
+        return GDK_FAIL;
+    }
+    if (!(method = get_attr_val("method", XRPC_NS, pre, nattrs,
+                    attr_ownT, attr_qnT, attr_propT, qn_loc, prop_val)))
+    {
+        send_err(out, 1, ERR404, "env:Sender",
+                "\"method\" attribute not found");
+        stream_close(out); stream_destroy(out);
+        return GDK_FAIL;
+    }
+    if (!(location = get_attr_val("location", XRPC_NS, pre, nattrs,
+                    attr_ownT, attr_qnT, attr_propT, qn_loc, prop_val)))
+    {
+        send_err(out, 1, ERR404, "env:Sender",
+                "\"location\" attribute not found");
+        stream_close(out); stream_destroy(out);
+        return GDK_FAIL;
+    }
+
+    if (!(iterc = count_node("call", XRPC_NS, pre+1, last_pre,
+                    pre_propT, pre_kindT, qn_loc))) {
+        send_err(out, 1, ERR404, "env:Sender",
+                "\"call\" node not found");
+        stream_close(out); stream_destroy(out);
+        return GDK_FAIL;
+    }
+
+    argc = count_node("sequence", XRPC_NS, pre+2, last_pre, pre_propT,
+            pre_kindT, qn_loc) / iterc;
+
+    if (!(argcnt = GDKmalloc(iterc * sizeof(lng*)))) {
+        send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
+        clean_up(out, argcnt, argtpe, argval, iterc, nr_args);
+        return GDK_FAIL;
+    }
+    for (i = 0; i < iterc; i++) {
+        /* we allocate _at least one_ argcnt for each parameter, so that
+         * we have a place to note that a function has zero parameter */
+        if (!(argcnt[i] = GDKmalloc((argc>0?argc:1) * sizeof(lng)))) {
+            send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
+            clean_up(out, argcnt, argtpe, argval, iterc, nr_args);
+            return GDK_FAIL;
+        }
+        argcnt[i][0] = 0;
+        for (j = 1; j < argc; j++)
+            argcnt[i][j] = 0;
+    }
+
+    max_args = iterc * MAXPARAMS;
+    argval = GDKmalloc(max_args * sizeof(char *));
+    argtpe = GDKmalloc(max_args * sizeof(char *));
+    if (!argval || !argtpe) {
+        send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
+        clean_up(out, argcnt, argtpe, argval, iterc, nr_args);
+        return GDK_FAIL;
+    }
+   
+    /* Fill the arrays 'argcnt', 'argval', 'argtpe' */
+    call_node_pre = pre;
+    for (i = 0; i < iterc; i++) {
+        call_node_pre  = get_elem_pre_by_name("call", XRPC_NS,
+                (call_node_pre + call_node_size + 1), last_pre, ELEMENT,
+                pre_propT, pre_kindT, qn_loc);
+        call_node_size = pre_sizeT[call_node_pre];
+        if (call_node_size == 0) continue;
+
+        seq_node_pre = call_node_pre;
+        for (j = 0; j < argc; j++) {
+            seq_node_pre  = get_elem_pre_by_name("sequence", XRPC_NS,
+                    seq_node_pre+1, (call_node_pre + call_node_size),
+                    ELEMENT, pre_propT, pre_kindT, qn_loc);
+            if (seq_node_pre == 0) continue; /* This function call has
+                                                no parameters */
+            seq_node_size = pre_sizeT[seq_node_pre];
+            if (seq_node_size == 0) continue;
+       
+            tpe_node_pre = seq_node_pre + 1; k = 1;
+            while((tpe_node_pre <= (seq_node_pre + seq_node_size)) && 
+                  (tpe_node_pre = get_elem_pre(tpe_node_pre,
+                                          (seq_node_pre+seq_node_size),
+                                          ELEMENT, pre_kindT)) > 0){
+                tpe_node_size = pre_sizeT[tpe_node_pre];
+
+                if (nr_args == max_args) {
+                    snprintf(errstr, 1024, "XRPC request: too many "
+                            "parameters, maximum is %d", MAXPARAMS);
+                    send_err(out, 1, ERR404, "env:Sender", errstr);
+                    clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                    return GDK_FAIL;
+                }
+
+                if (!(argtpe[nr_args] = get_type(tpe_node_pre,
+                                            pre_propT, qn_loc,
+                                            qn_prefix))) {
+                    send_err(out, 1, ERR500, "env:Receiver",OUT_OF_MEM);
+                    clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                    return GDK_FAIL;
+                }
+
+                if (strcmp(argtpe[nr_args], "xrpc:atomic-value") == 0) {
+                    GDKfree(argtpe[nr_args]); /* find sub-type of the
+                                                 atomic-value */
+                    char *tptr = get_attr_val("type", XSI_NS,
+                                    tpe_node_pre, nattrs, attr_ownT,
+                                    attr_qnT, attr_propT, qn_loc,
+                                    prop_val);
+                    if(!tptr){
+                        send_err(out, 1, ERR404, "env:Sender",
+                                "XRPC request: an \"atomic-value\" "
+                                "node must have a \"type\" attribute");
+                        clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+                    argtpe[nr_args] = GDKstrdup(tptr);
+
+                    val_node_pre = tpe_node_pre + 1;
+                    if( (tpe_node_size != 1) || 
+                        (pre_kindT[val_node_pre] != TEXT) ) {
+                        snprintf(errstr, 1024, "XRPC request: "
+                                "iteration%lld/parameter%lld/value%d "
+                                "of type \"%s\" is expected to have a "
+                                "simple value",
+                                i+1, j+1, k, argtpe[nr_args]);
+                        send_err(out, 1, ERR404, "env:Sender", errstr);
+                        clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+                    argval[nr_args] = GDKstrdup(text_base +
+                            prop_textT[pre_propT[val_node_pre]]);
+                } else if (strcmp(argtpe[nr_args], "xs:attribute") == 0) {
+                    /* 32-bytes is enough to hold the string
+                     * representation of the largest 64bits OID value */
+                    argval[nr_args] = GDKmalloc(32);
+                    if (!argval[nr_args]) {
+                        send_err(out,1,ERR500,"env:Receiver",OUT_OF_MEM);
+                        clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+
+                    val_node_pre = 0;
+                    int off;
+                    for (off = 0; off < nattrs; off++) {
+                        if (attr_ownT[off] == tpe_node_pre) {
+                            val_node_pre = attr_propT[off];
+                            break;
+                        }
+                    }
+                    if (val_node_pre == 0) {
+                        snprintf(errstr, 1024, "XRPC request: "
+                                "iteration%lld/param%lld/value%d "
+                                "does not contain a *node* value",
+                                i+1, j+1, k);
+                        send_err(out, 1, ERR404, "env:Sender", errstr);
+                        clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+
+                    snprintf(argval[nr_args], 32, OIDFMT, val_node_pre);
+                } else {
+                    /* 32-bytes is enough to hold the string
+                     * representation of the largest 64bits OID value */
+                    argval[nr_args] = GDKmalloc(32);
+                    if (!argval[nr_args]) {
+                        send_err(out,1,ERR500,"env:Receiver",OUT_OF_MEM);
+                        clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+
+                    if (strcmp(argtpe[nr_args], "xs:element") == 0) {
+                        val_node_pre = get_elem_pre(tpe_node_pre+1,
+                                (tpe_node_pre+tpe_node_size), ELEMENT,
+                                pre_kindT);
+                    } else if (strcmp(argtpe[nr_args], "xs:text") == 0) {
+                        val_node_pre = get_elem_pre(tpe_node_pre+1,
+                                (tpe_node_pre+tpe_node_size), TEXT,
+                                pre_kindT);
+                    } else if (strcmp(argtpe[nr_args], "xs:comment") == 0) {
+                        val_node_pre = get_elem_pre(tpe_node_pre+1,
+                                (tpe_node_pre+tpe_node_size), COMMENT,
+                                pre_kindT);
+                    } else if( strcmp(argtpe[nr_args],
+                                "xs:processing-instruction") == 0 ) {
+                        val_node_pre = get_elem_pre(tpe_node_pre+1,
+                                (tpe_node_pre+tpe_node_size), PI,
+                                pre_kindT);
+                    } else if (strcmp(argtpe[nr_args], "xs:document")  == 0) {
+                        val_node_pre = tpe_node_pre;
+                        pre_kindT[val_node_pre] = 4;
+                        pre_propT[val_node_pre] = oid_nil;
+                    } else {
+                        snprintf(errstr, 1024, "XRPC request: "
+                                "iteration%lld/param%lld/value%d "
+                                "contains unsupported type: %s\n",
+                                i+1, j+1, k, argtpe[nr_args]);
+                        send_err(out, 1, ERR404, "env:Sender", errstr);
+                        clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+
+                    if (val_node_pre == 0) {
+                        snprintf(errstr, 1024, "XRPC request: "
+                                "iteration%lld/param%lld/value%d "
+                                "does not contain a *node* value",
+                                i+1, j+1, k);
+                        send_err(out, 1, ERR404, "env:Sender", errstr);
+                        clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+
+                    snprintf(argval[nr_args], 32, OIDFMT, val_node_pre);
+                    frag_root = BUNappend(frag_root, (ptr)&val_node_pre, TRUE);
+
+                    /* reassign level values for the ELEM nodes */
+                    level_diff = pre_levelT[val_node_pre];
+                    if (strcmp(argtpe[nr_args], "xs:document")  == 0)
+                        level_diff++;
+                    unsigned long long l = val_node_pre;
+                    for( ; l <= (val_node_pre + pre_sizeT[val_node_pre]); l++){
+                        pre_levelT[l] -= level_diff;
+                    }
+                    for (l = start_invalidate; l < val_node_pre; l++) {
+                        pre_levelT[l] = -3;
+                        pre_sizeT[l] = 0;
+                    }
+                    start_invalidate = val_node_pre + pre_sizeT[val_node_pre] + 1;
+                }
+                /* skip all children of tpe_node and go to the next
+                 * possible tpe_node */
+                tpe_node_pre += (tpe_node_size + 1);
+                argcnt[i][j]++;
+                nr_args++;
+                k++;
+            } /* end WHILE 'tpe_node_pre' */
+        } /* end FOR 'argc' */
+    } /* end FOR 'iterc' */
+
+    /* Stop timing Server DeSerialisation */
+    time_servDeSeria = GDKusec() - time_servDeSeria;
+
+    lng time_servApp = GDKusec(); /* Start timing Server Application */
+    stream_printf(out, "HTTP/1.1 200 OK\r\n"
+            "Content-Type: application/soap+xml; "
+            "charset=\"utf-8\"\r\n\r\n");
+    argc += 1000;
+    char *err = xquery_method(out, timing, module, location, method,
+            argc, iterc, argcnt, argtpe, argval, shredBAT);
+    time_servApp = GDKusec() - time_servApp; /* Stop timing Server
+                                                Application */
+
+    if (err) {
+        send_err(out, 0, "", "env:Sender", err);
+        clean_up(out, argcnt, argtpe, argval, iterc, nr_args);
+        return GDK_FAIL;
+    }
+
+    if (timing) {
+        printf("Server_DeSerialisation: %lld microsec\n",
+                time_servDeSeria);
+        printf("Server_Application: %lld microsec\n", time_servApp);
+    }
+
+    clean_up(out, argcnt, argtpe, argval, iterc, nr_args);
+    return GDK_SUCCEED;
+}
+
+int
+CMDhttpd_start(int* port, str option)
+{
+    shttpd_socket ctx;
+       
+    if (rpcd_running) {
+        GDKerror("CMDhttpd_start: RPC receiver already running\n");
+        return GDK_FAIL;
+    }
+
+    rpcd_running = 1;
+
+    if (option && strstr(option, "timing") != NULL)
+        timing = 1;
+
+    /* Initialize with specific config file, pass NULL to use default
+     * values */
+    shttpd_init(NULL);
+
+    /* Register call back function */
+    shttpd_register_url(HTTPD_FUNC, &handle_rpc_request, NULL);
+
+    /* Open listening socket */
+    ctx = shttpd_open_port(*port);
+
+    /* Serve connections infinitely until someone kills us */
+    for ( ; rpcd_running; ) shttpd_poll(&ctx, 200);
+
+    return GDK_SUCCEED;
+}
+
+bat* xrpc_prelude() {
+    return NULL;        /* Nothing to do here. */
+}
+
+void xrpc_epilogue() {
+    shttpd_fini();      /* Shut down the HTTP server. */
+    rpcd_running = 0;   /* Stop RPC server */
+}
+/* vim:set shiftwidth=4 expandtab: */
