@@ -376,6 +376,25 @@ typedef struct Ssabdb {
 
 mal_export str SABAOTHgetStatus(sabdb** ret, str dbname);
 @c
+#ifndef HAVE_LOCKF
+/* Windows implementation: struct flock is there, but lockf() is
+   missing.
+ */
+static int
+lockf(int fd, int cmd, off_t len)
+{
+	struct flock l;
+
+	if (cmd == F_LOCK || cmd == F_TLOCK)
+		l.l_type = F_WRLCK;
+	else if (cmd == F_ULOCK)
+		l.l_type = F_UNLCK;
+	l.l_whence = SEEK_CUR;
+	l.l_start = 0;
+	l.l_len = len;
+	return fcntl(fd, cmd == F_TLOCK ? F_SETLKW : F_SETLK, &l);
+}
+#endif
 /**
  */
 str SABAOTHgetStatus(sabdb** ret, str dbname) {
