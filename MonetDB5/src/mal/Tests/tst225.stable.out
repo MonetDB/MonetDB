@@ -38,8 +38,9 @@ end main;	# 10
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
-!ERROR: MALException: : MALException:batcalc.+:Cannot access descriptor
-# 17:40:07 >  
-# 17:40:07 >  Done.
-# 17:40:07 >  
+!MALException:batcalc.+:Cannot access descriptor
+
+# 08:58:54 >  
+# 08:58:54 >  Done.
+# 08:58:54 >  
 

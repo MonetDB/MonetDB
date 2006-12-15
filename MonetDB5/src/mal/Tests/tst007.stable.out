@@ -61,25 +61,44 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 #
 #
 #
-!ERROR: TypeException: user.main[3]: 'algebra.fetch' undefined in: Tail:any := algebra.fetch(b:any, H:any)
-!ERROR: TypeException: user.main[10]: 'chop.hasMoreElements' undefined in: L:any := chop.hasMoreElements(b:any)
-!ERROR: TypeException: user.main[11]: 'chop.head' undefined in: H:any := chop.head(b:any)
-!ERROR: TypeException: user.main[12]: 'chop.nextElement' undefined in: v:any := chop.nextElement(b:any)
-!ERROR: TypeException: user.main[36]: 'batcalc.not' undefined in: FS:any := batcalc.not(FTE:any)
-!ERROR: TypeException: user.main[2]: barrier 'H' should be of type bit, str or number
-!ERROR: TypeException: user.main[10]: barrier 'L' should be of type bit, str or number
-!ERROR: TypeException: user.main[17]: barrier 'M' should be of type bit, str or number
-!ERROR: TypeException: user.main[30]: barrier 'FT' should be of type bit, str or number
-!ERROR: TypeException: user.main[33]: barrier 'FTE' should be of type bit, str or number
-!ERROR: TypeException: user.main[36]: barrier 'FS' should be of type bit, str or number
-!ERROR: TypeException: user.main[2]: 'batoperatie' may not be used before being initialized
-!ERROR: TypeException: user.main[3]: 'b' may not be used before being initialized
-!ERROR: TypeException: user.main[10]: 'b' may not be used before being initialized
-!ERROR: TypeException: user.main[11]: 'b' may not be used before being initialized
-!ERROR: TypeException: user.main[12]: 'b' may not be used before being initialized
-!ERROR: TypeException: user.main[17]: 'entry_or_exittest' may not be used before being initialized
-!ERROR: TypeException: user.main[30]: 'booleanexpr' may not be used before being initialized
-!ERROR: TypeException: user.main[33]: 'booleanexpr' may not be used before being initialized
+!TypeException:user.main[3]:'algebra.fetch' undefined in: Tail:any := algebra.fetch(b:any, H:any)
+
+!TypeException:user.main[10]:'chop.hasMoreElements' undefined in: L:any := chop.hasMoreElements(b:any)
+
+!TypeException:user.main[11]:'chop.head' undefined in: H:any := chop.head(b:any)
+
+!TypeException:user.main[12]:'chop.nextElement' undefined in: v:any := chop.nextElement(b:any)
+
+!TypeException:user.main[36]:'batcalc.not' undefined in: FS:any := batcalc.not(FTE:any)
+
+!TypeException:user.main[2]:barrier 'H' should be of type bit, str or number
+
+!TypeException:user.main[10]:barrier 'L' should be of type bit, str or number
+
+!TypeException:user.main[17]:barrier 'M' should be of type bit, str or number
+
+!TypeException:user.main[30]:barrier 'FT' should be of type bit, str or number
+
+!TypeException:user.main[33]:barrier 'FTE' should be of type bit, str or number
+
+!TypeException:user.main[36]:barrier 'FS' should be of type bit, str or number
+
+!TypeException:user.main[2]:'batoperatie' may not be used before being initialized
+
+!TypeException:user.main[3]:'b' may not be used before being initialized
+
+!TypeException:user.main[10]:'b' may not be used before being initialized
+
+!TypeException:user.main[11]:'b' may not be used before being initialized
+
+!TypeException:user.main[12]:'b' may not be used before being initialized
+
+!TypeException:user.main[17]:'entry_or_exittest' may not be used before being initialized
+
+!TypeException:user.main[30]:'booleanexpr' may not be used before being initialized
+
+!TypeException:user.main[33]:'booleanexpr' may not be used before being initialized
+
 function user.main():void;	# 0  (main:void)
 # A collection of forloops, which should not execute 	# 1  (_2:str)
 barrier H := batoperatie;	# 2  (H:any)<-(batoperatie:any) jump 6

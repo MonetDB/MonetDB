@@ -64,7 +64,7 @@ ptop=3 plimit=1024
 [0] bid=7 pid=7 f=0, l=10 prv=-1 nxt=1 cap=-1
 [1] bid=7 pid=8 f=10, l=20 prv=0 nxt=2 cap=-1
 [2] bid=7 pid=9 f=20, l=30 prv=1 nxt=-1 cap=-1
-!ERROR: MALException: : MALException:partitions.deposit:Partition already known
+!MALException:partitions.deposit:Partition already known
 
 # 00:03:57 >  
 # 00:03:57 >  Done.

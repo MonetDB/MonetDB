@@ -15,7 +15,7 @@ stdout of test 'tst115` in directory 'src/mal` itself:
 ## the next step is to trace the call of a mal function call
 #
 #command + (L:any_1,R:any_1):any_1 
-!ERROR: MALException: : address of 'user.addIntInt' not found
+!MALException:MAL.getAddress:address of 'user.addIntInt' not found
 command user.+(L:any_1,R:any_1):any_1 address addIntInt;	# 0  dynamic (+:any_1)<-(L:any_1)(R:any_1)
 #
 #function doitOnce():int;
@@ -48,7 +48,8 @@ end doitTwice;	# 5
 #c:= 3;
 #d:= doitTwice("wrong");
 #
-!ERROR: TypeException: user.main[7]: 'user.doitTwice' undefined in: d:int := user.doitTwice(_9:str)
+!TypeException:user.main[7]:'user.doitTwice' undefined in: d:int := user.doitTwice(_9:str)
+
 function user.main():void;	# 0  (main:void)
 # the next step is to trace the call of a mal function call 	# 1  (_1:str)
     a := 1;	# 2  (a:int)<-(_3:int)

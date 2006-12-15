@@ -24,10 +24,14 @@ stdout of test 'rangePush01` in directory 'src/optimizer` itself:
 #optimizer.rangePush();
 #mdb.list();
 #
-!ERROR: TypeException: user.main[4]: 'bat.new' undefined in: s2:bat[:oid,:int] := bat.new(_3:void, _4:int)
-!ERROR: TypeException: user.main[7]: 'bat.new' undefined in: s5:bat[:oid,:int] := bat.new(_3:void, _4:int)
-!ERROR: TypeException: user.main[8]: 'bat.new' undefined in: s6:bat[:oid,:int] := bat.new(_3:void, _4:int)
-!ERROR: TypeException: user.main[9]: 'bat.new' undefined in: s7:bat[:oid,:int] := bat.new(_3:void, _4:int)
+!TypeException:user.main[4]:'bat.new' undefined in: s2:bat[:oid,:int] := bat.new(_3:void, _4:int)
+
+!TypeException:user.main[7]:'bat.new' undefined in: s5:bat[:oid,:int] := bat.new(_3:void, _4:int)
+
+!TypeException:user.main[8]:'bat.new' undefined in: s6:bat[:oid,:int] := bat.new(_3:void, _4:int)
+
+!TypeException:user.main[9]:'bat.new' undefined in: s7:bat[:oid,:int] := bat.new(_3:void, _4:int)
+
 function user.main():void;	# 0  (main:void)
 # detect empty ranges 	# 1  (_1:str)
     b := bat.new(nil:void,nil:int);	# 2 CMDBATnew (b:bat[:void,:int])<-(_3:void)(_4:int)

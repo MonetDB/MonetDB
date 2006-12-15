@@ -14,8 +14,10 @@ stdout of test 'tst008` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 #i:=32;
 #io.printi;
-!ERROR: SyntaxException: : io.printi;
-!ERROR: SyntaxException: :         ^'(' expected
+!SyntaxException:parseError:io.printi;
+
+!SyntaxException:parseError:        ^'(' expected
+
 #io.print(i);
 #
 function user.main():void;	# 0  (main:void)

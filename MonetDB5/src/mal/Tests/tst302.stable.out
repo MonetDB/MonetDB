@@ -21,7 +21,7 @@ function user.main():void;	# 0  (main:void)
     raise PermissionDeniedException := 1234;	# 3  (PermissionDeniedException:int)<-(_4:int)
     io.print("should not come here\n");	# 4 IOprint_val (_5:void)<-(_6:str)
 end main;	# 5  
-!ERROR: MALException: : PermissionDeniedException:user.main[5]:Exception not catched
+!PermissionDeniedException:user.main[5]:Exception not catched
 MALException:user.main[3]:Exception raised
 # 17:40:17 >  
 # 17:40:17 >  Done.

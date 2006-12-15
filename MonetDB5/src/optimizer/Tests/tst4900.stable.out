@@ -189,11 +189,16 @@ end f1;	# 84
 #	##f1();
 #
 #
-!ERROR: TypeException: user.f1[86]: 't59' may not be used before being initialized
-!ERROR: TypeException: user.f1[86]: 't48' may not be used before being initialized
-!ERROR: TypeException: user.f1[110]: 't83' may not be used before being initialized
-!ERROR: TypeException: user.f1[110]: 't82' may not be used before being initialized
-!ERROR: TypeException: user.f1[114]: 't84' may not be used before being initialized
+!TypeException:user.f1[86]:'t59' may not be used before being initialized
+
+!TypeException:user.f1[86]:'t48' may not be used before being initialized
+
+!TypeException:user.f1[110]:'t83' may not be used before being initialized
+
+!TypeException:user.f1[110]:'t82' may not be used before being initialized
+
+!TypeException:user.f1[114]:'t84' may not be used before being initialized
+
 function user.main():void;	# 0  (main:void)
     mdb.list("user","f1");	# 1 MDBlist3 (_6:void)<-(_2:str)(_3:str)
 ##f1(); 	# 2  (_8:str)

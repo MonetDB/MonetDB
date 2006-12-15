@@ -23,8 +23,9 @@ function user.main():void;	# 0  (main:void)
     bat.setPersistent(b,false);	# 3 BKCpersists (_4:void)<-(b:bat[:any,:any])(_5:bit)
     transaction.commit();	# 4 TRNglobal_commit (_6:bit)
 end main;	# 5  
-!ERROR: MALException: : MALException:bbp.bind:failed to locate object in box
-# 17:40:23 >  
-# 17:40:23 >  Done.
-# 17:40:23 >  
+!MALException:bbp.bind:failed to locate object in box
+
+# 09:12:52 >  
+# 09:12:52 >  Done.
+# 09:12:52 >  
 

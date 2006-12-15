@@ -17,9 +17,12 @@ stdout of test 'tst070` in directory 'src/mal` itself:
 #(x,y):= point(z:int);
 #(initial:str,surname:str):= getName();
 #
-!ERROR: TypeException: user.main[2]: 'user.point' undefined in: (x:any, y:any) := user.point(z:int)
-!ERROR: TypeException: user.main[3]: 'user.getName' undefined in: (initial:str, surname:str) := user.getName()
-!ERROR: TypeException: user.main[2]: 'z' may not be used before being initialized
+!TypeException:user.main[2]:'user.point' undefined in: (x:any, y:any) := user.point(z:int)
+
+!TypeException:user.main[3]:'user.getName' undefined in: (initial:str, surname:str) := user.getName()
+
+!TypeException:user.main[2]:'z' may not be used before being initialized
+
 function user.main():void;	# 0  (main:void)
 # parsing operations with multi-assignments 	# 1  (_2:str)
     (x,y):= user.point(z);	# 2  unknown (x:any)(y:any)<-(z:int)

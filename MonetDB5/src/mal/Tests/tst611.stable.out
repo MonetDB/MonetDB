@@ -21,8 +21,10 @@ stdout of test 'tst611` in directory 'src/mal` itself:
 ##the next one should fail
 #setWriteMode(RKB);
 #
-!ERROR: TypeException: user.main[7]: 'bat.setWriteMode' undefined in: _11:any := bat.setWriteMode(RKB:any)
-!ERROR: TypeException: user.main[7]: 'RKB' may not be used before being initialized
+!TypeException:user.main[7]:'bat.setWriteMode' undefined in: _11:any := bat.setWriteMode(RKB:any)
+
+!TypeException:user.main[7]:'RKB' may not be used before being initialized
+
 function user.main():void;	# 0  (main:void)
 # initialization of BATs on the stack 	# 1  (_1:str)
 # caused a problem when executed in interactve mode 	# 2  (_2:str)

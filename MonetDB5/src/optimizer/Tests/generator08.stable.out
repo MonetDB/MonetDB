@@ -107,7 +107,7 @@ exit s;
     pbm.discard("pbat_s");
 end main;
 [ "start" ]
-!ERROR: MALException: : MALException:pbm.newIterator:Could not find PBAT
+!MALException:pbm.newIterator:Could not find PBAT
 
 # 20:51:04 >  
 # 20:51:04 >  Done.

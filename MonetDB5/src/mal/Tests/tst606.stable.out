@@ -62,7 +62,7 @@ end release;	# 3
 #
 ## accept the definition of a new constant
 #function deposit(v:any_1,name:str) 
-!ERROR: MALException: : address of 'constants.space_deposit' not found
+!MALException:MAL.getAddress:address of 'constants.space_deposit' not found
 #
 #
 

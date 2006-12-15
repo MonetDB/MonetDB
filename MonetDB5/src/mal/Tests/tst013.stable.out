@@ -28,8 +28,10 @@ stdout of test 'tst013` in directory 'src/mal` itself:
 #	redo;
 #exit;
 #
-!ERROR: SyntaxException: user.main[3]: label '_4' not in guarded block
-!ERROR: SyntaxException: user.main[14]: label 't' not in guarded block
+!SyntaxException:user.main[3]:label '_4' not in guarded block
+
+!SyntaxException:user.main[14]:label 't' not in guarded block
+
 function user.main():void;	# 0  (main:void)
 # incomplete barrier blocks. Resolve them when unambigous 	# 1  (_1:str)
 barrier z := true;	# 2  (z:bit)<-(_3:bit) jump 4

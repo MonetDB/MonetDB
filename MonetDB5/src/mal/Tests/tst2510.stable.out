@@ -24,7 +24,8 @@ stdout of test 'tst2510` in directory 'src/mal` itself:
 #    #print("exception");
 ##exit MALException;
 #end tryme;
-!ERROR: TypeException: user.tryme[1]: 'b' may not be used before being initialized
+!TypeException:user.tryme[1]:'b' may not be used before being initialized
+
 factory user.tryme():bit;	# 0  (tryme:bit)
     bat.setWriteMode(b);	# 1 BKCsetWriteMode (_1:bat[:any,:any])<-(b:bat[:any_1,:any_2])
 barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 5
@@ -43,8 +44,9 @@ function user.main():void;	# 0  (main:void)
     user.tryme();	# 2  (_2:bit)
 # shouldn;t hang when you forget the exception 	# 3  (_3:str)
 end main;	# 4  
-!ERROR: MALException: : MALException:factory.call:Factory contains errors
-# 17:40:11 >  
-# 17:40:11 >  Done.
-# 17:40:11 >  
+!MALException:factory.call:Factory contains errors
+
+# 08:58:58 >  
+# 08:58:58 >  Done.
+# 08:58:58 >  
 

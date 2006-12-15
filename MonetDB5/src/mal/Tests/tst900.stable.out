@@ -17,11 +17,15 @@ stdout of test 'tst900` in directory 'src/mal` itself:
 #b:= new(:lng,:lng);
 #x:= multiplex.+(b,b);
 #d:= [+](b,c) ;;# parser bug
-!ERROR: SyntaxException: : d:= [+](b,c) ;;# parser bug
-!ERROR: SyntaxException: :    ^operator expected
+!SyntaxException:parseError:d:= [+](b,c) ;;# parser bug
+
+!SyntaxException:parseError:   ^operator expected
+
 #a:= b [+] b;
-!ERROR: SyntaxException: : a:= b [+] b;
-!ERROR: SyntaxException: :      ^operator expected
+!SyntaxException:parseError:a:= b [+] b;
+
+!SyntaxException:parseError:     ^operator expected
+
 function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. Testing syntax errors 	# 1  unknown (_1:str)
     b := bat.new(:lng,:lng);	# 2  unknown (b:any)<-(_3:lng)(_3:lng)

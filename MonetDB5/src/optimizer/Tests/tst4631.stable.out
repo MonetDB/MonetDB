@@ -238,9 +238,12 @@ end qry1;	# 101
 #optimizer.commonExpressionRemoval("user","qry1");
 #mdb.list("user","qry1");
 #
-!ERROR: TypeException: user.qry1[39]: 'V91' may not be used before being initialized
-!ERROR: TypeException: user.qry1[39]: 'V95' may not be used before being initialized
-!ERROR: TypeException: user.qry1[44]: 'V99' may not be used before being initialized
+!TypeException:user.qry1[39]:'V91' may not be used before being initialized
+
+!TypeException:user.qry1[39]:'V95' may not be used before being initialized
+
+!TypeException:user.qry1[44]:'V99' may not be used before being initialized
+
 Optimizer optimizer.commonTerms failed
 function user.qry1():void;	# 0  (qry1:void)
     V3:bat[:void,:date]  := user.bind("sys","lineitem","l_shipdate",0);	# 1  (V3:bat[:void,:date])<-(_2:str)(_3:str)(_4:str)(_5:int)

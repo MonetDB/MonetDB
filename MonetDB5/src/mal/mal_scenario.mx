@@ -221,7 +221,7 @@ getFreeScenario()
 		;
 
 	if (i == MAXSCEN) {
-		showException(MAL,"freeScenario:no scenario space left; adjust & recompile");
+		showException(MAL,"freeScenario", "no scenario space left (%d); adjust MAXSCEN and recompile", MAXSCEN);
 	} else {
 		scen = scenarioRec + i;
 	}

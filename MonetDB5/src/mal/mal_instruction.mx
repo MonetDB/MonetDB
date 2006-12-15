@@ -1522,7 +1522,7 @@ convertConstant(malType type, ValPtr vr)
 
 		ATOMfromstr(type, &d, &ll, vr->val.sval);
 		if (d == NULL) {
-			showException(SYNTAX,"Parse error in '%s'", vr->val.sval);
+			showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 			VALset(vr, type, ATOMnilptr(type));
 			return 1;
 		}
@@ -1530,7 +1530,7 @@ convertConstant(malType type, ValPtr vr)
 		if (ATOMextern(type) == 0)
 			GDKfree(d);
 #else
-		showException(SYNTAX,"newConstants:missing implementation\n");
+		showException(SYNTAX, "convertConstant", "missing implementation");
 #endif
 		return vr->vtype != type;
 	}
@@ -1623,7 +1623,7 @@ end.
 		/* see if an atomFromStr() function is available */
 		if (BATatoms[type].atomFromStr == 0) {
 			s = getTypeName(type);
-			showException(SYNTAX,"no string coercion for '%s'", s);
+			showException(SYNTAX, "convertConstant", "no string coercion for '%s'", s);
 			GDKfree(s);
 			break;
 		}
@@ -1645,7 +1645,7 @@ end.
 			/* and try to parse it from string as the desired type */
 			ATOMfromstr(type, &d, &ll, w);
 			if (d == 0) {
-				showException(SYNTAX,"Parse error in '%s'", w);
+				showException(SYNTAX, "convertConstant", "parse error in '%s'", w);
 				VALset(vr, type, ATOMnilptr(type));
 				GDKfree(w);
 				return 1;
@@ -1658,7 +1658,7 @@ end.
 #ifdef STRUCT_ALIGNED
 			ATOMfromstr(type, &d, &ll, vr->val.sval);
 			if (d == NULL) {
-				showException(SYNTAX,"Parse error in '%s'", vr->val.sval);
+				showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 				VALset(vr, type, ATOMnilptr(type));
 				return 1;
 			}
@@ -1666,7 +1666,7 @@ end.
 			if (ATOMextern(type) == 0)
 				GDKfree(d);
 #else
-			showException(SYNTAX,"newConstants:missing implementation\n");
+			showException(SYNTAX, "convertConstant", "missing implementation");
 #endif
 		}
 	}
@@ -1720,7 +1720,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			str ft,tt;
 			ft= getTypeName(otype);
 			tt= getTypeName(type);
-			showException(SYNTAX, "constant coercion error from %s to %s\n", ft,tt);
+			showException(SYNTAX, "defConstant", "constant coercion error from %s to %s", ft,tt);
 			GDKfree(ft);
 			GDKfree(tt);
 			mb->errors++;
@@ -1936,7 +1936,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 
 		if (newblk == NULL) {
 			mb->errors++;
-			showException(MAL,"pushInstruction:no storage left\n");
+			showException(MAL, "pushInstruction", "out of memory (requested: %d bytes)", space);
 			return;
 		}
 		memcpy(newblk, mb->stmt, mb->stop * sizeof(InstrPtr));

@@ -623,7 +623,9 @@ optimizeMALBlock(MalBlkPtr mb)
 				printInstruction(GDKout,mb,optimizers[pc],LIST_MAL_ALL);
 			}
 			if (msg) {
-				showException(MAL,msg);
+				str place = getExceptionPlace(msg);
+				showException(getExceptionType(msg), place, getExceptionMessage(msg));
+				GDKfree(place);
 				showErrors();
 				return msg;
 			}

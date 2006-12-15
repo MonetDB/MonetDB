@@ -17,7 +17,8 @@ stdout of test 'tst019` in directory 'src/mal` itself:
 #    w:="hello";
 #    return w;   # should produce a type error
 #end welcome;
-!ERROR: TypeException: user.welcome[3]: RETURN type mismatch at type 13
+!TypeException:user.welcome[3]:RETURN type mismatch at type 13
+
 function user.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
     w := "hello";	# 2  (w:str)<-(_5:str)
@@ -31,7 +32,7 @@ end welcome;	# 5
 #    return (w,i);   # should produce a type error
 #   # should produce a type error
 #end welcome0;
-!ERROR: SyntaxException: user.welcome0[3]: invalid return target
+!SyntaxException:user.welcome0[3]:invalid return target
 !
 function user.welcome0(lim:int):str;	# 0  (welcome0:str)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
@@ -64,7 +65,7 @@ end welcome2;	# 4
 #    i:= 2;
 #    return w:="hello"; #illegal return statement
 #end welcome3;
-!ERROR: SyntaxException: user.welcome3[2]: invalid return target
+!SyntaxException:user.welcome3[2]:invalid return target
 !
 function user.welcome3(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_4:int)
@@ -76,7 +77,8 @@ end welcome3;	# 4
 #    i:= 2;
 #    return (w,i):="hello"; #illegal return statement
 #end welcome4;
-!ERROR: TypeException: user.welcome4[2]: Multiple assignment mismatch
+!TypeException:user.welcome4[2]:Multiple assignment mismatch
+
 function user.welcome4(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_4:int)
     return (w,i):= "hello";	# 2  unknown (w:str)(i:int)<-(_5:str)
@@ -99,7 +101,8 @@ end welcome5;	# 3
 #
 #(x,y):= user.welcome2(1);
 #
-!ERROR: TypeException: user.main[5]: 'user.welcome2' undefined in: (x:any, y:str) := user.welcome2(_2:int)
+!TypeException:user.main[5]:'user.welcome2' undefined in: (x:any, y:str) := user.welcome2(_2:int)
+
 function user.main():void;	# 0  (main:void)
     y := user.welcome1(1);	# 1  (y:str)<-(_2:int)
     io.print(y);	# 2 IOprint_val (_3:void)<-(y:str)

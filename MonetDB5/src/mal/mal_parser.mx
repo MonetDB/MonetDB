@@ -1804,7 +1804,7 @@ str parseError(Client cntxt, str msg)
 	}
 	*s++= '\n';
 	*s = 0;
-	showException(SYNTAX, buf);
+	showException(SYNTAX, "parseError", buf);
 	/* produce the position marker*/
 	s= buf;
 	i = position(cntxt) -1;
@@ -1817,7 +1817,7 @@ str parseError(Client cntxt, str msg)
 	if( msg && strlen(msg)+strlen(buf) < 1020)
 		snprintf(s,1020,"%s", msg);
 	skipToEnd(cntxt);
-	showException(SYNTAX, buf);
+	showException(SYNTAX, "parseError", buf);
 	return 0;
 }
 @}

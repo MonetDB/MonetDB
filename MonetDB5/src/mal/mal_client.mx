@@ -355,7 +355,7 @@ Client MCnewClient(){
 	mal_set_lock(mal_contextLock, "newClient");
 	if( mal_clients[CONSOLE].user &&
 			mal_clients[CONSOLE].mode == FINISHING){
-		showException(MAL,"newClient:system shutdown in progress \n");
+		showException(MAL,"newClient", "system shutdown in progress");
 		mal_unset_lock(mal_contextLock, "newClient");
 		return NULL;
 	}
@@ -400,7 +400,7 @@ Client MCgetClient()
 
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
 		if( c->mythread) stream_printf(c->fdout,"client %d\n",c->mythread);
-	showException(MAL,"unexpected call to getClient %d\n" , tid);
+	showException(MAL, "getClient", "unexpected call to getClient %d", tid);
 	return NULL;
 }
 
@@ -485,7 +485,7 @@ The GDK thread administration should be set to reflect use of
 the proper IO descriptors.
 @c
 	if ( t==0) {
-		showException(MAL,"Failed to initialize client\n");
+		showException(MAL, "initClientThread", "Failed to initialize client");
 		MPresetProfiler(c->fdout);
 		assert(c->bak==NULL);
 		if( c->fdin){
@@ -639,7 +639,7 @@ void MCcloseClient(Client c) {
 
 	for (k = mal_clients+1; k < mal_clients+MAL_MAXCLIENTS; k++) 
 		if ((k->mode > FINISHING) ){
-			showException(MAL,"closeClient:client '%d' is still active\n", k->user);
+			showException(MAL,"closeClient", "client '%d' is still active", k->user);
 			MCkillClient(k, PROCESSTIMEOUT);
 		}
 	MCkillClient(CONSOLE, PROCESSTIMEOUT);

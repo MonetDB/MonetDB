@@ -39,7 +39,7 @@ end welcome;	# 8
 #a:= user.welcome(2);
 #mdb.list();
 #
-!ERROR: MALException: : MALException:optimizer.MACROvalidate:RETURN statement is not the last one
+!MALException:optimizer.MACROvalidate:RETURN statement is not the last one
 
 # 20:03:29 >  
 # 20:03:29 >  Done.

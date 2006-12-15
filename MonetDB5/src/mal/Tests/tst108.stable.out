@@ -25,9 +25,12 @@ stdout of test 'tst108` in directory 'src/mal` itself:
 #exit	t;
 #	i:= 0;
 #
-!ERROR: SyntaxException: user.main[7]: exit-label 'v' doesnot match 't'
-!ERROR: SyntaxException: user.main[9]: label 't' not in guarded block
-!ERROR: SyntaxException: user.main[10]: exit-label 't' without begin-label
+!SyntaxException:user.main[7]:exit-label 'v' doesnot match 't'
+
+!SyntaxException:user.main[9]:label 't' not in guarded block
+
+!SyntaxException:user.main[10]:exit-label 't' without begin-label
+
 function user.main():void;	# 0  (main:void)
 # analyse the basic interpreter loop 	# 1  (_1:str)
     i := 0;	# 2  (i:int)<-(_3:int)

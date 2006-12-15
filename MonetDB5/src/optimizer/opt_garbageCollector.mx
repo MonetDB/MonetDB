@@ -228,8 +228,8 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (top < MAXDEPTH - 2) {
 				} else {
 					mb->errors++;
-					showException(MAL,"optimizer.garbageCollector:"
-							 "Too deeply nested MAL program\n");
+					showException(MAL,"optimizer.garbageCollector",
+							 "Too deeply nested MAL program");
 				}
 			}
 			if (blockExit(p))

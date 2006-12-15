@@ -27,10 +27,14 @@ stdout of test 'tst050` in directory 'src/mal` itself:
 #y:bat[:str,:int]:= new(:int,:int);
 #f:flt := "wrong";
 #
-!ERROR: TypeException: user.main[9]: type mismatch sht := lng
-!ERROR: TypeException: user.main[10]: type mismatch lng := sht
-!ERROR: TypeException: user.main[11]: 'bat.new' undefined in: y:bat[:str,:int] := bat.new(_11:int, _11:int)
-!ERROR: TypeException: user.main[12]: type mismatch flt := str
+!TypeException:user.main[9]:type mismatch sht := lng
+
+!TypeException:user.main[10]:type mismatch lng := sht
+
+!TypeException:user.main[11]:'bat.new' undefined in: y:bat[:str,:int] := bat.new(_11:int, _11:int)
+
+!TypeException:user.main[12]:type mismatch flt := str
+
 function user.main():void;	# 0  (main:void)
 # Variables names may be tagged with a type upfront. 	# 1  (_1:str)
 # They may be initialized with a lexical constant using 	# 2  (_2:str)

@@ -61,7 +61,7 @@ exit b:bat[:void,:int] ;
     io.print("finished");
 end main;
 [ "start" ]
-!ERROR: MALException: : MALException:pbm.newIterator:Could not find PBAT
+!MALException:pbm.newIterator:Could not find PBAT
 
 # 08:52:35 >  
 # 08:52:35 >  Done.

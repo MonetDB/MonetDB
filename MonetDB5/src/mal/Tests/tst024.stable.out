@@ -16,12 +16,15 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 #i:= 12;		# internal location of i is 3
 #
 #_2:=55;		# acceptable
-!ERROR: MALException: user.main[0]: '_2' overwrites i
+!MALException:user.main[0]:'_2' overwrites i
+
 #_3:= 23;	# error, overwriting non-temp
 #_5:=23;
-!ERROR: MALException: user.main[0]: '_5' overwrites _2
+!MALException:user.main[0]:'_5' overwrites _2
+
 #io.print(_5);
-!ERROR: MALException: user.main[0]: '_5' overwrites _2
+!MALException:user.main[0]:'_5' overwrites _2
+
 #
 function user.main():void;	# 0  (main:void)
 #detect illegal use of temporary variables 	# 1  unknown (_1:str)

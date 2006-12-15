@@ -22,7 +22,8 @@ end test;	# 2
 #c:= bbp.new(:int,:int);
 #user.test("hello",b,c);
 #
-!ERROR: TypeException: user.main[4]: 'user.test' undefined in: _5:any := user.test(_6:str, b:bat[:int,:int], c:bat[:int,:int])
+!TypeException:user.main[4]:'user.test' undefined in: _5:any := user.test(_6:str, b:bat[:int,:int], c:bat[:int,:int])
+
 function user.main():void;	# 0  (main:void)
 #variable arguments are only allowed in patterns 	# 1  (_1:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)

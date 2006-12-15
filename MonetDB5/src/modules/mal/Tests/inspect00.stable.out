@@ -77,8 +77,9 @@ stack depth 2
 [ "tst",  "0@0"	  ]
 [ "i",	  "nil"	  ]
 [ "_2",	  "0@0"	  ]
-!ERROR: MALException: : MALException:mdb.getStackFrame:Illegal depth.
-# 18:03:43 >  
-# 18:03:43 >  Done.
-# 18:03:43 >  
+!MALException:mdb.getStackFrame:Illegal depth.
+
+# 09:13:25 >  
+# 09:13:25 >  Done.
+# 09:13:25 >  
 

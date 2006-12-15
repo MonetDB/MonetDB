@@ -25,9 +25,12 @@ end tst2;	# 2
 ##The call to tst2 fails at runtime
 #tst2(b);
 #
-!ERROR: TypeException: user.tst2[1]: 'bat.insert' undefined in: _2:void := bat.insert(b:bat[:int,:str], _3:str, _4:int)
-!ERROR: MALException: user.tst2[0]: Error in cloned function
-!ERROR: TypeException: user.main[4]: 'user.tst2' undefined in: _6:void := user.tst2(b:bat[:int,:str])
+!TypeException:user.tst2[1]:'bat.insert' undefined in: _2:void := bat.insert(b:bat[:int,:str], _3:str, _4:int)
+
+!MALException:user.tst2[0]:Error in cloned function
+
+!TypeException:user.main[4]:'user.tst2' undefined in: _6:void := user.tst2(b:bat[:int,:str])
+
 function user.main():void;	# 0  (main:void)
 #test the capability to deal with unspecified bats. 	# 1  (_1:str)
     b := bat.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_3:int)(_4:str)

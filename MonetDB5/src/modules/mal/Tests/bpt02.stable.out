@@ -62,7 +62,7 @@ end main;	# 21
 ptop=2 plimit=1024
 [0] bid=7 pid=7 f=0, l=10 prv=-1 nxt=1 cap=-1
 [1] bid=7 pid=8 f=10, l=20 prv=0 nxt=-1 cap=-1
-!ERROR: MALException: : MALException:partitions.deposit:BAT group unknown
+!MALException:partitions.deposit:BAT group unknown
 
 # 00:03:57 >  
 # 00:03:57 >  Done.

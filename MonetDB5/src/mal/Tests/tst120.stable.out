@@ -35,11 +35,16 @@ stdout of test 'tst120` in directory 'src/mal` itself:
 #d:= bottom.first("hello world");
 #e:= top.first(2:sht);
 #
-!ERROR: TypeException: user.main[4]: 'bottom.second' undefined in: a:any := bottom.second(_5:str)
-!ERROR: TypeException: user.main[5]: 'top.first' undefined in: b:any := top.first(_7:int)
-!ERROR: TypeException: user.main[6]: 'top.first' undefined in: c:any := top.first(_9:sht)
-!ERROR: TypeException: user.main[7]: 'bottom.first' undefined in: d:any := bottom.first(_11:str)
-!ERROR: TypeException: user.main[8]: 'top.first' undefined in: e:any := top.first(_13:sht)
+!TypeException:user.main[4]:'bottom.second' undefined in: a:any := bottom.second(_5:str)
+
+!TypeException:user.main[5]:'top.first' undefined in: b:any := top.first(_7:int)
+
+!TypeException:user.main[6]:'top.first' undefined in: c:any := top.first(_9:sht)
+
+!TypeException:user.main[7]:'bottom.first' undefined in: d:any := bottom.first(_11:str)
+
+!TypeException:user.main[8]:'top.first' undefined in: e:any := top.first(_13:sht)
+
 function user.main():void;	# 0  (main:void)
 #define 2 modules and check location of routines 	# 1  (_1:str)
 # lookup DBHOME/mal/tst120a.mal 	# 2  (_2:str)

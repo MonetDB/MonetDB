@@ -30,7 +30,8 @@ end swap;	# 4
 #a:= swap(3,4);
 #print(a);
 #
-!ERROR: TypeException: user.main[5]: 'user.swap' undefined in: a:any := user.swap(_9:int, _10:int)
+!TypeException:user.main[5]:'user.swap' undefined in: a:any := user.swap(_9:int, _10:int)
+
 function user.main():void;	# 0  (main:void)
 # parsing operations with multi-assignments 	# 1  (_1:str)
     (x,y):= user.swap(1,2);	# 2  (x:int)(y:int)<-(_4:int)(_5:int)
