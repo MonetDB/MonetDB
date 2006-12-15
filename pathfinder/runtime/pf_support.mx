@@ -3152,6 +3152,10 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
   var rid_nid_update := ws.fetch(RID_NID_UPDATE).find(cont);
   var nid_qn_ins_update := ws.fetch(NID_QN_INS_UPDATE).find(cont);
   var nid_qn_del_update := ws.fetch(NID_QN_DEL_UPDATE).find(cont);
+  var attr_own := ws.fetch(ATTR_OWN).find(cont);
+  var attr_own_update := ws.fetch(ATTR_OWN_UPDATE).find(cont);
+  var attr_qn_update := ws.fetch(ATTR_QN_UPDATE).find(cont);
+  var attr_prop_update := ws.fetch(ATTR_PROP_UPDATE).find(cont);
   var modified_page := ws.fetch(MODIFIED_PAGE);
 
   var pageno := oid(lng(newpre) >> REMAP_PAGE_BITS);
@@ -3201,7 +3205,15 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
       modified_page.insert(cont, oid(lng(rid) >> REMAP_PAGE_BITS));
     }
 
-    var update_data := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
+    var update_data;
+    if (isoldpage) {
+      var pre := swizzle(rid, map_pid);
+      var pid_map := ws.fetch(PID_MAP).find(cont);
+      update_data := [swizzle](pre_nid.reverse().select(pre, oid(lng(pre) + pgsize)), pid_map).reverse();
+      update_data.access(BAT_WRITE).myupdate(rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize)).reverse());
+    } else {
+      update_data := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
+    }
     {
       var nid_qn_del;
       if (isoldpage) {
@@ -3270,6 +3282,17 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
     nid_rid_update := myupdate(nid_rid_update, nid_rid_updates);
     modified_nid.reverse().accbuild("hash");
     modified_nid.insert(nid_rid_update.project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
+
+    # delete attributes of deleted nodes
+    # split attributes into two subsets: unchanged attributes and modified attributes
+    var attrs1 := attr_own_update.join(nid_rid_updates);
+    var attrs2 := attr_own.join(nid_rid_updates).kdiff(attr_own_update);
+    attr_own_update.myupdate(attrs1);
+    attr_own_update.myupdate(attrs2);
+    attr_qn_update.myupdate(attrs1);
+    attr_qn_update.myupdate(attrs2);
+    attr_prop_update.myupdate(attrs1);
+    attr_prop_update.myupdate(attrs2);
 
     size :-= pgsize + 1;
     newpre := oid((lng(newpre) + pgsize) + 1);
