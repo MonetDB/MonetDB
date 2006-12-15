@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MonetDB-Installer", "..\..\..\MonetDB5-Installer\MonetDB-Installer.vdproj", "{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MonetDB5", "..\..\..\..\..\..\..\..\Documents and Settings\Administrator\My Documents\Setup1.vdproj", "{EBAB5BB9-E0E3-4D64-8658-5E542675A0C2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		Release|Default = Release|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Debug|Default.ActiveCfg = Debug
+		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Debug|Default.Build.0 = Debug
+		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Release|Default.ActiveCfg = Release
+		{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}.Release|Default.Build.0 = Release
+		{EBAB5BB9-E0E3-4D64-8658-5E542675A0C2}.Debug|Default.ActiveCfg = Debug
+		{EBAB5BB9-E0E3-4D64-8658-5E542675A0C2}.Debug|Default.Build.0 = Debug
+		{EBAB5BB9-E0E3-4D64-8658-5E542675A0C2}.Release|Default.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
