@@ -806,7 +806,7 @@ SQLparser(Client c)
 
 	be = ((backend *) c->state[PARSER]);
 	if (be == 0) {
-		showException(SQL,"SQL state descriptor missing\n");
+		showException(SQL,"sql","SQL state descriptor missing\n");
 		throw(SQL, "SQLparser", "State descriptor missing");
 	}
 	oldvtop = c->curprg->def->vtop;
@@ -1238,7 +1238,7 @@ cleanup_engine:
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
 		} else {
-			showException(SQL,msg);
+			showException(SQL,"sql",msg);
 		}
 		showErrors();
 		m->session->status = -10;

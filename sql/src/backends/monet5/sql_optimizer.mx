@@ -346,10 +346,10 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				getVarConstant(mb, k).val.bval = b->batCacheid;
 				if (mb->var[k]->props == 0)
 					mb->var[k]->props = newPropertySet();
-				setProperty(getProps(k),"bid", "=", TYPE_int, &b->batCacheid);
-				setProperty(getProps(k),"rows", "=", TYPE_lng, &rows);
+				setProperty(getProps(mb,k),"bid", "=", TYPE_int, &b->batCacheid);
+				setProperty(getProps(mb,k),"rows", "=", TYPE_lng, &rows);
 				if (not_null)
-					setProperty(getProps(k),"not_nil", "=", TYPE_bit, &t);
+					setProperty(getProps(mb,k),"not_nil", "=", TYPE_bit, &t);
 				BBPunfix(b->batCacheid);
 				actions++;
 			}
@@ -373,7 +373,7 @@ str defaultPlan=
 	/* "joinselect," */
 	"modes,"
 	"aliases,"
-	"crackers," 
+	/* "crackers," */
 	"commonTerms,"
 	"accumulators,"
 	"joinPath,"
