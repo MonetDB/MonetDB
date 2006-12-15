@@ -1989,14 +1989,14 @@ setVarProperty(MalBlkPtr mb, int i, str name, str op, ValPtr cst)
 {
 	bit t = TRUE;
 
-	if (getProps(i) == NULL)
-		getProps(i) = newPropertySet();
+	if (getProps(mb,i) == NULL)
+		getProps(mb,i) = newPropertySet();
 
 	if (cst == NULL)
-		setProperty(getProps(i), name, "", TYPE_bit, &t);
+		setProperty(getProps(mb,i), name, "", TYPE_bit, &t);
 
 	else
-		setProperty(getProps(i), name, op, cst->vtype, VALget(cst));
+		setProperty(getProps(mb,i), name, op, cst->vtype, VALget(cst));
 }
 
 @+ Reverse programming
@@ -2131,7 +2131,7 @@ beginning of each line.
 @= showParam
         tpe= getTypeName(getArgType(mb,p,i));
 		if( flg & LIST_MAL_PROPS ){
-			ps= getProps(getArg(p,i));
+			ps= getProps(mb,getArg(p,i));
 			pstring= propertySet2str(ps);
 		} else pstring= GDKstrdup("");
         advance(t);
@@ -2154,7 +2154,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	str t, tpe, pstring;
 	PropertySet ps = 0;
 
-	ps = getProps(getArg(p, 0));
+	ps = getProps(mb,getArg(p, 0));
 	pstring = propertySet2str(ps);
 	t = s;
 	sprintf(t, "%s%s ", (flg ? "" : "#"), fcnClass(p));
@@ -2318,7 +2318,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	case ASSIGNsymbol:
 		if (p->argc <= 1 && getFunctionId(p) == NULL) {
 			if( flg & LIST_MAL_PROPS ){
-				ps = getProps(getArg(p, 0));
+				ps = getProps(mb,getArg(p, 0));
 				pstring = propertySet2str(ps);
 			} else pstring = GDKstrdup("");
 
@@ -2345,7 +2345,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 
 			for (i = 0; i < p->retc; i++) {
 				if( flg & LIST_MAL_PROPS ){
-					ps = getProps(getArg(p, i));
+					ps = getProps(mb,getArg(p, i));
 					pstring = propertySet2str(ps);
 				} else pstring= GDKstrdup("");
 				if (getVar(mb, getArg(p, i))->isudftype) {

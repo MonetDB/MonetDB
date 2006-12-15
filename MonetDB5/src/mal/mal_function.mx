@@ -970,7 +970,7 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 		stream_printf(f,":%s", s=getTypeName(getVarType(mb,getArg(p,i))));
 		GDKfree(s);
 
-		ps = getProps(getArg(p,i));
+		ps = getProps(mb,getArg(p,i));
 		if( ps == 0) continue;
 		s= propertySet2str(ps);
 		for (; s && *s; s++)
