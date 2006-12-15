@@ -62,8 +62,7 @@ end main;	# 21
 !MALException:mserver.rpc:remote error: "TypeException:user.main[1]:'algebra.select' undefined in: e:any := algebra.select(d:any, low:int, _6:int)
 !TypeException:user.main[2]:'aggr.count' undefined in: i:any := aggr.count(d:any)
 !TypeException:user.main[1]:'d' may not be used before being initialized
-!TypeException:user.main[2]:'d' may not be used before being initialized
-"
+!TypeException:user.main[2]:'d' may not be used before being initialized"
 
 # 15:27:54 >  
 # 15:27:54 >  Done.

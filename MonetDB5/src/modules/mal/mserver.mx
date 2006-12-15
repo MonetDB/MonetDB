@@ -1205,18 +1205,30 @@ dump and inspect the sessions table.
 @= catchErrors
 	if (mapi_error(mid) == -4 && hdl && mapi_result_error(hdl)) {
 		str err = mapi_result_error(hdl);
+		size_t i;
 		if (err == NULL)
 			err = "(no additional error message)";
 		if (err[0] == '!')
 			err++;
+		i = strlen(err);
+		while (i > 0 && err[i - 1] == '\n') {
+			err[i - 1] = '\0';
+			i--;
+		}
 		throw(MAL, "@1", "remote error: \"%s\"", err);
 	}
 	if (mapi_error(mid)) {
 		str err = mapi_result_error(SERVERsessions[i].hdl);
+		size_t i;
 		if (err == NULL)
 			err = "(no additional error message)";
 		if (err[0] == '!')
 			err++;
+		i = strlen(err);
+		while (i > 0 && err[i - 1] == '\n') {
+			err[i - 1] = '\0';
+			i--;
+		}
 		throw(MAL, "@1", "remote error: \"%s\"", err);
 	}
 @c

@@ -34,8 +34,7 @@ function user.main():void;	# 0  (main:void)
     mserver.rpc(mid,"io.print(d);");	# 8 SERVERquery (_13:void)<-(mid:int)(_14:str)
     io.print("done");	# 9 IOprint_val (_15:void)<-(_16:str)
 end main;	# 10  
-!MALException:mserver.query:remote error: "TypeException:user.main[1]:'d' may not be used before being initialized
-"
+!MALException:mserver.query:remote error: "TypeException:user.main[1]:'d' may not be used before being initialized"
 
 # 15:27:53 >  
 # 15:27:53 >  Done.
