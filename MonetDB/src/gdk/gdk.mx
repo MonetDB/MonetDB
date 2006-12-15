@@ -1027,6 +1027,7 @@ they can either be stored on disk, loaded into memory, or memory mapped.
 @item int
 @tab
  HEAPdelete (Heap *dst, str o, str ext);
+@item int
 @tab
  HEAPwarm (Heap *h);
 @item int
