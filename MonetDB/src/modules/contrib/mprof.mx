@@ -170,7 +170,6 @@ be paired in statement blocks when it ran in parallel.
 	.COMP    = Tms_comp;
 	.HASH    = Tms_hash;
 	.NULL    = Tms_null;
-	.DEL	= Tms_del;
 .END;
        
 .COMMAND Tms_new() : Tms = Tms_new;
@@ -192,7 +191,6 @@ Beware of size differences between platforms.
 	.NEQUAL  = Ma_comp;
 	.HASH    = Ma_hash;
 	.NULL    = Ma_null;
-	.DEL	= Ma_del;
 .END;
 
 .COMMAND Ma_new(): Mallinfo = Ma_new;
@@ -221,7 +219,6 @@ number of physical IOs.
 	.NEQUAL  = Ru_comp;		
 	.HASH    = Ru_hash;
 	.NULL    = Ru_null;
-	.DEL	= Ru_del;
 .END;
 
 .COMMAND Ru_new() : Rusage = Ru_new;
@@ -616,13 +613,6 @@ Tms_null(void)
 	return (&Tmsnullval);
 }
 
-void
-Tms_del(Heap *h, var_t *b)
-{
-	(void) h;
-	(void) b;
-}
-
 hash_t
 Tms_hash(Tms *T			/* IN: to-be-hashed Tms. */
     )
@@ -777,13 +767,6 @@ Ma_null(void)
 	return &Mu_null_record;
 }
 
-void
-Ma_del(Heap *h, var_t *b)
-{
-	(void) h;
-	(void) b;
-}
-
 hash_t
 Ma_hash(Mallinfo *M)
 {
@@ -936,13 +919,6 @@ Ru_null(void)
 	Rusage_null_record.ru_inblock = -1;
 	Rusage_null_record.ru_oublock = -1;
 	return &Rusage_null_record;
-}
-
-void
-Ru_del(Heap *h, var_t *b)
-{
-	(void) h;
-	(void) b;
 }
 
 hash_t

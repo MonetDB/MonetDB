@@ -1503,7 +1503,13 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			   || (b->ttype == TYPE_oid  && tpe == TYPE_int) /* not covered by b->ttype < tpe */
 #else
 			   || (b->ttype == TYPE_void && tpe >= TYPE_oid)
+			   || (b->ttype == TYPE_wrd  && tpe == TYPE_oid) /* not covered by b->ttype < tpe */
 			   || (b->ttype == TYPE_lng  && tpe == TYPE_oid) /* not covered by b->ttype < tpe */
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
+			   || (b->ttype == TYPE_wrd  && tpe >= TYPE_int) /* not covered by b->ttype < tpe */
+#else
+			   || (b->ttype == TYPE_lng  && tpe == TYPE_wrd) /* not covered by b->ttype < tpe */
 #endif
 			   || (b->ttype <= TYPE_oid && tpe == TYPE_void)) {
 			/* casts with target domain larger than source domain, i.e.,
