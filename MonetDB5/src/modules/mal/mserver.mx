@@ -1203,12 +1203,22 @@ A few extra routines should be defined to
 dump and inspect the sessions table.
 	
 @= catchErrors
-	if( mapi_error(mid) == -4 && hdl && mapi_result_error(hdl) ){
-		throw(MAL, "@1", mapi_result_error(hdl));
+	if (mapi_error(mid) == -4 && hdl && mapi_result_error(hdl)) {
+		str err = mapi_result_error(hdl);
+		if (err == NULL)
+			err = "(no additional error message)";
+		if (err[0] == '!')
+			err++;
+		throw(MAL, "@1", "remote error: \"%s\"", err);
 	}
-	if( mapi_error(mid) )
-		throw(MAL, "@1",
-			mapi_result_error(SERVERsessions[i].hdl));
+	if (mapi_error(mid)) {
+		str err = mapi_result_error(SERVERsessions[i].hdl);
+		if (err == NULL)
+			err = "(no additional error message)";
+		if (err[0] == '!')
+			err++;
+		throw(MAL, "@1", "remote error: \"%s\"", err);
+	}
 @c
 #define MAXSESSIONS 32
 struct{

@@ -59,10 +59,11 @@ function user.main():void;	# 0  (main:void)
     d:bat[:int,:int]  := mserver.rpc(mid,"io.print(d);");	# 19 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_37:str)
     io.print(d);	# 20 IOprint_val (_38:void)<-(d:bat[:int,:int])
 end main;	# 21  
-!ERROR: MALException: : MALException:mserver.rpc:!ERROR: TypeException: user.main[1]: 'algebra.select' undefined in: e:any := algebra.select(d:any, low:int, _6:int)
-!ERROR: TypeException: user.main[2]: 'aggr.count' undefined in: i:any := aggr.count(d:any)
-!ERROR: TypeException: user.main[1]: 'd' may not be used before being initialized
-!ERROR: TypeException: user.main[2]: 'd' may not be used before being initialized
+!MALException:mserver.rpc:remote error: "TypeException:user.main[1]:'algebra.select' undefined in: e:any := algebra.select(d:any, low:int, _6:int)
+!TypeException:user.main[2]:'aggr.count' undefined in: i:any := aggr.count(d:any)
+!TypeException:user.main[1]:'d' may not be used before being initialized
+!TypeException:user.main[2]:'d' may not be used before being initialized
+"
 
 # 15:27:54 >  
 # 15:27:54 >  Done.
