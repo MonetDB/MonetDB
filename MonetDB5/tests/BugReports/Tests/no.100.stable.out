@@ -94,14 +94,14 @@ stdout of test 'no.100` in directory 'tests/BugReports` itself:
 #	xa_a := clients.quit();
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #
-!ERROR: TypeException: user.main[61]: 'batcalc.oid' undefined in: ka_a:any := batcalc.oid(ja_a:bat[:int,:void])
-!ERROR: TypeException: user.main[62]: 'bat.reverse' undefined in: la_a:any := bat.reverse(ka_a:any)
-!ERROR: TypeException: user.main[65]: 'bat.setSequenceBase' undefined in: na_a:any := bat.setSequenceBase(a:bat[:int,:str], _68:oid)
-!ERROR: TypeException: user.main[68]: 'batcalc.oid' undefined in: pa_a:any := batcalc.oid(oa_a:bat[:int,:void])
-!ERROR: TypeException: user.main[69]: 'bat.reverse' undefined in: qa_a:any := bat.reverse(pa_a:any)
-!ERROR: TypeException: user.main[73]: 'batcalc.oid' undefined in: ta_a:any := batcalc.oid(sa_a:bat[:int,:void])
-!ERROR: TypeException: user.main[74]: 'bat.reverse' undefined in: ua_a:any := bat.reverse(ta_a:any)
-!ERROR: TypeException: user.main[75]: 'algebra.copy' undefined in: va_a:any := algebra.copy(ua_a:any)
+!TypeException:user.main[61]:'batcalc.oid' undefined in: ka_a:any := batcalc.oid(ja_a:bat[:int,:void])
+!TypeException:user.main[62]:'bat.reverse' undefined in: la_a:any := bat.reverse(ka_a:any)
+!TypeException:user.main[65]:'bat.setSequenceBase' undefined in: na_a:any := bat.setSequenceBase(a:bat[:int,:str], _68:oid)
+!TypeException:user.main[68]:'batcalc.oid' undefined in: pa_a:any := batcalc.oid(oa_a:bat[:int,:void])
+!TypeException:user.main[69]:'bat.reverse' undefined in: qa_a:any := bat.reverse(pa_a:any)
+!TypeException:user.main[73]:'batcalc.oid' undefined in: ta_a:any := batcalc.oid(sa_a:bat[:int,:void])
+!TypeException:user.main[74]:'bat.reverse' undefined in: ua_a:any := bat.reverse(ta_a:any)
+!TypeException:user.main[75]:'algebra.copy' undefined in: va_a:any := algebra.copy(ua_a:any)
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
