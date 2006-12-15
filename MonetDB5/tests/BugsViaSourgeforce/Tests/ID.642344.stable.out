@@ -42,7 +42,7 @@ stdout of test 'ID.642344` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := user.varval("bar");
 #	ba_a := io.print(aa_a);
 #
-!ERROR: TypeException: user.main[26]: 'user.varval' undefined in: aa_a:any := user.varval(_28:str)
+!TypeException:user.main[26]:'user.varval' undefined in: aa_a:any := user.varval(_28:str)
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)

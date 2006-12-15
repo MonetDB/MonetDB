@@ -14,7 +14,7 @@ stdout of test 'error.998332` in directory 'tests/BugDay_2005-10-06_4.9.3` itsel
 function user.main():void;	# 0  (main:void)
     raise SQLerror := "this is an error ";	# 1  (SQLerror:str)<-(_2:str)
 end main;	# 2  
-!ERROR: MALException: : MALException:user.main[2]:Exception not catched
+!MALException:user.main[2]:Exception not catched
 MALException:user.main[1]:this is an error 
 
 
