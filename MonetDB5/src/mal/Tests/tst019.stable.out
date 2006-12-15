@@ -32,8 +32,7 @@ end welcome;	# 5
 #    return (w,i);   # should produce a type error
 #   # should produce a type error
 #end welcome0;
-!SyntaxException:user.welcome0[3]:invalid return target
-!
+!SyntaxException:user.welcome0[3]:invalid return target!
 function user.welcome0(lim:int):str;	# 0  (welcome0:str)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
     w := "hello";	# 2  (w:str)<-(_5:str)
@@ -65,8 +64,7 @@ end welcome2;	# 4
 #    i:= 2;
 #    return w:="hello"; #illegal return statement
 #end welcome3;
-!SyntaxException:user.welcome3[2]:invalid return target
-!
+!SyntaxException:user.welcome3[2]:invalid return target!
 function user.welcome3(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_4:int)
     return w := "hello";	# 2  (w:str)<-(_5:str)
