@@ -133,10 +133,13 @@ int old_main(BAT* optbat, char* startNodes_name)
        r.aly@ewi.utwente.nl (2006-11-24): 
        bad hack (2*) because of this function writes behind the allocated space 
        and code ist not understood
+
+       roel.van.os@humanitech.nl (2006-12-15):
+       This bug should be fixed now, with the cleanup of nexi_rewriter.c
     */
-    txt_retr_model = calloc(2*MAX_QUERIES, sizeof(struct_RMT));
-    img_retr_model = calloc(2*MAX_QUERIES, sizeof(struct_RMI));
-    rel_feedback = calloc(2*MAX_QUERIES, sizeof(struct_RF));
+    txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
+    img_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMI));
+    rel_feedback = calloc(MAX_QUERIES, sizeof(struct_RF));
 
     /*** Set default configuration values here: ***/
     
