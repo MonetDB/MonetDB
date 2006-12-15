@@ -333,6 +333,10 @@ mal_export str propertySet2str(PropertySet ps);
 mal_export int isPropertyDefined(PropertySet ps, str nme);
 
 #define getProps(Y) mb->var[Y]->props
+#define fndArgProperty(M,P,I,NME) fndProperty(getProps(M,getArg(P,I)),NME)
+#define setArgProperty(M,P,I,NME,OP,T,V) if(getProps(M,getArg(P,I))== 0) \
+		getProps(M,getArg(P,I))= newPropertySet();\
+		setProperty(getProps(M,getArg(P,I)),NME,OP,T,V)
 
 #endif
 @c
