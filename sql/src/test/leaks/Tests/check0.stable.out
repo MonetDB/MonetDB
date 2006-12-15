@@ -23,8 +23,8 @@ Over..
 
 % .bbp,	.bbp,	.bbp # table_name
 % htype,	ttype,	count # name
-% int,	int,	bigint # type
-% 10,	7,	4 # length
+% clob,	clob,	bigint # type
+% 4,	3,	4 # length
 [ "int",	"int",	0	]
 [ "int",	"lng",	2	]
 [ "int",	"str",	284	]
