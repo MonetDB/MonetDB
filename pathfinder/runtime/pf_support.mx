@@ -2456,7 +2456,6 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
       var attr_prop_update := ws.fetch(ATTR_PROP_UPDATE).find(cont);
       var attr_own_update := ws.fetch(ATTR_OWN_UPDATE).find(cont);
       var attr_qn_update := ws.fetch(ATTR_QN_UPDATE).find(cont);
-      var attr_own := ws.fetch(ATTR_OWN).find(cont);
       var attr_qn := ws.fetch(ATTR_QN).find(cont);
 
       var list := attrconts.ord_uselect(cont).mirror(); # [i,i]
@@ -2483,7 +2482,9 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
       # check whether attribute already occurs on element and if so, raise error
       var aownunique := aownid.tunique().mirror(); # [DOC_NID,DOC_NID] unique owners of to-be-inserted attributes
       # get the (updated) set of attributes that belong to affected owners
-      var owners := attr_own.join(aownunique).kdiff(attr_own_update) # [DOC_ATID,DOC_NID]
+      var owners := get_attr_own(ws, aownunique, cont) # [DOC_NID,DOC_ATID]
+        .reverse() # [DOC_ATID,DOC_NID]
+        .kdiff(attr_own_update) # [DOC_ATID,DOC_NID]
         .access(BAT_WRITE).insert(attr_own_update.join(aownunique));
       # for those attributes, get the (updated) QNIDs
       var qnames := owners.mirror().leftjoin(attr_qn).kdiff(attr_qn_update) # [DOC_ATID,DOC_QNID]
@@ -2949,7 +2950,6 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               samedoc := true;
             }
           }
-          var insert_attr_own := ws.fetch(ATTR_OWN).find(insertcont);
           var insert_attr_qn := ws.fetch(ATTR_QN).find(insertcont);
           var insert_attr_cont := ws.fetch(ATTR_CONT).find(insertcont);
           var sameattrdoc := false;
@@ -2961,7 +2961,6 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           }
           var insert_attr_prop := ws.fetch(ATTR_PROP).find(insertcont);
 
-          var attr_own := ws.fetch(ATTR_OWN).find(doccont);
           var attr_own_update := ws.fetch(ATTR_OWN_UPDATE).find(doccont);
           var attr_qn_update := ws.fetch(ATTR_QN_UPDATE).find(doccont);
           var attr_prop_update := ws.fetch(ATTR_PROP_UPDATE).find(doccont);
@@ -3043,7 +3042,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               lastdata := max(lastdata, elems.reverse().max());
               elems := elems.mirror(); # PRE-PRE subset of the elements
               var prenids := elems.leftjoin(insert_pre_nid); # PRE-NID subset of the elements
-              var preattrs := prenids.leftjoin(insert_attr_own.reverse()); # PRE_ATID of all attrs on the element subset, ATID is key
+              var preattrs := get_attr_own(ws, prenids, insertcont); # PRE_ATID of all attrs on the element subset, ATID is key
               var attrattrs := preattrs.reverse().mirror(); # ATID-ATID
               var attrnqnids; # ATID-New QNID
               if (sameattrdoc) {
@@ -3206,10 +3205,18 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
     }
 
     var update_data;
+    var oldpre;
     if (isoldpage) {
-      var pre := swizzle(rid, map_pid);
+      var oldrid := rid;
+      if (rid_nid_update.exist(rid)) {
+        var nid := rid_nid_update.find(rid);
+        oldrid := nid_rid.find(nid);
+      }
+      oldpre := swizzle(oldrid, map_pid);
+    }
+    if (isoldpage) {
       var pid_map := ws.fetch(PID_MAP).find(cont);
-      update_data := [swizzle](pre_nid.reverse().select(pre, oid(lng(pre) + pgsize)), pid_map).reverse();
+      update_data := [swizzle](pre_nid.reverse().select(oldpre, oid(lng(oldpre) + pgsize)), pid_map).hmark(rid);
       update_data.access(BAT_WRITE).myupdate(rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize)).reverse());
     } else {
       update_data := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
@@ -3273,10 +3280,13 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
     } else {
       rid_nid.replace(update_data, true);
     }
-    var rid_nid_page := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
+    var rid_nid_page;
     if (isoldpage) {
+      rid_nid_page := pre_nid.reverse().select(oldpre, oid(lng(oldpre) + pgsize)).hmark(rid);
       var rid_nid_page_update := rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize));
       rid_nid_page := rid_nid_page.copy().access(BAT_WRITE).key(true).replace(rid_nid_page_update);
+    } else {
+      rid_nid_page := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
     }
     var nid_rid_updates := rid_nid_page.select(oid_nil, oid_nil).reverse().project(oid_nil);
     nid_rid_update := myupdate(nid_rid_update, nid_rid_updates);
@@ -3285,8 +3295,8 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
 
     # delete attributes of deleted nodes
     # split attributes into two subsets: unchanged attributes and modified attributes
-    var attrs1 := attr_own_update.join(nid_rid_updates);
-    var attrs2 := attr_own.join(nid_rid_updates).kdiff(attr_own_update);
+    var attrs1 := attr_own_update.join(nid_rid_updates); # [ATID,nil] for all NIDs in nid_rid_udpates
+    var attrs2 := get_attr_own(ws, nid_rid_updates.hmark(0@0), cont).reverse().project(oid_nil);
     attr_own_update.myupdate(attrs1);
     attr_own_update.myupdate(attrs2);
     attr_qn_update.myupdate(attrs1);
