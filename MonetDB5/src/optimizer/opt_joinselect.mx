@@ -42,11 +42,12 @@ comment "Replace select with join select";
 @c
 #include "opt_joinselect.h"
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_exception.h"
 
 static int
 OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p, *old, qs, qi, qu, qd, r, d, k;// qu, qi, r, d,  *old;
+	InstrPtr p, *old, qs, qi, qu, qd, r, d, k;
 	int i, limit, attr;
 	int start = -1;
 	int *scr_s, *scr_i, *scr_u, *scr_d;
@@ -72,7 +73,8 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	newMalBlkStmt(mb, mb->stop);
 	
-	/*The first loop identifies all the select calls and keeps a reference to the operations.
+	/* The first loop identifies all the select calls and keeps a reference 
+		to the operations.
 	  Also the end of the selection part is found where the pivot is made.	 
 	  All operations before the first select call are added to the new plan	*/
 	for (i = 0; i < limit; i++) {
@@ -82,7 +84,7 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (start == -1) 
 				start = i;
 
-			if(fndArgProperty(mb,p,1,"stable"){
+			if(fndArgProperty(mb,p,1,"stable")){
 				*(int*)ps = i;
 				ps += xx;
 			}
@@ -107,7 +109,7 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ( getVar(mb,getArg(p,4))->value.val.ival == 0 )	
 					setArgProperty(mb,p,0,"stable","=", TYPE_int, &i);
 			if ( getVar(mb,getArg(p,4))->value.val.ival == 1 )	
-					setArgProperty(mb,p,0"insertions","=", TYPE_int, &i);
+					setArgProperty(mb,p,0,"insertions","=", TYPE_int, &i);
 			if ( getVar(mb,getArg(p,4))->value.val.ival == 3 )	
 					setArgProperty(mb,p,0,"updates","=", TYPE_int, &i);
 		}
