@@ -444,7 +444,7 @@ This piece of code may be shared by the separate binder
 			break;
 		default: {
 			showScriptException(mb, getPC(mb, p), MAL, 
-					"MALresolve: unexpected token type\n");
+					"MALresolve: unexpected token type");
 			mb->errors++;
 			return -3;
 		}
@@ -485,7 +485,7 @@ with one of the target variables.
 @c
 	if( foundbutwrong && !silent){
 		showScriptException(mb, getPC(mb, p), TYPE,
-			"type conflict in assignment\n");
+			"type conflict in assignment");
 	}
 	return -3;
 }
@@ -592,7 +592,7 @@ void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent){
 		n1 = getTypeName(lhs);
 		n2 = getTypeName(rhs);
 		showScriptException(mb, getPC(mb, p), TYPE, 
-				"type mismatch %s := %s\n", n1, n2);
+				"type mismatch %s := %s", n1, n2);
 		GDKfree(n1);
 		GDKfree(n2);
 		mb->errors++;
@@ -667,14 +667,14 @@ In those cases, the detailed analysis is performed upon an actual call.
 		if( ! isaSignature(p) && !getInstrPtr(mb,0)->polymorphic )  {
 			mb->errors++;
 			if( !silent) {
-				char errmsg[BUFSIZ];
 				char errsig[BUFSIZ];
 
 				recognizedCall(mb,p,errsig);
-				snprintf(errmsg,BUFSIZ,"'%s%s%s' undefined in: %s\n", 
-					(getModuleId(p)?getModuleId(p):""), (getModuleId(p)?".":""),
-					getFunctionId(p), errsig);
-				showScriptException(mb,getPC(mb,p),TYPE, errmsg);
+				showScriptException(mb,getPC(mb,p),TYPE,
+						"'%s%s%s' undefined in: %s", 
+						(getModuleId(p)?getModuleId(p):""),
+						(getModuleId(p)?".":""),
+						getFunctionId(p), errsig);
 			}
 			p->typechk= TYPE_UNKNOWN;
 		} else p->typechk= TYPE_RESOLVED;
@@ -689,7 +689,7 @@ variables.
 	if( getFunctionId(p) ) return;
 	if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
 		showScriptException( mb, getPC(mb,p), TYPE,
-			"Multiple assignment mismatch\n");
+			"Multiple assignment mismatch");
 		mb->errors++;
 	} else
 		p->typechk= TYPE_RESOLVED;

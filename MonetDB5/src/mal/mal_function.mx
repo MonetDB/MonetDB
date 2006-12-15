@@ -225,7 +225,7 @@ void chkFlow(MalBlkPtr mb)
 		case CATCHsymbol:
 			if(btop== DEPTH){
 			    showScriptException(mb,i,SYNTAX,
-					"Too many nested MAL blocks\n");
+					"Too many nested MAL blocks");
 			    mb->errors++;
 			    return;
 			}
@@ -236,7 +236,7 @@ void chkFlow(MalBlkPtr mb)
 			for(j=btop-1;j>=0;j--)
 			if( v==var[j]){
 			    showScriptException(mb,i,SYNTAX,
-					"recursive %s[%d] shields %s[%d]\n",
+					"recursive %s[%d] shields %s[%d]",
 						getVarName(mb,v), pc[j],
 						getFcnName(mb),pc[i]);
 			    mb->errors++;
@@ -255,7 +255,7 @@ void chkFlow(MalBlkPtr mb)
 			    getVarType(mb,v) != TYPE_wrd 
 				){
 			    showScriptException(mb,i,TYPE,
-					"barrier '%s' should be of type bit, str or number\n",
+					"barrier '%s' should be of type bit, str or number",
 					getVarName(mb, v));
 					mb->errors++;
 			}
@@ -267,12 +267,12 @@ void chkFlow(MalBlkPtr mb)
 			if( btop>0 && var[btop-1] != v){
 			    mb->errors++;
 			    showScriptException(mb,i,SYNTAX,
-					"exit-label '%s' doesnot match '%s'\n",
+					"exit-label '%s' doesnot match '%s'",
 					getVarName(mb,v), getVarName(mb,var[btop-1]));
 			}
 			if(btop==0){
 			    showScriptException(mb,i,SYNTAX,
-					"exit-label '%s' without begin-label\n",
+					"exit-label '%s' without begin-label",
 					getVarName(mb,v));
 			    mb->errors++;
 			    continue;
@@ -304,7 +304,7 @@ void chkFlow(MalBlkPtr mb)
 			if(j<0){
 				str nme= getVarName(mb,v);
 			    showScriptException(mb,i,SYNTAX,
-					"label '%s' not in guarded block\n",nme);
+					"label '%s' not in guarded block",nme);
 			    mb->errors++;
 			} else
 			if( p->typechk != TYPE_RESOLVED) fixed =0;
@@ -312,7 +312,7 @@ void chkFlow(MalBlkPtr mb)
 		case YIELDsymbol:
 			{ InstrPtr ps= getInstrPtr(mb,0);
 			if( ps->token != FACTORYsymbol){
-			    showScriptException(mb,i,SYNTAX,"yield misplaced\n!");
+			    showScriptException(mb,i,SYNTAX,"yield misplaced!");
 			    mb->errors++;
 			} }
 		case RETURNsymbol:
@@ -320,14 +320,14 @@ void chkFlow(MalBlkPtr mb)
 			    int e;
 			    if( ps->retc != p->retc){
 			        showScriptException(mb,i,SYNTAX,
-						"invalid return target\n!");
+						"invalid return target!");
 			        mb->errors++;
 			    } else
 			    if(ps->typechk == TYPE_RESOLVED)
 			    for(e=0;e<p->retc; e++){
 	                if( resolveType(getArgType(mb,ps,e),getArgType(mb,p,e)) <0 ){
 	                    showScriptException(mb,i,TYPE,
-							"%s type mismatch at type %d\n",
+							"%s type mismatch at type %d",
 	                        (p->barrier==RETURNsymbol?"RETURN":"YIELD"),
 			                                getArgType(mb,p,e));
 	                    mb->errors++;
@@ -349,7 +349,7 @@ void chkFlow(MalBlkPtr mb)
 					/* do nothing */
 				} else if( i) {
 					str msg=instruction2str(mb,p,TRUE);
-					showScriptException(mb,i,SYNTAX,"signature misplaced\n!%s\n",msg);
+					showScriptException(mb,i,SYNTAX,"signature misplaced\n!%s",msg);
 					GDKfree(msg);
 					mb->errors++;
 				}
@@ -358,7 +358,7 @@ void chkFlow(MalBlkPtr mb)
 	}
 	if( lastInstruction < mb->stop-1 ){
 		showScriptException(mb,lastInstruction,SYNTAX,
-			"instructions after END \n");
+			"instructions after END");
 #ifdef DEBUG_MAL_FCN
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
@@ -366,19 +366,19 @@ void chkFlow(MalBlkPtr mb)
 	}
 	for(btop--; btop>=0;btop--){
 		showScriptException(mb,lastInstruction, SYNTAX,
-			"begin '%s' without exit in %s[%d]\n",
+			"begin '%s' without exit in %s[%d]",
 				getVarName(mb,var[btop]),getFcnName(mb),i);
 		mb->errors++;
 	}
 	p= getInstrPtr(mb,0);
 	if( !isaSignature(p)){
-		showScriptException(mb,0,SYNTAX,"signature missing\n");
+		showScriptException(mb,0,SYNTAX,"signature missing");
 		mb->errors++;
 	}
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
 			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
-			showScriptException(mb,0,SYNTAX,"RETURN missing\n");
+			showScriptException(mb,0,SYNTAX,"RETURN missing");
 			mb->errors++;
 		}
 	}
@@ -619,7 +619,7 @@ printFunction(GDKout, new->def, LIST_MAL_ALL);
 	if(proc->def->errors == 0) {
 		chkProgram(scope,new->def);
 		if( new->def->errors){
-			showScriptException(new->def,0,MAL,"Error in cloned function\n");
+			showScriptException(new->def,0,MAL,"Error in cloned function");
 #ifdef DEBUG_MAL_FCN
 			printFunction(GDKout,new->def, LIST_MAL_ALL);
 #endif
@@ -810,7 +810,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		getVarDepth(mb,i)=0;
 		getVarScope(mb,i)=0;
 		if( mb->var[i]->name == 0 && !isTmpVar(mb,i)){
-			showScriptException(mb,0,TYPE,"Name missing in variable %d\n",i);
+			showScriptException(mb,0,TYPE,"Name missing in variable %d",i);
 			mb->errors++;
 		}
 	}
@@ -824,7 +824,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	/* and the function name as well */
 	if( getFunctionId(p) == NULL){
 		showScriptException(mb,0, TYPE,
-			"Function name missing in signature\n");
+			"Function name missing in signature");
 		return;
 	}
 	nme= getFunctionId(p);
@@ -840,13 +840,13 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			} else 
 			if( (s = getVarScope(mb,l) ) ==0 ) {
 					showScriptException(mb,pc,TYPE,
-						"'%s' may not be used before being initialized\n", 
+						"'%s' may not be used before being initialized", 
 						getVarName(mb,l));
 						mb->errors++;
 			} else 
 			if( getVarDepth(mb,l) >= top){
 						showScriptException(mb,pc,TYPE,
-							"'%s' may not be used before being set in %s[%d]\n",
+							"'%s' may not be used before being set in %s[%d]",
 							getVarName(mb,l));
 						mb->errors++;
 			}
@@ -872,7 +872,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			    if( blks[i] == s ) break;
 			    if( i< top && blks[i]!= s && !isTmpVar(mb, l)){
 			            showScriptException(mb,pc,TYPE,
-							"'%s' used outside declaration\n",
+							"'%s' used outside declaration",
 							getVarName(mb,l));
 			        mb->errors++;
 			    }
@@ -886,7 +886,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 					blks[++top]= 0;
 				} else {
 					showScriptException(mb,pc,SYNTAX,
-						"too deeply nested  MAL program\n");
+						"too deeply nested  MAL program");
 					mb->errors++;
 					return;
 				}

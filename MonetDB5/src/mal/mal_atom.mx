@@ -284,15 +284,15 @@ void malAtomDefinition(str name, int tpe){
 	int i;
 
 	if(strlen(name) >= IDLENGTH){
-		showException(SYNTAX,"Atom name '%s' too long\n", name);
+		showException(SYNTAX,"atomDefinition", "Atom name '%s' too long", name);
 		return;
 	}
 	if( ATOMindex(name)>=0){
-		showException(TYPE,"Redefinition of atom '%s'\n", name);
+		showException(TYPE,"atomDefinition", "Redefinition of atom '%s'", name);
 		return;
 	}
 	if( tpe<0 || tpe >=GDKatomcnt){
-		showException(TYPE,"Undefined atom inheritance '%s'\n", name);
+		showException(TYPE,"atomDefinition", "Undefined atom inheritance '%s'", name);
 		return;
 	}
 #ifdef MAL_ATOM_DEBUG
@@ -342,7 +342,7 @@ int malAtomArray(int tpe, int size){
 	snprintf(name+i,IDLENGTH-i,"%d", size);
 	GDKfree(nme);
 	if(strlen(name) >= IDLENGTH){
-		showException(SYNTAX,"Atom name '%s' too long\n", name);
+		showException(SYNTAX,"atomArray", "Atom name '%s' too long", name);
 		return -1;  /* ERROR! */
 	}
 #ifdef MAL_ATOM_DEBUG
