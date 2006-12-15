@@ -1237,9 +1237,8 @@ cleanup_engine:
 			be->language = oldlang;
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
-		} else {
-			showException(SQL,"sql",msg);
-		}
+		} else 
+			stream_printf(GDKout, "!%s\n", msg);
 		showErrors();
 		m->session->status = -10;
 	}
