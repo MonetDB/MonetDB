@@ -106,16 +106,20 @@ OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	
 		if (match2(p, sqlRef, bindRef)){
-			if ( getVar(mb,getArg(p,4))->value.val.ival == 0 )	
-					setArgProperty(mb,p,0,"stable","=", TYPE_int, &i);
-			if ( getVar(mb,getArg(p,4))->value.val.ival == 1 )	
-					setArgProperty(mb,p,0,"insertions","=", TYPE_int, &i);
-			if ( getVar(mb,getArg(p,4))->value.val.ival == 3 )	
-					setArgProperty(mb,p,0,"updates","=", TYPE_int, &i);
+			switch( getVar(mb,getArg(p,4))->value.val.ival ){
+			case 0:
+				setArgProperty(mb,p,0,"stable","=", TYPE_int, &i);
+				break;
+			case 1:
+				setArgProperty(mb,p,0,"insertions","=", TYPE_int, &i);
+				break;
+			case 3:
+				setArgProperty(mb,p,0,"updates","=", TYPE_int, &i);
+			}
 		}
-		if (match2(p, sqlRef, binddbatRef)){
+		if (match2(p, sqlRef, binddbatRef))
 			setArgProperty(mb,p,0,"deletes","=", TYPE_int, &i);
-		}
+
 		if (match2(p, batRef, setWriteModeRef)){ 
 				if(fndArgProperty(mb,p,1,"stable"))
 						setArgProperty(mb,p,0,"stable","=", TYPE_int, &i);
