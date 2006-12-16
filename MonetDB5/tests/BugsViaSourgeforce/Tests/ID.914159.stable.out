@@ -53,7 +53,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("crash();"); 	# 11  (_11:str)
     ba_a := user.crash();	# 12  (ba_a:void)
 end main;	# 13  
-!SyntaxException:user.crash[0]:Syntax error in script
+!MALException:user.crash[0]:Syntax error in script
 
 # 10:01:19 >  
 # 10:01:19 >  Done.
