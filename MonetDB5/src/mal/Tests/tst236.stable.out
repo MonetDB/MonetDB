@@ -1,15 +1,13 @@
 stdout of test 'tst236` in directory 'src/mal` itself:
 
 
-# 20:38:43 >  
-# 20:38:43 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=36290 --set monet_prompt= --trace --dbname=mTests_src_mal  tst236.mal < /dev/null
-# 20:38:43 >  
+# 13:59:36 >  
+# 13:59:36 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib64/MonetDB5:/ufs/mk/monet5/Linux/lib64/MonetDB5/lib:/ufs/mk/monet5/Linux/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/xquery_logs" --set mapi_port=37951 --set monet_prompt= --trace --dbname=mTests_src_mal  tst236.mal < /dev/null
+# 13:59:36 >  
 
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information
 ## check reference counting and multiplex
@@ -29,7 +27,7 @@ end dir;	# 5
 #function createBAT(name:str):bat;
 #	res:= bat.new(:int,:int);
 #	bat.setName(res,name);
-#	i:= calc.bat(res);
+#	i:= calc.getBATidentifier(res);
 #	return i;
 #end createBAT;
 function user.createBAT(name:str):BAT;	# 0  (createBAT:BAT)<-(name:str)
@@ -42,7 +40,7 @@ end createBAT;	# 5
 #bat.insert(m,10:oid,"ten");
 #bat.insert(m,20:oid,"twenty");
 #dir();
-#r:bat[:oid,:bat]:= optimizer.multiplex("user.createBAT",m);
+#r:bat[:oid,:bat]:= optimizer.multiplex("user","createBAT",m);
 #dir();
 #io.print(r);
 #
@@ -97,7 +95,7 @@ end main;	# 18
 [ 10@0,	  <ten>		  ]
 [ 20@0,	  <twenty>	  ]
 
-# 20:38:43 >  
-# 20:38:43 >  Done.
-# 20:38:43 >  
+# 13:59:36 >  
+# 13:59:36 >  Done.
+# 13:59:36 >  
 
