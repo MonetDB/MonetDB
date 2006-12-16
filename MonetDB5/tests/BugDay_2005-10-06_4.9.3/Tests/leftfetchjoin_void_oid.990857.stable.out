@@ -35,71 +35,9 @@ function user.main():void;	# 0  (main:void)
     b1 := bat.reverse(b0);	# 7 BKCreverse (b1:bat[:void,:oid])<-(b0:bat[:oid,:void])
     b := batcalc.int(b1);	# 8 CMDconvert_void_oid_int (b:bat[:void,:int])<-(b1:bat[:void,:oid])
     z := algebra.leftfetchjoin(a,b);	# 9 ALGleftfetchjoin (z:bat[:void,:int])<-(a:bat[:void,:oid])(b:bat[:void,:int])
-    i := bat.info(z);	# 10 BKCinfo (i:bat[:str,:str])<-(z:bat[:void,:int])
-    io.print(i);	# 11 IOprint_val (_13:void)<-(i:bat[:str,:str])
+#i:= bat.info(z); 	# 10  (_12:str)
+#io.print(i); 	# 11  (_13:str)
 end main;	# 12  
-#-----------------------------------------#
-# h			t		  # name
-# str			str		  # type
-#-----------------------------------------#
-[ "version",		  "25105"	  ]
-[ "batId",		  "tmp_13"	  ]
-[ "batCacheid",		  "11"		  ]
-[ "batParentid",	  "0"		  ]
-[ "batSharecnt",	  "0"		  ]
-[ "head",		  "void"	  ]
-[ "tail",		  "int"		  ]
-[ "batPersistence",	  "transient"	  ]
-[ "batRestricted",	  "read-only"	  ]
-[ "batRefcnt",		  "1"		  ]
-[ "batLRefcnt",		  "1"		  ]
-[ "batDirty",		  "dirty"	  ]
-[ "batSet",		  "0"		  ]
-[ "void_tid",		  "-1"		  ]
-[ "void_cnt",		  "0"		  ]
-[ "hsorted",		  "65"		  ]
-[ "hident",		  "h"		  ]
-[ "hdense",		  "1"		  ]
-[ "hseqbase",		  "0@0"		  ]
-[ "hkey",		  "1"		  ]
-[ "hloc",		  "0"		  ]
-[ "hvarsized",		  "1"		  ]
-[ "halign",		  "1000169"	  ]
-[ "hnosorted",		  "0"		  ]
-[ "hnosorted_rev",	  "0"		  ]
-[ "hnodense",		  "0"		  ]
-[ "hnokey[0]",		  "0"		  ]
-[ "hnokey[1]",		  "0"		  ]
-[ "tident",		  "t"		  ]
-[ "tdense",		  "0"		  ]
-[ "tseqbase",		  "0@0"		  ]
-[ "tsorted",		  "65"		  ]
-[ "tkey",		  "1"		  ]
-[ "tloc",		  "0"		  ]
-[ "tvarsized",		  "0"		  ]
-[ "talign",		  "1000168"	  ]
-[ "tnosorted",		  "0"		  ]
-[ "tnosorted_rev",	  "0"		  ]
-[ "tnodense",		  "0"		  ]
-[ "tnokey[0]",		  "0"		  ]
-[ "tnokey[1]",		  "0"		  ]
-[ "batInserted",	  "0"		  ]
-[ "batDeleted",		  "0"		  ]
-[ "batFirst",		  "0"		  ]
-[ "top",		  "0"		  ]
-[ "batStamp",		  "9"		  ]
-[ "lastUsed",		  "180"		  ]
-[ "curStamp",		  "10"		  ]
-[ "batCopiedtodisk",	  "0"		  ]
-[ "batDirtydesc",	  "dirty"	  ]
-[ "batDirtybuns",	  "clean"	  ]
-[ "batBuns.free",	  "0"		  ]
-[ "batBuns.size",	  "1024"	  ]
-[ "batBuns.maxsize",	  "1024"	  ]
-[ "batBuns.storage",	  "malloced"	  ]
-[ "batBuns.filename",	  "13.buns"	  ]
-[ "hheapdirty",		  "clean"	  ]
-[ "theapdirty",		  "clean"	  ]
 
 # 16:07:16 >  
 # 16:07:16 >  Done.
