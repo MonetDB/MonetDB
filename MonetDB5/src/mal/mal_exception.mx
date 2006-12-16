@@ -121,7 +121,7 @@ The first attempt: grep on src/MAL module.
 
 /* These are the exceptions known, adding new ones here requires to also
  * add the "full" name to the exceptionNames array below */
-enum exception {
+enum malexception {
 	MAL=0,
 	ILLARG,
 	OUTOFBNDS,
@@ -145,15 +145,15 @@ enum exception {
 #define rethrow(FCN, TMP, PRV) \
 	if ((TMP = PRV) != MAL_SUCCEED) return(TMP);
 
-mal_export str	createException(enum exception, str, str, ...);
-mal_export void	showException(enum exception, str, str, ...);
-mal_export str	createScriptException(MalBlkPtr, int, enum exception, str, str, ...);
-mal_export void	showScriptException(MalBlkPtr, int, enum exception, str, ...);
+mal_export str	createException(enum malexception, str, str, ...);
+mal_export void	showException(enum malexception, str, str, ...);
+mal_export str	createScriptException(MalBlkPtr, int, enum malexception, str, str, ...);
+mal_export void	showScriptException(MalBlkPtr, int, enum malexception, str, ...);
 
-mal_export enum exception	getExceptionType(str);
+mal_export enum malexception	getExceptionType(str);
 mal_export str	getExceptionPlace(str);
 mal_export str	getExceptionMessage(str);
-mal_export str	exceptionToString(enum exception);
+mal_export str	exceptionToString(enum malexception);
 
 #endif /*  _MAL_EXCEPTION_H*/
 
@@ -185,7 +185,7 @@ static char *exceptionNames[] = {
  * is good.
  */
 static str
-createExceptionInternal(enum exception type, str fcn, str format, va_list ap)
+createExceptionInternal(enum malexception type, str fcn, str format, va_list ap)
 {
 	char message[GDKMAXERRLEN];
 	int len;
@@ -201,11 +201,11 @@ createExceptionInternal(enum exception type, str fcn, str format, va_list ap)
 /**
  * Returns an exception string for the given type of exception, function
  * and additional formatting parameters.  This function will crash the
- * system or return bogus when the exception enum is not aligned with
+ * system or return bogus when the malexception enum is not aligned with
  * the exceptionNames array.
  */
 str
-createException(enum exception type, str fcn, str format, ...)
+createException(enum malexception type, str fcn, str format, ...)
 {
 	va_list ap;
 	str ret;
@@ -222,7 +222,7 @@ createException(enum exception type, str fcn, str format, ...)
  * console as defined by GDKout.
  */
 void
-showException(enum exception type, str fcn, str format, ...)
+showException(enum malexception type, str fcn, str format, ...)
 {
 	va_list ap;
 	str msg;
@@ -241,7 +241,7 @@ showException(enum exception type, str fcn, str format, ...)
  * is good.
  */
 static str
-createScriptExceptionInternal(MalBlkPtr mb, int pc, enum exception type, str prev, str format, va_list ap)
+createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, str prev, str format, va_list ap)
 {
 	char buf[GDKMAXERRLEN];
 	size_t i;
@@ -268,10 +268,10 @@ createScriptExceptionInternal(MalBlkPtr mb, int pc, enum exception type, str pre
  * this exception is chained to the previous one.  Conceptually this
  * creates a "stack" of exceptions.
  * This function will crash the system or return bogus when the
- * exception enum is not aligned with the exceptionNames array.
+ * malexception enum is not aligned with the exceptionNames array.
  */
 str
-createScriptException(MalBlkPtr mb, int pc, enum exception type, str prev, str format, ...)
+createScriptException(MalBlkPtr mb, int pc, enum malexception type, str prev, str format, ...)
 {
 	va_list ap;
 	str ret;
@@ -289,7 +289,7 @@ createScriptException(MalBlkPtr mb, int pc, enum exception type, str prev, str f
  * defined by GDKout.
  */
 void
-showScriptException(MalBlkPtr mb, int pc, enum exception type, str format, ...)
+showScriptException(MalBlkPtr mb, int pc, enum malexception type, str format, ...)
 {
 	va_list ap;
 	str msg;
@@ -303,16 +303,16 @@ showScriptException(MalBlkPtr mb, int pc, enum exception type, str format, ...)
 }
 
 /**
- * Returns the exception number for the given exception string.  If no
+ * Returns the malexception number for the given exception string.  If no
  * exception could be found in the string, MAL is returned indicating a
  * generic MALException.
  */
-enum exception
+enum malexception
 getExceptionType(str exception)
 {
-	enum exception ret = MAL;
+	enum malexception ret = MAL;
 	str s;
-	enum exception i;
+	enum malexception i;
 
 	if ((s = strchr(exception, ':')) != NULL)
 		*s = '\0';
@@ -378,7 +378,7 @@ getExceptionMessage(str exception)
  * the string as used when creating an exception of the same type.
  */
 str
-exceptionToString(enum exception e)
+exceptionToString(enum malexception e)
 {
 	return(exceptionNames[e]);
 }
