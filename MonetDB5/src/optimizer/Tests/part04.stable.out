@@ -1,40 +1,38 @@
 stdout of test 'part04` in directory 'src/optimizer` itself:
 
 
-# 23:53:02 >  
-# 23:53:02 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  part04.mal </dev/null
-# 23:53:02 >  
+# 14:00:18 >  
+# 14:00:18 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib64/MonetDB5:/ufs/mk/monet5/Linux/lib64/MonetDB5/lib:/ufs/mk/monet5/Linux/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/xquery_logs" --set mapi_port=37951 --set monet_prompt= --trace --dbname=mTests_src_optimizer  part04.mal < /dev/null
+# 14:00:18 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ##testing the partition optimizer
 #
-#a1:= bbp.new(:void,:int);
+#a1:= bat.new(:void,:int);
 #bat.setSequenceBase(a1,0@0);
-#a2:= bbp.new(:void,:int);
+#a2:= bat.new(:void,:int);
 #bat.setSequenceBase(a2,10@0);
-#a3:= bbp.new(:void,:int);
+#a3:= bat.new(:void,:int);
 #bat.setSequenceBase(a3,20@0);
-#b1:= bbp.new(:void,:int);
+#b1:= bat.new(:void,:int);
 #bat.setSequenceBase(b1,0@0);
-#b2:= bbp.new(:void,:int);
+#b2:= bat.new(:void,:int);
 #bat.setSequenceBase(b2,10@0);
-#b3:= bbp.new(:void,:int);
+#b3:= bat.new(:void,:int);
 #bat.setSequenceBase(b3,20@0);
 #
-#barrier (go,i):= mal.newRange(0);
-#	bat.insert(a1,nil,i);
-#	bat.insert(a2,nil,i);
-#	bat.insert(a3,nil,i);
-#	bat.insert(b1,nil,i);
-#	bat.insert(b2,nil,i);
-#	bat.insert(b3,nil,i);
-#	redo (go,i):= mal.nextElement(1,10);
+#barrier (go,i):= language.newRange(0);
+#	bat.append(a1,i);
+#	bat.append(a2,i);
+#	bat.append(a3,i);
+#	bat.append(b1,i);
+#	bat.append(b2,i);
+#	bat.append(b3,i);
+#	redo (go,i):= language.nextElement(1,10);
 #exit (go,i);
 #
 #
@@ -51,6 +49,14 @@ stdout of test 'part04` in directory 'src/optimizer` itself:
 ## two sinks. A naive translation will produce
 ## a double nested loop
 #function qry(a:bat[:void,:int], b:bat[:void,:int]);
+#	io.print("a partition");
+#	zz:= algebra.select(a,0,10);
+#	io.print(zz);
+#
+#	io.print("b partition");
+#	yy:= algebra.select(b,0,10);
+#	io.print(yy);
+#
 #	io.print("experiment 3");
 #	c:= algebra.select(a,0,10);
 #	m:= bat.mirror(c);
@@ -317,7 +323,7 @@ end qry;
 [ 28@0,	  8	  ]
 [ 29@0,	  9	  ]
 
-# 23:53:02 >  
-# 23:53:02 >  Done.
-# 23:53:02 >  
+# 14:00:18 >  
+# 14:00:18 >  Done.
+# 14:00:18 >  
 
