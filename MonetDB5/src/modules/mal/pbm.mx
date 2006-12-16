@@ -360,8 +360,10 @@ PBMprelude(int *ret)
 
 	(void) ret;
 	box = openBox("partitions");
+/*
 	if (box == 0)
 		throw(MAL, "pbm.prelude", "failed to open box");
+*/
 	PBMresize(INCREMENT);
 	return MAL_SUCCEED;
 }

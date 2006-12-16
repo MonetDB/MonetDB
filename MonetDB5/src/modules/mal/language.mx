@@ -298,9 +298,7 @@ CMDevalFile(int *ret, str *fnme)
 		strcat(buffer, "/");
 	}
 	strcat(buffer, s);
-	evalFile(c, buffer, 0);
-
-	return MAL_SUCCEED;
+	return evalFile(c, buffer, 0);
 }
 @-
 Calling a BAT is simply translated into a concatenation of

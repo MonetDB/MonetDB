@@ -26,6 +26,7 @@ REGISTER FUNCTIOn user.main
 #function user.main():int;
 #    io.print("hello world");
 #end main;
+!MALException:mdb.list:Could not find user.mytest
 
 # 23:05:10 >  
 # 23:05:10 >  Done.

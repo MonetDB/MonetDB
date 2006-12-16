@@ -407,8 +407,10 @@ BPTprelude(int *ret)
 
 	(void) ret;
 	box = openBox("partitions");
+/*
 	if (box == 0)
 		throw(MAL, "partitions.prelude", "Failed to open box");
+*/
 	BPTresize(INCREMENT);
 	return MAL_SUCCEED;
 }
