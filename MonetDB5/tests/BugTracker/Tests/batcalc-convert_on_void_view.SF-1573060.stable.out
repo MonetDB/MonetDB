@@ -46,144 +46,153 @@ stdout of test 'batcalc-convert_on_void_view.SF-1573060` in directory 'tests/Bug
 function user.main():void;	# 0  (main:void)
 # head: oid 	# 1  (_1:str)
     a := microbenchmark.uniform(0@0:oid,9,9);	# 2 MBMuniform (a:bat[:oid,:int])<-(_3:oid)(_4:int)(_4:int)
-    io.print(a);	# 3 IOprint_val (_5:void)<-(a:bat[:oid,:int])
-    b := batcalc.sht(a);	# 4 CMDconvert_int_sht (b:bat[:oid,:sht])<-(a:bat[:oid,:int])
-    io.print(b);	# 5 IOprint_val (_7:void)<-(b:bat[:oid,:sht])
-    c := batcalc.lng(a);	# 6 CMDconvert_int_lng (c:bat[:oid,:lng])<-(a:bat[:oid,:int])
-    io.print(c);	# 7 IOprint_val (_9:void)<-(c:bat[:oid,:lng])
-# head: void view on oid 	# 8  (_10:str)
-    d := algebra.markH(a,10@0:oid);	# 9 ALGmarkHead (d:bat[:void,:int])<-(a:bat[:oid,:int])(_12:oid)
-    io.print(d);	# 10 IOprint_val (_13:void)<-(d:bat[:void,:int])
-    e := batcalc.sht(d);	# 11 CMDconvert_void_int_sht (e:bat[:void,:sht])<-(d:bat[:void,:int])
-    io.print(e);	# 12 IOprint_val (_15:void)<-(e:bat[:void,:sht])
-    f := batcalc.lng(d);	# 13 CMDconvert_void_int_lng (f:bat[:void,:lng])<-(d:bat[:void,:int])
-    io.print(f);	# 14 IOprint_val (_17:void)<-(f:bat[:void,:lng])
-# head: physically void 	# 15  (_18:str)
-    g := algebra.markH(a,20@0:oid);	# 16 ALGmarkHead (g:bat[:void,:int])<-(a:bat[:oid,:int])(_20:oid)
-    g := algebra.copy(g);	# 17 ALGcopy (g:bat[:void,:int])<-(g:bat[:void,:int])
-    io.print(g);	# 18 IOprint_val (_21:void)<-(g:bat[:void,:int])
-    h := batcalc.sht(g);	# 19 CMDconvert_void_int_sht (h:bat[:void,:sht])<-(g:bat[:void,:int])
-    io.print(h);	# 20 IOprint_val (_23:void)<-(h:bat[:void,:sht])
-    i := batcalc.lng(g);	# 21 CMDconvert_void_int_lng (i:bat[:void,:lng])<-(g:bat[:void,:int])
-    io.print(i);	# 22 IOprint_val (_25:void)<-(i:bat[:void,:lng])
-end main;	# 23  
+    as := algebra.sortTail(a);	# 3 ALGtsort (as:bat[:oid,:int])<-(a:bat[:oid,:int])
+    io.print(as);	# 4 IOprint_val (_6:void)<-(as:bat[:oid,:int])
+    b := batcalc.sht(a);	# 5 CMDconvert_int_sht (b:bat[:oid,:sht])<-(a:bat[:oid,:int])
+    bs := algebra.sortTail(b);	# 6 ALGtsort (bs:bat[:oid,:sht])<-(b:bat[:oid,:sht])
+    io.print(bs);	# 7 IOprint_val (_9:void)<-(bs:bat[:oid,:sht])
+    c := batcalc.lng(a);	# 8 CMDconvert_int_lng (c:bat[:oid,:lng])<-(a:bat[:oid,:int])
+    cs := algebra.sortTail(c);	# 9 ALGtsort (cs:bat[:oid,:lng])<-(c:bat[:oid,:lng])
+    io.print(cs);	# 10 IOprint_val (_12:void)<-(cs:bat[:oid,:lng])
+# head: void view on oid 	# 11  (_13:str)
+    d := algebra.markH(a,10@0:oid);	# 12 ALGmarkHead (d:bat[:void,:int])<-(a:bat[:oid,:int])(_15:oid)
+    ds := algebra.sortTail(d);	# 13 ALGtsort (ds:bat[:void,:int])<-(d:bat[:void,:int])
+    io.print(ds);	# 14 IOprint_val (_17:void)<-(ds:bat[:void,:int])
+    e := batcalc.sht(d);	# 15 CMDconvert_void_int_sht (e:bat[:void,:sht])<-(d:bat[:void,:int])
+    es := algebra.sortTail(e);	# 16 ALGtsort (es:bat[:void,:sht])<-(e:bat[:void,:sht])
+    io.print(es);	# 17 IOprint_val (_20:void)<-(es:bat[:void,:sht])
+    f := batcalc.lng(d);	# 18 CMDconvert_void_int_lng (f:bat[:void,:lng])<-(d:bat[:void,:int])
+    fs := algebra.sortTail(f);	# 19 ALGtsort (fs:bat[:void,:lng])<-(f:bat[:void,:lng])
+    io.print(fs);	# 20 IOprint_val (_23:void)<-(fs:bat[:void,:lng])
+# head: physically void 	# 21  (_24:str)
+    g := algebra.markH(a,20@0:oid);	# 22 ALGmarkHead (g:bat[:void,:int])<-(a:bat[:oid,:int])(_26:oid)
+    g := algebra.copy(g);	# 23 ALGcopy (g:bat[:void,:int])<-(g:bat[:void,:int])
+    gs := algebra.sortTail(g);	# 24 ALGtsort (gs:bat[:void,:int])<-(g:bat[:void,:int])
+    io.print(gs);	# 25 IOprint_val (_28:void)<-(gs:bat[:void,:int])
+    h := batcalc.sht(g);	# 26 CMDconvert_void_int_sht (h:bat[:void,:sht])<-(g:bat[:void,:int])
+    hs := algebra.sortTail(h);	# 27 ALGtsort (hs:bat[:void,:sht])<-(h:bat[:void,:sht])
+    io.print(hs);	# 28 IOprint_val (_31:void)<-(hs:bat[:void,:sht])
+    i := batcalc.lng(g);	# 29 CMDconvert_void_int_lng (i:bat[:void,:lng])<-(g:bat[:void,:int])
+    is := algebra.sortTail(i);	# 30 ALGtsort (is:bat[:void,:lng])<-(i:bat[:void,:lng])
+    io.print(is);	# 31 IOprint_val (_34:void)<-(is:bat[:void,:lng])
+end main;	# 32  
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  6	  ]
-[ 2@0,	  2	  ]
 [ 3@0,	  0	  ]
-[ 4@0,	  8	  ]
+[ 0@0,	  1	  ]
+[ 2@0,	  2	  ]
 [ 5@0,	  3	  ]
-[ 6@0,	  7	  ]
 [ 7@0,	  4	  ]
 [ 8@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ 4@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # void	sht	  # type
 #-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  6	  ]
-[ 2@0,	  2	  ]
 [ 3@0,	  0	  ]
-[ 4@0,	  8	  ]
+[ 0@0,	  1	  ]
+[ 2@0,	  2	  ]
 [ 5@0,	  3	  ]
-[ 6@0,	  7	  ]
 [ 7@0,	  4	  ]
 [ 8@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ 4@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # void	lng	  # type
 #-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  6	  ]
-[ 2@0,	  2	  ]
 [ 3@0,	  0	  ]
-[ 4@0,	  8	  ]
+[ 0@0,	  1	  ]
+[ 2@0,	  2	  ]
 [ 5@0,	  3	  ]
-[ 6@0,	  7	  ]
 [ 7@0,	  4	  ]
 [ 8@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ 4@0,	  8	  ]
 #-----------------#
 # t	h	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  6	  ]
-[ 12@0,	  2	  ]
 [ 13@0,	  0	  ]
-[ 14@0,	  8	  ]
+[ 10@0,	  1	  ]
+[ 12@0,	  2	  ]
 [ 15@0,	  3	  ]
-[ 16@0,	  7	  ]
 [ 17@0,	  4	  ]
 [ 18@0,	  5	  ]
+[ 11@0,	  6	  ]
+[ 16@0,	  7	  ]
+[ 14@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # void	sht	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  6	  ]
-[ 12@0,	  2	  ]
 [ 13@0,	  0	  ]
-[ 14@0,	  8	  ]
+[ 10@0,	  1	  ]
+[ 12@0,	  2	  ]
 [ 15@0,	  3	  ]
-[ 16@0,	  7	  ]
 [ 17@0,	  4	  ]
 [ 18@0,	  5	  ]
+[ 11@0,	  6	  ]
+[ 16@0,	  7	  ]
+[ 14@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # void	lng	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  6	  ]
-[ 12@0,	  2	  ]
 [ 13@0,	  0	  ]
-[ 14@0,	  8	  ]
+[ 10@0,	  1	  ]
+[ 12@0,	  2	  ]
 [ 15@0,	  3	  ]
-[ 16@0,	  7	  ]
 [ 17@0,	  4	  ]
 [ 18@0,	  5	  ]
+[ 11@0,	  6	  ]
+[ 16@0,	  7	  ]
+[ 14@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 20@0,	  1	  ]
-[ 21@0,	  6	  ]
-[ 22@0,	  2	  ]
 [ 23@0,	  0	  ]
-[ 24@0,	  8	  ]
+[ 20@0,	  1	  ]
+[ 22@0,	  2	  ]
 [ 25@0,	  3	  ]
-[ 26@0,	  7	  ]
 [ 27@0,	  4	  ]
 [ 28@0,	  5	  ]
+[ 21@0,	  6	  ]
+[ 26@0,	  7	  ]
+[ 24@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # void	sht	  # type
 #-----------------#
-[ 20@0,	  1	  ]
-[ 21@0,	  6	  ]
-[ 22@0,	  2	  ]
 [ 23@0,	  0	  ]
-[ 24@0,	  8	  ]
+[ 20@0,	  1	  ]
+[ 22@0,	  2	  ]
 [ 25@0,	  3	  ]
-[ 26@0,	  7	  ]
 [ 27@0,	  4	  ]
 [ 28@0,	  5	  ]
+[ 21@0,	  6	  ]
+[ 26@0,	  7	  ]
+[ 24@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # void	lng	  # type
 #-----------------#
-[ 20@0,	  1	  ]
-[ 21@0,	  6	  ]
-[ 22@0,	  2	  ]
 [ 23@0,	  0	  ]
-[ 24@0,	  8	  ]
+[ 20@0,	  1	  ]
+[ 22@0,	  2	  ]
 [ 25@0,	  3	  ]
-[ 26@0,	  7	  ]
 [ 27@0,	  4	  ]
 [ 28@0,	  5	  ]
+[ 21@0,	  6	  ]
+[ 26@0,	  7	  ]
+[ 24@0,	  8	  ]
 
 # 10:19:04 >  
 # 10:19:04 >  Done.

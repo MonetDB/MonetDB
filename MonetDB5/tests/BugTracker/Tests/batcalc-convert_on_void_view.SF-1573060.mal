@@ -2,25 +2,35 @@ include microbenchmark;
 
 # head: oid
 a:=microbenchmark.uniform(0:oid,9,9);
-io.print(a);
+as:= algebra.sortTail(a);
+io.print(as);
+
 b:=batcalc.sht(a);
-io.print(b);
+bs:= algebra.sortTail(b);
+io.print(bs);
 c:=batcalc.lng(a);
-io.print(c);
+cs:= algebra.sortTail(c);
+io.print(cs);
 
 # head: void view on oid
 d:=algebra.markH(a,10:oid);
-io.print(d);
+ds:= algebra.sortTail(d);
+io.print(ds);
 e:=batcalc.sht(d);
-io.print(e);
+es:= algebra.sortTail(e);
+io.print(es);
 f:=batcalc.lng(d);
-io.print(f);
+fs:= algebra.sortTail(f);
+io.print(fs);
 
 # head: physically void
 g:=algebra.markH(a,20:oid);
 g:=algebra.copy(g);
-io.print(g);
+gs:= algebra.sortTail(g);
+io.print(gs);
 h:=batcalc.sht(g);
-io.print(h);
+hs:= algebra.sortTail(h);
+io.print(hs);
 i:=batcalc.lng(g);
-io.print(i);
+is:= algebra.sortTail(i);
+io.print(is);
