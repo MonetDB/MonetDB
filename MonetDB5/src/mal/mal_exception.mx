@@ -119,6 +119,8 @@ The first attempt: grep on src/MAL module.
 #define _MAL_EXCEPTION_H
 #include "mal_instruction.h"
 
+/* #define _DEBUG_EXCEPTION_		trace the exception handling */
+
 /* These are the exceptions known, adding new ones here requires to also
  * add the "full" name to the exceptionNames array below */
 enum malexception {
@@ -190,6 +192,9 @@ createExceptionInternal(enum malexception type, str fcn, str format, va_list ap)
 	char message[GDKMAXERRLEN];
 	int len;
 
+#ifdef _DEBUG_EXCEPTION_
+	printf("exception:%s:%s\n",fcn,format);
+#endif
 	len = snprintf(message, GDKMAXERRLEN - 1, "%s:%s:",
 			exceptionNames[type], fcn);
 	len += vsnprintf(message + len, GDKMAXERRLEN - 1 - len, format, ap);

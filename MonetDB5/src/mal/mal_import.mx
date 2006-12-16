@@ -221,6 +221,7 @@ str
 evalFile(Client c, str fname, int listing){
 	@:restoreState@
 	stream *fd;
+	str msg= MAL_SUCCEED;
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
@@ -237,11 +238,11 @@ evalFile(Client c, str fname, int listing){
 	} else {
 		c->fdin = bstream_create(fd, 128 * BLOCK);
 		MSinitClientPrg(c,"user","main");	/* re-initialize context */
-		runScenario(c);
+		msg= runScenario(c);
 	}
 
 	@:restoreClient()@
-	return MAL_SUCCEED;
+	return msg;
 }
 @h
 mal_export str compileString(Symbol *fcn, Client c, str s);

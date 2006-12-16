@@ -153,8 +153,8 @@ typedef struct SCENARIO {
 } *Scenario;
 
 mal_export str setScenario(Client c, str nme);
-mal_export void runScenario(Client c);
-mal_export void runScenarioBody(Client c);
+mal_export str runScenario(Client c);
+mal_export str runScenarioBody(Client c);
 mal_export str fillScenario(Client c, Scenario scen);
 mal_export void clrScenario(Client c);
 mal_export str getScenarioLanguage(Client c);
@@ -566,10 +566,10 @@ between speed and ability to analysis its behavior.
 Access control enforcement. Except for the server owner
 running a scenario should be explicitly permitted.
 @c
-void
+str
 runScenarioBody(Client c)
 {
-	str msg;
+	str msg= MAL_SUCCEED;
 
 /* postponed
 	if( !isServerOwner(c) ){
@@ -584,16 +584,20 @@ runScenarioBody(Client c)
 		@:runPhase(SCHEDULER)@
 		@:runPhase(ENGINE)@
 	}
+	return msg;
 }
-void
+str
 runScenario(Client c)
 {
 	int cnt = 0;
+	str msg = MAL_SUCCEED;
 	Client c1;
 
-	if( c== 0 || c->phase[READER] == 0) return;
+	if( c== 0 || c->phase[READER] == 0) return msg;
 
-	runScenarioBody(c);
+	msg= runScenarioBody(c);
+	if( msg != MAL_SUCCEED)
+		stream_printf(c->fdout,"!%s\n",msg);
 #ifdef MAL_SCENARIO_DEBUG
 	printf("About to terminate scenario %s\n", c->scenario);
 #endif
@@ -618,6 +622,7 @@ have to call the scenario exit.
 	if (cnt == 1) {
 		exitScenario(c);
 	}
+	return msg;
 }
 
 @-
