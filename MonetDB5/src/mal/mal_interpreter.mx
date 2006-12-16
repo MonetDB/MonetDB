@@ -661,12 +661,9 @@ limited.
 @= MALwrapup
 	if( exceptionVar >= 0) {
 		if (ret) {
-			char *err= alloca(100+strlen(ret));
-			strcpy(err,"Exception not catched\n");
-			strcat(err,ret);
 			ret = createScriptException(mb, mb->stop-1,
 					getExceptionType(getVarName(mb,exceptionVar)),
-					NULL,err);
+					ret, "Exception not catched");
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
 				ret = createScriptException(mb, mb->stop-1, MAL,

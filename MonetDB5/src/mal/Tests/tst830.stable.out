@@ -9,6 +9,8 @@ stdout of test 'tst830` in directory 'src/mal` itself:
 
 
 
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -100,35 +102,35 @@ exit MALException:str ;	# 46  (MALException:str)
 # now try to set the password for ourself, should fail 	# 49  (_53:str)
     clients.setPassword("monetdb","badpass");	# 50 CLTsetPassword (_54:void)<-(_55:str)(_56:str)
 catch InvalidCredentialsException:str ;	# 51  (InvalidCredentialsException:str) jump 53
-    io.printf(InvalidCredentialsException);	# 52 IOprint_str (_58:void)<-(InvalidCredentialsException:str)
+    io.printf("%s\n",InvalidCredentialsException);	# 52 IOprint_formatted_str (_58:void)<-(_59:str)(InvalidCredentialsException:str)
 exit InvalidCredentialsException:str ;	# 53  (InvalidCredentialsException:str)
-# change our own password 	# 54  (_59:str)
-    clients.changePassword("monetdb","newdb");	# 55 CLTchangePassword (_60:void)<-(_55:str)(_61:str)
-# try it again, should fail... 	# 56  (_62:str)
-    clients.changePassword("monetdb","newdb");	# 57 CLTchangePassword (_63:void)<-(_55:str)(_61:str)
+# change our own password 	# 54  (_60:str)
+    clients.changePassword("monetdb","newdb");	# 55 CLTchangePassword (_61:void)<-(_55:str)(_62:str)
+# try it again, should fail... 	# 56  (_63:str)
+    clients.changePassword("monetdb","newdb");	# 57 CLTchangePassword (_64:void)<-(_55:str)(_62:str)
 catch InvalidCredentialsException:str ;	# 58  (InvalidCredentialsException:str) jump 61
-    io.printf("%s\n",InvalidCredentialsException);	# 59 IOprint_formatted_str (_64:void)<-(_65:str)(InvalidCredentialsException:str)
+    io.printf("%s\n",InvalidCredentialsException);	# 59 IOprint_formatted_str (_65:void)<-(_59:str)(InvalidCredentialsException:str)
     InvalidCredentialsException:str  := nil:str;	# 60  (InvalidCredentialsException:str)<-(_43:str)
 exit InvalidCredentialsException:str ;	# 61  (InvalidCredentialsException:str)
 # all should fail 	# 62  (_66:str)
     clients.checkPermission("monetdb","Pmonetdb","sql");	# 63 CLTcheckPermission (_67:void)<-(_55:str)(_68:str)(_69:str)
 catch InvalidCredentialsException:str ;	# 64  (InvalidCredentialsException:str) jump 67
-    io.printf("%s\n",InvalidCredentialsException);	# 65 IOprint_formatted_str (_70:void)<-(_65:str)(InvalidCredentialsException:str)
+    io.printf("%s\n",InvalidCredentialsException);	# 65 IOprint_formatted_str (_70:void)<-(_59:str)(InvalidCredentialsException:str)
     InvalidCredentialsException:str  := nil:str;	# 66  (InvalidCredentialsException:str)<-(_43:str)
 exit InvalidCredentialsException:str ;	# 67  (InvalidCredentialsException:str)
     clients.checkPermission("monetdb","x","sql");	# 68 CLTcheckPermission (_71:void)<-(_55:str)(_72:str)(_69:str)
 catch InvalidCredentialsException:str ;	# 69  (InvalidCredentialsException:str) jump 72
-    io.printf("%s\n",InvalidCredentialsException);	# 70 IOprint_formatted_str (_73:void)<-(_65:str)(InvalidCredentialsException:str)
+    io.printf("%s\n",InvalidCredentialsException);	# 70 IOprint_formatted_str (_73:void)<-(_59:str)(InvalidCredentialsException:str)
     InvalidCredentialsException:str  := nil:str;	# 71  (InvalidCredentialsException:str)<-(_43:str)
 exit InvalidCredentialsException:str ;	# 72  (InvalidCredentialsException:str)
     clients.checkPermission("monetdb","Pmonetdb","x");	# 73 CLTcheckPermission (_74:void)<-(_55:str)(_68:str)(_72:str)
 catch InvalidCredentialsException:str ;	# 74  (InvalidCredentialsException:str) jump 77
-    io.printf("%s\n",InvalidCredentialsException);	# 75 IOprint_formatted_str (_75:void)<-(_65:str)(InvalidCredentialsException:str)
+    io.printf("%s\n",InvalidCredentialsException);	# 75 IOprint_formatted_str (_75:void)<-(_59:str)(InvalidCredentialsException:str)
     InvalidCredentialsException:str  := nil:str;	# 76  (InvalidCredentialsException:str)<-(_43:str)
 exit InvalidCredentialsException:str ;	# 77  (InvalidCredentialsException:str)
     clients.checkPermission("x","Pmonetdb","sql");	# 78 CLTcheckPermission (_76:void)<-(_72:str)(_68:str)(_69:str)
 catch InvalidCredentialsException:str ;	# 79  (InvalidCredentialsException:str) jump 82
-    io.printf("%s\n",InvalidCredentialsException);	# 80 IOprint_formatted_str (_77:void)<-(_65:str)(InvalidCredentialsException:str)
+    io.printf("%s\n",InvalidCredentialsException);	# 80 IOprint_formatted_str (_77:void)<-(_59:str)(InvalidCredentialsException:str)
     InvalidCredentialsException:str  := nil:str;	# 81  (InvalidCredentialsException:str)<-(_43:str)
 exit InvalidCredentialsException:str ;	# 82  (InvalidCredentialsException:str)
 end main;	# 83  

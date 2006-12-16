@@ -59,7 +59,7 @@ exit MALException;
 	# now try to set the password for ourself, should fail
 	clients.setPassword("monetdb", "badpass");
 catch InvalidCredentialsException:str;
-	io.printf(InvalidCredentialsException);
+	io.printf("%s\n", InvalidCredentialsException);
 exit InvalidCredentialsException;
 
 	# change our own password

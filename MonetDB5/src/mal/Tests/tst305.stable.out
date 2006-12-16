@@ -34,9 +34,10 @@ function user.main():void;	# 0  (main:void)
     user.myException();	# 3  (_3:void)
     io.print("should not come here");	# 4 IOprint_val (_4:void)<-(_5:str)
 end main;	# 5  
+!MALException:user.myException[1]:new exception
 !MALException:user.myException[3]:Exception not catched
-MALException:user.myException[1]:new exception
-# 17:40:18 >  
-# 17:40:18 >  Done.
-# 17:40:18 >  
+
+# 17:45:30 >  
+# 17:45:30 >  Done.
+# 17:45:30 >  
 
