@@ -36,9 +36,9 @@ function user.main():void;	# 0  (main:void)
     user.myException();	# 3  (_3:void)
     io.print("should not come here");	# 4 IOprint_val (_4:void)<-(_5:str)
 #exception block; 	# 5  (_6:str)
-catch PermissionDeniedException:str ;	# 6  (PermissionDeniedException:str) jump 8
+catch MALException:str ;	# 6  (MALException:str) jump 8
     io.printf("catched IllegalAccess\n");	# 7 IOprint_str (_8:void)<-(_9:str)
-exit PermissionDeniedException:str ;	# 8  (PermissionDeniedException:str)
+exit MALException:str ;	# 8  (MALException:str)
     io.print("done");	# 9 IOprint_val (_10:void)<-(_11:str)
 end main;	# 10  
 catched IllegalAccess
