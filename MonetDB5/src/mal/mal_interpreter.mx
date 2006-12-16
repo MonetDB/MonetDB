@@ -205,7 +205,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	if (mb->errors) {
 		showErrors();
 		if (cntxt->itrace == 0) /* permit debugger analysis */
-			return createScriptException(mb, 0, SYNTAX, NULL, "Syntax error in script");
+			return createScriptException(mb, 0, MAL, NULL, "Syntax error in script");
 	}
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
@@ -448,12 +448,12 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		@:beginProfile@
-			@:MALinterpret@
-			@:MALflowofcontrol@
-			@:endProfile@
+		@:MALinterpret@
+		@:MALflowofcontrol@
+		@:endProfile@
 	}
 	@:MALwrapup@
-		return ret;
+	return ret;
 }
 @}
 @- Out of order execution
@@ -822,7 +822,7 @@ switch(pci->barrier){
 			ret = createScriptException(mb, stkpc, MAL, NULL,
 					"Exception raised");
 		@:skipToCatch(exceptionVar)@
-			break;
+		break;
 	case YIELDsymbol: /* to be defined */
 		if( oldtimer)
 			cntxt->timer= oldtimer;
@@ -1295,8 +1295,15 @@ if( ret != MAL_SUCCEED ) {
 		*msg=':';
 		exceptionPC = stkpc;
 	} else {
-		exceptionVar = getDestVar(pci);
-		exceptionPC = stkpc;
+		if( ret == MAL_SUCCEED && cntxt->errbuf){
+			/* trap hidden (GDK) exception */
+			msg= GDKstrdup(cntxt->errbuf);
+			exceptionVar= findVariable(mb,"GDKerror");
+			exceptionPC = stkpc;
+		} else {
+			exceptionVar = getDestVar(pci);
+			exceptionPC = stkpc;
+		}
 	}
 	/* unknown exceptions lead to propagation */
 	if( exceptionVar == -1){
