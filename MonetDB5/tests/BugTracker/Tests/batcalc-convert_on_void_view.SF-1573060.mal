@@ -1,7 +1,18 @@
 include microbenchmark;
-
 # head: oid
-a:=microbenchmark.uniform(0:oid,9,9);
+# a:=microbenchmark.uniform(0:oid,9,9); platform dependent
+
+a:= bat.new(:oid,:int);
+bat.insert(a, 3@0,  0  );
+bat.insert(a, 0@0,  1  );
+bat.insert(a, 2@0,  2  );
+bat.insert(a, 5@0,  3  );
+bat.insert(a, 7@0,  4  );
+bat.insert(a, 8@0,  5  );
+bat.insert(a, 1@0,  6  );
+bat.insert(a, 6@0,  7  );
+bat.insert(a, 4@0,  8  );
+
 as:= algebra.sortTail(a);
 io.print(as);
 

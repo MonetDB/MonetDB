@@ -1,83 +1,110 @@
 stdout of test 'batcalc-convert_on_void_view.SF-1573060` in directory 'tests/BugTracker` itself:
 
 
-# 10:19:04 >  
-# 10:19:04 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONET5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONET5/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONET5/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONET5/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONET5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONET5/var/MonetDB5/dblogs" --set mapi_port=38889 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  batcalc-convert_on_void_view.SF-1573060.mal < /dev/null
-# 10:19:04 >  
-
-
+# 14:01:54 >  
+# 14:01:54 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib64/MonetDB5:/ufs/mk/monet5/Linux/lib64/MonetDB5/lib:/ufs/mk/monet5/Linux/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/xquery_logs" --set mapi_port=32772 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  batcalc-convert_on_void_view.SF-1573060.mal < /dev/null
+# 14:01:54 >  
 
 !WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
 !WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONET5/etc/MonetDB5.conf
-# dbfarm:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONET5/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugTracker
 # Visit http://monetdb.cwi.nl/ for further information
 #include microbenchmark;
-#
 ## head: oid
-#a:=microbenchmark.uniform(0:oid,9,9);
-#io.print(a);
+## a:=microbenchmark.uniform(0:oid,9,9); platform dependent
+#
+#a:= bat.new(:oid,:int);
+#bat.insert(a, 3@0,  0  );
+#bat.insert(a, 0@0,  1  );
+#bat.insert(a, 2@0,  2  );
+#bat.insert(a, 5@0,  3  );
+#bat.insert(a, 7@0,  4  );
+#bat.insert(a, 8@0,  5  );
+#bat.insert(a, 1@0,  6  );
+#bat.insert(a, 6@0,  7  );
+#bat.insert(a, 4@0,  8  );
+#
+#as:= algebra.sortTail(a);
+#io.print(as);
+#
 #b:=batcalc.sht(a);
-#io.print(b);
+#bs:= algebra.sortTail(b);
+#io.print(bs);
 #c:=batcalc.lng(a);
-#io.print(c);
+#cs:= algebra.sortTail(c);
+#io.print(cs);
 #
 ## head: void view on oid
 #d:=algebra.markH(a,10:oid);
-#io.print(d);
+#ds:= algebra.sortTail(d);
+#io.print(ds);
 #e:=batcalc.sht(d);
-#io.print(e);
+#es:= algebra.sortTail(e);
+#io.print(es);
 #f:=batcalc.lng(d);
-#io.print(f);
+#fs:= algebra.sortTail(f);
+#io.print(fs);
 #
 ## head: physically void
 #g:=algebra.markH(a,20:oid);
 #g:=algebra.copy(g);
-#io.print(g);
+#gs:= algebra.sortTail(g);
+#io.print(gs);
 #h:=batcalc.sht(g);
-#io.print(h);
+#hs:= algebra.sortTail(h);
+#io.print(hs);
 #i:=batcalc.lng(g);
-#io.print(i);
+#is:= algebra.sortTail(i);
+#io.print(is);
 #
 function user.main():void;	# 0  (main:void)
 # head: oid 	# 1  (_1:str)
-    a := microbenchmark.uniform(0@0:oid,9,9);	# 2 MBMuniform (a:bat[:oid,:int])<-(_3:oid)(_4:int)(_4:int)
-    as := algebra.sortTail(a);	# 3 ALGtsort (as:bat[:oid,:int])<-(a:bat[:oid,:int])
-    io.print(as);	# 4 IOprint_val (_6:void)<-(as:bat[:oid,:int])
-    b := batcalc.sht(a);	# 5 CMDconvert_int_sht (b:bat[:oid,:sht])<-(a:bat[:oid,:int])
-    bs := algebra.sortTail(b);	# 6 ALGtsort (bs:bat[:oid,:sht])<-(b:bat[:oid,:sht])
-    io.print(bs);	# 7 IOprint_val (_9:void)<-(bs:bat[:oid,:sht])
-    c := batcalc.lng(a);	# 8 CMDconvert_int_lng (c:bat[:oid,:lng])<-(a:bat[:oid,:int])
-    cs := algebra.sortTail(c);	# 9 ALGtsort (cs:bat[:oid,:lng])<-(c:bat[:oid,:lng])
-    io.print(cs);	# 10 IOprint_val (_12:void)<-(cs:bat[:oid,:lng])
-# head: void view on oid 	# 11  (_13:str)
-    d := algebra.markH(a,10@0:oid);	# 12 ALGmarkHead (d:bat[:void,:int])<-(a:bat[:oid,:int])(_15:oid)
-    ds := algebra.sortTail(d);	# 13 ALGtsort (ds:bat[:void,:int])<-(d:bat[:void,:int])
-    io.print(ds);	# 14 IOprint_val (_17:void)<-(ds:bat[:void,:int])
-    e := batcalc.sht(d);	# 15 CMDconvert_void_int_sht (e:bat[:void,:sht])<-(d:bat[:void,:int])
-    es := algebra.sortTail(e);	# 16 ALGtsort (es:bat[:void,:sht])<-(e:bat[:void,:sht])
-    io.print(es);	# 17 IOprint_val (_20:void)<-(es:bat[:void,:sht])
-    f := batcalc.lng(d);	# 18 CMDconvert_void_int_lng (f:bat[:void,:lng])<-(d:bat[:void,:int])
-    fs := algebra.sortTail(f);	# 19 ALGtsort (fs:bat[:void,:lng])<-(f:bat[:void,:lng])
-    io.print(fs);	# 20 IOprint_val (_23:void)<-(fs:bat[:void,:lng])
-# head: physically void 	# 21  (_24:str)
-    g := algebra.markH(a,20@0:oid);	# 22 ALGmarkHead (g:bat[:void,:int])<-(a:bat[:oid,:int])(_26:oid)
-    g := algebra.copy(g);	# 23 ALGcopy (g:bat[:void,:int])<-(g:bat[:void,:int])
-    gs := algebra.sortTail(g);	# 24 ALGtsort (gs:bat[:void,:int])<-(g:bat[:void,:int])
-    io.print(gs);	# 25 IOprint_val (_28:void)<-(gs:bat[:void,:int])
-    h := batcalc.sht(g);	# 26 CMDconvert_void_int_sht (h:bat[:void,:sht])<-(g:bat[:void,:int])
-    hs := algebra.sortTail(h);	# 27 ALGtsort (hs:bat[:void,:sht])<-(h:bat[:void,:sht])
-    io.print(hs);	# 28 IOprint_val (_31:void)<-(hs:bat[:void,:sht])
-    i := batcalc.lng(g);	# 29 CMDconvert_void_int_lng (i:bat[:void,:lng])<-(g:bat[:void,:int])
-    is := algebra.sortTail(i);	# 30 ALGtsort (is:bat[:void,:lng])<-(i:bat[:void,:lng])
-    io.print(is);	# 31 IOprint_val (_34:void)<-(is:bat[:void,:lng])
-end main;	# 32  
+# a:=microbenchmark.uniform(0:oid,9,9); platform dependent 	# 2  (_2:str)
+    a := bat.new(:oid,:int);	# 3 CMDBATnew (a:bat[:oid,:int])<-(_4:oid)(_5:int)
+    bat.insert(a,3@0,0);	# 4 BKCinsert_bun (_6:void)<-(a:bat[:oid,:int])(_7:oid)(_8:int)
+    bat.insert(a,0@0,1);	# 5 BKCinsert_bun (_9:void)<-(a:bat[:oid,:int])(_10:oid)(_11:int)
+    bat.insert(a,2@0,2);	# 6 BKCinsert_bun (_12:void)<-(a:bat[:oid,:int])(_13:oid)(_14:int)
+    bat.insert(a,5@0,3);	# 7 BKCinsert_bun (_15:void)<-(a:bat[:oid,:int])(_16:oid)(_17:int)
+    bat.insert(a,7@0,4);	# 8 BKCinsert_bun (_18:void)<-(a:bat[:oid,:int])(_19:oid)(_20:int)
+    bat.insert(a,8@0,5);	# 9 BKCinsert_bun (_21:void)<-(a:bat[:oid,:int])(_22:oid)(_23:int)
+    bat.insert(a,1@0,6);	# 10 BKCinsert_bun (_24:void)<-(a:bat[:oid,:int])(_25:oid)(_26:int)
+    bat.insert(a,6@0,7);	# 11 BKCinsert_bun (_27:void)<-(a:bat[:oid,:int])(_28:oid)(_29:int)
+    bat.insert(a,4@0,8);	# 12 BKCinsert_bun (_30:void)<-(a:bat[:oid,:int])(_31:oid)(_32:int)
+    as := algebra.sortTail(a);	# 13 ALGtsort (as:bat[:oid,:int])<-(a:bat[:oid,:int])
+    io.print(as);	# 14 IOprint_val (_34:void)<-(as:bat[:oid,:int])
+    b := batcalc.sht(a);	# 15 CMDconvert_int_sht (b:bat[:oid,:sht])<-(a:bat[:oid,:int])
+    bs := algebra.sortTail(b);	# 16 ALGtsort (bs:bat[:oid,:sht])<-(b:bat[:oid,:sht])
+    io.print(bs);	# 17 IOprint_val (_37:void)<-(bs:bat[:oid,:sht])
+    c := batcalc.lng(a);	# 18 CMDconvert_int_lng (c:bat[:oid,:lng])<-(a:bat[:oid,:int])
+    cs := algebra.sortTail(c);	# 19 ALGtsort (cs:bat[:oid,:lng])<-(c:bat[:oid,:lng])
+    io.print(cs);	# 20 IOprint_val (_40:void)<-(cs:bat[:oid,:lng])
+# head: void view on oid 	# 21  (_41:str)
+    d := algebra.markH(a,10@0:oid);	# 22 ALGmarkHead (d:bat[:void,:int])<-(a:bat[:oid,:int])(_43:oid)
+    ds := algebra.sortTail(d);	# 23 ALGtsort (ds:bat[:void,:int])<-(d:bat[:void,:int])
+    io.print(ds);	# 24 IOprint_val (_45:void)<-(ds:bat[:void,:int])
+    e := batcalc.sht(d);	# 25 CMDconvert_void_int_sht (e:bat[:void,:sht])<-(d:bat[:void,:int])
+    es := algebra.sortTail(e);	# 26 ALGtsort (es:bat[:void,:sht])<-(e:bat[:void,:sht])
+    io.print(es);	# 27 IOprint_val (_48:void)<-(es:bat[:void,:sht])
+    f := batcalc.lng(d);	# 28 CMDconvert_void_int_lng (f:bat[:void,:lng])<-(d:bat[:void,:int])
+    fs := algebra.sortTail(f);	# 29 ALGtsort (fs:bat[:void,:lng])<-(f:bat[:void,:lng])
+    io.print(fs);	# 30 IOprint_val (_51:void)<-(fs:bat[:void,:lng])
+# head: physically void 	# 31  (_52:str)
+    g := algebra.markH(a,20@0:oid);	# 32 ALGmarkHead (g:bat[:void,:int])<-(a:bat[:oid,:int])(_54:oid)
+    g := algebra.copy(g);	# 33 ALGcopy (g:bat[:void,:int])<-(g:bat[:void,:int])
+    gs := algebra.sortTail(g);	# 34 ALGtsort (gs:bat[:void,:int])<-(g:bat[:void,:int])
+    io.print(gs);	# 35 IOprint_val (_56:void)<-(gs:bat[:void,:int])
+    h := batcalc.sht(g);	# 36 CMDconvert_void_int_sht (h:bat[:void,:sht])<-(g:bat[:void,:int])
+    hs := algebra.sortTail(h);	# 37 ALGtsort (hs:bat[:void,:sht])<-(h:bat[:void,:sht])
+    io.print(hs);	# 38 IOprint_val (_59:void)<-(hs:bat[:void,:sht])
+    i := batcalc.lng(g);	# 39 CMDconvert_void_int_lng (i:bat[:void,:lng])<-(g:bat[:void,:int])
+    is := algebra.sortTail(i);	# 40 ALGtsort (is:bat[:void,:lng])<-(i:bat[:void,:lng])
+    io.print(is);	# 41 IOprint_val (_62:void)<-(is:bat[:void,:lng])
+end main;	# 42  
 #-----------------#
-# h	t	  # name
+# t	h	  # name
 # oid	int	  # type
 #-----------------#
 [ 3@0,	  0	  ]
@@ -90,8 +117,8 @@ end main;	# 32
 [ 6@0,	  7	  ]
 [ 4@0,	  8	  ]
 #-----------------#
-# h	t	  # name
-# void	sht	  # type
+# t	h	  # name
+# oid	sht	  # type
 #-----------------#
 [ 3@0,	  0	  ]
 [ 0@0,	  1	  ]
@@ -103,8 +130,8 @@ end main;	# 32
 [ 6@0,	  7	  ]
 [ 4@0,	  8	  ]
 #-----------------#
-# h	t	  # name
-# void	lng	  # type
+# t	h	  # name
+# oid	lng	  # type
 #-----------------#
 [ 3@0,	  0	  ]
 [ 0@0,	  1	  ]
@@ -119,82 +146,82 @@ end main;	# 32
 # t	h	  # name
 # void	int	  # type
 #-----------------#
-[ 13@0,	  0	  ]
-[ 10@0,	  1	  ]
+[ 10@0,	  0	  ]
+[ 11@0,	  1	  ]
 [ 12@0,	  2	  ]
-[ 15@0,	  3	  ]
-[ 17@0,	  4	  ]
-[ 18@0,	  5	  ]
-[ 11@0,	  6	  ]
-[ 16@0,	  7	  ]
-[ 14@0,	  8	  ]
+[ 13@0,	  3	  ]
+[ 14@0,	  4	  ]
+[ 15@0,	  5	  ]
+[ 16@0,	  6	  ]
+[ 17@0,	  7	  ]
+[ 18@0,	  8	  ]
 #-----------------#
-# h	t	  # name
+# t	h	  # name
 # void	sht	  # type
 #-----------------#
-[ 13@0,	  0	  ]
-[ 10@0,	  1	  ]
+[ 10@0,	  0	  ]
+[ 11@0,	  1	  ]
 [ 12@0,	  2	  ]
-[ 15@0,	  3	  ]
-[ 17@0,	  4	  ]
-[ 18@0,	  5	  ]
-[ 11@0,	  6	  ]
-[ 16@0,	  7	  ]
-[ 14@0,	  8	  ]
+[ 13@0,	  3	  ]
+[ 14@0,	  4	  ]
+[ 15@0,	  5	  ]
+[ 16@0,	  6	  ]
+[ 17@0,	  7	  ]
+[ 18@0,	  8	  ]
 #-----------------#
-# h	t	  # name
+# t	h	  # name
 # void	lng	  # type
 #-----------------#
-[ 13@0,	  0	  ]
-[ 10@0,	  1	  ]
+[ 10@0,	  0	  ]
+[ 11@0,	  1	  ]
 [ 12@0,	  2	  ]
-[ 15@0,	  3	  ]
-[ 17@0,	  4	  ]
-[ 18@0,	  5	  ]
-[ 11@0,	  6	  ]
-[ 16@0,	  7	  ]
-[ 14@0,	  8	  ]
+[ 13@0,	  3	  ]
+[ 14@0,	  4	  ]
+[ 15@0,	  5	  ]
+[ 16@0,	  6	  ]
+[ 17@0,	  7	  ]
+[ 18@0,	  8	  ]
 #-----------------#
-# h	t	  # name
+# t	h	  # name
 # void	int	  # type
 #-----------------#
-[ 23@0,	  0	  ]
-[ 20@0,	  1	  ]
+[ 20@0,	  0	  ]
+[ 21@0,	  1	  ]
 [ 22@0,	  2	  ]
-[ 25@0,	  3	  ]
-[ 27@0,	  4	  ]
-[ 28@0,	  5	  ]
-[ 21@0,	  6	  ]
-[ 26@0,	  7	  ]
-[ 24@0,	  8	  ]
+[ 23@0,	  3	  ]
+[ 24@0,	  4	  ]
+[ 25@0,	  5	  ]
+[ 26@0,	  6	  ]
+[ 27@0,	  7	  ]
+[ 28@0,	  8	  ]
 #-----------------#
-# h	t	  # name
+# t	h	  # name
 # void	sht	  # type
 #-----------------#
-[ 23@0,	  0	  ]
-[ 20@0,	  1	  ]
+[ 20@0,	  0	  ]
+[ 21@0,	  1	  ]
 [ 22@0,	  2	  ]
-[ 25@0,	  3	  ]
-[ 27@0,	  4	  ]
-[ 28@0,	  5	  ]
-[ 21@0,	  6	  ]
-[ 26@0,	  7	  ]
-[ 24@0,	  8	  ]
+[ 23@0,	  3	  ]
+[ 24@0,	  4	  ]
+[ 25@0,	  5	  ]
+[ 26@0,	  6	  ]
+[ 27@0,	  7	  ]
+[ 28@0,	  8	  ]
 #-----------------#
-# h	t	  # name
+# t	h	  # name
 # void	lng	  # type
 #-----------------#
-[ 23@0,	  0	  ]
-[ 20@0,	  1	  ]
+[ 20@0,	  0	  ]
+[ 21@0,	  1	  ]
 [ 22@0,	  2	  ]
-[ 25@0,	  3	  ]
-[ 27@0,	  4	  ]
-[ 28@0,	  5	  ]
-[ 21@0,	  6	  ]
-[ 26@0,	  7	  ]
-[ 24@0,	  8	  ]
+[ 23@0,	  3	  ]
+[ 24@0,	  4	  ]
+[ 25@0,	  5	  ]
+[ 26@0,	  6	  ]
+[ 27@0,	  7	  ]
+[ 28@0,	  8	  ]
 
-# 10:19:04 >  
-# 10:19:04 >  Done.
-# 10:19:04 >  
+# 14:01:54 >  
+# 14:01:54 >  Done.
+# 14:01:54 >  
 
