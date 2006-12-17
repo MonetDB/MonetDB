@@ -365,7 +365,6 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 The optimizers applied are taken from a list managed with
 the SQL set optimizer statement. The default list has been
 tested extensively and should provide overall good performance.
-@c
 str defaultPlan=
 	"costModel,"
 	"coercions,"
@@ -380,6 +379,45 @@ str defaultPlan=
 	"deadcode,"
 	"reduce,"
 	"garbageCollector,";
+@c
+str defaultPlan="";
+
+static void
+addOptimizers(Client c,MalBlkPtr mb, str optimizer)
+{
+		/* the optimizer control is a semicolon separated list of names */
+		str optimizers[256];
+		int top=0,i;
+		char *nxt, *nme;
+
+		while(optimizer && *optimizer )
+		{
+			nxt= strchr(optimizer,',');
+			if( nxt){
+				*nxt= 0;
+				nxt++;
+			}
+			if( strcmp(optimizer,"default")==0){
+				str base= GDKstrdup(defaultPlan);
+				addOptimizers(c,mb,base);
+				GDKfree(base);
+			} else
+			if( (nme = getName(optimizer,strlen(optimizer))) == 0) {
+				showException(SQL,"optimizer '%s' does not exist\n",optimizer);
+				mb->errors++;
+			} else
+			if( top<256)
+				optimizers[top++] =nme; 
+			optimizer =nxt;
+		} 
+
+		/* add the optimizers to the query plan */
+		for(i=0;i<top; i++) {
+			InstrPtr p;
+			p=  newFcnCall(mb,getName("optimizer",9),optimizers[i]);
+			typeChecker(c->nspace, mb,p,TRUE);
+		}
+}
 
 void
 addQueryToCache(Client c)
@@ -437,35 +475,10 @@ care of.
 		/* no optimization needed */
 		OPTmultiplex(mb,0,0);	/* always perform multiplex expansions */
 	} else {
-		/* the optimizer control is a semicolon separated list of names */
-		str optimizers[256], base;
-		int top=0,i;
-		char *nxt, *nme;
-
-		base= optimizer=  GDKstrdup(optimizer);
-		while(optimizer && *optimizer )
-		{
-			nxt= strchr(optimizer,',');
-			if( nxt){
-				*nxt= 0;
-				nxt++;
-			}
-			if( (nme = getName(optimizer,strlen(optimizer))) == 0) {
-				showException(SQL,"optimizer '%s' does not exist\n",optimizer);
-				mb->errors++;
-			} else
-			if( top<256)
-				optimizers[top++] =nme; 
-			optimizer =nxt;
-		} 
+		str base;
+		base= GDKstrdup(optimizer);
+		addOptimizers(c,mb,base);
 		GDKfree(base);
-
-		/* add the optimizers to the query plan */
-		for(i=0;i<top; i++) {
-			InstrPtr p;
-			p=  newFcnCall(mb,getName("optimizer",9),optimizers[i]);
-			typeChecker(c->nspace, mb,p,TRUE);
-		}
 
 		/* time to execute the optimizers */
 		if( c->debug)
