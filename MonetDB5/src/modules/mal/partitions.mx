@@ -403,15 +403,15 @@ access.
 str
 BPTprelude(int *ret)
 {
+/*
 	Box box;
 
-	(void) ret;
 	box = openBox("partitions");
-	(void)box;
-/*
 	if (box == 0)
 		throw(MAL, "partitions.prelude", "Failed to open box");
 */
+	(void) ret;
+
 	BPTresize(INCREMENT);
 	return MAL_SUCCEED;
 }
