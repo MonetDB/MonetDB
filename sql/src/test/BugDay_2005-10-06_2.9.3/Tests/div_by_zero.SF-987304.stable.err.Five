@@ -68,12 +68,13 @@ stderr of test 'div_by_zero.SF-987304` in directory 'src/test/BugDay_2005-10-06_
 # 15:14:18 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=43299  < div_by_zero.sql
 # 15:14:18 >  
 
-MAPI  = monetdb@localhost:33290
+MAPI  = monetdb@localhost:31292
 QUERY = select 1/0;
-ERROR = !ERROR: MALException:calc./:Division by zero
-MAPI  = monetdb@localhost:33290
+ERROR = !MALException:calc./:Division by zero
+MAPI  = monetdb@localhost:31292
 QUERY = select x/y from a;
-ERROR = !ERROR: ArithmeticException:batcalc./:Division by zero
+ERROR = !ArithmeticException:batcalc./:Division by zero
+
 
 # 19:04:14 >  
 # 19:04:14 >  Done.

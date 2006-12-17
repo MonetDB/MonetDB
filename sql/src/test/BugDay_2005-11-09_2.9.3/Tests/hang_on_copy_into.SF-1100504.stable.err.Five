@@ -1,14 +1,14 @@
-stderr of test 'cardinality_violation.SF-1240701` in directory 'src/test/BugTracker` itself:
+stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
 
 
-# 23:24:25 >  
-# 23:24:25 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=30825 --set sql_port=45948 --set xquery_port=55139 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 23:24:25 >  
+# 13:11:12 >  
+# 13:11:12 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=30055 --set sql_port=45907 --set xquery_port=50884 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:11:12 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 25732
+# builtin opt 	monet_pid = 16950
 # builtin opt 	prefix = /ufs/niels/scratch/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -58,25 +58,26 @@ stderr of test 'cardinality_violation.SF-1240701` in directory 'src/test/BugTrac
 # cmdline opt 	monet_mod_path = /ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin
 # cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/niels/scratch/Linux-x86_64/var/MonetDB/log
-# cmdline opt 	mapi_port = 30825
-# cmdline opt 	sql_port = 45948
-# cmdline opt 	xquery_port = 55139
+# cmdline opt 	mapi_port = 30055
+# cmdline opt 	sql_port = 45907
+# cmdline opt 	xquery_port = 50884
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_test_BugTracker
+# cmdline opt 	gdk_dbname = mTests_src_test_BugDay_2005-11-09_2.9.3
 
-# 23:24:25 >  
-# 23:24:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45948  < cardinality_violation.SF-1240701.sql
-# 23:24:25 >  
+# 13:11:12 >  
+# 13:11:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45907  < hang_on_copy_into.SF-1100504.sql
+# 13:11:12 >  
 
 MAPI  = monetdb@localhost:31292
-QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
-ERROR = !SQLException:zero_or_one:cardinality violation (33>1)
+QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t';
+ERROR = !SQLException:importTable:failed to import table
+        !ERROR: End of string (') missing in 'dwerg.net word volwassen, er is eindelijk content
 MAPI  = monetdb@localhost:31292
-QUERY = select * from columns where name = (select columns.name from _tables, columns where _tables.id = columns.table_id);
-ERROR = !SQLException:zero_or_one:cardinality violation (168>1)
+QUERY = en het voicemail archief begint al aardig vol te lopen.
+ERROR = !syntax error, unexpected IDENT in: "en"
 
 
-# 23:24:25 >  
-# 23:24:25 >  Done.
-# 23:24:25 >  
+# 13:11:12 >  
+# 13:11:12 >  Done.
+# 13:11:12 >  
 
