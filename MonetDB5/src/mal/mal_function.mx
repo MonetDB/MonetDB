@@ -801,7 +801,6 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	int pc,i, k,l;
 	InstrPtr p;
 	short s, blks[MAXDEPTH], top= 0, blkId=1;
-	str nme;
 
 	blks[top] = 1;
 	blks[++top]= 0;
@@ -827,7 +826,6 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			"Function name missing in signature");
 		return;
 	}
-	nme= getFunctionId(p);
 		
 	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
