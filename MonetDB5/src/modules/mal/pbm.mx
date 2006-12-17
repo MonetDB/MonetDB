@@ -360,6 +360,7 @@ PBMprelude(int *ret)
 
 	(void) ret;
 	box = openBox("partitions");
+	(void) box;
 /*
 	if (box == 0)
 		throw(MAL, "pbm.prelude", "failed to open box");

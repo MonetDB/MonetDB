@@ -407,6 +407,7 @@ BPTprelude(int *ret)
 
 	(void) ret;
 	box = openBox("partitions");
+	(void)box;
 /*
 	if (box == 0)
 		throw(MAL, "partitions.prelude", "Failed to open box");
