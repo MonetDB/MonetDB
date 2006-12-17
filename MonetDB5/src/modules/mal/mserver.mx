@@ -1202,14 +1202,22 @@ consumed before continueing.
 A few extra routines should be defined to
 dump and inspect the sessions table.
 	
+The remote site may return a single error
+with a series of error lines. These contain
+then a starting !. They are all stripped here.
 @= catchErrors
 	if (mapi_error(mid) == -4 && hdl && mapi_result_error(hdl)) {
 		str err = mapi_result_error(hdl);
 		size_t i;
+		char *e,*f;
 		if (err == NULL)
 			err = "(no additional error message)";
 		if (err[0] == '!')
 			err++;
+		for( e=f=err+1; *e; e++)
+			if( !(*e== '!' && *(e-1)=='\n') )
+				*f++= *e;
+		*f=0;
 		i = strlen(err);
 		while (i > 0 && err[i - 1] == '\n') {
 			err[i - 1] = '\0';
@@ -1220,10 +1228,15 @@ dump and inspect the sessions table.
 	if (mapi_error(mid)) {
 		str err = mapi_result_error(SERVERsessions[i].hdl);
 		size_t i;
+		char *e,*f;
 		if (err == NULL)
 			err = "(no additional error message)";
 		if (err[0] == '!')
 			err++;
+		for( e=f=err+1; *e; e++)
+			if( !(*e== '!' && *(e-1)=='\n') )
+				*f++= *e;
+		*f=0;
 		i = strlen(err);
 		while (i > 0 && err[i - 1] == '\n') {
 			err[i - 1] = '\0';
