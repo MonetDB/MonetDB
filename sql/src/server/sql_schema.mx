@@ -663,7 +663,6 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	} else if (query) {
 		exp_kind ek = {type_value, card_relation, TRUE};
 		stmt *sq = NULL;
-		sql_table *t = NULL;
 		char *q = QUERY(sql->scanner);
 
 		if (query->token == SQL_SELECT) {
