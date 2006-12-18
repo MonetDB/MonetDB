@@ -689,6 +689,15 @@ PFmil_kdiff (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Monet kintersect operator
+ */
+PFmil_t *
+PFmil_kintersect (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_kintersect, a, b);
+}
+
+/**
  * Monet sintersect operator
  */
 PFmil_t *

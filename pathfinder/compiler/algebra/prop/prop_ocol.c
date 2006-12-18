@@ -128,6 +128,10 @@ infer_ocol (PFla_op_t *n)
             }
             break;
             
+        case la_semijoin:
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+            break;
+            
         case la_project:
         {
             PFarray_t *proj_list = PFarray (sizeof (PFalg_proj_t));

@@ -715,6 +715,20 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
 
+            case la_semijoin:
+                /* push join below the left side */
+                *p = *(semijoin (eqjoin_unq (L(lp), rp, latt, ratt,
+                                             p->sem.eqjoin_unq.res),
+                                 R(lp),
+                                 lp->sem.eqjoin.att1 == latt
+                                 ? p->sem.eqjoin_unq.res
+                                 : lp->sem.eqjoin.att1,
+                                 lp->sem.eqjoin.att2));
+
+                next_join = L(p);
+                *(PFla_op_t **) PFarray_add (clean_up_list) = R(p);
+                break;
+                
             case la_project:
                 /* Here we apply transformations in two different cases.
                    First we rewrite equi-joins followed by a project that
@@ -1348,6 +1362,7 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_select:
         case la_disjunion:
         case la_eqjoin_unq:
+        case la_semijoin:
         case la_roots:
         case la_cond_err:
             /* name does not change */

@@ -60,6 +60,9 @@
 /** standard join operator */
 #define eqjoin(a,b,c,d)   PFpa_eqjoin ((a), (b), (c), (d))
 
+/** semijoin operator */
+#define semijoin(a,b,c,d)   PFpa_semijoin ((a), (b), (c), (d))
+
 /** projection operator */
 #define project(a,b,c)    PFpa_project ((a), (b), (c))
 

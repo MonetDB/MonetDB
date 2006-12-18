@@ -160,6 +160,9 @@
 /** kdiff() operator */
 #define kdiff(a,b) PFmil_kdiff((a),(b))
 
+/** kintersect() operator */
+#define kintersect(a,b) PFmil_kintersect((a),(b))
+
 /** sintersect() operator */
 #define sintersect(a,b) PFmil_sintersect((a),(b))
 

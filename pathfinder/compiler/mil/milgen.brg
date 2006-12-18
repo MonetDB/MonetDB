@@ -82,8 +82,9 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term cross          =  10
 %term leftjoin       =  11
 %term eqjoin         =  14
-%term project        =  15
-%term select         =  16
+%term semijoin       =  15
+%term project        =  16
+%term select         =  17
 %term append_union   =  20
 %term merge_union    =  21
 %term intersect      =  22
@@ -169,6 +170,7 @@ Rel:      attach (Rel)                                             =  12 (10);
 Rel:      cross (Rel, Rel)                                         =  13 (10);
 Rel:      leftjoin (Rel, Rel)                                      =  14 (10);
 Rel:      eqjoin (Rel, Rel)                                        =  15 (10);
+Rel:      semijoin (Rel, Rel)                                      =  16 (10);
 Rel:      project (Rel)                                            =  20 (10);
 Rel:      select (Rel)                                             =  21 (10);
 Rel:      append_union (Rel, Rel)                                  =  22 (10);
@@ -1882,6 +1884,71 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (tmp[0], 1);
             unpin (tmp[1], 1);
 
+        } break;
+
+        /* Rel:      semijoin (Rel, Rel) */
+        case 16:
+        {
+            PFalg_simple_type_t lty = type_of (L(p), p->sem.eqjoin.att1);
+            PFalg_simple_type_t rty = type_of (R(p), p->sem.eqjoin.att2);
+            PFalg_simple_type_t t = 0;
+            mvar_t *l = NULL;
+            mvar_t *r = NULL;
+            mvar_t *res = new_var (1);
+
+            assert (lty == rty);
+
+            for (t = 1; t; t <<= 1) {
+                if (t & lty && t & rty) {
+                    l = env_mvar_unsafe (L(p)->env, p->sem.eqjoin.att1, t);
+                    r = env_mvar_unsafe (R(p)->env, p->sem.eqjoin.att2, t);
+                    break;
+                }
+            }
+
+            if (t != lty || t != rty)
+                PFoops (OOPS_FATAL, 
+                        "multi-predicate semijoins are not supported yet");
+
+            if (!l || !r)
+                PFoops (OOPS_FATAL, "incompatible types in semijoin");
+
+            /* apply semijoin */
+            execute (
+                assgn (var (res->name),
+                       kintersect (reverse (var (l->name)),
+                                   reverse (var (r->name)))),
+                assgn (var (res->name),
+                       reverse (mark (reverse (var (res->name)),
+                                      lit_oid (0)))));
+
+            /* map all columns */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+            {
+
+                 mvar_t *v = new_var (p->refctr);
+
+                 execute (
+                      assgn (var (v->name),
+                             leftjoin (
+                                  var (res->name),
+                                  var (env_at (L(p)->env,
+                                               i).mvar->name))),
+                      /* because leftjoin does not know that we have 
+                         exactly one match for each tuple in v,
+                         we need to make the heads void ourselves */
+                      assgn (var (v->name),
+                             reverse (mark (reverse (var (v->name)),
+                                            lit_oid (0))))
+                      );
+
+                 env_add (p->env,
+                          env_at (L(p)->env, i).att,
+                          env_at (L(p)->env, i).ty,
+                          v);
+            }
+
+            unpin (res, 1);
         } break;
 
         /* Rel:      project (Rel) */

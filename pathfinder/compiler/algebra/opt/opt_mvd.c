@@ -383,6 +383,25 @@ opt_mvd (PFla_op_t *p)
         }
         break;
 
+    case la_semijoin:
+        /* Move the independent expression (the one without
+           join attribute) up the DAG. */
+        if (is_cross (L(p))) {
+            if (att_present (LL(p), p->sem.eqjoin.att1))
+                *p = *(cross_can (LR(p), semijoin (LL(p), R(p), 
+                                                   p->sem.eqjoin.att1,
+                                                   p->sem.eqjoin.att2)));
+            else
+                *p = *(cross_can (LL(p), semijoin (LR(p), R(p),
+                                                   p->sem.eqjoin.att1,
+                                                   p->sem.eqjoin.att2)));
+
+            modified = true;
+            break;
+
+        }
+        break;
+        
     case la_project:
         /* Split project operator and push it beyond the cross product. */
         if (is_cross (L(p))) {

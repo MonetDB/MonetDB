@@ -586,6 +586,49 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 }
         }   break;
 
+        case la_semijoin:
+        {   /**
+             * Infering the domains of the join attributes results
+             * in a common schema, that is either the more general
+             * domain if the are in a subdomain relationship or a
+             * new subdomain. The domains of all other columns
+             * (whose domain is different from the domains of the
+             * join arguments) remain unchanged.
+             */
+            dom_t att1_dom = PFprop_dom (L(n)->prop,
+                                         n->sem.eqjoin.att1);
+            dom_t att2_dom = PFprop_dom (R(n)->prop,
+                                         n->sem.eqjoin.att2);
+            dom_t join_dom;
+            dom_t cur_dom;
+
+            if (att1_dom == att2_dom)
+                join_dom = att1_dom;
+            else if (PFprop_subdom (n->prop, att1_dom, att2_dom))
+                join_dom = att1_dom;
+            else if (PFprop_subdom (n->prop, att2_dom, att1_dom))
+                join_dom = att2_dom;
+            else {
+                join_dom = id++;
+                add_subdom (n->prop, att1_dom, join_dom);
+                add_subdom (n->prop, att2_dom, join_dom);
+            }
+
+            /* copy domains and update domains of join arguments */
+            for (unsigned int i = 0; i < L(n)->schema.count; i++)
+                if ((cur_dom = PFprop_dom (
+                                   L(n)->prop,
+                                   L(n)->schema.items[i].name))
+                    == att1_dom)
+                    add_dom (n->prop, L(n)->schema.items[i].name, join_dom);
+                else if (join_dom == att1_dom)
+                    add_dom (n->prop, L(n)->schema.items[i].name, cur_dom);
+                else {
+                    add_subdom (n->prop, cur_dom, id);
+                    add_dom (n->prop, L(n)->schema.items[i].name, id++);
+                }
+        }   break;
+
         case la_project:
             /* bind all existing domains to the possibly new names */
             for (unsigned int i = 0; i < n->schema.count; i++)

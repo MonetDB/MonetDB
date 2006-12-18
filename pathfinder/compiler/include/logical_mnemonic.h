@@ -53,6 +53,9 @@
 /** equi-join */
 #define eqjoin(a,b,c,d)   PFla_eqjoin ((a),(b),(c),(d))
 
+/** semi-join */
+#define semijoin(a,b,c,d) PFla_semijoin ((a),(b),(c),(d))
+
 /** projection operator */
 #define project(...)      PFla_project (__VA_ARGS__)
 

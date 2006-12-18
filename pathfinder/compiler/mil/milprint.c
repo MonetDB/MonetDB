@@ -41,6 +41,7 @@
                  | expression '.leftjoin (' expression ')'  <m_leftjoin>
                  | expression '.kunion (' expression ')'    <m_kunion>
                  | expression '.kdiff (' expression ')'     <m_kdiff>
+                 | expression '.kintersect (' expression ')'<m_kintersect>
                  | expression '.sintersect (' expression ')'<m_sintersect>
                  | expression '.CTrefine (' expression ')'  <m_ctrefine>
                  | expression '.CTderive (' expression ')'  <m_ctderive>
@@ -203,6 +204,7 @@ static char *ID[] = {
     , [m_tunique]      = "tunique"
     , [m_kunion]       = "kunion"
     , [m_kdiff]        = "kdiff"
+    , [m_kintersect]   = "kintersect"
     , [m_sintersect]   = "sintersect"
     , [m_merged_union] = "merged_union"
     , [m_var]          = "var"
@@ -695,6 +697,8 @@ print_expression (PFmil_t * n)
         case m_kunion:
         /* expression : expression '.kdiff (' expression ')' */
         case m_kdiff:
+        /* expression : expression '.kintersect (' expression ')' */
+        case m_kintersect:
         /* expression : expression '.sintersect (' expression ')' */
         case m_sintersect:
         /* expression : expression '.set_kind (' expression ')' */

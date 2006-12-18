@@ -294,6 +294,10 @@ infer_key (PFla_op_t *n)
                 copy (n->prop->keys, L(n)->prop->keys);
             break;
 
+        case la_semijoin:
+            copy (n->prop->keys, L(n)->prop->keys);
+            break;
+
         case la_project:
             /* rename keys columns from old to new */
             for (unsigned int i = 0; i < n->sem.proj.count; i++)

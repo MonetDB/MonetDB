@@ -49,16 +49,17 @@ static char *a_id[]  = {
       [la_serialize]        = "SERIALIZE"
     , [la_lit_tbl]          = "TBL"
     , [la_empty_tbl]        = "EMPTY_TBL"
-    , [la_attach]           = "@"
+    , [la_attach]           = "Attach"
       /* note: dot does not like the sequence "×\nfoo", so we put spaces
        * around the cross symbol.
        */
-    , [la_cross]            = " × "              /* \"#00FFFF\" */
-    , [la_eqjoin]           = "|X|"              /* \"#00FF00\" */
-    , [la_eqjoin_unq]       = "|X|"              /* \"#00FF00\" */
-    , [la_project]          = "¶"
-    , [la_select]           = "SEL"
-    , [la_disjunion]        = "U"
+    , [la_cross]            = "Cross"             /* \"#00FFFF\" */
+    , [la_eqjoin]           = "Join"              /* \"#00FF00\" */
+    , [la_eqjoin_unq]       = "Join"              /* \"#00FF00\" */
+    , [la_semijoin]         = "SemiJoin"          /* \"#00FF00\" */
+    , [la_project]          = "Project"
+    , [la_select]           = "Select"
+    , [la_disjunion]        = "UNION"
     , [la_intersect]        = "INTERSECT"
     , [la_difference]       = "DIFF"             /* \"#FFA500\" */
     , [la_distinct]         = "DISTINCT"         /* indian \"#FF0000\" */
@@ -123,6 +124,7 @@ static char *xml_id[]  = {
     , [la_attach]           = "attach"
     , [la_cross]            = "cross"
     , [la_eqjoin]           = "eqjoin"
+    , [la_semijoin]         = "semijoin"
     , [la_project]          = "project"
     , [la_select]           = "select"
     , [la_disjunion]        = "union"
@@ -321,6 +323,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_cross]          = "\"#990000\""
         , [la_eqjoin]         = "\"#00FF00\""
         , [la_eqjoin_unq]     = "\"#00CC00\""
+        , [la_semijoin]       = "\"#009900\""
         , [la_project]        = "\"#EEEEEE\""
         , [la_select]         = "\"#00DDDD\""
         , [la_disjunion]      = "\"#909090\""
@@ -436,6 +439,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
             break;
 
         case la_eqjoin:
+        case la_semijoin:
             PFarray_printf (dot, "%s (%s = %s)",
                             a_id[n->kind], 
                             PFatt_str (n->sem.eqjoin.att1),
@@ -1190,6 +1194,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
             break;
 
         case la_eqjoin:
+        case la_semijoin:
             PFarray_printf (xml, 
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"false\">\n"

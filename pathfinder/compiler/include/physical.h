@@ -59,8 +59,9 @@ enum PFpa_op_kind_t {
     , pa_merge_join     =  13 /**< MergeJoin */
 #endif                       
     , pa_eqjoin         =  14 /**< Generic join implementation */
-    , pa_project        =  15 /**< Project */
-    , pa_select         =  16 /**< Select: filter rows by value in given att */
+    , pa_semijoin       =  15 /**< Semijoin implementation */
+    , pa_project        =  16 /**< Project */
+    , pa_select         =  17 /**< Select: filter rows by value in given att */
     , pa_append_union   =  20 /**< AppendUnion */
     , pa_merge_union    =  21 /**< MergeUnion */
     , pa_intersect      =  22 /**< Intersect */
@@ -417,6 +418,13 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
 PFpa_op_t *
 PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
              const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * SemiJoin: Semi-Join. Preserves the order of the left argument.
+ */
+PFpa_op_t *
+PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
+               const PFpa_op_t *n1, const PFpa_op_t *n2);
 
 /**
  * Project.

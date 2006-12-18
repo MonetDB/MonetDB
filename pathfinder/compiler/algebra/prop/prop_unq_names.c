@@ -289,6 +289,17 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             }
         }   break;
 
+        case la_semijoin:
+            bulk_add_name_pairs (np_list, L(n));
+
+            /* make sure to know the name of the right join argument */
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+            add_name_pair (n->prop->r_name_pairs,
+                           n->sem.eqjoin.att2,
+                           PFprop_unq_name (R(n)->prop,
+                                            n->sem.eqjoin.att2));
+            break;
+
         case la_project:
             /* bind all existing unique names to the possibly new names */
             for (unsigned int i = 0; i < n->schema.count; i++)

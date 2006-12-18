@@ -81,12 +81,13 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  attach         =   4
 %term  cross          =   5
 %term  eqjoin         =   6
-%term  project        =   7
-%term  select_        =   8
-%term  disjunion      =   9
-%term  intersect      =  10
-%term  difference     =  11
-%term  distinct       =  12
+%term  semijoin       =   7
+%term  project        =   8
+%term  select_        =   9
+%term  disjunion      =  10
+%term  intersect      =  11
+%term  difference     =  12
+%term  distinct       =  13
 %term  num_add        =  20
 %term  num_subtract   =  21
 %term  num_multiply   =  22
@@ -147,6 +148,7 @@ Rel:    cross (Rel, Rel)                          =   4 (10);
 Rel:    cross (Rel, lit_tbl)                      =   5 (10);
 Rel:    cross (lit_tbl, Rel)                      =   6 (10);
 Rel:    eqjoin (Rel, Rel)                         =   8 (10);
+Rel:    semijoin (Rel, Rel)                       =   9 (10);
 Rel:    project (Rel)                             =  10 (10);
 Rel:    project (attach (Rel))                    =  11 (10);
 Rel:    project (project (Rel))                   =  13  (1);
@@ -241,8 +243,10 @@ EmptyRel:    cross (EmptyRel, Rel)                = 122  (0);
 EmptyRel:    cross (Rel, EmptyRel)                = 123  (0);
 EmptyRel:    eqjoin (EmptyRel, Rel)               = 124  (0);
 EmptyRel:    eqjoin (Rel, EmptyRel)               = 125  (0);
-EmptyRel:    project (EmptyRel)                   = 126  (0);
-EmptyRel:    select_ (EmptyRel)                   = 127  (0);
+EmptyRel:    semijoin (EmptyRel, Rel)             = 126  (0);
+EmptyRel:    semijoin (Rel, EmptyRel)             = 127  (0);
+EmptyRel:    project (EmptyRel)                   = 128  (0);
+EmptyRel:    select_ (EmptyRel)                   = 129  (0);
 EmptyRel:    disjunion (EmptyRel, EmptyRel)       = 130  (0);
 EmptyRel:    intersect (EmptyRel, Rel)            = 131  (0);
 EmptyRel:    intersect (Rel, EmptyRel)            = 132  (0);
@@ -1030,10 +1034,14 @@ reduce (PFla_op_t *p, int goalnt)
         case 124:
         /* EmptyRel:    eqjoin (Rel, EmptyRel) */
         case 125:
-        /* EmptyRel:    project (EmptyRel) */
+        /* EmptyRel:    semijoin (EmptyRel, Rel) */
         case 126:
-        /* EmptyRel:    select_ (EmptyRel) */
+        /* EmptyRel:    semijoin (Rel, EmptyRel) */
         case 127:
+        /* EmptyRel:    project (EmptyRel) */
+        case 128:
+        /* EmptyRel:    select_ (EmptyRel) */
+        case 129:
         /* EmptyRel:    disjunion (EmptyRel, EmptyRel) */
         case 130:
         /* EmptyRel:    intersect (EmptyRel, Rel) */

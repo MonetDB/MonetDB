@@ -270,8 +270,76 @@ opt_complex (PFla_op_t *p)
                 *p = *PFla_project_ (L(p), count, proj);
                 break;
             }
-        }   break;
 
+            /* introduce semi-join operator if possible */
+            if (!left_arg_req &&
+                (PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
+                 PFprop_set (p->prop))) {
+                /* Every column of the left argument will point
+                   to the join argument of the right argument to
+                   avoid missing references. (Columns that are not
+                   required may be still referenced by the following
+                   operators.) */
+                PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+                unsigned int count = 0;
+
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    proj[count++] = PFalg_proj (
+                                        L(p)->schema.items[i].name,
+                                        p->sem.eqjoin.att2);
+
+                for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                    proj[count++] = PFalg_proj (
+                                        R(p)->schema.items[i].name,
+                                        R(p)->schema.items[i].name);
+
+                *p = *PFla_project_ (
+                          PFla_semijoin (
+                              R(p),
+                              L(p),
+                              p->sem.eqjoin.att2,
+                              p->sem.eqjoin.att1),
+                          count,
+                          proj);
+                break;
+            }
+
+            /* introduce semi-join operator if possible */
+            if (!right_arg_req &&
+                (PFprop_key_right (p->prop, p->sem.eqjoin.att2) ||
+                 PFprop_set (p->prop))) {
+                /* Every column of the right argument will point
+                   to the join argument of the left argument to
+                   avoid missing references. (Columns that are not
+                   required may be still referenced by the following
+                   operators.) */
+                PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+                unsigned int count = 0;
+
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    proj[count++] = PFalg_proj (
+                                        L(p)->schema.items[i].name,
+                                        L(p)->schema.items[i].name);
+
+                for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                    proj[count++] = PFalg_proj (
+                                        R(p)->schema.items[i].name,
+                                        p->sem.eqjoin.att1);
+
+                *p = *PFla_project_ (
+                          PFla_semijoin (
+                              L(p),
+                              R(p),
+                              p->sem.eqjoin.att1,
+                              p->sem.eqjoin.att2),
+                          count,
+                          proj);
+                break;
+            }
+        }   break;
+            
         case la_cross:
             /* PFprop_icols_count () == 0 is also true 
                for nodes without inferred properties 
@@ -639,6 +707,7 @@ PFalgopt_complex (PFla_op_t *root)
        skip it:
     PFprop_infer_dom (root);
     */
+    PFprop_infer_set (root);
     PFprop_infer_unq_names (root);
 
     /* Optimize algebra tree */

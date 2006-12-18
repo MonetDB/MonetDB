@@ -55,12 +55,13 @@ enum PFla_op_kind_t {
     , la_attach         =  4 /**< attach constant column */
     , la_cross          =  5 /**< cross product (Cartesian product) */
     , la_eqjoin         =  6 /**< equi-join */
-    , la_project        =  7 /**< algebra projection and renaming operator */
-    , la_select         =  8 /**< selection of rows where column value != 0 */
-    , la_disjunion      =  9 /**< union two relations with same schema */
-    , la_intersect      = 10 /**< intersect two relations with same schema */
-    , la_difference     = 11 /**< difference of two relations w/ same schema */
-    , la_distinct       = 12 /**< duplicate elimination operator */
+    , la_semijoin       =  7 /**< semi-join */
+    , la_project        =  8 /**< algebra projection and renaming operator */
+    , la_select         =  9 /**< selection of rows where column value != 0 */
+    , la_disjunion      = 10 /**< union two relations with same schema */
+    , la_intersect      = 11 /**< intersect two relations with same schema */
+    , la_difference     = 12 /**< difference of two relations w/ same schema */
+    , la_distinct       = 13 /**< duplicate elimination operator */
     , la_num_add        = 20 /**< arithmetic plus operator */
     , la_num_subtract   = 21 /**< arithmetic minus operator */
     , la_num_multiply   = 22 /**< arithmetic times operator */
@@ -443,6 +444,13 @@ PFla_op_t * PFla_cross_clone (const PFla_op_t *n1, const PFla_op_t *n2);
  */
 PFla_op_t * PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
                          PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Semi-join between two relations.
+ * No duplicate attribute names allowed.
+ */
+PFla_op_t * PFla_semijoin (const PFla_op_t *n1, const PFla_op_t *n2,
+                           PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * Equi-join between two relations.

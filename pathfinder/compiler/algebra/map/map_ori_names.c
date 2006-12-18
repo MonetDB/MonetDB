@@ -322,6 +322,13 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             res = PFla_project_ (res, p->schema.count, projlist);
         }   break;
 
+        case la_semijoin:
+            res = semijoin (PROJ(LEFT, p), O(R(p)),
+                            ONAME (p, p->sem.eqjoin.att1),
+                            PFprop_ori_name_right (p->prop,
+                                                   p->sem.eqjoin.att2));
+            break;
+
         case la_project:
         {
             PFla_op_t *left;

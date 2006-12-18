@@ -330,6 +330,15 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
                 }
         }   break;
 
+        case la_semijoin:
+            n->prop->l_name_pairs = PFarray_copy (np_list);
+            /* the left and the right join argument may both
+               have the same name as only the left one survives */
+            add_name_pair (n->prop->r_name_pairs,
+                           find_ori_name (np_list, n->sem.eqjoin.att1),
+                           n->sem.eqjoin.att2);
+            break;
+
         case la_project:
             /* Infer only columns that are used in the projection.
                Renamings do not have to be mapped. Conflicting names

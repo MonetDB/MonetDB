@@ -207,6 +207,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             break;
 
+        case la_semijoin:
         case la_difference:
         case la_cond_err:
             prop_infer_reqvals (L(n), rv);

@@ -373,6 +373,7 @@ infer_const (PFla_op_t *n)
                     }
             break;
 
+        case la_semijoin:
         case la_difference:
         case la_cond_err:
             /* propagate information from the first input operator */

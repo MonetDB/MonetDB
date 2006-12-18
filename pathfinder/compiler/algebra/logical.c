@@ -562,6 +562,7 @@ PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
 
     return ret;
 }
+
 /**
  * Equi-join between two operator nodes.
  *
@@ -652,6 +653,62 @@ PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
     return ret;
 }
 
+/**
+ * Semi-join between two operator nodes.
+ *
+ * Assert that @a att1 is an attribute of @a n1 and @a att2 is an attribute
+ * of @a n2. @a n1 and @a n2 must not have duplicate attribute names.
+ * The schema of the result is (schema(@a n1)).
+ */
+PFla_op_t *
+PFla_semijoin (const PFla_op_t *n1, const PFla_op_t *n2,
+               PFalg_att_t att1, PFalg_att_t att2)
+{
+    PFla_op_t     *ret;
+    unsigned int   i;
+
+    assert (n1); assert (n2);
+
+    /* verify that att1 is attribute of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+        if (att1 == n1->schema.items[i].name)
+            break;
+
+    /* did we find attribute att1? */
+    if (i >= n1->schema.count)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in join not found", 
+                PFatt_str(att1));
+
+    /* ... and att2 is attribute of n2 */
+    for (i = 0; i < n2->schema.count; i++)
+        if (att2 == n2->schema.items[i].name)
+            break;
+
+    /* did we find attribute att2? */
+    if (i >= n2->schema.count)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in join not found",
+                PFatt_str (att2));
+
+    /* build new semi-join node */
+    ret = la_op_wire2 (la_semijoin, n1, n2);
+
+    /* insert semantic value (join attributes) into the result */
+    ret->sem.eqjoin.att1 = att1;
+    ret->sem.eqjoin.att2 = att2;
+
+    /* allocate memory for the result schema (schema(n1)) */
+    ret->schema.count = n1->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from argument 'n1' */
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    return ret;
+}
 
 /**
  * Logical algebra projection/renaming.

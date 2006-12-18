@@ -188,6 +188,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_eqjoin:
+        case la_semijoin:
             return (a->sem.eqjoin.att1 == b->sem.eqjoin.att1
                     && a->sem.eqjoin.att2 == b->sem.eqjoin.att2);
             break;

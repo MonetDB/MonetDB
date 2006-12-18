@@ -127,6 +127,7 @@ enum PFmil_kind_t {
     , m_tunique      /**< MIL tunique() operator, unique BAT tails in head */
     , m_kunion       /**< MIL kunion() operator */
     , m_kdiff        /**< MIL kdiff() operator */
+    , m_kintersect   /**< MIL kintersect() operator */
     , m_sintersect   /**< MIL sintersect() operator */
 
     , m_merged_union /**< MIL merged_union() function (from the pathfinder
@@ -539,6 +540,9 @@ PFmil_t * PFmil_kunion (const PFmil_t *, const PFmil_t *);
 
 /** MIL kdiff() function */
 PFmil_t * PFmil_kdiff (const PFmil_t *, const PFmil_t *);
+
+/** MIL kintersect() function */
+PFmil_t * PFmil_kintersect (const PFmil_t *, const PFmil_t *);
 
 /** MIL sintersect() function */
 PFmil_t * PFmil_sintersect (const PFmil_t *, const PFmil_t *);

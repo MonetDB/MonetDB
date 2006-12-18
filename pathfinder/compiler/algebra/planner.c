@@ -449,9 +449,34 @@ plan_eqjoin (const PFla_op_t *n)
             join_worker (ret, n->sem.eqjoin.att1, n->sem.eqjoin.att2,
                               *(plan_t **) PFarray_at (L(n)->plans, r),
                               *(plan_t **) PFarray_at (R(n)->plans, s));
-            join_worker (ret, n->sem.eqjoin.att1, n->sem.eqjoin.att2,
+            join_worker (ret, n->sem.eqjoin.att2, n->sem.eqjoin.att1,
                               *(plan_t **) PFarray_at (R(n)->plans, s),
                               *(plan_t **) PFarray_at (L(n)->plans, r));
+        }
+
+    return ret;
+}
+
+/**
+ * Generate physical plans for semi-join.
+ */
+static PFplanlist_t *
+plan_semijoin (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret       = new_planlist ();
+
+    assert (n); assert (n->kind == la_semijoin);
+    assert (L(n)); assert (L(n)->plans);
+    assert (R(n)); assert (R(n)->plans);
+
+    /* combine each plan in R with each plan in S */
+    for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
+        for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++) {
+            add_plan (ret, 
+                      semijoin (n->sem.eqjoin.att1,
+                                n->sem.eqjoin.att2,
+                                *(plan_t **) PFarray_at (L(n)->plans, r),
+                                *(plan_t **) PFarray_at (R(n)->plans, s)));
         }
 
     return ret;
@@ -2103,6 +2128,7 @@ plan_subexpression (PFla_op_t *n)
         case la_attach:         plans = plan_attach (n);       break;
         case la_cross:          plans = plan_cross (n);        break;
         case la_eqjoin:         plans = plan_eqjoin (n);       break;
+        case la_semijoin:       plans = plan_semijoin (n);     break;
         case la_project:        plans = plan_project (n);      break;
         case la_select:         plans = plan_select (n);       break;
         case la_disjunion:      plans = plan_disjunion (n);    break;

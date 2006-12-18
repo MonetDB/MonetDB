@@ -57,6 +57,7 @@ static char *a_id[]  = {
     , [pa_cross]           = " × "              /* \"#00FFFF\" */
     , [pa_leftjoin]        = "LEFTJOIN"         /* \"#00FF00\" */
     , [pa_eqjoin]          = "EQJOIN"           /* \"#00FF00\" */
+    , [pa_semijoin]        = "SEMIJOIN"         /* \"#00FF00\" */
     , [pa_project]         = "¶ "
     , [pa_select]          = "SEL"
     , [pa_append_union]    = "APPEND_UNION"
@@ -143,6 +144,7 @@ static char *xml_id[]  = {
     , [pa_cross]           = "cross"
     , [pa_leftjoin]        = "leftjoin"
     , [pa_eqjoin]          = "eqjoin"
+    , [pa_semijoin]        = "semijoin"
     , [pa_project]         = "project"
     , [pa_select]          = "select"
     , [pa_append_union]    = "append_union"
@@ -357,6 +359,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_cross]           = "\"#990000\""
         , [pa_leftjoin]        = "\"#00FF00\""
         , [pa_eqjoin]          = "\"#00FF00\""
+        , [pa_semijoin]        = "\"#00FF00\""
         , [pa_project]         = "\"#EEEEEE\""
         , [pa_select]          = "\"#00DDDD\""
         , [pa_append_union]    = "\"#909090\""
@@ -488,11 +491,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
 
         case pa_leftjoin:
         case pa_eqjoin:
+        case pa_semijoin:
             PFarray_printf (dot, "%s: (%s= %s)", a_id[n->kind],
                             PFatt_str (n->sem.eqjoin.att1),
                             PFatt_str (n->sem.eqjoin.att2));
             break;
-
+            
         case pa_project:
             if (n->sem.proj.items[0].new != n->sem.proj.items[0].old)
                 PFarray_printf (dot, "%s (%s:%s", a_id[n->kind],
@@ -975,6 +979,7 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
 
         case pa_leftjoin:
         case pa_eqjoin:
+        case pa_semijoin:
             PFarray_printf (xml, 
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"false\">\n"

@@ -620,6 +620,50 @@ PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
 }
 
 /**
+ * SemiJoin: Semi-Join of two relations. Preserves the ordering
+ *           of the left operand.
+ */
+PFpa_op_t *
+PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
+               const PFpa_op_t *n1, const PFpa_op_t *n2)
+{
+    PFpa_op_t  *ret = wire2 (pa_leftjoin, n1, n2);
+
+    /* see if we can find attribute att1 in n1 */
+    if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
+        ret->sem.eqjoin.att1 = att1;
+        ret->sem.eqjoin.att2 = att2;
+    }
+    else
+        PFoops (OOPS_FATAL, "problem with attributes in SemiJoin");
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n1->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n1 */
+    for (unsigned int i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    /* ---- SemiJoin: orderings ---- */
+
+    /*
+     * We preserve any ordering of the left operand.
+     */
+    ret->orderings = PFord_unique (n1->orderings);
+
+    /* ---- SemiJoin: costs ---- */
+    
+    /* We have no alternative implmementation for this operator
+       and it should be cheaper than a join plus a distinct operator
+       --> dummy cost: + 10 */;
+    ret->cost = n1->cost + n2->cost + 10;
+
+    return ret;
+}
+
+/**
  * Project: Column selection and renaming.
  *
  * Note that projection does @b not eliminate duplicates. If you

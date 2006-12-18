@@ -253,6 +253,12 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = union_ (n->prop->icols, n->sem.eqjoin.att2);
             break;
 
+        case la_semijoin:
+            /* add both join columns to the inferred icols */
+            n->prop->l_icols = union_ (n->prop->icols, n->sem.eqjoin.att1);
+            n->prop->r_icols = n->sem.eqjoin.att2;
+            break;
+
         case la_project:
             n->prop->l_icols = 0;
             /* rename icols columns from new to old */

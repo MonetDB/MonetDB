@@ -265,6 +265,25 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     "clone column aware eqjoin operator is "
                     "only allowed with unique attribute names!");
 
+        case la_semijoin:
+            /* Transform semi-join operations into equi-joins
+               as these semi-joins might be superfluous as well. */
+            if (PFprop_set (p->prop)) {
+                res = PFla_eqjoin_clone (
+                          U(L(p)),
+                          U(R(p)),
+                          UNAME (p, p->sem.eqjoin.att1),
+                          PFprop_unq_name_right (p->prop, 
+                                                 p->sem.eqjoin.att2),
+                          UNAME (p, p->sem.eqjoin.att1));
+            } else {
+                res = semijoin (U(L(p)), U(R(p)),
+                                UNAME (p, p->sem.eqjoin.att1),
+                                PFprop_unq_name_right (p->prop, 
+                                                       p->sem.eqjoin.att2));
+            }
+            break;
+
         case la_project:
         {
             PFla_op_t *left;
@@ -653,6 +672,8 @@ PFmap_unq_names (PFla_op_t *root)
 
     /* infer unique names */
     PFprop_infer_unq_names (root);
+    /* infer the set property */
+    PFprop_infer_set (root);
  
     /* generate equivalent algebra DAG */
     map_unq_names (root, map);

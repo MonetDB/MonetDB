@@ -136,6 +136,7 @@ prop_infer_set (PFla_op_t *n, bool set)
             r_set = true;
             break;
 
+        case la_semijoin:
         case la_difference:
             l_set = n->prop->set;
             r_set = true;
