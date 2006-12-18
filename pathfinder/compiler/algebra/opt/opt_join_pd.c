@@ -1752,7 +1752,7 @@ clean_up_eqjoin (PFla_op_t *p)
         /* check for duplicate columns */
         prune = false;
         if (p->sem.eqjoin_unq.att1 != p->sem.eqjoin_unq.att2)
-            for (j = 0; j < R(p)->schema.count; j++)
+            for (i = 0; i < R(p)->schema.count; i++)
                 /* The first join column appeared - we have to introduce
                    the projection. */
                 if (R(p)->schema.items[i].name == p->sem.eqjoin_unq.att1) {
