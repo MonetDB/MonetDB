@@ -2072,10 +2072,14 @@ proxy_unnest_exit (PFla_op_t *proxy, PFla_op_t *entry)
             case la_bool_or:
             case la_bool_not:
             case la_cast:
+                /* get rid of dummy nodes */
+                if (L(p)->kind == la_dummy) L(p) = LL(p);
                 p = L(p);
                 break;
 
             case la_doc_access:
+                /* get rid of dummy nodes */
+                if (R(p)->kind == la_dummy) R(p) = RL(p);
                 p = R(p);
                 break;
 
