@@ -205,7 +205,7 @@ if (standoff) {
 # NOTE: when the query starts, a first, empty container is created, the
 #       'transient document container'. It has container-ID (cont) 0.
 #
-# NOTE: open temporary shredded documents that are not cached have both 
+# NOTE: open temporary shredded docmuments that are not cached have both 
 #       _COLL and _DOCID fields set to an "artificial" doc_oid == open-docid.
 #       These are values < DOCID_MIN (1 billion). It is only unique within the ws.
 #       Persistent documents and container have globally unique keys that 
@@ -701,7 +701,7 @@ strength of optimistic CC).
 @- short lock
 
 There is a short lock (pf_short) that protects access to the collection_*,
-doc_* and colname_* meta-tables. Note that the fn:add_doc(), fn:del_doc()
+doc_* and colname_* meta-tables. Note that the pf:add-doc(), pf:del-doc()
 as well as the fn:doc() function (which does implicit shredding and caching)
 modify these tables. All types of queries read them. Thus all reads and
 writes to these tables need to be locked, with the short lock. 
@@ -758,7 +758,7 @@ lock.
 
 @- shred lock 
 
-Note that we will not use the collection lock while shredding (fn:add_doc())
+Note that we will not use the collection lock while shredding (pf:add-doc())
 continuously, only when extending the master bats. The code of shredding is 
 carefully screened only to touch *new* parts of the BATs thus not affecting 
 the master copies in places that are shared with ongoing queries. BAT-extends 
@@ -807,7 +807,7 @@ when such transactions finish.
 @- collection pins and ws-IDs
 
 To detect concurrent use of collections, all document-using functions 
-(fn:doc() but also fn:add_doc()) put a so-called 'pin' on the collection 
+(fn:doc() but also pf:add-doc()) put a so-called 'pin' on the collection 
 they are intending to manipulate.  These pins are gathered in the BAT[str,lng] 
 colname_pins (it contains document names and ws-IDs). 
 This BAT is also used for recording which queries currently hold 
@@ -2486,7 +2486,7 @@ PROC del_doc_base(bit cachedOnly,
 
 @+ Document Management Interfaces
 
-The fn:add_doc, fn:del_doc XQuery builtin functions are implemented
+The pf:add-doc, pf:del-doc XQuery builtin functions are implemented
 in loop-lifted form by the following MIL PROCs.
 
 Note that ws_doc (previous) is similarly called from XQuery for fn:doc()
@@ -2521,7 +2521,7 @@ PROC play_doc_tape(BAT[void,BAT] ws,
 @- MIL Document Management Interface
 
 This is the old MIL administrative interface, now superseded by the 
-new {fn:add_doc(),fn:del_doc()} XQuery built-ins. It can continue to exist.
+new {pf:add-doc(),pf:del-doc()} XQuery built-ins. It can continue to exist.
 
 The shred_doc() operation is the MIL document management interface. It uses a "phony" working
 set identifier derived from the MIL client-id.
