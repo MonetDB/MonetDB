@@ -2279,8 +2279,13 @@ PFla_pf_merge_adjacent_text_nodes (
     PFalg_att_t iter_in, PFalg_att_t pos_in, PFalg_att_t item_in,
     PFalg_att_t iter_res, PFalg_att_t pos_res, PFalg_att_t item_res)
 {
+    unsigned int i;
     PFla_op_t *ret = la_op_wire2 (la_merge_adjacent, doc, n);
 
+    for (i = 0; i < n->schema.count; i++)
+        if (n->schema.items[i].name == item_in)
+            break;
+        
     /* store columns to work on in semantical field */
     ret->sem.merge_adjacent.iter_in  = iter_in;
     ret->sem.merge_adjacent.pos_in   = pos_in;
@@ -2299,7 +2304,9 @@ PFla_pf_merge_adjacent_text_nodes (
     ret->schema.items[1]
         = (PFalg_schm_item_t) { .name = pos_res, .type = aat_nat };
     ret->schema.items[2]
-        = (PFalg_schm_item_t) { .name = item_res, .type = aat_node };
+        = (PFalg_schm_item_t) { .name = item_res,
+                                .type = n->schema.items[i].type & aat_anode
+                                        ? aat_node : aat_pnode };
 
     return ret;
 }
