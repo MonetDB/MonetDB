@@ -761,8 +761,10 @@ main (int argc, char *argv[])
                                             "the options)\n");
                 printf ("         (default is: "
                                   "'-o OIKDCG_VGO_[J]OKVCG"
-                                           "}IMS{_[J]OKVCG"
-                                           "}IMS{_[J]OKVCG"
+                                           "}IM_{_[J]OKVCG"
+                                           "}IM_{_[J]OKVCGCG"
+                                           "}IM_{_[J]OKVCG"
+                                           "}IM_{_[J]OKVCGCG"
                                            "}IMS{_[J]OKVCG"
                                            "}IMS{_[J]OKVCGCGP')\n");
 
