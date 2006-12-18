@@ -1206,44 +1206,34 @@ The remote site may return a single error
 with a series of error lines. These contain
 then a starting !. They are all stripped here.
 @= catchErrors
-	if (mapi_error(mid) == -4 && hdl && mapi_result_error(hdl)) {
-		str err = mapi_result_error(hdl);
-		size_t i;
+{int rn;
+	if ( ( (rn=mapi_error(mid)) == -4 && hdl && mapi_result_error(hdl))  || rn){
+		str err,newerr;
+		size_t l;
 		char *e,*f;
+
+		if( hdl && mapi_result_error(hdl))
+			err= mapi_result_error(hdl);
+		else err= mapi_result_error(SERVERsessions[i].hdl);
+		l= 2*strlen(err)+8192;
+		newerr= (str) alloca(l);
+
 		if (err == NULL)
 			err = "(no additional error message)";
-		if (err[0] == '!')
-			err++;
-		for( e=f=err+1; *e; e++)
-			if( !(*e== '!' && *(e-1)=='\n') )
-				*f++= *e;
+		f= newerr; 
+		for( e=err+1; *e && l>1; e++)
+			if( *e== '!' && *(e-1)=='\n'){
+				snprintf(f,l,"MALException:@1:remote error:");
+				l-= strlen(f);
+				while(*f) f++;
+			} else{
+				*f++ = *e;
+				l--;
+			}
 		*f=0;
-		i = strlen(err);
-		while (i > 0 && err[i - 1] == '\n') {
-			err[i - 1] = '\0';
-			i--;
-		}
-		throw(MAL, "@1", "remote error: \"%s\"", err);
+		throw(MAL, "@1", "remote error: %s", newerr);
 	}
-	if (mapi_error(mid)) {
-		str err = mapi_result_error(SERVERsessions[i].hdl);
-		size_t i;
-		char *e,*f;
-		if (err == NULL)
-			err = "(no additional error message)";
-		if (err[0] == '!')
-			err++;
-		for( e=f=err+1; *e; e++)
-			if( !(*e== '!' && *(e-1)=='\n') )
-				*f++= *e;
-		*f=0;
-		i = strlen(err);
-		while (i > 0 && err[i - 1] == '\n') {
-			err[i - 1] = '\0';
-			i--;
-		}
-		throw(MAL, "@1", "remote error: \"%s\"", err);
-	}
+}
 @c
 #define MAXSESSIONS 32
 struct{
