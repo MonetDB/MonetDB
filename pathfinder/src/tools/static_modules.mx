@@ -57,7 +57,8 @@
 @:install_module(pf_support)@
 @:install_module(pathfinder)@
 @:install_module(pf_standoff)@
-@:install_module(xrpc)@
+@:install_module(xrpc_client)@
+@:install_module(xrpc_server)@
 #ifdef HAVE_PFTIJAH
 @:install_module(pftijah)@
 #endif
