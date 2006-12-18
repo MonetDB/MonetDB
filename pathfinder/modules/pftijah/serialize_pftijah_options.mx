@@ -67,9 +67,10 @@ static struct PTOS* GLOBAL_PTOS = NULL;
  * Definition of the structure containing the functions
  */
 static bool
-pftijah_options_init(XqueryCtx* ctx, char* args, char *restag) {
+pftijah_options_init(XqueryCtx* ctx, char* args, char *restag, char *resprefix) {
     (void) args;
     (void) restag;
+    (void) resprefix;
     ctx->driverWs		= GLOBAL_PTOS;
     GLOBAL_PTOS->errorMessage	= NULL;
 #ifdef DEBUG
@@ -134,6 +135,9 @@ static struct serializeFunStruct pftijah_optionsSerializeFun = {
     "pftijah_options",
     pftijah_options_init,
     null_cleanup,
+
+    null_startSerialize,
+    null_endSerialize,
 
     null_handle_startDocument,
     null_handle_endDocument,

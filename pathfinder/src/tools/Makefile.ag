@@ -51,7 +51,8 @@ smallTOC_SHARED_MODS =	\
 	../../runtime/lib_pf_support \
 	../../runtime/lib_pathfinder \
 	../../runtime/lib_pf_standoff \
-	../../runtime/lib_xrpc	\
+	../../runtime/lib_xrpc_client	\
+	../../runtime/lib_xrpc_server	\
 	@HAVE_PFTIJAH_TRUE@ ../../modules/pftijah/lib_pftijah
 
 EXTRA_DIST = static_modules.mx

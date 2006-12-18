@@ -800,10 +800,11 @@ static tjCtx* GLOBAL_TJCTX; /* INCOMPLETE, CODE NOT REENTRANT */
  * Default driver initialization function
  */
 static bool
-pftijah_init(XqueryCtx* ctx, char* args, char* restag) {
+pftijah_init(XqueryCtx* ctx, char* args, char* restag, char* resprefix) {
     (void) ctx;
     (void) args;
     (void) restag;
+    (void) resprefix;
     ctx->driverWs = GLOBAL_TJCTX;
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:pftijah_init()\n",GLOBAL_TJCTX->name);
@@ -1005,6 +1006,9 @@ struct serializeFunStruct pftijahSerializeFun = {
     "pftijah",
     pftijah_init,
     null_cleanup,
+
+    null_startSerialize,
+    null_endSerialize,
 
     pftijah_handle_startDocument,
     null_handle_endDocument,
