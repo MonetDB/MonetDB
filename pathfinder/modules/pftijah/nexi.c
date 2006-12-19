@@ -42,10 +42,12 @@ extern int old_main(BAT* optbat, char* startNodes_name);
 char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF) {
   /* setup TijahParserContext structure */
   LOGPRINTF(LOGFILE,"- tijahParse([%s])\n",query);
-  parserCtx->collection= "PFX";
-  parserCtx->queryText = query;
-  parserCtx->logFILE   = NULL;
-  parserCtx->errBUFF[0]= 0;
+  parserCtx->collection   = "PFX";
+  parserCtx->queryText    = query;
+  parserCtx->logFILE      = NULL;
+  parserCtx->errBUFF[0]   = 0;
+  parserCtx->useFragments = 0;
+  parserCtx->ffPfx        = ""; /* "_frag"*/;
 #ifdef GENMILSTRING
   parserCtx->milBUFF[0] = 0;
 #else
@@ -84,7 +86,6 @@ extern command_tree **CAS_plan_gen(
 
 int old_main(BAT* optbat, char* startNodes_name)
 {
-
     /* for the type of topics and for the preprocessing */
     bool use_startNodes = (startNodes_name != NULL);
     bool scale_on;
@@ -196,12 +197,6 @@ int old_main(BAT* optbat, char* startNodes_name)
         str optName = (str)BUNhead(optbat,p);
         str optVal  = (str)BUNtail(optbat,p);
 
-        if ( 1 ) {
-            FILE* xx = fopen("/tmp/TijahOptions.log","a");
-            fprintf(xx,"TijahOptions: handle: %s=%s\n",optName,optVal);
-            fclose(xx);
-        }
-        
         if ( strcmp(optName,"debug") == 0 ) {
 	    if ( 0 ) {
 	        /* set in serialize options for now, is earlier */
@@ -211,7 +206,20 @@ int old_main(BAT* optbat, char* startNodes_name)
 	    }
 	} else if ( strcmp(optName,"collection") == 0 ) {
             parserCtx->collection = optVal;
-            
+	} else if ( strcmp(optName,"fragments") == 0 ) {
+	    if ( (strcmp(optVal,"true")==0) || 
+	         (strcmp(optVal,"TRUE")==0) ||
+	         (strcmp(optVal,"on")==0) ||
+	         (strcmp(optVal,"ON")==0) 
+	       ) {
+	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation ON.\n");
+              parserCtx->useFragments = 1;
+              parserCtx->ffPfx        = "_frag";
+	    } else {
+	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation OFF.\n");
+              parserCtx->useFragments = 0;
+              parserCtx->ffPfx        = "";
+	    }
 	} else if ( strcmp(optName,"background_collection") == 0 ) {
             strcpy(background_collection, optVal);
             
@@ -554,11 +562,16 @@ int old_main(BAT* optbat, char* startNodes_name)
                               "INCOMPLETE", 
                               p_command_array, 
                               FALSE);
+
 #ifdef GENMILSTRING
     LOGPRINTF(LOGFILE,"\tGenerated MIL in string, size=%d\n",strlen(parserCtx->milBUFF));
-    fprintf(parserCtx->milFILE,"%s",parserCtx->milBUFF);
+     if ( parserCtx->milFILE ) {
+       fprintf(parserCtx->milFILE,"%s",parserCtx->milBUFF);
+     }
 #endif
-    fclose(parserCtx->milFILE);
+     if ( parserCtx->milFILE ) {
+       fclose(parserCtx->milFILE);
+     }
 
     if (!plan_ret) {
         LOGPRINTF(LOGFILE,"MIL query plan generation was not successful.\n");
@@ -567,13 +580,13 @@ int old_main(BAT* optbat, char* startNodes_name)
 
     /* memory cleaning */
     p_command_array = NULL;
-    free(p_command_array);
+    free(p_command_array); /* NONSENSE */
     txt_retr_model = NULL;
     img_retr_model = NULL;
     free(txt_retr_model);
-    free(img_retr_model);
+    free(img_retr_model); /* NONSENSE */
     rel_feedback = NULL;
-    free(rel_feedback);
+    free(rel_feedback); /* NONSENSE */
 
     return 1;
 }

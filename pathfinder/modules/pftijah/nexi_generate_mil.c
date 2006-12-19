@@ -277,10 +277,10 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
         if (p_com->left == NULL && p_com->right == NULL) {
 
           if (!strcmp(p_com->argument,"\"Root\"")) {
-            MILPRINTF(MILOUT, "R%d := select_root();\n", com_num);
+            MILPRINTF(MILOUT, "R%d := select_root%s();\n", com_num,parserCtx->ffPfx);
           }
           else {
-            MILPRINTF(MILOUT, "R%d := select_node(%s,%s);\n", com_num, p_com->argument, txt_retr_model->e_class);
+            MILPRINTF(MILOUT, "R%d := select_node%s(%s,%s);\n", com_num, parserCtx->ffPfx,p_com->argument, txt_retr_model->e_class);
           }
 
         }
@@ -289,10 +289,10 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
           com_nr_left = p_com->left->number;
 
           if (!strcmp(p_com->argument,"")) {
-            MILPRINTF(MILOUT, "R%d := R%d.select_node(%d);\n", com_num, com_nr_left,0);
+            MILPRINTF(MILOUT, "R%d := R%d.select_node%s(%d);\n", com_num, com_nr_left,parserCtx->ffPfx,0);
           }
           else {
-            MILPRINTF(MILOUT, "R%d := R%d.select_node(%s,%s);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->e_class);
+            MILPRINTF(MILOUT, "R%d := R%d.select_node%s(%s,%s);\n", com_num, com_nr_left, parserCtx->ffPfx, p_com->argument, txt_retr_model->e_class);
           }
 
         }
@@ -301,13 +301,13 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
 
       case SELECT_NODE_VAGUE:
 
-         MILPRINTF(MILOUT, "R%d := select_node_vague(%s,%s,\"%s\");\n", com_num, p_com->argument, txt_retr_model->e_class, txt_retr_model->exp_class);
+         MILPRINTF(MILOUT, "R%d := select_node_vague%s(%s,%s,\"%s\");\n", com_num, parserCtx->ffPfx, p_com->argument, txt_retr_model->e_class, txt_retr_model->exp_class);
 
          break;
 
       case P_SELECT_NODE_T:
 
-      MILPRINTF(MILOUT, "R%d := p_select_node_t(%s,%d,%d,%d,%d,%d,%s,\"%s\",%d,%d,%f,%f,%d,%d,%d,%d,%s,%s,%d);\n", com_num, p_com->argument, txt_retr_model->model, 	txt_retr_model->or_comb, txt_retr_model->and_comb, txt_retr_model->up_prop, txt_retr_model->down_prop, txt_retr_model->e_class, txt_retr_model->exp_class, 		txt_retr_model->stemming, txt_retr_model->size_type, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->param3, txt_retr_model->prior_type, txt_retr_model->prior_size, img_retr_model->model, img_retr_model->descriptor, img_retr_model->attr_name, img_retr_model->computation);
+      MILPRINTF(MILOUT, "R%d := p_select_node_t%s(%s,%d,%d,%d,%d,%d,%s,\"%s\",%d,%d,%f,%f,%d,%d,%d,%d,%s,%s,%d);\n", com_num,parserCtx->ffPfx, p_com->argument, txt_retr_model->model, 	txt_retr_model->or_comb, txt_retr_model->and_comb, txt_retr_model->up_prop, txt_retr_model->down_prop, txt_retr_model->e_class, txt_retr_model->exp_class, 		txt_retr_model->stemming, txt_retr_model->size_type, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->param3, txt_retr_model->prior_type, txt_retr_model->prior_size, img_retr_model->model, img_retr_model->descriptor, img_retr_model->attr_name, img_retr_model->computation);
 
          break;
 
@@ -450,7 +450,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
           com_nr_left = p_com->left->number;
           com_nr_right = p_com->right->number;
 
-          MILPRINTF(MILOUT, "R%d := R%d.contained_by(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.contained_by%s(R%d);\n", com_num, com_nr_left, parserCtx->ffPfx, com_nr_right);
 
         }
         else {
@@ -688,7 +688,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
         
         case MODEL_NLLR :
             
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR(terms, %f);\n", com_num, com_nr_left, txt_retr_model->param1);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR%s(terms, %f);\n", com_num, com_nr_left, parserCtx->ffPfx, txt_retr_model->param1);
         
           break;
         
@@ -1009,8 +1009,18 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
 
 
     }
-    
-    MILPRINTF(MILOUT, "R%d := R%d.tsort_rev();\n", com_num, com_num);
+
+    if ( parserCtx->useFragments ) {
+      MILPRINTF(MILOUT, "var collect := new(oid,dbl);\n");
+      MILPRINTF(MILOUT, "R%d@batloop() {\n", com_num);
+      MILPRINTF(MILOUT, "  collect.insert($t);\n");
+      MILPRINTF(MILOUT, "}\n");
+      MILPRINTF(MILOUT, "R%d := collect;\n",com_num);
+      MILPRINTF(MILOUT, "collect := nil;\n");
+      MILPRINTF(MILOUT, "R%d := R%d.tsort_rev();\n", com_num, com_num);
+    } else {
+      MILPRINTF(MILOUT, "R%d := R%d.tsort_rev();\n", com_num, com_num);
+    }
     MILPRINTF(MILOUT, "if ( retNum >= 0 ) { R%d := R%d.slice(0, retNum - 1); }\n", com_num, com_num);
     MILPRINTF(MILOUT, "R%d.persists(true).rename(\"nexi_result\");\n", com_num);
     MILPRINTF(MILOUT, "}\n");

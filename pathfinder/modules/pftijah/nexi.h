@@ -312,6 +312,9 @@ typedef struct TijahParserContext {
     FILE*	commandFILE;
     FILE*	tokenFILE;
     /* */
+    int		useFragments;   /* use fragmentation code */
+    const char* ffPfx;		/* fragfunPrefix */
+    /* */ 
     const char* collection;
     const char* queryText;
     char	errBUFF[QUERY_SIZE];

@@ -433,6 +433,13 @@ PROC select_root() : bat[oid,dbl] :=
     }
 }
 
+PROC select_root_frag() : bat[oid,bat] := 
+{
+    var res := new(oid,bat);
+    
+    res.insert(1@0, select_root() );
+    return res;
+}
 
 ##
 # Select all element nodes in the collection
@@ -447,7 +454,6 @@ PROC select_node() : bat[oid,dbl] :=
     
     return pfpre.project( dbl(scoreBase ) );
 }
-
 
 ##
 # Select all element nodes in the collection with the given name
@@ -507,6 +513,14 @@ PROC select_node(str name, bit e_class) : bat[oid,dbl] :=
         if ( trace ) tj_trace( sprintf(" END select_node('%s',%d)", name, e_class) );
         return select_node(name);
     }
+}
+
+PROC select_node_frag(str name, bit e_class) : bat[oid,bat] := 
+{
+    var res := new(oid,bat);
+    
+    res.insert(1@0, select_node(name, e_class) );
+    return res;
 }
 
 
@@ -633,6 +647,17 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
     return result;
 }
 
+PROC contained_by_frag(bat[oid,bat] left, bat[oid,bat] right) : bat[oid,bat] :=
+{
+    var res        := new(oid,bat);
+
+    left@batloop() {
+      if ( right.exist($h) ) {
+        res.insert($h, $t.contained_by(right.find($h)) );
+      }
+    }
+    return res;
+}
 
 ##
 # Returns all regions in the collection that are contained by the argument. 
@@ -707,6 +732,7 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 ################################################################################
 # PROBABILISTIC CONTAINMENT
 ################################################################################
+
 
 PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
@@ -902,6 +928,18 @@ PROC collTermCount(str col, bat[void,oid] terms) : bat[oid,int] :=
      var offsets2 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
      var res := [-](offsets2.[int](),offsets1.[int]()).select(1,int(nil));
      return res;
+}
+
+
+# NEW fragment code
+PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd) : bat[oid,bat] :=
+{
+    var res        := new(oid,bat);
+
+    left@batloop() {
+      res.insert($h, $t.p_containing_q_NLLR(Qterms,lmbd) );
+    }
+    return res;
 }
 
 PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
@@ -1982,7 +2020,8 @@ PROC tj_url2Collection(str doc, str url, str selTagList) : void
 }
 
 PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
-{
+{ 
+        var debug := false;
 	var ws := ws_create();
 	if (not(bat("doc_name").reverse().exist(doc))) {
 		shred_doc(url,doc);
@@ -2057,10 +2096,18 @@ PROC tj_finalize(str collName) : void
 	gterm_sort.bbpname("tj_globalTerms");
 	gtag_sort.persists(true);
 	gtag_sort.bbpname("tj_globalTags");
-	#bat("tj_globalTerms").access(BAT_READ);
-	#bat("tj_globalTags").access(BAT_READ);
-	#bat("tj_globalTerms").mmap(1);
-	bat("tj_globalTags").mmap(1);
+	if ( false ) {
+	  # Monet error, server crashes on .acces(BAT_WRITE) when a new 
+	  # collection is created on a fresh Mserver.
+	  bat("tj_globalTerms").access(BAT_READ);
+	  bat("tj_globalTags").access(BAT_READ);
+	}
+	bat("tj_globalTerms").mmap(1);
+	if ( false ) {
+	  # Monet error, server crashes on .acces(BAT_WRITE) when a new 
+	  # collection is created on a fresh Mserver.
+	  bat("tj_globalTags").mmap(1);
+	}
 	commit(); 
 }
 
@@ -2561,6 +2608,14 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 }
 
 bat* pftijah_prelude() {
+    /* stream_printf(GDKout,"# execute pftijah_prelude().\n"); */
+    BAT* b = BATnew(TYPE_void,TYPE_bat,0);
+    /* tj_termDB, tj_termDBconf, tj_termDBtree, tj_termDBbats, tj_termDBbatN */
+    /* ? max tree size , max frag size ? */
+    if ( (!b) || (BBPrename(BBPcacheid(b),"tj_termDB")!=0) ) {
+      stream_printf(GDKout,"# pftijah_prelude(): env bat creation failed.\n");
+    }
+    BBPfix(BBPcacheid(b));
     return NULL;
 }
 
