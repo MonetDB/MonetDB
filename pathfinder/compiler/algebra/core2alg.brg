@@ -2208,9 +2208,10 @@ reduce (PFcnode_t * p, int goalnt)
                                       proj (att_item, att_item)));
             
 #if STRATEGY
-            updated_loop = project (eqjoin (project (distinct (delta), 
-                                                     proj (att_iter1, 
-                                                           att_iter)),
+            updated_loop = project (eqjoin (distinct (
+                                                project (delta, 
+                                                         proj (att_iter1, 
+                                                               att_iter))),
                                             base_loop,
                                             att_iter1,
                                             att_iter),
