@@ -627,7 +627,7 @@ PFpa_op_t *
 PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
                const PFpa_op_t *n1, const PFpa_op_t *n2)
 {
-    PFpa_op_t  *ret = wire2 (pa_leftjoin, n1, n2);
+    PFpa_op_t  *ret = wire2 (pa_semijoin, n1, n2);
 
     /* see if we can find attribute att1 in n1 */
     if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
