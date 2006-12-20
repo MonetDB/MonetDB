@@ -680,7 +680,7 @@ PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 
     var ctx      := region;
     var pre_size := load( "tj_" + collName + "_size1");    
-    var desc     := scj_desc( pre_size, ctx, collHeight, count(pre_size) );
+    var desc     := scj_desc( pre_size, ctx, count(pre_size) );
     var result   := nodes( desc ).project( dbl(scoreBase) );
     
     if ( trace ) tj_trace( "END  contained_by_1" );
