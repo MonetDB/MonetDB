@@ -1094,19 +1094,19 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 	@:resultBAT(bit,"batcalc.@1")@
 
 	if( b->htype == TYPE_void && right->htype== TYPE_void ){
-		@3 *p,*q,*t;
-		bit *o;
-		o= (bit*) BUNtail(bn,BUNfirst(bn));
-		p= (@3*) BUNtail(b,BUNfirst(b));
-		q= (@3*) BUNtail(b,BUNlast(b));
-		t= (@3*) BUNtail(right,BUNfirst(right));
+		bit *o = (bit*) BUNtail(bn,BUNfirst(bn));
+		BUN p= BUNtail(b,BUNfirst(b));
+		BUN q= BUNtail(b,BUNlast(b));
+		BUN t= BUNtail(right,BUNfirst(right));
+		size_t xx= BUNsize(b);
+		size_t yy= BUNsize(right);
 		
 		while(p<q){
-			if( *p == @3_nil || *t == @3_nil)
+			if( *(@3*) p == @3_nil || *(@3*) t == @3_nil)
 				*o++ = bit_nil;
 			else 
-				*o++ = (bit)(*p @2 *t);
-			p++;  t++;
+				*o++ = *(@3*)p @2 *(@3*)t;
+			p += xx; t += yy; 
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
 		BATsetcount(bn, BATcount(b));
@@ -1121,10 +1121,10 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 		t = BUNtail(right,BUNfirst(right));
 		
 		while(p<q){
-			if( *(@3*) p == @3_nil || *(@3*) t == @3_nil)
+			if( *(@3*) p == @3_nil || *(@3*) t == @3_nil) {
 				BUNfastins(bn, h, (ptr) &nilval);
-			else {
-				val= *(@3*) p @2 *(@3*)t;
+			} else {
+				val = *(@3*) p @2 *(@3*)t;
 				BUNfastins(bn, h, &val);
 			}
 			p+= xx; h += yy; t+= yy; 
@@ -1151,19 +1151,19 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 
 	if(bn->htype== TYPE_void &&
 	   b->htype == TYPE_void && right->htype== TYPE_void ){
-		@3 *p,*q,*t;
-		bit *o;
-		p= (@3*) BUNtail(b,BUNfirst(b));
-		q= (@3*) BUNtail(b,BUNlast(b));
-		t= (@3*) BUNtail(right,BUNfirst(right));
-		o= (bit*) BUNtail(bn,BUNfirst(bn));
+		bit *o = (bit*) BUNtail(bn,BUNfirst(bn));
+		BUN p= BUNtail(b,BUNfirst(b));
+		BUN q= BUNtail(b,BUNlast(b));
+		BUN t= BUNtail(right,BUNfirst(right));
+		size_t xx= BUNsize(b);
+		size_t yy= BUNsize(right);
 		
 		while(p<q){
-			if( *p == @3_nil || *t == @3_nil)
+			if( *(@3*) p == @3_nil || *(@3*) t == @3_nil)
 				*o++ = bit_nil;
 			else 
-				*o++ = (bit)( *p @2 *t);
-			p++;  t++;
+				*o++ = (bit)( *(@3*) p @2 *(@3*)t);
+			p += xx; t += yy; 
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
 		BATsetcount(bn, BATcount(b));
@@ -1203,18 +1203,17 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 	@:resultBAT(bit,"batcalc.@1")@
 
 	if( b->htype == TYPE_void ){
-		@3 *p,*q;
-		bit *o;
-		o= (bit*) BUNtail(bn,BUNfirst(bn));
-		p= (@3*) BUNtail(b,BUNfirst(b));
-		q= (@3*) BUNtail(b,BUNlast(b));
+		bit *o = (bit*) BUNtail(bn,BUNfirst(bn));
+		BUN p = BUNtail(b,BUNfirst(b));
+		BUN q = BUNtail(b,BUNlast(b));
+		size_t xx = BUNsize(b);
 		
 		while(p<q){
-			if( *p == @3_nil || *cst == @3_nil)
+			if( *(@3*) p == @3_nil || *cst == @3_nil)
 				*o++ = bit_nil;
 			else 
-				*o++ = (bit)(*p @2 *cst);
-			p++;  
+				*o++ = *(@3*) p @2 *cst;
+			p += xx;
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
 		BATsetcount(bn, BATcount(b));
@@ -1250,41 +1249,25 @@ str CMD_@4_cst_@3(int *ret, @3 *cst, int *l){
 batcalc_export str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst);
 str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 {	BAT *bn, *b;
+	BUN o,p,q;
+	size_t xx, zz;
+
 	@:getBATdescriptor(r,bn,"batcalc.@1")@
 	@:getBATdescriptor(l,b,"batcalc.@1", BBPreleaseref(bn->batCacheid);)@
 	@:chkSize(bn,b,batcalc.@1)@
 
-	if(bn->htype== TYPE_void && b->htype == TYPE_void ){
-		@3 *p,*q;
-		bit *o;
-		p= (@3*) BUNtail(b,BUNfirst(b));
-		q= (@3*) BUNtail(b,BUNlast(b));
-		o= (bit*) BUNtail(bn,BUNfirst(bn));
+	xx = BUNsize(b);
+	zz = BUNsize(bn);
+	p = BUNtail(b,BUNfirst(b));
+	q = BUNtail(b,BUNlast(b));
+	o = BUNtail(bn,BUNfirst(bn));
 		
-		while(p<q){
-			if( *p == @3_nil || *cst == @3_nil)
-				*o++ = bit_nil;
-			else 
-				*o++ = (bit)(*p @2 *cst);
-			p++;  
-		}
-		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
-		BATsetcount(bn, BATcount(b));
-	} else {
-		BUN o,p,q;
-		size_t xx= BUNsize(b);
-		size_t zz= BUNsize(bn);
-		p = BUNtail(b,BUNfirst(b));
-		q = BUNtail(b,BUNlast(b));
-		o = BUNtail(bn,BUNfirst(bn));
-		
-		while(p<q){
-			if( *(@3*) p == @3_nil || *cst == @3_nil)
-				*(bit*) o = bit_nil;
-			else 
-				*(bit*)o = (bit)(*(@3*) p @2 *cst);
-			p+= xx; o += zz;
-		}
+	while(p<q){
+		if( *(@3*) p == @3_nil || *cst == @3_nil)
+			*(bit*) o = bit_nil;
+		else 
+			*(bit*)o = (bit)(*(@3*) p @2 *cst);
+		p+= xx; o += zz;
 	}
 
 	bn->tsorted= 0;
@@ -1339,38 +1322,25 @@ str
 CMDbitbataccumNOT(int *ret, int *d, int *l)
 {
 	BAT *bn, *left;
+	BUN p,q,t;
+	size_t xx, yy;
 
 	@:getBATdescriptor(d,bn,"batcalc.not")@
 	@:getBATdescriptor(l,left,"batcalc.not",BBPreleaseref(bn->batCacheid);)@
 	@:chkSize(bn,left,batcalc.not)@
 
-	if( bn->htype== TYPE_void && left->htype== TYPE_void){
-		bit *p,*q,*o;
-		o= (bit*) BUNtail(bn,BUNfirst(bn));
-		p= (bit*) BUNtail(left,BUNfirst(left));
-		q= (bit*) BUNtail(left,BUNlast(left));
-		while(p<q){
-			if( *p == bit_nil)
-				*o++ = bit_nil;
-			else 
-				*o++ = ! *p;
-			p++;  
-		}
-	} else {
-		BUN p,q,t;
-		size_t xx= BUNsize(bn);
-		size_t yy= BUNsize(left);
-		p = BUNtail(bn,BUNfirst(bn));
-		q = BUNtail(bn,BUNlast(bn));
-		t = BUNtail(left,BUNfirst(left));
+	xx = BUNsize(bn);
+	yy = BUNsize(left);
+	p = BUNtail(bn,BUNfirst(bn));
+	q = BUNtail(bn,BUNlast(bn));
+	t = BUNtail(left,BUNfirst(left));
 
-		while(p<q){
-			if( *(bit*) t == bit_nil)
-				*(bit*) p = bit_nil;
-			else 
-				*(bit*) p = ! *(bit*)t;
-			p += xx; t += yy;
-		}
+	while(p<q){
+		if( *(bit*) t == bit_nil)
+			*(bit*) p = bit_nil;
+		else 
+			*(bit*) p = ! *(bit*)t;
+		p += xx; t += yy;
 	}
 
 	bn->tsorted = 0;
@@ -1390,17 +1360,18 @@ CMDbitbatNOT(int *ret, int *bid)
 	@:getBATdescriptor(bid,b,"batcalc.not")@
 	@:resultBAT(bit,"batcalc.not")@
 
-	if(  b->htype == TYPE_void ){
-		bit *p,*q,*o;
-		o= (bit*) BUNtail(bn,BUNfirst(bn));
-		p= (bit*) BUNtail(b,BUNfirst(b));
-		q= (bit*) BUNtail(b,BUNlast(b));
+	if (b->htype == TYPE_void ){
+		bit *o = (bit*) BUNtail(bn,BUNfirst(bn));
+		BUN p = BUNtail(b,BUNfirst(b));
+		BUN q = BUNtail(b,BUNlast(b));
+		size_t xx = BUNsize(b);
+
 		while(p<q){
-			if( *p == bit_nil)
+			if( *(bit*)p == bit_nil)
 				*o++ = bit_nil;
 			else 
-				*o++ = ! *p;
-			p++;  
+				*o++ = ! *(bit*)p;
+			p += xx;  
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
 		BATsetcount(bn, BATcount(b));
