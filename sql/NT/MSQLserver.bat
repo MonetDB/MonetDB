@@ -14,6 +14,6 @@ if exist "%MONETDB%\M5server.bat" goto m5server
 "%MONETDB%\Mserver.bat" --dbinit="module(sql_server); sql_server_start();" %*
 
 :m5server
-"%MONETDB%\M5server.bat" --dbinit="include sql; sql_start();" %*
+"%MONETDB%\M5server.bat" --dbinit="include sql; sql.start();" %*
 
 endlocal
