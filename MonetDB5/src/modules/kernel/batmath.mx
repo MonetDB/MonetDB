@@ -101,7 +101,9 @@ BATMATHresult(BAT *b, int tpe)
 batmath_export str CMDsciencevoid_@1(int *ret, int *bid);
 str CMDsciencevoid_@1(int *ret, int *bid){
 	BAT *b,*bn;
-	@2 *o,*p,*q;
+	@2 *o;
+	BUN p,q;
+	size_t xx;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		throw(MAL, "batcalc.@1", "Cannot access descriptor");
@@ -115,12 +117,13 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 	@:tstBat(CMDscience_@1)@
 	o = (@2*) BUNtail(bn, BUNfirst(bn));
 
-	p = (@2*) BUNtail(b, BUNfirst(b));
-	q = (@2*) BUNtail(b, BUNlast(b));
+	xx= BUNsize(b);
+	p = BUNtail(b, BUNfirst(b));
+	q = BUNtail(b, BUNlast(b));
 
 	while(p<q){
-		*o++ = *p== dbl_nil? dbl_nil: @1(*p);
-		p++;
+		*o++ = *(@2*)p== dbl_nil? dbl_nil: @1(*(@2*)p);
+		p+= xx;
 	}
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
@@ -131,7 +134,9 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 batmath_export str CMDscience_@1(int *ret, int *bid, @2 *d);
 str CMDscience_@1(int *ret, int *bid, @2 *d){
 	BAT *b,*bn;
-	@2 *o,*p,*q;
+	@2 *o;
+	BUN p,q;
+	size_t xx;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		throw(MAL, "batcalc.@1", "Cannot access descriptor");
@@ -145,12 +150,13 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 	@:tstBat(CMDscience_@1)@
 	o = (@2*) BUNtail(bn, BUNfirst(bn));
 
-	p = (@2*) BUNtail(b, BUNfirst(b));
-	q = (@2*) BUNtail(b, BUNlast(b));
+	xx= BUNsize(b);
+	p = BUNtail(b, BUNfirst(b));
+	q = BUNtail(b, BUNlast(b));
 
 	while(p<q){
-		*o++ = *p== dbl_nil? dbl_nil: @1(*p,*d);
-		p++;
+		*o++ = *(@2*)p== dbl_nil? dbl_nil: @1(*(@2*)p,*d);
+		p+=xx;
 	}
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 

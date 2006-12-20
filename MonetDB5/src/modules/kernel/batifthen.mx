@@ -164,19 +164,22 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid){
 	@:resultBAT(@1,"batcalc.ifThenElse")@
 
 	if( b->htype == TYPE_void && !ATOMvarsized(b->ttype)){
-		bit *p,*q;
+		BUN p,q;
 		@1 *o;
+		size_t xx= BUNsize(b);
+
 		o= (@1*) BUNtail(bn,BUNfirst(bn));
-		p= (bit*) BUNtail(b,BUNfirst(b));
-		q= (bit*) BUNtail(b,BUNlast(b));
+		p= BUNtail(b,BUNfirst(b));
+		q= BUNtail(b,BUNlast(b));
+
 		while(p<q){
-			if( * p== bit_nil) 
+			if( *(bit*) p== bit_nil) 
 				*o++ = (@1) @1_nil;
-			else if( * p ) 
+			else if( *(bit*) p ) 
 				*o++ = *tid;
 			else
 				*o++ = *eid;
-			p++; 
+			p += xx; 
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(@1);
 		BATsetcount(bn, BATcount(b));
@@ -211,20 +214,24 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	@:resultBAT(@1,"batcalc.ifThenElse")@
 
 	if( b->htype == TYPE_void && !ATOMvarsized(b->ttype)){
-		bit *p,*q;
+		BUN p,q;
 		@1 *o, *t,*e;
+		size_t px = BUNsize(b);
+		size_t tx = BUNsize(tb);
+		size_t ex = BUNsize(eb);
+
 		o= (@1*) BUNtail(bn,BUNfirst(bn));
-		p= (bit*) BUNtail(b,BUNfirst(b));
-		q= (bit*) BUNtail(b,BUNlast(b));
+		p= BUNtail(b,BUNfirst(b));
+		q= BUNtail(b,BUNlast(b));
 		t= (@1*) BUNtail(tb,BUNfirst(tb));
 		e= (@1*) BUNtail(eb,BUNfirst(eb));
 		while(p<q){
-			if( *p== bit_nil) 
+			if( *(bit*) p== bit_nil) 
 				*o++ = (@1) @1_nil;
-			else if( *p ) 
+			else if( *(bit*) p ) 
 				*o++ = *t;
 			else *o++ = *e;
-			p++;  t++; e++;
+			p+= px;  t+=tx; e+=ex;
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(@1);
 		BATsetcount(bn, BATcount(b));
@@ -261,19 +268,21 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 	@:resultBAT(@1,"batcalc.ifThenElse")@
 
 	if( b->htype == TYPE_void && !ATOMvarsized(b->ttype)){
-		bit*p,*q;
+		BUN p,q;
 		@1 *o,*e;
+		size_t px= BUNsize(b);
+		size_t ex= BUNsize(eb);
 		o= (@1*) BUNtail(bn,BUNfirst(bn));
-		p= (bit*) BUNtail(b,BUNfirst(b));
-		q= (bit*) BUNtail(b,BUNlast(b));
+		p= BUNtail(b,BUNfirst(b));
+		q= BUNtail(b,BUNlast(b));
 		e= (@1*) BUNtail(eb,BUNfirst(eb));
 		while(p<q){
-			if( *p== bit_nil) 
+			if( *(bit*) p== bit_nil) 
 				*o++ = (@1) @1_nil;
-			else if( *p ) 
+			else if( *(bit*) p ) 
 				*o++ = *val;
 			else *o++ = *e;
-			p++;  e++;
+			p+=px;  e+=ex;
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(@1);
 		BATsetcount(bn, BATcount(b));
@@ -309,19 +318,21 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	@:resultBAT(@1,"batcalc.ifThenElse")@
 
 	if( b->htype == TYPE_void && !ATOMvarsized(b->ttype)){
-		bit *p,*q;
+		BUN p,q;
 		@1 *o,*t;
+		size_t px= BUNsize(b);
+		size_t tx= BUNsize(tb);
 		o= (@1*) BUNtail(bn,BUNfirst(bn));
-		p= (bit*) BUNtail(b,BUNfirst(b));
-		q= (bit*) BUNtail(b,BUNlast(b));
+		p= BUNtail(b,BUNfirst(b));
+		q= BUNtail(b,BUNlast(b));
 		t= (@1*) BUNtail(tb,BUNfirst(tb));
 		while(p<q){
-			if( *p== bit_nil) 
+			if( *(bit*)p== bit_nil) 
 				*o++ = (@1) @1_nil;
-			else if( *p ) 
+			else if( *(bit*)p ) 
 				*o++ = *t;
 			else *o++ = *val;
-			p++;  t++; 
+			p+=px;  t+=tx; 
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(@1);
 		BATsetcount(bn, BATcount(b));

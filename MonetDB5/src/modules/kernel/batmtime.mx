@@ -110,8 +110,9 @@ batmtime_export str MTIME@1bat_@2cst(int *ret, int *l, @1 *cst);
 @= implCmpOp
 str MTIME@1bat_@3(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
-	@1 *o, *p, *q;
+	BUN o,p,q;
 	bit *a;
+	size_t xx,yy;
 
 	prepareOperand2(left,l,right,r,"batcalc.@2");
 	@:chkSize(left,right,CMDcompare@1)@
@@ -123,13 +124,17 @@ str MTIME@1bat_@3(int *ret, int *l, int *r)
 		throw(MAL, "batmtime.@3","Unexpected input type");
 	}
 
-	o = (@1*)BUNtail(left,BUNfirst(left));
-	p = (@1*)BUNtail(right,BUNfirst(right));
-	q = (@1*)BUNtail(right,BUNlast(right));
+	o = BUNtail(left,BUNfirst(left));
+	p = BUNtail(right,BUNfirst(right));
+	q = BUNtail(right,BUNlast(right));
 	a = (bit*)BUNtail(bn, BUNfirst(bn));
+	xx= BUNsize(left);
+	yy= BUNsize(right);
 
 	while(p<q) {
-		MTIME@1_@3(a++, o++, p++);
+		MTIME@1_@3(a++, (@1*)o, (@1*)p);
+		o+= xx;
+		p+= yy;
 	}
 	BATsetcount(bn, BATcount(left));
  	bn->batBuns->free = ((char *)a) - bn->batBuns->base;
@@ -140,19 +145,22 @@ str MTIME@1bat_@3(int *ret, int *l, int *r)
 
 str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst)
 {   BAT *bn, *left;
-	@1 *p, *q;
+	BUN p,q;
 	bit *a;
+	size_t xx;
 
 	prepareOperand(left,l,"batcalc.@2");
 	prepareResult(bn,left,TYPE_bit,"batcalc.@2");
 	if( BUNsize(left) != sizeof(@1))
 		throw(MAL, "batmtime.@3","Unexpected input type");
 
-	p = (@1*)BUNtail(left,BUNfirst(left));
-	q = (@1*)BUNtail(left,BUNlast(left));
+	p = BUNtail(left,BUNfirst(left));
+	q = BUNtail(left,BUNlast(left));
 	a = (bit*)BUNtail(bn, BUNfirst(bn));
+	xx= BUNsize(left);
 	while(p<q) {
-		MTIME@1_@3(a++, p++, cst);
+		MTIME@1_@3(a++, (@1*)p, cst);
+		p+= xx;
 	}
 	BATsetcount(bn, BATcount(left));
  	bn->batBuns->free = ((char *)a) - bn->batBuns->base;
