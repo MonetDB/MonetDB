@@ -130,6 +130,8 @@ int parseNEXI(TijahParserContext* parserCtx, int *query_end_num)
   rep_err = FALSE;
   char_number = 1;
   line_number = 1;
+  CO_number = 0;
+  CAS_number = 0;
   
   if ( !(parserCtx->commandFILE = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"a")) ) {
       sprintf(&parserCtx->errBUFF[0],"Error: cannot create command file for writing.\n");
