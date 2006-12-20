@@ -118,7 +118,7 @@ and the head values from the batlist"
 .COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,oid] g)
 		: BAT[any::1,OID] = CMDmark_grp_1; 
 "\"grouped mark\": Produces a new BAT with per group a locally unique dense
- ascending sequense of OIDs in the tail. The tail of the first BAT (b)
+ ascending sequence of OIDs in the tail. The tail of the first BAT (b)
  identifies the group that each BUN of b belongs to. The second BAT (g)
  represents the group extend, i.e., the head is the unique list of group IDs
  from b's tail. The tail of g gives for each group the base value for the new
@@ -934,12 +934,46 @@ PROC ll_htordered_unique_thetajoin( int mode,
 	@:chk_order(@1@2,1,iter)@
 	# =>  we do not need to sort the input
 	order := or(order,1);
+@= unique_iters
+		# unique iters
+                var unq_items;
+                unq_items := item.reverse().kunique();
+                if ((item.count() - unq_items.count()) > 1000) {
+                        unq_iter := TRUE;
+                        unq_iters := iter.reverse()
+                                         .leftfetchjoin(item)
+                                         .leftjoin(unq_items.mark(0@0));
+                        item := unq_items.mark(0@0).reverse();
+                        iter := item.mirror();
+                        # we now certainly have iter|item ordering
+                        order := and(order,2);
+                }
+@= resolve_unique_iters
+                # undo memoization and remap iter values
+                if (unq_iter) {
+                    # we assume descendant and child steps ALWAYS
+                    # return their result in iter|item order
+                    #
+                    # Otherwise we need to correct the ordering if not already present
+                    # if (not (ordered (res))) {
+                    #     var ord := res.mark(0@0).sort().reverse();
+                    #         ord := ord.CTrefine(res.reverse().mark(0@0).reverse())
+                    #                   .mark(0@0).reverse();
+                    #     iter := ord.leftfetchjoin(res.mark(0@0).reverse());
+                    #     item := ord.leftfetchjoin(res.reverse().mark(0@0).reverse());
+                    #     res := iter.reverse().leftfetchjoin(item);
+                    # }
+                    res := unq_iters.lefthashjoin(res.access(BAT_WRITE).revert());
+                    res.chk_order();
+                }
 @= wrap
 PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
 {
 	var result := nil;
 	var one_iter := FALSE;
 	var one_item := FALSE;
+	var unq_iter := FALSE;
+        var unq_iters := nil;
 	var min_iter := oid_nil;
 	var max_iter := oid_nil;
 	var skip_self := 1;
@@ -994,7 +1028,10 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 	item := item.chk_order(); # just in case...
 	if ( ordered(reverse(item)) and (min(item) = max(item)) ) {
 		@:many_iters_one_item(@1,(9))@
-	}}}}}
+	} else {
+	if ( ordered(reverse(iter)) and (key(reverse(iter)))) {
+		@:unique_iters()@
+	}}}}}}
 
 	min_iter := min(iter);
 	max_iter := max(iter);
@@ -1013,12 +1050,15 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 	if ( isnil(result) ) {
 		var res := ll_@1 (iter, item, pre_size, cands, one_iter, one_item, 
 		                   min_iter, max_iter, (and(order,2) = 0), kind_test);
+                               
+                @:resolve_unique_iters()@
+
 		result := new(void,bat,2).seqbase(0@0)
 		          .append(res.mark(0@0).reverse())
 		          .append(res.reverse().mark(0@0).reverse())
 		          .access(BAT_READ);
 	}
-	
+
 	# post-sort output
 	if ( (and(order,2) = 2) and not(ordered(reverse(result.fetch(1)))) ) {
 		iter := result.fetch(0);
