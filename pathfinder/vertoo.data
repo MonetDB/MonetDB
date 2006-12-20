@@ -1,2 +1,0 @@
-monetdb = major:4; minor:15; release:0;
-pathfinder = major:0; minor:15; release:0; rc:x; build:1;

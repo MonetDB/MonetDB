@@ -1,5 +1,0 @@
-var b:= new(int,int);
-b.access().print();
-b.insert(2,2);
-var c := b.select(1);
-c.access().print();

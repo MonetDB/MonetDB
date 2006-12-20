@@ -1,5 +1,0 @@
-var b:=bat(void,int);
-b.insert(0@0,1);
-b.rename("xyz");
-b.persists(true);
-commit();
