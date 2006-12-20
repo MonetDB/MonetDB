@@ -67,6 +67,8 @@ attribute_value_comparison.SF-1576463.alg
 document_handling.SF-1618802.unpack_docs
 document_handling.SF-1618802.a
 document_handling.SF-1618802.b
+pf_add-doc.SF-1617681
+pf_del-doc.SF-1617684
 #
 corrupt-attributelist.SF-1483706.create_doc
 corrupt-attributelist.SF-1483706.shred_doc

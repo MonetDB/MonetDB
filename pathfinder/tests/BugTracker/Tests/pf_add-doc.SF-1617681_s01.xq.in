@@ -1,0 +1,9 @@
+(
+doc("pf_add-doc.SF-1617681a.xml")
+,
+doc("pf_add-doc.SF-1617681b.xml")
+,
+doc("pf_add-doc.SF-1617681c.xml")
+,
+doc("$TSTSRCDIR/pf_add-doc.SF-1617681.xml")
+)
