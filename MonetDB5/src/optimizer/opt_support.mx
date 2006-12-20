@@ -772,6 +772,8 @@ isUnsafeFunction(InstrPtr q)
 	if (q->fcn == 0 || getFunctionId(q) == 0 || q->blk == NULL)
 		return FALSE;
 	p= getInstrPtr(q->blk,0);
+	if( p->retc== 0) 
+		return TRUE;
 	return isPropertyDefined( getVar(q->blk,getArg(p,0))->props, unsafeRef);
 	/* check also arguments for 'unsafe' property */
 }
