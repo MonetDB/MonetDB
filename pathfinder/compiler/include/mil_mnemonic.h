@@ -166,6 +166,9 @@
 /** sintersect() operator */
 #define sintersect(a,b) PFmil_sintersect((a),(b))
 
+/** multi column intersection */
+#define mc_intersect(a) PFmil_mc_intersect(a)
+
 /** merged_union() function */
 #define merged_union(a) PFmil_merged_union (a)
 

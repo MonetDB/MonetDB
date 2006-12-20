@@ -2330,125 +2330,160 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      intersect (Rel, Rel) */
         case 25:
         {
-	    mvar_t **res, **r;
-	    mvar_t *is;
-	    unsigned int shared_cols;
-	    PFmil_t *intersection;
+            mvar_t **res, **r;
+            mvar_t *is;
+            unsigned int shared_cols;
+            PFmil_t *intersection;
 
-	    /* prepare as many result variables and temporary variables as 
-	       there will be result columns */
-	    res = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
-					env_count(L(p)->env));
-	    r   = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
-					env_count(L(p)->env));
+            /* prepare as many result variables and temporary variables as 
+               there will be result columns */
+            res = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
+                                        env_count(L(p)->env));
+            r   = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
+                                        env_count(L(p)->env));
 
-	    shared_cols = 0;
-	    for (unsigned int col = 0; col < env_count (L(p)->env); col++) {
-	      /* in the rhs argument, try to find the column that coresponds 
-		 (name, type) with the column in the lhs */ 
-	      r[shared_cols] = env_mvar_unsafe (R(p)->env,
-						env_at (L(p)->env, col).att,
-						env_at (L(p)->env, col).ty);
-	      if (r[shared_cols]) {
-		res[shared_cols] = new_var (p->refctr);
-		execute (assgn (var (res[shared_cols]->name), 
-				join (var (env_at (L(p)->env, col).mvar->name),
-				      reverse (var (r[shared_cols]->name)))));
+            shared_cols = 0;
+            for (unsigned int col = 0; col < env_count (L(p)->env); col++) {
+              /* in the rhs argument, try to find the column that coresponds 
+                 (name, type) with the column in the lhs */ 
+              r[shared_cols] = env_mvar_unsafe (R(p)->env,
+                                                env_at (L(p)->env, col).att,
+                                                env_at (L(p)->env, col).ty);
+              if (r[shared_cols]) {
+                res[shared_cols] = new_var (p->refctr);
+                execute (assgn (var (res[shared_cols]->name), 
+                                join (var (env_at (L(p)->env, col).mvar->name),
+                                      reverse (var (r[shared_cols]->name)))));
 
-		env_add (p->env, 
-			 env_at (L(p)->env, col).att, 
-			 env_at (L(p)->env, col).ty,
-			 res[shared_cols]);
+                env_add (p->env, 
+                         env_at (L(p)->env, col).att, 
+                         env_at (L(p)->env, col).ty,
+                         res[shared_cols]);
 
-		shared_cols++;
-	      }
-	    }
+                shared_cols++;
+              }
+            }
 
-	    if (!shared_cols)
-	      PFoops (OOPS_FATAL, "Arguments to Intersect do not share "
-		                  "any column with common name and type");
+            if (!shared_cols)
+              PFoops (OOPS_FATAL, "Arguments to Intersect do not share "
+                                  "any column with common name and type");
 
-	    /* compute intersection (column-by-column) */ 	
-	    intersection = var (res[0]->name);
-	    for (unsigned int col = 1; col < shared_cols; col++)
-	        intersection = sintersect (intersection, var (res[col]->name));
+            /* compute intersection (column-by-column) */       
+            intersection = var (res[0]->name);
+            for (unsigned int col = 1; col < shared_cols; col++)
+                intersection = sintersect (intersection, var (res[col]->name));
 
-	    is = new_var (1);
-	    execute (
+            is = new_var (1);
+            execute (
                 assgn (var (is->name), 
-		       reverse (mark (tunique (intersection), lit_oid (0)))));
-	    
-	    for (unsigned int col = 0; col < shared_cols; col++)
-	        execute (
-	  	    assgn (var (res[col]->name),
-			   leftjoin (var (is->name), var (r[col]->name))));
+                       reverse (mark (tunique (intersection), lit_oid (0)))));
+            
+            for (unsigned int col = 0; col < shared_cols; col++)
+                execute (
+                    assgn (var (res[col]->name),
+                           leftjoin (var (is->name), var (r[col]->name))));
 
-	    /* release temporary variable is */
-	    unpin (is, 1);
-	    
-	} break;
+            /* release temporary variable is */
+            unpin (is, 1);
+            
+        } break;
 
-	/* Rel:      difference (Rel, Rel) */
+        /* Rel:      difference (Rel, Rel) */
         case 26:
-	{
-   	    mvar_t **res, **l, *r;
-	    unsigned int shared_cols;
-	    mvar_t *is;
-	    PFmil_t *intersection;
+        {
+            mvar_t **l, *r = NULL;
+            unsigned int shared_cols;
+            mvar_t  *is;
+            PFmil_t *args = NULL;
 
-  	    /* prepare as many result variables and temporary variables as 
-	       there will be result columns */
-  	    res = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
-					env_count(L(p)->env));
-	    l   = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
-					env_count(L(p)->env));
-	    
-	    shared_cols = 0;
-	    for (unsigned int col = 0; col < env_count (L(p)->env); col++) {
-	      /* in the rhs argument, try to find the column that coresponds 
-		 (name, type) with the column in the lhs */ 
-	      r = env_mvar_unsafe (R(p)->env, env_at (L(p)->env, col).att,
-				              env_at (L(p)->env, col).ty);
-	      if (r) {
-		res[shared_cols] = new_var (p->refctr);
-		l[shared_cols]   = env_at (L(p)->env, col).mvar;
-		execute (assgn (var (res[shared_cols]->name), 
-				join (var (l[col]->name), 
-				      reverse (var (r->name)))));
+            /* prepare as many temporary variables as there are input columns */
+            l    = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
+                                         env_count(L(p)->env));
+            
+            shared_cols = 0;
+            for (unsigned int col = 0; col < env_count (L(p)->env); col++) {
+                /* in the rhs argument, try to find the column that corresponds 
+                   (name, type) with the column in the lhs */ 
+                r = env_mvar_unsafe (R(p)->env, env_at (L(p)->env, col).att,
+                                                env_at (L(p)->env, col).ty);
+                l[col]   = env_at (L(p)->env, col).mvar;
+                
+                if (r) {
+                    if (!shared_cols)
+                        args = arg (var (l[col]->name), var (r->name));
+                    else
+                        args = arg (args, arg (var (l[col]->name), 
+                                               var (r->name)));
+                    shared_cols++;
+                }
+            }
 
-		env_add (p->env, 
-			 env_at (L(p)->env, col).att, 
-			 env_at (L(p)->env, col).ty,
-			 res[shared_cols]);
+            if (!shared_cols)
+              PFoops (OOPS_FATAL, "Arguments to Difference do not share "
+                                  "any column with common name and type");
 
-		shared_cols++;
-	      }
-	    }
+            assert (args);
 
-	    if (!shared_cols)
-	      PFoops (OOPS_FATAL, "Arguments to Difference do not share "
-		                  "any column with common name and type");
+            /* in most cases we only have a single column (difference based 
+               on iter) where we can choose a more efficient variant. */
+            if (shared_cols == 1 &&
+                env_count (L(p)->env) == 1) {
+                mvar_t *res = new_var (p->refctr);
 
-	    /* compute intersection (column-by-column) */ 	
-	    intersection = var (res[0]->name);
-	    for (unsigned int col = 1; col < shared_cols; col++)
-	        intersection = sintersect (intersection, var (res[col]->name));
-	    
-	    is = new_var (1);
-	    execute (assgn (var (is->name), intersection));
+                assert (r);
+                
+                execute (
+                    assgn (var (res->name),
+                           reverse (
+                               mark (
+                                   reverse (
+                                       kdiff (
+                                           var (l[0]->name),
+                                           reverse (
+                                               kintersect (
+                                                   reverse (var (l[0]->name)),
+                                                   reverse (var (r->name)))))),
+                                   lit_oid (0)))));
+                     
+                env_add (p->env,
+                         env_at (L(p)->env, 0).att,
+                         env_at (L(p)->env, 0).ty,
+                         res);
+                break;
+            }
+                
+            /* compute intersection */
+            is = new_var (1);
+            execute (assgn (var (is->name), 
+                            mc_intersect (args)),
+            /* build the difference */
+                     assgn (var (is->name),
+                            reverse (
+                                mark (
+                                    kdiff (var (l[0]->name),
+                                           var (is->name)),
+                                    lit_oid (0)))));
 
-	    for (unsigned int col = 0; col < shared_cols; col++)
-	      execute (
-	          assgn (var (res[col]->name),
-			 reverse (
-			     mark (reverse (kdiff (var (l[col]->name), 
-						   var (is->name))),
-				   lit_oid (0)))));
-	    
-	    /* release temporary variable is */
-	    unpin (is, 1);
+            /* apply the difference on all columns */
+            for (unsigned int col = 0; col < env_count (L(p)->env); col++) {
+                 mvar_t *a = new_var (p->refctr);
 
-	} break;
+                 execute (
+                      assgn (var (a->name),
+                             leftjoin (
+                                  var (is->name),
+                                  var (l[col]->name))));
+                      
+                 env_add (p->env,
+                          env_at (L(p)->env, col).att,
+                          env_at (L(p)->env, col).ty,
+                          a);
+            }
+            
+            /* release temporary variable is */
+            unpin (is, 1);
+
+        } break;
 
         /* Rel:      sort_distinct (Rel) */
         case 30:
@@ -5372,6 +5407,7 @@ PFmilgen (PFpa_op_t *n)
     bodymilprog = milprog;
     
     milprog = seq (module (lit_str ("pathfinder")),
+                   module (lit_str ("mkey")),
                    /* add timing information */
                    declare (var (PF_MIL_VAR_TIME_LOAD)),
                    declare (var (PF_MIL_VAR_TIME_QUERY)),

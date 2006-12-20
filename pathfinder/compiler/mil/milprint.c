@@ -120,6 +120,7 @@
                              (' ex ',' ex ',' ex ',' ex ')' <m_merge_adjacent>
                  | 'string_join (' expr ',' expr ')'        <m_string_join>
                  | 'merged_union (' args ')'                <m_merged_union>
+                 | 'ds_link (' args ')'                     <m_mc_intersect>
 
                  | 'llscj_child (' a ',' b ',' c ',' d ')'  <m_llscj_child>
                  | ... more staircase join variants ...
@@ -206,6 +207,7 @@ static char *ID[] = {
     , [m_kdiff]        = "kdiff"
     , [m_kintersect]   = "kintersect"
     , [m_sintersect]   = "sintersect"
+    , [m_mc_intersect] = "ds_link"
     , [m_merged_union] = "merged_union"
     , [m_var]          = "var"
 
@@ -956,6 +958,7 @@ print_expression (PFmil_t * n)
             break;
 
         case m_merged_union:
+        case m_mc_intersect:
             milprintf ("%s (", ID[n->kind]);
             print_args (n->child[0]);
             milprintf (")");

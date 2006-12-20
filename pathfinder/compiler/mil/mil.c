@@ -707,6 +707,16 @@ PFmil_sintersect (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Multi column intersection 
+ * (MIL ds_link() proc from the mkey module)
+ */
+PFmil_t *
+PFmil_mc_intersect (const PFmil_t *a)
+{
+    return wire1 (m_mc_intersect, a);
+}
+
+/**
  * Monet merged_union operator
  */
 PFmil_t *

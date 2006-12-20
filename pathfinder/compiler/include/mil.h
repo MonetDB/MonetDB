@@ -129,6 +129,7 @@ enum PFmil_kind_t {
     , m_kdiff        /**< MIL kdiff() operator */
     , m_kintersect   /**< MIL kintersect() operator */
     , m_sintersect   /**< MIL sintersect() operator */
+    , m_mc_intersect /**< multi column intersection */
 
     , m_merged_union /**< MIL merged_union() function (from the pathfinder
                           runtime module */
@@ -546,6 +547,9 @@ PFmil_t * PFmil_kintersect (const PFmil_t *, const PFmil_t *);
 
 /** MIL sintersect() function */
 PFmil_t * PFmil_sintersect (const PFmil_t *, const PFmil_t *);
+
+/** Multi column intersection (MIL ds_link() proc from the mkey module) */
+PFmil_t * PFmil_mc_intersect (const PFmil_t *);
 
 /** MIL merged_union() function (from the pathfinder runtime module) */
 PFmil_t * PFmil_merged_union (const PFmil_t *);
