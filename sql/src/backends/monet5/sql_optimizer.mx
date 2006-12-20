@@ -365,10 +365,11 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 The optimizers applied are taken from a list managed with
 the SQL set optimizer statement. The default list has been
 tested extensively and should provide overall good performance.
+@c
 str defaultPlan=
 	"costModel,"
 	"coercions,"
-	"emptySet,"
+	/* "emptySet," */
 	/* "joinselect," */
 	"modes,"
 	"aliases,"
@@ -379,8 +380,6 @@ str defaultPlan=
 	"deadcode,"
 	"reduce,"
 	"garbageCollector,";
-@c
-str defaultPlan="";
 
 static void
 addOptimizers(Client c,MalBlkPtr mb, str optimizer)
