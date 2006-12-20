@@ -1503,7 +1503,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:MonetDB-Installer.msi"
+        "OutputFilename" = "8:Debug\\MonetDB5-Installer.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -1519,7 +1519,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release\\MonetDB-Installer.msi"
+        "OutputFilename" = "8:Release\\MonetDB5-Installer.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -6518,7 +6518,7 @@
                 {
                     "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_38127E40D5154983A56ED4DED9B77213"
                     {
-                    "Name" = "8:MonetDB"
+                    "Name" = "8:MonetDB5"
                     "AlwaysCreate" = "11:FALSE"
                     "Condition" = "8:"
                     "Transitive" = "11:FALSE"
@@ -6709,18 +6709,18 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:MonetDB"
-        "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{98CA3ED7-8CE7-4200-8136-A238E5FC4F6D}"
+        "ProductName" = "8:MonetDB5"
+        "ProductCode" = "8:{9A94921A-6A95-48B0-BA88-D9A9F088F311}"
+        "PackageCode" = "8:{5DCEA2DC-A920-4025-B4C0-405A17447F68}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:4.15.0"
+        "ProductVersion" = "8:5.0.1"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
-        "Title" = "8:MonetDB"
+        "Title" = "8:MonetDB5"
         "Subject" = "8:"
         "ARPCONTACT" = "8:CWI"
         "Keywords" = "8:"
@@ -6827,7 +6827,7 @@
         {
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_77897AF72E944B5F9D93AE10E5046633"
             {
-            "Name" = "8:MonetDB SQL Client"
+            "Name" = "8:MonetDB5 SQL Client"
             "Arguments" = "8:-lsql -umonetdb -Pmonetdb"
             "Description" = "8:"
             "ShowCmd" = "3:1"
@@ -6855,7 +6855,7 @@
             }
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_EB00F4DBF4DE4F7C8CABB7D97A29354A"
             {
-            "Name" = "8:MonetDB SQL Server"
+            "Name" = "8:MonetDB5 SQL Server"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:1"
