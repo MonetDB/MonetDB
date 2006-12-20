@@ -1858,10 +1858,23 @@ clrAllTypes(MalBlkPtr mb)
 	}
 	for(i=1; i<mb->stop-1; i++){
 		p= getInstrPtr(mb,i);
-		p->token= ASSIGNsymbol;
-		p->typechk= TYPE_UNKNOWN;
-		p->fcn= 0;
-		p->blk= NULL;
+		switch(p->token){
+		case RAISEsymbol:
+		case CATCHsymbol:
+		case RETURNsymbol:
+		case LEAVEsymbol:
+		case YIELDsymbol:
+		case EXITsymbol:
+		case NOOPsymbol:
+			break;
+		case ENDsymbol:
+			return;
+		default:
+			p->token= ASSIGNsymbol;
+			p->typechk= TYPE_UNKNOWN;
+			p->fcn= 0;
+			p->blk= NULL;
+		}
 	}
 }
 
