@@ -129,7 +129,6 @@ First apply alias propagation, before considering a match.
 			break;
 		}
 		if( p->token == NOOPsymbol) continue;
-		if( getModuleId(p)== optimizerRef) continue;
 		if( p->token == ASSIGNsymbol && p->argc== 2 && p->barrier==0){
 			if( getLastUpdate(mb,getArg(p,0)) == i &&
 				getBeginLifespan(mb,getArg(p,0)) == i &&
