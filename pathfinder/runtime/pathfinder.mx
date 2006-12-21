@@ -2504,18 +2504,20 @@ PROC play_doc_tape(BAT[void,BAT] ws,
                    BAT[void,lng] int_values, 
                    BAT[void,str] str_values) : void
 {
-    var locations   := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(str_values);
-    var names       := [+](locations.mirror().[lng](), 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values).tmark(0@0);
-    var colnames    := [+](locations.mirror().[lng](), 2).[oid]().leftfetchjoin(item).leftfetchjoin(str_values).tmark(0@0);
-    var percentages := [+](locations.mirror().[lng](), 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values).tmark(0@0);
+    var IDoid       := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).hmark(0@0);
+    var IDlng       := IDoid.[lng]();
+    var locations   := IDoid.leftfetchjoin(item).leftfetchjoin(str_values);
+    var names       := [+](IDlng, 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+    var colnames    := [+](IDlng, 2).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+    var percentages := [+](IDlng, 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values);
     var del_doc     := percentages.ord_uselect(-1LL).hmark(0@0); 
     var add_doc     := percentages.ord_uselect(0LL,lng_nil).hmark(0@0); 
     shred_doc_base(del_doc(bit_nil, del_doc.leftfetchjoin(names), true),
-                   stream_nil,
                    add_doc.leftfetchjoin(locations), 
                    add_doc.leftfetchjoin(names), 
                    add_doc.leftfetchjoin(colnames), 
-                   add_doc.leftfetchjoin(percentages), ws_id(ws));
+                   add_doc.leftfetchjoin(percentages),
+                   stream_nil, ws_id(ws));
 }
 
 @- MIL Document Management Interface

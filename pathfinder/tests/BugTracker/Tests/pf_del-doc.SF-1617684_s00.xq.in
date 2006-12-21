@@ -1,5 +1,5 @@
 (
 pf:del-doc("pf_del-doc.SF-1617684a.xml")
 ,
-pf:del-doc("$TSTSRCDIR/pf_del-doc.SF-1617684.xml")
+pf:del-doc("pf_del-doc.SF-1617684b.xml")
 )
