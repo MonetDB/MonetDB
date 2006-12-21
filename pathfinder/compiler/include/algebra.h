@@ -175,6 +175,7 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 #define att_notsub  0x10000000    /**< notsub column */
 #define att_isint   0x20000000    /**< isint column */
 #define att_isdec   0x40000000    /**< isdec column */
+
 /** attribute names */
 typedef unsigned int PFalg_att_t;
 
