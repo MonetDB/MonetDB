@@ -1,0 +1,28 @@
+b:= bat.new(:void,:oid);
+bat.insert(b,0@1,0@1);
+bat.insert(b,0@2,0@2);
+bat.insert(b,0@3,0@3);
+
+io.print(b);
+bl:= batcalc.lng(b);
+io.print(bl);
+
+bb:= bat.new(:void,:oid);
+bat.setSequenceBase(bb,0@0);
+bat.insert(bb,0@1,0@1);
+bat.insert(bb,0@2,0@2);
+bat.insert(bb,0@3,0@3);
+
+io.print(bb);
+bbl:= batcalc.lng(bb);
+io.print(bbl);
+
+c:= bat.new(:void,:oid);
+bat.append(c,0@1);
+bat.append(c,0@2);
+bat.append(c,0@3);
+
+io.print(c);
+cl:= batcalc.lng(c);
+io.print(cl);
+
