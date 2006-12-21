@@ -19,8 +19,17 @@ io.print(bbl);
 
 c:= bat.new(:void,:oid);
 bat.append(c,0@1);
+o:= algebra.fetch(c,0);
+io.print(o);
 bat.append(c,0@2);
 bat.append(c,0@3);
+o:= 0@1;
+io.print(o);
+bat.append(c,o);
+o:= 0@2;
+bat.append(c,o);
+o:= 0@3;
+bat.append(c,o);
 
 io.print(c);
 cl:= batcalc.lng(c);
