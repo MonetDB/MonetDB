@@ -1,8 +1,4 @@
 /**
- * Fri Oct 27 13:26:38 CEST 2006, Manuel Mayr
- */
-
-/**
  * @file
  *
  * Declarations regarding the transformation from logical algebra to sql. 
@@ -40,140 +36,477 @@
 
 #include "algebra.h"
 
-/* ........................ type definitions ...............................*/
+/*..................... type definitions ......................*/
+#define ATT_BITS 5
+#define TYPE_BITS 4
+#define ASCII_A   97
 
-/* type to count the tuples in a table */
+/* Reserve identifiers. */
+#define PF_SQL_TABLE_SYSDUMMY1  1
+#define PF_SQL_TABLE_FRAG       2
+#define PF_SQL_TABLE_TIME_PRINT 23
+#define PF_SQL_RES_TABLE_COUNT (PF_SQL_TABLE_TIME_PRINT + 1)
+
+#define PF_SQL_COLUMN_TIME_PRINT 23
+#define PF_SQL_RES_COLUMN_COUNT (PF_SQL_COLUMN_TIME_PRINT + 1)
+
+/**
+ * Type to count the tuples in a table.
+ */
 typedef unsigned int PFsql_tuple_count_t;
-/* type to count the atoms in a tuple */
+/**
+ * Type to count the atoms in a tuple.
+ */
 typedef unsigned int PFsql_atom_count_t;
-/* type to count the schema items */
+/**
+ * Type to count the schema items.
+ */
 typedef unsigned int PFsql_schema_item_count_t;
-/* type to count attributes */
+/**
+ * Type to count attributes.
+ */
 typedef unsigned int PFsql_att_count_t;
-
-/* sql schema attribute names */
-enum PFsql_att_t { 
-    sql_att_iter,
-    sql_att_item,
-    sql_att_item1
-};
-typedef enum PFsql_att_t PFsql_att_t;
-
-/** list of attributes */
-struct PFsql_attlist_t {
-   PFsql_att_count_t    count;   /**< number of attributes */
-   PFsql_att_t          *atts;   /**< array that holds the list items */
-};
-typedef struct PFsql_attlist_t PFsql_attlist_t; 
-
-/* types in SQL does not know polymorphic types,
- * therefore we use an enum to represent simple
- * types in sql
+/**
+ * Type to count types in an itemset.
  */
-// TODO define types
-enum PFsql_simple_type_t {
-    sql_type_integer = 1
+typedef unsigned int PFsql_type_count_t;
+/**
+ * SQL identifiers are unsigned ints
+ */
+typedef unsigned int PFsql_ident_t;
+
+/*............... SQL operators (relational operators) ............*/
+
+/**
+ * SQL operator kinds.
+ * Each SQL tree node has a type, specified
+ * in this enum.
+ */
+enum PFsql_kind_t {
+   sql_tmp_tbl          =  1,
+   sql_comment          =  2,
+   sql_cmmn_tbl_expr    =  3,
+   sql_tbl_name         =  4,
+   sql_declare          =  5,
+   sql_bind             =  6,
+   sql_attbind          =  7,
+   sql_list_terminator  =  8,
+   sql_bln_expr         =  9,
+   sql_expr             = 10,
+   sql_frm_list        = 11,
+   sql_lit_int          = 12,
+   sql_lit_lng          = 13,
+   sql_lit_str          = 14,
+   sql_lit_bln          = 15,
+   sql_add              = 16,
+   sql_sub              = 17,
+   sql_mul              = 18,
+   sql_div              = 19,
+   sql_gt               = 20,
+   sql_eq               = 21,
+   sql_not              = 22,
+   sql_and              = 23,
+   sql_or               = 24,
+   sql_with             = 25,
+   sql_union            = 26,
+   sql_select           = 27,
+   sql_slct_list        = 28,
+   sql_clmn_assign      = 29,
+   sql_clmn_name        = 30,
+   sql_over             = 31,
+   sql_rownumber        = 32,
+   sql_ordr_by          = 33,
+   sql_table_ref        = 34,
+   sql_dot              = 35,
+   sql_alias            = 36,
+   sql_crrltn_name      = 37,
+   sql_clmn_list        = 38,
+   sql_lit_null         = 39,
+   sql_whr_list         = 40,
+   sql_star             = 41,
+   sql_tb_name          = 42,
+   sql_schm             = 43,
+   sql_cst              = 44,
+   sql_type             = 45,
+   sql_prttn            = 46,
+   sql_prt_expr         = 47,
+   sql_srtky_expr       = 48,
+   sql_wnd_clause        = 49
 };
-typedef enum PFsql_simple_type_t PFsql_simple_type_t;
+typedef enum PFsql_kind_t PFsql_kind_t;
 
-struct PFsql_schema_item_t {
-    PFsql_att_t name;
-    PFsql_simple_type_t type;   
-};
-typedef struct PFsql_schema_item_t PFsql_schema_item_t;
-
-struct PFsql_schema_t {
-    PFsql_schema_item_count_t  count;
-    PFsql_schema_item_t        *items;
-};
-typedef struct PFsql_schema_t PFsql_schema_t;
-
-union PFsql_atom_val_t {
-   int      int_;    /**< value for integer atoms */
-   double   dbl_;    /**< value for double atoms */
-   bool     bln_;    /**< value for boolean atoms */
-};
-typedef union PFsql_atom_val_t PFsql_atom_val_t;
-
-
-/* an atom is a value with simple type in SQL */
-struct PFsql_atom_t {
-    PFsql_simple_type_t    type;   
-    PFsql_atom_val_t       val;
-};
-typedef struct PFsql_atom_t PFsql_atom_t;
-
-/* a tuple is an array of atoms, with length specified in count */
-struct PFsql_tuple_t {
-    PFsql_atom_count_t  count;
-    PFsql_atom_t        *atoms; 
-};
-typedef struct PFsql_tuple_t PFsql_tuple_t;
-
-/* .............. sql operators (relational operators) .................... */
-
-/** sql operator kinds */
-enum PFsql_op_kind_t {
-   sql_tmp_tbl          = 1
-};
-typedef enum PFsql_op_kind_t PFsql_op_kind_t;
-
-/** semantic content in sql operators */
-union PFsql_op_sem_t {
+/**
+ * Semantic content in SQL operators.
+ */
+union PFsql_sem_t {
     struct {
-        PFsql_tuple_count_t   count;   /**< number of tuples */
-        PFsql_tuple_t         *tuples; /**< array holding the tuples */               
-    } tmp_tbl;
-    
+        PFalg_simple_type_t t;
+    } type;
+    struct {
+        PFsql_ident_t ident;
+        struct PFsql_t    *clmn_list;
+    } tablename;
+    struct {
+        char *str;
+    } schema;
+    struct {
+        PFsql_ident_t ident;
+    } correlation;
+    struct {
+        PFsql_ident_t ident;
+    } column;
+    struct {
+        bool distinct;                  /**< No equal tuples in result
+                                             relation */
+        struct PFsql_t   *select_list;  /**< Select list. */
+        struct PFsql_t   *from_list;    /**< Select from list. */
+        struct PFsql_t   *where_list;   /**< Select where list. */
+        struct PFsql_t   *grpby_list;   /**< Select group by list. */
+    } select;
+    char             *comment;         /**< String containing comment. */
+
+    struct {
+        bool null;
+        union {
+            int              i;                /**< Integer containing
+                                                    literal. */   
+            long long int    l;                /**< Long integer
+                                                    containing literal. */
+            char             *s;               /**< String containing
+                                                    literal string. */
+            bool             b;                /**< Boolean containing
+                                                    literal boolean. */
+      } val;
+    } atom;
+    char             *table;           /**< string identifying
+                                            the table */
 };
-typedef union PFsql_op_sem_t PFsql_op_sem_t; 
+typedef union PFsql_sem_t PFsql_sem_t; 
 
-/* each node has at most two childs */
-#define PFSQL_OP_MAXCHILD 2
+/** Each node has at most for childs */
+#define PFSQL_OP_MAXCHILD  3 
 
-/** sql operator node */
-struct PFsql_op_t {
-    PFsql_op_kind_t     kind;       /**< operator kind */
-    PFsql_op_sem_t      sem;        /**< semantic content for this operator */
-    //PFalg_schema_t      schema;     /**< result schema */
-
-    struct PFsql_op_t   *child[PFSQL_OP_MAXCHILD];
+/**
+ * SQL operator node.
+ * Represents a single SQL tree node in the
+ * SQL tree.
+ */
+struct PFsql_t {
+    PFsql_kind_t     kind;          /**< Operator kind. */
+    PFsql_sem_t      sem;           /**< Semantic content for 
+                                            this operator. */
+    struct PFsql_t   *child[PFSQL_OP_MAXCHILD]; /**< Childs of this
+                                                        operator. */
 };
-typedef struct PFsql_op_t PFsql_op_t;
-
-/************************** Constructors **********************/
+typedef struct PFsql_t PFsql_t;
 
 /**
- * Construct literal integer atom.
+ * Annotations to logical algebra tree nodes. Used during 
+ * SQL code generation.
  */
-PFsql_atom_t PFsql_lit_int(long long int value);
+struct PFsql_alg_ann_t {
+    PFsql_t       *tabname;      /**< Table name that this subexpression
+                                      has been bound to. NULL otherwise. */
+    PFsql_t       *sfw;          /**< SQL code that implements this
+                                      subexpression. Should always be an
+                                      SFW clause. */
+    PFarray_t   *colmap;     /**< Mapping table that maps (logical)
+                                      attribute type  pairs to their
+                                      SQL expression or in case of 
+                                      a binding to their column names. */
+    PFarray_t   *wheremap;  /**< contains references to the boolean
+                                 in colmap */
+};
+typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
+
+/*.................... Constructors .....................*/
 
 /**
- * Construct an attribute list.
+ * Construct an SQL leaf.
  */
-#define PFsql_attlist(...) \
-PFsql_attlist_ ( (sizeof( (PFsql_att_t[]) { __VA_ARGS__ } ) \
-            / sizeof( PFsql_att_t ) ), \
-            (PFsql_att_t[]) { __VA_ARGS__ } ) 
-PFsql_attlist_t PFsql_attlist_(PFsql_att_count_t count, PFsql_att_t *atts);
+PFsql_t* PFsql_op_leaf(PFsql_kind_t kind);
+
+#define PFsql_common_table_expr(...) \
+    PFsql_common_table_expr_ (sizeof((PFsql_t *[]) {__VA_ARGS__} ) / \
+                sizeof (PFsql_t*), (const PFsql_t *[]) \
+                {__VA_ARGS__})
+PFsql_t* PFsql_common_table_expr_(int count, const PFsql_t **stmts);
+
+PFsql_t* PFsql_star(void);
+
+PFsql_t* PFsql_select(const PFsql_t *selectlist, const PFsql_t *fromlist,
+               const PFsql_t *wherelist);
+
+PFsql_t* PFsql_select_distinct(const PFsql_t *selectlist,
+        const PFsql_t *fromlist, const PFsql_t *wherelist);
 
 /**
- * Construct temporary table, that is not gonna be stored in the database.
+ * Construct a SQL `union' operator.
  */
-PFsql_op_t* PFsql_tmp_tbl_(PFalg_attlist_t a,
-                                unsigned int count, PFalg_tuple_t *tuples);
+PFsql_t* PFsql_union(const PFsql_t *a, const PFsql_t *b);
 
-/************************* Translation ************************/
+/*............ Common Operators ............*/
 
-/**
- * Convert an algebra schema item to a SQL specific schema.
- */
-PFsql_schema_item_t PFsql_alg_schmitm_conv(PFalg_schm_item_t item);
+PFsql_t* PFsql_with( const PFsql_t *a, const PFsql_t *b );
 
 /**
- * Convert an algeba schema to a SQL specific  schema.
+ * Construct a comment.
  */
-PFsql_schema_t PFsql_alg_schema_conv(PFalg_schema_t schema);
+PFsql_t* PFsql_comment(const char *fmt, ...);
+
+/**
+ * Construct a SQL type.
+ */
+PFsql_t* PFsql_type(PFalg_simple_type_t t);
+
+/**
+ * Construct a SQL tree representing a SQL
+ * `CAST' operator.
+ */
+PFsql_t* PFsql_cast(const PFsql_t *expr, const PFsql_t *t);
+
+/*............ Aggregat Functions ............*/
+
+/**
+ * Construct a SQL `rownumber' operator.
+ */
+PFsql_t* PFsql_rownumber(void);
+
+/**
+ * Construct a SQL `over' operator.
+ */
+PFsql_t* PFsql_over(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct a SQL `partition' clause.
+ */
+PFsql_t* PFsql_partition(const PFsql_t *a);
+
+#define PFsql_part_expressions(...) \
+   PFsql_part_expressions_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+               sizeof(PFsql_t*), (const PFsql_t *[]) \
+               {__VA_ARGS__})
+PFsql_t* PFsql_part_expressions_(unsigned int count, const PFsql_t **list);
+
+PFsql_t* PFsql_part_expressions_empty(void);
+
+PFsql_t* PFsql_part_expressions_add(const PFsql_t *list, const PFsql_t *item);
+
+PFsql_t* PFsql_order_by(const PFsql_t *a);
+
+PFsql_t* PFsql_sortkey_expressions_empty(void);
+
+PFsql_t* PFsql_sortkey_expressions_add(const PFsql_t *list,
+        const PFsql_t *item);
+
+PFsql_t* PFsql_window_clause(const PFsql_t *partcls, const PFsql_t *ordercls);
+
+/*................. Tables ..................*/
+
+#define PFsql_sysdummy1()     PFsql_table_name(PF_SQL_TABLE_SYSDUMMY1, NULL)
+#define PFsql_fragrelation()  PFsql_table_name(PF_SQL_TABLE_FRAG, NULL)
+#define PFsql_table_name_default(name)    PFsql_table_name(name, NULL)
+PFsql_t* PFsql_table_name(PFsql_ident_t name, PFsql_t *clmnlist);
+
+PFsql_t* PFsql_schema(const char *name);
+
+PFsql_t* PFsql_bind(PFsql_t *a, PFsql_t *b);
+
+PFsql_t* PFsql_tab_name(const PFsql_t *schema, const PFsql_t *table_name);
+
+PFsql_t* PFsql_alias( const PFsql_t *a, const PFsql_t *b);
+
+PFsql_t* PFsql_correlation_name( PFsql_ident_t name );
+
+/*................. Columns ...................*/
+
+PFsql_t* PFsql_column_name(PFsql_ident_t ident);
+
+PFsql_t* PFsql_column_assign(const PFsql_t *a, const PFsql_t *b);
+
+/*................. String conversion ....................*/
+
+/**
+ * Convert the @a name to a string.
+ */
+char* PFsql_table_str(PFsql_ident_t name);
+
+/**
+ * Convert the @a ident to a string.
+ */
+char* PFsql_column_name_str(PFsql_ident_t ident);
+
+/**
+ * Convert the @a type to a string.
+ */
+char* PFsql_simple_type_str(PFalg_simple_type_t type);
+
+/**
+ * Convert the @a name to a string.
+ */
+char* PFsql_loc_var_str(PFsql_ident_t name);
+
+/*.................. Literal construction .................... */
+
+/**
+ * Construct a NULL.
+ */
+PFsql_t* PFsql_null(void);
+
+/**
+ * Construct a literal integer.
+ */
+PFsql_t* PFsql_lit_int(int i);
+
+/**
+ * Construct a literal 64bit integer.
+ */
+PFsql_t* PFsql_lit_lng(long long int lng);
+
+/**
+ * Construct a literal string.
+ */
+PFsql_t* PFsql_lit_str(const char* s);
+
+/**
+ * Construct a literal boolean value.
+ */
+PFsql_t* PFsql_lit_bln(bool b);
+
+/*............. List construction ............*/
+
+/**
+ * Create a SQL tree node representing a list terminator.
+ */
+PFsql_t* PFsql_list_terminator(void);
+
+/**
+ * A sequence of select_list-expressions.
+ */
+#define PFsql_select_list(...) \
+    PFsql_select_list_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+            sizeof(PFsql_t*), (const PFsql_t *[]) \
+            {__VA_ARGS__})
+PFsql_t* PFsql_select_list_(unsigned int count, const PFsql_t **list);
+
+/**
+ * Create an empty select_list.
+ */
+PFsql_t* PFsql_select_list_empty(void);
+
+/**
+ * Adds an item to the front of an existing select_list.
+ */
+PFsql_t* PFsql_select_list_add(const PFsql_t *list, const PFsql_t *item);
+
+/**
+ * A sequence of from_list-expressions.
+ */
+#define PFsql_from_list(...) \
+    PFsql_from_list_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+            sizeof(PFsql_t*), (const PFsql_t *[]) \
+            {__VA_ARGS__})
+PFsql_t* PFsql_from_list_(unsigned int count, const PFsql_t **list);
+
+/**
+ * Create an empty from_list.
+ */
+PFsql_t* PFsql_from_list_empty(void);
+
+/**
+ * Adds an item to the front of an existing from_list.
+ */
+PFsql_t* PFsql_from_list_add(const PFsql_t *list, const PFsql_t *item);
+
+/**
+ * A sequence of where_list-expressions.
+ */
+#define PFsql_where_list(...) \
+    PFsql_where_list_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+            sizeof(PFsql_t*), (const PFsql_t *[]) \
+            {__VA_ARGS__})
+PFsql_t* PFsql_where_list_(unsigned int count,
+        const PFsql_t **list);
+
+/**
+ * Create an empty where_list.
+ */
+PFsql_t* PFsql_where_list_empty(void);
+
+/**
+ * Adds an item to the front of an existing where_list.
+ */
+PFsql_t* PFsql_where_list_add(const PFsql_t *list,
+        const PFsql_t *item);
+
+/**
+ * A sequence of columns.
+ */
+#define PFsql_column_list(...) \
+   PFsql_column_list_(sizeof((PFsql_t *[]) {__VA_ARGS}) / \
+            sizeof(PFsql_t*), (const PFsql_t *[]) \
+            {__VA_ARGS__})
+PFsql_t* PFsql_column_list_(unsigned int count,
+        const PFsql_t **list);
+
+/**
+ * Create an empty column_list.
+ */
+PFsql_t* PFsql_column_list_empty(void);
+
+/**
+ * Adds an item to the front of an existing column_list.
+ */
+PFsql_t* PFsql_column_list_add(PFsql_t *list, PFsql_t *item);
+
+/*................ Aritmethic ..............*/
+
+/**
+ * Construct an arithmetic addition operator.
+ */
+PFsql_t* PFsql_add(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct an arithmetic subtraction operator.
+ */
+PFsql_t* PFsql_sub(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct an arithmetic multiplication operator.
+ */
+PFsql_t* PFsql_mul(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct an arithmetic division operator.
+ */
+PFsql_t* PFsql_div(const PFsql_t *a, const PFsql_t *b);
+
+/*.............. Boolean operator constructors ............ */
+
+/**
+ * Construct a (comparison) greater-than operator.
+ */
+PFsql_t* PFsql_gt(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct a (comparison) equality operator.
+ */
+PFsql_t* PFsql_eq(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct a boolean `not' operator.
+ */
+PFsql_t* PFsql_not(const PFsql_t *a);
+
+/**
+ * Construct a boolean `and' operator.
+ */
+PFsql_t* PFsql_and(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct a boolean `or' operator.
+ */
+PFsql_t* PFsql_or(const PFsql_t *a, const PFsql_t *b);
 
 #endif /* __SQL_H__ */
 
