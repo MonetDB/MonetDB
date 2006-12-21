@@ -30,8 +30,8 @@
 #define CORE_2_SQL_H
 
 #include "logical.h"
+#include "sql.h"
 
-
-void PFlalg2sql(PFla_op_t *p);
+PFsql_t* PFlalg2sql(PFla_op_t *p);
 
 #endif /* CORE_2_SQL */
