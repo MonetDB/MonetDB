@@ -40,7 +40,8 @@ lib_sql = {
         DIR = libdir
         SOURCES = \
                 lalg2sql.brg \
-                sql.c
+                sql.c \
+                sqlprint.c
 }
 
 #EXTRA_DIST =
