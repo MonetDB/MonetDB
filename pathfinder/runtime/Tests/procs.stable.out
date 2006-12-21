@@ -56,7 +56,7 @@ procs();
 [ "_shred_doc_base(BAT[oid,str], BAT[void,str], BAT[void,str], lng) : BAT[oid,BAT]"									  ]
 [ "_shred_doc_cleanup(lng, bit) : BAT[any,any]"													  ]
 [ "_shred_into_docBAT(BAT[str,BAT], BAT[void,str], BAT[void,str], str, oid, timestamp, lng) : oid"							  ]
-[ "_shredlock_set(str, lng) : void"															  ]
+[ "_shredlock_set(str, lng) : bit"																								  ]
 [ "_shredlock_unset(str, lng) : void"															  ]
 [ "_ws_coll_isolate(BAT[void,BAT], str, BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,oid]) : void"						  ]
 [ "_ws_free(lng) : BAT[void,any]"														  ]
