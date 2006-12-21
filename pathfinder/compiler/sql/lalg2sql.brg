@@ -465,7 +465,7 @@ void
 sql_column_env_add(PFarray_t *env, PFalg_att_t att,
         PFalg_simple_type_t ty, PFsql_t *expr)
 {
-    assert( ty == aat_nat || ty == aat_int || ty == aat_str || ty = aat_bln );
+    assert( ty == aat_nat || ty == aat_int || ty == aat_str || ty == aat_bln );
 
     *(sql_column_env_t*)PFarray_add(env) =
         (sql_column_env_t) { .type = ty, .att = att,
