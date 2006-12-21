@@ -118,9 +118,8 @@ typedef enum PFalg_minmax_t PFalg_minmax_t;
 
 /** typed atomic value representation in our algebra */
 struct PFalg_atom_t {
-    PFalg_simple_type_t type;    /**< type of this atom */
-    PFalg_atom_val_t    val;     /**< value */
-    PFalg_minmax_t      special; /**< min/max domain value indicator */
+    PFalg_simple_type_t type; /**< type of this atom */
+    PFalg_atom_val_t    val;  /**< value */
 };
 /** typed atomic value representation in our algebra */
 typedef struct PFalg_atom_t PFalg_atom_t;
@@ -136,6 +135,9 @@ struct PFalg_tuple_t {
 
 typedef struct PFalg_tuple_t PFalg_tuple_t;
 
+/** direction of sorting */
+#define DIR_DESC true
+#define DIR_ASC false
 
 /* ................ algebra attribute lists ................ */
 

@@ -1466,7 +1466,7 @@ reduce (PFpa_op_t * p, int goalnt)
             if (!sorted)
                 execute (
                     assgn (var (item->name),
-                           sort (var (item->name))),
+                           sort (var (item->name), DIR_ASC)),
                     assgn (var (kind->name),
                            leftjoin (mirror (var (item->name)),
                                      var (kind->name))));
@@ -2531,8 +2531,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                     reverse (
                                         sort (
                                             reverse (
-                                                var (first_sort_var->name))
-                                            ))));
+                                                var (first_sort_var->name)),
+                                            DIR_ASC))));
 
                             initialized = true;
                         }
@@ -2546,7 +2546,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                              PFord_order_at (p->sem
                                                                .sort_distinct
                                                                .ord, i),
-                                             t))));
+                                             t),
+                                        DIR_ASC)));
                         }
                     }
                 }
@@ -2635,8 +2636,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                     reverse (
                                         sort (
                                             reverse (
-                                                var (first_sort_var->name))
-                                            ))));
+                                                var (first_sort_var->name)),
+                                            DIR_ASC))));
                             initialized = true;
                         }
                         else {
@@ -2649,7 +2650,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                              PFord_order_at (
                                                  p->sem.sortby.required,
                                                  i),
-                                             t))));
+                                             t),
+                                        DIR_ASC)));
                         }
                     }
 
@@ -2733,7 +2735,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                              PFord_order_at (p->sem
                                                                .sortby
                                                                .existing, i),
-                                             t))));
+                                             t),
+                                        DIR_ASC)));
                         }
                     }
                 }
@@ -2776,7 +2779,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                                                .sortby
                                                                .required,
                                                              i),
-                                             t))));
+                                             t),
+                                        DIR_ASC)));
                     }
             }
 
@@ -4386,46 +4390,23 @@ type_of (PFpa_op_t *n, PFalg_att_t att)
 static PFmil_t *
 literal (PFalg_atom_t atom)
 {
-    if (atom.special == amm_min)
-        switch (atom.type) {
-            case aat_int:  return lit_min (m_lng);
-            case aat_uA:
-            case aat_str:  return lit_min (m_str);
-            case aat_dec:  return lit_min (m_dbl);
-            case aat_dbl:  return lit_min (m_dbl);
-            case aat_bln:  return lit_min (m_bit);
-            default:
-                break;
-        }
-    else if (atom.special == amm_max)
-        switch (atom.type) {
-            case aat_int:  return lit_max (m_lng);
-            case aat_uA:
-            case aat_str:  return lit_max (m_str);
-            case aat_dec:  return lit_max (m_dbl);
-            case aat_dbl:  return lit_max (m_dbl);
-            case aat_bln:  return lit_max (m_bit);
-            default:
-                break;
-        }
-    else
-        switch (atom.type) {
+    switch (atom.type) {
 
-            case aat_nat:  return lit_oid (atom.val.nat_);
-            case aat_int:  return lit_lng (atom.val.int_);
-            case aat_uA:
-            case aat_str:  return lit_str (atom.val.str);
-            case aat_dec:  return lit_dbl (atom.val.dec_);
-            case aat_dbl:  return lit_dbl (atom.val.dbl);
-            case aat_bln:  return lit_bit (atom.val.bln);
-            case aat_qname:  
-                return add_qname (lit_str (PFqname_ns (atom.val.qname)),
-                                  lit_str (PFqname_uri (atom.val.qname)),
-                                  lit_str (PFqname_loc (atom.val.qname)),
-                                  var (PF_MIL_VAR_WS));
-            default:
-                break;
-        }
+        case aat_nat:  return lit_oid (atom.val.nat_);
+        case aat_int:  return lit_lng (atom.val.int_);
+        case aat_uA:
+        case aat_str:  return lit_str (atom.val.str);
+        case aat_dec:  return lit_dbl (atom.val.dec_);
+        case aat_dbl:  return lit_dbl (atom.val.dbl);
+        case aat_bln:  return lit_bit (atom.val.bln);
+        case aat_qname:  
+            return add_qname (lit_str (PFqname_ns (atom.val.qname)),
+                              lit_str (PFqname_uri (atom.val.qname)),
+                              lit_str (PFqname_loc (atom.val.qname)),
+                              var (PF_MIL_VAR_WS));
+        default:
+            break;
+    }
 
     PFoops (OOPS_FATAL,
             "A relational algebra type (%u) has not yet "

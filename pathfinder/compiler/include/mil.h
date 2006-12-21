@@ -73,9 +73,7 @@ typedef unsigned int PFmil_ident_t;
 
 /** Node kinds for MIL tree representation */
 enum PFmil_kind_t {
-      m_lit_min      /**< literal minimum */
-    , m_lit_max      /**< literal maximum */
-    , m_lit_int      /**< literal integer */
+      m_lit_int      /**< literal integer */
     , m_lit_lng      /**< literal long integer */
     , m_lit_oid      /**< literal oid */
     , m_lit_str      /**< literal string */
@@ -135,10 +133,12 @@ enum PFmil_kind_t {
                           runtime module */
 
     , m_sort         /**< MIL sort function */
+    , m_sort_rev     /**< MIL sort_rev function */
     , m_ctgroup      /**< MIL CTgroup function */
     , m_ctmap        /**< MIL CTmap function */
     , m_ctextend     /**< MIL CTextend function */
-    , m_ctrefine     /**< MIL ctrefine function */
+    , m_ctrefine     /**< MIL CTrefine function */
+    , m_ctrefine_rev /**< MIL CTrefine_rev function */
     , m_ctderive     /**< MIL CTderive function */
 
     , m_cast         /**< typecast */
@@ -414,12 +414,6 @@ struct PFmil_t {
 };
 typedef struct PFmil_t PFmil_t;
 
-/** a minimum value */
-PFmil_t * PFmil_lit_min (PFmil_type_t t);
-
-/** a maximum value */
-PFmil_t * PFmil_lit_max (PFmil_type_t t);
-
 /** a literal integer */
 PFmil_t * PFmil_lit_int (int i);
 
@@ -561,21 +555,21 @@ PFmil_t * PFmil_arg (const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_copy (const PFmil_t *);
 
 /** MIL sort function */
-PFmil_t * PFmil_sort (const PFmil_t *);
+PFmil_t * PFmil_sort (const PFmil_t *, bool dir_desc);
 
-/** MIL ctgroup function */
+/** MIL CTgroup function */
 PFmil_t * PFmil_ctgroup (const PFmil_t *);
 
-/** MIL ctmap function */
+/** MIL CTmap function */
 PFmil_t * PFmil_ctmap (const PFmil_t *);
 
-/** MIL ctextend function */
+/** MIL CTextend function */
 PFmil_t * PFmil_ctextend (const PFmil_t *);
 
-/** MIL ctrefine function */
-PFmil_t * PFmil_ctrefine (const PFmil_t *, const PFmil_t *);
+/** MIL CTrefine function */
+PFmil_t * PFmil_ctrefine (const PFmil_t *, const PFmil_t *, bool dir_desc);
 
-/** MIL ctderive function */
+/** MIL CTderive function */
 PFmil_t * PFmil_ctderive (const PFmil_t *, const PFmil_t *);
 
 /** MIL count() function, return number of BUNs in a BAT */

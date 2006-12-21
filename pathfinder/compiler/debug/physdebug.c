@@ -242,11 +242,6 @@ literal (PFalg_atom_t a)
 {
     PFarray_t *s = PFarray (sizeof (char));
 
-    if (a.special == amm_min)
-        return "MIN";
-    else if (a.special == amm_max)
-        return "MAX";
-
     switch (a.type) {
 
         case aat_nat:
@@ -291,15 +286,7 @@ xml_literal (PFalg_atom_t a)
 {
     PFarray_t *s = PFarray (sizeof (char));
 
-    if (a.special == amm_min)
-        PFarray_printf (
-           s, "<value type=\"%s\">MIN</value>",
-           atomtype[a.type]);
-    else if (a.special == amm_max)
-        PFarray_printf (
-           s, "<value type=\"%s\">MAX</value>",
-           atomtype[a.type]);
-    else if (a.type == aat_nat)
+    if (a.type == aat_nat)
         PFarray_printf (
            s, "<value type=\"%s\">%u</value>",
            atomtype[a.type],

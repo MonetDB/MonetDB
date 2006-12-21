@@ -1346,74 +1346,112 @@ reduce (PFcnode_t * p, int goalnt)
             PFty_t              t;
             PFalg_simple_type_t algty;
             PFalg_atom_t        atom;
+            unsigned int        empty = 0;
 
             /* translate order expression */
             reduce (kids[0], nts[0]);
+
+            sort_attr = project (A(L(p)).rel,
+                                 proj (att_iter, att_iter),
+                                 proj (att_item, att_item));
+            
+            if (p->sem.mode.dir == p_desc) {
+                if (PFty_subtype (L(p)->type, PFty_opt(PFty_numeric ())))
+                    /* just negate the items and sort it ascending afterwards */
+                    sort_attr = project (neg (sort_attr,
+                                              att_res,
+                                              att_item),
+                                         proj (att_iter, att_iter),
+                                         proj (att_item, att_res));
+                else
+                    /* apply rownum based on items and negate the rownum
+                       values to support descending sorting with ascending
+                       sort only */
+                    sort_attr = project (neg (cast (rownum (sort_attr,
+                                                            att_item1,
+                                                            sortby (att_item),
+                                                            att_NULL),
+                                                    att_res,
+                                                    att_item1,
+                                                    aat_int),
+                                              att_pos1, att_res),
+                                         proj (att_iter, att_iter),
+                                         proj (att_item, att_pos1));
+            }
 
             /*
              * If we we know (from static typing) that all
              * iterations allways have a sequence length of 1
              * we do not need to add min/max values.
              */
-            if (PFty_subtype (L(p)->type, PFty_xs_anyItem ()))
-                sort_attr = project (A(L(p)).rel,
-                                     proj (att_iter, att_iter),
-                                     proj (att_item, att_item));
-
-            else {
+            if (!PFty_subtype (L(p)->type, PFty_xs_anyItem ())) {
                 t = PFty_prime (PFty_defn (L(p)->type));
                 /*
                  * Unfortunately, we only know how to cast atomic types
                  * into (exactly) one of our builtin atomic types. We
                  * cannot sensibly cast, e.g., into subtypes thereof.
                  */
-                if (PFty_equality (t, PFty_xs_string ()))
-                    algty = atom.type = aat_str;
-                else if (PFty_equality (t, PFty_xs_integer ()))
-                    algty = atom.type = aat_int;
-                else if (PFty_equality (t, PFty_xs_decimal ()))
-                    algty = atom.type = aat_dec;
-                else if (PFty_subtype (t, PFty_xs_decimal ()))
-                    algty = atom.type = aat_dec;
-                else if (PFty_equality (t, PFty_xs_double ()))
-                    algty = atom.type = aat_dbl;
-                else if (PFty_equality (t, PFty_xs_boolean ()))
-                    algty = atom.type = aat_bln;
-                else if (PFty_equality (t, PFty_untypedAtomic ()))
+                if (PFty_equality (t, PFty_xs_string ())) {
+                    algty = aat_str;
+                    atom = lit_str ("");
+                }
+                else if (PFty_equality (t, PFty_xs_integer ())) {
+                    algty = aat_int;
+                    atom = lit_int (0);
+                }
+                else if (PFty_equality (t, PFty_xs_decimal ())) {
+                    algty = aat_dec;
+                    atom = lit_dec (0);
+                }
+                else if (PFty_subtype (t, PFty_xs_decimal ())) {
+                    algty = aat_dec;
+                    atom = lit_dec (0);
+                }
+                else if (PFty_equality (t, PFty_xs_double ())) {
+                    algty = aat_dbl;
+                    atom = lit_dbl (0);
+                }
+                else if (PFty_equality (t, PFty_xs_boolean ())) {
+                    algty = aat_bln;
+                    atom = lit_bln (true);
+                }
+                else if (PFty_equality (t, PFty_untypedAtomic ())) {
+                    atom = lit_str ("");
                     algty = atom.type = aat_uA;
+                }
                 else
                     PFoops (OOPS_FATAL,
                             "don't know the algebra equivalent of type %s",
                             PFty_str (L(p)->type));
 
-                if (p->sem.mode.empty == p_least)
-                    atom.special = amm_min;
-                else
-                    atom.special = amm_max;
-
                 sort_attr = disjunion (
-                                project (cast (A(L(p)).rel, 
-                                               att_cast, att_item, algty),
-                                         proj (att_iter, att_iter),
-                                         proj (att_item, att_cast)),
                                 attach (
-                                    difference (
-                                        loop,
-                                        project (A(L(p)).rel, 
-                                                 proj (att_iter, att_iter))),
-                                    att_item, atom));
+                                    project (cast (sort_attr,
+                                                   att_cast, att_item, algty),
+                                             proj (att_iter, att_iter),
+                                             proj (att_item, att_cast)),
+                                    att_pos,
+                                    lit_nat ((p->sem.mode.dir == p_desc) ^
+                                             (p->sem.mode.empty == p_least))),
+                                attach (
+                                    attach (
+                                        difference (
+                                            loop,
+                                            project (A(L(p)).rel, 
+                                                     proj (att_iter,
+                                                           att_iter))),
+                                        att_item, atom),
+                                    att_pos,
+                                    lit_nat ((p->sem.mode.dir == p_desc) ^
+                                             (p->sem.mode.empty != p_least))));
+                empty = 1;
             }
-
-            if (p->sem.mode.dir == p_desc)
-                PFoops (OOPS_FATAL,
-                        "algebra translation does not "
-                        "support reverse sorting");
 
             /* extend the backmapping relation map with
              * (a) position information of the for-loop input sequence and
              * (b) the current iteration values */
             map_count++;
-            atts = PFmalloc (map_count * sizeof (PFalg_proj_t));
+            atts = PFmalloc ((map_count + empty) * sizeof (PFalg_proj_t));
             /* columns outer and inner remain the same */
             atts[0].new = att_outer;
             atts[0].old = att_outer;
@@ -1424,10 +1462,16 @@ reduce (PFcnode_t * p, int goalnt)
                 atts[i].new = 
                 atts[i].old = att_sort << (i - 2);
             /* we now have on additional sort column generated 
-               from column pos */
+               from column item (and possible pos) */
+            if (empty) {
+                atts[map_count -1].new = att_sort << (map_count - 3);
+                atts[map_count -1].old = att_pos;
+                map_count++;
+            }
             /* the first sort criterion is column sort itself */
             atts[map_count -1].new = att_sort << (map_count - 3);
             atts[map_count -1].old = att_item;
+            
 
             map = PFla_project_ (eqjoin (map, sort_attr, att_inner, att_iter),
                                  map_count, atts);

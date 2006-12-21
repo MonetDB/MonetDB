@@ -33,12 +33,6 @@
  * $Id$
  */
 
-/** literal minimum */
-#define lit_min(t) PFmil_lit_min (t)
-
-/** literal maximum */
-#define lit_max(t) PFmil_lit_max (t)
-
 /** literal integers */
 #define lit_int(i) PFmil_lit_int (i)
 
@@ -179,21 +173,21 @@
 #define copy(a) PFmil_copy(a)
 
 /** sort() function */
-#define sort(a) PFmil_sort(a)
+#define sort(a,b) PFmil_sort((a),(b))
 
-/** ctgroup() function */
+/** CTgroup() function */
 #define ctgroup(a) PFmil_ctgroup (a)
 
-/** ctmap() function */
+/** CTmap() function */
 #define ctmap(a) PFmil_ctmap (a)
 
-/** ctextend() function */
+/** CTextend() function */
 #define ctextend(a) PFmil_ctextend (a)
 
-/** ctrefine() function */
-#define ctrefine(a,b) PFmil_ctrefine(a,b)
+/** CTrefine() function */
+#define ctrefine(a,b,c) PFmil_ctrefine((a),(b),(c))
 
-/** ctderive() function */
+/** CTderive() function */
 #define ctderive(a,b) PFmil_ctderive(a,b)
 
 /** max() operator */

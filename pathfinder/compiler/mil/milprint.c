@@ -44,6 +44,7 @@
                  | expression '.kintersect (' expression ')'<m_kintersect>
                  | expression '.sintersect (' expression ')'<m_sintersect>
                  | expression '.CTrefine (' expression ')'  <m_ctrefine>
+                 | expression '.CTrefine_rev (' exp ')'     <m_ctrefine_rev>
                  | expression '.CTderive (' expression ')'  <m_ctderive>
                  | expression '.insert (' expression ')'    <m_binsert>
                  | expression '.append (' expression ')'    <m_bappend>
@@ -55,6 +56,7 @@
                  | expression '.mirror ()'                  <m_mirror>
                  | expression '.copy ()'                    <m_copy>
                  | expression '.sort ()'                    <m_sort>
+                 | expression '.sort_rev ()'                <m_sort_rev>
                  | expression '.count ()'                   <m_count>
                  | expression '.avg ()'                     <m_avg>
                  | expression '.max ()'                     <m_max>
@@ -132,8 +134,6 @@
                  | LongIntegerLiteral                       <m_lit_lng>
                  | StringLiteral                            <m_lit_str>
                  | OidLiteral                               <m_lit_oid>
-                 | MinLiteral                               <m_lit_min>
-                 | MaxLiteral                               <m_lit_max>
                  | 'nil'                                    <m_nil>
 @endverbatim
  *
@@ -212,10 +212,12 @@ static char *ID[] = {
     , [m_var]          = "var"
 
     , [m_sort]         = "sort"
+    , [m_sort_rev]     = "sort_rev"
     , [m_ctgroup]      = "CTgroup"
     , [m_ctmap]        = "CTmap"
     , [m_ctextend]     = "CTextend"
     , [m_ctrefine]     = "CTrefine"
+    , [m_ctrefine_rev] = "CTrefine_rev"
     , [m_ctderive]     = "CTderive"
 
     , [m_add]          = "+"
@@ -687,6 +689,8 @@ print_expression (PFmil_t * n)
         case m_leftjoin:
         /* expression : expression '.CTrefine (' expression ')' */
         case m_ctrefine:
+        /* expression : expression '.CTrefine_rev (' expression ')' */
+        case m_ctrefine_rev:
         /* expression : expression '.CTderive (' expression ')' */
         case m_ctderive:
         /* expression : expression '.insert (' expression ')' */
@@ -723,6 +727,8 @@ print_expression (PFmil_t * n)
         case m_copy:
         /* expression : expression '.sort' */
         case m_sort:
+        /* expression : expression '.sort_rev' */
+        case m_sort_rev:
          /* expression : expression '.count' */
         case m_count:
         /* expression : expression '.avg' */
@@ -962,14 +968,6 @@ print_expression (PFmil_t * n)
             milprintf ("%s (", ID[n->kind]);
             print_args (n->child[0]);
             milprintf (")");
-            break;
-
-        case m_lit_min:
-            print_min (n);
-            break;
-
-        case m_lit_max:
-            print_max (n);
             break;
 
         /* expression : literal */
@@ -1233,61 +1231,6 @@ print_variable (PFmil_t * n)
     assert (n->kind == m_var);
 
     milprintf ("%s", PFmil_var_str (n->sem.ident));
-}
-
-/**
- * Implementation of the grammar rules for minimal `literal'.
- *
- * @param n MIL tree node
- */
-static void
-print_min (PFmil_t * n)
-{
-    char *min[] = {
-          [m_lng]   = "LNG_MIN"
-        , [m_dbl]   = "dbl(nil)"
-        , [m_str]   = "str(nil)"
-        , [m_bit]   = "bit(nil)"
-    };
-
-    if (n->kind != m_lit_min) {
-        debug_output;     /* Print MIL code so far when in debug mode. */
-#ifndef NDEBUG
-        PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
-#endif
-        PFoops (OOPS_FATAL, "Illegal MIL tree, type expected. "
-                            "MIL printer screwed up.");
-    }
-
-    milprintf (min[n->sem.t]);
-}
-
-/**
- * Implementation of the grammar rules for maximal `literal'.
- *
- * @param n MIL tree node
- */
-static void
-print_max (PFmil_t * n)
-{
-    char *max[] = {
-          [m_lng]   = "LNG_MAX"
-        /* FIXME: this is the minimum value */
-        , [m_dbl]   = "dbl(nil)"
-        , [m_str]   = "str(nil)"
-        , [m_bit]   = "bit(nil)"
-    };
-
-    if (n->kind != m_lit_max) {
-        debug_output;     /* Print MIL code so far when in debug mode. */
-#ifndef NDEBUG
-        PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
-#endif
-        PFoops (OOPS_FATAL, "Illegal MIL tree, type expected. "
-                            "MIL printer screwed up.");
-    }
-
-    milprintf (max[n->sem.t]);
 }
 
 /**
