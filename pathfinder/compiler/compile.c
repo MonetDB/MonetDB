@@ -78,6 +78,7 @@
 #include "mem.h"
 #include "coreopt.h"
 #include "lalg2sql.h"
+#include "sqlprint.h"
 
 #ifndef NDEBUG
 /* to invoke PFty_debug_subtyping() if --debug subtyping */
@@ -649,7 +650,13 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if(status->generate_sql) {
          if(laroot) {
              /* this is not the final semantic of this function */
-             PFlalg2sql(laroot);
+             PFsql_t* sqlroot = PFlalg2sql(laroot);
+
+             if( sqlroot ) {
+                 PFarray_t *sqlprog = PFsql_serialize( sqlroot );
+                 if( sqlprog )
+                     PFsqlprint(pfout, sqlprog);
+             }
          }
          else
             PFinfo(OOPS_NOTICE,
