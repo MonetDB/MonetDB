@@ -89,4 +89,6 @@ EXTRA_DIST = \
 	xquery_fo.h \
    sql.h \
    sql_mnemonic.h \
-   lalg2sql.h
+   lalg2sql.h \
+   sqlprint.h
+   
