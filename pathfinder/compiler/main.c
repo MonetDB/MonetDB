@@ -291,6 +291,14 @@
  * the same time validates the structure of the MIL tree during
  * serialization.
  *
+ * @subsection sqlgen Compilation into SQL:99
+ *
+ * SQL is the standard <b>D</b>ata <b>M</b>anipulation <b>L</b>anguage
+ * (DML) and <b>D</b>ata <b>D</b>efinition <b>L</b>anguage (DDL) for nearly
+ * all relational Databases. This module extends the abilities of
+ * Pathfinder to communicate with all Databases supporting SQL.
+ * The SQL generation module is still in progress and should be finished
+ * at the end of march 2007.
  *
  * @section commandline Command Line Switches
  *
