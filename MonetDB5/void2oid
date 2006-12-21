@@ -57,3 +57,6 @@ src/optimizer
 	20 cases where TYPE_void plays a decisive role
 */Tests
 	around 788 test files should be checked and re-approved
+	a simple recast experiment in mal/Tests shows that only
+	23 out of 195 needs a re-approval when :void is replaced
+	with :oid.
