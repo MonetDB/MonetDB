@@ -38,6 +38,7 @@
 #include "variable.h"
 #include "algebra.h"
 #include "physical.h"
+#include "mem.h"
 
 /** algebra operator node */
 typedef struct PFla_op_t PFla_op_t;
@@ -350,6 +351,8 @@ struct PFla_op_t {
                                         of a proxy node */
     unsigned           bit_out:1;  /**< indicates that node is not part
                                         of a proxy node */
+    unsigned int       refctr;     /**< indicates the incoming edges of
+                                        each node */
 
     PFplanlist_t      *plans;      /**< Physical algebra plans that implement
                                         this logical algebra subexpression. */
@@ -360,6 +363,12 @@ struct PFla_op_t {
     int                node_id;    /**< specifies the id of this operator
                                         node; required exclusively to
                                         create dot output. */
+                                        
+    struct PFsql_alg_ann_t    *sql_ann; /**< SQL annotations used during code
+                                             generation. */
+    unsigned            dirty:1;         /**< indicates nested SQL statements */
+    unsigned int        crrltn_cnt;       /**< count correlation
+                                              names */
 };
 
 /**
