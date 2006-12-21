@@ -465,7 +465,7 @@ void
 sql_column_env_add(PFarray_t *env, PFalg_att_t att,
         PFalg_simple_type_t ty, PFsql_t *expr)
 {
-    assert( ty == aat_nat || ty == aat_int || ty == aat_str );
+    assert( ty == aat_nat || ty == aat_int || ty == aat_str || ty = aat_bln );
 
     *(sql_column_env_t*)PFarray_add(env) =
         (sql_column_env_t) { .type = ty, .att = att,
@@ -679,11 +679,6 @@ reduce(PFla_op_t *p, int goalnt)
     /* initialize SQL annotations */
     p->sql_ann = sql_alg_ann_new(); 
 
-#ifndef NDEBUG
-    execute( comment( "Begin rule (reduce): \"%s\" (%i)",
-                PFlalg2sql_string[rule], rule ) );
-#endif
-        
     switch(rule) {
         /* Query:    serialize(Frag,Rel)  */
         case 1:
@@ -704,9 +699,6 @@ reduce(PFla_op_t *p, int goalnt)
         /* Rel:      lit_tbl              */ 
         case 2:
         {
-#ifndef NDEBUG
-            execute( comment( "create SQL temporary table" ) );
-#endif
             for( unsigned int row = 0;
                     row < p->sem.lit_tbl.count; row++ ) {
                 for(unsigned int col = 0;
@@ -741,9 +733,6 @@ reduce(PFla_op_t *p, int goalnt)
         /* Rel: attach(Rel) */
         case 3:
         {
-#ifndef NDEBUG
-            execute( comment( "Attach new column" ));
-#endif
             assert( L(p)->sql_ann->sfw != NULL );
 
             /* copy all existing expressions */
@@ -778,9 +767,6 @@ reduce(PFla_op_t *p, int goalnt)
         /* Rel:      cross(Rel,Rel) */
         case 4:
         {
-#ifndef NDEBUG
-            execute( comment( "cross two relations" ) );
-#endif
             for(unsigned short i = 0; nts[i]; i++)
             {
                  /* make subsequent nodes of cross dirty to force
@@ -919,9 +905,6 @@ reduce(PFla_op_t *p, int goalnt)
         /* Rel:      disjunion(Rel,Rel) */
         case 20:
         {
-#ifndef NDEBUG 
-            execute( comment("union two tables") );
-#endif
 
             PFsql_t *selectlist1 = select_list_empty();
             PFsql_t *selectlist2 = select_list_empty();
@@ -1077,9 +1060,6 @@ reduce(PFla_op_t *p, int goalnt)
         /* Rel: project(Rel) */
         case 10:
         {
-#ifndef NDEBUG
-            execute( comment( "projection" ) );
-#endif
 
             for( unsigned int i=0; i < p->sem.proj.count; i++) {
                 for(PFalg_simple_type_t t=1; t; t<<=1) {
@@ -1111,27 +1091,18 @@ reduce(PFla_op_t *p, int goalnt)
         /* Rel:         num_add(Rel) */
         case 30:
         {
-#ifndef NDEBUG
-            execute( comment( "num_add" ) );
-#endif
             if( L(p)->sql_ann->sfw )
             sql_stmt = bin_arith(PFsql_add, p);
         } break;
         /* Rel:         num_subtract(Rel) */
         case 31:
         {
-#ifndef NDEBUG
-            execute( comment( "num_subtract" ) );
-#endif
             if( L(p)->sql_ann->sfw )
             sql_stmt = bin_arith(PFsql_sub, p);
         } break;
         /* Rel:         num_multiply(Rel) */
         case 32:
         {
-#ifndef NDEBUG
-            execute( comment( "num_multiply" ) );
-#endif
             if( L(p)->sql_ann->sfw )
                 sql_stmt = bin_arith(PFsql_mul, p);
         } break;
@@ -1144,9 +1115,6 @@ reduce(PFla_op_t *p, int goalnt)
         /* Rel: num_eq(Rel) */
         case 37:
         {
-#ifndef NDEBUG
-            execute( comment( "num_eq" ) );    
-#endif
             if( L(p)->sql_ann->sfw )
                 sql_stmt = bin_comp(PFsql_eq, p);
         } break;
@@ -1300,20 +1268,11 @@ reduce(PFla_op_t *p, int goalnt)
         p->sql_ann->sfw = ( DIRTY(p) )?NULL:sql_stmt;
     }
  
-#ifndef NDEBUG
-    if( p->sql_ann->sfw ) 
-        execute( comment( "dirty node: \"%s\"",
-                    DIRTY(p)?"yes":"no" ) ); 
-#endif
-
     /* BINDING */
     /* execute the statement at the end if the node is dirty,
        and bind it to a new SQL variable */
     if( sql_stmt )
     if( DIRTY(p) ) {
-#ifndef NDEBUG
-        execute( comment( "Dirty node -> bind it" ) );
-#endif
         /* create a new table name for binding */ 
         sql_table_name_t   *newvar = sql_table_name_new();
         /* bind the new variable to the sql annotation */
@@ -1416,10 +1375,6 @@ reduce(PFla_op_t *p, int goalnt)
             );
     }
     
-#ifndef NDEBUG
-    execute( comment( "End rule (reduce): \"%s\" (%i)",
-                PFlalg2sql_string[rule], rule ) );
-#endif
 }
 
 static PFsql_t*
