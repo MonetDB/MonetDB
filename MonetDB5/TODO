@@ -33,15 +33,15 @@
   amount of data traffic.
 
 *MonetDB 5.0 (Dec 2006)
+  21 Dec 2006; Martin Kersten <mlkersten>; OPEN
+  Change redering of values in GDK to not avoid decimal dots.
+  Challenge to drop :void in favor of :oid{dense,base=0@0}
  
-  14 Dec 2006; Martin Kersten <mlkersten>; OPEN
-  Align the 
-
   13 Dec 2006; Martin Kersten <mlkersten>; CLOSED
-  Resolved errors in flow checking.
+  Resolved errors in flow checking and the optimizer.
 
-  10 Dec 2006; Fabian Groggen <mlkersten>; CLOSED
-  Stratify  exception handling syntax.
+  10 Dec 2006; Fabian Groffen ; CLOSED
+  Stratified exception handling syntax.
 
   9 Dec 2006; Martin Kersten <mlkersten>; CLOSED
   The SQL optimizer allows for a better control
