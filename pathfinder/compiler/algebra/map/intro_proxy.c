@@ -373,7 +373,9 @@ semijoin_entry (PFla_op_t *p)
         rp = L(rp);
 
     return ((p->kind == la_semijoin &&
-             rp->kind == la_distinct &&
+             /* here we do not need to ensure that a distinct
+                operator is present as duplicates are removed
+                anyway */
              lp->kind == la_number &&
              L(lp)->kind == la_cross &&
              !lp->sem.number.part &&
@@ -385,8 +387,8 @@ semijoin_entry (PFla_op_t *p)
              PFprop_subdom (p->prop,
                             PFprop_dom_left (p->prop,
                                              p->sem.eqjoin.att1),
-                            PFprop_dom (rp->prop,
-                                        rp->sem.number.attname)))
+                            PFprop_dom (lp->prop,
+                                        lp->sem.number.attname)))
             ||
             (lp->kind == la_distinct &&
              rp->kind == la_number &&
@@ -658,7 +660,7 @@ modify_semijoin_proxy (PFla_op_t *root,
                        PFarray_t *checked_nodes)
 {
     int leaf_ref;
-    PFalg_att_t num_col, num_col1, num_col2,
+    PFalg_att_t num_col, num_col1, num_col2, join_att2,
                 num_col_alias, num_col_alias1, num_col_alias2,
                 used_cols = 0;
     unsigned int i, j;
@@ -695,16 +697,34 @@ modify_semijoin_proxy (PFla_op_t *root,
         lp = L(lp);
     }
     /* look for an project operator in the right equi-join branch */
-    if (rp->kind == la_project) {
+    if (rp->kind == la_project &&
+        proxy_entry->kind != la_semijoin) {
         rproject = rp;
         rp = L(rp);
     }
 
     /* normalize the pattern such that the distinct
        operator always resides in the 'virtual' right side (rp). */
-    if (lp->kind == la_distinct) {
+    if (lp->kind == la_distinct &&
+        proxy_entry->kind != la_semijoin) {
         rp = lp; /* we do not need the old 'rp' reference anymore */
         lproject = rproject; /* we do not need the old 'rproject' anymore */
+    }
+
+    /* in case our proxy entry is a semijoin
+       we need to link the arguments of the right
+       join argument differently. */
+    if (proxy_entry->kind == la_semijoin) {
+        assert (R(proxy_entry) == rp);
+
+        join_att2 = proxy_entry->sem.eqjoin.att2;
+        rp = rp;
+    } else {
+        assert (rp->kind == la_distinct);
+        
+        /* the name of the single distinct column */
+        join_att2 = rp->schema.items[0].name;
+        rp = L(rp);
     }
 
     /* we have now checked the additional requirements (conflicts
@@ -736,7 +756,7 @@ modify_semijoin_proxy (PFla_op_t *root,
     /* We mark the right join column used.
        (It possibly has a different name as we discarded
         renaming projections (rproject)) */
-    used_cols = used_cols | rp->schema.items[0].name;
+    used_cols = used_cols | join_att2;
 
     /* Create 4 new column names for the two additional number operators
        and their backmapping equi-joins */
@@ -751,7 +771,7 @@ modify_semijoin_proxy (PFla_op_t *root,
 
     /* Create a new alias for the mapping number operator if its
        name conflicts with the column name of the sub-DAG */
-    if (rp->schema.items[0].name == num_col) {
+    if (join_att2 == num_col) {
         num_col_alias = PFalg_ori_name (
                             PFalg_unq_name (num_col, 0),
                             ~used_cols);
@@ -813,9 +833,9 @@ modify_semijoin_proxy (PFla_op_t *root,
                                          PFla_project_ (
                                              number,
                                              3, left_proj),
-                                         L(rp),
+                                         rp,
                                          num_col_alias,
-                                         rp->schema.items[0].name),
+                                         join_att2),
                                      2, dist_proj)),
                              num_col1,
                              num_col_alias1),
