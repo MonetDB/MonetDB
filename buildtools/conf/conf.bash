@@ -52,13 +52,6 @@
 # (If not or wrongly set, "GNU 32 dynamic" is used as default.)
 #
 
-if [ ! -f configure.ag ] ; then
-	echo ''
-	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out ${what} source tree.'
-	echo ''
-	return 1
-fi
-
 base="`pwd`"
 # first, try the CVS repository name to guess the value for $what
 if [ -f CVS/Repository ]; then
@@ -70,6 +63,19 @@ else
 	wh_t="`basename $base`"
 fi
 what="`echo ${wh_t} | tr '[a-z]' '[A-Z]' | tr '.-' '_'`"
+
+if [ "${what}" != "BUILDTOOLS" -a ! -f configure.ag ] ; then
+	echo ''
+	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out ${what} source tree.'
+	echo ''
+	return 1
+fi
+if [ "${what}" = "BUILDTOOLS" -a ! -f configure.ac ] ; then
+	echo ''
+	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out ${what} source tree.'
+	echo ''
+	return 1
+fi
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	if [ "${what}" = "MONET5" ] ; then
