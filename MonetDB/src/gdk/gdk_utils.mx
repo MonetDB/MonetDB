@@ -979,7 +979,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 	}
 
 	gdk_set_lock(GDKthreadLock, "GDKmemfail");
-	THRprintf(GDKout, "!%s(" SZFMT ") fail => BBPtrim(enter) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKout, "#%s(" SZFMT ") fail => BBPtrim(enter) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 	GDKdebug |= 4;
 	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
@@ -988,7 +988,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 
 	gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug, bak);
-	THRprintf(GDKout, "!%s(" SZFMT ") fail => BBPtrim(ready) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKout, "#%s(" SZFMT ") fail => BBPtrim(ready) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 }

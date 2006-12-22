@@ -93,12 +93,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_1FC9E49DEC6F49A29E04CCC97AA8CB8A"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_203FE07F74E54A71945F9264E89C3BA5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -316,6 +310,12 @@
         "Entry"
         {
         "MsmKey" = "8:_59C2909E9B6A4A069D7A9EADF236B705"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5A77B074403441A7833A10E383E08807"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -657,6 +657,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_C31759650FB64D599FE55D1D73CFB9A0"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_C464E85622B641E5A8EEA48F39228B0C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -772,12 +778,6 @@
         "Entry"
         {
         "MsmKey" = "8:_E81D14DD2D2C420BA1187440D1F31912"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E99A408B4DCC4C52A793D6B8742A013D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1245,26 +1245,6 @@
             "TargetName" = "8:lib_vector.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_1FC9E49DEC6F49A29E04CCC97AA8CB8A"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\NT\\share\\MonetDB\\lib\\monetdb-1.4-jdbc.jar"
-            "TargetName" = "8:monetdb-1.4-jdbc.jar"
-            "Tag" = "8:"
-            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2005,6 +1985,26 @@
             "TargetName" = "8:bat_mmath.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5A77B074403441A7833A10E383E08807"
+            {
+            "SourcePath" = "8:..\\..\\..\\sql\\NT\\share\\MonetDB\\lib\\jdbcclient-1.5.jar"
+            "TargetName" = "8:jdbcclient-1.5.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3139,6 +3139,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C31759650FB64D599FE55D1D73CFB9A0"
+            {
+            "SourcePath" = "8:..\\..\\..\\sql\\NT\\share\\MonetDB\\lib\\monetdb-1.5-jdbc.jar"
+            "TargetName" = "8:monetdb-1.5-jdbc.jar"
+            "Tag" = "8:"
+            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C464E85622B641E5A8EEA48F39228B0C"
             {
             "SourcePath" = "8:C:\\Pthreads\\lib\\pthreadVC2.dll"
@@ -3505,26 +3525,6 @@
             "TargetName" = "8:arith.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E99A408B4DCC4C52A793D6B8742A013D"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\NT\\share\\MonetDB\\lib\\jdbcclient-1.4.jar"
-            "TargetName" = "8:jdbcclient-1.4.jar"
-            "Tag" = "8:"
-            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -5096,9 +5096,6 @@
             }
         }
         "ProjectOutput"
-        {
-        }
-        "VJSharpPlugin"
         {
         }
     }
