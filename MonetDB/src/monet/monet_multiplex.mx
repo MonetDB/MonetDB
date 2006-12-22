@@ -592,18 +592,16 @@ multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv)
 	}
 	if (!desc->b) {
 		desc->b = BATnew(desc->id.vtype, desc->argv[0].vtype, desc->cap + 3);
-		desc->unfix = desc->notall ? NULL : BATatoms[desc->argv[0].vtype].atomUnfix;
-		if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
-			desc->unfix = BATunfix;
-
-		/* void void case */
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
-			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			GDKerror("multiplex: bat allocation failed.\n");
 			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
+		desc->unfix = desc->notall ? NULL : BATatoms[desc->argv[0].vtype].atomUnfix;
+		if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
+			desc->unfix = BATunfix;
 	}
 	@:insert_@3(@2)@
 	return 0;
@@ -634,18 +632,16 @@ multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv)
 	}
 	if (!desc->b) {
 		desc->b = BATnew(desc->id.vtype, desc->argv[0].vtype, desc->cap+3);
-		desc->unfix = (desc->notall)?NULL:BATatoms[desc->argv[0].vtype].atomUnfix;
-		if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
-			desc->unfix = BATunfix;
-
-		/* void void case */
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
-			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			GDKerror("multiplex: bat allocation failed.\n");
 			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
+		desc->unfix = (desc->notall)?NULL:BATatoms[desc->argv[0].vtype].atomUnfix;
+		if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
+			desc->unfix = BATunfix;
 	}
 	@:insert_@3(@2)@
 	return 0;
@@ -665,12 +661,7 @@ bunins_failed:
 		VALnil(desc->argv, desc->b->ttype);
 		bulkerror_format(&desc->bulkerror, desc->id.vtype, @1);
 	}
-	if (desc->b->ttype != TYPE_void) {
-		bunfastins(desc->b, @1, @2);
-	} else {
-		desc->b->U->buns.free += 1;
-		BATsetcount(desc->b, desc->b->batCount+1);
-	}
+	bunfastins(desc->b, @1, @2);
 	if (desc->unfix)
 		(desc->unfix)(@2);
 
