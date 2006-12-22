@@ -772,7 +772,7 @@ main (int argc, char *argv[])
                                            "}IM_{_[J]OKVCG"
                                            "}IM_{_[J]OKVCGCG"
                                            "}IM_{_[J]OKVCG"
-                                           "}IM_{_[J]OKVCGCG"
+                                           "}IMS{_[J]OKVCGCG"
                                            "}IMS{_[J]OKVCG"
                                            "}IMS{_[J]OKVCGCGP')\n");
 

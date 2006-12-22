@@ -80,7 +80,7 @@ Usage: pf [OPTION] [FILE]
          P  infer all properties
             (used for debug output and physical algebra
          _  does nothing (used for structuring the options)
-         (default is: '-o OIKDCG_VGO_[J]OKVCG}IM_{_[J]OKVCG}IM_{_[J]OKVCGCG}IM_{_[J]OKVCG}IM_{_[J]OKVCGCG}IMS{_[J]OKVCG}IMS{_[J]OKVCGCGP')
+         (default is: '-o OIKDCG_VGO_[J]OKVCG}IM_{_[J]OKVCG}IM_{_[J]OKVCGCG}IM_{_[J]OKVCG}IMS{_[J]OKVCGCG}IMS{_[J]OKVCG}IMS{_[J]OKVCGCGP')
 = -e[0|1], --dead-code-elimination=[0|1]: dead code elimination:
          0 disable dead code elimination
          1 enable dead code elimination (default)
