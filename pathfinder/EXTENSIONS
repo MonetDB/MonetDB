@@ -139,8 +139,8 @@ means to change it (i.e. add and delete documents).
 To avoid having to resort to other means than XQuery for data
 management tasks, we provide the following functions:
 
-pf:del_doc(name as xs:string)
-pf:add_doc(location as xs:string, 
+pf:del-doc(name as xs:string)
+pf:add-doc(location as xs:string, 
            name as xs:string, 
            collection as xs:string, 
            percentage as xs:integer)
@@ -149,9 +149,9 @@ An XML document is stored at a 'location' (URI) and can be given
 a logical name. A 'collection' is a database object that contains 
 multiple documents. Especially in cases where we have many small
 documents, it may make sense to store them together in a collection
-(i.e. by using the same 'collection' name in the add_doc() function).
+(i.e. by using the same 'collection' name in the pf:add-doc() function).
 
-Parameters: in add_doc(), 'name' and 'collection' may be both omitted, 
+Parameters: in pf:add-doc(), 'name' and 'collection' may be both omitted, 
 in which case name=collection=location.  If only 'collection' is omitted, 
 collection=name.  Percentage may always be omitted, in which case it is 0.
 

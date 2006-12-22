@@ -1,0 +1,2 @@
+shred_doc("$TSTSRCDIR/pf_del-doc.SF-1617684.xml","pf_del-doc.SF-1617684a.xml");
+shred_doc("$TSTSRCDIR/pf_del-doc.SF-1617684.xml","pf_del-doc.SF-1617684b.xml");

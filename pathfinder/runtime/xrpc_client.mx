@@ -955,6 +955,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                                         XDT_NS, str_val);
                         break;
                     case ATTR:
+                    {
                         str2buf(b, "<xrpc:attribute");
                         contID = XTRACT_CONT(cmbn_cont_kind);
 
@@ -986,6 +987,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                         str2buf(b, attr_val);
                         str2buf(b, "\"/>");
                         break;
+                    }
                     case ELEM:
                     {
                         contID = XTRACT_CONT(cmbn_cont_kind);

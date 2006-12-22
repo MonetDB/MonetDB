@@ -1,0 +1,47 @@
+stdout of test 'document_handling.SF-1618802.a` in directory 'tests/BugTracker` itself:
+
+
+# 15:23:49 >  
+# 15:23:49 >  Mtimeout -timeout 300 Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./PATHFINDER/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./PATHFINDER/lib64/MonetDB/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/lib64/MonetDB:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/lib64/MonetDB/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/lib64/MonetDB/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/var/MonetDB/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/var/MonetDB/xquery_logs" --set mapi_port=34652 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 15:23:49 >  
+
+# Monet Database Server V4.14.0
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:23:49 >  
+# 15:23:49 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34652 document_handling.SF-1618802.a_s00.xq
+# 15:23:49 >  
+
+# Elapsed time = 001ms 011us [252us/node]
+# Elapsed time = 410us [136us/node]
+# Elapsed time = 279us [093us/node]
+# Elapsed time = 269us [089us/node]
+# Elapsed time = 279us [093us/node]
+# Elapsed time = 267us [089us/node]
+# Elapsed time = 264us [088us/node]
+# Elapsed time = 265us [088us/node]
+# Elapsed time = 267us [089us/node]
+# Elapsed time = 262us [087us/node]
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 15:23:50 >  
+# 15:23:50 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34652 document_handling.SF-1618802.a_s01.xq
+# 15:23:50 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 15:23:50 >  
+# 15:23:50 >  Done.
+# 15:23:50 >  
+

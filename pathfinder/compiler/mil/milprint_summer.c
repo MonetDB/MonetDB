@@ -7790,7 +7790,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                       "var item%03u := item%03u;\n"
                       "var kind%03u := kind%03u;\n"
                       "# percentage default is 0\n"
-                      "item := int_values.addValues(0LL).tmark(0@0);\n"
+                      "item := int_values.addValues(0LL);\n"
                       "kind := INT;\n",
                       counter, counter - 1, counter, counter - 1);
         } else {
@@ -7806,7 +7806,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                           "  kind%03u := kind%03u;\n"
                           "  item%03u := item%03u;\n"
                           "} else {\n"
-                          "  item := int_values.addValues(0LL).tmark(0@0);\n"
+                          "  item := int_values.addValues(0LL);\n"
                           "  kind := INT;\n"
                           "}\n",
                           counter, counter, counter, counter, counter - 1, counter, counter - 1);
@@ -7820,7 +7820,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "                           kind%03u, kind%03u,\n"
                   "                           iter, iter);\n"
                   "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item%03u, [abs](item),\n"
+                  "                           item%03u, item,\n"
                   "                           kind%03u, kind,\n"
                   "                           iter, iter);\n"
                   "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
@@ -7851,8 +7851,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "                           kind, kind,\n"
                   "                           iter, iter);\n"
                   "var merge2 := merged_union(ids, ids,\n"
-                  "                           item, -1LL,\n"
-                  "                           kind, delID,\n"
+                  "                           item, delID,\n"
+                  "                           kind, INT,\n"
                   "                           iter, iter);\n"
                   "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
                   "                          merge1.fetch(1), merge2.fetch(1),\n"

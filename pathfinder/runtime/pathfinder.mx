@@ -205,7 +205,7 @@ if (standoff) {
 # NOTE: when the query starts, a first, empty container is created, the
 #       'transient document container'. It has container-ID (cont) 0.
 #
-# NOTE: open temporary shredded documents that are not cached have both 
+# NOTE: open temporary shredded docmuments that are not cached have both 
 #       _COLL and _DOCID fields set to an "artificial" doc_oid == open-docid.
 #       These are values < DOCID_MIN (1 billion). It is only unique within the ws.
 #       Persistent documents and container have globally unique keys that 
@@ -701,7 +701,7 @@ strength of optimistic CC).
 @- short lock
 
 There is a short lock (pf_short) that protects access to the collection_*,
-doc_* and colname_* meta-tables. Note that the fn:add_doc(), fn:del_doc()
+doc_* and colname_* meta-tables. Note that the pf:add-doc(), pf:del-doc()
 as well as the fn:doc() function (which does implicit shredding and caching)
 modify these tables. All types of queries read them. Thus all reads and
 writes to these tables need to be locked, with the short lock. 
@@ -758,7 +758,7 @@ lock.
 
 @- shred lock 
 
-Note that we will not use the collection lock while shredding (fn:add_doc())
+Note that we will not use the collection lock while shredding (pf:add-doc())
 continuously, only when extending the master bats. The code of shredding is 
 carefully screened only to touch *new* parts of the BATs thus not affecting 
 the master copies in places that are shared with ongoing queries. BAT-extends 
@@ -807,7 +807,7 @@ when such transactions finish.
 @- collection pins and ws-IDs
 
 To detect concurrent use of collections, all document-using functions 
-(fn:doc() but also fn:add_doc()) put a so-called 'pin' on the collection 
+(fn:doc() but also pf:add-doc()) put a so-called 'pin' on the collection 
 they are intending to manipulate.  These pins are gathered in the BAT[str,lng] 
 colname_pins (it contains document names and ws-IDs). 
 This BAT is also used for recording which queries currently hold 
@@ -967,7 +967,18 @@ checkpoint.
 
 @mil
 PROC _shredlock_set(str colname, 
-                    lng wsid) : void
+                    lng wsid) : bit
+#                               ^^^
+# Stefan.Manegold@cwi.nl:
+# This should actually be a void function, 
+# but then the multiplexed call in _shred_doc_base() below triggers either a
+# !FATAL: BATpropcheck: BAT tmp_335(-221) has inconsistent descriptor 32768 (100000)
+# (when using pf:add-doc()) or a
+# !WARNING: [_shredlock_set]: empty result, hence return type unknown.
+# (when using pf:del-doc()).
+# This seems to be a bug in the multiplexer that I could not locate, yet.
+# An alternative workarount to the fake-return used here would be to replace the 
+# multiplexed _shredlock_set() call in _shred_doc_base() by a batloop-ed version.
 {
     # xlocks use a string collection key as it may not yet exist in the table
     if (not(colname_shredlock.exist(colname))) 
@@ -978,6 +989,7 @@ PROC _shredlock_set(str colname,
     lock_set(shred_lock); # can take a long time, do so with short lock released 
     lock_set(pf_short);
     colname_pins.insert(colname, -(wsid));
+    return true; # see above
 }
 
 PROC _shredlock_unset(str colname, 
@@ -2486,7 +2498,7 @@ PROC del_doc_base(bit cachedOnly,
 
 @+ Document Management Interfaces
 
-The fn:add_doc, fn:del_doc XQuery builtin functions are implemented
+The pf:add-doc, pf:del-doc XQuery builtin functions are implemented
 in loop-lifted form by the following MIL PROCs.
 
 Note that ws_doc (previous) is similarly called from XQuery for fn:doc()
@@ -2504,24 +2516,26 @@ PROC play_doc_tape(BAT[void,BAT] ws,
                    BAT[void,lng] int_values, 
                    BAT[void,str] str_values) : void
 {
-    var locations   := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(str_values);
-    var names       := [+](locations.mirror().[lng](), 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values).tmark(0@0);
-    var colnames    := [+](locations.mirror().[lng](), 2).[oid]().leftfetchjoin(item).leftfetchjoin(str_values).tmark(0@0);
-    var percentages := [+](locations.mirror().[lng](), 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values).tmark(0@0);
+    var IDoid       := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).hmark(0@0);
+    var IDlng       := IDoid.[lng]();
+    var locations   := IDoid.leftfetchjoin(item).leftfetchjoin(str_values);
+    var names       := [+](IDlng, 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+    var colnames    := [+](IDlng, 2).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+    var percentages := [+](IDlng, 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values);
     var del_doc     := percentages.ord_uselect(-1LL).hmark(0@0); 
     var add_doc     := percentages.ord_uselect(0LL,lng_nil).hmark(0@0); 
     shred_doc_base(del_doc(bit_nil, del_doc.leftfetchjoin(names), true),
-                   stream_nil,
                    add_doc.leftfetchjoin(locations), 
                    add_doc.leftfetchjoin(names), 
                    add_doc.leftfetchjoin(colnames), 
-                   add_doc.leftfetchjoin(percentages), ws_id(ws));
+                   add_doc.leftfetchjoin(percentages),
+                   stream_nil, ws_id(ws));
 }
 
 @- MIL Document Management Interface
 
 This is the old MIL administrative interface, now superseded by the 
-new {fn:add_doc(),fn:del_doc()} XQuery built-ins. It can continue to exist.
+new {pf:add-doc(),pf:del-doc()} XQuery built-ins. It can continue to exist.
 
 The shred_doc() operation is the MIL document management interface. It uses a "phony" working
 set identifier derived from the MIL client-id.

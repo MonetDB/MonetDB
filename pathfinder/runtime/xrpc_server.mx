@@ -123,7 +123,7 @@ Start XPRC receiver on the default port as specified in \
 
 /* TODO: why don't we define this in pathfinder.mx??? */
 #define ELEMENT         0
-#define TEXT            1
+#define PFTEXT          1
 #define COMMENT         2
 #define PI              3
 #define DOCUMENT        4
@@ -606,7 +606,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
 
                     val_node_pre = tpe_node_pre + 1;
                     if( (tpe_node_size != 1) || 
-                        (pre_kindT[val_node_pre] != TEXT) ) {
+                        (pre_kindT[val_node_pre] != PFTEXT) ) {
                         snprintf(errstr, 1024, "XRPC request: "
                                 "iteration%lld/parameter%lld/value%d "
                                 "of type \"%s\" is expected to have a "
@@ -663,7 +663,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
                                 pre_kindT);
                     } else if (strcmp(argtpe[nr_args], "xs:text") == 0) {
                         val_node_pre = get_elem_pre(tpe_node_pre+1,
-                                (tpe_node_pre+tpe_node_size), TEXT,
+                                (tpe_node_pre+tpe_node_size), PFTEXT,
                                 pre_kindT);
                     } else if (strcmp(argtpe[nr_args], "xs:comment") == 0) {
                         val_node_pre = get_elem_pre(tpe_node_pre+1,

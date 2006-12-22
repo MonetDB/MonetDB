@@ -1,0 +1,9 @@
+(
+pf:add-doc("$TSTSRCDIR/pf_add-doc.SF-1617681.xml","pf_add-doc.SF-1617681a.xml","pf_add-doc.SF-1617681",0)
+,
+pf:add-doc("$TSTSRCDIR/pf_add-doc.SF-1617681.xml","pf_add-doc.SF-1617681b.xml","pf_add-doc.SF-1617681")
+,
+pf:add-doc("$TSTSRCDIR/pf_add-doc.SF-1617681.xml","pf_add-doc.SF-1617681c.xml")
+,
+pf:add-doc("$TSTSRCDIR/pf_add-doc.SF-1617681.xml","$TSTSRCDIR/pf_add-doc.SF-1617681.xml")
+)

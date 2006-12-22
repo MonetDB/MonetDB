@@ -272,7 +272,7 @@ xquery_print_result_DRIVER (
     BAT                *strVAL);
 
 /* hack to allow direct calls in xrpc_client.mx */
-int 
+pf_support_export int
 xquery_print_result_driver (
     Stream              fp,
     str                 mode,
