@@ -20,7 +20,6 @@ AC_INIT(src/Tests/All)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AH_TOP([#include "monetdb_config.h"])
 AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
@@ -32,18 +31,21 @@ AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
 AM_MONETDB_DEFAULTS()
+req_monetdb_ver='1.15.0'
+AM_MONETDB_COMMON($req_monetdb_ver)
+if test "x$have_monetdb" != xyes; then
+	AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+fi
 AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 req_monetdb_ver='4.15.0'
-AM_MONET($req_monetdb_ver)
-if test "x$have_monet" != xyes; then
-	AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+AM_MONETDB4($req_monetdb_ver)
+if test "x$have_monetdb4" != xyes; then
+	AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB4, but only version $MONETDBVERS was found.])
 fi
 AM_MONETDB_UTILS()
 
-dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"
-

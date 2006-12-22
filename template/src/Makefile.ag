@@ -17,12 +17,12 @@
 EXTRA_DIST_DIR = Tests
 
 MTSAFE
-INCLUDES = $(MONETDB_INCS)
+INCLUDES = $(MONETDB_INCS) $(MONETDB4_INCS)
 
 lib__example = {
 	DIR = libdir/MonetDB
 	SOURCES = example.mx
-	LIBS = $(MONETDB_MODS) 
+	LIBS = $(MONETDB4_MODS) 
 }
 
 scripts_mil = {
