@@ -1,0 +1,133 @@
+stdout of test 'Test_Cmanycon` in directory 'src/jdbc/tests` itself:
+
+
+# 15:04:15 >  
+# 15:04:15 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=30168 --set sql_port=41338 --set xquery_port=52001 --set monet_prompt= --trace "--dbname=mTests_src_jdbc_tests" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:04:15 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:04:15 >  
+# 15:04:15 >  Mtimeout -timeout 60 ./Test_Cmanycon.SQL Test_Cmanycon 
+# 15:04:15 >  
+
+
+# 15:04:15 >  
+# 15:04:15 >  java Test_Cmanycon jdbc:monetdb://localhost:41338/database?user=monetdb&password=monetdb
+# 15:04:15 >  
+
+Establishing Connection 0... done... alive
+Establishing Connection 1... done... alive
+Establishing Connection 2... done... alive
+Establishing Connection 3... done... alive
+Establishing Connection 4... done... alive
+Establishing Connection 5... done... alive
+Establishing Connection 6... done... alive
+Establishing Connection 7... done... alive
+Establishing Connection 8... done... alive
+Establishing Connection 9... done... alive
+Establishing Connection 10... done... alive
+Establishing Connection 11... done... alive
+Establishing Connection 12... done... alive
+Establishing Connection 13... done... alive
+Establishing Connection 14... done... alive
+Establishing Connection 15... done... alive
+Establishing Connection 16... done... alive
+Establishing Connection 17... done... alive
+Establishing Connection 18... done... alive
+Establishing Connection 19... done... alive
+Establishing Connection 20... done... alive
+Establishing Connection 21... done... alive
+Establishing Connection 22... done... alive
+Establishing Connection 23... done... alive
+Establishing Connection 24... done... alive
+Establishing Connection 25... done... alive
+Establishing Connection 26... done... alive
+Establishing Connection 27... done... alive
+Establishing Connection 28... done... alive
+Establishing Connection 29... done... alive
+Establishing Connection 30... done... alive
+Establishing Connection 31... done... alive
+Establishing Connection 32... done... alive
+Establishing Connection 33... done... alive
+Establishing Connection 34... done... alive
+Establishing Connection 35... done... alive
+Establishing Connection 36... done... alive
+Establishing Connection 37... done... alive
+Establishing Connection 38... done... alive
+Establishing Connection 39... done... alive
+Establishing Connection 40... done... alive
+Establishing Connection 41... done... alive
+Establishing Connection 42... done... alive
+Establishing Connection 43... done... alive
+Establishing Connection 44... done... alive
+Establishing Connection 45... done... alive
+Establishing Connection 46... done... alive
+Establishing Connection 47... done... alive
+Establishing Connection 48... done... alive
+Establishing Connection 49... done... alive
+Closing Connection 0... still alive... done
+Closing Connection 1... still alive... done
+Closing Connection 2... still alive... done
+Closing Connection 3... still alive... done
+Closing Connection 4... still alive... done
+Closing Connection 5... still alive... done
+Closing Connection 6... still alive... done
+Closing Connection 7... still alive... done
+Closing Connection 8... still alive... done
+Closing Connection 9... still alive... done
+Closing Connection 10... still alive... done
+Closing Connection 11... still alive... done
+Closing Connection 12... still alive... done
+Closing Connection 13... still alive... done
+Closing Connection 14... still alive... done
+Closing Connection 15... still alive... done
+Closing Connection 16... still alive... done
+Closing Connection 17... still alive... done
+Closing Connection 18... still alive... done
+Closing Connection 19... still alive... done
+Closing Connection 20... still alive... done
+Closing Connection 21... still alive... done
+Closing Connection 22... still alive... done
+Closing Connection 23... still alive... done
+Closing Connection 24... still alive... done
+Closing Connection 25... still alive... done
+Closing Connection 26... still alive... done
+Closing Connection 27... still alive... done
+Closing Connection 28... still alive... done
+Closing Connection 29... still alive... done
+Closing Connection 30... still alive... done
+Closing Connection 31... still alive... done
+Closing Connection 32... still alive... done
+Closing Connection 33... still alive... done
+Closing Connection 34... still alive... done
+Closing Connection 35... still alive... done
+Closing Connection 36... still alive... done
+Closing Connection 37... still alive... done
+Closing Connection 38... still alive... done
+Closing Connection 39... still alive... done
+Closing Connection 40... still alive... done
+Closing Connection 41... still alive... done
+Closing Connection 42... still alive... done
+Closing Connection 43... still alive... done
+Closing Connection 44... still alive... done
+Closing Connection 45... still alive... done
+Closing Connection 46... still alive... done
+Closing Connection 47... still alive... done
+Closing Connection 48... still alive... done
+Closing Connection 49... still alive... done
+
+# 15:04:18 >  
+# 15:04:18 >  Done.
+# 15:04:18 >  
+
