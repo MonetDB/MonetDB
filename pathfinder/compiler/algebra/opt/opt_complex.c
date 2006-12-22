@@ -340,6 +340,44 @@ opt_complex (PFla_op_t *p)
             }
         }   break;
             
+        case la_semijoin:
+            if (!PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
+                !PFprop_subdom (p->prop, 
+                                PFprop_dom_right (p->prop,
+                                                  p->sem.eqjoin.att2),
+                                PFprop_dom_left (p->prop,
+                                                 p->sem.eqjoin.att1)))
+                break;
+            
+            /* remove the distinct operator and redirect the
+               references to the semijoin operator */
+            if (R(p)->kind == la_distinct) {
+                PFla_op_t *distinct = R(p);
+                R(p) = L(distinct);
+                *distinct = *PFla_project (p, PFalg_proj (p->sem.eqjoin.att2,
+                                                          p->sem.eqjoin.att1));
+            }
+            else if (R(p)->kind == la_project &&
+                     RL(p)->kind == la_distinct &&
+                     R(p)->schema.count == 1 &&
+                     RL(p)->schema.count == 1) {
+                PFla_op_t *project = R(p),
+                          *distinct = RL(p);
+                R(p) = L(distinct);
+                *project = *PFla_project (
+                                p,
+                                PFalg_proj (p->sem.eqjoin.att2,
+                                            p->sem.eqjoin.att1));
+                *distinct = *PFla_project (
+                                 p,
+                                 PFalg_proj (distinct->schema.items[0].name,
+                                             p->sem.eqjoin.att1));
+
+                /* we need to adjust the semijoin argument as well */
+                p->sem.eqjoin.att2 = R(p)->schema.items[0].name;
+            }
+            break;
+
         case la_cross:
             /* PFprop_icols_count () == 0 is also true 
                for nodes without inferred properties 
