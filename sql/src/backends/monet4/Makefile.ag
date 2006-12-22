@@ -18,7 +18,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 	$(MONETDB_INCS) $(MONETDB4_INCS)
 
 lib__sql_server = {
-	DIR = libdir/MonetDB
+	DIR = libdir/MonetDB4
 	SOURCES = \
 		sql_user.mx \
 		sql_server.mx \
@@ -32,7 +32,7 @@ lib__sql_server = {
 }
 
 scripts_mil = {
-	DIR = libdir/MonetDB
+	DIR = libdir/MonetDB4
 	SOURCES = sql_server.mx 
 }
 
