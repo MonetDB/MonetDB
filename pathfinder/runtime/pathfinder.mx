@@ -967,18 +967,7 @@ checkpoint.
 
 @mil
 PROC _shredlock_set(str colname, 
-                    lng wsid) : bit
-#                               ^^^
-# Stefan.Manegold@cwi.nl:
-# This should actually be a void function, 
-# but then the multiplexed call in _shred_doc_base() below triggers either a
-# !FATAL: BATpropcheck: BAT tmp_335(-221) has inconsistent descriptor 32768 (100000)
-# (when using pf:add-doc()) or a
-# !WARNING: [_shredlock_set]: empty result, hence return type unknown.
-# (when using pf:del-doc()).
-# This seems to be a bug in the multiplexer that I could not locate, yet.
-# An alternative workarount to the fake-return used here would be to replace the 
-# multiplexed _shredlock_set() call in _shred_doc_base() by a batloop-ed version.
+                    lng wsid) : void
 {
     # xlocks use a string collection key as it may not yet exist in the table
     if (not(colname_shredlock.exist(colname))) 
@@ -989,7 +978,6 @@ PROC _shredlock_set(str colname,
     lock_set(shred_lock); # can take a long time, do so with short lock released 
     lock_set(pf_short);
     colname_pins.insert(colname, -(wsid));
-    return true; # see above
 }
 
 PROC _shredlock_unset(str colname, 
