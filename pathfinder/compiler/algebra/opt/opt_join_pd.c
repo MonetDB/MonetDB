@@ -222,6 +222,26 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
         if (p->kind != la_eqjoin_unq)
             break;
         
+        /* in case we have pushed a join down to its origin (where
+           both children references point to the same node) we may
+           safely remove the join */
+        if (L(p) == R(p) &&
+            p->sem.eqjoin_unq.att1 == p->sem.eqjoin_unq.att2 &&
+            PFprop_key (L(p)->prop, p->sem.eqjoin_unq.att1)) {
+            /* the join does nothing -- it only applies a key-join
+               with itself and the schema stays the same.
+               Thus replace it by a dummy projection */
+            PFalg_proj_t *proj_list = PFmalloc (p->schema.count *
+                                                sizeof (PFalg_proj_t));
+                                                
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                proj_list[i] = proj (p->schema.items[i].name,
+                                     p->schema.items[i].name);
+                                     
+            *p = *(PFla_project_ (L(p), p->schema.count, proj_list));
+            return true;
+        }
+
         /* parametrize optimization to use the same code
            for the left and the right operand of the equi-join */
         if (c) {
@@ -234,6 +254,17 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             rp = L(p);
             latt = p->sem.eqjoin_unq.att2;
             ratt = p->sem.eqjoin_unq.att1;
+        }
+        
+        /* In case the join does nothing we may safely discard it. */
+        if (lp->schema.count == 1 &&
+            PFprop_key (lp->prop, latt) &&
+            PFprop_subdom (lp->prop,
+                           PFprop_dom (rp->prop, ratt),
+                           PFprop_dom (lp->prop, latt)) &&
+            ratt == p->sem.eqjoin_unq.res) {
+            *p = *rp;
+            return true;
         }
         
         /* skip rewrite if the join might reference itself 
