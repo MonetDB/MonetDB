@@ -222,7 +222,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         {
             PFalg_att_t ori, join_unq, att1_unq, att2_unq, child_unq;
             PFarray_t *left_np_list, *right_np_list;
-
+            bool proj_left = PFprop_key (L(n)->prop, n->sem.eqjoin.att1);
+            
             att1_unq = PFprop_unq_name (L(n)->prop, n->sem.eqjoin.att1);
             att2_unq = PFprop_unq_name (R(n)->prop, n->sem.eqjoin.att2);
             /* always use smaller (hopefully original) unique name
@@ -239,16 +240,36 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             left_np_list  = n->prop->l_name_pairs;
             right_np_list = n->prop->r_name_pairs;
             
+            /* Based on the boolean proj_left we decide whether
+               we solve name conflicts at the left or the right side.
+                  All column names that are identical to the join
+               argument are replaced by the overall join column name
+               and all columns that are also referenced on the other
+               side will be renamed by introducing a new unique name.
+               All other column stay unchanged. */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
                 ori = L(n)->schema.items[i].name;
                 child_unq = PFprop_unq_name (L(n)->prop, ori);
 
-                /* Inside a relation we don't have any naming
-                   conflicts and thus only have to assign new
-                   names for all columns that are identical to
-                   the join argument column */
                 if (child_unq == att1_unq)
                     add_name_pair (np_list, ori, join_unq);
+                else if (proj_left &&
+                         PFprop_ori_name (R(n)->prop, child_unq)) {
+                    PFalg_att_t ori_prev, unq;
+
+                    /* like in the cross product case we map equally
+                       named conflicting names to the same replacement */
+                    if ((ori_prev = PFprop_ori_name_left (n->prop, 
+                                                           child_unq)))
+                        /* we already have mapped this unique name 
+                           - so look up new unique name */
+                        unq = find_unq_name (np_list, ori_prev);
+                    else
+                        /* no match */
+                        unq = PFalg_unq_name (ori, id++);
+
+                    add_name_pair (np_list, ori, unq);
+                }
                 else
                     add_name_pair (np_list, ori, child_unq);
 
@@ -259,14 +280,10 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                 ori = R(n)->schema.items[i].name;
                 child_unq = PFprop_unq_name (R(n)->prop, ori);
 
-                /* In comparison to the first argument we may
-                   now hit some equally named columns even if they
-                   are not identical to the second join argument
-                   column. In this case we rename the conflicting
-                   columns by introducing a new unique name. */
                 if (child_unq == att2_unq)
                     add_name_pair (np_list, ori, join_unq);
-                else if (PFprop_ori_name_left (n->prop, child_unq)) {
+                else if (!proj_left &&
+                         PFprop_ori_name (L(n)->prop, child_unq)) {
                     PFalg_att_t ori_prev, unq;
 
                     /* like in the cross product case we map equally
@@ -683,6 +700,10 @@ prop_infer (PFla_op_t *n, unsigned int cur_col_id)
 void
 PFprop_infer_unq_names (PFla_op_t *root)
 {
+    /* get the key information for 
+       a more useful eqjoin inference */
+    PFprop_infer_key (root);
+
     prop_infer (root, 1);
     PFla_dag_reset (root);
 }

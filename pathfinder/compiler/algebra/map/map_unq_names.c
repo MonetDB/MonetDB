@@ -224,10 +224,10 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             /* Add a projection for each operand to ensure
                that all columns are present. */
             PFla_op_t *left, *right;
-            PFalg_proj_t *projlist2;
-            PFalg_att_t ori, unq, r_unq, att1_unq, att2_unq;
-            unsigned int count2;
-            bool renamed = false;
+            PFalg_proj_t *projlist, *projlist2;
+            PFalg_att_t ori, unq, l_unq, r_unq, att1_unq, att2_unq;
+            unsigned int count, count2;
+            bool renamed;
 
             left = U(L(p));
             right = U(R(p));
@@ -235,11 +235,31 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             att1_unq = PFprop_unq_name_left (p->prop, p->sem.eqjoin.att1);
             att2_unq = PFprop_unq_name_right (p->prop, p->sem.eqjoin.att2);
             
+            projlist  = PFmalloc (left->schema.count *
+                                  sizeof (PFalg_proj_t));
             projlist2 = PFmalloc (right->schema.count *
                                   sizeof (PFalg_proj_t));
+            count = 0;
             count2 = 0;
+            projlist [count++]  = proj (att1_unq, att1_unq);
             projlist2[count2++] = proj (att2_unq, att2_unq);
                                               
+            renamed = false;
+            for (unsigned int i = 0; i < left->schema.count; i++) {
+                l_unq = left->schema.items[i].name;
+                ori = PFprop_ori_name_left (p->prop, l_unq);
+                assert (ori);
+                
+                unq = PFprop_unq_name (p->prop, ori);
+                if (l_unq != att1_unq) {
+                    projlist[count++] = proj (unq, l_unq);
+                    renamed = renamed || (unq != l_unq);
+                }
+            }
+            if (renamed)
+                left = PFla_project_ (left, count, projlist);
+
+            renamed = false;
             for (unsigned int i = 0; i < right->schema.count; i++) {
                 r_unq = right->schema.items[i].name;
                 ori = PFprop_ori_name_right (p->prop, r_unq);
@@ -251,7 +271,6 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     renamed = renamed || (unq != r_unq);
                 }
             }
-            
             if (renamed)
                 right = PFla_project_ (right, count2, projlist2);
                                 
