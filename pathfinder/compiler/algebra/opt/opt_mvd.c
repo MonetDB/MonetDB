@@ -71,6 +71,11 @@
 #define RL(p) L(R(p))
 /** starting from p, make two steps right */
 #define RR(p) R(R(p))
+/** and so on ... */
+#define LLL(p) L(L(L(p)))
+#define LRL(p) L(R(L(p)))
+#define RLL(p) L(L(R(p)))
+#define RRL(p) L(R(R(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -227,6 +232,22 @@ modify_aggr (PFla_op_t *p,
         }
     }
     return modified;
+}
+
+/* check if the semantical information 
+   of two attributes matches */
+static bool
+project_identical (PFla_op_t *a, PFla_op_t *b)
+{
+    if (a->sem.proj.count != b->sem.proj.count)
+        return false;
+
+    for (unsigned int i = 0; i < a->sem.proj.count; i++)
+        if (a->sem.proj.items[i].new != b->sem.proj.items[i].new
+            || a->sem.proj.items[i].old != b->sem.proj.items[i].old)
+            return false;
+
+    return true;
 }
 
 /**
@@ -536,6 +557,38 @@ opt_mvd (PFla_op_t *p)
                 break;
             }
             else if (LR(p) == RR(p)) {
+                *p = *(cross_can (LR(p), disjunion (LL(p), RL(p))));
+                modified = true;
+                break;
+            }
+            else if (LL(p)->kind == la_project &&
+                     RL(p)->kind == la_project &&
+                     LLL(p) == RLL(p) &&
+                     project_identical (LL(p), RL(p))) {
+                *p = *(cross_can (LL(p), disjunion (LR(p), RR(p))));
+                modified = true;
+                break;
+            }
+            else if (LR(p)->kind == la_project &&
+                     RL(p)->kind == la_project &&
+                     LRL(p) == RLL(p) &&
+                     project_identical (LR(p), RL(p))) {
+                *p = *(cross_can (LR(p), disjunion (LL(p), RR(p))));
+                modified = true;
+                break;
+            }
+            else if (LL(p)->kind == la_project &&
+                     RR(p)->kind == la_project &&
+                     LLL(p) == RRL(p) &&
+                     project_identical (LL(p), RR(p))) {
+                *p = *(cross_can (LL(p), disjunion (LR(p), RL(p))));
+                modified = true;
+                break;
+            }
+            else if (LR(p)->kind == la_project &&
+                     RR(p)->kind == la_project &&
+                     LRL(p) == RRL(p) &&
+                     project_identical (LR(p), RR(p))) {
                 *p = *(cross_can (LR(p), disjunion (LL(p), RL(p))));
                 modified = true;
                 break;
