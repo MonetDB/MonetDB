@@ -192,6 +192,7 @@ this interface.
 #endif /* _STATISTICS_DEF */
 @-
 @c
+#include "mal_config.h"
 #include "statistics.h"
 #include "algebra.h"
 s_export str STATforceUpdateAll(int *ret);

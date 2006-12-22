@@ -68,6 +68,7 @@ module batmath;
 #endif  /* _BATMATH_H */
 @- Implementations of scientific functions
 @c
+#include "mal_config.h"
 #include "gdk.h"
 #include "math.h"
 #include "mal_exception.h"

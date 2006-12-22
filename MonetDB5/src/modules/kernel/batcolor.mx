@@ -97,6 +97,7 @@ address CLRbatCb
 comment	"Extracts Cb(blue color) component from a color atom";
 @+ Implementation
 @c
+#include "mal_config.h"
 #include <gdk.h>
 #include <string.h>
 #include <mal.h>

@@ -42,6 +42,7 @@ extern void DESCsetmodes(BAT *b, BAT *img);
 
 #endif /* _GDK_STORAGE_H_ */
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 #include <stdlib.h>
 #include "gdk_storage.h"

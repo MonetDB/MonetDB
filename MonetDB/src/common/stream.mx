@@ -272,6 +272,7 @@ typedef enum stream_errors {
 } stream_errors;
 #endif /*_STREAM_H_*/
 @c
+#include "monetdb_config.h"
 #include "stream.h"
 #include <string.h>
 

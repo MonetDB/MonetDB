@@ -81,6 +81,7 @@ extern list*	backend_schema_user_dependencies(ptr trans, int schema_id);
 #endif /* _SQL_BACKEND_H_ */
 @c
 
+#include "sql_config.h"
 #include "sql_backend.h"
 
 static backend_functions *be_funcs = NULL;

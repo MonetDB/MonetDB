@@ -109,6 +109,7 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 @+ Implementation
 @include prelude.mx
 @c
+#include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 

@@ -16,8 +16,8 @@
 
 MTSAFE
 
-SWIGFLAGS = $(MONETDB_INCS)
-INCLUDES = -I$(MONETDB_INCLUDEDIR)/C $(MONETDB_INCS) $(PYTHON_INCS)
+SWIGFLAGS = $(MONETDB_INCS) $(MONETDBCLIENTS_INCS)
+INCLUDES = $(MONETDB_INCS) $(MONETDBCLIENTS_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
 
 # with gcc we could use these
 #X_CFLAGS = -Wno-unused-parameter -Wno-unused-function
@@ -27,7 +27,7 @@ X_CFLAGS =
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
-STATIC_MODS = $(MONETDB_MODS) \
+STATIC_MODS = $(MONETDB4_MODS) \
 	-l_builtin -l_arith -l_bat -l_algebra -l_sys -l_trans -l_str -l_constant
 
 smallTOC_SHARED_MODS =	\

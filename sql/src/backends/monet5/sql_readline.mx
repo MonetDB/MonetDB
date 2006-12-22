@@ -34,6 +34,7 @@ mal_export int SQLreadConsole(Client cntxt);
 
 #endif /* SQL_READLINETOOLS_H_INCLUDED */
 @c
+#include "sql_config.h"
 #include "mal.h"
 #undef PATHLENGTH
 #include "mal_readline.h"

@@ -45,6 +45,7 @@ constraints_export str CemptySet(int *k, int *bid);
 #endif /* _CONSTRAINTS_H */
 
 @c
+#include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include "constraints.h"

@@ -643,6 +643,7 @@ the string representations.
 @}
 
 @c
+#include "mal_config.h"
 #include "calc.h"
 #include "stdlib.h"
 #include "mal.h"

@@ -32,6 +32,7 @@ sql_server_export void monet4_user_init(backend_functions *be_funcs);
 #endif /* _SQL_USER_H_ */
 
 @c
+#include "sql_config.h"
 #include "sql_user.h"
 #include <sql_mvc.h>
 #include <sql_statement.h>

@@ -54,6 +54,7 @@ mb_export str MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev
 
 #endif /* _MBM_H_ */
 @c
+#include "mal_config.h"
 #include <mal.h>
 #include <math.h>
 #include <mal_exception.h>

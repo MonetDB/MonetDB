@@ -58,10 +58,10 @@ pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, l
 
 #define PRINT_STAT 0
 
+#include <pf_config.h>
 #include <gdk.h>
 #include <monet.h>
 
-#include <pf_config.h>
 #include "pathfinder.h"
 #include "pf_support.h"
 #include "shredder.h"

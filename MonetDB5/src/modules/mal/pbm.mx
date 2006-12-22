@@ -269,6 +269,7 @@ pbm_export str PBMgetNames(int *ret);
 pbm_export str PBMdummy(int *ret, str *grp);
 #endif
 @c
+#include "mal_config.h"
 #include "pbm.h"
 
 PBAT partitions = NULL;

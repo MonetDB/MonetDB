@@ -15,12 +15,12 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = -I$(MONETDB_INCLUDEDIR)/C $(MONETDB_INCS)
+INCLUDES = $(MONETDB_INCS) $(MONETDB4_INCS) $(MONETDBCLIENTS_INCS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
-STATIC_MODS = $(MONETDB_MODS) \
+STATIC_MODS = $(MONETDB4_MODS) \
 	-l_builtin -l_arith -l_bat -l_algebra -l_sys -l_trans -l_str -l_constant
 
 smallTOC_SHARED_MODS =	\
@@ -66,18 +66,18 @@ bin_Mserver = {
 	COND = LINK_STATIC
 	SOURCES = Mserver.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream
 }
 
 lib_embeddedxq = {
 	SOURCES = embeddedclient.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream -lMapi
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream -lMapi
 }
 
 bin_Mbeddedxq = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedxq \
-		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream -lMapi
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream -lMapi
 }

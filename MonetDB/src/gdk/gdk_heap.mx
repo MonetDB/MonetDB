@@ -64,6 +64,7 @@ sometimes implies flushing heaps to disk and even re-loading them with a new
 storage mode.  This is discussed in detail in BATsetaccess (gdk_bat.mx).
 @{
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 static char *

@@ -38,6 +38,7 @@ extern comp_type swap_compare( comp_type t );
 
 @c
 
+#include "sql_config.h"
 #include "sql_parser.h"
 #include "sql_symbol.h"
 #include "rel_semantic.h"

@@ -120,6 +120,7 @@ typedef struct {
 } counter;
 
 @c
+#include "mal_config.h"
 #include "counters.h"
 #include "errno.h"
 

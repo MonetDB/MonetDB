@@ -43,6 +43,7 @@ load the dynamic libraries before we load and run the scripts.
 void static_module_init(void);
 
 @c
+#include "sql_config.h"
 #include "gdk.h"
 #include "monet.h"
 #include "initmodules.h"

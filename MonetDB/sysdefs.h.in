@@ -16,49 +16,6 @@
  * All Rights Reserved.
  */
 
-#if defined(__MINGW32__)
-#define NATIVE_WIN32
-#endif 
-
-#ifndef __CYGWIN__
-#define SO_PREFIX "lib"
-#endif
-
-#ifndef NATIVE_WIN32
-
-#define DIR_SEP '@QDIRSEP@'
-#define DIR_SEP_STR "@QDIRSEP@"
-#define PATH_SEP ':'
-#define PATH_SEP_STR ":"
-#if defined(_AIX)
-#define SO_EXT ".a"
-#elif defined(__MACH__)
-#define SO_EXT ".dylib"
-#elif defined(__CYGWIN__)
-#define SO_EXT "-0.dll"
-#define SO_PREFIX "cyg"
-#else
-#define SO_EXT ".so"
-#endif
-
-#else
-
-#define DIR_SEP '\\'
-#define DIR_SEP_STR "\\"
-#define PATH_SEP ';'
-#define PATH_SEP_STR ";"
-#ifdef __MINGW32__
-#define SO_EXT "-0.dll"
-#else
-#define SO_EXT ".dll"
-#endif
-
-#define HAVE_GLOBALMEMORYSTATUS 1
-#define ALLREADY_HAVE_WINDOWS_TYPE
-
-#endif
-
-
 #if (!defined __GNUC__) && defined __INTEL_COMPILER && __INTEL_COMPILER >= 800
 /*
  * With "-no-gcc", icc 8.0 does not predefine __GNUC__, and hence __REDIRECT

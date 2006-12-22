@@ -296,6 +296,7 @@ xquery_print_result_driver (
  *
  */
 
+#include <pf_config.h>
 #include "serialize.h"
 
 /**

@@ -356,6 +356,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 #endif /* _GDK_SCANSELECT_H */
 
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 #if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)

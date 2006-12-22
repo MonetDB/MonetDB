@@ -31,6 +31,7 @@ extern int create_dependency_table(sql_trans *tr, sql_schema *s);
 #endif /*BAT_DEPEND_H */
 @c
 
+#include "sql_config.h"
 #include "bat_dependency.h"
 
 

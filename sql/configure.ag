@@ -1,3 +1,5 @@
+#                                               -*- Autoconf -*-
+
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -20,7 +22,6 @@ AC_INIT(src/include/sql_catalog.h)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AH_TOP([#include "monetdb_config.h"])
 AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
@@ -31,19 +32,22 @@ CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
+req_monetdb_ver='1.15.0'
+AM_MONETDB_COMMON($req_monetdb_ver)
+if test "x$have_monetdb" != xyes; then
+	AC_MSG_ERROR([MonetDB5 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+fi
+AM_MONETDB_CLIENTS()
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
-req_monetdb_ver='4.15.0'
-AM_MONET($req_monetdb_ver)
-if test "x$have_monet" != xyes; then
-	AC_MSG_ERROR([SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETVERS was found.])
-fi
 AM_MONETDB_UTILS()
+req_monetdb_ver='4.15.0'
+AM_MONETDB4($req_monetdb_ver)
 req_monetdb_ver='4.99.19'
-AM_MONET5($req_monetdb_ver)
+AM_MONETDB5($req_monetdb_ver)
 AM_CONDITIONAL(MONET5,test "x$have_monet5" = xyes)
 
 backend=monet4
@@ -52,60 +56,6 @@ AC_ARG_WITH(backend,
 SQL_BACKEND=$backend
 AC_SUBST(SQL_BACKEND)
 AM_CONDITIONAL(MONET4,test "x$backend" = xmonet4)
-
-dnl unixODBC
-dnl this is only used by the ODBC driver
-have_unixodbc=auto
-UNIXODBC_PATH="$PATH"
-UNIXODBC_CONFIG=''
-ODBC_INCS=''
-ODBC_LIBS=''
-AC_ARG_WITH(unixodbc,
-	AC_HELP_STRING([--with-unixodbc=DIR],
-		[unixODBC library is installed in DIR]),
-	have_unixodbc="$withval")
-case "$have_unixodbc" in
-yes|no|auto)
-	;;
-*)
-	UNIXODBC_PATH="$withval/bin:$PATH"
-	;;
-esac
-if test "x$have_unixodbc" != xno; then
-	AC_PATH_PROG(UNIXODBC_CONFIG,odbc_config,,$UNIXODBC_PATH)
-	if test "x$UNIXODBC_CONFIG" = x; then
-		if test "x$have_unixodbc" = xyes; then
-			AC_MSG_ERROR([odbc_config not found; use --with-unixodbc=<path>])
-		fi
-		have_unixodbc=no
-	fi
-fi
-if test "x$have_unixodbc" != xno; then
-	case "$have_unixodbc" in
-	yes|auto)
-		;;
-	*)
-		ODBC_INCS="-I$have_unixodbc/include"
-		ODBC_LIBS="-L$have_unixodbc/lib"
-		;;
-	esac
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $ODBC_INCS"
-	AC_CHECK_HEADER(odbcinst.h, AC_DEFINE(HAVE_ODBCINST_H, 1, [Define to 1 if you have the <odbcinst.h> header file.]), [if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([odbcinst.h not found]); fi; have_unixodbc=no])
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_unixodbc" != xno; then
-	save_LIBS="$LIBS"
-    	LIBS="$LIBS $ODBC_LIBS"
-    	AC_CHECK_LIB(odbcinst, SQLGetPrivateProfileString, :, [if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbcinst not found]); fi; have_unixodbc=no])
-    	LIBS="$save_LIBS"
-fi
-if test "x$have_unixodbc" != xno; then
-	ODBC_LIBS="$ODBC_LIBS -lodbcinst"
-	AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1, [Define if you have the SQLGetPrivateProfileString function])
-fi
-AC_SUBST(ODBC_INCS)
-AC_SUBST(ODBC_LIBS)
 
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 

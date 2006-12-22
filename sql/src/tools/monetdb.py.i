@@ -22,9 +22,9 @@
 #ifdef HAVE_FSTAT
 #undef HAVE_FSTAT
 #endif
-#include "C/Mapi.h"
+#include "Mapi.h"
 %}
 
 extern Mapi monetdb_sql(char *dbfarm, char *dbname);
 
-%include "C/Mapi.h"
+%include "Mapi.h"

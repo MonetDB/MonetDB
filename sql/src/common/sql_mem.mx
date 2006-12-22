@@ -19,6 +19,7 @@
 @* 
 
 @c
+#include "sql_config.h"
 
 /* Stefan: 
  * "Fake-include" to make msc.py create the proper dependencies;

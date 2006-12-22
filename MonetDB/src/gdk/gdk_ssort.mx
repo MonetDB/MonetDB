@@ -22,6 +22,7 @@ straight copy of the listsort function in the Python 2.5 source code,
 heavily modified to fit into the MonetDB environment.
 @{
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 /* The maximum number of entries in a MergeState's pending-runs stack.

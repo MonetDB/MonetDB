@@ -187,11 +187,15 @@ status_export int set_mem_maxsize(lng *num);
 
 @include kprelude.mx
 @c
+#include "mal_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
 #include "mal_exception.h"
 #include "status.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
@@ -200,7 +204,9 @@ status_export int set_mem_maxsize(lng *num);
 
 #ifndef NATIVE_WIN32
 # ifndef HZ
-#  define HZ CLK_TCK
+#  if !defined(HAVE_SYSCONF) || !defined(_SC_CLK_TCK)
+#   define HZ CLK_TCK
+#  endif
 # endif
 #endif
 
@@ -280,6 +286,12 @@ SYScpuStatistics(int *ret)
 #endif
 	int i;
 	BAT *b;
+#if !defined(NATIVE_WIN32) && !defined(HZ) && defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+	static int HZ;
+
+	if (HZ == 0)
+			HZ = sysconf(_SC_CLK_TCK);
+#endif
 
 	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)

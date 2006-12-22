@@ -312,6 +312,7 @@ extern stmt *grp_find_groupby_col(group *g, stmt *s);
 #endif /* _SQL_STATEMENT_H_ */
 
 @c
+#include "sql_config.h"
 #include "sql_mem.h"
 #include "sql_statement.h"
 #include <string.h>

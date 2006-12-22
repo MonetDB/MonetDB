@@ -29,6 +29,7 @@ extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
 #endif /*_REL_OPTIMIZER_H_*/
 @c
 
+#include "sql_config.h"
 #include "rel_optimizer.h"
 #include "rel_select.h"
 #include "rel_dump.h"

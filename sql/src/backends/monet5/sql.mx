@@ -724,6 +724,7 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 @-
 First introduce the routines to be called by the front-end.
 @c
+#include "sql_config.h"
 #include "sql.h"
 #include "sql_result.h"
 #include "sql_gencode.h"

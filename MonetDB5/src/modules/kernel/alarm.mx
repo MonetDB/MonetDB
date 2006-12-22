@@ -81,6 +81,7 @@ typedef struct {
 } monet_timer_t;
 
 @c
+#include "mal_config.h"
 #include "alarm.h"
 #include <time.h>
 

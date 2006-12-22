@@ -27,6 +27,7 @@ extern int seq_restart(sql_sequence *seq, lng start);
 
 #endif /* BAT_SEQ_H */
 @c
+#include "sql_config.h"
 #include "sql_catalog.h"
 #include "sql_storage.h"
 #include "bat_store.h"

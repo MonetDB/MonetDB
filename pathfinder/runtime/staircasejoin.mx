@@ -36,6 +36,7 @@
 *
 */
 
+#include "pf_config.h"
 #include <gdk.h>
 
 #if 0

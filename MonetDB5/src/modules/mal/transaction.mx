@@ -63,6 +63,7 @@ comment	"List deletions since last commit.";
 @{
 @+ Implementation Code 
 @c
+#include "mal_config.h"
 #include "gdk.h"
 #include "mal.h"
 #include "mal_interpreter.h"

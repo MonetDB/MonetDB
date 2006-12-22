@@ -157,6 +157,7 @@ url_export str unescape_str(str *retval, str s);
 
 
 @c
+#include "mal_config.h"
 #include "url.h"
 #include "mal.h"
 #include "mal_exception.h"

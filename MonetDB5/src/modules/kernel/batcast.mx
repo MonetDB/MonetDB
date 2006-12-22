@@ -257,6 +257,7 @@ str CMDconvert_void_str_@1(int *ret, int *bid){
 @-
 The lengthly list of coercions options could have been generated.
 @c
+#include "mal_config.h"
 #include "batcast.h"
 
 int	oidToStr(char **dst, int *len, oid *src  ){

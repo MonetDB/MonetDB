@@ -89,6 +89,7 @@ sabaoth_export str SABwildRetreat(int *ret);
 @-
 
 @c
+#include "mal_config.h"
 #include <mal.h>
 #include <mal_exception.h>
 #include <mal_sabaoth.h>	/* for the implementation of the functions */

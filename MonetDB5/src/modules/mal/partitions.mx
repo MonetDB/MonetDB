@@ -290,6 +290,7 @@ as a handle.
 
 #endif
 @c
+#include "mal_config.h"
 #include "partitions.h"
 #include "bat5.h"
 

@@ -168,6 +168,7 @@ extern int sqlparse(void *);
 
 @y
 %{
+#include "sql_config.h"
 #include <sql_mem.h>
 #include "sql_parser.h"
 #include "sql_symbol.h"

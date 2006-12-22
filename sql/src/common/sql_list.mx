@@ -19,6 +19,7 @@
 @* 
 
 @c
+#include "sql_config.h"
 #include <gdk.h>		/* for GDKmalloc() & GDKfree() */
 #include "sql_list.h"
 

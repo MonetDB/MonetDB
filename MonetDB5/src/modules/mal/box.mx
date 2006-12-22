@@ -93,6 +93,7 @@ box_export str BOXgetBoxNames(int *bid);
 box_export str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* __BOX_H */
 @c
+#include "mal_config.h"
 #include "mal_exception.h"
 #include "mal_box.h"
 #include "mal_interpreter.h"

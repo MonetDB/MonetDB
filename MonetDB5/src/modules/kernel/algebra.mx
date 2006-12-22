@@ -858,6 +858,7 @@ algebra_export str ALGavg_@1(dbl *res, int *bid);
 #endif
 
 @c
+#include "mal_config.h"
 #include "algebra.h"
 
 @= BATaggr

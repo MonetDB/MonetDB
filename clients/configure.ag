@@ -1,0 +1,272 @@
+#                                               -*- Autoconf -*-
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
+# All Rights Reserved.
+
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.59)
+AC_INIT([MonetDBClients], [1.15.0], [monet@cwi.nl], [MonetDB])
+AC_CONFIG_AUX_DIR(conf)
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+dnl AH_TOP([#include "sysdefs.h"])
+AH_BOTTOM([#include "stddef.h"])
+AM_INIT_AUTOMAKE
+AC_CONFIG_SRCDIR([src/mapilib/Mapi.mx])
+AC_CONFIG_HEADER([clients_config.h])
+
+HOST=[$target]
+AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
+
+if test x"$target_os" = xcygwin; then
+	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
+fi
+
+# MONETDBCLIENTS_BUILD and MONETDBCLIENTS_SOURCE are *only* used for monetdb-clients-config
+# MONETDBCLIENTS_SOURCE is the absolute path name of the source directory
+# (srcdir can be relative)
+
+# The Q versions of various variables are used in places where \'s
+# need to be escapes with an extra \.  Configure does not support \'s
+# in path names, so there is no need to do anything special here
+# except set the variables.  The command to set them in case we do
+# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
+MONETDBCLIENTS_BUILD=[`pwd`]
+AC_SUBST(MONETDBCLIENTS_BUILD)
+
+MONETDBCLIENTS_SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(MONETDBCLIENTS_SOURCE)
+
+# if no --prefix option, we must set Qprefix to the default value
+# the problem is that prefix is set very late in the process if it
+# wasn't set by --prefix
+if test "${prefix}x" = "NONEx"; then
+	Qprefix="${ac_default_prefix}"
+else
+	Qprefix="${prefix}"
+fi
+Qprefix="`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qprefix)
+# exec_prefix is created very late, so let make do the expansion
+if test "${exec_prefix}x" = "NONEx"; then
+	Qexec_prefix='${prefix}'
+else
+	Qexec_prefix="`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+AC_SUBST(Qexec_prefix)
+
+AM_MONETDB_DEFAULTS()
+
+# Checks for programs.
+AM_MONETDB_COMMON()
+AM_MONETDB_DEFAULTS()
+AM_MONETDB_COMPILER()
+AM_MONETDB_TOOLS()
+AM_MONETDB_OPTIONS()
+AM_MONETDB_LIBS()
+AM_MONETDB_UTILS()
+
+# Checks for libraries.
+dnl unixODBC
+dnl this is only used by the ODBC driver
+have_unixodbc=auto
+UNIXODBC_PATH="$PATH"
+UNIXODBC_CONFIG=''
+ODBC_INCS=''
+ODBC_LIBS=''
+AC_ARG_WITH(unixodbc,
+	AC_HELP_STRING([--with-unixodbc=DIR],
+		[unixODBC library is installed in DIR]),
+	have_unixodbc="$withval")
+case "$have_unixodbc" in
+yes|no|auto)
+	;;
+*)
+	UNIXODBC_PATH="$withval/bin:$PATH"
+	;;
+esac
+if test "x$have_unixodbc" != xno; then
+	AC_PATH_PROG(UNIXODBC_CONFIG,odbc_config,,$UNIXODBC_PATH)
+	if test "x$UNIXODBC_CONFIG" = x; then
+		if test "x$have_unixodbc" = xyes; then
+			AC_MSG_ERROR([odbc_config not found; use --with-unixodbc=<path>])
+		fi
+		have_unixodbc=no
+	fi
+fi
+if test "x$have_unixodbc" != xno; then
+	case "$have_unixodbc" in
+	yes|auto)
+		;;
+	*)
+		ODBC_INCS="-I$have_unixodbc/include"
+		ODBC_LIBS="-L$have_unixodbc/lib"
+		;;
+	esac
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $ODBC_INCS"
+	AC_CHECK_HEADER(odbcinst.h, AC_DEFINE(HAVE_ODBCINST_H, 1, [Define to 1 if you have the <odbcinst.h> header file.]), [if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([odbcinst.h not found]); fi; have_unixodbc=no])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_unixodbc" != xno; then
+	save_LIBS="$LIBS"
+    	LIBS="$LIBS $ODBC_LIBS"
+    	AC_CHECK_LIB(odbcinst, SQLGetPrivateProfileString, :, [if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbcinst not found]); fi; have_unixodbc=no])
+    	LIBS="$save_LIBS"
+fi
+if test "x$have_unixodbc" != xno; then
+	ODBC_LIBS="$ODBC_LIBS -lodbcinst"
+	AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1, [Define if you have the SQLGetPrivateProfileString function])
+fi
+AC_SUBST(ODBC_INCS)
+AC_SUBST(ODBC_LIBS)
+
+# Checks for header files.
+AC_HEADER_TIME
+AC_CHECK_HEADERS([crypt.h pwd.h sys/un.h])
+
+# Checks for library functions.
+AC_CHECK_FUNCS([crypt ftime getlogin gettimeofday localtime_r strcasecmp strncasecmp strtod strtof strtoll strtoull])
+
+dnl provide different versions of the paths derived above
+if test "${prefix}x" = "NONEx"; then
+	Xprefix="`$translatepath "$Qprefix"`"
+	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+else
+	Xprefix="`$translatepath "$prefix"`"
+	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+if test "${exec_prefix}x" = "NONEx"; then
+	Xexec_prefix="`$translatepath "$Qexec_prefix"`"
+	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+else
+	Xexec_prefix="`$translatepath "$exec_prefix"`"
+	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
+fi
+AC_SUBST(Xprefix)
+AC_SUBST(QXprefix)
+AC_DEFINE_UNQUOTED(MONETDBCLIENTS_PREFIX,"$QXprefix",[architecture-independent files])
+AC_SUBST(Xexec_prefix)
+AC_SUBST(QXexec_prefix)
+AC_DEFINE_UNQUOTED(MONETDBCLIENTS_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
+QMONETDBCLIENTS_BUILD="$MONETDBCLIENTS_BUILD"
+XMONETDBCLIENTS_BUILD="`$translatepath "$MONETDBCLIENTS_BUILD"`"
+QXMONETDBCLIENTS_BUILD="`echo "$XMONETDBCLIENTS_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QMONETDBCLIENTS_BUILD)
+AC_SUBST(XMONETDBCLIENTS_BUILD)
+AC_SUBST(QXMONETDBCLIENTS_BUILD)
+QMONETDBCLIENTS_SOURCE="$MONETDBCLIENTS_SOURCE"
+XMONETDBCLIENTS_SOURCE="`$translatepath "$MONETDBCLIENTS_SOURCE"`"
+QXMONETDBCLIENTS_SOURCE="`echo "$XMONETDBCLIENTS_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QMONETDBCLIENTS_SOURCE)
+AC_SUBST(XMONETDBCLIENTS_SOURCE)
+AC_SUBST(QXMONETDBCLIENTS_SOURCE)
+Qsrcdir="$srcdir"
+Xsrcdir="`$translatepath "$srcdir"`"
+QXsrcdir="`echo "$Xsrcdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qsrcdir)
+AC_SUBST(Xsrcdir)
+AC_SUBST(QXsrcdir)
+Qlocalstatedir="$localstatedir"
+Xlocalstatedir="`$translatepath "$localstatedir"`"
+QXlocalstatedir="`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_DEFINE_UNQUOTED(MONETDBCLIENTS_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
+AC_SUBST(Qlocalstatedir)
+AC_SUBST(Xlocalstatedir)
+AC_SUBST(QXlocalstatedir)
+Qlibdir="$libdir"
+Xlibdir="`$translatepath "$libdir"`"
+QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qlibdir)
+AC_SUBST(Xlibdir)
+AC_SUBST(QXlibdir)
+AC_DEFINE_UNQUOTED(MONETDBCLIENTS_LIBDIR,"$QXlibdir",[object code libraries])
+Qsysconfdir="$sysconfdir"
+Xsysconfdir="`$translatepath "$sysconfdir"`"
+QXsysconfdir="`echo "$Xsysconfdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_DEFINE_UNQUOTED(MONETDBCLIENTS_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
+AC_SUBST(Qsysconfdir)
+AC_SUBST(Xsysconfdir)
+AC_SUBST(QXsysconfdir)
+Qbindir="$bindir"
+Xbindir="`$translatepath "$bindir"`"
+QXbindir="`echo "$Xbindir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qbindir)
+AC_SUBST(Xbindir)
+AC_SUBST(QXbindir)
+Qlibexecdir="$libexecdir"
+Xlibexecdir="`$translatepath "$libexecdir"`"
+QXlibexecdir="`echo "$Xlibexecdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qlibexecdir)
+AC_SUBST(Xlibexecdir)
+AC_SUBST(QXlibexecdir)
+Qdatarootdir="$datarootdir"
+Xdatarootdir="`$translatepath "$datarootdir"`"
+QXdatarootdir="`echo "$Xdatarootdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qdatarootdir)
+AC_SUBST(Xdatarootdir)
+AC_SUBST(QXdatarootdir)
+Qdatadir="$datadir"
+Xdatadir="`$translatepath "$datadir"`"
+QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qdatadir)
+AC_SUBST(Xdatadir)
+AC_SUBST(QXdatadir)
+Qmandir="$mandir"
+Xmandir="`$translatepath "$mandir"`"
+QXmandir="`echo "$Xmandir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qmandir)
+AC_SUBST(Xmandir)
+AC_SUBST(QXmandir)
+Qincludedir="$includedir"
+Xincludedir="`$translatepath "$includedir"`"
+QXincludedir="`echo "$Xincludedir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qincludedir)
+AC_SUBST(Xincludedir)
+AC_SUBST(QXincludedir)
+Qinfodir="$infodir"
+Xinfodir="`$translatepath "$infodir"`"
+QXinfodir="`echo "$Xinfodir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qinfodir)
+AC_SUBST(Xinfodir)
+AC_SUBST(QXinfodir)
+
+case "$host_os" in
+mac*)	DIRSEP=':'
+	QDIRSEP=':'
+	AC_ERROR([mac not supported yet])
+	;;
+*mingw*)
+	DIRSEP='\'
+	QDIRSEP='\\'
+	PATHSEP=';'
+	SOEXT='-0.dll'
+	;;
+*)
+	DIRSEP='/'
+	QDIRSEP='/'
+	PATHSEP=':'
+	SOEXT='.so'
+	;;
+esac
+AC_SUBST(DIRSEP)
+AC_SUBST(QDIRSEP)
+AC_SUBST(PATHSEP)
+AC_SUBST(SOEXT)
+
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"

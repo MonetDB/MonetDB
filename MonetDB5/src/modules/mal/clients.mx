@@ -125,6 +125,7 @@ clients_export str CLTgetUsers(bat *ret, bat *scens);
 
 #endif /* _CLIENTS_H */
 @c
+#include "mal_config.h"
 #include "clients.h"
 #include "mal_scenario.h"
 #include "mal_instruction.h"

@@ -179,6 +179,7 @@ logger_export log_bid logger_find_bat(logger *logger, char *name);
 
 #endif /*_LOGGER_H_*/
 @c
+#include "mal_config.h"
 #include "logger.h"
 #include "mal.h"
 #include "mal_exception.h"

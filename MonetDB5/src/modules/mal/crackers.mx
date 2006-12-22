@@ -466,6 +466,7 @@ crackers_export str CRKmergeDeletions_OnNeedGraduallyRipple(int *k, int *bid, in
 #endif /* _CRACKERS_H */
 
 @c
+#include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include "crackers.h"

@@ -1,0 +1,1425 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f mprof
+@t Monet performance monitoring
+@a M.L. Kersten
+@v 1.0
+
+@* Introduction
+@T
+Performance analysis is a must to understand the and improve the
+database applications developed for Monet.
+To simplify this job, a profiling module is provided, which
+can be used to embed
+performance tracing at any level of granularity required. 
+It has been optimized to
+limit the cost of keeping track of the performance data.
+
+The simpliest approach to performance monitoring involves keeping a 
+log of marks on the time axis. 
+Often, however, specific instruction sequences are to be monitored.
+Thus it makes sense to label and tag both begin and end of the interval. 
+Postprocessing then merely involves calculation of the 
+difference in resource consumption.
+
+Interval labels are chosen by the user, because they should relate
+to the program semantics. Simple identifier tags are preferred.
+Multi-string context dependent (debugging) information can also be 
+associated with an interval.
+
+Finally, interval labels can be organized into a hierarchy. 
+This enables aggregation over the dynamic calling behavior of
+the program, much like gprof (UNIX).
+
+The calls to the Monet profiler should be embedded in the MIL program
+or called from another module. 
+An alternative method is to enhanced the MIL interpreter to keep track
+of performance data. 
+If need arises, this functionality will be added as a client controllable
+option.
+
+In Section 2 an old MIL script version is listed. It is out of date now.
+Secion 3 and 4 contain the atomary type and command modules respectively.
+A sample session and printing routines are shown in Chapter 5.
+@* MIL performance script
+[REWRITE ]
+The script below can be used to gather performance information for coarse 
+grain experiments. Several BATs are used to keep track of the interval
+properties.
+The necessary bats should be created once and they are tagged using the
+user name.They are not protected against concurrent access.
+
+A new timing period is tagged with the routine pBegin(N), where N is 
+a string. It returns an integer that represents the period for further actions.
+The interval is closed using pEnd(I) where I is the tag.
+The last pEnd for parameter I is considered only and calling this function is optional.
+
+The routine pOuter(I,Out) relates an interval to the enclosing context.
+It enables construction of a hierarchical decomposition of the
+session stream in performance blocks.
+
+A default tabular print is provided. 
+
+Preparitory actions for measuring time is not reflected in the timing of the interval.
+The performance penalty of nested interval is about 6 ms.
+The constant should be derived for each platform separately.
+
+@* Module Definition
+The mprof module provides a performance tracing facility with minimal
+interference to the experiments running.
+It uses the Mprof atoms and just a few temporary bats to administer the 
+results.
+
+Mprof assumes a single user environment. When used in a parallel or 
+concurrent mode the labelling should be used to differentiate the cases.
+
+The properties collected are summarized below. The items marked '*' are 
+collected for both the beginning and the end of the intervals.
+@T
+\begin{tabular}{l l}
+name	& label associate with a oid \\
+intervals & oid associate with each interval\\
+tag	& commentaries\\
+clk*  & wall clock information\\
+cpu*  & cpu timing information\\
+io*	& io performance data\\
+mem* & memory allocation parameters\\
+pair & label hierarhy encoding\\
+\end{tabular}
+
+The{\em mprof} operations are:
+\begin{itemize}
+\item {\em pmStart} initializes the performance administration.
+This routine is automatically called as part of loading the module.
+
+\item {\em pmClear} resets the performance bats after pmStart.
+It can be used to run different performance experiments within the same 
+session.
+
+\item {\em pmExit} terminates performance tracing. The underlying BATs
+are removed and the global trace flag is set to zero.
+It is automatically called when the module is dropped.
+
+\item {\em pmB(L)} starts a new timing interval labeled L. 
+Resource parameters are retained.
+
+\item {\em pmE(L)} terminates the last interval identified by L.
+\item {\em pmTag(L, Msg)} associates the message Msg with interval 
+named L.
+Typically used to retain application specific information, such as 
+property=value pairs.
+\item {\em pmParent(L,LP)} administers L as logically enclosed by interval LP.
+\item {\em pmPrint(L)} produces a listing 
+of the information gathered for the intervals labeled L.
+Ommission of the label produces a listing of for all labels.
+\item {\em pmSummary} produces a complete performance analysis 
+for the hierarchy.
+\end{itemize}
+
+@m
+.MODULE mprof;
+
+.COMMAND pmB(str): int = pmB_impl;
+	"Start a new labelled timing period"
+.COMMAND pmE(str): int = pmE_impl;
+	"End a labelled timing period"
+.COMMAND pmClear(): void = pmClear_impl;
+	"Clear the performance bats"
+.COMMAND pmTag(str,str):void = pmTag_impl;
+	"Add comment to a timing period"
+@ifdef LATER
+.COMMAND pmParent(str,str):void = pmParent_impl;
+	"Denote child-parent relation between labels"
+.COMMAND pmPrint():void = pmPrintAll_impl;
+	"Print information of all timing categories"
+.COMMAND pmPrint(str):void = pmPrint_impl;
+	"Print information of a timing category"
+.COMMAND pmSummary(str):void = pmSummary_impl;
+	"Print hierarchical summary information a label "
+.COMMAND pmSummary():void = pmSummaryAll_impl;
+	"Print hierarchical summary information for all periods "
+@endif
+@
+To limit the interference of performance monitoring and the
+actual experiments, we introduce a few atomary types to store
+the UNIX performance records.
+The @%tms@ record contains information from the corresponding system record.
+
+Note that this information is only relevant when obtained within the 
+context of a single thread. This implies using the Mprof intervals should
+be paired in statement blocks when it ran in parallel.
+@m
+
+.FIXED_ATOM Tms;
+	.TOSTR   = Tms_tostr;
+	.FROMSTR = Tms_fromstr;
+	.COMP    = Tms_comp;
+	.HASH    = Tms_hash;
+	.NULL    = Tms_null;
+.END;
+       
+.COMMAND Tms_new() : Tms = Tms_new;
+	"Create a new Tms record"
+.COMMAND Tms_utime(Tms): int = Tms_utime;
+	"Extract the user time part from the record"
+.COMMAND Tms_stime(Tms): int = Tms_stime;
+	"Extract the system time part from the record"
+.OPERATOR (Tms) "-" (Tms): Tms = Tms_subtract;
+	"Subtract the timing records"
+@-
+The memory resource information is obtained from the dynamic memory
+allocation resource @%Mallinfo@
+Beware of size differences between platforms.
+@m
+.FIXED_ATOM Mallinfo;
+	.TOSTR   = Ma_tostr;
+	.FROMSTR = Ma_fromstr;
+	.NEQUAL  = Ma_comp;
+	.HASH    = Ma_hash;
+	.NULL    = Ma_null;
+.END;
+
+.COMMAND Ma_new(): Mallinfo = Ma_new;
+        "Get malloc information"
+.COMMAND Ma_arena(Mallinfo): int = Ma_arena_impl;
+        "Dynamic allocated arena size"
+.COMMAND Ma_usmblks(Mallinfo): int = Ma_usmblks_impl;
+        "Used small blocks in arena"
+.COMMAND Ma_fsmblks(Mallinfo): int = Ma_fsmblks_impl;
+        "Free small blocks in arena"
+.COMMAND Ma_uordblks(Mallinfo): int = Ma_uordblks_impl;
+        "Used ordinary blocks in arena"
+.COMMAND Ma_fordblks(Mallinfo): int = Ma_fordblks_impl;
+        "Free ordinary blocks in arena"
+.OPERATOR (Mallinfo) "-" (Mallinfo): Mallinfo = Ma_subtract;
+	"Subtract the memory info records"
+@-
+The io and swap information is obtained from the struct @%Rusage@.
+The comparison between Rusage objects is defined in terms of total
+number of physical IOs.
+@m
+
+.FIXED_ATOM Rusage;
+	.TOSTR   = Ru_tostr;
+	.FROMSTR = Ru_fromstr;
+	.NEQUAL  = Ru_comp;		
+	.HASH    = Ru_hash;
+	.NULL    = Ru_null;
+.END;
+
+.COMMAND Ru_new() : Rusage = Ru_new;
+        "Extract system resource usage record"
+.COMMAND Ru_maxrss(Rusage) : int = Ru_maxrss;
+        "Extract the maximum resident set size utilized"
+.COMMAND Ru_minflt(Rusage) : int = Ru_minflt;
+        "Extract the minor page faults"
+.COMMAND Ru_majflt(Rusage) : int = Ru_majflt;
+        "Extract the major page faults"
+.COMMAND Ru_inblock(Rusage) : int = Ru_inblock;
+        "Extract the actual physical read count"
+.COMMAND Ru_oublock(Rusage) : int = Ru_oublock;
+        "Extract the actual physical write count"
+.COMMAND Ru_nswap(Rusage) : int = Ru_nswap;
+        "Extract the actual process swap count"
+.COMMAND Ru_nivcsw(Rusage) : int = Ru_nivcsw;
+        "Extract the non-voluntary context switch count"
+.COMMAND Ru_nvcsw(Rusage) : int = Ru_nvcsw;
+        "Extract the voluntary context switch count"
+.OPERATOR (Rusage) "-" (Rusage): Rusage = Ru_subtract;
+	"Subtract the io and swap records"
+
+@+ External performance insertions
+@m
+.COMMAND insB(str,int,Tms,Rusage,Mallinfo):int = insB_impl;
+	"Insert the begin of a new labelled time period"
+.COMMAND insE(str,int,Tms,Rusage,Mallinfo):int = insE_impl;
+	"Insert the end of a new labelled time period"
+
+@+ MIL Initializations
+@m
+.PRELUDE = pmStart_impl; 
+.EPILOGUE = pmExit_impl; 
+
+.END mprof;
+
+@mil
+    # The code below collects the differences 
+    # subsequently we can print the information
+    proc pmPrint() : void {
+	var mprof_cpu := bat("mprof_Ecpu") [-] bat("mprof_Bcpu");
+	mprof_cpu.rename("utime_stime");
+	var mprof_io  := bat("mprof_Eio") [-] bat("mprof_Bio");
+	mprof_io.rename("ru_usage");
+	var mprof_mem := bat("mprof_Emem") [-] bat("mprof_Bmem");
+	mprof_mem.rename("mallinfo");
+	var mprof_clk := bat("mprof_Eclk") [-] bat("mprof_Bclk");
+	mprof_clk.rename("clock");
+	var mprof_id:= bat("mprof_interval").reverse().join(bat("mprof_name"));
+	mprof_id.rename("mprof_id");
+
+	# Some simple prints
+	print(mprof_id, mprof_clk, mprof_cpu );
+	print(mprof_id, mprof_io);
+	print(mprof_id, mprof_mem);
+    }
+
+    # more interesting prints
+    proc pmSummary() : void {
+	var mprof_cpu := bat("mprof_Ecpu") [-] bat("mprof_Bcpu");
+	var mprof_io  := bat("mprof_Eio") [-] bat("mprof_Bio");
+	var mprof_mem := bat("mprof_Emem") [-] bat("mprof_Bmem");
+	var mprof_clk := bat("mprof_Eclk") [-] bat("mprof_Bclk");
+	var mprof_id:= bat("mprof_interval").reverse().join(bat("mprof_name"));
+
+	var names:= bat("mprof_name").reverse().kunique();
+	names@batloop() {
+		var t:= mprof_id.select($h);
+		var cnt:= t.count();
+		printf("Label: %s called: %d\n", $h, cnt);
+
+		var comm:= bat("mprof_tag").reverse().select($t);
+		comm@batloop() {
+			printf("%s\n",$h);
+		}
+		printf("\t\tsum\tavg\tmin\tmax\n");
+		
+		var a:= mprof_clk.semijoin(t);		
+		printf("\ttime\t%4d\t%4d\t%4d\t%4d\n",
+			a.sum(),a.sum()/a.count(),a.min(),a.max());
+
+		a:= mprof_cpu.semijoin(t);		
+		var z:= [Tms_utime](a);
+		printf("\tutime\t%4d\t%4d\t%4d\t%4d\n",
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
+			
+		z:= [Tms_stime](a);
+		printf("\tstime\t%4d\t%4d\t%4d\t%4d\n",
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
+		
+		a:= mprof_io.semijoin(t);
+		z:= [Ru_inblock](a);
+		printf("\tinblock\t%4d\t%4d\t%4d\t%4d\n",
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
+		
+		z:= [Ru_oublock](a);
+		printf("\toublock\t%4d\t%4d\t%4d\t%4d\n",
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
+		
+		z:= [Ru_majflt](a);
+		printf("\tmajflt\t%4d\t%4d\t%4d\t%4d\n",
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
+		
+		z:= [Ru_nvcsw](a) [+] [Ru_nivcsw](a) ;
+		printf("\tcntxsw\t%4d\t%4d\t%4d\t%4d\n",
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
+
+		a:= mprof_mem.semijoin(t);
+		z:= [Ma_arena](a);
+		printf("\tarena\t%4d\t%4d\t%4d\t%4d\n",
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
+
+		printf("\n");
+		}
+    }
+    PROC emptyMallinfo() : Mallinfo {
+	RETURN Mallinfo("(0,0,0,0,0,0,0,0)");
+    }
+
+
+@+ Old mil implementation
+USER:= environment.find("owner");
+VAR perf_tag_name;
+VAR perf_tag_outer;
+VAR perf_tag_size;
+VAR perf_beg_time;
+VAR perf_beg_io;
+VAR perf_beg_memory;
+VAR perf_end_time;
+VAR perf_end_io;
+VAR perf_end_memory;
+
+proc pNew(str Name, int Type) : any {
+	var nme :=sprintf("p%s%s",USER,Name);
+	var T := new(int, Type);
+	T.rename(nme);
+	T.persists(true);
+	return T;
+}
+proc pInit() : void {
+	perf_tag_name:= pNew("_tag_name", str);
+	perf_tag_outer:= pNew("_tag_outer", int);
+	perf_tag_size:= pNew("_tag_size", int);
+	perf_beg_time:= pNew("_beg_time", int);
+	perf_beg_io:= pNew("_beg_io", int);
+	perf_beg_memory:= pNew("_beg_memory", int);
+	perf_end_time:= pNew("_end_time", int);
+	perf_end_io:= pNew("_end_io", int);
+	perf_end_memory:= pNew("_end_memory", int);
+	commit();
+}
+
+proc pExit() : void {
+	perf_tag_name.destroy();
+	perf_tag_outer.destroy();
+	perf_tag_size.destroy();
+	perf_beg_time.destroy();
+	perf_beg_io.destroy();
+	perf_beg_memory.destroy();
+	perf_end_time.destroy();
+	perf_end_io.destroy();
+	perf_end_memory.destroy();
+	commit();
+}
+
+proc pBegin(str Name) : any {
+        var l := perf_tag_name.count();
+        perf_tag_name.insert(l,Name);
+        var x:=  io().find("inblock") + io().find("oublock");
+        perf_beg_io.insert(l, x);
+        perf_end_io.insert(l, 0);
+        x:= memory().find("usmblks") + memory().find("uordblks");
+        perf_beg_memory.insert(l, x);
+        perf_end_memory.insert(l, 0);
+        perf_end_time.insert(l, 0);
+        perf_tag_size.insert(l, nil);
+        perf_tag_outer.insert(l, nil);
+	var t:= time;
+        perf_beg_time.insert(l, t);
+        return l;
+}
+proc pEnd(int Tag) : void {
+	var t:= time;
+        perf_end_time.replace(Tag, time);
+        var x:=  io().find("inblock") + io().find("oublock");
+        perf_end_io.replace(Tag, x);
+        x:= memory().find("usmblks") + memory().find("uordblks");
+        perf_end_memory.replace(Tag, x);
+}
+proc pOuter(int Tag, int outer) : void {
+        perf_tag_outer.replace(Tag, Outer);
+}
+proc pSize(str Tag, bat[any,any] Res) : void {
+        perf_tag_size.replace(Tag, Res.count());
+}
+
+pPenalty := 6;
+
+
+proc pPrint(Nme) : void {
+	var tag:= perf_tag_name.select(Nme);
+	tag.rename("name");
+	var tim:= perf_end_time [-] perf_beg_time;
+	tim.rename("time");
+	var ios:= perf_end_io [-] perf_beg_io;
+	ios.rename("io");
+	var mem:= perf_end_memory [-] perf_beg_memory;
+	mem.rename("memory");
+	print(tag,tim,ios,mem, perf_tag_outer,perf_tag_size);
+}
+proc pSummary() : void {
+        var tim:= perf_end_time [-] perf_beg_time;
+        tim.rename("time");
+        var ios:= perf_end_io [-] perf_beg_io;
+        ios.rename("io");
+        var mem:= perf_end_memory [-] perf_beg_memory;
+        mem.rename("memory");
+	var names:= perf_tag_name.reverse().kunique();
+	names@batloop() {
+		var t:= perf_tag_name.select($h);
+		var a:= tim.semijoin(t);
+		a:= a.sum()/a.count();
+		var b:= ios.semijoin(t);
+		b:= b.sum()/b.count();
+		var c:= mem.semijoin(t);
+		c:= c.sum()/c.count();
+		printf("Tag %s average cpu %d io=%d mem=%d\n", $h,a,b,c);
+	}
+}
+proc pDump() : void  {
+        printf("perf_tag_name\n"); perf_tag_name.print();
+        printf("perf_tag_outer\n"); perf_tag_outer.print();
+        printf("perf_tag_size\n"); perf_beg_time.print();
+        printf("perf_beg_io\n"); perf_beg_io.print();
+        printf("perf_beg_memory\n"); perf_beg_memory.print();
+        printf("perf_end_time\n"); perf_end_time.print();
+        printf("perf_end_io\n"); perf_end_io.print();
+        printf("perf_end_memory\n"); perf_end_memory.print();
+}
+@{
+@* Mprof implementation
+The implementation is relatively straight forward.
+@+ Tms Atom Implementation
+@h
+#ifndef MPROF_H
+#define MPROF_H
+
+#include <gdk.h>
+
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+
+typedef struct tms Tms;
+typedef struct mallinfo Mallinfo;
+typedef struct rusage Rusage;
+
+#include "mprof.proto.h"
+
+#endif /*MPROF_H */
+@-
+The inspections routines are guarded against null value.
+
+@= nullchk
+	if( @1 == 0) {
+		GDKerror("@2: Atom missing\n");
+		return GDK_FAIL;
+	}
+@
+
+In collecting the timing information we should sum over the thread
+and all its children.
+@c
+#include "monetdb4_config.h"
+#include "mprof.h"
+#include "algebra.h"
+#include <stdlib.h>
+
+static Tms Tmsnullval;
+
+int
+Tms_size(void)
+{
+	return sizeof(Tms);
+}
+
+int
+Tms_align(void)
+{
+	return sizeof(double);
+}
+
+int
+Tms_tostr(char **dst, int *len, Tms *T)
+{
+	char buf[200];
+	int l;
+
+	if (T == 0)
+		strcpy(buf, "nil");
+	else
+		sprintf(buf, "(%d,%d)", (int) (T->tms_utime + T->tms_cutime), (int) (T->tms_stime + T->tms_cstime));
+	l = (int) strlen(buf) + 1;
+	if (*dst && *len < l) {
+		GDKfree(*dst);
+		*dst = NULL;
+	}
+	if (!*dst) {
+		*dst = (char *) GDKmalloc(l);
+		*len = l;
+	}
+	if (*dst)
+		strcpy(*dst, buf);
+	return l - 1;
+}
+
+int
+Tms_fromstr(char *src, int *len, Tms **T_ptr)
+{
+	char *s = src;
+	Tms t;
+
+	t.tms_utime = 0;
+	t.tms_cutime = 0;
+	t.tms_stime = 0;
+	t.tms_cstime = 0;
+
+	if (strncmp(src, "nil", 3) == 0) {
+		t = Tmsnullval;
+		return 3;
+	} else {
+		s = strchr(s, '(');
+		if (s == 0) {
+			GDKerror("Tms_fromstr: syntax error '(' missing\n");
+			return 0;
+		}
+		t.tms_utime = atoi(++s);
+		s = strchr(s, ',');
+		if (s == 0) {
+			GDKerror("Tms_fromstr: syntax error ',' missing\n");
+			return 0;
+		}
+		t.tms_stime = atoi(s + 1);
+		s = strchr(s, ')');
+		if (s == 0) {
+			GDKerror("Tms_fromstr: syntax error ')' missing\n");
+			return 0;
+		}
+	}
+	if (*T_ptr) {
+		if (*len < (int) sizeof(Tms)) {
+			GDKfree(*T_ptr);
+			*T_ptr = NULL;
+		}
+	}
+	if (!*T_ptr)
+		*T_ptr = (Tms *) GDKmalloc(sizeof(Tms));
+	**T_ptr = t;
+	*len = sizeof(Tms);
+	return (int) (s + 1 - src);
+}
+
+@-
+Use lexical order over components.
+@c 
+int
+Tms_comp(Tms *T1, Tms *T2)
+{
+	int d1, d2;
+
+	@:nullchk(T1,Tms_comp)@
+	@:nullchk(T2,Tms_comp)@
+	d1 = T1->tms_utime - T2->tms_utime;
+	if (d1 < 0)
+		return -1;
+	if (d1 > 0)
+		return 1;
+	d2 = T1->tms_stime - T2->tms_stime;
+	if (d2 < 0)
+		return -1;
+	if (d2 > 0)
+		return 1;
+	return 0;
+}
+
+
+Tms *
+Tms_null(void)
+{
+	Tmsnullval.tms_utime = -1;
+	Tmsnullval.tms_stime = -1;
+	return (&Tmsnullval);
+}
+
+hash_t
+Tms_hash(Tms *T			/* IN: to-be-hashed Tms. */
+    )
+{
+	return (hash_t) (T->tms_utime | (T->tms_stime << 16));
+}
+
+@- Tms Commands
+@c
+int
+Tms_new(Tms *retval)
+{
+	times(retval);
+	return GDK_SUCCEED;
+}
+
+int
+Tms_stime(int *retval, Tms *Atm1)
+{
+	@:nullchk(Atm1,Tms_stime)@
+	*retval = Atm1->tms_stime + Atm1->tms_cstime;
+	return GDK_SUCCEED;
+}
+
+int
+Tms_utime(int *retval,		/* put return atom here. */
+	  Tms *Atm1		/* pointer to user-defined atom. */
+    )
+{
+	@:nullchk(Atm1,Tms_utime)@
+	*retval = Atm1->tms_utime + Atm1->tms_cutime;
+	return GDK_SUCCEED;
+}
+
+int
+Tms_subtract(Tms *retval,	/* put return atom here. */
+	     Tms *Atm1,		/* pointer to user-defined atom. */
+	     Tms *Atm2		/* pointer to user-defined atom. */
+    )
+{
+	@:nullchk(Atm1,Tms_subtract)@
+	@:nullchk(Atm2,Tms_subtract)@
+	retval->tms_utime = Atm1->tms_utime - Atm2->tms_utime + Atm1->tms_cutime - Atm2->tms_cutime;
+	retval->tms_cutime = 0;
+	retval->tms_stime = Atm1->tms_stime - Atm2->tms_stime + Atm1->tms_cstime - Atm2->tms_cstime;
+	retval->tms_cstime = 0;
+	return GDK_SUCCEED;
+}
+
+@+ Mallinfo Atom Implementation
+@c
+
+int
+Mallinfo_size(void)
+{
+	return sizeof(Mallinfo);
+}
+
+int
+Mallinfo_align(void)
+{
+	return sizeof(double);
+}
+
+int
+Ma_new(Mallinfo *retval		/* put return atom here. */
+    )
+{
+	*retval = MT_mallinfo();
+	return GDK_SUCCEED;
+}
+
+int
+Ma_tostr(char **dst, int *len, Mallinfo *M)
+{
+	char buf[1024];
+	int l = 0;
+
+	sprintf(buf, "(" SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT ")", (ssize_t) M->arena, (ssize_t) M->ordblks, (ssize_t) M->smblks, (ssize_t) M->hblkhd, (ssize_t) M->hblks, (ssize_t) M->usmblks,
+		(ssize_t) M->fsmblks, (ssize_t) M->uordblks);
+	l = (int) strlen(buf) + 1;
+	if (*dst && *len < l) {
+		GDKfree(*dst);
+		*dst = NULL;
+	}
+	if (!*dst) {
+		*dst = (char *) GDKmalloc(l);
+		*len = l;
+	}
+	if (*dst)
+		strcpy(*dst, buf);
+	return l - 1;
+}
+
+
+int
+Ma_fromstr(char *src, int *len, Mallinfo **M_ptr)
+{
+	int i = 0;
+	Mallinfo m;
+	int arena, ordblks, smblks, hblkhd, hblks, usmblks, fsmblks, uordblks;
+	char *c;
+
+	c = strchr(src, ')');
+	if (c == 0) {
+		GDKerror("Ma_fromstr: syntax error\n");
+		return GDK_FAIL;
+	}
+	*++c = 0;
+
+	/* can't use &m.arena etc here because on 64-bit SGI these
+	   aren't ints */
+	i = sscanf(src, "(%d,%d,%d,%d,%d,%d,%d,%d)", &arena, &ordblks, &smblks, &hblkhd, &hblks, &usmblks, &fsmblks, &uordblks);
+
+	if (i != 8)
+		return 0;
+	m.arena = arena;
+	m.ordblks = ordblks;
+	m.smblks = smblks;
+	m.hblkhd = hblkhd;
+	m.hblks = hblks;
+	m.usmblks = usmblks;
+	m.fsmblks = fsmblks;
+	m.uordblks = uordblks;
+	m.fordblks = 0;
+	m.keepcost = 0;
+	if (*M_ptr) {
+		if (*len < (int) sizeof(Mallinfo)) {
+			GDKfree(*M_ptr);
+			*M_ptr = NULL;
+		}
+	}
+	if (!*M_ptr)
+		*M_ptr = (Mallinfo *) GDKmalloc(Mallinfo_size());
+	**M_ptr = m;
+	*len = sizeof(Mallinfo);
+	return (int) (c - src);
+}
+
+
+int
+Ma_comp(Mallinfo *M1, Mallinfo *M2)
+{
+	return M1->arena != M2->arena;
+}
+
+struct mallinfo Mu_null_record;
+Mallinfo *
+Ma_null(void)
+{
+	Mu_null_record.arena = -1;
+	return &Mu_null_record;
+}
+
+hash_t
+Ma_hash(Mallinfo *M)
+{
+	@:nullchk(M,Ma_hash)@
+	return (hash_t) M->arena;
+}
+
+@- Mallinfo commands
+@c
+int
+Ma_fordblks_impl(int *retval, Mallinfo *Atm1)
+{
+	@:nullchk(Atm1,Ma_fordblks)@
+	*retval = Atm1->fordblks;
+	return GDK_SUCCEED;
+}
+
+int
+Ma_fsmblks_impl(int *retval, Mallinfo *Atm1)
+{
+	@:nullchk(Atm1,Ma_fsmblks)@
+	*retval = Atm1->fsmblks;
+	return GDK_SUCCEED;
+}
+
+int
+Ma_uordblks_impl(int *retval, Mallinfo *Atm1)
+{
+	@:nullchk(Atm1,Ma_ordblks)@
+	*retval = Atm1->uordblks;
+	return GDK_SUCCEED;
+}
+
+int
+Ma_usmblks_impl(int *retval, Mallinfo *Atm1)
+{
+	@:nullchk(Atm1,Ma_usmblks)@
+	*retval = Atm1->usmblks;
+	return GDK_SUCCEED;
+}
+
+
+int
+Ma_arena_impl(int *retval, Mallinfo *Atm1)
+{
+	@:nullchk(Atm1,Ma_arena)@
+	*retval = Atm1->arena;
+	return GDK_SUCCEED;
+}
+
+int
+Ma_subtract(Mallinfo *retval, Mallinfo *Atm1, Mallinfo *Atm2)
+{
+	@:nullchk(Atm1,Ma_subtract)@
+	@:nullchk(Atm2,Ma_subtract)@
+	retval->arena = Atm1->arena - Atm2->arena;
+	retval->ordblks = Atm1->ordblks - Atm2->ordblks;
+	retval->smblks = Atm1->smblks - Atm2->smblks;
+	retval->hblkhd = Atm1->hblkhd - Atm2->hblkhd;
+	retval->hblks = Atm1->hblks - Atm2->hblks;
+	retval->usmblks = Atm1->usmblks - Atm2->usmblks;
+	retval->fsmblks = Atm1->fsmblks - Atm2->fsmblks;
+	retval->uordblks = Atm1->uordblks - Atm2->uordblks;
+	return GDK_SUCCEED;
+}
+
+@+ Rusage Implementation
+@c
+
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+
+
+int
+Rusage_size(void)
+{
+	return sizeof(Rusage);
+}
+
+int
+Rusage_align(void)
+{
+	return sizeof(ssize_t);
+}
+
+int
+Ru_tostr(char **dst, int *len, Rusage *R)
+{
+	int l = 0;
+	char buf[1024];
+
+	sprintf(buf, "(" SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT ")", (ssize_t) R->ru_maxrss, (ssize_t) R->ru_minflt, (ssize_t) R->ru_majflt, (ssize_t) R->ru_nswap, (ssize_t) R->ru_inblock,
+		(ssize_t) R->ru_oublock, (ssize_t) R->ru_nvcsw, (ssize_t) R->ru_nivcsw);
+	l = (int) strlen(buf) + 1;
+	if (*dst && *len < l) {
+		GDKfree(*dst);
+		*dst = NULL;
+	}
+	if (!*dst) {
+		*dst = (char *) GDKmalloc(l);
+		*len = l;
+	}
+	if (*dst)
+		strcpy(*dst, buf);
+	return l - 1;
+}
+
+
+int
+Ru_fromstr(char *src, int *len, Rusage **R_ptr)
+{
+	int i = 0;
+	Rusage ru;
+	char *c;
+
+	for (c = src; c && *c && *c != ')'; c++)
+		;
+	if (*c == ')')
+		*++c = 0;
+
+	i = sscanf(src, "(%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld)", &ru.ru_maxrss, &ru.ru_minflt, &ru.ru_majflt, &ru.ru_nswap, &ru.ru_inblock, &ru.ru_oublock, &ru.ru_nvcsw, &ru.ru_nivcsw);
+	if (i != 8)
+		return 0;
+	if (*R_ptr) {
+		if (*len < (int) sizeof(Rusage)) {
+			GDKfree(*R_ptr);
+			*R_ptr = NULL;
+		}
+	}
+	if (!*R_ptr)
+		*R_ptr = (Rusage *) GDKmalloc(sizeof(Rusage));
+	**R_ptr = ru;
+	*len = sizeof(Rusage);
+	return (int) (c - src);
+}
+
+int
+Ru_comp(Rusage *R1, Rusage *R2)
+{
+	return R1->ru_inblock + R1->ru_oublock != R2->ru_inblock - R2->ru_oublock;
+}
+
+
+static struct rusage Rusage_null_record;
+
+Rusage *
+Ru_null(void)
+{
+	Rusage_null_record.ru_inblock = -1;
+	Rusage_null_record.ru_oublock = -1;
+	return &Rusage_null_record;
+}
+
+hash_t
+Ru_hash(Rusage *R		/* IN: to-be-hashed Rusage. */
+    )
+{
+	return (hash_t) (R->ru_inblock + R->ru_oublock);
+}
+
+@- Rusage commands
+@c
+int
+Ru_new(Rusage *retval)
+{
+	getrusage(RUSAGE_SELF, retval);
+	return GDK_SUCCEED;
+}
+
+int
+Ru_inblock(int *retval, Rusage *Atm1)
+{
+	@:nullchk(Atm1,Ru_inblock)@
+	*retval = Atm1->ru_inblock;
+	return GDK_SUCCEED;
+}
+
+int
+Ru_majflt(int *retval,		/* put return atom here. */
+	  Rusage *Atm1		/* pointer to user-defined atom. */
+    )
+{
+	@:nullchk(Atm1,Ru_majflt)@
+	*retval = Atm1->ru_majflt;
+	return GDK_SUCCEED;
+}
+
+int
+Ru_maxrss(int *retval,		/* put return atom here. */
+	  Rusage *Atm1		/* pointer to user-defined atom. */
+    )
+{
+	@:nullchk(Atm1,Ru_maxrss)@
+	*retval = Atm1->ru_maxrss;
+	return GDK_SUCCEED;
+}
+
+int
+Ru_minflt(int *retval, Rusage *Atm1)
+{
+	@:nullchk(Atm1,Ru_minflt)@
+	*retval = Atm1->ru_minflt;
+	return GDK_SUCCEED;
+}
+
+int
+Ru_nivcsw(int *retval, Rusage *Atm1)
+{
+	@:nullchk(Atm1,Ru_nivcsw)@
+	*retval = Atm1->ru_nivcsw;
+	return GDK_SUCCEED;
+}
+
+int
+Ru_nswap(int *retval, Rusage *Atm1)
+{
+	@:nullchk(Atm1,Ru_nswap)@
+	*retval = Atm1->ru_nswap;
+	return GDK_SUCCEED;
+}
+
+int
+Ru_nvcsw(int *retval, Rusage *Atm1)
+{
+	@:nullchk(Atm1,Ru_nvcsw)@
+	*retval = Atm1->ru_nvcsw;
+	return GDK_SUCCEED;
+}
+
+int
+Ru_oublock(int *retval, Rusage *Atm1)
+{
+	@:nullchk(Atm1,Ru_oublock)@
+	*retval = Atm1->ru_oublock;
+	return GDK_SUCCEED;
+}
+
+int
+Ru_subtract(Rusage *retval, Rusage *Atm1, Rusage *Atm2)
+{
+	@:nullchk(Atm1,Ru_subtract)@
+	@:nullchk(Atm2,Ru_subtract)@
+	retval->ru_maxrss = Atm1->ru_maxrss - Atm2->ru_maxrss;
+	retval->ru_minflt = Atm1->ru_minflt - Atm2->ru_minflt;
+	retval->ru_majflt = Atm1->ru_majflt - Atm2->ru_majflt;
+	retval->ru_nswap = Atm1->ru_nswap - Atm2->ru_nswap;
+	retval->ru_inblock = Atm1->ru_inblock - Atm2->ru_inblock;
+	retval->ru_oublock = Atm1->ru_oublock - Atm2->ru_oublock;
+	retval->ru_nvcsw = Atm1->ru_nvcsw - Atm2->ru_nvcsw;
+	retval->ru_nivcsw = Atm1->ru_nivcsw - Atm2->ru_nivcsw;
+	return GDK_SUCCEED;
+}
+
+@+ Mprof implementation
+The Mprof BATs are fixed into memory to avoid overhead in their
+location and update their tables.
+@c
+
+static BAT *Mprof_name_bat;
+static BAT *Mprof_interval_bat;
+static BAT *Mprof_tag_bat;
+static BAT *Mprof_Bclk_bat;
+static BAT *Mprof_Eclk_bat;
+static BAT *Mprof_Bcpu_bat;
+static BAT *Mprof_Ecpu_bat;
+static BAT *Mprof_Bio_bat;
+static BAT *Mprof_Eio_bat;
+static BAT *Mprof_Bmem_bat;
+static BAT *Mprof_Emem_bat;
+static BAT *Mprof_pair_bat;
+static BAT *Mprof_option_bat;
+
+@
+The Mprof\_oid is used for fast unique numbers . The Mprof\_count is used
+for numbering the intervals. 
+@c
+static int Mprof_oid = 0;
+static int Mprof_count = 0;
+static int Mprof_init = 0;
+
+#define MprofOK (Mprof_init == 13)
+
+void
+pmBat(BAT **keep, str name, int typ1, int typ2)
+{
+	BAT *b;
+	int i = BBPindex(name);
+
+	if (i == 0) {
+		b = BATnew(typ1, typ2, 1000);
+		if (b == 0)
+			return;
+		BATrename(b, name);
+		BATmode(b, PERSISTENT);
+	} else {
+		BBPfix(i);
+		b = BATload(name);
+		if (b == 0)
+			return;
+	}
+	Mprof_init++;
+	*keep = b;
+	(void) BATprepareHash(b);
+}
+
+bat *
+pmStart_impl(void)
+{
+	static bat buf[7];
+
+	pmBat(&Mprof_name_bat, "mprof_name", TYPE_int, TYPE_str);
+	pmBat(&Mprof_interval_bat, "mprof_interval", TYPE_int, TYPE_int);
+	pmBat(&Mprof_tag_bat, "mprof_tag", TYPE_int, TYPE_str);
+	pmBat(&Mprof_Bclk_bat, "mprof_Bclk", TYPE_int, TYPE_int);
+	pmBat(&Mprof_Eclk_bat, "mprof_Eclk", TYPE_int, TYPE_int);
+	pmBat(&Mprof_Bcpu_bat, "mprof_Bcpu", TYPE_int, TYPE_Tms);
+	pmBat(&Mprof_Bio_bat, "mprof_Bio", TYPE_int, TYPE_Rusage);
+	pmBat(&Mprof_Bmem_bat, "mprof_Bmem", TYPE_int, TYPE_Mallinfo);
+	pmBat(&Mprof_Ecpu_bat, "mprof_Ecpu", TYPE_int, TYPE_Tms);
+	pmBat(&Mprof_Eio_bat, "mprof_Eio", TYPE_int, TYPE_Rusage);
+	pmBat(&Mprof_Emem_bat, "mprof_Emem", TYPE_int, TYPE_Mallinfo);
+	pmBat(&Mprof_pair_bat, "mprof_pair", TYPE_str, TYPE_str);
+	pmBat(&Mprof_option_bat, "mprof_option", TYPE_str, TYPE_str);
+
+	if (!MprofOK)
+		(void) pmExit_impl();
+
+	buf[0] = Mprof_Bcpu_bat->batCacheid;
+	buf[1] = Mprof_Bio_bat->batCacheid;
+	buf[2] = Mprof_Bmem_bat->batCacheid;
+	buf[3] = Mprof_Ecpu_bat->batCacheid;
+	buf[4] = Mprof_Eio_bat->batCacheid;
+	buf[5] = Mprof_Emem_bat->batCacheid;
+	buf[6] = 0;
+
+	if (BATcount(Mprof_name_bat) > 0)
+		BATmax(BATmirror(Mprof_name_bat), &Mprof_oid);
+	if (BATcount(Mprof_interval_bat) > 0)
+		BATmax(Mprof_interval_bat, &Mprof_count);
+
+	return buf;
+}
+
+@-
+Explicit termination of the mprof session leads to forced removal of the 
+BATs.
+@c
+
+void
+pmExit_impl(void)
+{
+	Mprof_init = 0;
+	BBPunfix(Mprof_name_bat->batCacheid);
+	BBPunfix(Mprof_interval_bat->batCacheid);
+	BBPunfix(Mprof_tag_bat->batCacheid);
+	BBPunfix(Mprof_Bclk_bat->batCacheid);
+	BBPunfix(Mprof_Eclk_bat->batCacheid);
+	BBPunfix(Mprof_Bcpu_bat->batCacheid);
+	BBPunfix(Mprof_Bio_bat->batCacheid);
+	BBPunfix(Mprof_Bmem_bat->batCacheid);
+	BBPunfix(Mprof_Ecpu_bat->batCacheid);
+	BBPunfix(Mprof_Eio_bat->batCacheid);
+	BBPunfix(Mprof_Emem_bat->batCacheid);
+	BBPunfix(Mprof_pair_bat->batCacheid);
+	BBPunfix(Mprof_option_bat->batCacheid);
+
+	Mprof_name_bat = 0;
+	Mprof_interval_bat = 0;
+	Mprof_tag_bat = 0;
+	Mprof_Bclk_bat = 0;
+	Mprof_Eclk_bat = 0;
+	Mprof_Bio_bat = 0;
+	Mprof_Bcpu_bat = 0;
+	Mprof_Bmem_bat = 0;
+	Mprof_Ecpu_bat = 0;
+	Mprof_Eio_bat = 0;
+	Mprof_Emem_bat = 0;
+	Mprof_pair_bat = 0;
+	Mprof_option_bat = 0;
+
+	Mprof_count = 0;
+	Mprof_oid = 0;
+}
+
+int
+pmClear_impl(void)
+{
+	BATclear(Mprof_name_bat);
+	BATclear(Mprof_interval_bat);
+	BATclear(Mprof_tag_bat);
+	BATclear(Mprof_Bclk_bat);
+	BATclear(Mprof_Eclk_bat);
+	BATclear(Mprof_Bcpu_bat);
+	BATclear(Mprof_Bio_bat);
+	BATclear(Mprof_Bmem_bat);
+	BATclear(Mprof_Ecpu_bat);
+	BATclear(Mprof_Eio_bat);
+	BATclear(Mprof_Emem_bat);
+	BATclear(Mprof_pair_bat);
+	BATclear(Mprof_option_bat);
+	Mprof_count = 0;
+	Mprof_oid = 0;
+	return GDK_SUCCEED;
+}
+
+int
+insB_impl(int *res, str Str1, int *clk, struct tms *t, struct rusage *ru, struct mallinfo *m)
+{
+	BUN p;
+	int i;
+	int o;
+
+	if (!MprofOK)
+		return GDK_SUCCEED;
+
+	p = (BUN) BUNfnd(BATmirror(Mprof_name_bat), Str1);
+	if (p == 0) {
+		o = Mprof_oid++;
+		BUNins(Mprof_name_bat, &o, Str1, FALSE);
+		p = (BUN) BUNfnd(BATmirror(Mprof_name_bat), Str1);
+	}
+	o = *(int *) BUNhead(Mprof_name_bat, p);
+	i = Mprof_count++;
+	BUNins(Mprof_interval_bat, &o, &i, FALSE);
+	BUNins(Mprof_Bclk_bat, &i, clk, FALSE);
+	BUNins(Mprof_Eclk_bat, &i, clk, FALSE);
+	BUNins(Mprof_Bcpu_bat, &i, t, FALSE);
+	BUNins(Mprof_Ecpu_bat, &i, t, FALSE);
+	BUNins(Mprof_Bio_bat, &i, ru, FALSE);
+	BUNins(Mprof_Eio_bat, &i, ru, FALSE);
+	BUNins(Mprof_Bmem_bat, &i, m, FALSE);
+	BUNins(Mprof_Emem_bat, &i, m, FALSE);
+	*res = i;
+	return GDK_SUCCEED;
+}
+
+int
+pmB_impl(int *res, str Str1)
+{
+	int clk;
+	struct tms t;
+	struct rusage ru;
+	struct mallinfo m;
+
+	if (!MprofOK)
+		return GDK_SUCCEED;
+
+	m = MT_mallinfo();
+	getrusage(RUSAGE_SELF, &ru);
+	times(&t);
+	clk = time(0);
+
+	return insB_impl(res, Str1, &clk, &t, &ru, &m);
+}
+
+int
+insE_impl(int *res, str Str1, int *clk, struct tms *t, struct rusage *ru, struct mallinfo *m)
+{
+	BUN p;
+	int i;
+	int o;
+
+	if (!MprofOK)
+		return GDK_SUCCEED;
+
+	p = (BUN) BUNfnd(BATmirror(Mprof_name_bat), Str1);
+	if (p == 0) {
+		GDKerror("pmE: could not find '%s'\n", Str1);
+		return GDK_FAIL;
+	}
+	o = *(int *) BUNhloc(Mprof_name_bat, p);
+	p = (BUN) BUNfnd(Mprof_interval_bat, &o);
+	if (p == 0) {
+		GDKerror("pmE: could not find '%s', '%d'\n", Str1, (int) o);
+		return GDK_FAIL;
+	}
+	i = *(int *) BUNtloc(Mprof_interval_bat, p);
+	BUNreplace(Mprof_Ecpu_bat, &i, t, 0);
+	BUNreplace(Mprof_Eio_bat, &i, ru, 0);
+	BUNreplace(Mprof_Emem_bat, &i, m, 0);
+	BUNreplace(Mprof_Eclk_bat, &i, clk, 0);
+	*res = i;
+	return GDK_SUCCEED;
+}
+
+int
+pmE_impl(int *res, str Str1)
+{
+	int clk;
+	struct tms t;
+	struct rusage ru;
+	struct mallinfo m;
+
+	if (!MprofOK)
+		return GDK_SUCCEED;
+
+	m = MT_mallinfo();
+	getrusage(RUSAGE_SELF, &ru);
+	times(&t);
+	clk = time(0);
+
+	return insE_impl(res, Str1, &clk, &t, &ru, &m);
+}
+
+int
+pmTag_impl(str Str1,		/* string: pointer to char. */
+	   str Str2		/* string: pointer to char. */
+    )
+{
+	BUN p;
+	int o;
+	int i;
+
+	if (!MprofOK)
+		return GDK_SUCCEED;
+
+	p = (BUN) BUNfnd(BATmirror(Mprof_name_bat), Str1);
+	if (p == 0) {
+		GDKerror("pmTag: could not find '%s'\n", Str1);
+		return GDK_FAIL;
+	}
+	o = *(int *) BUNhloc(Mprof_name_bat, p);
+	p = (BUN) BUNfnd(Mprof_interval_bat, &o);
+	if (p == 0) {
+		GDKerror("pmTag: could not find '%s', '%d'\n", Str1, (int) o);
+		return GDK_FAIL;
+	}
+	i = *(int *) BUNtloc(Mprof_interval_bat, p);
+
+	BUNins(Mprof_tag_bat, &i, Str2, FALSE);
+	return GDK_SUCCEED;
+}
+
+int
+pmPrint_impl(str Str1		/* string: pointer to char. */
+    )
+{
+	(void) Str1;
+	return GDK_SUCCEED;
+}
+
+int
+pmPrintAll_impl(void)
+{
+	return GDK_SUCCEED;
+}
+
+int
+pmSummary_impl(void)
+{
+	return GDK_SUCCEED;
+}
+
+int
+pmParent_impl(str Str1,		/* string: pointer to char. */
+	      str Str2		/* string: pointer to char. */
+    )
+{
+	(void) Str1;
+	(void) Str2;
+	return GDK_SUCCEED;
+}
+
+@}
+
+
+@* Examples and Print routines
+The following MIL fragments have been used to assess correctness
+of the implementation. Moreover, it demonstrates several printing
+facilities.
+
+The first example does not rely on general aggregate processing.
+
+@-
+@T
+\begin{verbatim}
+# some simple atom expressions
+a := Tms("12,13");
+a := Tms("(12.13");
+a := Tms("(12,13");
+a := Tms(" ( 12 , 13 )");
+a := Tms("(12,13)");
+a.print;
+# [ (12,13) ]
+a:= Tms_new();
+b := new(int,Tms);
+b.insert(1,a);
+c := new(Tms,str);
+c.insert(a,"hello");
+join(b,c).print;
+#----------------------------------------#
+# h                   | t                #
+#----------------------------------------#
+#[ 1,                    "hello"          ]
+\end{verbatim}
+
+@mil
+PROC test_mprof() : void {   
+	setoid(oid(20000000));
+
+	# A test for the performance analysis
+	pmB("abc");
+	monet_atomtbl.count().print();
+	pmE("abc");
+	pmB("pmPrint");
+	printf("#~BeginVariableOutput~#\n"); pmPrint(); printf("#~EndVariableOutput~#\n");
+	pmE("pmPrint");
+	pmB("xyz");
+	monet_fcn_fcn.count();
+	pmE("xyz");
+	pmB("pmPrint");
+	printf("#~BeginVariableOutput~#\n"); pmPrint(); printf("#~EndVariableOutput~#\n");
+	pmE("pmPrint");
+	printf("#~BeginVariableOutput~#\n"); pmSummary(); printf("#~EndVariableOutput~#\n");
+}
+@T
+
+A sample output of the pmSummary routine is shown below
+(for the example above)
+
+\begin{verbatim}
+Label: abc called: 1
+                sum     avg     min     max
+        time       0       0       0       0
+        utime      0       0       0       0
+        stime      0       0       0       0
+        inblock    0       0       0       0
+        oublock    0       0       0       0
+        majflt     0       0       0       0
+        cntxsw     2       2       2       2
+        arena      0       0       0       0
+
+Label: pmPrint called: 2
+                sum     avg     min     max
+        time       1       0       0       1
+        utime      3       1       1       2
+        stime      3       1       1       2
+        inblock    8       4       4       4
+        oublock    8       4       4       4
+        majflt     0       0       0       0
+        cntxsw    63      31      26      37
+        arena   8192    4096       0    8192
+
+Label: xyz called: 1
+                sum     avg     min     max
+        time       0       0       0       0
+        utime      3       3       3       3
+        stime      1       1       1       1
+        inblock    4       4       4       4
+        oublock    4       4       4       4
+        majflt     0       0       0       0
+        cntxsw    32      32      32      32
+        arena   8192    8192    8192    8192
+\end{verbatim}

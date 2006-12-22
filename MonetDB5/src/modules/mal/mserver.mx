@@ -281,7 +281,7 @@ address SERVERepilogue;
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
-#include "C/Mapi.h"
+#include <Mapi.h>
 
 #ifdef WIN32
 #ifndef LIBMSERVER
@@ -362,6 +362,7 @@ m_export str SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */
 @c
+#include "mal_config.h"
 #include "mserver.h"
 
 #include  <sys/types.h>

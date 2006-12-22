@@ -46,6 +46,7 @@ We also use these numbers, which are always the first 16-bits of the
 BAT image, to check whether the image is in big endian or little endian format.
 @{
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 @+ BAT Conversion functions

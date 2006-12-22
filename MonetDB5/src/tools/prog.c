@@ -16,8 +16,8 @@
  * All Rights Reserved.
  */
 
-#include <monet_options.h>
 #include "embeddedclient.h"
+#include <monet_options.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>

@@ -205,6 +205,7 @@ Beware, the types of the objects to be printed should be
 obtained from the stack, because the symbol table may actually
 allow for any type to be assigned.
 @c
+#include "mal_config.h"
 #include "mal_io.h"
 
 str

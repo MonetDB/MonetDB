@@ -278,6 +278,7 @@ glue::generate_table(ostream &o, Symtable *_tableptr)
 	o << " * This module is generated using the mel -glue utility\n";
 	o << " * not intended for reading !!! \n";
 	o << " */\n\n";
+	o << "#include \"monetdb4_config.h\"\n";
 	o << "#include \"gdk.h\"\n";
 	o << "#include \"monet.h\"\n";
 	o << "#include \"monet_tbl.h\"\n\n";

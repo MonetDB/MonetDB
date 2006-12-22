@@ -64,6 +64,7 @@ bool null_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2);
 
 @c
 
+#include "pf_config.h"
 #include "serialize_null.h"
 
 /*******************************************

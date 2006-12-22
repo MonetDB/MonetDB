@@ -16,6 +16,7 @@
 
 @f sql_catalog
 @c
+#include "sql_config.h"
 #include "sql_catalog.h"
 #include "bat_store.h"
 

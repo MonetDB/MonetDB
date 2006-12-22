@@ -224,6 +224,7 @@ first one by one create a hash value out of the multiple attributes.
 This hash value is computed by xoring and rotating individual hash
 values together. We create a hash and rotate command to do this.
 @c
+#include "mal_config.h"
 #include "mkey.h"
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
 int

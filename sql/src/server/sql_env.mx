@@ -66,6 +66,7 @@ extern int sql_create_profile(mvc *sql, sql_schema *tmp);
 
 #endif /* _SQL_ENV_H_ */
 @c
+#include "sql_config.h"
 #include "sql_env.h"
 #include "sql_scope.h"
 #include "sql_select.h"

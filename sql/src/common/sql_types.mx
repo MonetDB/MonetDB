@@ -131,6 +131,7 @@ extern void types_exit(void);
 
 #endif /* SQL_TYPES_H */
 @c
+#include "sql_config.h"
 #include "sql_types.h"
 #include "sql_keyword.h"	/* for keyword_exists(), keywords_insert(), init_keywords(), exit_keywords() */
 #include <string.h>

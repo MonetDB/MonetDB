@@ -44,6 +44,7 @@ extern ptr bun_find(BAT *b, ptr v);
 
 #endif /*_SQL_BM_H_*/
 @c
+#include "sql_config.h"
 #include "sql_mem.h"
 #include "bat_bm.h"
 #include "stream.h"

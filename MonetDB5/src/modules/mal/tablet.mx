@@ -450,6 +450,7 @@ tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, p
 
 #endif
 @c
+#include "mal_config.h"
 #include "tablet.h"
 #include "algebra.h"
 

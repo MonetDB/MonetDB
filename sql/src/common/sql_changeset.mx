@@ -17,6 +17,7 @@
 @f sql_changeset
 @c
 
+#include "sql_config.h"
 #include "sql_catalog.h"
 
 void

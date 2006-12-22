@@ -183,6 +183,7 @@ gdk_export int strCmpNoNil(unsigned char *l, unsigned char *r);
 @- inline comparison routines
 Return 0 on l==r, < 0 iff l < r, >0 iff l > r  
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 #include <math.h>		/* for INFINITY and NAN */
 

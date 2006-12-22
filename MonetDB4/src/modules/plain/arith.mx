@@ -1,0 +1,838 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f arith
+@a N.J. Nes, P. Boncz, Arjen P. de Vries
+@t The Arithmetics Module
+@* Introduction
+@T
+This module implements the arithmetic operations on the built-in types,
+{\tt chr}, {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, {\tt flt}, {\tt dbl} and {\tt lng}.
+All combinations are implemented. Limited combinations are implemented
+for {\tt bit}, {\tt oid} and {\tt str}.
+
+\begin{description}
+\item[binary operators]
+The implemented operators are first of all all comparison that return a
+TRUE/FALSE value ({\tt bit} values), i.e.
+{\tt $<=$}, {\tt $<$}, {\tt $=$}, {\tt $!=$}, {\tt $>=$}, and {\tt $>=$}.
+
+The module also implements the operators {\tt +}, {\tt -}, {\tt *} and {\tt /}.
+The rules for the return types operators is as follows.
+
+\begin{enumerate}
+\item If one of the input types is a floating point the result will be a
+floating point.
+\item The largest type of the input types is taken.
+\end{enumerate}
+
+The {\tt max} and {\tt min} functions return the maximum and minimum of
+the two input parameters.
+
+\item[unary operators]
+This module also implements the unary {\tt abs}() function, which calculates
+the absolute value of the given input parameter, as well as the {\tt -} unary
+operator.
+
+The {\tt inv} unary operation calculates the inverse of the input value.
+An error message is given when the input value is zero.
+
+\item[bitwise operators]
+For integers there are some additional operations. The {\tt $\%$} operator
+implements the congruent modulo operation. The {\tt $<<$} and {\tt $>>$}
+are the left and right bit shift. The {\tt or}, {\tt and}, {\tt xor} and
+{\tt not} for integers are implemented as bitwise boolean operations.
+
+\item[boolean operators]
+The {\tt or}, {\tt and}, {\tt xor} and {\tt not} for the bit atomic type
+in MIL (this corresponds to what is normally called boolean)
+are implemented as the logic operations.
+
+\item[random numbers]
+This module also contains the rand and srand functions. The {\tt srand}()
+function initializes the random number generator using a seed value. The
+subsequent calls to {\tt rand}() are pseudo random numbers (with the same
+seed the sequence can be repeated).
+
+\item[constants]
+The module also provides access to constants {\tt RAND\_MAX}, and the maximum
+and minimum of the domains of numeric types {\tt chr}, {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, and {\tt lng}
+(excluding nil).
+\end{description}
+
+{\bf The general interpretation for the NIL value is "unknown".
+This semantics mean that any operation that receives at least one NIL
+value, will produce a NIL value in the output for sure.}
+
+The only exception to this rule are the "==" and "!=" equality
+test routines (it would otherwise become rather difficult to test
+whether a value is nil).
+
+@* Module Definition
+@m
+.MODULE arith;
+
+@= mel_isnil
+	.COMMAND isnil(@1) : bit = @2_isnil;
+		"is a value nil?"
+@= mel_isnil_op
+	@:mel_isnil(@1,@1)@
+@= isnil_ops
+	@:@1_isnil_op(chr)@
+	@:@1_isnil_op(bte)@
+	@:@1_isnil_op(sht)@
+	@:@1_isnil_op(int)@
+	@:@1_isnil_op(wrd)@
+	@:@1_isnil_op(lng)@
+	@:@1_isnil_op(flt)@
+	@:@1_isnil_op(dbl)@
+	@:@1_isnil_op(oid)@
+@m
+	@:isnil_ops(mel)@
+	@:mel_isnil_op(any)@
+	@:mel_isnil(bit,chr)@
+	@:mel_isnil_op(str)@
+
+@- comparisons { <, <=, =, !=, >=, > }
+@T
+The {\tt mel\_comp\_ops} Mx macro implements the mel interface to the
+arithmetic operations. Note that comparison operators with unequal
+operands are already supported in the kernel, but are not nearly as fast,
+(because they have to convert values on the fly).
+@= mel_eq_ops
+	.OPERATOR0 (@1) "=" (@1) : bit = @2_comp_EQ;
+		"left equal to right?"
+	.OPERATOR0 (@1) "!=" (@1) : bit = @2_comp_NEQ;
+		"left unequal to right?"
+@= mel_comp_ops
+	@:mel_eq_ops(@1,@2)@
+	.OPERATOR0 (@1) "<" (@1) : bit = @2_comp_LT;
+		"left smaller than right?"
+	.OPERATOR0 (@1) "<=" (@1) : bit = @2_comp_LE;
+		"left smaller than right or equal?"
+	.OPERATOR0 (@1) ">=" (@1) : bit = @2_comp_GE;
+		"left greater than right or equal?)"
+	.OPERATOR0 (@1) ">" (@1) : bit = @2_comp_GT;
+		"left greater than right?"
+	.COMMAND between(@1 val, @1 low, @1 high) : bit = @2_comp_between;
+		"checks (low <= val <= high)"
+@m
+	@:mel_comp_ops(any::1,any)@
+	@:mel_eq_ops(bit,chr)@
+@= mel_comparison_ops
+	@:mel_comp_ops(@1,@1)@
+@= comparison_ops
+	@:@1_comparison_ops(chr)@
+	@:@1_comparison_ops(bte)@
+	@:@1_comparison_ops(sht)@
+	@:@1_comparison_ops(int)@
+	@:@1_comparison_ops(oid)@
+	@:@1_comparison_ops(wrd)@
+	@:@1_comparison_ops(flt)@
+	@:@1_comparison_ops(dbl)@
+	@:@1_comparison_ops(lng)@
+@m
+	@:comparison_ops(mel)@
+	@:mel_comp_ops(str,str)@
+
+@- computation of { +, -, *, /, % }
+@T
+The {\tt mel\_arith\_ops} Mx macro implements the mel interface to the
+arithmetic operations.  The macro expects four parameters, two input
+atomic types and two result types, the last of which for modulo and
+the first for all other operations.
+@= mel_arith_ops
+	.OPERATOR (@1) "+" (@2) : @3 = @1@2_binary_ADD;		"addition"
+	.OPERATOR (@1) "-" (@2) : @3 = @1@2_binary_SUB;		"substraction"
+	.OPERATOR1 (@1) "*" (@2) : @3 = @1@2_binary_MUL;	"multiplication"
+	.OPERATOR1 (@1) "/" (@2) : @3 = @1@2_checkbinary_DIV;	"division"
+	.OPERATOR1 (@1) "%" (@2) : @4 = @1@2_checkbinary_MOD;	"modulo"
+@= arith_ops
+	@:@1_arith_ops(chr,chr,chr,chr)@
+	@:@1_arith_ops(chr,bte,bte,bte)@
+	@:@1_arith_ops(chr,sht,sht,sht)@
+	@:@1_arith_ops(chr,int,int,int)@
+	@:@1_arith_ops(chr,wrd,wrd,wrd)@
+	@:@1_arith_ops(chr,lng,lng,lng)@
+	@:@1_arith_ops(chr,flt,flt,flt)@
+	@:@1_arith_ops(chr,dbl,dbl,dbl)@
+	@:@1_arith_ops(bte,bte,bte,bte)@
+	@:@1_arith_ops(bte,chr,bte,chr)@
+	@:@1_arith_ops(bte,sht,sht,sht)@
+	@:@1_arith_ops(bte,int,int,int)@
+	@:@1_arith_ops(bte,wrd,wrd,wrd)@
+	@:@1_arith_ops(bte,lng,lng,lng)@
+	@:@1_arith_ops(bte,flt,flt,flt)@
+	@:@1_arith_ops(bte,dbl,dbl,dbl)@
+	@:@1_arith_ops(sht,chr,sht,chr)@
+	@:@1_arith_ops(sht,bte,sht,bte)@
+	@:@1_arith_ops(sht,sht,sht,sht)@
+	@:@1_arith_ops(sht,int,int,int)@
+	@:@1_arith_ops(sht,wrd,wrd,wrd)@
+	@:@1_arith_ops(sht,lng,lng,lng)@
+	@:@1_arith_ops(sht,flt,flt,flt)@
+	@:@1_arith_ops(sht,dbl,dbl,dbl)@
+	@:@1_arith_ops(int,chr,int,chr)@
+	@:@1_arith_ops(int,bte,int,bte)@
+	@:@1_arith_ops(int,sht,int,sht)@
+	@:@1_arith_ops(int,int,int,int)@
+	@:@1_arith_ops(int,wrd,wrd,wrd)@
+	@:@1_arith_ops(int,lng,lng,lng)@
+	@:@1_arith_ops(int,flt,flt,flt)@
+	@:@1_arith_ops(int,dbl,dbl,dbl)@
+	@:@1_arith_ops(wrd,chr,wrd,chr)@
+	@:@1_arith_ops(wrd,bte,wrd,bte)@
+	@:@1_arith_ops(wrd,sht,wrd,sht)@
+	@:@1_arith_ops(wrd,int,wrd,int)@
+	@:@1_arith_ops(wrd,wrd,wrd,wrd)@
+	@:@1_arith_ops(wrd,lng,lng,lng)@
+	@:@1_arith_ops(wrd,flt,flt,flt)@
+	@:@1_arith_ops(wrd,dbl,dbl,dbl)@
+	@:@1_arith_ops(flt,chr,flt,flt)@
+	@:@1_arith_ops(flt,bte,flt,flt)@
+	@:@1_arith_ops(flt,sht,flt,flt)@
+	@:@1_arith_ops(flt,int,flt,flt)@
+	@:@1_arith_ops(flt,wrd,flt,flt)@
+	@:@1_arith_ops(flt,lng,flt,flt)@
+	@:@1_arith_ops(flt,flt,flt,flt)@
+	@:@1_arith_ops(flt,dbl,dbl,dbl)@
+	@:@1_arith_ops(dbl,chr,dbl,dbl)@
+	@:@1_arith_ops(dbl,bte,dbl,dbl)@
+	@:@1_arith_ops(dbl,sht,dbl,dbl)@
+	@:@1_arith_ops(dbl,int,dbl,dbl)@
+	@:@1_arith_ops(dbl,wrd,dbl,dbl)@
+	@:@1_arith_ops(dbl,lng,dbl,dbl)@
+	@:@1_arith_ops(dbl,flt,dbl,dbl)@
+	@:@1_arith_ops(dbl,dbl,dbl,dbl)@
+	@:@1_arith_ops(lng,chr,lng,chr)@
+	@:@1_arith_ops(lng,bte,lng,bte)@
+	@:@1_arith_ops(lng,sht,lng,sht)@
+	@:@1_arith_ops(lng,int,lng,int)@
+	@:@1_arith_ops(lng,wrd,lng,wrd)@
+	@:@1_arith_ops(lng,lng,lng,lng)@
+	@:@1_arith_ops(lng,flt,dbl,flt)@
+	@:@1_arith_ops(lng,dbl,dbl,dbl)@
+@m
+@:arith_ops(mel)@
+
+@- binary  operations { max, min, }
+@= mel_binary_ops
+	.COMMAND max(@1,@1) : @1 = @2_binary_MAX; "maximum of two values"
+	.COMMAND min(@1,@1) : @1 = @2_binary_MIN; "minimum of two values"
+@m
+	@:mel_binary_ops(any::1,any)@
+@= binary_ops
+	@:@1_binary_ops(chr,chr)@
+	@:@1_binary_ops(bte,bte)@
+	@:@1_binary_ops(sht,sht)@
+	@:@1_binary_ops(int,int)@
+	@:@1_binary_ops(wrd,wrd)@
+	@:@1_binary_ops(oid,oid)@
+	@:@1_binary_ops(flt,flt)@
+	@:@1_binary_ops(lng,lng)@
+	@:@1_binary_ops(dbl,dbl)@
+@m
+@:binary_ops(mel)@
+
+@- unary operations { abs, - }
+@= mel_unary_ops
+	.COMMAND abs(@1) : @1 = @1_unary_ABS; "absolute value"
+	.OPERATOR "-" (@1) : @1 = @1_unary_NEG; "negative value"
+@= unary_ops
+	@:@1_unary_ops(chr)@
+	@:@1_unary_ops(bte)@
+	@:@1_unary_ops(sht)@
+	@:@1_unary_ops(int)@
+	@:@1_unary_ops(wrd)@
+	@:@1_unary_ops(flt)@
+	@:@1_unary_ops(lng)@
+	@:@1_unary_ops(dbl)@
+@m
+@:unary_ops(mel)@
+
+@- inverse { inv }
+Inverse on @#chr..lng@ is not very useful, since it is only nonzero for 1;
+hence, these are not provided.
+@= mel_unary_inv
+	.COMMAND inv(@1 x) : @1 = @1_unary_INV; "inverse value (1/x)"
+@m
+	@:mel_unary_inv(flt)@
+	@:mel_unary_inv(dbl)@
+
+@- boolean { or, xor, and, not }
+@m
+	.OPERATOR (bit) "or"  (bit) : bit = bit_binary_OR; "boolean or"
+	.OPERATOR (bit) "and" (bit) : bit = bit_binary_AND; "boolean and"
+	.OPERATOR (bit) "xor" (bit) : bit = bit_binary_XOR; "boolean xor"
+	.OPERATOR "not" (bit) : bit = bit_unary_NOT; "boolean negation"
+	.COMMAND ifthenelse(bit b, any::1 t, any::1 f) : any::1 = bit_switch;
+	 "boolean switch: returns b?t:f (returns error on isnil(b)"
+
+@- bitwise operations
+Cardinal numerical types (including {\tt chr} can be regarded as a bit
+array. Specific operations work with this interpretation.
+@= mel_bitwise_ops
+	.OPERATOR (@1) "or"  (@1) : @1 = @1@1_binary_OR; "bitwise or"
+	.OPERATOR (@1) "and" (@1) : @1 = @1@1_binary_AND; "bitwise and"
+	.OPERATOR (@1) "xor" (@1) : @1 = @1@1_binary_XOR; "bitwise xor"
+	.OPERATOR "not" (@1) : @1 = @1_unary_NOT; "bitwise negation"
+	.OPERATOR (@1) "<<" (int) : @1 = @1int_binary_LSH; "shift left"
+	.OPERATOR (@1) ">>" (int) : @1 = @1int_binary_RSH; "shift right"
+@= bitwise_ops
+	@:@1_bitwise_ops(chr)@
+	@:@1_bitwise_ops(bte)@
+	@:@1_bitwise_ops(sht)@
+	@:@1_bitwise_ops(int)@
+	@:@1_bitwise_ops(wrd)@
+	@:@1_bitwise_ops(lng)@
+@m
+@:bitwise_ops(mel)@
+
+@- random numbers
+@m
+	.COMMAND rand () : int = int_rand;
+		"return a random number"
+	.COMMAND srand(int seed) : void = int_srand;
+		"initialize the rand() function with a seed"
+
+@- constants
+@m
+.COMMAND getRAND_MAX (): int = CMDgetRAND_MAX; "Maximum value returned by rand()"
+@= limit_ops
+@:@1_limit_ops(CHR,chr)@
+@:@1_limit_ops(BTE,bte)@
+@:@1_limit_ops(SHT,sht)@
+@:@1_limit_ops(INT,int)@
+@:@1_limit_ops(WRD,wrd)@
+@:@1_limit_ops(LNG,lng)@
+@m
+@:limit_ops(mel)@
+@= mel_limit_ops
+.COMMAND get@1_MAX (): @2 = CMDget@1_MAX; "Get maximum value of ordered type @2"
+.COMMAND get@1_MIN (): @2 = CMDget@1_MIN; "Get minimum value of ordered type @2"
+
+@- hard casts
+Casts without value conversion. Used for compressing experiments with IEEE floating point numbers
+@m
+.COMMAND lng2dbl(lng v) : dbl = lng2dbl; "keep binary representation (!DS2.2)"
+.COMMAND dbl2lng(dbl v) : lng = dbl2lng; "keep binary representation (!DS2.2)"
+.COMMAND int2flt(int v) : flt = int2flt; "keep binary representation (!DS2.2)"
+.COMMAND flt2int(flt v) : int = flt2int; "keep binary representation (!DS2.2)"
+
+.END arith;
+
+@
+The constants defined in limit.h are defined using autoloaded mil code.
+@mil
+	const RAND_MAX	 := getRAND_MAX();
+@:limit_milconst(CHR)@
+@:limit_milconst(BTE)@
+@:limit_milconst(SHT)@
+@:limit_milconst(INT)@
+@:limit_milconst(WRD)@
+@:limit_milconst(LNG)@
+@= limit_milconst
+	const @1_MAX   := get@1_MAX();
+	const @1_MIN   := get@1_MIN();
+@
+	const OID_MAX  := ifthenelse(isnil(oid(LNG_MAX)), oid(INT_MAX), oid(LNG_MAX)); 
+
+@{
+@* Implementation
+@h
+#ifndef __arith_H__
+#define __arith_H__
+
+#include "gdk.h"
+/* DEBUG phase.  #include "arith.proto.h" */
+
+
+#endif /* __arith_H__ */
+@}
+
+@{
+@c
+#include "monetdb4_config.h"
+#include "arith.h"
+#include "stdlib.h"
+
+int
+lng2dbl(dbl *r, lng *v)
+{
+	*r = *(dbl *) v;
+	return GDK_SUCCEED;
+}
+
+int
+dbl2lng(lng *r, dbl *v)
+{
+	*r = *(lng *) v;
+	return GDK_SUCCEED;
+}
+
+int
+int2flt(flt *r, int *v)
+{
+	*r = *(flt *) v;
+	return GDK_SUCCEED;
+}
+
+int
+flt2int(int *r, flt *v)
+{
+	*r = *(int *) v;
+	return GDK_SUCCEED;
+}
+
+/* these defines are used in the implementation of
+   *_checkbinary_{DIV,MOD} (see Mx macro check_binop) */
+#define CMD_MOD 1
+#define CMD_DIV 0
+
+@:arith_ops(c)@
+
+#define arith_inv(s) (1/(s))
+@:check_unop(_INV,arith_inv,flt,"Cannot take inverse of zero")@
+@:check_unop(_INV,arith_inv,dbl,"Cannot take inverse of zero")@
+
+#define arith_abs(s) ((s)<0)?-(s):(s)
+#define arith_neg(s) (-(s))
+@= c_unary_ops
+@:arith_unop(_ABS,arith_abs,@1)@
+@:arith_unop(_NEG,arith_neg,@1)@
+@c
+@:unary_ops(c)@
+
+@:any_binary_minmax(MIN,<=)@
+@:any_binary_minmax(MAX,>)@
+
+@= c_binary_ops
+@:arith_macrobinop(_MAX,arith_max,@1)@
+@:arith_macrobinop(_MIN,arith_min,@1)@
+@c
+#define arith_max(s1,s2) ((s1)>(s2))?(s1):(s2)
+#define arith_min(s1,s2) ((s1)<(s2))?(s1):(s2)
+@:binary_ops(c)@
+
+@:bitwise_ops(c)@
+
+int
+bit_binary_AND(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 == FALSE || *v2 == FALSE) {
+		*retval = FALSE;
+	} else if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = TRUE;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+bit_binary_OR(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 && *v1 != bit_nil) {
+		*retval = TRUE;
+	} else if (*v2 && *v2 != bit_nil) {
+		*retval = TRUE;
+	} else if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = *v1 || *v2;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+bit_binary_XOR(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = ((*v1 && *v2 == FALSE) || (*v1 == FALSE && *v2));
+	}
+	return GDK_SUCCEED;
+}
+
+int
+bit_unary_NOT(bit *retval, bit *value)
+{
+	if (*value == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = (*value) ? FALSE : TRUE;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+bit_switch(ptr retval, bit *b, ptr v1, int tpe, ptr v2)
+{
+	register ptr p;
+
+	if (*b == bit_nil) {
+		p = ATOMnilptr(tpe);
+	} else if (*b) {
+		p = v1;
+	} else {
+		p = v2;
+	}
+	if (ATOMextern(tpe)) {
+		*(ptr **) retval = ATOMdup(tpe, p);
+	} else if (tpe == TYPE_bat) {
+		BBPfix(((BAT *) p)->batCacheid);
+		*(BAT **) retval = p;
+	} else {
+		memcpy(retval, p, ATOMsize(tpe));
+	}
+	return GDK_SUCCEED;
+}
+
+int
+int_rand(int *res)
+{
+	*res = rand();
+	return GDK_SUCCEED;
+}
+
+int
+int_srand(int *seed)
+{
+	srand(*seed);
+	return GDK_SUCCEED;
+}
+
+@T
+The {\tt c\_comp} and {\tt c\_comp\_ops} macros implement the mil comparison
+operations.
+
+@= any_binary_minmax
+int
+any_binary_@1(ptr ret, ptr v1, int t, ptr v2)
+{
+	int (*cmp)(ptr, ptr) = BATatoms[t].atomCmp;
+	ptr src, nil = ATOMnilptr(t);
+
+	if (t == TYPE_bat) {
+		v1 = &(((BAT*) v1)->batCacheid);
+		v2 = &(((BAT*) v2)->batCacheid);
+	}
+	if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
+		src = nil;
+	} else {
+		src = ((*cmp)(v1, v2) @2 0)?v1:v2;
+	}
+	if (ATOMextern(t)) {
+		int s = ATOMlen(t, src);
+		str buf = *(str*) ret = (char*) GDKmalloc(s);
+		memcpy(buf, src, s);
+	} else {
+		memcpy(ret, src, ATOMsize(t));
+	}
+	return GDK_SUCCEED;
+}
+
+@= c_comp_op
+int @2_comp_@3(bit *retval, @2 *v1, @2 *v2)
+{
+	if (*v1 == @2_nil || *v2 == @2_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = *v1 @1 *v2;
+	}
+	return GDK_SUCCEED;
+}
+@= c_comparison_ops
+@:c_comp_op(<,@1,LT)@
+@:c_comp_op(<=,@1,LE)@
+@:c_comp_op(==,@1,EQ)@
+@:c_comp_op(!=,@1,NEQ)@
+@:c_comp_op(>,@1,GT)@
+@:c_comp_op(>=,@1,GE)@
+@:c_between_op(@1)@
+
+@c
+@:comparison_ops(c)@
+
+@= c_comp_ops
+int
+str_comp_@2(bit *retval, str s1, str s2)
+{
+	if (strNil(s1) || strNil(s2)) {
+		*retval = bit_nil;
+	} else {
+		*retval = (strcmp(s1,s2) @1 0);
+	}
+	return GDK_SUCCEED;
+}
+int
+any_comp_@2(bit *retval, ptr v1, int tpe, ptr v2)
+{
+	int (*cmp)(ptr, ptr) = BATatoms[tpe].atomCmp;
+	ptr nil = ATOMnilptr(tpe);
+
+	if (tpe == TYPE_bat) {
+		v1 = &(((BAT*) v1)->batCacheid);
+		v2 = &(((BAT*) v2)->batCacheid);
+	}
+	if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
+		*retval = bit_nil;
+	} else {
+		*retval = ((*cmp)( v1, v2) @1 0);
+	}
+	return GDK_SUCCEED;
+}
+@c
+@:c_comp_ops(<,LT)@
+@:c_comp_ops(<=,LE)@
+@:c_comp_ops(==,EQ)@
+@:c_comp_ops(!=,NEQ)@
+@:c_comp_ops(>=,GE)@
+@:c_comp_ops(>,GT)@
+
+int
+str_comp_between(bit *retval, str val, str low, str high)
+{
+	int val_nil = strNil(val);
+	int low_nil = strNil(low);
+	int high_nil = strNil(high);
+
+	if (val_nil || (low_nil && high_nil)) {
+		*retval = bit_nil;
+	} else if (low_nil) {
+		*retval = (strcmp(val, high) <= 0);
+	} else if (high_nil) {
+		*retval = (strcmp(low, val) <= 0);
+	} else {
+		*retval = (strcmp(low, val) <= 0 && strcmp(val, high) <= 0);
+	}
+	return GDK_SUCCEED;
+}
+
+int
+any_comp_between(bit *retval, ptr val, int tpe, ptr low, ptr high)
+{
+	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
+	ptr nilptr = ATOMnilptr(tpe);
+	int val_nil = ((*cmp) (val, nilptr) == 0);
+	int low_nil = ((*cmp) (low, nilptr) == 0);
+	int high_nil = ((*cmp) (high, nilptr) == 0);
+
+	if (val_nil || (low_nil && high_nil)) {
+		*retval = bit_nil;
+	} else if (low_nil) {
+		*retval = ((*cmp) (val, high) <= 0);
+	} else if (high_nil) {
+		*retval = ((*cmp) (low, val) <= 0);
+	} else {
+		*retval = ((*cmp) (low, val) <= 0 && (*cmp) (val, high) <= 0);
+	}
+	return GDK_SUCCEED;
+}
+
+@= c_isnil_op
+int @1_isnil(bit *retval, @1* val)
+{
+	*retval = (*val == @1_nil);
+	return GDK_SUCCEED;
+}
+@c
+@:isnil_ops(c)@
+
+int
+str_isnil(bit *retval, str val)
+{
+	*retval = (*(chr *) (val) == GDK_chr_min);
+	return GDK_SUCCEED;
+}
+
+int
+any_isnil(bit *retval, ptr val, int tpe)
+{
+	ptr nilval = ATOMnilptr(tpe);
+
+	*retval = (ATOMcmp(tpe, nilval, val) == 0);
+	return GDK_SUCCEED;
+}
+
+@= c_between_op
+int @1_comp_between(bit *retval, @1 *v, @1 *low, @1 *high)
+{
+	if (*v == @1_nil || (*low == @1_nil && *high == @1_nil)) {
+		*retval = bit_nil;
+	} else if (*low == @1_nil) {
+		*retval = (*v <= *high);
+	} else if (*high == @1_nil) {
+		*retval = (*low <= *v);
+	} else {
+		*retval = (*low <= *v) && (*v <= *high);
+	}
+	return GDK_SUCCEED;
+}
+@T
+The {\tt c\_arith\_ops} implement the arithmetic operations on the given type.
+The {\tt c\_arith\_ops} macro gets three arguments, two input types and a
+result type.
+
+@= c_arith_ops
+@:arith_binop(_ADD,+,@1,@2,@3)@
+@:arith_binop(_SUB,-,@1,@2,@3)@
+@:arith_binop(_MUL,*,@1,@2,@3)@
+@:check_binop(_DIV,/,@1,@2,@3,"Division by zero","division")@
+@:check_binop(_MOD,%,@1,@2,@4,"Modulo zero is not possible","modulo")@
+@
+
+@= arith_unop
+int @3_unary@1(@3 *res , @3 *a)
+{
+#ifdef DEBUG
+	printf( "@3_unary@1\n");
+#endif
+	if (*a == @3_nil) {
+		*res = @3_nil;
+	} else {
+		*res = @2 (*a);
+	}
+	return(GDK_SUCCEED);
+}
+@
+
+@= check_unop
+int @3_unary@1(@3 *res , @3 *a)
+{
+#ifdef DEBUG
+	printf( "@3_unary@1\n");
+#endif
+	if (*a == 0) {
+		GDKerror(@4);
+		return(GDK_FAIL);
+	} else if (*a == @3_nil) {
+		*res = @3_nil;
+	} else {
+		*res = @2 (*a);
+	}
+	return(GDK_SUCCEED);
+}
+@
+
+@= arith_binop
+int @3@4_binary@1(@5 *res, @3 *a, @4 *b)
+{
+#ifdef DEBUG
+	printf( "@3@4_binary@1\n");
+#endif
+	if (*a == @3_nil || *b == @4_nil) {
+		*res = @5_nil;
+	} else {
+		*res = ((@5)(*a)) @2 *b;
+	}
+	return(GDK_SUCCEED);
+}
+@
+
+/*
+	1: function name suffix (_MOD,_DIV etc)
+	2: operator (%,/ etc)
+	3: type argument 1
+	4: type argument 2
+	5: result type 
+	6: Error message when the second argument is zero.
+*/
+@= check_binop
+int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b)
+{
+#ifdef DEBUG
+	printf( "@3_binary@1\n");
+#endif
+	if (*b == 0) {
+		GDKerror(@6);
+		return GDK_FAIL;
+	} else if (*a == @3_nil || *b == @4_nil) {
+		*res = @5_nil;
+	} else {
+#if TYPE_@3 == TYPE_flt || TYPE_@3 == TYPE_dbl || TYPE_@4 == TYPE_flt || TYPE_@4 == TYPE_dbl
+		/* at least one of the operands is a floating point
+		   type, do calculations in double precision */
+#if CMD@1
+		/* special case for floating point modulo */
+		*res = (@5) ((dbl)*a - (dbl) ((lng) ((dbl)*a / (dbl)*b)) * (dbl)*b);
+#else
+		*res = (@5) ((dbl)*a @2 (dbl)*b);
+#endif
+#else
+		/* neither operand is floating point, use the largest
+		   of the operands as intermediate type */
+#if TYPE_@3 > TYPE_@4
+		*res = (@5) ((@3)*a @2 (@3)*b);
+#else
+		*res = (@5) ((@4)*a @2 (@4)*b);
+#endif
+#endif
+	}
+	return(GDK_SUCCEED);
+}
+@
+
+@= c_bitwise_ops
+@:arith_binop(_OR,|,@1,@1,@1)@
+@:arith_binop(_AND,&,@1,@1,@1)@
+@:arith_binop(_XOR,^,@1,@1,@1)@
+@:arith_unop(_NOT,~,@1)@
+@:arith_binop(_LSH,<<,@1,int,@1)@
+@:arith_binop(_RSH,>>,@1,int,@1)@
+
+@= arith_macrobinop
+int @3_binary@1(@3 *res , @3 *a, @3 *b)
+{
+#ifdef DEBUG
+	printf( "@3_binary@1\n");
+#endif
+	if (*a == @3_nil || *b == @3_nil) {
+		*res = @3_nil;
+	} else {
+		*res = @2 (*a,*b);
+	}
+	return(GDK_SUCCEED);
+}
+@
+
+@= c_limit_ops
+int
+CMDget@1_MAX(@2* maxval)
+{
+	*maxval = GDK_@2_max;
+	return GDK_SUCCEED;
+}
+int
+CMDget@1_MIN(@2* minval)
+{
+	/* the real minimum is used as `nil' value */
+	*minval = GDK_@2_min + 1;
+	return GDK_SUCCEED;
+}
+@
+@c
+@:limit_ops(c)@
+
+int
+CMDgetRAND_MAX(int *randmaxval)
+{
+	*randmaxval = RAND_MAX;
+	return GDK_SUCCEED;
+}
+
+@}

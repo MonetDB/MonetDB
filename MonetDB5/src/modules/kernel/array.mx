@@ -99,6 +99,7 @@ comment "Prints an array, using 1 value bat and N aligned index bats";
 /*============================================================================*/
 @c
 /*============================================================================*/
+#include "mal_config.h"
 #include "array.h"
 #include "gdk.h"
 #include <math.h>

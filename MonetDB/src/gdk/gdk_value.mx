@@ -47,6 +47,7 @@ Note that binding a BAT requires upgrading its reference count.
 The receiver of the value should have been cleared or represent
 free space.
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 ValPtr

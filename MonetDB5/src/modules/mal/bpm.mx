@@ -452,6 +452,7 @@ The partition manager uses its private memory mapped catalog of persistent BATs.
 The handle returned is a BAT that represents the whole group.
 They are further administered  by type
 @c
+#include "mal_config.h"
 #include "bpm.h"
 
 static BAT *bpmName;		/* bat[:bat,:str] */

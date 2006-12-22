@@ -260,6 +260,7 @@ handles and returns proper error messages upon failure.
 #endif /*_SQL_SERVER_H_*/
 
 @c
+#include "sql_config.h"
 #include "sql_server.h"
 #include "sql_result.h"
 #include "sql_session.h"

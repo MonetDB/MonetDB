@@ -145,6 +145,7 @@ gdk_export void BBPatom_load(int atom);
 gdk_export int BBPbackup(BAT *b, bit subcommit);
 @
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_storage.h"
 @}

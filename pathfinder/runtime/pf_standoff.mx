@@ -1423,6 +1423,7 @@ adds three BATs to the working set REGION_PRE, REGION_START, and REGION_END and 
 @
 
 @c
+#include "pf_config.h"
 #include "pf_standoff.h"
 
 /* simple heap operations for the loop-lifted StandOff join */

@@ -23,7 +23,7 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-INCLUDES = -I$(MONETDB_INCLUDEDIR)/C $(MONET5_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
+INCLUDES = $(MONETDB5_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
 lib__xquery = {
@@ -34,7 +34,7 @@ lib__xquery = {
 		xquery_backend.mx 
         LIBS = \
                 $(PF_LIBS) \
-                $(MONET5_MODS) -l_bat5 \
+                $(MONETDB5_MODS) -l_bat5 \
 		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 

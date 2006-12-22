@@ -89,6 +89,7 @@ is limited, but is huge on multiple iterations, the new loop-lifted
 algorithms for the upwards XPath axes seem a profitable addition for the 
 pathfinder runtime.
 @c
+#include "pf_config.h"
 #include <gdk.h>
 #include "pathfinder.h"
 

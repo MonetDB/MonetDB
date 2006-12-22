@@ -71,6 +71,7 @@ embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
+#include "sql_config.h"
 #include "embeddedclient.h"
 #include "mserver.h"
 

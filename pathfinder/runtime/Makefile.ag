@@ -25,7 +25,7 @@
 
 EXTRA_DIST_DIR = Tests
 
-INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
+INCLUDES = $(MONETDB_INCS) $(MONETDB4_INCS) $(LIBXML2_CFLAGS) ../compiler/include
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
 # these defines are needed to get shttpd to compile in the right way
@@ -48,8 +48,8 @@ lib__pf_support = {
 
         LIBS = \
                 $(PF_LIBS) \
-                $(MONETDB_LIBS) -lbat -lmonet -lstream $(PTHREAD_LIBS) \
-                $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
+                $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream $(PTHREAD_LIBS) \
+                $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 
 lib__pf_standoff = {
@@ -59,8 +59,8 @@ lib__pf_standoff = {
 
         LIBS = \
                 $(PF_LIBS) \
-                $(MONETDB_LIBS) -lbat -lmonet -lstream \
-                $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant 
+                $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream \
+                $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant 
 }
 
 lib__pathfinder = {
@@ -84,8 +84,8 @@ lib__pathfinder = {
                 ../compiler/libcompiler2 \
                 ../compiler/sql/libsql \
                 $(PF_LIBS) \
-                $(MONETDB_LIBS) -lbat -lmonet -lstream $(PTHREAD_LIBS) \
-                $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
+                $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream $(PTHREAD_LIBS) \
+                $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
 }
 
 lib__xrpc_client = {
@@ -93,8 +93,8 @@ lib__xrpc_client = {
         SOURCES = xrpc_client.mx
         LIBS = \
 			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-			   $(MONETDB_LIBS) -lbat -lmonet -lstream -lpthread \
-			   $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io
+			   $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream -lpthread \
+			   $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io
 }
 
 lib__xrpc_server = {
@@ -104,8 +104,8 @@ lib__xrpc_server = {
 				  xrpc_server.mx
         LIBS = \
 			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-			   $(MONETDB_LIBS) -lbat -lmonet -lstream -lpthread \
-			   $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io
+			   $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream -lpthread \
+			   $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io
 }
 
 scripts_mil = {

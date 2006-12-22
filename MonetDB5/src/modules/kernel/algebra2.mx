@@ -144,6 +144,7 @@ comment "grouped tail sum";
 #endif /* __MALALGEBRA_H__ */
 
 @c
+#include "mal_config.h"
 #include "algebra2.h"
 
 /* don't reorder! */

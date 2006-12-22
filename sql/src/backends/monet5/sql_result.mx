@@ -45,6 +45,7 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 #endif /* sql_result_H */
 @c
 
+#include "sql_config.h"
 #include "sql_result.h"
 #include <tablet.h>
 #include <mtime.h>

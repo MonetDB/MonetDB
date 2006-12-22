@@ -1,0 +1,2156 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@v 1.0
+@f ddbench
+@a Peter Boncz
+@t DDbench Optimization Module
+@* Introduction
+@T
+This module is intended to attack the times presented on the DD benchmark
+by the infocharger product. 
+
+@+ Enumeration Grouping/Counting
+@T
+It enables experimentation with various optimizations:
+\begin{itemize}
+
+\item creating a group BAT on a BAT with enumeration tail-column
+      can be avoided using a view-implementation that returns the
+      same BAT, but with a different enumeration lookup-table
+      (that contains oids instead of the original type). This 
+      adapted lookup table is produced by the {\small\tt enum\_view()} command.
+
+      This totally eliminates the group computation costs of batch 0.
+
+\item specific techniques to more efficiently perform the group(ct,b) 
+      operations of batch 1, exploiting the fact that both ct and b are 
+      enumeration types. More specifically: a hash table is not necessary, 
+      and an enumerated column for the group oids can be constructed directly, 
+      instead of in a second step. 
+
+      This reduces the group computation cost of batch 1.
+
+\item when computing a full histogram on an enumerated column, we
+      can just return the lookup table without effort; it
+      already is a histogram! 
+
+      This totally eliminates the histogram creation cost of batches 0 and 1. 
+\end{itemize}
+
+The above are obvious improvements of which the only question is how much
+exactly they will improve the computation time. These implementations
+are incorporated using procs into the generic {\small\tt group()} commands.
+
+@+ Selections and Intersecting them
+@T
+Our initial benchmark result was obtained by 
+creating selection-BATs with {\small\tt uselect()} and intersecting those for AND 
+predicates.
+These selection BATs where piped into a {\small\tt CTsubgroup()}, which 
+rematerialized a sub-CT on which consequently a histogram was computed.
+
+First, focusing on the selection effort, a number of optimizations
+may be identified:
+\begin{description}
+\item[bitmasks]  the select-phase may be optimized by using bitmasks instead
+      ov (inverted) oid-lists.  As the selection percentages are high, 
+      oid BATs used to express selections can be very large and may even be 
+     larger than the data-BATs
+(e.g. gender\_0 has BAT-width of 1 byte, so it takes 1MB, but the selection
+      BAT of all males (50\%) has BAT-width 4 bytes, so takes 2MB).
+In case where the selection percentage is over 12\%, we can better store the
+selection as a bitmask, which is done by the {\small\tt val\_bitselect()} and
+{\small\tt rng\_bitselect()} commands (for equi- and range-select respectively). 
+The storage is again a BAT, that has the new {\small\tt bit32} type in its tail.
+The {\small\tt \[and\]()} operator can simply be used for intersecting them.
+
+\item[subselect] instead of the materialized AND strategy for further zooming 
+into subgroups (i.e. {\small\tt kintersect()} for oid-BATs, and {\small\tt \[and\]()} for 
+bitmasks) we can use the already existing selection to reduce the number
+of comparisons in the scan for the second predicate (which are traded
+off for lookup effort on the first selection). This strategy has both been
+implemented for the oid- and bitmask cases by having {\small\tt val\_bitselect()} and
+{\small\tt rng\_bitselect()} commands that receive an additional oid- or bitmask-BAT
+parameter for the initial restriction.
+
+\item[overwrite-anding] when doing an additional restriction, we sometimes 
+knwo that the original restriction is not going to be used anymore. In such 
+cases, we can {\bf overwrite} the original restriction with the result. As the
+retstriction-BAT is hot anyway, this altogether saves all allocation
+and memory-access cost to the result BAT, at very little extra expense.
+This strategy has both been implemented for the oid- and bitmask cases in
+the {\small\tt val\_bitrefine()} and {\small\tt rng\_bitrefine()} commands 
+(bitmask selections), and {\small\tt val\_oidrefine()} and {\small\tt rng\_oidrefine()} 
+commands (oid-BAT selections).
+
+\item[single-scan/multipredicate-selects] in batch2, selections are requested for both gender 
+(male,females), age (18-45,45-55,55-80), marital (single,married,divorced) and
+zipcode(3000-4000,4000-7000). In such cases we can try to save scans on the 
+data-attributes by computing e.g. both {\small\tt =male} and {\small\tt =female}  
+in one scan. 
+This strategy has both been implemented for the oid- and bitmask cases in
+the {\small\tt vals\_bitselect()} and {\small\tt rngs\_bitselect()} commands 
+(bitmask selections), and {\small\tt vals\_oidselect()} and {\small\tt rngs\_oidselect()} 
+commands (oid-BAT selections).
+
+The return value of these operations is a BAT of result BATs.
+
+\item[result estimation] the oid-BAT computing selection primitives
+     exploit the fact that the tail-column of the data BATs are enumeration
+     types. The lookup table of such types contains a histogram, which is
+     used for creating a good result size estimate. 
+\end{description}
+
+All the selection primitives exploit (even require) the fact that the 
+head-columns of the data BATs are {\small\tt void} and that their tail-column is
+an enumeration type.
+
+@+ Sub-Histograms
+@T
+For the computation of the sub-histograms, the following
+optimizations have been done:
+
+\begin{itemize}
+\item evading the materialization of a sub-CT by providing an aggregate 
+construct with a filter. This generic construct is mimicked in case of the 
+COUNT aggregate by the {\small\tt oid\_subhisto()} and {\small\tt bit\_subhisto()} implementations.
+
+\item whereas the multiple select on one attribute tries to exploit
+      the advantages of scanning an attribute only once; this same
+      technique may be applied for computation of the sub-histograms.
+      This is especially useful for the bitmask subhistograms, as 
+      they scan ther bitmasks anyway. The {\small\tt bits\_subhisto()} implementations scans multiple bitmasks and creates multiple histogram results.
+\end{itemize}
+
+All the selection primitives exploit (even require) the fact that the 
+head-columns of the data BATs are {\small\tt void} and that their tail-column is
+an enumeration type. The limited cardinality of such types is exploited
+by using a direct-indexed array instead of a hash-table to organize
+the histogram counting buckets.
+
+@+ Other Possible Optimizations
+@T
+We discuss possible avenues to further improve the performance of the DD benchmark. 
+
+One such is idea is to further enhance the speed of the basic primitives on
+intel processors by processing multiple byte-values in parallel using
+the speical MMX instruction set. This approach necessarily involves
+assembly programming.
+
+Another approach is through query optimization where first on invests in computing 
+more complex cubes, which are used in batches 2 and 3 to avoid going to the 
+full data set altogether. 
+
+Finally, a different representation of crosstables using bitmasks that are
+interpreted using a tree-data structure is being investigated by Martin. It 
+should find its way into this document (TODO).
+
+@- MMX parallellism
+@T
+Extra speed may be gained by implementing in assembly directly. 
+The incompatibilities suffered by this might be recompensated by
+the opportunity to achieve implementation code that cannot possibly
+generated with C, {\bf and} provides significant performance advantages.
+
+Such opportunities are especially found in the implementations of the
+bitmask-BAT commands on PC hardware.
+
+\begin{description}
+\item[MMX selections]
+PC hardware provides 64-bit MMX registers on which 8 independent
+byte-compares may be performed in one clock cycle. This technique will 
+probably accelerate by a factor 4 all {\small\tt *\_bitselect()} commands.
+
+\item[bitmask subselects] intel hardware has a special opcode
+that in 1 clock-cycle tells you which is the first bit in an 
+integer bitmask that is turned on. This might significantly (factor 2?)
+speed up the {\small\tt bit\_subhisto()} implementation as it scans
+over a bitmask to see which tuples are selected.
+\end{description}
+
+@- Query Optimization
+@T
+An additional way to speed up the DD benchmark is to use an intelligent
+cube-caching system. The basic idea is to first invest in computing a 
+complex cubes that are cached instead of out current binary \[X,reliable\]
+cubes. In the batches 2,3,4 when subsets are requested, (parts of ) 
+these can be immediately asked by the cached complex cubes without any scans.
+
+To be more explicit, 
+in the DD benchmark we have the following attributes
+
+\begin{tabular}{l|c|c|l}
+ & \multicolumn{3}{c}{\bf attributes of the DD benchmark}\\
+\hline\\
+reliable & bool  & 2    & \{ true, false \}\\
+marital  & string& 4    & \{single,married,divorced,widow\}\\
+town     & string& 15   & 15 Dutch city names\\
+age      & int   & 80   & [18-98]\\
+spendings& float & 100  & \ \\
+zipcode  & int   & 7000 & 2000-9000\\
+\end{tabular}
+
+The {\small\tt reliable} attribute is called the {\em target attribute}, 
+the others are the {\em query attributes} 
+the benchmark consists of 4 batches, that are executed separately, one
+after the other:
+\begin{description}
+\item[batch 0] for each attribute {\small\tt select COUNT(*) FROM attr GROUP BY attr} ( 6 results).
+\item[batch 1] for each query attribute {\small\tt select COUNT(*) FROM attr,reliable GROUP by attr,reliable} (5 results). 
+\item[batch 2] for 10 simple predicates {\small\tt PRED} on one query attribute, do for the 
+other 5 query attributes a {\small\tt select COUNT(*) FROM attr,reliable WHERE PRED GROUP by attr,reliable} (50 results).
+\item[batch 3] for 10 predicates {\small\tt (PRED1 and PRED2)} on two query attributes, do for 
+the other 4 attributes a {\small\tt select COUNT(*) FROM attr,reliable WHERE PRED1 AND PRED2 GROUP by attr,reliable} (40 results).
+\item[batch 4] for 10 predicates {\small\tt (PRED1 and PRED2 and PRED3)} on three query attributes, do for 
+the other 3 attributes a {\small\tt select COUNT(*) FROM attr,reliable WHERE PRED1 AND PRED2 AND PRED3 GROUP by attr,reliable} (30 results).
+\end{description}
+
+These queries results can be viewed as 0, 1, 2, and 3-dimensional cubes.
+
+In our initial experiments, we just cache the 1-dimensional cubes:
+
+\begin{tabular}{r|r|r}
+ & \multicolumn{2}{l}{\bf cached cubes: standard strategy}\\
+\hline\\
+cube1 & [ spendings, reliable ] &   200 values\\
+cube2 &   [ zipcode, reliable ] & 14000 values\\
+cube3 &       [ age, reliable ] &   160 values\\
+cube4 &      [ town, reliable ] &    30 values\\
+cube5 &    [ gender, reliable ] &     4 values\\
+cube6 &   [ marital, reliable ] &     8 values\\
+\end{tabular}
+
+Now, we could use a simple strategy that simply adds attributes to each
+cubes in ascending order of cardinality till the cube size reaches a certain 
+treshold. The \[attr,reliable\] cubes of added attributes disappear.
+If we take, for instance the treshold to be 1000, we get the
+following cubes to cache:
+
+\begin{tabular}{r|r|r}
+ & \multicolumn{2}{l}{\bf cached cubes: {\em limit=1000}}\\
+\hline\\
+cube1 &    [ spendings, gender, reliable ] & 400 values\\
+cube2 &   [ spendings, marital, reliable ] & 800 values\\
+cube3 &              [ zipcode, reliable ] & 14000 values\\
+cube4 &          [ age, gender, reliable ] & 320 values\\
+cube5 &         [ age, marital, reliable ] & 640 values\\
+cube6 & [town, marital, gender, reliable ] & 240 values\\
+\end{tabular}
+
+These should not be much more expensive to compute by choosing
+a smart {\small\tt CTgroup()} sequence. First -- and independently -- compute
+{\small\tt \[zipcode,reliable\]}.  Then do {\small\tt \[gender,reliable\]}
+and use this to {\small\tt CTgroup()} the attributes {\small\tt age} and {\small\tt spendings}.
+Then do {\small\tt \[marital,reliable\]}, and compute with this the extra
+{\small\tt age} and {\small\tt spendings} cross-tables. Finally
+do a {\small\tt CTgroup()} with {\small\tt town}.
+
+The histograms of batch 1 will be more detailed, so a small postprocess
+step that sums the cell values in one class is necessary: 
+{\small\begin{verbatim}
+SELECT sum(cnt) FROM cube1 GROUP BY spendings; 
+\end{verbatim}}
+
+In MIL, this becomes
+{\small\begin{verbatim}
+ct := cube1_spendings.CTgroup();
+aggr := join(cube1_cnt.reverse, ct);
+subhisto := {sum}(cube1_cnt, aggr);
+print(cube1_spendings, subhisto); 
+\end{verbatim}}
+
+Due to the fact that cell cardinalities of the {\small\tt cube1\_X } BATs are 
+in the hundreds, the cost this step is negligable. The benefits of this approach 
+appear in batch 2 (and later), when we have selections on '{\small\tt gender=male}' 
+and '{\small\tt gender=female}' with a GROUP BY on {\small\tt \[spendings,reliable\]}. 
+As {\small\tt \[spendings,gender,reliable\]} are covered by {\small\tt cube1}
+we can resolve them with the queries:
+
+{\small\begin{verbatim}
+SELECT cnt FROM cube1 WHERE gender='male' GROUP BY spendings; 
+SELECT cnt FROM cube1 WHERE gender='female' GROUP BY spendings; 
+\end{verbatim}}
+In MIL, this becomes
+{\small\begin{verbatim}
+subhisto1 := semijoin(cube1_cnt, cube1_gender.uselect('male');
+print(cube1_spendings,subhisto1);
+
+subhisto2 := semijoin(cube1_cnt, cube1_gender.uselect('female');
+print(cube2_spendings,subhisto2);
+\end{verbatim}}
+
+the below table shows which queries from batch 2 would be 'covered' by
+the cached subcubes with {\em limit=1000}:
+
+\begin{tabular}{l|l|l}
+{\bf selections}  & \multicolumn{2}{l}{\bf group by}\\
+\ 	    & {\bf\em covered}		     & {\bf\em not covered}\\
+\hline\\
+2* gender,  & 4:spendings,age,marital,town   & 1:zipcode\\
+3* age,     & 3:gender,marital,town  	     & 2:spendings,zipcode\\
+3* marital  & 4:gender,spendings,age,town    & 1:zipcode\\
+2* zipcode  & \                              & 5:age,gender,town,marital,spendings\\
+\end{tabular}
+
+In total, (2*4 + 3*3 + 3*4) = 28 out of 50 queries of batch 1 are covered. 
+As batch 1 accounts for half of the benchmark cost, the savings can be 
+significant.
+
+One should remark that the cubes of which {\small\tt zipcode} is part must
+be computed in the 'old' way; e.g. using a subselection to query a 
+cached binary CT (keeping those in memory as well just costs 5MB and is worth 
+doing). This forces us to still do all the selects and subselects
+(or intersects). So this part of the computation cost of batch 2 is
+not attacked by this optimization; limiting its impact.
+
+The next question that arises is whether batch 3 and 4 can also benifit
+from the complex cube caching strategy. Short examination learns that
+only one cube out of 40 is covered in batch 3 (cube6 covers selection on 
+{\small\tt marital,gender}, group by {\small\tt town,reliable}) and none from
+batch 4.
+
+So we could consider using a larger limit, e.g. {\em limit=2000}:
+
+\begin{tabular}{r|r|r}
+ & \multicolumn{2}{l}{\bf cached cubes: {\em limit=2000}}\\
+\hline\\
+cube1 & [ spendings, gender, marital, reliable ] & 1600 values\\
+cube2 &                    [ zipcode, reliable ] & 14000 values\\
+cube3 &       [ age, gender, marital, reliable ] & 1280 values\\
+cube4 &       [town, marital, gender, reliable ] & 240 values\\
+\end{tabular}
+
+or {\em limit=30000}:
+
+\begin{tabular}{r|r|r}
+ & \multicolumn{2}{l}{\bf cached cubes: {\em limit=30000}}\\
+\hline\\
+cube1 & [ spendings, town, gender, marital, reliable ] & 24000 values\\
+cube2 &       [ age, town, gender, marital, reliable ] & 19200 values\\
+cube3 &                  [ zipcode, gender, reliable ] & 28000 values\\
+\end{tabular}
+
+The below table summarizes the 'coverage' in batch 3 of all three caching strategies:
+
+\begin{tabular}{l|l|l|l}
+{\bf selections}     & \multicolumn{3}{l}{\bf group by}\\
+\ 	             & {\bf\em limit=1000} & {\bf\em limit=2000} & {\bf\em limit=30000}\\
+\hline\\
+3* gender,age        & \          & 1:marital            & 2:town,marital\\ 
+3* age,town          & \          & \                    & 2:gender,marital\\
+2* marital,age       & \          & 1:gender             & 2:town,gender\\
+1* marital,gender    & 1:town     & 3:spendings,age,town & 3:spendings,age,town\\
+1* zipcode,town      & \          & \                    & \ \\
+\hline
+{\em total covered:} & 1          & 8                    & 19\\ 
+\end{tabular}
+
+So, with {\em limit=30000}, again about half of batch 3 can be covered.
+Experiments should determine whether these extra savings are offset by the
+increased computation  cost of the cubes and sub queries on them, caused
+by the increased cube sizes (probably not; {\em limit=1000} performs best). 
+
+
+
+@* Module Definition
+@m
+.MODULE ddbench;
+
+.USE xtables;
+.USE enum;
+
+.ATOM bit32 = int;
+.FROMSTR = bit32FromStr;
+.TOSTR = bit32ToStr;
+.END;
+
+.COMMAND stats(BAT[void,bit32] sel) : BAT[str,lng] = bit32stats;
+ "produce info on this bit-selection"
+
+.COMMAND tobat(BAT[void,bit32] sel) : BAT[oid,void] = bit32tobat;
+ "convert a bat[void,bit32] bitmap selection into a BAT of oids"
+
+.COMMAND kintersect(BAT[oid,any::1] b, BAT[void,bit32] sel) : 
+					BAT[oid,any::1] = bit32semijoin;
+ "do b.semijoin(sel.tobat); b must be dense and sel must correspond to it.\n"
+
+@- groupings optimized for enumeration types
+@m
+.COMMAND enum_view(BAT[void,any] b) : 	BAT[oid,int] = enum_view; 
+ "produces a histogram that is an adaptation of the enum-lookup table
+  of the tail of b. Its head column differs: it contains oids; namely 
+  the first oid of 'b' where the original lookup head value occured
+  in the tail of 'b'. In other words :-), this produces the lookup
+  table needed to create an 'enumeration view' that represents CTgroup(b)."
+
+.COMMAND enum_group(BAT[void,any] ct, BAT[void,any] b) : 
+	 				BAT[void,any] = enum_group; 
+ "optimized group: use a byte-array[card(ct)*card(b)] instead of a hash
+	           table and directly create enumerated group oid-s" 
+
+.COMMAND enum_semijoin(BAT[void,any::1] b1, BAT[any,any] b2) : 
+	 				BAT[oid,any::1] = enum_semijoin; 
+ "positional semijoin if the b2 head type is an enumerated oid"
+
+.COMMAND enum_join(BAT[any::1,void] b1, BAT[any,any::2] b2) : 
+	 				BAT[any::1,any::2] = enum_join; 
+ "positional join if the b2 head type is an enumerated oid"
+
+@- fast oid selections 
+work only on void BATs with enum tails. treat the BATs as unary
+arrays. Use the enumeration lookup table as a histogram to estimate
+the selectivity.
+@m
+.COMMAND val_oidselect(BAT[oid,any::1] b, any::1 v) : 
+				BAT[void,oid] = val_oidselect;
+ "uselect, optimized for enumeration types"
+
+.COMMAND rng_oidselect(BAT[oid,any::1] b, any::1 lo, any::1 hi) :
+				BAT[void,oid] = rng_oidselect;
+ "uselect, optimized for enumeration types"
+
+.COMMAND vals_oidselect(BAT[oid,any::1] b, any::1 v, ...any::1...) : 
+	 			BAT[int,BAT[oid,void]] = vals_oidselect;
+ "uselect, optimized for enum types, on multiple equi-select predicates"
+
+.COMMAND rngs_oidselect(BAT[oid,any::1] b, any::1 lo, any::1 hi, ...any::1..) : 
+	 			BAT[int,BAT[oid,void]] = rngs_oidselect;
+ "uselect, optimized for enum types, on multiple range-select predicates"
+
+.COMMAND subselect(BAT[oid,void] sel, BAT[oid,any::1] b, any::1 v) : 
+				BAT[oid,void] = val_oidsubsel;
+ "uselect, on b.semijoin(sel), optimized for enum types"
+
+.COMMAND subselect(BAT[oid,void] sel, BAT[oid,any::1] b, any::1 lo, 
+		any::1 hi) :	BAT[oid,void] = rng_oidsubsel;
+ "uselect, on b.semijoin(sel), optimized for enum types"
+
+@- selections that produce bitmasks
+work only on void BATs with enum tails. Coded out in 32-tuple batches
+to process the bitmask per 32-bit integers.
+@m
+.COMMAND val_bitselect(BAT[oid,any::1] b, any::1 v) : 
+	 				BAT[void,bit32] = val_bitselect;
+ "do a range-scan equiselect, but output the result as a bitmask, partitioned
+  in 32-bits integers. "
+
+.COMMAND rng_bitselect(BAT[oid,any::1] b, any::1 lo, any::1 hi) : 
+	 			BAT[void,bit32] = rng_bitselect;
+ "do a range-scan rangeselect, but output the result as a bitmask, partitioned
+  in 32-bits integers. "
+
+.COMMAND vals_bitselect(BAT[oid,any::1] b, any::1 v, ...any::1...) : 
+	 			BAT[int,BAT[void,bit32]] = vals_bitselect;
+ "computes multiple bitmasks for each equi-select 'v' on 'sel'"
+
+.COMMAND rngs_bitselect(BAT[oid,any::1] b, any::1 lo, any::1 hi, ...any::1...) :
+	 			BAT[int,BAT[void,bit32]] = rngs_bitselect;
+ "computes multiple bitmasks for each equi-select 'v' on 'sel'"
+
+.COMMAND subselect(BAT[void,bit32] sel, BAT[oid,any::1] b, any::1 v) : 
+				BAT[void,bit32] = val_bitsubsel;
+ "do a bitselect on the subset indicated by the first BAT param"
+
+.COMMAND subselect(BAT[void,bit32] sel, BAT[oid,any::1] b, any::1 lo, 
+		any::1 hi) :	BAT[void,bit32] = rng_bitsubsel;
+ "do a bitselect on the subset indicated by the first BAT param"
+
+@- refinements
+these are like the sub-selects, but overwrite the 'sel' parameter
+with the result.
+@m 
+.COMMAND refine(BAT[oid,void] sel, BAT[oid,any::1] b, any::1 v) : 
+				BAT[oid,void] = val_oidrefine;
+ "like val_oidsubsel(sel,b,v), but *OVERWRITES* sel with result."
+
+.COMMAND refine(BAT[oid,void] sel, BAT[oid,any::1] b, any::1 lo, 
+		any::1 hi) :	BAT[oid,void] = rng_oidrefine;
+ "like rng_oidsubsel(sel,b,lo,hi), but *OVERWRITES* sel with result."
+
+.COMMAND refine(BAT[void,bit32] sel, BAT[oid,any::1] b, any::1 v) : 
+				BAT[void,bit32] = val_bitrefine;
+ "like val_bitsubsel(sel,b,v), but *OVERWRITES* sel with result."
+
+.COMMAND refine(BAT[void,bit32] sel, BAT[oid,any::1] b, any::1 lo, 
+		any::1 hi) :	BAT[void,bit32] = rng_bitrefine;
+ "like rng_bitsubsel(sel,b,lo,hi), but *OVERWRITES* sel with result."
+
+@- sub-histograms
+work only on void BATs with enum tails.
+@m
+.COMMAND subhistos(BAT[oid,any::1] b, ...BAT[void,bit32]...) :
+	 BAT[int,BAT[any,int]] = bits_subhisto;
+ "computes multiple subset-histograms on b, receiving multiple bitmasks"
+
+.COMMAND subhisto(BAT[oid,any::1] b, BAT[oid,any] sel) :
+	 			BAT[any,int] = oid_subhisto;
+ "computes a subset-histogram on b, receiving the subset as a selection BAT"
+
+.COMMAND subhisto(BAT[oid,any::1] b, BAT[void,bit32] sel) :
+	 BAT[any,int] = bit_subhisto;
+ "computes a subset-histogram on b, receiving the subset as a bitmask"
+
+.END ddbench;
+
+@mil
+    proc group(bat[oid,any] b) : bat[oid,oid] {
+        return CTgroup(b);
+    }
+
+    proc group(bat[void,any] b) : bat[oid,oid] {
+        if (isenum(b.ttype())) {
+	    return enum_trick(b,enum_view(b));
+        }
+        return CTgroup(b);
+    }
+
+    proc group(bat[oid,any] ct, bat[oid,any] b) : bat[oid,any] {
+        return CTgroup(ct,b);
+    }
+
+    proc group(bat[void,any] ct, bat[void,any] b) : bat[oid,any] {
+        if (isenum(b.ttype()) and isenum(ct.ttype())) {
+            # condition should be more generic: thin types
+            var bn := enum_group(ct,b);
+            monet_atomtbl.insert(str(b.ttype().enum_table()),b.ttype());
+            return bn;
+        }
+        return CTgroup(ct,b);
+    }
+    
+    proc {count}(bat[any::1,any] b) : bat[any::1,int] {
+    	if (isenum(b.htype()))
+	if (enum_ishisto(b.htype(),b)) {
+    	    # always use histograms for enum creation!
+    	    return enum_table(b.htype());
+    	}
+    	return histogram(b.reverse());
+    }
+
+    proc not(bat[void,bit32] b) : bat[void,bit32] {
+        return [bit32]([not]([int](b)));
+    }
+
+    proc semijoin(bat[void,any::1] b1, bat[any,any] b2) : bat[oid,any::1] {
+	if (isenum(b2.htype()))
+	if (enum_table(b2.htype()).htype() = oid) {
+		return enum_semijoin(b1,b2);
+	}
+	return kintersect(b1,b2);
+    }
+
+    proc semijoin(bat[void,bit32] b1, bat[void,bit32] b2) : bat[void,bit32] {
+        return [bit32]([and]([int](b1),[int](b2)));
+    }
+
+    proc mjoin(bat[any::1,any::3] b1, bat[any::3,any::2] b2) : bat[any::1,any::2] {
+	return join(b1,b2);
+    }
+
+    proc mjoin(bat[any::1,void] b1, bat[any,any::2] b2) : bat[any::1,any::2] {
+	if (isenum(b2.htype()))
+	if (enum_table(b2.htype()).htype() = oid) {
+		return enum_join(b1,b2);
+	}
+	return join(b1,b2);
+    }
+
+    proc mjoin(bat[any::1,any] b1, bat[void,any::2] b2) : bat[any::1,any::2] {
+	if (isenum(b1.ttype()))
+	if (enum_table(b1.ttype()).htype() = oid) {
+		return mirror(enum_join(mirror(b2),mirror(b1)));
+	}
+	return join(b1,b2);
+    }
+
+@* Test Script
+@mil
+
+PROC test_ddbench() : void {
+    if (view_bbp_name.reverse().exist("tpe")) {
+	tpe := tpe.destroy();
+	commit;
+    }
+
+    a := new(oid,oid);
+    a.insert(2@0,nil); a.insert(2@0,nil); a.insert(2@0,nil); a.insert(2@0,nil);
+    a.insert(1@0,nil); a.insert(1@0,nil); a.insert(1@0,nil);
+    a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil);
+    a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil);
+    a.insert(3@0,nil); a.insert(3@0,nil); a.insert(3@0,nil); a.insert(3@0,nil);
+    a.insert(a.copy());
+    aa := a.mark(0@0).reverse();
+    tpe := enum_create("tpe", aa);
+    aaa := tpe.[encode](aa);
+
+    brsel := rng_bitselect(aaa, tpe.encode(1@0), tpe.encode(3@0));
+    aa.semijoin(brsel.tobat()).print();
+    aaa.bit_subhisto(brsel).print();
+    
+    bvsel := val_bitselect(aaa, tpe.encode(2@0));
+    aa.semijoin(bvsel.tobat()).print();
+    aaa.bit_subhisto(bvsel).print();
+    
+    bvvsel := val_bitselect(brsel, aaa, tpe.encode(3@0));
+    aaa.bit_subhisto(bvvsel).print();
+    
+    brrsel := rng_bitselect(brsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
+    aaa.bit_subhisto(brrsel).print();
+
+    brsel.access(BAT_WRITE);
+    rng_bitrefine(brsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
+    aaa.bit_subhisto(brsel).print();
+
+    val_bitrefine(brsel, aaa, tpe.encode(2@0));
+    aaa.bit_subhisto(brsel).print();
+
+    bvs := vals_bitselect(aaa, tpe.encode(1@0), tpe.encode(3@0)); 
+    bvs@batloop() print($t);
+
+    brs := rngs_bitselect(aaa, tpe.encode(1@0), tpe.encode(2@0), 
+                           tpe.encode(2@0), tpe.encode(3@0)); 
+    brs@batloop() print($t);
+
+    bhs := bits_subhisto(aaa, bvvsel, brsel); 
+    bhs@batloop() print($t);
+
+    orsel := rng_oidselect(aaa, tpe.encode(1@0), tpe.encode(3@0));
+    aaa.oid_subhisto(orsel).print();
+
+    ovsel := val_oidselect(aaa, tpe.encode(2@0));
+    aaa.oid_subhisto(ovsel).print();
+
+    ovvsel := val_oidselect(orsel, aaa, tpe.encode(3@0));
+    aaa.oid_subhisto(ovvsel).print();
+
+    orrsel := rng_oidselect(orsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
+    aaa.oid_subhisto(orrsel).print();
+
+    orsel.access(BAT_WRITE);
+    rng_oidrefine(orsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
+    aaa.oid_subhisto(orsel).print();
+
+    val_oidrefine(orsel, aaa, tpe.encode(2@0));
+    aaa.oid_subhisto(orsel).print();
+
+    ovs := vals_oidselect(aaa, tpe.encode(1@0), tpe.encode(3@0)); 
+    ovs@batloop() print($t);
+
+    ors := rngs_oidselect(aaa, tpe.encode(1@0), tpe.encode(2@0), 
+                           tpe.encode(2@0), tpe.encode(3@0)); 
+    ors@batloop() print($t);
+}
+
+@* Implementation 
+@c
+#include "monetdb4_config.h"
+#include <monet.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include "streams.h"
+#include "enum.proto.h"
+#include "enum.h"
+
+static size_t
+estimate(BAT *b, size_t lo, size_t hi)
+{
+	BUN p = BUNptr(b, BUNindex(b, BUNfirst(b)) + lo);
+	BUN q = BUNptr(b, BUNindex(b, BUNfirst(b)) + hi);
+	int xx = BUNsize(b);
+	size_t sum = 1;
+
+	if (p < BUNfirst(b))
+		p = BUNfirst(b);
+	if (q >= BUNlast(b))
+		q = BUNlast(b) - xx;
+
+	while (p <= q) {
+		sum += *(int *) BUNtloc(b, p);
+		p += xx;
+	}
+	return (size_t) (sum * BATMARGIN);
+}
+
+@= rng_estimate
+	estimate(map, (size_t) *(unsigned @1*) lo@2, (size_t) *(unsigned @1*) hi@2)
+@= val_estimate
+	estimate(map, (size_t) *(unsigned @1*) v@2, (size_t) *(unsigned @1*) v@2)
+@= check_bitsel
+	if (@2->htype != TYPE_void || @2->ttype != TYPE_bit32 || 
+	    @2->hseqbase != (BAThdense(@3)?@3->hseqbase:@3->halign) ||
+	    @2->halign != (@4+1) || BATcount(@2)-1 != ((@4-1)>>5))
+	{
+		GDKerror("@1: illegal bitvector\n");
+		return GDK_FAIL;
+	}
+@= check_oidsel
+	if (@2->htype != TYPE_oid) {
+		GDKerror("@1: selection head must be oids.\n");
+		return GDK_FAIL;
+	}
+	if (BUNsize(@2) != ATOMsize(@2->htype)) {
+		GDKerror("@1: selection tail must be void.\n");
+		return GDK_FAIL;
+	}
+@= check_enumbat
+	if (!enum_chktpe(@2->ttype)) {
+		GDKerror("@1: attribute tail column is not enum.\n");
+		return GDK_FAIL;
+	}
+	if (BUNsize(@2) != ATOMsize(@2->ttype)) {
+		GDKerror("@1: attribute head must be void.\n");
+		return GDK_FAIL;
+	}
+
+@+ bit32 type 
+@= atommem
+        if (!*dst) {
+                *dst = (@1 *) GDKmalloc(*len = @2);
+        } else if (*len < (int) @2) {
+                GDKfree(*dst);
+                *dst = (@1 *) GDKmalloc(*len = @2);
+        }
+@c
+extern int TYPE_bit32;
+
+int
+bit32ToStr(char **dst, int *len, int *src)
+{
+	int mask = 1;
+	str p;
+
+	@:atommem(char,33)@
+
+	if (*src == int_nil) {
+		strcpy(*dst, "nil");
+		return 3;
+	}
+	p = *dst;
+	do {
+		*p++ = (*src & mask) ? '1' : '0';
+	} while (mask <<= 1);
+	*p = 0;
+	return (int) strlen(*dst);
+}
+
+int
+bit32FromStr(char *src, int *len, int **dst)
+{
+	str p = src;
+	int res = 0, mask = 1;
+
+	@:atommem(int,sizeof(int))@
+
+	do {
+		if (*p == '1') {
+			res |= mask;
+		} else if (*p != '0') {
+			**dst = int_nil;
+			return 0;
+		}
+	} while (mask <<= 1);
+	**dst = res;
+	return (int) (p - src);
+}
+
+
+int
+bit32tobat(BAT **ret, BAT *sel)
+{
+	oid size = sel->halign - 1;
+	oid o = sel->hseqbase, last = o + size;
+	int *cur = (int *) BUNhloc(sel, BUNfirst(sel));
+	BAT *bn;
+
+	@:check_bitsel(bit32tobat,sel,sel,size)@
+
+	*ret = bn = BATnew(TYPE_oid, TYPE_void, size);
+
+	for (;;) {
+		int mask = 1, val = *cur++;
+
+		do {
+			if (val & mask)
+				BUNfastins(bn, &o, NULL);
+			if (++o >= last) {
+				BATkey(bn, TRUE);
+				return GDK_SUCCEED;
+			}
+		} while (mask <<= 1);
+	}
+}
+
+
+int
+bit32semijoin(BAT **ret, BAT *b, BAT *sel)
+{
+	int *cur = (int *) BUNhloc(sel, BUNfirst(sel));
+	BUN p = BUNfirst(b), q = BUNlast(b);
+	int xx = BUNsize(b);
+	BAT *bn;
+
+	@:check_bitsel(bit32semijoin,sel,b,BATcount(b))@
+	*ret = bn = BATnew(TYPE_oid, BATttype(b), sel->halign - 1);
+
+	for (;;) {
+		int mask = 1, val = *cur++;
+
+		do {
+			if (val & mask)
+				BUNfastins(bn, BUNhead(b, p), BUNtail(b, p));
+			if ((p += xx) >= q) {
+				bn->hsorted = BAThordered(b);
+				bn->tsorted = BATtordered(b);
+				if (b->hkey)
+					BATkey(bn, TRUE);
+				if (b->tkey)
+					BATkey(BATmirror(bn), TRUE);
+				return GDK_SUCCEED;
+			}
+		} while (mask <<= 1);
+	}
+}
+
+
+int
+bit32stats(BAT **ret, BAT *sel)
+{
+	size_t hits = 0, size = sel->halign - 1, i = size;
+	int *cur = (int *) BUNhloc(sel, BUNfirst(sel));
+
+	@:check_bitsel(bit32stats,sel,sel,size)@
+
+	for (;;) {
+		int mask = 1, val = *cur++;
+
+		do {
+			if (val & mask)
+				hits++;
+			if (--i == 0) {
+				lng v;
+
+				*ret = BATnew(TYPE_str, TYPE_lng, 4);
+				v = (lng) sel->hseqbase;
+				BUNins(*ret, "seqbase", &v, FALSE);
+				v = (lng) size;
+				BUNins(*ret, "size", &v, FALSE);
+				v = (lng) hits;
+				BUNins(*ret, "yes", &v, FALSE);
+				size -= hits;
+				v = (lng) size;
+				BUNins(*ret, "no", &v, FALSE);
+				return GDK_SUCCEED;
+			}
+		} while (mask <<= 1);
+	}
+}
+
+
+@+ enum_view
+@c
+/* COMMAND 
+ * optimized group: create an enumerated oid column that is a view on b
+ */
+typedef struct {
+	oid val;
+	int cnt;
+} histo_t;
+
+int
+enum_view(BAT **res, BAT *b)
+{
+	BAT *histo;
+	int tpe = b->ttype;
+
+	if (!enum_table(&histo, &tpe)) {
+		return GDK_FAIL;
+	}
+	if (ATOMsize(b->ttype) == 1) {
+		@:createview(char)@
+	} else {
+		@:createview(short)@
+	}
+	return GDK_SUCCEED;
+}
+
+@= createview
+{	BUN p, q;
+	size_t xx, cnt = BATcount(histo);
+	oid curoid = b->hseqbase;
+	BAT* map = BATnew(TYPE_oid, TYPE_int, cnt);
+	histo_t *dst = (histo_t*) BUNfirst(map);
+	size_t off = BUNindex(histo, BUNfirst(histo));
+
+	map->batBuns->free = cnt * sizeof(histo_t);
+	BATsetcount(map, cnt);
+	map->hsorted = map->tsorted = FALSE;
+	for(xx=0; xx<cnt; xx++) dst[xx].cnt = 0;
+
+	BATloopFast(b, p, q, xx) {
+		unsigned @1 idx = *(unsigned @1*) BUNtloc(b,p);
+		if (dst[idx].cnt == 0) {
+			dst[idx].val = curoid;  
+			dst[idx].cnt = 
+				*(int*) BUNtloc(histo,BUNptr(histo, (off+idx)));
+			if (--cnt == 0) break;
+		} curoid++;
+	} *res = map;
+}
+
+@+ enum_group
+@c	
+/* COMMAND 
+ * optimized group: use a byte-array[card(ct)*card(b)] instead of a hash
+ * table and directly create enumerated group oid-s
+ */
+
+int
+enum_group(BAT **res, BAT *ct, BAT *b)
+{
+	size_t card_b, card_c, pow_c, pow_b;
+	int log_c, log_b;
+	BAT *histo_b, *histo_ct;
+	int ctpe = ct->ttype, btpe = b->ttype;
+
+	if (!ALIGNsynced(ct, b)) {
+		GDKerror("enum_group: params must be aligned.\n");
+		return GDK_FAIL;
+	}
+	if (BAThdense(ct) == 0 || BAThdense(b) == 0) {
+		GDKerror("enum_group: params must be dense.\n");
+		return GDK_FAIL;
+	}
+	@:check_enumbat(enum_group,ct)@
+	@:check_enumbat(enum_group,b)@
+
+	enum_table(&histo_ct, &ctpe);
+	enum_table(&histo_b, &btpe);
+	card_c = BATcount(histo_ct);
+	card_b = BATcount(histo_b);
+	for (log_c = 0, pow_c = 1; pow_c < card_c; pow_c <<= 1, log_c++)
+		;
+	for (log_b = 0, pow_b = 1; pow_b < card_b; pow_b <<= 1, log_b++)
+		;
+
+	/* we shift on the maptable that is closest to a power of 2 */
+	if (pow_b * card_c < pow_c * card_b) {
+		BAT *swap_bat = ct;
+		size_t swap_card = card_c;
+
+		ct = b;
+		b = swap_bat;
+		card_c = card_b;
+		card_b = swap_card;
+		pow_c = pow_b;
+		log_c = log_b;
+	}
+
+	/* group, create histogram and result in enumtype */
+	if (card_b * pow_c < 255) {
+		if (ATOMsize(b->ttype) != 1 || ATOMsize(ct->ttype) != 1) {
+			GDKerror("enum_group: nyi: unexpected types.\n");
+			return GDK_FAIL;
+		}
+		@:enumgroup(char,char,char)@
+	} else if (card_b * pow_c > 65535) {
+		GDKerror("enum_group: overflow scenario nyi.\n");
+		return GDK_FAIL;
+	} else if (ATOMsize(b->ttype) == ATOMsize(ct->ttype)) {
+		GDKerror("enum_group: nyi: unexpected types.\n");
+		return GDK_FAIL;
+	} else if (pow_c > 255) {
+		@:enumgroup(short,char,short)@
+	} else {
+		@:enumgroup(char,short,short)@
+	}
+	ALIGNsetH(*res, ct);
+	return GDK_SUCCEED;
+}
+
+@- optimized implementation
+@T
+The below grouping algorithm exploits a limited number of grouping
+combinations by creating an 'map' of index numbers for each possible group
+that is initialized on zero. The index to the map is computed for each
+combination of group values (c,b) as c*CARD\_C + b. As an optimization,
+we take POW\_C which is the smallest power of 2 $>=$ CARD\_C, so the 
+multiplication can be implemented as a shift (LOG\_C to the right).
+
+If the map entry is 0, this is a new group. Group members are collected in 
+a histogram BAT $=>$ at the same moment we also collect the counts for
+each group. This enables us to create the result directly as an
+enumerated type. The histogram BAT serves as the lookup table for
+this enumerated type.
+
+nils are not handled properly $=>$ they are treated as normal values
+(FUTURE: we might want to have group(nil,X) = group(Y,nil) = nil).
+
+@= enumgroup
+{	BAT *bn, *histo = BATnew(TYPE_oid, TYPE_int, pow_c*card_b);
+	int new_enum_tpe, histo_entry = 0;
+	oid baseoid = b->hseqbase, lastoid = baseoid + BATcount(b);
+	char buf[128];
+
+	unsigned @1 *cp = (unsigned @1*) BUNtloc(ct,BUNfirst(ct)); 
+	unsigned @2 *bp = (unsigned @2*) BUNtloc(b,BUNfirst(b)); 
+	unsigned @3 *map = (unsigned @3*) GDKmalloc(pow_c*card_b*sizeof(@3));
+	unsigned @3 *rp;
+	oid curoid;
+	histo_t* base = (histo_t*) histo->batFirst;
+
+	/* preparation: create an histogram and use it as maptable of a new 
+         * enumtype. Create 'bn' result BAT with  this tailtype and dense head.
+         */	
+	histo->batBuns->free = BUNsize(histo)*pow_c*card_b;
+	BATsetcount(histo, pow_c*card_b);
+	sprintf(buf, "enum_%d", (int) histo->batCacheid);
+	BBPrename(histo->batCacheid, buf);	
+	enum_load(&new_enum_tpe, histo);
+	*res = bn = BATnew(TYPE_void, new_enum_tpe, BATcount(b));
+	BATseqbase(bn, baseoid);
+	rp = (unsigned @3*) BUNfirst(bn);
+	memset(map, 0, pow_c*card_b*sizeof(@3));
+
+	/* the core of the algorithm */
+	for(curoid=baseoid; curoid<lastoid; curoid++) {
+		unsigned @3* map_ptr = map + ((*bp << log_c) | *cp);
+		unsigned int grp_idx = *map_ptr; 
+
+		if (grp_idx == 0) {
+			*rp = histo_entry;
+			*map_ptr = ++histo_entry; 
+			base[histo_entry].val = curoid;
+			base[histo_entry].cnt = 1;
+		} else {
+			base[grp_idx].cnt++; 
+			*rp = grp_idx - 1;
+		}
+		cp ++; bp ++; rp++;
+	}
+
+	/* aftermath: free space and set correct boundaries on created BATs */ 
+	GDKfree(map);
+	histo->batBuns->free -= BUNsize(histo)*(pow_c*card_b - histo_entry);
+	histo->batCount -= pow_c*card_b;
+	bn->batBuns->free = sizeof(@3)*BATcount(b);
+	BATsetcount(bn, BATcount(b));
+	histo->tsorted = bn->tsorted = 0;
+	enum_sethisto(&new_enum_tpe, BATmirror(bn));
+}
+
+@+ fetch-joins on enumerated oids.
+@c
+@:enum_fetch(enum_join,t)@
+@:enum_fetch(enum_semijoin,h)@
+
+@= enum_fetch
+int @1( BAT** res, BAT* b1, BAT* b2){
+	BAT *map, *bn = BATnew(TYPE_oid, b1->ttype, BATcount(b2));
+	ssize_t off1;
+	size_t off2;
+	int xx = b2->htype;
+	BUN p, q;
+
+	if (!BAT@2dense(b1)) {
+		GDKerror("@1: first param not BAT@2dense.\n");
+		return GDK_FAIL;
+	}	
+	if ((!enum_table(&map, (int*) &xx)) || map->htype != TYPE_oid) {
+		GDKerror("@1: head of second BAT should be enumerated oid.\n");
+		return GDK_FAIL;
+	}
+	off1 = (ssize_t) (BUNindex(b1, BUNfirst(b1)) - b1->hseqbase);
+	off2 = BUNindex(map, BUNfirst(map));
+	if (ATOMsize(b2->htype) == 1) {
+		@:@1(char)@
+	} else if (ATOMsize(b2->htype) == 2) {
+		@:@1(short)@
+	}
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+@= enum_join
+	BATloopFast(b2, p, q, xx) {
+		unsigned @1 *cur = (unsigned @1*) BUNtloc(b2,p);
+		oid *o = (oid*) BUNhloc(map, BUNptr(map, off2 + *cur));
+		BUN r = BUNptr(b1, off1 + *o);
+		BUNfastins(bn, BUNhead(b1,r), BUNtail(b2,p));
+	}
+	bn->hsorted = (BAThordered(b2)&BAThordered(map)&1)?BAThordered(b1):0;
+	bn->tsorted = BATtordered(b2);
+@= enum_semijoin
+	BATloopFast(b2, p, q, xx) {
+		unsigned @1 *cur = (unsigned @1*) BUNhloc(b2,p);
+		oid *o = (oid*) BUNhloc(map, BUNptr(map, off2 + *cur));
+		BUN r = BUNptr(b1, off1 + *o);
+		BUNfastins(bn, o, BUNtail(b1,r));
+	}
+	bn->hsorted = BAThordered(map)?BAThordered(b2):0;
+	bn->tsorted = (BAThordered(b2)&BAThordered(map)&1)?BATtordered(b1):0;
+
+@+ Bitvector Equi-Select and Range-Select 
+Here we use the fact that memory on modern hardware is fetched (at least)
+by the 32-bits. So when selecting on 1-byte dense arrays, we can process
+4 bytes at a time (2 for 2-byte arrays). Big endian hardware causes
+some headaches here as the bytes appear out of order. The shift
+direction is also inverse. All that is handled by the below macros:
+@c
+#ifndef WORDS_BIGENDIAN
+#define SHIFT(x,b)	 x <<= b
+
+#define CHR01 0x00000001
+#define CHR02 0x00000002
+#define CHR03 0x00000004
+#define CHR04 0x00000008
+#define CHR05 0x00000010
+#define CHR06 0x00000020
+#define CHR07 0x00000040
+#define CHR08 0x00000080
+#define CHR09 0x00000100
+#define CHR10 0x00000200
+#define CHR11 0x00000400
+#define CHR12 0x00000800
+#define CHR13 0x00001000
+#define CHR14 0x00002000
+#define CHR15 0x00004000
+#define CHR16 0x00008000
+#define CHR17 0x00010000
+#define CHR18 0x00020000
+#define CHR19 0x00040000
+#define CHR20 0x00080000
+#define CHR21 0x00100000
+#define CHR22 0x00200000
+#define CHR23 0x00400000
+#define CHR24 0x00800000
+#define CHR25 0x01000000
+#define CHR26 0x02000000
+#define CHR27 0x04000000
+#define CHR28 0x08000000
+#define CHR29 0x10000000
+#define CHR30 0x20000000
+#define CHR31 0x40000000
+#define CHR32 0x80000000
+
+#define SHT01 0x00000001
+#define SHT02 0x00000002
+#define SHT03 0x00000004
+#define SHT04 0x00000008
+#define SHT05 0x00000010
+#define SHT06 0x00000020
+#define SHT07 0x00000040
+#define SHT08 0x00000080
+#define SHT09 0x00000100
+#define SHT10 0x00000200
+#define SHT11 0x00000400
+#define SHT12 0x00000800
+#define SHT13 0x00001000
+#define SHT14 0x00002000
+#define SHT15 0x00004000
+#define SHT16 0x00008000
+#define SHT17 0x00010000
+#define SHT18 0x00020000
+#define SHT19 0x00040000
+#define SHT20 0x00080000
+#define SHT21 0x00100000
+#define SHT22 0x00200000
+#define SHT23 0x00400000
+#define SHT24 0x00800000
+#define SHT25 0x01000000
+#define SHT26 0x02000000
+#define SHT27 0x04000000
+#define SHT28 0x08000000
+#define SHT29 0x10000000
+#define SHT30 0x20000000
+#define SHT31 0x40000000
+#define SHT32 0x80000000
+#else
+#define SHIFT(x,b)	 x >>= b
+
+#define CHR01 0x00000008
+#define CHR02 0x00000004
+#define CHR03 0x00000002
+#define CHR04 0x00000001
+#define CHR05 0x00000080
+#define CHR06 0x00000040
+#define CHR07 0x00000020
+#define CHR08 0x00000010
+#define CHR09 0x00000800
+#define CHR10 0x00000400
+#define CHR11 0x00000200
+#define CHR12 0x00000100
+#define CHR13 0x00008000
+#define CHR14 0x00004000
+#define CHR15 0x00002000
+#define CHR16 0x00001000
+#define CHR17 0x00080000
+#define CHR18 0x00040000
+#define CHR19 0x00020000
+#define CHR20 0x00010000
+#define CHR21 0x00800000
+#define CHR22 0x00400000
+#define CHR23 0x00200000
+#define CHR24 0x00100000
+#define CHR25 0x08000000
+#define CHR26 0x04000000
+#define CHR27 0x02000000
+#define CHR28 0x01000000
+#define CHR29 0x80000000
+#define CHR30 0x40000000
+#define CHR31 0x20000000
+#define CHR32 0x10000000
+
+#define SHT01 0x00000002
+#define SHT02 0x00000001
+#define SHT03 0x00000008
+#define SHT04 0x00000004
+#define SHT05 0x00000020
+#define SHT06 0x00000010
+#define SHT07 0x00000080
+#define SHT08 0x00000040
+#define SHT09 0x00000200
+#define SHT10 0x00000100
+#define SHT11 0x00000800
+#define SHT12 0x00000400
+#define SHT13 0x00002000
+#define SHT14 0x00001000
+#define SHT15 0x00008000
+#define SHT16 0x00004000
+#define SHT17 0x00020000
+#define SHT18 0x00010000
+#define SHT19 0x00080000
+#define SHT20 0x00040000
+#define SHT21 0x00200000
+#define SHT22 0x00100000
+#define SHT23 0x00800000
+#define SHT24 0x00400000
+#define SHT25 0x02000000
+#define SHT26 0x01000000
+#define SHT27 0x08000000
+#define SHT28 0x04000000
+#define SHT29 0x20000000
+#define SHT30 0x10000000
+#define SHT31 0x80000000
+#define SHT32 0x40000000
+#endif
+
+#define NEXTrefine	submask = *(sub++);
+#define NEXTnormal
+
+#define multiplex 	for(i=0;i<argc;i++)
+
+/* COMMAND 
+ * do a range-scan equiselect, but output the result as a bitmask, paritioned
+ * in 32-bits integers. The head-oids are densly incremental from from 0@0
+ */
+int
+val_bitselect(BAT **res, BAT *b, ptr v)
+{
+	int *dst, val;
+	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+	int vector = 0;
+
+	@:bitselect(normal,val)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+@c
+/* COMMAND 
+ * do a range-scan rangeselect, but output the result as a bitmask, paritioned
+ * in 32-bits integers. The head-oids are densly incremental from from 0@0
+ */
+int
+rng_bitselect(BAT **res, BAT *b, ptr lo, ptr hi)
+{
+	int *dst, low, high;
+	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+	int vector = 0;
+
+	@:bitselect(normal,rng)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+
+/* COMMAND 
+ * do a bitselect on the subset indicated by the first BAT param
+ */
+int
+val_bitsubsel(BAT **res, BAT *sel, BAT *b, ptr v)
+{
+	int *sub = (int *) BUNfirst(sel);
+	int *dst, val, submask;
+	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+	int vector = 0;
+
+	@:check_bitsel(val_bitsubsel,sel,b,BATcount(b))@
+	bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+	@:bitselect(refine,val)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a bitselect on the subset indicated by the first BAT param
+ */
+int
+rng_bitsubsel(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
+{
+	int *sub = (int *) BUNfirst(sel);
+	int *dst, low, high, submask;
+	int vector = 0;
+	BAT *bn;
+
+	@:check_bitsel(rng_bitsubsel,sel,b,BATcount(b))@
+	bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+	@:bitselect(refine,rng)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a bitselect on the subset indicated by the first BAT param
+ */
+int
+val_bitrefine(BAT **res, BAT *sel, BAT *b, ptr v)
+{
+	int *sub = (int *) BUNfirst(sel);
+	int *dst, val, submask;
+	BAT *bn = sel;
+	int vector = 0;
+
+	ALIGNdel(sel, "val_oidrefine", FALSE);
+	@:check_bitsel(val_bitrefine,sel,b,BATcount(b))@
+	@:bitselect(refine,val)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a bitselect on the subset indicated by the first BAT param
+ */
+int
+rng_bitrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
+{
+	int *sub = (int *) BUNfirst(sel);
+	int *dst, low, high, submask;
+	BAT *bn = sel;
+	int vector = 0;
+
+	ALIGNdel(sel, "val_oidrefine", FALSE);
+	@:check_bitsel(rng_bitrefine,sel,b,BATcount(b))@
+	@:bitselect(refine,rng)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a range-scan equiselect, but output the result as a bitmask, 
+ * partitioned  in 32-bits integers. 
+ */
+int
+vals_bitselect(BAT **res, BAT *b, ...)
+{
+	int *v[MAXPARAMS], val[MAXPARAMS];
+	int vector[MAXPARAMS], *dst[MAXPARAMS], i, argc;
+	BAT *bn[MAXPARAMS];
+	va_list ap;
+
+	va_start(ap, b);
+	for (argc = 0; TRUE; argc++) {
+		v[argc] = va_arg(ap, int *);
+
+		if (v[argc] == NULL)
+			break;
+		bn[argc] = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+		vector[argc] = 0;
+	}
+	va_end(ap);
+
+	@:bitselect(normal,val,multiplex,[i])@
+
+	*res = BATnew(TYPE_int, TYPE_bat, argc);
+	for (i = 0; i < argc; i++)
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a range-scan rangeselect, but output the result as a bitmask, 
+ * partitioned in 32-bits integers.
+ */
+int
+rngs_bitselect(BAT **res, BAT *b, ...)
+{
+	int *lo[MAXPARAMS], *hi[MAXPARAMS], low[MAXPARAMS], high[MAXPARAMS];
+	int *dst[MAXPARAMS], vector[MAXPARAMS], i, argc;
+	BAT *bn[MAXPARAMS];
+	va_list ap;
+
+	va_start(ap, b);
+	for (argc = 0; TRUE; argc++) {
+		lo[argc] = va_arg(ap, int *);
+
+		if (lo[argc] == NULL)
+			break;
+		hi[argc] = va_arg(ap, int *);
+
+		bn[argc] = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+		vector[argc] = 0;
+	}
+	va_end(ap);
+
+	@:bitselect(normal,rng,multiplex,[i])@
+
+	*res = BATnew(TYPE_int, TYPE_bat, argc);
+	for (i = 0; i < argc; i++)
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
+	return GDK_SUCCEED;
+}
+
+
+@- optimized bit32 select/refine implementations
+@T
+The creation of the destination submask, of which each integer
+contains 32 answers (yes or no selected) is sped up by loop
+unrolling these 32 tests. If the attribute type being
+examined is chr, this converts 4 character memory reads
+into 1 integer read plus 3 shifts and ANDs. It also avoids
+shifting the test-mask and checking wheter its bit should cross
+from left to right (bit 31 shifts into bit 0). Finally, it 
+streamlines the result collection, which comes down to 1 integer 
+memory write per 32 processed tuples.
+
+The 32-tuple-at-a-time optimization is made only when the
+head column is void and the attribute type is either a 1-byte 
+or 2-byte intege. If not, a generic ADT-call interface is used.
+This loop is also used to process remaining tuples that did not 
+fit into a 32-at-a-time roundup.
+
+This select may be done either on all tuples, or as a subselection 
+on an already existing bitmask. This is controlled with the 
+first parameter:
+\begin{itemize}
+\item sel: select on all values
+\item sub: refine using the already existing mask 'sel'
+\end{itemize}
+
+The second parameter to the 'bitselect' macro is:
+\begin{itemize}
+\item val: equi-select on a single value 'v'
+\item rng: range-select between 'lo' and 'hi'
+\end{itemize}
+
+The third and fourth parameters are optional. In the
+standard cases they are empty. In the case in which multiple
+results should be computed in one scan, the third parameter is 
+the multiplier-statement {\small\tt for(i=0;i$<$argc;i++)} and 
+the fourth param is the array-index operator({\small\tt \[i\]}).
+
+@= bitselect
+{	BUN p = BUNfirst(b), q = BUNlast(b);
+	GDKfcn cmp = BATatoms[b->ttype].atomCmp;
+	int mask = 1, xx = BUNsize(b);
+	oid stamp;
+
+	@3 {
+		dst@4 = (int*) BUNfirst(bn@4);
+		vector@4 = 0;
+	}
+
+	/* optimized versions are only tried if there is no head column to care
+           about and the start of the values in the BAT is integer-aligned */
+	if (BUNsize(b) == ATOMsize(b->ttype) && (((size_t) p)&3) == 0) {
+		if (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte) {
+			int *src = (int*) p;
+			/* treat 32 tuples = 32 (=2^5) bytes per iteration */
+			int *end = src + (((q-p) >> 5) << 3); 
+
+			@3 @:INIT@2(unsigned char,@4)@
+
+			while(src < end) {
+				/* silly code spelled out to make SPARC feel good */
+				int cur = src[0];
+				NEXT@1
+				@3 @:BIT@1(TST@2,cur&255,CHR01,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR02,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR03,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR04,@4)@ cur = src[1]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR05,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR06,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR07,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR08,@4)@ cur = src[2]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR09,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR10,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR11,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR12,@4)@ cur = src[3]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR13,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR14,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR15,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR16,@4)@ cur = src[4]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR17,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR18,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR19,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR20,@4)@ cur = src[5]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR21,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR22,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR23,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR24,@4)@ cur = src[6]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR25,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR26,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR27,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR28,@4)@ cur = src[7]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR29,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR30,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR31,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR32,@4)@ src += 8;
+				@3 { *dst@4++ = vector@4; vector@4 = 0; } 
+			}
+			p = (BUN) end;
+		} else if (ATOMstorage(b->ttype) == TYPE_sht) {
+			int *src = (int*) p;
+			/* treat 32 tuples = 32*2 = 64 (=2^6) bytes per iteration */
+			int *end = src + (((q-p) >> 6) << 4);
+
+			@3 @:INIT@2(unsigned short,@4)@
+
+			while(src < end) {
+				int cur = src[0];
+				/* silly code spelled out to make SPARC feel good */
+				NEXT@1
+				@3 @:BIT@1(TST@2,cur&65535,SHT01,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT02,@4)@ cur = src[1];
+				@3 @:BIT@1(TST@2,cur&65535,SHT03,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT04,@4)@ cur = src[2];
+				@3 @:BIT@1(TST@2,cur&65535,SHT05,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT06,@4)@ cur = src[3];
+				@3 @:BIT@1(TST@2,cur&65535,SHT07,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT08,@4)@ cur = src[4];
+				@3 @:BIT@1(TST@2,cur&65535,SHT09,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT10,@4)@ cur = src[5];
+				@3 @:BIT@1(TST@2,cur&65535,SHT11,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT12,@4)@ cur = src[6];
+				@3 @:BIT@1(TST@2,cur&65535,SHT13,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT14,@4)@ cur = src[7];
+				@3 @:BIT@1(TST@2,cur&65535,SHT15,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT16,@4)@ cur = src[8];
+				@3 @:BIT@1(TST@2,cur&65535,SHT17,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT18,@4)@ cur = src[9];
+				@3 @:BIT@1(TST@2,cur&65535,SHT19,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT20,@4)@ cur = src[10];
+				@3 @:BIT@1(TST@2,cur&65535,SHT21,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT22,@4)@ cur = src[11];
+				@3 @:BIT@1(TST@2,cur&65535,SHT23,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT24,@4)@ cur = src[12];
+				@3 @:BIT@1(TST@2,cur&65535,SHT25,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT26,@4)@ cur = src[13];
+				@3 @:BIT@1(TST@2,cur&65535,SHT27,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT28,@4)@ cur = src[14];
+				@3 @:BIT@1(TST@2,cur&65535,SHT29,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT30,@4)@ cur = src[15];
+				@3 @:BIT@1(TST@2,cur&65535,SHT31,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT32,@4)@ src += 16;
+				@3 { *dst@4++ = vector@4; vector@4 = 0; } 
+			}
+			p = (BUN) end;
+		}
+	}
+
+	/* process any tuples left with a slower (generic) implementation */
+	@3 {
+		bn@4->batBuns->free = ((char*) dst@4) - bn@4->batBuns->base; 
+		BATsetcount(bn@4, bn@4->batBuns->free/BUNsize(bn@4));
+		bn@4->tsorted = 0;
+		bn@4->batDirty = 1;
+	}
+	if (p < q) {
+	    NEXT@1
+	    while(p < q) {
+		@3 @:BIT@1(CALL@2,BUNtail(b,p),mask,@4)@
+		mask <<= 1; 
+		if (mask == 0) {
+			@3 {
+				BUNfastins(bn@4, NULL, &vector@4);
+				vector@4=0; 
+				NEXT@1
+			} mask = 1; 
+		}
+		p += xx;
+  	    }
+	}   
+	if (mask != 1) {
+		@3 BUNfastins(bn@4, NULL, &vector@4);
+	}
+	/* we put a stamp in the seqbase of the result. This stamp
+         * relates the selection to the BAT from which it was derived. 
+	 */
+	if (BAThdense(b)) {
+		stamp = b->hseqbase;
+	} else {
+		if (b->halign == 0) {
+			b->halign = OIDnew(1);
+			b->batDirtydesc = TRUE;
+		}
+		stamp = b->halign;
+	}
+
+        /* The size (in bits) of the bitvector is stored in the 
+         * halign -- incremented with 1 to avoid the 0 value 
+	 */
+	@3 {
+		bn@4->halign = 1 + BATcount(b);
+		BATseqbase(bn@4, stamp);
+	}
+}
+@= BITnormal
+	if (@:@1(@2,@4)@) vector@4 |= @3;
+@= BITrefine
+	if (submask&@3 && @:@1(@2,@4)@) vector@4 |= @3;
+@= INITval
+	val@2 = *(@1*) (v@2);
+@= INITrng
+	{ low@2 = *(@1*) (lo@2); high@2 = *(@1*) (hi@2); }
+@= TSTval
+	(@1) == val@2
+@= TSTrng
+        (@1) >= low@2 && (@1) <= high@2
+@= CALLval
+	(*cmp)(@1, v@2) == 0
+@= CALLrng
+	(*cmp)(@1, lo@2) >= 0 && (*cmp)(@1,hi@2) <= 0
+
+@+ OID (Sub)Selections
+@c
+/* COMMAND 
+ * do a equi-select
+ */
+int
+val_oidselect(BAT **res, BAT *b, ptr v)
+{
+	oid *dst, *last = 0;
+	int val;
+	BAT *bn;
+
+	(void) last;
+	@:oidselect(val)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+@c
+/* COMMAND 
+ * do a range-select
+ */
+int
+rng_oidselect(BAT **res, BAT *b, ptr lo, ptr hi)
+{
+	oid *dst, *last = 0;
+	int low, high;
+	BAT *bn;
+
+	(void) last;
+	@:oidselect(rng)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+
+/* COMMAND 
+ * do a equi-select on multiple values, yielding multiple BAT results.
+ */
+int
+vals_oidselect(BAT **res, BAT *b, ...)
+{
+	int *v[MAXPARAMS], val[MAXPARAMS], i, argc;
+	oid *dst[MAXPARAMS], *last[MAXPARAMS];
+	BAT *bn[MAXPARAMS];
+	va_list ap;
+
+	va_start(ap, b);
+	last[0] = 0;
+	(void) last[0];
+	for (argc = 0; TRUE; argc++) {
+		v[argc] = va_arg(ap, int *);
+
+		if (v[argc] == NULL)
+			break;
+	}
+	va_end(ap);
+	@:oidselect(val,multiplex,[i])@
+
+	*res = BATnew(TYPE_int, TYPE_bat, argc);
+	for (i = 0; i < argc; i++)
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a range-select on multiple range predicates yielding multiple BAT results.
+ */
+int
+rngs_oidselect(BAT **res, BAT *b, ...)
+{
+	int *lo[MAXPARAMS], *hi[MAXPARAMS], low[MAXPARAMS], high[MAXPARAMS];
+	oid *dst[MAXPARAMS], *last[MAXPARAMS];
+	BAT *bn[MAXPARAMS];
+	int i, argc;
+	va_list ap;
+
+	va_start(ap, b);
+	last[0] = 0;
+	(void) last[0];
+	for (argc = 0; TRUE; argc++) {
+		lo[argc] = va_arg(ap, int *);
+
+		if (lo[argc] == NULL)
+			break;
+		hi[argc] = va_arg(ap, int *);
+	}
+	va_end(ap);
+
+	@:oidselect(rng,multiplex,[i])@
+
+	*res = BATnew(TYPE_int, TYPE_bat, argc);
+	for (i = 0; i < argc; i++)
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
+	return GDK_SUCCEED;
+}
+
+@- optimized oid-select implementation
+
+@= oidselect
+{	int tpe=b->ttype;
+	BAT *map;
+
+	if (!enum_chktpe(b->ttype)) {
+		GDKerror("oidselect: attribute tail column is not enum.\n");
+		return GDK_FAIL;
+	}
+	enum_table(&map, &tpe);
+	/* if (BUNsize(b) == ATOMsize(b->ttype)) { 
+		if (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte) {
+			@:oidsel(@1,@2,@3,char,1)@
+		} else if (ATOMstorage(b->ttype) == TYPE_sht) {
+			@:oidsel(@1,@2,@3,short,2)@
+		}
+	} else */ if (BAThdense(b) && (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte)) {
+		int bs = BUNsize(b);
+		@:oidsel(@1,@2,@3,char,bs)@
+	} else if (BAThdense(b) && ATOMstorage(b->ttype) == TYPE_sht) {
+		int bs = BUNsize(b);
+		@:oidsel(@1,@2,@3,short,bs)@
+	} else {
+		GDKerror("oidselect: case nyi.\n");
+		return GDK_FAIL;
+	}
+}
+
+@= oidsel
+	BUN cur = BUNtloc(b,BUNfirst(b));
+	BUN end = BUNtloc(b,BUNlast(b));
+
+	oid o = b->hseqbase;
+	@2 {	
+		size_t size_estimate = @:@1_estimate(@4,@3)@;
+		bn@3 = BATnew(TYPE_oid,TYPE_void,size_estimate);
+		dst@3 = (oid*) BUNfirst(bn@3);
+		last@3 = (oid*) (bn@3->batBuns->base + bn@3->batBuns->size);
+	}
+	@2 @:INIT@1(unsigned @4,@3)@
+
+#if (defined(IRIX) && SIZEOF_LONG==8 && !defined (__GNUC__))
+	@:prefetch@2(@1,@4,@5)@
+#endif
+	while(cur < end) {
+		@2 if (@:TST@1(*(unsigned @4*) cur,@3)@) {
+			*(dst@3++) = o;
+		} cur += @5; o++;
+	}
+	@2 {
+		bn@3->batBuns->free = ((char*) dst@3) - bn@3->batBuns->base;
+		BATsetcount(bn@3, bn@3->batBuns->free/BUNsize(bn@3));
+		bn@3->hkey = BATmirror(bn@3)->tkey = b->hkey;
+		bn@3->hsorted = BAThordered(b) && ((GDKdebug&786432)==0);
+		bn@3->batDirty = 1;
+	}
+
+@= prefetch_select
+#pragma ivdep 
+	while(cur < end) {
+#pragma prefetch_ref=cur[@4],stride=@5,kind=rd,size=4
+		if (@:TST@1(*(unsigned @2*) cur)@) {
+			*(dst++) = o;
+		} cur += @3; o++;
+	}
+@= prefetchmultiplex
+@= prefetch
+if (@3 < 128 && GDKdebug&1048576)
+if ((GDKdebug&786432)==262144) {
+	int d0 = @3*32;
+	BUN endK = end - 2*d0;
+	while(cur < endK) {
+	    oid ol = o+32;
+#pragma ivdep 
+#pragma prefetch_ref=cur[128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d0+128],stride=32,kind=rd,size=4
+	    while(o < ol) {
+		int t0 = (@:TST@1(*(unsigned @2*)(cur+0))@);
+		int t1 = (@:TST@1(*(unsigned @2*)(cur+d0))@);
+		if (t0) *(dst++) = o;
+		if (t1) *(dst++) = o+32;
+		cur += @3; o++;
+	    }
+	    cur += d0; o += 32;
+	}
+} else if ((GDKdebug&786432)==524288) {
+	int d0 = @3*32, d1=d0+d0, d2=d1+d0;
+	BUN endK = end - 4*d0;
+	while(cur < endK) {
+	    oid ol = o+32;
+#pragma ivdep 
+#pragma prefetch_ref=cur[128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d0+128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d1+128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d2+128],stride=32,kind=rd,size=4
+	    while(o < ol) {
+		int t0 = (@:TST@1(*(unsigned @2*)(cur+0))@);
+		int t1 = (@:TST@1(*(unsigned @2*)(cur+d0))@);
+		int t2 = (@:TST@1(*(unsigned @2*)(cur+d1))@);
+		int t3 = (@:TST@1(*(unsigned @2*)(cur+d2))@);
+		if (t0) *(dst++) = o;
+		if (t1) *(dst++) = o+32;
+		if (t2) *(dst++) = o+64;
+		if (t3) *(dst++) = o+96;
+		cur += @3; o++;
+	    }
+	    cur += d2; o += 128;
+	}
+} else if ((GDKdebug&786432)==786432) {
+	int d0 = @3*32, d1=d0+d0, d2=d1+d0, d3=d2+d0, d4=d3+d0;
+	BUN endK = end - 6*d0;
+	while(cur < endK) {
+	    oid ol = o+32;
+#pragma ivdep 
+#pragma prefetch_ref=cur[128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d0+128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d1+128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d2+128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d3+128],stride=32,kind=rd,size=4
+#pragma prefetch_ref=cur[d4+128],stride=32,kind=rd,size=4
+	    while(o < ol) {
+		int t0 = (@:TST@1(*(unsigned @2*)(cur+0))@);
+		int t1 = (@:TST@1(*(unsigned @2*)(cur+d0))@);
+		int t2 = (@:TST@1(*(unsigned @2*)(cur+d1))@);
+		int t3 = (@:TST@1(*(unsigned @2*)(cur+d2))@);
+		int t4 = (@:TST@1(*(unsigned @2*)(cur+d3))@);
+		int t5 = (@:TST@1(*(unsigned @2*)(cur+d4))@);
+		if (t0) *(dst++) = o;
+		if (t1) *(dst++) = o+32;
+		if (t2) *(dst++) = o+64;
+		if (t3) *(dst++) = o+96;
+		if (t4) *(dst++) = o+128;
+		if (t5) *(dst++) = o+160;
+		cur += @3; o++;
+	    } 
+	    cur += d4; o += 160;
+	}
+} else if (@3 >= 64) { 
+	@:prefetch_select(@1,@2,@3,256,1)@
+} else if (@3 >= 32) { 
+	@:prefetch_select(@1,@2,@3,128,1)@
+} else if (@3 >= 16) { 
+	@:prefetch_select(@1,@2,@3,128,2)@
+} else if (@3 >= 8) { 
+	@:prefetch_select(@1,@2,@3,128,4)@
+} else if (@3 >= 4) { 
+	@:prefetch_select(@1,@2,@3,128,8)@
+} else if (@3 >= 2) { 
+	@:prefetch_select(@1,@2,@3,128,16)@
+} else {  
+	@:prefetch_select(@1,@2,@3,128,32)@
+}
+
+@= checkdstFALSE
+@= checkdstTRUE
+	if (dst@1 >= last@1) {
+		ssize_t off = ((char*) dst@1) - BUNfirst(bn@1);
+		bn@1->batBuns->free = bn@1->batBuns->size;
+		BATsetcount(bn@1, bn@1->batBuns->free/BUNsize(bn@1));
+		if (BATextend(bn@1, BATgrows(bn@1)) == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL; 
+		}
+		dst@1 = (oid*) (BUNfirst(bn@1) + off);
+		last@1 = (oid*) (bn@1->batBuns->base + bn@1->batBuns->size);
+	}
+
+@c
+/* COMMAND 
+ * do a bitselect on the subset indicated by the first BAT param
+ */
+int
+val_oidsubsel(BAT **res, BAT *sel, BAT *b, ptr v)
+{
+	oid *dst = NULL, *last;
+	int val;
+	BAT *bn = NULL;
+
+	@:check_oidsel(val_oidrefine,sel)@
+	@:oidrefine(val,TRUE)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a bitselect on the subset indicated by the first BAT param
+ */
+int
+rng_oidsubsel(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
+{
+	int low, high;
+	oid *dst = NULL, *last;
+	BAT *bn = NULL;
+
+	@:check_oidsel(rng_oidrefine,sel)@
+	@:oidrefine(rng,TRUE)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a bitselect on the subset indicated by the first BAT param
+ */
+int
+val_oidrefine(BAT **res, BAT *sel, BAT *b, ptr v)
+{
+	oid *dst = NULL, *last = 0;
+	int val;
+	BAT *bn = NULL;
+
+	(void) last;
+	ALIGNdel(sel, "val_oidrefine", FALSE);
+	@:check_oidsel(val_oidrefine,sel)@
+	@:oidrefine(val,FALSE)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+/* COMMAND 
+ * do a bitselect on the subset indicated by the first BAT param
+ */
+int
+rng_oidrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
+{
+	int low, high;
+	oid *dst = NULL, *last = 0;
+	BAT *bn = NULL;
+
+	(void) last;
+	ALIGNdel(sel, "val_oidrefine", FALSE);
+	@:check_oidsel(rng_oidrefine,sel)@
+	@:oidrefine(rng,FALSE)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+
+@- optimized oid-refine implementation
+
+@= oidrefine
+{	oid *cur = (oid*) BUNfirst(sel);
+	oid *end = (oid*) BUNlast(sel);
+	oid base = b->hseqbase;
+	int tpe=b->ttype;
+	BAT *map;
+
+	@:check_oidsel(subsel_oid,sel)@
+	@:check_enumbat(subsel_oid,b)@
+	enum_table(&map, &tpe);
+
+	if (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte) {
+		@:oidref(@1,@2,char)@
+	} else if (ATOMstorage(b->ttype) == TYPE_sht) {
+		@:oidref(@1,@2,short)@
+	}
+	bn->batBuns->free = ((char*) dst) - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	bn->hsorted = BAThordered(b) && BAThordered(sel);
+	bn->hkey = BATmirror(bn)->tkey = b->hkey && sel->hkey;
+	bn->batDirty = 1;
+}
+@= oidref
+	unsigned @3 *src = (unsigned @3*) BUNfirst(b);
+	size_t size_estimate = (size_t) (@:@1_estimate(@3)@ * ((float) BATcount(sel)/(float) BATcount(b)));
+	if (@2) {
+		bn = BATnew(TYPE_oid,TYPE_void,size_estimate);
+	} else {
+		bn = sel;
+	}
+	dst = (oid*) BUNfirst(bn);
+	last = (oid*) (bn->batBuns->base + bn->batBuns->size);
+
+	@:INIT@1(unsigned @3)@
+	while(cur < end) {
+		size_t idx = *cur - base;
+		if (@:TST@1(src[idx])@) {
+			@:checkdst@2@
+			*(dst++) = *cur; 
+		} cur ++;
+	}
+
+@+ Sub-Histogram Calculation
+@c
+/* COMMAND sel_histo
+ * computes a subset-histogram on b, receiving the subset as a selection BAT
+ */
+int
+oid_subhisto(BAT **res, BAT *b, BAT *sel)
+{
+	oid *cur = (oid *) BUNhloc(sel, BUNfirst(sel));
+	int *cnt;
+	BAT *bn = NULL;
+
+	@:subhisto(oid)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+
+/* COMMAND 
+ * computes a subset-histogram on b, receiving the subset as a bitmask
+ */
+int
+bit_subhisto(BAT **res, BAT *b, BAT *sel)
+{
+	int *cur = (int *) BUNhloc(sel, BUNfirst(sel));
+	int *cnt;
+	BAT *bn = NULL;
+
+	@:subhisto(bit)@
+
+	*res = bn;
+	return GDK_SUCCEED;
+}
+
+/* basically the same implementation, but now we produce multiple histograms 
+   at the same time */
+int
+bits_subhisto(BAT **res, BAT *b, ...)
+{
+	int *cur[MAXPARAMS], *cnt[MAXPARAMS], i, argc;
+	BAT *bn[MAXPARAMS], *sel[MAXPARAMS];
+	va_list ap;
+
+	va_start(ap, b);
+	for (argc = 0; TRUE; argc++) {
+		sel[argc] = va_arg(ap, BAT *);
+
+		if (sel[argc] == NULL)
+			break;
+		cur[argc] = (int *) BUNfirst(sel[argc]);
+	}
+	va_end(ap);
+
+	@:subhisto(bit,multiplex,[i])@
+
+	*res = BATnew(TYPE_int, TYPE_bat, argc);
+	for (i = 0; i < argc; i++)
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
+	return GDK_SUCCEED;
+}
+
+@- optimized sub-histogram implementation
+
+@= subhisto
+{	int xx = b->ttype, *yy;
+	BAT *map;
+	BUN p,q;
+
+	@2 @:check_@1sel(@1_subhisto,sel@3,b,BATcount(b))@
+	@:check_enumbat(@1_subhisto,b)@
+
+	/* initialization */
+	enum_table(&map, &xx);
+	@2 {
+		size_t xx = BATcount(map);
+		cnt@3 = (int*) GDKmalloc(xx<<2);
+		for(yy=cnt@3; xx--; yy++) *yy = 0;
+	}
+
+	/* the algorithm */
+	if (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte) {
+		@:@1_subhisto(char,@2,@3)@
+		@:end_subhisto(char,@2,@3)@
+	} else if (ATOMstorage(b->ttype) == TYPE_sht) {
+		@:@1_subhisto(short,@2,@3)@
+		@:end_subhisto(short,@2,@3)@
+	}
+}
+@= bit_subhisto
+        size_t n = BATcount(b);
+        unsigned @1 *src = (unsigned @1*) BUNfirst(b);
+        unsigned @1 *end = src + ((n >> 5) << 5);
+        size_t mask = 1;
+ 
+        while(src < end) {
+                while(mask) {
+                        @2 if ((*cur@3)&mask) cnt@3[*src]++; /* ABR&ABW */
+                        mask <<= 1; src++;
+                }
+                mask = 1; @2 cur@3++;
+        }
+        n = (size_t) 1 << (n&31);
+        while(mask != n) {
+                @2 if ((*cur@3)&mask) cnt@3[*src]++;
+                mask <<= 1; src++;
+        }
+@= oid_subhisto
+        unsigned @1 *base = (unsigned @1*) BUNfirst(b);
+        oid *end = (oid*) BUNlast(sel);
+        oid off = b->hseqbase;
+        while(cur < end) {
+                unsigned @1 idx = base[*(cur++)-off]; 
+                cnt[idx]++; 
+        } 
+@= end_subhisto
+        @2 {
+                bn@3 = BATnew(map->htype, TYPE_int, BATcount(map));
+                yy = cnt@3;
+                BATloopFast(map, p, q, xx) {
+                        if (*yy) BUNfastins(bn@3, BUNhead(map,p), yy);
+                        yy++;
+                }
+		bn@3->hsorted = BAThordered(map);
+		bn@3->tsorted = FALSE;
+		bn@3->hkey = BATmirror(bn@3)->tkey = TRUE;
+                GDKfree(cnt@3);
+        }
+

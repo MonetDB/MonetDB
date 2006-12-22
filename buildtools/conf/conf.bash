@@ -14,11 +14,6 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-#
-# ! this file should be kept identical in                                                         !
-# ! MonetDB, template, sql, pathfinder,  xml, pruning, playpen, times100, misq, gis, acoi, monet5 !
-#
-
 # In the following, ${what} is one of monet, sql, xml, acoi. 
 # It is automatically derived from the current directory name.
 #
@@ -57,7 +52,7 @@
 # (If not or wrongly set, "GNU 32 dynamic" is used as default.)
 #
 
-if [ ! -f conf/conf.bash ] ; then
+if [ ! -f configure.ag ] ; then
 	echo ''
 	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out ${what} source tree.'
 	echo ''

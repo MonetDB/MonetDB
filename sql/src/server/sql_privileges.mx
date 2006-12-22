@@ -54,6 +54,7 @@ extern int sql_schema_has_user(mvc *m, sql_schema *s);
 
 #endif /*_SQL_PRIV_H_ */
 @c
+#include "sql_config.h"
 #include "sql_privileges.h"
 #include "sql_statement.h"
 #include <sql_parser.h>

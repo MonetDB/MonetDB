@@ -31,6 +31,7 @@ extern stmt *bin_optimizer(mvc *c, stmt *s);
 
 @c
 
+#include "sql_config.h"
 #include "bin_optimizer.h"
 #include "sql_types.h"
 #include "sql_rel2bin.h"

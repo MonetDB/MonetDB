@@ -53,6 +53,7 @@ comment "Compare a bat of @1 against a singleton";
 
 @+ Implementation
 @c
+#include "mal_config.h"
 #include <gdk.h>
 #include "ctype.h"
 #include "mal_exception.h"

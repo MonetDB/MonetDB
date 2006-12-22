@@ -15,17 +15,36 @@
 # All Rights Reserved.
 
 EXTRA_DIST = \
+	bootstrap \
 	config.guess config.sub \
 	install-sh missing \
 	ltmain.sh config.h.in \
-	monet.m4 conf.bash MonetDB.conf.in
+	MonetDB.m4 conf.bash \
+	rules.mk
+
+scripts_bs = {
+	EXT = ""
+	DIR = pkgdatadir/conf
+	SOURCES = bootstrap
+}
 
 scripts_m4 = {
 	DIR = pkgdatadir/conf
-	SOURCES = monet.m4 
+	SOURCES = MonetDB.m4
 }
 
-scripts_conf = {
-	DIR = sysconfdir
-	SOURCES = MonetDB.conf
+scripts_mk = {
+	DIR = pkgdatadir/conf
+	SOURCES = rules.mk
+}
+
+scripts_sh = {
+	EXT = ""
+	DIR = bindir
+	SOURCES = monetdb-config.in
+}
+
+scripts_bat = {
+	DIR = bindir
+	SOURCES = monetdb-config.bat.in 
 }

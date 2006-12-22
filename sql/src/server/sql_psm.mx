@@ -34,6 +34,7 @@ extern stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *b
 
 #endif /* _SQL_PSM_H_ */
 @c
+#include "sql_config.h"
 #include "sql_psm.h"
 #include "sql_schema.h"
 #include "sql_select.h"

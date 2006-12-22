@@ -142,6 +142,7 @@ int timing = 0;
 #endif /* XQUERY_RPC_H */
 
 @c
+#include "pf_config.h"
 #include "xrpc_server.h"
 
 #define clean_up(s, argcnt, argtpe, argval, iterc, nr_args) {       \

@@ -38,6 +38,8 @@ gdk_export int gdk_alloc_map;
 gdk_export BAT *GDKenv;
 
 @c
+#include "monetdb_config.h"
+
 #ifndef GDK_NOLINK
 #include "gdk.h"
 

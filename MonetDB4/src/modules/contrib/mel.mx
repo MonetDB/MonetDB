@@ -1,0 +1,75 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f mel
+@t The mel module
+@a N.J. Nes
+@v 0.1
+@* The mel module
+The mel module contains a collection of examples and tests for the
+extension system.
+
+@m
+.MODULE mel;
+
+.ATOM overloadedstr = str;
+.FIX = ovstr_fix;
+.UNFIX = ovstr_unfix;
+.END;
+
+@mil
+	const teststring := "# test # functionality";
+@m
+.END mel;
+
+@* Example Script
+@mil
+proc mel_test() : void {
+	var m:= overloadedstr("tird string");
+	m := 1;
+}
+
+PROC test_mel() : void {   
+	setoid(oid(20000000));
+	var m:= overloadedstr("http://www.cwi.nl/~mk/Acoi/index.html");
+	# not checked bogus second var 
+	var m:= overloadedstr("second string");
+	mel_test();
+	m := 1;
+	print(teststring);
+}
+
+@c
+#include "monetdb4_config.h"
+#include <gdk.h>
+
+typedef str overloadedstr;
+
+#include "mel.proto.h"
+
+int
+ovstr_unfix(overloadedstr input)
+{
+	printf("unfix overloadedstr %s\n", input);
+	return 0;
+}
+
+int
+ovstr_fix(overloadedstr input)
+{
+	printf("fix overloadedstr %s\n", input);
+	return 0;
+}

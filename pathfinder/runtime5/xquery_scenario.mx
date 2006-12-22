@@ -206,7 +206,7 @@ XQUERYparser(Client c)
 
 	xb = (Xbackend) c->state[PARSER];
 	if(xb == NULL || c->curprg->def== NULL) 
-		return throwMessage("xquery.parser","No context available\n");
+		return createException(MAL, "xquery.parser","No context available\n");
 
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
@@ -227,7 +227,7 @@ XQUERYparser(Client c)
 		/* restore the state */
 		resetMalBlk(c->curprg->def, oldstop);
 		c->curprg->def->errors = 0;
-		return throwMessage("xquery.parser","Parsing errors\n");
+		return createException(MAL, "xquery.parser","Parsing errors\n");
 	} 
 	return MAL_SUCCEED;
 }

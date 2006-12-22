@@ -231,6 +231,7 @@ extern int CTgroup(BAT **B, BAT **H, BAT *b);
 
 #endif /* _GROUP_H_ */
 @c
+#include "mal_config.h"
 #include "group.h"
 #include "algebra.h"
 static int TYPE_mapentry;

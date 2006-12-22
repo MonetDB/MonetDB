@@ -252,6 +252,7 @@ occurs (mask/2) then we abandon the attempt and restart with a mask that is 4 ti
 larger. This converges after three cycles to direct hashing.
 @{
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 hash_t

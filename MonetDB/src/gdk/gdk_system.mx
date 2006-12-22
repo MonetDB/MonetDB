@@ -216,6 +216,7 @@ typedef pthread_cond_t MT_Cond;
 
 @- Mthreads Routine implementations
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 size_t _MT_pagesize = 0;	/* variable holding memory size */

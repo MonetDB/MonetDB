@@ -47,6 +47,7 @@ extern ptr sql_frontend(void);
 
 #endif /*_SQL_SESSION_H_*/
 @c
+#include "sql_config.h"
 #include "sql_session.h"
 #include "sql_server.h"
 #include "sql_result.h"

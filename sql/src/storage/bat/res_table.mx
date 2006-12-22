@@ -34,6 +34,7 @@ extern res_table *res_tables_find(res_table *results, int res_id);
 #endif /* RES_TABLE_H */
 @c
 
+#include "sql_config.h"
 #include "res_table.h"
 #include "sql_types.h"
 #include "bat_bm.h"

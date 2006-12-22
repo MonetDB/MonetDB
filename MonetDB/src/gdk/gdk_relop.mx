@@ -23,6 +23,7 @@ joins, such that navigational access and object re-assembly
 are not being harmed too much.
 @{
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 #define SAMPLE_TRESHOLD_LOG 17

@@ -85,6 +85,7 @@ comment "return the BUN tail value using the cursor.";
 @include prelude.mx
 @+ BAT Iterator Implementation
 @c
+#include "mal_config.h"
 #include "mal.h"
 #include "mal_interpreter.h"
 

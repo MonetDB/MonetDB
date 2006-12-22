@@ -32,6 +32,7 @@ extern char* sql_next_seq_name(mvc *sql);
 #endif /*_SQL_SEQUENCE_H_*/
 @c
 
+#include "sql_config.h"
 #include "sql_sequence.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"

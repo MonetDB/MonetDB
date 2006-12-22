@@ -25,9 +25,7 @@ server.
 #ifndef _MU_H_
 #define _MU_H_
 
-#include <monetdb_config.h>	/* we always have this */
-
-#ifdef NATIVE_WIN32
+#ifdef WIN32
 #ifndef LIBMUTILS
 #define mutils_export extern __declspec(dllimport)
 #else

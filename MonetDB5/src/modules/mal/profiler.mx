@@ -181,6 +181,7 @@ its generates a noticable overhead.
 @-
 Using the Monet Performance Profiler is constrained by the mal_profiler.
 @c
+#include "mal_config.h"
 #include "profiler.h"
 
 #ifdef WIN32

@@ -108,6 +108,7 @@ Impact on hashing and indexing.
 The hash structure is maintained for all elements to be deleted ?.
 
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 @- 

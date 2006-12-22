@@ -664,6 +664,7 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	return res;
 }
 @c
+#include "mal_config.h"
 #include "batcalc.h"
 
 #define BATwcopy(b) BATcopy(b, b->htype, b->ttype, TRUE)

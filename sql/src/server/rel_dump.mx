@@ -28,6 +28,7 @@ extern void rel_print(mvc *sql, sql_rel *rel, int depth);
 
 #endif /*_REL_DUMP_H_*/
 @c
+#include "sql_config.h"
 #define LINESIZE 80
 
 #include "rel_dump.h"

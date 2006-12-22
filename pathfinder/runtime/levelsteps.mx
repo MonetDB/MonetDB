@@ -33,6 +33,7 @@
 * levelsteps.c : axis step operators based on level table
 *
 */
+#include "pf_config.h"
 #include <gdk.h>
 #include "pathfinder.h"
 

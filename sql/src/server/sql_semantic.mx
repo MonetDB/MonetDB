@@ -89,6 +89,7 @@ extern char * toUpper(char *dest, const char *src);
 
 @c
 
+#include "sql_config.h"
 #include "sql_parser.h"
 #include "sql_symbol.h"
 #include "sql_statement.h"

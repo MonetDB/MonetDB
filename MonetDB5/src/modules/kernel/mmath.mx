@@ -237,6 +237,7 @@ quit;
 
 @* Implementation Code
 @c
+#include "mal_config.h"
 
 #include "mmath.h"
 #include <math.h>

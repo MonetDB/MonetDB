@@ -145,6 +145,7 @@ language_export str MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* _LANGUAGE_H */
 @c
 
+#include "mal_config.h"
 #include "language.h"
 
 str

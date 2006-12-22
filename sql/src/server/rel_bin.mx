@@ -29,6 +29,7 @@ extern stmt * rel_bin(mvc *sql, sql_rel *rel);
 
 #endif /*_REL_BIN_H_*/
 @c
+#include "sql_config.h"
 #define LINESIZE 80
 
 #include "rel_bin.h"

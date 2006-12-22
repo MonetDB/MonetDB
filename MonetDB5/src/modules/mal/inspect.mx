@@ -113,6 +113,7 @@ comment "Collect the environment variables.";
 #ifdef _INSPECT_H
 #endif /* _INSPECT_H */
 @c
+#include "mal_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>

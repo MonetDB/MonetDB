@@ -120,13 +120,13 @@ while test $# -gt 0; do
 
     --includes)
        	echo \
-	  	-I\${MONET5_INCLUDEDIR}/atoms \
-	  	-I\${MONET5_INCLUDEDIR}/compiler \
-	  	-I\${MONET5_INCLUDEDIR}/kernel \
-	  	-I\${MONET5_INCLUDEDIR}/mal \
-	  	-I\${MONET5_INCLUDEDIR}/mil \
-	  	-I\${MONET5_INCLUDEDIR}/optimizer \
-	  	-I\${MONET5_INCLUDEDIR}
+	  	-I\${MONETDB5_INCLUDEDIR}/atoms \
+	  	-I\${MONETDB5_INCLUDEDIR}/compiler \
+	  	-I\${MONETDB5_INCLUDEDIR}/kernel \
+	  	-I\${MONETDB5_INCLUDEDIR}/mal \
+	  	-I\${MONETDB5_INCLUDEDIR}/mil \
+	  	-I\${MONETDB5_INCLUDEDIR}/optimizer \
+	  	-I\${MONETDB5_INCLUDEDIR}
        	;;
 
     --cflags)

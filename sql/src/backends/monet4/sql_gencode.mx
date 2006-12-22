@@ -45,6 +45,7 @@ sql_server_export void monet4_parse(backend_stack stk, char *code);
 #endif /*_SQL_GENCODE_H_*/
 
 @c
+#include "sql_config.h"
 #include <sql_gencode.h>
 #include <sql_privileges.h>
 #include <sql_env.h>

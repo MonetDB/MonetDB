@@ -290,6 +290,7 @@ gdk_export int closedir(DIR *dir);
 
 #endif /* GDK_POSIX_H */
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 #include <stdio.h>

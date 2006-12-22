@@ -1,3 +1,5 @@
+#                                               -*- Autoconf -*-
+
 # The contents of this file are subject to the Pathfinder Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License.  You may obtain a copy of the License at
@@ -24,7 +26,6 @@ AC_INIT(compiler/main.c)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-dnl AH_TOP([#include "monetdb_config.h"])
 dnl AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
@@ -35,6 +36,17 @@ CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
+req_monetdb_ver='1.15.0'
+AM_MONETDB_COMMON($req_monetdb_ver)
+if test "x$have_monetdb" != xyes; then
+	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+fi
+req_monetdb_ver='4.15.0'
+AM_MONETDB4($req_monetdb_ver)
+if test "x$have_monetdb4" != xyes; then
+	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB4, but only version $MONETDBVERS was found.])
+fi
+AM_MONETDB_CLIENTS()
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
 if test "x$have_c99" != xyes; then
@@ -43,15 +55,10 @@ fi
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
-req_monetdb_ver='4.15.0'
-AM_MONET($req_monetdb_ver)
-if test "x$have_monet" != xyes; then
-	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
-fi
 AM_MONETDB_UTILS()
 req_monetdb_ver='4.99.19'
-AM_MONET5($req_monetdb_ver)
-AM_CONDITIONAL(MONET5,test "x$have_monet5" = xyes)
+AM_MONETDB5($req_monetdb_ver)
+AM_CONDITIONAL(MONET5,test "x$have_monetdb5" = xyes)
 
 backend=monet4
 AC_ARG_WITH(backend,

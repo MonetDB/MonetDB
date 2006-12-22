@@ -172,6 +172,7 @@ address STRbatlike2
 comment "Perform SQL like operation against a string bat";
 @+ Implementation
 @c
+#include "mal_config.h"
 #include <gdk.h>
 #include "ctype.h"
 #include <string.h>

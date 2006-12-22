@@ -1,0 +1,714 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f monet_tem
+@a M. L. Kersten
+@* Monet trigger-event-monitor
+The trigger model supported consists of a trigger abstraction
+mechanism, a trigger (de-)activation mechanism, ...
+A detailed description is given in an accompanying document.
+
+Basically the server is extended with events for all known operations.
+They are raised within the interpreter. The argument of an event is
+a reference to a ValRecord, which is copied from the argument list
+in which the event was detected.
+
+The code should be (re)structured to become a Monet kernel extension.
+Can not be done, because it requires enhancements within the interpreter.
+@-
+The Monet server contains a few global tables for trigger management.
+They are shared by all users, thus they should be protected by the transaction
+manager. [later]
+The pool of events contains the (obj,eventname) pairs.
+
+Each user gets a private copy of the DBA events and triggers upon session
+start. It is initialized for all built-in routines using their
+address as an internal id. The tables are not persistent.
+
+Session dependent BATs are marked as non-dirty after creation. This means that
+only after they become used their content is saved on disk.
+@c
+#include "monetdb4_config.h"
+#include "monet.h"
+#define TEMSIZE	2000
+
+void scheduleTrigger();
+
+BAT *TEMevents;			/* BAT(str,int) events of <adm> */
+BAT *TEMtriggers;		/* BAT(str,ptr) triggers of <adm> */
+BAT *TEMpool;			/* BAT(int,*ValRecord) event pool */
+BAT *TEMconsumed;		/* BAT(int,int) consumed event pool */
+BAT *TEMactive;			/* BAT(int,ptr) trigger instances */
+
+TEM_init()
+{
+	int i;
+
+@-
+The event detected during processing are collected in a single global table.
+Search accellerators are always necessary for speed. Therefore they are
+created immediately.
+@c
+	if (i = BBPindex("tem_pool")) {
+		BBPclear(i);	/* just ignore old stuff */
+	}
+	TEMpool = BATnew(TYPE_int, TYPE_ptr, TEMSIZE);
+	TEMpool = (((TEMpool)->batCacheid<0)?(TEMpool):BATmirror(TEMpool));
+	BAThash(TEMpool, 0);
+	TEMpool = BBP_cache(ABS((TEMpool)->batCacheid));
+	BAThash(TEMpool, 0);
+	BATroles(TEMpool, "tem", "pool");
+	BATfakeCommit(TEMpool);
+@-
+The events eaten by firing triggers are collected in a BAT for
+disposal at the end of the trigger scheduler
+@c
+	if (i = BBPindex("tem_consumed")) {
+		BBPclear(i);	/* just ignore old stuff */
+	}
+	TEMconsumed = BATnew(TYPE_int, TYPE_ptr, TEMSIZE);
+	BATroles(TEMpool, "tem", "consumed");
+	BATfakeCommit(TEMconsumed);
+@-
+The active triggers, i.e. those called by users, are administered in
+a single global table. This way it becomes possible to schedule all
+when the event pool so requires.
+@c
+	if (i = BBPindex("tem_active")) {
+		BBPclear(i);	/* just ignore old stuff */
+	}
+	TEMactive = BATnew(TYPE_int, TYPE_ptr, TEMSIZE);
+	BATroles(TEMpool, "tem", "active");
+	TEMactive = (((TEMactive)->batCacheid<0)?(TEMactive):BATmirror(TEMactive));
+	BAThash(TEMactive, 0);
+	TEMactive = BBP_cache(ABS((TEMactive)->batCacheid));
+	BAThash(TEMactive, 0);
+	BATfakeCommit(TEMactive);
+@-
+Some data structures are used to speed-up processing
+@c
+	TEMsubscriptions();
+}
+
+@-
+The first user gets a specially initialized  event and trigger table.
+It also includes  the hardwired aspects. These tables are normally
+enhanced through the database prelude files.
+@c
+TEMadmInit()
+{
+	int i;
+	Fcndesc *pt;
+	Variable v;
+	char evname[PATHLENGTH];
+
+	if (i = BBPindex("adm_events")) {
+		BBPclear(i);	/* just ignore old stuff */
+	}
+	TEMevents = BATnew(TYPE_str, TYPE_int, 250);
+	TEMevents = (((TEMevents)->batCacheid<0)?(TEMevents):BATmirror(TEMevents));
+	BAThash(TEMevents, 0);
+	TEMevents = (((TEMevents)->batCacheid<0)?(TEMevents):BATmirror(TEMevents)));
+	BATkey(TEMevents, TRUE);
+	TEMevents = BBP_cache(ABS((TEMevents)->batCacheid));
+	BAThash(TEMevents, 0);
+	BATroles(TEMevents, "tem", "events");
+@-
+The events associated with linked functions is equated with their
+start address. This simplifies our life considerably, because now
+the interpreter merely needs some minor adjustments.
+@c
+	for (pt = monet_fcntable; pt->fname; pt++) {
+		i = (int) pt->fcn;
+		sprintf(evname, "%sEntry", pt->fname);
+		TEMevents = BUNins(TEMevents, evname, &i);
+		i = (int) (pt->fcn) + 1;
+		sprintf(evname, "%sExit", pt->fname);
+		TEMevents = BUNins(TEMevents, evname, &i);
+	}
+	BATfakeCommit(TEMevents);
+
+	v = VARnew(0, "monet_events");
+	v->binding.vtype = TYPE_bat;
+	v->binding.val.bval = BBPcacheid(TEMevents);
+	v->binding.len = 0;
+
+@-
+All trigger definitions are stored in a single table. Otherwise
+it becomes difficult to analyse their status internally.
+@c
+	if (i = BBPindex("adm_triggers")) {
+		BBPclear(i);	/* forget old stuff */
+	}
+	TEMtriggers = BATnew(TYPE_str, TYPE_ptr, TEMSIZE);
+	if (TEMtriggers == 0)
+		return;
+	BAThash(TEMtriggers, 0);
+	BATfakeCommit(TEMtriggers);
+
+	v = VARnew(0, "monet_triggers");
+	v->binding.vtype = TYPE_bat;
+	v->binding.val.bval = BBPcacheid(TEMtriggers);
+	v->binding.len = 0;
+
+}
+
+@-
+Each user gets a private copy of the event mapping table.
+This way he can specialize event management.
+The event table is accessible through the user context.
+Note that triggers are also administered in the user-specific
+function table.
+@c
+void
+TEM_initclient(Client client)
+{
+	Variable v;
+	BAT *b;
+
+	if (TEMevents == 0) {
+		TEMadmInit();
+		client->triggers = TEMtriggers;
+		return;
+	}
+@-
+Each users gets his private copy of the events table.
+It is not kept synchonized with the source.
+@c
+	client->events = b = BATdocopy(TEMevents);
+	BATkey(b, TRUE);
+	BATroles(b, client->user, "events");
+	BATfakeCommit(b);
+	v = VARnew(client - monet_clients, "monet_events");
+	v->binding.vtype = TYPE_bat;
+	v->binding.val.bval = BBPcacheid(b);
+@-
+Each users gets his private copy of the trigger table.
+It is not kept synchonized with the source.
+@c
+	/* should copy the YYTREES ! */
+	client->triggers = b = BATdocopy(TEMtriggers);
+	BATkey(b, TRUE);
+	BATroles(b, client->user, "triggers");
+	BATfakeCommit(b);
+	v = VARnew(client - monet_clients, "monet_triggers");
+	v->binding.vtype = TYPE_bat;
+	v->binding.val.bval = BBPcacheid(b);
+}
+
+TEM_exitclient(Client c)
+{
+	if (c->triggers == TEMtriggers) {
+		VARclearBAT(TEMpool);
+		VARclearBAT(TEMconsumed);
+		VARclearBAT(TEMactive);
+	}
+	VARclearBAT(c->triggers);
+	VARclearBAT(c->events);
+	c->events = c->triggers = 0;
+}
+
+@-
+The user defined events and trigger tables are kept around in the client
+structure to speed-up access to these potentially performance expensive
+tables.
+Alternative, the BAT can be located through the context.
+@c
+BAT *
+TEMgetEvents(Client c)
+{
+	Variable v;
+	BAT *b;
+	Cntxt stk;
+
+	stk = c->stk;
+	v = VARfind(&stk, "monet_events");
+	if (v == 0) {
+		GDKerror("TEMgetEvents: 'monet_events' not found.\n");
+		return 0;
+	}
+	b = BBPdescriptor(v->binding.val.bval);
+	if (b == 0) {
+		GDKerror("TEMgetEvents: 'monet_events' bat not found.\n");
+		return 0;
+	}
+	return b;
+}
+
+BAT *
+TEMgetTriggers(Client c)
+{
+	char name[PATHLENGTH];
+	Variable v;
+	BAT *b;
+	Cntxt stk;
+
+	/* sprintf(name,"%s_triggers", c->user); */
+	stk = c->stk;
+	v = VARfind(&stk, "monet_triggers");
+	if (v == 0) {
+		GDKerror("TEMgetTriggers: 'monet_triggers' not found.\n");
+		return 0;
+	}
+	b = BBPdescriptor(v->binding.val.bval);
+	if (b == 0) {
+		GDKerror("TEMgetTriggers: 'monet_triggers' bat not found.\n");
+		return 0;
+	}
+	return b;
+}
+
+@-
+Events received an internal number to speed up searching.
+@c
+void
+TEMdefEvent(Client c, str id)
+{
+	int i = OIDnew(1);
+	BAT *b;
+
+	TRGDEBUG THRprintf(GDKout, "TEMinsEvent: %s %d\n", id, i);
+
+	b = TEMgetEvents(c);
+	if (b == 0) {
+		GDKerror("TEMdefEvent: user event table missing\n");
+		return;
+	}
+	if (BUNfnd(b, id) != 0) {
+		GDKerror("TEMdefEvent: event defined twice\n");
+	} else {
+		BUNins(b, id, &i);
+	}
+	return;
+}
+
+@+ Event subscription
+To speed up event detection, the system uses several hash tables to
+filter out unwanted events. The commutative filters are initialized by
+the trigger instances. If need arises, the filters can be re-initialized
+explicitly using the command @%TEMsubscriptions@.
+
+A combination of event and object is used to increase selectivity.
+The hash table size may becomde dependent on the number of
+active instances later on.
+@c
+#define TEMFILTER	8196
+#define TEMHASH(X,Y)	(	((int) (X) * (int)(Y)) % TEMFILTER)
+
+int
+TEMhash(int x, int y)
+{
+	int z;
+
+	if (y == 0)
+		y++;
+	if (x == 0)
+		x++;
+	z = abs(x * y);
+	return z % TEMFILTER;
+}
+
+str TEMfilter;
+
+void
+TEMsubscriptions()
+{
+	BUN p, q;
+
+	if (TEMfilter)
+		GDKfree(TEMfilter);
+	TEMfilter = GDKmalloc(TEMFILTER);
+	memset(TEMfilter, 0, TEMFILTER);
+	BATloop(TEMactive, p, q) {
+		/* add the events of the trigger instance to the hash */
+	}
+}
+
+void
+TEMsubscribe(int evnt, int obj)
+{
+	char *s;
+	int probe;
+
+	probe = TEMhash(evnt, obj);
+	TRGDEBUG THRprintf(GDKout, "TEMsubscribe: %d %d hash %d\n", evnt, obj, probe);
+
+	s = TEMfilter + probe;
+	*s = 1;
+}
+
+@-
+Whenever an event is found, the event pool should be inspected and
+the trigger instances scheduled for execution. This may involve
+suspension of the current request. The code should be copied
+from monet_interpreter.mx.
+
+Explicit notification on (abstract) events is also possible.
+@c
+int
+TEMnotify(Cntxt stk, str name, int *obj)
+{
+	ptr p;
+	Client c;
+	BAT *b;
+	int evnt;
+
+	CNTXTclient(stk, &c);
+	b = TEMgetEvents(c);
+
+	p = BUNfnd(b, name);
+	if (p == 0) {
+		GDKerror("TEMnotify: event identifier expected.\n");
+		return -1;
+	}
+	evnt = *(int *) BUNtail(b, p);
+
+	/* is this event interesting */
+	if (*(TEMfilter + TEMhash(evnt, *obj))) {
+		TEMpool = BUNins(TEMpool, &evnt, obj);
+		TRGDEBUG THRprintf(GDKout, "TEMnotify %s(%d)  %d\n", name, evnt, *obj);
+
+		TEMschedule(stk, evnt, *obj);
+	}
+	return 0;
+}
+
+@- Instance administration
+The parse trees for events is condensed. The event numbers and negation are
+stored as 'garbage' directly in the YYSTREE parameters. The count field
+guards removal.
+@c
+YYSTREE
+TEMnewevent(YYSTREE object, YYSTREE event, int negation)
+{
+	YYSTREE ev = Myynode(TOK_EVENT, 0);
+	BAT *b;
+	ptr p;
+
+	b = TEMgetEvents(ll_client);
+	p = BUNfnd(b, event->yyval.val.sval);
+	if (p == 0) {
+		GDKerror("TEMnewevent: %s not defined\n", event->yyval.val.sval);
+	}
+	ev->yysons[0] = object;
+	ev->yysons[1] = event;
+	ev->yysons[2] = negation ? Myynode(TOK_CONSTANT, 0) : 0;
+	ev->cnt = 3;
+
+	return ev;
+}
+
+#define EVENTobject(X)	((X)->yysons[0]->yyval.val.sval)
+#define EVENTnegation(X)	((X)->yysons[2])
+@-
+A concise description is maintained for all triggers. It should be moved
+to a new atom type later (?) Alternative, use a snapshot in a BAT for
+inspection. Separate the requires and denial event terms.
+@c
+#define TRGnme(X)	((X)->yysons[0]->yyval.val.sval)
+#define TRGhdr(X)	((X)->yysons[0])
+#define TRGxpr(X)	((X)->yysons[1])
+#define TRGbdy(X)	((X)->yysons[2])
+
+void
+TEMdefTrigger(Client client, YYSTREE hdr, YYSTREE event, YYSTREE body)
+{
+	YYSTREE t;
+	str tname;
+
+	t = Myynode(TOK_TRGDEF, 0);
+	Myyexpand(t, hdr);
+	Myyexpand(t, event);
+	Myyexpand(t, body);
+	tname = TRGnme(t);
+	TRGDEBUG THRprintf(GDKout, "TEMdefine %s \n", tname);
+
+	client->triggers = BUNins(client->triggers, tname, &t);
+}
+
+@-
+The trigger definitions are obtained by the lexical analyser upon
+encountering their name.
+@c
+char *
+TEMsearch(str name, int *t)
+{
+	char *p, *ret = 0;
+
+	if (name != 0)
+		if (p = BUNfnd(ll_client->triggers, name)) {
+			ret = *(char **) BUNtail(ll_client->triggers, p);
+		}
+	return ret;
+}
+
+@-
+Trigger instances are explicitly enabled or disabled.
+Assumes proper syntax.
+This routine is called from the interpreter directly.
+The trigger has been byte compiled already to substitute the arguments.
+The trigger is given a private context to run in, which is made dependent
+on the session context. This also permits enabling of triggers within
+procedure calls. (otherwise references to deleted context records may result)
+The administration of event and negation flag are upgraded to
+speedup processing.
+
+Trigger instances can be run in IMMEDIATE or DETACHED mode. The default
+is IMMEDIATE, which leads to a fast call of the trigger body. DETACHED mode
+means that the instance is scheduled for execution and does not stop
+the thread of control that raised the event.
+The mode of operation can be set per trigger instance.
+@c
+int
+TEMenable(Cntxt stk, YYSTREE lt, ValPtr result)
+{
+	int i, evnt;
+	str tname, ename;
+	YYSTREE t, ev;
+	Cntxt cntxt = 0;
+	Client c;
+	BAT *b;
+	ptr p;
+	int probe, obj = 0;
+
+	tname = TRGnme(lt);
+	TRGDEBUG THRprintf(GDKout, "TEMenable %s\n", tname);
+
+@-
+The event expression should be checked.
+Update the event filters for speed.
+@c
+	CNTXTclient(stk, &c);
+	b = TEMgetEvents(c);
+	/* add trigger to active set */
+	cntxt = CNTXTnew(c->stk);
+	if (cntxt == 0) {
+		GDKerror("TEMenable: too many trigger instances\n");
+		return -1;
+	}
+	lt->yyval.val.ival = cntxt;
+
+	for (t = TRGxpr(lt); t; t = YYOVERFLOW(t))
+		for (i = 0; i < t->cnt; i++) {
+			ev = t->yysons[i];	/* event substructure */
+			if (ev->yysons[0]) {
+				ValRecord res;
+
+				switch (ev->yysons[0]->token) {
+				case TOK_TEMPLATE:
+					res = *((ValPtr) ev->yysons[0]->yyval.val.pval);
+					obj = res.val.ival;
+					break;
+				case TOK_CONSTANT:
+					obj = ev->yysons[0]->yyval.val.ival;
+				}
+				TRGDEBUG THRprintf(GDKout, "TEMenable object %d\n", obj);
+			}
+
+			if (ev->yysons[1]) {
+				ename = ev->yysons[1]->yyval.val.sval;
+				TRGDEBUG THRprintf(GDKout, "TEMenable event %s \n", ename);
+
+				p = BUNfnd(b, ename);
+				if (p == 0) {
+					TRGDEBUG THRprintf(GDKout, "TEMenable: event %s not found\n", ename);
+				} else {
+					evnt = *(int *) BUNtail(b, p);
+					Myyfree(ev->yysons[1]);
+					ev->yysons[1] = (YYSTREE) evnt;
+				}
+			}
+			TEMsubscribe(evnt, obj);
+			if (ev->yysons[2]) {
+				TRGDEBUG THRprintf(GDKout, "TEMenable: negated \n");
+
+				ev->yysons[2] = (YYSTREE) 1;
+			} else {
+				ev->yysons[2] = (YYSTREE) 0;
+			}
+			ev->cnt = 1;
+			probe = TEMhash(evnt, obj);
+			TEMactive = BUNins(TEMactive, &probe, &lt);
+		}
+
+
+	result->vtype = TYPE_int;
+	result->val.ival = 0;
+	return 0;
+}
+
+int
+TEMdisable(Cntxt stk, YYSTREE lt, ValPtr result)
+{
+	str name;
+
+	name = lt->yyval.val.sval;
+	TRGDEBUG THRprintf(GDKout, "TEMdisable %s\n", name);
+
+	result->vtype = TYPE_int;
+	result->val.ival = 0;
+	return 0;
+}
+
+@- Trigger scheduling
+After it has been determined that an event is of interest to some trigger
+instances, They are isolated, their complete event expression is checked,
+and when satisfied its body is scheduled for execution.
+Simplified model here is to consider each trigger in serial execution.
+
+The events consumed are removed from the pool in the end.
+
+Further optimizations involve preselection of instances based on the
+event to be handled. This works fo large active trigger sets.
+
+[Apr 95]
+The current routine first determines the firable triggers and
+builds a (parallel) dependency list of actions. Then it clears
+the event pool and schedules the actions for immediate execution.
+The current request is suspended until the block has been processed.
+The negative effect is that the queue becomes larger then really necessary,
+especially if the caller processed the last request.
+
+Experience shows that this is extremely expensive for small trigger instances..
+It leads to an overhead of about 1ms per cycle.
+
+[June 95]
+Start experimentation with two modes of operation: IMMEDIATE and DETACHED.
+The latter simply schedules the request for early execution. (after the
+current sequential block)
+@c
+void
+TEMschedule(Cntxt stk, int evnt, int obj)
+{
+	BUN p;
+	YYSTREE lt;
+	Cntxt cntxt;
+	int ret, i;
+	Request current;
+	int probe = TEMhash(evnt, obj);
+
+	TRGDEBUG THRprintf(GDKout, "TEMschedule: %d %d (%d)\n", evnt, obj, probe);
+
+	BATclear(TEMconsumed);
+	HASHloop_int(TEMactive, TEMactive->hhash, i, &probe, p) {
+		lt = *(YYSTREE *) BUNtail(TEMactive, p);
+		cntxt = lt->yyval.val.ival;
+		if (TEMsatisfied(lt->yysons[1])) {
+@-
+Under DETACHED mode policy the trigger is simply scheduled for
+execution. The main thread does not wait its completion.
+Beware, a DETACHED trigger body may indirectly interfere with the
+current thread. In particular, if both are run in parallel.
+@c
+			current = newRequest(cntxt, lt->yysons[2], 0);
+			nxtRequest(current);
+		}
+	}
+	if (BATcount(TEMconsumed) > 0) {
+		TEMpool = BATdel(TEMpool, TEMconsumed);
+
+		TRGDEBUG {
+			THRprintf(GDKout, "remove events from " PTRFMT "\n", PTRFMTCAST(void *)TEMpool);
+
+			BATprint(TEMpool);
+			QMprint();
+		}
+	}
+}
+
+@- Event expression
+The trigger event expression is evaluated against the pool. If it can be
+satisfied then the events used are collected in the BAT TEMconsumed for
+memory.
+The event qualifiers are saved in a local structure to simplify the common
+situation that the routine fails.
+The algorithm uses a shortcut when it detects that a conjunct can not be
+satisfied.
+@c
+int
+TEMsatisfied(YYSTREE lt)
+{
+	YYSTREE t, ev;
+	int i, evnt, obj = 0;
+	ptr fnd;
+	int etable[256], otable[256], top = 0;
+	ValRecord res;
+
+	for (t = lt; t; t = YYOVERFLOW(t))
+		for (i = 0; i < t->cnt; i++) {
+			ev = t->yysons[i];	/* event substructure */
+			if (ev->yysons[0]) {
+				switch (ev->yysons[0]->token) {
+				case TOK_TEMPLATE:
+					res = *((ValPtr) ev->yysons[0]->yyval.val.pval);
+					obj = res.val.ival;
+					break;
+				case TOK_CONSTANT:
+					obj = ev->yysons[0]->yyval.val.ival;
+					break;
+				default:
+					GDKerror("TEMsatisfied: unexpected token %d\n", ev->yysons[0]->token);
+				}
+
+			}
+			evnt = (int) ev->yysons[1];
+			if (ev->yysons[0]) {
+				TRGDEBUG THRprintf(GDKout, "TEMsatisfies pair %d %d ", evnt, obj);
+
+				fnd = (ptr) BUNlocate(TEMpool, &evnt, &obj);
+				if (fnd) {
+					TRGDEBUG THRprintf(GDKout, "found\n");
+				} else {
+					TRGDEBUG THRprintf(GDKout, "not found\n");
+				}
+			} else {
+				fnd = BUNfnd(TEMpool, &evnt);
+			}
+			if (evnt && ev->yysons[2]) {
+				TRGDEBUG THRprintf(GDKout, "TEMsatisfied ~event %d " PTRFMT "\n", evnt, PTRFMTCAST fnd);
+
+				if (fnd)
+					return 0;
+			} else if (evnt) {
+				TRGDEBUG THRprintf(GDKout, "TEMsatisfied event %d " PTRFMT "\n", evnt, PTRFMTCAST fnd);
+
+				if (fnd == 0)
+					return 0;
+			}
+@-
+If the event term holds then we should remember the event combination.
+This is done in a local table to speed up recovery. This assumes that we
+won't find event expressions with more then 256 terms.
+@c
+			if (top == 256) {
+				GDKfatal("TEMsatisfied: too many event terms\n");
+			}
+			etable[top] = evnt;
+			otable[top] = obj;
+			top++;
+		}
+@-
+The evaluation was succesful. Keep track of the events by copying them into
+a BAT for later removal from the pool.
+@c
+	for (i = 0; i < top; i++) {
+		TEMconsumed = BUNins(TEMconsumed, etable + i, otable + i);
+	}
+	TRGDEBUG THRprintf(GDKout, "TEMSATISFIED: ok\n");
+	TRGDEBUG BATprint(TEMconsumed);
+
+	return 1;
+}

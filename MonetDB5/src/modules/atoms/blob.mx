@@ -116,6 +116,7 @@ blob_export size_t blobsize(size_t nitems);
 
 #endif /* __BLOB_H__ */
 @c
+#include "mal_config.h"
 #include "blob.h"
 
 blob_export int BLOBtostr(str *tostr, int *l, blob *pin);

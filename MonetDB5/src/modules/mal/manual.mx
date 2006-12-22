@@ -65,6 +65,7 @@ comment "Produces a manual with help lines grouped by module.";
 #ifdef _MANUAL_H
 #endif /* _MANUAL_H */
 @c
+#include "mal_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>

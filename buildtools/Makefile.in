@@ -1,8 +1,8 @@
 # "Meta-Makefile[.in]" for buildtools
 
-SRC="@SRC@"
-BUILD="@BUILD@"
-PREFIX="@PREFIX@"
+SRC=@SRC@
+BUILD=@BUILD@
+PREFIX=@PREFIX@
 DESTDIR=
 
 # Run individual "make [all]"s ...
@@ -21,6 +21,11 @@ install:
 	cd _MX && $(MAKE) MAKE=$(MAKE) $@
 	cd _MEL && $(MAKE) MAKE=$(MAKE) $@
 	cd _BURG && $(MAKE) MAKE=$(MAKE) $@
+	mkdir -p "$(DESTDIR)$(PREFIX)"/share/MonetDB/conf
+	cp "$(SRC)"/conf/conf.bash "$(DESTDIR)$(PREFIX)"/share/MonetDB/conf
+	chmod +x "$(DESTDIR)$(PREFIX)"/share/MonetDB/conf/conf.bash
+	cp "$(SRC)"/conf/Mbootstrap "$(SRC)"/conf/Mdebootstrap "$(DESTDIR)$(PREFIX)"/bin
+	chmod +x "$(DESTDIR)$(PREFIX)"/bin/Mbootstrap "$(DESTDIR)$(PREFIX)"/bin/Mdebootstrap
 
 # ... and individual "make *"s
 %:

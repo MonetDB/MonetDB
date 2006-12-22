@@ -307,6 +307,7 @@ str_export str STRspace(str *ret, int *l);
 
 @{
 @c
+#include "mal_config.h"
 #include "str.h"
 #include <string.h>
 

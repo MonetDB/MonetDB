@@ -1,0 +1,443 @@
+/* clients_config.h.in.  Generated from configure.in by autoheader.  */
+
+/* Define if you already have Windows types. */
+#undef ALLREADY_HAVE_WINDOWS_TYPE
+
+/* Directory separator */
+#undef DIR_SEP
+
+/* Directory separator */
+#undef DIR_SEP_STR
+
+/* Define to 1 if you have the <alloca.h> header file. */
+#undef HAVE_ALLOCA_H
+
+/* Is your compiler C99 compliant? */
+#undef HAVE_C99
+
+/* Define to 1 if you have the `crypt' function. */
+#undef HAVE_CRYPT
+
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
+/* Define if you have the cURL library */
+#undef HAVE_CURL
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `ftime' function. */
+#undef HAVE_FTIME
+
+/* Define to 1 if you have the `getlogin' function. */
+#undef HAVE_GETLOGIN
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
+/* Define to 1 if you have the `getopt_long' function. */
+#undef HAVE_GETOPT_LONG
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the `GlobalMemoryStatus' function. */
+#undef HAVE_GLOBALMEMORYSTATUS
+
+/* Define if you have the iconv library */
+#undef HAVE_ICONV
+
+/* Define to 1 if you have the <iconv.h> header file. */
+#undef HAVE_ICONV_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <langinfo.h> header file. */
+#undef HAVE_LANGINFO_H
+
+/* Define if you have the bz2 library */
+#undef HAVE_LIBBZ2
+
+/* Define if you have the cpc library */
+#undef HAVE_LIBCPC
+
+/* Define to 1 if you have the <libcpc.h> header file. */
+#undef HAVE_LIBCPC_H
+
+/* Define if you have the netcdf library */
+#undef HAVE_LIBNETCDF
+
+/* Define if you have the pcl library */
+#undef HAVE_LIBPCL
+
+/* Define if you have the pcre library */
+#undef HAVE_LIBPCRE
+
+/* Define if you have the perfctr library */
+#undef HAVE_LIBPERFCTR
+
+/* Define to 1 if you have the <libperfctr.h> header file. */
+#undef HAVE_LIBPERFCTR_H
+
+/* Define if you have the perfmon library */
+#undef HAVE_LIBPERFMON
+
+/* Define if you have the pfm library */
+#undef HAVE_LIBPFM
+
+/* Define if you have the pperf library */
+#undef HAVE_LIBPPERF
+
+/* Define to 1 if you have the <libpperf.h> header file. */
+#undef HAVE_LIBPPERF_H
+
+/* Define if you have the pthread library */
+#undef HAVE_LIBPTHREAD
+
+/* Define if you have the readline library */
+#undef HAVE_LIBREADLINE
+
+/* Define if you have the z library */
+#undef HAVE_LIBZ
+
+/* Define to 1 if you have the <locale.h> header file. */
+#undef HAVE_LOCALE_H
+
+/* Define to 1 if you have the `localtime_r' function. */
+#undef HAVE_LOCALTIME_R
+
+/* Define to 1 if the system has the type `long long'. */
+#undef HAVE_LONG_LONG
+
+/* Define to 1 if you have the `mallinfo' function. */
+#undef HAVE_MALLINFO
+
+/* Define to 1 if you have the `mallopt' function. */
+#undef HAVE_MALLOPT
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
+/* Define to 1 if you have the `nl_langinfo' function. */
+#undef HAVE_NL_LANGINFO
+
+/* Define to 1 if you have the <odbcinst.h> header file. */
+#undef HAVE_ODBCINST_H
+
+/* Define if you have the OpenSSL library */
+#undef HAVE_OPENSSL
+
+/* Define to 1 if you have the <perfmon.h> header file. */
+#undef HAVE_PERFMON_H
+
+/* Define to 1 if you have the <perfmon/pfmlib.h> header file. */
+#undef HAVE_PERFMON_PFMLIB_H
+
+/* Define to 1 if you have the <pthread.h> header file. */
+#undef HAVE_PTHREAD_H
+
+/* Define if you have the pthread_kill_other_threads_np function */
+#undef HAVE_PTHREAD_KILL_OTHER_THREADS_NP
+
+/* Define if you have the pthread_sigmask function */
+#undef HAVE_PTHREAD_SIGMASK
+
+/* Define to 1 if the system has the type `ptrdiff_t'. */
+#undef HAVE_PTRDIFF_T
+
+/* Define to 1 if you have the <pwd.h> header file. */
+#undef HAVE_PWD_H
+
+/* Define to 1 if you have the <regex.h> header file. */
+#undef HAVE_REGEX_H
+
+/* Define to 1 if you have the <sched.h> header file. */
+#undef HAVE_SCHED_H
+
+/* Define to 1 if you have the <semaphore.h> header file. */
+#undef HAVE_SEMAPHORE_H
+
+/* Define to 1 if you have the `setlocale' function. */
+#undef HAVE_SETLOCALE
+
+/* Define to 1 if the system has the type `socklen_t'. */
+#undef HAVE_SOCKLEN_T
+
+/* Define if you have the SQLGetPrivateProfileString function */
+#undef HAVE_SQLGETPRIVATEPROFILESTRING
+
+/* Define to 1 if the system has the type `ssize_t'. */
+#undef HAVE_SSIZE_T
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strncasecmp' function. */
+#undef HAVE_STRNCASECMP
+
+/* Define to 1 if you have the `strtod' function. */
+#undef HAVE_STRTOD
+
+/* Define to 1 if you have the `strtof' function. */
+#undef HAVE_STRTOF
+
+/* Define to 1 if you have the `strtoll' function. */
+#undef HAVE_STRTOLL
+
+/* Define to 1 if you have the `strtoull' function. */
+#undef HAVE_STRTOULL
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/un.h> header file. */
+#undef HAVE_SYS_UN_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <winsock2.h> header file. */
+#undef HAVE_WINSOCK2_H
+
+/* Define to 1 if you have the <Zend/zend_exceptions.h> header file. */
+#undef HAVE_ZEND_ZEND_EXCEPTIONS_H
+
+/* Define to 1 if the system has the type `__int64'. */
+#undef HAVE___INT64
+
+/* Host identifier */
+#undef HOST
+
+/* Define as const if the declaration of iconv() needs const for 2nd argument.
+   */
+#undef ICONV_CONST
+
+/* architecture-dependent files */
+#undef MONETDBCLIENTS_EXEC_PREFIX
+
+/* object code libraries */
+#undef MONETDBCLIENTS_LIBDIR
+
+/* modifiable single-machine data */
+#undef MONETDBCLIENTS_LOCALSTATEDIR
+
+/* architecture-independent files */
+#undef MONETDBCLIENTS_PREFIX
+
+/* read-only single-machine data */
+#undef MONETDBCLIENTS_SYSCONFDIR
+
+/* Define if the oid type should use 32 bits on a 64-bit architecture */
+#undef MONET_OID32
+
+/* Define if you are compiling for Native Windows (MinGW or Visual Studio) */
+#undef NATIVE_WIN32
+
+/* Define if you do not want assertions */
+#undef NDEBUG
+
+/* Define if you don't want to expand the bat type */
+#undef NOEXPAND_BAT
+
+/* Define if you don't want to expand the bit type */
+#undef NOEXPAND_BIT
+
+/* Define if you don't want to expand the bte type */
+#undef NOEXPAND_BTE
+
+/* Define if you don't want to expand the chr type */
+#undef NOEXPAND_CHR
+
+/* Define if you don't want to expand the dbl type */
+#undef NOEXPAND_DBL
+
+/* Define if you don't want to expand the flt type */
+#undef NOEXPAND_FLT
+
+/* Define if you don't want to expand the int type */
+#undef NOEXPAND_INT
+
+/* Define if you don't want to expand the lng type */
+#undef NOEXPAND_LNG
+
+/* Define if you don't want to expand the oid type */
+#undef NOEXPAND_OID
+
+/* Define if you don't want to expand the ptr type */
+#undef NOEXPAND_PTR
+
+/* Define if you don't want to expand the sht type */
+#undef NOEXPAND_SHT
+
+/* Define if you don't want to expand the str type */
+#undef NOEXPAND_STR
+
+/* Define if you don't want to expand the wrd type */
+#undef NOEXPAND_WRD
+
+/* Define if OpenSSL should not use Kerberos 5 */
+#undef OPENSSL_NO_KRB5
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Path separator */
+#undef PATH_SEP
+
+/* Path separator */
+#undef PATH_SEP_STR
+
+/* Compiler flag */
+#undef PROFILE
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#undef RETSIGTYPE
+
+/* The size of a `char', as computed by sizeof. */
+#undef SIZEOF_CHAR
+
+/* The size of a `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of a `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of a `long long', as computed by sizeof. */
+#undef SIZEOF_LONG_LONG
+
+/* The size of a `ptrdiff_t', as computed by sizeof. */
+#undef SIZEOF_PTRDIFF_T
+
+/* The size of a `short', as computed by sizeof. */
+#undef SIZEOF_SHORT
+
+/* The size of a `size_t', as computed by sizeof. */
+#undef SIZEOF_SIZE_T
+
+/* The size of a `ssize_t', as computed by sizeof. */
+#undef SIZEOF_SSIZE_T
+
+/* The size of a `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
+
+/* The size of a `__int64', as computed by sizeof. */
+#undef SIZEOF___INT64
+
+/* type used for sockets */
+#undef SOCKET
+
+/* Shared Object extension */
+#undef SO_EXT
+
+/* Shared Object prefix */
+#undef SO_PREFIX
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Version number of package */
+#undef VERSION
+
+/* Define on MS Windows (also under Cygwin) */
+#undef WIN32
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
+/* Compiler flag */
+#undef _POSIX_C_SOURCE
+
+/* Compiler flag */
+#undef _POSIX_SOURCE
+
+/* Compiler flag */
+#undef _XOPEN_SOURCE
+
+/* Compiler flag */
+#undef __BSD_VISIBLE
+
+/* Compiler flag */
+#undef __EXTENSIONS__
+
+/* function to close a socket */
+#undef closesocket
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Wrapper */
+#undef iconv
+
+/* Wrapper */
+#undef iconv_close
+
+/* Wrapper */
+#undef iconv_open
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t
+
+/* type used by connect */
+#undef socklen_t
+
+#include "stddef.h"

@@ -58,6 +58,7 @@ extern void atom_dump(atom *a, stream *s);
 #endif /* _SQL_ATOM_H_ */
 
 @c
+#include "sql_config.h"
 #include "sql_atom.h"
 #include <sql_string.h>
 #include <sql_decimal.h>

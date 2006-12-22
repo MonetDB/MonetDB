@@ -58,12 +58,12 @@ extern BAT *temp_descriptor(log_bid b);
 
 #endif /*BATSTORE_H */
 @c
+#include "sql_config.h"
 #include "bat_store.h"
 #include "sql_types.h"
 #include "sql_backend.h"
 #include "bat_bm.h"
 #include "bat_sequence.h"
-#include <bat.h>
 
 /* version 03.02.01 of catalog */
 #define CATALOG_VERSION 30201

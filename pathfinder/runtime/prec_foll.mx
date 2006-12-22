@@ -33,6 +33,7 @@
 * prec_foll.c : axis step operators for preceding and following axis
 *
 */
+#include "pf_config.h"
 #include <gdk.h>
 
 /**

@@ -54,11 +54,15 @@ called atomHeap.
 #include "gdk.h"
 
 gdk_export void BATinit_idents(BAT *bn);
+gdk_export ssize_t void_replace_bat(BAT *b, BAT *u, bit force);
+gdk_export int void_inplace(BAT *b, oid id, ptr val, bit force);
+
 extern int default_ident( char *s ); 
 extern oid MAXoid(BAT *i);
 
 #endif /* _GDK_BAT_H_ */
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 #ifdef ALIGN
@@ -1554,6 +1558,46 @@ BUNreplace(BAT *b, ptr h, ptr t, bit force)
 	}
 
 	return BUNinplace(b, p, h, t, force);
+}
+
+int
+void_inplace(BAT *b, oid id, ptr val, bit force)
+{
+	int res = GDK_SUCCEED;
+	BUN p = NULL;
+	BUN oldInserted = b->batInserted;
+
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase != oid_nil);
+	assert(BATcount(b) > (id -b->hseqbase));
+
+	b->batInserted = NULL;
+	BUNfndVOID(p, b, (ptr) &id);
+
+	assert(p >= b->batInserted);	/* we don't want delete/ins */
+	assert(force || !b->batRestricted);
+	if (!BUNinplace(b, p, (ptr) &id, val, force))
+		 res = GDK_FAIL;
+
+	b->batInserted = oldInserted;
+	return res;
+}
+
+ssize_t
+void_replace_bat(BAT *b, BAT *u, bit force)
+{
+	size_t nr = 0;
+	BUN r, s;
+
+	BATloop(u, r, s) {
+		oid updid = *(oid *) BUNhead(u, r);
+		ptr val = BUNtail(u, r);
+
+		if (void_inplace(b, updid, val, force) == GDK_FAIL)
+			return -1;
+		nr++;
+	}
+	return nr;
 }
 
 @- BUN Lookup

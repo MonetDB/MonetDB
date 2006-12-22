@@ -85,6 +85,7 @@ inet_export str INETtext(str *retval, inet *val);
 inet_export str INETabbrev(str *retval, inet *val);
 
 @c
+#include "mal_config.h"
 #include <gdk.h>
 #include "mal.h"
 #include "mal_exception.h"

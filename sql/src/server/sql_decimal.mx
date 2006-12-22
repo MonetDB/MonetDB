@@ -32,6 +32,7 @@ extern char * decimal_to_str(lng v, sql_subtype *t);
 #endif /* _SQL_DECIMAL_H */
 
 @c
+#include "sql_config.h"
 
 #include "sql_decimal.h"
 

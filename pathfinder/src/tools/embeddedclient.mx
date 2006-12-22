@@ -54,6 +54,7 @@ embeddedclient_export Mapi embedded_xquery(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
+#include "pf_config.h"
 #include "monet.h"
 #include "monet_options.h"
 #include "initmodules.h"

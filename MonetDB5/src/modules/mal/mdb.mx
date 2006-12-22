@@ -152,6 +152,7 @@ comment "Returns a string representation of the current function
 #ifdef _MDB_H
 #endif /* _MDB_H */
 @c
+#include "mal_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>

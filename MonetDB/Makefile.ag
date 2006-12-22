@@ -14,29 +14,8 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-SUBDIRS = src conf scripts
+SUBDIRS = src conf
 
-EXTRA_DIST = rules.mk bootstrap lady.gif configure.ag RunMtest.in \
-		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
-		sysdefs.h.in MonetDB.spec MonetDB.spec.in HowToStart \
-		HowToStart-Win32.txt HowToStart-MinGW.txt \
-		HowToStart-MinGW-pcre.txt HowToStart-MinGW-swig.txt \
-		RunMserver.bat.in rpm.mk.in RunMapiClient.bat.in RunMserver.in
+EXTRA_DIST = bootstrap configure.ag rpm.mk.in sysdefs.h.in
 
-EXTRA_DIST_DIR = NT tests
-
-EXTRA_HEADERS = monetdb_config.h sysdefs.h
-
-scripts_gif = {
-	DIR = pkgdatadir
-	SOURCES = lady.gif
-}
-
-headers_pc = {
-	HEADERS = pc
-	SOURCES	= MonetDB.pc.in
-	DIR = libdir/pkgconfig
-}
-
-TESTS = RunMtest
-TESTS_ENVIRONMENT = $(SHELL)
+EXTRA_HEADERS = sysdefs.h

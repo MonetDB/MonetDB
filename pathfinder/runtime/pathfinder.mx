@@ -2778,6 +2778,7 @@ xquery_method(stream *out,
 
 #endif
 @c
+#include "pf_config.h"
 #include "pathfinder.h"
 #include "shredder.h"
 

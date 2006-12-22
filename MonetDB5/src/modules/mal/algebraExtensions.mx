@@ -37,6 +37,7 @@ In most cases we pass a BAT identifier, which should be unified
 with a BAT descriptor. Upon failure we can simply abort the function.
 
 @c
+#include "mal_config.h"
 #include "mal_box.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"

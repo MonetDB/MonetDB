@@ -53,6 +53,7 @@ sql5_export str backend_name(cq *cq);
 
 #endif /* _SQL2MAL_H */
 @c
+#include "sql_config.h"
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
 #include "sql_scope.h"

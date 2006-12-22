@@ -89,6 +89,7 @@ factory_export str FCTgetLocations(int *ret);
 factory_export str FCTshutdown(int *ret, str *mod, str *fcn);
 #endif /* _FACTORY_H */
 @c
+#include "mal_config.h"
 #include "factory.h"
 
 

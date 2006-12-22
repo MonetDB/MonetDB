@@ -816,6 +816,7 @@ of the calendar).
 typedef int date;
 #define date_nil ((date) int_nil)
 @c
+#include "mal_config.h"
 #include "mtime.h"
 
 @- daytime

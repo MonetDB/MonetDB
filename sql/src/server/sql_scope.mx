@@ -126,6 +126,7 @@ extern void tvar_destroy(tvar *t);
 
 @c
 
+#include "sql_config.h"
 #include "sql_scope.h"
 #include <string.h>
 

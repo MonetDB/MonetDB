@@ -41,6 +41,7 @@ extern char *sql_escape_ident(char *s);
 
 @c
 
+#include "sql_config.h"
 #include <sql_mem.h>
 #include <gdk.h>
 #include "sql_string.h"

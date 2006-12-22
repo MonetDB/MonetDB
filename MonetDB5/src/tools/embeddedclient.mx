@@ -64,7 +64,7 @@ between 25-50%.
 #define embeddedclient_export extern
 #endif
 
-#include <streams.h>
+#include <stream.h>
 #include <Mapi.h>
 
 embeddedclient_export Mapi embedded_mal(opt *set, int len);

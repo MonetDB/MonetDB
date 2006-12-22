@@ -38,10 +38,10 @@ operators.
 
 @c
 
+#include "sql_config.h"
 #include "sql_storage.h"
 #include "bat_bm.h"
 #include "bat_store.h"
-#include <bat.h>
 
 static BAT *
 full_column(sql_column *c, BAT *d, BAT *s )

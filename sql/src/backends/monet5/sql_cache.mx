@@ -64,6 +64,7 @@ sql5_export str SQLCacheGetDefinition(int *ret, str *nme);
 
 #endif /* _SQL_CACHE_H_ */
 @c
+#include "sql_config.h"
 #include "mal.h"
 #include "mal_interpreter.h"
 #include "inspect.h"

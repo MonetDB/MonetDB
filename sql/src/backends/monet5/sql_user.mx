@@ -34,6 +34,7 @@ sql5_export str db_users_wrap(int *r);
 #endif /* _SQL_USER_H_ */
 
 @c
+#include "sql_config.h"
 #include "sql_user.h"
 #include "sql_mvc.h"
 #include "bat5.h"

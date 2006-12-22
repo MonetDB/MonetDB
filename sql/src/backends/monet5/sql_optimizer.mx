@@ -102,6 +102,7 @@ quite some (expensive) instructions can be safed.
 The current heuristic is geared at avoiding trivial
 factory structures.
 @c
+#include "sql_config.h"
 #include "mal_builder.h"
 #include "bat5.h"
 

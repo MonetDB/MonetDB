@@ -1,0 +1,507 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f pcl
+@a N. Nes
+@t PCL - The Performance Counter Library
+@v 2.2, January 2003
+@T
+PCL (The Performance Counter Library) is a common interface to access
+in a portable way performance counters built into modern
+microprocessors. PCL supports query for functionality, start and stop
+of counters, and reading the current values out of the
+counters. Performance counting can be done in user mode, system, and
+user-or-system mode. Functions are callable from C, C++, Fortran, and
+Java.
+
+Currently, the following systems are supported:
+\begin{tabular}{l}
+  Linux 2.x.x with Intel Pentium/PPro/Pentium II/Pentium III/Pentium 4\\
+  Linux 2.x.x with AMD Athlon/Duron\\
+  IBM AIX 4.x >= 4.3 with PowerPC 604, 604e, Power3, Power3-II\\
+  SUN Solaris 2.x, Solaris 7, 8 with UltraSPARC I,II, III\\
+  Digital Unix with Alpha 21164, 21264\\
+  Cray T3E with Alpha 21164\\
+  SGI IRIX with R10000, R12000\\
+\end{tabular}
+
+The homepage of PCL can be found at
+
+\begin{center}
+http://www.fz-juelich.de/zam/PCL/
+\end{center}
+
+were you can find the source and a detailed description of PCL
+including a description of performance counters on various
+microprocessors.
+@+ Module Definition
+@m
+.MODULE pcl;
+
+.COMMAND pcl_info() : BAT[str,str] = pcl_info;
+  "get information about the processor in use"
+
+.COMMAND pcl_start(BAT[int,any] events, int mode) = pcl_start;
+  "start counting the given events"
+
+.COMMAND pcl_stop(BAT[int,any] events) : BAT[int,lng] = pcl_stop;
+  "stop counting and return the counts for the given events."
+
+.COMMAND pcl_start_rates(BAT[int,any] rates, int mode) = pcl_start_rates;
+  "start counting the events needed for the given rates"
+
+.COMMAND pcl_stop_rates(BAT[int,any] rates) : BAT[int,dbl] = pcl_stop_rates;
+  "stop event counters and return the requested rates."
+
+.COMMAND pcl_query(BAT[int,any] events, int mode) : BAT[int,int] = pcl_query;
+  "query for existing events"
+
+.COMMAND pcl_try(BAT[int,any] events, int mode) : bit = pcl_try;
+  "try wheter the events could be started together on this CPU"
+
+.COMMAND pcl_eventname(int event) : str = pcl_eventname;
+  "return name of given event number"
+
+.PRELUDE = pcl_init;
+.EPILOGUE = pcl_exit;
+
+.END pcl;
+
+@mil
+
+var pcl_events := new(str,int,100);
+
+const PCL_MODE_USER := 1;
+const PCL_MODE_SYSTEM := 2;
+const PCL_MODE_BOTH := 3;
+
+#/* Level-1-Cache */
+pcl_events.insert( "PCL_L1CACHE_READ",            0);
+pcl_events.insert( "PCL_L1CACHE_WRITE",           1);
+pcl_events.insert( "PCL_L1CACHE_READWRITE",       2);
+pcl_events.insert( "PCL_L1CACHE_HIT",             3);
+pcl_events.insert( "PCL_L1CACHE_MISS",            4);
+
+#/* Level-1-Data-Cache */
+pcl_events.insert( "PCL_L1DCACHE_READ",           5);
+pcl_events.insert( "PCL_L1DCACHE_WRITE",          6);
+pcl_events.insert( "PCL_L1DCACHE_READWRITE",      7);
+pcl_events.insert( "PCL_L1DCACHE_HIT",            8);
+pcl_events.insert( "PCL_L1DCACHE_MISS",           9);
+
+#/* Level-1-Instruction-Cache */
+pcl_events.insert( "PCL_L1ICACHE_READ",           10);
+pcl_events.insert( "PCL_L1ICACHE_WRITE",          11);
+pcl_events.insert( "PCL_L1ICACHE_READWRITE",      12);
+pcl_events.insert( "PCL_L1ICACHE_HIT",            13);
+pcl_events.insert( "PCL_L1ICACHE_MISS",           14);
+
+#/* Level-2-Cache */
+pcl_events.insert( "PCL_L2CACHE_READ",            15);
+pcl_events.insert( "PCL_L2CACHE_WRITE",           16);
+pcl_events.insert( "PCL_L2CACHE_READWRITE",       17);
+pcl_events.insert( "PCL_L2CACHE_HIT",             18);
+pcl_events.insert( "PCL_L2CACHE_MISS",            19);
+
+#/* Level-2-Data-Cache */
+pcl_events.insert( "PCL_L2DCACHE_READ",           20);
+pcl_events.insert( "PCL_L2DCACHE_WRITE",          21);
+pcl_events.insert( "PCL_L2DCACHE_READWRITE",      22);
+pcl_events.insert( "PCL_L2DCACHE_HIT",            23);
+pcl_events.insert( "PCL_L2DCACHE_MISS",           24);
+
+#/* Level-2-Instruction-Cache */
+pcl_events.insert( "PCL_L2ICACHE_READ",           25);
+pcl_events.insert( "PCL_L2ICACHE_WRITE",          26);
+pcl_events.insert( "PCL_L2ICACHE_READWRITE",      27);
+pcl_events.insert( "PCL_L2ICACHE_HIT",            28);
+pcl_events.insert( "PCL_L2ICACHE_MISS",           29);
+
+#/* TLB */
+pcl_events.insert( "PCL_TLB_HIT",                 30);
+pcl_events.insert( "PCL_TLB_MISS",                31);
+
+#/* Instruction-TLB */
+pcl_events.insert( "PCL_ITLB_HIT",                32);
+pcl_events.insert( "PCL_ITLB_MISS",               33);
+
+#/* Data-TLB */
+pcl_events.insert( "PCL_DTLB_HIT",                34);
+pcl_events.insert( "PCL_DTLB_MISS",               35);
+
+#/* Cycles */
+pcl_events.insert( "PCL_CYCLES",                  36);
+pcl_events.insert( "PCL_ELAPSED_CYCLES",          37);
+
+#/* Operations */
+pcl_events.insert( "PCL_INTEGER_INSTR",           38);
+pcl_events.insert( "PCL_FP_INSTR",                39);
+pcl_events.insert( "PCL_LOAD_INSTR",              40);
+pcl_events.insert( "PCL_STORE_INSTR",             41);
+pcl_events.insert( "PCL_LOADSTORE_INSTR",         42);
+pcl_events.insert( "PCL_INSTR",                   43);
+
+#/* Jump Instructions */
+pcl_events.insert( "PCL_JUMP_SUCCESS",            44);
+pcl_events.insert( "PCL_JUMP_UNSUCCESS",          45);
+pcl_events.insert( "PCL_JUMP",                    46);
+
+#/* Atomic Instructions */
+pcl_events.insert( "PCL_ATOMIC_SUCCESS",          47);
+pcl_events.insert( "PCL_ATOMIC_UNSUCCESS",        48);
+pcl_events.insert( "PCL_ATOMIC",                  49);
+
+#/* Stalls */
+pcl_events.insert( "PCL_STALL_INTEGER",           50);
+pcl_events.insert( "PCL_STALL_FP",                51);
+pcl_events.insert( "PCL_STALL_JUMP",              52);
+pcl_events.insert( "PCL_STALL_LOAD",              53);
+pcl_events.insert( "PCL_STALL_STORE",             54);
+pcl_events.insert( "PCL_STALL",                   55);
+
+#/* derived numbers */
+pcl_events.insert( "PCL_MFLOPS",                  56);
+pcl_events.insert( "PCL_IPC",                     57);
+pcl_events.insert( "PCL_L1DCACHE_MISSRATE",       58);
+pcl_events.insert( "PCL_L2DCACHE_MISSRATE",       59);
+pcl_events.insert( "PCL_MEM_FP_RATIO",            60);
+
+pcl_events := pcl_events.reverse();
+@{
+@-
+
+TODO
+
+add pcl_cpu_info! (void,str bat) (max counters?)
+later add low level api
+
+
+@+ Implementation
+@c
+#include "monetdb4_config.h"
+#include "gdk.h"
+
+#ifndef HAVE_LIBPCL
+
+bat *
+pcl_init()
+{
+	return NULL;
+}
+
+void
+pcl_exit()
+{
+}
+
+int
+pcl_info(BAT **result)
+{
+	*result = NULL;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_start(BAT *event, int *mode)
+{
+	(void) event;
+	(void) mode;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_start_rates(BAT *event, int *mode)
+{
+	(void) event;
+	(void) mode;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_stop(BAT **result, BAT *event)
+{
+	(void) event;
+	*result = NULL;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_stop_rates(BAT **result, BAT *event)
+{
+	(void) event;
+	*result = NULL;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_query(BAT **result, BAT *event, int *mode)
+{
+	(void) event;
+	(void) mode;
+	*result = NULL;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_try(bit *result, BAT *event, int *mode)
+{
+	(void) event;
+	(void) mode;
+	*result = FALSE;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_eventname(str *result, int *event)
+{
+	(void) event;
+	*result = (str)str_nil;
+	return GDK_SUCCEED;
+}
+#else
+
+#include "pcl.proto.h"
+#include <pcl.h>
+
+static PCL_DESCR_TYPE pcl_desc;
+
+bat *
+pcl_init()
+{
+	if (PCLinit(&pcl_desc) != PCL_SUCCESS) {
+		GDKwarning("couldn't initialize pcl library\n");
+	}
+	return NULL;
+}
+
+void
+pcl_exit()
+{
+	if (PCLexit(pcl_desc) != PCL_SUCCESS) {
+		GDKwarning("couldn't free pcl library resources\n");
+	}
+}
+
+int
+pcl_info(BAT **result)
+{
+	int res;
+	char mhz[16], ncounters[16];
+	PCL_PROCESSOR_INFO info;
+
+	res = PCL_driver_info(&info);
+	if (res != PCL_SUCCESS) {
+		GDKwarning("pcl_info failed with %d\n", res);
+		*result = NULL;
+		return GDK_FAIL;
+	}
+	*result = BATnew(TYPE_str, TYPE_str, 5);
+	if (*result == NULL)
+		return GDK_FAIL;
+	BUNins(*result, "vendor", info.vendor);
+	BUNins(*result, "family", info.family);
+	BUNins(*result, "model", info.model);
+	snprintf(mhz, 16, "%d", info.mhz);
+	BUNins(*result, "mhz", mhz);
+	snprintf(ncounters, 16, "%d", info.ncounters);
+	BUNins(*result, "ncounters", ncounters);
+	return GDK_SUCCEED;
+}
+
+int
+pcl_start(BAT *event, int *mode)
+{
+	int clist[PCL_MAX_EVENT_PER_CALL];
+	int res, i = 0;
+	BUN p, q;
+
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
+		return GDK_FAIL;
+	}
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		if (PCL_EVENT_IS_INT(ev)) {
+			clist[i] = ev;
+			i++;
+		}
+	}
+	res = PCLstart(pcl_desc, clist, i, *mode);
+	if (res != PCL_SUCCESS) {
+		GDKwarning("pcl_start failed with %d\n", res);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+pcl_start_rates(BAT *event, int *mode)
+{
+	int clist[PCL_MAX_EVENT_PER_CALL];
+	int res, i = 0;
+	BUN p, q;
+
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
+		return GDK_FAIL;
+	}
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		if (!PCL_EVENT_IS_INT(ev)) {
+			clist[i] = ev;
+			i++;
+		}
+	}
+	res = PCLstart(pcl_desc, clist, i, *mode);
+	if (res != PCL_SUCCESS) {
+		GDKwarning("pcl_start_rates failed with %d\n", res);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+pcl_stop(BAT **result, BAT *event)
+{
+	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
+	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
+	int res, i = 0;
+	size_t cnt = BATcount(event);
+	BUN p, q;
+
+	if (cnt > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
+		return GDK_FAIL;
+	}
+	res = PCLstop(pcl_desc, ilist, flist, cnt);
+	if (res != PCL_SUCCESS) {
+		GDKwarning("pcl_stop failed with %d\n", res);
+		return GDK_FAIL;
+	}
+	*result = BATnew(TYPE_int, TYPE_lng, cnt);
+	if (*result == NULL)
+		return GDK_FAIL;
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		if (PCL_EVENT_IS_INT(ev)) {
+			lng h = ilist[i];
+
+			BUNins(*result, &ev, &h);
+		}
+		i++;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+pcl_stop_rates(BAT **result, BAT *event)
+{
+	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
+	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
+	int res, i = 0;
+	size_t cnt = BATcount(event);
+	BUN p, q;
+
+	if (cnt > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
+		return GDK_FAIL;
+	}
+	res = PCLstop(pcl_desc, ilist, flist, cnt);
+	if (res != PCL_SUCCESS) {
+		GDKwarning("pcl_stop_rates failed with %d\n", res);
+		return GDK_FAIL;
+	}
+	*result = BATnew(TYPE_int, TYPE_dbl, cnt);
+	if (*result == NULL)
+		return GDK_FAIL;
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		if (!PCL_EVENT_IS_INT(ev)) {
+			dbl h = flist[i];
+
+			BUNins(*result, &ev, &h);
+		}
+		i++;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+pcl_query(BAT **result, BAT *event, int *mode)
+{
+	int res;
+	size_t cnt = BATcount(event);
+	int clist;
+	BUN p, q;
+
+	*result = BATnew(TYPE_int, TYPE_int, cnt);
+	if (*result == NULL)
+		return GDK_FAIL;
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		clist = ev;
+		res = PCLquery(pcl_desc, &clist, 1, *mode);
+		BUNins(*result, &ev, &res);
+	}
+	return GDK_SUCCEED;
+}
+
+int
+pcl_try(bit *result, BAT *event, int *mode)
+{
+	int i = 0, res;
+	int clist[PCL_MAX_EVENT_PER_CALL];
+	BUN p, q;
+
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
+		return GDK_FAIL;
+	}
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		clist[i] = ev;
+		i++;
+	}
+	res = PCLquery(pcl_desc, clist, i, *mode);
+	if (res == PCL_SUCCESS)
+		*result = TRUE;
+	else
+		*result = FALSE;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_eventname(str *result, int *event)
+{
+	str res = (str) PCLeventname(*event);
+
+	if (res == NULL) {
+		*result = str_nil;
+	} else {
+		*result = GDKstrdup(res);
+		/* free(res); */
+	}
+	return GDK_SUCCEED;
+}
+#endif
+
+@}

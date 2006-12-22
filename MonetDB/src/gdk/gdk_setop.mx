@@ -81,6 +81,7 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 #endif /* _GDK_SETOP_H */
 
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_setop.h"
 

@@ -84,6 +84,7 @@ mutils_export void mo_free_options(opt *set, int setlen);
 #endif
 #endif
 @c
+#include "monetdb_config.h"
 #include "monet_options.h"
 #include <stdio.h>
 #include <string.h>

@@ -133,6 +133,7 @@ The content of this box my only be changed by the Administrator.
 	insertToBox(box,@1,msg);
 	GDKfree(msg);
 @c
+#include "mal_config.h"
 #include "const.h"
 
 

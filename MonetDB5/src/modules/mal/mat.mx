@@ -62,6 +62,7 @@ comment "retrieve the definition from the partition catalogue";
 #ifdef _INSPECT_H
 #endif /* _INSPECT_H */
 @c
+#include "mal_config.h"
 #include <stdarg.h>
 #include "mal_resolve.h"
 #include "mal_exception.h"

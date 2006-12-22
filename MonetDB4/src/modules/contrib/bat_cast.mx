@@ -1,0 +1,89 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@' 		Alex van Ballegooij  <Alex.van.Ballegooij@cwi.nl>
+@f bat_cast
+@t Optimized Multiplexed Type-Casts on BATs
+@a A.R. van Ballegooij
+@v 1.0
+@* Introduction
+
+This module provides optimized code-expanded implementations of multiplxed
+cast functions ([dbl],[oid],...) on void-headed BATs.
+
+@* Module Definition 
+
+\begin{verbatim}
+	signature
+	@1:	int,dbl,... 	input type
+	@2:	int,dbl,...	output type
+\end{verbatim}
+
+@m
+.MODULE bat_cast;
+
+@= signature
+.COMMAND "[@2]" (BAT[void,@1]) : BAT[void,@2] = batcast_@1_@2;
+	"optimized multiplexed @2-cast on [void,@1] BATs"
+
+@m
+@:signature(int,oid)@
+@:signature(int,dbl)@
+
+.END bat_cast;
+
+@* Implementation
+@c
+#include "monetdb4_config.h"
+#include <gdk.h>
+#include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#include "bat_cast.proto.h"
+
+@c
+@= implementation
+int batcast_@1_@2(BAT **ret, BAT *b) {
+	REGISTER chr *bp, *bq;
+	REGISTER @2 *bnp;
+	REGISTER int bs = BUNsize(b);
+	BAT *bn;
+
+        ALGODEBUG THRprintf(GDKout, "batcast_@1_@2(b=%s);\n",BATgetId(b));
+ 	ERRORcheck((b->htype!=TYPE_void),
+ 	           "batcast_@1_@2: BAT b must be void-headed.\n");
+
+	bn = BATnew(TYPE_void, TYPE_@2, BATcount(b));
+	BATseqbase(bn,b->hseqbase);
+	bn->tsorted = 0;
+	bq = (chr*)BUNtloc(b,BUNlast(b));
+	bp = (chr*)BUNtloc(b,BUNfirst(b));
+	bnp = (@2*)BUNtloc(bn,BUNlast(bn));
+	for (; bp < bq; bp+=bs) {
+		REGISTER @1 bv = *(@1*)bp;
+		*bnp = (bv != @1_nil) ? (@2)bv : @2_nil;
+		bnp++;
+	}
+        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+        BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+        if (!bn->batDirty) bn->batDirty = TRUE;
+
+        *ret = bn;
+        return GDK_SUCCEED;
+}
+
+@c
+
+@:implementation(int,oid)@
+@:implementation(int,dbl)@

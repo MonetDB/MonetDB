@@ -41,6 +41,7 @@ invokes operation(dstbat, BUNhead(srcbat), BUNtail(srcbat)) on all buns
 of the srcbat, but testing only once where they reside.
 @{
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_scanselect.h"
 

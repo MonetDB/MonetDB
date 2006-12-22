@@ -76,6 +76,7 @@ In such a case, the tail values correspond to the head values
 that would have been there in a non-virtual column, continuing
 the same head-sequence as the other BATs in the sync group.
 @c
+#include "monetdb_config.h"
 #include "gdk.h"
 
 int

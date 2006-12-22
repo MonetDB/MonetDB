@@ -355,6 +355,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	@:wrapup@
 }
 @c
+#include "mal_config.h"
 #include "batifthen.h"
 
 @:ifthencstImpl(int)@

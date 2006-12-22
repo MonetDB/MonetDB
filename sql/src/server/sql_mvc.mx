@@ -201,8 +201,8 @@ extern void stack_set_number(mvc *sql, char *name, lng v);
 
 /* multi version catalog */
 
+#include "sql_config.h"
 #include <gdk.h>
-#include <bat.h>
 
 #include "sql_mvc.h"
 #include "sql_qc.h"

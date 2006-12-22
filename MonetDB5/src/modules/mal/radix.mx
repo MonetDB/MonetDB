@@ -1234,6 +1234,7 @@ radix_cluster(attr_int,
 @f radix
 @* Implementation
 @c
+#include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"  /* for getArgReference() */

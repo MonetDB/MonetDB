@@ -31,6 +31,7 @@ extern stmt *optimize(mvc *c, stmt *s);
 #endif /* _SQL_OPTIMIZE_H */
 
 @c
+#include "sql_config.h"
 #include "sql_optimize.h"
 #include "sql_env.h"
 #include <stdio.h>
