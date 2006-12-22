@@ -1,2 +1,0 @@
-module(xrpc_server);
-rpcd_start();

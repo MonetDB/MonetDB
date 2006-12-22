@@ -1,9 +1,0 @@
-# Nil values
-
-s:str := nil:str;	io.print(s);
-i:sht := nil:sht;	io.print(i);
-b:bit := nil:bit;	io.print(b);
-f:flt := nil:flt;	io.print(f);
-d:dbl := nil:dbl;	io.print(d);
-l:lng := nil:lng;	io.print(l);
-j:int := nil:int;	io.print(j);
