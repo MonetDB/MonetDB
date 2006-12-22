@@ -340,7 +340,7 @@ void setNEXIscanstring(const char *s);
 
 extern int parseNEXI(TijahParserContext* parserCtx, int *query_end_num);
 extern int preprocess(int preproc_type);
-extern int process(int processing_type, int language);
+int process(char* stemmer, bool stem_stop, bool stop_quoted);
 
 extern int COtoCPlan(int query_num, int type, struct_RMT *txt_retr_model, struct_RF *rel_feedback);
 int CAStoCPlan(int query_num, int type, bool rm_set);

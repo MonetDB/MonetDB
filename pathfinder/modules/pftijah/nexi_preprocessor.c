@@ -15,60 +15,64 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <strings.h>
 #include "nexi.h"
 
-int DutchStem(char *word ) {
-   (void)word;
-   if ( 1 ) {
-     fprintf(stderr,"DutchStem: not implemented yet.\n");
-     exit(0);
-   }
-   return 0;
-}
+#include <pftijah_stem.h>
 
-int Stem( char *word ) {
-   (void)word;
-   if ( 1 ) {
-     fprintf(stderr,"Stem: not implemented yet.\n");
-     exit(0);
-   }
-   return 0;
-}
-
-bool StopWord(char *term, int language) {
-
-  bool comp;
-  char st_ls[30];
-
-  FILE *stop_list_file = NULL;
-
-  if (language == ENGLISH)
-    stop_list_file = fopen(myfileName(WORKDIR,"english_stop_list.sl"),"r");
-  else if (language == DUTCH)
-    stop_list_file = fopen(myfileName(WORKDIR,"dutch_stop_list.sl"),"r");
-
-  if (stop_list_file == NULL) {
-    printf("Error: cannot open stop list file for reading.\n");
-    return 0;
-  }
-
-  comp = FALSE;
-
-  while (!feof(stop_list_file)) {
-
-    fscanf(stop_list_file, "%s", st_ls);
-
-    if (!strcmp(st_ls, term)) {
-      comp = TRUE;
+/**
+ * This function performs both stop word removal and stemming.
+ *
+ *  - when a term is a stop word (according to the stop word list
+ *    associated with the stemmer), NULL is returned.
+ *  - otherwise, the stemmed variant of the term is returned.
+ */
+char* stop_stem( tjStemCtx* stemCtx, char* term ) {
+    // Find out if it is a stop word
+    int i = 0;
+    while ( stemCtx->stopWords[i] != NULL ) {
+        if ( strcasecmp(term, stemCtx->stopWords[i]) == 0 )
+            return NULL;
+        i++;
     }
+    
+    if ( stemCtx->stem ) {
+        // Convert to lowercase?
+    
+        // Perform initialization of udf structure if necessary
+        if ( !stemCtx->udf && stemCtx->init ) stemCtx->init( stemCtx, NULL );
 
-  }
-
-  return comp;
-
+        // Perform stemming
+        char* stemmed = (char *)stemCtx->stem( stemCtx, term );
+        return stemmed;
+    } else 
+        return term;
 }
 
-/* Procedure for preprocessing query files */
+
+/**
+ * This function performs preprocessing: drop or leave in tokens for 
+ * phrase search and term weighting (a.k.a. modifiers)
+ *
+ * There are several preprocessing types. Based on these types, 
+ * tokens like +, - and " are output (or dropped).
+ *
+ *                     modifiers   phrases
+ *             PLAIN:     no         no
+ *       NO_MODIFIER:     no         yes
+ *
+ *       VAGUE_MODIF:     vague(1)   yes
+ *      STRICT_MODIF:     strict(2)  yes
+ *
+ *   VAGUE_NO_PHRASE:     vague(1)   no
+ *  STRICT_NO_PHRASE:     strict(2)  no
+ *
+ *  (1): vague means that + and - are output as is
+ *  (2): strict means that + and - are converted to MUST and MUST_NOT
+ *
+ * When phrase search is disabled, any modifiers placed before the phrases
+ * are placed before the terms that make up the phrase.
+ */
 int preprocess(int preproc_type) {
 
   /* token and command variables for preprocessing */
@@ -427,9 +431,16 @@ int preprocess(int preproc_type) {
 
 
 
-/* Procedure for processing query files */
-
-int process(int processing_type, int language) {
+/**
+ * This function performs stemming and stop word removal. Arguments:
+ * 
+ * - stemmer (string): name of the stemmer to use. This should be the same as was used on
+ *   the collection to be queried.
+ * - stem_stop (boolean): whether to perform stemming and stop word removal at all.
+ *   (if not, you might consider not calling this function :-))
+ * - stop_quoted (boolean): whether to perform stop word removal inside quoted query strings (phrases)
+ */
+int process(char* stemmer, bool stem_stop, bool stop_quoted) {
 
   /* token and command variables for preprocessing */
   int com_var;
@@ -473,8 +484,15 @@ int process(int processing_type, int language) {
     return 0;
   }
 
+  // Initialize the stemmer
+  tjStemCtx* stemCtx = getStemmingContext( stemmer );
 
-  if (processing_type == NO_STOP_STEM) {
+  if ( stemCtx->stem && !stemCtx->udf && stemCtx->init ) 
+      stemCtx->init( stemCtx, NULL );
+
+  // Don't perform stemming and stop word removal at all,
+  // just write input to output
+  if (!stem_stop) {
 
     fscanf(token_file_pre, "%s", tok_var);
     while (!feof(token_file_pre)) {
@@ -490,7 +508,7 @@ int process(int processing_type, int language) {
 
   }
 
-  else if (processing_type == STOP_WORD || processing_type == STEMMING || processing_type == STOP_STEM) {
+  else {
 
     com_var_tmp = 0;
 
@@ -532,9 +550,7 @@ int process(int processing_type, int language) {
 	    while (com_var != QUOTE) {
               fscanf(token_file_pre, "%s", tok_var);
 	      fprintf (command_file, "%d\n", com_var);
-printf("%d\n", com_var);
               fprintf (token_file, "\"%s\"\n", tok_var);
-printf("%s\n", tok_var);
 	      fscanf(command_file_pre, "%d", &com_var);
 	    }
 
@@ -558,65 +574,23 @@ printf("%s\n", tok_var);
 	}
 
 	else {
-
-	  if (processing_type == STOP_WORD){
-
-	    if (!StopWord(tok_var, language)) {
-	      fprintf (command_file, "%d\n", com_var);
-	      fprintf (token_file, "\"%s\"\n", tok_var);
-	    }
-	    else {
-	      num_stopword++;
-	    }
-
-	  }
-
-	  else if (processing_type == STEMMING) {
-
-	    if (language == ENGLISH)
-	      Stem(tok_var);
-	    else if (language == DUTCH)
-	      DutchStem(tok_var);
-
-	    fprintf (command_file, "%d\n", com_var);
-	    fprintf (token_file, "\"%s\"\n", tok_var);
-
-	  }
-
-	  else if (processing_type == STOP_STEM) {
-
-	    if (!StopWord(tok_var, language)) {
-
-	      if (language == ENGLISH)
-	        Stem(tok_var);
-	      else if (language == DUTCH)
-	        DutchStem(tok_var);
-
-	      fprintf (command_file, "%d\n", com_var);
-	      fprintf (token_file, "\"%s\"\n", tok_var);
-
-	    }
-            else {
-
-	      if(in_quote == TRUE) {
-
-		if (language == ENGLISH)
-	          Stem(tok_var);
-	        else if (language == DUTCH)
-	          DutchStem(tok_var);
-
-		 fprintf (command_file, "%d\n", com_var);
-	      	 fprintf (token_file, "\"%s\"\n", tok_var);
-
-	      }
-              else{
-	      	num_stopword++;
-              }
-
-	    }
-
-	  }
-
+	  // Perform stemming and stop word detection
+          char* stemmed = stop_stem( stemCtx, tok_var );
+          if ( stemmed ) {
+            // Output the stemmed version of the term to the token file
+            fprintf (command_file, "%d\n", com_var);
+            fprintf (token_file, "\"%s\"\n", stemmed);
+          } else {
+            // If we're inside a quoted string, and stop word removal inside
+            // quoted strings is disabled, output the original token
+            if ( in_quote && !stop_quoted ) {
+              fprintf (command_file, "%d\n", com_var);
+              fprintf (token_file, "\"%s\"\n", tok_var);
+            } else { 
+              // It is a stop word
+              num_stopword++;
+            }
+          }
 	}
 
       }
@@ -632,70 +606,24 @@ printf("%s\n", tok_var);
 	}
 
 	else {
-
-	  if (processing_type == STOP_WORD){
-
-	    if (!StopWord(tok_var, language)) {
-	      fprintf (command_file, "%d\n", com_var);
-	      fprintf (token_file, "\"%s\"\n", tok_var);
-	    }
-	    else {
-	    	if(in_quote == TRUE) {
-			fprintf (command_file, "%d\n", com_var);
-	      		fprintf (token_file, "\"%s\"\n", tok_var);
-		}
-		else{
-	      		num_stopword++;
-		}
-	    }
-
-	  }
-
-	  else if (processing_type == STEMMING) {
-
-	    if (language == ENGLISH)
-	      Stem(tok_var);
-	    else if (language == DUTCH)
-	      DutchStem(tok_var);
-
-	    fprintf (command_file, "%d\n", com_var);
-	    fprintf (token_file, "\"%s\"\n", tok_var);
-
-	  }
-
-	  else if (processing_type == STOP_STEM) {
-
-	    if (!StopWord(tok_var,language)) {
-
-	      if (language == ENGLISH)
-	        Stem(tok_var);
-	      else if (language == DUTCH)
-	        DutchStem(tok_var);
-
-	      fprintf (command_file, "%d\n", com_var);
-	      fprintf (token_file, "\"%s\"\n", tok_var);
-
-	    }
-	    else {
-
-	      if(in_quote == TRUE) {
-
-		  if (language == ENGLISH)
-	            Stem(tok_var);
-	          else if (language == DUTCH)
-	            DutchStem(tok_var);
-
-		   fprintf (command_file, "%d\n", com_var);
-	      	   fprintf (token_file, "\"%s\"\n", tok_var);
-
-	      }
-              else{
-	      	num_stopword++;
-              }
-
-	    }
-
-	  }
+	
+	  // Perform stemming and stop word detection
+          char* stemmed = stop_stem( stemCtx, tok_var );
+          if ( stemmed ) {
+            // Output the stemmed version of the term to the token file
+            fprintf (command_file, "%d\n", com_var);
+            fprintf (token_file, "\"%s\"\n", stemmed);
+          } else {
+            // If we're inside a quoted string, and stop word removal inside
+            // quoted strings is disabled, output the original token
+            if ( in_quote && !stop_quoted ) {
+              fprintf (command_file, "%d\n", com_var);
+              fprintf (token_file, "\"%s\"\n", tok_var);
+            } else { 
+              // It is a stop word
+              num_stopword++;
+            }
+          }
 
 	}
 

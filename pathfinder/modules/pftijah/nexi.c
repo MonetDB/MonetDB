@@ -1,13 +1,49 @@
-/*
-
-     QPlanGen.c
-     =========================
-     Author: Vojkan Mihajlovic
-     University of Twente
-
-     Main module for generating logical query plans and MIL query plans from NEXI queries
-
-*/
+/**
+ * nexi.c:this is the main entry point of the NEXI-to-SRA compiler for the PF/Tijah 
+ * IR querying module.
+ *
+ * The original code in this file was taken from TIJAH (written by Vojkan Mihajlovic et al.)
+ * and gradually rewritten for PF/Tijah.
+ *
+ * NEXI queries are processed by old_main as follows:
+ *
+ *  1. parseNEXI(): nexi.l and nexi.y: first parsing of the NEXI query. 
+ *     The tokens and commands are written to temporary files.
+ *
+ *  2. preprocess(): nexi_preprocessor.c: performs preprocessing for phrases and vague selection
+ *     The temporary files created in step 1 are used for this.
+ *     Output is written in the same files.
+ *
+ *  3. process(): nexi_preprocessor.c: performs stemming and stop word removal
+ *     The temporary files created in step 1-2 are used as input. 
+ *     Output is written in the same files.
+ *
+ *  4. COtoCPlan or CAStoCPlan(): nexi_rewriter.c: rewrites CO or CAS queries.
+ *     Content-Only (CO) queries are rewritten to Content-And-Structure (CAS) queries,
+ *     because the following step only supports CAS queries as input.
+ *
+ *     The temporary files created in step 1-3 are used as input. 
+ *     Output is written in the same files.
+ *    
+ *  5. CAS_plan_gen(): nexi_generate_plan.c: converts queries into logical level plans.
+ *     Input is read from the temporary files created and modified in steps 1-4.
+ *     Output is a structure of command_tree instances (see nexi.h)
+ *
+ *  6. SRA_to_MIL(): nexi_generate_mil.c: converts logical level query plan to executable MIL code.
+ *     Input is the command_tree structure from step 5.
+ *     Output (MIL code) is written to a buffer. This buffer is executed.
+ *
+ *  
+ *
+ * Original heading of this file:
+ *    QPlanGen.c
+ *    =========================
+ *    Author: Vojkan Mihajlovic
+ *    University of Twente
+ *
+ *    Main module for generating logical query plans and MIL query plans from NEXI queries
+ *
+ */
 
 #include <pf_config.h>
 
@@ -90,6 +126,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     bool use_startNodes = (startNodes_name != NULL);
     bool scale_on;
     bool phrase_in;
+    bool stem_stop_query;
     int topic_type;
     int preproc_type;
     int processing_type;
@@ -177,7 +214,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     language_type       = ENGLISH;
     base_type           = ONE;
     return_all          = FALSE;
-    
+    stem_stop_query     = FALSE;
     bool eq_init        = FALSE;
     
     /* startup of argument options */
@@ -385,6 +422,14 @@ int old_main(BAT* optbat, char* startNodes_name)
                 MILPRINTF(MILOUT, "scoreBase := 0;\n");
                 base_type = ZERO;
             }
+            
+        } else if (strcmp(optName, "stem_stop_query") == 0) {
+            if (strcasecmp(optVal, "TRUE") == 0) {
+                stem_stop_query = TRUE;
+            } else {
+                stem_stop_query = FALSE;
+            }
+            
         } else if (strcmp(optName, "prior") == 0) {
             if (strcasecmp(optVal, "LENGTH_PRIOR") == 0) {
                 txt_retr_model->prior_type  = LENGTH_PRIOR;
@@ -486,9 +531,17 @@ int old_main(BAT* optbat, char* startNodes_name)
         LOGPRINTF(LOGFILE,"Preprocessing was not successful.\n");
         return 0;
     }
+    
+    // Find out which stemmer was used for collection to be queried
+    char batName[100]; 
+    sprintf( batName, "tj_%s_param", parserCtx->collection );
+    BAT* collOptBat = BATdescriptor( BBPindex(batName) );
+	
+    BUN bun = BUNfnd( collOptBat, (str)"stemmer" );
+    char *stemmer = (char *)BUNtail( collOptBat, bun );
 
     /* processing original query plans: stemming and stop word removal */
-    plan_ret = process(processing_type, language_type);
+    plan_ret = process(stemmer, stem_stop_query, FALSE);
 
     if (!plan_ret) {
         LOGPRINTF(LOGFILE,"Processing was not successful.\n");

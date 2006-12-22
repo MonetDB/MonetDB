@@ -505,8 +505,7 @@ PROC select_node(str name, bit e_class) : bat[oid,dbl] :=
                         bat("tj_" + collName + "_TagIndex"),
                         bat("tj_" + collName + "_Tags") );
         result := result.reverse().sort().project(dbl(scoreBase)); 
-        
-        
+
         if ( trace ) tj_trace( sprintf("END   select_node('%s',%d)", name, e_class) );
         return result;
     } else {
@@ -641,7 +640,7 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
     var anc_desc := anc_desc( right, left );
     
     # Attach the scores to the resulting nodes again:
-    var result := anc_desc.reverse().mirror().join(left);
+    var result := anc_desc.reverse().kunique().mirror().join(left);
     
     if ( trace ) tj_trace( "END   contained_by_2" );
     return result;
@@ -1150,26 +1149,29 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
     # In this case, we know that count(right) = tc(tm,col)
     #
     # This constitutes P(t|C), or tc(tm,col)/len(col)
-    if (size_type = SIZE_ENTITY) {
-        # Compute right size / collection entity size
-        
-        var pre_pfpre := bat("tj_" + collName + "_pfpre");
-        bckgnd_prob := dbl(count(right))/dbl(count(pre_pfpre));
+    var col_len := bat("tj_" + background_collName + "_Terms").count();
+    bckgnd_prob := dbl(count(right))/dbl(col_len);
 
-        pre_pfpre := nil;
-    } else if (size_type = SIZE_TERM) {
-        # Compute right size / collection term size
-        
-        var pre_tid  := bat("tj_" + collName + "_tid1");
-        var pre_pfpre := bat("tj_" + collName + "_pfpre");
-        var terms := pre_tid.mirror().kdiff( pre_pfpre.mirror() );
-
-        bckgnd_prob := dbl(count(right))/dbl(count(terms));
-        
-        var pre_tid := nil;
-        var pre_pfpre := nil;
-        var terms := nil;
-    }
+    #if (size_type = SIZE_ENTITY) {
+    #    # Compute right size / collection entity size
+    #    
+    #    var pre_pfpre := bat("tj_" + collName + "_pfpre");
+    #    bckgnd_prob := dbl(count(right))/dbl(count(pre_pfpre));
+    #
+    #    pre_pfpre := nil;
+    #} else if (size_type = SIZE_TERM) {
+    #    # Compute right size / collection term size
+    #    
+    #    var pre_tid  := bat("tj_" + collName + "_tid");
+    #    var pre_pfpre := bat("tj_" + collName + "_pfpre");
+    #    var terms := pre_tid.mirror().kdiff( pre_pfpre.mirror() );
+    #
+    #    bckgnd_prob := dbl(count(right))/dbl(count(terms));
+    #    
+    #    var pre_tid := nil;
+    #    var pre_pfpre := nil;
+    #    var terms := nil;
+    #}
 
     if (bckgnd_prob = dbl(0)) {
         if (DEBUG) printf( "Minimum collection frequency has not been computed yet!\n" );
@@ -1186,9 +1188,7 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
         res_reg := [+](left, [+]([*](lambda,forgnd_prob),*(m_lambda,bckgnd_prob)));
     else if (scoreBase = 1)
         res_reg := [*](left, [+]([*](lambda,forgnd_prob),*(m_lambda,bckgnd_prob)));
-    
-    
-    
+
     if ( trace ) tj_trace( "END   p_containing_t_LMs_ASPECT" );
     return res_reg;
 }
@@ -1365,7 +1365,7 @@ PROC col_freq(oid tid) : dbl :=
 ##
 PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,dbl]    :=    
 {
-    var start_time := time();
+    if ( trace ) tj_trace( "START reg_freq");
     
     var reg_size;
     
@@ -1389,11 +1389,12 @@ PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,db
     prob_tmp := [/](prob_tmp,reg_size);
 
     # Set all to zero regions from left that do not contain regions from right
-	prob_tmp := prob_tmp.kunion( left.project(dbl(0)) );
+    
+    var result := prob_tmp.kunion( left.project(dbl(0)) );
 
-    var end_time := time();
-    if (DEBUG) printf( "reg_freq: \t\t%d ms\n", end_time - start_time );
-    return prob_tmp;
+    if ( trace ) tj_trace( "END   reg_freq " );
+    
+    return result;
 }
 
 
@@ -1435,16 +1436,20 @@ PROC size_term( bat[oid,any] region ) : bat[oid,dbl] :=
 # Calculate the entity size of the region: how many entities (tags and terms) does it contain?
 PROC size_entity( bat[oid,any] region ) : bat[oid,dbl] :=
 {
-    var start_time := time();
-    
+    if ( trace ) {
+        var trace_msg := sprintf("(receiving %d regions)", count(region));
+        tj_trace( "START size_entity " + trace_msg );
+    }
     
     # Entity sizes:
     var pre_size := load( "tj_" + collName + "_size1");
     
     var result := [dbl](region.mirror().join( pre_size ));
 
-    var end_time := time();
-    if (DEBUG) printf( "size_entity: \t\t%d ms\n", end_time - start_time );
+    if ( trace ) {
+        var trace_msg := sprintf("(returning %d regions)", count(result));
+        tj_trace( "END   size_entity " + trace_msg );
+    }
     return result;
 }
 
@@ -1551,7 +1556,7 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : 
 ### UNION
 PROC union(bat left, bat right) : bat :=
 {
-
+#TODO: perhaps do kunique here?
 	return left.kunion(right).sort();
 
 }
@@ -1587,7 +1592,14 @@ PROC or_sum(bat left, bat right) : bat :=
 {
 
 	return [+](left,right);
+	#var inters    := [+](left,right);
+	#var onlyleft  := left.kdiff(inters);
+	#var onlyright := right.kdiff(inters);
+	#var result    := inters.kunion(onlyleft).kunion(onlyright).sort();
 
+	#var inters := nil; var onlyleft := nil; var onlyright := nil;
+	
+        #return result;
 }
 
 PROC or_max(bat left, bat right) : bat :=
