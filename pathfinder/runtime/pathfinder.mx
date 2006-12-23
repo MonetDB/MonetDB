@@ -1970,7 +1970,8 @@ PROC _ws_open(lng wsid,
     # check the timestamps
     var sel_del := [>](sel_idx.leftfetchjoin(idx_timestamps), sel_lim).ord_uselect(true);
     if (count(sel_del) > 0) { # delete stale documents
-	del_doc_base(bit_nil,mirror(sel_del).leftfetchjoin(sel_idx).leftfetchjoin(idx_names),false);
+	var sel_name := mirror(sel_del).leftfetchjoin(sel_idx).leftjoin(idx_doc_).leftjoin(doc_name);
+	del_doc_base(bit_nil,sel_name,false);
         idx_doc.append(idx_names.outerjoin(reverse(doc_name)));
         idx_doc.replace(idx_doc.ord_uselect(oid_nil).mirror().leftfetchjoin(idx_names).join(reverse(doc_location)));
     } else {
@@ -2248,17 +2249,18 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
                        Stream s,
                        lng wsid) : oid
 {
+    var verbose := >=(wsid, WS_MAXID);
     var err := str_nil;
     var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     var pre := 0@0;
-    if (count(docBAT) > 0) pre := oid(count(docBAT.fetch(PRE_SIZE))); 
+    if (count(docBAT) > 0) pre := oid(count(docBAT.fetch(PRE_SIZE)));  
 
     if (isnil(s)) { 
         # shred multiple documents into a single collection (maybe empty at first)
-        [shred_url](const docBAT, location, pageFree, coll_lock);
+        [shred_url](const docBAT, location, pageFree, coll_lock, verbose); 
     } else {
         # shred from a stream (a single document assumed here)
-        shred_stream(docBAT, s, pageFree, coll_lock);
+        shred_stream(docBAT, s, pageFree, coll_lock, verbose);
     }
 
     if (doCommit) {
@@ -2421,9 +2423,7 @@ PROC _del_doc(bit cachedOnly,
 {
     var del := doc_timestamp; # select all at first
     if (isnil(cachedOnly)) {
-        var del1 := names.outerjoin(reverse(doc_name));
-        var del2 := names.outerjoin(reverse(doc_location));
-        del := reverse([isnil](del1).[ifthenelse](del2,del1));
+        del := reverse(names.outerjoin(reverse(doc_name)));
         if (del.exist(oid_nil)) {
             ERROR("_del_doc(%s): document not found in database (%d such errors)!\n", 
                                  names.find(del.find(oid_nil)), 
@@ -2693,7 +2693,7 @@ ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
 PROC xmlcache_print() : void 
 {
     lock_set(pf_short);
-    var err := CATCH({  table( doc_name.col_name("alias"), doc_location.col_name("URI"), collection_size.col_name("size")); });
+    var err := CATCH({  table( doc_name.select(str_nil,str_nil).col_name("alias"), doc_location.col_name("URI"), doc_timestamp.col_name("valid-thru"), doc_collection.leftjoin(collection_size).col_name("size")); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 }
@@ -2703,7 +2703,7 @@ ADDHELP("xmlcache_print", "boncz", "May 2005",
 PROC xmldb_print() : void 
 {
     lock_set(pf_short);
-    var err := CATCH({  table( tsort(mirror(doc_timestamp.uselect(timestamp_nil)).join(doc_collection).join(collection_name)).col_name("collection"), doc_name.col_name("alias"), doc_location.col_name("URI")); });
+    var err := CATCH({  table( tsort(mirror(doc_timestamp.uselect(timestamp_nil)).join(doc_collection).join(collection_name)).col_name("collection"), doc_name.col_name("alias"), doc_location.col_name("URI"), doc_collection.leftjoin(collection_size).col_name("size")); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 }

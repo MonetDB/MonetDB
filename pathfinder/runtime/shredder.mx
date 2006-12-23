@@ -39,9 +39,9 @@
 pf_support_export int shred(BAT *docBAT, str location, str buffer, stream *s, lng percentage, struct serializeFunStruct *serFun, struct XqueryCtx *serCtx, lock *collLock);
 
 /* MIL commands to shred XML from a {uri,string,stream}. */
-pf_support_export int CMDshred_url(BAT *docBAT, str location, lng *percentage, lock* collLock);
-pf_support_export int CMDshred_str(BAT *docBAT, str buffer, lng *percentage, lock* collLock);
-pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, lock* collLock);
+pf_support_export int CMDshred_url(BAT *docBAT, str location, lng *percentage, lock* collLock, bit *verbose);
+pf_support_export int CMDshred_str(BAT *docBAT, str buffer, lng *percentage, lock* collLock, bit *verbose);
+pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, lock* collLock, bit *verbose);
 
 #endif /* SHREDDER_H */
 @c
@@ -1730,6 +1730,7 @@ shred(BAT *docBAT,
       lock *collLock)
 {
     MT_Lock *coll_lock = (MT_Lock*) ((collLock && *collLock != ptr_nil)?*collLock:NULL);
+    int verbose = (collLock == NULL);
     int res = GDK_FAIL;
 
     /* timing */
@@ -1773,7 +1774,7 @@ shred(BAT *docBAT,
     if (shredCtx) {
         if (shredder_parse(shredCtx, location, buffer, s)) {
             res = shredder_finalize(shredCtx, docBAT);
-            if (res && !s && !buffer && !coll_lock) {
+            if (verbose && res && !s && !buffer) {
                 char buf1[80], buf2[80];
                 stop = GDKusec();
                 stream_printf(GDKout, "# Elapsed time = %s [%s/node]\n", 
@@ -1795,31 +1796,34 @@ int
 CMDshred_url(BAT *docBAT, 
              str location, 
              lng *percentage,
-             lock *collLock)
+             lock *collLock,
+             bit *verbose)
 {
     assert(percentage);
-    return shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL, collLock);
+    return shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
 }
 
 int
 CMDshred_str(BAT *docBAT, 
              str buffer, 
              lng *percentage,
-             lock *collLock)
+             lock *collLock,
+             bit *verbose)
 {
     assert(percentage);
-    return shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL, collLock);
+    return shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
 }
 
 int
 CMDshred_stream(BAT *docBAT, 
                 Stream *fp,
                 lng *percentage,
-                lock *collLock)
+                lock *collLock,
+                bit *verbose)
 {
     stream *s = (stream*) ((fp && *(ptr*) fp != ptr_nil)?*fp:NULL);
     assert(percentage);
-    return shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL, collLock);
+    return shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
 }
 @c
 /* vim:set shiftwidth=4 expandtab: */

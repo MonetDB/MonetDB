@@ -38,17 +38,17 @@ implementation on top of MonetDB within the "Pathfinder" project.
 
 @- XML shredder (shredder.mx)
 @m
-.COMMAND shred_url(BAT[str,bat], str url, lng percentage, lock l) : void = CMDshred_url;
+.COMMAND shred_url(BAT[str,bat], str url, lng percentage, lock l, bit verbose) : void = CMDshred_url;
 "PARAMETERS:
 url - document locates at this uri is shredded. 
 percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
 
-.COMMAND shred_str(BAT[str,bat], str buffer, lng percentage, lock l) : void = CMDshred_str;
+.COMMAND shred_str(BAT[str,bat], str buffer, lng percentage, lock l, bit verbose) : void = CMDshred_str;
 "PARAMETERS:
 buffer - the XML string to shred. 
 percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
 
-.COMMAND shred_stream(BAT[str,bat], Stream s, lng percentage, lock l) : void = CMDshred_stream;
+.COMMAND shred_stream(BAT[str,bat], Stream s, lng percentage, lock l, bit verbose) : void = CMDshred_stream;
 "PARAMETERS:
 s - XML input stream. 
 percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
