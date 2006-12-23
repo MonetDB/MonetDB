@@ -1957,20 +1957,25 @@ PROC _ws_open(lng wsid,
               BAT[void,oid] idx_doc) : void # out param
 {
     # get all the doc-id, coll-id's and collection names of known documents. The ones with nil-tail are unknown.
-    idx_doc.append(idx_names.outerjoin(reverse(doc_name)));
-    idx_doc.replace(idx_doc.ord_uselect(oid_nil).mirror().leftfetchjoin(idx_names).join(reverse(doc_location)));
-    idx_coll.append(idx_doc.outerjoin(doc_collection));
+    var idx_doc_ := idx_names.outerjoin(reverse(doc_name)).access(BAT_WRITE);
+    idx_doc_.replace(idx_doc_.ord_uselect(oid_nil).mirror().leftfetchjoin(idx_names).join(reverse(doc_location)));
+    idx_coll.append(idx_doc_.outerjoin(doc_collection));
     idx_colname.append(idx_coll.outerjoin(collection_name));
 
     # of the non-nil doc-ids, try to get non-nil timestamps
-    var idx_lim := idx_doc.ord_select(oid_nil,oid_nil).leftjoin(doc_timestamp).ord_select(timestamp_nil,timestamp_nil);
+    var idx_lim := idx_doc_.ord_select(oid_nil,oid_nil).leftjoin(doc_timestamp).ord_select(timestamp_nil,timestamp_nil);
     var sel_lim := idx_lim.tmark(0@0);
     var sel_idx := idx_lim.hmark(0@0);
 
     # check the timestamps
     var sel_del := [>](sel_idx.leftfetchjoin(idx_timestamps), sel_lim).ord_uselect(true);
-    if (count(sel_del) > 0) # delete stale documents
+    if (count(sel_del) > 0) { # delete stale documents
 	del_doc_base(bit_nil,mirror(sel_del).leftfetchjoin(sel_idx).leftfetchjoin(idx_names),false);
+        idx_doc.append(idx_names.outerjoin(reverse(doc_name)));
+        idx_doc.replace(idx_doc.ord_uselect(oid_nil).mirror().leftfetchjoin(idx_names).join(reverse(doc_location)));
+    } else {
+        idx_doc.append(idx_doc_);
+    }
 
     # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
     var idx_idx := idx_doc.ord_uselect(oid_nil).mirror();
@@ -2038,15 +2043,14 @@ PROC ws_open(BAT[void,BAT] ws,
         var locations := selidx_unq.tmark(0@0);
         var names     := [+]("::" + str(wsid) + "::",  locations);
         var colname   := names.fetch(0);
-        var min_ts    := selidx_unq.mirror().leftfetchjoin(idx_timestamps).min();
+        var timestamps:= selidx_unq.hmark(0@0).leftfetchjoin(idx_timestamps);
         var docid_base:= oid(count(open_docid));
-        var doCommit  := not(isnil(min_ts));
-        var coll_oid  := shred_into_docBAT(docBAT, locations, names, colname, 
+        var doCommit  := not(isnil(min(timestamps)));
+        var coll_oid  := shred_into_docBAT(docBAT, locations, names, timestamps, colname, 
                                            oid_nil,       # create new collection
                                            empty_runtime, # no index to maintain 
                                            docid_base,    # transient docid
                                            lng(0),        # read-only (freespace=0)
-                                           min_ts,        # until when to cache it
                                            doCommit,      # cache it persistently? 
                                            stream_nil, wsid); 
         var cont      := ws_opencoll(ws, docBAT, colname, coll_oid);
@@ -2168,9 +2172,9 @@ all documents mentioned in "doc_undo" are deleted again.
 PROC _shred_into_docBAT(BAT[str,bat] docBAT, 
                         BAT[void,str] idx_location, 
                         BAT[void,str] idx_name, 
+                        BAT[void,timestamp] idx_timestamp, 
                         str colname, 
                         oid coll_oid, 
-                        timestamp ts, 
                         lng wsid) : oid
 {
     # get a new persistent doc id
@@ -2196,11 +2200,12 @@ PROC _shred_into_docBAT(BAT[str,bat] docBAT,
     }
 
     # all documents to the doc_* table
-    var docid_location := idx_location.tmark(docid_base);
-    var docid_name     := idx_name.tmark(docid_base);
+    var docid_location   := idx_location.tmark(docid_base);
+    var docid_name       := idx_name.tmark(docid_base);
+    var docid_timestamps := idx_timestamps.tmark(docid_base);
     doc_name.insert(docid_name);
     doc_location.insert(docid_location);
-    doc_timestamp.insert(docid_name.project(ts));
+    doc_timestamp.insert(docid_timestamps);
     doc_collection.insert(docid_name.project(coll_oid));
     if (not(colname.startsWith("::"))) doc_undo.insert(docid_name.project(wsid));
 
@@ -2233,12 +2238,12 @@ PROC __shred_into_docBAT(BAT[str,bat] docBAT,
 PROC shred_into_docBAT(BAT[str,bat] docBAT, 
                        BAT[void,str] location, 
                        BAT[void,str] name, 
+                       BAT[void,timestamp] timestamps, 
                        str colname, 
                        oid coll_oid, 
                        BAT[lock,bat] runtime,
                        oid docid_base, 
                        lng pageFree, 
-                       timestamp ts, 
                        bit doCommit, 
                        Stream s,
                        lng wsid) : oid
@@ -2265,7 +2270,7 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
       if (colname.startsWith("::")) doCommit := pflock_free(doCommit); 
 
       # add doc to the database locked
-      if (doCommit) err := CATCH(docid_base := _shred_into_docBAT(docBAT, location, name, colname, coll_oid, ts, wsid));
+      if (doCommit) err := CATCH(docid_base := _shred_into_docBAT(docBAT, location, name, timestamps, colname, coll_oid, wsid));
 
       lock_unset(pf_short);
       if (not(isnil(err))) ERROR(err);
@@ -2355,7 +2360,8 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         shred_into_docBAT(docBAT, 
                           idx.leftfetchjoin(idx_locations),
                           idx.leftfetchjoin(idx_names),
-                          colname, coll_oid, runtime, oid_nil, percentage, timestamp_nil, true, s, wsid);
+                          idx.project(timestamp_nil),
+                          colname, coll_oid, runtime, oid_nil, percentage, true, s, wsid);
 
 	if (isnil(coll_oid)) {
             # register new bats with the logger
@@ -2415,7 +2421,9 @@ PROC _del_doc(bit cachedOnly,
 {
     var del := doc_timestamp; # select all at first
     if (isnil(cachedOnly)) {
-        del := reverse(names.outerjoin(reverse(doc_name)));
+        var del1 := names.outerjoin(reverse(doc_name));
+        var del2 := names.outerjoin(reverse(doc_location));
+        del := reverse([isnil](del1).[ifthenelse](del2,del1));
         if (del.exist(oid_nil)) {
             ERROR("_del_doc(%s): document not found in database (%d such errors)!\n", 
                                  names.find(del.find(oid_nil)), 
@@ -2685,7 +2693,7 @@ ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
 PROC xmlcache_print() : void 
 {
     lock_set(pf_short);
-    var err := CATCH({  table( doc_name.col_name("alias"), doc_location.col_name("URI"), collection_size.col_name("size"), doc_timestamp.select(timestamp_nil,timestamp_nil).col_name("valid-thru")); });
+    var err := CATCH({  table( doc_name.col_name("alias"), doc_location.col_name("URI"), collection_size.col_name("size")); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 }

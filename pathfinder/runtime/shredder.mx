@@ -1773,7 +1773,7 @@ shred(BAT *docBAT,
     if (shredCtx) {
         if (shredder_parse(shredCtx, location, buffer, s)) {
             res = shredder_finalize(shredCtx, docBAT);
-            if (res && !s && !buffer) {
+            if (res && !s && !buffer && !coll_lock) {
                 char buf1[80], buf2[80];
                 stop = GDKusec();
                 stream_printf(GDKout, "# Elapsed time = %s [%s/node]\n", 
