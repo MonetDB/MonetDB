@@ -670,14 +670,10 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
         # first remove the bats under control off the logger 
         if (logger_delBAT.count() > 0) {
             lock_set(pf_wal);
-            log_trans_start(pf_logger);
-            [log_bat_transient](pf_logger, logger_delBAT);
             [logger_del_bat](pf_logger, [logger_find_bat](pf_logger, logger_delBAT));
-            log_trans_end(pf_logger);
             lock_unset(pf_wal);
         }
-        # now remove those not under control off the logger 
-        delBAT.kdiff(reverse(logger_bats))@batloop() {
+        delBAT@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
         }
         pf_checkpoint(commitBAT);
@@ -2193,10 +2189,10 @@ PROC _shred_into_docBAT(BAT[str,bat] docBAT,
         coll_oid := docid_base;
         if (collection_name.texist(colname)) ERROR("_shred_doc: collection name should be globally unique\n");
         collection_name.insert(coll_oid, colname);
-        collection_size.insert(coll_oid, sum([batsize](docBAT)));
+        collection_size.insert(coll_oid, sum([batdsksize](docBAT)));
         [persists]([rename](docBAT, [+](str(int(coll_oid)), mirror(docBAT))), true);
     } else {
-        collection_size.replace(coll_oid, sum([batsize](docBAT)));
+        collection_size.replace(coll_oid, sum([batdsksize](docBAT)));
     }
 
     # all documents to the doc_* table
@@ -2369,10 +2365,7 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
     }
     if (count(newcoll) > 0) {
         lock_set(pf_wal);
-        log_trans_start(pf_logger);
         [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
-        [log_bat_persists](pf_logger, [bat](newcoll), newcoll);
-        log_trans_end(pf_logger);
         lock_unset(pf_wal);
     }
 
