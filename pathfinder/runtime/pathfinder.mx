@@ -2173,7 +2173,7 @@ all documents mentioned in "doc_undo" are deleted again.
 PROC _shred_into_docBAT(BAT[str,bat] docBAT, 
                         BAT[void,str] idx_location, 
                         BAT[void,str] idx_name, 
-                        BAT[void,timestamp] idx_timestamp, 
+                        BAT[void,timestamp] idx_timestamps, 
                         str colname, 
                         oid coll_oid, 
                         lng wsid) : oid
