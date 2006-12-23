@@ -48,14 +48,6 @@ req_monetdb_ver='4.15.0'
 AM_MONETDB4($req_monetdb_ver)
 req_monetdb_ver='4.99.19'
 AM_MONETDB5($req_monetdb_ver)
-AM_CONDITIONAL(MONET5,test "x$have_monet5" = xyes)
-
-backend=monet4
-AC_ARG_WITH(backend,
-[  --with-backend=     	which backend to use ], backend="$withval")
-SQL_BACKEND=$backend
-AC_SUBST(SQL_BACKEND)
-AM_CONDITIONAL(MONET4,test "x$backend" = xmonet4)
 
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 

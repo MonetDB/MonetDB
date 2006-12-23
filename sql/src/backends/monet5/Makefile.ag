@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
-	-I$(MONETDB_INCLUDEDIR)/C $(MONET5_INCS) $(MONETDB_INCS)
+	$(MONETDB_INCS) $(MONETDBCLIENTS_INCS) $(MONETDB5_INCS) 
 
 lib__sql = {
 	DIR = libdir/MonetDB5
@@ -29,7 +29,7 @@ lib__sql = {
 		sql_result.mx \
 		sql_readline.mx
 	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONET5_MODS) -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet $(MONET5_LIBS) -lmal \
+		$(MONETDB5_MODS) -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet $(MONETDB5_LIBS) -lmal \
 		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
@@ -37,15 +37,15 @@ lib__sql = {
 lib_embeddedsql5 = {
 	SOURCES = embeddedclient.mx
 	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONET5_MODS) -l_logger -l_bat5 -l_tablet $(MONET5_LIBS) -lmal \
-		$(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
+		$(MONETDBCLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 bin_Mbeddedsql5 = {
 	SOURCES = prog.c
 	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONET5_MODS) -l_logger -l_bat5 -l_tablet $(MONET5_LIBS) -lmal \
-		$(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
+		$(MONETDBCLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 lib__sql_cache = {

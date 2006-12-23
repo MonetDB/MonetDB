@@ -14,4 +14,4 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-SUBDIRS = MONET4?monet4 MONET5?monet5 
+SUBDIRS = HAVE_MONETDB4?monet4 HAVE_MONETDB5?monet5 
