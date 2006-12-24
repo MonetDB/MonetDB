@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1014 ]
+[ 1015 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1014 ]
+[ 1015 ]
 
 var All:=0;
 
@@ -826,8 +826,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 87 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 88 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -851,6 +851,7 @@ Module: "bat"
 [ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], any::1) : BAT[void,any::1]",						  "append the value u to i"																																		  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], any::1, bit) : BAT[void,any::1]",			  "append the value u to i"																																																									  ]
 [ "assert_order", "COMMAND:   ",  "assert_order(BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Assert the sortedness property of tail."																																  ]
+[ "batdsksize",	  "COMMAND:   ",  "batdsksize(BAT[any,any]) : lng",						  "batdsksize returns the size on disk rather than in memory"																																																																					  ]
 [ "batloop",	  "ITERATOR:  ",  "batloop(BAT[any,any], ptr) : void",							  "Iterators are special MIL constructs:\n  <bat-expression> @ <iterator>(<parameters>) <MIL-statement>\n 'b@batloop()..' iterates over all BUNs [$h,$t] of BAT b."																																									  ]
 [ "batloop",	  "ITERATOR:  ",  "batloop(BAT[any,any], ptr, int, int) : void",					  "Iterators are special MIL constructs:\n  <bat-expression> @ <iterator>(<parameters>) <MIL-statement>\n 'b@batloop(low,high)..' iterates over all BUNs of b.slice(low,high)"																																								  ]
 [ "batsize",	  "COMMAND:   ",  "batsize(BAT[any,any]) : lng",							  "A version of BATsize that does not require loading the BAT."																																	  ]
@@ -1159,7 +1160,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1014 ]
+[ 1015 ]
 
 quit();
 
