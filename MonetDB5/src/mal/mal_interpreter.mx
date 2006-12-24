@@ -1518,13 +1518,14 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		stream_printf(cntxt->fdout,"#%6d usec",GDKusec()-cntxt->timer);
 #ifdef HAVE_SYS_RESOURCE_H
 	if( cntxt-> flags & ioFlag){
-		getrusage(RUSAGE_SELF, &cntxt->resource);
-		if(	cntxt->resource.ru_inblock - oldinblock 
-		 ||	cntxt->resource.ru_oublock - oldoublock ) {
+		struct  rusage resource;
+		getrusage(RUSAGE_SELF, &resource);
+		if(	resource.ru_inblock - oldinblock 
+		 ||	resource.ru_oublock - oldoublock ) {
 			stream_printf(cntxt->fdout,"# %3d R",
-				cntxt->resource.ru_inblock- oldinblock);
+				resource.ru_inblock- oldinblock);
 			stream_printf(cntxt->fdout," %3d W",
-				cntxt->resource.ru_oublock- oldoublock);
+				resource.ru_oublock- oldoublock);
 		}
 	}
 #endif

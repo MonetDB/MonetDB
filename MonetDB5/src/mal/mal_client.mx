@@ -127,9 +127,6 @@ usage patterns.
 @h
 	sht		flags;	/* resource tracing flags */
 	lng     timer;  /* trace time in usec */
-#ifdef HAVE_SYS_RESOURCE_H
-	struct  rusage resource;	/* trace memory resource usage */
-#endif
 
 #define timerFlag	1
 #define memoryFlag	2
@@ -444,9 +441,6 @@ collect the buffer when in use.
 	c->itrace = 0;
 	c->debugOptimizer = c->debugScheduler= 0;
 	c->timer = 0;
-#ifdef HAVE_SYS_RESOURCE_H
-	memset( (char*) &c->resource, 0, sizeof(c->resource));
-#endif
 	c->errbuf = 0;
 
 	c->cwd= GDKstrdup(monet_cwd);

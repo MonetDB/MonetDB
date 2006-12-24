@@ -918,16 +918,19 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					stk->cmd = 0;
 				}
 				if (strncmp("io", b, 1) == 0) {
+#ifdef HAVE_SYS_RESOURCE_H
+					struct  rusage resource;        
+#endif
 					cntxt->flags |=ioFlag ;
 #ifdef HAVE_SYS_RESOURCE_H
-					getrusage(RUSAGE_SELF, &cntxt->resource);
+					getrusage(RUSAGE_SELF, &resource);
 					stream_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" 
 									" minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", 
-									cntxt->resource.ru_maxrss, cntxt->resource.ru_ixrss, 
-									cntxt->resource.ru_idrss, cntxt->resource.ru_isrss,
-									cntxt->resource.ru_minflt, cntxt->resource.ru_majflt, 
-									cntxt->resource.ru_nswap, cntxt->resource.ru_inblock, 
-									cntxt->resource.ru_oublock);
+									resource.ru_maxrss, resource.ru_ixrss, 
+									resource.ru_idrss, resource.ru_isrss,
+									resource.ru_minflt, resource.ru_majflt, 
+									resource.ru_nswap, resource.ru_inblock, 
+									resource.ru_oublock);
 #endif
 				}
 				continue;
