@@ -42,9 +42,6 @@
 /* PFvar_t */
 #include "variable.h"    
 
-/* PFapply_t */
-#include "apply.h"
-
 /** no type of parse tree node will need more than
  *  this many child nodes 
  */
@@ -277,7 +274,7 @@ union PFpsem_t {
     PFvar_t         *var;        /**< variable information
                                       (used after var scoping) */
 
-    PFapply_t        apply;      /**< function application information
+    struct PFfun_t  *fun;      /**< function application information
                                       (used after fun checks) */
     PFpragma_t       pragma;     /**< information given in a pragma
                                       (# qn cont #) */
@@ -317,12 +314,6 @@ struct PFpnode_t {
   PFloc_t           loc;               /**< textual location of this node */
   struct PFcnode_t *core;              /**< pointer to core representation */
   short             state_label;       /**< for BURG pattern matcher */
-
-  /**< for RPC modules: if a function is declared in an RPC module or if
-   * a function call is calling an RPC function, 'rpc_uri' contains the
-   * URI string, from where the module can be loaded; otherwise, it is a
-   * NULL pointer. */
-  char              *rpc_uri;          
 };
 
 /*
