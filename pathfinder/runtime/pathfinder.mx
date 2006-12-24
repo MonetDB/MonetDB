@@ -453,8 +453,9 @@ const NEW_PAGE := MODIFIED_PAGE + 1;
 @mil
 # get a handle to the global locks
 var pf_short := pflock_get(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
-var pf_free  := pflock_get(1); # lock held while freeing ws-es
-var pf_wal   := pflock_get(2); # lock that must be held while writing into the WAL
+var pf_wal   := pflock_get(1); # lock that must be held while writing into the WAL
+var pf_free  := pflock_get(2); # lock held while freeing ws-es
+var pf_free_held := 0LL;
 
 # initialize the logger
 var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
@@ -1089,8 +1090,7 @@ PROC _ws_free(lng wsid) : BAT[void,any]
 {
     # handle update queries
     if (and(wsid,WSID_UPDATE) != 0LL) {
-        pflock_end(wsid);
-        ws_overlaps_ws.delete(wsid); # remove the dependencies of this query 
+        pflock_end(wsid); # remove the dependencies of this query (modifies ws_overlaps_ws) 
     }
    
     # check for failed doc_adds (should happen infrequently - we don't care about performance)
@@ -1116,7 +1116,7 @@ PROC _ws_free(lng wsid) : BAT[void,any]
 PROC ws_free(lng wsid) : void
 {
     # always make sure not to cause errors while holding the lock
-    lock_set(pf_free);
+    if (pf_free_held != wsid) lock_set(pf_free);
     lock_set(pf_short);
     var commitBAT, err := CATCH(commitBAT := _ws_free(wsid));
     lock_unset(pf_short);
@@ -1735,6 +1735,7 @@ PROC ws_precommit(BAT[void,BAT] ws,
     # also get pf_free, to block processing of ending queries, to achieve total stability
     coll_lock_set(ws, cont); 
     lock_set(pf_free);
+    pf_free_held := wsid;
 
     # concurrency control: abort conflicting queries
     var conflict1 := join(modified_page,page_ws);
@@ -1760,15 +1761,10 @@ PROC ws_precommit(BAT[void,BAT] ws,
     # isolate these working sets against our intended updates. 
     # copying pages can take time, thus we introduced pf_free: it allows to do the isolation without claiming pf_short
     lock_unset(pf_short);
-    if (isnil(err)) {
-        if (other_ws.count() > 0) {
-            err := CATCH([_ws_coll_isolate](other_ws, colname,
-                                            const ancestor_nid,
-                                            const modified_nid,
-                                            const modified_page,
-                                            const modified_attr));
-        }
-    }
+    if (isnil(err) and bit(count(other_ws)))
+        err := CATCH([_ws_coll_isolate](other_ws, colname, const ancestor_nid,  const modified_nid,
+                                                           const modified_page, const modified_attr));
+    pf_free_held := 0LL;
     lock_unset(pf_free);
     if (not(isnil(err))) ERROR(err);
 }

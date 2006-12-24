@@ -6038,7 +6038,13 @@ CMDnil@1(int *res, int *v1, int *v2)
 @:nilarithC(plus,+)@
 
 
-@+ Transaction Locking
+@+ Global Transaction Locking
+
+While concurrency control in MonetDB/XQuery is optimistic and fine-grained (ehh, per page
+conflict detection) there is some coarse grained control as well. It serves to avoid
+thrashing on conflicting update loads: the database is automatically brought into serial 
+update mode. Also, querying the meta-tables leads to full blocking of document management
+(shred doc/delete doc) queries.
 
 We have three hooks inserted in the MIL transaction mgmt code:
 - pflock_begin() (called from ws_create) => QUERY STARTS
@@ -6052,18 +6058,18 @@ The below mechanism ensures that:
   queries in exclusive mode. This to gracefully degrade (avoid thrashing) in updating 
   loads that are highly conflictive.
 
-Exclusive updating means that we need a counted/exclusive lock (PF_UPDATE_LOCK,PF_UPDATE_BARRIER)
+Exclusive updating means that we need a counted-lock/exclusive-barrier (PF_UPDATE_LOCK,PF_UPDATE_BARRIER)
 In normal mode, updating queries use the 'counting' path, that is, the first entering update
-acquires the exclusive lock, and the last leaving releases it. In exclusive mode, all updating 
-queries take the exclusive lock.
+acquires the exclusive barrier, and the last leaving releases it. In exclusive mode, all updating 
+queries take the exclusive barrier.
 
 Similarly, there is a protection against seeing an inconsistent meta-database state.
 Just before a query uses the documents()/collections() functions, all new incoming
 document management queries (that shred and delete XML documents) are blocked,
 and we must wait until all such active queries have finished.
 
-This is again implemented using a counted/exclusive lock (PF_META_LOCK,PF_META_BARRIER).
-The first docmgmt query acquires the exclusive lock (barrier), and the last finishing releases it.
+This is again implemented using a counted-lock/exclusive-barrier (PF_META_LOCK,PF_META_BARRIER).
+The first docmgmt query acquires the exclusive-barrier, and the last finishing releases it.
 A query that calls pflock_meta() also must get this barrier, if it is the first to call it.
 When those queries do pflock_end() the last must free the lock, and thus we must know which queries 
 have taken it (this is also needed for not asking it twice). 
@@ -6076,17 +6082,18 @@ included in ws_overlaps_ws. Instead, a single variable 'pf_special' records the 
 @c
 #define PF_CONVOY 5
 BAT* ws_overlaps_ws = NULL;
-MT_Lock pf_runtime_lock[7];
+MT_Lock pf_runtime_lock[5];
+MT_Sema pf_runtime_sema[2];
 int pf_nreaders, pf_convoy, pf_ndocmgt;
 lng pf_writer, pf_special;
 
 #define PF_SHORT_LOCK     pf_runtime_lock[0]
-#define PF_FREE_LOCK      pf_runtime_lock[1]
-#define PF_WAL_LOCK       pf_runtime_lock[2]
+#define PF_WAL_LOCK       pf_runtime_lock[1]
+#define PF_FREE_LOCK      pf_runtime_lock[2]
 #define PF_META_LOCK      pf_runtime_lock[3]
-#define PF_META_BARRIER   pf_runtime_lock[4]
-#define PF_UPDATE_LOCK    pf_runtime_lock[5]
-#define PF_UPDATE_BARRIER pf_runtime_lock[6]
+#define PF_UPDATE_LOCK    pf_runtime_lock[4]
+#define PF_META_BARRIER   pf_runtime_sema[0]
+#define PF_UPDATE_BARRIER pf_runtime_sema[1]
 
 #define PF_MODE_RDONLY 0 /* read-only query */
 #define PF_MODE_UPDATE 1 /* updating query */
@@ -6114,7 +6121,7 @@ int CMDpflock_begin(lng *wsid)
         take_barrier = (pf_ndocmgt++ == 0);
         MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shirtLock for mgmt");
         if (take_barrier) {
-            MT_set_lock(PF_META_BARRIER, "pflock_begin: metaBarrier");
+            MT_down_sema(PF_META_BARRIER, "pflock_begin: metaBarrier");
         }
         MT_unset_lock(PF_META_LOCK, "pflock_begin: metaLock for mgmt");
         return GDK_SUCCEED;
@@ -6133,11 +6140,11 @@ int CMDpflock_begin(lng *wsid)
 	/* update in concurrent mode */
         MT_set_lock(PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
         if (pf_nreaders++ == 0) 
-            MT_set_lock(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for update");
+            MT_down_sema(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for update");
         MT_unset_lock(PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
     } else {
 	/* update in exclusive mode */
-        MT_set_lock(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for retry");
+        MT_down_sema(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for retry");
         MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
         pf_writer = *wsid;
         MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
@@ -6145,7 +6152,7 @@ int CMDpflock_begin(lng *wsid)
     return GDK_SUCCEED;
 }
 
-/* query execution finishes */
+/* query execution finishes; note that we have PF_SHORT_LOCK during this */
 int CMDpflock_end(lng *wsid) 
 {
     int mode = ((*wsid) & (3LL << 30)) >> 30;
@@ -6155,13 +6162,12 @@ int CMDpflock_end(lng *wsid)
         /* last docmgt function yields the meta barrier 
          */
         if (*wsid == pf_special) {
-            assert(pf_ndocmgt == 0);
             pf_special = -1;
         } else {
             pf_ndocmgt--;
         }
         if (pf_ndocmgt == 0) {
-            MT_unset_lock(PF_META_BARRIER, "pflock_end: metaBarrier for docmgt");
+            MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier for docmgt");
         }
     } else {
         /* last active meta-information query releases meta-barrier 
@@ -6173,7 +6179,7 @@ int CMDpflock_end(lng *wsid)
         BUNdelHead(ws_overlaps_ws, wsid, FALSE); /* release all active info on this query */
         others_passed = BUNfnd(BATmirror(ws_overlaps_ws), &nil);
         if (self_passed && !others_passed) {
-            MT_unset_lock(PF_META_BARRIER, "pflock_end: metaBarrier");
+            MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier");
         }
 
         /* last active update query releases update-barrier 
@@ -6181,11 +6187,11 @@ int CMDpflock_end(lng *wsid)
         if (pf_writer == *wsid) {
             /* finish in exclusive mode */
             pf_writer = -1;
-            MT_unset_lock(PF_UPDATE_BARRIER, "pflock_end: exclusive updateBarrier");
+            MT_up_sema(PF_UPDATE_BARRIER, "pflock_end: exclusive updateBarrier");
         } else if (mode != PF_MODE_RDONLY) { 
             /* finish in concurrent mode */
             if (--pf_nreaders == 0)
-                MT_unset_lock(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
+                MT_up_sema(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
         }
     }
     return GDK_SUCCEED;
@@ -6215,10 +6221,9 @@ int CMDpflock_meta(lng *wsid)
         int reapply_barrier = (pf_ndocmgt-- > 1);
         MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: metaLock precheck");
         if (reapply_barrier) {
-            MT_set_lock(PF_META_BARRIER, "pflock_meta: metaBarrier for convert");
+            MT_down_sema(PF_META_BARRIER, "pflock_meta: metaBarrier for convert");
             MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock special");
             pf_special = *wsid;
-            assert(pf_ndocmgt == 0); /* SPECIAL CASE (see above) */
             MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock special");
         }
         return GDK_SUCCEED;
@@ -6232,7 +6237,7 @@ int CMDpflock_meta(lng *wsid)
     MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock insert");
     if (!others_passed) {
         /* first query with meta function: get barrier */
-        MT_set_lock(PF_META_BARRIER, "pflock_meta: metaBarrier");
+        MT_down_sema(PF_META_BARRIER, "pflock_meta: metaBarrier");
     }
     MT_unset_lock(PF_META_LOCK, "pflock_meta: metaLock");
     return GDK_SUCCEED;
@@ -6255,8 +6260,8 @@ bat* pf_support_prelude() {
     MT_init_lock(pf_runtime_lock[2]);
     MT_init_lock(pf_runtime_lock[3]);
     MT_init_lock(pf_runtime_lock[4]);
-    MT_init_lock(pf_runtime_lock[5]);
-    MT_init_lock(pf_runtime_lock[6]);
+    MT_init_sema(pf_runtime_sema[0],1);
+    MT_init_sema(pf_runtime_sema[1],1);
     ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
     BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
     (void) BATprepareHash(ws_overlaps_ws);
@@ -6273,8 +6278,8 @@ void pf_support_epilogue() {
     MT_destroy_lock(pf_runtime_lock[2]);
     MT_destroy_lock(pf_runtime_lock[3]);
     MT_destroy_lock(pf_runtime_lock[4]);
-    MT_destroy_lock(pf_runtime_lock[5]);
-    MT_destroy_lock(pf_runtime_lock[6]);
+    MT_destroy_sema(pf_runtime_sema[0]);
+    MT_destroy_sema(pf_runtime_sema[1]);
 }
 
 @- PROCs required by the algebraic translation ###

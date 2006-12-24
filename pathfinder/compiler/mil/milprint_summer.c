@@ -10983,9 +10983,9 @@ const char* PFvarMIL(void) {
         "  ws := ws_create(" STMT ");\n" PF_STARTMIL_END
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var try := 0;\n"\
-        "var err := \"ERROR: conflicting update\";\n"\
+        "var err := \"!ERROR: conflicting update\";\n"\
         "while(((try :+= 1) <= 2) and not(isnil(err))) {\n"\
-        " if (not(err.startsWith(\"ERROR: conflicting update\"))) break;\n"\
+        " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " err := CATCH({\n"\
         "  ws := ws_create(try);\n" PF_STARTMIL_END
 #define PF_STARTMIL_END \
