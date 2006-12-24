@@ -116,7 +116,7 @@ information should be dealt with separately.[TODO]
 @h
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
-	str		srcFile;	/* NULL for stdin, or file name */
+	str	    srcFile;	/* NULL for stdin, or file name */
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
 	char    itrace;     /* trace execution using interactive mdb */
@@ -127,7 +127,6 @@ usage patterns.
 @h
 	sht		flags;	/* resource tracing flags */
 	lng     timer;  /* trace time in usec */
-	struct mallinfo memory;
 #ifdef HAVE_SYS_RESOURCE_H
 	struct  rusage resource;	/* trace memory resource usage */
 #endif

@@ -1529,10 +1529,11 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	}
 #endif
 	if( cntxt->flags & memoryFlag){
-		cntxt->memory= MT_mallinfo();
-		if( cntxt->memory.arena- oldMemory.arena > 0)
+		struct mallinfo memory;
+		memory= MT_mallinfo();
+		if( memory.arena- oldMemory.arena > 0)
 			stream_printf(cntxt->fdout,"# %6d bytes",
-				cntxt->memory.arena-oldMemory.arena );
+				memory.arena-oldMemory.arena );
 	}
 	if( cntxt->flags & flowFlag){
 		/* calculate the read/write byte flow */
