@@ -1088,10 +1088,8 @@ PROC ws_bat(lng wsid) : BAT[void,bat]
 
 PROC _ws_free(lng wsid) : BAT[void,any]
 {
-    # handle update queries
-    if (and(wsid,WSID_UPDATE) != 0LL) {
-        pflock_end(wsid); # remove the dependencies of this query (modifies ws_overlaps_ws) 
-    }
+    # remove the dependencies of this query (modifies ws_overlaps_ws) 
+    pflock_end(wsid); 
    
     # check for failed doc_adds (should happen infrequently - we don't care about performance)
     var del := doc_undo.uselect(wsid).project(str_nil);
