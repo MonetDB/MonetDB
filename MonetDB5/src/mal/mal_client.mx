@@ -17,7 +17,7 @@
 @a M. L. Kersten
 @v 5.0
 @-
-@+ Textual Client Interface
+@+ Client Interfaces
 Clients gain access to the Monet server through a internet connection
 or through its server console.
 Access through the internet requires a client program at the
@@ -35,6 +35,16 @@ a particular service.
 The number of clients permitted concurrent access is 
 a compile time option. The console is the first and is always present.
 It reads from standard input and writes to standard output.
+@end ifset
+
+Client sessions remain in existence until the corresponding
+communication channels break or its retention timer expires
+The administrator and owner of a sesssion
+can manipulate the timeout with a system call.
+
+@ifset sqlmanual
+There are many user-friendly tools to interact with a SQL database server.
+A few based on the JDBC library of MonetDB are included for reference only.
 @end ifset
 @{
 Client records are linked into a hierarchy, where the top record
@@ -135,11 +145,6 @@ usage patterns.
 @-
 @}
 @-
-Client sessions remain in existence until the corresponding
-communication channels break or its retention timer expires
-The administrator and owner of a sesssion
-can manipulate the timeout with a system call.
-
 @{
 Session structures are currently not saved over network failures.
 Future releases may support a re-connect facility.  [TODO]

@@ -31,7 +31,7 @@ MonetDB Version 5 is a major release of our software infrastructure.
 The most notable differences are its greatly
 improved software stack and a new interface language,
 which turns the database server back-end into an
-abstract database machine with its associated assembler language (MAL).
+abstract database machine with its associated assembly language (MAL).
 It supports backward compatibility of interfaces, tools, and 
 source sharing where feasible within the limited scope of resources available.
 
@@ -129,9 +129,9 @@ share data between language paradigms.
 @end iftex
 
 @node MAL Synopsis, Execution Engine, Architecture Overview,  MonetDB Overview
-@+ MonetDB Assembler Language (MAL)
+@+ MonetDB Assembly Language (MAL)
 The target language for a query compiler is 
-the MonetDB Assembler Language (MAL).
+the MonetDB Assembly Language (MAL).
 It was designed to ease code generation 
 and fast interpretation by the server.
 The compiler produces algebraic query plans, which 
