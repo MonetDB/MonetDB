@@ -513,7 +513,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib"
 		libpath="${WHAT_PREFIX}/${libdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib:${libpath}"
 		if [ "${what}" != "MONET5" ] ; then
-			mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
+			mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB4_PREFIX}/bin/monetdb4-config --modpath`"
 		fi
 	fi
 	if [ "${os}" = "CYGWIN" ] ; then
@@ -654,15 +654,17 @@ if [ "${what}" = "MONET5" ] ; then
 	monet5_config="-5 --config=${WHAT_PREFIX}/etc/monetdb5.conf"
   elif [ "${MONET5_PREFIX}" ] ; then
 	monet5_config="-5 --config=${MONET5_PREFIX}/etc/monetdb5.conf"
+  elif [ "${what}" = "MONETDB4" ] ; then
+	monet4_config="-4 --config=${WHAT_PREFIX}/etc/MonetDB.conf"
   else
-	monet5_config="-4"
+	monet4_config="-4 --config=${MONETDB4_PREFIX}/etc/MonetDB.conf"
 fi
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	if [ "${what}" = "MONET5" ] ; then
 		mtest_config="${monet5_config}"
 	  else
-		mtest_config="-4"
+		mtest_config="${monet4_config}"
 	fi
 fi
 
