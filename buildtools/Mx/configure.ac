@@ -10,7 +10,6 @@ AC_CONFIG_HEADER([mx_config.h])
 # Checks for programs.
 AC_PROG_CC
 AC_PATH_PROG(BASH, bash, /usr/bin/bash, $PATH)
-AC_PROG_LIBTOOL
 
 # Checks for libraries.
 
