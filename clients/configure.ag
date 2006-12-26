@@ -80,6 +80,8 @@ AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
 
+AC_PROG_LIBTOOL
+
 # Checks for libraries.
 dnl unixODBC
 dnl this is only used by the ODBC driver
