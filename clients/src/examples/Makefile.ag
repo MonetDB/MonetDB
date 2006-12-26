@@ -14,4 +14,4 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-SUBDIRS = C HAVE_JAVA?java
+SUBDIRS = C
