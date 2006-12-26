@@ -39,6 +39,8 @@ if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
 
+AC_PROG_LIBTOOL
+
 # MONETDB_BUILD and MONETDB_SOURCE are *only* used for monetdb-config
 # MONETDB_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
