@@ -79,6 +79,8 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 
+AC_PROG_LIBTOOL
+
 dnl provide different versions of the paths derived above
 if test "${prefix}x" = "NONEx"; then
 	Xprefix="`$translatepath "$Qprefix"`"
