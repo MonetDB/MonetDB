@@ -2377,7 +2377,7 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         lock_set(pf_short);
         err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
         lock_unset(pf_short);
-        if (not(isnil(err))) CATCH(collection_cleanup(commitBAT)); 
+        if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
     }
 }
 

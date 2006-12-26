@@ -1372,7 +1372,8 @@ shredder_create(char *location,
                 struct serializeFunStruct *serFun, 
                 struct XqueryCtx *serCtx, 
                 BAT *docBAT,
-                MT_Lock *coll_lock) 
+                MT_Lock *coll_lock,
+                int verbose) 
 {
     if (BATcount(docBAT) && BATcount(docBAT) != SHRED_BATS) {
         GDKerror("shredder_create: docBAT should be empty or have exactly %d buns.\n", SHRED_BATS);
@@ -1503,7 +1504,7 @@ shredder_create(char *location,
             GDKerror("shredder_create: read-only collection cannot have materialized NID-RID mappings\n");
             return shredder_free(shredCtx,0);
         }
-        if (pageFree) {
+        if (verbose && pageFree) {
             stream_printf(GDKout, "!WARNING: cannot make a read-only collection writable (set pageFree to 0).\n");
             pageFree = 0;
         }
@@ -1513,7 +1514,7 @@ shredder_create(char *location,
         pageFree = REMAP_PAGE_SIZE - (REMAP_PAGE_SIZE*pageFree)/100; 
     }
     shredCtx->pageFree = pageFree;
-    if (pageFree) {
+    if (verbose && pageFree) {
         stream_printf(GDKout, "# shredding with holes: pagesize=%d, #fillsize=%d\n", REMAP_PAGE_SIZE, pageFree);
     }
 
@@ -1770,7 +1771,7 @@ shred(BAT *docBAT,
     }
 
     /* shred it */
-    shredCtxStruct* shredCtx = shredder_create(location, estimatedSize, pageFree, serFun, serCtx, docBAT, coll_lock);
+    shredCtxStruct* shredCtx = shredder_create(location, estimatedSize, pageFree, serFun, serCtx, docBAT, coll_lock, verbose);
     if (shredCtx) {
         if (shredder_parse(shredCtx, location, buffer, s)) {
             res = shredder_finalize(shredCtx, docBAT);
