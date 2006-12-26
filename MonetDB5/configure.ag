@@ -54,6 +54,8 @@ fi
 
 AM_MONETDB_UTILS()
 
+AC_PROG_LIBTOOL
+
 dnl Checks for header files.
 AC_HEADER_TIME()
 AC_CHECK_HEADERS([crypt.h fcntl.h ieeefp.h malloc.h sys/resource.h sys/socket.h sys/time.h sys/times.h sys/un.h termios.h time.h xmmintrin.h])
