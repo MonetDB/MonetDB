@@ -1,7 +1,7 @@
 Dec 21 2006, challenge replace :void columns by :oid{dense,base=0@0}
 as part of the BIG BANG SQL Switchpoint cleanup.
 
-Rationale: the BAT[:void,-] column is a mixture between type information,
+Rationale: the current BAT[:void,-] column is a mixture of type information,
 value sequences, and storage implementation. This has been translated
 in many places in the M5 code where multiple signatures are used to
 capture all eligable cases/combinations. Moreover, it complicates
@@ -11,11 +11,23 @@ of runtime properties.
 Goal: to simplify the MAL language semantics and given its stable
 implementation, it seems possible to clearly separate the type
 information from the underlying (or desirable properties).
-That is, :bat[:void,-] should be turned into :bat[:oid{dense,base=0@0},-]
-where the base property represents the result of a setSequenceBase.
+That is, the old :bat[:void,-] is turned into :bat[:oid{dense,base=0@0},-]
+where the base property represents the result of an explicit setSequenceBase
+against a :bat[:oid,-].
+An append to :bat[:oid,-] selects the next available OID, it is only
+fast if you have also called setSequenceBase.
 
 It leaves open the situation to allow for a :void column if you
-really want a unary table. It is a none-space consumptive type.
+really want a unary table. It is a none-space consumptive column type.
+Thus, the object :bat[:void,:any] has a constant header nil:void.
+You can append/insert elements. 
+It also enables positional lookup and positional updates.
+Such objects can be coerced into a :bat[:oid,:any].
+
+The degenerated case is :bat[:void,:void], which contains only
+pairs (nil:void,nil:void).
+If we support bat.setNotNil() then it represents an always
+empty BAT.
 
 A consequence of this move could be that some runtime errors
 emerge, because not all kernel code can deal with non-void headers,
