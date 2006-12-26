@@ -318,7 +318,6 @@ static PFsql_t* bin_arith(PFsql_t* (*op) (const PFsql_t*, const PFsql_t*),
         PFla_op_t *p);
 static PFsql_t* bin_comp(PFsql_t* (*op) (const PFsql_t*, const PFsql_t*),
         PFla_op_t *p);
-static void column_env_copy(PFarray_t *srccolmap, PFarray_t *destcolmap);
 static void where_env_copy(PFarray_t *srcwheremap,
         PFarray_t *destwheremap);
 
@@ -386,6 +385,9 @@ struct sql_correlation_name_t {
 };
 typedef struct sql_correlation_name_t sql_correlation_name_t;
 
+#if 0
+       gcc: defined but never used
+
 static sql_correlation_name_t*
 sql_correlation_name_new(unsigned int cnt)
 {
@@ -395,6 +397,7 @@ sql_correlation_name_new(unsigned int cnt)
     var->name = cnt;
     return var;
 }
+#endif
 
 /* .............. SQL Columns ................ */
 
@@ -1492,6 +1495,9 @@ bin_comp(PFsql_t* (*op) (const PFsql_t*, const PFsql_t*),
     return bin_op(op, p, ty, aat_bln);
 }
 
+#if 0
+        gcc: defined but never used
+
 static void
 column_env_copy(PFarray_t *srccolmap, PFarray_t *destcolmap)
 {
@@ -1502,6 +1508,7 @@ column_env_copy(PFarray_t *srccolmap, PFarray_t *destcolmap)
                 entry.att, entry.type, entry.expression);
     }
 }
+#endif
 
 static void
 where_env_copy(PFarray_t *srcwheremap, PFarray_t *destwheremap)

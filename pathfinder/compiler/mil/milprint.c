@@ -433,8 +433,6 @@ static void print_statements (PFmil_t *);
 static void print_statement (PFmil_t *);
 static void print_variable (PFmil_t *);
 static void print_expression (PFmil_t *);
-static void print_min (PFmil_t *);
-static void print_max (PFmil_t *);
 static void print_literal (PFmil_t *);
 static void print_type (PFmil_t *);
 static void print_args (PFmil_t *);

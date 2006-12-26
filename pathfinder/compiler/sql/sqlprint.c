@@ -55,10 +55,8 @@ static void sqlprintf(char*, ...)
 /* forward declarations for the left site of grammar rules */
 static void print_statements(PFsql_t*);
 static void print_statement(PFsql_t*);
-static void print_expression(PFsql_t*);
 static void print_schema_name(PFsql_t*);
 static void print_variable(PFsql_t*);
-static void print_loc_variable(PFsql_t*);
 static void print_select_list(PFsql_t*);
 static void print_clm_list(PFsql_t*);
 static void print_aggrfunction(PFsql_t*);
@@ -586,6 +584,9 @@ print_aggrfunction(PFsql_t *n)
     }
 }
 
+#if 0
+        gcc: defined but never used
+
 static void
 print_expression(PFsql_t *n)
 {
@@ -612,6 +613,7 @@ print_expression(PFsql_t *n)
         } break;
     }
 }
+#endif
 
 static void
 print_variable( PFsql_t *n )
@@ -627,6 +629,9 @@ print_variable( PFsql_t *n )
     }
 }
 
+#if 0
+       gcc: defined but never used
+
 static void
 print_loc_variable( PFsql_t *n )
 {
@@ -635,6 +640,7 @@ print_loc_variable( PFsql_t *n )
     
     sqlprintf("%s", PFsql_loc_var_str( n->sem.correlation.ident ));
 }
+#endif
 
 static void
 sqlprintf(char *fmt, ...)
