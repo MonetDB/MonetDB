@@ -8,6 +8,7 @@ AC_CONFIG_SRCDIR([mel.mx])
 AC_CONFIG_HEADER([mel_config.h])
 
 # Checks for programs.
+AC_PROG_LIBTOOL
 AC_PROG_CXX
 AC_PROG_CC
 if test $GCC = yes; then
