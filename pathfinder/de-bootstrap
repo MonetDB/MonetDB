@@ -21,12 +21,4 @@
 # ! MonetDB, MonetDB4, monet5, clients, template, sql, pathfinder, amdb, xml, pruning !
 #
 
-if [ -n "$MONETDB_PREFIX" ]; then
-    MDEBOOTSTRAP="$MONETDB_PREFIX"/bin/Mdebootstrap
-elif [ -n "$MONETDIST" ]; then
-    MDEBOOTSTRAP="$MONETDIST"/bin/Mdebootstrap
-else
-    MDEBOOTSTRAP=Mdebootstrap
-fi
-
-exec "$MDEBOOTSTRAP"
+exec Mdebootstrap
