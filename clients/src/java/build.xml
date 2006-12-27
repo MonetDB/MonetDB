@@ -34,6 +34,8 @@ All Rights Reserved.
   <property name="jardir"             value="jars" />
   <property name="builddir"           value="build" />
   <property name="docdir"             value="doc" />
+  <property name="scriptdir"          value="scripts" />
+  <property name="bindir"             value="bin" />
   <property name="jdbc-package"       value="src/nl/cwi/monetdb/jdbc" />
   <property name="xmldb-package"      value="src/nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"        value="src/nl/cwi/monetdb/mcl" />
@@ -111,6 +113,20 @@ All Rights Reserved.
         <attribute name="Main-Class" value="nl.cwi.monetdb.client.JdbcClient" />
       </manifest>
     </jar>
+  </target>
+
+  <!-- a convenience script mjclient which calls the jdbcclient -->
+  <target name="create_mjclient" depends="jar_jdbcclient">
+    <echo message="Crafting an mjclient wrapper script for ${jdbcclient-jar}" />
+    <filter token="JDBCCLIENT_JAR" value="${jdbcclient-jar}" />
+
+    <!-- create bindir -->
+    <mkdir dir="${bindir}" />
+    <!-- now copy and filter the file -->
+    <copy file="${scriptdir}/mjclient.in"
+      overwrite="true"
+      tofile="${bindir}/mjclient"
+      filtering="yes" />
   </target>
 
   <!-- compile targets -->
@@ -306,6 +322,7 @@ All Rights Reserved.
     <delete quiet="true" dir="${builddir}" />
     <delete quiet="true" dir="${jardir}" />
     <delete quiet="true" dir="${docdir}" />
+    <delete quiet="true" dir="${bindir}" />
     <delete quiet="true" file="${jdbc-package}/MonetDriver.java" />
     <delete quiet="true" file="${xmldb-package}/base/MonetDBDatabase.java" />
   </target>
