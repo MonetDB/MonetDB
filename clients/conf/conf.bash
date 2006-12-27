@@ -19,10 +19,8 @@
 # ! MonetDB, MonetDB4, monet5, clients, template, sql, pathfinder, amdb, xml, pruning !
 #
 
-if [ -n "$MONETDB_PREFIX" ]; then
-    CONFBASH="$MONETDB_PREFIX"/share/MonetDB/conf/conf.bash
-elif [ -n "$MONETDIST" ]; then
-    CONFBASH="$MONETDIST"/share/MonetDB/conf/conf.bash
+if [ -n "$BUILDTOOLS_PREFIX" ]; then
+    CONFBASH="$BUILDTOOLS_PREFIX"/share/MonetDB/conf/conf.bash
 else
     BOOTSTRAP=`which Mbootstrap 2>/dev/null`
     if [ -z "$BOOTSTRAP" ]; then
