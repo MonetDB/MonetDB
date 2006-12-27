@@ -16,14 +16,14 @@
 
 MTSAFE
 
-SUBDIRS = tests
+SUBDIRS = tests scripts
 
 EXTRA_DIST = build.xml build.properties release.txt
 EXTRA_DIST_DIR = nl/cwi/monetdb/jdbc \
 		 nl/cwi/monetdb/client \
 		 nl/cwi/monetdb/mcl \
 		 nl/cwi/monetdb/xmldb \
-		 lib scripts /
+		 lib /
 		 example
 
 ant_jar_jdbcclient = {
