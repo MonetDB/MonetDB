@@ -34,7 +34,7 @@ All Rights Reserved.
   <property name="jardir"             value="jars" />
   <property name="builddir"           value="build" />
   <property name="docdir"             value="doc" />
-  <property name="scriptdir"          value="scripts" />
+  <property name="scriptdir"          value="${builddir}/scripts" />
   <property name="jdbc-package"       value="nl/cwi/monetdb/jdbc" />
   <property name="xmldb-package"      value="nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"        value="nl/cwi/monetdb/mcl" />
@@ -115,15 +115,19 @@ All Rights Reserved.
   </target>
 
   <!-- a convenience script mjclient which calls the jdbcclient -->
-  <target name="create_mjclient" depends="jar_jdbcclient">
-    <echo message="Crafting an mjclient wrapper script for ${jdbcclient-jar}" />
-    <filter token="JDBCCLIENT_JAR" value="${jdbcclient-jar}" />
+  <target name="create_mjclient">
+    <echo message="Crafting an mjclient wrapper script" />
+    <filter token="JDBCCLIENT_JAR"
+      value="jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
 
     <!-- now copy and filter the file -->
-    <copy file="${scriptdir}/mjclient.in"
+    <copy file="${scriptdir}/mjclient"
       overwrite="true"
-      tofile="${builddir}/mjclient"
+      tofile="${scriptdir}/mjclient.new"
       filtering="yes" />
+    <move file="${scriptdir}/mjclient.new"
+      overwrite="true"
+      tofile="${scriptdir}/mjclient" />
   </target>
 
   <!-- compile targets -->
