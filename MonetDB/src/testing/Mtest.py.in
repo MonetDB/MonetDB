@@ -2940,7 +2940,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['XQUERY_LOGDIR','SQL_LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','SQL_SERVER']
+        vars_ = vars_ + ['setXQUERY_LOGDIR','setSQL_LOGDIR','setGDK_DBFARM','setMONETDB_MOD_PATH','SQL_SERVER']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
