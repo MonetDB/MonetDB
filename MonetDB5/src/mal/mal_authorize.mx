@@ -158,7 +158,7 @@ can only be done after the GDK kernel has been initialized.
 @c
 void
 AUTHcommit() {
-	BAT *b = BATnew(TYPE_void, TYPE_str, 3);
+	BAT *b = BATnew(TYPE_oid, TYPE_str, 3);
 	assert(b);
 
 	assert(user);
