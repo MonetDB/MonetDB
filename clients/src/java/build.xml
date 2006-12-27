@@ -131,13 +131,14 @@ All Rights Reserved.
     <echo message="Compiling JDBC driver" />
     <javac
       classpath="${srcdir}"
-      srcdir="${srcdir}"
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
       target="${javac_version}"
       source="${javac_version}"
       >
+      <src path="${srcdir}" />
+      <src path="${builddir}/src" />
       <include name="${jdbc-package}/**/*.java" />
     </javac>
   </target>
@@ -146,13 +147,14 @@ All Rights Reserved.
     <echo message="Compiling XML:DB driver" />
     <javac
       classpath="${srcdir}:${libdir}/xmldb.jar"
-      srcdir="${srcdir}"
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
       target="${javac_version}"
       source="${javac_version}"
       >
+      <src path="${srcdir}" />
+      <src path="${builddir}/src" />
       <include name="${xmldb-package}/**/*.java" />
     </javac>
   </target>
@@ -243,12 +245,12 @@ All Rights Reserved.
     <!-- now copy and filter the file -->
     <copy file="${srcdir}/${jdbc-package}/MonetDriver.java.in"
       overwrite="true"
-      tofile="${srcdir}/${jdbc-package}/MonetDriver.java"
+      tofile="${builddir}/src/${jdbc-package}/MonetDriver.java"
       filtering="yes" />
 
     <copy file="${srcdir}/${xmldb-package}/base/MonetDBDatabase.java.in"
       overwrite="true"
-      tofile="${srcdir}/${xmldb-package}/base/MonetDBDatabase.java"
+      tofile="${builddir}/src/${xmldb-package}/base/MonetDBDatabase.java"
       filtering="yes" />
 
     <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
