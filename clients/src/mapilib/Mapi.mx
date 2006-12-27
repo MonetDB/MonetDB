@@ -2188,7 +2188,7 @@ mapi_start_talking(Mapi mid)
 			 */
 			char key[8]; /* NULL termination is not necessary */
 			char salt[3]; /* NULL termination is a necessity! */
-			str crypt;
+			char* cr;
 			int len;
 
 			/* prepare the key */
@@ -2208,10 +2208,10 @@ mapi_start_talking(Mapi mid)
 			salt[2] = '\0';
 
 			/* call crypt to do the work */
-			crypt = crypt(key, salt);
-			assert (crypt != NULL);
-			hash = malloc(sizeof(char) * (/*{crypt}*/7 + strlen(crypt) + 1));
-			sprintf(hash, "{crypt}%s", crypt);
+			cr = crypt(key, salt);
+			assert (cr != NULL);
+			hash = malloc(sizeof(char) * (/*{crypt}*/7 + strlen(cr) + 1));
+			sprintf(hash, "{crypt}%s", cr);
 #endif
 		} else if (strstr(hashes, "plain") != NULL) {
 			/* The plain text algorithm, doesn't really hash at all.  It's
