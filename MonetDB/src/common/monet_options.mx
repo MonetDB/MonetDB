@@ -301,6 +301,8 @@ mo_system_config(opt **Set, int setlen)
 		setlen = default_setlen;
 	}
 	cfg = mo_find_option(*Set, setlen, "config");
+	if (!cfg)
+		return setlen;
 	strcpy(config, cfg);
 	mo_substitute(*Set, setlen, config);
 	return mo_config_file(Set, setlen, config);
@@ -317,16 +319,11 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	25	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	24	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
 
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("config");
-	snprintf(buf, BUFSIZ, "%s%cMonetDB.conf", MONETDB_SYSCONFDIR, DIR_SEP);
-	set[i].value = strdup(buf);
-	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_arch");
 	snprintf(buf, BUFSIZ, "%dbit%s", (int) sizeof(char *) * 8, HOST);
