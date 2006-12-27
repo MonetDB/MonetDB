@@ -250,13 +250,19 @@ AC_SUBST(QXinfodir)
 case "$host_os" in
 mac*)	DIRSEP=':'
 	QDIRSEP=':'
-	AC_ERROR([mac not supported yet])
+	AC_ERROR([mac not supported])
 	;;
 *mingw*)
 	DIRSEP='\'
 	QDIRSEP='\\'
 	PATHSEP=';'
 	SOEXT='-0.dll'
+	;;
+*darwin*)
+	DIRSEP='/'
+	QDIRSEP='/'
+	PATHSEP=':'
+	SOEXT='.dylib'
 	;;
 *)
 	DIRSEP='/'
