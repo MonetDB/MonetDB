@@ -315,14 +315,11 @@ All Rights Reserved.
     <echo message="Debug is ${debug}, optimise is ${optimize}" />
   </target>
 
-  <!-- This target removes the build and jar directory plus the
-  generated MonetDriver.java and MonetDBDatabase.java -->
+  <!-- This target removes the build, jar and doc directories -->
   <target name="clean">
     <delete quiet="true" dir="${builddir}" />
     <delete quiet="true" dir="${jardir}" />
     <delete quiet="true" dir="${docdir}" />
-    <delete quiet="true" file="${jdbc-package}/MonetDriver.java" />
-    <delete quiet="true" file="${xmldb-package}/base/MonetDBDatabase.java" />
   </target>
 
 
