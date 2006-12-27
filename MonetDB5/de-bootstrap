@@ -17,8 +17,8 @@
 # All Rights Reserved.
 
 #
-# ! this file should be kept identical in                                                         !
-# ! MonetDB, MonetDB4, MonetDB5, template, sql, pathfinder, xml, pruning, playpen, times100, misq, gis, acoi !
+# ! this file should be kept identical in                                               !
+# ! MonetDB, MonetDB4, monet5, clients, template, sql, pathfinder, amdb, xml, pruning !
 #
 
 if [ -n "$MONETDB_PREFIX" ]; then
