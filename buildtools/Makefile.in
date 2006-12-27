@@ -10,14 +10,17 @@ default: all
 	@-echo
 
 all:
-	cd "$(SRC)/autogen" && python setup.py build
+	cd "$(SRC)"/autogen && python setup.py build \
+		--build-base="$(BUILD)"/_autogen
 	cd _MX && $(MAKE) MAKE=$(MAKE) $@
 	cd _MEL && $(MAKE) MAKE=$(MAKE) $@
 	cd _BURG && $(MAKE) MAKE=$(MAKE) $@
 
 # ... run individual "make install"s ...
 install:
-	cd "$(SRC)/autogen" && python setup.py install --prefix="$(DESTDIR)$(PREFIX)"
+	cd "$(SRC)"/autogen && python setup.py install \
+		--build-base="$(BUILD)"/_autogen \
+		--prefix="$(DESTDIR)$(PREFIX)"
 	cd _MX && $(MAKE) MAKE=$(MAKE) $@
 	cd _MEL && $(MAKE) MAKE=$(MAKE) $@
 	cd _BURG && $(MAKE) MAKE=$(MAKE) $@
