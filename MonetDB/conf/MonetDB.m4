@@ -903,9 +903,11 @@ AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
 SOPREF=lib
 case "$host_os" in
-mac*)	DIRSEP=':'
+mac*)
+	dnl Mac OS 9 stuff
+	DIRSEP=':'
 	QDIRSEP=':'
-	AC_ERROR([mac not supported yet])
+	AC_ERROR([mac not supported])
 	;;
 *mingw*)
 	DIRSEP='\'
@@ -921,6 +923,12 @@ mac*)	DIRSEP=':'
 	PATHSEP=':'
 	SOEXT='-0.dll'
 	SOPREF=cyg
+	;;
+*darwin*)
+	DIRSEP='/'
+	QDIRSEP='/'
+	PATHSEP=':'
+	SOEXT='.dylib'
 	;;
 *)
 	DIRSEP='/'
