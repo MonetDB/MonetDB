@@ -111,7 +111,7 @@ int x = (m.usmblks < 0);], AC_DEFINE(HAVE_SIGNED_MALLINFO, 1, [Define if your ma
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([memset])
-AC_CHECK_FUNCS([fcntl ftime ftruncate getopt getrlimit gettimeofday getuid kill lockf madvise nanosleep opendir pipe posix_fadvise posix_madvise setenv shutdown strdup sysconf uname])
+AC_CHECK_FUNCS([fcntl ftime ftruncate getopt getrlimit gettimeofday getuid kill lockf madvise nanosleep opendir pipe posix_fadvise posix_madvise setenv shutdown strdup sysconf uname strtoll])
 AC_CHECK_DECLS([strdup])
 
 dnl provide different versions of the paths derived above
@@ -220,13 +220,19 @@ AC_SUBST(QXinfodir)
 case "$host_os" in
 mac*)	DIRSEP=':'
 	QDIRSEP=':'
-	AC_ERROR([mac not supported yet])
+	AC_ERROR([mac not supported])
 	;;
 *mingw*)
 	DIRSEP='\'
 	QDIRSEP='\\'
 	PATHSEP=';'
 	SOEXT='-0.dll'
+	;;
+*darwin*)
+	DIRSEP='/'
+	QDIRSEP='/'
+	PATHSEP=':'
+	SOEXT='.dylib'
 	;;
 *)
 	DIRSEP='/'
@@ -239,3 +245,6 @@ AC_SUBST(DIRSEP)
 AC_SUBST(QDIRSEP)
 AC_SUBST(PATHSEP)
 AC_SUBST(SOEXT)
+
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
