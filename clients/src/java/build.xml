@@ -29,16 +29,16 @@ All Rights Reserved.
 <project name="MonetDB_Java_Drivers" default="jar_jdbcclient" basedir=".">
 
   <!-- set global properties for this build -->
-  <property name="srcdir"             value="." /> <!-- todo: make src -->
+  <property name="srcdir"             value="src" />
   <property name="libdir"             value="lib" />
   <property name="jardir"             value="jars" />
   <property name="builddir"           value="build" />
   <property name="docdir"             value="doc" />
   <property name="scriptdir"          value="scripts" />
-  <property name="jdbc-package"       value="src/nl/cwi/monetdb/jdbc" />
-  <property name="xmldb-package"      value="src/nl/cwi/monetdb/xmldb" />
-  <property name="mcl-package"        value="src/nl/cwi/monetdb/mcl" />
-  <property name="client-package"     value="src/nl/cwi/monetdb/client" />
+  <property name="jdbc-package"       value="nl/cwi/monetdb/jdbc" />
+  <property name="xmldb-package"      value="nl/cwi/monetdb/xmldb" />
+  <property name="mcl-package"        value="nl/cwi/monetdb/mcl" />
+  <property name="client-package"     value="nl/cwi/monetdb/client" />
 
   <property file="build.local.properties" />
   <property file="build.properties" />
@@ -241,14 +241,14 @@ All Rights Reserved.
     <fail unless="JDBC_VER_SUFFIX" message="'JDBC_VER_SUFFIX' undefined. Please follow the directions in build.properties."/>
 
     <!-- now copy and filter the file -->
-    <copy file="${jdbc-package}/MonetDriver.java.in"
+    <copy file="${srcdir}/${jdbc-package}/MonetDriver.java.in"
       overwrite="true"
-      tofile="${jdbc-package}/MonetDriver.java"
+      tofile="${srcdir}/${jdbc-package}/MonetDriver.java"
       filtering="yes" />
 
-    <copy file="${xmldb-package}/base/MonetDBDatabase.java.in"
+    <copy file="${srcdir}/${xmldb-package}/base/MonetDBDatabase.java.in"
       overwrite="true"
-      tofile="${xmldb-package}/base/MonetDBDatabase.java"
+      tofile="${srcdir}/${xmldb-package}/base/MonetDBDatabase.java"
       filtering="yes" />
 
     <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
