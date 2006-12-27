@@ -53,6 +53,10 @@ cat $SRC/Makefile.in \
        -e 's|@PREFIX@|'"$PREFIX"'|g' \
  > Makefile || exit 1
 
+# Copy python cruft to the build dir, so it can do it's thing, since it
+# stubbornly persists on polluting the src tree.
+cp -R "${SRC}"/autogen "${BUILD}"/_autogen
+
 # ... and run individual "configure"s
 ( test -d _MX || mkdir _MX ) && ( cd _MX && $SRC/Mx/configure "$@" ) || exit 1
 ( test -d _MEL || mkdir _MEL ) && ( cd _MEL && $SRC/mel/configure "$@" --with-mx=$BUILD/_MX/Mx ) || exit 1
