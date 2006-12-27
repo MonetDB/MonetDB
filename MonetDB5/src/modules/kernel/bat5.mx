@@ -831,8 +831,8 @@ bat5_export str BKCsetSequenceBase(int *r, int *bid, oid *o);
 bat5_export str BKCsetSequenceBaseNil(int *r, int *bid, oid *o);
 bat5_export str BKCgetSequenceBase(oid *r, int *bid);
 
-bat5_export ssize_t void_replace_bat(BAT *b, BAT *u, bit force);
-bat5_export int void_inplace(BAT *b, oid id, ptr val, bit force);
+bat5_export ssize_t void_replace_bat5(BAT *b, BAT *u, bit force);
+bat5_export int void_inplace5(BAT *b, oid id, ptr val, bit force);
 
 bat5_export int CMDbatsize(lng *tot, BAT *b);
 #endif /*_BAT_H_*/
@@ -1021,7 +1021,7 @@ The next collection of operators fill a hole in the MonetDB kernel libraries.
 It provide handy operations on void-BATs.
 @c
 int
-void_inplace(BAT *b, oid id, ptr val, bit force)
+void_inplace5(BAT *b, oid id, ptr val, bit force)
 {
 	int res = GDK_SUCCEED;
 	BUN p = NULL;
@@ -1046,7 +1046,7 @@ void_inplace(BAT *b, oid id, ptr val, bit force)
 int
 bun_inplace(BAT **res, BAT *b, oid *id, ptr val )
 {
-	int ret = void_inplace(b,*id,val,FALSE);
+	int ret = void_inplace5(b,*id,val,FALSE);
 	*res = b;
 	BBPfix(b->batCacheid);
 	return ret;
@@ -1055,14 +1055,14 @@ bun_inplace(BAT **res, BAT *b, oid *id, ptr val )
 int
 bun_inplace_force(BAT **res, BAT *b, oid *id, ptr val, bit *force )
 {
-	int ret = void_inplace(b,*id,val,*force);
+	int ret = void_inplace5(b,*id,val,*force);
 	*res = b;
 	BBPfix(b->batCacheid);
 	return ret;
 }
 
 ssize_t
-void_replace_bat(BAT *b, BAT *u, bit force)
+void_replace_bat5(BAT *b, BAT *u, bit force)
 {
 	size_t nr = 0;
 	BUN r, s;
@@ -1071,7 +1071,7 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 		oid updid = *(oid *) BUNhead(u, r);
 		ptr val = BUNtail(u, r);
 
-		if (void_inplace(b, updid, val, force) == GDK_FAIL)
+		if (void_inplace5(b, updid, val, force) == GDK_FAIL)
 			return -1;
 		nr++;
 	}
@@ -1082,7 +1082,7 @@ int
 bat_inplace(BAT **res, BAT *o, BAT *d)
 {
 	*res = o;
-	if (void_replace_bat(o, d, FALSE) < 0)
+	if (void_replace_bat5(o, d, FALSE) < 0)
 		return GDK_FAIL;
 	BBPfix(o->batCacheid);
 	return GDK_SUCCEED;
@@ -1092,7 +1092,7 @@ int
 bat_inplace_force(BAT **res, BAT *o, BAT *d, bit *force)
 {
 	*res = o;
-	if (void_replace_bat(o, d, *force) < 0)
+	if (void_replace_bat5(o, d, *force) < 0)
 		return GDK_FAIL;
 	BBPfix(o->batCacheid);
 	return GDK_SUCCEED;
@@ -2215,14 +2215,14 @@ void_delete_bat(BAT *b, BAT *d, int delta)
 		for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) {
 			oid delid = *(oid *) BUNtail(d, r);
 
-			void_inplace(b, delid, nil, TRUE);
+			void_inplace5(b, delid, nil, TRUE);
 			nr++;
 		}
 	} else {
 		BATloop(d, r, s) {
 			oid delid = *(oid *) BUNtail(d, r);
 
-			void_inplace(b, delid, nil, TRUE);
+			void_inplace5(b, delid, nil, TRUE);
 			nr++;
 		}
 	}
@@ -2252,7 +2252,7 @@ void_replace_delta(BAT *b, BAT *u)
 		oid updid = *(oid *) BUNhead(u, r);
 		ptr val = BUNtail(u, r);
 
-		void_inplace(b, updid, val, TRUE);
+		void_inplace5(b, updid, val, TRUE);
 		nr++;
 	}
 	return nr;
@@ -2337,7 +2337,7 @@ BKCbun_inplace(int *r, int *bid, oid *id, ptr t)
 	if ((o = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.inplace", "Cannot access descriptor");
 	}
-	void_inplace(o, *id, t,FALSE);
+	void_inplace5(o, *id, t,FALSE);
 	BBPreleaseref(o->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2351,7 +2351,7 @@ BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force)
 	if ((o = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.inplace", "Cannot access descriptor");
 	}
-	void_inplace(o, *id, t, *force);
+	void_inplace5(o, *id, t, *force);
 	BBPreleaseref(o->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2369,7 +2369,7 @@ BKCbat_inplace(int *r, int *bid, int *rid)
 		BBPreleaseref(o->batCacheid);
 		throw(MAL, "bat.inplace", "Cannot access descriptor");
 	}
-	void_replace_bat(o, d,FALSE);
+	void_replace_bat5(o, d,FALSE);
 	BBPreleaseref(o->batCacheid);
 	BBPreleaseref(d->batCacheid);
 	return MAL_SUCCEED;
@@ -2388,7 +2388,7 @@ BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force)
 		BBPreleaseref(o->batCacheid);
 		throw(MAL, "bat.inplace", "Cannot access descriptor");
 	}
-	void_replace_bat(o, d, *force);
+	void_replace_bat5(o, d, *force);
 	BBPreleaseref(o->batCacheid);
 	BBPreleaseref(d->batCacheid);
 	return MAL_SUCCEED;
