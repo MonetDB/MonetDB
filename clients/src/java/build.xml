@@ -35,7 +35,6 @@ All Rights Reserved.
   <property name="builddir"           value="build" />
   <property name="docdir"             value="doc" />
   <property name="scriptdir"          value="scripts" />
-  <property name="bindir"             value="bin" />
   <property name="jdbc-package"       value="src/nl/cwi/monetdb/jdbc" />
   <property name="xmldb-package"      value="src/nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"        value="src/nl/cwi/monetdb/mcl" />
@@ -320,7 +319,6 @@ All Rights Reserved.
     <delete quiet="true" dir="${builddir}" />
     <delete quiet="true" dir="${jardir}" />
     <delete quiet="true" dir="${docdir}" />
-    <delete quiet="true" dir="${bindir}" />
     <delete quiet="true" file="${jdbc-package}/MonetDriver.java" />
     <delete quiet="true" file="${xmldb-package}/base/MonetDBDatabase.java" />
   </target>
