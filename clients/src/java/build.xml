@@ -120,12 +120,10 @@ All Rights Reserved.
     <echo message="Crafting an mjclient wrapper script for ${jdbcclient-jar}" />
     <filter token="JDBCCLIENT_JAR" value="${jdbcclient-jar}" />
 
-    <!-- create bindir -->
-    <mkdir dir="${bindir}" />
     <!-- now copy and filter the file -->
     <copy file="${scriptdir}/mjclient.in"
       overwrite="true"
-      tofile="${bindir}/mjclient"
+      tofile="${builddir}/mjclient"
       filtering="yes" />
   </target>
 

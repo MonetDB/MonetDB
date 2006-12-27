@@ -23,10 +23,15 @@ EXTRA_DIST_DIR = nl/cwi/monetdb/jdbc \
 		 nl/cwi/monetdb/client \
 		 nl/cwi/monetdb/mcl \
 		 nl/cwi/monetdb/xmldb \
-		 lib /
+		 lib scripts /
 		 example
 
 ant_jar_jdbcclient = {
 	DIR = datadir/MonetDB/lib
 	FILES = jdbcclient-1.5.jar monetdb-1.5-jdbc.jar
+}
+
+ant_create_mjclient = {
+	DIR = bindir
+	FILES = mjclient
 }

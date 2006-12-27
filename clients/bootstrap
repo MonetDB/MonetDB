@@ -21,12 +21,4 @@
 # ! MonetDB, MonetDB4, MonetDB5, template, sql, pathfinder, xml, pruning, playpen, times100, misq, gis, acoi !
 #
 
-if [ -n "$MONETDB_PREFIX" ]; then
-    MBOOTSTRAP="$MONETDB_PREFIX"/bin/Mbootstrap
-elif [ -n "$MONETDIST" ]; then
-    MBOOTSTRAP="$MONETDIST"/bin/Mbootstrap
-else
-    MBOOTSTRAP=Mbootstrap
-fi
-
-exec "$MBOOTSTRAP"
+exec Mbootstrap
