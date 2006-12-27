@@ -14,11 +14,6 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-#
-# ! this file should be kept identical in                                            !
-# ! MonetDB, monet5, sql, xml, acoi, gis, template, playpen, misq, times100, pruning !
-#
-
 CP=cp
 MV=mv
 HIDE=1
