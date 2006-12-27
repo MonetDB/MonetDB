@@ -25,7 +25,6 @@ Over..
 % name # name
 % varchar # type
 % 15 # length
-[ "config"	]
 [ "gdk_arch"	]
 [ "gdk_version"	]
 [ "monet_pid"	]
@@ -50,6 +49,7 @@ Over..
 [ "sql_debug"	]
 [ "sql_logdir"	]
 [ "xquery_logdir"	]
+[ "config"	]
 [ "gdk_embedded"	]
 [ "mapi_open"	]
 [ "pf_httpd_port"	]
