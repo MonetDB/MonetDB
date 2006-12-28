@@ -19,7 +19,7 @@
 # "Meta-bootstrap" for buildtools
 
 # Create "Meta-configure" ...
-rm -f configure && cp configure.ac configure && chmod +x configure || exit 1
+rm -f configure && cp configure.bs configure && chmod +x configure || exit 1
 
 # ... and run individual "bootstrap"s
 ( cd Mx && ./bootstrap ) || exit 1
