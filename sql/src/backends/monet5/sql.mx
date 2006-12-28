@@ -1564,7 +1564,7 @@ bathash_wrap(int *res, int *bid )
 		throw(SQL, "bathash", "Cannot access descriptor");
 	}
 
-	if (b->htype == TYPE_void && !VIEWparent(b)) 
+	if (b->htype == TYPE_void) 
 		return voidbathash(res, b);
 
 	dst= BATnew(TYPE_oid,TYPE_int, BATcount(b));
