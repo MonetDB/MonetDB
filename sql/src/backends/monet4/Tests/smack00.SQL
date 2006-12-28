@@ -1,6 +1,6 @@
 #!/bin/sh
 
-for i in $MONETDB_PREFIX/lib/MonetDB/Tests $MONETDB_PREFIX/lib64/MonetDB/Tests $MONETDB_BUILD/src/mapi/examples/C ; do
+for i in $CLIENTS_PREFIX/lib/MonetDB/Tests $CLIENTS_PREFIX/lib64/MonetDB/Tests $CLIENTS_BUILD/src/examples/C ; do
 	if [ -d "$i" ] ; then
 		PATH="$i:$PATH"
 	fi
