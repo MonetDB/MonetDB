@@ -28,7 +28,6 @@ xml/conf/conf.bash
 pathfinder/bootstrap
 pathfinder/de-bootstrap
 pathfinder/conf/conf.bash
-buildtools/conf/conf.bash
 EOF
     then
 	cat <<EOF
