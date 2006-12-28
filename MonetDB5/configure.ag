@@ -48,6 +48,10 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 
+if test "x$have_monetdb" != xyes; then
+	AC_MSG_ERROR([MonetDB5 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+fi
+
 AM_MONETDB_UTILS()
 
 AC_PROG_LIBTOOL
