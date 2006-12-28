@@ -97,29 +97,25 @@ command restart( sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
-command bind_dbat(sname:str, tname:str, access:int):bat[:any_1,:any_2]
+command bind_dbat(sname:str, tname:str, access:int):bat[:oid,:oid]
 address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
 	with specific access modes";
 
-command bind_idxbat(sname:str, tname:str, iname:str, access:int):bat[:any_1,:any_2]
+command bind_idxbat(sname:str, tname:str, iname:str, access:int):bat[:oid,:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the idx bat, tname.idx
 	with specific accsess modes";
 
 command append_idxbat(sname:str, tname:str, iname:str, access:int, b:bat[:oid,:any_1] ):bat[:any_1,:any_2]
-address mvc_append_idxbat_wrap;
-command append_idxbat(sname:str, tname:str, iname:str, access:int, b:bat[:void,:any_1] ):bat[:any_1,:any_2]
 address mvc_append_idxbat_wrap
 comment "Append b to the column tname.iname (possibly optimized to replace the insert bat of tname.iname";
 
-command bind(sname:str, tname:str, cname:str, access:int ):bat[:any_1,:any_2]
+command bind(sname:str, tname:str, cname:str, access:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the bat tname.cname into the focus with specific access mode";
 
 command append(sname:str, tname:str, cname:str, access:int, b:bat[:oid,:any_1] ):bat[:any_1,:any_2]
-address mvc_append_wrap;
-command append(sname:str, tname:str, cname:str, access:int, b:bat[:void,:any_1] ):bat[:any_1,:any_2]
 address mvc_append_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname";
 
@@ -127,7 +123,7 @@ command clear_table(sname:str, tname:str) :lng
 address mvc_clear_table_wrap
 comment "Clear table";
 
-command columnBind(b:bat[:str,:bat], nme:str) :bat[:any_1,:any_2]
+command columnBind(b:bat[:str,:bat], nme:str) :bat[:oid,:any_1]
 address mvc_bind_single_wrap
 comment "Bind the column bat into the focus ";
 
@@ -135,7 +131,7 @@ comment "Bind the column bat into the focus ";
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
-command resultSet( nr_cols:int, qtype:int, order:bat[:void,:any_1] ) :int 
+command resultSet( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
 address mvc_result_table_wrap
 comment "Prepare a table result set"; 
 
@@ -146,10 +142,6 @@ comment "Prepare a table result set";
 command resultSet( nr_cols:int, qtype:int, order:any_1 ) :int 
 address mvc_result_row_wrap
 comment "Prepare a row result set"; 
-
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:void,:any_1] ) :void
-address mvc_result_column_wrap
-comment "Add the colunm to the table query result";
 
 command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any_1] ) :void
 address mvc_result_column_wrap
@@ -199,7 +191,7 @@ comment "if col contains exactly one value return this. Incase of more raise an 
 command not_unique( b:bat[:oid,:oid]) :bit 
 address not_unique 
 comment "check if the tail sorted bat b doesn't have unique tail values" ;
-command not_unique( b:bat[:void,:oid]) :bit 
+command not_unique( b:bat[:oid,:oid]) :bit 
 address not_unique ;
 
 function sql_environment():bat[:str,:bat];
@@ -281,7 +273,6 @@ ease code generation.
 @mal
 pattern calc.rotate_xor_hash(h:int, nbits:int, v:any_1) :int address MKEYrotate_xor_hash;
 command batcalc.rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
-command batcalc.rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any_1]) :bat[:void,:int] address MKEYbulk_rotate_xor_hash;
 
 pattern calc.hash( v:any ) :int address MKEYhash; 
 command calc.hash( v:chr ) :int address MKEYhash_chr; 
@@ -291,10 +282,6 @@ command calc.hash( v:flt ) :int address MKEYhash_flt;
 command calc.hash( v:dbl ) :int address MKEYhash_dbl; 
 command calc.hash( v:lng ) :int address MKEYhash_lng; 
 command calc.hash( v:str ) :int address MKEYhash_str; 
-
-command batcalc.hash( b:bat[:void,:any_1] ) :bat[:void,:int]
-address voidbathash_wrap 
-comment "calculate a hash value";
 
 command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:int]
 address bathash_wrap 
@@ -612,7 +599,6 @@ sql5_export str mvc_export_result_wrap(int *ret, int *res_id, str *w);
 sql5_export str mvc_export_operation_wrap(int *ret, str *w);
 sql5_export str mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, int *sz);
-sql5_export str voidbathash_wrap(int *res, int *bid );
 sql5_export str bathash_wrap(int *res, int *bid );
 sql5_export str hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1525,16 +1511,12 @@ str not_unique(bit *ret, int* bid)
 	return MAL_SUCCEED;
 }
 
-str
-voidbathash_wrap(int *res, int *bid )
+static str
+voidbathash(int *res, BAT *b )
 {
-	BAT *b, *dst;
+	BAT *dst;
 	hash_t (*hash)(ptr v); 
 	int *r, *f;
-
-	if( (b = BATdescriptor(*bid)) == NULL ){
-		throw(SQL, "bathash", "Cannot access descriptor");
-	}
 
 	dst= BATnew(TYPE_void,TYPE_int, BATcount(b));
 	if (!dst) {
@@ -1581,6 +1563,9 @@ bathash_wrap(int *res, int *bid )
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "bathash", "Cannot access descriptor");
 	}
+
+	if (b->ttype == TYPE_void && !VIEWparent(b)) 
+		return voidbathash(res, b);
 
 	dst= BATnew(TYPE_oid,TYPE_int, BATcount(b));
 	if (!dst) {

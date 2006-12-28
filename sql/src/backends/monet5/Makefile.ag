@@ -34,19 +34,19 @@ lib__sql = {
 }
 
 
-lib_embeddedsql5 = {
-	SOURCES = embeddedclient.mx
-	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
-		$(MONETDBCLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
-}
+#lib_embeddedsql5 = {
+	#SOURCES = embeddedclient.mx
+	#LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
+		#$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
+		#$(MONETDBCLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+#}
 
-bin_Mbeddedsql5 = {
-	SOURCES = prog.c
-	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
-		$(MONETDBCLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
-}
+#bin_Mbeddedsql5 = {
+	#SOURCES = prog.c
+	#LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
+		#$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet $(MONETDB5_LIBS) -lmal \
+		#$(MONETDBCLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+#}
 
 lib__sql_cache = {
 	DIR = libdir/MonetDB5

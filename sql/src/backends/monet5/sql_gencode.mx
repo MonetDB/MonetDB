@@ -289,7 +289,7 @@ multiplex1(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, in
 		q = pushArgument(mb, q, o1);
 	} else {
 		q = newStmt(mb, "optimizer","multiplex");
-		setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));
+		setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
 		freezeVarType(mb,getArg(q,0));
 		q = pushStr(mb, q, convertMultiplexMod(mod,name));
 		q = pushStr(mb, q, convertMultiplexFcn(name));
@@ -323,7 +323,7 @@ dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1
 		q = pushArgument(mb, q, o2);
 	} else {
 		q = newStmt(mb, "optimizer","multiplex");
-		setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));
+		setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
 		freezeVarType(mb,getArg(q,0));
 		q = pushStr(mb, q, convertMultiplexMod(mod,name));
 		q = pushStr(mb, q, convertMultiplexFcn(name));
@@ -423,8 +423,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		} break;
 		case st_temp:{
-			int l;
-			int ht = TYPE_void;
+			int ht = TYPE_oid;
 			int tt = s->op4.typeval.type->localtype;
 
 			q = newStmt1(mb, batRef, "new");
@@ -433,21 +432,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushNil(mb, q, ht);
 			q = pushNil(mb, q, tt);
 
-			l = getDestVar(q);
-			q = newStmt1(mb, batRef, "setSequenceBase");
-			q = pushArgument(mb, q, l);
-			pushOid(mb,q,0);
 			s->nr = getDestVar(q);
 		} break;
 		case st_column:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
 			break;
 		case st_bat: {
-			int ht = TYPE_void;
+			int ht = TYPE_oid;
 			int tt = s->op1.cval->type.type->localtype;
 
-			if (s->flag == UPD || s->flag == RD_UPD)
-				ht = TYPE_oid;
 			@:SQLprelude@
 			q = newStmt1(mb, sqlRef, bindRef);
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -461,7 +454,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_dbat:{
-			int ht = TYPE_void;
+			int ht = TYPE_oid;
 			@:SQLprelude@
 			q = newStmt1(mb, sqlRef, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
@@ -475,10 +468,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_idxbat:{
 			int tt;
-			int ht = TYPE_void;
+			int ht = TYPE_oid;
 
-			if (s->flag == UPD || s->flag == RD_UPD)
-				ht = TYPE_oid;
 			@:SQLprelude@
 			q = newStmt1(mb, sqlRef, "bind_idxbat");
 			tt = tail_type(s)->type->localtype;
@@ -522,7 +513,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* first insert single value into a bat */
 			if (s->nrcols == 0) { 
 				int k;
-				int ht = TYPE_void;
+				int ht = TYPE_oid;
 				int tt = tail_type(s->op1.stval)->type->localtype;
 
 				q = newStmt1(mb, batRef, "new");
@@ -530,11 +521,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				freezeVarType(mb,getArg(q,0));
 				q = pushNil(mb, q, ht);
 				q = pushNil(mb, q, tt);
-				k = getDestVar(q);
-
-				q = newStmt1(mb, batRef, "setSequenceBase");
-				q = pushArgument(mb, q, k);
-				pushOid(mb,q,0);
 				k = getDestVar(q);
 
 				q = newStmt2(mb, batRef, appendRef);
@@ -1122,7 +1108,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int type = s->op4.typeval.type->localtype;
 
 				q = newStmt(mb, "optimizer","multiplex");
-				setVarType(mb,getArg(q,0), newBatType(TYPE_void,type));
+				setVarType(mb,getArg(q,0), newBatType(TYPE_oid,type));
 				freezeVarType(mb,getArg(q,0));
 				q = pushStr(mb, q, convertMultiplexMod("calc",convert));
 				q = pushStr(mb, q, convertMultiplexFcn(convert));
@@ -1214,7 +1200,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					/* q = multiplexN(mb,fimp); */
 					q = newStmt(mb, "optimizer","multiplex");
 					setVarType(mb,getArg(q,0), 
-						newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
+						newBatType(TYPE_oid,tail_type(s->op1.stval)->type->localtype));
 					freezeVarType(mb,getArg(q,0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
@@ -1256,7 +1242,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (!q) {
 					q = newStmt(mb, "optimizer","multiplex");
 					setVarType(mb,getArg(q,0), 
-						newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
+						newBatType(TYPE_oid,tail_type(s->op1.stval)->type->localtype));
 					freezeVarType(mb,getArg(q,0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
@@ -1478,7 +1464,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			q = newStmt1(mb, sqlRef, "columnBind");
 			/* adjust destination type */
-			setVarType(mb,getArg(q,0), newBatType( TYPE_void,s->op4.typeval.type->localtype));
+			setVarType(mb,getArg(q,0), newBatType( TYPE_oid,s->op4.typeval.type->localtype));
 			freezeVarType(mb,getArg(q,0));
 			q = pushArgument(mb, q, o1);
 			q = pushArgument(mb, q, o2);
