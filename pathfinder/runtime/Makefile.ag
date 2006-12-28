@@ -32,7 +32,7 @@ PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 CFLAGS = -DEMBEDDED -DMT -DNO_CGI -DNO_AUTH -DIO_MAX=10240
 
 lib__pf_support = {
-        DIR = libdir/MonetDB
+        DIR = libdir/MonetDB4
         SOURCES = \
                 pf_support.mx \
                 staircasejoin.mx \
@@ -53,7 +53,7 @@ lib__pf_support = {
 }
 
 lib__pf_standoff = {
-        DIR = libdir/MonetDB
+        DIR = libdir/MonetDB4
         SOURCES = \
                 pf_standoff.mx 
 
@@ -64,7 +64,7 @@ lib__pf_standoff = {
 }
 
 lib__pathfinder = {
-        DIR = libdir/MonetDB
+        DIR = libdir/MonetDB4
         SOURCES = \
                 pathfinder.mx
 
@@ -89,7 +89,7 @@ lib__pathfinder = {
 }
 
 lib__xrpc_client = {
-        DIR = libdir/MonetDB
+        DIR = libdir/MonetDB4
         SOURCES = xrpc_client.mx
         LIBS = \
 			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
@@ -98,7 +98,7 @@ lib__xrpc_client = {
 }
 
 lib__xrpc_server = {
-        DIR = libdir/MonetDB
+        DIR = libdir/MonetDB4
         SOURCES = \
 				  shttpd.c shttpd.h \
 				  xrpc_server.mx
@@ -109,6 +109,6 @@ lib__xrpc_server = {
 }
 
 scripts_mil = {
-        DIR = libdir/MonetDB
+        DIR = libdir/MonetDB4
         SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xrpc_client.mx xrpc_server.mx
 }
