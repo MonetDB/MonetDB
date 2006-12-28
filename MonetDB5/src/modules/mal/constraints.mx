@@ -21,7 +21,7 @@
 @mal
 module constraints;
 
-command emptySet(b:bat[:any_1,:any_2]):void
+command emptySet(b:bat[:oid,:any_2]):void
 address CemptySet
 comment "Check if the bat is empty";
 

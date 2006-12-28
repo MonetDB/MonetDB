@@ -1,6 +1,6 @@
 # the multiplex code blocks.
 
-b:= bat.new(:void,:int);
+b:= bat.new(:oid,:int);
 barrier (v,i):= language.newRange(0:int);
 	bat.append(b,i);
 	redo (v,i):= language.nextElement(1:int,10:int);

@@ -1,5 +1,5 @@
-b:= bat.new(:int,:int);
-bat.insert(b,1,2);
+b:= bat.new(:oid,:int);
+bat.insert(b,1@0,2);
 #many more inserts
 c{singleton}:= algebra.select(b,0,4);
 d:= algebra.markH(c);

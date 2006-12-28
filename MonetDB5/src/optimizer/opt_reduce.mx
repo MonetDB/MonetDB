@@ -17,7 +17,7 @@
 @f opt_reduce
 @a M. Kersten
 @-
-@node Variable Stack Reduction, The MAL Debugger, Costmodels, Toolkit
+@node Variable Stack Reduction, Query Plans, Costmodels, Toolkit
 @- Variable Stack Reduction
 The compilers producing MAL may generate an abundance of temporary variables
 to hold the result of expressions. This leads to a polution of the

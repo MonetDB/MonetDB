@@ -63,31 +63,28 @@ operands. We also support the type enlargement and auto coercions,
 because they avoid expensive BAT copying.
 @= calcGrp
 
-	command @1(a:bat[:any_1,:@4], b:bat[:any_1,:@5], c:bat[:any_1,:@2]):bat[:any_1,:@4]
+	command @1(a:bat[:oid,:@4], b:bat[:oid,:@5], c:bat[:oid,:@2]):bat[:oid,:@4]
 	address CMDbataccum@3_@2_@4_@5
 	comment "Binary BAT calculator function with accumulator BAT result";
 
-	command @1(a:bat[:any_1,:@4], cst:@4, b:bat[:any_1,:@5]):bat[:any_1,:@4]
+	command @1(a:bat[:oid,:@4], cst:@4, b:bat[:oid,:@5]):bat[:oid,:@4]
 	address CMDbataccum@3cst2_@2_@4_@5
 	comment "(BAT,Constant) calculator function with accumulator BAT result";
 
-	command @1(a:bat[:any_1,:@4], b:bat[:any_1,:@4], cst:@5) :bat[:any_1,:@4]
+	command @1(a:bat[:oid,:@4], b:bat[:oid,:@4], cst:@5) :bat[:oid,:@4]
 	address CMDbataccum@3cst_@2_@4_@5
 	comment "(BAT,Constant) calculator function with accumulator BAT result";
 
-	command @1(b:bat[:any_1,:@4], cst:@5) :bat[:any_1,:@2] 
+	command @1(b:bat[:oid,:@4], cst:@5) :bat[:oid,:@2] 
 	address CMDbat@3cst_@2_@4_@5;
 
-	command @1(cst:@4, b:bat[:any_1,:@5]) :bat[:any_1,:@2] 
+	command @1(cst:@4, b:bat[:oid,:@5]) :bat[:oid,:@2] 
 	address CMDcst@3bat_@2_@4_@5;
 
-	command @1(b:bat[:any_1,:@4], c:bat[:any_1,:@5]) :bat[:any_1,:@2] 
+	command @1(b:bat[:oid,:@4], c:bat[:oid,:@5]) :bat[:oid,:@2] 
 	address CMDbat@3_@2_@4_@5
 	comment "Binary BAT calculator function with new BAT result";
 
-	command @1(b:bat[:void,:@4], c:bat[:oid,:@5]) :bat[:oid,:@2] 
-	address CMDbat@3_@2_@4_@5
-	comment "Binary BAT calculator function with new BAT result";
 @{
 @-
 We need instantiations for the accumulator code,

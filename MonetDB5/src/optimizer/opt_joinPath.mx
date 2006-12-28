@@ -22,7 +22,7 @@ The routine @code{optimizer.joinPath()}
 walks through the program looking for join operations
 and cascades them into multiple join paths.
 @verbatim
-	a:= bat.new(:void,:oid);
+	a:= bat.new(:oid,:oid);
 	b:= bat.new(:oid,:oid);
 	c:= bat.new(:oid,:str);
 	j1:= algebra.join(a,b);
@@ -34,7 +34,7 @@ The result includes the expanded join expressions.
 The deadcode optimizer should take care of superflous
 paths.
 @verbatim
-	a:= bat.new(:void,:oid);
+	a:= bat.new(:oid,:oid);
 	j1:= algebra.join(a,b);
 	j2:= algebra.joinPath(a,b,c);
 	j3:= algebra.join(b,b);
@@ -116,7 +116,7 @@ Final type check.
 @c
 				for(j=1; j<q->argc-1; j++)
 				if( getTailType(getArgType(mb,q,j)) != getHeadType(getArgType(mb,q,j+1)) &&
-				!( getTailType(getArgType(mb,q,j))== TYPE_oid &&
+				!( getTailType(getArgType(mb,q,j))== TYPE_oid  &&
 					getHeadType(getArgType(mb,q,j))== TYPE_void) &&
 				!( getTailType(getArgType(mb,q,j))== TYPE_void &&
 					getHeadType(getArgType(mb,q,j))== TYPE_oid)
@@ -158,7 +158,7 @@ ALGjoinCost(BAT *l, BAT *r)
 
 	lc = BATcount(l);
 	rc = BATcount(r);
-	if( l->ttype== TYPE_void || r->htype== TYPE_void )
+	if( l->ttype== TYPE_oid || r->htype== TYPE_oid )
 		return MIN(lc,rc);
 	return lc * rc;
 }

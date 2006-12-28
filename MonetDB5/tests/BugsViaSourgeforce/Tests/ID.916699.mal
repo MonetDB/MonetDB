@@ -9,8 +9,7 @@
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 #	io.print("## integers from -25 to 24\n");
-	aa_a := new(nil:void,nil:int,50);
-	a := bat.setSequenceBase(aa_a,0@0);
+	aa_a := new(nil:oid,nil:int,50);
 #	io.print("var i := -25;");
 	i := -25;
 #	io.print("while(i < 25) a.insert(nil, (i :+= 1));");

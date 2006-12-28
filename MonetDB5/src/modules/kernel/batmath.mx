@@ -28,10 +28,10 @@ The mmath functions are also overloaded to provide for
 the fast execution of expanded code blocks.
 The common set of math functions is supported.
 @= scienceFcn
-	command @1(x:bat[:void,:dbl])  :bat[:void,:dbl] 
+	command @1(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
 	address CMDsciencevoid_@1;
 @= scienceFcnBinary
-	command @1(x:bat[:void,:dbl],y:@2):bat[:void,:dbl] 
+	command @1(x:bat[:oid,:dbl],y:@2):bat[:oid,:dbl] 
 	address CMDscience_@1;
 @-
 @mal

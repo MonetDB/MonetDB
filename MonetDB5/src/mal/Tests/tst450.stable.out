@@ -27,12 +27,12 @@ function user.main():void;	# 0  (main:void)
 #testing the inspect module for help information 	# 1  (_2:str)
     a := inspect.getAtomNames();	# 2 INSPECTatom_names (a:bat[:int,:str])
     io.print(a);	# 3 IOprint_val (_3:void)<-(a:bat[:int,:str])
-    m := inspect.getModule();	# 4 INSPECTgetAllModules (m:bat[:void,:str])
-    mr := bat.reverse(m);	# 5 BKCreverse (mr:bat[:str,:void])<-(m:bat[:void,:str])
-    m1 := algebra.kunique(mr);	# 6 ALGkunique (m1:bat[:str,:void])<-(mr:bat[:str,:void])
-    z := algebra.project(m1);	# 7 ALGprojectNIL (z:bat[:str,:void])<-(m1:bat[:str,:void])
-    zs := algebra.sortHT(z);	# 8 ALGhtsort (zs:bat[:str,:void])<-(z:bat[:str,:void])
-    io.print(zs);	# 9 IOprint_val (_9:void)<-(zs:bat[:str,:void])
+    m := inspect.getModule();	# 4 INSPECTgetAllModules (m:bat[:oid,:str])
+    mr := bat.reverse(m);	# 5 BKCreverse (mr:bat[:str,:oid])<-(m:bat[:oid,:str])
+    m1 := algebra.kunique(mr);	# 6 ALGkunique (m1:bat[:str,:oid])<-(mr:bat[:str,:oid])
+    z := algebra.project(m1);	# 7 ALGprojectNIL (z:bat[:str,:oid])<-(m1:bat[:str,:oid])
+    zs := algebra.sortHT(z);	# 8 ALGhtsort (zs:bat[:str,:oid])<-(z:bat[:str,:oid])
+    io.print(zs);	# 9 IOprint_val (_9:void)<-(zs:bat[:str,:oid])
     stmt := inspect.getDefinition("algebra","select");	# 10 INSPECTgetDefinition (stmt:bat[:str,:str])<-(_11:str)(_12:str)
     sig := inspect.getSignature("algebra","select");	# 11 INSPECTgetSignature (sig:bat[:str,:str])<-(_11:str)(_12:str)
     n := manual.search("insert");	# 12 MANUALsearch (n:void)<-(_15:str)
@@ -134,10 +134,6 @@ end main;	# 16
 [ "url",	  nil	  ]
 [ "user",	  nil	  ]
 [ "zrule",	  nil	  ]
-command bat.insert(b:bat[:void,:any_2],h:oid,t:any_2,force:bit):void address BKCinsert_bun_force;
-command bat.insert(b:bat[:oid,:any_2],h:oid,t:any_2,force:bit):void address BKCinsert_bun_force;
-command bat.insert(b:bat[:void,:any_2],h:oid,t:any_2):void address BKCinsert_bun;
-command bat.insert(b:bat[:oid,:any_2],h:oid,t:any_2):void address BKCinsert_bun;
 command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):void address BKCinsert_bun_force;
 #Insert one BUN[h,t] in a BAT.
 
@@ -147,23 +143,8 @@ command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2):void address BKCinsert_
 command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):void address BKCinsert_bat_force;
 #Insert all BUNs of the second BAT into the first.
 
-command bat.insert(b:bat[:oid,:any_2],src:bat[:void,:any_2],force:bit):void address BKCinsert_bat_force;
-command bat.insert(b:bat[:void,:any_2],src:bat[:oid,:any_2],force:bit):void address BKCinsert_bat_force;
-command bat.insert(b:bat[:any_1,:oid],src:bat[:any_1,:void],force:bit):void address BKCinsert_bat_force;
 command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):void address BKCinsert_bat;
 #Insert all BUNs of the second BAT into the first.
-
-command bat.insert(b:bat[:oid,:any_2],src:bat[:void,:any_2]):void address BKCinsert_bat;
-#Insert all BUNs of the second BAT into the first. This case 
-#should be removed, because it is a hack for SQL
-
-command bat.insert(b:bat[:void,:any_2],src:bat[:oid,:any_2]):void address BKCinsert_bat;
-#Insert all BUNs of the second BAT into the first. This case 
-#should be removed, because it is a hack for SQL
-
-command bat.insert(b:bat[:any_1,:oid],src:bat[:any_1,:void]):void address BKCinsert_bat;
-#Insert all BUNs of the second BAT into the first. This case 
-#should be removed, because it is a hack for SQL
 
 command bat.setSet(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] address BKCsetSet;
 #Sets the 'set' property on this BAT to 'mode'. In 'set' mode, 
@@ -179,7 +160,7 @@ command bat.setKey(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] address BKC
 #function does not automatically eliminate duplicates. 
 #Use b := b.kunique;
 
-command bpm.insert(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]):void address BPMinsert;
+command bpm.insert(pb:bat[:oid,:any_2],b:bat[:oid,:any_2]):void address BPMinsert;
 #Insert elements into the BAT partitions
 
 command crackers.insertionsBOnNeedGraduallyRipple(b:bat[:any_1,:date],c:bat[:any_1,:date]):void address CRKmergeInsertionsB_OnNeedGraduallyRipple;
@@ -439,13 +420,13 @@ command io.import(b:bat[:any_1,:any_2],filepath:str):bat[:any_1,:any_2] address 
 #parameter BAT. You have to create it! Its signature must match the dump,
 #else parsing errors will occur and FALSE is returned.
 
-command partitions.insert(b:bat[:void,:any_1],p:bat[:void,:any_1]):bat[:void,:any_1] address BPTinsertBAT;
+command partitions.insert(b:bat[:oid,:any_1],p:bat[:oid,:any_1]):bat[:oid,:any_1] address BPTinsertBAT;
 #Add a BAT as a partition to the end of the list.
 
-command partitions.insert(b:bat[:void,:any_1],t:any_1):bat[:void,:any_1] address BPTinsert_void_bun;
+command partitions.insert(b:bat[:oid,:any_1],t:any_1):bat[:oid,:any_1] address BPTinsert_void_bun;
 #Add a tuple to the last partition
 
-command partitions.insert(b:bat[:void,:any_1],h:void,t:any_1):bat[:void,:any_1] address BPTinsert;
+command partitions.insert(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] address BPTinsert;
 #Add a tuple to the last partition
 
 command str.insert(s:str,start:int,l:int,s2:str):str address STRinsert;

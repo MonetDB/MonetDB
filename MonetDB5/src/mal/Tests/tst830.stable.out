@@ -5,12 +5,6 @@ stdout of test 'tst830` in directory 'src/mal` itself:
 # 20:34:17 >  Mtimeout -timeout 60 mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=36259 --set sql_port=40419 --set xquery_port=52492 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst830.mal < /dev/null
 # 20:34:17 >  
 
-
-
-
-
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -52,33 +46,33 @@ stdout of test 'tst830` in directory 'src/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 # a simple functional test for the access control table 	# 1  (_1:str)
-    scens := bat.new(:str,:void);	# 2 CMDBATnew (scens:bat[:str,:void])<-(_3:str)(_4:void)
-    bat.insert(scens,"sql",nil:void);	# 3 BKCinsert_bun (_5:void)<-(scens:bat[:str,:void])(_6:str)(_7:void)
-    bat.insert(scens,"mal",nil:void);	# 4 BKCinsert_bun (_8:void)<-(scens:bat[:str,:void])(_9:str)(_7:void)
+    scens := bat.new(:str,:oid);	# 2 CMDBATnew (scens:bat[:str,:oid])<-(_3:str)(_4:oid)
+    bat.insert(scens,"sql",nil:oid);	# 3 BKCinsert_bun (_5:void)<-(scens:bat[:str,:oid])(_6:str)(_7:oid)
+    bat.insert(scens,"mal",nil:oid);	# 4 BKCinsert_bun (_8:void)<-(scens:bat[:str,:oid])(_9:str)(_7:oid)
 # this should fail, the monetdb user is already there 	# 5  (_10:str)
-    id := clients.addUser("monetdb","Pmonetdb",scens);	# 6 CLTaddUser (id:oid)<-(_12:str)(_13:str)(scens:bat[:str,:void])
+    id := clients.addUser("monetdb","Pmonetdb",scens);	# 6 CLTaddUser (id:oid)<-(_12:str)(_13:str)(scens:bat[:str,:oid])
 catch MALException:str ;	# 7  (MALException:str) jump 9
     io.printf("%s\n",MALException);	# 8 IOprint_formatted_str (_15:void)<-(_16:str)(MALException:str)
 exit MALException:str ;	# 9  (MALException:str)
 # should print 0@1 or something 	# 10  (_17:str)
-    id := clients.addUser("test","test",scens);	# 11 CLTaddUser (id:oid)<-(_18:str)(_18:str)(scens:bat[:str,:void])
+    id := clients.addUser("test","test",scens);	# 11 CLTaddUser (id:oid)<-(_18:str)(_18:str)(scens:bat[:str,:oid])
     io.print(id);	# 12 IOprint_val (_19:void)<-(id:oid)
 # this should work also 	# 13  (_20:str)
-# don't use nil:bat[:str, :void] here, it results in a crash 	# 14  (_21:str)
-    t := bat.new(:str,:void);	# 15 CMDBATnew (t:bat[:str,:void])<-(_23:str)(_4:void)
-    id := clients.addUser("checkpoint","Pcheckpoint",t);	# 16 CLTaddUser (id:oid)<-(_24:str)(_25:str)(t:bat[:str,:void])
+# don't use nil:bat[:str, :oid] here, it results in a crash 	# 14  (_21:str)
+    t := bat.new(:str,:oid);	# 15 CMDBATnew (t:bat[:str,:oid])<-(_23:str)(_4:oid)
+    id := clients.addUser("checkpoint","Pcheckpoint",t);	# 16 CLTaddUser (id:oid)<-(_24:str)(_25:str)(t:bat[:str,:oid])
     io.print(id);	# 17 IOprint_val (_26:void)<-(id:oid)
 # do a simple listing of users known 	# 18  (_27:str)
-    u := clients.getUsers(t);	# 19 CLTgetUsers (u:bat[:oid,:str])<-(t:bat[:str,:void])
+    u := clients.getUsers(t);	# 19 CLTgetUsers (u:bat[:oid,:str])<-(t:bat[:str,:oid])
     io.print(u);	# 20 IOprint_val (_29:void)<-(u:bat[:oid,:str])
-    bat.insert(t,"mal",nil:void);	# 21 BKCinsert_bun (_30:void)<-(t:bat[:str,:void])(_9:str)(_7:void)
-    bat.insert(t,"sql",nil:void);	# 22 BKCinsert_bun (_31:void)<-(t:bat[:str,:void])(_6:str)(_7:void)
-    u := clients.getUsers(t);	# 23 CLTgetUsers (u:bat[:oid,:str])<-(t:bat[:str,:void])
+    bat.insert(t,"mal",nil:oid);	# 21 BKCinsert_bun (_30:void)<-(t:bat[:str,:oid])(_9:str)(_7:oid)
+    bat.insert(t,"sql",nil:oid);	# 22 BKCinsert_bun (_31:void)<-(t:bat[:str,:oid])(_6:str)(_7:oid)
+    u := clients.getUsers(t);	# 23 CLTgetUsers (u:bat[:oid,:str])<-(t:bat[:str,:oid])
     io.print(u);	# 24 IOprint_val (_32:void)<-(u:bat[:oid,:str])
 # should work, we're the admin here 	# 25  (_33:str)
     clients.removeUser("checkpoint");	# 26 CLTremoveUser (_34:void)<-(_24:str)
 # do a simple listing of users known 	# 27  (_27:str)
-    u := clients.getUsers(t);	# 28 CLTgetUsers (u:bat[:oid,:str])<-(t:bat[:str,:void])
+    u := clients.getUsers(t);	# 28 CLTgetUsers (u:bat[:oid,:str])<-(t:bat[:str,:oid])
     io.print(u);	# 29 IOprint_val (_35:void)<-(u:bat[:oid,:str])
 # just remove the scenarios one by one, should work 	# 30  (_36:str)
     clients.removeScenario("test","mal");	# 31 CLTremoveScenario (_37:void)<-(_18:str)(_9:str)

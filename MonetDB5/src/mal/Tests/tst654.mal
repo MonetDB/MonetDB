@@ -10,10 +10,10 @@ tablet.setProperties("name,type");
 tablet.setName(0,"Eerste");
 #tablet.setRowBracket("|","|");
 
-b1:= bat.new(:void,:int);
+b1:= bat.new(:oid,:int);
 bat.append(b1,42);
 bat.append(b1,49);
-b2:= bat.new(:void,:str);
+b2:= bat.new(:oid,:str);
 bat.append(b2,"hello world");
 bat.append(b2,"goodbye world");
 

@@ -35,7 +35,6 @@
 #	io.print("d.print();");
 	ia_a := print(d);
 #	io.print("a.seqbase(0@0);");
-	ja_a := bat.setSequenceBase(a,0@0);
 #	io.print("a.print();");
 	ka_a := print(a);
 #	io.print("c:=a.copy().access(BAT_WRITE);");
@@ -64,4 +63,3 @@
 	d := insert(c,b);
 #	io.print("d.print();");
 	ta_a := print(d);
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

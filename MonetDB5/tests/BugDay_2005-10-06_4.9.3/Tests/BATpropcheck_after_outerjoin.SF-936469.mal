@@ -1,8 +1,7 @@
-x:=bat.new(:void,:int);
-bat.insert(x,nil,1);
-bat.insert(x,nil,2);
-bat.insert(x,nil,3);
-bat.setSequenceBase(x,1@0);
+x:=bat.new(:oid,:int);
+bat.insert(x,nil:oid,1);
+bat.insert(x,nil:oid,2);
+bat.insert(x,nil:oid,3);
 
 y:=bat.new(:oid,:int);
 bat.insert(y,1@0,14);

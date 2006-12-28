@@ -1,4 +1,4 @@
-a := bat.new(:void,:oid);
+a := bat.new(:oid,:oid);
 a0:= bat.reverse(a);
 a1:= algebra.markT(a0,0@0);
 a := bat.reverse(a1);

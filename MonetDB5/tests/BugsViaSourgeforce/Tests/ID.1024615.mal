@@ -24,10 +24,9 @@
 	ha_a := bat.reverse(ga_a);
 	ia_a := io.print(ha_a);
 #	io.print("var b2 := bat(void,str);");
-	b2 := bat.new(nil:void,nil:str);
+	b2 := bat.new(nil:oid,nil:str);
 #	io.print("b2.seqbase(oid(10));");
 	ja_a := calc.oid(10);
-	ka_a := bat.setSequenceBase(b2,ja_a);
 #	io.print("b2.reverse().sort().reverse().print();");
 	la_a := bat.reverse(b2);
 	ma_a := algebra.sort(la_a);
@@ -57,10 +56,8 @@
 	bb_a := io.print(ab_a);
 #	io.print("#mini mil example\n");
 #	io.print("var b2 := bat(void,str);");
-	b2 := bat.new(nil:void,nil:str);
+	b2 := bat.new(nil:oid,nil:str);
 #	io.print("b2.seqbase(oid(10));");
-	cb_a := calc.oid(10);
-	db_a := bat.setSequenceBase(b2,cb_a);
 #	io.print("var b3 := mirror(b2);");
 	b3 := bat.mirror(b2);
 #	io.print("var b4 := b3.reverse().join(b2);");
@@ -72,4 +69,3 @@
 	gb_a := algebra.sort(fb_a);
 	hb_a := bat.reverse(gb_a);
 	ib_a := io.print(hb_a);
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

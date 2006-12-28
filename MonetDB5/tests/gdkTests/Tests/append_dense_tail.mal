@@ -1,11 +1,9 @@
 # create an empty [void,oid] BAT with dense tail
-a := bat.new(:void,:oid);
-bat.setSequenceBase(a,0@0);
+a := bat.new(:oid,:oid);
 bat.append(a,1@0);
 bat.delete(a,0@0);
 # create a non-empty [void,oid] BAT with non-dense tail
-b := bat.new(:void,:oid);
-bat.setSequenceBase(b,0@0);
+b := bat.new(:oid,:oid);
 bat.append(b,0@0);
 bat.append(b,0@0);
 bat.append(b,0@0);

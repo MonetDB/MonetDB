@@ -1,6 +1,5 @@
 #testing the BAT partition table with fixed capacity
-a1:= bat.new(:void,:int);
-bat.setSequenceBase(a1,0@0);
+a1:= bat.new(:oid,:int);
 
 partitions.deposit(a1);
 partitions.setCapacity(a1,3);

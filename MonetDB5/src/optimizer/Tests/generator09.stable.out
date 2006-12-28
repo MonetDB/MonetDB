@@ -47,25 +47,25 @@ function user.main():void;	# 0  (main:void)
     high := 3;	# 8  (high:int)<-(_15:int)
     i := 0;	# 9  (i:int)<-(_13:int)
     c := 0;	# 10  (c:int)<-(_13:int)
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 11 PBMnewIterator (b:bat[:void,:int])<-(_9:str) jump 17
-    s := algebra.select(b,low,high);	# 12 ALGselect (s:bat[:oid,:int])<-(b:bat[:void,:int])(low:int)(high:int)
+barrier b:bat[:oid,:int]  := pbm.newIterator("Sales2005");	# 11 PBMnewIterator (b:bat[:oid,:int])<-(_9:str) jump 17
+    s := algebra.select(b,low,high);	# 12 ALGselect (s:bat[:oid,:int])<-(b:bat[:oid,:int])(low:int)(high:int)
     _32 := aggr.count(s);	# 13 ALGcount_bat (_32:int)<-(s:bat[:oid,:int])
     i := calc.+(i,_32);	# 14 CALCbinaryADDintint (i:int)<-(i:int)(_32:int)
     pbm.deposit("pbat_s",s);	# 15 PBMdepositIndexed (_33:void)<-(_31:str)(s:bat[:oid,:int])
-    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 16 PBMgetNextElement (b:bat[:void,:int])<-(_9:str) jump 12
-exit b:bat[:void,:int] ;	# 17  (b:bat[:void,:int])
+    redo b:bat[:oid,:int]  := pbm.getNextElement("Sales2005");	# 16 PBMgetNextElement (b:bat[:oid,:int])<-(_9:str) jump 12
+exit b:bat[:oid,:int] ;	# 17  (b:bat[:oid,:int])
     io.print("Result is:");	# 18 IOprint_val (_18:void)<-(_19:str)
     io.print(i);	# 19 IOprint_val (_20:void)<-(i:int)
     io.print("go-on");	# 20 IOprint_val (_21:void)<-(_22:str)
 barrier s := pbm.newIterator("pbat_s");	# 21 PBMnewIterator (s:bat[:oid,:int])<-(_31:str) jump 31
     t := algebra.select(s,low,high);	# 22 ALGselect (t:bat[:oid,:int])<-(s:bat[:oid,:int])(low:int)(high:int)
-barrier a:bat[:void,:int]  := pbm.newIterator("Areas");	# 23 PBMnewIterator (a:bat[:void,:int])<-(_11:str) jump 29
-    ar := bat.reverse(a);	# 24 BKCreverse (ar:bat[:int,:void])<-(a:bat[:void,:int])
-    j := algebra.join(t,ar);	# 25 ALGjoin (j:bat[:oid,:void])<-(t:bat[:oid,:int])(ar:bat[:int,:void])
-    _38 := aggr.count(j);	# 26 ALGcount_bat (_38:int)<-(j:bat[:oid,:void])
+barrier a:bat[:oid,:int]  := pbm.newIterator("Areas");	# 23 PBMnewIterator (a:bat[:oid,:int])<-(_11:str) jump 29
+    ar := bat.reverse(a);	# 24 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
+    j := algebra.join(t,ar);	# 25 ALGjoin (j:bat[:oid,:oid])<-(t:bat[:oid,:int])(ar:bat[:int,:oid])
+    _38 := aggr.count(j);	# 26 ALGcount_bat (_38:int)<-(j:bat[:oid,:oid])
     c := calc.+(c,_38);	# 27 CALCbinaryADDintint (c:int)<-(c:int)(_38:int)
-    redo a:bat[:void,:int]  := pbm.getNextElement("Areas");	# 28 PBMgetNextElement (a:bat[:void,:int])<-(_11:str) jump 24
-exit a:bat[:void,:int] ;	# 29  (a:bat[:void,:int])
+    redo a:bat[:oid,:int]  := pbm.getNextElement("Areas");	# 28 PBMgetNextElement (a:bat[:oid,:int])<-(_11:str) jump 24
+exit a:bat[:oid,:int] ;	# 29  (a:bat[:oid,:int])
     redo s := pbm.getNextElement("pbat_s");	# 30 PBMgetNextElement (s:bat[:oid,:int])<-(_31:str) jump 22
 exit s;	# 31  (s:bat[:oid,:int])
     io.print(c);	# 32 IOprint_val (_27:void)<-(c:int)
@@ -83,25 +83,25 @@ function user.main():void;
     high := 3;
     i := 0;
     c := 0;
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
+barrier b:bat[:oid,:int]  := pbm.newIterator("Sales2005");
     s := algebra.select(b,low,high);
     _32 := aggr.count(s);
     i := calc.+(i,_32);
     pbm.deposit("pbat_s",s);
-    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit b:bat[:void,:int] ;
+    redo b:bat[:oid,:int]  := pbm.getNextElement("Sales2005");
+exit b:bat[:oid,:int] ;
     io.print("Result is:");
     io.print(i);
     io.print("go-on");
 barrier s := pbm.newIterator("pbat_s");
     t := algebra.select(s,low,high);
-barrier a:bat[:void,:int]  := pbm.newIterator("Areas");
+barrier a:bat[:oid,:int]  := pbm.newIterator("Areas");
     ar := bat.reverse(a);
     j := algebra.join(t,ar);
     _38 := aggr.count(j);
     c := calc.+(c,_38);
-    redo a:bat[:void,:int]  := pbm.getNextElement("Areas");
-exit a:bat[:void,:int] ;
+    redo a:bat[:oid,:int]  := pbm.getNextElement("Areas");
+exit a:bat[:oid,:int] ;
     redo s := pbm.getNextElement("pbat_s");
 exit s;
     io.print(c);

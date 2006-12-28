@@ -50,19 +50,19 @@ command getSource(mod:str,fcn:str):str
 address INSPECTgetSource
 comment "Return the original input for a function.";
 
-command getKind():bat[:void,:str]
+command getKind():bat[:oid,:str]
 address INSPECTgetkind
 comment "Obtain the instruction kind.";
-command getModule():bat[:void,:str]
+command getModule():bat[:oid,:str]
 address INSPECTgetAllModules
 comment "Obtain the function name.";
-command getFunction():bat[:void,:str]
+command getFunction():bat[:oid,:str]
 address INSPECTgetAllFunctions
 comment "Obtain the function name.";
-command getSignatures():bat[:void,:str]
+command getSignatures():bat[:oid,:str]
 address INSPECTgetAllSignatures
 comment "Obtain the function signatures.";
-command getAddresses():bat[:void,:str]
+command getAddresses():bat[:oid,:str]
 address INSPECTgetAllAddresses
 comment "Obtain the function address.";
 

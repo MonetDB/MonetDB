@@ -151,9 +151,9 @@ function user.tst(b:bat[:any_1,:int]):bat[:any_1,:int];	# 0  dynamic (tst:bat[:a
 #	mil.line("  i := 0;"); 	# 3  (_5:str)
 barrier ca_a := true;	# 4  (ca_a:bit)<-(_7:bit) jump 13
 barrier da_a := calc.<(i,2);	# 5 CALCcompLTintint (da_a:bit)<-(i:int)(_9:int) jump 12
-#	mil.line("  while (i < 2) {"); 	# 6  (_10:str)
-    b := batcalc.+(b,1);	# 7 CMDbatADDcst_int_int_int (b:bat[:any_1,:int])<-(b:bat[:any_1,:int])(_11:int)
-#	mil.line("    b := [+](b, 1);"); 	# 8  (_12:str)
+#	io.print("  while (i < 2) {"); 	# 6  (_10:str)
+    b := batcalc.+(b,1);	# 7  (b:bat[:any_1,:int])<-(b:bat[:any_1,:int])(_11:int)
+#	io.print("    b := [+](b, 1);"); 	# 8  (_12:str)
     i := calc.+(i,1);	# 9 CALCbinaryADDintint (i:int)<-(i:int)(_11:int)
 #	mil.line("    i := i + 1;"); 	# 10  (_13:str)
     redo ca_a;	# 11  (ca_a:bit) jump 5
@@ -291,24 +291,19 @@ function user.main():void;	# 0  (main:void)
     ba_a := calc.setoid(aa_a);	# 113 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
 #	io.print(""); 	# 114  (_76:str)
 #	io.print(""); 	# 115  (_76:str)
-    b1 := bat.new(nil:int,nil:int);	# 116 CMDBATnew (b1:bat[:int,:int])<-(_81:int)(_81:int)
-#	io.print("var b1 := bat.new(int, int);"); 	# 117  (_82:str)
-    fa_a := bat.insert(b1,0,0);	# 118 BKCinsert_bun (fa_a:void)<-(b1:bat[:int,:int])(_84:int)(_84:int)
-#	io.print("b1.insert(0, 0);"); 	# 119  (_85:str)
-    ga_a := bat.insert(b1,0,1);	# 120 BKCinsert_bun (ga_a:void)<-(b1:bat[:int,:int])(_84:int)(_87:int)
-#	io.print(""); 	# 121  (_76:str)
-    bn := user.tst(b1);	# 122  (bn:bat[:int,:int])<-(b1:bat[:int,:int])
-#	io.print("var bn := tst(b1);  "); 	# 123  (_89:str)
-    ha_a := io.print(bn);	# 124 IOprint_val (ha_a:void)<-(bn:bat[:int,:int])
-#	io.print(""); 	# 125  (_76:str)
-    ia_a := clients.quit();	# 126 CLTquitDefault (ia_a:void)
-end main;	# 127  
+    b1 := bat.new(:oid,nil:int);	# 116 CMDBATnew (b1:bat[:oid,:int])<-(_81:oid)(_82:int)
+    fa_a := bat.insert(b1,0@0,0);	# 117 BKCinsert_bun (fa_a:void)<-(b1:bat[:oid,:int])(_84:oid)(_85:int)
+    ga_a := bat.insert(b1,0@0,1);	# 118 BKCinsert_bun (ga_a:void)<-(b1:bat[:oid,:int])(_84:oid)(_87:int)
+    bn := user.tst(b1);	# 119  (bn:bat[:oid,:int])<-(b1:bat[:oid,:int])
+    ha_a := io.print(bn);	# 120 IOprint_val (ha_a:void)<-(bn:bat[:oid,:int])
+    ia_a := clients.quit();	# 121 CLTquitDefault (ia_a:void)
+end main;	# 122  
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 0,	  2	  ]
-[ 0,	  3	  ]
+[ 0@0,	  2	  ]
+[ 0@0,	  3	  ]
 
 # 07:27:16 >  
 # 07:27:16 >  Done.

@@ -24,20 +24,20 @@ stdout of test 'tst225` in directory 'src/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 #testing reference counting inliners 	# 1  (_1:str)
-    a := bat.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(a,1,1);	# 3 BKCinsert_bun (_4:void)<-(a:bat[:int,:int])(_5:int)(_5:int)
-    b := algebra.copy(a);	# 4 ALGcopy (b:bat[:int,:int])<-(a:bat[:int,:int])
-    z := batcalc.+(a,a,b);	# 5 CMDbataccumADD_int_int_int (z:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(b:bat[:int,:int])
-    io.print(a);	# 6 IOprint_val (_8:void)<-(a:bat[:int,:int])
-    bat.setGarbage(b);	# 7 CMDBATsetGarbage (_9:void)<-(b:bat[:int,:int])
-    bat.setGarbage(a);	# 8 CMDBATsetGarbage (_10:void)<-(a:bat[:int,:int])
-    z := batcalc.+(a,a,b);	# 9 CMDbataccumADD_int_int_int (z:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(b:bat[:int,:int])
+    a := bat.new(:oid,:int);	# 2 CMDBATnew (a:bat[:oid,:int])<-(_3:oid)(_4:int)
+    bat.insert(a,1@0,1);	# 3 BKCinsert_bun (_5:void)<-(a:bat[:oid,:int])(_6:oid)(_7:int)
+    b := algebra.copy(a);	# 4 ALGcopy (b:bat[:oid,:int])<-(a:bat[:oid,:int])
+    z := batcalc.+(a,a,b);	# 5 CMDbataccumADD_int_int_int (z:bat[:oid,:int])<-(a:bat[:oid,:int])(a:bat[:oid,:int])(b:bat[:oid,:int])
+    io.print(a);	# 6 IOprint_val (_10:void)<-(a:bat[:oid,:int])
+    bat.setGarbage(b);	# 7 CMDBATsetGarbage (_11:void)<-(b:bat[:oid,:int])
+    bat.setGarbage(a);	# 8 CMDBATsetGarbage (_12:void)<-(a:bat[:oid,:int])
+    z := batcalc.+(a,a,b);	# 9 CMDbataccumADD_int_int_int (z:bat[:oid,:int])<-(a:bat[:oid,:int])(a:bat[:oid,:int])(b:bat[:oid,:int])
 end main;	# 10  
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  2	  ]
+[ 1@0,	  2	  ]
 !MALException:batcalc.+:Cannot access descriptor
 
 # 08:58:54 >  

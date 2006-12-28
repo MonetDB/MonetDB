@@ -1,8 +1,8 @@
 # testing void bats
 
-b:= bat.new(:void,:str);
-bat.insert(b,nil,"hello");
-bat.insert(b,nil,"world");
+b:= bat.new(:oid,:str);
+bat.insert(b,nil:oid,"hello");
+bat.insert(b,nil:oid,"world");
 io.print(b);
 
 #materialize header

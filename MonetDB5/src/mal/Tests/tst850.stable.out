@@ -23,25 +23,22 @@ stdout of test 'tst850` in directory 'src/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 # The likeselect operation 	# 1  (_1:str)
-    t := bat.new(:void,:str);	# 2 CMDBATnew (t:bat[:void,:str])<-(_3:void)(_4:str)
-    bat.setSequenceBase(t,0@0);	# 3 BKCsetSequenceBase (_5:bat[:void,:str])<-(t:bat[:void,:str])(_6:oid)
-    bat.append(t,"hello world");	# 4 BKCappend_val_wrap (_7:void)<-(t:bat[:void,:str])(_8:str)
-    bat.append(t,"sleep well");	# 5 BKCappend_val_wrap (_9:void)<-(t:bat[:void,:str])(_10:str)
-    io.print(t);	# 6 IOprint_val (_11:void)<-(t:bat[:void,:str])
-    _18 := bat.new(nil:void,nil:bit);	# 7 CMDBATnew (_18:bat[:void,:bit])<-(_19:void)(_20:bit)
-    _21 := bat.setSequenceBase(_18,0@0);	# 8 BKCsetSequenceBase (_21:bat[:void,:bit])<-(_18:bat[:void,:bit])(_6:oid)
-barrier (_23,_24,_25):= bat.newIterator(t);	# 9 CHPbunIterator (_23:lng)(_24:oid)(_25:str)<-(t:bat[:void,:str]) jump 16
-    _27 := str.startsWith(_25,"");	# 10 STRPrefix (_27:bit)<-(_25:str)(_15:str)
-    bat.insert(_21,_24,_27);	# 11 BKCinsert_bun (_28:void)<-(_21:bat[:void,:bit])(_24:oid)(_27:bit)
-    redo (_23,_24,_25):= bat.hasMoreElements(t);	# 12 CHPbunHasMoreElements (_23:lng)(_24:oid)(_25:str)<-(t:bat[:void,:str]) jump 10
-catch MALException:str ;	# 13  (MALException:str) jump 15
-    redo (_23,_24,_25):= bat.hasMoreElements(t);	# 14 CHPbunHasMoreElements (_23:lng)(_24:oid)(_25:str)<-(t:bat[:void,:str]) jump 10
-exit MALException:str ;	# 15  (MALException:str)
-exit (_23,_24,_25);	# 16  (_23:lng)(_24:oid)(_25:str)
-    b:bat[:void,:bit]  := _21;	# 17  (b:bat[:void,:bit])<-(_21:bat[:void,:bit])
-    bat.setSequenceBase(b,0@0);	# 18 BKCsetSequenceBase (_16:bat[:void,:bit])<-(b:bat[:void,:bit])(_6:oid)
-    io.print(b);	# 19 IOprint_val (_17:void)<-(b:bat[:void,:bit])
-end main;	# 20  
+    t := bat.new(:oid,:str);	# 2 CMDBATnew (t:bat[:oid,:str])<-(_3:oid)(_4:str)
+    bat.append(t,"hello world");	# 3 BKCappend_val_wrap (_5:void)<-(t:bat[:oid,:str])(_6:str)
+    bat.append(t,"sleep well");	# 4 BKCappend_val_wrap (_7:void)<-(t:bat[:oid,:str])(_8:str)
+    io.print(t);	# 5 IOprint_val (_9:void)<-(t:bat[:oid,:str])
+    _15 := bat.new(nil:oid,nil:bit);	# 6 CMDBATnew (_15:bat[:oid,:bit])<-(_16:oid)(_17:bit)
+barrier (_19,_20,_21):= bat.newIterator(t);	# 7 CHPbunIterator (_19:lng)(_20:oid)(_21:str)<-(t:bat[:oid,:str]) jump 14
+    _23 := str.startsWith(_21,"");	# 8 STRPrefix (_23:bit)<-(_21:str)(_13:str)
+    bat.insert(_15,_20,_23);	# 9 BKCinsert_bun (_24:void)<-(_15:bat[:oid,:bit])(_20:oid)(_23:bit)
+    redo (_19,_20,_21):= bat.hasMoreElements(t);	# 10 CHPbunHasMoreElements (_19:lng)(_20:oid)(_21:str)<-(t:bat[:oid,:str]) jump 8
+catch MALException:str ;	# 11  (MALException:str) jump 13
+    redo (_19,_20,_21):= bat.hasMoreElements(t);	# 12 CHPbunHasMoreElements (_19:lng)(_20:oid)(_21:str)<-(t:bat[:oid,:str]) jump 8
+exit MALException:str ;	# 13  (MALException:str)
+exit (_19,_20,_21);	# 14  (_19:lng)(_20:oid)(_21:str)
+    b:bat[:oid,:bit]  := _15;	# 15  (b:bat[:oid,:bit])<-(_15:bat[:oid,:bit])
+    io.print(b);	# 16 IOprint_val (_14:void)<-(b:bat[:oid,:bit])
+end main;	# 17  
 #-------------------------#
 # h	tmp_13		  # name
 # void	str		  # type

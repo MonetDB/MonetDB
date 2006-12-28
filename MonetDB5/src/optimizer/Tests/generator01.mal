@@ -2,7 +2,7 @@
 # The flow graph becomes a little more complex 
 mdb.list();
 	io.print("start");
-	b:bat[:void,:int]:= pbm.generator("Sales2005");
+	b:bat[:oid,:int]:= pbm.generator("Sales2005");
 	low:= 0;
 	high:= 3;
 	s:= algebra.select(b,low,high);

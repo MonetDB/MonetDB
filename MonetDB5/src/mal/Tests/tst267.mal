@@ -1,8 +1,6 @@
 # Grouped sums
-a:= bat.new(:void,:int);
-bat.setSequenceBase(a,0:oid);
-b:= bat.new(:void,:int);
-bat.setSequenceBase(b,0:oid);
+a:= bat.new(:oid,:int);
+b:= bat.new(:oid,:int);
 bat.append(a,1);
 bat.append(a,2);
 bat.append(b,5);

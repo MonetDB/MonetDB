@@ -7,9 +7,9 @@ function perftst( b:bat[:any_1,:any_2],div:any_2):void;
 end perftst;
 
 
-b:= bat.new(:lng,:lng);
+b:= bat.new(:oid,:lng);
 barrier (v,i):= language.newRange(0:lng);
-        bat.insert(b,i,i);
+        bat.append(b,i);
         redo (v,i):= language.nextElement(1:lng,10:lng);
 exit (v,i);
 user.perftst(b,1:lng);

@@ -34,9 +34,9 @@ to arrive at a smaller and therefore faster evaluation.
 For example, consider the following MAL test 
 @example
 @verbatim
-    V1 := bat.new(:void,:int);
-    V7 := bat.new(:void,:int);
-    V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:void);
+    V1 := bat.new(:oid,:int);
+    V7 := bat.new(:oid,:int);
+    V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:oid);
     V11 := bat.reverse(V10);
     V12 := algebra.kdifference(V7,V11);
     V16 := algebra.markH(V12);
@@ -49,10 +49,10 @@ For example, consider the following MAL test
 Calling the optimizers replaces this program
 by the following code snippet. 
 @example
-    V1 := bat.new(:void,:int);
-    V7 := bat.new(:void,:int);
-    V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:void);
-    V11@verb{ { }rows=0@verb{ } } := bat.new(:void,:int);
+    V1 := bat.new(:oid,:int);
+    V7 := bat.new(:oid,:int);
+    V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:oid);
+    V11@verb{ { }rows=0@verb{ } } := bat.new(:oid,:int);
     V12 := V7;
     V16 := algebra.markH(V12);
     V17 := algebra.join(V16,V7);
@@ -62,8 +62,8 @@ by the following code snippet.
 This block can be further optimized using alias propagation
 and dead code removal. The final block becomes:
 @example
-    V1 := bat.new(:void,:int);
-    V7 := bat.new(:void,:int);
+    V1 := bat.new(:oid,:int);
+    V7 := bat.new(:oid,:int);
     V16 := algebra.markH(V7);
     V17 := algebra.join(V16,V7);
     bat.append(V1,V17);

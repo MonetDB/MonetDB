@@ -1,15 +1,12 @@
-namebat := bat.new(:void, :str);
-bat.setSequenceBase(namebat,0@0);
+namebat := bat.new(:oid, :str);
 bat.append(namebat,"tmpdocs");
 bat.append(namebat,"tmpterms");
 
-sepbat := bat.new(:void, :str);
-bat.setSequenceBase(sepbat,0@0);
+sepbat := bat.new(:oid, :str);
 bat.append(sepbat,",");
 bat.append(sepbat,"\n");
 
-typebat := bat.new(:void, :str);
-bat.setSequenceBase(typebat,0@0);
+typebat := bat.new(:oid, :str);
 bat.append(typebat,"str");
 bat.append(typebat,"str");
 

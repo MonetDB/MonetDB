@@ -1,23 +1,23 @@
 # initialize the BAT partition box.
 # to be used in the other pbm* tests
     pbm.open();
-    b1:= bat.new(:void,:int);
+    b1:= bat.new(:oid,:int);
     bat.setPersistent(b1);
     pbm.deposit("Sales2005","06",b1);
-    b2:= bat.new(:void,:int);
+    b2:= bat.new(:oid,:int);
     bat.setPersistent(b2);
     pbm.deposit("Sales2005","07",b2);
-    b3:= bat.new(:void,:int);
+    b3:= bat.new(:oid,:int);
     bat.setPersistent(b3);
     pbm.deposit("Sales2005","08",b3);
 
-    c1:= bat.new(:void,:int);
+    c1:= bat.new(:oid,:int);
     bat.setPersistent(c1);
     pbm.deposit("Invoice2005","06",c1);
-    c2:= bat.new(:void,:int);
+    c2:= bat.new(:oid,:int);
     bat.setPersistent(c2);
     pbm.deposit("Invoice2005","07",c2);
-    c3:= bat.new(:void,:int);
+    c3:= bat.new(:oid,:int);
     pbm.deposit("Invoice2005","08",c3);
     bat.setPersistent(c3);
 

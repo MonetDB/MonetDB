@@ -16,9 +16,9 @@
 	ca_a := histogram(w);
 	da_a := bat.print(ca_a);
 #	io.print("#split w in twee tabellen\n");
-	docid := bbp.new(nil:void,nil:oid);
+	docid := bbp.new(nil:oid,nil:oid);
 #	io.print("var tid := bbp.new( void, str );");
-	tid := bbp.new(nil:void,nil:str);
+	tid := bbp.new(nil:oid,nil:str);
 #	io.print("docid.insert( w.mark(nil).reverse() );");
 	ea_a := mark(w,nil);
 	fa_a := bat.reverse(ea_a);
@@ -33,11 +33,9 @@
 #	io.print("tid.print();");
 	ma_a := bat.print(tid);
 #	io.print("docid.seqbase( 1000@0 );");
-	na_a := bat.setSequenceBase(docid,1000@0);
 #	io.print("docid.print();");
 	oa_a := bat.print(docid);
 #	io.print("tid.seqbase( 1000@0 );");
-	pa_a := bat.setSequenceBase(tid,1000@0);
 #	io.print("tid.print();");
 	qa_a := bat.print(tid);
 #	io.print("tid.reverse().print();");
@@ -98,5 +96,4 @@
 	bc_a := bat.print(ac_a);
 #	io.print("quit();");
 	cc_a := clients.quit();
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #Identifer 'CTgroup' mapped to 'group'

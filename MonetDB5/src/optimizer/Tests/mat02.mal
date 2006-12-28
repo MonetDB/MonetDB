@@ -3,37 +3,30 @@
 mdb.list();
 
 # simulate the SQL behavior
-#   v2:bat[:void,:int]  := sql.bind("sys","ptables","id",0);
-#   v60:bat[:void,:str]  := sql.bind("sys","ptables","name",0);
-    v2v0:= bat.new(:void,:int);
+    v2v0:= bat.new(:oid,:int);
     bat.insert(v2v0,0@0,0);
-    v2v1:= bat.new(:void,:int);
+    v2v1:= bat.new(:oid,:int);
     bat.insert(v2v1,1@0,1);
-    v2v2:= bat.new(:void,:int);
-	bat.setSequenceBase(v2v2,2@0);
+    v2v2:= bat.new(:oid,:int);
     bat.insert(v2v2,nil,2);
     v2 := mat.new(v2v0,v2v1,v2v2);
 io.print(v2v2);
-	v60a := bat.new(:void,:str);
+	v60a := bat.new(:oid,:str);
 	bat.insert(v60a,0@0,"first");
-	v60b := bat.new(:void,:str);
+	v60b := bat.new(:oid,:str);
 	bat.insert(v60b,1@0,"second");
 	v60:= mat.new(v60a,v60b);
 
-#   v23:bat[:void,:int]  := sql.bindvdbat("sys","ptables",0);
-    v23:= bat.new(:void,:int);
-#   v68:bat[:void,:str]  := sql.bind("sys","ptables","name",0);
-	v68:= bat.new(:void,:str);
+    v23:= bat.new(:oid,:int);
+	v68:= bat.new(:oid,:str);
 
-#   v8:bat[:void,:oid]  := sql.bindvdbat("sys","ptables",0);
-    v8:= bat.new(:void,:oid);
+    v8:= bat.new(:oid,:oid);
     v10 := bat.reverse(v8);
     v12 := algebra.kdifference(v2,v10);
     v17 := algebra.markT(v12,0@0);
     v19 := bat.reverse(v17);
     v21 := algebra.join(v19,v2);
-#   v26:bat[:void,:oid]  := sql.bindvdbat("sys","ttables",0);
-    v26:= bat.new(:void,:oid);
+    v26:= bat.new(:oid,:oid);
     v28 := bat.reverse(v26);
     v30 := algebra.kdifference(v23,v28);
     v34 := algebra.markT(v30,0@0);

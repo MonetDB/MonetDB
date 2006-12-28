@@ -32,27 +32,27 @@ stdout of test 'tst890` in directory 'src/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 #test reference counting of batcalc 	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.setName(b,"b");	# 3 BKCsetName (_4:void)<-(b:bat[:int,:int])(_5:str)
-    bat.insert(b,1,1);	# 4 BKCinsert_bun (_6:void)<-(b:bat[:int,:int])(_7:int)(_7:int)
-    c := batcalc.+(b,2);	# 5 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_9:int)
-    c := batcalc.+(b,3);	# 6 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)
-    c := batcalc.+(b,4);	# 7 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_11:int)
-    c := batcalc.+(b,5);	# 8 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_12:int)
-    c := batcalc.+(b,6);	# 9 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_13:int)
-    c := batcalc.+(b,7);	# 10 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_14:int)
-    c := batcalc.+(b,8);	# 11 CMDbatADDcst_int_int_int (c:bat[:int,:int])<-(b:bat[:int,:int])(_15:int)
-    io.print(c);	# 12 IOprint_val (_16:void)<-(c:bat[:int,:int])
+    b := bat.new(:oid,:int);	# 2 CMDBATnew (b:bat[:oid,:int])<-(_3:oid)(_4:int)
+    bat.setName(b,"b");	# 3 BKCsetName (_5:void)<-(b:bat[:oid,:int])(_6:str)
+    bat.insert(b,1@0,1);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:oid,:int])(_8:oid)(_9:int)
+    c := batcalc.+(b,2);	# 5 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_11:int)
+    c := batcalc.+(b,3);	# 6 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_12:int)
+    c := batcalc.+(b,4);	# 7 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_13:int)
+    c := batcalc.+(b,5);	# 8 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_14:int)
+    c := batcalc.+(b,6);	# 9 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_15:int)
+    c := batcalc.+(b,7);	# 10 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_16:int)
+    c := batcalc.+(b,8);	# 11 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_17:int)
+    io.print(c);	# 12 IOprint_val (_18:void)<-(c:bat[:oid,:int])
     d := bbp.getRefCount();	# 13 CMDbbpRefCount (d:bat[:int,:int])
     dl := bbp.getLRefCount();	# 14 CMDbbpLRefCount (dl:bat[:int,:int])
     dn := bbp.getNames();	# 15 CMDbbpNames (dn:bat[:int,:str])
-    io.print(dn,d,dl);	# 16 IOtable (_20:void)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+    io.print(dn,d,dl);	# 16 IOtable (_22:void)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
 end main;	# 17  
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  9	  ]
+[ 1@0,	  9	  ]
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type

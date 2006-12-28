@@ -1,7 +1,7 @@
 #test reference counting of batcalc
-b:= bat.new(:int,:int);
+b:= bat.new(:oid,:int);
 bat.setName(b,"b");
-bat.insert(b,1,1);
+bat.insert(b,1@0,1);
 c:=batcalc.+(b,2);
 c:=batcalc.+(b,3);
 c:=batcalc.+(b,4);

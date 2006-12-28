@@ -25,7 +25,7 @@ of subqueries using a map-reduce strategy.
 The BAT partition manager (BPT) module is designed to 
 support this strategy using range- and hash-partitioning.
 
-Consider we want to reorganize R:bat[:void,:int] into three range partitions,
+Consider we want to reorganize R:bat[:oid,:int] into three range partitions,
 based on splitting on the head. Two partitions are stable
 and the third partition is reserved for appends.
 The following MAL program illustrates the snippet of actions needed:
@@ -77,8 +77,8 @@ The former is illustrated with the snippet to select part of
 a partitioned BAT.
 @example
 	bpm.open();
-	R:bat[:void,:int]:= bpm.take("myversion");
-	tu:= bat.new(:void,:int);
+	R:bat[:oid,:int]:= bpm.take("myversion");
+	tu:= bat.new(:oid,:int);
 barrier (idx,Rp):= partitions.newIterator(R);
 	...
 	t:= algebra.select(Rp,0,100);
@@ -96,7 +96,7 @@ the catalog as part of the preparatory optimizer step.
 The same problem handled by an optimizer produces the plan:
 @example
 	bpm.open();
-	Ralias:bat[:void,:int]:= bpm.take("myversion"); # get the partition alias
+	Ralias:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
 	R0:= bpm.take(Ralias,0); # get a specific partition
 	tu:= algebra.select(R0,0,100);
 	R1:= bpm.take("myversion",1);
@@ -113,7 +113,7 @@ the intermediate plan. This can be used by optimizers
 for symbolic evaluation.
 @example
 	bpm.open();
-	Ralias:bat[:void,:int]:= bpm.take("myversion"); # get the partition alias
+	Ralias:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
 	R0:= bpm.take(Ralias, 0@0, 100@0, nil:int,nil:int); 
 	tu:= algebra.select(R0,0,100);
 	R1:= bpm.take(Ralias, 101@0, 200@0, nil:int,nil:int); 
@@ -135,7 +135,7 @@ Once the transaction is commited, the updates are propagated
 (in parallel) to all partitions.
 @example
 	bpm.open();
-	R:bat[:void,:int] := bpm.take("myversion"); # get the partition alias
+	R:bat[:oid,:int] := bpm.take("myversion"); # get the partition alias
 	bpm.insert(R, Rinsert);	# handle pending inserts
 	bpm.delete(R, Rdelete);	# handle pending deletes
 	bpm.close();
@@ -158,14 +158,14 @@ command destroy():void
 address BPTdestroy
 comment "Destroy the partition box";
 
-command take(idx:int):bat[:void,:any_1]
+command take(idx:int):bat[:oid,:any_1]
 address BPTtake
 comment "Take a partition from the box";
 
-command deposit(b:bat[:void,:any_1]) :void
+command deposit(b:bat[:oid,:any_1]) :void
 address BPTdeposit
 comment "Enter a new BAT into the partition box";
-command deposit(b:bat[:void,:any_1],p:bat[:void,:any_1]) :void
+command deposit(b:bat[:oid,:any_1],p:bat[:oid,:any_1]) :void
 address BPTdeposit2
 comment "Enter a new partition to a group into the partition box";
 command deposit(b:str,p:str,cap:int) :void
@@ -175,7 +175,7 @@ comment "Enter a new BAT into the partition box";
 pattern releaseAll():void
 address BPTreleaseAll
 comment "Release all partitions in the box";
-pattern release(b:bat[:void,:any_1]) :void
+pattern release(b:bat[:oid,:any_1]) :void
 address BPTrelease
 comment "Release a single BAT with its partitions from the  box";
 
@@ -183,7 +183,7 @@ pattern toString(idx:int):str
 address BPTtoString
 comment "Get the string representation of an element in the box";
 
-command discard(name:bat[:void,:any_1]) :void
+command discard(name:bat[:oid,:any_1]) :void
 address BPTdiscard
 comment "Release a BAT variable from the box";
 
@@ -194,28 +194,28 @@ command hasMoreElements()(:int)
 address BPThasMoreElementsBase
 comment "Locate next element in the partition box";
 
-command newIterator(b:bat[:void,:any_1]) (:int,:bat[:void,:any_1])
+command newIterator(b:bat[:oid,:any_1]) (:int,:bat[:oid,:any_1])
 address BPTnewIterator
 comment "Create an iterator over the BAT partitions.";
 
-command newIterator(b:bat[:void,:any_1],first:oid,last:oid)
-		(:int,:bat[:void,:any_1])
+command newIterator(b:bat[:oid,:any_1],first:oid,last:oid)
+		(:int,:bat[:oid,:any_1])
 address BPTnewIteratorRng
 comment "Create an iterator over the BAT partitions.";
 
-command hasMoreElements(b:bat[:void,:any_1]) (:int, :bat[:void,:any_1])
+command hasMoreElements(b:bat[:oid,:any_1]) (:int, :bat[:oid,:any_1])
 address BPThasMoreElements
 comment "Localize the next partition for processing.";
 
-command hasMoreElements(b:bat[:void,:any_1],first:oid,last:oid) (:int, :bat[:void,:any_1])
+command hasMoreElements(b:bat[:oid,:any_1],first:oid,last:oid) (:int, :bat[:oid,:any_1])
 address BPThasMoreElementsRng
 comment "Localize the next partition for processing.";
 
-command getLastPartition(b:bat[:void,:any_1]):bat[:void,:any_1]
+command getLastPartition(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address BPTgetLastPartition
 comment "Obtain the last partition for update";
 
-command getRange(b:bat[:void,:any_1])(first:oid,last:oid)
+command getRange(b:bat[:oid,:any_1])(first:oid,last:oid)
 address BPTgetRange
 comment "Obtain the oid range for a partition";
 
@@ -231,30 +231,30 @@ of insertions. As soon as the capacity is exhausted,
 a new bat is allocated.
 
 @mal
-command setCapacity(b:bat[:void,:any_1], s:int):void
+command setCapacity(b:bat[:oid,:any_1], s:int):void
 address BPTsetCapacity
 comment "Limit the content of all remaining BATs";
 
-command insert(b:bat[:void,:any_1],h:void,t:any_1):bat[:void,:any_1]
+command insert(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1]
 address BPTinsert
 comment "Add a tuple to the last partition";
-command insert(b:bat[:void,:any_1],t:any_1):bat[:void,:any_1]
+command insert(b:bat[:oid,:any_1],t:any_1):bat[:oid,:any_1]
 address BPTinsert_void_bun
 comment "Add a tuple to the last partition";
 
-command insert(b:bat[:void,:any_1],p:bat[:void,:any_1]):bat[:void,:any_1]
+command insert(b:bat[:oid,:any_1],p:bat[:oid,:any_1]):bat[:oid,:any_1]
 address BPTinsertBAT
 comment "Add a BAT as a partition to the end of the list.";
 
-command delete(b:bat[:void,:any_1],h:oid):bat[:void,:any_1]
+command delete(b:bat[:oid,:any_1],h:oid):bat[:oid,:any_1]
 address BPTdelete_oid
 comment "Delete a tuple from the BAT group";
 
-command delete(b:bat[:void,:any_1],p:bat[:void,:any_1]):bat[:void,:any_1]
+command delete(b:bat[:oid,:any_1],p:bat[:oid,:any_1]):bat[:oid,:any_1]
 address BPTdeleteBAT
 comment "Delete a BAT from the partition";
 
-command compress(b:bat[:void,:any_1]):bat[:void,:any_1]
+command compress(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address BPTcompress
 comment "Compress the group to remove oid holes";
 

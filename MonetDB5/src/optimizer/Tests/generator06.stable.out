@@ -31,16 +31,16 @@ function user.main():void;	# 0  (main:void)
 # The flow graph has complex nesting of loops 	# 2  (_2:str)
     mdb.list();	# 3 MDBlist (_3:void)
     io.print("start");	# 4 IOprint_val (_4:void)<-(_5:str)
-barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 5 PBMnewIterator (c:bat[:void,:int])<-(_7:str) jump 14
-    cr := bat.reverse(c);	# 6 BKCreverse (cr:bat[:int,:void])<-(c:bat[:void,:int])
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (b:bat[:void,:int])<-(_7:str) jump 12
-    s := algebra.join(b,cr);	# 8 ALGjoin (s:bat[:void,:oid])<-(b:bat[:void,:int])(cr:bat[:int,:void])
-    t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:oid,:int])<-(b:bat[:void,:int])(_12:int)(_13:int)
-    u := algebra.select(c,4,6);	# 10 ALGselect (u:bat[:oid,:int])<-(c:bat[:void,:int])(_15:int)(_16:int)
-    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 11 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 8
-exit b:bat[:void,:int] ;	# 12  (b:bat[:void,:int])
-    redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 13 PBMgetNextElement (c:bat[:void,:int])<-(_7:str) jump 6
-exit c:bat[:void,:int] ;	# 14  (c:bat[:void,:int])
+barrier c:bat[:oid,:int]  := pbm.newIterator("Sales2005");	# 5 PBMnewIterator (c:bat[:oid,:int])<-(_7:str) jump 14
+    cr := bat.reverse(c);	# 6 BKCreverse (cr:bat[:int,:oid])<-(c:bat[:oid,:int])
+barrier b:bat[:oid,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (b:bat[:oid,:int])<-(_7:str) jump 12
+    s := algebra.join(b,cr);	# 8 ALGjoin (s:bat[:oid,:oid])<-(b:bat[:oid,:int])(cr:bat[:int,:oid])
+    t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:oid,:int])<-(b:bat[:oid,:int])(_12:int)(_13:int)
+    u := algebra.select(c,4,6);	# 10 ALGselect (u:bat[:oid,:int])<-(c:bat[:oid,:int])(_15:int)(_16:int)
+    redo b:bat[:oid,:int]  := pbm.getNextElement("Sales2005");	# 11 PBMgetNextElement (b:bat[:oid,:int])<-(_7:str) jump 8
+exit b:bat[:oid,:int] ;	# 12  (b:bat[:oid,:int])
+    redo c:bat[:oid,:int]  := pbm.getNextElement("Sales2005");	# 13 PBMgetNextElement (c:bat[:oid,:int])<-(_7:str) jump 6
+exit c:bat[:oid,:int] ;	# 14  (c:bat[:oid,:int])
     io.print("finished");	# 15 IOprint_val (_17:void)<-(_18:str)
 end main;	# 16  
 function user.main():void;
@@ -48,16 +48,16 @@ function user.main():void;
 # The flow graph has complex nesting of loops 
     mdb.list();
     io.print("start");
-barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");
+barrier c:bat[:oid,:int]  := pbm.newIterator("Sales2005");
     cr := bat.reverse(c);
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
+barrier b:bat[:oid,:int]  := pbm.newIterator("Sales2005");
     s := algebra.join(b,cr);
     t := algebra.select(b,0,3);
     u := algebra.select(c,4,6);
-    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit b:bat[:void,:int] ;
-    redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit c:bat[:void,:int] ;
+    redo b:bat[:oid,:int]  := pbm.getNextElement("Sales2005");
+exit b:bat[:oid,:int] ;
+    redo c:bat[:oid,:int]  := pbm.getNextElement("Sales2005");
+exit c:bat[:oid,:int] ;
     io.print("finished");
 end main;
 [ "start" ]

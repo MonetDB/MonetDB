@@ -24,75 +24,75 @@ for the color string primitives.
 In line with the batcalc module, we assume that
 if two bat operands are provided that they are already
 aligned on the head. Moreover, the head of the BATs
-are limited to :void, which can be cheaply realized using
+are limited to :oid, which can be cheaply realized using
 the GRPsplit operation.
 @mal
 module batcolor;
-command str(b:bat[:void,:color]):bat[:void,:str]
+command str(b:bat[:oid,:color]):bat[:oid,:str]
 address CLRbatStr
 comment "Identity mapping for string bats";
 
-command color(s:bat[:void,:str]):bat[:void,:color]
+command color(s:bat[:oid,:str]):bat[:oid,:color]
 address CLRbatColor
 comment "Converts string to color";
 
-command rgb(r:bat[:void,:int], g:bat[:void,:int], b:bat[:void,:int]):bat[:void,:color] 
+command rgb(r:bat[:oid,:int], g:bat[:oid,:int], b:bat[:oid,:int]):bat[:oid,:color] 
 address CLRbatRgb
 comment	"Converts an RGB triplets to a color atom";
 
-command red(c:bat[:void,:color]) :bat[:void,:int] 
+command red(c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatRed
 comment	"Extracts red component from a color atom";
 
-command green(c:bat[:void,:color]) :bat[:void,:int] 
+command green(c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatGreen
 comment	"Extracts green component from a color atom";
 
-command blue (c:bat[:void,:color]) :bat[:void,:int] 
+command blue (c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatBlue
 comment	"Extracts blue component from a color atom";
 
-command hue(c:bat[:void,:color]) :bat[:void,:int] 
+command hue(c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatHueInt
 comment	"Extracts hue component from a color atom";
 
-command saturation(c:bat[:void,:color]) :bat[:void,:int]
+command saturation(c:bat[:oid,:color]) :bat[:oid,:int]
 address CLRbatSaturationInt
 comment	"Extracts saturation component from a color atom";
 
-command value(c:bat[:void,:color]) :bat[:void,:int] 
+command value(c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatValueInt
 comment	"Extracts value component from a color atom";
 
-command hsv(h:bat[:void,:flt],s:bat[:void,:flt], v:bat[:void,:flt]) :bat[:void,:color] 
+command hsv(h:bat[:oid,:flt],s:bat[:oid,:flt], v:bat[:oid,:flt]) :bat[:oid,:color] 
 address CLRbatHsv
 comment	"Converts an HSV triplets to a color atom";
 
-command hue(c:bat[:void,:color]) :bat[:void,:flt] 
+command hue(c:bat[:oid,:color]) :bat[:oid,:flt] 
 address CLRbatHue
 comment	"Extracts hue component from a color atom";
 
-command saturation(c:bat[:void,:color]) :bat[:void,:flt] 
+command saturation(c:bat[:oid,:color]) :bat[:oid,:flt] 
 address CLRbatSaturation
 comment	"Extracts saturation component from a color atom";
 
-command value(c:bat[:void,:color]) :bat[:void,:flt] 
+command value(c:bat[:oid,:color]) :bat[:oid,:flt] 
 address CLRbatValue
 comment	"Extracts value component from a color atom";
 
-#command ycc(y:bat[:void,:int],cr:bat[:void,:int],cb:bat[:void,:int]) :bat[:void,:color] 
+#command ycc(y:bat[:oid,:int],cr:bat[:oid,:int],cb:bat[:oid,:int]) :bat[:oid,:color] 
 #address CLRbatycc
 #comment	"Converts an YCC triplets to a color atom";
 
-command luminance (c:bat[:void,:color]) :bat[:void,:int] 
+command luminance (c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatLuminance
 comment	"Extracts Y(luminance) component from a color atom";
 
-command cr(c:bat[:void,:color]) :bat[:void,:int] 
+command cr(c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatCr
 comment	"Extracts Cr(red color) component from a color atom";
 
-command cb(c:bat[:void,:color]) :bat[:void,:int] 
+command cb(c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatCb
 comment	"Extracts Cb(blue color) component from a color atom";
 @+ Implementation

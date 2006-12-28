@@ -54,11 +54,11 @@ stdout of test 'part01` in directory 'src/optimizer` itself:
 #	io.print(a);
 #	io.print(b);
 #end qry;
-function user.qry(a:bat[:void,:any_1],b:bat[:void,:any_2]):void;	# 0  (qry:void)<-(a:bat[:void,:any_1])(b:bat[:void,:any_2])
+function user.qry(a:bat[:oid,:any_1],b:bat[:oid,:any_2]):void;	# 0  (qry:void)<-(a:bat[:oid,:any_1])(b:bat[:oid,:any_2])
     io.print("experiment 2");	# 1 IOprint_val (_3:void)<-(_4:str)
-    io.print(b);	# 2 IOprint_val (_5:void)<-(b:bat[:void,:any_2])
-    io.print(a);	# 3 IOprint_val (_6:void)<-(a:bat[:void,:any_1])
-    io.print(b);	# 4 IOprint_val (_7:void)<-(b:bat[:void,:any_2])
+    io.print(b);	# 2 IOprint_val (_5:void)<-(b:bat[:oid,:any_2])
+    io.print(a);	# 3 IOprint_val (_6:void)<-(a:bat[:oid,:any_1])
+    io.print(b);	# 4 IOprint_val (_7:void)<-(b:bat[:oid,:any_2])
 end qry;	# 5  
 #
 #optimizer.partitionedQuery("user","qry");
@@ -81,41 +81,41 @@ first=14 last=14
 first=15 last=14 
 function user.main():void;	# 0  (main:void)
 #testing the partition optimizer 	# 1  (_1:str)
-    a1 := bat.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_3:void)(_4:int)
-    bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase (_5:bat[:void,:int])<-(a1:bat[:void,:int])(_6:oid)
-    a2 := bat.new(:void,:int);	# 4 CMDBATnew (a2:bat[:void,:int])<-(_3:void)(_4:int)
-    bat.setSequenceBase(a2,10@0);	# 5 BKCsetSequenceBase (_8:bat[:void,:int])<-(a2:bat[:void,:int])(_9:oid)
-    a3 := bat.new(:void,:int);	# 6 CMDBATnew (a3:bat[:void,:int])<-(_3:void)(_4:int)
-    bat.setSequenceBase(a3,20@0);	# 7 BKCsetSequenceBase (_11:bat[:void,:int])<-(a3:bat[:void,:int])(_12:oid)
-    b1 := bat.new(:void,:int);	# 8 CMDBATnew (b1:bat[:void,:int])<-(_3:void)(_4:int)
-    bat.setSequenceBase(b1,0@0);	# 9 BKCsetSequenceBase (_14:bat[:void,:int])<-(b1:bat[:void,:int])(_6:oid)
-    b2 := bat.new(:void,:int);	# 10 CMDBATnew (b2:bat[:void,:int])<-(_3:void)(_4:int)
-    bat.setSequenceBase(b2,10@0);	# 11 BKCsetSequenceBase (_16:bat[:void,:int])<-(b2:bat[:void,:int])(_9:oid)
-    b3 := bat.new(:void,:int);	# 12 CMDBATnew (b3:bat[:void,:int])<-(_3:void)(_4:int)
-    bat.setSequenceBase(b3,20@0);	# 13 BKCsetSequenceBase (_18:bat[:void,:int])<-(b3:bat[:void,:int])(_12:oid)
-barrier (go,i):= language.newRange(0);	# 14 RNGnewRange_int (go:bit)(i:int)<-(_21:int) jump 22
-    bat.append(a1,i);	# 15 BKCappend_val_wrap (_22:void)<-(a1:bat[:void,:int])(i:int)
-    bat.append(a2,i);	# 16 BKCappend_val_wrap (_23:void)<-(a2:bat[:void,:int])(i:int)
-    bat.append(a3,i);	# 17 BKCappend_val_wrap (_24:void)<-(a3:bat[:void,:int])(i:int)
-    bat.append(b1,i);	# 18 BKCappend_val_wrap (_25:void)<-(b1:bat[:void,:int])(i:int)
-    bat.append(b2,i);	# 19 BKCappend_val_wrap (_26:void)<-(b2:bat[:void,:int])(i:int)
-    bat.append(b3,i);	# 20 BKCappend_val_wrap (_27:void)<-(b3:bat[:void,:int])(i:int)
-    redo (go,i):= language.nextElement(1,10);	# 21 RNGnextElement_int (go:bit)(i:int)<-(_28:int)(_29:int) jump 15
+    a1 := bat.new(:oid,:int);	# 2 CMDBATnew (a1:bat[:oid,:int])<-(_3:oid)(_4:int)
+    bat.insert(a1,0@0,0);	# 3 BKCinsert_bun (_5:void)<-(a1:bat[:oid,:int])(_6:oid)(_7:int)
+    a2 := bat.new(:oid,:int);	# 4 CMDBATnew (a2:bat[:oid,:int])<-(_3:oid)(_4:int)
+    bat.insert(a2,10@0,10);	# 5 BKCinsert_bun (_9:void)<-(a2:bat[:oid,:int])(_10:oid)(_11:int)
+    a3 := bat.new(:oid,:int);	# 6 CMDBATnew (a3:bat[:oid,:int])<-(_3:oid)(_4:int)
+    bat.insert(a3,20@0,20);	# 7 BKCinsert_bun (_13:void)<-(a3:bat[:oid,:int])(_14:oid)(_15:int)
+    b1 := bat.new(:oid,:int);	# 8 CMDBATnew (b1:bat[:oid,:int])<-(_3:oid)(_4:int)
+    bat.insert(b1,0@0,0);	# 9 BKCinsert_bun (_17:void)<-(b1:bat[:oid,:int])(_6:oid)(_7:int)
+    b2 := bat.new(:oid,:int);	# 10 CMDBATnew (b2:bat[:oid,:int])<-(_3:oid)(_4:int)
+    bat.insert(b2,10@0,0);	# 11 BKCinsert_bun (_19:void)<-(b2:bat[:oid,:int])(_10:oid)(_7:int)
+    b3 := bat.new(:oid,:int);	# 12 CMDBATnew (b3:bat[:oid,:int])<-(_3:oid)(_4:int)
+    bat.insert(b3,20@0,0);	# 13 BKCinsert_bun (_21:void)<-(b3:bat[:oid,:int])(_14:oid)(_7:int)
+barrier (go,i):= language.newRange(1);	# 14 RNGnewRange_int (go:bit)(i:int)<-(_24:int) jump 22
+    bat.append(a1,i);	# 15 BKCappend_val_wrap (_25:void)<-(a1:bat[:oid,:int])(i:int)
+    bat.append(a2,i);	# 16 BKCappend_val_wrap (_26:void)<-(a2:bat[:oid,:int])(i:int)
+    bat.append(a3,i);	# 17 BKCappend_val_wrap (_27:void)<-(a3:bat[:oid,:int])(i:int)
+    bat.append(b1,i);	# 18 BKCappend_val_wrap (_28:void)<-(b1:bat[:oid,:int])(i:int)
+    bat.append(b2,i);	# 19 BKCappend_val_wrap (_29:void)<-(b2:bat[:oid,:int])(i:int)
+    bat.append(b3,i);	# 20 BKCappend_val_wrap (_30:void)<-(b3:bat[:oid,:int])(i:int)
+    redo (go,i):= language.nextElement(1,10);	# 21 RNGnextElement_int (go:bit)(i:int)<-(_24:int)(_11:int) jump 15
 exit (go,i);	# 22  (go:bit)(i:int)
-# add it to the BAT partition table 	# 23  (_30:str)
-    partitions.deposit(a1);	# 24 BPTdeposit (_31:void)<-(a1:bat[:void,:int])
-    partitions.deposit(a1,a2);	# 25 BPTdeposit2 (_32:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
-    partitions.deposit(a1,a3);	# 26 BPTdeposit2 (_33:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
-    partitions.deposit(b1);	# 27 BPTdeposit (_34:void)<-(b1:bat[:void,:int])
-    partitions.deposit(b1,b2);	# 28 BPTdeposit2 (_35:void)<-(b1:bat[:void,:int])(b2:bat[:void,:int])
-    partitions.deposit(b1,b3);	# 29 BPTdeposit2 (_36:void)<-(b1:bat[:void,:int])(b3:bat[:void,:int])
-    partitions.dump();	# 30 BPTdump (_37:void)
-# this query is already tricky because there are 	# 31  (_38:str)
-# two sinks. A naive translation will produce 	# 32  (_39:str)
-# a double nested loop 	# 33  (_40:str)
-    mdb.list("user","qry");	# 34 MDBlist3 (_44:void)<-(_42:str)(_43:str)
-    io.print("run experiment");	# 35 IOprint_val (_45:void)<-(_46:str)
-    user.qry(a1,b1);	# 36  (_47:void)<-(a1:bat[:void,:int])(b1:bat[:void,:int])
+# add it to the BAT partition table 	# 23  (_31:str)
+    partitions.deposit(a1);	# 24 BPTdeposit (_32:void)<-(a1:bat[:oid,:int])
+    partitions.deposit(a1,a2);	# 25 BPTdeposit2 (_33:void)<-(a1:bat[:oid,:int])(a2:bat[:oid,:int])
+    partitions.deposit(a1,a3);	# 26 BPTdeposit2 (_34:void)<-(a1:bat[:oid,:int])(a3:bat[:oid,:int])
+    partitions.deposit(b1);	# 27 BPTdeposit (_35:void)<-(b1:bat[:oid,:int])
+    partitions.deposit(b1,b2);	# 28 BPTdeposit2 (_36:void)<-(b1:bat[:oid,:int])(b2:bat[:oid,:int])
+    partitions.deposit(b1,b3);	# 29 BPTdeposit2 (_37:void)<-(b1:bat[:oid,:int])(b3:bat[:oid,:int])
+    partitions.dump();	# 30 BPTdump (_38:void)
+# this query is already tricky because there are 	# 31  (_39:str)
+# two sinks. A naive translation will produce 	# 32  (_40:str)
+# a double nested loop 	# 33  (_41:str)
+    mdb.list("user","qry");	# 34 MDBlist3 (_45:void)<-(_43:str)(_44:str)
+    io.print("run experiment");	# 35 IOprint_val (_46:void)<-(_47:str)
+    user.qry(a1,b1);	# 36  (_48:void)<-(a1:bat[:oid,:int])(b1:bat[:oid,:int])
 end main;	# 37  
 ptop=6 plimit=1024
 [0] bid=7 pid=7 f=0, l=10 prv=-1 nxt=1 cap=-1
@@ -124,7 +124,7 @@ ptop=6 plimit=1024
 [3] bid=10 pid=10 f=0, l=10 prv=-1 nxt=4 cap=-1
 [4] bid=10 pid=11 f=10, l=20 prv=3 nxt=5 cap=-1
 [5] bid=10 pid=12 f=20, l=30 prv=4 nxt=-1 cap=-1
-function user.qry(a:bat[:void,:int],b:bat[:void,:int]):void;
+function user.qry(a:bat[:oid,:int],b:bat[:oid,:int]):void;
     io.print("experiment 2");
 barrier (_10,_11):= partitions.newIterator(b);
     io.print(_11);
@@ -201,7 +201,7 @@ end qry;
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  0	  ]
+[ 10@0,	  10	  ]
 [ 11@0,	  1	  ]
 [ 12@0,	  2	  ]
 [ 13@0,	  3	  ]
@@ -215,7 +215,7 @@ end qry;
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 20@0,	  0	  ]
+[ 20@0,	  20	  ]
 [ 21@0,	  1	  ]
 [ 22@0,	  2	  ]
 [ 23@0,	  3	  ]

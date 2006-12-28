@@ -3,10 +3,9 @@ function pow(i:int,j:int):int;
 	io.printf("result %d\n",z);
 	return z;
 end pow;
-function tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int]; 
+function tst(A2:bat[:oid,:int],A3:bat[:oid,:int]):bat[:oid,:int]; 
 	io.print(A2);
-	resB := bat.new(:void,:int); 
-	bat.setSequenceBase(resB,0@0);
+	resB := bat.new(:oid,:int); 
 	lim:= aggr.count(A2);
 	io.printf("count %d\n",lim);
 	l:= calc.lng(lim);
@@ -25,8 +24,7 @@ exit    (mloop,m) ;
         return resB;    
 end tst;   
 
-	b := bat.new(:void,:int);
-	bat.setSequenceBase(b,0@0);
+	b := bat.new(:oid,:int);
 	bat.append(b,1);
 	bat.append(b,2);
 	e:= algebra.fetch(b,1:lng);
@@ -35,4 +33,3 @@ end tst;
 	c:= algebra.copy(b);
 	z:= user.tst(b,c);
 	io.print(z);
-

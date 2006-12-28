@@ -1,13 +1,13 @@
 # testing the optimization of the pocket calculator
 function f3():void;
-		t1:bat[:void,:int] := bbp.bind("A_bat");
+		t1:bat[:oid,:int] := bbp.bind("A_bat");
         t3 := array.grid(4096,64,1,0);
         t2 := array.grid(64,64,64,0);
         t4:=batcalc.*(64,t3);
         t5:= batcalc.+(t2,t4);
         t6 := batcalc.oid(t5);
         t7 := algebra.join(t6,t1);
-        t8:bat[:void,:int] := bbp.bind("B_bat");
+        t8:bat[:oid,:int] := bbp.bind("B_bat");
         t9 := array.grid(4096,64,1,0);
         t10 := array.grid(1,64,4096,0);
         t11 := batcalc.*(64,t10);

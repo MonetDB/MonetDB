@@ -238,23 +238,23 @@ to be dumped bats. These bats can be dumped with dump_data.
 # the major tablet shuffling routines
 module tablet;
 
-command load( names:bat[:void,:str], seps:bat[:void,:str], 
-		types:bat[:void,:str], datafile:str, nr:int ) :bat[:str,:bat] 
+command load( names:bat[:oid,:str], seps:bat[:oid,:str], 
+		types:bat[:oid,:str], datafile:str, nr:int ) :bat[:str,:bat] 
 address CMDtablet_load
 comment "Load a bat using specific format.";
 
-command input( names:bat[:void,:str], seps:bat[:void,:str], 
-		types:bat[:void,:str], s:streams, nr:int ) :bat[:str,:bat] 
+command input( names:bat[:oid,:str], seps:bat[:oid,:str], 
+		types:bat[:oid,:str], s:streams, nr:int ) :bat[:str,:bat] 
 address CMDtablet_input
 comment "Load a bat using specific format.";
 
-command dump(names:bat[:void,:str], seps:bat[:void,:str], 
-		bats:bat[:void,:bat], datafile:str, nr:int) :void 
+command dump(names:bat[:oid,:str], seps:bat[:oid,:str], 
+		bats:bat[:oid,:bat], datafile:str, nr:int) :void 
 address CMDtablet_dump 
 comment "Dump the bat in ASCII format";
 
-command output(order:bat[:any_1,:any_2], seps:bat[:void,:str], 
-		bats:bat[:void,:bat], s:streams) :void 
+command output(order:bat[:any_1,:any_2], seps:bat[:oid,:str], 
+		bats:bat[:oid,:bat], s:streams) :void 
 address CMDtablet_output 
 comment "Send the bat to an output stream.";
 

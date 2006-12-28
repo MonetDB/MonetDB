@@ -35,13 +35,10 @@
 	ka_a := print(d);
 #	io.print("x.reverse().seqbase().print();");
 	la_a := reverse(x);
-	ma_a := bat.setSequenceBase(la_a);
 	na_a := print(ma_a);
 #	io.print("c.seqbase().print();");
-	oa_a := bat.setSequenceBase(c);
 	pa_a := print(oa_a);
 #	io.print("d.seqbase().print();");
-	qa_a := bat.setSequenceBase(d);
 	ra_a := print(qa_a);
 #	io.print("var e:=x.join(c);");
 	e := join(x,c);
@@ -57,4 +54,3 @@
 	wa_a := print(e);
 #	io.print("f.print();");
 	xa_a := print(f);
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

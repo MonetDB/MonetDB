@@ -1,11 +1,11 @@
 # the multiplex code blocks.
 
 t0:= alarm.usec();
-b:= bat.new(:void,:lng);
+b:= bat.new(:oid,:lng);
 barrier (go,i):= language.newRange(0:lng);
 	k:= mmath.rand();
 	l:= calc.lng(k);
-	bat.insert(b,nil,l);
+	bat.insert(b,nil:oid,l);
 	redo (go,i):= language.nextElement(1:lng,1000000:lng);
 exit (go,i);
 t1:= alarm.usec();
@@ -107,7 +107,7 @@ cnt:= aggr.count(s);
 io.printf(" count %d\n",cnt);
 cnt:= aggr.count(z9);
 t0:= alarm.usec();
-x:bat[:void,:lng]:= optimizer.multiplex("calc","+",b,c);
+x:bat[:oid,:lng]:= optimizer.multiplex("calc","+",b,c);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#optimizer.multiplex(+) %d\n",d0);

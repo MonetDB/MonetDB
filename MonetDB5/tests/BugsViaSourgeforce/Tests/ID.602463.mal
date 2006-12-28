@@ -22,16 +22,14 @@
 #	io.print("# result while it should have been empty. \n");
 #	io.print("");
 	aa_a := oid(0);
-	ba_a := new(nil:void,nil:oid);
+	ba_a := new(nil:oid,nil:oid);
 	ca_a := oid(0);
 	da_a := oid(10);
-	ea_a := bat.setSequenceBase(ba_a,aa_a);
 	t1 := insert(ea_a,ca_a,da_a);
 #	io.print("var t1 := new(void,oid).seqbase(oid(0)).insert(oid(0),oid(10));");
 	fa_a := oid(0);
-	ga_a := new(nil:void,nil:int);
+	ga_a := new(nil:oid,nil:int);
 	ha_a := oid(0);
-	ia_a := bat.setSequenceBase(ga_a,fa_a);
 	t2 := insert(ia_a,ha_a,1);
 #	io.print("");
 	ja_a := printf("LHS:\n");
@@ -51,4 +49,3 @@
 	ra_a := mirror(t1);
 	sa_a := join(ra_a,t2);
 	ta_a := print(sa_a);
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

@@ -3,7 +3,7 @@ i := 1;
 f := 3.14;
 c := 'a';
 b:= true;
-bb:= bat.new(:void,:str);
+bb:= bat.new(:oid,:str);
 
 st:= inspect.getType(s); io.printf("%s\n",st);
 it:= inspect.getType(i); io.printf("%s\n",it);

@@ -269,6 +269,7 @@ static void
 STATcommit()
 {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 10);
+	BATseqbase(b,0);
 	BUNappend(b, BBPname(STAT_id_inuse->batCacheid), FALSE);
 	BUNappend(b, BBPname(STAT_id_nme->batCacheid), FALSE);
 	BUNappend(b, BBPname(STAT_id_expire->batCacheid), FALSE);

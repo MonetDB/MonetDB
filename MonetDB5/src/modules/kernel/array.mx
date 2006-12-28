@@ -31,20 +31,20 @@ The optimization is captured in a contraction macro.
 @mal
 module array;
 @= grid_mdefs
-command grid(i:@1,j:@1,k:@1,l:@1) :bat[:void,:@1] 
+command grid(i:@1,j:@1,k:@1,l:@1) :bat[:oid,:@1] 
 address ARRAYgrid_@1
 comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)";
 
-command grid(i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:void,:@1] 
+command grid(i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:oid,:@1] 
 address ARRAYgridShift_@1
 comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elements with a factor s";
 
-command grid(b:bat[:void,:@1],i:@1,j:@1,k:@1,l:@1) :bat[:void,:@1] 
+command grid(b:bat[:oid,:@1],i:@1,j:@1,k:@1,l:@1) :bat[:oid,:@1] 
 address ARRAYgridBAT_@1
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)";
 
-command grid(b:bat[:void,:@1],i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:void,:@1] 
+command grid(b:bat[:oid,:@1],i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:oid,:@1] 
 address ARRAYgridBAT_@1
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
@@ -53,11 +53,11 @@ and shift all elemenets with a factor s";
 @:grid_mdefs(int)@
 @:grid_mdefs(lng)@
 
-command product(b:bat[:void,:any_1],c:bat[:void,:any_2]):bat[:any_1,:any_2]
+command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
 comment "Produce an array product";
 
-command project(b:bat[:void,:any_1],i:int):bat[:void,:int]
+command project(b:bat[:oid,:any_1],i:int):bat[:oid,:int]
 address ARRAYproject
 comment "Fill an array representation with constants ";
 
@@ -65,10 +65,6 @@ pattern print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...) :void
 address ARRAYprint
 comment "Prints an array, using 1 value bat and N aligned index bats";
 @{
-@-
-#command *(b:bat[:void,:int],c:bat[:void,:int]):bat[:void,:int]
-#address ARRAYmultiply_int_int
-#comment "Calculate the array product";
 @- Implementation
 @include ../mal/prelude.mx
 @h

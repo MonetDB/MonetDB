@@ -1,20 +1,17 @@
 #testing the BAT partition table
-a1:= bat.new(:void,:int);
-bat.setSequenceBase(a1,0@0);
-a2:= bat.new(:void,:int);
-bat.setSequenceBase(a2,10@0);
-a3:= bat.new(:void,:int);
-bat.setSequenceBase(a3,20@0);
+a1:= bat.new(:oid,:int);
+bat.insert(a1,0@0,0);
+a2:= bat.new(:oid,:int);
+bat.insert(a2,10@0,0);
+a3:= bat.new(:oid,:int);
+bat.insert(a3,20@0,0);
 
-barrier (go,i):= language.newRange(0);
+barrier (go,i):= language.newRange(1);
 	bat.append(a1,i);
 	bat.append(a2,i);
 	bat.append(a3,i);
 	redo (go,i):= language.nextElement(1,10);
 exit (go,i);
-io.print(a1);
-io.print(a2);
-io.print(a3);
 
 # add the stuff to the BPT and dump it
 barrier idx:= partitions.newIterator();

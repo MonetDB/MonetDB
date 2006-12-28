@@ -1,6 +1,5 @@
 #testing the BAT partition manager
 R := bat.new(:oid,:int);
-bat.setSequenceBase(R,0@0);
 bat.append(R,1);
 bat.append(R,3);
 bat.append(R,5);

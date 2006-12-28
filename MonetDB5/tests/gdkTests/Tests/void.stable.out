@@ -165,254 +165,247 @@ stdout of test 'void` in directory 'tests/gdkTests` itself:
 #
 function user.main():void;	# 0  (main:void)
     io.print("First keep void tests");	# 1 IOprint_val (_1:void)<-(_2:str)
-    a := bat.new(:void,:int,10);	# 2 CMDBATnewint (a:bat[:void,:int])<-(_4:void)(_5:int)(_6:int)
-    bat.setName(a,"A");	# 3 BKCsetName (_7:void)<-(a:bat[:void,:int])(_8:str)
-    bat.append(a,1);	# 4 BKCappend_val_wrap (_9:void)<-(a:bat[:void,:int])(_10:int)
-    bat.append(a,4);	# 5 BKCappend_val_wrap (_11:void)<-(a:bat[:void,:int])(_12:int)
-    bat.append(a,7);	# 6 BKCappend_val_wrap (_13:void)<-(a:bat[:void,:int])(_14:int)
-    bat.append(a,2);	# 7 BKCappend_val_wrap (_15:void)<-(a:bat[:void,:int])(_16:int)
-    bat.append(a,8);	# 8 BKCappend_val_wrap (_17:void)<-(a:bat[:void,:int])(_18:int)
-    bat.append(a,1);	# 9 BKCappend_val_wrap (_19:void)<-(a:bat[:void,:int])(_10:int)
-    bat.append(a,4);	# 10 BKCappend_val_wrap (_20:void)<-(a:bat[:void,:int])(_12:int)
-    bat.append(a,5);	# 11 BKCappend_val_wrap (_21:void)<-(a:bat[:void,:int])(_22:int)
-    bat.append(a,8);	# 12 BKCappend_val_wrap (_23:void)<-(a:bat[:void,:int])(_18:int)
-    bat.append(a,3);	# 13 BKCappend_val_wrap (_24:void)<-(a:bat[:void,:int])(_25:int)
-    bat.setSequenceBase(a,10@0:oid);	# 14 BKCsetSequenceBase (_26:bat[:void,:int])<-(a:bat[:void,:int])(_27:oid)
-    io.print(a);	# 15 IOprint_val (_28:void)<-(a:bat[:void,:int])
-    b := algebra.copy(a);	# 16 ALGcopy (b:bat[:void,:int])<-(a:bat[:void,:int])
-    bat.setName(b,"B");	# 17 BKCsetName (_30:void)<-(b:bat[:void,:int])(_31:str)
-    io.print("insert tests");	# 18 IOprint_val (_32:void)<-(_33:str)
-#insert in order 	# 19  (_34:str)
-    bat.insert(a,20@0:oid,8);	# 20 BKCinsert_bun (_35:void)<-(a:bat[:void,:int])(_36:oid)(_18:int)
-    io.print(a);	# 21 IOprint_val (_37:void)<-(a:bat[:void,:int])
-    io.print("replace tests");	# 22 IOprint_val (_38:void)<-(_39:str)
-# replace uncommited no need to change to oid 	# 23  (_40:str)
-    bat.replace(a,15@0:oid,9);	# 24 BKCreplace_bun (_41:void)<-(a:bat[:void,:int])(_42:oid)(_43:int)
-    io.print(a);	# 25 IOprint_val (_44:void)<-(a:bat[:void,:int])
-# replace last no need to change to oid 	# 26  (_45:str)
-    bat.replace(a,20@0:oid,9);	# 27 BKCreplace_bun (_46:void)<-(a:bat[:void,:int])(_36:oid)(_43:int)
-    io.print(a);	# 28 IOprint_val (_47:void)<-(a:bat[:void,:int])
-# replace last + 1, noting needed 	# 29  (_48:str)
-    bat.replace(a,20@0:oid,9);	# 30 BKCreplace_bun (_49:void)<-(a:bat[:void,:int])(_36:oid)(_43:int)
-    io.print(a);	# 31 IOprint_val (_50:void)<-(a:bat[:void,:int])
-    io.print("delete tests");	# 32 IOprint_val (_51:void)<-(_52:str)
-# delete uncommited from the top 	# 33  (_53:str)
-    bat.delete(a,20@0:oid);	# 34 BKCdelete (_54:void)<-(a:bat[:void,:int])(_36:oid)
-    bat.delete(a,19@0:oid);	# 35 BKCdelete (_55:void)<-(a:bat[:void,:int])(_56:oid)
-    bat.delete(a,18@0:oid);	# 36 BKCdelete (_57:void)<-(a:bat[:void,:int])(_58:oid)
-    bat.delete(a,17@0:oid);	# 37 BKCdelete (_59:void)<-(a:bat[:void,:int])(_60:oid)
-    bat.delete(a,16@0:oid);	# 38 BKCdelete (_61:void)<-(a:bat[:void,:int])(_62:oid)
-    bat.delete(a,15@0:oid);	# 39 BKCdelete (_63:void)<-(a:bat[:void,:int])(_42:oid)
-    bat.delete(a,14@0:oid);	# 40 BKCdelete (_64:void)<-(a:bat[:void,:int])(_65:oid)
-    bat.delete(a,13@0:oid);	# 41 BKCdelete (_66:void)<-(a:bat[:void,:int])(_67:oid)
-    bat.delete(a,12@0:oid);	# 42 BKCdelete (_68:void)<-(a:bat[:void,:int])(_69:oid)
-    bat.delete(a,11@0:oid);	# 43 BKCdelete (_70:void)<-(a:bat[:void,:int])(_71:oid)
-# only 1 left and still void 	# 44  (_72:str)
-    io.print(a);	# 45 IOprint_val (_73:void)<-(a:bat[:void,:int])
-# now the convert to oid test 	# 46  (_74:str)
-    io.print("convert void to oid tests");	# 47 IOprint_val (_75:void)<-(_76:str)
-    a := algebra.copy(b);	# 48 ALGcopy (a:bat[:void,:int])<-(b:bat[:void,:int])
-    bat.setWriteMode(a);	# 49 BKCsetWriteMode (_77:bat[:void,:int])<-(a:bat[:void,:int])
-    bat.setName(a,"C");	# 50 BKCsetName (_78:void)<-(a:bat[:void,:int])(_79:str)
-    io.print("insert tests");	# 51 IOprint_val (_80:void)<-(_81:str)
-#insert in out of order 	# 52  (_82:str)
-    bat.insert(a,21@0:oid,8);	# 53 BKCinsert_bun (_83:void)<-(a:bat[:void,:int])(_84:oid)(_85:int)
-    io.print(a);	# 54 IOprint_val (_86:void)<-(a:bat[:void,:int])
-# use oid bat (test if its a properly made bat) 	# 55  (_87:str)
-    bat.delete(a,21@0:oid);	# 56 BKCdelete (_88:void)<-(a:bat[:void,:int])(_84:oid)
-    ar := bat.reverse(a);	# 57 BKCreverse (ar:bat[:int,:void])<-(a:bat[:void,:int])
-    z := algebra.join(ar,b);	# 58 ALGjoin (z:bat[:int,:int])<-(ar:bat[:int,:void])(b:bat[:void,:int])
-    io.print(z);	# 59 IOprint_val (_91:void)<-(z:bat[:int,:int])
-    io.print("replace tests");	# 60 IOprint_val (_92:void)<-(_93:str)
-#replace commited bun 	# 61  (_94:str)
-    a := algebra.copy(b);	# 62 ALGcopy (a:bat[:void,:int])<-(b:bat[:void,:int])
-    bat.setWriteMode(a);	# 63 BKCsetWriteMode (_95:bat[:void,:int])<-(a:bat[:void,:int])
-    bat.setName(a,"D");	# 64 BKCsetName (_96:void)<-(a:bat[:void,:int])(_97:str)
-    transaction.commit(a);	# 65 TRNtrans_commit (_98:void)<-(a:bat[:void,:int])
-# replace commited  	# 66  (_99:str)
-    bat.replace(a,15@0:oid,-3);	# 67 BKCreplace_bun (_100:void)<-(a:bat[:void,:int])(_101:oid)(_102:int)
-# replace last (or used to be last) 	# 68  (_103:str)
-    bat.replace(a,19@0:oid,-1);	# 69 BKCreplace_bun (_104:void)<-(a:bat[:void,:int])(_105:oid)(_106:int)
-# replace something not there 	# 70  (_107:str)
-    bat.replace(a,20@0:oid,-2);	# 71 BKCreplace_bun (_108:void)<-(a:bat[:void,:int])(_109:oid)(_110:int)
-    io.print(a);	# 72 IOprint_val (_111:void)<-(a:bat[:void,:int])
-# delete commited  	# 73  (_112:str)
-    io.print("delete tests");	# 74 IOprint_val (_113:void)<-(_114:str)
-    a := algebra.copy(b);	# 75 ALGcopy (a:bat[:void,:int])<-(b:bat[:void,:int])
-    bat.setWriteMode(a);	# 76 BKCsetWriteMode (_115:bat[:void,:int])<-(a:bat[:void,:int])
-    bat.setName(a,"E");	# 77 BKCsetName (_116:void)<-(a:bat[:void,:int])(_117:str)
-    transaction.commit(a);	# 78 TRNtrans_commit (_118:void)<-(a:bat[:void,:int])
-    io.print(a);	# 79 IOprint_val (_119:void)<-(a:bat[:void,:int])
-    bat.delete(a,20@0:oid);	# 80 BKCdelete (_120:void)<-(a:bat[:void,:int])(_109:oid)
-    io.print(a);	# 81 IOprint_val (_121:void)<-(a:bat[:void,:int])
-    bat.delete(a,19@0:oid);	# 82 BKCdelete (_122:void)<-(a:bat[:void,:int])(_105:oid)
-    io.print(a);	# 83 IOprint_val (_123:void)<-(a:bat[:void,:int])
-    bat.delete(a,18@0:oid);	# 84 BKCdelete (_124:void)<-(a:bat[:void,:int])(_125:oid)
-    io.print(a);	# 85 IOprint_val (_126:void)<-(a:bat[:void,:int])
-    bat.delete(a,17@0:oid);	# 86 BKCdelete (_127:void)<-(a:bat[:void,:int])(_128:oid)
-    io.print(a);	# 87 IOprint_val (_129:void)<-(a:bat[:void,:int])
-    bat.delete(a,16@0:oid);	# 88 BKCdelete (_130:void)<-(a:bat[:void,:int])(_131:oid)
-    io.print(a);	# 89 IOprint_val (_132:void)<-(a:bat[:void,:int])
-    bat.delete(a,15@0:oid);	# 90 BKCdelete (_133:void)<-(a:bat[:void,:int])(_101:oid)
-    io.print(a);	# 91 IOprint_val (_134:void)<-(a:bat[:void,:int])
-    bat.delete(a,14@0:oid);	# 92 BKCdelete (_135:void)<-(a:bat[:void,:int])(_136:oid)
-    io.print(a);	# 93 IOprint_val (_137:void)<-(a:bat[:void,:int])
-    bat.delete(a,13@0:oid);	# 94 BKCdelete (_138:void)<-(a:bat[:void,:int])(_139:oid)
-    io.print(a);	# 95 IOprint_val (_140:void)<-(a:bat[:void,:int])
-    bat.delete(a,12@0:oid);	# 96 BKCdelete (_141:void)<-(a:bat[:void,:int])(_142:oid)
-    io.print(a);	# 97 IOprint_val (_143:void)<-(a:bat[:void,:int])
-    bat.delete(a,11@0:oid);	# 98 BKCdelete (_144:void)<-(a:bat[:void,:int])(_145:oid)
-    io.print(a);	# 99 IOprint_val (_146:void)<-(a:bat[:void,:int])
-# only 1 left and still void 	# 100  (_147:str)
-    io.print(a);	# 101 IOprint_val (_148:void)<-(a:bat[:void,:int])
-# deleting a transient value from a just void table didn't fix 	# 102  (_149:str)
-# the denseness 	# 103  (_150:str)
-    t1 := bat.new(:void,:int);	# 104 CMDBATnew (t1:bat[:void,:int])<-(_4:void)(_5:int)
-    bat.setSequenceBase(t1,0@0);	# 105 BKCsetSequenceBase (_152:bat[:void,:int])<-(t1:bat[:void,:int])(_153:oid)
-    bat.append(t1,1);	# 106 BKCappend_val_wrap (_154:void)<-(t1:bat[:void,:int])(_155:int)
-    bat.append(t1,2);	# 107 BKCappend_val_wrap (_156:void)<-(t1:bat[:void,:int])(_157:int)
-    bat.append(t1,3);	# 108 BKCappend_val_wrap (_158:void)<-(t1:bat[:void,:int])(_159:int)
-    io.print("<in>");	# 109 IOprint_val (_160:void)<-(_161:str)
-    v1 := algebra.select(t1,2,nil:int,false,false);	# 110 ALGselectInclusive (v1:bat[:oid,:int])<-(t1:bat[:void,:int])(_157:int)(_163:int)(_164:bit)(_164:bit)
-    v2a := algebra.markT(v1,0@0);	# 111 ALGtmark (v2a:bat[:oid,:void])<-(v1:bat[:oid,:int])(_153:oid)
-    vr := bat.reverse(v2a);	# 112 BKCreverse (vr:bat[:void,:oid])<-(v2a:bat[:oid,:void])
-    vj := algebra.join(vr,t1);	# 113 ALGjoin (vj:bat[:void,:int])<-(vr:bat[:void,:oid])(t1:bat[:void,:int])
-    io.print(vj);	# 114 IOprint_val (_168:void)<-(vj:bat[:void,:int])
-    v3 := algebra.select(t1,2,nil:int);	# 115 ALGselect (v3:bat[:oid,:int])<-(t1:bat[:void,:int])(_157:int)(_163:int)
-    i := bat.info(v3);	# 116 BKCinfo (i:bat[:str,:str])<-(v3:bat[:oid,:int])
-    z2 := algebra.find(i,"hseqbase");	# 117 ALGfind (z2:str)<-(i:bat[:str,:str])(_172:str)
-    io.print(z2);	# 118 IOprint_val (_173:void)<-(z2:str)
-    z2 := algebra.find(i,"hdense");	# 119 ALGfind (z2:str)<-(i:bat[:str,:str])(_174:str)
-    io.print(z2);	# 120 IOprint_val (_175:void)<-(z2:str)
-    bat.setWriteMode(v3);	# 121 BKCsetWriteMode (_176:bat[:oid,:int])<-(v3:bat[:oid,:int])
-    v3r := bat.reverse(v3);	# 122 BKCreverse (v3r:bat[:int,:oid])<-(v3:bat[:oid,:int])
-    bat.delete(v3r,2);	# 123 BKCdelete (_178:void)<-(v3r:bat[:int,:oid])(_157:int)
-    i := bat.info(v3);	# 124 BKCinfo (i:bat[:str,:str])<-(v3:bat[:oid,:int])
-    z2 := algebra.find(i,"hseqbase");	# 125 ALGfind (z2:str)<-(i:bat[:str,:str])(_172:str)
-    io.print(z2);	# 126 IOprint_val (_179:void)<-(z2:str)
-    z2 := algebra.find(i,"hdense");	# 127 ALGfind (z2:str)<-(i:bat[:str,:str])(_174:str)
-    io.print(z2);	# 128 IOprint_val (_180:void)<-(z2:str)
-    x := bat.new(:void,:void);	# 129 CMDBATnew (x:bat[:void,:void])<-(_4:void)(_4:void)
-    bat.setSequenceBase(x,0@0);	# 130 BKCsetSequenceBase (_182:bat[:void,:void])<-(x:bat[:void,:void])(_153:oid)
-#bat.append(x,12@0); 	# 131  (_183:str)
-    bat.append(x,nil:void);	# 132 BKCappend_val_wrap (_184:void)<-(x:bat[:void,:void])(_185:void)
-    io.print(x);	# 133 IOprint_val (_186:void)<-(x:bat[:void,:void])
-    e := bat.new(:void,:int);	# 134 CMDBATnew (e:bat[:void,:int])<-(_4:void)(_5:int)
-    bat.setSequenceBase(e,10@0);	# 135 BKCsetSequenceBase (_188:bat[:void,:int])<-(e:bat[:void,:int])(_189:oid)
-    n := bat.new(:void,:int);	# 136 CMDBATnew (n:bat[:void,:int])<-(_4:void)(_5:int)
-    bat.setSequenceBase(n,20@0);	# 137 BKCsetSequenceBase (_191:bat[:void,:int])<-(n:bat[:void,:int])(_192:oid)
-    bat.append(n,20);	# 138 BKCappend_val_wrap (_193:void)<-(n:bat[:void,:int])(_194:int)
-    bat.insert(e,n);	# 139 BKCinsert_bat (_195:void)<-(e:bat[:void,:int])(n:bat[:void,:int])
-    io.print(e);	# 140 IOprint_val (_196:void)<-(e:bat[:void,:int])
-    y := bat.new(:void,:int);	# 141 CMDBATnew (y:bat[:void,:int])<-(_4:void)(_5:int)
-    bat.insert(y,nil:oid,0);	# 142 BKCinsert_bun (_198:void)<-(y:bat[:void,:int])(_199:oid)(_200:int)
-    bat.setSequenceBase(y,20@0);	# 143 BKCsetSequenceBase (_201:bat[:void,:int])<-(y:bat[:void,:int])(_192:oid)
-    zn := bat.new(:void,:int);	# 144 CMDBATnew (zn:bat[:void,:int])<-(_4:void)(_5:int)
-    bat.setSequenceBase(zn,10@0);	# 145 BKCsetSequenceBase (_203:bat[:void,:int])<-(zn:bat[:void,:int])(_189:oid)
-    bat.setKey(zn,true);	# 146 BKCsetkey (_204:bat[:void,:int])<-(zn:bat[:void,:int])(_205:bit)
-    bat.insert(zn,y);	# 147 BKCinsert_bat (_206:void)<-(zn:bat[:void,:int])(y:bat[:void,:int])
-    io.print(zn);	# 148 IOprint_val (_207:void)<-(zn:bat[:void,:int])
-    clients.quit();	# 149 CLTquitDefault (_208:void)
-end main;	# 150  
+    a := bat.new(:oid,:int,10);	# 2 CMDBATnewint (a:bat[:oid,:int])<-(_4:oid)(_5:int)(_6:int)
+    bat.setName(a,"A");	# 3 BKCsetName (_7:void)<-(a:bat[:oid,:int])(_8:str)
+    bat.append(a,1);	# 4 BKCappend_val_wrap (_9:void)<-(a:bat[:oid,:int])(_10:int)
+    bat.append(a,4);	# 5 BKCappend_val_wrap (_11:void)<-(a:bat[:oid,:int])(_12:int)
+    bat.append(a,7);	# 6 BKCappend_val_wrap (_13:void)<-(a:bat[:oid,:int])(_14:int)
+    bat.append(a,2);	# 7 BKCappend_val_wrap (_15:void)<-(a:bat[:oid,:int])(_16:int)
+    bat.append(a,8);	# 8 BKCappend_val_wrap (_17:void)<-(a:bat[:oid,:int])(_18:int)
+    bat.append(a,1);	# 9 BKCappend_val_wrap (_19:void)<-(a:bat[:oid,:int])(_10:int)
+    bat.append(a,4);	# 10 BKCappend_val_wrap (_20:void)<-(a:bat[:oid,:int])(_12:int)
+    bat.append(a,5);	# 11 BKCappend_val_wrap (_21:void)<-(a:bat[:oid,:int])(_22:int)
+    bat.append(a,8);	# 12 BKCappend_val_wrap (_23:void)<-(a:bat[:oid,:int])(_18:int)
+    bat.append(a,3);	# 13 BKCappend_val_wrap (_24:void)<-(a:bat[:oid,:int])(_25:int)
+    io.print(a);	# 14 IOprint_val (_26:void)<-(a:bat[:oid,:int])
+    b := algebra.copy(a);	# 15 ALGcopy (b:bat[:oid,:int])<-(a:bat[:oid,:int])
+    bat.setName(b,"B");	# 16 BKCsetName (_28:void)<-(b:bat[:oid,:int])(_29:str)
+    io.print("insert tests");	# 17 IOprint_val (_30:void)<-(_31:str)
+#insert in order 	# 18  (_32:str)
+    bat.insert(a,20@0:oid,8);	# 19 BKCinsert_bun (_33:void)<-(a:bat[:oid,:int])(_34:oid)(_18:int)
+    io.print(a);	# 20 IOprint_val (_35:void)<-(a:bat[:oid,:int])
+    io.print("replace tests");	# 21 IOprint_val (_36:void)<-(_37:str)
+# replace uncommited no need to change to oid 	# 22  (_38:str)
+    bat.replace(a,5@0:oid,9);	# 23 BKCreplace_bun (_39:void)<-(a:bat[:oid,:int])(_40:oid)(_41:int)
+    io.print(a);	# 24 IOprint_val (_42:void)<-(a:bat[:oid,:int])
+# replace last no need to change to oid 	# 25  (_43:str)
+    bat.replace(a,20@0:oid,9);	# 26 BKCreplace_bun (_44:void)<-(a:bat[:oid,:int])(_34:oid)(_41:int)
+    io.print(a);	# 27 IOprint_val (_45:void)<-(a:bat[:oid,:int])
+# replace last + 1, noting needed 	# 28  (_46:str)
+    bat.replace(a,20@0:oid,9);	# 29 BKCreplace_bun (_47:void)<-(a:bat[:oid,:int])(_34:oid)(_41:int)
+    io.print(a);	# 30 IOprint_val (_48:void)<-(a:bat[:oid,:int])
+    io.print("delete tests");	# 31 IOprint_val (_49:void)<-(_50:str)
+# delete uncommited from the top 	# 32  (_51:str)
+    bat.delete(a,20@0:oid);	# 33 BKCdelete (_52:void)<-(a:bat[:oid,:int])(_34:oid)
+    bat.delete(a,9@0:oid);	# 34 BKCdelete (_53:void)<-(a:bat[:oid,:int])(_54:oid)
+    bat.delete(a,8@0:oid);	# 35 BKCdelete (_55:void)<-(a:bat[:oid,:int])(_56:oid)
+    bat.delete(a,7@0:oid);	# 36 BKCdelete (_57:void)<-(a:bat[:oid,:int])(_58:oid)
+    bat.delete(a,6@0:oid);	# 37 BKCdelete (_59:void)<-(a:bat[:oid,:int])(_60:oid)
+    bat.delete(a,5@0:oid);	# 38 BKCdelete (_61:void)<-(a:bat[:oid,:int])(_40:oid)
+    bat.delete(a,4@0:oid);	# 39 BKCdelete (_62:void)<-(a:bat[:oid,:int])(_63:oid)
+    bat.delete(a,3@0:oid);	# 40 BKCdelete (_64:void)<-(a:bat[:oid,:int])(_65:oid)
+    bat.delete(a,2@0:oid);	# 41 BKCdelete (_66:void)<-(a:bat[:oid,:int])(_67:oid)
+    bat.delete(a,1@0:oid);	# 42 BKCdelete (_68:void)<-(a:bat[:oid,:int])(_69:oid)
+# only 1 left and still void 	# 43  (_70:str)
+    io.print(a);	# 44 IOprint_val (_71:void)<-(a:bat[:oid,:int])
+# now the convert to oid test 	# 45  (_72:str)
+    io.print("convert void to oid tests");	# 46 IOprint_val (_73:void)<-(_74:str)
+    a := algebra.copy(b);	# 47 ALGcopy (a:bat[:oid,:int])<-(b:bat[:oid,:int])
+    bat.setWriteMode(a);	# 48 BKCsetWriteMode (_75:bat[:oid,:int])<-(a:bat[:oid,:int])
+    bat.setName(a,"C");	# 49 BKCsetName (_76:void)<-(a:bat[:oid,:int])(_77:str)
+    io.print("insert tests");	# 50 IOprint_val (_78:void)<-(_79:str)
+#insert in out of order 	# 51  (_80:str)
+    bat.insert(a,21@0:oid,8);	# 52 BKCinsert_bun (_81:void)<-(a:bat[:oid,:int])(_82:oid)(_83:int)
+    io.print(a);	# 53 IOprint_val (_84:void)<-(a:bat[:oid,:int])
+# use oid bat (test if its a properly made bat) 	# 54  (_85:str)
+    bat.delete(a,21@0:oid);	# 55 BKCdelete (_86:void)<-(a:bat[:oid,:int])(_82:oid)
+    ar := bat.reverse(a);	# 56 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
+    z := algebra.join(ar,b);	# 57 ALGjoin (z:bat[:int,:int])<-(ar:bat[:int,:oid])(b:bat[:oid,:int])
+    io.print(z);	# 58 IOprint_val (_89:void)<-(z:bat[:int,:int])
+    io.print("replace tests");	# 59 IOprint_val (_90:void)<-(_91:str)
+#replace commited bun 	# 60  (_92:str)
+    a := algebra.copy(b);	# 61 ALGcopy (a:bat[:oid,:int])<-(b:bat[:oid,:int])
+    bat.setWriteMode(a);	# 62 BKCsetWriteMode (_93:bat[:oid,:int])<-(a:bat[:oid,:int])
+    bat.setName(a,"D");	# 63 BKCsetName (_94:void)<-(a:bat[:oid,:int])(_95:str)
+    transaction.commit(a);	# 64 TRNtrans_commit (_96:void)<-(a:bat[:oid,:int])
+# replace commited  	# 65  (_97:str)
+    bat.replace(a,5@0:oid,-3);	# 66 BKCreplace_bun (_98:void)<-(a:bat[:oid,:int])(_99:oid)(_100:int)
+# replace last (or used to be last) 	# 67  (_101:str)
+    bat.replace(a,9@0:oid,-1);	# 68 BKCreplace_bun (_102:void)<-(a:bat[:oid,:int])(_103:oid)(_104:int)
+# replace something not there 	# 69  (_105:str)
+    bat.replace(a,20@0:oid,-2);	# 70 BKCreplace_bun (_106:void)<-(a:bat[:oid,:int])(_107:oid)(_108:int)
+    io.print(a);	# 71 IOprint_val (_109:void)<-(a:bat[:oid,:int])
+# delete commited  	# 72  (_110:str)
+    io.print("delete tests");	# 73 IOprint_val (_111:void)<-(_112:str)
+    a := algebra.copy(b);	# 74 ALGcopy (a:bat[:oid,:int])<-(b:bat[:oid,:int])
+    bat.setWriteMode(a);	# 75 BKCsetWriteMode (_113:bat[:oid,:int])<-(a:bat[:oid,:int])
+    bat.setName(a,"E");	# 76 BKCsetName (_114:void)<-(a:bat[:oid,:int])(_115:str)
+    transaction.commit(a);	# 77 TRNtrans_commit (_116:void)<-(a:bat[:oid,:int])
+    io.print(a);	# 78 IOprint_val (_117:void)<-(a:bat[:oid,:int])
+    bat.delete(a,20@0:oid);	# 79 BKCdelete (_118:void)<-(a:bat[:oid,:int])(_107:oid)
+    io.print(a);	# 80 IOprint_val (_119:void)<-(a:bat[:oid,:int])
+    bat.delete(a,9@0:oid);	# 81 BKCdelete (_120:void)<-(a:bat[:oid,:int])(_103:oid)
+    io.print(a);	# 82 IOprint_val (_121:void)<-(a:bat[:oid,:int])
+    bat.delete(a,8@0:oid);	# 83 BKCdelete (_122:void)<-(a:bat[:oid,:int])(_123:oid)
+    io.print(a);	# 84 IOprint_val (_124:void)<-(a:bat[:oid,:int])
+    bat.delete(a,7@0:oid);	# 85 BKCdelete (_125:void)<-(a:bat[:oid,:int])(_126:oid)
+    io.print(a);	# 86 IOprint_val (_127:void)<-(a:bat[:oid,:int])
+    bat.delete(a,6@0:oid);	# 87 BKCdelete (_128:void)<-(a:bat[:oid,:int])(_129:oid)
+    io.print(a);	# 88 IOprint_val (_130:void)<-(a:bat[:oid,:int])
+    bat.delete(a,5@0:oid);	# 89 BKCdelete (_131:void)<-(a:bat[:oid,:int])(_99:oid)
+    io.print(a);	# 90 IOprint_val (_132:void)<-(a:bat[:oid,:int])
+    bat.delete(a,4@0:oid);	# 91 BKCdelete (_133:void)<-(a:bat[:oid,:int])(_134:oid)
+    io.print(a);	# 92 IOprint_val (_135:void)<-(a:bat[:oid,:int])
+    bat.delete(a,3@0:oid);	# 93 BKCdelete (_136:void)<-(a:bat[:oid,:int])(_137:oid)
+    io.print(a);	# 94 IOprint_val (_138:void)<-(a:bat[:oid,:int])
+    bat.delete(a,2@0:oid);	# 95 BKCdelete (_139:void)<-(a:bat[:oid,:int])(_140:oid)
+    io.print(a);	# 96 IOprint_val (_141:void)<-(a:bat[:oid,:int])
+    bat.delete(a,1@0:oid);	# 97 BKCdelete (_142:void)<-(a:bat[:oid,:int])(_143:oid)
+    io.print(a);	# 98 IOprint_val (_144:void)<-(a:bat[:oid,:int])
+# only 1 left and still void 	# 99  (_145:str)
+    io.print(a);	# 100 IOprint_val (_146:void)<-(a:bat[:oid,:int])
+# deleting a transient value from a just void table didn't fix 	# 101  (_147:str)
+# the denseness 	# 102  (_148:str)
+    t1 := bat.new(:oid,:int);	# 103 CMDBATnew (t1:bat[:oid,:int])<-(_4:oid)(_5:int)
+    bat.append(t1,1);	# 104 BKCappend_val_wrap (_150:void)<-(t1:bat[:oid,:int])(_151:int)
+    bat.append(t1,2);	# 105 BKCappend_val_wrap (_152:void)<-(t1:bat[:oid,:int])(_153:int)
+    bat.append(t1,3);	# 106 BKCappend_val_wrap (_154:void)<-(t1:bat[:oid,:int])(_155:int)
+    io.print("<in>");	# 107 IOprint_val (_156:void)<-(_157:str)
+    v1 := algebra.select(t1,2,nil:int,false,false);	# 108 ALGselectInclusive (v1:bat[:oid,:int])<-(t1:bat[:oid,:int])(_153:int)(_159:int)(_160:bit)(_160:bit)
+    v2a := algebra.markT(v1,0@0);	# 109 ALGtmark (v2a:bat[:oid,:oid])<-(v1:bat[:oid,:int])(_162:oid)
+    vr := bat.reverse(v2a);	# 110 BKCreverse (vr:bat[:oid,:oid])<-(v2a:bat[:oid,:oid])
+    vj := algebra.join(vr,t1);	# 111 ALGjoin (vj:bat[:oid,:int])<-(vr:bat[:oid,:oid])(t1:bat[:oid,:int])
+    io.print(vj);	# 112 IOprint_val (_165:void)<-(vj:bat[:oid,:int])
+    v3 := algebra.select(t1,2,nil:int);	# 113 ALGselect (v3:bat[:oid,:int])<-(t1:bat[:oid,:int])(_153:int)(_159:int)
+    i := bat.info(v3);	# 114 BKCinfo (i:bat[:str,:str])<-(v3:bat[:oid,:int])
+    z2 := algebra.find(i,"hseqbase");	# 115 ALGfind (z2:str)<-(i:bat[:str,:str])(_169:str)
+    io.print(z2);	# 116 IOprint_val (_170:void)<-(z2:str)
+    z2 := algebra.find(i,"hdense");	# 117 ALGfind (z2:str)<-(i:bat[:str,:str])(_171:str)
+    io.print(z2);	# 118 IOprint_val (_172:void)<-(z2:str)
+    bat.setWriteMode(v3);	# 119 BKCsetWriteMode (_173:bat[:oid,:int])<-(v3:bat[:oid,:int])
+    v3r := bat.reverse(v3);	# 120 BKCreverse (v3r:bat[:int,:oid])<-(v3:bat[:oid,:int])
+    bat.delete(v3r,2);	# 121 BKCdelete (_175:void)<-(v3r:bat[:int,:oid])(_153:int)
+    i := bat.info(v3);	# 122 BKCinfo (i:bat[:str,:str])<-(v3:bat[:oid,:int])
+    z2 := algebra.find(i,"hseqbase");	# 123 ALGfind (z2:str)<-(i:bat[:str,:str])(_169:str)
+    io.print(z2);	# 124 IOprint_val (_176:void)<-(z2:str)
+    z2 := algebra.find(i,"hdense");	# 125 ALGfind (z2:str)<-(i:bat[:str,:str])(_171:str)
+    io.print(z2);	# 126 IOprint_val (_177:void)<-(z2:str)
+    x := bat.new(:oid,:oid);	# 127 CMDBATnew (x:bat[:oid,:oid])<-(_4:oid)(_4:oid)
+#bat.append(x,2@0); 	# 128  (_179:str)
+    bat.append(x,nil:oid);	# 129 BKCappend_val_wrap (_180:void)<-(x:bat[:oid,:oid])(_181:oid)
+    io.print(x);	# 130 IOprint_val (_182:void)<-(x:bat[:oid,:oid])
+    e := bat.new(:oid,:int);	# 131 CMDBATnew (e:bat[:oid,:int])<-(_4:oid)(_5:int)
+    n := bat.new(:oid,:int);	# 132 CMDBATnew (n:bat[:oid,:int])<-(_4:oid)(_5:int)
+    bat.append(n,20);	# 133 BKCappend_val_wrap (_185:void)<-(n:bat[:oid,:int])(_186:int)
+    bat.insert(e,n);	# 134 BKCinsert_bat (_187:void)<-(e:bat[:oid,:int])(n:bat[:oid,:int])
+    io.print(e);	# 135 IOprint_val (_188:void)<-(e:bat[:oid,:int])
+    y := bat.new(:oid,:int);	# 136 CMDBATnew (y:bat[:oid,:int])<-(_4:oid)(_5:int)
+    bat.insert(y,nil:oid,0);	# 137 BKCinsert_bun (_190:void)<-(y:bat[:oid,:int])(_181:oid)(_191:int)
+    zn := bat.new(:oid,:int);	# 138 CMDBATnew (zn:bat[:oid,:int])<-(_4:oid)(_5:int)
+    bat.setKey(zn,true);	# 139 BKCsetkey (_193:bat[:oid,:int])<-(zn:bat[:oid,:int])(_194:bit)
+    bat.insert(zn,y);	# 140 BKCinsert_bat (_195:void)<-(zn:bat[:oid,:int])(y:bat[:oid,:int])
+    io.print(zn);	# 141 IOprint_val (_196:void)<-(zn:bat[:oid,:int])
+    clients.quit();	# 142 CLTquitDefault (_197:void)
+end main;	# 143  
 [ "First keep void tests" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 19@0,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  3	  ]
 [ "insert tests" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 19@0,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  3	  ]
 [ 20@0,	  8	  ]
 [ "replace tests" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  9	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 19@0,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  9	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  3	  ]
 [ 20@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  9	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 19@0,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  9	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  3	  ]
 [ 20@0,	  9	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  9	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 19@0,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  9	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  3	  ]
 [ 20@0,	  9	  ]
 [ "delete tests" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
+[ 0@0,	  1	  ]
 [ "convert void to oid tests" ]
 [ "insert tests" ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 19@0,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  3	  ]
 [ 21@0,	  8	  ]
 #-----------------#
 # t	h	  # name
@@ -433,131 +426,131 @@ end main;	# 150
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 19@0,	  -1	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 15@0,	  -3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 9@0,	  -1	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 5@0,	  -3	  ]
 [ "delete tests" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 19@0,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  3	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
-[ 19@0,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  3	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
-[ 18@0,	  8	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
+[ 8@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
-[ 16@0,	  4	  ]
-[ 17@0,	  5	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  5	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
-[ 16@0,	  4	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  4	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
-[ 15@0,	  1	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  1	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
-[ 14@0,	  8	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  8	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
-[ 13@0,	  2	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
+[ 3@0,	  2	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
-[ 12@0,	  7	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  7	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
-[ 11@0,	  4	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  4	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
+[ 0@0,	  1	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-[ 10@0,	  1	  ]
+[ 0@0,	  1	  ]
 [ "<in>" ]
 #-----------------#
 # h	t	  # name
@@ -577,12 +570,12 @@ end main;	# 150
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 20@0,	  20	  ]
+[ 0@0,	  20	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 20@0,	  0	  ]
+[ nil,	  0	  ]
 
 # 23:46:00 >  
 # 23:46:00 >  Done.

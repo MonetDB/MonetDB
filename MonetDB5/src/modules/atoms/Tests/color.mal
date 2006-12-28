@@ -40,10 +40,10 @@ function testcolor();
     V94 := color.blue(c);	
     io.print(V94);	
 
-	bc:= bat.new(:void,:color);
-	bat.insert(bc,nil,"0x00000000":color);
-	bat.insert(bc,nil,"0x0033ff44":color);
-	bat.insert(bc,nil,"0x00003f44":color);
+	bc:= bat.new(:oid,:color);
+	bat.append(bc,"0x00000000":color);
+	bat.append(bc,"0x0033ff44":color);
+	bat.append(bc,"0x00003f44":color);
 	io.print(bc);
 	z:= batcolor.red(bc);
 	io.print(z);

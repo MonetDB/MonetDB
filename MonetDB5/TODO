@@ -33,9 +33,13 @@
   amount of data traffic.
 
 *MonetDB 5.0 (Dec 2006)
+  27 Dec 2006; Martin Kersten <mlkersten>; OPEN
+  double check batstr when it produces str results using match.
+
   21 Dec 2006; Martin Kersten <mlkersten>; OPEN
+  Drop :bat[:void,...] in favor of :bat[:oid{dense,base=0@0},...]
+  It dissects type information from runtime properties.
   Change redering of values in GDK to not avoid decimal dots.
-  Challenge to drop :void in favor of :oid{dense,base=0@0}
  
   13 Dec 2006; Martin Kersten <mlkersten>; CLOSED
   Resolved errors in flow checking and the optimizer.

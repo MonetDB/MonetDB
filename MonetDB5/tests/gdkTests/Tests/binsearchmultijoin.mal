@@ -4,9 +4,8 @@
 #      larger is not "too" small.
 #   2. all bats are sorted on head, but the larger is *much* larger.
 
-function Nseq(N:int):bat[:void,:int];
-	seq:= bat.new(:void,:int);
-	bat.setSequenceBase(seq,0@0);
+function Nseq(N:int):bat[:oid,:int];
+	seq:= bat.new(:oid,:int);
 	i:= 0;
 barrier go:= true;
 	bat.append(seq,i);

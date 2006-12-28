@@ -1,13 +1,13 @@
 #testing the partition optimizer
 
-a1:= bat.new(:void,:int);
-bat.setSequenceBase(a1,0@0);
-a2:= bat.new(:void,:int);
-bat.setSequenceBase(a2,10@0);
-a3:= bat.new(:void,:int);
-bat.setSequenceBase(a3,20@0);
+a1:= bat.new(:oid,:int);
+bat.insert(a1,0@0,0);
+a2:= bat.new(:oid,:int);
+bat.insert(a2,10@0,0);
+a3:= bat.new(:oid,:int);
+bat.insert(a3,20@0,0);
 
-barrier (go,i):= language.newRange(0);
+barrier (go,i):= language.newRange(1);
 	bat.append(a1,i);
 	bat.append(a2,i);
 	bat.append(a3,i);
@@ -20,7 +20,7 @@ partitions.deposit(a1,a2);
 partitions.deposit(a1,a3);
 partitions.dump();
 
-function qry(a:bat[:void,:any_1]);
+function qry(a:bat[:oid,:any_1]);
 	io.print("hello");
 	io.print(a);
 end qry;

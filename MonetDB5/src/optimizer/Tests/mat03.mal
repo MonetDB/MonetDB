@@ -1,28 +1,28 @@
 #select * from t,s where t.i=s.j;
 
 mdb.list();
-#   v2:bat[:void,:int]  := sql.bind("sys","t","i",0);
-	v2v0:= bat.new(:void,:int);
+#   v2:bat[:oid,:int]  := sql.bind("sys","t","i",0);
+	v2v0:= bat.new(:oid,:int);
     bat.insert(v2v0,nil,0);
-    v2v1:= bat.new(:void,:int);
+    v2v1:= bat.new(:oid,:int);
     bat.insert(v2v1,nil,1);
 	v2:= mat.new(v2v0,v2v1);
 
-#   v14:bat[:void,:int]  := sql.bind("sys","s","j",0);
-    v14v0:= bat.new(:void,:int);
+#   v14:bat[:oid,:int]  := sql.bind("sys","s","j",0);
+    v14v0:= bat.new(:oid,:int);
     bat.insert(v14v0,nil,0);
-    v14v1:= bat.new(:void,:int);
+    v14v1:= bat.new(:oid,:int);
     bat.insert(v14v1,nil,1);
 	v14:= mat.new(v14v0,v14v1);
 
 
-#   v8:bat[:void,:oid]  := sql.bindvdbat("sys","t",0);
-	v8:= bat.new(:void,:oid);
+#   v8:bat[:oid,:oid]  := sql.bindvdbat("sys","t",0);
+	v8:= bat.new(:oid,:oid);
     v10 := bat.reverse(v8);
     v12 := algebra.kdifference(v2,v10);
 
-#   v18:bat[:void,:oid]  := sql.bindvdbat("sys","s",0);
-	v18:= bat.new(:void,:oid);
+#   v18:bat[:oid,:oid]  := sql.bindvdbat("sys","s",0);
+	v18:= bat.new(:oid,:oid);
 
     v20 := bat.reverse(v18);
     v22 := algebra.kdifference(v14,v20);

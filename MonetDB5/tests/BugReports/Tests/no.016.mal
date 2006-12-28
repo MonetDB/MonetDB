@@ -29,7 +29,7 @@
 #	io.print("# >a.sample(1).print;\n");
 #	io.print("# !FATAL GDKmalloc called with size 0\n");
 #	io.print("var a := bat.new(int, int);");
-	a := bat.new(nil:int,nil:int);
+	a := bat.new(nil:oid,nil:int);
 #	io.print("a.sample(1).print();");
 	aa_a := algebra.sample(a,1);
 	ba_a := io.print(aa_a);

@@ -1,4 +1,4 @@
-b:= bat.new(:void,:oid);
+b:= bat.new(:oid,:oid);
 bat.insert(b,1@0,1@0);
 bat.insert(b,2@0,2@0);
 bat.insert(b,3@0,3@0);
@@ -7,8 +7,7 @@ io.print(b);
 bl:= batcalc.lng(b);
 io.print(bl);
 
-bb:= bat.new(:void,:oid);
-bat.setSequenceBase(bb,0@0);
+bb:= bat.new(:oid,:oid);
 bat.insert(bb,1@0,1@0);
 bat.insert(bb,2@0,2@0);
 bat.insert(bb,3@0,3@0);
@@ -17,7 +16,7 @@ io.print(bb);
 bbl:= batcalc.lng(bb);
 io.print(bbl);
 
-c:= bat.new(:void,:oid);
+c:= bat.new(:oid,:oid);
 bat.append(c,1@0);
 o:= algebra.fetch(c,0);
 io.print(o);

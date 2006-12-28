@@ -9,8 +9,7 @@
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 #	io.print("var b := new(void, int).seqbase(0@0);");
-	aa_a := new(nil:void,nil:int);
-	b := bat.setSequenceBase(aa_a,0@0);
+	aa_a := new(nil:oid,nil:int);
 #	io.print("b.insert(nil,1).insert(nil, 2).insert(nil, 3);");
 	ba_a := insert(b,nil,1);
 	ca_a := insert(ba_a,nil,2);
@@ -28,4 +27,3 @@
 	ka_a := multiplex.tactics("+",b,48);
 	la_a := multiplex.tactics("cast",ka_a,nil:chr);
 	ma_a := print(la_a);
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

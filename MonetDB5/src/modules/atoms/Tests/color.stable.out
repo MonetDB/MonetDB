@@ -54,6 +54,7 @@ stdout of test 'color` in directory 'src/modules/atoms` itself:
 #    V94 := color.blue(c);	
 #    io.print(V94);	
 #end testcolor;	
+
 function user.testcolor():void;	# 0  (testcolor:void)
     c := color.rgb(100,101,102);	# 1 CLRrgb (c:color)<-(_2:int)(_3:int)(_4:int)
     io.print(c);	# 2 IOprint_val (_5:void)<-(c:color)
@@ -95,13 +96,13 @@ function user.testcolor():void;	# 0  (testcolor:void)
     io.print(V91);	# 38 IOprint_val (_44:void)<-(V91:int)
     V94 := color.blue(c);	# 39 CLRblue (V94:int)<-(c:color)
     io.print(V94);	# 40 IOprint_val (_46:void)<-(V94:int)
-    bc := bat.new(:void,:color);	# 41 CMDBATnew (bc:bat[:void,:color])<-(_48:void)(_49:color)
-    bat.insert(bc,nil:void,0x00000000:color);	# 42 BKCinsert_bun (_50:void)<-(bc:bat[:void,:color])(_51:void)(_52:color)
-    bat.insert(bc,nil:void,0x0033FF44:color);	# 43 BKCinsert_bun (_53:void)<-(bc:bat[:void,:color])(_51:void)(_54:color)
-    bat.insert(bc,nil:void,0x00003F44:color);	# 44 BKCinsert_bun (_55:void)<-(bc:bat[:void,:color])(_51:void)(_56:color)
-    io.print(bc);	# 45 IOprint_val (_57:void)<-(bc:bat[:void,:color])
-    z := batcolor.red(bc);	# 46 CLRbatRed (z:bat[:void,:int])<-(bc:bat[:void,:color])
-    io.print(z);	# 47 IOprint_val (_59:void)<-(z:bat[:void,:int])
+    bc := bat.new(:oid,:color);	# 41 CMDBATnew (bc:bat[:oid,:color])<-(_48:oid)(_49:color)
+    bat.append(bc,0x00000000:color);	# 42 BKCappend_val_wrap (_50:void)<-(bc:bat[:oid,:color])(_51:color)
+    bat.append(bc,0x0033FF44:color);	# 43 BKCappend_val_wrap (_52:void)<-(bc:bat[:oid,:color])(_53:color)
+    bat.append(bc,0x00003F44:color);	# 44 BKCappend_val_wrap (_54:void)<-(bc:bat[:oid,:color])(_55:color)
+    io.print(bc);	# 45 IOprint_val (_56:void)<-(bc:bat[:oid,:color])
+    z := batcolor.red(bc);	# 46 CLRbatRed (z:bat[:oid,:int])<-(bc:bat[:oid,:color])
+    io.print(z);	# 47 IOprint_val (_58:void)<-(z:bat[:oid,:int])
 end testcolor;	# 48  
 #user.testcolor();
 #
@@ -126,16 +127,17 @@ end main;	# 2
 # h	t		  # name
 # void	color		  # type
 #-------------------------#
-[ nil,	  0x00000000	  ]
-[ nil,	  0x0033FF44	  ]
-[ nil,	  0x00003F44	  ]
+[ 0@0,	  0x00000000	  ]
+[ 1@0,	  0x0033FF44	  ]
+[ 2@0,	  0x00003F44	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ nil,	  0	  ]
-[ nil,	  51	  ]
-[ nil,	  0	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  51	  ]
+[ 2@0,	  0	  ]
+
 
 # 23:57:21 >  
 # 23:57:21 >  Done.

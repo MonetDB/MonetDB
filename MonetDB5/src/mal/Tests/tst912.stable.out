@@ -26,15 +26,15 @@ stdout of test 'tst912` in directory 'src/mal` itself:
 #    printf("#factory done\n");
 #    return (bb,c):= (false,c);
 #end getChunk;
-factory user.getChunk(b:bat[:void,:lng],size:lng) (bb:bit,c:bat[:void,:lng]);	# 0  (bb:bit)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
-    (chk,c):= bat.newIterator(b,size);	# 1 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
+factory user.getChunk(b:bat[:oid,:lng],size:lng) (bb:bit,c:bat[:oid,:lng]);	# 0  (bb:bit)(c:bat[:oid,:lng])<-(b:bat[:oid,:lng])(size:lng)
+    (chk,c):= bat.newIterator(b,size);	# 1 CHPnewChunkIterator (chk:lng)(c:bat[:oid,:lng])<-(b:bat[:oid,:lng])(size:lng)
 barrier allways := calc.>=(chk,0);	# 2 CALCcompGElngint (allways:bit)<-(chk:lng)(_7:int) jump 6
-    yield (bb,c):= (true,c);	# 3  (bb:bit)(c:bat[:void,:lng])<-(_8:bit)(c:bat[:void,:lng])
-    (chk,c):= bat.hasMoreElements(b,size);	# 4 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
+    yield (bb,c):= (true,c);	# 3  (bb:bit)(c:bat[:oid,:lng])<-(_8:bit)(c:bat[:oid,:lng])
+    (chk,c):= bat.hasMoreElements(b,size);	# 4 CHPhasMoreChunks (chk:lng)(c:bat[:oid,:lng])<-(b:bat[:oid,:lng])(size:lng)
     redo allways := calc.>=(chk,0);	# 5 CALCcompGElngint (allways:bit)<-(chk:lng)(_7:int) jump 3
 exit allways;	# 6  (allways:bit)
     io.print("#factory done\n");	# 7 IOprint_val (_9:void)<-(_10:str)
-    return (bb,c):= (false,c);	# 8  (bb:bit)(c:bat[:void,:lng])<-(_11:bit)(c:bat[:void,:lng])
+    return (bb,c):= (false,c);	# 8  (bb:bit)(c:bat[:oid,:lng])<-(_11:bit)(c:bat[:oid,:lng])
 end getChunk;	# 9  
 #
 #function choptest(b:bat[:void,:lng], size:lng, base:lng);
@@ -56,12 +56,12 @@ end getChunk;	# 9
 #    f:= df/if;
 #    printf(" at %f usec\n",f);
 #end choptest;
-function user.choptest(b:bat[:void,:lng],size:lng,base:lng):void;	# 0  (choptest:void)<-(b:bat[:void,:lng])(size:lng)(base:lng)
+function user.choptest(b:bat[:oid,:lng],size:lng,base:lng):void;	# 0  (choptest:void)<-(b:bat[:oid,:lng])(size:lng)(base:lng)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
-barrier (tst,c):= user.getChunk(b,size);	# 2  (tst:bit)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 5
-    t := algebra.select(c,256000:lng,266000:lng);	# 3 ALGselect (t:bat[:oid,:lng])<-(c:bat[:void,:lng])(_8:lng)(_9:lng)
-    redo (tst,c):= user.getChunk(b,size);	# 4  (tst:bit)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 3
-exit (tst,c);	# 5  (tst:bit)(c:bat[:void,:lng])
+barrier (tst,c):= user.getChunk(b,size);	# 2  (tst:bit)(c:bat[:oid,:lng])<-(b:bat[:oid,:lng])(size:lng) jump 5
+    t := algebra.select(c,256000:lng,266000:lng);	# 3 ALGselect (t:bat[:oid,:lng])<-(c:bat[:oid,:lng])(_8:lng)(_9:lng)
+    redo (tst,c):= user.getChunk(b,size);	# 4  (tst:bit)(c:bat[:oid,:lng])<-(b:bat[:oid,:lng])(size:lng) jump 3
+exit (tst,c);	# 5  (tst:bit)(c:bat[:oid,:lng])
     t1 := alarm.usec();	# 6 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 7 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     i := calc./(1000000:lng,size);	# 8 CALCbinarycheckDIVlnglng (i:lng)<-(_13:lng)(size:lng)
@@ -96,24 +96,24 @@ end choptest;	# 14
 function user.main():void;	# 0  (main:void)
 # analyse the overhead of chopping a table 	# 1  (_1:str)
 # the multiplex code blocks. 	# 2  (_2:str)
-    b := bat.new(:void,:lng);	# 3 CMDBATnew (b:bat[:void,:lng])<-(_4:void)(_5:lng)
+    b := bat.new(:oid,:lng);	# 3 CMDBATnew (b:bat[:oid,:lng])<-(_4:oid)(_5:lng)
 barrier (go,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_8:lng) jump 9
     k := mmath.rand();	# 5 MATHrandint (k:int)
     l := calc.lng(k);	# 6 CALCint2lng (l:lng)<-(k:int)
-    bat.insert(b,nil:void,l);	# 7 BKCinsert_bun (_11:void)<-(b:bat[:void,:lng])(_12:void)(l:lng)
+    bat.insert(b,nil:oid,l);	# 7 BKCinsert_bun (_11:void)<-(b:bat[:oid,:lng])(_12:oid)(l:lng)
     redo (go,i):= language.nextElement(1:lng,1000000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_13:lng)(_14:lng) jump 5
 exit (go,i);	# 9  (go:bit)(i:lng)
     t0 := alarm.usec();	# 10 ALARMusec (t0:lng)
 barrier doit := true;	# 11  (doit:bit)<-(_17:bit) jump 13
-    t := algebra.select(b,256000:lng,266000:lng);	# 12 ALGselect (t:bat[:oid,:lng])<-(b:bat[:void,:lng])(_19:lng)(_20:lng)
+    t := algebra.select(b,256000:lng,266000:lng);	# 12 ALGselect (t:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_19:lng)(_20:lng)
 exit doit;	# 13  (doit:bit)
     t1 := alarm.usec();	# 14 ALARMusec (t1:lng)
     base := calc.-(t1,t0);	# 15 CALCbinarySUBlnglng (base:lng)<-(t1:lng)(t0:lng)
     io.printf("#select direct %d usec\n",base);	# 16 IOprint_formatted_lng (_23:void)<-(_24:str)(base:lng)
-    user.choptest(b,100000:lng,base);	# 17  (_25:void)<-(b:bat[:void,:lng])(_26:lng)(base:lng)
-    user.choptest(b,10000:lng,base);	# 18  (_27:void)<-(b:bat[:void,:lng])(_28:lng)(base:lng)
-    user.choptest(b,1000:lng,base);	# 19  (_29:void)<-(b:bat[:void,:lng])(_30:lng)(base:lng)
-    user.choptest(b,100:lng,base);	# 20  (_31:void)<-(b:bat[:void,:lng])(_32:lng)(base:lng)
+    user.choptest(b,100000:lng,base);	# 17  (_25:void)<-(b:bat[:oid,:lng])(_26:lng)(base:lng)
+    user.choptest(b,10000:lng,base);	# 18  (_27:void)<-(b:bat[:oid,:lng])(_28:lng)(base:lng)
+    user.choptest(b,1000:lng,base);	# 19  (_29:void)<-(b:bat[:oid,:lng])(_30:lng)(base:lng)
+    user.choptest(b,100:lng,base);	# 20  (_31:void)<-(b:bat[:oid,:lng])(_32:lng)(base:lng)
 end main;	# 21  
 #select direct 7337 usec
 [ "#factory done\n" ]

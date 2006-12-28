@@ -1,7 +1,7 @@
 # analyse the overhead of chopping a table
 # the multiplex code blocks.
 
-function choptest(b:bat[:void,:lng], size:lng, base:lng);
+function choptest(b:bat[:oid,:lng], size:lng, base:lng);
     t0:= alarm.usec();
     barrier (chk,c):= bat.newIterator(b,size);
         t:= algebra.select(c, 256000:lng,266000:lng);
@@ -20,11 +20,11 @@ function choptest(b:bat[:void,:lng], size:lng, base:lng);
     io.printf(" at %f usec\n",f);
 end choptest;
 
-b:= bat.new(:void,:lng);
+b:= bat.new(:oid,:lng);
 barrier (go,i):= language.newRange(0:lng);
 	k:= mmath.rand();
 	l:= calc.lng(k);
-	bat.insert(b,nil,l);
+	bat.insert(b,nil:oid,l);
 	redo (go,i):= language.nextElement(1:lng,1000000:lng);
 exit (go,i);
 t0:= alarm.usec();

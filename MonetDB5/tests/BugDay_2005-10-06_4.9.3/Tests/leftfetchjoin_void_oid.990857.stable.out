@@ -26,17 +26,17 @@ stdout of test 'leftfetchjoin_void_oid.990857` in directory 'tests/BugDay_2005-1
 #io.print(i);
 #
 function user.main():void;	# 0  (main:void)
-    a := bat.new(:void,:oid);	# 1 CMDBATnew (a:bat[:void,:oid])<-(_2:void)(_3:oid)
-    a0 := bat.reverse(a);	# 2 BKCreverse (a0:bat[:oid,:void])<-(a:bat[:void,:oid])
-    a1 := algebra.markT(a0,0@0);	# 3 ALGtmark (a1:bat[:oid,:void])<-(a0:bat[:oid,:void])(_6:oid)
-    a := bat.reverse(a1);	# 4 BKCreverse (a:bat[:void,:oid])<-(a1:bat[:oid,:void])
-    b0 := bat.reverse(a);	# 5 BKCreverse (b0:bat[:oid,:void])<-(a:bat[:void,:oid])
-    algebra.markT(b0,0@0);	# 6 ALGtmark (_8:bat[:oid,:void])<-(b0:bat[:oid,:void])(_6:oid)
-    b1 := bat.reverse(b0);	# 7 BKCreverse (b1:bat[:void,:oid])<-(b0:bat[:oid,:void])
-    b := batcalc.int(b1);	# 8 CMDconvert_void_oid_int (b:bat[:void,:int])<-(b1:bat[:void,:oid])
-    z := algebra.leftfetchjoin(a,b);	# 9 ALGleftfetchjoin (z:bat[:void,:int])<-(a:bat[:void,:oid])(b:bat[:void,:int])
-#i:= bat.info(z); 	# 10  (_12:str)
-#io.print(i); 	# 11  (_13:str)
+    a := bat.new(:oid,:oid);	# 1 CMDBATnew (a:bat[:oid,:oid])<-(_2:oid)(_2:oid)
+    a0 := bat.reverse(a);	# 2 BKCreverse (a0:bat[:oid,:oid])<-(a:bat[:oid,:oid])
+    a1 := algebra.markT(a0,0@0);	# 3 ALGtmark (a1:bat[:oid,:oid])<-(a0:bat[:oid,:oid])(_5:oid)
+    a := bat.reverse(a1);	# 4 BKCreverse (a:bat[:oid,:oid])<-(a1:bat[:oid,:oid])
+    b0 := bat.reverse(a);	# 5 BKCreverse (b0:bat[:oid,:oid])<-(a:bat[:oid,:oid])
+    algebra.markT(b0,0@0);	# 6 ALGtmark (_7:bat[:oid,:oid])<-(b0:bat[:oid,:oid])(_5:oid)
+    b1 := bat.reverse(b0);	# 7 BKCreverse (b1:bat[:oid,:oid])<-(b0:bat[:oid,:oid])
+    b := batcalc.int(b1);	# 8 CMDconvert_oid_int (b:bat[:oid,:int])<-(b1:bat[:oid,:oid])
+    z := algebra.leftfetchjoin(a,b);	# 9 ALGleftfetchjoin (z:bat[:oid,:int])<-(a:bat[:oid,:oid])(b:bat[:oid,:int])
+#i:= bat.info(z); 	# 10  (_11:str)
+#io.print(i); 	# 11  (_12:str)
 end main;	# 12  
 
 # 16:07:16 >  

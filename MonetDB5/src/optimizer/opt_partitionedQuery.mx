@@ -53,14 +53,14 @@ A subsequent call of the partition optimizer will replace
 the print command with an iterator.
 @verbatim
 
-function qry(a:bat[:void,:any_1]{mat});
+function qry(a:bat[:oid,:any_1]{mat});
 	io.print(b);
 end qry;
 optimizer.partitionedQuery("user","qry");
 @end verbatim
 The query is transformed into the following version.
 @verbatim
-function user.qry(a:bat[:void,:any_1]{mat}):void;
+function user.qry(a:bat[:oid,:any_1]{mat}):void;
 barrier (_5,_6):= mat.newIterator(a);
 	io.print(_6);
 	redo (_5,_6):= mat.hasMoreElements(a);
@@ -185,7 +185,7 @@ OPTneedsExpansion(MalBlkPtr mb, int varid)
 	str msg = 0;
 
 	tpe = getVarType(mb, varid);
-	if (isaBatType(tpe) && getHeadType(tpe) == TYPE_void) {
+	if (isaBatType(tpe) && getHeadType(tpe) == TYPE_oid) {
 		first = 1;
 		last = mb->stop - 2;
 		printf("start first=%d last=%d \n", first, last);

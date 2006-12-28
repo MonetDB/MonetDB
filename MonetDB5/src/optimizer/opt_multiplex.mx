@@ -158,14 +158,6 @@ find the actual arguments at the proper place of the callee.
 	freezeVarType(mb,getArg(q,q->argc-1));
 	q = pushNil(mb, q, tt);
 	freezeVarType(mb,getArg(q,q->argc-1));
-	/* set the sequence base if the original had it */
-	if( ht == TYPE_void){
-		int base = 0;
-		q= newFcnCall(mb,batRef,"setSequenceBase");
-		pushArgument(mb,q,resB);
-		pushOid(mb,q,base);
-		resB = getDestVar(q);
-	}
 	/* barrier (mloop,h,r) := newIterator(refBat); */
 	q = newFcnCall(mb, batRef, "newIterator");
 	q->barrier = BARRIERsymbol;
@@ -200,7 +192,7 @@ find the actual arguments at the proper place of the callee.
 		}
 
 	/* insert(resB,h,cr);  
-	   not append(resB, cr); the head type (void) may dynamically change */
+	   not append(resB, cr); the head type (oid) may dynamically change */
 	
 	q = newFcnCall(mb, batRef, insertRef);
 	pushArgument(mb, q, resB);

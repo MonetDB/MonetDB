@@ -4,17 +4,13 @@ bat.append(b,0);
 bat.append(b,1);
 bat.append(b,2);
 io.print(b);
-k:= 1@0;
-bat.replace(b,k,3);
-io.print(b);
-bat.delete(b,2@0);
-io.print(b);
+#k:= 1@0;
+#bat.replace(b,k,3);
+#io.print(b);
+#bat.delete(b,2@0);
+#io.print(b);
 
-# sequence base setting after insert produces error
-bat.setSequenceBase(b,5@0);
-
-
-# The oid cases, the should start as a vid column, both replace and delete work
+# The oid cases, they should start as a vid column, both replace and delete work
 io.print("oid as a vid column");
 c:= bat.new(:oid,:int);
 bat.insert(c,0@0,0);
@@ -26,11 +22,8 @@ bat.replace(c,k,3);
 io.print(c);
 bat.delete(c,2@0);
 io.print(c);
-k:= bat.getSequenceBase(c);
-io.print(k);
 
-
-# The oid cases using nils
+# The oid cases using nils should fail on replace /delete
 io.print("inserting nil's in a oid column");
 d:= bat.new(:oid,:int);
 bat.insert(d,nil:oid,0);
@@ -42,22 +35,19 @@ bat.replace(d,k,3);
 io.print(d);
 bat.delete(d,2@0);
 io.print(d);
-k:= bat.getSequenceBase(c);
-io.print(k);
 
-# can we handle two-columns vids
+# can we handle a vid column starting differently
 io.print("double oid as a vid column starting at 3,5");
 e:= bat.new(:oid,:oid);
 bat.insert(e,3@0,5@0);
-k:= bat.getSequenceBase(e);
-io.print(k);
-er:= bat.reverse(e);
-k:= bat.getSequenceBase(er);
+bat.append(e,6@0);
+io.print(e);
 
-# the void,void bat
+# the void,void bat they still consume space
+# shouldn't that be avoided or limited to at most 1 pair?
 io.print("void,void bat");
 f:= bat.new(:void,:void);
-bat.insert(f,nil,nil);
-bat.insert(f,nil,nil);
+bat.insert(f,nil:void,nil:void);
+bat.insert(f,nil:void,nil:void);
 io.print(f);
 

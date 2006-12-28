@@ -1,10 +1,10 @@
 function tst();
-    V1 := bat.new(:void,:int);
-    V7 := bat.new(:void,:int);
-    V10{rows=0} := bat.new(:int,:void);
+    V1 := bat.new(:oid,:int);
+    V7 := bat.new(:oid,:int);
+    V10{rows=0} := bat.new(:int,:oid);
     V11 := bat.reverse(V10);
     V12 := algebra.kdifference(V7,V11);
-    V16 := algebra.markH(V12);
+    V16 := algebra.markT(V12);
     V17 := algebra.join(V16,V7);
     bat.append(V1,V17);
 end tst;

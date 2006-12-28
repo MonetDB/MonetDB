@@ -9,8 +9,7 @@
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 #	io.print("VAR b := new(void,str).seqbase(0@0);");
-	aa_a := new(nil:void,nil:str);
-	b := bat.setSequenceBase(aa_a,0@0);
+	aa_a := new(nil:oid,nil:str);
 #	io.print("b.insert(nil,\"zero\");");
 	ba_a := insert(b,nil,"zero");
 #	io.print("b.print();");
@@ -27,7 +26,6 @@
 	ka_a := printf("oid(nil) -> %s\n",ja_a);
 #	io.print("b.seqbase(oid(nil));");
 	la_a := oid(nil);
-	ma_a := bat.setSequenceBase(b,la_a);
 #	io.print("b.print();");
 	na_a := print(b);
 #	io.print("printf(\"oid(0)   -> %s\\n\",str(b.find(oid(0))));");
@@ -40,4 +38,3 @@
 	ta_a := find(b,sa_a);
 	ua_a := str(ta_a);
 	va_a := printf("oid(nil) -> %s\n",ua_a);
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

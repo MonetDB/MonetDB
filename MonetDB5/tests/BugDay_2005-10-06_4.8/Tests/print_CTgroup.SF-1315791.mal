@@ -1,6 +1,7 @@
 #CTgroup(new(void,int).insert(nil,0).seqbase(0@0)).print();
-  b:= bat.new(:void,:int);
-  bat.insert(b,nil,0);
-  bat.setSequenceBase(b,0@0);
+  b:= bat.new(:oid,:int);
+  bat.insert(b,0@0,0);
   (histo,grp):= group.new(b);
+  io.print(b);
+  io.print(histo);
   io.print(grp);

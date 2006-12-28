@@ -34,12 +34,12 @@ function user.main():void;	# 0  (main:void)
     low := 0;	# 5  (low:int)<-(_9:int)
     high := 3;	# 6  (high:int)<-(_11:int)
     c := 0;	# 7  (c:int)<-(_9:int)
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (b:bat[:void,:int])<-(_7:str) jump 13
-    s := algebra.select(b,low,high);	# 9 ALGselect (s:bat[:oid,:int])<-(b:bat[:void,:int])(low:int)(high:int)
+barrier b:bat[:oid,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (b:bat[:oid,:int])<-(_7:str) jump 13
+    s := algebra.select(b,low,high);	# 9 ALGselect (s:bat[:oid,:int])<-(b:bat[:oid,:int])(low:int)(high:int)
     _19 := aggr.count(s);	# 10 ALGcount_bat (_19:int)<-(s:bat[:oid,:int])
     c := calc.+(c,_19);	# 11 CALCbinaryADDintint (c:int)<-(c:int)(_19:int)
-    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 12 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 9
-exit b:bat[:void,:int] ;	# 13  (b:bat[:void,:int])
+    redo b:bat[:oid,:int]  := pbm.getNextElement("Sales2005");	# 12 PBMgetNextElement (b:bat[:oid,:int])<-(_7:str) jump 9
+exit b:bat[:oid,:int] ;	# 13  (b:bat[:oid,:int])
     io.print(c);	# 14 IOprint_val (_14:void)<-(c:int)
     io.print("finished");	# 15 IOprint_val (_15:void)<-(_16:str)
 end main;	# 16  
@@ -51,12 +51,12 @@ function user.main():void;
     low := 0;
     high := 3;
     c := 0;
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
+barrier b:bat[:oid,:int]  := pbm.newIterator("Sales2005");
     s := algebra.select(b,low,high);
     _19 := aggr.count(s);
     c := calc.+(c,_19);
-    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit b:bat[:void,:int] ;
+    redo b:bat[:oid,:int]  := pbm.getNextElement("Sales2005");
+exit b:bat[:oid,:int] ;
     io.print(c);
     io.print("finished");
 end main;

@@ -3,8 +3,8 @@
 t0:= alarm.usec();
 size:= 1024:lng;
 size:= 16* size;
-R:= bat.new(:int,:void);
-S:= bat.new(:void,:int);
+R:= bat.new(:int,:oid);
+S:= bat.new(:oid,:int);
 barrier (go,i):= mal.newRange(0:lng);
 	l:= calc.int(i);
 	bat.insert(R,l,nil);

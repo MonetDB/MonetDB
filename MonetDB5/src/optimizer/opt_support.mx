@@ -994,6 +994,7 @@ of simple SQL rewrites using the module name as the discriminator.
 * Strength Reduction::
 * Costmodels::
 * Variable Stack Reduction::
+* Query Plans::
 @end menu
 @{
 @-

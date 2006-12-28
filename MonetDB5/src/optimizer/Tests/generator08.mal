@@ -4,8 +4,8 @@
 # because there is a blocking instruction inbetween
 mdb.list();
 	io.print("start");
-	b:bat[:void,:int]:= pbm.generator("Sales2005");
-	a:bat[:void,:int]:= pbm.generator("Areas");
+	b:bat[:oid,:int]:= pbm.generator("Sales2005");
+	a:bat[:oid,:int]:= pbm.generator("Areas");
 	low:= 0;
 	high:= 3;
 	s:= algebra.select(b,low,high);

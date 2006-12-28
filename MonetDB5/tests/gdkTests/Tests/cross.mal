@@ -1,9 +1,7 @@
-a:=bat.new(:void,:int);
-bat.setSequenceBase(a,0@0);
+a:=bat.new(:oid,:int);
 ar:= bat.reverse(a);
 io.print(ar);
-b:=bat.new(:void,:int);
-bat.setSequenceBase(b,0@0);
+b:=bat.new(:oid,:int);
 io.print(b);
 
 ar:= bat.reverse(a);

@@ -9,12 +9,12 @@
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 #	io.print("var x:=new(void,int);");
-	x := bat.new(:void,:int);
+	x := bat.new(:oid,:int);
 #	io.print("x.insert(void(nil),2);");
-	aa_a := calc.void(nil);
+	aa_a := calc.oid(nil);
 	ba_a := bat.insert(x,aa_a,2);
 #	io.print("x.insert(void(nil),4);");
-	ca_a := calc.void(nil);
+	ca_a := calc.oid(nil);
 	da_a := bat.insert(x,ca_a,4);
 #	io.print("x:=x.reverse().mark(0@0).reverse();");
 	ea_a := bat.reverse(x);

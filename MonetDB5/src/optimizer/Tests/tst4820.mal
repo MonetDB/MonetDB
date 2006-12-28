@@ -3,7 +3,7 @@ function f():void;
   i:=0;             
   barrier go:=true; 	
     # remove from disk
-    a:bat[:void,:dbl] := bbp.bind("P_bat");
+    a:bat[:oid,:dbl] := bbp.bind("P_bat");
     bat.setPersistent(a,false);
     transaction.commit();
     

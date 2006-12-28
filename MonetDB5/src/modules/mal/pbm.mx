@@ -33,13 +33,13 @@ The code snippet below illustrates a sequence over time
 to build the partitioned BAT. BATs are incrementally
 added to a named PBAT @code{Sales}.
 @verbatim
-    b1:= bat.new(:void,:int);
+    b1:= bat.new(:oid,:int);
     bat.setPersistent(b1);
     pbm.deposit("Sales2005","06",b1);
-    b2:= bat.new(:void,:int);
+    b2:= bat.new(:oid,:int);
     bat.setPersistent(b2);
     pbm.deposit("Sales2005","07",b2);
-    b3:= bat.new(:void,:int);
+    b3:= bat.new(:oid,:int);
     bat.setPersistent(b3);
     pbm.deposit("Sales2005","08",b3);
     n:= pbm.getNames(); # get content of partitition catalogue.
@@ -113,7 +113,7 @@ comment "Add a BAT to a PBAT in the partition box";
 command deposit(nme:str,elm:str,b:bat[:any_1,:any_2]) :void
 address PBMdeposit
 comment "Add a BAT to a PBAT in the partition box";
-command deposit(nme:str,b:bat[:any_1,:any_2]) :void
+command deposit(nme:str,b:bat[:oid,:any_2]) :void
 address PBMdepositIndexed
 comment "Add a BAT to a PBAT in the partition box";
 
@@ -127,7 +127,7 @@ comment "Release all PBAT variable from the box";
 command discard(name:str) :void
 address PBMdiscard
 comment "Release a PBAT variable from the box";
-command discard(nme:str, b:bat[:void,:any_1]) :void
+command discard(nme:str, b:bat[:oid,:any_1]) :void
 address PBMdiscardComponent
 comment "Release a single BAT from a PBAT";
 
@@ -135,32 +135,32 @@ command newIterator()(:int,:str,:str)
 address PBMnewIteratorBase
 comment "Create an iterator over the partition box";
 
-command generator(s:str):bat[:any_1,:any_2]
+command generator(s:str):bat[:oid,:any_2]
 address PBMdummy
 comment "Place holder for generator optimizer";
 
-command newIterator(grp:str):bat[:any_1,:any_2]
+command newIterator(grp:str):bat[:oid,:any_2]
 address PBMnewIterator
 comment "Create an iterator over the BAT partitions.";
 
 command newIterator(grp:str,first:oid,last:oid)
-		:bat[:any_1,:any_2]
+		:bat[:oid,:any_2]
 address PBMnewIteratorRng
 comment "Create an iterator over the BAT partitions.";
 
-command getNextElement(grp:str) :bat[:any_2,:any_1]
+command getNextElement(grp:str) :bat[:oid,:any_1]
 address PBMgetNextElement
 comment "Localize the next partition for processing.";
 
-command getNextElement(grp:str,first:oid,last:oid) :bat[:any_1,:any_2]
+command getNextElement(grp:str,first:oid,last:oid) :bat[:oid,:any_2]
 address PBMgetNextElementRng
 comment "Localize the next partition for processing.";
 
-command getLast(grp:str):bat[:any_1,:any_2]
+command getLast(grp:str):bat[:oid,:any_2]
 address PBMgetLast
 comment "Obtain the last partition for update";
 
-command getRange(b:bat[:void,:any_1])(first:oid,last:oid)
+command getRange(b:bat[:oid,:any_1])(first:oid,last:oid)
 address PBMgetRange
 comment "Obtain the oid range for a partition";
 
@@ -169,10 +169,10 @@ address PBMcompress
 comment "Compress the group to remove oid holes";
 
 
-command setWriteMode(nme:str):bat[:any_1,:any_2]
+command setWriteMode(nme:str):bat[:oid,:any_2]
 address PBMdummy
 comment "Perform mode change for all components of the partitioned BAT";
-command setReadMode(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+command setReadMode(b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address PBMdummy
 comment "Perform mode change for all components of the partitioned BAT";
 

@@ -30,15 +30,15 @@ stdout of test 'tst655` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # An extensive test for the new tablet layout 	# 1  (_1:str)
 #sent the output of a table to a file 	# 2  (_2:str)
-    b1 := bat.new(:void,:int);	# 3 CMDBATnew (b1:bat[:void,:int])<-(_4:void)(_5:int)
-    bat.append(b1,42);	# 4 BKCappend_val_wrap (_6:void)<-(b1:bat[:void,:int])(_7:int)
-    bat.append(b1,49);	# 5 BKCappend_val_wrap (_8:void)<-(b1:bat[:void,:int])(_9:int)
-    b2 := bat.new(:void,:str);	# 6 CMDBATnew (b2:bat[:void,:str])<-(_4:void)(_11:str)
-    bat.append(b2,"hello world");	# 7 BKCappend_val_wrap (_12:void)<-(b2:bat[:void,:str])(_13:str)
-    bat.append(b2,"goodbye world");	# 8 BKCappend_val_wrap (_14:void)<-(b2:bat[:void,:str])(_15:str)
-    tablet.setFormat(b1,b2);	# 9 TABsetFormat (_16:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+    b1 := bat.new(:oid,:int);	# 3 CMDBATnew (b1:bat[:oid,:int])<-(_4:oid)(_5:int)
+    bat.append(b1,42);	# 4 BKCappend_val_wrap (_6:void)<-(b1:bat[:oid,:int])(_7:int)
+    bat.append(b1,49);	# 5 BKCappend_val_wrap (_8:void)<-(b1:bat[:oid,:int])(_9:int)
+    b2 := bat.new(:oid,:str);	# 6 CMDBATnew (b2:bat[:oid,:str])<-(_4:oid)(_11:str)
+    bat.append(b2,"hello world");	# 7 BKCappend_val_wrap (_12:void)<-(b2:bat[:oid,:str])(_13:str)
+    bat.append(b2,"goodbye world");	# 8 BKCappend_val_wrap (_14:void)<-(b2:bat[:oid,:str])(_15:str)
+    tablet.setFormat(b1,b2);	# 9 TABsetFormat (_16:void)<-(b1:bat[:oid,:int])(b2:bat[:oid,:str])
     tablet.setProperties("name,type,dense,sorted,key,min,max");	# 10 TABsetProperties (_17:int)<-(_18:str)
-    tablet.display(b1,b2);	# 11 TABdisplayTable (_19:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+    tablet.display(b1,b2);	# 11 TABdisplayTable (_19:int)<-(b1:bat[:oid,:int])(b2:bat[:oid,:str])
 end main;	# 12  
 #---------------------------------------#
 # tmp_4,	tmp_5			# name

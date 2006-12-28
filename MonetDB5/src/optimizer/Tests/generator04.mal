@@ -2,8 +2,8 @@
 # The flow graph becomes a little more complex 
 mdb.list();
 	io.print("start");
-	b:bat[:void,:int]:= pbm.generator("Sales2005");
-	c:bat[:void,:int]:= pbm.generator("Sales2005");
+	b:bat[:oid,:int]:= pbm.generator("Sales2005");
+	c:bat[:oid,:int]:= pbm.generator("Sales2005");
 	cr:= bat.reverse(c);
 	t:= algebra.select(b,0,3);
 	s:= algebra.join(t,cr);

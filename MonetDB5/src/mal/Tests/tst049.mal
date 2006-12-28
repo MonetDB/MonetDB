@@ -1,15 +1,15 @@
-b:= bat.new(:int,:str);
-bat.insert(b,1,"");
-bat.insert(b,2,"t");
-bat.insert(b,3,"ts");
-bat.insert(b,4,"tsz");
-bat.insert(b,5,"a math assignment");
-bat.insert(b,6,"pathfined is fun!");
-bat.insert(b,7,"123123123");
-bat.insert(b,8,"123123456123");
-bat.insert(b,9,"199993456123");
-bat.insert(b,10,"123456123456");
-bat.insert(b,11,"123454321");
+b:= bat.new(:oid,:str);
+bat.insert(b,1@0,"");
+bat.insert(b,2@0,"t");
+bat.insert(b,3@0,"ts");
+bat.insert(b,4@0,"tsz");
+bat.insert(b,5@0,"a math assignment");
+bat.insert(b,6@0,"pathfined is fun!");
+bat.insert(b,7@0,"123123123");
+bat.insert(b,8@0,"123123456123");
+bat.insert(b,9@0,"199993456123");
+bat.insert(b,10@0,"123456123456");
+bat.insert(b,11@0,"123454321");
 io.print(b);
 
 i:= str.like("hello","hello");

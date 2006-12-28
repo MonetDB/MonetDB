@@ -1,8 +1,8 @@
 # a simple functional test for the access control table
 
-	scens := bat.new(:str, :void);
-	bat.insert(scens, "sql", nil:void);
-	bat.insert(scens, "mal", nil:void);
+	scens := bat.new(:str, :oid);
+	bat.insert(scens, "sql", nil:oid);
+	bat.insert(scens, "mal", nil:oid);
 
 	# this should fail, the monetdb user is already there
 	id := clients.addUser("monetdb", "Pmonetdb", scens);
@@ -15,16 +15,16 @@ exit MALException;
 	io.print(id);
 
 	# this should work also
-	# don't use nil:bat[:str, :void] here, it results in a crash
-	t := bat.new(:str, :void);
+	# don't use nil:bat[:str, :oid] here, it results in a crash
+	t := bat.new(:str, :oid);
 	id := clients.addUser("checkpoint", "Pcheckpoint", t);
 	io.print(id);
 
 	# do a simple listing of users known
 	u := clients.getUsers(t);
 	io.print(u);
-	bat.insert(t, "mal", nil:void);
-	bat.insert(t, "sql", nil:void);
+	bat.insert(t, "mal", nil:oid);
+	bat.insert(t, "sql", nil:oid);
 	u := clients.getUsers(t);
 	io.print(u);
 

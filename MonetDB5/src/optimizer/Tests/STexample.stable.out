@@ -21,65 +21,30 @@ stdout of test 'STexample` in directory 'src/optimizer` itself:
 #optimizer.singleton();
 #mdb.list();
 #
-START SINGLETON OPTIMIZER 1:[7,14,15] 
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.insert(b,1,2);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
-#many more inserts 	# 3  (_6:str)
-    c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
-    d := algebra.markH(c);	# 5 ALGmarkHead_default (d:bat[:void,:int])<-(c:bat[:int,:int])
-    io.print(d);	# 6 IOprint_val (_11:void)<-(d:bat[:void,:int])
-    mdb.list();	# 7 MDBlist (_13:void)
-end main;	# 8  
-START OPTIMIZER FINAL STAGE doAR=1
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.insert(b,1,2);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
-#many more inserts 	# 3  (_6:str)
-    c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
-    (_14,_15):= bat.unpack(c);	# 5  unknown (_14:int)(_15:int)<-(c:bat[:int,:int])
-    (_18,_19):= (nil:void,_15);	# 6 ALGmarkHead_default (_18:oid)(_19:int)<-(_17:void)(_15:int)
-    d := bat.pack(_18,_19);	# 7  unknown (d:bat[:void,:int])<-(_18:oid)(_19:int)
-    io.print(d);	# 8 IOprint_val (_11:void)<-(d:bat[:void,:int])
-    mdb.list();	# 9 MDBlist (_13:void)
-end main;	# 10  
-[7,14:int,15:int] [10,18:oid,19:int] 
-FINAL STAGE SINGLETON errors=0
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.insert(b,1,2);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
-#many more inserts 	# 3  (_6:str)
-    c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
-    (_14,_15):= bat.unpack(c);	# 5  unknown (_14:int)(_15:int)<-(c:bat[:int,:int])
-    (_18,_19):= (nil:void,_15);	# 6 ALGmarkHead_default (_18:oid)(_19:int)<-(_17:void)(_15:int)
-    d := bat.pack(_18,_19);	# 7  unknown (d:bat[:void,:int])<-(_18:oid)(_19:int)
-    io.print(d);	# 8 IOprint_val (_11:void)<-(d:bat[:void,:int])
-    mdb.list();	# 9 MDBlist (_13:void)
-end main;	# 10  
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.insert(b,1,2);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
-#many more inserts 	# 3  (_6:str)
-    c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
-    (_14,_15):= bat.unpack(c);	# 5 CMDbatunpack (_14:int)(_15:int)<-(c:bat[:int,:int])
-    (_18,_19):= (nil:oid,_15);	# 6 ALGmarkHead_default (_18:void)(_19:int)<-(_21:oid)(_15:int)
-    d := bat.pack(_18,_19);	# 7 CMDbatpack (d:bat[:void,:int])<-(_18:void)(_19:int)
-    io.print(d);	# 8 IOprint_val (_11:void)<-(d:bat[:void,:int])
-    mdb.list();	# 9 MDBlist (_13:void)
+    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
+    bat.insert(b,1@0,2);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:int])(_5:oid)(_6:int)
+#many more inserts 	# 3  (_7:str)
+    c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_9:int)(_10:int)
+    (_15,_16):= bat.unpack(c);	# 5 CMDbatunpack (_15:oid)(_16:int)<-(c:bat[:oid,:int])
+    (_19,_20):= (0@0,_16);	# 6 ALGmarkHead_default (_19:oid)(_20:int)<-(_18:oid)(_16:int)
+    d := bat.pack(_19,_20);	# 7 CMDbatpack (d:bat[:oid,:int])<-(_19:oid)(_20:int)
+    io.print(d);	# 8 IOprint_val (_12:void)<-(d:bat[:oid,:int])
+    mdb.list();	# 9 MDBlist (_14:void)
 end main;	# 10  
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ nil,	  2	  ]
+[ 0@0,	  2	  ]
 function user.main():void;
-    b := bat.new(:int,:int);
-    bat.insert(b,1,2);
+    b := bat.new(:oid,:int);
+    bat.insert(b,1@0,2);
 #many more inserts 
     c{singleton} := algebra.select(b,0,4);
-    (_14,_15):= bat.unpack(c);
-    (_18,_19):= (nil:oid,_15);
-    d := bat.pack(_18,_19);
+    (_15,_16):= bat.unpack(c);
+    (_19,_20):= (0@0,_16);
+    d := bat.pack(_19,_20);
     io.print(d);
     mdb.list();
 end main;

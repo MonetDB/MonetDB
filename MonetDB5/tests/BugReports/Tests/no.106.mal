@@ -12,9 +12,9 @@
 	aa_a := calc.oid(20000000);
 	ba_a := setoid(aa_a);
 #	io.print("#split w in twee tabellen\n");
-	docid := bbp.new(nil:void,nil:oid);
+	docid := bbp.new(nil:oid,nil:oid);
 #	io.print("var tid := bbp.new( void, str );");
-	tid := bbp.new(nil:void,nil:str);
+	tid := bbp.new(nil:oid,nil:str);
 #	io.print("docid := w.mark(nil).reverse();");
 	w:= mil.take("w");
 	ca_a := mark(w,nil);
@@ -28,11 +28,9 @@
 #	io.print("tid.print();");
 	ga_a := bat.print(tid);
 #	io.print("docid.seqbase( 1000@0 );");
-	ha_a := bat.setSequenceBase(docid,1000@0);
 #	io.print("docid.print();");
 	ia_a := bat.print(docid);
 #	io.print("tid.seqbase( 1000@0 );");
-	ja_a := bat.setSequenceBase(tid,1000@0);
 #	io.print("tid.print();");
 	ka_a := bat.print(tid);
 #	io.print("CTgroup( docid, tid ).print();");
@@ -40,5 +38,4 @@
 	ma_a := bat.print(la_a);
 #	io.print("quit();");
 	na_a := clients.quit();
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #Identifer 'CTgroup' mapped to 'group'

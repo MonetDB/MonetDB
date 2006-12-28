@@ -63,9 +63,6 @@ address ALGfind
 comment "Returns the tail value 't' for which some [h,t] BUN 
 	exists in b.  If no such BUN exists, an error occurs." ;
 
-command find(b:bat[:oid,:any_2], h:void):any_2 address ALGfind;
-command find(b:bat[:void,:any_2], h:oid):any_2 address ALGfind;
-
 command position(b:bat[:any_1,:any_2], v:any_1):int
 address ALGposition
 comment "Returns BAT position [0.. b.count] of 'v' in the head 
@@ -104,9 +101,6 @@ The range selections are targeted at the tail of the BAT.
 @mal
 command select(b:bat[:any_1,:any_2], low:any_2, high:any_2) 
 		:bat[:any_1,:any_2] 
-address ALGselect;
-command select(b:bat[:void,:any_2], low:any_2, high:any_2) 
-		:bat[:oid,:any_2] 
 address ALGselect
 comment "Select all BUNs that have tail values: {v| low <= v <= high}.
 	NIL boundary values have a special meaning.
@@ -120,9 +114,6 @@ comment "Select all BUNs that have tail values: {v| low <= v <= high}.
 
 command select(b:bat[:any_1,:any_2], low:any_2, 
 	high:any_2, li:bit, hi:bit) :bat[:any_1,:any_2] 
-address ALGselectInclusive;
-command select(b:bat[:void,:any_2], low:any_2, 
-	high:any_2, li:bit, hi:bit) :bat[:oid,:any_2] 
 address ALGselectInclusive
 comment "Select all BUNs that have tail values: {v| low <{=} v <{=} high}.
 	Boundary inclusion is indicated separately.
@@ -131,8 +122,6 @@ comment "Select all BUNs that have tail values: {v| low <{=} v <{=} high}.
 	+ high == nil means: no upper bound.";
 
 command select(b:bat[:any_1,:any_2],value:any_2) :bat[:any_1,:any_2] 
-address ALGselect1;
-command select(b:bat[:void,:any_2],value:any_2) :bat[:oid,:any_2] 
 address ALGselect1
 comment "Select all BUNs of a BAT with a certain 
 	tail value. Selection on NIL is also 
@@ -140,8 +129,6 @@ comment "Select all BUNs of a BAT with a certain
 	e.g.:int(nil)).";
 
 command selectNotNil(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address ALGselectNotNil;
-command selectNotNil(b:bat[:void,:any_2]):bat[:oid,:any_2]
 address ALGselectNotNil
 comment "Select all not-nil values";
 @-
@@ -179,36 +166,30 @@ command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
 address ALGtopN
 comment "Trim all but the top N tuples.";
 
-command groupby(b:bat[:any_1,:int]) :bat[:any_1,:void] 
+command groupby(b:bat[:any_1,:int]) :bat[:any_1,:oid] 
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
-		li:bit, hi:bit) :bat[:any_1,:void] 
-address ALGuselectInclusive;
-command uselect(b:bat[:void,:any_2], low:any_2, high:any_2, 
-		li:bit, hi:bit) :bat[:oid,:void] 
+		li:bit, hi:bit) :bat[:any_1,:oid] 
 address ALGuselectInclusive
 comment "See select() but limited to head values";
 
-command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void] 
+command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:oid] 
 address ALGuselect;
-command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void] 
-address ALGuselect1;
-command uselect(b:bat[:void,:any_2], low:any_2, high:any_2):bat[:oid,:void] 
-address ALGuselect;
-command uselect(b:bat[:void,:any_2], value:any_2) :bat[:oid,:void] 
+command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:oid] 
 address ALGuselect1
 comment "Value select, but returning only the 
 	head values. SEE ALSO:select(bat,val)";
 @- Pattern matching
 @mal
-command like(b:bat[:any_1,:str], substr:str) :bat[:any_1,:str] 
+command like(b:bat[:any_1,:str], substr:str) :bat[:any_1,:str]
 address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
+
 @- Sampling
 @mal
-command sample ( b:bat[:any_1,:any_2], num:int ) :bat[:any_1,:any_2] 
+command sample ( b:bat[:oid,:any_2], num:int ) :bat[:oid,:any_2] 
 address ALGsample
 comment "Produce a random selection of size 'num' from the input BAT.";
 @+ BAT copying
@@ -338,15 +319,6 @@ comment "Returns the intersection taken over only the *head* columns of
 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
 	or: 'kunique(kintersect(left,right))'.";
 
-command semijoin( left:bat[:void,:any_2], right:bat[:oid,:any] ) 
-		:bat[:oid,:any_2] 
-address ALGsemijoin
-comment "Patch to enable semijoin over void/oid columns";
-command semijoin( left:bat[:oid,:any_2], right:bat[:void,:any] ) 
-		:bat[:oid,:any_2] 
-address ALGsemijoin
-comment "Patch to enable semijoin over void/oid columns";
-
 command kintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
 		:bat[:any_1,:any_2] 
 address ALGsemijoin
@@ -380,13 +352,6 @@ comment "Returns the difference taken over only the *head* columns of two BATs.
 		If you want this, use:
 	 'kdifference(left.kunique,right.kunique)' 
 	or: 'kdifference(left,right).kunique'.";
-
-command kdifference ( left:bat[:void,:any_2], right:bat[:oid,:any] ) 
-		:bat[:oid,:any_2] 
-address ALGkdiff ;
-command kdifference ( left:bat[:oid,:any_2], right:bat[:void,:any] ) 
-		:bat[:oid,:any_2] 
-address ALGkdiff ;
 @- Unions on bun
 @mal
 command union ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
@@ -403,12 +368,6 @@ comment "Returns the union of two BATs; looking at both columns of both BATs.
 	or: 'sunion(left,right).sunique'.";
 @- Union on head
 @mal
-command kunion ( left:bat[:oid,:any_2], right:bat[:void,:any_2])
-		:bat[:oid,:any_2] 
-address ALGkunion;
-command kunion ( left:bat[:void,:any_2], right:bat[:oid,:any_2])
-		:bat[:oid,:any_2] 
-address ALGkunion;
 command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2] 
 address ALGkunion
@@ -441,16 +400,7 @@ comment "Returns all BUNs, consisting of a head-value from 'left' and
 		and 'right' with equal tail- resp. head-value (i.e. the join
 	columns are projected out).";
 
-command fetchjoin( left:bat[:void,:any_2], right:bat[:any_2,:any_3]) :bat[:void,:any_3] 
-address ALGjoin;
-
-command join( left:bat[:void,:any_1], right:bat[:any_1,:void])
-		:bat[:void,:oid] 
-address ALGjoin;
-command join( left:bat[:any_1,:void], right:bat[:oid,:any_3])
-		:bat[:any_1,:any_3] 
-address ALGjoin;
-command join( left:bat[:any_1,:oid], right:bat[:void,:any_3])
+command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3] 
 address ALGjoin;
 
@@ -460,19 +410,13 @@ address ALGleftjoinestimate;
 command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
 		estimate:lng) :bat[:any_1,:any_3] 
 address ALGjoinestimate;
-command join( left:bat[:any_1,:void], right:bat[:oid,:any_3],
-		estimate:lng) :bat[:any_1,:any_3] 
-address ALGjoinestimate;
-command join( left:bat[:any_1,:oid], right:bat[:void,:any_3],
-		estimate:lng) :bat[:any_1,:any_3] 
-address ALGjoinestimate;
 
-command fetchjoin ( left:bat[:any_1,:oid], right:bat[:void,:any_3] )
+command fetchjoin ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] )
 		:bat[:any_1,:any_3] 
 address ALGfetchjoin
 comment "Hook directly into the fetch implementation of the join.";
 
-command leftfetchjoin ( left:bat[:any_1,:oid], right:bat[:void,:any_3] )
+command leftfetchjoin ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] )
 		:bat[:any_1,:any_3] 
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
@@ -500,13 +444,13 @@ address ALGouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in 
 		the tail and the head-values of 'outer' whose tail-value does 
 		not match an head-value in 'inner'.";
-command outerjoin( outer:bat[:any_1,:oid], inner:bat[:void,:any_3]) 
+command outerjoin( outer:bat[:any_1,:oid], inner:bat[:oid,:any_3]) 
 		:bat[:any_1,:any_3] 
 address ALGouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in 
 		the tail and the head-values of 'outer' whose tail-value does 
 		not match an head-value in 'inner'.";
-command outerjoin( outer:bat[:any_1,:void], inner:bat[:oid,:any_3]) 
+command outerjoin( outer:bat[:any_1,:oid], inner:bat[:oid,:any_3]) 
 		:bat[:any_1,:any_3] 
 address ALGouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in 
@@ -542,7 +486,7 @@ comment "This is a join() for which the predicate is that two BUNs match
 		and their derivates.";
 @+ Projection operations
 @mal
-command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
+command project(b:bat[:any_1,:any_2]) :bat[:any_1,:oid]
 address ALGprojectNIL
 comment "Extract the head of a BAT.";
 
@@ -568,35 +512,24 @@ For relational processing, some operators are necessary to produce newly
 initiated OID columns, for representing n-ary (intermediary) relations.
 
 @mal
-command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:void] 
+command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid] 
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in 
 		the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
-command markT( b:bat[:void,:any_2], base:oid ) :bat[:oid,:void] 
-address ALGtmark;
 
-
-command markT( b:bat[:any_1,:any_2] ) :bat[:any_1,:void] 
-address ALGtmark_default
-comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
-
-command markT( b:bat[:void,:any_1] ) :bat[:oid,:void] 
+command markT( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid] 
 address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
 
-command markH( b:bat[:any_1,:any_2] ) :bat[:void,:any_2] 
+command markH( b:bat[:any_1,:any_2] ) :bat[:oid,:any_2] 
 address ALGmarkHead_default
 comment "Produces a BAT with fresh OIDs in the head starting at 0@0.";
-command markH( b:bat[:void,:any_2] ) :bat[:void,:oid] 
-address ALGmarkHead_default;
 
-command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:void,:any_2] 
+command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:oid,:any_2] 
 address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
 		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
-command markH( b:bat[:void,:any_2], base:oid ) :bat[:void,:oid] 
-address ALGmarkHead;
 
 command number( b:bat[:any_1,:any] ) :bat[:any_1,:int]  
 address ALGnumber
@@ -617,14 +550,7 @@ Various operations for splitting BATs into useful fragments.
 @- Variable management
 It is sometimes needed to cast a type at runtime
 @mal
-command identity(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address ALGidentity;
-command identity(b:bat[:void,:any_1]):bat[:oid,:any_1]
-address ALGidentity;
-
-command materialize(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address ALGmaterialize;
-command materialize(b:bat[:void,:any_1]):bat[:oid,:any_1]
+command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGmaterialize
 comment "Materialize the void column";
 
@@ -659,7 +585,7 @@ comment "Split a BAT on tail column in 'ranges' equally sized consecutive
 	range is 'nil'.";
 
 command urangesplit( b:bat[:any_1,:any_2], ranges:int ) 
-		:bat[:any_2,bat[:any_1,:void]] 
+		:bat[:any_2,bat[:any_1,:oid]] 
 address ALGurangesplit
 comment "Same as rangesplit, but only collect the head values in the fragments" ;
 

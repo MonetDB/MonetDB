@@ -34,72 +34,51 @@ function user.main():void;	# 0  (main:void)
     bat.append(b,1);	# 4 BKCappend_val_wrap (_7:void)<-(b:bat[:void,:int])(_8:int)
     bat.append(b,2);	# 5 BKCappend_val_wrap (_9:void)<-(b:bat[:void,:int])(_10:int)
     io.print(b);	# 6 IOprint_val (_11:void)<-(b:bat[:void,:int])
-    k := 1@0;	# 7  (k:oid)<-(_13:oid)
-    bat.replace(b,k,3);	# 8 BKCreplace_bun (_14:void)<-(b:bat[:void,:int])(k:oid)(_15:int)
-    io.print(b);	# 9 IOprint_val (_16:void)<-(b:bat[:void,:int])
-    bat.delete(b,2@0);	# 10 BKCdelete (_17:void)<-(b:bat[:void,:int])(_18:oid)
-    io.print(b);	# 11 IOprint_val (_19:void)<-(b:bat[:void,:int])
-# sequence base setting after insert produces error 	# 12  (_20:str)
-    bat.setSequenceBase(b,5@0);	# 13 BKCsetSequenceBase (_21:bat[:void,:int])<-(b:bat[:void,:int])(_22:oid)
-# The oid cases, the should start as a vid column, both replace and delete work 	# 14  (_23:str)
-    io.print("oid as a vid column");	# 15 IOprint_val (_24:void)<-(_25:str)
-    c := bat.new(:oid,:int);	# 16 CMDBATnew (c:bat[:oid,:int])<-(_27:oid)(_4:int)
-    bat.insert(c,0@0,0);	# 17 BKCinsert_bun (_28:void)<-(c:bat[:oid,:int])(_29:oid)(_6:int)
-    bat.insert(c,1@0,1);	# 18 BKCinsert_bun (_30:void)<-(c:bat[:oid,:int])(_13:oid)(_8:int)
-    bat.insert(c,2@0,2);	# 19 BKCinsert_bun (_31:void)<-(c:bat[:oid,:int])(_18:oid)(_10:int)
-    io.print(c);	# 20 IOprint_val (_32:void)<-(c:bat[:oid,:int])
-    k := 1@0;	# 21  (k:oid)<-(_13:oid)
-    bat.replace(c,k,3);	# 22 BKCreplace_bun (_33:void)<-(c:bat[:oid,:int])(k:oid)(_15:int)
-    io.print(c);	# 23 IOprint_val (_34:void)<-(c:bat[:oid,:int])
-    bat.delete(c,2@0);	# 24 BKCdelete (_35:void)<-(c:bat[:oid,:int])(_18:oid)
-    io.print(c);	# 25 IOprint_val (_36:void)<-(c:bat[:oid,:int])
-    k := bat.getSequenceBase(c);	# 26 BKCgetSequenceBase (k:oid)<-(c:bat[:oid,:int])
-    io.print(k);	# 27 IOprint_val (_37:void)<-(k:oid)
-# The oid cases using nils 	# 28  (_38:str)
-    io.print("inserting nil's in a oid column");	# 29 IOprint_val (_39:void)<-(_40:str)
-    d := bat.new(:oid,:int);	# 30 CMDBATnew (d:bat[:oid,:int])<-(_42:oid)(_4:int)
-    bat.insert(d,nil:oid,0);	# 31 BKCinsert_bun (_43:void)<-(d:bat[:oid,:int])(_44:oid)(_45:int)
-    bat.insert(d,nil:oid,1);	# 32 BKCinsert_bun (_46:void)<-(d:bat[:oid,:int])(_44:oid)(_47:int)
-    bat.insert(d,nil:oid,2);	# 33 BKCinsert_bun (_48:void)<-(d:bat[:oid,:int])(_44:oid)(_49:int)
-    io.print(d);	# 34 IOprint_val (_50:void)<-(d:bat[:oid,:int])
-    k := 1@0;	# 35  (k:oid)<-(_51:oid)
-    bat.replace(d,k,3);	# 36 BKCreplace_bun (_52:void)<-(d:bat[:oid,:int])(k:oid)(_53:int)
-    io.print(d);	# 37 IOprint_val (_54:void)<-(d:bat[:oid,:int])
-    bat.delete(d,2@0);	# 38 BKCdelete (_55:void)<-(d:bat[:oid,:int])(_56:oid)
-    io.print(d);	# 39 IOprint_val (_57:void)<-(d:bat[:oid,:int])
-    k := bat.getSequenceBase(c);	# 40 BKCgetSequenceBase (k:oid)<-(c:bat[:oid,:int])
-    io.print(k);	# 41 IOprint_val (_58:void)<-(k:oid)
-# can we handle two-columns vids 	# 42  (_59:str)
-    io.print("double oid as a vid column starting at 3,5");	# 43 IOprint_val (_60:void)<-(_61:str)
-    e := bat.new(:oid,:oid);	# 44 CMDBATnew (e:bat[:oid,:oid])<-(_63:oid)(_64:oid)
-    bat.insert(e,3@0,5@0);	# 45 BKCinsert_bun (_65:void)<-(e:bat[:oid,:oid])(_66:oid)(_67:oid)
-    k := bat.getSequenceBase(e);	# 46 BKCgetSequenceBase (k:oid)<-(e:bat[:oid,:oid])
-    io.print(k);	# 47 IOprint_val (_68:void)<-(k:oid)
-    er := bat.reverse(e);	# 48 BKCreverse (er:bat[:oid,:oid])<-(e:bat[:oid,:oid])
-    k := bat.getSequenceBase(er);	# 49 BKCgetSequenceBase (k:oid)<-(er:bat[:oid,:oid])
-# the void,void bat 	# 50  (_70:str)
-    io.print("void,void bat");	# 51 IOprint_val (_71:void)<-(_72:str)
-    f := bat.new(:void,:void);	# 52 CMDBATnew (f:bat[:void,:void])<-(_3:void)(_3:void)
-    bat.insert(f,nil:void,nil:void);	# 53 BKCinsert_bun (_74:void)<-(f:bat[:void,:void])(_75:void)(_75:void)
-    bat.insert(f,nil:void,nil:void);	# 54 BKCinsert_bun (_76:void)<-(f:bat[:void,:void])(_75:void)(_75:void)
-    io.print(f);	# 55 IOprint_val (_77:void)<-(f:bat[:void,:void])
-end main;	# 56  
+#k:= 1@0; 	# 7  (_12:str)
+#bat.replace(b,k,3); 	# 8  (_13:str)
+#io.print(b); 	# 9  (_14:str)
+#bat.delete(b,2@0); 	# 10  (_15:str)
+#io.print(b); 	# 11  (_14:str)
+# The oid cases, they should start as a vid column, both replace and delete work 	# 12  (_16:str)
+    io.print("oid as a vid column");	# 13 IOprint_val (_17:void)<-(_18:str)
+    c := bat.new(:oid,:int);	# 14 CMDBATnew (c:bat[:oid,:int])<-(_20:oid)(_4:int)
+    bat.insert(c,0@0,0);	# 15 BKCinsert_bun (_21:void)<-(c:bat[:oid,:int])(_22:oid)(_6:int)
+    bat.insert(c,1@0,1);	# 16 BKCinsert_bun (_23:void)<-(c:bat[:oid,:int])(_24:oid)(_8:int)
+    bat.insert(c,2@0,2);	# 17 BKCinsert_bun (_25:void)<-(c:bat[:oid,:int])(_26:oid)(_10:int)
+    io.print(c);	# 18 IOprint_val (_27:void)<-(c:bat[:oid,:int])
+    k := 1@0;	# 19  (k:oid)<-(_24:oid)
+    bat.replace(c,k,3);	# 20 BKCreplace_bun (_29:void)<-(c:bat[:oid,:int])(k:oid)(_30:int)
+    io.print(c);	# 21 IOprint_val (_31:void)<-(c:bat[:oid,:int])
+    bat.delete(c,2@0);	# 22 BKCdelete (_32:void)<-(c:bat[:oid,:int])(_26:oid)
+    io.print(c);	# 23 IOprint_val (_33:void)<-(c:bat[:oid,:int])
+# The oid cases using nils should fail on replace /delete 	# 24  (_34:str)
+    io.print("inserting nil's in a oid column");	# 25 IOprint_val (_35:void)<-(_36:str)
+    d := bat.new(:oid,:int);	# 26 CMDBATnew (d:bat[:oid,:int])<-(_20:oid)(_4:int)
+    bat.insert(d,nil:oid,0);	# 27 BKCinsert_bun (_38:void)<-(d:bat[:oid,:int])(_39:oid)(_6:int)
+    bat.insert(d,nil:oid,1);	# 28 BKCinsert_bun (_40:void)<-(d:bat[:oid,:int])(_39:oid)(_8:int)
+    bat.insert(d,nil:oid,2);	# 29 BKCinsert_bun (_41:void)<-(d:bat[:oid,:int])(_39:oid)(_10:int)
+    io.print(d);	# 30 IOprint_val (_42:void)<-(d:bat[:oid,:int])
+    k := 1@0;	# 31  (k:oid)<-(_24:oid)
+    bat.replace(d,k,3);	# 32 BKCreplace_bun (_43:void)<-(d:bat[:oid,:int])(k:oid)(_30:int)
+    io.print(d);	# 33 IOprint_val (_44:void)<-(d:bat[:oid,:int])
+    bat.delete(d,2@0);	# 34 BKCdelete (_45:void)<-(d:bat[:oid,:int])(_26:oid)
+    io.print(d);	# 35 IOprint_val (_46:void)<-(d:bat[:oid,:int])
+# can we handle a vid column starting differently 	# 36  (_47:str)
+    io.print("double oid as a vid column starting at 3,5");	# 37 IOprint_val (_48:void)<-(_49:str)
+    e := bat.new(:oid,:oid);	# 38 CMDBATnew (e:bat[:oid,:oid])<-(_20:oid)(_20:oid)
+    bat.insert(e,3@0,5@0);	# 39 BKCinsert_bun (_51:void)<-(e:bat[:oid,:oid])(_52:oid)(_53:oid)
+    bat.append(e,6@0);	# 40 BKCappend_val_wrap (_54:void)<-(e:bat[:oid,:oid])(_55:oid)
+    io.print(e);	# 41 IOprint_val (_56:void)<-(e:bat[:oid,:oid])
+# the void,void bat they still consume space 	# 42  (_57:str)
+# shouldn't that be avoided or limited to at most 1 pair? 	# 43  (_58:str)
+    io.print("void,void bat");	# 44 IOprint_val (_59:void)<-(_60:str)
+    f := bat.new(:void,:void);	# 45 CMDBATnew (f:bat[:void,:void])<-(_3:void)(_3:void)
+    bat.insert(f,nil:void,nil:void);	# 46 BKCinsert_bun (_62:void)<-(f:bat[:void,:void])(_63:void)(_63:void)
+    bat.insert(f,nil:void,nil:void);	# 47 BKCinsert_bun (_64:void)<-(f:bat[:void,:void])(_63:void)(_63:void)
+    io.print(f);	# 48 IOprint_val (_65:void)<-(f:bat[:void,:void])
+end main;	# 49  
 #-----------------#
 # h	t	  # name
-# void	int	  # type
-#-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
-#-----------------#
-# h	tmp_4	  # name
 # void	int	  # type
 #-----------------#
 [ nil,	  0	  ]
@@ -126,7 +105,6 @@ end main;	# 56
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  3	  ]
-[ 0@0 ]
 [ "inserting nil's in a oid column" ]
 #-----------------#
 # h	t	  # name
@@ -149,9 +127,13 @@ end main;	# 56
 [ nil,	  0	  ]
 [ nil,	  1	  ]
 [ nil,	  2	  ]
-[ 0@0 ]
 [ "double oid as a vid column starting at 3,5" ]
-[ 3@0 ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 3@0,	  5@0	  ]
+[ 4@0,	  6@0	  ]
 [ "void,void bat" ]
 #-----------------#
 # h	t	  # name

@@ -1,5 +1,4 @@
-a:=bat.new(:void,:int);
-bat.setSequenceBase(a,0@0);
+a:=bat.new(:oid,:int);
 bat.append(a,0);
 bat.append(a,1);
 

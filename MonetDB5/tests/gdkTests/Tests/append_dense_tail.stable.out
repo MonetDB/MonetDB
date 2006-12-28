@@ -7,6 +7,10 @@ stdout of test 'append_dense_tail` in directory 'tests/gdkTests` itself:
 
 
 
+
+
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -42,31 +46,29 @@ stdout of test 'append_dense_tail` in directory 'tests/gdkTests` itself:
 #
 function user.main():void;	# 0  (main:void)
 # create an empty [void,oid] BAT with dense tail 	# 1  (_1:str)
-    a := bat.new(:void,:oid);	# 2 CMDBATnew (a:bat[:void,:oid])<-(_3:void)(_4:oid)
-    bat.setSequenceBase(a,0@0);	# 3 BKCsetSequenceBase (_5:bat[:void,:oid])<-(a:bat[:void,:oid])(_6:oid)
-    bat.append(a,1@0);	# 4 BKCappend_val_wrap (_7:void)<-(a:bat[:void,:oid])(_8:oid)
-    bat.delete(a,0@0);	# 5 BKCdelete (_9:void)<-(a:bat[:void,:oid])(_6:oid)
-# create a non-empty [void,oid] BAT with non-dense tail 	# 6  (_10:str)
-    b := bat.new(:void,:oid);	# 7 CMDBATnew (b:bat[:void,:oid])<-(_3:void)(_4:oid)
-    bat.setSequenceBase(b,0@0);	# 8 BKCsetSequenceBase (_12:bat[:void,:oid])<-(b:bat[:void,:oid])(_6:oid)
-    bat.append(b,0@0);	# 9 BKCappend_val_wrap (_13:void)<-(b:bat[:void,:oid])(_6:oid)
-    bat.append(b,0@0);	# 10 BKCappend_val_wrap (_14:void)<-(b:bat[:void,:oid])(_6:oid)
-    bat.append(b,0@0);	# 11 BKCappend_val_wrap (_15:void)<-(b:bat[:void,:oid])(_6:oid)
-# append the latter to the former 	# 12  (_16:str)
-    bat.append(a,b);	# 13 BKCappend_wrap (_17:void)<-(a:bat[:void,:oid])(b:bat[:void,:oid])
-    io.print(a);	# 14 IOprint_val (_18:void)<-(a:bat[:void,:oid])
-# check important properties 	# 15  (_19:str)
-    f := bat.new(:void,:str);	# 16 CMDBATnew (f:bat[:void,:str])<-(_3:void)(_21:str)
-    bat.append(f,"hseqbase");	# 17 BKCappend_val_wrap (_22:void)<-(f:bat[:void,:str])(_23:str)
-    bat.append(f,"hdense");	# 18 BKCappend_val_wrap (_24:void)<-(f:bat[:void,:str])(_25:str)
-    bat.append(f,"tseqbase");	# 19 BKCappend_val_wrap (_26:void)<-(f:bat[:void,:str])(_27:str)
-    bat.append(f,"tdense");	# 20 BKCappend_val_wrap (_28:void)<-(f:bat[:void,:str])(_29:str)
-    fr := bat.reverse(f);	# 21 BKCreverse (fr:bat[:str,:void])<-(f:bat[:void,:str])
-    fm := bat.mirror(fr);	# 22 BKCmirror (fm:bat[:str,:str])<-(fr:bat[:str,:void])
-    i := bat.info(a);	# 23 BKCinfo (i:bat[:str,:str])<-(a:bat[:void,:oid])
-    j := algebra.join(fm,i);	# 24 ALGjoin (j:bat[:str,:str])<-(fm:bat[:str,:str])(i:bat[:str,:str])
-    io.print(j);	# 25 IOprint_val (_34:void)<-(j:bat[:str,:str])
-end main;	# 26  
+    a := bat.new(:oid,:oid);	# 2 CMDBATnew (a:bat[:oid,:oid])<-(_3:oid)(_3:oid)
+    bat.append(a,1@0);	# 3 BKCappend_val_wrap (_4:void)<-(a:bat[:oid,:oid])(_5:oid)
+    bat.delete(a,0@0);	# 4 BKCdelete (_6:void)<-(a:bat[:oid,:oid])(_7:oid)
+# create a non-empty [void,oid] BAT with non-dense tail 	# 5  (_8:str)
+    b := bat.new(:oid,:oid);	# 6 CMDBATnew (b:bat[:oid,:oid])<-(_3:oid)(_3:oid)
+    bat.append(b,0@0);	# 7 BKCappend_val_wrap (_10:void)<-(b:bat[:oid,:oid])(_7:oid)
+    bat.append(b,0@0);	# 8 BKCappend_val_wrap (_11:void)<-(b:bat[:oid,:oid])(_7:oid)
+    bat.append(b,0@0);	# 9 BKCappend_val_wrap (_12:void)<-(b:bat[:oid,:oid])(_7:oid)
+# append the latter to the former 	# 10  (_13:str)
+    bat.append(a,b);	# 11 BKCappend_wrap (_14:void)<-(a:bat[:oid,:oid])(b:bat[:oid,:oid])
+    io.print(a);	# 12 IOprint_val (_15:void)<-(a:bat[:oid,:oid])
+# check important properties 	# 13  (_16:str)
+    f := bat.new(:void,:str);	# 14 CMDBATnew (f:bat[:void,:str])<-(_18:void)(_19:str)
+    bat.append(f,"hseqbase");	# 15 BKCappend_val_wrap (_20:void)<-(f:bat[:void,:str])(_21:str)
+    bat.append(f,"hdense");	# 16 BKCappend_val_wrap (_22:void)<-(f:bat[:void,:str])(_23:str)
+    bat.append(f,"tseqbase");	# 17 BKCappend_val_wrap (_24:void)<-(f:bat[:void,:str])(_25:str)
+    bat.append(f,"tdense");	# 18 BKCappend_val_wrap (_26:void)<-(f:bat[:void,:str])(_27:str)
+    fr := bat.reverse(f);	# 19 BKCreverse (fr:bat[:str,:void])<-(f:bat[:void,:str])
+    fm := bat.mirror(fr);	# 20 BKCmirror (fm:bat[:str,:str])<-(fr:bat[:str,:void])
+    i := bat.info(a);	# 21 BKCinfo (i:bat[:str,:str])<-(a:bat[:oid,:oid])
+    j := algebra.join(fm,i);	# 22 ALGjoin (j:bat[:str,:str])<-(fm:bat[:str,:str])(i:bat[:str,:str])
+    io.print(j);	# 23 IOprint_val (_32:void)<-(j:bat[:str,:str])
+end main;	# 24  
 #-----------------#
 # h	t	  # name
 # void	oid	  # type

@@ -29,14 +29,14 @@ function user.main():void;	# 0  (main:void)
 # The flow graph becomes a little more complex  	# 2  (_2:str)
     mdb.list();	# 3 MDBlist (_3:void)
     io.print("start");	# 4 IOprint_val (_4:void)<-(_5:str)
-barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 5 PBMnewIterator (c:bat[:void,:int])<-(_7:str) jump 12
-    cr := bat.reverse(c);	# 6 BKCreverse (cr:bat[:int,:void])<-(c:bat[:void,:int])
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (b:bat[:void,:int])<-(_7:str) jump 10
-    s := algebra.join(b,cr);	# 8 ALGjoin (s:bat[:void,:oid])<-(b:bat[:void,:int])(cr:bat[:int,:void])
-    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 9 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 8
-exit b:bat[:void,:int] ;	# 10  (b:bat[:void,:int])
-    redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 11 PBMgetNextElement (c:bat[:void,:int])<-(_7:str) jump 6
-exit c:bat[:void,:int] ;	# 12  (c:bat[:void,:int])
+barrier c:bat[:oid,:int]  := pbm.newIterator("Sales2005");	# 5 PBMnewIterator (c:bat[:oid,:int])<-(_7:str) jump 12
+    cr := bat.reverse(c);	# 6 BKCreverse (cr:bat[:int,:oid])<-(c:bat[:oid,:int])
+barrier b:bat[:oid,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (b:bat[:oid,:int])<-(_7:str) jump 10
+    s := algebra.join(b,cr);	# 8 ALGjoin (s:bat[:oid,:oid])<-(b:bat[:oid,:int])(cr:bat[:int,:oid])
+    redo b:bat[:oid,:int]  := pbm.getNextElement("Sales2005");	# 9 PBMgetNextElement (b:bat[:oid,:int])<-(_7:str) jump 8
+exit b:bat[:oid,:int] ;	# 10  (b:bat[:oid,:int])
+    redo c:bat[:oid,:int]  := pbm.getNextElement("Sales2005");	# 11 PBMgetNextElement (c:bat[:oid,:int])<-(_7:str) jump 6
+exit c:bat[:oid,:int] ;	# 12  (c:bat[:oid,:int])
     io.print("finished");	# 13 IOprint_val (_11:void)<-(_12:str)
 end main;	# 14  
 function user.main():void;
@@ -44,14 +44,14 @@ function user.main():void;
 # The flow graph becomes a little more complex  
     mdb.list();
     io.print("start");
-barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");
+barrier c:bat[:oid,:int]  := pbm.newIterator("Sales2005");
     cr := bat.reverse(c);
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
+barrier b:bat[:oid,:int]  := pbm.newIterator("Sales2005");
     s := algebra.join(b,cr);
-    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit b:bat[:void,:int] ;
-    redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit c:bat[:void,:int] ;
+    redo b:bat[:oid,:int]  := pbm.getNextElement("Sales2005");
+exit b:bat[:oid,:int] ;
+    redo c:bat[:oid,:int]  := pbm.getNextElement("Sales2005");
+exit c:bat[:oid,:int] ;
     io.print("finished");
 end main;
 [ "start" ]

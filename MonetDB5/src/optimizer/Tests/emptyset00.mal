@@ -1,4 +1,4 @@
-	b := bat.new(:void,:int);
+	b := bat.new(:oid,:int);
 	s1 := algebra.select(b,80,90);
 	s2 := algebra.select(s1,90,80);
 	s3 := algebra.select(s2,80,80);

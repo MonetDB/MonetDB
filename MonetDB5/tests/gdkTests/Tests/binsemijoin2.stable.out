@@ -49,31 +49,30 @@ function user.main():void;	# 0  (main:void)
 # Test provided as bug-report by  	# 1  (_1:str)
 # Maurice van Keulen <keulen@fmi.uni-konstanz.de> 	# 2  (_2:str)
 # Torsten Grust <grust@fmi.uni-konstanz.de> 	# 3  (_3:str)
-    left := bat.new(:void,:oid);	# 4 CMDBATnew (left:bat[:void,:oid])<-(_5:void)(_6:oid)
-    bat.setSequenceBase(left,0@0);	# 5 BKCsetSequenceBase (_7:bat[:void,:oid])<-(left:bat[:void,:oid])(_8:oid)
-    right := bat.new(:oid,:void);	# 6 CMDBATnew (right:bat[:oid,:void])<-(_6:oid)(_5:void)
-    i := 0;	# 7  (i:int)<-(_11:int)
-barrier go := calc.<(i,12);	# 8 CALCcompLTintint (go:bit)<-(i:int)(_13:int) jump 13
-    o := calc.oid(i);	# 9 CALCint2oid (o:oid)<-(i:int)
-    bat.append(left,o);	# 10 BKCappend_val_wrap (_15:void)<-(left:bat[:void,:oid])(o:oid)
-    i := calc.+(i,1);	# 11 CALCbinaryADDintint (i:int)<-(i:int)(_16:int)
-    redo go := calc.<(i,12);	# 12 CALCcompLTintint (go:bit)<-(i:int)(_13:int) jump 9
-exit go;	# 13  (go:bit)
-    i := 0;	# 14  (i:int)<-(_11:int)
-barrier go := calc.<(i,200);	# 15 CALCcompLTintint (go:bit)<-(i:int)(_17:int) jump 21
-    j := calc.*(i,2);	# 16 CALCbinaryMULintint (j:int)<-(i:int)(_19:int)
-    oj := calc.oid(j);	# 17 CALCint2oid (oj:oid)<-(j:int)
-    bat.insert(right,oj,nil:void);	# 18 BKCinsert_bun (_21:void)<-(right:bat[:oid,:void])(oj:oid)(_22:void)
-    i := calc.+(i,1);	# 19 CALCbinaryADDintint (i:int)<-(i:int)(_16:int)
-    redo go := calc.<(i,200);	# 20 CALCcompLTintint (go:bit)<-(i:int)(_17:int) jump 16
-exit go;	# 21  (go:bit)
-    io.print(left);	# 22 IOprint_val (_23:void)<-(left:bat[:void,:oid])
-    io.print(right);	# 23 IOprint_val (_24:void)<-(right:bat[:oid,:void])
-    bat.order(right);	# 24 BKCorder (_25:bat[:oid,:void])<-(right:bat[:oid,:void])
-    io.print(right);	# 25 IOprint_val (_26:void)<-(right:bat[:oid,:void])
-    z := algebra.semijoin(left,right);	# 26 ALGsemijoin (z:bat[:oid,:oid])<-(left:bat[:void,:oid])(right:bat[:oid,:void])
-    io.print(z);	# 27 IOprint_val (_28:void)<-(z:bat[:oid,:oid])
-end main;	# 28  
+    left := bat.new(:oid,:oid);	# 4 CMDBATnew (left:bat[:oid,:oid])<-(_5:oid)(_5:oid)
+    right := bat.new(:oid,:oid);	# 5 CMDBATnew (right:bat[:oid,:oid])<-(_5:oid)(_5:oid)
+    i := 0;	# 6  (i:int)<-(_8:int)
+barrier go := calc.<(i,12);	# 7 CALCcompLTintint (go:bit)<-(i:int)(_10:int) jump 12
+    o := calc.oid(i);	# 8 CALCint2oid (o:oid)<-(i:int)
+    bat.append(left,o);	# 9 BKCappend_val_wrap (_12:void)<-(left:bat[:oid,:oid])(o:oid)
+    i := calc.+(i,1);	# 10 CALCbinaryADDintint (i:int)<-(i:int)(_13:int)
+    redo go := calc.<(i,12);	# 11 CALCcompLTintint (go:bit)<-(i:int)(_10:int) jump 8
+exit go;	# 12  (go:bit)
+    i := 0;	# 13  (i:int)<-(_8:int)
+barrier go := calc.<(i,200);	# 14 CALCcompLTintint (go:bit)<-(i:int)(_14:int) jump 20
+    j := calc.*(i,2);	# 15 CALCbinaryMULintint (j:int)<-(i:int)(_16:int)
+    oj := calc.oid(j);	# 16 CALCint2oid (oj:oid)<-(j:int)
+    bat.insert(right,oj,nil:oid);	# 17 BKCinsert_bun (_18:void)<-(right:bat[:oid,:oid])(oj:oid)(_19:oid)
+    i := calc.+(i,1);	# 18 CALCbinaryADDintint (i:int)<-(i:int)(_13:int)
+    redo go := calc.<(i,200);	# 19 CALCcompLTintint (go:bit)<-(i:int)(_14:int) jump 15
+exit go;	# 20  (go:bit)
+    io.print(left);	# 21 IOprint_val (_20:void)<-(left:bat[:oid,:oid])
+    io.print(right);	# 22 IOprint_val (_21:void)<-(right:bat[:oid,:oid])
+    bat.order(right);	# 23 BKCorder (_22:bat[:oid,:oid])<-(right:bat[:oid,:oid])
+    io.print(right);	# 24 IOprint_val (_23:void)<-(right:bat[:oid,:oid])
+    z := algebra.semijoin(left,right);	# 25 ALGsemijoin (z:bat[:oid,:oid])<-(left:bat[:oid,:oid])(right:bat[:oid,:oid])
+    io.print(z);	# 26 IOprint_val (_25:void)<-(z:bat[:oid,:oid])
+end main;	# 27  
 #-----------------#
 # h	t	  # name
 # void	oid	  # type

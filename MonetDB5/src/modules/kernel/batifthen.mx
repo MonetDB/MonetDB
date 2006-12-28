@@ -20,30 +20,30 @@ The assembled code for IF-THEN-ELSE multiplex operations.
 Again we assume that the BAT arguments are aligned.
 @-
 @= ifthenGrp
-command batcalc.ifthen(b:bat[:any_1,:bit], t:bat[:any_1,:@1]) :bat[:any_1,:@1] 
+command batcalc.ifthen(b:bat[:oid,:bit], t:bat[:oid,:@1]) :bat[:oid,:@1] 
 address CMDifThen_@1
 comment "If-then operation to assemble a conditional result ";
 
-command batcalc.ifthen(b:bat[:any_1,:bit], v:@1) :bat[:any_1,:@1] 
+command batcalc.ifthen(b:bat[:oid,:bit], v:@1) :bat[:oid,:@1] 
 address CMDifThenCst_@1
 comment "Ifthen operation to assemble a conditional result ";
 
-command batcalc.ifthenelse(b:bat[:any_1,:bit], v:@1,w:@1) :bat[:any_1,:@1] 
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:@1,w:@1) :bat[:oid,:@1] 
 address CMDifThenElseCst_@1
 comment "Ifthen operation to assemble a conditional result ";
 
-command batcalc.ifthenelse(b:bat[:any_3,:bit], t:bat[:any_1,:@1], 
-		e:bat[:any_1,:@1]) :bat[:any_1,:@1] 
+command batcalc.ifthenelse(b:bat[:oid,:bit], t:bat[:oid,:@1], 
+		e:bat[:oid,:@1]) :bat[:oid,:@1] 
 address CMDifThenElse_@1
 comment "If-then-else operation to assemble a conditional result ";
 
-command batcalc.ifthenelse(b:bat[:any_1,:bit], e:@1, t:bat[:any_1,:@1])
-	:bat[:any_1,:@1] 
+command batcalc.ifthenelse(b:bat[:oid,:bit], e:@1, t:bat[:oid,:@1])
+	:bat[:oid,:@1] 
 address CMDifThenElseCst1_@1
 comment "If-then-else operation to assemble a conditional result ";
 
-command batcalc.ifthenelse(b:bat[:any_1,:bit], t:bat[:any_1,:@1], e:@1)
-	:bat[:any_1,:@1] 
+command batcalc.ifthenelse(b:bat[:oid,:bit], t:bat[:any_1,:@1], e:@1)
+	:bat[:oid,:@1] 
 address CMDifThenElseCst2_@1
 comment "If-then-else operation to assemble a conditional result ";
 @{
@@ -101,7 +101,7 @@ batifthen_export str CMDifThen_@1(int *ret, int *bid, int *tid);
 str
 CMDifThen_@1(int *ret, int *bid, int *tid) {
 	BAT *b, *tb, *bn;
-	@1 nilval=  (@1) @1_nil;
+	@1 nilval=  (@1) @1_nil, *val;
 	BUN p,q;
 	size_t xx;
 
@@ -119,10 +119,13 @@ CMDifThen_@1(int *ret, int *bid, int *tid) {
 	bn->tsorted= b->tsorted;
 
 	BATloopFast(b, p, q, xx) {
-		if( *(bit *) p == bit_nil) 
+		bit *t= (bit*) BUNtail(b,p);
+		if( *(bit *) t == bit_nil) 
 			BUNfastins(bn, BUNhead(b,p), (ptr) & nilval);
-		else if( *(bit *) p ) 
-			BUNfastins(bn, BUNhead(b,p), BUNtail(tb,BUNptr(tb,BUNindex(b,p))));
+		else if( *(bit *) t ) {
+			val = (@1*) BUNtail(tb,BUNptr(tb,BUNindex(b,p)));
+			BUNfastins(bn, BUNhead(b,p), val);
+		}
 	}
 	BBPreleaseref(tb->batCacheid);
 	@:wrapup@

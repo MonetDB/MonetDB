@@ -23,14 +23,14 @@ stdout of test 'ESexample` in directory 'src/optimizer` itself:
 #	bat.append(V1,V17); 
 #end tst;
 function user.tst():void;	# 0  (tst:void)
-    V1 := bat.new(:void,:int);	# 1 CMDBATnew (V1:bat[:void,:int])<-(_2:void)(_3:int)
-    V7 := bat.new(:void,:int);	# 2 CMDBATnew (V7:bat[:void,:int])<-(_2:void)(_3:int)
-    V10{rows=0} := bat.new(:int,:void);	# 3 CMDBATnew (V10:bat[:int,:void])<-(_3:int)(_2:void)
-    V11 := bat.reverse(V10);	# 4 BKCreverse (V11:bat[:void,:int])<-(V10:bat[:int,:void])
-    V12 := algebra.kdifference(V7,V11);	# 5 ALGkdiff (V12:bat[:void,:int])<-(V7:bat[:void,:int])(V11:bat[:void,:int])
-    V16 := algebra.markH(V12);	# 6 ALGmarkHead_default (V16:bat[:void,:oid])<-(V12:bat[:void,:int])
-    V17 := algebra.join(V16,V7);	# 7 ALGjoin (V17:bat[:void,:int])<-(V16:bat[:void,:oid])(V7:bat[:void,:int])
-    bat.append(V1,V17);	# 8 BKCappend_wrap (_10:void)<-(V1:bat[:void,:int])(V17:bat[:void,:int])
+    V1 := bat.new(:oid,:int);	# 1 CMDBATnew (V1:bat[:oid,:int])<-(_2:oid)(_3:int)
+    V7 := bat.new(:oid,:int);	# 2 CMDBATnew (V7:bat[:oid,:int])<-(_2:oid)(_3:int)
+    V10{rows=0} := bat.new(:int,:oid);	# 3 CMDBATnew (V10:bat[:int,:oid])<-(_3:int)(_2:oid)
+    V11 := bat.reverse(V10);	# 4 BKCreverse (V11:bat[:oid,:int])<-(V10:bat[:int,:oid])
+    V12 := algebra.kdifference(V7,V11);	# 5 ALGkdiff (V12:bat[:oid,:int])<-(V7:bat[:oid,:int])(V11:bat[:oid,:int])
+    V16 := algebra.markT(V12);	# 6 ALGtmark_default (V16:bat[:oid,:oid])<-(V12:bat[:oid,:int])
+    V17 := algebra.join(V16,V7);	# 7 ALGjoin (V17:bat[:oid,:int])<-(V16:bat[:oid,:oid])(V7:bat[:oid,:int])
+    bat.append(V1,V17);	# 8 BKCappend_wrap (_10:void)<-(V1:bat[:oid,:int])(V17:bat[:oid,:int])
 end tst;	# 9  
 #    optimizer.costModel("user","tst");
 #    optimizer.emptySet("user","tst");
@@ -42,9 +42,9 @@ function user.main():void;	# 0  (main:void)
     mdb.list("user","tst");	# 1 MDBlist3 (_7:void)<-(_2:str)(_3:str)
 end main;	# 2  
 function user.tst():void;
-    V1 := bat.new(:void,:int);
-    V7 := bat.new(:void,:int);
-    V16 := algebra.markH(V7);
+    V1 := bat.new(:oid,:int);
+    V7 := bat.new(:oid,:int);
+    V16 := algebra.markT(V7);
     V17 := algebra.join(V16,V7);
     bat.append(V1,V17);
 end tst;

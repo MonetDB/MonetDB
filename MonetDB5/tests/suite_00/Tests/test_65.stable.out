@@ -83,54 +83,44 @@ function user.main():void;	# 0  (main:void)
     aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
     ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
 #	io.print("#test sampling\n"); 	# 13  (_14:str)
-    b := bat.new(nil:int,nil:int);	# 14 CMDBATnew (b:bat[:int,:int])<-(_16:int)(_16:int)
-#	io.print("b.insert(1,15);"); 	# 15  (_17:str)
-    ca_a := bat.insert(b,1,15);	# 16 BKCinsert_bun (ca_a:void)<-(b:bat[:int,:int])(_19:int)(_20:int)
-#	io.print("b.insert(2,4);"); 	# 17  (_21:str)
-    da_a := bat.insert(b,2,4);	# 18 BKCinsert_bun (da_a:void)<-(b:bat[:int,:int])(_23:int)(_24:int)
-#	io.print("b.insert(3,int(nil));"); 	# 19  (_25:str)
-    ea_a := calc.int(nil:void);	# 20 CALCnil2int (ea_a:int)<-(_27:void)
-    fa_a := bat.insert(b,3,ea_a);	# 21 BKCinsert_bun (fa_a:void)<-(b:bat[:int,:int])(_29:int)(ea_a:int)
-#	io.print("b.insert(4,16);"); 	# 22  (_30:str)
-    ga_a := bat.insert(b,4,16);	# 23 BKCinsert_bun (ga_a:void)<-(b:bat[:int,:int])(_24:int)(_32:int)
-#	io.print("b.insert(5,25);"); 	# 24  (_33:str)
-    ha_a := bat.insert(b,5,25);	# 25 BKCinsert_bun (ha_a:void)<-(b:bat[:int,:int])(_35:int)(_36:int)
-#	io.print("b.insert(6,36);"); 	# 26  (_37:str)
-    ia_a := bat.insert(b,6,36);	# 27 BKCinsert_bun (ia_a:void)<-(b:bat[:int,:int])(_39:int)(_40:int)
-#	io.print("b.insert(7,49);"); 	# 28  (_41:str)
-    ja_a := bat.insert(b,7,49);	# 29 BKCinsert_bun (ja_a:void)<-(b:bat[:int,:int])(_43:int)(_44:int)
-#	io.print("b.insert(8,64);"); 	# 30  (_45:str)
-    ka_a := bat.insert(b,8,64);	# 31 BKCinsert_bun (ka_a:void)<-(b:bat[:int,:int])(_47:int)(_48:int)
-#	io.print("b.insert(9,int(nil));"); 	# 32  (_49:str)
-    la_a := calc.int(nil:void);	# 33 CALCnil2int (la_a:int)<-(_27:void)
-    ma_a := bat.insert(b,9,la_a);	# 34 BKCinsert_bun (ma_a:void)<-(b:bat[:int,:int])(_52:int)(la_a:int)
-#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");"); 	# 35  (_53:str)
-    na_a := io.printf("#~BeginVariableOutput~#\n");	# 36 IOprint_str (na_a:void)<-(_55:str)
-    oa_a := algebra.sample(b,1);	# 37 ALGsample (oa_a:bat[:int,:int])<-(b:bat[:int,:int])(_57:int)
-    pa_a := io.print(oa_a);	# 38 IOprint_val (pa_a:void)<-(oa_a:bat[:int,:int])
-    qa_a := io.printf("#~EndVariableOutput~#\n");	# 39 IOprint_str (qa_a:void)<-(_60:str)
-#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");"); 	# 40  (_53:str)
-    ra_a := io.printf("#~BeginVariableOutput~#\n");	# 41 IOprint_str (ra_a:void)<-(_55:str)
-    sa_a := algebra.sample(b,1);	# 42 ALGsample (sa_a:bat[:int,:int])<-(b:bat[:int,:int])(_57:int)
-    ta_a := io.print(sa_a);	# 43 IOprint_val (ta_a:void)<-(sa_a:bat[:int,:int])
-    ua_a := io.printf("#~EndVariableOutput~#\n");	# 44 IOprint_str (ua_a:void)<-(_60:str)
-#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); ioprintf(\"#~EndVariableOutput~#\\n\");"); 	# 45  (_65:str)
-    va_a := io.printf("#~BeginVariableOutput~#\n");	# 46 IOprint_str (va_a:void)<-(_55:str)
-    wa_a := algebra.sample(b,9);	# 47 ALGsample (wa_a:bat[:int,:int])<-(b:bat[:int,:int])(_52:int)
-    xa_a := io.print(wa_a);	# 48 IOprint_val (xa_a:void)<-(wa_a:bat[:int,:int])
-    ya_a := io.printf("#~EndVariableOutput~#\n");	# 49 IOprint_str (ya_a:void)<-(_60:str)
-#	io.print("b.sample(0).print();"); 	# 50  (_70:str)
-    ab_a := algebra.sample(b,0);	# 51 ALGsample (ab_a:bat[:int,:int])<-(b:bat[:int,:int])(_72:int)
-    bb_a := io.print(ab_a);	# 52 IOprint_val (bb_a:void)<-(ab_a:bat[:int,:int])
-#	io.print("quit();"); 	# 53  (_74:str)
-    cb_a := clients.quit();	# 54 CLTquitDefault (cb_a:void)
-end main;	# 55  
+    b := bat.new(:oid,nil:int);	# 14 CMDBATnew (b:bat[:oid,:int])<-(_16:oid)(_17:int)
+    ca_a := bat.insert(b,1@0,15);	# 15 BKCinsert_bun (ca_a:void)<-(b:bat[:oid,:int])(_19:oid)(_20:int)
+    da_a := bat.insert(b,2@0,4);	# 16 BKCinsert_bun (da_a:void)<-(b:bat[:oid,:int])(_22:oid)(_23:int)
+    ea_a := calc.int(nil:void);	# 17 CALCnil2int (ea_a:int)<-(_25:void)
+    fa_a := bat.insert(b,3@0,ea_a);	# 18 BKCinsert_bun (fa_a:void)<-(b:bat[:oid,:int])(_27:oid)(ea_a:int)
+    ga_a := bat.insert(b,4@0,16);	# 19 BKCinsert_bun (ga_a:void)<-(b:bat[:oid,:int])(_29:oid)(_30:int)
+    ia_a := bat.insert(b,6@0,36);	# 20 BKCinsert_bun (ia_a:void)<-(b:bat[:oid,:int])(_32:oid)(_33:int)
+    ja_a := bat.insert(b,7@0,49);	# 21 BKCinsert_bun (ja_a:void)<-(b:bat[:oid,:int])(_35:oid)(_36:int)
+    ka_a := bat.insert(b,8@0,64);	# 22 BKCinsert_bun (ka_a:void)<-(b:bat[:oid,:int])(_38:oid)(_39:int)
+    la_a := calc.int(nil:void);	# 23 CALCnil2int (la_a:int)<-(_25:void)
+    ma_a := bat.insert(b,9@0,la_a);	# 24 BKCinsert_bun (ma_a:void)<-(b:bat[:oid,:int])(_42:oid)(la_a:int)
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");"); 	# 25  (_43:str)
+    na_a := io.printf("#~BeginVariableOutput~#\n");	# 26 IOprint_str (na_a:void)<-(_45:str)
+    oa_a := algebra.sample(b,1);	# 27 ALGsample (oa_a:bat[:oid,:int])<-(b:bat[:oid,:int])(_47:int)
+    pa_a := io.print(oa_a);	# 28 IOprint_val (pa_a:void)<-(oa_a:bat[:oid,:int])
+    qa_a := io.printf("#~EndVariableOutput~#\n");	# 29 IOprint_str (qa_a:void)<-(_50:str)
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");"); 	# 30  (_43:str)
+    ra_a := io.printf("#~BeginVariableOutput~#\n");	# 31 IOprint_str (ra_a:void)<-(_45:str)
+    sa_a := algebra.sample(b,1);	# 32 ALGsample (sa_a:bat[:oid,:int])<-(b:bat[:oid,:int])(_47:int)
+    ta_a := io.print(sa_a);	# 33 IOprint_val (ta_a:void)<-(sa_a:bat[:oid,:int])
+    ua_a := io.printf("#~EndVariableOutput~#\n");	# 34 IOprint_str (ua_a:void)<-(_50:str)
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); ioprintf(\"#~EndVariableOutput~#\\n\");"); 	# 35  (_55:str)
+    va_a := io.printf("#~BeginVariableOutput~#\n");	# 36 IOprint_str (va_a:void)<-(_45:str)
+    wa_a := algebra.sample(b,9);	# 37 ALGsample (wa_a:bat[:oid,:int])<-(b:bat[:oid,:int])(_58:int)
+    xa_a := io.print(wa_a);	# 38 IOprint_val (xa_a:void)<-(wa_a:bat[:oid,:int])
+    ya_a := io.printf("#~EndVariableOutput~#\n");	# 39 IOprint_str (ya_a:void)<-(_50:str)
+#	io.print("b.sample(0).print();"); 	# 40  (_61:str)
+    ab_a := algebra.sample(b,0);	# 41 ALGsample (ab_a:bat[:oid,:int])<-(b:bat[:oid,:int])(_63:int)
+    bb_a := io.print(ab_a);	# 42 IOprint_val (bb_a:void)<-(ab_a:bat[:oid,:int])
+#	io.print("quit();"); 	# 43  (_65:str)
+    cb_a := clients.quit();	# 44 CLTquitDefault (cb_a:void)
+end main;	# 45  
 #~BeginVariableOutput~#
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 2,	  4	  ]
+[ 9@0,	  nil	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#
@@ -138,7 +128,7 @@ end main;	# 55
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 8,	  64	  ]
+[ 8@0,	  64	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); ioprintf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#
@@ -146,15 +136,14 @@ end main;	# 55
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  15	  ]
-[ 2,	  4	  ]
-[ 3,	  nil	  ]
-[ 4,	  16	  ]
-[ 5,	  25	  ]
-[ 6,	  36	  ]
-[ 7,	  49	  ]
-[ 8,	  64	  ]
-[ 9,	  nil	  ]
+[ 1@0,	  15	  ]
+[ 2@0,	  4	  ]
+[ 3@0,	  nil	  ]
+[ 4@0,	  16	  ]
+[ 6@0,	  36	  ]
+[ 7@0,	  49	  ]
+[ 8@0,	  64	  ]
+[ 9@0,	  nil	  ]
 #~EndVariableOutput~#
 #b.sample(0).print();
 #-----------------#

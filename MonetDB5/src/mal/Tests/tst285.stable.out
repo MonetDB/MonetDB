@@ -23,15 +23,14 @@ stdout of test 'tst285` in directory 'src/mal` itself:
 #print(z2);
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-(_2:void)(_3:str)
-    bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase (_4:bat[:void,:str])<-(b:bat[:void,:str])(_5:oid)
-    bat.append(b,"hello");	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:void,:str])(_7:str)
-    bat.append(b,"goodbye");	# 4 BKCappend_val_wrap (_8:void)<-(b:bat[:void,:str])(_9:str)
-    z1 := batcalc.match(b,"hel");	# 5 STRbatmatchCst (z1:bat[:void,:bit])<-(b:bat[:void,:str])(_11:str)
-    io.print(z1);	# 6 IOprint_val (_12:void)<-(z1:bat[:void,:bit])
-    z2 := batcalc.match(b,".*[ly].*");	# 7 STRbatmatchCst (z2:bat[:void,:bit])<-(b:bat[:void,:str])(_14:str)
-    io.print(z2);	# 8 IOprint_val (_15:void)<-(z2:bat[:void,:bit])
-end main;	# 9  
+    b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
+    bat.append(b,"hello");	# 2 BKCappend_val_wrap (_4:void)<-(b:bat[:oid,:str])(_5:str)
+    bat.append(b,"goodbye");	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:oid,:str])(_7:str)
+    z1 := batcalc.match(b,"hel");	# 4 STRbatmatchCst (z1:bat[:oid,:bit])<-(b:bat[:oid,:str])(_9:str)
+    io.print(z1);	# 5 IOprint_val (_10:void)<-(z1:bat[:oid,:bit])
+    z2 := batcalc.match(b,".*[ly].*");	# 6 STRbatmatchCst (z2:bat[:oid,:bit])<-(b:bat[:oid,:str])(_12:str)
+    io.print(z2);	# 7 IOprint_val (_13:void)<-(z2:bat[:oid,:bit])
+end main;	# 8  
 #-----------------#
 # h	tmp_5	  # name
 # int	bit	  # type

@@ -35,21 +35,20 @@ stdout of test 'bpt05` in directory 'src/modules/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 #testing the BAT partition table with fixed capacity 	# 1  (_1:str)
-    a1 := bat.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_3:void)(_4:int)
-    bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase (_5:bat[:void,:int])<-(a1:bat[:void,:int])(_6:oid)
-    partitions.deposit(a1);	# 4 BPTdeposit (_7:void)<-(a1:bat[:void,:int])
-    partitions.setCapacity(a1,3);	# 5 BPTsetCapacity (_8:void)<-(a1:bat[:void,:int])(_9:int)
-barrier (go,i):= language.newRange(0);	# 6 RNGnewRange_int (go:bit)(i:int)<-(_12:int) jump 9
-    partitions.insert(a1,i);	# 7 BPTinsert_void_bun (_13:bat[:void,:int])<-(a1:bat[:void,:int])(i:int)
-    redo (go,i):= language.nextElement(1,10);	# 8 RNGnextElement_int (go:bit)(i:int)<-(_14:int)(_15:int) jump 7
-exit (go,i);	# 9  (go:bit)(i:int)
-    partitions.dump();	# 10 BPTdump (_16:void)
-barrier (k,b):= partitions.newIterator(a1);	# 11 BPTnewIterator (k:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 14
-    io.print(b);	# 12 IOprint_val (_19:void)<-(b:bat[:void,:int])
-    redo (k,b):= partitions.hasMoreElements(a1);	# 13 BPThasMoreElements (k:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 12
-exit (k,b);	# 14  (k:int)(b:bat[:void,:int])
-# add it 	# 15  (_22:str)
-end main;	# 16  
+    a1 := bat.new(:oid,:int);	# 2 CMDBATnew (a1:bat[:oid,:int])<-(_3:oid)(_4:int)
+    partitions.deposit(a1);	# 3 BPTdeposit (_5:void)<-(a1:bat[:oid,:int])
+    partitions.setCapacity(a1,3);	# 4 BPTsetCapacity (_6:void)<-(a1:bat[:oid,:int])(_7:int)
+barrier (go,i):= language.newRange(0);	# 5 RNGnewRange_int (go:bit)(i:int)<-(_10:int) jump 8
+    partitions.insert(a1,i);	# 6 BPTinsert_void_bun (_11:bat[:oid,:int])<-(a1:bat[:oid,:int])(i:int)
+    redo (go,i):= language.nextElement(1,10);	# 7 RNGnextElement_int (go:bit)(i:int)<-(_12:int)(_13:int) jump 6
+exit (go,i);	# 8  (go:bit)(i:int)
+    partitions.dump();	# 9 BPTdump (_14:void)
+barrier (k,b):= partitions.newIterator(a1);	# 10 BPTnewIterator (k:int)(b:bat[:oid,:int])<-(a1:bat[:oid,:int]) jump 13
+    io.print(b);	# 11 IOprint_val (_17:void)<-(b:bat[:oid,:int])
+    redo (k,b):= partitions.hasMoreElements(a1);	# 12 BPThasMoreElements (k:int)(b:bat[:oid,:int])<-(a1:bat[:oid,:int]) jump 11
+exit (k,b);	# 13  (k:int)(b:bat[:oid,:int])
+# add it 	# 14  (_18:str)
+end main;	# 15  
 ptop=4 plimit=1024
 [0] bid=7 pid=7 f=0, l=3 prv=-1 nxt=1 cap=3
 [1] bid=7 pid=8 f=3, l=6 prv=-1 nxt=2 cap=3

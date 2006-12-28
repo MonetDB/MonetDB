@@ -27,8 +27,7 @@
 #	io.print("# I have no idea, where the problem might come from.\n");
 #	io.print("# Note also, that the problem seems to occur \"non-deterministically\"...\n");
 #	io.print("");
-	aa_a := new(nil:void,nil:str);
-	v1 := bat.setSequenceBase(aa_a,0@0);
+	aa_a := new(nil:oid,nil:str);
 #	io.print("");
 	ba_a := insert(v1,nil,"");
 #	io.print("v1.insert(nil,\"\");");
@@ -101,4 +100,3 @@
 	jb_a := print(v9);
 #	io.print("");
 	kb_a := quit();
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

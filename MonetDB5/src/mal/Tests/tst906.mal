@@ -1,7 +1,7 @@
 # the multiplex code blocks.
 # check detection of the underlying fast implementations
 
-b:= bat.new(:void,:lng);
+b:= bat.new(:oid,:lng);
 barrier (v,i):= language.newRange(0:lng);
 	bat.append(b,i);
 	redo (v,i):= language.nextElement(1:lng,10:lng);

@@ -1,19 +1,19 @@
 #testing the partition optimizer
 
-a1:= bat.new(:void,:int);
-bat.setSequenceBase(a1,0@0);
-a2:= bat.new(:void,:int);
-bat.setSequenceBase(a2,10@0);
-a3:= bat.new(:void,:int);
-bat.setSequenceBase(a3,20@0);
-b1:= bat.new(:void,:int);
-bat.setSequenceBase(b1,0@0);
-b2:= bat.new(:void,:int);
-bat.setSequenceBase(b2,10@0);
-b3:= bat.new(:void,:int);
-bat.setSequenceBase(b3,20@0);
+a1:= bat.new(:oid,:int);
+bat.insert(a1,0@0,0);
+a2:= bat.new(:oid,:int);
+bat.insert(a2,10@0,10);
+a3:= bat.new(:oid,:int);
+bat.insert(a3,20@0,20);
+b1:= bat.new(:oid,:int);
+bat.insert(b1,0@0,0);
+b2:= bat.new(:oid,:int);
+bat.insert(b2,10@0,0);
+b3:= bat.new(:oid,:int);
+bat.insert(b3,20@0,0);
 
-barrier (go,i):= language.newRange(0);
+barrier (go,i):= language.newRange(1);
 	bat.append(a1,i);
 	bat.append(a2,i);
 	bat.append(a3,i);
@@ -22,7 +22,6 @@ barrier (go,i):= language.newRange(0);
 	bat.append(b3,i);
 	redo (go,i):= language.nextElement(1,10);
 exit (go,i);
-
 
 # add it to the BAT partition table
 partitions.deposit(a1);
@@ -36,7 +35,7 @@ partitions.dump();
 # this query is already tricky because there are
 # two sinks. A naive translation will produce
 # a double nested loop
-function qry(a:bat[:void,:any_1], b:bat[:void,:any_2]);
+function qry(a:bat[:oid,:any_1], b:bat[:oid,:any_2]);
 	io.print("experiment 2");
 	io.print(b);
 	io.print(a);

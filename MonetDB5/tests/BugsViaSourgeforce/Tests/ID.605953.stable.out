@@ -94,31 +94,29 @@ function user.main():void;	# 0  (main:void)
     na_a := bat.insert(t,ma_a,"g");	# 24 BKCinsert_bun (na_a:void)<-(t:bat[:oid,:str])(ma_a:oid)(_40:str)
     oa_a := calc.oid(7);	# 25 CALCint2oid (oa_a:oid)<-(_42:int)
     pa_a := bat.insert(t,oa_a,"h");	# 26 BKCinsert_bun (pa_a:void)<-(t:bat[:oid,:str])(oa_a:oid)(_44:str)
-    qa_a := algebra.markT(t,nil:oid);	# 27 ALGtmark (qa_a:bat[:oid,:void])<-(t:bat[:oid,:str])(_11:oid)
+    qa_a := algebra.markT(t,nil:oid);	# 27 ALGtmark (qa_a:bat[:oid,:oid])<-(t:bat[:oid,:str])(_11:oid)
     ra_a := io.print(t);	# 28 IOprint_val (ra_a:void)<-(t:bat[:oid,:str])
     t2 := bat.new(nil:void,nil:str);	# 29 CMDBATnew (t2:bat[:void,:str])<-(_48:void)(_49:str)
-    sa_a := calc.oid(0);	# 30 CALCint2oid (sa_a:oid)<-(_51:int)
-    ta_a := bat.setSequenceBase(t2,sa_a);	# 31 BKCsetSequenceBase (ta_a:bat[:void,:str])<-(t2:bat[:void,:str])(sa_a:oid)
-    ua_a := calc.oid(0);	# 32 CALCint2oid (ua_a:oid)<-(_51:int)
-    va_a := bat.insert(t2,ua_a,"a");	# 33 BKCinsert_bun (va_a:void)<-(t2:bat[:void,:str])(ua_a:oid)(_55:str)
-    wa_a := calc.oid(1);	# 34 CALCint2oid (wa_a:oid)<-(_57:int)
-    xa_a := bat.insert(t2,wa_a,"b");	# 35 BKCinsert_bun (xa_a:void)<-(t2:bat[:void,:str])(wa_a:oid)(_59:str)
-    ya_a := calc.oid(2);	# 36 CALCint2oid (ya_a:oid)<-(_61:int)
-    ab_a := bat.insert(t2,ya_a,"c");	# 37 BKCinsert_bun (ab_a:void)<-(t2:bat[:void,:str])(ya_a:oid)(_63:str)
-    bb_a := calc.oid(3);	# 38 CALCint2oid (bb_a:oid)<-(_65:int)
-    cb_a := bat.insert(t2,bb_a,"d");	# 39 BKCinsert_bun (cb_a:void)<-(t2:bat[:void,:str])(bb_a:oid)(_67:str)
-    db_a := calc.oid(4);	# 40 CALCint2oid (db_a:oid)<-(_69:int)
-    eb_a := bat.insert(t2,db_a,"e");	# 41 BKCinsert_bun (eb_a:void)<-(t2:bat[:void,:str])(db_a:oid)(_71:str)
-    fb_a := calc.oid(5);	# 42 CALCint2oid (fb_a:oid)<-(_73:int)
-    gb_a := bat.insert(t2,fb_a,"f");	# 43 BKCinsert_bun (gb_a:void)<-(t2:bat[:void,:str])(fb_a:oid)(_75:str)
-    hb_a := calc.oid(6);	# 44 CALCint2oid (hb_a:oid)<-(_77:int)
-    ib_a := bat.insert(t2,hb_a,"g");	# 45 BKCinsert_bun (ib_a:void)<-(t2:bat[:void,:str])(hb_a:oid)(_79:str)
-    jb_a := calc.oid(7);	# 46 CALCint2oid (jb_a:oid)<-(_81:int)
-    kb_a := bat.insert(t2,jb_a,"h");	# 47 BKCinsert_bun (kb_a:void)<-(t2:bat[:void,:str])(jb_a:oid)(_83:str)
-    lb_a := algebra.markT(t2,nil:oid);	# 48 ALGtmark (lb_a:bat[:oid,:void])<-(t2:bat[:void,:str])(_85:oid)
-    mb_a := io.print(lb_a);	# 49 IOprint_val (mb_a:void)<-(lb_a:bat[:oid,:void])
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase' 	# 50  (_87:str)
-end main;	# 51  
+    ua_a := nil:void;	# 30  (ua_a:void)<-(_48:void)
+    va_a := bat.insert(t2,ua_a,"a");	# 31 BKCinsert_bun (va_a:void)<-(t2:bat[:void,:str])(ua_a:void)(_16:str)
+    wa_a := nil:void;	# 32  (wa_a:void)<-(_48:void)
+    xa_a := bat.insert(t2,wa_a,"b");	# 33 BKCinsert_bun (xa_a:void)<-(t2:bat[:void,:str])(wa_a:void)(_20:str)
+    ya_a := nil:void;	# 34  (ya_a:void)<-(_48:void)
+    ab_a := bat.insert(t2,ya_a,"c");	# 35 BKCinsert_bun (ab_a:void)<-(t2:bat[:void,:str])(ya_a:void)(_24:str)
+    bb_a := nil:void;	# 36  (bb_a:void)<-(_48:void)
+    cb_a := bat.insert(t2,bb_a,"d");	# 37 BKCinsert_bun (cb_a:void)<-(t2:bat[:void,:str])(bb_a:void)(_28:str)
+    db_a := nil:void;	# 38  (db_a:void)<-(_48:void)
+    eb_a := bat.insert(t2,db_a,"e");	# 39 BKCinsert_bun (eb_a:void)<-(t2:bat[:void,:str])(db_a:void)(_32:str)
+    fb_a := nil:void;	# 40  (fb_a:void)<-(_48:void)
+    gb_a := bat.insert(t2,fb_a,"f");	# 41 BKCinsert_bun (gb_a:void)<-(t2:bat[:void,:str])(fb_a:void)(_36:str)
+    hb_a := nil:void;	# 42  (hb_a:void)<-(_48:void)
+    ib_a := bat.insert(t2,hb_a,"g");	# 43 BKCinsert_bun (ib_a:void)<-(t2:bat[:void,:str])(hb_a:void)(_40:str)
+    jb_a := nil:void;	# 44  (jb_a:void)<-(_48:void)
+    kb_a := bat.insert(t2,jb_a,"h");	# 45 BKCinsert_bun (kb_a:void)<-(t2:bat[:void,:str])(jb_a:void)(_44:str)
+    lb_a := algebra.markT(t2,nil:oid);	# 46 ALGtmark (lb_a:bat[:void,:oid])<-(t2:bat[:void,:str])(_67:oid)
+    mb_a := io.print(lb_a);	# 47 IOprint_val (mb_a:void)<-(lb_a:bat[:void,:oid])
+#Identifer 'seqbase' mapped to 'bat.setSequenceBase' 	# 48  (_69:str)
+end main;	# 49  
 #-----------------#
 # h	t	  # name
 # oid	str	  # type
@@ -135,14 +133,14 @@ end main;	# 51
 # h	t	  # name
 # void	void	  # type
 #-----------------#
-[ 0@0,	  nil	  ]
-[ 1@0,	  nil	  ]
-[ 2@0,	  nil	  ]
-[ 3@0,	  nil	  ]
-[ 4@0,	  nil	  ]
-[ 5@0,	  nil	  ]
-[ 6@0,	  nil	  ]
-[ 7@0,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  nil	  ]
 
 # 07:27:17 >  
 # 07:27:17 >  Done.

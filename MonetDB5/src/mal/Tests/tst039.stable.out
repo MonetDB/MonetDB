@@ -25,11 +25,11 @@ stdout of test 'tst039` in directory 'src/mal` itself:
 #end sample;
 function user.sample(nme:str,val:any_1):bit;	# 0  (sample:bit)<-(nme:str)(val:any_1)
     c := calc.*(2,3);	# 1 CALCbinaryMULintint (c:int)<-(_4:int)(_5:int)
-    b := bbp.bind(nme);	# 2 CMDbbpbind (b:bat[:any,:any])<-(nme:str)
+    b:bat[:void,:int]  := bbp.bind(nme);	# 2 CMDbbpbind (b:bat[:void,:int])<-(nme:str)
 #find a BAT 	# 3  (_7:str)
-    h := algebra.select(b,val,val);	# 4 ALGselect (h:bat[:oid,:any])<-(b:bat[:any,:any])(val:any_1)(val:any_1)
-    t := aggr.count(h);	# 5 ALGcount_bat (t:int)<-(h:bat[:oid,:any])
-    x := io.print(t);	# 6 IOprint_val (x:void)<-(t:int)
+    h := algebra.select(b,val,val);	# 4  (h:any)<-(b:bat[:void,:int])(val:any_1)(val:any_1)
+    t := aggr.count(h);	# 5  (t:any)<-(h:any)
+    x := io.print(t);	# 6 IOprint_val (x:void)<-(t:any)
     y := io.print(val);	# 7 IOprint_val (y:void)<-(val:any_1)
     return sample := true;	# 8  (sample:bit)<-(_12:bit)
 end sample;	# 9  

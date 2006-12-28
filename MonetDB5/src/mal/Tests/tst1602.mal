@@ -1,5 +1,4 @@
-	int_1M:= bat.new(:void,:lng,1000000);
-	bat.setSequenceBase(int_1M,0@0);
+	int_1M:= bat.new(:oid,:lng,1000000);
 
 	i:= 1000000:lng;
 barrier	sj_a:= true;
@@ -7,7 +6,7 @@ barrier	sj_a:= true;
 	uj_a := i;
 	vj_a := calc.>=(uj_a,0);
 barrier	tj_a:= vj_a;
-	xj_a := bat.insert(int_1M,nil,i);
+	xj_a := bat.insert(int_1M,nil:oid,i);
 redo	sj_a;
 exit	tj_a;
 exit	sj_a;

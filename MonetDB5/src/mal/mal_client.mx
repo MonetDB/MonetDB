@@ -17,11 +17,12 @@
 @a M. L. Kersten
 @v 5.0
 @-
-@+ Client Interfaces
 Clients gain access to the Monet server through a internet connection
 or through its server console.
 Access through the internet requires a client program at the
 source, which addresses the default port of a running server.
+The functionality of the server console is limited.
+It is a bare bone textual interface for expert use.
 
 @ifset M5manual
 At the server side, each client is represented by a session record with the
@@ -180,9 +181,6 @@ Nesting is indicated using a '+' before the prompt.
 @h
 	int blkmode;        /* control block parsing */
 @-
-@}
-@-
-@ifset M5manual
 Keeping track of instructions executed is a valueable tool for
 script processing and debugging. 
 Its default value is defined in the MonetDB configuration file.
@@ -192,18 +190,12 @@ A listing bit controls the level of detail to be generated during
 program execution tracing. The lowest level (1) simply dumps the input,
 (2) also demonstrates the MAL internal structur (4) adds the 
 type information
-@end ifset
-@{
 @h
 	bitset  listing;        
 @-
-@}
-@-
-@ifset M5manual
 The MAL debugger uses the client record to keep track of
 any pervasive debugger command. For detailed information
 on the debugger features.
-@end ifset
 @{
 @h
 	bitset debug;
@@ -765,7 +757,6 @@ str MCstopClient(Client c, oid which){
 	mal_unset_lock(mal_contextLock, "stopClient");
 	throw(ILLARG, "stop","Illegal client name");
 }
-@}
 @-
 In embedded mode there can be at most one console client and one 
 Mapi connection. Moreover, the Mapi connection should disable the administrator
@@ -783,6 +774,8 @@ int MCrunEmbedded(Client c){
 	/* to be defined */
 	return 0;
 }
+@-
+@}
 @+ Spying on clients
 During system monitoring with multiple clients active it is
 often hard to detect who or what is causing a system degradation. 

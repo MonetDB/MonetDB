@@ -43,9 +43,9 @@ comment "Creates a new BAT with sufficient space.";
 pattern bat.new(ht:any_1, tt:any_2, size:lng) :bat[:any_1,:any_2] 	
 address CMDBATnew
 comment "Creates a new BAT and allocate space.";
-pattern bat.new(ht:void, tt:any_2, size:int) :bat[:void,:any_2] 	
+pattern bat.new(ht:oid, tt:any_2, size:int) :bat[:oid,:any_2] 	
 address CMDBATnewint;
-pattern bat.new(ht:void, tt:any_2, size:lng) :bat[:void,:any_2] 	
+pattern bat.new(ht:oid, tt:any_2, size:lng) :bat[:oid,:any_2] 	
 address CMDBATnew;
 
 pattern bat.new(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 	
@@ -69,13 +69,7 @@ comment "Designate a BAT as garbage";
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
 comment "Extract the first tuple from a bat";
-pattern bat.unpack(b:bat[:void,:any_2])(h:oid,t:any_2)
-address CMDbatunpack
-comment "Extract the first tuple from a bat";
 pattern bat.pack(h:any_1,t:any_2):bat[:any_1,:any_2]
-address CMDbatpack
-comment "Pack a pair into a BAT";
-pattern bat.pack(h:oid,t:any_2):bat[:void,:any_2]
 address CMDbatpack
 comment "Pack a pair into a BAT";
 

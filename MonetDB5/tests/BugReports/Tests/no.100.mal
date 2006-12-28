@@ -63,7 +63,6 @@
 	la_a := bat.reverse(ka_a);
 	ma_a := io.print(la_a);
 #	io.print("a.seqbase(100@0);");
-	na_a := bat.setSequenceBase(a,100@0);
 #	io.print("[oid](a.mark(nil)).reverse().print();");
 	oa_a := algebra.markT(a);
 	pa_a := batcalc.oid(oa_a);
@@ -77,4 +76,3 @@
 	wa_a := io.print(va_a);
 #	io.print("quit();");
 	xa_a := clients.quit();
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

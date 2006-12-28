@@ -88,8 +88,8 @@ end main;	# 26
 # h	t					  # name
 # oid	str					  # type
 #-------------------------------------------------#
-[ 1@0,	  "http://www.yahoo.com/"		  ]
 [ 3@0,	  "http://www.searchengineshowdown.com/"  ]
+[ 1@0,	  "http://www.yahoo.com/"		  ]
 [ 0@0,	  "http://www.metacrawler.com/"		  ]
 [ 2@0,	  "http://www.altavista.com/"		  ]
 [ true ]
@@ -97,8 +97,8 @@ end main;	# 26
 # h	t					  # name
 # oid	str					  # type
 #-------------------------------------------------#
-[ 1@0,	  "http://www.yahoo.com/"		  ]
 [ 3@0,	  "http://www.searchengineshowdown.com/"  ]
+[ 1@0,	  "http://www.yahoo.com/"		  ]
 [ 0@0,	  "http://www.metacrawler.com/"		  ]
 [ 2@0,	  "http://www.altavista.com/"		  ]
 [ 4@0,	  "http://www.ibiblio.org/javafaq/"	  ]

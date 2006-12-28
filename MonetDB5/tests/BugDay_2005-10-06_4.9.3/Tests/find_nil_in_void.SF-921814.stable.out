@@ -41,53 +41,52 @@ stdout of test 'find_nil_in_void.SF-921814` in directory 'tests/BugDay_2005-10-0
 #exit MALException;
 #io.printf("oid(nil) -> %s\n",zs);
 #
+
+
+
+
+
+
+
+
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-(_2:void)(_3:str)
-    bat.setSequenceBase(b,nil:void);	# 2 BKCsetSequenceBaseNil (_4:bat[:void,:str])<-(b:bat[:void,:str])(_5:void)
-    bat.append(b,"zero");	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:void,:str])(_7:str)
-    io.print(b);	# 4 IOprint_val (_8:void)<-(b:bat[:void,:str])
-    z := algebra.find(b,0@0:oid);	# 5 ALGfind (z:str)<-(b:bat[:void,:str])(_10:oid)
-    zs := str.str(z);	# 6 STRtostr (zs:str)<-(z:str)
-catch MALException:str ;	# 7  (MALException:str) jump 9
-    zs := nil:str;	# 8  (zs:str)<-(_13:str)
-exit MALException:str ;	# 9  (MALException:str)
-    io.printf("oid(0) -> %s\n",zs);	# 10 IOprint_formatted_str (_14:void)<-(_15:str)(zs:str)
-    z := algebra.find(b,nil:oid);	# 11 ALGfind (z:str)<-(b:bat[:void,:str])(_16:oid)
-    zs := str.str(z);	# 12 STRtostr (zs:str)<-(z:str)
-    io.printf("oid(nil) -> %s\n",zs);	# 13 IOprint_formatted_str (_17:void)<-(_18:str)(zs:str)
-    bat.setSequenceBase(b,0@0:oid);	# 14 BKCsetSequenceBase (_19:bat[:void,:str])<-(b:bat[:void,:str])(_10:oid)
-    bat.append(b,"zero");	# 15 BKCappend_val_wrap (_20:void)<-(b:bat[:void,:str])(_7:str)
-    io.print(b);	# 16 IOprint_val (_21:void)<-(b:bat[:void,:str])
-    z := algebra.find(b,0@0:oid);	# 17 ALGfind (z:str)<-(b:bat[:void,:str])(_10:oid)
-    zs := str.str(z);	# 18 STRtostr (zs:str)<-(z:str)
-catch MALException:str ;	# 19  (MALException:str) jump 21
-    zs := nil:str;	# 20  (zs:str)<-(_13:str)
-exit MALException:str ;	# 21  (MALException:str)
-    io.printf("oid(0) -> %s\n",zs);	# 22 IOprint_formatted_str (_22:void)<-(_15:str)(zs:str)
-    z := algebra.find(b,nil:oid);	# 23 ALGfind (z:str)<-(b:bat[:void,:str])(_16:oid)
-    zs := str.str(z);	# 24 STRtostr (zs:str)<-(z:str)
-catch MALException:str ;	# 25  (MALException:str) jump 27
-    zs := nil:str;	# 26  (zs:str)<-(_13:str)
-exit MALException:str ;	# 27  (MALException:str)
-    io.printf("oid(nil) -> %s\n",zs);	# 28 IOprint_formatted_str (_23:void)<-(_18:str)(zs:str)
-end main;	# 29  
+    b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
+    bat.append(b,"zero");	# 2 BKCappend_val_wrap (_4:void)<-(b:bat[:oid,:str])(_5:str)
+    io.print(b);	# 3 IOprint_val (_6:void)<-(b:bat[:oid,:str])
+    z := algebra.find(b,0@0:oid);	# 4 ALGfind (z:str)<-(b:bat[:oid,:str])(_8:oid)
+    zs := str.str(z);	# 5 STRtostr (zs:str)<-(z:str)
+catch MALException:str ;	# 6  (MALException:str) jump 8
+    zs := nil:str;	# 7  (zs:str)<-(_11:str)
+exit MALException:str ;	# 8  (MALException:str)
+    io.printf("oid(0) -> %s\n",zs);	# 9 IOprint_formatted_str (_12:void)<-(_13:str)(zs:str)
+    z := algebra.find(b,nil:oid);	# 10 ALGfind (z:str)<-(b:bat[:oid,:str])(_14:oid)
+    zs := str.str(z);	# 11 STRtostr (zs:str)<-(z:str)
+    io.printf("oid(nil) -> %s\n",zs);	# 12 IOprint_formatted_str (_15:void)<-(_16:str)(zs:str)
+    bat.append(b,"zero");	# 13 BKCappend_val_wrap (_17:void)<-(b:bat[:oid,:str])(_5:str)
+    io.print(b);	# 14 IOprint_val (_18:void)<-(b:bat[:oid,:str])
+    z := algebra.find(b,0@0:oid);	# 15 ALGfind (z:str)<-(b:bat[:oid,:str])(_8:oid)
+    zs := str.str(z);	# 16 STRtostr (zs:str)<-(z:str)
+catch MALException:str ;	# 17  (MALException:str) jump 19
+    zs := nil:str;	# 18  (zs:str)<-(_11:str)
+exit MALException:str ;	# 19  (MALException:str)
+    io.printf("oid(0) -> %s\n",zs);	# 20 IOprint_formatted_str (_19:void)<-(_13:str)(zs:str)
+    z := algebra.find(b,nil:oid);	# 21 ALGfind (z:str)<-(b:bat[:oid,:str])(_14:oid)
+    zs := str.str(z);	# 22 STRtostr (zs:str)<-(z:str)
+catch MALException:str ;	# 23  (MALException:str) jump 25
+    zs := nil:str;	# 24  (zs:str)<-(_11:str)
+exit MALException:str ;	# 25  (MALException:str)
+    io.printf("oid(nil) -> %s\n",zs);	# 26 IOprint_formatted_str (_20:void)<-(_16:str)(zs:str)
+end main;	# 27  
 #-----------------#
 # h	t	  # name
-# void	str	  # type
-#-----------------#
-[ nil,	  "zero"  ]
-oid(0) -> nil
-oid(nil) -> zero
-#-----------------#
-# h	t	  # name
-# void	str	  # type
+# oid	str	  # type
 #-----------------#
 [ 0@0,	  "zero"  ]
-[ 1@0,	  "zero"  ]
 oid(0) -> zero
+oid(0) -> nil
 oid(nil) -> nil
 
-# 13:57:07 >  
-# 13:57:07 >  Done.
-# 13:57:07 >  
+# 19:59:42 >  
+# 19:59:42 >  Done.
+# 19:59:42 >  
 

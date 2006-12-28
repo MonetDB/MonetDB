@@ -1,8 +1,8 @@
 # testing the void semantics
-b:= bat.new(:void,:int);
-bat.insert(b,nil,0);
-bat.insert(b,nil,1);
-bat.insert(b,nil,2);
+b:= bat.new(:oid,:int);
+bat.insert(b,nil:oid,0);
+bat.insert(b,nil:oid,1);
+bat.insert(b,nil:oid,2);
 io.print(b);
 k:= 1@0;
 bat.replace(b,k,3);

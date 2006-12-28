@@ -38,12 +38,12 @@ end perftst;	# 5
 #
 function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_1:str)
-    b := bat.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_3:lng)(_3:lng)
-barrier (v,i):= language.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_6:lng) jump 6
-    bat.insert(b,i,i);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= language.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_8:lng)(_9:lng) jump 4
+    b := bat.new(:oid,:lng);	# 2 CMDBATnew (b:bat[:oid,:lng])<-(_3:oid)(_4:lng)
+barrier (v,i):= language.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 6
+    bat.append(b,i);	# 4 BKCappend_val_wrap (_8:void)<-(b:bat[:oid,:lng])(i:lng)
+    redo (v,i):= language.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
-    user.perftst(b,1:lng);	# 7  (_10:void)<-(b:bat[:lng,:lng])(_8:lng)
+    user.perftst(b,1:lng);	# 7  (_11:void)<-(b:bat[:oid,:lng])(_9:lng)
 end main;	# 8  
 [ "perftst" ]
 [ 1 ]
@@ -51,16 +51,16 @@ end main;	# 8
 # h	t	  # name
 # lng	lng	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  2	  ]
-[ 3,	  3	  ]
-[ 4,	  4	  ]
-[ 5,	  5	  ]
-[ 6,	  6	  ]
-[ 7,	  7	  ]
-[ 8,	  8	  ]
-[ 9,	  9	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
 
 # 08:01:39 >  
 # 08:01:39 >  Done.

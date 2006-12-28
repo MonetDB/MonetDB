@@ -1,5 +1,5 @@
 # check coercion of bit coercions on big/little endian platforms
-b := bat.new(:void,:bit);
-bat.insert(b, nil, 1:bit);
-bat.insert(b, nil, 0:bit);
+b := bat.new(:oid,:bit);
+bat.insert(b, nil:oid, 1:bit);
+bat.insert(b, nil:oid, 0:bit);
 io.print(b);

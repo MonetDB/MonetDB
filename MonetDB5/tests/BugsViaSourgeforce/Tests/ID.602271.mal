@@ -67,9 +67,7 @@
 	ab_a := copy(oid_int_bat);
 	bb_a := access(ab_a,BAT_WRITE);
 #	io.print("print(insert(access(copy(oid_int_bat),BAT_WRITE),");
-	cb_a := new(nil:void,nil:int);
-	db_a := oid(2);
-	eb_a := bat.setSequenceBase(cb_a,db_a);
+	cb_a := new(nil:oid,nil:int);
 	fb_a := oid(2);
 	gb_a := insert(eb_a,fb_a,2);
 	hb_a := insert(bb_a,gb_a);
@@ -95,9 +93,8 @@
 	vb_a := copy(oid_int_bat);
 	wb_a := access(vb_a,BAT_WRITE);
 #	io.print("print(insert(access(copy(oid_int_bat),BAT_WRITE),");
-	xb_a := new(nil:void,nil:int);
+	xb_a := new(nil:oid,nil:int);
 	yb_a := oid(10);
-	ac_a := bat.setSequenceBase(xb_a,yb_a);
 	bc_a := oid(10);
 	cc_a := insert(ac_a,bc_a,10);
 	dc_a := insert(wb_a,cc_a);
@@ -123,9 +120,8 @@
 	rc_a := copy(void_int_bat);
 	sc_a := access(rc_a,BAT_WRITE);
 #	io.print("print(insert(access(copy(void_int_bat),BAT_WRITE),");
-	tc_a := new(nil:void,nil:int);
+	tc_a := new(nil:oid,nil:int);
 	uc_a := oid(2);
-	vc_a := bat.setSequenceBase(tc_a,uc_a);
 	wc_a := oid(2);
 	xc_a := insert(vc_a,wc_a,2);
 	yc_a := insert(sc_a,xc_a);
@@ -153,9 +149,8 @@
 	nd_a := copy(void_int_bat);
 	od_a := access(nd_a,BAT_WRITE);
 #	io.print("print(insert(access(copy(void_int_bat),BAT_WRITE),");
-	pd_a := new(nil:void,nil:int);
+	pd_a := new(nil:oid,nil:int);
 	qd_a := oid(10);
-	rd_a := bat.setSequenceBase(pd_a,qd_a);
 	sd_a := oid(10);
 	td_a := insert(rd_a,sd_a,10);
 	ud_a := insert(od_a,td_a);
@@ -175,4 +170,3 @@
 #	io.print("# The provided stable output has been hand-crafted to \n");
 #	io.print("# depict that which I argue to be the 'correct' outpu.\n");
 #	io.print("#\n");
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

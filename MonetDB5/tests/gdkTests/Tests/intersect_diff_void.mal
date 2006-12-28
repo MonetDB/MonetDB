@@ -1,9 +1,9 @@
-a:=bat.new(:oid,:void);
+a:=bat.new(:oid,:oid);
+bat.insert(a,1@0,1@0);
 ar:=bat.reverse(a);
-bat.setSequenceBase(ar,1:oid);
-b:=bat.new(:oid,:void);
+b:=bat.new(:oid,:oid);
+bat.insert(b,2@0,2@0);
 br:=bat.reverse(b);
-bat.setSequenceBase(br,2:oid);
 
 a0 := algebra.kintersect(a,b);
 a0r:= bat.reverse(a0);

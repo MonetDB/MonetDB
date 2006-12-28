@@ -1,13 +1,13 @@
 #tests to illustrate simple code transformation
 
-function select{inline}(a:bat[:void,:int],low:int,hgh:int);
+function select{inline}(a:bat[:oid,:int],low:int,hgh:int);
 	io.print(a);
 	io.print("doit");
 	io.print(low);
 	io.print(hgh);
 end select;
 
-t:= bat.new(:void,:int);
+t:= bat.new(:oid,:int);
 io.print("test inliners");
 select(t,0,1);
 #optimizer.inliners();
