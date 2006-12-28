@@ -387,6 +387,7 @@ typedef struct shredCtxStruct {
     struct XqueryCtx *serCtx; /* the runtime data */
 
      MT_Lock *coll_lock;
+     MT_Sema *extend_sema;
 } shredCtxStruct;
 
 /* some string buffer sizes */
@@ -534,15 +535,17 @@ emit_tuple(shredCtxStruct* shredCtx,
     /* make sure the rid_* and nid_* bats have enough room */
     if (pre >= shredCtx->dstBAT[PRE_SIZE].size) {
         size_t newsize = shredBAT_newsize(&shredCtx->dstBAT[PRE_SIZE], pre);
-        if (!(newsize &&
-              shredBAT_extend(&shredCtx->dstBAT[PRE_SIZE], newsize) &&
+        int err = 0;
+        MT_sema_down(shredCtx->extend_sema, "shredder_extend"); 
+        err = 
+            !(newsize &&
+              shredBAT_extend(&shredCtx->dstBAT[PRE_SIZE],  newsize) &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_LEVEL], newsize) &&
-              shredBAT_extend(&shredCtx->dstBAT[PRE_PROP], newsize) &&
-              shredBAT_extend(&shredCtx->dstBAT[PRE_KIND], newsize) &&
-              (shredCtx->updatable == 0 ||shredBAT_extend(&shredCtx->dstBAT[PRE_NID], newsize))))
-        {
-            return GDK_FAIL;
-        }
+              shredBAT_extend(&shredCtx->dstBAT[PRE_PROP],  newsize) &&
+              shredBAT_extend(&shredCtx->dstBAT[PRE_KIND],  newsize) &&
+              (shredCtx->updatable == 0 || shredBAT_extend(&shredCtx->dstBAT[PRE_NID], newsize)));
+        MT_sema_up(shredCtx->extend_sema, "shredder_extend"); 
+        if (err) return GDK_FAIL;
     }
     /* insert the new RID tuple */
     if (shredCtx->updatable) {
@@ -1385,6 +1388,7 @@ shredder_create(char *location,
     if (shredCtx == NULL) return NULL;
 
     /* fill it */
+    int i = 4;
     memset(shredCtx, 0, sizeof(shredCtxStruct)); 
     shredCtx->location  = location;
     shredCtx->fileSize  = fileSize;
@@ -1392,12 +1396,13 @@ shredder_create(char *location,
     shredCtx->serFun    = serFun;
     shredCtx->serCtx    = serCtx;
     shredCtx->coll_lock = coll_lock;
+    (void) CMDpflock_get((lock*) &(shredCtx->extend_sema), &i);
     shredCtx->incremental = (BATcount(docBAT) > 0);
 
     /* init the idref attribute database */
     attrDB_init(&shredCtx->idrefAttrDB);
 
-    int xx = BUNsize(docBAT), i;
+    int xx = BUNsize(docBAT);
     BUN p = BUNfirst(docBAT);
     for(i=0; i<SHRED_BATS; i++, p+=xx) {
         shredBAT *sb = &shredCtx->dstBAT[i];
