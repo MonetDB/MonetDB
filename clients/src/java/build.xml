@@ -123,7 +123,7 @@ All Rights Reserved.
     <!-- now copy and filter the file -->
     <copy file="${scriptdir}/mjclient"
       overwrite="true"
-      tofile="${builddir}/mjclient.new"
+      tofile="${builddir}/mjclient"
       filtering="yes" />
   </target>
 
