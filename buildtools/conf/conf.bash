@@ -81,7 +81,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	if [ "${what}" = "MONET5" ] ; then
 		pkgdir="MonetDB5"
 	  else
-		pkgdir="MonetDB"
+		pkgdir="MonetDB4"
 	fi
 
 	if [ "${what}" != "MONETDB" ] ; then
@@ -683,7 +683,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
 	eval "alias Mtest_${wh_t}"
 	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/${libdir}/${pkgdir}5:${WHAT_PREFIX}/${libdir}/${pkgdir}5/lib:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
+		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/${libdir}/MonetDB5:${WHAT_PREFIX}/${libdir}/MonetDB5/lib:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
 		echo " MTEST_${what}5=${MTEST_WHAT}"
 		eval "MTEST_${what}5='${MTEST_WHAT}'; export MTEST_${what}5"
 		eval "alias Mtest_${wh_t}5='${MTEST_WHAT}'"
