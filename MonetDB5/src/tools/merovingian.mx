@@ -21,6 +21,12 @@
 The role of the Merovingian within the MonetDB suite is to act as a
 smart proxy, with capabilities to start Mservers when necessary.
 
+Since some people appear to have troubles pronouncing or remembering its
+name, one can also refer to the Merovingian, as Mero, Merov or Nebula.
+While the latter one has nothing to do with the former, it is provided
+as convenience for those who keep on having technical problems with
+pronouncing the former.
+
 Most of the Merovingian's decisions are based on information provided by
 Sabaoth.  Sabaoth is a file-system based administration shared between
 all Mservers in the same farm on a local machine.  It keeps track of how
@@ -42,25 +48,76 @@ period.  The Merovingian will log such refusals as well as return this
 as error to the connecting client.
 
 @h
-/* define stuff (is there any?) */
+#define MEROV_VERSION "0.1 (pre-release)"
 
 @c
 #include "merovingian.h"
+/*#include "mal_sabaoth.h"*/
+#include <stdlib.h> /* exit */
+#include <stdarg.h>	/* variadic stuff */
+#include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <unistd.h>
-#include <string.h>
+#include <string.h> /* strdup, strerror */
 #include <errno.h>
 
 typedef char* str;
 typedef char* err;
 
-#define newErr(X) strdup(X)
 #define freeErr(X) free(X)
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
-/* C99 stuff, not windows-proof */
-#define LOG(fmt, ...) fprintf(stderr, fmt , ## __VA_ARGS__);
+static size_t _merovingian_log_cnt = 0;
+
+/**
+ * Tries to log the given string and formatting parameter stuff.  This
+ * function may decide how to log it, e.g. syslog, it's own logfile or
+ * stderr.
+ *
+ * Currently this method just spits everything it gets to stderr.
+ */
+static void
+merlog(str fmt, ...)
+{
+	va_list ap;
+	char message[4096];
+	int len;
+
+	va_start(ap, fmt);
+
+	len = snprintf(message, 4095, "[merovingian]:%lld ", (long long int)_merovingian_log_cnt++);
+	len += vsnprintf(message + len, 4095 - len, fmt, ap);
+	message[len] = '\0';
+
+	/* trim trailing newlines */
+	while (len > 0 && message[--len] == '\n')
+		message[len] = '\0';
+
+	fprintf(stderr, "%s\n", message);
+
+	va_end(ap);
+}
+
+static str
+newErr(str fmt, ...)
+{
+	va_list ap;
+	char message[4096];
+	str ret;
+	int len;
+
+	va_start(ap, fmt);
+
+	len = vsnprintf(message, 4095, fmt, ap);
+	message[len] = '\0';
+
+	va_end(ap);
+
+	ret = malloc(sizeof(char) * (len + 1));
+	memcpy(ret, message, len + 1);
+	return(ret);
+}
 
 /**
  * Fork an Mserver and detach.  The forked Mserver is not a child of
@@ -68,7 +125,8 @@ typedef char* err;
  * maintained or returned.
  */
 static err
-forkMserver(str database) {
+forkMserver(str database)
+{
 	pid_t pid;
 
 	pid = fork();
@@ -78,13 +136,15 @@ forkMserver(str database) {
 		pid = fork();
 		if (pid == 0) {
 			/* ok, now exec that Mserver we want */
-			execv(....); /* FIXME */
+			/*execv(.... mserver --dbname=%s, databse);  FIXME */
+			merlog("todo: %s", database);
+			return(NO_ERR);
 		} else if (pid > 0) {
 			/* we are the parent of the childchild, so let's die */
 			exit(0);
 		} else {
 			/* bleh... forking failed :( nothing we can do but log */
-			LOG("Forking sub-child failed, no Mserver spawned!");
+			merlog("Forking sub-child failed, no Mserver spawned!");
 			exit(1);
 		}
 	} else if (pid > 0) {
@@ -96,4 +156,12 @@ forkMserver(str database) {
 	}
 }
 
-# vim:ts=4 sw=4 noexpandtab:
+int main(int argc, char *argv[]) {
+	merlog("Merovingian %s starting ...", MEROV_VERSION);
+
+	if (argc > 1) {
+		forkMserver(argv[1]);
+	}
+}
+
+/* vim:set ts=4 sw=4 noexpandtab: */

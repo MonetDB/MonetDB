@@ -25,6 +25,13 @@ bin_mserver5 = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
+bin_merovingian = {
+	SOURCES = merovingian.mx
+	LIBS = ../mal/libmal @SHARED_LIBS@ -lstream \
+		   $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		   $(MALLOC_LIBS)
+}
+
 lib_embeddedmal = {
 	SOURCES = embeddedclient.mx
 	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi \
