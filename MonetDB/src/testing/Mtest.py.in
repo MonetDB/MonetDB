@@ -89,8 +89,8 @@ CONDITIONALS = {
     'NATIVE_WIN32'     : "@NATIVE_WIN32_FALSE@",
     # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
     # hence, we set them at runtime in main() below
-    'HAVE_MONET5'      : "@HAVE_MONET5_FALSE@",
-    'HAVE_MONET'       : "@HAVE_MONET_FALSE@",
+    'HAVE_MONETDB5'    : "@HAVE_MONETDB5_FALSE@",
+    'HAVE_MONETDB4'    : "@HAVE_MONETDB4_FALSE@",
     'MONET4'           : "@MONET4_FALSE@",
     'MONET5'           : "@MONET5_FALSE@",
 }
@@ -2784,13 +2784,13 @@ def main(argv) :
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     if env['VERSION'] >= 49900:
-        CONDITIONALS['HAVE_MONET5'] = '#'
-        CONDITIONALS['HAVE_MONET'] = ''
+        CONDITIONALS['HAVE_MONETDB5'] = '#'
+        CONDITIONALS['HAVE_MONETDB4'] = ''
         CONDITIONALS['MONET4'] = ''
         CONDITIONALS['MONET5'] = '#'
     else:
-        CONDITIONALS['HAVE_MONET5'] = ''
-        CONDITIONALS['HAVE_MONET'] = '#'
+        CONDITIONALS['HAVE_MONETDB5'] = ''
+        CONDITIONALS['HAVE_MONETDB4'] = '#'
         CONDITIONALS['MONET4'] = '#'
         CONDITIONALS['MONET5'] = ''
 

@@ -20,7 +20,7 @@ rollback_and_autocommit.SF-926453
 accents_in_strings.SF-926709
 timestamp_parsing.SF-927300
 index_management.SF-927326
-HAVE_MONET?bad_sql_logdir.SF-927371
+HAVE_MONETDB4?bad_sql_logdir.SF-927371
 string2float_coercions.SF-928850
 case.SF-929151
 drop_index.SF-929243

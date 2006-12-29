@@ -15,7 +15,7 @@ insert_not_exists.SF-1380287
 HAVE_JAVA?authorization.SF-1430616
 mapi_connect_errors_vanish.SF-1432134
 create_column_name_data.SF-1440214
-HAVE_MONET?connect_crash.SF-1436626
+HAVE_MONETDB4?connect_crash.SF-1436626
 HAVE_JAVA?drop_schema_crash.SF-1504794
 set_session_vars.SF-1505987
 reset_session_vars.SF-1505987
