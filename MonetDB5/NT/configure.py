@@ -74,8 +74,8 @@ subs = [
     ('@CROSS_COMPILING_FALSE@',  '#'),
     ('@DOCTOOLS_FALSE@',         '#'),
     ('@HAVE_JAVA_FALSE@',        have_java_false),
-    ('@HAVE_MONET5_FALSE@',      ''),
-    ('@HAVE_MONET_FALSE@',       '#'),
+    ('@HAVE_MONETDB5_FALSE@',    '#'),
+    ('@HAVE_MONETDB4_FALSE@',    ''),
     ('@HAVE_PCRE_FALSE@',        ''),
     ('@HAVE_PERL_FALSE@',        ''),
     ('@HAVE_PERL_DEVEL_FALSE@',  ''),
@@ -90,8 +90,8 @@ subs = [
     ('@NOT_WIN32_FALSE@',        ''),
     ('@PROFILING_FALSE@',        ''),
     # SQL:
-    ('@MONET4_FALSE@',           '#'),
-    ('@MONET5_FALSE@',           ''),
+    ('@MONET4_FALSE@',           ''),
+    ('@MONET5_FALSE@',           '#'),
     ('@NATIVE_WIN32_FALSE@',     '#'),
 ]
 
