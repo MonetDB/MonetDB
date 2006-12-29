@@ -78,11 +78,14 @@ if [ "${what}" = "BUILDTOOLS" -a ! -f configure.bs ] ; then
 fi
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
-	if [ "${what}" = "MONET5" ] ; then
-		pkgdir="MonetDB5"
-	  else
-		pkgdir="MonetDB4"
-	fi
+	case "${what}" in
+	MONETDB4)
+		pkgdir="MonetDB4";;
+	MONET5)
+		pkgdir="MonetDB5";;
+	*)
+		pkgdir="MonetDB";;
+	esac
 
 	if [ "${what}" != "MONETDB" ] ; then
 		if [ ! "${MONETDB_PREFIX}" ] ; then
@@ -90,11 +93,38 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 		fi
 		if [ ! -x ${MONETDB_PREFIX}/bin/monetdb-config ] ; then
 			echo ''
-			echo 'Could not find Monet installation.'
+			echo 'Could not find MonetDB Common installation.'
 			echo ''
 			wh_t='' ; unset wh_t
 			what='' ; unset what
 			return 1
+		fi
+		if [ "${what}" != "CLIENTS" ] ; then
+			if [ ! "${CLIENTS_PREFIX}" ] ; then
+				CLIENTS_PREFIX=`monetdb-clients-config --prefix`
+			fi
+			if [ ! -x ${CLIENTS_PREFIX}/bin/monetdb-clients-config ] ; then
+				echo ''
+				echo 'Could not find MonetDB Clients installation.'
+				echo ''
+				wh_t='' ; unset wh_t
+				what='' ; unset what
+				return 1
+			fi
+			if [ "${what}" != "MONETDB4"  -a  "${what}" != "MONET5" ] ; then
+				if [ ! "${MONETDB4_PREFIX}${MONET5_PREFIX}" ] ; then
+					MONETDB4_PREFIX=`monetdb4-config --prefix 2>/dev/null`
+					MONET5_PREFIX=`monetdb5-config --prefix 2>/dev/null`
+				fi
+				if [ ! \( -x ${MONETDB4_PREFIX}/bin/monetdb4-config  -o  -x ${MONET5_PREFIX}/bin/monetdb5-config \) ] ; then
+					echo ''
+					echo 'Could not find neither MonetDB4 nor MonetDB5 installation.'
+					echo ''
+					wh_t='' ; unset wh_t
+					what='' ; unset what
+					return 1
+				fi
+			fi
 		fi
 	fi
 fi
@@ -236,7 +266,7 @@ if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv"  -a  -d "${softpath}" ] ; then
 		# the Intel compiler doesn't find headers/libs in /usr/local without help
 		case ${what} in
-		MONETDB)
+		MONETDB4)
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 			conf_opts="${conf_opts} --with-pcl=${softpath}"
 			;;
@@ -436,7 +466,7 @@ if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; th
 			conf_opts="${conf_opts} --with-getopt=${softpath}"
 			conf_opts="${conf_opts} --with-tcl=${softpath}"
 			;;
-		SQL)
+		CLIENTS)
 			conf_opts="${conf_opts} --with-odbc=${softpath}"
 			;;
 		XML)
@@ -493,14 +523,14 @@ if [ "${INSTRUMENT}" ] ; then
 	conf_opts="${conf_opts} --enable-instrument"
 fi
 
-if [ "${what}" != "BUILDTOOLS"  -a  "${what}" != "MONETDB" ] ; then
-	# tell configure where to find MonetDB
-	conf_opts="${conf_opts} --with-monet=${MONETDB_PREFIX}"
-	if [ "${what}" != "MONET5"  -a  "${MONET5_PREFIX}" ] ; then
-		# tell configure where to find MonetDB5
-		conf_opts="${conf_opts} --with-monet5=${MONET5_PREFIX}"
-	fi
-fi
+###if [ "${what}" != "BUILDTOOLS"  -a  "${what}" != "MONETDB" ] ; then
+###	# tell configure where to find MonetDB
+###	conf_opts="${conf_opts} --with-monetdb=${MONETDB_PREFIX}"
+###	if [ "${what}" != "MONET5"  -a  "${MONET5_PREFIX}" ] ; then
+###		# tell configure where to find MonetDB5
+###		conf_opts="${conf_opts} --with-monetdb5=${MONET5_PREFIX}"
+###	fi
+###fi
 
 # prepend target bin-dir to PATH
 binpath="${WHAT_PREFIX}/bin:${binpath}"
