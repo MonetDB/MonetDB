@@ -27,10 +27,10 @@ obtained from a simulated run.
 The current implementation contains a framework and an example for
 building your own cost-based optimized.
 
-The @code{optimizer.costModel()} works its way through a 
+The @sc{optimizer.costModel()} works its way through a 
 MAL program in search for
 relational operators and estimates their result size. 
-The estimated size is left behind as the property @code{rows}.
+The estimated size is left behind as the property @sc{rows}.
 @verbatim
     r{rows=100} := bat.new(:void,:int);
     s{rows=1000}:= bat.new(:void,:int);
@@ -49,14 +49,14 @@ changes the properties of the instructions as follows:
 @end verbatim
 
 The cost estimation does not use any statistics on the actual
-data distribution yet. It relies on the @code{rows}
+data distribution yet. It relies on the @sc{rows}
 property provided by the front-end or other optimizers.
 It just applies a few heuristic cost estimators.
 However, it ensures that empty results are only tagged
-with @code{rows=0} if the estimate is accurate, otherwise
+with @sc{rows=0} if the estimate is accurate, otherwise
 it assumes at least one result row. This property makes
 it possible to safely pass the result of the cost estimation
-to the @code{emptySet} optimizer for code squeezing.
+to the @sc{emptySet} optimizer for code squeezing.
 @{
 @+ Implementation section
 To work in conjunction with the emptySet optimizer, we should

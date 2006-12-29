@@ -31,7 +31,7 @@ to produce the result incrementally.
 
 The code snippet below illustrates a sequence over time
 to build the partitioned BAT. BATs are incrementally
-added to a named PBAT @code{Sales}.
+added to a named PBAT @sc{Sales}.
 @verbatim
     b1:= bat.new(:oid,:int);
     bat.setPersistent(b1);

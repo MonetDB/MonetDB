@@ -30,11 +30,11 @@ or d) pass the exception to an enclosing call.
 The current implementation of the MAL interpreter only supports c) and d).
 
 @- Exception control
-The exception handling keywords are: @code{catch} and @code{raise}
-The @code{catch}  marks a point in the dataflow where
+The exception handling keywords are: @sc{catch} and @sc{raise}
+The @sc{catch}  marks a point in the dataflow where
 an exception raised can be dealt with. Any statement between the
 point where it is raised and the catch block is ignored.
-Moreover, the @code{ catch} ... @code{ exit} block is ignored when
+Moreover, the @sc{ catch} ... @sc{ exit} block is ignored when
 no errors have occurred in the preceeding dataflow structure.
 Within the catch block, the exception variable can be manipulated
 without constraints.
@@ -45,12 +45,12 @@ the exception message can be delivered. Otherwise, it
 implicitly raises the exception in the surrounding scope.
 
 After an exception has been dealt with the catch block can be left
-at the normal @code{exit} with the option @code{leave} or
-continue after the failed instruction using a @code{redo}.
+at the normal @sc{exit} with the option @sc{leave} or
+continue after the failed instruction using a @sc{redo}.
 The latter case assumes the catched code block has been able to provide
 an alternative for the failed instruction.
 
-Both @code{leave} and @code{redo} are conditional flow of control modifiers,
+Both @sc{leave} and @sc{redo} are conditional flow of control modifiers,
 which trigger on a non-empty string variable.
 An exception raised within a catch-block terminates
 the function and returns control to the enclosing environment.
@@ -59,8 +59,8 @@ The argument to the catch statement is a target list,
 which holds the exception variables you are interested in.
 
 The snippet below illustrates how an exception raised
-in the function @code{io.read} is catched using the exception variable IOerror.
-After dealing with it locally, it raises a new exception @code{ FATALerror}
+in the function @sc{io.read} is catched using the exception variable IOerror.
+After dealing with it locally, it raises a new exception @sc{ FATALerror}
 for the enclosing call.
 
 @example
@@ -72,7 +72,7 @@ raise FATALerror:= "Can't handle it";
 exit IOerror;
 @end example
 
-Since @code{catch} is a flow control modifier it can be attached to any
+Since @sc{catch} is a flow control modifier it can be attached to any
 assignment statement. This statement is executed whenever there is no
 exception outstanding, but will be ignored when control is moved
 to the block otherwise.
@@ -91,7 +91,7 @@ and concludes with specific information needed to interpret
 and handle the exception.
 
 For example, the exception string 
-@code{ 'MALException:Admin.main[2]:address of function missing'}
+@sc{ 'MALException:Admin.main[2]:address of function missing'}
 denotes an exception raised while typechecking a MAL program.
 
 The exceptions captured within the kernel are marked as 'GDKerror'.
@@ -107,7 +107,7 @@ during the exection.
 @+ Error Handling
 Internationalization and consistent error reporting is helped by a
 central place of all kernel error messages. 
-They are split into @code{fatal}, code{errors} and @code{warnings}.
+They are split into @sc{fatal}, code{errors} and @sc{warnings}.
 The second category is the system component in which it is raised.
 
 The first attempt: grep on src/MAL module.

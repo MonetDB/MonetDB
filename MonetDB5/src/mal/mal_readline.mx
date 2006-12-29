@@ -20,7 +20,7 @@ The argument is a (partial) operator call,
 which is looked up in the symbol table.
 If the pattern includes a '(' it also
 displays the signature for each match.
-The @code{argument types} and @code{address} attributes
+The @sc{argument types} and @sc{address} attributes
 are also shown if the call contains the closing bracket ')'.
 @example
 >?bat.is
@@ -53,13 +53,13 @@ pattern io.print(val:bat[:any_1,:any_2]):int
 @end example
 
 The result of the help command can also be obtained in a BAT,
-using the commands @code{manual.help}.
-Keyword based lookup is supported by the operation @code{manual.search};
-Additional routines are available in the @code{inspect}
+using the commands @sc{manual.help}.
+Keyword based lookup is supported by the operation @sc{manual.search};
+Additional routines are available in the @sc{inspect}
 module to built reflexive code.
 
 @{
-For console input the @code{readline} library linked with
+For console input the @sc{readline} library linked with
 the system provides a history mechanism and also name completion.
 Add readline functionality to the MAL console.
 This means that the user has history access and some other

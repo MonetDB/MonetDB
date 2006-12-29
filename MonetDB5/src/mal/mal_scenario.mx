@@ -26,7 +26,7 @@ and consists of a @emph{reader}, @emph{parser}, @emph{optimizer},
 for both linked-in and external components.
 
 The languages supported are SQL, XQuery, 
-and the Monet Assembler Language (MAL).
+and the Monet Assembly Language (MAL).
 The default scenario handles MAL instructions, which is used
 to illustrate the behavior of the scenario steps.
 
@@ -68,14 +68,14 @@ cycle. It returns to the user for a new command.
 @+ Scenario management
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.
-The first time a scenario @code{XYZ} is used, the system looks for a scenario
-initialization routine @code{XYZinitSystem()} and executes it. 
+The first time a scenario @sc{xyz} is used, the system looks for a scenario
+initialization routine @sc{xyzinitSystem()} and executes it. 
 It is typically used to prepare the server for language specific interactions.
 Thereafter its components are set to those required by
 the scenario and the client initialization takes place.
 
 When the last user interested in a particular scenario leaves the
-scene, we activate its finalization routine calling @code{XYZexitSystem()}.
+scene, we activate its finalization routine calling @sc{xyzexitSystem()}.
 It typically perform cleanup, backup and monitoring functions.
 
 A scenario is interpreted in a strictly linear fashion,
@@ -524,24 +524,24 @@ name signature. They require exclusive access to the client
 record. Any specific information should be accessible from
 there, e.g. access to a scenario specific state descriptor.
 The client scenario initialization and finalization brackets
-are  @code{XYZinitClient()} and @code{XYZexitClient()}.
+are  @sc{xyzinitClient()} and @sc{xyzexitClient()}.
 
-The @code{XYZparser(Client c)} contains the parser for language XYZ
+The @sc{xyzparser(Client c)} contains the parser for language XYZ
 and should fill the MAL program block associated with the client record.
 The latter may have been initialized with variables. 
 Each language parser may require a catalog with information
 on the translation of language specific datastructures into their BAT
 equivalent.
 
-The @code{XYZoptimizer(Client c)} contains language specific optimizations
+The @sc{xyzoptimizer(Client c)} contains language specific optimizations
 using the MAL intermediate code as a starting point.
 
-The @code{XYZtactics(Client c)} synchronizes the program execution with the
+The @sc{xyztactics(Client c)} synchronizes the program execution with the
 state of the machine, e.g. claiming resources, the history of the client 
 or alignment of the request with concurrent actions (e.g. transaction
 coordination).
 
-The @code{XYZengine(Client c)} contains the applicable back-end engine.
+The @sc{xyzengine(Client c)} contains the applicable back-end engine.
 The default is the MAL interpreter, which provides good balance
 between speed and ability to analysis its behavior.
 

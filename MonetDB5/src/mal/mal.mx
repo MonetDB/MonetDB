@@ -143,13 +143,13 @@ of the MAL program or the compiler is tightly coupled with
 the server to save parsing and communication overhead.
 
 A snippet of the MAL code produced by the SQL compiler
-for the query @code{select count(*) from tables}
+for the query @sc{select count(*) from tables}
 is shown below. It illustrates a sequences of relational
 operations against a table column and producing a
 partial result.
 @example
 	...
-    _22:bat[:void,:oid]  := sql.bind_dbat("tmp","_tables",0);
+    _22:bat[:oid,:oid]  := sql.bind_dbat("tmp","_tables",0);
     _23 := bat.reverse(_22);
     _24 := algebra.kdifference(_20,_23);
     _25 := algebra.markT(_24,0:oid);

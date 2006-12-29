@@ -25,7 +25,7 @@ for distributed storage makes that BATs ideally should be
 looked upon as a union of smaller BATs which are processed
 within the (memory) resource limitations given.
 
-The operation @code{optimizer.generators} takes @code{pbm.generator} definitions
+The operation @sc{optimizer.generators} takes @sc{pbm.generator} definitions
 and encapsulate them in iterator blocks, thereby minimizing the
 MAL memory footprint.
 
@@ -41,7 +41,7 @@ operators with their incremental counter part, alike the
 multi_table optimizer.
 
 A snippet of the partitioning optimizer is shown below. It assumes
-that the partitioned BAT @code{a0} consists of the components @code{a1,a2,a3}.
+that the partitioned BAT @sc{a0} consists of the components @sc{a1,a2,a3}.
 A subsequent call of the partition optimizer will replace
 the print command with an iterator.
 @verbatim
@@ -205,7 +205,7 @@ In the general case it is more difficult. An incremental operation may exist,
 but also the operation is targeted at the partitioned bat itself, without
 interference with others.
 In that case we can wrape the code in an iterator or rely on such a routine
-to be available in the @code{pbm} module.
+to be available in the @sc{pbm} module.
 The case below is to used as a starting point for experimentation.
 @c
 		if( getFunctionId(p) == setWriteModeRef && getModuleId(p) == batRef){

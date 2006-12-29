@@ -16,9 +16,9 @@
 
 @a M. Kersten
 @v 1.0
-@* MonetDB Assembler Language (MAL)
+@* MonetDB Assembly Language (MAL)
 The primary textual interface to the Monetdb kernel
-is a simple, assembler-like language, called MAL. 
+is a simple, assembly-like language, called MAL. 
 The language reflects the virtual machine architecture around the
 kernel libraries and has been designed for speed of parsing,
 ease of analysis, and ease of target compilation by query compilers.
@@ -55,40 +55,44 @@ bulk assignment instructions.
 The remainder of this chapter provide a concise overview of the
 language features and illustrative examples.
 @menu
-* MAL variables::
-* MAL instructions::
+* MAL Literals::
+* MAL Variables::
+* MAL Instructions::
 * Flow of control::
-* Function definitions::
-* Factory definitions::
+* MAL Functions::
+* MAL Factories::
 * Type resolution::
 * Atomary types::
 * Boxed variables::
 * Property Management::
 @end menu
 
-@node MAL variables, MAL instructions, MAL,MAL
-@+ Literals and Variables
+
+@node MAL Literals, MAL Variables, MAL,MAL
+@+ MAL Literals 
 Literals in MAL follow the lexical conventions of C/C++.
 A default type is attached, e.g. the literal 1 is typed
-as an @code{int} value.
-Likewise, the literal 3.14 is typed @code{flt} rather than @code{dbl}.
+as an @sc{int} value.
+Likewise, the literal 3.14 is typed @sc{flt} rather than @sc{dbl}.
 
 A literal can be coerced to another type by tagging it with a type
 classifier, provided a coercion operation is defined.
-For example, @code{1:lng} marks the literal as of type @code{lng}.
-and @code{"1999-12-10":date} creates a @code{date} literal.
+For example, @sc{1:lng} marks the literal as of type @sc{lng}.
+and @sc{"1999-12-10":date} creates a @sc{date} literal.
 
-MonetDB comes with the hardwired types @code{bit, chr, sht, int, lng, oid, flt, 
-dbl, str} and @code{bat}, the bat identifier.
+MonetDB comes with the hardwired types @sc{bit, chr, sht, int, lng, oid, flt, 
+dbl, str} and @sc{bat}, the bat identifier.
 The kernel code has been optimized to deal with these types efficiently,
 i.e. without unnecessary function call overheads
 In addition,  the system supports
-temporal types @code{date, daytime, time, timestamp, timezone},
-extensions to deal with IPv4 addresses and URLs using @code{inet, url},
+temporal types @sc{date, daytime, time, timestamp, timezone},
+extensions to deal with IPv4 addresses and URLs using @sc{inet, url},
 and several types to interact more closely with the 
-kernel @code{lock, semphore}.
+kernel @sc{lock, semphore}.
 This list can be extended with user defined types.
 
+@node MAL Variables, MAL Instructions, MAL,MAL
+@+ MAL Variables
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
 the context in which they are first used, see @ref{Type resolution}. 
@@ -99,7 +103,7 @@ temporary variable whose name aligns with an entry in the symbol table.
 In general they can not be used in MAL programs, but they may become
 visible in MAL program listings or during debugging.
 
-@node MAL instructions, Flow of control, MAL variables , MonetDB Assembler Language (MAL)
+@node MAL Instructions, Flow of control, MAL Variables, MAL
 @+ Instructions
 MAL instructions have purposely a simple format. 
 It is syntactically represented by an assignment, where
@@ -117,8 +121,8 @@ Operators are grouped into user defined modules.
 Ommission of the module name is interpreter as the @sc{user} module.
 
 Simple binary arithmetic operations are merely provided as a short-hand,
-e.g. the expression @code{t:=2+2} is converted directly 
-into @code{t:= calc.+(2,2)}.
+e.g. the expression @sc{t:=2+2} is converted directly 
+into @sc{t:= calc.+(2,2)}.
 
 Target variables are optional. The compiler introduces temporary 
 variables to hold the result of the expression upon need. 
@@ -139,38 +143,38 @@ Variable- and statement- block together describe the
 static part of a MAL procedure. It carries carry enough 
 information to produce a listing and to aid symbolic debugging.
 
-@node Flow of control, Function definitions, MAL instructions, MonetDB Assembler Language (MAL)
+@node Flow of control, MAL Functions, MAL Instructions, MAL
 @+ Flow of control
 The flow of control within a MAL program block can be changed by
-tagging an statement with either @code{return}, @code{yield},
-@code{barrier}, @code{catch}, @code{leave}, @code{redo}, or @code{exit}.
+tagging an statement with either @sc{return}, @sc{yield},
+@sc{barrier}, @sc{catch}, @sc{leave}, @sc{redo}, or @sc{exit}.
 
-The flow modifiers @code{return} and @code{yield} mark the end 
-of a call and return one or more results to the calling environment. 
-The @code{return} and @code{yield} are followed by a target list
+The flow modifiers @sc{return} and @sc{yield} mark the end
+of a call and return one or more results to the calling environment.
+The @sc{return} and @sc{yield} are followed by a target list
 or an assignment, which is executed first.
 
-The @code{barrier} (@code{catch}) and @code{exit} pair mark a
+The @sc{barrier} (@sc{catch}) and @sc{exit} pair mark a
 guarded statement block. They may be nested to form a proper
 hierarchy identified by their primary target variable,
 also called the control variable.
 
-The @code{leave} and @code{redo} are conditional flow modifiers. 
-The control variable is used after the assignment statement has 
+The @sc{leave} and @sc{redo} are conditional flow modifiers.
+The control variable is used after the assignment statement has
 been evaluated to decide on the flow-of-control action to be taken.
 Built-in controls exists for booleans and numeric values.
 The barrier block is opened when the control variable holds
 true, when its numeric value >= 0, or when it is a non-empty
-string. The @code{nil} value blocks entry in all cases.
+string. The @sc{nil} value blocks entry in all cases.
 
 Once inside the barrier you have an option to prematurely
-@code{leave} it at the exit statement
-or to @code{redo} interpretation just after the corresponding
-barrier statement. Much like 'break' and 'continue' statements 
+@sc{leave} it at the exit statement
+or to @sc{redo} interpretation just after the corresponding
+barrier statement. Much like 'break' and 'continue' statements
 in the programming language C.
 The action is taken when the condition is met.
 
-The @code{exit} marks the exit for a block. Its optional assignment
+The @sc{exit} marks the exit for a block. Its optional assignment
 can be used to re-initialize the barrier control variables
 or wrap-up any related administration.
 
@@ -178,7 +182,7 @@ The barrier blocks can be properly nested to form
 a hierarchy of basic blocks.
 The control flow within and between blocks is
 simple enough to deal with during an optimizer stage.
-The @code{redo} and @code{leave} statements mark
+The @sc{redo} and @sc{leave} statements mark
 the partial end of a block. Statements within these
 blocks can be re-arranged according to the data-flow
 dependencies. The order of partial blocks can not
@@ -189,7 +193,7 @@ Common guarded blocks in imperative languages are
 the for-loop and if-then-else constructs.
 They can be simulated as follows.
 
-Consider the statement @code{for(i=1;i<10;i++) print(i)}.
+Consider the statement @sc{for(i=1;i<10;i++) print(i)}.
 The (optimized) MAL block to implement this becomes:
 @example
      i:= 1;
@@ -200,10 +204,10 @@ redo B:= i<10;
 exit B;
 @end example
 
-Translation of the statement @code{if(i<1) print("ok"); else print("wrong");}
+Translation of the statement @sc{if(i<1) print("ok"); else print("wrong");}
 becomes:
 @example
-    i:=1; 
+    i:=1;
 barrier ifpart:= i<1;
     print("ok");
 exit ifpart;
@@ -214,9 +218,9 @@ exit elsepart;
 
 Note that both guarded blocks can be interchanged without
 affecting the outcome. Moreover, neither block would
-have been entered if the variable happens to be assigned @code{nil}.
+have been entered if the variable happens to be assigned @sc{nil}.
 
-The primitives are sufficient to model a wide variety of iterators, 
+The primitives are sufficient to model a wide variety of iterators,
 whose pattern look like (for a module M):
 @example
 barrier i:= M.newIterator(T);
@@ -236,7 +240,7 @@ the redo.
 Likewise, the leave control statement skips to the exit
 when the control variable @emph{ i} shows a closed barrier block.
 Otherwise, it continues with the next instruction.
-Note, in both failed cases the control variable is 
+Note, in both failed cases the control variable is
 possibly changed.
 
 A recurring situation is to iterate over the elements in
@@ -250,12 +254,12 @@ exit (ids,hd,tl);
 @end example
 Where idx is an integer to denote the row in the BAT,
 hd and tl denote values of the current element.
-This scheme is more efficient 
+This scheme is more efficient
 @{
 @+ The MAL instruction records
 The data structure to represent a MAL block is kept simple.
 It carries a sequence of MAL statements and a variable table.
-Each instruction contains references to elements in the 
+Each instruction contains references to elements in the
 symbol table.
 
 The MAL instruction is a code byte string overlaid with the
@@ -264,7 +268,7 @@ allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
 
 Variable- and stmt- block together describe the
-static part of a MAL procedure. It carries carry enough 
+static part of a MAL procedure. It carries carry enough
 information to produce
 a listing and to aid symbolic debugging.
 
@@ -273,7 +277,7 @@ This costs some space, but will improve readability and permits
 instruction sequences generated internally also to be kept
 around as ASCII text for later inclusion.
 
-WARNING. The way we lay out the instructions means that 
+WARNING. The way we lay out the instructions means that
 you can prepare only one instruction at a time, because you don't
 know how many arguments may be needed upfront.
 [TODO, rather then breaking the original input into pieces,
@@ -944,7 +948,7 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 @-
 Query optimizers walk their way through a MAL program block.
 They require some primitives to move instructions around and
-to remove superflous instructions. 
+to remove superflous instructions.
 The removal is based on the assumption that indeed the instruction
 belonged to the block.
 @c
@@ -1040,7 +1044,7 @@ location of a temporary variable should be flagged as an error.
 		for(j=0; j< mb->vtop; j++)
 			if( getVarTmp(mb,j)== i && isTmpVar(mb,j)) return j;
         return -1;
-    } 
+    }
 @-
 Temporary names are not materialized as strings unless necessary.
 @c
@@ -1156,12 +1160,12 @@ getArgDefault(MalBlkPtr mb, InstrPtr p, int idx)
 }
 
 @-
-All variables are implicitly declared upon their first assignment. 
+All variables are implicitly declared upon their first assignment.
 
 Lexical constants require some care. They typically appear as arguments
 in operator/function calls. To simplify program analysis later on,
 we stick to the situation that function/operator arguments are always
-references to by variables. 
+references to by variables.
 @- Reserved words
 Although MAL has been designed as a minimal language, several
 identifiers are not eligible as variables. The encoding below
@@ -1259,7 +1263,7 @@ cheap to perform a linear search to a variable or constant.
         mb->vsize= s;
         mb->var= new;
         mb->var[mb->vtop-1]->gdktype= TYPE_void;
-    } 
+    }
 @c
 int
 newVariable(MalBlkPtr mb, str name, malType type)
@@ -1328,7 +1332,7 @@ newTmpVariable(MalBlkPtr mb, malType type)
 
 	@:makeVarSpace@
 	n = mb->vtop;
-	if (getVar(mb, n) == NULL) 
+	if (getVar(mb, n) == NULL)
 		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord));
 /* already captured by memset
     mb->var[n]->name = 0;
@@ -1555,11 +1559,11 @@ convertConstant(malType type, ValPtr vr)
 			vr->vtype = type;
 			vr->val.sval = GDKstrdup(str_nil);
 			return 0;
-		  } 
+		  }
 		  if( vr->vtype == TYPE_chr){
 			w= GDKstrdup("a");
 			*w = vr->val.cval[0];
-		  } else 
+		  } else
 			ATOMformat(vr->vtype, VALptr(vr), &w);
 			assert(w != NULL);
 			vr->vtype= TYPE_str;
@@ -1597,7 +1601,7 @@ convertConstant(malType type, ValPtr vr)
 			if( d==0 ){
 				VALset(vr, type, BATatoms[type].atomNull);
 				return 1;
-			} 
+			}
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0 )
 				GDKfree(d);
@@ -1649,7 +1653,7 @@ end.
 				VALset(vr, type, ATOMnilptr(type));
 				GDKfree(w);
 				return 1;
-			} 
+			}
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0)
 				GDKfree(d);
@@ -1687,8 +1691,8 @@ fndConstant(MalBlkPtr mb, ValPtr cst)
 	for (i = mb->vtop - 1; i >= k; i--) {
 		VarPtr v = getVar(mb, i);
 
-		if (v && v->isaconstant && 
-			v->type == cst->vtype && 
+		if (v && v->isaconstant &&
+			v->type == cst->vtype &&
 			ATOMcmp(cst->vtype, VALget(&v->value), p) == 0)
 			return i;
 	}
@@ -1742,7 +1746,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 @- Argument handling
 The number of arguments for procedures is currently limited.
 Furthermore, we should assure that no variable is referenced
-before being assigned. 
+before being assigned.
 Failure to obey should mark the instruction as type-error.
 @c
 InstrPtr
@@ -1848,7 +1852,7 @@ clrAllTypes(MalBlkPtr mb)
 	p= getInstrPtr(mb,0);
 
 	for(i=p->argc; i<mb->vtop; i++)
-	if( !mb->var[i]->isudftype && 
+	if( !mb->var[i]->isudftype &&
 		mb->var[i]->isused &&
 		!mb->var[i]->isaconstant){
 		setVarType(mb,i,TYPE_any);
@@ -1969,7 +1973,7 @@ variable to hold the result instead.
 	assert(p->argv[0]>=0);
 	if (mb->stmt[i]) {
 		/* if( getModuleId(mb->stmt[i] ) )
-		   printf("Garbage collect statement %s.%s\n", 
+		   printf("Garbage collect statement %s.%s\n",
 		   getModuleId(mb->stmt[i]), getFunctionId(mb->stmt[i])); */
 		freeInstruction(mb->stmt[i]);
 	}
@@ -2019,7 +2023,7 @@ mandatory to be able to produce textual correct MAL programs
 from its internal representation.
 
 No guarantee is given to produce the exact input for a reversed
-MAL program, except that the output can be fed back for 
+MAL program, except that the output can be fed back for
 interpretation. Provided, the code did not produce an error.
 
 The hiddenInstruction operator assumes a sufficiently large block
@@ -2136,7 +2140,7 @@ beginning of each line.
 		int pc= getPC(mb,p);
         double avg= (mb->profiler[pc].ticks+0.0)/mb->profiler[pc].counter;
         sprintf(t,"[%7ld, %5.2f] ",mb->profiler[pc].counter,avg);
-    } 
+    }
     advance(t);
 #endif
 @-
@@ -2226,7 +2230,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
     *t= 0;
     advance(t);
 @-
-Variables and MAL blocks, and instructions can be associated with a 
+Variables and MAL blocks, and instructions can be associated with a
 property list. At least for debugging purposes, the latest known value
 should be displayed.
 @= propertyList

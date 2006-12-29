@@ -20,7 +20,7 @@
 @node Function Inliners, Common Terms , Macro Processing, Toolkit
 
 @subsection Function Inliners
-The routine @code{optimizer.inliners()} searches MAL function definitions
+The routine @sc{optimizer.inliners()} searches MAL function definitions
 whose property @{inline@}  is set. In addition, all MAL function calls
 whose primary target variable carry the @{inline@} property are inlined
 as well.

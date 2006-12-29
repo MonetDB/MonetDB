@@ -37,7 +37,7 @@ The following MAL program illustrates the snippet of actions needed:
 	R3:= bpm.rangePartition(Ralias,201:oid,nil:oid,nil:int,nil:int);
 	bpm.close();
 @end example
-The command @code{pbm.deposit} accepts any BAT and
+The command @sc{pbm.deposit} accepts any BAT and
 registers it as one with a partitioned copy.
 The default constraint is to allow only pair-wise disjoint
 partitions. It flags attempts to overlap partitions as errors. 
@@ -49,7 +49,7 @@ Beware that now there are four components R, R1, R2, and R3.
 Once the partition has been succesful and the box is closed
 it is possible to remove the content from R. The BAT R should
 not be destroyed, because its identity is the handle to access
-the partitions later on. The call @code{bpm.disgard(R)} removes all
+the partitions later on. The call @sc{bpm.disgard(R)} removes all
 the partitions.
 
 The partition manager supports hash-based partitioning.
@@ -66,7 +66,7 @@ Repartition automatically occurs when a new hash size is given.
 
 It should not come as a surprise, that a combination of
 hashing and range is also provided using the
-commands @code{bpm.hashRangePartition()} and @code{bpm.rangeHashPartition()}.
+commands @sc{bpm.hashRangePartition()} and @sc{bpm.rangeHashPartition()}.
 
 @- Using partitions
 The partitioned BAT can be used in two ways. A query plan can be

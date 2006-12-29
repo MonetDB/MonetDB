@@ -31,7 +31,7 @@ It can be used as a basis for incremental processing as well.
 For this to work, we assume that the MAT components each satisfy
 the (memory) resource contraints. 
 
-The operation @code{optimizer.partitionedQuery} takes these definitions
+The operation @sc{optimizer.partitionedQuery} takes these definitions
 and encapsulate them in iterator blocks, thereby minimizing the
 MAL program footprint.
 
@@ -48,7 +48,7 @@ operators with their incremental counter part, alike the
 MAT optimizer.
 
 A snippet of the partitioning optimizer is shown below. It assumes
-that the MAT @code{a0} consists of the components @code{a1,a2,a3}.
+that the MAT @sc{a0} consists of the components @sc{a1,a2,a3}.
 A subsequent call of the partition optimizer will replace
 the print command with an iterator.
 @verbatim

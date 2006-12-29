@@ -30,17 +30,17 @@ Each select operation results in a partial re-clustering of the tuples
 such that the result set is a consecutive memory area in the BAT.
 This set can be returned as a BAT view for further processing.
 
-A cracker index is created with the command @code{crackers.new}
-and destroyed using @code{crackers.destroy}.
+A cracker index is created with the command @sc{crackers.new}
+and destroyed using @sc{crackers.destroy}.
 Multiple calls to create/destroy the cracker index on the same
 argument are ignored.
 
 The cracker index can be created for the time being on
 tail columns of type {int,lng,dbl,flt,time}. The head
-is always of type @code{oid}.
+is always of type @sc{oid}.
 
 Once a cracker index exist, portions can be extracted
-using @code{crackers.select} and @code{crackers.uselect},
+using @sc{crackers.select} and @sc{crackers.uselect},
 which semantically behave as their algebraic counterparts.
 Both operations may have to glue pieces from the cracked
 bat to satisfy the BAT semantics.
@@ -58,7 +58,7 @@ Repeated cracking leads to an ever growing index. This process
 can be stopped by setting the granule size,
 i.e.  the minimum number of tuples in each piece,
 or the maximum number of pieces.
-The operations @code{crackers.setGranule()} and @code{crackers.setLimit()}
+The operations @sc{crackers.setGranule()} and @sc{crackers.setLimit()}
 implement them. The default is to allow an arbitrary number pieces
 with arbitrary sizes.
 

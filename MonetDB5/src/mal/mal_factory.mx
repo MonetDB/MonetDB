@@ -41,11 +41,11 @@ is created in the local system to handle the requests.
 The plant carries the stack frame and synchronizes access.
 
 In this case it initializes the generator. 
-The random number is generated and @code{yield}  as
+The random number is generated and @sc{yield}  as
 a result of the call. The factory plant is then put to sleep.
 The second call received by the factory wakes it up at the
 point where it went to sleep. In this case it will
-find a @code{redo} statement and produces the next random number.
+find a @sc{redo} statement and produces the next random number.
 Note that also in this case a seed and limit value are
 expected, but they are ignored in the body.
 This factory can be called upon to generate at most 'limit'
@@ -54,8 +54,8 @@ Thereafter it is being removed, i.e. reset to the original state.
 
 A cooperative group of factories can be readily constructed.
 For example, assume we would like the
-random factories to respond to both @code{random(seed,limit)} 
-and @code{random()}. This can be defined as follows:
+random factories to respond to both @sc{random(seed,limit)} 
+and @sc{random()}. This can be defined as follows:
 @example
 factory random(seed:int,limit:int):int;
     rnd:=seed;
@@ -119,8 +119,8 @@ end random;
 @end example
 
 The operators to built client aware factories are,
-@code{factory.getCaller()}, which returns a client 
-index, @code{factory.getModule()} and @code{factory.getFunction()}, 
+@sc{factory.getCaller()}, which returns a client 
+index, @sc{factory.getModule()} and @sc{factory.getFunction()}, 
 which returns the identity of scope enclosed.
 
 To illustrate, the client specific random generator
@@ -212,9 +212,9 @@ Provided the arguments have not been changed.
 For example:
 
 @example
-factory view1(l:int, h:int):bat[:void,:str];
-	a:bat[:void,:int]:= bbp.bind("emp","age");
-	b:bat[:void,:str]:= bbp.bind("emp","name");
+factory view1(l:int, h:int):bat[:oid,:str];
+	a:bat[:oid,:int]:= bbp.bind("emp","age");
+	b:bat[:oid,:str]:= bbp.bind("emp","name");
 barrier always := true;
     lOld := l;
     hOld := h;

@@ -36,7 +36,7 @@ i:=aggr.count(e);
 io.printf(" count %d\n",i);
 io.print(d);
 @end verbatim
-which uses a BAT @code{rvar} stored at the remote site @code{db1}.
+which uses a BAT @sc{rvar} stored at the remote site @sc{db1}.
 
 There are several options to execute this query.
 The remote BAT can be fetched as soon as the bind operation is executed,

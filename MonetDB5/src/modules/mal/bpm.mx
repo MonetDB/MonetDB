@@ -38,7 +38,7 @@ The following MAL program illustrates the snippet of actions needed:
 	bpm.rangePartition(Ralias,201:oid,nil:oid,nil:int,nil:int);
 	bpm.close();
 @end example
-The command @code{bpm.deposit} registers a BAT as one to be partitioned.
+The command @sc{bpm.deposit} registers a BAT as one to be partitioned.
 The side effect is that R is empty after this call.
 The remainder are the partition definitions based
 on slices from the table using a simple range condition.
@@ -46,10 +46,10 @@ The BAT partitions share the persistency properties.
 
 Beware that now there are four components R, R1, R2, and R3.
 The BAT R is is turned into an empty bat, its content is
-taken over by the @code{bpm} and broken into pieces.
+taken over by the @sc{bpm} and broken into pieces.
 The partitioned version is referenced with a BAT variable
-initialized with the @code{take} operation.
-The call @code{bpm.discard(Ralias)} removes all partitions.
+initialized with the @sc{take} operation.
+The call @sc{bpm.discard(Ralias)} removes all partitions.
 
 The partition manager also supports hash-based partitioning.
 It accepts two arguments, which denote the number of hash buckets
@@ -66,7 +66,7 @@ Re-partitioning automatically occurs when a new hash size is given.
 
 It should not come as a surprise, that a combination of
 hashing and range is also provided using the
-commands @code{bpm.hashRangePartition()} and @code{bpm.rangeHashPartition()}.
+commands @sc{bpm.hashRangePartition()} and @sc{bpm.rangeHashPartition()}.
 
 The design is based on the assumption that partitions
 are reasonably large. This helps to limit plan explosion.
@@ -124,7 +124,7 @@ is translated into
 	R2:= bpm.take(Ralias, 201@0, nil:oid, nil:int,nil:int); 
 	R:= mat.new(R0,R1,R2);
 @end example
-It is up to the @code{mat} optimizer to decide about
+It is up to the @sc{mat} optimizer to decide about
 plan expansion or an iterator approach.
 
 A decision should be made over what happens if you
@@ -147,7 +147,7 @@ Once the transaction is commited, the updates are propagated
 	bpm.close();
 @end example
 
-The @code{bpm.deposit(R,Rinsert)} takes over the content
+The @sc{bpm.deposit(R,Rinsert)} takes over the content
 of the bat Rinsert, leaving an empty BAT behind.
 This does not hold for the insert and delete cases.
 
@@ -190,7 +190,7 @@ The previous plan for this becomes
 	bpm.deposit(Tmp,T2);
 @end example
 The rationale for this approach is that re-distribution
-of temporary results are hidden behind the @code{bpm} interface.
+of temporary results are hidden behind the @sc{bpm} interface.
 The only decision that should be taken by the optimizer is
 the fragmentation criteria for the temporary results.
 

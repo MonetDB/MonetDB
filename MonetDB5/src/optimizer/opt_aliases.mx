@@ -18,7 +18,7 @@
 @-
 @node Alias Removal, Dead Code Removal, Toolkit, Toolkit
 @- Alias Removal
-The routine @code{optimizer.aliasRemoval()}
+The routine @sc{optimizer.aliasRemoval()}
 walks through the program looking for simple
 assignment statements, e.g. V:=W. It replaces all subsequent
 occurrences of V by W, provided V is assigned a value once and
@@ -39,8 +39,8 @@ exit go;
 	io.print(b);
 	optimizer.aliasRemoval();
 @end verbatim
-The constant strings are propagated to the @code{print()} routine, while
-the initial assigment @code{i:=0} should be retained. The code block becomes:
+The constant strings are propagated to the @sc{print()} routine, while
+the initial assigment @sc{i:=0} should be retained. The code block becomes:
 @verbatim
 	i:=0;
 barrier go:= true;

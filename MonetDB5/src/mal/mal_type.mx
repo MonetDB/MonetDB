@@ -22,8 +22,8 @@ library.
 For the time being, we assume GDK to support at most 127 different
 atomic types. 
 Type composition is limited to at most two builtin types to form
-a BAT. Furthermore, the polymorphic type @code{any} can be qualified
-with a type variable index @code{any$I}, where I is a digit (1-9). 
+a BAT. Furthermore, the polymorphic type @sc{any} can be qualified
+with a type variable index @sc{any$I}, where I is a digit (1-9). 
 Beware, the TYPE_any is a speudo type known within MAL only.
 
 @{

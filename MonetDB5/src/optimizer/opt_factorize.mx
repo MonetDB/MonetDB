@@ -71,7 +71,7 @@ For the time being we simple reorganize the plan for all
 parameters
 
 Caveats. The factorize operation interferes with 
-@code{optimizer.expressionAccumulation()}
+@sc{optimizer.expressionAccumulation()}
 because that may overwrite the arguments.
 For the time being this is captured in a local routine.
 @{

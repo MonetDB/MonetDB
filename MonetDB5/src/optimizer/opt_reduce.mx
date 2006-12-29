@@ -27,7 +27,7 @@ collection tests should be performed.
 Likewise, constant duplicates are scattered around the stack.
 They are located and merged.
 
-The routine @code{optimizer.reduce()} reduces the number of scratch
+The routine @sc{optimizer.reduce()} reduces the number of scratch
 variables to a minimum. All scratch variables of the same underlying
 type share the storage space. 
 The result of this optimizer can be seen using the MonetDB debugger,

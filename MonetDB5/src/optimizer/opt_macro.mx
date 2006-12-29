@@ -22,9 +22,9 @@
 The optimizers form the basis for replacing code fragments.
 Two optimizers are focused on code expansion and contraction.
 The former involves replacing individual instructions by a block of
-MAL code, i.e. a @code{macro} call.
+MAL code, i.e. a @sc{macro} call.
 The latter depicts the inverse operation, a group of instructions
-is replaced by a single MAL assignment statement, i.e. a @code{orcam}
+is replaced by a single MAL assignment statement, i.e. a @sc{orcam}
 call.
 
 The macro facility is limited to type-correct MAL functions,
@@ -32,7 +32,7 @@ which means that replacement is not essential from a semantic
 point of view. They could have been called, or the block need
 not be compressed. It is equivalent to inline code expansion.
 
-The @code{macro} and @code{orcam} transformations provide 
+The @sc{macro} and @sc{orcam} transformations provide 
 a basis to develop front-end specific code generation templates.
 The prototypical test case is the following template:
 @example
@@ -46,15 +46,15 @@ address fastjoinpath;
 end user.joinPath;
 @end example
 
-The call @code{optimizer.macro("user", "joinPath")} hunts
+The call @sc{optimizer.macro("user", "joinPath")} hunts
 for occurrences of the instruction call in the block in
 which it is called
 and replaces it with the body, i.e. it in-lines the code.
-Conversely,  the @code{optimizer.orcam("user", "joinPath")}
+Conversely,  the @sc{optimizer.orcam("user", "joinPath")}
 attempts to localize a block of two join operations and,
-when found, it is replaced by the direct call to @code{joinPath}.
+when found, it is replaced by the direct call to @sc{joinPath}.
 In turn, type resolution then directs execution to a built-in
-function @code{fastjoinpath}.
+function @sc{fastjoinpath}.
 
 The current implementation is limited to finding a consecutive
 sequence, ending in a return-statement. The latter is needed to
@@ -74,25 +74,25 @@ The generalization of malMatch is malFcnMatch, which checks
 equivalence of a function body as an occurrence in another one.
 @}
 
-The optimizer can be targeted to a function @code{user.foo()}
-using the call @code{optimizer.macro("user","foo","user","joinPath");
+The optimizer can be targeted to a function @sc{user.foo()}
+using the call @sc{optimizer.macro("user","foo","user","joinPath");
 @- Known issues. 
 The functions subject to expansion or contraction should be
 checked on 'proper' behavior.
 
 The current implementation is extremely limited. 
-The @code{macro} optimizer does not recognize use of intermediate results 
+The @sc{macro} optimizer does not recognize use of intermediate results 
 outside the block being contracted. This should be checked and
 it should block the replacement, unless the intermediates are part of
 the return list.
 Likewise, we assume here that the block has a single return
 statement, which is also the last one to be executed.
 
-The @code{macro} optimizer can only expand functions. Factories already
+The @sc{macro} optimizer can only expand functions. Factories already
 carry a significant complex flow of control that is hard
 to simulate in the nested flow structure of an arbitrary function.
 
-The @code{orcam} optimizer can not deal with calls controlled by a barrier.
+The @sc{orcam} optimizer can not deal with calls controlled by a barrier.
 It would often require a rewrite of several other statements as well.
 
 @mal

@@ -83,7 +83,7 @@ profiler.closeStream();
 The information on CPU, IO, memory use, program counter
 and the event identifier are not retained. 
 Furthermore, we are interested in all
-functions name @code{insert} and @code{print}. A wildcard
+functions name @sc{insert} and @sc{print}. A wildcard
 can be used to signify any name, e.g.
 no constraints are put on the module in which the operations
 are defined.
@@ -99,22 +99,22 @@ the following content. The ticks are measured in micro-seconds.
 [ "15:17:56",   245,     "_36 := io.print(<tmp_15>);",   ]
 @end verbatim
 The XML-formatted output is produced by encapsulation
-of a code block with the pair @code{profiler.setOfflineProfiling()}.
+of a code block with the pair @sc{profiler.setOfflineProfiling()}.
 The default is tuple format, which can be requested
-explicitly using @code{profiler.setOnlineProfiling()}.
+explicitly using @sc{profiler.setOnlineProfiling()}.
 
 @node Event Caching, The MAL Modules, Event Filtering, The MAL Profiler
 @+ Event Caching
 Aside from shipping events to a separate process, the profiler
-can keep the events in a local @code{BAT} group, 
-triggered with the command @code{profiler.setCachedProfiling()}.
+can keep the events in a local @sc{BAT} group, 
+triggered with the command @sc{profiler.setCachedProfiling()}.
 Ofcourse, every measurement scheme does not come for free and may
 even obscure performance measurements obtained throug e.g. valgrind.
 The separate event caches can be accessed using the 
-operator @code{profiler.getTrace}(@emph{name}).
+operator @sc{profiler.getTrace}(@emph{name}).
 The current implementation only supports 
-access to @code{time},@code{ticks},@code{pc},@code{statement}.
-The event cache can be cleared with @code{profiler.clearTrace()}.
+access to @sc{time},@sc{ticks},@sc{pc},@sc{statement}.
+The event cache can be cleared with @sc{profiler.clearTrace()}.
 
 Consider the following MAL program snippet:
 @example

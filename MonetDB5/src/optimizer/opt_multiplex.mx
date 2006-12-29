@@ -23,10 +23,10 @@
 @- Multiplex Compilation
 The MonetDB operator multiplex concept has been pivotal to
 easily apply any scalar function to elements in a containers.
-Any operator @code{cmd} came with its multiplex variant [@code{cmd}].
-Given the signature @code{cmd(T1,..,Tn) : Tr}, it could be
+Any operator @sc{cmd} came with its multiplex variant [@sc{cmd}].
+Given the signature @sc{cmd(T1,..,Tn) : Tr}, it could be
 applied also as
-@code{[CMD](bat[:any_1,:T1],...,bat[any_1,Tn]) :bat[any_1,Tr]}.
+@sc{[CMD](bat[:any_1,:T1],...,bat[any_1,Tn]) :bat[any_1,Tr]}.
 
 The semantics of the multiplex is to perform the
 natural join on all bat-valued parameters, and to execute the 

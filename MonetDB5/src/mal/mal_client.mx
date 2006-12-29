@@ -185,7 +185,7 @@ Keeping track of instructions executed is a valueable tool for
 script processing and debugging. 
 Its default value is defined in the MonetDB configuration file.
 It can be changed at runtime for individual clients using
-the operation @code{clients.listing}(@emph{mask}).
+the operation @sc{clients.listing}(@emph{mask}).
 A listing bit controls the level of detail to be generated during
 program execution tracing. The lowest level (1) simply dumps the input,
 (2) also demonstrates the MAL internal structur (4) adds the 

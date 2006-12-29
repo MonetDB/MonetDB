@@ -23,7 +23,7 @@ often contain multiple selections over the same column.
 They may also have fixed range arguments comming from
 fragmentation criteria.
 
-The purpose of the @code{rangePush} optimizer is to
+The purpose of the @sc{rangePush} optimizer is to
 minimize the number of table scans by cascading the
 range terms as much as possible. Useless instructions
 are removed from the plan.

@@ -23,12 +23,12 @@ Garbage collection of temporary variables, such as strings and BATs,
 takes place upon returning from a function call. Especially for BATs
 this may keep sizable resources locked longer than strictly necessary.
 Although the programmer can influence their lifespan by assignment
-of the @code{nil}, thereby triggering the garbage collector,
+of the @sc{nil}, thereby triggering the garbage collector,
 it is more appropriate to rely on an optimizer to inject these statements. 
 For, it keeps the program smaller and a better
 target for code-optimizations.
 
-The operation @code{optimizer.garbageCollector()} removes all 
+The operation @sc{optimizer.garbageCollector()} removes all 
 BAT references that are at their end of life to make room for new ones.
 It is typically called as one of the last optimizer steps.
 A snippet of a the effect of the garbage collector:

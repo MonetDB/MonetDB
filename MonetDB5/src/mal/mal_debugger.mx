@@ -92,10 +92,10 @@ mdb>help
 mdb>
 @end example
 
-The term @code{<obj>} is an abbreviation for a 
-MAL operation @code{<mod>.<fcn>}, optionally extended with
-a version number, i.e. @code{[<nr>]}.
-The @code{var} denotes a variable in the current stack frame.
+The term @sc{<obj>} is an abbreviation for a 
+MAL operation @sc{<mod>.<fcn>}, optionally extended with
+a version number, i.e. @sc{[<nr>]}.
+The @sc{var} denotes a variable in the current stack frame.
 Debugger commands may be abbreviated.
 
 We walk our way through a debugging session, highlighting the
@@ -210,19 +210,19 @@ mdb>
 @end example
 
 The breakpoints remain in effect over multiple function calls.
-They can be removed with the @code{delete} statement.
-A list of all remaining breakpoints is obtained with @code{breakpoints}.
+They can be removed with the @sc{delete} statement.
+A list of all remaining breakpoints is obtained with @sc{breakpoints}.
 
 The interpreter can be instructed to call the debugger as soon as an exception
-is raised. Simply add the instruction @code{mdb.setCatch(true)}.
+is raised. Simply add the instruction @sc{mdb.setCatch(true)}.
 
 @node Profile Switches, Program Inspection, Handling Breakpoints,  The MAL Debugger
 @+ Profile Switches
 Switches control the level of detail output shown while debugging
 or tracing program execution.
-They are toggled with the @code{set} and @code{unset} command.
+They are toggled with the @sc{set} and @sc{unset} command.
 The following switches are currently supported:
-@table @code
+@table @sc
 @item timer
 activates a listing of all instructions being executed.
 It is measured in wall-clock time.
@@ -236,7 +236,7 @@ keeps track on the amount of physical IO
 and is used to detect operators consuming excessive amounts of space.
 @end table
 
-The snippet below shows setting the @code{memory} and @code{timer}
+The snippet below shows setting the @sc{memory} and @sc{timer}
 switch. The switches take effect at the next instruction.
 @example
 mdb>set timer
@@ -261,11 +261,11 @@ mdb>c
 @+ Program Inspection 
 The debugger commands available for inspection of the program and
 symbol tables are:
-@table @code
+@table @sc
 @item list (List) [<mod>.<fcn>['['<nr>']']]
 A listing of the current MAL block, or one designated
 by the <mod>.<fcn> is produced.
-The @code{[<nr>]} extension provides access to an element
+The @sc{[<nr>]} extension provides access to an element
 in the MAL block history.
 The alternative name 'List' also produces the type information.
 @item optimizer  [<mod>.<fcn>['['<nr>']']]
@@ -277,9 +277,9 @@ Lists the atoms currently known
 Lists the modules currently known. An optional <mod> argument
 produces a list of all signatures within the module identified.
 @item dot [<mod>.<fcn>['['<nr>']']] [<file>]
-A dataflow diagram can be produced using the @code{dot} command.
+A dataflow diagram can be produced using the @sc{dot} command.
 It expects a function identifier with an optional history index
-and produces a file for the Linux program @code{dot},
+and produces a file for the Linux program @sc{dot},
 which can produce a nice, multi-page graph to illustrate plan
 complexity.
 @end table
@@ -287,7 +287,7 @@ complexity.
 @example
 mdb>dot user.test
 @end example
-This example produces the @code{user-tst.dot} in the current
+This example produces the @sc{user-tst.dot} in the current
 working directory. The program call
 @example
 dot -Tps user-tst-0.dot -o user-tst-0.ps
@@ -295,7 +295,7 @@ dot -Tps user-tst-0.dot -o user-tst-0.ps
 creates a postscript file with the graphs. With the Adobe reader professional
 you can break it up into multiple pages. An alternative
 is the program available from 
- @code{http://www.tug.org/tex-archive/support/poster/poster.c}
+ @sc{http://www.tug.org/tex-archive/support/poster/poster.c}
 The result is shown in the figure below:
 
 Since the flow graphs become rather complex, an optional variable
@@ -306,8 +306,8 @@ list limits its size.[TODO]
 Part of the debugger functionality can also be used directly with
 MAL instructions. 
 The execution trace of a snippet of code can be visualized 
-encapsulation with @code{mdb.setTrace(true)} and @code{mdb.setTrace(false)}.
-Likewise, the performance can be monitored with the command @code{mdb.setTimer(on/off)}.
+encapsulation with @sc{mdb.setTrace(true)} and @sc{mdb.setTrace(false)}.
+Likewise, the performance can be monitored with the command @sc{mdb.setTimer(on/off)}.
 Using a boolean argument makes it easy to control the (performance) trace
 at run time. The following snippet shows the effect of patching
 the test case.
@@ -339,7 +339,7 @@ the test case.
 >
 @end example
 
-The command @code{mdb.setTimer()} toggles the performance traceing flag. 
+The command @sc{mdb.setTimer()} toggles the performance traceing flag. 
 The argument is a boolen to designate its state. 
 The primary output of the timer switch is statistics in micro-seconds,
 the memory tracer shows the arena increment, and the IO tracer
@@ -349,7 +349,7 @@ from the report.
 For more detailed timing information the Linux
 tool @emph{valgrind} may be of help.
 
-The routines @code{mdb.setFlow()}, @code{mdb.setMemory()}, and @code{mdb.setIO()} 
+The routines @sc{mdb.setFlow()}, @sc{mdb.setMemory()}, and @sc{mdb.setIO()} 
 (de-)activate the other switches.
 @example
 >function test(i:int):str;
@@ -379,7 +379,7 @@ The routines @code{mdb.setFlow()}, @code{mdb.setMemory()}, and @code{mdb.setIO()
 @end example
 
 It is also possible to activate the debugger from within a program 
-using @code{mdb.start()}. It remains in this mode until 
+using @sc{mdb.start()}. It remains in this mode until 
 you either issue a quit command, or the command mdb.stop() instruction is
 encountered. 
 The debugger is only activated when the user can direct its execution
@@ -388,17 +388,17 @@ and the debugger will run in trace mode.
 
 The program listing functionality of the debugger is 
 also captured in the MAL debugger module. The current code
-block can be listed using @code{mdb.list()} and @code{mdb.List()}.
-An arbitrary code block can be shown with  @code{mdb.list}(@emph{module},@emph{function})
-and @code{mdb.List}(@emph{module},@emph{function}).
-A BAT representation of the current function is return by @code{mdb.getDefinition()}@.
+block can be listed using @sc{mdb.list()} and @sc{mdb.List()}.
+An arbitrary code block can be shown with  @sc{mdb.list}(@emph{module},@emph{function})
+and @sc{mdb.List}(@emph{module},@emph{function}).
+A BAT representation of the current function is return by @sc{mdb.getDefinition()}@.
 
 The symbol table and stack content, if available, can be shown with
-the operations @code{mdb.var()} and @code{mdb.list}(@emph{module},@emph{function})
+the operations @sc{mdb.var()} and @sc{mdb.list}(@emph{module},@emph{function})
 Access to the stack frames may be helpful in the context of exception handling.
-The operation @code{mdb.getStackDepth()} gives the depth and individual
-elements can be accessed as BATs using @code{mdb.getStackFrame(@emph{n})}.
-The top stack frame is accessed using @code{mdb.getStackFrame()}.
+The operation @sc{mdb.getStackDepth()} gives the depth and individual
+elements can be accessed as BATs using @sc{mdb.getStackFrame(@emph{n})}.
+The top stack frame is accessed using @sc{mdb.getStackFrame()}.
 @{
 @- Compilation control
 Being able to debug comes at a price.

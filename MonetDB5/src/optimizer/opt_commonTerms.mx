@@ -45,7 +45,7 @@ program block to detect re-curring statements.
 The key problem to be addressed is to make sure that the parameters involved
 in the repeatative instruction are invariant. 
 
-The analysis of @code{optimizer.commonTerms()}
+The analysis of @sc{optimizer.commonTerms()}
 is rather crude. All functions with possible side-effects on
 their arguments should have been marked as 'unsafe'.
 Their use within a MAL block breaks the dataflow graph for all 

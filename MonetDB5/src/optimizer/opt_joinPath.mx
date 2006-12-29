@@ -18,7 +18,7 @@
 @-
 @node Join Path , , , Toolkit
 @- Join Path Optimization
-The routine @code{optimizer.joinPath()}
+The routine @sc{optimizer.joinPath()}
 walks through the program looking for join operations
 and cascades them into multiple join paths.
 @verbatim

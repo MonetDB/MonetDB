@@ -22,21 +22,21 @@ The type administration keeps track of their properties and
 provides access to the underlying implementations.
 
 MAL recognizes the definition of a new
-type by replacing the @code{module} keyword with @code{atom}.
+type by replacing the @sc{module} keyword with @sc{atom}.
 Atoms definitions require special care, because their definition and 
 properties should be communicated with the kernel library.
-The commands defined in an @code{atom } block are screened as of interest 
+The commands defined in an @sc{atom } block are screened as of interest 
 to the library. 
 
-MonetDB comes with the hardwired types @code{bit, chr, sht, int, lng, oid, flt, 
-dbl, str} and @code{bat}, the representation of a bat identifier.
+MonetDB comes with the hardwired types @sc{bit, chr, sht, int, lng, oid, flt, 
+dbl, str} and @sc{bat}, the representation of a bat identifier.
 The kernel code has been optimized to deal with these types efficiently,
 i.e. without unnecessary function call overheads.
 
-A small collection of user-defined @code{atom} types is shipped with the sysem.
+A small collection of user-defined @sc{atom} types is shipped with the sysem.
 They implement types considered essential for end-user applications,
-such as @code{color, date, daytime,  time, timestamp, timezone, blob}, 
-and @code{inet, url}.
+such as @sc{color, date, daytime,  time, timestamp, timezone, blob}, 
+and @sc{inet, url}.
 They are implemented using the type extension mechanism described below.
 As such, they provide examples for future extensions.
 A concrete example is the 'blob' datatype in the MonetDB atom module
@@ -50,7 +50,7 @@ More involved atomary types require a study of the
 documentation associated with the atom structures (gdk_atoms),
 because you have to develop a handful routines complying with the
 signatures required in the kernel library.
-They are registered upon loading the @code{atom} module.
+They are registered upon loading the @sc{atom} module.
 @{
 @-
 The atom registration functions perform the necessary

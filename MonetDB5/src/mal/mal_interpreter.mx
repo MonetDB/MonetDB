@@ -1230,13 +1230,13 @@ the modules/plain/*.  The number of fatal errors is 26, 2, respectively.]
 @}
 
 To improve error handling in MAL, an exception handling
-scheme based on @code{catch}-@code{exit} blocks. The @code{catch}
+scheme based on @sc{catch}-@sc{exit} blocks. The @sc{catch}
 statement identifies a (string-valued) variable, which carries the 
 exception message from
-the originally failed routine or @code{raise} exception assignment.
-During normal processing @code{catch}-@code{exit} blocks are simply skipped.
+the originally failed routine or @sc{raise} exception assignment.
+During normal processing @sc{catch}-@sc{exit} blocks are simply skipped.
 Upon receiving an exception status from a function call, we set the 
-exception variable and skip to the first associated @code{catch}-@code{exit} 
+exception variable and skip to the first associated @sc{catch}-@sc{exit} 
 block.
 MAL interpretation then continues until it reaches the end of the block.
 If no exception variable was defined, we should abandon the function

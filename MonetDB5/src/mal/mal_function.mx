@@ -19,10 +19,10 @@
 @+ Functions
 MAL comes with a standard functional abstraction scheme.
 Functions are represented by MAL instruction lists, enclosed
-by a @code{function} signature statement
-and @code{end} statement. The @code{function}
+by a @sc{function} signature statement
+and @sc{end} statement. The @sc{function}
 signature lists the arguments and their types.
-The @code{end} statement marks the end of this sequence. 
+The @sc{end} statement marks the end of this sequence. 
 Its argument is the function name.
 
 An illustrative example is:
@@ -39,7 +39,7 @@ All user defined functions are assembled in the module @sc{user}
 by default. It may be dropped without affecting the intended semantics.
 
 The functional abstraction scheme comes with several variations:
- @code{commands}, @code{patterns}, and @code{factories}.
+ @sc{commands}, @sc{patterns}, and @sc{factories}.
 They are discussed shortly.
 @menu
 * Polymorphic Functions ::
@@ -412,7 +412,7 @@ int getBarrierEnvelop(MalBlkPtr mb){
 }
 @}
 @-
-@node Polymorphic Functions, Commands and Patterns, Function definitions, Function definitions
+@node Polymorphic Functions, Commands and Patterns, MAL Functions, MAL Functions
 @- Polymorphic Functions
 Polymorphic functions are characterised by type variables
 denoted by @sc{:any} and an optional index.
@@ -424,9 +424,9 @@ variables are replaced with their concrete types.
 The new MAL program is immediately type checked and, if
 no errors occured, added to the symbol table.
 
-The generic type variable @code{:any} designates an unknown type, which may
+The generic type variable @sc{:any} designates an unknown type, which may
 be filled at type resolution time. Unlike indexed polymorphic type 
-arguments, @code{:any} type arguments match possibly with different 
+arguments, @sc{:any} type arguments match possibly with different 
 concrete types.
 
 An example of a parameterised function is shown below:
@@ -442,28 +442,28 @@ Beware that polymorphic typed variables are propagated
 throughout the function body. This may invalidate 
 type resolutions decisions taken  earlier (See @ref{Type resolution}).
 
-This version of @code{helloWorld} can also be used for
-other arguments types, i.e. @code{bit,sht,lng,flt,dbl,...}.
-For example, calling @code{helloWorld(3.14:flt)} echoes
+This version of @sc{helloWorld} can also be used for
+other arguments types, i.e. @sc{bit,sht,lng,flt,dbl,...}.
+For example, calling @sc{helloWorld(3.14:flt)} echoes
 a float value.
 
-@node Commands and Patterns, Factory definitions, Polymorphic Functions, Function definitions
+@node Commands and Patterns, MAL Factories, Polymorphic Functions, MAL Functions
 @- Commands and Patterns
 The MAL function body can also be implemented with a C-function.
 They are introduced to the MAL type checker by providing their
-signature and an @code{address} qualifier for linkage.
+signature and an @sc{address} qualifier for linkage.
 
-We distinguish both @code{command} and @code{pattern} C-function blocks.
-They differ in the information accessible at run time. The @code{command}
+We distinguish both @sc{command} and @sc{pattern} C-function blocks.
+They differ in the information accessible at run time. The @sc{command}
 variant calls the underlying C-function, passing pointers to the arguments
-on the MAL runtime stack. The @code{pattern} command is passed pointers
+on the MAL runtime stack. The @sc{pattern} command is passed pointers
 to the MAL definition block, the runtime stack, and the instruction itself.
 It can be used to analyse the types of the arguments directly.
 
-For example, the definitions below link the kernel routine @code{BKCinsert_bun}
-with the function @code{bat.insert()}. 
+For example, the definitions below link the kernel routine @sc{BKCinsert_bun}
+with the function @sc{bat.insert()}. 
 It does not fully specify the result type.
-The @code{io.print()} pattern applies to any BAT argument list, 
+The @sc{io.print()} pattern applies to any BAT argument list, 
 provided they match on the head column type.
 Such a polymorphic type list may only be used in the context of
 a pattern.

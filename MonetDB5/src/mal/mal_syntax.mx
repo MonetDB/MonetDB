@@ -34,20 +34,20 @@ Lexical tokens are illustrated in small capitals.
 @item
 @tab | includeStmt | stmt 
 @item moduleStmt	
-@tab :  @code{ MODULE} ident | @code{ ATOM} ident [':'ident]  
+@tab :  @sc{module} ident | @sc{atom} ident [':'ident]  
 @item includeStmt	
-@tab : @code{ INCLUDE} identifier 
-|  @code{ INCLUDE} string_literal
+@tab : @sc{include} identifier 
+|  @sc{include} string_literal
 @item definition	
-@tab : @code{ COMMAND } header @code{ ADDRESS } identifier
+@tab : @sc{command} header @sc{address} identifier
 @item
-@tab | @code{PATTERN } header @code{ADDRESS}  identifier
+@tab | @sc{pattern} header @sc{address}  identifier
 @item
-@tab |  @code{ FUNCTION } header statement* @code{ END } identifier
+@tab |  @sc{function} header statement* @sc{end} identifier
 @item
-@tab |  @code{ FACTORY } header statement* @code{ END } identifier
+@tab |  @sc{factory} header statement* @sc{end} identifier
 @item helpinfo	
-@tab : @code{ COMMENT} string_literal 
+@tab : @sc{comment} string_literal 
 @item header		
 @tab : [ moduelName '.'] name '(' params ')' result 
 @item result		
@@ -58,11 +58,11 @@ Lexical tokens are illustrated in small capitals.
 @tab : identifier typeName [ props ]
 @item typeName	
 @tab : scalarType | collectionType 
-| ':' @code{ ANY} ['_' digit] 
+| ':' @sc{any} ['_' digit] 
 @item scalarType	
-@tab : ':' @code{ identifier} 
+@tab : ':' @sc{ identifier} 
 @item collectionType	
-@tab : ':' @code{ BAT} ['[' colType ',' colType ']'] 
+@tab : ':' @sc{bat} ['[' colType ',' colType ']'] 
 @item colType		
 @tab : scalarType | anyType 
 @item props	
@@ -74,8 +74,8 @@ Lexical tokens are illustrated in small capitals.
 @item stmt	
 @tab : [tag] varlist [':=' expr ] 
 @item tag
-@tab |  @code{ RETURN} | @code{ BARRIER} | @code{ CATCH}
-|  @code{ LEAVE} | @code{ REDO} | @code{RAISE} 
+@tab |  @sc{return} | @sc{barrier} | @sc{catch}
+|  @sc{leave} | @sc{redo} | @sc{raise} 
 @item varlist		
 @tab : variable 
 |  '(' variable [',' variable ] * ')' 
@@ -84,7 +84,7 @@ Lexical tokens are illustrated in small capitals.
 @item expr
 @tab : fcncall | [factor  operator] factor 
 @item factor  	
-@tab :  @code{ literal_constant} | @code{ nil} | var 
+@tab :  @sc{ literal_constant} | @sc{ nil} | var 
 @item fcncall
 @tab : moduleName '.' name '(' [args] ')'
 @item args

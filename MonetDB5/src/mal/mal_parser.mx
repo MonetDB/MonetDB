@@ -593,11 +593,11 @@ The syntax structure is
 @item typeName
 @tab : scalarType | collectionType | anyType
 @item scalarType
-@tab :  ':' @code{ identifier} 
+@tab :  ':' @sc{ identifier} 
 @item collectionType 
-@tab :  ':' @code{ bat} ['[' col ',' col ']'] 
+@tab :  ':' @sc{ bat} ['[' col ',' col ']'] 
 @item anyType
-@tab :  ':' @code{ any} [typeAlias] 
+@tab :  ':' @sc{ any} [typeAlias] 
 @item col
 @tab :  scalarType | anyType 
 @item propQualifier  
@@ -800,9 +800,9 @@ for updates by concurrent users.
 
 @multitable @columnfractions 0.15 0.8
 @item moduleStmt
-@tab :  @code{atom} ident [':'ident]
+@tab :  @sc{atom} ident [':'ident]
 @item
-@tab | @code{module} ident
+@tab | @sc{module} ident
 @end multitable
 
 @-
@@ -861,9 +861,9 @@ No listing is produced, because module sources are assumed to
 be debugged upfront already.
 @multitable @columnfractions 0.15 0.8
 @item includeStmt
-@tab : @code{include} identifier 
+@tab : @sc{include} identifier 
 @item
-@tab | @code{include} string_literal
+@tab | @sc{include} string_literal
 @end multitable
 
 @c
@@ -1329,9 +1329,9 @@ modified with a barrier/catch tag.
 @item statement	   
 @tab :  tag varlist [':=' expr ] propQualifier
 @item tag			 
-@tab :  @code{ return} | @code{ barrier} | @code{ catch}
+@tab :  @sc{ return} | @sc{ barrier} | @sc{ catch}
 @item
-@tab |  @code{ leave} | @code{ redo} | 
+@tab |  @sc{ leave} | @sc{ redo} | 
 @item expr			
 @tab :  fcncall 
 @item

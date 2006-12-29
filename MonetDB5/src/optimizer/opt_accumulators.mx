@@ -19,7 +19,7 @@
 @node Accumulator Evaluations, Heuristic Rewrite Rules, Dead Code Removal, Toolkit
 @- Accumulator Evaluations
 Bulk arithmetic calculations are pretty expensive,
-because new @code{BAT}s are created for each expression. 
+because new @sc{bat}s are created for each expression. 
 This memory hunger can be reduced
 by detecting opportunities for accummulator processing, i.e.
 where a (temporary) variable is overwritten.
@@ -37,13 +37,13 @@ and propagate its alias through the remainder of the code.
 	t4:= batcalc.+(t2,t1,t2);
 @end example
 The implementation is straight forward. It only deals with the
-arithmetic operations available in @code{batcalc} right now.
+arithmetic operations available in @sc{batcalc} right now.
 This set will be gradually be extended.
 The key decision is to determine whether we may overwrite
 any of the arguments. This is hard to detect at compile
 time, e.g. the argument may be the result of a binding operation
 or represent a view over a persistent BAT.
-Therefore, the compiler injects the call @code{algebra.reuse()},
+Therefore, the compiler injects the call @sc{algebra.reuse()},
 which avoids overwriting persistent BATs by taking a copy.
 @{
 @mal

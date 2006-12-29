@@ -22,8 +22,8 @@
 Application semantics and precise cost analysis may
 identify the result of an operation to produce a BAT with
 a single element. Such variables can be tagged with the
-property @code{singleton}, whereafter the operation
-@code{optimizer.singleton()} derives an MAL program
+property @sc{singleton}, whereafter the operation
+@sc{optimizer.singleton()} derives an MAL program
 using a symbolic evaluation as far as possible.
 
 During its evaluation, more singleton sets can be created, 
