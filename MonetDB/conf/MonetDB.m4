@@ -104,14 +104,14 @@ AC_SUBST(MONETDB_INCLUDEDIR)
 AC_SUBST(MONETDB_LIBS)
 AC_SUBST(MONETDB_PREFIX)
 AC_SUBST(MONETDB_CONFDIR)
-AM_CONDITIONAL(HAVE_MONET,test x$have_monetdb = xyes)
+AM_CONDITIONAL(HAVE_MONETDB,test x$have_monetdb = xyes)
 ]) dnl AC_DEFUN AM_MONETDB_COMMON
 
 AC_DEFUN([AM_MONETDB_CLIENTS],
 [
 
 dnl check for MonetDB Client Libraries
-have_monetdb=auto
+have_clients=auto
 MONETDBCLIENTS_CFLAGS=""
 MONETDBCLIENTS_LIBS=""
 MONETDBCLIENTS_MODS=""
@@ -122,11 +122,11 @@ if test "x$1" = "x"; then
 else
   MONETDBCLIENTS_REQUIRED_VERSION="$1"
 fi
-AC_ARG_WITH(monetdb,
-	AC_HELP_STRING([--with-monetdb=DIR], [MonetDB Common is installed in DIR]),
-	have_monetdb="$withval")
-if test "x$have_monetdb" != xno; then
-  case "$have_monetdb" in
+AC_ARG_WITH(clients,
+	AC_HELP_STRING([--with-clients=DIR], [MonetDB Clients is installed in DIR]),
+	have_clients="$withval")
+if test "x$have_clients" != xno; then
+  case "$have_clients" in
   yes|auto) MPATH="${MONETDBCLIENTS_PREFIX+$MONETDBCLIENTS_PREFIX/bin:}$PATH";;
   *) MPATH="$withval/bin:$PATH";;
   esac
@@ -136,15 +136,15 @@ if test "x$have_monetdb" != xno; then
     AC_MSG_CHECKING(whether MonetDB version $MONETDBCLIENTS_REQUIRED_VERSION or newer is installed) 
     MONETDBCLIENTSVERS=`$MONETDBCLIENTS_CONFIG --version`
     if test MONETDB_VERSION_TO_NUMBER(echo $MONETDBCLIENTSVERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDBCLIENTS_REQUIRED_VERSION); then
-      have_monetdb=yes
-      AC_MSG_RESULT($have_monetdb: found version $MONETDBCLIENTSVERS)
+      have_clients=yes
+      AC_MSG_RESULT($have_clients: found version $MONETDBCLIENTSVERS)
     else
-      have_monetdb=no
-      AC_MSG_RESULT($have_monetdb: found only version $MONETDBCLIENTSVERS)
+      have_clients=no
+      AC_MSG_RESULT($have_clients: found only version $MONETDBCLIENTSVERS)
     fi
   fi
 
-  if test "x$have_monetdb" != xyes; then
+  if test "x$have_clients" != xyes; then
     MONETDBCLIENTS_CFLAGS=""
     MONETDBCLIENTS_INCS=""
     MONETDBCLIENTS_INCLUDEDIR=""
@@ -166,7 +166,7 @@ AC_SUBST(MONETDBCLIENTS_INCLUDEDIR)
 AC_SUBST(MONETDBCLIENTS_LIBS)
 AC_SUBST(MONETDBCLIENTS_PREFIX)
 AC_SUBST(MONETDBCLIENTS_CONFDIR)
-AM_CONDITIONAL(HAVE_MONET,test x$have_monetdb = xyes)
+AM_CONDITIONAL(HAVE_MONETDBCLIENTS,test x$have_clients = xyes)
 ]) dnl AC_DEFUN AM_MONETDB_CLIENTS
 
 AC_DEFUN([AM_MONETDB4],
