@@ -1396,7 +1396,13 @@ shredder_create(char *location,
     shredCtx->serFun    = serFun;
     shredCtx->serCtx    = serCtx;
     shredCtx->coll_lock = coll_lock;
-    (void) CMDpflock_get((lock*) &(shredCtx->extend_sema), &i);
+    {
+    /* avoid "dereferencing type-punned pointer will break strict-aliasing rules" with gcc >= 4.1 */
+    /* (void) CMDpflock_get((ptr*) &(shredCtx->extend_sema), &i); */
+    ptr s = (ptr)shredCtx->extend_sema;
+    (void) CMDpflock_get(&s, &i);
+    shredCtx->extend_sema = s;
+    }
     shredCtx->incremental = (BATcount(docBAT) > 0);
 
     /* init the idref attribute database */
