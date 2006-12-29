@@ -53,31 +53,6 @@ address MKEYbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
-command bulk_rotate_xor_hash(h:bat[:oid,:int], nbits:int,b:bat[:oid,:any_1])
-	:bat[:void,:int] 
-address MKEYbulk_rotate_xor_hash
-comment "pre:  h and b should be synced on head
-         post: [:xor=]([:rotate=](h, nbits), [hash](b))";
-
-command bulk_rotate_xor_hash(h:bat[:void,:int], nbits:int,b:bat[:oid,:any_1])
-	:bat[:void,:int] 
-address MKEYbulk_rotate_xor_hash
-comment "pre:  h and b should be synced on head
-         post: [:xor=]([:rotate=](h, nbits), [hash](b))";
-
-command bulk_rotate_xor_hash(h:bat[:void,:int], nbits:int,b:bat[:void,:any_1])
-	:bat[:void,:int] 
-address MKEYbulk_rotate_xor_hash
-comment "pre:  h and b should be synced on head
-         post: [:xor=]([:rotate=](h, nbits), [hash](b))";
-
-command bulk_rotate_xor_hash(h:bat[:oid,:int], nbits:int,b:bat[:void,:any_1])
-	:bat[:oid,:int] 
-address MKEYbulk_rotate_xor_hash
-comment "pre:  h and b should be synced on head
-         post: [:xor=]([:rotate=](h, nbits), [hash](b))";
-
-
 @- The Problem
 When creating a join, we want to make a unique key of the attributes on both
 sides and then join these keys.
