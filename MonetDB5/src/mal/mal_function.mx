@@ -522,22 +522,6 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 		stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
 #endif 
 		} else
-		if( isaColType(x)){
-			int tail;
-			int tx;
-			tail = getTailType(x);
-			tx = getTailIndex(x);
-			if(v && tx == v && tail == TYPE_any){
-			    tx= 0;
-			    tail = t;
-			}
-			y= newColType(tail);
-			setAnyTailIndex(y,tx);
-			setArgType(mb,p,i,y);
-#ifdef DEBUG_MAL_FCN
-		stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
-#endif 
-		} else
 		if(v>0 &&  getTailIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
 		stream_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
@@ -587,10 +571,6 @@ printFunction(GDKout, new->def, LIST_MAL_ALL);
 	            replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
 			if( getTailIndex(v) )
 	            replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
-		} else
-		if( isaColType(t) ){
-			if( getTailIndex(v) )
-				replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
 		} else
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
 	} 

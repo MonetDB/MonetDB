@@ -1339,7 +1339,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	for (i=1; i < mb->vtop; i++){
 		n= getVar(mb,i);
 		v= stk->stk+i;
-		if (isaBatType(n->type)) {
+		if (isaBatType(n->type) && v->val.ival) {
 			BAT *b;
 
 			b = BATdescriptor(v->val.ival);
@@ -1347,7 +1347,8 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				nme = getTypeName(n->type);
 				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
 				if (strcmp(nme, nmeOnStk)) {
-					stream_printf(cntxt->fdout, "!ERROR: %s != :%s",
+					printTraceCall(cntxt,mb,stk,pc);
+					stream_printf(cntxt->fdout, "!ERROR: %s != :%s\n",
 						nme, nmeOnStk);
 					stk->cmd='n';
 				}
@@ -1365,7 +1366,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	char ch;
 
 	mdbSessionActive= 1; /* for name completion */
-	mdbSanityCheck(cntxt, mb, stk, pc); /* expensive */
+	/* mdbSanityCheck(cntxt, mb, stk, pc); expensive */
 	switch (stk->cmd) {
 	case 'c':
 		p = getInstrPtr(mb, pc);
@@ -1561,9 +1562,7 @@ printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt
 				BBP_refs(ABS(b->batCacheid)) - 1);
 			BBPunfix(b->batCacheid);
 		}
-	} else if (cnt && isaColType(n->type) && v && v->val.ival) {
-		stream_printf(f, "Operation not yet implemented for :col types\n");
-	}
+	} 
 	if( n->props){
 		nme= propertySet2str(n->props);
 		stream_printf(f,"%s",nme);

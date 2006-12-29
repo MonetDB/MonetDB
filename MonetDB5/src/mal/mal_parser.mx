@@ -693,23 +693,6 @@ parseTypeId(Client cntxt, int defaultType)
 		skipSpace(cntxt);
 		return i;
 	}  
-	if (strncmp(s, ":col[", 5) == 0) {
-		/* parse :col[:type] */
-		advance(cntxt,5);
-		if( currChar(cntxt) ==':') { 
-			ht = simpleTypeId(cntxt);
-			kh = typeAlias(cntxt,ht);
-		} else ht = TYPE_any;
-
-		i = newColType(ht);
-		if (kh > 0)
-			setAnyHeadIndex(i, kh);
-		if (currChar(cntxt) != ']')
-			parseError(cntxt, "']' expected\n");
-		nextChar(cntxt); /* skip ']' */
-		skipSpace(cntxt);
-		return i;
-	}  
 	if( (strncmp(s,":bat",4)==0 ||
 		 strncmp(s,":BAT",4)==0 )  && !idCharacter[(int) s[4]]) {
 		advance(cntxt,4);

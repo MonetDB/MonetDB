@@ -553,26 +553,6 @@ A bat reference can be coerced to bat type.
 #endif
 		return newBatType(h3,t3);
 	}
-@-
-Column type resolution looks much like a BAT
-@c
-	if( isaColType(dsttype) && isaColType(srctype) ){
-		int t1,t2,t3;
-		t1= getTailType(dsttype);
-		t2= getTailType(srctype);
-
-		t3= -1;
-		if( t1 == TYPE_any) t3= t2;
-		if( t2 == TYPE_any) t3= t1;
-		if( t1 == t2) t3= t1;
-		else {
-#ifdef DEBUG_MAL_RESOLVE
-			if(tracefcn) stream_printf(GDKout,"Can not be resolved \n");
-#endif
-			return -1;
-		}
-		return newColType(t3);
-	}
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) stream_printf(GDKout,"Can not be resolved \n");
 #endif
@@ -873,9 +853,6 @@ malType getPolyType(malType t,int *polytype){
 		head= hi == 0 ? getHeadType(t): polytype[hi];
 		return newBatType(head,tail);
 	}
-
-	if( isaColType(t))
-		return newColType(tail);
 	return tail;
 }
 @-
@@ -923,9 +900,7 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 				}
 			}
 		}
-	} else
-	if( isaColType(formal))
-		if(!isaColType(actual)) ret= -1;
+	} 
 updLabel:
 #ifdef DEBUG_MAL_RESOLVE
 	stream_printf(GDKout,"updateTypeMap returns: %d\n",ret);

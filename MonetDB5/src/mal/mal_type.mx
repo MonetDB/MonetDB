@@ -25,7 +25,6 @@ Type composition is limited to at most two builtin types to form
 a BAT. Furthermore, the polymorphic type @code{any} can be qualified
 with a type variable index @code{any$I}, where I is a digit (1-9). 
 Beware, the TYPE_any is a speudo type known within MAL only.
-The type TYPE_col is reserved for the column backend.
 
 @{
 Within the MAL layer types are encoded in 32-bit integers using
@@ -41,7 +40,6 @@ This encoding scheme permits a limited number of different bat types.
 
 /* #define DEBUG_MAL_TYPE 1 */
 
-#define TYPE_col (TYPE_any-1)
 
 typedef int malType;
 
@@ -54,7 +52,6 @@ typedef int malType;
 #define getHeadType(X)  ((X>>8) & 0377 )
 #define getTailType(X)  ((X) & 0377 )
 #define isaBatType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
-#define isaColType(X)   ((1<<25) & (X) && (X)!= TYPE_any)
 
 #define setAnyHeadIndex(X,I) X |= ((I & 017)<<22);
 #define setAnyTailIndex(X,I) X |= ((I & 017)<<18);
@@ -145,19 +142,6 @@ getTypeName(malType tpe)
 			snprintf(s, l, ":any]");
 		else
 			snprintf(s, l, ":%s]", ATOMname(getTailType(tpe)));
-#ifdef DEBUG_MAL_TYPE
-		stream_printf(GDKout, "%s\n", buf);
-#endif
-		return GDKstrdup(buf);
-	}
-	if (isaColType(tpe)) {
-		k = getTailIndex(tpe);
-		if (k)
-			snprintf(buf, l, "col[:any%c%d]", TMPMARKER, k);
-		else if (getTailType(tpe) == TYPE_any)
-			snprintf(buf, l, "col[:any]");
-		else
-			snprintf(buf, l, "col[:%s]", ATOMname(getTailType(tpe)));
 #ifdef DEBUG_MAL_TYPE
 		stream_printf(GDKout, "%s\n", buf);
 #endif
@@ -283,8 +267,6 @@ getTypeIndex(str nme, int len, int deftype)
 		case 'c':
 			if (qt("chr"))
 				return TYPE_chr;
-			if (qt("col"))
-				return TYPE_col;
 			break;
 		case 'd':
 			if (qt("dbl"))
@@ -344,8 +326,6 @@ findGDKtype(int type)
 		return TYPE_void;
 	if (isaBatType(type))
 		return TYPE_bat;
-	if (type == TYPE_col)
-		return TYPE_int;
 	return ATOMtype(type);
 }
 
