@@ -455,14 +455,15 @@ const NEW_PAGE := MODIFIED_PAGE + 1;
 # get a handle to the global locks
 var pf_short := pflock_get(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
 var pf_wal   := pflock_get(1); # lock that must be held while writing into the WAL
-var pf_free  := pflock_get(2); # lock held while freeing ws-es
-var pf_extend:= pflock_get(3); # read-lock for extending
+var pf_extend:= pflock_get(2); # read-lock for protecting _RID_* bats against base reallocation
+var pf_free  := pflock_get(3); # lock held while freeing ws-es
 var pf_free_held := 0LL;
 
-# pf_extend is a stop-gap: we whould have liked to have per-collection read-locks..
-# pure read access to master bats (that is at danger only from BATextends) take a 
-# 'extend-lock', which can be read-only or write-acces. write-access also implies
-# taking a collection lock. read-only access can be granted to multiple threads..
+# The counting read-write lock pf_extend/pf_extenc_cnt/pf_extend_barrier
+# is a stop-gap: we whould have liked to have per-collection read-locks..
+# Pure read access to master bats (that is at danger only from BATextends) take a 
+# 'extend-lock', which can be read-only or write-acces. Write-access also implies
+# taking a collection lock. Read-only access can be granted to multiple threads..
 var pf_extend_barrier := sema(ptr(pflock_get(4))); # semaphore.. not a lock, and shared for all collections
 var pf_extend_cnt := 0;
 
@@ -783,6 +784,39 @@ always request a larger batch of (pages, NIDs) in one go, adding them to a
 free-list. Thus, many insert actions will actually not need to take the 
 shred-lock (as they can get their new pages/NIDs from a freelist).
 
+@- extend lock 
+
+When we insert RID_* data in new pages, this is done right away in the master 
+bats (i.e. _RID_*).
+
+This is legal as it is only done for newly allocated pages, thus in unused
+ranges of the master bat that have been uniquely assigned to the updating query.
+These master bats are also regularly re-read while determining what to update.
+
+The only  danger here is that a ws_newpage() triggers a BATextend() on one
+of the _RID_* bats. In MonetDB, such extends may lead to base reallocations. 
+Concurrent commands that work on the bat will crash if this happens.
+
+To avoid this, we in fact need a read- and write-access to collection
+locks. That is, multiple updaters take read-locks while accessing only new
+pages in _RID_* bats. The ws_newpage() takes a write-lock when 
+extending the bats. Note that the free-list of pages used in ws_newpage() 
+means that in most cases BATextends() are not required, as extends happen
+in bulk and most page requests can be satisfied off the free-list.
+
+Due to lack of time, there is no per-collection extend-lock; only a global one.
+It consist of:
+- a counter (pf_extend_cnt) that counts how many readers are inside
+- a lock (pf_extend) that protects the counter
+- a semaphore that is taken by the first reader and released by the last.
+  extend write-locks always take the semaphore.
+
+While the _RID_* data is now still logged; we can easily switch to a mechanism
+where the new pages are flushed during the update. This reduces the log volume
+considerably, possibly at the cost of a more scattererd I/O pattern. 
+(OTOH the syncing may be initiated in async mode during the update phase already,
+ overlapping more I/O with computation)
+
 @- deleting documents 
 
 Deleting documents simply marks them as unused by changing document and
@@ -1016,37 +1050,23 @@ PROC coll_lock_unset(BAT[void,bat] ws,
     }
 }
 
-PROC extend_lock_set(BAT[void,bat] ws,
-                     oid cont,
-                     bit readonly) : void
+PROC coll_protect(BAT[void,bat] ws,
+                  oid cont) : void
 {
-    var l := lock(nil);
-     if (readonly) {
-         lock_set(l := pf_extend);
-         if (pf_extend_cnt = 0) sema_down(pf_extend_barrier);
-         pf_extend_cnt :+= 1;
-         lock_unset(pf_extend);
-     } else {
-         coll_lock_set(ws, cont);
-         sema_down(pf_extend_barrier);
-     }
-     ws.fetch(CONT_LOCKED).append(l);
+    lock_set(pf_extend);
+    if (pf_extend_cnt = 0) sema_down(pf_extend_barrier);
+    pf_extend_cnt :+= 1;
+    lock_unset(pf_extend);
+    ws.fetch(CONT_LOCKED).append(pf_extend);
 }
 
-PROC extend_lock_unset(BAT[void,bat] ws, 
-                       oid cont,
-                       bit readonly) : void
+PROC coll_unprotect(BAT[void,bat] ws,
+                    oid cont) : void
 {
-    var l := lock(nil);
-    if (readonly) {
-        lock_set(l := pf_extend);
-        if ((pf_extend_cnt :-= 1) = 0) sema_up(pf_extend_barrier);
-        lock_unset(l);
-    } else {
-        coll_lock_unset(ws, cont);
-        sema_up(pf_extend_barrier);
-    }
-    ws.fetch(CONT_LOCKED).reverse().delete(l);
+    lock_set(pf_extend);
+    if ((pf_extend_cnt :-= 1) = 0) sema_up(pf_extend_barrier);
+    lock_unset(pf_extend);
+    ws.fetch(CONT_LOCKED).reverse().delete(pf_extend);
 }
 
 @+ working sets and ws-IDs
@@ -1886,7 +1906,10 @@ PROC ws_newpage(BAT[void,BAT] ws,
             var empty_page_chr := empty_page.project(chr_nil);
             var empty_page_oid := empty_page.project(oid_nil);
 
-            extend_lock_set(ws, cont, false);
+            # fully protect/lock the collection during bat extend
+            lock_set(coll_lock);
+            sema_down(pf_extend_barrier);
+            ws.fetch(CONT_LOCKED).append(coll_lock).append(lock(nil));
 
             # take care to fill out the last page (should happen only for small documents)
             var lastpage_size := and(lng(rid_cnt),REMAP_PAGE_MASK);
@@ -1909,7 +1932,11 @@ PROC ws_newpage(BAT[void,BAT] ws,
                 map_pid.append(oid_nil,true); # add page as unused to map_pid
                 new_pid :+= 1;
             }
-            extend_lock_unset(ws, cont, false);
+
+            # unprotect/lock the collection after bat extend
+            sema_up(pf_extend_barrier);
+            lock_unset(coll_lock);
+            ws.fetch(CONT_LOCKED).reverse().delete(lock(nil)).delete(coll_lock);
 
             lock_set(pf_short);
             err := CATCH(_shredlock_unset(colname, wsid));
@@ -1955,6 +1982,7 @@ PROC ws_newnids(BAT[void, BAT] ws,
         lock_unset(pf_short);
 
         if (isnil(err)) {
+            coll_lock_set(ws, cont); 
             var nid_rid := ws.fetch(_NID_RID).find(cont);
             var nid_cnt := count(nid_rid);
             var nid_tgt := nid_cnt + cnt + (nid_cnt/16);
@@ -1962,7 +1990,6 @@ PROC ws_newnids(BAT[void, BAT] ws,
             var empty_page_oid := empty_page.project(oid_nil);
             var pgsz := int(REMAP_PAGE_SIZE);
 
-            extend_lock_set(ws, cont, false);
             if (nid_tgt < pgsz) {
                 # extend nid column of small documents by the amount needed, not more
                 nid_rid.append(empty_page_oid.slice(1, nid_tgt - nid_cnt), true);
@@ -1972,10 +1999,9 @@ PROC ws_newnids(BAT[void, BAT] ws,
                 nid_rid.append(empty_page_oid, true);
                 nid_cnt :+= pgsz;
             }
-            extend_lock_unset(ws, cont, false);
-
             newnids := newnids.access(BAT_WRITE);
             reverse(newnids).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
+            coll_lock_unset(ws, cont);
 
             lock_set(pf_short);
             err := CATCH(_shredlock_unset(colname, wsid));
