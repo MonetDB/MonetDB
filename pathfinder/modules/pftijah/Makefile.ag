@@ -64,7 +64,7 @@ lib__pftijah = {
 
 	LIBS = \
 		$(PF_LIBS) \
-		$(MONETDB_LIBS) -lbat -lmonet -lstream \
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream \
 		$(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 

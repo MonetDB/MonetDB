@@ -137,7 +137,7 @@ Once properly installed, the application can be compiled and linked as
 follows:
 @example
 @verbatim
-cc sample.c `monetdb-config --cflags --libs` -lMapi -o sample
+cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample
 @end verbatim
 @end example
 

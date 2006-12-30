@@ -65,20 +65,20 @@ bin_Mserver = {
 	COND = LINK_STATIC
 	SOURCES = Mserver.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream
 }
 
 lib_embeddedsql = {
 	SOURCES = embeddedclient.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream -lMapi
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
 }
 
 bin_Mbeddedsql = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedsql \
-		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream -lMapi
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
 }
 
 bin_embeddedExample = {
@@ -86,7 +86,7 @@ bin_embeddedExample = {
 	DIR = pkglibdir/Tests
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedsql \
-		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream -lMapi
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
 }
 
 scripts_h = {
@@ -100,7 +100,7 @@ lib_monetdb = {
 	PREFIX =
 	NAME = _monetdb
 	SOURCES = monetdb.py.i
-	LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lmutils -lstream -lMapi
+	LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 

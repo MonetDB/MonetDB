@@ -72,12 +72,12 @@ bin_Mserver = {
 lib_embeddedxq = {
 	SOURCES = embeddedclient.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream -lMapi
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
 }
 
 bin_Mbeddedxq = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedxq \
-		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream -lMapi
+		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
 }
