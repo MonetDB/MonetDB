@@ -18,14 +18,6 @@
 
 # "Meta-bootstrap" for buildtools
 
-# create insrall.lst for files that are installed by the top-level Makefile[.in]
-cat << EOF > install.lst
-conf/
-	share/MonetDB/conf/conf.bash
-	bin/Mbootstrap
-	bin/Mdebootstrap
-EOF
-
 # Create "Meta-configure" ...
 rm -f configure && cp configure.bs configure && chmod +x configure || exit 1
 
