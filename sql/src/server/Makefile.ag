@@ -16,8 +16,8 @@
 
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = ../include ../common ../storage 
-#$(MONETDB5_INCS) $(MONETDB_INCS)
+INCLUDES = ../include ../common ../storage $(MONETDB_INCS)
+# $(MONETDB5_INCS)
 
 YFLAGS = -d -p sql -v
 
