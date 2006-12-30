@@ -71,7 +71,7 @@ if test "x$have_monetdb" != xno; then
   AC_PATH_PROG(MONETDB_CONFIG,monetdb-config,,$MPATH)
 
   if test "x$MONETDB_CONFIG" != x; then
-    AC_MSG_CHECKING(whether MonetDB version $MONETDB_REQUIRED_VERSION or newer is installed) 
+    AC_MSG_CHECKING(whether MonetDB Common version $MONETDB_REQUIRED_VERSION or newer is installed) 
     MONETDBVERS=`$MONETDB_CONFIG --version`
     if test MONETDB_VERSION_TO_NUMBER(echo $MONETDBVERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB_REQUIRED_VERSION); then
       have_monetdb=yes
@@ -133,7 +133,7 @@ if test "x$have_clients" != xno; then
   AC_PATH_PROG(MONETDBCLIENTS_CONFIG,monetdb-clients-config,,$MPATH)
 
   if test "x$MONETDBCLIENTS_CONFIG" != x; then
-    AC_MSG_CHECKING(whether MonetDB version $MONETDBCLIENTS_REQUIRED_VERSION or newer is installed) 
+    AC_MSG_CHECKING(whether MonetDB Clients version $MONETDBCLIENTS_REQUIRED_VERSION or newer is installed) 
     MONETDBCLIENTSVERS=`$MONETDBCLIENTS_CONFIG --version`
     if test MONETDB_VERSION_TO_NUMBER(echo $MONETDBCLIENTSVERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDBCLIENTS_REQUIRED_VERSION); then
       have_clients=yes
@@ -185,7 +185,7 @@ else
   MONETDB4_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monetdb4,
-	AC_HELP_STRING([--with-monetdb4=DIR], [monetdb4 is installed in DIR]),
+	AC_HELP_STRING([--with-monetdb4=DIR], [MonetDB4 is installed in DIR]),
 	have_monetdb4="$withval")
 if test "x$have_monetdb4" != xno; then
   case "$have_monetdb4" in
@@ -195,7 +195,7 @@ if test "x$have_monetdb4" != xno; then
   AC_PATH_PROG(MONETDB4_CONFIG,monetdb4-config,,$MPATH)
 
   if test "x$MONETDB4_CONFIG" != x; then
-    AC_MSG_CHECKING(whether MonetDB version $MONETDB4_REQUIRED_VERSION or newer is installed) 
+    AC_MSG_CHECKING(whether MonetDB4 version $MONETDB4_REQUIRED_VERSION or newer is installed) 
     MONETDB4VERS=`$MONETDB4_CONFIG --version`
     if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB4VERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB4_REQUIRED_VERSION); then
       have_monetdb4=yes
@@ -252,14 +252,14 @@ else
   MONETDB5_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monetdb5,
-	AC_HELP_STRING([--with-monetdb5=DIR], [monetdb5 is installed in DIR]),
+	AC_HELP_STRING([--with-monetdb5=DIR], [MonetDB5 is installed in DIR]),
 	have_monetdb5="$withval")
 if test "x$have_monetdb5" != xno; then
   MPATH="$withval/bin:$PATH"
   AC_PATH_PROG(MONETDB5_CONFIG,monetdb5-config,,$MPATH)
 
   if test "x$MONETDB5_CONFIG" != x; then
-    AC_MSG_CHECKING(whether MonetDB version $MONETDB5_REQUIRED_VERSION or newer is installed) 
+    AC_MSG_CHECKING(whether MonetDB5 version $MONETDB5_REQUIRED_VERSION or newer is installed) 
     MONETDB5VERS=`$MONETDB5_CONFIG --version`
     if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB5VERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB5_REQUIRED_VERSION); then
       have_monetdb5=yes
