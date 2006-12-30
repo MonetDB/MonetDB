@@ -58,7 +58,7 @@ language features and illustrative examples.
 * MAL Literals::
 * MAL Variables::
 * MAL Instructions::
-* Flow of control::
+* MAL Flow-of-control::
 * MAL Functions::
 * MAL Factories::
 * Type resolution::
@@ -72,23 +72,23 @@ language features and illustrative examples.
 @+ MAL Literals 
 Literals in MAL follow the lexical conventions of C/C++.
 A default type is attached, e.g. the literal 1 is typed
-as an @sc{int} value.
-Likewise, the literal 3.14 is typed @sc{flt} rather than @sc{dbl}.
+as an @sansserif{int} value.
+Likewise, the literal 3.14 is typed @sansserif{flt} rather than @sansserif{dbl}.
 
 A literal can be coerced to another type by tagging it with a type
 classifier, provided a coercion operation is defined.
-For example, @sc{1:lng} marks the literal as of type @sc{lng}.
-and @sc{"1999-12-10":date} creates a @sc{date} literal.
+For example, @sansserif{1:lng} marks the literal as of type @sansserif{lng}.
+and @sansserif{"1999-12-10":date} creates a @sansserif{date} literal.
 
-MonetDB comes with the hardwired types @sc{bit, chr, sht, int, lng, oid, flt, 
-dbl, str} and @sc{bat}, the bat identifier.
+MonetDB comes with the hardwired types @sansserif{bit, bte, chr, wrd, sht, int, lng, oid, flt, 
+dbl, str} and @sansserif{bat}, the bat identifier.
 The kernel code has been optimized to deal with these types efficiently,
 i.e. without unnecessary function call overheads
 In addition,  the system supports
-temporal types @sc{date, daytime, time, timestamp, timezone},
-extensions to deal with IPv4 addresses and URLs using @sc{inet, url},
+temporal types @sansserif{date, daytime, time, timestamp, timezone},
+extensions to deal with IPv4 addresses and URLs using @sansserif{inet, url},
 and several types to interact more closely with the 
-kernel @sc{lock, semphore}.
+kernel @sansserif{lock, semphore}.
 This list can be extended with user defined types.
 
 @node MAL Variables, MAL Instructions, MAL,MAL
@@ -98,14 +98,14 @@ on a type through a type classifier or inherit it from
 the context in which they are first used, see @ref{Type resolution}. 
 
 Variables are organized into two classes, starting with and without
-an underscore. The latter are reserved for MAL parser, they represent
+an underscore. The latter are reserved for the MAL parser, they represent
 temporary variable whose name aligns with an entry in the symbol table.
 In general they can not be used in MAL programs, but they may become
 visible in MAL program listings or during debugging.
 
-@node MAL Instructions, Flow of control, MAL Variables, MAL
+@node MAL Instructions, MAL Flow-of-control, MAL Variables, MAL
 @+ Instructions
-MAL instructions have purposely a simple format. 
+A MAL instruction has purposely a simple format. 
 It is syntactically represented by an assignment, where
 an expression (function call) delivers results to multiple target variables. 
 The assignment patterns recognized are illustrated below.
@@ -118,14 +118,15 @@ t1 := constant;
 @end example
 
 Operators are grouped into user defined modules.
-Ommission of the module name is interpreter as the @sc{user} module.
+Ommission of the module name is interpreter as the @sansserif{user} module.
 
 Simple binary arithmetic operations are merely provided as a short-hand,
-e.g. the expression @sc{t:=2+2} is converted directly 
-into @sc{t:= calc.+(2,2)}.
+e.g. the expression @sansserif{t:=2+2} is converted directly 
+into @sansserif{t:= calc.+(2,2)}.
 
 Target variables are optional. The compiler introduces temporary 
 variables to hold the result of the expression upon need. 
+They won't show up when you list the MAL program.
 
 For parsing simplicity, each instruction fits on a single line.
 Comments start with a sharp '#' and continues to the end of the line.
@@ -140,41 +141,41 @@ and administrative data for the interpreter.
 
 This method leads to a large allocated block, which can be easily freed.
 Variable- and statement- block together describe the
-static part of a MAL procedure. It carries carry enough 
+static part of a MAL procedure. It carries enough 
 information to produce a listing and to aid symbolic debugging.
 
-@node Flow of control, MAL Functions, MAL Instructions, MAL
-@+ Flow of control
+@node MAL Flow-of-control, MAL Functions, MAL Instructions, MAL
+@+ MAL Flow-of-control
 The flow of control within a MAL program block can be changed by
-tagging an statement with either @sc{return}, @sc{yield},
-@sc{barrier}, @sc{catch}, @sc{leave}, @sc{redo}, or @sc{exit}.
+tagging a statement with either @sansserif{return}, @sansserif{yield},
+@sansserif{barrier}, @sansserif{catch}, @sansserif{leave}, @sansserif{redo}, or @sansserif{exit}.
 
-The flow modifiers @sc{return} and @sc{yield} mark the end
+The flow modifiers @sansserif{return} and @sansserif{yield} mark the end
 of a call and return one or more results to the calling environment.
-The @sc{return} and @sc{yield} are followed by a target list
+The @sansserif{return} and @sansserif{yield} are followed by a target list
 or an assignment, which is executed first.
 
-The @sc{barrier} (@sc{catch}) and @sc{exit} pair mark a
+The @sansserif{barrier} (@sansserif{catch}) and @sansserif{exit} pair mark a
 guarded statement block. They may be nested to form a proper
 hierarchy identified by their primary target variable,
 also called the control variable.
 
-The @sc{leave} and @sc{redo} are conditional flow modifiers.
+The @sansserif{leave} and @sansserif{redo} are conditional flow modifiers.
 The control variable is used after the assignment statement has
 been evaluated to decide on the flow-of-control action to be taken.
 Built-in controls exists for booleans and numeric values.
 The barrier block is opened when the control variable holds
 true, when its numeric value >= 0, or when it is a non-empty
-string. The @sc{nil} value blocks entry in all cases.
+string. The @sansserif{nil} value blocks entry in all cases.
 
 Once inside the barrier you have an option to prematurely
-@sc{leave} it at the exit statement
-or to @sc{redo} interpretation just after the corresponding
+@sansserif{leave} it at the exit statement
+or to @sansserif{redo} interpretation just after the corresponding
 barrier statement. Much like 'break' and 'continue' statements
 in the programming language C.
 The action is taken when the condition is met.
 
-The @sc{exit} marks the exit for a block. Its optional assignment
+The @sansserif{exit} marks the exit for a block. Its optional assignment
 can be used to re-initialize the barrier control variables
 or wrap-up any related administration.
 
@@ -182,7 +183,7 @@ The barrier blocks can be properly nested to form
 a hierarchy of basic blocks.
 The control flow within and between blocks is
 simple enough to deal with during an optimizer stage.
-The @sc{redo} and @sc{leave} statements mark
+The @sansserif{redo} and @sansserif{leave} statements mark
 the partial end of a block. Statements within these
 blocks can be re-arranged according to the data-flow
 dependencies. The order of partial blocks can not
@@ -193,32 +194,32 @@ Common guarded blocks in imperative languages are
 the for-loop and if-then-else constructs.
 They can be simulated as follows.
 
-Consider the statement @sc{for(i=1;i<10;i++) print(i)}.
+Consider the statement @sansserif{for(i=1;i<10;i++) print(i)}.
 The (optimized) MAL block to implement this becomes:
 @example
      i:= 1;
 barrier B:= i<10;
-     print(i);
+     io.print(i);
      i:= i+1;
 redo B:= i<10;
 exit B;
 @end example
 
-Translation of the statement @sc{if(i<1) print("ok"); else print("wrong");}
+Translation of the statement @sansserif{if(i<1) print("ok"); else print("wrong");}
 becomes:
 @example
     i:=1;
 barrier ifpart:= i<1;
-    print("ok");
+    io.print("ok");
 exit ifpart;
 barrier elsepart:= i>=1;
-    print("wrong");
+    io.print("wrong");
 exit elsepart;
 @end example
 
 Note that both guarded blocks can be interchanged without
 affecting the outcome. Moreover, neither block would
-have been entered if the variable happens to be assigned @sc{nil}.
+have been entered if the variable happens to be assigned @sansserif{nil}.
 
 The primitives are sufficient to model a wide variety of iterators,
 whose pattern look like (for a module M):

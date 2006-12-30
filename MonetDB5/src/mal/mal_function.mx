@@ -19,7 +19,7 @@
 @+ Functions
 MAL comes with a standard functional abstraction scheme.
 Functions are represented by MAL instruction lists, enclosed
-by a @sc{function} signature statement
+by a @sc{function} signature
 and @sc{end} statement. The @sc{function}
 signature lists the arguments and their types.
 The @sc{end} statement marks the end of this sequence. 
@@ -43,7 +43,7 @@ The functional abstraction scheme comes with several variations:
 They are discussed shortly.
 @menu
 * Polymorphic Functions ::
-* Commands and Patterns::
+* C Functions::
 @end menu
 @{
 @-
@@ -412,7 +412,7 @@ int getBarrierEnvelop(MalBlkPtr mb){
 }
 @}
 @-
-@node Polymorphic Functions, Commands and Patterns, MAL Functions, MAL Functions
+@node Polymorphic Functions, C Functions, MAL Functions, MAL Functions
 @- Polymorphic Functions
 Polymorphic functions are characterised by type variables
 denoted by @sc{:any} and an optional index.
@@ -447,8 +447,8 @@ other arguments types, i.e. @sc{bit,sht,lng,flt,dbl,...}.
 For example, calling @sc{helloWorld(3.14:flt)} echoes
 a float value.
 
-@node Commands and Patterns, MAL Factories, Polymorphic Functions, MAL Functions
-@- Commands and Patterns
+@node C Functions, MAL Factories, Polymorphic Functions, MAL Functions
+@- C functions
 The MAL function body can also be implemented with a C-function.
 They are introduced to the MAL type checker by providing their
 signature and an @sc{address} qualifier for linkage.
