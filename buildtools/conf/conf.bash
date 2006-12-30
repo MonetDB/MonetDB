@@ -538,14 +538,14 @@ binpath="${WHAT_PREFIX}/bin:${binpath}"
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	# the following is nolonger needed for Monet,
 	# but still needed for the rest:
-	if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
-		# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
-		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib"
-		libpath="${WHAT_PREFIX}/${libdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib:${libpath}"
-		if [ "${what}" != "MONET5" ] ; then
-			mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB4_PREFIX}/bin/monetdb4-config --modpath`"
-		fi
-	fi
+####	if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
+####		# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
+####		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib"
+####		libpath="${WHAT_PREFIX}/${libdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib:${libpath}"
+####		if [ "${what}" != "MONET5" ] ; then
+####			mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB4_PREFIX}/bin/monetdb4-config --modpath`"
+####		fi
+####	fi
 	if [ "${os}" = "CYGWIN" ] ; then
 		# CYGWIN finds dlls using the PATH variable 
 		if [ "${what}" = "MONETDB" ] ; then
