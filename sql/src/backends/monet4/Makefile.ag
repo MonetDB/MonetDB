@@ -26,7 +26,7 @@ lib__sql_server = {
 		sql_gencode.mx \
 		sql_result.mx
 	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
-		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream \
+		$(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
 		$(MONETDB4_MODS) -l_logger -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra -l_str -l_monettime \
 		$(PTHREAD_LIBS)
 }

@@ -65,20 +65,20 @@ bin_Mserver = {
 	COND = LINK_STATIC
 	SOURCES = Mserver.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet
 }
 
 lib_embeddedsql = {
 	SOURCES = embeddedclient.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(MONETDBCLIENTS_LIBS) -lMapi
 }
 
 bin_Mbeddedsql = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedsql \
-		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(MONETDBCLIENTS_LIBS) -lMapi
 }
 
 bin_embeddedExample = {
@@ -86,7 +86,7 @@ bin_embeddedExample = {
 	DIR = pkglibdir/Tests
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedsql \
-		$(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(MONETDBCLIENTS_LIBS) -lMapi
 }
 
 scripts_h = {

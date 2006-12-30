@@ -48,7 +48,7 @@ lib__pf_support = {
 
         LIBS = \
                 $(PF_LIBS) \
-                $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream $(PTHREAD_LIBS) \
+                $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet $(PTHREAD_LIBS) \
                 $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 
@@ -59,7 +59,7 @@ lib__pf_standoff = {
 
         LIBS = \
                 $(PF_LIBS) \
-                $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream \
+                $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
                 $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant 
 }
 
@@ -84,7 +84,7 @@ lib__pathfinder = {
                 ../compiler/libcompiler2 \
                 ../compiler/sql/libsql \
                 $(PF_LIBS) \
-                $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream $(PTHREAD_LIBS) \
+                $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet $(PTHREAD_LIBS) \
                 $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
 }
 
@@ -93,7 +93,7 @@ lib__xrpc_client = {
         SOURCES = xrpc_client.mx
         LIBS = \
 			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-			   $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream -lpthread \
+			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet -lpthread \
 			   $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io
 }
 
@@ -104,7 +104,7 @@ lib__xrpc_server = {
 				  xrpc_server.mx
         LIBS = \
 			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-			   $(MONETDB4_LIBS) -lmonet $(MONETDB_LIBS) -lbat -lstream -lpthread \
+			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet -lpthread \
 			   $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io
 }
 
