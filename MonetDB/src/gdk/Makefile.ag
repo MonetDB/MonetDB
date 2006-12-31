@@ -46,4 +46,3 @@ lib_gdk = {
 		#gdk_posix.mx logger.mx bat.feps bat1.feps bat2.feps
 #}
 
-EXTRA_DIST_DIR = Tests
