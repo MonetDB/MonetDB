@@ -46,7 +46,7 @@ Conditional operators are quite common, e.g. the triple (count, <, 1000)
 can be used to denote a small table.
 
 The property bearing objects in the MAL setting are 
-variables (symbol table entries) and MAL function blocks.
+variables (symbol table entries).
 The direct relationship between instructions and
 a target variable, make it possible to keep the instruction properties
 in the corresponding target variable. 

@@ -455,7 +455,6 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	@:MALwrapup@
 	return ret;
 }
-@}
 @- Out of order execution
 The alternative is to execute the instructions out of order
 using a dataflow dependencies. It only works on a code
@@ -468,7 +467,6 @@ The dataflow portion is identified as a guarded block,
 whose entry is controlled by the function language.dataflow();
 This way the function can inform the caller to skip the block
 when dataflow execution was performed.
-@{
 @h
 mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
@@ -906,7 +904,6 @@ to an exception string upon failure.
 Failure leads to raise-ing an exception in the interpreter loop,
 by either looking up the relevant exception message in the module
 administration or construction of a standard string.
-Upon successfull return, we update the ValRecord with length indications.
 
 The PATcall initiates a call which contains the MAL context.
 i.e. f(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -916,14 +913,14 @@ as the optimizers. The Mal stack frame pointer provides access
 to the values maintained. The arguments passed are offsets
 into the stack frame rather than pointers to the actual value.
 
+@{
 BAT parameters require some care. Ideally, a BAT should not be kept
 around long. This would mean that each time we access a BAT it has to be
 pinned in memory and upon leaving the function, it is unpinned.
 This degrades performance significantly. 
 After the parameters are fixed, we can safely free the destination
-variable and re-initialize it to nil;
+variable and re-initialize it to nil.
 
-@{
 The policy implemented here is to make pin/unpin decisions part of
 the bind(namespace, batname, mode) operation. [todo]
 

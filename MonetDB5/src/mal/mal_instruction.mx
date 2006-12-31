@@ -61,8 +61,7 @@ language features and illustrative examples.
 * MAL Flow-of-control::
 * MAL Functions::
 * MAL Factories::
-* Type resolution::
-* Atomary types::
+* MAL Type System::
 * Boxed variables::
 * Property Management::
 @end menu

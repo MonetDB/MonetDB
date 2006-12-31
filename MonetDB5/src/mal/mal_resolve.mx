@@ -16,7 +16,12 @@
 
 @a M. Kersten
 @v 1.0
-@+ Type Resolution
+@-
+@menu
+* Type Resolution::
+* User Defined Types::
+@end menu
+@- Type Resolution
 Given the interpretative nature of many of the MAL instructions,
 when and where type resolution takes place is a critical design issue.
 Performing it too late, i.e. at each instruction call, leads to 
