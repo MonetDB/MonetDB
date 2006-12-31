@@ -418,7 +418,7 @@ interpret_multiplex_fcn(str s,		/* operator name */
 			int stk,	/* -1 if no proc */
 			size_t size,	/* expected result size */
 			int tpe,	/* head column type */
-			int ret,	/* return type; <=0 if unknown */
+			int ret,	/* return type; <0 if unknown */
 			GDKfcn imp	/* command pack address or proc YYSTREE */
 	)
 {
@@ -483,7 +483,7 @@ Set up type and length info for the values that will come out of BAT params.
 			  (ATOMextern(desc.id.vtype) ?
 			   multiplex_bat_proc_extern_tpechk :
 			   multiplex_bat_proc_intern_tpechk) :
-			  (ret > 0 ?
+			  (ret >= 0 ?
 			   (ATOMextern(ret) ?
 			    (ATOMextern(desc.id.vtype) ?
 			     multiplex_bat_fcn_extern_extern :
@@ -498,7 +498,7 @@ Set up type and length info for the values that will come out of BAT params.
 			  (ATOMextern(desc.id.vtype) ?
 			   multiplex_bat_proc_extern_tpechk :
 			   multiplex_bat_proc_intern_tpechk) :
-			  (ret > 0 ?
+			  (ret >= 0 ?
 			   (ATOMextern(ret) ?
 			    (ATOMextern(desc.id.vtype) ?
 			     multiplex_fcn_extern_extern :
@@ -510,7 +510,7 @@ Set up type and length info for the values that will come out of BAT params.
 			    multiplex_fcn_extern_tpechk :
 			    multiplex_fcn_intern_tpechk))));
 	desc.need_unfix = (!proc && !desc.notall);
-	if (ret > 0) {
+	if (ret >= 0) {
 		desc.b = BATnew(desc.id.vtype, ret, desc.cap + 3);
 		BATseqbase(desc.b, hseq);
 
@@ -541,7 +541,7 @@ but rather discard the complete result and return an error.
 When zero matching elements where there, no execution took place.
 So, what tail-type should the empty return BAT have? Dilemma!
 @c
-	if (desc.b == NULL && ret <= 0) {
+	if (desc.b == NULL && ret < 0) {
 		GDKwarning("%s: empty result, hence return type unknown.\n", desc.name);
 		desc.b = BATnew(desc.id.vtype, TYPE_int, 10);
 		BATseqbase(desc.b, hseq);
@@ -593,18 +593,16 @@ multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv)
 	}
 	if (!desc->b) {
 		desc->b = BATnew(desc->id.vtype, desc->argv[0].vtype, desc->cap + 3);
-		desc->unfix = desc->notall ? NULL : BATatoms[desc->argv[0].vtype].atomUnfix;
-		if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
-			desc->unfix = BATunfix;
-
-		/* void void case */
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
-			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			GDKerror("multiplex: bat allocation failed.\n");
 			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
+		desc->unfix = desc->notall ? NULL : BATatoms[desc->argv[0].vtype].atomUnfix;
+		if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
+			desc->unfix = BATunfix;
 	}
 	@:insert_@3(@2)@
 	return 0;
@@ -635,18 +633,16 @@ multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv)
 	}
 	if (!desc->b) {
 		desc->b = BATnew(desc->id.vtype, desc->argv[0].vtype, desc->cap+3);
-		desc->unfix = (desc->notall)?NULL:BATatoms[desc->argv[0].vtype].atomUnfix;
-		if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
-			desc->unfix = BATunfix;
-
-		/* void void case */
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
-			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			GDKerror("multiplex: bat allocation failed.\n");
 			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
+		desc->unfix = (desc->notall)?NULL:BATatoms[desc->argv[0].vtype].atomUnfix;
+		if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
+			desc->unfix = BATunfix;
 	}
 	@:insert_@3(@2)@
 	return 0;
@@ -666,12 +662,12 @@ bunins_failed:
 		VALnil(desc->argv, desc->b->ttype);
 		bulkerror_format(&desc->bulkerror, desc->id.vtype, @1);
 	}
-	if (desc->b->ttype != TYPE_void) {
-		bunfastins(desc->b, @1, @2);
-	} else {
-		desc->b->U->buns.free += 1;
-		BATsetcount(desc->b, desc->b->batCount+1);
-	}
+        if (desc->b->htype || desc->b->ttype) {
+	    bunfastins(desc->b, @1, @2);
+        } else {
+            desc->b->batBuns->free++;
+            BATsetcount(desc->b, desc->b->batCount+1);
+        }
 	if (desc->unfix)
 		(desc->unfix)(@2);
 

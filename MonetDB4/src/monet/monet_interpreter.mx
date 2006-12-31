@@ -104,7 +104,7 @@ typedef struct {
 	PackFcn pack_fcn;	/* function pointer to generated impl stub */
 	GDKfcn fast_fcn;	/* function pointer that gets pointer params */
 	str fcn_nme;		/* function name */
-	sht ret_tpe;		/* 0=unknown, or monet atom number */
+	sht ret_tpe;		/* -1=unknown, or monet atom number */
 	sht token;		/* kind of function to execute */
 	chr special;		/* 0=none, 1=ifthenelse, 2=ifthen, 3=ifelse */
 	bit assignop;		/* [OP=](A,..) overwrite A with result */

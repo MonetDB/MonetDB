@@ -342,6 +342,9 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 .COMMAND batsize(BAT[any,any] b) : lng = CMDbatsize;
 "A version of BATsize that does not require loading the BAT."
 
+.COMMAND batdsksize(BAT[any,any] b) : lng = CMDbatdsksize;
+"batdsksize returns the size on disk rather than in memory"
+
 @- BUN Access
 @m
 .ITERATOR  batloop(BAT[any,any], ptr handle) = CMDbatloop_std;
@@ -1395,6 +1398,24 @@ CMDinfo(BAT **retval, BAT *b)
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 int
+CMDbatdsksize(lng *tot, BAT *b)
+{
+	size_t blksize = 512;
+	size_t size = 0;
+
+	if (!VIEWparent(b)) {
+		size += ROUND_UP(sizeof(BAT), blksize);
+		size += ROUND_UP(b->batBuns->free, blksize);
+		if (b->hheap)
+			size += ROUND_UP(b->hheap->free, blksize);
+		if (b->theap)
+			size += ROUND_UP(b->theap->free, blksize);
+	}
+	*tot = size;
+	return GDK_SUCCEED;
+}
+
+int
 CMDbatsize(lng *tot, BAT *b)
 {
 	size_t blksize = MT_pagesize();
@@ -2151,7 +2172,7 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 		GDKerror("isolate(%s): cannot isolate direct maps.\n", BBP_logical(b->batCacheid));
 		return GDK_FAIL;
 	}
-	if (cnt && b->batBuns->storage == STORE_PRIV) {
+	if (cnt && (b->batBuns->storage & STORE_PRIV)) {
 		size_t pagebits, pagesize = MT_pagesize(), pagecnt = pagesize/ATOMsize(b->ttype);
 		size_t pos, lim = 0, idx, xx, yy = pagecnt;
 		unsigned int *bitmask;
