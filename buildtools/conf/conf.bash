@@ -62,6 +62,9 @@ else
 	# which of monet, sql, xml, acoi, template, ... we are.
 	wh_t="`basename $base`"
 fi
+if [ "${wh_t}" = 'monet5' ] ; then
+	wh_t = 'MonetDB5'
+fi
 what="`echo ${wh_t} | tr '[a-z]' '[A-Z]' | tr '.-' '_'`"
 
 if [ "${what}" != "BUILDTOOLS" -a ! -f configure.ag ] ; then
@@ -81,7 +84,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	case "${what}" in
 	MONETDB4)
 		pkgdir="MonetDB4";;
-	MONET5)
+	MONETDB5)
 		pkgdir="MonetDB5";;
 	*)
 		pkgdir="MonetDB";;
@@ -111,12 +114,12 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 				what='' ; unset what
 				return 1
 			fi
-			if [ "${what}" != "MONETDB4"  -a  "${what}" != "MONET5" ] ; then
-				if [ ! "${MONETDB4_PREFIX}${MONET5_PREFIX}" ] ; then
+			if [ "${what}" != "MONETDB4"  -a  "${what}" != "MONETDB5" ] ; then
+				if [ ! "${MONETDB4_PREFIX}${MONETDB5_PREFIX}" ] ; then
 					MONETDB4_PREFIX=`monetdb4-config --prefix 2>/dev/null`
-					MONET5_PREFIX=`monetdb5-config --prefix 2>/dev/null`
+					MONETDB5_PREFIX=`monetdb5-config --prefix 2>/dev/null`
 				fi
-				if [ ! \( -x ${MONETDB4_PREFIX}/bin/monetdb4-config  -o  -x ${MONET5_PREFIX}/bin/monetdb5-config \) ] ; then
+				if [ ! \( -x ${MONETDB4_PREFIX}/bin/monetdb4-config  -o  -x ${MONETDB5_PREFIX}/bin/monetdb5-config \) ] ; then
 					echo ''
 					echo 'Could not find neither MonetDB4 nor MonetDB5 installation.'
 					echo ''
@@ -526,9 +529,9 @@ fi
 ###if [ "${what}" != "BUILDTOOLS"  -a  "${what}" != "MONETDB" ] ; then
 ###	# tell configure where to find MonetDB
 ###	conf_opts="${conf_opts} --with-monetdb=${MONETDB_PREFIX}"
-###	if [ "${what}" != "MONET5"  -a  "${MONET5_PREFIX}" ] ; then
+###	if [ "${what}" != "MONETDB5"  -a  "${MONETDB5_PREFIX}" ] ; then
 ###		# tell configure where to find MonetDB5
-###		conf_opts="${conf_opts} --with-monetdb5=${MONET5_PREFIX}"
+###		conf_opts="${conf_opts} --with-monetdb5=${MONETDB5_PREFIX}"
 ###	fi
 ###fi
 
@@ -542,7 +545,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 ####		# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
 ####		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib"
 ####		libpath="${WHAT_PREFIX}/${libdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib:${libpath}"
-####		if [ "${what}" != "MONET5" ] ; then
+####		if [ "${what}" != "MONETDB5" ] ; then
 ####			mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB4_PREFIX}/bin/monetdb4-config --modpath`"
 ####		fi
 ####	fi
@@ -680,10 +683,10 @@ if [ "${modpath}" ] ; then
 	echo " MONETDB_MOD_PATH=${MONETDB_MOD_PATH}"
 fi
 
-if [ "${what}" = "MONET5" ] ; then
+if [ "${what}" = "MONETDB5" ] ; then
 	monet5_config="-5 --config=${WHAT_PREFIX}/etc/monetdb5.conf"
-  elif [ "${MONET5_PREFIX}" ] ; then
-	monet5_config="-5 --config=${MONET5_PREFIX}/etc/monetdb5.conf"
+  elif [ "${MONETDB5_PREFIX}" ] ; then
+	monet5_config="-5 --config=${MONETDB5_PREFIX}/etc/monetdb5.conf"
   elif [ "${what}" = "MONETDB4" ] ; then
 	monet4_config="-4 --config=${WHAT_PREFIX}/etc/MonetDB.conf"
   else
@@ -691,7 +694,7 @@ if [ "${what}" = "MONET5" ] ; then
 fi
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
-	if [ "${what}" = "MONET5" ] ; then
+	if [ "${what}" = "MONETDB5" ] ; then
 		mtest_config="${monet5_config}"
 	  else
 		mtest_config="${monet4_config}"
@@ -712,8 +715,8 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	eval "MTEST_${what}='${MTEST_WHAT}'; export MTEST_${what}"
 	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
 	eval "alias Mtest_${wh_t}"
-	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/${libdir}/MonetDB5:${WHAT_PREFIX}/${libdir}/MonetDB5/lib:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
+	if [ "${what}" = "SQL"  -a  "${MONETDB5_PREFIX}" ] ; then
+		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/${libdir}/MonetDB5:${WHAT_PREFIX}/${libdir}/MonetDB5/lib:`${MONETDB5_PREFIX}/bin/monetdb5-config --modpath`"
 		echo " MTEST_${what}5=${MTEST_WHAT}"
 		eval "MTEST_${what}5='${MTEST_WHAT}'; export MTEST_${what}5"
 		eval "alias Mtest_${wh_t}5='${MTEST_WHAT}'"
@@ -722,7 +725,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	MTEST_WHAT='' ; unset MTEST_WHAT
 	eval "alias Mapprove_${wh_t}='Mapprove.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 	eval "alias Mapprove_${wh_t}"
-	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
+	if [ "${what}" = "SQL"  -a  "${MONETDB5_PREFIX}" ] ; then
 		eval "alias Mapprove_${wh_t}5='Mapprove.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 		eval "alias Mapprove_${wh_t}5"
 	fi

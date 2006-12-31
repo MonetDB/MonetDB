@@ -26,7 +26,7 @@ prefix=os.path.abspath(sys.argv[2]);
 source=os.path.abspath(os.path.join(build,os.pardir))
 
 subs = [
-    ('@MONET5_PREFIX@', os.getenv('MONET5_PREFIX') or '@MONET5_PREFIX@'),
+    ('@MONETDB5_PREFIX@', os.getenv('MONETDB5_PREFIX') or '@MONETDB5_PREFIX@'),
     ('@MONETDB_PREFIX@', os.getenv('MONETDB_PREFIX')),
     ('@SQL_BUILD@', build),
     ('@SQL_SOURCE@', source),
