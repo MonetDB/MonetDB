@@ -1,4 +1,0 @@
-conf/
-	share/MonetDB/conf/conf.bash
-	bin/Mbootstrap
-	bin/Mdebootstrap

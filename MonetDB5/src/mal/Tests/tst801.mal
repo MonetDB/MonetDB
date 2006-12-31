@@ -1,5 +1,0 @@
-#testing simple stuff around type BAT
-z:= bat.new(:int,:int);
-b:= bat.new(:int,:bat);
-bat.insert(b,1,z);
-io.print(b);

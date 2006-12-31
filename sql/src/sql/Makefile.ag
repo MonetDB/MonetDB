@@ -1,8 +1,0 @@
-
-scripts_sql = {
-	EXT = sql
-	DIR = pkgdatadir
-	SOURCES = \
-		bbp.sql stats.sql cache.sql math.sql mtime.sql url.sql \
-		dependency_functions.sql ms_functions.sql
-}
