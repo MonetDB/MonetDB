@@ -17,12 +17,12 @@
 @f unix
 @a Tim Ruhl, Martin Kersten, A.R. van Ballegooij
 @v 0.2
-@* Unix standard library calls
+@+ Unix standard library calls
 The unix module is currently of rather limited size.
 It should include only those facilities that are UNIX
 specific, i.e. not portable to other platforms.
 Similar modules may be defined for Windows platforms.
-
+@{
 @mal
 module unix;
 
@@ -34,7 +34,6 @@ command setenv(nme:str,val:str) :bit
 address UNIXsetenv
 comment "Set the environment variable string.";
 
-@{
 @- Implementation
 The remainder is a straight forward mapping to the underlying
 facilities

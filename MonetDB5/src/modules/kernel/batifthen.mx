@@ -18,6 +18,7 @@
 @+ BAT if-then-else multiplex expressions.
 The assembled code for IF-THEN-ELSE multiplex operations.
 Again we assume that the BAT arguments are aligned.
+@{
 @-
 @= ifthenGrp
 command batcalc.ifthen(b:bat[:oid,:bit], t:bat[:oid,:@1]) :bat[:oid,:@1] 
@@ -46,7 +47,6 @@ command batcalc.ifthenelse(b:bat[:oid,:bit], t:bat[:any_1,:@1], e:@1)
 	:bat[:oid,:@1] 
 address CMDifThenElseCst2_@1
 comment "If-then-else operation to assemble a conditional result ";
-@{
 @mal
 	@:ifthenGrp(bit)@
 	@:ifthenGrp(chr)@

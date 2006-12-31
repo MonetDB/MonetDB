@@ -62,7 +62,7 @@ the changed bats. Once all logs have been read, the changes to
 the bats are made persistent, i.e. a bbp sub-commit is done.
 
 @{
-@* Module Definition
+@+ Module Definition
 @mal
 module logger;
 
@@ -76,7 +76,7 @@ command destroy( l:logger ) :void
 address logger_destroy_wrap
 comment "Free the resources used by the logger.";
 
-@* Implementation Code 
+@+ Implementation Code 
 @h
 #ifndef _LOGGER_H_
 #define _LOGGER_H_

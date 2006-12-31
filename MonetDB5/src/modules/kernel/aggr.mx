@@ -17,7 +17,7 @@
 @f aggr
 @a S. Manegold 
 @v 1.0
-@* Aggregates Module
+@+ Aggregates Module
 
 This module contains some efficient aggregate functions that compute their 
 result in one scan, rather than in the iterative manner of the generic 
@@ -38,7 +38,7 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 The routines should not be stored in their own module, but
 added to the 'group' module. This can be achieved by setting
 the module.
-
+@{
 @mal
 module aggr;
 @= sumprod_signatures
@@ -128,7 +128,6 @@ comment "Grouped count";
 command count_no_nil(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2])
 	:bat[:oid,:int]
 address AX3count_no_nil3;
-@{
 @+ Implementation
 These implementations need just one scan and a simple hash-maintained data
 structure to compute a group of common aggregates.

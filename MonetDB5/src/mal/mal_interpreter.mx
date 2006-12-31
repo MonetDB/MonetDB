@@ -23,7 +23,6 @@ which provides for storage access to global variables and modules.
 * MAL API::
 * Exception Handling::
 * Garbage Collection::
-* Module Loading::
 * Stack Management::
 @end menu
 
@@ -1339,7 +1338,7 @@ str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
 
 @}
 @-
-@node Garbage Collection, Module Loading, Exception Handling, The MAL Interpreter
+@node Garbage Collection, Stack Management, Exception Handling, The MAL Interpreter
 @+ Garbage collection
 Garbage collection is relatively straightforward, because most values are
 retained on the stackframe of an interpreter call. However, two storage

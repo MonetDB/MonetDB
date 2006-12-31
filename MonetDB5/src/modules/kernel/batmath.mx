@@ -16,7 +16,7 @@
 
 @f batmath
 @a M.L. Kersten
-@* BAT math calculator
+@+ BAT math calculator
 
 @{
 @= tstBat

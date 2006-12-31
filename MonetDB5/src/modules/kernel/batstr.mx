@@ -16,7 +16,7 @@
 
 @f batstr
 @a M.L. Kersten
-@* String multiplexes
+@+ String multiplexes
 [TODO: property propagations]
 The collection of routines provided here are map operations
 for the atom string primitives. 
@@ -26,6 +26,7 @@ if two bat operands are provided that they are already
 aligned on the head. Moreover, the head of the BATs
 are limited to :void, which can be cheaply realized using
 the GRPsplit operation.
+@{
 @mal
 command batcalc.length( s:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatLength

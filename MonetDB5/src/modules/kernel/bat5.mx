@@ -17,7 +17,7 @@
 @f bat5
 @v 2.0
 @a Peter Boncz, M.L. Kersten
-@* Binary Association Tables
+@+ Binary Association Tables
 This module contains the commands and patterns to manage Binary
 Association Tables (BATs). The relational operations you can execute
 on BATs have the form of a neat algebra, described in algebra.mx
@@ -35,6 +35,7 @@ layer as (str *)
 and we have to de-reference them before entering the gdk library.
 (Actual a design error in gdk to differentiate passing int/str)
 This calls for knowledge on the underlying BAT types`s
+@-
 @{
 @= derefStr
 { if( @1->@2type >= TYPE_str  && ATOMstorage(@1->@2type) >= TYPE_str)
@@ -43,7 +44,6 @@ This calls for knowledge on the underlying BAT types`s
 }}
 @-
 The code speaks for itself
-@}
 @mal
 
 
@@ -549,9 +549,7 @@ The following constants have not been integrated in the code base
 #    BUF_WILLNEED  := 3;   # Will need these pages
 #    BUF_DONTNEED  := 4;   # Don't need these pages
 
-@{
-@{
-@* Implementation Code
+@+ Implementation Code
 In Version 5, we are not going to support recursive BATs.
 It is up to the programmer to translate a bat into a
 bat-name or batCacheid

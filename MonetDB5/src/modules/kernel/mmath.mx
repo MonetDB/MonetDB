@@ -24,7 +24,7 @@ ANSI-C/POSIX manuals of the equaly named functions.
 
 NOTE: the operand itself is being modified, rather than that we produce
 a new BAT. This to save the expensive copying.
-
+@{
 @mal
 module mmath;
 
@@ -202,10 +202,8 @@ function mmath.pi():dbl;
 	return pi;
 end pi;
 
-@{
 @-
 The constants defined in math.h are defined in const.mx
-@* Example Script
 @mil
 module(mmath);
 # these tests are disabled: they're in mmath2 test
@@ -235,7 +233,7 @@ quit;
 
 #endif /* __MMATH_H__ */
 
-@* Implementation Code
+@+ Implementation Code
 @c
 #include "mal_config.h"
 

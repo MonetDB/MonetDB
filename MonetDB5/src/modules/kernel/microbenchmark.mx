@@ -20,7 +20,7 @@ The microbenchmark routines are primarilly used to create a
 simple database for testing the performance of core routines.
 It was originally developed in the context of the Radix Cluster
 activities.
-
+@{
 @f microbenchmark
 @mal
 module microbenchmark;
@@ -242,3 +242,4 @@ MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean){
 	} else throw(MAL, "microbenchmark","uniform");
 	return MAL_SUCCEED;
 }
+@}

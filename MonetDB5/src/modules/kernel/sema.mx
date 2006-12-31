@@ -17,10 +17,10 @@
 @f sema
 @v 1.0
 @a Peter Boncz
-@* Lightweight Lock Module
+@+ Lightweight Lock Module
 This module provides simple SMP lock and thread functionality
 as already present in the MonetDB system.
-
+@{
 @+ semaphores
 @mal
 atom sema:ptr;
@@ -37,8 +37,7 @@ comment "Increment the semaphore";
 command destroy(s:sema) 
 address SEMAdestroy
 comment "Destroy a semaphore";
-@{
-@* Implementation
+@+ Implementation
 @c
 #include "mal_config.h"
 #include <gdk.h>
@@ -90,7 +89,6 @@ destroy_sema(monet_sema *s)
 	return GDK_SUCCEED;
 }
 
-@}
 @-
 The old code base is wrapped to ease update propagation.
 @c

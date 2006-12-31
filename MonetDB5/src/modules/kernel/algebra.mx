@@ -17,7 +17,7 @@
 @f algebra
 @a Peter Boncz, Martin Kersten, Niels Nes
 @v 2.0
-@* BAT Algebra
+@+ BAT Algebra
 This modules contains the most common algebraic BAT manipulation
 commands. We call them @#algebra@, because all operations take
 values as parameters, and produce new result values, but
@@ -43,7 +43,6 @@ This calls for knowlegde on the underlying BAT typs`s
 }}
 
 @
-@}
 We split between selections that return one value, and selections
 that return a BAT.
 @+ Value Selections
@@ -751,7 +750,6 @@ each algebraic operator may have different propagation rules with these
 different situations as conditions.
 
 @include kprelude.mx
-@{
 @h
 #ifndef ALGEBRA_H
 #define ALGEBRA_H

@@ -16,7 +16,7 @@
 
 @f batcolor
 @a M.L. Kersten
-@* Color multiplexes
+@+ Color multiplexes
 [TODO: property propagations and general testing]
 The collection of routines provided here are map operations
 for the color string primitives. 
@@ -26,6 +26,7 @@ if two bat operands are provided that they are already
 aligned on the head. Moreover, the head of the BATs
 are limited to :oid, which can be cheaply realized using
 the GRPsplit operation.
+@{
 @mal
 module batcolor;
 command str(b:bat[:oid,:color]):bat[:oid,:str]
@@ -242,3 +243,4 @@ bunins_failed:
 @:BATwalk3(Hsv,CLRhsv,flt,color)@
 @:BATwalk3(Rgb,CLRrgb,int,color)@
 @:BATwalk3(ycc,CLRycc,int,color)@
+@}

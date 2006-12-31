@@ -17,7 +17,7 @@
 @f group
 @a M.L. Kersten, P. Boncz, A.P. de Vries, N.J. Nes
 @v 2.3
-@* The group module
+@+ The group module
 This module contains the primitives to construct, derive, and
 perform statistical operations on BATs representing groups.
 The default scheme in Monet is to assume the head to represent
@@ -70,14 +70,13 @@ Successively the subgroups can be identified by modifying the GRP BAT or
 to derive a new GRP BAT for the subgroups. After all groups have been
 identified this way, a BAT histogram operation can be used to obtain
 the counts of each data cube. Other aggregation operations using the MIL
-set aggregate construct @{X@}(bat) (see the
-@[<a href="../../../FrontEnds/mil/mil.html#mod_3_2_0">MIL Reference Manual</a>@) 
+set aggregate construct @{X@}(bat) 
 can be used as well; note for instance that histogram == @{count@}(b.reverse()).
 
 The Monet interface module specification is shown below.
 Ideally we should defined stronger type constraints, e.g.
 command group.new(attr:bat[@{void,oid@},:any_1]
-
+@{
 @mal
 module group;
 
@@ -189,7 +188,6 @@ command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:int]
 address GRPsize
 comment "Grouped count of true values";
 
-@{
 @-
 We need a few routines to support MonetDB/XQ implementation.
 They are focussed on edge BATs [:oid,:oid] where the tail is
@@ -217,7 +215,7 @@ command prelude()
 address GRPprelude;
 
 group.prelude();
-@* Implementation Code
+@+ Implementation Code
 Inclusion of the xtables requires some preliminary definitions
 and als renaming :group by something else, because Mx can;t handle
 macros identical to file names.
@@ -394,25 +392,28 @@ map2histo(BAT *map)
 
 	return map;
 }
-
+@}
 @-
 The group macro is split along three dimensions:
-@table
+@multitable @columnfractions 0.2 0.8
 @item [type:] 
+@tab
 Type specific implementation for selecting the right
 hash function and data size etc.;
 @item [clustered:] 
+@tab
 The @{clustered and unclustered@} select the
 appropriate algorithm, i.e., with or without taking advantage of 
 an order of values in the parent groups;
 @item [physical properties:] 
+@tab
 Values @{standard and custom@}, 
 choosing between a fixed predefined and a custom hashmask. Custom
 allows the user to determine the size of the hashmask (and indirectly
 the estimated size of the result). The hashmask is $2^n - 1$ where $n$
 is given by the user, or 1023 otherwise, and the derived result
 size is $4 \cdot 2^n$.
-@end table
+@end multitable
 
 Further research should point out whether fitting a simple statistical
 model (possibly a simple mixture model) can help choose these parameters
@@ -420,6 +421,7 @@ automatically; the current idea is that the user (which could be a
 domain-specific extension of the higher-level language) knows the
 properties of the data, especially for IR in which the standard grouping
 settings differ significantly from the original datamining application.
+@{
 @c
 #define group_params_STANDARD	/* fixed */
 #define group_params_CUSTOM   hash_t custom_MASK, int custom_rng,

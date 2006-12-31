@@ -16,7 +16,7 @@
 
 @f batcalc
 @a M.L. Kersten
-@* BAT calculator
+@+ BAT calculator
 Many applications require extension of the basic calculator and
 mathematic functions to work on BAT arguments. Although the
 MAL multiplex optimizer contains a command ('optimizer.multiplex')
@@ -53,6 +53,7 @@ being. If it turns out to be effective, we will derive a new
 version of batcalc.
 Experiments show that ignoring the NULLS saves about 15\%
 for larger instructions.
+@{
 @mal
 module batcalc;
 
@@ -85,7 +86,6 @@ because they avoid expensive BAT copying.
 	address CMDbat@3_@2_@4_@5
 	comment "Binary BAT calculator function with new BAT result";
 
-@{
 @-
 We need instantiations for the accumulator code,
 but should limit modulo functions to integer-based types.
@@ -177,7 +177,6 @@ C qualifier and the operands
 
 
 @-
-@}
 @= unary
 	command -(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
 	address CMDunaryMIN
@@ -206,7 +205,6 @@ Not used yet
 	#		:bat[:any_1,:@1] 
 	#address CMDunaryAccumPLUSPLUS 
 	#comment "Unary ++ over the tail of the bat";
-@{
 @mal
 @:unary(oid)@
 @:unary(int)@
@@ -214,7 +212,6 @@ Not used yet
 @:unary(sht)@
 @:unary(flt)@
 @:unary(dbl)@
-@}
 @+ Comparison routines
 The command signatures are similar to those above, producing a bit result.
 @= comparison
@@ -252,7 +249,6 @@ The command signatures are similar to those above, producing a bit result.
 	@:comparison(and,bit,AND)@
 	@:comparison(or,bit,OR)@
 
-@}
 @+ Boolean operations
 The command signature can mostly be borrowed from the arithmetic.
 

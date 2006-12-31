@@ -16,7 +16,7 @@
 
 @f batmtime
 @a M.L. Kersten
-@* Time/Date multiplexes
+@+ Time/Date multiplexes
 [TODO: property propagations]
 The collection of routines provided here are map operations
 for the atom time and date primitives. 
@@ -26,6 +26,7 @@ if two bat operands are provided that they are already
 aligned on the head. Moreover, the head of the BATs
 are limited to :void, which can be cheaply realized using
 the GRPsplit operation.
+@{
 @= compareOp
 command batcalc.@2( l:bat[:oid,:@1], r:bat[:oid,:@1]) :bat[:oid,:bit]
 address MTIME@1bat_@3;

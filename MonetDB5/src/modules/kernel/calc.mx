@@ -17,7 +17,7 @@
 @f calc
 @a N.J. Nes, P. Boncz, M. Kersten, A. de Vries
 @v 2.0
-@* Basic arithmetic 
+@+ Basic arithmetic 
 This module is an extended version of the V4 arithmetic module.
 It implements the arithmetic operations on the built-in types,
 @emph{chr}, @emph{sht}, @emph{int}, @emph{flt}, @emph{dbl} and @emph{lng}.
@@ -72,6 +72,7 @@ The only exception to this rule are the "==" and "!=" equality
 test routines (it would otherwise become rather difficult to test 
 whether a value is nil). 
 
+@{
 The collection of type conversion routines are included here as well.
 
 The definitions shown are limited to the Mx macros.
@@ -89,7 +90,6 @@ built-in type set (int,lng,sht,bit,oid,flt,...)
 @-
 [Mx bug, space required here]
 
-@{
 @mal
 module calc;
 
@@ -109,7 +109,6 @@ comment "is a value nil?";
 command isnotnil(v:void) :bit 
 address CALCisnotnil_void
 comment "is a value not equal to nil?";
-@}
 @+ Comparison operations
 The @emph{eq_ops} and @emph{cmp_ops} Mx macro implements the interface to the
 arithmetic comparisons. Note that comparison operators with different
@@ -136,7 +135,6 @@ the least interesting one is pushed onto the symbol table stack first.
 		address CALCcompGT@1@2;
 		command between(val:@1, low:@1, high:@1) :bit 
 		address CALCcompBetween@1;
-@{
 @mal
 
 		@:cmp_ops(oid,oid)@
@@ -171,7 +169,6 @@ the least interesting one is pushed onto the symbol table stack first.
 		@:cmp_ops(lng,lng)@
 
 		@:cmp_ops(str,str)@
-@}
 @+ Arithmetic computation 
 The operators @{ +, -, *, /, % @} are handled here.
 The macro expects three parameters, two input atomic types and a result type. 
@@ -207,7 +204,6 @@ comment "Concatenate two strings";
 		address CALCbinaryMUL@1@2;
 		command /(left:@1, right:@2) :@3 
 		address CALCbinarycheckDIV@1@2;
-@{
 @-
 The coercions described below ensure that there is never any information loss.
 @mal
@@ -255,14 +251,12 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_calc_ops(lng,lng,lng)@
 	@:mal_calc_ops(lng,flt,flt)@
 	@:mal_calc_ops(lng,dbl,dbl)@
-@}
 @+ Binary  operations { max, min, }
 @= mal_binary_ops
 		command max(l:@1, r:@1) :@1 
 		address CALCbinaryMAX@2; 
 		command min(l:@1, r:@1) :@1 
 		address CALCbinaryMIN@2;
-@{
 @-
 @mal
 	@:mal_binary_ops(chr,chr)@
@@ -272,7 +266,6 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_binary_ops(flt,flt)@
 	@:mal_binary_ops(lng,lng)@
 	@:mal_binary_ops(dbl,dbl)@
-@}
 @+ Unary operations { abs, inv }
 The unary operators include coercion routines for built-in types
 @= mal_unary_ops
@@ -287,7 +280,6 @@ The unary operators include coercion routines for built-in types
 		comment "negative value";
 		command length(x:@1):int
 		address CALClength@1;
-@{
 @-
 @mal
 	@:mal_unary_ops(dbl)@
@@ -298,14 +290,12 @@ The unary operators include coercion routines for built-in types
 	@:mal_unary_ops(lng)@
 	command length(x:str):int
 	address CALClengthstr;
-@}
 @-
 Coercion functions are typical used in multiplex calls.
 @= mal_coercion
 		command @1(x:@2):@1 
 		address CALC@22@1 
 		comment "coercion @2 to @1";
-@{
 @= scalar_coercion
 	@:mal_coercion(@1,oid)@
 	@:mal_coercion(@1,bit)@
@@ -351,7 +341,6 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(chr,sht)@
 	@:mal_coercion(chr,int)@
 	@:mal_coercion(chr,lng)@
-@}
 @+ Boolean operations { or, xor, and, not }
 @mal
 command or(left:bit, right:bit) :bit 
@@ -382,13 +371,11 @@ array. Specific operations work with this interpretation.
 		address CALCbinaryLSH@1int;
 		command >>(left:@1, right:int) :@1 
 		address CALCbinaryRSH@1int;
-@{
 @mal
 	@:mal_bitwise_ops(chr)@
 	@:mal_bitwise_ops(sht)@
 	@:mal_bitwise_ops(int)@
 	@:mal_bitwise_ops(lng)@
-@}
 @+ Type coercions
 The Monet kernel contains a few built-in atomic types together
 with useful functions. 
@@ -402,7 +389,6 @@ Those accessible at the MAL command level are introduced below.
 		command @1(v:void) :@1 
 		address CALCnil2@1;
 
-@{
 @mal
 @:convertCmd(oid)@
 @:convertCmd(sht)@
@@ -455,7 +441,6 @@ command getBAT(b:bat):bat[:any_1,:any_2]
 address CALCbatid2bat
 comment "Coerce bat to BAT identifier";
 
-@}
 @-
 We should also deal with superflous operations, such as int(v:int).
 This is a noop operation that should ideally be filtered out with
@@ -481,7 +466,6 @@ comment "Sets the oid range of consecutive unique OIDs; returns the
 command setoid() :oid 
 address CALCsetoidBase
 comment "Equivalent to setoid(1:oid).";
-@{
 @+ Example script 
 The following example MIL script will do each operation in the
 calc module. It can be used for testing and the M2m compiler.
@@ -623,8 +607,7 @@ operations.  It gets two parameters which are the operants for the operations.
 (@1 / @2).print;
 @
 
-@{
-@* Implementation
+@+ Implementation
 The implementation below differs from the pre-V5 implementation in
 that all strings and pointers are passed by reference, rather than
 by value. Since it is unclear in the module implementation whether
@@ -640,7 +623,6 @@ the string representations.
 #include "gdk.h"
 
 #endif /* __calc_H__ */
-@}
 
 @c
 #include "mal_config.h"

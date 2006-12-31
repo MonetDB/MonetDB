@@ -17,7 +17,6 @@
 @a M. Kersten
 @v 0.0
 @-
-@node Module Loading, Stack Management, Garbage Collection, The MAL Interpreter
 @+ Module Loading
 The server is bootstrapped by processing a MAL script with
 module definitions or extensions.

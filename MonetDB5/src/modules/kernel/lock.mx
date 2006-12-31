@@ -17,10 +17,10 @@
 @f lock
 @v 1.0
 @a Peter Boncz
-@* Lightweight Lock Module
+@+ Lightweight Lock Module
 This module provides simple SMP lock and thread functionality
 as already present in the MonetDB system.
-
+@{
 @+ Locks
 @mal
 atom lock:ptr;
@@ -44,8 +44,7 @@ command tostr(l:lock)
 address lockToStr
 comment "Overloaded atom function";
 
-@{
-@* Implementation
+@+ Implementation
 @c
 #include "mal_config.h"
 #include <gdk.h>
@@ -106,7 +105,6 @@ destroy_lock(monet_lock *l)
 }
 
 
-@}
 @-
 The old code base is wrapped to ease update propagation.
 @c

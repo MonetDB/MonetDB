@@ -24,7 +24,7 @@ to the Version 4.* implementation.
 
 The coercion routines are build for speed. They are not protected
 against overflow.
-
+@{
 @= idempotent
 	command batcalc.@1(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
 	address CMDconvert_@1;
@@ -35,7 +35,6 @@ against overflow.
 	command batcalc.@2(b:bat[:void,:@1]):bat[:void,:@2] 
 	address CMDconvert_void_@1_@2
 	comment "Coerce an @1 tail to a bat with @2 tail.";
-@{
 @mal
 	@:idempotent(bit)@
 	@:idempotent(chr)@
@@ -92,7 +91,6 @@ against overflow.
 
 	@:coercion(str,int)@
 @-
-@{
 @include kprelude.mx
 @- Implementation
 @h

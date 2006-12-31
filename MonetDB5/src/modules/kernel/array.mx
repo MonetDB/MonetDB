@@ -16,7 +16,7 @@
 
 @f array
 @a A.R. van Ballegooij
-@* Basic array support
+@+ Basic array support
 
 The array support library constructs the index arrays essential
 for the Relational Algebra Model language.
@@ -26,7 +26,7 @@ It is a recurring operation for the RAM front-end and will save
 an additional copying.
 
 The optimization is captured in a contraction macro.
-
+@{
 
 @mal
 module array;
@@ -64,7 +64,6 @@ comment "Fill an array representation with constants ";
 pattern print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...) :void 
 address ARRAYprint
 comment "Prints an array, using 1 value bat and N aligned index bats";
-@{
 @- Implementation
 @include ../mal/prelude.mx
 @h

@@ -18,13 +18,14 @@
 @a Arjen P. de Vries, S. Manegold
 @v 1.0
 @t Work around internal select and join algorithm selection
-@* Introduction
-@T
+@+ Introduction
+
 Too many bugs.[ Unclear if this still holds]
 The module is a copy of modules/contrib/malalgebra and heavily used
 by Pathfinder.
 The commands are added to the algebra module, because it is considered
 a natural extension of the operations provided there.
+@{
 @mal
 
 @= join
@@ -132,7 +133,6 @@ comment "grouped tail sum";
 @:milsum(flt)@
 @:milsum(dbl)@
 
-@{
 @* Implementation Code
 @h
 #ifndef __MALALGEBRA_H__
