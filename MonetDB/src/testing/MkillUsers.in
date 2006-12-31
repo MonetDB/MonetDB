@@ -62,28 +62,38 @@ if [ "$PARENT" ] ; then
 fi
 
 BINPATH="$THISPATH"
-if [  "$MONETDB_PREFIX" ] ; then BINPATH="$BINPATH  $MONETDB_PREFIX/bin" ; fi
-if [   "$MONET5_PREFIX" ] ; then BINPATH="$BINPATH   $MONET5_PREFIX/bin" ; fi
-if [     "$ACOI_PREFIX" ] ; then BINPATH="$BINPATH     $ACOI_PREFIX/bin" ; fi
-if [      "$SQL_PREFIX" ] ; then BINPATH="$BINPATH      $SQL_PREFIX/bin" ; fi
-if [      "$XML_PREFIX" ] ; then BINPATH="$BINPATH      $XML_PREFIX/bin" ; fi
-if [      "$GIS_PREFIX" ] ; then BINPATH="$BINPATH      $GIS_PREFIX/bin" ; fi
-if [     "$MISQ_PREFIX" ] ; then BINPATH="$BINPATH     $MISQ_PREFIX/bin" ; fi
-if [ "$TIMES100_PREFIX" ] ; then BINPATH="$BINPATH $TIMES100_PREFIX/bin" ; fi
-if [  "$PLAYPEN_PREFIX" ] ; then BINPATH="$BINPATH  $PLAYPEN_PREFIX/bin" ; fi
-if [ "$TEMPLATE_PREFIX" ] ; then BINPATH="$BINPATH $TEMPLATE_PREFIX/bin" ; fi
-if [  "$MONETDB_BUILD" ] ; then BINPATH="$BINPATH  $MONETDB_BUILD/src/tools  $MONETDB_BUILD/src/tools/.libs" ; fi
-if [   "$MONET5_BUILD" ] ; then BINPATH="$BINPATH   $MONET5_BUILD/src/tools   $MONET5_BUILD/src/tools/.libs" ; fi
-if [     "$ACOI_BUILD" ] ; then BINPATH="$BINPATH     $ACOI_BUILD/src/tools     $ACOI_BUILD/src/tools/.libs" ; fi
-if [      "$SQL_BUILD" ] ; then BINPATH="$BINPATH      $SQL_BUILD/src/tools      $SQL_BUILD/src/tools/.libs" ; fi
-if [      "$XML_BUILD" ] ; then BINPATH="$BINPATH      $XML_BUILD/src/tools      $XML_BUILD/src/tools/.libs" ; fi
-if [      "$GIS_BUILD" ] ; then BINPATH="$BINPATH      $GIS_BUILD/src/tools      $GIS_BUILD/src/tools/.libs" ; fi
-if [     "$MISQ_BUILD" ] ; then BINPATH="$BINPATH     $MISQ_BUILD/src/tools     $MISQ_BUILD/src/tools/.libs" ; fi
-if [ "$TIMES100_BUILD" ] ; then BINPATH="$BINPATH $TIMES100_BUILD/src/tools $TIMES100_BUILD/src/tools/.libs" ; fi
-if [  "$PLAYPEN_BUILD" ] ; then BINPATH="$BINPATH  $PLAYPEN_BUILD/src/tools  $PLAYPEN_BUILD/src/tools/.libs" ; fi
-if [ "$TEMPLATE_BUILD" ] ; then BINPATH="$BINPATH $TEMPLATE_BUILD/src/tools $TEMPLATE_BUILD/src/tools/.libs" ; fi
+if [    "$CLIENTS_PREFIX" ] ; then BINPATH="$BINPATH    $CLIENTS_PREFIX/bin" ; fi
+if [    "$MONETDB_PREFIX" ] ; then BINPATH="$BINPATH    $MONETDB_PREFIX/bin" ; fi
+if [   "$MONETDB4_PREFIX" ] ; then BINPATH="$BINPATH   $MONETDB4_PREFIX/bin" ; fi
+if [   "$MONETDB5_PREFIX" ] ; then BINPATH="$BINPATH   $MONETDB5_PREFIX/bin" ; fi
+if [     "$MONET5_PREFIX" ] ; then BINPATH="$BINPATH     $MONET5_PREFIX/bin" ; fi
+if [       "$ACOI_PREFIX" ] ; then BINPATH="$BINPATH       $ACOI_PREFIX/bin" ; fi
+if [        "$SQL_PREFIX" ] ; then BINPATH="$BINPATH        $SQL_PREFIX/bin" ; fi
+if [       "$SQL5_PREFIX" ] ; then BINPATH="$BINPATH       $SQL5_PREFIX/bin" ; fi
+if [        "$XML_PREFIX" ] ; then BINPATH="$BINPATH        $XML_PREFIX/bin" ; fi
+if [        "$GIS_PREFIX" ] ; then BINPATH="$BINPATH        $GIS_PREFIX/bin" ; fi
+if [       "$MISQ_PREFIX" ] ; then BINPATH="$BINPATH       $MISQ_PREFIX/bin" ; fi
+if [   "$TIMES100_PREFIX" ] ; then BINPATH="$BINPATH   $TIMES100_PREFIX/bin" ; fi
+if [    "$PLAYPEN_PREFIX" ] ; then BINPATH="$BINPATH    $PLAYPEN_PREFIX/bin" ; fi
+if [   "$TEMPLATE_PREFIX" ] ; then BINPATH="$BINPATH   $TEMPLATE_PREFIX/bin" ; fi
+if [ "$PATHFINDER_PREFIX" ] ; then BINPATH="$BINPATH $PATHFINDER_PREFIX/bin" ; fi
+if [    "$CLIENTS_BUILD" ] ; then BINPATH="$BINPATH    $CLIENTS_BUILD/src/tools    $CLIENTS_BUILD/src/tools/.libs" ; fi
+if [    "$MONETDB_BUILD" ] ; then BINPATH="$BINPATH    $MONETDB_BUILD/src/tools    $MONETDB_BUILD/src/tools/.libs" ; fi
+if [   "$MONETDB4_BUILD" ] ; then BINPATH="$BINPATH   $MONETDB4_BUILD/src/tools   $MONETDB4_BUILD/src/tools/.libs" ; fi
+if [   "$MONETDB5_BUILD" ] ; then BINPATH="$BINPATH   $MONETDB5_BUILD/src/tools   $MONETDB5_BUILD/src/tools/.libs" ; fi
+if [     "$MONET5_BUILD" ] ; then BINPATH="$BINPATH     $MONET5_BUILD/src/tools     $MONET5_BUILD/src/tools/.libs" ; fi
+if [       "$ACOI_BUILD" ] ; then BINPATH="$BINPATH       $ACOI_BUILD/src/tools       $ACOI_BUILD/src/tools/.libs" ; fi
+if [        "$SQL_BUILD" ] ; then BINPATH="$BINPATH        $SQL_BUILD/src/tools        $SQL_BUILD/src/tools/.libs" ; fi
+if [       "$SQL5_BUILD" ] ; then BINPATH="$BINPATH       $SQL5_BUILD/src/tools       $SQL5_BUILD/src/tools/.libs" ; fi
+if [        "$XML_BUILD" ] ; then BINPATH="$BINPATH        $XML_BUILD/src/tools        $XML_BUILD/src/tools/.libs" ; fi
+if [        "$GIS_BUILD" ] ; then BINPATH="$BINPATH        $GIS_BUILD/src/tools        $GIS_BUILD/src/tools/.libs" ; fi
+if [       "$MISQ_BUILD" ] ; then BINPATH="$BINPATH       $MISQ_BUILD/src/tools       $MISQ_BUILD/src/tools/.libs" ; fi
+if [   "$TIMES100_BUILD" ] ; then BINPATH="$BINPATH   $TIMES100_BUILD/src/tools   $TIMES100_BUILD/src/tools/.libs" ; fi
+if [    "$PLAYPEN_BUILD" ] ; then BINPATH="$BINPATH    $PLAYPEN_BUILD/src/tools    $PLAYPEN_BUILD/src/tools/.libs" ; fi
+if [   "$TEMPLATE_BUILD" ] ; then BINPATH="$BINPATH   $TEMPLATE_BUILD/src/tools   $TEMPLATE_BUILD/src/tools/.libs" ; fi
+if [ "$PATHFINDER_BUILD" ] ; then BINPATH="$BINPATH $PATHFINDER_BUILD/src/tools $PATHFINDER_BUILD/src/tools/.libs" ; fi
 for b in $BINPATH ; do
-	files="$files `ls $b/* 2>/dev/null | egrep '/(mserver5|Mserver|MapiClient|MapiClient\.py|Mdiff|Mlog|Mtimeout|pf)$'`"
+	files="$files `ls $b/* 2>/dev/null | egrep '/(mserver5|Mserver|MapiClient|MapiClient\.py|mclient|Mdiff|Mlog|Mtimeout|pf)$'`"
 done
 
 case `uname` in
