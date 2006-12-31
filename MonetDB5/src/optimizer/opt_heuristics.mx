@@ -55,7 +55,22 @@ back into their elementary steps.
 A more complete implementation should als push the selection through
 multiple operators. In particular, a reverse operator may obscure
 the opportunity to perform the select push through. 
+@h
+#ifndef _OPT_HEURISTICS_
+#define _OPT_HEURISTICS_
+
+#include "mal.h"
+#include "mal_function.h"
+#include "mal_scenario.h"
+#include "mal_builder.h"
+
+#include "opt_prelude.h"
+#include "mal_interpreter.h"
+#include "opt_support.h"
+
+#endif
 @c
+#include "opt_heuristics.h"
 int
 SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 {
