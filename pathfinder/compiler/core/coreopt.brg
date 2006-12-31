@@ -706,7 +706,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           apply (arg (Atom, nil)) */
         case 62:
-            if (! PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "data"))) {
+            if (! PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "data"))) {
                 /*
                  * If the argument is a subtype of atomic*, fn:data()
                  * returns the argument itself.
@@ -735,7 +735,7 @@ reduce (PFcnode_t * p, int goalnt)
 
                     *p = *flwr (for_ (forbind (forvars (var (v), nil ()), 
                                                LL(p)), nil ()),
-                                apply (PFapply(fn_tv), arg (var (v), nil ())));
+                                apply (fn_tv, arg (var (v), nil ())));
 
                     /* type-check what we just created */
                     PFty_check (p);
@@ -758,11 +758,11 @@ reduce (PFcnode_t * p, int goalnt)
              * fn:typed-value() returns the string-value
              * of the argument.
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_pf, "typed-value"))
                 && PFty_subtype (TY(LL(p)),
                                  PFty_choice (PFty_comm (), PFty_pi (NULL)))) {
-                p->sem.apply.fun = function (PFqname (PFns_pf, "string-value"));
+                p->sem.fun = function (PFqname (PFns_pf, "string-value"));
                 rewritten = true;
                 break;
             }
@@ -775,7 +775,7 @@ reduce (PFcnode_t * p, int goalnt)
              * the node as xs:untypedAtomic.
              * (see also Data Model, 6.2.3)
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_pf, "typed-value"))
                 && PFty_subtype (TY(p), PFty_untypedAtomic ())) {
 
@@ -784,7 +784,7 @@ reduce (PFcnode_t * p, int goalnt)
 
                 /* apply string-value(), not typed-value() */
                 *c = *p;
-                c->sem.apply.fun = function (PFqname (PFns_pf, "string-value"));
+                c->sem.fun = function (PFqname (PFns_pf, "string-value"));
 
                 *p = *flwr (let (letbind (var (v), c), nil ()),
                             cast (seqtype (PFty_untypedAtomic ()), 
@@ -810,12 +810,12 @@ reduce (PFcnode_t * p, int goalnt)
              * by the function #pf:distinct-doc-order if the type is node*
              * and by the identity otherwise (type atomic*).
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (
                                   PFns_pf, 
                                   "distinct-doc-order-or-atomic-sequence"))) {
                 if (PFty_subtype (TY(p), PFty_star (PFty_node ()))) {
-                    p->sem.apply.fun = 
+                    p->sem.fun = 
                         function (
                             PFqname (
                                 PFns_pf,
@@ -838,7 +838,7 @@ reduce (PFcnode_t * p, int goalnt)
              * fn:zero-or-one() applied to something that is of
              * type item? returns the argument itself.
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_fn, "zero-or-one"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_opt (PFty_item ()))) {
                     *p = *LL(p);
@@ -851,7 +851,7 @@ reduce (PFcnode_t * p, int goalnt)
              * fn:exactly-one() applied to something that is of
              * type empty returns an error.
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_fn, "exactly-one"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_empty ()))
                     PFoops (OOPS_FATAL,
@@ -864,7 +864,7 @@ reduce (PFcnode_t * p, int goalnt)
              * fn:boolean() applied to something that is already of
              * type xs:boolean returns the argument itself.
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_fn, "boolean"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_xs_boolean ())) {
                     *p = *LL(p);
@@ -873,7 +873,7 @@ reduce (PFcnode_t * p, int goalnt)
                 }
             }
 
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_fn, "string"))) {
                 /*
                  * If the argument is a subtype of xs:string,
@@ -915,7 +915,7 @@ reduce (PFcnode_t * p, int goalnt)
                  * of the argument.
                  */
                 else if (PFty_subtype (TY(LL(p)), PFty_xs_anyNode ())) {
-                    p->sem.apply.fun
+                    p->sem.fun
                         = function (PFqname (PFns_pf, "string-value"));
                     /* type-check what we just created */
                     PFty_check (p);
@@ -937,7 +937,7 @@ reduce (PFcnode_t * p, int goalnt)
              * fn:string for each node followed by a fn:string-join ()
              * with the seperator " "
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_pf,
                                        "item-sequence-to-untypedAtomic"))) {
                 
@@ -954,12 +954,12 @@ reduce (PFcnode_t * p, int goalnt)
                                      flwr (for_ (forbind (forvars (var (v2),
                                                                    nil ()),
                                                           LL(p)), nil ()),
-                                           apply (PFapply(fn_string), 
+                                           apply (fn_string, 
                                                   arg (var (v2), nil ())))), 
                             let (letbind (
                                     var (v3),
                                     apply (
-                                        PFapply (fn_string_join),
+                                        fn_string_join,
                                         arg (var (v1), arg (str (" "),nil())))),
                                  nil ())),
                             cast (seqtype (PFty_untypedAtomic ()),
@@ -983,7 +983,7 @@ reduce (PFcnode_t * p, int goalnt)
              * The application of pf:item-sequence-to-node-sequence ()
              * to something that contains only nodes can be discarded.
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_pf,
                                        "item-sequence-to-node-sequence"))) {
                 if (PFty_subtype (TY(LL(p)),
@@ -999,7 +999,7 @@ reduce (PFcnode_t * p, int goalnt)
              * to something that contains at most one text node
              * can be discarded.
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_pf, "merge-adjacent-text-nodes"))) {
                     /* is empty */
                 if (LL(p)->kind == c_empty ||
@@ -1034,7 +1034,7 @@ reduce (PFcnode_t * p, int goalnt)
             /*
              * fn:concat does not need to append an empty string
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_fn, "concat"))) {
                 if (LRL(p)->kind == c_lit_str && !strcmp (LRL(p)->sem.str,"")) {
                     *p = *LL(p);
@@ -1048,7 +1048,7 @@ reduce (PFcnode_t * p, int goalnt)
              * returns an empty string and applied to a singleton
              * sequence returns the singleton
              */
-            if (! PFqname_eq (p->sem.apply.fun->qname,
+            if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_fn, "string-join"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
                     *p = *str ("");

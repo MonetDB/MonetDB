@@ -1114,9 +1114,9 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         return GDK_FAIL;
     }
     if (!(*updCall)){
+        bit verbose = FALSE;
         strptr = strstr(b->buf, "<env:Envelope");
-        if (!strptr || 
-                CMDshred_str(shredBAT, strptr, &percentage, NULL) == GDK_FAIL) {
+        if (!strptr || CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL) {
             GDKerror("CMDhttp_post: invalid XRPC response received\n");
             GDKerror("%s\n", strptr?strptr:b->buf);
             clean_up(sock, in, out, bs, b, argcnt, iterc);

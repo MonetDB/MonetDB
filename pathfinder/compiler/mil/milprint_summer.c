@@ -705,9 +705,9 @@ translateElemContent (opt_t *f, int code, int cur_level, int counter, PFcnode_t 
         c->kind == c_seq   ||
         c->kind == c_empty ||
         (c->kind == c_apply &&
-         (!PFqname_eq(c->sem.apply.fun->qname,
+         (!PFqname_eq(c->sem.fun->qname,
                       PFqname (PFns_pf,"item-sequence-to-node-sequence")) ||
-          !PFqname_eq(c->sem.apply.fun->qname,
+          !PFqname_eq(c->sem.fun->qname,
                       PFqname (PFns_pf,"merge-adjacent-text-nodes")))))
         return translate2MIL (f, code, cur_level, counter, c);
    else
@@ -5660,7 +5660,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 
     args = R(args);
     c = L(args);
-    fun = c->sem.apply.fun;
+    fun = c->sem.fun;
 
     args = R(args);
     c = L(args);
@@ -6181,7 +6181,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
  *
  *              xrpc (query type)
  *             /    \
- *            URI (FunctionCall)->sem.apply.fun
+ *            URI (FunctionCall)->sem.fun
  *                   |
  *                  args
  *
@@ -6193,14 +6193,14 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
     int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 1 ? 1 : 0;
     PFcnode_t *dsts = L(xrpc);
-    PFapply_t apply = R(xrpc)->sem.apply;
+    PFfun_t   *fun  = R(xrpc)->sem.fun;
     PFcnode_t *args = RD(xrpc);
 
-    if (apply.fun->builtin){
+    if (fun->builtin){
         milprintf(f,
                 "{ERROR (\"XRPC calls to builtin functions"
                 " are not allowed.\"); }\n");
-    } else if (apply.fun->qname.ns.uri == NULL) {
+    } else if (fun->qname.ns.uri == NULL) {
         milprintf(f,
                 "{ERROR (\"Functions called via XRPC should defined"
                 " in a module definition.\"); }\n");
@@ -6240,13 +6240,13 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "  var fun_iter%03u := bat(void,oid);\n"
             "  var fun_item%03u := bat(void,oid);\n"
             "  var fun_kind%03u := bat(void,int);\n",
-            counter, apply.fun->sig,
+            counter, fun->sig,
             counter,
             counter,
             counter,
             counter);
 
-    while ((args->kind != c_nil) && (apply.fun->params[i]))
+    while ((args->kind != c_nil) && (fun->params[i]))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
@@ -6272,7 +6272,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
     getExpanded (f,
             /* we don't want to get the variables from
                the surrounding scope like for but from the current */
-            cur_level+1, apply.fun->fid);
+            cur_level+1, fun->fid);
     milprintf(f,
             "  var vid := expOid.leftfetchjoin(v_vid%03u);\n"
             "  iter    := expOid.leftfetchjoin(v_iter%03u);\n"
@@ -6337,8 +6337,8 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "  }\n"
             "} # end of XRPC function call\n",
         counter, counter, counter,
-        apply.fun->qname.ns.uri, apply.fun->atURI, apply.fun->qname.loc,    
-        updCall, apply.fun->arity,
+        fun->qname.ns.uri, fun->atURI, fun->qname.loc,    
+        updCall, fun->arity,
         counter, counter, counter, counter);
 }
 
@@ -6353,7 +6353,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
  */
 static void
 translateUDF (opt_t *f, int cur_level, int counter, 
-        PFapply_t apply, PFcnode_t *args)
+        PFfun_t *fun, PFcnode_t *args)
 {
     int i = 0;
 
@@ -6366,9 +6366,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
             "var fun_iter%03u := bat(void,oid);\n"
             "var fun_item%03u := bat(void,oid);\n"
             "var fun_kind%03u := bat(void,int);\n",
-            counter, apply.fun->sig, counter, counter, counter, counter);
+            counter, fun->sig, counter, counter, counter, counter);
 
-    while ((args->kind != c_nil) && (apply.fun->params[i]))
+    while ((args->kind != c_nil) && (fun->params[i]))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
@@ -6394,7 +6394,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
     getExpanded (f,
             /* we don't want to get the variables from
                the surrounding scope like for but from the current */
-            cur_level+1, apply.fun->fid);
+            cur_level+1, fun->fid);
     milprintf(f,
             "var vid := expOid.leftfetchjoin(v_vid%03u);\n"
             "iter    := expOid.leftfetchjoin(v_iter%03u);\n"
@@ -6426,10 +6426,10 @@ translateUDF (opt_t *f, int cur_level, int counter,
 
     /* call the proc */
     milprintf(f, PFudfMIL(),
-            apply.fun->sig,
+            fun->sig,
             cur_level, cur_level, cur_level, cur_level, 
             counter, counter, counter, counter, 
-            apply.fun->qname.loc, apply.fun->qname.loc);
+            fun->qname.loc, fun->qname.loc);
 
     milprintf(f, "} # end of UDF - function call\n");
 }
@@ -8618,22 +8618,22 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             rc = translateCast (f, code, rc, cur_level, c);
             break;
         case c_apply:
-            if (c->sem.apply.fun->builtin)
+            if (c->sem.fun->builtin)
             {
                 rc = translateFunction (f, code, cur_level, counter, 
-                                        c->sem.apply.fun, D(c));
+                                        c->sem.fun, D(c));
             }
             else
             {
                 translateUDF (f, cur_level, counter,
-                              c->sem.apply, D(c));
+                              c->sem.fun, D(c));
                 rc = NORMAL;
             }
             break;
         case c_xrpc:
             /*              xrpc
              *             /    \
-             *            URI (FunctionCall)->sem.apply.fun
+             *            URI (FunctionCall)->sem.fun
              *                   |
              *                  args
              */
@@ -8737,7 +8737,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             } else { 
 	        f->num_fun--;
   	        opt_output(f, OPT_SEC_EPILOGUE);
-                milprintf(f, "UNDEF %s;\n", c->sem.apply.fun->sig);
+                milprintf(f, "UNDEF %s;\n", c->sem.fun->sig);
   	        opt_output(f, OPT_SEC_PROLOGUE);
             }
 /* debug statement to print actual UDF parameters
@@ -8759,13 +8759,13 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     "v_iter000 := [oid](v_iter000).access(BAT_WRITE);\n"
                     "v_item000 := [oid](v_item000).access(BAT_WRITE);\n"
                     "v_kind000 := [int](v_kind000).access(BAT_WRITE);\n",
-                    c->sem.apply.fun->sig, c->sem.apply.fun->qname.loc);
+                    c->sem.fun->sig, c->sem.fun->qname.loc);
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
                     "return bat(void,bat,4).append(iter).append(item).append(kind).access(BAT_READ);\n"
                     "} # end of PROC %s\n",
-                    c->sem.apply.fun->sig);
+                    c->sem.fun->sig);
             opt_flush(f, 0);
   	    opt_output(f, OPT_SEC_QUERY);
             rc = NORMAL; /* dummy */
@@ -8838,10 +8838,10 @@ noTijahFun (PFcnode_t *c)
 {
     int i;
     if (c->kind == c_apply && (
-	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_lib,"tijah-query"))) ||
-	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_lib,"tijah-query-id"))) ||
-	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_lib,"tijah-nodes"))) ||
-	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_lib,"tijah-score")))))
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_lib,"tijah-query"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_lib,"tijah-query-id"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_lib,"tijah-nodes"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_lib,"tijah-score")))))
         return 0;
     else 
         for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
@@ -8873,7 +8873,7 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
                 return 0;
     }
     else if (c->kind == c_apply &&
-             !PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_pf,"join")))
+             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
     {
         if (var_is_used (v, D(c)))
                 return 0;
@@ -9024,7 +9024,6 @@ simplifyCoreTree (PFcnode_t *c)
     PFcnode_t *new_node;
     PFty_t expected;
     PFty_t cast_type, input_type, opt_cast_type;
-    int is_rpc;
 
     assert(c);
     switch (c->kind)
@@ -9272,8 +9271,7 @@ simplifyCoreTree (PFcnode_t *c)
             break;
         case c_apply:
             /* handle the promotable types explicitly by casting them */
-            fun = c->sem.apply.fun;
-            is_rpc = c->sem.apply.rpc_uri == NULL ? 0 : 1;
+            fun = c->sem.fun;
             {
                 unsigned int i = 0;
                 PFcnode_t *tmp = D(c);
@@ -9316,7 +9314,7 @@ simplifyCoreTree (PFcnode_t *c)
                   DL(c)->kind != c_seq) ||
                  /* merge is not needed after is2ns anymore */
                  ((DL(c)->kind == c_apply) &&
-                  !PFqname_eq(DL(c)->sem.apply.fun->qname,
+                  !PFqname_eq(DL(c)->sem.fun->qname,
                               PFqname (PFns_pf,"item-sequence-to-node-sequence"))) ||
                  /* element nodes don't contain text nodes to merge */
                  (PFty_subtype(TY(DL(c)), 
@@ -9381,13 +9379,13 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq((DL(c))->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))) 
+                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))) 
             {
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq((DL(c))->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
+                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
             {
                 *c = *(DL(c));
             }
@@ -9407,7 +9405,7 @@ simplifyCoreTree (PFcnode_t *c)
                 TY(R(D(c))) = PFty_none ();
                 L(D(c)) = new_node;
                 TY(L(D(c))) = TY(new_node);
-                c->sem.apply.fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
+                c->sem.fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
             }
             /* concatentation with empty string not needed */
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"concat")) &&
@@ -9418,7 +9416,7 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"not")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq(DL(c)->sem.apply.fun->qname,
+                     !PFqname_eq(DL(c)->sem.fun->qname,
                                  PFqname (PFns_fn,"not")))
             {
                 *c = *(DL(DL(c)));
@@ -9431,14 +9429,14 @@ simplifyCoreTree (PFcnode_t *c)
                                    PFty_empty ()))
             {
                 if (L(DL(c))->kind == c_apply &&
-                     !PFqname_eq(L(DL(c))->sem.apply.fun->qname,
+                     !PFqname_eq(L(DL(c))->sem.fun->qname,
                                  PFqname (PFns_fn,"not")))
                 {
                     *c = *DL(L(DL(c)));
                 }
                 else
                 {
-                    c->sem.apply.fun = PFcore_function (PFqname (PFns_fn, "not"));
+                    c->sem.fun = PFcore_function (PFqname (PFns_fn, "not"));
                     DL(c) = L(DL(c));
                     TY(D(c)) = TY(DL(c));
                 }
@@ -9468,24 +9466,15 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 c = D(c);
                 if (fun->sig_count == 1) {
-                     for (i = 0; i < fun->arity + is_rpc; i++, c = R(c))
+                     for (i = 0; i < fun->arity; i++, c = R(c))
                      {
-                          if (is_rpc && i == 0)
-                          {
-                               expected = PFty_plus( PFty_xs_string() );
-                          }
-                          else
-                          {
-                               assert (fun->sig_count == 1);
-                               expected = PFty_defn((fun->sigs[0].par_ty)[i-is_rpc]);
-                          }
-                          
-                          cast_to_expected (c, expected);
+                         assert (fun->sig_count == 1);
+                         expected = PFty_defn((fun->sigs[0].par_ty)[i]);
+                         cast_to_expected (c, expected);
                      }
                 }
                 else {
                      /* quick and dirty hack to support dynamic overloading */
-                     assert (!is_rpc);
                      assert (fun->arity == 2);
                      bool found = false;
                      /* choose one implementation. */
@@ -9514,7 +9503,7 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (RR(c));
 
             if (L(c)->kind == c_apply &&
-                !PFqname_eq(L(c)->sem.apply.fun->qname,
+                !PFqname_eq(L(c)->sem.fun->qname,
                             PFqname (PFns_fn,"not")))
             {
                 L(c) = DL(L(c));
@@ -9529,10 +9518,10 @@ simplifyCoreTree (PFcnode_t *c)
             if (R(c)->kind != c_locsteps &&
                 !PFty_subtype(TY(R(c)),PFty_opt (PFty_node ())) &&
                 !(R(c)->kind == c_apply &&
-                  !PFqname_eq(R(c)->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))))
+                  !PFqname_eq(R(c)->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))))
             {
                 fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
-                R(c) = PFcore_apply (PFapply(fun), PFcore_arg (R(c), PFcore_nil ()));
+                R(c) = PFcore_apply (fun, PFcore_arg (R(c), PFcore_nil ()));
             }
             else
             /* don't have to look at predicates because they are already expanded */
@@ -9757,7 +9746,7 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     snd_cast = (!snd_cast)?PFcore_nil():snd_cast;
 
     comp = PFcore_leaf(c_apply);
-    comp->sem.apply.fun = fun;
+    comp->sem.fun = fun;
 
     PFfun_t *join = PFfun_new(PFqname (PFns_pf,"join"), /* name */
                               10,     /* arity */
@@ -9780,7 +9769,7 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     c = PFcore_arg(fst_cast,c);
     c = PFcore_arg(fst_for,c);
     c = PFcore_wire1 (c_apply, c);
-    c->sem.apply.fun = join;
+    c->sem.fun = join;
     TY(c) = TY(result);
     return c;
 }
@@ -9862,7 +9851,7 @@ static int test_join_pattern(PFcnode_t *for_node,
 
     if_node = R(for_node);
     apply_node = L(if_node);
-    fun = apply_node->sem.apply.fun;
+    fun = apply_node->sem.fun;
 
     /* test quantified pattern */
     if (!PFqname_eq (fun->qname, PFqname (PFns_fn,"empty")) &&
@@ -9881,7 +9870,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                                 PFcore_empty());
         if_node = R(c);
         apply_node = L(if_node);
-        fun = apply_node->sem.apply.fun;
+        fun = apply_node->sem.fun;
 
         /* test quantified pattern for second comparison input */
         if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
@@ -9899,7 +9888,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                                     PFcore_empty());
             if_node = R(c);
             apply_node = L(if_node);
-            fun = apply_node->sem.apply.fun;
+            fun = apply_node->sem.fun;
         }
     }
 
@@ -9979,7 +9968,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                 RL(LR(fst_inner))->kind == c_seqtype &&
                 TY_EQ (RL(LR(fst_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(fst_inner))->kind == c_apply &&
-                !PFqname_eq (RR(LR(fst_inner))->sem.apply.fun->qname,
+                !PFqname_eq (RR(LR(fst_inner))->sem.fun->qname,
                              PFqname (PFns_pf,"string-value")) &&
                 DL(RR(LR(fst_inner)))->kind == c_var &&
                 DL(RR(LR(fst_inner)))->sem.var == LLL(LR(fst_inner))->sem.var &&
@@ -10022,7 +10011,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                 RL(LR(snd_inner))->kind == c_seqtype &&
                 TY_EQ (RL(LR(snd_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(snd_inner))->kind == c_apply &&
-                !PFqname_eq (RR(LR(snd_inner))->sem.apply.fun->qname,
+                !PFqname_eq (RR(LR(snd_inner))->sem.fun->qname,
                              PFqname (PFns_pf,"string-value")) &&
                 DL(RR(LR(snd_inner)))->kind == c_var &&
                 DL(RR(LR(snd_inner)))->sem.var == LLL(LR(snd_inner))->sem.var &&
@@ -10529,7 +10518,7 @@ walk_through_UDF (opt_t *f,
         PFarray_del (way);
     }
     else if (c->kind == c_apply && 
-             !c->sem.apply.fun->builtin)
+             !c->sem.fun->builtin)
     {
         counter = walk_through_UDF (f, D(c), way, counter, active_funs);
 
@@ -10537,7 +10526,7 @@ walk_through_UDF (opt_t *f,
            (to avoid infinite recursion */
         for (i = 0, found = false; i < PFarray_last (active_funs); i++)
         {
-            if (*(PFfun_t **) PFarray_at (active_funs, i) == c->sem.apply.fun)
+            if (*(PFfun_t **) PFarray_at (active_funs, i) == c->sem.fun)
             {
                 found = true;
                 break;
@@ -10547,11 +10536,11 @@ walk_through_UDF (opt_t *f,
            to map all global variables correctly */
         if (!found)
         {
-            *(PFfun_t **) PFarray_add (active_funs) = c->sem.apply.fun;
+            *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
             /* add new active function to an active function stack and once
                again check UDFs to map all global variables correctly */
-            *(int *) PFarray_add (way) = c->sem.apply.fun->fid;
-            counter = walk_through_UDF (f, c->sem.apply.fun->core,
+            *(int *) PFarray_add (way) = c->sem.fun->fid;
+            counter = walk_through_UDF (f, c->sem.fun->core,
                                         way, counter, active_funs);
             PFarray_del (way);
             PFarray_del (active_funs);
@@ -10693,7 +10682,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     }
     /* apply mapping correctly for recognized join */    
     else if (c->kind == c_apply && 
-             !PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_pf,"join")))
+             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
     {
         /* get all necessary Core nodes */
             args = D(c);
@@ -10750,8 +10739,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* create a new valid PROC name for mil */
         /* ==================================== */
 
-        char sig[1024], *p = c->sem.apply.fun->qname.loc, *q = c->sem.apply.fun->qname.ns.uri;
-        char *r = c->sem.apply.fun->qname.ns.prefix;
+        char sig[1024], *p = c->sem.fun->qname.loc, *q = c->sem.fun->qname.ns.uri;
+        char *r = c->sem.fun->qname.ns.prefix;
         int i = 0, j, first = 0;
         unsigned int hash = 0; /* f->module_base; */
         int stmt = PFqueryType(R(c));
@@ -10787,7 +10776,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             args = R(args);
         }
         /* create the full signature that also is a valid MIL identifier */
-        c->sem.apply.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
+        c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
 
         /* hash uri in proc name to make it uniquely identifyable  */
         for(; *q; q++) 
@@ -10798,39 +10787,39 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
              * (_4_ cannot be a subsequent type name; those always end in [0-3])
              */ 
             char x = (*p == '-' || *p == '.')?'_':*p;
-            c->sem.apply.fun->sig[j++] = x; 
+            c->sem.fun->sig[j++] = x; 
             hash = (hash*3) + *(unsigned char*) p;
-            if (*p == '-') c->sem.apply.fun->sig[j++] = '4';
-            else if (*p == '.') c->sem.apply.fun->sig[j++] = '5';
-            if (x == '_') c->sem.apply.fun->sig[j++] = '_';
+            if (*p == '-') c->sem.fun->sig[j++] = '4';
+            else if (*p == '.') c->sem.fun->sig[j++] = '5';
+            if (x == '_') c->sem.fun->sig[j++] = '_';
         }
 
         while(sig[i++] == ',') {
             int ch = 0;
-            c->sem.apply.fun->sig[j++] = '_';
+            c->sem.fun->sig[j++] = '_';
             while (sig[i] && sig[i] != ',') { 
                 hash = (hash*3) + *(unsigned char*) (sig+i);
                 ch = sig[i++];
                 if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
-                    c->sem.apply.fun->sig[j++] = '_';
-                    c->sem.apply.fun->sig[j++] = '_';
+                    c->sem.fun->sig[j++] = '_';
+                    c->sem.fun->sig[j++] = '_';
                 } else if (ch == ':') {
-                    c->sem.apply.fun->sig[j++] = '_';
+                    c->sem.fun->sig[j++] = '_';
                 } else if (ch == '?') {
-                    c->sem.apply.fun->sig[j++] = '0';
+                    c->sem.fun->sig[j++] = '0';
                 } else if (ch == '*') {
-                    c->sem.apply.fun->sig[j++] = '2';
+                    c->sem.fun->sig[j++] = '2';
                 } else if (ch == '+') {
-                    c->sem.apply.fun->sig[j++] = '3';
+                    c->sem.fun->sig[j++] = '3';
                 } else if (ch != ' ') {
-                    c->sem.apply.fun->sig[j++] = ch;
+                    c->sem.fun->sig[j++] = ch;
                 }
                     }
-            if (c->sem.apply.fun->sig[j-1] != '0' && 
-                c->sem.apply.fun->sig[j-1] != '2' && 
-                c->sem.apply.fun->sig[j-1] != '3') 
+            if (c->sem.fun->sig[j-1] != '0' && 
+                c->sem.fun->sig[j-1] != '2' && 
+                c->sem.fun->sig[j-1] != '3') 
             {
-                c->sem.apply.fun->sig[j++] = '1';
+                c->sem.fun->sig[j++] = '1';
             }
         }
 
@@ -10839,38 +10828,38 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* ============================================== */
 
         /* finish name by printing start (hashed name), connecting and terminating it */
-        sprintf(c->sem.apply.fun->sig, "%s%08X", (stmt==1)?"up":"fn", hash);
-        c->sem.apply.fun->sig[10] = '_';
-        c->sem.apply.fun->sig[j] = 0;
+        sprintf(c->sem.fun->sig, "%s%08X", (stmt==1)?"up":"fn", hash);
+        c->sem.fun->sig[10] = '_';
+        c->sem.fun->sig[j] = 0;
 
         if (f->module_base || f->num_fun) {
-                 milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.apply.fun->sig, f->module_base+first);
+                 milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
                  f->num_fun--;
         }
         counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
     }
     /* apply mapping correctly for user defined function calls */    
     else if (c->kind == c_apply && 
-             !c->sem.apply.fun->builtin)
+             !c->sem.fun->builtin)
     {
         /* get variable occurrences of the input arguments */
         counter = get_var_usage (f, D(c), way, counter);
 
-        if (!c->sem.apply.fun->fid) /* create fid for UDF on demand */
+        if (!c->sem.fun->fid) /* create fid for UDF on demand */
         {
             /* give fun_decl a fid to map global variables */
             (*(int *) PFarray_at (counter, FID))++;
-            c->sem.apply.fun->fid = *(int *) PFarray_at (counter, FID);
+            c->sem.fun->fid = *(int *) PFarray_at (counter, FID);
         }
 
         /* add new active function to an active function stack and once
            again check UDFs to map all global variables correctly */
-        *(int *) PFarray_add (way) = c->sem.apply.fun->fid;
+        *(int *) PFarray_add (way) = c->sem.fun->fid;
         /* create a new stack with active UDFs to avoid endless recursion */
         PFarray_t *active_funs = PFarray (sizeof (PFvar_t *));
-        *(PFfun_t **) PFarray_add (active_funs) = c->sem.apply.fun;
+        *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
 
-        counter = walk_through_UDF (f, c->sem.apply.fun->core, 
+        counter = walk_through_UDF (f, c->sem.fun->core, 
                                     way, counter, active_funs);
 
         PFarray_del (active_funs);
@@ -10993,9 +10982,9 @@ const char* PFvarMIL(void) {
         "  ws := ws_create(" STMT ");\n" PF_STARTMIL_END
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var try := 0;\n"\
-        "var err := \"ERROR: conflicting update\";\n"\
+        "var err := \"!ERROR: conflicting update\";\n"\
         "while(((try :+= 1) <= 2) and not(isnil(err))) {\n"\
-        " if (not(err.startsWith(\"ERROR: conflicting update\"))) break;\n"\
+        " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " err := CATCH({\n"\
         "  ws := ws_create(try);\n" PF_STARTMIL_END
 #define PF_STARTMIL_END \

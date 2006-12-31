@@ -335,7 +335,7 @@ CoreExpr:           xrpc (Atom, CoreExpr)                        =  75 (10);
 /** mnemonic XQuery Core constructors */
 #include "core_mnemonic.h"
 
-static PFfun_t * overload (PFqname_t qn, PFcnode_t *args, int is_rpc);
+static PFfun_t * overload (PFqname_t qn, PFcnode_t *args);
 static PFty_t specific (PFfun_t *fn, PFcnode_t *args);
 
 /**
@@ -911,12 +911,12 @@ reduce (PFcnode_t * p, int goalnt)
             /* resolve overloading,
              * any type errors will be detected during resolution
              */
-            p->sem.apply.fun = overload (p->sem.apply.fun->qname, L(p), (p->sem.apply.rpc_uri != NULL));
+            p->sem.fun = overload (p->sem.fun->qname, L(p));
 
             /* invoke specific typing rules for standard F&O functions 
              * (W3C XQuery Formal Semantics 6.2)
              */
-            TY(p) = specific (p->sem.apply.fun, L(p));
+            TY(p) = specific (p->sem.fun, L(p));
 
             break;
 
@@ -1175,14 +1175,14 @@ reduce (PFcnode_t * p, int goalnt)
             /*
              * See if function body matches function return type.
              */
-	    assert (p->sem.apply.fun->sig_count == 1);
-            if (!PFty_subtype (TY(R(p)), p->sem.apply.fun->sigs[0].ret_ty))
+	    assert (p->sem.fun->sig_count == 1);
+            if (!PFty_subtype (TY(R(p)), p->sem.fun->sigs[0].ret_ty))
                 PFoops (OOPS_TYPECHECK,
                         "body of %s() evaluates to `%s' which is not "
                         "a subtype of `%s'",
-                        PFqname_str (p->sem.apply.fun->qname),
+                        PFqname_str (p->sem.fun->qname),
                         PFty_str (TY(R(p))), 
-			PFty_str (p->sem.apply.fun->sigs[0].ret_ty));
+			PFty_str (p->sem.fun->sigs[0].ret_ty));
             break;
 
         /* ParamList:          nil */
@@ -1343,7 +1343,7 @@ static void fun_not_found (PFqname_t qn, PFcnode_t *args)
  *             arg (e1, arg (e2, ..., arg (en, nil)...))
  */
 static PFfun_t *
-overload (PFqname_t qn, PFcnode_t *args, int is_rpc)
+overload (PFqname_t qn, PFcnode_t *args)
 {
     PFarray_t *fns;
     PFcnode_t *arg;
@@ -1363,14 +1363,6 @@ overload (PFqname_t qn, PFcnode_t *args, int is_rpc)
         /* can all actual argument types be promoted to
          * expected formal parameter types?
          */
-        if (is_rpc) {
-            /* In RPC function call, the first actual parameter (dst URI)
-             * should be ignored for function resolution
-             */
-            if (arg->kind == c_nil) continue;
-            arg = arg->child[1];
-        }
-
         if (fn->sig_count == 1) {
             for (a = 0, match = true; a < fn->arity; a++) {
                 /* test if function has at least the same

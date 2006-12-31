@@ -38,17 +38,17 @@ implementation on top of MonetDB within the "Pathfinder" project.
 
 @- XML shredder (shredder.mx)
 @m
-.COMMAND shred_url(BAT[str,bat], str url, lng percentage, lock l) : void = CMDshred_url;
+.COMMAND shred_url(BAT[str,bat], str url, lng percentage, lock l, bit verbose) : void = CMDshred_url;
 "PARAMETERS:
 url - document locates at this uri is shredded. 
 percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
 
-.COMMAND shred_str(BAT[str,bat], str buffer, lng percentage, lock l) : void = CMDshred_str;
+.COMMAND shred_str(BAT[str,bat], str buffer, lng percentage, lock l, bit verbose) : void = CMDshred_str;
 "PARAMETERS:
 buffer - the XML string to shred. 
 percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
 
-.COMMAND shred_stream(BAT[str,bat], Stream s, lng percentage, lock l) : void = CMDshred_stream;
+.COMMAND shred_stream(BAT[str,bat], Stream s, lng percentage, lock l, bit verbose) : void = CMDshred_stream;
 "PARAMETERS:
 s - XML input stream. 
 percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
@@ -1572,6 +1572,7 @@ PROC mil_ancestor(bat[void,bat] ws, oid cont, oid newpre) : bat[void,oid]
   var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
 
   var p := 0@0;
+  coll_protect(ws, cont);
   while (p < newpre) {
     var pageid := pid_map_update.find(oid(lng(p) >> REMAP_PAGE_BITS));
     var isoldpage := false;
@@ -1587,7 +1588,7 @@ PROC mil_ancestor(bat[void,bat] ws, oid cont, oid newpre) : bat[void,oid]
         size := pre_size.find(swizzle(r, map_pid));
       }
     } else {
-      size := rid_size(r);
+      size := rid_size.find(r); # PETER: looks like this code path was untested
     }
     size := niland(size, INT_MAX);
     var e := oid(lng(p) + size);
@@ -1598,6 +1599,7 @@ PROC mil_ancestor(bat[void,bat] ws, oid cont, oid newpre) : bat[void,oid]
       p := oid(lng(e) + 1);
     }
   }
+  coll_unprotect(ws, cont);
   return ancestors;
 }
 
@@ -1715,6 +1717,8 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   var ancestor_nid := ws.fetch(ANCESTOR_NID);
   var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
 
+  coll_protect(ws, cont);
+
   # for each page prior to the one we're actually moving in, and for
   # all nodes in the page we're moving in before the affected area,
   # find the nodes (holes or real nodes) that end inside the affected
@@ -1805,7 +1809,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
       }
       var new_page := ancestors_isnewpage.uselect(true);
       if (new_page.count() > 0) {
-        rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(new_size)));
+         rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(new_size)));
       }
       # remember which ancestors were changed
       ancestor_nid.insert(cands.project(cont).reverse().join(ancestors_nid));
@@ -1941,6 +1945,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     modified_nid.reverse().accbuild("hash");
     modified_nid.insert(update_nid.project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
   }
+  coll_unprotect(ws, cont);
 }
 ADDHELP("movedata", "sjoerd", "Oct 4 2005",
 "Move data starting in WS for document CONT, starting at FROM of size
@@ -2201,6 +2206,7 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
     log_delta(pf_logger, ws.fetch(QN_PREFIX_URI_LOC_UPDATE).find(cont), ws.fetch(_QN_PREFIX_URI_LOC).find(cont).bbpname());
     log_delta(pf_logger, ws.fetch(QN_HISTOGRAM_UPDATE).find(cont), ws.fetch(_QN_HISTOGRAM).find(cont).bbpname());
     var new_page := ws.fetch(NEW_PAGE).reverse().ord_uselect(cont).sort();
+    coll_protect(ws, cont);
     new_page@batloop() {
       var start := oid(lng($h) << REMAP_PAGE_BITS);
       var end := oid(lng(start) + REMAP_PAGE_MASK);
@@ -2210,6 +2216,7 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
       log_delta(pf_logger, rid_prop.reverse().select(start, end).reverse(), rid_prop.bbpname());
       log_delta(pf_logger, rid_nid.reverse().select(start, end).reverse(), rid_nid.bbpname());
     }
+    coll_unprotect(ws, cont);
   }
 
   # acquire collection locks by calling ws_precommit (must be done in the correct order)
@@ -2359,13 +2366,15 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
         var upd := eelem.leftjoin(erids).reverse().join(eqnid); # [RID,QNID]
         rid_prop_update.insert(upd);
       }
-      if (epi.count() > 0) {
+      if (epi.count() > 0) { 
         var prop_ins := ws.fetch(_PROP_INS).find(cont);
         # rename comes before replace, so we don't have to deal with updated properties
         var pre_prop := ws.fetch(PRE_PROP).find(cont);
         var etgt := epi.leftjoin(update_rename); # [i,tgt]
-        var eins := epi.leftjoin(epres).leftjoin(pre_prop).leftjoin(prop_ins); # [i,ins]
-        var evalid := add_pi_bulk(ws, cont, etgt, eins); # [i,PROPID]
+        var eins := epi.leftjoin(epres).leftjoin(pre_prop);
+        coll_lock_set(ws,cont);
+        var evalid := add_pi_bulk(ws, cont, etgt, eins.leftjoin(prop_ins)); # [i,PROPID]
+        coll_lock_unset(ws,cont);
         var upd := epi.leftjoin(erids).reverse().join(evalid); # [RID,PROPID]
         rid_prop_update.insert(upd);
       }
@@ -2396,7 +2405,6 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
       var list := aconts.ord_uselect(cont).mirror(); # [i,i]
       var aval := list.leftjoin(update_replace); # [i,update_replace]
       var avalid := add_string_bulk(ws, cont, _PROP_VAL, PROP_VAL_UPDATE, aval);
-      var attr_prop := ws.fetch(_ATTR_PROP).find(cont);
       var attr_prop_updates := ws.fetch(ATTR_PROP_UPDATE).find(cont);
       attr_prop_updates.insert(list.leftjoin(aitem).reverse().leftjoin(avalid));
     }
@@ -2410,7 +2418,6 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
       var cont := $h;
 
       var pre_kind := ws.fetch(PRE_KIND).find(cont);
-      var rid_prop := ws.fetch(_RID_PROP).find(cont);
       var rid_prop_update := ws.fetch(RID_PROP_UPDATE).find(cont);
       var pre_nid := ws.fetch(PRE_NID).find(cont);
       var pid_map := ws.fetch(PID_MAP).find(cont);
@@ -2448,13 +2455,14 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
         rid_prop_update.insert(upd);
       }
       if (epi.count() > 0) {
-        var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
+        var prop_tgt := ws.fetch(_PROP_TGT).find(cont); 
         # replace comes after rename: deal with renamed processing instruction targets
         var props := epi.leftjoin(erids).leftjoin(rid_prop_update); # [i,old PROPID]
         if (props.count() > 0) {
           var eins := props.mirror().leftjoin(update_replace); # [i,ins]
-          var etgt := props.leftjoin(prop_tgt); # [i,tgt]
-          var elvalid := add_pi_bulk(ws, cont, etgt, eins); # [i,new PROPID]
+          coll_lock_set(ws, cont);
+          var elvalid := add_pi_bulk(ws, cont, props.leftjoin(prop_tgt), eins); # [i,new PROPID]
+          coll_lock_unset(ws, cont);
           var upd := epi.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
           rid_prop_update.replace(upd, true);
           epi := epi.kdiff(props); # only do the remaining ones
@@ -2462,8 +2470,10 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
         if (epi.count() > 0) {
           var pre_prop := ws.fetch(PRE_PROP).find(cont);
           var eins := epi.leftjoin(update_replace); # [i,ins]
-          var etgt := epi.leftjoin(epres).leftjoin(pre_prop).leftjoin(prop_tgt);
-          var elvalid := add_pi_bulk(ws, cont, etgt, eins); # [i,PROPID]
+          var etgt := epi.leftjoin(epres).leftjoin(pre_prop);
+          coll_lock_set(ws, cont);
+          var elvalid := add_pi_bulk(ws, cont, etgt.leftjoin(prop_tgt), eins); # [i,PROPID]
+          coll_lock_unset(ws, cont);
           var upd := epi.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
           rid_prop_update.insert(upd);
         }
@@ -2672,6 +2682,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
 
           if (docinsertcmd = lng(UPDATE_REPLACECONTENT)) {
             var size;
+            coll_protect(ws, doccont);
             if (isoldpage) {
               if (rid_size_update.exist(docinsertafter_rid)) {
                 size := rid_size_update.find(docinsertafter_rid);
@@ -2684,6 +2695,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             if (size > 0) {
               do_delete_nodes(ws, doccont, oid(lng(docinsertafter_newpre) + 1), size - 1);
             }
+            coll_unprotect(ws, doccont);
           }
 
           # figure out the number of holes on the page on which the new
@@ -2759,9 +2771,12 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 # fix up hole at start of last page since it doesn't
                 # extend to the end of the page anymore (this will be
                 # overwritten again)
+                coll_protect(ws, doccont);
                 var update_hole := rid_size.reverse().select(pgstart, cpwhere, true, false).reverse();
                 update_hole := [nilor]([-](update_hole.project(int(cpwhere) - 1), [int](update_hole.mirror())), int_nil);
-                rid_size.replace(update_hole, true);
+                # PETER: ILLEGAL WRITE IN OLD PAGE?? DELETE REMARK IF SURE THAT IT WRITES NEW PAGES ONLY
+                rid_size.replace(update_hole, true); 
+                coll_unprotect(ws, doccont);
               }
               newholeatend := (int(cpwhere) + cpsize) and int(REMAP_PAGE_MASK);
             }
@@ -2798,11 +2813,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 modified_nid.insert(rid_nid_data.select(oid_nil, oid_nil).reverse().project(doccont).reverse().[wrd]().[>>](OID_PAGE_BITS));
               } else {
                 var cpend := oid((lng(cpstart) + cpsize) - 1);
+                coll_protect(ws, doccont);
                 rid_size_data := rid_size.reverse().select(cpstart, cpend).reverse();
                 rid_level_data := rid_level.reverse().select(cpstart, cpend).reverse();
                 rid_kind_data := rid_kind.reverse().select(cpstart, cpend).reverse();
                 rid_prop_data := rid_prop.reverse().select(cpstart, cpend).reverse();
                 rid_nid_data := rid_nid.reverse().select(cpstart, cpend).reverse();
+                coll_unprotect(ws, doccont);
                 # nodes on a new page have already been added to modified_nid table
               }
               if (holeatend != newholeatend) {
@@ -2811,11 +2828,15 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 var past_end := rid_end_data.uselect(int(cpstart) + cpsize, int_nil);
                 rid_size_data.replace([nilplus](past_end.mirror().join(rid_size_data), newholeatend - holeatend), true);
               }
+              # PETER: ILLEGAL WRITE IN OLD PAGE?? DELETE REMARK IF SURE THAT IT WRITES NEW PAGES ONLY
+              coll_protect(ws, doccont);
               rid_size.replace(rid_size_data.tmark(cpwhere), true);
               rid_level.replace(rid_level_data.tmark(cpwhere), true);
               rid_kind.replace(rid_kind_data.tmark(cpwhere), true);
               rid_prop.replace(rid_prop_data.tmark(cpwhere), true);
               rid_nid.replace(rid_nid_data.tmark(cpwhere), true);
+              coll_unprotect(ws, doccont);
+
               var nid_rid_data := rid_nid_data.tmark(cpwhere).select(oid_nil, oid_nil).reverse();
               nid_rid_update.myupdate(nid_rid_data);
 
@@ -2832,11 +2853,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 rid_prop_update.myupdate(rid_prop_data);
                 rid_nid_update.myupdate(rid_nid_data);
               } else {
+                coll_protect(ws, doccont);
                 rid_size.replace(rid_size_data, true);
                 rid_level.replace(rid_level_data, true);
                 rid_kind.replace(rid_kind_data, true);
                 rid_prop.replace(rid_prop_data, true);
                 rid_nid.replace(rid_nid_data, true);
+                coll_unprotect(ws, doccont);
               }
             }
 
@@ -2882,7 +2905,10 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             }
             var new_page := is_new_page.uselect(true);
             if (new_page.count() > 0) {
-              rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(new_size)));
+              var tmp := ancestors_newrid.reverse().join(new_page.mirror().join(new_size));
+              coll_protect(ws, doccont);
+              rid_size.myupdate(tmp);
+              coll_unprotect(ws, doccont);
             }
             # register which ancestors are being changed
             ancestor_nid.insert(new_size.project(doccont).reverse().join(ancestors_nid));
@@ -2913,8 +2939,11 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                   } else {
                     s := pre_size.find(swizzle(rid, map_pid));
                   }
-                } else if (rid_size.exist(rid)) {
-                  s := rid_size.find(rid);
+                } else {
+                  coll_protect(ws, doccont);
+                  if (rid_size.exist(rid)) 
+                      s := rid_size.find(rid);
+                  coll_unprotect(ws, doccont);
                 }
                 if (isnil(niland(s, int_nil))) {
                   # we're looking at a hole
@@ -2964,7 +2993,10 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               }
               var new_page := is_new_page.uselect(true);
               if (new_page.count() > 0) {
-                rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(new_size)));
+                var tmp := ancestors_newrid.reverse().join(new_page.mirror().join(new_size));
+                coll_protect(ws, doccont);
+                rid_size.myupdate(tmp);
+                coll_unprotect(ws, doccont);
               }
             }
           }
@@ -3074,7 +3106,9 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 pis := pis.mirror().tmark(0@0);
                 var insval := mposjoin(pis.leftjoin(insert_pre_prop), pis.leftjoin(insert_pre_cont), ws.fetch(PROP_INS));
                 var tgtval := mposjoin(pis.leftjoin(insert_pre_prop), pis.leftjoin(insert_pre_cont), ws.fetch(PROP_TGT));
+                coll_lock_set(ws, doccont);
                 var piids := add_pi_bulk(ws, doccont, tgtval, insval);
+                coll_lock_unset(ws, doccont);
                 insprop.replace(pis.reverse().join(pis.reverse().join(piids)));
               }
             }
@@ -3152,11 +3186,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               rid_prop_update.myupdate(insprop);
               rid_nid_update.myupdate(insnid);
             } else {
+              coll_protect(ws, doccont);
               rid_size.replace(inssize, true);
               rid_level.replace(inslevel, true);
               rid_kind.replace(inskind, true);
               rid_prop.replace(insprop, true);
               rid_nid.replace(insnid, true);
+              coll_unprotect(ws, doccont);
             }
 
             insertsize :-= int(batchsize);
@@ -3169,6 +3205,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
   }
 }
 
+# note: extend read-lock must be taken while calling this function!!
 PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
 {
   var map_pid := ws.fetch(MAP_PID).find(cont);
@@ -3296,7 +3333,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
     update_data := update_data.project(cast(nil, rid_level_update.ttype()));
     if (isoldpage) {
       rid_level_update.myupdate(update_data);
-    } else {
+    } else {    
       rid_level.replace(update_data, true);
     }
 
@@ -3425,6 +3462,7 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
           isoldpage := not(isnil(map_pid.find(pageid)));
         }
 
+        coll_protect(ws, cont);
         var size;
         if (isoldpage) {
           if (rid_size_update.exist(rid)) {
@@ -3524,6 +3562,7 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
           # do the actual deleting in a subroutine
 	  do_delete_nodes(ws, cont, pre, size);
         }
+        coll_unprotect(ws, cont);
       }
     }
   }
@@ -3547,10 +3586,10 @@ PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, ba
   return validbat;
 }
 
+# note: coll lock must be taken while calling this function!!
 PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] insbat) : bat[oid,oid]
 {
   var instgtbat := [+]([+](insbat, ":"), tgtbat);
-  coll_lock_set(ws, cont);
   var prop_ins := ws.fetch(_PROP_INS).find(cont);
   var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
   var prop_ins_tgt := [+]([+](prop_ins, ":"), prop_tgt);
@@ -3572,7 +3611,6 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
     ws.fetch(PROP_INS_UPDATE).find(cont).insert(prop_ins.join(instgtuniquesplit.fetch(0).reverse().mirror()));
     ws.fetch(PROP_TGT_UPDATE).find(cont).insert(prop_tgt.join(instgtuniquesplit.fetch(1).reverse().mirror()));
   }
-  coll_lock_unset(ws, cont);
   return idbat;
 }
 
@@ -3631,6 +3669,8 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
   # for now ignore position information
   contnid.reverse().tunique()@batloop() {
     var cont := $h;
+
+    coll_protect(ws, cont);
 
     var map_pid := ws.fetch(MAP_PID).find(cont);
     var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
@@ -3718,7 +3758,9 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
       var rp := t2.join(pre_prop).access(BAT_WRITE).key(true).myupdate(t1mold.join(rid_prop_update)).myupdate(t1mnew.join(rid_prop)); # [RID,PROP]
 
       var gp := t1.reverse().leftjoin(rp); # [GRP,PROP]
+      coll_lock_set(ws, cont);
       var c := gp.leftfetchjoin(ws.fetch(_PROP_TEXT).find(cont)); # [GRP,content] hsorted
+      coll_lock_unset(ws, cont);
       var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
       var i := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, v); # [GRP,SID] OID into _PROP_TEXT table
       var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
@@ -3767,6 +3809,7 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
         nid_rid_update.myupdate(nid, oid_nil);
       }
     }
+    coll_unprotect(ws, cont);
   }
 }
 @* Module Implementation
@@ -6079,7 +6122,13 @@ CMDnil@1(int *res, int *v1, int *v2)
 @:nilarithC(plus,+)@
 
 
-@+ Transaction Locking
+@+ Global Transaction Locking
+
+While concurrency control in MonetDB/XQuery is optimistic and fine-grained (ehh, per page
+conflict detection) there is some coarse grained control as well. It serves to avoid
+thrashing on conflicting update loads: the database is automatically brought into serial 
+update mode. Also, querying the meta-tables leads to full blocking of document management
+(shred doc/delete doc) queries.
 
 We have three hooks inserted in the MIL transaction mgmt code:
 - pflock_begin() (called from ws_create) => QUERY STARTS
@@ -6093,18 +6142,18 @@ The below mechanism ensures that:
   queries in exclusive mode. This to gracefully degrade (avoid thrashing) in updating 
   loads that are highly conflictive.
 
-Exclusive updating means that we need a counted/exclusive lock (PF_UPDATE_LOCK,PF_UPDATE_BARRIER)
+Exclusive updating means that we need a counted-lock/exclusive-barrier (PF_UPDATE_LOCK,PF_UPDATE_BARRIER)
 In normal mode, updating queries use the 'counting' path, that is, the first entering update
-acquires the exclusive lock, and the last leaving releases it. In exclusive mode, all updating 
-queries take the exclusive lock.
+acquires the exclusive barrier, and the last leaving releases it. In exclusive mode, all updating 
+queries take the exclusive barrier.
 
 Similarly, there is a protection against seeing an inconsistent meta-database state.
 Just before a query uses the documents()/collections() functions, all new incoming
 document management queries (that shred and delete XML documents) are blocked,
 and we must wait until all such active queries have finished.
 
-This is again implemented using a counted/exclusive lock (PF_META_LOCK,PF_META_BARRIER).
-The first docmgmt query acquires the exclusive lock (barrier), and the last finishing releases it.
+This is again implemented using a counted-lock/exclusive-barrier (PF_META_LOCK,PF_META_BARRIER).
+The first docmgmt query acquires the exclusive-barrier, and the last finishing releases it.
 A query that calls pflock_meta() also must get this barrier, if it is the first to call it.
 When those queries do pflock_end() the last must free the lock, and thus we must know which queries 
 have taken it (this is also needed for not asking it twice). 
@@ -6117,17 +6166,20 @@ included in ws_overlaps_ws. Instead, a single variable 'pf_special' records the 
 @c
 #define PF_CONVOY 5
 BAT* ws_overlaps_ws = NULL;
-MT_Lock pf_runtime_lock[7];
+MT_Lock pf_runtime_lock[6];
+MT_Sema pf_runtime_sema[3];
 int pf_nreaders, pf_convoy, pf_ndocmgt;
 lng pf_writer, pf_special;
 
 #define PF_SHORT_LOCK     pf_runtime_lock[0]
-#define PF_FREE_LOCK      pf_runtime_lock[1]
-#define PF_WAL_LOCK       pf_runtime_lock[2]
-#define PF_META_LOCK      pf_runtime_lock[3]
-#define PF_META_BARRIER   pf_runtime_lock[4]
+#define PF_WAL_LOCK       pf_runtime_lock[1]
+#define PF_EXTEND_LOCK    pf_runtime_lock[2]
+#define PF_FREE_LOCK      pf_runtime_lock[3]
+#define PF_META_LOCK      pf_runtime_lock[4]
 #define PF_UPDATE_LOCK    pf_runtime_lock[5]
-#define PF_UPDATE_BARRIER pf_runtime_lock[6]
+#define PF_META_BARRIER   pf_runtime_sema[0]
+#define PF_UPDATE_BARRIER pf_runtime_sema[1]
+#define PF_EXTEND_BARRIER pf_runtime_sema[2]
 
 #define PF_MODE_RDONLY 0 /* read-only query */
 #define PF_MODE_UPDATE 1 /* updating query */
@@ -6137,6 +6189,7 @@ lng pf_writer, pf_special;
 /* get handle to the shared locks */
 int CMDpflock_get(ptr *ret, int* nr) {
     *ret = (ptr) &pf_runtime_lock[(*nr)&3];
+    if (*nr > 3) *ret = (ptr) &PF_EXTEND_BARRIER; /* hack: do not feel like creating a CMDsema_get */
     return GDK_SUCCEED;
 }
 
@@ -6155,7 +6208,7 @@ int CMDpflock_begin(lng *wsid)
         take_barrier = (pf_ndocmgt++ == 0);
         MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shirtLock for mgmt");
         if (take_barrier) {
-            MT_set_lock(PF_META_BARRIER, "pflock_begin: metaBarrier");
+            MT_down_sema(PF_META_BARRIER, "pflock_begin: metaBarrier");
         }
         MT_unset_lock(PF_META_LOCK, "pflock_begin: metaLock for mgmt");
         return GDK_SUCCEED;
@@ -6174,11 +6227,11 @@ int CMDpflock_begin(lng *wsid)
 	/* update in concurrent mode */
         MT_set_lock(PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
         if (pf_nreaders++ == 0) 
-            MT_set_lock(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for update");
+            MT_down_sema(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for update");
         MT_unset_lock(PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
     } else {
 	/* update in exclusive mode */
-        MT_set_lock(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for retry");
+        MT_down_sema(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for retry");
         MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
         pf_writer = *wsid;
         MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
@@ -6186,7 +6239,7 @@ int CMDpflock_begin(lng *wsid)
     return GDK_SUCCEED;
 }
 
-/* query execution finishes */
+/* query execution finishes; note that we have PF_SHORT_LOCK during this */
 int CMDpflock_end(lng *wsid) 
 {
     int mode = ((*wsid) & (3LL << 30)) >> 30;
@@ -6196,13 +6249,12 @@ int CMDpflock_end(lng *wsid)
         /* last docmgt function yields the meta barrier 
          */
         if (*wsid == pf_special) {
-            assert(pf_ndocmgt == 0);
             pf_special = -1;
         } else {
             pf_ndocmgt--;
         }
         if (pf_ndocmgt == 0) {
-            MT_unset_lock(PF_META_BARRIER, "pflock_end: metaBarrier for docmgt");
+            MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier for docmgt");
         }
     } else {
         /* last active meta-information query releases meta-barrier 
@@ -6214,7 +6266,7 @@ int CMDpflock_end(lng *wsid)
         BUNdelHead(ws_overlaps_ws, wsid, FALSE); /* release all active info on this query */
         others_passed = BUNfnd(BATmirror(ws_overlaps_ws), &nil);
         if (self_passed && !others_passed) {
-            MT_unset_lock(PF_META_BARRIER, "pflock_end: metaBarrier");
+            MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier");
         }
 
         /* last active update query releases update-barrier 
@@ -6222,11 +6274,11 @@ int CMDpflock_end(lng *wsid)
         if (pf_writer == *wsid) {
             /* finish in exclusive mode */
             pf_writer = -1;
-            MT_unset_lock(PF_UPDATE_BARRIER, "pflock_end: exclusive updateBarrier");
+            MT_up_sema(PF_UPDATE_BARRIER, "pflock_end: exclusive updateBarrier");
         } else if (mode != PF_MODE_RDONLY) { 
             /* finish in concurrent mode */
             if (--pf_nreaders == 0)
-                MT_unset_lock(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
+                MT_up_sema(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
         }
     }
     return GDK_SUCCEED;
@@ -6256,10 +6308,9 @@ int CMDpflock_meta(lng *wsid)
         int reapply_barrier = (pf_ndocmgt-- > 1);
         MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: metaLock precheck");
         if (reapply_barrier) {
-            MT_set_lock(PF_META_BARRIER, "pflock_meta: metaBarrier for convert");
+            MT_down_sema(PF_META_BARRIER, "pflock_meta: metaBarrier for convert");
             MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock special");
             pf_special = *wsid;
-            assert(pf_ndocmgt == 0); /* SPECIAL CASE (see above) */
             MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock special");
         }
         return GDK_SUCCEED;
@@ -6273,7 +6324,7 @@ int CMDpflock_meta(lng *wsid)
     MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock insert");
     if (!others_passed) {
         /* first query with meta function: get barrier */
-        MT_set_lock(PF_META_BARRIER, "pflock_meta: metaBarrier");
+        MT_down_sema(PF_META_BARRIER, "pflock_meta: metaBarrier");
     }
     MT_unset_lock(PF_META_LOCK, "pflock_meta: metaLock");
     return GDK_SUCCEED;
@@ -6297,7 +6348,9 @@ bat* pf_support_prelude() {
     MT_init_lock(pf_runtime_lock[3]);
     MT_init_lock(pf_runtime_lock[4]);
     MT_init_lock(pf_runtime_lock[5]);
-    MT_init_lock(pf_runtime_lock[6]);
+    MT_init_sema(pf_runtime_sema[0],1);
+    MT_init_sema(pf_runtime_sema[1],1);
+    MT_init_sema(pf_runtime_sema[2],1);
     ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
     BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
     (void) BATprepareHash(ws_overlaps_ws);
@@ -6315,7 +6368,9 @@ void pf_support_epilogue() {
     MT_destroy_lock(pf_runtime_lock[3]);
     MT_destroy_lock(pf_runtime_lock[4]);
     MT_destroy_lock(pf_runtime_lock[5]);
-    MT_destroy_lock(pf_runtime_lock[6]);
+    MT_destroy_sema(pf_runtime_sema[0]);
+    MT_destroy_sema(pf_runtime_sema[1]);
+    MT_destroy_sema(pf_runtime_sema[2]);
 }
 
 @- PROCs required by the algebraic translation ###

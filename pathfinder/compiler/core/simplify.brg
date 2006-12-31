@@ -618,7 +618,7 @@ reduce (PFcnode_t *p, int goalnt)
                  * number of arguments: fn:concat(). We normalize it here
                  * to subsequent calls with just two arguments.
                  */
-                if (! PFqname_eq (p->sem.apply.fun->qname,
+                if (! PFqname_eq (p->sem.fun->qname,
                                   PFqname (PFns_fn, "concat"))) {
 
                     PFvar_t *v = new_var (NULL);
@@ -626,12 +626,12 @@ reduce (PFcnode_t *p, int goalnt)
 
                     *p = *flwr (let (letbind (
                                          var (v),
-                                         apply (PFapply(fn_concat),
+                                         apply (fn_concat,
                                                 arg (LL(p), 
                                                      arg (LRL(p), 
                                                           nil ())))),
                                      nil ()),
-                                apply (PFapply(fn_concat), arg (var (v), LRR(p))));
+                                apply (fn_concat, arg (var (v), LRR(p))));
                     relabel (p, kids);
                     rewrite_again = true;
                 }
@@ -668,7 +668,7 @@ reduce (PFcnode_t *p, int goalnt)
                 /* During simplification, the function body root may have
                  * changed. Fix it in the corresponding PFfun_t struct.
                  */
-                p->sem.apply.fun->core = R(p);
+                p->sem.fun->core = R(p);
                 break;
 
             default:
