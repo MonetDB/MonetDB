@@ -992,14 +992,15 @@ if test -f "$srcdir"/vertoo.data; then
         esac
         if test "x$SWIG" != xno; then
           # we want the right version...
-          AC_MSG_CHECKING(whether $SWIG is >= 1.3.20)
-          swig_ver="`"$SWIG" -version 2>&1 | grep Version`"
-          case "$swig_ver" in
-          *Version\ 1.3.2*)
-              AC_MSG_RESULT(yes: $swig_ver);;
-          *)  AC_MSG_RESULT(no: $swig_ver)
-              SWIG=no;;
-          esac
+          req_swig_ver="1.3.20"
+          AC_MSG_CHECKING(whether $SWIG is >= $req_swig_ver)
+          swig_ver="`"$SWIG" -version 2>&1 | grep Version | sed -e 's|^[[^0-9]]*||' -e 's|[[^0-9]]*$||'`"
+          if test MONETDB_VERSION_TO_NUMBER(echo $swig_ver) -ge MONETDB_VERSION_TO_NUMBER(echo $req_swig_ver); then
+              AC_MSG_RESULT(yes: $swig_ver)
+          else
+              AC_MSG_RESULT(no: $swig_ver)
+              SWIG=no
+          fi
         fi
         if test "x$SWIG" != xno; then
           # ...and it must support -outdir

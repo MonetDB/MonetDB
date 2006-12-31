@@ -1695,8 +1695,10 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	@:swapif((BAThordered(b)&1)&&!(BATtordered(b)&1))@
 	if (BATtordered(b) & 1) {
 		cmp = BATatoms[b->htype].atomCmp;
+		cmp2 = BATatoms[b->ttype].atomCmp; /* check is necessary for y==nil (but should be cheap) */
 
 		SORTloop(b, p, q, y, y, h) {
+			if ((*cmp2) (y, BUNtail(b, p))) break;
 			if ((*cmp) (x, BUNhead(b, p)) == 0)
 				return p;
 		}
@@ -1712,6 +1714,7 @@ BUNlocate(BAT *b, ptr x, ptr y)
 			if ((*cmp) (y, BUNtail(b, p)) == 0)
 				return p;
 		}
+		return NULL;
 	}
 	/* better than to GDKfatal is to do a linear scan */
 	cmp2 = BATatoms[b->htype].atomCmp;

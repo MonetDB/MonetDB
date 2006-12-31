@@ -946,14 +946,14 @@ the commit tremendously complicated.
 #define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)
 #define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
 #if SIZEOF_SIZE_T == SIZEOF_INT
-#define GDK_ELIMPOWER		18	/* makes for a max 256KB hash table 
+#define GDK_ELIMPOWER		16	/* makes for a max 64KB hash table 
 					 * ie 256 string bytes per hash bucket 
-					 * ~ 16 strings of UP4(8<=len<=11)=12 + 4 bytes 
+					 * ~ 4 strings of UP4(8<=len<=11)=12 + 4 bytes 
 					 */
 #else
-#define GDK_ELIMPOWER		19	/* makes for a max 512KB hash table 
+#define GDK_ELIMPOWER		17	/* makes for a max 128KB hash table 
 					 * ie 512 string bytes per hash bucket 
-					 * ~ 21 strings of UP8(8<=len<=15)=16 + 8 bytes 
+					 * ~ 5 strings of UP8(8<=len<=15)=16 + 8 bytes 
 					 */
 #endif
 
