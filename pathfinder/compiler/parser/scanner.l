@@ -492,6 +492,8 @@ _                                {S}
                                      yield (import_schema); }
 "import"{_}"module"                { gotoState (NAMESPACEKEYWORD);
                                      yield (import_module); }
+"import"{_}"rpc-module"            { gotoState (NAMESPACEKEYWORD);
+                                     yield (import_rpc_module); }
 "at"{_}{StringLiteral}             { pflval.str = extract_string (yytext);
                                      yield (at_URILiteral);
                                    }

@@ -154,11 +154,10 @@ m_export void TBL_Install_MilVar(Client client, str mod, ptr v);
 
 @- function resolution
 @h
-#define TBL_RESOLVE_NOBAT (-5)	/* no bats passed to a multiplex */
-#define TBL_RESOLVE_NOFCN (-4)	/* no function with this name and # params exists */
-#define TBL_RESOLVE_NOSIG (-3)	/* no function with this exact signature exists */
-#define TBL_RESOLVE_NOTPE (-2)	/* actual parameters contain illegal (no-loaded) type */
-#define TBL_RESOLVE_RUN   (-1)	/* resolved, but return type will be known at runtime */
+#define TBL_RESOLVE_NOBAT (-4)	/* no bats passed to a multiplex */
+#define TBL_RESOLVE_NOFCN (-3)	/* no function with this name and # params exists */
+#define TBL_RESOLVE_NOSIG (-2)	/* no function with this exact signature exists */
+#define TBL_RESOLVE_NOTPE (-1)	/* actual parameters contain illegal (no-loaded) type */
 
 m_export int TBL_normal_resolve(str name, int argc, ValPtr Argv, monet_sig_t *sig, Cntxt stk);
 
@@ -967,14 +966,14 @@ TBL_checkparams(paramcheck_t *pt, oid op)
 					goto ready;
 				}
 		}
-		return TBL_RESOLVE_RUN;
+		return 0;
 	}
       ready:
 	if (v[0] == 'B' && v[1] == 'A' && v[2] == 'T') {
 		return TYPE_bat;
 	}
 	i = ATOMindex(v);
-	return (i < 0) ? TBL_RESOLVE_NOTPE : i;
+	return (i < 0) ? 0 : i;
 }
 
 @- TBL_getname
@@ -2276,12 +2275,12 @@ Try to resolve the function to an address.
 		}
 
 		BUNfndOID(p, TBL_fcn_pro, fidp);
-		if (p && (j = TBL_checkparams(&pt, fid)) < TBL_RESOLVE_RUN) {
+		if (p && (j = TBL_checkparams(&pt, fid)) < 0) {
 			if (j == TBL_RESOLVE_NOSIG)
 				ret = TBL_RESOLVE_NOSIG;
 			continue;
 		}
-		if (j > 0 && BUNfnd(atomtbl, &j) == NULL)
+		if (BUNfnd(atomtbl, &j) == NULL)
 			break;	/* matches, but return type not allowed */
 @-
 Found IT: substitute name by address.
@@ -2414,7 +2413,7 @@ constraints for assigment-multiplexing: first must be identically typed BAT
 			GDKerror("[%s=]: assignment to non-bat parameter.\n", name);
 			RETURN(TBL_RESOLVE_NOFCN);
 		} else if (assignbat->ttype != sig->ret_tpe) {
-			GDKerror("[%s=]: assignment of bat[%s,%s] to bat[%s,%s]\n", name, ATOMname(assignbat->htype), (sig->ret_tpe == TBL_RESOLVE_RUN)?"any":ATOMname(sig->ret_tpe), ATOMname(assignbat->htype), ATOMname(assignbat->ttype));
+			GDKerror("[%s=]: assignment of bat[%s,%s] to bat[% s,%s]\n", name, ATOMname(assignbat->htype), ATOMname(sig->ret_tpe), ATOMname(assignbat->htype), ATOMname(assignbat->ttype));
 			RETURN(TBL_RESOLVE_NOFCN);
 		}
 	}
@@ -2443,7 +2442,7 @@ and store the results in resp. sig->array\_opt and sig->merge\_opt.
 @c
 	if (sig->special) {
 		optimize = optimize_true;
-	} else if (tok != TOK_PROC && sig->fast_fcn && argc <= 3 && (BATatoms[sig->ret_tpe].atomFix == NULL) && sig->ret_tpe > TYPE_void && ATOMvarsized(sig->ret_tpe) == 0) {
+	} else if (tok != TOK_PROC && sig->fast_fcn && argc <= 3 && (BATatoms[sig->ret_tpe].atomFix == NULL) && sig->ret_tpe != TYPE_void && ATOMvarsized(sig->ret_tpe) == 0) {
 		str t_argv[1 + MAXPARAMS];
 		int t_argc = TBL_getparams((ptr) sig->pack_fcn, t_argv);
 
@@ -2533,7 +2532,7 @@ TBL_setaggr_resolve(str nme, int argc, ValPtr argv, monet_sig_t *sig, Cntxt stk)
 	if (tok < 0)
 		return TBL_setaggr_cleanup(tok, b, extent);
 
-	if (sig->ret_tpe == TBL_RESOLVE_RUN) {
+	if (sig->ret_tpe == 0) {
 		GDKerror("{%s}(Y): 'any' return types not allowed.\n", nme);
 		return TBL_setaggr_cleanup(TBL_RESOLVE_NOFCN, b, extent);
 	}
@@ -2663,17 +2662,17 @@ TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv)
 	if (BATprepareHash(c->fcntbl) == 0)
 		if (TBL_checkparams_init(&pt, argc, argv, BATmirror(c->atomtbl)) >= 0)
 			HASHloop_str(c->fcntbl, c->fcntbl->hhash, i, name) {
-			        char *v = BUNptr(c->fcntbl, i);
-			        oid fid = *(oid *) BUNtail(c->fcntbl, v);
-			        int tpe = *BUNtailfnd(int, TBL_fcn_tpe, v, &fid);
+			char *v = BUNptr(c->fcntbl, i);
+			oid fid = *(oid *) BUNtail(c->fcntbl, v);
+			int tpe = *BUNtailfnd(int, TBL_fcn_tpe, v, &fid);
 
-			        if (tpe != TOK_ITERATOR)
-			        	continue;
+			if (tpe != TOK_ITERATOR)
+				continue;
 
-			        if (TBL_checkparams(&pt, fid) > TBL_RESOLVE_RUN) {
-			        	TBL_unset_readlock();
-			        	return *BUNtailfnd(void *, TBL_fcn_imp, v, &fid);
-			        }
+			if (TBL_checkparams(&pt, fid) >= 0) {
+				TBL_unset_readlock();
+				return *BUNtailfnd(void *, TBL_fcn_imp, v, &fid);
+			}
 			}
 	TBL_unset_readlock();
 	return (void *) 0;

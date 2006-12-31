@@ -417,10 +417,7 @@ static void
 la_bat_updates(logger *logger, logaction *la)
 {
 	log_bid bid = logger_find_bat(logger, la->name);
-	BAT *b;
-        if (bid == 0) return; /* ignore bats no longer in the catalog */
-
-	b = BATdescriptor(bid);
+	BAT *b = BATdescriptor(bid);
 
 	/* do we need to skip these old updates */
 	if (BATcount(logger->snapshots)) {

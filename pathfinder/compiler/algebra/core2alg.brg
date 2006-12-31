@@ -1964,17 +1964,17 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* All function arguments are now in the array `fun_args'. */
 
-            if (p->sem.fun->builtin) {
+            if (p->sem.apply.fun->builtin) {
                 /*
                  * For built-in functions use this array to call the
                  * algebraic representation of the function (builtins.c)
                  */
-                if (!p->sem.fun->alg)
+                if (!p->sem.apply.fun->alg)
                     PFoops (OOPS_FATAL,
                             "Algebra implementation for function `%s' unknown.",
-                            PFqname_str (p->sem.fun->qname));
+                            PFqname_str (p->sem.apply.fun->qname));
 
-                A(p) = p->sem.fun->alg (loop, ordering, fun_args->base);
+                A(p) = p->sem.apply.fun->alg (loop, ordering, fun_args->base);
 
             }
             else {
@@ -1982,13 +1982,13 @@ reduce (PFcnode_t * p, int goalnt)
                  * Otherwise bind parameter variables to the argument
                  * values and invoke compilation for function body.
                  */
-                for (unsigned int i = 0; i < p->sem.fun->arity; i++) {
+                for (unsigned int i = 0; i < p->sem.apply.fun->arity; i++) {
 
                     PFla_pair_t curr_arg
                         = *(PFla_pair_t *) PFarray_at (fun_args, i);
 
                     *((PFla_env_t *) PFarray_add (env))
-                        = enventry (p->sem.fun->params[i],
+                        = enventry (p->sem.apply.fun->params[i],
                                     curr_arg.rel,
                                     NULL,
                                     curr_arg.frag);
@@ -1999,22 +1999,22 @@ reduce (PFcnode_t * p, int goalnt)
                 /* check active user-defined functions */
                 for (unsigned int i = 0; i < PFarray_last (fun_active); i++)
                     if (*((PFcnode_t **) PFarray_at (fun_active, i)) ==
-                        p->sem.fun->core)
+                        p->sem.apply.fun->core)
                         PFoops (OOPS_FATAL, 
                                 "Algebra implementation cannot cope "
                                 "with recursive functions yet.");
 
                 /* add function to the active ones */ 
                 *((PFcnode_t **) PFarray_add (fun_active)) =
-                    p->sem.fun->core;
+                    p->sem.apply.fun->core;
 
                 /* (3) Invoke compilation of the function body. */
-                reduce (p->sem.fun->core, 1);
+                reduce (p->sem.apply.fun->core, 1);
 
                 /* remove function from the active ones */
                 PFarray_del (fun_active);
 
-                A(p) = A(p->sem.fun->core);
+                A(p) = A(p->sem.apply.fun->core);
             }
 
             /* (4) Restore variable environment. */

@@ -30,6 +30,7 @@ EXTRA_DIST = \
 	algebra.h \
 	algebra_mnemonic.h \
 	algopt.h \
+	apply.h \
 	array.h \
 	bitset.h \
 	builtins.h \

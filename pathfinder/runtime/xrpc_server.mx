@@ -191,7 +191,6 @@ request2bat(struct shttpd_callback_arg *arg, stream *out)
     char *strptr = NULL, *req_msg = NULL;
     lng percentage = 0;
     BAT *shredBAT = NULL;
-    bit verbose = FALSE;
 
     /* Remove the first line of the message, which containing
      * "<?xml...?>", so that the message we pass to CMDshred2bats starts
@@ -209,7 +208,7 @@ request2bat(struct shttpd_callback_arg *arg, stream *out)
         return NULL;
     }
 
-    if (CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL) {
+    if (CMDshred_str(shredBAT, strptr, &percentage, NULL) == GDK_FAIL) {
         BBPreclaim(shredBAT);
         send_err(out, 1, ERR404, "env:Sender", NOT_WELL_FORMED);
         return NULL;

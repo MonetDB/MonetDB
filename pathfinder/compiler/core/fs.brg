@@ -806,7 +806,7 @@ process_fun_sigs (PFpnode_t *p, int goalnt)
 
             /* debugging only
             PFinfo (OOPS_NOTICE, "processing `%s'",
-                    PFqname_str (L(p)->sem.fun->qname));
+                    PFqname_str (L(p)->sem.apply.fun->qname));
             */
 
             /*
@@ -821,12 +821,12 @@ process_fun_sigs (PFpnode_t *p, int goalnt)
             reduce (kids[0], nts[0]);
             reduce (kids[1], nts[1]);
 
-            L(p)->sem.fun->sig_count = 1;
-            L(p)->sem.fun->sigs =  
+            L(p)->sem.apply.fun->sig_count = 1;
+            L(p)->sem.apply.fun->sigs =  
                 (PFfun_sig_t *) PFmalloc (sizeof (PFfun_sig_t));
 	    
-            L(p)->sem.fun->sigs[0].par_ty = parameter_types (LLL(p));
-            L(p)->sem.fun->sigs[0].ret_ty = C(LLR(p))->sem.type;
+            L(p)->sem.apply.fun->sigs[0].par_ty = parameter_types (LLL(p));
+            L(p)->sem.apply.fun->sigs[0].ret_ty = C(LLR(p))->sem.type;
 
             /* Look out for more function declarations */
             process_fun_sigs (kids[3], nts[3]);
@@ -1072,9 +1072,9 @@ reduce (PFpnode_t * p, int goalnt)
             C(LR(p)) = flwr (let (letbind (var (v), C(LR(p))), nil ()),
                              function_conversion (var (v), 
                                                   C(LLR(p))->sem.type));
-            L(p)->sem.fun->core = C(LR(p));
+            L(p)->sem.apply.fun->core = C(LR(p));
 
-            fun_sigs = fun_decls (fun_decl (L(p)->sem.fun, C(LLL(p)), C(LR(p))),
+            fun_sigs = fun_decls (fun_decl (L(p)->sem.apply.fun, C(LLL(p)), C(LR(p))),
                                   fun_sigs);
 
         } break;
@@ -2843,16 +2843,16 @@ reduce (PFpnode_t * p, int goalnt)
              * implicitly get the current
              * context node `.' as their argument.
              */
-            if ( (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "string")))
-                || (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "name")))
-                || (!PFqname_eq (p->sem.fun->qname,
+            if ( (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "string")))
+                || (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "name")))
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "local-name")))
-                || (!PFqname_eq (p->sem.fun->qname,
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "namespace-uri")))
-                || (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "root")))
+                || (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "root")))
                ) {
                 if (fs_dot)
-                    C(p) = APPLY (p->sem.fun, var (fs_dot));
+                    C(p) = APPLY (p->sem.apply.fun, var (fs_dot));
                 else
                     PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
 
@@ -2866,11 +2866,11 @@ reduce (PFpnode_t * p, int goalnt)
              * node `.' as their argument if called without any
              * arguments.
              */
-            if ((!PFqname_eq (p->sem.fun->qname,
+            if ((!PFqname_eq (p->sem.apply.fun->qname,
                               PFqname (PFns_fn, "string-length")))
-                || (!PFqname_eq (p->sem.fun->qname,
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "normalize-space")))
-                || (!PFqname_eq (p->sem.fun->qname,
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "number")))
                ) {
                 if (fs_dot) {
@@ -2881,7 +2881,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                       PFqname (PFns_fn,
                                                                "string")),
                                        var (fs_dot))), nil ()),
-                                 APPLY (p->sem.fun, var (v)));
+                                 APPLY (p->sem.apply.fun, var (v)));
                 }
                 else
                     PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
@@ -2892,7 +2892,7 @@ reduce (PFpnode_t * p, int goalnt)
             /*
              * `fn:position' is available as variable $fs:position.
              */
-            if (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "position"))){
+            if (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "position"))){
                 if (fs_position)
                     C(p) = var (fs_position);
                 else
@@ -2904,7 +2904,7 @@ reduce (PFpnode_t * p, int goalnt)
             /*
              * `fn:last' is available as variable $fs:last.
              */
-            if (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "last"))) {
+            if (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "last"))) {
                 if (fs_last)
                     C(p) = var (fs_last);
                 else
@@ -2916,30 +2916,36 @@ reduce (PFpnode_t * p, int goalnt)
             /*
              * In all other cases just call the respective function
              */
-            C(p) = apply (p->sem.fun, nil ());
+            C(p) = apply (&p->sem.apply, nil ());
             break;
 
         /* FunctionCall:           apply (FuncArgList) */
         case 183:
             /* TOPDOWN */
 
-            assert (PFqname_eq (p->sem.fun->qname,
+            assert (PFqname_eq (p->sem.apply.fun->qname,
                                 PFqname (PFns_fn, "position")));
 
-            *(PFfun_t **) PFarray_add (funs) = p->sem.fun;
+            *(PFapply_t **) PFarray_add (funs) = &p->sem.apply;
             *(PFcnode_t **) PFarray_add (args) = nil ();
 
-            *(short *) PFarray_add (arg_num) = 0;
+            if (p->sem.apply.rpc_uri != NULL) {
+                /* tread the magic leading URL string parameter of an
+                 * XRPC function call as the -1st argument */
+                *(short *) PFarray_add (arg_num) = -1;
+            } else {
+                *(short *) PFarray_add (arg_num) = 0;
+            }
 
             /*
              * Functions `fn:id', `fn:idref' with one argument
              * implicitly get the current context node `.' as
              * their second/last argument.
              */
-            if (p->sem.fun->arity == 1 &&
-                ((!PFqname_eq (p->sem.fun->qname,
+            if (p->sem.apply.fun->arity == 1 &&
+                ((!PFqname_eq (p->sem.apply.fun->qname,
                                PFqname (PFns_fn, "id")))
-                || (!PFqname_eq (p->sem.fun->qname,
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "idref")))
                 )
                ) {
@@ -2963,7 +2969,7 @@ reduce (PFpnode_t * p, int goalnt)
         /* FuncArgList:            nil */
         case 184:
         {
-            PFfun_t *fun = *(PFfun_t **) PFarray_top (funs);
+            PFapply_t *fun = *(PFapply_t **) PFarray_top (funs);
 
             C(p) = apply (fun, *(PFcnode_t **) PFarray_top (args));
 
@@ -3000,7 +3006,7 @@ reduce (PFpnode_t * p, int goalnt)
 
 
             /* What function are we actually talking about? */
-            fun = *(PFfun_t **) PFarray_top (funs);
+            fun = (*(PFapply_t **) PFarray_top (funs))->fun;
 
             /* no dynamic overloading here */
             assert (fun->sig_count == 1);
@@ -4207,7 +4213,7 @@ PFfs (PFpnode_t *r)
     core_vars = 0;
 
     /* initially, there is no function on the current function stack */
-    funs = PFarray (sizeof (PFfun_t *));
+    funs = PFarray (sizeof (PFapply_t *));
 
     /* initially, there is no argument list on the current arguments stack */
     args = PFarray (sizeof (PFcnode_t *));

@@ -62,7 +62,8 @@ static PFpnode_t *root;
 /* temporay node memory */
 static PFpnode_t *c, *c1;
 
-static void add_to_module_wl (char* id, char *ns, char *uri);
+static void add_to_module_wl (char rpc, char* id, char *ns, char *uri);
+static char *get_rpc_uri (char *prefix);
 
 /* avoid `implicit declaration of yylex' warning */
 extern int pflex (void);
@@ -99,9 +100,10 @@ extern unsigned int  cur_row;
 /**
  * True if we have been invoked via parse_module().
  *
- * For queries that contain "import module" instructions, we re-invoke
- * the parser for each imported module.  In that case we _only_ allow
- * modules to be read and refuse query scripts.
+ * For queries that contain "import module" or "import rpc-module"
+ * instructions, we re-invoke the parser for each imported module.  In
+ * that case we _only_ allow modules to be read and refuse query
+ * scripts.
  */
 static bool module_only = false;
 
@@ -142,9 +144,10 @@ static char *current_uri = NULL;
 /**
  * Work list of modules that we have to load.
  *
- * Whenever we encounter an "import module" statement, we add an URI to
- * the list (if it is not in there already).  We process the work list
- * after parsing the main query file.
+ * Whenever we encounter an "import module" statement or an "import
+ * rpc-module" statement, we add an URI to the list (if it is not in
+ * there already).  We process the work list after parsing the main
+ * query file.
  */
 static PFarray_t *modules = NULL;
 
@@ -155,6 +158,7 @@ static PFarray_t *modules = NULL;
  * otherwise).
  */
 typedef struct module_t {
+    bool rpc;   /* is this an RPC module? */
     char *id;
     char *ns;
     char *uri;
@@ -367,6 +371,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token idiv                            "idiv"
 %token if_lparen                       "if ("
 %token import_module                   "import module"
+%token import_rpc_module               "import rpc-module"
 %token import_schema                   "import schema"
 %token in_                             "in"
 %token instance_of                     "instance of"
@@ -717,6 +722,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                ModuleNSWithoutPrefix
                ModuleNSWithPrefix
                PredicateList
+               RPCModuleImport /* !W3C */
                SchemaImport
                SchemaSrc_
                SetterImportAndNSDecls_
@@ -912,7 +918,9 @@ Setter                    : BoundarySpaceDecl    { $$ = $1; }
                           ;
 
 /* [8] */
+/* !W3C RPC modules are a Pathfinder extension */
 Import                    : SchemaImport     { $$ = $1; }
+                          | RPCModuleImport  { $$ = $1; }
                           | ModuleImport     { $$ = $1; }
                           ;
 
@@ -1137,10 +1145,47 @@ ModuleImport              : "import module" ModuleNS_ OptAtURILiterals_
                                    c->kind == p_schm_ats;
                                    c = c->child[1])
                                   add_to_module_wl (
+                                      false,                       /* no RPC */
                                       $2.root
                                           ? $2.root->sem.str : "", /* prefix */
                                       $2.hole->sem.str,            /* namespc */
                                       c->child[0]->sem.str);       /* at URI */
+
+                              $$.root = wire2 (p_mod_imp, @$, $2.hole, $3);
+                              $$.hole = $2.root;
+                            }
+                          ;
+
+RPCModuleImport           : "import rpc-module" ModuleNSWithPrefix
+                            OptAtURILiterals_
+                            { /* RPC extension of XQuery: call to
+                               *   functions defined in this module will
+                               *   be translated into an RPC call.
+                               *
+                               * Merge a module import and an associated
+                               * namespace declaration is not allowed
+                               * when importing rpc-modules.  Thus the
+                               * only valid syntax to import a module
+                               * for RPC is (line wrapped):
+                               *
+                               * import rpc-module
+                               *    namespace ns = "ns" [at "url"]
+                               *
+                               * We return the module import in $$.root
+                               * and the namespace declaration in
+                               * $$.hole, which is the same as the
+                               * normal module import, but $2.root is
+                               * never NULL, since namespace decl is
+                               * always present.
+                               */
+                              for (c = $3;
+                                   c->kind == p_schm_ats;
+                                   c = c->child[1])
+                                  add_to_module_wl (
+                                      true,                   /* RPC */
+                                      $2.root->sem.str,       /* prefix */
+                                      $2.hole->sem.str,       /* namespc */
+                                      c->child[0]->sem.str);  /* at URI */
 
                               $$.root = wire2 (p_mod_imp, @$, $2.hole, $3);
                               $$.hole = $2.root;
@@ -1204,6 +1249,12 @@ FunctionDecl              : "declare function" QName_LParen
                                                 $3, $4),
                                          $5);
                               c->sem.qname = $2;
+                              /*
+                               * FIXME:
+                               *   This is not the parser's job!
+                               *   Do this during function resolution!
+                               */
+                              c->rpc_uri = get_rpc_uri(c->sem.qname.ns.prefix);
                               $$ = c;
 
 #ifdef ENABLE_MILPRINT_SUMMER
@@ -1239,6 +1290,12 @@ FunctionDecl              : "declare function" QName_LParen
                                                  c1)),
                                          $5);
                               c->sem.qname = $2;
+                              /*
+                               * FIXME:
+                               *   This is not the parser's job!
+                               *   Do this during function resolution!
+                               */
+                              c->rpc_uri = get_rpc_uri(c->sem.qname.ns.prefix);
                               $$ = c;
 
 #ifdef ENABLE_MILPRINT_SUMMER
@@ -2059,6 +2116,7 @@ FunctionCall              : QName_LParen OptFuncArgList_ ")"
                                *   Do this during function resolution!
                                */
                               c->sem.qname = $1;
+                              c->rpc_uri = get_rpc_uri (c->sem.qname.ns.prefix);
                               $$ = c;
                             }
                           ;
@@ -2794,6 +2852,7 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
  * Add an item to the work list of modules to import.  If it is
  * already in there, do nothing.
  *
+ * @param rpc  normale module or rpc module
  * @param id   namespace id
  * @param ns   namespace associated with this module
  * @param uri  URI where we will find the module definition.
@@ -2801,14 +2860,26 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
  *  import module [prefix =] ns at uri, uri, uri...
  */
 static void
-add_to_module_wl (char*id, char *ns, char *uri)
+add_to_module_wl (char rpc, char*id, char *ns, char *uri)
 {
     for (unsigned int i = 0; i < PFarray_last (modules); i++)
         if ( !strcmp (((module_t *) PFarray_at (modules, i))->uri, uri) )
             return;
 
     *(module_t *) PFarray_add (modules)
-        = (module_t) { .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
+        = (module_t) { .rpc = rpc, .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
+}
+
+static char *
+get_rpc_uri(char *prefix){
+    if (!prefix) return NULL;
+
+    for (unsigned int i = 0; i < PFarray_last (modules); i++){
+        module_t *m = (module_t *) PFarray_at(modules, i);
+        if ( m->rpc && (strcmp (m->id, prefix) == 0))
+            return m->uri;
+    }
+    return NULL;
 }
 
 /**

@@ -39,9 +39,9 @@
 pf_support_export int shred(BAT *docBAT, str location, str buffer, stream *s, lng percentage, struct serializeFunStruct *serFun, struct XqueryCtx *serCtx, lock *collLock);
 
 /* MIL commands to shred XML from a {uri,string,stream}. */
-pf_support_export int CMDshred_url(BAT *docBAT, str location, lng *percentage, lock* collLock, bit *verbose);
-pf_support_export int CMDshred_str(BAT *docBAT, str buffer, lng *percentage, lock* collLock, bit *verbose);
-pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, lock* collLock, bit *verbose);
+pf_support_export int CMDshred_url(BAT *docBAT, str location, lng *percentage, lock* collLock);
+pf_support_export int CMDshred_str(BAT *docBAT, str buffer, lng *percentage, lock* collLock);
+pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, lock* collLock);
 
 #endif /* SHREDDER_H */
 @c
@@ -387,7 +387,6 @@ typedef struct shredCtxStruct {
     struct XqueryCtx *serCtx; /* the runtime data */
 
      MT_Lock *coll_lock;
-     MT_Sema *extend_sema;
 } shredCtxStruct;
 
 /* some string buffer sizes */
@@ -535,17 +534,15 @@ emit_tuple(shredCtxStruct* shredCtx,
     /* make sure the rid_* and nid_* bats have enough room */
     if (pre >= shredCtx->dstBAT[PRE_SIZE].size) {
         size_t newsize = shredBAT_newsize(&shredCtx->dstBAT[PRE_SIZE], pre);
-        int err = 0;
-        MT_sema_down(shredCtx->extend_sema, "shredder_extend"); 
-        err = 
-            !(newsize &&
-              shredBAT_extend(&shredCtx->dstBAT[PRE_SIZE],  newsize) &&
+        if (!(newsize &&
+              shredBAT_extend(&shredCtx->dstBAT[PRE_SIZE], newsize) &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_LEVEL], newsize) &&
-              shredBAT_extend(&shredCtx->dstBAT[PRE_PROP],  newsize) &&
-              shredBAT_extend(&shredCtx->dstBAT[PRE_KIND],  newsize) &&
-              (shredCtx->updatable == 0 || shredBAT_extend(&shredCtx->dstBAT[PRE_NID], newsize)));
-        MT_sema_up(shredCtx->extend_sema, "shredder_extend"); 
-        if (err) return GDK_FAIL;
+              shredBAT_extend(&shredCtx->dstBAT[PRE_PROP], newsize) &&
+              shredBAT_extend(&shredCtx->dstBAT[PRE_KIND], newsize) &&
+              (shredCtx->updatable == 0 ||shredBAT_extend(&shredCtx->dstBAT[PRE_NID], newsize))))
+        {
+            return GDK_FAIL;
+        }
     }
     /* insert the new RID tuple */
     if (shredCtx->updatable) {
@@ -1375,8 +1372,7 @@ shredder_create(char *location,
                 struct serializeFunStruct *serFun, 
                 struct XqueryCtx *serCtx, 
                 BAT *docBAT,
-                MT_Lock *coll_lock,
-                int verbose) 
+                MT_Lock *coll_lock) 
 {
     if (BATcount(docBAT) && BATcount(docBAT) != SHRED_BATS) {
         GDKerror("shredder_create: docBAT should be empty or have exactly %d buns.\n", SHRED_BATS);
@@ -1388,7 +1384,6 @@ shredder_create(char *location,
     if (shredCtx == NULL) return NULL;
 
     /* fill it */
-    int i = 4;
     memset(shredCtx, 0, sizeof(shredCtxStruct)); 
     shredCtx->location  = location;
     shredCtx->fileSize  = fileSize;
@@ -1396,19 +1391,12 @@ shredder_create(char *location,
     shredCtx->serFun    = serFun;
     shredCtx->serCtx    = serCtx;
     shredCtx->coll_lock = coll_lock;
-    {
-    /* avoid "dereferencing type-punned pointer will break strict-aliasing rules" with gcc >= 4.1 */
-    /* (void) CMDpflock_get((ptr*) &(shredCtx->extend_sema), &i); */
-    ptr s = (ptr)shredCtx->extend_sema;
-    (void) CMDpflock_get(&s, &i);
-    shredCtx->extend_sema = s;
-    }
     shredCtx->incremental = (BATcount(docBAT) > 0);
 
     /* init the idref attribute database */
     attrDB_init(&shredCtx->idrefAttrDB);
 
-    int xx = BUNsize(docBAT);
+    int xx = BUNsize(docBAT), i;
     BUN p = BUNfirst(docBAT);
     for(i=0; i<SHRED_BATS; i++, p+=xx) {
         shredBAT *sb = &shredCtx->dstBAT[i];
@@ -1515,7 +1503,7 @@ shredder_create(char *location,
             GDKerror("shredder_create: read-only collection cannot have materialized NID-RID mappings\n");
             return shredder_free(shredCtx,0);
         }
-        if (verbose && pageFree) {
+        if (pageFree) {
             stream_printf(GDKout, "!WARNING: cannot make a read-only collection writable (set pageFree to 0).\n");
             pageFree = 0;
         }
@@ -1525,7 +1513,7 @@ shredder_create(char *location,
         pageFree = REMAP_PAGE_SIZE - (REMAP_PAGE_SIZE*pageFree)/100; 
     }
     shredCtx->pageFree = pageFree;
-    if (verbose && pageFree) {
+    if (pageFree) {
         stream_printf(GDKout, "# shredding with holes: pagesize=%d, #fillsize=%d\n", REMAP_PAGE_SIZE, pageFree);
     }
 
@@ -1742,7 +1730,6 @@ shred(BAT *docBAT,
       lock *collLock)
 {
     MT_Lock *coll_lock = (MT_Lock*) ((collLock && *collLock != ptr_nil)?*collLock:NULL);
-    int verbose = (collLock == NULL);
     int res = GDK_FAIL;
 
     /* timing */
@@ -1782,11 +1769,11 @@ shred(BAT *docBAT,
     }
 
     /* shred it */
-    shredCtxStruct* shredCtx = shredder_create(location, estimatedSize, pageFree, serFun, serCtx, docBAT, coll_lock, verbose);
+    shredCtxStruct* shredCtx = shredder_create(location, estimatedSize, pageFree, serFun, serCtx, docBAT, coll_lock);
     if (shredCtx) {
         if (shredder_parse(shredCtx, location, buffer, s)) {
             res = shredder_finalize(shredCtx, docBAT);
-            if (verbose && res && !s && !buffer) {
+            if (res && !s && !buffer) {
                 char buf1[80], buf2[80];
                 stop = GDKusec();
                 stream_printf(GDKout, "# Elapsed time = %s [%s/node]\n", 
@@ -1808,34 +1795,31 @@ int
 CMDshred_url(BAT *docBAT, 
              str location, 
              lng *percentage,
-             lock *collLock,
-             bit *verbose)
+             lock *collLock)
 {
     assert(percentage);
-    return shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
+    return shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL, collLock);
 }
 
 int
 CMDshred_str(BAT *docBAT, 
              str buffer, 
              lng *percentage,
-             lock *collLock,
-             bit *verbose)
+             lock *collLock)
 {
     assert(percentage);
-    return shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
+    return shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL, collLock);
 }
 
 int
 CMDshred_stream(BAT *docBAT, 
                 Stream *fp,
                 lng *percentage,
-                lock *collLock,
-                bit *verbose)
+                lock *collLock)
 {
     stream *s = (stream*) ((fp && *(ptr*) fp != ptr_nil)?*fp:NULL);
     assert(percentage);
-    return shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
+    return shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL, collLock);
 }
 @c
 /* vim:set shiftwidth=4 expandtab: */

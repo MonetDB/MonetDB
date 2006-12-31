@@ -49,6 +49,9 @@ extern unsigned int core_vars;
 /* PFfun_t */
 #include "functions.h"
 
+/* PFapply_t */
+#include "apply.h"
+
 /* PFla_pair_t */
 #include "logical.h"
 
@@ -179,7 +182,7 @@ union PFcsem_t {
     PFvar_t       *var;        /**< variable information */
     PFty_t         type;       /**< used with c_type */
     PFsort_t       mode;       /**< sort modifier */
-    PFfun_t       *fun;        /**< function application */
+    PFapply_t      apply;      /**< function application */
 
     /* semantic content for flwr subexpressions (let/for) */
     struct {
@@ -299,9 +302,9 @@ PFcnode_t *PFcore_seed (const PFcnode_t *seed, const PFcnode_t *recurse);
 PFcnode_t *PFcore_xrpc (const PFcnode_t *uri, const PFcnode_t *fun);
 
 PFfun_t *PFcore_function (PFqname_t);
-PFcnode_t *PFcore_apply (PFfun_t *, const PFcnode_t *);
+PFcnode_t *PFcore_apply (PFapply_t *, const PFcnode_t *);
 PFcnode_t *PFcore_arg (const PFcnode_t *, const PFcnode_t *);
-PFcnode_t *PFcore_apply_ (PFfun_t *, ...);
+PFcnode_t *PFcore_apply_ (PFapply_t *, ...);
 
 /**
  * Expansion functions for Calculations
@@ -314,7 +317,7 @@ PFcnode_t *PFcore_some (const PFcnode_t *, const PFcnode_t *, const PFcnode_t *)
 /**
  * Wrapper for #apply_.
  */
-#define APPLY(fn,...) PFcore_apply_ ((fn), __VA_ARGS__, 0)
+#define APPLY(fn,...) PFcore_apply_ (PFapply(fn), __VA_ARGS__, 0)
 
 PFcnode_t *PFcore_ebv (const PFcnode_t *);
 

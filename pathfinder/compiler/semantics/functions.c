@@ -272,7 +272,7 @@ add_ufuns (PFpnode_t *n)
 static void
 check_fun_usage (PFpnode_t * n)
 {
-    unsigned int i;
+    unsigned int i, is_rpc = 0;
     PFarray_t *funs;
     PFfun_t *fun;
     unsigned int arity;
@@ -313,17 +313,28 @@ check_fun_usage (PFpnode_t * n)
                             "fn:concat expects at least two arguments "
                             "(got %u)", arity);
 
-            n->sem.fun = fun;
+            n->sem.apply.fun = fun;
+            n->sem.apply.rpc_uri = NULL;
             n->kind = n->kind == p_fun_ref ? p_apply : p_fun;
             break;
         }
         
         /*
+         * RPC UDF calls are recognized by the content of 'rpc_uri'
+         * - we will require the first parameter to be string (destination machine)
+         * - it is excluded from function resolution
+         */
+        if (n->kind == p_fun_ref && n->rpc_uri != NULL) {
+            is_rpc = 1;
+        }
+
+        /*
          * Unset the function reference field in the parse tree
          * node. Note that this invalidates the sem.qname field!
          * (sem is a union type).
          */
-        n->sem.fun = NULL;
+        n->sem.apply.fun = NULL;
+        n->sem.apply.rpc_uri = NULL;
 
         /*
          * For all the other functions, we search for the last
@@ -342,17 +353,18 @@ check_fun_usage (PFpnode_t * n)
          */
         for (i = 0; i < PFarray_last (funs); i++) { 
             fun = *((PFfun_t **) PFarray_at (funs, i));
-            if (arity == fun->arity) {
-                n->sem.fun = fun;
+            if ((arity - is_rpc) == fun->arity) {
+                n->sem.apply.fun = fun;
+                n->sem.apply.rpc_uri = n->rpc_uri;
             }
         }
 
         /* see if number of actual argument matches function declaration */
-        if (! n->sem.fun)
+        if (! n->sem.apply.fun)
             PFoops_loc (OOPS_APPLYERROR, n->loc,
                         "wrong number of arguments for function `%s' "
                         "(expected %u, got %u)",
-                        PFqname_str (fun->qname), fun->arity, arity);
+                        PFqname_str (fun->qname), (fun->arity + is_rpc), arity);
         
         /*
          * Replace semantic value of abstract syntax tree node
@@ -573,6 +585,17 @@ PFfun_check (PFpnode_t * root)
 
     /* now traverse the whole tree and check all function usages */
     check_fun_usage (root);
+}
+
+/**
+ * constructor for function application struct
+ */
+PFapply_t*
+PFapply(struct PFfun_t *fun) {
+    PFapply_t *app = (PFapply_t*) PFmalloc (sizeof (PFapply_t));
+    app->fun = fun;
+    app->rpc_uri = NULL;
+    return app;
 }
 
 /* vim:set shiftwidth=4 expandtab: */
