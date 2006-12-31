@@ -63,7 +63,7 @@ else
 	wh_t="`basename $base`"
 fi
 if [ "${wh_t}" = 'monet5' ] ; then
-	wh_t = 'MonetDB5'
+	wh_t='MonetDB5'
 fi
 what="`echo ${wh_t} | tr '[a-z]' '[A-Z]' | tr '.-' '_'`"
 
