@@ -17,7 +17,7 @@
 @f opt_costModel
 @a M. L. Kersten
 @-
-@node Costmodels, Variable Stack Reduction, Strength Reduction, Toolkit
+@node Cost Models, Dead Code Removal, Constant Expressions, Optimizer Toolkit
 @- The costmodel approach
 Cost models form the basis for many optimization decisions.
 The cost parameters are typically the size of the (intermediate)

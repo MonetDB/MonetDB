@@ -16,7 +16,7 @@
 
 @f opt_aliases
 @-
-@node Alias Removal, Dead Code Removal, Toolkit, Toolkit
+@node Alias Removal, Code Factorization, Accumulators, Optimizer Toolkit
 @- Alias Removal
 The routine @sc{optimizer.aliasRemoval()}
 walks through the program looking for simple

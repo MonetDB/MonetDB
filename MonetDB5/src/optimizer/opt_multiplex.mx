@@ -19,7 +19,7 @@
 @f opt_multiplex
 @a M. Kersten
 @-
-@node Multiplex Compiler, Garbage Collector,  Peephole Optimization, Toolkit
+@node Multiplex Compiler, Partitioned Tables, Merge Tables,  Optimizer Toolkit
 @- Multiplex Compilation
 The MonetDB operator multiplex concept has been pivotal to
 easily apply any scalar function to elements in a containers.

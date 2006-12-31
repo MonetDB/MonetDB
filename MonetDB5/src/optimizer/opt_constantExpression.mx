@@ -17,7 +17,7 @@
 @f opt_constantExpression
 @a M. Kersten
 @-
-@node Constant Expressions, Empty Set Reduction, Common Terms, Toolkit
+@node Constant Expressions, Cost Models, Common Terms, Optimizer Toolkit
 @- Constant Expression Evaluation
 Expressions produced by compilers involving only constant
 arguments can be evaluated once. It is particular relevant

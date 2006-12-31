@@ -17,7 +17,8 @@
 @f opt_remoteQueries
 @a M. Kersten
 @-
-@- Remote Query Execution
+@node Remote Queries, Singleton Sets, Range Propagation, Optimizer Toolkit
+@- Remote Queries
 MAL variables may live at a different site from where they are used.
 In particular, the SQL front-end uses portions of remote
 BATs as replication views. Each time such a view is needed,

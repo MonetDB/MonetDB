@@ -17,8 +17,8 @@
 @f opt_reduce
 @a M. Kersten
 @-
-@node Variable Stack Reduction, Query Plans, Costmodels, Toolkit
-@- Variable Stack Reduction
+@node Stack Reduction, Strength Reduction, Singleton Sets, Optimizer Toolkit
+@- Stack Reduction
 The compilers producing MAL may generate an abundance of temporary variables
 to hold the result of expressions. This leads to a polution of the
 runtime stack space, because space should be allocated and garbage

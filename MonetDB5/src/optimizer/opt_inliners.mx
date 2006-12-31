@@ -17,7 +17,7 @@
 @f opt_inliners
 @a M. Kersten
 @-
-@node Function Inliners, Common Terms , Macro Processing, Toolkit
+@node Inline Functions, Join Paths , Heuristic Rules, Optimizer Toolkit
 
 @subsection Function Inliners
 The routine @sc{optimizer.inliners()} searches MAL function definitions

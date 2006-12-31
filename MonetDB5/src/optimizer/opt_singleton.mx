@@ -17,7 +17,7 @@
 @f opt_singleton
 @a M. Kersten
 @-
-@node Singleton Sets, Peephole Optimization, Empty Set Reduction,  Toolkit
+@node Singleton Sets, Stack Reduction, Remote Queries,  Optimizer Toolkit
 @- Singleton Set Reduction
 Application semantics and precise cost analysis may
 identify the result of an operation to produce a BAT with

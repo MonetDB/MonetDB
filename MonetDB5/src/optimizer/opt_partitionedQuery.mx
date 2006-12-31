@@ -17,8 +17,8 @@
 @f opt_partitionedQuery
 @a M. Kersten
 @-
-@node Partitioned Databases, Strength Reduction, Multi-Association Tables, Toolkit
-@- Incremental query processing
+@node Partitioned Tables, Peephole Optimization, Multiplex Compiler, Optimizer Toolkit
+@- Partitioned Tables
 Limitations on the addressing space in older PCs and the need
 for distributed storage makes that BATs ideally should be 
 looked upon as a union of smaller BATs which are processed

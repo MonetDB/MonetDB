@@ -14,13 +14,13 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f opt_multiTable
+@f opt_mergetable
 @a M. Kersten
 @-
-@node Multi-Association Tables , Partitioned Databases, Code Factorization, Toolkit
+@node Merge Tables , Multiplex Compiler, Macro Processing, Optimizer Toolkit
 
-@- Multiple Association Tables 
-A Multi Association Table descriptor (MAT) defines an ordered collection 
+@- Merge Tables 
+A merge association table (MAT) descriptor defines an ordered collection 
 of type compatible BATs, whose union represents a single (virtual) BAT.
 The MAT may relate to a partitioned BAT, but could also be an arbitrary
 collection of temporary BATs within a program fragment.

@@ -17,7 +17,7 @@
 @f opt_qep
 @a M. Kersten
 @-
-@node Query Plans,The MAL Debugger, Variable Stack Reduction, Toolkit
+@node Query Plans, Range Propagation, Peephole Optimization, Optimizer Toolkit
 @- Query Execution Plans
 A commonly used data structure to represent and manipulate
 a query is a tree (or graph). Its nodes represent the

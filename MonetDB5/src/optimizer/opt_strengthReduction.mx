@@ -17,7 +17,7 @@
 @f opt_strengthReduction
 @a M. Kersten
 @-
-@node Strength Reduction, Costmodels, Partitioned Databases, Toolkit
+@node Strength Reduction, The MAL Debugger, Stack Reduction, Optimizer Toolkit
 @- Strength Reduction
 An effective optimization technique in compiler construction is to
 move invariant statements out of the loops. The equivalent strategy can be

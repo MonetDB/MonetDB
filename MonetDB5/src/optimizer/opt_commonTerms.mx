@@ -38,7 +38,7 @@ comment "Common sub-expression optimizer"
 #include "opt_aliases.h"
 @}
 @-
-@node Common Terms, Constant Expressions, Function Inliners,   Toolkit
+@node Common Terms, Constant Expressions, Coercions,   Optimizer Toolkit
 @- Common Subexpression Elimination
 Common subexpression elimination merely involves a scan through the 
 program block to detect re-curring statements.

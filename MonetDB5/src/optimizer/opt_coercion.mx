@@ -16,7 +16,18 @@
 
 @f opt_coercion
 @-
+@node Coercions, Common Terms, Code Factorization,  Optimizer Toolkit
 @- Coercion Removal
+A simple optimizer that removes coercions that are not needed.
+They may result from a sloppy code-generator or function
+call resolution decision. For example:
+@example
+  v:= calc.int(23);
+@end example
+becomes a single assignment without function call.
+
+The primary role is a small illustration of coding
+an optimizer algorithm.
 @{
 @mal
 pattern optimizer.coercions():str

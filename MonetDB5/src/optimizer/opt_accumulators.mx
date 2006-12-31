@@ -16,7 +16,7 @@
 
 @f opt_accumulators
 @-
-@node Accumulator Evaluations, Heuristic Rewrite Rules, Dead Code Removal, Toolkit
+@node Accumulators, Alias Removal, Optimizer Toolkit, Optimizer Toolkit
 @- Accumulator Evaluations
 Bulk arithmetic calculations are pretty expensive,
 because new @sc{bat}s are created for each expression. 

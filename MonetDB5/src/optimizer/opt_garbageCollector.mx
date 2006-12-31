@@ -17,7 +17,7 @@
 @f opt_garbageCollector
 @a M. Kersten
 @-
-@node Garbage Collector, Code Factorization, Multiplex Compiler, Toolkit
+@node Garbage Collector, Heuristic Rules, Empty Set Removal, Optimizer Toolkit
 @- Garbage Collection
 Garbage collection of temporary variables, such as strings and BATs,
 takes place upon returning from a function call. Especially for BATs

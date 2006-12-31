@@ -32,12 +32,12 @@ but can also be ran at runtime for query fragments.
 
 @menu
 * Landscape::
-* Toolkit::
 * Dependencies::
 * Building Blocks::
 * Framework::
 * Lifespan Analysis::
 * Flow Analysis::
+* Optimizer Toolkit::
 @end menu
 
 @node Landscape, Dependencies ,The MAL Optimizer, The MAL Optimizer
@@ -359,7 +359,7 @@ them in a preferred order of deployment.
 @item group D:
 @tab    Code Parallizer.
 @item 
-@tab    Accumulator Evaliations.
+@tab    Accumulator Evaluations.
 @item 
 @tab    Result Cacher.
 @item
@@ -924,7 +924,7 @@ isTouched(MalBlkPtr mb, int varid, int p1, int p2)
 
 @}
 @-
-@node Flow Analysis, Toolkit, Lifespan Analysis, The MAL Optimizer
+@node Flow Analysis, Optimizer Toolkit, Lifespan Analysis, The MAL Optimizer
 @subsection Flow analysis
 In many optimization rules, the data flow dependency between statements is
 of crucial importance. The MAL language encodes a multi-source, multi-sink
@@ -961,8 +961,8 @@ It suffice to respect the flow graph.
 [unclear as what we need]
 @}
 @-
-@node Toolkit, Alias Removal, Flow Analysis , The MAL Optimizer
-@+ The Optimizer Toolkit
+@node Optimizer Toolkit, Accumulators, Flow Analysis , The MAL Optimizer
+@+ Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers 
 included in the code base. The tool kit is incrementally built, triggered
 by experimentation and curiousity. Several optimizers require
@@ -975,26 +975,30 @@ produced as long as possible. For example,
 the snippet @code{ sql.insert(col, 12@@0, "hello")} can be the target
 of simple SQL rewrites using the module name as the discriminator.
 @menu
+* Accumulators::
 * Alias Removal::
-* Dead Code Removal::
-* Accumulator Evaluations::
-* Heuristic Rewrite Rules::
-* Macro Processing::
-* Function Inliners::
+* Code Factorization::
+* Coercions::
 * Common Terms::
 * Constant Expressions::
-* Empty Set Reduction::
-* Singleton Sets ::
-* Peephole Optimization::
-* Multiplex Compiler::
+* Cost Models::
+* Dead Code Removal::
+* Empty Set Removal::
 * Garbage Collector::
-* Code Factorization::
-* Multi-Association Tables ::
-* Partitioned Databases::
-* Strength Reduction::
-* Costmodels::
-* Variable Stack Reduction::
+* Heuristic Rules::
+* Inline Functions::
+* Join Paths::
+* Macro Processing::
+* Merge Tables ::
+* Multiplex Compiler::
+* Partitioned Tables::
+* Peephole Optimization::
 * Query Plans::
+* Range Propagation::
+* Remote Queries::
+* Singleton Sets ::
+* Stack Reduction::
+* Strength Reduction::
 @end menu
 @{
 @-
@@ -1067,144 +1071,5 @@ replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 			}
 	}
 }
-
-@}
-@-
-@node Heuristic Rewrite Rules, Macro Processing, Accumulator Evaluations,  Toolkit
-@- Heuristic rewrites rules
-One of the oldest optimizer tricks in relational query processing is
-to apply heuristic rules to reduce the processing cost. For example,
-a selection predicate is pushed through another operator to reduce
-the number of tuples to consider.
-Heuristic rewrites are relatively easy to apply in a context where 
-the expression is still close to a relational algebra tree.
-Therefore, many of the standard rewrite rules are already applied by the SQL
-front-end as part of its strategic optimization decisions.
-
-Finding rewrite opportunities within a linear MAL program may
-be more difficult. For, the pattern should respect the flow
-of control that may already be introduced.
-The last resort for the optimizer builder is to write a
-C-function to look for a pattern of interest and transform it.
-The code base contains an example how to built such 
-user specific optimizer routines.
-It translates the pattern:
-@example
-y:= reverse(R);
-z:= select(y,l,h);          
-@end example
-into the statement:
-@example
-z:= selectHead(x,R,l,h) 
-@end example
-
-@{
-@-
-During a final pass through the program, we can convert all combinators 
-back into their elementary steps.
-@= fndOperator
-	(( getModuleId(@1)==0 || (@2 && idcmp(getModuleId(@1),@2)==0) ) &&
-		 (getFunctionId(@1)==0 || (@3 && idcmp(getFunctionId(@1),@3)==0) ))
-@-
-A more complete implementation should als push the selection through
-multiple operators. In particular, a reverse operator may obscure
-the opportunity to perform the select push through. 
-@c
-int
-SPcombi000(MalBlkPtr mb, int pc1, int pc2)
-{
-	InstrPtr p, q;
-
-	p = getInstrPtr(mb, pc1);
-	q = getInstrPtr(mb, pc2);
-	if (@:fndOperator(p, "bat", "reverse")@) {
-		if (@:fndOperator(q, "algebra", "select")@) {
-			if (p->argv[0] == q->argv[1]) {
-				setModuleId(p, putName("algebra", 7));
-				setFunctionId(p, putName("reverse_select", 14));
-				p = pushArgument(mb, p, q->argv[1]);
-				p = pushArgument(mb, p, q->argv[2]);
-				p = pushArgument(mb, p, q->argv[3]);
-				removeInstruction(mb, q);
-				chkFlow(mb);
-				chkDeclarations(mb, TRUE);
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
-
-int
-SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
-{
-	InstrPtr p, q;
-
-	p = getInstrPtr(mb, pc1);
-	q = getInstrPtr(mb, pc2);
-	(void) p;
-	(void) q;		/* do something useful later on */
-	return 0;
-}
-
-static int
-OPTheuristicsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i, k, combis = 0, squeeze = 0;
-	InstrPtr p;
-
-	(void) stk;		/* fool compilers */
-	(void) pci;
-
-	/* process the combinators */
-	for (i = 0; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
-		for (k = i + 1; k < mb->stop && isAlife(mb, p->argv[0], k); k++)
-			if (SPcombi000(mb, i, k)) {
-#ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(GDKout, "Combinator found\n");
-				printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
-#endif
-				combis++;
-				k--;	/* an instruction has been removed */
-				setLifespan(mb);	/* expensive but needed */
-			}
-	}
-	/* process the squeezers */
-	for (i = 0; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
-		for (k = i + 1; k < mb->stop && isAlife(mb, p->argv[0], k); k++)
-			if (SPsqueezer000(mb, i, k)) {
-#ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(GDKout, "Squeezer found\n");
-				printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
-#endif
-				squeeze++;
-				k--;	/* an instruction has been removed */
-			}
-	}
-	return squeeze;
-}
-
-@-
-Pushing a selection geared at the left operand through the join operator
-is more complex, because you can only recognize those instances when later
-on the semijoin is recognized. The pattern we are looking for
-@T
-\begin{verbatim}
-AD := join (AB, CD);
-ZZ := semijoin (AB, AD);
-Za := select(ZZ, l,h);
-\end{verbatim}
-@-
-Note that this operation depends on HRoptimizer, because it already
-pushes down the selection through the semijoin.
-Should be done differently
-
-@include optimizerWrapper.mx
-@h
-@:exportOptimizer(heuristics)@
-@c
-@:wrapOptimizer(heuristics,OPT_CHECK_ALL)@
 
 @}
