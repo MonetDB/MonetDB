@@ -25,7 +25,7 @@ All combinations are implemented. Limited combinations are implemented
 for @emph{bit}, @emph{oid} and @emph{str}. 
 
 @table @code
-@item[binary operators]
+@item [binary operators]
 The implemented operators are first of all all comparison that return a 
 TRUE/FALSE value (@emph{bit} values), i.e. 
 @emph{<=}, @emph{<}, @emph{==}, @emph{!=}, @emph{>=}, and @emph{>=}.
@@ -38,7 +38,7 @@ floating point.  The largest type of the input types is taken.
 The @emph{max} and @emph{min} functions return the maximum and minimum of 
 the two input parameters.
 
-@item[unary operators]
+@item [unary operators]
 This module also implements the unary @emph{abs}() function, which calculates 
 the absolute value of the given input parameter, as well as the @emph{-} unary
 operator. 
@@ -46,18 +46,18 @@ operator.
 The @emph{inv} unary operation calculates the inverse of the input value. 
 An error message is given when the input value is zero.
 
-@item[bitwise operators]
+@item [bitwise operators]
 For integers there are some additional operations. The @emph{\%} operator
 implements the congruent modulo operation. The @emph{<<} and @emph{>>} 
 are the left and right bit shift. The @emph{or}, @emph{and}, @emph{xor} and 
 @emph{not} for integers are implemented as bitwise boolean operations. 
 
-@item[boolean operators]
+@item [boolean operators]
 The @emph{or}, @emph{and}, @emph{xor} and @emph{not} for the bit atomic type 
 in MIL (this corresponds to what is normally called boolean)
 are implemented as the logic operations.
 
-@item[random numbers]
+@item [random numbers]
 This module also contains the rand and srand functions. The @emph{srand}() 
 function initializes the random number generator using a seed value. The 
 subsequent calls to @emph{rand}() are pseudo random numbers (with the same 

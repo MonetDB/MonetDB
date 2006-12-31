@@ -30,8 +30,8 @@ Where feasible, it replaced (expansive) hash-lookup by significantly cheaper pos
 void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by 
 (also positional) array lookups (in case the group-ids span a reasonably small range);
 
-In addition to the 2-parameter {}(BAT[oid,any::1] b, BAT[oid,any] e)
-functions, there are now also 3-parameter {}(BAT[void,any::1] b,
+In addition to the 2-parameter @{ { } @{ } }(BAT[oid,any::1] b, BAT[oid,any] e)
+functions, there are now also 3-parameter @{ { } @{ } }(BAT[void,any::1] b,
 BAT[void,oid] g, BAT[oid,any] e) functions, that require b & g to be
 head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 
