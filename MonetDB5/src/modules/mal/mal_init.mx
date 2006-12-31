@@ -113,7 +113,7 @@ include opt_joinPath;
 include opt_macro;
 include opt_modes;
 include opt_multiplex;
-include opt_multiTable;
+include opt_mergetable;
 include opt_partitionedQuery;
 include opt_peephole;
 include opt_qep;
