@@ -110,10 +110,10 @@ operations. The operations mat.new() and mat.range() can be
 removed as a last step in the optimizer. It is now handy for
 debugging.
 @mal
-pattern optimizer.multiTable():str
-address OPTmultiTable;
-pattern optimizer.multiTable(mod:str, fcn:str):str
-address OPTmultiTable
+pattern optimizer.mergetable():str
+address OPTmergetable;
+pattern optimizer.mergetable(mod:str, fcn:str):str
+address OPTmergetable
 comment "Resolve the multi-table definitions";
 @h
 #ifndef _MAL_MERGETABLE_
@@ -127,7 +127,7 @@ comment "Resolve the multi-table definitions";
 
 #endif
 @c
-#include "opt_multiTable.h"
+#include "opt_mergetable.h"
 
 static int
 isMATalias(int idx, int mvar[], int top){
@@ -161,7 +161,7 @@ void MATcollect(int m, InstrPtr *mat, int *mvar, int mtop, int *newvar, int *n){
 }
 
 int
-OPTmultiTableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, mat[256];
 	int oldtop,i,j,k,m,mtop=0, mvar[256],tpe;
 	int size,match,actions=0;
@@ -468,7 +468,7 @@ For the time being, they are no-ops.
 }
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(multiTable)@
+@:exportOptimizer(mergetable)@
 @c
-@:wrapOptimizer(multiTable,OPT_CHECK_ALL)@
+@:wrapOptimizer(mergetable,OPT_CHECK_ALL)@
 @}
