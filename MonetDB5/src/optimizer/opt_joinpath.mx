@@ -62,7 +62,7 @@ comment "internal routine to handle join paths.
 #endif
 @-
 @c
-#include "opt_joinPath.h"
+#include "opt_joinpath.h"
 
 static int
 OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
