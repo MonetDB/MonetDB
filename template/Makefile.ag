@@ -16,7 +16,7 @@
 
 SUBDIRS = conf src
 
-EXTRA_DIST = rules.mk RunMtest.in rpm.mk.in
+EXTRA_DIST = RunMtest.in rpm.mk.in
 
 EXTRA_HEADERS = template_config.h
 

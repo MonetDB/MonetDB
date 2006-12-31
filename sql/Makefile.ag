@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 SUBDIRS = conf src 
-EXTRA_DIST = rules.mk RunMtest.in RunMtest.bat.in \
+EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
 		MonetDB-SQL.spec.in MonetDB-SQL.spec \
 		rpm.mk.in RunMserver.bat.in
