@@ -16,7 +16,7 @@
 
 SUBDIRS = src conf scripts
 
-EXTRA_DIST = rules.mk bootstrap lady.gif configure.ag RunMtest.in \
+EXTRA_DIST = bootstrap lady.gif configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		sysdefs.h.in MonetDB.spec MonetDB.spec.in HowToStart \
 		HowToStart-Win32.txt HowToStart-MinGW.txt \

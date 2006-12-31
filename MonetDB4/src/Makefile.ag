@@ -17,3 +17,5 @@
 ## Process this file with automake to produce Makefile.in
 
 SUBDIRS = monet modules mapi tools
+
+EXTRA_DIST_DIR = gdk/Tests
