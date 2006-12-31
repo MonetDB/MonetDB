@@ -42,14 +42,14 @@ function diefunc() {
 shopt -s expand_aliases
 alias die='diefunc "$LINENO" "$?"'
 
-DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
-DBLOGS=$MONET5_PREFIX/var/MonetDB5/dblogs
-CHKPNTDIR=$MONET5_PREFIX/var/MonetDB5/chkpnt
+DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
+DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
+CHKPNTDIR=$MONETDB5_PREFIX/var/MonetDB5/chkpnt
 TAG=`date +%F-%H%M%S`
 
 # First perform some sanity checks
-[[ -z "$MONET5_PREFIX" ]] && die \
-"The MONET5_PREFIX environment variable has not been set.\n\
+[[ -z "$MONETDB5_PREFIX" ]] && die \
+"The MONETDB5_PREFIX environment variable has not been set.\n\
 It should point to where you have installed the build directory"
 
 # start the checkpoint process.

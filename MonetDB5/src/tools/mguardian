@@ -50,8 +50,8 @@ then
 	DBLOGS=$DBFARM/../dblogs
 	echo "mguardian working on " $DBFARM
 else
-	DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
-	DBLOGS=$MONET5_PREFIX/var/MonetDB5/dblogs
+	DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
+	DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
 fi
 DELAY=300
 ACTION=start
