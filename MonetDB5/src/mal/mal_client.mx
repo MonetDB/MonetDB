@@ -896,10 +896,13 @@ int MCreadClient(Client c){
 	if( *CURRENT(c) == '<'){
 		bstream *fdin;
 		str nme= GDKstrdup(CURRENT(c)+1);
+		str err;
 
 		nme[strlen(CURRENT(c)+1)]=0;
 		printf("# loading from file `%s`\n",nme);
-		if (malLoadScript(nme,&fdin)) {
+		if ((err = malLoadScript(nme,&fdin)) != MAL_SUCCEED) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
 			return 0;
 		}
 		GDKfree(nme);

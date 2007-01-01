@@ -190,7 +190,7 @@ malInclude(Client c, str name, int listing)
 	c->fdin = NULL;
 	c->srcFile = name;
 	if ((s = malLoadScript(name, &c->fdin)))
-		stream_printf(c->fdout, "#%s\n", s);
+		stream_printf(c->fdout, "!%s\n", s);
 	else 
 		parseMAL(c,c->curprg);
 
