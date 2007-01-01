@@ -34,9 +34,9 @@ lib_mal = {
 	HEADERS = h 
 	SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		$(READLINE_LIBS) $(OPENSSL_LIBS)
+	            $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+	            $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+	            $(READLINE_LIBS) $(OPENSSL_LIBS)
 }
 #scripts_mal = {
 	#DIR = pkglibdir
