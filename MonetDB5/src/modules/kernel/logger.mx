@@ -15,10 +15,8 @@
 @' All Rights Reserved.
 
 @f logger
-@t Transactions
 @a N. J. Nes
 @v 2.0
-@T
 @+ Logger
 In the philosophy of MonetDB, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 

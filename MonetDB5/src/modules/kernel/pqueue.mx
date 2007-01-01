@@ -15,7 +15,6 @@
 @' All Rights Reserved.
 
 @f pqueue
-@t implementation of a priority queue -pqueue-
 @a Nikos Mamoulis, Niels Nes
 @v 2.0
 @+ Priority queues

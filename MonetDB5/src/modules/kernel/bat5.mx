@@ -313,6 +313,10 @@ command append(i:bat[:void,:any_1], u:any_1):void
 address BKCappend_val_wrap
 comment "append the value u to i";
 
+command append(i:bat[:any_1,:void], u:any_1):void
+address BKCappend_reverse_val_wrap
+comment "append the value u to i";
+
 command append(i:bat[:any_1,:any_2], u:any_2, force:bit):void
 address BKCappend_val_force_wrap
 comment "append the value u to i";
@@ -658,6 +662,7 @@ bat5_export str BKCdelete_bat(int *r, int *bid, int *sid);
 bat5_export str BKCdestroy_bat(bit *r, str *input);
 bat5_export str BKCappend_wrap(int *r, int *bid, int *uid);
 bat5_export str BKCappend_val_wrap(int *r, int *bid, ptr u);
+bat5_export str BKCappend_reverse_val_wrap(int *r, int *bid, ptr u);
 bat5_export str BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force);
 bat5_export str BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force);
 bat5_export str BKCbun_inplace(int *r, int *bid, oid *id, ptr t);
@@ -2192,6 +2197,21 @@ BKCappend_val_wrap(int *r, int *bid, ptr u)
 
 	@:derefStr(i,t,u)@
 	BUNappend(i, u,FALSE);
+	BBPreleaseref(i->batCacheid);
+	return MAL_SUCCEED;
+}
+str
+BKCappend_reverse_val_wrap(int *r, int *bid, ptr u)
+{
+	BAT *i;
+
+	(void) r;
+	if ((i = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.append", "Cannot access descriptor");
+	}
+
+	@:derefStr(i,t,u)@
+	BUNappend(BATmirror(i), u,FALSE);
 	BBPreleaseref(i->batCacheid);
 	return MAL_SUCCEED;
 }

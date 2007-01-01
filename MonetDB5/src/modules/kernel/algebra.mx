@@ -143,6 +143,19 @@ address ALGselectInclusiveHead;
 
 command selectH(b:bat[:any_1,:any_2],value:any_1) :bat[:any_1,:any_2] 
 address ALGselect1Head;
+@-
+A special case for this set are the void tailed bats.
+@mal
+command select(b:bat[:any_2,:void], low:any_2) 
+		:bat[:any_2,:void] 
+address ALGselect1Head;
+command select(b:bat[:any_2,:void], low:any_2, high:any_2) 
+		:bat[:any_2,:void] 
+address ALGselectHead;
+command select(b:bat[:any_2,:void], low:any_2, high:any_2,li:bit, hi:bit) 
+		:bat[:any_2,:void] 
+address ALGselectInclusiveHead;
+
 
 @-
 The second group uses the head to perform the range selection
