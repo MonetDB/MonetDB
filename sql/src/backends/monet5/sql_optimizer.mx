@@ -117,7 +117,7 @@ factory structures.
 #include "opt_emptySet.h"
 #include "opt_crack.h"
 #include "opt_garbageCollector.h"
-#include "opt_joinPath.h"
+#include "opt_joinpath.h"
 #include "opt_joinselect.h"
 #include "opt_macro.h"
 #include "opt_modes.h"
