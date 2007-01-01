@@ -21,6 +21,7 @@ io.print(s2);
 s2:= algebra.select(c2,0,2);
 io.print(s2);
 
+io.print("column join tests");
 j1:= algebra.join(c1,c2);
 io.print(j1);
 

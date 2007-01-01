@@ -39,7 +39,7 @@ In the remainder of this section we shortly introduce the
 MonetDB Version 5 design considerations and
 a quick overview of its architecture.
 
-@node  Design Considerations, Architecture Overview, MonetDB Overview ,MonetDB Overview
+@node  Design Considerations, Architecture Overview, MonetDB Overview, Design Overview
 @+ Design Considerations
 Redesign of the MonetDB software stack was driven by the need to
 reduce the effort to extend the system into novel directions
@@ -93,7 +93,7 @@ Moreover, a textual interface reduces the programming
 effort otherwise needed to develop test and application programs.
 The XML trend as the language for tool interaction supports our decision.
 
-@node Architecture Overview, MAL Synopsis, Design Considerations, MonetDB Overview
+@node Architecture Overview, MAL Synopsis, Design Considerations, Design  Overview
 @+ Architecture Overview
 The architecture is built around a few independent components:
 the MonetDB server, the MonetDB guardian, and the client application.
@@ -103,7 +103,7 @@ The guardian program works along side a single server, keeping
 an eye on its behavior. If the server accidently crashes, it is this program
 that will attempt an automatic restart.
 The server and the guardian are managed with the @sc{monetdb} script,
-introduced in @ref{Start and Stop the Server}.
+introduced in @ref{Start and Stop}.
 
 The top layer consists of applications written in your favorite
 language.
@@ -128,7 +128,7 @@ share data between language paradigms.
 @emph{Figure 2.1}
 @end iftex
 
-@node MAL Synopsis, Execution Engine, Architecture Overview,  MonetDB Overview
+@node MAL Synopsis, Execution Engine, Architecture Overview,  Design  Overview
 @+ MonetDB Assembly Language (MAL)
 The target language for a query compiler is 
 the MonetDB Assembly Language (MAL).
@@ -181,7 +181,6 @@ ease of optimization and scheduling.
 function modules. 
 @end itemize
 
-A more indepth description of the MAL language is given in @ref{MAL Introduction}
 @-
 @{
 @+ Critical sections and semaphores
@@ -241,7 +240,7 @@ str *monet_script;
 int monet_daemon=0;
 @}
 @-
-@node Execution Engine, Session Scenarios, MAL Synopsis , MonetDB Overview
+@node Execution Engine, Session Scenarios, MAL Synopsis , Design  Overview
 @+ Execution Engine
 The execution engine comes in several flavors. The default is a
 simple, sequential MAL interpreter. For each MAL function call it creates

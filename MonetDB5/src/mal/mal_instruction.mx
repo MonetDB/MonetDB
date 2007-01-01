@@ -94,7 +94,7 @@ This list can be extended with user defined types.
 @+ MAL Variables
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
-the context in which they are first used, see @ref{Type resolution}. 
+the context in which they are first used, see @ref{MAL Type System}. 
 
 Variables are organized into two classes, starting with and without
 an underscore. The latter are reserved for the MAL parser, they represent

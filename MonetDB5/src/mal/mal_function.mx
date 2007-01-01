@@ -440,7 +440,7 @@ argument type. Type variables can be used at any place
 where a type name is permitted. 
 Beware that polymorphic typed variables are propagated
 throughout the function body. This may invalidate 
-type resolutions decisions taken  earlier (See @ref{Type resolution}).
+type resolutions decisions taken  earlier (See @ref{MAL Type System}).
 
 This version of @sc{helloWorld} can also be used for
 other arguments types, i.e. @sc{bit,sht,lng,flt,dbl,...}.
