@@ -1,0 +1,28 @@
+#The series of tests that illustrate algebra over unary tables.
+
+c1:= bat.new(:void,:int);
+c2:= bat.new(:int,:void);
+
+bat.insert(c1,nil,1);
+bat.append(c1,2);
+bat.append(c1,3);
+io.print(c1);
+s1:= algebra.select(c1,0,2);
+io.print(s1);
+s1:= algebra.select(c1,2);
+io.print(s1);
+
+bat.insert(c2,1,nil);
+bat.append(c2,2);
+bat.append(c2,3);
+io.print(c2);
+s2:= algebra.select(c2,2);
+io.print(s2);
+s2:= algebra.select(c2,0,2);
+io.print(s2);
+
+j1:= algebra.join(c1,c2);
+io.print(j1);
+
+j2:= algebra.join(c2,c1);
+io.print(j2);
