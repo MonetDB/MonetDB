@@ -15,19 +15,11 @@ stdout of test 'tst120` in directory 'src/mal` itself:
 ##define 2 modules and check location of routines
 #
 #include tst120a;	# lookup DBHOME/mal/tst120a.mal
-#MALException:malInclude: could not open file: tst120a
-
+!MALException:malInclude:could not open file: tst120a
 #include tst120b;
-#MALException:malInclude: could not open file: tst120b
-
+!MALException:malInclude:could not open file: tst120b
 #include tst120a;	# does not do anything
-#MALException:malInclude: could not open file: tst120a
-
-#a:= second("hh");
-#b:= first(1);
-#c:= first(1:sht);
-#d:= first("hello world");
-#e:= top.first(2:sht);
+!MALException:malInclude:could not open file: tst120a
 #
 #a:= bottom.second("hh");
 #b:= top.first(1);
