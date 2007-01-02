@@ -37,7 +37,7 @@ YFLAGS = -d -p nexi
 CFLAGS = $(NO_INLINE_CFLAGS)
 
 lib__pftijah = {
-	DIR = libdir/MonetDB
+	DIR = libdir/MonetDB4
 	SOURCES = \
 	        termdb.mx \
 		pftijah.mx \
@@ -70,7 +70,7 @@ lib__pftijah = {
 }
 
 scripts_mil = {
-	DIR = libdir/MonetDB
+	DIR = libdir/MonetDB4
 	SOURCES = pftijah.mx
 }
 
