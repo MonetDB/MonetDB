@@ -1322,7 +1322,7 @@ reduce (PFpnode_t * p, int goalnt)
                      let (letbind (C(LL(p)),
                                    proof (subty (var (v1), C(LR(p))),
                                           seqcast (C(LR(p)), var (v1)))),
-                          NULL));
+                          nil ()));
 
 	    /* set global information */
 	    LL(R(c))->sem.var->global = true;

@@ -2477,18 +2477,18 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "_attr_cont := _r_attr_cont;\n"
                 "_attr_own  := attr_own.tmark(0@0);\n"
                 "} else {\n"
-                "var seqb := oid(_attr_iter.count() + int(_attr_iter.seqbase()));\n"
-                "_r_attr_iter := _r_attr_iter.tmark(seqb);\n"
-                "_r_attr_qn   := _r_attr_qn  .tmark(seqb);\n"
-                "_r_attr_prop := _r_attr_prop.tmark(seqb);\n"
-                "_r_attr_cont := _r_attr_cont.tmark(seqb);\n"
-                "attr_own := attr_own.tmark(seqb);\n"
-                "seqb := nil;\n"
-                "_attr_iter := _attr_iter.access(BAT_WRITE).insert(_r_attr_iter);\n"
-                "_attr_qn   := _attr_qn  .access(BAT_WRITE).insert(_r_attr_qn);\n"
-                "_attr_prop := _attr_prop.access(BAT_WRITE).insert(_r_attr_prop);\n"
-                "_attr_cont := _attr_cont.access(BAT_WRITE).insert(_r_attr_cont);\n"
-                "_attr_own  := _attr_own .access(BAT_WRITE).insert(attr_own);\n"
+                "var merged_result := merged_union ("
+                "_attr_iter, _r_attr_iter, "
+                "_attr_qn  , _r_attr_qn,   "
+                "_attr_prop, _r_attr_prop, "
+                "_attr_cont, _r_attr_cont, "
+                "_attr_own , attr_own);\n"
+                "_attr_iter := merged_result.fetch(0);\n" /* CONST? */
+                "_attr_qn   := merged_result.fetch(1);\n" /* CONST? */
+                "_attr_prop := merged_result.fetch(2);\n" /* CONST? */
+                "_attr_cont := merged_result.fetch(3);\n" /* CONST? */
+                "_attr_own  := merged_result.fetch(4);\n" /* CONST? */
+                "merged_result := nil;\n"
                 "}\n"
                 "_r_attr_iter := empty_bat;\n"
                 "_r_attr_qn   := empty_bat;\n"

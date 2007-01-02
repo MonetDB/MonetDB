@@ -80,6 +80,8 @@ document_handling.SF-1618802.unpack_docs
 document_handling.SF-1618802.a
 document_handling.SF-1618802.b
 pf_add-doc.SF-1617681
-#
 pf_del-doc.SF-1617684
 pf_del-doc.SF-1617684_check
+declare_variable.SF-1625597
+declare_variable_as_TYPE.SF-1625597
+merged_union-bug.SF-1626306
