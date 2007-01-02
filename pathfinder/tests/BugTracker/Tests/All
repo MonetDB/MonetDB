@@ -70,11 +70,6 @@ update_error.SF-1579510
 path_steps_with_name_tests_on_transsient_nodes.SF-1610247.alg
 add_qnames.SF-1611353.alg
 attribute_value_comparison.SF-1576463.alg
-corrupt-attributelist.SF-1483706.create_doc
-corrupt-attributelist.SF-1483706.shred_doc
-corrupt-attributelist.SF-1483706.cache_doc
-corrupt-attributelist.SF-1483706.remove_doc
-corrupt-attributelist.SF-1483706.check
 attr-ns.SF-1490200
 document_handling.SF-1618802.unpack_docs
 document_handling.SF-1618802.a
