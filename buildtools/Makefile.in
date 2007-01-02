@@ -5,10 +5,10 @@ BUILD=@BUILD@
 PREFIX=@PREFIX@
 DESTDIR=
 
-# Run individual "make [all]"s ...
 default: all
 	@-echo
 
+# Run individual "make [all]"s ...
 all:
 	cd "$(BUILD)"/_autogen && python setup.py build
 	cd _MX && $(MAKE) MAKE=$(MAKE) $@
@@ -16,8 +16,8 @@ all:
 	cd _BURG && $(MAKE) MAKE=$(MAKE) $@
 
 # ... run individual "make install"s ...
-install:
-	cd "$(BUILD)"/_autogen && python setup.py install \
+install: all
+	cd "$(BUILD)"/_autogen && python setup.py $@ \
 		--prefix="$(DESTDIR)$(PREFIX)"
 	cd _MX && $(MAKE) MAKE=$(MAKE) $@
 	cd _MEL && $(MAKE) MAKE=$(MAKE) $@
@@ -27,6 +27,23 @@ install:
 	chmod +x "$(DESTDIR)$(PREFIX)"/share/MonetDB/conf/conf.bash
 	cp "$(SRC)"/conf/Mbootstrap "$(SRC)"/conf/Mdebootstrap "$(DESTDIR)$(PREFIX)"/bin
 	chmod +x "$(DESTDIR)$(PREFIX)"/bin/Mbootstrap "$(DESTDIR)$(PREFIX)"/bin/Mdebootstrap
+
+# ... run individual "make uninstall"s ...
+uninstall:
+	rm -rf "$(DESTDIR)$(PREFIX)"/"`python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")'`"/autogen \
+		"$(DESTDIR)$(PREFIX)"/bin/autogen.py
+	cd _MX && $(MAKE) MAKE=$(MAKE) $@
+	cd _MEL && $(MAKE) MAKE=$(MAKE) $@
+	cd _BURG && $(MAKE) MAKE=$(MAKE) $@
+	rm -f "$(DESTDIR)$(PREFIX)"/share/MonetDB/conf/conf.bash
+	rm -f "$(DESTDIR)$(PREFIX)"/bin/Mbootstrap "$(DESTDIR)$(PREFIX)"/bin/Mdebootstrap
+
+# ... run individual "make clean"s ...
+clean:
+	cd "$(BUILD)"/_autogen && python setup.py $@
+	cd _MX && $(MAKE) MAKE=$(MAKE) $@
+	cd _MEL && $(MAKE) MAKE=$(MAKE) $@
+	cd _BURG && $(MAKE) MAKE=$(MAKE) $@
 
 # ... and individual "make *"s
 %:
