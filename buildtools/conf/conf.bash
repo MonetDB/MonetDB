@@ -82,12 +82,10 @@ fi
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	case "${what}" in
-	MONETDB4)
-		pkgdir="MonetDB4";;
 	MONETDB5)
 		pkgdir="MonetDB5";;
 	*)
-		pkgdir="MonetDB";;
+		pkgdir="MonetDB4";;
 	esac
 
 	if [ "${what}" != "MONETDB" ] ; then
@@ -541,6 +539,15 @@ binpath="${WHAT_PREFIX}/bin:${binpath}"
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	# the following is nolonger needed for Monet,
 	# but still needed for the rest:
+	case "${what}" in
+	MONETDB|CLIENTS|MONETDB4|MONETDB5)	;;
+	*)	if [ "${WHAT_PREFIX}" != "${MONETDB4_PREFIX}" ] ; then
+			# set MONETDB_MOD_PATH
+			mtest_modpath="--monet_mod_path=${WHAT_PREFIX}/${libdir}/${pkgdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib"
+			mtest_modpath="${mtest_modpath}:`${MONETDB4_PREFIX}/bin/monetdb4-config --modpath`"
+		fi
+		;;
+	esac
 ####	if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
 ####		# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
 ####		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib"
