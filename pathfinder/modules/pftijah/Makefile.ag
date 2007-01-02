@@ -39,6 +39,7 @@ CFLAGS = $(NO_INLINE_CFLAGS)
 lib__pftijah = {
 	DIR = libdir/MonetDB
 	SOURCES = \
+	        termdb.mx \
 		pftijah.mx \
 		pftijah_stem.mx \
 		snb_header.h \

@@ -39,7 +39,6 @@ void nexierror(char *err) /* 'yyerror()' called by yyparse in error */
 
 }
 
-
 %}
 
 %token NUMBER ALPHANUMERIC XMLTAG
@@ -133,22 +132,11 @@ int parseNEXI(TijahParserContext* parserCtx, int *query_end_num)
   CO_number = 0;
   CAS_number = 0;
   
-  if ( !(parserCtx->commandFILE = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"a")) ) {
-      sprintf(&parserCtx->errBUFF[0],"Error: cannot create command file for writing.\n");
-      return FALSE;
-  }
-  if ( !(parserCtx->tokenFILE = fopen(myfileName(WORKDIR,"file_token_pre.nxi"),"a")) ) {
-      sprintf(&parserCtx->errBUFF[0],"Error: cannot create token file for writing.\n");
-      return FALSE;
-  }
   /* */
   setNEXIscanstring(parserCtx->queryText);
   nexiparse();
   // Manually terminate the query, otherwise the rewriter gets confused
-  fprintf(parserCtx->commandFILE, "%d\n", QUERY_END);
-  /* */
-  fclose(parserCtx->commandFILE);
-  fclose(parserCtx->tokenFILE);
+  tnl_append(&parserCtx->command_preLIST,QUERY_END);
 
   if ((query_type == CO && CAS_number == 0) || (query_type == CAS && CO_number == 0)) {
     if (rep_err) {

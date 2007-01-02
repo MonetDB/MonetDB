@@ -31,8 +31,8 @@ command_tree **CAS_plan_gen(
 	struct_RMT *txt_retr_model,
 	struct_RF *rel_feedback,
 	bool alg_type,
-	char *mil_fname,
-	char *log_fname,
+	char *mil_filename,
+	char *logical_filname,
 	char *result_name,
 	bool scale_on)
 {
@@ -44,7 +44,8 @@ command_tree **CAS_plan_gen(
   /* variable for reading parser command output */
   command parse_com;
   /* variable for reading parser token output */
-  char parse_nam[20];
+  // char parse_nam[20];
+  char* parse_nam;
   /* probabilistic propagation */
   bool follow_step;
   /* counters for brackets inside about predicate */
@@ -116,35 +117,23 @@ command_tree **CAS_plan_gen(
   command_tree *p_ctx=NULL, *p_ctx_in;
   command_tree **p_command_array,**p_command_start;
 
-  /* files obtained after NEXI parsing and for storing logical and phisical query plans */
-  FILE *command_file;
-  FILE *token_file;
+  /* LISTS obtained after NEXI parsing and for storing logical and phisical query plans */
+  int itm = 0;
+  TijahStringList* tokmain = &parserCtx->tokenLIST;
+  int icm = 0;
+  TijahNumberList* commain = &parserCtx->commandLIST;
   FILE *mil_file = NULL;
-  FILE *log_file = NULL;
+  FILE *logical_file = NULL;
 
   end_process = FALSE;
 
-  if ( mil_fname && !(mil_file = fopen(myfileName(WORKDIR,mil_fname),"w")) ) {
+  if ( mil_filename && !(mil_file = fopen(mil_filename,"w")) ) {
     printf("Error: cannot find file for writing mil code.\n");
     return NULL;
   }
 
-  if ( log_fname && !(log_file = fopen(myfileName(WORKDIR,log_fname),"w")) ) {
+  if ( logical_filname && !(logical_file = fopen(logical_filname,"w")) ) {
     printf("Error: cannot find file for writing logical plan.\n");
-    return NULL;
-  }
-
-  command_file = fopen(myfileName(WORKDIR,"file_command.nxi"),"r");
-  token_file   = fopen(myfileName(WORKDIR,"file_token.nxi"),"r");
-
-  if (command_file == NULL) {
-    printf("Error: cannot find command file for reading.\n");
-    return NULL;
-  }
-
-
-  if (token_file == NULL) {
-    printf("Error: cannot find token file for reading.\n");
     return NULL;
   }
 
@@ -182,7 +171,7 @@ command_tree **CAS_plan_gen(
 
   /* iterates untill the end of the input query file */
 
-  while(!feof(command_file) && !end_process) {
+  while(icm<=commain->cnt && !end_process) {
 
     com_cnt = 0;
     in_step = FALSE;
@@ -214,7 +203,7 @@ command_tree **CAS_plan_gen(
     if ( mil_file ) fprintf(mil_file, "var eta := %f;\n\n", txt_retr_model->param2);
 
 
-    if ( log_file ) fprintf(log_file, "# Query plan for topic number %d.\n\n", topic_num);
+    if ( logical_file ) fprintf(logical_file, "# Query plan for topic number %d.\n\n", topic_num);
 
     parse_com_tmp = EMPTY;
 
@@ -233,7 +222,7 @@ command_tree **CAS_plan_gen(
 
     /* initialization: selecting the root node */
     
-    fscanf(command_file, "%d", &parse_com);
+    parse_com = commain->val[icm++];
 
     if (parse_com == DSC) {
 
@@ -243,7 +232,7 @@ command_tree **CAS_plan_gen(
     	p_command->right = NULL;
     	strcpy(p_command->argument,"\"Root\"");
   
-    	if ( log_file ) fprintf(log_file, "%s\n", "R0 := SELECT_NODE(\"Root\");");
+    	if ( logical_file ) fprintf(logical_file, "%s\n", "R0 := SELECT_NODE(\"Root\");");
     	if ( mil_file ) fprintf(mil_file, "%s\n", "R0 := ctx_pre;");
     	p1_command = p_command;
 	
@@ -257,7 +246,7 @@ command_tree **CAS_plan_gen(
     	p_command->right = NULL;
     	strcpy(p_command->argument,rel_feedback->journal_name);
   
-    	if ( log_file ) fprintf(log_file, "R0 := SELECT_NODE(\"%s\");\n",rel_feedback->journal_name);
+    	if ( logical_file ) fprintf(logical_file, "R0 := SELECT_NODE(\"%s\");\n",rel_feedback->journal_name);
     	if ( mil_file ) fprintf(mil_file, "R0 := select_journal(\"%s\");\n",rel_feedback->journal_name);
     	p1_command = p_command;
 
@@ -265,16 +254,16 @@ command_tree **CAS_plan_gen(
 
     /* loop for reading the command file */
 
-    while (!feof(command_file) && parse_com != QUERY_END) {
+    while (icm<=commain->cnt && parse_com != QUERY_END) {
 
 
       /*loop for the execution descendants + name tests including UNION of name tests, e.g., //(a|b) */
 
-      while (parse_com != OPEN && !feof(command_file)) {
+      while (parse_com != OPEN && icm<=commain->cnt) {
 
 	/* normal step before, inside or after the predicate */
 
-	fscanf(command_file, "%d", &parse_com);
+        parse_com = commain->val[icm++];
 	/*printf("x:%d\n", parse_com); */
 
 	if (parse_com == STAR) {
@@ -290,7 +279,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = p1_command;
 	    strcpy(p_command->argument, "C");
 
-	    if ( log_file ) fprintf(log_file, "R%d := C CONTAINED_BY R%d;\n",  com_cnt, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := C CONTAINED_BY R%d;\n",  com_cnt, p1_command->number);
 
 	    if (topic_type == CAS_TOPIC) {
 	      if ( mil_file ) fprintf(mil_file, "R%d := R%d.descendant();\n",  com_cnt, p1_command->number);
@@ -312,7 +301,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = NULL;
 	    strcpy(p_command->argument, "");
 
-	    if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(R%d);\n",  com_cnt, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(R%d);\n",  com_cnt, p1_command->number);
 	    */
 
 	    if ( mil_file ) fprintf(mil_file, "R%d := R%d.node();\n",  com_cnt, p1_command->number);
@@ -330,7 +319,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = p1_command;
 	    strcpy(p_command->argument, "C");
 
-	    if ( log_file ) fprintf(log_file, "R%d := C P_CONTAINED_BY R%d;\n",  com_cnt, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := C P_CONTAINED_BY R%d;\n",  com_cnt, p1_command->number);
 
 	    if (first_step == FALSE) {
 
@@ -367,7 +356,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = NULL;
 	    strcpy(p_command->argument, "");
 
-	    if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(R%d);\n",  com_cnt, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(R%d);\n",  com_cnt, p1_command->number);
 	    */
 
 	    if ( mil_file ) fprintf(mil_file, "R%d := R%d.node();\n",  com_cnt, p_command->number);
@@ -380,9 +369,9 @@ command_tree **CAS_plan_gen(
 
 	  p3_command = p1_command;
 
-	  fscanf(command_file, "%d", &parse_com);
+          parse_com = commain->val[icm++];
 	  /*printf("STRUCT_OR:%d\n", parse_com); */
-	  fscanf(token_file, "%s", &parse_nam[0]);
+	  parse_nam = tokmain->val[itm++];
 
 	  com_cnt++;
 	  p_command = p_command + 1;
@@ -393,7 +382,7 @@ command_tree **CAS_plan_gen(
 	  p_command->right = NULL;
 	  strcpy(p_command->argument, parse_nam);
 
-	  if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+	  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 
 	  if (follow_step == FALSE) {
 
@@ -409,14 +398,14 @@ command_tree **CAS_plan_gen(
 
 	  p1_command = p_command;
 
-	  fscanf(command_file, "%d", &parse_com);
+          parse_com = commain->val[icm++];
 	  /*printf("STRUCT_OR:%d\n", parse_com); */
 
 	  while (parse_com != CB) {
 
-	    fscanf(command_file, "%d", &parse_com);
+            parse_com = commain->val[icm++];
 	    /*printf("STRUCT_OR:%d\n", parse_com); */
-	    fscanf(token_file, "%s", &parse_nam[0]);
+	    parse_nam = tokmain->val[itm++];
 
 	    com_cnt++;
 	    p_command = p_command + 1;
@@ -427,7 +416,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = NULL;
 	    strcpy(p_command->argument, parse_nam);
 
-	    if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+	    if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 
 	    p2_command = p_command;
 
@@ -444,7 +433,7 @@ command_tree **CAS_plan_gen(
 	      p_command->right = p2_command;
 	      strcpy(p_command->argument, "");
 
-	      if ( log_file ) fprintf(log_file, "R%d := R%d UNION R%d;\n",  com_cnt, p1_command->number, p2_command->number);
+	      if ( logical_file ) fprintf(logical_file, "R%d := R%d UNION R%d;\n",  com_cnt, p1_command->number, p2_command->number);
 	      if ( mil_file ) fprintf(mil_file, "R%d := R%d.union(R%d);\n",  com_cnt, p1_command->number, p2_command->number);
 
 	    }
@@ -462,7 +451,7 @@ command_tree **CAS_plan_gen(
 	      p_command->right = p2_command;
 	      strcpy(p_command->argument, "");
 
-	      if ( log_file ) fprintf(log_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p1_command->number, p2_command->number);
+	      if ( logical_file ) fprintf(logical_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p1_command->number, p2_command->number);
 	      if ( mil_file ) fprintf(mil_file, "R%d := R%d.p_union(R%d);\n",  com_cnt, p1_command->number, p2_command->number);
 
 	    }
@@ -470,7 +459,7 @@ command_tree **CAS_plan_gen(
 	    if ( mil_file ) fprintf(mil_file, "R%d := nil;\n", p1_command->number);
 	    if ( mil_file ) fprintf(mil_file, "R%d := nil;\n", p2_command->number);
 
-	    fscanf(command_file, "%d", &parse_com);
+            parse_com = commain->val[icm++];
 	    /*printf("x:%d\n", parse_com); */
 
 	  }
@@ -488,7 +477,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = p3_command;
 	    strcpy(p_command->argument, "");
 
-	    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  com_cnt, p1_command->number, p3_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  com_cnt, p1_command->number, p3_command->number);
 	    if ( mil_file ) fprintf(mil_file, "R%d := R%d.descendant(R%d);\n",  com_cnt, p3_command->number, p1_command->number);
 
 	    if ( mil_file ) fprintf(mil_file, "R%d := nil;\n", p1_command->number);
@@ -507,7 +496,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = p1_command;
 	    strcpy(p_command->argument, "");
 
-	    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  com_cnt, p3_command->number, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  com_cnt, p3_command->number, p1_command->number);
 
 	    if (first_step == FALSE) {
 	      if ( mil_file ) fprintf(mil_file, "R%d := R%d.p_descendant(R%d);\n",  com_cnt, p1_command->number, p3_command->number);
@@ -527,9 +516,9 @@ command_tree **CAS_plan_gen(
 
 	else if (parse_com == VAGUE) {
 
-	  fscanf(command_file, "%d", &parse_com);
+          parse_com = commain->val[icm++];
 
- 	  fscanf(token_file, "%s", &parse_nam[0]);
+	  parse_nam = tokmain->val[itm++];
 	  com_cnt++;
 	  p_command = p_command + 1;
 
@@ -539,7 +528,7 @@ command_tree **CAS_plan_gen(
 	  p_command->right = NULL;
 	  strcpy(p_command->argument, parse_nam);
 
-	  if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE_VAGUE(%s);\n", com_cnt, parse_nam);
+	  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE_VAGUE(%s);\n", com_cnt, parse_nam);
 	  p2_command = p_command;
 
 	  if (follow_step == FALSE) {
@@ -555,7 +544,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = p1_command;
 	    strcpy(p_command->argument, "");
 
-	    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  com_cnt, p2_command->number, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  com_cnt, p2_command->number, p1_command->number);
 	    if ( mil_file ) fprintf(mil_file, "R%d := R%d.descendant(R%d);\n",  com_cnt, p1_command->number, p2_command->number);
 
 	    if ( mil_file ) fprintf(mil_file, "R%d := nil;\n", p1_command->number);
@@ -576,7 +565,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = p1_command;
 	    strcpy(p_command->argument, "");
 
-	    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  com_cnt, p2_command->number, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  com_cnt, p2_command->number, p1_command->number);
 
 	    if (first_step == FALSE) {
 	      if ( mil_file ) fprintf(mil_file, "R%d := R%d.p_descendant(R%d);\n",  com_cnt, p1_command->number, p2_command->number);
@@ -596,7 +585,7 @@ command_tree **CAS_plan_gen(
 
 	else if (parse_com == SELECT_NODE) {
 
- 	  fscanf(token_file, "%s", &parse_nam[0]);
+	  parse_nam = tokmain->val[itm++];
 	  com_cnt++;
 	  p_command = p_command + 1;
 
@@ -606,7 +595,7 @@ command_tree **CAS_plan_gen(
 	  p_command->right = NULL;
 	  strcpy(p_command->argument, parse_nam);
 
-	  if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+	  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 	  p2_command = p_command;
 
 	  if (follow_step == FALSE) {
@@ -622,7 +611,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = p1_command;
 	    strcpy(p_command->argument, "");
 
-	    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  com_cnt, p2_command->number, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  com_cnt, p2_command->number, p1_command->number);
 	    if ( mil_file ) fprintf(mil_file, "R%d := R%d.descendant(R%d);\n",  com_cnt, p1_command->number, p2_command->number);
 
 	    if ( mil_file ) fprintf(mil_file, "R%d := nil;\n", p1_command->number);
@@ -643,7 +632,7 @@ command_tree **CAS_plan_gen(
 	    p_command->right = p1_command;
 	    strcpy(p_command->argument, "");
 
-	    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  com_cnt, p2_command->number, p1_command->number);
+	    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  com_cnt, p2_command->number, p1_command->number);
 
 	    if (first_step == FALSE) {
 	      if ( mil_file ) fprintf(mil_file, "R%d := R%d.p_descendant(R%d);\n",  com_cnt, p1_command->number, p2_command->number);
@@ -663,7 +652,7 @@ command_tree **CAS_plan_gen(
 
 	p1_command = p_command;
 
-	fscanf(command_file, "%d", &parse_com);
+	parse_com = commain->val[icm++];
 	/*printf("x:%d\n", parse_com); */
 
       }
@@ -681,7 +670,7 @@ command_tree **CAS_plan_gen(
 
 	p_ctx = p_command;
 	if ( mil_file ) fprintf(mil_file, "\nR%d := init_IR(R%d);\n",  p_ctx->number, p_ctx->number);
-	fscanf (command_file, "%d", &parse_com);
+	parse_com = commain->val[icm++];
 	/*printf("%d\n",parse_com); */
 	/* loop for the predicate */
 
@@ -694,7 +683,7 @@ command_tree **CAS_plan_gen(
 	    op_sp++;
 	    PUSH_OP(OB,p_command);
 
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d %d\n",parse_com,op_sp); */
 	  }
 
@@ -702,7 +691,7 @@ command_tree **CAS_plan_gen(
 
 	  if (parse_com == CURRENT) {
 
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 	    p1_command = p_ctx;
 
@@ -712,7 +701,7 @@ command_tree **CAS_plan_gen(
 
 	      in_step = TRUE;
 
-	      fscanf (command_file, "%d", &parse_com);
+	      parse_com = commain->val[icm++];
 	      /*printf("%d\n", parse_com); */
 
 	      while (parse_com != GR && parse_com != LS && parse_com != EQ) {
@@ -728,7 +717,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p1_command;
 		  strcpy(p_command->argument, "C");
 
-		  if ( log_file ) fprintf(log_file, "R%d := C CONTAINED_BY R%d;\n", com_cnt, p1_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := C CONTAINED_BY R%d;\n", com_cnt, p1_command->number);
 
 		  step_sp++;
 		  PUSH_STEP(STAR,p_command);
@@ -746,9 +735,9 @@ command_tree **CAS_plan_gen(
 
 		  p3_command = p_command;
 
-		  fscanf(command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("STRUCT_OR:%d\n", parse_com); */
-		  fscanf(token_file, "%s", &parse_nam[0]);
+	          parse_nam = tokmain->val[itm++];
 		  com_cnt++;
 		  p_command++;
 
@@ -758,7 +747,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, parse_nam);
 
-		  if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+		  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 		  if ( mil_file ) fprintf(mil_file, "\tR%d := p_qname(%s,ENTITY_PN_TYPE);\n",  com_cnt, parse_nam);
 
 		  p1_command = p_command;
@@ -766,14 +755,14 @@ command_tree **CAS_plan_gen(
 		  step_sp++;
 		  PUSH_STEP(DSC,p_command);
 
-		  fscanf(command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n", parse_com); */
 
 		  while (parse_com != CB) {
 
-		    fscanf(command_file, "%d", &parse_com);
+		    parse_com = commain->val[icm++];
 		    /*printf("STRUCT_OR:%d\n", parse_com); */
-		    fscanf(token_file, "%s", &parse_nam[0]);
+	            parse_nam = tokmain->val[itm++];
 		    com_cnt++;
 		    p_command = p_command + 1;
 
@@ -783,7 +772,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = NULL;
 		    strcpy(p_command->argument, parse_nam);
 
-		    if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+		    if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 		    if ( mil_file ) fprintf(mil_file, "\tR%d := p_qname(%s,ENTITY_PN_TYPE);\n",  com_cnt, parse_nam);
 
 		    p2_command = p_command;
@@ -797,7 +786,7 @@ command_tree **CAS_plan_gen(
 
 		    p1_command = p_command;
 		    
-		    fscanf(command_file, "%d", &parse_com);
+		    parse_com = commain->val[icm++];
 		    /*printf("x:%d\n", parse_com); */
 		    
 		  }
@@ -813,7 +802,7 @@ command_tree **CAS_plan_gen(
 
 		else if (parse_com == SELECT_NODE) {
 		  
-		  fscanf(token_file, "%s", &parse_nam[0]);
+	          parse_nam = tokmain->val[itm++];
 		  com_cnt++;
 		  p_command++;
 
@@ -823,7 +812,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, parse_nam);
 
-		  if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+		  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 		  if ( mil_file ) fprintf(mil_file, "\tR%d := p_qname(%s,ENTITY_PN_TYPE);\n",  com_cnt, parse_nam);
 
 		  step_sp++;
@@ -840,12 +829,12 @@ command_tree **CAS_plan_gen(
 
 		p1_command = p_command;
 
-		fscanf(command_file, "%d", &parse_com);
+		parse_com = commain->val[icm++];
 		/*printf("x:%d\n", parse_com); */
 
 	      }
 
-	      fscanf (command_file, "%d", &parse_com_tmp);
+	      parse_com_tmp = commain->val[icm++];
 	      /*printf("%d\n",parse_com_tmp); */
 
 	      /* comparing the content of the element (<,>,=) with the specified  value */
@@ -878,12 +867,12 @@ command_tree **CAS_plan_gen(
 		  operator_tmp = P_SELECT_LEQ;
 		}
 
-		fscanf (command_file, "%d", &parse_com_tmp);
+		parse_com_tmp = commain->val[icm++];
 		/*printf("%d\n",parse_com_tmp); */
 
 	      }
 
-	      fscanf(token_file, "%s", &parse_nam[0]);
+	      parse_nam = tokmain->val[itm++];
 	      /* seting the right logical plan */
 
 	      if (step_sp > 0) {
@@ -908,7 +897,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p1_command;
 		  strcpy(p_command->argument, "");
 
-		  if ( log_file ) fprintf(log_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p_step->number, p1_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p_step->number, p1_command->number);
 
 		  p1_command = p_command;
 
@@ -931,28 +920,28 @@ command_tree **CAS_plan_gen(
 
 	      case GREATER:
 
-		if ( log_file ) fprintf(log_file, "R%d := P_SELECT_GT(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
+		if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_GT(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
 		break;
 
 	      case LESS:
 
-		if ( log_file ) fprintf(log_file, "R%d := P_SELECT_LT(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
+		if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_LT(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
 		break;
 
 	      case EQUAL:
 
-		if ( log_file ) fprintf(log_file, "R%d := P_SELECT_EQ(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
+		if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_EQ(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
 		break;
 
 
 	      case GEQ:
 
-		if ( log_file ) fprintf(log_file, "R%d := P_SELECT_GEQ(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
+		if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_GEQ(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
 		break;
 
 	      case LEQ:
 
-		if ( log_file ) fprintf(log_file, "R%d := P_SELECT_LEQ(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
+		if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_LEQ(R%d,%s);\n",  com_cnt, p1_command->number, p_command->argument);
 		break;
 
 	      }
@@ -984,7 +973,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p1_command;
 		  strcpy(p_command->argument, "");
 
-		  if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p_step->number, p1_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p_step->number, p1_command->number);
 
 		}
 
@@ -1006,7 +995,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p3_command;
 		    strcpy(p_command->argument, "");
 
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p_step->number, p3_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p_step->number, p3_command->number);
 
 		    p3_command = p_command;
 
@@ -1021,7 +1010,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p1_command;
 		  strcpy(p_command->argument, "");
 
-		  if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p3_command->number, p1_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p3_command->number, p1_command->number);
 
 		}
 
@@ -1042,7 +1031,7 @@ command_tree **CAS_plan_gen(
 	      p_command->right = p1_command;
 	      strcpy(p_command->argument, "");
 
-	      if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p_ctx->number, p1_command->number);
+	      if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p_ctx->number, p1_command->number);
 
 	      in_step = FALSE;
 	      if ( mil_file ) fprintf(mil_file, "\tR%d := exit_XE(R%d,R%d);\n",  com_cnt, p_ctx->number, p2_command->number);
@@ -1053,7 +1042,7 @@ command_tree **CAS_plan_gen(
 
 	    }
 
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 
 	  }
@@ -1067,20 +1056,20 @@ command_tree **CAS_plan_gen(
 	    char node_about[100];
 	    char tpi_about[200];
 
-	    fscanf(token_file, "%s", &parse_nam[0]);
+	    parse_nam = tokmain->val[itm++];
 
 	    step_sp = 0;
 	    p_step = NULL;
 	    in_step = FALSE;
 
 	    /* OB */
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 	    /* CURRENT */
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 	    /* DSC or COMMA */
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 
 	    
@@ -1091,7 +1080,7 @@ command_tree **CAS_plan_gen(
 
 	      if ( mil_file ) fprintf(mil_file, "\n\tR%d := init_XE(R%d);\n",  p_ctx->number, p_ctx->number);
 
-	      fscanf (command_file, "%d", &parse_com);
+	      parse_com = commain->val[icm++];
 	      /*printf("%d\n", parse_com); */
 
 	      /* resets the default value */
@@ -1110,7 +1099,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p1_command;
 		  strcpy(p_command->argument, "C");
 
-		  if ( log_file ) fprintf(log_file, "R%d := C CONTAINED_BY R%d;\n", com_cnt, p1_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := C CONTAINED_BY R%d;\n", com_cnt, p1_command->number);
 
 		  step_sp++;
 		  PUSH_STEP(STAR,p_command);
@@ -1128,9 +1117,9 @@ command_tree **CAS_plan_gen(
 
 		  p3_command = p_command;
 
-		  fscanf(command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("STRUCT_OR:%d\n", parse_com); */
-		  fscanf(token_file, "%s", &parse_nam[0]);
+	          parse_nam = tokmain->val[itm++];
 		  com_cnt++;
 		  p_command++;
 
@@ -1140,7 +1129,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, parse_nam);
 
-		  if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+		  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 		  if ( mil_file ) fprintf(mil_file, "\tR%d := p_qname(%s,ENTITY_PN_TYPE);\n",  com_cnt, parse_nam);
 
 		  p1_command = p_command;
@@ -1148,14 +1137,14 @@ command_tree **CAS_plan_gen(
 		  step_sp++;
 		  PUSH_STEP(DSC,p_command);
 
-		  fscanf(command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n", parse_com); */
 
 		  while (parse_com != CB) {
 
-		    fscanf(command_file, "%d", &parse_com);
+		    parse_com = commain->val[icm++];
 		    /*printf("STRUCT_OR:%d\n", parse_com); */
-		    fscanf(token_file, "%s", &parse_nam[0]);
+	            parse_nam = tokmain->val[itm++];
 		    com_cnt++;
 		    p_command = p_command + 1;
 
@@ -1165,7 +1154,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = NULL;
 		    strcpy(p_command->argument, parse_nam);
 
-		    if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+		    if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 		    if ( mil_file ) fprintf(mil_file, "\tR%d := p_qname(%s,ENTITY_PN_TYPE);\n",  com_cnt, parse_nam);
 
 		    p2_command = p_command;
@@ -1179,7 +1168,7 @@ command_tree **CAS_plan_gen(
 
 		    p1_command = p_command;
 
-		    fscanf(command_file, "%d", &parse_com);
+		    parse_com = commain->val[icm++];
 		    /*printf("x:%d\n", parse_com); */
 
 		  }
@@ -1195,8 +1184,8 @@ command_tree **CAS_plan_gen(
 
 		else if (parse_com == VAGUE) {
 
-		  fscanf(command_file, "%d", &parse_com);
-		  fscanf(token_file, "%s", &parse_nam[0]);
+		  parse_com = commain->val[icm++];
+	          parse_nam = tokmain->val[itm++];
 		  com_cnt++;
 		  p_command++;
 
@@ -1206,7 +1195,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, parse_nam);
 
-		  if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE_VAGUE(%s);\n", com_cnt, parse_nam);
+		  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE_VAGUE(%s);\n", com_cnt, parse_nam);
 		  fprintf(mil_file, "\tR%d := p_qname(%s,ENTITY_PN_TYPE);\n",  com_cnt, parse_nam);
 
 		  step_sp++;
@@ -1223,7 +1212,7 @@ command_tree **CAS_plan_gen(
 
 		else if (parse_com == SELECT_NODE) {
 
-		  fscanf(token_file, "%s", &parse_nam[0]);
+	          parse_nam = tokmain->val[itm++];
 		  com_cnt++;
 		  p_command++;
 
@@ -1233,7 +1222,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, parse_nam);
 
-		  if ( log_file ) fprintf(log_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
+		  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_NODE(%s);\n", com_cnt, parse_nam);
 		  if ( mil_file ) fprintf(mil_file, "\tR%d := p_qname(%s,ENTITY_PN_TYPE);\n",  com_cnt, parse_nam);
 
 		  step_sp++;
@@ -1250,7 +1239,7 @@ command_tree **CAS_plan_gen(
 
 		p1_command = p_command;
 
-		fscanf(command_file, "%d", &parse_com);
+		parse_com = commain->val[icm++];
 		/*printf("x:%d\n", parse_com); */
 
 	      }
@@ -1267,7 +1256,7 @@ command_tree **CAS_plan_gen(
 
 	    }
 
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 
 
@@ -1289,23 +1278,23 @@ command_tree **CAS_plan_gen(
 		if (parse_com == PLUS) {
 		  plus_term++;
 		  prefix = PLUS;
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		}
 		else if (parse_com == MINUS) {
 		  prefix = MINUS;
 		  minus_term++;
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		}
 		else if (parse_com == MUST) {
 		  prefix = MUST;
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		}
 		else if (parse_com == MUST_NOT) {
 		  prefix = MUST_NOT;
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		}
 		else {
@@ -1315,12 +1304,12 @@ command_tree **CAS_plan_gen(
 		if (parse_com != QUOTE && parse_com != IMAGE_ABOUT) {
 		  
 		  num_term++;
-		  fscanf(token_file, "%s", &parse_nam[0]);
+	          parse_nam = tokmain->val[itm++];
 
 		  term_sp++;
 		  PUSH_TERM(parse_nam, prefix);
 
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		  
 		}
@@ -1330,7 +1319,7 @@ command_tree **CAS_plan_gen(
 		
 		  num_phrase++;
 		  
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		  
 		  while (parse_com != QUOTE) {
@@ -1341,7 +1330,7 @@ command_tree **CAS_plan_gen(
 		      minus_term++;
 		    
 		    num_term++;
-		    fscanf(token_file, "%s", &parse_nam[0]);
+	            parse_nam = tokmain->val[itm++];
 		    
 		    term_sp++;
 		    phrase_sp++;
@@ -1349,7 +1338,7 @@ command_tree **CAS_plan_gen(
 		    PUSH_TERM(parse_nam, prefix);
 		    PUSH_PHRASE(parse_nam, prefix);
 		    
-		    fscanf (command_file, "%d", &parse_com);
+		    parse_com = commain->val[icm++];
 		    /*printf("%d\n",parse_com); */
 
 		  }
@@ -1357,7 +1346,7 @@ command_tree **CAS_plan_gen(
 		  phrase_sp++;
 		  PUSH_PHRASE("", END_PHRASE);
 		  
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		  
 		  
@@ -1366,12 +1355,12 @@ command_tree **CAS_plan_gen(
 		else if (parse_com == IMAGE_ABOUT) {
 		  
 		  num_term++;
-		  fscanf(token_file, "%s", &parse_nam[0]);
+	          parse_nam = tokmain->val[itm++];
 		  
 		  term_sp++;
 		  PUSH_TERM(parse_nam, IMAGE_ABOUT+prefix);
 		  
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		  
 		}
@@ -1388,22 +1377,22 @@ command_tree **CAS_plan_gen(
 
 		if (parse_com == PLUS || parse_com == MUST) {
 		  strcat(tpi_about,"+");
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		}
 		else if (parse_com == MINUS || parse_com == MUST_NOT) {
 		  strcat(tpi_about,"-");
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		}
 
 		
 		if (parse_com != QUOTE && parse_com != IMAGE_ABOUT) {
 
-		  fscanf(token_file, "%s", &parse_nam[0]);
+	          parse_nam = tokmain->val[itm++];
 		  strcat(tpi_about,parse_nam);
 		  strcat(tpi_about,"|");
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		  
 		}
@@ -1411,32 +1400,32 @@ command_tree **CAS_plan_gen(
 		else if (parse_com == QUOTE) {
 		  
 		  strcat(tpi_about,"\"");
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		  
 		  while (parse_com != QUOTE) {
 
-		    fscanf(token_file, "%s", &parse_nam[0]);
+	            parse_nam = tokmain->val[itm++];
 		    strcat(tpi_about,parse_nam);
 		    strcat(tpi_about," ");
-		    fscanf (command_file, "%d", &parse_com);
+		    parse_com = commain->val[icm++];
 		    /*printf("%d\n",parse_com); */
 
 		  }
 		  
 		  strcat(tpi_about,"\"|");
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		  
 		}
 		
 		else if (parse_com == IMAGE_ABOUT) {
 
-		  fscanf(token_file, "%s", &parse_nam[0]);
+	          parse_nam = tokmain->val[itm++];
 		  strcat(tpi_about,"IMG:");
 		  strcat(tpi_about,parse_nam);
 		  strcat(tpi_about,"|");
-		  fscanf (command_file, "%d", &parse_com);
+		  parse_com = commain->val[icm++];
 		  /*printf("%d\n",parse_com); */
 		  
 		}
@@ -1480,7 +1469,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p1_command;
 		  strcpy(p_command->argument, "");
 		  
-		  if ( log_file ) fprintf(log_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p_step->number, p1_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p_step->number, p1_command->number);
 
 		  p1_command = p_command;
 
@@ -1527,7 +1516,7 @@ command_tree **CAS_plan_gen(
 		strcat(p_command->argument, ",");
 		strcat(p_command->argument, tpi_about);
 		  
-		if ( log_file ) fprintf(log_file, "R%d := P_SELECT_NODE_T(%s);\n",  com_cnt, p_command->argument);
+		if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_NODE_T(%s);\n",  com_cnt, p_command->argument);
 		
 		p1_command = p_command;
 
@@ -1589,7 +1578,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, t);
 		  
-		  if ( log_file ) fprintf(log_file, "R%d := SELECT_TERM(%s);\n",  com_cnt, t);
+		  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_TERM(%s);\n",  com_cnt, t);
 		  
 		  
 		  if (s == NORMAL || s == PLUS) {
@@ -1605,7 +1594,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 		    
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINING_T R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINING_T R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		    if ( mil_file ) fprintf(mil_file, "\tR%d := prob_LM(R%d,%s,lambda);\n",  com_cnt, p2_command->number, t);
 		    
 		    if (s == PLUS) {
@@ -1621,7 +1610,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = NULL;
 		      strcpy(p_command->argument, extend_term_s);
 
-		      if ( log_file ) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		      if ( logical_file ) fprintf(logical_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.scale(%f);\n",  com_cnt, p1_command->number, extend_term);
 
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := nil;\n", p1_command->number);
@@ -1641,7 +1630,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = NULL;
 		      strcpy(p_command->argument, normal_term_s);
 		      
-		      if ( log_file ) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		      if ( logical_file ) fprintf(logical_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.scale(%f);\n",  com_cnt, p1_command->number, normal_term);
 		      
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := nil;\n", p1_command->number);
@@ -1663,7 +1652,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 		    
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_NOT_CONTAINING_T R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_NOT_CONTAINING_T R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		    if ( mil_file ) fprintf(mil_file, "\tR%d := soft_not(R%d,%s,lambda);\n",  com_cnt, p_ctx_in->number,t);
 		    
 		  }
@@ -1683,7 +1672,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = p1_command;
 		      strcpy(p_command->argument, "");
 		      
-		      if ( log_file ) fprintf(log_file, "R%d := R%d MUST_CONTAIN_T R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		      if ( logical_file ) fprintf(logical_file, "R%d := R%d MUST_CONTAIN_T R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := must(R%d,%s);\n",  com_cnt, p2_command->number, t);
 		    
 		    }
@@ -1701,7 +1690,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = p1_command;
 		      strcpy(p_command->argument, "");
 		      
-		      if ( log_file ) fprintf(log_file, "R%d := R%d MUST_NOT_CONTAIN_T R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		      if ( logical_file ) fprintf(logical_file, "R%d := R%d MUST_NOT_CONTAIN_T R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := must_not(R%d,%s);\n",  com_cnt, p2_command->number, t);
 		      
 		    }
@@ -1717,7 +1706,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = NULL;
 		    strcpy(p_command->argument, normal_term_s);
 		    
-		    if ( log_file ) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
 		    if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.scale(%f);\n",  com_cnt, p1_command->number, normal_term);
 		  
 		    if ( mil_file ) fprintf(mil_file, "\tR%d := nil;\n", p1_command->number);
@@ -1737,7 +1726,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, parse_nam);
 		  
-		  if ( log_file ) fprintf(log_file, "R%d := P_SELECT_IMAGE(%s);\n",  com_cnt, t);
+		  if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_IMAGE(%s);\n",  com_cnt, t);
 		  
 		  if (s == IMAGE_ABOUT+NORMAL || s == IMAGE_ABOUT+PLUS || s == IMAGE_ABOUT+MUST) {
 		    
@@ -1752,7 +1741,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 		    
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		    
 		    if (s == IMAGE_ABOUT+PLUS) {
 		      
@@ -1767,7 +1756,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = NULL;
 		      strcpy(p_command->argument, extend_term_s);
 		      
-		      if ( log_file ) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		      if ( logical_file ) fprintf(logical_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.scale(%f);\n",  com_cnt, p1_command->number, extend_term);
 		      
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := nil;\n", p1_command->number);
@@ -1787,7 +1776,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = NULL;
 		      strcpy(p_command->argument, normal_term_s);
 		      
-		      if ( log_file ) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		      if ( logical_file ) fprintf(logical_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.scale(%f);\n",  com_cnt, p1_command->number, normal_term);
 		      
 		      if ( mil_file ) fprintf(mil_file, "\tR%d := nil;\n", p1_command->number);
@@ -1809,7 +1798,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 		    
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_NOT_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_NOT_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		    
 		  }
 		  
@@ -1828,7 +1817,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p1_command;
 		  strcpy(p_command->argument, "");
 		  
-		  if ( log_file ) fprintf(log_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_term->number, p1_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_term->number, p1_command->number);
 		  if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.and(R%d);\n",  com_cnt, p_term->number, p1_command->number);
 		  
 		  if ( mil_file ) fprintf(mil_file, "\tR%d := nil;\n", p_term->number);
@@ -1892,7 +1881,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, phrase);
 		  
-		  if ( log_file ) fprintf(log_file, "R%d := SELECT_ADJ(%s);\n",  com_cnt, phrase);
+		  if ( logical_file ) fprintf(logical_file, "R%d := SELECT_ADJ(%s);\n",  com_cnt, phrase);
 		  p1_command = p_command;
 		  
 		  com_cnt++;
@@ -1906,7 +1895,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 		    
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_ADJ R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_ADJ R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		    if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.adj_term(phrase,ord,eta);\n",  com_cnt, p2_command->number);
 		    
 		  }
@@ -1919,7 +1908,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 		    
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_ADJ_NOT R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_ADJ_NOT R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		    if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.adj_term_not(phrase,ord,eta);\n",  com_cnt, p2_command->number);
 		    
 		  }
@@ -1935,7 +1924,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p3_command;
 		  strcpy(p_command->argument, "");
 
-		  if ( log_file ) fprintf(log_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_adjcommand->number, p3_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_adjcommand->number, p3_command->number);
 		  if ( mil_file ) fprintf(mil_file, "\tR%d := R%d.and(R%d);\n",  com_cnt, p_adjcommand->number, p3_command->number);
 		  
 		  if ( mil_file ) fprintf(mil_file, "\tphrase := nil;\n");
@@ -1970,7 +1959,7 @@ command_tree **CAS_plan_gen(
 	      p_command->right = NULL;
 	      strcpy(p_command->argument, "");
 		  
-	      if (log_file) fprintf(log_file, "Q%d := CREATE_QUERY_OBJECT ();\n",  com_cnt);
+	      if (logical_file) fprintf(logical_file, "Q%d := CREATE_QUERY_OBJECT ();\n",  com_cnt);
 	      
 	      term_sp = 0;
 	      
@@ -1997,7 +1986,7 @@ command_tree **CAS_plan_gen(
                 /* ToLowerLetters(t); INCOMPLETE CHECK USAGE RODEH */
 		strcpy(p_command->argument, t);
 		  
-		if (log_file) fprintf(log_file, "Q%d := Q%d QUERY_ADD_TERM (%s);\n",  com_cnt, p1_command->number, p_command->argument);
+		if (logical_file) fprintf(logical_file, "Q%d := Q%d QUERY_ADD_TERM (%s);\n",  com_cnt, p1_command->number, p_command->argument);
 	      
                 if (scale_on == TRUE) {
 	      	      sprintf(modifier_term_s, "%d", s);
@@ -2012,7 +2001,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = NULL;
 		      strcpy(p_command->argument, modifier_term_s);
 		      
-		      if (log_file) fprintf(log_file, "Q%d := Q%d QUERY_ADD_MODIFIER (%s);\n",  com_cnt, p1_command->number, p_command->argument);
+		      if (logical_file) fprintf(logical_file, "Q%d := Q%d QUERY_ADD_MODIFIER (%s);\n",  com_cnt, p1_command->number, p_command->argument);
                 }
               }  	
 
@@ -2029,7 +2018,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, parse_nam);
 		  
-		  if (log_file) fprintf(log_file, "R%d := P_SELECT_IMAGE(%s);\n",  com_cnt, t);
+		  if (logical_file) fprintf(logical_file, "R%d := P_SELECT_IMAGE(%s);\n",  com_cnt, t);
 		  
 		  if (s == IMAGE_ABOUT+NORMAL || s == IMAGE_ABOUT+PLUS || s == IMAGE_ABOUT+MUST) {
 		    
@@ -2044,7 +2033,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 		    
-		    if (log_file) fprintf(log_file, "R%d := R%d P_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    if (logical_file) fprintf(logical_file, "R%d := R%d P_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		    
 		    if (s == IMAGE_ABOUT+PLUS) {
 		      
@@ -2059,7 +2048,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = NULL;
 		      strcpy(p_command->argument, modifier_term_s);
 		      
-		      if (log_file) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		      if (logical_file) fprintf(logical_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
 		      
 		    }
 		    
@@ -2076,7 +2065,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = NULL;
 		      strcpy(p_command->argument, modifier_term_s);
 		      
-		      if (log_file) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		      if (logical_file) fprintf(logical_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
 		      
 		    }
 
@@ -2095,7 +2084,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 		    
-		    if (log_file) fprintf(log_file, "R%d := R%d P_NOT_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    if (logical_file) fprintf(logical_file, "R%d := R%d P_NOT_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
 		    
 		  }
 		  
@@ -2114,7 +2103,7 @@ command_tree **CAS_plan_gen(
 		  //p_command->right = p1_command;
 		  //strcpy(p_command->argument, "");
 		  
-		  //fprintf(log_file, "R%d := R%d P_AND_ph R%d;\n",  com_cnt, p_term->number, p1_command->number);
+		  //fprintf(logical_file, "R%d := R%d P_AND_ph R%d;\n",  com_cnt, p_term->number, p1_command->number);
 		  //fprintf(mil_file, "\tR%d := R%d.and(R%d);\n",  com_cnt, p_term->number, p1_command->number);
 		  
 		  //fprintf(mil_file, "\tR%d := nil;\n", p_term->number);
@@ -2136,7 +2125,7 @@ command_tree **CAS_plan_gen(
 	      p_command->right = p1_command;
 	      strcpy(p_command->argument, "");
 	      
-              if (log_file) fprintf(log_file, "R%d := R%d P_SELECT_NODE_Q (Q%d);\n",  com_cnt, p_ctx_in->number, p1_command->number);
+              if (logical_file) fprintf(logical_file, "R%d := R%d P_SELECT_NODE_Q (Q%d);\n",  com_cnt, p_ctx_in->number, p1_command->number);
               
               //TODO: include phrases		    
 
@@ -2174,7 +2163,7 @@ command_tree **CAS_plan_gen(
 		  strcat(p_command->argument, ",");
 		  strcat(p_command->argument, tpi_about);
 		  
-		  if ( log_file ) fprintf(log_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
+		  if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
 
 
 		  p1_command = p_command;
@@ -2189,10 +2178,10 @@ command_tree **CAS_plan_gen(
 		  strcpy(p_command->argument, "");
 
 		  if (p_ctx_in->operator == CONTAINED_BY) {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p_command->left->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p_command->left->number, p_ctx_in->right->number);
 		  }
 		  else {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p_command->left->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p_command->left->number, p_ctx_in->right->number);
 		  }
 
 		
@@ -2216,7 +2205,7 @@ command_tree **CAS_plan_gen(
 		  strcat(p_command->argument, ",");
 		  strcat(p_command->argument, tpi_about);
 		  
-		  if ( log_file ) fprintf(log_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
+		  if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
 
 		  p1_command = p_command;
 
@@ -2230,10 +2219,10 @@ command_tree **CAS_plan_gen(
 		  strcpy(p_command->argument, "");
 
 		  if (p_ctx_in->operator == CONTAINED_BY) {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p_command->left->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p_command->left->number, p_ctx_in->right->number);
 		  }
 		  else {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p_command->left->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p_command->left->number, p_ctx_in->right->number);
 		  }
 
 		}
@@ -2270,7 +2259,7 @@ command_tree **CAS_plan_gen(
 		  strcat(p_command->argument, ",");
 		  strcat(p_command->argument, tpi_about);
 
-		  if ( log_file ) fprintf(log_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
+		  if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
 
 
 		  p1_command = p_command;
@@ -2285,10 +2274,10 @@ command_tree **CAS_plan_gen(
 		  strcpy(p_command->argument, "");
 
 		  if (p_ctx_in->operator == CONTAINED_BY) {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
 		  }
 		  else {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
 		  }
 
 
@@ -2312,7 +2301,7 @@ command_tree **CAS_plan_gen(
 		  strcat(p_command->argument, ",");
 		  strcat(p_command->argument, tpi_about);
 
-		  if ( log_file ) fprintf(log_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
+		  if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
 
 
 		  p1_command = p_command;
@@ -2328,10 +2317,10 @@ command_tree **CAS_plan_gen(
 		  
 
 		  if (p_ctx_in->operator == CONTAINED_BY) {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
 		  }
 		  else {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
 		  }
 
 
@@ -2378,7 +2367,7 @@ command_tree **CAS_plan_gen(
 		  strcat(p_command->argument, ",");
 		  strcat(p_command->argument, tpi_about);
 
-		  if ( log_file ) fprintf(log_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
+		  if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
 
 
 		  p1_command = p_command;
@@ -2393,10 +2382,10 @@ command_tree **CAS_plan_gen(
 		  strcpy(p_command->argument, "");
 		  
 		  if (p_ctx_in->operator == CONTAINED_BY) {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
 		  }
 		  else {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
 		  }
 
 
@@ -2417,7 +2406,7 @@ command_tree **CAS_plan_gen(
 		  strcat(p_command->argument, ",");
 		  strcat(p_command->argument, tpi_about);
 
-		  if ( log_file ) fprintf(log_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
+		  if ( logical_file ) fprintf(logical_file, "R%d := P_SELECT_NODE_T(%s);\n",  p_command->number, p_command->argument);
 
 
 		  p1_command = p_command;
@@ -2433,10 +2422,10 @@ command_tree **CAS_plan_gen(
 		  
 
 		  if (p_ctx_in->operator == CONTAINED_BY) {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
 		  }
 		  else {
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINED_BY R%d;\n",  p_command->number, p1_command->number, p_ctx_in->right->number);
 		  }
 
 		}
@@ -2474,7 +2463,7 @@ command_tree **CAS_plan_gen(
 		p_command->right = p1_command;
 		strcpy(p_command->argument, "");
 
-		if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p_step->number, p1_command->number);
+		if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p_step->number, p1_command->number);
 
 	      }
 
@@ -2496,7 +2485,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = p3_command;
 		  strcpy(p_command->argument, "");
 
-		  if ( log_file ) fprintf(log_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p_step->number, p3_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := R%d P_UNION R%d;\n",  com_cnt, p_step->number, p3_command->number);
 
 		  p3_command = p_command;
 
@@ -2511,7 +2500,7 @@ command_tree **CAS_plan_gen(
 		p_command->right = p1_command;
 		strcpy(p_command->argument, "");
 
-		if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p3_command->number, p1_command->number);
+		if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p3_command->number, p1_command->number);
 
 	      }
 
@@ -2531,7 +2520,7 @@ command_tree **CAS_plan_gen(
 	      p_command->right = p1_command;
 	      strcpy(p_command->argument, "");
 
-	      if ( log_file ) fprintf(log_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p_ctx->number, p1_command->number);
+	      if ( logical_file ) fprintf(logical_file, "R%d := R%d P_CONTAINING R%d;\n",  com_cnt, p_ctx->number, p1_command->number);
 
 	      in_step = FALSE;
 	      if ( mil_file ) fprintf(mil_file, "\tR%d := exit_XE(R%d,R%d);\n",  com_cnt, p_ctx->number, p2_command->number);
@@ -2542,7 +2531,7 @@ command_tree **CAS_plan_gen(
 
 	    p1_command = p_command;
 
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 
 	  }
@@ -2551,7 +2540,7 @@ command_tree **CAS_plan_gen(
 
 
 	    /* and and or expressions in NEXI */
-	    fscanf(token_file, "%s", &parse_nam[0]);
+	    parse_nam = tokmain->val[itm++];
 
 	    /* and and or expressions inside predicate */
 	    num_bracket =0;
@@ -2592,7 +2581,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
 		    if ( mil_file ) fprintf(mil_file, "\n\tR%d := R%d.and(R%d);\n",  com_cnt, p_leftop->number, p1_command->number);
 
 		  }
@@ -2605,7 +2594,7 @@ command_tree **CAS_plan_gen(
 		    p_command->right = p1_command;
 		    strcpy(p_command->argument, "");
 
-		    if ( log_file ) fprintf(log_file, "R%d := R%d P_OR R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
+		    if ( logical_file ) fprintf(logical_file, "R%d := R%d P_OR R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
 		    if ( mil_file ) fprintf(mil_file, "\n\tR%d := R%d.or(R%d);\n",  com_cnt, p_leftop->number, p1_command->number);
 
 		  }
@@ -2656,7 +2645,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = p1_command;
 		      strcpy(p_command->argument, "");
 
-		      if ( log_file ) fprintf(log_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
+		      if ( logical_file ) fprintf(logical_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
 		      if ( mil_file ) fprintf(mil_file, "\n\tR%d := R%d.and(R%d);\n",  com_cnt, p_leftop->number, p1_command->number);
 
 		    }
@@ -2669,7 +2658,7 @@ command_tree **CAS_plan_gen(
 		      p_command->right = p1_command;
 		      strcpy(p_command->argument, "");
 
-		      if ( log_file ) fprintf(log_file, "R%d := R%d P_OR R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
+		      if ( logical_file ) fprintf(logical_file, "R%d := R%d P_OR R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
 		      if ( mil_file ) fprintf(mil_file, "\n\tR%d := R%d.or(R%d);\n",  com_cnt, p_leftop->number, p1_command->number);
 
 		    }
@@ -2704,17 +2693,16 @@ command_tree **CAS_plan_gen(
 
 	    }
 
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 
 	  }
 
 	  while (parse_com == CB) {
-
 	    op_sp++;
 	    PUSH_OP(CB,p_command);
 
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 	    /*printf("%d\n",parse_com); */
 	  }
 
@@ -2754,7 +2742,7 @@ command_tree **CAS_plan_gen(
 	      p_command->right = p1_command;
 	      strcpy(p_command->argument, "");
 
-	      if ( log_file ) fprintf(log_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
+	      if ( logical_file ) fprintf(logical_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
 	      if ( mil_file ) fprintf(mil_file, "\n\tR%d := R%d.and(R%d);\n",  com_cnt, p_leftop->number, p1_command->number);
 
 	    }
@@ -2767,7 +2755,7 @@ command_tree **CAS_plan_gen(
 	      p_command->right = p1_command;
 	      strcpy(p_command->argument, "");
 
-	      if ( log_file ) fprintf(log_file, "R%d := R%d P_OR R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
+	      if ( logical_file ) fprintf(logical_file, "R%d := R%d P_OR R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
 	      if ( mil_file ) fprintf(mil_file, "\n\tR%d := R%d.or(R%d);\n",  com_cnt, p_leftop->number, p1_command->number);
 
 	    }
@@ -2811,7 +2799,7 @@ command_tree **CAS_plan_gen(
 	        p_command->right = p1_command;
 	        strcpy(p_command->argument, "");
 
-		if ( log_file ) fprintf(log_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
+		if ( logical_file ) fprintf(logical_file, "R%d := R%d P_AND R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
 		if ( mil_file ) fprintf(mil_file, "\n\tR%d := R%d.and(R%d);\n",  com_cnt, p_leftop->number, p1_command->number);
 
 	      }
@@ -2824,7 +2812,7 @@ command_tree **CAS_plan_gen(
 	        p_command->right = p1_command;
 	        strcpy(p_command->argument, "");
 
-		if ( log_file ) fprintf(log_file, "R%d := R%d P_OR R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
+		if ( logical_file ) fprintf(logical_file, "R%d := R%d P_OR R%d;\n",  com_cnt, p_leftop->number, p1_command->number);
 		if ( mil_file ) fprintf(mil_file, "\n\tR%d := R%d.or(R%d);\n",  com_cnt, p_leftop->number, p1_command->number);
 
 	      }
@@ -2842,12 +2830,12 @@ command_tree **CAS_plan_gen(
 
 	if ( mil_file ) fprintf(mil_file, "\nR%d := exit_IR(R%d,R%d);\n",  com_cnt, p_ctx->number, p1_command->number);
 
-	fscanf (command_file, "%d", &parse_com);
+	parse_com = commain->val[icm++];
 	/*printf("e1:%d\n",parse_com); */
 
 	/* checking if the end of the query is reached */
 
-	if (!feof(command_file) && parse_com != QUERY_END && parse_com != P_PRIOR) {
+	if ( icm<=commain->cnt && parse_com != QUERY_END && parse_com != P_PRIOR) {
 
 	  follow_step = TRUE;
 	  first_step = TRUE;
@@ -2872,7 +2860,7 @@ command_tree **CAS_plan_gen(
 	  }
 
 	  /* incorporating the prior into the model */
-	  if (!feof(command_file) && parse_com == P_PRIOR) {
+	  if (icm<=commain->cnt && parse_com == P_PRIOR) {
 
 	    if (rel_feedback != NULL) {
 
@@ -2889,7 +2877,7 @@ command_tree **CAS_plan_gen(
 	      	p_command->right = NULL;
 		strcpy(p_command->argument, "");
 
-		if ( log_file ) fprintf(log_file, "R%d := P_PRIOR(R%d);\n",  com_cnt, p1_command->number);
+		if ( logical_file ) fprintf(logical_file, "R%d := P_PRIOR(R%d);\n",  com_cnt, p1_command->number);
 
 		if ( mil_file ) fprintf(mil_file, "\nR%d := R%d.log_normal_prior(%d);\n",  com_cnt, p1_command->number, rel_feedback->prior_size);
 
@@ -2913,7 +2901,7 @@ command_tree **CAS_plan_gen(
 		  p_command->right = NULL;
 		  strcpy(p_command->argument, "");
 
-		  if ( log_file ) fprintf(log_file, "R%d := P_PRIOR(R%d);\n",  com_cnt, p1_command->number);
+		  if ( logical_file ) fprintf(logical_file, "R%d := P_PRIOR(R%d);\n",  com_cnt, p1_command->number);
 
 		  if (txt_retr_model->prior_type == LENGTH_PRIOR) {
 		    if ( mil_file ) fprintf(mil_file, "\nR%d := R%d.length_prior();\n",  com_cnt, p1_command->number);
@@ -2926,7 +2914,7 @@ command_tree **CAS_plan_gen(
 
 	    }
 
-	    fscanf (command_file, "%d", &parse_com);
+	    parse_com = commain->val[icm++];
 
 	  }
 
@@ -2947,26 +2935,29 @@ command_tree **CAS_plan_gen(
 
     }
 
-    if ( log_file ) fprintf(log_file, "\n\n");
+    if ( logical_file ) fprintf(logical_file, "\n\n");
     if ( mil_file ) fprintf(mil_file, "\n\n\n");
 
 
     /* checking for carriage return, line feed, tabs, etc. and for the end of input file */
-    fscanf (command_file, "%d", &parse_com_tmp);
+    parse_com_tmp = commain->val[icm++];
 
-    if (feof(command_file))
+    if (icm<=commain->cnt)
       end_process = TRUE;
     else {
 
       if (parse_com_tmp == QUERY_END) {
 
-	while (!feof(command_file) && parse_com_tmp == QUERY_END)
-	  fscanf (command_file, "%d", &parse_com_tmp);
+	while (icm<=commain->cnt && parse_com_tmp == QUERY_END)
+	  parse_com_tmp = commain->val[icm++];
 
       }
 
-      if (!feof(command_file))
-        fseek(command_file, -2, SEEK_CUR );
+      if ( icm<=commain->cnt ) {
+        /* fseek(command_file, -2, SEEK_CUR ); original Vojkan prose */
+	/* I guess he wants one command record back soo: */
+	icm--;
+      }
 
     }
 
@@ -2983,10 +2974,8 @@ command_tree **CAS_plan_gen(
   if ( mil_file ) fprintf(mil_file, "topics.persists(true).rename(\"topics\");\n");
   if ( mil_file ) fprintf(mil_file, "unload(\"topics\");\n");
 
-  fclose(command_file);
-  fclose(token_file);
   if ( mil_file ) fclose(mil_file);
-  if ( log_file ) fclose(log_file);
+  if ( logical_file ) fclose(logical_file);
 
   /*printf("\tQuery plans generated.\n"); */
 
@@ -2995,4 +2984,3 @@ command_tree **CAS_plan_gen(
   return p_command_start;
 
 }
-

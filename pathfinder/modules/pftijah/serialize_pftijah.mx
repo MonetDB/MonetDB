@@ -44,6 +44,7 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
 @c
 #include <pf_config.h>
 
+
 /* #define TJ_TRACE 1 */
 
 /*******************************************
@@ -57,6 +58,8 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
 
 #include "serialize_pftijah.h"
 #include "pftijah_stem.h"
+
+#include "termdb.h"
 
 #include "shredder.h"
 
@@ -260,6 +263,9 @@ typedef struct tijahContextStruct {
 	oid  n_globalTerm;
 	BAT* b_globalTerm;	/* global term dictionary*/
 	BAT* hm_globalTerm;	/* hashed mirrorred global term dictionary*/
+#ifdef USE_TERMDB
+	termDbCtx* tdb;
+#endif
 	oid  n_globalTag;
 	BAT* b_globalTag;	/* global tag dictionary*/
 	BAT* hm_globalTag;	/* hashed mirrorred global tag dictionary*/
@@ -325,32 +331,60 @@ tj_popTag(tjCtx* tjctx) {
 
 static oid
 tj_tagOid(tjCtx* tjctx, str t) {
+    oid res;
     BUN bun;
 
     if ( (bun = BUNfnd(tjctx->hm_globalTag,t)) )
-        return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
+        res = *(oid*)BUNtail(tjctx->hm_globalTag,bun);
     else {
     	if ( !BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
     	    GDKerror("INSERT OF \"%s\" in globalTag fails.\n");
     	    return oid_nil;
         } else
-    	    return tjctx->n_globalTag++;
+    	    res = tjctx->n_globalTag++;
     }
+#ifdef USE_TERMDB
+    oid to = tdb_lookupTag(tjctx->tdb,t);
+    if ( to == oid_nil ) {
+    	GDKerror("LOOKUP OF TAG \"%s\" in TERMDB failed.\n",t);
+    	return oid_nil;
+    }
+    if ( res != to ) {
+    	stream_printf(GDKout,"#ERROR: tag \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
+    } else {
+    	if ( 0 ) stream_printf(GDKout,"#OK: tag \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
+    }
+#endif
+    return res;
 }
 
 static oid
 tj_termOid(tjCtx* tjctx, char *t) {
+    oid res;
     BUN bun;
 
     if ( (bun = BUNfnd(tjctx->hm_globalTerm,t)) )
-        return *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
+        res = *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
     else {
     	if ( !BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t, FALSE)){
     	    GDKerror("INSERT OF \"%s\" in globalTerm fails.\n");
     	    return oid_nil;
         } else 
-    	    return tjctx->n_globalTerm++;
+    	    res = tjctx->n_globalTerm++;
     }
+#ifdef USE_TERMDB
+    oid to = tdb_lookupTerm(tjctx->tdb,t);
+    if ( to == oid_nil ) {
+    	GDKerror("LOOKUP OF TERM \"%s\" in TERMDB failed.\n",t);
+    	return oid_nil;
+    }
+    if ( res != to ) {
+    	stream_printf(GDKout,"#ERROR: term \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
+    } else {
+    	if ( 0 ) stream_printf(GDKout,"#OK: term \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
+    }
+#endif
+    return res;
 }
 
 INLINE static oid
@@ -604,6 +638,10 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	/*
 	 * The section where the parameter bats are read
 	 */
+#ifdef USE_TERMDB
+	if ( !(res->tdb = tdb_open()) )
+	    return NULL;
+#endif
 	if ( !(res->b_globalTerm  = getBAT(tjCtx_BAT,0)) ) return NULL;
 	res->n_globalTerm = (oid)BATcount(res->b_globalTerm);
 	if ( !(res->b_globalTag   = getBAT(tjCtx_BAT,1)) ) return NULL;
@@ -702,6 +740,10 @@ static int
 freeTijahContext(tjCtx* tjctx) {
         if ( !setPreSize(tjctx,tjctx->tijahPre) )
 	        return GDK_FAIL;
+#ifdef USE_TERMDB
+	if ( ! tdb_close(tjctx->tdb) )
+		return GDK_FAIL;
+#endif
 	BATkey(BATmirror(tjctx->b_globalTerm), TRUE);
 	BATkey(BATmirror(tjctx->b_globalTag), TRUE);
 	BBPunfix(BBPcacheid(tjctx->b_globalTerm));

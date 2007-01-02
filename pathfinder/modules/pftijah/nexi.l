@@ -58,8 +58,8 @@ extern int char_number;
 #define FALSE 0
 #define TRUE 1
 
-#define WRITE_COMMAND(COMMAND) fprintf(parserCtx->commandFILE, "%d\n", COMMAND)
-#define WRITE_TOKEN(TOKEN)     fprintf(parserCtx->tokenFILE, "%s\n", TOKEN)
+#define WRITE_COMMAND(COMMAND) tnl_append(&parserCtx->command_preLIST,COMMAND)
+#define WRITE_TOKEN(TOKEN)     tsl_append(&parserCtx->token_preLIST,TOKEN)
 
 /* This hack is to prevent problems with flex 2.5.33 and lower on Debian and
  * Gentoo systems. When flex.2.5.4 and hiher is obligatory this define

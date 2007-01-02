@@ -81,6 +81,11 @@ int tree_traverse_opt(command_tree *p_command, command_tree *com_lifo[], int *co
 
 char *unquote(char *q_term) {
 
+  if ( *q_term != '"' ) {
+      fprintf(stderr,"WARNING: unquote: term not quoted.\n"); 
+      return q_term; /* term was not quoted, JF */
+  }
+
   int cnt;
 
   cnt = 1;
@@ -269,7 +274,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
         set_reset = TRUE;
       }
 
-      switch(p_com->operator){
+      switch(p_com->operator) {
       case SELECT_NODE:
 
         argument = unquote(p_com->argument);

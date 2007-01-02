@@ -77,79 +77,58 @@ int preprocess(int preproc_type) {
 
   /* token and command variables for preprocessing */
   int com_var;
-  char tok_var[30];
+  /* char tok_var[30]; */
+  char* tok_var;
 
   /* files that store parser command and token output */
-  FILE *command_file_pre;
-  FILE *token_file_pre;
-  /* files that store command and token output afte stop words  removal and stemming */
-  FILE *command_file;
-  FILE *token_file;
+  int icp = 0;
+  TijahNumberList* compre = &parserCtx->command_preLIST;
+  int icm = 0;
+  TijahNumberList* commain = &parserCtx->commandLIST;
+  int itp = 0;
+  TijahStringList* tokpre = &parserCtx->token_preLIST;
+  int itm = 0;
+  TijahStringList* tokmain = &parserCtx->tokenLIST;
 
+  /* tsl_clear(commain); */ 
+  
+  com_var = compre->val[icp++];
+  while ( icp <= compre->cnt ) {
 
-  token_file_pre = fopen(myfileName(WORKDIR,"file_token_pre.nxi"),"r");
-  command_file_pre = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"r");
-  token_file = fopen(myfileName(WORKDIR,"file_token.nxi"),"w");
-  command_file = fopen(myfileName(WORKDIR,"file_command.nxi"),"w");
-
-  if (token_file_pre == NULL) {
-    printf("Error: cannot create file for reading.\n");
-    return 0;
-  }
-
-  if (token_file == NULL) {
-    printf("Error: cannot create file for writing.\n");
-    return 0;
-  }
-
-  if (command_file_pre == NULL) {
-    printf("Error: cannot create file for reading.\n");
-    return 0;
-  }
-
-  if (command_file == NULL) {
-    printf("Error: cannot create file for writing.\n");
-    return 0;
-  }
-
-  fscanf(command_file_pre, "%d", &com_var);
-
-  while (!feof(command_file_pre)) {
-    
     if (com_var ==  QUERY_END || com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var ==  CURRENT || com_var == VAGUE) {
 
-      fprintf(command_file, "%d\n", com_var);
+      tnl_append(commain,com_var);
+
     
     }
     else if (com_var == QUOTE) {
       
       if (preproc_type == NO_MODIFIER || preproc_type == VAGUE_MODIF || preproc_type == STRICT_MODIF)
-	
-	fprintf (command_file, "%d\n", com_var);
-      
+        tnl_append(commain,com_var);
     }
 
     else if (com_var == PLUS) {
       
-      if (preproc_type == PLAIN || preproc_type == NO_MODIFIER)
-	fscanf(command_file_pre, "%d", &com_var);
+      if (preproc_type == PLAIN || preproc_type == NO_MODIFIER) {
+        com_var = compre->val[icp++];
       
-      else {
+      } else {
 	
 	if (preproc_type == VAGUE_NO_PHRASE || preproc_type == VAGUE_MODIF)
-	  fprintf(command_file, "%d\n", com_var);
+          tnl_append(commain,com_var);
 	else
-	  fprintf(command_file, "%d\n", MUST);
+	  // fprintf(command_file, "%d\n", MUST);
+          tnl_append(commain,MUST);
 	
-	fscanf(command_file_pre, "%d", &com_var);
+        com_var = compre->val[icp++];
 
       }
       
       if (com_var ==  ABOUT || com_var ==  INTERSECT || com_var ==  UNION || com_var == SELECT_NODE) {
 
-	fscanf(token_file_pre, "%s", tok_var);
-	fprintf (command_file, "%d\n", com_var);
-	fprintf (token_file, "%s\n", tok_var);
+        tok_var = tokpre->val[itp++];
+        tnl_append(commain,com_var);
+	tsl_append(tokmain,tok_var);
 	
       }
       
@@ -157,63 +136,64 @@ int preprocess(int preproc_type) {
 	
 	if (preproc_type == PLAIN || preproc_type == NO_MODIFIER || preproc_type == VAGUE_MODIF || preproc_type == STRICT_MODIF) {
 
-	  if (preproc_type == PLAIN)
-	    fscanf(command_file_pre, "%d", &com_var);
+	  if (preproc_type == PLAIN) {
+            com_var = compre->val[icp++];
+          }
 
 	  else if (preproc_type == NO_MODIFIER || preproc_type == VAGUE_MODIF || preproc_type == STRICT_MODIF) {
-	    fprintf (command_file, "%d\n", com_var);
-	    fscanf(command_file_pre, "%d", &com_var);
+            tnl_append(commain,com_var);
+            com_var = compre->val[icp++];
 	  }
 	  
 	  while (com_var != QUOTE) {
-	    fscanf(token_file_pre, "%s", tok_var);
-	    fprintf (command_file, "%d\n", com_var);
-	    fprintf (token_file, "%s\n", tok_var);
-	    fscanf(command_file_pre, "%d", &com_var);
+            tok_var = tokpre->val[itp++];
+            tnl_append(commain,com_var);
+	    tsl_append(tokmain,tok_var);
+            com_var = compre->val[icp++];
 	  }
 
 	  if (preproc_type == NO_MODIFIER || preproc_type == VAGUE_MODIF || preproc_type == STRICT_MODIF) {
-	    fprintf (command_file, "%d\n", com_var);
+            tnl_append(commain,com_var);
 	  }
 	  
 	}
 
 	else if (preproc_type == VAGUE_NO_PHRASE || preproc_type == STRICT_NO_PHRASE) {
 
-	  fscanf(command_file_pre, "%d", &com_var);
+          com_var = compre->val[icp++];
 	  
 	  if (preproc_type == VAGUE_NO_PHRASE) {
 	    
-	    fscanf(token_file_pre, "%s", tok_var);
+            tok_var = tokpre->val[itp++];
 	    /*	    fprintf(command_file, "%d\n", PLUS); */
-	    fprintf(command_file, "%d\n", com_var);
-	    fprintf(token_file, "%s\n", tok_var);
-	    fscanf(command_file_pre, "%d", &com_var);
+            tnl_append(commain,com_var);
+	    tsl_append(tokmain,tok_var);
+            com_var = compre->val[icp++];
 
 	    while (com_var != QUOTE) {
-	      fscanf(token_file_pre, "%s", tok_var);
-	      fprintf(command_file, "%d\n", PLUS);
-	      fprintf(command_file, "%d\n", com_var);
-	      fprintf(token_file, "%s\n", tok_var);
-	      fscanf(command_file_pre, "%d", &com_var);
+              tok_var = tokpre->val[itp++];
+              tnl_append(commain,PLUS);
+              tnl_append(commain,com_var);
+	      tsl_append(tokmain,tok_var);
+              com_var = compre->val[icp++];
 	    }
 	    
 	  }
 	  
 	  else {
 	    
-	    fscanf(token_file_pre, "%s", tok_var);
+            tok_var = tokpre->val[itp++];
 	    /*	    fprintf(command_file, "%d\n", MUST); */
-	    fprintf(command_file, "%d\n", com_var);
-	    fprintf(token_file, "%s\n", tok_var);
-	    fscanf(command_file_pre, "%d", &com_var);
+            tnl_append(commain,com_var);
+	    tsl_append(tokmain,tok_var);
+            com_var = compre->val[icp++];
 	    
 	    while (com_var != QUOTE) {
-	      fscanf(token_file_pre, "%s", tok_var);
-	      fprintf(command_file, "%d\n", MUST);
-	      fprintf(command_file, "%d\n", com_var);
-	      fprintf(token_file, "%s\n", tok_var);
-	      fscanf(command_file_pre, "%d", &com_var);
+              tok_var = tokpre->val[itp++];
+              tnl_append(commain,MUST);
+              tnl_append(commain,com_var);
+	      tsl_append(tokmain,tok_var);
+              com_var = compre->val[icp++];
 	    }
 
 	  }
@@ -227,29 +207,28 @@ int preprocess(int preproc_type) {
     else if (com_var == MINUS) {
          
       if (preproc_type == PLAIN || preproc_type == NO_MODIFIER) {
-	fscanf(command_file_pre, "%d", &com_var);
+        com_var = compre->val[icp++];
       }
       else {
 	
 	if (preproc_type == VAGUE_NO_PHRASE || preproc_type == VAGUE_MODIF)
-	  fprintf(command_file, "%d\n", com_var);
+          tnl_append(commain,com_var);
 	else
-	  fprintf(command_file, "%d\n", MUST_NOT);
+          tnl_append(commain,MUST_NOT);
 	
-	fscanf(command_file_pre, "%d", &com_var);
-	
+        com_var = compre->val[icp++];
       }
 
       if (com_var ==  ABOUT || com_var ==  INTERSECT || com_var ==  UNION || com_var == SELECT_NODE) {
 	
 	if (preproc_type == PLAIN || preproc_type == NO_MODIFIER) {
-	  fscanf(token_file_pre, "%s", tok_var);
+          tok_var = tokpre->val[itp++];
 	  /*printf("%s ",tok_var); */
 	}
 	else {
-	  fscanf(token_file_pre, "%s", tok_var);
-	  fprintf(command_file, "%d\n", com_var);
-	  fprintf(token_file, "%s\n", tok_var);
+          tok_var = tokpre->val[itp++];
+          tnl_append(commain,com_var);
+	  tsl_append(tokmain,tok_var);
 	}
 
       }
@@ -258,19 +237,19 @@ int preprocess(int preproc_type) {
      	
 	if (preproc_type == PLAIN || preproc_type == NO_MODIFIER || preproc_type == VAGUE_MODIF || preproc_type == STRICT_MODIF) {
 	  
-	  if (preproc_type == PLAIN)
-	    fscanf(command_file_pre, "%d", &com_var);
+	  if (preproc_type == PLAIN) {
+            com_var = compre->val[icp++];
 
-	  else if (preproc_type == NO_MODIFIER || preproc_type == VAGUE_MODIF || preproc_type == STRICT_MODIF) {
-	    fprintf(command_file, "%d\n", com_var);
-	    fscanf(command_file_pre, "%d", &com_var);
+	  } else if (preproc_type == NO_MODIFIER || preproc_type == VAGUE_MODIF || preproc_type == STRICT_MODIF) {
+            tnl_append(commain,com_var);
+            com_var = compre->val[icp++];
 	  }
 	  
 	  if (preproc_type == PLAIN || preproc_type == NO_MODIFIER) {
 	    
 	    while (com_var != QUOTE) {
-                fscanf(token_file_pre, "%s", tok_var);
-	        fscanf(command_file_pre, "%d", &com_var);
+                tok_var = tokpre->val[itp++];
+                com_var = compre->val[icp++];
 
 	    }
 
@@ -279,56 +258,55 @@ int preprocess(int preproc_type) {
 	  else {
 
 	    while (com_var != QUOTE) {
-	      fscanf(token_file_pre, "%s", tok_var);
-	      fprintf(command_file, "%d\n", com_var);
-	      fprintf(token_file, "%s\n", tok_var);
-	      fscanf(command_file_pre, "%d", &com_var);
+              tok_var = tokpre->val[itp++];
+              tnl_append(commain,com_var);
+	      tsl_append(tokmain,tok_var);
+              com_var = compre->val[icp++];
 	    }
 	    
 	  }
 	  
 	  if (preproc_type == NO_MODIFIER || preproc_type == VAGUE_MODIF || preproc_type == STRICT_MODIF) {
-	    fprintf (command_file, "%d\n", com_var);
+            tnl_append(commain,com_var);
 	  }
 	  
 	}
 	
 	else if (preproc_type == VAGUE_NO_PHRASE || preproc_type == STRICT_NO_PHRASE) {
 	  
-	  fscanf(command_file_pre, "%d", &com_var);
+          com_var = compre->val[icp++];
 	  
 	  if (preproc_type == VAGUE_NO_PHRASE) {
 	    
-	    fscanf(token_file_pre, "%s", tok_var);
-	    /*	    fprintf(command_file, "%d\n", MINUS); */
-	    fprintf(command_file, "%d\n", com_var);
-	    fprintf(token_file, "%s\n", tok_var);
-	    fscanf(command_file_pre, "%d", &com_var);
+            tok_var = tokpre->val[itp++];
+            tnl_append(commain,com_var);
+	    tsl_append(tokmain,tok_var);
+            com_var = compre->val[icp++];
 	    
 	      while (com_var != QUOTE) {
-                fscanf(token_file_pre, "%s", tok_var);
-		fprintf(command_file, "%d\n", MINUS);
-	        fprintf(command_file, "%d\n", com_var);
-                fprintf(token_file, "%s\n", tok_var);
-	        fscanf(command_file_pre, "%d", &com_var);
+                tok_var = tokpre->val[itp++];
+                tnl_append(commain,MINUS);
+                tnl_append(commain,com_var);
+	        tsl_append(tokmain,tok_var);
+  		com_var = compre->val[icp++];
               }
 	      
 	  }
 	  
 	  else {
 	    
-	    fscanf(token_file_pre, "%s", tok_var);
+            tok_var = tokpre->val[itp++];
 	    /*	    fprintf(command_file, "%d\n", MUST_NOT); */
-	    fprintf(command_file, "%d\n", com_var);
-	    fprintf(token_file, "%s\n", tok_var);
-	    fscanf(command_file_pre, "%d", &com_var);
+            tnl_append(commain,com_var);
+	    tsl_append(tokmain,tok_var);
+  	    com_var = compre->val[icp++];
 	    
 	    while (com_var != QUOTE) {
-	      fscanf(token_file_pre, "%s", tok_var);
-	      fprintf(command_file, "%d\n", MUST_NOT);
-	      fprintf(command_file, "%d\n", com_var);
-	      fprintf(token_file, "%s\n", tok_var);
-	      fscanf(command_file_pre, "%d", &com_var);
+              tok_var = tokpre->val[itp++];
+              tnl_append(commain,MUST_NOT);
+              tnl_append(commain,com_var);
+	      tsl_append(tokmain,tok_var);
+              com_var = compre->val[icp++];
 	    }
 	    
 	  }
@@ -341,95 +319,50 @@ int preprocess(int preproc_type) {
 
     else if (com_var ==  ABOUT || com_var ==  INTERSECT || com_var ==  UNION || com_var == SELECT_NODE) {
       
-      fscanf(token_file_pre, "%s", tok_var);
-      fprintf (command_file, "%d\n", com_var);
-      fprintf (token_file, "%s\n", tok_var);
+      tok_var = tokpre->val[itp++];
+      tnl_append(commain,com_var);
+      tsl_append(tokmain,tok_var);
 
     }
 
     else if (com_var ==  IMAGE_ABOUT) {
 
-      fscanf(token_file_pre, "%s", tok_var);
-      fprintf (command_file, "%d\n", com_var);
+      tok_var = tokpre->val[itp++];
+      tnl_append(commain,com_var);
 
       char* ch_img = strrchr(tok_var, '/');
       ch_img++;
       /*printf("%s\n", ch_img); */
-      fprintf (token_file, "%s\n", ch_img);
+      tsl_append(tokmain,tok_var);
 
     }
-
-    fscanf(command_file_pre, "%d", &com_var);
-
-
-    
-  }
-  
-  fclose(token_file_pre);
-  fclose(command_file_pre);
-  fclose(token_file);
-  fclose(command_file);
-
-  token_file_pre = fopen(myfileName(WORKDIR,"file_token_pre.nxi"),"w");
-  command_file_pre = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"w");
-  token_file = fopen(myfileName(WORKDIR,"file_token.nxi"),"r");
-  command_file = fopen(myfileName(WORKDIR,"file_command.nxi"),"r");
-
-  if (token_file_pre == NULL) {
-    printf("Error: cannot create file for rewriting.\n");
-    return 0;
+    com_var = compre->val[icp++];
   }
 
-  if (token_file == NULL) {
-    printf("Error: cannot create file for rereading.\n");
-    return 0;
+  tsl_clear(tokpre); /* make the token pre list empty again, WHY Vojkan */
+  tnl_clear(compre); /* make the command pre list empty again, WHY Vojkan */
+
+  icm = 0;
+
+  itm = 0;
+  tok_var = tokmain->val[itm++];
+  while( itm<=tokmain->cnt ) {
+    tsl_append(tokpre,tok_var);
+    tok_var = tokmain->val[itm++];
   }
 
-  if (command_file_pre == NULL) {
-    printf("Error: cannot create file for rewriting.\n");
-    return 0;
+  com_var = commain->val[icm++];
+  while ( icm<=commain->cnt ) {
+    tnl_append(compre,com_var);
+    com_var = commain->val[icm++];
   }
 
-  if (command_file == NULL) {
-    printf("Error: cannot create file for rereading.\n");
-    return 0;
-  }
+  tsl_clear(tokmain); /* make the token list empty again, WHY Vojkan */
+  tnl_clear(commain); /* make the token list empty again, WHY Vojkan */
 
-  fscanf(token_file, "%s", tok_var);
-  while (!feof(token_file)) {
-    fprintf (token_file_pre, "%s\n", tok_var);
-    fscanf(token_file, "%s", tok_var);
-  }
-
-  fscanf(command_file, "%d", &com_var);
-  while (!feof(command_file)) {
-    fprintf (command_file_pre, "%d\n", com_var);
-    fscanf(command_file, "%d", &com_var);
-  }
-
-  fclose(token_file_pre);
-  fclose(command_file_pre);
-  fclose(token_file);
-  fclose(command_file);
-
-  token_file = fopen(myfileName(WORKDIR,"file_token.nxi"),"w");
-  command_file = fopen(myfileName(WORKDIR,"file_command.nxi"),"w");
-  if (command_file == NULL || token_file == NULL) {
-    printf("Error: cannot clear files for writing.\n");
-    return 0;
-  }
-  else {
-    fclose(command_file);
-    fclose(token_file);
-  }
   return 1;
 
 }
-
-
-
-
-
 
 /**
  * This function performs stemming and stop word removal. Arguments:
@@ -441,48 +374,29 @@ int preprocess(int preproc_type) {
  * - stop_quoted (boolean): whether to perform stop word removal inside quoted query strings (phrases)
  */
 int process(char* stemmer, bool stem_stop, bool stop_quoted) {
-
   /* token and command variables for preprocessing */
   int com_var;
-  char tok_var[30];
+  // char tok_var[30];
+  char* tok_var;
   int com_var_tmp;
   int num_stopword;
   bool in_quote;
 
   /* files that store parser command and token output */
-  FILE *command_file_pre;
-  FILE *token_file_pre;
-  /* files that store command and token output afte stop words  removal and stemming */
-  FILE *command_file;
-  FILE *token_file;
+  int icp = 0;
+  TijahNumberList* compre = &parserCtx->command_preLIST;
+  // int icm = 0;
+  TijahNumberList* commain = &parserCtx->commandLIST;
+  int itp = 0;
+  TijahStringList* tokpre = &parserCtx->token_preLIST;
+  /* int itm = 0; */
+  TijahStringList* tokmain = &parserCtx->tokenLIST;
 
   in_quote = FALSE;
   num_stopword = 0;
 
-  token_file_pre = fopen(myfileName(WORKDIR,"file_token_pre.nxi"),"r");
-  command_file_pre = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"r");
-  token_file = fopen(myfileName(WORKDIR,"file_token.nxi"),"w");
-  command_file = fopen(myfileName(WORKDIR,"file_command.nxi"),"w");
-
-  if (token_file_pre == NULL) {
-    printf("Error: cannot create file for reading.\n");
-    return 0;
-  }
-
-  if (token_file == NULL) {
-    printf("Error: cannot create file for writing.\n");
-    return 0;
-  }
-
-  if (command_file_pre == NULL) {
-    printf("Error: cannot create file for reading.\n");
-    return 0;
-  }
-
-  if (command_file == NULL) {
-    printf("Error: cannot create file for writing.\n");
-    return 0;
-  }
+  tsl_clear(tokmain);
+  tnl_clear(commain);
 
   // Initialize the stemmer
   tjStemCtx* stemCtx = getStemmingContext( stemmer );
@@ -494,16 +408,16 @@ int process(char* stemmer, bool stem_stop, bool stop_quoted) {
   // just write input to output
   if (!stem_stop) {
 
-    fscanf(token_file_pre, "%s", tok_var);
-    while (!feof(token_file_pre)) {
-      fprintf (token_file, "\"%s\"\n", tok_var);
-      fscanf(token_file_pre, "%s", tok_var);
+    tok_var = tokpre->val[itp++];
+    while ( itp <= tokpre->cnt ) {
+      tsl_appendq(tokmain,tok_var);
+      tok_var = tokpre->val[itp++];
     }
 
-    fscanf(command_file_pre, "%d", &com_var);
-    while (!feof(command_file_pre)) {
-      fprintf (command_file, "%d\n", com_var);
-      fscanf(command_file_pre, "%d", &com_var);
+    com_var = compre->val[icp++];
+    while ( icp <= compre->cnt ) {
+      tnl_append(commain,com_var);
+      com_var = compre->val[icp++];
     }
 
   }
@@ -512,9 +426,10 @@ int process(char* stemmer, bool stem_stop, bool stop_quoted) {
 
     com_var_tmp = 0;
 
-    fscanf(command_file_pre, "%d", &com_var);
+    com_var = compre->val[icp++];
 
-    while (!feof(command_file_pre)) {
+    // while (!feof(command_file_pre)) {
+    while ( icp <= compre->cnt ) {
 
       if (com_var ==  QUERY_END || com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == QUOTE || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var ==  CURRENT || com_var == MINUS || com_var == PLUS || com_var == MUST_NOT || com_var == MUST || com_var == VAGUE) {
 
@@ -527,65 +442,59 @@ int process(char* stemmer, bool stem_stop, bool stop_quoted) {
 
 	}
 
-	fprintf (command_file, "%d\n", com_var);
+        tnl_append(commain,com_var);
 
 	if (com_var == PLUS || com_var == MINUS || com_var == MUST || com_var == MUST_NOT) {
 
-	  fscanf(command_file_pre, "%d", &com_var);
+          com_var = compre->val[icp++];
 
 	  if (com_var == SELECT_NODE) {
 
-            fscanf(token_file_pre, "%s", tok_var);
-	    fprintf (command_file, "%d\n", com_var);
-            fprintf (token_file, "\"%s\"\n", tok_var);
+            tok_var = tokpre->val[itp++];
+            tnl_append(commain,com_var);
+            tsl_appendq(tokmain,tok_var);
 
 	  }
 
 	  else if (com_var == QUOTE) {
 
-	    fprintf (command_file, "%d\n", com_var);
+            tnl_append(commain,com_var);
 
-	    fscanf(command_file_pre, "%d", &com_var);
+            com_var = compre->val[icp++];
 
 	    while (com_var != QUOTE) {
-              fscanf(token_file_pre, "%s", tok_var);
-	      fprintf (command_file, "%d\n", com_var);
-              fprintf (token_file, "\"%s\"\n", tok_var);
-	      fscanf(command_file_pre, "%d", &com_var);
+              tok_var = tokpre->val[itp++];
+              tnl_append(commain,com_var);
+              tsl_appendq(tokmain,tok_var);
+              com_var = compre->val[icp++];
 	    }
 
-            fprintf (command_file, "%d\n", com_var);
-
+            tnl_append(commain,com_var);
 	  }
-
         }
-
       }
-
       else if (com_var ==  ABOUT || com_var ==  INTERSECT || com_var ==  UNION) {
-
-	fscanf(token_file_pre, "%s", tok_var);
+        tok_var = tokpre->val[itp++];
 
 	if ((com_var_tmp == CB  && (com_var ==  INTERSECT || com_var ==  UNION)) || (com_var == ABOUT && (com_var_tmp == OB || com_var_tmp == OPEN || com_var_tmp == INTERSECT || com_var_tmp == UNION))) {
 
-	  fprintf (command_file, "%d\n", com_var);
-	  fprintf (token_file, "\"%s\"\n", tok_var);
+          tnl_append(commain,com_var);
+          tsl_appendq(tokmain,tok_var);
 
 	}
-
 	else {
 	  // Perform stemming and stop word detection
           char* stemmed = stop_stem( stemCtx, tok_var );
           if ( stemmed ) {
             // Output the stemmed version of the term to the token file
-            fprintf (command_file, "%d\n", com_var);
-            fprintf (token_file, "\"%s\"\n", stemmed);
+            tnl_append(commain,com_var);
+            tsl_appendq(tokmain,tok_var);
           } else {
             // If we're inside a quoted string, and stop word removal inside
             // quoted strings is disabled, output the original token
             if ( in_quote && !stop_quoted ) {
-              fprintf (command_file, "%d\n", com_var);
-              fprintf (token_file, "\"%s\"\n", tok_var);
+              tnl_append(commain,com_var);
+              tsl_appendq(tokmain,tok_var);
             } else { 
               // It is a stop word
               num_stopword++;
@@ -597,11 +506,11 @@ int process(char* stemmer, bool stem_stop, bool stop_quoted) {
 
       else if (com_var == SELECT_NODE) {
 
-	fscanf(token_file_pre, "%s", tok_var);
+        tok_var = tokpre->val[itp++];
 
 	if (com_var_tmp == DSC || com_var_tmp == OB || com_var_tmp == STRUCT_OR || com_var_tmp == VAGUE){
-	  fprintf (command_file, "%d\n", com_var);
-	  fprintf (token_file, "\"%s\"\n", tok_var);
+          tnl_append(commain,com_var);
+          tsl_appendq(tokmain,tok_var);
 
 	}
 
@@ -611,14 +520,14 @@ int process(char* stemmer, bool stem_stop, bool stop_quoted) {
           char* stemmed = stop_stem( stemCtx, tok_var );
           if ( stemmed ) {
             // Output the stemmed version of the term to the token file
-            fprintf (command_file, "%d\n", com_var);
-            fprintf (token_file, "\"%s\"\n", stemmed);
+            tnl_append(commain,com_var);
+            tsl_appendq(tokmain,stemmed);
           } else {
             // If we're inside a quoted string, and stop word removal inside
             // quoted strings is disabled, output the original token
             if ( in_quote && !stop_quoted ) {
-              fprintf (command_file, "%d\n", com_var);
-              fprintf (token_file, "\"%s\"\n", tok_var);
+              tnl_append(commain,com_var);
+              tsl_appendq(tokmain,tok_var);
             } else { 
               // It is a stop word
               num_stopword++;
@@ -631,24 +540,16 @@ int process(char* stemmer, bool stem_stop, bool stop_quoted) {
 
       else if (com_var == IMAGE_ABOUT) {
 
-         fscanf(token_file_pre, "%s", tok_var);
-	 fprintf (command_file, "%d\n", com_var);
-         fprintf (token_file, "\"%s\"\n", tok_var);
+         tok_var = tokpre->val[itp++];
+         tnl_append(commain,com_var);
+         tsl_appendq(tokmain,tok_var);
 
       }
 
       com_var_tmp = com_var;
-      fscanf(command_file_pre, "%d", &com_var);
+      com_var = compre->val[icp++];
 
     }
-
   }
-
-  fclose(token_file_pre);
-  fclose(command_file_pre);
-  fclose(token_file);
-  fclose(command_file);
-
   return 1;
-
 }

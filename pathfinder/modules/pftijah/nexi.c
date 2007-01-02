@@ -60,10 +60,6 @@
 #include "nexi.h"
 #include "pftijah.h"
 
-/*
- * #define LOGFILE   parserCtx->logFILE
- * #define LOGPRINTF if ( parserCtx->logFILE ) fprintf
- */
 #define LOGFILE   GDKout
 #define LOGPRINTF if ( 0 ) stream_printf
 
@@ -80,15 +76,21 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
   LOGPRINTF(LOGFILE,"- tijahParse([%s])\n",query);
   parserCtx->collection   = "PFX";
   parserCtx->queryText    = query;
-  parserCtx->logFILE      = NULL;
   parserCtx->errBUFF[0]   = 0;
   parserCtx->useFragments = 0;
   parserCtx->ffPfx        = ""; /* "_frag"*/;
-#ifdef GENMILSTRING
+  parserCtx->milFILEname  = NULL;
+  /* initialize the lists */
+  if ( ! (
+        tnl_init(&parserCtx->command_preLIST, "COMMAND_PRE", TSL_DFLTMAX) &&
+        tsl_init(&parserCtx->token_preLIST, "TOKEN_PRE", TSL_DFLTMAX) &&
+        tnl_init(&parserCtx->commandLIST, "COMMAND", TSL_DFLTMAX) &&
+        tsl_init(&parserCtx->tokenLIST, "TOKEN", TSL_DFLTMAX)
+     ) ) {
+      sprintf(&parserCtx->errBUFF[0],"Error: cannot create LIST structures.\n");
+      return FALSE;
+  }
   parserCtx->milBUFF[0] = 0;
-#else
-  ERROR: should open de miloutput file here
-#endif
   /* */
   MILPRINTF(MILOUT, "#\n# Generated NEXI MIL by Pathfinder-PFTIJAH package \n#\n\n");
   MILPRINTF(MILOUT, "module(pftijah);\n");
@@ -105,6 +107,10 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
       return NULL;
   }
   else {
+      tnl_free(&parserCtx->command_preLIST);
+      tnl_free(&parserCtx->commandLIST);
+      tsl_free(&parserCtx->token_preLIST);
+      tsl_free(&parserCtx->tokenLIST);
       return &parserCtx->milBUFF[0];
   }
 }
@@ -115,8 +121,8 @@ extern command_tree **CAS_plan_gen(
 	struct_RMT *txt_retr_model,
 	struct_RF *rel_feedback,
 	bool alg_type,
-	char *mil_fname,
-	char *log_fname,
+	char *mil_filename,
+	char *logical_filename,
 	char *result_name,
 	bool scale_on);
 
@@ -143,9 +149,11 @@ int old_main(BAT* optbat, char* startNodes_name)
     char *res_table = "result_table";
 
     /* Intermediate file names */
-    char *milpre_fname = "mil_pre.mil";
-    char *log_fname = "logical.sra";
-    char *mil_fname = "query_plan.mil";
+    /* char *milpre_filename = "/tmp/mil_pre.mil"; */
+    char *milpre_filename = NULL; // do not write the mil pre plan
+    /* char *logical_filename = "/tmp/logical.sra"; */
+    char *logical_filename = NULL; // do not write a logical plan
+    char *mil_filename = "/tmp/query_plan.mil";
 
     /* pointer to SRA command tree structure */
     command_tree **p_command_array;
@@ -158,13 +166,6 @@ int old_main(BAT* optbat, char* startNodes_name)
     /* struct_RMI *img_retr_model , *img_retr_model1 ; */
     struct_RMI *img_retr_model;
     struct_RF *rel_feedback;
-
-    /* files that store parser command and token output */
-    FILE *command_file_pre;
-    FILE *token_file_pre;
-    /* files that store command and token output afte stop words  removal and stemming */
-    FILE *command_file;
-    FILE *token_file;
 
     /* structure initialization */
     /* 
@@ -241,6 +242,9 @@ int old_main(BAT* optbat, char* startNodes_name)
 	        SET_TDEBUG(v);
 	        if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting debug value to %d.\n",v);
 	    }
+	} else if ( strcmp(optName,"milfile") == 0 ) {
+	    /* incomplete open file */
+            parserCtx->milFILEname = optVal;
 	} else if ( strcmp(optName,"collection") == 0 ) {
             parserCtx->collection = optVal;
 	} else if ( strcmp(optName,"fragments") == 0 ) {
@@ -463,54 +467,22 @@ int old_main(BAT* optbat, char* startNodes_name)
         MILPRINTF(MILOUT, "returnAllElements := false;\n" );
     }
       
-    /* reseting the files */
-    command_file_pre = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"w");
-    token_file_pre = fopen(myfileName(WORKDIR,"file_token_pre.nxi"),"w");
-    command_file = fopen(myfileName(WORKDIR,"file_command.nxi"),"w");
-    token_file = fopen(myfileName(WORKDIR,"file_token.nxi"),"w");
-
-    if (command_file_pre == NULL) {
-        LOGPRINTF(LOGFILE,"Error: cannot open pre-command file.\n");
-        return 0;
-    }
-
-    if (token_file_pre == NULL) {
-        LOGPRINTF(LOGFILE,"Error: cannot open pre-token file.\n");
-        return 0;
-    }
-
-    if (command_file == NULL) {
-        LOGPRINTF(LOGFILE,"Error: cannot open command file.\n");
-        return 0;
-    }
-
-    if (token_file == NULL) {
-        LOGPRINTF(LOGFILE,"Error: cannot open token file.\n");
-        return 0;
-    }
-
-
-    fclose(command_file_pre);
-    fclose(token_file_pre);
-    fclose(command_file);
-    fclose(token_file);
-
     /* specifying input and output files and result table name */
 
     FILE* milpre_file = NULL;
-    if ( milpre_fname && !(milpre_file = fopen(myfileName(WORKDIR,milpre_fname),"w")) ) {
+    if ( milpre_filename && !(milpre_file = fopen(milpre_filename,"w")) ) {
         LOGPRINTF(LOGFILE,"Error: cannot find file for writing fast mil code.\n");
         return 0;
     }
 
-    FILE* log_file = NULL;
-    if ( log_fname && !(log_file = fopen(myfileName(WORKDIR,log_fname),"w")) ) {
+    FILE* logical_file = NULL;
+    if ( logical_filename && !(logical_file = fopen(logical_filename,"w")) ) {
         LOGPRINTF(LOGFILE,"Error: cannot find file for writing logical plan.\n");
         return 0;
     }
 
     if ( milpre_file ) fclose(milpre_file);
-    if ( log_file ) fclose(log_file);
+    if ( logical_file ) fclose(logical_file);
 
     /*  Perform parsing of NEXI query */
     plan_ret = parseNEXI(parserCtx,&query_end_num);
@@ -572,8 +544,8 @@ int old_main(BAT* optbat, char* startNodes_name)
                                     txt_retr_model, 
                                     rel_feedback, 
                                     algebra_type, 
-                                    milpre_fname, 
-                                    log_fname, 
+                                    milpre_filename, 
+                                    logical_filename, 
                                     res_table, 
                                     scale_on);
 
@@ -590,9 +562,11 @@ int old_main(BAT* optbat, char* startNodes_name)
     else
         phrase_in = FALSE;
 
-    if ( !(parserCtx->milFILE = fopen(myfileName(WORKDIR,mil_fname),"w")) ) {
+    if ( parserCtx->milFILEname ) {
+      if ( !(parserCtx->milFILEdesc = fopen(parserCtx->milFILEname,"w")) ) {
         LOGPRINTF(LOGFILE,"Error: cannot find file for writing mil code.\n");
         return 0;
+      }
     }
 
     if (phrase_in == TRUE)
@@ -601,7 +575,7 @@ int old_main(BAT* optbat, char* startNodes_name)
                               txt_retr_model, 
                               img_retr_model, 
                               rel_feedback, 
-                              mil_fname, 
+                              mil_filename, 
                               "INCOMPLETE", 
                               p_command_array, 
                               TRUE);
@@ -611,19 +585,17 @@ int old_main(BAT* optbat, char* startNodes_name)
                               txt_retr_model, 
                               img_retr_model, 
                               rel_feedback, 
-                              mil_fname, 
+                              mil_filename, 
                               "INCOMPLETE", 
                               p_command_array, 
                               FALSE);
 
-#ifdef GENMILSTRING
     LOGPRINTF(LOGFILE,"\tGenerated MIL in string, size=%d\n",strlen(parserCtx->milBUFF));
-     if ( parserCtx->milFILE ) {
-       fprintf(parserCtx->milFILE,"%s",parserCtx->milBUFF);
+     if ( parserCtx->milFILEdesc ) {
+       fprintf(parserCtx->milFILEdesc,"%s",parserCtx->milBUFF);
      }
-#endif
-     if ( parserCtx->milFILE ) {
-       fclose(parserCtx->milFILE);
+     if ( parserCtx->milFILEdesc ) {
+       fclose(parserCtx->milFILEdesc);
      }
 
     if (!plan_ret) {
@@ -646,12 +618,98 @@ int old_main(BAT* optbat, char* startNodes_name)
 
 /*
  *
+ *  The Tijah[Number|String]List implementations
  *
  */
 
-char* myfileName(char* dirName, char* fileName) {
-    static char buff[FILENAME_SIZE];
-    char * userName = getenv( "USER" );
-    sprintf(buff,"%s/%s_%d_%s",dirName,userName,(int)getpid(),fileName);
-    return &buff[0];
+/* #define DEBUG_LIST */
+
+int   tsl_init(TijahStringList* tsl, char* label, int max) {
+#ifdef DEBUG_LIST
+	stream_printf(GDKout,"# init LIST[%s].\n",label);
+#endif
+	tsl->label = label;
+	tsl->cnt   = 0;
+	tsl->max   = max;
+	tsl->val   = GDKmalloc( tsl->max * sizeof(char*) );
+	return 1;
+}
+
+int tsl_clear(TijahStringList* tsl) {
+#ifdef DEBUG_LIST
+	stream_printf(GDKout,"# clearing LIST[%s].\n",tsl->label);
+#endif
+	for (int i=0; i<tsl->cnt; i++) {
+		GDKfree(tsl->val[i]);
+	}
+	tsl->cnt = 0;
+	return 1;
+}
+
+int tsl_free(TijahStringList* tsl) {
+#ifdef DEBUG_LIST
+	stream_printf(GDKout,"# free string LIST[%s].\n",tsl->label);
+#endif
+	for (int i=0; i<tsl->cnt; i++) {
+		GDKfree(tsl->val[i]);
+	}
+	GDKfree(tsl->val);
+	return 1;
+}
+
+char* tsl_append(TijahStringList* tsl, char* v) {
+	if ( tsl->cnt >= tsl->max) {
+		tsl->max *= 2;
+		tsl->val = GDKrealloc(tsl->val,(tsl->max * sizeof(char*)));
+	}
+#ifdef DEBUG_LIST
+	stream_printf(GDKout,"# appending \"%s\" to LIST[%s].\n",v,tsl->label);
+#endif
+	return (tsl->val[tsl->cnt++] = GDKstrdup(v));
+}
+
+char* tsl_appendq(TijahStringList* tsl, char* v) {
+	static char b[128];
+
+	sprintf(b,"\"%s\"",v);
+	return tsl_append(tsl,b);
+}
+
+int   tnl_init(TijahNumberList* tnl, char* label, int max) {
+#ifdef DEBUG_LIST
+	stream_printf(GDKout,"# init LIST[%s].\n",label);
+#endif
+	tnl->label = label;
+	tnl->cnt   = 0;
+	tnl->max   = max;
+	tnl->val   = GDKmalloc( tnl->max * sizeof(int) );
+	return 1;
+}
+
+int tnl_clear(TijahNumberList* tnl) {
+#ifdef DEBUG_LIST
+	stream_printf(GDKout,"# clearing LIST[%s].\n",tnl->label);
+#endif
+	tnl->cnt = 0;
+	return 1;
+}
+
+int tnl_free(TijahNumberList* tnl) {
+	GDKfree(tnl->val);
+#ifdef DEBUG_LIST
+	stream_printf(GDKout,"# free number LIST[%s].\n",tnl->label);
+#endif
+	return 1;
+}
+
+int tnl_append(TijahNumberList* tnl, int v) {
+	if ( tnl->cnt >= tnl->max) {
+		tnl->max *= 2;
+		tnl->val = GDKrealloc(tnl->val,tnl->max * sizeof(int));
+	}
+#ifdef DEBUG_LIST
+	stream_printf(GDKout,"# appending (%d) to LIST[%s].\n",v,tnl->label);
+#endif
+	tnl->val[tnl->cnt++] = v;
+	return 1;
 }

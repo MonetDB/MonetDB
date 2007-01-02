@@ -295,22 +295,45 @@ struct struct_RF {
 /* Maximum characters per query */
 #define QUERY_SIZE 1024
 
-#define GENMILSTRING
-
-#ifdef GENMILSTRING
 #define MAXMILSIZE	32000
 #define MILPRINTF sprintf
 #define MILOUT    &parserCtx->milBUFF[strlen(parserCtx->milBUFF)]
-#else
-#define MILPRINTF fprintf
-#define MILOUT    parserCtx->milFILE
-#endif
+
+typedef struct TijahStringList {
+    char*	label;
+    int		cnt;
+    int		max;
+    char**	val;
+} TijahStringList;
+
+typedef struct TijahNumberList {
+    char*	label;
+    int		cnt;
+    int		max;
+    int*	val;
+} TijahNumberList;
+
+#define TSL_DFLTMAX 32
+
+extern int   tsl_init(TijahStringList* tsl, char* label, int max);
+extern int   tsl_clear(TijahStringList* tsl);
+extern int   tsl_free(TijahStringList* tsl);
+extern char* tsl_append(TijahStringList* tsl, char* v);
+extern char* tsl_appendq(TijahStringList* tsl, char* v);
+
+extern int   tnl_init(TijahNumberList* tnl, char* label, int max);
+extern int   tnl_clear(TijahNumberList* tnl);
+extern int   tnl_free(TijahNumberList* tnl);
+extern int   tnl_append(TijahNumberList* tnl, int v);
 
 typedef struct TijahParserContext {
-    FILE*	logFILE; /* debugging log stream */
-    FILE* 	milFILE; /* descriptor for the MIL file output */
-    FILE*	commandFILE;
-    FILE*	tokenFILE;
+    char*	milFILEname; /* name of the generated milfile */
+    FILE* 	milFILEdesc; /* descriptor for the MIL file output */
+    /* */
+    TijahNumberList commandLIST;
+    TijahNumberList command_preLIST;
+    TijahStringList tokenLIST;
+    TijahStringList token_preLIST;
     /* */
     int		useFragments;   /* use fragmentation code */
     const char* ffPfx;		/* fragfunPrefix */
@@ -318,9 +341,7 @@ typedef struct TijahParserContext {
     const char* collection;
     const char* queryText;
     char	errBUFF[QUERY_SIZE];
-#ifdef GENMILSTRING
     char        milBUFF[MAXMILSIZE];
-#endif
     /* */
     struct tijahContextStruct* tjCtx;
 } TijahParserContext;
@@ -330,8 +351,6 @@ extern TijahParserContext* parserCtx;
 #define WORKDIR	"/tmp/"
 
 #define NEXI_RESULT_BAT "nexi_result"
-
-extern char* myfileName(char* dirName, char* fileName);
 
 /*
  *

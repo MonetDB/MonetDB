@@ -50,6 +50,9 @@
 .COMMAND tijah_tokenize(str) : str = CMDtijah_tokenize;
  "INCOMPLETE"
 
+.COMMAND tj_create_termdb(int, oid) : void = CMDtj_create_termdb;
+ "INCOMPLETE"
+
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
                       int	    niters,
@@ -2257,6 +2260,8 @@ extern int pftijah_debug;
 
 #include "pftijah.h"
 
+#include "termdb.h"
+
 #ifdef ENABLE_TDEBUG
 /* 
  * The main pftijah variable, settable from the command line by the
@@ -2620,14 +2625,7 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 }
 
 bat* pftijah_prelude() {
-    /* stream_printf(GDKout,"# execute pftijah_prelude().\n"); */
-    BAT* b = BATnew(TYPE_void,TYPE_bat,0);
-    /* tj_termDB, tj_termDBconf, tj_termDBtree, tj_termDBbats, tj_termDBbatN */
-    /* ? max tree size , max frag size ? */
-    if ( (!b) || (BBPrename(BBPcacheid(b),"tj_termDB")!=0) ) {
-      stream_printf(GDKout,"# pftijah_prelude(): env bat creation failed.\n");
-    }
-    BBPfix(BBPcacheid(b));
+    termdb_prelude();
     return NULL;
 }
 
