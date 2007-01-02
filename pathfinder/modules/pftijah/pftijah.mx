@@ -101,11 +101,14 @@ the join algorithm comes down to a repeated slice and insert operation.
 		: BAT[oid,dbl] = CMDscore_NLLR;
 "PARAMETERS:
 BAT[oid,oid] elem_tid - pre-order / tid bat that results from containment-join
-BAT[void,oid] pre_size - the pre_size bat of the element nodes
-BAT[oid,dbl] tid_fac - bat holding the search terms and the precomputed coll frequency
+BAT[void,int] pre_size - the pre_size bat of the element nodes
+BAT[oid,int] tid_cnt - tid histogram of the query
+BAT[oid,int] tid_frq - coll frequencies of the query
 BAT[oid,any] e - the extend bat, holding all pre-order identifiers of elements to score
+dbl _lmbd - the lambda interpolation factor
+q_cnt - the number of query terms
 DESCRIPTION:
-The function calculates NLLR scores for all elements in e and all terms in tid_fac.
+The function calculates NLLR scores for all elements in e and all terms in tid_cnt.
 "
 
 .COMMAND treemergejoin_sort(BAT[void,oid],BAT[void,int],BAT[void,oid]) : BAT[oid,oid] = CMDtreemergejoin_sort; 
@@ -1114,7 +1117,8 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     ### Background probability:
     # For each term: collection term frequency tc(tm_i, col):
     #var col_term_frq := tid_pre.reverse().histogram();
-    var col_term_frq := collTermCount(background_collName, terms);
+    #small hack to get LMs running again...
+    var col_term_frq := collTermCount(background_collName, terms.reverse().project(int(0)));
 
     # Collection size len(col): int
     var col_len := bat("tj_" + background_collName + "_Terms").count();
