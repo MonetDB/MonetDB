@@ -19,6 +19,10 @@
 import sys
 import os
 
+sys.path.append(os.path.join(os.environ.get('CLIENTS_PREFIX','@QXprefix@'),
+                             'share',
+                             '@PACKAGE@',
+                             'python'))
 sys.path.append(os.path.join(os.environ.get('MONETDB_PREFIX','@QXprefix@'),
                              'share',
                              '@PACKAGE@',
