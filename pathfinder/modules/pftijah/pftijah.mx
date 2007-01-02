@@ -96,6 +96,21 @@ DESCRIPTION:
 the join algorithm comes down to a repeated slice and insert operation.
 "
 
+.COMMAND score_NLLR( BAT[oid,oid] elem_tid, BAT[void,int] pre_size, BAT[oid,int] tid_cnt, 
+                     BAT[oid,int] tid_frq, BAT[oid,any] e, dbl _lmbd, int q_cnt)
+		: BAT[oid,dbl] = CMDscore_NLLR;
+"PARAMETERS:
+BAT[oid,oid] elem_tid - pre-order / tid bat that results from containment-join
+BAT[void,oid] pre_size - the pre_size bat of the element nodes
+BAT[oid,dbl] tid_fac - bat holding the search terms and the precomputed coll frequency
+BAT[oid,any] e - the extend bat, holding all pre-order identifiers of elements to score
+DESCRIPTION:
+The function calculates NLLR scores for all elements in e and all terms in tid_fac.
+"
+
+.COMMAND treemergejoin_sort(BAT[void,oid],BAT[void,int],BAT[void,oid]) : BAT[oid,oid] = CMDtreemergejoin_sort; 
+"Stack tree merge join descendant"
+
 .PRELUDE = pftijah_prelude;
 .EPILOGUE = pftijah_epilogue;
 
@@ -735,141 +750,6 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 # PROBABILISTIC CONTAINMENT
 ################################################################################
 
-
-PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
-{
-    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR_batloop_anc" );
-     var terms := Qterms_to_void_tid( Qterms );
-     if (terms.count() = 0) {return new(oid,dbl);}
-     var t1 := time();
-     var tind := bat("tj_" + collName + "_TermIndex");
-     var pres := bat("tj_" + collName + "_Terms");
-     var _lmbd := (1.0 - lmbd) / lmbd;
-     var collFrq := pres.count();
-     _lmbd :*= collFrq; 
-
-     var t2 := time();
-     var doc_prob := new(oid,dbl);
-     terms@batloop()
-     {
-	  var t5 := time();
-	  var oid_min := int(tind.fetch($t));
-	  var oid_max := int(tind.fetch(int($t) + 1)) - 1;
-	  var tid_pre := pres.slice(oid_min, oid_max);
-          var tmp_pre := tid_pre.tsort().tmark(0@0); 
-	  tid_pre := nil;
-	  var fac := tmp_pre.count();
-	  if (fac > 0)
-	  {
-	       fac := _lmbd / fac;
-               
-               var elem_termpre := ll_ancestor(tmp_pre, tmp_pre, bat("tj_" + collName + "_size1"), collHeight).reverse(); 
-               tmp_pre := nil;
-               elem_termpre := elem_termpre.semijoin(left);
-               var elem_frq := bat("tj_" + collName + "_size1").semijoin(elem_termpre);
-	       
-	       var tmp := elem_termpre.reverse().histogram();
-               elem_termpre := nil;
-	       tmp := [dbl](tmp);
-	       tmp := [/](tmp, elem_frq);
-	       tmp := [*](tmp, fac);
-	       tmp := [+](tmp, 1);
-	       tmp := [log](tmp);
-	       var t8 := time();
-	       doc_prob.insert(tmp);
-	       var t9 := time();
-         if (DEBUG) {
-            printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
-            fflush(stdout());
-         }
-	       
-          }
-     }
-     var t3 := time();
-     var res := {sum}(doc_prob.reverse().mark(0@0).reverse(), doc_prob.mark(0@0).reverse(), left.mark(0@0));
-     res := res.[/](terms.count()).[+](left);
-     var t4 := time();
-     
-     if (DEBUG) {
-        printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
-        fflush(stdout());
-     }
-     
-     if ( trace ) tj_trace( "END  p_containing_q_NLLR_batloop_anc" );
-     return res;
-}
-
-PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
-{
-    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR_batloop" );
-     var terms := Qterms_to_void_tid( Qterms );
-     if (terms.count() = 0) {return new(oid,dbl);}
-     var t1 := time();
-     var tind := bat("tj_" + collName + "_TermIndex");
-     var pres := bat("tj_" + collName + "_Terms");
-     var elem_frq := bat("tj_" + collName + "_size1").semijoin(left);
-     var elems := left.hmark(0@0);
-     var iter := elems.mirror();
-     var _lmbd := (1.0 - lmbd) / lmbd;
-     var collFrq := pres.count();
-     _lmbd :*= collFrq; 
-
-     var t2 := time();
-     var doc_prob := new(oid,dbl);
-     terms@batloop()
-     {
-	  var t5 := time();
-	  var oid_min := int(tind.fetch($t));
-	  var oid_max := int(tind.fetch(int($t) + 1)) - 1;
-	  var tid_pre := pres.slice(oid_min, oid_max);
-          var cands := tid_pre.reverse().sort().mark(0@0).reverse();
-	  var fac := tid_pre.count();
-	  if (fac > 0)
-	  {
-	       fac := _lmbd / fac;
-	       var t6 := time();
-               if (DEBUG) {
-                    printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size1").count());
-                    fflush(stdout());
-               }
-	       var elem_termpre := ll_descendant(iter, 
-     						 elems, 
-						 bat("tj_" + collName + "_size1"), 
-						 cands, 
-						 false, false, min(iter), max(iter), false, chr(nil));
-               var t7 := time();
-	       cands := nil;
-	       tid_pre := nil;
-     	       elem_termpre := elem_termpre.reverse().leftfetchjoin(elems).reverse();
-	       var tmp := elem_termpre.reverse().histogram();
-               elem_termpre := nil;
-	       tmp := [dbl](tmp);
-	       tmp := [/](tmp, elem_frq);
-	       tmp := [*](tmp, fac);
-	       tmp := [+](tmp, 1);
-	       tmp := [log](tmp);
-	       var t8 := time();
-	       doc_prob.insert(tmp);
-	       var t9 := time();
-           if (DEBUG) {
-               printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
-               fflush(stdout());
-	       }
-          }
-     }
-     var t3 := time();
-     var res := {sum}(doc_prob.reverse().mark(0@0).reverse(), doc_prob.mark(0@0).reverse(), elems.reverse());
-     res := res.[/](terms.count()).[+](left);
-     var t4 := time();
-     
-     if (DEBUG) {
-        printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
-        fflush(stdout());
-     }
-     if ( trace ) tj_trace( "END   p_containing_q_NLLR_batloop" );
-     return res;
-}
-
 PROC _containing_desc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_desc" );    
@@ -905,6 +785,20 @@ PROC _containing_desc2(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] 
      return elem_tid;
 }
 
+PROC _containing_desc3(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
+{
+    if ( trace ) tj_trace( "BEGIN _containing_desc3" );    
+     var elems := left.hmark(0@0);
+     var cands := tid_pre.tmark(0@0);
+     var elem_termpre := treemergejoin_sort( elems, 
+					bat("tj_" + collName + "_size1"), 
+					cands);
+     var elem_tid := elem_termpre.join(tid_pre.reverse());
+     elem_termpre := nil;
+     if ( trace ) tj_trace( "END   _containing_desc" );    
+     return elem_tid;
+}
+
 PROC _containing_anc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_anc" );    
@@ -922,9 +816,9 @@ PROC _containing_anc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
      return elem_tid;
 }
 
-PROC collTermCount(str col, bat[void,oid] terms) : bat[oid,int] :=
+PROC collTermCount(str col, bat[oid,int] terms) : bat[oid,int] :=
 {
-     var tids := terms.reverse().mirror();
+     var tids := terms.mirror();
      var offsets1 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
      tids := tids.[int]().[+](1).[oid]();
      var offsets2 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
@@ -932,11 +826,47 @@ PROC collTermCount(str col, bat[void,oid] terms) : bat[oid,int] :=
      return res;
 }
 
+PROC score_NLLR_mil(bat[oid,oid] elem_tid, bat[void,int] pre_size, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, bat[oid,oid] elems, dbl _lmbd, int q_cnt) : bat[oid,dbl] :=
+{
+     # compute collection terms frequencies 
+     var _tid_frq := [/](_lmbd, tid_frq);
+     tid_frq := nil;
 
-# NEW fragment code
+     # compute document sizes
+     var elem_size := pre_size.semijoin(elems);
+
+     # compute scores in batloop over terms
+     var doc_prob := new(oid,dbl);
+     _tid_frq@batloop()
+     {
+	  var tmp := elem_tid.select($h);
+	  var fac := dbl(tid_cnt.find($h)) / dbl(q_cnt);
+	  tmp := tmp.reverse().histogram();
+	  tmp := [dbl](tmp);
+	  tmp := [/](tmp, elem_size);
+	  tmp := [*](tmp, $t);
+	  tmp := [+](tmp, 1);
+	  tmp := [log](tmp);
+	  tmp := [*](tmp, fac);
+	  doc_prob.insert(tmp);
+     }
+    
+    var elements := left.mark(0@0);
+    
+    if ( not( returnAllElements ) ) 
+        elements := elements.semijoin(elem_tid);
+     
+     # aggregate doc scores
+     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
+    
+     #res := res.[/](_tid_frq.count());
+
+     return res;
+}
+
 PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd) : bat[oid,bat] :=
 {
-    var res        := new(oid,bat);
+    var res := new(oid,bat);
 
     left@batloop() {
       res.insert($h, $t.p_containing_q_NLLR(Qterms,lmbd) );
@@ -949,71 +879,36 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
     var t1 := time();
     
-     # fetch term occurrences and drop all terms with zero frq in col or background-col
-     var terms := Qterms_to_void_tid( Qterms );
+     # get term ids and drop all terms with zero frq in col or background-col
+     var terms := Qterms_to_void_tid( Qterms ).histogram();
+     var q_cnt := Qterms.count();
      var tid_frq := collTermCount(background_collName, terms);
-     terms := terms.reverse().semijoin(tid_frq).hmark(0@0);
+     terms := terms.semijoin(tid_frq);
      if (terms.count() = 0) {return new(oid,dbl);}
+    
+     # compute constant factor in score computation
+     var _lmbd := dbl((1.0 - lmbd) / lmbd);
+     var collFrq := bat("tj_" + background_collName + "_Terms").count();
+     _lmbd :*= collFrq;
      
-     var tid_pre := indexfetchjoin(terms, 
+     # fetch term occurrences and sort them in preorder
+     var tid_pre := indexfetchjoin(terms.hmark(0@0), 
                                    bat("tj_" + collName + "_TermIndex"), 
                                    bat("tj_" + collName + "_Terms") );
      if (tid_pre.count() = 0) {return new(oid,dbl);}
+     var t1a := time();
      tid_pre := tid_pre.tsort();
      
-     # compute constant factor in score computation
-     var _lmbd := (1.0 - lmbd) / lmbd;
-     var collFrq := bat("tj_" + background_collName + "_Terms").count();
-     _lmbd :*= collFrq;
-
-     # compute collection terms frequencies 
-     var _tid_frq := [/](_lmbd, tid_frq);
-     tid_frq := nil;
-
-     # get evaluate doc/term (anc/desc) relationship
-     # including rule-of-thumb optimization
-     var elem_tid;
+     # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     #if ((tid_pre.count() * 50000) > collFrq)
-          elem_tid := _containing_desc(left.mark(0@0), tid_pre);
-     #else
-     #     elem_tid := _containing_anc(left.mark(0@0), tid_pre);
+     var elem_tid := _containing_desc3(left.mark(0@0), tid_pre);
      var t3 := time();
      tid_pre := nil;
-    
-     # if matches found in any node, return empty set
-     if (elem_tid.count() = 0)
-     {
-          return new(oid,dbl);
-     }
-    
-     # compute document sizes
-     var elem_size := bat("tj_" + collName + "_size1").semijoin(elem_tid);
-
-     # compute scores in batloop over terms
-     var doc_prob := new(oid,dbl);
-     terms@batloop()
-     {
-	  var tmp := elem_tid.select($t);
-	  var fac := _tid_frq.find($t);
-	  tmp := tmp.reverse().histogram();
-	  tmp := [dbl](tmp);
-	  tmp := [/](tmp, elem_size);
-	  tmp := [*](tmp, fac);
-	  tmp := [+](tmp, 1);
-	  tmp := [log](tmp);
-	  doc_prob.insert(tmp);
-     }
-    
-    var elements := left.mark(0@0);
-    
-    if ( not( returnAllElements ) ) 
-        elements := elements.semijoin(elem_tid);
+     if (elem_tid.count() = 0) {return new(oid,dbl);}
      
-     # aggregate doc scores
-     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
+     var pre_size := bat("tj_" + collName + "_size1");
+     var res := score_NLLR(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
      
-     res := res.[/](terms.count());
      # Obey scoreBase setting: 
      if ( scoreBase = 0 ) {
         res := [+](left, res);
@@ -1022,80 +917,45 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      }
      if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
      var t4 := time();
-     # printf("total time: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t3 - t2, t4 - t3);
+     printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
      return res;
 }
 
-PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
+PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
     var t1 := time();
     
-     # fetch term occurrences and drop all terms with zero frq in col or background-col
-     var terms := Qterms_to_void_tid( Qterms );
+     # get term ids and drop all terms with zero frq in col or background-col
+     var terms := Qterms_to_void_tid( Qterms ).histogram();
+     var q_cnt := Qterms.count();
      var tid_frq := collTermCount(background_collName, terms);
-     terms := terms.reverse().semijoin(tid_frq).hmark(0@0);
+     terms := terms.semijoin(tid_frq);
      if (terms.count() = 0) {return new(oid,dbl);}
+    
+     # compute constant factor in score computation
+     var _lmbd := dbl((1.0 - lmbd) / lmbd);
+     var collFrq := bat("tj_" + background_collName + "_Terms").count();
+     _lmbd :*= collFrq;
      
-     var tid_pre := indexfetchjoin(terms, 
+     # fetch term occurrences and sort them in preorder
+     var tid_pre := indexfetchjoin(terms.hmark(0@0), 
                                    bat("tj_" + collName + "_TermIndex"), 
                                    bat("tj_" + collName + "_Terms") );
      if (tid_pre.count() = 0) {return new(oid,dbl);}
+     var t1a := time();
      tid_pre := tid_pre.tsort();
      
-     # compute constant factor in score computation
-     var _lmbd := (1.0 - lmbd) / lmbd;
-     var collFrq := bat("tj_" + background_collName + "_Terms").count();
-     _lmbd :*= collFrq;
-
-     # compute collection terms frequencies 
-     var _tid_frq := [/](_lmbd, tid_frq);
-     tid_frq := nil;
-
-     # get evaluate doc/term (anc/desc) relationship
-     # including rule-of-thumb optimization
-     var elem_tid;
+     # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     #if ((tid_pre.count() * 50000) > collFrq)
-          elem_tid := _containing_desc2(left.mark(0@0), tid_pre);
-     #else
-     #     elem_tid := _containing_anc(left.mark(0@0), tid_pre);
+     var elem_tid := _containing_desc(left.mark(0@0), tid_pre);
      var t3 := time();
      tid_pre := nil;
-    
-     # if matches found in any node, return empty set
-     if (elem_tid.count() = 0)
-     {
-          return new(oid,dbl);
-     }
-    
-     # compute document sizes
-     var elem_size := bat("tj_" + collName + "_size1").semijoin(elem_tid);
-
-     # compute scores in batloop over terms
-     var doc_prob := new(oid,dbl);
-     terms@batloop()
-     {
-	  var tmp := elem_tid.select($t);
-	  var fac := _tid_frq.find($t);
-	  tmp := tmp.reverse().histogram();
-	  tmp := [dbl](tmp);
-	  tmp := [/](tmp, elem_size);
-	  tmp := [*](tmp, fac);
-	  tmp := [+](tmp, 1);
-	  tmp := [log](tmp);
-	  doc_prob.insert(tmp);
-     }
-    
-    var elements := left.mark(0@0);
-    
-    if ( not( returnAllElements ) ) 
-        elements := elements.semijoin(elem_tid);
+     if (elem_tid.count() = 0) {return new(oid,dbl);}
      
-     # aggregate doc scores
-     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
+     var pre_size := bat("tj_" + collName + "_size1");
+     var res := score_NLLR_mil(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
      
-     res := res.[/](terms.count());
      # Obey scoreBase setting: 
      if ( scoreBase = 0 ) {
         res := [+](left, res);
@@ -1104,7 +964,7 @@ PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : b
      }
      if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
      var t4 := time();
-     printf("total time: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t3 - t2, t4 - t3);
+     printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
      return res;
 }
 
@@ -2255,6 +2115,8 @@ extern int pftijah_debug;
 
 #include <monet.h>
 #include <gdk.h>
+#include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#include <math.h>
 
 #include <pathfinder.h>
 
@@ -2624,6 +2486,270 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	return GDK_SUCCEED;
 }
 
+@= init_result
+{
+	REGISTER BUN _p = BUNlast(bn);
+	REGISTER int _bunsize = BUNsize(bn);
+
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	BATloopFast(e, p, q, xx) {
+		oiddbl_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
+		_p += _bunsize;
+	}
+	ALGODEBUG THRprintf(GDKout, "#init_result(dbl): BAThordered(e)&1, \n");
+	bn->batBuns->free = _p - bn->batBuns->base;
+	BATsetcount(bn, bn->batBuns->free/_bunsize);
+	BATprepareHash(bn);	
+	if (!bn->batDirty)
+		bn->batDirty = TRUE;
+}
+@
+@c
+int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BAT* tid_frq, BAT* e, dbl* _lmbd, int* q_cnt )
+{
+	char *name = "TJscore_NLLR";
+	BAT *bn;
+	dbl zero = (dbl)0;
+	dbl score = (dbl)0; 
+	BUN p, q, r, t;
+	int xx, i;
+	int term_cnt = (int)BATcount(tid_frq);
+	int est;
+	int *size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+        int bs_x, bs_t;
+	int tid_sum = 0;
+
+	oid* terms = (oid*) GDKmalloc(term_cnt * sizeof(oid));
+	dbl* facs = (dbl*) GDKmalloc(term_cnt * sizeof(dbl));
+	BAT** bats = (BAT**) GDKmalloc(term_cnt * sizeof(BAT*)); 
+        BUN* dsts = (BUN*) GDKmalloc(term_cnt * sizeof(BUN));
+	int* bfrees = (int*) GDKmalloc(term_cnt * sizeof(int));
+	
+	/* --------------------------- checks ---------------------------------- */
+	
+	BATcheck(elem_tid, name);
+	BATcheck(pre_size, name);
+	BATcheck(tid_cnt, name);
+	BATcheck(tid_frq, name);
+
+	/* ---------------------------- main ----------------------------------- */
+
+	i = 0;
+	BATloopFast(tid_frq, p, q, xx) {
+		int frq = *(int*) BUNtail(tid_frq, p);
+		tid_sum += frq;
+		facs[i] = *_lmbd / (dbl)frq;
+		terms[i] = *(oid*) BUNhead(tid_frq, p);
+		bfrees[i] = frq;
+		/* printf("fac term: %f, _lambda %f, frq %d\n", facs[i], *_lmbd, *(int*) BUNtail(tid_frq, p)); */
+		i++;
+	}
+	
+	est = (int)BATcount(elem_tid);
+	/* printf("term-count: %d\n",term_cnt); */
+
+	for(i = 0; i < term_cnt; i++) {
+	        dbl est2 = (est * (dbl)bfrees[i]) / (dbl)tid_sum;
+		bats[i] = BATnew(TYPE_void, TYPE_oid, (int)est2);
+		dsts[i] = BUNlast(bats[i]);
+		bfrees[i] = (int)est2;
+	}
+        bs_x = BUNsize(bats[0]);
+	
+        /* init result */
+ 	bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
+	if (bn == NULL)
+		return GDK_FAIL;
+	@:init_result@
+	
+
+	BATloopFast(elem_tid, p, q, xx) {
+		oid *h = (oid*) BUNhloc(elem_tid, p);
+		oid *t = (oid*) BUNtloc(elem_tid, p);
+		for(i = 0; i < term_cnt; i++)  
+			if (terms[i] == *t) { 
+				if (0) BUNappend(bats[i], h, 0); 
+				else {
+					if (!bfrees[i]) {
+						printf("bat extension\n");
+						bats[i]->batBuns->free = dsts[i] - bats[i]->batBuns->base;
+	        				BATsetcount(bats[i], (bats[i]->batBuns->free+Bunbase(bats[i])-BUNfirst(bats[i]))/bs_x);
+					        int sz = BATcount(bats[i]);
+						BATextend(bats[i],2*sz); 
+						dsts[i] = BUNlast(bats[i]);
+						bfrees[i] = sz;
+					}
+					*(oid*)dsts[i] = *h;
+					dsts[i] += bs_x;
+					bfrees[i]--;
+				}
+				break;
+			}
+		if (i == term_cnt)
+			GDKerror("%s: jan was right.\n",name);
+	}
+
+        t = BUNfirst(tid_cnt);
+        bs_t = BUNsize(tid_cnt);
+	for(i = 0; i < term_cnt; i++) {
+		dbl fac = *(int*) BUNtail(tid_cnt, t) / (dbl)*q_cnt;
+		/*printf("fac: %f\n", fac); */
+		t += bs_t;
+		if (1) {
+			bats[i]->batBuns->free = dsts[i] - bats[i]->batBuns->base;
+	        	BATsetcount(bats[i], (bats[i]->batBuns->free+Bunbase(bats[i])-BUNfirst(bats[i]))/bs_x);
+		}
+		BAT *tmp = BAThistogram(bats[i]);
+		BATloopFast(tmp, p, q, xx) {
+			oid *h = (oid*) BUNhloc(tmp, p);
+			int *t = (int*) BUNtloc(tmp, p);
+			score = (dbl)*t / (dbl)size[*h];
+			score *= facs[i];
+			score++;
+			score = log(score);
+			score *= fac;
+			HASHfnd_oid(r, bn, h);
+			if (r) {
+					dbl *dst = (dbl*) BUNtloc(bn,r);
+					(*dst) += score;
+			       } 
+			else GDKerror("%s: jan was right again.\n",name);     
+		}
+		BBPreclaim(tmp);
+		BBPreclaim(bats[i]);
+	}
+        
+        GDKfree(terms);
+	GDKfree(facs);
+	GDKfree(bats);
+	GDKfree(dsts);
+	
+	*result = bn;
+	return GDK_SUCCEED;
+}
+@
+@= push
+    si new_stack_item;
+    new_stack_item.ctx = *A_cur_start;
+    new_stack_item.eocs = *A_cur_start + size[*A_cur_start];
+    stack[stack_top++] = new_stack_item;
+@
+@= pop
+    stack_top--;
+@
+@c
+#define max_stack_size 128
+
+typedef struct stack_item si;
+
+struct stack_item {
+    oid ctx;            /* ctx */
+    oid eocs;           /* end of ctx scope (pre + size) */
+};
+
+int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) {
+
+    /* ---------------------------- declarations ------------------------------------ */
+    BAT *res = *result;
+    oid *D_cur_start, *D_last_start, 
+        *A_cur_start, *A_last_start;
+   
+    si *stack; 
+    int stack_top = 0, i;
+	
+    oid *A_cur_oid, *D_cur_oid;
+    int SAs;
+    int SDs;
+    int SRs;
+    int *size;
+    
+    BUN dst = NULL;
+    
+    /* ------------------------------- checks ---------------------------------------- */
+    if (!(BATtordered(Astart)&1)) { 
+        GDKerror("treemergejoin_sort_proper: Ancestor pre BAT not sorted (on start).\n"); 
+        return(GDK_FAIL);
+    }
+    if (!(BATtordered(Dstart)&1)) { 
+        GDKerror("treemergejoin_sort_proper: Descendant BAT not sorted (on start).\n"); 
+        return(GDK_FAIL);
+    }
+
+    /* ----------------------------- initialize -------------------------------------- */
+    // The maximum depth of the stack is the depth of the XML tree
+    if ((stack = (si*)GDKmalloc(sizeof(si) * max_stack_size)) == NULL) {
+        GDKerror("treemergejoin_sort: could not allocate memory for stack.\n"); 
+        return(GDK_FAIL);
+    }
+
+    // the size of the bat may not be correct (could be more, could be less)
+    res = BATnew(TYPE_oid, TYPE_oid, BATcount(Dstart)); 
+    
+    /* todo: what if size is not a multiple of sizeof(oid)  (BUNsize(...) % sizeof(oid) != 0) */
+    SAs = BUNsize(Astart) / SIZEOF_OID;
+    SDs = BUNsize(Dstart) / SIZEOF_OID;
+    SRs = BUNsize(res);
+    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
+    D_last_start = (oid *) BUNtail(Dstart, BUNlast(Dstart));  
+    D_cur_oid = (oid *) BUNhead(Dstart,BUNfirst(Dstart));
+    A_cur_oid = (oid *) BUNhead(Astart, BUNfirst(Astart));
+    A_cur_start = (oid *) BUNtail(Astart, BUNfirst(Astart));
+    A_last_start = (oid *) BUNtail(Astart, BUNlast(Astart));
+    dst = BUNlast(res);
+
+    /* -------------------------------- main ---------------------------------------- */
+    while(D_cur_start < D_last_start) {
+      
+      /* printf("0. eocs: %d, desc: %d\n", stack[stack_top-1].eocs, *D_cur_start); */
+      
+      /* remove ancestor candidates that ended before D_cur_start */
+      while (stack_top && *D_cur_start > stack[stack_top-1].eocs) {
+        @:pop@
+      }	
+      
+      /* printf("1.stacksize: %d\n", stack_top); */
+      
+      /* Put ancestors on stack until we reach the current descendent */ 
+      while (*A_cur_start < *D_cur_start && A_cur_start < A_last_start){		
+	if (*D_cur_start <= (*A_cur_start + size[*A_cur_start])) {
+	   @:push@
+	}
+	A_cur_start += SAs;
+      }
+      
+      /* printf("2.stacksize: %d\n", stack_top); */
+
+      /* output everything that is on the stack (the ancestors) */
+      /* It has started before Dstart and since it's a tree, */
+      /* it has to end after Dend. */
+      /* for (; D_cur_start < D_last_start && *D_cur_start < *A_cur_start; D_cur_start += SDs) { */
+        for (i=0;i<stack_top;i++) {
+          /* printf("3. anc/desc: (%d/%d)\n", stack[i].ctx, *D_cur_start); */
+          *(oid*)dst              = stack[i].ctx;
+          *(oid*)(dst+SIZEOF_OID) = *D_cur_start;
+          dst += SRs;
+        }
+      /*} */
+        D_cur_start += SDs;
+    }
+    
+    /* ----------------------------- tidy up -------------------------------------- */
+     GDKfree(stack); 
+	
+     res->batBuns->free = dst - res->batBuns->base;
+     BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/SRs);
+     res->batDirty = TRUE;
+     res->tsorted = GDK_SORTED;
+     BATset(res, TRUE);
+     
+     *result = res;    
+     /* it is possible there are still ancestor candidates left on the stack, but we are out of descendants, so they starve... */
+     return(GDK_SUCCEED);
+}
+@
+@c
 bat* pftijah_prelude() {
     termdb_prelude();
     return NULL;
