@@ -149,29 +149,29 @@ static Client
 Monet_init(opt *set, int setlen)
 {
 	char *p;
-	opt *n = (opt *) GDKmalloc(setlen * sizeof(opt));
+	opt *n = (opt *) malloc(setlen * sizeof(opt));
 	int i, j, nlen = 0;
 
-	char dbfarm[BUFSIZ];
+	char buf[BUFSIZ];
 	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
 	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
 	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
 
 	if (!n || !dbname || !dbfarmval || !alloc_map) {
 		if (n)
-			GDKfree(n);
+			free(n);
 		return NULL;
 	}
 
-	strcpy(dbfarm, dbfarmval);
-	mo_substitute(set, setlen, dbfarm);
+	strcpy(buf, dbfarmval);
+	mo_substitute(set, setlen, buf);
 
 	if ((p = mo_find_option(set, setlen, "gdk_debug")))
 		GDKdebug = strtol(p, NULL, 10);
 
 	/* determine Monet's kernel settings. */
-	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map, "yes") == 0)) {
-		GDKfree(n);
+	if (!GDKinit(dbname, buf, strcasecmp(alloc_map, "yes") == 0)) {
+		free(n);
 		return NULL;
 	}
 
@@ -193,13 +193,11 @@ Monet_init(opt *set, int setlen)
 		}
 	}
 	for (i = 0; i < nlen; i++) {
-		char value[BUFSIZ];
-
-		strncpy(value, n[i].value, BUFSIZ);
-		mo_substitute(n, nlen, value);
-		GDKsetenv(n[i].name, value);
+		strncpy(buf, n[i].value, BUFSIZ);
+		mo_substitute(n, nlen, buf);
+		GDKsetenv(n[i].name, buf);
 	}
-	GDKfree(n);
+	free(n);
 
 
 	if ((p = GDKgetenv("gdk_mem_bigsize"))) {
@@ -209,7 +207,7 @@ Monet_init(opt *set, int setlen)
 		/* sanity check to avoid memory fragmentation */
 		GDK_mem_bigsize = (size_t) MIN(max_mem_bigsize, strtol(p, NULL, 10));
 	}
-	if ((p = GDKgetenv("gdk_vm_minsize"))) {
+	if ((p = GDKgetenv("gdk_vm_minsize"))){
 		/* when allocating HUGE regions, switch from vmalloc() to mmap() on a real file */
 		/* for 32-bits systems HUGE = RAM/8, for 64-bits systems HUGE = RAM/2 */
 		lng max_vm_minsize = ((lng)GDK_mem_maxsize*sizeof(void*)*sizeof(void*))/128;
@@ -297,8 +295,8 @@ capabilities depend on the malloc implementation used at run time.
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog, debug, set, setlen);
 
-	monet_script = (str *) GDKmalloc(sizeof(str) * (argc - optind + 5));
-	monet_script[idx] = NULL;
+	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
+	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
 
 	for (;;) {
 		int option_index = 0;
@@ -367,6 +365,8 @@ capabilities depend on the malloc implementation used at run time.
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog,debug, set, setlen);
 
+	monet_script = (str *) GDKmalloc(sizeof(str) * (argc - optind + 5));
+	monet_script[idx] = NULL;
 	while (optind < argc) {
 		monet_script[idx] = absolute_path(av[optind]);
 		monet_script[idx + 1] = NULL;

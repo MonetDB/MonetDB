@@ -69,3 +69,6 @@
 #define __GLIBC_HAVE_LONG_LONG 1
 #endif
 #endif
+
+#define MONETDBPREFIX "@Qprefix@"
+#define MONETDBCONFIG "@Qsysconfdir@@QDIRSEP@MonetDB.conf"
