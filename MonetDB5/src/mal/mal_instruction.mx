@@ -67,7 +67,7 @@ language features and illustrative examples.
 @end menu
 
 
-@node MAL Literals, MAL Variables, MAL,MAL
+@node MAL Literals, MAL Variables, MAL Reference,MAL Reference
 @+ MAL Literals 
 Literals in MAL follow the lexical conventions of C/C++.
 A default type is attached, e.g. the literal 1 is typed
@@ -90,7 +90,7 @@ and several types to interact more closely with the
 kernel @sansserif{lock, semphore}.
 This list can be extended with user defined types.
 
-@node MAL Variables, MAL Instructions, MAL,MAL
+@node MAL Variables, MAL Instructions, MAL Literals, MAL Reference
 @+ MAL Variables
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
@@ -102,7 +102,7 @@ temporary variable whose name aligns with an entry in the symbol table.
 In general they can not be used in MAL programs, but they may become
 visible in MAL program listings or during debugging.
 
-@node MAL Instructions, MAL Flow-of-control, MAL Variables, MAL
+@node MAL Instructions, MAL Flow-of-control, MAL Variables, MAL Reference
 @+ Instructions
 A MAL instruction has purposely a simple format. 
 It is syntactically represented by an assignment, where
@@ -143,7 +143,7 @@ Variable- and statement- block together describe the
 static part of a MAL procedure. It carries enough 
 information to produce a listing and to aid symbolic debugging.
 
-@node MAL Flow-of-control, MAL Functions, MAL Instructions, MAL
+@node MAL Flow-of-control, MAL Functions, MAL Instructions, MAL Reference
 @+ MAL Flow-of-control
 The flow of control within a MAL program block can be changed by
 tagging a statement with either @sansserif{return}, @sansserif{yield},
