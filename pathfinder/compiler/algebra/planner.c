@@ -197,7 +197,7 @@ plan_serialize (const PFla_op_t *n)
         add_plans (sorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (PFordering (), n->sem.serialize.pos)));
+                       sortby (n->sem.serialize.pos)));
 
     /* throw out those plans that are too expensive */
     sorted = prune_plans (sorted);
@@ -593,7 +593,9 @@ plan_disjunion (const PFla_op_t *n)
 
             for (unsigned int i = 0; i < PFord_set_count (common); i++) {
 
-                PFalg_att_t att = PFord_order_at (PFord_set_at (common, i), 0);
+                PFalg_att_t att = PFord_order_col_at (
+                                      PFord_set_at (common, i),
+                                      0);
 
                 PFalg_simple_type_t tyR = type_of (R->schema, att);
                 PFalg_simple_type_t tyS = type_of (S->schema, att);
@@ -601,8 +603,7 @@ plan_disjunion (const PFla_op_t *n)
                 if (tyR == tyS
                     && (tyR == aat_nat || tyR == aat_int || tyR == aat_str
                         || tyR == aat_dec || tyR == aat_dbl || tyR == aat_uA))
-
-                    PFord_set_add (prefixes, PFord_refine (PFordering (), att));
+                    PFord_set_add (prefixes, sortby (att));
             }
 
             /* kick out the duplicates */
@@ -701,8 +702,12 @@ plan_distinct (const PFla_op_t *n)
 
     for (unsigned int i = 0; i < n->schema.count; i++)
         if (!PFprop_const (n->prop, n->schema.items[i].name))
-            ord = PFord_refine (ord, n->schema.items[i].name);
+            ord = PFord_refine (ord,
+                                n->schema.items[i].name,
+                                DIR_ASC /* will be ignored anyway */);
 
+    /* PFord_permutations ignores the input direction and
+       generates all permutations also for the directions. */
     perms = PFord_permutations (ord);
 
     /* consider all possible orderings (permutations) */
@@ -943,7 +948,7 @@ plan_rownum (const PFla_op_t *n)
 {
     PFplanlist_t *ret    = new_planlist ();
     PFplanlist_t *sorted = new_planlist ();
-    PFord_ordering_t ord;
+    PFord_ordering_t ord_asc, ord_desc;
 
     assert (n); assert (n->kind == la_rownum);
     assert (L(n)); assert (L(n)->plans);
@@ -951,21 +956,38 @@ plan_rownum (const PFla_op_t *n)
     /*
      * Build up the ordering that we require for MergeRowNumber
      */
-    ord = PFordering ();
+    ord_asc  = PFordering ();
+    ord_desc = PFordering ();
 
     /* the partitioning attribute must be the primary ordering */
-    if (n->sem.rownum.part)
-        ord = PFord_refine (ord, n->sem.rownum.part);
+    if (n->sem.rownum.part) {
+        ord_asc  = PFord_refine (ord_asc, n->sem.rownum.part, DIR_ASC);
+        ord_desc = PFord_refine (ord_desc, n->sem.rownum.part, DIR_DESC);
+    }
 
     /* then we refine by all the attributes in the sortby parameter */
-    for (unsigned int i = 0; i < n->sem.rownum.sortby.count; i++)
-        ord = PFord_refine (ord, n->sem.rownum.sortby.atts[i]);
+    for (unsigned int i = 0;
+         i < PFord_count (n->sem.rownum.sortby);
+         i++) {
+        ord_asc = PFord_refine (
+                      ord_asc,
+                      PFord_order_col_at (n->sem.rownum.sortby, i),
+                      PFord_order_dir_at (n->sem.rownum.sortby, i));
+        ord_desc = PFord_refine (
+                       ord_desc,
+                       PFord_order_col_at (n->sem.rownum.sortby, i),
+                       PFord_order_dir_at (n->sem.rownum.sortby, i));
+    }
 
     /* ensure correct input ordering for MergeRowNumber */
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++) {
         add_plans (sorted,
                    ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i), ord));
+                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_asc));
+        add_plans (sorted,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_desc));
+    }
 
     /* throw out those plans that are too expensive */
     sorted = prune_plans (sorted);
@@ -974,8 +996,8 @@ plan_rownum (const PFla_op_t *n)
     for (unsigned int i = 0; i < PFarray_last (sorted); i++)
         for (unsigned int j = 0; j < PFarray_last (L(n)->plans); j++)
             add_plan (ret,
-                      merge_rownum (*(plan_t **) PFarray_at (sorted, i),
-                                    n->sem.rownum.attname, n->sem.rownum.part));
+                      number (*(plan_t **) PFarray_at (sorted, i),
+                              n->sem.rownum.attname, n->sem.rownum.part));
 
     return ret;
 }
@@ -999,7 +1021,8 @@ plan_number (const PFla_op_t *n)
                 = *(plan_t **) PFarray_at (L(n)->plans, i);
 
     add_plan (ret, number (cheapest_unordered,
-              n->sem.number.attname, n->sem.number.part));
+                           n->sem.number.attname,
+                           n->sem.number.part));
 
     return ret;
 }
@@ -1112,19 +1135,11 @@ plan_scjoin (const PFla_op_t *n)
      * encoded in a single integer value.
      */
     const PFord_ordering_t in[2]
-        = { PFord_refine (PFord_refine (PFordering (),
-                                            n->sem.scjoin.iter),
-                              n->sem.scjoin.item),
-                PFord_refine (PFord_refine (PFordering (),
-                                            n->sem.scjoin.item),
-                              n->sem.scjoin.iter) };
+        = { sortby (n->sem.scjoin.iter, n->sem.scjoin.item),
+            sortby (n->sem.scjoin.item, n->sem.scjoin.iter) };
     const PFord_ordering_t out[2]
-            = { PFord_refine (PFord_refine (PFordering (),
-                                            n->sem.scjoin.iter),
-                              n->sem.scjoin.item),
-                PFord_refine (PFord_refine (PFordering (),
-                                            n->sem.scjoin.item),
-                              n->sem.scjoin.iter) };
+        = { sortby (n->sem.scjoin.iter, n->sem.scjoin.item),
+            sortby (n->sem.scjoin.item, n->sem.scjoin.iter) };
 
     /* consider the two possible input orderings */
     for (unsigned short i = 0; i < 2; i++) {
@@ -1206,7 +1221,7 @@ plan_doc_tbl (const PFla_op_t *n)
         add_plans (ordered,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (L(n)->plans, i),
-                       PFord_refine (PFordering (), n->sem.doc_tbl.iter)));
+                       sortby (n->sem.doc_tbl.iter)));
 
     for (unsigned int i = 0; i < PFarray_last (ordered); i++)
         if (!cheapest_ordered
@@ -1301,7 +1316,7 @@ plan_element (const PFla_op_t *n)
         add_plans (ordered_qn,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (L(R(n))->plans, i),
-                       PFord_refine (PFordering (), iter)));
+                       sortby (iter)));
 
     for (unsigned int i = 0; i < PFarray_last (ordered_qn); i++)
         if (!cheapest_qn_plan
@@ -1314,9 +1329,7 @@ plan_element (const PFla_op_t *n)
         add_plans (ordered_cont,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(R(n))->plans, i),
-                       PFord_refine (
-                           PFord_refine (PFordering (), iter),
-                           pos)));
+                       sortby (iter, pos)));
 
     for (unsigned int i = 0; i < PFarray_last (ordered_cont); i++)
         if (!cheapest_cont_plan
@@ -1432,9 +1445,7 @@ plan_merge_texts (const PFla_op_t *n)
         add_plans (sorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (
-                           PFord_refine (PFordering (), iter),
-                           pos)));
+                       sortby (iter, pos)));
 
     for (unsigned int i = 0; i < PFarray_last (sorted); i++)
         if (!cheapest_sorted
@@ -1613,14 +1624,13 @@ plan_string_join (const PFla_op_t *n)
         add_plans (sorted_n1,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (L(n)->plans, i),
-                       PFord_refine (PFord_refine (PFordering (), iter),
-                                     pos)));
+                       sortby (iter, pos)));
 
     for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
         add_plans (sorted_n2,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (PFordering (), iter)));
+                       sortby (iter)));
 
     /* for each remaining plan, generate a string_join operator */
     for (unsigned int i = 0; i < PFarray_last (sorted_n1); i++)
@@ -1928,9 +1938,14 @@ ensure_ordering (const plan_t *unordered, PFord_ordering_t required)
         /* collect the common prefix of required and existing ordering */
         for (unsigned int k = 0;
              k < PFord_count (required) && k < PFord_count (existing)
-             && PFord_order_at (required, k) == PFord_order_at (existing, k);
+             && PFord_order_col_at (required, k) 
+             == PFord_order_col_at (existing, k) 
+             && PFord_order_dir_at (required, k)
+             == PFord_order_dir_at (existing, k);
              k++)
-            prefix = PFord_refine (prefix, PFord_order_at (existing, k));
+            prefix = PFord_refine (prefix,
+                                   PFord_order_col_at (existing, k),
+                                   PFord_order_dir_at (existing, k));
 
         /*
          * If this prefix is better that what we already found

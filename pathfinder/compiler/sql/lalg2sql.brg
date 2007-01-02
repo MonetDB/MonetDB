@@ -1133,18 +1133,23 @@ reduce(PFla_op_t *p, int goalnt)
 
                              PFsql_t *srtbylist =
                                  sortkey_expressions_empty();
-                             for( unsigned int j = 0; j < p->sem.rownum.
-                                     sortby.count; j++ ) {
+                             for( unsigned int j = 0; 
+                                  j < PFord_count (p->sem.rownum.sortby); j++ ) {
                                  srtbylist = 
+                             /* FIXME: cope with direction
+                                PFord_order_dir_at (p->sem.rownum.sortby, j) */
                                      sortkey_expressions_add(
                                              srtbylist,
                                          sql_expression(
-                                             L(p)->sql_ann->
-                                             colmap, p->sem.rownum.
-                                             sortby.atts[j],
+                                             L(p)->sql_ann->colmap,
+                                             PFord_order_col_at (
+                                                 p->sem.rownum.sortby,
+                                                 j),
                                              type_of(
-                                                 L(p), p->sem.rownum
-                                                 .sortby.atts[j])));
+                                                 L(p),
+                                                 PFord_order_col_at (
+                                                     p->sem.rownum.sortby,
+                                                     j))));
                              }
                              sql_column_env_add( p->sql_ann->colmap,
                                      p->schema.items[i].name,

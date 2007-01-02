@@ -92,8 +92,6 @@ static char *a_id[]  = {
     , [pa_max]             = "MIN"
     , [pa_sum]             = "SUM"
     , [pa_hash_count]      = "HASH_COUNT"
-    , [pa_merge_rownum]    = "MROW#"             /* \"#FF0000\" */
-    , [pa_hash_rownum]     = "HROW#"             /* \"#FF0000\" */
     , [pa_number]          = "NUMBER"            /* \"#FF0000\" */
     , [pa_type]            = "TYPE"
     , [pa_type_assert]     = "type assertion"
@@ -179,8 +177,6 @@ static char *xml_id[]  = {
     , [pa_max]             = "min"
     , [pa_sum]             = "sum"
     , [pa_hash_count]      = "hash_count"
-    , [pa_merge_rownum]    = "mrownum"
-    , [pa_hash_rownum]     = "hrownum"
     , [pa_number]          = "number"
     , [pa_type]            = "type"
     , [pa_type_assert]     = "type assertion"
@@ -381,8 +377,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_min]             = "\"#A0A0A0\""
         , [pa_sum]             = "\"#A0A0A0\""
         , [pa_hash_count]      = "\"#A0A0A0\""
-        , [pa_hash_rownum]     = "\"#FFBBBB\""
-        , [pa_merge_rownum]    = "\"#FFBBBB\""
         , [pa_number]          = "\"#FFBBBB\""
         , [pa_type]            = "\"#C0C0C0\""
         , [pa_type_assert]     = "\"#C0C0C0\""
@@ -588,17 +582,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                                 PFatt_str (n->sem.aggr.res),
                                 PFatt_str (n->sem.aggr.att),
                                 PFatt_str (n->sem.aggr.part));
-            break;
-
-        case pa_hash_rownum:
-        case pa_merge_rownum:
-            if (n->sem.count.part != att_NULL)
-                PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
-                                PFatt_str (n->sem.rownum.attname),
-                                PFatt_str (n->sem.rownum.part));
-            else
-                PFarray_printf (dot, "%s (%s)", a_id[n->kind],
-                                PFatt_str (n->sem.rownum.attname));
             break;
 
         case pa_number:
@@ -1023,29 +1006,39 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
 
             for (c = 0; c < PFord_count (n->sem.sortby.existing); c++)
                 PFarray_printf (xml, 
-                                "      <column name=\"%s\" function=\"existing"
-                                        " sort\""
+                                "      <column name=\"%s\" direction=\"%s\""
+                                        "function=\"existing sort\""
                                         " position=\"%u\" new=\"false\">\n"
                                 "        <annotation>%u. existing sort "
                                         "criterion</annotation>\n"
                                 "      </column>\n",
-                                PFatt_str (PFord_order_at (
+                                PFatt_str (PFord_order_col_at (
                                                n->sem.sortby.existing,
                                                c)),
+                                PFord_order_dir_at (
+                                    n->sem.sortby.required,
+                                    c) == DIR_ASC
+                                ? "ascending"
+                                : "descending",
                                 c+1, c+1);
 
             i = c;
             for (c = 0; c < PFord_count (n->sem.sortby.required); c++)
                 PFarray_printf (xml, 
-                                "      <column name=\"%s\" function=\"new"
-                                        " sort\""
+                                "      <column name=\"%s\" direction=\"%s\""
+                                        "function=\"new sort\""
                                         " position=\"%u\" new=\"false\">\n"
                                 "        <annotation>%u. sort argument"
                                         "</annotation>\n"
                                 "      </column>\n",
-                                PFatt_str (PFord_order_at (
+                                PFatt_str (PFord_order_col_at (
                                                n->sem.sortby.required,
                                                c)),
+                                PFord_order_dir_at (
+                                    n->sem.sortby.required,
+                                    c) == DIR_ASC
+                                ? "ascending"
+                                : "descending",
                                 i+c+1, i+c+1);
 
             PFarray_printf (xml, "    </content>\n");
@@ -1173,38 +1166,16 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
             PFarray_printf (xml, "    </content>\n");
             break;
 
-        case pa_hash_rownum:
-        case pa_merge_rownum:
-            PFarray_printf (xml, 
-                            "    <content>\n" 
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>new rownum column"
-                                    "</annotation>\n"
-                            "      </column>\n",
-                            PFatt_str (n->sem.rownum.attname));
-
-            if (n->sem.rownum.part != att_NULL)
-                PFarray_printf (xml,
-                                "      <column name=\"%s\" function=\"partition\""
-                                        " new=\"false\">\n"
-                                "        <annotation>partitioning argument"
-                                        "</annotation>\n"
-                                "      </column>\n",
-                                PFatt_str (n->sem.rownum.part));
-
-            PFarray_printf (xml, "    </content>\n");
-            break;
-
         case pa_number:
             PFarray_printf (xml, 
                             "    <content>\n" 
                             "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the count operator"
+                            "        <annotation>new number column"
                                     "</annotation>\n"
                             "      </column>\n",
                             PFatt_str (n->sem.number.attname));
 
-            if (n->sem.rownum.part != att_NULL)
+            if (n->sem.number.part != att_NULL)
                 PFarray_printf (xml,
                                 "      <column name=\"%s\" function=\"partition\""
                                         " new=\"false\">\n"

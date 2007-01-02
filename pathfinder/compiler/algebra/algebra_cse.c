@@ -258,9 +258,13 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             if (a->sem.rownum.attname != b->sem.rownum.attname)
                 return false;
 
-            for (unsigned int i = 0; i < a->sem.rownum.sortby.count; i++)
-                if (a->sem.rownum.sortby.atts[i] !=
-                    b->sem.rownum.sortby.atts[i])
+            for (unsigned int i = 0;
+                 i < PFord_count (a->sem.rownum.sortby);
+                 i++)
+                if (PFord_order_col_at (a->sem.rownum.sortby, i) !=
+                    PFord_order_col_at (b->sem.rownum.sortby, i) ||
+                    PFord_order_dir_at (a->sem.rownum.sortby, i) !=
+                    PFord_order_dir_at (b->sem.rownum.sortby, i))
                     return false;
 
             /* either both rownums are partitioned or none */ 

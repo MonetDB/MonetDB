@@ -596,16 +596,24 @@ opt_const (PFla_op_t *p, bool no_attach)
         case la_rownum:
         {
             /* discard all sort criterions that are constant */
-            unsigned int count = 0;
-            PFalg_att_t  *atts = PFmalloc (p->sem.rownum.sortby.count *
-	                                       sizeof (PFalg_att_t));
+            PFord_ordering_t sortby = PFordering ();
 
-            for (unsigned int i = 0; i < p->sem.rownum.sortby.count; i++)
+            for (unsigned int i = 0;
+                 i < PFord_count (p->sem.rownum.sortby);
+                 i++)
                 if (!PFprop_const (p->prop,
-                                   p->sem.rownum.sortby.atts[i]))
-                    atts[count++] = p->sem.rownum.sortby.atts[i];
+                                   PFord_order_col_at (
+                                       p->sem.rownum.sortby, i)))
+                    sortby = PFord_refine (
+                                sortby,
+                                PFord_order_col_at (
+                                    p->sem.rownum.sortby,
+                                    i),
+                                PFord_order_dir_at (
+                                    p->sem.rownum.sortby,
+                                    i));
 
-            p->sem.rownum.sortby = PFalg_attlist_ (count, atts);
+            p->sem.rownum.sortby = sortby;
 
             /* only include partitioning attribute if it is not constant */
             if (p->sem.rownum.part &&
@@ -614,7 +622,7 @@ opt_const (PFla_op_t *p, bool no_attach)
 
             /* replace rownum by number operator
                if no sort criterions remain */
-            if (!p->sem.rownum.sortby.count) {
+            if (!PFord_count (p->sem.rownum.sortby)) {
                 *p = *PFla_number (L(p),
                                    p->sem.rownum.attname,
                                    p->sem.rownum.part);

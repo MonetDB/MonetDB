@@ -393,9 +393,12 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             n->prop->l_icols = diff (n->prop->l_icols, n->sem.rownum.attname);
 
-            for (unsigned int i = 0; i < n->sem.rownum.sortby.count; i++)
+            for (unsigned int i = 0;
+                 i < PFord_count (n->sem.rownum.sortby);
+                 i++)
                 n->prop->l_icols = union_ (n->prop->l_icols,
-                                           n->sem.rownum.sortby.atts[i]);
+                                           PFord_order_col_at (
+                                               n->sem.rownum.sortby, i));
 
             /* only infer part if available */
             if (n->sem.rownum.part != att_NULL)

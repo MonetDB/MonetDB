@@ -316,6 +316,11 @@ static PFla_op_t *map = NULL;
  * Attribute counter of current map relation
  */
 static unsigned int map_count = 0;
+/**
+ * Sort direction of the attributes
+ * of the current map relation
+ */
+static unsigned int map_dir = 0;
 
 /**
  * ordering mode indicator
@@ -729,11 +734,13 @@ reduce (PFcnode_t * p, int goalnt)
             PFla_op_t   *old_loop      = loop;
             PFla_op_t   *old_map       = map;
             unsigned int old_map_count = map_count;
+            unsigned int old_map_dir   = map_dir;
             PFarray_t    *old_env      = env;
         
             /* start with empty map relation */
             map = 0;
             map_count = 0;
+            map_dir   = 0;
 
             /* initiate translation of bindings */
             reduce (kids[0], nts[0]);
@@ -780,34 +787,37 @@ reduce (PFcnode_t * p, int goalnt)
                      * (sort_0, sort_1, ..., sort_n, pos).
                      */
                     /* create sortby attribute list: */
-                    PFalg_attlist_t sortby;
+                    PFord_ordering_t sortby = PFordering ();
                     if (R(p)->kind == c_orderby)
                     {
+                        PFalg_att_t cur;
+                        
                         /* don't include columns inner and outer */
-                        sortby.count = map_count - 2 + 2;
-                        sortby.atts = PFmalloc (sortby.count *
-                                                sizeof (PFalg_attlist_t));
-
                         /* starting from attribute sort add consecutive
                            attributes ... */
-                        for (unsigned int i = 0; i < sortby.count - 2; i++)
-                            sortby.atts[i] = att_sort << i;
+                        for (unsigned int i = 0; i < map_count - 2; i++) {
+                            cur = att_sort << i;
+                            sortby = PFord_refine (sortby,
+                                                   cur,
+                                                   cur & map_dir 
+                                                   ? DIR_DESC : DIR_ASC);
+                        }
+
                         /* ... and complete sortby list with attributes
                            iter and  pos */
-                        sortby.atts[sortby.count - 2] = att_iter;
-                        sortby.atts[sortby.count - 1] = att_pos;
+                        sortby = PFord_refine (sortby, att_iter, DIR_ASC);
+                        sortby = PFord_refine (sortby, att_pos, DIR_ASC);
                     } else {
                         /* don't include columns inner and outer */
-                        sortby.count = map_count - 2 + 1;
-                        sortby.atts = PFmalloc (sortby.count *
-                                                sizeof (PFalg_attlist_t));
-
                         /* starting from attribute sort add consecutive
                            attributes ... */
-                        for (unsigned int i = 0; i < sortby.count - 1; i++)
-                            sortby.atts[i] = att_sort << i;
+                        for (unsigned int i = 0; i < map_count - 2; i++)
+                            sortby = PFord_refine (sortby,
+                                                   att_sort << i,
+                                                   DIR_ASC);
+                        
                         /* ... and complete sortby list with attribute pos */
-                        sortby.atts[sortby.count - 1] = att_pos;
+                        sortby = PFord_refine (sortby, att_pos, DIR_ASC);
                     }
 
                     A(p) = (struct PFla_pair_t) {
@@ -831,6 +841,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* restore map relation and its attribute counter */
             map = old_map;
             map_count = old_map_count;
+            map_dir   = old_map_dir;
             /* restore old environment */
             env = old_env;
 
@@ -1346,6 +1357,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFty_t              t;
             PFalg_simple_type_t algty;
             PFalg_atom_t        atom;
+            PFalg_att_t         sort_col;
             unsigned int        empty = 0;
 
             /* translate order expression */
@@ -1355,30 +1367,6 @@ reduce (PFcnode_t * p, int goalnt)
                                  proj (att_iter, att_iter),
                                  proj (att_item, att_item));
             
-            if (p->sem.mode.dir == p_desc) {
-                if (PFty_subtype (L(p)->type, PFty_opt(PFty_numeric ())))
-                    /* just negate the items and sort it ascending afterwards */
-                    sort_attr = project (neg (sort_attr,
-                                              att_res,
-                                              att_item),
-                                         proj (att_iter, att_iter),
-                                         proj (att_item, att_res));
-                else
-                    /* apply rownum based on items and negate the rownum
-                       values to support descending sorting with ascending
-                       sort only */
-                    sort_attr = project (neg (cast (rownum (sort_attr,
-                                                            att_item1,
-                                                            sortby (att_item),
-                                                            att_NULL),
-                                                    att_res,
-                                                    att_item1,
-                                                    aat_int),
-                                              att_pos1, att_res),
-                                         proj (att_iter, att_iter),
-                                         proj (att_item, att_pos1));
-            }
-
             /*
              * If we we know (from static typing) that all
              * iterations allways have a sequence length of 1
@@ -1457,21 +1445,29 @@ reduce (PFcnode_t * p, int goalnt)
             atts[0].old = att_outer;
             atts[1].new = att_inner;
             atts[1].old = att_inner;
+            
             /* copy all old sort columns */
             for (unsigned i = 2; i < map_count - 1; i++)
                 atts[i].new = 
                 atts[i].old = att_sort << (i - 2);
+
             /* we now have on additional sort column generated 
                from column item (and possible pos) */
             if (empty) {
-                atts[map_count -1].new = att_sort << (map_count - 3);
+                sort_col = att_sort << (map_count - 3);
+                atts[map_count -1].new = sort_col;
                 atts[map_count -1].old = att_pos;
                 map_count++;
             }
             /* the first sort criterion is column sort itself */
-            atts[map_count -1].new = att_sort << (map_count - 3);
+            sort_col = att_sort << (map_count - 3);
+            atts[map_count -1].new = sort_col;
             atts[map_count -1].old = att_item;
             
+            if (p->sem.mode.dir == p_desc)
+                /* mark the bit corresponding to the last 
+                   entry to cope with descending order */
+                map_dir |= sort_col;
 
             map = PFla_project_ (eqjoin (map, sort_attr, att_inner, att_iter),
                                  map_count, atts);

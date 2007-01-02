@@ -433,13 +433,17 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                            
         case la_rownum:
         {
-            PFalg_attlist_t sortby;
-            sortby.count = p->sem.rownum.sortby.count;
-            sortby.atts  = PFmalloc (sortby.count *
-                                      sizeof (PFalg_attlist_t));
+            PFord_ordering_t sortby = PFordering ();
 
-            for (unsigned int i = 0; i < sortby.count; i++)
-                sortby.atts[i] = ONAME(p, p->sem.rownum.sortby.atts[i]);
+            for (unsigned int i = 0;
+                 i < PFord_count (p->sem.rownum.sortby);
+                 i++)
+                sortby = PFord_refine (
+                             sortby,
+                             ONAME(p, PFord_order_col_at (
+                                          p->sem.rownum.sortby, i)),
+                             PFord_order_dir_at (
+                                 p->sem.rownum.sortby, i));
                                                    
             res = rownum (SEC_PROJ(LEFT, p, p->sem.rownum.attname),
                           ONAME(p, p->sem.rownum.attname),

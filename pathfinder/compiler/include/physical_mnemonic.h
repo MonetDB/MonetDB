@@ -88,13 +88,9 @@
 #define aggr(a,b,c,d, e) PFpa_aggr ((a), (b), (c), (d), (e))
 
 /** a sort specification list is just another attribute list */
-/* FIXME */
-#define sortby(...)       PFalg_attlist (__VA_ARGS__)
-/** MergeRowNumber */
-#define merge_rownum(a,b,c) PFpa_merge_rownum ((a), (b), (c))
-/** HashRowNumber */
-#define hash_rownum(a,b,c) PFpa_hash_rownum ((a), (b), (c))
-/** Number */
+#define sortby(...)     PFord_order_intro (__VA_ARGS__)
+
+/** Numbering operator */
 #define number(a,b,c)     PFpa_number ((a), (b), (c))
 
 #define type(a,b,c,d)     PFpa_type ((a), (b), (c), (d))

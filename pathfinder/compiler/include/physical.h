@@ -94,9 +94,7 @@ enum PFpa_op_kind_t {
     , pa_max            =  57 /**< Max operator */
     , pa_min            =  58 /**< Min operator */    
     , pa_sum            =  59 /**< Sum operator */
-    , pa_merge_rownum   =  60 /**< MergeRowNumber */
-    , pa_hash_rownum    =  61 /**< HashRowNumber */
-    , pa_number         =  62 /**< Number */
+    , pa_number         =  60 /**< Numbering operator */
     , pa_type           =  63 /**< selection of rows where a column is of a
                                    certain type */
     , pa_type_assert    =  64 /**< restriction of the type of a given column */
@@ -240,13 +238,6 @@ union PFpa_op_sem_t {
         PFalg_att_t     part; /**< partitioning attribute */
         PFalg_att_t     res;  /**< attribute to hold the result */
     } aggr;
-
-    /* semantic content for rownum operator */
-    struct {
-        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
-        PFalg_att_t     part;     /**< optional partitioning attribute,
-                                       otherwise NULL */
-    } rownum;
 
     /* semantic content for number operator */
     struct {
@@ -634,26 +625,8 @@ PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
 
 /****************************************************************/
 
-PFpa_op_t *PFpa_merge_rownum (const PFpa_op_t *n,
-                              PFalg_att_t new_att,
-                              PFalg_att_t part);
-
-/**
- * HashRowNumber: Introduce new row numbers.
- *
- * HashRowNumber uses a hash table to implement partitioning. Hence,
- * it does not require any specific input ordering.
- *
- * @param n        Argument relation.
- * @param new_att  Name of newly introduced attribute.
- * @param part     Partitioning attribute. @c NULL if partitioning
- *                 is not requested.
- */
-PFpa_op_t *PFpa_hash_rownum (const PFpa_op_t *n,
-                             PFalg_att_t new_att,
-                             PFalg_att_t part);
-
-PFpa_op_t *PFpa_number (const PFpa_op_t *n, PFalg_att_t new_att,
+PFpa_op_t *PFpa_number (const PFpa_op_t *n,
+                        PFalg_att_t new_att,
                         PFalg_att_t part);
 
 /**

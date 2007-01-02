@@ -38,6 +38,7 @@
 #include "variable.h"
 #include "algebra.h"
 #include "physical.h"
+#include "ordering.h"
 #include "mem.h"
 
 /** algebra operator node */
@@ -212,10 +213,11 @@ union PFla_op_sem_t {
 
     /* semantic content for rownum operator */
     struct {
-        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
-        PFalg_attlist_t sortby;   /**< sort crit. (list of attribute names */
-        PFalg_att_t     part;     /**< optional partitioning attribute,
-                                       otherwise NULL */
+        PFalg_att_t      attname;  /**< name of generated (integer) attribute */
+        PFord_ordering_t sortby;   /**< sort crit. (list of attribute names
+                                        and direction) */
+        PFalg_att_t      part;     /**< optional partitioning attribute,
+                                        otherwise NULL */
     } rownum;
 
     /* semantic content for number operator */
@@ -575,7 +577,7 @@ PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_att_t res,
 
 /** Constructor for row numbering operator. */
 PFla_op_t * PFla_rownum (const PFla_op_t *n, PFalg_att_t a,
-                         PFalg_attlist_t s, PFalg_att_t p);
+                         PFord_ordering_t s, PFalg_att_t p);
 
 /** Constructor for numbering operator. */
 PFla_op_t * PFla_number (const PFla_op_t *n, PFalg_att_t a, PFalg_att_t p);

@@ -1021,7 +1021,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
                 if (!is_join_att (p, lp->sem.rownum.attname)) {
                     PFalg_proj_t *proj_list;
-                    PFalg_attlist_t sortby;
+                    PFord_ordering_t sortby;
                     PFalg_att_t cur;
                     unsigned int count = 0;
                     /* create projection list */
@@ -1041,15 +1041,23 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     /* copy sortby criteria and change name of
                        sort column to equi-join result if it is
                        also a join argument */
-                    sortby.count = lp->sem.rownum.sortby.count;
-                    sortby.atts = PFmalloc (sortby.count *
-                                            sizeof (PFalg_att_t));
-                    for (unsigned int i = 0; i < sortby.count; i++) {
-                        cur = lp->sem.rownum.sortby.atts[i];
-                        if (cur != latt)
-                            sortby.atts[i] = cur;
-                        else
-                            sortby.atts[i] = p->sem.eqjoin_unq.res;
+                    sortby = PFordering ();
+                    
+                    for (unsigned int i = 0;
+                         i < PFord_count (lp->sem.rownum.sortby);
+                         i++) {
+                        cur = PFord_order_col_at (
+                                  lp->sem.rownum.sortby,
+                                  i);
+                        if (cur == latt)
+                            cur = p->sem.eqjoin_unq.res;
+
+                        sortby = PFord_refine (
+                                     sortby,
+                                     cur,
+                                     PFord_order_dir_at (
+                                         lp->sem.rownum.sortby,
+                                         i));
                     }
                                             
                     /* make sure that frag and roots see

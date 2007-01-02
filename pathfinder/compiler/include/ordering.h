@@ -65,6 +65,15 @@ typedef PFarray_t * PFord_set_t;
 PFord_ordering_t PFordering (void);
 
 /**
+ * Construct an order list (based on the attribute list) with ascending order.
+ */
+#define PFord_order_intro(...)                                     \
+    PFord_order_intro_ ((sizeof ((PFalg_att_t[]) { __VA_ARGS__ }) \
+                         / sizeof (PFalg_att_t)),                  \
+                         (PFalg_att_t[]) { __VA_ARGS__ })
+PFord_ordering_t PFord_order_intro_ (unsigned int count, PFalg_att_t *atts);
+
+/**
  * Create an empty set of orderings.
  */
 PFord_set_t PFord_set (void);
@@ -72,12 +81,17 @@ PFord_set_t PFord_set (void);
 /**
  * Refine an existing ordering by one more attribute.
  */
-PFord_ordering_t PFord_refine (const PFord_ordering_t, const PFalg_att_t);
+PFord_ordering_t PFord_refine (const PFord_ordering_t, 
+                               const PFalg_att_t,
+                               const bool);
 
 unsigned int PFord_count (const PFord_ordering_t ordering);
 
-PFalg_att_t PFord_order_at (const PFord_ordering_t ordering,
-                            unsigned int index);
+PFalg_att_t PFord_order_col_at (const PFord_ordering_t ordering,
+                                unsigned int index);
+
+bool PFord_order_dir_at (const PFord_ordering_t ordering,
+                         unsigned int index);
 
 /**
  * Return true if the ordering @a a implies the ordering @a b.

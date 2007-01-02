@@ -1495,18 +1495,17 @@ PFla_count (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t part)
  */
 PFla_op_t *
 PFla_rownum (const PFla_op_t *n,
-             PFalg_att_t a, PFalg_attlist_t s, PFalg_att_t p)
+             PFalg_att_t a, PFord_ordering_t s, PFalg_att_t p)
 {
     PFla_op_t    *ret = la_op_wire1 (la_rownum, n);
     unsigned int  i;
     unsigned int  j;
 
+    assert (s);
+
     /* copy parameters into semantic content of return node */
     ret->sem.rownum.attname = a;
-    ret->sem.rownum.sortby = (PFalg_attlist_t) {
-        .count = s.count,
-        .atts = memcpy (PFmalloc (s.count * sizeof (PFalg_att_t)), s.atts,
-                        s.count * sizeof (PFalg_att_t)) };
+    ret->sem.rownum.sortby = s;
     ret->sem.rownum.part = p;
 
     /* result schema is input schema plus the new attribute */
@@ -1530,22 +1529,23 @@ PFla_rownum (const PFla_op_t *n,
         = (struct PFalg_schm_item_t) { .name = a, .type = aat_nat };
 
     /* sanity checks below */
-    if (s.count == 0)
+    if (PFord_count (s) == 0)
         PFinfo (OOPS_WARNING,
                 "applying rownum operator without sort specifier");
 
     /* see if we can find all sort specifications */
-    for (i = 0; i < ret->sem.rownum.sortby.count; i++) {
+    for (i = 0; i < PFord_count (ret->sem.rownum.sortby); i++) {
 
         for (j = 0; j < n->schema.count; j++)
             if (n->schema.items[j].name ==
-                         ret->sem.rownum.sortby.atts[i])
+                         PFord_order_col_at (ret->sem.rownum.sortby, i))
                 break;
 
         if (j == n->schema.count)
             PFoops (OOPS_FATAL,
                     "could not find sort attribute `%s'",
-                    PFatt_str (ret->sem.rownum.sortby.atts[i]));
+                    PFatt_str (PFord_order_col_at (
+                                   ret->sem.rownum.sortby, i)));
 
         if (!monomorphic (n->schema.items[j].type))
             PFoops (OOPS_FATAL,
@@ -1555,7 +1555,8 @@ PFla_rownum (const PFla_op_t *n,
                     PFatt_str (n->schema.items[j].name));
 
         if (ret->sem.rownum.part
-            && ret->sem.rownum.sortby.atts[i] == ret->sem.rownum.part)
+            && PFord_order_col_at (ret->sem.rownum.sortby, i)
+               == ret->sem.rownum.part)
             PFoops (OOPS_FATAL,
                     "partitioning attribute must not appear in sort clause");
     }

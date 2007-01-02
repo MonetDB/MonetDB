@@ -49,6 +49,9 @@
 #include "ordering.h"
 #include "properties.h"
 
+/** mnemonic for a sort specification list */
+#define sortby(...)     PFord_order_intro (__VA_ARGS__)
+
 /**
  * Create an algebra operator (leaf) node.
  *
@@ -218,8 +221,10 @@ PFpa_lit_tbl (PFalg_attlist_t attlist,
         PFord_ordering_t ord = PFordering ();
 
         for (unsigned int i = 0; i < attlist.count; i++)
-            ord = PFord_refine (ord, attlist.atts[i]);
+            ord = PFord_refine (ord, attlist.atts[i], DIR_ASC);
 
+        /* PFord_permutations ignores the input direction and
+           generates all permutations also for the directions. */
         ret->orderings = PFord_permutations (ord);
     }
 
@@ -268,7 +273,10 @@ PFpa_empty_tbl (PFalg_schema_t schema)
 
     PFord_ordering_t ord = PFordering ();
     for (unsigned int i = 0; i < schema.count; i++)
-        ord = PFord_refine (ord, schema.items[i].name);
+        ord = PFord_refine (ord, schema.items[i].name, DIR_ASC);
+
+    /* PFord_permutations ignores the input direction and
+       generates all permutations also for the directions. */
     ret->orderings = PFord_permutations (ord);
 
     ret->cost = 1;
@@ -355,15 +363,28 @@ PFpa_attach (const PFpa_op_t *n,
         /* interleave the new column everywhere possible */
         for (unsigned int j = 0; j <= PFord_count (current_in); j++) {
 
-            PFord_ordering_t ord = PFord_refine (prefix, attname);
+            PFord_ordering_t ord_asc  = PFord_refine (prefix, attname, DIR_ASC);
+            PFord_ordering_t ord_desc = PFord_refine (prefix, attname, DIR_DESC);
 
-            for (unsigned int k = j; k < PFord_count (current_in); k++)
-                ord = PFord_refine (ord, PFord_order_at (current_in, k));
+            for (unsigned int k = j; k < PFord_count (current_in); k++) {
+                ord_asc  = PFord_refine (
+                               ord_asc,
+                               PFord_order_col_at (current_in, k),
+                               PFord_order_dir_at (current_in, k));
+                ord_desc = PFord_refine (
+                               ord_desc,
+                               PFord_order_col_at (current_in, k),
+                               PFord_order_dir_at (current_in, k));
+            }
 
-            PFord_set_add (ret->orderings, ord);
+            PFord_set_add (ret->orderings, ord_asc);
+            PFord_set_add (ret->orderings, ord_desc);
 
             if (j < PFord_count (current_in))
-                prefix = PFord_refine (prefix, PFord_order_at (current_in, j));
+                prefix = PFord_refine (
+                             prefix,
+                             PFord_order_col_at (current_in, j),
+                             PFord_order_dir_at (current_in, j));
         }
     }
 
@@ -441,7 +462,8 @@ PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
                  k++)
                 ord = PFord_refine (
                         ord,
-                        PFord_order_at ( PFord_set_at (b->orderings, j), k));
+                        PFord_order_col_at ( PFord_set_at (b->orderings, j), k),
+                        PFord_order_dir_at ( PFord_set_at (b->orderings, j), k));
 
             /* add it to the orderings of the result */
             PFord_set_add (ret->orderings, ord);
@@ -527,12 +549,16 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
          * attribute.
          */
         bool found = false;
+        bool dir = DIR_ASC;
 
         for (unsigned int j = 0; j < PFord_count (left_ordering); j++) {
 
-            if (PFord_order_at (left_ordering, j) == ret->sem.eqjoin.att1)
+            if (PFord_order_col_at (left_ordering, j) == ret->sem.eqjoin.att1) {
                 /* Hey, we found the left join attribute. */
                 found = true;
+                /* remember the direction */
+                dir = PFord_order_dir_at (left_ordering, j);
+            }
 
             if (found) {
 
@@ -545,22 +571,26 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
 
                 /* Insert the left join attribute */
                 PFord_ordering_t ord2
-                    = PFord_refine (ord, ret->sem.eqjoin.att2);
+                    = PFord_refine (ord, ret->sem.eqjoin.att2, dir);
 
                 /* Fill up with the remaining ordering of left relation */
                 for (unsigned int k = j; k < PFord_count (left_ordering); k++)
                     ord2 = PFord_refine (ord2,
-                                         PFord_order_at (left_ordering, j));
+                                         PFord_order_col_at (left_ordering, j),
+                                         PFord_order_dir_at (left_ordering, j));
 
                 /* and append to result */
                 PFord_set_add (ret->orderings, ord2);
             }
 
-            ord = PFord_refine (ord, PFord_order_at (left_ordering, j));
+            ord = PFord_refine (
+                      ord,
+                      PFord_order_col_at (left_ordering, j),
+                      PFord_order_dir_at (left_ordering, j));
         }
 
         if (found)
-            ord = PFord_refine (ord, ret->sem.eqjoin.att2);
+            ord = PFord_refine (ord, ret->sem.eqjoin.att2, dir);
 
         PFord_set_add (ret->orderings, ord);
 
@@ -744,11 +774,14 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
 
             unsigned int k;
             for (k = 0; k < ret->sem.proj.count; k++)
-                if (ret->sem.proj.items[k].old == PFord_order_at (ni, j))
+                if (ret->sem.proj.items[k].old == PFord_order_col_at (ni, j))
                     break;
 
             if (k < ret->sem.proj.count)
-                prefix = PFord_refine (prefix, ret->sem.proj.items[k].new);
+                prefix = PFord_refine (
+                             prefix,
+                             ret->sem.proj.items[k].new,
+                             PFord_order_dir_at (ni, j));
             else
                 break;
         }
@@ -852,14 +885,19 @@ PFpa_append_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
         for (unsigned int a2 = 0; a2 < PFprop_const_count (n2->prop); a2++)
             if (PFprop_const_at (n1->prop, a1) == PFprop_const_at (n2->prop, a2)
                 && PFalg_atom_comparable (PFprop_const_val_at (n1->prop, a1),
-                                          PFprop_const_val_at (n2->prop, a2))
-                && PFalg_atom_cmp (PFprop_const_val_at (n1->prop, a1),
-                                   PFprop_const_val_at (n2->prop, a2)) < 0) {
+                                          PFprop_const_val_at (n2->prop, a2))) {
+                bool dir;
+                if (PFalg_atom_cmp (PFprop_const_val_at (n1->prop, a1),
+                                    PFprop_const_val_at (n2->prop, a2)) < 0)
+                    dir = DIR_ASC;
+                else
+                    dir = DIR_DESC;
 
                 PFord_set_add (
                         ret->orderings,
                         PFord_refine (PFordering (),
-                                      PFprop_const_at (n1->prop, a1)));
+                                      PFprop_const_at (n1->prop, a1),
+                                      dir));
             }
     }
 
@@ -986,12 +1024,16 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
         for (unsigned int a2 = 0; a2 < PFprop_const_count (n2->prop); a2++)
             if (PFprop_const_at (n1->prop, a1) == PFprop_const_at (n2->prop, a2)
                 && PFalg_atom_comparable (PFprop_const_val_at (n1->prop, a1),
-                                          PFprop_const_val_at (n2->prop, a2))
-                && PFalg_atom_cmp (PFprop_const_val_at (n1->prop, a1),
-                                   PFprop_const_val_at (n2->prop, a2)) < 0) {
+                                          PFprop_const_val_at (n2->prop, a2))) {
+                bool dir;
+                if (PFalg_atom_cmp (PFprop_const_val_at (n1->prop, a1),
+                                    PFprop_const_val_at (n2->prop, a2)) < 0)
+                    dir = DIR_ASC;
+                else
+                    dir = DIR_DESC;
 
                 PFord_ordering_t o
-                    = PFord_refine (ord, PFprop_const_at (n1->prop, a1));
+                    = PFord_refine (ord, PFprop_const_at (n1->prop, a1), dir);
 
                 for (unsigned int o1= 0; o1 < PFord_count (n1->orderings); o1++)
                     if (PFord_implies (PFord_set_at (n1->orderings, o1), o))
@@ -1779,15 +1821,16 @@ PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
 }
 
 PFpa_op_t *
-PFpa_merge_rownum (const PFpa_op_t *n,
-                   PFalg_att_t new_att,
-                   PFalg_att_t part)
+PFpa_number (const PFpa_op_t *n,
+             PFalg_att_t new_att,
+             PFalg_att_t part)
 {
-    PFpa_op_t        *ret = wire1 (pa_merge_rownum, n);
-    PFord_ordering_t  ord = PFordering ();
+    PFpa_op_t *ret      = wire1 (pa_number, n);
+    bool       dir_asc  = false,
+               dir_desc = false;
 
-    ret->sem.rownum.attname = new_att;
-    ret->sem.rownum.part = part;
+    ret->sem.number.attname = new_att;
+    ret->sem.number.part = part;
 
     /* allocate memory for the result schema */
     ret->schema.count = n->schema.count + 1;
@@ -1802,116 +1845,40 @@ PFpa_merge_rownum (const PFpa_op_t *n,
         = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
 
     /* ---- MergeRowNum: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /* of course, the new attribute is also a valid ordering */
-    if (part)
-        ord = PFord_refine (ord, part);
-
-    PFord_set_add (ret->orderings, PFord_refine (ord, new_att));
-
-    /* ---- MergeRowNum: costs ---- */
-    ret->cost = 1 + n->cost;
-
-    return ret;
-}
-
-/**
- * HashRowNumber: Introduce new row numbers.
- *
- * HashRowNumber uses a hash table to implement partitioning. Hence,
- * it does not require any specific input ordering.
- *
- * @param n        Argument relation.
- * @param new_att  Name of newly introduced attribute.
- * @param part     Partitioning attribute. @c NULL if partitioning
- *                 is not requested.
- */
-PFpa_op_t *
-PFpa_hash_rownum (const PFpa_op_t *n,
-                  PFalg_att_t new_att,
-                  PFalg_att_t part)
-{
-    PFpa_op_t *ret = wire1 (pa_hash_rownum, n);
-
-    assert (!"FIXME: hash_rownum: orderings not implemented yet!");
-
-    ret->sem.rownum.attname = new_att;
-    ret->sem.rownum.part = part;
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
-
-    return ret;
-}
-
-PFpa_op_t *
-PFpa_number (const PFpa_op_t *n,
-             PFalg_att_t new_att, PFalg_att_t part)
-{
-    PFpa_op_t        *ret = wire1 (pa_number, n);
-
-    ret->sem.number.attname = new_att;
-    ret->sem.number.part    = part;
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
-
-    /* ---- Number: orderings ---- */
-    /* copied from attach operator */
-
-    /* all the input orderings we consider */
-    PFord_set_t in  = n->orderings;
-
-    /*
-     * If the input has no defined ordering, we create a new
-     * set that contains one empty ordering.  Our new column
-     * will then be the only result ordering
-     */
-    if (PFord_set_count (in) == 0)
-        in = PFord_set_add (PFord_set (), PFordering ());
-
-    /* Iterate over all the input orderings... */
-    for (unsigned int i = 0; i < PFord_set_count (in); i++) {
-
-        PFord_ordering_t current_in = PFord_set_at (in, i);
-        PFord_ordering_t prefix     = PFordering ();
-
-        /* interleave the new column everywhere possible */
-        for (unsigned int j = 0; j <= PFord_count (current_in); j++) {
-
-            PFord_ordering_t ord = PFord_refine (prefix, new_att);
-
-            for (unsigned int k = j; k < PFord_count (current_in); k++)
-                ord = PFord_refine (ord, PFord_order_at (current_in, k));
-
-            PFord_set_add (ret->orderings, ord);
-
-            if (j < PFord_count (current_in))
-                prefix = PFord_refine (prefix, PFord_order_at (current_in, j));
+        /* get the direction of the partitioning column */
+        if (part &&
+            PFord_order_col_at (PFord_set_at (n->orderings, i), 0)
+            == part) {
+            if (PFord_order_col_at (PFord_set_at (n->orderings, i), 0)
+                == DIR_ASC)
+                dir_asc = true;
+            else
+                dir_desc = true;
         }
     }
 
-    /* ---- Number: costs ---- */
+    /* of course, the new attribute is also a valid ordering */
+    if (part) {
+        if (dir_asc)
+            PFord_set_add (ret->orderings, sortby (part, new_att));
+
+        if (dir_desc)
+            PFord_set_add (
+                ret->orderings,
+                PFord_refine (
+                    PFord_refine (
+                        PFordering (),
+                        part,
+                        DIR_DESC),
+                    new_att,
+                    DIR_ASC));
+    }
+    else
+        PFord_set_add (ret->orderings, sortby (new_att));
+
+    /* ---- MergeRowNum: costs ---- */
     ret->cost = 1 + n->cost;
 
     return ret;
@@ -2037,9 +2004,9 @@ llscj_worker (PFpa_op_kind_t axis,
 {
     PFpa_op_t *ret = wire2 (axis, frag, ctx);
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), iter), item);
+        = sortby (iter, item);
     PFord_ordering_t item_iter
-        = PFord_refine (PFord_refine (PFordering (), item), iter);
+        = sortby (item, iter);
 
 #ifndef NDEBUG
     unsigned short found = 0;
@@ -2105,9 +2072,7 @@ static void
 llscj_cost (PFpa_op_t *n, unsigned long ctx_cost)
 {
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (),
-                                      n->sem.scjoin.iter),
-                        n->sem.scjoin.item);
+        = sortby (n->sem.scjoin.iter, n->sem.scjoin.item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -2407,20 +2372,16 @@ PFpa_doc_tbl (const PFpa_op_t *rel, PFalg_att_t iter, PFalg_att_t item)
 
     for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
         if (PFord_implies (PFord_set_at (rel->orderings, i),
-                           PFord_refine (PFordering (), iter))) {
+                           sortby (iter))) {
             sorted_by_iter = true;
             break;
         }
 
     if (sorted_by_iter) {
         if (PFprop_const (rel->prop, item))
-            PFord_set_add (ret->orderings,
-                           PFord_refine (PFord_refine (PFordering (),
-                                                       iter),
-                                         item));
+            PFord_set_add (ret->orderings, sortby (iter, item));
         else
-            PFord_set_add (ret->orderings,
-                           PFord_refine (PFordering (), iter));
+            PFord_set_add (ret->orderings, sortby (iter));
     }
 
     /* ---- doc_tbl: costs ---- */
@@ -2530,14 +2491,10 @@ PFpa_element (const PFpa_op_t *fragment,
     /* ---- attribute: orderings ---- */
 
     /* the input is sorted by `iter', therefore the output will be as well. */
-    PFord_set_add (ret->orderings,
-                   PFord_refine (PFordering (), iter));
+    PFord_set_add (ret->orderings, sortby (iter));
     /* additionally as we return only one value per iteration the output
        is refined by the item order */
-    PFord_set_add (ret->orderings,
-                   PFord_refine (PFord_refine (PFordering (),
-                                               iter),
-                                 item));
+    PFord_set_add (ret->orderings, sortby (iter, item));
 
     /* ---- attribute: costs ---- */
     /* dummy costs as we have only this version */
@@ -2657,9 +2614,7 @@ PFpa_merge_adjacent (const PFpa_op_t *fragment, const PFpa_op_t *n,
         ret->schema.items[i] = n->schema.items[i];
 
     /* result is in iter|pos order */
-    PFord_set_add (ret->orderings,
-                   PFord_refine (PFord_refine (PFordering (), iter),
-                                 pos));
+    PFord_set_add (ret->orderings, sortby (iter, pos));
     /* costs */
     ret->cost = fragment->cost + n->cost + 1;
 
@@ -2976,14 +2931,14 @@ PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
     /* check if the order criteria all appear in the schema */
     for (i = 0; i < PFord_count (ord); i++) {
         for (j = 0; j < schema.count; j++)
-            if (PFord_order_at (ord, i) ==
+            if (PFord_order_col_at (ord, i) ==
                 schema.items[j].name)
                 break;
 
         if (i == schema.count)
             PFoops (OOPS_FATAL,
                     "sort column '%s' does not appear in the schema",
-                    PFatt_str (PFord_order_at (ord, i)));
+                    PFatt_str (PFord_order_col_at (ord, i)));
     }
     
     /* create base operator for the recursion */
@@ -3144,12 +3099,9 @@ PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2,
         = (PFalg_schm_item_t) { .name = item, .type = aat_str };
 
     /* result is in iter order */
-    PFord_set_add (ret->orderings,
-                   PFord_refine (PFordering (), iter));
+    PFord_set_add (ret->orderings, sortby (iter));
     /* ... and automatically also in iter|item order */
-    PFord_set_add (ret->orderings,
-                   PFord_refine (PFord_refine (PFordering (), iter),
-                                 item));
+    PFord_set_add (ret->orderings, sortby (iter, item));
     /* costs */
     ret->cost = n1->cost + n2->cost + 1;
 

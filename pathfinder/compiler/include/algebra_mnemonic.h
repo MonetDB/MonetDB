@@ -63,7 +63,4 @@
 /** item in the projection list */
 #define proj(a,b)       PFalg_proj ((a),(b))
 
-/** a sort specification list is just another attribute list */
-#define sortby(...)     PFalg_attlist (__VA_ARGS__)
-
 /* vim:set shiftwidth=4 expandtab: */

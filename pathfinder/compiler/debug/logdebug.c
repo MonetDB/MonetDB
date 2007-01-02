@@ -523,13 +523,23 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
             PFarray_printf (dot, "%s (%s:<", a_id[n->kind],
                             PFatt_str (n->sem.rownum.attname));
 
-            if (n->sem.rownum.sortby.count)
-                PFarray_printf (dot, "%s", 
-                                PFatt_str (n->sem.rownum.sortby.atts[0]));
+            if (PFord_count (n->sem.rownum.sortby))
+                PFarray_printf (dot, "%s%s", 
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.rownum.sortby, 0)),
+                                PFord_order_dir_at (
+                                    n->sem.rownum.sortby, 0) == DIR_ASC
+                                ? "" : " (desc)");
 
-            for (c = 1; c < n->sem.rownum.sortby.count; c++)
-                PFarray_printf (dot, ", %s", 
-                                PFatt_str (n->sem.rownum.sortby.atts[c]));
+            for (c = 1; c < PFord_count (n->sem.rownum.sortby); c++)
+                PFarray_printf (dot, ", %s%s", 
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.rownum.sortby, c)),
+                                PFord_order_dir_at (
+                                    n->sem.rownum.sortby, c) == DIR_ASC
+                                ? "" : " (desc)");
 
             PFarray_printf (dot, ">");
 
@@ -1337,15 +1347,22 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "      </column>\n",
                             PFatt_str (n->sem.rownum.attname));
 
-            for (c = 0; c < n->sem.rownum.sortby.count; c++)
+            for (c = 0; c < PFord_count (n->sem.rownum.sortby); c++)
                 PFarray_printf (xml, 
                                 "      <column name=\"%s\" function=\"sort\""
-                                        " position=\"%u\" new=\"false\">\n"
+                                        " position=\"%u\" direction=\"%s\""
+                                        " new=\"false\">\n"
                                 "        <annotation>%u. sort argument"
                                         "</annotation>\n"
                                 "      </column>\n",
-                                PFatt_str (n->sem.rownum.sortby.atts[c]),
-                                c+1, c+1);
+                                PFatt_str (
+                                    PFord_order_col_at (
+                                        n->sem.rownum.sortby, c)),
+                                c+1,
+                                PFord_order_dir_at (
+                                    n->sem.rownum.sortby, c) == DIR_ASC
+                                ? "ascending" : "descending",
+                                c+1);
 
             if (n->sem.rownum.part != att_NULL)
                 PFarray_printf (xml,
@@ -1368,7 +1385,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "      </column>\n",
                             PFatt_str (n->sem.number.attname));
 
-            if (n->sem.rownum.part != att_NULL)
+            if (n->sem.number.part != att_NULL)
                 PFarray_printf (xml,
                                 "      <column name=\"%s\" function=\"partition\""
                                         " new=\"false\">\n"

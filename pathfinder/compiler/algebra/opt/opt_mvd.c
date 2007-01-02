@@ -750,9 +750,13 @@ opt_mvd (PFla_op_t *p)
             for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
                 if (LL(p)->schema.items[i].name == p->sem.rownum.part)
                     part = true;
-                for (unsigned int j = 0; j < p->sem.rownum.sortby.count; j++)
+                for (unsigned int j = 0;
+                     j < PFord_count (p->sem.rownum.sortby);
+                     j++)
                     if (LL(p)->schema.items[i].name 
-                        == p->sem.rownum.sortby.atts[j]) {
+                        == PFord_order_col_at (
+                               p->sem.rownum.sortby,
+                               j)) {
                         sortby = true;
                         break;
                     }
@@ -775,9 +779,13 @@ opt_mvd (PFla_op_t *p)
             for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
                 if (LR(p)->schema.items[i].name == p->sem.rownum.part)
                     part = true;
-                for (unsigned int j = 0; j < p->sem.rownum.sortby.count; j++)
+                for (unsigned int j = 0;
+                     j < PFord_count (p->sem.rownum.sortby);
+                     j++)
                     if (LR(p)->schema.items[i].name 
-                        == p->sem.rownum.sortby.atts[j]) {
+                        == PFord_order_col_at (
+                               p->sem.rownum.sortby,
+                               j)) {
                         sortby = true;
                         break;
                     }

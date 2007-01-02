@@ -542,7 +542,7 @@ opt_complex (PFla_op_t *p)
             if (rownum->kind == la_rownum &&
                 !PFprop_icol (p->prop, rownum->sem.rownum.attname)) {
                 
-                PFalg_attlist_t sortby;
+                PFord_ordering_t sortby;
                 PFalg_proj_t *proj_list;
                 PFalg_att_t inner_att = rownum->sem.rownum.attname;
                 PFalg_att_t inner_part = rownum->sem.rownum.part;
@@ -556,14 +556,15 @@ opt_complex (PFla_op_t *p)
                 if (inner_part) {
                     /* get the position of the inner partition attribute
                        in the sort criteria of the outer rownum */
-                    for (i = 0; i < p->sem.rownum.sortby.count; i++)
-                        if (p->sem.rownum.sortby.atts[i] == inner_part) {
+                    for (i = 0; i < PFord_count (p->sem.rownum.sortby); i++)
+                        if (PFord_order_col_at (p->sem.rownum.sortby, i)
+                                == inner_part) {
                             pos_part = i;
                             break;
                         }
                     /* don't handle patterns where the inner partition
                        column does not occur in the outer rownum */
-                    if (i == p->sem.rownum.sortby.count)
+                    if (i == PFord_count (p->sem.rownum.sortby))
                         if (!p->sem.rownum.part ||
                             p->sem.rownum.part != inner_part)
                             break;
@@ -571,8 +572,12 @@ opt_complex (PFla_op_t *p)
                 
                 /* lookup position of the inner rownum column in
                    the list of sort criteria of the outer rownum */
-                for (i = 0; i < p->sem.rownum.sortby.count; i++)
-                    if (p->sem.rownum.sortby.atts[i] == inner_att) {
+                for (i = 0; i < PFord_count (p->sem.rownum.sortby); i++)
+                    if (PFord_order_col_at (p->sem.rownum.sortby, i)
+                            == inner_att &&
+                        /* make sure the order is the same */
+                        PFord_order_dir_at (p->sem.rownum.sortby, i)
+                            == DIR_ASC) {
                         pos_att = i;
                         break;
                     }
@@ -582,28 +587,43 @@ opt_complex (PFla_op_t *p)
                     -- let the icols optimization remove the operator)
                    or the inner partition column does not occur as
                    sort criterion before the inner rownum column */
-                if (i == p->sem.rownum.sortby.count ||
+                if (i == PFord_count (p->sem.rownum.sortby) ||
                     pos_part > pos_att)
                     break;
                 
-                sortby.count = p->sem.rownum.sortby.count + 
-                               rownum->sem.rownum.sortby.count - 1;
-                sortby.atts = PFmalloc (sortby.count *
-                                        sizeof (PFalg_attlist_t));
+                sortby = PFordering ();
 
                 /* create new sort list where the sort criteria of the
                    inner rownum substitute the inner rownum column */
                 for (i = 0; i < pos_att; i++)
-                    sortby.atts[count++] = p->sem.rownum.sortby.atts[i];
+                    sortby = PFord_refine (sortby,
+                                           PFord_order_col_at (
+                                               p->sem.rownum.sortby,
+                                               i),
+                                           PFord_order_dir_at (
+                                               p->sem.rownum.sortby,
+                                               i));
                     
-                for (i = 0; i < rownum->sem.rownum.sortby.count; i++)
-                    sortby.atts[count++] = rownum->sem.rownum.sortby.atts[i];
+                for (i = 0; i < PFord_count (rownum->sem.rownum.sortby); i++)
+                    sortby = PFord_refine (sortby,
+                                           PFord_order_col_at (
+                                               rownum->sem.rownum.sortby,
+                                               i),
+                                           PFord_order_dir_at (
+                                               rownum->sem.rownum.sortby,
+                                               i));
 
-                for (i = pos_att + 1; i < p->sem.rownum.sortby.count; i++)
-                    sortby.atts[count++] = p->sem.rownum.sortby.atts[i];
+                for (i = pos_att + 1;
+                     i < PFord_count (p->sem.rownum.sortby);
+                     i++)
+                    sortby = PFord_refine (sortby,
+                                           PFord_order_col_at (
+                                               p->sem.rownum.sortby,
+                                               i),
+                                           PFord_order_dir_at (
+                                               p->sem.rownum.sortby,
+                                               i));
 
-                assert (count == sortby.count);
-                    
                 if (proj) {
                     /* Introduce the projection above the new rownum
                        operator to maintain the correct result schema.
@@ -652,9 +672,9 @@ opt_complex (PFla_op_t *p)
             if (L(p)->kind == la_project &&
                 LL(p)->kind == la_doc_access &&
                 LLR(p)->kind == la_rownum &&
-                p->sem.rownum.sortby.count == 1 &&
+                PFord_count (p->sem.rownum.sortby) == 1 &&
                 p->sem.rownum.part &&
-                LLR(p)->sem.rownum.sortby.count == 1 &&
+                PFord_count (LLR(p)->sem.rownum.sortby) == 1 &&
                 LLR(p)->sem.rownum.part) {
                 unsigned int  i;
                 PFalg_att_t   pos, iter, cur;
@@ -674,7 +694,10 @@ opt_complex (PFla_op_t *p)
                         break;
                     }
                 if (pos == iter ||
-                    pos != p->sem.rownum.sortby.atts[0] ||
+                    PFord_order_col_at (
+                        p->sem.rownum.sortby, 0) != pos ||
+                    PFord_order_dir_at (
+                        p->sem.rownum.sortby, 0) != DIR_ASC ||
                     iter != p->sem.rownum.part)
                     break;
                 

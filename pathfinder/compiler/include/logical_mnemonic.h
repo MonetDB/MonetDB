@@ -196,4 +196,7 @@
 #define fn_string_join(a,b,c,d,e,f,g,h,i) \
         PFla_fn_string_join ((a),(b),(c),(d),(e),(f),(g),(h),(i))
 
+/** a sort specification list is just another attribute list */
+#define sortby(...)     PFord_order_intro (__VA_ARGS__)
+
 /* vim:set shiftwidth=4 expandtab: */

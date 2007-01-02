@@ -48,6 +48,9 @@
 
 #include <stdio.h>
 
+/** mnemonic for a sort specification list */
+#define sortby(...)     PFord_order_intro (__VA_ARGS__)
+
 /*
  * Accessors for the burg matcher
  */
@@ -117,9 +120,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term max_           =  57
 %term min_           =  58
 %term sum            =  59
-%term merge_rownum   =  60
-%term hash_rownum    =  61
-%term number         =  62
+%term number         =  60
 %term type           =  63
 %term type_assert    =  64
 %term cast           =  65
@@ -211,8 +212,6 @@ Rel:      avg (Rel)                                                =  67 (10);
 Rel:      max_ (Rel)                                               =  68 (10);
 Rel:      min_ (Rel)                                               =  69 (10);
 Rel:      sum (Rel)                                                =  70 (10);
-Rel:      merge_rownum (Rel)                                       =  71 (10);
-Rel:      hash_rownum (Rel)                                        =  72 (10);
 Rel:      number (Rel)                                             =  73 (10);
 Rel:      type (Rel)                                               =  74 (10);
 Rel:      type_assert (Rel)                                        =  75 (10);
@@ -2171,16 +2170,20 @@ reduce (PFpa_op_t * p, int goalnt)
              * functions to generate a BAT that describes just that
              * grouping.
              */
+            assert (PFord_order_dir_at (p->sem.merge_union.ord, 0) == DIR_ASC);
+
             grouping[0]
                 = VAR (L(p)->env,
-                       PFord_order_at (p->sem.merge_union.ord, 0),
+                       PFord_order_col_at (p->sem.merge_union.ord, 0),
                        type_of (L(p),
-                                PFord_order_at (p->sem.merge_union.ord, 0)));
+                                PFord_order_col_at (p->sem.merge_union.ord,
+                                                    0)));
             grouping[1]
                 = VAR (R(p)->env,
-                       PFord_order_at (p->sem.merge_union.ord, 0),
+                       PFord_order_col_at (p->sem.merge_union.ord, 0),
                        type_of (R(p),
-                                PFord_order_at (p->sem.merge_union.ord, 0)));
+                                PFord_order_col_at (p->sem.merge_union.ord,
+                                                    0)));
 
             /*
              * We know (from the ordering properties we derived) that
@@ -2202,6 +2205,9 @@ reduce (PFpa_op_t * p, int goalnt)
              */
             for (unsigned int i = 1;
                     i < PFord_count (p->sem.merge_union.ord); i++) {
+                
+                assert (PFord_order_dir_at (p->sem.merge_union.ord, 
+                                            i) == DIR_ASC);
 
                 single_column_grouping = false;
 
@@ -2209,18 +2215,20 @@ reduce (PFpa_op_t * p, int goalnt)
                     = ctderive (
                         grouping[0],
                         VAR (L(p)->env,
-                             PFord_order_at (p->sem.merge_union.ord, i),
+                             PFord_order_col_at (p->sem.merge_union.ord, i),
                              type_of (
                                  L(p),
-                                 PFord_order_at (p->sem.merge_union.ord, i))));
+                                 PFord_order_col_at (p->sem.merge_union.ord,
+                                                     i))));
                 grouping[1]
                     = ctderive (
                         grouping[1],
                         VAR (R(p)->env,
-                             PFord_order_at (p->sem.merge_union.ord, i),
+                             PFord_order_col_at (p->sem.merge_union.ord, i),
                              type_of (
                                  R(p),
-                                 PFord_order_at (p->sem.merge_union.ord, i))));
+                                 PFord_order_col_at (p->sem.merge_union.ord,
+                                                     i))));
             }
 
             /*
@@ -2253,7 +2261,7 @@ reduce (PFpa_op_t * p, int goalnt)
                  */
                 if (!single_column_grouping
                     || p->schema.items[i].name !=
-                       PFord_order_at (p->sem.merge_union.ord, 0)) {
+                       PFord_order_col_at (p->sem.merge_union.ord, 0)) {
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & p->schema.items[i].type) {
@@ -2295,7 +2303,7 @@ reduce (PFpa_op_t * p, int goalnt)
                  */
                 if (!single_column_grouping
                     || p->schema.items[i].name !=
-                       PFord_order_at (p->sem.merge_union.ord, 0)) {
+                       PFord_order_col_at (p->sem.merge_union.ord, 0)) {
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & p->schema.items[i].type) {
@@ -2516,12 +2524,13 @@ reduce (PFpa_op_t * p, int goalnt)
                     i < PFord_count (p->sem.sort_distinct.ord); i++) {
                 for (PFalg_simple_type_t t = 1; t; t <<= 1) {
                     if (t & type_of (rel,
-                                     PFord_order_at (p->sem.sort_distinct.ord,
-                                                     i))) {
+                                     PFord_order_col_at (
+                                         p->sem.sort_distinct.ord,
+                                         i))) {
                         if (!initialized) {
                             first_sort_var = env_mvar (
                                                  rel->env,
-                                                 PFord_order_at (
+                                                 PFord_order_col_at (
                                                      p->sem.sort_distinct.ord,
                                                      i),
                                                  t);
@@ -2532,7 +2541,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                         sort (
                                             reverse (
                                                 var (first_sort_var->name)),
-                                            DIR_ASC))));
+                                            PFord_order_dir_at (
+                                                p->sem.sort_distinct.ord,
+                                                i)))));
 
                             initialized = true;
                         }
@@ -2543,11 +2554,13 @@ reduce (PFpa_op_t * p, int goalnt)
                                     ctrefine (
                                         var (v->name),
                                         VAR (rel->env,
-                                             PFord_order_at (p->sem
-                                                               .sort_distinct
-                                                               .ord, i),
+                                             PFord_order_col_at (
+                                                 p->sem.sort_distinct.ord,
+                                                 i),
                                              t),
-                                        DIR_ASC)));
+                                        PFord_order_dir_at (
+                                            p->sem.sort_distinct.ord,
+                                            i))));
                         }
                     }
                 }
@@ -2620,12 +2633,13 @@ reduce (PFpa_op_t * p, int goalnt)
                     i < PFord_count (p->sem.sortby.required); i++)
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & type_of (L(p),
-                                     PFord_order_at (p->sem.sortby.required,
-                                                     i))) {
+                                     PFord_order_col_at (
+                                         p->sem.sortby.required,
+                                         i))) {
                         if (!initialized) {
                             first_sort_var = env_mvar (
                                                  L(p)->env,
-                                                 PFord_order_at (
+                                                 PFord_order_col_at (
                                                      p->sem.sortby.required,
                                                      i),
                                                  t);
@@ -2637,7 +2651,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                         sort (
                                             reverse (
                                                 var (first_sort_var->name)),
-                                            DIR_ASC))));
+                                            PFord_order_dir_at (
+                                                p->sem.sortby.required,
+                                                i)))));
                             initialized = true;
                         }
                         else {
@@ -2647,11 +2663,13 @@ reduce (PFpa_op_t * p, int goalnt)
                                     ctrefine (
                                         var (v->name),
                                         VAR (L(p)->env,
-                                             PFord_order_at (
+                                             PFord_order_col_at (
                                                  p->sem.sortby.required,
                                                  i),
                                              t),
-                                        DIR_ASC)));
+                                        PFord_order_dir_at (
+                                            p->sem.sortby.required,
+                                            i))));
                         }
                     }
 
@@ -2712,16 +2730,16 @@ reduce (PFpa_op_t * p, int goalnt)
             for (i = 0; i < PFord_count (p->sem.sortby.existing); i++) {
                 for (PFalg_simple_type_t t = 1; t; t <<= 1) {
                     if (t & type_of (L(p),
-                                     PFord_order_at (p->sem.sortby.existing,
-                                                     i))) {
+                                     PFord_order_col_at (
+                                         p->sem.sortby.existing,
+                                         i))) {
                         if (!initialized) {
                             execute (
                                 assgn (
                                     var (v->name),
                                     VAR (L(p)->env,
-                                         PFord_order_at (p->sem
-                                                           .sortby
-                                                           .existing, i),
+                                         PFord_order_col_at (
+                                             p->sem.sortby.existing, i),
                                          t)));
                             initialized = true;
                         }
@@ -2732,11 +2750,12 @@ reduce (PFpa_op_t * p, int goalnt)
                                     ctrefine (
                                         var (v->name),
                                         VAR (L(p)->env,
-                                             PFord_order_at (p->sem
-                                                               .sortby
-                                                               .existing, i),
+                                             PFord_order_col_at (
+                                                 p->sem.sortby.existing, i),
                                              t),
-                                        DIR_ASC)));
+                                        PFord_order_dir_at (
+                                            p->sem.sortby.existing,
+                                            i))));
                         }
                     }
                 }
@@ -2759,28 +2778,28 @@ reduce (PFpa_op_t * p, int goalnt)
                  */
                 assert(!((aat_anode & 
                           type_of (L(p),
-                                   PFord_order_at (p->sem.sortby.required,
-                                                   i))) &&
+                                   PFord_order_col_at (p->sem.sortby.required,
+                                                       i))) &&
                          (aat_pnode &
                           type_of (L(p),
-                                  PFord_order_at (p->sem.sortby.required,
-                                                  i)))));
+                                  PFord_order_col_at (p->sem.sortby.required,
+                                                      i)))));
 
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & type_of (L(p),
-                                     PFord_order_at (p->sem.sortby.required,
-                                                     i))) {
+                                     PFord_order_col_at (
+                                         p->sem.sortby.required,
+                                         i))) {
                          execute (
                              assgn (var (v->name),
                                     ctrefine (
                                         var (v->name),
                                         VAR (L(p)->env,
-                                             PFord_order_at (p->sem
-                                                               .sortby
-                                                               .required,
-                                                             i),
+                                             PFord_order_col_at (
+                                                 p->sem.sortby.required, i),
                                              t),
-                                        DIR_ASC)));
+                                        PFord_order_dir_at (
+                                            p->sem.sortby.required, i))));
                     }
             }
 
@@ -2792,7 +2811,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 /* all columns that ensure the already existing order
                    stay unchanged. */
                 for (j = 0; j < PFord_count (p->sem.sortby.existing); j++)
-                    if (PFord_order_at (p->sem.sortby.existing, j) ==
+                    if (PFord_order_col_at (p->sem.sortby.existing, j) ==
                         env_at (L(p)->env, i).att) {
                         env_t entry = env_at (L(p)->env, i);
                         env_add (p->env, entry.att, entry.ty, entry.mvar);
@@ -2800,7 +2819,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         break;
                     }
                 
-                /* adjust the ordering for :wall other columns */
+                /* adjust the ordering for all other columns */
                 if (j == PFord_count (p->sem.sortby.existing)) {
                     mvar_t *a = new_var (p->refctr);
                  
@@ -3010,54 +3029,6 @@ reduce (PFpa_op_t * p, int goalnt)
         case 70:
              aggr_function(PFmil_sum, PFmil_gsum, p);
              break;
-
-        /* Rel:      merge_rownum (Rel) */
-        case 71:
-        {
-            mvar_t *v = new_var (p->refctr);
-
-            /* copy all the attributes from our argument */
-            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
-
-                pin (env_at (L(p)->env, i).mvar, p->refctr);
-
-                env_add (p->env,
-                         env_at (L(p)->env, i).att,
-                         env_at (L(p)->env, i).ty,
-                         env_at (L(p)->env, i).mvar);
-            }
-
-            /* and add the newly numbered one */
-            if (p->sem.rownum.part != att_NULL)
-                execute (
-                    assgn (var (v->name),
-                           mark_grp (
-                               VAR (p->env,
-                                    p->sem.rownum.part,
-                                    type_of (p, p->sem.rownum.part)),
-                               project (
-                                   kunique (
-                                       reverse (
-                                           VAR (p->env,
-                                                p->sem.rownum.part,
-                                                type_of (p, p->sem.rownum.part))
-                                           )),
-                                   lit_oid (1)))));
-            else
-                execute (
-                    assgn (var (v->name),
-                           mark (var (env_at (L(p)->env, 0).mvar->name),
-                                 lit_oid (1))));
-
-            env_add (p->env, p->sem.rownum.attname, aat_nat, v);
-
-        } break;
-
-        /* Rel:      hash_rownum (Rel) */
-        case 72:
-            PFoops (OOPS_FATAL,
-                    "hash_rownum not implemented yet.");
-            break;
 
         /* Rel:      number (Rel) */
         case 73:
@@ -4765,22 +4736,16 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
      * MIL functions expect this information encoded in an integer
      * value that we build up here.
      */
-    if (PFord_implies (in, PFord_refine (PFord_refine (PFordering (), pa_iter),
-                                         pa_item)))
+    if (PFord_implies (in, sortby (pa_iter, pa_item)))
         o = 0;
-    else if (PFord_implies (in, PFord_refine (PFord_refine (PFordering (),
-                                                            pa_item),
-                                              pa_iter)))
+    else if (PFord_implies (in, sortby (pa_item, pa_iter)))
         o = 1;
     else
         PFoops (OOPS_FATAL, "illegal argument for input ordering");
 
-    if (PFord_implies (out, PFord_refine (PFord_refine (PFordering (), pa_iter),
-                                          pa_item)))
+    if (PFord_implies (out, sortby (pa_iter, pa_item)))
         o |= 0;
-    else if (PFord_implies (out, PFord_refine (PFord_refine (PFordering (),
-                                                             pa_item),
-                                               pa_iter)))
+    else if (PFord_implies (out, sortby (pa_item, pa_iter)))
         o |= 2;
     else
         PFoops (OOPS_FATAL, "illegal argument for output ordering");

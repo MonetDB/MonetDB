@@ -123,18 +123,28 @@ opt_key (PFla_op_t *p)
                 SEEN(p) = true;                   
             } else {
                 /* discard all sort criterions after a key attribute */
-                unsigned int count = 0;
-                PFalg_att_t  *atts = PFmalloc (p->sem.rownum.sortby.count *
-                                               sizeof (PFalg_att_t));
+                PFord_ordering_t sortby = PFordering ();
 
-                for (unsigned int i = 0; i < p->sem.rownum.sortby.count; i++) {
-                    atts[count++] = p->sem.rownum.sortby.atts[i];
-                    if (PFprop_key_left (p->prop,
-                                         p->sem.rownum.sortby.atts[i]))
+                for (unsigned int i = 0;
+                     i < PFord_count (p->sem.rownum.sortby);
+                     i++) {
+                    sortby = PFord_refine (
+                                 sortby,
+                                 PFord_order_col_at (
+                                     p->sem.rownum.sortby,
+                                     i),
+                                 PFord_order_dir_at (
+                                     p->sem.rownum.sortby,
+                                     i));
+                    if (PFprop_key_left (
+                            p->prop,
+                            PFord_order_col_at (
+                                p->sem.rownum.sortby,
+                                i)))
                         break;
                 }
 
-                p->sem.rownum.sortby = PFalg_attlist_ (count, atts);
+                p->sem.rownum.sortby = sortby;
             }
             break;
         

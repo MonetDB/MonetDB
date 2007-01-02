@@ -38,10 +38,31 @@
 
 #include "array.h"
 
+/** An ordering item */
+struct PFalg_order_item_t {
+    PFalg_att_t name;
+    bool        dir;
+};
+typedef struct PFalg_order_item_t PFalg_order_item_t;
+
 PFord_ordering_t
 PFordering (void)
 {
-    return PFarray (sizeof (PFalg_att_t));
+    return PFarray (sizeof (PFalg_order_item_t));
+}
+
+PFord_ordering_t
+PFord_order_intro_ (unsigned int count, PFalg_att_t *atts)
+{
+    /* construct new PFord_ordering_t object */
+    PFord_ordering_t ret = PFordering ();
+
+    /* copy all attributes to return value */
+    for (unsigned int i = 0; i < count; i++)
+        *((PFalg_order_item_t *) PFarray_add (ret))
+            = (PFalg_order_item_t) { .name = atts[i], .dir = DIR_ASC };
+
+    return ret;
 }
 
 PFord_set_t
@@ -51,17 +72,20 @@ PFord_set (void)
 }
 
 PFord_ordering_t
-PFord_refine (const PFord_ordering_t ordering, const PFalg_att_t attribute)
+PFord_refine (const PFord_ordering_t ordering, 
+              const PFalg_att_t attribute,
+              const bool direction)
 {
     /* construct new PFord_ordering_t object */
     PFord_ordering_t ret = PFordering ();
 
     /* copy existing orderings to return value */
     for (unsigned int i = 0; i < PFarray_last (ordering); i++)
-        *((PFalg_att_t *) PFarray_add (ret))
-            = *((PFalg_att_t *) PFarray_at (ordering, i));
+        *((PFalg_order_item_t *) PFarray_add (ret))
+            = *((PFalg_order_item_t *) PFarray_at (ordering, i));
 
-    *((PFalg_att_t *) PFarray_add (ret)) = attribute;
+    *((PFalg_order_item_t *) PFarray_add (ret)) 
+        = (PFalg_order_item_t) { .name = attribute, .dir = direction };
 
     return ret;
 }
@@ -73,11 +97,19 @@ PFord_count (const PFord_ordering_t ordering)
 }
 
 PFalg_att_t
-PFord_order_at (const PFord_ordering_t ordering, unsigned int index)
+PFord_order_col_at (const PFord_ordering_t ordering, unsigned int index)
 {
     assert (index < PFord_count (ordering));
 
-    return *((PFalg_att_t *) PFarray_at (ordering, index));
+    return (*((PFalg_order_item_t *) PFarray_at (ordering, index))).name;
+}
+
+bool
+PFord_order_dir_at (const PFord_ordering_t ordering, unsigned int index)
+{
+    assert (index < PFord_count (ordering));
+
+    return (*((PFalg_order_item_t *) PFarray_at (ordering, index))).dir;
 }
 
 bool
@@ -89,7 +121,8 @@ PFord_implies (const PFord_ordering_t a, const PFord_ordering_t b)
 
     /* Attribute list of b must be a prefix of attribute list of a. */
     for (unsigned int i = 0; i < PFord_count (b); i++)
-        if (PFord_order_at (a, i) != PFord_order_at (b, i))
+        if (PFord_order_col_at (a, i) != PFord_order_col_at (b, i) ||
+            PFord_order_dir_at (a, i) != PFord_order_dir_at (b, i))
             return false;
 
     return true;
@@ -99,7 +132,8 @@ bool
 PFord_common_prefix (const PFord_ordering_t a, const PFord_ordering_t b)
 {
     return PFord_count (a) && PFord_count (b)
-        && PFord_order_at (a, 0) == PFord_order_at (b, 0);
+        && PFord_order_col_at (a, 0) == PFord_order_col_at (b, 0)
+        && PFord_order_dir_at (a, 0) == PFord_order_dir_at (b, 0);
 }
 
 char *
@@ -110,8 +144,10 @@ PFord_str (const PFord_ordering_t o)
     PFarray_printf (a, "<");
 
     for (unsigned int i = 0; i < PFord_count (o); i++)
-        PFarray_printf (a, "%s%s", i ? "," : "", 
-                        PFatt_str (PFord_order_at (o, i)));
+        PFarray_printf (a, "%s%s (%s)", i ? "," : "", 
+                        PFatt_str (PFord_order_col_at (o, i)),
+                        PFord_order_dir_at (o, i) == DIR_ASC
+                        ? "asc" : "desc");
 
     PFarray_printf (a, ">");
 
@@ -160,9 +196,12 @@ PFord_intersect (const PFord_set_t a, const PFord_set_t b)
             /* compute the longest prefix of the current ordering in a and b */
             for (unsigned int k = 0;
                  k < PFord_count (ai) && k < PFord_count (bj)
-                    && PFord_order_at (ai, k) == PFord_order_at (bj, k);
+                    && PFord_order_col_at (ai, k) == PFord_order_col_at (bj, k)
+                    && PFord_order_dir_at (ai, k) == PFord_order_dir_at (bj, k);
                  k++)
-                prefix = PFord_refine (prefix, PFord_order_at (ai, k));
+                prefix = PFord_refine (prefix,
+                                       PFord_order_col_at (ai, k),
+                                       PFord_order_dir_at (ai, k));
 
             /* keep it if it is better than what we have so far */
             if (PFord_count (prefix) > PFord_count (best_prefix))
@@ -245,7 +284,9 @@ PFord_prefixes (PFord_set_t a)
 
         for (unsigned int j = 0; j < PFord_count (ai); j++) {
 
-            prefix = PFord_refine (prefix, PFord_order_at (ai, j));
+            prefix = PFord_refine (prefix,
+                                   PFord_order_col_at (ai, j),
+                                   PFord_order_dir_at (ai, j));
 
             /* make sure we do not already have that prefix in the list */
             unsigned int k;
@@ -294,15 +335,23 @@ PFord_permutations (const PFord_ordering_t ordering)
 
         for (unsigned int j = 0; j < PFord_count (ordering); j++)
             if (j != i)
-                removed = PFord_refine (removed, PFord_order_at (ordering, j));
+                removed = PFord_refine (removed,
+                                        PFord_order_col_at (ordering, j),
+                                        PFord_order_dir_at (ordering, j));
 
         subperms = PFord_permutations (removed);
 
         /* Refine all this permutations with the attribute at position i. */
-        for (unsigned int j = 0; j < PFarray_last (subperms); j++)
+        for (unsigned int j = 0; j < PFarray_last (subperms); j++) {
             PFord_set_add (ret,
                            PFord_refine (PFord_set_at (subperms, j),
-                                         PFord_order_at (ordering, i)));
+                                         PFord_order_col_at (ordering, i),
+                                         DIR_ASC));
+            PFord_set_add (ret,
+                           PFord_refine (PFord_set_at (subperms, j),
+                                         PFord_order_col_at (ordering, i),
+                                         DIR_DESC));
+        }
     }
 
     return ret;
