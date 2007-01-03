@@ -17,7 +17,7 @@
 @f logger
 @a N. J. Nes
 @v 2.0
-@+ Logger
+@+ The Transaction Logger
 In the philosophy of MonetDB, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 
 implemented as a separate module and applications are required to
@@ -1705,14 +1705,5 @@ logger_find_bat_wrap( int *bid, logger *L, str nme )
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
-}
-
-@mil
-proc logger_start() : void {
-	var dir := bat("monet_environment").find("sql_logdir");
-	var db := bat("monet_environment").find("gdk_dbname");
-	print(dir);
-	print(db);
-	logger_start(dir, db);
 }
 @}

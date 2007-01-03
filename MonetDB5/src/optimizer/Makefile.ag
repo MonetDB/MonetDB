@@ -15,8 +15,8 @@ lib_optimizer = {
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_generators.mx opt_remoteQueries.mx opt_joinselect.mx \
-		opt_constantExpression.mx opt_inliners.mx opt_rangePush.mx \
-		opt_modes.mx opt_joinpath.mx opt_heuristics.mx
+		opt_constantExpression.mx opt_inliners.mx opt_pushranges.mx \
+		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
@@ -36,6 +36,6 @@ scripts_mal = {
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_generators.mx opt_remoteQueries.mx opt_joinselect.mx \
-		opt_constantExpression.mx opt_inliners.mx opt_rangePush.mx \
-		opt_modes.mx opt_joinpath.mx opt_heuristics.mx
+		opt_constantExpression.mx opt_inliners.mx opt_pushranges.mx \
+		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx
 }

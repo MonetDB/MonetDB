@@ -961,7 +961,7 @@ It suffice to respect the flow graph.
 [unclear as what we need]
 @}
 @-
-@node Optimizer Toolkit, Accumulators, Flow Analysis , The MAL Optimizer
+@node Optimizer Toolkit, Access Mode, Flow Analysis , The MAL Optimizer
 @+ Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers 
 included in the code base. The tool kit is incrementally built, triggered
@@ -975,6 +975,7 @@ produced as long as possible. For example,
 the snippet @code{ sql.insert(col, 12@@0, "hello")} can be the target
 of simple SQL rewrites using the module name as the discriminator.
 @menu
+* Access Mode::
 * Accumulators::
 * Alias Removal::
 * Code Factorization::
@@ -985,6 +986,7 @@ of simple SQL rewrites using the module name as the discriminator.
 * Dead Code Removal::
 * Empty Set Removal::
 * Garbage Collector::
+* Generators::
 * Heuristic Rules::
 * Inline Functions::
 * Join Paths::

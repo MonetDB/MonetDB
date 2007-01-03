@@ -48,7 +48,7 @@ integer id's (as embodied by Monet's void type) is also available.
 
 This limitation on (v)oid-headers is marginal. The primitive GRPsplit
 produces for any BAT two copies with both a (v)oid header.
-@+ Algorithms
+@- Algorithms
 There are several approaches to build a cross table. The one chosen here
 is aimed at incremental construction, such that re-use of intermediates
 becomes possible. Starting with the first dimension, a BAT is derived to

@@ -15,8 +15,8 @@
 @' All Rights Reserved.
 
 @f lock
-@v 1.0
 @a Peter Boncz
+@v 1.0
 @+ Lightweight Lock Module
 This module provides simple SMP lock and thread functionality
 as already present in the MonetDB system.

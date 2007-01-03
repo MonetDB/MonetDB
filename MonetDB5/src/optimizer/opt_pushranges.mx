@@ -16,8 +16,6 @@
 
 @f opt_pushranges
 @a M. Kersten
-@-
-@node Range Propagation, Remote Queries, Query Plans, Optimizer Toolkit
 @- Range Propagation
 Almost all queries are interested in a few slices
 of the table. If applied to a view, the query plans

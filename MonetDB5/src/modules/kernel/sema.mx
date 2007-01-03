@@ -15,9 +15,9 @@
 @' All Rights Reserved.
 
 @f sema
-@v 1.0
 @a Peter Boncz
-@+ Lightweight Lock Module
+@v 1.0
+@-
 This module provides simple SMP lock and thread functionality
 as already present in the MonetDB system.
 @{

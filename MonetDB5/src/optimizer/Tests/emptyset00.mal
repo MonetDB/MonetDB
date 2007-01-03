@@ -4,6 +4,6 @@
 	s3 := algebra.select(s2,80,80);
 	io.print(s3);
 
-optimizer.rangePush();
+optimizer.pushranges();
 optimizer.emptySet();
 mdb.list();

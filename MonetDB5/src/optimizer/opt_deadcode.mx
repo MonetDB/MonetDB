@@ -50,7 +50,7 @@ The dead code removal trims this program to the following short block:
 
 A refinement of the dead code comes from using arguments
 that ceased to exist due to actions taken by an optimizer.
-For example, in the snippet below the @sc{rangePush} optimizer
+For example, in the snippet below the @sc{pushranges} optimizer
 may conclude that variable V31 becomes empty and simply
 injects a 'dead' variable by dropping the assignment statement.
 This makes other code dead as well.
