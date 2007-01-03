@@ -39,7 +39,7 @@ In the remainder of this section we shortly introduce the
 MonetDB Version 5 design considerations and
 a quick overview of its architecture.
 
-@node  Design Considerations, Architecture Overview, MonetDB Overview, Design Overview
+@node  Design Considerations, Architecture Overview, Design Overview, Design Overview
 @+ Design Considerations
 Redesign of the MonetDB software stack was driven by the need to
 reduce the effort to extend the system into novel directions

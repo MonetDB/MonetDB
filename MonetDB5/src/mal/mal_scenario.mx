@@ -64,7 +64,7 @@ or vectorized pipe-line execution by a dedicated engine.
 
 A failure encountered in any of the steps terminates the scenario
 cycle. It returns to the user for a new command.
-@node Scenario Management, Server Management,  Session Scenarios, Design Overview 
+
 @+ Scenario management
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.
