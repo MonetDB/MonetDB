@@ -13,7 +13,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2006 CWI.
+# Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
 # This program makes an output file prof_(original file name) which can be
