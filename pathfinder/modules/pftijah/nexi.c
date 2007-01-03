@@ -184,7 +184,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     
     /** Text retrieval model parameters **/
     txt_retr_model->qnumber     = 0;
-    txt_retr_model->model       = MODEL_LMS;
+    txt_retr_model->model       = MODEL_NLLR;
     txt_retr_model->or_comb     = OR_SUM;
     txt_retr_model->and_comb    = AND_PROD;
     txt_retr_model->up_prop     = UP_WSUMD;
