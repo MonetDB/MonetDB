@@ -15,8 +15,6 @@
 @' All Rights Reserved.
 
 @f opt_accumulators
-@-
-@node Accumulators, Alias Removal, Optimizer Toolkit, Optimizer Toolkit
 @- Accumulator Evaluations
 Bulk arithmetic calculations are pretty expensive,
 because new @sc{bat}s are created for each expression. 

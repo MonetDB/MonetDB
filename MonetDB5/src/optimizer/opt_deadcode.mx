@@ -15,8 +15,6 @@
 @' All Rights Reserved.
 
 @f opt_deadcode
-@-
-@node Dead Code Removal, Empty Set Removal, Cost Models, Optimizer Toolkit
 @- Dead Code Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. 

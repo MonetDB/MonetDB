@@ -16,9 +16,6 @@
 
 @f opt_inliners
 @a M. Kersten
-@-
-@node Inline Functions, Join Paths , Heuristic Rules, Optimizer Toolkit
-
 @subsection Function Inliners
 The routine @sc{optimizer.inliners()} searches MAL function definitions
 whose property @{inline@}  is set. In addition, all MAL function calls

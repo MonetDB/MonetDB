@@ -16,8 +16,6 @@
 
 @f opt_macro
 @a M. L. Kersten
-@-
-@node Macro Processing, Merge Tables, Join Paths, Optimizer Toolkit
 @- Macro and Orcam Processing
 The optimizers form the basis for replacing code fragments.
 Two optimizers are focused on code expansion and contraction.

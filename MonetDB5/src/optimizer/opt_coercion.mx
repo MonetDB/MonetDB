@@ -15,8 +15,6 @@
 @' All Rights Reserved.
 
 @f opt_coercion
-@-
-@node Coercions, Common Terms, Code Factorization,  Optimizer Toolkit
 @- Coercion Removal
 A simple optimizer that removes coercions that are not needed.
 They may result from a sloppy code-generator or function

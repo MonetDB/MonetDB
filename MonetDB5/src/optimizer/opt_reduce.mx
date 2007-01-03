@@ -16,8 +16,6 @@
 
 @f opt_reduce
 @a M. Kersten
-@-
-@node Stack Reduction, Strength Reduction, Singleton Sets, Optimizer Toolkit
 @- Stack Reduction
 The compilers producing MAL may generate an abundance of temporary variables
 to hold the result of expressions. This leads to a polution of the

@@ -15,8 +15,6 @@
 @' All Rights Reserved.
 
 @f opt_heuristics
-@-
-@node Heuristic Rules, Inline Functions, Garbage Collector,  Optimizer Toolkit
 @- Heuristic rewrites rules
 One of the oldest optimizer tricks in relational query processing is
 to apply heuristic rules to reduce the processing cost. For example,

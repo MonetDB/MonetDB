@@ -17,8 +17,6 @@
 
 @f opt_generators
 @a M. Kersten
-@-
-@node Partitioned Databases, Strength Reduction, Multi-Association Tables, Optimizer Toolkit
 @- Iterator query processing
 Limitations on the addressing space in older PCs and the need
 for distributed storage makes that BATs ideally should be 
@@ -38,7 +36,7 @@ The general strategy is to select a portion of the workflow
 related to a variable and encapsulate it with
 an iterator over the BAT partitions. In doing so, we replace
 operators with their incremental counter part, alike the
-multi_table optimizer.
+mergetable optimizer.
 
 A snippet of the partitioning optimizer is shown below. It assumes
 that the partitioned BAT @sc{a0} consists of the components @sc{a1,a2,a3}.

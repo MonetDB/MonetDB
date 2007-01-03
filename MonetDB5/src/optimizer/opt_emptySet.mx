@@ -16,8 +16,6 @@
 
 @f opt_emptySet
 @a M. Kersten
-@-
-@node Empty Set Removal, Garbage Collector, Dead Code Removal, Optimizer Toolkit
 @- Emptyset Reduction
 One of the key decisions during MAL optimization is to estimate
 the size of the BATs produced and consumed. Two cases are of interest

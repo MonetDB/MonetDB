@@ -16,9 +16,6 @@
 
 @f opt_mergetable
 @a M. Kersten
-@-
-@node Merge Tables , Multiplex Compiler, Macro Processing, Optimizer Toolkit
-
 @- Merge Tables 
 A merge association table (MAT) descriptor defines an ordered collection 
 of type compatible BATs, whose union represents a single (virtual) BAT.

@@ -16,8 +16,6 @@
 
 @f opt_factorize
 @a M. Kersten
-@-
-@node Code Factorization, Coercions, Alias Removal,  Optimizer Toolkit
 @- Code Factorization
 In most real-life situations queries are repeatedly called with
 only slight changes in their parameters. This situation can be

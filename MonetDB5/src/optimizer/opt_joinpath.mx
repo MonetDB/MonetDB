@@ -15,8 +15,6 @@
 @' All Rights Reserved.
 
 @f opt_joinpath
-@-
-@node Join Paths, Macro Processing,Inline Functions , Optimizer Toolkit
 @- Join Paths
 The routine @sc{optimizer.joinPath()}
 walks through the program looking for join operations
