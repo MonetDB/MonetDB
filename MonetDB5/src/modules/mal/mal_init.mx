@@ -111,7 +111,7 @@ include opt_generators;
 include opt_inliners;
 include opt_joinpath;
 include opt_macro;
-include opt_accesmode;
+include opt_accessmode;
 include opt_multiplex;
 include opt_mergetable;
 include opt_partitionedQuery;
