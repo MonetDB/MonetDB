@@ -1931,6 +1931,11 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     return;
   }
 
+  # check that we're not trying to update the transient container
+  if (affected_conts.uselect(0@0).count() > 0) {
+    ERROR("updating transient container.\n");
+  }
+
   # check that all containers are updatable (i.e. that none are read-only)
   if ([ttype](affected_conts.join(ws.fetch(MAP_PID))).uselect(void).count() > 0) {
     ERROR("updating read-only document.\n");
