@@ -108,7 +108,7 @@ introduced in @ref{Start and Stop}.
 The top layer consists of applications written in your favorite
 language.
 They provide both specific functionality
-for a particular product, e.g. @url{http://kdl.cs.umass.edu/prox-overview,Proximity},
+for a particular product, e.g. @url{http://kdl.cs.umass.edu/software,Proximity},
 and generic functionality, e.g. 
 the @url{http://www.aquafold.com,Aquabrowser} or @url{http://www.minq.se,Dbvisualizer}.
 The applications communicate with the server 
