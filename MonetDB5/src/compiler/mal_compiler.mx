@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
 @f mal_compiler
@@ -131,7 +131,7 @@ mal_compiler_export str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 static char *mccPrelude[] = {
 	"/* MAL to C compiler\n",
-	"   Copyright (c) 2001-2006, CWI.\n",
+	"   Copyright (c) 2001-2007, CWI.\n",
 	"   All rights reserved.\n",
 	" \n",
 	"   The current version does not yet\n",

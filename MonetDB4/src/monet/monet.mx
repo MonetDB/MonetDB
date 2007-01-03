@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
 @f monet
@@ -389,7 +389,7 @@ monet_hello(stream *out)
 		if (out == NULL)
 			out = GDKout;
 		stream_printf(out, "# Monet Database Server V%s\n", monet_version);
-		stream_printf(out, "# Copyright (c) 1993-2006, CWI. "
+		stream_printf(out, "# Copyright (c) 1993-2007, CWI. "
 			      "All rights reserved.\n");
 		stream_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
 		                   monet_arch, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
