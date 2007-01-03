@@ -85,6 +85,10 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/lady.gif
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/docs/*/*.tex
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/docs/*/*/*.tex
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Tests/sample.class
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Mprofile-commands.lst
+
+rm -rf $RPM_BUILD_ROOT%{prefix}/bin/M*
+rm -rf $RPM_BUILD_ROOT%{prefix}/bin/prof.py
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
@@ -96,11 +100,13 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root) 
 %{_libdir}/libmutils.*
 %{_libdir}/libstream.*
+%{_libdir}/libbat.*
 
 %files devel
 %defattr(-,root,root) 
 %{prefix}/bin/monetdb-config*
-%{prefix}/share/%{name}/conf/MonetDB.m4 
+%{prefix}/share/%{name}/conf/*
+%{prefix}/share/%{name}/python/*
 
 %{prefix}/include/%{name}/*.h
 %{prefix}/include/%{name}/*/*.[hcm]
