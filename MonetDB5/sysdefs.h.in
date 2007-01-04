@@ -16,5 +16,30 @@
  * All Rights Reserved.
  */
 
+#if (!defined __GNUC__) && defined __INTEL_COMPILER && __INTEL_COMPILER >= 800
+/*
+ * With "-no-gcc", icc 8.0 does not predefine __GNUC__, and hence __REDIRECT
+ * is not defined in /usr/include/sys/cdefs.h; which in turn causes readdir to
+ * be defined as readdir64 in /usr/include/dirent.h .
+ * To prevent the latter, we ensure here that __REDIRECT is defined also for 
+ * icc 8.0 with "-no-gcc".
+ */
+# define __REDIRECT(name, proto, alias) name proto __asm__ (__ASMNAME (#alias))
+# ifdef __cplusplus
+#  define __REDIRECT_NTH(name, proto, alias) \
+     name proto __THROW __asm__ (__ASMNAME (#alias))
+# else
+#  define __REDIRECT_NTH(name, proto, alias) \
+     name proto __asm__ (__ASMNAME (#alias)) __THROW
+# endif
+# define __ASMNAME(cname)  __ASMNAME2 (__USER_LABEL_PREFIX__, cname)
+# define __ASMNAME2(prefix, cname) __STRING (prefix) cname
+# define __interface
+/* work around bug in glibc header files */
+#ifndef __GLIBC_HAVE_LONG_LONG
+#define __GLIBC_HAVE_LONG_LONG 1
+#endif
+#endif
+
 #define MONETDBPREFIX "@Qprefix@"
 #define MONETDBCONFIG "@Qsysconfdir@@QDIRSEP@monetdb5.conf"
