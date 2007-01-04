@@ -40,17 +40,17 @@ pkgincludedir="${includedir}/${pkg}"
 usage()
 {
     cat <<EOF
-Usage: monetdb-config [OPTION]
+Usage: `basename $0` [OPTION]
 
 Known values for OPTION are:
 
-  --build		print monet build directory
-  --source		print monet source directory
-  --libs		print Monet library linking information
-  --mods		print Monet module linking information
-  --cflags		print Monet module pre-processor and compiler flags
-  --modpath             print default Monet module path
-  --classpath		print default Monet CLASSPATH
+  --build		print ${pkg} build directory
+  --source		print ${pkg} source directory
+  --libs		print ${pkg} library linking information
+  --mods		print ${pkg} module linking information
+  --cflags		print ${pkg} module pre-processor and compiler flags
+  --modpath		print default ${pkg} module path
+  --classpath		print default ${pkg} CLASSPATH
   --help		display this help and exit
   --version		output version information
 
@@ -115,25 +115,21 @@ while test $# -gt 0; do
     --includes)
        	echo \
 		-I\${MONETDB4_INCLUDEDIR} \
-		-I\${MONETDB4_INCLUDEDIR}/common \
-		-I\${MONETDB4_INCLUDEDIR}/gdk \
 	  	-I\${MONETDB4_INCLUDEDIR}/monet \
 	  	-I\${MONETDB4_INCLUDEDIR}/plain \
 	  	-I\${MONETDB4_INCLUDEDIR}/contrib \
 	  	-I\${MONETDB4_INCLUDEDIR}/mapi \
-	  	-I\${MONETDB4_INCLUDEDIR}/C 
+	  	-I\${MONETDB4_INCLUDEDIR}/calibrator
        	;;
 
     --cflags)
        	echo \
 		-I$pkgincludedir \
-		-I$pkgincludedir/common \
-		-I$pkgincludedir/gdk \
 		-I$pkgincludedir/monet \
 		-I$pkgincludedir/plain \
 		-I$pkgincludedir/contrib \
 		-I$pkgincludedir/mapi \
-	  	-I$pkgincludedir/C 
+	  	-I$pkgincludedir/calibrator 
        	;;
 
     --libs)

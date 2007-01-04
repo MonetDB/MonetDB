@@ -56,13 +56,13 @@ if "%1" == "--classpath"	echo %classpath%	& goto shift
 
 :usage
 	echo.
-	echo Usage: monetdb-config [OPTION]
+	echo Usage: monetdb4-config [OPTION]
 	echo.
 	echo Known values for OPTION are:
 	echo.
-	echo   --build		print monet build directory
-	echo   --source		print monet source directory
-	echo   --modpath	print default Monet module directory
+	echo   --build		print %pkg% build directory
+	echo   --source		print %pkg% source directory
+	echo   --modpath	print default %pkg% module directory
 	echo   --help		display this help and exit
 	echo   --version	output version information
 	echo.
