@@ -2,13 +2,12 @@
 
 setlocal
 
-set builddir=@XMONETDB_BUILD@
+set builddir=@XMONETDB4_BUILD@
 
-set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\plain;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\contrib;%builddir%\src\modules\calibrator\.libs;%builddir%\src\modules\calibrator;%builddir%\src\modules\mnetcdf\.libs;%builddir%\src\modules\mnetcdf;%builddir%\src\mapi\.libs;%builddir%\src\mapi
+set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\plain;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\contrib;%builddir%\src\modules\calibrator\.libs;%builddir%\src\modules\calibrator;%builddir%\src\mapi\.libs;%builddir%\src\mapi;%builddir%\src\modules\mnetcdf\.libs;%builddir%\src\modules\mnetcdf
+set PATH=%MOD_PATH%;%builddir%\src\monet;%PATH%
+set PATH=%builddir%\src\tools;%PATH%
 
-set PATH=%builddir%\src\testing;%builddir%\src\tools;%builddir%\src\mapi\clients\C;%builddir%\src\mapi\clients\python;%PATH%
-set PATH=%MOD_PATH%;%builddir%\src\common;%builddir%\src\gdk;%builddir%\src\mapi\clients\C;%builddir%\src\modules\plain\stream;%builddir%\src\monet;%PATH%
-
-"%builddir%\src\tools\Mserver.exe" "--config=%builddir%\conf\MonetDB.conf" --set "monet_mod_path=%MOD_PATH%" %*
+Mserver.exe "--config=%builddir%\conf\MonetDB.conf" --set "monet_mod_path=%MOD_PATH%" %*
 
 endlocal

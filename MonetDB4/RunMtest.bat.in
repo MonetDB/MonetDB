@@ -11,16 +11,15 @@ setlocal
 set builddir=@XMONETDB4_BUILD@
 set srcdir=@XMONETDB4_SOURCE@
 
-set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\plain;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\contrib;%builddir%\src\modules\calibrator\.libs;%builddir%\src\modules\calibrator;%builddir%\src\modules\mnetcdf\.libs;%builddir%\src\modules\mnetcdf;%builddir%\src\mapi\.libs;%builddir%\src\mapi
-
+set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\plain;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\contrib;%builddir%\src\modules\calibrator\.libs;%builddir%\src\modules\calibrator;%builddir%\src\mapi\.libs;%builddir%\src\mapi;%builddir%\src\modules\mnetcdf\.libs;%builddir%\src\modules\mnetcdf
+set PATH=%MOD_PATH%;%builddir%\src\monet;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
 REM set PYTHONPATH=%builddir%\src\testing;%srcdir%\src\testing;%builddir%\src\common;%srcdir%\src\mapi\clients\python
-set PATH=%MOD_PATH%;%\src\monet;%PATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call Mtest.py "--monet_mod_path=%MOD_PATH%" "--config=%builddir%\conf\MonetDB.conf" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" %*
+call Mtest.py "--config=%builddir%\conf\MonetDB.conf" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

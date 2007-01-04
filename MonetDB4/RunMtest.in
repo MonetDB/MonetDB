@@ -36,6 +36,9 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance various paths to find our stuff
+if [ -s "${builddir}/src/tools/monetdb4-config" ] ; then
+	chmod +x "${builddir}/src/tools/monetdb4-config"
+fi
 PATH="${builddir}/src/tools:$PATH"
 if [ "${uname}" = "IRIX64" ] ; then
 	# on IRIX64 (at least when compiled with the MIPS compiler),
@@ -70,4 +73,4 @@ type -a @PYTHON@
 # if the environment variable MTEST_AT is set (value does not matter),
 # pass the --at flag to Mtest.py so that it uses the at command as a
 # watchdog.
-exec Mtest.py --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/MonetDB.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="${srcdir}" --TSTBLDBASE="${builddir}" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"
+exec Mtest.py --config="${builddir}/conf/MonetDB.conf" --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="${srcdir}" --TSTBLDBASE="${builddir}" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"
