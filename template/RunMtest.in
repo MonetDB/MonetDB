@@ -21,16 +21,8 @@ builddir=`pwd`
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-MONETDB_PREFIX=@MONETDB_PREFIX@
-
-if [ ! -x "${MONETDB_PREFIX}/bin/Mtest.py" ]
-then
-	echo "Mtest.py not found, install MonetDB first" >&2
-	exit 1
-fi
-
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/.libs:${builddir}/src:${srcdir}/src:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
+MOD_PATH="${builddir}/src/.libs:${builddir}/src:${srcdir}/src:`monetdb4-config --modpath`"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -43,7 +35,6 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance PATH with Msql and MonetDB binaries
-PATH="${MONETDB_PREFIX}/bin:$PATH"
 libpath="${MOD_PATH}"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
@@ -54,11 +45,11 @@ if [ "${uname}" = "AIX" ] ; then
 	LIBPATH="${libpath}${LIBPATH}"
 	export LIBPATH
 fi
-export PATH LD_LIBRARY_PATH
+export LD_LIBRARY_PATH
 
 # execute Mtest.py in the source directory
 cd "$srcdir"
 
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
-exec Mtest.py --monet_mod_path="$MOD_PATH" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --dbfarm="${builddir}/dbfarm" "${@--r}"
+exec Mtest.py --config="`monetdb4-config --sysconfdir`/MonetDB.conf" --monet_mod_path="$MOD_PATH" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" "${@--r}"
