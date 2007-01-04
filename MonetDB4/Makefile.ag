@@ -18,8 +18,8 @@ SUBDIRS = src conf scripts
 
 EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
-		sysdefs.h.in MonetDB.spec MonetDB.spec.in HowToStart \
-		HowToStart-Win32.txt HowToStart-MinGW.txt \
+		sysdefs.h.in MonetDB-server.spec MonetDB-server.spec.in \
+		HowToStart HowToStart-Win32.txt HowToStart-MinGW.txt \
 		HowToStart-MinGW-pcre.txt HowToStart-MinGW-swig.txt \
 		RunMserver.bat.in rpm.mk.in RunMapiClient.bat.in RunMserver.in
 

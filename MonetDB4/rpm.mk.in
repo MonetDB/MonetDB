@@ -30,7 +30,7 @@ rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
 
-rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
+rpm:	MonetDB-server.spec $(top_builddir)/$(distdir).tar.gz
 
 	mkdir -p $(rpmtopdir)/RPMS
 	mkdir -p $(rpmtopdir)/SRPMS
