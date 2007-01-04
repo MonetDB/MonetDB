@@ -16,12 +16,6 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-# Contributor(s):
-# 		Martin Kersten <Martin.Kersten@cwi.nl>
-# 		Peter Boncz <Peter.Boncz@cwi.nl>
-# 		Niels Nes <Niels.Nes@cwi.nl>
-# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 pkg="@PACKAGE@"
 source="@QMONETDB5_SOURCE@"
 build="@QMONETDB5_BUILD@"
@@ -46,17 +40,17 @@ pkgincludedir="${includedir}/${pkg}"
 usage()
 {
     cat <<EOF
-Usage: monetdb5-config [OPTION]
+Usage: `basename $0` [OPTION]
 
 Known values for OPTION are:
 
-  --build		print monet build directory
-  --source		print monet source directory
-  --libs		print Monet5 library linking information
-  --mods		print Monet5 module linking information
-  --cflags		print Monet5 module pre-processor and compiler flags
-  --modpath             print default Monet5 module path
-  --classpath		print default Monet5 CLASSPATH
+  --build		print ${pkg} build directory
+  --source		print ${pkg} source directory
+  --libs		print ${pkg} library linking information
+  --mods		print ${pkg} module linking information
+  --cflags		print ${pkg} module pre-processor and compiler flags
+  --modpath		print default ${pkg} module path
+  --classpath		print default ${pkg} CLASSPATH
   --help		display this help and exit
   --version		output version information
 
@@ -124,8 +118,8 @@ while test $# -gt 0; do
 	  	-I\${MONETDB5_INCLUDEDIR}/compiler \
 	  	-I\${MONETDB5_INCLUDEDIR}/kernel \
 	  	-I\${MONETDB5_INCLUDEDIR}/mal \
-	  	-I\${MONETDB5_INCLUDEDIR}/mil \
 	  	-I\${MONETDB5_INCLUDEDIR}/optimizer \
+	  	-I\${MONETDB5_INCLUDEDIR}/scheduler \
 	  	-I\${MONETDB5_INCLUDEDIR}
        	;;
 
@@ -135,8 +129,8 @@ while test $# -gt 0; do
 	  	-I$pkgincludedir/compiler \
 	  	-I$pkgincludedir/kernel \
 	  	-I$pkgincludedir/mal \
-	  	-I$pkgincludedir/mil \
 	  	-I$pkgincludedir/optimizer \
+	  	-I$pkgincludedir/scheduler \
 	  	-I$pkgincludedir
        	;;
 
@@ -151,7 +145,7 @@ while test $# -gt 0; do
        	;;
 
     --modpath)
-		echo 	$pkglibdir:$pkglibdir/lib:$pkglibdir/bin
+        echo 	$pkglibdir:$pkglibdir/lib:$pkglibdir/bin
         ;;
 
     --classpath)

@@ -58,9 +58,9 @@ if "%1" == "--modpath"		echo %modpath%		& goto shift
 	echo.
 	echo Known values for OPTION are:
 	echo.
-	echo   --build		print monet build directory
-	echo   --source		print monet source directory
-	echo   --modpath	print default Monet module directory
+	echo   --build		print %pkg% build directory
+	echo   --source		print %pkg% source directory
+	echo   --modpath	print default %pkg% module directory
 	echo   --help		display this help and exit
 	echo   --version	output version information
 	echo.
