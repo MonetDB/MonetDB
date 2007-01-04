@@ -17,11 +17,9 @@ Requires: python
 
 %{!?buildsystem: %define buildsystem 0}
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel 
+BuildRequires: MonetDB-devel, MonetDB-client-devel 
 %endif
 
-%{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
-%{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %define comp_cc @CC@
 
 # groups of related archs
@@ -31,28 +29,6 @@ BuildRequires: MonetDB-devel
 %define bits 32
 %else
 %define bits 64
-%endif
-
-%package odbc
-Summary: MonetDB SQL odbc
-Group: System
-
-%if %{?_with_java:1}%{!?_with_java:0}
-%package java
-Summary: MonetDB SQL java interface
-Group: System
-%if !%{?buildsystem}
-BuildRequires: java ant
-%endif
-%endif
-
-%if %{?_with_python:1}%{!?_with_python:0}
-%package python
-Summary: MonetDB SQL python interface
-Group: System
-%if !%{?buildsystem}
-BuildRequires: python swig
-%endif
 %endif
 
 %package server
@@ -68,23 +44,6 @@ MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
-
-%description odbc
-Add the MonetDB SQL odbc description here
-Requires: MonetDB-client
-
-%if %{?_with_java:1}%{!?_with_java:0}
-%description java
-Add the MonetDB SQL java description here
-%endif
-
-%if %{?_with_python:1}%{!?_with_python:0}
-%description python
-Add the MonetDB SQL python description here
-Requires: %{name}-odbc
-Requires: python
-%define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
-%endif
 
 %description server
 Add the MonetDB SQL server module description here
@@ -110,9 +69,7 @@ rm -rf $RPM_BUILD_ROOT
 	CC="%{comp_cc}" \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
-	--with-monet=%{prefix} \
-	%{?_with_python} %{?_without_python} \
-	%{?_with_java} %{?_without_java} \
+	--with-monet=%{prefix} 
 
 make
 
@@ -124,41 +81,29 @@ make install \
 
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 
+rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
+rm -rf $RPM_BUILD_ROOT%{_libdir}/python2.4
+
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files odbc
-%defattr(-,monetdb,monetdb) 
-%{_libdir}/libMonetODBC*
-%{_libdir}/sql/Tests/odbcsample1
-
-%if %{?_with_java:1}%{!?_with_java:0}
-%files java
-%defattr(-,monetdb,monetdb)
-%{prefix}/share/MonetDB/lib/*.jar
-%{prefix}/share/sql/Tests/Test_*.class
-%endif
-
-%if %{?_with_python:1}%{!?_with_python:0}
-%files python
-%defattr(-,monetdb,monetdb) 
-%{prefix}/%{python_libdir}/*
-%endif
+%files
+%defattr(-,root,root) 
+%{_datadir}/MonetDB/sql/*
 
 %files server
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/bin/Mbeddedsql
 %{_libdir}/libembeddedsql.*
-%{_libdir}/MonetDB/lib/lib_sql_server*
-%{_libdir}/MonetDB/*.mil
+%{_libdir}/MonetDB4/lib/lib_sql_server*
+%{_libdir}/MonetDB4/*.mil
 %{_datadir}/doc/%{name}-%{version}/*
 
 %files devel
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/include/*.h
 %{prefix}/include/sql/*.h
-%{_libdir}/sql/Tests/*
 %{_libdir}/pkgconfig/MonetDB-SQL.pc
