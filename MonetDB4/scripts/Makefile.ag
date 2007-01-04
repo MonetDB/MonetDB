@@ -20,7 +20,7 @@ EXTRA_DIST_DIR = gold
 SUBDIRS = tools
 
 scripts_mil = {
-	DIR = pkgdatadir
+	DIR = pkglibdir
 	SOURCES = general.mil quit.mil
 }
 

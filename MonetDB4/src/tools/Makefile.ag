@@ -15,8 +15,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = $(MONETDB_CFLAGS) $(MONETDBCLIENTS_CFLAGS) ../monet ../modules/plain
-# ../mapi/clients/C
+INCLUDES = $(MONETDB_CFLAGS) $(CLIENTS_CFLAGS) ../monet ../modules/plain
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
@@ -99,20 +98,15 @@ bin_Mserver = {
 lib_embeddedmil = {
 	SOURCES = embeddedclient.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		../monet/libmonet $(MONETDB_LIBS) $(MONETDBCLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
+		../monet/libmonet $(MONETDB_LIBS) $(CLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
 }
 
 bin_Mbeddedmil = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedmil \
-		../monet/libmonet $(MONETDB_LIBS) $(MONETDBCLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
+		../monet/libmonet $(MONETDB_LIBS) $(CLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
 }
-
-#doc_Mserver = {
-	#DIR = pkgdatadir/docs/tools
-	#SOURCES = Mserver.mx initmodules.mx 
-#}
 
 scripts_sh = {
 	EXT = ""

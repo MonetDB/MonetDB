@@ -16,7 +16,7 @@
 
 SUBDIRS = src conf scripts
 
-EXTRA_DIST = bootstrap lady.gif configure.ag RunMtest.in \
+EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		sysdefs.h.in MonetDB.spec MonetDB.spec.in HowToStart \
 		HowToStart-Win32.txt HowToStart-MinGW.txt \
@@ -26,11 +26,6 @@ EXTRA_DIST = bootstrap lady.gif configure.ag RunMtest.in \
 EXTRA_DIST_DIR = NT tests
 
 EXTRA_HEADERS = monetdb4_config.h sysdefs.h
-
-scripts_gif = {
-	DIR = pkgdatadir
-	SOURCES = lady.gif
-}
 
 headers_pc = {
 	HEADERS = pc

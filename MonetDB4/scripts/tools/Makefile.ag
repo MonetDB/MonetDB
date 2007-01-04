@@ -17,6 +17,6 @@
 EXTRA_DIST  = backup.mil restore.mil
 
 scripts_mil = {
-	DIR = pkgdatadir/tools
+	DIR = pkglibdir/tools
 	SOURCES = backup.mil restore.mil
 }

@@ -186,11 +186,7 @@ find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/epsffit
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/conf/conf.bash
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/general.mil
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/lady.gif
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/docs/*/*.tex
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/docs/*/*/*.tex
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Tests/sample.class
+rm -rf $RPM_BUILD_ROOT%{_libdir}/%{name}/Tests/*
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
@@ -205,7 +201,6 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libmutils.*
 %{_libdir}/libMapi.* 
 %{_libdir}/libstream.*
-%{_libdir}/MonetDB/Tests/*
 %{prefix}/share/%{name}/python/* 
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
