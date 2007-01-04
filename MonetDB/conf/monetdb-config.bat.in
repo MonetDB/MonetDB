@@ -56,8 +56,8 @@ if "%1" == "--pkgincludedir"	echo %pkgincludedir%	& goto shift
 	echo.
 	echo Known values for OPTION are:
 	echo.
-	echo   --build		print monet build directory
-	echo   --source		print monet source directory
+	echo   --build		print %pkg% build directory
+	echo   --source		print %pkg% source directory
 	echo   --help		display this help and exit
 	echo   --version	output version information
 	echo.
