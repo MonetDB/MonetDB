@@ -22,12 +22,6 @@ EXTRA_DIST = \
 	MonetDB.m4 conf.bash \
 	rules.mk
 
-scripts_bs = {
-	EXT = ""
-	DIR = pkgdatadir/conf
-	SOURCES = bootstrap
-}
-
 scripts_m4 = {
 	DIR = pkgdatadir/conf
 	SOURCES = MonetDB.m4
