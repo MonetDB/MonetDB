@@ -17,8 +17,8 @@
 # All Rights Reserved.
 
 pkg="@PACKAGE@"
-source="@QMONETDBCLIENTS_SOURCE@"
-build="@QMONETDBCLIENTS_BUILD@"
+source="@QCLIENTS_SOURCE@"
+build="@QCLIENTS_BUILD@"
 prefix="@Qprefix@"
 exec_prefix="@Qexec_prefix@"
 
@@ -111,8 +111,8 @@ while test $# -gt 0; do
 
     --includes)
        	echo \
-		-I\${MONETDBCLIENTS_INCLUDEDIR} \
-		-I\${MONETDBCLIENTS_INCLUDEDIR}/mapilib
+		-I\${CLIENTS_INCLUDEDIR} \
+		-I\${CLIENTS_INCLUDEDIR}/mapilib
        	;;
 
     --cflags)

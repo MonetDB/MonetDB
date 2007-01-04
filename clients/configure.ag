@@ -19,7 +19,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([MonetDBClients], [1.15.0], [monet@cwi.nl], [MonetDB])
+AC_INIT([clients], [1.15.0], [monet@cwi.nl], [MonetDB-client])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -36,8 +36,8 @@ if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
 
-# MONETDBCLIENTS_BUILD and MONETDBCLIENTS_SOURCE are *only* used for monetdb-clients-config
-# MONETDBCLIENTS_SOURCE is the absolute path name of the source directory
+# CLIENTS_BUILD and CLIENTS_SOURCE are *only* used for monetdb-clients-config
+# CLIENTS_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
 
 # The Q versions of various variables are used in places where \'s
@@ -45,11 +45,11 @@ fi
 # in path names, so there is no need to do anything special here
 # except set the variables.  The command to set them in case we do
 # need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
-MONETDBCLIENTS_BUILD=[`pwd`]
-AC_SUBST(MONETDBCLIENTS_BUILD)
+CLIENTS_BUILD=[`pwd`]
+AC_SUBST(CLIENTS_BUILD)
 
-MONETDBCLIENTS_SOURCE=[`(cd $srcdir && pwd)`]
-AC_SUBST(MONETDBCLIENTS_SOURCE)
+CLIENTS_SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(CLIENTS_SOURCE)
 
 # if no --prefix option, we must set Qprefix to the default value
 # the problem is that prefix is set very late in the process if it
@@ -161,22 +161,22 @@ else
 fi
 AC_SUBST(Xprefix)
 AC_SUBST(QXprefix)
-AC_DEFINE_UNQUOTED(MONETDBCLIENTS_PREFIX,"$QXprefix",[architecture-independent files])
+AC_DEFINE_UNQUOTED(CLIENTS_PREFIX,"$QXprefix",[architecture-independent files])
 AC_SUBST(Xexec_prefix)
 AC_SUBST(QXexec_prefix)
-AC_DEFINE_UNQUOTED(MONETDBCLIENTS_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
-QMONETDBCLIENTS_BUILD="$MONETDBCLIENTS_BUILD"
-XMONETDBCLIENTS_BUILD="`$translatepath "$MONETDBCLIENTS_BUILD"`"
-QXMONETDBCLIENTS_BUILD="`echo "$XMONETDBCLIENTS_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QMONETDBCLIENTS_BUILD)
-AC_SUBST(XMONETDBCLIENTS_BUILD)
-AC_SUBST(QXMONETDBCLIENTS_BUILD)
-QMONETDBCLIENTS_SOURCE="$MONETDBCLIENTS_SOURCE"
-XMONETDBCLIENTS_SOURCE="`$translatepath "$MONETDBCLIENTS_SOURCE"`"
-QXMONETDBCLIENTS_SOURCE="`echo "$XMONETDBCLIENTS_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QMONETDBCLIENTS_SOURCE)
-AC_SUBST(XMONETDBCLIENTS_SOURCE)
-AC_SUBST(QXMONETDBCLIENTS_SOURCE)
+AC_DEFINE_UNQUOTED(CLIENTS_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
+QCLIENTS_BUILD="$CLIENTS_BUILD"
+XCLIENTS_BUILD="`$translatepath "$CLIENTS_BUILD"`"
+QXCLIENTS_BUILD="`echo "$XCLIENTS_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QCLIENTS_BUILD)
+AC_SUBST(XCLIENTS_BUILD)
+AC_SUBST(QXCLIENTS_BUILD)
+QCLIENTS_SOURCE="$CLIENTS_SOURCE"
+XCLIENTS_SOURCE="`$translatepath "$CLIENTS_SOURCE"`"
+QXCLIENTS_SOURCE="`echo "$XCLIENTS_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QCLIENTS_SOURCE)
+AC_SUBST(XCLIENTS_SOURCE)
+AC_SUBST(QXCLIENTS_SOURCE)
 Qsrcdir="$srcdir"
 Xsrcdir="`$translatepath "$srcdir"`"
 QXsrcdir="`echo "$Xsrcdir" | sed 's/\\\\/\\\\\\\\/g'`"
@@ -186,7 +186,7 @@ AC_SUBST(QXsrcdir)
 Qlocalstatedir="$localstatedir"
 Xlocalstatedir="`$translatepath "$localstatedir"`"
 QXlocalstatedir="`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_DEFINE_UNQUOTED(MONETDBCLIENTS_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(CLIENTS_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
 AC_SUBST(Qlocalstatedir)
 AC_SUBST(Xlocalstatedir)
 AC_SUBST(QXlocalstatedir)
@@ -196,11 +196,11 @@ QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qlibdir)
 AC_SUBST(Xlibdir)
 AC_SUBST(QXlibdir)
-AC_DEFINE_UNQUOTED(MONETDBCLIENTS_LIBDIR,"$QXlibdir",[object code libraries])
+AC_DEFINE_UNQUOTED(CLIENTS_LIBDIR,"$QXlibdir",[object code libraries])
 Qsysconfdir="$sysconfdir"
 Xsysconfdir="`$translatepath "$sysconfdir"`"
 QXsysconfdir="`echo "$Xsysconfdir" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_DEFINE_UNQUOTED(MONETDBCLIENTS_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
+AC_DEFINE_UNQUOTED(CLIENTS_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 AC_SUBST(Qsysconfdir)
 AC_SUBST(Xsysconfdir)
 AC_SUBST(QXsysconfdir)

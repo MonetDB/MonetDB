@@ -3,6 +3,21 @@
 /* Define if you already have Windows types. */
 #undef ALLREADY_HAVE_WINDOWS_TYPE
 
+/* architecture-dependent files */
+#undef CLIENTS_EXEC_PREFIX
+
+/* object code libraries */
+#undef CLIENTS_LIBDIR
+
+/* modifiable single-machine data */
+#undef CLIENTS_LOCALSTATEDIR
+
+/* architecture-independent files */
+#undef CLIENTS_PREFIX
+
+/* read-only single-machine data */
+#undef CLIENTS_SYSCONFDIR
+
 /* Directory separator */
 #undef DIR_SEP
 
@@ -249,21 +264,6 @@
 /* Define as const if the declaration of iconv() needs const for 2nd argument.
    */
 #undef ICONV_CONST
-
-/* architecture-dependent files */
-#undef MONETDBCLIENTS_EXEC_PREFIX
-
-/* object code libraries */
-#undef MONETDBCLIENTS_LIBDIR
-
-/* modifiable single-machine data */
-#undef MONETDBCLIENTS_LOCALSTATEDIR
-
-/* architecture-independent files */
-#undef MONETDBCLIENTS_PREFIX
-
-/* read-only single-machine data */
-#undef MONETDBCLIENTS_SYSCONFDIR
 
 /* Define if the oid type should use 32 bits on a 64-bit architecture */
 #undef MONET_OID32

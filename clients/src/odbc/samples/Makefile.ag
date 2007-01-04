@@ -18,7 +18,7 @@ MTSAFE
 INCLUDES = ../include $(MONETDB_INCS)
 
 BINS = {
-	DIR = pkglibdir/Tests
+	DIR = libdir/MonetDB/Tests
 	SOURCES = odbcsample1.c
 	LIBS = ../driver/libMonetODBC
 }

@@ -31,7 +31,7 @@ scripts_bat = {
 
 scripts_python = {
 	EXT = py
-	DIR = pkgdatadir/python
+	DIR = datadir/MonetDB/python
 	SOURCES = Mapi.py
 }
 

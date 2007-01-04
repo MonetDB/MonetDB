@@ -5,8 +5,8 @@ REM	set prefix=%prefix:~0,-4%
 
 set pkg=@PACKAGE@
 set version=@VERSION@
-set source=@MONETDBCLIENTS_SOURCE@
-set build=@MONETDBCLIENTS_BUILD@
+set source=@CLIENTS_SOURCE@
+set build=@CLIENTS_BUILD@
 set prefix=@prefix@
 set exec_prefix=@exec_prefix@
 set bindir=@bindir@

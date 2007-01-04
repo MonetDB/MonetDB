@@ -20,6 +20,6 @@ SUBDIRS = HAVE_PERL_DEVEL?MonetDB-CLI-MapiPP HAVE_PERL_DEVEL?MonetDB-CLI-MapiLib
 
 scripts_perl = {
 	EXT = pl pm
-	DIR = pkgdatadir/perl
+	DIR = datadir/MonetDB/perl
 	SOURCES = Mapi.pm 
 }

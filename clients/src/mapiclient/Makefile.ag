@@ -39,8 +39,3 @@ bin_msqldump = {
 }
 
 EXTRA_DIST = msqldump.h mprompt.h
-
-#doc_MapiClient = {
-#	DIR = pkgdatadir/docs/tools
-#	SOURCES = MapiClient.mx
-#}

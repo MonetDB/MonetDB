@@ -28,7 +28,7 @@ EXTRA_DIST = \
 		build.xml build.properties
 
 ant_compile = {
-	DIR = pkgdatadir/Tests
+	DIR = datadir/MonetDB/Tests
 	FILES = \
 		Test_Cautocommit.class \
 		Test_Csavepoints.class \

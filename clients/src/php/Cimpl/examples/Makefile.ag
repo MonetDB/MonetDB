@@ -18,12 +18,12 @@ MTSAFE
 
 scripts_php = {
 	EXT = php
-	DIR = pkgdatadir/php
+	DIR = datadir/MonetDB/php
 	SOURCES = monetdb.php pear.php
 }
 
 scripts_ini = {
 	EXT = ini
-	DIR = pkgdatadir/php
+	DIR = datadir/MonetDB/php
 	SOURCES = php.ini.in
 }

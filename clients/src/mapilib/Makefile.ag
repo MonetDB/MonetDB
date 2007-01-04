@@ -24,8 +24,3 @@ lib_Mapi = {
 	LIBS = $(MAPI_LIBS) $(MONETDB_LIBS) -lmutils -lstream
 	HEADERS = h
 }
-
-#doc_Mapi = {
-#	DIR = pkgdatadir/docs/mapi/C
-#	SOURCES = Mapi.mx 
-#}
