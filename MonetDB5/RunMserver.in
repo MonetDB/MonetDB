@@ -22,7 +22,7 @@ srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/compiler/.libs:${builddir}/src/compiler:${srcdir}/src/compiler:${builddir}/src/mil/.libs:${builddir}/src/mil:${srcdir}/src/mil:${builddir}/src/optimizer/.libs:${builddir}/src/optimizer:${srcdir}/src/optimizer:${builddir}/src/scheduler/.libs:${builddir}/src/scheduler:${srcdir}/src/scheduler:${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/atoms:${srcdir}/src/modules/atoms:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/kernel:${srcdir}/src/modules/kernel:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/mal:${srcdir}/src/modules/mal:${builddir}/src/modules/mil/.libs:${builddir}/src/modules/mil:${srcdir}/src/modules/mil:${builddir}/src/modules/milprocs/.libs:${builddir}/src/modules/milprocs:${srcdir}/src/modules/milprocs"
+MOD_PATH="${builddir}/src/compiler/.libs:${builddir}/src/compiler:${srcdir}/src/compiler:${builddir}/src/optimizer/.libs:${builddir}/src/optimizer:${srcdir}/src/optimizer:${builddir}/src/scheduler/.libs:${builddir}/src/scheduler:${srcdir}/src/scheduler:${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/atoms:${srcdir}/src/modules/atoms:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/kernel:${srcdir}/src/modules/kernel:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/mal:${srcdir}/src/modules/mal"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -35,7 +35,7 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance various paths to find our stuff
-PATH="${builddir}/src/tools:${builddir}/src/mil:${MONETDB_PREFIX}/bin:$PATH"
+PATH="${builddir}/src/tools:$PATH"
 libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
@@ -46,6 +46,6 @@ if [ "${uname}" = "AIX" ] ; then
 	LIBPATH="${libpath}${LIBPATH}"
 	export LIBPATH
 fi
-export LD_LIBRARY_PATH
+export PATH LD_LIBRARY_PATH
 
-exec mserver5 --set monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/monetdb5.conf" --dbfarm="${builddir}/dbfarm" ${1+"$@"}
+exec mserver5 --config="${builddir}/conf/monetdb5.conf" --set monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" ${1+"$@"}

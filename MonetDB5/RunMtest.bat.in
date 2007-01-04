@@ -8,20 +8,18 @@ goto end
 
 setlocal
 
-set builddir=@MONETDB_BUILD@
-set srcdir=@MONETDB_SOURCE@
+set builddir=@XMONETDB5_BUILD@
+set srcdir=@XMONETDB5_SOURCE@
 
-set MOD_PATH=%builddir%\src\applications\datacell\.libs;%builddir%\src\compiler\.libs;%builddir%\src\mil\.libs;%builddir%\src\modules\atoms\.libs;%builddir%\src\modules\kernel\.libs;%builddir%\src\modules\mal\.libs;%builddir%\src\modules\mil\.libs;%builddir%\src\optimizer\.libs;%builddir%\src\scheduler\.libs
-
-set PATH=%builddir%\src\tools;%PATH%
+set MOD_PATH=%builddir%\src\compiler\.libs;%builddir%\src\compiler;%builddir%\src\optimizer\.libs;%builddir%\src\optimizer;%builddir%\src\scheduler\.libs;%builddir%\src\scheduler;%builddir%\src\modules\atoms\.libs;%builddir%\src\modules\atoms;%builddir%\src\modules\kernel\.libs;%builddir%\src\modules\kernel;%builddir%\src\modules\mal\.libs;%builddir%\src\modules\mal
 set PATH=%MOD_PATH%;%builddir%\src\mal;%PATH%
-
-set PYTHONPATH=@MONETDB_PREFIX@\share\MonetDB\python
+set PATH=%builddir%\src\tools;%PATH%
+REM set PYTHONPATH=@MONETDB_PREFIX@\share\MonetDB\python
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call python "@MONETDB_PREFIX@\bin\Mtest.py" -5 --config="%builddir%/conf/monetdb5.conf" "--monet_mod_path=%MOD_PATH%" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--dbfarm=%builddir%\dbfarm" %*
+call Mtest.py -5 --config="%builddir%/conf/monetdb5.conf" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

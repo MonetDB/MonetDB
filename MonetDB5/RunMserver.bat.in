@@ -2,12 +2,12 @@
 
 setlocal
 
-set builddir=@XMONETDB_BUILD@
+set builddir=@XMONETDB5_BUILD@
 
-set MOD_PATH=%builddir%\src\applications\datacell\.libs;%builddir%\src\compiler\.libs;%builddir%\src\mil\.libs;%builddir%\src\modules\atoms\.libs;%builddir%\src\modules\kernel\.libs;%builddir%\src\modules\mal\.libs;%builddir%\src\modules\mil\.libs;%builddir%\src\optimizer\.libs;%builddir%\src\scheduler\.libs
-set PATH=%builddir%\src\tools;%PATH%
+set MOD_PATH=%builddir%\src\compiler\.libs;%builddir%\src\compiler;%builddir%\src\optimizer\.libs;%builddir%\src\optimizer;%builddir%\src\scheduler\.libs;%builddir%\src\scheduler;%builddir%\src\modules\atoms\.libs;%builddir%\src\modules\atoms;%builddir%\src\modules\kernel\.libs;%builddir%\src\modules\kernel;%builddir%\src\modules\mal\.libs;%builddir%\src\modules\mal
 set PATH=%MOD_PATH%;%builddir%\src\mal;%PATH%
+set PATH=%builddir%\src\tools;%PATH%
 
-"%builddir%\src\tools\mserver5.exe" "--config=%builddir%\conf\monetdb5.conf" --set "monet_mod_path=%MOD_PATH%" %*
+mserver5.exe "--config=%builddir%\conf\monetdb5.conf" --set "monet_mod_path=%MOD_PATH%" %*
 
 endlocal

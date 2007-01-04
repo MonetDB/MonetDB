@@ -16,28 +16,13 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-#
-# Contributor(s):
-#		Martin Kersten <Martin.Kersten@cwi.nl>
-#		Peter Boncz <Peter.Boncz@cwi.nl>
-#		Niels Nes <Niels.Nes@cwi.nl>
-#		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
-builddir=`pwd`
+builddir=@QXMONETDB5_BUILD@
 # make sure srcdir contains absolute path name
-srcdir=`cd '@srcdir@'; pwd`
+srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
 
-MONETDB_PREFIX=@MONETDB_PREFIX@
-
-if [ ! -x "${MONETDB_PREFIX}/bin/Mtest.py" ]
-then
-	echo "Mtest.py not found, install MonetDB first" >&2
-	exit 1
-fi
-
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/compiler/.libs:${builddir}/src/compiler:${srcdir}/src/compiler:${builddir}/src/mil/.libs:${builddir}/src/mil:${srcdir}/src/mil:${builddir}/src/optimizer/.libs:${builddir}/src/optimizer:${srcdir}/src/optimizer:${builddir}/src/scheduler/.libs:${builddir}/src/scheduler:${srcdir}/src/scheduler:${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/atoms:${srcdir}/src/modules/atoms:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/kernel:${srcdir}/src/modules/kernel:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/mal:${srcdir}/src/modules/mal:${builddir}/src/modules/mil/.libs:${builddir}/src/modules/mil:${srcdir}/src/modules/mil:${builddir}/src/modules/milprocs/.libs:${builddir}/src/modules/milprocs:${srcdir}/src/modules/milprocs"
+MOD_PATH="${builddir}/src/compiler/.libs:${builddir}/src/compiler:${srcdir}/src/compiler:${builddir}/src/optimizer/.libs:${builddir}/src/optimizer:${srcdir}/src/optimizer:${builddir}/src/scheduler/.libs:${builddir}/src/scheduler:${srcdir}/src/scheduler:${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/atoms:${srcdir}/src/modules/atoms:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/kernel:${srcdir}/src/modules/kernel:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/mal:${srcdir}/src/modules/mal"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -50,7 +35,10 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance various paths to find our stuff
-PATH="${builddir}/src/tools:${builddir}/src/mil:${MONETDB_PREFIX}/bin:$PATH"
+if [ -s "${builddir}/src/tools/monetdb5-config" ] ; then
+	chmod +x "${builddir}/src/tools/monetdb5-config"
+fi
+PATH="${builddir}/src/tools:$PATH"
 libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
@@ -72,4 +60,4 @@ type -a @PYTHON@
 
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
-exec Mtest.py -5 --monet_mod_path="${MOD_PATH}" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --config="${builddir}/conf/monetdb5.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" "${@--r}"
+exec Mtest.py -5 --config="${builddir}/conf/monetdb5.conf" --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"
