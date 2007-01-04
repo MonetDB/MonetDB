@@ -51,5 +51,9 @@ export LD_LIBRARY_PATH
 cd "$srcdir"
 
 # execute the script
-# if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
-exec Mtest.py --config="`monetdb4-config --sysconfdir`/MonetDB.conf" --monet_mod_path="$MOD_PATH" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" "${@--r}"
+# if no arguments, do a recursive test (Mtest.py -r), else pass on the
+# arguments.
+# if the environment variable MTEST_AT is set (value does not matter),
+# pass the --at flag to Mtest.py so that it uses the at command as a
+# watchdog.
+exec Mtest.py --config="`monetdb4-config --sysconfdir`/MonetDB.conf" --monet_mod_path="$MOD_PATH" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"
