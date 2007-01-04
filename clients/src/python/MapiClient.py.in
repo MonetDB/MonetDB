@@ -21,11 +21,11 @@ import os
 
 sys.path.append(os.path.join(os.environ.get('CLIENTS_PREFIX','@QXprefix@'),
                              'share',
-                             '@PACKAGE@',
+                             'MonetDB',
                              'python'))
 sys.path.append(os.path.join(os.environ.get('MONETDB_PREFIX','@QXprefix@'),
                              'share',
-                             '@PACKAGE@',
+                             'MonetDB',
                              'python'))
 
 import monet_options
