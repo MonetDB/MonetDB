@@ -284,11 +284,11 @@ monet_options.mx.in
 }
 
 int
-main(int argc, char **argv)
+main(int argc, char **av)
 {
-	char *prog = *argv, **av= argv;
+	char *prog = *av;
 	opt *set = NULL;
-	int i, ac=argc, debug = 0, setlen = 0, listing = 0;
+	int idx = 0, debug = 0, setlen = 0, listing = 0, i = 0;
 	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 
@@ -363,10 +363,10 @@ faster system start.
 	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
 
-	for(;;) {
+	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(ac, av, "c:d:t:r:?s:",
+		int c = getopt_long(argc, av, "c:d:t:r:?s:",
 				    long_options, &option_index);
 
 		if (c == -1)
@@ -374,26 +374,26 @@ faster system start.
 
 		switch (c) {
 		case 0:
-			if (strcmp((char*)long_options[option_index].name, "dbname") == 0) {
+			if (strcmp(long_options[option_index].name, "dbname") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
 				break;
 			}
-			if (strcmp((char*)long_options[option_index].name, "delay") == 0) {
+			if (strcmp(long_options[option_index].name, "delay") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "delay", optarg);
 				break;
 			}
-			if (strcmp((char*)long_options[option_index].name, "dbfarm") == 0) {
+			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
 				break;
 			}
-			if (strcmp((char*)long_options[option_index].name, "dbinit") == 0) {
+			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
 				if (dbinit)
 					fprintf(stderr, "#warning: ignoring multiple --dbinit argument\n");
 				else
 					dbinit = optarg;
 				break;
 			}
-			if (strcmp((char*)long_options[option_index].name, "daemon") == 0) {
+			if (strcmp(long_options[option_index].name, "daemon") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_daemon", optarg);
 				break;
 			}
@@ -441,14 +441,13 @@ faster system start.
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog);
 
-	i = 0;
-	monet_script = (str *) GDKmalloc(sizeof(str) * (ac + 1));
-	monet_script[i] = NULL;
-	while (optind < ac) {
-		monet_script[i] = absolute_path(av[optind]);
-		monet_script[i + 1] = NULL;
+	monet_script = (str *) GDKmalloc(sizeof(str) * (argc + 1));
+	monet_script[idx] = NULL;
+	while (optind < argc) {
+		monet_script[idx] = absolute_path(av[optind]);
+		monet_script[idx + 1] = NULL;
 		optind++;
-		i++;
+		idx++;
 	}
 
 	if (debug)
