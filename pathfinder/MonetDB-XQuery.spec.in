@@ -39,6 +39,7 @@ accellerators, SQL- and XQuery- frontends.
 %package devel
 Summary: MonetDB XQuery development package 
 Group: System 
+Requires: MonetDB-server>=4.15<5.0
 
 %description devel
 Add the MonetDB devel description here
@@ -80,8 +81,8 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/pf
-%{_libdir}/MonetDB/lib/lib_*
-%{_libdir}/MonetDB/*.mil
+%{_libdir}/MonetDB4/lib/lib_*
+%{_libdir}/MonetDB4/*.mil
 %{prefix}/bin/Mbeddedxq
 %{_libdir}/libembeddedxq.*
 %{_datadir}/doc/%{name}-%{version}/*
