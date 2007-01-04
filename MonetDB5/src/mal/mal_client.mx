@@ -127,7 +127,7 @@ information should be dealt with separately.[TODO]
 @h
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
-	str	    srcFile;	/* NULL for stdin, or file name */
+	str     srcFile;	/* NULL for stdin, or file name */
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
 	char    itrace;     /* trace execution using interactive mdb */

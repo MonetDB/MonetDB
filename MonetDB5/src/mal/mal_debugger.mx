@@ -900,7 +900,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				if( strncmp("memory",b,1) == 0){
 					struct mallinfo memory;
 					cntxt->flags |= memoryFlag;
-					memory= MT_mallinfo();
+					memory = MT_mallinfo();
 					stream_printf(out,"arena %d ordblks %d smblks %d "
 						" hblkhd %d hblks %d fsmblks %d uordblks %d\n",
 						memory.arena,

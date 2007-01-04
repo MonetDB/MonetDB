@@ -38,7 +38,3 @@ lib_mal = {
 	            $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 	            $(READLINE_LIBS) $(OPENSSL_LIBS)
 }
-#scripts_mal = {
-	#DIR = pkglibdir
-	#SOURCES = mal_scenario.mal
-#}
