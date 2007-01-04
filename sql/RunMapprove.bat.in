@@ -8,17 +8,14 @@ goto end
 
 setlocal
 
+set monetdb4_prefix=@MONETDB4_PREFIX@
 set builddir=@SQL_BUILD@
 set srcdir=@SQL_SOURCE@
-
-set PATH=%builddir%\src\client;%builddir%\src\tools;@MONETDB_PREFIX@\bin;@MONETDB_PREFIX@\lib;%PATH%
-set PATH=%builddir%\src\server;%builddir%\src\odbc\driver;%builddir%\src\odbc\setup;%PATH%
-set PATH=%MOD_PATH%;%PATH%
 
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 
-call python "@MONETDB_PREFIX@\bin\Mapprove.py" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" %*
+call Mapprove.py "--config=%monetdb4_prefix%\etc\MonetDB.conf" "--TSTSRCBASE=%srcdir%" "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

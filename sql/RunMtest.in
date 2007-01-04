@@ -21,16 +21,8 @@ builddir=`pwd`
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-MONETDB_PREFIX=@MONETDB_PREFIX@
-
-if [ ! -x "${MONETDB_PREFIX}/bin/Mtest.py" ]
-then
-	echo "Mtest.py not found, install MonetDB first" >&2
-	exit 1
-fi
-
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/backends/@SQL_BACKEND@/.libs:${builddir}/src/backends/@SQL_BACKEND@:${srcdir}/src/backends/@SQL_BACKEND@:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
+MOD_PATH="${builddir}/src/backends/monet4/.libs:${builddir}/src/backends/monet4:${srcdir}/src/backends/monet4:`monetdb4-config --modpath`"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -43,8 +35,8 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance PATH with Msql and MonetDB binaries
-PATH="${builddir}/src/client:${builddir}/src/tools:${MONETDB_PREFIX}/bin:$PATH"
-libpath="${MOD_PATH}:${builddir}/src/client/.libs:${builddir}/src/server/.libs:${builddir}/src/odbc/driver/.libs:${builddir}/src/odbc/setup/.libs"
+PATH="${builddir}/src/tools:$PATH"
+libpath="${MOD_PATH}:${builddir}/src/server/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
 	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"
@@ -65,4 +57,5 @@ cd "$srcdir"
 # if the environment variable MTEST_AT is set (value does not matter),
 # pass the --at flag to Mtest.py so that it uses the at command as a
 # watchdog.
-exec Mtest.py --monet_mod_path="$MOD_PATH" --SQL_PREFIX="${builddir}/src/tools" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" ${MTEST_AT+--at} "${@--r}"
+exec Mtest.py --config="`monetdb4-config --sysconfdir`/MonetDB.conf" --monet_mod_path="$MOD_PATH" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"
+# --SQL_PREFIX="${builddir}/src/tools"

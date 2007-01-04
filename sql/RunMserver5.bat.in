@@ -2,13 +2,12 @@
 
 setlocal
 
-set monetdbdir=@MONETDB5_PREFIX@
-set sqldir=@SQL_BUILD@
+set monetdb5_prefix=@MONETDB5_PREFIX@
+set builddir=@SQL_BUILD@
 
-set MOD_PATH=%sqldir%\src\backends\monet5\.libs;%sqldir%\src\backends\monet5;%monetdbdir%\lib\MonetDB5
+set MOD_PATH=%builddir%\src\backends\monet5\.libs;%builddir%\src\backends\monet5;%monetdb5_prefix%\lib\MonetDB5;%monetdb5_prefix%\lib\MonetDB5\lib;%monetdb5_prefix%\lib\MonetDB5\bin
+set PATH=%MOD_PATH%;%PATH%
 
-set PATH=%MOD_PATH%;%monetdbdir%\bin;%monetdbdir%\lib;%PATH%
-
-"%monetdbdir%\bin\mserver5.exe" "--config=%monetdbdir%\etc\monetdb5.conf" --set "monet_mod_path=%MOD_PATH%" %*
+mserver5.exe "--config=%monetdb5_prefix%\etc\monetdb5.conf" --set "monet_mod_path=%MOD_PATH%" %*
 
 endlocal
