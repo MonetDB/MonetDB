@@ -47,7 +47,6 @@ accellerators, SQL- and XML- frontends.
 
 %description server
 Add the MonetDB SQL server module description here
-Requires: %{name}-odbc
 Requires: MonetDB-server
 
 %description devel
