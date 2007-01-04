@@ -67,21 +67,11 @@ static char *a_id[]  = {
     , [pa_sort_distinct]   = "SORT_DISTINCT"
     , [pa_std_sort]        = "SORT"
     , [pa_refine_sort]     = "refine_sort"
-    , [pa_num_add]         = "num-add"
-    , [pa_num_add_atom]    = "num-add (atom)"
-    , [pa_num_sub]         = "num-sub"
-    , [pa_num_sub_atom]    = "num-sub (atom)"
-    , [pa_num_mult]        = "num-mult"
-    , [pa_num_mult_atom]   = "num-mult (atom)"
-    , [pa_num_div]         = "num-div"
-    , [pa_num_div_atom]    = "num-div (atom)"
-    , [pa_num_mod]         = "num-mod"
-    , [pa_num_mod_atom]    = "num-mod (atom)"
+    , [pa_fun_1to1]        = "1:1 fun"
     , [pa_eq]              = "="
     , [pa_eq_atom]         = "= (atom)"
     , [pa_gt]              = ">"
     , [pa_gt_atom]         = "> (atom)"
-    , [pa_num_neg]         = "-"
     , [pa_bool_and]        = "AND"
     , [pa_bool_or]         = "OR"
     , [pa_bool_not]        = "NOT"
@@ -128,8 +118,6 @@ static char *a_id[]  = {
     , [pa_rec_arg]         = "rec arg"
     , [pa_rec_base]        = "rec base"
     , [pa_rec_border]      = "rec border"
-    , [pa_concat]          = "fn:concat"
-    , [pa_contains]        = "fn:contains"
     , [pa_string_join]     = "fn:string-join"
 };
 
@@ -152,21 +140,11 @@ static char *xml_id[]  = {
     , [pa_sort_distinct]   = "sort_distinct"
     , [pa_std_sort]        = "sort"
     , [pa_refine_sort]     = "refine_sort"
-    , [pa_num_add]         = "num-add"
-    , [pa_num_add_atom]    = "num-add (atom)"
-    , [pa_num_sub]         = "num-sub"
-    , [pa_num_sub_atom]    = "num-sub (atom)"
-    , [pa_num_mult]        = "num-mult"
-    , [pa_num_mult_atom]   = "num-mult (atom)"
-    , [pa_num_div]         = "num-div"
-    , [pa_num_div_atom]    = "num-div (atom)"
-    , [pa_num_mod]         = "num-mod"
-    , [pa_num_mod_atom]    = "num-mod (atom)"
+    , [pa_fun_1to1]        = "fun"
     , [pa_eq]              = "eq"
     , [pa_eq_atom]         = "eq (atom)"
     , [pa_gt]              = "gt"
     , [pa_gt_atom]         = "gt (atom)"
-    , [pa_num_neg]         = "neg"
     , [pa_bool_and]        = "and"
     , [pa_bool_or]         = "or"
     , [pa_bool_not]        = "not"
@@ -213,24 +191,7 @@ static char *xml_id[]  = {
     , [pa_rec_arg]         = "rec_arg"
     , [pa_rec_base]        = "rec_base"
     , [pa_rec_border]      = "rec_border"
-    , [pa_concat]          = "fn:concat"
-    , [pa_contains]        = "fn:contains"
     , [pa_string_join]     = "fn:string-join"
-};
-
-/** string representation of algebra atomic types */
-static char *atomtype[] = {
-      [aat_nat]   = "nat"
-    , [aat_int]   = "int"
-    , [aat_str]   = "str"
-    , [aat_uA]    = "uA"
-    , [aat_node]  = "node"
-    , [aat_anode] = "attr"
-    , [aat_pnode] = "pnode"
-    , [aat_dec]   = "dec"
-    , [aat_dbl]   = "dbl"
-    , [aat_bln]   = "bool"
-    , [aat_qname] = "qname"
 };
 
 static char *
@@ -285,32 +246,32 @@ xml_literal (PFalg_atom_t a)
     if (a.type == aat_nat)
         PFarray_printf (
            s, "<value type=\"%s\">%u</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.nat_);
     else if (a.type == aat_int)
         PFarray_printf (
            s, "<value type=\"%s\">%lld</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.int_);
     else if (a.type == aat_str || a.type == aat_uA)
         PFarray_printf (
            s, "<value type=\"%s\">%s</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            PFesc_string (a.val.str));
     else if (a.type == aat_dec)
         PFarray_printf (
            s, "<value type=\"%s\">%g</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.dec_);
     else if (a.type == aat_dbl)
         PFarray_printf (
            s, "<value type=\"%s\">%g</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.dbl);
     else if (a.type == aat_bln)
         PFarray_printf (
            s, "<value type=\"%s\">%s</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.bln ?
                "true" : "false");
     else if (a.type == aat_qname)
@@ -352,21 +313,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_sort_distinct]   = "\"#FFA500\""
         , [pa_std_sort]        = "red"
         , [pa_refine_sort]     = "red"
-        , [pa_num_add]         = "\"#C0C0C0\""
-        , [pa_num_add_atom]    = "\"#C0C0C0\""
-        , [pa_num_sub]         = "\"#C0C0C0\""
-        , [pa_num_sub_atom]    = "\"#C0C0C0\""
-        , [pa_num_mult]        = "\"#C0C0C0\""
-        , [pa_num_mult_atom]   = "\"#C0C0C0\""
-        , [pa_num_div]         = "\"#C0C0C0\""
-        , [pa_num_div_atom]    = "\"#C0C0C0\""
-        , [pa_num_mod]         = "\"#C0C0C0\""
-        , [pa_num_mod_atom]    = "\"#C0C0C0\""
+        , [pa_fun_1to1]        = "\"#C0C0C0\""
         , [pa_eq]              = "\"#00DDDD\""
         , [pa_eq_atom]         = "\"#00DDDD\""
         , [pa_gt]              = "\"#00DDDD\""
         , [pa_gt_atom]         = "\"#00DDDD\""
-        , [pa_num_neg]         = "\"#C0C0C0\""
         , [pa_bool_not]        = "\"#C0C0C0\""
         , [pa_bool_and]        = "\"#C0C0C0\""
         , [pa_bool_or]         = "\"#C0C0C0\""
@@ -413,8 +364,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_rec_arg]         = "\"#BB00BB\""
         , [pa_rec_base]        = "\"#BB00BB\""
         , [pa_rec_border]      = "\"#BB00BB\""
-        , [pa_concat]          = "\"#C0C0C0\""
-        , [pa_contains]        = "\"#C0C0C0\""
         , [pa_string_join]     = "\"#C0C0C0\""
     };
 
@@ -520,28 +469,27 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFord_str (n->sem.sortby.required));
             break;
 
-        case pa_num_add:
-        case pa_num_sub:
-        case pa_num_mult:
-        case pa_num_div:
-        case pa_num_mod:
+        case pa_fun_1to1:
+            PFarray_printf (dot, "%s [%s] (%s:<", a_id[n->kind],
+                            PFalg_fun_str (n->sem.fun_1to1.kind),
+                            PFatt_str (n->sem.fun_1to1.res));
+            for (c = 0; c < n->sem.fun_1to1.refs.count;c++)
+                PFarray_printf (dot, "%s%s", 
+                                c ? ", " : "",
+                                PFatt_str (n->sem.fun_1to1.refs.atts[c]));
+            PFarray_printf (dot, ">)");
+            break;
+            
         case pa_eq:
         case pa_gt:
         case pa_bool_and:
         case pa_bool_or:
-        case pa_concat:
-        case pa_contains:
             PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
                             PFatt_str (n->sem.binary.att2));
             break;
 
-        case pa_num_add_atom:
-        case pa_num_sub_atom:
-        case pa_num_mult_atom:
-        case pa_num_div_atom:
-        case pa_num_mod_atom:
         case pa_eq_atom:
         case pa_gt_atom:
         case pa_bool_and_atom:
@@ -552,7 +500,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             literal (n->sem.bin_atom.att2));
             break;
 
-        case pa_num_neg:
         case pa_bool_not:
             PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                             PFatt_str (n->sem.unary.res),
@@ -595,28 +542,16 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
             break;
 
         case pa_type:
-            if (atomtype[n->sem.type.ty])
-                PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
-                                PFatt_str (n->sem.type.res),
-                                PFatt_str (n->sem.type.att),
-                                atomtype[n->sem.type.ty]);
-            else
-                PFarray_printf (dot, "%s (%s:<%s>), type: %i", a_id[n->kind],
-                                PFatt_str (n->sem.type.res),
-                                PFatt_str (n->sem.type.att),
-                                n->sem.type.ty);
+            PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
+                            PFatt_str (n->sem.type.res),
+                            PFatt_str (n->sem.type.att),
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case pa_type_assert:
-            if (atomtype[n->sem.type_a.ty])
-                PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
-                                PFatt_str (n->sem.type_a.att),
-                                atomtype[n->sem.type_a.ty]);
-            else
-                PFarray_printf (dot, "%s (%s), type: %i", a_id[n->kind],
-                                PFatt_str (n->sem.type_a.att),
-                                n->sem.type_a.ty);
-                
+            PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
+                            PFatt_str (n->sem.type_a.att),
+                            PFalg_simple_type_str (n->sem.type_a.ty));
             break;
 
         case pa_cast:
@@ -625,7 +560,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             n->sem.cast.res?":<":"",
                             PFatt_str (n->sem.cast.att),
                             n->sem.cast.res?">":"",
-                            atomtype[n->sem.cast.ty]);
+                            PFalg_simple_type_str (n->sem.cast.ty));
             break;
 
         case pa_llscj_anc:
@@ -1044,17 +979,33 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
             PFarray_printf (xml, "    </content>\n");
         }   break;
 
-        case pa_num_add:
-        case pa_num_sub:
-        case pa_num_mult:
-        case pa_num_div:
-        case pa_num_mod:
+        case pa_fun_1to1:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <kind name=\"%s\"/>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the operation"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.fun_1to1.kind),
+                            PFatt_str (n->sem.fun_1to1.res));
+            
+            for (c = 0; c < n->sem.fun_1to1.refs.count; c++)
+                PFarray_printf (xml,
+                                "      <column name=\"%s\" new=\"false\">\n"
+                                "        <annotation>%i. argument"
+                                        "</annotation>\n"
+                                "      </column>\n",
+                                PFatt_str (n->sem.fun_1to1.refs.atts[c]),
+                                c + 1);
+                        
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
         case pa_eq:
         case pa_gt:
         case pa_bool_and:
         case pa_bool_or:
-        case pa_concat:
-        case pa_contains:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"true\">\n"
@@ -1075,11 +1026,6 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.binary.att2));
             break;
 
-        case pa_num_add_atom:
-        case pa_num_sub_atom:
-        case pa_num_mult_atom:
-        case pa_num_div_atom:
-        case pa_num_mod_atom:
         case pa_eq_atom:
         case pa_gt_atom:
         case pa_bool_and_atom:
@@ -1101,7 +1047,6 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             xml_literal (n->sem.bin_atom.att2));
             break;
 
-        case pa_num_neg:
         case pa_bool_not:
             PFarray_printf (xml,
                             "    <content>\n"
@@ -1197,26 +1142,15 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             "      <column name=\"%s\" new=\"false\">\n"
                             "        <annotation>argument"
                                     "</annotation>\n"
-                            "      </column>\n",
+                            "      </column>\n"
+                            "      <type name=\"%s\">\n"
+                            "        <annotation>type to check"
+                                    "</annotation>\n"
+                            "      </type>\n"
+                            "    </content>\n",
                             PFatt_str (n->sem.type.res),
-                            PFatt_str (n->sem.type.att));
-
-            if (atomtype[n->sem.type.ty])
-                PFarray_printf (xml, 
-                                "      <type name=\"%s\">\n"
-                                "        <annotation>type to check"
-                                        "</annotation>\n"
-                                "      </type>\n",
-                                atomtype[n->sem.type.ty]);
-            else
-                PFarray_printf (xml, 
-                                "      <type name=\"%i\">\n"
-                                "        <annotation>type to check"
-                                        "</annotation>\n"
-                                "      </type>\n",
-                                n->sem.type.ty);
-
-            PFarray_printf (xml, "    </content>\n");
+                            PFatt_str (n->sem.type.att),
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case pa_type_assert:
@@ -1225,25 +1159,14 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             "      <column name=\"%s\" new=\"false\">\n"
                             "        <annotation>column to assign "
                                     "more explicit type</annotation>\n"
-                            "      </column>\n",
-                            PFatt_str (n->sem.type.att));
-
-            if (atomtype[n->sem.type.ty])
-                PFarray_printf (xml, 
-                                "      <type name=\"%s\">\n"
-                                "        <annotation>type to assign"
-                                        "</annotation>\n"
-                                "      </type>\n",
-                                atomtype[n->sem.type.ty]);
-            else
-                PFarray_printf (xml, 
-                                "      <type name=\"%i\">\n"
-                                "        <annotation>type to assign"
-                                        "</annotation>\n"
-                                "      </type>\n",
-                                n->sem.type.ty);
-
-            PFarray_printf (xml, "    </content>\n");
+                            "      </column>\n"
+                            "      <type name=\"%s\">\n"
+                            "        <annotation>type to assign"
+                                    "</annotation>\n"
+                            "      </type>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.type.att),
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case pa_cast:
@@ -1264,7 +1187,7 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             "    </content>\n",
                             PFatt_str (n->sem.type.res),
                             PFatt_str (n->sem.type.att),
-                            atomtype[n->sem.type.ty]);
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case pa_llscj_anc:

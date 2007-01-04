@@ -471,17 +471,20 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
         } break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            /* introduce attach if necessary */
+            for (unsigned int i = 0; i < p->sem.fun_1to1.refs.count; i++)
+                if (PFprop_const (p->prop, p->sem.fun_1to1.refs.atts[i]))
+                    L(p) = add_attach (L(p), p->sem.fun_1to1.refs.atts[i],
+                                       PFprop_const_val (
+                                           p->prop,
+                                           p->sem.fun_1to1.refs.atts[i]));
+            break;
+
         case la_num_eq:
         case la_num_gt:   /* possible extensions for 'and' and 'or': */
         case la_bool_and: /* if one arg is const && false replace by project */
         case la_bool_or:  /* if one arg is const && true replace by project */
-        case la_concat:
-        case la_contains:
             /* introduce attach if necessary */
             if (PFprop_const (p->prop, p->sem.binary.att1)) {
                 L(p) = add_attach (L(p), p->sem.binary.att1,
@@ -495,7 +498,6 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
-        case la_num_neg:
         case la_bool_not:
             /* introduce attach if necessary */
             if (PFprop_const (p->prop, p->sem.unary.att)) {

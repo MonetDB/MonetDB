@@ -374,29 +374,28 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = distinct (U(L(p)));
             break;
 
-        case la_num_add:
-            res = binary_op (PFla_add, p, map);
-            break;
-        case la_num_subtract:
-            res = binary_op (PFla_subtract, p, map);
-            break;
-        case la_num_multiply:
-            res = binary_op (PFla_multiply, p, map);
-            break;
-        case la_num_divide:
-            res = binary_op (PFla_divide, p, map);
-            break;
-        case la_num_modulo:
-            res = binary_op (PFla_modulo, p, map);
-            break;
+        case la_fun_1to1:
+        {
+            PFalg_attlist_t refs;
+            
+            refs.count = p->sem.fun_1to1.refs.count;
+            refs.atts  = PFmalloc (refs.count *
+                                   sizeof (*(refs.atts)));
+
+            for (unsigned int i = 0; i < refs.count; i++)
+                refs.atts[i] = UNAME(p, p->sem.fun_1to1.refs.atts[i]);
+
+            res = fun_1to1 (U(L(p)),
+                            p->sem.fun_1to1.kind,
+                            UNAME(p, p->sem.fun_1to1.res),
+                            refs);
+        }   break;
+            
         case la_num_eq:
             res = binary_op (PFla_eq, p, map);
             break;
         case la_num_gt:
             res = binary_op (PFla_gt, p, map);
-            break;
-        case la_num_neg:
-            res = unary_op (PFla_neg, p, map);
             break;
         case la_bool_and:
             res = binary_op (PFla_and, p, map);
@@ -649,14 +648,6 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     "PROXY EXPANSION MISSING");
             break;
 
-        case la_concat:
-            res = binary_op (PFla_fn_concat, p, map);
-            break;
-
-        case la_contains:
-            res = binary_op (PFla_fn_contains, p, map);
-            break;
-            
         case la_string_join:
             res = fn_string_join (
                       U(L(p)), U(R(p)),

@@ -229,15 +229,14 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            rv.name = diff (rv.name, n->sem.fun_1to1.res);
+            rv.val = diff (rv.val, n->sem.fun_1to1.res);
+            prop_infer_reqvals (L(n), rv);
+            break;
+
         case la_num_eq:
         case la_num_gt:
-        case la_concat:
-        case la_contains:
             rv.name = diff (rv.name, n->sem.binary.res);
             rv.val = diff (rv.val, n->sem.binary.res);
             prop_infer_reqvals (L(n), rv);
@@ -274,8 +273,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
                    value stays false (default) */
                 if (!PFprop_reqval_val (n->prop, n->sem.unary.res))
                     rv.val = union_ (rv.val, n->sem.unary.att);
-            } /* continue */
-        case la_num_neg:
+            }
             rv.name = diff (rv.name, n->sem.unary.res);
             rv.val = diff (rv.val, n->sem.unary.res);
             prop_infer_reqvals (L(n), rv);

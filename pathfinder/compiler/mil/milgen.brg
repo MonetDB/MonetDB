@@ -95,21 +95,11 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term sort_distinct  =  24
 %term std_sort       =  25
 %term refine_sort    =  26
-%term num_add        =  30
-%term num_add_atom   =  31
-%term num_sub        =  32
-%term num_sub_atom   =  33
-%term num_mult       =  34
-%term num_mult_atom  =  35
-%term num_div        =  36
-%term num_div_atom   =  37
-%term num_mod        =  38
-%term num_mod_atom   =  39
+%term fun_1to1       =  30
 %term eq             =  40
 %term eq_atom        =  41
 %term gt             =  42
 %term gt_atom        =  43
-%term num_neg        =  44
 %term bool_not       =  45
 %term bool_and       =  46
 %term bool_or        =  47
@@ -156,9 +146,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term rec_arg        = 144
 %term rec_base       = 145
 %term rec_border     = 146
-%term concat         = 150
-%term contains       = 151
-%term string_join    = 152
+%term string_join    = 150
 
 %%
 
@@ -187,21 +175,11 @@ Rel:      sort_distinct (std_sort (Rel))                           =  31 (10);
 Rel:      sort_distinct (refine_sort (Rel))                        =  32 (10);
 Rel:      std_sort (Rel)                                           =  33 (10);
 Rel:      refine_sort (Rel)                                        =  34 (10);
-Rel:      num_add (Rel)                                            =  40 (10);
-Rel:      num_sub (Rel)                                            =  41 (10);
-Rel:      num_mult (Rel)                                           =  42 (10);
-Rel:      num_div (Rel)                                            =  43 (10);
-Rel:      num_mod (Rel)                                            =  44 (10);
-Rel:      num_add_atom (Rel)                                       =  45 (10);
-Rel:      num_sub_atom (Rel)                                       =  46 (10);
-Rel:      num_mult_atom (Rel)                                      =  47 (10);
-Rel:      num_div_atom (Rel)                                       =  48 (10);
-Rel:      num_mod_atom (Rel)                                       =  49 (10);
+Rel:      fun_1to1 (Rel)                                           =  40 (10);
 Rel:      eq (Rel)                                                 =  50 (10);
 Rel:      eq_atom (Rel)                                            =  51 (10);
 Rel:      gt (Rel)                                                 =  52 (10);
 Rel:      gt_atom (Rel)                                            =  53 (10);
-Rel:      num_neg (Rel)                                            =  60 (10);
 Rel:      bool_not (Rel)                                           =  61 (10);
 Rel:      bool_and (Rel)                                           =  62 (10);
 Rel:      bool_or (Rel)                                            =  63 (10);
@@ -256,9 +234,7 @@ Rec:      rec_nil                                                  = 134 (10);
 Rel:      rec_base                                                 = 135 (10);
 Rel:      rec_border (Rel)                                         = 136 (10);
 
-Rel:      concat (Rel)                                             = 140 (10);
-Rel:      contains (Rel)                                           = 141 (10);
-Rel:      string_join (Rel, Rel)                                   = 142 (10);
+Rel:      string_join (Rel, Rel)                                   = 140 (10);
 
 %%
 
@@ -412,7 +388,7 @@ env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
     execute ( comment ("    %s: %s(%s)", 
                        PFmil_var_str (v->name), 
                        PFatt_str (att), 
-                       PFsimple_type_str (ty)));
+                       PFalg_simple_type_str (ty)));
 #endif
 }
 
@@ -551,7 +527,7 @@ static void bin_bool (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
                       PFpa_op_t *p);
 static void bin_bool_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
                            PFpa_op_t *p);
-/* translate unary operators (numeric negation, Boolean not) */
+/* translate unary operators (Boolean not) */
 static void unary_op (PFmil_t * (*op) (const PFmil_t *), PFpa_op_t *p);
 
 /* Generic handling of aggregation functions (avg, max, min and sum). */
@@ -2846,55 +2822,85 @@ reduce (PFpa_op_t * p, int goalnt)
 
         } break;
 
-        /* Rel:      num_add (Rel) */
+        /* Rel:      fun_1to1 (Rel) */
         case 40:
-            bin_arith (PFmil_madd, p);
-            break;
+        {
+            /* result variable */
+            mvar_t             *res = new_var (p->refctr);
+            PFalg_simple_type_t res_type = 0; 
 
-        /* Rel:      num_sub (Rel) */
-        case 41:
-            bin_arith (PFmil_msub, p);
-            break;
+            switch (p->sem.fun_1to1.kind) {
+                case alg_fun_num_add:
+                case alg_fun_num_subtract:
+                case alg_fun_num_multiply:
+                case alg_fun_num_divide:
+                case alg_fun_num_modulo:
+                case alg_fun_fn_concat:
+                {
+                    PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
+                    PFalg_att_t         att1, att2;
 
-        /* Rel:      num_mult (Rel) */
-        case 42:
-            bin_arith (PFmil_mmult, p);
-            break;
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    res_type = type_of (L(p), att1);
 
-        /* Rel:      num_div (Rel) */
-        case 43:
-            bin_arith (PFmil_mdiv, p);
-            break;
+                    assert (res_type == type_of (L(p), att2));
+                    assert (res_type == aat_int || res_type == aat_dec ||
+                            res_type == aat_dbl || res_type == aat_str);
 
-        /* Rel:      num_mod (Rel) */
-        case 44:
-            bin_arith (PFmil_mmod, p);
-            break;
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_concat:
+                        case alg_fun_num_add:
+                            op = PFmil_madd; break;
+                        case alg_fun_num_subtract:
+                            op = PFmil_msub; break;
+                        case alg_fun_num_multiply:
+                            op = PFmil_mmult; break;
+                        case alg_fun_num_divide:
+                            op = PFmil_mdiv; break;
+                        case alg_fun_num_modulo:
+                            op = PFmil_mmod; break;
+                        default:
+                            break;
+                    }
+                    
+                    /* do the arithmetics */
+                    execute (
+                        assgn (var (res->name),
+                               op (VAR (L(p)->env, att1, res_type),
+                                   VAR (L(p)->env, att2, res_type))));
 
-        /* Rel:      num_add_atom (Rel) */
-        case 45:
-            bin_arith_atom (PFmil_madd, p);
-            break;
+                }   break;
+                    
+                case alg_fun_fn_contains:
+                {
+                    PFalg_att_t         att1, att2;
 
-        /* Rel:      num_sub_atom (Rel) */
-        case 46:
-            bin_arith_atom (PFmil_msub, p);
-            break;
+                    att1 = p->sem.fun_1to1.refs.atts[0];
+                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    res_type = aat_bln;
 
-        /* Rel:      num_mult_atom (Rel) */
-        case 47:
-            bin_arith_atom (PFmil_mmult, p);
-            break;
+                    /* do the containment checks:
+                       [search](strings,search_strs).[!=](-1).[oid]() */
+                    execute (
+                        assgn (var (res->name),
+                               mnot (meq (msearch (
+                                              VAR (L(p)->env, att1, aat_str),
+                                              VAR (L(p)->env, att2, aat_str)),
+                                          lit_int (-1)))));
+                }   break;
+            }
+            
+            /* and put the result into p's environment */
+            env_add (p->env, p->sem.fun_1to1.res, res_type, res);
 
-        /* Rel:      num_div_atom (Rel) */
-        case 48:
-            bin_arith_atom (PFmil_mdiv, p);
-            break;
-
-        /* Rel:      num_mod_atom (Rel) */
-        case 49:
-            bin_arith_atom (PFmil_mmod, p);
-            break;
+            /* everything from p's child */
+            for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
+                env_t entry = env_at (L(p)->env, i);
+                env_add (p->env, entry.att, entry.ty, entry.mvar);
+                pin (entry.mvar, p->refctr);
+            }
+        }   break;
 
         /* Rel:      eq (Rel) */
         case 50:
@@ -2914,11 +2920,6 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      gt_atom (Rel) */
         case 53:
             bin_comp_atom (PFmil_mgt, p);
-            break;
-
-        /* Rel:      num_neg (Rel) */
-        case 60:
-            unary_op (PFmil_mneg, p);
             break;
 
         /* Rel:      bool_not (Rel) */
@@ -4242,45 +4243,8 @@ reduce (PFpa_op_t * p, int goalnt)
             }
             break;
 
-        /* Rel:      concat (Rel) */
-        case 140:
-            bin_arith (PFmil_madd, p);
-            break;
-
-        /* Rel:      contains (Rel) */
-        case 141:
-        {
-            mvar_t              *res = new_var (p->refctr);
-
-            /* do the containment checks:
-               [search](strings,search_strs).[!=](-1).[oid]() */
-            execute (
-                assgn (var (res->name),
-                              mnot (meq (msearch (
-                                             VAR (L(p)->env,
-                                                  p->sem.binary.att1,
-                                                  aat_str),
-                                             VAR (L(p)->env,
-                                                  p->sem.binary.att2,
-                                                  aat_str)),
-                                         lit_int (-1)))));
-
-            /* and put the result into p's environment */
-            env_add (p->env, p->sem.binary.res, aat_bln, res);
-
-            /* everything from p's child */
-            for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
-
-                env_t entry = env_at (L(p)->env, i);
-
-                env_add (p->env, entry.att, entry.ty, entry.mvar);
-
-                pin (entry.mvar, p->refctr);
-            }
-        } break;
-
         /* Rel:      string_join (Rel, Rel) */
-        case 142:
+        case 140:
         {
             mvar_t *str  = new_var (1);
             mvar_t *iter = new_var (p->refctr);
@@ -5109,7 +5073,7 @@ bin_bool_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
 }
 
 /**
- * Generic handling of unary operators (numeric and Boolean negation).
+ * Generic handling of unary operators (Boolean negation).
  *
  * @param op A MIL multiplex operation that implements the
  *           operation of interest (as a function pointer to the

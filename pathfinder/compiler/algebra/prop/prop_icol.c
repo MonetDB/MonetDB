@@ -318,17 +318,23 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = n->prop->l_icols;
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            n->prop->l_icols = n->prop->icols;
+
+            /* do not infer input columns if operator is not required */
+            if (!(n->prop->icols & n->sem.fun_1to1.res))
+                break;
+
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.fun_1to1.res);
+            for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
+                n->prop->l_icols = union_ (n->prop->l_icols, 
+                                           n->sem.fun_1to1.refs.atts[i]);
+            break;
+
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
@@ -340,7 +346,6 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = union_ (n->prop->l_icols, n->sem.binary.att2);
             break;
 
-        case la_num_neg:
         case la_bool_not:
             n->prop->l_icols = n->prop->icols;
 

@@ -246,14 +246,9 @@ infer_const (PFla_op_t *n)
         case la_eqjoin_unq:
         case la_select:
         case la_distinct:
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
         case la_num_eq:
         case la_num_gt:
-        case la_num_neg:
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
@@ -267,8 +262,6 @@ infer_const (PFla_op_t *n)
         case la_attribute:
         case la_textnode:
         case la_roots:
-        case la_concat:
-        case la_contains:
         case la_dummy:
 
             /* propagate information from both input operators */
@@ -626,12 +619,7 @@ infer_const (PFla_op_t *n)
         case la_distinct:
         /* we also might calculate some result constants.
            Leave it out as it isn't a common case */
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
-        case la_num_neg:
+        case la_fun_1to1:
         case la_rownum:
         case la_number:
         case la_type_assert:
@@ -648,8 +636,6 @@ infer_const (PFla_op_t *n)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
-        case la_concat:
-        case la_contains:
         case la_dummy:
             break;
 

@@ -58,11 +58,6 @@
 #include "logical_mnemonic.h"
 
 
-/* Encapsulates initialization stuff common to binary arithmetic operators. */
-static PFla_op_t *
-arithm_op (PFla_op_kind_t kind, const PFla_op_t *n,
-           PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
-
 /* Encapsulates initialization stuff common to binary comparison operators.  */
 static PFla_op_t *
 compar_op (PFla_op_kind_t kind, const PFla_op_t *n,
@@ -972,12 +967,118 @@ PFla_op_t * PFla_distinct (const PFla_op_t *n)
 }
 
 
+/** Constructor for generic operator that extends the schema 
+    with a new column where each value is determined by the values
+    of a single row (cardinality stays the same) */
+PFla_op_t *
+PFla_fun_1to1 (const PFla_op_t *n,
+               PFalg_fun_t kind,
+               PFalg_att_t res,
+               PFalg_attlist_t refs)
+{
+    PFla_op_t          *ret;
+    unsigned int        i, j, ix[refs.count];
+    PFalg_simple_type_t res_type = 0;
+    
+    assert (n);
+
+    /* verify that the referenced attributes in refs
+       are really attributes of n ... */
+    for (i = 0; i < refs.count; i++) {
+        for (j = 0; j < n->schema.count; j++)
+            if (n->schema.items[j].name == refs.atts[i])
+                break;
+        if (j == n->schema.count)
+            PFoops (OOPS_FATAL,
+                    "attribute `%s' referenced in generic function"
+                    " operator not found", PFatt_str (refs.atts[i]));
+        ix[i] = j;
+    }
+
+    /* we want to perform some more consistency checks
+       that are specific to certain operators */
+    switch (kind) {
+        /**
+         * Depending on the @a kind parameter, we add, subtract, multiply, or
+         * divide the two values of columns @a att1 and @a att2 and store the
+         * result in newly created attribute @a res. @a res gets the same data
+         * type as @a att1 and @a att2. The result schema corresponds to the
+         * schema of the input relation @a n plus @a res.
+         */
+        case alg_fun_num_add:
+        case alg_fun_num_subtract:
+        case alg_fun_num_multiply:
+        case alg_fun_num_divide:
+        case alg_fun_num_modulo:
+            assert (refs.count == 2);
+            /* make sure both attributes are of the same numeric type */
+            assert (n->schema.items[ix[0]].type == aat_nat ||
+                    n->schema.items[ix[0]].type == aat_int ||
+                    n->schema.items[ix[0]].type == aat_dec ||
+                    n->schema.items[ix[0]].type == aat_dbl);
+            assert (n->schema.items[ix[0]].type == 
+                    n->schema.items[ix[1]].type);
+
+            res_type = n->schema.items[ix[1]].type;
+            break;
+
+        case alg_fun_fn_concat:
+            assert (refs.count == 2);
+            /* make sure both attributes are of type string */
+            assert (n->schema.items[ix[0]].type == aat_str &&
+                    n->schema.items[ix[1]].type == aat_str);
+
+            res_type = aat_str;
+            break;
+            
+        case alg_fun_fn_contains:
+            assert (refs.count == 2);
+            /* make sure both attributes are of type string */
+            assert (n->schema.items[ix[0]].type == aat_str &&
+                    n->schema.items[ix[1]].type == aat_str);
+
+            res_type = aat_bln;
+            break;
+    }
+
+    /* create new generic function operator node */
+    ret = la_op_wire1 (la_fun_1to1, n);
+
+    /* insert semantic values into the result */
+    ret->sem.fun_1to1.kind = kind;
+    ret->sem.fun_1to1.res  = res;
+    ret->sem.fun_1to1.refs = (PFalg_attlist_t) {
+        .count = refs.count,
+        .atts  = memcpy (PFmalloc (refs.count * sizeof (PFalg_att_t)), 
+                         refs.atts,
+                         refs.count * sizeof (PFalg_att_t)) };
+
+    /* allocate memory for the result schema (schema(n) + 'res') */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res' attribute */
+    ret->schema.items[ret->schema.count - 1].name = res;
+    ret->schema.items[ret->schema.count - 1].type = res_type;
+
+    return ret;
+}
+
+
 /** Constructs an operator for an arithmetic addition. */
 PFla_op_t *
 PFla_add (const PFla_op_t *n,
           PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return arithm_op (la_num_add, n, res, att1, att2);
+    return PFla_fun_1to1 (n,
+                          alg_fun_num_add,
+                          res,
+                          PFalg_attlist (att1, att2));
 }
 
 
@@ -986,7 +1087,10 @@ PFla_op_t *
 PFla_subtract (const PFla_op_t *n,
                PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return arithm_op (la_num_subtract, n, res, att1, att2);
+    return PFla_fun_1to1 (n,
+                          alg_fun_num_subtract,
+                          res,
+                          PFalg_attlist (att1, att2));
 }
 
 
@@ -995,7 +1099,10 @@ PFla_op_t *
 PFla_multiply (const PFla_op_t *n,
                PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return arithm_op (la_num_multiply, n, res, att1, att2);
+    return PFla_fun_1to1 (n,
+                          alg_fun_num_multiply,
+                          res,
+                          PFalg_attlist (att1, att2));
 }
 
 
@@ -1004,7 +1111,10 @@ PFla_op_t *
 PFla_divide (const PFla_op_t *n,
              PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return arithm_op (la_num_divide, n, res, att1, att2);
+    return PFla_fun_1to1 (n,
+                          alg_fun_num_divide,
+                          res,
+                          PFalg_attlist (att1, att2));
 }
 
 
@@ -1013,7 +1123,10 @@ PFla_op_t *
 PFla_modulo (const PFla_op_t *n,
              PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return arithm_op (la_num_modulo, n, res, att1, att2);
+    return PFla_fun_1to1 (n,
+                          alg_fun_num_modulo,
+                          res,
+                          PFalg_attlist (att1, att2));
 }
 
 
@@ -1050,14 +1163,6 @@ PFla_eq (const PFla_op_t *n,
 }
 
 
-/** Constructor for numeric negation operators. */
-PFla_op_t *
-PFla_neg (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att)
-{
-    return unary_op (la_num_neg, n, res, att);
-}
-
-
 /** Constructor for boolean AND operators. */
 PFla_op_t *
 PFla_and (const PFla_op_t *n,
@@ -1081,81 +1186,6 @@ PFla_op_t *
 PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
     return unary_op (la_bool_not, n, res, att);
-}
-
-
-/**
- * Encapsulates initialization stuff common to binary arithmetic
- * operators.
- *
- * Depending on the @a kind parameter, we add, subtract, multiply, or
- * divide the two values of columns @a att1 and @a att2 and store the
- * result in newly created attribute @a res. @a res gets the same data
- * type as @a att1 and @a att2. The result schema corresponds to the
- * schema of the input relation @a n plus @a res.
- */
-static PFla_op_t *
-arithm_op (PFla_op_kind_t kind, const PFla_op_t *n,
-           PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
-{
-    PFla_op_t *ret;
-    unsigned int  i;
-    int           ix1 = -1;
-    int           ix2 = -1;
-    
-    assert (n);
-
-    /* verify that 'att1' and 'att2' are attributes of n ... */
-    for (i = 0; i < n->schema.count; i++) {
-        if (att1 == n->schema.items[i].name)
-            ix1 = i;                /* remember array index of att1 */
-        if (att2 == n->schema.items[i].name)
-            ix2 = i;                /* remember array index of att2 */
-    }
-
-    /* did we find attribute 'att1' and 'att2'? */
-    if (ix1 < 0)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in arithmetic operation "
-                "not found", PFatt_str (att1));
-    if (ix2 < 0)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in arithmetic operation "
-                "not found", PFatt_str (att2));
-
-    /* make sure both attributes are of the same numeric type */
-    assert (n->schema.items[ix1].type == aat_nat ||
-            n->schema.items[ix1].type == aat_int ||
-            n->schema.items[ix1].type == aat_dec ||
-            n->schema.items[ix1].type == aat_dbl);
-    assert (n->schema.items[ix1].type == n->schema.items[ix2].type);
-
-    /* create new binary operator node */
-    ret = la_op_wire1 (kind, n);
-
-    /* insert semantic value (operand attributes and result attribute)
-     * into the result
-     */
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
-    ret->sem.binary.res = res;
-
-    /* allocate memory for the result schema (schema(n) + 'res') */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from 'n' argument */
-    for (i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    /* add the information on the 'res' attribute; it has the same type
-     * as attribute 'att1' (and 'att2'), but a different name
-     */
-    ret->schema.items[ret->schema.count - 1].type = n->schema.items[ix1].type;
-    ret->schema.items[ret->schema.count - 1].name = res;
-
-    return ret;
 }
 
 
@@ -1337,11 +1367,7 @@ unary_op(PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
                 PFatt_str (att));
 
     /* assert that 'att' is of correct type */
-    if (kind == la_num_neg)
-        assert (n->schema.items[ix].type == aat_int ||
-                n->schema.items[ix].type == aat_dec ||
-                n->schema.items[ix].type == aat_dbl);
-    else if (kind == la_bool_not)
+    if (kind == la_bool_not)
         assert (n->schema.items[ix].type == aat_bln);
 
     /* create new unary operator node */
@@ -2829,132 +2855,6 @@ PFla_op_t *PFla_proxy_base (const PFla_op_t *n)
     return ret;
 }
 
-
-/**
- * Constructor for builtin function fn:concat
- * (translation is similar to arithmetic operators)
- */
-PFla_op_t *
-PFla_fn_concat (const PFla_op_t *n,
-                PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
-{
-    PFla_op_t *ret;
-    unsigned int  i;
-    int           ix1 = -1;
-    int           ix2 = -1;
-    
-    assert (n);
-
-    /* verify that 'att1' and 'att2' are attributes of n ... */
-    for (i = 0; i < n->schema.count; i++) {
-        if (att1 == n->schema.items[i].name)
-            ix1 = i;                /* remember array index of att1 */
-        if (att2 == n->schema.items[i].name)
-            ix2 = i;                /* remember array index of att2 */
-    }
-
-    /* did we find attribute 'att1' and 'att2'? */
-    if (ix1 < 0)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in concat operation "
-                "not found", PFatt_str (att1));
-    else if (ix2 < 0)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in concat operation "
-                "not found", PFatt_str (att2));
-
-    /* make sure both attributes are of type string */
-    assert (n->schema.items[ix1].type == aat_str);
-    assert (n->schema.items[ix2].type == aat_str);
-
-    /* create new binary operator node */
-    ret = la_op_wire1 (la_concat, n);
-
-    /* insert semantic value (operand attributes and result attribute)
-     * into the result
-     */
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
-    ret->sem.binary.res = res;
-
-    /* allocate memory for the result schema (schema(n) + 'res') */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from 'n' argument */
-    for (i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    /* add the information on the 'res' attribute; it has the type string */
-    ret->schema.items[ret->schema.count - 1].type = aat_str;
-    ret->schema.items[ret->schema.count - 1].name = res;
-
-    return ret;
-}
-
-/**
- * Constructor for builtin function fn:contains
- * (translation is similar to arithmetic operators)
- */
-PFla_op_t *
-PFla_fn_contains (const PFla_op_t *n,
-                  PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
-{
-    PFla_op_t *ret;
-    unsigned int  i;
-    int           ix1 = -1;
-    int           ix2 = -1;
-    
-    assert (n);
-
-    /* verify that 'att1' and 'att2' are attributes of n ... */
-    for (i = 0; i < n->schema.count; i++) {
-        if (att1 == n->schema.items[i].name)
-            ix1 = i;                /* remember array index of att1 */
-        if (att2 == n->schema.items[i].name)
-            ix2 = i;                /* remember array index of att2 */
-    }
-
-    /* did we find attribute 'att1' and 'att2'? */
-    if (ix1 < 0)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in fn:contains "
-                "not found", PFatt_str (att1));
-    else if (ix2 < 0)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in fn:contains "
-                "not found", PFatt_str (att2));
-
-    /* make sure both attributes are of type string */
-    assert (n->schema.items[ix1].type == aat_str);
-    assert (n->schema.items[ix2].type == aat_str);
-
-    /* create new binary operator node */
-    ret = la_op_wire1 (la_contains, n);
-
-    /* insert semantic value (operand attributes and result attribute)
-     * into the result
-     */
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
-    ret->sem.binary.res = res;
-
-    /* allocate memory for the result schema (schema(n) + 'res') */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from 'n' argument */
-    for (i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    /* add the information on the 'res' attribute; it has the type boolean */
-    ret->schema.items[ret->schema.count - 1].type = aat_bln;
-    ret->schema.items[ret->schema.count - 1].name = res;
-
-    return ret;
-}
 
 /**
  * Constructor for builtin function fn:string-join

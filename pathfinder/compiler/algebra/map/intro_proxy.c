@@ -2100,14 +2100,9 @@ proxy_unnest_exit (PFla_op_t *proxy, PFla_op_t *entry)
         switch (p->kind) {
             case la_attach:
             case la_project:
-            case la_num_add:
-            case la_num_subtract:
-            case la_num_multiply:
-            case la_num_divide:
-            case la_num_modulo:
+            case la_fun_1to1:
             case la_num_eq:
             case la_num_gt:
-            case la_num_neg:
             case la_bool_and:
             case la_bool_or:
             case la_bool_not:
@@ -2141,15 +2136,14 @@ proxy_unnest_exit (PFla_op_t *proxy, PFla_op_t *entry)
  */
 static void
 collect_mappings_worker (PFalg_att_t res,
-                         PFalg_att_t att1,
-                         PFalg_att_t att2,
+                         PFalg_attlist_t refs,
                          unsigned int req_count,
                          PFalg_proj_t *req_col_names,
                          PFarray_t *new_col_names)
 {
     PFalg_att_t col;
-    unsigned int i;
-    bool att1_present = false, att2_present = false;
+    unsigned int i, j;
+    bool att_present;
 
     /* reset name mapping of the result column
        in the list of required columns */
@@ -2157,8 +2151,7 @@ collect_mappings_worker (PFalg_att_t res,
         if (res == req_col_names[i].old)
             req_col_names[i].old = att_NULL;
 
-    /* Remove result column and add att1 and att2 columns
-       if they are not already an available column. */
+    /* Remove result column */
     for (i = 0; i < PFarray_last (new_col_names); i++) {
         col = *(PFalg_att_t *) PFarray_at (new_col_names, i);
         if (col == res) {
@@ -2167,15 +2160,21 @@ collect_mappings_worker (PFalg_att_t res,
             PFarray_del (new_col_names);
             i--;
         }
-        else if (col == att1)
-            att1_present = true;
-        else if (col == att2)
-            att2_present = true;
     }
-    if (!att1_present && att1)
-        *(PFalg_att_t *) PFarray_add (new_col_names) = att1;
-    if (!att2_present && att2)
-        *(PFalg_att_t *) PFarray_add (new_col_names) = att2;
+    
+    /* Add columns in refs if they are not already an available column. */
+    for (i = 0; i < refs.count; i++) {
+        att_present = false;
+        for (j = 0; j < PFarray_last (new_col_names); j++) {
+            col = *(PFalg_att_t *) PFarray_at (new_col_names, j);
+            if (col == refs.atts[i]) {
+                att_present = true;
+                break;
+            }
+        }
+        if (!att_present)
+            *(PFalg_att_t *) PFarray_add (new_col_names) = refs.atts[i];
+    }
 }
 
 /**
@@ -2194,8 +2193,7 @@ collect_mappings (PFla_op_t *p,
         switch (p->kind) {
             case la_attach:
                 collect_mappings_worker (p->sem.attach.attname,
-                                         att_NULL,
-                                         att_NULL,
+                                         PFalg_attlist (),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2225,28 +2223,30 @@ collect_mappings (PFla_op_t *p,
                 }
             }   break;
 
-            case la_num_add:
-            case la_num_subtract:
-            case la_num_multiply:
-            case la_num_divide:
-            case la_num_modulo:
-            case la_num_eq:
-            case la_num_gt:
-            case la_bool_and:
-            case la_bool_or:
-                collect_mappings_worker (p->sem.binary.res,
-                                         p->sem.binary.att1,
-                                         p->sem.binary.att2,
+            case la_fun_1to1:
+                collect_mappings_worker (p->sem.fun_1to1.res,
+                                         p->sem.fun_1to1.refs,
                                          req_count,
                                          req_col_names,
                                          new_col_names);
                 break;
 
-            case la_num_neg:
+            case la_num_eq:
+            case la_num_gt:
+            case la_bool_and:
+            case la_bool_or:
+                collect_mappings_worker (p->sem.binary.res,
+                                         PFalg_attlist (
+                                             p->sem.binary.att1,
+                                             p->sem.binary.att2),
+                                         req_count,
+                                         req_col_names,
+                                         new_col_names);
+                break;
+
             case la_bool_not:
                 collect_mappings_worker (p->sem.unary.res,
-                                         p->sem.unary.att,
-                                         att_NULL,
+                                         PFalg_attlist (p->sem.unary.att),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2254,8 +2254,7 @@ collect_mappings (PFla_op_t *p,
 
             case la_cast:
                 collect_mappings_worker (p->sem.type.res,
-                                         p->sem.type.att,
-                                         att_NULL,
+                                         PFalg_attlist (p->sem.type.att),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2263,8 +2262,7 @@ collect_mappings (PFla_op_t *p,
 
             case la_doc_access:
                 collect_mappings_worker (p->sem.doc_access.res,
-                                         p->sem.doc_access.att,
-                                         att_NULL,
+                                         PFalg_attlist (p->sem.doc_access.att),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2359,7 +2357,7 @@ collect_mappings (PFla_op_t *p,
  *         |      |                    of the following operators:
  *         |      |                    - project
  *         |   pi_(exit)               - attach
- *         |      |                    - +, -, *, \, %, neg
+ *         |      |                    - +, -, *, \, %
  *         \___   |                    - eq, gt, not, and, or
  *             \ /                     - cast
  *              #_(new_num_col)        - doc_access

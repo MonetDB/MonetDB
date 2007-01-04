@@ -363,21 +363,17 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             n->prop->r_name_pairs = PFarray_copy (np_list);
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.fun_1to1.res);
+            break;
+
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             diff_np (n->prop->l_name_pairs, np_list, n->sem.binary.res);
             break;
 
-        case la_num_neg:
         case la_bool_not:
             diff_np (n->prop->l_name_pairs, np_list, n->sem.unary.res);
             break;

@@ -74,29 +74,14 @@
 /* duplicate elimination operator */
 #define distinct(a)       PFla_distinct ((a))
 
-/* addition operator */
-#define add(a,b,c,d)      PFla_add ((a),(b),(c),(d))
-
-/* subtraction operator */
-#define subtract(a,b,c,d) PFla_subtract ((a),(b),(c),(d))
-
-/* multiplication operator */
-#define multiply(a,b,c,d) PFla_multiply ((a),(b),(c),(d))
-
-/* division operator */
-#define divide(a,b,c,d)   PFla_divide ((a),(b),(c),(d))
-
-/* modulo operator */
-#define modulo(a,b,c,d)   PFla_modulo ((a),(b),(c),(d))
+/* generic function operator */
+#define fun_1to1(a,b,c,d) PFla_fun_1to1 ((a),(b),(c),(d))
 
 /* numeric equal operator */
 #define eq(a,b,c,d)       PFla_eq ((a),(b),(c),(d))
 
 /* numeric greater-than operator */
 #define gt(a,b,c,d)       PFla_gt ((a),(b),(c),(d))
-
-/* numeric negation operator */
-#define neg(a,b,c)        PFla_neg ((a),(b),(c))
 
 /* boolean AND operator */
 #define and(a,b,c,d)      PFla_and ((a),(b),(c),(d))
@@ -191,8 +176,6 @@
 #define rec_base(a) PFla_rec_base (a)
 
 /* constructors for built-in functions */
-#define fn_concat(a,b,c,d)  PFla_fn_concat ((a), (b), (c), (d))
-#define fn_contains(a,b,c,d)  PFla_fn_contains ((a), (b), (c), (d))
 #define fn_string_join(a,b,c,d,e,f,g,h,i) \
         PFla_fn_string_join ((a),(b),(c),(d),(e),(f),(g),(h),(i))
 

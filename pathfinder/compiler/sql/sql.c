@@ -461,7 +461,7 @@ PFsql_column_name_str(PFsql_ident_t ident)
                 ATT_BITS));
 
     attstr = PFatt_str(att);
-    tystr  = PFsimple_type_str(ty);
+    tystr  = PFalg_simple_type_str(ty);
 
     len = strlen(attstr);
     len += strlen(tystr);

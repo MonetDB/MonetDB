@@ -87,14 +87,9 @@ infer_card (PFla_op_t *n)
 
         case la_attach:
         case la_project:
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
         case la_num_eq:
         case la_num_gt:
-        case la_num_neg:
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
@@ -110,8 +105,6 @@ infer_card (PFla_op_t *n)
         case la_roots:
         case la_proxy:
         case la_proxy_base:
-        case la_concat:
-        case la_contains:
         case la_dummy:
             /* cardinality stays the same */
             n->prop->card = L(n)->prop->card;

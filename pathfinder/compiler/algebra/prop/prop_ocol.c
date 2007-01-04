@@ -240,59 +240,79 @@ infer_ocol (PFla_op_t *n)
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
         {
-            int ix1 = -1;
-            int ix2 = -1;
-            /* verify that 'att1' and 'att2' are attributes of n ... */
-            for (unsigned int i = 0; i < ocols_count (L(n)); i++) {
-                if (n->sem.binary.att1 == ocol_at (L(n), i).name)
-                    ix1 = i;                /* remember array index of att1 */
-                else if (n->sem.binary.att2 == ocol_at (L(n), i).name)
-                    ix2 = i;                /* remember array index of att2 */
+            unsigned int        i, j, ix[n->sem.fun_1to1.refs.count];
+            PFalg_simple_type_t res_type = 0;
+            
+            /* verify that the referenced attributes in refs
+               are really attributes of n ... */
+            for (i = 0; i < n->sem.fun_1to1.refs.count; i++) {
+                for (j = 0; j < ocols_count (L(n)); j++)
+                    if (ocol_at (L(n), j).name == n->sem.fun_1to1.refs.atts[i])
+                        break;
+                if (j == ocols_count (L(n)))
+                    PFoops (OOPS_FATAL,
+                            "attribute `%s' referenced in generic function"
+                            " operator not found",
+                            PFatt_str (n->sem.fun_1to1.refs.atts[i]));
+                ix[i] = j;
             }
-            /* did we find attribute 'att1' and 'att2'? */
-            if (ix1 < 0)
-                PFoops (OOPS_FATAL,
-                        "attribute `%s' referenced in binary operation "
-                        "not found", PFatt_str (n->sem.binary.att1));
-            else if (ix2 < 0)
-                PFoops (OOPS_FATAL,
-                        "attribute `%s' referenced in binary operation "
-                        "not found", PFatt_str (n->sem.binary.att2));
+
+            /* we want to perform some more consistency checks
+               that are specific to certain operators */
+            switch (n->sem.fun_1to1.kind) {
+                /**
+                 * Depending on the @a kind parameter, we add, subtract, 
+                 * multiply, or divide the two values of columns @a att1
+                 * and @a att2 and store the result in newly created attribute
+                 * @a res. @a res gets the same data type as @a att1 and 
+                 * @a att2. The result schema corresponds to the schema 
+                 * of the input relation @a n plus @a res.
+                 */
+                case alg_fun_num_add:
+                case alg_fun_num_subtract:
+                case alg_fun_num_multiply:
+                case alg_fun_num_divide:
+                case alg_fun_num_modulo:
+                    assert (n->sem.fun_1to1.refs.count == 2);
+                    /* make sure both attributes are of the same numeric type */
+                    assert (ocol_at (L(n), ix[0]).type == aat_nat ||
+                            ocol_at (L(n), ix[0]).type == aat_int ||
+                            ocol_at (L(n), ix[0]).type == aat_dec ||
+                            ocol_at (L(n), ix[0]).type == aat_dbl);
+                    assert (ocol_at (L(n), ix[0]).type == 
+                            ocol_at (L(n), ix[1]).type);
+
+                    res_type = ocol_at (L(n), ix[1]).type;
+                    break;
+
+                case alg_fun_fn_concat:
+                    assert (n->sem.fun_1to1.refs.count == 2);
+                    /* make sure both attributes are of type string */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str &&
+                            ocol_at (L(n), ix[1]).type == aat_str);
+
+                    res_type = aat_str;
+                    break;
+                    
+                case alg_fun_fn_contains:
+                    assert (n->sem.fun_1to1.refs.count == 2);
+                    /* make sure both attributes are of type string */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str &&
+                            ocol_at (L(n), ix[1]).type == aat_str);
+
+                    res_type = aat_bln;
+                    break;
+            }
 
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.binary.res;
-            ocol_at (n, ocols_count (n)).type = ocol_at (L(n), ix1).type;
+            ocol_at (n, ocols_count (n)).name = n->sem.fun_1to1.res;
+            ocol_at (n, ocols_count (n)).type = res_type;
             ocols_count (n)++;
-        }
-            break;
-
-        case la_num_neg:
-        {
-            int ix = -1;
-            /* verify that 'att1' and 'att2' are attributes of n ... */
-            for (unsigned int i = 0; i < ocols_count (L(n)); i++) {
-                if (n->sem.unary.att == ocol_at (L(n), i).name)
-                    ix = i;                /* remember array index of att */
-            }
-            /* did we find attribute 'att'? */
-            if (ix < 0)
-                PFoops (OOPS_FATAL,
-                        "attribute `%s' referenced in unary operation "
-                        "not found", PFatt_str (n->sem.unary.att));
-
-            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.unary.res;
-            ocol_at (n, ocols_count (n)).type = ocol_at (L(n), ix).type;
-            ocols_count (n)++;
-        }
-            break;
-
+            
+        }   break;
+            
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
@@ -521,20 +541,6 @@ infer_ocol (PFla_op_t *n)
 
         case la_cond_err:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
-            break;
-
-        case la_concat:
-            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.binary.res;
-            ocol_at (n, ocols_count (n)).type = aat_str;
-            ocols_count (n)++;
-            break;
-
-        case la_contains:
-            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.binary.res;
-            ocol_at (n, ocols_count (n)).type = aat_bln;
-            ocols_count (n)++;
             break;
 
         case la_rec_fix:

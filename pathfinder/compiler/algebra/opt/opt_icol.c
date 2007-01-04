@@ -275,17 +275,18 @@ opt_icol (PFla_op_t *p)
             }
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            /* prune generic function operator if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.fun_1to1.res)) {
+                *p = *PFla_dummy (L(p));
+                break;
+            }
+            break;
+
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             /* prune binary operation if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.binary.res)) {
                 *p = *PFla_dummy (L(p));
@@ -293,7 +294,6 @@ opt_icol (PFla_op_t *p)
             }
             break;
 
-        case la_num_neg:
         case la_bool_not:
             /* prune unary operation if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.unary.res)) {

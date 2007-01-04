@@ -972,29 +972,35 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 join_pushdown_worker (R(p), clean_up_list);
             } break;
                 
-            case la_num_add:
-                next_join = modify_binary_op (p, lp, rp, PFla_add);
+            case la_fun_1to1:
+                if (!is_join_att (p, lp->sem.fun_1to1.res)) {
+                    PFalg_attlist_t refs;
+                    
+                    refs.count = lp->sem.fun_1to1.refs.count;
+                    refs.atts  = PFmalloc (refs.count *
+                                           sizeof (*(refs.atts)));
+
+                    for (unsigned int i = 0; i < refs.count; i++)
+                        refs.atts[i] = is_join_att (
+                                           p,
+                                           lp->sem.fun_1to1.refs.atts[i])
+                                       ? p->sem.eqjoin_unq.res
+                                       : lp->sem.fun_1to1.refs.atts[i];
+
+                    *p = *(fun_1to1 (eqjoin_unq (L(lp), rp, latt, ratt,
+                                                 p->sem.eqjoin_unq.res),
+                                     lp->sem.fun_1to1.kind,
+                                     lp->sem.fun_1to1.res,
+                                     refs));
+                    next_join = L(p);
+                }
                 break;
-            case la_num_subtract:
-                next_join = modify_binary_op (p, lp, rp, PFla_subtract);
-                break;
-            case la_num_multiply:
-                next_join = modify_binary_op (p, lp, rp, PFla_multiply);
-                break;
-            case la_num_divide:
-                next_join = modify_binary_op (p, lp, rp, PFla_divide);
-                break;
-            case la_num_modulo:
-                next_join = modify_binary_op (p, lp, rp, PFla_modulo);
-                break;
+
             case la_num_eq:
                 next_join = modify_binary_op (p, lp, rp, PFla_eq);
                 break;
             case la_num_gt:
                 next_join = modify_binary_op (p, lp, rp, PFla_gt);
-                break;
-            case la_num_neg:
-                next_join = modify_unary_op (p, lp, rp, PFla_neg);
                 break;
             case la_bool_and:
                 next_join = modify_binary_op (p, lp, rp, PFla_and);
@@ -1324,14 +1330,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         "cannot cope with proxy nodes");
                 break;
 
-            case la_concat:
-                next_join = modify_binary_op (p, lp, rp, PFla_fn_concat);
-                break;
-                
-            case la_contains:
-                next_join = modify_binary_op (p, lp, rp, PFla_fn_contains);
-                break;
-
         }
         
         if (next_join)
@@ -1415,20 +1413,15 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_attach:       
             if (att == p->sem.attach.attname) return att_NULL;
             break;
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            if (att == p->sem.fun_1to1.res) return att_NULL;
+            break;
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             if (att == p->sem.binary.res) return att_NULL;
             break;
-        case la_num_neg:
         case la_bool_not:
             if (att == p->sem.unary.res) return att_NULL;
             break;

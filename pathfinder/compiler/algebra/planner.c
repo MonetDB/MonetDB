@@ -736,6 +736,29 @@ plan_distinct (const PFla_op_t *n)
 }
 
 /**
+ * Generate physical plan for the logical generic function operator.
+ */
+static PFplanlist_t *
+plan_fun_1to1 (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    assert (n); assert (n->kind == la_fun_1to1);
+    assert (L(n)); assert (L(n)->plans);
+
+    /* copy all plans */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret,
+                  fun_1to1 (
+                      *(plan_t **) PFarray_at (L(n)->plans, i),
+                      n->sem.fun_1to1.kind,
+                      n->sem.fun_1to1.res,
+                      n->sem.fun_1to1.refs));
+
+    return ret;
+}
+
+/**
  * Helper function to plan binary operators (arithmetic, comparison,
  * Boolean). If either operand column is known to be constant, plan
  * for a more specific implementation.
@@ -748,12 +771,7 @@ plan_binop (const PFla_op_t *n)
     static PFpa_op_t * (*op_atom[]) (const PFpa_op_t *, const PFalg_att_t,
                                      const PFalg_att_t, const PFalg_atom_t)
         = {
-              [la_num_add]      = PFpa_num_add_atom
-            , [la_num_multiply] = PFpa_num_mult_atom
-            , [la_num_eq]       = PFpa_eq_atom
-            , [la_num_subtract] = PFpa_num_sub_atom
-            , [la_num_divide]   = PFpa_num_div_atom
-            , [la_num_modulo]   = PFpa_num_mod_atom
+              [la_num_eq]       = PFpa_eq_atom
             , [la_num_gt]       = PFpa_gt_atom
             , [la_bool_and]     = PFpa_and_atom
             , [la_bool_or]      = PFpa_or_atom
@@ -762,12 +780,7 @@ plan_binop (const PFla_op_t *n)
     static PFpa_op_t * (*op[]) (const PFpa_op_t *, const PFalg_att_t,
                                 const PFalg_att_t, const PFalg_att_t)
         = {
-              [la_num_add]      = PFpa_num_add
-            , [la_num_multiply] = PFpa_num_mult
-            , [la_num_eq]       = PFpa_eq
-            , [la_num_subtract] = PFpa_num_sub
-            , [la_num_divide]   = PFpa_num_div
-            , [la_num_modulo]   = PFpa_num_mod
+              [la_num_eq]       = PFpa_eq
             , [la_num_gt]       = PFpa_gt
             , [la_bool_and]     = PFpa_and
             , [la_bool_or]      = PFpa_or
@@ -776,8 +789,6 @@ plan_binop (const PFla_op_t *n)
 
     switch (n->kind) {
 
-        case la_num_add:
-        case la_num_multiply:
         case la_num_eq:
 
             assert (op_atom[n->kind]);
@@ -796,9 +807,6 @@ plan_binop (const PFla_op_t *n)
 
             /* fall through */
 
-        case la_num_subtract:
-        case la_num_divide:
-        case la_num_modulo:
         case la_num_gt:
 
             assert (op_atom[n->kind]);
@@ -834,7 +842,7 @@ plan_binop (const PFla_op_t *n)
 }
 
 /**
- * Helper function to plan unary operators (numeric/Boolean negation)
+ * Helper function to plan unary operators (Boolean negation)
  */
 static PFplanlist_t *
 plan_unary (const PFla_op_t *n)
@@ -843,13 +851,6 @@ plan_unary (const PFla_op_t *n)
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         switch (n->kind) {
-
-            case la_num_neg:
-                add_plan (ret,
-                          num_neg (
-                            *(plan_t **) PFarray_at (L(n)->plans, i),
-                            n->sem.unary.res, n->sem.unary.att));
-                break;
 
             case la_bool_not:
                 add_plan (ret,
@@ -1551,44 +1552,6 @@ plan_cond_err (const PFla_op_t *n)
 }
 
 /**
- * `concat' operator in the logical algebra just get a 1:1 mapping
- * into the physical concat operator.
- */
-static PFplanlist_t *
-plan_concat (const PFla_op_t *n)
-{
-    PFplanlist_t *ret = new_planlist ();
-
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plan (ret,
-                  fn_concat (*(plan_t **) PFarray_at (L(n)->plans, i),
-                             n->sem.binary.res,
-                             n->sem.binary.att1,
-                             n->sem.binary.att2));
-
-    return ret;
-}
-
-/**
- * `contains' operator in the logical algebra just get a 1:1 mapping
- * into the physical contains operator.
- */
-static PFplanlist_t *
-plan_contains (const PFla_op_t *n)
-{
-    PFplanlist_t *ret = new_planlist ();
-
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plan (ret,
-                  fn_contains (*(plan_t **) PFarray_at (L(n)->plans, i),
-                               n->sem.binary.res,
-                               n->sem.binary.att1,
-                               n->sem.binary.att2));
-
-    return ret;
-}
-
-/**
  * Create physical equivalent for the string_join operator
  * (concatenates sets of strings using a seperator for each set)
  *
@@ -2151,18 +2114,13 @@ plan_subexpression (PFla_op_t *n)
         case la_difference:     plans = plan_difference (n);   break;
         case la_distinct:       plans = plan_distinct (n);     break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:       plans = plan_fun_1to1 (n);     break;
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
                                 plans = plan_binop (n);        break;
 
-        case la_num_neg:
         case la_bool_not:
                                 plans = plan_unary (n);        break;
         case la_avg:            plans = plan_aggr (pa_avg, n); break;
@@ -2294,8 +2252,6 @@ plan_subexpression (PFla_op_t *n)
             add_plan (plans, cheapest_rec_plan);
         } break;
 
-        case la_concat:         plans = plan_concat (n);       break;
-        case la_contains:       plans = plan_contains (n);     break;
         case la_string_join:    plans = plan_string_join (n);  break;
 
         default:

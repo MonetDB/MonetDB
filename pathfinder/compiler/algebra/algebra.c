@@ -611,7 +611,8 @@ PFalg_atom_comparable (PFalg_atom_t a, PFalg_atom_t b)
 /**
  * Compare two atomic values (if possible)
  */
-int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
+int
+PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
 {
     assert (PFalg_atom_comparable (a, b));
 
@@ -644,19 +645,20 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
 /**
  * Print simple type name
  */
-char * PFsimple_type_str (PFalg_simple_type_t type) {
+char *
+PFalg_simple_type_str (PFalg_simple_type_t type) {
     switch (type) {
         case aat_nat:   return "nat";
         case aat_int:   return "int";
         case aat_str:   return "str";
         case aat_dec:   return "dec";
         case aat_dbl:   return "dbl";
-        case aat_bln:   return "bln";
+        case aat_bln:   return "bool";
         case aat_uA:    return "uA";
         case aat_qname: return "qname";
         case aat_node:  return "node";
-        case aat_anode: return "anode";
-        case aat_attr:  return "attr";
+        case aat_anode: return "attr";
+        case aat_attr:  return "attrID";
         case aat_afrag: return "afrag";
         case aat_pnode: return "pnode";
         case aat_pre:   return "pre";
@@ -868,6 +870,25 @@ PFatt_str (PFalg_att_t att) {
             else
                 PFoops (OOPS_FATAL, "unknown attribute name (%i)", att);
     }
+    return NULL;
+}
+
+/**
+ * Print function name
+ */
+char *
+PFalg_fun_str (PFalg_fun_t fun)
+{
+    switch (fun) {
+        case alg_fun_num_add:      return "add";
+        case alg_fun_num_subtract: return "subtract";
+        case alg_fun_num_multiply: return "multiply";
+        case alg_fun_num_divide:   return "divide";
+        case alg_fun_num_modulo:   return "modulo";
+        case alg_fun_fn_concat:    return "fn:concat";
+        case alg_fun_fn_contains:  return "fn:contains";
+    }
+    PFoops (OOPS_FATAL, "unknown algebraic function name (%i)", fun);
     return NULL;
 }
 

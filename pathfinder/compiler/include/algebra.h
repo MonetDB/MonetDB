@@ -108,14 +108,6 @@ union PFalg_atom_val_t {
 /** algebra values */
 typedef union PFalg_atom_val_t PFalg_atom_val_t;
 
-/** value indicator of PFalg_atom_t */
-enum PFalg_minmax_t {
-    amm_min    = 0 /**< minimal domain value */
-  , amm_normal = 1 /**< standard value */
-  , amm_max    = 2 /**< maximal domain value */
-};
-typedef enum PFalg_minmax_t PFalg_minmax_t;
-
 /** typed atomic value representation in our algebra */
 struct PFalg_atom_t {
     PFalg_simple_type_t type; /**< type of this atom */
@@ -253,6 +245,18 @@ struct PFalg_scj_spec_t {
 };
 typedef struct PFalg_scj_spec_t PFalg_scj_spec_t;
 
+/** function representatives */
+enum PFalg_fun_t {
+      alg_fun_num_add      /**< arithmetic plus operator */
+    , alg_fun_num_subtract /**< arithmetic minus operator */
+    , alg_fun_num_multiply /**< arithmetic times operator */
+    , alg_fun_num_divide   /**< arithmetic divide operator */
+    , alg_fun_num_modulo   /**< arithmetic modulo operator */
+    , alg_fun_fn_concat    /**< fn:concat */
+    , alg_fun_fn_contains  /**< fn:contains */
+};
+typedef enum PFalg_fun_t PFalg_fun_t;
+
 /* ............. document fields specification .............. */
 
 enum PFalg_doc_t {
@@ -353,8 +357,13 @@ PFalg_att_t PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free);
 /**
  * Print simple type name
  */
-char * PFsimple_type_str (PFalg_simple_type_t att);
+char * PFalg_simple_type_str (PFalg_simple_type_t att);
 
+/**
+ * Print function name
+ */
+char * PFalg_fun_str (PFalg_fun_t fun);
+    
 #endif  /* ALGEBRA_H */
 
 /* vim:set shiftwidth=4 expandtab: */

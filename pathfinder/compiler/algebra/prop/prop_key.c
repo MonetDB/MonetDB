@@ -329,17 +329,20 @@ infer_key (PFla_op_t *n)
                 copy (n->prop->keys, L(n)->prop->keys);
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            /* key columns are propagated */
+            copy (n->prop->keys, L(n)->prop->keys);
+
+            /* if the cardinality is equal to one
+               the result is key itself */
+            if (PFprop_card (n->prop) == 1)
+                union_ (n->prop->keys, n->sem.fun_1to1.res);
+            break;
+            
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
 
@@ -349,7 +352,6 @@ infer_key (PFla_op_t *n)
                 union_ (n->prop->keys, n->sem.binary.res);
             break;
 
-        case la_num_neg:
         case la_bool_not:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);

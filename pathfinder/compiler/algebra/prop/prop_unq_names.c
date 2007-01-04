@@ -365,22 +365,19 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             }
         }   break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.fun_1to1.res, id++);
+            break;
+
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             bulk_add_name_pairs (np_list, L(n));
             new_name_pair (np_list, n->sem.binary.res, id++);
             break;
 
-        case la_num_neg:
         case la_bool_not:
             bulk_add_name_pairs (np_list, L(n));
             new_name_pair (np_list, n->sem.unary.res, id++);

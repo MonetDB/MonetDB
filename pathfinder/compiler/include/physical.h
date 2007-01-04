@@ -69,21 +69,14 @@ enum PFpa_op_kind_t {
     , pa_sort_distinct  =  24 /**< SortDistinct */
     , pa_std_sort       =  25 /**< StdSort */
     , pa_refine_sort    =  26 /**< RefineSort */
-    , pa_num_add        =  30 /**< Arithmetic + */
-    , pa_num_add_atom   =  31 /**< Arithmetic +, where one arg is an atom */
-    , pa_num_sub        =  32 /**< Arithmetic - */
-    , pa_num_sub_atom   =  33 /**< Arithmetic -, where one arg is an atom */
-    , pa_num_mult       =  34 /**< Arithmetic * */
-    , pa_num_mult_atom  =  35 /**< Arithmetic *, where one arg is an atom */
-    , pa_num_div        =  36 /**< Arithmetic / */
-    , pa_num_div_atom   =  37 /**< Arithmetic /, where one arg is an atom */
-    , pa_num_mod        =  38 /**< Arithmetic mod */
-    , pa_num_mod_atom   =  39 /**< Arithmetic mod, where one arg is an atom */
+    , pa_fun_1to1       =  30 /**< generic operator that extends the schema with
+                                   a new column where each value is determined 
+                                   by the values of a single row (cardinality 
+                                   stays the same) */
     , pa_eq             =  40 /**< Numeric or String Equality */
     , pa_eq_atom        =  41 /**< Numeric or String Equality */
     , pa_gt             =  42 /**< Numeric or String GreaterThan */
     , pa_gt_atom        =  43 /**< Numeric or String GreaterThan */
-    , pa_num_neg        =  44 /**< Numeric negation */
     , pa_bool_not       =  45 /**< Boolean negation */
     , pa_bool_and       =  46 /**< Boolean and */
     , pa_bool_or        =  47 /**< Boolean or */
@@ -136,9 +129,7 @@ enum PFpa_op_kind_t {
                                   in the recursion */
     , pa_rec_base       = 145 /**< base of the DAG describing the recursion */
     , pa_rec_border     = 146 /**< border of the DAG describing the recursion */
-    , pa_concat         = 150 /**< Concatenation of two strings (fn:concat) */
-    , pa_contains       = 151 /**< string containment check (fn:contains) */
-    , pa_string_join    = 152 /**< Concatenation of multiple strings */
+    , pa_string_join    = 150 /**< Concatenation of multiple strings */
 };
 /** algebra operator kinds */
 typedef enum PFpa_op_kind_t PFpa_op_kind_t;
@@ -198,6 +189,14 @@ union PFpa_op_sem_t {
         PFord_ordering_t existing;
     } sortby;
 
+    /* semantic content for generic (row based) function operator */
+    struct {
+        PFalg_fun_t         kind;  /**< kind of the function */
+        PFalg_att_t         res;   /**< attribute to hold the result */
+        PFalg_attlist_t     refs;  /**< list of attributes required 
+                                        to compute attribute res */
+    } fun_1to1;
+
     /* semantic content for binary (arithmetic and boolean) operators */
     struct {
         PFalg_att_t     att1;     /**< first operand */
@@ -216,7 +215,7 @@ union PFpa_op_sem_t {
 
     /**
      * semantic content for unary (numeric or Boolean) operators
-     * (e.g. numeric/Boolean negation)
+     * (e.g. Boolean negation)
      */
     struct {
         PFalg_att_t     att;      /**< argument attribute */
@@ -479,73 +478,11 @@ PFpa_op_t *PFpa_refine_sort (const PFpa_op_t *,
 
 /****************************************************************/
 
-/**
- * Arithmetic operator +.
- *
- * This generic variant expects both operands to be available as
- * columns in the argument relation. If know one of the operands
- * to be actually a constant, we may prefer PFpa_num_add_const()
- * and avoid materialization of the constant attribute.
- */
-PFpa_op_t *PFpa_num_add (const PFpa_op_t *, PFalg_att_t res,
-                         PFalg_att_t att1, PFalg_att_t att2);
-
-/**
- * Arithmetic operator -. See PFpa_num_add() for details.
- */
-PFpa_op_t *PFpa_num_sub (const PFpa_op_t *, PFalg_att_t res,
-                         PFalg_att_t att1, PFalg_att_t att2);
-
-/**
- * Arithmetic operator *. See PFpa_num_add() for details.
- */
-PFpa_op_t *PFpa_num_mult (const PFpa_op_t *, PFalg_att_t res,
-                          PFalg_att_t att1, PFalg_att_t att2);
-
-/**
- * Arithmetic operator /. See PFpa_num_add() for details.
- */
-PFpa_op_t *PFpa_num_div (const PFpa_op_t *, PFalg_att_t res,
-                         PFalg_att_t att1, PFalg_att_t att2);
-
-/**
- * Arithmetic operator mod. See PFpa_num_add() for details.
- */
-PFpa_op_t *PFpa_num_mod (const PFpa_op_t *, PFalg_att_t res,
-                         PFalg_att_t att1, PFalg_att_t att2);
-
-/**
- * Arithmetic operator +.
- *
- * This variant expects one operands to be an atomic value (which
- * is helpful if we know one attribute/argument to be constant).
- */
-PFpa_op_t *PFpa_num_add_atom (const PFpa_op_t *, PFalg_att_t res,
-                              PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
- * Arithmetic operator -. See PFpa_num_add_atom() for details.
- */
-PFpa_op_t *PFpa_num_sub_atom (const PFpa_op_t *, PFalg_att_t res,
-                              PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
- * Arithmetic operator *. See PFpa_num_add_atom() for details.
- */
-PFpa_op_t *PFpa_num_mult_atom (const PFpa_op_t *, PFalg_att_t res,
-                               PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
- * Arithmetic operator /. See PFpa_num_add_atom() for details.
- */
-PFpa_op_t *PFpa_num_div_atom (const PFpa_op_t *, PFalg_att_t res,
-                              PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
- * Arithmetic operator mod. See PFpa_num_add_atom() for details.
- */
-PFpa_op_t *PFpa_num_mod_atom (const PFpa_op_t *, PFalg_att_t res,
-                              PFalg_att_t att1, PFalg_atom_t att2);
+/** Constructor for generic operator that extends the schema 
+    with a new column where each value is determined by the values
+    of a single row (cardinality stays the same) */
+PFpa_op_t * PFpa_fun_1to1 (const PFpa_op_t *n, PFalg_fun_t kind,
+                           PFalg_att_t res, PFalg_attlist_t refs);
 
 /**
  * Comparison operator eq.
@@ -570,12 +507,6 @@ PFpa_op_t *PFpa_eq_atom (const PFpa_op_t *, PFalg_att_t res,
  */
 PFpa_op_t *PFpa_gt_atom (const PFpa_op_t *, PFalg_att_t res,
                          PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
- * Numeric negation
- */
-PFpa_op_t *PFpa_num_neg (const PFpa_op_t *,
-                         PFalg_att_t res, PFalg_att_t att);
 
 /**
  * Boolean negation
@@ -857,18 +788,6 @@ PFpa_op_t *PFpa_rec_border (const PFpa_op_t *n);
 
 /****************************************************************/
 /* operators introduced by built-in functions */
-
-/**
- * Constructor for builtin function fn:concat
- */
-PFpa_op_t * PFpa_fn_concat (const PFpa_op_t *n, PFalg_att_t res,
-                            PFalg_att_t att1, PFalg_att_t att2);
-
-/**
- * Constructor for builtin function fn:contains
- */
-PFpa_op_t * PFpa_fn_contains (const PFpa_op_t *n, PFalg_att_t res,
-                              PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * Concatenation of multiple strings (using seperators)

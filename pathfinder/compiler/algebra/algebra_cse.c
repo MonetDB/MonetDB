@@ -214,23 +214,29 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return a->sem.select.att == b->sem.select.att;
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            if (a->sem.fun_1to1.kind        != b->sem.fun_1to1.kind      ||
+                a->sem.fun_1to1.res         != b->sem.fun_1to1.res       ||
+                a->sem.fun_1to1.refs.count  != b->sem.fun_1to1.refs.count)
+                return false;
+            
+            for (unsigned int i = 0; i < a->sem.fun_1to1.refs.count; i++)
+                if (a->sem.fun_1to1.refs.atts[i] != 
+                    b->sem.fun_1to1.refs.atts[i])
+                    return false;
+                    
+            return true;
+            break;
+            
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             return (a->sem.binary.att1 == b->sem.binary.att1
                     && a->sem.binary.att2 == b->sem.binary.att2
                     && a->sem.binary.res == b->sem.binary.res);
             break;
 
-        case la_num_neg:
         case la_bool_not:
             return (a->sem.unary.att == b->sem.unary.att
                     && a->sem.unary.res == b->sem.unary.res);

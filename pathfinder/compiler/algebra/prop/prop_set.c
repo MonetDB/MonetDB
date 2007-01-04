@@ -101,18 +101,11 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_attach:
         case la_project:
         case la_select:
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
-        case la_num_neg:
         case la_bool_not:
         case la_type:
         case la_cast:

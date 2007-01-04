@@ -1387,10 +1387,6 @@ reduce (PFcnode_t * p, int goalnt)
                     algty = aat_int;
                     atom = lit_int (0);
                 }
-                else if (PFty_equality (t, PFty_xs_decimal ())) {
-                    algty = aat_dec;
-                    atom = lit_dec (0);
-                }
                 else if (PFty_subtype (t, PFty_xs_decimal ())) {
                     algty = aat_dec;
                     atom = lit_dec (0);

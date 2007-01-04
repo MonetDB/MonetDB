@@ -662,29 +662,55 @@ opt_mvd (PFla_op_t *p)
         }
         break;
         
-    case la_num_add:
-        modified = modify_binary_op (p, PFla_add);
+    case la_fun_1to1:
+        if (is_cross (L(p))) {
+            bool switch_left = true;
+            bool switch_right = true;
+
+            for (unsigned int i = 0; i < p->sem.fun_1to1.refs.count; i++) {
+                switch_left  = switch_left &&
+                               att_present (LL(p),
+                                            p->sem.fun_1to1.refs.atts[i]);
+                switch_right = switch_left &&
+                               att_present (LR(p),
+                                            p->sem.fun_1to1.refs.atts[i]);
+            }
+                               
+            if (switch_left && switch_right) {
+                *p = *(cross_can (fun_1to1 (LL(p),
+                                            p->sem.fun_1to1.kind,
+                                            p->sem.fun_1to1.res,
+                                            p->sem.fun_1to1.refs),
+                                  fun_1to1 (LR(p),
+                                            p->sem.fun_1to1.kind,
+                                            p->sem.fun_1to1.res,
+                                            p->sem.fun_1to1.refs)));
+                modified = true;
+            }
+            else if (switch_left) {
+                *p = *(cross_can (fun_1to1 (LL(p),
+                                            p->sem.fun_1to1.kind,
+                                            p->sem.fun_1to1.res,
+                                            p->sem.fun_1to1.refs),
+                                  LR(p)));
+                modified = true;
+            }
+            else if (switch_right) {
+                *p = *(cross_can (LL(p),
+                                  fun_1to1 (LR(p),
+                                            p->sem.fun_1to1.kind,
+                                            p->sem.fun_1to1.res,
+                                            p->sem.fun_1to1.refs)));
+                modified = true;
+            }
+        }
         break;
-    case la_num_subtract:
-        modified = modify_binary_op (p, PFla_subtract);
-        break;
-    case la_num_multiply:
-        modified = modify_binary_op (p, PFla_multiply);
-        break;
-    case la_num_divide:
-        modified = modify_binary_op (p, PFla_divide);
-        break;
-    case la_num_modulo:
-        modified = modify_binary_op (p, PFla_modulo);
-        break;
+
     case la_num_eq:
         modified = modify_binary_op (p, PFla_eq);
         break;
     case la_num_gt:
         modified = modify_binary_op (p, PFla_gt);
-        break;
-    case la_num_neg:
-        modified = modify_unary_op (p, PFla_neg);
         break;
     case la_bool_and:
         modified = modify_binary_op (p, PFla_and);
@@ -1470,16 +1496,6 @@ opt_mvd (PFla_op_t *p)
         break;
 
     case la_proxy_base:
-        break;
-
-    case la_concat:
-        modified = modify_binary_op (p, PFla_fn_concat);
-        break;
-        
-    case la_contains:
-        modified = modify_binary_op (p, PFla_fn_contains);
-        break;
-
     case la_string_join:
     case la_dummy:
         break;

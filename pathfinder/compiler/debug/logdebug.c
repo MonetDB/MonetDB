@@ -63,14 +63,9 @@ static char *a_id[]  = {
     , [la_intersect]        = "INTERSECT"
     , [la_difference]       = "DIFF"             /* \"#FFA500\" */
     , [la_distinct]         = "DISTINCT"         /* indian \"#FF0000\" */
-    , [la_num_add]          = "num-add"
-    , [la_num_subtract]     = "num_subtr"
-    , [la_num_multiply]     = "num-mult"
-    , [la_num_divide]       = "num-div"
-    , [la_num_modulo]       = "num-mod"
+    , [la_fun_1to1]         = "1:1 fun"
     , [la_num_eq]           = "="
     , [la_num_gt]           = ">"
-    , [la_num_neg]          = "-"
     , [la_bool_and ]        = "AND"
     , [la_bool_or ]         = "OR"
     , [la_bool_not]         = "NOT"
@@ -110,8 +105,6 @@ static char *a_id[]  = {
     , [la_rec_base]         = "rec base"
     , [la_proxy]            = "PROXY"
     , [la_proxy_base]       = "PROXY_BASE"
-    , [la_concat]           = "fn:concat"
-    , [la_contains]         = "fn:contains"
     , [la_string_join]      = "fn:string_join"
     , [la_dummy]            = "DUMMY"
 };
@@ -131,14 +124,9 @@ static char *xml_id[]  = {
     , [la_intersect]        = "intersect"
     , [la_difference]       = "difference"
     , [la_distinct]         = "distinct"
-    , [la_num_add]          = "num-add"
-    , [la_num_subtract]     = "num_subtr"
-    , [la_num_multiply]     = "num-mult"
-    , [la_num_divide]       = "num-div"
-    , [la_num_modulo]       = "num-mod"
+    , [la_fun_1to1]         = "fun"
     , [la_num_eq]           = "eq"
     , [la_num_gt]           = "gt"
-    , [la_num_neg]          = "negate"
     , [la_bool_and ]        = "and"
     , [la_bool_or ]         = "or"
     , [la_bool_not]         = "not"
@@ -178,25 +166,8 @@ static char *xml_id[]  = {
     , [la_rec_base]         = "rec_base"
     , [la_proxy]            = "PROXY"
     , [la_proxy_base]       = "PROXY_BASE"
-    , [la_concat]           = "fn:concat"
-    , [la_contains]         = "fn:contains"
     , [la_string_join]      = "fn:string_join"
     , [la_dummy]            = "DUMMY"
-};
-
-/** string representation of algebra atomic types */
-static char *atomtype[] = {
-      [aat_nat]   = "nat"
-    , [aat_int]   = "int"
-    , [aat_str]   = "str"
-    , [aat_uA]    = "uA"
-    , [aat_node]  = "node"
-    , [aat_anode] = "attr"
-    , [aat_pnode] = "pnode"
-    , [aat_dec]   = "dec"
-    , [aat_dbl]   = "dbl"
-    , [aat_bln]   = "bool"
-    , [aat_qname] = "qname"
 };
 
 static char *
@@ -251,38 +222,38 @@ xml_literal (PFalg_atom_t a)
     if (a.type == aat_nat)
         PFarray_printf (
            s, "<value type=\"%s\">%u</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.nat_);
     else if (a.type == aat_int)
         PFarray_printf (
            s, "<value type=\"%s\">%lld</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.int_);
     else if (a.type == aat_str || a.type == aat_uA)
         PFarray_printf (
            s, "<value type=\"%s\">%s</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            PFesc_string (a.val.str));
     else if (a.type == aat_dec)
         PFarray_printf (
            s, "<value type=\"%s\">%g</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.dec_);
     else if (a.type == aat_dbl)
         PFarray_printf (
            s, "<value type=\"%s\">%g</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.dbl);
     else if (a.type == aat_bln)
         PFarray_printf (
            s, "<value type=\"%s\">%s</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            a.val.bln ?
                "true" : "false");
     else if (a.type == aat_qname)
         PFarray_printf (
            s, "<value type=\"%s\">%s</value>",
-           atomtype[a.type],
+           PFalg_simple_type_str (a.type),
            PFqname_str (a.val.qname));
     else
         PFarray_printf (s, "<value type=\"node\"/>");
@@ -317,14 +288,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_intersect]      = "\"#FFA500\""
         , [la_difference]     = "\"#FFA500\""
         , [la_distinct]       = "\"#FFA500\""
-        , [la_num_add]        = "\"#C0C0C0\""
-        , [la_num_subtract]   = "\"#C0C0C0\""
-        , [la_num_multiply]   = "\"#C0C0C0\""
-        , [la_num_divide]     = "\"#C0C0C0\""
-        , [la_num_modulo]     = "\"#C0C0C0\""
+        , [la_fun_1to1]       = "\"#C0C0C0\""
         , [la_num_eq]         = "\"#00DDDD\""
         , [la_num_gt]         = "\"#00DDDD\""
-        , [la_num_neg]        = "\"#C0C0C0\""
         , [la_bool_and ]      = "\"#C0C0C0\""
         , [la_bool_or ]       = "\"#C0C0C0\""
         , [la_bool_not]       = "\"#C0C0C0\""
@@ -364,8 +330,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_rec_base]       = "\"#BB00BB\""
         , [la_proxy]          = "\"#DFFFFF\""
         , [la_proxy_base]     = "\"#DFFFFF\""
-        , [la_concat]         = "\"#C0C0C0\""
-        , [la_contains]       = "\"#C0C0C0\""
         , [la_string_join]    = "\"#C0C0C0\""
         , [la_dummy]          = "\"#FFFFFF\""
     };
@@ -468,24 +432,27 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.select.att));
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            PFarray_printf (dot, "%s [%s] (%s:<", a_id[n->kind],
+                            PFalg_fun_str (n->sem.fun_1to1.kind),
+                            PFatt_str (n->sem.fun_1to1.res));
+            for (c = 0; c < n->sem.fun_1to1.refs.count;c++)
+                PFarray_printf (dot, "%s%s", 
+                                c ? ", " : "",
+                                PFatt_str (n->sem.fun_1to1.refs.atts[c]));
+            PFarray_printf (dot, ">)");
+            break;
+            
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
                             PFatt_str (n->sem.binary.att2));
             break;
 
-        case la_num_neg:
         case la_bool_not:
             PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                             PFatt_str (n->sem.unary.res),
@@ -561,28 +528,16 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
             break;
 
         case la_type:
-            if (atomtype[n->sem.type.ty])
-                PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
-                                PFatt_str (n->sem.type.res),
-                                PFatt_str (n->sem.type.att),
-                                atomtype[n->sem.type.ty]);
-            else
-                PFarray_printf (dot, "%s (%s:<%s>), type: %i", a_id[n->kind],
-                                PFatt_str (n->sem.type.res),
-                                PFatt_str (n->sem.type.att),
-                                n->sem.type.ty);
+            PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
+                            PFatt_str (n->sem.type.res),
+                            PFatt_str (n->sem.type.att),
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case la_type_assert:
-            if (atomtype[n->sem.type.ty])
-                PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
-                                PFatt_str (n->sem.type.att),
-                                atomtype[n->sem.type.ty]);
-            else
-                PFarray_printf (dot, "%s (%s), type: %i", a_id[n->kind],
-                                PFatt_str (n->sem.type.att),
-                                n->sem.type.ty);
-                
+            PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
+                            PFatt_str (n->sem.type.att),
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case la_cast:
@@ -591,7 +546,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             n->sem.type.res?":<":"",
                             PFatt_str (n->sem.type.att),
                             n->sem.type.res?">":"",
-                            atomtype[n->sem.type.ty]);
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case la_scjoin:
@@ -1239,17 +1194,33 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.select.att));
             break;
 
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
+        case la_fun_1to1:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <kind name=\"%s\"/>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the operation"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.fun_1to1.kind),
+                            PFatt_str (n->sem.fun_1to1.res));
+            
+            for (c = 0; c < n->sem.fun_1to1.refs.count; c++)
+                PFarray_printf (xml,
+                                "      <column name=\"%s\" new=\"false\">\n"
+                                "        <annotation>%i. argument"
+                                        "</annotation>\n"
+                                "      </column>\n",
+                                PFatt_str (n->sem.fun_1to1.refs.atts[c]),
+                                c + 1);
+                        
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
         case la_num_eq:
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-        case la_concat:
-        case la_contains:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"true\">\n"
@@ -1270,7 +1241,6 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.binary.att2));
             break;
 
-        case la_num_neg:
         case la_bool_not:
             PFarray_printf (xml,
                             "    <content>\n"
@@ -1407,26 +1377,15 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "      <column name=\"%s\" new=\"false\">\n"
                             "        <annotation>argument"
                                     "</annotation>\n"
-                            "      </column>\n",
+                            "      </column>\n"
+                            "      <type name=\"%s\">\n"
+                            "        <annotation>type to check"
+                                    "</annotation>\n"
+                            "      </type>\n"
+                            "    </content>\n",
                             PFatt_str (n->sem.type.res),
-                            PFatt_str (n->sem.type.att));
-
-            if (atomtype[n->sem.type.ty])
-                PFarray_printf (xml, 
-                                "      <type name=\"%s\">\n"
-                                "        <annotation>type to check"
-                                        "</annotation>\n"
-                                "      </type>\n",
-                                atomtype[n->sem.type.ty]);
-            else
-                PFarray_printf (xml, 
-                                "      <type name=\"%i\">\n"
-                                "        <annotation>type to check"
-                                        "</annotation>\n"
-                                "      </type>\n",
-                                n->sem.type.ty);
-
-            PFarray_printf (xml, "    </content>\n");
+                            PFatt_str (n->sem.type.att),
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case la_type_assert:
@@ -1435,25 +1394,14 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "      <column name=\"%s\" new=\"false\">\n"
                             "        <annotation>column to assign "
                                     "more explicit type</annotation>\n"
-                            "      </column>\n",
-                            PFatt_str (n->sem.type.att));
-
-            if (atomtype[n->sem.type.ty])
-                PFarray_printf (xml, 
-                                "      <type name=\"%s\">\n"
-                                "        <annotation>type to assign"
-                                        "</annotation>\n"
-                                "      </type>\n",
-                                atomtype[n->sem.type.ty]);
-            else
-                PFarray_printf (xml, 
-                                "      <type name=\"%i\">\n"
-                                "        <annotation>type to assign"
-                                        "</annotation>\n"
-                                "      </type>\n",
-                                n->sem.type.ty);
-
-            PFarray_printf (xml, "    </content>\n");
+                            "      </column>\n"
+                            "      <type name=\"%s\">\n"
+                            "        <annotation>type to assign"
+                                    "</annotation>\n"
+                            "      </type>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.type.att),
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case la_cast:
@@ -1474,7 +1422,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "    </content>\n",
                             PFatt_str (n->sem.type.res),
                             PFatt_str (n->sem.type.att),
-                            atomtype[n->sem.type.ty]);
+                            PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case la_scjoin:

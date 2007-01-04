@@ -80,7 +80,8 @@
 /** RefineSort */
 #define refine_sort(a,b,c) PFpa_refine_sort ((a), (b), (c))
 
-#define num_neg(a,b,c)  PFpa_num_neg ((a), (b), (c))
+#define fun_1to1(a,b,c,d) PFpa_fun_1to1 ((a), (b), (c), (d))
+
 #define bool_not(a,b,c) PFpa_bool_not ((a), (b), (c))
 
 #define hash_count(a,b,c) PFpa_hash_count ((a), (b), (c))

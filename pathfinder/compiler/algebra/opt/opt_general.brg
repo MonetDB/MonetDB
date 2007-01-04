@@ -88,14 +88,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  intersect      =  11
 %term  difference     =  12
 %term  distinct       =  13
-%term  num_add        =  20
-%term  num_subtract   =  21
-%term  num_multiply   =  22
-%term  num_divide     =  23
-%term  num_modulo     =  24
+%term  fun_1to1       =  20
 %term  num_eq         =  25
 %term  num_gt         =  26
-%term  num_neg        =  27
 %term  bool_and       =  28
 %term  bool_or        =  29
 %term  bool_not       =  30
@@ -133,8 +128,6 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  rec_nil        =  83
 %term  rec_arg        =  84
 %term  rec_base       =  85
-%term  concat         = 100
-%term  contains       = 101
 %term  string_join    = 102
 %term  dummy          = 120
 
@@ -161,12 +154,7 @@ Rel:    difference (Rel, Rel)                     =  24 (10);
 Rel:    difference (Rel, EmptyRel)                =  25  (5);
 Rel:    distinct (Rel)                            =  26 (10);
 Rel:    distinct (scjoin (Frag, Rel))             =  27 (5);
-Rel:    num_add (Rel)                             =  30 (10);
-Rel:    num_subtract (Rel)                        =  31 (10);
-Rel:    num_multiply (Rel)                        =  32 (10);
-Rel:    num_divide (Rel)                          =  33 (10);
-Rel:    num_modulo (Rel)                          =  34 (10);
-Rel:    num_neg (Rel)                             =  35 (10);
+Rel:    fun_1to1 (Rel)                            =  30 (10);
 Rel:    num_gt (Rel)                              =  36 (10);
 Rel:    num_eq (Rel)                              =  37 (10);
 Rel:    bool_and (Rel)                            =  38 (10);
@@ -213,8 +201,6 @@ Rec:    rec_param (Arg, Rec)                      =  83 (10);
 Rec:    rec_nil                                   =  84 (10);
 Arg:    rec_arg (Rel, Rel)                        =  85 (10);
 
-Rel:    concat (Rel)                              =  86 (10);
-Rel:    contains (Rel)                            =  87 (10);
 Rel:    string_join (Rel, Rel)                    =  88 (10);
 Rel:    dummy (Rel)                               =  89 (10);
 
@@ -252,12 +238,7 @@ EmptyRel:    intersect (EmptyRel, Rel)            = 131  (0);
 EmptyRel:    intersect (Rel, EmptyRel)            = 132  (0);
 EmptyRel:    difference (EmptyRel, Rel)           = 133  (0);
 EmptyRel:    distinct (EmptyRel)                  = 134  (0);
-EmptyRel:    num_add (EmptyRel)                   = 140  (0);
-EmptyRel:    num_subtract (EmptyRel)              = 141  (0);
-EmptyRel:    num_multiply (EmptyRel)              = 142  (0);
-EmptyRel:    num_divide (EmptyRel)                = 143  (0);
-EmptyRel:    num_modulo (EmptyRel)                = 144  (0);
-EmptyRel:    num_neg (EmptyRel)                   = 145  (0);
+EmptyRel:    fun_1to1 (EmptyRel)                  = 140  (0);
 EmptyRel:    num_gt (EmptyRel)                    = 146  (0);
 EmptyRel:    num_eq (EmptyRel)                    = 147  (0);
 EmptyRel:    bool_and (EmptyRel)                  = 148  (0);
@@ -289,7 +270,6 @@ EmptyRel:    roots_ (processi (EmptyRel))         = 186  (0);
 EmptyRel:    roots_ (merge_adjacent (Frag,                   
                                      EmptyRel))   = 187  (0);
 EmptyRel:    cond_err (EmptyRel, Rel)             = 190  (0);
-EmptyRel:    concat (EmptyRel)                    = 200  (0);
 EmptyRel:    string_join (EmptyRel, Rel)          = 201  (0);
 EmptyRel:    dummy (EmptyRel)                     = 202  (0);
 
@@ -1052,18 +1032,8 @@ reduce (PFla_op_t *p, int goalnt)
         case 133:
         /* EmptyRel:    distinct (EmptyRel) */
         case 134:
-        /* EmptyRel:    num_add (EmptyRel) */
+        /* EmptyRel:    fun_1to1 (EmptyRel) */
         case 140:
-        /* EmptyRel:    num_subtract (EmptyRel) */
-        case 141:
-        /* EmptyRel:    num_multiply (EmptyRel) */
-        case 142:
-        /* EmptyRel:    num_divide (EmptyRel) */
-        case 143:
-        /* EmptyRel:    num_modulo (EmptyRel) */
-        case 144:
-        /* EmptyRel:    num_neg (EmptyRel) */
-        case 145:
         /* EmptyRel:    num_gt (EmptyRel) */
         case 146:
         /* EmptyRel:    num_eq (EmptyRel) */
@@ -1118,8 +1088,6 @@ reduce (PFla_op_t *p, int goalnt)
         case 187:
         /* EmptyRel:    cond_err (EmptyRel, Rel) */
         case 190:
-        /* EmptyRel:    concat (EmptyRel) */
-        case 200:
         /* EmptyRel:    string_join (EmptyRel, Rel) */
         case 201:
         /* EmptyRel:    dummy (EmptyRel) */

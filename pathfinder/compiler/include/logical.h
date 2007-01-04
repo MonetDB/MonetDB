@@ -64,14 +64,12 @@ enum PFla_op_kind_t {
     , la_intersect      = 11 /**< intersect two relations with same schema */
     , la_difference     = 12 /**< difference of two relations w/ same schema */
     , la_distinct       = 13 /**< duplicate elimination operator */
-    , la_num_add        = 20 /**< arithmetic plus operator */
-    , la_num_subtract   = 21 /**< arithmetic minus operator */
-    , la_num_multiply   = 22 /**< arithmetic times operator */
-    , la_num_divide     = 23 /**< arithmetic divide operator */
-    , la_num_modulo     = 24 /**< arithmetic modulo operator */
+    , la_fun_1to1       = 20 /**< generic operator that extends the schema with
+                                  a new column where each value is determined 
+                                  by the values of a single row (cardinality 
+                                  stays the same) */
     , la_num_eq         = 25 /**< numeric equal operator */
     , la_num_gt         = 26 /**< numeric greater-than operator */
-    , la_num_neg        = 27 /**< numeric negation operator */
     , la_bool_and       = 28 /**< boolean AND operator */
     , la_bool_or        = 29 /**< boolean OR operator */
     , la_bool_not       = 30 /**< boolean NOT operator */
@@ -130,8 +128,6 @@ enum PFla_op_kind_t {
     , la_cross_mvd      = 98 /**< clone column aware cross product */
     , la_eqjoin_unq     = 99 /**< clone column aware equi-join */                            
     /* builtin support for XQuery functions */
-    , la_concat         =100 /**< fn:concat */
-    , la_contains       =101 /**< fn:contains */
     , la_string_join    =102 /**< fn:string-join */
 
     , la_dummy          =120 /**< dummy operator that does nothing */
@@ -184,6 +180,14 @@ union PFla_op_sem_t {
     struct {
         PFalg_att_t     att;     /**< name of selected attribute */
     } select;
+
+    /* semantic content for generic (row based) function operator */
+    struct {
+        PFalg_fun_t         kind;  /**< kind of the function */
+        PFalg_att_t         res;   /**< attribute to hold the result */
+        PFalg_attlist_t     refs;  /**< list of attributes required 
+                                        to compute attribute res */
+    } fun_1to1;
 
     /* semantic content for binary (arithmetic and boolean) operators */
     struct {
@@ -521,6 +525,12 @@ PFla_op_t * PFla_difference (const PFla_op_t *, const PFla_op_t *);
 /** Constructor for duplicate elimination operator. */
 PFla_op_t * PFla_distinct (const PFla_op_t *n);
 
+/** Constructor for generic operator that extends the schema 
+    with a new column where each value is determined by the values
+    of a single row (cardinality stays the same) */
+PFla_op_t * PFla_fun_1to1 (const PFla_op_t *n, PFalg_fun_t kind,
+                           PFalg_att_t res, PFalg_attlist_t refs);
+
 /** Constructor for arithmetic addition operators. */
 PFla_op_t * PFla_add (const PFla_op_t *n, PFalg_att_t res,
                       PFalg_att_t att1, PFalg_att_t att2);
@@ -548,10 +558,6 @@ PFla_op_t * PFla_eq (const PFla_op_t *n, PFalg_att_t res,
 /** Constructor for numeric greater-than operators. */
 PFla_op_t * PFla_gt (const PFla_op_t *n, PFalg_att_t res,
                      PFalg_att_t att1, PFalg_att_t att2);
-
-/** Constructor for numeric negation operators. */
-PFla_op_t * PFla_neg (const PFla_op_t *n, PFalg_att_t res,
-                      PFalg_att_t att);
 
 /** Constructor for boolean AND operators. */
 PFla_op_t * PFla_and (const PFla_op_t *n, PFalg_att_t res,
@@ -855,18 +861,6 @@ PFla_op_t *PFla_proxy2 (const PFla_op_t *n, unsigned int kind,
 PFla_op_t *PFla_proxy_base (const PFla_op_t *n);
 
 /****************** built-in functions **************************/
-
-/**
- * Constructor for builtin function fn:concat
- */
-PFla_op_t * PFla_fn_concat (const PFla_op_t *n, PFalg_att_t res,
-                            PFalg_att_t att1, PFalg_att_t att2);
-
-/**
- * Constructor for builtin function fn:contains
- */
-PFla_op_t * PFla_fn_contains (const PFla_op_t *n, PFalg_att_t res,
-                              PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * Constructor for builtin function fn:string-join
