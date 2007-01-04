@@ -21,8 +21,6 @@ EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		rpm.mk.in RunMserver.bat.in
 EXTRA_DIST_DIR = NT
 
-EXTRA_HEADERS = sql_config.h
-
 headers_pc = {
 	HEADERS = pc
 	SOURCES	= MonetDB-SQL.pc.in

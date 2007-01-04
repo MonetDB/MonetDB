@@ -20,8 +20,10 @@ rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 
 @HAVE_PYTHON_SWIG_FALSE@python=--without python
 @HAVE_PYTHON_SWIG_TRUE@python=--with python
-@HAVE_JAVA_FALSE@java=--without java
-@HAVE_JAVA_TRUE@java=--with java
+@HAVE_MONETDB4_FALSE@monetdb4=--without monetdb4
+@HAVE_MONETDB4_TRUE@monetdb4=--with monetdb4
+@HAVE_MONETDB5_FALSE@monetdb5=--without monetdb5
+@HAVE_MONETDB5_TRUE@monetdb5=--with monetdb5
 
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
@@ -42,7 +44,7 @@ rpm:	MonetDB-SQL.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
-	$(RPMBUILD) ${python} ${java} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) ${python} ${monetdb4} ${monetdb5} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done

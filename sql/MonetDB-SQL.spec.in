@@ -15,6 +15,9 @@ Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 Requires: python
 
+%{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
+%{!?_with_monetdb4: %{!?_without_monetdb4: %define _with_monetdb4 --with-monetdb4}}
+%{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 %{!?buildsystem: %define buildsystem 0}
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel, MonetDB-client-devel 
@@ -31,9 +34,25 @@ BuildRequires: MonetDB-devel, MonetDB-client-devel
 %define bits 64
 %endif
 
+%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
 %package server
 Summary: MonetDB SQL server modules
 Group: System 
+
+%description server
+Add the MonetDB SQL server module description here
+Requires: MonetDB-server>=4.0<5
+%endif
+
+%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
+%package server
+Summary: MonetDB SQL server modules
+Group: System 
+
+%description server
+Add the MonetDB SQL server module description here
+Requires: MonetDB-server>5.0
+%endif
 
 %package devel
 Summary: MonetDB SQL development package 
@@ -44,10 +63,6 @@ MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
-
-%description server
-Add the MonetDB SQL server module description here
-Requires: MonetDB-server
 
 %description devel
 Add the MonetDB devel description here
@@ -68,7 +83,10 @@ rm -rf $RPM_BUILD_ROOT
 	CC="%{comp_cc}" \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
-	--with-monet=%{prefix} 
+	--with-monetdb=%{prefix} \
+	--with-clients=%{prefix} \
+	%{?_with_monetdb4} %{?_without_monetdb4} \
+	%{?_with_monetdb5} %{?_without_monetdb5} 
 
 make
 
@@ -81,7 +99,8 @@ make install \
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
-rm -rf $RPM_BUILD_ROOT%{_libdir}/python2.4
+rm -rf $RPM_BUILD_ROOT%{_libdir}/python*
+rm -rf $RPM_BUILD_ROOT%{prefix}/include/sql
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
@@ -92,17 +111,26 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root) 
 %{_datadir}/MonetDB/sql/*
+%{_datadir}/doc/%{name}-%{version}/*
 
+%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
 %files server
 %defattr(-,root,root) 
 %{prefix}/bin/Mbeddedsql
 %{_libdir}/libembeddedsql.*
 %{_libdir}/MonetDB4/lib/lib_sql_server*
 %{_libdir}/MonetDB4/*.mil
-%{_datadir}/doc/%{name}-%{version}/*
+%endif
+
+%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
+%files server
+%defattr(-,root,root) 
+#%{prefix}/bin/Mbeddedsql
+#%{_libdir}/libembeddedsql.*
+%{_libdir}/MonetDB5/lib/lib_sql*
+%{_libdir}/MonetDB5/*.mal
+%endif
 
 %files devel
 %defattr(-,root,root) 
-%{prefix}/include/*.h
-%{prefix}/include/sql/*.h
 %{_libdir}/pkgconfig/MonetDB-SQL.pc
