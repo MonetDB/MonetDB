@@ -1,7 +1,7 @@
 
 scripts_sql = {
 	EXT = sql
-	DIR = pkgdatadir
+	DIR = datadir/MonetDB/sql
 	SOURCES = \
 		bbp.sql stats.sql cache.sql math.sql mtime.sql url.sql \
 		dependency_functions.sql ms_functions.sql

@@ -16,8 +16,8 @@
 
 MTSAFE
 
-SWIGFLAGS = $(MONETDB_INCS) $(MONETDBCLIENTS_INCS)
-INCLUDES = $(MONETDB_INCS) $(MONETDBCLIENTS_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
+SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
+INCLUDES = $(MONETDB_INCS) $(CLIENTS_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
 
 # with gcc we could use these
 #X_CFLAGS = -Wno-unused-parameter -Wno-unused-function
@@ -71,22 +71,22 @@ bin_Mserver = {
 lib_embeddedsql = {
 	SOURCES = embeddedclient.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(MONETDBCLIENTS_LIBS) -lMapi
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
 
 bin_Mbeddedsql = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedsql \
-		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(MONETDBCLIENTS_LIBS) -lMapi
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
 
 bin_embeddedExample = {
 	SOURCES = embeddedExample.c
-	DIR = pkglibdir/Tests
+	DIR = libdir/MonetDB4/Tests
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedsql \
-		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(MONETDBCLIENTS_LIBS) -lMapi
+		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
 
 scripts_h = {
@@ -100,7 +100,7 @@ lib_monetdb = {
 	PREFIX =
 	NAME = _monetdb
 	SOURCES = monetdb.py.i
-	LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lmutils -lstream $(MONETDBCLIENTS_LIBS) -lMapi
+	LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lmutils -lstream $(CLIENTS_LIBS) -lMapi
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
