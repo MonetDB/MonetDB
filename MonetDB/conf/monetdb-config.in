@@ -40,14 +40,14 @@ pkgincludedir="${includedir}/${pkg}"
 usage()
 {
     cat <<EOF
-Usage: monetdb-config [OPTION]
+Usage: `basename $0` [OPTION]
 
 Known values for OPTION are:
 
-  --build		print monet build directory
-  --source		print monet source directory
-  --libs		print Monet library linking information
-  --cflags		print Monet module pre-processor and compiler flags
+  --build		print ${pkg} build directory
+  --source		print ${pkg} source directory
+  --libs		print ${pkg} library linking information
+  --cflags		print ${pkg} module pre-processor and compiler flags
   --help		display this help and exit
   --version		output version information
 
