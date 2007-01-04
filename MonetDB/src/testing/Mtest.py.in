@@ -2531,7 +2531,7 @@ def MonetDBVersion(monetdb_config):
         res = pOut.readlines()[0]
         res = res.strip();
         pOut.close()
-        (x,y,z) = res.split('.',2)
+        (x,y,z) = res.split('.',3)[:3]
         z = z.split('_',1)[0]
         return ((int(x)*100) + int(y)) * 100 + int(z)
     except:
@@ -2777,7 +2777,7 @@ def main(argv) :
     if par['M5']:
         env['VERSION'] = MonetDBVersion("monetdb5-config")
     else:
-        env['VERSION'] = MonetDBVersion("monetdb-config")
+        env['VERSION'] = MonetDBVersion("monetdb4-config")
 
     # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
     # hence, we set then at runtime.
