@@ -53,6 +53,9 @@
 .COMMAND tj_create_termdb(int, oid) : void = CMDtj_create_termdb;
  "INCOMPLETE"
 
+.COMMAND tj_dispose_termdb() : void = CMDtj_dispose_termdb;
+ "INCOMPLETE"
+
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
                       int	    niters,
@@ -920,6 +923,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      }
      if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
      var t4 := time();
+
      printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
      return res;
 }
@@ -967,7 +971,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) 
      }
      if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
      var t4 := time();
-     printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
+     stream_printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
      return res;
 }
 
@@ -2113,6 +2117,8 @@ extern int pftijah_debug;
 #define SET_TDEBUG(V)
 #define TDEBUG(V) 0
 #endif
+
+#define TJ_TIMINGS 777
 
 @c
 #include <pf_config.h>

@@ -379,7 +379,7 @@ tj_termOid(tjCtx* tjctx, char *t) {
     	return oid_nil;
     }
     if ( res != to ) {
-    	stream_printf(GDKout,"#ERROR: term \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
+    	stream_printf(GDKout,"#ERROR: term \"%s\" has org(" OIDFMT ") and termdb(" OIDFMT ").\n",t,res,to);
     } else {
     	if ( 0 ) stream_printf(GDKout,"#OK: term \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
     }
@@ -686,22 +686,36 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	/* */
 	res->tagStackPtr = 0;
 
+#ifdef USE_TERMDB
+	if ( tdb_isEmpty(res->tdb) ) {
+	     if ( tdb_lookupTerm(res->tdb,(char*)stopwordMarker) == oid_nil )
+	     	     return NULL;
+	}
+#endif
 	/*
 	 * Finally ensure there are accellerators on the Term and Tag dictionaries
 	 */
 	res->hm_globalTerm = BATmirror(res->b_globalTerm);
+
 	if ( res->n_globalTerm == 0 ) {
 	     oid zero = 0;
 	     if ( !BUNins(res->b_globalTerm, &zero, (str)stopwordMarker, FALSE)){
 	             return NULL;
 	     }
 	     res->n_globalTerm++;
+
 #ifdef TJ_TRACE
 	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:INSERTED STOPWORDMARKER IN GLOBALTERM\n",res->name);
 #endif
 	     if ( res->checkStopWords ) {
 		 for(int i=0; res->stemCtx->stopWords[i]; i++) {
 		     str sw = (str)res->stemCtx->stopWords[i];
+		     /* INCOMPLETE, store it with 0 in termDB */
+#ifdef USE_TERMDB
+	             if ( !tdb_insertTerm(res->tdb,(char*)sw, zero, 0) ) {
+		         return NULL;
+		     }
+#endif
 	             if ( !BUNins(res->b_globalTerm, &zero, sw, FALSE)){
 	                 return NULL;
 	             }
@@ -709,7 +723,6 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	             if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:ADDED STOPWORD \"%s\" to GLOBALTERM\n",res->name,sw);
 #endif
 		     }
-	             res->n_globalTerm++;
 	     }
 	}
 	if ( res->b_globalTerm->thash == NULL ) {
