@@ -6,17 +6,23 @@ goto end
 
 :skip
 
-set builddir=@MONETDB_BUILD@
-set srcdir=@MONETDB_SOURCE@
+setlocal
 
-set MOD_PATH=%builddir%\runtime;%builddir%\modules\pftijah;@MONETDB_PREFIX@\lib\MonetDB
+set monetdb4_prefix=@MONETDB4_PREFIX@
+set builddir=@PATHFINDER_BUILD@
+set srcdir=@PATHFINDER_SOURCE@
 
-set PATH=%builddir%\compiler;@MONETDB_PREFIX@\bin;@MONETDB_PREFIX@\lib;%PATH%
+set MOD_PATH=%builddir%\runtime\.libs;%builddir%\runtime;%builddir%\modules\pftijah\.libs;%builddir%\modules\pftijah;%monetdb4_prefix%\lib\MonetDB4;%monetdb4_prefix%\lib\MonetDB4\lib;%monetdb4_prefix%\lib\MonetDB4\bin
+
+set PATH=%builddir%\compiler;%PATH%
 set PATH=%MOD_PATH%;%PATH%
 
 REM execute Mtest.py in the source directory
-cd %srcdir%
+pushd %srcdir%
 
-call python "@MONETDB_PREFIX@\bin\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--PF_PREFIX=%builddir%" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--dbfarm=%builddir%\dbfarm" %*
+call Mtest.py "--config=%monetdb4_prefix%\etc\MonetDB.conf" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" %*
+
+popd
+endlocal
 
 :end

@@ -2,14 +2,13 @@
 
 setlocal
 
-set monetdbdir=@MONETDB_PREFIX@
-set pfdir=@PF_BUILD@
+set monetdb4_prefix=@MONETDB4_PREFIX@
+set builddir=@PATHFINDER_BUILD@
 set xml2dir=C:\Documents and Settings\sjoerd\My Documents\src\libxml2-2.6.17.win32
 
-set MOD_PATH=%pfdir%\runtime;%monetdbdir%\lib\MonetDB
+set MOD_PATH=%builddir%\runtime\.libs;%builddir%\runtime;%monetdb4_prefix%\lib\MonetDB4;%monetdb4_prefix%\lib\MonetDB4\lib;%monetdb4_prefix%\lib\MonetDB4\bin
+set PATH=%MOD_PATH%;%xml2dir%\bin;%PATH%
 
-set PATH=%MOD_PATH%;%monetdbdir%\bin;%xml2dir%\bin;%PATH%
-
-"%monetdbdir%\bin\Mserver.exe" "--config=%monetdbdir%\etc\MonetDB.conf" --set "monet_mod_path=%MOD_PATH%" %*
+Mserver.exe "--config=%monetdb4_prefix%\etc\MonetDB.conf" --set "monet_mod_path=%MOD_PATH%" %*
 
 endlocal
