@@ -173,12 +173,13 @@ str CMDconvert_@1_@2(int *ret, int *bid){
 	@:getBATdescriptor(bid, b, "batcalc.@2")@
 	@:resultBAT(@2,"batcalc.@2")@
 	h= (char*) BUNhead(b,BUNfirst(b));
-	p= (char*) BUNtail(b,BUNfirst(b));
-	q= (char*) BUNtail(b,BUNlast(b));
+	p= (char*) BUNfirst(b);
+	q= (char*) BUNlast(b);
 	xx= BUNsize(b);
 
 	while(p<q){
-		y= *(@1*)p== @1_nil? @2_nil: (@2) *(@1*)p;
+		@1 *r = (@1*)BUNtail(b,p);
+		y= (*r == @1_nil) ? @2_nil: (@2)(*r);
 		bunfastins(bn, h, &y);
 		p+= xx; h+=xx;
 	}
@@ -189,7 +190,7 @@ bunins_failed:
 Handling string coercion
 		ATOMfromstr( TYPE_@1, &v, &len, (char*)Tbase(b)+*(var_t*)p);
 @= ConvertToStr
-		@1ToStr(&dst,&len, (ptr) p);
+		@1ToStr(&dst,&len, (ptr) r);
 		bunfastins(bn, h, (ptr)dst);
 		if( dst) GDKfree(dst);
 @= ConvertFromStr
@@ -210,11 +211,12 @@ str CMDconvert_@1_str(int *ret, int *bid){
 	@:getBATdescriptor(bid, b, "batcalc.@2")@
 	@:resultBAT(str,"batcalc.@2")@
 	h= (char*) BUNhead(b,BUNfirst(b));
-	p= (char*) BUNtail(b,BUNfirst(b));
-	q= (char*) BUNtail(b,BUNlast(b));
+	p= (char*) BUNfirst(b);
+	q= (char*) BUNlast(b);
 	xx= BUNsize(b);
 
 	while(p<q){
+		@1 *r = (@1*)BUNtail(b,p);
 		@:ConvertToStr(@1)@
 		p+=xx; h+= xx;
 	}
