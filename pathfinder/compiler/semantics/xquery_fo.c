@@ -1455,13 +1455,15 @@ PFfun_xquery_fo ()
     , /* fn:position () as integer */
       { .ns = PFns_fn, .loc = "position",
         .arity = 0,  .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_integer () } } }
+            .ret_ty = PFty_xs_integer () } },
+        .alg = NULL }
 
 /* 16.2. fn:last */
     , /* fn:last () as integer */
       { .ns = PFns_fn, .loc = "last",
         .arity = 0, .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_integer () } } }
+            .ret_ty = PFty_xs_integer () } },
+        .alg = NULL }
 
 
 /* #1. PATHFINDER SPECIFIC HELPER FUNCTIONS */
@@ -1478,32 +1480,33 @@ PFfun_xquery_fo ()
             .ret_ty = PFty_xs_boolean () } },
         .alg = PFbui_op_and_bln }
 
-    , /* pf:distinct-doc-order-or-atomic-sequence (item*) as item* */
+    , /* #pf:distinct-doc-order-or-atomic-sequence (item*) as item* */
       { .ns = PFns_pf, .loc = "distinct-doc-order-or-atomic-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ()) },
-            .ret_ty = PFty_star (PFty_item ()) } } }
-    , /* pf:distinct-doc-order (node *) as node* */
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = NULL }
+    , /* #pf:distinct-doc-order (node *) as node* */
       { .ns = PFns_pf, .loc = "distinct-doc-order",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_node ()) },
             .ret_ty = PFty_star (PFty_node ()) } },
         .alg = PFbui_pf_distinct_doc_order }
-      /* the return type of pf:item-sequence-to-node-sequence is          */
+      /* the return type of #pf:item-sequence-to-node-sequence is         */
       /* generated using a special typing rule during typechecking        */
-    , /* pf:item-sequence-to-node-sequence (atomic) as text */
+    , /* #pf:item-sequence-to-node-sequence (atomic) as text */
       { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_atomic ()},
             .ret_ty = PFty_text () } },
         .alg = PFbui_pf_item_seq_to_node_seq_single_atomic }
-    , /* pf:item-sequence-to-node-sequence (atomic*) as text */
+    , /* #pf:item-sequence-to-node-sequence (atomic*) as text */
       { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_atomic ())},
             .ret_ty = PFty_text () } },
         .alg = PFbui_pf_item_seq_to_node_seq_atomic }
-    , /* pf:item-sequence-to-node-sequence (attr*, atomic) as node* */
+    , /* #pf:item-sequence-to-node-sequence (attr*, atomic) as node* */
       { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_seq (
@@ -1511,7 +1514,7 @@ PFfun_xquery_fo ()
                                         PFty_atomic ())},
             .ret_ty = PFty_star (PFty_node ()) } },
         .alg = PFbui_pf_item_seq_to_node_seq_attr_single }
-    , /* pf:item-sequence-to-node-sequence (attr*, atomic*) as node* */
+    , /* #pf:item-sequence-to-node-sequence (attr*, atomic*) as node* */
       { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (
@@ -1520,7 +1523,7 @@ PFfun_xquery_fo ()
                                         PFty_xs_anyAttribute ()))},
             .ret_ty = PFty_star (PFty_node ()) } },
         .alg = PFbui_pf_item_seq_to_node_seq_attr }
-    , /* pf:item-sequence-to-node-sequence (item*) as node* */
+    , /* #pf:item-sequence-to-node-sequence (item*) as node* */
       { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (
@@ -1537,7 +1540,7 @@ PFfun_xquery_fo ()
                                                         PFty_comm ()))))))},
             .ret_ty = PFty_star (PFty_node ()) } },
         .alg = PFbui_pf_item_seq_to_node_seq_wo_attr }
-    , /* pf:item-sequence-to-node-sequence (item*) as node* */
+    , /* #pf:item-sequence-to-node-sequence (item*) as node* */
       { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ())},
@@ -1546,50 +1549,51 @@ PFfun_xquery_fo ()
       /* FIXME:                                                     */
       /*   The W3C specs describe variants of is2uA for each node   */
       /*   (with differences in the empty sequence handling).       */
-    , /* pf:item-sequence-to-untypedAtomic (item*) as untypedAtomic */
+    , /* #pf:item-sequence-to-untypedAtomic (item*) as untypedAtomic */
       { .ns = PFns_pf, .loc = "item-sequence-to-untypedAtomic",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ())},
-            .ret_ty = PFty_untypedAtomic () } } }
-    , /* pf:merge-adjacent-text-nodes (node*) as node* */
+            .ret_ty = PFty_untypedAtomic () } },
+        .alg = NULL }
+    , /* #pf:merge-adjacent-text-nodes (node*) as node* */
       { .ns = PFns_pf, .loc = "merge-adjacent-text-nodes",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_node ())},
             .ret_ty = PFty_star (PFty_node ()) } },
         .alg = PFbui_pf_merge_adjacent_text_nodes }
 
-    , /* pf:typed-value (node) as untypedAtomic* */
+    , /* #pf:typed-value (node) as untypedAtomic* */
       { .ns = PFns_pf, .loc = "typed-value",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_node () },
             .ret_ty = PFty_star (PFty_untypedAtomic ()) } },
         /* FIXME: does this still fit or is it string-value? */
-        .alg = PFbui_pf_typed_value }
-    , /* pf:string-value (attribute) as string */
+        .alg = PFbui_pf_string_value }
+    , /* #pf:string-value (attribute) as string */
       { .ns = PFns_pf, .loc = "string-value",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyAttribute () },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_string_value_attr }
-    , /* pf:string-value (text) as string */
+    , /* #pf:string-value (text) as string */
       { .ns = PFns_pf, .loc = "string-value",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_text () },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_string_value_text }
-    , /* pf:string-value (processing-instruction) as string */
+    , /* #pf:string-value (processing-instruction) as string */
       { .ns = PFns_pf, .loc = "string-value",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_pi (NULL) },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_string_value_pi }
-    , /* pf:string-value (comment) as string */
+    , /* #pf:string-value (comment) as string */
       { .ns = PFns_pf, .loc = "string-value",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_comm () },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_string_value_comm }
-    , /* pf:string-value (elem) as string */
+    , /* #pf:string-value (elem) as string */
       { .ns = PFns_pf, .loc = "string-value",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_choice (
@@ -1599,7 +1603,7 @@ PFfun_xquery_fo ()
                                         PFty_doc (PFty_xs_anyType ()))) },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_string_value_elem }
-    , /* pf:string-value (elem, attr) as string */
+    , /* #pf:string-value (elem, attr) as string */
       { .ns = PFns_pf, .loc = "string-value",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_choice (
@@ -1611,7 +1615,7 @@ PFfun_xquery_fo ()
                                             PFty_xs_anyAttribute ()))) },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_string_value_elem_attr }
-    , /* pf:string-value (node) as string */
+    , /* #pf:string-value (node) as string */
       { .ns = PFns_pf, .loc = "string-value",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_node () },
@@ -1624,8 +1628,7 @@ PFfun_xquery_fo ()
       { .ns = PFns_fn, .loc = "put",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyNode (), PFty_xs_string () },
-            .ret_ty = PFty_stmt () } },
-        .alg = PFbui_fn_doc }
+            .ret_ty = PFty_stmt () } } }
     , /* pf:documents () as string* */
       { .ns = PFns_lib, .loc = "documents",
         .arity = 0, .sig_count = 1, .sigs = { {
