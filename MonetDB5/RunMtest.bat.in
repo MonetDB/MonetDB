@@ -9,7 +9,7 @@ goto end
 setlocal
 
 set builddir=@XMONETDB5_BUILD@
-set srcdir=@XMONETDB5_SOURCE@
+set srcdir=@MONETDB5_SOURCE@
 
 set MOD_PATH=%builddir%\src\compiler\.libs;%builddir%\src\compiler;%builddir%\src\optimizer\.libs;%builddir%\src\optimizer;%builddir%\src\scheduler\.libs;%builddir%\src\scheduler;%builddir%\src\modules\atoms\.libs;%builddir%\src\modules\atoms;%builddir%\src\modules\kernel\.libs;%builddir%\src\modules\kernel;%builddir%\src\modules\mal\.libs;%builddir%\src\modules\mal
 set PATH=%MOD_PATH%;%builddir%\src\mal;%PATH%
