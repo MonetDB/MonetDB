@@ -15,8 +15,8 @@
 # All Rights Reserved.
 
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.53)
-AC_INIT(src/Tests/All)
+AC_PREREQ(2.59)
+AC_INIT([MonetDB template], [0.1.3], [monet@cwi.nl], [template])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -24,8 +24,9 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("template", 0.1.3, [no-define])
-AM_CONFIG_HEADER(template_config.h:conf/config.h.in)
+AM_INIT_AUTOMAKE([no-define])
+AC_CONFIG_SRCDIR([src/monetdb4/example.mx])
+AM_CONFIG_HEADER([template_config.h:conf/config.h.in])
 CONFIG_H=template_config.h
 AC_SUBST(CONFIG_H)
 
