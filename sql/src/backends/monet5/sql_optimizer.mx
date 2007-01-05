@@ -84,7 +84,7 @@ str.iconv
 #define _SQL_OPTIMIZER_H_
 #include "sql.h"
 
-/* #define _SQL_OPTIMIZER_DEBUG  */
+/* #define _SQL_OPTIMIZER_DEBUG   */
 
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
@@ -371,7 +371,6 @@ str defaultPlan=
 	"coercions,"
 	/* "emptySet," */
 	/* "joinselect," */
-	"modes,"
 	"aliases,"
 	/* "crackers," */
 	"commonTerms,"
@@ -384,38 +383,34 @@ str defaultPlan=
 static void
 addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 {
-		/* the optimizer control is a semicolon separated list of names */
-		str optimizers[256];
-		int top=0,i;
-		char *nxt, *nme;
+	/* the optimizer control is a semicolon separated list of names */
+	str optimizers[256];
+	int top=0,i;
+	char *nxt, *nme;
 
-		while(optimizer && *optimizer )
-		{
-			nxt= strchr(optimizer,',');
-			if( nxt){
-				*nxt= 0;
-				nxt++;
-			}
-			if( strcmp(optimizer,"default")==0){
-				str base= GDKstrdup(defaultPlan);
-				addOptimizers(c,mb,base);
-				GDKfree(base);
-			} else
-			if( (nme = getName(optimizer,strlen(optimizer))) == 0) {
-				showException(SQL,"optimizer '%s' does not exist\n",optimizer);
-				mb->errors++;
-			} else
-			if( top<256)
-				optimizers[top++] =nme; 
-			optimizer =nxt;
-		} 
-
-		/* add the optimizers to the query plan */
-		for(i=0;i<top; i++) {
-			InstrPtr p;
-			p=  newFcnCall(mb,getName("optimizer",9),optimizers[i]);
-			typeChecker(c->nspace, mb,p,TRUE);
+	while (optimizer && *optimizer ) {
+		nxt = strchr(optimizer,',');
+		if (nxt){
+			*nxt = 0;
+			nxt++;
 		}
+		if (strcmp(optimizer,"default")==0){
+			str base= GDKstrdup(defaultPlan);
+			addOptimizers(c,mb,base);
+			GDKfree(base);
+		} else if ((nme = getName(optimizer,strlen(optimizer))) == 0) {
+			showException(SQL,"optimizer '%s' does not exist\n",optimizer);
+			mb->errors++;
+		} else if (top<256)
+			optimizers[top++] = nme; 
+		optimizer = nxt;
+	} 
+
+	/* add the optimizers to the query plan */
+	for (i=0;i<top; i++) {
+		InstrPtr p = newFcnCall(mb,getName("optimizer",9),optimizers[i]);
+		typeChecker(c->nspace, mb,p,TRUE);
+	}
 }
 
 void
