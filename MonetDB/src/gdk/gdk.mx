@@ -577,7 +577,7 @@ typedef char long_str[IDLENGTH]; /* standard GDK static string */
 typedef char short_str[OLDLENGTH]; /* old GDK small static string */
 
 typedef oid hash_t;		/* type used for hash tables */
-#if defined(MONET_OID32) || SIZEOF_INT==4
+#if SIZEOF_OID == SIZEOF_INT
 #define HASH_MAX INT_MAX
 #else
 #define HASH_MAX LLONG_MAX

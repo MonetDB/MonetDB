@@ -354,7 +354,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	} else {
 		BUN p, q;
 		int xx;
-		size_t i = BATcount(b);
+		size_t i = BUNindex(b, BUNlast(b));
 
 		if (b->tkey & BOUND2BTRUE) {
 			BAT *bm = BBP_cache(-b->batCacheid);
