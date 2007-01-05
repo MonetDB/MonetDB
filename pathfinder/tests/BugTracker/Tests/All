@@ -80,3 +80,7 @@ pf_del-doc.SF-1617684_check
 declare_variable.SF-1625597
 declare_variable_as_TYPE.SF-1625597
 merged_union-bug.SF-1626306
+insert_into_transient.SF-1626208
+clear_attrs_on_delete.SF-1612739
+clear_attrs_on_delete.SF-1612739-b
+clear_attrs_on_delete.SF-1612739-c
