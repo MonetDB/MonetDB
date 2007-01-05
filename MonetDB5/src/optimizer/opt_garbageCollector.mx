@@ -90,6 +90,7 @@ comment "Garbage collector optimizer";
 
 #endif
 @c
+#include "mal_config.h"
 #include "opt_garbageCollector.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"

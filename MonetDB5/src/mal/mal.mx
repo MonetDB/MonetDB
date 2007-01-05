@@ -200,7 +200,6 @@ as well as in user defined module implementations.
 #ifndef _MAL_H
 #define _MAL_H
 
-#include <mal_config.h>
 #include <gdk.h>
 #include <gdk_utils.h>
 #include <stream.h>
@@ -232,6 +231,7 @@ mal_export int 				monet_daemon;
 #define mal_up_sema(X,Y) if(GDKprotected) MT_up_sema(X,Y)
 #define mal_down_sema(X,Y) if(GDKprotected) MT_down_sema(X,Y)
 @c 
+#include <mal_config.h>
 #include <mal.h>
 
 char monet_cwd[PATHLENGTH] = { 0 };
@@ -312,6 +312,7 @@ mal_export void mal_exit(void);
 
 #endif /*  _MAL_H*/
 @c
+#include "mal_config.h"
 #include "mal_linker.h"
 #include "mal_session.h"
 #include "mal_parser.h"

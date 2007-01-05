@@ -89,6 +89,7 @@ comment "Turn function into a factory";
 /* #define DEBUG_OPT_FACTORIZE     show partial result */
 #endif
 @c
+#include "mal_config.h"
 #include "opt_factorize.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"

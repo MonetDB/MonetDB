@@ -63,6 +63,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define VALcopy2(lhs,rhs) if( (rhs)->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
 #endif /*  _MAL_INTERPRET_H*/
 @c
+#include "mal_config.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"

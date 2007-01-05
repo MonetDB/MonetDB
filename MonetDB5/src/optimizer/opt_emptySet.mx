@@ -91,6 +91,7 @@ comment "Symbolic evaluation of empty BAT expressions";
 /* #define DEBUG_OPT_EMPTYSET	 show partial result */
 #endif
 @c
+#include "mal_config.h"
 #include "opt_emptySet.h"
 #include "opt_aliases.h"
 #include "opt_deadcode.h"

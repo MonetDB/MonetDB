@@ -104,6 +104,7 @@ typedef struct QEPrecord {
 
 #endif /* _OPT_QEP_ */
 @c
+#include "mal_config.h"
 #include "opt_qep.h"
 
 static QEP

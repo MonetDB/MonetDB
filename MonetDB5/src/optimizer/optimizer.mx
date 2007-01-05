@@ -88,6 +88,7 @@ opt_export size_t QOTjoinEstimate(BAT *l, BAT *r);
 
 #endif /* _OPTIMIZER_H */
 @c
+#include "mal_config.h"
 #include "optimizer.h"
 @
 Upon loading the module it should inspect the scenario table

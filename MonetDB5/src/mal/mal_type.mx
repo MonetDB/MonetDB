@@ -110,6 +110,7 @@ mal_export int findGDKtype(int type);	/* used in src/mal/mal_interpreter.c */
 At any point we should be able to construct an ascii representation of
 the type descriptor. Including the variable references.
 @c
+#include "mal_config.h"
 #include "mal_type.h"
 
 str

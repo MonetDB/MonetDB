@@ -89,6 +89,7 @@ The MAL function blocks are constructed incrementally while parsing the source.
 The function kind determines its semantics. It is taken from the list
 FUNCTION, FACTORY, COMMAND, and PATTERN.
 @c
+#include "mal_config.h"
 #include "mal_function.h"
 #include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */
 #include "mal_interpreter.h"	/* for showErrors() */

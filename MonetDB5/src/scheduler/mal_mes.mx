@@ -220,6 +220,7 @@ called sql_optimizer.
 #define MAL_MES_DEBUG 1
 #endif
 @c
+#include "mal_config.h"
 #include "mal_mes.h"
 #include "mal_builder.h"
 @-

@@ -547,6 +547,7 @@ mal_export void batBeforeCall(ValPtr v, ValPtr bak);
 mal_export void batAfterCall(ValPtr v, ValPtr bak);
 #endif /*  _MAL_INSTR_H */
 @c
+#include "mal_config.h"
 #include "mal_instruction.h"
 #include "mal_function.h"	/* for getPC() */
 #include "mal_utils.h"

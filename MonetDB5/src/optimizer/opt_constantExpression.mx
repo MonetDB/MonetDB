@@ -60,6 +60,7 @@ comment "Evaluate constant expressions once.";
 /* #define DEBUG_OPT_CX  */
 #endif
 @c  
+#include "mal_config.h"
 #include "opt_constantExpression.h"
 #include "opt_aliases.h"
 

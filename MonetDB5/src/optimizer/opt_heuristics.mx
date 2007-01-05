@@ -68,6 +68,7 @@ the opportunity to perform the select push through.
 
 #endif
 @c
+#include "mal_config.h"
 #include "opt_heuristics.h"
 int
 SPcombi000(MalBlkPtr mb, int pc1, int pc2)

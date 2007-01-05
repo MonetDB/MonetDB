@@ -75,6 +75,7 @@ comment "Move constant expressions out of the loop";
 
 #endif
 @c
+#include "mal_config.h"
 #include "opt_strengthReduction.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 

@@ -110,6 +110,7 @@ It will be prepended to the symbol list as it is more restrictive.
 This effectively overloads the MAL procedure.
 
 @c
+#include "mal_config.h"
 #include "mal_resolve.h"
 #include "mal_namespace.h"
 

@@ -84,6 +84,7 @@ code in place.
 The subsequent call to the typechecker ensures we end up with
 a valid program.
 @c
+#include "mal_config.h"
 #include "opt_multiplex.h"
 #include "mal_interpreter.h"
 @-

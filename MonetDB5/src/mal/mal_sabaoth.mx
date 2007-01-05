@@ -36,6 +36,7 @@ machine and redirect to each other when necessary.
 @-
 
 @c
+#include "mal_config.h"
 #include "mal_sabaoth.h"
 #include <stdio.h> /* fseek, rewind */
 #include <unistd.h>	/* unlink and friends */

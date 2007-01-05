@@ -124,6 +124,7 @@ comment "Resolve the multi-table definitions";
 
 #endif
 @c
+#include "mal_config.h"
 #include "opt_mergetable.h"
 
 static int

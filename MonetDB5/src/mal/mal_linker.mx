@@ -86,6 +86,7 @@ do;t close them until end of session it seems prudent to maintain
 the consistency of this counter.
 
 @c
+#include "mal_config.h"
 #include "mal_linker.h"
 #include "mal_function.h"	/* for throwException() */
 #include "mal_import.h"		/* for slash_2_dir_sep() */

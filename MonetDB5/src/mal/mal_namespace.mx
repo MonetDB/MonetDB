@@ -51,6 +51,7 @@ The Namespace block is organized using a simple hashstructure over the first
 character. Better structures can be introduced when searching becomes
 too expensive. An alternative would be to use a BAT to handle the collection.
 @c
+#include "mal_config.h"
 #include "mal_type.h"
 #include "mal_namespace.h"
 #define MAXIDENTIFIERS 2048

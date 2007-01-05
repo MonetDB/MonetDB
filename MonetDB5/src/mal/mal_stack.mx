@@ -107,6 +107,7 @@ context. Since the stack is allocated and zeroed on the calling stack,
 it may happen that entries are never set to a real value.
 This can be recognized by the vtype component
 @c
+#include "mal_config.h"
 #include "mal_stack.h"
 
 MalStkPtr

@@ -55,6 +55,7 @@ mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 #endif /* _MAL_BUILDER_ */
 
 @c
+#include "mal_config.h"
 #include "mal_builder.h"
 InstrPtr
 newAssignment(MalBlkPtr mb)

@@ -45,6 +45,7 @@ comment "Perform local rewrites";
 #endif
 
 @c
+#include "mal_config.h"
 #include "opt_peephole.h"
 #include "opt_aliases.h"
 @}

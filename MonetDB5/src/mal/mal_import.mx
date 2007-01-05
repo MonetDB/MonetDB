@@ -44,6 +44,7 @@ If the string starts with '/' or '~' the context is not changed.
 Every IMPORT statement denotes a possible dynamic load library.
 Make sure it is loaded as well.
 @c
+#include "mal_config.h"
 #include "mal_import.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_linker.h"		/* for loadModuleLibrary() */

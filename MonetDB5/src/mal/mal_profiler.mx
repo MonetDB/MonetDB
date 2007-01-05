@@ -227,6 +227,7 @@ event records on the event stream. Since this event stream is owned
 by a client, we should ensure that the profiler is automatically be
 reset once the owner leaves. The routine profilerReset() handles the case.
 @c
+#include "mal_config.h"
 #include "mal_function.h"
 #include "mal_profiler.h"
 #include "mal_debugger.h"

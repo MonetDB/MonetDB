@@ -125,6 +125,7 @@ mal_compiler_export str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 #endif /* _MAL_COMPILER_H_ */
 @-
 @c
+#include "mal_config.h"
 #include "mal_compiler.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"

@@ -128,6 +128,7 @@ opt_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
 #endif /* _MAL_MACRO_H_ */
 @-
 @c
+#include "mal_config.h"
 #include "opt_prelude.h"
 #include "opt_macro.h"
 #include "mal_interpreter.h"

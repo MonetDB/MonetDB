@@ -63,6 +63,7 @@ comment "Perform singleton optimization";
 /* #define DEBUG_OPT_SINGLETON     show partial result */
 #endif
 @c
+#include "mal_config.h"
 #include "opt_singleton.h"
 #include "opt_aliases.h"
 #include "mal_interpreter.h"	/* for showErrors() */

@@ -81,6 +81,7 @@ comment "Experiment with partitioned databases";
 #define DEBUG_OPT_PARTITIONED	/* show partial result */
 #endif
 @c
+#include "mal_config.h"
 #include "opt_partitionedQuery.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 

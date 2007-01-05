@@ -51,6 +51,7 @@ mal_export int MALcommentsOnly(MalBlkPtr mb);
 #endif /*  _MAL_SESSION_H */
 
 @c
+#include "mal_config.h"
 #include "mal_session.h"
 #include "mal_instruction.h"	/* for pushEndInstruction() */
 #include "mal_interpreter.h"	/* for showErrors(), runMAL(), garbageElement(), garbageCollector() */

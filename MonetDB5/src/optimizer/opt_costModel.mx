@@ -82,6 +82,7 @@ comment "Estimate the cost of a relational expression";
 #endif /* _OPT_COSTMODEL_H_ */
 @-
 @c
+#include "mal_config.h"
 #include "opt_costModel.h"
 
 static void

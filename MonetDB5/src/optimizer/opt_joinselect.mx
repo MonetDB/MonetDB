@@ -40,6 +40,7 @@ comment "Replace select with join select";
 #endif
 
 @c
+#include "mal_config.h"
 #include "opt_joinselect.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_exception.h"

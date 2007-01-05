@@ -115,6 +115,7 @@ opt_export  str unsafeRef;
 opt_export void optimizerInit(void);
 #endif
 @c
+#include "mal_config.h"
 #include "opt_support.h"
 #include "opt_prelude.h"
 

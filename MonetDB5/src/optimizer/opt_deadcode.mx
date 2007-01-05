@@ -83,6 +83,7 @@ comment "Dead code optimizer";
 @c
 
 @c
+#include "mal_config.h"
 #include "opt_deadcode.h"
 
 static int 

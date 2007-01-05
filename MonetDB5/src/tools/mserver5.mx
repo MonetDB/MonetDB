@@ -71,7 +71,7 @@ The server options have the following meaning:
 /* #define MONET_GLOBAL_DEBUG */
 #endif /* _MONET_GLOBAL_H_ */
 @c
-#include "mal.h"
+#include "mal_config.h"
 #include "mserver5.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"

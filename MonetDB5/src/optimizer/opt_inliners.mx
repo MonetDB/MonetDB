@@ -43,6 +43,7 @@ comment "Expand inline functions";
 
 #endif
 @c
+#include "mal_config.h"
 #include "opt_inliners.h"
 
 static int

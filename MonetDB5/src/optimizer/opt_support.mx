@@ -543,6 +543,7 @@ Unclear what will be the best strategy. For the time being we just recalc.
 @{
 If one of the optimizers fails, we should not attempt others.
 @c
+#include "mal_config.h"
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"

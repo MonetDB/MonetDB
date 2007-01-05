@@ -62,6 +62,7 @@ comment "Replace calculations with accumulator model";
 #endif
 
 @c
+#include "mal_config.h"
 #include "opt_accumulators.h"
 #include "mal_builder.h"
 

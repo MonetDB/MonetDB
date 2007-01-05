@@ -118,6 +118,7 @@ point for the modules to be added later.
 	cur->isAtomModule = FALSE;
 
 @c
+#include "mal_config.h"
 #include "mal_module.h"
 #include "mal_function.h"   /* for printFunction() */
 #include "mal_namespace.h"

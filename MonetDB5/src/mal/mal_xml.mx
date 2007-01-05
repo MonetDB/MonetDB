@@ -29,6 +29,7 @@ mal_export char *xmlChr(str s);
 
 #endif /* _MAL_XML_H */
 @c
+#include "mal_config.h"
 #include "mal_xml.h"
 char *
 xmlChr(str s)

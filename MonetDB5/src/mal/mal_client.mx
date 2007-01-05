@@ -270,6 +270,7 @@ actions to obtain client records.
 
 @{
 @c
+#include "mal_config.h"
 #include "mal_client.h"
 #include "mal_readline.h"
 #include "mal_import.h"

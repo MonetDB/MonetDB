@@ -161,6 +161,7 @@ mal_export str	exceptionToString(enum malexception);
 
 @-
 @c
+#include "mal_config.h"
 #include "mal_exception.h"
 
 static char *exceptionNames[] = {

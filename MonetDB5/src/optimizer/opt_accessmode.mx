@@ -49,6 +49,7 @@ We should also remember the BATs that are already been set
 writable, to avoid subsequent calls.[todo]
 In a second pass we can then remove/keep them upon need.
 @c
+#include "mal_config.h"
 #include "opt_accessmode.h"
 #include "mal_interpreter.h"
 

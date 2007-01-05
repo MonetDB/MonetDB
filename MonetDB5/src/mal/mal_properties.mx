@@ -340,6 +340,7 @@ mal_export int isPropertyDefined(PropertySet ps, str nme);
 
 #endif
 @c
+#include "mal_config.h"
 #include "mal_properties.h"
 #include "mal_type.h"		/* for idcmp() */
 

@@ -82,6 +82,7 @@ comment "Push constant range selections through the program";
 
 
 @c  
+#include "mal_config.h"
 #include "opt_pushranges.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 

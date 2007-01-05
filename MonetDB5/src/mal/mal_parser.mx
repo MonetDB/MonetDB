@@ -85,6 +85,7 @@ Before a line is parsed we check for a request to echo it.
 This command should be executed at the beginning of a parse
 request and each time we encounter EOL.
 @c
+#include "mal_config.h"
 #include "mal_parser.h"
 #include "mal_resolve.h"
 #include "mal_linker.h"

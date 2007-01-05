@@ -119,6 +119,7 @@ if( idcmp(@1,name) || pci->argc != 1)
 	setAtomName(pci);
 	return 1;
 @c
+#include "mal_config.h"
 #include "mal_atom.h"
 #include "mal_namespace.h"
 #include "mal_exception.h"

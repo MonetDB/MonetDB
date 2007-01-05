@@ -36,6 +36,7 @@ comment "Replace algebra select with crackers select";
 #endif
 
 @c  
+#include "mal_config.h"
 #include "opt_crack.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"

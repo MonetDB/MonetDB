@@ -54,6 +54,7 @@ comment "Reduce the stack space claims";
 
 #endif
 @c
+#include "mal_config.h"
 #include "opt_reduce.h"
 #include "mal_interpreter.h"
 

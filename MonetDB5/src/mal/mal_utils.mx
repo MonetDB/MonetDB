@@ -35,6 +35,7 @@ the type descriptor. Including the variable references.
 Unquoting of a string is done in place. It returns the start
 of the unquoted part section.
 @c
+#include "mal_config.h"
 #include "mal_utils.h"
 
 #define PLACEHOLDER '?'

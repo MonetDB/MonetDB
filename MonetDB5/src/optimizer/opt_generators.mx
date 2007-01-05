@@ -99,6 +99,7 @@ opt_export str BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif
 @c
+#include "mal_config.h"
 #include "opt_generators.h"
 
 static int

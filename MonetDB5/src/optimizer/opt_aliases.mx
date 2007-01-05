@@ -87,6 +87,7 @@ The new aliasremoval code performs a single scan through the
 code. We are currently only interested in simple V:=W
 expressions.
 @c
+#include "mal_config.h"
 #include "opt_aliases.h"
 static int
 OPTisAlias(InstrPtr p){

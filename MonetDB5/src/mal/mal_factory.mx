@@ -277,6 +277,7 @@ any factory call to their proper destination.
 The factory plants are collected in a global,
 limited table for now.
 @c
+#include "mal_config.h"
 #include "mal_factory.h"
 
 typedef struct {
