@@ -49,6 +49,10 @@ AM_MONETDB4($req_monetdb_ver)
 req_monetdb_ver='4.99.19'
 AM_MONETDB5($req_monetdb_ver)
 
+if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
+	AC_MSG_ERROR([MonetDB/SQL requires at least version $req_monetdb_ver of MonetDB.])
+fi
+
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.

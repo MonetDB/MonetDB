@@ -120,7 +120,6 @@ factory structures.
 #include "opt_joinpath.h"
 #include "opt_joinselect.h"
 #include "opt_macro.h"
-#include "opt_modes.h"
 #include "opt_multiplex.h"
 #include "opt_peephole.h"
 #include "opt_reduce.h"
