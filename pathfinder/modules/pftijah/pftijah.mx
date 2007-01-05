@@ -2510,7 +2510,9 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	ALGODEBUG THRprintf(GDKout, "#init_result(dbl): BAThordered(e)&1, \n");
 	bn->batBuns->free = _p - bn->batBuns->base;
 	BATsetcount(bn, bn->batBuns->free/_bunsize);
-	BATprepareHash(bn);	
+	if ( !BATprepareHash(bn) ) {
+	    /* do nothing yet */;	
+	}
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
 }
