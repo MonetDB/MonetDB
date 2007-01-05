@@ -53,6 +53,7 @@ example_export str hello(str *ret0, str *arg0);
 @c
 #include <template_config.h>
 #include "example.h"
+#include <mal_exception.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,7 +61,7 @@ example_export str hello(str *ret0, str *arg0);
 #include <math.h>
 #include <time.h>
 
-str *
+str 
 hello(str *res, str *arg0)
 {
 	str src = *arg0;
