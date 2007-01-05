@@ -12,7 +12,7 @@ set monetdb4_prefix=@MONETDB4_PREFIX@
 set builddir=@SQL_BUILD@
 set srcdir=@SQL_SOURCE@
 
-set MOD_PATH=%builddir%\src\backends\monet4\.libs;%sqldir%\src\backends\monet4;@MONETDB_PREFIX@\lib\MonetDB
+set MOD_PATH=%builddir%\src\backends\monet4\.libs;%sqldir%\src\backends\monet4;%monetdb4_prefix%\lib\MonetDB4;%monetdb4_prefix%\lib\MonetDB4\lib;%monetdb4_prefix%\lib\MonetDB4\bin
 
 set PATH=%builddir%\src\common;%builddir%\src\storage\bat;%builddir%\src\server;%builddir%\src\tools;%PATH%
 set PATH=%MOD_PATH%;%PATH%
