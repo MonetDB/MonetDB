@@ -1124,6 +1124,13 @@ PFbui_op_ge_str (const PFla_op_t *loop, bool ordering,
 /* -------------------------------- */
 /* 6.4. Functions on Numeric Values */
 /* -------------------------------- */
+struct PFla_pair_t
+PFbui_fn_round (const PFla_op_t *loop, bool ordering,
+                struct PFla_pair_t *args)
+{
+    assert (!"not implemented yet");
+    return PFbui_fn_subsequence (loop, ordering, args);
+}
 
 /* ----------------------- */
 /* 7. FUNCTIONS ON STRINGS */
@@ -1794,6 +1801,273 @@ PFbui_fn_distinct_values (const PFla_op_t *loop, bool ordering,
 }
 
 struct PFla_pair_t
+PFbui_fn_insert_before (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    /* mark all rows true where the second argument is greather than
+       the index position */
+    PFla_op_t *partition = gt (eqjoin (
+                                   cast (args[0].rel,
+                                         att_cast,
+                                         att_pos,
+                                         aat_int),
+                                   project (args[1].rel,
+                                            proj (att_iter1, att_iter),
+                                            proj (att_item1, att_item)),
+                                   att_iter,
+                                   att_iter1),
+                               att_res,
+                               att_item1,
+                               att_cast);
+
+    /* select all the tuples whose index position is smaller than
+       the second argument */
+    PFla_op_t *first = attach (
+                           project (
+                               select_ (partition, att_res),
+                               proj (att_iter, att_iter),
+                               proj (att_pos, att_pos),
+                               proj (att_item, att_item)),
+                           att_ord,
+                           lit_nat (1));
+    
+    PFla_op_t *second = attach (args[2].rel, att_ord, lit_nat (2));
+    
+    /* select all the tuples whose index position is bigger or equal to
+       the second argument */
+    PFla_op_t *third = attach (
+                           project (
+                               select_ (
+                                   not (partition, att_res1, att_res),
+                                   att_res1),
+                               proj (att_iter, att_iter),
+                               proj (att_pos, att_pos),
+                               proj (att_item, att_item)),
+                           att_ord,
+                           lit_nat (3));
+    
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        /* patch the third function argument into the middle*/
+        .rel = project (
+                    rownum (
+                        disjunion (first, disjunion (second, third)),
+                        att_pos1,
+                        sortby (att_ord, att_pos),
+                        att_iter),
+                    proj (att_iter, att_iter),
+                    proj (att_pos, att_pos1),
+                    proj (att_item, att_item)),
+        .frag = args[0].frag };
+}
+
+struct PFla_pair_t
+PFbui_fn_remove (const PFla_op_t *loop, bool ordering,
+                 struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    /*
+     * Join the index position with the sequence,
+     * cast the positions of the sequence to integer
+     * and keep all rows whose columns are distinct from
+     * the index position.
+     */
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   rownum (
+                       select_ (
+                           not (eq (eqjoin (
+                                        cast (args[0].rel,
+                                              att_cast,
+                                              att_pos,
+                                              aat_int),
+                                        project (args[1].rel,
+                                                 proj (att_iter1, att_iter),
+                                                 proj (att_item1, att_item)),
+                                        att_iter,
+                                        att_iter1),
+                                    att_res,
+                                    att_cast,
+                                    att_item1),
+                                att_res1, att_res),
+                           att_res1),
+                       att_pos1,
+                       sortby (att_pos),
+                       att_iter),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos1),
+                   proj (att_item, att_item)),
+        .frag = args[0].frag };
+}
+
+struct PFla_pair_t
+PFbui_fn_reverse (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    /*
+     * Use column pos to introduce a new column pos
+     * that is sorted in reverse order.
+     */
+    return (struct PFla_pair_t) {
+        .rel  = project (
+                    rownum (
+                        args[0].rel,
+                        att_res,
+                        PFord_refine (PFordering (), att_pos, DIR_DESC),
+                        att_iter),
+                    proj (att_iter, att_iter),
+                    proj (att_pos, att_res),
+                    proj (att_item, att_item)),
+        .frag = args[0].frag };
+}
+
+struct PFla_pair_t
+PFbui_fn_subsequence_till_end (const PFla_op_t *loop, bool ordering,
+                               struct PFla_pair_t *args)
+{
+    PFla_op_t *startingLoc = args[1].rel;
+    PFalg_simple_type_t ty = 0;
+    
+    for (unsigned int i = 0; i < startingLoc->schema.count; i++) {
+        if (startingLoc->schema.items[i].name == att_item) {
+            ty = startingLoc->schema.items[i].type;
+            break;
+        }
+    }
+    if (ty != aat_int) {
+        struct PFla_pair_t arg = { .rel  = args[1].rel,
+                                   .frag = args[1].frag };
+        startingLoc = PFbui_fn_round (loop, ordering, &arg).rel;
+    }
+    
+    /*
+     * Join the index position with the sequence,
+     * cast the positions of the sequence to integer
+     * and keep all rows whose columns whose position values
+     * are bigger or equal than the index position.
+     */
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   rownum (
+                       select_ (
+                           not (gt (eqjoin (
+                                        cast (args[0].rel,
+                                              att_cast,
+                                              att_pos,
+                                              aat_int),
+                                        project (startingLoc,
+                                                 proj (att_iter1, att_iter),
+                                                 proj (att_item1, att_item)),
+                                        att_iter,
+                                        att_iter1),
+                                    att_res,
+                                    att_item1,
+                                    att_cast),
+                                att_res1, att_res),
+                           att_res1),
+                       att_pos1,
+                       sortby (att_pos),
+                       att_iter),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos1),
+                   proj (att_item, att_item)),
+        .frag = args[0].frag };
+}
+
+struct PFla_pair_t
+PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
+                      struct PFla_pair_t *args)
+{
+    PFla_op_t *startingLoc = args[1].rel;
+    PFla_op_t *length      = args[2].rel;
+    PFla_op_t *first_cond;
+    PFalg_simple_type_t ty = 0;
+    
+    /* avoid calling fn:round if we already have integer values */
+    for (unsigned int i = 0; i < startingLoc->schema.count; i++) {
+        if (startingLoc->schema.items[i].name == att_item) {
+            ty = startingLoc->schema.items[i].type;
+            break;
+        }
+    }
+    if (ty != aat_int) {
+        struct PFla_pair_t arg = { .rel  = args[1].rel,
+                                   .frag = args[1].frag };
+        startingLoc = PFbui_fn_round (loop, ordering, &arg).rel;
+    }
+    
+    /* avoid calling fn:round if we already have integer values */
+    for (unsigned int i = 0; i < length->schema.count; i++) {
+        if (length->schema.items[i].name == att_item) {
+            ty = length->schema.items[i].type;
+            break;
+        }
+    }
+    if (ty != aat_int) {
+        struct PFla_pair_t arg = { .rel  = args[2].rel,
+                                   .frag = args[2].frag };
+        length = PFbui_fn_round (loop, ordering, &arg).rel;
+    }
+    
+    /* evaluate the first condition (startingLoc) */
+    first_cond = project (
+                     select_ (
+                         not (gt (eqjoin (
+                                      cast (args[0].rel,
+                                            att_cast,
+                                            att_pos,
+                                            aat_int),
+                                      project (startingLoc,
+                                               proj (att_iter1, att_iter),
+                                               proj (att_item1, att_item)),
+                                      att_iter,
+                                      att_iter1),
+                                  att_res,
+                                  att_item1,
+                                  att_cast),
+                              att_res1, att_res),
+                         att_res1),
+                     proj (att_iter, att_iter),
+                     proj (att_pos, att_pos),
+                     proj (att_item, att_item),
+                     proj (att_cast, att_cast),    /* pos as int  */
+                     proj (att_item1, att_item1)); /* startingLoc */
+    
+    /* evaluate the second condition ($pos < $startingLoc + $length)
+       and fill in new position values afterwards */
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   rownum (
+                       select_ (
+                           gt (fun_1to1 (
+                                   eqjoin (
+                                       first_cond,
+                                       project (length,
+                                                proj (att_iter1, att_iter),
+                                                proj (att_item2, att_item)),
+                                       att_iter,
+                                       att_iter1),
+                                   alg_fun_num_add,
+                                   att_res,
+                                   attlist (att_item2, att_item1)),
+                               att_res1,
+                               att_res,
+                               att_cast),
+                           att_res1),
+                       att_pos1,
+                       sortby (att_pos),
+                       att_iter),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos1),
+                   proj (att_item, att_item)),
+        .frag = args[0].frag };
+}
+
+struct PFla_pair_t
 PFbui_fn_unordered (const PFla_op_t *loop, bool ordering,
                     struct PFla_pair_t *args)
 {
@@ -1808,7 +2082,7 @@ PFbui_fn_unordered (const PFla_op_t *loop, bool ordering,
                              proj (att_iter, att_iter),
                              proj (att_item, att_item)),
                     att_pos, att_iter),
-        .frag = PFla_empty_set () };
+        .frag = args[0].frag };
 }
 
 /* ------------------------------------------------------ */

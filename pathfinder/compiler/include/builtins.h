@@ -303,6 +303,26 @@ struct PFla_pair_t PFbui_fn_distinct_values (const PFla_op_t *loop,
                                              bool ordering,
                                              struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_insert_before (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_remove (const PFla_op_t *loop,
+                                    bool ordering,
+                                    struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_reverse (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_subsequence_till_end (const PFla_op_t *loop,
+                                                  bool ordering,
+                                                  struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_subsequence (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_fn_unordered (const PFla_op_t *loop,
                                        bool ordering,
                                        struct PFla_pair_t *args);

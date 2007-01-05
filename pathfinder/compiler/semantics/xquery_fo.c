@@ -1159,18 +1159,38 @@ PFfun_xquery_fo ()
             .par_ty = (PFty_t[]) { PFty_star (PFty_atomic ())},
             .ret_ty = PFty_star (PFty_untypedAtomic ()) } },
         .alg = PFbui_fn_distinct_values }
+    , /* fn:insert-before(item*, int, item*) as item* */
+      /* Note that typecheck.brg implements a specific typing rule! */
+      { .ns = PFns_fn, .loc = "insert-before",
+        .arity = 3, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
+                                   PFty_xs_integer (),
+                                   PFty_star (PFty_item ()) },
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = PFbui_fn_insert_before }
+    , /* fn:remove(item*, int) as item* */
+      /* Note that typecheck.brg implements a specific typing rule! */
+      { .ns = PFns_fn, .loc = "remove",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
+                                   PFty_xs_integer () },
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = PFbui_fn_remove }
     , /* fn:reverse(item*) as item* */
+      /* Note that typecheck.brg implements a specific typing rule! */
       { .ns = PFns_fn, .loc = "reverse",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ()) },
-            .ret_ty = PFty_star (PFty_item ()) } } }
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = PFbui_fn_reverse }
     , /* fn:subsequence(item*, double) as item* */
       /* Note that typecheck.brg implements a specific typing rule! */
       { .ns = PFns_fn, .loc = "subsequence",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
                                 PFty_xs_double () },
-            .ret_ty = PFty_star (PFty_item ()) } } }
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = PFbui_fn_subsequence_till_end }
     , /* fn:subsequence(item*, double, double) as item* */
       /* Note that typecheck.brg implements a specific typing rule! */
       { .ns = PFns_fn, .loc = "subsequence",
@@ -1178,7 +1198,8 @@ PFfun_xquery_fo ()
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
                                 PFty_xs_double (),
                                 PFty_xs_double () },
-            .ret_ty = PFty_star (PFty_item ()) } } }
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = PFbui_fn_subsequence }
     , /* fn:unordered (item *) as item */
       { .ns = PFns_fn, .loc = "unordered",
         .arity = 1, .sig_count = 1, .sigs = { {

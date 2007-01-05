@@ -1431,6 +1431,111 @@ specific (PFfun_t *fn, PFcnode_t *args)
     assert (fn);
     assert (args && (args->kind == c_nil || args->kind == c_arg));
 
+    /* Typing rules for fn:data() are described by the special
+     * judgement `data on' (W3C FS 6.2.3), implemented in PFty_data_on()
+     */
+    if ((! PFqname_eq (fn->qname, PFqname (PFns_fn, "data")))
+        || (! PFqname_eq (fn->qname, PFqname (PFns_pf, "typed-value")))) {
+        /* fn:data() gets exactly one argument */
+        assert (args->kind == c_arg && R(args)->kind == c_nil);
+        return *PFty_simplify (
+                (PFty_quantifier (TY(L(args)))
+                    (PFty_data_on (PFty_defn (TY(L(args)))))));
+    }
+
+    /* specific typing rules for fn:insert-before() */
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "insert-before"))) {
+        assert (args->kind == c_arg && R(args)->kind == c_arg &&
+                R(R(args))->kind == c_arg && R(R(R(args)))->kind == c_nil);
+        
+        PFty_t seq_type = PFty_seq (PFty_defn (TY(L(args))),
+                                    PFty_defn (TY(L(R(R(args))))));
+        
+        return *PFty_simplify (PFty_quantifier (seq_type)
+                                   (PFty_prime (seq_type)));
+    }
+
+    /* specific typing rules for fn:remove() */
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "remove"))) {
+        assert (args->kind == c_arg && R(args)->kind == c_arg &&
+                R(R(args))->kind == c_nil);
+        return *PFty_simplify (
+                    PFty_opt (PFty_quantifier (TY(L(args)))
+                                  (PFty_prime (PFty_defn(TY(L(args)))))));
+    }
+
+    /* specific typing rules for fn:reverse() */
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "reverse"))) {
+        assert (args->kind == c_arg && R(args)->kind == c_nil);
+        return *PFty_simplify (PFty_quantifier (TY(L(args)))
+                                   (PFty_prime (PFty_defn(TY(L(args))))));
+    }
+
+    /* specific typing rules for fn:subsequence() */
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "subsequence"))) {
+
+        assert (args->kind == c_arg);
+
+        /*
+         * The W3C Formal Semantics demands a special treatment of the
+         * case
+         *    fn:subsequence (Expr, Num, 1)
+         * (Use quantifier `?' if last argument is literal 1.)
+         *
+         * However, we won't see any literal constants here, as they
+         * have been wrapped into fn:data() and others.  We just ignore
+         * that W3C rule.  (Current draft is buggy with that respect
+         * anyway.  No one knows, how those rules will look like in
+         * upcoming drafts...)
+         */
+
+        /* use occurrence indicator `?' if expr contains at most one item */
+        if (PFty_subtype (TY(L(args)), PFty_opt (PFty_item ())))
+            return *PFty_simplify (PFty_opt (
+                        PFty_prime (PFty_defn(TY(L(args))))));
+        /* otherwise we cannot do more than `*' */
+        else
+            return *PFty_simplify (PFty_star (
+                        PFty_prime (PFty_defn (TY(L(args))))));
+    }
+
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "unordered"))) {
+        return *PFty_simplify (PFty_prime (PFty_defn (TY(L(args)))));
+    }
+    
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "zero-or-one"))) {
+        return *PFty_simplify (PFty_opt (PFty_prime (PFty_defn (TY(L(args))))));
+    }
+
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "exactly-one"))) {
+        return *PFty_simplify (PFty_prime (PFty_defn (TY(L(args)))));
+    }
+
+    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "union"))) {
+        PFty_t seq_type = PFty_seq (PFty_defn (TY(L(args))),
+                                    PFty_defn (TY(RL(args))));
+        return *PFty_simplify (
+                    (PFty_quantifier (seq_type))
+                        (PFty_prime (seq_type)));
+    }
+
+    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "intersect"))) {
+        PFty_t seq_type = PFty_seq (PFty_defn (TY(L(args))),
+                                    PFty_defn (TY(RL(args))));
+        return *PFty_simplify (
+                    PFty_opt (
+                        (PFty_quantifier (seq_type))
+                            (PFty_prime (seq_type))));
+    }
+    
+    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "except"))) {
+        PFty_t left_type = PFty_defn (TY(L(args)));
+        return *PFty_simplify (
+                    PFty_opt (
+                        (PFty_quantifier (left_type))
+                            (PFty_prime (left_type))));
+    }
+
     /* #pf:distinct-doc-order-or-atomic-sequence() splits up the typing
        into a case for atomic values and one for node values */
     if (! PFqname_eq (fn->qname, 
@@ -1464,18 +1569,6 @@ specific (PFfun_t *fn, PFcnode_t *args)
                     (PFty_prime (PFty_defn (TY(L(args))))));
     }
 
-    /* Typing rules for fn:data() are described by the special
-     * judgement `data on' (W3C FS 6.2.3), implemented in PFty_data_on()
-     */
-    if ((! PFqname_eq (fn->qname, PFqname (PFns_fn, "data")))
-        || (! PFqname_eq (fn->qname, PFqname (PFns_pf, "typed-value")))) {
-        /* fn:data() gets exactly one argument */
-        assert (args->kind == c_arg && R(args)->kind == c_nil);
-        return *PFty_simplify (
-                (PFty_quantifier (TY(L(args)))
-                    (PFty_data_on (PFty_defn (TY(L(args)))))));
-    }
-
     /* Typing rules for #pf:item-sequence-to-node-sequence() are described
      * by the special judgment `is2ns', implemented in PFty_is2ns(),
      * which reduces atomic types to text().
@@ -1484,71 +1577,6 @@ specific (PFfun_t *fn, PFcnode_t *args)
                        PFqname (PFns_pf, "item-sequence-to-node-sequence")))) {
         assert (args->kind == c_arg && R(args)->kind == c_nil);
         return *PFty_simplify ((PFty_is2ns (PFty_defn (TY(L(args))))));
-    }
-
-    /* specific typing rules for fn:subsequence() */
-    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "subsequence"))) {
-
-        assert (args->kind == c_arg);
-
-        /*
-         * The W3C Formal Semantics demands a special treatment of the
-         * case
-         *    fn:subsequence (Expr, Num, 1)
-         * (Use quantifier `?' if last argument is literal 1.)
-         *
-         * However, we won't see any literal constants here, as they
-         * have been wrapped into fn:data() and others.  We just ignore
-         * that W3C rule.  (Current draft is buggy with that respect
-         * anyway.  No one knows, how those rules will look like in
-         * upcoming drafts...)
-         */
-
-        /* use occurrence indicator `?' if expr contains at most one item */
-        if (PFty_subtype (TY(L(args)), PFty_opt (PFty_item ())))
-            return *PFty_simplify (PFty_opt (
-                        PFty_prime (PFty_defn(TY(L(args))))));
-        /* otherwise we cannot do more than `*' */
-        else
-            return *PFty_simplify (PFty_star (
-                        PFty_prime (PFty_defn (TY(L(args))))));
-    }
-
-    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "exactly-one"))) {
-        return *PFty_simplify (PFty_prime (PFty_defn (TY(L(args)))));
-    }
-
-    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "zero-or-one"))) {
-        return *PFty_simplify (PFty_opt (PFty_prime (PFty_defn (TY(L(args))))));
-    }
-
-    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "unordered"))) {
-        return *PFty_simplify (PFty_prime (PFty_defn (TY(L(args)))));
-    }
-
-    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "union"))) {
-        PFty_t seq_type = PFty_seq (PFty_defn (TY(L(args))),
-                                    PFty_defn (TY(RL(args))));
-        return *PFty_simplify (
-                    (PFty_quantifier (seq_type))
-                        (PFty_prime (seq_type)));
-    }
-
-    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "intersect"))) {
-        PFty_t seq_type = PFty_seq (PFty_defn (TY(L(args))),
-                                    PFty_defn (TY(RL(args))));
-        return *PFty_simplify (
-                    PFty_opt (
-                        (PFty_quantifier (seq_type))
-                            (PFty_prime (seq_type))));
-    }
-    
-    if (! PFqname_eq (fn->qname, PFqname (PFns_op, "except"))) {
-        PFty_t left_type = PFty_defn (TY(L(args)));
-        return *PFty_simplify (
-                    PFty_opt (
-                        (PFty_quantifier (left_type))
-                            (PFty_prime (left_type))));
     }
 
 
