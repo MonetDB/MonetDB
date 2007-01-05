@@ -42,7 +42,6 @@ They are marked as unsafe.
 @h
 #ifndef _OPT_COERCION_
 #define _OPT_COERCION_
-#include "mal_config.h"
 #include "opt_prelude.h"
 #include "mal_interpreter.h"
 #include "opt_support.h"
@@ -51,6 +50,7 @@ They are marked as unsafe.
 
 #endif
 @c
+#include "mal_config.h"
 #include "opt_coercion.h"
 
 static int
