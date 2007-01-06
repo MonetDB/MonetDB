@@ -24,7 +24,7 @@
  * is now maintained by the Database Systems Group at the Technische
  * Universitaet Muenchen, Germany.  Portions created by the University of
  * Konstanz and the Technische Universitaet Muenchen are Copyright (C)
- * 2000-2005 University of Konstanz and (C) 2005-2007 Technische
+ * 2000-2005 University of Konstanz and (C) 2005-2006 Technische
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  * $Id$
@@ -39,13 +39,25 @@
 /*..................... type definitions ......................*/
 #define ATT_BITS 5
 #define TYPE_BITS 4
+#define SPEC_BITS 3
 #define ASCII_A   97
+
+#define sql_col_pre     0x00000002
+#define sql_col_level   0x00000004
+#define sql_col_size    0x00000008
+#define sql_col_kind    0x00000010
+#define sql_col_prop    0x00000020
+typedef unsigned int PFsql_special_t;
 
 /* Reserve identifiers. */
 #define PF_SQL_TABLE_SYSDUMMY1  1
 #define PF_SQL_TABLE_FRAG       2
 #define PF_SQL_TABLE_TIME_PRINT 23
 #define PF_SQL_RES_TABLE_COUNT (PF_SQL_TABLE_TIME_PRINT + 1)
+
+#define PF_SQL_CORRELATION_UNBOUNDED 0
+#define PF_SQL_CORRELATION_TIME_PRINT 1
+#define PF_SQL_RES_CORRELATION_COUNT (PF_SQL_CORRELATION_TIME_PRINT + 1)
 
 #define PF_SQL_COLUMN_TIME_PRINT 23
 #define PF_SQL_RES_COLUMN_COUNT (PF_SQL_COLUMN_TIME_PRINT + 1)
@@ -71,9 +83,13 @@ typedef unsigned int PFsql_att_count_t;
  */
 typedef unsigned int PFsql_type_count_t;
 /**
- * SQL identifiers are unsigned ints
+ * SQL identifiers are unsigned ints.
  */
 typedef unsigned int PFsql_ident_t;
+/**
+ * SQL correlation name.
+ */
+typedef unsigned int PFsql_correlation_name_t;
 
 /*............... SQL operators (relational operators) ............*/
 
@@ -131,7 +147,10 @@ enum PFsql_kind_t {
    sql_prttn            = 46,
    sql_prt_expr         = 47,
    sql_srtky_expr       = 48,
-   sql_wnd_clause        = 49
+   sql_wnd_clause       = 49,
+   sql_diff             = 50,
+   sql_gteq             = 51,
+   sql_count            = 52
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -153,7 +172,7 @@ union PFsql_sem_t {
         PFsql_ident_t ident;
     } correlation;
     struct {
-        PFsql_ident_t ident;
+        PFsql_correlation_name_t ident;
     } column;
     struct {
         bool distinct;                  /**< No equal tuples in result
@@ -163,6 +182,9 @@ union PFsql_sem_t {
         struct PFsql_t   *where_list;   /**< Select where list. */
         struct PFsql_t   *grpby_list;   /**< Select group by list. */
     } select;
+    struct {
+         bool distinct;
+    } count;
     char             *comment;         /**< String containing comment. */
 
     struct {
@@ -195,6 +217,9 @@ struct PFsql_t {
     PFsql_kind_t     kind;          /**< Operator kind. */
     PFsql_sem_t      sem;           /**< Semantic content for 
                                             this operator. */
+    PFsql_correlation_name_t    crrlname;  /**< Each expression is bound to a
+                                                table identified by its
+                                                correlation name */
     struct PFsql_t   *child[PFSQL_OP_MAXCHILD]; /**< Childs of this
                                                         operator. */
 };
@@ -210,14 +235,22 @@ struct PFsql_alg_ann_t {
     PFsql_t       *sfw;          /**< SQL code that implements this
                                       subexpression. Should always be an
                                       SFW clause. */
+    PFsql_t       *fragment;     /**< table containing a fragment */
     PFarray_t   *colmap;     /**< Mapping table that maps (logical)
-                                      attribute type  pairs to their
+                                      attribute/type  pairs to their
                                       SQL expression or in case of 
                                       a binding to their column names. */
     PFarray_t   *wheremap;  /**< contains references to the boolean
                                  in colmap */
 };
 typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
+
+/*.................... General ...................*/
+/**
+ * Decorate an SQL expression with a correlation.
+ */
+PFsql_t* PFsql_correlation_decorator(PFsql_t *op,
+                        PFsql_correlation_name_t crrl);
 
 /*.................... Constructors .....................*/
 
@@ -245,6 +278,11 @@ PFsql_t* PFsql_select_distinct(const PFsql_t *selectlist,
  */
 PFsql_t* PFsql_union(const PFsql_t *a, const PFsql_t *b);
 
+/**
+ * Construct a SQL `difference' operator.
+ */
+PFsql_t* PFsql_difference(const PFsql_t *a, const PFsql_t *b);
+
 /*............ Common Operators ............*/
 
 PFsql_t* PFsql_with( const PFsql_t *a, const PFsql_t *b );
@@ -266,6 +304,8 @@ PFsql_t* PFsql_type(PFalg_simple_type_t t);
 PFsql_t* PFsql_cast(const PFsql_t *expr, const PFsql_t *t);
 
 /*............ Aggregat Functions ............*/
+
+PFsql_t* PFsql_count(bool dist, const PFsql_t *expr);
 
 /**
  * Construct a SQL `rownumber' operator.
@@ -316,7 +356,7 @@ PFsql_t* PFsql_tab_name(const PFsql_t *schema, const PFsql_t *table_name);
 
 PFsql_t* PFsql_alias( const PFsql_t *a, const PFsql_t *b);
 
-PFsql_t* PFsql_correlation_name( PFsql_ident_t name );
+PFsql_t* PFsql_correlation_name( PFsql_correlation_name_t name );
 
 /*................. Columns ...................*/
 
@@ -344,7 +384,7 @@ char* PFsql_simple_type_str(PFalg_simple_type_t type);
 /**
  * Convert the @a name to a string.
  */
-char* PFsql_loc_var_str(PFsql_ident_t name);
+char* PFsql_correlation_name_str(PFsql_correlation_name_t name);
 
 /*.................. Literal construction .................... */
 
@@ -487,6 +527,11 @@ PFsql_t* PFsql_div(const PFsql_t *a, const PFsql_t *b);
  * Construct a (comparison) greater-than operator.
  */
 PFsql_t* PFsql_gt(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct a (comparison) great-than-or-equal operator.
+ */
+PFsql_t* PFsql_gteq(const PFsql_t *a, const PFsql_t *b);
 
 /**
  * Construct a (comparison) equality operator.

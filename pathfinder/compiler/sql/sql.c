@@ -27,7 +27,7 @@
  * is now maintained by the Database Systems Group at the Technische
  * Universitaet Muenchen, Germany.  Portions created by the University of
  * Konstanz and the Technische Universitaet Muenchen are Copyright (C)
- * 2000-2005 University of Konstanz and (C) 2005-2007 Technische
+ * 2000-2005 University of Konstanz and (C) 2005-2006 Technische
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  * $Id$
@@ -43,6 +43,22 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+
+/*............... General ...............*/
+
+/**
+ * Decorate an SQL expression with a correlation.
+ *
+ * @param op   SQL operator or expression.
+ * @param crrl The identifier of the correlation.
+ */
+PFsql_t*
+PFsql_correlation_decorator(PFsql_t *op, PFsql_correlation_name_t crrl)
+{
+    assert( op );
+    op->crrlname = crrl;
+    return op;
+}
 
 /*............... Constructors ..............*/ 
 
@@ -103,6 +119,7 @@ PFsql_op_leaf (PFsql_kind_t kind)
     PFsql_t *ret  =  (PFsql_t*)PFmalloc(
             sizeof( PFsql_t ) );
     ret->kind        =  kind;
+    ret->crrlname    = PF_SQL_CORRELATION_UNBOUNDED;
    
     /* initialize childs */
     for( unsigned int i = 0; i < PFSQL_OP_MAXCHILD; i++)
@@ -181,6 +198,16 @@ PFsql_union(const PFsql_t *a, const PFsql_t *b)
     return wire2(sql_union, a, b);
 }
 
+/**
+ * Create a SQL tree node representing the SQL
+ * `differenc' operator.
+ */
+PFsql_t*
+PFsql_difference(const PFsql_t *a, const PFsql_t* b)
+{
+    return wire2(sql_diff, a, b);
+}
+
 /*........... Common Operators ..........*/
 
 /**
@@ -242,6 +269,14 @@ PFsql_cast(const PFsql_t *expr, const PFsql_t *t)
 }
 
 /*............ Aggregat Functions ...........*/
+
+PFsql_t*
+PFsql_count(bool dist, const PFsql_t *expr)
+{
+    PFsql_t* ret = wire1(sql_count, expr);
+    ret->sem.count.distinct = dist;
+    return ret;
+}
 
 /**
  * Create a SQL tree node representing SQL
@@ -370,7 +405,7 @@ PFsql_alias(const PFsql_t *a, const PFsql_t *b)
 }
 
 PFsql_t*
-PFsql_correlation_name(PFsql_ident_t name)
+PFsql_correlation_name(PFsql_correlation_name_t name)
 {
     PFsql_t *ret = leaf(sql_crrltn_name);
     ret->sem.correlation.ident = name;
@@ -455,13 +490,25 @@ PFsql_column_name_str(PFsql_ident_t ident)
     char *res = NULL;
     size_t len = 0;
 
+    /* check if special bits are set */
+    if( (ident >> (ATT_BITS + TYPE_BITS)) & 0x00000007 ) {
+        switch( (0x00000001) <<
+                ((ident >> (ATT_BITS + TYPE_BITS)) & 0x00000007) ) {
+            case sql_col_pre:    return "pre";
+            case sql_col_level:  return "level";
+            case sql_col_size:   return "size";
+            case sql_col_kind:   return "kind";
+            case sql_col_prop:   return "prop";
+            default: PFoops( OOPS_FATAL, "unknown special flag set" );
+        }
+    }
     PFalg_att_t att = ((0x0000001F & ident) <= 0)? 0x00000000:
         (0x00000001 << (((0x0000001F) & ident)-1));
     PFalg_simple_type_t ty = (0x00000001 << (((0x000001E0) & ident) >>
                 ATT_BITS));
 
     attstr = PFatt_str(att);
-    tystr  = PFalg_simple_type_str(ty);
+    tystr  = PFsimple_type_str(ty);
 
     len = strlen(attstr);
     len += strlen(tystr);
@@ -495,17 +542,21 @@ PFsql_simple_type_str(PFalg_simple_type_t type)
  * @param name The identifier to convert.
  */
 char*
-PFsql_loc_var_str(PFsql_ident_t name)
+PFsql_correlation_name_str(PFsql_correlation_name_t name)
 {
-   switch( name ) {
-       default:
-       {
-           assert( name <= 26 );
-           char *res = (char*)PFmalloc( 2 * sizeof( char ) );
-           snprintf(res, 2, "%c", (char)name + ASCII_A );
-           return res; 
-       }
-   }
+    switch( name ) {
+        default:
+        {
+            assert( name >= PF_SQL_RES_CORRELATION_COUNT);
+            name -= PF_SQL_RES_CORRELATION_COUNT;
+            assert( name < 10000 );
+            size_t len = sizeof("c0000");
+            char *res = (char*)PFmalloc( len );
+            snprintf( res, len, "c%04u", name);
+            return res;
+        }
+    }
+    return NULL; /* satisfy picky compilers */
 }
 
 /*............ Literal construction ............*/
@@ -873,6 +924,19 @@ PFsql_t*
 PFsql_gt(const PFsql_t *a, const PFsql_t *b)
 {
     return wire2(sql_gt, a, b);
+}
+
+/**
+ * Create a SQL tree node representing a boolean
+ * (comparison) greater-than-or_equal operator.
+ *
+ * @param   a  
+ * @param   b
+ */
+PFsql_t*
+PFsql_gteq(const PFsql_t *a, const PFsql_t *b)
+{
+    return wire2(sql_gteq, a, b);
 }
 
 /**

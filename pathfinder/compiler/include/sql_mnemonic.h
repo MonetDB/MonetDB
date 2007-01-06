@@ -45,6 +45,7 @@
 /** SQL select distinct construction */
 #define select_distinct(sl, fl, wl)     PFsql_select_distinct(sl, fl, wl)
 #define disjunion( a, b )           PFsql_union( a , b )
+#define difference( a, b )          PFsql_difference( a, b )
 
 /*............ Common Operators ...........*/
 
@@ -56,6 +57,7 @@
 
 /*............ SQL aggregat functions ............*/ 
 
+#define count(b, e)                    PFsql_count(b, e)
 /* SQL rownumber aggrfun construction. */
 #define rownumber( )                   PFsql_rownumber( )
 #define over( a, b )                   PFsql_over( a, b )
@@ -82,11 +84,13 @@
 #define tab_name( a, b )            PFsql_tab_name( a, b )
 #define alias( a, b )               PFsql_alias( a, b )
 #define correlation_name( i )       PFsql_correlation_name( i )
+#define crrl_deco( op, crrl )       PFsql_correlation_decorator( op, crrl )
+#define CRRL_UNBOUNDED              PF_SQL_CORRELATION_UNBOUNDED
 
 /*........... Columns .............*/
 
 /* SQL attribute variable construction. */
-#define column_name(i)              PFsql_column_name(i)
+#define column_name( i )          PFsql_column_name( i )
 #define column_assign( a, b )       PFsql_column_assign( a, b )
 
 /*........... literal constructors ............*/ 
@@ -142,8 +146,10 @@
 /*......... Boolean operator constructors .......*/
 
 /** Construct boolean `greater-than' operator. */
-#define gt( a, b )                  PFsql_or( a, b )
-/** Construct boolean `equality' operator. */
+#define gt( a, b )                  PFsql_gt( a, b )
+/** Construct boolean `greater-than-or-equal' operator. */
+#define gteq( a, b )                  PFsql_gteq( a, b )
+/** Construct boolean `equal' operator.  */
 #define eq( a, b )                  PFsql_eq( a, b )
 /** Construct boolean `not' operator. */
 #define not( a, b )                 PFsql_not( a, b )

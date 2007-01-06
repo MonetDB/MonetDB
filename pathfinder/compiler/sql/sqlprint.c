@@ -18,7 +18,7 @@
  fullselect ::=   '('fullselect') UNION ('fullselect')'
               |   subselect
 
- subselect  ::=   'SELECT' select-list 'FROM' from-list
+ subselect  ::=   'SELECT' select-list 'FROM' from-list ['WHERE' where-list]
 
  from-list  ::=   table-reference from-list 
 
@@ -70,6 +70,7 @@ static void print_from_list(PFsql_t*);
 static void print_tablereference(PFsql_t*);
 static void print_fullselect(PFsql_t*);
 static void print_expr(PFsql_t*);
+static void print_correlation(PFsql_t*);
 
 /**
  * Print SQL statements.
@@ -142,7 +143,7 @@ static void
 print_table_name(PFsql_t *n)
 {
     assert( n );
-    assert( n->kind == sql_tbl_name );
+    assert( n->kind = sql_tbl_name );
 
     sqlprintf("%s", PFsql_table_str( n->sem.tablename.ident ));
     /* the column-list has not to be specified in every case */ 
@@ -162,7 +163,7 @@ print_subselect(PFsql_t *n)
         {
             sqlprintf("SELECT ");
             sqlprintf("%s", ( n->sem.select.distinct )?
-                    "DISTINCT ":"ALL ");
+                    "DISTINCT ":"");
             print_select_list( n->sem.select.select_list );
             sqlprintf(" FROM ");
             print_from_list( n->sem.select.from_list );
@@ -217,6 +218,12 @@ print_tablereference(PFsql_t* n)
             print_fullselect( n );
             sqlprintf(")");
         } break;
+        case sql_alias:
+        {
+          print_tablereference( n->child[0] );
+          sqlprintf(" ");
+          print_correlation( n->child[1]);
+        } break;
         case sql_tbl_name:
         {
             print_table_name( n );
@@ -236,6 +243,16 @@ print_tablereference(PFsql_t* n)
 }
 
 static void
+print_correlation( PFsql_t *n)
+{
+   assert( n );
+   assert( n->kind == sql_crrltn_name );
+
+   sqlprintf("%s",
+       PFsql_correlation_name_str( n->sem.correlation.ident ));
+}
+
+static void
 print_fullselect(PFsql_t *n)
 {
     assert( n );
@@ -244,10 +261,19 @@ print_fullselect(PFsql_t *n)
         {
             sqlprintf("(");
             print_fullselect(n->child[0]);
-            sqlprintf(") UNION ALL (");
+            sqlprintf(") UNION (");
             print_fullselect(n->child[1]);
             sqlprintf(")");
         } break;
+        case sql_diff:
+        {
+            sqlprintf("(");
+            print_fullselect(n->child[0]);
+            sqlprintf(") EXCEPT (");
+            print_fullselect(n->child[1]);
+            sqlprintf(")");
+        } break;
+
         default:
         {
             print_subselect( n );
@@ -301,8 +327,21 @@ print_expr(PFsql_t *n)
           print_expr( n->child[1] );
           sqlprintf(")");
         } break;
+        case sql_gteq:
+        {
+          sqlprintf("(");
+          print_expr( n->child[0] );
+          sqlprintf(" >= ");
+          print_expr( n->child[1] );
+          sqlprintf(")");
+        } break;
         case sql_clmn_name:
         {
+            if( n->crrlname != PF_SQL_CORRELATION_UNBOUNDED ) {
+                sqlprintf("%s",
+                    PFsql_correlation_name_str(n->crrlname));
+                sqlprintf(".");
+            }
             sqlprintf("%s",
                     PFsql_column_name_str(n->sem.column.ident));
         } break;
@@ -310,7 +349,10 @@ print_expr(PFsql_t *n)
         {
             sqlprintf("%i", n->sem.atom.val.i);
         } break;
-
+        case sql_lit_str:
+        {
+            sqlprintf("'%s'", n->sem.atom.val.s);
+        } break;
         default:
         {
             PFoops( OOPS_FATAL, "expression screwed up (%u)",
@@ -411,7 +453,7 @@ print_clm_list(PFsql_t *n)
                 "Pathfinder failed to print argument list");
     }
 
-    if( (n->kind == sql_list_terminator) &&
+    if( (n->kind = sql_list_terminator) &&
             (n->child[0] == NULL) && (n->child[1] == NULL) )
         return;
 
@@ -425,6 +467,13 @@ static void
 print_statement(PFsql_t *n)
 {
     switch( n->kind ) {
+        case sql_count:
+        {
+            sqlprintf("COUNT (");
+            sqlprintf("%s", (n->sem.count.distinct)?"DISTINCT ":"");
+            print_statement( n->child[0] );
+            sqlprintf(")"); 
+        } break;
         case sql_eq:
             sqlprintf("(");
             print_statement( n->child[0] );
@@ -466,6 +515,14 @@ print_statement(PFsql_t *n)
                 print_statement( n->child[1] );
                 sqlprintf(")");
             } break;
+        case sql_diff:
+            {
+                sqlprintf("(");
+                print_statement( n->child[0] );
+                sqlprintf(") EXCEPT (");
+                print_statement( n->child[1] );
+                sqlprintf(")");
+            } break;
         case sql_alias:
             {
                 if(n->child[0]->kind != sql_tbl_name ) {
@@ -498,6 +555,11 @@ print_statement(PFsql_t *n)
         } break;
         case sql_clmn_name:
         {
+            if( n->crrlname != PF_SQL_CORRELATION_UNBOUNDED ) {
+                sqlprintf("%s", 
+                    PFsql_correlation_name_str(n->crrlname));
+                sqlprintf(".");
+            }
             sqlprintf("%s",
                     PFsql_column_name_str(n->sem.column.ident));
         } break;
@@ -562,7 +624,7 @@ static void
 print_schema_name(PFsql_t *n)
 {
     assert( n );
-    assert( n->kind == sql_schm );
+    assert( n->kind = sql_schm );
 
     sqlprintf("%s", n->sem.schema.str);
 }
