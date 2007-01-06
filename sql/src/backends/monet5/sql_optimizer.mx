@@ -108,6 +108,7 @@ factory structures.
 
 #include "opt_prelude.h"
 #include "opt_support.h"
+#include "opt_ccumulators.accessmode"
 #include "opt_accumulators.h"
 #include "opt_aliases.h"
 #include "opt_coercion.h"
@@ -371,6 +372,7 @@ str defaultPlan=
 	"coercions,"
 	/* "emptySet," */
 	/* "joinselect," */
+	"accessmode",
 	"aliases,"
 	/* "crackers," */
 	"commonTerms,"
