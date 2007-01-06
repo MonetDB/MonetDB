@@ -9,7 +9,7 @@ Version: %{version}
 Release: %{release}
 Summary: MonetDB - Monet Database Management System
 Group: System
-Source: %{name}-%{version}.tar.gz
+Source: MonetDB-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
@@ -117,7 +117,7 @@ Requires: java
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n %{name}-%{version}
+%setup -q -n MonetDB-%{version}
 
 %build
 
@@ -144,8 +144,9 @@ make install \
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
 
 # cleanup stuff we don't want to install
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/conf/conf.bash
-rm -rf $RPM_BUILD_ROOT%{_libdir}/%{name}/Tests/*
+rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/conf/conf.bash
+rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/Tests/*
+rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-clients-config.bat
 
 rm -rf $RPM_BUILD_ROOT%{prefix}/include/MonetDB/sql.h
@@ -197,5 +198,6 @@ rm -fr $RPM_BUILD_ROOT
 %if %{?_with_java:1}%{!?_with_java:0}
 %files java
 %defattr(-,monetdb,monetdb) 
+%{prefix}/bin/mjclient 
 %{prefix}/share/MonetDB/lib/*jar
 %endif
