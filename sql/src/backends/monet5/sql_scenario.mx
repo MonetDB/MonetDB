@@ -63,8 +63,6 @@ should be initialized. Thereafter, each time a client enters
 we update its context descriptor to denote an SQL scenario.
 @c
 #include "sql_config.h"
-#include "mal_config.h"
-#include <malloc.h>
 #include "sql_scenario.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
