@@ -120,6 +120,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql.*
 %{_libdir}/MonetDB4/lib/lib_sql_server*
 %{_libdir}/MonetDB4/*.mil
+%{prefix}/include/embeddedclient.h
 %endif
 
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
