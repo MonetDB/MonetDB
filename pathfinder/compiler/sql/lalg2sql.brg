@@ -1358,16 +1358,16 @@ reduce(PFla_op_t *p, int goalnt)
                     p->sql_ann->wheremap);
                     
             PFsql_t *srtbylist = sortkey_expressions_empty();
-            for( unsigned int j = 0; j < p->sem.rownum.
-                            sortby.count; j++ ) {
+            for( unsigned int j = 0; j < PFord_count(p->sem.rownum.
+                            sortby); j++ ) {
                 srtbylist = 
                         sortkey_expressions_add(
                             srtbylist,
                             sql_expression(
-                                L(p)->sql_ann->colmap, p->sem.rownum.
-                                sortby.atts[j],
+                                L(p)->sql_ann->colmap, PFord_order_dir_at(p->sem.rownum.
+                                sortby, j),
                                 type_of(
-                                    L(p), p->sem.rownum.sortby.atts[j])));
+                                    L(p), PFord_order_dir_at(p->sem.rownum.sortby, j))));
             }
 
             sql_column_env_add( p->sql_ann->colmap,
@@ -1944,6 +1944,53 @@ where_env_copy(PFarray_t *srcwheremap, PFarray_t *destwheremap)
                 entry.expression);
     }
 }
+
+#if 0
+
+static PFsql_t*
+llscj_desc_self_elem()
+{
+}
+
+static PFsql_t*
+llscj_elem(enum axis_t axis)
+{
+    switch( axis ) {
+        case ax_desc_self:
+            return llscj_desc_self_elem();
+    }
+}
+static PFsql_t*
+llscj(enum axis_t axis, const PFla_op_t *p)
+{
+    /* abbreviations for input expressions */
+    PFty_t ty = p->sem.scjoin.ty;
+
+    PFsql_t *scj = NULL; /* SQL expression that evaluates the scj */
+
+    /* SQL equivalents of input expression */
+    PFsql_t *iter;
+    PFsql_t *item;
+    PFsql_t *frag;
+
+    /*
+     * Determine generic input arguments.
+     */
+    assert(p); assert(R(p)); assert( R(p)->sql_ann->colmap );
+    iter = sql_expression( R(p)->sql_ann->colmap,
+            aat_
+
+    if( PFty_subtype( ty, PFty_xs_anyElement ())) {
+        /* This is a test for element nodes */
+
+        /* This is just a generic element kind test */
+        if( PFty_subtype( PFty_xs_anyElement(), ty) ) {
+            scj = llscj_elem( axis );
+        }
+    }
+}
+
+#endif
 
 static void
 parse(PFla_op_t *n)

@@ -16,6 +16,7 @@
                            fullselect')'
 
  fullselect ::=   '('fullselect') UNION ('fullselect')'
+              |   '('fullselect') EXCEPT ('fullselect')'
               |   subselect
 
  subselect  ::=   'SELECT' select-list 'FROM' from-list ['WHERE' where-list]
