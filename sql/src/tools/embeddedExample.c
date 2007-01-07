@@ -20,6 +20,7 @@
 This program is meant to illustrate an embedded SQL application
 and provides a baseline for footprint comparisons.
 */
+#include <sql_config.h>
 #include <embeddedclient.h>
 
 #define die(dbh,hdl)	do {						\

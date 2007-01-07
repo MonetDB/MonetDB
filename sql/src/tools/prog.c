@@ -16,6 +16,7 @@
  * All Rights Reserved.
  */
 
+#include <sql_config.h>
 #include <monet_options.h>
 #include "embeddedclient.h"
 
