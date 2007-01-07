@@ -905,9 +905,9 @@ Failure leads to raise-ing an exception in the interpreter loop,
 by either looking up the relevant exception message in the module
 administration or construction of a standard string.
 
-The PATcall initiates a call which contains the MAL context.
+The PATcall initiates a call which contains the MAL context,
 i.e. f(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-The blk provides access to the code definitions. It is primarilly
+The mb provides access to the code definitions. It is primarilly
 used by routines intended to manipulate the code base itself, such
 as the optimizers. The Mal stack frame pointer provides access
 to the values maintained. The arguments passed are offsets
@@ -1219,13 +1219,8 @@ jumps are re-established.
 @-
 @node Exception Handling, Garbage Collection, MAL API, The MAL Interpreter
 @+ Exception handling
-Calling a built-in or user-defined routine may lead to an error, a
-cached status message to be dealt with in MAL, or as an error status in Mapi.
-@{
-[there are about 55 GDKerror calls in gdk and 167 in 
-the modules/plain/*.  The number of fatal errors is 26, 2, respectively.]
-@}
-
+Calling a built-in or user-defined routine may lead to an error or a
+cached status message to be dealt with in MAL.
 To improve error handling in MAL, an exception handling
 scheme based on @sc{catch}-@sc{exit} blocks. The @sc{catch}
 statement identifies a (string-valued) variable, which carries the 
@@ -1255,11 +1250,11 @@ Second, exceptional cases can be handled deeply in the recursion, where they
 may also be handled, i.e. by issueing an GDKerror message. The upper layers
 merely receive a negative integer value to indicate occurrence of an
 error somewhere in the calling sequence.
-We have to also look into GDKerrbuf to see if there was
+We then have to also look into GDKerrbuf to see if there was
 an error raised deeply inside the system.
 
 The policy is to require all C-functions to return a string-pointer. 
-Upon successfull call, this string function is NULL. Otherwise it contains an
+Upon a successfull call, this string function is NULL. Otherwise it contains an
 encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
 @{
@@ -1344,22 +1339,13 @@ str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
 Garbage collection is relatively straightforward, because most values are
 retained on the stackframe of an interpreter call. However, two storage
 types and possibly user-defined type garbage collector definitions
-require attention: BATs and strings. [TAKE CARE OF fixable atoms !!]
+require attention: BATs and strings.
 
 A key issue is to deal with temporary BATs in an efficient way.
 References to bats in the buffer pool may cause dangling references
 at the language level. This appears as soons as your share
 a reference and delete the BAT from one angle. If not carefull, the
 dangling pointer may subsequently be associated with another BAT
-
-Dangling references can be dealt with in several ways.
-First, we could increase the reference count each time a BAT
-becomes shared and rely on the garbage collector to properly
-decrement the count before abanding a execution frame.
-Second, we could try to avoid dangling pointers by permitting
-just one reference per BAT. This doesn't work, because we may
-keep BAT-views around, which depend on the existence of the
-underlying BAT.
 
 All string values are private to the VALrecord, which means they
 have to be freed explicitly before a MAL function returns. 

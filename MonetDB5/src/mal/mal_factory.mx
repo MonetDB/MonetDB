@@ -76,7 +76,7 @@ exit forever;
 end random;
 @end example
 
-@- Client Authorization
+@- Factory Ownership
 For simple cases, e.g. implementation of a random function,
 it suffices to ensure that the state is secured between calls.
 But, in a database context there are multiple clients
@@ -106,7 +106,7 @@ factory random(seed:int,clientid:int):int;
 barrier always:=true;
     rnd:= algebra.find(clt,clientid);
 catch   rnd; #failed to find client
-    insert(clt,clientid,seed);
+    bat.insert(clt,clientid,seed);
     rnd:= algebra.find(clt,clientid);
 exit    rnd;
     rnd:= rnd * 125;
@@ -213,8 +213,8 @@ For example:
 
 @example
 factory view1(l:int, h:int):bat[:oid,:str];
-	a:bat[:oid,:int]:= bbp.bind("emp","age");
-	b:bat[:oid,:str]:= bbp.bind("emp","name");
+    a:bat[:oid,:int]:= bbp.bind("emp","age");
+    b:bat[:oid,:str]:= bbp.bind("emp","name");
 barrier always := true;
     lOld := l;
     hOld := h;

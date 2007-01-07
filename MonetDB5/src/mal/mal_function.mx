@@ -29,6 +29,7 @@ An illustrative example is:
 @example
 function user.helloWorld(msg:str):str;
     io.print(msg);
+	msg:= "done";
     return msg;
 end user.hellowWorld;
 @end example
@@ -417,9 +418,9 @@ int getBarrierEnvelop(MalBlkPtr mb){
 @- Polymorphic Functions
 Polymorphic functions are characterised by type variables
 denoted by @sc{:any} and an optional index.
-Each time a polymorphic  MAL function is called, the
+Each time a polymorphic MAL function is called, the
 symbol table is first inspected for the matching strongly typed
-version.  If it does not exists, a copy of MAL program
+version.  If it does not exists, a copy of the MAL program
 is generated, whereafter the type
 variables are replaced with their concrete types.
 The new MAL program is immediately type checked and, if
@@ -433,7 +434,7 @@ concrete types.
 An example of a parameterised function is shown below:
 @example
 function user.helloWorld(msg:any_1):any_1;
-	io.print(msg);
+    io.print(msg);
 return user.helloWorld;
 @end example
 The type variables ensure that the return type equals the
@@ -469,7 +470,8 @@ provided they match on the head column type.
 Such a polymorphic type list may only be used in the context of
 a pattern.
 @example
-command bat.insert(b:bat[:any_1,:any_2], ht:any_1, tt:any_2) :bat[:any_1,:any_2]
+command bat.insert(b:bat[:any_1,:any_2], ht:any_1, tt:any_2)
+	:bat[:any_1,:any_2]
 address BKCinsert_bun;
 
 pattern io.print(b1:bat[:any_1,:any]...):int

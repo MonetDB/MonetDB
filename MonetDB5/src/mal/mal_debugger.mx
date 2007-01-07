@@ -153,8 +153,7 @@ mdb>
 #    b := bat.new(:int,:int);
 mdb>
 @end example
-The last instruction shown is ready to be executed, which means
-the calculation has already been finished. The result can be
+The last instruction shown is next to be executed. The result can be
 shown using a print statement, which contains the location of
 the variable on the stack frame, its name, its value and type.
 The complete stack frame becomes visible with 'values' ('v')

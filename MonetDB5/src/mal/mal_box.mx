@@ -87,7 +87,7 @@ end function;
 @end example
 
 The function binds to a copy from the local persistent BAT space,
-much like bat-names are resolved in earlier versions. The second
+much like bat-names are resolved in earlier MonetDB versions. The second
 statement uses an implementation of take that searches a variable
 of interest using two string properties. It illustrates that
 a box manager is free to extend/overload the predefined scheme, 
@@ -145,7 +145,7 @@ the users having permission to read/write its content.
 The first one to create the box becomes the owner. He may grant/revoke
 access to the box to users on a selective basis.
 
-@- Session box
+@- Session Box
 Aside from box associated with the modules, a session box is created
 dynamically on behalf of each client. Such boxes are considered private
 and require access by the user name (and password). 
@@ -168,7 +168,7 @@ user, language, database, port, and any other session parameter.
 The boxes are all collected in the context of the database directory,
 i.e. the directory <dbfarm>/box
 
-@- Garbage collection
+@- Garbage Collection
 The key objects managed by MonetDB are the persistent BATs, which
 call for an efficient scheme to make them accessible for manipulation
 in the MAL procedures taking into account a possibly hostile
@@ -179,7 +179,7 @@ from the runtime stack. They should be garbage collected as soon as
 deemed possible to free-up space. By default, temporary results are
 garbage collected before returning from a MAL function.
 
-@- Polymorphic globals
+@- Globale Environment
 The top level interaction keeps a 'box' with global variables,
 i.e. each MAL statement is interpreted in an already initialized
 stack frame.

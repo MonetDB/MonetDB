@@ -20,7 +20,7 @@
 
 Properties come in several classes, those linked with the symbol table and
 those linked with the runtime environment. The former are determined
-once upon parsing or catalogue lookup. The runtime properties have two 
+once upon parsing or catalog lookup. The runtime properties have two 
 major subclasses, i.e. reflective and prescriptive. The reflective properties 
 merely provide a fast cache to information aggregated from the target.
 Prescriptive properties communicate desirable states, leaving it to other
@@ -93,20 +93,6 @@ is translated into the following code block;
 	z:= user.test(b);
 	mal.assert(z,"sorted");
 @end verbatim
-
-@emph{MAL instructions.} Properties associated with an instruction are aimed
-at the a tactical optimizer and execution engine. It says something about
-the context in which the instruction should take place, e.g. a timeout 
-property.
-
-The second layer involves tagging structures known to front-ends, such as
-SQL and XML. Given that they produce a MAL block, setting properties
-becomes an explicit action. This can be handled as a first step in the
-optimization phase, which 'executes' all property setting actions first.
-However, 'preferred' properties may have to be dealt with later. For example,
-an operation should produce a sorted BAT. This calls for a runtime test and
-possible coercion. Alternatively, the desired property leads to a different
-selection of an operator implementation.
 
 @emph{How to propagate properties?}
 Property inspection and manipulation is strongly linked with the operators

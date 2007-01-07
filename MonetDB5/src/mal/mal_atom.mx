@@ -45,7 +45,7 @@ library(see ../modules/atoms/blob.mx)
 @- Defining your own types
 For the courageous at heart, you may enter the difficult world
 of extending the kernel library. The easiest way is to derive
-the atom modules from one shipped in the source distributie.
+the atom modules from one shipped in the source distributed.
 More involved atomary types require a study of the
 documentation associated with the atom structures (gdk_atoms),
 because you have to develop a handful routines complying with the
