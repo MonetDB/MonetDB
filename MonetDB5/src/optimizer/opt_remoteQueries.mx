@@ -25,7 +25,7 @@ the corresponding BAT is fetched and added to the local cache.
 Consider the following snippet produced by a query compiler,
 @verbatim
 mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-b:bat[:void,:int] := mserver.bind(mid,"rvar");
+b:bat[:oid,:int] := mserver.bind(mid,"rvar");
 c:=algebra.select(b,0,12);
 io.print(c);
 d:=algebra.select(b,5,10);
@@ -56,9 +56,9 @@ just before they are locally needed.
 
 @verbatim
 mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-mserver.rpc(mid,"b:bat[:void,:int] :=bbp.bind(\"rvar\");");
+mserver.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
 mserver.rpc(mid,"c:=algebra.select(b,0,12);");
-c:bat[:void,:int]:= mserver.rpc(mid, "io.print(c);");
+c:bat[:oid,:int]:= mserver.rpc(mid, "io.print(c);");
 io.print(c);
 mserver.rpc(mid,"d:=algebra.select(b,5,10);");
 low:= 5+1;
@@ -79,17 +79,17 @@ Glueing together statements should respect the flow.
 It seems that we can savely concatenate subsequence
 requests.
 @verbatim
-mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-mserver.rpc(mid,"b:bat[:void,:int] :=bbp.bind(\"rvar\");");
-mserver.rpc(mid,"c:=algebra.select(b,0,12);");
-c:bat[:void,:int]:= mserver.rpc(mid, "io.print(c);");
-io.print(c);
-mserver.rpc(mid,"d:=algebra.select(b,5,10);");
-low:= 5+1;
-mserver.put(mid,"low",low);
-i:= mserver.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");
-io.printf(" count %d\n",i);
-io.print(d);
+    mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+    mserver.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
+    mserver.rpc(mid,"c:=algebra.select(b,0,12);");
+    c:bat[:oid,:int]:= mserver.rpc(mid, "io.print(c);");
+    io.print(c);
+    mserver.rpc(mid,"d:=algebra.select(b,5,10);");
+    low:= 5+1;
+    mserver.put(mid,"low",low);
+    i:= mserver.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");
+    io.printf(" count %d\n",i);
+    io.print(d);
 @end verbatim
 
 @mal

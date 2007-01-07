@@ -44,7 +44,7 @@ A subsequent call of the partition optimizer will replace
 the print command with an iterator.
 @verbatim
 
-function qry(a:bat[:void,:any_1]
+function qry(a:bat[:oid,:any_1]
 	b:bat[void,:int]:= pdbm.generator("Sales2005")
 	i:= algebra.count(b);
 	io.print(i);
@@ -53,7 +53,7 @@ optimizer.generators("user","qry");
 @end verbatim
 The query is transformed into the following version.
 @verbatim
-function user.qry(a:bat[:void,:any_1]{mat}):void;
+function user.qry(a:bat[:oid,:any_1]{mat}):void;
 	i:= 0;
 barrier b:= mat.newIterator("Sales2005");
 	_8:= aggr.count(b);

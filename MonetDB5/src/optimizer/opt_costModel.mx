@@ -16,7 +16,7 @@
 
 @f opt_costModel
 @a M. L. Kersten
-@- The costmodel approach
+@- Costmodel Approach
 Cost models form the basis for many optimization decisions.
 The cost parameters are typically the size of the (intermediate)
 results and response time. Alternatively, they are running
@@ -30,8 +30,8 @@ MAL program in search for
 relational operators and estimates their result size. 
 The estimated size is left behind as the property @sc{rows}.
 @verbatim
-    r{rows=100} := bat.new(:void,:int);
-    s{rows=1000}:= bat.new(:void,:int);
+    r{rows=100} := bat.new(:oid,:int);
+    s{rows=1000}:= bat.new(:oid,:int);
     rs:= algebra.select(s,1,1);
     rr:= bat.reverse(r);
     j:= algebra.join(rs,rr);
@@ -39,8 +39,8 @@ The estimated size is left behind as the property @sc{rows}.
 @end verbatim
 changes the properties of the instructions as follows:
 @verbatim
-    r{rows=100} := bat.new(:void,:int);
-    s{rows=1000} := bat.new(:void,:int);
+    r{rows=100} := bat.new(:oid,:int);
+    s{rows=1000} := bat.new(:oid,:int);
     rs{rows=501} := algebra.select(s,1,1);
     rr{rows=100} := bat.reverse(r);
     j{rows=100} := algebra.join(rs,rr);
@@ -201,7 +201,7 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 Updates are a little more complicated, because you have to
 propagate changes in the expected size up the expression tree.
 For example, the SQL snippet:
-    _49:bat[:void,:oid]{rows=0,bid=622}  := sql.bind_dbat("sys","example",3);
+    _49:bat[:oid,:oid]{rows=0,bid=622}  := sql.bind_dbat("sys","example",3);
     _54 := bat.setWriteMode(_49);
     bat.append(_54,_47,true);
 shows what is produced when it encounters a deletion. If a non-empty
