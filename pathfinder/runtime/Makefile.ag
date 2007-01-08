@@ -49,7 +49,7 @@ lib__pf_support = {
         LIBS = \
                 $(PF_LIBS) \
                 $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet $(PTHREAD_LIBS) \
-                $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
+                $(MONETDB4_MODS) -l_monettime -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 
 lib__pf_standoff = {
