@@ -78,7 +78,13 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
   parserCtx->queryText    = query;
   parserCtx->errBUFF[0]   = 0;
   parserCtx->useFragments = 0;
-  parserCtx->ffPfx        = ""; /* "_frag"*/;
+  if ( 0 /* not framented */ ) {
+    parserCtx->ffPfx        = ""; /* "_frag"*/;
+    parserCtx->flastPfx     = ", str(1)"; /* */;
+  } else {
+    parserCtx->ffPfx        = "_frag"; /* "_frag"*/;
+    parserCtx->flastPfx     = ""; /* "_frag"*/;
+  }
   parserCtx->milFILEname  = NULL;
   /* initialize the lists */
   if ( ! (
@@ -256,10 +262,12 @@ int old_main(BAT* optbat, char* startNodes_name)
 	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation ON.\n");
               parserCtx->useFragments = 1;
               parserCtx->ffPfx        = "_frag";
+              parserCtx->flastPfx     = "";
 	    } else {
 	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation OFF.\n");
               parserCtx->useFragments = 0;
               parserCtx->ffPfx        = "";
+              parserCtx->flastPfx     = ", str(1)";
 	    }
 	} else if ( strcmp(optName,"background_collection") == 0 ) {
             strcpy(background_collection, optVal);

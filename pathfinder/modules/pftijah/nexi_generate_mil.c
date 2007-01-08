@@ -455,7 +455,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
           com_nr_left = p_com->left->number;
           com_nr_right = p_com->right->number;
 
-          MILPRINTF(MILOUT, "R%d := R%d.contained_by%s(R%d);\n", com_num, com_nr_left, parserCtx->ffPfx, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.contained_by%s(R%d%s);\n", com_num, com_nr_left, parserCtx->ffPfx, com_nr_right, parserCtx->flastPfx);
 
         }
         else {
@@ -693,7 +693,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
         
         case MODEL_NLLR :
             
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR%s(terms, %f);\n", com_num, com_nr_left, parserCtx->ffPfx, txt_retr_model->param1);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR%s(terms, %f%s);\n", com_num, com_nr_left, parserCtx->ffPfx, txt_retr_model->param1, parserCtx->flastPfx);
         
           break;
         

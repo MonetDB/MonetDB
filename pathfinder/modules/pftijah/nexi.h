@@ -337,6 +337,7 @@ typedef struct TijahParserContext {
     /* */
     int		useFragments;   /* use fragmentation code */
     const char* ffPfx;		/* fragfunPrefix */
+    const char* flastPfx;	/* fraglast par Postfix */
     /* */ 
     const char* collection;
     const char* queryText;
