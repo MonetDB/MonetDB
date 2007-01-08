@@ -9,7 +9,7 @@ Version: %{version}
 Release: %{release}
 Summary: MonetDB - Monet Database Management System
 Group: System
-Source: MonetDB-%{version}.tar.gz
+Source: clients-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
@@ -117,7 +117,7 @@ Requires: java
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n MonetDB-%{version}
+%setup -q -n clients-%{version}
 
 %build
 
@@ -149,10 +149,6 @@ rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/Tests/*
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-clients-config.bat
 
-rm -rf $RPM_BUILD_ROOT%{prefix}/include/MonetDB/sql.h
-rm -rf $RPM_BUILD_ROOT%{prefix}/include/MonetDB/sqlext.h
-rm -rf $RPM_BUILD_ROOT%{prefix}/include/MonetDB/sqltypes.h
-rm -rf $RPM_BUILD_ROOT%{prefix}/include/MonetDB/sqlucode.h
 
 %clean
 rm -fr $RPM_BUILD_ROOT
@@ -163,15 +159,19 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/msqldump* 
 %{prefix}/bin/monetdb-clients-config
 %{_libdir}/libMapi.* 
-%{prefix}/include/MonetDB/clients_config.h
 %{prefix}/include/MonetDB/mapilib/Mapi.h
 
 
+# todo odbc-devel package ?
 %files odbc
 %defattr(-,root,root) 
 %{_libdir}/libMonetODBC.* 
 %{_libdir}/libMonetODBCs.* 
-%{prefix}/include/MonetDB/odbcinst.h
+%{prefix}/include/MonetDB/odbc/odbcinst.h
+%{prefix}/include/MonetDB/odbc/sql.h
+%{prefix}/include/MonetDB/odbc/sqlext.h
+%{prefix}/include/MonetDB/odbc/sqltypes.h
+%{prefix}/include/MonetDB/odbc/sqlucode.h
 
 %if %{?_with_php:1}%{!?_with_php:0}
 %files php

@@ -33,9 +33,9 @@ infodir="@Qinfodir@"
 mandir="@Qmandir@"
 includedir="@Qincludedir@"
 
-pkglibdir="${libdir}/${pkg}"
+pkglibdir="${libdir}/MonetDB"
 pkgdatadir="${datadir}/MonetDB"
-pkgincludedir="${includedir}/${pkg}"
+pkgincludedir="${includedir}/MonetDB"
 
 usage()
 {

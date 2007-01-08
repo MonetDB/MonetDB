@@ -22,5 +22,10 @@ MAPI_LIBS = $(SOCKET_LIBS) $(OPENSSL_LIBS)
 lib_Mapi = {
 	SOURCES = Mapi.mx
 	LIBS = $(MAPI_LIBS) $(MONETDB_LIBS) -lmutils -lstream
+}
+
+headers_mapi = {
+	DIR = includedir/MonetDB/mapilib
 	HEADERS = h
+	SOURCES = Mapi.mx
 }

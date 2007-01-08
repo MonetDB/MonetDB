@@ -18,9 +18,9 @@ set libdir=@libdir@
 set infodir=@infodir@
 set mandir=@mandir@
 set includedir=@includedir@
-set pkglibdir=%libdir%\%pkg%
+set pkglibdir=%libdir%\MonetDB
 set pkgdatadir=%datadir%\MonetDB
-set pkgincludedir=%includedir%\%pkg%
+set pkgincludedir=%includedir%\MonetDB
 set classpath=%pkgdatadir%\lib\mapi.jar
 
 if "%1" == ""	goto usage

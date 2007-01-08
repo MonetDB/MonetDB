@@ -20,7 +20,7 @@ INCLUDES = $(MONETDB_CFLAGS) ../../mapilib $(READLINE_INCS)
 MAPI_LIBS = $(SOCKET_LIBS) 
 
 BINS = {
-	DIR = pkglibdir/Tests
+	DIR = libdir/MonetDB/Tests
 	SOURCES = sample0.c sample1.c sample2.c sample3.c sample4.c \
 		smack00.c  smack01.c
 	LIBS = $(MAPI_LIBS) ../../mapilib/libMapi $(MONETDB_LIBS) -lstream
