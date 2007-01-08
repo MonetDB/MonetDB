@@ -449,9 +449,9 @@ def msc_scripts(fd, var, scripts, msc):
             fd.write('%s: "$(SRCDIR)\\%s"\n' % (script, script))
             fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script))
         if scripts.has_key('COND'):
-            condname = '+'.join(scripts['COND'])
+            condname = 'defined(' + ') && defined('.join(scripts['COND']) + ')'
             mkname = script.replace('.', '_')
-            fd.write('!IFDEF %s\n' % condname)
+            fd.write('!IF %s\n' % condname)
             fd.write('C_%s = %s\n' % (mkname, script))
             fd.write('!ELSE\n')
             fd.write('C_%s =\n' % mkname)
@@ -747,7 +747,7 @@ def msc_library(fd, var, libmap, msc):
     else:
         makelib = makedll
     if libmap.has_key('COND'):
-        condname = '+'.join(libmap['COND'])
+        condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
         mkname = (pref + v).replace('.', '_')
         fd.write('!IFDEF %s\n' % condname)
         fd.write('C_%s_dll = %s%s.dll\n' % (mkname, pref, v))
@@ -993,7 +993,7 @@ def msc_ant(fd, var, ant, msc):
     for file in ant['FILES']:
         sfile = file.replace(".", "_")
     	fd.write('%s: %s_ant_target\n' % (file, target))
-        msc['INSTALL'][file] = file, '', jd, '', ''
+        msc['INSTALL'][file] = file, '', jd, '', condname
 
     fd.write("\n!ELSE\n\n")
 
@@ -1171,7 +1171,7 @@ def output(tree, cwd, topdir):
             if not dir:
                 continue
             if cond:
-                fd.write('!IFDEF %s\n' % cond)
+                fd.write('!IF %s\n' % cond)
             fd.write('install_%s: "%s" "%s"\n' % (dst, src, dir))
             fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (src, dir, dst, ext))
             if instlib:
