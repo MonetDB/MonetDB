@@ -127,6 +127,19 @@ All Rights Reserved.
       filtering="yes" />
   </target>
 
+  <!-- a convenience script mjclient.bat which calls the jdbcclient -->
+  <target name="create_mjclient_bat">
+    <echo message="Crafting an mjclient.bat wrapper script" />
+    <filter token="JDBCCLIENT_JAR"
+      value="jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
+
+    <!-- now copy and filter the file -->
+    <copy file="${scriptdir}/mjclient.bat"
+      overwrite="true"
+      tofile="${builddir}/mjclient.bat"
+      filtering="yes" />
+  </target>
+
   <!-- compile targets -->
   <target name="compile_jdbc" depends="prepare,driver">
     <echo message="Compiling JDBC driver" />

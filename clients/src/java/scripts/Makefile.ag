@@ -18,5 +18,11 @@ MTSAFE
 
 scripts_sh = {
 	NOINST
+	EXT = ""
 	SOURCES = mjclient.in
+}
+
+scripts_bat = {
+	NOINST
+	SOURCES = mjclient.bat.in
 }

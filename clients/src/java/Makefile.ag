@@ -29,6 +29,13 @@ ant_jar_jdbcclient = {
 }
 
 ant_create_mjclient = {
+	COND = NOT_WIN32
 	DIR = bindir
 	FILES = mjclient
+}
+
+ant_create_mjclient_bat = {
+	COND = NATIVE_WIN32
+	DIR = bindir
+	FILES = mjclient.bat
 }

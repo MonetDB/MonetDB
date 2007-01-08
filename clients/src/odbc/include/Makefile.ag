@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 headers_odbc = {
-	DIR = includedir/MonetDB/odbc/
+	DIR = includedir/MonetDB/odbc
 	HEADERS = h
 	SOURCES = sql.h sqlext.h sqltypes.h sqlucode.h odbcinst.h
 }
