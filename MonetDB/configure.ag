@@ -27,7 +27,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/gdk/gdk.mx])
-AC_CONFIG_HEADER([monetdb_config.h:conf/config.h.in])
+AM_CONFIG_HEADER([monetdb_config.h:conf/config.h.in])
 
 MONETDB_CONFDIR='$(top_srcdir)/conf'
 AC_SUBST(MONETDB_CONFDIR)

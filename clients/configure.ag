@@ -27,7 +27,7 @@ dnl AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/mapilib/Mapi.mx])
-AC_CONFIG_HEADER([clients_config.h])
+AM_CONFIG_HEADER([clients_config.h])
 
 HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
