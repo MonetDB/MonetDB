@@ -460,7 +460,8 @@ def msc_scripts(fd, var, scripts, msc):
         else:
             cscript = script
             condname = ''
-        msc['INSTALL'][script] = cscript, '', sd, '', condname
+        if not scripts.has_key('NOINST'):
+            msc['INSTALL'][script] = cscript, '', sd, '', condname
         msc['SCRIPTS'].append(cscript)
 
 ##    msc_deps(fd, scripts['DEPS'], "\.o", msc)
@@ -953,7 +954,9 @@ def msc_includes(fd, var, values, msc):
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
+callantno = 0
 def msc_ant(fd, var, ant, msc):
+    global callantno
 
     target = var[4:]	# the ant target to call
 
@@ -966,17 +969,23 @@ def msc_ant(fd, var, ant, msc):
     	for src in ant['SOURCES']:
         	msc['EXTRA_DIST'].append(src)
 
-    fd.write("\n!IFDEF HAVE_JAVA\n\n") # there is ant if configure set HAVE_JAVA
+    if ant.has_key('COND'):
+        condname = 'defined(' + ') && defined('.join(ant['COND']) + ')'
+        condname = 'defined(HAVE_JAVA) && ' + condname
+    else:
+        condname = 'defined(HAVE_JAVA)'
+    fd.write("\n!IF %s\n\n" % condname) # there is ant if configure set HAVE_JAVA
 
     # we create a bat file that contains the call to ant so that we
     # can get hold of the full path name of the current working
     # directory
-    fd.write("callant.bat:\n")
-    fd.write("\techo @set PWD=%~dp0>callant.bat\n")
-    fd.write("\techo @set PWD=%PWD:~0,-1%>>callant.bat\n")
-    fd.write("\techo @$(ANT) -d -f $(SRCDIR)\\build.xml \"-Dbuilddir=%%PWD%%\" \"-Djardir=%%PWD%%\" %s>>callant.bat\n" % target)
-    fd.write("%s_ant_target: callant.bat\n" % target)
-    fd.write("\tcallant.bat\n")
+    fd.write("callant%d.bat:\n" % callantno)
+    fd.write("\techo @set PWD=%%~dp0>callant%d.bat\n" % callantno)
+    fd.write("\techo @set PWD=%%PWD:~0,-1%%>>callant%d.bat\n" % callantno)
+    fd.write("\techo @$(ANT) -d -f $(SRCDIR)\\build.xml \"-Dbuilddir=%%PWD%%\" \"-Djardir=%%PWD%%\" %s>>callant%d.bat\n" % (target, callantno))
+    fd.write("%s_ant_target: callant%d.bat\n" % (target, callantno))
+    fd.write("\tcallant%d.bat\n" % callantno)
+    callantno = callantno + 1
 
 
     # install is done at the end, here we simply collect to be installed files
@@ -990,8 +999,9 @@ def msc_ant(fd, var, ant, msc):
 
     fd.write('%s:\n' % file)
     fd.write('install_%s:\n' % file)
+    fd.write("%s_ant_target:\n" % target)
 
-    fd.write("\n!ENDIF #HAVE_JAVA\n\n")
+    fd.write("\n!ENDIF #%s\n\n" % condname)
 
     # make sure the jars and classes get made
     msc['SCRIPTS'].append(target + '_ant_target')
