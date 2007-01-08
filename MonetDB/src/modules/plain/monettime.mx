@@ -534,7 +534,7 @@ One day we should introduce the concept of locale, and hook here.
 	#
 	const RULE_MAR := rule("first sunday from end of march@02:00");
 	const RULE_OCT := rule("first sunday from end of october@02:00");
-	const TIMEZONES := new(str, tzone).col_name("monettime_tzones");
+	const TIMEZONES := new(str, tzone).rename("monettime_tzones");
 
 	TIMEZONES.insert("Wake Island",		 tzone( 12*60));
 	TIMEZONES.insert("Melbourne/Australia",	 tzone( 11*60));
