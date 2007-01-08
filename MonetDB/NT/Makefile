@@ -11,10 +11,10 @@ prefix = $(MAKEDIR)
 
 UNISTD_H = unistd.h
 
-all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMserver.bat RunMapiClient.bat RunMtest.bat RunMapprove.bat
+all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
-check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
+check: "$(SRCDIR)\Makefile.msc"
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
 	call RunMtest.bat
 
@@ -42,18 +42,6 @@ unistd.h:
 	$(ECHO) #define umask _umask >> unistd.h
 	$(ECHO) #endif >> unistd.h
 
-RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
-	$(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
-
-RunMapprove.bat: "$(SRCDIR)\RunMapprove.bat.in"
-	$(CONFIGURE) "$(SRCDIR)\RunMapprove.bat.in" > RunMapprove.bat
-
-RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
-	$(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
-
-RunMapiClient.bat: "$(SRCDIR)\RunMapiClient.bat.in"
-	$(CONFIGURE) "$(SRCDIR)\RunMapiClient.bat.in" > RunMapiClient.bat
-
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"
 	if not exist "$(sbindir)"		$(MKDIR) "$(sbindir)"
@@ -68,7 +56,6 @@ targetdirs:
 	if not exist "$(includedir)"		$(MKDIR) "$(includedir)"
 	if not exist "$(pkgdatadir)"		$(MKDIR) "$(pkgdatadir)"
 	if not exist "$(pkglibdir)"		$(MKDIR) "$(pkglibdir)"
-	if not exist "$(pkglibdir)\Tests"	$(MKDIR) "$(pkglibdir)\Tests"
 	if not exist "$(pkgincludedir)"		$(MKDIR) "$(pkgincludedir)"
 
 docs:

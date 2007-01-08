@@ -915,7 +915,7 @@ mac*)
 	PATHSEP=';'
 	SOEXT='-0.dll'
 	AC_DEFINE([HAVE_GLOBALMEMORYSTATUS], 1, [Define to 1 if you have the `GlobalMemoryStatus' function.])
-	AC_DEFINE([ALLREADY_HAVE_WINDOWS_TYPE], , [Define if you already have Windows types.])
+	AC_DEFINE([ALREADY_HAVE_WINDOWS_TYPE], , [Define if you already have Windows types.])
 	;;
 *cygwin*)
 	DIRSEP='/'
