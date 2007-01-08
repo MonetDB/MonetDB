@@ -34,13 +34,15 @@
  *          use BUNfnd and hashing and these work more easy with the string
  *          in the head
  *
+ * BUGS: stopword problem. Multiple stopword collections on one term db is
+ *       never goiing to work.
  */
 
 /* #define USE_TERMDB */ /* used by serialize_pftijah */
 
 #define TDB_DEBUG if ( 0 ) stream_printf
 #define TDB_OUT   GDKout
-/* #define TDB_SHOWLOOKUP used to debug all term lookups */
+/* #define TDB_SHOWLOOKUP */ /* used to debug all term lookups */
 
 #define TERMDBCONF	"tj_termDBconf"
 #define TERMDBTAGS	"tj_termDBtags0"
@@ -51,7 +53,7 @@
 #define TDB_LOC_MAXFRAGSIZE 1
 #define TDB_LOC_CURFRAG     2
 #define TDB_LOC_CUROID      3
-#define TDB_LOC_TREE(I)     (I+4)
+#define TDB_LOC_TREE(I)     (oid)(I+4)
 
 typedef struct termDbCtx {
 	BAT*	frags;
@@ -74,7 +76,7 @@ typedef struct termDbCtx {
 
 extern int termdb_prelude();
 
-extern termDbCtx* tdb_open();
+extern termDbCtx* tdb_open(char* name);
 extern int	  tdb_insertTerm(termDbCtx* tdb, char* term, oid o, int check);
 extern oid	  tdb_lookupTerm(termDbCtx* tdb, char* term);
 extern oid	  tdb_lookupTag(termDbCtx* tdb, char* term);
@@ -114,6 +116,17 @@ INLINE static BAT *tdb_lookupBAT(str name) {
     } else {
     	return BBPdescriptor(b);
     }
+}
+
+static int tdb_destroyCnt = 0;
+
+INLINE static BAT *tdb_prepare2destroy(BAT* bat) {
+    char buff[32];
+
+    sprintf(buff,"tdb_destroy%d",tdb_destroyCnt++);
+    BBPrename(BBPcacheid(bat),(str)buff);
+    bat->batPersistence = TRANSIENT;
+    return bat;
 }
 
 INLINE static int tdb_destroyBAT(str name) {
@@ -256,38 +269,74 @@ int CMDtj_create_termdb(int* p_nFrag, oid* p_maxFragSize) {
     return termdb_prelude();
 }
 
-int CMDtj_dispose_termdb() {
-    termDbCtx *tdb = tdb_open();
+/*
+ *
+ */
+ 
+extern BAT* get_fragBAT(termDbCtx* tdb, int idx);
 
+static void dumpTDBtree(termDbCtx* tdb) {
+    stream_printf(GDKout,"# TDB TREE=[");
+    for(int i=0; i<(int)tdb->nFrag; i++) {
+        stream_printf(GDKout,"%d[%d] ",i,tdb->buckets[i]);
+    }
+    stream_printf(GDKout,"]\n");
+}
+
+static void dumpTDB(termDbCtx* tdb,char* p) {
+int i;
+
+    stream_printf(GDKout,"########################################\n");
+    stream_printf(GDKout,"### dump of termDB: %s. #####\n",p);
+    stream_printf(GDKout,"########################################\n");
+    dumpTDBtree(tdb);
+    stream_printf(GDKout,"FRAGMENT BATS: \n",p);
+    for(i=0; i<(int)tdb->curFrag; i++) {
+        stream_printf(GDKout,"BAT[frag#=%d]: \n",i);
+	BATprintf(GDKout,get_fragBAT(tdb,i));
+    }
+}
+
+int CMDtj_dispose_termdb() {
+    TDB_DEBUG(TDB_OUT,"#termdb: start CMDtj_dispose_termdb().\n");
+    termDbCtx *tdb = tdb_open("termDB");
+
+    if ( 0 ) {
+	dumpTDB(tdb,"DISPOSED termDB");
+    }
     if ( !tdb ) {
         stream_printf(GDKout,"#ERROR: CMDtj_dispose_termdb: fail to open termDB.\n");
 	return  GDK_FAIL;
     }
-    oid nFrag = tdb->nFrag;
+    oid curFrag = tdb->curFrag;
     if ( ! tdb_close(tdb) ) {
         stream_printf(GDKout,"#ERROR: CMDtj_dispose_termdb: fail to close termDB.\n");
 	return  GDK_FAIL;
     }
+    TDB_DEBUG(TDB_OUT,"#termdb: CMDtj_dispose_termdb() throw away conf bats.\n");
     if ( !tdb_destroyBAT(TERMDBCONF) ||
          !tdb_destroyBAT(TERMDBTAGS) ||
          !tdb_destroyBAT(TERMDBFRAGMENTS)
        ) {
     	return GDK_FAIL;
     }
-    for(int i=0; i<(int)nFrag; i++) {
+    for(int i=0; i<(int)curFrag; i++) {
 	if ( !tdb_destroyBAT(hashbatName(TERMDBBAT,i)) )
 	    return GDK_FAIL;
+        TDB_DEBUG(TDB_OUT,"#termdb: CMDtj_dispose_termdb() delete frag[%d].\n",i);
     }
+    TDB_DEBUG(TDB_OUT,"#termdb: finish CMDtj_dispose_termdb().\n");
     return GDK_SUCCEED;
 }
 
 /*
  *
  */
+
 int tdb_checkHashTable(BAT* b) {
-    if ( b->thash == NULL ) {
+    if ( b->hhash == NULL ) {
          if ( !BAThash(b,0) ) {
-                 stream_printf(GDKout,"#Itermdb:tdb_checkHashTable: fail to creat hashtable on [oid,str] bat.\n");
+                 stream_printf(GDKout,"#termdb:tdb_checkHashTable: fail to creat hashtable on [oid,str] bat.\n");
              return 0;
          } else {
             TDB_DEBUG(TDB_OUT,"#termdb:tdb_checkHashTable(): created hashtable on [oid,str] bat.\n");
@@ -301,7 +350,8 @@ int tdb_checkHashTable(BAT* b) {
  *
  */
 
-termDbCtx* tdb_open() {
+termDbCtx* tdb_open(char* name) {
+    (void)name; // incomplete, termDB's should have a name
     TDB_DEBUG(TDB_OUT,"#termdb: start tdb_open().\n");
 
     BAT* tdb_frags = tdb_lookupBAT(TERMDBFRAGMENTS);
@@ -348,7 +398,7 @@ termDbCtx* tdb_open() {
     TDB_DEBUG(TDB_OUT,"#termdb: curFrag     = " OIDFMT "\n",tdb->curFrag);
 
     tdb->buckets = GDKmalloc((int)tdb->nFrag  * sizeof(int));
-    tdb->hashbat= GDKmalloc((int)tdb->curFrag* sizeof(int));
+    tdb->hashbat= GDKmalloc((int)tdb->curFrag* sizeof(BAT*));
     if ( !tdb->buckets || !tdb->hashbat ) {
         stream_printf(GDKout,"#ERROR:tdb_open: out of memory on bucket/bats malloc.\n");
     	return NULL;
@@ -362,6 +412,7 @@ termDbCtx* tdb_open() {
 	    return NULL;
 
 	}
+        TDB_DEBUG(TDB_OUT,"#termdb: create hashbatSize[%d] array.\n",(int)tdb->curFrag);
     }
     int i;
 
@@ -371,7 +422,7 @@ termDbCtx* tdb_open() {
     for(i=0; i<(int)tdb->curFrag; i++) {
         tdb->hashbat[i] = NULL; // demand loading
 	if ( tdb->hashbatSize )
-		tdb->hashbatSize = 0;
+		tdb->hashbatSize[i] = 0;
     }
     TDB_DEBUG(TDB_OUT,"#termdb: finish tdb_open().\n");
     return tdb;
@@ -399,7 +450,7 @@ int tdb_close(termDbCtx* tdb) {
     }
     TDB_DEBUG(TDB_OUT,".\n");
     GDKfree(tdb->hashbat);
-    if ( tdb->hashbatSize) 
+    if ( tdb->hashbatSize ) 
         GDKfree(tdb->hashbatSize);
     BBPunfix(BBPcacheid(tdb->conf));
     BBPunfix(BBPcacheid(tdb->tags));
@@ -427,7 +478,7 @@ BAT* get_fragBAT(termDbCtx* tdb, int idx) {
     else {
     	res = tdb_findBat(tdb->frags,idx);
 	if ( ! res ) {
-            stream_printf(GDKout,"#Itermdb:get_fragBAT: unable to load fragment[%d].\n",idx);
+            stream_printf(GDKout,"#termdb:get_fragBAT: unable to load fragment[%d].\n",idx);
 	    return NULL;
 	}
 	if ( !tdb_checkHashTable(res) )
@@ -442,12 +493,76 @@ BAT* get_fragBAT(termDbCtx* tdb, int idx) {
     }
 }
 
-int tdb_handleOverflow(termDbCtx* tdb, int bucket) {
-    (void)tdb;
-    (void)bucket;
-    // INCOMPLETE, bucket is overflowing and should be split
+int tdb_splitBucket(termDbCtx* tdb, int frag) {
+    // dumpTDB(tdb,"before split");
+    TDB_DEBUG(TDB_OUT,"#termdb:tdb_splitBucket(tdb,%d): called.\n",frag);
+    int i, lower = -1, upper = -1;
+    for(i=0; i<(int)tdb->nFrag; i++) {
+    	if ( tdb->buckets[i] == frag ) {
+	    if ( lower == -1 )
+	        lower = i;
+	     if ( i > upper )
+	        upper = i;
+	}
+    }
+    TDB_DEBUG(TDB_OUT,"# tdb_splitBucket(), frag=%d, range=[%d,%d]\n",frag,lower,upper);
+    int new_fragIdx = tdb->curFrag;
+    int range = ((upper+1)-lower);
+    if ( range == 1 ) {
+        stream_printf(GDKout,"# WARNING: tdb_splitBucket(), frag=%d, range=[%d,%d], UNABLE to split\n",frag,lower,upper);
+	tdb->hashbatSize[frag] = 0; // to be able to continue
+        return 1;
+    }
+    for(i=lower+range/2; i<=upper ; i++) {
+        TDB_DEBUG(TDB_OUT,"# tdb_splitBucket(), bucket[%d] = %d\n",i,(int)new_fragIdx);
+	tdb->buckets[i] = new_fragIdx;
+        if ( !tdb_replaceOid(tdb->conf,TDB_LOC_TREE(i),(oid)new_fragIdx) )
+            return 0;
+    }
+    BAT* old_frag = tdb_prepare2destroy(tdb->hashbat[frag]);
+    BAT* new_frag;
+    if ( !(tdb->hashbat[frag] = tdb_createBAT(hashbatName(TERMDBBAT,frag),TYPE_str,TYPE_oid,1/*persistent*/)) ||
+
+         !(new_frag = tdb_createBAT(hashbatName(TERMDBBAT,new_fragIdx),TYPE_str,TYPE_oid,1/*persistent*/)) )
+        return 0;
+    BBPfix(BBPcacheid(new_frag));
+    BBPfix(BBPcacheid(tdb->hashbat[frag]));
+    //
+    oid oid_frag = (oid)frag;
+    if ( !BUNappend(tdb->frags, &BBPcacheid(new_frag), 0) ||
+	 !BUNreplace(tdb->frags,&oid_frag,&BBPcacheid(tdb->hashbat[frag]),0)
+       ) {
+	   stream_printf(GDKout,"# ERROR: unable to update frag bat.\n");
+           return 0;
+    }
+    /*
+     *
+     */
+    tdb->hashbat= GDKrealloc(tdb->hashbat,1+(int)tdb->curFrag* sizeof(BAT*));
+    tdb->hashbat[new_fragIdx] = 0;
+    if (tdb->hashbatSize) {
+        tdb->hashbatSize = GDKrealloc(tdb->hashbatSize,1+(int)tdb->curFrag* sizeof(size_t));
+        tdb->hashbatSize[frag]        = 0;
+        tdb->hashbatSize[new_fragIdx] = 0;
+    }
+    /*
+     *
+     */
+    BUN p, q;
+    BATloop(old_frag, p, q) {
+	str h = (str) BUNhead(old_frag, p);
+	oid t = *(oid*)BUNtail(old_frag, p);
+
+	if ( !tdb_insertTerm(tdb,h,t,1 /*incomplete, should be 0 */ ) )
+	    return 0;
+    }
+    BBPunfix(BBPcacheid(old_frag));
+    if ( !tdb_replaceOid(tdb->conf,TDB_LOC_CURFRAG,++tdb->curFrag) )
+        return 0;
+    /* oeff, ready */
     return 1;
 }
+
 
 int tdb_insertTerm(termDbCtx* tdb, char* term, oid o, int check) {
     int frag = tdb->buckets[hashTerm(term) % tdb->nBuckets];
@@ -457,7 +572,7 @@ int tdb_insertTerm(termDbCtx* tdb, char* term, oid o, int check) {
     if ( ! fragTerm )
     	return oid_nil;
     if ( check && BUNfnd(fragTerm,term) ) {
-        stream_printf(GDKout,"#tdb_insertTerm: duplicate term \"%s\".\n",term);
+        stream_printf(GDKout,"#tdb_insertTerm:frag[%d]: duplicate term \"%s\".\n",frag,term);
         return 0;
     } else {
     	if ( !BUNins(fragTerm, (str)term, &o, FALSE)){
@@ -466,17 +581,18 @@ int tdb_insertTerm(termDbCtx* tdb, char* term, oid o, int check) {
         } 
 	if ( tdb->hashbatSize ) {
 	    if ( (size_t)++tdb->hashbatSize[frag] > (size_t)tdb->maxFragSize)
-	        if ( !tdb_handleOverflow(tdb,frag) )
+	        if ( !tdb_splitBucket(tdb,frag) )
 		    return 0;
 	}
 #ifdef TDB_SHOWLOOKUP
-        TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookup(\"%s\") = " OIDFMT "[new]\n",term,o);
+        TDB_DEBUG(TDB_OUT,"#termdb:tdb_insertTerm[%d](\"%s\") = " OIDFMT "[new]\n",frag,term,o);
 #endif
     }
     return 1;
 }
 
 oid tdb_lookupTerm(termDbCtx* tdb, char* term) {
+    if (1) TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookupTerm(\"%s\") start\n",term);
     int frag = tdb->buckets[hashTerm(term) % tdb->nBuckets];
 
     BAT* fragTerm = get_fragBAT(tdb, frag);
@@ -486,24 +602,23 @@ oid tdb_lookupTerm(termDbCtx* tdb, char* term) {
     BUN bun;
     if ( (bun = BUNfnd(fragTerm,term)) ) {
 #ifdef TDB_SHOWLOOKUP
-        TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookup(\"%s\") = " OIDFMT "\n",term,*(oid*)BUNtail(fragTerm,bun));
+        TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookupTerm[%d](\"%s\") = " OIDFMT "\n",frag,term,*(oid*)BUNtail(fragTerm,bun));
 #endif
         return *(oid*)BUNtail(fragTerm,bun);
     } else {
     	if ( !BUNins(fragTerm, (str)term, &tdb->curOid, FALSE)){
     	    GDKerror("tdb_lookup: insert \"%s\" in termbat fails.\n");
     	    return oid_nil;
-        } else { 
-	    if ( tdb->hashbatSize ) {
-	        if ( (size_t)++tdb->hashbatSize[frag] > (size_t)tdb->maxFragSize)
-	            if ( !tdb_handleOverflow(tdb,frag) )
-		        return 0;
-	    }
+        }  
+	if ( tdb->hashbatSize ) {
+	    if ( (size_t)++tdb->hashbatSize[frag] > (size_t)tdb->maxFragSize)
+	        if ( !tdb_splitBucket(tdb,frag) )
+	            return oid_nil;
+	}
 #ifdef TDB_SHOWLOOKUP
-            TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookup(\"%s\") = " OIDFMT "[new]\n",term,tdb->curOid);
+        TDB_DEBUG(TDB_OUT,"#termdb:tdb_lookupTerm[%d](\"%s\") = " OIDFMT "[new]\n",frag,term,tdb->curOid);
 #endif
-    	    return tdb->curOid++;
-        }
+    	return tdb->curOid++;
     }
 }
 

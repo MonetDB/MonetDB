@@ -100,7 +100,6 @@ int dbat_init(const char* name, dbat* dbat, BAT* b) {
 	    return 0;
 	}
         dbat->oid_mark = b->hseqbase;
-	if ( 0 ) stream_printf(GDKout,"SETTING_OID_START(%d@0)\n",dbat->oid_mark);
 	dbat->max_i = dbat->max_sz = BATcount(dbat->bat);
 	dbat->cast.voidCAST = (void*)BUNfirst(dbat->bat);
 	/* */
@@ -148,9 +147,8 @@ int dbat_finalize(dbat* dbat) {
 #define MAXCHUNK 16777216
 
 int dbat_extend(dbat* dbat, int i_mark) {
-    int i = 0;
-    if ( i_mark ) i = i_mark - dbat->oid_mark;
-    size_t newsize = MAX(MIN(MAX(MINCHUNK,dbat->max_sz*2),(size_t)(dbat->max_sz+MAXCHUNK)),(size_t)i);
+    /* CHECK THIS if ( i_mark ) i = i_mark - dbat->oid_mark; */
+    size_t newsize = MAX(MIN(MAX(MINCHUNK,dbat->max_sz*2),(size_t)(dbat->max_sz+MAXCHUNK)),(size_t)i_mark);
 
     /* first check if the number of BUN's < INT_MAX. If this was the case
      * and the previous time INT_MAX was returned this means the BAT cannot
@@ -164,7 +162,7 @@ int dbat_extend(dbat* dbat, int i_mark) {
 		return -1;
 	}
     }
-    if ( 0 ) stream_printf(GDKout,"dbat_extend[%s](%d -> %d)\n",dbat->name,dbat->max_sz,newsize);
+    if ( 0 ) { stream_printf(GDKout,"dbat_extend[%s](%d -> %d)\n",dbat->name,dbat->max_sz,newsize); }
     dbat->max_sz= newsize;
     if ( !(dbat->bat = BATextend(dbat->bat,newsize)) ) {
         GDKerror("dbat_extend: BATextend[\"%s\"](to %d) fails\n","incomplete",newsize);
@@ -213,18 +211,6 @@ int dbat_sizeHint(dbat* dbat, int sizeHint_mark) {
 	int estimate = dbat->max_i + sizeHint;
 
 	return dbat_extend(dbat, estimate);
-}
-
-INLINE static int dbat_adjust_size(dbat* dbat, int pos_mark) {
-	int pos = pos_mark - dbat->oid_mark;
-	if ( pos >= dbat->max_i ) {
-		if ( pos >= dbat->max_sz ) {
-			if ( dbat_extend(dbat,pos) < 0 )
-				return -1;
-		}
-		dbat->max_i = pos + 1;
-	}
-	return 1;
 }
 
 INLINE static int dbat_set_oid(dbat* dbat, int pos_mark, oid v) {
@@ -639,7 +625,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	 * The section where the parameter bats are read
 	 */
 #ifdef USE_TERMDB
-	if ( !(res->tdb = tdb_open()) )
+	if ( !(res->tdb = tdb_open("termDB")) )
 	    return NULL;
 #endif
 	if ( !(res->b_globalTerm  = getBAT(tjCtx_BAT,0)) ) return NULL;
@@ -666,6 +652,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	        BATseqbase(res->b_collPre,res->tijahPre);
 	        res->b_collSize    = BATnew(TYPE_void,TYPE_int,0);
 	        BATseqbase(res->b_collPre,res->tijahPre);
+	        BATseqbase(res->b_collSize,res->tijahPre);
 		BAT* fragments;
 	        if ( !(fragments = getBAT(tjCtx_BAT,8)) )
 		    return NULL;
