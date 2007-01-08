@@ -1,3 +1,5 @@
+/* -*-C-*- */
+
 /*
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
@@ -45,6 +47,7 @@
 #define PATH_SEP ';'
 #define PATH_SEP_STR ";"
 #define SO_EXT ".dll"
+#define SO_PREFIX "lib"
 
 #define isatty _isatty
 
@@ -284,7 +287,9 @@
 
 /* Define to 1 if you have the `strcasecmp' function. */
 #define HAVE_STRCASECMP 1
-/* #define strcasecmp(x,y) stricmp(x,y) -- defined in monetdb_config.h */
+#ifndef strcasecmp
+#define strcasecmp(x,y) _stricmp(x,y)
+#endif
 
 /* Define to 1 if you have the `strcspn' function. */
 #define HAVE_STRCSPN 1
@@ -309,6 +314,24 @@
 
 /* Define to 1 if you have the `strtol' function. */
 #define HAVE_STRTOL 1
+
+/* Define to 1 if you have the `strtoll' function. */
+#if _MSC_VER >= 1300
+#define HAVE_STRTOLL 1
+#define strtoll _strtoi64
+#define HAVE_DECL_STRTOLL 1
+#else
+/* #undef HAVE_STRTOLL */
+#endif
+
+/* Define to 1 if you have the `strtoull' function. */
+#if _MSC_VER >= 1300
+#define HAVE_STRTOULL
+#define strtoull _strtoui64
+#define HAVE_DECL_STRTOULL 1
+#else
+/* #undef HAVE_STRTOULL */
+#endif
 
 /* Define if you have struct mallinfo */
 /* #undef HAVE_STRUCT_MALLINFO */

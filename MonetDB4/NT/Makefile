@@ -27,8 +27,8 @@ $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
 
 all-msc: monetdb4_config.h
 
-monetdb4_config.h: monetdb_config.h.in
-	$(CONFIGURE) monetdb4_config.h.in > monetdb_config.h
+monetdb4_config.h: monetdb4_config.h.in
+	$(CONFIGURE) monetdb4_config.h.in > monetdb4_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

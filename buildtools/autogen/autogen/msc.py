@@ -372,8 +372,10 @@ def msc_dep(fd, tar, deplist, msc):
         fd.write(getsrc)
         fd.write('\t$(LEX) $(LFLAGS) "%s.l"\n' % b)
         # either lex.yy.c or lex.$(PARSERNAME).c gets generated
-        fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c"\n' % b)
-        fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c"\n' % b)
+        fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c.tmp"\n' % b)
+        fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c.tmp"\n' % b)
+        fd.write('\techo #include "$(CONFIG_H)" > "%s.yy.c"\n' % b)
+        fd.write('\ttype "%s.yy.c.tmp" >> "%s.yy.c"\n' % (b, b))
 
     if ext == "glue.c":
         fd.write(getsrc)

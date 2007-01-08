@@ -46,6 +46,9 @@
 #include <windows.h>
 #include <stddef.h>
 
+#define MONETDBPREFIX "@Qprefix@"
+#define MONETDBCONFIG "@Qsysconfdir@@QDIRSEP@MonetDB.conf"
+
 #define NATIVE_WIN32
 
 #define DIR_SEP '\\'
@@ -554,19 +557,19 @@
 /* #undef ICONV_CONST */
 
 /* architecture-dependent files */
-#define MONETDB_EXEC_PREFIX "${prefix}"
+#define MONETDB4_EXEC_PREFIX "${prefix}"
 
 /* object code libraries */
-#define MONETDB_LIBDIR "${exec_prefix}\\lib"
+#define MONETDB4_LIBDIR "${exec_prefix}\\lib"
 
 /* modifiable single-machine data */
-#define MONETDB_LOCALSTATEDIR "${prefix}\\var"
+#define MONETDB4_LOCALSTATEDIR "${prefix}\\var"
 
 /* architecture-independent files */
-#define MONETDB_PREFIX "@QXprefix@"
+#define MONETDB4_PREFIX "@QXprefix@"
 
 /* read-only single-machine data */
-#define MONETDB_SYSCONFDIR "${prefix}\\etc"
+#define MONETDB4_SYSCONFDIR "${prefix}\\etc"
 
 /* Define if the oid type should use 32 bits on a 64-bit architecture */
 /* #undef MONET_OID32 */
