@@ -1,25 +1,22 @@
 @' Copyright Notice:
 @' -----------------
 @'
-@' The contents of this file are subject to the Pathfinder Public License
+@' The contents of this file are subject to the PfTijah Public License
 @' Version 1.1 (the "License"); you may not use this file except in
-@' compliance with the License.  You may obtain a copy of the License at
-@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
-@'
+@' compliance with the License. You may obtain a copy of the License at
+@' http://dbappl.cs.utwente.nl/Legal/PfTijah-1.1.html
+@' 
 @' Software distributed under the License is distributed on an "AS IS"
-@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
-@' the License for the specific language governing rights and limitations
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
 @' under the License.
-@'
-@' The Original Code is the Pathfinder system.
-@'
-@' The Original Code has initially been developed by the Database &
-@' Information Systems Group at the University of Konstanz, Germany and
-@' is now maintained by the Database Systems Group at the Technische
-@' Universitaet Muenchen, Germany.  Portions created by the University of
-@' Konstanz and the Technische Universitaet Muenchen are Copyright (C)
-@' 2000-2005 University of Konstanz and (C) 2005-2007 Technische
-@' Universitaet Muenchen, respectively.  All Rights Reserved.
+@' 
+@' The Original Code is the PfTijah system.
+@' 
+@' The Initial Developer of the Original Code is the "University of Twente".
+@' Portions created by the "University of Twente" are 
+@' Copyright (C) 2006-2007 "University of Twente".
+@' All Rights Reserved.
 @'
 
 @f termdb
@@ -93,30 +90,9 @@ extern int        tdb_isEmpty(termDbCtx* tdb);
 
 #include <gdk.h>
 
+#include "pftijah_util.h"
+
 #include "termdb.h"
-
-BAT* tdb_createBAT(char* name, int ht, int tt, int persists) {
-    BAT* b = BATnew(ht,tt,0);
-    if ( (!b) || (BBPrename(BBPcacheid(b),name)!=0) ) {
-      stream_printf(GDKout,"#termdb:createBAT(\"name\"): bat creation failed.\n",name);
-      return NULL;
-    }
-    if ( persists ) {
-      b->batPersistence = PERSISTENT;
-    }
-    TDB_DEBUG(TDB_OUT,"#termdb: createBAT(\"%s\",%d,%d,%d) succes.\n",name,ht,tt,persists);
-    return b;
-}
-
-INLINE static BAT *tdb_lookupBAT(str name) {
-    bat b = BBPindex(name);
-    
-    if ( b == bat_nil ) {
-    	return NULL;
-    } else {
-    	return BBPdescriptor(b);
-    }
-}
 
 static int tdb_destroyCnt = 0;
 
@@ -187,15 +163,15 @@ BAT* tdb_findBat(BAT* void_bat_bat, oid idx) {
 int termdb_prelude() {
     TDB_DEBUG(TDB_OUT,"#termdb:prelude: start.\n");
 
-    BAT* conf = tdb_lookupBAT(TERMDBCONF);
+    BAT* conf = pftu_lookup_bat(TERMDBCONF);
 
     if ( conf ) {
         TDB_DEBUG(TDB_OUT,"#termdb:prelude: found conf bat: \"%s\".\n",TERMDBCONF);
-        if ( tdb_lookupBAT(TERMDBFRAGMENTS) ) {
+        if ( pftu_lookup_bat(TERMDBFRAGMENTS) ) {
             stream_printf(GDKout,"#termdb_prelude: bat \"%s\"already exists.\n",TERMDBFRAGMENTS);
             return GDK_FAIL;
         }
-        BAT* rt = tdb_createBAT(TERMDBFRAGMENTS,TYPE_void,TYPE_bat,0);
+        BAT* rt = pftu_create_bat(TERMDBFRAGMENTS,TYPE_void,TYPE_bat,0);
 	if ( !rt )
 	    return GDK_FAIL;
         BBPfix(BBPcacheid(rt));
@@ -207,7 +183,7 @@ int termdb_prelude() {
 	    return GDK_FAIL;
 	}
 	for(int i=0; i<(int)curFrag; i++) {
-	    BAT* fb = tdb_lookupBAT(hashbatName(TERMDBBAT,i));
+	    BAT* fb = pftu_lookup_bat(hashbatName(TERMDBBAT,i));
 
             if ( !fb || !BUNappend(rt, &BBPcacheid(fb), 0) ) {
                 stream_printf(GDKout,"#termdb_prelude: fail to add fragbat[%i] to rt bat.\n");
@@ -233,11 +209,11 @@ int CMDtj_create_termdb(int* p_nFrag, oid* p_maxFragSize) {
 
     BAT* conf;
     
-    if ( tdb_lookupBAT(TERMDBCONF) ) {
+    if ( pftu_lookup_bat(TERMDBCONF) ) {
         stream_printf(GDKout,"#CMDtj_create_termdb: bat \"%s\"already exists.\n",TERMDBCONF);
         return GDK_FAIL;
     }
-    if (!(conf = tdb_createBAT(TERMDBCONF,TYPE_void,TYPE_oid,1/*persistent*/)))
+    if (!(conf = pftu_create_bat(TERMDBCONF,TYPE_void,TYPE_oid,1/*persistent*/)))
         return GDK_FAIL;
     BATseqbase(conf,(oid)0);
     if ( !BUNappend(conf, &nFrag, 0) ||
@@ -250,14 +226,14 @@ int CMDtj_create_termdb(int* p_nFrag, oid* p_maxFragSize) {
     }
 
     BAT* tags;
-    if ( ! (tags=tdb_createBAT(TERMDBTAGS,TYPE_str,TYPE_oid,1/*persistent*/)) )
+    if ( ! (tags=pftu_create_bat(TERMDBTAGS,TYPE_str,TYPE_oid,1/*persistent*/)) )
                 return GDK_FAIL;
 
     oid lastbat = 0;
     for(int i=0; i< (int)nFrag; i++) {
         if (  (i==0) || !dynamic ) {
 	    lastbat = (oid)i;
-            if ( ! tdb_createBAT(hashbatName(TERMDBBAT,i),TYPE_str,TYPE_oid,1/*persistent*/))
+            if ( ! pftu_create_bat(hashbatName(TERMDBBAT,i),TYPE_str,TYPE_oid,1/*persistent*/))
                 return GDK_FAIL;
 	}
     	if ( !BUNappend(conf, &lastbat, 0) ) {
@@ -354,7 +330,7 @@ termDbCtx* tdb_open(char* name) {
     (void)name; // incomplete, termDB's should have a name
     TDB_DEBUG(TDB_OUT,"#termdb: start tdb_open().\n");
 
-    BAT* tdb_frags = tdb_lookupBAT(TERMDBFRAGMENTS);
+    BAT* tdb_frags = pftu_lookup_bat(TERMDBFRAGMENTS);
     if ( !tdb_frags ) {
         stream_printf(GDKout,"#ERROR:tdb_open: no termdb runtime bat found.\n");
     	return NULL;
@@ -367,14 +343,14 @@ termDbCtx* tdb_open(char* name) {
 
     tdb->frags	= tdb_frags;
     BBPfix(BBPcacheid(tdb->frags));
-    tdb->conf	= tdb_lookupBAT(TERMDBCONF);
+    tdb->conf	= pftu_lookup_bat(TERMDBCONF);
     if ( tdb->conf == NULL ) {
         stream_printf(GDKout,"#ERROR:tdb_open: unable to load conf bat.\n");
     	return NULL;
     }
     BBPfix(BBPcacheid(tdb->conf));
     //
-    tdb->tags        = tdb_lookupBAT(TERMDBTAGS);
+    tdb->tags        = pftu_lookup_bat(TERMDBTAGS);
     if ( tdb->tags == NULL ) {
         stream_printf(GDKout,"#ERROR:tdb_open: unable to load tags bat.\n");
     	return NULL;
@@ -521,9 +497,9 @@ int tdb_splitBucket(termDbCtx* tdb, int frag) {
     }
     BAT* old_frag = tdb_prepare2destroy(tdb->hashbat[frag]);
     BAT* new_frag;
-    if ( !(tdb->hashbat[frag] = tdb_createBAT(hashbatName(TERMDBBAT,frag),TYPE_str,TYPE_oid,1/*persistent*/)) ||
+    if ( !(tdb->hashbat[frag] = pftu_create_bat(hashbatName(TERMDBBAT,frag),TYPE_str,TYPE_oid,1/*persistent*/)) ||
 
-         !(new_frag = tdb_createBAT(hashbatName(TERMDBBAT,new_fragIdx),TYPE_str,TYPE_oid,1/*persistent*/)) )
+         !(new_frag = pftu_create_bat(hashbatName(TERMDBBAT,new_fragIdx),TYPE_str,TYPE_oid,1/*persistent*/)) )
         return 0;
     BBPfix(BBPcacheid(new_frag));
     BBPfix(BBPcacheid(tdb->hashbat[frag]));

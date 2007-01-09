@@ -1,3 +1,12 @@
+/**
+ * This software was created by the Snowball Project
+ * (see http://snowball.tartarus.org/) and is covered by the
+ * BSD license:
+ * 
+ * http://www.opensource.org/licenses/bsd-license.html 
+ * 
+ */
+
 #include <pf_config.h>
 
 #include <stdlib.h> /* for calloc, free */
