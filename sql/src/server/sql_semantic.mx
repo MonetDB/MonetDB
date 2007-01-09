@@ -38,6 +38,7 @@ extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
 extern char *qname_schema(dlist *qname);
 extern char *qname_table(dlist *qname);
+extern char *qname_catalog(dlist *qname);
 #define qname_module(qname) qname_schema(qname)
 #define qname_fname(qname) qname_table(qname)
 
@@ -221,9 +222,9 @@ qname_schema(dlist *qname)
 	assert(qname && qname->h);
 
 	if (dlist_length(qname) == 2) {
-		char *name = qname->h->data.sval;
-
-		return name;
+		return qname->h->data.sval;
+	} else if (dlist_length(qname) == 3) {
+		return qname->h->next->data.sval;
 	}
 	return NULL;
 }
@@ -237,8 +238,22 @@ qname_table(dlist *qname)
 		return qname->h->data.sval;
 	} else if (dlist_length(qname) == 2) {
 		return qname->h->next->data.sval;
+	} else if (dlist_length(qname) == 3) {
+		return qname->h->next->next->data.sval;
 	}
 	return "unknown";
+}
+
+char *
+qname_catalog(dlist *qname)
+{
+	assert(qname && qname->h);
+
+	if (dlist_length(qname) == 3) {
+		return qname->h->data.sval;
+	} 
+
+	return NULL;
 }
 
 stmt *

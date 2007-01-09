@@ -3571,9 +3571,15 @@ interval_expression:
  ;
 
 qname:
-    ident		{ $$ = append_string(L(), $1); }
- |  ident '.' ident	{ $$ = append_string(
-				append_string(L(), $1), $3);}
+    ident			{ $$ = append_string(L(), $1); }
+ |  ident '.' ident		{ $$ = append_string(
+					append_string(L(), $1), $3);}
+ |  ident '.' ident '.' ident	{ $$ = append_string(
+						append_string(
+							append_string(L(), $1), 
+							$3), 
+						$5)
+				;}
  ;
 
 column_ref:
