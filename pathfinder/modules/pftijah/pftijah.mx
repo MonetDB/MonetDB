@@ -786,11 +786,11 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 # PROBABILISTIC CONTAINMENT
 ################################################################################
 
-PROC _containing_desc(bat[oid,void] left, bat[oid,oid] tid_pre, bat[void,int] pre_size) : bat[oid,oid] :=
+PROC _containing_desc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_desc" );    
      var elems := left.hmark(0@0);
-     var cands := tid_pre.tmark(0@0);
+     var cands := pre_tid.hmark(0@0);
      var iter := elems.mirror();
      var elem_termpre := ll_descendant(	iter, 
      					elems, 
@@ -798,54 +798,54 @@ PROC _containing_desc(bat[oid,void] left, bat[oid,oid] tid_pre, bat[void,int] pr
 					cands, 
 					false, false, min(iter), max(iter), false, chr(nil));
      elem_termpre := elem_termpre.reverse().leftfetchjoin(elems).reverse();
-     var elem_tid := elem_termpre.join(tid_pre.reverse());
+     var elem_tid := elem_termpre.join(pre_tid);
      elem_termpre := nil;
      if ( trace ) tj_trace( "END   _containing_desc" );    
      return elem_tid;
 }
 
-PROC _containing_desc2(bat[oid,void] left, bat[oid,oid] tid_pre, bat[void,int] pre_size) : bat[oid,oid] :=
+PROC _containing_desc2(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_desc2" );    
      var elems := left.hmark(0@0);
-     var cands := tid_pre.tmark(0@0);
+     var cands := pre_tid.hmark(0@0);
      var iter := elems.mirror();
      var elem_termpre := ll_descendant2(iter, 
      					elems, 
 					pre_size, 
 					cands, 
 					false, false, min(iter), max(iter), false, chr(nil));
-     var elem_tid := elem_termpre.join(tid_pre.reverse());
+     var elem_tid := elem_termpre.join(pre_tid);
      elem_termpre := nil;
      if ( trace ) tj_trace( "END   _containing_desc" );    
      return elem_tid;
 }
 
-PROC _containing_desc3(bat[oid,void] left, bat[oid,oid] tid_pre, bat[void,int] pre_size) : bat[oid,oid] :=
+PROC _containing_desc3(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_desc3" );    
      var elems := left.hmark(0@0);
-     var cands := tid_pre.tmark(0@0);
+     var cands := pre_tid.hmark(0@0);
      var elem_termpre := treemergejoin_sort( elems, 
 					pre_size, 
 					cands);
-     var elem_tid := elem_termpre.join(tid_pre.reverse());
+     var elem_tid := elem_termpre.join(pre_tid);
      elem_termpre := nil;
      if ( trace ) tj_trace( "END   _containing_desc" );    
      return elem_tid;
 }
 
-PROC _containing_anc(bat[oid,void] left, bat[oid,oid] tid_pre, bat[void,int] pre_size) : bat[oid,oid] :=
+PROC _containing_anc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_anc" );    
-     var tmp_pre := tid_pre.tmark(0@0);
+     var tmp_pre := pre_tid.hmark(0@0);
      var elems := ll_ancestor(tmp_pre, 
                               tmp_pre, 
                               pre_size, 
                               collHeight).reverse(); 
      tmp_pre := nil;
      elems := elems.semijoin(left);
-     var elem_tid := elems.join(tid_pre.reverse());
+     var elem_tid := elems.join(pre_tid);
      var elems := nil;
      
      print( "END   _containing_anc" );
@@ -919,20 +919,19 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd)
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
-     var tid_pre := indexfetchjoin(tid_cnt.hmark(0@0), 
+     var pre_tid := indexfetchjoin(tid_cnt.hmark(0@0), 
                                    bat("tj_" + collName + "_TermIndex"), 
-                                   bat("tj_" + collName + "_Terms") );
-     if (tid_pre.count() = 0) {return new(oid,dbl);}
-     var t1a := time();
-     tid_pre := tid_pre.tsort();
+                                   bat("tj_" + collName + "_Terms") ).reverse();
+     if (pre_tid.count() = 0) {return new(oid,dbl);}
+     pre_tid := pre_tid.sort();
 
-    var tid_pres := split2frag(tid_pre, bat("tj_" + collName + "_fragments"));
+    var pre_tids := split2frag(pre_tid, bat("tj_" + collName + "_fragments"));
 
     var res := new(oid,bat);
 
     left@batloop() {
-      if ( tid_pres.exist($h) ) {
-        var tmp := NLLR_body($t, tid_pres.find($h), str(int($h)), tid_cnt, tid_frq, _lmbd, q_cnt);
+      if ( pre_tids.exist($h) ) {
+        var tmp := NLLR_body($t, pre_tids.find($h), str(int($h)), tid_cnt, tid_frq, _lmbd, q_cnt);
 	if (tmp.count() > 0) {res.insert($h, tmp);}
       }
     }
@@ -944,13 +943,13 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd)
     return res;
 }
 
-PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] tid_pre, str ind, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, dbl _lmbd, int q_cnt) : bat[oid,dbl] :=
+PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, dbl _lmbd, int q_cnt) : bat[oid,dbl] :=
 {
      var pre_size := bat("tj_" + collName + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
-     var elem_tid := _containing_desc3(left.mark(0@0), tid_pre, pre_size);
-     tid_pre := nil;
+     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
+     pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
      var res := score_NLLR(elem_tid, pre_size, tid_cnt, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
@@ -983,18 +982,18 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
-     var tid_pre := indexfetchjoin(terms.hmark(0@0), 
+     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
                                    bat("tj_" + collName + "_TermIndex"), 
-                                   bat("tj_" + collName + "_Terms") );
-     if (tid_pre.count() = 0) {return new(oid,dbl);}
+                                   bat("tj_" + collName + "_Terms") ).reverse();
+     if (pre_tid.count() = 0) {return new(oid,dbl);}
      var t1a := time();
-     tid_pre := tid_pre.tsort();
+     pre_tid := pre_tid.sort();
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc3(left.mark(0@0), tid_pre, pre_size);
+     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
      var t3 := time();
-     tid_pre := nil;
+     pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
      var res := score_NLLR(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
@@ -1030,18 +1029,18 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
-     var tid_pre := indexfetchjoin(terms.hmark(0@0), 
+     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
                                    bat("tj_" + collName + "_TermIndex"), 
-                                   bat("tj_" + collName + "_Terms") );
-     if (tid_pre.count() = 0) {return new(oid,dbl);}
+                                   bat("tj_" + collName + "_Terms") ).reverse();
+     if (pre_tid.count() = 0) {return new(oid,dbl);}
      var t1a := time();
-     tid_pre := tid_pre.tsort();
+     pre_tid := pre_tid.sort();
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc(left.mark(0@0), tid_pre, pre_size);
+     var elem_tid := _containing_desc(left.mark(0@0), pre_tid, pre_size);
      var t3 := time();
-     tid_pre := nil;
+     pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
      var res := score_NLLR_mil(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
