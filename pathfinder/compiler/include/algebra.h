@@ -252,6 +252,10 @@ enum PFalg_fun_t {
     , alg_fun_num_multiply /**< arithmetic times operator */
     , alg_fun_num_divide   /**< arithmetic divide operator */
     , alg_fun_num_modulo   /**< arithmetic modulo operator */
+    , alg_fun_fn_abs       /**< fn:abs */
+    , alg_fun_fn_ceiling   /**< fn:ceiling */
+    , alg_fun_fn_floor     /**< fn:floor */
+    , alg_fun_fn_round     /**< fn:round */
     , alg_fun_fn_concat    /**< fn:concat */
     , alg_fun_fn_contains  /**< fn:contains */
 };

@@ -153,6 +153,11 @@ enum PFmil_kind_t {
     , m_mdiv         /**< multiplexed arithmetic divide */
     , m_mmod         /**< multiplexed arithmetic modulo */
 
+    , m_mabs         /**< multiplexed operator abs */
+    , m_mceiling     /**< multiplexed operator ceil */
+    , m_mfloor       /**< multiplexed operator floor */
+    , m_mround_up    /**< multiplexed operator round_up */
+    
     , m_gt           /**< greater than */
     , m_mgt          /**< multiplexed comparison (greater than) */
     , m_meq          /**< multiplexed comparison (equality) */
@@ -635,6 +640,18 @@ PFmil_t * PFmil_mdiv (const PFmil_t *, const PFmil_t *);
 
 /** MIL multiplexed modulo operator */
 PFmil_t * PFmil_mmod (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed operator abs */
+PFmil_t * PFmil_mabs (const PFmil_t *);
+
+/** MIL multiplexed operator ceil */
+PFmil_t * PFmil_mceil (const PFmil_t *);
+
+/** MIL multiplexed operator floor */
+PFmil_t * PFmil_mfloor (const PFmil_t *);
+
+/** MIL multiplexed operator round_up */
+PFmil_t * PFmil_mround_up (const PFmil_t *);
 
 /** greater than */
 PFmil_t * PFmil_gt (const PFmil_t *, const PFmil_t *);

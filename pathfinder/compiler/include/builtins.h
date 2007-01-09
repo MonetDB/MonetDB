@@ -207,6 +207,45 @@ struct PFla_pair_t PFbui_op_ge_str (const PFla_op_t *loop,
                                     struct PFla_pair_t *args);
 
 /* 6.4. Functions on Numeric Values */
+struct PFla_pair_t PFbui_fn_abs_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_abs_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_abs_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_ceiling_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_ceiling_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_ceiling_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_floor_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_floor_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_floor_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_round_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_round_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_round_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
 
 /* 7. FUNCTIONS ON STRINGS */
 /* 7.4. Functions on String Values */

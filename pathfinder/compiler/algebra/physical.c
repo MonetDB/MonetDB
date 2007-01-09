@@ -1305,6 +1305,19 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             res_type = n->schema.items[ix[1]].type;
             break;
 
+        case alg_fun_fn_abs:
+        case alg_fun_fn_ceiling:
+        case alg_fun_fn_floor:
+        case alg_fun_fn_round:
+            assert (refs.count == 1);
+            /* make sure the attribute is of numeric type */
+            assert (n->schema.items[ix[0]].type == aat_int ||
+                    n->schema.items[ix[0]].type == aat_dec ||
+                    n->schema.items[ix[0]].type == aat_dbl);
+
+            res_type = n->schema.items[ix[0]].type;
+            break;
+
         case alg_fun_fn_concat:
             assert (refs.count == 2);
             /* make sure both attributes are of type string */

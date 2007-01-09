@@ -873,6 +873,24 @@ reduce (PFcnode_t * p, int goalnt)
                 }
             }
 
+            /*
+             * fn:ceiling(), fn:floor(), and fn:round() applied 
+             * to something that is of type integer returns
+             * the argument itself.
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "ceiling")) ||
+                ! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "floor")) ||
+                ! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "round"))) {
+                if (PFty_subtype (TY(LL(p)), PFty_xs_integer ())) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+            }
+
             if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_fn, "string"))) {
                 /*
@@ -1067,6 +1085,16 @@ reduce (PFcnode_t * p, int goalnt)
             }
             break;
 
+        /* CoreExpr:           cast (SequenceType, CoreExpr) */
+        case 72:
+            if (PFty_subtype (TY(L(p)), TY(R(p))) &&
+                PFty_subtype (TY(R(p)), TY(L(p)))) {
+                *p = *R(p);
+                rewritten = true;
+                break;
+            }
+            break;
+            
         /* Atom:                var */
         case 73:
             {

@@ -84,6 +84,10 @@
                  | '/(' expression ',' expression ')'       <m_div>
                  | '[/](' expression ',' expression ')'     <m_mdiv>
                  | '[%](' expression ',' expression ')'     <m_mmod>
+                 | '[abs](' expression ')'                  <m_mabs>
+                 | '[ceil](' expression ')'                 <m_mceiling>
+                 | '[floor](' expression ')'                <m_mfloor>
+                 | '[round_up](' expression ')'             <m_mround_up>
                  | '>(' expression ',' expression ')'       <m_gt>
                  | '[>](' expression ',' expression ')'     <m_mgt>
                  | '[=](' expression ',' expression ')'     <m_meq>
@@ -228,6 +232,10 @@ static char *ID[] = {
     , [m_div]          = "/"
     , [m_mdiv]         = "[/]"
     , [m_mmod]         = "[%]"
+    , [m_mabs]         = "[abs]"
+    , [m_mceiling]     = "[ceil]"
+    , [m_mfloor]       = "[floor]"
+    , [m_mround_up]    = "[round_up]"
     , [m_gt]           = ">"
     , [m_mgt]          = "[>]"
     , [m_meq]          = "[=]"
@@ -866,6 +874,14 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : '[abs](' expression ')' */
+        case m_mabs:
+        /* expression : '[ceil](' expression ')' */
+        case m_mceiling:
+        /* expression : '[floor](' expression ')' */
+        case m_mfloor:
+        /* expression : '[round_up](' expression ')' */
+        case m_mround_up:
         /* expression : 'not(' expression ')' */
         case m_not:
         /* expression : '[not](' expression ')' */

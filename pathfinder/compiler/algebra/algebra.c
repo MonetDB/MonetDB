@@ -885,6 +885,10 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_num_multiply: return "multiply";
         case alg_fun_num_divide:   return "divide";
         case alg_fun_num_modulo:   return "modulo";
+        case alg_fun_fn_abs:       return "fn:abs";
+        case alg_fun_fn_ceiling:   return "fn:ceiling";
+        case alg_fun_fn_floor:     return "fn:floor";
+        case alg_fun_fn_round:     return "fn:round";
         case alg_fun_fn_concat:    return "fn:concat";
         case alg_fun_fn_contains:  return "fn:contains";
     }

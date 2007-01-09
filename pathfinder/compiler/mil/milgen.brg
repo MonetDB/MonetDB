@@ -2866,6 +2866,50 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 }   break;
                     
+                case alg_fun_fn_abs:
+                case alg_fun_fn_ceiling:
+                case alg_fun_fn_floor:
+                case alg_fun_fn_round:
+                {
+                    PFmil_t * (*op) (const PFmil_t *) = NULL;
+                    PFalg_att_t         att;
+
+                    att = p->sem.fun_1to1.refs.atts[0];
+                    res_type = type_of (L(p), att);
+
+                    assert (res_type == aat_int || res_type == aat_dec ||
+                            res_type == aat_dbl);
+
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_abs:
+                            op = PFmil_mabs; break;
+                        case alg_fun_fn_ceiling:
+                            op = PFmil_mceil; break;
+                        case alg_fun_fn_floor:
+                            op = PFmil_mfloor; break;
+                        case alg_fun_fn_round:
+                            op = PFmil_mround_up; break;
+                        default:
+                            break;
+                    }
+
+                    /* because functions are only allowed for dbl
+                       we need to cast before and afterwards:
+                       res := `input'.[dbl]().[`op']().[`res_type'](); */
+                    if (impl_types[res_type] == m_dbl)
+                        execute (
+                            assgn (var (res->name),
+                                   op (VAR (L(p)->env, att, res_type))));
+                    else
+                        execute (
+                            assgn (var (res->name),
+                                   mcast (implty (res_type),
+                                          op (mcast (type (m_dbl),
+                                                     VAR (L(p)->env,
+                                                          att,
+                                                          res_type))))));
+                }   break;
+
                 case alg_fun_fn_contains:
                 {
                     PFalg_att_t         att1, att2;

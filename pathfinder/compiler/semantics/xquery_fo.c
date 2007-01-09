@@ -768,66 +768,150 @@ PFfun_xquery_fo ()
         .alg = PFbui_op_ge_str }
 
 /* 6.4. Functions on Numeric Values */
+    , /* fn:abs (integer) as integer */
+      { .ns = PFns_fn, .loc = "abs",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_integer () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_fn_abs_int }
+    , /* fn:abs (decimal) as decimal */
+      { .ns = PFns_fn, .loc = "abs",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_decimal () },
+            .ret_ty = PFty_xs_decimal () } },
+        .alg = PFbui_fn_abs_dec }
+    , /* fn:abs (double) as double */
+      { .ns = PFns_fn, .loc = "abs",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_double () },
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_fn_abs_dbl }
     , /* fn:abs (integer?) as integer? */
       { .ns = PFns_fn, .loc = "abs",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_integer ()) },
-            .ret_ty = PFty_opt (PFty_xs_integer ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_integer ()) } },
+        .alg = PFbui_fn_abs_int }
     , /* fn:abs (decimal?) as decimal? */
       { .ns = PFns_fn, .loc = "abs",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()) },
-            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } },
+        .alg = PFbui_fn_abs_dec }
     , /* fn:abs (double?) as double? */
       { .ns = PFns_fn, .loc = "abs",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
-            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_double ()) } },
+        .alg = PFbui_fn_abs_dbl }
+    , /* fn:ceiling (integer) as integer */
+      { .ns = PFns_fn, .loc = "ceiling",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_integer () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_fn_ceiling_int }
+    , /* fn:ceiling (decimal) as decimal */
+      { .ns = PFns_fn, .loc = "ceiling",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_decimal () },
+            .ret_ty = PFty_xs_decimal () } },
+        .alg = PFbui_fn_ceiling_dec }
+    , /* fn:ceiling (double) as double */
+      { .ns = PFns_fn, .loc = "ceiling",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_double () },
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_fn_ceiling_dbl }
     , /* fn:ceiling (integer?) as integer? */
       { .ns = PFns_fn, .loc = "ceiling",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_integer ()) },
-            .ret_ty = PFty_opt (PFty_xs_integer ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_integer ()) } },
+        .alg = PFbui_fn_ceiling_int }
     , /* fn:ceiling (decimal?) as decimal? */
       { .ns = PFns_fn, .loc = "ceiling",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()) },
-            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } },
+        .alg = PFbui_fn_ceiling_dec }
     , /* fn:ceiling (double?) as double? */
       { .ns = PFns_fn, .loc = "ceiling",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
-            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_double ()) } },
+        .alg = PFbui_fn_ceiling_dbl }
+    , /* fn:floor (integer) as integer */
+      { .ns = PFns_fn, .loc = "floor",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_integer () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_fn_floor_int }
+    , /* fn:floor (decimal) as decimal */
+      { .ns = PFns_fn, .loc = "floor",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_decimal () },
+            .ret_ty = PFty_xs_decimal () } },
+        .alg = PFbui_fn_floor_dec }
+    , /* fn:floor (double) as double */
+      { .ns = PFns_fn, .loc = "floor",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_double () },
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_fn_floor_dbl }
     , /* fn:floor (integer?) as integer? */
       { .ns = PFns_fn, .loc = "floor",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_integer ()) },
-            .ret_ty = PFty_opt (PFty_xs_integer ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_integer ()) } },
+        .alg = PFbui_fn_floor_int }
     , /* fn:floor (decimal?) as decimal? */
       { .ns = PFns_fn, .loc = "floor",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()) },
-            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } },
+        .alg = PFbui_fn_floor_dec }
     , /* fn:floor (double?) as double? */
       { .ns = PFns_fn, .loc = "floor",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
-            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_double ()) } },
+        .alg = PFbui_fn_floor_dbl }
+    , /* fn:round (integer) as integer */
+      { .ns = PFns_fn, .loc = "round",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_integer () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_fn_round_int }
+    , /* fn:round (decimal) as decimal */
+      { .ns = PFns_fn, .loc = "round",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_decimal () },
+            .ret_ty = PFty_xs_decimal () } },
+        .alg = PFbui_fn_round_dec }
+    , /* fn:round (double) as double */
+      { .ns = PFns_fn, .loc = "round",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_double () },
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_fn_round_dbl }
     , /* fn:round (integer?) as integer? */
       { .ns = PFns_fn, .loc = "round",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_integer ()) },
-            .ret_ty = PFty_opt (PFty_xs_integer ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_integer ()) } },
+        .alg = PFbui_fn_round_int }
     , /* fn:round (decimal?) as decimal? */
       { .ns = PFns_fn, .loc = "round",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()) },
-            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } },
+        .alg = PFbui_fn_round_dec }
     , /* fn:round (double?) as double? */
       { .ns = PFns_fn, .loc = "round",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
-            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_double ()) } },
+        .alg = PFbui_fn_round_dbl }
 
 
 /* 7. FUNCTIONS ON STRINGS */
@@ -1062,7 +1146,8 @@ PFfun_xquery_fo ()
     , /* fn:number () as double */
       { .ns = PFns_fn, .loc = "number",
         .arity = 0, .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_xs_double () } }}
+            .ret_ty = PFty_xs_double () } },
+        .alg = NULL }
     , /* fn:number (atomic?) as double */
       { .ns = PFns_fn, .loc = "number",
         .arity = 1, .sig_count = 1, .sigs = { {

@@ -3041,6 +3041,21 @@ reduce (PFpnode_t * p, int goalnt)
             /*
              * There's implicit semantics for some functions.
              */
+            
+            /* Implicitly call fn:round() and cast the result to integer
+               for the second and third argument of fn:subsequence(). */
+            if (! PFqname_eq (fun->qname, PFqname (PFns_fn, "subsequence")) &&
+                param_num > 0) {
+                PFvar_t *v1 = new_var (NULL);
+                PFvar_t *v2 = new_var (NULL);
+                
+                converted = flwr (let (letbind (var (v1), converted), nil ()),
+                                  APPLY (function (PFqname (PFns_fn, "round")),
+                                         var (v1)));
+		converted = flwr (let (letbind (var (v2), converted), nil ()),
+                                  cast (seqtype (PFty_xs_integer ()), var (v2)));
+            }
+            
             /* Implicitly call fn:boolean() before fn:not(). */
             if (! PFqname_eq (fun->qname, PFqname (PFns_fn, "not")))
                 implicit = function (PFqname (PFns_fn, "boolean"));

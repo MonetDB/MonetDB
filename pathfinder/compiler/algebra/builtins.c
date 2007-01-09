@@ -1124,12 +1124,126 @@ PFbui_op_ge_str (const PFla_op_t *loop, bool ordering,
 /* -------------------------------- */
 /* 6.4. Functions on Numeric Values */
 /* -------------------------------- */
-struct PFla_pair_t
-PFbui_fn_round (const PFla_op_t *loop, bool ordering,
+
+static PFla_pair_t
+numeric_fun_op (PFalg_simple_type_t t,
+                PFalg_fun_t kind,
+                const PFla_op_t *loop, bool ordering,
                 struct PFla_pair_t *args)
 {
-    assert (!"not implemented yet");
-    return PFbui_fn_subsequence (loop, ordering, args);
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                            cast (args[0].rel,
+                                  att_cast,
+                                  att_item,
+                                  t),
+                            kind,
+                            att_res,
+                            attlist (att_cast)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
+}
+
+struct PFla_pair_t
+PFbui_fn_abs_int (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_int, alg_fun_fn_abs, loop, ordering, args);
+}
+
+struct PFla_pair_t
+PFbui_fn_abs_dec (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dec, alg_fun_fn_abs, loop, ordering, args);
+}
+
+struct PFla_pair_t
+PFbui_fn_abs_dbl (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dbl, alg_fun_fn_abs, loop, ordering, args);
+}
+
+
+struct PFla_pair_t
+PFbui_fn_ceiling_int (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_int, alg_fun_fn_ceiling, loop, ordering, args);
+}
+
+struct PFla_pair_t
+PFbui_fn_ceiling_dec (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dec, alg_fun_fn_ceiling, loop, ordering, args);
+}
+
+struct PFla_pair_t
+PFbui_fn_ceiling_dbl (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dbl, alg_fun_fn_ceiling, loop, ordering, args);
+}
+
+
+struct PFla_pair_t
+PFbui_fn_floor_int (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_int, alg_fun_fn_floor, loop, ordering, args);
+}
+
+struct PFla_pair_t
+PFbui_fn_floor_dec (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dec, alg_fun_fn_floor, loop, ordering, args);
+}
+
+struct PFla_pair_t
+PFbui_fn_floor_dbl (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dbl, alg_fun_fn_floor, loop, ordering, args);
+}
+
+
+struct PFla_pair_t
+PFbui_fn_round_int (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_int, alg_fun_fn_round, loop, ordering, args);
+}
+
+struct PFla_pair_t
+PFbui_fn_round_dec (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dec, alg_fun_fn_round, loop, ordering, args);
+}
+
+struct PFla_pair_t
+PFbui_fn_round_dbl (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dbl, alg_fun_fn_round, loop, ordering, args);
 }
 
 /* ----------------------- */
@@ -1930,19 +2044,18 @@ PFbui_fn_subsequence_till_end (const PFla_op_t *loop, bool ordering,
                                struct PFla_pair_t *args)
 {
     PFla_op_t *startingLoc = args[1].rel;
-    PFalg_simple_type_t ty = 0;
     
+    (void) loop; (void) ordering;
+
+#ifndef NDEBUG
+    /* make sure that the second argument is of type integer */
     for (unsigned int i = 0; i < startingLoc->schema.count; i++) {
         if (startingLoc->schema.items[i].name == att_item) {
-            ty = startingLoc->schema.items[i].type;
+            assert (startingLoc->schema.items[i].type == aat_int);
             break;
         }
     }
-    if (ty != aat_int) {
-        struct PFla_pair_t arg = { .rel  = args[1].rel,
-                                   .frag = args[1].frag };
-        startingLoc = PFbui_fn_round (loop, ordering, &arg).rel;
-    }
+#endif
     
     /*
      * Join the index position with the sequence,
@@ -1985,34 +2098,25 @@ PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
     PFla_op_t *startingLoc = args[1].rel;
     PFla_op_t *length      = args[2].rel;
     PFla_op_t *first_cond;
-    PFalg_simple_type_t ty = 0;
     
-    /* avoid calling fn:round if we already have integer values */
+#ifndef NDEBUG
+    /* make sure that the second and the third argument are of type integer */
     for (unsigned int i = 0; i < startingLoc->schema.count; i++) {
         if (startingLoc->schema.items[i].name == att_item) {
-            ty = startingLoc->schema.items[i].type;
+            assert (startingLoc->schema.items[i].type == aat_int);
             break;
         }
     }
-    if (ty != aat_int) {
-        struct PFla_pair_t arg = { .rel  = args[1].rel,
-                                   .frag = args[1].frag };
-        startingLoc = PFbui_fn_round (loop, ordering, &arg).rel;
-    }
-    
-    /* avoid calling fn:round if we already have integer values */
     for (unsigned int i = 0; i < length->schema.count; i++) {
         if (length->schema.items[i].name == att_item) {
-            ty = length->schema.items[i].type;
+            assert (length->schema.items[i].type == aat_int);
             break;
         }
     }
-    if (ty != aat_int) {
-        struct PFla_pair_t arg = { .rel  = args[2].rel,
-                                   .frag = args[2].frag };
-        length = PFbui_fn_round (loop, ordering, &arg).rel;
-    }
+#endif
     
+    (void) loop; (void) ordering;
+
     /* evaluate the first condition (startingLoc) */
     first_cond = project (
                      select_ (

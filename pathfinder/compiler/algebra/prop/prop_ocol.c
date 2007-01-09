@@ -287,6 +287,19 @@ infer_ocol (PFla_op_t *n)
                     res_type = ocol_at (L(n), ix[1]).type;
                     break;
 
+                case alg_fun_fn_abs:
+                case alg_fun_fn_ceiling:
+                case alg_fun_fn_floor:
+                case alg_fun_fn_round:
+                    assert (n->sem.fun_1to1.refs.count == 1);
+                    /* make sure the attribute is of numeric type */
+                    assert (ocol_at (L(n), ix[0]).type == aat_int ||
+                            ocol_at (L(n), ix[0]).type == aat_dec ||
+                            ocol_at (L(n), ix[0]).type == aat_dbl);
+
+                    res_type = ocol_at (L(n), ix[0]).type;
+                    break;
+
                 case alg_fun_fn_concat:
                     assert (n->sem.fun_1to1.refs.count == 2);
                     /* make sure both attributes are of type string */

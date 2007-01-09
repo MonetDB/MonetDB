@@ -961,6 +961,42 @@ PFmil_mmod (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Multiplexed operator abs
+ */
+PFmil_t *
+PFmil_mabs (const PFmil_t *a)
+{
+    return wire1 (m_mabs, a);
+}
+
+/**
+ * Multiplexed operator ceil
+ */
+PFmil_t *
+PFmil_mceil (const PFmil_t *a)
+{
+    return wire1 (m_mceiling, a);
+}
+
+/**
+ * Multiplexed operator floor
+ */
+PFmil_t *
+PFmil_mfloor (const PFmil_t *a)
+{
+    return wire1 (m_mfloor, a);
+}
+
+/**
+ * Multiplexed operator round_up
+ */
+PFmil_t *
+PFmil_mround_up (const PFmil_t *a)
+{
+    return wire1 (m_mround_up, a);
+}
+
+/**
  * Greater than operator
  */
 PFmil_t *
