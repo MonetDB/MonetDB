@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+## Please run automake on this file to produce a Makefile.in
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -16,19 +16,5 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-# bootstrap sub-targets
-( cd Mx && ./bootstrap ) || exit 1
-( cd mel && ./bootstrap ) || exit 1
-( cd burg && ./bootstrap ) || exit 1
-
-# bootstrap ourself
-aclocal -I .
-if [ "`type -t glibtoolize`" ==  "file" ] ; then
-	glibtoolize --copy --force --automake
-else
-	libtoolize --copy --force --automake
-fi
-aclocal -I .
-autoconf
-autoheader
-automake --add-missing --copy
+dist_pkgdata_SCRIPTS = conf.bash
+dist_bin_SCRIPTS = Mdebootstrap Mbootstrap

@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+## Please run automake on this file to produce a Makefile.in
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -16,19 +16,24 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-# bootstrap sub-targets
-( cd Mx && ./bootstrap ) || exit 1
-( cd mel && ./bootstrap ) || exit 1
-( cd burg && ./bootstrap ) || exit 1
+PREFIX=@prefix@
+SRCDIR=@srcdir@
+DESTDIR=
 
-# bootstrap ourself
-aclocal -I .
-if [ "`type -t glibtoolize`" ==  "file" ] ; then
-	glibtoolize --copy --force --automake
-else
-	libtoolize --copy --force --automake
-fi
-aclocal -I .
-autoconf
-autoheader
-automake --add-missing --copy
+default: all
+
+all: @abs_builddir@/setup.py
+	@PYTHON@ setup.py build
+
+@abs_builddir@/setup.py:
+	cp -R "$(SRCDIR)"/* @abs_builddir@
+
+install: all
+	@PYTHON@ setup.py $@ --prefix="$(DESTDIR)$(PREFIX)"
+
+uninstall:
+	rm -rf "$(DESTDIR)$(PREFIX)"/"`@PYTHON@ -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")'`"/autogen \
+		"$(DESTDIR)$(PREFIX)"/bin/autogen.py
+
+clean:
+	@PYTHON@ setup.py $@

@@ -6,6 +6,7 @@ AC_INIT([mel], [1.0], [monet@cwi.nl])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([mel.mx])
 AC_CONFIG_HEADER([mel_config.h])
+AC_SET_MAKE
 
 # Checks for programs.
 AC_PROG_CXX
