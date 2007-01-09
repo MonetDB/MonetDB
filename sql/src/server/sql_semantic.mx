@@ -44,6 +44,7 @@ extern char *qname_catalog(dlist *qname);
 
 extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access);
 extern tvar *scope_add_temp_table(scope *scp, sql_table *t, stmt *temp_table, char *tname);
+extern tvar *scope_add_temp_view(scope *scp, stmt *temp_table, char *tname);
 
 extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
 
@@ -340,6 +341,26 @@ scope_add_temp_table(scope *scp, sql_table *t, stmt *temp_table, char *tname)
 		stmt *sc = stmt_dup(n->data);
 
 		sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
+		sc = stmt_column(sc, stmt_dup(temp_table), NULL);
+		table_add_column(tv, sc, NULL, cname);
+	}
+	return tv;
+}
+
+tvar *
+scope_add_temp_view(scope *scp, stmt *temp_table, char *tname)
+{
+	node *n;
+	tvar *tv = scope_add_table(scp, stmt_dup(temp_table), tname, NULL);
+
+	assert(temp_table->type == st_list);
+
+	/* foreach column add column name */
+	for (n = temp_table->op1.lval->h; n; n = n->next) {
+		stmt *sc = stmt_dup(n->data);
+		char *cname = column_name(sc);
+
+		sc = stmt_alias(sc, _strdup(tname), cname);
 		sc = stmt_column(sc, stmt_dup(temp_table), NULL);
 		table_add_column(tv, sc, NULL, cname);
 	}
@@ -1043,6 +1064,30 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_DECLARE:
 	case SQL_SET:
 		return psm(sql, s);
+
+	case SQL_WITH:
+	{
+		dnode *d = s->data.lval->h;
+		symbol *select = d->next->data.sym;
+		stmt *st;
+
+		/* first handle all with's (ie inlined views) */
+		for (d = d->data.lval->h; d; d = d->next) {
+			symbol *sym = d->data.sym;
+			dnode *dn = sym->data.lval->h;
+			char *name = qname_table(dn->data.lval);
+
+			if (frame_find_var(sql, name)) 
+				return sql_error(sql, 01, "Variable '%s' allready declared", name);
+
+			st = semantic(sql, scp, sym);
+			if (!st) 
+				return NULL;
+			stack_push_view(sql, name, st);
+		}
+		st = semantic(sql, scp, select);
+		return st;
+	}
 
 	case SQL_PREP:
 	case SQL_MULSTMT:

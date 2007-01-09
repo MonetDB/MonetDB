@@ -152,7 +152,8 @@ typedef enum tokens {
 	SQL_COPYTO,
 	SQL_EXPORT,
 	SQL_NEXT,
-	SQL_MULSTMT
+	SQL_MULSTMT,
+	SQL_WITH
 } tokens;
 
 typedef enum jt {
@@ -260,7 +261,7 @@ int yydebug=1;
 	copyfrom_stmt
 	table_def
 	view_def
-	view_as
+	query_expression
 	role_def
 	type_def
 	func_def
@@ -364,6 +365,7 @@ int yydebug=1;
 	trigger_procedure_statement
 	if_opt_else
 	func_data_type
+	with_list_element
 
 %type <type>
 	data_type
@@ -403,7 +405,7 @@ int yydebug=1;
 	privileges
 	schema_name_clause
 	assignment_commalist
-	opt_column_commalist
+	opt_column_list
 	column_commalist_parens
 	ident_commalist
 	opt_corresponding
@@ -462,6 +464,7 @@ int yydebug=1;
 	table_function_column_list
 	select_target_list
 	external_function_name
+	with_list
 
 %type <ival>
 	drop_action
@@ -939,9 +942,9 @@ operation_commalist:
 operation:
     INSERT			    { $$ = _symbol_create(SQL_INSERT,NULL); }
  |  sqlDELETE			    { $$ = _symbol_create(SQL_DELETE,NULL); }
- |  UPDATE opt_column_commalist     { $$ = _symbol_create_list(SQL_UPDATE,$2); }
- |  SELECT opt_column_commalist	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
- |  REFERENCES opt_column_commalist { $$ = _symbol_create_list(SQL_SELECT,$2); }
+ |  UPDATE opt_column_list          { $$ = _symbol_create_list(SQL_UPDATE,$2); }
+ |  SELECT opt_column_list	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
+ |  REFERENCES opt_column_list 	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  EXECUTE			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
  ;
 
@@ -1309,9 +1312,9 @@ table_content_source:
  ;
 
 as_subquery_clause:
-	opt_column_commalist
+	opt_column_list
 	AS
-	view_as			
+	query_expression			
 	with_or_without_data
 			{ $$ = append_list(L(), $1);
 			  append_symbol($$, $3); 
@@ -1589,7 +1592,7 @@ table_constraint_type:
  |  PRIMARY KEY column_commalist_parens
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
  |  FOREIGN KEY column_commalist_parens
-    REFERENCES qname opt_column_commalist opt_match opt_ref_action
+    REFERENCES qname opt_column_list opt_match opt_ref_action
 
 			{ dlist *l = L();
 			  append_list(l, $5 );
@@ -1618,17 +1621,18 @@ like_table:
  ;
 
 view_def:
-    create VIEW qname opt_column_commalist AS view_as opt_with_check_option
+    create VIEW qname opt_column_list AS query_expression opt_with_check_option
 	{  dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  append_int(l, $7);
+	  append_int(l, TRUE);	/* persistent view */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
   ;
 
-view_as:
+query_expression:
 	select_no_parens
   ;
 
@@ -1637,7 +1641,7 @@ opt_with_check_option:
  |  WITH CHECK OPTION		{ $$ = TRUE; }
  ;
 
-opt_column_commalist:
+opt_column_list:
     /* empty */			{ $$ = NULL; }
  | column_commalist_parens
  ;
@@ -2528,6 +2532,48 @@ join_spec:
   | USING column_commalist_parens
 		{ $$ = _symbol_create_list( SQL_USING, $2); }
   ;
+
+/*
+<query expression> ::= [ <with clause> ] <query expression body>
+
+<with clause> ::= WITH [ RECURSIVE ] <with list>
+
+<with list> ::= <with list element> [ { <comma> <with list element> }... ]
+
+<with list element> ::=
+                <query name> [ <left paren> <with column list> <right paren> ]
+                AS <left paren> <query expression> <right paren> [ <search or cycle clause> ]
+
+<with column list> ::= <column name list>
+
+RECURSIVE and <search or cycle clause> are currently not supported
+*/
+sql:
+	WITH with_list query_expression
+	{
+		dlist *l = L();
+	  	append_list(l, $2);
+	  	append_symbol(l, $3);
+	  	$$ = _symbol_create_list( SQL_WITH, l ); 
+	}
+ ;
+
+with_list:
+	with_list ',' with_list_element	 { $$ = append_symbol($1, $3); }
+ |	with_list_element	 	 { $$ = append_symbol(L(), $1); }
+ ;
+
+with_list_element: 
+    ident opt_column_list AS '(' query_expression ')'
+	{  dlist *l = L();
+	  append_list(l, append_string(L(), $1));
+	  append_list(l, $2);
+	  append_symbol(l, $5);
+	  append_int(l, FALSE);	/* no with check */
+	  append_int(l, FALSE);	/* inlined view  (ie not persistent) */
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
+	}
+ ;
 
 sql:
     select_no_parens

@@ -655,14 +655,36 @@ as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 }
 
 static stmt *
-create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check)
+view_rename_columns( char *name, stmt *sq, dlist *column_spec)
+{
+	dnode *n = column_spec->h;
+	node *m = sq->op1.lval->h;
+	list *l = create_stmt_list();
+
+	for (; n && m; n = n->next, m = m->next) {
+		char *cname = n->data.sval;
+		stmt *st = stmt_dup(m->data);
+
+		st = stmt_alias(st, _strdup(name), _strdup(cname));
+		list_append(l, st);
+	}
+	stmt_destroy(sq);
+	if (n || m) {
+		list_destroy(l);
+		return NULL;
+	}
+	return stmt_list(l);
+}
+
+static stmt *
+create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent)
 {
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	list * id_l = NULL;
-	int instantiate = (sql->mode == m_execute);
+	int instantiate = (sql->mode == m_execute || !persistent);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
@@ -698,6 +720,8 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 			t = mvc_create_view(sql, s, name, q, 0);
 			as_subquery( sql, t, sq, column_spec );
 		}
+		if (!persistent && column_spec) 
+			sq = view_rename_columns( name, sq, column_spec);
 		if (!instantiate && sq) {
 			id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
 			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
@@ -1643,7 +1667,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+				res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival, l->h->next->next->next->next->data.ival);
 			}
 			if (!res) {
 				list_destroy(table_elements);
@@ -1734,7 +1758,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_view(sql, cur_schema(sql), l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+		ret = create_view(sql, cur_schema(sql), l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival, l->h->next->next->next->next->data.ival);
 		sql->type = Q_SCHEMA;
 	}
 		break;

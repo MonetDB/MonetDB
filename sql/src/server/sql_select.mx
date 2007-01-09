@@ -170,19 +170,23 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 			if ((tpe = stack_find_type(sql, tname)) != NULL) {
 				temp_table = stack_find_var(sql, tname);
 				t = tpe->comp_type;
+			} else {
+				temp_table = stack_find_table(sql, tname);
 			}
 		}
-		if (!t) {
+		if (!t && !temp_table) {
 			(void) sql_error(sql, 02, "SELECT: no such table '%s'", tname);
 			return NULL;
-		} else if (!table_privs(sql, t, PRIV_SELECT)) {
+		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
 			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
 			return NULL;
 		}
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
-		if (temp_table) {
+		if (temp_table && !t) {
+			return scope_add_temp_view(scp, temp_table, tname); 
+		} else if (temp_table) {
 			return scope_add_temp_table(scp, t, temp_table, tname); 
 		} else {
 			return scope_add_table_columns(sql, scp, t, tname, RDONLY);

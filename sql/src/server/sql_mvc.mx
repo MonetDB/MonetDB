@@ -57,6 +57,7 @@ typedef struct sql_var {
 	char *name;
 	ValRecord value;
 	sql_subtype type;
+	int view;
 } sql_var;
 
 #define MAXSTATS 8
@@ -179,10 +180,12 @@ extern int mvc_check_dependency(mvc * m, int id, int type);
 
 /* variable management */
 extern void stack_push_var(mvc *sql, char *name, struct stmt *var, sql_subtype *type);
+extern void stack_push_view(mvc *sql, char *name, struct stmt *var);
 extern void stack_push_frame(mvc *sql, char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
 extern sql_subtype *stack_find_type(mvc *sql, char *name);
+extern struct stmt *stack_find_table(mvc *sql, char *name);
 extern struct stmt *stack_find_var(mvc *sql, char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, char *name);
@@ -525,7 +528,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->sa = sa_create();
 
 	m->params = NULL;
-	m->vars = NEW_ARRAY(sql_var,MAXPARAMS);
+	m->vars = NEW_ARRAY(sql_var, MAXPARAMS);
 	m->topvars = 0;
 	m->sizevars = MAXPARAMS;
 	m->frame = 1;
@@ -1199,8 +1202,24 @@ stack_push_var(mvc *sql, char *name, stmt *var, sql_subtype *type)
 	sql->vars[sql->topvars].name = _strdup(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].type = *type;
+	sql->vars[sql->topvars].view = 0;
 	sql->topvars++;
 }
+
+void 
+stack_push_view(mvc *sql, char *name, stmt *var)
+{
+	if (sql->topvars == sql->sizevars) {
+		sql->sizevars <<= 1;
+		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+	}
+	sql->vars[sql->topvars].s = stmt_dup(var);
+	sql->vars[sql->topvars].name = _strdup(name);
+	sql->vars[sql->topvars].value.vtype = 0;
+	sql->vars[sql->topvars].view = 1;
+	sql->topvars++;
+}
+
 
 void
 stack_set_var(mvc *sql, char *name, ValRecord *v)
@@ -1287,6 +1306,18 @@ stack_find_type(mvc *sql, char *name)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].s && strcmp(sql->vars[i].name, name)==0)
 			return &sql->vars[i].type;
+	}
+	return NULL;
+}
+
+stmt *
+stack_find_table(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (sql->vars[i].s && strcmp(sql->vars[i].name, name)==0)
+			return stmt_dup(sql->vars[i].s);
 	}
 	return NULL;
 }
