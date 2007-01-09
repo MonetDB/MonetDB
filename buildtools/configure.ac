@@ -17,7 +17,7 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.59)
 AC_INIT("MonetDB Buildtools", 1.0, monet@cwi.nl)
 AC_REVISION($Revision$)
 AM_INIT_AUTOMAKE([MonetDB], [1.0])
