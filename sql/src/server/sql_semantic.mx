@@ -1015,6 +1015,8 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_CREATE_TYPE:
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
+	case SQL_CONNECT:
+	case SQL_DISCONNECT:
 		return schemas(sql, s);
 
 	case SQL_CREATE_SEQ:

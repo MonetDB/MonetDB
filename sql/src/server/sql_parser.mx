@@ -100,6 +100,10 @@ typedef enum tokens {
 	SQL_CROSS,
 	SQL_JOIN,
 	SQL_SELECT,
+	SQL_CONNECT,
+	SQL_DISCONNECT,
+	SQL_DATABASE,
+	SQL_PORT,
 	SQL_WHERE,
 	SQL_FROM,
 	SQL_UNIONJOIN,
@@ -238,6 +242,7 @@ int yydebug=1;
 
 	/* symbolic tokens */
 %type <sym>
+	opt_user_passwd
 	alter_statement
 	assignment
 	create_statement
@@ -280,7 +285,10 @@ int yydebug=1;
 	join_spec
 	search_condition
 	update_statement
+	sql_connections_statement
 	update_stmt
+	connect_stmt
+	disconnect_stmt
 	control_statement
 	select_statement_single_row
 	call_statement
@@ -363,6 +371,9 @@ int yydebug=1;
 	interval_type
 
 %type <sval>
+	opt_lang
+	opt_port
+	opt_db_alias
 	opt_constraint_name
 	any_all_some
 	non_reserved_word
@@ -526,7 +537,7 @@ int yydebug=1;
 	LEX_ERROR 
 %token	USER CURRENT_USER SESSION_USER LOCAL
 %token  CURRENT_ROLE sqlSESSION
-%token <sval> sqlDELETE UPDATE SELECT INSERT
+%token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE CONNECT DISCONNECT PORT CURRENT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
@@ -2104,6 +2115,7 @@ drop_action:
 sql:
    transaction_statement
  | update_statement
+ | sql_connections_statement
  ;
 
 update_statement: 
@@ -2114,6 +2126,10 @@ update_statement:
  | copyfrom_stmt
  ;
 
+sql_connections_statement:
+   connect_stmt
+ | disconnect_stmt
+;
 transaction_statement:
    _transaction_stmt
 	{ mvc *m = (mvc*)parm;
@@ -2253,6 +2269,59 @@ update_stmt:
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
+connect_stmt:
+    CONNECT TO DEFAULT		{ $$ = _symbol_create_list(SQL_CONNECT, L()); }
+ |  CONNECT TO ident opt_port DATABASE ident opt_db_alias opt_user_passwd opt_lang
+
+	{ dlist *l = L();
+	  append_string(l, $3);
+	  append_string(l, $4);
+	  append_string(l, $6);
+	  append_string(l, $7);
+	  append_symbol(l, $8);
+	  append_string(l, $9);
+	  $$ = _symbol_create_list( SQL_CONNECT, l ); }
+ ;
+
+disconnect_stmt:
+    DISCONNECT ident		{ dlist *l = L(); 
+				 append_string(l, $2);
+				 append_int(l, 0);
+				 $$ = _symbol_create_list(SQL_DISCONNECT, l);
+				}
+ |  DISCONNECT CURRENT		{ dlist *l = L();
+				 append_int(l, 0);
+				 $$ = _symbol_create_list(SQL_DISCONNECT, l);
+				}
+ |  DISCONNECT ALL		{ dlist *l = L();
+				 append_int(l, 0);
+				 $$ = _symbol_create_list(SQL_DISCONNECT, l);
+				}
+ ;
+
+opt_port:
+    /*empty*/		{ $$ = NULL; }
+ |  PORT ident		{ $$ = $2; }
+ ;
+
+opt_db_alias:
+    /*empty*/		{ $$ = NULL; }
+ |  AS ident		{ $$ = $2; }
+ ;
+
+opt_user_passwd:
+    /*empty*/			{ $$ = NULL; }
+ |  USER ident PASSWORD ident	{ dlist *l = L(); 
+				append_string(l, $2);
+				append_string(l, $4);
+				$$ = _symbol_create_list(SQL_USER, l);
+				}
+ ;
+
+opt_lang:
+    /*empty*/		{ $$ = NULL; }
+ |  LANGUAGE ident	{ $$ = $2; }
+ ;
 
 /* todo merge statment 
 --p 
@@ -4130,6 +4199,14 @@ char *token2string(int token)
 		return "Prepare";
 	case SQL_SELECT:
 		return "Select";
+	case SQL_CONNECT:
+		return "Connect";
+	case SQL_DISCONNECT:
+		return "Disconnect";
+	case SQL_DATABASE:
+		return "Database";
+	case SQL_PORT:
+		return "Port";
 	case SQL_WHERE:
 		return "Where";
 	case SQL_FROM:

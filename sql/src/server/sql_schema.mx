@@ -610,6 +610,22 @@ drop_trigger(mvc *sql, dlist *qname)
 	return stmt_none();
 }
 
+static stmt *
+connect_catalog(mvc *sql, dlist *qname)
+{
+	(void) qname;
+	(void) sql;
+	return stmt_none();
+}
+
+static stmt *
+disconnect_catalog(mvc *sql, dlist *qname)
+{
+	(void) qname;
+	(void) sql;
+	return stmt_none();
+}
+
 static void
 as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 {
@@ -1858,6 +1874,24 @@ schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = drop_trigger(sql, l);
+		sql->type = Q_SCHEMA;
+	}
+		break;
+
+	case SQL_CONNECT:
+	{
+		dlist *l = s->data.lval;
+
+		ret = connect_catalog(sql, l);
+		sql->type = Q_SCHEMA;
+	}
+		break;
+
+	case SQL_DISCONNECT:
+	{
+		dlist *l = s->data.lval;
+
+		ret = disconnect_catalog(sql, l);
 		sql->type = Q_SCHEMA;
 	}
 		break;
