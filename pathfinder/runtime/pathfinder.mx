@@ -1865,36 +1865,41 @@ PROC _ws_coll_isolate(BAT[void,bat] ws,
                       BAT[void,oid] modified_page,
                       BAT[void,oid] modified_attr) : void 
 {
-    # get columns of a concurrent query (ws)
-    var cont      := ws.fetch(CONT_NAME).reverse().find(colname);
-    var attr_own  := ws.fetch(ATTR_OWN).fetch(cont);
-    var attr_qn   := ws.fetch(ATTR_QN).fetch(cont);
-    var attr_prop := ws.fetch(ATTR_PROP).fetch(cont);
-    var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
-    var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
-    var pre_prop  := ws.fetch(PRE_PROP).fetch(cont);
-    var pre_kind  := ws.fetch(PRE_KIND).fetch(cont);
-    var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
-    var nid_rid   := ws.fetch(NID_RID).fetch(cont);
-    var map_pid   := ws.fetch(MAP_PID).fetch(cont);
+    # it may be that the other thread has done _opencoll (adding itself to 
+    # ws_overlaps_ws, so we noticed it) but not yet __opencoll(), which 
+    # requires the coll_lock (possed by ws_precommit(), doing the isolate)
+    if (ws.fetch(CONT_NAME).texist(colname)) {
+        # get columns of a concurrent query (ws)
+        var cont      := ws.fetch(CONT_NAME).reverse().find(colname);
+        var attr_own  := ws.fetch(ATTR_OWN).fetch(cont);
+        var attr_qn   := ws.fetch(ATTR_QN).fetch(cont);
+        var attr_prop := ws.fetch(ATTR_PROP).fetch(cont);
+        var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
+        var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
+        var pre_prop  := ws.fetch(PRE_PROP).fetch(cont);
+        var pre_kind  := ws.fetch(PRE_KIND).fetch(cont);
+        var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
+        var nid_rid   := ws.fetch(NID_RID).fetch(cont);
+        var map_pid   := ws.fetch(MAP_PID).fetch(cont);
 
-    # translate nid-s to that query's pre-s
-    var ancestor_pre := ancestor_nid.leftfetchjoin(nid_rid).[swizzle](map_pid);
-    var modified_pid := modified_page.leftfetchjoin(map_pid);
+        # translate nid-s to that query's pre-s
+        var ancestor_pre := ancestor_nid.leftfetchjoin(nid_rid).[swizzle](map_pid);
+        var modified_pid := modified_page.leftfetchjoin(map_pid);
 
-    # isolate the affected positions
-    pre_size.isolate(ancestor_pre, false);
-    pre_size.isolate(modified_pid, true);
-    pre_level.isolate(modified_pid,true);
-    pre_prop.isolate(modified_pid, true);
-    pre_kind.isolate(modified_pid, true);
-    if (map_pid.ttype() = oid) {
-        pre_nid.isolate(modified_pid, true);
-        nid_rid.isolate(modified_nid, false);
+        # isolate the affected positions
+        pre_size.isolate(ancestor_pre, false);
+        pre_size.isolate(modified_pid, true);
+        pre_level.isolate(modified_pid,true);
+        pre_prop.isolate(modified_pid, true);
+        pre_kind.isolate(modified_pid, true);
+        if (map_pid.ttype() = oid) {
+            pre_nid.isolate(modified_pid, true);
+            nid_rid.isolate(modified_nid, false);
+        }
+        attr_own.isolate(modified_attr, false);
+        attr_qn.isolate(modified_attr, false);
+        attr_prop.isolate(modified_attr, false);
     }
-    attr_own.isolate(modified_attr, false);
-    attr_qn.isolate(modified_attr, false);
-    attr_prop.isolate(modified_attr, false);
 }
 
 PROC ws_precommit(BAT[void,BAT] ws,
