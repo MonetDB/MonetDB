@@ -4719,13 +4719,13 @@ xquery_client_engine(mapi_client *fc )
     size_t curlen;
     xquery_client *ctx = fc->fc;
     stream *in = fc->c->fdin, *out = fc->c->fdout;
-    char *p, *xquery, *err = (char*) -1;
+    char *p, *xquery, *err = (char*) -1, *msg = NULL;
 
     /* buf is the mode string that is available during execution in the MIL genType var */
     char buf[113], *genType, *output; 
-    strcpy(buf, "timing-mapi-xml");
-    genType = buf+7; /* initially skis over  over "timing-" */
-    output = buf+12; /* place to overwrite with alternatives to "xml" */
+    strcpy(buf, "timing-mapi-dm");
+    genType = buf+7; /* initially skips over  over "timing-" */
+    output = buf+12; /* place to overwrite with alternatives to "dm" */
     output[100] = 0; /* max 100 characters in output string, ensure zero at end */
 
     ctx->mode = XQ_MAPI;
@@ -4733,21 +4733,17 @@ xquery_client_engine(mapi_client *fc )
         /* use the MAPI protocol to read as much xquery buffer as possible */
         if (!fc->c->blocked && 
                 stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
-            xquery_client_end(ctx, "could not write prompt"); 
-            return;
+            msg = "could not write prompt"; 
+            break;
         }
         if (stream_flush(out)) {
-            xquery_client_end(ctx, "could not flush prompt"); 
-            return;
+            msg = "could not flush prompt"; 
+            break;
         }
 
         for (p = ctx->buf, curlen = 0; p; ) {
             n = stream_read(in, p + curlen, 1, ctx->buflen - curlen);
-            if (n < 0) {
-                xquery_client_end(ctx, NULL); 
-                return;
-            }
-            if (n == 0 || p[curlen] == 0)
+            if (n <= 0 || p[curlen] == 0)
                 break;
 
             curlen += n;
@@ -4759,8 +4755,8 @@ xquery_client_engine(mapi_client *fc )
                 }
             }
         }
-        if (curlen == 0 || !p)
-                break;
+        if (curlen == 0 || !p || n < 0)
+            break;
         p[curlen] = 0;        /* terminate (we know there is space) */
         if (*p == 'X') {
                 /* remove newline */
@@ -4784,17 +4780,17 @@ xquery_client_engine(mapi_client *fc )
                         /* start shredder (first character should be skipped) */
                         if (!fc->c->blocked && 
                                 stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
-                                xquery_client_end(ctx, "could not write prompt"); 
-                                return;
+                                msg = "could not write prompt"; 
+                                break;
                         }
                         if (stream_flush(out)) {
-                                xquery_client_end(ctx, "could not flush prompt"); 
-                                return;
+                                msg = "could not flush prompt"; 
+                                break;
                         }
                         dname = GDKstrdup(p);
                         if (dname == NULL) {
-                                xquery_client_end(ctx, "malloc failure"); 
-                                return;
+                                msg = "malloc failure"; 
+                                break;
                         }
                         cname = strchr(dname, ',');
                         if (cname == NULL)  { 
@@ -4810,10 +4806,7 @@ xquery_client_engine(mapi_client *fc )
                         snprintf(ctx->buf, ctx->buflen, "shred_stream(Stream(" SZFMT "LL), \"%s\", \"%s\", lng(%d));\n", (size_t) in, dname, cname, perc);
                         i = xquery_mil_exec(ctx, ctx->buf); /* use MIL to add it to the repository */
                         GDKfree(dname);
-                        if (i < 0) {
-                                xquery_client_end(ctx, "shred_stream failed"); 
-                                return;
-                        }
+                        if (i < 0) msg = "shred_stream failed"; 
                         break;
                     }
                 }
@@ -4847,7 +4840,12 @@ xquery_client_engine(mapi_client *fc )
         /* second and on queries also need a cleared context */
         xquery_client_end(ctx, NULL); 
     }
-    xquery_client_end(ctx, NULL); 
+    xquery_client_end(ctx, msg); 
+
+    /* for some reason, mapi_client_end sets keep_open=1 so it continuously leaks streams */
+    stream_close(fc->c->fdin);
+    stream_destroy(fc->c->fdin);
+    fc->c->fdin = NULL;
 }
 
 int
