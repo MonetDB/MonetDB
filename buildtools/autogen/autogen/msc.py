@@ -751,7 +751,7 @@ def msc_library(fd, var, libmap, msc):
     if libmap.has_key('COND'):
         condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
         mkname = (pref + v).replace('.', '_')
-        fd.write('!IFDEF %s\n' % condname)
+        fd.write('!IF %s\n' % condname)
         fd.write('C_%s_dll = %s%s.dll\n' % (mkname, pref, v))
         fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
         fd.write('!ELSE\n')

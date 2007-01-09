@@ -17,7 +17,7 @@
 MTSAFE
 
 SWIGFLAGS = $(MONETDB_INCS) $(CLIENTS_INCS)
-INCLUDES = $(MONETDB_INCS) $(CLIENTS_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
+INCLUDES = $(CLIENTS_INCS) $(MONETDB_INCS) $(MONETDB4_INCS) $(PYTHON_INCS)
 
 # with gcc we could use these
 #X_CFLAGS = -Wno-unused-parameter -Wno-unused-function

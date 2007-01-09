@@ -20,26 +20,28 @@ import sys
 import fileinput
 import os
 
-build=os.path.abspath(sys.argv[1]);
-prefix=os.path.abspath(sys.argv[2]);
+subs = [("@DIRSEP@", '\\'),
+        ("@CROSS_COMPILING_FALSE@", ''),
+        ("@LINK_STATIC_FALSE@", ''),
+        ("@NATIVE_WIN32_FALSE@", '#'),
+        ("@NOT_WIN32_FALSE@", ''),
+        ("@PATHSEP@", ';')]
 
-source=os.path.abspath(os.path.join(build,os.pardir))
-
-subs = [
-    ('@MONETDB5_PREFIX@', os.getenv('MONETDB5_PREFIX') or '@MONETDB5_PREFIX@'),
-    ('@MONETDB_PREFIX@', os.getenv('MONETDB_PREFIX')),
-    ('@SQL_BUILD@', build),
-    ('@SQL_SOURCE@', source),
-    ]
+while len(sys.argv) > 2 and '=' in sys.argv[1]:
+    arg = sys.argv[1]
+    i = arg.find('=')
+    subs.append(('@'+arg[:i]+'@', arg[i+1:]))
+    del sys.argv[1]
 
 for key, val in subs[:]:
+    subs.insert(0, ('@X'+key[1:], val))
     subs.insert(0, ('@Q'+key[1:], val.replace('\\', r'\\')))
-
+    subs.insert(0, ('@QX'+key[1:], val.replace('\\', r'\\')))
 
 def substitute(line):
     for (p,v) in subs:
         line = line.replace(p, v);
     return line
 
-for line in fileinput.input(sys.argv[3:]):
+for line in fileinput.input(sys.argv[1]):
     sys.stdout.write(substitute(line))
