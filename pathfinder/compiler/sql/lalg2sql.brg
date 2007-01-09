@@ -431,7 +431,7 @@ typedef struct sql_column_env_t sql_column_env_t;
 static sql_column_name_t*
 sql_special_name_new(PFsql_special_t spc)
 {
-    unsigned int sp;
+    unsigned int sp = 0;
     
     /* determine position of special bit */
     for(PFsql_special_t spmask = 1, i = 0;
