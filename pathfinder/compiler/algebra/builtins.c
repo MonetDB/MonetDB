@@ -1557,6 +1557,40 @@ PFbui_fn_resolve_qname (const PFla_op_t *loop, bool ordering,
 /* 14.4. fn:number */    
 /* --------------- */
 
+struct PFla_pair_t
+PFbui_fn_number (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+{
+    /* As we do not support the value NaN we need to generate an error
+       for all tuples that are empty (instead of attaching NaN). */
+       
+    char *err_string = "We do not support the value NaN.";
+    
+    (void) ordering;
+
+    return (struct  PFla_pair_t) {
+                 .rel = project (
+                            fun_1to1 (
+                                cond_err (
+                                    args[0].rel,
+                                    attach (
+                                        difference (
+                                            loop,
+                                            project (
+                                                args[0].rel,
+                                                proj (att_iter, att_iter))),
+                                        att_item,
+                                        lit_bln (false)),
+                                    att_item,
+                                    err_string),
+                                alg_fun_fn_number,
+                                att_res,
+                                attlist (att_item)),
+                            proj (att_iter, att_iter),
+                            proj (att_pos, att_pos),
+                            proj (att_item, att_res)),
+                 .frag = args[0].frag };
+}
+
 /* --------------------- */
 /* 14.6. op:is-same-node */
 /* --------------------- */
@@ -2231,18 +2265,7 @@ PFbui_fn_exactly_one (const PFla_op_t *loop, bool ordering,
                       struct PFla_pair_t *args)
 {
     PFla_op_t *count = eq (attach (
-                               disjunion (
-                                   count (
-                                       project (args[0].rel, 
-                                                proj (att_iter, att_iter)),
-                                       att_item, att_iter),
-                                   attach (
-                                       difference (
-                                           loop,
-                                           project (
-                                               args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_item, lit_int (0))),
+                               PFbui_fn_count (loop, ordering, args).rel,
                                att_item1, lit_int (1)),
                            att_res, att_item1, att_item); 
 

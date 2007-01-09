@@ -891,6 +891,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_round:     return "fn:round";
         case alg_fun_fn_concat:    return "fn:concat";
         case alg_fun_fn_contains:  return "fn:contains";
+        case alg_fun_fn_number:    return "fn:number";
     }
     PFoops (OOPS_FATAL, "unknown algebraic function name (%i)", fun);
     return NULL;

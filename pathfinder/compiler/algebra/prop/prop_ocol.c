@@ -317,6 +317,11 @@ infer_ocol (PFla_op_t *n)
 
                     res_type = aat_bln;
                     break;
+            
+                case alg_fun_fn_number:
+                    assert (n->sem.fun_1to1.refs.count == 1);
+                    res_type = aat_dbl;
+                    break;
             }
 
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);

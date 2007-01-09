@@ -300,6 +300,9 @@ struct PFla_pair_t PFbui_fn_resolve_qname
 /* 14.3. fn:namespace-uri */
 
 /* 14.4. fn:number */
+struct PFla_pair_t PFbui_fn_number (const PFla_op_t *loop,
+                                    bool ordering,
+                                    struct PFla_pair_t *args);
                
 /* 14.6. op:is-same-node */
 struct PFla_pair_t PFbui_op_is_same_node (const PFla_op_t *loop,

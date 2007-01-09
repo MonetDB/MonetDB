@@ -194,12 +194,13 @@ Rel:    roots_ (processi (Rel))                   =  76 (10);
 Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
 
 Rel:    cond_err (Rel, Rel)                       =  80 (10);
+Rel:    cond_err (Rel, EmptyRel)                  =  81  (0);
 
-Rel:    rec_fix (Rec, Rel)                        =  81 (10);
-Rel:    rec_base                                  =  82 (10);
-Rec:    rec_param (Arg, Rec)                      =  83 (10);
-Rec:    rec_nil                                   =  84 (10);
-Arg:    rec_arg (Rel, Rel)                        =  85 (10);
+Rel:    rec_fix (Rec, Rel)                        =  82 (10);
+Rel:    rec_base                                  =  83 (10);
+Rec:    rec_param (Arg, Rec)                      =  84 (10);
+Rec:    rec_nil                                   =  85 (10);
+Arg:    rec_arg (Rel, Rel)                        =  86 (10);
 
 Rel:    string_join (Rel, Rel)                    =  88 (10);
 Rel:    dummy (Rel)                               =  89 (10);
@@ -983,6 +984,17 @@ reduce (PFla_op_t *p, int goalnt)
         case 64:
             R(p) = L(R(p));
             SEEN(p) = false;
+            relabel (p, kids);
+            break;
+
+        /* Rel:    cond_err (Rel, EmptyRel) */
+        case 81:
+            /* an error node with an empty condition
+               relation triggers no error */
+            *p = *PFla_dummy (L(p));
+            SEEN(p) = false;
+            /* relabeling will be expensive 
+               if there is no real dummy node */
             relabel (p, kids);
             break;
 

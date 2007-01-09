@@ -258,6 +258,7 @@ enum PFalg_fun_t {
     , alg_fun_fn_round     /**< fn:round */
     , alg_fun_fn_concat    /**< fn:concat */
     , alg_fun_fn_contains  /**< fn:contains */
+    , alg_fun_fn_number    /**< fn:number */
 };
 typedef enum PFalg_fun_t PFalg_fun_t;
 

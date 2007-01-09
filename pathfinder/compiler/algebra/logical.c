@@ -1052,6 +1052,11 @@ PFla_fun_1to1 (const PFla_op_t *n,
 
             res_type = aat_bln;
             break;
+            
+        case alg_fun_fn_number:
+            assert (refs.count == 1);
+            res_type = aat_dbl;
+            break;
     }
 
     /* create new generic function operator node */

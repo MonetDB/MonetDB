@@ -226,13 +226,14 @@ FragList: frag_union (FragList, Frag)                              = 122 (10);
 FragList: empty_frag                                               = 123 (10);
 
 Rel:      cond_err (Rel, Rel)                                      = 130 (10);
+Rel:      cond_err (Rel, empty_tbl)                                = 131 (10);
 
-Rel:      rec_fix (Rec, Rel)                                       = 131 (10);
-Rec:      rec_param (rec_arg (Rel, Rel), Rec)                      = 132 (10);
-Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec)                = 133 (10);
-Rec:      rec_nil                                                  = 134 (10);
-Rel:      rec_base                                                 = 135 (10);
-Rel:      rec_border (Rel)                                         = 136 (10);
+Rel:      rec_fix (Rec, Rel)                                       = 132 (10);
+Rec:      rec_param (rec_arg (Rel, Rel), Rec)                      = 133 (10);
+Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec)                = 134 (10);
+Rec:      rec_nil                                                  = 135 (10);
+Rel:      rec_base                                                 = 136 (10);
+Rel:      rec_border (Rel)                                         = 137 (10);
 
 Rel:      string_join (Rel, Rel)                                   = 140 (10);
 
@@ -590,7 +591,7 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     
     switch (rule) {
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 132:
+        case 133:
             /* only follow the seeds */
             reduce (kids[0], nts[0]);
             /* and the rest of the parameter list */
@@ -598,18 +599,18 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
             break;
 
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 133:
+        case 134:
             /* follow the rest of the parameter list */
             reduce_border (kids[1], nts[1], border_vars);
             break;
 
         /* Rec:      rec_nil */
-        case 134:
+        case 135:
             /* nothing to be done */
             break;
             
         /* Rel:      rec_border (Rel) */
-        case 136:
+        case 137:
             if (!p->env) {
                 /* translate sub-DAG starting at the border */
                 reduce (p, goalnt);
@@ -675,7 +676,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
 
     switch (rule) {
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 132:
+        case 133:
             /* only generate MIL code for the seed */
             reduce (kids[0], nts[0]);
             
@@ -717,7 +718,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
             break;
 
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 133:
+        case 134:
             /* relink the enviroment of arg to its base */
             L(p)->sem.rec_arg.base->env = p->env;
 
@@ -758,7 +759,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
             break;
 
         /* Rec:      rec_nil */
-        case 134:
+        case 135:
             /* no MIL code needed */
             break;
             
@@ -833,10 +834,10 @@ reduce2 (PFpa_op_t * p, int goalnt)
     
     switch (rule) {
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 132:
+        case 133:
             pos_body = 1; /* discard the seed */
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 133:
+        case 134:
             /* only generate MIL code for the seed */
             reduce (kids[pos_body], nts[pos_body]);
             /* translate all the remaining parts of the body */
@@ -864,7 +865,7 @@ reduce2 (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rec:      rec_nil */
-        case 134:
+        case 135:
             /* no MIL code needed */
             break;
             
@@ -939,10 +940,10 @@ reduce3 (PFpa_op_t * p, int goalnt)
     
     switch (rule) {
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 132:
+        case 133:
             pos_list = 2; /* discard the seed */
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 133:
+        case 134:
             /* translate all the remaining parts of the list */
             reduce3 (kids[pos_list], nts[pos_list]);
             
@@ -955,7 +956,7 @@ reduce3 (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rec:      rec_nil */
-        case 134:
+        case 135:
             /* no MIL code needed */
             break;
             
@@ -1022,7 +1023,7 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Query:    serialize (FragList, empty_tbl) */
         case 2:
         /* Rel:      rec_fix (Rec, Rel) */
-        case 131:
+        case 132:
             topdown = true;
             break;
 
@@ -2927,6 +2928,58 @@ reduce (PFpa_op_t * p, int goalnt)
                                               VAR (L(p)->env, att2, aat_str)),
                                           lit_int (-1)))));
                 }   break;
+            
+                case alg_fun_fn_number:
+                {
+                    PFalg_att_t         att;
+                    PFalg_simple_type_t att_type = 0;
+                    bool                first = true;
+
+                    att = p->sem.fun_1to1.refs.atts[0];
+                    
+                    for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                        if (L(p)->schema.items[i].name == att) {
+                            att_type = L(p)->schema.items[i].type;
+                            break;
+                        }
+                    
+                    res_type = aat_dbl;
+
+                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                        if (t & att_type) {
+
+                            PFmil_t *casted = NULL;
+
+                            if (t == res_type)
+                                casted = VAR (L(p)->env, att, t);
+                            else
+                                casted
+                                    = mcast (
+                                        implty (res_type),
+                                        VAR (L(p)->env, att, t));
+
+                            if (first) {
+                                execute (assgn (var (res->name), casted));
+                                first = false;
+                            }
+                            else
+                                execute (assgn (var (res->name),
+                                                mifthenelse (
+                                                    misnil (var (res->name)),
+                                                    casted,
+                                                    var (res->name))));
+                        }
+       
+                    /* As we do not support the value NaN we need to generate
+                       an error for all tuples that cannot be casted (instead
+                       of generating NaN). */
+                    execute (
+                        if_ (exist (reverse (var (res->name)),
+                                    cast (implty (res_type), nil ())),
+                             error (
+                                 lit_str ("We do not support the value NaN.")),
+                             nop ()));
+                }   break;
             }
             
             /* and put the result into p's environment */
@@ -4161,8 +4214,20 @@ reduce (PFpa_op_t * p, int goalnt)
             }
             break;
 
-        /* Rel:      rec_fix (Rec, Rel) */
+        /* Rel:      cond_err (Rel, empty_tbl) */
         case 131:
+            /* copy all the attributes */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                pin (env_at (L(p)->env, i).mvar, p->refctr);
+                env_add (p->env,
+                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).ty,
+                         env_at (L(p)->env, i).mvar);
+            }
+            break;
+            
+        /* Rel:      rec_fix (Rec, Rel) */
+        case 132:
         {
             PFmil_t *oldmilprog, *bodymilprog;
             PFarray_t *res_env;
@@ -4249,16 +4314,16 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 132:
-        /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
         case 133:
-        /* Rec:      rec_nil */
+        /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
         case 134:
+        /* Rec:      rec_nil */
+        case 135:
             /* the rules are called via reduce1, reduce2, and reduce3 */
             break;
 
         /* Rel:      rec_base */
-        case 135:
+        case 136:
             /* no MIL code needed */
 
             /* The environment already contains the bindings.
@@ -4270,7 +4335,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      rec_border (Rel) */
-        case 136:
+        case 137:
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
                 pin (env_at (L(p)->env, i).mvar, p->refctr);
                 

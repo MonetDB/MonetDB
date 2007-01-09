@@ -1152,7 +1152,8 @@ PFfun_xquery_fo ()
       { .ns = PFns_fn, .loc = "number",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_atomic ()) },
-            .ret_ty = PFty_xs_double () } } }
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_fn_number }
 
 /* 14.6. op:is-same-node */
     , /* op:is-same-node (node, node) as boolean */
