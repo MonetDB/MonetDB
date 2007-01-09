@@ -3198,7 +3198,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
 }
 
 # note: extend read-lock must be taken while calling this function!!
-PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
+PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : void
 {
   var map_pid := ws.fetch(MAP_PID).find(cont);
   var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
@@ -3233,23 +3233,23 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
   if (map_pid.exist(pageid)) {
     isoldpage := not(isnil(map_pid.find(pageid)));
   }
-  while (size >= 0) {
+  while (delsize >= 0) {
     var rid := oid((lng(newpre) and REMAP_PAGE_MASK) or (lng(pageid) << REMAP_PAGE_BITS));
     var nsize; # new size we're going to write (may join with consecutive hole)
     var pgsize; # size of hole we're dealing with this iteration (does not cross page boundary)
-    if (oid(lng(newpre) + size) >= next_pagebase) {
+    if (oid(lng(newpre) + delsize) >= next_pagebase) {
       # new hole extends into next page
       nsize := (int(next_pagebase) - int(newpre)) - 1;
       pgsize := nsize;
     } else {
       # new hole wholly contained on this page
-      pgsize := size;
-      if (oid((lng(newpre) + size) + 1) >= next_pagebase) {
+      pgsize := delsize;
+      if (oid((lng(newpre) + delsize) + 1) >= next_pagebase) {
         # new hole ends at page boundary
-        nsize := size;
+        nsize := delsize;
       } else {
         # room to spare after new hole, maybe coalesce with consecutive hole
-        var next_rid := oid((lng(rid) + size) + 1);
+        var next_rid := oid((lng(rid) + delsize) + 1);
         if (isoldpage) {
           if (rid_size_update.exist(next_rid)) {
             nsize := rid_size_update.find(next_rid);
@@ -3261,10 +3261,10 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
         }
         if (isnil(niland(nsize, int_nil))) { # result of niland(nsize, int_nil) is either 0 or int_nil
           # there is a following hole
-          nsize := (size + niland(nsize, INT_MAX)) + 1;
+          nsize := (delsize + niland(nsize, INT_MAX)) + 1;
         } else {
           # no following hole
-          nsize := size;
+          nsize := delsize;
         }
       }
     }
@@ -3274,36 +3274,45 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
     }
 
     var update_data;
-    var oldpre;
+    var oldpre := oid_nil;
     if (isoldpage) {
-      var oldrid := rid;
       if (rid_nid_update.exist(rid)) {
         var nid := rid_nid_update.find(rid);
-        oldrid := nid_rid.find(nid);
+        if (nid_rid.exist(nid)) {
+          var oldrid := nid_rid.find(nid);
+          oldpre := swizzle(oldrid, map_pid);
+        }
+      } else {
+        oldpre := swizzle(rid, map_pid);
       }
-      oldpre := swizzle(oldrid, map_pid);
     }
     if (isoldpage) {
       var pid_map := ws.fetch(PID_MAP).find(cont);
-      update_data := [swizzle](pre_nid.reverse().select(oldpre, oid(lng(oldpre) + pgsize)), pid_map).hmark(rid);
-      update_data.access(BAT_WRITE).myupdate(rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize)).reverse());
+      if (not(isnil(oldpre))) {
+        update_data := [swizzle](pre_nid.reverse().select(oldpre, oid(lng(oldpre) + pgsize)), pid_map).hmark(rid);
+        update_data.access(BAT_WRITE).myupdate(rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize)).reverse());
+      } else {
+        # we're deleting a new node, so there is no data about it (or its descendants) in pre_nid
+        update_data := rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize)).reverse().sort();
+      }
     } else {
       update_data := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
     }
     {
       var nid_qn_del;
       if (isoldpage) {
-        var rk := update_data.mirror().outerjoin(rid_kind_update).access(BAT_WRITE); # [newRID,KIND/nil]
-        rk.replace(rk.uselect(chr_nil).mirror().[swizzle](map_pid).join(pre_kind));  # [newRID,KIND]
-        var r := rk.uselect(ELEMENT).mirror();                                       # [newRID,newRID] (elements)
-        var rn := r.outerjoin(rid_nid_update).access(BAT_WRITE);                     # [newRID,NID/nil]
-        rn.replace(rn.uselect(oid_nil).mirror().[swizzle](map_pid).join(pre_nid));   # [newRID,NID]
-        var rp := rn.join(nid_rid)          # [newRID,oldRID]
-          .[swizzle](map_pid)               # [newRID,oldPRE]
-          .join(pre_prop);                  # [newRID,oldPROP]
+        var rk := update_data.mirror().outerjoin(rid_kind_update).access(BAT_WRITE); # [rid,KIND/nil]
+        rk.replace(rk.uselect(chr_nil).mirror().[swizzle](map_pid).join(pre_kind));  # [rid,KIND]
+        var r := rk.uselect(ELEMENT).mirror();                                       # [rid,rid] (elements)
+        var rn := r.outerjoin(rid_nid_update).access(BAT_WRITE);                     # [rid,NID/nil]
+        rn.replace(rn.uselect(oid_nil).mirror().[swizzle](map_pid).join(pre_nid));   # [rid,NID]
+        var rp := rn.join(nid_rid)          # [rid,oldRID]
+          .[swizzle](map_pid)               # [rid,oldPRE]
+          .join(pre_prop);                  # [rid,oldPROP]
         nid_qn_del := rn.reverse().join(rp);
+        nid_qn_ins_update.delete(rn.reverse()); # in case we're deleting new nodes
       } else {
-        nid_qn_del := update_data.reverse() # [NID,newRID]
+        nid_qn_del := update_data.reverse() # [NID,rid]
           .join(rid_kind)                   # [NID,KIND]
           .uselect(ELEMENT)                 # [NID,nil] (only elements)
           .mirror()                         # [NID,NID] (only elements)
@@ -3351,9 +3360,13 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
     }
     var rid_nid_page;
     if (isoldpage) {
-      rid_nid_page := pre_nid.reverse().select(oldpre, oid(lng(oldpre) + pgsize)).hmark(rid);
-      var rid_nid_page_update := rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize));
-      rid_nid_page := rid_nid_page.copy().access(BAT_WRITE).key(true).replace(rid_nid_page_update);
+      if (isnil(oldpre)) {
+        rid_nid_page := rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
+      } else {
+        rid_nid_page := pre_nid.reverse().select(oldpre, oid(lng(oldpre) + pgsize)).hmark(rid);
+        var rid_nid_page_update := rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize));
+        rid_nid_page := rid_nid_page.copy().access(BAT_WRITE).key(true).replace(rid_nid_page_update);
+      }
     } else {
       rid_nid_page := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
     }
@@ -3373,7 +3386,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int size) : void
     attr_prop_update.myupdate(attrs1);
     attr_prop_update.myupdate(attrs2);
 
-    size :-= pgsize + 1;
+    delsize :-= pgsize + 1;
     newpre := oid((lng(newpre) + pgsize) + 1);
     if (newpre >= next_pagebase) {
       # per page house keeping
