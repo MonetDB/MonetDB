@@ -523,11 +523,14 @@ sql_column_env_at(const PFarray_t *env, unsigned int i)
     return *(sql_column_env_t*)PFarray_at((PFarray_t*)env, i);
 }
 
+#if 0
+    GCC: defined but never used
 static unsigned int
 sql_column_env_count(const PFarray_t *env)
 {
     return PFarray_last(env);
 }
+#endif
 
 static PFsql_t*
 sql_expression_unsafe(const PFarray_t *env, PFalg_att_t att,
@@ -1995,11 +1998,14 @@ llscj_elem_nsloc(PFalg_axis_t axis)
     return NULL;
 }
 
+#if 0
+    GCC: defined but never used
 static PFsql_t*
 llscj_desc_self_elem_loc()
 {
     return NULL;
 }
+#endif
 
 static void
 llscj_elem_loc(PFalg_axis_t axis, PFsql_t *loc, PFsql_correlation_name_t c,

@@ -511,12 +511,6 @@ static PFmil_t * literal (PFalg_atom_t atom);
 
 /* helper to handle loop-lifted staircase join operator */
 static void llscj (enum axis_t axis, const PFpa_op_t *p);
-/* translate arithmetic operators where both arguments are a BAT */
-static void bin_arith (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
-                       PFpa_op_t *p);
-/* translate arithmetic operators where one argument is an atom */
-static void bin_arith_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
-                            PFpa_op_t *p);
 /* translate binary coparison operator (eq/gt) */
 static void bin_comp (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
                       PFpa_op_t *p);
@@ -4883,6 +4877,8 @@ bin_op (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
     }
 }
 
+#if 0
+    GCC: defined but never used
 /**
  * Generic binary arithmetic operator. In addition to bin_op() does
  * additional type checks.
@@ -4898,6 +4894,7 @@ bin_arith (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
 
     bin_op (op, p, ty, ty);
 }
+#endif
 
 /**
  * node comparison operator, where both operands are a BAT
@@ -5035,6 +5032,8 @@ bin_op_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
     }
 }
 
+#if 0
+    GCC: defined but never used
 static void
 bin_arith_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
                 PFpa_op_t *p)
@@ -5046,6 +5045,7 @@ bin_arith_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
 
     bin_op_atom (op, p, ty, ty);
 }
+#endif
 
 static void
 bin_comp_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
