@@ -43,6 +43,7 @@ The backend structure contains the state description
 for the code generator.
 @c
 
+#include "pf_config.h"
 #include "xquery_backend.h"
 
 Xbackend

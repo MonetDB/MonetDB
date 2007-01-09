@@ -44,6 +44,7 @@ xquery_export str XQUERYengine(Client c);
 #endif /* _XQUERY_SCENARIO_H_ */
 
 @c
+#include "pf_config.h"
 #include "xquery_scenario.h"
 #include "xquery_backend.h"
 #include <mal_instruction.h>

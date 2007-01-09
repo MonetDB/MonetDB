@@ -68,4 +68,5 @@ typedef enum modes_xquery {
 #endif /* _XQUERY_H */
 
 @c
+#include "pf_config.h"
 #include "xquery.h"
