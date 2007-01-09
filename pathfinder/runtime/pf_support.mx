@@ -421,17 +421,18 @@ module("pcre");
 module("malalgebra");
 module("monettime");
 module("lock");
+module("logger");
 
 # global constants using in the MIL translation
-const empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);
+const empty_kind_bat := bat(void,int,0).seqbase(0@0).rename("empty_kind_bat").access(BAT_READ);
 const EMPTY_STRING := 0@0;
 const OID_PAGE_BITS := isnil(lng(1LL << 32).oid()).ifthenelse(10,9);
-const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);
+const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).rename("empty_dbl__bat").access(BAT_READ);
 const empty_dec__bat := empty_dbl__bat;
-const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
-const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
-const bool_not := bat(void,oid,2).append(1@0).append(0@0).seqbase(0@0).access(BAT_READ);
-const bool_str := bat(void,str,2).append("false").append("true").seqbase(0@0).access(BAT_READ);
+const empty_str__bat := bat(void,str,0).seqbase(0@0).rename("empty_str__bat").access(BAT_READ);
+const empty_int__bat := bat(void,lng,0).seqbase(0@0).rename("empty_int__bat").access(BAT_READ);
+const bool_not := bat(void,oid,2).append(1@0).append(0@0).rename("bool_not").seqbase(0@0).access(BAT_READ);
+const bool_str := bat(void,str,2).append("false").append("true").rename("bool_str").seqbase(0@0).access(BAT_READ);
 
 # nil constants (saves some run-time casting)
 const bit_nil       := bit(nil);
@@ -725,8 +726,8 @@ that the loop-lifted iterations appear contiguous in both inputs. Thus, each ite
 is a slice of both input BATs. We just go through all outer iterations, take slices, and
 execute the join for corresponding iter slices on l and r; concatenating all results.
 @mil
-var samp256 := bat(void,lng,256LL);
-{ var i := 0LL; while(i < 256LL) { samp256.append(i); i :+= 1LL; } samp256.seqbase(0@0); }
+var pf_sample256 := bat(void,lng,256LL).rename("pf_sample256").seqbase(0@0); 
+{ var i := 0LL; while(i < 256LL) { pf_sample256.append(i); i :+= 1LL; } } 
 
 PROC htordered_unique_thetajoin( int mode,
                                  bat[oid,any::1] l, bat[oid,any::1] r,
@@ -777,7 +778,7 @@ PROC htordered_unique_thetajoin( int mode,
             l := {min}(l);
             r := {max}(r);
         }
-        var samp := [oid]([*](samp256, int(l).count()/256LL)).leftfetchjoin(l.reverse().mark(0@0).reverse());
+        var samp := [oid]([*](pf_sample256, int(l).count()/256LL)).leftfetchjoin(l.reverse().mark(0@0).reverse());
         var res := nlthetajoin(samp, reverse(r), mode, int(r).count() * 64LL);
         if (((2LL * batsize(res) * int(l).count()) / (1LL + int(samp).count())) > mem_maxsize()) {
             var cnt := int(res).count(); res := nil;
@@ -1553,7 +1554,7 @@ PROC mil_ancestor(bat[void,bat] ws, oid cont, oid newpre) : bat[void,oid]
   var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
 
   var p := 0@0;
-  coll_protect(ws, cont);
+  extend_protect(ws, cont);
   while (p < newpre) {
     var pageid := pid_map_update.find(oid(lng(p) >> REMAP_PAGE_BITS));
     var isoldpage := false;
@@ -1580,7 +1581,7 @@ PROC mil_ancestor(bat[void,bat] ws, oid cont, oid newpre) : bat[void,oid]
       p := oid(lng(e) + 1);
     }
   }
-  coll_unprotect(ws, cont);
+  extend_unprotect(ws, cont);
   return ancestors;
 }
 
@@ -1698,7 +1699,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   var ancestor_nid := ws.fetch(ANCESTOR_NID);
   var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
 
-  coll_protect(ws, cont);
+  extend_protect(ws, cont);
 
   # for each page prior to the one we're actually moving in, and for
   # all nodes in the page we're moving in before the affected area,
@@ -1926,7 +1927,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     modified_nid.reverse().accbuild("hash");
     modified_nid.insert(update_nid.project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
   }
-  coll_unprotect(ws, cont);
+  extend_unprotect(ws, cont);
 }
 ADDHELP("movedata", "sjoerd", "Oct 4 2005",
 "Move data starting in WS for document CONT, starting at FROM of size
@@ -1938,11 +1939,6 @@ changed already made to the BATs in the working set.",
 
 PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
 {
-  if (MAP_PID_UPDATE != ws.count()) {
-    # assert that the const values above are correct
-    ERROR("Internal error: MAP_PID_UPDATE has incorrect value.");
-  }
-
   # [void,oid] list of all conts of affected documents
   var affected_conts := [and]([lng](item.mirror()), 3LL).ord_uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
 
@@ -1961,38 +1957,6 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   if ([ttype](affected_conts.join(ws.fetch(MAP_PID))).uselect(void).count() > 0) {
     ERROR("updating read-only document.\n");
   }
-
-  # this is where we're going to collect all changes
-  ws.access(BAT_WRITE);
-  ws.append(new(oid,bat).key(true)); # MAP_PID_UPDATE
-  ws.append(new(oid,bat).key(true)); # RID_SIZE_UPDATE
-  ws.append(new(oid,bat).key(true)); # RID_LEVEL_UPDATE
-  ws.append(new(oid,bat).key(true)); # RID_KIND_UPDATE
-  ws.append(new(oid,bat).key(true)); # RID_PROP_UPDATE
-  ws.append(new(oid,bat).key(true)); # RID_NID_UPDATE
-  ws.append(new(oid,bat).key(true)); # NID_RID_UPDATE
-  ws.append(new(oid,bat).key(true)); # ATTR_QN_UPDATE
-  ws.append(new(oid,bat).key(true)); # ATTR_PROP_UPDATE
-  ws.append(new(oid,bat).key(true)); # ATTR_OWN_UPDATE
-  ws.append(new(oid,bat).key(true)); # PROP_VAL_UPDATE
-  ws.append(new(oid,bat).key(true)); # PROP_TEXT_UPDATE
-  ws.append(new(oid,bat).key(true)); # PROP_COM_UPDATE
-  ws.append(new(oid,bat).key(true)); # PROP_INS_UPDATE
-  ws.append(new(oid,bat).key(true)); # PROP_TGT_UPDATE
-  ws.append(new(oid,bat).key(true)); # QN_LOC_UPDATE
-  ws.append(new(oid,bat).key(true)); # QN_URI_UPDATE
-  ws.append(new(oid,bat).key(true)); # QN_PREFIX_UPDATE
-  ws.append(new(oid,bat).key(true)); # QN_URI_LOC_UPDATE
-  ws.append(new(oid,bat).key(true)); # QN_PREFIX_URI_LOC_UPDATE
-  ws.append(new(oid,bat).key(true)); # QN_HISTOGRAM_UPDATE
-  ws.append(new(oid,oid).set(true)); # UPDATED_TEXT
-  ws.append(new(oid,bat).key(true)); # NID_QN_INS_UPDATE
-  ws.append(new(oid,bat).key(true)); # NID_QN_DEL_UPDATE
-  ws.append(new(oid,wrd).set(true)); # MODIFIED_NID
-  ws.append(new(oid,oid).set(true)); # ANCESTOR_NID
-  ws.append(new(oid,oid).set(true)); # MODIFIED_ATTR
-  ws.append(new(oid,oid).set(true)); # MODIFIED_PAGE
-  ws.append(new(oid,oid).set(true)); # NEW_PAGE
 
   # set-wise unique bats, but better build the hash table on tail (head=cont != selective)
   ws.fetch(MODIFIED_NID).reverse().accbuild("hash");
@@ -2160,6 +2124,29 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   if (not(isnil(err))) ERROR(err);
 }
 
+PROC do_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
+{
+  cont_order@batloop() {
+    var cont := $t;
+    ws.fetch(_MAP_PID).find(cont).myupdate(ws.fetch(MAP_PID_UPDATE).find(cont));
+    ws.fetch(_RID_SIZE).find(cont).myupdate(ws.fetch(RID_SIZE_UPDATE).find(cont));
+    ws.fetch(_RID_LEVEL).find(cont).myupdate(ws.fetch(RID_LEVEL_UPDATE).find(cont));
+    ws.fetch(_RID_KIND).find(cont).myupdate(ws.fetch(RID_KIND_UPDATE).find(cont));
+    ws.fetch(_RID_PROP).find(cont).myupdate(ws.fetch(RID_PROP_UPDATE).find(cont));
+    ws.fetch(_RID_NID).find(cont).myupdate(ws.fetch(RID_NID_UPDATE).find(cont));
+    ws.fetch(_NID_RID).find(cont).myupdate(ws.fetch(NID_RID_UPDATE).find(cont));
+    ws.fetch(_ATTR_QN).find(cont).myupdate(ws.fetch(ATTR_QN_UPDATE).find(cont));
+    ws.fetch(_ATTR_PROP).find(cont).myupdate(ws.fetch(ATTR_PROP_UPDATE).find(cont));
+    ws.fetch(_ATTR_OWN).find(cont).myupdate(ws.fetch(ATTR_OWN_UPDATE).find(cont));
+  }
+}
+
+PROC mylog_delta(logger l, BAT[any,any] b, str nme) : void
+{
+    log_delta(l, b, nme);
+b.col_name(nme).print();
+}
+
 PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
 {
   # first do the main logging work without the collection locks
@@ -2192,7 +2179,7 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
     log_delta(pf_logger, ws.fetch(QN_PREFIX_URI_LOC_UPDATE).find(cont), ws.fetch(_QN_PREFIX_URI_LOC).find(cont).bbpname());
     log_delta(pf_logger, ws.fetch(QN_HISTOGRAM_UPDATE).find(cont), ws.fetch(_QN_HISTOGRAM).find(cont).bbpname());
     var new_page := ws.fetch(NEW_PAGE).reverse().ord_uselect(cont).sort();
-    coll_protect(ws, cont);
+    extend_protect(ws, cont);
     new_page@batloop() {
       var start := oid(lng($h) << REMAP_PAGE_BITS);
       var end := oid(lng(start) + REMAP_PAGE_MASK);
@@ -2202,7 +2189,7 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
       log_delta(pf_logger, rid_prop.reverse().select(start, end).reverse(), rid_prop.bbpname());
       log_delta(pf_logger, rid_nid.reverse().select(start, end).reverse(), rid_nid.bbpname());
     }
-    coll_unprotect(ws, cont);
+    extend_unprotect(ws, cont);
   }
 
   # acquire collection locks by calling ws_precommit (must be done in the correct order)
@@ -2250,19 +2237,7 @@ PROC do_log_commit_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
   log_trans_end(pf_logger); # write commit record in WAL: this is the commit point!
 
   # apply the logged changes to the masters
-  cont_order@batloop() {
-    var cont := $t;
-    ws.fetch(_MAP_PID).find(cont).access(BAT_WRITE).delete().myupdate(ws.fetch(MAP_PID_UPDATE).find(cont));
-    ws.fetch(_RID_SIZE).find(cont).myupdate(ws.fetch(RID_SIZE_UPDATE).find(cont));
-    ws.fetch(_RID_LEVEL).find(cont).myupdate(ws.fetch(RID_LEVEL_UPDATE).find(cont));
-    ws.fetch(_RID_KIND).find(cont).myupdate(ws.fetch(RID_KIND_UPDATE).find(cont));
-    ws.fetch(_RID_PROP).find(cont).myupdate(ws.fetch(RID_PROP_UPDATE).find(cont));
-    ws.fetch(_RID_NID).find(cont).myupdate(ws.fetch(RID_NID_UPDATE).find(cont));
-    ws.fetch(_NID_RID).find(cont).myupdate(ws.fetch(NID_RID_UPDATE).find(cont));
-    ws.fetch(_ATTR_QN).find(cont).myupdate(ws.fetch(ATTR_QN_UPDATE).find(cont));
-    ws.fetch(_ATTR_PROP).find(cont).myupdate(ws.fetch(ATTR_PROP_UPDATE).find(cont));
-    ws.fetch(_ATTR_OWN).find(cont).myupdate(ws.fetch(ATTR_OWN_UPDATE).find(cont));
-  }
+  pf_assert(CATCH(do_commit_updates(ws, cont_order)), "master update failed (commit_updates)");
 
   # ws_postcommit maintains the indices and releases the collection lock
   cont_order@batloop() {
@@ -2358,9 +2333,7 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
         var pre_prop := ws.fetch(PRE_PROP).find(cont);
         var etgt := epi.leftjoin(update_rename); # [i,tgt]
         var eins := epi.leftjoin(epres).leftjoin(pre_prop);
-        coll_lock_set(ws,cont);
         var evalid := add_pi_bulk(ws, cont, etgt, eins.leftjoin(prop_ins)); # [i,PROPID]
-        coll_lock_unset(ws,cont);
         var upd := epi.leftjoin(erids).reverse().join(evalid); # [RID,PROPID]
         rid_prop_update.insert(upd);
       }
@@ -2390,7 +2363,7 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
       var cont := $h;
       var list := aconts.ord_uselect(cont).mirror(); # [i,i]
       var aval := list.leftjoin(update_replace); # [i,update_replace]
-      var avalid := add_string_bulk(ws, cont, _PROP_VAL, PROP_VAL_UPDATE, aval);
+      var avalid := add_string_bulk(ws, cont, _PROP_VAL, PROP_VAL_UPDATE, aval, true);
       var attr_prop_updates := ws.fetch(ATTR_PROP_UPDATE).find(cont);
       attr_prop_updates.insert(list.leftjoin(aitem).reverse().leftjoin(avalid));
     }
@@ -2430,13 +2403,13 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
       }
       if (etext.count() > 0) {
         var elval := etext.leftjoin(update_replace); # [i,update_replace]
-        var elvalid := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, elval); # [i,PROPID]
+        var elvalid := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, elval, true); # [i,PROPID]
         var upd := etext.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
         rid_prop_update.insert(upd);
       }
       if (ecomment.count() > 0) {
         var elval := ecomment.leftjoin(update_replace); # [i,update_replace]
-        var elvalid := add_string_bulk(ws, cont, _PROP_COM, PROP_COM_UPDATE, elval); # [i,PROPID]
+        var elvalid := add_string_bulk(ws, cont, _PROP_COM, PROP_COM_UPDATE, elval, true); # [i,PROPID]
         var upd := ecomment.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
         rid_prop_update.insert(upd);
       }
@@ -2446,9 +2419,7 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
         var props := epi.leftjoin(erids).leftjoin(rid_prop_update); # [i,old PROPID]
         if (props.count() > 0) {
           var eins := props.mirror().leftjoin(update_replace); # [i,ins]
-          coll_lock_set(ws, cont);
           var elvalid := add_pi_bulk(ws, cont, props.leftjoin(prop_tgt), eins); # [i,new PROPID]
-          coll_lock_unset(ws, cont);
           var upd := epi.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
           rid_prop_update.replace(upd, true);
           epi := epi.kdiff(props); # only do the remaining ones
@@ -2457,9 +2428,7 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
           var pre_prop := ws.fetch(PRE_PROP).find(cont);
           var eins := epi.leftjoin(update_replace); # [i,ins]
           var etgt := epi.leftjoin(epres).leftjoin(pre_prop);
-          coll_lock_set(ws, cont);
           var elvalid := add_pi_bulk(ws, cont, etgt.leftjoin(prop_tgt), eins); # [i,PROPID]
-          coll_lock_unset(ws, cont);
           var upd := epi.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
           rid_prop_update.insert(upd);
         }
@@ -2510,7 +2479,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
 
       var aprops := mposjoin(taitems, taconts, ws.fetch(ATTR_PROP)); # [j,ATTR_PROPID]
       var avals := mposjoin(aprops, taconts, ws.fetch(PROP_VAL)); # [j,ATTR_VAL]
-      var avalid := add_string_bulk(ws, cont, _PROP_VAL, PROP_VAL_UPDATE, avals); # [j,DOC_VALID]
+      var avalid := add_string_bulk(ws, cont, _PROP_VAL, PROP_VAL_UPDATE, avals, true); # [j,DOC_VALID]
       avalid := mapping.leftjoin(avalid); # [i,DOC_VALID]
 
       var aownid := list.leftjoin(update_node_item).leftjoin(ws.fetch(PRE_NID).find(cont)); # [i,DOC_NID]
@@ -2535,21 +2504,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
       }
 
       # figure out an ID for the new attribute
-      var attrid;
-      {
-        var oid_list := list.project(oid_nil);
-        coll_lock_set(ws, cont);
-        var _attr_own := ws.fetch(_ATTR_OWN).find(cont);
-        var _attr_prop := ws.fetch(_ATTR_PROP).find(cont);
-        var _attr_qn := ws.fetch(_ATTR_QN).find(cont);
-        _attr_own.append(oid_list, true);
-        _attr_prop.append(oid_list, true);
-        _attr_qn.append(oid_list, true);
-        attrid := oid(_attr_prop.count() - oid_list.count());
-        coll_lock_unset(ws, cont);
-      }
-
-      # record updates
+      var attrid := add_attr_bulk(ws, cont, list.project(oid_nil));
       attr_own_update.insert(aownid.tmark(attrid));
       attr_qn_update.insert(aqnid.tmark(attrid));
       attr_prop_update.insert(avalid.tmark(attrid));
@@ -2668,7 +2623,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
 
           if (docinsertcmd = lng(UPDATE_REPLACECONTENT)) {
             var size;
-            coll_protect(ws, doccont);
+            extend_protect(ws, doccont);
             if (isoldpage) {
               if (rid_size_update.exist(docinsertafter_rid)) {
                 size := rid_size_update.find(docinsertafter_rid);
@@ -2681,7 +2636,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             if (size > 0) {
               do_delete_nodes(ws, doccont, oid(lng(docinsertafter_newpre) + 1), size - 1);
             }
-            coll_unprotect(ws, doccont);
+            extend_unprotect(ws, doccont);
           }
 
           # figure out the number of holes on the page on which the new
@@ -2759,11 +2714,11 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 # fix up hole at start of last page since it doesn't
                 # extend to the end of the page anymore (this will be
                 # overwritten again)
-                coll_protect(ws, doccont);
+                extend_protect(ws, doccont);
                 var update_hole := rid_size.reverse().select(pgstart, cpwhere_rid, true, false).reverse();
                 update_hole := [nilor]([-](update_hole.project(int(cpwhere_rid) - 1), [int](update_hole.mirror())), int_nil);
                 rid_size.replace(update_hole, true); 
-                coll_unprotect(ws, doccont);
+                extend_unprotect(ws, doccont);
               }
               newholeatend := int(REMAP_PAGE_SIZE) - ((int(cpwhere_rid) + cpsize) and int(REMAP_PAGE_MASK));
             }
@@ -2800,13 +2755,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 modified_nid.insert(rid_nid_data.select(oid_nil, oid_nil).reverse().project(doccont).reverse().[wrd]().[>>](OID_PAGE_BITS));
               } else {
                 var cpend_rid := oid((lng(cpstart_rid) + cpsize) - 1);
-                coll_protect(ws, doccont);
+                extend_protect(ws, doccont);
                 rid_size_data := rid_size.reverse().select(cpstart_rid, cpend_rid).reverse();
                 rid_level_data := rid_level.reverse().select(cpstart_rid, cpend_rid).reverse();
                 rid_kind_data := rid_kind.reverse().select(cpstart_rid, cpend_rid).reverse();
                 rid_prop_data := rid_prop.reverse().select(cpstart_rid, cpend_rid).reverse();
                 rid_nid_data := rid_nid.reverse().select(cpstart_rid, cpend_rid).reverse();
-                coll_unprotect(ws, doccont);
+                extend_unprotect(ws, doccont);
                 # nodes on a new page have already been added to modified_nid table
               }
               if (holeatend != newholeatend) {
@@ -2815,13 +2770,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 var past_end := rid_end_data.uselect(int(cpstart_rid) + cpsize, int_nil);
                 rid_size_data.replace([nilplus](past_end.mirror().join(rid_size_data), newholeatend - holeatend), true);
               }
-              coll_protect(ws, doccont);
+              extend_protect(ws, doccont);
               rid_size.replace(rid_size_data.tmark(cpwhere_rid), true);
               rid_level.replace(rid_level_data.tmark(cpwhere_rid), true);
               rid_kind.replace(rid_kind_data.tmark(cpwhere_rid), true);
               rid_prop.replace(rid_prop_data.tmark(cpwhere_rid), true);
               rid_nid.replace(rid_nid_data.tmark(cpwhere_rid), true);
-              coll_unprotect(ws, doccont);
+              extend_unprotect(ws, doccont);
 
               var nid_rid_data := rid_nid_data.tmark(cpwhere_rid).select(oid_nil, oid_nil).reverse();
               nid_rid_update.myupdate(nid_rid_data);
@@ -2839,13 +2794,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 rid_prop_update.myupdate(rid_prop_data);
                 rid_nid_update.myupdate(rid_nid_data);
               } else {
-                coll_protect(ws, doccont);
+                extend_protect(ws, doccont);
                 rid_size.replace(rid_size_data, true);
                 rid_level.replace(rid_level_data, true);
                 rid_kind.replace(rid_kind_data, true);
                 rid_prop.replace(rid_prop_data, true);
                 rid_nid.replace(rid_nid_data, true);
-                coll_unprotect(ws, doccont);
+                extend_unprotect(ws, doccont);
               }
             }
 
@@ -2892,9 +2847,9 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             var new_page := is_new_page.uselect(true);
             if (new_page.count() > 0) {
               var tmp := ancestors_newrid.reverse().join(new_page.mirror().join(new_size));
-              coll_protect(ws, doccont);
+              extend_protect(ws, doccont);
               rid_size.myupdate(tmp);
-              coll_unprotect(ws, doccont);
+              extend_unprotect(ws, doccont);
             }
             # register which ancestors are being changed
             ancestor_nid.insert(new_size.project(doccont).reverse().join(ancestors_nid));
@@ -2926,10 +2881,10 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                     s := pre_size.find(swizzle(rid, map_pid));
                   }
                 } else {
-                  coll_protect(ws, doccont);
+                  extend_protect(ws, doccont);
                   if (rid_size.exist(rid)) 
                       s := rid_size.find(rid);
-                  coll_unprotect(ws, doccont);
+                  extend_unprotect(ws, doccont);
                 }
                 if (isnil(niland(s, int_nil))) {
                   # we're looking at a hole
@@ -2980,9 +2935,9 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               var new_page := is_new_page.uselect(true);
               if (new_page.count() > 0) {
                 var tmp := ancestors_newrid.reverse().join(new_page.mirror().join(new_size));
-                coll_protect(ws, doccont);
+                extend_protect(ws, doccont);
                 rid_size.myupdate(tmp);
-                coll_unprotect(ws, doccont);
+                extend_unprotect(ws, doccont);
               }
             }
           }
@@ -3083,14 +3038,14 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 lastdata := max(lastdata, texts.reverse().max());
                 texts := texts.mirror().tmark(0@0);
                 var textval := mposjoin(texts.leftjoin(insert_pre_prop), texts.leftjoin(insert_pre_cont), ws.fetch(PROP_TEXT));
-                var textids := add_string_bulk(ws, doccont, _PROP_TEXT, PROP_TEXT_UPDATE, textval);
+                var textids := add_string_bulk(ws, doccont, _PROP_TEXT, PROP_TEXT_UPDATE, textval, true);
                 insprop.replace(texts.reverse().join(textids));
               }
               if (comments.count() > 0) {
                 lastdata := max(lastdata, comments.reverse().max());
                 comments := comments.mirror().tmark(0@0);
                 var commentval := mposjoin(comments.leftjoin(insert_pre_prop), comments.leftjoin(insert_pre_cont), ws.fetch(PROP_COM));
-                var commentids := add_string_bulk(ws, doccont, _PROP_COM, PROP_COM_UPDATE, commentval);
+                var commentids := add_string_bulk(ws, doccont, _PROP_COM, PROP_COM_UPDATE, commentval, true);
                 insprop.replace(comments.reverse().join(commentids));
               }
               if (pis.count() > 0) {
@@ -3098,9 +3053,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 pis := pis.mirror().tmark(0@0);
                 var insval := mposjoin(pis.leftjoin(insert_pre_prop), pis.leftjoin(insert_pre_cont), ws.fetch(PROP_INS));
                 var tgtval := mposjoin(pis.leftjoin(insert_pre_prop), pis.leftjoin(insert_pre_cont), ws.fetch(PROP_TGT));
-                coll_lock_set(ws, doccont);
                 var piids := add_pi_bulk(ws, doccont, tgtval, insval);
-                coll_lock_unset(ws, doccont);
                 insprop.replace(pis.reverse().join(pis.reverse().join(piids)));
               }
             }
@@ -3124,21 +3077,11 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               } else {
                 var a := attrattrs.tmark(0@0);
                 var propval := mposjoin(a.leftjoin(insert_attr_prop), a.leftjoin(insert_attr_cont), ws.fetch(PROP_VAL));
-                attrnprops := a.reverse().leftjoin(add_string_bulk(ws, doccont, _PROP_VAL, PROP_VAL_UPDATE, propval));
+                attrnprops := a.reverse().leftjoin(add_string_bulk(ws, doccont, _PROP_VAL, PROP_VAL_UPDATE, propval, true));
               }
               if (attrattrs.count() > 0) {
                 # first claim enough entries in the ATTR table with the lock set
-                var attrattrsnil := attrattrs.project(oid_nil);
-                coll_lock_set(ws, doccont);
-                var _attr_own := ws.fetch(_ATTR_OWN).find(doccont);
-                var _attr_prop := ws.fetch(_ATTR_PROP).find(doccont);
-                var _attr_qn := ws.fetch(_ATTR_QN).find(doccont);
-                _attr_own.append(attrattrsnil, true);
-                _attr_prop.append(attrattrsnil, true);
-                _attr_qn.append(attrattrsnil, true);
-                var attr_id := oid(_attr_prop.count() - attrattrs.count());
-                coll_lock_unset(ws, doccont);
-
+                var attr_id := add_attr_bulk(ws, doccont, attrattrs.project(oid_nil));
                 var nattrattrs := attrattrs.tmark(attr_id); # New ATID-ATID
                 var nattrnqnids := nattrattrs.join(attrnqnids); # New ATID-New QNID
                 var nattrnids := nattrattrs.join(preattrs.reverse()).join(insnnids); # New ATID-New NID
@@ -3178,13 +3121,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               rid_prop_update.myupdate(insprop);
               rid_nid_update.myupdate(insnid);
             } else {
-              coll_protect(ws, doccont);
+              extend_protect(ws, doccont);
               rid_size.replace(inssize, true);
               rid_level.replace(inslevel, true);
               rid_kind.replace(inskind, true);
               rid_prop.replace(insprop, true);
               rid_nid.replace(insnid, true);
-              coll_unprotect(ws, doccont);
+              extend_unprotect(ws, doccont);
             }
 
             insertsize :-= int(batchsize);
@@ -3467,7 +3410,7 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
           isoldpage := not(isnil(map_pid.find(pageid)));
         }
 
-        coll_protect(ws, cont);
+        extend_protect(ws, cont);
         var size;
         if (isoldpage) {
           if (rid_size_update.exist(rid)) {
@@ -3567,24 +3510,37 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
           # do the actual deleting in a subroutine
 	  do_delete_nodes(ws, cont, pre, size);
         }
-        coll_unprotect(ws, cont);
+        extend_unprotect(ws, cont);
       }
     }
   }
 }
 
-PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, bat[oid,str] valbat) : bat[oid,oid]
+PROC add_attr_bulk(BAT[void,bat] ws, oid cont, BAT[oid,oid] oid_list) : oid
+{ 
+    coll_lock_set(ws, cont);
+    var attr_own := ws.fetch(_ATTR_OWN).find(cont);
+    var attr_prop := ws.fetch(_ATTR_PROP).find(cont);
+    var attr_qn := ws.fetch(_ATTR_QN).find(cont);
+    pf_assert(CATCH({ attr_own.append(oid_list, true);
+                      attr_prop.append(oid_list, true);
+                      attr_qn.append(oid_list, true); }), "master update failed (add_attr)");
+    var attr_id := oid(attr_prop.count() - oid_list.count());
+    coll_lock_unset(ws, cont);
+    return attr_id;
+}
+
+PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, bat[oid,str] valbat, bit dolock) : bat[oid,oid]
 {
-  coll_lock_set(ws, cont);
+  if (dolock) coll_lock_set(ws, cont);
   var table := ws.fetch(tableid).find(cont);
   var oldsize := count(table);
   var missing := valbat.tdiff(table).tunique();
-  if (missing.count() > 0) {
-    table.append(missing.reverse(), true);
-  }
+  if (missing.count() > 0)
+    pf_assert(CATCH(table.append(missing.reverse(), true)), "master update failed (add_string)");
   var logvals := table.slice(oldsize, count(table)).copy();
   var validbat := valbat.leftjoin(table.reverse());
-  coll_lock_unset(ws, cont);
+  if (dolock) coll_lock_unset(ws, cont);
   if (count(logvals) > 0) {
     ws.fetch(updtableid).find(cont).insert(logvals); # log new values
   }
@@ -3594,6 +3550,7 @@ PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, ba
 # note: coll lock must be taken while calling this function!!
 PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] insbat) : bat[oid,oid]
 {
+  coll_lock_set(ws, cont);
   var instgtbat := [+]([+](insbat, ":"), tgtbat);
   var prop_ins := ws.fetch(_PROP_INS).find(cont);
   var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
@@ -3607,8 +3564,10 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
     # then extract instruction and target
     var instgtuniquesplit := instgtunique.splitbat(":");
     # add them to respective BATs
-    prop_ins.append(instgtuniquesplit.fetch(0), true);
-    prop_tgt.append(instgtuniquesplit.fetch(1), true);
+
+    pf_assert(CATCH({ prop_ins.append(instgtuniquesplit.fetch(0), true);
+                      prop_tgt.append(instgtuniquesplit.fetch(1), true); }), "master update failed (add_pi)");
+
     # recalculate ids
     prop_ins_tgt := [+]([+](prop_ins, ":"), prop_tgt);
     idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
@@ -3616,8 +3575,10 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
     ws.fetch(PROP_INS_UPDATE).find(cont).insert(prop_ins.join(instgtuniquesplit.fetch(0).reverse().mirror()));
     ws.fetch(PROP_TGT_UPDATE).find(cont).insert(prop_tgt.join(instgtuniquesplit.fetch(1).reverse().mirror()));
   }
+  coll_lock_unset(ws, cont);
   return idbat;
 }
+
 
 PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add) : bat[oid,oid]
 {
@@ -3646,13 +3607,14 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
       var _pref  := _split.fetch(0);
       var _uri   := _split.fetch(1);
       var _loc   := _split.fetch(2);
-      qn_loc.append(_loc, true);
-      qn_uri.append(_uri, true);
-      qn_prefix.append(_pref, true);
       var _uri_loc := [+]([+](_uri, ":"), _loc);
-      qn_uri_loc.append(_uri_loc, true);
-      qn_prefix_uri_loc.append(_pref_uri_loc, true); 
-      qn_histogram.append(_histogram, true); 
+      pf_assert(CATCH({ qn_loc.append(_loc, true); 
+                        qn_uri.append(_uri, true); 
+                        qn_prefix.append(_pref, true);
+                        qn_uri_loc.append(_uri_loc, true);
+                        qn_prefix_uri_loc.append(_pref_uri_loc, true); 
+                        qn_histogram.append(_histogram, true); }), "master update failed (add_qn)");
+
       # recalculate map now
       qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
       coll_lock_unset(ws, cont);
@@ -3675,7 +3637,7 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
   contnid.reverse().tunique()@batloop() {
     var cont := $h;
 
-    coll_protect(ws, cont);
+    extend_protect(ws, cont);
 
     var map_pid := ws.fetch(MAP_PID).find(cont);
     var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
@@ -3765,9 +3727,9 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
       var gp := t1.reverse().leftjoin(rp); # [GRP,PROP]
       coll_lock_set(ws, cont);
       var c := gp.leftfetchjoin(ws.fetch(_PROP_TEXT).find(cont)); # [GRP,content] hsorted
-      coll_lock_unset(ws, cont);
       var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
-      var i := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, v); # [GRP,SID] OID into _PROP_TEXT table
+      var i := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, v, false); # [GRP,SID] OID into _PROP_TEXT table
+      coll_lock_unset(ws, cont);
       var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
       var p1 := [swizzle](p.reverse(), pid_map_update).reverse(); # [RID,GRP]
       var h1 := kdiff(t1, p1).project(oid_nil); # [RID,nil] the other RIDs
@@ -3814,7 +3776,7 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
         nid_rid_update.myupdate(nid, oid_nil);
       }
     }
-    coll_unprotect(ws, cont);
+    extend_unprotect(ws, cont);
   }
 }
 @* Module Implementation
@@ -6177,8 +6139,8 @@ lng pf_writer, pf_special;
 
 #define PF_SHORT_LOCK     pf_runtime_lock[0]
 #define PF_WAL_LOCK       pf_runtime_lock[1]
-#define PF_EXTEND_LOCK    pf_runtime_lock[2]
-#define PF_FREE_LOCK      pf_runtime_lock[3]
+#define PF_FREE_LOCK      pf_runtime_lock[2]
+#define PF_EXTEND_LOCK    pf_runtime_lock[3]
 #define PF_META_LOCK      pf_runtime_lock[4]
 #define PF_UPDATE_LOCK    pf_runtime_lock[5]
 #define PF_META_BARRIER   pf_runtime_sema[0]
@@ -6186,9 +6148,9 @@ lng pf_writer, pf_special;
 #define PF_EXTEND_BARRIER pf_runtime_sema[2]
 
 #define PF_MODE_RDONLY 0 /* read-only query */
-#define PF_MODE_UPDATE 1 /* updating query */
-#define PF_MODE_RETRY  2 /* updating query run for the second time (exclusive mode) */
-#define PF_MODE_DOCMGT 3 /* document management query */ 
+#define PF_MODE_DOCMGT 1 /* document management query */ 
+#define PF_MODE_UPDATE 2 /* updating query */
+#define PF_MODE_RETRY  3 /* updating query run for the second time (exclusive mode) */
 
 /* get handle to the shared locks */
 int CMDpflock_get(ptr *ret, int* nr) {
