@@ -56,6 +56,8 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
 #include "serialize_pftijah.h"
 #include "pftijah_stem.h"
 
+#include "pftijah_util.h"
+
 #include "termdb.h"
 
 #include "shredder.h"
@@ -256,7 +258,6 @@ typedef struct tijahContextStruct {
 	BAT* b_docFirstPre;	/* First tijah-pre-nr of document */
 	BAT* b_collParam;	/* Collection Parameters BAT */
 	/* */
-	int  newFragments;      /* new fragments created in this session */
 	unsigned int  fragmentSize;	/* maximum frament size, new frag if larger */
 	oid  tijahPre;		/* Current max tijahpre number */
 	/* INCOMPLETE< SHOULD BE FRAGMENTED */
@@ -579,7 +580,6 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 			res->preExpansion = v;
 	}
 	/* */
-	res->newFragments = 0;
 	res->fragmentSize = 0;
 	str str_fragmentSize = readCollParam(res,"fragmentSize");
 	if ( str_fragmentSize != str_nil ) {
@@ -644,17 +644,23 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 #ifdef TJ_TRACE
 	        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: loadTijahContext() [b_collPre|b_collSize] too big(%d), create new fragment\n",res->name,BATcount(res->b_collPre));
 #endif
-	        res->b_collPre     = BATnew(TYPE_void,TYPE_oid,0);
-	        BATseqbase(res->b_collPre,res->tijahPre);
-	        res->b_collSize    = BATnew(TYPE_void,TYPE_int,0);
-	        BATseqbase(res->b_collPre,res->tijahPre);
-	        BATseqbase(res->b_collSize,res->tijahPre);
 		BAT* fragments;
 	        if ( !(fragments = getBAT(tjCtx_BAT,8)) )
 		    return NULL;
+	        int newFragments  = (int)BATcount(fragments) + 1;
+		/* */
+		res->b_collPre     = pftu_create_bat(pftu_batname1("tj_%s_tid%d",res->name,newFragments),TYPE_void,TYPE_oid,1);
+		if ( !res->b_collPre ) 
+		    return NULL;
+		BBPfix(BBPcacheid(res->b_collPre));
+	        BATseqbase(res->b_collPre,res->tijahPre);
+	        res->b_collSize    = pftu_create_bat(pftu_batname1("tj_%s_size%d",res->name,newFragments),TYPE_void,TYPE_int,1);
+		if ( !res->b_collSize )
+		    return NULL;
+		BBPfix(BBPcacheid(res->b_collSize));
+	        BATseqbase(res->b_collSize,res->tijahPre);
 		if ( !BUNappend(fragments,&res->tijahPre,0) )
 		    return NULL;
-	        res->newFragments  = (int)BATcount(fragments);
 		BBPunfix(BBPcacheid(fragments));
 #ifdef TJ_TRACE
 	        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: loadTijahContext() finished creating new fragments\n",res->name);
@@ -1083,7 +1089,7 @@ struct serializeFunStruct pftijahSerializeFun = {
  */
 
 static int
-MAINtj_add2collection(BAT** res, int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
+MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
 	tjCtx* tjctx;
 
 #ifdef TJ_TRACE
@@ -1171,38 +1177,17 @@ MAINtj_add2collection(BAT** res, int justIndex, BAT* tjCtx_BAT, BAT* ws, str doc
 
 	}
 #endif
-        /* INCOMPLETE, should just make the BAT's persistent here myself */
-	/*  Create return BAT. When new fragments are created the result bat
-	 * is filled with 2 bats, @0 = pre-term bat and @1 = pre-size bat
-	 *
-	 */
-        *res = BATnew(TYPE_void,TYPE_bat,2);
-	BBPfix((*res)->batCacheid);
-	if ( tjctx->newFragments ) {
-#ifdef TJ_TRACE
-	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: MAINtj_add2collection() returning new fragments\n",tjctx->name);
-#endif
-	     BATseqbase(*res,(oid)0);
-	     /* "tj_" + collName + "_tid" + count */
-	     BUNappend(*res,&tjctx->b_collPre->batCacheid,0);
-	     /* "tj_" + collName + "_size" + count */
-	     BUNappend(*res,&tjctx->b_collSize->batCacheid,0);
-	} else {
-#ifdef TJ_TRACE
-	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: MAINtj_add2collection() returning existing fragments\n",tjctx->name);
-#endif
-	}
 	return freeTijahContext(tjctx);
 }
 
 int
-CMDtj_add2collection(BAT** res, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
-    return  MAINtj_add2collection(res,0,tjCtx_BAT,ws,docName,selTagList);
+CMDtj_add2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
+    return  MAINtj_add2collection(0,tjCtx_BAT,ws,docName,selTagList);
 }
 
 int
-CMDtj_add2collection_index(BAT** res, BAT* tjCtx_BAT, str locName) {
-    return  MAINtj_add2collection(res,1,tjCtx_BAT,NULL,locName,"");
+CMDtj_add2collection_index(BAT* tjCtx_BAT, str locName) {
+    return  MAINtj_add2collection(1,tjCtx_BAT,NULL,locName,"");
 }
 
 /* vim:set shiftwidth=4 expandtab: */

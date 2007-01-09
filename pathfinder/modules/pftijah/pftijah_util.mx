@@ -26,6 +26,10 @@
 
 @h
 
+extern char* pftu_batname0(char* format, int i);
+extern char* pftu_batname1(char* format, char* arg1, int i);
+extern char* pftu_batname2(char* format, char* arg1, char* arg2, int i);
+
 extern BAT *pftu_lookup_bat(str name);
 
 extern int  pftu_make_persistent(BAT* b, char* name);
@@ -78,7 +82,10 @@ BAT* pftu_make_persistent(BAT* b, char* name) {
       stream_printf(GDKout,"#pftu_cr_bat(\"%s\"): bat creation failed.\n",name);
       return NULL;
     }
-    b->batPersistence = PERSISTENT;
+    if ( !BATmode(b,PERSISTENT) ) {
+          stream_printf(GDKout,"#pftu_make_persistent(\"%s\"): bat persistent failed.\n",name);
+          return NULL;
+    }
     return b;
 }
 
@@ -88,8 +95,9 @@ BAT* pftu_create_bat(char* name, int ht, int tt, int persists) {
       stream_printf(GDKout,"#pftu_cr_bat(\"%s\"): bat creation failed.\n",name);
       return NULL;
     }
-    if ( persists ) {
-      b->batPersistence = PERSISTENT;
+    if ( persists && !BATmode(b,PERSISTENT) ) {
+          stream_printf(GDKout,"#pftu_create_bat(\"%s\"): make bat persistent failed.\n",name);
+          return NULL;
     }
     return b;
 }

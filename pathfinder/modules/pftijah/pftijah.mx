@@ -38,10 +38,10 @@
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
  "INCOMPLETE"
 
-.COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : BAT[void,bat] = CMDtj_add2collection;
+.COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_add2collection;
  "INCOMPLETE"
 
-.COMMAND tj_add2collection_index(BAT[oid,bat],str) : BAT[void,bat] = CMDtj_add2collection_index;
+.COMMAND tj_add2collection_index(BAT[oid,bat],str) : void = CMDtj_add2collection_index;
  "INCOMPLETE"
  
 .COMMAND tijah_tokenize(str) : str = CMDtijah_tokenize;
@@ -1982,6 +1982,8 @@ PROC tj_url2Collection(str doc, str url, str selTagList) : void
 	tj_url2Collection(collName, doc, url, selTagList);
 }
 
+var xqps := 999;
+
 PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 { 
         var debug := false;
@@ -1994,13 +1996,7 @@ PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 	bat("tj_globalTerms").access(BAT_WRITE);
 	bat("tj_globalTags").access(BAT_WRITE);
         
-	var newfrags := tj_add2collection(tj_collection(collName),ws,doc,selTagList);
-	if ( newfrags.count() > 0 ) {
-	    # new fragment pre-term and pre-size() added
-	    var fpfx := str(bat("tj_" + collName + "_fragments").count());
-	    newfrags.fetch(0@0).persists(true).bbpname("tj_" + collName + "_tid"+fpfx);
-	    newfrags.fetch(1@0).persists(true).bbpname("tj_" + collName + "_size"+fpfx);
-	}
+	tj_add2collection(tj_collection(collName),ws,doc,selTagList);
 	ws_destroy(ws);
 	# var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(doc));
 	var height1 := 999; # REMOVE
@@ -2017,13 +2013,7 @@ PROC tj_url2Collection_index(str collName, str url, str selTagList) : void
 	bat("tj_globalTerms").access(BAT_WRITE);
 	bat("tj_globalTags").access(BAT_WRITE);
         
-	var newfrags := tj_add2collection_index(tj_collection(collName),url);
-	if ( newfrags.count() > 0 ) {
-	    # new fragment pre-term and pre-size() added
-	    var fpfx := str(bat("tj_" + collName + "_fragments").count());
-	    newfrags.fetch(0@0).persists(true).bbpname("tj_" + collName + "_tid"+fpfx);
-	    newfrags.fetch(1@0).persists(true).bbpname("tj_" + collName + "_size"+fpfx);
-	}
+	tj_add2collection_index(tj_collection(collName),url);
 
 	bat("tj_" + collName + "_param").replace("status","building");
         commit();	
