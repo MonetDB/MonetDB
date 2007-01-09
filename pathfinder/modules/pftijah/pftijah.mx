@@ -459,7 +459,7 @@ PROC select_root_frag() : bat[oid,bat] :=
 {
     var res := new(oid,bat);
     
-    res.insert(1@0, select_root() );
+    res.insert(0@0, select_root() );
     return res;
 }
 
@@ -540,7 +540,7 @@ PROC select_node_frag(str name, bit e_class) : bat[oid,bat] :=
 {
     var nodes := select_node(name, e_class);
     var res := split2frag(nodes, bat("tj_" + collName + "_fragments"));
-    
+   
     return res;
 }
 
@@ -677,7 +677,8 @@ PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
 PROC contained_by_frag(bat[oid,bat] left, bat[oid,bat] right) : bat[oid,bat] :=
 {
     var res        := new(oid,bat);
-
+    #exception for root in right
+    if ( right.exist(0@0) ) return left; 
     left@batloop() {
       if ( right.exist($h) ) {
         res.insert($h, contained_by($t, right.find($h), str(int($h))) );
