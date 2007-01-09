@@ -165,10 +165,9 @@ forkMserver(str database)
 	} else if (pid > 0) {
 		/* parent: fine, we're done */
 		return(NO_ERR);
-	} else {
-		/* forking failed somehow */
-		return(newErr(strerror(errno)));
 	}
+	/* forking failed somehow */
+	return(newErr(strerror(errno)));
 #endif
 }
 
