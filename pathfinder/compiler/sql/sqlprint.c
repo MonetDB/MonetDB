@@ -84,9 +84,9 @@ print_statements(PFsql_t *n)
     switch( n->kind ) {
         case sql_with:
         {
-            sqlprintf("WITH \\\n");
+            sqlprintf("WITH \n");
             print_common_table_expressions( n->child[0] );
-            sqlprintf(" \\\n");
+            sqlprintf(" \n");
             print_fullselect( n->child[1] );
             sqlprintf("\n");
         } break;
