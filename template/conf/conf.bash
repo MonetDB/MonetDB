@@ -20,14 +20,14 @@
 #
 
 if [ -n "$BUILDTOOLS_PREFIX" ]; then
-    CONFBASH="$BUILDTOOLS_PREFIX"/share/MonetDB/conf/conf.bash
+    CONFBASH="$BUILDTOOLS_PREFIX"/share/MonetDB/conf.bash
 else
     BOOTSTRAP=`which Mbootstrap 2>/dev/null`
     if [ -z "$BOOTSTRAP" ]; then
 	echo "$0: cannot find MonetDB buildtools installation"
 	return 1
     fi
-    CONFBASH="${BOOTSTRAP%/bin/Mbootstrap}"/share/MonetDB/conf/conf.bash
+    CONFBASH="${BOOTSTRAP%/bin/Mbootstrap}"/share/MonetDB/conf.bash
 fi
 
 if [ ! -f "$CONFBASH" ]; then
