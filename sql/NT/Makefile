@@ -31,8 +31,8 @@ $(SRCDIR)\Makefile.msc:
 
 all-msc: sql_config.h
 
-sql_config.h: winconfig.h
-	$(INSTALL) winconfig.h sql_config.h
+sql_config.h: sql_config.h.in
+	$(CONFIGURE) sql_config.h.in > sql_config.h
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h
