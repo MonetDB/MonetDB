@@ -119,7 +119,7 @@ PFns_t PFns_xsi =
 /** XQuery default function namespace (fn:...). */
 PFns_t PFns_fn  =
     { .prefix = "fn",  
-      .uri    = "http://www.w3.org/2002/11/xquery-functions" };
+      .uri    = "http://www.w3.org/2005/xpath-functions" };
 /** Predefined namespace `xdt' (XPath Data Types) for any query */
 PFns_t PFns_xdt = 
     { .prefix = "xdt",
@@ -127,7 +127,7 @@ PFns_t PFns_xdt =
 /** Predefined namespace `local' (XQuery Local Functions) for any query */
 PFns_t PFns_local = 
     { .prefix = "local",
-      .uri    = "http://www.w3.org/2003/11/xquery-local-functions" };
+      .uri    = "http://www.w3.org/2005/xquery-local-functions" };
 /**
  * XQuery Update Facility.
  * There's no URI in the specs.  Teggy suggested to use http://www.kicker.de/.

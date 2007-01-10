@@ -10911,7 +10911,7 @@ const char* PFinitMIL(void) {
         "var time_shred := 0LL;\n"
         "var time_print := 0LL;\n"
         "var time_exec := 0LL;\n"
-        "var genType := \"xml\";";
+        "var genType := \"xml\";\n";
 }
 
 const char* PFstandoffMIL(void) {
@@ -10958,33 +10958,31 @@ const char* PFvarMIL(void) {
         "var _r_attr_prop; # oid|oid\n"
         "var _r_attr_cont; # oid|oid\n"
         "\n"
-        /* Decleration of 'ws' has been moved from PFstartMIL to here to
-         * easy debugging. */
-        "var ws := int_nil;\n"
         "# environment that represents start of any query\n"
         "var v_iter000;\n"
         "var v_item000;\n"
         "var v_kind000;\n"
-	    "var outer000;\n"
+	"var outer000;\n"
         "var inner000;\n"
         "var order_000;\n";
 }
 
 #define PF_STARTMIL_START \
-        "{\n"\
         "time_read := 0LL;\n"\
         "time_shred := 0LL;\n"\
         "time_print := 0LL;\n"\
         "time_exec := usec();\n"
 #define PF_STARTMIL_NORMAL(STMT) PF_STARTMIL_START\
         "var err;\n"\
-        "{ err := CATCH({\n"\
+        "{ var ws := empty_bat;\n"\
+        "  err := CATCH({\n"\
         "  ws := ws_create(" STMT ");\n" PF_STARTMIL_END
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
-        "var try := 0;\n"\
+        "var try := 1;\n"\
         "var err := \"!ERROR: conflicting update\";\n"\
-        "while(((try :+= 1) <= 2) and not(isnil(err))) {\n"\
+        "while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
+        " var ws := empty_bat;\n"\
         " err := CATCH({\n"\
         "  ws := ws_create(try);\n" PF_STARTMIL_END
 #define PF_STARTMIL_END \
@@ -11005,7 +11003,7 @@ const char* PFstartMIL(int statement_type) {
     return (statement_type==1)?
                (PF_STARTMIL_UPDATE):
                (statement_type==0)?(PF_STARTMIL_NORMAL("0")):
-                                   (PF_STARTMIL_NORMAL("3"));
+                                   (PF_STARTMIL_NORMAL("1"));
 }
 
 const char* PFdocbatMIL(void) {
@@ -11023,7 +11021,7 @@ const char* PFdocbatMIL(void) {
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\
            "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
            "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
-           "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
+           "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
            PF_STOPMIL_END("Print ")
 #define PF_STOPMIL_UPDATE PF_STOPMIL_START\
            "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")
@@ -11036,9 +11034,8 @@ const char* PFdocbatMIL(void) {
            "if (not(isnil(err))) ERROR(err);\n"\
            "time_print := usec() - time_print;\n"\
            "if (genType.startsWith(\"timing\"))\n"\
-           "   printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
-           "       dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print)/1000.0);\n"\
-           "}\n"
+           "  printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
+           "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print)/1000.0);\n"
 const char* PFstopMIL(int statement_type) {
     return (statement_type==0)?
                (PF_STOPMIL_RDONLY):
