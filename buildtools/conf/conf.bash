@@ -73,7 +73,7 @@ if [ "${what}" != "BUILDTOOLS" -a ! -f configure.ag ] ; then
 	echo ''
 	return 1
 fi
-if [ "${what}" = "BUILDTOOLS" -a ! -f configure.bs ] ; then
+if [ "${what}" = "BUILDTOOLS" -a ! -f configure.ac ] ; then
 	echo ''
 	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out ${what} source tree.'
 	echo ''
