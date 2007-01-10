@@ -47,7 +47,7 @@
 #include <windows.h>
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
-#define ALREADY_HAVE_WINDOWS_TYPE
+#define ALREADY_HAVE_WINDOWS_TYPE 1
 #endif
 
 /**** Define the ODBC Version this ODBC driver complies with ****/
