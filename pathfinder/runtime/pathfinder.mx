@@ -3246,10 +3246,11 @@ xquery_mil2tree(xquery_client *ctx,
     YYSTREE ret = NULL, treebak = c->tree;
     char* bufbak = c->input;
     int listing_bak = c->listing;
+    int lineno = 1;
     c->listing = 0;
     c->input = buf;
     c->tree = NULL;
-    if (parseClient(c, FALSE))
+    if (parseClient(c, FALSE, "<xquery>", &lineno))
         ret = c->tree;
     c->tree = treebak;
     c->input = bufbak;
@@ -4715,7 +4716,7 @@ xquery_change_genType(xquery_client *ctx, char* magic_string) {
 static void
 xquery_client_engine(mapi_client *fc )
 {
-    ssize_t n;
+    ssize_t n = 0;
     size_t curlen;
     xquery_client *ctx = fc->fc;
     stream *in = fc->c->fdin, *out = fc->c->fdout;
