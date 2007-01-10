@@ -1402,11 +1402,28 @@ Most dictionary tables are created once and loaded upon system
 restart. By keeping the reference count at one we are assured that
 they remain fixed in memory for the duration of the session.
 @c
+static void tbl_rename(Client client, BAT* b, str nme) 
+{
+	/* the batname is prefixed with the client user name to make in easy to spot
+	 * in the BBP dir list. Note that this rename may fail if such a bat already
+	 * exists (very rare and contrived though)
+	 */
+	char buf[256];
+        strncpy(buf, client->user ? client->user : "monet", 128);
+        if (client->stk) {
+            int len = strlen(buf);
+            snprintf(buf+len, 256-len, "_%d", client->stk);     
+        }
+        strncat(buf, "_",  256); 
+        strncat(buf, nme,  256); 
+	BBPrename(b->batCacheid, buf);
+}
+
 static BAT *
 TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, int tmode)
 {
 	BAT *b = BATnew(htpe, ttpe, cnt);
-	char buf[128], *user = client->user;
+	char buf[128];
 	Variable v;
 
 	if (b == NULL)
@@ -1416,37 +1433,30 @@ TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, int t
 	if (tmode)
 		BATkey(BATmirror(b), tmode);
 
-	/* the batname is prefixed with the client user name to make in easy to spot
-	 * in the BBP dir list. Note that this rename may fail if such a bat already
-	 * exists (very rare and contrived though)
-	 */
-	sprintf(buf, "%s_%s", user ? user : "monet", nme);
-	BBPrename(b->batCacheid, buf);
+        tbl_rename(client, b, nme);
 
 	/* whereas the batname is for debugging, each client sees his bat using the
 	 * alias monet_X using a MIL variable.
 	 */
-	if (user) {
-		sprintf(buf, "monet_%s", nme);
-		v = VARnew((Cntxt) (client - monet_clients), buf);
-		v->binding.val.bval = b->batCacheid;
-		v->binding.vtype = TYPE_bat;
-		v->binding.len = 0;
-		BBPincref(b->batCacheid, TRUE);
-		VARfreeze(v);
-		VARfixate(v);
-	}
+	snprintf(buf, 128, "monet_%s", nme);
+	v = VARnew((Cntxt) (client - monet_clients), buf);
+	v->binding.val.bval = b->batCacheid;
+	v->binding.vtype = TYPE_bat;
+	v->binding.len = 0;
+	BBPincref(b->batCacheid, TRUE);
+	VARfreeze(v);
+	VARfixate(v);
 	return b;
 }
 
 static BAT *
 TBL_fathercopy(Client client, Client father, str nme)
 {
-	char buf[128];
+	char buf[256];
 	Variable v;
 	BAT *b = NULL;
 
-	sprintf(buf, "monet_%s", nme);
+	snprintf(buf, 128, "monet_%s", nme);
 	v = VARfind(&father->stk, buf);
 	if (v) {		/* dirty replacement of the client bats */
 		Variable n = VARnew(client->stk, v->name);
@@ -1459,6 +1469,7 @@ TBL_fathercopy(Client client, Client father, str nme)
 		BBPincref(b->batCacheid, TRUE);
 		BBPdecref(o->batCacheid, FALSE);
 		n->binding.val.bval = b->batCacheid;
+                tbl_rename(client, b, nme);
 	} else {
 		GDKerror("TBL_fathercopy: variable %s not found\n", buf);
 	}

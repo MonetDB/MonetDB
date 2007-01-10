@@ -714,7 +714,7 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	int port, *Port;
 	int maxusers, *Maxusers;
 	Client father;
-	int accept_any, *Accept_any;
+	bit accept_any, *Accept_any;
 
 	mapi_active = 1;
 	CNTXTclient(stk, &father);
