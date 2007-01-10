@@ -37,20 +37,21 @@ AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	AC_MSG_ERROR([MONETDB/SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 fi
-AM_MONETDB_CLIENTS()
+req_clients_ver='1.15.0'
+AM_MONETDB_CLIENTS($req_clients_ver)
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
-req_monetdb_ver='4.15.0'
-AM_MONETDB4($req_monetdb_ver)
-req_monetdb_ver='4.99.19'
-AM_MONETDB5($req_monetdb_ver)
+req_monetdb4_ver='4.15.0'
+AM_MONETDB4($req_monetdb4_ver)
+req_monetdb5_ver='5.0.0_alpha1'
+AM_MONETDB5($req_monetdb5_ver)
 
 if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
-	AC_MSG_ERROR([MonetDB/SQL requires at least version $req_monetdb_ver of MonetDB.])
+	AC_MSG_ERROR([MonetDB/SQL requires at least version $req_monetdb4_ver of MonetDB4 (found $MONETDB4VERS) or version $req_monetdb5_ver of MonetDB5 (found $MONETDB5VERS).])
 fi
 
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)

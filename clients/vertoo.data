@@ -1,1 +1,2 @@
 monetdb = major:1; minor:15; release:0; rc:x; build:1;
+clients = major:1; minor:15; release:0; rc:x; build:1;
