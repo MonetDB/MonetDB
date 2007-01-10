@@ -1653,78 +1653,171 @@ BUNfnd(BAT *b, ptr v)
 
 @= swapif
 	if (@1) {
-		ptr _p = x;
-
-		x = y;
-		y = _p; 
+		int (*_cmp) (ptr, ptr) = hcmp; hcmp = tcmp; tcmp = _cmp;
+		ptr _p = x; x = y; y = _p; 
 		b = BATmirror(b);
+		if (v) v = BATmirror(v);
 	}	
+			    
+@= dohash
+        ATOMstorage(@1->@2type) != TYPE_chr && (ATOMstorage(@1->@2type) != TYPE_str || !GDK_ELIMDOUBLES(@1->@2heap)) 
 @c
 BUN
 BUNlocate(BAT *b, ptr x, ptr y)
 {
-	BUN p = NULL, q = NULL;
-	hash_t h;
-	int xx, (*cmp) (ptr, ptr), (*cmp2) (ptr, ptr);
+	int (*hcmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
+	int (*tcmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
+	int htpe, ttpe, hint = 0, tint = 0, hlng = 0, tlng = 0, xx;
+        var_t hidx, tidx;
+	BUN p, q;
+	BAT *v = NULL;
 
 	BATcheck(b, "BUNlocate: BAT parameter");
 	BATcheck(x, "BUNlocate: value parameter");
+        p = BUNfirst(b);
+        q = BUNlast(b);
+        xx = BUNsize(b);
+	if (p == q) return NULL; /* empty bat */
 
-	@:swapif(b->htype==TYPE_void&&b->hseqbase==oid_nil&&*(oid*)x==oid_nil)@
-	if (y == NULL || (b->ttype == TYPE_void && b->tseqbase == oid_nil && *(oid *) y == oid_nil)) {
+        /* sometimes BUNlocate is just about a single column */
+	@:swapif(y && ((BAThordered(b)&1) && (*hcmp)(x,BUNhead(b,p)) == 0 && (*hcmp)(x,BUNhead(b,q-xx)) == 0))@
+	if (y == NULL || ((BATtordered(b)&1) && (*tcmp)(y,BUNtail(b,p)) == 0 && (*tcmp)(y,BUNtail(b,q-xx)) == 0)) {
 		return BUNfnd(b, x);
 	}
-
-	/* positional lookup */
+       
+	/* positional lookup is always the best choice */
 	@:swapif(BATtdense(b))@
 	if (BAThdense(b)) {
 		oid i = *(oid *) x - b->hseqbase;
-
-		cmp = BATatoms[b->ttype].atomCmp;
-
 		if ((size_t) i < BATcount(b)) {
 			i += BUNindex(b, BUNfirst(b));
 			p = BUNptr(b, i);
-			if ((*cmp) (y, BUNtail(b, p)) == 0)
-				return p;
+			if ((*tcmp) (y, BUNtail(b, p)) == 0) return p;
 		}
 		return NULL;
 	}
 
-	/* binary search */
-	@:swapif((BAThordered(b)&1)&&!(BATtordered(b)&1))@
+	/* next, try to restrict the range using sorted columns */
 	if (BATtordered(b) & 1) {
-		cmp = BATatoms[b->htype].atomCmp;
-		cmp2 = BATatoms[b->ttype].atomCmp; /* check is necessary for y==nil (but should be cheap) */
+        	p = SORTfndfirst(b,y);
+		q = SORTfndlast(b,y);
+        } 
+	if (BAThordered(b) & 1) {
+		BUN mp = SORTfndfirst(BATmirror(b),x);
+		BUN mq = SORTfndlast(BATmirror(b),x);
+		if (mp > p) p = mp;
+		if (mq < p) q = mq;
+        }
+	if (p >= q) return NULL; /* value combination cannot occur */
 
-		SORTloop(b, p, q, y, y, h) {
-			if ((*cmp2) (y, BUNtail(b, p))) break;
-			if ((*cmp) (x, BUNhead(b, p)) == 0)
-				return p;
+	/* if the range is still larger than 32 BUNs, consider investing in a hash table */
+        if ((q-p) > (xx<<5)) {
+        	/* regrettably MonetDB support only single-column hashes 
+        	 * strategy: create a hash on both columns, and select the column with the best distribution
+                 */
+		@:swapif((b->thash && b->hhash == NULL) || !(@:dohash(b,h)@))@
+        	if (b->hhash == NULL && (v = VIEWcreate_(b, TRUE)) != NULL) {
+			/* As we are going to remove the worst hash table later, we must do everything 
+                         * in a view, as it is not permitted to remove a hash table from a read-only 
+                         * operation (like BUNlocate). Other threads might then crash. 
+                         */
+               		if (@:dohash(v,h)@) (void) BATprepareHash(v);
+               		if (@:dohash(v,t)@) (void) BATprepareHash(BATmirror(v));
+			if (v->hhash && v->thash) { /* we can choose between two hash tables */
+				size_t hcnt = 0, tcnt = 0, i; 
+				for(i=0; i<=v->hhash->mask; i++) hcnt += (v->hhash->hash[i] != HASH_MAX);
+				for(i=0; i<=v->thash->mask; i++) tcnt += (v->thash->hash[i] != HASH_MAX);
+				@:swapif(hcnt < tcnt)@
+
+				/* remove the least selective hash table */
+				HASHremove(BATmirror(v)); 
+			}
+			@:swapif(v->hhash == NULL)@
+			if (v->hhash) {
+				gdk_set_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BUNlocate");
+				if (b->hhash == NULL) { /* give it to the parent */
+					b->hhash = BATmirror(b)->thash = v->hhash;
+				}
+				gdk_unset_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BUNlocate");
+			}
+			BBPreclaim(v); v = NULL;
 		}
-		return NULL;
+	}
+	
+	/* exploit string double elimination, when present */
+	htpe = ATOMstorage(b->htype);
+	ttpe = ATOMstorage(b->ttype);
+	if (htpe == TYPE_str && GDK_ELIMDOUBLES(b->hheap)) {
+		hidx = strLocate(b->hheap, x);
+		if (hidx == 0) return NULL; /* x does not occur */
+		if (b->hhash == NULL) {	htpe = TYPE_oid; x = &hidx; }
+	}
+	if (ttpe == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
+		tidx = strLocate(b->theap, y);
+		if (tidx == 0) return NULL; /* y does not occur */
+		ttpe = TYPE_oid; y = &tidx;
 	}
 
-	/* hash-table lookup */
-	@:swapif(b->thash && b->hhash == NULL)@
-	cmp = BATatoms[b->ttype].atomCmp;
-	if (!BATprepareHash(b)) {
-		HASHloop(b, b->hhash, h, x) {
-			p = BUNptr(b, h);
-			if ((*cmp) (y, BUNtail(b, p)) == 0)
-				return p;
+	/* type analysis. For equi-lookup {flt,dbl,wrd,oid} can all be treated as either int or lng */
+        if (!ATOMvarsized(htpe)) {
+		hint = (ATOMsize(htpe) == sizeof(int));
+		hlng = (ATOMsize(htpe) == sizeof(lng));
+ 	}
+        if (!ATOMvarsized(ttpe)) {
+		tint = (ATOMsize(ttpe) == sizeof(int));
+		tlng = (ATOMsize(ttpe) == sizeof(lng));
+ 	}
+
+	/* hashloop over head values, check tail values */
+        if (b->hhash) {
+		hash_t h;
+		if (hint && tint) {
+			HASHloop_int(b, b->hhash, h, x, p)
+				if (*(int*) y == *(int*) BUNtloc(b, p)) return p;
+		} else if (hint && tlng) {
+			HASHloop_int(b, b->hhash, h, x, p)
+				if (*(lng*) y == *(lng*) BUNtloc(b, p)) return p;
+		} else if (hlng && tint) {
+			HASHloop_lng(b, b->hhash, h, x, p)
+				if (*(int*) y == *(int*) BUNtloc(b, p)) return p;
+		} else if (hlng && tlng) {
+			HASHloop_lng(b, b->hhash, h, x, p)
+				if (*(lng*) y == *(lng*) BUNtloc(b, p)) return p;
+		} else {
+			HASHloop(b, b->hhash, h, x) 
+				if ((*tcmp) (y, BUNtail(b, p = BUNptr(b,h))) == 0) return p;
 		}
-		return NULL;
+	       	return NULL;
 	}
-	/* better than to GDKfatal is to do a linear scan */
-	cmp2 = BATatoms[b->htype].atomCmp;
-	BATloopFast(b, p, q, xx) {
-		if ((*cmp2) (x, BUNhead(b, p)) == 0 && (*cmp) (y, BUNtail(b, p)) == 0)
-			return p;
-	}
+
+	/* linear check; we get here for small ranges, [chr,chr] bats, and hash alloc failure */
+        if (ATOMstorage(b->htype) == TYPE_chr && ATOMstorage(b->ttype) == TYPE_chr) {
+		for(;p < q; p+=xx)
+			if (*(chr*) BUNhloc(b, p) == *(chr*) x && 
+ 			    *(chr*) BUNtloc(b, p) == *(chr*) y) return p;
+        } else if (hint && tint) {
+		for(;p < q; p+=xx)
+			if (*(int*) BUNhloc(b, p) == *(int*) x && 
+ 			    *(int*) BUNtloc(b, p) == *(int*) y) return p;
+        } else if (hint && tlng) {
+		for(;p < q; p+=xx)
+			if (*(int*) BUNhloc(b, p) == *(int*) x && 
+ 			    *(lng*) BUNtloc(b, p) == *(lng*) y) return p;
+        } else if (hlng && tint) {
+		for(;p < q; p+=xx)
+			if (*(lng*) BUNhloc(b, p) == *(lng*) x && 
+ 			    *(int*) BUNtloc(b, p) == *(int*) y) return p;
+        } else if (hlng && tlng) {
+		for(;p < q; p+=xx)
+			if (*(lng*) BUNhloc(b, p) == *(lng*) x && 
+ 			    *(lng*) BUNtloc(b, p) == *(lng*) y) return p;
+        } else {
+		for(;p < q; p+=xx)
+			if ((*hcmp) (x, BUNhead(b, p)) == 0 && 
+			    (*tcmp) (y, BUNtail(b, p)) == 0) return p;
+        }
 	return NULL;
 }
-
 @}
 
 
