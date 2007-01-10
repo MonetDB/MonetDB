@@ -28,7 +28,7 @@ gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 # and restart MonetDB.
 gdk_dbname=demo			# default database to open
 
-gdk_version=4.99.19
+gdk_version=5.0.0_alpha1
 
 # The options below deal with various aspects of memory usage behaviour.
 # If you don't know what these values mean, you should leave them alone.
