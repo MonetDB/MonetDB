@@ -72,7 +72,7 @@ else
 fi
 
 if [ "$what" = "buildtools" ] ; then
-	RM -rf configure */autom4te.cache */build */{configure,depcomp,INSTALL,install-sh,missing,*_config.h.in,aclocal.m4,Makefile.in} `find .[^.]* [^_]* -name \*.class -o -name \*.orig -o -name \*.rej -o -name .cache -o -name .incs.\* -o -name \*.pyc -o -name \*~ -o -name .\*~ -o -name .#\* -o -name \*.bak | grep -v 'burg/Makefile.orig$'`
+	RM -rf {,*/}{autom4te.cache,build,configure,depcomp,INSTALL,install-sh,missing,*_config.h.in,aclocal.m4,Makefile.in} config.guess config.sub ltmain.sh `find .[^.]* [^_]* -name \*.class -o -name \*.orig -o -name \*.rej -o -name .cache -o -name .incs.\* -o -name \*.pyc -o -name \*~ -o -name .\*~ -o -name .#\* -o -name \*.bak | grep -v 'burg/Makefile.orig$'`
 else
 	RM -rf autom4*.cache `find .[^.]* [^_]* -name Makefile.\* | egrep -v '(\.(|ag|standalone|rules|bsd|svr4|sun4|PL|inc)|burg/Makefile.orig)$' ; find .[^.]* [^_]* -name \*.class -o -name \*.orig -o -name \*.rej -o -name .cache -o -name .incs.\* -o -name \*.pyc -o -name \*~ -o -name .\*~ -o -name .#\* -o -name \*.bak | grep -v 'burg/Makefile.orig$'` ./install.lst ./doc.lst ./acout.in ./configure.in ./aclocal.m4 ./configure ./stamp-h.in ./conf/depcomp ./conf/mkinstalldirs ./conf/stamp-h.in ./conf/config.h.in ./conf/install-sh ./conf/config.guess ./conf/config.sub ./conf/ltconfig ./conf/ltmain.sh ./conf/missing ./conf/compile ./acconfig.h
 fi
