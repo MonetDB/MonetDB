@@ -1,7 +1,7 @@
 /* clients_config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Define if you already have Windows types. */
-#undef ALLREADY_HAVE_WINDOWS_TYPE
+#undef ALREADY_HAVE_WINDOWS_TYPE
 
 /* architecture-dependent files */
 #undef CLIENTS_EXEC_PREFIX
