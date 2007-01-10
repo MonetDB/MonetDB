@@ -636,15 +636,20 @@ la_apply( logger *logger, logaction *c )
 	case LOG_INSERT:
 	case LOG_DELETE:
 	case LOG_UPDATE:
-		return la_bat_updates(logger, c);
+		la_bat_updates(logger, c);
+		break;
 	case LOG_CREATE:
-		return la_bat_create(logger, c);
+		la_bat_create(logger, c);
+		break;
 	case LOG_USE:
-		return la_bat_use(logger, c);
+		la_bat_use(logger, c);
+		break;
 	case LOG_DESTROY:
-		return la_bat_destroy(logger, c);
+		la_bat_destroy(logger, c);
+		break;
 	case LOG_CLEAR:
-		return la_bat_clear(logger, c);
+		la_bat_clear(logger, c);
+		break;
 	}
 }
 
