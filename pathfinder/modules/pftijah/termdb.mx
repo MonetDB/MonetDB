@@ -546,7 +546,7 @@ int tdb_insertTerm(termDbCtx* tdb, char* term, oid o, int check) {
     BAT* fragTerm = get_fragBAT(tdb, frag);
 
     if ( ! fragTerm )
-    	return oid_nil;
+    	return 0;
     if ( check && BUNfnd(fragTerm,term) ) {
         stream_printf(GDKout,"#tdb_insertTerm:frag[%d]: duplicate term \"%s\".\n",frag,term);
         return 0;
