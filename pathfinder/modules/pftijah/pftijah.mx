@@ -38,10 +38,10 @@
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
  "INCOMPLETE"
 
-.COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_add2collection;
+.COMMAND tj_throw2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_throw2collection;
  "INCOMPLETE"
 
-.COMMAND tj_add2collection_index(BAT[oid,bat],str) : void = CMDtj_add2collection_index;
+.COMMAND tj_throw2collection_index(BAT[oid,bat],str) : void = CMDtj_throw2collection_index;
  "INCOMPLETE"
  
 .COMMAND tijah_tokenize(str) : str = CMDtijah_tokenize;
@@ -186,6 +186,210 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 		tj_setCollName(name);
 	}
 }
+
+#####################################################################
+#                                                                   #
+# Start of the new implementation of the interfaces                 #
+#                                                                   #
+#####################################################################
+
+var verbose := false;
+
+PROC tj_init_global(BAT[str,str] param) : void :=
+{
+    if ( verbose ) printf("#TJ: tj_init_global() called.\n");
+    param@batloop() {
+	if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
+	if ( $h = "term_frag" ) {
+	    # incomplete, handle term frag
+	} else if ( $h = "term_frag_size" ) {
+	    # incomplete, handle term frag
+	} else {
+	    ERROR("# tj_init_global() unkonwn parameter [%s].\n",$h);
+	}
+    }
+    new(oid,str).persists(true).bbpname("tj_globalTerms");
+    new(oid,str).persists(true).bbpname("tj_globalTags");
+    new(oid,str).persists(true).bbpname("tj_collName");
+}
+
+PROC tj_init_global() : void :=
+{
+     tj_init_global(new(str,str));
+}
+
+
+PROC tj_delete_global() : void :=
+{
+    if ( verbose ) printf("#TJ: tj_delete_global() called.\n");
+    #
+    bat("tj_collName")@batloop(){
+    	tj_coll_remove($t);
+    }
+    bat("tj_globalTerms").persists(false);
+    bat("tj_globalTags").persists(false);
+    bat("tj_collName").persists(false);
+    commit();
+}
+
+PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
+{
+    if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") called.\n",collName);
+
+    if (not(view_bbp_name().reverse().exist("tj_collName"))) {
+    	tj_init_global(); # just in case 
+    }
+    if (bat("tj_collName").reverse().exist(collName)) {
+    	ERROR("tj_init_collection, pftijah collection already exists: %s\n",collName);
+    }
+    new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_name");
+    new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_firstpre");
+    new(str,str).persists(true).bbpname("tj_" + collName + "_param");
+    
+    new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_tid1");
+    new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_size1");
+    # bat contains the start oid of every tid/size frag. Head is postfix
+    # string to _tid/_size. Normally "", "2", "3"
+    new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_fragments");
+    bat("tj_" + collName + "_fragments").append(1@0);
+    new(oid,oid).persists(true).bbpname("tj_" + collName + "_pfpre");
+       
+    var coll_oid;
+    if (bat("tj_collName").count() = 0) { coll_oid := 0@0; }
+        	else { coll_oid := oid(int(bat("tj_collName").reverse().max()) + 1); }
+    bat("tj_collName").insert(coll_oid, collName);
+    #
+    # now read the param file
+    #
+    var stemmer  := "nostemming";
+    var tagfilter := "";
+
+    param@batloop() {
+	if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
+	if ( $h = "stemmer" ) {
+	    stemmer := $t;
+	} else if ( $h = "fragmentSize" ) {
+            bat("tj_" + collName + "_param").insert($h,$t);
+	} else if ( $h = "tagFilter" ) {
+            tagfilter := $t;
+	} else {
+	    ERROR("# tj_init_global() unkonwn parameter [%s].\n",$h);
+	}
+    }
+    #
+    # now set the parameters for this collection
+    #
+    bat("tj_" + collName + "_param").insert("_version","1.01");
+    bat("tj_" + collName + "_param").insert("name",collName);
+    bat("tj_" + collName + "_param").insert("height","0");
+    bat("tj_" + collName + "_param").insert("stemmer",stemmer);
+    bat("tj_" + collName + "_param").insert("tagFilter",tagfilter);
+    bat("tj_" + collName + "_param").insert("preExpansion","4");
+    bat("tj_" + collName + "_param").insert("status","building");
+    bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
+    bat("tj_" + collName + "_param").insert("_last_finalizedPre","1");
+    #
+    commit();
+}
+
+
+PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
+{
+    _tj_add2collection(collName,uri_loc,uri_name,store);
+    tj_finalize_collection(collName);
+}
+
+PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
+{
+    uri@batloop() {
+      _tj_add2collection(collName,$h,$t,store);
+    }
+    tj_finalize_collection(collName);
+}
+
+
+PROC _tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
+{ 
+    if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") called.\n",collName);
+    bat("tj_globalTerms").access(BAT_WRITE);
+    bat("tj_globalTags").access(BAT_WRITE);
+
+    var selTagList := bat("tj_" + collName + "_param").find("tagFilter");
+           
+    if ( store ) {
+        var ws := ws_create();
+        if (not(bat("doc_name").reverse().exist(uri_name))) {
+    	shred_doc(uri_loc,uri_name);
+        }
+        ws_opendoc(ws, bat(void,str,1).append(uri_name));
+        tj_throw2collection(tj_collection(collName),ws,uri_name,selTagList);
+        ws_destroy(ws);
+    } else {
+        tj_throw2collection_index(tj_collection(collName),uri_loc);
+    }
+    # var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(uri_name));
+    var height1 := 999; # REMOVE
+           
+    var coll_oid := bat("tj_collName").reverse().find(collName);
+    var height2 := bat("tj_" + collName + "_param").find("height").int();
+    bat("tj_" + collName + "_param").replace("height", max(height1,height2).str());
+    bat("tj_" + collName + "_param").replace("status","building");
+    commit();	
+}
+
+# xxxxxxxxxxxxxxxxxxxx
+    
+PROC tj_finalize_collection(str collName) : void
+{
+    if ( verbose ) printf("#TJ: tj_finalize_collection(\"%s\") called.\n",collName);
+    #
+    # Finalize one collection. No documents should be added after this
+    bat("tj_" + collName + "_fragments").access(BAT_READ);
+    bat("tj_" + collName + "_fragments")@batloop()
+    {
+        var ind := str(int($h));
+        bat("tj_" + collName + "_tid" + ind).access(BAT_READ);
+        bat("tj_" + collName + "_tid" + ind).mmap(1);
+        bat("tj_" + collName + "_size" + ind).access(BAT_READ);
+        bat("tj_" + collName + "_size" + ind).mmap(1);
+    }
+    bat("tj_" + collName + "_pfpre").access(BAT_READ);
+    bat("tj_" + collName + "_pfpre").mmap(1);
+    commit();
+    tj_buildIRindex(collName);
+    #
+    bat("tj_" + collName + "_param").replace("status","finalized");
+    #
+    var gterm_sort := bat("tj_globalTerms").reverse().sort().reverse();
+    bat("tj_globalTerms").persists(false);
+    var gtag_sort := bat("tj_globalTags").reverse().sort().reverse();
+    bat("tj_globalTags").persists(false);
+    commit();
+    gterm_sort.persists(true);
+    gterm_sort.bbpname("tj_globalTerms");
+    gtag_sort.persists(true);
+    gtag_sort.bbpname("tj_globalTags");
+    if ( false ) {
+      # Monet error, server crashes on .acces(BAT_WRITE) when a new 
+      # collection is created on a fresh Mserver.
+      bat("tj_globalTerms").access(BAT_READ);
+      bat("tj_globalTags").access(BAT_READ);
+    }
+    bat("tj_globalTerms").mmap(1);
+    if ( false ) {
+      # Monet error, server crashes on .acces(BAT_WRITE) when a new 
+      # collection is created on a fresh Mserver.
+      bat("tj_globalTags").mmap(1);
+    }
+    commit(); 
+}
+
+
+#####################################################################
+#                                                                   #
+# End of the new implementation of the interfaces                   #
+#                                                                   #
+#####################################################################
 
 PROC tj_setCollName(str name) : void := 
 {
@@ -1871,6 +2075,7 @@ PROC tj_coll_init(str collName, str stemmer) : void
 	bat("tj_" + collName + "_param").insert("preExpansion","4");
 	bat("tj_" + collName + "_param").insert("status","building");
 	bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
+	bat("tj_" + collName + "_param").insert("_finalizePre","1");
 	#
 	commit();
 }
@@ -1996,7 +2201,7 @@ PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 	bat("tj_globalTerms").access(BAT_WRITE);
 	bat("tj_globalTags").access(BAT_WRITE);
         
-	tj_add2collection(tj_collection(collName),ws,doc,selTagList);
+	tj_throw2collection(tj_collection(collName),ws,doc,selTagList);
 	ws_destroy(ws);
 	# var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(doc));
 	var height1 := 999; # REMOVE
@@ -2013,7 +2218,7 @@ PROC tj_url2Collection_index(str collName, str url, str selTagList) : void
 	bat("tj_globalTerms").access(BAT_WRITE);
 	bat("tj_globalTags").access(BAT_WRITE);
         
-	tj_add2collection_index(tj_collection(collName),url);
+	tj_throw2collection_index(tj_collection(collName),url);
 
 	bat("tj_" + collName + "_param").replace("status","building");
         commit();	

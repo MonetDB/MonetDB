@@ -761,7 +761,7 @@ freeTijahContext(tjCtx* tjctx) {
 		return GDK_FAIL;
 	free(tjctx);
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:FINISH: CMDtj_add2collection()\n");
+	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:FINISH: CMDtj_throw2collection()\n");
 #endif
 	return GDK_SUCCEED;
 }
@@ -1089,11 +1089,11 @@ struct serializeFunStruct pftijahSerializeFun = {
  */
 
 static int
-MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
+MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
 	tjCtx* tjctx;
 
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:START: CMDtj_add2collection(%s)\n",docName);
+	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:START: CMDtj_throw2collection(%s)\n",docName);
 	/* timing */
 	struct timeval now;
 	long start, stop;
@@ -1111,7 +1111,7 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:LOADED CONTEXT\n",tjctx->name);
 #endif
 	if ( tijahDocIndex(tjctx,docName) != oid_nil ) {
-	    stream_printf(GDKerr,"CMDtj_add2collection(CTX,%s) already in collection\n",docName);
+	    stream_printf(GDKerr,"CMDtj_throw2collection(CTX,%s) already in collection\n",docName);
 	    return GDK_FAIL;
 	}
 	oid start_oid = tjctx->tijahPre;
@@ -1167,7 +1167,7 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 	stop = now.tv_sec * 1000000 + now.tv_usec;
 	if ( TJ_TRACE ) {
 		stream_printf(GDKout,"C[%s]:TIMINGS & SIZES\n",tjctx->name);
-		stream_printf(GDKout,"C[%s]:add2collection[](%s) time=%s \n",
+		stream_printf(GDKout,"C[%s]:throw2collection[](%s) time=%s \n",
 			tjctx->name, docName,timer_str (abs (stop - start)));
 		stream_printf(GDKout,"C[%s]:size( b_globalTerm ) = %d\n",tjctx->name, BATcount(tjctx->b_globalTerm));
 		stream_printf(GDKout,"C[%s]:size( b_globalTag )  = %d\n",tjctx->name, BATcount(tjctx->b_globalTag));
@@ -1181,13 +1181,13 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 }
 
 int
-CMDtj_add2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
-    return  MAINtj_add2collection(0,tjCtx_BAT,ws,docName,selTagList);
+CMDtj_throw2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
+    return  MAINtj_throw2collection(0,tjCtx_BAT,ws,docName,selTagList);
 }
 
 int
-CMDtj_add2collection_index(BAT* tjCtx_BAT, str locName) {
-    return  MAINtj_add2collection(1,tjCtx_BAT,NULL,locName,"");
+CMDtj_throw2collection_index(BAT* tjCtx_BAT, str locName) {
+    return  MAINtj_throw2collection(1,tjCtx_BAT,NULL,locName,"");
 }
 
 /* vim:set shiftwidth=4 expandtab: */
