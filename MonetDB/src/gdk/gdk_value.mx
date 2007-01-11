@@ -271,7 +271,7 @@ up with an ILLEGALVALUE.
    does not destroy src, but src and dst are allowed to point to the
    same location if the caller knows that that won't do any harm */
 ptr
-VALconvert2(int typ, ValPtr src, ValPtr dst)
+VALconvert1(int typ, ValPtr src, ValPtr dst)
 {
 	int orig_src_tpe = src->vtype, src_tpe = src->vtype, dst_tpe = typ;
 	ptr p;			/* what's going to be returned (may change for BATs */
@@ -349,8 +349,8 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 				if (bid == 0 || !BBPvalid(bid)) {
 					return ILLEGALVALUE;
 				}
-				p = (ptr) BATdescriptor(bid);
 				dst->val.bval = bid;
+				p = &dst->val.bval;
 				break;
 			}
 			case TYPE_bit:
@@ -658,6 +658,18 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 	return p;
 }
 
+/* VALconvert1, but returns a BAT* instead of a bat* and (thus) adds a physical fix to the bat */
+ptr
+VALconvert2(int typ, ValPtr src, ValPtr dst)
+{
+	ptr p = VALconvert1(typ, src, dst);
+	if (typ == TYPE_bat && p != ILLEGALVALUE) {
+		p = BATdescriptor(dst->val.bval); /* fixes the bat */
+		if (p == NULL) p = ILLEGALVALUE;
+	}
+	return p;
+}
+
 ptr
 VALconvert(int typ, ValPtr t)
 {
@@ -672,7 +684,7 @@ VALconvert(int typ, ValPtr t)
 		dst_tpe = ATOMstorage(dst_tpe);
 
 	/* first convert into a new location */
-	p = VALconvert2(typ, t, &dst);
+	p = VALconvert1(typ, t, &dst);
 	/* then maybe free the old */
 	if (src_tpe != dst_tpe && t->vtype != typ && dst_tpe != TYPE_void &&
 	    (src_tpe >= TYPE_str || dst_tpe >= TYPE_str))

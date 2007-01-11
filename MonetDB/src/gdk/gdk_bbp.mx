@@ -1223,10 +1223,9 @@ BBPspin(bat i, str s, int event)
 	}
 }
 
-int
-BBPincref(bat i, int logical)
+static INLINE int
+incref(bat i, int logical, int lock)
 {
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 	int refs = 0;
 
 	if (i == bat_nil) {
@@ -1259,6 +1258,13 @@ BBPincref(bat i, int logical)
 	return refs;
 }
 
+int
+BBPincref(bat i, int logical)
+{
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+	return incref(i, logical,lock);
+}
+
 void
 BBPshare(bat parent)
 {
@@ -1280,9 +1286,8 @@ BBPshare(bat parent)
 static INLINE int
 decref(bat i, int logical, int lock)
 {
-	int refs = 0, swap = 0;
+	int refs = 0, swap = 0, swap_unloading = 0;
 	BAT *b;
-
 
 	/* decrement references by one */
 	if (logical) {
@@ -1309,22 +1314,31 @@ decref(bat i, int logical, int lock)
 			BBP_lastused(i) = sec;
 	} else if (b || (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
-		BBP_status_on(i, BBPUNLOADING, "BBPdecref");
-		swap = TRUE;
+                if (BBP_status(i) & BBPUNLOADING) {
+                        /* BBPtrim was unloading this bat that just now lost its last refcnt. */
+                        incref(i, logical, FALSE); /* cannot destroy it now; back off */
+                        swap_unloading = TRUE; 
+                } else {
+		        BBP_status_on(i, BBPUNLOADING, "BBPdecref");
+		        swap = TRUE;
+                }
 	}
 
 	/* unlock before re-locking in unload; as saving a dirty persistent bat may take a long time */
 	if (lock)
 		gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPdecref");
 
-	if (swap) {
+        if (swap_unloading) {
+		BBPspin(i, "BBPdecref", BBPUNLOADING);  /* wait for unload to complete */
+		decref(i, logical, lock);  /* and just try again */
+	} else if (swap) {
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 		b = BBPquickdesc(i, TRUE);
 		if (destroy) {
-			 BBPdestroy(b);	  	/* free memory of transient */
+			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
 			BBP_unload_cnt(i, "BBPdecref");
-			BBPfree(b, "BBPdecref" );	/* free memory (if loaded) and delete from disk (if transient but saved) */
+			BBPfree(b, "BBPdecref" );	/* free memory of transient */
 		}
 	}
 	return refs;
