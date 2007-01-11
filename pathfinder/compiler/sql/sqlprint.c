@@ -144,7 +144,7 @@ static void
 print_table_name(PFsql_t *n)
 {
     assert( n );
-    assert( n->kind = sql_tbl_name );
+    assert( n->kind == sql_tbl_name );
 
     sqlprintf("%s", PFsql_table_str( n->sem.tablename.ident ));
     /* the column-list has not to be specified in every case */ 
@@ -455,7 +455,7 @@ print_clm_list(PFsql_t *n)
                 "Pathfinder failed to print argument list");
     }
 
-    if( (n->kind = sql_list_terminator) &&
+    if( (n->kind == sql_list_terminator) &&
             (n->child[0] == NULL) && (n->child[1] == NULL) )
         return;
 
@@ -626,7 +626,7 @@ static void
 print_schema_name(PFsql_t *n)
 {
     assert( n );
-    assert( n->kind = sql_schm );
+    assert( n->kind == sql_schm );
 
     sqlprintf("%s", n->sem.schema.str);
 }
