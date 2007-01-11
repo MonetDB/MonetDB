@@ -1737,7 +1737,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					reduce = 1;	/* rounding off */
 				}
 				/* use a version of VALconvert that does not free any data, it wasn't allocated */
-				s = VALconvert2(tpe, res, res);	/* try once if this works */
+				s = VALconvert1(tpe, res, res);	/* try once if this works */
 				if (s == ILLEGALVALUE || TYPEerror(tpe, res->vtype)) {
 					GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 					goto bunins_failed;
@@ -1748,7 +1748,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					for (p += xx; p < q; p += xx) {
 						res->vtype = BATttype(b);
 						res->val.pval = BUNtail(b, p);
-						s = VALconvert2(tpe, res, res);
+						s = VALconvert1(tpe, res, res);
 						if (s == ILLEGALVALUE) {
 							GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 							goto bunins_failed;
@@ -1760,7 +1760,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					for (p += xx; p < q; p += xx) {
 						res->vtype = BATttype(b);
 						memcpy(&res->val.ival, BUNtail(b, p), len);
-						s = VALconvert2(tpe, res, res);
+						s = VALconvert1(tpe, res, res);
 						if (s == ILLEGALVALUE) {
 							GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 							goto bunins_failed;
