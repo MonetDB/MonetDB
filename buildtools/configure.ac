@@ -31,7 +31,7 @@ AC_PATH_PROGS([PYTHON], [python python2 python2.3 python2.4],
 (mkdir mel ; cd mel && eval "${srcdir}/mel/configure ${ac_configure_args} --with-mx=../Mx/Mx")
 
 AC_CONFIG_FILES([Makefile autogen/Makefile conf/Makefile])
-AC_CONFIG_HEADERS([dummy.h])
+AM_CONFIG_HEADER([dummy.h])
 
 AC_SUBST([PYTHON])
 
