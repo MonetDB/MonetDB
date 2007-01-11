@@ -26,5 +26,3 @@ BINS = {
 	LIBS = $(MAPI_LIBS) ../../mapilib/libMapi $(MONETDB_LIBS) -lstream
 	HEADERS = h
 }
-
-EXTRA_DIST_DIR = Tests
