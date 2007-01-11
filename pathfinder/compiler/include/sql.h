@@ -52,6 +52,8 @@ typedef unsigned int PFsql_special_t;
 /* Reserve identifiers. */
 #define PF_SQL_TABLE_SYSDUMMY1  1
 #define PF_SQL_TABLE_FRAG       2
+#define PF_SQL_TABLE_RESULT     3
+#define PF_SQL_TABLE_DOC        4
 #define PF_SQL_TABLE_TIME_PRINT 23
 #define PF_SQL_RES_TABLE_COUNT (PF_SQL_TABLE_TIME_PRINT + 1)
 
@@ -150,7 +152,8 @@ enum PFsql_kind_t {
    sql_wnd_clause       = 49,
    sql_diff             = 50,
    sql_gteq             = 51,
-   sql_count            = 52
+   sql_count            = 52,
+   sql_schm_inf         = 53
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -345,6 +348,7 @@ PFsql_t* PFsql_window_clause(const PFsql_t *partcls, const PFsql_t *ordercls);
 
 #define PFsql_sysdummy1()     PFsql_table_name(PF_SQL_TABLE_SYSDUMMY1, NULL)
 #define PFsql_fragrelation()  PFsql_table_name(PF_SQL_TABLE_FRAG, NULL)
+#define PFsql_result()  PFsql_table_name(PF_SQL_TABLE_RESULT, NULL)
 #define PFsql_table_name_default(name)    PFsql_table_name(name, NULL)
 PFsql_t* PFsql_table_name(PFsql_ident_t name, PFsql_t *clmnlist);
 

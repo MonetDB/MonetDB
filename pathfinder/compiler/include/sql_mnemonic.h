@@ -76,6 +76,7 @@
 /* SQL table construction. */
 #define sysdummy1()                 PFsql_sysdummy1()
 #define fragrelation()              PFsql_fragrelation()
+#define result()                    PFsql_result()
 #define table_name_default( n )     PFsql_table_name_default( n )
 #define table_name( n, clmnlist )   PFsql_table_name( n, clmnlist )
 #define schema( s )                 PFsql_schema( s )
