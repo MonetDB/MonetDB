@@ -717,7 +717,9 @@ echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
 eval "alias configure_${wh_t}=\"`echo "${WHAT_CONFIGURE}" | sed -e 's|\\$|\\\\\$|g'`\""
 eval "alias configure_${wh_t}"
 if [ "${what}" != "BUILDTOOLS" ] ; then
-	MTEST_WHAT="Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}"
+case "${what}" in
+BUILDTOOLS|MONETDB|CLIENTS)	;;
+*)	MTEST_WHAT="Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}"
 	echo " MTEST_${what}=${MTEST_WHAT}"
 	eval "MTEST_${what}='${MTEST_WHAT}'; export MTEST_${what}"
 	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
@@ -736,7 +738,8 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 		eval "alias Mapprove_${wh_t}5='Mapprove.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 		eval "alias Mapprove_${wh_t}5"
 	fi
-fi
+	;;
+esac
 
 mkdir -p ${WHAT_BUILD}
 
