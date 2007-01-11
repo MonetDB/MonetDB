@@ -148,6 +148,7 @@ rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/conf/conf.bash
 rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/Tests/*
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb-clients-config.bat
+rm -rf $RPM_BUILD_ROOT%{prefix}/bin/mjclient.bat
 
 
 %clean
