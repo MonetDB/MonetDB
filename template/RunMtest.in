@@ -22,7 +22,7 @@ srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/.libs:${builddir}/src:${srcdir}/src:`monetdb4-config --modpath`"
+MOD_PATH="${builddir}/src/monetdb4/.libs:${builddir}/src/monetdb4:${srcdir}/src/monetdb4:`monetdb4-config --modpath`"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
