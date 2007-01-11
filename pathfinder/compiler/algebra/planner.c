@@ -592,6 +592,11 @@ plan_disjunion (const PFla_op_t *n)
             PFord_set_t prefixes = PFord_set ();
 
             for (unsigned int i = 0; i < PFord_set_count (common); i++) {
+                /* make sure that merged_union is only called for
+                   ascending orders */
+                if (PFord_order_dir_at (PFord_set_at (common, i), 0) 
+                    != DIR_ASC)
+                    continue;
 
                 PFalg_att_t att = PFord_order_col_at (
                                       PFord_set_at (common, i),
