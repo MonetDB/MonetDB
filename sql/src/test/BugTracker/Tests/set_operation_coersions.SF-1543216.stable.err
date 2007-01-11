@@ -62,10 +62,10 @@ stderr of test 'set_operation_coersions.SF-1543216` in directory 'src/test/BugTr
 # 11:19:45 >  
 
 MAPI  = monetdb@localhost:36646
-QUERY = select * from t1 union select * from s1;
+QUERY = select * from t1543216 union select * from s1543216;
 ERROR = !types varchar(23,0) (str) and int(32,0) (int) are not equal
 MAPI  = monetdb@localhost:36646
-QUERY = select * from f union select * from b;
+QUERY = select * from f1543216 union select * from b1543216;
 ERROR = !types boolean(1,0) (bit) and double(53,0) (dbl) are not equal
 
 # 11:19:45 >  

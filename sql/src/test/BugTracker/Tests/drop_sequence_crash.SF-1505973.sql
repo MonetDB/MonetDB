@@ -45,7 +45,7 @@ CREATE TABLE tapestry (
 	comments varchar(30)
 );
 
-CREATE TABLE partition (
+CREATE TABLE "partition" (
 	id integer PRIMARY KEY AUTO_INCREMENT,
 	name varchar(20) UNIQUE,
 	corr integer,
@@ -61,7 +61,7 @@ CREATE TABLE partition (
 CREATE TABLE query_walk (
 	id integer PRIMARY KEY AUTO_INCREMENT,
 	name varchar(30) UNIQUE,
-	partition_id integer references partition(id),
+	partition_id integer references "partition"(id),
 	start_ varchar(10),
 	X integer,
 	width integer,
@@ -141,7 +141,7 @@ INSERT INTO target VALUES (4,'PostgreSQL',1, 1, 1);
 INSERT INTO configuration (name,system_id, target_id) 
 		VALUES ('c1',1,1);
 INSERT INTO tapestry VALUES (1,'tap1',10240,2,1024,'tapestry comments');
-INSERT INTO partition VALUES (1,'p1',0,0,2,0,2,null,null,null);
+INSERT INTO "partition" VALUES (1,'p1',0,0,2,0,2,null,null,null);
 INSERT INTO query_walk VALUES
 (1,'q1',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,2);
 INSERT INTO scenario (name, tapestry_id,	configuration_id,
