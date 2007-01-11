@@ -292,40 +292,74 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
     commit();
 }
 
+PROC tj_collection(str collName) : BAT[void,bat]
+{
+	var tjCollBat := new(void,bat).seqbase(0@0);
+
+	var parbat := bat("tj_" + collName + "_param");
+	var curversion;
+	if ( parbat.exist("_version") ) {
+	    curversion := parbat.find("_version");
+	} else {
+	    curversion := "0.0";
+	}
+	if ( curversion < "1.0" ) {
+	     ERROR("tj_collection(): pftijah index structure changed, reindex collection!!");
+	}
+	tjCollBat.append(bat("tj_globalTerms"));
+	tjCollBat.append(bat("tj_globalTags"));
+	tjCollBat.append(bat("tj_" + collName + "_doc_name"));
+	tjCollBat.append(bat("tj_" + collName + "_doc_firstpre"));
+	tjCollBat.append(parbat);
+	# only load the top [pre|term|size] fragments
+	var fpfx := str(bat("tj_" + collName + "_fragments").count());
+	tjCollBat.append(bat("tj_" + collName + "_tid"+fpfx));
+	tjCollBat.append(bat("tj_" + collName + "_size"+fpfx));
+	tjCollBat.append(bat("tj_" + collName + "_pfpre"));
+	tjCollBat.append(bat("tj_" + collName + "_fragments"));
+	return tjCollBat;
+}
 
 PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
 {
-    _tj_add2collection(collName,uri_loc,uri_name,store);
+    bat("tj_globalTerms").access(BAT_WRITE);
+    bat("tj_globalTags").access(BAT_WRITE);
+    _tj_add2collection(collName,tj_collection(collName),uri_loc,uri_name,store);
     tj_finalize_collection(collName);
 }
 
 PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
 {
+    bat("tj_globalTerms").access(BAT_WRITE);
+    bat("tj_globalTags").access(BAT_WRITE);
     uri@batloop() {
-      _tj_add2collection(collName,$h,$t,store);
+      _tj_add2collection(collName,tj_collection(collName),$h,$t,store);
     }
     tj_finalize_collection(collName);
 }
 
 
-PROC _tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
+PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str uri_name, bit store) : void
 { 
-    if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") called.\n",collName);
-    bat("tj_globalTerms").access(BAT_WRITE);
-    bat("tj_globalTags").access(BAT_WRITE);
+    if ( verbose ) printf("#TJ: _tj_add2collection(\"%s\") start.\n",collName);
 
     var selTagList := bat("tj_" + collName + "_param").find("tagFilter");
            
     if ( store ) {
+        if ( isnil(uri_name) ) {
+	  uri_name := uri_loc;
+	} else if ( uri_name = "" ) {
+	  uri_name := uri_loc;
+	}
         var ws := ws_create();
         if (not(bat("doc_name").reverse().exist(uri_name))) {
     	shred_doc(uri_loc,uri_name);
         }
         ws_opendoc(ws, bat(void,str,1).append(uri_name));
-        tj_throw2collection(tj_collection(collName),ws,uri_name,selTagList);
+        tj_throw2collection(collBats,ws,uri_name,selTagList);
         ws_destroy(ws);
     } else {
-        tj_throw2collection_index(tj_collection(collName),uri_loc);
+        tj_throw2collection_index(collBats,uri_loc);
     }
     # var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(uri_name));
     var height1 := 999; # REMOVE
@@ -335,10 +369,9 @@ PROC _tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : vo
     bat("tj_" + collName + "_param").replace("height", max(height1,height2).str());
     bat("tj_" + collName + "_param").replace("status","building");
     commit();	
+    if ( verbose ) printf("#TJ:_tj_add2collectiontj_init_collection(\"%s\") finish.\n",collName);
 }
 
-# xxxxxxxxxxxxxxxxxxxx
-    
 PROC tj_finalize_collection(str collName) : void
 {
     if ( verbose ) printf("#TJ: tj_finalize_collection(\"%s\") called.\n",collName);
@@ -353,7 +386,7 @@ PROC tj_finalize_collection(str collName) : void
         bat("tj_" + collName + "_size" + ind).access(BAT_READ);
         bat("tj_" + collName + "_size" + ind).mmap(1);
     }
-    bat("tj_" + collName + "_pfpre").access(BAT_READ);
+    # bat("tj_" + collName + "_pfpre").access(BAT_READ); BUG CANNOT USE FINALIZED BAT, JF!!!
     bat("tj_" + collName + "_pfpre").mmap(1);
     commit();
     tj_buildIRindex(collName);
@@ -383,7 +416,6 @@ PROC tj_finalize_collection(str collName) : void
     }
     commit(); 
 }
-
 
 #####################################################################
 #                                                                   #
