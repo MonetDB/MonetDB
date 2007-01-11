@@ -1195,7 +1195,9 @@ PROC ws_create(int update) : BAT[void,bat]
     mirror(ws_mem).leftfetchjoin(ws).[insert](0@0, [fetch](ws_mem.leftfetchjoin(ws), 0));
 
     # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
-    var wsid := <<(and(lng(newoid(1)), 2147483647LL), 32) + (lng(update) << 30) + lng(ws);
+    var id := lng(newoid(1));
+    var wsid := <<(and(id, 2147483647LL), 32) + (lng(update) << 30) + lng(ws);
+
     ws.access(BAT_READ).rename(str(wsid));
     pflock_begin(wsid);
 
@@ -1625,12 +1627,19 @@ PROC __runtime_maintain(lng wsid,
                         BAT[void,oid] new_qn,
                         BAT[void,oid] del_pages) : void
 {
-    var others := colname_pins.reverse().ord_uselect(colname).access(BAT_WRITE).delete(wsid);
+    lock_set(pf_short);
+    var others := colname_pins.reverse().ord_uselect(colname);
+    lock_unset(pf_short);
+    others.access(BAT_WRITE).delete(wsid);
+
+    var unq := runtime.fetch(RT_QN_NID_UNQ);
     var ins := runtime.fetch(RT_QN_NID_INS);
     var del := runtime.fetch(RT_QN_NID_DEL);
     var idx := runtime.fetch(RT_QN_NID);
+    var coast_clear := (count(others) = 0);
+    var flush_deletes := ((count(del)*8) > count(idx));
 
-    if (count(others) > 0) {
+    if (coast_clear) {
         ins.insert(ins_qn_nid);
         del.insert(del_qn_nid);
     } else {
@@ -1642,7 +1651,7 @@ PROC __runtime_maintain(lng wsid,
         # do not maintain the hash table on qn under deletes, rather
         # accumulate del-s until a full rebuild of the hash
         del.insert(del_qn_nid);
-        if ((count(del)*8) > count(idx)) { 
+        if (flush_deletes) { 
            # problem: the hash table has a long coll list that unites all equal qn-s
            #          the length is often |N|/8, i.e. linear in #nodes (*really* long)
            #          it is singly linked, deleting in the middle requires a traverse
@@ -1654,7 +1663,7 @@ PROC __runtime_maintain(lng wsid,
     }
     # store the new size in the UNQ seqbase
     var totsize := batsize(idx) + batsize(ins) + batsize(del);
-    runtime.fetch(RT_QN_NID_UNQ).append(new_qn, true).seqbase(oid(totsize));
+    unq.append(new_qn, true).seqbase(oid(totsize));
 
     # mark the region index invalid
     # for now, we don't try to maintain it over updates
@@ -4847,6 +4856,9 @@ xquery_client_engine(mapi_client *fc )
     stream_close(fc->c->fdin);
     stream_destroy(fc->c->fdin);
     fc->c->fdin = NULL;
+    stream_close(fc->c->fdout);
+    stream_destroy(fc->c->fdout);
+    fc->c->fdout = NULL;
 }
 
 int
