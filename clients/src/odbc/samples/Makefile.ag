@@ -23,4 +23,3 @@ BINS = {
 	LIBS = ../driver/libMonetODBC
 }
 
-EXTRA_DIST_DIR = Tests
