@@ -1328,6 +1328,7 @@ interpret_var(int stk, YYSTREE lt, ValPtr res)
 					arg(t, 0)->yyval.val.pval = (ptr) &v->binding;
 					i = interpret_assignment(stk, t, res);
 					CLEANUP(t);
+					*res = v->binding;
 					if (i < 0)
 						break;
 				} else {
