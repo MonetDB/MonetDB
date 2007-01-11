@@ -118,7 +118,7 @@ print_common_table_expressions(PFsql_t *n)
        case sql_cmmn_tbl_expr:
        {
            print_common_table_expressions( n->child[0] );
-           sqlprintf(", \\\n");
+           sqlprintf(", \n");
            print_common_table_expression( n->child[1] );
        } break;
        default:
@@ -384,7 +384,8 @@ print_select_list(PFsql_t *n)
     print_select_list(n->child[1]);
 }
 
-static void print_part_expression(PFsql_t *n)
+static void
+print_part_expression(PFsql_t *n)
 {
     assert( n );
     
@@ -401,7 +402,8 @@ static void print_part_expression(PFsql_t *n)
 
     print_statement(n->child[0]);
     if(!(n->child[1]->kind == sql_list_terminator ))
-        sqlprintf(", ");
+        sqlprintf(",");
+    sqlprintf(" ");
     print_part_expression(n->child[1]);
 }
 
@@ -434,7 +436,6 @@ print_window_clause(PFsql_t* n)
     assert( n->kind == sql_wnd_clause );
 
     if( n->child[0] ) {
-        sqlprintf("PARTITION BY ");
         print_statement(n->child[0]);
     }
     if( n->child[1] ) {
