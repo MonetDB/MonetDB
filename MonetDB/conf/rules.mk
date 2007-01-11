@@ -93,7 +93,7 @@ ifdef NEED_MX
 	$(MX) $(MXFLAGS) -x m $<
 
 %.mil: %.m %.tmpmil $(MEL)
-	$(MEL) $(INCLUDES) -mil $*.m > $@
+	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
 	cat $*.tmpmil >> $@
 
 %.tmpmil: %.mx
@@ -101,7 +101,7 @@ ifdef NEED_MX
 	$(MV) $*.mil $*.tmpmil
 
 %.mil: %.m $(MEL) 
-	$(MEL) $(INCLUDES) -mil $*.m > $@
+	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
 
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
@@ -114,10 +114,10 @@ ifdef NEED_MX
 	chmod a+x $@
 
 %.proto.h: %.m $(MEL)
-	$(MEL) $(INCLUDES) -proto $< > $@
+	$(MEL) -c $(CONFIG_H) $(INCLUDES) -proto $< > $@
 
 %.glue.c: %.m $(MEL)
-	$(MEL) $(INCLUDES) -glue $< > $@
+	$(MEL) -c $(CONFIG_H) $(INCLUDES) -glue $< > $@
 
 # The following rules generate two files using swig, the .xx.c and the
 # .xx file.  There may be a race condition here when using a parallel

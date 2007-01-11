@@ -202,6 +202,7 @@ extern Symtable *table;
 extern Symbol *root;
 extern FileInfo *fileinfo;
 extern List *dirs;
+extern char *config_h;
 
 #endif
 
@@ -241,6 +242,7 @@ Symtable *table = NULL;
 Symbol *root = NULL;
 FileInfo *fileinfo = NULL;
 List *dirs = NULL;
+char *config_h = "monetdb4_config.h";
 
 language *l = NULL;
 
@@ -415,6 +417,14 @@ handle_args(int argc, char *argv[])
 			break;
 		case 'L':
 			l = new Link();
+			break;
+		case 'c':
+			if (argv[i][2] == 0) {
+				i++;
+				config_h = argv[i];
+			} else {
+				config_h = argv[i] + 2;
+			}
 			break;
 		default:
 			cerr << "Unknown option " << argv[i] << "\n";
