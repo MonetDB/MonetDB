@@ -23,7 +23,7 @@
 
 # bootstrap ourself
 aclocal -I .
-if [ "`type -t glibtoolize`" ==  "file" ] ; then
+if [ "`type -t glibtoolize`" = "file" ] ; then
 	glibtoolize --copy --force --automake
 else
 	libtoolize --copy --force --automake
