@@ -144,7 +144,7 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS([crypt.h pwd.h sys/un.h])
 
 # Checks for library functions.
-AC_CHECK_FUNCS([crypt ftime getlogin gethostname gettimeofday localtime_r strcasecmp strncasecmp strtod strtof strtoll strtoull])
+AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r strcasecmp strncasecmp strtod strtof strtoll strtoull])
 
 dnl provide different versions of the paths derived above
 if test "${prefix}x" = "NONEx"; then

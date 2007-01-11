@@ -885,6 +885,7 @@ AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
 
 # Checks for library functions.
+AC_CHECK_FUNCS([ftruncate gettimeofday opendir])
 
 dnl AC_PROG_CC_STDC()
 if test -f "$srcdir"/vertoo.data; then

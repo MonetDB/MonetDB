@@ -375,7 +375,7 @@ AC_HEADER_TIME()
 AC_STRUCT_TM()
 AC_STRUCT_TIMEZONE()
 AC_FUNC_UTIME_NULL()
-AC_CHECK_FUNCS(gettimeofday ftime times ctime_r localtime_r)
+AC_CHECK_FUNCS([ftime times ctime_r localtime_r])
 ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)
 AC_TRY_COMPILE([$ac_includes_default

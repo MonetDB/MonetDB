@@ -84,7 +84,7 @@ AC_DEFINE(HAVE___RESTRICT__, 1, [Define if the compiler supports the __restrict_
 
 dnl Checks for library functions.
 AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
-AC_CHECK_FUNCS([asctime_r ctime_r fpclass fpclassify ftime gettimeofday isinf localtime_r putenv sbrk setenv setsid strncasecmp strtoll sysconf times])
+AC_CHECK_FUNCS([asctime_r ctime_r fpclass fpclassify ftime isinf localtime_r putenv sbrk setenv setsid strncasecmp strtoll sysconf times])
 
 asctime_r3=yes
 AC_MSG_CHECKING(asctime_r3)
