@@ -1,6 +1,6 @@
 %define name MonetDB-client
 %define version @VERSION@
-%define release 1_@LINUX_DIST@
+%define release 1_@LINUX_DIST@.oid@oids@
 
 %define prefix /usr
 
