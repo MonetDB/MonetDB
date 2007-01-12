@@ -1653,8 +1653,10 @@ BUNfnd(BAT *b, ptr v)
 
 @= swapif
 	if (@1) {
-		int (*_cmp) (ptr, ptr) = hcmp; hcmp = tcmp; tcmp = _cmp;
-		ptr _p = x; x = y; y = _p; 
+		int (*_cmp) (ptr, ptr);
+		ptr _p;
+		_cmp = hcmp; hcmp = tcmp; tcmp = _cmp;
+		_p = x; x = y; y = _p;
 		b = BATmirror(b);
 		if (v) v = BATmirror(v);
 	}	
