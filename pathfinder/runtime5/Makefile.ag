@@ -34,8 +34,8 @@ lib__xquery = {
 		xquery_backend.mx 
         LIBS = \
                 $(PF_LIBS) \
-                $(MONETDB5_MODS) -l_bat5 \
-		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+                $(MONETDB5_MODS) -l_optimizer -l_bat5 \
+		$(MONETDB_LIBS) -lmal -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 scripts_mal = {
