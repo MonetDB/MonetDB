@@ -1,8 +1,16 @@
 import sys
 import os
+import popen2
 
-if os.environ.has_key('CLIENTS_PREFIX'):
-    sys.path.append(os.path.join(os.environ['CLIENTS_PREFIX'],'share','MonetDB','python'))
+try:
+    pOut,pIn = popen2.popen2('monetdb-clients-config --pkgdatadir')
+    pIn.close()
+    pdd = pOut.readlines()[0]
+    pdd = pdd.strip();
+    pOut.close()
+    sys.path.append(os.path.join(pdd,'python'))
+except:
+    pass
 
 import Mapi
 
