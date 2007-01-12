@@ -29,7 +29,9 @@
  */
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
+#include "mem.h"
 #include "pathfinder.h"
 #include "sql.h"
 #include "sqlprint.h"
@@ -72,6 +74,135 @@ static void print_tablereference(PFsql_t*);
 static void print_fullselect(PFsql_t*);
 static void print_expr(PFsql_t*);
 static void print_correlation(PFsql_t*);
+static void print_column_name(PFsql_t*);
+static void print_schema_information(PFsql_t*);
+static void print_schema_table(PFsql_t*);
+static void print_schema_relcol(PFsql_t*);
+
+
+/**
+   * Convert the @a ident to a string.
+    *
+     * @param ident The identifier to convert.
+      */
+char*
+sql_column_name_str(PFsql_ident_t ident)
+{
+    char *attstr = NULL;
+    char *tystr = NULL;
+    char *res = NULL;
+    size_t len = 0;
+
+    /* check if special bits are set */
+    if( (ident >> (ATT_BITS + TYPE_BITS)) & 0x00000007 ) {
+        switch( (0x00000001) << ((ident >> (ATT_BITS + TYPE_BITS))
+             & 0x00000007) ) {
+            case sql_col_pre:    return "pre";
+            case sql_col_level:  return "level";
+            case sql_col_size: return "size";
+            case sql_col_kind: return "kind";
+            case sql_col_prop: return "prop";
+            case sql_col_tag: return "tag";
+            default: PFoops( OOPS_FATAL, 
+                             "unknown special flag set");
+        }
+    }
+    PFalg_att_t att = ((0x0000001F & ident) <= 0)?  0x00000000:
+            (0x00000001 << (((0x0000001F) & ident)-1));
+    PFalg_simple_type_t ty = (0x00000001 << (((0x000001E0) & ident)
+                >> ATT_BITS));
+
+    attstr = PFatt_str(att);
+    tystr  = PFalg_simple_type_str(ty);
+
+    len = strlen(attstr);
+    len += strlen(tystr);
+
+    res = (char*)PFmalloc(len * sizeof(char));
+    snprintf(res, len+2, "%s-%s", attstr, tystr);
+
+    return res;
+}
+
+static void
+print_sequence(PFsql_t *n)
+{
+   assert( n );
+   assert( n->kind == sql_seq );
+
+   print_schema_information(n->child[0]);
+   sqlprintf("\n");
+   print_statements(n->child[1]);
+}
+
+static void
+print_schema_information( PFsql_t *n )
+{
+    assert( n );
+
+    switch( n->kind ) {
+        case sql_schm_inf:
+            print_schema_information( n->child[0] );
+            sqlprintf("\n");
+            print_schema_information( n->child[1] );
+            break;
+        case sql_schm_cmmnt:
+            sqlprintf("-- !! ");
+            sqlprintf("%s", n->sem.comment );
+            sqlprintf(" !!");
+            break;
+        case sql_schm_expr:
+            sqlprintf("-- ");
+            print_schema_table( n->child[0] );
+            print_schema_relcol( n->child[1] );
+            break;
+        default:
+            PFoops( OOPS_FATAL,
+                    "SQL generation doesn't support this kind "
+                    "of schema information (%u)", n->kind );
+    }
+}
+
+static void 
+print_schema_relcol( PFsql_t *n )
+{
+    assert( n );
+    
+    sqlprintf("-");
+    switch( n->kind ) {
+        case sql_clmn_name:
+            sqlprintf("%s", sql_column_name_str( n->sem.column.ident ));
+            sqlprintf(": ");
+            sqlprintf("%s", PFsql_column_name_str( n->sem.column.ident ));
+            break;
+        case sql_tbl_name:
+            sqlprintf("relation: ");
+            sqlprintf("%s", PFsql_table_str( n->sem.tablename.ident ));
+            break;
+        default:
+            PFoops( OOPS_FATAL,
+                    "In schema information is neither a "
+                    "column nor a relation (%u)", n->kind);
+    }
+}
+
+static void
+print_schema_table( PFsql_t *n )
+{
+    assert( n );
+
+    switch( n->kind ) {
+        case sql_schm_doc:
+            sqlprintf("document");
+            break;
+        case sql_schm_res:
+            sqlprintf("result");
+            break;
+        default:
+            PFoops( OOPS_FATAL, 
+                    "SQL generation doesn't support this schema tables");
+    }
+}
 
 /**
  * Print SQL statements.
@@ -87,19 +218,6 @@ print_statements(PFsql_t *n)
             sqlprintf("WITH \n");
             print_common_table_expressions( n->child[0] );
             sqlprintf(" \n");
-            print_fullselect( n->child[1] );
-            sqlprintf("\n");
-        } break;
-        case sql_cmmn_tbl_expr:
-        {
-            print_statements(n->child[0]);
-            print_statements(n->child[1]);
-        } break;
-        case sql_comment:
-        {
-            sqlprintf("/* ");
-            sqlprintf("%s", n->sem.comment);
-            sqlprintf(" */\n");
         } break;
        default:
         {
@@ -173,6 +291,10 @@ print_subselect(PFsql_t *n)
             if( n->sem.select.where_list ) {
                 sqlprintf(" WHERE ");
                 print_expr( n->sem.select.where_list );
+            }
+            if( n->sem.select.grpby_list ) {
+                sqlprintf(" GROUP BY ");
+                print_clm_list( n->sem.select.grpby_list );
             }
         } break;
         default:
@@ -448,21 +570,31 @@ print_clm_list(PFsql_t *n)
 {
     assert( n );
 
-    if( !((n->kind == sql_clmn_list) ||
-                (n->kind == sql_list_terminator)) )
-    {
-        PFoops( OOPS_FATAL,
-                "Pathfinder failed to print argument list");
+    switch( n->kind ) {
+        case sql_clmn_list:
+            print_clm_list( n->child[0] );
+            sqlprintf(", ");
+            print_clm_list( n->child[1] );
+            break;
+        default:
+            print_column_name( n );
     }
+}
 
-    if( (n->kind == sql_list_terminator) &&
-            (n->child[0] == NULL) && (n->child[1] == NULL) )
-        return;
+static void
+print_column_name( PFsql_t *n )
+{
+    assert( n );
+    assert( n->kind == sql_clmn_name );
 
-    print_statement(n->child[0]);
-    if( !(n->child[1]->kind == sql_list_terminator) )
-        sqlprintf(", ");
-    print_clm_list(n->child[1]);
+    if( n->crrlname != PF_SQL_CORRELATION_UNBOUNDED ) {
+        sqlprintf("%s", 
+            PFsql_correlation_name_str(n->crrlname));
+        sqlprintf(".");
+    }
+    sqlprintf("%s",
+        PFsql_column_name_str(n->sem.column.ident));
+
 }
 
 static void
@@ -729,7 +861,7 @@ PFsql_serialize(PFsql_t* s)
     out = PFarray (sizeof(char));
 
     /* `statements' is the top rule of the grammar */
-    print_statements( s );
+    print_sequence( s );
 
     return out;
 }

@@ -41,19 +41,20 @@
 #define common_table_expr( ... )    PFsql_common_table_expr( __VA_ARGS__ )
 #define star()                      PFsql_star()
 /** SQL select construction. */
-#define select(sl, fl, wl)              PFsql_select(sl, fl, wl)
+#define select(sl, fl, wl, gl)            PFsql_select(sl, fl, wl, gl)
 /** SQL select distinct construction */
-#define select_distinct(sl, fl, wl)     PFsql_select_distinct(sl, fl, wl)
+#define select_distinct(sl, fl, wl, gl)   PFsql_select_distinct(sl, fl, wl, gl)
 #define disjunion( a, b )           PFsql_union( a , b )
 #define difference( a, b )          PFsql_difference( a, b )
 
 /*............ Common Operators ...........*/
 
-#define with( a, b )                   PFsql_with( a, b )
+#define with( a )                   PFsql_with( a )
 /** Comment construction. */
 #define comment( ... )              PFsql_comment( __VA_ARGS__ )
 #define type( t )                   PFsql_type( t )
 #define cast( a, b )                PFsql_cast( a, b )
+#define seq( si, ce )                 PFsql_seq( si, ce )
 
 /*............ SQL aggregat functions ............*/ 
 
@@ -76,7 +77,8 @@
 /* SQL table construction. */
 #define sysdummy1()                 PFsql_sysdummy1()
 #define fragrelation()              PFsql_fragrelation()
-#define result()                    PFsql_result()
+#define result(cl)                  PFsql_result(cl)
+#define document(cl)                PFsql_document(cl)
 #define table_name_default( n )     PFsql_table_name_default( n )
 #define table_name( n, clmnlist )   PFsql_table_name( n, clmnlist )
 #define schema( s )                 PFsql_schema( s )
@@ -124,14 +126,17 @@
 /** Add an item to an existing fromlist. */
 #define from_list_add( list, item )    PFsql_from_list_add( list, item )
 /** A sequence of columns */
-#define column_list( ... )             PFsql_column_list( ... )
-/** Construct empty argument list */
-#define column_list_empty( )           PFsql_column_list_empty( )
-/** Add an item to an existing arglist. */
-#define column_list_add( list, item )  PFsql_column_list_add( list, item )
+#define column_list( l, i )             PFsql_column_list( l, i )
 
 #define where_list_empty( )            PFsql_where_list_empty( )
 #define where_list_add( l, i )         PFsql_where_list_add( l, i )
+
+/*.......... Schema Information ..............*/
+#define schema_information( l, i )     PFsql_schema_information( l, i )
+#define schema_expression( s, c )      PFsql_schema_expression( s, c )
+#define schema_result()                PFsql_schema_result()
+#define schema_doc()                   PFsql_schema_document()
+#define schema_comment( s )            PFsql_schema_comment( s )
 
 /*.......... Arithmetic operator constructors ........*/
 

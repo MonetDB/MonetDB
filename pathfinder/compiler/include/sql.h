@@ -42,11 +42,13 @@
 #define SPEC_BITS 3
 #define ASCII_A   97
 
+/* special bits for column names */
 #define sql_col_pre     0x00000002
 #define sql_col_level   0x00000004
 #define sql_col_size    0x00000008
 #define sql_col_kind    0x00000010
 #define sql_col_prop    0x00000020
+#define sql_col_tag     0x00000040
 typedef unsigned int PFsql_special_t;
 
 /* Reserve identifiers. */
@@ -111,7 +113,7 @@ enum PFsql_kind_t {
    sql_list_terminator  =  8,
    sql_bln_expr         =  9,
    sql_expr             = 10,
-   sql_frm_list        = 11,
+   sql_frm_list         = 11,
    sql_lit_int          = 12,
    sql_lit_lng          = 13,
    sql_lit_str          = 14,
@@ -153,7 +155,12 @@ enum PFsql_kind_t {
    sql_diff             = 50,
    sql_gteq             = 51,
    sql_count            = 52,
-   sql_schm_inf         = 53
+   sql_schm_inf         = 53,
+   sql_schm_doc         = 54,
+   sql_schm_res         = 55,
+   sql_schm_cmmnt       = 56,
+   sql_schm_expr        = 57,
+   sql_seq              = 58
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -271,10 +278,10 @@ PFsql_t* PFsql_common_table_expr_(int count, const PFsql_t **stmts);
 PFsql_t* PFsql_star(void);
 
 PFsql_t* PFsql_select(const PFsql_t *selectlist, const PFsql_t *fromlist,
-               const PFsql_t *wherelist);
+               const PFsql_t *wherelist, const PFsql_t *grpbylist);
 
 PFsql_t* PFsql_select_distinct(const PFsql_t *selectlist,
-        const PFsql_t *fromlist, const PFsql_t *wherelist);
+        const PFsql_t *fromlist, const PFsql_t *wherelist, PFsql_t *grpbylist);
 
 /**
  * Construct a SQL `union' operator.
@@ -288,7 +295,7 @@ PFsql_t* PFsql_difference(const PFsql_t *a, const PFsql_t *b);
 
 /*............ Common Operators ............*/
 
-PFsql_t* PFsql_with( const PFsql_t *a, const PFsql_t *b );
+PFsql_t* PFsql_with( const PFsql_t *a );
 
 /**
  * Construct a comment.
@@ -305,6 +312,8 @@ PFsql_t* PFsql_type(PFalg_simple_type_t t);
  * `CAST' operator.
  */
 PFsql_t* PFsql_cast(const PFsql_t *expr, const PFsql_t *t);
+
+PFsql_t* PFsql_seq(const PFsql_t *schm_inf, const PFsql_t *cmtblexpr);
 
 /*............ Aggregat Functions ............*/
 
@@ -348,7 +357,8 @@ PFsql_t* PFsql_window_clause(const PFsql_t *partcls, const PFsql_t *ordercls);
 
 #define PFsql_sysdummy1()     PFsql_table_name(PF_SQL_TABLE_SYSDUMMY1, NULL)
 #define PFsql_fragrelation()  PFsql_table_name(PF_SQL_TABLE_FRAG, NULL)
-#define PFsql_result()  PFsql_table_name(PF_SQL_TABLE_RESULT, NULL)
+#define PFsql_result(clmnlist)  PFsql_table_name(PF_SQL_TABLE_RESULT, clmnlist)
+#define PFsql_document(clmnlist) PFsql_table_name(PF_SQL_TABLE_DOC, clmnlist)
 #define PFsql_table_name_default(name)    PFsql_table_name(name, NULL)
 PFsql_t* PFsql_table_name(PFsql_ident_t name, PFsql_t *clmnlist);
 
@@ -486,22 +496,19 @@ PFsql_t* PFsql_where_list_add(const PFsql_t *list,
 /**
  * A sequence of columns.
  */
-#define PFsql_column_list(...) \
-   PFsql_column_list_(sizeof((PFsql_t *[]) {__VA_ARGS}) / \
-            sizeof(PFsql_t*), (const PFsql_t *[]) \
-            {__VA_ARGS__})
-PFsql_t* PFsql_column_list_(unsigned int count,
-        const PFsql_t **list);
+PFsql_t* PFsql_column_list(PFsql_t *list, PFsql_t *item);
 
-/**
- * Create an empty column_list.
- */
-PFsql_t* PFsql_column_list_empty(void);
+/*..............Schema Information ............*/
 
-/**
- * Adds an item to the front of an existing column_list.
- */
-PFsql_t* PFsql_column_list_add(PFsql_t *list, PFsql_t *item);
+PFsql_t* PFsql_schema_information(PFsql_t *list, PFsql_t *item);
+
+PFsql_t* PFsql_schema_expression(PFsql_t *schm, PFsql_t *clmn);
+
+PFsql_t* PFsql_schema_document(void);
+
+PFsql_t* PFsql_schema_result(void);
+
+PFsql_t* PFsql_schema_comment(char *cmmnt);
 
 /*................ Aritmethic ..............*/
 

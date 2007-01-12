@@ -156,7 +156,7 @@ PFsql_star(void)
  */
 PFsql_t*
 PFsql_select(const PFsql_t *selectlist, const PFsql_t *fromlist,
-        const PFsql_t *wherelist)
+        const PFsql_t *wherelist, const PFsql_t *grpbylist)
 {
     PFsql_t *ret = leaf(sql_select);
 
@@ -166,7 +166,7 @@ PFsql_select(const PFsql_t *selectlist, const PFsql_t *fromlist,
     ret->sem.select.select_list  = (PFsql_t*)selectlist;
     ret->sem.select.from_list    = (PFsql_t*)fromlist;
     ret->sem.select.where_list   = (PFsql_t*)wherelist;
-    ret->sem.select.grpby_list   = NULL;
+    ret->sem.select.grpby_list   = (PFsql_t*)grpbylist;
 
     return ret;
 }
@@ -181,9 +181,9 @@ PFsql_select(const PFsql_t *selectlist, const PFsql_t *fromlist,
  */
 PFsql_t*
 PFsql_select_distinct(const PFsql_t *selectlist,
-        const PFsql_t *fromlist, const PFsql_t *wherelist)
+        const PFsql_t *fromlist, const PFsql_t *wherelist, PFsql_t *grpbylist)
 {
-    PFsql_t *ret = select( selectlist, fromlist, wherelist );
+    PFsql_t *ret = select( selectlist, fromlist, wherelist, grpbylist );
     ret->sem.select.distinct = true;
     return ret;
 }
@@ -215,9 +215,9 @@ PFsql_difference(const PFsql_t *a, const PFsql_t* b)
  * `with' operator.
  */
 PFsql_t*
-PFsql_with(const PFsql_t *a, const PFsql_t *b)
+PFsql_with(const PFsql_t *a )
 {
-    return wire2( sql_with, a, b );
+    return wire1( sql_with, a );
 }
 
 /**
@@ -266,6 +266,12 @@ PFsql_t*
 PFsql_cast(const PFsql_t *expr, const PFsql_t *t)
 {
     return wire2(sql_cst, expr, t);
+}
+
+PFsql_t*
+PFsql_seq( const PFsql_t *schm_inf, const PFsql_t *cmtblexpr )
+{
+    return wire2( sql_seq, schm_inf, cmtblexpr );
 }
 
 /*............ Aggregat Functions ...........*/
@@ -463,6 +469,14 @@ PFsql_table_str(PFsql_ident_t name)
         {
             return "test";
         } break;
+        case PF_SQL_TABLE_RESULT:
+        {
+            return "result";
+        } break;
+        case PF_SQL_TABLE_DOC:
+        {
+            return "document";
+        } break;
         default:
         {
             assert( name >= PF_SQL_RES_TABLE_COUNT);
@@ -499,6 +513,7 @@ PFsql_column_name_str(PFsql_ident_t ident)
             case sql_col_size:   return "size";
             case sql_col_kind:   return "kind";
             case sql_col_prop:   return "prop";
+            case sql_col_tag:    return "tag";
             default: PFoops( OOPS_FATAL, "unknown special flag set" );
         }
     }
@@ -818,43 +833,62 @@ PFsql_where_list_add(const PFsql_t *list, const PFsql_t *item)
  * @return        A chain of column nodes.
  */
 PFsql_t*
-PFsql_column_list_(unsigned int count, const PFsql_t **list)
+PFsql_column_list(PFsql_t* list, PFsql_t* item)
 {
-    assert( count > 0 );
-
-    if( count == 1 )
+    assert( item );
+    if( list == NULL )
     {
-        return wire2(sql_clmn_list, list[0], terminator());
+        return (PFsql_t*) item;
     }
     else
     {
-        return wire2(sql_clmn_list, list[0],
-                PFsql_column_list_(count - 1, list + 1));
+        return wire2(sql_clmn_list, item, list); 
     }
     return NULL; /* satisfy picky compilers */
 }
 
-/**
- * Create an empty column_list.
- */
+/*.......... Schema Information .........*/
+
 PFsql_t*
-PFsql_column_list_empty(void)
+PFsql_schema_information(PFsql_t *list, PFsql_t *item)
 {
-    return terminator();
+    assert( item );
+    if( list == NULL ) {
+        return (PFsql_t*) item;
+    }
+    else {
+        return wire2(sql_schm_inf, item, list);
+    }
+    return NULL; /* satisfy picky compilers */
 }
 
-/**
- * Adds an item to the front of an existing 
- * columnlist.
- *
- * @param   list  The list.
- * @param   item  The item to append to the front
- *                of the @a list list.
- */
 PFsql_t*
-PFsql_column_list_add(PFsql_t *list, PFsql_t *item)
+PFsql_schema_expression(PFsql_t *schm, PFsql_t *clmn)
 {
-    return wire2(sql_clmn_list, item, list);
+    assert( schm );
+    assert( clmn );
+
+    return wire2(sql_schm_expr, schm, clmn);
+}
+
+PFsql_t*
+PFsql_schema_document(void)
+{
+    return leaf(sql_schm_doc);
+}
+
+PFsql_t*
+PFsql_schema_result(void)
+{
+    return leaf(sql_schm_res);
+}
+
+PFsql_t*
+PFsql_schema_comment(char *cmmnt)
+{
+    PFsql_t *ret = leaf(sql_schm_cmmnt);
+    ret->sem.comment = cmmnt;
+    return ret;
 }
 
 /*........... Arithmetic .............*/
