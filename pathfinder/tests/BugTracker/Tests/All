@@ -24,6 +24,7 @@ empty_distinct_values.SF-1431357
 string_join.SF-1505520
 nested_doc.SF-1446426
 nlthetajoin.SF-1437299
+noroot.SF-1452237
 where-clause.SF-1524344a
 where-clause.SF-1524344b
 where-clause.SF-1524344c
