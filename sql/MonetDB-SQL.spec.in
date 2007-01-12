@@ -35,22 +35,22 @@ BuildRequires: MonetDB-devel, MonetDB-client-devel
 %endif
 
 %if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-%package server
-Summary: MonetDB SQL server modules
+%package server4
+Summary: MonetDB4 SQL server modules
 Group: System 
 
-%description server
-Add the MonetDB SQL server module description here
+%description server4
+Add the MonetDB4 SQL server module description here
 Requires: MonetDB-server>=4.0<5
 %endif
 
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
-%package server
-Summary: MonetDB SQL server modules
+%package server5
+Summary: MonetDB5 SQL server modules
 Group: System 
 
-%description server
-Add the MonetDB SQL server module description here
+%description server5
+Add the MonetDB5 SQL server module description here
 Requires: MonetDB-server>5.0
 %endif
 
@@ -66,7 +66,11 @@ accellerators, SQL- and XML- frontends.
 
 %description devel
 Add the MonetDB devel description here
-Requires: %{name}-server
+%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
+Requires: %{name}-server4
+%else
+Requires: %{name}-server5
+%endif
 Requires: MonetDB-devel
 
 %prep
@@ -114,7 +118,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/doc/%{name}-%{version}/*
 
 %if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-%files server
+%files server4
 %defattr(-,root,root) 
 %{prefix}/bin/Mbeddedsql
 %{_libdir}/libembeddedsql.*
@@ -124,7 +128,7 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
-%files server
+%files server5
 %defattr(-,root,root) 
 #%{prefix}/bin/Mbeddedsql
 #%{_libdir}/libembeddedsql.*
