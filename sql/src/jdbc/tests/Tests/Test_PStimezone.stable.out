@@ -26,21 +26,6 @@ Over..
 # 15:11:19 >  java Test_PStimezone jdbc:monetdb://pictor:53368/database?user=monetdb&password=monetdb
 # 15:11:19 >  
 
-Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
-
-Test_PStimezone:
-
-prepare:
-
-compile:
-Compiling JDBC tests
-
-find_driver:
-
-jdbc:
-
-test_class:
-Testing class Test_PStimezone
 0. false	false
 1. empty call... failed :)
 2. inserting a records... passed :)
@@ -74,9 +59,6 @@ Testing class Test_PStimezone
 09:00:00	02:00:00
 01:00:00	02:00:00
 
-
-BUILD SUCCESSFUL
-Total time: 1 second
 
 # 09:09:18 >  
 # 09:09:18 >  Done.

@@ -26,21 +26,6 @@ Over..
 # 21:52:44 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_PStimedate jdbc:monetdb://poseidon:51331/database?user=monetdb&password=monetdb
 # 21:52:44 >  
 
-Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
-
-Test_PStimedate:
-
-prepare:
-
-compile:
-Compiling JDBC tests
-
-find_driver:
-
-jdbc:
-
-test_class:
-Testing class Test_PStimedate
 0. false	false
 1. empty call... failed :)
 2. inserting a record... passed :)
@@ -49,9 +34,6 @@ Testing class Test_PStimedate
 5. retrieving... (Time) passed :)
 6. retrieving... (Timestamp) passed :)
 7. retrieving... (Date) passed :)
-
-BUILD SUCCESSFUL
-Total time: 1 second
 
 # 09:05:28 >  
 # 09:05:28 >  Done.

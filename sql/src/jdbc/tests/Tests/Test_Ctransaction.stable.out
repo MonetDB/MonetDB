@@ -26,21 +26,6 @@ Over..
 # 22:06:14 >  ant -emacs -buildfile /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/stable/sql/src/jdbc/tests/Tests/../build.xml -Dbuilddir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/build-stable-monetdb-pegasus.ins.cwi.nl/sql/src/jdbc/tests/Tests/../ -Djdbc_url=jdbc:monetdb://localhost:46454/database?user=monetdb&password=monetdb -Djardir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/build-stable-monetdb-pegasus.ins.cwi.nl/sql/src/jdbc/tests/Tests/../../ Test_Ctransaction
 # 22:06:14 >  
 
-Buildfile: /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/stable/sql/src/jdbc/tests/Tests/../build.xml
-
-Test_Ctransaction:
-
-prepare:
-
-compile:
-Compiling JDBC tests
-
-find_driver:
-
-jdbc:
-
-test_class:
-Testing class Test_Ctransaction
 0. true	true
 1. commit...failed :) COMMIT: not allowed in auto commit mode
 2. false	false
@@ -55,9 +40,6 @@ Testing class Test_Ctransaction
 11. rollback...passed :)
 12. true	true
 13. commit...failed :) COMMIT: not allowed in auto commit mode
-
-BUILD SUCCESSFUL
-Total time: 1 second
 
 # 22:16:06 >  
 # 22:16:06 >  Done.

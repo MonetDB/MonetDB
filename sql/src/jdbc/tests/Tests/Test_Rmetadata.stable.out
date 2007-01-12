@@ -26,21 +26,6 @@ Over..
 # 22:17:15 >  java Test_Rmetadata jdbc:monetdb://pictor:59613/database?user=monetdb&password=monetdb
 # 22:17:15 >  
 
-Buildfile: /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/sql/src/jdbc/tests/Tests/../build.xml
-
-Test_Rmetadata:
-
-prepare:
-
-compile:
-Compiling JDBC tests
-
-find_driver:
-
-jdbc:
-
-test_class:
-Testing class Test_Rmetadata
 0. false	false
 0. 4 columns:	5
 1.	mTests_src_jdbc_tests
@@ -153,9 +138,6 @@ Testing class Test_Rmetadata
 6.	java.lang.Boolean is an instance of java.lang.Boolean
 6.	java.lang.String is an instance of java.lang.String
 6.	java.lang.String is an instance of java.lang.String
-
-BUILD SUCCESSFUL
-Total time: 2 seconds
 
 # 09:09:21 >  
 # 09:09:21 >  Done.

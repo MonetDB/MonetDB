@@ -26,19 +26,6 @@ Over..
 # 22:30:55 >  java Test_PStimezone jdbc:monetdb://monet:52081/database?user=monetdb&password=monetdb
 # 22:30:55 >  
 
-Test_PStimezone:
-
-prepare:
-
-compile:
-Compiling JDBC tests
-
-find_driver:
-
-jdbc:
-
-test_class:
-Testing class Test_PStimezone
 0. false	false
 1. empty call... failed :)
 2. inserting a records... passed :)
@@ -72,7 +59,6 @@ Testing class Test_PStimezone
 03:00:00	14:00:00
 19:00:00	14:00:00
 
-BUILD SUCCESSFUL
 
 # 22:30:56 >  
 # 22:30:56 >  Done.

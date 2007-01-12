@@ -26,26 +26,8 @@ Over..
 # 16:35:35 >  ant -emacs -buildfile /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml -Dbuilddir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../ -Djdbc_url=jdbc:monetdb://localhost:32659/mTests_src_jdbc_tests?user=monetdb&password=monetdb -Djardir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../../ Test_PStypes
 # 16:35:35 >  
 
-Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
-
-Test_PStypes:
-
-prepare:
-
-compile:
-Compiling JDBC tests
-
-find_driver:
-
-jdbc:
-
-test_class:
-Testing class Test_PStypes
 0. false	false
 1. inserting a record...success :)
-
-BUILD SUCCESSFUL
-Total time: 1 second
 
 # 16:35:37 >  
 # 16:35:37 >  Done.

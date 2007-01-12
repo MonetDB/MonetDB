@@ -26,29 +26,11 @@ Over..
 # 21:59:12 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Rbooleans jdbc:monetdb://poseidon:57824/database?user=monetdb&password=monetdb
 # 21:59:12 >  
 
-Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
-
-Test_Rbooleans:
-
-prepare:
-
-compile:
-Compiling JDBC tests
-
-find_driver:
-
-jdbc:
-
-test_class:
-Testing class Test_Rbooleans
 0. false	false
 1. 1, false, false, false, false, false, false, false, false, false, false, false, false, false
 2. 2, true, true, true, true, true, true, true, true, true, true, true, false, true
 3. 3, true, true, true, true, true, true, true, true, true, true, true, false, false
 4. 4, true, true, true, true, true, true, true, true, true, true, false, false, false
-
-BUILD SUCCESSFUL
-Total time: 1 second
 
 # 09:05:30 >  
 # 09:05:30 >  Done.

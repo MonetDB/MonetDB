@@ -26,21 +26,6 @@ Over..
 # 09:09:12 >  ant -emacs -buildfile /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml -Dbuilddir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../ -Djdbc_url=jdbc:monetdb://localhost:42887/database?user=monetdb&password=monetdb -Djardir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../../ Test_Sbatching
 # 09:09:12 >  
 
-Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
-
-Test_Sbatching:
-
-prepare:
-
-compile:
-Compiling JDBC tests
-
-find_driver:
-
-jdbc:
-
-test_class:
-Testing class Test_Sbatching
 0. true	true
 1. create...passed :)
 2. executing batch (400 inserts)...passed :)
@@ -346,9 +331,6 @@ Testing class Test_Sbatching
 6. executing batch...passed :)
 7. checking table count...30000 passed :)
 8. clean up mess we made...passed :)
-
-BUILD SUCCESSFUL
-Total time: 3 seconds
 
 # 09:09:16 >  
 # 09:09:16 >  Done.
