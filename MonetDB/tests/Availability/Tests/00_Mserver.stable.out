@@ -52,7 +52,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "profiler",	  "plain"	  ]
 [ "qt",		  "contrib"	  ]
 [ "radix",	  "plain"	  ]
-[ "salgebra",	  "plain"	  ]
+[ "salgebra",	  "contrib"	  ]
 [ "stats",	  "plain"	  ]
 [ "str",	  "static"	  ]
 [ "streams",	  "plain"	  ]

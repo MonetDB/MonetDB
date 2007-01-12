@@ -47,7 +47,6 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "pqueue"	  ]
 [ "profiler"	  ]
 [ "radix"	  ]
-[ "salgebra"	  ]
 [ "stats"	  ]
 [ "streams"	  ]
 [ "tcpip"	  ]
@@ -1327,25 +1326,6 @@ Module: "radix"
 [ "uniform",		  "COMMAND:   ",  "uniform(int) : BAT[oid,int]",										  "shortcut for:  uniform( base=0@0, size, domain=size);"																																																																																																		  ]
 [ "uniform",		  "COMMAND:   ",  "uniform(int, int) : BAT[oid,int]",										  "shortcut for:  uniform( base=0@0, size, domain);"																																																																																																			  ]
 [ "uniform",		  "COMMAND:   ",  "uniform(oid, int, int) : BAT[oid,int]",									  "create a random bat of certain size, head values starting from base, unique, dense and ordered,\n tail values perfect uniform from a certain domain ((domain >= size)  =>  unique tails)."																																																																																		  ]
-
-Module: "salgebra"
-
-[ 11 ]
-[ 11 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature							| help									  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "CHbat",		  "COMMAND:   ",  "CHbat(clusterhash) : BAT[void,any]",				  "Provides access to the original bat."				  ]
-[ "CHdir",		  "PROC:      ",  "CHdir() : void",						  "List the clusterhash dictionary."					  ]
-[ "clusterhash",	  "COMMAND:   ",  "clusterhash(BAT[any,any]) : clusterhash",			  "Build a new or get a previously built clusterhash for the input bat."  ]
-[ "destroy",		  "COMMAND:   ",  "destroy(str) : void",					  "Destroy the clusterhash with name chname (if possible)."		  ]
-[ "info",		  "COMMAND:   ",  "info(clusterhash) : BAT[str,str]",				  "Return some info about the chash."					  ]
-[ "rename",		  "COMMAND:   ",  "rename(clusterhash, str) : void",				  "Try to name ch; fail upon error."					  ]
-[ "select",		  "PROC:      ",  "select(clusterhash, any::1) : BAT[oid,any::1]",		  "Select using a clusterhash uselect plus a cast."			  ]
-[ "test_salgebra",	  "PROC:      ",  "test_salgebra() : void",					  "not available"							  ]
-[ "ujoin",		  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).project(nil) with propagated clustering."		  ]
-[ "uselect",		  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).project(nil) with propagated clustering."		  ]
-[ "usortedjoin",	  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).project(nil).sort with propagated clustering."	  ]
 
 Module: "stats"
 
