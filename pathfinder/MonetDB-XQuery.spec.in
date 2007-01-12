@@ -72,6 +72,8 @@ make install \
 
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 
+rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5
+
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 
