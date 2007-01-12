@@ -1,12 +1,12 @@
 @echo off
 
-if exist "%MONETDB_BUILD%\src\mapi\clients\java\mapi.jar" goto l1
-set CLASSPATH=%MONETDB_PREFIX\share\MonetDB\lib\mapi.jar;%CLASSPATH%
-goto s1
-:l1
-set CLASSPATH=%MONETDB_BUILD%\src\mapi\clients\java\mapi.jar;%CLASSPATH%
-:s1
+set JAR="%CLIENTS_PREFIX%\share\MonetDB\lib\jdbcclient-1.5.jar"
 
 set LANG=en_US.UTF-8
 
-echo print("\303\251\303\251n"); | java MapiClient localhost %MAPIPORT% guest anonymous mil --utf8
+echo user=guest>      .monetdb
+echo password=anonymous>> .monetdb
+
+echo print("\303\251\303\251n");> %TST%.mil
+
+call java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -l mil -f %TST%.mil

@@ -1,18 +1,19 @@
 #!/bin/sh
 
-cp=""
-if [ -f "$MONETDB_BUILD/src/mapi/clients/java/mapi.jar" ]; then
-	cp="`$CYGPATH_WP "$MONETDB_BUILD/src/mapi/clients/java/mapi.jar"`"
-elif [ -f "$MONETDB_PREFIX/share/MonetDB/lib/mapi.jar" ]; then
-	cp="`$CYGPATH_WP "$MONETDB_PREFIX/share/MonetDB/lib/mapi.jar"`"
-else
-	echo "Neither $MONETDB_BUILD/src/mapi/clients/java/mapi.jar nor $MONETDB_PREFIX/share/MonetDB/lib/mapi.jar found"
-	exit 1
-fi
+pdd="`monetdb-clients-config --pkgdatadir`"
+jar="`ls $pdd/lib/jdbcclient-*.*.jar | head -n1`"
+jar="`$CYGPATH_WP "$jar"`"
 
 LANG="en_US.UTF-8" 
 export LANG
 
-java -cp "$cp" MapiClient $HOST $MAPIPORT guest anonymous mil --utf8 << EOMIL
+cat << EOF > .monetdb
+user=guest
+password=anonymous
+EOF
+
+cat << EOMIL > $TST.mil
 	print("\303\251\303\251n");
 EOMIL
+
+java -jar "$jar" -h $HOST -p $MAPIPORT -l mil -f $TST.mil
