@@ -38,10 +38,10 @@
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
  "INCOMPLETE"
 
-.COMMAND tj_throw2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_throw2collection;
+.COMMAND _tj_throw2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_throw2collection;
  "INCOMPLETE"
 
-.COMMAND tj_throw2collection_index(BAT[oid,bat],str) : void = CMDtj_throw2collection_index;
+.COMMAND _tj_throw2collection_index(BAT[oid,bat],str) : void = CMDtj_throw2collection_index;
  "INCOMPLETE"
  
 .COMMAND tijah_tokenize(str) : str = CMDtijah_tokenize;
@@ -195,6 +195,13 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 
 var verbose := false;
 
+ADDHELP("tj_init_global", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+- optional BAT[str,str] param: initialization parameter for global pftijah.\n\
+  settings.\n\
+DESCRIPTION:\n\
+Initialize the global pftijah environment.",
+"pftijah");
 PROC tj_init_global(BAT[str,str] param) : void :=
 {
     if ( verbose ) printf("#TJ: tj_init_global() called.\n");
@@ -218,13 +225,17 @@ PROC tj_init_global() : void :=
      tj_init_global(new(str,str));
 }
 
-
+ADDHELP("tj_delete_global", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+DESCRIPTION:\n\
+Delete all pftijah collections and remove the global pftijah settings.",
+"pftijah");
 PROC tj_delete_global() : void :=
 {
     if ( verbose ) printf("#TJ: tj_delete_global() called.\n");
     #
     bat("tj_collName")@batloop(){
-    	tj_coll_remove($t);
+    	tj_delete_collection($t);
     }
     bat("tj_globalTerms").persists(false);
     bat("tj_globalTags").persists(false);
@@ -232,6 +243,18 @@ PROC tj_delete_global() : void :=
     commit();
 }
 
+ADDHELP("tj_init_collection", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+- str collName: the name of the collection
+- BAT[str,str] param: initialization parameter for collection.\n\
+  possible values are:\n\
+  stemmer = { nostemming, snowball-english, snowball-porter, snowball-dutch }\n\
+  fragmentSize = [number] == the maximum size of a [pre|item] fragment\n\
+  tagFilter = [comma seperated list of tags to be indexed]\n\
+  etc.\n\
+DESCRIPTION:\n\
+Create a new tijah collection.",
+"pftijah");
 PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
 {
     if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") called.\n",collName);
@@ -292,7 +315,39 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
     commit();
 }
 
-PROC tj_collection(str collName) : BAT[void,bat]
+ADDHELP("tj_delete_collection", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+- str collName: the name of the collection to be deleted.\n
+DESCRIPTION:\n\
+Delete the collection with name \"collName\".",
+"pftijah");
+PROC tj_delete_collection(str collName) : void
+{
+	bat("tj_" + collName + "_doc_name").persists(false);
+	bat("tj_" + collName + "_doc_firstpre").persists(false);
+	bat("tj_" + collName + "_param").persists(false);
+	bat("tj_" + collName + "_pfpre").persists(false);
+	bat("tj_" + collName + "_fragments")@batloop() {
+	    var fpfx := str(int($h));
+	    bat("tj_" + collName + "_tid"+fpfx).persists(false);
+	    bat("tj_" + collName + "_size"+fpfx).persists(false);
+	}
+	bat("tj_" + collName + "_fragments").persists(false);
+	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) {
+		bat("tj_" + collName + "_TermIndex").persists(false);
+		bat("tj_" + collName + "_Terms").persists(false);
+		bat("tj_" + collName + "_TagIndex").persists(false);
+		bat("tj_" + collName + "_Tags").persists(false);
+	}
+        
+	var coll_oid := bat("tj_collName").reverse().find(collName);
+	bat("tj_collName").delete(coll_oid);
+	commit();
+}
+
+# internal method which return all relevant data about a collection in a
+# a single [void,bat] bat
+PROC _tj_collection(str collName) : BAT[void,bat]
 {
 	var tjCollBat := new(void,bat).seqbase(0@0);
 
@@ -304,7 +359,7 @@ PROC tj_collection(str collName) : BAT[void,bat]
 	    curversion := "0.0";
 	}
 	if ( curversion < "1.0" ) {
-	     ERROR("tj_collection(): pftijah index structure changed, reindex collection!!");
+	     ERROR("_tj_collection(): pftijah index structure changed, reindex collection!!");
 	}
 	tjCollBat.append(bat("tj_globalTerms"));
 	tjCollBat.append(bat("tj_globalTags"));
@@ -320,25 +375,51 @@ PROC tj_collection(str collName) : BAT[void,bat]
 	return tjCollBat;
 }
 
+ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+- str collName: the name of the collection.\n
+- str uri_loc: the location of the xml document.\n
+- str uri_name: the name of the xml document (optional).\n
+- bit store: when true the doc is stored in pathfinder.\n\
+DESCRIPTION:\n\
+Add a document to a pftijah collection. The document is indexed and if the \n\
+store parameter is true it is also stored in Pathfinder. When a document is\n\
+not stored in Pathfinder it will be shredded on the fly when nodes from the\n\
+document are returned by the XQUERY pftijah-node() function.\n\
+The index is automatically finalized at the end of the method.",
+"pftijah");
 PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
 {
     bat("tj_globalTerms").access(BAT_WRITE);
     bat("tj_globalTags").access(BAT_WRITE);
-    _tj_add2collection(collName,tj_collection(collName),uri_loc,uri_name,store);
-    tj_finalize_collection(collName);
+    _tj_add2collection(collName,_tj_collection(collName),uri_loc,uri_name,store);
+    _tj_finalize_collection(collName);
 }
 
+ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+- str collName: the name of the collection.\n
+- BAT[str,str]: the bat containing the [location,name] pairs of the xml docs.\n\
+- bit store: when true the documents are stored in Pathfinder.\n\
+DESCRIPTION:\n\
+The multidocument version of tj_add2collection. The main difference with the\n\
+other method is the [str,str] bat which contains the location of the document\n\
+in the head and the name in the tail.\n\
+The advantage of this method is that the collection is finalized after all\n\
+xml documents in the bat are added to the collection.",
+"pftijah");
 PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
 {
     bat("tj_globalTerms").access(BAT_WRITE);
     bat("tj_globalTags").access(BAT_WRITE);
     uri@batloop() {
-      _tj_add2collection(collName,tj_collection(collName),$h,$t,store);
+      _tj_add2collection(collName,_tj_collection(collName),$h,$t,store);
     }
-    tj_finalize_collection(collName);
+    _tj_finalize_collection(collName);
 }
 
 
+# main internal add2collection() function.
 PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str uri_name, bit store) : void
 { 
     if ( verbose ) printf("#TJ: _tj_add2collection(\"%s\") start.\n",collName);
@@ -356,10 +437,10 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
     	shred_doc(uri_loc,uri_name);
         }
         ws_opendoc(ws, bat(void,str,1).append(uri_name));
-        tj_throw2collection(collBats,ws,uri_name,selTagList);
+        _tj_throw2collection(collBats,ws,uri_name,selTagList);
         ws_destroy(ws);
     } else {
-        tj_throw2collection_index(collBats,uri_loc);
+        _tj_throw2collection_index(collBats,uri_loc);
     }
     # var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(uri_name));
     var height1 := 999; # REMOVE
@@ -372,9 +453,23 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
     if ( verbose ) printf("#TJ:_tj_add2collectiontj_init_collection(\"%s\") finish.\n",collName);
 }
 
+
+ADDHELP("tj_finalize_collection", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+- str collName: the name of the collection.\n
+DESCRIPTION:\n\
+Obsolete function which prepares the collection for usage of new documents\n\
+added to the collection. This is now done automagically",
+"pftijah");
 PROC tj_finalize_collection(str collName) : void
 {
-    if ( verbose ) printf("#TJ: tj_finalize_collection(\"%s\") called.\n",collName);
+    _tj_finalize_collection(collName);
+}
+
+# internal finalize function
+PROC _tj_finalize_collection(str collName) : void
+{
+    if ( verbose ) printf("#TJ: _tj_finalize_collection(\"%s\") called.\n",collName);
     #
     # Finalize one collection. No documents should be added after this
     bat("tj_" + collName + "_fragments").access(BAT_READ);
@@ -417,12 +512,41 @@ PROC tj_finalize_collection(str collName) : void
     commit(); 
 }
 
+# set a collection parameter
+PROC tj_set_parameter(str collName, str par, str val) : void
+{
+	var parbat := bat("tj_" + collName + "_param");
+
+	if ( parbat.exist(par) ) {
+	    parbat.replace(par,val);
+	} else {
+	    parbat.insert(par,val);
+	}
+}
+
+PROC tj_dump_collection(str collName) : void
+{
+	bat("tj_" + collName + "_param").print();
+	bat("tj_" + collName + "_doc_name").print();
+	bat("tj_" + collName + "_doc_firstpre").print();
+	# print(bat("tj_" + collName + "_doc_name"),bat("tj_" + collName + "_doc_firstpre"));
+	bat("tj_globalTerms").print();
+	bat("tj_globalTags").print();
+	print(bat("tj_" + collName + "_tid1"));
+	print(bat("tj_" + collName + "_size1"));
+	print(bat("tj_" + collName + "_pfpre"));
+	print(bat("tj_" + collName + "_fragments"));
+	# print(bat("tj_" + collName + "_height"));
+}
+
 #####################################################################
 #                                                                   #
 # End of the new implementation of the interfaces                   #
 #                                                                   #
 #####################################################################
 
+# SUGAR: this function should not be necessary in the future but it
+#        first has to be removed from the generated scripts.
 PROC tj_setCollName(str name) : void := 
 {
 	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
@@ -440,6 +564,7 @@ PROC tj_setCollName(str name) : void :=
         } 
 }
 
+# INCOMPLETE: henning, what should I do about this.
 PROC tj_setBackgroundCollName(str name) : void := 
 {
 	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
@@ -455,12 +580,14 @@ PROC tj_setBackgroundCollName(str name) : void :=
         } 
 }
 
+# INCOMPLETE: henning, what should I do about this.
 PROC tj_setScoreBase(int default) : void :=
 {
 	scoreBase := default;
 }
 
 
+# INCOMPLETE: henning, what should I do about this.
 var equivalences := new(str,str);
 PROC tj_initEquivalences() : void := 
 {
@@ -2058,13 +2185,10 @@ PROC order_regions(bat region) : bat :=
 
 
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_global_init() : void 
 {
-	if (DEBUG) printf("# Initializing Pathfinder-Tijah integration package.\n");
-	new(oid,str).persists(true).bbpname("tj_globalTerms");
-	new(oid,str).persists(true).bbpname("tj_globalTags");
-	new(oid,str).persists(true).bbpname("tj_collName");
-	commit();
+	tj_init_global();
 }
 
 ##########################################
@@ -2072,135 +2196,52 @@ PROC tj_global_init() : void
 #
 ##########################################
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_coll_init(str collName, str stemmer) : void
 {
-	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
-		tj_global_init();
-	}
-	if (bat("tj_collName").reverse().exist(collName)) {
-		ERROR("tj_coll_init, pftijah collection already exists: %s\n",collName);
-	}
-	new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_name");
-	new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_firstpre");
-	new(str,str).persists(true).bbpname("tj_" + collName + "_param");
-
-	new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_tid1");
-	new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_size1");
-	# bat contains the start oid of every tid/size frag. Head is postfix
-	# string to _tid/_size. Normally "", "2", "3"
-	new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_fragments");
-	bat("tj_" + collName + "_fragments").append(1@0);
-	new(oid,oid).persists(true).bbpname("tj_" + collName + "_pfpre");
-    
-	var coll_oid;
-	if (bat("tj_collName").count() = 0) { coll_oid := 0@0; }
-     	else { coll_oid := oid(int(bat("tj_collName").reverse().max()) + 1); }
-	bat("tj_collName").insert(coll_oid, collName);
-	#
-	# now set the parameters for this collection
-	#
-	bat("tj_" + collName + "_param").insert("_version","1.01");
-	bat("tj_" + collName + "_param").insert("name",collName);
-	bat("tj_" + collName + "_param").insert("height","0");
-	if (stemmer = "") bat("tj_" + collName + "_param").insert("stemmer","nostemming");
-	else bat("tj_" + collName + "_param").insert("stemmer",stemmer);
-	bat("tj_" + collName + "_param").insert("preExpansion","4");
-	bat("tj_" + collName + "_param").insert("status","building");
-	bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
-	bat("tj_" + collName + "_param").insert("_finalizePre","1");
-	#
-	commit();
+	var collpar := new(str,str);
+	collpar.insert("stemmer",stemmer);
+	tj_init_collection(collName,collpar);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_global_remove() : void
 {
-	bat("tj_collName")@batloop(){
-		tj_coll_remove($t);
-	}
-	bat("tj_globalTerms").persists(false);
-	bat("tj_globalTags").persists(false);
-	bat("tj_collName").persists(false);
-	commit();
+	tj_delete_global();
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_coll_remove() : void
 {
-	tj_coll_remove(collName);
+	tj_delete_collection(collName);
 }
 
-PROC tj_set_parameter(str collName, str par, str val) : void
-{
-	var parbat := bat("tj_" + collName + "_param");
-
-	if ( parbat.exist(par) ) {
-	    parbat.replace(par,val);
-	} else {
-	    parbat.insert(par,val);
-	}
-}
-
+# SUGAR, REMOVE IN FUTURE
 PROC tj_coll_remove(str collName) : void
 {
-	bat("tj_" + collName + "_doc_name").persists(false);
-	bat("tj_" + collName + "_doc_firstpre").persists(false);
-	bat("tj_" + collName + "_param").persists(false);
-	bat("tj_" + collName + "_pfpre").persists(false);
-	bat("tj_" + collName + "_fragments")@batloop() {
-	    var fpfx := str(int($h));
-	    bat("tj_" + collName + "_tid"+fpfx).persists(false);
-	    bat("tj_" + collName + "_size"+fpfx).persists(false);
-	}
-	bat("tj_" + collName + "_fragments").persists(false);
-	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) {
-		bat("tj_" + collName + "_TermIndex").persists(false);
-		bat("tj_" + collName + "_Terms").persists(false);
-		bat("tj_" + collName + "_TagIndex").persists(false);
-		bat("tj_" + collName + "_Tags").persists(false);
-	}
-        
-	var coll_oid := bat("tj_collName").reverse().find(collName);
-	bat("tj_collName").delete(coll_oid);
+	tj_delete_collection(collName);
 	commit();
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_collection() : BAT[void,bat]
 {
-	return tj_collection(collName);
+	return _tj_collection(collName);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_collection(str collName) : BAT[void,bat]
 {
-	var tjCollBat := new(void,bat).seqbase(0@0);
-
-	var parbat := bat("tj_" + collName + "_param");
-	var curversion;
-	if ( parbat.exist("_version") ) {
-	    curversion := parbat.find("_version");
-	} else {
-	    curversion := "0.0";
-	}
-	if ( curversion < "1.0" ) {
-	     ERROR("tj_collection(): pftijah index structure changed, reindex collection!!");
-	}
-	tjCollBat.append(bat("tj_globalTerms"));
-	tjCollBat.append(bat("tj_globalTags"));
-	tjCollBat.append(bat("tj_" + collName + "_doc_name"));
-	tjCollBat.append(bat("tj_" + collName + "_doc_firstpre"));
-	tjCollBat.append(parbat);
-	# only load the top [pre|term|size] fragments
-	var fpfx := str(bat("tj_" + collName + "_fragments").count());
-	tjCollBat.append(bat("tj_" + collName + "_tid"+fpfx));
-	tjCollBat.append(bat("tj_" + collName + "_size"+fpfx));
-	tjCollBat.append(bat("tj_" + collName + "_pfpre"));
-	tjCollBat.append(bat("tj_" + collName + "_fragments"));
-	return tjCollBat;
+	return _tj_collection(collName);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_createCollection(str doc, str url, str stemmer) : BAT[void,bat]
 {
 	return tj_createCollection(collName, doc, url, stemmer);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_createCollection(str collName, str doc, str url, str stemmer) : void
 {
 	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
@@ -2214,114 +2255,48 @@ PROC tj_createCollection(str collName, str doc, str url, str stemmer) : void
 	tj_finalize(collName);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_url2Collection(str doc, str url, str selTagList) : void
 {
 	tj_url2Collection(collName, doc, url, selTagList);
 }
 
-var xqps := 999;
-
+# SUGAR, REMOVE IN FUTURE
 PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 { 
-        var debug := false;
-	var ws := ws_create();
-	if (not(bat("doc_name").reverse().exist(doc))) {
-		shred_doc(url,doc);
-	}
-	ws_opendoc(ws, bat(void,str,1).append(doc));
-        
-	bat("tj_globalTerms").access(BAT_WRITE);
-	bat("tj_globalTags").access(BAT_WRITE);
-        
-	tj_throw2collection(tj_collection(collName),ws,doc,selTagList);
-	ws_destroy(ws);
-	# var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(doc));
-	var height1 := 999; # REMOVE
-        
-        var coll_oid := bat("tj_collName").reverse().find(collName);
-	var height2 := bat("tj_" + collName + "_param").find("height").int();
-	bat("tj_" + collName + "_param").replace("height", max(height1,height2).str());
-	bat("tj_" + collName + "_param").replace("status","building");
-        commit();	
+	tj_set_parameter(collName,"tagFilter",selTagList);
+	_tj_add2collection(collName,_tj_collection(collName),url,doc,true);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_url2Collection_index(str collName, str url, str selTagList) : void
 {
-	bat("tj_globalTerms").access(BAT_WRITE);
-	bat("tj_globalTags").access(BAT_WRITE);
-        
-	tj_throw2collection_index(tj_collection(collName),url);
-
-	bat("tj_" + collName + "_param").replace("status","building");
-        commit();	
+	tj_set_parameter(collName,"tagFilter",selTagList);
+	_tj_add2collection(collName,_tj_collection(collName),url,url,false);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_finalize() : void
 {
-	tj_finalize(collName);
+	_tj_finalize_collection(collName);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_finalize(str collName) : void
 {
-	# Finalize one collection. No documents should be added after this
-	bat("tj_" + collName + "_fragments").access(BAT_READ);
-	bat("tj_" + collName + "_fragments")@batloop()
-	{
-	    var ind := str(int($h));
-	    bat("tj_" + collName + "_tid" + ind).access(BAT_READ);
-	    bat("tj_" + collName + "_tid" + ind).mmap(1);
-	    bat("tj_" + collName + "_size" + ind).access(BAT_READ);
-	    bat("tj_" + collName + "_size" + ind).mmap(1);
-	}
-	bat("tj_" + collName + "_pfpre").access(BAT_READ);
-	bat("tj_" + collName + "_pfpre").mmap(1);
-	commit();
-	tj_buildIRindex(collName);
-	#
-	bat("tj_" + collName + "_param").replace("status","finalized");
-	#
-	var gterm_sort := bat("tj_globalTerms").reverse().sort().reverse();
-	bat("tj_globalTerms").persists(false);
-	var gtag_sort := bat("tj_globalTags").reverse().sort().reverse();
-	bat("tj_globalTags").persists(false);
-	commit();
-	gterm_sort.persists(true);
-	gterm_sort.bbpname("tj_globalTerms");
-	gtag_sort.persists(true);
-	gtag_sort.bbpname("tj_globalTags");
-	if ( false ) {
-	  # Monet error, server crashes on .acces(BAT_WRITE) when a new 
-	  # collection is created on a fresh Mserver.
-	  bat("tj_globalTerms").access(BAT_READ);
-	  bat("tj_globalTags").access(BAT_READ);
-	}
-	bat("tj_globalTerms").mmap(1);
-	if ( false ) {
-	  # Monet error, server crashes on .acces(BAT_WRITE) when a new 
-	  # collection is created on a fresh Mserver.
-	  bat("tj_globalTags").mmap(1);
-	}
-	commit(); 
+	_tj_finalize_collection(collName);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_dump() : void
 {
-	tj_dump(collName);
+	tj_dump_collection(collName);
 }
 
+# SUGAR, REMOVE IN FUTURE
 PROC tj_dump(str collName) : void
 {
-	bat("tj_" + collName + "_param").print();
-	bat("tj_" + collName + "_doc_name").print();
-	bat("tj_" + collName + "_doc_firstpre").print();
-	# print(bat("tj_" + collName + "_doc_name"),bat("tj_" + collName + "_doc_firstpre"));
-	bat("tj_globalTerms").print();
-	bat("tj_globalTags").print();
-	print(bat("tj_" + collName + "_tid1"));
-	print(bat("tj_" + collName + "_size1"));
-	print(bat("tj_" + collName + "_pfpre"));
-	print(bat("tj_" + collName + "_fragments"));
-	# print(bat("tj_" + collName + "_height"));
+	tj_dump_collection(collName);
 }
 
 # mil-code to build faster IR indices
