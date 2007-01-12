@@ -24,6 +24,9 @@ EXTRA_DIST = \
 		Test_Rtimedate.java \
 		Test_Sbatching.java \
 		Test_Rmetadata.java \
+		Test_Creplysize.java \
+		Test_PStimezone.java \
+		Test_PStypes.java \
 		Test_Cmanycon.java \
 		build.xml build.properties
 
@@ -39,5 +42,8 @@ ant_compile = {
 		Test_Rtimedate.class \
 		Test_Sbatching.class \
 		Test_Rmetadata.class \
+		Test_Creplysize.class \
+		Test_PStimezone.class \
+		Test_PStypes.class \
 		Test_Cmanycon.class
 }
