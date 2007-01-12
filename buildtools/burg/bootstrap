@@ -13,7 +13,7 @@ retrieving revision 1.2
 diff -u -r1.2 configure.ac
 --- configure.ac	13 Aug 2005 15:46:26 -0000	1.2
 +++ configure.ac	27 Oct 2005 16:16:14 -0000
-@@ -3,11 +3,10 @@
+@@ -3,13 +3,12 @@
 
  AC_PREREQ(2.57)
  AC_INIT([burg], [1.0], [monet@cwi.nl])
@@ -22,12 +22,13 @@ diff -u -r1.2 configure.ac
  AC_CONFIG_SRCDIR([burs.c])
 -AC_CONFIG_HEADER([burg_config.h])
 +AM_CONFIG_HEADER([burg_config.h])
- 
+
  # Checks for programs.
  AC_PROG_CC
 -AC_PROG_LEX
  AM_PROG_LEX()
  AC_PROG_YACC()
+
 EOF
 	;;
 esac

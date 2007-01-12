@@ -38,10 +38,10 @@ diff -u -r1.4 configure.ac
  AC_CONFIG_SRCDIR([mel.mx])
 -AC_CONFIG_HEADER([mel_config.h])
 +AM_CONFIG_HEADER([mel_config.h])
+ AC_SET_MAKE
  
  # Checks for programs.
- AC_PROG_CXX
-@@ -31,7 +31,6 @@
+@@ -37,7 +37,6 @@
  fi
  AC_SUBST(MX)
  AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
