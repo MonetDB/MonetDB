@@ -46,7 +46,11 @@
 #include <windows.h>
 #include <stddef.h>
 
-#define NATIVE_WIN32
+/* indicate to sqltypes.h that windows.h has already been included and
+   that it doesn't have to define Windows constants */
+#define ALREADY_HAVE_WINDOWS_TYPE 1
+
+#define NATIVE_WIN32 1
 
 #define DIR_SEP '\\'
 #define DIR_SEP_STR "\\"

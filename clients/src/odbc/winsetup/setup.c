@@ -23,7 +23,9 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define ALREADY_HAVE_WINDOWS_TYPE
+/* indicate to sqltypes.h that windows.h has already been included and
+   that it doesn't have to define Windows constants */
+#define ALREADY_HAVE_WINDOWS_TYPE 1
 #include <sql.h>
 #include <sqlext.h>
 #ifdef EXPORT

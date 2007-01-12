@@ -17,10 +17,6 @@
  */
 
 #include "ODBCGlobal.h"
-#include <windows.h>
-#include <sql.h>
-#include <sqlext.h>
-#include <odbcinst.h>
 #include <winver.h>
 #include <shlwapi.h>
 #include <string.h>
