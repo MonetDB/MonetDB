@@ -426,7 +426,7 @@ module("logger");
 # global constants using in the MIL translation
 const empty_kind_bat := bat(void,int,0).seqbase(0@0).rename("empty_kind_bat").access(BAT_READ);
 const EMPTY_STRING := 0@0;
-const OID_PAGE_BITS := isnil(lng(1LL << 32).oid()).ifthenelse(10,9);
+const OID_PAGE_BITS := REMAP_PAGE_BITS - isnil(lng(1LL << 32).oid()).ifthenelse(6,7);
 const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).rename("empty_dbl__bat").access(BAT_READ);
 const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).rename("empty_str__bat").access(BAT_READ);
