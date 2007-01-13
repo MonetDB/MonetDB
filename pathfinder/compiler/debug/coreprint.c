@@ -320,5 +320,6 @@ PFcore_pretty (FILE *f, PFcnode_t *t)
     fputc ('\n', f);
 }
 
+void PFpcore (PFcnode_t *t) { PFcore_pretty(stdout, t); }
 
 /* vim:set shiftwidth=4 expandtab: */

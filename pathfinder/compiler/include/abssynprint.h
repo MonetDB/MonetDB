@@ -48,6 +48,8 @@ void PFabssyn_dot (FILE *f, PFpnode_t *root);
 
 void PFabssyn_pretty (FILE *f, PFpnode_t *root);
 
+void PFaprint (PFpnode_t *root);
+
 #endif
 
 /* vim:set shiftwidth=4 expandtab: */
