@@ -573,12 +573,6 @@ these 'sync' OIDs with their own propagation rules.
     CONST BUF_WILLNEED	:= 3;	# Will need these pages
     CONST BUF_DONTNEED	:= 4;	# Don't need these pages
 
-@- constants for remap()
-@mil
-    CONST REMAP_PAGE_BITS := 16;
-    CONST REMAP_PAGE_SIZE := 1LL << REMAP_PAGE_BITS;
-    CONST REMAP_PAGE_MASK := REMAP_PAGE_SIZE - 1LL;
-
     PROC swizzle(oid o, BAT[void,oid] map) : oid {
         var pid := oid(lng(o) >> REMAP_PAGE_BITS);
         if (map.exist(pid))

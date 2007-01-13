@@ -482,6 +482,10 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     PROC mem_usage(int minsize) : BAT[str,lng] { return mem_usage(lng(minsize));}
     PROC vm_usage(int minsize) : BAT[str,lng] { return vm_usage(lng(minsize));}
 
+    CONST REMAP_PAGE_BITS := monet_environment.find("gdk_mem_pagebits").int();
+    CONST REMAP_PAGE_SIZE := 1LL << REMAP_PAGE_BITS;
+    CONST REMAP_PAGE_MASK := REMAP_PAGE_SIZE - 1LL;
+
     const BBPTRIM_ALL := <<(1LL, (monet_environment.find("gdk_arch").int() - 2));
 
 @{
