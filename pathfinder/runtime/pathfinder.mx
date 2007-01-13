@@ -1743,10 +1743,10 @@ PROC __runtime_maintain(lng wsid,
     unq.append(new_qn, true).seqbase(oid(totsize));
 
 ##ws_log(ws, sprintf("maintain(idx=%d,unq=%d,ins=%d,del=%d,_unq=%d,_ins=%d,_del=%d) %s %s",
-                   count(idx), 
-                   count(unq), count(ins), count(del), 
-                   count(new_qn), count(ins_qn_nid), count(del_qn_nid), 
-                   str(coast_clear), str(flush_deletes)));
+##                   count(idx), 
+##                   count(unq), count(ins), count(del), 
+##                   count(new_qn), count(ins_qn_nid), count(del_qn_nid), 
+##                   str(coast_clear), str(flush_deletes)));
 
     # mark the region index invalid
     # for now, we don't try to maintain it over updates
