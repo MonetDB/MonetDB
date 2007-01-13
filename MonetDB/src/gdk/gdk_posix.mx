@@ -301,7 +301,7 @@ gdk_export int closedir(DIR *dir);
 #ifdef WIN32
 size_t  GDK_mem_pagebits = 16; /* on windows, the mmap addresses can be set by the 64KB */
 #else
-size_t  GDK_mem_pagebits = 12; /* on linux, 4KB pages can be addressed */
+size_t  GDK_mem_pagebits = 14; /* on linux, 4KB pages can be addressed */
 #endif
 
 #ifndef MAP_NORESERVE

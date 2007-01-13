@@ -384,7 +384,7 @@ mo_builtin_settings(opt **Set)
 #ifdef WIN32
 	set[i].value = strdup("16");
 #else
-	set[i].value = strdup("12");
+	set[i].value = strdup("14");
 #endif
 	i++;
 	set[i].kind = opt_builtin;
