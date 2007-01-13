@@ -1960,8 +1960,7 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 	BATloop(TBL_mod_drop, p, q) {
 		if (*(oid *) BUNhloc(TBL_mod_drop, p) == mid) {
 			bat bid = ABS(*(bat *) BUNtloc(TBL_mod_drop, p));
-
-			BBP_status_on(bid, BBPUNLOADING, "TBL_unloadmod");
+			BBP_status_on(bid, BBPDELETING, "TBL_unloadmod");
 		}
 	}
 	if (BUNdelHead(TBL_mod_drop, &mid, FALSE) == NULL)

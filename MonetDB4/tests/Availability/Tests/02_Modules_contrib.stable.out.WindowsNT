@@ -38,6 +38,7 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "mel"		  ]
 [ "oo7"		  ]
 [ "qt"		  ]
+[ "salgebra"	  ]
 [ "txtsim"	  ]
 [ "uchr"	  ]
 [ "vector"	  ]
@@ -379,6 +380,25 @@ Module: "qt"
 [ "[set]",			  "PROC:      ",  "[set](BAT[any::1,lng], int) : void",																		  "not available"																																																													  ]
 [ "test_bitvector",		  "PROC:      ",  "test_bitvector() : void",																			  "not available"																																																													  ]
 [ "test_uchr",			  "PROC:      ",  "test_uchr() : void",																				  "not available"																																																													  ]
+
+Module: "salgebra"
+
+[ 11 ]
+[ 11 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature							| help									  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "CHbat",		  "COMMAND:   ",  "CHbat(clusterhash) : BAT[void,any]",				  "Provides access to the original bat."				  ]
+[ "CHdir",		  "PROC:      ",  "CHdir() : void",						  "List the clusterhash dictionary."					  ]
+[ "clusterhash",	  "COMMAND:   ",  "clusterhash(BAT[any,any]) : clusterhash",			  "Build a new or get a previously built clusterhash for the input bat."  ]
+[ "destroy",		  "COMMAND:   ",  "destroy(str) : void",					  "Destroy the clusterhash with name chname (if possible)."		  ]
+[ "info",		  "COMMAND:   ",  "info(clusterhash) : BAT[str,str]",				  "Return some info about the chash."					  ]
+[ "rename",		  "COMMAND:   ",  "rename(clusterhash, str) : void",				  "Try to name ch; fail upon error."					  ]
+[ "select",		  "PROC:      ",  "select(clusterhash, any::1) : BAT[oid,any::1]",		  "Select using a clusterhash uselect plus a cast."			  ]
+[ "test_salgebra",	  "PROC:      ",  "test_salgebra() : void",					  "not available"							  ]
+[ "ujoin",		  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).project(nil) with propagated clustering."		  ]
+[ "uselect",		  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).project(nil) with propagated clustering."		  ]
+[ "usortedjoin",	  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).project(nil).sort with propagated clustering."	  ]
 
 Module: "txtsim"
 
