@@ -324,6 +324,7 @@ static PFsql_t* bin_comp(PFsql_t* (*op) (const PFsql_t*, const PFsql_t*),
 static void where_env_copy(PFarray_t *srcwheremap,
         PFarray_t *destwheremap);
 static PFsql_t* llscj(PFalg_axis_t axis, const PFla_op_t *p);
+static PFsql_t* doc_access(PFla_op_t *p);
 
 
 /** 
@@ -931,8 +932,6 @@ reduce(PFla_op_t *p, int goalnt)
         /* Rel: attach(Rel) */
         case 3:
         {
-            assert( L(p)->sql_ann->sfw != NULL );
-
             /* copy all existing expressions */
             for(unsigned int i = 0;
                     i < PFarray_last(L(p)->sql_ann->colmap); i++) {
@@ -1524,6 +1523,11 @@ reduce(PFla_op_t *p, int goalnt)
 
              p->dirty = true;
         } break;
+        /* Rel:   doc_access (Frag, Rel) */
+        case 65:
+        {
+            sql_stmt = doc_access(p);
+        } break;
         default:
         {
             /** TODO add OOPS here to indicate an unimplemented rule */
@@ -2057,6 +2061,21 @@ llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
         PFsql_correlation_name_t c2, const PFla_op_t *p)
 {
     switch( axis ) {
+        case alg_self:
+        {
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1),
+                    crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c2)
+                    ));
+        } break;
         case alg_desc_s:
         {
             sql_where_env_add( p->sql_ann->wheremap,
@@ -2422,6 +2441,86 @@ llscj(PFalg_axis_t axis, const PFla_op_t *p)
                 "SQL genereation couldn't figure out what we test");
     }
     return select 
+        (
+         NULL,
+         fromlist,
+         NULL,
+         NULL
+        );
+}
+
+static PFsql_t*
+doc_access(PFla_op_t *p)
+{
+    /* copying environment */
+    for( unsigned int i = 0; i < PFarray_last(R(p)->sql_ann->colmap);
+            i++) {
+        sql_column_env_t entry = sql_column_env_at(
+                R(p)->sql_ann->colmap, i );
+        sql_column_env_add( p->sql_ann->colmap,
+                entry.att, entry.type,
+                entry.expression);
+    }
+    /* get new correlation name */
+    sql_correlation_name_t *crrl = sql_correlation_name_new();
+    
+    /* adding prop column containing the property we
+       are connecting */
+    sql_column_env_add( p->sql_ann->colmap,
+            p->sem.doc_access.res, type_of( p, p->sem.doc_access.res),
+            crrl_deco(
+                column_name(
+                    sql_special_name_new(sql_col_prop)->ident),
+                crrl->name
+                ));
+
+    /* copy wheremaps */
+    for( unsigned int i = 0; i < PFarray_last(R(p)->sql_ann->wheremap);
+            i++) {
+        sql_where_env_t entry = sql_where_env_at(
+                R(p)->sql_ann->wheremap, i);
+        sql_where_env_add( p->sql_ann->wheremap,
+                entry.expression);
+    }
+
+    /* add constraint to get only the rows we are interested in */
+    sql_where_env_add( p->sql_ann->wheremap,
+            eq
+            (
+             sql_expression( R(p)->sql_ann->colmap,
+                 p->sem.doc_access.att,
+                 type_of( p, p->sem.doc_access.att)),
+             crrl_deco(
+                 column_name(sql_special_name_new(sql_col_pre)->ident),
+                 crrl->name)
+            ));
+
+    switch( p->sem.doc_access.doc_col )
+    {
+        case doc_text:
+            /* add constraints to get text nodes */
+            sql_where_env_add( p->sql_ann->wheremap,
+                eq
+                (
+                 crrl_deco(
+                     column_name(
+                         sql_special_name_new(sql_col_kind)->ident),
+                     crrl->name),
+                 lit_int(TEXT)
+                ));
+            break;
+        default:
+            PFoops( OOPS_FATAL,
+                    "SQL generation does not support this kind "
+                    " doc access (%u)", p->sem.doc_access.doc_col);
+            break;
+    }
+    
+    PFsql_t * fromlist = R(p)->sql_ann->sfw->sem.select.from_list;
+    fromlist = from_list_add(fromlist, alias( L(p)->sql_ann->fragment,
+                correlation_name( crrl->name )));
+
+    return select
         (
          NULL,
          fromlist,
