@@ -93,6 +93,8 @@ parent is memory resident as required because of the 'pointer' sharing.
 #define BBPPERSISTENT	96	/* mask for currently persistent bats */
 #define BBPSTATUS	127
 
+#define BBPDELETING	2048	/* set while we are deleting (special case in module unload) */
+#define BBPUNSTABLE	2176	/* set while we are unloading */
 #define BBPUNLOADING	128	/* set while we are unloading */
 #define BBPLOADING	256	/* set while we are loading */
 #define BBPSAVING       512	/* set while we are saving */
@@ -1239,7 +1241,7 @@ incref(bat i, int logical, int lock)
 		if (lock)
 			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref");
 
-		while (BBP_status(i) & BBPUNLOADING) {
+		while (BBP_status(i) & BBPUNSTABLE) {
 			if (lock)
 				gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
 			MT_sleep_ms(1);
