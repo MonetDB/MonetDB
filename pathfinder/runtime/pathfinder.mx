@@ -1534,9 +1534,10 @@ PROC _ws_opencoll(lng wsid,
         if (bit(count(indices))) {
             var totsize := [fetch](reverse(indices), RT_QN_NID_UNQ).[seqbase]().[lng]().sum();
             if (totsize > (mem_maxsize()/4LL)) {
-                # ISSUE: the locks are leaking
-                colname_runtime.delete(); # note that in-use runtime bats stay alive until the last ref
-                runtime := _runtime_get(colname);
+                var shortlocks := [fetch]([reverse](colname_runtime), RT_LOCK_FREELIST);
+                var longlocks := [fetch]([reverse](colname_runtime), RT_NID_FREELIST);
+                var runtimes := [_runtime_create](colname_runtime.mirror(), shortlocks, longlocks);
+                colname_runtime.delete().insert(runtimes); 
             }
         }
     }
@@ -1647,13 +1648,18 @@ concurrent queries, _INS and _DEL are flushed with the new changes into the
 QN_NID master.
 @mil
 # get a handle to the runtime-BAT (and create it if not there yet)
+PROC _runtime_create(str colname, lock shortlock, lock longlock) : BAT[lock,bat] 
+{
+    var runtime := bat(lock,bat).insert(shortlock,empty_bat).insert(longlock, empty_bat);
+    runtime.bbpname("runtime" + str(abs(int(runtime))));
+    colname_runtime.insert(colname, runtime);
+    return runtime;
+}
+
 PROC _runtime_get(str colname) : BAT[lock,bat] 
 {
-    if (not(colname_runtime.exist(colname))) {
-        var runtime := bat(lock,bat).insert(lock_create(),empty_bat).insert(lock_create(), empty_bat);
-        runtime.bbpname("runtime" + str(abs(int(runtime))));
-        colname_runtime.insert(colname, runtime);
-    }
+    if (not(colname_runtime.exist(colname)))
+        return _runtime_create(colname, lock_create(), lock_create());
     return colname_runtime.find(colname);
 }
 
@@ -2158,14 +2164,14 @@ PROC ws_newpage(BAT[void,BAT] ws,
             var rid_kind  := ws.fetch(_RID_KIND).find(cont);
             var rid_nid   := ws.fetch(_RID_NID).find(cont);
             var map_pid   := ws.fetch(_MAP_PID).find(cont);
-            var new_pid   := 1 + ((count(rid_size) - 1) >> REMAP_PAGE_BITS);
-            var last_pid;
 
             # fully protect/lock the collection during bat extend
             lock_set(coll_shortlock);
             checkpoint_protect(ws);
             sema_down(pf_extend_barrier);
             ws.fetch(CONT_LOCKED).append(coll_shortlock).append(lock(nil));
+ 
+            var last_pid, new_pid := 1 + ((count(rid_size) - 1) >> REMAP_PAGE_BITS);
 
             pf_assert(CATCH(last_pid := __ws_newpage(rid_size, rid_level, rid_prop, 
                                                      rid_kind, rid_nid, map_pid, new_pid)), 
