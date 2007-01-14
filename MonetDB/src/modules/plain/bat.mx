@@ -1881,7 +1881,7 @@ copy_segment(char* mmap, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt, int m
 			memcpy(BUNfirst(bn) + dst_off, BUNfirst(b) + src_off, (partial < nbytes)?partial:nbytes);
 		} else if ((size_t) src_off != dst_off) { /* otherwise it is already mapped so */
 			void *fixed = (bn->batBuns->base + dst_off);
-                        if (GDKmmap(mmap, mode, src_off, nbytes, fixed) != fixed) {
+                        if (MT_mmap(mmap, mode, src_off, nbytes, fixed) != fixed) {
 				return 0;
 			}
 		}
