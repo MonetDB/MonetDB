@@ -140,6 +140,7 @@ typedef enum tokens {
 	SQL_PARAMETER,
 	SQL_FUNC,
 	SQL_AGGR,
+	SQL_RANK,
 	SQL_COMPARE,
 	SQL_TEMP_LOCAL,
 	SQL_TEMP_GLOBAL,
@@ -342,6 +343,7 @@ int yydebug=1;
 	value_exp
 	column_exp
 	atom
+	atom2
 	insert_atom
 	simple_atom
 	literal
@@ -366,6 +368,10 @@ int yydebug=1;
 	if_opt_else
 	func_data_type
 	with_list_element
+	window_function
+	window_function_type
+	window_partition_clause
+	window_order_clause
 
 %type <type>
 	data_type
@@ -418,7 +424,7 @@ int yydebug=1;
 	qname
 	qfunc
 	routine_name
-	ordering_spec_commalist
+	sort_specification_list
 	opt_schema_element_list
 	schema_element_list
 	operation_commalist
@@ -465,6 +471,7 @@ int yydebug=1;
 	select_target_list
 	external_function_name
 	with_list
+	window_specification
 
 %type <ival>
 	drop_action
@@ -529,7 +536,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR sqlINT HEXADECIMAL INTNUM APPROXNUM USING
+	IDENT aTYPE ALIAS AGGR RANK sqlINT HEXADECIMAL INTNUM APPROXNUM USING
 	ALL ANY SOME GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
@@ -538,6 +545,7 @@ int yydebug=1;
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
+
 %token	USER CURRENT_USER SESSION_USER LOCAL
 %token  CURRENT_ROLE sqlSESSION
 %token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE CONNECT DISCONNECT PORT CURRENT
@@ -589,7 +597,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
-%token CALL LANGUAGE SQL
+%token CALL LANGUAGE 
 %token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
@@ -610,6 +618,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token INDEX
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
+%token OVER PARTITION 
 
 %%
 
@@ -2823,7 +2832,7 @@ search_condition:
 
 opt_order_by_clause:
     /* empty */ 			  { $$ = NULL; }
- |  ORDER BY ordering_spec_commalist
+ |  ORDER BY sort_specification_list
 		{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
  ;
 
@@ -2837,9 +2846,9 @@ opt_offset:
  |  OFFSET posint			{ $$ = $2; }
  ;
 
-ordering_spec_commalist:
+sort_specification_list:
     ordering_spec	 { $$ = append_symbol(L(), $1); }
- |  ordering_spec_commalist ',' ordering_spec
+ |  sort_specification_list ',' ordering_spec
 			 { $$ = append_symbol( $1, $3 ); }
  ;
 
@@ -2925,13 +2934,17 @@ like_predicate:
 		  $$ = _symbol_create_list(SQL_LIKE, l ); }
  ;
 
+atom2:
+	'(' atom ')' 	{ $$ = $2; }
+ |	atom
+ ;
 
 atom_exp:
-    atom
+    atom2
 	{ dlist *l = L();
 	  append_symbol(l, $1);
 	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
- |  atom ESCAPE string
+ |  atom2 ESCAPE string
  	{ char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
 		char buf[BUFSIZ];
@@ -3058,6 +3071,7 @@ value_exp:
 			  append_string(L(), sa_strdup(SA, "current_user"))); }
  |  CURRENT_ROLE	{ $$ = _symbol_create_list( SQL_COLUMN, 
 			  append_string(L(), sa_strdup(SA, "current_role"))); }
+ |  window_function
  |  column_ref 		{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
  |  var_ref		
  |  aggr_ref
@@ -3069,6 +3083,67 @@ value_exp:
  |  cast_exp
  |  '?'			{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
  ;
+
+/*
+<window function> ::= <window function type> OVER <window name or specification>
+
+<window function type> ::=
+		<rank function type> <left paren> <right paren>
+	|	ROW_NUMBER <left paren> <right paren>
+	|	<aggregate function>
+
+<rank function type> ::= RANK | DENSE_RANK | PERCENT_RANK | CUME_DIST
+
+<window name or specification> ::= <window name> | <in-line window specification>
+
+<in-line window specification> ::= <window specification>
+
+
+<window specification> ::= <left paren> <window specification details> <right paren>
+
+<window specification details> ::=
+                [ <existing window name> ] [ <window partition clause> ] [ <window order clause> ] [ <window frame clause> ]
+
+<existing window name> ::= <window name>
+
+<window partition clause> ::= PARTITION BY <window partition column reference list>
+
+<window partition column reference list> ::= <window partition column reference> [ { <comma> <window partition column reference> }... ]
+
+<window partition column reference> ::= <column reference> [ <collate clause> ]
+
+<window order clause> ::= ORDER BY <sort specification list>
+
+<window frame clause> ::= <window frame units> <window frame extent> [ <window frame exclusion> ]
+*/
+
+window_function: 
+	window_function_type OVER '(' window_specification ')'
+	{ $$ = _symbol_create_list( SQL_RANK, 
+		append_list(append_symbol(L(), $1), $4)); }
+  ;
+
+window_function_type:
+	RANK '(' ')' 	{ $$ = _symbol_create( SQL_RANK, $1 ); }
+  |	aggr_ref
+  ;
+
+window_specification:
+	window_partition_clause window_order_clause
+	{ $$ = append_symbol(append_symbol(L(), $1), $2); }
+  ;
+
+window_partition_clause:
+	/* empty */ 	{ $$ = NULL; }
+  |	PARTITION BY column_ref_commalist
+	{ $$ = _symbol_create_list( SQL_GROUPBY, $3 ); }
+  ;
+
+window_order_clause:
+	/* empty */ 	{ $$ = NULL; }
+  |	ORDER BY sort_specification_list
+	{ $$ = _symbol_create_list( SQL_ORDERBY, $3 ); }
+  ;
 
 var_ref:
 	AT ident 	{ $$ = _symbol_create( SQL_NAME, $2 ); }
@@ -4017,6 +4092,7 @@ restricted_ident:
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
+ |  RANK	{ $$ = $1; }	/* without '(' */
  ;
 
 ident:
@@ -4024,6 +4100,7 @@ ident:
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
+ |  RANK	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
  ;
 
@@ -4050,7 +4127,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  ROW		{ $$ = sa_strdup(SA, "row"); }
 |  KEY		{ $$ = sa_strdup(SA, "key"); }
 |  LANGUAGE	{ $$ = sa_strdup(SA, "language"); }
-|  SQL		{ $$ = sa_strdup(SA, "sql"); }
+|  LEVEL	{ $$ = sa_strdup(SA, "level"); }
 |  sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
 |  sqlDATE	{ $$ = sa_strdup(SA, "date"); }
 |  TIME 	{ $$ = sa_strdup(SA, "time"); }
@@ -4064,6 +4141,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 |  AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
+
 ;
 
 name_commalist:
@@ -4155,207 +4233,132 @@ schema_name_list: name_commalist ;
 char *token2string(int token)
 {
 	switch (token) {
-	case SQL_CREATE_SCHEMA:
-		return "Create Schema";
-	case SQL_CREATE_TABLE:
-		return "Create Table";
-	case SQL_CREATE_VIEW:
-		return "Create View";
-	case SQL_CREATE_ROLE:
-		return "Create ROLE";
-	case SQL_CREATE_USER:
-		return "Create USER";
-	case SQL_CREATE_TYPE:
-		return "Create TYPE";
-	case SQL_CREATE_FUNC:
-		return "Create FUNC";
-	case SQL_DROP_SCHEMA:
-		return "Drop Schema";
-	case SQL_DROP_TABLE:
-		return "Drop Table";
-	case SQL_DROP_VIEW:
-		return "Drop View";
-	case SQL_DROP_ROLE:
-		return "Drop ROLE";
-	case SQL_DROP_USER:
-		return "Drop USER";
-	case SQL_DROP_TYPE:
-		return "Drop TYPE";
-	case SQL_DROP_FUNC:
-		return "Drop FUNC";
-	case SQL_DROP_CONSTRAINT:
-		return "Drop CONSTRAINT";
-	case SQL_DROP_INDEX:
-		return "Drop INDEX";
-	case SQL_ALTER_TABLE:
-		return "Alter TABLE";
-	case SQL_ALTER_SEQ:
-		return "Alter SEQUENCE";
-	case SQL_GRANT_ROLES:
-		return "Grant ROLE";
-	case SQL_NAME:
-		return "Name";
-	case SQL_USER:
-		return "User";
-	case SQL_PATH:
-		return "Path";
-	case SQL_CHARSET:
-		return "Char Set";
-	case SQL_SCHEMA:
-		return "Schema";
-	case SQL_TABLE:
-		return "Table";
-	case SQL_COLUMN:
-		return "Column";
-	case SQL_COLUMN_OPTIONS:
-		return "Column Options";
-	case SQL_CONSTRAINT:
-		return "Constraint";
-	case SQL_CHECK:
-		return "Check";
-	case SQL_DEFAULT:
-		return "default";
-	case SQL_NOT_NULL:
-		return "Not Null";
-	case SQL_NULL:
-		return "Null";
-	case SQL_UNIQUE:
-		return "Unique";
-	case SQL_PRIMARY_KEY:
-		return "Primary Key";
-	case SQL_FOREIGN_KEY:
-		return "Foreign Key";
-	case TR_COMMIT:
-		return "Commit";
-	case TR_ROLLBACK:
-		return "Rollback";
-	case TR_SAVEPOINT:
-		return "Savepoint";
-	case TR_RELEASE:
-		return "Release";
-	case TR_START:
-		return "Start";
-	case TR_MODE:
-		return "Mode";
-	case SQL_DECLARE:
-		return "Declare";
-	case SQL_SET:
-		return "Set";
-	case SQL_PREP:
-		return "Prepare";
-	case SQL_SELECT:
-		return "Select";
-	case SQL_CONNECT:
-		return "Connect";
-	case SQL_DISCONNECT:
-		return "Disconnect";
-	case SQL_DATABASE:
-		return "Database";
-	case SQL_PORT:
-		return "Port";
-	case SQL_WHERE:
-		return "Where";
-	case SQL_FROM:
-		return "From";
-	case SQL_UNIONJOIN:
-		return "Union Join";
-	case SQL_UNION:
-		return "Union";
-	case SQL_EXCEPT:
-		return "Except";
-	case SQL_INTERSECT:
-		return "Intersect";
-	case SQL_UPDATE:
-		return "Update";
-	case SQL_INSERT:
-		return "Insert";
-	case SQL_DELETE:
-		return "Delete";
-	case SQL_VALUES:
-		return "Values";
-	case SQL_ASSIGN:
-		return "Assignment";
-	case SQL_ORDERBY:
-		return "Order By";
-	case SQL_GROUPBY:
-		return "Group By";
-	case SQL_DESC:
-		return "Desc";
-	case SQL_AND:
-		return "And";
-	case SQL_OR:
-		return "Or";
-	case SQL_EXISTS:
-		return "Exists";
-	case SQL_NOT_EXISTS:
-		return "Not Exists";
-	case SQL_OP:
-		return "Op";
-	case SQL_UNOP:
-		return "Unop";
-	case SQL_BINOP:
-		return "Binop";
-	case SQL_BETWEEN:
-		return "Between";
-	case SQL_NOT_BETWEEN:
-		return "Not Between";
-	case SQL_LIKE:
-		return "Like";
-	case SQL_NOT_LIKE:
-		return "Not Like";
-	case SQL_IN:
-		return "In";
-	case SQL_NOT_IN:
-		return "Not In";
-	case SQL_GRANT:
-		return "Grant";
-	case SQL_REVOKE:
-		return "Revoke";
-	case SQL_EXECUTE:
-		return "Execute";
-	case SQL_PARAMETER:
-		return "Parameter";
-	case SQL_AGGR:
-		return "Aggregates";
-	case SQL_COMPARE:
-		return "Compare";
-	case SQL_TEMP_LOCAL:
-		return "Local Temporary";
-	case SQL_TEMP_GLOBAL:
-		return "Global Temporary";
-	case SQL_INT_VALUE:
-		return "Integer";
-	case SQL_ATOM:
-		return "Atom";
-	case SQL_ESCAPE:
-		return "Escape";
-	case SQL_CAST:
-		return "CAST";
-	case SQL_RETURN:
-		return "RETURN";
-	case SQL_IF:
-		return "IF";
-	case SQL_ELSE:
-		return "ELSE";
-	case SQL_CASE:
-		return "CASE";
-	case SQL_WHEN:
-		return "WHEN";
-	case SQL_COALESCE:
-		return "Coalesce";
-	case SQL_NULLIF:
-		return "NULLIF";
-	case SQL_JOIN:
-		return "Join";
-	case SQL_CROSS:
-		return "Cross";
-	case SQL_COPYFROM:
-		return "Copy From";
-	case SQL_COPYTO:
-		return "Copy To";
-	default:
-		return "unknown";
+#define SQL(TYPE) case SQL_##TYPE : return #TYPE
+	SQL(CREATE_SCHEMA);
+	SQL(CREATE_TABLE);
+	SQL(CREATE_VIEW);
+	SQL(CREATE_INDEX);
+	SQL(CREATE_ROLE);
+	SQL(CREATE_USER);
+	SQL(CREATE_TYPE);
+	SQL(CREATE_FUNC);
+	SQL(CREATE_SEQ);
+	SQL(CREATE_TRIGGER);
+	SQL(DROP_SCHEMA);
+	SQL(DROP_TABLE);
+	SQL(DROP_VIEW);
+	SQL(DROP_INDEX);
+	SQL(DROP_ROLE);
+	SQL(DROP_USER);
+	SQL(DROP_TYPE);
+	SQL(DROP_FUNC);
+	SQL(DROP_SEQ);
+	SQL(DROP_TRIGGER);
+	SQL(ALTER_TABLE);
+	SQL(ALTER_SEQ);
+	SQL(ALTER_USER);
+	SQL(DROP_COLUMN);
+	SQL(DROP_CONSTRAINT);
+	SQL(DROP_DEFAULT);
+	SQL(DECLARE);
+	SQL(SET);
+	SQL(PREP);
+	SQL(NAME);
+	SQL(USER);
+	SQL(PATH);
+	SQL(CHARSET);
+	SQL(SCHEMA);
+	SQL(TABLE);
+	SQL(TYPE);
+	SQL(CASE);
+	SQL(CAST);
+	SQL(RETURN);
+	SQL(IF);
+	SQL(ELSE);
+	SQL(WHILE);
+	SQL(COLUMN);
+	SQL(COLUMN_OPTIONS);
+	SQL(COALESCE);
+	SQL(CONSTRAINT);
+	SQL(CHECK);
+	SQL(DEFAULT);
+	SQL(NOT_NULL);
+	SQL(NULL);
+	SQL(NULLIF);
+	SQL(UNIQUE);
+	SQL(PRIMARY_KEY);
+	SQL(FOREIGN_KEY);
+	SQL(BEGIN);
+#define TR(TYPE) case TR_##TYPE : return #TYPE
+	TR(COMMIT);
+	TR(ROLLBACK);
+	TR(SAVEPOINT);
+	TR(RELEASE);
+	TR(START);
+	TR(MODE);
+	SQL(INSERT);
+	SQL(DELETE);
+	SQL(UPDATE);
+	SQL(CROSS);
+	SQL(JOIN);
+	SQL(SELECT);
+	SQL(CONNECT);
+	SQL(DISCONNECT);
+	SQL(DATABASE);
+	SQL(PORT);
+	SQL(WHERE);
+	SQL(FROM);
+	SQL(UNIONJOIN);
+	SQL(UNION);
+	SQL(EXCEPT);
+	SQL(INTERSECT);
+	SQL(VALUES);
+	SQL(ASSIGN);
+	SQL(ORDERBY);
+	SQL(GROUPBY);
+	SQL(DESC);
+	SQL(AND);
+	SQL(OR);
+	SQL(NOT);
+	SQL(EXISTS);
+	SQL(NOT_EXISTS);
+	SQL(OP);
+	SQL(UNOP);
+	SQL(BINOP);
+	SQL(NOP);
+	SQL(BETWEEN);
+	SQL(NOT_BETWEEN);
+	SQL(LIKE);
+	SQL(NOT_LIKE);
+	SQL(IN);
+	SQL(NOT_IN);
+	SQL(GRANT);
+	SQL(GRANT_ROLES);
+	SQL(REVOKE);
+	SQL(REVOKE_ROLES);
+	SQL(EXECUTE);
+	SQL(PRIVILEGES);
+	SQL(ROLE);
+	SQL(PARAMETER);
+	SQL(FUNC);
+	SQL(AGGR);
+	SQL(RANK);
+	SQL(COMPARE);
+	SQL(TEMP_LOCAL);
+	SQL(TEMP_GLOBAL);
+	SQL(INT_VALUE);
+	SQL(ATOM);
+	SQL(USING);
+	SQL(WHEN);
+	SQL(ESCAPE);
+	SQL(COPYFROM);
+	SQL(COPYTO);
+	SQL(EXPORT);
+	SQL(NEXT);
+	SQL(MULSTMT);
+	SQL(WITH);
 	}
+	return "unknown";	/* just needed for broken compilers ! */
 }
 
 void *sql_error( mvc * sql, int error_code, char *format, ... )

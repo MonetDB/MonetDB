@@ -89,6 +89,13 @@ scanner_init_keywords(void)
 	keywords_insert("MAX", AGGR);
 	keywords_insert("SUM", AGGR);
 	keywords_insert("COUNT", AGGR);
+
+	keywords_insert("RANK", RANK);
+	keywords_insert("DENSE_RANK", RANK);
+	keywords_insert("PERCENT_RANK", RANK);
+	keywords_insert("CUME_DIST", RANK);
+	keywords_insert("ROW_NUMBER", RANK);
+	
 	keywords_insert("AS", AS);
 	keywords_insert("ASC", ASC);
 	keywords_insert("AUTHORIZATION", AUTHORIZATION);
@@ -183,6 +190,8 @@ scanner_init_keywords(void)
 	keywords_insert("OR", OR);
 	keywords_insert("ORDER", ORDER);
 	keywords_insert("OUTER", OUTER);
+	keywords_insert("OVER", OVER);
+	keywords_insert("PARTITION", PARTITION);
 	keywords_insert("PATH", PATH);
 	keywords_insert("PRECISION", PRECISION);
 	keywords_insert("PRIMARY", PRIMARY);
@@ -296,7 +305,6 @@ scanner_init_keywords(void)
 	keywords_insert("RETURN", RETURN);
 	keywords_insert("CALL", CALL);
 	keywords_insert("LANGUAGE", LANGUAGE);
-	keywords_insert("SQL", SQL);
 
 	keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	keywords_insert("PROFILE", SQL_PROFILE);
@@ -878,7 +886,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	if (token == KW_TYPE)
 		token = aTYPE;
 
-	if (token == IDENT || token == COMPARISON || token == AGGR || token == aTYPE || token == ALIAS)
+	if (token == IDENT || token == COMPARISON || token == AGGR || token == RANK || token == aTYPE || token == ALIAS)
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 	if (token == STRING) {
 		char quote = *yylval->sval;

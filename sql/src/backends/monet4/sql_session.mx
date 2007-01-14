@@ -162,15 +162,18 @@ sql_symbol2stmt(mvc *c)
 		opt = optimize(c, s);
 		stmt_destroy(s);
 		s = opt;
-		/*stmt2dot(s, 2, "/tmp/g2.dot");*/
+		if (mvc_debug_on(c,32768)) 
+			stmt2dot(s, 2, "/tmp/g2.dot");
 		opt = rel2bin(c, s);
 		stmt_destroy(s);
 		s = opt;
-		/*stmt2dot(s, 3, "/tmp/g3.dot");*/
+		if (mvc_debug_on(c,32768)) 
+			stmt2dot(s, 3, "/tmp/g3.dot");
 		opt = bin_optimizer(c, s);
 		stmt_destroy(s);
 		s = opt;
-		/*stmt2dot(s, 4, "/tmp/g4.dot");*/
+		if (mvc_debug_on(c,32768)) 
+			stmt2dot(s, 4, "/tmp/g4.dot");
 	}
 	return s;
 }

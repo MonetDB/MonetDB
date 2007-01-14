@@ -275,7 +275,6 @@ stmt_intersect(stmt *op1, stmt *op2)
 	/* this case should have been transformed into a proper
 	   multi-att join ("st_reljoin") by push_selects_down()
 	 */
-	assert(!(op1->flag == cmp_equal && op2->flag == cmp_equal));
 	assert(!(op1->type == st_reljoin && op2->type == st_reljoin));
 
 	/*
@@ -378,7 +377,8 @@ stmt_push_down_head(stmt *join, stmt *select)
 		stmt_destroy(select);
 		stmt_destroy(join);
 		return stmt_relselect(l);
-	} else if (join->type == st_bat || join->type == st_column) {
+	} else if (join->type == st_bat || join->type == st_column || 
+		   join->type == st_append) {
 		return stmt_semijoin(join, select);
 #ifndef NDEBUG
 	} else {
@@ -981,59 +981,6 @@ mk_pivot(list *pivots, stmt *st, stmt *p, int markid)
 	stmt_destroy(pnr);
 	return npivots;
 }
-
-/* merge_pivot_sets tries to merge pivot sets using the joins in the join set
- * returns a set of pivot sets.
- * */
-/*
-static list *merge_pivot_sets(list *pivotsets, list *joins)
-{
-	stmt *st;
-	if (list_length(joins) == 0)
-		return NULL;
-	if (!pivotsets){
-		list *pivots = create_stmt_list();
-		node *n = joins->h;
-		pivotsets = list_create((fdestroy)&list_destroy);
-		st = n->data;
-
-		if (st->nrcols == 1) {
-			list_append(pivots, 
-					stmt_mark(stmt_reverse(stmt_dup(st)), markid++));
-		}
-		if (st->nrcols == 2) {
-			list_append(pivots, 
-					stmt_mark(stmt_reverse(stmt_dup(st)), markid));
-			list_append(pivots, 
-					stmt_mark(stmt_dup(st), markid++));
-		}
-		list_append(pivotsets,pivots);
-	}
-}
-
-static list *pivot_sets(list *joins, int *Markid)
-{
-	int markid = *Markid;
-	list *psets = list_create((fdestroy)&list_destroy);
-	node *n;
-
-	for( n = joins->h; n; n = n->next ){
-		list *pivots = create_stmt_list();
-		stmt *st = n->data;
-
-		if (st->nrcols == 1) {
-			list_append(pivots, stmt_mark(stmt_reverse(stmt_dup(st)), markid++));
-		}
-		if (st->nrcols == 2) {
-			list_append(pivots, stmt_mark (stmt_reverse(stmt_dup(st)), markid));
-			list_append(pivots, stmt_mark(stmt_dup(st), markid++));
-		}
-		list_append(psets,pivots);
-	}
-	*Markid = markid;
-	return psets;
-}
-*/
 
 static stmt *
 set2pivot(mvc *c, list *l)

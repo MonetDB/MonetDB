@@ -171,7 +171,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 				temp_table = stack_find_var(sql, tname);
 				t = tpe->comp_type;
 			} else {
-				temp_table = stack_find_table(sql, tname);
+				temp_table = stack_find_view(sql, tname);
 			}
 		}
 		if (!t && !temp_table) {
@@ -293,7 +293,6 @@ flat_subquery(mvc *sql, symbol *sq)
  * using a combination of table name and column name (or alias).
  * The sql_column_ref finds the column based on the specification from
  * symbol column_r.
- * A special column reference is 'rowid'.
  */
 static stmt *
 sql_var_ref(mvc *sql, char *name, int at)
@@ -331,46 +330,29 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 
-		if (strcmp(name, "rowid") == 0) {
-			cvar *cv = scope_first_column(scp);
+		sql_arg *a = sql_bind_param(sql, name);
+		stmt *s = stack_find_var(sql, name);
+		cs = scope_bind(scp, NULL, name);
 
-			if (!cv)
-				return sql_error(sql, 02, "SELECT: ROWID column used without table reference");
-			return stmt_mirror(stmt_dup(cv->s));
-		} else {
-			sql_arg *a = sql_bind_param(sql, name);
-			stmt *s = stack_find_var(sql, name);
-			cs = scope_bind(scp, NULL, name);
-
-			if (cs) {
-				if (a || s) {
-					stmt_destroy(cs);
-					return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
-				}
-			} else if (a) {
-				if (s) 
-					return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
-				cs = stmt_var(_strdup(a->name), &a->type, 0, 0);
-			} else if (s) {
-				cs = sql_var_ref(sql, name, 0);
-			} else {
-				return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+		if (cs) {
+			if (a || s) {
+				stmt_destroy(cs);
+				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
 			}
+		} else if (a) {
+			if (s) 
+				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+			cs = stmt_var(_strdup(a->name), &a->type, 0, 0);
+		} else if (s) {
+			cs = sql_var_ref(sql, name, 0);
+		} else {
+			return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
 		}
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
 		char *cname = l->h->next->data.sval;
 
-		if (strcmp(cname, "rowid") == 0) {
-			tvar *tv = scope_bind_table(scp, tname);
-			cvar *cv;
-
-			if (!tv) {
-				return sql_error(sql, 02, "SELECT: no such identifier '%s'", tname);
-			}
-			cv = tv->columns->h->data;
-			return stmt_mirror(stmt_dup(cv->s));
-		} else if (!(cs = scope_bind(scp, tname, cname))) {
+		if (!(cs = scope_bind(scp, tname, cname))) {
 			return sql_error(sql, 02, "SELECT: no such column '%s.%s'", tname, cname);
 		}
 	} else if (dlist_length(l) >= 3) {
@@ -1164,6 +1146,8 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			/* if we have a where (boolean only) */
 			if (!(s = scope_bind(scp, NULL, "row"))) 
 				return stmt_atom_int(1);
+			stmt_destroy(s);
+			s = stmt_dup(subset);
 		}
 	} else {
 		exp_kind ek = {type_value, card_column, FALSE};
@@ -1208,6 +1192,237 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
 	}
 	return NULL;
+}
+
+static group *
+query_groupby_inner(mvc *sql, scope *scp, stmt *c, stmt *subset, group *cur)
+{
+	stmt *s = find_pivot(subset, c->h);
+
+	(void) scp;		/* Stefan: unused!? */
+
+	if (s) {
+		stmt *j = stmt_join(s, c, cmp_equal);
+
+		cur = grp_create(j, cur, c);
+	}
+
+	if (!cur) {
+		char *cn = column_name(c);
+
+		(void) sql_error(sql, 02, "GROUP BY: no subset for column '%s'", cn);
+		_DELETE(cn);
+		return NULL;
+	}
+	return cur;
+}
+
+/* some users like to use aliases allready in the groupby */
+stmt *
+sql_selection_ref(mvc *sql, scope *scp, symbol *grp, dlist *selection, stmt *subset)
+{
+	dnode *n;
+	dlist *gl = grp->data.lval;
+	char *name = NULL;
+	exp_kind ek = {type_value, card_column, FALSE};
+
+	if (dlist_length(gl) > 1)
+		return NULL;
+	if (!selection)
+		return NULL;
+
+	name = gl->h->data.sval;
+	for (n = selection->h; n; n = n->next) {
+		/* we only look for columns */
+		if (n->data.sym->token == SQL_COLUMN) {
+			dlist *l = n->data.sym->data.lval;
+			/* AS name */ 
+			if (l->h->next->data.sval &&
+			    strcmp(l->h->next->data.sval, name) == 0){
+				return sql_value_exp(sql, scp, l->h->data.sym, NULL, subset, sql_sel, ek);
+			}
+		}
+	}
+	return NULL;
+}
+
+static group *
+query_groupby(mvc *sql, scope *scp, symbol *groupby, stmt *subset, dlist *selection)
+{
+	group *cur = NULL;
+	dnode *o = groupby->data.lval->h;
+
+	for (; o; o = o->next) {
+		symbol *grp = o->data.sym;
+		stmt *c = sql_column_ref(sql, scp, grp);
+
+		if (!c) {
+			/* reset error */
+			sql->errstr[0] = '\0';
+			sql->session->status = 0;
+
+			c = sql_selection_ref(sql, scp, grp, selection, subset);
+			if (c) {
+				cur = grp_create(c, cur, NULL);
+				continue;
+			}
+		} 
+		if (!c) {
+			if (cur)
+				grp_destroy(cur);
+			return NULL;
+		}
+		cur = query_groupby_inner(sql, scp, c, subset, cur);
+	}
+	return cur;
+}
+
+/*
+   select column_1, column_2 from x order by column_1, column_2;
+
+   As SQL-3 dropped support for order by number (column position in result 
+   table) so we also do not support it. Unfortunately SQL-3 added new crap,
+   order by 'expression', where expression should match a result column 
+   expression. We also do not support this (just use as bla and order by bla!).
+   SQL-3 supports ordering on columns not in the result table, but again we
+   don't.
+ */
+static stmt *
+orderby_column_ref(mvc *sql, symbol *column_r, stmt *s)
+{
+	dlist *l = column_r->data.lval;
+
+	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
+
+	if (dlist_length(l) == 1) {
+		char *name = l->h->data.sval;
+		node *n;
+
+		for (n = s->op1.lval->h; n; n = n->next) {
+			stmt *t = n->data;
+			char *cn = column_name(t);
+
+			if (strcmp(cn, name) == 0) {
+				_DELETE(cn);
+				return stmt_dup(t);
+			}
+			_DELETE(cn);
+		}
+		return sql_error(sql, 02, "ORDER BY: no such column '%s'", name);
+	}
+	if (dlist_length(l) == 2) {
+		char *tname = l->h->data.sval;
+		char *name = l->h->next->data.sval;
+		node *n;
+
+		for (n = s->op1.lval->h; n; n = n->next) {
+			stmt *t = n->data;
+			char *tn = table_name(t);
+			char *cn = column_name(t);
+
+			if (tn && strcmp(tn, tname) == 0 && strcmp(cn, name) == 0) {
+				if (tn)
+					_DELETE(tn);
+				_DELETE(cn);
+				return stmt_dup(t);
+			}
+			if (tn)
+				_DELETE(tn);
+			_DELETE(cn);
+		}
+		return sql_error(sql, 02, "ORDER BY: no such column '%s'", name);
+	}
+	return sql_error(sql, 02, "ORDER BY: absolute column names not supported");
+}
+
+static stmt *
+query_orderby(mvc *sql, scope *scp, symbol *orderby, stmt *subset, group *grp, int by_column_ref)
+{
+	stmt *cur = NULL;
+	dnode *o = orderby->data.lval->h;
+
+	/* first sort the groups */
+	if (grp) 
+		cur = stmt_order(stmt_dup(grp->grp), 1);
+	while (o) {
+		symbol *order = o->data.sym;
+
+		if (order->token == SQL_COLUMN) {
+			symbol *col = order->data.lval->h->data.sym;
+			int direction = order->data.lval->h->next->data.ival;
+			stmt *sc = NULL;
+
+			if (by_column_ref) {
+				sc = orderby_column_ref(sql, col, subset);
+			} else {
+
+				sc = sql_column_ref(sql, scp, col);
+				if (sc) {
+					stmt *t = find_pivot(subset, sc->h);
+					if (t) {
+						sc = stmt_join(t, sc, cmp_equal);
+					} else {
+						stmt_destroy(sc); 
+						sc = NULL;
+					}
+				}
+			}
+
+			if (sc) {
+				if (cur)
+					cur = stmt_reorder(cur, sc, direction);
+				else
+					cur = stmt_order(sc, direction);
+			} else {
+				return NULL;
+			}
+		} else {
+			return sql_error(sql, 02, "ORDER BY: not a column");
+		}
+		o = o->next;
+	}
+	return cur;
+}
+
+/* window functions */
+static stmt *
+sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
+{
+	dlist *l = se->data.lval;
+	symbol *window_function = l->h->data.sym;
+	dlist *window_specification = l->h->next->data.lval;
+	char *aggrstr = NULL;
+	stmt *s = NULL;
+	
+	if (window_function->token == SQL_RANK) {
+		aggrstr = window_function->data.sval;
+	} else { /* real aggr */
+		aggrstr  = window_function->data.lval->h->data.sval;
+	}
+
+	if (grp) 
+		return sql_error(sql, 02, "OVER: not allowed in combination with GROUP BY");
+
+	if (f == sql_where) 
+		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
+
+	printf("rank func %s\n", aggrstr);
+	/* Partition By */
+	if (window_specification->h->data.sym) {
+		grp = query_groupby(sql, scp, window_specification->h->data.sym, subset, NULL /* cannot use (selection) column references, as this result is a selection column */ );
+	}
+	/* Order By */
+	if (window_specification->h->next->data.sym) {
+		s = query_orderby(sql, scp, window_specification->h->next->data.sym, subset, grp, 0 /* cannot use (selection) column references, as this result is a selection column */ );
+	}
+	/* Rank or Aggr function */
+	if (window_function->token == SQL_RANK) {
+		/* for now only row_number */
+		s = stmt_mark(s, 0);
+	} else {
+		return s;
+	}
+	return s;
 }
 
 static stmt *
@@ -1294,6 +1509,8 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 		return sql_unop(sql, scp, se, grp, subset, f);
 	case SQL_AGGR:
 		return sql_aggrop(sql, scp, se, grp, subset, f);
+	case SQL_RANK:
+		return sql_rankop(sql, scp, se, grp, subset, f);
 	case SQL_COLUMN:
 		return sql_column_value(sql, scp, se, grp, subset, f);
 	case SQL_NAME:
@@ -3077,15 +3294,18 @@ sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int 
 		int found = 1;
 
 		if (!(t = scope_bind(scp, NULL, "row"))) {
+			stmt *b = stmt_bool(1);
 			t = stmt_temp(bt);
-			t = stmt_append(t, stmt_bool(1));
+			/* fake column needs fake base table too */
+			t->h = b;
+			t = stmt_append(t, stmt_dup(b));
 			found = 0;
 		}
 		if (!(s = check_types(sql, bt, s, type_equal)))
 			return NULL;
 		s = stmt_select(t, s, cmp_equal);
 		if (!found)
-			scope_add_alias(scp, stmt_dup(s), "row");
+			scope_add_alias(scp, stmt_dup(t), "row");
 
 	} else if (s && s->nrcols == 0 && f == sql_search && subset) {
 		stmt *t = first_subset(subset);
@@ -3093,99 +3313,7 @@ sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int 
 		t = stmt_const(t, stmt_bool(1));
 		return stmt_select(t, s, cmp_equal);
 	}
-/*
-	if (s && s->type == st_filter) {
-		filter(scp->ptable, s);
-		if (subset)
-			return first_subset(subset);
-		else
-			return stmt_dup(scope_first_column(scp)->s);
-	}
-*/
 	return s;
-}
-
-static group *
-query_groupby_inner(mvc *sql, scope *scp, stmt *c, stmt *subset, group *cur)
-{
-	stmt *s = find_pivot(subset, c->h);
-
-	(void) scp;		/* Stefan: unused!? */
-
-	if (s) {
-		stmt *j = stmt_join(s, c, cmp_equal);
-
-		cur = grp_create(j, cur, c);
-	}
-
-	if (!cur) {
-		char *cn = column_name(c);
-
-		(void) sql_error(sql, 02, "GROUP BY: no subset for column '%s'", cn);
-		_DELETE(cn);
-		return NULL;
-	}
-	return cur;
-}
-
-/* some users like to use aliases allready in the groupby */
-stmt *
-sql_selection_ref(mvc *sql, scope *scp, symbol *grp, dlist *selection, stmt *subset)
-{
-	dnode *n;
-	dlist *gl = grp->data.lval;
-	char *name = NULL;
-	exp_kind ek = {type_value, card_column, FALSE};
-
-	if (dlist_length(gl) > 1)
-		return NULL;
-	if (!selection)
-		return NULL;
-
-	name = gl->h->data.sval;
-	for (n = selection->h; n; n = n->next) {
-		/* we only look for columns */
-		if (n->data.sym->token == SQL_COLUMN) {
-			dlist *l = n->data.sym->data.lval;
-			/* AS name */ 
-			if (l->h->next->data.sval &&
-			    strcmp(l->h->next->data.sval, name) == 0){
-				return sql_value_exp(sql, scp, l->h->data.sym, NULL, subset, sql_sel, ek);
-			}
-		}
-	}
-	return NULL;
-}
-
-static group *
-query_groupby(mvc *sql, scope *scp, symbol *groupby, stmt *subset, dlist *selection)
-{
-	group *cur = NULL;
-	dnode *o = groupby->data.lval->h;
-
-	for (; o; o = o->next) {
-		symbol *grp = o->data.sym;
-		stmt *c = sql_column_ref(sql, scp, grp);
-
-		if (!c) {
-			/* reset error */
-			sql->errstr[0] = '\0';
-			sql->session->status = 0;
-
-			c = sql_selection_ref(sql, scp, grp, selection, subset);
-			if (c) {
-				cur = grp_create(c, cur, NULL);
-				continue;
-			}
-		} 
-		if (!c) {
-			if (cur)
-				grp_destroy(cur);
-			return NULL;
-		}
-		cur = query_groupby_inner(sql, scp, c, subset, cur);
-	}
-	return cur;
 }
 
 static group *
@@ -3202,94 +3330,6 @@ query_groupby_outers(mvc *sql, scope *scp, stmt *subset)
 
 		if (s)
 			cur = grp_create(s, cur, NULL);
-	}
-	return cur;
-}
-
-/*
-   select column_1, column_2 from x order by column_1, column_2;
-
-   As SQL-3 dropped support for order by number (column position in result 
-   table) so we also do not support it. Unfortunately SQL-3 added new crap,
-   order by 'expression', where expression should match a result column 
-   expression. We also do not support this (just use as bla and order by bla!).
-   SQL-3 supports ordering on columns not in the result table, but again we
-   don't.
- */
-static stmt *
-orderby_column_ref(mvc *sql, symbol *column_r, stmt *s)
-{
-	dlist *l = column_r->data.lval;
-
-	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
-
-	if (dlist_length(l) == 1) {
-		char *name = l->h->data.sval;
-		node *n;
-
-		for (n = s->op1.lval->h; n; n = n->next) {
-			stmt *t = n->data;
-			char *cn = column_name(t);
-
-			if (strcmp(cn, name) == 0) {
-				_DELETE(cn);
-				return stmt_dup(t);
-			}
-			_DELETE(cn);
-		}
-		return sql_error(sql, 02, "ORDER BY: no such column '%s'", name);
-	}
-	if (dlist_length(l) == 2) {
-		char *tname = l->h->data.sval;
-		char *name = l->h->next->data.sval;
-		node *n;
-
-		for (n = s->op1.lval->h; n; n = n->next) {
-			stmt *t = n->data;
-			char *tn = table_name(t);
-			char *cn = column_name(t);
-
-			if (tn && strcmp(tn, tname) == 0 && strcmp(cn, name) == 0) {
-				if (tn)
-					_DELETE(tn);
-				_DELETE(cn);
-				return stmt_dup(t);
-			}
-			if (tn)
-				_DELETE(tn);
-			_DELETE(cn);
-		}
-		return sql_error(sql, 02, "ORDER BY: no such column '%s'", name);
-	}
-	return sql_error(sql, 02, "ORDER BY: absolute column names not supported");
-}
-
-static stmt *
-query_orderby(mvc *sql, symbol *orderby, stmt *s)
-{
-	stmt *cur = NULL;
-	dnode *o = orderby->data.lval->h;
-
-	while (o) {
-		symbol *order = o->data.sym;
-
-		if (order->token == SQL_COLUMN) {
-			symbol *col = order->data.lval->h->data.sym;
-			int direction = order->data.lval->h->next->data.ival;
-			stmt *sc = orderby_column_ref(sql, col, s);
-
-			if (sc) {
-				if (cur)
-					cur = stmt_reorder(cur, sc, direction);
-				else
-					cur = stmt_order(sc, direction);
-			} else {
-				return NULL;
-			}
-		} else {
-			return sql_error(sql, 02, "ORDER BY: not a column");
-		}
-		o = o->next;
 	}
 	return cur;
 }
@@ -3322,18 +3362,6 @@ sql_reorder(stmt *order, stmt *s)
 	return stmt_list(l);
 }
 
-/* find the special 'row' column */
-static stmt *
-find_base_row( stmt *subset, int aggr )
-{
-	stmt *s = subset->op1.lval->h->data;
-	/* if its an aggregation we need the real base */
-	if (aggr)
-		while(s->type != st_append && s->op1.stval) 
-			s = s->op1.stval;
-	return stmt_dup(s);
-}
-
 static stmt *
 sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 {
@@ -3351,14 +3379,11 @@ sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 		s = sql_logical_exp(sql, scp, sn->where, NULL, NULL, sql_where);
 		if (!s)
 			return NULL;
-		if (s->type != st_set && s->type != st_sets) {
-			s = stmt_set(s);
-		}
 		subset = s;
 	}
 	sl = create_stmt_list();
 	for ( n = sn->selection->h; n; n = n->next) {
-		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
+		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, subset, sql_sel);
 
 		if (!cs || !tail_type(cs)) {
 			list_destroy(sl);
@@ -3390,8 +3415,12 @@ sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 				return sql_error(sql, 02, "SELECT: subquery should return a single value");
 			}
 		} else if (subset) {
-			stmt *ss = find_base_row(subset, aggr);
-
+			stmt *ss = NULL;
+			if (aggr) { 
+				ss = scope_bind(scp, NULL, "row"); 
+			} else {
+				ss = stmt_dup(subset);
+			}
 			cs = stmt_const(ss, stmt_dup(cs));
 			list_append(rl, cs);
 		} else {
@@ -3445,7 +3474,8 @@ sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 static stmt *
 set2table( mvc *sql, scope *scp, stmt *s) 
 {
-	stmt *cur = NULL;
+	stmt *cur = NULL, *t = NULL;
+	int pending = 0;
 	node *n;
 
 	for (n = scp->tables->h; n; n = n->next) {
@@ -3456,23 +3486,32 @@ set2table( mvc *sql, scope *scp, stmt *s)
 			cvar *cv = v->columns->h->data;
 
 			tmp = stmt_dup(cv->s);
+			pending = 1;
 			/* just add a select whole column */
 			if (!cur) {
-				cur = stmt_dup(tmp);
-				/* add join to an already used column */
-			} else {
-				tmp = stmt_join(stmt_dup(cur), 
-						stmt_reverse(tmp), cmp_all);
+				cur = tmp;
+				continue;
 			}
-			s = sql_and(sql, scp, s, tmp, sql_where);
 		} else if (!cur) {
 			cur = tmp;
-		} else {
+			continue;
+		}
+		if (pending) {
+			pending = 0;
+			tmp = stmt_join(stmt_dup(cur), 
+					stmt_reverse(tmp), cmp_all);
+			s = sql_and(sql, scp, s, tmp, sql_where);
+		} else if (tmp) {
 			stmt_destroy(tmp);
 		}
 	}
-	if (cur)
-		stmt_destroy(cur);
+	if (!cur)
+		return s;
+	if ((t = scope_bind(scp, NULL, "row")) != NULL) {
+		t = stmt_join(stmt_dup(cur), stmt_reverse(t), cmp_all);
+		s = sql_and(sql, scp, s, t, sql_where);
+	}
+	stmt_destroy(cur);
 	return s;
 }
 
@@ -3532,6 +3571,10 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 			sql_select_cleanup(sql, s, subset, grp);
 			return sql_error(sql, 02, "SELECT: subquery result missing");
 		}
+		if (s->type == st_filter) {
+			filter(scp->ptable, s);
+			s = stmt_dup(scope_first_column(scp)->s);
+		}
 		if (s->type != st_set && s->type != st_sets) {
 			s = stmt_set(s);
 		}
@@ -3541,7 +3584,6 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 		} else {
 			s = sets2table(sql, scp, s);
 		}
-
 	} else if (sn->from) {
 		node *n;
 		stmt *cur = NULL;
@@ -3787,7 +3829,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 	}
 
 	if (s && subset && sn->orderby) {
-		order = query_orderby(sql, sn->orderby, s);
+		order = query_orderby(sql, scp, sn->orderby, s, NULL, 1);
 		if (!order) {
 			sql_select_cleanup(sql, s, subset, grp);
 			return sql_error(sql, 02, "SELECT: subquery result missing");
