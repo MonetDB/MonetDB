@@ -4260,6 +4260,8 @@ xquery_client_free_(xquery_client *ctx)
     @:unfix(fun_item000)@
     @:unfix(fun_kind000)@
     @:unfix(loop000)@
+    @:unfix(proc_vid)@
+    @:unfix(var_usage)@
 
     /* close the MIL client session */
     monet_cntxt[ctx->repeat_stk].reuse = FALSE;
