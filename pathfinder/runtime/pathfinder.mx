@@ -1100,10 +1100,12 @@ PROC _shredlock_set(str colname,
                     lng wsid) : void
 {
     # xlocks use a string collection key as it may not yet exist in the table
-    if (not(colname_shredlock.exist(colname))) 
-        colname_shredlock.insert(colname, lock_create());
-
-    var shred_lock := colname_shredlock.find(colname);
+    var shred_lock;
+    if (colname_shredlock.exist(colname)) 
+        shred_lock := colname_shredlock.find(colname);
+    else
+        shred_lock := lock_create();
+    colname_shredlock.insert(colname, shred_lock);
     lock_unset(pf_short);
     lock_set(shred_lock); # can take a long time, do so with short lock released 
     lock_set(pf_short);
