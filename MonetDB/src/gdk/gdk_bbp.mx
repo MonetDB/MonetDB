@@ -1993,6 +1993,10 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 		for (i = bbpunload; i != BBPMAXTRIM; i = bbptrim[i].next) {
 			BAT *b = BBP_cache(bbptrim[i].bid);
+			if (b == NULL || !(BBP_status(bbptrim[i].bid)&BBPUNLOADING)) {
+				GDKwarning("BBPtrim: bat(%d) gone\n",  bbptrim[i].bid);
+				continue;
+			}
 			MEMDEBUG THRprintf(GDKout, "#BBPTRIM: %9d %7d %s\n", bbptrim[i].lastused, (int) bbptrim[i].bid, BBPname(bbptrim[i].bid));
 
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));
