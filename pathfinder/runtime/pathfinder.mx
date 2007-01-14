@@ -1120,6 +1120,7 @@ PROC _shredlock_unset(str colname,
     lock_unset(shred_lock);
     colname_pins.delete(colname, -(wsid));
     colname_shredlock.delete(colname, shred_lock);
+    if (not(colname_shredlock.exist(colname))) lock_destroy(shred_lock); 
 }
 
 PROC extend_protect(BAT[void,bat] ws,

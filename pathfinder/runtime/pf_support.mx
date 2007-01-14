@@ -6181,7 +6181,7 @@ included in ws_overlaps_ws. Instead, a single variable 'pf_special' records the 
 #define PF_CONVOY 5
 BAT* ws_overlaps_ws = NULL;
 MT_Lock pf_runtime_lock[6];
-MT_Sema pf_runtime_sema[4];
+MT_Sema pf_runtime_sema[3];
 int pf_nreaders, pf_convoy, pf_ndocmgt;
 lng pf_writer, pf_special;
 
@@ -6194,7 +6194,6 @@ lng pf_writer, pf_special;
 #define PF_META_BARRIER      pf_runtime_sema[0]
 #define PF_UPDATE_BARRIER    pf_runtime_sema[1]
 #define PF_EXTEND_BARRIER    pf_runtime_sema[2]
-#define PF_MAXQUERY_BARRIER  pf_runtime_sema[3]
 
 #define PF_MODE_RDONLY 0 /* read-only query */
 #define PF_MODE_DOCMGT 1 /* document management query */ 
@@ -6212,10 +6211,6 @@ int CMDpflock_get(ptr *ret, int* nr) {
 int CMDpflock_begin(lng *wsid) 
 {
     int mode = ((*wsid) & (3LL << 30)) >> 30;
-
-    /* protection against overwhelming the server with concurrent queries */
-    MT_down_sema(PF_MAXQUERY_BARRIER, "pflock_begin: query limit");
-	
     if (mode == PF_MODE_RDONLY) 
         return GDK_SUCCEED;
 
@@ -6263,9 +6258,6 @@ int CMDpflock_end(lng *wsid)
 {
     int mode = ((*wsid) & (3LL << 30)) >> 30;
     lng nil = lng_nil;
-
-    /* protection against overwhelming the server with concurrent queries */
-    MT_up_sema(PF_MAXQUERY_BARRIER, "pflock_end: query limit");
 
     if (mode == PF_MODE_DOCMGT) {
         /* last docmgt function yields the meta barrier 
@@ -6364,10 +6356,6 @@ int CMDpflock_free(bit *res, bit* doCommit) {
 }
 
 bat* pf_support_prelude() {
-    char *m_clients = GDKgetenv("mapi_clients");
-    xquery_concurrency = (m_clients)?strtol(m_clients, NULL, 10):1;
-    if (xquery_concurrency == 0) xquery_concurrency = 2;
-    if (xquery_concurrency > 16) xquery_concurrency = 16;
     MT_init_lock(pf_runtime_lock[0]);
     MT_init_lock(pf_runtime_lock[1]);
     MT_init_lock(pf_runtime_lock[2]);
@@ -6377,7 +6365,6 @@ bat* pf_support_prelude() {
     MT_init_sema(pf_runtime_sema[0],1);
     MT_init_sema(pf_runtime_sema[1],1);
     MT_init_sema(pf_runtime_sema[2],1);
-    MT_init_sema(pf_runtime_sema[3],xquery_concurrency);
     ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
     BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
     (void) BATprepareHash(ws_overlaps_ws);
@@ -6398,8 +6385,6 @@ void pf_support_epilogue() {
     MT_destroy_sema(pf_runtime_sema[0]);
     MT_destroy_sema(pf_runtime_sema[1]);
     MT_destroy_sema(pf_runtime_sema[2]);
-    MT_destroy_sema(pf_runtime_sema[3]);
-    MT_destroy_sema(pf_runtime_sema[4]);
 }
 
 @- PROCs required by the algebraic translation ###
