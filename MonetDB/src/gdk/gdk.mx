@@ -680,7 +680,7 @@ BUNs (@strong{Binary UNits}).  The two attributes of a BUN are called
 @strong{head} (left) and @strong{tail} (right) in the remainder of this
 document.
 
-@image{bat1,,,,feps}
+ @c image{http://monetdb.cwi.nl/projects/monetdb-mk/imgs/bat1,,,,feps}
 
 The above figure shows what a BAT looks like. It consists of two
 columns, called head and tail, such that we have always binary tuples
@@ -835,7 +835,7 @@ In the same line, we allow @strong{synchronized BATs} (BATs with identical
 head columns, and marked as such in the @strong{BAT Alignment} interface) now to
 be clustered horizontally.
 
-@image{bat2,,,,feps}
+ @c image{http://monetdb.cwi.nl/projects/monetdb-mk/imgs/bat2,,,,feps}
 @
 
 @{
@@ -1930,7 +1930,7 @@ copied into that heap `hp'.
 
 @item The @emph{ATOMfix()} and @emph{ATOMunfix()} operations do bookkeeping
 on the number of references that a GDK application maintains to the atom.
-In MonetDB, we use this to count the number of references by MIL variables
+In MonetDB, we use this to count the number of references
 directly, or through BATs that have columns of these atoms. The only operator
 for which this is currently relevant is BAT. The operators return the
 POST reference count to the atom. BATs with fixable atoms may not be
