@@ -356,6 +356,8 @@ static PFsql_t* literal(PFalg_atom_t);
                      ((p)->sql_ann->sfw->kind != sql_select):true) \
                   || ((p)->dirty == true))
 #define TYPE_MASK(t) ( (t) & (0xFFFF ^ (aat_anode | aat_pfrag)))
+#define IS_PRE(ident)   ( ((ident) >> (ATT_BITS+TYPE_BITS) \
+            & 0x00000007) == 1) 
 
 #define ELEM   1
 #define ATTR   2
@@ -527,6 +529,7 @@ static void
 sql_column_env_add(PFarray_t *env, PFalg_att_t att,
         PFalg_simple_type_t ty, PFsql_t *expr)
 {
+    ty = TYPE_MASK(ty); 
     assert( ty == aat_nat || ty == aat_int || ty == aat_str || ty == aat_bln 
             || ty == aat_pre );
 
@@ -1616,10 +1619,16 @@ reduce(PFla_op_t *p, int goalnt)
                             ((sqlnode->kind == sql_clmn_name ) &&
                             (eq_type(p->schema.items[i].name,t,
                                      sqlnode->sem.column.ident)))?
-
-                           column_name(sqlnode->sem.column
-                               .ident):
-                           column_name(colname->ident),
+                           column_name(IS_PRE(sqlnode->sem.column
+                               .ident)?sql_column_name_new(p->schema.
+                                   items[i].name,
+                                   t)->ident:
+                               sqlnode->sem.column.ident):
+                           column_name(IS_PRE(colname->ident)?
+                               sql_column_name_new(p->schema.
+                                   items[i].name,
+                                   t)->ident:
+                               colname->ident),
                            crrl->name));
 
                    /* create columnlist for the table name */
@@ -1629,9 +1638,16 @@ reduce(PFla_op_t *p, int goalnt)
                                      sqlnode->sem.column.ident)))?
                            /* regarding the correlation
                               names both columns are unbounded */
-                           column_name(sqlnode->sem.column
-                               .ident):
-                           column_name(colname->ident));
+                             column_name(IS_PRE(sqlnode->sem.column
+                               .ident)?sql_column_name_new(p->schema.
+                                   items[i].name,
+                                   t)->ident:
+                               sqlnode->sem.column.ident):
+                           column_name(IS_PRE(colname->ident)?
+                               sql_column_name_new(p->schema.
+                                   items[i].name,
+                                   t)->ident:
+                               colname->ident));
                    
                    /* override expression with columnname */
                    sql_override_expr(p->sql_ann->colmap,
@@ -1640,8 +1656,12 @@ reduce(PFla_op_t *p, int goalnt)
                          ((sqlnode->kind == sql_clmn_name ) &&
                         (eq_type(p->schema.items[i].name,t,
                                  sqlnode->sem.column.ident)))?
-                       sqlnode->sem.column.ident:
-                       colname->ident, crrl->name);
+                       IS_PRE(sqlnode->sem.column.ident)?
+                       sql_column_name_new(p->schema.items[i].name,
+                           t)->ident:sqlnode->sem.column.ident:
+                       IS_PRE(colname->ident)?
+                       sql_column_name_new(p->schema.items[i].name,
+                           t)->ident:colname->ident, crrl->name);
                 }
             }
         }
@@ -1736,7 +1756,7 @@ bin_cmp( PFsql_t* (*op) (const PFsql_t *, const PFsql_t*),
 
     for( unsigned int col = 0; col < p->schema.count; col++ ) {
         for( PFalg_simple_type_t t = 1; t; t<<=1 ) {
-            if( t & p->schema.items[col].type ) {
+            if( t & TYPE_MASK(p->schema.items[col].type) ) {
                 sql_column_env_add(p->sql_ann->colmap,
                         p->schema.items[col].name,
                         t,
@@ -1783,7 +1803,7 @@ bin_op( PFsql_t* (*op) (const PFsql_t *, const PFsql_t*),
 
     for( unsigned int col = 0; col < p->schema.count; col++ ) {
         for( PFalg_simple_type_t t = 1; t; t<<=1 ) {
-            if( t & p->schema.items[col].type ) {
+            if( t & TYPE_MASK(p->schema.items[col].type) ) {
                 sql_column_env_add(p->sql_ann->colmap,
                         p->schema.items[col].name,
                         t,
@@ -1820,7 +1840,7 @@ bin_rel(PFsql_t* (*op) (const PFsql_t*, const PFsql_t*),
 
     for(unsigned int i = 0; i < p->schema.count; i++) {
         for(PFalg_simple_type_t t=1; t; t<<=1) {
-            if( t & p->schema.items[i].type ) {
+            if( t & TYPE_MASK(p->schema.items[i].type) ) {
                 /*
                  * Type t is in the result relation.
                  * See if it is also in the left
