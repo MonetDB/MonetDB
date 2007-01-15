@@ -10912,6 +10912,7 @@ const char* PFinitMIL(void) {
         "var time_shred := 0LL;\n"
         "var time_print := 0LL;\n"
         "var time_exec := 0LL;\n"
+        "var time_start := 0LL;\n"
         "var genType := \"xml\";\n";
 }
 
@@ -10972,7 +10973,8 @@ const char* PFvarMIL(void) {
         "time_read := 0LL;\n"\
         "time_shred := 0LL;\n"\
         "time_print := 0LL;\n"\
-        "time_exec := usec();\n"
+        "time_exec := 0LL;\n"\
+        "time_start := usec();\n"
 #define PF_STARTMIL_NORMAL(STMT) PF_STARTMIL_START\
         "var err;\n"\
         "{ var ws := empty_bat;\n"\
@@ -11018,7 +11020,7 @@ const char* PFdocbatMIL(void) {
 
 #define PF_STOPMIL_START \
            "  time_print := usec();\n"\
-           "  time_exec := time_print - time_exec;\n"
+           "  time_exec := time_print - time_start;\n"
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\
            "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
            "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\

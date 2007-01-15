@@ -1957,7 +1957,8 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   if ([ttype](affected_conts.join(ws.fetch(MAP_PID))).uselect(void).count() > 0) {
     ERROR("updating read-only document.\n");
   }
-##ws_log(ws, "===================== START OF UPDATE");
+  if (ws_log_active)
+    ws_log(ws, "===================== START OF UPDATE");
 
   # set-wise unique bats, but better build the hash table on tail (head=cont != selective)
   ws.fetch(MODIFIED_NID).reverse().accbuild("hash");
@@ -2119,14 +2120,14 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
 
   ws.seqbase(oid_nil); # indicate that we are done reading our snapshot
 
-##var ws_logtime := usec(), ws_logstarttime := ws_logtime; # this timer is used assuming a single collection per query
+  var ws_logstarttime := usec(); # this timer is used assuming a single collection per query
 
   # get the collection locks, re-read the master ancestor sizes, and check for conflicts (ws_precommit)
   cont_order@batloop() {
     var cont := $t;
 
     coll_lock_set(ws, cont, COLL_LONGLOCK, "===================== COMMIT START"); 
-##ws_logtime := usec();
+    var ws_logtime := usec();
 
     # add ancestor nids on modified pages to modified nids list and remove them from ancestor nids list
     var modified_nid := ws.fetch(MODIFIED_NID); # [cont,NID]
@@ -2147,24 +2148,25 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     # we change modified_nid + ancestor_nid here; this info is later needed by ws_isolate()
     reverse(ancestor_nid).deleteBuns(del_ancestor_nid.tunique().project(cont));
 
-##ws_log(ws, "commit-reread exec=" + str(usec() - ws_logtime)); 
-
-#sel_modified_page.col_name("modified_page").print();
-#sel_modified_attr.col_name("modified_attr").print();
+    if (ws_log_active)
+      ws_log(ws, "commit-reread exec" + str(ws_logtime - usec())); 
 
     # ws_precommit gives an ERROR if a conflicting transaction has committed already
     ws_precommit(ws, cont, sel_modified_page, sel_modified_attr);
   }
+  var ws_logtime := usec();
 
   # WAL all changes: no error means a succesful commit
-##ws_logtime := usec();
   lock_set(pf_wal);
-##ws_log(ws, "===================== WAL LOCKED exec=" + str(usec() - ws_logtime)); ws_logtime := usec();
+  if (ws_log_active) 
+    ws_log(ws, "===================== WAL LOCKED wal_lock" + str(ws_logtime - (ws_logtime := usec()))); 
   log_trans_start(pf_logger);
   var err := CATCH(do_log_updates(ws, cont_order));
   lock_unset(pf_wal);
   if (not(isnil(err))) ERROR(err);
-##ws_log(ws, "===================== WAL RELEASED exec=" + str(usec() - ws_logtime)); ws_logtime := usec();
+
+  if (ws_log_active)
+    ws_log(ws, "===================== WAL RELEASED exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
 
   # upgrade locks, isolate the masters, apply deltas to them, maintain indices, and release all coll-lock(s)
@@ -2179,20 +2181,17 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     var modified_nid := ws.fetch(MODIFIED_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
     var ancestor_nid := ws.fetch(ANCESTOR_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
 
-#modified_page.col_name("modified_page").print();
-#modified_attr.col_name("modified_attr").print();
-#modified_nid.col_name("modified_nid").print();
-#ancestor_nid.col_name("ancestor_nid").print();
-
     # ws_isolate isolates concurrent snapshots, before we modify the masters 
     __ws_isolate(ws, cont, modified_page, ancestor_nid, [oid]([<<](modified_nid, OID_PAGE_BITS)), modified_attr);
 
-##ws_log(ws, "commit-isolate exec=" + str(usec() - ws_logtime)); ws_logtime := usec();
+    if (ws_log_active)
+      ws_log(ws, "commit-isolate exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
     # apply the logged changes to the masters
     pf_assert(CATCH(do_commit_updates(ws, cont)), "master update failed (commit_updates)");
 
-##ws_log(ws, "commit-apply exec=" + str(usec() - ws_logtime)); ws_logtime := usec();
+    if (ws_log_active)
+      ws_log(ws, "commit-apply exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
     # ws_postcommit maintains the indices and releases the collection lock
     __ws_postcommit(ws, cont, 
@@ -2200,9 +2199,10 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
                     ws.fetch(NID_QN_DEL_UPDATE).find(cont).reverse(), 
                     ws.fetch(QN_URI_UPDATE).find(cont).hmark(0@0), empty_bat);
 
-##ws_log(ws, "commit-idx exec=" + str(usec() - ws_logtime)); ws_logtime := ws_logstarttime; 
+    if (ws_log_active)
+      ws_log(ws, "commit-idx exec" + str(ws_logtime - usec())); 
 
-    coll_lock_unset(ws, cont, COLL_BOTHLOCK, "===================== COMMIT END", ws_logtime); 
+    coll_lock_unset(ws, cont, COLL_BOTHLOCK, "===================== COMMIT END", ws_logstarttime); 
   }
 }
 
@@ -2228,7 +2228,7 @@ b.col_name(nme).print();
 
 PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
 {
-##var ws_logtime := usec(); 
+  var ws_logtime := usec(); 
 
   # first do the main logging work without the collection locks
   cont_order@batloop() {
@@ -2270,7 +2270,8 @@ PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
       log_delta(pf_logger, rid_nid.reverse().select(start, end).reverse(), rid_nid.bbpname());
     }
 
-##ws_log(ws, "commit-LOG_DELTAS exec=" + str(usec() - ws_logtime)); ws_logtime := usec();
+    if (ws_log_active)
+      ws_log(ws, "commit-LOG_DELTAS exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
     # compute the size-delta on the ancestors of modified nodes, and apply those to the recent masters (and LOG it) 
     var sel_ancestor_nid := ws.fetch(ANCESTOR_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
@@ -2284,12 +2285,13 @@ PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
     log_delta(pf_logger, rid_updsize, ws.fetch(_RID_SIZE).find(cont).bbpname()); 
     ws.fetch(RID_SIZE_UPDATE).find(cont).myupdate(rid_updsize);
 
-##ws_log(ws, "commit-LOG_SIZE exec=" + str(usec() - ws_logtime)); ws_logtime := usec();
-
+    if (ws_log_active)
+      ws_log(ws, "commit-LOG_SIZE exec" + str(ws_logtime - (ws_logtime := usec()))); 
   }
   log_trans_end(pf_logger); # write commit record in WAL: ==> THIS IS THE COMMIT POINT <==
 
-##ws_log(ws, "commit-LOG_TRANS_END exec=" + str(usec() - ws_logtime)); ws_logtime := usec();
+  if (ws_log_active)
+    ws_log(ws, "commit-LOG_TRANS_END exec" + str(ws_logtime - usec()));
 }
 
 # due to the order in which updates are executed, do_update_rename and
@@ -3206,10 +3208,6 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
   var rid_nid_update := ws.fetch(RID_NID_UPDATE).find(cont);
   var nid_qn_ins_update := ws.fetch(NID_QN_INS_UPDATE).find(cont);
   var nid_qn_del_update := ws.fetch(NID_QN_DEL_UPDATE).find(cont);
-  var attr_own := ws.fetch(ATTR_OWN).find(cont);
-  var attr_own_update := ws.fetch(ATTR_OWN_UPDATE).find(cont);
-  var attr_qn_update := ws.fetch(ATTR_QN_UPDATE).find(cont);
-  var attr_prop_update := ws.fetch(ATTR_PROP_UPDATE).find(cont);
   var modified_page := ws.fetch(MODIFIED_PAGE);
 
   var pageno := oid(lng(newpre) >> REMAP_PAGE_BITS);
@@ -3360,17 +3358,6 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
     nid_rid_update := myupdate(nid_rid_update, nid_rid_updates);
     modified_nid.reverse().accbuild("hash");
     modified_nid.insert(nid_rid_update.project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
-
-    # delete attributes of deleted nodes
-    # split attributes into two subsets: unchanged attributes and modified attributes
-    var attrs1 := attr_own_update.join(nid_rid_updates); # [ATID,nil] for all NIDs in nid_rid_udpates
-    var attrs2 := get_attr_own(ws, nid_rid_updates.hmark(0@0), cont).reverse().project(oid_nil);
-    attr_own_update.myupdate(attrs1);
-    attr_own_update.myupdate(attrs2);
-    attr_qn_update.myupdate(attrs1);
-    attr_qn_update.myupdate(attrs2);
-    attr_prop_update.myupdate(attrs1);
-    attr_prop_update.myupdate(attrs2);
 
     delsize :-= pgsize + 1;
     newpre := oid((lng(newpre) + pgsize) + 1);
@@ -3562,7 +3549,7 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
 PROC add_attr_bulk(BAT[void,bat] ws, oid cont, BAT[oid,oid] oid_list) : oid
 { 
   coll_lock_set(ws, cont, COLL_SHORTLOCK, "add_attr_bulk");
-##var ws_logtime := usec();
+  var ws_logtime := usec();
   var attr_own := ws.fetch(_ATTR_OWN).find(cont);
   var attr_prop := ws.fetch(_ATTR_PROP).find(cont);
   var attr_qn := ws.fetch(_ATTR_QN).find(cont);
@@ -3577,7 +3564,7 @@ PROC add_attr_bulk(BAT[void,bat] ws, oid cont, BAT[oid,oid] oid_list) : oid
 PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, bat[oid,str] valbat, bit dolock) : bat[oid,oid]
 {
   if (dolock) coll_lock_set(ws, cont, COLL_SHORTLOCK, "add_string_bulk");
-##var ws_logtime := usec();
+  var ws_logtime := usec();
   var table := ws.fetch(tableid).find(cont);
   var oldsize := count(table);
   var missing := valbat.tdiff(table).tunique();
@@ -3596,7 +3583,7 @@ PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, ba
 PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] insbat) : bat[oid,oid]
 {
   coll_lock_set(ws, cont, COLL_SHORTLOCK, "add_pi_bulk");
-##var ws_logtime := usec();
+  var ws_logtime := usec();
   var instgtbat := [+]([+](insbat, ":"), tgtbat);
   var prop_ins := ws.fetch(_PROP_INS).find(cont);
   var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
@@ -3645,7 +3632,7 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
 
       # get the unique missing strings and append them
       coll_lock_set(ws, cont, COLL_SHORTLOCK, "find_qn_bulk");
-##var ws_logtime := usec();
+      var ws_logtime := usec();
       var _base := oid(count(qn_histogram));
       var _delta := reverse(miss).join(pref_uri_loc).histogram();
       var _pref_uri_loc := _delta.hmark(_base);
@@ -3773,7 +3760,7 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 
       var gp := t1.reverse().leftjoin(rp); # [GRP,PROP]
       coll_lock_set(ws, cont, COLL_SHORTLOCK, "consec-texts");
-##var ws_logtime := usec();
+      var ws_logtime := usec();
       var c := gp.leftfetchjoin(ws.fetch(_PROP_TEXT).find(cont)); # [GRP,content] hsorted
       var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
       var i := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, v, false); # [GRP,SID] OID into _PROP_TEXT table
