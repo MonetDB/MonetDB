@@ -35,3 +35,4 @@ insert_values.SF-1578838
 ambiguous_join.SF-1580565
 copy_decimal.SF-1582957
 blob_corner_cases.SF-1613902
+like_exp.SF-1613949
