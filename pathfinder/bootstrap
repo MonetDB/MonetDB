@@ -21,4 +21,15 @@
 # ! MonetDB, MonetDB4, monet5, clients, template, sql, pathfinder, amdb, xml, pruning !
 #
 
+if [ ! "`type -p Mbootstrap`" ] ; then
+	cat <<- EOF >&2
+
+	Mbootstrap not found.
+	You need to install buildtools, first,
+	and ensure that <[buildtools_]prefix>/bin is in your PATH.
+
+EOF
+	exit 1
+fi
+
 exec Mbootstrap
