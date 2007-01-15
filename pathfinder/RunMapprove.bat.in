@@ -8,9 +8,9 @@ goto end
 
 setlocal
 
-set monetdb4_prefix=@MONETDB4_PREFIX@
-set builddir=@PATHFINDER_BUILD@
-set srcdir=@PATHFINDER_SOURCE@
+set monetdb4_prefix=@XMONETDB4_PREFIX@
+set builddir=@XPATHFINDER_BUILD@
+set srcdir=@XPATHFINDER_SOURCE@
 
 REM execute Mapprove.py in the source directory
 pushd %srcdir%

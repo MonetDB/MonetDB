@@ -57,6 +57,10 @@
 /* make abs() available */
 #include <stdlib.h>
 
+#ifdef NATIVE_WIN32
+#include <windows.h>
+#endif
+
 static long
 PFgettime (void)
 {

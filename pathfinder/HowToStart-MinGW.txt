@@ -101,9 +101,7 @@ the ones that are needed for MonetDB itself::
  rem the folder where MonetDB was installed
  set MONETDB_PREFIX=...\MinGW
  set PATH=C:\Pthreads\lib;%PATH%
- set PATH=%MONETDB_PREFIX%\lib\MonetDB;%PATH%
- set PATH=%MONETDB_PREFIX%\lib\bin;%PATH%
- set PATH=%MONETDB_PREFIX%\lib;%PATH%
+ set PATH=%MONETDB_PREFIX%\lib\MonetDB4/bin;%PATH%
  set PATH=%MONETDB_PREFIX%\bin;%PATH%
 
 If bz2 and z are included in the compilation (i.e. the libraries were

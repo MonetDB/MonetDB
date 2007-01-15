@@ -8,9 +8,9 @@ goto end
 
 setlocal
 
-set monetdb4_prefix=@MONETDB4_PREFIX@
-set builddir=@PATHFINDER_BUILD@
-set srcdir=@PATHFINDER_SOURCE@
+set monetdb4_prefix=@XMONETDB4_PREFIX@
+set builddir=@XPATHFINDER_BUILD@
+set srcdir=@XPATHFINDER_SOURCE@
 
 set MOD_PATH=%builddir%\runtime\.libs;%builddir%\runtime;%builddir%\modules\pftijah\.libs;%builddir%\modules\pftijah;%monetdb4_prefix%\lib\MonetDB4;%monetdb4_prefix%\lib\MonetDB4\lib;%monetdb4_prefix%\lib\MonetDB4\bin
 
