@@ -1494,6 +1494,8 @@ shredder_create(char *location,
         oid tab_size = shredCtx->dstBAT[sb->def->table].size;
         if (tab_size == 0) {
             tab_size = BATcount(sb->bat) + (sb->def->sizeFact * shredCtx->estSize);
+            if (tab_size > (size_t) REMAP_PAGE_SIZE && sb->def->table == PRE_SIZE) 
+               tab_size = (((tab_size - 1) >> REMAP_PAGE_BITS) + 1) << REMAP_PAGE_BITS;
         }
         /* make sure the bat is at least as big as its leader (that is later used to check overflow) */
         oid cur_size = ((sb->bat->batBuns->base + sb->bat->batBuns->size) - BUNfirst(sb->bat))/BUNsize(sb->bat);
