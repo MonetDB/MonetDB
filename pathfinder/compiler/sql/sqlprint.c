@@ -440,6 +440,14 @@ print_expr(PFsql_t *n)
           sqlprintf(" + ");
           print_expr( n->child[1] );
           sqlprintf(")");
+        } break;
+        case sql_sub:
+        {
+          sqlprintf("(");
+          print_expr( n->child[0] );
+          sqlprintf(" - ");
+          print_expr( n->child[1] );
+          sqlprintf(")");
 
         } break;
         case sql_gt:

@@ -2078,69 +2078,24 @@ llscj_desc_self_elem_loc()
 
 static void
 llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
-        PFsql_correlation_name_t c2, const PFla_op_t *p)
+        PFsql_correlation_name_t c2, const PFla_op_t *p, PFsql_t **fromlist)
 {
     switch( axis ) {
-        case alg_self:
-        {
-            sql_where_env_add( p->sql_ann->wheremap,
-                    gteq
-                    (
-                     crrl_deco(
-                         column_name(
-                             sql_special_name_new(sql_col_pre)->ident),
-                         c1),
-                    crrl_deco(
-                         column_name(
-                             sql_special_name_new(sql_col_pre)->ident),
-                         c2)
-                    ));
-        } break;
-        case alg_desc_s:
-        {
-            sql_where_env_add( p->sql_ann->wheremap,
-                    gteq
-                    (
-                     crrl_deco(
-                         column_name(
-                             sql_special_name_new(sql_col_pre)->ident),
-                         c1),
-                     sql_expression(R(p)->sql_ann->colmap,
-                         p->sem.scjoin.item, aat_pre)
-                    ));
-
-            sql_where_env_add( p->sql_ann->wheremap,
-                    gteq
-                    (
-                     add
-                     (
-                      crrl_deco(
-                          column_name(
-                              sql_special_name_new(sql_col_pre)->ident),
-                          c2),
-                      crrl_deco(
-                          column_name(
-                              sql_special_name_new(sql_col_size)->ident),
-                          c2)
-                     ),
-                     crrl_deco( column_name (
-                             sql_special_name_new(sql_col_pre)->ident),
-                         c1)
-                    ));
-        } break;
-        case alg_desc:
+        /* ancestor axis */
+        case alg_anc:
         {
             sql_where_env_add( p->sql_ann->wheremap,
                     gt
                     (
                      crrl_deco(
                          column_name(
-                             sql_special_name_new(sql_col_pre)->ident),
-                         c1),
-                     sql_expression(R(p)->sql_ann->colmap,
-                         p->sem.scjoin.item, aat_pre)
+                              sql_special_name_new(sql_col_level)->ident),
+                         c2),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_level)->ident),
+                         c1)
                     ));
-
             sql_where_env_add( p->sql_ann->wheremap,
                     gteq
                     (
@@ -2155,11 +2110,87 @@ llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
                               sql_special_name_new(sql_col_size)->ident),
                           c2)
                      ),
-                     crrl_deco( column_name (
+                     crrl_deco(
+                         column_name(
                              sql_special_name_new(sql_col_pre)->ident),
                          c1)
                     ));
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c2),
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c1),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c1)
+                     )
+                    ));
         } break;
+        /* ancestor-or-self axis */
+        case alg_anc_s:
+        {
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gt
+                    (
+                     crrl_deco(
+                         column_name(
+                              sql_special_name_new(sql_col_level)->ident),
+                         c2),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_level)->ident),
+                         c1)
+                    ));
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c2),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c2)
+                     ),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1)
+                    ));
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c2),
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c1),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c1)
+                     )
+                    ));
+
+        } break;
+        /* child axis */
         case alg_chld:
         {
             sql_where_env_add( p->sql_ann->wheremap,
@@ -2169,8 +2200,10 @@ llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
                          column_name(
                              sql_special_name_new(sql_col_pre)->ident),
                          c1),
-                     sql_expression(R(p)->sql_ann->colmap,
-                         p->sem.scjoin.item, aat_pre)
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c2)
                     ));
 
             sql_where_env_add( p->sql_ann->wheremap,
@@ -2208,6 +2241,95 @@ llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
                         )
                     ));
         } break;
+        /* descendant axis */
+        case alg_desc:
+        {
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gt
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c2)
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c2),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c2)
+                     ),
+                     crrl_deco( column_name (
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1)
+                    ));
+        } break;
+        /* descendant-or-self axis */
+        case alg_desc_s:
+        {
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c2)
+                     /*sql_expression(R(p)->sql_ann->colmap,
+                         p->sem.scjoin.item, aat_pre)*/
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c2),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c2)
+                     ),
+                     crrl_deco( column_name (
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1)
+                    ));
+        } break;
+        /* following-sibling axis */
+        case alg_fol_s:
+        {
+            sql_where_env_add( p->sql_ann->wheremap,
+                    eq
+                    (
+                     crrl_deco(
+                         column_name(sql_special_name_new(sql_col_level)->ident
+                             ),
+                         c1),
+                     crrl_deco(
+                         column_name(sql_special_name_new(sql_col_level)->ident
+                             ),
+                         c2)
+                    ));
+        } /* continue with follwing */
+        /* following axis */
         case alg_fol:
         {
             sql_where_env_add( p->sql_ann->wheremap,
@@ -2229,7 +2351,250 @@ llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
                           c2)
                      )
                     ));
+
+            sql_correlation_name_t *crrl = sql_correlation_name_new();
+
+            *fromlist = from_list_add( *fromlist, 
+                    alias(L(p)->sql_ann->fragment,
+                        correlation_name(crrl->name)));
+
+            /* get parent of context node */
+            sql_where_env_add( p->sql_ann->wheremap,
+                    eq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_level)->ident),
+                         crrl->name),
+                     sub
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_level)->ident),
+                          c2),
+                      lit_int(1)
+                     )
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          crrl->name),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          crrl->name)
+                     ),
+                     crrl_deco(
+                         column_name( sql_special_name_new(sql_col_pre)->ident
+                             ),
+                         c2)
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c2),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c2)
+                     ),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident
+                             ),
+                         crrl->name)
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          crrl->name),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          crrl->name)
+                     ),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1)
+                    ));
+ 
         } break;
+        /* parent axis */
+        case alg_par:
+        {
+            sql_where_env_add( p->sql_ann->wheremap,
+                    eq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_level)->ident),
+                         c1),
+                     sub
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_level)->ident),
+                          c2),
+                      lit_int(1)
+                     )
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c1),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c1)
+                     ),
+                     crrl_deco(
+                         column_name( sql_special_name_new(sql_col_pre)->ident
+                             ),
+                         c2)
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c2),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c2)
+                     ),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident
+                             ),
+                         c1)
+                    ));
+        } break;
+        /* preceding-sibling axis */
+        case alg_prec_s:
+        {
+            sql_where_env_add( p->sql_ann->wheremap,
+                    eq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_level)->ident),
+                         c1),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_level)->ident),
+                         c2)
+                    ));
+
+            sql_correlation_name_t *crrl = sql_correlation_name_new();
+
+            *fromlist = from_list_add( *fromlist, 
+                    alias(L(p)->sql_ann->fragment,
+                        correlation_name(crrl->name)));
+
+            /* get parent of context node */
+            sql_where_env_add( p->sql_ann->wheremap,
+                    eq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_level)->ident),
+                         crrl->name),
+                     sub
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_level)->ident),
+                          c2),
+                      lit_int(1)
+                     )
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          crrl->name),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          crrl->name)
+                     ),
+                     crrl_deco(
+                         column_name( sql_special_name_new(sql_col_pre)->ident
+                             ),
+                         c2)
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gteq
+                    (
+                     add
+                     (
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_pre)->ident),
+                          c2),
+                      crrl_deco(
+                          column_name(
+                              sql_special_name_new(sql_col_size)->ident),
+                          c2)
+                     ),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident
+                             ),
+                         crrl->name)
+                    ));
+
+            sql_where_env_add( p->sql_ann->wheremap,
+                    gt
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1),
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         crrl->name)
+                    ));
+
+        } /* continue with preceding axis */
+        /* preceding axis */
         case alg_prec:
         {
             sql_where_env_add( p->sql_ann->wheremap,
@@ -2238,7 +2603,7 @@ llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
                      crrl_deco(
                          column_name(
                              sql_special_name_new(sql_col_pre)->ident),
-                         c1),
+                         c2),
                      add
                      (
                       crrl_deco(
@@ -2253,6 +2618,22 @@ llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
                     ));
 
         } break;
+        /* self axis */
+        case alg_self:
+        {
+            sql_where_env_add( p->sql_ann->wheremap,
+                    eq
+                    (
+                     crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c1),
+                    crrl_deco(
+                         column_name(
+                             sql_special_name_new(sql_col_pre)->ident),
+                         c2)
+                    ));
+        } break;
         default:
             PFoops( OOPS_FATAL,
                     "Axis not supported by SQL generation");
@@ -2261,7 +2642,7 @@ llscj_axis(PFalg_axis_t axis, PFsql_correlation_name_t c1,
 
 static void
 llscj_elem(PFalg_axis_t axis, PFsql_correlation_name_t c1,
-        PFsql_correlation_name_t c2, const PFla_op_t *p)
+        PFsql_correlation_name_t c2, const PFla_op_t *p, PFsql_t **fromlist)
 {
     sql_where_env_add( p->sql_ann->wheremap,
         eq
@@ -2273,12 +2654,12 @@ llscj_elem(PFalg_axis_t axis, PFsql_correlation_name_t c1,
          lit_int(ELEM)
         ));
 
-    llscj_axis( axis, c1, c2, p);
+    llscj_axis( axis, c1, c2, p, fromlist);
 }
 
 static void
 llscj_text(PFalg_axis_t axis, PFsql_correlation_name_t c1,
-        PFsql_correlation_name_t c2, const PFla_op_t *p)
+        PFsql_correlation_name_t c2, const PFla_op_t *p, PFsql_t **fromlist)
 {
     sql_where_env_add( p->sql_ann->wheremap,
         eq
@@ -2290,12 +2671,12 @@ llscj_text(PFalg_axis_t axis, PFsql_correlation_name_t c1,
          lit_int(TEXT)
         ));
 
-    llscj_axis(axis, c1, c2, p);    
+    llscj_axis(axis, c1, c2, p, fromlist);    
 }
 
 static void
 llscj_comm(PFalg_axis_t axis, PFsql_correlation_name_t c1,
-        PFsql_correlation_name_t c2, const PFla_op_t *p)
+        PFsql_correlation_name_t c2, const PFla_op_t *p, PFsql_t **fromlist)
 {
     sql_where_env_add( p->sql_ann->wheremap,
             eq
@@ -2307,14 +2688,14 @@ llscj_comm(PFalg_axis_t axis, PFsql_correlation_name_t c1,
              lit_int(COMM)
             ));
 
-    llscj_axis(axis, c1, c2, p);
+    llscj_axis(axis, c1, c2, p, fromlist);
 }
 
-#define llscj_elem_nsloc(ax, ns, loc, c1, c2, p) \
-   llscj_elem_loc(ax, loc, c1, c2, p)
+#define llscj_elem_nsloc(ax, ns, loc, c1, c2, p, fr) \
+   llscj_elem_loc(ax, loc, c1, c2, p, fr)
 static void
 llscj_elem_loc(PFalg_axis_t axis, PFsql_t *loc, PFsql_correlation_name_t c1,
-        PFsql_correlation_name_t c2, const PFla_op_t *p)
+        PFsql_correlation_name_t c2, const PFla_op_t *p, PFsql_t **fromlist)
 {
     sql_where_env_add( p->sql_ann->wheremap,
             eq
@@ -2336,7 +2717,7 @@ llscj_elem_loc(PFalg_axis_t axis, PFsql_t *loc, PFsql_correlation_name_t c1,
              loc
             ));
 
-    llscj_elem( axis, c1, c2, p);
+    llscj_elem( axis, c1, c2, p, fromlist);
 }
 
 static PFsql_t*
@@ -2408,7 +2789,7 @@ llscj(PFalg_axis_t axis, const PFla_op_t *p)
 
         /* This is just a generic element kind test */
         if( PFty_subtype( PFty_xs_anyElement(), ty) ) {
-            llscj_elem( axis, crrl1->name, crrl2->name, p);
+            llscj_elem( axis, crrl1->name, crrl2->name, p, &fromlist);
         }
         /* test on element kind and local name only */
         else if( PFty_subtype(
@@ -2418,7 +2799,7 @@ llscj(PFalg_axis_t axis, const PFla_op_t *p)
                     ty)) {
             llscj_elem_loc( axis,
                     lit_str( PFqname_loc( PFty_name( PFty_defn( ty ) ))),
-                    crrl1->name, crrl2->name, p );
+                    crrl1->name, crrl2->name, p, &fromlist );
         }
         /* test on element kind and namespace only */
         else if (PFty_subtype(
@@ -2439,7 +2820,7 @@ llscj(PFalg_axis_t axis, const PFla_op_t *p)
             llscj_elem_nsloc( axis, 
                     lit_str(""),
                     lit_str( PFqname_loc( PFty_name( PFty_defn( ty ) ))),
-                    crrl1->name, crrl2->name, p );
+                    crrl1->name, crrl2->name, p, &fromlist );
         }
         /*
          * We couldn't figure out what element test we got, give up.
@@ -2451,16 +2832,16 @@ llscj(PFalg_axis_t axis, const PFla_op_t *p)
         }
     }
     else if( PFty_subtype( ty, PFty_text()) ) {
-        llscj_text( axis, crrl1->name, crrl2->name, p); 
+        llscj_text( axis, crrl1->name, crrl2->name, p, &fromlist); 
     }
     else if( PFty_subtype( ty, PFty_comm()) ) {
-        llscj_comm( axis, crrl1->name, crrl2->name, p);
+        llscj_comm( axis, crrl1->name, crrl2->name, p, &fromlist);
     }
     else {
         PFoops( OOPS_FATAL,
                 "SQL genereation couldn't figure out what we test");
     }
-    return select 
+    return select_distinct 
         (
          NULL,
          fromlist,
