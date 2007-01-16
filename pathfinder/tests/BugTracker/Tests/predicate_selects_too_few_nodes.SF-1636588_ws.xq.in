@@ -1,0 +1,7 @@
+let $worlds := exactly-one(doc("$TSTSRCDIR/predicate_selects_too_few_nodes.SF-1636588.xml")/worlds)
+return
+	for $w in $worlds/world
+	return <r>{$w/@prob}{$w//genre[.="Thriller"]/ancestor::movie/title}</r>
+		 
+
+ 	  	 
