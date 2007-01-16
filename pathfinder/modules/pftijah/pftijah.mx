@@ -86,8 +86,19 @@ DESCRIPTION:
 creates an offset index.
 "
 
+.COMMAND mergeindex( BAT[any,oid] tid_pre, BAT[void,oid] index, BAT[void, oid] pre, BAT[void,oid] new_index)
+		: BAT[oid,oid] = CMDmergeindex;
+"PARAMETERS:
+BAT[oid,oid] - new tid_pre to merge with the old index
+BAT[void,oid] - join index bat with value-offset
+BAT[void,oid] - bat with indexed offset and tail values to be returned
+BAT[void,oid] - new index bat. it should have the right size already.
+DESCRIPTION:
+the operation merges a new sorted tid_pre with an existing offset index.
+"
+
 .COMMAND indexfetchjoin( BAT[any,oid] tid, BAT[void,oid] index, BAT[void, oid] pre)
-		: BAT[oid,oid] = CMDindexfetchjoin;
+		: BAT[void,oid] = CMDindexfetchjoin;
 "PARAMETERS:
 BAT[any,oid] - bat with tail values which have to be joined (e.g. tid values)
 BAT[void,oid] - join index bat with value-offset
@@ -487,6 +498,8 @@ PROC _tj_finalize_collection(str collName) : void
     tj_buildIRindex(collName);
     #
     bat("tj_" + collName + "_param").replace("status","finalized");
+    var lst_fpre := bat("tj_" + collName + "_param").find("_last_tijahPre");
+    bat("tj_" + collName + "_param").replace("_last_finalizedPre", lst_fpre);
     #
     var gterm_sort := bat("tj_globalTerms").reverse().sort().reverse();
     bat("tj_globalTerms").persists(false);
@@ -1309,7 +1322,7 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      var pre_size := bat("tj_" + collName + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
-     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc(left.mark(0@0), pre_tid, pre_size);
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
@@ -1352,7 +1365,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc(left.mark(0@0), pre_tid, pre_size);
      var t3 := time();
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
@@ -2307,51 +2320,104 @@ PROC tj_buildIRindex() : void :=
 
 PROC tj_buildIRindex(str collName) : void :=
 {
-	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) {
-		bat("tj_" + collName + "_TermIndex").persists(false);
-		bat("tj_" + collName + "_Terms").persists(false);
-		bat("tj_" + collName + "_TagIndex").persists(false);
-		bat("tj_" + collName + "_Tags").persists(false);
-		commit();
-	}
-	var tids := new(void,oid).seqbase(1@0);
-	bat("tj_" + collName + "_fragments")@batloop()
+	var offset := oid(int(bat("tj_" + collName + "_param").find("_last_finalizedPre")) + 1);
+	var frag_offset := int(find_lower(bat("tj_" + collName + "_fragments").reverse(), offset));
+	var frag_last := bat("tj_" + collName + "_fragments").count();
+	
+	var pre_tid := bat("tj_" + collName + "_tid" + str(frag_offset));
+	var tids := pre_tid.slice(int(offset), pre_tid.count() - 1);
+	frag_offset :+= 1;
+	while (frag_offset <= frag_last)
 	{
-	    var ind := str(int($h));
-	    tids.append(bat("tj_" + collName + "_tid" + ind));
-	}
+	    	tids.append(bat("tj_" + collName + "_tid" + str(frag_offset)));
+		frag_offset :+= 1;
+	}	
 	var tmp := tids.kdiff(bat("tj_" + collName + "_pfpre"));
         tmp := tmp.reverse().sort();
-	var termindex := tmp.mark(0@0).reverse().offsetindex(bat("tj_globalTerms").count() + 1);
-	var terms := tmp.reverse().mark(0@0).reverse();
-	# create _TermIndex and _Terms here
-	termindex.persists(true).bbpname("tj_" + collName + "_TermIndex");
-	terms.persists(true).bbpname("tj_" + collName + "_Terms");
-	tmp := nil;
-	termindex.access(BAT_READ);
-	termindex.mmap(1);
-	terms.access(BAT_READ);
-	terms.mmap(1);
-	termindex := nil;
-	terms := nil;
-	commit();
-	
-	# incomplete, use fragmentation here, merge union ??
-	tmp := tids.semijoin(bat("tj_" + collName + "_pfpre"));
-        tmp := tmp.reverse().sort();
-	var tagindex := tmp.mark(0@0).reverse().offsetindex(bat("tj_globalTags").count() + 1);
-	var tags := tmp.reverse().mark(0@0).reverse();
-	# create _Tags and _Tagindex here
-	tagindex.persists(true).bbpname("tj_" + collName + "_TagIndex");
-	tags.persists(true).bbpname("tj_" + collName + "_Tags");
-	tmp := nil;
-	tagindex.access(BAT_READ);
-	#tagindex.mmap(1);
-	tags.access(BAT_READ);
-	tags.mmap(1);
-	tagindex := nil;
-	tags := nil;
-	commit();
+
+        # incremental index merge
+	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) 
+        {
+	        var tmp := tids.kdiff(bat("tj_" + collName + "_pfpre"));
+                tmp := tmp.reverse().sort();
+                var newindex := bat("tj_globalTerms").hmark(0@0).project(0@0);
+                newindex.access(BAT_WRITE);
+                newindex.append(0@0);
+                var newterms := mergeindex(tmp, bat("tj_" + collName + "_TermIndex"),
+                                                bat("tj_" + collName + "_Terms"),
+                                                newindex);       
+	        bat("tj_" + collName + "_TermIndex").persists(false);
+	        bat("tj_" + collName + "_Terms").persists(false);
+                commit();
+                # create _TermIndex and _Terms here
+	        newindex.persists(true).bbpname("tj_" + collName + "_TermIndex");
+	        newterms.persists(true).bbpname("tj_" + collName + "_Terms");
+	        tmp := nil;
+	        newindex.access(BAT_READ);
+	        newindex.mmap(1);
+	        newterms.access(BAT_READ);
+	        newterms.mmap(1);
+	        newindex := nil;
+	        newterms := nil;
+	        commit();
+	        
+	        tmp := tids.semijoin(bat("tj_" + collName + "_pfpre"));
+                tmp := tmp.reverse().sort();
+                var newindex := bat("tj_globalTags").hmark(0@0).project(0@0);
+                newindex.access(BAT_WRITE);
+                newindex.append(0@0);
+                var newtags := mergeindex(tmp, bat("tj_" + collName + "_TagIndex"),
+                                               bat("tj_" + collName + "_Tags"),
+                                               newindex);       
+	        bat("tj_" + collName + "_TagIndex").persists(false);
+	        bat("tj_" + collName + "_Tags").persists(false);
+                commit();
+                # create _TagIndex and _Tags here
+	        newindex.persists(true).bbpname("tj_" + collName + "_TagIndex");
+	        newtags.persists(true).bbpname("tj_" + collName + "_Tags");
+	        tmp := nil;
+	        newindex.access(BAT_READ);
+	        newindex.mmap(1);
+	        newtags.access(BAT_READ);
+	        newtags.mmap(1);
+	        newindex := nil;
+	        newtags := nil;
+	        commit();
+        }
+        else # create new index
+        {       
+	        var tmp := tids.kdiff(bat("tj_" + collName + "_pfpre"));
+                tmp := tmp.reverse().sort();
+	        var termindex := tmp.hmark(0@0).offsetindex(bat("tj_globalTerms").count() + 1);
+	        var terms := tmp.tmark(0@0);
+	        # create _TermIndex and _Terms here
+	        termindex.persists(true).bbpname("tj_" + collName + "_TermIndex");
+	        terms.persists(true).bbpname("tj_" + collName + "_Terms");
+	        tmp := nil;
+	        termindex.access(BAT_READ);
+	        termindex.mmap(1);
+	        terms.access(BAT_READ);
+	        terms.mmap(1);
+	        termindex := nil;
+	        terms := nil;
+	        commit();
+	        
+	        tmp := tids.semijoin(bat("tj_" + collName + "_pfpre"));
+                tmp := tmp.reverse().sort();
+	        var tagindex := tmp.hmark(0@0).offsetindex(bat("tj_globalTags").count() + 1);
+	        var tags := tmp.tmark(0@0);
+	        # create _Tags and _Tagindex here
+	        tagindex.persists(true).bbpname("tj_" + collName + "_TagIndex");
+	        tags.persists(true).bbpname("tj_" + collName + "_Tags");
+	        tmp := nil;
+	        tagindex.access(BAT_READ);
+	        tagindex.mmap(1);
+	        tags.access(BAT_READ);
+	        tags.mmap(1);
+	        tagindex := nil;
+	        tags := nil;
+	        commit();
+        }
 }
 
 ######################################
@@ -2675,6 +2741,8 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
     		return GDK_FAIL;
 	}
 		
+	/* ---------------------------- inits ---------------------------------- */
+
 	res = BATnew(TYPE_void, TYPE_oid, *res_size);
         if (res == NULL) 
         { 
@@ -2688,6 +2756,8 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
 	*(oid*)dst = (oid)0;
 	dst += bs_res;
 	
+	/* ----------------------------- main ---------------------------------- */
+
 	BATloopFast(tid, p, q, x)
 	{
 		s = *(oid*) BUNtail(tid, p);
@@ -2708,6 +2778,8 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
 		dst += bs_res; 
 	}
 	
+	/* ---------------------------- tidy up --------------------------------- */
+	
 	res->batBuns->free = dst - res->batBuns->base;
 	BATsetcount(res, res->batBuns->free / bs_res);
     	res->batDirty = TRUE;
@@ -2719,7 +2791,238 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
 	*result = res;
 	return GDK_SUCCEED;
 }	
+
+int CMDmergeindex ( BAT** result, BAT* tid_pre, BAT* index, BAT* pre, BAT* new_index )
+{
+	char *name = "TJmergeindex";
+	BAT *res = NULL;
+	int bs_res, bs_tidpre, bs_index, bs_pre, bs_newindex;
+	int ressize = 0;
+        BUN dst, lst_tidpre, lst_index, lst_pre, lst_copy, lst_newindex, cur_tidpre, cur_index, cur_pre, cur_newindex;
+	oid tid;
 	
+	/* --------------------------- checks ---------------------------------- */
+	
+	BATcheck(tid_pre, name);
+	BATcheck(index, name);
+	BATcheck(pre, name);
+	BATcheck(new_index, name);
+        
+	if (!(BAThordered(tid_pre) & 1))
+	{
+        	GDKerror("%s: term-bat must be ordered on tail.\n", name);
+    		return GDK_FAIL;
+	}
+
+	/* ---------------------------- inits ---------------------------------- */
+
+	ressize = BATcount(tid_pre) + BATcount(pre);
+	res = BATnew(TYPE_void, TYPE_oid, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	return(GDK_FAIL);
+        }
+	
+	bs_res = BUNsize(res);
+	bs_tidpre = BUNsize(tid_pre);
+	bs_index = BUNsize(index);
+	bs_pre = BUNsize(pre);
+        bs_newindex = BUNsize(new_index);
+	
+	dst = BUNlast(res);
+	lst_tidpre = BUNlast(tid_pre);
+	lst_index = BUNlast(index) - bs_index; /* last index is not a real term */
+	lst_pre = BUNlast(pre);
+        lst_newindex = BUNlast(new_index) - bs_newindex; /* last index is not a real term */
+	
+	cur_tidpre = BUNfirst(tid_pre);
+	cur_index = BUNfirst(index);
+	cur_pre = BUNfirst(pre);
+        cur_newindex = BUNfirst(new_index);
+	
+	/* ----------------------------- main ---------------------------------- */
+
+        while (cur_newindex < lst_newindex)
+        {
+	        tid = *(oid*) BUNhead(new_index, cur_newindex);
+		*(oid*) BUNtail(new_index, cur_newindex) = BUNindex(res,dst);
+               
+                /* copy old nodes to new index */
+                if (cur_index < lst_index && tid == *(oid*)BUNhead(index, cur_index))
+                {
+		        lst_copy = BUNptr(pre, *(int*) BUNtail(index, cur_index + bs_index));
+		        while (cur_pre < lst_copy)
+		        {
+			        *(oid*)dst = *(oid*)BUNtail(pre, cur_pre);
+			        dst += bs_res;
+			        cur_pre += bs_pre;
+		        }
+                        cur_index += bs_index;
+                }
+                /* merge-in new nodes */
+                while(cur_tidpre < lst_tidpre && tid == *(oid*)BUNhead(tid_pre, cur_tidpre))
+                {
+                        *(oid*)dst = *(oid*)BUNtail(tid_pre, cur_tidpre);
+	        	dst += bs_res;
+	        	cur_tidpre += bs_tidpre;
+                }
+
+                cur_newindex += bs_newindex;
+        }
+
+	/* write limit of index as last item to index bat */
+	*(oid*) BUNtail(new_index, cur_newindex) = (oid)ressize;
+
+	/* ---------------------------- tidy up --------------------------------- */
+
+	new_index->batDirty = TRUE;
+        new_index->tsorted = GDK_SORTED;
+
+	res->batBuns->free = dst - res->batBuns->base;
+	BATsetcount(res, res->batBuns->free / bs_res);
+    	res->batDirty = TRUE;
+        res->tsorted = GDK_SORTED;
+        BATkey (res, TRUE);
+	BATset(res, TRUE);
+	BATseqbase(res, 0);
+	
+	*result = res;
+	return GDK_SUCCEED;
+}
+
+int CMDmergeindex2 ( BAT** result, BAT* tid_pre, BAT* index, BAT* pre )
+{
+	char *name = "TJmergeindex";
+	BAT *res = NULL;
+	int bs_res, bs_tidpre, bs_index, bs_pre;
+	int ressize = 0;
+        BUN dst, lst_tidpre, lst_index, lst_pre, lst_copy, cur_tidpre, cur_index, cur_pre;
+	oid tid_index, tid_tidpre;
+	
+	/* --------------------------- checks ---------------------------------- */
+	
+	BATcheck(tid_pre, name);
+	BATcheck(index, name);
+	BATcheck(pre, name);
+	
+	if (!(BAThordered(tid_pre) & 1))
+	{
+        	GDKerror("%s: term-bat must be ordered on tail.\n", name);
+    		return GDK_FAIL;
+	}
+
+	/* ---------------------------- inits ---------------------------------- */
+
+	ressize = BATcount(tid_pre) + BATcount(pre);
+	res = BATnew(TYPE_void, TYPE_oid, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	return(GDK_FAIL);
+        }
+	
+	bs_res = BUNsize(res);
+	bs_tidpre = BUNsize(tid_pre);
+	bs_index = BUNsize(index);
+	bs_pre = BUNsize(pre);
+	
+	dst = BUNlast(res);
+	lst_tidpre = BUNlast(tid_pre);
+	lst_index = BUNlast(index) - bs_index; /* last index is not real term */
+	lst_pre = BUNlast(pre);
+	
+	cur_tidpre = BUNfirst(tid_pre);
+	cur_index = BUNfirst(index);
+	cur_pre = BUNfirst(pre);
+	
+	tid_tidpre = *(oid*) BUNhead(tid_pre, cur_tidpre);
+        tid_index = *(oid*) BUNhead(index, cur_index);
+
+	/* ----------------------------- main ---------------------------------- */
+
+	while (cur_tidpre < lst_tidpre && cur_index < lst_index) 
+        {
+		tid_tidpre = *(oid*) BUNhead(tid_pre, cur_tidpre);
+        	tid_index = *(oid*) BUNhead(index, cur_index);
+		
+		lst_copy = BUNptr(pre, *(int*) BUNtail(index, cur_index + bs_index));
+		*(oid*) BUNtail(index, cur_index) = BUNindex(res,dst);
+
+	        /* copy and update from old to new index */
+		while (cur_pre < lst_copy)
+		{
+			*(oid*)dst = *(oid*)BUNtail(pre, cur_pre);
+			dst += bs_res;
+			cur_pre += bs_pre;
+		}
+                
+	        /* merge-in new tuples from tid_pre */
+	        while (tid_tidpre == tid_index)
+	        {
+                        *(oid*)dst = *(oid*)BUNtail(tid_pre, cur_tidpre);
+	        	dst += bs_res;
+	        	cur_tidpre += bs_tidpre;
+	        	if(cur_tidpre < lst_tidpre) tid_tidpre = *(oid*) BUNhead(tid_pre, cur_tidpre);
+	        	else break;
+	        }
+
+		cur_index += bs_index;
+	}
+	
+	/* copy remaining items from old index */
+	while (cur_index < lst_index)
+	{
+		lst_copy = BUNptr(pre, *(int*) BUNtail(index, cur_index + bs_index));
+		*(oid*) BUNtail(index, cur_index) = BUNindex(res,dst);
+			
+		while (cur_pre < lst_copy)
+		{
+			*(oid*)dst = *(oid*)BUNtail(pre, cur_pre);
+			dst += bs_res;
+			cur_pre += bs_pre;
+		}
+			
+		cur_index += bs_index;
+	}
+	
+	/* copy remaining items from new index */
+	while (cur_tidpre < lst_tidpre) 
+        {
+		oid x = BUNindex(res,dst);
+		BUNappend(index,&x,1);
+		*(oid*) BUNtail(index, cur_index) = x;
+		cur_index += bs_index;
+		
+		tid_index = tid_tidpre;
+		while (tid_tidpre == tid_index)
+		{
+			*(oid*)dst = *(oid*)BUNtail(tid_pre, cur_tidpre);
+			dst += bs_res;
+			cur_tidpre += bs_tidpre;
+			if(cur_tidpre < lst_tidpre) tid_tidpre = *(oid*) BUNhead(tid_pre, cur_tidpre);
+			else break;
+		}
+	}
+	/* write limit of index as last item to index bat */
+	*(oid*) BUNtail(index, cur_index) = (oid)ressize;
+
+	/* ---------------------------- tidy up --------------------------------- */
+
+	index->batDirty = TRUE;
+
+	res->batBuns->free = dst - res->batBuns->base;
+	BATsetcount(res, res->batBuns->free / bs_res);
+    	res->batDirty = TRUE;
+        res->tsorted = GDK_SORTED;
+        BATkey (res, TRUE);
+	BATset(res, TRUE);
+	BATseqbase(res, 0);
+	
+	*result = res;
+	return GDK_SUCCEED;
+}
+
 int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 {
 	char *name = "TJindexfetchjoin";
@@ -2748,7 +3051,14 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
     		return GDK_FAIL;
 	}
 
+	/* ---------------------------- inits ---------------------------------- */
+
 	ind = GDKmalloc(sizeof(oid) * BATcount(tid) * 3);
+        if (ind == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a offset stack of size %d.\n", name, BATcount(tid));
+            	return(GDK_FAIL);
+        }
 	
 	BATloopFast(tid, p, q, x) {
 		t = *(oid*) BUNtail(tid, p);
@@ -2759,9 +3069,16 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	}
 	
 	res = BATnew(TYPE_oid, TYPE_oid, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[oid,oid] of size %d.\n", name, ressize);
+            	return(GDK_FAIL);
+        }
 	bs_res = BUNsize(res);
 	dst = BUNlast(res);
 	
+	/* ----------------------------- main ---------------------------------- */
+
 	j = 0;
 	while (j < i) {
         	t = ind[j++];
@@ -2773,6 +3090,8 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 			dst += bs_res;
 		}
 	}
+
+	/* ---------------------------- tidy up --------------------------------- */
 
 	GDKfree(ind);
 	res->batBuns->free = dst - res->batBuns->base;
