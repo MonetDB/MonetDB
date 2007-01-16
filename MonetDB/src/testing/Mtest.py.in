@@ -2107,7 +2107,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 	DBINIT=""
         if os.path.isfile(TST+".dbinit"):
             dbinit = TST+".dbinit"
-	    DBINIT = open(dbinit).readline().replace(os.linesep,'')
+	    DBINIT = open(dbinit).readline().strip()
 
 	lang="mil"
 
