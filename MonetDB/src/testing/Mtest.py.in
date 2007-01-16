@@ -1104,7 +1104,11 @@ def ApproveOutput (env, TST) :
 def isexecutable(TST) :
     if   os.name == "nt":
         for ext in ".exe", ".com", ".bat", ".cmd":
-            if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
+            if TST.lower().endswith(ext):
+                tst = TST
+            else:
+                tst = TST + ext
+            if os.path.isfile(tst) or os.path.isfile(tst+".src"):
                 return [ 1, ext ]
     elif os.name == "posix":
         #TODO:
@@ -2998,7 +3002,7 @@ def main(argv) :
             exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s %s --set mapi_port=%s --set monet_prompt= --trace' % \
                                                                (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
-        exe['python']        = CheckExec('@PYTHON@')     , '@PYTHON@'
+        exe['python']        = CheckExec('@QXPYTHON@')     , '@PYTHON@'
         exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])

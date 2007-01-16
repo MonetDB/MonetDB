@@ -216,6 +216,12 @@ QXinfodir="`echo "$Xinfodir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qinfodir)
 AC_SUBST(Xinfodir)
 AC_SUBST(QXinfodir)
+QPYTHON="$PYTHON"
+XPYTHON="`$translatepath "$PYTHON"`"
+QXPYTHON="`echo "$XPYTHON" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QPYTHON)
+AC_SUBST(XPYTHON)
+AC_SUBST(QXPYTHON)
 
 case "$host_os" in
 mac*)	DIRSEP=':'
