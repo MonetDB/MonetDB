@@ -1,12 +1,23 @@
-import os
-import string
+import zipfile, os
 
-TSTSRCDIR = os.environ['TSTSRCDIR']
+archive = 'shredding-remap-error.SF-1487156.unpack_docs.zip'
 
-CALL = "unzip shredding-remap-error.SF-1487156.unpack_doc.zip"
+def mkpardir(path):
+    i = path.find('/')
+    d = ''
+    while i >= 0:
+        d = os.path.join(d, path[:i])
+        if not os.path.exists(d):
+            os.mkdir(d)
+        path = path[i + 1:]
+        i = path.find('/')
 
-if os.name == "nt":
-    os.system("call Mlog.bat '%s'" % CALL.replace('|','\\|'))
-else:
-    os.system("Mlog '%s'" % CALL.replace('|','\\|'))
-os.system(CALL)
+z = zipfile.ZipFile(archive)
+print 'Archive:  %s' % archive
+for name in z.namelist():
+    print '  inflating: %s' % name
+    mkpardir(name)
+    data = z.read(name)
+    f = open(name, 'wb')
+    f.write(data)
+    f.close()

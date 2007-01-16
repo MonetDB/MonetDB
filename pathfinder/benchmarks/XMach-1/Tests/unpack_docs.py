@@ -1,12 +1,12 @@
-import os
-import string
+import zipfile
 
-TSTSRCDIR = os.environ['TSTSRCDIR']
+archive = 'unpack_docs.zip'
 
-CALL = "unzip unpack_docs.zip"
-
-if os.name == "nt":
-    os.system("call Mlog.bat '%s'" % CALL.replace('|','\\|'))
-else:
-    os.system("Mlog '%s'" % CALL.replace('|','\\|'))
-os.system(CALL)
+z = zipfile.ZipFile(archive)
+print 'Archive:  %s' % archive
+for name in z.namelist():
+    print '  inflating: %s' % name
+    data = z.read(name)
+    f = open(name, 'wb')
+    f.write(data)
+    f.close()
