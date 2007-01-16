@@ -68,9 +68,9 @@ stderr of test 'select_from_env.SF-1240701.1242164` in directory 'src/test/BugDa
 # 13:22:15 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47090  < select_from_env.SF-1240701.1242164.sql
 # 13:22:15 >  
 
-MAPI  = monetdb@localhost:38571
+MAPI  = monetdb@localhost:38078
 QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
-ERROR = !ERROR: zero_or_one: cardinality violation (32>1)
+ERROR = !ERROR: zero_or_one: cardinality violation (33>1)
         !ERROR: zero_or_one: operation failed.
 
 # 13:22:15 >  
