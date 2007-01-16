@@ -35,7 +35,6 @@ pkgincludedir=${includedir}/${pkg}
 pkglibdir=${libdir}/${pkg}
 
 modpath=${pkglibdir}:${pkglibdir}/lib:${pkglibdir}/bin
-classpath=${pkglibdir}/java/mapi.jar
 
 Name: ${pkg}
 Description: A database management system developed from a main-memory perspective.

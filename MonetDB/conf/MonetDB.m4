@@ -222,7 +222,6 @@ if test "x$have_monetdb4" != xno; then
     MONETDB4_MODS=`$MONETDB4_CONFIG --mods`
     MONETDB4_MOD_PATH=`$MONETDB4_CONFIG --modpath`
     MONETDB4_PREFIX=`$MONETDB4_CONFIG --prefix`
-    CLASSPATH="$CLASSPATH:`$MONETDB4_CONFIG --classpath`"
   fi
 fi
 AC_SUBST(MONETDB4_CFLAGS)
