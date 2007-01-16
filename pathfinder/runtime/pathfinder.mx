@@ -4889,7 +4889,7 @@ xquery_change_genType(xquery_client *ctx, char* magic_string) {
 static void
 xquery_client_engine(mapi_client *fc )
 {
-    ssize_t n;
+    ssize_t n = 0;
     size_t curlen;
     xquery_client *ctx = fc->fc;
     stream *in = fc->c->fdin, *out = fc->c->fdout;
