@@ -98,7 +98,7 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
   parserCtx->queryText    = query;
   parserCtx->errBUFF[0]   = 0;
   parserCtx->useFragments = 0;
-  if ( 0 /* not framented */ ) {
+  if ( 1 /* not fragmented */ ) {
     parserCtx->ffPfx        = ""; /* "_frag"*/;
     parserCtx->flastPfx     = ", str(1)"; /* */;
   } else {
