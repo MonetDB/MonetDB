@@ -398,7 +398,6 @@ BBPextend(dbl factor, int buildhash)
 	int newsize = (int) (BBPlimit * factor);
 	size_t maxsize = MAX(newsize * 2, BBPmaxsize) * sizeof(BBPrec);
 
-	gdk_set_lock(GDKtrimLock, "BBPextend");
 	BBP_notrim = BBP_getpid();
 	BBP = (BBPrec *) GDKvmrealloc(BBP, BBPlimit * sizeof(BBPrec), newsize * sizeof(BBPrec), BBPmaxsize * sizeof(BBPrec), &maxsize, 1);
 	if (BBP == NULL)
@@ -415,7 +414,6 @@ BBPextend(dbl factor, int buildhash)
 		BBPinithash();
 	}
 	BBP_notrim = 0;
-	gdk_unset_lock(GDKtrimLock, "BBPextend");
 }
 
 static INLINE char *
@@ -929,8 +927,10 @@ BBPinsert(BAT *b)
 	bat i;
 
 	/* ciritical section: get a new BBP entry */
-	if (lock)
+	if (lock) {
+	        gdk_set_lock(GDKtrimLock, "BBPreplace");
 		gdk_set_lock(GDKcacheLock, "BBPinsert");
+        }
 
 	/* find an empty slot */
 	if (BBP_free <= 0) {
@@ -943,8 +943,10 @@ BBPinsert(BAT *b)
 	i = BBP_free;
 	BBP_free = BBP_next(BBP_free);
 
-	if (lock)
+	if (lock) {
 		gdk_unset_lock(GDKcacheLock, "BBPinsert");
+	        gdk_unset_lock(GDKtrimLock, "BBPreplace");
+        }
 	/* rest of the work outside the lock , as GDKstrdup/GDKmalloc may trigger a BBPtrim */
 
 	/* fill in basic BBP fields for the new bat */
@@ -1992,6 +1994,10 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 		for (i = bbpunload; i != BBPMAXTRIM; i = bbptrim[i].next) {
 			BAT *b = BBP_cache(bbptrim[i].bid);
+			if (b == NULL || !(BBP_status(bbptrim[i].bid)&BBPUNLOADING)) {
+				GDKwarning("BBPtrim: bat(%d) gone\n",  bbptrim[i].bid);
+				continue;
+			}
 			MEMDEBUG THRprintf(GDKout, "#BBPTRIM: %9d %7d %s\n", bbptrim[i].lastused, (int) bbptrim[i].bid, BBPname(bbptrim[i].bid));
 
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));

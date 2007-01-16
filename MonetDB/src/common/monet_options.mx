@@ -319,7 +319,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	24	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	25	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -376,6 +376,14 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_alloc_map");
 	set[i].value = strdup("yes");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_mem_pagebits");
+#ifdef WIN32
+	set[i].value = strdup("16");
+#else
+	set[i].value = strdup("14");
+#endif
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_admin");

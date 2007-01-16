@@ -1553,11 +1553,10 @@ expected usage pattern of the memory in a heap.
 #define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
 #define STORE_UNSET	((char)-1)/* no mode specified */
 
-/* page size for non-linear mmaps */
-#define REMAP_PAGE_BITS 16
-#define REMAP_PAGE_SIZE (1<<REMAP_PAGE_BITS)
-#define REMAP_PAGE_MASK (REMAP_PAGE_SIZE-1)
-
+gdk_export size_t    GDK_mem_pagebits; /* page size for non-linear mmaps */
+#define REMAP_PAGE_BITS    GDK_mem_pagebits
+#define REMAP_PAGE_SIZE    (1 << REMAP_PAGE_BITS)
+#define REMAP_PAGE_MASK    (REMAP_PAGE_SIZE - 1)
 #define REMAP_PAGE_MAXBITS (REMAP_PAGE_BITS+3)
 #define REMAP_PAGE_MAXSIZE (1<<REMAP_PAGE_MAXBITS) /* max page bytesize of unary BUN heap (8-byte atom) */
 
