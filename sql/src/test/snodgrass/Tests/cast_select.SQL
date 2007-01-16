@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# necessary for version number
-source ${TSTSRCBASE}/src/jdbc/build.properties
-
-JAR="${TSTBLDBASE}/src/jdbc/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar"
+pdd="`monetdb-clients-config --pkgdatadir`"
+JAR="`ls $pdd/lib/jdbcclient-*.*.jar | head -n1`"
 
 cat << EOF > .monetdb
 user=monetdb
