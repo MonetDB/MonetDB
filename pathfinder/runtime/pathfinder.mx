@@ -3142,8 +3142,6 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 @:ws(c_decl)@
 @:ws_decl(c)@
 
-size_t xquery_concurrency;
-
 #define XTRACT_KIND(X)     (X & 63)
 #define XTRACT_CONT(X)     (X >> 6)
 #define SET_CONT_KIND(X,Y) (X << 6 | Y)
@@ -3374,7 +3372,6 @@ typedef struct {
 #define XQ_MAPI  2 
 
 size_t xquery_client_bytes = 64<<20; /* 64MB of procs should be enough for anyone */
-size_t xquery_concurrency = 1; /* max #concurrent sessions; reset in prelude */
 int xquery_cacheid = 0;
 
 MT_Lock pf_compiler_lock;
@@ -5023,6 +5020,8 @@ xquery_client_engine(mapi_client *fc )
     stream_close(fc->c->fdout);
     stream_destroy(fc->c->fdout);
     fc->c->fdout = NULL;
+    monetSetChannel(THRget(THRgettid()), NULL, NULL);
+
 }
 
 int
@@ -5032,8 +5031,10 @@ xquery_frontend( ptr *F)
     if (f) {
         f->name = GDKstrdup("xquery");
         if (f->name) {
+            char *p = GDKgetenv("mapi_clients");
+            int nr = p?atoi(p):0;
             *F = f;
-            f->cache_limit = xquery_concurrency;
+            f->cache_limit = (nr>0)?nr:1;
 	    f->f_alloc = xquery_client_alloc;
 	    f->f_init  = xquery_client_init;
 	    f->f_free  = xquery_client_free;

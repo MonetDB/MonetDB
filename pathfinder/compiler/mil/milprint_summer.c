@@ -10983,11 +10983,13 @@ const char* PFvarMIL(void) {
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var try := 1;\n"\
         "var err := \"!ERROR: conflicting update\";\n"\
+        "var ws_log_wsid := 0LL;\n"\
         "while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " var ws := empty_bat;\n"\
         " err := CATCH({\n"\
-        "  ws := ws_create(try);\n" PF_STARTMIL_END
+        "  ws := ws_create(try);\n"\
+        "  if (ws_log_active and bit(ws_log_wsid)) ws_log(ws, \"restarted \" + str(ws_log_wsid));\n" PF_STARTMIL_END
 #define PF_STARTMIL_END \
         "  # get full picture on var_usage (and sort it)\n"\
         "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"\
@@ -11032,6 +11034,7 @@ const char* PFdocbatMIL(void) {
            "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")
 #define PF_STOPMIL_END(LASTPHASE) \
            " });\n"\
+           " ws_log_wsid := ws_id(ws);\n"\
            " ws_destroy(ws);\n"\
            "}\n"\
            "if (not(isnil(err))) ERROR(err);\n"\
