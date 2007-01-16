@@ -21,7 +21,6 @@ set includedir=@includedir@
 set pkglibdir=%libdir%\MonetDB
 set pkgdatadir=%datadir%\MonetDB
 set pkgincludedir=%includedir%\MonetDB
-set classpath=%pkgdatadir%\lib\mapi.jar
 
 if "%1" == ""	goto usage
 
@@ -50,7 +49,6 @@ if "%1" == "--includedir"	echo %includedir%	& goto shift
 if "%1" == "--pkgdatadir"	echo %pkgdatadir%	& goto shift
 if "%1" == "--pkglibdir"	echo %pkglibdir%	& goto shift
 if "%1" == "--pkgincludedir"	echo %pkgincludedir%	& goto shift
-if "%1" == "--classpath"	echo %classpath%	& goto shift
 
 :usage
 	echo.
@@ -67,6 +65,5 @@ if "%1" == "--classpath"	echo %classpath%	& goto shift
 	echo   --prefix  --exec-prefix  --bindir  --libexecdir  --datadir
 	echo   --sysconfdir  --localstatedir  --libdir  --infodir
 	echo   --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
-	echo   --classpath
 	echo.
 

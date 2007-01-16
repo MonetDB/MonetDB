@@ -48,7 +48,6 @@ Known values for OPTION are:
   --source		print ${pkg} source directory
   --libs		print ${pkg} library linking information
   --cflags		print ${pkg} module pre-processor and compiler flags
-  --classpath		print default ${pkg} CLASSPATH
   --help		display this help and exit
   --version		output version information
 
@@ -126,10 +125,6 @@ while test $# -gt 0; do
        	echo \
 		-L$libdir
        	;;
-
-    --classpath)
-        echo 	$pkgdatadir/lib/mapi.jar
-        ;;
 
     *)
 	usage 1 >&2
