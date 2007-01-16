@@ -1123,6 +1123,7 @@ def isexecutable(TST) :
     return [ 0, "" ]
 ### isexecutable(TST) #
 
+# this function is a straight copy of the posixpath version
 _varprog = None
 def expandvars(path):
     """Expand shell variables of form $var and ${var}.  Unknown variables
