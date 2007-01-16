@@ -29,3 +29,5 @@
 *.sln -k 'o'
 *.suo -k 'b'
 *.vcproj -k 'o'
+# Other binary files
+*.zip -k 'b'
