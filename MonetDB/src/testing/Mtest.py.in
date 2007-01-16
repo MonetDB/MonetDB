@@ -1712,14 +1712,14 @@ def RunTest(env, TST, BusyPorts, COND) :
             SetExecEnv(env['exe'],0)
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
-	    try:
-            	Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
-            	Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
-            	Mfilter.mFilter(TST+".test.out",par['IGNORE'])
-            	Mfilter.mFilter(TST+".test.err",par['IGNORE'])
-    	    except:
-        	Warn("mFilter failed\n")
-		pass
+            try:
+                Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
+                Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
+                Mfilter.mFilter(TST+".test.out",par['IGNORE'])
+                Mfilter.mFilter(TST+".test.err",par['IGNORE'])
+            except:
+            Warn("mFilter failed\n")
+        pass
 
             testO = re.compile("^/"+TST+STABLEout+"/([^/]*)/", re.MULTILINE)
             testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/", re.MULTILINE)
@@ -2104,17 +2104,17 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
 
-	DBINIT=""
+        DBINIT=""
         if os.path.isfile(TST+".dbinit"):
             dbinit = TST+".dbinit"
-	    DBINIT = open(dbinit).readline().strip()
+        DBINIT = open(dbinit).readline().strip()
 
-	lang="mil"
+        lang="mil"
 
         if SERVER == "MAPI":
             Srvr = '%s --dbinit="%s module(mapi); mil_start();"' % (Srvr, DBINIT)
         if SERVER == "SQL":
-	    lang="sql"
+            lang="sql"
             if env['VERSION'] >= 49900:
                 source = ""
                 if PROLOGUE:
@@ -2123,7 +2123,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             else:
                 Srvr = '%s --dbinit="%s module(sql_server);"' % (Srvr, DBINIT)
         if SERVER == "XQUERY":
-	    lang="xquery"
+            lang="xquery"
             Srvr = '%s --dbinit="%s module(pathfinder);"' % (Srvr, DBINIT)
         if SERVER != "SQL"  or  env['VERSION'] < 49900:
             Srvr = Srvr+PROLOGUE
