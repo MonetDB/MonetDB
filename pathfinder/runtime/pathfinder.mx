@@ -693,7 +693,7 @@ var ws_overlaps_ws := bat("ws_overlaps_ws");
                         # bat[lng,lng] execution of query X overlapped query Y and they used a common collection
 
 var empty_bat        := bat(void,oid).seqbase(0@0).access(BAT_READ).rename("empty_bat"); 
-var empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
+var empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
 var empty_page       := bat(void,int,REMAP_PAGE_SIZE).rename("empty_page"); 
                         # empty pages to append onto rid_* master bats
 {   # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
@@ -1425,7 +1425,6 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         pre := reverse(ws_rid).leftjoin(dsk);     # pre_*'s are identical to rid_*
         mem := reverse(ws_mem).leftjoin(dsk);     # other bats are also just the same bats
     }
-    var commit_lock := reverse(runtime).fetch(RT_NID_FREELIST);
 
     # register new container in ws, and append all bats to it
     var cont := oid(count(ws.fetch(CONT_COLL)));
@@ -1502,7 +1501,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
             unq.bbpname(prefix + "_qn_nid_unq" + suffix);
 
             # insert new index
-            runtime.replace(commit_lock,free_nids); 
+            runtime.replace(reverse(runtime).fetch(RT_NID_FREELIST),free_nids); 
             runtime.insert(lock_nil,page_ws);
             runtime.insert(lock_nil,attr_ws);
             runtime.insert(lock_nil,own);
