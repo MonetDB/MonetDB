@@ -619,12 +619,14 @@ PROC exit() : void { # redefine exit to do a checkpoint first
 
 # the logger background thread
 PROC pf_logmanager() : void {
+    var base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
-        cnt :+= 1;
-        if ((logger_changes(pf_logger) > 100000) and (cnt > 10)) { 
+        var changes := logger_changes(pf_logger);
+        var delta := changes - base;
+        if (((delta < 0) or (delta > 100000)) and ((cnt :+= 1) > 10)) { 
             pf_logflush(0LL);
-            cnt := 0;
+            cnt := 0; base = changes;
         } 
         sleep(30);  
     }
