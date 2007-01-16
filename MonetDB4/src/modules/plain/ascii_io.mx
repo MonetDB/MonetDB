@@ -324,7 +324,7 @@ void_bat_create(int adt, size_t nr)
 		return b;
 	if (BATmirror(b))
 		BATseqbase(b, 0);
-	if (nr > REMAP_PAGE_MAXSIZE)
+	if (nr > (size_t) REMAP_PAGE_MAXSIZE)
         	BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	if (nr > BATTINY)
 		b = BATextend(b, nr);

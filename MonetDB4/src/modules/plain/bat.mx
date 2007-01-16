@@ -573,12 +573,6 @@ these 'sync' OIDs with their own propagation rules.
     CONST BUF_WILLNEED	:= 3;	# Will need these pages
     CONST BUF_DONTNEED	:= 4;	# Don't need these pages
 
-@- constants for remap()
-@mil
-    CONST REMAP_PAGE_BITS := 16;
-    CONST REMAP_PAGE_SIZE := 1LL << REMAP_PAGE_BITS;
-    CONST REMAP_PAGE_MASK := REMAP_PAGE_SIZE - 1LL;
-
     PROC swizzle(oid o, BAT[void,oid] map) : oid {
         var pid := oid(lng(o) >> REMAP_PAGE_BITS);
         if (map.exist(pid))
@@ -1838,7 +1832,7 @@ copy_segment(char* mmap, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt, int m
 			memcpy(BUNfirst(bn) + dst_off, BUNfirst(b) + src_off, (partial < nbytes)?partial:nbytes);
 		} else if ((size_t) src_off != dst_off) { /* otherwise it is already mapped so */
 			void *fixed = (bn->batBuns->base + dst_off);
-                        if (GDKmmap(mmap, mode, src_off, nbytes, fixed) != fixed) {
+                        if (MT_mmap(mmap, mode, src_off, nbytes, fixed) != fixed) {
 				return 0;
 			}
 		}
