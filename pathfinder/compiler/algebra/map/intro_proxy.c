@@ -2193,7 +2193,7 @@ collect_mappings (PFla_op_t *p,
         switch (p->kind) {
             case la_attach:
                 collect_mappings_worker (p->sem.attach.attname,
-                                         PFalg_attlist (),
+                                         PFalg_attlist_ (0, NULL),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
