@@ -1718,8 +1718,8 @@ def RunTest(env, TST, BusyPorts, COND) :
                 Mfilter.mFilter(TST+".test.out",par['IGNORE'])
                 Mfilter.mFilter(TST+".test.err",par['IGNORE'])
             except:
-            Warn("mFilter failed\n")
-        pass
+                Warn("mFilter failed\n")
+                pass
 
             testO = re.compile("^/"+TST+STABLEout+"/([^/]*)/", re.MULTILINE)
             testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/", re.MULTILINE)
