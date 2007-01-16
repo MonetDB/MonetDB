@@ -50,7 +50,6 @@ Known values for OPTION are:
   --mods		print ${pkg} module linking information
   --cflags		print ${pkg} module pre-processor and compiler flags
   --modpath		print default ${pkg} module path
-  --classpath		print default ${pkg} CLASSPATH
   --help		display this help and exit
   --version		output version information
 
@@ -146,10 +145,6 @@ while test $# -gt 0; do
 
     --modpath)
         echo 	$pkglibdir:$pkglibdir/lib:$pkglibdir/bin
-        ;;
-
-    --classpath)
-        echo 	$pkglibdir/java/mapi.jar
         ;;
 
     *)
