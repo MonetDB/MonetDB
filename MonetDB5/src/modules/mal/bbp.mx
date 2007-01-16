@@ -579,13 +579,12 @@ CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bid = (int *) getArgValue(stk, pci, 1);
 	immediate = (bit *) getArgValue(stk, pci, 2);
+	msg = CMDbbpreleaseBAT(mb, stk, pci);
 	if( *immediate) 
 		msg = BKCdestroyImmediate(&ret, bid);
 	else 
 		msg = BKCdestroy(&ret, bid);
-	if (msg == MAL_SUCCEED) {
-		msg = CMDbbpreleaseBAT(mb, stk, pci);
-	}
+	*(int *) getArgValue(stk, pci, 1)  = 0;
 	return msg;
 }
 
@@ -594,14 +593,11 @@ CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit ret = 0;
 	int *bid;
-	str msg;
+	(void) mb;
 
 	bid = (int *) getArgValue(stk, pci, 1);
-	msg = BKCdestroyImmediate(&ret, bid);
-	if (msg == MAL_SUCCEED) {
-		msg = CMDbbpreleaseBAT(mb, stk, pci);
-	}
-	return msg;
+	*(int *) getArgValue(stk, pci, 1)  = 0;
+	return BKCdestroyImmediate(&ret, bid);
 }
 
 str

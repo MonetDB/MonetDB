@@ -1,0 +1,161 @@
+#select a,b from r,s where r.a<2 and s.b>=3 and r.k=s.k;
+
+# The original compress SQL output is
+#function sql_cache.s7_0():void;
+#    _1:bat[:oid,:int]{not_nil=true,rows=3,bid=709}:= sql.bind("sys","r","k",0);
+#    _6:bat[:oid,:int]{not_nil=true,rows=0,bid=684}:= sql.bind("sys","r","k",1);
+#    constraints.emptySet(_6);
+#    _8:bat[:oid,:int]{not_nil=true,rows=0,bid=690}:= sql.bind("sys","r","k",2);
+#    constraints.emptySet(_8);
+#    _10:bat[:oid,:int]{not_nil=true,rows=3,bid=708}:= sql.bind("sys","r","a",0);
+#    _18:bat[:oid,:int]{not_nil=true,rows=3,bid=688}:= sql.bind("sys","s","k",0);
+#    _20:bat[:oid,:int]{not_nil=true,rows=0,bid=697}:= sql.bind("sys","s","k",1);
+#    constraints.emptySet(_20);
+#    _21:bat[:oid,:int]{not_nil=true,rows=0,bid=702}:= sql.bind("sys","s","k",2);
+#    constraints.emptySet(_21);
+#    _22:bat[:oid,:int]{not_nil=true,rows=3,bid=691}:= sql.bind("sys","s","b",0);
+#    _13 := calc.int(2);
+#    _14{rows=3} := algebra.uselect(_10,nil:int,_13,false,false);
+#    _17{rows=3} := algebra.semijoin(_1,_14);
+#    _25 := calc.int(3);
+#    _26{rows=3} := algebra.uselect(_22,_25,nil:int);
+#    _27{rows=3} := algebra.semijoin(_18,_26);
+#    _28{rows=3} := bat.reverse(_27);
+#    _29{rows=3} := algebra.join(_17,_28);
+#    _31{rows=3} := algebra.markT(_29,0@0);
+#    _32{rows=3} := bat.reverse(_31);
+#    _33{rows=3} := algebra.join(_32,_10);
+#    _34{rows=3} := bat.reverse(_29);
+#    _35{rows=3} := algebra.markT(_34,0@0);
+#    _36{rows=3} := bat.reverse(_35);
+#    _37{rows=3} := algebra.join(_36,_22);
+#    _38 := sql.resultSet(2,1,_33);
+#    sql.rsColumn(_38,"sys.r","a","int",32,0,_33);
+#    sql.rsColumn(_38,"sys.s","b","int",32,0,_37);
+#    sql.exportResult(_38,"");
+#end s7_0;
+
+
+# This example is cast into a streaming version manually
+
+function sql_cache.s7_0():void;
+    _1:bat[:oid,:int]{not_nil=true,rows=3,bid=709}:= sql.bind("sys","r","k",0);
+    _6:bat[:oid,:int]{not_nil=true,rows=0,bid=684}:= sql.bind("sys","r","k",1);
+    constraints.emptySet(_6);
+    _8:bat[:oid,:int]{not_nil=true,rows=0,bid=690}:= sql.bind("sys","r","k",2);
+    constraints.emptySet(_8);
+    _10:bat[:oid,:int]{not_nil=true,rows=3,bid=708}:= sql.bind("sys","r","a",0);
+    _18:bat[:oid,:int]{not_nil=true,rows=3,bid=688}:= sql.bind("sys","s","k",0);
+    _20:bat[:oid,:int]{not_nil=true,rows=0,bid=697}:= sql.bind("sys","s","k",1);
+    constraints.emptySet(_20);
+    _21:bat[:oid,:int]{not_nil=true,rows=0,bid=702}:= sql.bind("sys","s","k",2);
+    constraints.emptySet(_21);
+    _22:bat[:oid,:int]{not_nil=true,rows=3,bid=691}:= sql.bind("sys","s","b",0);
+    _13 := calc.int(2);
+    _14{rows=3} := algebra.uselect(_10,nil:int,_13,false,false);
+    _17{rows=3} := algebra.semijoin(_1,_14);
+    _25 := calc.int(3);
+    _26{rows=3} := algebra.uselect(_22,_25,nil:int);
+    _27{rows=3} := algebra.semijoin(_18,_26);
+    _28{rows=3} := bat.reverse(_27);
+    _29{rows=3} := algebra.join(_17,_28);
+    _31{rows=3} := algebra.markT(_29,0@0);
+    _32{rows=3} := bat.reverse(_31);
+    _33{rows=3} := algebra.join(_32,_10);
+    _34{rows=3} := bat.reverse(_29);
+    _35{rows=3} := algebra.markT(_34,0@0);
+    _36{rows=3} := bat.reverse(_35);
+    #_37{rows=3} := algebra.join(_36,_22);
+	_37:= node_37(_36,_22);
+    R_38 := volcano.pack(_33);
+    _38 := sql.resultSet(2,1,R_33);
+    sql.rsColumn(_38,"sys.r","a","int",32,0,_33);
+    R_37 := volcano.pack(_37);
+    sql.rsColumn(_38,"sys.s","b","int",32,0,R_37);
+    sql.exportResult(R_38,"");
+end s7_0;
+
+# collect the pieces before shipping
+# a general stream packer
+function volcano.pack(R3:bat[:oid:int]):bat[:oid,:int];
+	A3:= bat.new(:oid,:int);
+barrier (go,T3):= node3();
+	algebra.insert(A3,T3);
+redo (go,T3):= node3();
+exit go;
+	return A3;
+end pack;
+
+# joins should be based on the assumption that
+# the streams are produced in oid-order.
+factory volcano.join(R:bat[:oid,:oid], S:bat[:oid,:int]):bat[:oid,:int];
+	Rp:= volcano.slice(R,nil:oid,nil:oid);
+	Sp:= volcano.slice(S,nil:oid,nil:oid);
+barrier go:= true;
+	leave go:= not(go);
+	RS:= algebra.join(Rp,Sp);
+	yield RS;
+	(firstR,lastR):= algebra.bounds(Rr);
+	(firstS,lastS):= algebra.bounds(Sr);
+	redo (go,Rp):= volcano.slice(R,firstS,lastS);
+	redo (go,Sp):= volcano.slice(S,firstR,lastR);
+	redo (go,Rp):= volcano.slice(R,nil:oid,nil:oid);
+	redo (go,Sp):= volcano.slice(S,nil:oid,nil:oid);
+exit go;
+end join;
+
+# The join for this query is specific.
+factory node_37():bat[:oid,:int];
+	Rp:= node_36(R,nil:oid,nil:oid);
+	Sp:= node_22(S,nil:oid,nil:oid);
+barrier go:= true;
+	leave go:= not(go);
+	RS:= algebra.join(Rp,Sp);
+	yield RS;
+	(firstR,lastR):= algebra.bounds(Rr);
+	(firstS,lastS):= algebra.bounds(Sr);
+	redo (go,Rp):= node_36(firstS,lastS);
+	redo (go,Sp):= node_22(S,firstR,lastR);
+	redo (go,Rp):= node_36(nil:oid,nil:oid);
+	redo (go,Sp):= node_22(S,nil:oid,nil:oid);
+exit go;
+end node_37;
+
+factory node_36(first:oid,last:oid)(:bit,:bat[:oid,:int]);
+barrier (go,Rp):=node_35(first,last);
+	Rr:= bat.reverse(Rp);
+	yield (true,Rr);
+	redo (go,Rp):= node_35(first,last);
+	redo (go,Rp):= node_35(oid:nil,oid:nil);
+exit go;
+	return (false,nil:bat);
+end node_36;
+
+factory select(R:bat[:oid,:any_1],cst1:any_1,cst2:any_1) :bat[:oid,:any_1];
+barrier	b:= volcano.node0(Ra);
+	c:= algebra.select(Ra,cst1,cst2);
+	yield(c);
+redo  b:= scan(Ra);
+exit b;
+end select;
+
+factory semijoin(Rk:bat[:oid,:any_1], Ra:bat[:oid,:any_1]) :bat[:oid,:any_1];
+barrier	b:= volcano.scan(Ra);
+	c:= volcano.select(Ra,cst1,nil:any_1);
+	d:= algebra.semijoin(Rk,c);
+	yield(d);
+redo  b:= scan(Ra);
+end semijoin;
+
+factory join(Rk:bat[:oid,:any_1], Sk:bat[:oid,:any_1])  :bat[:oid,:oid];
+barrier	b:= volcano.scan(Rk);
+barrier	c:= volcano.scan(Sk);
+	d:= algebra.join(b,c);
+	yield(d);
+redo  c:= scan(Sk);
+redo  b:= scan(Rk);
+exit b;
+end join;
+
+factory project(X:bat[:oid,:oid],Y:bat[:oid,:oid]) (Xa:bat[:oid,:any],Yb:bat[:oid,:any]);
+end project;

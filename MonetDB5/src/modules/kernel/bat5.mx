@@ -2091,8 +2091,8 @@ BKCdestroyImmediate(signed char*r, int *bid)
 		throw(MAL, "bat.destroy", "Cannot access descriptor");
 	}
 	BBPlogical(b->batCacheid, buf);
-	CMDdestroy(r, buf);
 	BBPreleaseref(b->batCacheid);
+	CMDdestroy(r, buf);
 	return MAL_SUCCEED;
 }
 

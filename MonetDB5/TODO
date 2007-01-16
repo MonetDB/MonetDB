@@ -32,6 +32,10 @@
   optimizer into local/remote calls, minimizing the 
   amount of data traffic.
 
+  12 Jan 2007; Martin Kersten <mlkersten>; OPEN
+  Introduce the notion of module boxes as the equivalent of
+  globally scoped variables. 
+
 *MonetDB 5.0 (Dec 2006)
   27 Dec 2006; Martin Kersten <mlkersten>; OPEN
   double check batstr when it produces str results using match.
