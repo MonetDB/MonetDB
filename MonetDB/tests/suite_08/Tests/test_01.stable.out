@@ -238,39 +238,40 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf"														  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/data/home/boncz/gcc-64-32-debug/etc/MonetDB.conf"													  ]
 [ "gdk_arch",		  "64bitx86_64-redhat-linux-gnu"																	  ]
 [ "gdk_version",	  "4.14.0"																			  ]
-[ "monet_pid",		  "11267"																			  ]
-[ "prefix",		  "/ufs/niels/scratch/rc/Linux-x86_64"																  ]
-[ "exec_prefix",	  "/ufs/niels/scratch/rc/Linux-x86_64"																  ]
+[ "monet_pid",		  "4253"																		  ]
+[ "prefix",		  "/data/home/boncz/gcc-64-32-debug"															  ]
+[ "exec_prefix",	  "/data/home/boncz/gcc-64-32-debug"															  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm"													  ]
+[ "gdk_dbfarm",		  "/data/home/boncz/gcc-64-32-debug/var/MonetDB/dbfarm"													  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "262144"																		  ]
 [ "gdk_vm_minsize",	  "137438953472"																			  ]
 [ "gdk_alloc_map",	  "no"										  ]
+[ "gdk_mem_pagebits",	  "14"																			  ]
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/bin"	  ]
+[ "monet_mod_path",	  "/data/home/boncz/gcc-64-32-debug/lib/MonetDB:/data/home/boncz/gcc-64-32-debug/lib/MonetDB/lib:/data/home/boncz/gcc-64-32-debug/lib/MonetDB/bin"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "37665"																			  ]
+[ "mapi_port",		  "39419"																		  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
 [ "sql_debug",		  "0"							  ]
-[ "sql_logdir",		  "/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/sql_logs"													  ]
+[ "sql_logdir",		  "/data/home/boncz/gcc-64-32-debug/var/MonetDB/sql_logs"												  ]
+[ "xquery_logdir",	  "/data/home/boncz/gcc-64-32-debug/var/MonetDB/xquery_logs"												  ]
 [ "gdk_embedded",	  "no"								  ]
-[ "pf_httpd_port",	  "48080"																																																																																				  ]
-[ "xquery_output",	  "xml"																																																																																					  ]
+[ "mapi_open",		  "false"																		  ]
+[ "xquery_httpd_port",	  "48080"																		  ]
+[ "xquery_output",	  "dm"																			  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
-[ "xquery_procMB",	  "64"																				  ]
-[ "xquery_open",	  "false"																			  ]
-[ "xquery_logdir",	  "/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/xquery_logs"													  ]
-[ "monet_cwd",		  "/net/koala.ins.cwi.nl/export/scratch0/niels/rc/Linux-x86_64/mTests/tests/suite_08"										  ]
+[ "xquery_procMB",	  "128"																			  ]
+[ "monet_cwd",		  "/data/home/boncz/gcc-64-32-debug/mTests/tests/suite_08"												  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -300,7 +301,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Wed Nov  8 13:09:53 2006"	  ]
+[ 0,	  "Tue Jan 16 11:53:15 2007"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree

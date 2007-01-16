@@ -40,7 +40,7 @@ xyz();
 #-------------------------------------------------------------------------#
 [ "z2",	  "int",  "liquid",	  "changeable",	  "234"			  ]
 [ "z1",	  "int",  "liquid",	  "changeable",	  "23"			  ]
-[ "REMAP_PAGE_SIZE",	  "lng",  "frozen",	  "constant",	  "65536"		  ]
+[ "REMAP_PAGE_SIZE",	  "lng",  "frozen",	  "constant",	  "16384"		  ]
 quit();
 
 # 18:33:55 >  
