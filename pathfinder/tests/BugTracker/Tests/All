@@ -85,3 +85,6 @@ insert_into_transient.SF-1626208
 clear_attrs_on_delete.SF-1612739
 clear_attrs_on_delete.SF-1612739-b
 clear_attrs_on_delete.SF-1612739-c
+predicate_rewriting.SF-1635936
+predicate_selects_too_few_nodes.SF-1636588
+predicate_selects_too_few_nodes.SF-1636588_ws

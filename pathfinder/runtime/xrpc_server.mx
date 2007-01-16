@@ -72,12 +72,12 @@ Start XRPC receiver on the specified port",
 "xrpc_server");
 
 PROC rpcd_start() : void {
-    rpcd_start( int(monet_environment.find("pf_httpd_port")), "");
+    rpcd_start( int(monet_environment.find("xquery_httpd_port")), "");
 }
 ADDHELP("rpcd_start", "zhang", "November 2005",
 "DESCRIPTION:\n\
 Start XPRC receiver on the default port as specified in \
-\"monet_environment\" by \"pf_httpd_port\"",
+\"monet_environment\" by \"xquery_httpd_port\"",
 "xrpc_server");
 
 @h

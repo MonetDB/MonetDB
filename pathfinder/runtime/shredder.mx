@@ -278,7 +278,7 @@ typedef struct shredBATdef {
 
 /* values of the static properties of a result BAT */
 static shredBATdef shredbatdef[SHRED_BATS] = {
- { MAP_PID,      "_map_pid",          TYPE_void, TYPE_void, 1.0/REMAP_PAGE_SIZE, 0}, 
+ { MAP_PID,      "_map_pid",          TYPE_void, TYPE_void, 1.0/65336, 0}, 
  { PRE_SIZE,     "_rid_size",         TYPE_void, TYPE_int,  1.0, 0}, 
  { PRE_SIZE,     "_rid_level",        TYPE_void, TYPE_chr,  1.0, 0}, 
  { PRE_SIZE,     "_rid_prop",         TYPE_void, TYPE_oid,  1.0, 0}, 
@@ -446,7 +446,7 @@ shredBAT_extend(shredBAT *sb,
     if (sb->bat->ttype == TYPE_void) {
         return GDK_SUCCEED;
     }
-    if (newsize+newsize > REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+    if (newsize+newsize > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
         BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     }
     if (!(sb->bat = BATextend(sb->bat, newsize))) {
@@ -1494,6 +1494,8 @@ shredder_create(char *location,
         oid tab_size = shredCtx->dstBAT[sb->def->table].size;
         if (tab_size == 0) {
             tab_size = BATcount(sb->bat) + (sb->def->sizeFact * shredCtx->estSize);
+            if (tab_size > (size_t) REMAP_PAGE_SIZE && sb->def->table == PRE_SIZE) 
+               tab_size = (((tab_size - 1) >> REMAP_PAGE_BITS) + 1) << REMAP_PAGE_BITS;
         }
         /* make sure the bat is at least as big as its leader (that is later used to check overflow) */
         oid cur_size = ((sb->bat->batBuns->base + sb->bat->batBuns->size) - BUNfirst(sb->bat))/BUNsize(sb->bat);
@@ -1665,7 +1667,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
     }
     /* set the bats to their final size */
     size_t newsize = shredCtx->nnode_pre;
-    if (shredCtx->updatable && newsize > REMAP_PAGE_SIZE) {
+    if (shredCtx->updatable && newsize > (size_t) REMAP_PAGE_SIZE) {
         /* we fill out memory mapped (big) rid_* bats to the next page boundary, as this speeds up remap */
         int delsize = (1<<31) + REMAP_PAGE_SIZE - (1+(newsize & REMAP_PAGE_MASK));
         while(newsize & REMAP_PAGE_MASK) {

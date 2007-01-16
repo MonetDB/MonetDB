@@ -2760,7 +2760,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                    working set, that a following (preceding) step can check
                    the fragment boundaries */
                 "# adding new fragments to the _FRAG_ROOT bat\n"
-                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(roots.project(oid_nil)));\n"
+                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(roots).project(oid_nil)));\n"
                );
     
                 /* return the root elements in iter|pos|item|kind representation */
@@ -2951,7 +2951,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                working set, that a following (preceding) step can check
                the fragment boundaries */
             "# adding new fragments to the _FRAG_ROOT bat\n"
-            "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(roots.project(oid_nil)));\n"
+            "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(roots).project(oid_nil)));\n"
 
             /* return the root elements in iter|pos|item|kind representation */
             /* should contain for each iter exactly 1 root element
@@ -10911,6 +10911,7 @@ const char* PFinitMIL(void) {
         "var time_shred := 0LL;\n"
         "var time_print := 0LL;\n"
         "var time_exec := 0LL;\n"
+        "var time_start := 0LL;\n"
         "var genType := \"xml\";\n";
 }
 
@@ -10971,7 +10972,8 @@ const char* PFvarMIL(void) {
         "time_read := 0LL;\n"\
         "time_shred := 0LL;\n"\
         "time_print := 0LL;\n"\
-        "time_exec := usec();\n"
+        "time_exec := 0LL;\n"\
+        "time_start := usec();\n"
 #define PF_STARTMIL_NORMAL(STMT) PF_STARTMIL_START\
         "var err;\n"\
         "{ var ws := empty_bat;\n"\
@@ -10984,7 +10986,8 @@ const char* PFvarMIL(void) {
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " var ws := empty_bat;\n"\
         " err := CATCH({\n"\
-        "  ws := ws_create(try);\n" PF_STARTMIL_END
+        "  ws := ws_create(try);\n"\
+        "  if (ws_log_active and bit(ws_log_wsid)) ws_log(ws, \"restarted \" + str(ws_log_wsid));\n" PF_STARTMIL_END
 #define PF_STARTMIL_END \
         "  # get full picture on var_usage (and sort it)\n"\
         "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"\
@@ -11017,7 +11020,7 @@ const char* PFdocbatMIL(void) {
 
 #define PF_STOPMIL_START \
            "  time_print := usec();\n"\
-           "  time_exec := time_print - time_exec;\n"
+           "  time_exec := time_print - time_start;\n"
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\
            "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
            "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
@@ -11029,6 +11032,7 @@ const char* PFdocbatMIL(void) {
            "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")
 #define PF_STOPMIL_END(LASTPHASE) \
            " });\n"\
+           " ws_log_wsid := ws_id(ws);\n"\
            " ws_destroy(ws);\n"\
            "}\n"\
            "if (not(isnil(err))) ERROR(err);\n"\

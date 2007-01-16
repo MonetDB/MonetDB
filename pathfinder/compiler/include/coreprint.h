@@ -48,6 +48,8 @@ void PFcore_dot (FILE *f, PFcnode_t *root);
 
 void PFcore_pretty (FILE *f, PFcnode_t *root);
 
+void PFpcore (PFcnode_t *root);
+
 #endif     /* COREPRINT_H */
 
 /* vim:set shiftwidth=4 expandtab: */

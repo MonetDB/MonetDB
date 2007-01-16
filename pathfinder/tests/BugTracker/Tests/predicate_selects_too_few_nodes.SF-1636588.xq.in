@@ -1,0 +1,11 @@
+(: TEST :)
+let $worlds := exactly-one(doc("$TSTSRCDIR/predicate_selects_too_few_nodes.SF-1636588.xml")/worlds)
+(: ws contains all worlds with their probabilities, and the movies that are thrillermovies in them :)
+let $ws := 	for $w in $worlds/world
+		return <r>{$w/@prob}{$w//genre[.="Thriller"]/ancestor::movie/title}</r>
+for $v in distinct-values($ws/title)
+let $rank := sum($ws[//title=$v]/@prob)
+return
+	<res rank="{$rank}">{$v}</res> 
+
+ 	  	 

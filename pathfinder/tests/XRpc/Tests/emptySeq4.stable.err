@@ -45,7 +45,7 @@ stderr of test 'emptySeq4` in directory 'tests/XRpc` itself:
 # config opt 	mapi_debug = 0
 # config opt 	sql_debug = 0
 # config opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	pf_httpd_port = 48080
+# config opt 	xquery_httpd_port = 48080
 # config opt 	xquery_output = xml
 # config opt 	xquery_cacheMB = 100
 # cmdline opt 	config = /ufs/zhang/scratch/monet/dev-install/etc/MonetDB.conf

@@ -656,9 +656,7 @@ contains_last_pos_or_nonstepdot(PFpnode_t *p)
             if (p->kind == p_dot) return true;
    
             /* check for the forbidden special functions */ 
-            if (p->kind == p_fun_ref && 
-               (p->sem.qname.ns.prefix[0] == 0 || strcmp(p->sem.qname.ns.prefix, "fn") == 0)) 
-            {
+            if (p->kind == p_fun_ref) {
                 if (strcmp(p->sem.qname.loc, "position") == 0) return true;
                 if (strcmp(p->sem.qname.loc, "last") == 0) return true;
             }

@@ -382,6 +382,8 @@ const COLLECTION       := chr(5);
 const WS               := 0@0; # first container in ws = transient doc container
 const PRE_BASE         := 0@0; # all our PRE bats start at 0 (the super-root)
 const TEMP_DOC         := 0@0; # doc/coll key that is never used for persistent docs
+const DOCID_CURID_HACK := 0@0; # doc/coll key that is never used for persistent docs
+const DOCID_PGBIT_HACK := 1@0; # doc/coll key that is never used for persistent docs
 const DOCID_MIN        := 1000000000@0; # persistent doc-ids start here
 const DOCID_MAX        := 2000000000@0; # and end here (so we have 1G of them)
 const WS_MAXID         := 1LL << 62;
@@ -399,6 +401,11 @@ const RT_QN_NID_UNQ    := 8; # qn-nid nsloc index: subset of indexed qns (small)
 const RT_REGION_PRE    := 9;
 const RT_REGION_START  := 10;
 const RT_REGION_END    := 11;
+
+# for coll_lock_[un]set, you can request SHORTLOCK, LONGLOCK or BOTHLOCK mode
+const COLL_SHORTLOCK   := 1;
+const COLL_LONGLOCK    := 2;
+const COLL_BOTHLOCK    := 3;
 
 const WSID_UPDATE := (1LL << 31);
 
@@ -439,6 +446,55 @@ const ANCESTOR_NID := MODIFIED_NID + 1;
 const MODIFIED_ATTR := ANCESTOR_NID + 1;
 const MODIFIED_PAGE := MODIFIED_ATTR + 1;
 const NEW_PAGE := MODIFIED_PAGE + 1;
+
+
+# transaction debugging / performance profiling 
+var ws_log_lock := lock_create();
+var ws_log := bat(lng,str,1000000).rename("ws_log");
+var ws_log_id := 0LL;
+var ws_log_wsid := 0LL;
+var ws_log_msg := "";
+var ws_log_active := false;
+
+PROC ws_log(lng wsid, str msg) : void {
+    var id := (usec() * 1000LL) + lng(clientid()); 
+    lock_set(ws_log_lock);
+    ws_log.insert(ws_log_id := id, ws_log_msg := str(wsid) + " " + msg);
+    lock_unset(ws_log_lock);
+}
+PROC ws_log(BAT[void,bat] ws, str msg) : void { ws_log(ws_id(ws), msg); }
+
+var ws_log_stamp, ws_log_txt, ws_log_tid, ws_log_lck, ws_log_exc;
+
+# analyze the last run 
+PROC ws_log_analyze() : void {
+    ws_log_active := true;
+    ws_log_stamp := ws_log.hmark(0@0);
+    ws_log_txt := ws_log.tmark(0@0);
+    ws_log_tid := [lng](ws_log_txt);
+    ws_log_lck := [search](ws_log_txt, "lock-").ord_uselect(0,int(nil)).mirror().leftfetchjoin(ws_log_txt);
+    ws_log_lck := [lng](ws_log_lck.[string](ws_log_lck.[search]("lock-").[+](5))).ord_uselect(1000LL,lng(nil)).mirror().leftfetchjoin(ws_log_txt);
+    ws_log_exc := [search](ws_log_txt, "exec-").ord_uselect(0,int(nil)).mirror().leftfetchjoin(ws_log_txt);
+    ws_log_exc := [lng](ws_log_exc.[string](ws_log_exc.[search]("exec-").[+](5))).ord_uselect(1000LL,lng(nil)).mirror().leftfetchjoin(ws_log_txt);
+    ws_log_stamp.rename("ws_log_stamp");
+    ws_log_txt.rename("ws_log_txt");
+    ws_log_tid.rename("ws_log_tid");
+    ws_log_lck.rename("ws_log_lck");
+    ws_log_exc.rename("ws_log_exc");
+    ws_log.delete();
+    ws_log_exc.sample(30).mirror().leftfetchjoin(ws_log_stamp).table(ws_log_txt);
+}
+
+# print transaction sequence
+PROC ws_log_print(lng t) : void {
+   var seq := ws_log_tid.ord_uselect(t).mirror().leftfetchjoin(ws_log_stamp);
+   var lo := seq.fetch(0);
+   var hi := seq.fetch(seq.count() - 1);
+   var lst := ws_log_stamp.ord_select(lo,hi);
+   table(lst, [substitute](ws_log_txt,str(t),"=================", false));
+   table([/]([-](seq,lo),1000LL), ws_log_txt);
+}
+
 
 @= ws_nme
     .append(toLower("@1"))
@@ -538,26 +594,40 @@ PROC pf_checkpoint(BAT[void,str] commitBAT) : bit
 PROC pf_assert(str err, str msg) : void
 {
     if (not(isnil(err))) { 
-        printf("%s\nERROR: %s; please restart Mserver.\n", err, msg); 
-        exit(); 
+        printf("%s\n!ERROR: %s; please restart Mserver.\n", err, msg); 
+        quit(); 
     }
 }
 
+PROC pf_logflush(lng wsid) : void {
+    var ws_logtime := usec(); 
+    lock_set(pf_wal);
+    sema_down(pf_chkpt_barrier);
+    if (ws_log_active) 
+        ws_log(wsid, "checkpoint-begin"); 
+    pf_assert(CATCH(logger_restart(pf_logger)), "background checkpoint failed");
+    if (ws_log_active) 
+        ws_log(wsid, "checkpoint-end exec" + str(ws_logtime - usec()));
+    sema_up(pf_chkpt_barrier);
+    lock_unset(pf_wal);
+    logger_cleanup(pf_logger);
+}
+
+PROC exit() : void { # redefine exit to do a checkpoint first
+    pf_logflush(1LL); # exit with clean log makes server restart significantly faster 
+    quit(); 
+}
 
 # the logger background thread
 PROC pf_logmanager() : void {
+    var base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
-        cnt :+= 1;
-        if ((logger_changes(pf_logger) > 100000) and (cnt > 10)) { 
-            lock_set(pf_wal);
-            sema_down(pf_chkpt_barrier);
-            # maybe fatal is not required here; but not doing so would be scary..
-            pf_assert(CATCH(logger_restart(pf_logger)), "background checkpoint failed");
-            sema_up(pf_chkpt_barrier);
-            lock_unset(pf_wal);
-            logger_cleanup(pf_logger);
-            cnt := 0;
+        var changes := logger_changes(pf_logger);
+        var delta := changes - base;
+        if (((delta < 0) or (delta > 100000)) and ((cnt :+= 1) > 10)) { 
+            pf_logflush(0LL);
+            cnt := 0; base = changes;
         } 
         sleep(30);  
     }
@@ -589,6 +659,12 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_location     := bat("doc_location");
     doc_timestamp    := bat("doc_timestamp");
     uri_lifetime     := bat("uri_lifetime");
+
+    # check that this database was created with a compatible pagesize as requested now
+    var pagebits := 16; 
+    if (doc_collection.exist(DOCID_PGBIT_HACK)) 
+        pagebits := int(doc_collection.find(DOCID_PGBIT_HACK));
+    if (pagebits != REMAP_PAGE_BITS) pf_assert("", "Set gdk_mem_pagebits=" + str(pagebits));
 } else {
     # create doc_name table in case it does not exist
     collection_name := new(oid,str).persists(true).rename("collection_name");
@@ -598,7 +674,8 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_location    := new(oid,str).persists(true).rename("doc_location");
     doc_timestamp   := new(oid,timestamp).persists(true).rename("doc_timestamp");
     uri_lifetime    := new(str,lng).persists(true).rename("uri_lifetime");
-    doc_collection.insert(TEMP_DOC, DOCID_MIN); # hack: store next oid as in invalid TEMP_DOC tuple
+    doc_collection.insert(DOCID_CURID_HACK, DOCID_MIN); # hack: store next oid as in invalid tuple
+    doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
     pf_checkpoint(bat(void,str).append("uri_lifetime"));
 }
 
@@ -616,7 +693,7 @@ var ws_overlaps_ws := bat("ws_overlaps_ws");
                         # bat[lng,lng] execution of query X overlapped query Y and they used a common collection
 
 var empty_bat        := bat(void,oid).seqbase(0@0).access(BAT_READ).rename("empty_bat"); 
-var empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
+var empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
 var empty_page       := bat(void,int,REMAP_PAGE_SIZE).rename("empty_page"); 
                         # empty pages to append onto rid_* master bats
 {   # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
@@ -680,8 +757,10 @@ PROC _collection_cleanup() : BAT[str,str]
             # delete empty collection 
             if (colname_runtime.exist($t)) {
                 var runtime := colname_runtime.find($t);
-                var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
-                coll_lock.lock_destroy();
+                var coll_rlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+                var coll_wlock := reverse(runtime).fetch(RT_NID_FREELIST);
+                coll_wlock.lock_destroy();
+                coll_rlock.lock_destroy();
                 colname_runtime.delete($t);
             }
             colname_shredlock.reverse().select($t)@batloop() lock_destroy($h);
@@ -758,21 +837,36 @@ PROC X() : void {
 As a general convention all MIL PROCs _X(), i.e. whose name starts with an
 underscore, assume the pf_short lock is taken.
 
-@- collection lock 
+@- collection locks and the extend lock 
 
-Apart from the short lock, each XML collection (i.e. document container) has 
-its own lock. These locks can be found via the colname_runtime BAT[str,bat]. 
-Its head contains collection names. Its tail a so-called 'runtime' BAT[lock,bat]. 
-The first entry (named RT_LOCK_FREELIST ) in this runtime-BAT is 
-[coll_lock,pagefree], where 'coll_lock' is the collection lock and 
-'pagefree' is a BAT[oid,void] that contains a list of free pages.
+Apart from the global short lock, each XML collection (i.e. document container) 
+has two coll_locks: long and short. 
+These locks can be found via the colname_runtime BAT[str,bat].  Its head contains 
+collection names. Its tail a so-called 'runtime' BAT[lock,bat]. 
+The first entry (named RT_LOCK_FREELIST) in this runtime-BAT is 
+[coll_shortlock,pagefree], and the second named RT_NID_FREELIST) contains
+[coll_longlock,freenids].
+The tails of these BUNs hold free-lists for pages and NIDS, respectively.
 
 The other entries in the runtime-BAT relate to indices on the collection.
-More information can be found in the QN_NID section. Also, the StandOff
+More information can be found in the QN_NID paragraph. Also, the StandOff
 extensions use entries in the runtime-BAT.
 
-The collection lock can be used to get exclusive access to the master
-bats of a collection. This is required when:
+The coll_short lock is the most critical lock that guarantees that
+no changes at all (except new pages allocated to other transactions).
+occur. It is taken by read-transactions when they want to read stable
+master bats. It must also be taken by update transactions that modify
+stable portions of the master bats.
+
+The long lock is taken by updating actions only. Holding it prevents
+other updates from proceeding on a commit to that collection. However, 
+it does allow read-transactions to access the master BATs freely.
+In the commit sequence, the long-lock is taken during the logging
+phase. After that succeeds, the short lock is added, and then the
+mater BATs are updated.
+
+So, the collection shortlock should be used to get exclusive access 
+to the master bats of a collection. This is required when:
 
 - a collection is opened and isolated copies of the master bats need to 
   be made. This includes the time taken for any nsloc index construction,
@@ -783,11 +877,17 @@ bats of a collection. This is required when:
 
 - while playing the update tape, and determining which updates
   to make, certain append-only tables are extended (qn_*,  prop_*).
-  These extensions must also take the coll_lock, temporarily.
 
 - while applying the updates of a committed query to the master bat.
-  note that in a commit, first all locks of all documents must be acquired
+  Note that in a commit, first all locks of all documents must be acquired
   (in ascending order - to prevent deadlock), then all changes commited. 
+
+There are some situations where access to the master BATs is allowed
+without acquiring any of these collection locks. That for pages 
+not part of the stable master bats (i.e. newly allocated pages).
+This access (reading and writing in newly allocated RID_* pages during 
+updates) is protected by pf_extend_[un]protect(). It sets a non-exclusive
+counting lock. Its function is to prevent base reallocation. 
 
 Similar to the short_lock PROC naming convention, __X() PROCs, i.e.
 with double underscore are those that execute while holding a collection
@@ -813,40 +913,6 @@ or a new set of NIDs (ws_newnids) must acquire this lock. These two operations
 always request a larger batch of (pages, NIDs) in one go, adding them to a 
 free-list. Thus, many insert actions will actually not need to take the 
 shred-lock (as they can get their new pages/NIDs from a freelist).
-
-@- extend lock 
-
-When we insert RID_* data in new pages, this is done right away in the master 
-bats (i.e. _RID_*).
-
-This is legal as it is only done for newly allocated pages, thus in unused
-ranges of the master bat that have been uniquely assigned to the updating query.
-These master bats are also regularly re-read while determining what to update.
-
-The only  danger here is that a ws_newpage() triggers a BATextend() on one
-of the _RID_* bats. In MonetDB, such extends may lead to base reallocations. 
-Concurrent commands that work on the bat will crash if this happens.
-
-To avoid this, we in fact need a nonexclusive- and exclusive-access to collection
-locks. That is, multiple updaters take nonexclusive-locks while accessing only new
-pages in _RID_* bats. The ws_newpage() takes a exclusive-lock when 
-extending the bats. Note that the free-list of pages used in ws_newpage() 
-means that in most cases BATextends() are not required, as extends happen
-in bulk and most page requests can be satisfied off the free-list.
-
-Due to lack of time, there is no per-collection extend-lock; only a global one.
-It consist of:
-- a counter (pf_extend_cnt) that counts how many nonexclusive users are inside
-  the critical section
-- a lock (pf_extend) that protects the counter
-- a semaphore (pf_extend_barrier) that is taken by the first nonexclusive user 
-  and released by the last. Exclusive extend locks always take the semaphore.
-
-While the _RID_* data is now still logged; we can easily switch to a mechanism
-where the new pages are flushed during the update. This reduces the log volume
-considerably, possibly at the cost of a more scattered I/O pattern. 
-(OTOH the syncing may be initiated in async mode during the update phase already,
- overlapping more I/O with computation)
 
 @- deleting documents 
 
@@ -976,35 +1042,32 @@ An update query goes through the following phases:
     is 3, it is a rerun of an aborted transaction (in serial mode). 
 (1) query execution. this produces an update tape.
 (2) ordering and playing the update tape for each kind of update
-    (delete, insert, renam). This produces intentional updates
+    (delete, insert, rename). This produces intentional updates
     aka "delta bats" to the (rid_*, nid_* and attr_* master tables),
-    but *directly* carries out modifications to the qn_* and prop_* 
-    masters.  For the latter direct modifications coll_lock's are used
-    short-term (i.e. lock, modify, unlock). 
-    Also, while the update tape is played, all (intended or direct)
-    updates are logged in the WAL.
-(3) ws_precommit(). The main function is conflict detection:
+    but *directly* carries out modifications to the qn_*,attr_* and prop_* 
+    masters.  For the latter direct modifications coll_shortlocks
+    are used temporarily (i.e. lock, modify, unlock). 
+(3) taking the long coll_lock for all affected containers (in a fixed order)
+    ws_precommit() then performs conflict detection:
     this will trigger a MIL ERROR, which will result in an abort.
-    In case of no error, ws_precommit() isolates all concurrent
+(4) All updates are logged in the WAL and a sommit record is written. 
+    This step is protected by a separate global WAL-lock.
+    Reaching this point determines transaction commit/abort.
+    Note that computing the deltas to the rid_size column is special,
+    because for accted ancestors, we keep not the new value, but the difference. 
+    So, the final sizes have to be computed when logging into the WAL
+    by we reading the current value in the master, and adding the difference kept 
+    in the delta-bat, and loggiong those deltas.  Thanks to this, we can keep 
+    the affected ancestors out of the modified-page administration (otherwise, 
+    the page containing the root node would always be modified, inhibiting any concurrency).
+(5) Upgrade the long-locks to a both lock (i.e. taking the short lock also)
+     __ws_isolate() then isolates all concurrent
     transactions from the intended updates (VM shadow paging).
-    ws_precommit() also obtains the coll_lock of an affected
-    container and does not release it (to prevent deadlock, the 
-    order of the affected containers for which ws_precommit() 
-    is called, should be consistent).
-(4) commit in the WAL. Reaching this point determines transaction commit/abort.
-    Afterwards, update all rid_*, nid_* and attr_* masters with the 
-    intentional updates (delta bats) produced in phase 2.
-    Note that applying the deltas to the size column are special,
-    because we keep not the new value, but the difference. So, when
-    apllying size deltas, we read the current value in the master, 
-    apply the difference kept in the delta-bat, and write back the result.
-    Thanks to this, we can keep the ancestor-sizes out of the 
-    modified-page administration (otherwise, the page containing 
-    the root node would always be modified, inhibiting any concurrency).
-(5) ws_postcommit(). It maintains the index structures, and 
-    releases the coll_lock. It should be called for each 
-    affected container in consistent order.
-(6) ws_destroy(). In case of an error in any of the stages >0, 
+(6) Update all rid_*, nid_* and attr_* masters with the 
+    intentional updates (delta bats) produced in phase 2 (and 4).
+(7) __ws_postcommit() maintains the index structures.
+    Finally, both coll_locks (long and short) are released.
+(8) ws_destroy(). In case of an error in any of the stages >0, 
     we get here.  It releases all locks (these actions are protected 
     by pf_short, the only lock that must never remain taken when 
     an error occurs)
@@ -1016,6 +1079,9 @@ being rather large), this is a serious threat to update throughput.
 This threat is reduced somewhat by adaptively handling transaction aborts.
 When a transaction aborts (due to concurrent conflict only), we immediately 
 reschedule the transaction it and run it in serial mode.
+
+A rerun of an update transaction starts with ws_create(3); so it is easily
+recognized as such.
 
 We actually schedule a "serial convoy" of e.g. size 5.  This serial convoy 
 means that the next 5 incoming update transactions will be executed in 
@@ -1060,10 +1126,12 @@ PROC _shredlock_set(str colname,
                     lng wsid) : void
 {
     # xlocks use a string collection key as it may not yet exist in the table
-    if (not(colname_shredlock.exist(colname))) 
-        colname_shredlock.insert(colname, lock_create());
-
-    var shred_lock := colname_shredlock.find(colname);
+    var shred_lock;
+    if (colname_shredlock.exist(colname)) 
+        shred_lock := colname_shredlock.find(colname);
+    else
+        shred_lock := lock_create();
+    colname_shredlock.insert(colname, shred_lock);
     lock_unset(pf_short);
     lock_set(shred_lock); # can take a long time, do so with short lock released 
     lock_set(pf_short);
@@ -1078,10 +1146,11 @@ PROC _shredlock_unset(str colname,
     lock_unset(shred_lock);
     colname_pins.delete(colname, -(wsid));
     colname_shredlock.delete(colname, shred_lock);
+    if (not(colname_shredlock.exist(colname))) lock_destroy(shred_lock); 
 }
 
 PROC extend_protect(BAT[void,bat] ws,
-                  oid cont) : void
+                    oid cont) : void
 {
     lock_set(pf_extend);
     if (pf_extend_cnt = 0) sema_down(pf_extend_barrier);
@@ -1091,7 +1160,7 @@ PROC extend_protect(BAT[void,bat] ws,
 }
 
 PROC extend_unprotect(BAT[void,bat] ws,
-                    oid cont) : void
+                      oid cont) : void
 {
     lock_set(pf_extend);
     if ((pf_extend_cnt :-= 1) = 0) sema_up(pf_extend_barrier);
@@ -1117,24 +1186,51 @@ PROC checkpoint_unprotect(BAT[void,bat] ws) : void
 }
 
 PROC coll_lock_set(BAT[void,bat] ws, 
-                   oid cont) : void
+                   oid cont, 
+                   int mode, 
+                   str nme) : void
 {
     if (bit(cont)) {
-        var coll_lock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
-        ws.fetch(CONT_LOCKED).append(coll_lock);
-        lock_set(coll_lock);
-        checkpoint_protect(ws);
+        var ws_logtime := usec();
+        if (bit(mode and COLL_LONGLOCK)) {
+            var coll_longlock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_NID_FREELIST);
+            ws.fetch(CONT_LOCKED).append(coll_longlock);
+            lock_set(coll_longlock);
+            if (ws_log_active) 
+                ws_log(ws, nme + " (coll_lock_set) longlock" + str(ws_logtime - (ws_logtime := usec())));
+        }
+        if (bit(mode and COLL_SHORTLOCK)) {
+            var coll_shortlock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
+            ws.fetch(CONT_LOCKED).append(coll_shortlock);
+            lock_set(coll_shortlock);
+            if (ws_log_active)
+                ws_log(ws, nme + " (coll_lock_set) shortlock" + str(ws_logtime - (ws_logtime := usec())));
+            checkpoint_protect(ws);
+            if (ws_log_active)
+                ws_log(ws, nme + " (coll_lock_set) checkpoint_lock" + str(ws_logtime - usec()));
+        }
     }
 }
 
 PROC coll_lock_unset(BAT[void,bat] ws, 
-                     oid cont) : void
+                     oid cont, 
+                     int mode, 
+                     str nme, lng ws_logtime) : void
 {
     if (bit(cont)) {
-        var coll_lock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
-        ws.fetch(CONT_LOCKED).reverse().delete(coll_lock);
-        checkpoint_unprotect(ws);
-        lock_unset(coll_lock);
+        if (bit(mode and COLL_SHORTLOCK)) {
+            checkpoint_unprotect(ws);
+            var coll_shortlock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
+            ws.fetch(CONT_LOCKED).reverse().delete(coll_shortlock);
+            lock_unset(coll_shortlock);
+        }
+        if (bit(mode and COLL_LONGLOCK)) {
+            var coll_longlock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_NID_FREELIST);
+            ws.fetch(CONT_LOCKED).reverse().delete(coll_longlock);
+            lock_unset(coll_longlock);
+        }
+        if (ws_log_active)
+            ws_log(ws, nme + " (coll_lock_unset) exec" + str(ws_logtime - usec()));
     }
 }
 
@@ -1168,6 +1264,7 @@ PROC ws_new(oid id,
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
+PROC ws_create() : BAT[void,bat] { return ws_create(0); } # still exists for algebra
 PROC ws_create(int update) : BAT[void,bat]
 {
     # only instantiates the default views of the ws-bats (not the master bats)
@@ -1188,7 +1285,7 @@ PROC ws_create(int update) : BAT[void,bat]
     ws.fetch(PRE_PROP).fetch(WS).append(oid_nil);
     ws.fetch(PRE_KIND).fetch(WS).append(COLLECTION);
     ws.fetch(PRE_NID).fetch(WS).append(oid_nil);
-    ws.fetch(FRAG_ROOT).fetch(WS).insert(WS,1@0); # first root is 1@0
+    ws.fetch(FRAG_ROOT).fetch(WS).insert(oid_nil,1@0); # first root is 1@0
 
     # add identical bat references as 'master' bats just to make the transient container complete  
     mirror(ws_rid).leftfetchjoin(ws).[insert](0@0, [fetch](ws_rid.leftfetchjoin(ws), 0));
@@ -1202,21 +1299,19 @@ PROC ws_create(int update) : BAT[void,bat]
     pflock_begin(wsid);
 
     if (bit(and(update,2))) {
-      # for update queries, create additional bats that will hold the deltas
-      var tpe := ws_update.hmark(oid(WS_SIZE));
-      var upd := [new](oid,tpe);
-      var unq := [=](tpe,bat);
-      [set](mirror(unq.uselect(false)).leftfetchjoin(upd), true);
-      [key](mirror(unq.uselect(true)).leftfetchjoin(upd), true);
-      ws := ws.access(BAT_WRITE).insert(upd).access(BAT_READ);
+        # for update queries, create additional bats that will hold the deltas
+        var tpe := ws_update.hmark(oid(WS_SIZE));
+        var upd := [new](oid,tpe);
+        var unq := [=](tpe,bat);
+        [set](mirror(unq.uselect(false)).leftfetchjoin(upd), true);
+        [key](mirror(unq.uselect(true)).leftfetchjoin(upd), true);
+        ws := ws.access(BAT_WRITE).insert(upd).access(BAT_READ);
     }
+    if (ws_log_active)
+        ws_log(ws, "===================== START TRANSACTION update-" + str(update));
     return ws;
 }
 
-PROC ws_create() : BAT[void,bat]
-{
-    return ws_create(0);
-}
 
 # retrieve wsid from name of BAT ws 
 PROC ws_id(BAT[void,bat] ws) : lng
@@ -1266,7 +1361,7 @@ PROC ws_free(lng wsid) : void
     CATCH(collection_cleanup(commitBAT)); 
 }
 
-PROC ws_destroy(any ws) : void {}
+PROC ws_destroy(any ws) : void {} # dummy that gets called if ws_create() failed
 PROC ws_destroy(BAT[void,bat] ws) : void
 {
     # free any collection, extend and checkpoint locks that this query holds 
@@ -1293,7 +1388,10 @@ PROC ws_destroy(BAT[void,bat] ws) : void
     ws_free(ws_id(ws)); # deregister working set from meta tables
 }
 
-# add a collection to the working set
+# add a collection to the working set. 
+# - open all master bats (remap the rid_* bats into pre_*s).
+# - create a runtime index on persistent ocuments (we do not deem index creation
+#   worthwhile on temporary documents taht only exist during this query).
 PROC __ws_opencoll(BAT[void,bat] ws, 
                    BAT[lock,bat] runtime, 
                    BAT[str,bat] docBAT, 
@@ -1312,8 +1410,8 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         var free_pages := map_pid.ord_uselect(oid_nil).access(BAT_WRITE).revert(); # list of free pages
         free_pages.bbpname(prefix + "_free_pages");
         if ((free_pages.count() = 0) and (free_pages.htype() = void)) free_pages.seqbase(0@0); # give it a non-nil head
-        var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
-        runtime.replace(coll_lock, free_pages);
+        var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+        runtime.replace(coll_shortlock, free_pages);
 
         # sort the non-nil entries to get used-page-list (avoids sorting using positional insert trick)
         pid_map := map_pid.slice(0,count(map_pid)-(1+count(free_pages))).copy().access(BAT_WRITE);
@@ -1366,16 +1464,30 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         if (runtime != empty_runtime) { # a non temporary document
             var free_nids := empty_bat;
             if (isolate) { # new writable empty bats
+                own := ws.fetch(ATTR_OWN).fetch(cont).copy(); 
+                reverse(own).accbuild("hash");
                 free_nids := dsk.fetch(NID_RID).uselect(oid_nil).access(BAT_WRITE).revert();
                 if ((free_nids.count() = 0) and (free_nids.htype() = void)) {
                   free_nids.seqbase(0@0);
+                } else {
+                   # BEWARE DELETED NODES: our impl leaves attrs of deleted nodes in place; filter those out now
+                   var garbage := reverse(reverse(free_nids).leftjoin(reverse(own))).project(oid_nil);
+
+                   # the above leftjoin is fast thanks to the hashtable; these replaces are positional (thus fast also)
+                   own.replace(garbage,true); # delete from idx
+                   ws.fetch(_ATTR_OWN).fetch(cont).replace(garbage,true); # delete from master
+
+                   # with mmapped bats, the master changes will directly be visible in the private copy
+                   # however for small, non memory mapped bats this is not the case
+                   # in the mmap-case we do not want to touch (needless copy-on-write), so filter first
+                   garbage := garbage.mirror().leftfetchjoin(ws.fetch(ATTR_OWN).fetch(cont)).uselect(oid_nil,oid_nil);
+                   if (bit(count(garbage))) # only non-empty for malloced (non -mmap) bats 
+                       ws.fetch(ATTR_OWN).fetch(cont).replace(garbage.project(oid_nil),true); # delete from private copy
                 }
                 ins := bat(oid,oid);
                 del := bat(oid,oid);
                 page_ws := bat(oid,lng);
                 attr_ws := bat(oid,lng);
-                own := ws.fetch(ATTR_OWN).fetch(cont).copy(); 
-                reverse(own).accbuild("hash");
             }
             # to ease debugging and monitoring, we give these potentially long-lived bats a name
             var suffix := str(abs(int(idx)));
@@ -1389,7 +1501,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
             unq.bbpname(prefix + "_qn_nid_unq" + suffix);
 
             # insert new index
-            runtime.insert(lock_nil,free_nids); 
+            runtime.replace(reverse(runtime).fetch(RT_NID_FREELIST),free_nids); 
             runtime.insert(lock_nil,page_ws);
             runtime.insert(lock_nil,attr_ws);
             runtime.insert(lock_nil,own);
@@ -1398,7 +1510,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
             runtime.insert(lock_nil,del);
 
             # we retain the index sizes for cache control
-            # it must be part of the runtime structure, protected by coll_lock
+            # it must be part of the runtime structure, protected by coll_shortlock
             # but where to store such a number?
             # the hack is to misuse the (unused) tail seqbase of unq
             unq.seqbase(oid(batsize(idx))); 
@@ -1444,12 +1556,13 @@ PROC _ws_opencoll(lng wsid,
         # clean up the query change lists (pages, attributes) by removing no longer overlapping queries
         if (count(runtime) > RT_ATTR_WS) {
             var page_ws := runtime.fetch(RT_PAGE_WS);
+            var all_ws := reverse(kunique(ws_overlaps_ws).kunion(reverse(ws_overlaps_ws)));
             if (bit(count(page_ws))) {
-                page_ws.delete(tdiff(page_ws, ws_overlaps_ws));
+                page_ws.delete(tdiff(page_ws, all_ws));
             }
             var attr_ws := runtime.fetch(RT_ATTR_WS);
             if (bit(count(attr_ws))) {
-                attr_ws.delete(tdiff(attr_ws, ws_overlaps_ws));
+                attr_ws.delete(tdiff(attr_ws, all_ws));
             }
         }
 
@@ -1466,8 +1579,10 @@ PROC _ws_opencoll(lng wsid,
         if (bit(count(indices))) {
             var totsize := [fetch](reverse(indices), RT_QN_NID_UNQ).[seqbase]().[lng]().sum();
             if (totsize > (mem_maxsize()/4LL)) {
-                colname_runtime.delete(); # flush everything!
-                runtime := _runtime_get(colname);
+                var shortlocks := [fetch]([reverse](colname_runtime), RT_LOCK_FREELIST);
+                var longlocks := [fetch]([reverse](colname_runtime), RT_NID_FREELIST);
+                var runtimes := [_runtime_create](colname_runtime.mirror(), shortlocks, longlocks);
+                colname_runtime.delete().insert(runtimes); 
             }
         }
     }
@@ -1479,19 +1594,24 @@ PROC ws_opencoll(BAT[void,BAT] ws,
                  BAT[str,bat] docBAT, 
                  str name, oid coll_oid) : oid
 {
-    var err, cont, coll_lock, runtime := empty_runtime;
+    var ws_logtime := usec(), err, cont, coll_shortlock, runtime := empty_runtime;
 
     if (coll_oid >= DOCID_MIN) {
          lock_set(pf_short);
-         err := CATCH(coll_lock := reverse(runtime := _ws_opencoll(ws_id(ws), coll_oid)).fetch(RT_LOCK_FREELIST));
+         err := CATCH(coll_shortlock := reverse(runtime := _ws_opencoll(ws_id(ws), coll_oid)).fetch(RT_LOCK_FREELIST));
          lock_unset(pf_short);
          if (not(isnil(err))) ERROR(err);
 
-         lock_set(coll_lock); # never lock a collection inside the short lock
+         if (ws_log_active)
+             ws_log(ws, sprintf("_ws_opencoll(%s) exec%s\n", name, str(ws_logtime - (ws_logtime := usec()))));
+
+         lock_set(coll_shortlock); # never lock a collection inside the short lock
+         if (ws_log_active) 
+             ws_log(ws, sprintf("opencoll(%s) shortlock%s\n", name, str(ws_logtime - usec())));
     }
     err := CATCH(cont := __ws_opencoll(ws, runtime, docBAT, name, coll_oid));
     if (coll_oid >= DOCID_MIN) {
-        lock_unset(coll_lock); # release lock acquired for updatable bats
+         lock_unset(coll_shortlock); # release lock acquired for updatable bats
     }
     if (not(isnil(err))) ERROR(err);
 
@@ -1525,10 +1645,13 @@ collection a number of specific locks and index structures (BATs).
 5 RT_QN_NID_UNQ    [nil, bat] 
                    a BAT[oid,void] list of QNs which are interesting to index (i.e. MlogM < N).
 
-The first entry head holds a collection lock (coll_lock, in much of the
+The first entry head holds a "short" collection lock (coll_shortlock, in much of the
 MIL code). It is used to guard the master BAT images, while isolated
 copies are created for read-queries. Update-queries and shred-docs
 acquire this lock when committing resp. extending these master bats. 
+
+The second entry head holds a "long" collection lock. It is used during
+the commit sequence to keep away other commits on that collection.
 
 The first entry tail holds a page-free list.
 The second entry tail holds a NID-free list.
@@ -1538,7 +1661,7 @@ Both are used when a document is being extended by an update query.
 
 The QN_NID index uses the collection lock for all its maintenance and
 query actions. The bulk of the data is in the shared QN_NID master bat (thus 
-taking coll_lock is required when accessing it).  The QN_NID index does not 
+taking coll_shortlock is required when accessing it).  The QN_NID index does not 
 use any additional locks, so the other head values are nil.
 
 The QN_NID index is a dynamic, adaptive non-persistent index on NSLOC that
@@ -1573,13 +1696,18 @@ concurrent queries, _INS and _DEL are flushed with the new changes into the
 QN_NID master.
 @mil
 # get a handle to the runtime-BAT (and create it if not there yet)
+PROC _runtime_create(str colname, lock shortlock, lock longlock) : BAT[lock,bat] 
+{
+    var runtime := bat(lock,bat).insert(shortlock,empty_bat).insert(longlock, empty_bat);
+    runtime.bbpname("runtime" + str(abs(int(runtime))));
+    colname_runtime.insert(colname, runtime);
+    return runtime;
+}
+
 PROC _runtime_get(str colname) : BAT[lock,bat] 
 {
-    if (not(colname_runtime.exist(colname))) {
-        var runtime := bat(lock,bat).insert(lock_create(),empty_bat);
-        runtime.bbpname("runtime" + str(abs(int(runtime))));
-        colname_runtime.insert(colname, runtime);
-    }
+    if (not(colname_runtime.exist(colname)))
+        return _runtime_create(colname, lock_create(), lock_create());
     return colname_runtime.find(colname);
 }
 
@@ -1628,21 +1756,16 @@ PROC __runtime_maintain(lng wsid,
                         BAT[void,oid] del_pages) : void
 {
     lock_set(pf_short);
-    var others := colname_pins.reverse().ord_uselect(colname);
+    var coast_clear := (count(colname_pins.reverse().ord_uselect(colname)) = 1); 
     lock_unset(pf_short);
-    others.access(BAT_WRITE).delete(wsid);
 
+    var idx := runtime.fetch(RT_QN_NID);
     var unq := runtime.fetch(RT_QN_NID_UNQ);
     var ins := runtime.fetch(RT_QN_NID_INS);
     var del := runtime.fetch(RT_QN_NID_DEL);
-    var idx := runtime.fetch(RT_QN_NID);
-    var coast_clear := (count(others) = 0);
     var flush_deletes := ((count(del)*8) > count(idx));
 
     if (coast_clear) {
-        ins.insert(ins_qn_nid);
-        del.insert(del_qn_nid);
-    } else {
         # coast is clear, unite als ins, all del and apply them to the master
         ins.insert(ins_qn_nid);
         idx.insert(ins);
@@ -1652,18 +1775,33 @@ PROC __runtime_maintain(lng wsid,
         # accumulate del-s until a full rebuild of the hash
         del.insert(del_qn_nid);
         if (flush_deletes) { 
-           # problem: the hash table has a long coll list that unites all equal qn-s
-           #          the length is often |N|/8, i.e. linear in #nodes (*really* long)
-           #          it is singly linked, deleting in the middle requires a traverse
+           # The problem is not so much finding the BUN to delet (by NID), but
+           # maintaining the hash-table on qn. 
+           # This hash table has a long coll list that unites all equal qn-s
+           # the length is often |N|/8, i.e. linear in #nodes (*really* long)
+           # As the collision list is singly linked, deleting in the middle 
+           # requires a traverse.
+           # Thus, we avoid deleting, rather kdiff it and replace the entire 
+           # bat in bulk.
            var stay := reverse(reverse(idx).kdiff(reverse(del))); 
            idx.delete().insert(stay);
            del.delete();
         }
         idx.accbuild("hash"); # the hash table on qn ensures fast nsloc lookup
+    } else {
+        ins.insert(ins_qn_nid);
+        del.insert(del_qn_nid);
     }
     # store the new size in the UNQ seqbase
     var totsize := batsize(idx) + batsize(ins) + batsize(del);
     unq.append(new_qn, true).seqbase(oid(totsize));
+
+    if (ws_log_active)
+      ws_log(ws, sprintf("maintain(idx-%d unq-%d ins-%d del-%d _unq-%d _ins-%d _del-%d) %s %s",
+                   count(idx), 
+                   count(unq), count(ins), count(del), 
+                   count(new_qn), count(ins_qn_nid), count(del_qn_nid), 
+                   str(coast_clear), str(flush_deletes)));
 
     # mark the region index invalid
     # for now, we don't try to maintain it over updates
@@ -1700,8 +1838,9 @@ PROC __runtime_addchunk(lng wsid,
         unq := reverse(ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd))));
     } else if (maintain) {
         # incremental readonly shred with existing indices: deactivate them
-        var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
-        runtime.delete().insert(coll_lock,empty_bat);
+        var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+        var coll_longlock := reverse(runtime).fetch(RT_NID_FREELIST);
+        runtime.delete().insert(coll_shortlock,empty_bat).insert(coll_longlock,empty_bat);
         CATCH(bat(commitbat).persists(false).rename(commitbat :+= "_old")); # delete idx in commit
     } else {
         commitbat := str_nil; # incremental readonly shred, but no index to delete
@@ -1776,11 +1915,12 @@ PROC __runtime_newnids(BAT[lock,bat] runtime, int cnt) : BAT[void,oid]
 
 @- exported runtime support API 
 
-ws_lookup     - lookup nids by qn id
-ws_precommit  - detect conflicts with overlapping queries that committed already, isolate concurrent queries
-ws_postcommit - maintain indices after updates
-ws_newpage    - allocate a new page, during an update
-ws_newnids    - allocate a new nids, during an update
+ws_lookup       - lookup nids by qn id
+ws_precommit    - detect conflicts with overlapping queries that committed already
+__ws_isolate    - isolate bats in concurrent queries (shadow paging)
+__ws_postcommit - maintain indices after updates
+ws_newpage      - allocate a new page, during an update
+ws_newnids      - allocate a new nids, during an update
 @mil
 # proc to call from the SCJ with nsloc test: acquire locks and get a candidate list using the index
 PROC ws_lookup(BAT[void,bat] ws, 
@@ -1791,12 +1931,12 @@ PROC ws_lookup(BAT[void,bat] ws,
 
     var colname := ws.fetch(CONT_NAME).fetch(cont);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+    var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
     # get the lock and runtime inside the short lock
-    lock_set(coll_lock);
+    lock_set(coll_shortlock);
     var res, err := CATCH(res := __ws_lookup(ws, cont, qn_ids));
-    lock_unset(coll_lock);
+    lock_unset(coll_shortlock);
     if (not(isnil(err))) ERROR(err);
 
     # SCJ must catch error and use sequential post-filter instead.
@@ -1874,10 +2014,11 @@ PROC _ws_coll_isolate(BAT[void,bat] ws,
                       BAT[void,oid] modified_page,
                       BAT[void,oid] modified_attr) : void 
 {
-    # it may be that the other thread has done _opencoll (adding itself to 
-    # ws_overlaps_ws, so we noticed it) but not yet __opencoll(), which 
-    # requires the coll_lock (possed by ws_precommit(), doing the isolate)
-    if (ws.fetch(CONT_NAME).texist(colname)) {
+
+    # it may be that the other thread has done _ws_open_coll (adding itself to 
+    # ws_overlaps_ws, so we noticed it) but not yet __ws_open_coll(), which
+    # requires the coll_shortlock (possed by ws_isolate())
+    if (not(isnil(ws.seqbase())) and ws.fetch(CONT_NAME).texist(colname)) {
         # get columns of a concurrent query (ws)
         var cont      := ws.fetch(CONT_NAME).reverse().find(colname);
         var attr_own  := ws.fetch(ATTR_OWN).fetch(cont);
@@ -1892,8 +2033,8 @@ PROC _ws_coll_isolate(BAT[void,bat] ws,
         var map_pid   := ws.fetch(MAP_PID).fetch(cont);
 
         # translate nid-s to that query's pre-s
-        var ancestor_pre := ancestor_nid.leftfetchjoin(nid_rid).[swizzle](map_pid);
-        var modified_pid := modified_page.leftfetchjoin(map_pid);
+        var ancestor_pre := ancestor_nid.leftjoin(nid_rid).tmark(0@0).[swizzle](map_pid);
+        var modified_pid := modified_page.leftjoin(map_pid).tmark(0@0);
 
         # isolate the affected positions
         pre_size.isolate(ancestor_pre, false);
@@ -1912,74 +2053,114 @@ PROC _ws_coll_isolate(BAT[void,bat] ws,
 }
 
 PROC ws_precommit(BAT[void,BAT] ws,
+                    oid cont,
+                    BAT[void,oid] modified_page,
+                    BAT[void,oid] modified_attr) : void
+{
+    var wsid := ws_id(ws);
+    var overlap := reverse(ws_overlaps_ws).uselect(wsid).kunique().mirror();
+    var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
+    var page_ws := runtime.fetch(RT_PAGE_WS);
+    var attr_ws := runtime.fetch(RT_ATTR_WS);
+    var ws_logtime;
+
+    if (ws_log_active) {
+        ws_logtime := usec(); 
+        ws_log(wsid, "precommit-begin()");
+        overlap@batloop() 
+            ws_log(wsid, sprintf("precommit-overlaps(%s)", str($t)));
+        modified_attr@batloop() 
+            ws_log(wsid, sprintf("precommit-modified(attr-%s)", str($t)));
+        attr_ws@batloop() 
+            ws_log(wsid, sprintf("precommit-attr_ws(%s,%s)", str($h), str($t)));
+        modified_page@batloop() 
+            ws_log(wsid, sprintf("precommit-modified(page-%s)", str($t)));
+        page_ws@batloop() 
+            ws_log(wsid, sprintf("precommit-page_ws(%s,%s)", str($h), str($t)));
+    }
+
+    # concurrency control: abort conflicting queries
+    var conflict1 := join(modified_page,page_ws).join(overlap);
+    if (bit(count(conflict1))) { 
+        var err := sprintf("conflicting update at page %s from ws %s (%d such errors in total)", 
+                           str(modified_page.find(reverse(conflict1).fetch(0))), 
+                           str(conflict1.fetch(0)), count(conflict1));
+        if (ws_log_active) ws_log(wsid, err);
+        ERROR(err);
+    }
+
+    var conflict2 := join(modified_attr,attr_ws).join(overlap);
+    if (bit(count(conflict2))) { 
+        var err := sprintf("conflicting update at page %s from ws %s (%d such errors in total)", 
+                           str(modified_attr.find(reverse(conflict2).fetch(0))), 
+                           str(conflict2.fetch(0)), count(conflict2));
+        if (ws_log_active) ws_log(wsid, err);
+        ERROR(err);
+    }
+
+    # insert pages in modified page list (similar for attr ids)
+    page_ws.insert(reverse(modified_page).project(wsid));
+    attr_ws.insert(reverse(modified_attr).project(wsid));
+
+    if (ws_log_active)
+        ws_log(wsid, "precommit-end() exec=" + str(usec() - ws_logtime)); 
+}
+
+PROC __ws_isolate(BAT[void,BAT] ws,
                   oid cont,
                   BAT[void,oid] modified_page,
                   BAT[void,oid] ancestor_nid,
                   BAT[void,oid] modified_nid,
                   BAT[void,oid] modified_attr) : void
 {
-    var wsid := ws_id(ws);
-    var overlap := ws_overlaps_ws.uselect(wsid).kunique().mirror();
-    var colname := ws.fetch(CONT_NAME).fetch(cont);
-    var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-    var page_ws := runtime.fetch(RT_PAGE_WS);
-    var attr_ws := runtime.fetch(RT_ATTR_WS);
- 
-    # thanks to coll_lock, no new cont users will appear for the moment
+    var ws_logtime := usec(); 
+
+    # thanks to coll_shortlock, no new cont users will appear for the moment
     # also get pf_free, to block processing of ending queries, to achieve total stability
-    coll_lock_set(ws, cont); 
+    var wsid := ws_id(ws);
     lock_set(pf_free);
     pf_free_held := wsid;
 
-    # concurrency control: abort conflicting queries
-    var conflict1 := join(modified_page,page_ws).join(overlap);
-    if (bit(count(conflict1))) 
-        ERROR("conflicting update at page %d from ws=%d (%d such errors in total)", 
-              modified_page.find(reverse(conflict1).fetch(0)), 
-              conflict1.fetch(0), count(conflict1));
+    var colname := ws.fetch(CONT_NAME).fetch(cont);
 
-    var conflict2 := join(modified_attr,attr_ws).join(overlap);
-    if (bit(count(conflict2))) 
-        ERROR("conflicting update at page %d from ws=%d (%d such errors in total)", 
-              modified_attr.find(reverse(conflict2).fetch(0)), 
-              conflict2.fetch(0), count(conflict2));
+    if (ws_log_active)
+        ws_log(ws, "ws_isolate-start pf_free_lock" + str(ws_logtime - (ws_logtime := usec()))); 
 
-    # insert pages in modified page list (similar for attr ids)
-    page_ws.insert(reverse(modified_page).project(wsid));
-    attr_ws.insert(reverse(modified_attr).project(wsid));
-
-    # let's now establish the current set of queries (ws-s) that were already using this collection
+    # establish the current set of queries (ws-s) that were already using this collection
     lock_set(pf_short);
     var other_ws, err := CATCH(other_ws := [ws_bat](_ws_pinnedcoll(wsid, colname)).tmark(0@0));
+    lock_unset(pf_short);
+
+    if (ws_log_active)
+        ws_log(ws, "ws_isolate-mid() exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
     # isolate these working sets against our intended updates. 
     # copying pages can take time, thus we introduced pf_free: it allows to do the isolation without claiming pf_short
-    lock_unset(pf_short);
     if (isnil(err) and bit(count(other_ws)))
         err := CATCH([_ws_coll_isolate](other_ws, colname, const ancestor_nid,  const modified_nid,
                                                            const modified_page, const modified_attr));
     pf_free_held := 0LL;
     lock_unset(pf_free);
+
+    if (ws_log_active)
+        ws_log(ws, "ws_isolate-end() exec" + str(ws_logtime - usec()));
+
     if (not(isnil(err))) ERROR(err);
 }
 
 
-# proc to call from the update code: acquire locks and add new nodes and remove deleted ones
-PROC ws_postcommit(BAT[void,BAT] ws,
-                   oid cont,  
-                   BAT[oid,oid] ins, 
-                   BAT[oid,oid] del,
-                   BAT[void,oid] newqns,
-                   BAT[void,oid] delpages) : void 
+# proc to call from the update code: add new nodes and remove deleted ones
+PROC __ws_postcommit(BAT[void,BAT] ws,
+                     oid cont,  
+                     BAT[oid,oid] ins, 
+                     BAT[oid,oid] del,
+                     BAT[void,oid] newqns,
+                     BAT[void,oid] delpages) : void 
 {
+    # maintain the index while holding the collection lock
     var colname := ws.fetch(CONT_NAME).fetch(cont);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-
-    # maintain the index while holding the collection lock
-    var err := CATCH(__runtime_maintain(ws_id(ws), colname, runtime, ins, del, newqns, delpages));
-    if (not(isnil(err))) ERROR(err);
-
-    coll_lock_unset(ws, cont); # release X-access to the masters (after the commit phase)
+    __runtime_maintain(ws_id(ws), colname, runtime, ins, del, newqns, delpages);
 }
 
 # extend the master rid_* bats with new pages
@@ -2024,12 +2205,12 @@ PROC ws_newpage(BAT[void,BAT] ws,
 {
     var wsid := ws_id(ws);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+    var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
     # if there is a free page, then this is easy
-    lock_set(coll_lock);
+    lock_set(coll_shortlock);
     var page_id := 0@0, err := CATCH(page_id := __runtime_newpage(runtime));
-    lock_unset(coll_lock);
+    lock_unset(coll_shortlock);
 
     if (isnil(err) and isnil(page_id)) {
         # no free page: we must physically extend the rid_* table 
@@ -2047,14 +2228,14 @@ PROC ws_newpage(BAT[void,BAT] ws,
             var rid_kind  := ws.fetch(_RID_KIND).find(cont);
             var rid_nid   := ws.fetch(_RID_NID).find(cont);
             var map_pid   := ws.fetch(_MAP_PID).find(cont);
-            var new_pid   := 1 + ((count(rid_size) - 1) >> REMAP_PAGE_BITS);
-            var last_pid;
 
             # fully protect/lock the collection during bat extend
-            lock_set(coll_lock);
+            lock_set(coll_shortlock);
             checkpoint_protect(ws);
             sema_down(pf_extend_barrier);
-            ws.fetch(CONT_LOCKED).append(coll_lock).append(lock(nil));
+            ws.fetch(CONT_LOCKED).append(coll_shortlock).append(lock(nil));
+ 
+            var last_pid, new_pid := 1 + ((count(rid_size) - 1) >> REMAP_PAGE_BITS);
 
             pf_assert(CATCH(last_pid := __ws_newpage(rid_size, rid_level, rid_prop, 
                                                      rid_kind, rid_nid, map_pid, new_pid)), 
@@ -2063,8 +2244,8 @@ PROC ws_newpage(BAT[void,BAT] ws,
             # unprotect/lock the collection after bat extend
             sema_up(pf_extend_barrier);
             checkpoint_unprotect(ws);
-            lock_unset(coll_lock);
-            ws.fetch(CONT_LOCKED).reverse().delete(lock(nil)).delete(coll_lock);
+            lock_unset(coll_shortlock);
+            ws.fetch(CONT_LOCKED).reverse().delete(lock(nil)).delete(coll_shortlock);
 
             var pages_free := reverse(runtime.fetch(RT_LOCK_FREELIST));
             var newpids := bat(void,oid);
@@ -2078,9 +2259,9 @@ PROC ws_newpage(BAT[void,BAT] ws,
 
             # add extra created pages to the freelist
             if (isnil(err) and (new_pid < last_pid)) {
-                lock_set(coll_lock);
+                lock_set(coll_shortlock);
                 err := CATCH(pages_free.insert(newpids));
-                lock_unset(coll_lock);
+                lock_unset(coll_shortlock);
             }
         }
     }
@@ -2115,11 +2296,11 @@ PROC ws_newnids(BAT[void, BAT] ws,
 {
     var wsid := ws_id(ws);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+    var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
-    lock_set(coll_lock);
+    lock_set(coll_shortlock);
     var newnids := empty_bat, err := CATCH(newnids := __runtime_newnids(runtime, cnt));
-    lock_unset(coll_lock);
+    lock_unset(coll_shortlock);
 
     if (isnil(err) and bit(cnt :-= count(newnids))) {
         # not enough free nids page: we must physically extend the nid_rid table 
@@ -2135,11 +2316,11 @@ PROC ws_newnids(BAT[void, BAT] ws,
             var nid_off := count(nid_rid);
             var nid_cnt;
 
-            lock_set(coll_lock);
+            lock_set(coll_shortlock);
             checkpoint_protect(ws);
             pf_assert(CATCH(nid_cnt := __ws_newnids(nid_rid, cnt)), "master update failed (newnids)");
             checkpoint_unprotect(ws);
-            lock_unset(coll_lock);
+            lock_unset(coll_shortlock);
 
             # put nids in reverse order in the freelist, so they are given out in order
             newnids.access(BAT_WRITE).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
@@ -2152,9 +2333,9 @@ PROC ws_newnids(BAT[void, BAT] ws,
 
             if (isnil(err) and (nid_cnt > nid_off)) {
                 # add extra created NIDs to the freelist
-                lock_set(coll_lock);
+                lock_set(coll_shortlock);
                 err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(delta));
-                lock_unset(coll_lock);
+                lock_unset(coll_shortlock);
             }
         }
     }
@@ -2174,7 +2355,7 @@ When multiple collections are involved, things go one-at-a-time, thus more slowl
 
 The decision process which documents are new and must be shredded (and x-locked)
 and which are available (and need only pinning) is done inside the locked phase of
-wd_doc(). Care was taken to allow large sets of documents that reside in a single
+ws_doc(). Care was taken to allow large sets of documents that reside in a single
 collection to be opened quickly (i.e. using the proper bulk primitives).
 @mil
 PROC _ws_open(lng wsid,
@@ -2310,7 +2491,12 @@ PROC ws_open(BAT[void,BAT] ws,
     return idx_doc.leftjoin(reverse(open_docid)).tmark(0@0);
 }
 
-# fn:doc() support, optimized for loop-lifted execution (e.g. quickly open thousands of documents from a few collections)
+# fn:doc() support. 
+# - it filters out all documents already in the working set, and walls ws_open on the unknown ones. 
+#   this filtering step is important, as open collections may have been deleted in the meantime.
+#   while the running query lasts, such collections remain available (collection-wise snapshot isolation)
+# - it looks up the document-root PRE (i.e. document node) for each opened document. With multi-document 
+#   collections, the value of the PRE is no longer trivial (1@0).
 PROC ws_opendoc(BAT[void,BAT] ws,
                 BAT[void,str] idx_names) : BAT[oid,oid]
 {
@@ -2408,12 +2594,12 @@ PROC _shred_into_docBAT(BAT[str,bat] docBAT,
                         lng wsid) : oid
 {
     # get a new persistent doc id
-    var docid_base := doc_collection.find(TEMP_DOC);
+    var docid_base := doc_collection.find(DOCID_CURID_HACK);
     var docid      := lng(docid_base);
     var docid_new  := docid + lng(count(idx_location));
     if (docid_new > lng(DOCID_MAX)) 
         ERROR("_shred_doc: out of document id's. Export all documents, and shred them into a new database\n");
-    doc_collection.replace(TEMP_DOC, oid(docid_new));
+    doc_collection.replace(DOCID_CURID_HACK, oid(docid_new));
 
     if (bit(count(doc_name.tintersect(idx_name)))) 
         ERROR("_shred_doc: document names should be globally unique\n");
@@ -2480,16 +2666,16 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
 {
     var verbose := >=(wsid, WS_MAXID);
     var err := str_nil;
-    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+    var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     var pre := 0@0;
     if (count(docBAT) > 0) pre := oid(count(docBAT.fetch(PRE_SIZE)));  
 
     if (isnil(s)) { 
         # shred multiple documents into a single collection (maybe empty at first)
-        [shred_url](const docBAT, location, pageFree, coll_lock, verbose); 
+        [shred_url](const docBAT, location, pageFree, coll_shortlock, verbose); 
     } else {
         # shred from a stream (a single document assumed here)
-        shred_stream(docBAT, s, pageFree, coll_lock, verbose);
+        shred_stream(docBAT, s, pageFree, coll_shortlock, verbose);
     }
 
     if (doCommit) {
@@ -2510,10 +2696,10 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
         coll_oid := docid_base; # new collection got oid of first doc in it 
 
     # finish the shred (set doc_oids in FRAG_ROOT, and maintain the nsloc index)
-    var protect := not(isnil(coll_lock));
-    if (protect) lock_set(coll_lock); # never lock a collection inside the short lock
+    var protect := not(isnil(coll_shortlock));
+    if (protect) lock_set(coll_shortlock); # never lock a collection inside the short lock
     err := CATCH(__shred_into_docBAT(docBAT, colname, coll_oid, docid_base, runtime, pre, >(pageFree,0LL), wsid));
-    if (protect) lock_unset(coll_lock);
+    if (protect) lock_unset(coll_shortlock);
     if (not(isnil(err))) ERROR(err);
 
     return coll_oid;
@@ -3127,10 +3313,7 @@ typedef struct _xquery_prepared_function {
     struct _xquery_prepared_function *next;
     xquery_function *def;         /* function definition */
     YYSTREE lt;                   /* cached MIL tree */
-    unsigned int lru;             /* least recently used stamp */
 } xquery_prepared_function;
-
-unsigned int xquery_lru = 0;
 
 /* loaded modules */
 typedef struct _xquery_loaded_module {
@@ -3147,6 +3330,7 @@ typedef struct {
     Cntxt stk; /* stack to execute module prologues and non-cacheable queries in */  
     /* MIL child context of ctx->stk; it is marked as a reusable stack frame so variable records are kept */
     Cntxt repeat_stk; /* stk to execute the prepared function trees in  for fast reuse */ 
+    Cntxt repeat_max; /* c->maxstk for repeats */ 
 
     /* value parsing buffer reuse */
     int vallen;
@@ -3232,6 +3416,13 @@ xquery_tree_exec(xquery_client *ctx,
 { 
     ValRecord res;
     int ret = interpret(repeat?ctx->repeat_stk:ctx->stk, t, &res);
+    if (repeat) {
+        /* record the maxstk. recall we do not ever free stacks for the repeated execs  */ 
+        ctx->repeat_max = monet_clients[ctx->stk].maxstk;
+    } else if (ctx->repeat_max) {
+        /* restore MIL maxstk so we do not lose our repeat cfg */ 
+        monet_clients[ctx->stk].maxstk = ctx->repeat_max; 
+    }
     if (ret == -TOK_RETURN) {
         /* ignore return value here */
         VALclear(&res);
@@ -3682,6 +3873,11 @@ xquery_function_call(xquery_client *ctx,
             GDKfree(prepfun);
             return "xquery_function_call: error during parsing .\n";
         }
+        if (fun->size == 0) {
+            size_t dummy;
+            fun->size = Myysize(prepfun->lt, &dummy);
+        }
+        ctx->cachesize += fun->size; /* the prepared function cache is kept within a certain size */
     }
 
     /* put the actual parameters into the fun_* bats (and *_values containers) */
@@ -3753,7 +3949,6 @@ xquery_function_call(xquery_client *ctx,
     *(ctx->time_compile) = GDKusec() - usec;
     
     /* Done preparing the query. Time to (re-)execute the MIL tree */
-    prepfun->lru = xquery_lru++;
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
 /*
         if (strstr(*(ctx->genType), "rpcdtime") != NULL) {
@@ -3764,25 +3959,6 @@ xquery_function_call(xquery_client *ctx,
            printf("Server_Serialisation + Network_Server_2_Client: %.3f msec\n", (*ctx->time_print) / 1000.0 );
         }
 */
-
-        size_t dummy;
-        if (fun->size == 0)
-            fun->size = Myysize(prepfun->lt, &dummy);
-
-        /* keep the prepared function cache within a certain size */
-        ctx->cachesize += fun->size;
-        while (ctx->cachesize > xquery_client_bytes) {
-             xquery_prepared_function *kill=NULL,*cur;
-             unsigned int lru = xquery_lru;
-             for(cur=ctx->prepared_functions; cur; cur=cur->next)
-                 if (cur->lt && cur->lru < lru) { kill = cur; lru = cur->lru; }
-             if (kill) {
-                 Myyfree(kill->lt);
-                 kill->lt = NULL;
-                 ctx->cachesize -= kill->def->size; 
-             }
-        }
-
         return NULL;
     }
     return xquery_function_error;
@@ -4098,29 +4274,18 @@ xquery_client_alloc(mapi_client *fc)
     }
 }
 
-/*
- * initialize a new xquery cache context, returns error string (NULL if ok)
- */ 
-static char *
-xquery_client_init_(xquery_client *ctx )
+@= unfix
+    if (ctx->@1) BBPunfix(ctx->@1->batCacheid);
+    ctx->@1 = NULL;
+@c
+/* 
+ * free a xquery cache context (terminate).
+ */
+static void
+xquery_client_free_(xquery_client *ctx)
 {
-    ctx->mode = 0;
-    if (!ctx->initialized) {
-        ctx->initialized = 1;
-        if (!xquery_mil_exec(ctx, (char*) PFvarMIL()))
-            return "xquery_client_init: failed to execute variable declarations.\n"; 
-    }
-    return NULL;
-}
-
-/*
- * free all cached subtrees and all proc definitions for all xquery modules
- * (the epilogue contains UNDEF procs) 
- */ 
-void
-xquery_client_free_cached_modules(xquery_client *ctx)
-{
-    xquery_prepared_function *fun= ctx->prepared_functions; 
+    /* free all prepared functions and loaded modules */
+    xquery_prepared_function *fun = ctx->prepared_functions; 
     xquery_loaded_module *mod= ctx->loaded_modules; 
 
     while(fun) {
@@ -4144,46 +4309,6 @@ xquery_client_free_cached_modules(xquery_client *ctx)
     if (ctx->buf) GDKfree(ctx->buf);
     ctx->buf = NULL;
     ctx->buflen = 0;
-}
-
-static char* 
-xquery_client_init(mapi_client *fc) 
-{ 
-    xquery_client *ctx = fc->fc;
-    char* err = xquery_client_init_(ctx);
-
-    ctx->fderr = fc->c->fdout;
-
-    if (!err && ctx->cacheid != xquery_cacheid) {
-        xquery_client_free_cached_modules(ctx);
-
-        ctx->buflen = XQUERY_BUFSIZE;
-        ctx->cacheid = xquery_cacheid;
-        ctx->buf = GDKmalloc(ctx->buflen+1);
-        if (ctx->buf == NULL) {
-            if (ctx->buf) GDKfree(ctx->buf);
-            ctx->buflen = 0;
-            err = "xquery_client_init: failed to allocate.\n";
-        }
-    }
-    if (err)
-        fprintf(stderr, "xquery_client_init: client %d %s\n", fc->stk, err);
-    return err;
-}
-
-
-@= unfix
-    if (ctx->@1) BBPunfix(ctx->@1->batCacheid);
-    ctx->@1 = NULL;
-@c
-/* 
- * free a xquery cache context (terminate).
- */
-static void
-xquery_client_free_(xquery_client *ctx)
-{
-    xquery_client_free_cached_modules(ctx);
-
     ctx->shredBAT = NULL;
 
     /* free the value buffer */
@@ -4200,6 +4325,8 @@ xquery_client_free_(xquery_client *ctx)
     @:unfix(fun_item000)@
     @:unfix(fun_kind000)@
     @:unfix(loop000)@
+    @:unfix(proc_vid)@
+    @:unfix(var_usage)@
 
     /* close the MIL client session */
     monet_cntxt[ctx->repeat_stk].reuse = FALSE;
@@ -4213,6 +4340,43 @@ xquery_client_free(mapi_client *fc)
 {
     xquery_client_free_(fc->fc);
 }
+
+
+/*
+ * initialize a new xquery cache context, returns error string (NULL if ok)
+ */ 
+static char *
+xquery_client_init_(xquery_client *ctx )
+{
+    ctx->mode = 0;
+    if (!ctx->initialized) {
+        ctx->initialized = 1;
+        if (!xquery_mil_exec(ctx, (char*) PFvarMIL()))
+            return "xquery_client_init: failed to execute variable declarations.\n"; 
+    }
+    return NULL;
+}
+
+
+static char* 
+xquery_client_init(mapi_client *fc) 
+{ 
+    xquery_client *ctx = fc->fc;
+    char* err = xquery_client_init_(ctx);
+
+    ctx->fderr = fc->c->fdout;
+
+    if (err == 0 && (ctx->cacheid != xquery_cacheid || ctx->cachesize > xquery_client_bytes)) {
+        /* re-initialize everything */
+        xquery_client_free_(ctx);
+        err = xquery_client_alloc_(ctx);
+    }
+    if (err)
+        fprintf(stderr, "xquery_client_init: client %d %s\n", fc->stk, err);
+    return err;
+}
+
+
 
 /* 
  * end of xquery execution (struct stays alive for reuse).
@@ -4859,19 +5023,21 @@ xquery_client_engine(mapi_client *fc )
     stream_close(fc->c->fdout);
     stream_destroy(fc->c->fdout);
     fc->c->fdout = NULL;
+    monetSetChannel(THRget(THRgettid()), NULL, NULL);
+
 }
 
 int
 xquery_frontend( ptr *F)
 {
-    char *m_clients = GDKgetenv("mapi_clients"); 
-    int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
     mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
     if (f) {
         f->name = GDKstrdup("xquery");
         if (f->name) {
+            char *p = GDKgetenv("mapi_clients");
+            int nr = p?atoi(p):0;
             *F = f;
-            f->cache_limit = nr;
+            f->cache_limit = (nr>0)?nr:1;
 	    f->f_alloc = xquery_client_alloc;
 	    f->f_init  = xquery_client_init;
 	    f->f_free  = xquery_client_free;

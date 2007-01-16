@@ -560,5 +560,7 @@ PFabssyn_pretty (FILE *f, PFpnode_t *t)
     fputc ('\n', f);
 }
 
+void PFaprint (PFpnode_t *t) { PFabssyn_pretty (stdout, t); }
+
 
 /* vim:set shiftwidth=4 expandtab: */
