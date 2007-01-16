@@ -452,6 +452,7 @@ const NEW_PAGE := MODIFIED_PAGE + 1;
 var ws_log_lock := lock_create();
 var ws_log := bat(lng,str,1000000).rename("ws_log");
 var ws_log_id := 0LL;
+var ws_log_wsid := 0LL;
 var ws_log_msg := "";
 var ws_log_active := false;
 
