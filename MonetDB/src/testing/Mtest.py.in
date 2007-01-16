@@ -1123,6 +1123,35 @@ def isexecutable(TST) :
     return [ 0, "" ]
 ### isexecutable(TST) #
 
+_varprog = None
+def expandvars(path):
+    """Expand shell variables of form $var and ${var}.  Unknown variables
+    are left unchanged."""
+    global _varprog
+    if '$' not in path:
+        return path
+    if not _varprog:
+        import re
+        _varprog = re.compile(r'\$(\w+|\{[^}]*\})')
+    i = 0
+    while True:
+        m = _varprog.search(path, i)
+        if not m:
+            break
+        i, j = m.span(0)
+        name = m.group(1)
+        if name.startswith('{') and name.endswith('}'):
+            name = name[1:-1]
+        if name in os.environ:
+            tail = path[j:]
+            val = os.environ[name].replace('\\', '\\\\')
+            path = path[:i] + val
+            i = len(path)
+            path += tail
+        else:
+            i = j
+    return path
+
 def GetBitsAndOIDsAndModsAndStatic(env) :
     rtrn = 0
     TSTPREF = env['TSTPREF']
@@ -1494,7 +1523,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                 SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = open(TST+EXT+".src","r")
-            TSTSRC = os.path.expandvars(path(f.readline().strip()))
+            TSTSRC = expandvars(path(f.readline().strip()))
             f.close()
             if os.path.isfile(TSTSRC):
                 SymlinkOrCopy(TSTSRC,TST+EXT)
@@ -1505,7 +1534,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         for ff in os.listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
                 f = open(ff,"r")
-                TSTSRC = os.path.expandvars(path(f.readline().strip()))
+                TSTSRC = expandvars(path(f.readline().strip()))
                 f.close()
                 if os.path.isfile(TSTSRC):
                     SymlinkOrCopy(TSTSRC,ff[:-4])
@@ -1517,7 +1546,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             if test.match(ff) and not os.path.isfile(fff):
                 f = open(fff,"w")
                 for l in fileinput.input(ff):
-                    f.write(os.path.expandvars(l))
+                    f.write(expandvars(l))
                 f.close()
 
         if THISFILE == "Mprofile.py":
