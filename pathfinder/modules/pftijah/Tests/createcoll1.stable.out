@@ -17,16 +17,33 @@ module(unix);
 var path:=getenv("TSTSRCDIR");
 
 tj_init_collection("testcoll1", new(str,str).insert("stemmer","snowball-english"));
-#var docs := new(str,str);
-#docs.insert(path+"/xml-docs/dilbert.xml","dilbert.xml");
-#docs.insert(path+"/xml-docs/special.xml","special.xml");
-#tj_add2collection("testcoll1",docs,true);
-tj_add2collection("testcoll1",path+"/xml-docs/dilbert.xml","dilbert.xml",true);
-# Elapsed time = 763us [013us/node]
+var docs := new(str,str);
+docs.insert(path+"/xml-docs/dilbert.xml","dilbert.xml");
+docs.insert(path+"/xml-docs/dilbert2.xml","dilbert2.xml");
+docs.insert(path+"/xml-docs/special.xml","special.xml");
+tj_add2collection("testcoll1",docs,true);
+# Elapsed time = 740us [012us/node]
 # Shredded 1 XML document (dilbert.xml), total time after commit=0.007s
-tj_add2collection("testcoll1",path+"/xml-docs/special.xml","special.xml",true);
-# Elapsed time = 497us [022us/node]
-# Shredded 1 XML document (special.xml), total time after commit=0.007s
+# Elapsed time = 599us [010us/node]
+# Shredded 1 XML document (dilbert2.xml), total time after commit=0.005s
+# Elapsed time = 546us [024us/node]
+# Shredded 1 XML document (special.xml), total time after commit=0.005s
+
+# index collection incrementally
+tj_init_collection("testcoll2", new(str,str).insert("stemmer","snowball-english"));
+tj_add2collection("testcoll2",path+"/xml-docs/dilbert.xml","dilbert.xml",true);
+tj_add2collection("testcoll2",path+"/xml-docs/dilbert2.xml","dilbert2.xml",true);
+tj_add2collection("testcoll2",path+"/xml-docs/special.xml","special.xml",true);
+
+# compare indexed collections
+var tids := bat("tj_globalTerms").sort().kunique().hmark(0@0);
+var coll1 := indexfetchjoin(tids, bat("tj_testcoll1_TermIndex"), bat("tj_testcoll1_Terms"));
+var coll2 := indexfetchjoin(tids, bat("tj_testcoll2_TermIndex"), bat("tj_testcoll2_Terms"));
+diff(coll1,coll2).print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
 quit();
 
 # 17:58:49 >  

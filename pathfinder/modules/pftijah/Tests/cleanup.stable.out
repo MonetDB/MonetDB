@@ -11,10 +11,7 @@ stdout of test 'cleanup` in directory 'modules/pftijah` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pftijah);
 
-
-
-tj_global_remove();
-
+tj_delete_global();
 quit();
 
 # 17:58:51 >  

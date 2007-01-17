@@ -1,0 +1,26 @@
+stdout of test 'qmil0` in directory 'modules/pftijah` itself:
+
+
+# 15:34:47 >  
+# 15:34:47 >  Mtimeout -timeout 60 Mserver "--config=/local/rodeh/monet/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local/rodeh/monet/lib/MonetDB4:/local/rodeh/monet/lib/MonetDB4/lib:/local/rodeh/monet/lib/MonetDB4/bin" --set "gdk_dbfarm=/local/rodeh/monet/var/MonetDB4/dbfarm" --set "sql_logdir=/local/rodeh/monet/var/MonetDB4/sql_logs" --set "xquery_logdir=/local/rodeh/monet/var/MonetDB4/xquery_logs" --set mapi_port=31886 --set monet_prompt= --trace --dbname=mTests_modules_pftijah  < qmil0.milS
+# 15:34:47 >  
+
+# Monet Database Server V4.15.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-suse-linux/64bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module(pftijah);
+
+var res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\"/> let $x := pf:tijah-query-id($opt,(),\"//panel[about(.,humbug)]\") let $n := pf:tijah-nodes($x) for $i in $n return (fn:round(100*pf:tijah-score($x,$i)),$i)");
+printf("%s",res);
+
+
+res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\"/> let $x := pf:tijah-query-id($opt,(),\"//humbug[about(.,dilbert)]\") let $n := pf:tijah-nodes($x) for $i in $n return (fn:round(100*pf:tijah-score($x,$i)),$i)");
+printf("%s",res);
+
+quit();
+
+# 15:34:47 >  
+# 15:34:47 >  Done.
+# 15:34:47 >  
+

@@ -1,5 +1,10 @@
 load
 sigs
 createcoll1
+test_split2frag
+test_indexmerge
+test_nllr
+qmil0
 qmil1
+qmil2
 cleanup

@@ -1,0 +1,18 @@
+module(pftijah);
+
+var nodes := new(oid,dbl);
+nodes.insert(2@0,dbl(0.0));
+nodes.insert(4@0,dbl(0.0));
+nodes.insert(5@0,dbl(0.0));
+nodes.insert(6@0,dbl(0.0));
+nodes.insert(8@0,dbl(0.0));
+nodes.insert(9@0,dbl(0.0));
+
+var frags := new(void,oid).seqbase(1@0);
+frags.append(1@0);
+frags.append(4@0);
+frags.append(7@0);
+
+var res := split2frag(nodes,frags);
+res@batloop(){print($h); print($t);}
+

@@ -11,15 +11,23 @@ stdout of test 'qmil1` in directory 'modules/pftijah` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pftijah);
 
-var res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\" txtmodel_model=\"NLLR\" debug=\"0\" top=\"99\"/> let $x := pf:tijah-query-id($opt,(),\"//panel[about(.,speed)]\") let $n := pf:tijah-nodes($x) for $i in $n return (fn:round(100*pf:tijah-score($x,$i)),$i)");
+var res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\" txtmodel_model=\"NLLR\" debug=\"0\" top=\"99\"/> let $x := pf:tijah-query-id($opt,(),\"//panel[about(.,dilbert)]\") let $n := pf:tijah-nodes($x) for $i in $n return (fn:round(100*pf:tijah-score($x,$i)),$i)");
 
 printf("%s",res);
-77.000000,
-<panel id="d1">
-    <dat>19930216</dat>
+67.000000,
+<panel id="d2">
+    <dat>19940216</dat>
     <speech>
-      <character>Pointy-Haired Boss</character>
-      <bubble>Speed is the key to success.</bubble>
+      <character>Dilbert</character>
+      <bubble>Is it okay to do things wrong if we're really, really fast?</bubble>
+    </speech>
+  </panel>,
+47.000000,
+<panel id="d5">
+    <dat>19920216</dat>
+    <speech>
+      <character>Dilbert</character>
+      <bubble>Ist es in Ordnung, Fehler zu machen, wenn wir dafuer wirklich wirklich schnell sind?</bubble>
     </speech>
   </panel>
 
