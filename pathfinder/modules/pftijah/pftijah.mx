@@ -86,17 +86,6 @@ DESCRIPTION:
 creates an offset index.
 "
 
-.COMMAND mergeindex_old( BAT[any,oid] tid_pre, BAT[void,oid] index, BAT[void, oid] pre, BAT[void,oid] new_index)
-		: BAT[oid,oid] = CMDmergeindex_old;
-"PARAMETERS:
-BAT[oid,oid] - new tid_pre to merge with the old index
-BAT[void,oid] - join index bat with value-offset
-BAT[void,oid] - bat with indexed offset and tail values to be returned
-BAT[void,oid] - new index bat. it should have the right size already.
-DESCRIPTION:
-the operation merges a new sorted tid_pre with an existing offset index.
-"
-
 .COMMAND mergeindex( BAT[oid,oid] tid_pre, BAT[void,oid] index, BAT[void, oid] pre, int indsize)
 		: BAT[void,bat] = CMDmergeindex;
 "PARAMETERS:
@@ -506,7 +495,7 @@ PROC _tj_finalize_collection(str collName) : void
     # bat("tj_" + collName + "_pfpre").access(BAT_READ); BUG CANNOT USE FINALIZED BAT, JF!!!
     bat("tj_" + collName + "_pfpre").mmap(1);
     commit();
-    tj_buildIRindex(collName);
+    _buildIRindex(collName);
     #
     bat("tj_" + collName + "_param").replace("status","finalized");
     var lst_fpre := bat("tj_" + collName + "_param").find("_last_tijahPre");
@@ -2208,17 +2197,16 @@ PROC order_regions(bat region) : bat :=
 #"TIJAH");
 
 
+##########################################
+# Collection Management Functions
+#
+##########################################
 
 # SUGAR, REMOVE IN FUTURE
 PROC tj_global_init() : void 
 {
 	tj_init_global();
 }
-
-##########################################
-# Collection Management Functions
-#
-##########################################
 
 # SUGAR, REMOVE IN FUTURE
 PROC tj_coll_init(str collName, str stemmer) : void
@@ -2235,12 +2223,6 @@ PROC tj_global_remove() : void
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_coll_remove() : void
-{
-	tj_delete_collection(collName);
-}
-
-# SUGAR, REMOVE IN FUTURE
 PROC tj_coll_remove(str collName) : void
 {
 	tj_delete_collection(collName);
@@ -2248,35 +2230,9 @@ PROC tj_coll_remove(str collName) : void
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_collection() : BAT[void,bat]
-{
-	return _tj_collection(collName);
-}
-
-# SUGAR, REMOVE IN FUTURE
 PROC tj_collection(str collName) : BAT[void,bat]
 {
 	return _tj_collection(collName);
-}
-
-# SUGAR, REMOVE IN FUTURE
-PROC tj_createCollection(str doc, str url, str stemmer) : BAT[void,bat]
-{
-	return tj_createCollection(collName, doc, url, stemmer);
-}
-
-# SUGAR, REMOVE IN FUTURE
-PROC tj_createCollection(str collName, str doc, str url, str stemmer) : void
-{
-	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
-		tj_global_init();
-	}
-	if (not(bat("tj_collName").reverse().exist(collName))) {
-		tj_coll_init(stemmer);
-	}
-	
-	tj_url2Collection(collName, doc, url, "");
-	tj_finalize(collName);
 }
 
 # SUGAR, REMOVE IN FUTURE
@@ -2300,36 +2256,11 @@ PROC tj_url2Collection_index(str collName, str url, str selTagList) : void
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_finalize() : void
-{
-	_tj_finalize_collection(collName);
-}
-
-# SUGAR, REMOVE IN FUTURE
 PROC tj_finalize(str collName) : void
 {
-	_tj_finalize_collection(collName);
 }
 
-# SUGAR, REMOVE IN FUTURE
-PROC tj_dump() : void
-{
-	tj_dump_collection(collName);
-}
-
-# SUGAR, REMOVE IN FUTURE
-PROC tj_dump(str collName) : void
-{
-	tj_dump_collection(collName);
-}
-
-# mil-code to build faster IR indices
-PROC tj_buildIRindex() : void :=
-{
-	tj_buildIRindex(collName);
-}
-
-PROC tj_buildIRindex(str collName) : void :=
+PROC _buildIRindex(str collName) : void :=
 {
 	var offset := oid(int(bat("tj_" + collName + "_param").find("_last_finalizedPre")) + 1);
 	var frag_offset := int(find_lower(bat("tj_" + collName + "_fragments").reverse(), offset));
@@ -2436,24 +2367,24 @@ PROC tj_buildIRindex(str collName) : void :=
 #
 ######################################
 
-PROC tijah2pf(BAT[oid,dbl] pre_score) : BAT :=
-{
-	var docpre := bat("tj_" + collName + "_doc_firstpre").[oid]();
-	var pfpre :=  bat("tj_" + collName + "_pfpre");
-	
-	var item := pre_score.hmark(0@0);
-	var score := pre_score.tmark(0@0);
-	var iter := item.mirror();
-	var frag := [find_lower](const docpre.reverse().mark(0@0), item);
-	item := item.join(pfpre).sort().tmark(0@0);
-	
-	var res := new(void,bat);
-	res.append(iter);
-	res.append(item);
-	res.append(frag);
-	res.append(score);
-	return res;
-}
+#PROC tijah2pf(BAT[oid,dbl] pre_score) : BAT :=
+#{
+#	var docpre := bat("tj_" + collName + "_doc_firstpre").[oid]();
+#	var pfpre :=  bat("tj_" + collName + "_pfpre");
+#	
+#	var item := pre_score.hmark(0@0);
+#	var score := pre_score.tmark(0@0);
+#	var iter := item.mirror();
+#	var frag := [find_lower](const docpre.reverse().mark(0@0), item);
+#	item := item.join(pfpre).sort().tmark(0@0);
+#	
+#	var res := new(void,bat);
+#	res.append(iter);
+#	res.append(item);
+#	res.append(frag);
+#	res.append(score);
+#	return res;
+#}
 
 # align_frag assumes the following variable to be global to its scope:
 # frag, kind, ipik, ws
@@ -2948,237 +2879,6 @@ bunins_failed:
         GDKerror("%s: BUN insert failed.\n", name);
         return(GDK_FAIL);
 	
-}
-
-int CMDmergeindex_old ( BAT** result, BAT* tid_pre, BAT* index, BAT* pre, BAT* new_index )
-{
-	char *name = "TJmergeindex";
-	BAT *res = NULL;
-	int bs_res, bs_tidpre, bs_index, bs_pre, bs_newindex;
-	int ressize = 0;
-        BUN dst, lst_tidpre, lst_index, lst_pre, lst_copy, lst_newindex, cur_tidpre, cur_index, cur_pre, cur_newindex;
-	oid tid;
-	
-	/* --------------------------- checks ---------------------------------- */
-	
-	BATcheck(tid_pre, name);
-	BATcheck(index, name);
-	BATcheck(pre, name);
-	BATcheck(new_index, name);
-        
-	if (!(BAThordered(tid_pre) & 1))
-	{
-        	GDKerror("%s: term-bat must be ordered on tail.\n", name);
-    		return GDK_FAIL;
-	}
-
-	/* ---------------------------- inits ---------------------------------- */
-
-	ressize = BATcount(tid_pre) + BATcount(pre);
-	res = BATnew(TYPE_void, TYPE_oid, ressize);
-        if (res == NULL) 
-        { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
-            	return(GDK_FAIL);
-        }
-	
-	bs_res = BUNsize(res);
-	bs_tidpre = BUNsize(tid_pre);
-	bs_index = BUNsize(index);
-	bs_pre = BUNsize(pre);
-        bs_newindex = BUNsize(new_index);
-	
-	dst = BUNlast(res);
-	lst_tidpre = BUNlast(tid_pre);
-	lst_index = BUNlast(index) - bs_index; /* last index is not a real term */
-	lst_pre = BUNlast(pre);
-        lst_newindex = BUNlast(new_index) - bs_newindex; /* last index is not a real term */
-	
-	cur_tidpre = BUNfirst(tid_pre);
-	cur_index = BUNfirst(index);
-	cur_pre = BUNfirst(pre);
-        cur_newindex = BUNfirst(new_index);
-	
-	/* ----------------------------- main ---------------------------------- */
-
-        while (cur_newindex < lst_newindex)
-        {
-	        tid = *(oid*) BUNhead(new_index, cur_newindex);
-		*(oid*) BUNtail(new_index, cur_newindex) = BUNindex(res,dst);
-               
-                /* copy old nodes to new index */
-                if (cur_index < lst_index && tid == *(oid*)BUNhead(index, cur_index))
-                {
-		        lst_copy = BUNptr(pre, *(int*) BUNtail(index, cur_index + bs_index));
-		        while (cur_pre < lst_copy)
-		        {
-			        *(oid*)dst = *(oid*)BUNtail(pre, cur_pre);
-			        dst += bs_res;
-			        cur_pre += bs_pre;
-		        }
-                        cur_index += bs_index;
-                }
-                /* merge-in new nodes */
-                while(cur_tidpre < lst_tidpre && tid == *(oid*)BUNhead(tid_pre, cur_tidpre))
-                {
-                        *(oid*)dst = *(oid*)BUNtail(tid_pre, cur_tidpre);
-	        	dst += bs_res;
-	        	cur_tidpre += bs_tidpre;
-                }
-
-                cur_newindex += bs_newindex;
-        }
-
-	/* write limit of index as last item to index bat */
-	*(oid*) BUNtail(new_index, cur_newindex) = (oid)ressize;
-
-	/* ---------------------------- tidy up --------------------------------- */
-
-	new_index->batDirty = TRUE;
-        new_index->tsorted = GDK_SORTED;
-
-	res->batBuns->free = dst - res->batBuns->base;
-	BATsetcount(res, res->batBuns->free / bs_res);
-    	res->batDirty = TRUE;
-        res->tsorted = GDK_SORTED;
-        BATkey (res, TRUE);
-	BATset(res, TRUE);
-	BATseqbase(res, 0);
-	
-	*result = res;
-	return GDK_SUCCEED;
-}
-
-int CMDmergeindex2 ( BAT** result, BAT* tid_pre, BAT* index, BAT* pre )
-{
-	char *name = "TJmergeindex";
-	BAT *res = NULL;
-	int bs_res, bs_tidpre, bs_index, bs_pre;
-	int ressize = 0;
-        BUN dst, lst_tidpre, lst_index, lst_pre, lst_copy, cur_tidpre, cur_index, cur_pre;
-	oid tid_index, tid_tidpre;
-	
-	/* --------------------------- checks ---------------------------------- */
-	
-	BATcheck(tid_pre, name);
-	BATcheck(index, name);
-	BATcheck(pre, name);
-	
-	if (!(BAThordered(tid_pre) & 1))
-	{
-        	GDKerror("%s: term-bat must be ordered on tail.\n", name);
-    		return GDK_FAIL;
-	}
-
-	/* ---------------------------- inits ---------------------------------- */
-
-	ressize = BATcount(tid_pre) + BATcount(pre);
-	res = BATnew(TYPE_void, TYPE_oid, ressize);
-        if (res == NULL) 
-        { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
-            	return(GDK_FAIL);
-        }
-	
-	bs_res = BUNsize(res);
-	bs_tidpre = BUNsize(tid_pre);
-	bs_index = BUNsize(index);
-	bs_pre = BUNsize(pre);
-	
-	dst = BUNlast(res);
-	lst_tidpre = BUNlast(tid_pre);
-	lst_index = BUNlast(index) - bs_index; /* last index is not real term */
-	lst_pre = BUNlast(pre);
-	
-	cur_tidpre = BUNfirst(tid_pre);
-	cur_index = BUNfirst(index);
-	cur_pre = BUNfirst(pre);
-	
-	tid_tidpre = *(oid*) BUNhead(tid_pre, cur_tidpre);
-        tid_index = *(oid*) BUNhead(index, cur_index);
-
-	/* ----------------------------- main ---------------------------------- */
-
-	while (cur_tidpre < lst_tidpre && cur_index < lst_index) 
-        {
-		tid_tidpre = *(oid*) BUNhead(tid_pre, cur_tidpre);
-        	tid_index = *(oid*) BUNhead(index, cur_index);
-		
-		lst_copy = BUNptr(pre, *(int*) BUNtail(index, cur_index + bs_index));
-		*(oid*) BUNtail(index, cur_index) = BUNindex(res,dst);
-
-	        /* copy and update from old to new index */
-		while (cur_pre < lst_copy)
-		{
-			*(oid*)dst = *(oid*)BUNtail(pre, cur_pre);
-			dst += bs_res;
-			cur_pre += bs_pre;
-		}
-                
-	        /* merge-in new tuples from tid_pre */
-	        while (tid_tidpre == tid_index)
-	        {
-                        *(oid*)dst = *(oid*)BUNtail(tid_pre, cur_tidpre);
-	        	dst += bs_res;
-	        	cur_tidpre += bs_tidpre;
-	        	if(cur_tidpre < lst_tidpre) tid_tidpre = *(oid*) BUNhead(tid_pre, cur_tidpre);
-	        	else break;
-	        }
-
-		cur_index += bs_index;
-	}
-	
-	/* copy remaining items from old index */
-	while (cur_index < lst_index)
-	{
-		lst_copy = BUNptr(pre, *(int*) BUNtail(index, cur_index + bs_index));
-		*(oid*) BUNtail(index, cur_index) = BUNindex(res,dst);
-			
-		while (cur_pre < lst_copy)
-		{
-			*(oid*)dst = *(oid*)BUNtail(pre, cur_pre);
-			dst += bs_res;
-			cur_pre += bs_pre;
-		}
-			
-		cur_index += bs_index;
-	}
-	
-	/* copy remaining items from new index */
-	while (cur_tidpre < lst_tidpre) 
-        {
-		oid x = BUNindex(res,dst);
-		BUNappend(index,&x,1);
-		*(oid*) BUNtail(index, cur_index) = x;
-		cur_index += bs_index;
-		
-		tid_index = tid_tidpre;
-		while (tid_tidpre == tid_index)
-		{
-			*(oid*)dst = *(oid*)BUNtail(tid_pre, cur_tidpre);
-			dst += bs_res;
-			cur_tidpre += bs_tidpre;
-			if(cur_tidpre < lst_tidpre) tid_tidpre = *(oid*) BUNhead(tid_pre, cur_tidpre);
-			else break;
-		}
-	}
-	/* write limit of index as last item to index bat */
-	*(oid*) BUNtail(index, cur_index) = (oid)ressize;
-
-	/* ---------------------------- tidy up --------------------------------- */
-
-	index->batDirty = TRUE;
-
-	res->batBuns->free = dst - res->batBuns->base;
-	BATsetcount(res, res->batBuns->free / bs_res);
-    	res->batDirty = TRUE;
-        res->tsorted = GDK_SORTED;
-        BATkey (res, TRUE);
-	BATset(res, TRUE);
-	BATseqbase(res, 0);
-	
-	*result = res;
-	return GDK_SUCCEED;
 }
 
 int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
