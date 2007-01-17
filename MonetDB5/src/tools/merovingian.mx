@@ -51,6 +51,7 @@ as error to the connecting client.
 #define MEROV_VERSION "0.1 (pre-release)"
 
 @c
+#include "mal_config.h"
 #include "merovingian.h"
 /*#include "mal_sabaoth.h"*/
 #include <stdlib.h> /* exit */
@@ -133,9 +134,9 @@ newErr(str fmt, ...)
 static err
 forkMserver(str database)
 {
-#ifdef _MSC_VER
+#ifdef NATIVE_WIN32
 	intptr_t rv = 0;
-	/*rv = _spawnv(_P_DETACH, ...); FIXME */
+	/*rv = _spawnv(_P_DETACH, ...); FIXME */ (void) database;
 	if (rv == -1) {
 		/* forking failed somehow */
 		return(newErr(strerror(errno)));
