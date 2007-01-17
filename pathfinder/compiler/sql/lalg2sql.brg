@@ -457,11 +457,8 @@ sql_special_name_new(PFsql_special_t spc)
 static sql_column_name_t*
 sql_column_name_new(PFalg_att_t att, PFalg_simple_type_t ty)
 {
-    unsigned int i;
     static unsigned int varno = PF_SQL_RES_COLUMN_COUNT;
     sql_column_name_t *ret = NULL; 
-
-    i = 0; /* satisfy pick compilers */
     
     /* bit position of attribute a. */
     unsigned int a = 0;
