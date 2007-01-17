@@ -381,6 +381,7 @@ str defaultPlan=
 	"deadcode,"
 	"reduce,"
 	"garbageCollector,";
+	
 
 static void
 addOptimizers(Client c,MalBlkPtr mb, str optimizer)

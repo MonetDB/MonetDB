@@ -366,6 +366,64 @@ dump_3(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 	@:SQLpostlude@
 }
 
+static char*
+reconnect(MalBlkPtr mb, list *l)
+{
+	InstrPtr q = NULL;
+	char *db_alias = NULL;
+
+	node* n = l->h;	
+	int i = 0, id = 0;
+
+	id = *(int *) n->data;
+	n = n->next;
+	
+	/*create the mserver reconnect*/
+	q = newStmt1(mb,mserverRef,reconnectRef);
+	getVar(mb,getArg(q,0))->isudftype= 1;
+	setVarType(mb, getArg(q, 0), TYPE_int);
+	
+	while (n) {
+		if (i == 1)
+			q = pushInt(mb, q, *(int *) n->data);
+		else {
+			if (i == 3) {
+				db_alias = (char *) n->data;
+				q = pushStr(mb, q, (char *) n->data);
+			}
+			else
+				if(i != 2)
+					q = pushStr(mb, q, (char *) n->data);
+		}
+		n = n->next;
+		i++;
+	}
+	
+	return db_alias;
+}
+
+
+void
+disconnect(MalBlkPtr mb, list *l)
+{
+	InstrPtr q = NULL;
+
+	node* n = l->h;	
+	int id = -1;
+
+	
+	/*create the mserver disconnect*/
+	q = newStmt1(mb,mserverRef,disconnectRef);
+	getVar(mb,getArg(q,0))->isudftype= 1;
+	setVarType(mb, getArg(q, 0), TYPE_int);
+	
+	if (list_length(l) == 2) {
+		id = *(int *) n->data;
+		q = pushStr(mb, q, (char *) n->next->data);
+	}
+
+}
+
 @-
 The big code generation switch. The sections are aligned to the
 Monet version4 code generation block for ease of comparison.
@@ -385,6 +443,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newAssignment(mb);
 			s->nr = getDestVar(q);
 			q = pushInt(mb, q, 1);
+		}	break;
+		case st_connection: {
+			char * db_alias = NULL;
+			if (list_length(s->op1.lval) < 3)
+				disconnect(mb, s->op1.lval);
+			else 
+				db_alias = reconnect(mb, s->op1.lval);
 		}	break;
 		case st_sql:{
 			int o1 = _dumpstmt(sql, mb, s->op1.stval);
