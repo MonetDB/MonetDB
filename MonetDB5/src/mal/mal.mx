@@ -382,9 +382,9 @@ void mal_exit(void){
 	profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));
 	close_stream(f);
 #endif
-	/* early exit to solve random crashes, needs work */
-	MT_global_exit(0); 
 
+#if 0
+	/* skip this to solve random crashes, needs work */
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
 	mal_scope = 0;
@@ -409,6 +409,7 @@ void mal_exit(void){
 		(void) stream_close(cntxt->fdout);
 		(void) stream_destroy(cntxt->fdout);
 	}
+#endif
 
 	/* deregister everything that was registered, ignore errors */
 	if ((err = SABAOTHwildRetreat(&t)) != MAL_SUCCEED) {
