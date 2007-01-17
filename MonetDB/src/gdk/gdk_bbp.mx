@@ -498,7 +498,7 @@ BBPinit(void)
 	}
 	if (fp == NULL) {
 		/* now it is time for real panic */
-		GDKfatal("BBPinit: could not write %sBBP.dir\n", BATDIR);
+		GDKfatal("BBPinit: could not write %s%cBBP.dir\n", BATDIR, DIR_SEP);
 	}
 
 	/* scan the BBP.dir to obtain its current size */
@@ -901,11 +901,11 @@ BBPsubdir_recursive(str s, bat i)
 	i >>= 6;
 	if (i >= 64) {
 		s = BBPsubdir_recursive(s, i);
+		*s++ = DIR_SEP;
 	}
 	i &= 63;
 	*s++ = '0' + (i >> 3);
 	*s++ = '0' + (i & 7);
-	*s++ = DIR_SEP;
 	return s;
 }
 
@@ -974,7 +974,7 @@ BBPinsert(BAT *b)
 	/* Keep the physical location around forever */
 	if( BBP_physical(i) == NULL){
 		BBPgetsubdir(dirname, i);
-		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4);
+		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4 + 1);
 		GDKfilepath(BBP_physical(i), dirname, BATgetId(b) + 4, NULL);
 
 	BATDEBUG THRprintf(GDKout, "#%d = new %s(%s,%s)\n", (int) i, BATgetId(b), ATOMname(b->htype), ATOMname(b->ttype));
@@ -1151,7 +1151,7 @@ BBPrename(bat bid, str nme)
 	if ((tmpid = BBPnamecheck(nme)) && (bid < 0 || tmpid != bid)) {
 		return BBPRENAME_ILLEGAL;
 	}
-	if (strlen(dirname) + strLen(nme) >= IDLENGTH) {
+	if (strlen(dirname) + strLen(nme) + 1 >= IDLENGTH) {
 		return BBPRENAME_LONG;
 	}
 	gdk_set_lock(GDKtrimLock, "BBPrename");
@@ -2702,8 +2702,7 @@ BBPbackup(BAT *b, bit subcommit)
 		return 0;
 	}
 	/* determine location dir and physical suffix */
-	strcpy(srcdir, BATDIR);
-	strcat(srcdir, s);
+	GDKfilepath(srcdir, BATDIR, s, NULL);
 	s = strrchr(srcdir, DIR_SEP);
 	strcpy(nme, ++s);
 	srcdir[s - srcdir] = 0;
@@ -2878,8 +2877,7 @@ force_move(str srcdir, str dstdir, str name)
 		}
 
 		/* step 2: now remove the .kill file. This one is crucial, otherwise we'll never finish recovering */
-		strcpy(killfile, srcdir);
-		strcat(killfile, name);
+		GDKfilepath(killfile, srcdir, name, NULL);
 		ret = unlink(killfile);
 		if (ret) {
 			GDKsyserror("force_move: unlink(%s)\n", killfile);
@@ -3022,7 +3020,7 @@ BBPrecover_subdir()
 	if (ret == 0) {
 		ret = GDKremovedir(SUBDIR);	
 		if (backup_dir == 2) {
-			GDKwarning("BBPrecover_subdir: %s/BBP.dir had disappeared!", SUBDIR);
+			GDKwarning("BBPrecover_subdir: %s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
 			backup_dir = 0;
 		}
 	}
@@ -3092,8 +3090,8 @@ BBPdiskscan_r(str parent)
 			continue;	/* ignore .dot files and directories (. ..) */
 		if (strncmp(dent->d_name, "BBP.", 4) == 0) {
 			if (parent == NULL || 
-                            strncmp(parent, BAKDIR, strlen(BAKDIR)-1) == 0 ||
-                            strncmp(parent, SUBDIR, strlen(SUBDIR)-1) == 0) 
+                            strncmp(parent, BAKDIR, strlen(BAKDIR)) == 0 ||
+                            strncmp(parent, SUBDIR, strlen(SUBDIR)) == 0) 
 				continue;
 		}
 		strcpy(dst, dent->d_name);

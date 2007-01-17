@@ -53,9 +53,13 @@ void
 GDKfilepath(str path, str dir, str name, str ext)
 {
 	*path = 0;
-	if (dir && *name != DIR_SEP) {
+	if (dir && *dir && *name != DIR_SEP) {
 		strcpy(path, dir);
 		path += strlen(dir);
+		if (path[-1] != DIR_SEP) {
+			*path++ = DIR_SEP;
+			*path = 0;
+		}
 	}
 	strcpy(path, name);
 	if (ext) {

@@ -420,17 +420,17 @@ extern "C" {
 #define GDKPROP		6	/*      use one spare! */
 #define MONETHOME	"MONETHOME"
 #ifndef NATIVE_WIN32
-#define BATDIR          "bat/"
-#define DELDIR          "bat/DELETE_ME/"
-#define BAKDIR          "bat/BACKUP/"
-#define SUBDIR          "bat/BACKUP/SUBCOMMIT/"
-#define LEFTDIR         "bat/LEFTOVERS/"
+#define BATDIR          "bat"
+#define DELDIR          "bat/DELETE_ME"
+#define BAKDIR          "bat/BACKUP"
+#define SUBDIR          "bat/BACKUP/SUBCOMMIT"
+#define LEFTDIR         "bat/LEFTOVERS"
 #else
-#define BATDIR          "bat\\"
-#define DELDIR          "bat\\DELETE_ME\\"
-#define BAKDIR          "bat\\BACKUP\\"
-#define SUBDIR          "bat\\BACKUP\\SUBCOMMIT\\"
-#define LEFTDIR         "bat\\LEFTOVERS\\"
+#define BATDIR          "bat"
+#define DELDIR          "bat\\DELETE_ME"
+#define BAKDIR          "bat\\BACKUP"
+#define SUBDIR          "bat\\BACKUP\\SUBCOMMIT"
+#define LEFTDIR         "bat\\LEFTOVERS"
 #endif
 #define DBLOGFILE	"MonetLog"
 
