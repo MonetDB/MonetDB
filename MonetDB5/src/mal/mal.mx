@@ -383,7 +383,7 @@ void mal_exit(void){
 	close_stream(f);
 #endif
 	/* early exit to solve random crashes, needs work */
-/*	MT_global_exit(0); */
+	MT_global_exit(0); 
 
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
