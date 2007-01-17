@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# All Rights Reserved.
+
+PWD=`pwd`
+echo $PWD
+SQL='MapiClient -p500000 -lsql -umonetdb -Pmonetdb'
+M5='mserver5 --dbname=demo --set mapi_port=40000 --dbinit="include sql;"'
+if [ $# -eq 1 ]; then
+	SQL=$1
+fi
+
+#Generate Data...
+
+#Bulk-Load into SQL server...
+$M5
+
+echo syntax
+$SQL < connections_syntax.sql
+
+echo semantic
+$SQL < connections_semantic.sql
+
+echo default values
+$SQL < connections_default_values.sql
