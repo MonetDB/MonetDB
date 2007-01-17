@@ -3625,11 +3625,13 @@ movements += remainingIns;
 @= shrinkDeletions
 		/* shrink the deletions bat */
 		endPosition += 1;
+{
 BAT *shrinkSLice  = BATslice(u,startPosition,endPosition);
 BAT *shrinkCopy = BATcopy(shrinkSLice, shrinkSLice->htype, shrinkSLice->ttype, TRUE);
 u = BATdel(u, shrinkCopy, TRUE);
 BBPunfix(shrinkSLice->batCacheid);
 BBPunfix(shrinkCopy->batCacheid);
+}
 /*		if (startPosition == 0 && (size_t)endPosition == BATcount(u)){
 			BATmode(u, TRANSIENT);
                         TreeIndex[position].did = -1;
@@ -4388,7 +4390,7 @@ TendM1 = GDKusec();
 #endif
 		
 		if (rt < crkLast && inst == insLast){
-
+			int i;
 #ifdef DEBUG_CRACKERS_INSERTIONS
 TstartM2 = GDKusec();	
 #endif
@@ -4396,7 +4398,7 @@ TstartM2 = GDKusec();
 			insh  = insFirst+(startPosition+consumedRipple+consumedInsertions)*xx;
 			memcpy(insh,rh,(BATcount(ripple)-consumedRipple)*xx);
 */
-			for(int i = 0; (size_t)i<BATcount(ripple)-(size_t)consumedRipple; i++){
+			for(i = 0; (size_t)i<BATcount(ripple)-(size_t)consumedRipple; i++){
 				*(oid*)crkh = *(oid*)rh;
                                 *( @1*)crkt = *( @1*)rt;
 				 rh+=xx; rt+=xx;crkh+=xx; crkt+=xx;
@@ -4408,6 +4410,7 @@ TendM2 = GDKusec();
 
 		} else	
 		if (rt == crkLast && inst < insLast){
+			int i;
 
 #ifdef DEBUG_CRACKERS_INSERTIONS
 TstartM3 = GDKusec();	
@@ -4417,7 +4420,7 @@ TstartM3 = GDKusec();
 			insh  = insFirst+(startPosition+consumedRipple+consumedInsertions)*xx;
 			memcpy(insh,rh,(BATcount(u)-endPosition -consumedInsertions)*xx);
 */
-			for(int i = 0; (size_t)i<BATcount(u)-(size_t)endPosition -(size_t)consumedInsertions; i++){
+			for(i = 0; (size_t)i<BATcount(u)-(size_t)endPosition -(size_t)consumedInsertions; i++){
                                 *(oid*)crkh = *(oid*)insh;
                                 *( @1*)crkt = *( @1*)inst;
                                  insh+=xx; inst+=xx;crkh+=xx; crkt+=xx;
