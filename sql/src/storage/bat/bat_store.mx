@@ -3296,7 +3296,7 @@ rollforward_create_idx(sql_trans *tr, sql_idx * i)
 			/* snapshot large bats */
 			if (BATcount(b) > 1000) 
 				BATmode(b, PERSISTENT);
-			if (BATcount(b) > REMAP_PAGE_MAXSIZE)
+			if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
         			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 			ok = log_bat_persists(sql_logger, b, i->bat.name);
 		}
@@ -3391,7 +3391,7 @@ rollforward_create_column(sql_trans *tr, sql_column *c)
 			/* snapshot large bats */
 			if (BATcount(b) > 1000) 
 				BATmode(b, PERSISTENT);
-			if (BATcount(b) > REMAP_PAGE_MAXSIZE)
+			if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
         			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 			ok = log_bat_persists(sql_logger, b, c->bat.name);
 		}
@@ -3452,7 +3452,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 				/* snapshot large bats */
 				if (BATcount(d) > 1000) 
 					BATmode(d, PERSISTENT);
-				if (BATcount(d) > REMAP_PAGE_MAXSIZE)
+				if (BATcount(d) > (size_t) REMAP_PAGE_MAXSIZE)
         				BATmmap(d, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 				ok = log_bat_persists(sql_logger, d, t->dname);
 			}
@@ -3725,7 +3725,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					cc->bat.bid = temp_create(swpbat);
 					if (ttr == gtrans) {
 						BATmode(ins, PERSISTENT);
-						if (BATcount(ins) > REMAP_PAGE_MAXSIZE)
+						if (BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE)
         						BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 						logger_add_bat(sql_logger, ins, oc->bat.name);
 						log_bat_persists(sql_logger, ins, oc->bat.name);
@@ -3836,7 +3836,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						ci->bat.bid = temp_create(swpbat);
 						if (ttr == gtrans) {
 							BATmode(ins, PERSISTENT);
-							if (BATcount(ins) > REMAP_PAGE_MAXSIZE)
+							if (BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE)
         							BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 							logger_add_bat(sql_logger, ins, oi->bat.name);
 							log_bat_persists(sql_logger, ins, oi->bat.name);
