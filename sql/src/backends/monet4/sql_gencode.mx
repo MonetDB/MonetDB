@@ -1426,6 +1426,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_basetable:	/* relation(table) */
 		case st_ptable:
 		case st_pivot:
+		case st_connection:
 			printf("backend_dumpstmt_: not implemented stmt %s\n", st_type2string(s->type));
 			assert(0);
 		}
