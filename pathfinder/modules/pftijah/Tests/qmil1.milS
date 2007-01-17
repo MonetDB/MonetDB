@@ -1,5 +1,6 @@
 module(pftijah);
 
 var res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\" txtmodel_model=\"NLLR\" debug=\"0\" top=\"99\"/> let $x := pf:tijah-query-id($opt,(),\"//panel[about(.,speed)]\") let $n := pf:tijah-nodes($x) for $i in $n return (fn:round(100*pf:tijah-score($x,$i)),$i)");
-  printf("%s",res);
+
+printf("%s",res);
 

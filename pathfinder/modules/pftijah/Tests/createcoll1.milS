@@ -1,12 +1,14 @@
-module(pathfinder);
-module(unix);
 module(pftijah);
+module(unix);
 
 # should run if you set TSTTRGDIR to pwd
 
 var path:=getenv("TSTSRCDIR");
 
-tj_coll_init("testcoll1","snowball-english");
-tj_url2Collection("testcoll1","dilbert.xml",path+"/xml-docs/dilbert.xml","");
-tj_url2Collection("testcoll1","special.xml",path+"/xml-docs/special.xml","");
-tj_finalize("testcoll1");
+tj_init_collection("testcoll1", new(str,str).insert("stemmer","snowball-english"));
+#var docs := new(str,str);
+#docs.insert(path+"/xml-docs/dilbert.xml","dilbert.xml");
+#docs.insert(path+"/xml-docs/special.xml","special.xml");
+#tj_add2collection("testcoll1",docs,true);
+tj_add2collection("testcoll1",path+"/xml-docs/dilbert.xml","dilbert.xml",true);
+tj_add2collection("testcoll1",path+"/xml-docs/special.xml","special.xml",true);

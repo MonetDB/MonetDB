@@ -26,16 +26,29 @@ module 'pftijah'
 # signature	  # name
 # str		  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "indexfetchjoin(BAT[any,oid], BAT[void,oid], BAT[void,oid]) : BAT[oid,oid]"												  ]
+[ "_tj_throw2collection(BAT[oid,BAT], BAT[oid,BAT], str, str) : void"													  ]
+[ "_tj_throw2collection_index(BAT[oid,BAT], str) : void"														  ]
+[ "indexfetchjoin(BAT[any,oid], BAT[void,oid], BAT[void,oid]) : BAT[void,oid]"												  ]
+[ "mergeindex(BAT[oid,oid], BAT[void,oid], BAT[void,oid], int) : BAT[void,BAT]"												  ]
+[ "mergeindex_old(BAT[any,oid], BAT[void,oid], BAT[void,oid], BAT[void,oid]) : BAT[oid,oid]"										  ]
 [ "offsetindex(BAT[void,oid], int) : BAT[void,oid]"															  ]
 [ "pf2tijah_node(BAT[void,str], BAT[void,int], BAT[oid,oid], BAT[void,oid], BAT[void,int], BAT[void,str]) : BAT[void,oid]"						  ]
 [ "run_tijah_command(str) : bit"																	  ]
 [ "run_tijah_query(BAT[str,str], BAT[void,oid], str) : BAT[oid,dbl]"													  ]
+[ "score_NLLR(BAT[oid,oid], BAT[void,int], BAT[oid,int], BAT[oid,int], BAT[oid,any], dbl, int) : BAT[oid,dbl]"								  ]
 [ "serialize_tijah_opt(BAT[void,BAT], int, BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[str,str]"	  ]
 [ "tijah_tokenize(str) : str"																		  ]
-[ "tj_add2collection(BAT[oid,BAT], BAT[oid,BAT], str, str) : BAT[void,BAT]"												  ]
-[ "tj_add2collection_index(BAT[oid,BAT], str) : BAT[void,BAT]"														  ]
+[ "tj_add2collection(str, BAT[str,str], bit) : void"															  ]
+[ "tj_add2collection(str, str, str, bit) : void"															  ]
+[ "tj_create_termdb(int, oid) : void"																	  ]
+[ "tj_delete_collection(str) : void"																	  ]
+[ "tj_delete_global() : void"																		  ]
+[ "tj_dispose_termdb() : void"																		  ]
+[ "tj_finalize_collection(str) : void"																	  ]
+[ "tj_init_collection(str, BAT[str,str]) : void"															  ]
+[ "tj_init_global(BAT[str,str]) : void"																	  ]
 [ "tj_normalizeTerm(str, str) : str"																	  ]
+[ "treemergejoin_sort(BAT[void,oid], BAT[void,int], BAT[void,oid]) : BAT[oid,oid]"											  ]
 
 quit();
 

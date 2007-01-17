@@ -747,8 +747,10 @@ freeTijahContext(tjCtx* tjctx) {
 	if ( ! tdb_close(tjctx->tdb) )
 		return GDK_FAIL;
 #endif
-	BATkey(BATmirror(tjctx->b_globalTerm), TRUE);
-	BATkey(BATmirror(tjctx->b_globalTag), TRUE);
+	/* BATkey(BATmirror(tjctx->b_globalTerm), TRUE); */
+	/* BATkey(BATmirror(tjctx->b_globalTag), TRUE); */
+	BATkey(BATmirror(tjctx->b_collPre), FALSE);
+	BATkey(BATmirror(tjctx->b_collSize), FALSE);
 	BBPunfix(BBPcacheid(tjctx->b_globalTerm));
 	BBPunfix(BBPcacheid(tjctx->b_globalTag));
 	BBPunfix(BBPcacheid(tjctx->b_docName));
