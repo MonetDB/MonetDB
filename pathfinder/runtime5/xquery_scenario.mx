@@ -199,7 +199,7 @@ str
 XQUERYparser(Client c)
 {
 	Xbackend xb;
-	int err = 0, oldstop, oldvtop;
+	int err = 0, oldstop;
 
 #ifdef _XQUERY_SCENARIO_DEBUG
 	stream_printf(c->fdout,"#start the xquery parser\n");
@@ -209,7 +209,6 @@ XQUERYparser(Client c)
 	if(xb == NULL || c->curprg->def== NULL) 
 		return createException(MAL, "xquery.parser","No context available\n");
 
-	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
 
 	/* Here the current query should be parsed and converted into mal */ 
