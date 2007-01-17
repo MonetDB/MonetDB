@@ -321,7 +321,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
     bat("tj_" + collName + "_param").insert("preExpansion","4");
     bat("tj_" + collName + "_param").insert("status","building");
     bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
-    bat("tj_" + collName + "_param").insert("_last_finalizedPre","1");
+    bat("tj_" + collName + "_param").insert("_last_finalizedPre","0");
     #
     commit();
 }
@@ -1365,7 +1365,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
      var t3 := time();
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
@@ -3187,8 +3187,9 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	
 
 	BATloopFast(elem_tid, p, q, xx) {
-		oid *h = (oid*) BUNhloc(elem_tid, p);
-		oid *t = (oid*) BUNtloc(elem_tid, p);
+		oid *h = (oid*) BUNhead(elem_tid, p);
+		oid *t = (oid*) BUNtail(elem_tid, p);
+		
 		for(i = 0; i < term_cnt; i++)  
 			if (terms[i] == *t) { 
 				if (0) BUNappend(bats[i], h, 0); 
@@ -3208,8 +3209,9 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 				}
 				break;
 			}
-		if (i == term_cnt)
-			GDKerror("%s: jan was right.\n",name);
+		if (i == term_cnt) {
+			GDKerror("WARNING:%s: cannot find term " OIDFMT ".\n",name,*t);
+	        }
 	}
 
         t = BUNfirst(tid_cnt);
