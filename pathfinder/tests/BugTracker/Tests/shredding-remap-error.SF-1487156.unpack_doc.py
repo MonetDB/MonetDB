@@ -1,6 +1,6 @@
 import zipfile, os
 
-archive = 'shredding-remap-error.SF-1487156.unpack_docs.zip'
+archive = 'shredding-remap-error.SF-1487156.unpack_doc.zip'
 
 def mkpardir(path):
     i = path.find('/')
