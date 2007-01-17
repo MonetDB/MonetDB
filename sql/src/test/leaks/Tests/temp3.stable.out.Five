@@ -24,12 +24,12 @@ Over..
 % single_value,	count_ # name
 % char,	int # type
 % 9,	3 # length
-[ "transient",	514	]
+[ "transient",	539	]
 % .,	. # table_name
 % single_value,	count_ # name
 % char,	int # type
 % 10,	3 # length
-[ "persistent",	202	]
+[ "persistent",	219	]
 
 # 15:17:45 >  
 # 15:17:45 >  Done.
