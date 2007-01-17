@@ -613,17 +613,68 @@ drop_trigger(mvc *sql, dlist *qname)
 static stmt *
 connect_catalog(mvc *sql, dlist *qname)
 {
-	(void) qname;
-	(void) sql;
-	return stmt_none();
+	char *server = qname->h->data.sval;
+	int id = -1, port = qname->h->next->data.ival;
+	char *db = qname->h->next->next->data.sval;
+	char *db_alias = qname->h->next->next->next->data.sval;
+	symbol *user_symb = qname->h->next->next->next->next->data.sym;
+	char *user = NULL, *passwd = NULL;
+	char *lang = qname->h->next->next->next->next->next->data.sval;
+
+	if (user_symb) {
+		user = user_symb->data.lval->h->data.sval;
+		passwd = user_symb->data.lval->h->next->data.sval;
+	}
+
+	if (port  == -1)
+		port = 50000;
+	
+	if (db_alias == NULL){
+		char default_dbalias[BUFSIZ];
+		snprintf(default_dbalias, BUFSIZ, "%s:%d_%s", server, port, db);
+		db_alias = default_dbalias;
+	}
+
+	if (user == NULL){
+		char default_user[BUFSIZ];
+		char default_passwd[BUFSIZ];
+		snprintf(default_user, BUFSIZ, "monetdb");
+		snprintf(default_passwd, BUFSIZ, "monetdb");
+		user = default_user;
+		passwd = default_passwd;
+	}
+
+	if (lang == NULL){
+		char default_lang[BUFSIZ];
+		snprintf(default_lang, BUFSIZ, "sql");
+		lang = default_lang;
+	}
+	
+	id = mvc_connect_catalog(sql, server, port, db, db_alias, user, passwd, lang);
+	
+	if (id == 0)	
+		return sql_error(sql, 02, "CONNECT TO: this connection already exists or the db_alias '%s' was already used!", db_alias);
+	
+	return stmt_connection(&id, server, &port, db, db_alias, user, passwd, lang);	
 }
 
 static stmt *
 disconnect_catalog(mvc *sql, dlist *qname)
 {
-	(void) qname;
-	(void) sql;
-	return stmt_none();
+	int id = 0, port = -1;
+	if (qname->cnt != 0) {
+		char *db_alias = qname->h->data.sval;
+	
+		id = mvc_disconnect_catalog(sql, db_alias);
+
+		if (id == 0)	
+			return sql_error(sql, 02, "DISCONNECT CATALOG: no such db_alias '%s'", db_alias);
+		else
+			return stmt_connection(&id, NULL, &port, NULL, db_alias, NULL, NULL, NULL);	
+	} else {
+		mvc_disconnect_catalog_ALL(sql);	
+		return stmt_connection(&id, NULL, &port, NULL, NULL, NULL, NULL, NULL);	
+	}
 }
 
 static void

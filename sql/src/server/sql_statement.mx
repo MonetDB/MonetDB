@@ -116,6 +116,8 @@ typedef enum stmt_type {
 	st_ptable,		/* (R(tables) */
 	st_pivot,		/* binary relation between R and input table */
 
+	st_connection,		/*To handle support sql connections*/
+
 	/* used internally only */
 	st_list,
 
@@ -241,6 +243,7 @@ extern stmt *stmt_set(stmt *s1);
 extern stmt *stmt_sets(list *s1);
 extern stmt *stmt_ptable(stmt *p);
 extern stmt *stmt_pivot(stmt *s, stmt *ptable);
+extern stmt *stmt_connection(int *id, char *server, int *port, char *db, char *db_alias, char *user, char *passwd, char *lang);
 
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
 
@@ -389,6 +392,7 @@ st_type2string(st_type type)
 		ST(aggr);
 
 		ST(alias);
+		ST(connection);
 
 		ST(set);
 		ST(sets);
@@ -598,6 +602,7 @@ stmt_destroy(stmt *s)
 		switch (s->type) {
 			/* stmt_destroy  op1 */
 		case st_relselect:
+		case st_connection:
 			list_destroy(s->op1.lval);
 			break;
 		case st_reljoin:
@@ -953,6 +958,7 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_uselect:
 		case st_uselect2:
 		case st_semijoin:
+		case st_connection:
 
 		case st_bulkinsert:
 			if (s->op1.stval)
@@ -1749,6 +1755,34 @@ stmt_pivot(stmt *base, stmt *ptable)
 	s->t = stmt_dup(base);	/* pivots have oid's in the tail */
 	s->nrcols = 2;
 	list_append(ptable_pivots(ptable), s /* no dup since ptable points to pivot and vs*/);
+	return s;
+}
+
+stmt*
+stmt_connection(int *id, char *server, int *port, char *db, char * db_alias, char *user, char *passwd, char *lang)
+{
+	stmt *s = stmt_create(st_connection);
+	list *l = list_create((fdestroy) NULL);
+
+	if (*id != 0)
+		list_append(l, id);
+	if (server)
+		list_append(l, server);
+	if (*port != -1)
+		list_append(l, port);
+	if (db)
+		list_append(l, db);
+	if (db_alias)
+		list_append(l, db_alias);
+	if (user)
+		list_append(l, user);
+	if (passwd)
+		list_append(l, passwd);
+	if (lang)
+		list_append(l, lang);
+
+	s->op1.lval = l;
+
 	return s;
 }
 

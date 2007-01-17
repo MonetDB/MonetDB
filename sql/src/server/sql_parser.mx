@@ -380,7 +380,6 @@ int yydebug=1;
 
 %type <sval>
 	opt_lang
-	opt_port
 	opt_db_alias
 	opt_constraint_name
 	any_all_some
@@ -474,6 +473,7 @@ int yydebug=1;
 	window_specification
 
 %type <ival>
+	opt_port
 	drop_action
 	ref_action
 	join_type
@@ -2284,11 +2284,11 @@ update_stmt:
 
 connect_stmt:
     CONNECT TO DEFAULT		{ $$ = _symbol_create_list(SQL_CONNECT, L()); }
- |  CONNECT TO ident opt_port DATABASE ident opt_db_alias opt_user_passwd opt_lang
+ |  CONNECT TO string opt_port DATABASE string opt_db_alias opt_user_passwd opt_lang
 
 	{ dlist *l = L();
 	  append_string(l, $3);
-	  append_string(l, $4);
+	  append_int(l, $4);
 	  append_string(l, $6);
 	  append_string(l, $7);
 	  append_symbol(l, $8);
@@ -2297,43 +2297,38 @@ connect_stmt:
  ;
 
 disconnect_stmt:
-    DISCONNECT ident		{ dlist *l = L(); 
+    DISCONNECT string		{ dlist *l = L(); 
 				 append_string(l, $2);
 				 append_int(l, 0);
 				 $$ = _symbol_create_list(SQL_DISCONNECT, l);
 				}
- |  DISCONNECT CURRENT		{ dlist *l = L();
-				 append_int(l, 0);
-				 $$ = _symbol_create_list(SQL_DISCONNECT, l);
-				}
  |  DISCONNECT ALL		{ dlist *l = L();
-				 append_int(l, 0);
 				 $$ = _symbol_create_list(SQL_DISCONNECT, l);
 				}
  ;
 
 opt_port:
-    /*empty*/		{ $$ = NULL; }
- |  PORT ident		{ $$ = $2; }
+    /*empty*/		{ $$ = -1; }
+ |  PORT intval		{ $$ = $2; }
  ;
 
 opt_db_alias:
     /*empty*/		{ $$ = NULL; }
- |  AS ident		{ $$ = $2; }
+ |  AS string		{ $$ = $2; }
  ;
 
 opt_user_passwd:
-    /*empty*/			{ $$ = NULL; }
- |  USER ident PASSWORD ident	{ dlist *l = L(); 
-				append_string(l, $2);
-				append_string(l, $4);
-				$$ = _symbol_create_list(SQL_USER, l);
-				}
+    /*empty*/				{ $$ = NULL; }
+ |  USER string PASSWORD string		{ dlist *l = L(); 
+					append_string(l, $2);
+					append_string(l, $4);
+					$$ = _symbol_create_list(SQL_USER, l);
+					}
  ;
 
 opt_lang:
     /*empty*/		{ $$ = NULL; }
- |  LANGUAGE ident	{ $$ = $2; }
+ |  LANGUAGE string	{ $$ = $2; }
  ;
 
 /* todo merge statment 
