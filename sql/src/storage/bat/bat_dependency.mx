@@ -27,6 +27,7 @@
 #include "bat_store.h"
 
 extern int create_dependency_table(sql_trans *tr, sql_schema *s);
+extern sql_column* create_column(sql_trans *tr, sql_table* t, char* table, char *type, int digits);
 
 #endif /*BAT_DEPEND_H */
 @c

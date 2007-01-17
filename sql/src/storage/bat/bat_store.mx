@@ -22,6 +22,7 @@
 
 #include "sql_storage.h"
 #include "bat_dependency.h"
+#include "bat_connections.h"
 #include <logger.h>
 
 extern logger *sql_logger;
@@ -2520,6 +2521,9 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 			if (!p) {
 				/*To create the dependency table*/
 				create_dependency_table(tr,s);
+
+				/*To create the connections table*/
+				create_connections_table(tr,s);
 
 				p = s; 
 				/* now the same tables for temporaries */
