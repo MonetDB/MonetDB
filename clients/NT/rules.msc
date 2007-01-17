@@ -21,3 +21,4 @@ MONETDB_LIBS=/libpath:$(TOPDIR)\..\..\MonetDB\NT\lib
 
 pkg = MonetDB
 CONFIG_H=clients_config.h
+VERSION=1.15.0

@@ -18,3 +18,4 @@
 
 pkg = MonetDB
 CONFIG_H=monetdb_config.h
+VERSION=1.15.0
