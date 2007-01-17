@@ -1051,6 +1051,10 @@ hasSideEffects(InstrPtr p, int strict)
 	if( getModuleId(p) == mserverRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;
+		if( getFunctionId(p) == reconnectRef)
+			return TRUE;
+		if( getFunctionId(p) == disconnectRef)
+			return TRUE;
 	}
 	if (strict && getFunctionId(p)==newRef)
 		return TRUE;
