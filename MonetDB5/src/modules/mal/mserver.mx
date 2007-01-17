@@ -83,12 +83,12 @@ command trace(mid:int,flag:int):void
 address SERVERtrace
 comment "Toggle the Mapi library tracer";
 
-command reconnect(alias:str, host:str, port:int, usr:str, passwd:str,lang:str):int
-address SERVERreconnectAlias
-comment "Re-establish connection with a remote mserver";
-
 command reconnect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERreconnectWithoutAlias
+comment "Re-establish connection with a remote mserver";
+
+command reconnect(host:str, port:int, db_alias:str, usr:str, passwd:str,lang:str):int
+address SERVERreconnectAlias
 comment "Re-establish connection with a remote mserver";
 
 command reconnect(mid:int):void
@@ -103,6 +103,14 @@ command connect_ssl(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnectssl
 comment "Establish connection with a remote mserver using the
 secure socket layer";
+
+command disconnect(dbalias:str):int
+address SERVERdisconnectWithAlias
+comment "Close connection with a remote mserver";
+
+command disconnect():int
+address SERVERdisconnectALL
+comment "Close connections with all remote mserver";
 
 command setAlias(dbalias:str)
 address SERVERsetAlias
@@ -316,7 +324,9 @@ m_export str SERVERresume(int *ret);
 m_export void SERVERexit(void);
 
 m_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
-m_export str SERVERreconnectAlias(int *ret, str *dbalias, str *host, int *port, str *username, str *password, str *lang);
+m_export str SERVERdisconnectWithAlias(int *ret, str *db_alias);
+m_export str SERVERdisconnectALL(int *ret);
+m_export str SERVERreconnectAlias(int *ret, str *host, int *port, str *dbalias, str *username, str *password, str *lang);
 m_export str SERVERreconnectWithoutAlias(int *ret, str *host, int *port, str *username, str *password, str *lang);
 m_export str SERVERconnectssl(int *ret, str *host, int *port, str *username, str *password, str *lang);
 m_export str SERVERtrace(int *ret, int *mid, int *flag);
@@ -1288,6 +1298,57 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 	*key = SERVERsessions[i].key;
 	return MAL_SUCCEED;
 }
+
+str
+SERVERdisconnectALL(int *key){
+	int i;
+
+	mal_set_lock(mal_contextLock,"SERVERdisconnect");
+
+	for(i=1; i< MAXSESSIONS; i++)
+		if( SERVERsessions[i].c != 0 ) {
+			SERVERsessions[i].c = NULL;
+			*key = SERVERsessions[i].key;
+			mapi_disconnect(SERVERsessions[i].mid);
+		}
+
+	mal_unset_lock(mal_contextLock,"SERVERdisconnect");
+
+#ifdef MAPI_TEST
+	stream_printf(GDKout,"Succeeded to close all session\n");
+#endif
+	return MAL_SUCCEED;
+}
+
+str
+SERVERdisconnectWithAlias(int *key, str *dbalias){
+	int i;
+
+	mal_set_lock(mal_contextLock,"SERVERdisconnectWithAlias");
+
+	for(i=0; i<MAXSESSIONS; i++)
+		 if( SERVERsessions[i].dbalias &&
+			 strcmp(SERVERsessions[i].dbalias, *dbalias)==0){
+				SERVERsessions[i].c = NULL;
+				*key = SERVERsessions[i].key;
+				mapi_disconnect(SERVERsessions[i].mid);
+				break;
+		}
+
+	if( i==MAXSESSIONS){
+		mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
+		throw(IO, "mserver.disconnect", "Impossible to close session for db_alias: '%s'", dbalias);
+	}
+
+	mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
+
+#ifdef MAPI_TEST
+	stream_printf(GDKout,"Succeeded to close all session\n");
+#endif
+
+	return MAL_SUCCEED;
+}
+
 str
 SERVERconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
 	return SERVERconnectAll(key,host,port,username,password,lang, FALSE);
@@ -1297,8 +1358,9 @@ SERVERconnectssl(int *key, str *host, int *port, str *username, str *password, s
 	return SERVERconnectAll(key,host,port,username,password,lang, TRUE);
 }
 
+
 str
-SERVERreconnectAlias(int *key,str *dbalias, str *host, int *port, str *username, str *password, str *lang){
+SERVERreconnectAlias(int *key, str *host, int *port, str  * dbalias, str *username, str *password, str *lang){
 	int i;
 	str msg=MAL_SUCCEED;
 
