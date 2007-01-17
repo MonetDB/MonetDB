@@ -11,7 +11,6 @@ stdout of test 'unpack_docs` in directory 'benchmarks/XMach-1` itself:
 # 00:17:39 >  
 
 Archive:  unpack_docs.zip
-   creating: documentCount_100/
   inflating: documentCount_100/001_doc_1_test.xml  
   inflating: documentCount_100/002_doc_1_test.xml  
   inflating: documentCount_100/003_doc_1_test.xml  
