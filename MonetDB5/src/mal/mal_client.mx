@@ -73,7 +73,7 @@ are located in mal\_startup.
 #include "mal_profiler.h"
 #include "mal.h"
 
-#define MAL_MAXCLIENTS  32
+#define MAL_MAXCLIENTS  64
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
 
@@ -361,10 +361,8 @@ Client MCnewClient(){
 	}
 	mal_unset_lock(mal_contextLock, "newClient");
 
-	if (c == mal_clients+MAL_MAXCLIENTS) {
-		GDKfatal("Out of client slots\n");
+	if (c == mal_clients+MAL_MAXCLIENTS) 
 		return NULL;
-	}
 	c->idx= c - mal_clients;
 #ifdef MAL_CLIENT_DEBUG
 	printf("New client created %d\n",c-mal_clients);

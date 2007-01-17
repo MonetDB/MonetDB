@@ -346,6 +346,12 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		}
 
 		c = MCinitClient(uid, fin, fout);
+		if (c == NULL) {
+			stream_printf(fout, "!Out of client slots\n");
+			stream_flush(fout);
+			GDKfree(command);
+			return;
+		}
 		c->nspace = newModule(NULL, putName("user", 4));
 		c->nspace->outer = mal_scope;
 		c->sessionkey = key;
