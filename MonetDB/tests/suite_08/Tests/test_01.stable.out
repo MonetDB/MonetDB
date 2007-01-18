@@ -238,15 +238,15 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "config",		  "/data/home/boncz/gcc-64-32-debug/etc/MonetDB.conf"													  ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/etc/MonetDB.conf"																																										  ]
 [ "gdk_arch",		  "64bitx86_64-redhat-linux-gnu"																	  ]
 [ "gdk_version",	  "4.14.0"																			  ]
-[ "monet_pid",		  "4253"																		  ]
-[ "prefix",		  "/data/home/boncz/gcc-64-32-debug"															  ]
-[ "exec_prefix",	  "/data/home/boncz/gcc-64-32-debug"															  ]
+[ "monet_pid",		  "11287"																																																														  ]
+[ "prefix",		  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB"																																													  ]
+[ "exec_prefix",	  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB"																																													  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/data/home/boncz/gcc-64-32-debug/var/MonetDB/dbfarm"													  ]
+[ "gdk_dbfarm",		  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/dbfarm"																																										  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "262144"																		  ]
 [ "gdk_vm_minsize",	  "137438953472"																			  ]
@@ -255,23 +255,26 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/data/home/boncz/gcc-64-32-debug/lib/MonetDB:/data/home/boncz/gcc-64-32-debug/lib/MonetDB/lib:/data/home/boncz/gcc-64-32-debug/lib/MonetDB/bin"	  ]
+[ "monet_mod_path",	  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB/bin"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "39419"																		  ]
+[ "mapi_port",		  "38418"																																																														  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
 [ "sql_debug",		  "0"							  ]
-[ "sql_logdir",		  "/data/home/boncz/gcc-64-32-debug/var/MonetDB/sql_logs"												  ]
-[ "xquery_logdir",	  "/data/home/boncz/gcc-64-32-debug/var/MonetDB/xquery_logs"												  ]
+[ "sql_logdir",		  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/sql_logs"																																										  ]
+[ "xquery_logdir",	  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/xquery_logs"																																										  ]
+[ "standoff_ns",	  ""																																																															  ]
+[ "standoff_start",	  "start"																																																														  ]
+[ "standoff_end",	  "end"																																																															  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "mapi_open",		  "false"																		  ]
 [ "xquery_httpd_port",	  "48080"																		  ]
 [ "xquery_output",	  "dm"																			  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
 [ "xquery_procMB",	  "128"																			  ]
-[ "monet_cwd",		  "/data/home/boncz/gcc-64-32-debug/mTests/tests/suite_08"												  ]
+[ "monet_cwd",		  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/mTests/tests/suite_08"																																										  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -301,7 +304,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Tue Jan 16 11:53:15 2007"	  ]
+[ 0,	  "Thu Jan 18 15:34:34 2007"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree
