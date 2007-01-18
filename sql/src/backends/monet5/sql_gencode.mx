@@ -373,9 +373,8 @@ reconnect(MalBlkPtr mb, list *l)
 	char *db_alias = NULL;
 
 	node* n = l->h;	
-	int i = 0, id = 0;
+	int i = 0;
 
-	id = *(int *) n->data;
 	n = n->next;
 	
 	/*create the mserver reconnect*/
@@ -409,7 +408,6 @@ disconnect(MalBlkPtr mb, list *l)
 	InstrPtr q = NULL;
 
 	node* n = l->h;	
-	int id = -1;
 
 	
 	/*create the mserver disconnect*/
@@ -418,7 +416,6 @@ disconnect(MalBlkPtr mb, list *l)
 	setVarType(mb, getArg(q, 0), TYPE_int);
 	
 	if (list_length(l) == 2) {
-		id = *(int *) n->data;
 		q = pushStr(mb, q, (char *) n->next->data);
 	}
 
@@ -445,7 +442,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushInt(mb, q, 1);
 		}	break;
 		case st_connection: {
-			char * db_alias = NULL;
 			if (list_length(s->op1.lval) < 3)
 				disconnect(mb, s->op1.lval);
 			else 
