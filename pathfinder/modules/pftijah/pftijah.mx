@@ -2761,7 +2761,7 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
 	BAT *newpre = NULL;
 	int bs_tidpre, bs_oldindex, bs_oldpre, bs_newindex, bs_newpre, bs_res;
 	int i,j, ressize = 0;
-        BUN lst_tidpre, lst_oldindex, lst_oldpre, lst_copy, lst_newindex, lst_newpre, lst_res, cur_tidpre, cur_oldindex, cur_oldpre;
+        BUN lst_tidpre, lst_oldindex, lst_copy, lst_newindex, lst_newpre, lst_res, cur_tidpre, cur_oldindex, cur_oldpre;
 	oid tid;
 	
 	/* --------------------------- checks ---------------------------------- */
@@ -2811,7 +2811,6 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
 	
 	lst_tidpre = BUNlast(tidpre);
 	lst_oldindex = BUNlast(oldindex) - bs_oldindex; /* last index is not a real term */
-	lst_oldpre = BUNlast(oldpre);
 	lst_newindex = BUNlast(newindex);
 	lst_newpre = BUNlast(newpre);
 	lst_res = BUNlast(res);
@@ -3159,7 +3158,6 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
     si *stack; 
     int stack_top = 0, i;
 	
-    oid *A_cur_oid, *D_cur_oid;
     int SAs;
     int SDs;
     int SRs;
@@ -3194,8 +3192,6 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
     size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
     D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
     D_last_start = (oid *) BUNtail(Dstart, BUNlast(Dstart));  
-    D_cur_oid = (oid *) BUNhead(Dstart,BUNfirst(Dstart));
-    A_cur_oid = (oid *) BUNhead(Astart, BUNfirst(Astart));
     A_cur_start = (oid *) BUNtail(Astart, BUNfirst(Astart));
     A_last_start = (oid *) BUNtail(Astart, BUNlast(Astart));
     dst = BUNlast(res);

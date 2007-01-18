@@ -71,7 +71,7 @@ typedef struct termDbCtx {
 	size_t* hashbatSize;
 } termDbCtx;
 
-extern int termdb_prelude();
+extern int termdb_prelude(void);
 
 extern termDbCtx* tdb_open(char* name);
 extern int	  tdb_insertTerm(termDbCtx* tdb, char* term, oid o, int check);
@@ -225,8 +225,7 @@ int CMDtj_create_termdb(int* p_nFrag, oid* p_maxFragSize) {
         return GDK_FAIL;
     }
 
-    BAT* tags;
-    if ( ! (tags=pftu_create_bat(TERMDBTAGS,TYPE_str,TYPE_oid,1/*persistent*/)) )
+    if ( ! (pftu_create_bat(TERMDBTAGS,TYPE_str,TYPE_oid,1/*persistent*/)) )
                 return GDK_FAIL;
 
     oid lastbat = 0;

@@ -161,14 +161,11 @@ int old_main(BAT* optbat, char* startNodes_name)
     bool stem_stop_query;
     int topic_type;
     int preproc_type;
-    int processing_type;
     int query_num = 1;
     int query_end_num;
     int rewrite_type;
-    int language_type;
     int algebra_type;
     int return_all;
-    int base_type;
     char background_collection[20] = "";
 
     /* Result table name */
@@ -236,10 +233,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     algebra_type        = COARSE2;
     preproc_type        = PLAIN;
     scale_on            = FALSE;
-    processing_type     = NO_STOP_STEM;
     rewrite_type        = BASIC;
-    language_type       = ENGLISH;
-    base_type           = ONE;
     return_all          = FALSE;
     stem_stop_query     = FALSE;
     bool eq_init        = FALSE;
@@ -449,10 +443,8 @@ int old_main(BAT* optbat, char* startNodes_name)
         } else if (strcmp(optName, "scoreBase") == 0) {
             if (strcasecmp(optVal, "ONE") == 0) {
                 MILPRINTF(MILOUT, "scoreBase := 1;\n");
-                base_type = ONE;
             } else {
                 MILPRINTF(MILOUT, "scoreBase := 0;\n");
-                base_type = ZERO;
             }
             
         } else if (strcmp(optName, "stem_stop_query") == 0) {
