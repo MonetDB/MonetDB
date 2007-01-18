@@ -47,6 +47,8 @@ module 'pftijah'
 [ "tj_init_collection(str, BAT[str,str]) : void"															  ]
 [ "tj_init_global(BAT[str,str]) : void"																	  ]
 [ "tj_normalizeTerm(str, str) : str"																	  ]
+[ "tj_ping() : void"																			  ]
+[ "tj_setCollName(str) : void"																		  ]
 [ "treemergejoin_sort(BAT[void,oid], BAT[void,int], BAT[void,oid]) : BAT[oid,oid]"											  ]
 
 quit();
