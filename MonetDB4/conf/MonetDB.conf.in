@@ -132,6 +132,12 @@ xquery_cacheMB=100
 #limit the function cache in memory to 128MB
 xquery_procMB=128                    
 
+# standoff annotation XPath extension
+#standoff_ns=http://monetdb.cwi.nl/standoff
+standoff_ns=
+standoff_start=start
+standoff_end=end
+
 # Place to store transaction logs
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
