@@ -206,6 +206,18 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 
 var verbose := false;
 
+
+ADDHELP("tj_ping", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+- none.\n\
+DESCRIPTION:\n\
+debugging, when this help is removed Mtest/Mapi fails ",
+"pftijah");
+PROC tj_ping() : void :=
+{
+  printf("# *** ping *****\n");
+}
+
 ADDHELP("tj_init_global", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
 - optional BAT[str,str] param: initialization parameter for global pftijah.\n\
@@ -423,6 +435,7 @@ PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
 {
     bat("tj_globalTerms").access(BAT_WRITE);
     bat("tj_globalTags").access(BAT_WRITE);
+    # var cb := _tj_collection(collName);
     uri@batloop() {
       _tj_add2collection(collName,_tj_collection(collName),$h,$t,store);
     }
@@ -558,6 +571,12 @@ PROC tj_dump_collection(str collName) : void
 #                                                                   #
 #####################################################################
 
+ADDHELP("tj_setCollName", "flokstra & rode", "Jan 2007",
+"PARAMETERS:\n\
+- the name of the collection to be set.\n\
+DESCRIPTION:\n\
+debugging, when this help is removed Mtest/Mapi fails ",
+"pftijah");
 # SUGAR: this function should not be necessary in the future but it
 #        first has to be removed from the generated scripts.
 PROC tj_setCollName(str name) : void := 
