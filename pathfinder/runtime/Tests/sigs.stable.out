@@ -30,6 +30,7 @@ module 'pf_support'
 [ "attr_constr(BAT[void,oid], BAT[void,str], BAT[void,BAT]) : BAT[void,BAT]"										  ]
 [ "bat2constant(any) : any"																  ]
 [ "child(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"							  ]
+[ "cleantmpdir(lng) : void"																  ]
 [ "combine_text_string(BAT[void,oid], BAT[void,oid], BAT[void,str], int) : BAT[oid,str]"						  ]
 [ "constant2bat(any) : BAT[any,any]"															  ]
 [ "correct_sizes(BAT[void,oid], BAT[void,oid], BAT[void,int]) : BAT[void,int]"								  ]
@@ -120,7 +121,6 @@ module 'pf_standoff'
 # signature												  # name
 # str													  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ "__region_extract(BAT[oid,BAT], BAT[lock,BAT], oid, str) : void"						  ]
 [ "blob(BAT[void,int], BAT[void,int], str) : BAT[void,str]"						  ]
 [ "blob(BAT[void,lng], BAT[void,lng], str) : BAT[void,str]"						  ]
 [ "ll_reject_narrow_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[oid,oid]"	  ]
@@ -131,6 +131,7 @@ module 'pf_standoff'
 [ "ll_select_narrow_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[oid,oid]"	  ]
 [ "ll_select_wide_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[oid,oid]"	  ]
 [ "ll_select_wide_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[oid,oid]"	  ]
+[ "regionindex_extract(BAT[void,BAT], oid, str) : void"								  ]
 [ "reject_narrow_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[void,oid]"	  ]
 [ "reject_narrow_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[void,oid]"	  ]
 [ "reject_wide_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[void,oid]"	  ]
