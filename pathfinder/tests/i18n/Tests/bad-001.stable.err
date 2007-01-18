@@ -61,15 +61,15 @@ stderr of test 'bad-001` in directory 'tests/i18n` itself:
 # 12:34:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35551 bad-001.xq
 # 12:34:20 >  
 
-MAPI  = monetdb@localhost:35551
+MAPI  = monetdb@localhost:36098
 QUERY = (: This file is UTF-8 encoded.  Be careful when editing this file! :)
         xquery version '1.0' encoding 'utf-8';
         
         (: the Ã— symbol is not a valid Letter :)
         doc('i18n.xml')/Ã—
-ERROR = !syntax error, unexpected invalid_character on line 5, column 19 (next token is `Ã')
+ERROR = !parse error: syntax error, unexpected invalid_character on line 5, column 19 (next token is `Ã')
         !parse error: XQuery parsing failed
-        !# halted in /Users/monet/Monet/pathfinder/compiler/parser/parser.y (PFparse), line 2880
+        !# halted in /local_tmp/try_new/pathfinder/compiler/parser/parser.y (PFparse), line 2867
 
 # 12:34:20 >  
 # 12:34:20 >  Done.

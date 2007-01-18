@@ -2817,11 +2817,13 @@ add_to_module_wl (char*id, char *ns, char *uri)
 void pferror (const char *s)
 {
     if (pftext && *pftext)
-        PFlog ("%s on line %d, column %d (next token is `%s')",
+        PFinfo (OOPS_PARSE,
+                "%s on line %d, column %d (next token is `%s')",
                 s, cur_row, cur_col,
                 pftext);
     else
-        PFlog ("%s on line %d, column %d",
+        PFinfo (OOPS_PARSE,
+                "%s on line %d, column %d",
                 s, cur_row, cur_col);
 }
 

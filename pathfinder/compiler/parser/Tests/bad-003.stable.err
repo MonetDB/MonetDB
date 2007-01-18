@@ -5,7 +5,7 @@ stderr of test 'bad-003` in directory 'compiler/parser` itself:
 # 12:36:18 >  Mtimeout -timeout 60 ./bad-003 bad-003 
 # 12:36:18 >  
 
-syntax error, unexpected invalid_character, expecting ";" on line 1, column 30 (next token is `e')
+parse error: syntax error, unexpected invalid_character, expecting ; on line 1, column 30 (next token is `e')
 parse error: XQuery parsing failed
 # halted in parser.y (PFparse), line 2237
 

@@ -5,7 +5,7 @@ stderr of test 'bad-012` in directory 'compiler/parser` itself:
 # 17:18:36 >  Mtimeout -timeout 60 ./bad-012 bad-012 
 # 17:18:36 >  
 
-syntax error, unexpected QName, expecting "=" on line 1, column 38 (next token is `attribute')
+parse error: syntax error, unexpected QName, expecting = on line 1, column 38 (next token is `attribute')
 parse error: XQuery parsing failed
 # halted in parser.y (PFparse), line 2868
 

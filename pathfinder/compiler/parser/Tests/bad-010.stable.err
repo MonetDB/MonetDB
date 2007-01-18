@@ -5,7 +5,7 @@ stderr of test 'bad-010` in directory 'compiler/parser` itself:
 # 17:18:35 >  Mtimeout -timeout 60 ./bad-010 bad-010 
 # 17:18:35 >  
 
-syntax error, unexpected invalid_character, expecting $end on line 2, column 1 (next token is `'')
+parse error: syntax error, unexpected invalid_character, expecting $end on line 2, column 1 (next token is `'')
 parse error: XQuery parsing failed
 # halted in parser.y (PFparse), line 2868
 

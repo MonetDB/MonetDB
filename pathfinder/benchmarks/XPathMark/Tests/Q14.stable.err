@@ -68,11 +68,11 @@ stderr of test 'Q14` in directory 'benchmarks/XPathMark` itself:
 # 18:38:43 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=50144 Q14.xq
 # 18:38:43 >  
 
-MAPI  = monetdb@localhost:35613
+MAPI  = monetdb@localhost:34729
 QUERY = doc("document_1.xml")//person[namespace::xml]
-ERROR = !syntax error, unexpected invalid_character, expecting "]" on line 1, column 41 (next token is `:')
+ERROR = !parse error: syntax error, unexpected invalid_character, expecting ] on line 1, column 41 (next token is `:')
         !parse error: XQuery parsing failed
-        !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/parser/parser.y (PFparse), line 2868
+        !# halted in /local_tmp/try_new/pathfinder/compiler/parser/parser.y (PFparse), line 2867
 
 # 18:38:44 >  
 # 18:38:44 >  Done.

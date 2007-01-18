@@ -5,7 +5,7 @@ stderr of test 'bad-011` in directory 'compiler/parser` itself:
 # 17:18:36 >  Mtimeout -timeout 60 ./bad-011 bad-011 
 # 17:18:36 >  
 
-syntax error, unexpected invalid_character, expecting $end on line 2, column 37 (next token is `c')
+parse error: syntax error, unexpected invalid_character, expecting $end on line 2, column 37 (next token is `c')
 parse error: XQuery parsing failed
 # halted in parser.y (PFparse), line 2868
 

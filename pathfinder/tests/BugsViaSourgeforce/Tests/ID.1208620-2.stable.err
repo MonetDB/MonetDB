@@ -67,11 +67,11 @@ stderr of test 'ID.1208620-2` in directory 'tests/BugsViaSourgeforce` itself:
 # 23:18:14 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=59628 ID.1208620-2.xq
 # 23:18:14 >  
 
-MAPI  = monetdb@localhost:35613
+MAPI  = monetdb@localhost:36098
 QUERY = <a>&l;</a>
-ERROR = !syntax error, unexpected invalid_character, expecting "</" on line 1, column 6 (next token is `&')
+ERROR = !parse error: syntax error, unexpected invalid_character, expecting </ on line 1, column 6 (next token is `&')
         !parse error: XQuery parsing failed
-        !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/parser/parser.y (PFparse), line 2868
+        !# halted in /local_tmp/try_new/pathfinder/compiler/parser/parser.y (PFparse), line 2867
 
 # 23:18:14 >  
 # 23:18:14 >  Done.
