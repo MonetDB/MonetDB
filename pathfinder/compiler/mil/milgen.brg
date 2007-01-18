@@ -2499,6 +2499,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                          p->sem.sort_distinct.ord,
                                          i))) {
                         if (!initialized) {
+                            /* we need a hit for the first order criterion */
+                            assert (!i);
+                            
                             first_sort_var = env_mvar (
                                                  rel->env,
                                                  PFord_order_col_at (
@@ -2567,9 +2570,11 @@ reduce (PFpa_op_t * p, int goalnt)
                                        var (env_at (rel->env,
                                                     i).mvar->name))));
 
-                 /* we know that the first sort criterion certainly 
-                    is sorted */
-                 if (first_sort_var == env_at (rel->env,i).mvar)
+                 /* we know that the first sort criterion certainly is sorted
+                    -- assert_order however only copes with ascending order */
+                 if (first_sort_var == env_at (rel->env,i).mvar &&
+                     PFord_order_dir_at (p->sem.sort_distinct.ord, 0)
+                     == DIR_ASC)
                      execute (
                           assgn (var (out->name),
                                  assert_order (var (out->name))));
@@ -2608,6 +2613,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                          p->sem.sortby.required,
                                          i))) {
                         if (!initialized) {
+                            /* we need a hit for the first order criterion */
+                            assert (!i);
+                            
                             first_sort_var = env_mvar (
                                                  L(p)->env,
                                                  PFord_order_col_at (
@@ -2662,9 +2670,11 @@ reduce (PFpa_op_t * p, int goalnt)
                                   var (v->name),
                                   var (env_at (L(p)->env, i).mvar->name))));
                       
-                 /* we know that the first sort criterion certainly 
-                    is sorted */
-                 if (first_sort_var == env_at (L(p)->env,i).mvar)
+                 /* we know that the first sort criterion certainly is sorted
+                    -- assert_order however only copes with ascending order */
+                 if (first_sort_var == env_at (L(p)->env,i).mvar &&
+                     PFord_order_dir_at (p->sem.sort_distinct.ord, 0)
+                     == DIR_ASC)
                      execute (
                           assgn (var (a->name),
                                  assert_order (var (a->name))));
