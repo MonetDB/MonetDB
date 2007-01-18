@@ -185,7 +185,7 @@ module(xtables);
 
 # FIXME/TODO: the attribute-names should be set by a 'declare option' statement inside
 # an XQuery expression
-var region_namespace := ""; #monet_environment.find("standoff_ns");
+var region_namespace := monet_environment.find("standoff_ns");
 var region_start_attr_tag := monet_environment.find("standoff_start");
 var region_end_attr_tag := monet_environment.find("standoff_end");
 
