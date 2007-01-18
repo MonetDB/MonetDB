@@ -88,3 +88,4 @@ clear_attrs_on_delete.SF-1612739-c
 predicate_rewriting.SF-1635936
 predicate_selects_too_few_nodes.SF-1636588
 predicate_selects_too_few_nodes.SF-1636588_ws
+seqcast_opt_int_to_numeric.SF-1637867
