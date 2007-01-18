@@ -445,7 +445,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (list_length(s->op1.lval) < 3)
 				disconnect(mb, s->op1.lval);
 			else 
-				db_alias = reconnect(mb, s->op1.lval);
+				reconnect(mb, s->op1.lval);
 		}	break;
 		case st_sql:{
 			int o1 = _dumpstmt(sql, mb, s->op1.stval);
