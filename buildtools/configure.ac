@@ -28,7 +28,7 @@ AC_PATH_PROGS([PYTHON], [python python2 python2.3 python2.4],
 
 # HACK: because autoconf doesn't want to run configure with "added
 # arguments", we just call it ourselves here.  Pretty dirty, I know.
-(mkdir mel ; cd mel && eval "`cd .. && cd ${srcdir} && pwd`/mel/configure ${ac_configure_args} --with-mx=../Mx/Mx")
+(test -d mel || mkdir mel ; cd mel && eval "`cd .. && cd ${srcdir} && pwd`/mel/configure ${ac_configure_args} --with-mx=../Mx/Mx")
 
 AC_CONFIG_FILES([Makefile autogen/Makefile conf/Makefile])
 AM_CONFIG_HEADER([dummy.h])
