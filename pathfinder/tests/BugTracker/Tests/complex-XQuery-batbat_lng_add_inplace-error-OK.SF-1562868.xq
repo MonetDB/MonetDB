@@ -93,13 +93,13 @@ declare function constructIntPoss($all as element()*, $ptlist as element(list))
    for $pt in $ptlist/cand
    return
       if (count($pt/@b) gt 0)
-      then integrate($all,exactly-one($all[($pt/@a) cast as xs:integer?])
-                         ,exactly-one($all[($pt/@b) cast as xs:integer?]))
+      then integrate($all,exactly-one($all[number ($pt/@a)])
+                         ,exactly-one($all[number ($pt/@b)]))
 (:
-      then <integrate><one>{exactly-one($all[($pt/@a) cast as xs:integer?])}</one>
-                      <two>{exactly-one($all[($pt/@b) cast as xs:integer?])}</two></integrate>
+      then <integrate><one>{exactly-one($all[number ($pt/@a)])}</one>
+                      <two>{exactly-one($all[number ($pt/@b)])}</two></integrate>
 :)
-      else <prob><poss prob="1.0">{$all[($pt/@a) cast as xs:integer?]}</poss></prob>
+      else <prob><poss prob="1.0">{$all[number ($pt/@a)]}</poss></prob>
 };
 
 declare function integrate($all as element()*

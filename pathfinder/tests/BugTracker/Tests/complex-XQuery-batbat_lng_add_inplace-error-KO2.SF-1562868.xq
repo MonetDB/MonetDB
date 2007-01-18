@@ -45,7 +45,7 @@ declare function constructPossibility($all as node()*,$l as element(list))
    for $cand in $l/cand
    return
       if (count($cand/@b) gt 0)
-      then let $e1:=exactly-one($all[($cand/@a) cast as xs:integer?])
+      then let $e1:=exactly-one($all[number ($cand/@a)])
            return integrate_e($e1,$e1)
       else <prob></prob>
 };
