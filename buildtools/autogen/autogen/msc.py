@@ -428,7 +428,7 @@ def msc_scripts(fd, var, scripts, msc):
     if scripts.has_key("EXT"):
         ext = scripts["EXT"] # list of extentions
 
-    sd = "SCRIPTSDIR"
+    sd = "bindir"
     if scripts.has_key("DIR"):
         sd = scripts["DIR"][0] # use first name given
     sd = msc_translate_dir(sd, msc)
@@ -471,7 +471,7 @@ def msc_scripts(fd, var, scripts, msc):
 # list of headers to install
 def msc_headers(fd, var, headers, msc):
 
-    sd = "HEADERSDIR"
+    sd = "includedir"
     if headers.has_key("DIR"):
         sd = headers["DIR"][0] # use first name given
     sd = msc_translate_dir(sd, msc)

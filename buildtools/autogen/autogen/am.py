@@ -292,7 +292,7 @@ def am_scripts(fd, var, scripts, am):
     if scripts.has_key("EXT"):
         ext = scripts["EXT"] # list of extentions
 
-    sd = "SCRIPTSDIR"
+    sd = "bindir"
     if scripts.has_key("DIR"):
         sd = scripts["DIR"][0] # use first name given
     sd = am_translate_dir(sd, am)
@@ -364,7 +364,7 @@ def am_scripts(fd, var, scripts, am):
 # list of headers to install
 def am_headers(fd, var, headers, am):
 
-    sd = "HEADERSDIR"
+    sd = "includedir"
     if headers.has_key("DIR"):
         sd = headers["DIR"][0] # use first name given
     sd = am_translate_dir(sd, am)
