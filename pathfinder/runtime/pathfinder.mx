@@ -305,38 +305,41 @@ concurrent updates.
 @:ws_@1(PID_MAP,           30, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(ATTR_OWN_PRIVATE,  31, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(ATTR_OWN_SHARED,   32, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(OPEN_NAME,         33, void, str, void, void, oid_nil)@
-@:ws_@1(OPEN_DOCID,        34, void, oid, void, void, oid_nil)@
-@:ws_@1(OPEN_CONT,         35, void, oid, void, void, oid_nil)@
-@:ws_@1(CONT_COLL,         36, void, oid, void, void, oid_nil)@
-@:ws_@1(CONT_NAME,         37, void, str, void, void, oid_nil)@
-@:ws_@1(CONT_RUNTIME,      38, void, bat, void, void, oid_nil)@
-@:ws_@1(CONT_LOCKED,       39, void, lock,void, void, oid_nil)@
+@:ws_@1(REGION_PRE,        33, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(REGION_START,      34, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(REGION_END,        35, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(OPEN_NAME,         36, void, str, void, void, oid_nil)@
+@:ws_@1(OPEN_DOCID,        37, void, oid, void, void, oid_nil)@
+@:ws_@1(OPEN_CONT,         38, void, oid, void, void, oid_nil)@
+@:ws_@1(CONT_COLL,         39, void, oid, void, void, oid_nil)@
+@:ws_@1(CONT_NAME,         40, void, str, void, void, oid_nil)@
+@:ws_@1(CONT_RUNTIME,      41, void, bat, void, void, oid_nil)@
+@:ws_@1(CONT_LOCKED,       42, void, lock,void, void, oid_nil)@
 
-@:ws_@1(_MAP_PID,          40, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_SIZE,         41, void, bat, void,  int, PRE_BASE)@
-@:ws_@1(_RID_LEVEL,        42, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_PROP,         43, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_KIND,         44, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_NID,          45, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_NID_RID,          46, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_FRAG_ROOT,        46, void, bat,  oid,  oid, oid_nil)@
-@:ws_@1(_QN_HISTOGRAM,     48, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX_URI_LOC,49, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI_LOC,       50, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX,        51, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI,           52, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_LOC,           53, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TEXT,        54, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_COM,         55, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_INS,         56, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TGT,         57, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_VAL,         58, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_ID_NID,           59, void, bat,  str,  oid, oid_nil)@
-@:ws_@1(_IDREF_NID,        60, void, bat,  str,  oid, oid_nil)@
-@:ws_@1(_ATTR_OWN,         61, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_QN,          62, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_PROP,        63, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_MAP_PID,          43, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_SIZE,         44, void, bat, void,  int, PRE_BASE)@
+@:ws_@1(_RID_LEVEL,        45, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_PROP,         46, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_KIND,         47, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_NID,          48, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_NID_RID,          49, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_FRAG_ROOT,        50, void, bat,  oid,  oid, oid_nil)@
+@:ws_@1(_QN_HISTOGRAM,     51, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX_URI_LOC,52, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI_LOC,       53, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX,        54, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI,           55, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_LOC,           56, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TEXT,        57, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_COM,         58, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_INS,         59, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TGT,         60, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_VAL,         61, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_ID_NID,           62, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(_IDREF_NID,        63, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(_ATTR_OWN,         64, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_QN,          65, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_PROP,        66, void, bat, void,  oid, PRE_BASE)@
 @-
 The bottom segment are the master copies of the top segment.
 The middle segment is private to the query.
@@ -346,7 +349,7 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 BEWARE: the logger version number below needs to be incremented whenever the working set schema is changed.
 
 @= ws_decl
-@:ws_@1_decl(WS_SIZE, 64)@
+@:ws_@1_decl(WS_SIZE, 67)@
 @:ws_@1_decl(QNAME,    2)@
 @:ws_@1_decl(BOOL,     3)@
 @:ws_@1_decl(INT,      4)@
@@ -391,16 +394,17 @@ const WS_MAXID         := 1LL << 62;
 # slots in the col_runtime bats
 const RT_LOCK_FREELIST := 0; # free page ids
 const RT_NID_FREELIST  := 1; # free nids 
-const RT_PAGE_WS       := 2; # pages modified by transactions 
-const RT_ATTR_WS       := 3; # attributes modified by transactions
-const RT_ATTR_OWN      := 4; # a shared (old) ATTR_OWN bat with hash-table on OWN
-const RT_QN_NID        := 5; # qn-nid nsloc index, with hash-table on QN
-const RT_QN_NID_INS    := 6; # qn-nid nsloc index: extra items
-const RT_QN_NID_DEL    := 7; # qn-nid nsloc index: deleted items
-const RT_QN_NID_UNQ    := 8; # qn-nid nsloc index: subset of indexed qns (small)
-const RT_REGION_PRE    := 9;
-const RT_REGION_START  := 10;
-const RT_REGION_END    := 11;
+const RT_REGION_WSID   := 2; # wsid that is allowed to make the region index
+const RT_REGION_PRE    := 3; # standoff pre numbers
+const RT_REGION_START  := 4; # standoff start offset
+const RT_REGION_END    := 5; # standoff end numbers
+const RT_PAGE_WS       := 6; # pages modified by transactions 
+const RT_ATTR_WS       := 7; # attributes modified by transactions
+const RT_ATTR_OWN      := 8; # a shared (old) ATTR_OWN bat with hash-table on OWN
+const RT_QN_NID        := 9; # qn-nid nsloc index, with hash-table on QN
+const RT_QN_NID_INS    := 10;# qn-nid nsloc index: extra items
+const RT_QN_NID_DEL    := 11;# qn-nid nsloc index: deleted items
+const RT_QN_NID_UNQ    := 12;# qn-nid nsloc index: subset of indexed qns (small)
 
 # for coll_lock_[un]set, you can request SHORTLOCK, LONGLOCK or BOTHLOCK mode
 const COLL_SHORTLOCK   := 1;
@@ -625,13 +629,21 @@ PROC pf_logmanager() : void {
     while(true) {
         var changes := logger_changes(pf_logger);
         var delta := changes - base;
-        if (((delta < 0) or (delta > 100000)) and ((cnt :+= 1) > 10)) { 
+        if (((cnt :+= 1) % 10) = 0) { 
+            cleantmpdir((msec() / 1000LL) - 3600LL);
+        }
+        if (((delta < 0) or (delta > 100000)) and (cnt > 10)) { 
             pf_logflush(0LL);
-            cnt := 0; base = changes;
+            base = changes;
+            cnt := 0;
         } 
         sleep(30);  
     }
 }
+
+# delete tmp files in DBFARM/DBNAME/tmp
+cleantmpdir(msec() / 1000LL);
+
 # synchronize the starting of the log
 fork(pf_logmanager());
 
@@ -673,7 +685,7 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_name        := new(oid,str).persists(true).rename("doc_name");
     doc_location    := new(oid,str).persists(true).rename("doc_location");
     doc_timestamp   := new(oid,timestamp).persists(true).rename("doc_timestamp");
-    uri_lifetime    := new(str,lng).persists(true).rename("uri_lifetime");
+    uri_lifetime    := new(str,lng).insert("tmp", 1LL).persists(true).rename("uri_lifetime");
     doc_collection.insert(DOCID_CURID_HACK, DOCID_MIN); # hack: store next oid as in invalid tuple
     doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
     pf_checkpoint(bat(void,str).append("uri_lifetime"));
@@ -693,7 +705,6 @@ var ws_overlaps_ws := bat("ws_overlaps_ws");
                         # bat[lng,lng] execution of query X overlapped query Y and they used a common collection
 
 var empty_bat        := bat(void,oid).seqbase(0@0).access(BAT_READ).rename("empty_bat"); 
-var empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
 var empty_page       := bat(void,int,REMAP_PAGE_SIZE).rename("empty_page"); 
                         # empty pages to append onto rid_* master bats
 {   # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
@@ -1267,8 +1278,13 @@ PROC ws_new(oid id,
 PROC ws_create() : BAT[void,bat] { return ws_create(0); } # still exists for algebra
 PROC ws_create(int update) : BAT[void,bat]
 {
-    # only instantiates the default views of the ws-bats (not the master bats)
+    # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
     var ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
+    var id := and(lng(newoid(1)), 2147483647LL);
+    var wsid := <<(id, 32) + (lng(update) << 30) + lng(ws);
+    ws.access(BAT_READ).rename(str(wsid));
+
+    # only instantiates the default views of the ws-bats (not the master bats)
     ws.fetch(PID_MAP).append(ws.fetch(MAP_PID).fetch(WS));
     ws.fetch(_MAP_PID).append(ws.fetch(MAP_PID).fetch(WS));
     ws.fetch(ATTR_OWN_SHARED).append(empty_bat);
@@ -1277,7 +1293,12 @@ PROC ws_create(int update) : BAT[void,bat]
     # the temporary document container has some bogus values here
     ws.fetch(CONT_COLL).seqbase(0@0).insert(0@0,oid_nil);
     ws.fetch(CONT_NAME).seqbase(0@0).insert(0@0,str_nil);
-    ws.fetch(CONT_RUNTIME).seqbase(0@0).insert(0@0,empty_runtime);
+    ws.fetch(CONT_RUNTIME).seqbase(0@0).insert(0@0,runtime(lock_nil,lock_nil));
+
+    # add empty region index entries
+    ws.fetch(REGION_PRE).append(empty_bat);
+    ws.fetch(REGION_START).append(empty_bat);
+    ws.fetch(REGION_END).append(empty_bat);
 
     # add a (bogus) collection root pre=0@0 to the temporary document container
     ws.fetch(PRE_SIZE).fetch(WS).append(int_nil);
@@ -1291,11 +1312,6 @@ PROC ws_create(int update) : BAT[void,bat]
     mirror(ws_rid).leftfetchjoin(ws).[insert](0@0, [fetch](ws_rid.leftfetchjoin(ws), 0));
     mirror(ws_mem).leftfetchjoin(ws).[insert](0@0, [fetch](ws_mem.leftfetchjoin(ws), 0));
 
-    # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
-    var id := lng(newoid(1));
-    var wsid := <<(and(id, 2147483647LL), 32) + (lng(update) << 30) + lng(ws);
-
-    ws.access(BAT_READ).rename(str(wsid));
     pflock_begin(wsid);
 
     if (bit(and(update,2))) {
@@ -1461,8 +1477,9 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         ins := empty_bat;
         del := empty_bat;
         own := empty_bat;
-        if (runtime != empty_runtime) { # a non temporary document
+        if (coll_oid >= DOCID_MIN) {
             var free_nids := empty_bat;
+            var suffix := str(abs(int(idx)));
             if (isolate) { # new writable empty bats
                 own := ws.fetch(ATTR_OWN).fetch(cont).copy(); 
                 reverse(own).accbuild("hash");
@@ -1488,16 +1505,16 @@ PROC __ws_opencoll(BAT[void,bat] ws,
                 del := bat(oid,oid);
                 page_ws := bat(oid,lng);
                 attr_ws := bat(oid,lng);
+
+                # to ease debugging and monitoring, we give these potentially long-lived bats a name
+                free_nids.bbpname(prefix + "_free_nids" + suffix);
+                ins.bbpname(prefix + "_qn_nid_ins" + suffix);
+                del.bbpname(prefix + "_qn_nid_del" + suffix);
+                own.bbpname(prefix + "_attr_own" + suffix);
+                page_ws.bbpname(prefix + "_page_ws" + suffix);
+                attr_ws.bbpname(prefix + "_attr_ws" + suffix);
             }
-            # to ease debugging and monitoring, we give these potentially long-lived bats a name
-            var suffix := str(abs(int(idx)));
-            free_nids.bbpname(prefix + "_free_nids" + suffix);
-            page_ws.bbpname(prefix + "_page_ws" + suffix);
-            attr_ws.bbpname(prefix + "_attr_ws" + suffix);
-            own.bbpname(prefix + "_attr_own" + suffix);
             idx.bbpname(prefix + "_qn_nid" + suffix);
-            ins.bbpname(prefix + "_qn_nid_ins" + suffix);
-            del.bbpname(prefix + "_qn_nid_del" + suffix);
             unq.bbpname(prefix + "_qn_nid_unq" + suffix);
 
             # insert new index
@@ -1517,6 +1534,19 @@ PROC __ws_opencoll(BAT[void,bat] ws,
             runtime.insert(lock_nil,unq);
         }
     }
+    # Set a unique number (mangled from the wsid in the runtime).
+    # it will be zapped by any update. therefore, precenseo of this id 
+    # proves absence of updates. We enforce an odd mangled number (or with 1)
+    # to avoid ever confusing such numbers with real lock values
+    # (the lock values in RT_LOCK_FREELIST and RT_NID_FREELIST runtime BUNs are 
+    #  sometimes used as lookup keys -- should not collide with this mangled id). 
+    reverse(runtime).replace(colname_locks, lock((ws_id(ws) >> 32) or 1LL));
+
+    # do not create the region index yet, but claim the right to do so 
+    ws.fetch(REGION_PRE).append(empty_bat);
+    ws.fetch(REGION_START).append(empty_bat);
+    ws.fetch(REGION_END).append(empty_bat);
+
     # for accessing ATTR_OWN, we split it in an old (shared, hash-indexed) and new part.
     ws.fetch(ATTR_OWN_SHARED).append(own);
     ws.fetch(ATTR_OWN_PRIVATE).append(ws.fetch(ATTR_OWN).fetch(cont).slice(count(own),int_nil));
@@ -1594,7 +1624,7 @@ PROC ws_opencoll(BAT[void,BAT] ws,
                  BAT[str,bat] docBAT, 
                  str name, oid coll_oid) : oid
 {
-    var ws_logtime := usec(), err, cont, coll_shortlock, runtime := empty_runtime;
+    var ws_logtime := usec(), err, cont, coll_shortlock, runtime;
 
     if (coll_oid >= DOCID_MIN) {
          lock_set(pf_short);
@@ -1608,6 +1638,8 @@ PROC ws_opencoll(BAT[void,BAT] ws,
          lock_set(coll_shortlock); # never lock a collection inside the short lock
          if (ws_log_active) 
              ws_log(ws, sprintf("opencoll(%s) shortlock%s\n", name, str(ws_logtime - usec())));
+    } else {
+         runtime := runtime(lock_nil,lock_nil);
     }
     err := CATCH(cont := __ws_opencoll(ws, runtime, docBAT, name, coll_oid));
     if (coll_oid >= DOCID_MIN) {
@@ -1630,20 +1662,36 @@ The runtime-BATs are BAT[lock,bat]s, in which order does matter. We fetch
 BUNs by position using RT_* constants. The idea is to store per
 collection a number of specific locks and index structures (BATs).
 
-  fetch constant   runtime tuple 
-  ================ ==========
-0 RT_LOCK_FREELIST [lock,bat] 
-                   the lock and a BAT with a list of free page ids.
-1 RT_NID_FREELIST  [lock,bat] 
-                   nil lock and a BAT with a list of free NIDs
-2 RT_QN_NID        [nil, bat] 
-                   the main BAT[oid,oid] object shared by all concurrent queries
-3 RT_QN_NID_INS    [nil, bat] 
-                   a private BAT[oid,oid] with all nodes that got this QN  during this query
-4 RT_QN_NID_DEL    [nil, bat] 
-                   a private BAT[oid,oid] with all nodes that no longer have this QN since this query.
-5 RT_QN_NID_UNQ    [nil, bat] 
-                   a BAT[oid,void] list of QNs which are interesting to index (i.e. MlogM < N).
+  fetch constant    runtime tuple 
+  ================  ==========
+0  RT_LOCK_FREELIST [lock,bat] 
+                    the lock and a BAT with a list of free page ids.
+1  RT_NID_FREELIST  [lock,bat] 
+                    nil lock and a BAT with a list of free NIDs
+2  RT_REGION_WSID   [wsid,colname_locks] 
+                    lock(wsid) that last opened this collection (pf_standoff)
+                    colname_locks does not have a real role here (just used as an id)
+3  RT_REGION_PRE    [lock,bat] 
+                    nil lock and a BAT with sorted PRE list (pf_standoff)
+4  RT_REGION_START  [lock,bat] 
+                    nil lock and a BAT with start attr values (pf_standoff)
+5  RT_REGION_END    [lock,bat] 
+                    nil lock and a BAT with end attr values (pf_standoff)
+------------------------- start of optional part ---------------------
+6  RT_PAGE_WS       [lock,bat] 
+                    nil lock and a BAT with (cont,modified pages)
+7  RT_ATTR_WS       [lock,bat] 
+                    nil lock and a BAT with (cont,modified attrs)
+8  RT_ATTR_OWN      [lock,bat] 
+                    nil lock and a copy of the ATTR_OWN with hash table
+9  RT_QN_NID        [nil, bat] 
+                    the main BAT[oid,oid] object shared by all concurrent queries
+10 RT_QN_NID_INS    [nil, bat] 
+                    a private BAT[oid,oid] with all nodes that got this QN  during this query
+11 RT_QN_NID_DEL    [nil, bat] 
+                    a private BAT[oid,oid] with all nodes that no longer have this QN since this query.
+12 RT_QN_NID_UNQ    [nil, bat] 
+                    a BAT[oid,void] list of QNs which are interesting to index (i.e. MlogM < N).
 
 The first entry head holds a "short" collection lock (coll_shortlock, in much of the
 MIL code). It is used to guard the master BAT images, while isolated
@@ -1696,10 +1744,21 @@ concurrent queries, _INS and _DEL are flushed with the new changes into the
 QN_NID master.
 @mil
 # get a handle to the runtime-BAT (and create it if not there yet)
+PROC runtime(lock shortlock, lock longlock) : BAT[lock,bat] 
+{
+    var runtime := bat(lock,bat).insert(shortlock,empty_bat)
+                                .insert(longlock, empty_bat)
+                                .insert(lock(0),  colname_locks)
+                                .insert(RT_REGION_PRE_LOCK, empty_bat)
+                                .insert(RT_REGION_START_LOCK, empty_bat)
+                                .insert(RT_REGION_END_LOCK, empty_bat);
+    runtime.bbpname("runtime" + str(abs(int(runtime))));
+    return runtime;
+}
+
 PROC _runtime_create(str colname, lock shortlock, lock longlock) : BAT[lock,bat] 
 {
-    var runtime := bat(lock,bat).insert(shortlock,empty_bat).insert(longlock, empty_bat);
-    runtime.bbpname("runtime" + str(abs(int(runtime))));
+    var runtime := runtime(shortlock, longlock);
     colname_runtime.insert(colname, runtime);
     return runtime;
 }
@@ -1806,6 +1865,7 @@ PROC __runtime_maintain(lng wsid,
     # mark the region index invalid
     # for now, we don't try to maintain it over updates
     # any subsequent queries need to first recreate the index
+    reverse(runtime).replace(colname_locks, lock(0LL));
     runtime.replace(RT_REGION_PRE_LOCK, empty_bat);
     runtime.replace(RT_REGION_START_LOCK, empty_bat);
     runtime.replace(RT_REGION_END_LOCK, empty_bat);
@@ -2458,11 +2518,11 @@ PROC ws_open(BAT[void,BAT] ws,
         var docid_base:= oid(count(open_docid));
         var doCommit  := not(isnil(min(timestamps)));
         var coll_oid  := shred_into_docBAT(docBAT, locations, names, timestamps, colname, 
-                                           oid_nil,       # create new collection
-                                           empty_runtime, # no index to maintain 
-                                           docid_base,    # transient docid
-                                           lng(0),        # read-only (freespace=0)
-                                           doCommit,      # cache it persistently? 
+                                           oid_nil,                    # create new collection
+                                           runtime(lock_nil,lock_nil), # no index to maintain 
+                                           docid_base,                 # transient docid
+                                           lng(0),                     # read-only (freespace=0)
+                                           doCommit,                   # cache it persistently? 
                                            stream_nil, wsid); 
         var cont      := ws_opencoll(ws, docBAT, colname, coll_oid);
         if (doCommit) # persistent? (probably -- could have backed off -- should not matter)
@@ -2643,7 +2703,7 @@ PROC __shred_into_docBAT(BAT[str,bat] docBAT,
     root_frag.replace(root_frag.ord_uselect(TEMP_DOC).mark(docid_base), true);
 
     # index the new document(s)
-    if (runtime != empty_runtime) {
+    if (coll_oid >= DOCID_MIN) {
         var commitbat := __runtime_addchunk(wsid, colname, coll_oid, runtime, docBAT.fetch(PRE_NID), docBAT.fetch(PRE_KIND), docBAT.fetch(PRE_PROP), pre, updatable);
         if (not(isnil(commitbat))) docBAT.insert(commitbat, bat(commitbat)); 
     }

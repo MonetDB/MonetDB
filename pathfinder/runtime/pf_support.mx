@@ -383,6 +383,9 @@ the next substring or str(nil) if there are no more substrings."
 Returns a BAT of 5 BATs where the ith BAT is like the result of a uselect(i),
 but does this in a single scan."
 
+.COMMAND cleantmpdir(lng lim) : void = CMDcleantmpdir;
+"quietly delete all files older than 'lim' (unix time) from the tmp dir (dbfarm/dbname/tmp)"
+
 @- bit manipulations
 @= nilarithMIL
 .COMMAND nil@1(int v1, int v2) : int = CMDnil@1;
@@ -670,12 +673,23 @@ PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
     var protocol := [search](uri, "://");
     var sel := protocol.uselect(0,int_nil).hmark(0@0).leftfetchjoin(uri);
     var isfile := [or]([startsWith](sel, "file://"), [startsWith](sel, "FILE://"));
+    var filepath := protocol.uselect(-1).hmark(0@0).leftfetchjoin(uri).access(BAT_WRITE);
 
-    sel := isfile.uselect(true).hmark(0@0).leftfetchjoin(sel).access(BAT_WRITE);
-    sel.append(protocol.uselect(-1).hmark(0@0).leftfetchjoin(uri)).access(BAT_READ);
-    if (count(sel) != count(uri)) {
-       var wrong := tdiff(uri, sel);
-       ERROR("fn_put: URI '%s' not recognized (%d such errors).", wrong.fetch(0), count(wrong));
+    isfile := isfile.uselect(true).hmark(0@0).leftfetchjoin(sel);
+    sel := isfile.copy().access(BAT_WRITE).append(filepath).access(BAT_READ);
+    filepath.append([string](isfile,7));
+
+    if (count(sel) != count(uri)) { # we only support file url's for the moment
+       var nonfileurl := tdiff(uri, sel);
+       ERROR("fn_put: URI '%s' not recognized (only file URLs are supported; %d such errors).", wrong.fetch(0), count(nonfileurl));
+    }
+    var absolute := [or](filepath.[startsWith]("/"), filepath.[startsWith]("\\")).uselect(true).mirror().leftfetchjoin(sel);
+    if (count(absolute) > 0) {
+       ERROR("fn_put: file URI '%s' must be a relative path (%d such errors).", backwards.fetch(0), count(backwards));
+    }
+    var backwards := filepath.[search]("..").uselect(0,int_nil).mirror().leftfetchjoin(sel);
+    if (count(backwards) > 0) {
+       ERROR("fn_put: file URI '%s' must is not allowed to contain '..' (%d such errors).", backwards.fetch(0), count(backwards));
     }
     [print_result](sel, "xml-noroot", 
                    const ws, item, kind, 
@@ -3882,6 +3896,29 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 #define oidoid_bunfastins_nocheck_noinc(b,p,h,t) lnglng_bunfastins_nocheck_noinc(b,p,h,t);
 #endif
 @c
+/* delete a file from the local tmp/ directory in the dbfarm; protect against abuse */
+int CMDcleantmpdir(lng *lim) {
+        DIR *dirp = opendir("tmp");
+        char path[PATHLENGTH];
+        struct dirent *dent;
+
+        if (dirp == NULL)
+  	        return GDK_SUCCEED;
+        while ((dent = readdir(dirp)) != NULL) {
+		struct stat st;
+                if ((dent->d_name[0] == '.') && ((dent->d_name[1] == 0) || (dent->d_name[1] == '.' && dent->d_name[2] == 0))) {
+                        continue;
+                }
+                GDKfilepath(path, "tmp/", dent->d_name, NULL);
+		if (stat(path, &st) == 0 && st.st_mtime < *lim) {
+                    int ret = unlink(path);
+                    IODEBUG THRprintf(GDKout, "#unlink %s = %d\n", path, ret);
+                }
+        }
+        closedir(dirp);
+  	return GDK_SUCCEED;
+}
+
 int CMDdelete_nodes_prepare_pre_size( BAT** ret, BAT *pre_size, BAT *pre_ )
 {
 	BAT *res = NULL;

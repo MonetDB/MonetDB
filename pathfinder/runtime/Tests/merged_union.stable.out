@@ -11,6 +11,7 @@ stdout of test 'merged_union` in directory 'runtime` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pf_support);
 
+
 var a:=new(oid,int);
 a.insert(oid(0),0);
 a.insert(oid(1),0);
@@ -79,7 +80,7 @@ print(x);
 # void	BAT		  # type
 #-------------------------#
 [ 0@0,	  <tmp_51>	  ]
-[ 1@0,	  <tmp_53>	  ]
+[ 1@0,	  <tmp_54>	  ]
 print(fetch(x,0),fetch(x,1));
 #-------------------------#
 # h	tmp_33	tmp_34	  # name
@@ -152,7 +153,7 @@ print(x);
 # void	BAT		  # type
 #-------------------------#
 [ 0@0,	  <tmp_51>	  ]
-[ 1@0,	  <tmp_53>	  ]
+[ 1@0,	  <tmp_54>	  ]
 print(fetch(x,0),fetch(x,1));
 #-------------------------#
 # h	tmp_29	tmp_28	  # name

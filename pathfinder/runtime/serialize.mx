@@ -166,7 +166,7 @@ typedef struct serializeFunStruct {
     /* the clean up handler */
     bool (*cleanup)(XqueryCtx* ctx);
 
-    /* handleers of start/end of serialization.  These functions are
+    /* handlers of start/end of serialization.  These functions are
      * only executed _once_ for every serialization. */
     bool (*handle_startSerialize)(XqueryCtx* ctx);
     bool (*handle_endSerialize)(XqueryCtx* ctx);
