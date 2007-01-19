@@ -1052,46 +1052,6 @@ struct serializeFunStruct pftijahSerializeFun = {
  *
  */
 
-/* #define TJ_TIMING */
-
-#ifdef TJ_TIMING
-/*
- * Timer stuff decl 
- */
-static char *
-timer_str (long elapsed)
-{
-    char *tm, *str;
-
-    tm = str = strdup ("000h 00m 00s 000ms 000us");
-
-    if (elapsed / 3600000000UL) {
-        str += sprintf (str, "%03ldh ", elapsed / 3600000000UL);
-        elapsed %= 3600000000UL;
-    }
-
-    if (elapsed / 60000000UL) {
-        str += sprintf (str, "%02ldm ", elapsed / 60000000UL);
-        elapsed %= 60000000UL;
-    }
-
-    if (elapsed / 1000000UL) {
-        str += sprintf (str, "%02lds ", elapsed / 1000000UL);
-        elapsed %= 1000000UL;
-    }
-
-    if (elapsed / 1000UL) {
-        str += sprintf (str, "%03ldms ", elapsed / 1000UL);
-        elapsed %= 1000UL;
-    }
-
-    str += sprintf (str, "%03ldus", elapsed);
-
-    return tm;
-}
-#endif
-
-
 static int
 MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
 	tjCtx* tjctx;
@@ -1099,15 +1059,6 @@ MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:START: CMDtj_throw2collection(%s)\n",docName);
 #endif
-#ifdef TJ_TIMING
-	/* timing */
-	struct timeval now;
-	long start, stop;
-	/* start timer */
-	(void) gettimeofday (&now, 0);
-	start = now.tv_sec * 1000000 + now.tv_usec;
-#endif
-
 	if ( !(tjctx = loadTijahContext(tjCtx_BAT, selTagList)) )
 		return GDK_FAIL;
 	/* return the main plane, the caller should check if the main plane
@@ -1168,12 +1119,6 @@ MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str
 	if ( 0 && !handle_doc_height(tjctx) )
 	    return GDK_FAIL;
 	/* read elapsed time */
-#ifdef TJ_TIMING
-	gettimeofday (&now, 0);
-	stop = now.tv_sec * 1000000 + now.tv_usec;
-	stream_printf(GDKout,"# C[%s]:serialization/indexing for \"%s\" = %s\n",
-		tjctx->name, docName,timer_str (abs (stop - start)));
-#endif
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) {
 		stream_printf(GDKout,"C[%s]:SIZES\n",tjctx->name);

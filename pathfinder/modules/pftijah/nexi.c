@@ -121,6 +121,11 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
   MILPRINTF(MILOUT, "#\n# Generated NEXI MIL by Pathfinder-PFTIJAH package \n#\n\n");
   MILPRINTF(MILOUT, "module(pftijah);\n");
   MILPRINTF(MILOUT, "{\n");
+  if ( 0 ) {
+    MILPRINTF(MILOUT, "loaded();\n");
+    MILPRINTF(MILOUT, "sigs(\"pftijah\");\n");
+    MILPRINTF(MILOUT, "tj_ping();\n");
+  }
   /* */
   parserCtx->tjCtx     = NULL; /* INCOMPLETE, should be filled here */
   if ( !old_main(optbat,startNodes_name) )  {

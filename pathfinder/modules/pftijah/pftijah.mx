@@ -177,7 +177,7 @@ var collHeight := 10;
 var retNum := 100;
 
 var trace := false;
-var timings := false;
+var timing := false;
 
 ##
 # For retrieval models: 
@@ -413,10 +413,15 @@ The index is automatically finalized at the end of the method.",
 "pftijah");
 PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
 {
+    var t_start := usec();
     bat("tj_globalTerms").access(BAT_WRITE);
     bat("tj_globalTags").access(BAT_WRITE);
     _tj_add2collection(collName,_tj_collection(collName),uri_loc,uri_name,store);
     _tj_finalize_collection(collName);
+    if ( timing ) {
+       var ms := (usec()-t_start)/1000;
+       printf("#C[%s]:tj_add2collection(): + aggregate time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
+     }
 }
 
 ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
@@ -433,6 +438,7 @@ xml documents in the bat are added to the collection.",
 "pftijah");
 PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
 {
+    var t_start := usec();
     bat("tj_globalTerms").access(BAT_WRITE);
     bat("tj_globalTags").access(BAT_WRITE);
     # var cb := _tj_collection(collName);
@@ -440,16 +446,27 @@ PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
       _tj_add2collection(collName,_tj_collection(collName),$h,$t,store);
     }
     _tj_finalize_collection(collName);
+    if ( timing ) {
+       var ms := (usec()-t_start)/1000;
+       printf("#C[%s]:tj_add2collection(BAT): + aggregate time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
+     }
 }
 
+PROC _timestr(lng v) : str
+{
+    return str(v/1000000) + "." + str(v/1000) + "xs";
+}
 
 # main internal add2collection() function.
 PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str uri_name, bit store) : void
 { 
+    var ms;
+    var t_start := usec();
     if ( verbose ) printf("#TJ: _tj_add2collection(\"%s\") start.\n",collName);
 
     var selTagList := bat("tj_" + collName + "_param").find("tagFilter");
            
+    var i_start;
     if ( store ) {
         if ( isnil(uri_name) ) {
 	  uri_name := uri_loc;
@@ -458,13 +475,24 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
 	}
         var ws := ws_create();
         if (not(bat("doc_name").reverse().exist(uri_name))) {
-    	shred_doc(uri_loc,uri_name);
+            var s_start := usec();
+    	    shred_doc(uri_loc,uri_name);
+            if ( timing ) {
+	      ms := (usec()-s_start)/1000;
+              printf("#C[%s]:add2coll(\"%s\"): shred time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
+            }
         }
         ws_opendoc(ws, bat(void,str,1).append(uri_name));
+	i_start := usec();
         _tj_throw2collection(collBats,ws,uri_name,selTagList);
         ws_destroy(ws);
     } else {
+	i_start := usec();
         _tj_throw2collection_index(collBats,uri_loc);
+    }
+    if ( timing ) {
+	ms := (usec()-i_start)/1000;
+        printf("#C[%s]:add2coll(\"%s\"): index time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
     }
     # var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(uri_name));
     var height1 := 999; # REMOVE
@@ -475,6 +503,10 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
     bat("tj_" + collName + "_param").replace("status","building");
     commit();	
     if ( verbose ) printf("#TJ:_tj_add2collectiontj_init_collection(\"%s\") finish.\n",collName);
+    if ( timing ) {
+	ms := (usec()-t_start)/1000;
+        printf("#C[%s]:add2coll(\"%s\"): total time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
+    }
 }
 
 
@@ -493,6 +525,7 @@ PROC tj_finalize_collection(str collName) : void
 # internal finalize function
 PROC _tj_finalize_collection(str collName) : void
 {
+    var t_start := usec();
     if ( verbose ) printf("#TJ: _tj_finalize_collection(\"%s\") called.\n",collName);
     #
     # Finalize one collection. No documents should be added after this
@@ -536,6 +569,10 @@ PROC _tj_finalize_collection(str collName) : void
       bat("tj_globalTags").mmap(1);
     }
     commit(); 
+    if ( timing ) {
+        var ms := (usec()-t_start)/1000;
+        printf("#C[%s]:finalize(\"%s\"): total time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
+    }
 }
 
 # set a collection parameter
@@ -1331,7 +1368,7 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd)
     
     if ( trace ) tj_trace( "END   p_containing_q_NLLR_frag" );
     var t2 := time();
-    if (timings) printf("total time: %d\n", t2 - t1);
+    if (timing) printf("# p_containing_q_NLLR_frag(): total time: %d\n", t2 - t1);
     
     return res;
 }
@@ -1399,7 +1436,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
      var t4 := time();
 
-     if (timings) printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
+     if (timing) printf("# p_containing_q_NLLR(): total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
      return res;
 }
 
@@ -1446,7 +1483,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
      }
      if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
      var t4 := time();
-     if (timings) printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
+     if (timing) printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
      return res;
 }
 
@@ -3068,21 +3105,17 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 		
 		for(i = 0; i < term_cnt; i++)  
 			if (terms[i] == *t) { 
-				if (0) BUNappend(bats[i], h, 0); 
-				else {
-					if (!bfrees[i]) {
-						printf("bat extension\n");
-						bats[i]->batBuns->free = dsts[i] - bats[i]->batBuns->base;
-	        				BATsetcount(bats[i], (bats[i]->batBuns->free+Bunbase(bats[i])-BUNfirst(bats[i]))/bs_x);
-					        int sz = BATcount(bats[i]);
-						BATextend(bats[i],2*sz); 
-						dsts[i] = BUNlast(bats[i]);
-						bfrees[i] = sz;
-					}
-					*(oid*)dsts[i] = *h;
-					dsts[i] += bs_x;
-					bfrees[i]--;
+				if (!bfrees[i]) {
+					bats[i]->batBuns->free = dsts[i] - bats[i]->batBuns->base;
+	        			BATsetcount(bats[i], (bats[i]->batBuns->free+Bunbase(bats[i])-BUNfirst(bats[i]))/bs_x);
+				        int sz = BATcount(bats[i]);
+					BATextend(bats[i],2*sz); 
+					dsts[i] = BUNlast(bats[i]);
+					bfrees[i] = sz;
 				}
+				*(oid*)dsts[i] = *h;
+				dsts[i] += bs_x;
+				bfrees[i]--;
 				break;
 			}
 		if (i == term_cnt) {
@@ -3096,10 +3129,8 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 		dbl fac = *(int*) BUNtail(tid_cnt, t) / (dbl)*q_cnt;
 		/*printf("fac: %f\n", fac); */
 		t += bs_t;
-		if (1) {
-			bats[i]->batBuns->free = dsts[i] - bats[i]->batBuns->base;
-	        	BATsetcount(bats[i], (bats[i]->batBuns->free+Bunbase(bats[i])-BUNfirst(bats[i]))/bs_x);
-		}
+		bats[i]->batBuns->free = dsts[i] - bats[i]->batBuns->base;
+	        BATsetcount(bats[i], (bats[i]->batBuns->free+Bunbase(bats[i])-BUNfirst(bats[i]))/bs_x);
 		BAT *tmp = BAThistogram(bats[i]);
 		BATloopFast(tmp, p, q, xx) {
 			oid *h = (oid*) BUNhloc(tmp, p);
