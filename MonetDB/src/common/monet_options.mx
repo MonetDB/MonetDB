@@ -60,9 +60,10 @@ mutils_export void mo_print_options(opt *set, int setlen);
    (set,setlen). */
 mutils_export char *mo_find_option(opt *set, int setlen, const char *name);
 
-/* the option values can contain ${prefix} and ${exec_prefix}, these will
-   be substituted using the mo_substitute function */
-mutils_export void mo_substitute(opt *set, int setlen, char *name);
+/* the option values can contain ${prefix} and ${exec_prefix}, these
+   will be substituted using the mo_substitute function.  The return
+   value is a newly allocated buffer, it is the caller's responsibility to free the buffer. */
+mutils_export char *mo_substitute(opt *set, int setlen, char *name);
 
 /* mo_system_config will add the options from the system config file
    (returns the new setlen) */
@@ -170,35 +171,44 @@ mo_find_option(opt *set, int setlen, const char *name)
 	return NULL;
 }
 
-void
+char *
 mo_substitute(opt *set, int setlen, char *val)
 {
-	char *q = NULL;
+	char *q;
+	size_t n = strlen(val) + 1;
+	char *s = strdup(val);
 
 	setlen = mo_default_set(&set, setlen);
-	while ((q = strchr(val, '$')) != NULL) {
-		if (strncmp(q, "${exec_prefix}", strlen("${exec_prefix}")) == 0) {
-			char val2[BUFSIZ];
+	q = val;
+	while ((q = strchr(q, '$')) != NULL) {
+		if (strncmp(q, "${exec_prefix}",  14) == 0) {
 			char *p = mo_find_option(set, setlen, "exec_prefix");
-			char *t = strchr(q, '}');
+			char *t;
 
-			if (!t || !p)
-				return;
-			*q = '\0';
-			snprintf(val2, BUFSIZ, "%s%s%s", val, p, t + 1);
-			strncpy(val, val2, BUFSIZ);
-		} else if (strncmp(q, "${prefix}", strlen("${prefix}")) == 0) {
-			char val2[BUFSIZ];
+			if (!p)
+				return s;
+			t = malloc((n = n - 14 + strlen(p)));
+			s[q - val] = 0;
+			snprintf(t, n, "%s%s%s", s, p, q + 14);
+			free(s);
+			s = t;
+			q += 14;
+		} else if (strncmp(q, "${prefix}", 9) == 0) {
 			char *p = mo_find_option(set, setlen, "prefix");
-			char *t = strchr(q, '}');
+			char *t;
 
-			if (!t || !p)
-				return;
-			*q = '\0';
-			snprintf(val2, BUFSIZ, "%s%s%s", val, p, t + 1);
-			strncpy(val, val2, BUFSIZ);
-		}
+			if (!p)
+				return s;
+			t = malloc((n = n - 9 + strlen(p)));
+			s[q - val] = 0;
+			snprintf(t, n, "%s%s%s", s, p, q + 9);
+			free(s);
+			s = t;
+			q += 9;
+		} else
+			q++;
 	}
+	return s;
 }
 
 static int
@@ -289,7 +299,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 int
 mo_system_config(opt **Set, int setlen)
 {
-	char *cfg, config[BUFSIZ];
+	char *cfg;
 
 	if (Set == NULL) {
 		if (default_set == NULL) {
@@ -303,9 +313,10 @@ mo_system_config(opt **Set, int setlen)
 	cfg = mo_find_option(*Set, setlen, "config");
 	if (!cfg)
 		return setlen;
-	strcpy(config, cfg);
-	mo_substitute(*Set, setlen, config);
-	return mo_config_file(Set, setlen, config);
+	cfg = mo_substitute(*Set, setlen, cfg);
+	setlen = mo_config_file(Set, setlen, cfg);
+	free(cfg);
+	return setlen;
 }
 
 
