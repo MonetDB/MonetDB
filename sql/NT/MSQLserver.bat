@@ -11,7 +11,7 @@ set MONETDB=%MONETDB:~0,-1%
 rem start the real server
 
 if exist "%MONETDB%\M5server.bat" goto m5server
-"%MONETDB%\Mserver.bat" --dbinit="module(sql_server); sql_server_start();" %*
+"%MONETDB%\Mserver.bat" --dbinit="module(sql_server);" %*
 
 :m5server
 "%MONETDB%\M5server.bat" --dbinit="include sql;" %*
