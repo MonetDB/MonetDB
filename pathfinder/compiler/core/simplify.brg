@@ -355,7 +355,7 @@ FunParam:           param (SequenceType, Atom)                  =  76 (10);
 CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  77 (10);
 
 /* Pathfinder extension: XRPC */
-CoreExpr:           xrpc (var, CoreExpr)                        =  78 (10);
+CoreExpr:           xrpc (Atom, CoreExpr)                       =  78 (10);
 
 %%
 

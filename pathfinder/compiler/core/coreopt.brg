@@ -251,8 +251,6 @@ CoreExpr:           proof (subty (CoreExpr, SequenceType),
                                                                      
 CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =  25 (10);
                                                                      
-Var:                var                                         =  26 (10);
-                                                                     
 CoreExpr:           seq (seq (CoreExpr, CoreExpr), CoreExpr)    =  27 (10);
 CoreExpr:           seq (CoreExpr, CoreExpr)                    =  28 (10);
 CoreExpr:           seq (empty, CoreExpr)                       =  29 (10);
@@ -338,7 +336,7 @@ FunParam:           param (SequenceType, var)                   =  93 (10);
 CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  76 (10);
 
 /* Pathfinder extension: XRPC */
-CoreExpr:           xrpc (var, CoreExpr)                        =  77 (10);
+CoreExpr:           xrpc (Atom, CoreExpr)                       =  77 (10);
 
 %%
 
