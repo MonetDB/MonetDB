@@ -1818,7 +1818,7 @@ Making such bats persistent or appendable/writable, will force a true copy of th
 copy-on-write mmap heap to be made.
 @c
 static int
-copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt, int mode)
+copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt)
 {
 	int ret = 0;
 
@@ -1978,12 +1978,12 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	/* go over all pages and copy them in segments that unite consecutively mapped pages */
 	for(xx=1; xx<cnt; xx++) {
 		if (pid[xx]-1 != pid[xx-1]) {
-			if (!copy_segment(mmap ? &hdl : NULL, bn, b, pid[zz], zz, xx-zz, mode))
+			if (!copy_segment(mmap ? &hdl : NULL, bn, b, pid[zz], zz, xx-zz))
 				break;
 			zz = xx;
 		}
 	}
-	if (xx < cnt || !copy_segment(mmap ? &hdl : NULL, bn, b, pid[zz], zz, cnt-zz, mode)) {
+	if (xx < cnt || !copy_segment(mmap ? &hdl : NULL, bn, b, pid[zz], zz, cnt-zz)) {
 		HEAPfree(bn->batBuns);
 		goto error;
 	}
