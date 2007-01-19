@@ -16,4 +16,9 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-SUBDIRS = autogen Mx mel burg conf
+
+if ENABLE_MEL
+       OPT_MEL = mel
+endif
+SUBDIRS = autogen Mx $(OPT_MEL) burg conf
+DIST_SUBDIRS = autogen Mx mel burg conf

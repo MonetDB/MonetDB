@@ -26,9 +26,21 @@ AC_PROG_INSTALL
 AC_PATH_PROGS([PYTHON], [python python2 python2.3 python2.4],
 			  [AC_ERROR(No python could be found in your path)])
 
-# HACK: because autoconf doesn't want to run configure with "added
-# arguments", we just call it ourselves here.  Pretty dirty, I know.
-(test -d mel || mkdir mel ; cd mel && eval "`cd .. && cd ${srcdir} && pwd`/mel/configure ${ac_configure_args} --with-mx=../Mx/Mx")
+AC_ARG_ENABLE(mel,
+	AC_HELP_STRING([--enable-mel], 
+		[mel is only needed for MonetDB4]),
+	[enable_mel=$enableval],[enable_mel="yes"])
+
+case $enable_mel in
+yes)	
+	# HACK: because autoconf doesn't want to run configure with "added
+	# arguments", we just call it ourselves here.  Pretty dirty, I know.
+
+	(test -d mel || mkdir mel ; cd mel && eval "`cd .. && cd ${srcdir} && pwd`/mel/configure ${ac_configure_args} --with-mx=../Mx/Mx")
+	;;
+esac
+AM_CONDITIONAL([ENABLE_MEL], [test "$enable_mel" = yes])
+
 
 AC_CONFIG_FILES([Makefile autogen/Makefile conf/Makefile])
 AM_CONFIG_HEADER([dummy.h])
