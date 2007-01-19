@@ -571,7 +571,7 @@ PROC _tj_finalize_collection(str collName) : void
     commit(); 
     if ( timing ) {
         var ms := (usec()-t_start)/1000;
-        printf("#C[%s]:finalize(\"%s\"): total time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
+        printf("#C[%s]:finalize(): total time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
     }
 }
 
@@ -2324,6 +2324,7 @@ PROC _buildIRindex(str collName) : void :=
 	
 	var pre_tid := bat("tj_" + collName + "_tid" + str(frag_offset));
 	var tids := pre_tid.slice(int(offset), pre_tid.count() - 1);
+	tids.access(BAT_WRITE);
 	frag_offset :+= 1;
 	while (frag_offset <= frag_last)
 	{
