@@ -1011,7 +1011,7 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len)
 			}
 		}
 	}
-	return ret != (void *) -1L;
+	return ret == (void *) -1L;
 }
 
 void *
@@ -1023,7 +1023,8 @@ MT_mmap_tile(MT_mmap_hdl *hdl, off_t off, size_t len)
 		GDKerror("MT_mmap_tile: parameter don't match handle.\n");
 		return (void *) -1;
 	}
-	ret = mmap((void *) ((char *) hdl->fixed + off), len, ((hdl->mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ, ((hdl->mode & MMAP_COPY) ? (MAP_PRIVATE|MAP_NORESERVE) : MAP_SHARED) | MAP_FIXED, (int) (ssize_t) hdl->hdl, off);
+	ret = mmap(hdl->fixed, len, ((hdl->mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ, ((hdl->mode & MMAP_COPY) ? (MAP_PRIVATE|MAP_NORESERVE) : MAP_SHARED) | MAP_FIXED, (int) (ssize_t) hdl->hdl, off);
+	hdl->fixed = (void *) ((char *) ret + len);
 	return ret;
 }
 
