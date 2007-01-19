@@ -2132,7 +2132,8 @@ and are checked on inconsistent frees and memory leaks.
 #define GDK_HISTO_MAX_BIT             ((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len, void *fixed);
+gdk_export void GDKmeminc(size_t len);
+gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
 gdk_export int GDKmunmap(void *addr, size_t len);
 
 gdk_export ptr GDK_mem_start;	/* sbrk(0) at start of the program */

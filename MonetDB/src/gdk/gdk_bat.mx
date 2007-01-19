@@ -600,7 +600,7 @@ static int heapcopy(Heap* dst, Heap* src, int *remap) {
 		if (dst->filename) {
 			char path[PATHLENGTH];
                         GDKfilepath(path, BATDIR, dst->filename, NULL);
-			dst->base = GDKmmap(path, MMAP_READ|MMAP_SEQUENTIAL|MMAP_COPY, 0, dst->maxsize, NULL);
+			dst->base = GDKmmap(path, MMAP_READ|MMAP_SEQUENTIAL|MMAP_COPY, 0, dst->maxsize);
 		   	if (dst->base != (char*) -1) {
 				dst->copied = 1;
 				dst->storage = STORE_PRIV;

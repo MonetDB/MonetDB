@@ -370,7 +370,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 		{
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 			if (mode == STORE_PRIV) mod |= MMAP_COPY;
-			ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize, (void *) 0);
+			ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize);
 			if (ret == (char *) -1L) {
 				GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
 				ret = NULL;

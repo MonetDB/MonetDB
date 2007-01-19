@@ -1081,7 +1081,8 @@ GDKmalloc(size_t size)
 void *
 GDKzalloc(size_t size)
 {
-	void *p = GDKmallocmax(size, &size, 1);
+	size_t maxsize;
+	void *p = GDKmallocmax(size, &maxsize, 1);
 	if (p)
 		memset(p,0,size);
 	return p;
@@ -1243,22 +1244,28 @@ GDKstrdup(const char *s)
 @- virtual memory
 allocations affect only the logical VM resources.
 @c
-void *
-GDKmmap(char *path, int mode, off_t off, size_t len, void *fixed)
+void
+GDKmeminc(size_t len)
 {
-	void *ret = MT_mmap(path, mode, off, len, fixed);
+	@:meminc(0,len)@
+	CHKMEM(0, len);
+}
 
-	if (ret == (void *) -1L && fixed == NULL) {
+void *
+GDKmmap(char *path, int mode, off_t off, size_t len)
+{
+	void *ret = MT_mmap(path, mode, off, len);
+
+	if (ret == (void *) -1L) {
 		GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
-		ret = MT_mmap(path, mode, off, len, fixed);
+		ret = MT_mmap(path, mode, off, len);
 		if (ret != (void *) -1L) {
 			THRprintf(GDKout, "#GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
 	if (ret != (void *) -1L) {
 		MT_alloc_register(ret, len, 'M');
-		@:meminc(0,len)@
-		CHKMEM(0, len);
+		GDKmeminc(len);
 	}
 	return (void *) ret;
 }

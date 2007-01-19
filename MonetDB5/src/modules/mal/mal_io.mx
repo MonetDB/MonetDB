@@ -758,7 +758,7 @@ Open the file. Memory map it to minimize buffering problems.
 			BBPunfix(b->batCacheid);
 			throw(MAL, "io.imports", "File is empty or fstat broken");
 		}
-		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size, NULL);
+		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size);
 		end = cur + st.st_size;
 		if (cur == (char *) -1) {
 			BBPunfix(b->batCacheid);

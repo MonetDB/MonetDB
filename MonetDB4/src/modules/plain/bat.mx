@@ -1818,22 +1818,30 @@ Making such bats persistent or appendable/writable, will force a true copy of th
 copy-on-write mmap heap to be made.
 @c
 static int
-copy_segment(char* mmap, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt, int mode)
+copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt, int mode)
 {
 	int ret = 0;
+
 	if (cnt) {
-	        size_t xx = REMAP_PAGE_SIZE * BUNsize(b);
+		size_t xx = REMAP_PAGE_SIZE * BUNsize(b);
 		off_t src_off = (off_t) (src * xx); /* 64bit: could overflow */
 		size_t dst_off = dst * xx;
 		size_t nbytes  = cnt * xx;
 		size_t partial = (BUNlast(b) - BUNfirst(b)) - src_off;
-		if (!mmap) {
+
+		if (!hdl) {
 			/* copy segment from master bat */
 			memcpy(BUNfirst(bn) + dst_off, BUNfirst(b) + src_off, (partial < nbytes)?partial:nbytes);
-		} else if ((size_t) src_off != dst_off) { /* otherwise it is already mapped so */
-			void *fixed = (bn->batBuns->base + dst_off);
-                        if (MT_mmap(mmap, mode, src_off, nbytes, fixed) != fixed) {
+		} else {
+			void *base;
+
+			if ((base = MT_mmap_tile(hdl, src_off, nbytes)) == (void *) -1) {
 				return 0;
+			}
+			if (bn->batBuns->base == NULL) {
+				bn->batBuns->base = base;
+				bn->batFirst = bn->batDeleted = bn->batBuns->base;
+				bn->batInserted = bn->batBuns->base + bn->batBuns->free;
 			}
 		}
 		if (partial < nbytes) {
@@ -1841,13 +1849,14 @@ copy_segment(char* mmap, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt, int m
 			ptr nil = ATOMnilptr(bn->ttype);
 			BUN cur = BUNfirst(bn) + dst_off + partial;
 			BUN end = BUNlast(bn);
-			for(xx=BUNsize(bn); cur < end; cur += xx) {
+
+			for (xx = BUNsize(bn); cur < end; cur += xx) {
 				ATOMreplace(bn->ttype, bn->theap, BUNtail(bn,cur), nil); 
 			}
 		}
 	}
 	ret = 1;
-bunins_failed:			
+bunins_failed:
 	return ret;
 }
 
@@ -1863,9 +1872,9 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
         char *chk;
 	BUN p, q;
 	BAT *bn;
+	MT_mmap_hdl hdl;
 
    	/* try to use fast page-wise memory mapping technique on read-only mmapped [void,X] bats */ 
-        int failure = 0;
         char* mmap = (((BUNfirst(b) - b->batBuns->base) & REMAP_PAGE_MASK) == 0 &&
                     (b->batRestricted != BAT_WRITE) &&
 	            (b->batBuns->storage == STORE_MMAP))?path:NULL;
@@ -1937,40 +1946,29 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 		if (HEAPalloc(bn->theap, (size_t) (b->theap->free*BATMARGIN), 1) >= 0) {
         		memcpy(bn->theap->base, b->theap->base, bn->theap->free = b->theap->free);
 		} else {
-			failure = 1;
+			goto error;
 		}
 	}
 	/* try to get a reserved mmap region */
-	if (failure == 0 && mmap) {
-		if (bn->batBuns->filename) GDKfree(bn->batBuns->filename); 
+	if (mmap) {
+		if (bn->batBuns->filename)
+			GDKfree(bn->batBuns->filename); 
 		bn->batBuns->filename = GDKstrdup(b->batBuns->filename); 
-		failure = (bn->batBuns->filename == NULL);
+		if (bn->batBuns->filename == NULL)
+			goto error;
                 GDKfilepath(mmap, BATDIR, bn->batBuns->filename, NULL);
-	}
-	if (failure == 0 && mmap) {
-		bn->batBuns->base = GDKmmap(mmap, mode, 0, n, NULL);
-
-		if ((bn->batBuns->base != NULL) & (bn->batBuns->base != (BUN) -1)) {
-			bn->batBuns->size = bn->batBuns->maxsize = n; 
-			bn->batBuns->storage = STORE_MMAP;
-			if (!*force) bn->batBuns->storage |= STORE_PRIV; 
-		} else {
-			mmap = NULL; /* fall back on heap memory */
+		if (MT_mmap_open(&hdl, mmap, mode, 0, n)) {
+			mmap = NULL;
+			goto error;
 		}
+		bn->batBuns->base = NULL;
+		bn->batBuns->size = bn->batBuns->maxsize = n; 
+		bn->batBuns->storage = STORE_MMAP;
+		if (!*force)
+			bn->batBuns->storage |= STORE_PRIV; 
+	} else if (HEAPalloc(bn->batBuns, n, 1) < 0) {
+		goto error;
 	}
-	if (failure == 0) {
-retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
-	}
-	if (failure) {
-		/* failed to allocate */
-		if (bn->theap) {
-			HEAPfree(bn->theap);
-			GDKfree(bn->theap);
-		}
-		HEAPfree(bn->batBuns);
-		BBPclear(bn->batCacheid);
-		return GDK_FAIL;
-        }
 
 	/* set the right bat size */
 	bn->batBuns->free = n;
@@ -1980,15 +1978,18 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 	/* go over all pages and copy them in segments that unite consecutively mapped pages */
 	for(xx=1; xx<cnt; xx++) {
 		if (pid[xx]-1 != pid[xx-1]) {
-			if (!copy_segment(mmap, bn, b, pid[zz], zz, xx-zz, mode))
+			if (!copy_segment(mmap ? &hdl : NULL, bn, b, pid[zz], zz, xx-zz, mode))
 				break;
 			zz = xx;
 		}
 	}
-	if (xx < cnt || !copy_segment(mmap, bn, b, pid[zz], zz, cnt-zz, mode)) {
+	if (xx < cnt || !copy_segment(mmap ? &hdl : NULL, bn, b, pid[zz], zz, cnt-zz, mode)) {
 		HEAPfree(bn->batBuns);
-		failure = 1; mmap = (char*) (((size_t) mmap) ^ ((size_t) path));
-		goto retry;
+		goto error;
+	}
+	if (mmap) {
+		MT_mmap_close(&hdl);
+		GDKmeminc(n);
 	}
 
 	/* if the tail atom has refcounting, we must fix the copies */
@@ -2005,6 +2006,16 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 		BBPshare(bn->batParentid = ABS(b->batCacheid));
 	}
 	return GDK_SUCCEED;
+  error:
+	if (mmap)
+		MT_mmap_close(&hdl);
+	if (bn->theap) {
+		HEAPfree(bn->theap);
+		GDKfree(bn->theap);
+	}
+	HEAPfree(bn->batBuns);
+	BBPclear(bn->batCacheid);
+	return GDK_FAIL;
 }
 
 @- page-wise OID swizzling
