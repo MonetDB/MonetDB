@@ -47,8 +47,8 @@ fflush(stdout());
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><partlist>
   <part name="car" partid="0"/>
-  
-  
+  <part name="engine" partof="0" partid="1"/>
+  <part name="door" partof="0" partid="2"/>
   
   
   
@@ -66,13 +66,8 @@ fflush(stdout());
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><parttree>
     <part name="car" partid="0">
-        <part name="engine" partid="1">
-            <part name="piston" partid="3"/>
-        </part>
-        <part name="door" partid="2">
-            <part name="window" partid="4"/>
-            <part name="lock" partid="5"/>
-        </part>
+        
+        
     </part>
     <part name="skateboard" partid="10">
         <part name="board" partid="11"/>

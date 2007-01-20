@@ -33,9 +33,10 @@ declare updating function
       do delete $p
   "+"};"+"
 
-for $p in doc(\"part-tree.xml\")//part[@name=\"car\"]/part
+for $pt in doc(\"part-tree.xml\")//part[@name=\"car\"]/part
+let $pl := exactly-one(doc(\"part-list.xml\")//part[@partid eq $pt/@partid])
 return 
-  local:delete-subtree($p)
+  local:delete-subtree($pl)
 ").printf();
 fflush(stdout());
 fflush(stderr());
