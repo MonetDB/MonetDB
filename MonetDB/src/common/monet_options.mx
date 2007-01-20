@@ -179,7 +179,7 @@ mo_substitute(opt *set, int setlen, char *val)
 	char *s = strdup(val);
 
 	setlen = mo_default_set(&set, setlen);
-	q = val;
+	q = s;
 	while ((q = strchr(q, '$')) != NULL) {
 		if (strncmp(q, "${exec_prefix}",  14) == 0) {
 			char *p = mo_find_option(set, setlen, "exec_prefix");
@@ -188,11 +188,12 @@ mo_substitute(opt *set, int setlen, char *val)
 			if (!p)
 				return s;
 			t = malloc((n = n - 14 + strlen(p)));
-			s[q - val] = 0;
+			*q = 0;
 			snprintf(t, n, "%s%s%s", s, p, q + 14);
 			free(s);
-			s = t;
 			q += 14;
+			q = t + (q-s);
+			s = t;
 		} else if (strncmp(q, "${prefix}", 9) == 0) {
 			char *p = mo_find_option(set, setlen, "prefix");
 			char *t;
@@ -200,11 +201,12 @@ mo_substitute(opt *set, int setlen, char *val)
 			if (!p)
 				return s;
 			t = malloc((n = n - 9 + strlen(p)));
-			s[q - val] = 0;
+			*q = 0;
 			snprintf(t, n, "%s%s%s", s, p, q + 9);
 			free(s);
-			s = t;
 			q += 9;
+			q = t + (q-s);
+			s = t;
 		} else
 			q++;
 	}
