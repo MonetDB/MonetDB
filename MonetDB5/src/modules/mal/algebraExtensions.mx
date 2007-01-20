@@ -72,7 +72,7 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.project", "Cannot access descriptor");
 	}
 
-	if (tt >= TYPE_str) {
+	if (ATOMvarsized(tt)) {
 		if (p == 0 || *(str *) p == 0)
 			p = (ptr *) str_nil;
 		else
