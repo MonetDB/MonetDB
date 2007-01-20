@@ -222,6 +222,8 @@ test = (
                     r'^.*!ERROR: .*operation failed.$',
                 # suggested alternatives in case of XQuery type errors:
                     r'^type error:   .*$',
+                # Debugging "strange" errors on Solaris x86:
+                    r"^!ERROR: interpret: no matching MIL operator to 'лллллллллллллллл.*$",
                  ])+')',  re.MULTILINE)
        )
 
