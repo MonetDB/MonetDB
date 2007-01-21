@@ -1,0 +1,21 @@
+stdout of test 'basic_insert` in directory 'tests/StandOff/update` itself:
+
+
+# 16:11:32 >  
+# 16:11:32 >  Mtimeout -timeout 180 /usr/bin/python basic_insert.py basic_insert 
+# 16:11:32 >  
+
+
+# 16:11:32 >  
+# 16:11:32 >  pf --enable-standoff /home/xiraf/scratch/pathfinder/tests/StandOff/update/Tests/basic_insert.xq | Mtimeout -timeout 60 Mserver --config=/home/xiraf/scratch/build//etc/MonetDB.conf --debug=10 --set monet_mod_path=/home/xiraf/scratch/pathfinder/Linux/lib/MonetDB4:/home/xiraf/scratch/pathfinder/Linux/lib/MonetDB4/lib:/home/xiraf/scratch/build//lib/MonetDB4:/home/xiraf/scratch/build//lib/MonetDB4/lib:/home/xiraf/scratch/build//lib/MonetDB4/bin --set gdk_dbfarm=/home/xiraf/scratch/build//var/MonetDB4/dbfarm --set sql_logdir=/home/xiraf/scratch/build//var/MonetDB4/sql_logs --set xquery_logdir=/home/xiraf/scratch/build//var/MonetDB4/xquery_logs --set mapi_port=38400 --set monet_prompt= --set standoff=enabled --dbname=mTests_tests_StandOff_update
+# 16:11:32 >  
+
+# Monet Database Server V4.15.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+# 16:11:32 >  
+# 16:11:32 >  Done.
+# 16:11:32 >  
+
