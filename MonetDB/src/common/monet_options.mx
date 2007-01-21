@@ -191,7 +191,6 @@ mo_substitute(opt *set, int setlen, char *val)
 			*q = 0;
 			snprintf(t, n, "%s%s%s", s, p, q + 14);
 			free(s);
-			q += 14;
 			q = t + (q-s);
 			s = t;
 		} else if (strncmp(q, "${prefix}", 9) == 0) {
@@ -204,7 +203,6 @@ mo_substitute(opt *set, int setlen, char *val)
 			*q = 0;
 			snprintf(t, n, "%s%s%s", s, p, q + 9);
 			free(s);
-			q += 9;
 			q = t + (q-s);
 			s = t;
 		} else
