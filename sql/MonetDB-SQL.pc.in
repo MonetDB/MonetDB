@@ -28,6 +28,6 @@ classpath=${libdir}/MonetDB/java/MonetDB_JDBC.jar
 Name: ${pkg}
 Description: A SQL/ODBC/JDBC interface to MonetDB.
 Version: @VERSION@
-Requires: MonetDB >= 4.15.0
+Requires: MonetDB >= 4.17.0
 Cflags: -I${includedir}/sql
 Libs: -L${libdir} -lMonetODBC

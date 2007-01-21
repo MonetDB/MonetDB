@@ -19,7 +19,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([MonetDB clients], [1.15.0], [monet@cwi.nl], [clients])
+AC_INIT([MonetDB clients], [1.17.0], [monet@cwi.nl], [clients])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -70,7 +70,7 @@ fi
 AC_SUBST(Qexec_prefix)
 
 # Check for Monet 
-req_monetdb_ver='1.15.0'
+req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	AC_MSG_ERROR([Clients requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])

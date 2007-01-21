@@ -18,7 +18,7 @@ dnl -*- mode: autoconf -*-
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
-AC_INIT([MonetDB Server], [4.15.0], [monet@cwi.nl], [MonetDB4])
+AC_INIT([MonetDB Server], [4.17.0], [monet@cwi.nl], [MonetDB4])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -73,12 +73,12 @@ fi
 AC_SUBST(Qexec_prefix)
 
 # Check for Monet 
-req_monetdb_ver='1.15.0'
+req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	AC_MSG_ERROR([MonetDB4 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 fi
-req_clients_ver='1.15.0'
+req_clients_ver='1.17.0'
 AM_MONETDB_CLIENTS($req_clients_ver)
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()

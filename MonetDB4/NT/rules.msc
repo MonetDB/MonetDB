@@ -23,4 +23,4 @@ CLIENTS_LIBS=/libpath:$(TOPDIR)\..\..\clients\NT\lib
 
 pkg = MonetDB4
 CONFIG_H=monetdb4_config.h
-VERSION=4.15.0
+VERSION=4.17.0

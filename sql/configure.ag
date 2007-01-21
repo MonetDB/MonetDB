@@ -26,18 +26,18 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("sql", 2.15.0, [no-define])
+AM_INIT_AUTOMAKE("sql", 2.17.0, [no-define])
 AM_CONFIG_HEADER(sql_config.h:conf/config.h.in)
 CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
-req_monetdb_ver='1.15.0'
+req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	AC_MSG_ERROR([MONETDB/SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 fi
-req_clients_ver='1.15.0'
+req_clients_ver='1.17.0'
 AM_MONETDB_CLIENTS($req_clients_ver)
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
@@ -45,9 +45,9 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
-req_monetdb4_ver='4.15.0'
+req_monetdb4_ver='4.17.0'
 AM_MONETDB4($req_monetdb4_ver)
-req_monetdb5_ver='5.0.0_alpha1'
+req_monetdb5_ver='5.0.0_beta2'
 AM_MONETDB5($req_monetdb5_ver)
 
 if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
