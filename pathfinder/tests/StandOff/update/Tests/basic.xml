@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<fiets>
+  <beer end="20" start="10"/>
+  <noot end="400" start="80"/>
+  <kees end="110" start="100"/>
+  <vuur end="90" start="2"/>
+  <aap/>
+</fiets>
