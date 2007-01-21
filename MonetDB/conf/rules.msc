@@ -75,7 +75,7 @@ CONFIGURE=$(PYTHON) "$(TOPDIR)\..\..\MonetDB\conf\configure.py" "CLIENTS_BUILD=$
 CFLAGS = $(CFLAGS) -DNDEBUG
 !ELSE
 # default in case neither NDEBUG nor DEBUG are defined
-CFLAGS = $(CFLAGS)
+CFLAGS = $(CFLAGS) -DNDEBUG
 !ENDIF
 !ENDIF
 
