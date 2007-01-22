@@ -14,7 +14,6 @@ a.rename("x-");
 !ERROR: CMDrename: identifier expected: x-
 !ERROR: CMDrename: operation failed.
 !ERROR: interpret_params: not(param 1): evaluation error.
-!ERROR: yytree: rename: x-.
 a.print();
 #-----------------#
 # h	t	  # name
