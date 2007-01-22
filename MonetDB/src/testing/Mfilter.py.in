@@ -223,7 +223,7 @@ test = (
                 # suggested alternatives in case of XQuery type errors:
                     r'^type error:   .*$',
                 # Debugging "strange" errors on Solaris x86:
-                    r"^!ERROR: interpret: no matching MIL operator to 'лллллллллллллллл.*$",
+                    "^!ERROR: interpret: no matching MIL operator to '\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb.*$",
                  ])+')',  re.MULTILINE)
        )
 
