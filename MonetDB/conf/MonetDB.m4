@@ -866,6 +866,8 @@ AC_HEADER_TIME
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS([alloca.h getopt.h netdb.h sys/types.h])
 
+AC_SYS_LARGEFILE()
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
