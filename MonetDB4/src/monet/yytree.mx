@@ -721,7 +721,7 @@ if trees are more than 2-deep.
 #define CATCHERR(stk,lt,res,x,fcn)\
 	if (x == -TOK_BREAK) {\
 		x = 0;\
-	} else if ((x<0) && (res->vtype == TYPE_str) && res->val.sval) {\
+	} else if ((x<0) && (res->vtype == TYPE_str) && lt->dealloc) {\
 		char *s = (char*) TBL_getname(fcn);			\
 		GDKerror("yytree: %s: %s.\n", s?s:"null", res->val.sval); \
 		CLEANUP(lt); res->vtype = TYPE_void; lt->dealloc = 0;	\
