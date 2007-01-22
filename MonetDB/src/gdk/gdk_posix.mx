@@ -1204,6 +1204,7 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 	int mode4 = FILE_MAP_READ;
 	SECURITY_ATTRIBUTES sa;
 	HANDLE h1, h2;
+	remap_t *map;
 
 	memset(hdl, 0, sizeof(MT_mmap_hdl));
 	if (mode & MMAP_WRITE) {
@@ -1234,14 +1235,14 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 	h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 	if (h1 == INVALID_HANDLE_VALUE) {
 		GDKsyserror("MT_mmap: CreateFile('%s', %d, %d, &sa, %d, %d, NULL) failed\n", path, mode0, mode1, OPEN_ALWAYS, mode2);
-		return -1;
+		return (void *) -1;
 	}
 
 	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((gdk_int64) off + (gdk_int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
 		GDKsyserror("MT_mmap: CreateFileMapping(" PTRFMT ", &sa, %d, %d, %u, NULL) failed\n", PTRFMTCAST h1, mode3, (DWORD) ((((gdk_int64) off + (gdk_int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)));
 		CloseHandle(h1);
-		return -1;
+		return (void *) -1;
 	}
 	hdl->hdl = (void *) h2;
 	hdl->mode = mode4;
@@ -1254,7 +1255,8 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 	}
 	/* for complex mmaps we now make it very likely that the MapViewOfFileEx-es to a predetermined VM address will all succeed */
 	ret = VirtualAlloc(NULL, hdl->len, MEM_RESERVE, PAGE_READWRITE);    
-	if (ret == NULL) return (void*) -1;
+	if (ret == NULL)
+		return (void*) -1;
 	hdl->fixed = ret; /* now we have a VM region that is large enough */
 
 	/* ensure exclusive VM access to MapViewOfFile and VirtualAlloc (almost.. malloc() may trigger it -- ignored) */
@@ -1265,12 +1267,13 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 	VirtualFree(ret, 0, MEM_RELEASE);
 
 	/* allocate a map record to administer all your bases (they are belong to us!) */
-	map = malloc(sizeof(remap_t) + sizeof((void*)*nremaps));
-	if (map == NULL) return (void*) -1;
+	map = malloc(sizeof(remap_t) + sizeof(void *) * nremaps);
+	if (map == NULL)
+		return (void *) -1;
 
-	hdl->map = map;
+	hdl->map = (void *) map;
 	map->cnt = 0;
-	map->start = (char*) hdl->fixed;
+	map->start = (char *) hdl->fixed;
 	map->end = map->start + hdl->len;
 	return ret;
 }
@@ -1290,7 +1293,7 @@ MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len)
 	ret = MapViewOfFileEx((HANDLE) hdl->hdl, hdl->mode, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, (void *) ((char *) hdl->fixed));
 	if (ret == NULL) {
 		GDKsyserror("MT_mmap: MapViewOfFileEx(" PTRFMT ", %d, %d, %u, %d, " PTRFMT ") failed\n", PTRFMTCAST hdl->hdl, hdl->mode, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, PTRFMTCAST hdl->fixed);
-		return (void *) -1L;
+		return (void *) -1;
 	} 
 	if (map) map->bases[map->cnt++] = ret; /* administer new base */
 	hdl->fixed = (void *) ((char *) ret + len);
