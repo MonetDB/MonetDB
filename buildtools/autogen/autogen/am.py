@@ -1089,7 +1089,9 @@ endif
         fd.write("nodist_%sinclude_HEADERS = %s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
 
     fd.write('''
-include $(MONETDB_CONFDIR)/*.mk
+if HAVE_BUILDTOOLS
+  include $(BUILDTOOLS_CONFDIR)/rules.mk
+endif
 include $(top_builddir)/*.mk
 ''')
     fd.close()

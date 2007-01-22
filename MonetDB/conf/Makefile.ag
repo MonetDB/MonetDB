@@ -19,17 +19,11 @@ EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh missing \
 	ltmain.sh config.h.in \
-	MonetDB.m4 conf.bash \
-	rules.mk
+	MonetDB.m4 conf.bash
 
 scripts_m4 = {
 	DIR = pkgdatadir/conf
 	SOURCES = MonetDB.m4
-}
-
-scripts_mk = {
-	DIR = pkgdatadir/conf
-	SOURCES = rules.mk
 }
 
 scripts_sh = {

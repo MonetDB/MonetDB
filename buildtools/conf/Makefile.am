@@ -17,4 +17,5 @@
 # All Rights Reserved.
 
 dist_pkgdata_SCRIPTS = conf.bash
-dist_bin_SCRIPTS = Mdebootstrap Mbootstrap
+dist_pkgdata_DATA = rules.mk
+dist_bin_SCRIPTS = Mdebootstrap Mbootstrap buildtools-config

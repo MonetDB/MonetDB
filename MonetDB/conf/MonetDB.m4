@@ -2448,6 +2448,57 @@ fi
 
 AC_DEFUN([AM_MONETDB_UTILS],[
 
+AC_ARG_WITH(buildtools,
+    AC_HELP_STRING([--with-buildtools=DIR],
+                   [MonetDB Buildtools are installed in DIR]),
+    with_buildtools="$withval",
+    with_buildtools="auto")
+
+if test "x$with_buildtools" != xno
+then
+
+    if test "x$with_buildtools" = x -o "x$with_buildtools" = xauto
+    then
+        buildtools_path=$PATH
+    else
+        buildtools_path="$with_buildtools/bin"
+    fi
+
+    AC_PATH_PROG(BUILDTOOLS_CONFIG,buildtools-config,,$buildtools_path)
+
+    if test "x$BUILDTOOLS_CONFIG" = x
+    then
+
+        if test "x$with_buildtools" != xauto
+        then
+            AC_MSG_ERROR([MonetDB Buildtools could not be found,
+                          although you requested to use them.])
+        else
+            AC_MSG_WARN([MonetDB Buildtools could not be found.
+                         You won't be able to compile $PACKAGE_NAME
+                         from CVS sources.])
+        fi
+
+    else
+
+        have_mx=`"$BUILDTOOLS_CONFIG" --bindir`/Mx$EXEEXT
+        have_mel=`"$BUILDTOOLS_CONFIG" --bindir`/mel$EXEEXT
+
+        BUILDTOOLS_CONFDIR=`"$BUILDTOOLS_CONFIG" --pkgdatadir`
+        AC_SUBST(BUILDTOOLS_CONFDIR)
+        rules_mk=$BUILDTOOLS_CONFDIR/rules.mk
+
+        AC_CHECK_FILE($rules_mk,
+            [have_buildtools=yes],
+            [AC_MSG_WARN([$rules_mk could not be found.
+                          You won't be able to compile $PACKAGE_NAME
+                          from CVS sources.])])
+
+    fi
+fi
+
+AM_CONDITIONAL(HAVE_BUILDTOOLS, test "x$have_buildtools" = xyes)
+
 if test -f "$srcdir"/vertoo.data; then
         dnl check for Mx and mel if we find the not distributed vertoo.data 
         dnl having (this) file means we're compiling from CVS
