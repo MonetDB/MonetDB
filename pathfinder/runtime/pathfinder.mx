@@ -68,6 +68,7 @@ if (clientid() != 0) {
 module(mapi);       # remote client access
 module(pf_support);
 module(logger);
+module(pf_standoff);
 
 # standoff extensions
 var standoff := false;
@@ -75,9 +76,6 @@ if (monet_environment.exist("standoff")) {
      standoff := =(monet_environment.find("standoff"),"enabled"); 
 }
 
-if (standoff) {
-    module("pf_standoff");
-}
 
 # The XML Meta-Database #############################################################
 #
@@ -1508,13 +1506,13 @@ PROC __ws_opencoll(BAT[void,bat] ws,
 
                 # to ease debugging and monitoring, we give these potentially long-lived bats a name
                 free_nids.bbpname(prefix + "_free_nids" + suffix);
+                idx.bbpname(prefix + "_qn_nid" + suffix);
                 ins.bbpname(prefix + "_qn_nid_ins" + suffix);
                 del.bbpname(prefix + "_qn_nid_del" + suffix);
                 own.bbpname(prefix + "_attr_own" + suffix);
                 page_ws.bbpname(prefix + "_page_ws" + suffix);
                 attr_ws.bbpname(prefix + "_attr_ws" + suffix);
             }
-            idx.bbpname(prefix + "_qn_nid" + suffix);
             unq.bbpname(prefix + "_qn_nid_unq" + suffix);
 
             # insert new index
