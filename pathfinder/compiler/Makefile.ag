@@ -58,6 +58,7 @@ bin_pf = {
                 libcompiler2 \
                 mem/libmem \
                 sql/libsql \
+                $(LIBGC_LDADD) $(LIBGC_LIBS) \
                 $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
                 $(SOCKET_LIBS) $(DL_LIBS)
                 

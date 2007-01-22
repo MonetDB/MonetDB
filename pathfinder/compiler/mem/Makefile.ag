@@ -32,6 +32,14 @@ lib_mem = {
 	SOURCES = \
 		array.c \
 		bitset.c \
-		mem.c 
+		mem_gc.c 
 }
 
+lib_mem_embedded = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		array.c \
+		bitset.c \
+		mem.c 
+}

@@ -34,104 +34,31 @@
 
 #include "pathfinder.h"
 
+#if !HAVE_GC
+/* we need a fallback solution in case 
+   we have no garbage collector */
+#include "mem.c"
+
+#else
+/* we have a garbage collector 
+   (thus use it to implement the memory interface) */
+
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
+#include "gc.h"
 #include "mem.h"
-
 #include "oops.h"
-
-typedef struct PFmem_allocator {
-    size_t size;
-    size_t nr;
-    char **blks;
-    size_t used; 	/* memory used in last block */
-} PFmem_allocator;
-
-#define SA_BLOCK (4*1024*1024)
-
-PFmem_allocator *pf_alloc = NULL;
 
 void
 PFmem_init(void)
 {
-    assert (!pf_alloc);
-
-    pf_alloc = (PFmem_allocator*)malloc(sizeof(PFmem_allocator));
-    
-    pf_alloc->size = 64;
-    pf_alloc->nr = 1;
-    pf_alloc->blks = (char**)malloc(pf_alloc->size*sizeof(char*));
-    pf_alloc->blks[0] = (char*)malloc(SA_BLOCK);
-    pf_alloc->used = 0;
+    GC_INIT ();
 }
 
 void
 PFmem_destroy(void)
 {
-    unsigned int i ;
-
-    assert (pf_alloc);
-
-    for (i = 0; i<pf_alloc->nr; i++) {
-        free(pf_alloc->blks[i]);
-    }
-    free(pf_alloc->blks);
-    free(pf_alloc);
-
-    pf_alloc = NULL;
-}
-
-#define round16(sz) ((sz+15)&~15)
-char *
-mem_alloc (PFmem_allocator *pa, size_t sz)
-{
-    char *r;
-    sz = round16(sz);
-    if (sz > SA_BLOCK) {
-        char *t;
-        /* malloc new big block */
-        char *r = malloc(sz);
-        if (pa->nr >= pa->size) {
-            /* double the number of block references */
-            pa->size *=2;
-            pa->blks = (char**)realloc(pa->blks,pa->size*sizeof(char*));
-        }
-        /* fill in new big block before the last block */
-        t = pa->blks[pa->nr-1];
-        pa->blks[pa->nr-1] = r;
-        pa->blks[pa->nr] = t;
-        pa->nr ++;
-        return r;
-    }
-    else if (sz > (SA_BLOCK-pa->used)) {
-        /* there is not enough free memory in the current block
-           so malloc a new block */
-        char *r = malloc(SA_BLOCK);
-        if (pa->nr >= pa->size) {
-            /* double the number of block references */
-            pa->size *=2;
-            pa->blks = (char**)realloc(pa->blks,pa->size*sizeof(char*));
-        }
-        pa->blks[pa->nr] = r;
-        pa->nr ++;
-        /* reset the current `used' pointer */
-        pa->used = sz;
-        return r;
-    }
-    /* default case */
-    r = pa->blks[pa->nr-1] + pa->used;
-    pa->used += sz;
-    return r;
-}
-
-char *
-mem_realloc (PFmem_allocator *pa, char *p, size_t n) 
-{
-        char *r = mem_alloc( pa, n);
-        memcpy(r, p, n);
-        return r;
 }
 
 /**
@@ -142,7 +69,7 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
 {
     void *mem;
     /* allocate garbage collected heap memory of requested size */
-    mem = mem_alloc (pf_alloc, n);
+    mem = GC_MALLOC (n);
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
@@ -162,7 +89,7 @@ PFrealloc_ (size_t n, void *mem,
 	    const char *file, const char *func, const int line) 
 {
     /* resize garbage collected heap memory to requested size */
-    mem = mem_realloc (pf_alloc, mem, n);
+    mem = GC_REALLOC (mem, n);
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
@@ -211,5 +138,6 @@ PFstrdup (const char *str)
     return PFstrndup (str, strlen (str));
 }
 
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -593,6 +593,7 @@ main (int argc, char *argv[])
      */
     int rtrn = 0;
     if ((rtrn = setjmp(PFexitPoint)) != 0 ) {
+        PFmem_destroy ();
         MAIN_EXIT ( rtrn<0 ? -rtrn : rtrn );
     }
 
@@ -606,7 +607,7 @@ main (int argc, char *argv[])
     /* URL of query file (if present) */
     char *url = "-";
 
-    pf_alloc = pa_create();
+    PFmem_init ();
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on *copies*
      * of argv[0] as both functions may modify their arguments.
@@ -922,7 +923,7 @@ main (int argc, char *argv[])
     if ( PFcompile(url, stdout, status) < 0 )
         goto failure;
 
-    pa_destroy(pf_alloc);
+    PFmem_destroy ();
 
     MAIN_EXIT (EXIT_SUCCESS);
 

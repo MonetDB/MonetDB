@@ -39,17 +39,14 @@
 #include <stddef.h>
 
 /**
- * A dynamic buffer that can grow as more space is needed
- * (see #PFneed).
+ * Initialize everything related to the memory allocation
  */
-typedef struct PFbuf_t PFbuf_t;
+void PFmem_init(void);
 
-struct PFbuf_t {
-  char        *base;  /**< base address of buffer memory */
-  unsigned int size;  /**< current size of buffer (in bytes) */
-  unsigned int offs;  /**< current buffer write pos */
-  unsigned int chunk; /**< chunk size */
-};
+/**
+ * Clean up everything related to the memory allocation
+ */
+void PFmem_destroy(void);
 
 /** 
  * Tries to allocate @a nbytes bytes of garbage collected heap memory
@@ -82,19 +79,6 @@ void *PFrealloc_ (size_t, void *, const char *, const char *, const int);
 char *PFstrndup (const char *str, size_t n);
 
 char *PFstrdup (const char *str);
-
-typedef struct pf_allocator {
-	size_t size;
-	size_t nr;
-	char **blks;
-	size_t used; 	/* memory used in last block */
-} pf_allocator;
-
-extern pf_allocator *pa_create(void);
-extern char *pa_alloc( pf_allocator *pa,  size_t sz );
-extern void pa_destroy( pf_allocator *pa );
-
-extern pf_allocator *pf_alloc;
 
 #endif
 

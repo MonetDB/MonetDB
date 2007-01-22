@@ -334,6 +334,70 @@ AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
+dnl See if we have the Hans Boehm garbage collector available
+dnl
+dnl First allow the user to specify a location on the command line.
+dnl Further down see if we find the library and abort if not.
+have_gc="auto"
+AC_ARG_WITH(gc,
+    [  --with-gc=DIR           Boehm garbage collector library is installed in DIR],
+    [have_gc="$withval"], [have_gc="auto"])
+
+if test "x$have_gc" != xauto; then
+        LIBGC_CFLAGS="-I$have_gc/include"
+        LIBGC_LIBS="-L$have_gc/lib"
+fi
+
+if test "x$have_gc" = xauto; then
+        LIBGC_CFLAGS=""
+        LIBGC_LIBS=""
+fi
+
+save_CPPFLAGS="$CPPFLAGS"
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS"
+LDFLAGS="$LDFLAGS $LIBGC_LIBS"
+LIBS=""
+
+dnl If we have the dl and/or the pthread library, use it
+dnl (dl and/or pthread are required for the garbage collection
+dnl library on some systems.)
+LIBGC_LDADD=""
+AC_CHECK_LIB(dl, dlopen, [LIBGC_LDADD="$LIBGC_LDADD -ldl"])
+AC_CHECK_LIB(pthread, pthread_create, [LIBGC_LDADD="$LIBGC_LDADD -lpthread"])
+
+AC_CHECK_HEADER([gc.h],
+    [ dnl See if we can link in the gc library.
+      dnl If we have found the dl and/or pthread library as well, also use it.
+      dnl If the gc library was not found, clear LIBGC_LDADD.
+      AC_CHECK_LIB(gc, GC_malloc,
+                   [LIBGC_LDADD="$LIBGC_LDADD -lgc"],
+                   [LIBGC_LDADD=""], [$LIBGC_LDADD])],
+    [ LIBGC_LDADD=""])
+
+
+LIBS="$save_LIBS"
+LDFLAGS="$save_LDFLAGS"
+CPPFLAGS="$save_CPPFLAGS"
+
+if test "x$LIBGC_LDADD" = "x"; then
+    AC_MSG_WARN([Unable to find the Hans Boehm garbage collector.
+                 Please go get it from
+                 http://www.hpl.hp.com/personal/Hans_Boehm/gc/
+                 (Compilation will use memory allocation only strategy instead.)])
+    AC_DEFINE(HAVE_GC, 0, [Define if you use garbage collection])
+fi
+if test "x$LIBGC_LDADD" != "x"; then
+    AC_DEFINE(HAVE_GC, 1, [Define if you use garbage collection])
+fi
+
+
+dnl Propagate the variable to the Makefiles
+AC_SUBST(LIBGC_CFLAGS, $LIBGC_CFLAGS)
+AC_SUBST(LIBGC_LIBS, $LIBGC_LIBS)
+AC_SUBST(LIBGC_LDADD, $LIBGC_LDADD)
+
 # have_pftijah=no
 # AM_CONDITIONAL(HAVE_PFTIJAH, test "x$have_pftijah" == xyes)
 

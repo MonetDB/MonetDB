@@ -80,7 +80,7 @@ lib__pathfinder = {
                 ../compiler/algebra/prop/libprop \
                 ../compiler/algebra/opt/libopt \
                 ../compiler/mil/libmil \
-                ../compiler/mem/libmem \
+                ../compiler/mem/libmem_embedded \
                 ../compiler/libcompiler2 \
                 ../compiler/sql/libsql \
                 $(PF_LIBS) \

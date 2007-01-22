@@ -700,7 +700,7 @@ PFcompile_MonetDB (char *xquery, char** prologue, char** query, char** epilogue,
         *query = NULL;
         *epilogue = NULL;
 
-        pf_alloc = pa_create();
+        PFmem_init ();
 
         PFstate.invocation = invoke_monetdb;
 
@@ -716,6 +716,7 @@ PFcompile_MonetDB (char *xquery, char** prologue, char** query, char** epilogue,
         PFstate.standoff_axis_steps = (options & COMPILE_OPTION_STANDOFF);
 
         if (setjmp(PFexitPoint) != 0 ) {
+                PFmem_destroy ();
                 return PFerrbuf;
         }
 	timing = PFtimer_start ();
@@ -768,7 +769,7 @@ PFcompile_MonetDB (char *xquery, char** prologue, char** query, char** epilogue,
         *epilogue = malloc (1); **epilogue = '\0';
 
 #endif
-        pa_destroy(pf_alloc);
+        PFmem_destroy ();
         return (*PFerrbuf) ? PFerrbuf : NULL;
 }
 
