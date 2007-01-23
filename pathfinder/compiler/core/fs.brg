@@ -1662,7 +1662,7 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *v3 = new_var (NULL);
             PFvar_t *v4 = new_var (NULL);
             PFvar_t *v5 = new_var (NULL);
-            PFfun_t *fn_not   = function (PFqname (PFns_fn, "not"));
+            PFfun_t *fn_not  = function (PFqname (PFns_fn, "not"));
             PFfun_t *fn_bool = function (PFqname (PFns_fn, "boolean"));
 
             C(p) = flwr (let (letbind (
