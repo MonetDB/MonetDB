@@ -95,7 +95,7 @@ address PCRElike2;
 command like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void] 
 address PCRElike_uselect_pcre;
 
-pattern prelude():void 
+pattern prelude() :void 
 address pcre_init
 comment "Initialize pcre";
 

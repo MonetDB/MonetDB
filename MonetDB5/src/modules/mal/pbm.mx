@@ -180,10 +180,10 @@ command dump()
 address PBMdump;
 
 @{
-command prelude()
+command prelude() :void
 address PBMprelude;
 
-command epilogue()
+command epilogue() :void
 address PBMepilogue;
 
 pbm.prelude();
