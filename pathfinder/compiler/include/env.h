@@ -55,10 +55,8 @@ PFarray_t *PFenv_bind (PFenv_t *, PFqname_t, void *);
 /* lookup given key in environment (returns array of bindings or 0) */
 PFarray_t *PFenv_lookup (PFenv_t *, PFqname_t);
 
-#if 0
 /** iterate over all bound values in an environment */
 void PFenv_iterate (PFenv_t *, void (*) (PFqname_t, void *));
-#endif
 
 #endif /* ENV_H */
 
