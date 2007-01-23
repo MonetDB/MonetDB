@@ -713,19 +713,21 @@ if trees are more than 2-deep.
 			BBPunfix(res->val.bval);			\
 		}							\
 	}
-#define CATCHRET(stk,lt,res,x)			\
-	if (x == -TOK_RETURN) {			\
-		CATCHREF(stk,lt,res);		\
-		x=0;				\
+#define CATCHRET(stk,lt,res,x)						\
+	if (x == -TOK_RETURN) {						\
+		CATCHREF(stk,lt,res);					\
+		x=0;							\
 	}
-#define CATCHERR(stk,lt,res,x,fcn)\
-	if (x == -TOK_BREAK) {\
-		x = 0;\
-	} else if ((x<0) && (res->vtype == TYPE_str) && res->val.sval) {\
-		char *s = (char*) TBL_getname(fcn);			\
-		GDKerror("yytree: %s: %s.\n", s?s:"null", res->val.sval); \
-		CLEANUP(lt); res->vtype = TYPE_void; lt->dealloc = 0;	\
-	}
+#define CATCHERR(stk,lt,res,x,fcn)					\
+	if (x == -TOK_BREAK) {						\
+		x = 0;							\
+	} else if (x<0) {						\
+		res->vtype = TYPE_void;					\
+		res->val.oval = oid_nil;				\
+		if (lt->dealloc) {					\
+			CLEANUP(lt); 					\
+			lt->dealloc = 0;				\
+	}	}
 #define CATCHBREAK(x) ((x==-TOK_BREAK)?0:x)
 
 #endif /* _YYTREE_H_ */

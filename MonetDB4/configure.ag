@@ -336,8 +336,6 @@ AC_TRY_LINK([$ac_includes_default
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
 
-AC_SYS_LARGEFILE()
-
 AM_MONETDB_UTILS()
 
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)

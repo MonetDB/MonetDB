@@ -1750,18 +1750,22 @@ The XML node storage scheme of MonetDB/XQuery needs some extra kernel support.
   we introduce a fast way to create BATs with the VM pages in a different order
   (to cheaply support inserting new pages halfway). 
 \item
-  for other bats, there is a new rcopy(), that uses copies lare heaps using
-  copy-on-write ememory maps. This is also done for string heaps, if they are
+  for other bats, there is a new rcopy(), that copies large heaps using
+  copy-on-write memory maps. This is also done for string heaps, if they are
   no longer double eliminated. 
 \item
   we introduce a primitive to swizzle OIDs for such remappings between RIDs (the real
   voids on disk) and PREs (the voids of the remapped copy).
+\item
+  we introduce 'isolate()' a primitive that executes a number of idempotent updates
+  on a bat, such that all modified logical pages have received physical page
+  copies (transparently by the MMU page faults it generates).
 \end{itemize}
 
 Also, we use copy-on-write maps for transaction isolation. Contrary to intuition, we 
 write into STORE_MMAP read-only master bats (overriding the read-only protection 
 with a new 'force' flag), and read only from the copy-on-write copies produced by 
-the 'remap'. These copies provide efficient shadow paging. That is, before a master bat 
+the 'remap' and 'rcopy'. These copies provide efficient shadow paging. That is, before a master bat 
 is replaced into (appends are no problem) then all live read copies (copy-on-write remaps) 
 get a 'idempotent' replace on the affected pages (a BUN replace with a value that was 
 already there), such that a shadow copy of the page is made by the OS. In this way, 
@@ -1782,12 +1786,14 @@ other changes were:
   gdk_bat.mx/gdk_batop.mx: a 'force' flag in update operations that allow to update
   read-only/append-only BATs anyway. Note that if used, another (WAL-based) recovery
   mechanism must be used to repair BATs after a system crash!! This is a user
-  responability (in this case, of the MonetDB/XQuery frontend).
+  respsonability (in this case, of the MonetDB/XQuery frontend).
 \item
-  gdk_bat.mx: make a true copy of remapped BUN heaps if the bat becomes persistent or updatable. 
+  gdk_bat.mx: make a true copy of remapped/rcopied BUN heaps if the bat becomes persistent 
+  or updatable. 
 \item
   gdk_batop.mx: optimized fetchjoin for idempotent positional joins (into a bat[void,void]
-  with equal seqbase and all tuples hitting).
+  with equal seqbase and all tuples hitting). To keep semantics consistent, it is now
+  an error if a fetchjoin is performed with a key that is out-of-range. Everything *must* match!
 \item
   gdk_storage.mx: batload.  To preserve the integritry of string heaps with such forced updates, 
   the kernel zaps the internal hash table of string heaps. Note that this is only allowd if 
@@ -1833,16 +1839,7 @@ copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt)
 			/* copy segment from master bat */
 			memcpy(BUNfirst(bn) + dst_off, BUNfirst(b) + src_off, (partial < nbytes)?partial:nbytes);
 		} else {
-			void *base;
-
-			if ((base = MT_mmap_tile(hdl, src_off, nbytes)) == (void *) -1) {
-				return 0;
-			}
-			if (bn->batBuns->base == NULL) {
-				bn->batBuns->base = base;
-				bn->batFirst = bn->batDeleted = bn->batBuns->base;
-				bn->batInserted = bn->batBuns->base + bn->batBuns->free;
-			}
+			if (MT_mmap_remap(hdl, src_off, nbytes) == (void *) -1) return 0;
 		}
 		if (partial < nbytes) {
 			/* fill a partial page with nils */
@@ -1951,17 +1948,17 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	}
 	/* try to get a reserved mmap region */
 	if (mmap) {
+		void *base;
 		if (bn->batBuns->filename)
 			GDKfree(bn->batBuns->filename); 
 		bn->batBuns->filename = GDKstrdup(b->batBuns->filename); 
 		if (bn->batBuns->filename == NULL)
 			goto error;
                 GDKfilepath(mmap, BATDIR, bn->batBuns->filename, NULL);
-		if (MT_mmap_open(&hdl, mmap, mode, 0, n)) {
-			mmap = NULL;
-			goto error;
-		}
-		bn->batBuns->base = NULL;
+		base = MT_mmap_open(&hdl, mmap, mode, 0, n, cnt);
+		if (base == (void*) -1) goto error;
+
+		bn->batBuns->base = base;
 		bn->batBuns->size = bn->batBuns->maxsize = n; 
 		bn->batBuns->storage = STORE_MMAP;
 		if (!*force)
@@ -1989,7 +1986,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	}
 	if (mmap) {
 		MT_mmap_close(&hdl);
-		GDKmeminc(n);
+		GDKvminc(n);
 	}
 
 	/* if the tail atom has refcounting, we must fix the copies */
