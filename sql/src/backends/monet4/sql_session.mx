@@ -300,7 +300,7 @@ sqlexecute(backend *be, stream *out)
 	if (q && c->mode == m_prepare) {
 		int len;
 		if (c->params && (len = list_length(c->params)) > MAXPARAMS) {
-			sql_error(c, 2, "To many parameters in prepared statement (%d>%d)\n", len, MAXPARAMS);
+			sql_error(c, 2, "Too many parameters in prepared statement (%d>%d)\n", len, MAXPARAMS);
 			err = -1;
 			return sqlcleanup(c, err);
 		}
