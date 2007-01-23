@@ -5953,6 +5953,7 @@ struct stack_item {
 			GDKfree(stack);\
 	 		return GDK_FAIL;\
 		}\
+                stack = newstack;\
 	}\
 	stack[stack_top].sze = s;\
 	stack[stack_top].pre = p;\
