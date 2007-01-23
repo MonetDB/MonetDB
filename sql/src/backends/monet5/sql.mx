@@ -287,30 +287,6 @@ command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:int]
 address bathash_wrap 
 comment "calculate a hash value";
 
-# date
-command calc.date(s:str):date
-address MTIMEdate_fromstr;
-command calc.date(d:date):date
-address MTIMEdate_date;
-
-# daytime
-command calc.daytime(d:daytime):daytime
-address MTIMEdaytime2daytime;
-command calc.daytime(s:lng):daytime
-address MTIMEsecs2daytime;
-
-# timestamp
-command calc.timestamp(s:str):timestamp
-address MTIMEtimestamp_fromstr;
-command calc.timestamp(t:timestamp):timestamp
-address MTIMEtimestamp2timestamp;
-command calc.daytime(t:timestamp) :daytime
-address MTIMEtimestamp_extract_daytime_default;
-command calc.date(t:timestamp) :date
-address MTIMEtimestamp_extract_date_default;
-command calc.timestamp(d:date) :timestamp
-address MTIMEtimestamp_create_from_date;
-
 @- SQL functions
 The SQL functions are all recognized by their module name.
 For some we need to provide a new implementation, others
@@ -390,6 +366,7 @@ comment "cast @1 to str";
 @:mal_castfromstr(timestamp)@
 @:mal_castfromstr(daytime)@
 @:mal_castfromstr(date)@
+@:mal_castfromstr(sqlblob)@
 
 @mal
 command calc.str( v:bit) :str 
@@ -519,6 +496,7 @@ sql.prelude();
 #include <tablet.h>
 #include <streams.h>
 #include <mtime.h>
+#include <blob.h>
 #include "sql_privileges.h"
 #include "sql_semantic.h"
 #include "sql_optimize.h"
@@ -638,6 +616,7 @@ sql5_export str SQL@1_2_str( str *res, @1 *val );
 @:cast_export(timestamp,timestamp_tostr)@
 @:cast_export(daytime,daytime_tostr)@
 @:cast_export(date,date_tostr)@
+@:cast_export(sqlblob,sqlblob_tostr)@
 sql5_export str SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @= fround_export
 sql5_export str @1_@2_dec_round_wrap( @1 *res, @1 *v, @2 *r );
@@ -1817,6 +1796,7 @@ SQL@1_2_str( str *res, @1 *val )
 @:cast(timestamp,timestamp_tostr)@
 @:cast(daytime,daytime_tostr)@
 @:cast(date,date_tostr)@
+@:cast(sqlblob,sqlblob_tostr)@
 
 str
 SQLstr_2_str( str *res, str *val )
