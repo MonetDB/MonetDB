@@ -31,7 +31,7 @@ extern int seq_restart(sql_sequence *seq, lng start);
 #include "sql_catalog.h"
 #include "sql_storage.h"
 #include "bat_store.h"
-#include <logger.h>
+#include <gdk_logger.h>
 
 typedef struct bat_sequence {
 	sqlid seqid;
