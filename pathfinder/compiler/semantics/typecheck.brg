@@ -943,7 +943,7 @@ reduce (PFcnode_t * p, int goalnt)
         case 38:
         {   
             PFty_t t1 = TY(R(p));
-            PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
+            PFqname_t wild = PFqname (PFns_wild, NULL);
 
             if (!PFty_promotable (TY(L(p)), PFty_xs_QName ()))
                 PFoops (OOPS_TYPECHECK,
@@ -963,7 +963,7 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           attr (CoreExpr, CoreExpr) */
         case 40:
         {
-            PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
+            PFqname_t wild = PFqname (PFns_wild, NULL);
 
             if (!PFty_promotable (TY(L(p)), PFty_xs_QName ()))
                 PFoops (OOPS_TYPECHECK,

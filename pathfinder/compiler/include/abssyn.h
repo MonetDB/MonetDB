@@ -260,7 +260,8 @@ union PFpsem_t {
     bool             tru;        /**< truth value (boolean) */
     char            *str;        /**< string value */
     char             chr;        /**< character value */
-    PFqname_t        qname;      /**< qualified name */
+    PFqname_raw_t    qname_raw;  /**< qualified name (before ns resolution) */
+    PFqname_t        qname;      /**< qualified name (after ns resolution) */
     PFpaxis_t        axis;       /**< XPath axis */
     PFpkind_t        kind;       /**< node kind */
     PFsort_t         mode;       /**< sort modifier */

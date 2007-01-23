@@ -1629,7 +1629,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                    /* add_qname changes the working set 
                                       in 'var (PF_MIL_VAR_WS)' as side effect */
                                         add_qname (lit_str (
-                                                       PFqname_ns (
+                                                       PFqname_prefix (
                                                            p->sem.lit_tbl
                                                                  .tuples[row]
                                                                  .atoms[col]
@@ -3551,7 +3551,8 @@ reduce (PFpa_op_t * p, int goalnt)
                 else if (PFty_subtype (
                             PFty_attr (
                                 PFqname (PFns_wild,
-                                         PFty_name (PFty_defn (ty)).loc),
+                                         PFqname_loc (
+                                             PFty_name (PFty_defn (ty)))),
                                 PFty_xs_anySimpleType ()),
                             ty))
                     execute (
@@ -3589,9 +3590,11 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 /* Or maybe a test on attribute kind and namespace only? */
                 else if (PFty_subtype (
-                            PFty_attr (PFqname (PFty_name (PFty_defn (ty)).ns,
-                                                NULL),
-                                       PFty_xs_anySimpleType ()),
+                            PFty_attr (
+                                PFqname (
+                                    PFqname_ns (PFty_name (PFty_defn (ty))),
+                                    NULL),
+                                PFty_xs_anySimpleType ()),
                             ty))
                     execute (
                         assgn (var (tmp->name),
@@ -4448,7 +4451,7 @@ literal (PFalg_atom_t atom)
         case aat_dbl:  return lit_dbl (atom.val.dbl);
         case aat_bln:  return lit_bit (atom.val.bln);
         case aat_qname:  
-            return add_qname (lit_str (PFqname_ns (atom.val.qname)),
+            return add_qname (lit_str (PFqname_prefix (atom.val.qname)),
                               lit_str (PFqname_uri (atom.val.qname)),
                               lit_str (PFqname_loc (atom.val.qname)),
                               var (PF_MIL_VAR_WS));
@@ -4841,9 +4844,10 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
 
         /* Is it a test on element kind and local name only? */
         else if (PFty_subtype (
-                    PFty_elem (PFqname (PFns_wild,
-                                        PFty_name (PFty_defn (ty)).loc),
-                               PFty_xs_anyType ()),
+                    PFty_elem (
+                        PFqname (PFns_wild,
+                                 PFqname_loc (PFty_name (PFty_defn (ty)))),
+                        PFty_xs_anyType ()),
                     ty))
             scj = llscj_elem_loc (axis, iter, item, frag,
                                   var (PF_MIL_VAR_WS), order,
@@ -4852,7 +4856,7 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
 
         /* Or maybe a test on element kind and namespace only? */
         else if (PFty_subtype (
-                    PFty_elem (PFqname (PFty_name (PFty_defn (ty)).ns,
+                    PFty_elem (PFqname (PFqname_ns (PFty_name (PFty_defn (ty))),
                                         NULL),
                                PFty_xs_anyType ()),
                     ty))

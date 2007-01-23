@@ -86,7 +86,7 @@ PFty_t
 PFty_none (void)
 {
     PFty_t t = { .type  = ty_none,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -98,7 +98,7 @@ PFty_t
 PFty_empty (void)
 {
     PFty_t t = { .type  = ty_empty,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -110,7 +110,7 @@ PFty_t
 PFty_item (void)
 {
     PFty_t t = { .type  = ty_item,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -122,7 +122,7 @@ PFty_t
 PFty_untypedAny (void)
 {
     PFty_t t = { .type  = ty_untypedAny,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -134,7 +134,7 @@ PFty_t
 PFty_atomic (void)
 {
     PFty_t t = { .type  = ty_atomic,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -146,7 +146,7 @@ PFty_t
 PFty_untypedAtomic (void)
 {
     PFty_t t = { .type  = ty_untypedAtomic,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -158,7 +158,7 @@ PFty_t
 PFty_numeric (void)
 {
     PFty_t t = { .type  = ty_numeric,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -170,7 +170,7 @@ PFty_t
 PFty_node (void)
 {
     PFty_t t = { .type  = ty_node,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -182,7 +182,7 @@ PFty_t
 PFty_text (void)
 {
     PFty_t t = { .type  = ty_text,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -194,7 +194,7 @@ PFty_t
 PFty_pi (char *target)
 {
     PFty_t t = { .type  = ty_pi,
-                 .name  = { .ns = PFns_wild, .loc = target },
+                 .name  = PFqname (PFns_wild, target),
                  .sym_space = 0,
                  .child = { 0 }
     };
@@ -206,7 +206,7 @@ PFty_t
 PFty_comm (void)
 {
     PFty_t t = { .type  = ty_comm,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -218,7 +218,7 @@ static PFty_t
 PFty_integer (void)
 {
     PFty_t t = { .type  = ty_integer,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -230,7 +230,7 @@ static PFty_t
 PFty_decimal (void)
 {
     PFty_t t = { .type = ty_decimal,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -242,7 +242,7 @@ static PFty_t
 PFty_double (void)
 {
     PFty_t t = { .type = ty_double,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -254,7 +254,7 @@ static PFty_t
 PFty_string (void)
 {
     PFty_t t = { .type = ty_string,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -266,7 +266,7 @@ static PFty_t
 PFty_boolean (void)
 {
     PFty_t t = { .type = ty_boolean,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -278,7 +278,7 @@ static PFty_t
 PFty_qname (void)
 {
     PFty_t t = { .type = ty_qname,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -290,7 +290,7 @@ PFty_t
 PFty_stmt (void)
 {
     PFty_t t = { .type  = ty_stmt,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -302,7 +302,7 @@ PFty_t
 PFty_docmgmt (void)
 {
     PFty_t t = { .type  = ty_docmgmt,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .name  = 0,
                  .sym_space = 0,           
                  .child = { 0 } 
     };
@@ -429,7 +429,7 @@ PFty_t
 PFty_opt (PFty_t t)
 {
     PFty_t ty = { .type  = ty_opt,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .name  = 0,
                   .sym_space = 0,           
                   .child = { 0, 0 }
     };
@@ -445,7 +445,7 @@ PFty_t
 PFty_plus (PFty_t t)
 {
     PFty_t ty = { .type  = ty_plus,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .name  = 0,
                   .sym_space = 0,           
                   .child = { 0, 0 }
     };
@@ -461,7 +461,7 @@ PFty_t
 PFty_star (PFty_t t)
 {
     PFty_t ty = { .type  = ty_star,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .name  = 0,
                   .sym_space = 0,           
                   .child = { 0, 0 }
     };
@@ -479,7 +479,7 @@ PFty_t
 PFty_seq (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_seq,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .name  = 0,
                   .sym_space = 0,           
                   .child = { 0, 0 }
     };
@@ -499,7 +499,7 @@ PFty_t
 PFty_choice (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_choice,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .name  = 0,
                   .sym_space = 0,           
                   .child = { 0, 0 }
     };
@@ -519,7 +519,7 @@ PFty_t
 PFty_all (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_all,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .name  = 0,
                   .sym_space = 0,           
                   .child = { 0, 0 }
     };
@@ -569,7 +569,7 @@ PFty_t
 PFty_doc (PFty_t t)
 {
     PFty_t ty = { .type  = ty_doc,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .name  = 0,
                   .sym_space = 0,           
                   .child = { 0, 0 }
     }; 
@@ -662,7 +662,7 @@ PFty_xs_anySimpleType (void)
 PFty_t
 PFty_xs_anyElement (void)
 {
-    PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+    PFqname_t wild = PFqname (PFns_wild, NULL);
 
     return PFty_elem (wild, PFty_xs_anyType ());
 }
@@ -672,7 +672,7 @@ PFty_xs_anyElement (void)
 PFty_t
 PFty_xs_anyAttribute (void)
 {
-    PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+    PFqname_t wild = PFqname (PFns_wild, NULL);
 
     return PFty_attr (wild, PFty_star (PFty_atomic ()));
 }

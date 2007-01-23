@@ -417,7 +417,7 @@ new_ns (char *prefix, char *uri)
 static PFqname_t
 imported_qname (char *nsloc)
 {
-    PFqname_t qn;
+    PFqname_raw_t qn_raw;
 
     assert (nsloc);
 
@@ -425,17 +425,14 @@ imported_qname (char *nsloc)
      * It is still valid to call PFstr_qname() here, because we will
      * overwrite the namespace information in a moment.
      */
-    qn = PFstr_qname (nsloc);
+    qn_raw = PFqname_raw (nsloc);
 
-    if (qn.ns.prefix && *(qn.ns.prefix))
+    if (qn_raw.prefix && *(qn_raw.prefix))
         PFinfo (OOPS_SCHEMAIMPORT,
                 "namespace of `%s' replaced by target namespace `%s'",
-                PFqname_str (qn),
-                target_ns.uri);
+                PFqname_raw_str (qn_raw), target_ns.uri);
 
-    qn.ns = target_ns;
-
-    return qn;
+    return PFqname (target_ns, qn_raw.loc);
 }
 
 /**
@@ -450,30 +447,31 @@ imported_qname (char *nsloc)
 static PFqname_t
 ref_qname (char *nsloc)
 {
-    PFqname_t qn;
-    PFns_t *ns;
+    PFqname_raw_t  qn_raw;
+    PFns_t        *ns_ptr;
+    PFns_t         ns;
 
     assert (nsloc);
 
-    qn = PFstr_qname (nsloc);
+    qn_raw = PFqname_raw (nsloc);
 
-    assert (qn.ns.prefix);
+    assert (qn_raw.prefix);
 
     /*
      * Don't use lookup_ns() for unqualified names, as this would
      * yield the default element namespace, *not* the target
      * namespace.
      */
-    if (! *(qn.ns.prefix))
-        qn.ns = target_ns;
-    else if ((ns = lookup_ns (qn.ns.prefix)))
-        qn.ns = *ns;
+    if (! *(qn_raw.prefix))
+        ns = target_ns;
+    else if ((ns_ptr = lookup_ns (qn_raw.prefix)))
+        ns = *ns_ptr;
     else
         PFoops (OOPS_BADNS,
                 "(XML Schema import) prefix `%s' unknown",
-                qn.ns.prefix);
+                qn_raw.prefix);
 
-    return qn;
+    return PFqname (ns, qn_raw.loc);
 }
 
 /**
@@ -500,14 +498,13 @@ loc_cmp (const void *s1, const void *s2)
 static int
 map_open_tag (void *ctx, char *nsloc)
 {
-    PFqname_t qn;
-    PFns_t   *ns;
-    const char **t;
+    PFqname_raw_t   qn_raw;
+    PFns_t         *ns;
+    const char    **t;
 
     assert (nsloc);
 
-    /* validly called here, as we don't look into qn.ns.uri */
-    qn = PFstr_qname (nsloc);
+    qn_raw = PFqname_raw (nsloc);
 
     /*
      * check namespace of opening tag
@@ -517,7 +514,7 @@ map_open_tag (void *ctx, char *nsloc)
      * will correctly lead to the default element namespace in
      * lookup_ns().
      */
-    if ((ns = lookup_ns (qn.ns.prefix))) {
+    if ((ns = lookup_ns (qn_raw.prefix))) {
         /* is this the XML Schema namespace? */
         if (strcmp (ns->uri, PFns_xs.uri)) {
             PFinfo (OOPS_SCHEMAIMPORT, "non-XML Schema element seen");
@@ -527,12 +524,12 @@ map_open_tag (void *ctx, char *nsloc)
     }
     else {
         PFinfo (OOPS_BADNS,
-                "(XML Schema import) prefix `%s' unknown", qn.ns.prefix);
+                "(XML Schema import) prefix `%s' unknown", qn_raw.prefix);
         xmlParserError (ctx, "\n");
         PFoops (OOPS_SCHEMAIMPORT, "check schema validity");
     }
 
-    t = (char const **) bsearch (qn.loc,
+    t = (char const **) bsearch (qn_raw.loc,
                                  xml_schema_tags,
                                  XML_SCHEMA_TAGS,
                                  sizeof (char *),
@@ -580,8 +577,8 @@ map_closing_tag (void *ctx, char *nsloc)
 static PFarray_t *
 attributes (void *ctx, const xmlChar **atts)
 {
-    PFqname_t qn;
-    PFarray_t *attrs;
+    PFqname_raw_t  qn_raw;
+    PFarray_t     *attrs;
 
     attrs = PFarray (sizeof (char *));
 
@@ -591,17 +588,17 @@ attributes (void *ctx, const xmlChar **atts)
     if (atts)
         while (*atts) {
 
-            qn = PFstr_qname ((char *) *atts);
+            qn_raw = PFqname_raw ((char *) *atts);
 
-            assert (qn.ns.prefix);
+            assert (qn_raw.prefix);
 
-            if (*(qn.ns.prefix)) {
-                if (strcmp (qn.ns.prefix, XMLNS) == 0) {
+            if (*(qn_raw.prefix)) {
+                if (strcmp (qn_raw.prefix, XMLNS) == 0) {
                     /* `xmlns:loc="uri"' NS declaration attribute */
                     atts++;
 
                     /* declare loc namespace |-> uri */
-                    push_ns (new_ns (qn.loc, PFstrdup ((char *) *atts)));
+                    push_ns (new_ns (qn_raw.loc, PFstrdup ((char *) *atts)));
                     atts++;
 
                     continue;
@@ -609,12 +606,12 @@ attributes (void *ctx, const xmlChar **atts)
 
                 /* bogus namespace prefix for regular attribute */
                 PFinfo (OOPS_SCHEMAIMPORT,
-                        "undeclared attribute `%s'", PFqname_str (qn));
+                        "undeclared attribute `%s'", PFqname_raw_str (qn_raw));
                 xmlParserError (ctx, "\n");
                 PFoops (OOPS_SCHEMAIMPORT, "check schema validity");
             }
 
-            if (strcmp (qn.loc, XMLNS) == 0) {
+            if (strcmp (qn_raw.loc, XMLNS) == 0) {
                 /* `xmlns="uri"' default NS declaration attribute */
                 atts++;
 
@@ -2511,8 +2508,10 @@ schema_imports (PFpnode_t *di)
  * the given name @a qn in symbol space @a sym_space.
  */
 #define REGULARITY(sym_space)                                        \
-static void regularity_##sym_space (PFqname_t qn)                    \
+static void regularity_##sym_space (PFqname_t qn, void *defn)        \
 {                                                                    \
+    (void) defn;                                                     \
+                                                                     \
     if (PFty_regularity (PFty_##sym_space (qn)))                     \
         return;                                                      \
                                                                      \
@@ -2569,11 +2568,11 @@ PFschema_import (PFpnode_t *root)
     }
 
     /* check imported types for well-formedness (ensure regularity) */
-    PFenv_key_iterate (PFtype_defns,      regularity_named);
-    PFenv_key_iterate (PFelem_decls,      regularity_named_elem);
-    PFenv_key_iterate (PFattr_decls,      regularity_named_attr);
-    PFenv_key_iterate (PFgroup_defns,     regularity_named_group);
-    PFenv_key_iterate (PFattrgroup_defns, regularity_named_attrgroup);
+    PFenv_iterate (PFtype_defns,      regularity_named);
+    PFenv_iterate (PFelem_decls,      regularity_named_elem);
+    PFenv_iterate (PFattr_decls,      regularity_named_attr);
+    PFenv_iterate (PFgroup_defns,     regularity_named_group);
+    PFenv_iterate (PFattrgroup_defns, regularity_named_attrgroup);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

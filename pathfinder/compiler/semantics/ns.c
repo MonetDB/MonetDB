@@ -190,7 +190,7 @@ static PFns_t target_ns;
 /**
  * Does QName @a qn actually have a NS prefix?
  */
-#define NS_QUAL(qn) ((qn).ns.prefix && *((qn).ns.prefix))
+#define NS_QUAL(qn_raw) ((qn_raw).prefix && *((qn_raw).prefix))
 
 /**
  * NS prefix of XML NS declaration attributes `xmlns:...'
@@ -382,8 +382,8 @@ collect_xmlns (PFpnode_t *c)
                  */
                 assert (L(a));
                 if (L(a)->kind == p_tag) {
-                    if (NS_QUAL (L(a)->sem.qname) &&
-                        ! strcmp (L(a)->sem.qname.ns.prefix, XMLNS)) {
+                    if (NS_QUAL (L(a)->sem.qname_raw) &&
+                        ! strcmp (L(a)->sem.qname_raw.prefix, XMLNS)) {
                         /*
                          * this is a NS declaration attribute of the form
                          * `xmlns:foo=ns': bring `foo:...' |-> ns into scope
@@ -404,9 +404,9 @@ collect_xmlns (PFpnode_t *c)
                             RL(a)->kind == p_lit_str &&
                             RR(a)->kind == p_empty_seq) {
                             user_ns_add (
-                                    a->loc,
-                                    (PFns_t) { .prefix = L(a)->sem.qname.loc,
-                                               .uri    = RL(a)->sem.str });
+                                   a->loc,
+                                   (PFns_t) { .prefix = L(a)->sem.qname_raw.loc,
+                                              .uri    = RL(a)->sem.str });
 
                             /* finally remove this NS declaration attribute */
                             *c = *R(c);
@@ -422,11 +422,11 @@ collect_xmlns (PFpnode_t *c)
                                     "namespace declaration attribute %s is "
                                     "required to have non-empty literal "
                                     "string value",
-                                    PFqname_str (L(a)->sem.qname));
+                                    PFqname_raw_str (L(a)->sem.qname_raw));
 
                     }
                     else {
-                        if (! strcmp (L(a)->sem.qname.loc, XMLNS)) {
+                        if (! strcmp (L(a)->sem.qname_raw.loc, XMLNS)) {
 
                             /*
                              * this is a NS declaration attribute of the form
@@ -476,7 +476,8 @@ collect_xmlns (PFpnode_t *c)
                                             "namespace declaration attribute "
                                             "%s is required to have literal "
                                             "string value",
-                                            PFqname_str (L(a)->sem.qname));
+                                            PFqname_raw_str (
+                                                L(a)->sem.qname_raw));
                             }
 
                             /* finally remove this NS declaration attribute */
@@ -636,19 +637,23 @@ ns_resolve (PFpnode_t *n)
              *            /  |  \
              *         parm  t  body
              */
-            if (! NS_QUAL (n->sem.qname))
+            if (! NS_QUAL (n->sem.qname_raw))
                 /*
                  * function name unqualfied, attach default function NS,
                  * see W3C XQuery, 4.1
                  */
-                n->sem.qname.ns = fns;
+                n->sem.qname = PFqname (fns, n->sem.qname_raw.loc);
             else {
                 /* function name qualified, make sure the NS is in scope */
-                n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
-                if (! n->sem.qname.ns.uri)
+                PFns_t new_ns = { .prefix = n->sem.qname_raw.prefix,
+                                  .uri = ns_lookup (n->sem.qname_raw.prefix) };
+
+                if (! new_ns.uri)
                     PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified function name %s", 
-                            PFqname_str (n->sem.qname));
+                            PFqname_raw_str (n->sem.qname_raw));
+
+                n->sem.qname = PFqname (new_ns, n->sem.qname_raw.loc);
             }
 
             /*
@@ -656,7 +661,7 @@ ns_resolve (PFpnode_t *n)
              * within the module's target namespace.
              */
             if (PFns_eq (target_ns, PFns_wild)
-                    && PFns_eq (n->sem.qname.ns, target_ns))
+                    && PFns_eq (PFqname_ns (n->sem.qname), target_ns))
                 PFoops_loc (OOPS_BADNS, n->loc,
                         "function %s must be declared within the module's "
                         "target namespace (%s = \"%s\")",
@@ -680,12 +685,17 @@ ns_resolve (PFpnode_t *n)
 
         case p_atom_ty:
         case p_named_ty:
-            n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
-            if (! n->sem.qname.ns.uri)
+        {
+            PFns_t new_ns = { .prefix = n->sem.qname_raw.prefix,
+                              .uri    = ns_lookup (n->sem.qname_raw.prefix) };
+
+            if (! new_ns.uri)
                 PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified name %s",
-                            PFqname_str (n->sem.qname));
-            break;
+                            PFqname_raw_str (n->sem.qname_raw));
+
+            n->sem.qname = PFqname (new_ns, n->sem.qname_raw.loc);
+        } break;
 
         case p_node_ty:
             /*
@@ -723,8 +733,8 @@ ns_resolve (PFpnode_t *n)
              * the expression context; otherwise, it has no namespace URI.''
              */
             /* A NULL prefix means this is a wildcard namespace */
-            if (! n->sem.qname.ns.prefix)
-                n->sem.qname.ns = PFns_wild;
+            if (! n->sem.qname_raw.prefix)
+                n->sem.qname = PFqname (PFns_wild, n->sem.qname_raw.loc);
             /*
              * Unqualified attribute names (recognizable by a zero-length
              * prefix) shall not get the default element namespace (in
@@ -732,14 +742,18 @@ ns_resolve (PFpnode_t *n)
              * a zero-length prefix), but "no namespace" (the zero-length
              * URI).
              */
-            else if (principal == attribute && !*(n->sem.qname.ns.prefix))
-                n->sem.qname.ns.uri = PFstrdup ("");
+            else if (principal == attribute && !*(n->sem.qname_raw.prefix))
+                n->sem.qname = PFqname ((PFns_t) { .prefix = "", .uri = "" },
+                                        n->sem.qname_raw.loc);
             else {
-                n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
-                if (! n->sem.qname.ns.uri)
+                PFns_t new_ns = { .prefix = n->sem.qname_raw.prefix,
+                                  .uri = ns_lookup (n->sem.qname_raw.prefix) };
+                if (! new_ns.uri)
                     PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified name %s",
-                            PFqname_str (n->sem.qname));
+                            PFqname_raw_str (n->sem.qname_raw));
+
+                n->sem.qname = PFqname (new_ns, n->sem.qname_raw.loc);
             }
             break;
 
@@ -761,7 +775,7 @@ ns_resolve (PFpnode_t *n)
              * within the module's target namespace.
              */
             if (PFns_eq (target_ns, PFns_wild)
-                && PFns_eq (LL(n)->sem.qname.ns, target_ns))
+                && PFns_eq (PFqname_ns (LL(n)->sem.qname), target_ns))
                 PFoops_loc (OOPS_BADNS, n->loc,
                         "variable %s must be declared within the module's "
                         "target namespace (%s = \"%s\")",
@@ -776,20 +790,25 @@ ns_resolve (PFpnode_t *n)
         case p_varref:
             /* $ns:loc                       (variable)    */
 
-            assert (n->sem.qname.ns.prefix);
+            assert (n->sem.qname_raw.prefix);
 
             /*
              * An unprefixed variable reference is in no namespace
              * (W3C XQuery 3.1.2)
              */
-            if (! *(n->sem.qname.ns.prefix))
-                n->sem.qname.ns.uri = PFstrdup ("");
+            if (! *(n->sem.qname_raw.prefix))
+                n->sem.qname = PFqname ((PFns_t) { .prefix = "", .uri = "" },
+                                        n->sem.qname_raw.loc);
             else {
-                n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
-                if (! n->sem.qname.ns.uri)
+                PFns_t new_ns = { .prefix = n->sem.qname_raw.prefix,
+                                  .uri = ns_lookup (n->sem.qname_raw.prefix) };
+
+                if (! new_ns.uri)
                     PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified variable name $%s",
-                            PFqname_str (n->sem.qname));
+                            PFqname_raw_str (n->sem.qname_raw));
+
+                n->sem.qname = PFqname (new_ns, n->sem.qname_raw.loc);
             }
             break;
 
@@ -802,18 +821,22 @@ ns_resolve (PFpnode_t *n)
              *             |
              *           args
              */
-            if (! NS_QUAL (n->sem.qname))
+            if (! NS_QUAL (n->sem.qname_raw))
                 /* function name unqualfied, attach default function NS,
                  * see W3C XQuery, 4.1
                  */
-                n->sem.qname.ns = fns;
+                n->sem.qname = PFqname (fns, n->sem.qname_raw.loc);
             else  {
                 /* function name qualified, make sure the NS is in scope */
-                n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
-                if (! n->sem.qname.ns.uri)
+                PFns_t new_ns = { .prefix = n->sem.qname_raw.prefix,
+                                  .uri = ns_lookup (n->sem.qname_raw.prefix) };
+
+                if (! new_ns.uri)
                     PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified function name %s", 
-                            PFqname_str (n->sem.qname));
+                            PFqname_raw_str (n->sem.qname_raw));
+
+                n->sem.qname = PFqname (new_ns, n->sem.qname_raw.loc);
             }
 
             /* NS resolution in function arguments */
@@ -857,11 +880,15 @@ ns_resolve (PFpnode_t *n)
              */
             assert (L(n));
             if (L(n)->kind == p_tag) {
-                L(n)->sem.qname.ns.uri = ns_lookup (L(n)->sem.qname.ns.prefix);
-                if (! L(n)->sem.qname.ns.uri)
+                PFns_t new_ns
+                    = { .prefix = L(n)->sem.qname_raw.prefix,
+                        .uri    = ns_lookup (L(n)->sem.qname_raw.prefix) };
+                if (! new_ns.uri)
                     PFoops_loc (OOPS_BADNS, L(n)->loc,
                                 "unknown namespace in qualified tag name %s",
-                                PFqname_str (L(n)->sem.qname));
+                                PFqname_raw_str (L(n)->sem.qname_raw));
+
+                L(n)->sem.qname = PFqname (new_ns, L(n)->sem.qname_raw.loc);
             }
             else 
                 ns_resolve (L(n));
@@ -891,21 +918,28 @@ ns_resolve (PFpnode_t *n)
              */
             assert (L(n));
             if (L(n)->kind == p_tag) {
-                if (NS_QUAL (L(n)->sem.qname)) {
+                if (NS_QUAL (L(n)->sem.qname_raw)) {
                     /* qualified attribute name, check that NS is in scope */
-                    L(n)->sem.qname.ns.uri
-                        = ns_lookup (L(n)->sem.qname.ns.prefix);
-                    if (! L(n)->sem.qname.ns.uri)
+                    PFns_t new_ns
+                        = { .prefix = L(n)->sem.qname_raw.prefix,
+                            .uri    = ns_lookup (L(n)->sem.qname_raw.prefix) };
+
+                    if (! new_ns.uri)
                         PFoops_loc (OOPS_BADNS, L(n)->loc,
                                 "unknown namespace in qualified attribute "
-                                "name %s", PFqname_str (L(n)->sem.qname));
+                                "name %s",
+                                PFqname_raw_str (L(n)->sem.qname_raw));
+
+                    L(n)->sem.qname = PFqname (new_ns, L(n)->sem.qname_raw.loc);
                 }
                 else {
                     /*
                      * unqualified attributes are in no namespace
                      * (NOT in the default element namespace!)
                      */
-                    L(n)->sem.qname.ns.uri = PFstrdup ("");
+                    L(n)->sem.qname
+                        = PFqname ((PFns_t) { .prefix = "", .uri = "" },
+                                   L(n)->sem.qname_raw.loc);
                 }
             }
             else {
@@ -920,14 +954,20 @@ ns_resolve (PFpnode_t *n)
             break;
 
         case p_pragma:
-            /* (# ns:loc ... #) { ... }      (pragma)   */
-            n->sem.pragma.qname.ns.uri
-                = ns_lookup (n->sem.pragma.qname.ns.prefix);
-            if (! n->sem.pragma.qname.ns.uri)
+        {   /* (# ns:loc ... #) { ... }      (pragma)   */
+            PFns_t new_ns
+                = { .prefix = n->sem.pragma.qn.qname_raw.prefix,
+                    .uri = ns_lookup (n->sem.pragma.qn.qname_raw.prefix) };
+
+            if (! new_ns.uri)
                 PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in pragma $%s",
-                            PFqname_str (n->sem.pragma.qname));
-            break;
+                            PFqname_raw_str (n->sem.pragma.qn.qname_raw));
+
+            n->sem.pragma.qn.qname
+                = PFqname (new_ns, n->sem.pragma.qn.qname_raw.loc);
+
+        } break;
 
         default:
             for (c = 0; c < PFPNODE_MAXCHILD && n->child[c]; c++)

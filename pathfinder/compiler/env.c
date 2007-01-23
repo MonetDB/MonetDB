@@ -78,34 +78,10 @@ struct binding_t {
  * @return pointer to environment
  */
 PFenv_t *
-PFenv ()
+PFenv (void)
 {
     return (PFenv_t *) PFarray (sizeof (binding_t));
 }
-
-unsigned int
-PFenv_count (PFenv_t *e)
-{
-    assert (e);
-
-    return PFarray_last (e);
-}
-
-/**
- * Order two bindings (compares their keys).
- *
- * @param x first binding
- * @param y second binding
- * @return -1, 0, 1, depending on key comparison
- */
-static int 
-order (const void *x, const void *y)
-{
-    assert (x && y);
-
-    return PFqname_eq (((binding_t *) x)->key, ((binding_t *)y)->key);
-}
-
 
 /**
  * Lookup for binding with given key.  Returns the array of values
@@ -118,29 +94,17 @@ order (const void *x, const void *y)
 PFarray_t *
 PFenv_lookup (PFenv_t *e, PFqname_t key)
 {
-    binding_t bind = { .key = key, .values = NULL };
-    void *b;
-    unsigned int n;
+    /*
+     * The PFarray_... functions do not automatically adjust the
+     * last information, except for the PFarray_add() and PFarray_del()
+     * functions.  We rely on array cells automatically being initialized
+     * with NULL and, hence, take care of this initialization here.
+     */
+    while (PFarray_last (e) <= key)
+        *((PFarray_t **) PFarray_add (e)) = NULL;
 
-    assert (e);
-
-    n = PFenv_count (e);
-    
-    if (n) {
-        b = bsearch (&bind,                     /* key to search for */
-                     PFarray_at (e, 0),         /* bindings */
-                     n,                         /* # of keys */
-                     sizeof (binding_t),        /* size of a binding */
-                     order);                    /* order on bindings */
-
-        if (b)
-            return ((binding_t *) b)->values;
-    }
-
-    return 0;
+    return *((PFarray_t **) PFarray_at (e, key));
 }
-
-
 
 /**
  * Bind key to value (insert binding key |--> value) in environment.
@@ -153,36 +117,27 @@ PFenv_lookup (PFenv_t *e, PFqname_t key)
 PFarray_t *
 PFenv_bind (PFenv_t *e, PFqname_t key, void *value)
 {
-    binding_t bind;
-    PFarray_t *vs;
-    unsigned int n;
+    PFarray_t *a;
 
     assert (e);
 
-    /* is key already bound in environment e? */
-    if ((vs = PFenv_lookup (e, key))) {
-        /* key is already bound, add value to values vs */
-        *((void **) PFarray_add (vs)) = value;
-        return vs;
-    }
+    /*
+     * The PFarray_... functions do not automatically adjust the
+     * last information, except for the PFarray_add() and PFarray_del()
+     * functions.  We rely on array cells automatically being initialized
+     * with NULL and, hence, take care of this here.
+     */
+    while (PFarray_last (e) <= key)
+        *((PFarray_t **) PFarray_add (e)) = NULL;
 
-    /* key is yet unbound */
-    bind.key = key;
-    bind.values = PFarray (sizeof (void *));
-    
-    *((void **) PFarray_add (bind.values)) = value;
-    
-    /* insert new binding into environment */
-    *((binding_t *) PFarray_add (e)) = bind;
-    
-    /* sort environment by key to accelerate lookups */
-    if ((n = PFenv_count (e)) > 1) 
-        qsort (PFarray_at (e, 0),        /* bindings */
-               n,                        /* # of keys in env */
-                   sizeof (binding_t),       /* size of binding */
-               order);                   /* order on bindings */
+    a = *((PFarray_t **) PFarray_at (e, key));
 
-    return 0;
+    if (! a)
+        *((PFarray_t **) PFarray_at (e, key)) = PFarray (sizeof (void *));
+
+    *((void **) PFarray_add (*((PFarray_t **) PFarray_at (e, key)))) = value;
+
+    return a;
 }
 
 /**
@@ -193,21 +148,17 @@ PFenv_bind (PFenv_t *e, PFqname_t key, void *value)
  * @param fn callback function
  */
 void
-PFenv_iterate (PFenv_t *e, void (*fn) (void *))
+PFenv_iterate (PFenv_t *e, void (*fn) (PFqname_t, void *))
 {
-    unsigned int i;
-    unsigned int j;
-    binding_t *b;
-
-    for (i = 0; i < PFenv_count (e); i++) {
-        b = (binding_t *) PFarray_at (e, i);
-        assert (b);
-
-        for (j = 0; j < PFarray_last (b->values); j++) 
-            fn (PFarray_at (b->values, j));
+    for (unsigned int i = 0; i < PFarray_last (e); i++) {
+        PFarray_t *a = *(PFarray_t **) PFarray_at (e, i);
+        if (a)
+            for (unsigned int j = 0; j < PFarray_last (a); j++)
+                fn (i, PFarray_at (a, j));
     }
 }
 
+#if 0
 /**
  * Iterate over all bound keys in environment @a e and call the
  * callback function @a fun for each of key.
@@ -218,15 +169,12 @@ PFenv_iterate (PFenv_t *e, void (*fn) (void *))
 void
 PFenv_key_iterate (PFenv_t *e, void (*fn) (PFqname_t))
 {
-    unsigned int i;
-    binding_t *b;
-
-    for (i = 0; i < PFenv_count (e); i++) {
-        b = (binding_t *) PFarray_at (e, i);
-        assert (b);
-
-        fn (b->key);
+    for (unsigned int i = 0; i < PFarray_last (e); i++) {
+        PFarray_t *a = *(PFarray_t **) PFarray_at (e, i);
+        if (a)
+            fn (i);
     }
 }
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

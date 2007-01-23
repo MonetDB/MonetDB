@@ -2791,7 +2791,7 @@ llscj(PFalg_axis_t axis, const PFla_op_t *p)
         /* test on element kind and local name only */
         else if( PFty_subtype(
                     PFty_elem( PFqname( PFns_wild,
-                            PFty_name( PFty_defn (ty)).loc),
+                            PFqname_loc (PFty_name( PFty_defn (ty)))),
                         PFty_xs_anyType()),
                     ty)) {
             llscj_elem_loc( axis,
@@ -2800,7 +2800,7 @@ llscj(PFalg_axis_t axis, const PFla_op_t *p)
         }
         /* test on element kind and namespace only */
         else if (PFty_subtype(
-                    PFty_elem (PFqname( PFty_name( PFty_defn(ty)).ns,
+                    PFty_elem (PFqname( PFqname_ns (PFty_name( PFty_defn(ty))),
                             NULL),
                         PFty_xs_anyType()),
                     ty)) {

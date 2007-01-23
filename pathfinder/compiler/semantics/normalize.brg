@@ -639,8 +639,8 @@ static void relabel (PFpnode_t *p,  PFpnode_t **kids);
 #define wire1(t,loc,a)    p_wire1 ((t), (loc), (a))
 #define wire2(t,loc,a,b)  p_wire2 ((t), (loc), (a), (b))
 
-static PFpnode_t * varref (PFqname_t q, PFloc_t loc);
-static PFqname_t new_varname (char *prefix, unsigned int* varcount);
+static PFpnode_t * varref (PFqname_raw_t q, PFloc_t loc);
+static PFqname_raw_t new_varname (char *prefix, unsigned int* varcount);
 static bool contains_last_pos_or_nonstepdot(PFpnode_t *p);
                 
 /**
@@ -657,8 +657,8 @@ contains_last_pos_or_nonstepdot(PFpnode_t *p)
    
             /* check for the forbidden special functions */ 
             if (p->kind == p_fun_ref) {
-                if (strcmp(p->sem.qname.loc, "position") == 0) return true;
-                if (strcmp(p->sem.qname.loc, "last") == 0) return true;
+                if (strcmp(p->sem.qname_raw.loc, "position") == 0) return true;
+                if (strcmp(p->sem.qname_raw.loc, "last") == 0) return true;
             }
             /* allow the forbidden elements inside nested predicates (i.e. do not check R(p) then) */
             if (p->kind != p_pred && R(p)) {
@@ -903,7 +903,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
              *                                      /    \
              *                                     $d    def
              */
-            PFqname_t v1 = new_varname ("tsw", varcount);
+            PFqname_raw_t v1 = new_varname ("tsw", varcount);
 
             c = wire2 (p_typeswitch, p->loc,
                        L(p),
@@ -1039,11 +1039,11 @@ relabel (PFpnode_t *p,  PFpnode_t **kids)
  * @return    a parse tree node representing the variable
  */
 static PFpnode_t *
-varref (PFqname_t q, PFloc_t loc)
+varref (PFqname_raw_t q, PFloc_t loc)
 {
     PFpnode_t * n = p_leaf (p_varref, loc);
     
-    n->sem.qname = q;
+    n->sem.qname_raw = q;
     
     return n;
 }
@@ -1062,11 +1062,10 @@ varref (PFqname_t q, PFloc_t loc)
  * @return A QName describing the new variable name
  */
 
-static PFqname_t
+static PFqname_raw_t
 new_varname (char *prefix, unsigned int* varcount)
 {
     char                varname[sizeof("dot_000")];
-    PFqname_t           qn;
     
     /* construct new variable name */
     if (prefix)
@@ -1075,10 +1074,7 @@ new_varname (char *prefix, unsigned int* varcount)
         snprintf (varname, sizeof ("dot_000"), "v_%03u", (*varcount)++);
     
     /* assign internal Pathfinder namespace `pf:...' */
-    qn.ns  = PFns_pf;
-    qn.loc = PFstrdup (varname);
-    
-    return qn;
+    return (PFqname_raw_t) { .prefix = PFns_pf.prefix, .loc = PFstrdup (varname) };
 }
 
 

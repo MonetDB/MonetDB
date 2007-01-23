@@ -173,7 +173,10 @@ struct PFsort_t {
  *   (# qname content #)
  */
 struct PFpragma_t {
-    PFqname_t   qname;
+    union {
+        PFqname_raw_t qname_raw;
+        PFqname_t     qname;
+    } qn;
     char       *content;
 };
 typedef struct PFpragma_t PFpragma_t;

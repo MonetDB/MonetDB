@@ -260,7 +260,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
     double          dbl;
     char           *str;
     bool            bit;
-    PFqname_t       qname;
+    PFqname_raw_t   qname_raw;
     PFpnode_t      *pnode;
     struct phole_t  phole;
     PFptype_t       ptype;
@@ -508,7 +508,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                StringLiteral
                URILiteral
 
-%type <qname> 
+%type <qname_raw>
                AttributeDeclaration
                AttributeName
                Attribute_QName_LBrace
@@ -791,12 +791,15 @@ VersionDecl               : /* empty */
                             { PFquery.version = $2; PFquery.encoding = $3; 
                               if (strcmp (PFquery.version, "1.0")) {
                                   PFinfo_loc (OOPS_PARSE, @$,
-                                              "only XQuery version '1.0' is supported");
+                                      "only XQuery version '1.0' is supported");
                                   YYERROR;
                               }
-                              if (strcmp (PFquery.encoding, "UTF-8") && strcmp (PFquery.encoding, "utf-8")) {
+                              if (strcmp (PFquery.encoding, "UTF-8")
+                                  && strcmp (PFquery.encoding, "utf-8")) {
                                   PFinfo_loc (OOPS_PARSE, @$,
-                                              "only XQueries in UTF-8 encoding are supported, not in '%s' encoding", PFquery.encoding);
+                                      "only XQueries in UTF-8 encoding are "
+                                      "supported, not in '%s' encoding",
+                                      PFquery.encoding);
                                   YYERROR;
                               }
                             }
@@ -936,7 +939,7 @@ BoundarySpaceDecl         : "declare boundary-space preserve"
                               PFquery.pres_boundary_space = true;
                             } 
                           | "declare boundary-space strip"
-                            { ($$ = leaf (p_boundspc_decl, @$))->sem.tru = false;
+                            { ($$ = leaf (p_boundspc_decl,@$))->sem.tru = false;
                               PFquery.pres_boundary_space = false;
                             }
                           ;
@@ -965,7 +968,7 @@ OptionDecl                : "declare option" QName StringLiteral
                                  What could we do with options, actually? */
                               PFinfo (OOPS_NOTICE,
                                       "option %s will be ignored",
-                                      PFqname_str ($2));
+                                      PFqname_raw_str ($2));
                               $$ = nil (@$);
                             }
                           ;
@@ -1191,9 +1194,9 @@ OptTypeDeclaration_       : /* empty */      { $$ = nil (@$); }
 
 /* [25]  !W3C: Done by the lexer */
 ConstructionDecl          : "declare construction preserve"
-                            { ($$ = leaf (p_constr_decl, @$))->sem.tru = true; } 
+                            { ($$ = leaf (p_constr_decl, @$))->sem.tru = true; }
                           | "declare construction strip"
-                            { ($$ = leaf (p_constr_decl, @$))->sem.tru = false;} 
+                            { ($$ = leaf (p_constr_decl, @$))->sem.tru = false;}
                           ;
 
 /* [26] */
@@ -1203,7 +1206,7 @@ FunctionDecl              : "declare function" QName_LParen
                                          wire2 (p_fun_sig, loc_rng (@2, @4),
                                                 $3, $4),
                                          $5);
-                              c->sem.qname = $2;
+                              c->sem.qname_raw = $2;
                               $$ = c;
 
 #ifdef ENABLE_MILPRINT_SUMMER
@@ -1219,7 +1222,7 @@ FunctionDecl              : "declare function" QName_LParen
                                            wire2 (p_fun_sig, loc_rng (@2, @4),
                                                   $3, $4),
                                            leaf (p_external, @5)))
-                                   ->sem.qname = $2;
+                                   ->sem.qname_raw = $2;
 #ifdef ENABLE_MILPRINT_SUMMER
                               if (module_base)
                                   module_base
@@ -1238,7 +1241,7 @@ FunctionDecl              : "declare function" QName_LParen
                                                  c1->sem.oci = p_zero_or_more,
                                                  c1)),
                                          $5);
-                              c->sem.qname = $2;
+                              c->sem.qname_raw = $2;
                               $$ = c;
 
 #ifdef ENABLE_MILPRINT_SUMMER
@@ -1260,7 +1263,7 @@ FunctionDecl              : "declare function" QName_LParen
                                                    c->sem.oci = p_zero_or_more,
                                                    c)),
                                            leaf (p_external, @5)))
-                                   ->sem.qname = $2;
+                                   ->sem.qname_raw = $2;
 
 #ifdef ENABLE_MILPRINT_SUMMER
                               if (module_base)
@@ -1718,8 +1721,8 @@ OptPragmaExpr_            : /* empty */  { $$ = nil(@$); }
 /* [66] */
 Pragma                    : "(#" S QName PragmaContents "#)"
                             { $$ = p_leaf (p_pragma, @$);
-                              $$->sem.pragma.qname   = $3;
-                              $$->sem.pragma.content = $4;
+                              $$->sem.pragma.qn.qname_raw = $3;
+                              $$->sem.pragma.content   = $4;
                             }
                           ;
 
@@ -1943,7 +1946,7 @@ NodeTest                  : KindTest
 NameTest                  : QName
                             { $$ = wire2 (p_req_ty, @$,
                                           (c = leaf (p_req_name, @$),
-                                           c->sem.qname = $1,
+                                           c->sem.qname_raw = $1,
                                            c),
                                           nil (@$)); }
                           | Wildcard
@@ -1964,13 +1967,13 @@ Wildcard                  : "*"
                           | NCName_Colon_Star
                             { $$ = wire2 (p_req_ty, @$,
                                           (c = leaf (p_req_name, @$),
-                                           c->sem.qname = $1,
+                                           c->sem.qname_raw = $1,
                                            c),
                                           nil (@$)); }
                           | Star_Colon_NCName
                             { $$ = wire2 (p_req_ty, @$,
                                           (c = leaf (p_req_name, @$),
-                                           c->sem.qname = $1,
+                                           c->sem.qname_raw = $1,
                                            c),
                                           nil (@$)); }
                           ;
@@ -2029,7 +2032,7 @@ VarRef                    : "$" VarName   { $$ = $2; }
 
 /* [88] */
 VarName                   : QName
-                            { ($$ = leaf (p_varref, @$))->sem.qname = $1; }
+                            { ($$ = leaf (p_varref, @$))->sem.qname_raw = $1; }
                           ;
 
 /* [89] */
@@ -2058,7 +2061,7 @@ FunctionCall              : QName_LParen OptFuncArgList_ ")"
                                *   This is not the parser's job!
                                *   Do this during function resolution!
                                */
-                              c->sem.qname = $1;
+                              c->sem.qname_raw = $1;
                               $$ = c;
                             }
                           ;
@@ -2102,7 +2105,7 @@ DirElemConstructor        : "<" QName DirAttributeList "/>"
                               $$ = wire2 (p_elem,
                                           @$,
                                           (c = leaf (p_tag, @2),
-                                           c->sem.qname = $2,
+                                           c->sem.qname_raw = $2,
                                            c),
                                           $3.root);
                             }
@@ -2112,11 +2115,11 @@ DirElemConstructor        : "<" QName DirAttributeList "/>"
                             { /* XML well-formedness check:
                                * start and end tag must match
                                */ 
-                              if (PFqname_eq ($2, $7)) {
+                              if (PFqname_raw_eq ($2, $7)) {
                                 PFinfo_loc (OOPS_TAGMISMATCH, @$,
                                             "<%s> and </%s>",
-                                            PFqname_str ($2),
-                                            PFqname_str ($7));
+                                            PFqname_raw_str ($2),
+                                            PFqname_raw_str ($7));
                                 YYERROR;
                               }
 
@@ -2129,7 +2132,7 @@ DirElemConstructor        : "<" QName DirAttributeList "/>"
                                $$ = wire2 (p_elem,
                                            @$,
                                            (c = leaf (p_tag, @2),
-                                            c->sem.qname = $2,
+                                            c->sem.qname_raw = $2,
                                             c),
                                            $3.root);
                             }
@@ -2162,7 +2165,7 @@ DirAttributeList          : /* empty */
 DirAttribute_             : QName OptS_ "=" OptS_ DirAttributeValue
                             { $$ = wire2 (p_attr, @$,
                                           (c = leaf (p_tag, @1),
-                                           c->sem.qname = $1,
+                                           c->sem.qname_raw = $1,
                                            c), $5);
                             }
                           ;
@@ -2361,7 +2364,7 @@ CompDocConstructor        : "document {" Expr "}"
 CompElemConstructor       : Element_QName_LBrace OptContentExpr_ "}"
                             { $$ = wire2 (p_elem, @$,
                                           (c = leaf (p_tag, @1),
-                                           c->sem.qname = $1,
+                                           c->sem.qname_raw = $1,
                                            c),
                                           wire2 (p_contseq, @2, $2,
                                                  leaf (p_empty_seq, @2)));
@@ -2384,7 +2387,7 @@ ContentExpr               : Expr   { $$ = $1; }
 CompAttrConstructor       : Attribute_QName_LBrace OptContentExpr_ "}"
                             { $$ = wire2 (p_attr, @$,
                                           (c = leaf (p_tag, @1),
-                                           c->sem.qname = $1,
+                                           c->sem.qname_raw = $1,
                                            c),
                                           wire2 (p_contseq, @2, $2,
                                                  leaf (p_empty_seq, @2)));
@@ -2456,7 +2459,7 @@ ItemType                  : KindTest   { $$ = $1; }
 /* [122] */
 AtomicType                : QName
                             { ($$ = wire1 (p_atom_ty, @$, nil (@$)))
-                                ->sem.qname = $1; }
+                                ->sem.qname_raw = $1; }
                           ;
 
 /* [123] */
@@ -2534,21 +2537,21 @@ AttributeTest             : "attribute (" ")"
                                            wire2 (p_req_ty, @$,
                                                   $2,
                                                   (c = leaf (p_named_ty, @4),
-                                                   c->sem.qname = $4,
+                                                   c->sem.qname_raw = $4,
                                                    c))))
                                 ->sem.kind = p_kind_attr; }
                           ;
 
 /* [130] */
 AttribNameOrWildcard      : AttributeName
-                            { ($$ = leaf (p_req_name, @$))->sem.qname = $1; }
+                            { ($$ = leaf (p_req_name,@$))->sem.qname_raw = $1; }
                           | "*"
                             { $$ = nil (@$); }
                           ;
 
 /* [131] */
 SchemaAttributeTest       : "schema-attribute (" AttributeDeclaration ")"
-                            { ($$ = leaf (p_schm_attr, @$))->sem.qname = $2; }
+                            { ($$ = leaf (p_schm_attr,@$))->sem.qname_raw = $2;}
                           ;
 
 /* [132] */
@@ -2568,7 +2571,7 @@ ElementTest               : "element (" ")"
                                            wire2 (p_req_ty, @$,
                                                   $2,
                                                   (c = leaf (p_named_ty, @4),
-                                                   c->sem.qname = $4,
+                                                   c->sem.qname_raw = $4,
                                                    c))))
                                 ->sem.kind = p_kind_elem; }
                           | "element (" ElementNameOrWildcard ","
@@ -2588,7 +2591,7 @@ ElementTest               : "element (" ")"
                                            wire2 (p_req_ty, @$,
                                                   $2,
                                                   (c = leaf (p_named_ty, @4),
-                                                   c->sem.qname = $4,
+                                                   c->sem.qname_raw = $4,
                                                    c))))
                                 ->sem.kind = p_kind_elem;
                             }
@@ -2596,14 +2599,14 @@ ElementTest               : "element (" ")"
 
 /* [134] */
 ElementNameOrWildcard     : ElementName
-                            { ($$ = leaf (p_req_name, @$))->sem.qname = $1; }
+                            { ($$ = leaf (p_req_name,@$))->sem.qname_raw = $1; }
                           | "*"
                             { $$ = nil (@$); }
                           ;
 
 /* [135] */
 SchemaElementTest         : "schema-element (" ElementDeclaration ")"
-                            { ($$ = leaf (p_schm_elem, @$))->sem.qname = $2; }
+                            { ($$ = leaf (p_schm_elem,@$))->sem.qname_raw = $2;}
                           ;
 
 /* [136] */
@@ -2808,7 +2811,8 @@ add_to_module_wl (char*id, char *ns, char *uri)
             return;
 
     *(module_t *) PFarray_add (modules)
-        = (module_t) { .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
+        = (module_t) { .id = PFstrdup(id), .ns = PFstrdup (ns),
+                       .uri = PFstrdup (uri) };
 }
 
 /**

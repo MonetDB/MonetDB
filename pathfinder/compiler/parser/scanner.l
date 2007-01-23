@@ -298,7 +298,7 @@ PFscanner_init (char *buf)
 /* forward declarations */
 static char * entity_ref (const char *s, char **endptr);
 static char *extract_string (const char *s);
-static PFqname_t extract_qname (const char *s, unsigned int index);
+static PFqname_raw_t extract_qname (const char *s, unsigned int index);
 static char *extract_ncname (const char *s, unsigned int index);
 
 %}
@@ -552,13 +552,13 @@ _                                {S}
 ".."                               { gotoState (OPERATOR); yield (dot_dot); }
 "."                                { gotoState (OPERATOR); yield (dot); }
 "*"                                { gotoState (OPERATOR); yield (star); }
-{NCName}":*"                       { pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+{NCName}":*"                       { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR);
                                      yield (NCName_Colon_Star); }
-"*:"{NCName}                       { pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+"*:"{NCName}                       { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR); 
                                      yield (Star_Colon_NCName); }
@@ -612,11 +612,13 @@ _                                {S}
                                      yield (comment_lbrace); }
 "processing-instruction"{_}?"{"    { pushState (OPERATOR);
                                      yield (pi_lbrace); }
-"element"{_}{QName}{_}?"{"         { pflval.qname = extract_qname (yytext, 1);
+"element"{_}{QName}{_}?"{"         { pflval.qname_raw
+                                       = extract_qname (yytext, 1);
                                      pushState (OPERATOR);
                                      yield (Element_QName_LBrace);
                                    }
-"attribute"{_}{QName}{_}?"{"       { pflval.qname = extract_qname (yytext, 1);
+"attribute"{_}{QName}{_}?"{"       { pflval.qname_raw
+                                       = extract_qname (yytext, 1);
                                      pushState (OPERATOR);
                                      yield (Attribute_QName_LBrace);
                                    }
@@ -646,7 +648,8 @@ _                                {S}
 "do"{_}"replace"{_}"value"{_}"of"  { yield (do_replace_value_of); }
 "transform"{_}"copy"{_}"$"         { yield (transform_copy_dollar); }
 
-{QName}{_}?"("/[^:]                { pflval.qname = extract_qname (yytext, 0);
+{QName}{_}?"("/[^:]                { pflval.qname_raw
+                                       = extract_qname (yytext, 0);
                                      yield (QName_LParen);
                                    }
 {IntegerLiteral}                   { pflval.num = atoll (yytext);
@@ -661,8 +664,8 @@ _                                {S}
                                      gotoState (OPERATOR);
                                      yield (DoubleLiteral);
                                    }
-{QName}                            { pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+{QName}                            { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR);
                                      yield (QName);
@@ -801,8 +804,8 @@ _                                {S}
 }
 
 <VARNAME>{
-{QName}                            { pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+{QName}                            { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR);
                                      yield (QName);
@@ -811,8 +814,8 @@ _                                {S}
 }
 
 <SINGLETYPE>{
-{QName}                            { pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+{QName}                            { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR);
                                      yield (QName);
@@ -823,8 +826,8 @@ _                                {S}
 
 <ITEMTYPE>{
 "$"                                { gotoState (VARNAME); yield (dollar); }
-{QName}                            { pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+{QName}                            { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OCCURRENCEINDICATOR);
                                      yield (QName);
@@ -877,8 +880,8 @@ _                                {S}
 }
 
 <KINDTEST>{
-{QName}                            { pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+{QName}                            { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      yield (QName);
                                    }
@@ -903,8 +906,8 @@ _                                {S}
 }
 
 <START_TAG>{
-{QName}                            { pflval.qname 
-                                         = PFstr_qname (PFstrndup (yytext,
+{QName}                            { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      yield (QName);
                                    }
@@ -1027,8 +1030,8 @@ _                                {S}
 
 <END_TAG>{
 ">"                                { popState (); yield (greater_than); }
-{QName}                            { pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+{QName}                            { pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      yield (QName);
                                    }
@@ -1057,8 +1060,8 @@ _                                {S}
 <PRAGMA_TARGET>{
 {S}                                { yield (S); }
 {QName}                            { gotoState (PRAGMA_CONTENT);
-                                     pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
+                                     pflval.qname_raw
+                                         = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      yield (QName);
                                    }
@@ -1226,7 +1229,7 @@ isncnamechar (const char c)
  * Extract word number @a index from a pattern match and return
  * it as a QName.
  */
-static PFqname_t
+static PFqname_raw_t
 extract_qname (const char *s, unsigned int index)
 {
     unsigned int start = 0;
@@ -1278,7 +1281,7 @@ extract_qname (const char *s, unsigned int index)
                              && s[end] != '('; end++)
         /* do nothing */;
 
-    return PFstr_qname (PFstrndup (s + start, end - start));
+    return PFqname_raw (PFstrndup (s + start, end - start));
 }
 
 /**

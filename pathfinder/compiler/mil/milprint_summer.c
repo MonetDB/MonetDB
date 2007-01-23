@@ -2195,7 +2195,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     }
     else if (PFty_subtype (in_ty, PFty_pi (NULL)))
     {
-        char *target = (PFty_name (in_ty)).loc;
+        char *target = PFqname_loc (PFty_name (in_ty));
         loop_liftedSCJ (f, axis, "PI", 0, target, rev_in, rev_out);
     }
     else if (PFty_subtype (in_ty, PFty_doc (PFty_xs_anyType ())))
@@ -2204,8 +2204,8 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     }
     else if (PFty_subtype (in_ty, PFty_xs_anyElement ()))
     {
-        ns = (PFty_name (in_ty)).ns.uri;
-        loc = (PFty_name (in_ty)).loc;
+        ns = PFqname_uri (PFty_name (in_ty));
+        loc = PFqname_loc (PFty_name (in_ty));
 
         /*
          * wildcard ns/local part is represented as a NULL pointer
@@ -2242,8 +2242,8 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
             return;
         }
 
-        ns = (PFty_name (in_ty)).ns.uri;
-        loc = (PFty_name (in_ty)).loc;
+        ns = PFqname_uri (PFty_name (in_ty));
+        loc = PFqname_loc (PFty_name (in_ty));
 
         /*
          * wildcard ns/local part is represented as a NULL pointer
@@ -6200,7 +6200,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
         milprintf(f,
                 "{ERROR (\"XRPC calls to builtin functions"
                 " are not allowed.\"); }\n");
-    } else if (fun->qname.ns.uri == NULL) {
+    } else if (PFqname_uri (fun->qname) == NULL) {
         milprintf(f,
                 "{ERROR (\"Functions called via XRPC should defined"
                 " in a module definition.\"); }\n");
@@ -6337,7 +6337,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "  }\n"
             "} # end of XRPC function call\n",
         counter, counter, counter,
-        fun->qname.ns.uri, fun->atURI, fun->qname.loc,    
+        PFqname_uri (fun->qname), fun->atURI, PFqname_loc (fun->qname),    
         updCall, fun->arity,
         counter, counter, counter, counter);
 }
@@ -6429,7 +6429,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
             fun->sig,
             cur_level, cur_level, cur_level, cur_level, 
             counter, counter, counter, counter, 
-            fun->qname.loc, fun->qname.loc);
+            PFqname_loc (fun->qname), PFqname_loc (fun->qname));
 
     milprintf(f, "} # end of UDF - function call\n");
 }
@@ -8573,9 +8573,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             break;
         case c_tag:
             {
-            char *prefix = c->sem.qname.ns.prefix;
-            char *uri = c->sem.qname.ns.uri;
-            char *loc = c->sem.qname.loc;
+            char *prefix = PFqname_prefix (c->sem.qname);
+            char *uri = PFqname_uri (c->sem.qname);
+            char *loc = PFqname_loc (c->sem.qname);
 
             milprintf(f,
                     "{ # tagname-translation\n"
@@ -8759,7 +8759,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     "v_iter000 := [oid](v_iter000).access(BAT_WRITE);\n"
                     "v_item000 := [oid](v_item000).access(BAT_WRITE);\n"
                     "v_kind000 := [int](v_kind000).access(BAT_WRITE);\n",
-                    c->sem.fun->sig, c->sem.fun->qname.loc);
+                    c->sem.fun->sig, PFqname_loc (c->sem.fun->qname));
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
@@ -8899,7 +8899,7 @@ expandable (PFcnode_t *c)
 #ifdef HAVE_PFTIJAH
     if (!noTijahFun(LR(c))) return 0;
 #endif
-    if (strcmp(LL(c)->sem.var->qname.ns.prefix, "#pf") == 0) 
+    if (strcmp (PFqname_prefix (LL(c)->sem.var->qname), "#pf") == 0) 
         if (noConstructor(LR(c))) return 1;
     return noForBetween(LL(c)->sem.var, R(c));
 }
@@ -10739,8 +10739,10 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* create a new valid PROC name for mil */
         /* ==================================== */
 
-        char sig[1024], *p = c->sem.fun->qname.loc, *q = c->sem.fun->qname.ns.uri;
-        char *r = c->sem.fun->qname.ns.prefix;
+        char  sig[1024],
+             *p = PFqname_loc (c->sem.fun->qname),
+             *q = PFqname_uri (c->sem.fun->qname);
+        char *r = PFqname_prefix (c->sem.fun->qname);
         int i = 0, j, first = 0;
         unsigned int hash = 0; /* f->module_base; */
         int stmt = PFqueryType(R(c));

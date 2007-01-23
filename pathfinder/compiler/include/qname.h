@@ -39,23 +39,20 @@
 /* PFns_t */
 #include "ns.h"
 
-/** XML namespace qualified name */
-typedef struct PFqname_t PFqname_t;
+typedef unsigned int PFqname_t ;
 
-/**
- * This represents a QName `ns:loc'
- * See top of qname.c for detailed semantics of this field.
- */
-struct PFqname_t {
-  PFns_t ns;       /**< namespace part */
-  char   *loc;     /**< local part */
+typedef struct PFqname_raw_t PFqname_raw_t;
+
+struct PFqname_raw_t {
+    char *prefix;
+    char *loc;
 };
 
 /* is namespace the wildcard namespace? */
-#define PFQNAME_NS_WILDCARD(qn) ((qn).ns.prefix == NULL)
+#define PFQNAME_NS_WILDCARD(qn) PFqname_ns_wildcard (qn)
 
 /* is local name a wildcard (ns:*)? */
-#define PFQNAME_LOC_WILDCARD(qn) ((qn).loc == NULL)
+#define PFQNAME_LOC_WILDCARD(qn) PFqname_loc_wildcard (qn)
 
 /* is QName the wildcard *:* ? */
 #define PFQNAME_WILDCARD(qn) \
@@ -75,6 +72,10 @@ PFqname_uri_str (PFqname_t);
 
 /** Return the prefix part of a QName */
 char *
+PFqname_prefix (PFqname_t qn);
+
+/** Return namespace part of a QName */
+PFns_t
 PFqname_ns (PFqname_t qn);
 
 /** Return the URI part of a QName */
@@ -85,10 +86,20 @@ PFqname_uri (PFqname_t qn);
 char *
 PFqname_loc (PFqname_t qn);
 
-/* Extract QName from a string */
-PFqname_t PFstr_qname (char *);
+/* is namespace the wildcard namespace? */
+bool PFqname_ns_wildcard (PFqname_t);
 
-PFqname_t PFqname (PFns_t, char *);
+/* is local name a wildcard (ns:*)? */
+bool PFqname_loc_wildcard (PFqname_t q);
+
+/* Extract QName from a string */
+PFqname_raw_t PFqname_raw (const char *);
+
+char * PFqname_raw_str (PFqname_raw_t);
+
+int PFqname_raw_eq (PFqname_raw_t, PFqname_raw_t);
+
+PFqname_t PFqname (PFns_t, const char *);
 
 #endif   /* QNAME_H */
 

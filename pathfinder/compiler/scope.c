@@ -106,11 +106,11 @@ hash (PFqname_t key)
 
     i = 0;
 
-    if (key.ns.uri)
-        for (k = key.ns.uri; *k; k++)
+    if (PFqname_uri (key))
+        for (k = PFqname_uri (key); *k; k++)
             i = 131 * i + *k;
 
-    for (k = key.loc; *k; k++)
+    for (k = PFqname_loc (key); *k; k++)
         i = 131 * i + *k;
 
     return i % SCOPE_HASH_SZ;
