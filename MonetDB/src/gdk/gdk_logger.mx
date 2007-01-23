@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
-@f logger
+@f gdk_logger
 @t Transactions
 @a N. J. Nes
 @v 2.0
@@ -156,7 +156,7 @@ gdk_export log_bid logger_find_bat(logger *logger, char *name);
 #endif /*_LOGGER_H_*/
 @c
 #include "monetdb_config.h"
-#include "logger.h"
+#include "gdk_logger.h"
 #include <string.h>
 
 
