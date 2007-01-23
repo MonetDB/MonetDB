@@ -10982,6 +10982,7 @@ const char* PFvarMIL(void) {
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var try := 1;\n"\
         "var err := \"!ERROR: conflicting update\";\n"\
+        "var ws_log_wsid := 0LL;\n"\
         "while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " var ws := empty_bat;\n"\
@@ -11033,6 +11034,7 @@ const char* PFdocbatMIL(void) {
 #define PF_STOPMIL_END(LASTPHASE) \
            " });\n"\
            " ws_log_wsid := ws_id(ws);\n"\
+           " if (not(isnil(err))) ws_log(ws, err);\n"\
            " ws_destroy(ws);\n"\
            "}\n"\
            "if (not(isnil(err))) ERROR(err);\n"\
