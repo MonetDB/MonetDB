@@ -4,11 +4,13 @@
  * Algebra Mapper.
  */
 
+/* always include pathfinder.h first! */ 
+#include "pathfinder.h" 
+
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "pathfinder.h"
 #include "mem.h"
 #include "oops.h"
 #include "logical.h"

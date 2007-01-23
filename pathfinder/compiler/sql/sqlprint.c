@@ -27,12 +27,15 @@
 
  * $Id$
  */
+
+/* always include pathfinder.h first! */ 
+#include "pathfinder.h" 
+
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
 #include "mem.h"
-#include "pathfinder.h"
 #include "sql.h"
 #include "sqlprint.h"
 
