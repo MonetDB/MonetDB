@@ -734,7 +734,6 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
     stream_printf(out, "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/soap+xml; "
             "charset=\"utf-8\"\r\n\r\n");
-    argc += 1000;
     char *err = xquery_method(out, timing, module, location, method,
             argc, iterc, argcnt, argtpe, argval, shredBAT);
     time_servApp = GDKusec() - time_servApp; /* Stop timing Server
