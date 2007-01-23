@@ -82,8 +82,8 @@ loading module 'pathfinder'
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "aggrX3",	  2		  ]
-[ "alarm",	  4		  ]
+[ "aggrX3",	  3		  ]
+[ "alarm",	  5		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
@@ -93,18 +93,19 @@ loading module 'pathfinder'
 [ "lock",	  4		  ]
 [ "logger",	  3		  ]
 [ "main",	  1		  ]
-[ "malalgebra",	  4		  ]
+[ "malalgebra",	  5		  ]
 [ "mapi",	  1		  ]
-[ "mmath",	  2		  ]
+[ "mmath",	  3		  ]
 [ "monettime",	  4		  ]
 [ "pathfinder",	  1		  ]
 [ "pcre",	  2		  ]
+[ "pf_standoff",  1		  ]
 [ "pf_support",	  2		  ]
 [ "str",	  1		  ]
 [ "streams",	  3		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "xtables",	  2		  ]
+[ "xtables",	  3		  ]
 dropping module 'pathfinder'
 #---------------------------------#
 # module		usage_count	  # name
