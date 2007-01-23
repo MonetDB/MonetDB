@@ -12,10 +12,24 @@ set monetdb4_prefix=@XMONETDB4_PREFIX@
 set builddir=@XPATHFINDER_BUILD@
 set srcdir=@XPATHFINDER_SOURCE@
 
-set MOD_PATH=%builddir%\runtime\.libs;%builddir%\runtime;%builddir%\modules\pftijah\.libs;%builddir%\modules\pftijah;%monetdb4_prefix%\lib\MonetDB4;%monetdb4_prefix%\lib\MonetDB4\lib;%monetdb4_prefix%\lib\MonetDB4\bin
+set MOD_PATH=%builddir%\runtime\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\runtime
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\pftijah\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\pftijah
+set MOD_PATH=%MOD_PATH%;%monetdb4_prefix%\lib\MonetDB4
+set MOD_PATH=%MOD_PATH%;%monetdb4_prefix%\lib\MonetDB4\lib
+set MOD_PATH=%MOD_PATH%;%monetdb4_prefix%\lib\MonetDB4\bin
 
-set PATH=%builddir%\compiler;%PATH%
+set PATH=@XCLIENTS_PREFIX@\lib\MonetDB\Tests;%PATH%
+set PATH=@XMONETDB5_PREFIX@\bin;%PATH%
+set PATH=@XMONETDB4_PREFIX@\bin;%PATH%
+set PATH=@XCLIENTS_PREFIX@\bin;%PATH%
+set PATH=@XMONETDB_PREFIX@\bin;%PATH%
 set PATH=%MOD_PATH%;%PATH%
+set PATH=%builddir%\compiler;%PATH%
+
+set PYTHONPATH=@XMONETDB_PREFIX@\share\MonetDB\python;%PYTHONPATH%
+set PYTHONPATH=@XCLIENTS_PREFIX@\share\MonetDB\python;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%
