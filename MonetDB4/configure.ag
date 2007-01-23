@@ -337,6 +337,7 @@ AC_TRY_LINK([$ac_includes_default
 AC_MSG_RESULT($ctime_r3)
 
 AM_MONETDB_UTILS()
+AM_MONETDB_MEL()
 
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 
