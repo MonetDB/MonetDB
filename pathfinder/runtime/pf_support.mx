@@ -5626,7 +5626,8 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 			return GDK_FAIL;
 		}
 	}
-	if (view) { /* avoid BUNhead()/BUNtail() corruption due to multi-threading */
+	if (view && !VIEWparent(batlist[ii])) { 
+                /* avoid BUNhead()/BUNtail() corruption due to multi-threading */
 		batlist[ii] = VIEWcreate(batlist[ii]);  /* view shares master hash table */
 		BBPunfix(VIEWparent(batlist[ii])); /* release the fix of BATdescriptor */
 	}
