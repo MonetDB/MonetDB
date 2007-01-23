@@ -5237,7 +5237,7 @@ xquery_method(stream *out,
     monetSetChannel(XQthread, GDKin, out);
     if (argc >= 1000) {
         /* hack: pass argc+1000 and you get debug output */
-        s = open_wstream("/tmp/xrpc.mil");
+        s = open_wastream("/tmp/xrpc.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
