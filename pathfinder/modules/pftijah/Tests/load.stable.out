@@ -42,8 +42,8 @@ loading module 'pftijah'
 # module		usage_count	  # name
 # str		int		  # type
 #---------------------------------#
-[ "aggrX3",	  3		  ]
-[ "alarm",	  5		  ]
+[ "aggrX3",	  5		  ]
+[ "alarm",	  7		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
@@ -53,26 +53,27 @@ loading module 'pftijah'
 [ "lock",	  4		  ]
 [ "logger",	  5		  ]
 [ "main",	  1		  ]
-[ "malalgebra",	  4		  ]
+[ "malalgebra",	  6		  ]
 [ "mapi",	  2		  ]
-[ "mmath",	  3		  ]
+[ "mmath",	  5		  ]
 [ "monettime",	  5		  ]
 [ "pathfinder",	  2		  ]
 [ "pcre",	  3		  ]
+[ "pf_standoff",  2		  ]
 [ "pf_support",	  3		  ]
 [ "pftijah",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  5		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "xtables",	  3		  ]
+[ "xtables",	  5		  ]
 dropping module 'pftijah'
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type
 #---------------------------------#
-[ "aggrX3",	  2		  ]
-[ "alarm",	  3		  ]
+[ "aggrX3",	  3		  ]
+[ "alarm",	  4		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
@@ -82,18 +83,19 @@ dropping module 'pftijah'
 [ "lock",	  3		  ]
 [ "logger",	  3		  ]
 [ "main",	  1		  ]
-[ "malalgebra",	  3		  ]
+[ "malalgebra",	  4		  ]
 [ "mapi",	  1		  ]
-[ "mmath",	  2		  ]
+[ "mmath",	  3		  ]
 [ "monettime",	  3		  ]
 [ "pathfinder",	  1		  ]
 [ "pcre",	  2		  ]
+[ "pf_standoff",  1		  ]
 [ "pf_support",	  2		  ]
 [ "str",	  1		  ]
 [ "streams",	  3		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "xtables",	  2		  ]
+[ "xtables",	  3		  ]
 
 quit();
 
