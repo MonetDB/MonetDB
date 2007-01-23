@@ -125,7 +125,7 @@ the bats are made persistent, i.e. a bbp sub-commit is done.
 @* Implementation Code 
 @c
 #include "monetdb4_config.h"
-#include "logger.h"
+#include "gdk_logger.h"
 #include "logger.proto.h"
 
 
