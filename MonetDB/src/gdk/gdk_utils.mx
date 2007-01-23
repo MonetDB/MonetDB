@@ -558,13 +558,13 @@ GDKmem_heapcheck(int t)
 #endif
 	}
 
-@- meminc(size_t memdelta, size_t vmdelta)
+@- meminc(size_t memdelta, size_t vmdelta, str fcn)
 @= meminc
 	{
 		size_t _memdelta = (size_t) @1;
 		size_t _vmdelta = (size_t) SEG_SIZE(@2,MT_VMUNITLOG);
 
-		gdk_set_lock(GDKthreadLock, "GDKmeminc");
+		gdk_set_lock(GDKthreadLock, @3);
 		GDK_mem_cursize += _memdelta;
 #ifdef GDK_VM_KEEPHISTO
 		{
@@ -574,16 +574,16 @@ GDKmem_heapcheck(int t)
 		}
 #endif
 		GDK_vm_cursize += _vmdelta;
-		gdk_unset_lock(GDKthreadLock, "GDKmeminc");
+		gdk_unset_lock(GDKthreadLock, @3);
 	}
 
-@- memdec(size_t memdelta, size_t vmdelta)
+@- memdec(size_t memdelta, size_t vmdelta, str nme)
 @= memdec
 	{
 		size_t _memdelta = (size_t) @1;
 		size_t _vmdelta = (size_t) SEG_SIZE(@2,MT_VMUNITLOG);
 
-		gdk_set_lock(GDKthreadLock, "GDKmemdec");
+		gdk_set_lock(GDKthreadLock, @3);
 		GDK_mem_cursize -= _memdelta;
 #ifdef GDK_VM_KEEPHISTO
 		{
@@ -593,7 +593,7 @@ GDKmem_heapcheck(int t)
 		}
 #endif
 		GDK_vm_cursize -= _vmdelta;
-		gdk_unset_lock(GDKthreadLock, "GDKmemdec");
+		gdk_unset_lock(GDKthreadLock, @3);
 	}
 @c
 void
@@ -1245,9 +1245,9 @@ GDKstrdup(const char *s)
 allocations affect only the logical VM resources.
 @c
 void
-GDKmeminc(size_t len)
+GDKvminc(size_t len)
 {
-	@:meminc(0,len)@
+	@:meminc(0,len,"GDKvminc")@
 	CHKMEM(0, len);
 }
 
@@ -1265,7 +1265,7 @@ GDKmmap(char *path, int mode, off_t off, size_t len)
 	}
 	if (ret != (void *) -1L) {
 		MT_alloc_register(ret, len, 'M');
-		GDKmeminc(len);
+		GDKvminc(len);
 	}
 	return (void *) ret;
 }
@@ -1278,7 +1278,7 @@ GDKmunmap(void *addr, size_t size)
 	MT_alloc_register(addr, size, 'm');
 	ret = MT_munmap(addr, size);
 	if (ret == 0) {
-		@:memdec(0,size)@
+		@:memdec(0,size,"GDKunmap")@
 	}
 	return ret;
 }
@@ -1307,7 +1307,7 @@ GDKvmalloc(size_t size, size_t * maxsize, int emergency)
 		}
 	}
 	if (ret != NULL) {
-		@:meminc(size,*maxsize)@
+		@:meminc(size,*maxsize,"GDKvmalloc")@
 		CHKMEM(size, *maxsize);
 	}
 	return ret;
@@ -1331,8 +1331,8 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 		}
 	}
 	if (ret != NULL) {
-		@:memdec(oldsize,oldmax)@
-		@:meminc(newsize,*newmax)@
+		@:memdec(oldsize,oldmax,"GDKvmrealloc")@
+		@:meminc(newsize,*newmax,"GDKvmrealloc")@
 		CHKMEM(newsize, *newmax);
 	}
 	return ret;
@@ -1342,7 +1342,7 @@ void
 GDKvmfree(void *blk, size_t size, size_t maxsize)
 {
 	MT_vmfree(blk, maxsize);
-	@:memdec(size,maxsize)@
+	@:memdec(size,maxsize,"GDKvmfree")@
 }
 
 @}
