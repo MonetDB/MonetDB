@@ -2546,6 +2546,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
   var types := update_insert_node_kind.get_types();
   var attrs := types.ord_uselect(ATTR);
   var elems := types.ord_uselect(ELEM);
+
   if ((attrs.count() + elems.count()) != types.count()) {
     ERROR("node must be of type ELEMENT or ATTRIBUTE\n");
   }
@@ -2639,6 +2640,9 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         # it is to be inserted.
         var docinsertafter_oldpre := update_node_item.fetch(idx);
         var pre_nid := ws.fetch(PRE_NID).find(doccont);
+        var pre_kind := ws.fetch(PRE_KIND).find(doccont);
+        if (pre_kind.find(docinsertafter_oldpre) >= DOCUMENT)
+    	  ERROR("cannot insert into a document node\n");
         var nid_rid := ws.fetch(NID_RID).find(doccont);
         var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(doccont);
         var docinsertafter_rid := findupdate(nid_rid, nid_rid_update, pre_nid.find(docinsertafter_oldpre));
@@ -2688,7 +2692,6 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           {
             # docinsertafter_oldpre may point to a hole, so back track to a non-hole
             # item; this uses the original (unmodified) document
-            var pre_kind := ws.fetch(PRE_KIND).find(doccont);
             var cur := docinsertafter_oldpre;
             var ret := pre_kind.find(cur);
             while (isnil(ret)) {
@@ -3468,6 +3471,10 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
     update_node_item@batloop() {
       var oldpre := $t;         # the original PRE value of the to-be-deleted node
       var cont := conts.fetch($h);
+      var pre_kind := ws.fetch(PRE_KIND).find(cont);
+      if (pre_kind.find(oldpre) >= DOCUMENT)
+        ERROR("document nodes cannot be deleted");
+
       # translate PRE value to NID value which is also valid in the modified document
       var pre_nid := ws.fetch(PRE_NID).find(cont);
       var nid := pre_nid.find(oldpre);
@@ -3509,7 +3516,6 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
         if (not(isnil(niland(size, int_nil)))) { # result of niland(size, int_nil) is either 0 or int_nil
           var next_pagebase := oid((lng(pageno) + 1) << REMAP_PAGE_BITS);
           var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(cont);
-          var pre_kind := ws.fetch(PRE_KIND).find(cont);
           var rid_kind := ws.fetch(_RID_KIND).find(cont);
           var rid_kind_update := ws.fetch(RID_KIND_UPDATE).find(cont);
           var rid_level := ws.fetch(_RID_LEVEL).find(cont);

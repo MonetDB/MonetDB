@@ -1338,20 +1338,27 @@ PROC regionindex_extract(BAT[void,bat] ws, oid cont, str tpe) : void
     if (isnil(CATCH({ start_qn := XIRAF_nodes.find(region_start_attr_tag);
                         end_qn := XIRAF_nodes.find(region_end_attr_tag); })) and (cont != WS)) 
     {
+        var nid_rid  := ws.fetch(NID_RID).fetch(cont);
+        var map_pid  := ws.fetch(MAP_PID).fetch(cont);
+        var prp_val  := ws.fetch(PROP_VAL).fetch(cont);
+        var attr_qn  := ws.fetch(ATTR_QN).fetch(cont);
+        var attr_own := ws.fetch(ATTR_OWN).fetch(cont);
+        var attr_prp := ws.fetch(ATTR_PROP).fetch(cont);
+
         # get all start attributes, then their numerical value, sort it, and then get the PRE's
-        var attr_attr := ws.fetch(ATTR_QN).find(cont).ord_uselect(start_qn).mirror();
-        var attr_prop := attr_attr.leftjoin(ws.fetch(ATTR_PROP).find(cont));
-        var val_start := [*tpe](attr_prop.leftjoin(ws.fetch(PROP_VAL).find(cont))).reverse().sort();
-        var start_nid := val_start.leftjoin(ws.fetch(ATTR_OWN).find(cont));
+        var attr_attr := attr_qn.ord_uselect(start_qn).mirror();
+        var attr_prop := attr_attr.leftjoin(attr_prp);
+        var val_start := [*tpe](attr_prop.leftjoin(prp_val)).reverse().sort();
+        var start_nid := val_start.leftjoin(attr_own);
 
         # now we have a table with a PRE column and a start (numerical) column in the right order
-        var left_pre := start_nid.tmark(0@0).leftfetchjoin(ws.fetch(NID_RID).fetch(cont)).[swizzle](ws.fetch(MAP_PID).fetch(cont));
+        var left_pre := start_nid.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
         var left_start := start_nid.hmark(0@0);
 
         # go get the PRE numbers that have an end attribute
-        var right_attr := ws.fetch(ATTR_QN).find(cont).ord_uselect(end_qn).hmark(0@0);
-        var right_pre := right_attr.leftjoin(ws.fetch(ATTR_OWN).find(cont));
-        var right_end := [*tpe](right_attr.leftjoin(ws.fetch(ATTR_PROP).find(cont)).leftjoin(ws.fetch(PROP_VAL).find(cont)));
+        var right_attr := attr_qn.ord_uselect(end_qn).hmark(0@0);
+        var right_pre := right_attr.leftjoin(attr_own).leftfetchjoin(nid_rid).[swizzle](map_pid);
+        var right_end := [*tpe](right_attr.leftjoin(attr_prp).leftjoin(prp_val));
 
         # the region table is the intersection between start and end
         var left_right := left_pre.leftjoin(right_pre.reverse());
