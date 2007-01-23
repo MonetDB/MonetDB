@@ -5616,9 +5616,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	if (batlist[ii]->ttype == TYPE_void && batlist[ii]->tseqbase != oid_nil) {
 		view = 1; /* do not create the hash table on a void column */
 	} else {
-		if (!srt) {
-			hsh = (BAThash(BATmirror(batlist[ii]), 0) != NULL);
-		}
+		hsh = (BAThash(BATmirror(batlist[ii]), 0) != NULL);
 		if (batlist[ii]->ttype != TYPE_oid) {
 			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have tail type OID.\n");
 			ii++;
