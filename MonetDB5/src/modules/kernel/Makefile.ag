@@ -99,5 +99,3 @@ scripts_mal = {
 		counters.mx logger.mx pqueue.mx mkey.mx microbenchmark.mx
 }
 
-
-EXTRA_DIST_DIR = Tests

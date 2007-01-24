@@ -27,7 +27,7 @@ SUBDIRS = conf compiler MONET4?runtime MONET5?runtime5 modules src
 EXTRA_DIST = extra.mk.in RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
 		MonetDB-XQuery.spec.in MonetDB-XQuery.spec rpm.mk.in 
-EXTRA_DIST_DIR = NT tests
+EXTRA_DIST_DIR = NT tests benchmarks 
 
 EXTRA_HEADERS = pf_config.h
 

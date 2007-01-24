@@ -39,3 +39,5 @@ scripts_mal = {
 		opt_constantExpression.mx opt_inliners.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx
 }
+
+EXTRA_DIST_DIR = Tests

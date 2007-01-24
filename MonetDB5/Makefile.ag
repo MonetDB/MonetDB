@@ -29,7 +29,7 @@ EXTRA_DIST = bootstrap configure.ag RunMtest.in \
 		RunMserver.in RunMserver.bat.in sysdefs.h.in \
 		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in \
 
-EXTRA_DIST_DIR = NT
+EXTRA_DIST_DIR = NT tests
 
 EXTRA_HEADERS = mal_config.h sysdefs.h
 
