@@ -264,7 +264,7 @@ core_pretty (PFcnode_t *n)
         PFprettyprintf ("%s", PFqname_str (n->sem.var->qname));
         break;
     case c_lit_str:     
-        PFprettyprintf ("%s", n->sem.str);
+        PFprettyprintf ("\"%s\"", PFesc_string (n->sem.str));
         break;
     case c_lit_int:     
         PFprettyprintf ("%lld", n->sem.num);
@@ -284,7 +284,17 @@ core_pretty (PFcnode_t *n)
     case c_tag:       
         PFprettyprintf ("%s", PFqname_str (n->sem.qname));
         break;
-        
+    case c_orderby:
+        PFprettyprintf ("%s", n->sem.tru ? "stable" : "unstable");
+        break;
+    case c_orderspecs:
+        PFprettyprintf ("%s,%c %c%s", n->sem.mode.dir == p_desc ?
+                                      "descending" : "ascending",
+                                      END_BLOCK, START_BLOCK,
+                                      n->sem.mode.empty == p_greatest ?
+                                      "greatest" : "least");
+        break;
+
     default:            
         comma = false;
         break;
