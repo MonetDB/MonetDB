@@ -1,19 +1,9 @@
-
-connect to 'localhost' database 'demo';
-
+connect to 'localhost' database 'mTests_src_test_Connections_test1';
 select * from connections;
-
-disconnect 'localhost_demo';
-
-connect to 'localhost' port 40000 database 'demo' as 'test_db' user 'monetdb' password 'monetdb' language 'sql';
-
-connect to 'localhost' port 50000 database 'demo' as 'test_db' user 'monetdb' password 'monetdb' language 'sql';
-
-connect to 'localhost' port 40000 database 'demo' as 'localhost:40000_demo' user 'monetdb' password 'monetdb' language 'sql';
-
-connect to 'localhost' port 60000 database 'demo';
-
+disconnect 'localhost:port_num_mTests_src_test_Connections_test1';
+connect to 'localhost' port port_num database 'mTests_src_test_Connections_test1' as 'test_db' user 'monetdb' password 'monetdb' language 'sql';
+connect to 'localhost' port port_num5 database 'mTests_src_test_Connections_test1' as 'test_db1' user 'monetdb' password 'monetdb' language 'sql';
+connect to 'localhost' port port_num database 'mTests_src_test_Connections_test1' as 'localhost:port_num_mTests_src_test_Connections_test1' user 'monetdb' password 'monetdb' language 'sql';
+connect to 'localhost' port port_num6 database 'mTests_src_test_Connections_test1';
 select * from connections;
-
 disconnect ALL;
-

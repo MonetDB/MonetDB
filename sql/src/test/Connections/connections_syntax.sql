@@ -1,30 +1,23 @@
-
---connect
-
-connect to 'localhost' port 40000 database 'demo' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
-
-connect to 'localhost' database 'demo' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
-
-connect to 'localhost' port 40000 database 'demo' user 'monetdb' password 'monetdb' language 'sql';
-
-connect to 'localhost' port 40000 database 'demo' as 'test_db_1' language 'sql';
-
-connect to 'localhost' port 40000 database 'demo' as 'test_db_1' user 'monetdb' password 'monetdb';
-
-connect to 'localhost' database 'demo';
-
-
---syntax errors
-
-connect 'localhost' port 40000 database 'demo' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
-
-connect to 'localhost' port 40000 as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
-
---disconnect
-
+connect to 'localhost' port port_num database 'mTests_src_test_Connections_test1' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
 disconnect ALL;
-
-connect to 'localhost' port 40000 database 'demo' as 'test_db' user 'monetdb' password 'monetdb' language 'sql';
-
+connect to 'localhost' port 34 database 'mTests_src_test_Connections_test1' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
+select * from connections;
+disconnect ALL;
+connect to 'localhost' port port_num database 'mTests_src_test_Connections_test1' user 'monetdb' password 'monetdb' language 'sql';
+disconnect ALL;
+connect to 'localhost' port port_num database 'mTests_src_test_Connections_test1' as 'test_db_1' language 'sql';
+disconnect ALL;
+connect to 'localhost' port port_num database 'mTests_src_test_Connections_test1' as 'test_db_1' user 'monetdb' password 'monetdb';
+disconnect ALL;
+connect to 'localhost' database 'mTests_src_test_Connections_test1';
+select * from connections;
+disconnect ALL;
+connect 'localhost' port port_num database 'mTests_src_test_Connections_test1' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
+select * from connections;
+disconnect ALL;
+connect to 'localhost' port port_num as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
+select * from connections;
+disconnect ALL;
+connect to 'localhost' port port_num database 'mTests_src_test_Connections_test1' as 'test_db' user 'monetdb' language 'sql';
+select * from connections;
 disconnect 'test_db';
-
