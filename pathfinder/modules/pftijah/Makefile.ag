@@ -56,12 +56,16 @@ lib__pftijah = {
 		pftijah_util.mx \
 		serialize_pftijah.mx \
 		serialize_pftijah_options.mx \
+		nexi.h \
 		nexi.c \
 		nexi.y \
 		nexi.l \
 		nexi_preprocessor.c \
+		nexi_rewriter.h \
 		nexi_rewriter.c \
+		nexi_generate_mil.h \
 		nexi_generate_mil.c \
+		nexi_generate_plan.h \
 		nexi_generate_plan.c
 
 	LIBS = \
@@ -75,3 +79,4 @@ scripts_mil = {
 	SOURCES = pftijah.mx
 }
 
+EXTRA_DIST_DIR = Tests
