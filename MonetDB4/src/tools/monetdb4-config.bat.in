@@ -11,6 +11,7 @@ set prefix=@prefix@
 set exec_prefix=@exec_prefix@
 set bindir=@bindir@
 set libexecdir=@libexecdir@
+set datarootdir=@datarootdir@
 set datadir=@datadir@
 set sysconfdir=@sysconfdir@
 set localstatedir=@localstatedir@
@@ -40,6 +41,7 @@ if "%1" == "--prefix"		echo %prefix%		& goto shift
 if "%1" == "--exec-prefix"	echo %exec_prefix%	& goto shift
 if "%1" == "--bindir"		echo %bindir%		& goto shift
 if "%1" == "--libexecdir"	echo %libexecdir%	& goto shift
+if "%1" == "--datarootdir"	echo %datarootdir%	& goto shift
 if "%1" == "--datadir"		echo %datadir%		& goto shift
 if "%1" == "--sysconfdir"	echo %sysconfdir%	& goto shift
 if "%1" == "--localstatedir"	echo %localstatedir%	& goto shift
