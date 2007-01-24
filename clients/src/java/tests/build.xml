@@ -98,6 +98,7 @@ All Rights Reserved.
     <antcall target="Test_Rpositioning" />
     <antcall target="Test_Rtimedate" />
     <antcall target="Test_Rmetadata" />
+    <antcall target="BugConcurrent_clients_1504657" />
   </target>
 
   <target name="test_class" depends="compile,jdbc">
@@ -192,4 +193,10 @@ All Rights Reserved.
     </antcall>
   </target>
   
+  <target name="BugConcurrent_clients_1504657">
+    <antcall target="test_class">
+      <param name="test.class" value="BugConcurrent_clients_1504657" />
+    </antcall>
+  </target>
+
 </project>

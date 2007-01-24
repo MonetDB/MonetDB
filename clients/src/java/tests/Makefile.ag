@@ -28,6 +28,7 @@ EXTRA_DIST = \
 		Test_PStimezone.java \
 		Test_PStypes.java \
 		Test_Cmanycon.java \
+		BugConcurrent_clients_1504657.java \
 		build.xml build.properties
 
 ant_compile = {
@@ -45,5 +46,6 @@ ant_compile = {
 		Test_Creplysize.class \
 		Test_PStimezone.class \
 		Test_PStypes.class \
+		BugConcurrent_clients_1504657.class \
 		Test_Cmanycon.class
 }
