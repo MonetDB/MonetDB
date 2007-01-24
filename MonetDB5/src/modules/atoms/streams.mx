@@ -25,6 +25,8 @@ It encapsulates the corresponding library managed in
 .../stream.
 
 @mal
+module streams;
+
 atom streams:ptr;
 
 command openReadBytes{unsafe}( filename:str ) :streams

@@ -207,10 +207,10 @@ address STRrepeat;
 command space(l:int):str
 address STRspace;
 
-command STRprelude()
+command STRprelude() :void
 address strPrelude;
 
-command STRepilogue()
+command STRepilogue() :void
 address strEpilogue;
 
 str.STRprelude();	

@@ -36,6 +36,8 @@ the bytes-size of the blob (excluding the integer), and then just binary data.
 
 @+ Module Definition
 @mal
+module blob;
+
 atom blob;
 
 command tostr()   address BLOBtostr;
@@ -50,6 +52,13 @@ command put()     address BLOBput;
 command del()     address BLOBdel;
 command length()  address BLOBlength;
 command heap()    address BLOBheap;
+
+command blob(s:blob):blob
+address BLOBblob_blob
+comment "Noop routine.";
+
+command blob(s:str):blob
+address BLOBblob_fromstr;
 
 @+ string functions
 Manipulation functions to extract strings from blobs and vice versa.
@@ -72,8 +81,30 @@ address BLOBnitems
 comment " get the number of bytes in this blob.";
 
 atom sqlblob:blob;
+
 command tostr()   address SQLBLOBtostr;
 command fromstr() address SQLBLOBfromstr;
+
+command sqlblob(s:sqlblob):sqlblob
+address BLOBblob_blob
+comment "Noop routine.";
+
+command sqlblob(s:str):sqlblob
+address BLOBsqlblob_fromstr;
+
+module blob;
+
+command prelude() :void
+address BLOBprelude;
+
+blob.prelude();
+
+module calc;
+
+command blob(b:blob):blob address BLOBblob_blob;
+command blob(s:str):blob address BLOBblob_fromstr;
+command sqlblob(b:sqlblob):sqlblob address BLOBblob_blob;
+command sqlblob(s:str):sqlblob address BLOBsqlblob_fromstr;
 
 @{
 @* Example MAL Script
@@ -112,12 +143,22 @@ typedef struct blob {
 #define blob_export extern
 #endif
 
+blob_export int TYPE_blob;
+blob_export int TYPE_sqlblob;
+
 blob_export size_t blobsize(size_t nitems);
+blob_export int sqlblob_tostr(str *tostr, int *l, blob *p);
+blob_export int sqlblob_fromstr(char *instr, int *l, blob **val);
 
 #endif /* __BLOB_H__ */
 @c
 #include "mal_config.h"
 #include "blob.h"
+
+int TYPE_blob;
+int TYPE_sqlblob;
+
+blob_export str BLOBprelude(void);
 
 blob_export int BLOBtostr(str *tostr, int *l, blob *pin);
 blob_export int BLOBfromstr(char *instr, int *l, blob **val);
@@ -139,6 +180,19 @@ blob_export int BLOBnitems(int *ret, blob *b);
 blob_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 blob_export blob * BLOBread(blob *a, stream *s, size_t cnt);
 blob_export void BLOBwrite(blob *a, stream *s, size_t cnt);
+
+blob_export str BLOBblob_blob(blob **d, blob *s);
+blob_export str BLOBblob_fromstr(blob **b, str *d);
+
+blob_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
+
+str 
+BLOBprelude(void)
+{
+	TYPE_blob = ATOMindex("blob");
+	TYPE_sqlblob = ATOMindex("sqlblob");
+	return MAL_SUCCEED;
+}
 
 size_t
 blobsize(size_t nitems)
@@ -853,5 +907,36 @@ SQLBLOBfromstr(char *s, int *l, blob **val)
 {
 	return sqlblob_fromstr(s, l, val);
 }
+
+str 
+BLOBblob_blob(blob **d, blob *s)
+{
+	int len = blobsize(s->nitems);
+	blob *b = *d = (blob *) GDKmalloc(len);
+
+	b->nitems = len;
+	memcpy(b->data, s->data, len);
+	return MAL_SUCCEED;
+}
+
+str 
+BLOBblob_fromstr(blob **b, str *s)
+{
+	int len = 0;
+
+	blob_fromstr(*s, &len, b);
+	return MAL_SUCCEED;
+}
+
+
+str 
+BLOBsqlblob_fromstr(blob **b, str *s)
+{
+	int len = 0;
+
+	sqlblob_fromstr(*s, &len, b);
+	return MAL_SUCCEED;
+}
+
 
 @}

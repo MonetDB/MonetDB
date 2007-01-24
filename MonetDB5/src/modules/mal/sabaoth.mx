@@ -27,11 +27,11 @@ machine and redirect to each other when necessary.
 @mal
 module sabaoth;
 
-command prelude()
+command prelude() :void
 address SABprelude
 comment "Initialise the sabaoth module";
 
-command epilogue()
+command epilogue() :void
 address SABepilogue
 comment "Release the resources held by the sabaoth module";
 

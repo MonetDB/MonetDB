@@ -39,6 +39,8 @@ colors in various colorspaces and extract relevant color channels.
 @* Implementation
 
 @mal
+module color;
+
 atom color:int;
 
 command tostr():str address color_tostr;

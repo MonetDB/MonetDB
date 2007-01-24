@@ -111,15 +111,15 @@ command forceUpdate(bnme:str)
 address STATforceUpdate
 comment "Bring the statistics up to date for one BAT";
 
-command prelude()
+command prelude() :void
 address STATprelude
 comment "Initialize the statistics package";
 
-command epilogue()
+command epilogue() :void
 address STATepilogue
 comment "Release the resources of the statistics package";
 
-command dump()
+command dump() :void
 address STATdump
 comment "Display the statistics table";
 

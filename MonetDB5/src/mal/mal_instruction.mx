@@ -1530,7 +1530,7 @@ convertConstant(malType type, ValPtr vr)
 		ATOMfromstr(type, &d, &ll, vr->val.sval);
 		if (d == NULL) {
 			showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
-			VALset(vr, type, ATOMnilptr(type));
+			VALinit(vr, type, ATOMnilptr(type));
 			return 1;
 		}
 		VALset(vr, type, d);
@@ -1602,7 +1602,7 @@ convertConstant(malType type, ValPtr vr)
 			snprintf(buf, BUFSIZ, "%d", vr->val.ival);
 			(*BATatoms[type].atomFromStr) (buf, &ll, &d);
 			if( d==0 ){
-				VALset(vr, type, BATatoms[type].atomNull);
+				VALinit(vr, type, BATatoms[type].atomNull);
 				return 1;
 			}
 			VALset(vr, type, d);
@@ -1624,7 +1624,7 @@ end.
 		str s;
 
 		if( isaBatType(type)){
-			VALset(vr, TYPE_bat, ATOMnilptr(TYPE_bat));
+			VALinit(vr, TYPE_bat, ATOMnilptr(TYPE_bat));
 			break;
 		}
 		/* see if an atomFromStr() function is available */
@@ -1638,7 +1638,7 @@ end.
 		/* if the value we're converting from is nil, the to
 		 * convert to value will also be nil */
 		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-			VALset(vr, type, ATOMnilptr(type));
+			VALinit(vr, type, ATOMnilptr(type));
 			break;
 		}
 
@@ -1653,7 +1653,7 @@ end.
 			ATOMfromstr(type, &d, &ll, w);
 			if (d == 0) {
 				showException(SYNTAX, "convertConstant", "parse error in '%s'", w);
-				VALset(vr, type, ATOMnilptr(type));
+				VALinit(vr, type, ATOMnilptr(type));
 				GDKfree(w);
 				return 1;
 			}
@@ -1666,7 +1666,7 @@ end.
 			ATOMfromstr(type, &d, &ll, vr->val.sval);
 			if (d == NULL) {
 				showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
-				VALset(vr, type, ATOMnilptr(type));
+				VALinit(vr, type, ATOMnilptr(type));
 				return 1;
 			}
 			VALset(vr, type, d);
