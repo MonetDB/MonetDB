@@ -19,4 +19,6 @@ SUBDIRS = src conf
 EXTRA_DIST = bootstrap configure.ag rpm.mk.in sysdefs.h.in \
 		MonetDB.spec MonetDB.spec.in
 
+EXTRA_DIST_DIR = NT
+
 EXTRA_HEADERS = sysdefs.h
