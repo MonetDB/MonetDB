@@ -12,12 +12,26 @@ set monetdb4_prefix=@MONETDB4_PREFIX@
 set builddir=@SQL_BUILD@
 set srcdir=@SQL_SOURCE@
 
-set MOD_PATH=%builddir%\src\backends\monet4\.libs;%sqldir%\src\backends\monet4;%monetdb4_prefix%\lib\MonetDB4;%monetdb4_prefix%\lib\MonetDB4\lib;%monetdb4_prefix%\lib\MonetDB4\bin
+set MOD_PATH=%builddir%\src\backends\monet4\.libs
+set MOD_PATH=%MOD_PATH%;%sqldir%\src\backends\monet4
+set MOD_PATH=%MOD_PATH%;%monetdb4_prefix%\lib\MonetDB4
+set MOD_PATH=%MOD_PATH%;%monetdb4_prefix%\lib\MonetDB4\lib
+set MOD_PATH=%MOD_PATH%;%monetdb4_prefix%\lib\MonetDB4\bin
 
-set PATH=%builddir%\src\common;%builddir%\src\storage\bat;%builddir%\src\server;%builddir%\src\tools;%PATH%
+set PATH=@XCLIENTS_PREFIX@\lib\MonetDB\Tests;%PATH%
+set PATH=@XMONETDB5_PREFIX@\bin;%PATH%
+set PATH=@XMONETDB4_PREFIX@\bin;%PATH%
+set PATH=@XCLIENTS_PREFIX@\bin;%PATH%
+set PATH=@XMONETDB_PREFIX@\bin;%PATH%
 set PATH=%MOD_PATH%;%PATH%
+set PATH=%builddir%\src\server;%PATH%
+set PATH=%builddir%\src\storage\bat;%PATH%
+set PATH=%builddir%\src\common;%PATH%
+set PATH=%builddir%\src\tools;%PATH%
 
-REM set PYTHONPATH=@MONETDB_PREFIX@\share\MonetDB\python
+set PYTHONPATH=@XMONETDB_PREFIX@\share\MonetDB\python;%PYTHONPATH%
+set PYTHONPATH=@XCLIENTS_PREFIX@\share\MonetDB\python;%PYTHONPATH%
+set PYTHONPATH=%builddir%\src\tools;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

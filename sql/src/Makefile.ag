@@ -16,4 +16,4 @@
 
 SUBDIRS = include common storage server backends HAVE_MONETDB4?tools sql
 
-EXTRA_DIST_DIR = Tests test benchmarks
+EXTRA_DIST_DIR = Tests test benchmarks odbc/samples/Tests jdbc/tests
