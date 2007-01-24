@@ -244,7 +244,7 @@ int yydebug=1;
 
 	/* symbolic tokens */
 %type <sym>
-	opt_user_passwd
+	user_passwd
 	alter_statement
 	assignment
 	create_statement
@@ -2284,7 +2284,7 @@ update_stmt:
 
 connect_stmt:
     CONNECT TO DEFAULT		{ $$ = _symbol_create_list(SQL_CONNECT, L()); }
- |  CONNECT TO string opt_port DATABASE string opt_db_alias opt_user_passwd opt_lang
+ |  CONNECT TO string opt_port DATABASE string opt_db_alias user_passwd opt_lang
 
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -2308,7 +2308,7 @@ disconnect_stmt:
  ;
 
 opt_port:
-    /*empty*/		{ $$ = -1; }
+    /*empty*/		{ $$ = 0; }
  |  PORT intval		{ $$ = $2; }
  ;
 
@@ -2317,8 +2317,7 @@ opt_db_alias:
  |  AS string		{ $$ = $2; }
  ;
 
-opt_user_passwd:
-    /*empty*/				{ $$ = NULL; }
+user_passwd:
  |  USER string PASSWORD string		{ dlist *l = L(); 
 					append_string(l, $2);
 					append_string(l, $4);
