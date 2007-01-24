@@ -39,7 +39,7 @@
 #include "nexi.tab.h"
 
 int c;
-extern YYSTYPE yylval;
+extern YYSTYPE nexilval;
 extern int line_number;
 extern int char_number;
 
@@ -125,7 +125,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "about" {
           char_number += 5;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(ABOUT);
 	  WRITE_TOKEN(yytext);
           return Q_ABOUT;
@@ -133,7 +133,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "and"   {
           char_number += 3;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(INTERSECT);
 	  WRITE_TOKEN(yytext);
           return Q_AND;
@@ -141,7 +141,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "AND"   {
           char_number += 3;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(INTERSECT);
 	  WRITE_TOKEN(yytext);
           return Q_AND;
@@ -149,7 +149,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "or"    {
           char_number += 2;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(UNION);
 	  WRITE_TOKEN(yytext);
           return Q_OR;
@@ -157,7 +157,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "OR"    {
           char_number += 2;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(UNION);
 	  WRITE_TOKEN(yytext);
           return Q_OR;
@@ -165,7 +165,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "src:"{IMAGE_PATH}+  {
           char_number += strlen(yytext);
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(IMAGE_ABOUT);
 	  WRITE_TOKEN(yytext+4);
           return Q_IMAGE;
@@ -173,21 +173,21 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 ">"    {
           char_number++;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(GR);
           return Q_GREATER;
         }
 
 "<"    {
           char_number++;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(LS);
           return Q_LESS;
         }
 
 "="    {
           char_number++;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(EQ);
           return Q_EQUAL;
         }
@@ -195,7 +195,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 {LETTER}{LETTERDIGITEXTRAS}* {
           char_number += strlen(yytext);
 	  char* token = (char*)yytext;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(SELECT_NODE);
 	  /* INCOMPLETE, what to do with 0 or >1 tokens? */
           // Token normalisation should not be done here:
@@ -207,7 +207,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "-"?{DIGIT}+ {
           char_number += strlen(yytext);
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(SELECT_NODE);
 	  WRITE_TOKEN(yytext);
           return NUMBER;
@@ -215,7 +215,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "//"    {
           char_number += 2;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(DSC);
           return NODE_QUALIFIER;
         }
@@ -223,7 +223,7 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 {XML_NAME}{XML_NAMECHAR}* {
           char_number += strlen(yytext);
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(SELECT_NODE);
 	  WRITE_TOKEN(yytext);
           return XMLTAG;
@@ -232,14 +232,14 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 ","    {
           char_number += 1;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(COMMA);
           return yytext[0];
         }
 
 "\""   {
           char_number += 1;
-          yylval = yytext[0];
+          nexilval = yytext[0];
 	  WRITE_COMMAND(QUOTE);
           return yytext[0];
         }
@@ -247,42 +247,42 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "["    {
 	  char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(OPEN);
 	  return yytext[0];
 	}
 
 "]"    {
 	  char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(CLOSE);
 	  return yytext[0];
 	}
 
 "("    {
 	  char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(OB);
 	  return yytext[0];
 	}
 
 ")"    {
 	  char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(CB);
 	  return yytext[0];
 	}
 
 "|"    {
 	  char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(STRUCT_OR);
 	  return yytext[0];
 	}
 
 "*"    {
 	  char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(STAR);
 	  return yytext[0];
 	}
@@ -290,28 +290,28 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 "."     {
           char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(CURRENT);
           return yytext[0];
         }
 
 "-"     {
           char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(MINUS);
           return yytext[0];
         }
 
 "+"     {
           char_number++;
-	  yylval = yytext[0];
+	  nexilval = yytext[0];
 	  WRITE_COMMAND(PLUS);
           return yytext[0];
         }
 
 "~"   {
 	char_number++;
-	yylval = yytext[0];
+	nexilval = yytext[0];
 	WRITE_COMMAND(VAGUE);
 	return yytext[0];
       }

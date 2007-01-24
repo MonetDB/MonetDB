@@ -31,6 +31,11 @@ PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 # these defines are needed to get shttpd to compile in the right way
 CFLAGS = -DEMBEDDED -DMT -DNO_CGI -DNO_AUTH -DIO_MAX=10240
 
+lib_serialize_null = {
+	NOINST
+	SOURCES = serialize_null.mx
+}
+
 lib__pf_support = {
         DIR = libdir/MonetDB4
         SOURCES = \
@@ -42,12 +47,11 @@ lib__pf_support = {
                 levelsteps.mx \
                 shredder.mx \
                 serialize.mx \
-                serialize_null.mx \
                 serialize_dflt.mx \
                 serialize_sax.mx 
 
         LIBS = \
-                $(PF_LIBS) \
+                libserialize_null $(PF_LIBS) \
                 $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet $(PTHREAD_LIBS) \
                 $(MONETDB4_MODS) -l_lock -l_monettime -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
