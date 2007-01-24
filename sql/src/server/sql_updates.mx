@@ -1599,7 +1599,8 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 		return sql_error(sql, 02, "DELETE FROM: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
-	}
+	} 
+
 	if (!table_privs(sql, t, PRIV_DELETE)) {
 		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
 	} else {
