@@ -164,6 +164,26 @@ static int
 var_is_used (PFvar_t *v, PFcnode_t *e);
 int PFqueryType(PFcnode_t *c);
 
+/* throw away out-of date flwr information. return the relevant level */
+static int 
+prune_flwr_level(opt_t *f, int cur_level) 
+{
+    int self_active = f->flwr_level[cur_level];
+    int i = f->flwr_depth;
+
+    /* delete all info about higher flwr blocks */
+    for(i=f->flwr_depth; i >= cur_level; i--)
+        f->flwr_level[i] = 0; 
+    f->flwr_depth = i;
+
+    /* look up the highest still active flwr */
+    if (self_active) return self_active;
+    for(; i > 0; i--)
+        if (f->flwr_level[i]) return f->flwr_level[i];
+
+    return 1;
+}
+
 /* tests type equality (not only structural 'PFty_eq' 
    and without hierarchy 'PFty_subtype' */
 #define TY_EQ(t1,t2) (PFty_equality (t1,t2))
@@ -5620,7 +5640,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     PFfun_t *fun;
     char *comp;
     char rx[32], order_snd[128];
-    
+
     rx[0] = order_snd[0] = '\0';
 
     /* retrieve the arguments of the join function */
@@ -6433,7 +6453,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
 
     milprintf(f, "} # end of UDF - function call\n");
 }
-
 /**
  * translateFunction translates the builtin functions
  *
@@ -8458,11 +8477,20 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             break;
         case c_for:
             translate2MIL (f, NORMAL, cur_level, counter, LR(c));
-            /* not allowed to overwrite iter,pos,item */
+    	    (void) prune_flwr_level(f, cur_level);
+            {
+                 PFcnode_t *n = R(c);
+                 while(n && n->kind == c_let) n = R(n);
+		 if (n && n->kind == c_orderby) {
+                     f->flwr_level[f->flwr_depth = cur_level] = cur_level; /* this for started the flwro block */
+                 }
+            }
             cur_level++;
+
+            /* not allowed to overwrite iter,pos,item */
             milprintf(f, "if (ipik.count() != 0)\n");
             milprintf(f, "{  # for-translation\n");
-            project (f, cur_level);
+            project (f, cur_level); 
 
             milprintf(f, "var expOid;\n");
             getExpanded (f, cur_level, c->sem.flwr.fid);
@@ -8642,10 +8670,17 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             break;
         case c_orderby:
             counter++;
-            milprintf(f,
-                    "{ # order_by\n"
-                    "var refined%03u := inner%03u.reverse().leftfetchjoin(order_%03u);\n",
-                    counter, cur_level, cur_level);
+            milprintf(f, "{ # order_by\n");
+            milprintf(f, "var order_tmp := order_%03u;\n", cur_level);
+            {   
+                /* map back the order column to the last join level */
+	        int lim = prune_flwr_level(f, cur_level);
+                int cur = cur_level;
+                while(--cur >= lim) 
+                    milprintf(f, "order_tmp := order_tmp.leftjoin(reverse(inner%03u)).leftfetchjoin(outer%03u);\n", cur, cur);
+            }
+            milprintf(f, "var refined%03u := reverse(inner%03u).leftfetchjoin(order_tmp);\n", counter, cur_level);
+
             /* evaluate orderspecs */
             translate2MIL (f, code, cur_level, counter, L(c));
 

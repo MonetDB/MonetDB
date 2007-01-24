@@ -148,6 +148,8 @@ typedef struct {
     /* these three fields don't belong here (just state for milprint_summer) */
     int module_base;     
     int num_fun;     
+    int flwr_level[256];     
+    unsigned char flwr_depth;     
 } opt_t; /* should take ~1.5MB of RAM resources */
 
 #define opt_output(o,x) ((o)->sec = x)
