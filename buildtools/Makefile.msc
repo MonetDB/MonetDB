@@ -20,8 +20,10 @@ all:
 	cd autogen && python setup.py install
 	cd Mx && $(MAKE) /nologo /f Makefile.msc
 	cd mel && $(MAKE) /nologo /f Makefile.msc
+	cd burg && $(MAKE) /nologo /f Makefile.msc
 
 clean:
 	cd autogen && del /q build
 	cd Mx && $(MAKE) /nologo /f Makefile.msc clean
 	cd mel && $(MAKE) /nologo /f Makefile.msc clean
+	cd burg && $(MAKE) /nologo /f Makefile.msc clean
