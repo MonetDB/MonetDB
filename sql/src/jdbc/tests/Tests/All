@@ -10,5 +10,6 @@ HAVE_JAVA?Test_Rbooleans
 HAVE_JAVA?Test_Rpositioning
 HAVE_JAVA?Test_Sbatching
 HAVE_JAVA?Test_Rmetadata
+HAVE_JAVA?BugConcurrent_clients_1504657
 HAVE_JAVA?Test_Cmanycon
 HAVE_JAVA?Test_JdbcClient
