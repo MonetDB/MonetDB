@@ -2493,24 +2493,29 @@ esac
 
 AC_DEFUN([AM_MONETDB_MEL],[
 
+have_mel=""
 if test -f "$srcdir"/vertoo.data; then
         dnl check for mel if we find the not distributed vertoo.data 
         dnl having (this) file means we're compiling from CVS
         dnl and not from the distribution tar ball
 
-	dnl check for Monet and some basic utilities
+	MEL=""
 	AC_ARG_WITH(mel,
 		AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
 		have_mel="$withval",
 		have_mel=auto)
 	if test "x$have_mel" = xauto; then
 		AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$PATH)
-	elif test "x$have_mel" = xno; then
+	elif test "x$have_mel" != xno; then
+		MEL="$withval"
+	fi
+	if test x$MEL = x; then
 		if [ -z "$1" ]; then 
 			AC_MSG_ERROR([mel is required])
 		fi
+		have_mel=no
 	else
-		MEL="$withval"
+		have_mel=yes
 	fi
 	AC_SUBST(MEL)
 else	
