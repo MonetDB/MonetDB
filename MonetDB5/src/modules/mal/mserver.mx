@@ -1307,7 +1307,8 @@ SERVERdisconnectALL(int *key){
 
 	for(i=1; i< MAXSESSIONS; i++)
 		if( SERVERsessions[i].c != 0 ) {
-			SERVERsessions[i].c = NULL;
+			SERVERsessions[i].c = 0;
+			SERVERsessions[i].dbalias = NULL;
 			*key = SERVERsessions[i].key;
 			mapi_disconnect(SERVERsessions[i].mid);
 		}
