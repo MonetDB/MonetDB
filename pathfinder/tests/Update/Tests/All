@@ -9,3 +9,5 @@ symm-test-5
 replacevaluetest
 replacevaluetest2
 update
+illegal-insert
+illegal-delete
