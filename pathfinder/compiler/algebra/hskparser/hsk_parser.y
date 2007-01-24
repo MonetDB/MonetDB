@@ -4,11 +4,13 @@
  * algebra.
  */
 
+/* always include pathfinder.h first! */ 
+#include "pathfinder.h" 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "pathfinder.h"
 #include "logical.h"
 #include "hsk_parser.h"
 #include "logical_mnemonic.h"

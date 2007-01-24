@@ -172,10 +172,13 @@
  *
  * $Id$
  */
+
+/* always include pathfinder.h first! */ 
+#include "pathfinder.h" 
+
 #include <stdio.h>
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "milprint.h"
 
 #include "oops.h"

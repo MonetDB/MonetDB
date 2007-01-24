@@ -31,11 +31,12 @@
  * $Id$
  */
 
+/* always include pathfinder.h first! */
+#include "pathfinder.h"
+   
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
-
-#include "pathfinder.h"
 
 #include "mil.h"
 
