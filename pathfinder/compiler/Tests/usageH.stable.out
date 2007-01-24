@@ -53,7 +53,6 @@ Usage: pf [OPTION] [FILE]
 = -g, --gensql: generate SQL code
         (works best with -Algs16 flags).
         Current version doesn't support documents.
-= -d TEST, --debug=TEST: call internall debugging function TEST
 = -a, --print-abstract-syntax-tree: print abstract syntax tree
 = -c, --print-core-tree: print internal Core language
 = -l, --print-logical-algebra: print logical algebra tree
