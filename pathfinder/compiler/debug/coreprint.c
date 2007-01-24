@@ -4,7 +4,7 @@
  * @file
  * 
  * Debugging: dump XQuery core language tree in
- * AY&T dot format or human readable
+ * AT&T dot format or human readable
  *
  * Copyright Notice:
  * -----------------
