@@ -237,6 +237,7 @@ atom date :int;
 command date(s:date):date
 address MTIMEdate_date
 comment "Noop routine.";
+
 command fromstr() :date 
 address date_fromstr;
 command tostr() :str 
@@ -372,7 +373,6 @@ address MTIMEtimestamp_fromstr;
 command timestamp(secs:int):timestamp
 address MTIMEtimestamp
 comment "Utility function to create a timestamp from a number of seconds since the Unix epoch";
-
 
 atom zrule :int;
 command fromstr():zrule 
@@ -765,13 +765,28 @@ constants.
 These actions are captured in a single function activated directly after
 parsing of the signatures. 
 @mal
-command prelude()
+command prelude() :void
 address MTIMEprelude;
 
-command epilogue()
+command epilogue() :void
 address MTIMEepilogue;
 
 mtime.prelude();
+
+module calc;
+
+command date(s:str):date address MTIMEdate_fromstr;
+command date(d:date):date address MTIMEdate_date;
+command date(t:timestamp) :date address MTIMEtimestamp_extract_date_default;
+
+command timestamp(s:str):timestamp address MTIMEtimestamp_fromstr;
+command timestamp(t:timestamp):timestamp address MTIMEtimestamp2timestamp;
+command timestamp(d:date) :timestamp address MTIMEtimestamp_create_from_date;
+
+command daytime(s:str):daytime address MTIMEdaytime_fromstr;
+command daytime(d:daytime):daytime address MTIMEdaytime2daytime;
+command daytime(s:lng):daytime address MTIMEsecs2daytime;
+command daytime(t:timestamp) :daytime address MTIMEtimestamp_extract_daytime_default;
 
 @* Implementation
 

@@ -41,6 +41,8 @@ An intermediate step would be to refine the atom STR, then it would be
 possible to redefine hashing.
 
 @mal
+module url;
+
 atom url:str;
 
 command url(s:str):url 
