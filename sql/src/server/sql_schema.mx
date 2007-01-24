@@ -620,32 +620,17 @@ connect_catalog(mvc *sql, dlist *qname)
 	symbol *user_symb = qname->h->next->next->next->next->data.sym;
 	char *user = NULL, *passwd = NULL;
 	char *lang = qname->h->next->next->next->next->next->data.sval;
+	char default_dbalias[BUFSIZ], default_lang[BUFSIZ];
 
-	if (user_symb) {
-		user = user_symb->data.lval->h->data.sval;
-		passwd = user_symb->data.lval->h->next->data.sval;
-	}
-
-	if (port  == -1)
-		port = 50000;
+	user = user_symb->data.lval->h->data.sval;
+	passwd = user_symb->data.lval->h->next->data.sval;
 	
 	if (db_alias == NULL){
-		char default_dbalias[BUFSIZ];
 		snprintf(default_dbalias, BUFSIZ, "%s:%d_%s", server, port, db);
 		db_alias = default_dbalias;
 	}
 
-	if (user == NULL){
-		char default_user[BUFSIZ];
-		char default_passwd[BUFSIZ];
-		snprintf(default_user, BUFSIZ, "monetdb");
-		snprintf(default_passwd, BUFSIZ, "monetdb");
-		user = default_user;
-		passwd = default_passwd;
-	}
-
 	if (lang == NULL){
-		char default_lang[BUFSIZ];
 		snprintf(default_lang, BUFSIZ, "sql");
 		lang = default_lang;
 	}
@@ -662,8 +647,10 @@ static stmt *
 disconnect_catalog(mvc *sql, dlist *qname)
 {
 	int id = 0, port = -1;
+	char *db_alias = NULL;
+	
 	if (qname->cnt != 0) {
-		char *db_alias = qname->h->data.sval;
+		db_alias = qname->h->data.sval;
 	
 		id = mvc_disconnect_catalog(sql, db_alias);
 
