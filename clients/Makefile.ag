@@ -19,4 +19,6 @@ SUBDIRS = src conf
 EXTRA_DIST = configure.ag rpm.mk.in \
 		MonetDB-client.spec MonetDB-client.spec.in
 
+EXTRA_DIST_DIR = NT
+
 #EXTRA_HEADERS = clients_config.h
