@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
-@f logger
+@f gdk_logger
 @t Transactions
 @a N. J. Nes
 @v 2.0
@@ -156,7 +156,7 @@ gdk_export log_bid logger_find_bat(logger *logger, char *name);
 #endif /*_LOGGER_H_*/
 @c
 #include "monetdb_config.h"
-#include "logger.h"
+#include "gdk_logger.h"
 #include <string.h>
 
 
@@ -420,8 +420,6 @@ la_bat_updates(logger *logger, logaction *la)
 	BAT *b;
         if (bid == 0) return; /* ignore bats no longer in the catalog */
 
-	b = BATdescriptor(bid);
-
 	/* do we need to skip these old updates */
 	if (BATcount(logger->snapshots)) {
 		BUN p = BUNfnd(logger->snapshots, &bid);
@@ -433,6 +431,7 @@ la_bat_updates(logger *logger, logaction *la)
 		}
 	}
 
+	b = BATdescriptor(bid);
 	assert(b);
 	if (b) {
 		if (b->htype == TYPE_void && la->type == LOG_INSERT) { 
@@ -542,7 +541,7 @@ la_bat_create(logger *logger, logaction *la)
 	if (la->ht<0)
 		BATseqbase(b, 0);
 	if (la->tt<0)
-		BATseqbase(b=BATmirror(b), 0);
+		BATseqbase(BATmirror(b), 0);
 
 	logger_add_bat(logger, b, la->name);
 	logbat_destroy(b);
@@ -676,7 +675,6 @@ tr_commit(logger *logger, trans *tr)
 		la_apply(logger, &tr->changes[i]);
 		la_destroy(&tr->changes[i]);
 	}
-	bm_commit(logger);
 	return tr_destroy(tr);
 }
 

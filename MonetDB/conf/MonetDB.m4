@@ -232,7 +232,8 @@ AC_SUBST(MONETDB4_MODS)
 AC_SUBST(MONETDB4_MOD_PATH)
 AC_SUBST(MONETDB4_PREFIX)
 AC_SUBST(CLASSPATH)
-AM_CONDITIONAL(HAVE_MONETDB4,test x$have_monetdb4 = xyes)
+AM_MONETDB_MEL("NO ABORT")
+AM_CONDITIONAL(HAVE_MONETDB4,test x$have_monetdb4 = xyes -a x$have_mel = xyes)
 ]) dnl AC_DEFUN AM_MONETDB4
 
 AC_DEFUN([AM_MONETDB5],
@@ -2502,7 +2503,7 @@ fi
 AM_CONDITIONAL(HAVE_BUILDTOOLS, test "x$have_buildtools" = xyes)
 
 if test -f "$srcdir"/vertoo.data; then
-        dnl check for Mx and mel if we find the not distributed vertoo.data 
+        dnl check for Mx if we find the not distributed vertoo.data 
         dnl having (this) file means we're compiling from CVS
         dnl and not from the distribution tar ball
 
@@ -2522,22 +2523,6 @@ if test -f "$srcdir"/vertoo.data; then
 		MX="$withval"
 	fi
 	AC_SUBST(MX)
-	AC_ARG_WITH(mel,
-		AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
-		have_mel="$withval",
-		have_mel=auto)
-	if test "x$have_mel" = xauto; then
-		AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$PATH)
-		if test "x$MEL" = x; then
-			AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
-		fi
-	elif test "x$have_mel" = xno; then
-		AC_MSG_ERROR([mel is required])
-	else
-		MEL="$withval"
-	fi
-	AC_SUBST(MEL)
-
 	AM_CONDITIONAL(NEED_MX, true)
 else
 	AM_CONDITIONAL(NEED_MX, false)
@@ -2557,3 +2542,36 @@ esac
 
 ]) dnl AC_DEFUN AM_MONETDB_UTILS
 
+AC_DEFUN([AM_MONETDB_MEL],[
+
+have_mel=""
+if test -f "$srcdir"/vertoo.data; then
+        dnl check for mel if we find the not distributed vertoo.data 
+        dnl having (this) file means we're compiling from CVS
+        dnl and not from the distribution tar ball
+
+	MEL=""
+	AC_ARG_WITH(mel,
+		AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
+		have_mel="$withval",
+		have_mel=auto)
+	if test "x$have_mel" = xauto; then
+		AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$PATH)
+	elif test "x$have_mel" != xno; then
+		MEL="$withval"
+	fi
+	if test x$MEL = x; then
+		if [ -z "$1" ]; then 
+			AC_MSG_ERROR([mel is required])
+		fi
+		have_mel=no
+	else
+		have_mel=yes
+	fi
+	AC_SUBST(MEL)
+else	
+	dnl fack have_mel as we don't require it for distribution tar balls
+	have_mel=yes
+fi
+
+]) dnl AC_DEFUN AM_MONETDB_MEL
