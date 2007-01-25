@@ -1286,11 +1286,11 @@ PFfun_xquery_fo ()
                                 PFty_xs_double () },
             .ret_ty = PFty_star (PFty_item ()) } },
         .alg = PFbui_fn_subsequence }
-    , /* fn:unordered (item *) as item */
+    , /* fn:unordered (item *) as item* */
       { .ns = PFns_fn, .loc = "unordered",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_item ()) },
-            .ret_ty = PFty_opt (PFty_item ()) } },
+            .ret_ty = PFty_star (PFty_item ()) } },
         .alg = PFbui_fn_unordered }
 
 /* 15.2. Functions That Test the Cardinality of Sequences */
