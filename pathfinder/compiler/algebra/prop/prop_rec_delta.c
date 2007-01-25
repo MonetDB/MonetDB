@@ -33,7 +33,6 @@
 /* always include pathfinder.h first! */
 #include "pathfinder.h"
 #include <assert.h>
-#include <stdio.h>
 
 #include "properties.h"
 #include "alg_dag.h"
@@ -195,9 +194,9 @@ check_op (PFla_op_t *n)
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
             
-            /* record new position columns that are
-               generated out of old ones */
-            if (POS(L(n)) & PFord_order_col_at (n->sem.rownum.sortby, 0))
+            /* a numbering partitioned by ITER indicates a new sequence
+               order -- we thus add new position column */
+            if (n->sem.rownum.part && ITER(n) & n->sem.rownum.part)
                 POS(n) |= n->sem.rownum.attname;
             break;
             
@@ -205,6 +204,11 @@ check_op (PFla_op_t *n)
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
+            
+            /* a numbering partitioned by ITER indicates a new sequence
+               order -- we thus add new position column */
+            if (n->sem.number.part && ITER(n) & n->sem.number.part)
+                POS(n) |= n->sem.number.attname;
             
             /* mark new iteration column that is generated 
                based on the old input sequence.
@@ -357,7 +361,9 @@ PFprop_check_rec_delta (PFla_op_t *root) {
     bool found_conflict = prop_check (root);
     PFla_dag_reset (root);
 
-    fprintf(stderr,"conflict: %s\n",found_conflict?"yes":"no");
+    PFlog ("DELTA recursion strategy: %s",
+           found_conflict ? "NO" : "YES");
+
     return !found_conflict;
 }
 
