@@ -164,6 +164,24 @@ static int
 var_is_used (PFvar_t *v, PFcnode_t *e);
 int PFqueryType(PFcnode_t *c);
 
+/* throw away out-of date flwr information. return the relevant level */
+static void 
+add_flwr_level(opt_t *f, int cur_level) 
+{
+    f->flwr_level[cur_level] = -1; /* init the current level; but keep innerjoins */
+    f->flwr_depth = cur_level+1;
+}
+
+static int 
+get_flwr_level(opt_t *f, int cur_level) 
+{
+    /* look up the highest still active flwr */
+    int i = (cur_level < f->flwr_depth)?cur_level:f->flwr_depth-1; 
+    for(; i >= 0; i--)
+        if (f->flwr_level[i] > 0) return f->flwr_level[i];
+    return 0;
+}
+
 /* tests type equality (not only structural 'PFty_eq' 
    and without hierarchy 'PFty_subtype' */
 #define TY_EQ(t1,t2) (PFty_equality (t1,t2))
@@ -1210,12 +1228,19 @@ createEnumeration (opt_t *f, int cur_level)
 static void
 project (opt_t *f, int cur_level)
 {
-    /* create a new loop / outer|inner relation
-       and adjust iter, pos from for loop binding */
+    /* create an order that points back to the last flwro block */
+    int cur, lim = get_flwr_level(f, cur_level);
     milprintf(f, "# project ()\n");
     milprintf(f, "iter := iter.materialize(ipik);\n");
-    milprintf(f, "var outer%03u := iter;\n", cur_level);
     milprintf(f, "var order_%03u := iter;\n", cur_level);
+    if (lim == 0 || f->flwr_level[lim-1] == -1) 
+    for(cur=cur_level; cur > lim; cur--)
+        if (cur >= f->flwr_depth || f->flwr_level[cur] == -1) 
+            milprintf(f, "order_%03u := order_%03u.leftjoin(reverse(inner%03u)).leftfetchjoin(outer%03u);\n", cur_level, cur_level, cur-1, cur-1);
+
+    /* create a new loop / outer|inner relation
+       and adjust iter, pos from for loop binding */
+    milprintf(f, "var outer%03u := iter;\n", cur_level);
     milprintf(f, "iter := iter.mark(1@0);\n");
     milprintf(f, "var inner%03u := iter;\n", cur_level);
     milprintf(f, "pos := 1@0;\n");
@@ -5620,8 +5645,9 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     PFfun_t *fun;
     char *comp;
     char rx[32], order_snd[128];
-    
+
     rx[0] = order_snd[0] = '\0';
+
 
     /* retrieve the arguments of the join function */
     fst = L(args);
@@ -6433,7 +6459,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
 
     milprintf(f, "} # end of UDF - function call\n");
 }
-
 /**
  * translateFunction translates the builtin functions
  *
@@ -8458,11 +8483,20 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             break;
         case c_for:
             translate2MIL (f, NORMAL, cur_level, counter, LR(c));
-            /* not allowed to overwrite iter,pos,item */
+    	    add_flwr_level(f, cur_level);
+            {
+                 PFcnode_t *n = R(c);
+                 while(n && n->kind == c_let) n = R(n);
+		 if (n && n->kind == c_orderby) {
+                     f->flwr_level[cur_level] = cur_level; /* this for started the flwro block */
+                 }
+            }
             cur_level++;
+
+            /* not allowed to overwrite iter,pos,item */
             milprintf(f, "if (ipik.count() != 0)\n");
             milprintf(f, "{  # for-translation\n");
-            project (f, cur_level);
+            project (f, cur_level); 
 
             milprintf(f, "var expOid;\n");
             getExpanded (f, cur_level, c->sem.flwr.fid);
@@ -8642,10 +8676,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             break;
         case c_orderby:
             counter++;
-            milprintf(f,
-                    "{ # order_by\n"
-                    "var refined%03u := inner%03u.reverse().leftfetchjoin(order_%03u);\n",
-                    counter, cur_level, cur_level);
+            milprintf(f, "{ # order_by\n");
+            milprintf(f, "var refined%03u := reverse(inner%03u).leftfetchjoin(order_%03u);\n", counter, cur_level, cur_level);
+
             /* evaluate orderspecs */
             translate2MIL (f, code, cur_level, counter, L(c));
 
@@ -10984,6 +11017,7 @@ const char* PFvarMIL(void) {
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var try := 1;\n"\
         "var err := \"!ERROR: conflicting update\";\n"\
+        "var ws_log_wsid := 0LL;\n"\
         "while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " var ws := empty_bat;\n"\
@@ -11035,6 +11069,7 @@ const char* PFdocbatMIL(void) {
 #define PF_STOPMIL_END(LASTPHASE) \
            " });\n"\
            " ws_log_wsid := ws_id(ws);\n"\
+           " if (not(isnil(err))) ws_log(ws, err);\n"\
            " ws_destroy(ws);\n"\
            "}\n"\
            "if (not(isnil(err))) ERROR(err);\n"\

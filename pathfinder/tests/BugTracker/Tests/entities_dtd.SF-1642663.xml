@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE foo [
+  <!ELEMENT foo (bar)>
+  <!ELEMENT bar    (#PCDATA)>
+  <!ENTITY eacute  "&#233;" ><!-- small e, acute accent -->
+]>
+<foo>
+  <bar>want to see a nice e with a acute accent:&eacute;</bar>
+</foo>

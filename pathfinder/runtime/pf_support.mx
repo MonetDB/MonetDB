@@ -3474,6 +3474,8 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       var pre_kind := ws.fetch(PRE_KIND).find(cont);
       if (pre_kind.find(oldpre) >= DOCUMENT)
         ERROR("document nodes cannot be deleted");
+      if (ws.fetch(PRE_LEVEL).find(cont).find(oldpre) = chr(0))
+        ERROR("root nodes cannot be deleted");
 
       # translate PRE value to NID value which is also valid in the modified document
       var pre_nid := ws.fetch(PRE_NID).find(cont);
@@ -5040,7 +5042,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 		GDKerror("string_join: expected oid %i@0 in iter_str "
                          "is missing in separator (0 rows).",
                          *(oid*)BUNhead(iter_str,bun_iter_str)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
-		return GDK_FAIL;
+		goto cleanup;
 	}
 	else if (bun_iter_str == last_iter_str) {
 		sep0 = oid_nil;
@@ -5071,7 +5073,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	while (i0 > sep_oid && bun_sep != last_sep) {
 		if (sep0 == sep_oid) {
 			GDKerror("string_join: the head of separator has to be keyed.");
-			return GDK_FAIL;
+			goto cleanup;
 		}
 		bunfastins(bn, &sep_oid, "");
 		sep0 = sep_oid;
@@ -5086,7 +5088,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 		GDKerror("string_join: expected oid %i@0 in iter_str "
 			 "is missing in separator.",
 			 i0);
-		return GDK_FAIL;
+		goto cleanup;
 	}
 @c
 	@:get_next_separator@
@@ -5150,7 +5152,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	        sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		if (sep0 == sep_oid) {
 			GDKerror("string_join: the head of separator has to be keyed.");
-			return GDK_FAIL;
+			goto cleanup;
 		}
 		bunfastins(bn, &sep_oid, "");
 		sep0 = sep_oid;
@@ -5257,6 +5259,7 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
 	return GDK_SUCCEED;
 bunins_failed:
 	GDKerror("enumerate: bunins failed.\n");
+	BBPreclaim(bn);
 	return GDK_FAIL;
 }
 
@@ -5321,7 +5324,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 		@:mpos_init_batlist@
 		if (!fake_ws_item) {
 			*res = bn = BATleftfetchjoin(pre, batlist[0], oid_nil);
-			@:mpos_free_batlist@
+			@:mpos_free_batlist(0)@
 			if (bn == NULL) {
 				GDKerror("mposjoin: BATleftfetchjoin(pre, ws_item["SZFMT"]) failed.\n",
 					 the_cont_id);
@@ -5351,14 +5354,14 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 		if (!(fake_item || BAThdense(batlist[ii]))) {
 			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have a dense head.\n");
 			ii++;
-			@:mpos_free_batlist@
+			@:mpos_free_batlist(0)@
 			return GDK_FAIL;
 		}
 		if (ATOMtype(batlist[0]->ttype) != ATOMtype(batlist[ii]->ttype)) {
 			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have the same tail type (%d: %d != %d).\n",
 				ii, batlist[ii]->ttype, batlist[0]->ttype);
 			ii++;
-			@:mpos_free_batlist@
+			@:mpos_free_batlist(0)@
 			assert(0);
 			return GDK_FAIL;
 		}
@@ -5378,7 +5381,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	bn = BATnew(TYPE_void, ATOMtype(tt), cnt);
 	if (bn == NULL) {
 		GDKerror("mposjoin: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(tt)), cnt);
-		@:mpos_free_batlist@
+		@:mpos_free_batlist(0)@
 		return GDK_FAIL;
 	}
 	BATseqbase(bn, base);
@@ -5449,7 +5452,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 					oid b0 = BUNindex(b,BUNfirst(b));
 					void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNptr(b,p-l+b0)));
 					dst += bs;
-				}
+				} 
 			}
 		}
 	}
@@ -5487,13 +5490,13 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
     if (BATcount(pre) > BATcount(bn)) {
 		GDKerror("mposjoin: missing matches. The result requires the "
                  "same number of tuples as the first two input arguments: "SZFMT" < "SZFMT".", BATcount(bn), BATcount(pre));
-		@:mpos_free_batlist@
+		@:mpos_free_batlist(bn)@
 		return GDK_FAIL;
 	}
     if (BATcount(pre) < BATcount(bn)) {
 		GDKerror("mposjoin: more than one match per input tuple. "
                  "seqbase does not match anymore.");
-		@:mpos_free_batlist@
+		@:mpos_free_batlist(bn)@
 		return GDK_FAIL;
 	}
 
@@ -5511,13 +5514,13 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	*res = bn;
 @c
 	@:mpos_res_prop@
-	@:mpos_free_batlist@
+	@:mpos_free_batlist(0)@
 
 	return GDK_SUCCEED;
 bunins_failed:
 	GDKerror("mposjoin: bunins failed.\n");
-	BBPreclaim(bn);
 @= mpos_free_batlist
+	if (@1) BBPreclaim(bn);
 	while (ii > 0) {
 		BBPunfix(batlist[--ii]->batCacheid);
 	}
@@ -5525,7 +5528,7 @@ bunins_failed:
 		GDKfree(batlist);
 	}
 @c
-	@:mpos_free_batlist@
+	@:mpos_free_batlist(bn)@
 	return GDK_FAIL;
 }
 
@@ -5607,25 +5610,34 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 
 @= mval_init_batlist
 {
-		bit hsh, srt;
-		bat bid = *(bat*)BUNtloc(ws_item, pw);
-		batlist[ii] = BATdescriptor(bid);
-		if (batlist[ii]->ttype != TYPE_oid &&
-		    (batlist[ii]->ttype != TYPE_void || batlist[ii]->tseqbase == oid_nil)) {
+	bit hsh=0, srt, view;
+	bat bid = *(bat*)BUNtloc(ws_item, pw);
+	batlist[ii] = BATdescriptor(bid);
+ 	view = (batlist[ii]->htype == TYPE_void && batlist[ii]->hseqbase != oid_nil);
+	srt = (BATtordered(batlist[ii])&1);
+	if (batlist[ii]->ttype == TYPE_void && batlist[ii]->tseqbase != oid_nil) {
+		view = 1; /* do not create the hash table on a void column */
+	} else {
+		hsh = (BAThash(BATmirror(batlist[ii]), 0) != NULL);
+		if (batlist[ii]->ttype != TYPE_oid) {
 			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have tail type OID.\n");
 			ii++;
 			@:mval_free_batlist@
 			return GDK_FAIL;
 		}
-		hsh = (BAThash(BATmirror(batlist[ii]), 0) != NULL);
-		srt = (BATtordered(batlist[ii])&1);
-		all_hash &= hsh;
-		all_sort &= srt;
-		some_hash |= hsh;
-		some_sort |= srt;
-		all_key &= (batlist[ii]->tkey!=0);
-		sze = MAX(sze, BATcount(batlist[ii]));
-		ii++;
+	}
+	if (view && !VIEWparent(batlist[ii])) { 
+                /* avoid BUNhead()/BUNtail() corruption due to multi-threading */
+		batlist[ii] = VIEWcreate(batlist[ii]);  /* view shares master hash table */
+		BBPunfix(VIEWparent(batlist[ii])); /* release the fix of BATdescriptor */
+	}
+	all_hash &= hsh;
+	all_sort &= srt;
+	some_hash |= hsh;
+	some_sort |= srt;
+	all_key &= (batlist[ii]->tkey!=0);
+	sze = MAX(sze, BATcount(batlist[ii]));
+	ii++;
 }	
 @
 @= mval_res_empty
@@ -5936,12 +5948,13 @@ struct stack_item {
 #define PUSH(stack,s,p,l) \
 	stack_top++;\
 	if (stack_top >= stack_size) {\
-		stack_size *= 2;\
-		stack = (si*) GDKrealloc(stack, stack_size*sizeof(si));\
-		if (stack == NULL) {\
+		si* newstack = (si*) GDKrealloc(stack, (stack_size*=2)*sizeof(si));\
+		if (newstack == NULL) {\
 			GDKerror("correct_sizes: could not re-allocate stack of size %d.\n", stack_size*sizeof(si));\
+			GDKfree(stack);\
 	 		return GDK_FAIL;\
 		}\
+                stack = newstack;\
 	}\
 	stack[stack_top].sze = s;\
 	stack[stack_top].pre = p;\

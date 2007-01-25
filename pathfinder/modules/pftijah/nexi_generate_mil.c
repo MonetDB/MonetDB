@@ -216,7 +216,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
   MILPRINTF(MILOUT, "# NEXI-QUERY:\n");
   char *np;
   char *p = (char*)parserCtx->queryText;
-  while( (np=index(p,'\n')) ) {
+  while( (np=strchr(p,'\n')) ) {
 	*np = 0;
         MILPRINTF(MILOUT, "# %s\n",p);
 	*np = '\n';

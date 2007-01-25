@@ -1479,7 +1479,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
             var free_nids := empty_bat;
             var suffix := str(abs(int(idx)));
             if (isolate) { # new writable empty bats
-                own := ws.fetch(ATTR_OWN).fetch(cont).copy(); 
+                own := ws.fetch(_ATTR_OWN).fetch(cont).copy(); 
                 reverse(own).accbuild("hash");
                 free_nids := dsk.fetch(NID_RID).uselect(oid_nil).access(BAT_WRITE).revert();
                 if ((free_nids.count() = 0) and (free_nids.htype() = void)) {
@@ -1496,8 +1496,9 @@ PROC __ws_opencoll(BAT[void,bat] ws,
                    # however for small, non memory mapped bats this is not the case
                    # in the mmap-case we do not want to touch (needless copy-on-write), so filter first
                    garbage := garbage.mirror().leftfetchjoin(ws.fetch(ATTR_OWN).fetch(cont)).uselect(oid_nil,oid_nil);
-                   if (bit(count(garbage))) # only non-empty for malloced (non -mmap) bats 
+                   if (bit(count(garbage))) { # only non-empty for malloced (non -mmap) bats 
                        ws.fetch(ATTR_OWN).fetch(cont).replace(garbage.project(oid_nil),true); # delete from private copy
+                   }
                 }
                 ins := bat(oid,oid);
                 del := bat(oid,oid);
@@ -1533,7 +1534,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         }
     }
     # Set a unique number (mangled from the wsid in the runtime).
-    # it will be zapped by any update. therefore, precenseo of this id 
+    # it will be zapped by any update. therefore, precense of this id 
     # proves absence of updates. We enforce an odd mangled number (or with 1)
     # to avoid ever confusing such numbers with real lock values
     # (the lock values in RT_LOCK_FREELIST and RT_NID_FREELIST runtime BUNs are 
@@ -5236,7 +5237,7 @@ xquery_method(stream *out,
     monetSetChannel(XQthread, GDKin, out);
     if (argc >= 1000) {
         /* hack: pass argc+1000 and you get debug output */
-        s = open_wstream("/tmp/xrpc.mil");
+        s = open_wastream("/tmp/xrpc.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;

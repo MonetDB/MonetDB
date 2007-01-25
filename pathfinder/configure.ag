@@ -35,6 +35,9 @@ AM_CONFIG_HEADER(pf_config.h:conf/config.h.in)
 CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)
 
+dnl must check for compiler before checking for MonetDB4
+AM_MONETDB_COMPILER()
+
 dnl Check for Monet
 req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
@@ -49,7 +52,6 @@ fi
 req_clients_ver='1.17.0'
 AM_MONETDB_CLIENTS($req_clients_ver)
 AM_MONETDB_DEFAULTS()
-AM_MONETDB_COMPILER()
 if test "x$have_c99" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
 fi
@@ -403,11 +405,12 @@ AC_SUBST(LIBGC_LDADD, $LIBGC_LDADD)
 
 dnl Check for TIJAH support
 dnl --enable-pftijah
+dft_pftijah=yes
 AC_ARG_ENABLE(pftijah,
         AC_HELP_STRING([--enable-pftijah],
-                [enable support for TIJAH [default=no]]),
+                [enable support for TIJAH [default=$dft_pftijah]]),
         enable_pftijah=$enableval,
-        enable_pftijah=no)
+        enable_pftijah=$dft_pftijah)
 case $enable_pftijah in
 yes)  AC_DEFINE(HAVE_PFTIJAH, 1, [Define if you want TIJAH])
 ;;

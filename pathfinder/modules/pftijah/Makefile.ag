@@ -56,16 +56,20 @@ lib__pftijah = {
 		pftijah_util.mx \
 		serialize_pftijah.mx \
 		serialize_pftijah_options.mx \
+		nexi.h \
 		nexi.c \
 		nexi.y \
 		nexi.l \
 		nexi_preprocessor.c \
+		nexi_rewriter.h \
 		nexi_rewriter.c \
+		nexi_generate_mil.h \
 		nexi_generate_mil.c \
+		nexi_generate_plan.h \
 		nexi_generate_plan.c
 
 	LIBS = \
-		$(PF_LIBS) \
+		../../runtime/libserialize_null ../../runtime/lib_pf_support $(PF_LIBS) \
 		$(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
 		$(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
@@ -75,3 +79,4 @@ scripts_mil = {
 	SOURCES = pftijah.mx
 }
 
+EXTRA_DIST_DIR = Tests

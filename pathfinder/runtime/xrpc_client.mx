@@ -425,7 +425,6 @@ PROC doLoopLiftedRPC(
     # if there were more destinations, merge the result tables 
     var i := 0;
     while ((i :+= 1) < steps) {
-print(i);
         # initialize res_bat with the results for the first destination 
         res_bats := merged_union(res_bats.fetch(0), res_iter.fetch(i), 
                                  res_bats.fetch(1), res_item.fetch(i), 

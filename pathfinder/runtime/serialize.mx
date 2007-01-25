@@ -247,7 +247,7 @@ xquery_print_result_main (
     BAT* strVAL);
 
 /* hack to allow direct calls in serialize_pftijah.mx */
-int
+pf_support_export int
 xquery_print_doc_DRIVER (
     str                 mode, 
     serializeFunStruct *driverFun,
@@ -256,7 +256,7 @@ xquery_print_doc_DRIVER (
     str                 docName);
 
 /* hack to allow direct calls in serialize_pftijah_options.mx */
-int 
+pf_support_export int
 xquery_print_result_DRIVER (
     str                 mode,
     serializeFunStruct *driverFun, /* unused */
