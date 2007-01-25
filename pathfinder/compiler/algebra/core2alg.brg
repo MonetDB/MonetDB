@@ -2119,25 +2119,30 @@ reduce (PFcnode_t * p, int goalnt)
 /* different strategies to process the recursion */
 #define DELTA 1
 #define TC 2
-#define IFP 0 /* choose 0 to ensure that the loop mapping is discarded */
+#define IFP 3
+#define TC_OR_DELTA 4
+#define IFP_OR_DELTA 5
 /* different strategies to include the seed */
-#define STAR 3
-#define PLUS 4
+#define STAR 6
+#define PLUS 7
+             
+/* check whether variable strategy is allowed or not */
+#define VAR_STRATEGY(i) ((i) >= TC_OR_DELTA)
              
 /* choose strategy */
-#define STRATEGY IFP
+#define STRATEGY IFP_OR_DELTA
 #define RESULT STAR
 
             unsigned int   i;
-            PFla_op_t     *base_x, *base_res;
-            PFla_op_t     *res_seed, *res_body, *delta, *res;
-            PFalg_schema_t schema, res_schema;
-#if STRATEGY
+            int            strategy = STRATEGY;
             PFla_env_t     e;
             PFarray_t     *old_env;
+            PFalg_schema_t schema, res_schema;
+            PFla_op_t     *base_x, *base_res;
+            PFla_op_t     *res_seed, *res_body, *delta, *res;
             PFla_op_t     *new_map;    
             PFla_op_t     *old_loop, *base_loop, *updated_loop;
-#endif
+            PFla_op_t     *loop_rec_param, *body;
 
             /* initiate translation of e1 */
             reduce (kids[0], nts[0]);
@@ -2166,56 +2171,51 @@ reduce (PFcnode_t * p, int goalnt)
             /* create a new base for variable $x */
             base_x = rec_base (schema);
             
-            /* create a new result seed */
-            res_seed = PFla_empty_tbl_ (res_schema);
             /* create a new result base */
             base_res = rec_base (res_schema);
 
-#if RESULT == STAR
-            /* ensure that res_seed is also used
-               for the strategy IFP */
-            (void) res_seed;
-#endif
-
-#if STRATEGY
             /* create a new base_loop relation */
             base_loop = rec_base (loop->schema);
             
-            /* save old enviroment */
-            old_env = env;
             /* save old loop operator */
             old_loop = loop;
+            /* and overwrite it with the new one */
+            loop = base_loop;
+            
+            /* for strategy IFP we do not need to introduce
+               new map relations */
+            if (strategy != IFP) {
+                /* save old enviroment */
+                old_env = env;
 
-            /* create new environment */
-            env = PFarray (sizeof (PFla_env_t));
+                /* create new environment */
+                env = PFarray (sizeof (PFla_env_t));
 
-            /* update all variable bindings in old environment and put
-             * them into new environment */
-            for (i = 0; i < PFarray_last (old_env); i++) {
-                e = *((PFla_env_t *) PFarray_at (old_env, i));
+                /* update all variable bindings in old environment and put
+                 * them into new environment */
+                for (i = 0; i < PFarray_last (old_env); i++) {
+                    e = *((PFla_env_t *) PFarray_at (old_env, i));
 
-                if (!e.map)
-                    new_map = project (
-                                  loop,
-                                  proj (att_outer, att_iter),
-                                  proj (att_inner, att_iter));
-                else
-                    new_map = project (
-                                  eqjoin (
-                                      e.map,
+                    if (!e.map)
+                        new_map = project (
                                       loop,
-                                      att_inner,
-                                      att_iter),
-                                  proj (att_outer, att_outer),
-                                  proj (att_inner, att_inner));
+                                      proj (att_outer, att_iter),
+                                      proj (att_inner, att_iter));
+                    else
+                        new_map = project (
+                                      eqjoin (
+                                          e.map,
+                                          loop,
+                                          att_inner,
+                                          att_iter),
+                                      proj (att_outer, att_outer),
+                                      proj (att_inner, att_inner));
 
-                *((PFla_env_t *) PFarray_add (env))
-                    = enventry (e.var, e.rel, new_map, e.frag);
+                    *((PFla_env_t *) PFarray_add (env))
+                        = enventry (e.var, e.rel, new_map, e.frag);
+                }
             }
 
-            loop = base_loop;
-#endif
-            
             /* insert $x and "its document" into the NEW environment */
             *((PFla_env_t *) PFarray_add (env))
                 = enventry (L(p)->sem.var, base_x, NULL, A(RL(p)).frag);
@@ -2225,6 +2225,12 @@ reduce (PFcnode_t * p, int goalnt)
              */
             reduce (kids[1], nts[1]);
 
+            /* check whether we may modify the strategy and
+               if the DELTA approach is allowed */
+            if (VAR_STRATEGY(strategy) &&
+                PFprop_check_rec_delta (A(RR(p)).rel))
+                strategy = DELTA;
+                
             /* the result of the recursion body */
             res_body = distinct (project (A(RR(p)).rel,
                                           proj (att_iter, att_iter),
@@ -2243,24 +2249,8 @@ reduce (PFcnode_t * p, int goalnt)
                                       proj (att_iter, att_iter),
                                       proj (att_item, att_item)));
             
-#if STRATEGY
-            updated_loop = project (eqjoin (distinct (
-                                                project (delta, 
-                                                         proj (att_iter1, 
-                                                               att_iter))),
-                                            base_loop,
-                                            att_iter1,
-                                            att_iter),
-                                    proj (att_iter, att_iter));
-#endif
-
-            A(p) = (struct PFla_pair_t) {
-                     .rel = rownum (
-                                rec_fix (
-                                    rec_param (
-                                        rec_arg (
-                                            A(RL(p)).rel,
-                                            rownum (
+            /* ------------------- BODY ------------------- */
+            
             /* using 'distinct (delta)' or 'distinct (res_body)'
                instead of 'res' changes the evaluation strategy:
                 - 'delta': only the really new nodes are the input
@@ -2269,50 +2259,89 @@ reduce (PFcnode_t * p, int goalnt)
                   is the input for the next recursion
                 - 'res': the whole result collected until now
                   is input to the next recurstion step */
-#if STRATEGY == DELTA
-                    /* (1) */                   delta,
-#elif STRATEGY == IFP
-                    /* (2) */                   res,
-#else /* STRATEGY == TC */
-                    /* (3) */                   res_body,
+            if (strategy == DELTA)
+                body = delta;
+            else if (strategy == TC ||
+                strategy == TC_OR_DELTA)
+                body = res_body;
+            else if (strategy == IFP ||
+                strategy == IFP_OR_DELTA)
+                body = res;
+            else
+                PFoops (OOPS_FATAL,
+                        "unknown strategy in algebra translation "
+                        "of the recursion primitive");
+                    
+            /* ------------------ RESULT ------------------ */
+#if RESULT == STAR
+            res_seed = project (A(RL(p)).rel,
+                                proj (att_iter, 
+                                      att_iter),
+                                proj (att_item,
+                                      att_item));
+#else /* PLUS */
+            /* create a new result seed */
+            res_seed = PFla_empty_tbl_ (res_schema);
 #endif
+            
+            /* ------------------- LOOP ------------------- */
+            
+            /* for strategy IFP we do not need to update the
+               loop relation ... */
+            if (strategy == IFP || strategy == IFP_OR_DELTA) {
+                loop_rec_param = rec_nil ();
+
+                /* ... instead we have to make sure that the 'real'
+                   loop relation is used already at the beginning */
+                *loop = *old_loop;
+            } else {
+                /* update the loop relation after the recursion body
+                   has been processed ... */
+                updated_loop = project (eqjoin (distinct (
+                                                    project (delta, 
+                                                             proj (att_iter1, 
+                                                                   att_iter))),
+                                                base_loop,
+                                                att_iter1,
+                                                att_iter),
+                                        proj (att_iter, att_iter));
+
+                /* ... and integrate the loop maintenance in the recursion */
+                loop_rec_param = rec_param (rec_arg (old_loop,
+                                                     updated_loop,
+                                                     base_loop),
+                                            rec_nil ());
+            }
+            
+            /* ---------------- RECURSION ----------------- */
+            
+            A(p) = (struct PFla_pair_t) {
+                     .rel = rownum (
+                                rec_fix (
+                                    rec_param (
+                                        rec_arg (
+                                            A(RL(p)).rel,
+                                            rownum (
+                                                body,
                                                 att_pos,
                                                 sortby (att_item),
                                                 att_iter),
                                             base_x),
                                         rec_param (
                                             rec_arg (
-#if RESULT == STAR
-                                                project (A(RL(p)).rel,
-                                                         proj (att_iter, 
-                                                               att_iter),
-                                                         proj (att_item,
-                                                               att_item)),
-#else /* PLUS */
                                                 res_seed,
-#endif
                                                 res,
                                                 base_res),
-#if STRATEGY
-            /* using 'delta' instead of 'res_body' changes the evaluation
-               strategy: the loop relation cannot be changed */
-                                            rec_param (
-                                                rec_arg (
-                                                    old_loop,
-                                                    updated_loop,
-                                                    base_loop),
-                                                rec_nil ()))),   
-#else
-                                            rec_nil ())),
-#endif
+                                            loop_rec_param)),
                                     res),
                                 att_pos, sortby (att_item), att_iter),
                      .frag = A(RR(p)).frag };
-            
-#if STRATEGY
-            env = old_env;
+
+            /* clean up environment and loop relation */
+            if (strategy != IFP) {
+                env = old_env;
+            }
             loop = old_loop;
-#endif
         } break;
 
         default:

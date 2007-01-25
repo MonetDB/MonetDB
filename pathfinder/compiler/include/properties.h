@@ -170,6 +170,8 @@ void PFprop_infer_reqval (PFla_op_t *root);
 void PFprop_infer_unq_names (PFla_op_t *root);
 void PFprop_infer_ori_names (PFla_op_t *root);
 
+bool PFprop_check_rec_delta (PFla_op_t *root);
+
 /* --------------------- cardinality propery accessors --------------------- */
 
 /**
