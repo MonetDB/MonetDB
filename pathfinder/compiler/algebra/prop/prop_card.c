@@ -63,10 +63,6 @@ PFprop_card (const PFprop_t *prop)
 static void
 infer_card (PFla_op_t *n)
 {
-    /*
-     * Several operates (at least) propagate constant columns
-     * to their output 1:1.
-     */
     switch (n->kind) {
         case la_serialize:
         case la_doc_access:
@@ -209,7 +205,7 @@ prop_infer (PFla_op_t *n)
     /* reset cardinality property */
     n->prop->card = 0;
 
-    /* infer information on constant columns */
+    /* infer cardinality information */
     infer_card (n);
 }
 
