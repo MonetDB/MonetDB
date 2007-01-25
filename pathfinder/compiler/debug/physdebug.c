@@ -728,29 +728,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
             switch (*fmt) {
 
                 /* list costs if requested */
-                case 'C':
+                case 'c':
                     PFarray_printf (dot, "\\ncost: %lu", n->cost);
                     break;
-
-                /* list attributes marked const if requested */
-                case 'c':
-                    for (unsigned int i = 0;
-                            i < PFprop_const_count (n->prop); i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                        PFatt_str (
-                                            PFprop_const_at (n->prop, i)));
-                    break;
-
-                /* list icols attributes if requested */
-                case 'i':
-                {
-                    PFalg_attlist_t icols =
-                                    PFprop_icols_to_attlist (n->prop);
-                    for (unsigned int i = 0;
-                            i < icols.count; i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                        PFatt_str (icols.atts[i]));
-                } break;
 
                 /* list orderings if requested */
                 case 'o':

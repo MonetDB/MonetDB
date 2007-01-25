@@ -726,14 +726,10 @@ main (int argc, char *argv[])
                                             "dot output:\n",
                         long_option (opt_buf, ", --%s=format", 'f'));
 
-                printf ("         C  print cost value (physical algebra)\n");
-                printf ("         c  print constant attributes "
-                                     "(logical/physical algebra)\n");
-                printf ("         i  print icols property (logical/"
-                                     "physical algebra)\n");
-                printf ("         o  print orderings (physical algebra)\n");
                 printf ("         +  print all available properties (logical/"
                                      "physical algebra)\n");
+                printf ("         c  print cost value (physical algebra)\n");
+                printf ("         o  print orderings (physical algebra)\n");
 
                 printf ("  -o options%s: optimize algebra according to "
                                             "options:\n",

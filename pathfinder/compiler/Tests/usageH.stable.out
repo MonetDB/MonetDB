@@ -59,11 +59,9 @@ Usage: pf [OPTION] [FILE]
 = -l, --print-logical-algebra: print logical algebra tree
 = -p, --print-physical-algebra: print physical algebra tree
 = -f format, --format=format: print optional information in algebra dot output:
-         C  print cost value (physical algebra)
-         c  print constant attributes (logical/physical algebra)
-         i  print icols property (logical/physical algebra)
-         o  print orderings (physical algebra)
          +  print all available properties (logical/physical algebra)
+         c  print cost value (physical algebra)
+         o  print orderings (physical algebra)
 = -o options, --optimize-algebra=options: optimize algebra according to options:
          O  apply optimization based on constant property
          I  apply optimization based on icols property

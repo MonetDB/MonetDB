@@ -726,35 +726,51 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     if (PFstate.format) {
 
         char *fmt = PFstate.format;
+        /* format character '+' overwrites all others */
         bool all = false;
+        while (*fmt) {
+            if (*fmt == '+') {
+                all = true;
+                break;
+            }
+            fmt++;
+        }
+        /* iterate over all format characters 
+           if we haven't found a '+' character */
+        if (!all)
+            fmt = PFstate.format;
 
-        while (*fmt) { 
-            if (*fmt == '+')
-            {
-                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
-                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
-
+        while (*fmt) {
+            if (*fmt == '+' || *fmt == 'A') {
                 /* if present print cardinality */
                 if (PFprop_card (n->prop))
                     PFarray_printf (dot, "\\ncard: %i", PFprop_card (n->prop));
-
+            }
+            if (*fmt == '+' || *fmt == 'O') {
                 /* list attributes marked const */
                 for (unsigned int i = 0;
                         i < PFprop_const_count (n->prop); i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
                                     PFatt_str (
                                         PFprop_const_at (n->prop, i)));
+            }
+            if (*fmt == '+' || *fmt == 'I') {
+                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
 
                 /* list icols attributes */
                 for (unsigned int i = 0; i < icols.count; i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
                                     PFatt_str (icols.atts[i]));
+            }
+            if (*fmt == '+' || *fmt == 'K') {
+                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
 
                 /* list keys attributes */
                 for (unsigned int i = 0; i < keys.count; i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nkeys: %s",
                                     PFatt_str (keys.atts[i]));
-
+            }
+            if (*fmt == '+' || *fmt == 'V') {
                 /* list required value columns and their values */
                 for (unsigned int pre = 0, i = 0; i < n->schema.count; i++) {
                     PFalg_att_t att = n->schema.items[i].name;
@@ -765,7 +781,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (att),
                             PFprop_reqval_val (n->prop, att)?"true":"false");
                 }
-
+            }
+            if (*fmt == '+' || *fmt == 'D') {
                 /* list attributes and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)
                     if (PFprop_dom (n->prop, n->schema.items[i].name)) {
@@ -775,7 +792,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             dot, 
                             PFprop_dom (n->prop, n->schema.items[i].name));
                     }
-
+            }
+            if (*fmt == '+' || *fmt == '[') {
                 /* list attributes and their unique names */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_att_t ori = n->schema.items[i].name;
@@ -801,7 +819,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFarray_printf (dot, " |%s]", PFatt_str(r_unq));
                     }
                 }
-
+            }
+            if (*fmt == '+' || *fmt == ']') {
                 /* list attributes and their original names */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_att_t unq = n->schema.items[i].name;
@@ -827,38 +846,18 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFarray_printf (dot, " |%s]", PFatt_str(r_ori));
                     }
                 }
-                
+            }
+            if (*fmt == '+' || *fmt == 'S') {
                 /* print whether columns do have to respect duplicates */
                 if (PFprop_set (n->prop))
                     PFarray_printf (dot, "\\nset"); 
-
-                all = true;
             }
-            fmt++;
-        }
-        fmt = PFstate.format;
 
-        while (!all && *fmt) {
-            switch (*fmt) {
-                /* list attributes marked const if requested */
-                case 'c':
-                    for (unsigned int i = 0;
-                            i < PFprop_const_count (n->prop); i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                        PFatt_str (
-                                            PFprop_const_at (n->prop, i)));
-                    break;
-                /* list icols attributes if requested */
-                case 'i':
-                {
-                    PFalg_attlist_t icols = 
-                                    PFprop_icols_to_attlist (n->prop);
-                    for (unsigned int i = 0; i < icols.count; i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                        PFatt_str (icols.atts[i]));
-                } break;
-            }
-            fmt++;
+            /* stop after all properties have been printed */
+            if (*fmt == '+')
+                break;
+            else
+                fmt++;
         }
     }
 
