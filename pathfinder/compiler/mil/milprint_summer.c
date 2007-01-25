@@ -6363,7 +6363,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "  }\n"
             "} # end of XRPC function call\n",
         counter, counter, counter,
-        fun->qname.ns.uri, fun->atURI, fun->qname.loc,    
+        fun->qname.ns.uri, fun->atURI?fun->atURI:f->url, fun->qname.loc,    
         updCall, fun->arity,
         counter, counter, counter, counter);
 }
@@ -11162,7 +11162,7 @@ expand_flwr (PFcnode_t *c, PFcnode_t *ret)
  */
 int
 PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long timing, 
-                char** prologue, char** query, char** epilogue, bool standoff)
+                char** prologue, char** query, char** epilogue, char* url, bool standoff)
 {
     PFarray_t *way, *counter;
     opt_t *f = opt_open(optimize);
@@ -11171,6 +11171,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
     /* hack: milprint_summer state, not mil_opt state */
     f->num_fun = num_fun;     /* for queries: the amount of functions in the query itself (if any); used to ignore module functions */
     f->module_base = module_base; /* only generate mil module; no query */
+    f->url = url; /* url of this query / module definition */ 
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));

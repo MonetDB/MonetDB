@@ -39,7 +39,7 @@
 #include "core.h"
 
 int PFprintMILtemp (PFcnode_t *, int optimize, int module_base, int num_fun, long tm, 
-                    char** prologue, char** query, char** epilogue, bool standoff);
+                    char** prologue, char** query, char** epilogue, char* url, bool standoff);
 
 #endif    /* MILPRINT_H */
 
