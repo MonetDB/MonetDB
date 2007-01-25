@@ -1235,7 +1235,7 @@ project (opt_t *f, int cur_level)
     milprintf(f, "var order_%03u := iter;\n", cur_level);
     if (lim == 0 || f->flwr_level[lim-1] == -1) 
     for(cur=cur_level; cur > lim; cur--)
-        if (f->flwr_level[cur] == -1) 
+        if (cur >= f->flwr_depth || f->flwr_level[cur] == -1) 
             milprintf(f, "order_%03u := order_%03u.leftjoin(reverse(inner%03u)).leftfetchjoin(outer%03u);\n", cur_level, cur_level, cur-1, cur-1);
 
     /* create a new loop / outer|inner relation
