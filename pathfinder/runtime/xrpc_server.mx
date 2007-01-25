@@ -144,11 +144,12 @@ int timing = 0;
 @c
 #include "pf_config.h"
 #include "xrpc_server.h"
+/*    stream_close(s); stream_destroy(s);                             \
+ *    */
 
 #define clean_up(s, argcnt, argtpe, argval, iterc, nr_args) {       \
     lng i = 0;                                                      \
                                                                     \
-    stream_close(s); stream_destroy(s);                             \
     if(argcnt){                                                     \
         for(i = 0; i < iterc; i++) GDKfree(argcnt[i]);              \
         GDKfree(argcnt);                                            \
@@ -210,7 +211,11 @@ request2bat(struct shttpd_callback_arg *arg, stream *out)
     }
 
     if (CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL) {
-        BBPreclaim(shredBAT);
+        if(BBPreclaim(shredBAT) == -1){
+            GDKerror("request2bat: failed to destroy shredBAT on error, "
+                    "because it is used by other process!");
+            GDKerror("THIS SHOULD NEVER HAPPEN!!!");
+        }
         send_err(out, 1, ERR404, "env:Sender", NOT_WELL_FORMED);
         return NULL;
     }
@@ -752,6 +757,12 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
     }
 
     clean_up(out, argcnt, argtpe, argval, iterc, nr_args);
+    if(BBPreclaim(shredBAT) == -1){
+        GDKerror("handle_rpc_request: failed to destroy BAT \"shredBAT\", because it is in use by other process");
+        GDKerror("THIS SHOULD NEVER HAPPEN!!!");
+        return GDK_FAIL;
+    }
+
     return GDK_SUCCEED;
 }
 

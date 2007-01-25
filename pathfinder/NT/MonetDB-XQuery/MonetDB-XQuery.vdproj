@@ -351,6 +351,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_69D3482994044AC39B2914EDC14AB905"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_6AA080655DD44FF28A11E769D71AD74C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -754,6 +760,12 @@
         "Entry"
         {
         "MsmKey" = "8:_D7AF509D0B0146498791F2488A4B245A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D869C757510D4DE2B1DC2E81D9AE64DF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2063,6 +2075,26 @@
             {
             "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\bin\\lib_lock-0.dll"
             "TargetName" = "8:lib_lock-0.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_69D3482994044AC39B2914EDC14AB905"
+            {
+            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\pftijah.mil"
+            "TargetName" = "8:pftijah.mil"
             "Tag" = "8:"
             "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
             "Condition" = "8:"
@@ -3439,6 +3471,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D869C757510D4DE2B1DC2E81D9AE64DF"
+            {
+            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\bin\\lib_pftijah-0.dll"
+            "TargetName" = "8:lib_pftijah-0.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D9F97B7FCF984F1A86638878219EADB9"
             {
             "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\bin\\lib_ddbench-0.dll"
@@ -4075,7 +4127,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB-XQuery"
         "ProductCode" = "8:{27D88C92-6592-481F-A46B-7F0E2FE10059}"
-        "PackageCode" = "8:{A0F7A58A-0477-479E-8C49-D98238C73B2F}"
+        "PackageCode" = "8:{7C294CDE-0D5D-4349-BEE5-5F0C04C9EF09}"
         "UpgradeCode" = "8:{F5909DE2-4B01-4D0C-BE5C-92D694F80476}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
@@ -4189,20 +4241,6 @@
         }
         "Shortcut"
         {
-            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_3B2E4251A7E144A7ABDD662E21E6E3AE"
-            {
-            "Name" = "8:XQuery Client"
-            "Arguments" = "8:"
-            "Description" = "8:This is the MonetDB XML Query client program.  However, this program cannot be used interactively.  It is added to this menu only for completeness."
-            "ShowCmd" = "3:1"
-            "IconIndex" = "3:0"
-            "Transitive" = "11:FALSE"
-            "Target" = "8:_B6619A40394C4EA9AC348511B121960A"
-            "Folder" = "8:_F96F721F2CFD47F0995E8FEAFBF113D9"
-            "WorkingFolder" = "8:_C303A8E825E64186A1E38ECE43939A84"
-            "Icon" = "8:"
-            "Feature" = "8:"
-            }
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_6E820113C9D445028B98ADD45B9DC961"
             {
             "Name" = "8:XQuery Server"
@@ -4219,7 +4257,7 @@
             }
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_C1D546AE5C4E416DBF1204B1A0EB36EB"
             {
-            "Name" = "8:MonetDB Client"
+            "Name" = "8:MonetDB MIL Client"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:1"

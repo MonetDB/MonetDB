@@ -730,6 +730,7 @@ getELEMkind(BAT *ws, int contID, oid item_index)
 {
     BAT *b  = NULL;
     BUN bun = NULL;
+    char ret;
 
     if(!(b = getWsBAT(ws, contID, PRE_KIND)))
         return GDK_chr_min;
@@ -746,7 +747,10 @@ getELEMkind(BAT *ws, int contID, oid item_index)
                  b?BBP_logical(b->batCacheid):"NULL", item_index);
         return GDK_chr_min;
     }
-    return *(char*)BUNtail(b,bun);
+
+    ret = *(char*)BUNtail(b,bun);
+    BBPunfix( BBPcacheid(b));
+    return ret;
 }
 
 int
@@ -1026,6 +1030,25 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                                 "xml-noheader-noroot", NULL, NULL, ws, 1,
                                 node_item, node_item, node_item, node_kind,
                                 int_values, dbl_values, str_values);
+
+                        if(BBPreclaim(node_item) == -1){
+                            GDKerror("CMDhttp_post: failed to destroy "
+                                    "BAT \"node_item\", because it is in "
+                                    "use by other process!");
+                            GDKerror("THIS SHOULD NEVER HAPPEN!!!");
+                            clean_up(sock, in, out, bs, b, argcnt, iterc);
+                            return GDK_FAIL;
+                        }
+
+                        if(BBPreclaim(node_kind) == -1){
+                            GDKerror("CMDhttp_post: failed to destroy "
+                                    "BAT \"node_item\", because it is in "
+                                    "use by other process!");
+                            GDKerror("THIS SHOULD NEVER HAPPEN!!!");
+                            clean_up(sock, in, out, bs, b, argcnt, iterc);
+                            return GDK_FAIL;
+                        }
+
                         switch(elem_kind) {
                             case 0: str2buf(b, "</xrpc:element>");                break;
                             case 1: str2buf(b, "</xrpc:text>");                   break;
@@ -1119,7 +1142,12 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             GDKerror("CMDhttp_post: invalid XRPC response received\n");
             GDKerror("%s\n", strptr?strptr:b->buf);
             clean_up(sock, in, out, bs, b, argcnt, iterc);
-            BBPreclaim(shredBAT);
+            if(BBPreclaim(shredBAT) == -1){
+                GDKerror("CMDhttp_post: failed to destroy BAT "
+                        "\"shredBAT\", because it is in use by other "
+                        "process!");
+                GDKerror("THIS SHOULD NEVER HAPPEN!!!");
+            }
             return GDK_FAIL;
         }
     }

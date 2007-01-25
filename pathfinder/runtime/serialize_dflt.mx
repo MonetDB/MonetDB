@@ -897,10 +897,13 @@ get_attrVal(char *attrname,
     BAT *tmpBAT = NULL;
     BAT *qn1 = NULL, *qn2 = NULL;
     BAT *attr = NULL, *prop = NULL;
+    char *ret;
 
     qn1 = BATselect(qn_loc, attrname, attrname); /* [qn,loc] */
     qn2 = BATselect(qn_uri, attrns,   attrns);   /* [qn,uri] */
     tmpBAT = VIEWcombine(qn1);                   /* [qn,qn] */
+
+    BBPunfix(BBPcacheid(qn1));
 
     /* [qn,qn] join [qn,uri] => [qn,uri] */
     qn1 = BATjoin(tmpBAT, qn2, 1);
@@ -911,11 +914,20 @@ get_attrVal(char *attrname,
     /* [prop,attr] join [attr,uri] => [prop,uri] */
     prop = BATjoin(BATmirror(attr_prop), attr, 1);
 
+    BBPunfix(BBPcacheid(tmpBAT));
     /* [uri,prop] join [prop,val] => [uri,val] */
     tmpBAT = BATjoin(BATmirror(prop), prop_val, 1);
     if (BATcount(tmpBAT) != 1) return NULL;
 
-    return BUNtail(tmpBAT, BUNptr(tmpBAT, 0));
+    ret = GDKstrdup(BUNtail(tmpBAT, BUNptr(tmpBAT, 0)));
+    
+    BBPreclaim(tmpBAT);
+    BBPreclaim(qn1);
+    BBPreclaim(qn2);
+    BBPreclaim(attr);
+    BBPreclaim(prop);
+
+    return ret;
 }
 
 static BAT *
@@ -986,6 +998,12 @@ xrpc_startSerialize(XqueryCtx *ctx)
         return PROBLEM;
     }
 
+    BBPunfix( BBPcacheid(qn_loc) );
+    BBPunfix( BBPcacheid(qn_uri) );
+    BBPunfix( BBPcacheid(attr_qn) );
+    BBPunfix( BBPcacheid(attr_prop) );
+    BBPunfix( BBPcacheid(prop_val) );
+
     /* We need to prepend "=" to each line, so make sure
        that we print one after each newline (encoded in
        newline string 'newline')->
@@ -1014,6 +1032,9 @@ xrpc_startSerialize(XqueryCtx *ctx)
         stream_printf(ctx->out,
                 " xrpc:method=\"%s\"", method);
     stream_write(ctx->out, ">", 1, 1);
+
+    GDKfree(module);
+    GDKfree(method);
     return SUCCESS;
 }
 

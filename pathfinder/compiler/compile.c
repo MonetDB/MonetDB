@@ -435,7 +435,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
         if (PFprintMILtemp (croot, status->optimize, module_base, -1, tm_first, 
-                            &prologue, &query, &epilogue, status->standoff_axis_steps))
+                            &prologue, &query, &epilogue, url, status->standoff_axis_steps))
             goto failure;
         fputs(prologue, pfout);
         fputs(query, pfout);
@@ -682,7 +682,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
  * Runtime environment uses a lock to stay stable under concurrent requests. 
  */
 char*
-PFcompile_MonetDB (char *xquery, char** prologue, char** query, char** epilogue, int options)
+PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char** epilogue, int options)
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
@@ -737,7 +737,7 @@ PFcompile_MonetDB (char *xquery, char** prologue, char** query, char** epilogue,
     	croot = PFcoreopt (croot);
 #if MILPRINT_SUMMER_IS_DEFAULT
         (void)  PFprintMILtemp (croot, 1, module_base, num_fun, timing, 
-                                prologue, query, epilogue, PFstate.standoff_axis_steps);
+                                prologue, query, epilogue, url, PFstate.standoff_axis_steps);
 #else
 
         /* compile into logical algebra */

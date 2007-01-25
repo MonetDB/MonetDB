@@ -76,7 +76,7 @@ stderr of test 'illegal-delete` in directory 'tests/Update` itself:
 
 MAPI  = monetdb@localhost:30269
 QUERY = do delete (exactly-one(doc("document2.xml")/document))
-ERROR = !ERROR: document nodes cannot be deleted
+ERROR = !ERROR: root nodes cannot be deleted
 
 
 # 23:35:45 >  

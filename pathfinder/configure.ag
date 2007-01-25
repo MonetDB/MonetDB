@@ -35,15 +35,20 @@ AM_CONFIG_HEADER(pf_config.h:conf/config.h.in)
 CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)
 
-dnl must check for compiler before checking for MonetDB4
-AM_MONETDB_COMPILER()
-
 dnl Check for Monet
 req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 fi
+
+dnl must check for compiler before checking for MonetDB4
+AM_MONETDB_DEFAULTS()
+AM_MONETDB_COMPILER()
+if test "x$have_c99" != xyes; then
+	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
+fi
+
 req_monetdb4_ver='4.17.0'
 AM_MONETDB4($req_monetdb4_ver)
 if test "x$have_monetdb4" != xyes; then
@@ -51,10 +56,6 @@ if test "x$have_monetdb4" != xyes; then
 fi
 req_clients_ver='1.17.0'
 AM_MONETDB_CLIENTS($req_clients_ver)
-AM_MONETDB_DEFAULTS()
-if test "x$have_c99" != xyes; then
-	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
-fi
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()

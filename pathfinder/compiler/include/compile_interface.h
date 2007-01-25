@@ -37,7 +37,7 @@
                                      param to enable StandOff */
 
 /* main compiler call from the Monet runtime environment */
-char* PFcompile_MonetDB (char* xquery, char** prologue, char** query, char** epilogue, int options);
+char* PFcompile_MonetDB (char* xquery, char* url, char** prologue, char** query, char** epilogue, int options);
 
 /* get a document by URL (if not in cache, fetch it) */
 char* PFurlcache(char *url, int keep);
