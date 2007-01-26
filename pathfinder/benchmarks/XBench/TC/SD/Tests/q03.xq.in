@@ -1,7 +1,0 @@
-for $a in distinct-values(doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e/ss/s/qp/q[qd="1900"]/loc)
-let $b := doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e/ss/s/qp/q[loc=$a]
-return
-    <Output>
-        <Location>{$a}</Location>
-        <NumberOfEntries>{count($b)}</NumberOfEntries>
-    </Output>
