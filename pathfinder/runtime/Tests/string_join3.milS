@@ -1,3 +1,0 @@
-module(pf_support);
-string_join(bat(oid,str), bat(oid,str)).print();
-

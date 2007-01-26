@@ -1,5 +1,0 @@
-for $e in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aLevel=13] 
-  order by zero-or-one($e/@aSixtyFour)
-  return
-  <eNest aUnique1="{$e/@aUnique1}" aString="{$e/@aLevel}" aSixtyFour="{$e/@aSixtyFour}">
-  </eNest>

@@ -1,2 +1,0 @@
-<avgaSixtyFour average="{avg(for $e1 in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aLevel=15] return $e1/@aSixtyFour)}">
-  </avgaSixtyFour>

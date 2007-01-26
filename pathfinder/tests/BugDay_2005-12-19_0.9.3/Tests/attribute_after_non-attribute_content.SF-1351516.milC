@@ -1,1 +1,0 @@
-xquery("xml","<a>b{attribute c {\"d\"}}</a>").printf();

@@ -1,7 +1,0 @@
-let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-
-for $b in doc(exactly-one($doc[1]))/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly[./@type="type008"]
-return 
-<BaseAssembly>
-{$b/@*}
-</BaseAssembly>

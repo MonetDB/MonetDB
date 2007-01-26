@@ -1,5 +1,0 @@
-module(ascii_io);
-module(unix);
-module(pathfinder);
-var TSTSRCDIR := getenv("TSTSRCDIR");
-shred_doc(TSTSRCDIR+"/employees.xml", "employees.xml", "Nil", 9LL);
