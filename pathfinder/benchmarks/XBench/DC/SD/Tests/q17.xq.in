@@ -1,6 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item
-where contains(zero-or-one($a/description), "hockey")
-return
-<Output>
-    {$a/@id}
-</Output>

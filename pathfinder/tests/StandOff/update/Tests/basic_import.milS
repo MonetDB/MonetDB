@@ -1,7 +1,0 @@
-environment().insert("standoff","enabled");
-module("pf_standoff");
-module("pathfinder");
-module("unix");
-var doc := getenv("TSTSRCDIR")+"/basic.xml";
-shred_doc(doc,"basic.xml", "basic.xml", 10LL);
-quit();

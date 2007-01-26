@@ -1,6 +1,0 @@
-START TRANSACTION;
-
-DROP USER "voc";
-DROP SCHEMA "voc";
-
-commit;

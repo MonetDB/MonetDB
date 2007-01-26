@@ -1,8 +1,0 @@
-module("pathfinder");
-module("unix");
-
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/i18n/Tests";
-
-shred_doc(TSTSRCDIR + "/" + "i18n.xml", "i18n.xml");
-
-commit();
