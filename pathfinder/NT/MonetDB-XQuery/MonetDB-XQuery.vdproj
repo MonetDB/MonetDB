@@ -549,12 +549,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_95768BC98BE3425EB1A0DB7F80F5A92B"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_96E49403F8B14262B2174E3B21CBA568"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -658,12 +652,6 @@
         "Entry"
         {
         "MsmKey" = "8:_B7B3DBBC1C4448F686A0B95FAC6AF398"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_BAADFE8D2B34475589F17844CEA4389C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2751,26 +2739,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_95768BC98BE3425EB1A0DB7F80F5A92B"
-            {
-            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\sql_server.mil"
-            "TargetName" = "8:sql_server.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_96E49403F8B14262B2174E3B21CBA568"
             {
             "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\bitset.mil"
@@ -3115,26 +3083,6 @@
             {
             "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\array.mil"
             "TargetName" = "8:array.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_BAADFE8D2B34475589F17844CEA4389C"
-            {
-            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\bin\\lib_sql_server-0.dll"
-            "TargetName" = "8:lib_sql_server-0.dll"
             "Tag" = "8:"
             "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
             "Condition" = "8:"
