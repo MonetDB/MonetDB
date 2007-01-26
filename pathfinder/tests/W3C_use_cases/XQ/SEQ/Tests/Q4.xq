@@ -1,4 +1,0 @@
-for $p in doc("report1.xml")//section[section.title = "Procedure"]
-where not(some $a in $p//anesthesia satisfies
-        $a << exactly-one(($p//incision)[1]) )
-return $p

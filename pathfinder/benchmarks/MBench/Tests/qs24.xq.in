@@ -1,5 +1,0 @@
-for $e in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aSixteen=3] return
-  if (exists($e//eNest[@aSixteen=5])) then 
-  <eNest aUnique1="{$e/@aUnique1}">
-  </eNest>
-  else()
