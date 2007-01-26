@@ -1,5 +1,0 @@
-for $e in doc("$TSTTRGDIR/sf0.1.xml")//eNest
-  where contains(string($e), "oneB4") 
-return
-  <eNest aUnique1="{$e/@aUnique1}">
-  </eNest>

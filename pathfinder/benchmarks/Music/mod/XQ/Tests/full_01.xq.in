@@ -1,3 +1,0 @@
-(: 'SELECT * FROM Assets' :)
-import module namespace music = "http://www.cwi.nl/~boncz/music/mod/" at "$TSTSRCDIR/music.xq";
-music:Asset("music.xml", 1000000000) 
