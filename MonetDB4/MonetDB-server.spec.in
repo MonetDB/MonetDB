@@ -1,4 +1,4 @@
-%define name MonetDB-server
+%define name MonetDB4-server
 %define version @VERSION@
 %define release 1_@LINUX_DIST@.oid@oids@
 
