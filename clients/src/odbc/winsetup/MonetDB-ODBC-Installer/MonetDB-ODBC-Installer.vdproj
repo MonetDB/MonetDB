@@ -15,19 +15,19 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_42425D9BCD9641D3ABC839D5A29358DE"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_5CCCB992693C48C0BFEF4B0EFBBD884A"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_6A30CD408F5246B8BBF0C306A57EA9DA"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_6C43B75D0CC34B588C20E796B29984EE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -51,6 +51,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_CB89303C19364CECA36BDC911637BE9C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_E763DA578AC34798B710589F4C224BDE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -58,12 +64,6 @@
         "Entry"
         {
         "MsmKey" = "8:_E78854C05F3D4756B29D929C6E751845"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E80190BD93A44B8BABCF2554243F8821"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -153,50 +153,50 @@
         }
         "File"
         {
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB4\\banner.bmp"
+            "TargetName" = "8:banner.bmp"
+            "Tag" = "8:"
+            "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_42425D9BCD9641D3ABC839D5A29358DE"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\NT\\lib\\libMapi.dll"
+            "TargetName" = "8:libMapi.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_5CCCB992693C48C0BFEF4B0EFBBD884A"
             {
             "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\license.rtf"
             "TargetName" = "8:license.rtf"
-            "Tag" = "8:"
-            "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6A30CD408F5246B8BBF0C306A57EA9DA"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\website.html"
-            "TargetName" = "8:website.html"
-            "Tag" = "8:"
-            "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6C43B75D0CC34B588C20E796B29984EE"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\banner.bmp"
-            "TargetName" = "8:banner.bmp"
             "Tag" = "8:"
             "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
             "Condition" = "8:"
@@ -273,6 +273,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CB89303C19364CECA36BDC911637BE9C"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB4\\website.html"
+            "TargetName" = "8:website.html"
+            "Tag" = "8:"
+            "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E763DA578AC34798B710589F4C224BDE"
             {
             "SourcePath" = "8:..\\..\\..\\..\\NT\\lib\\libMonetODBCs.dll"
@@ -297,26 +317,6 @@
             {
             "SourcePath" = "8:..\\..\\..\\..\\NT\\lib\\libMonetODBC.dll"
             "TargetName" = "8:libMonetODBC.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E80190BD93A44B8BABCF2554243F8821"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\NT\\lib\\libMapi.dll"
-            "TargetName" = "8:libMapi.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
             "Condition" = "8:"
@@ -525,7 +525,7 @@
         }
         "Shortcut"
         {
-            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_F4135ABDC8AD41C490511A29C7FCF285"
+            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_9B1F21C1395547F5A001CB185B35F255"
             {
             "Name" = "8:MonetDB Web Site"
             "Arguments" = "8:"
@@ -533,7 +533,7 @@
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_6A30CD408F5246B8BBF0C306A57EA9DA"
+            "Target" = "8:_CB89303C19364CECA36BDC911637BE9C"
             "Folder" = "8:_1CAF389F5D9043A1AEDFA7B5978DF66F"
             "WorkingFolder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
             "Icon" = "8:"
@@ -573,7 +573,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -596,7 +596,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -619,7 +619,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "EulaText"
@@ -667,7 +667,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "CopyrightWarning"
@@ -725,7 +725,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "UpdateText"
@@ -770,7 +770,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "ShowProgress"
@@ -821,7 +821,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "EulaText"
@@ -869,7 +869,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -892,7 +892,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "CopyrightWarning"
@@ -941,7 +941,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -973,7 +973,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "ShowProgress"
@@ -1018,7 +1018,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:_6C43B75D0CC34B588C20E796B29984EE"
+                            "Value" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -1030,9 +1030,6 @@
         {
         }
         "ProjectOutput"
-        {
-        }
-        "VJSharpPlugin"
         {
         }
     }
