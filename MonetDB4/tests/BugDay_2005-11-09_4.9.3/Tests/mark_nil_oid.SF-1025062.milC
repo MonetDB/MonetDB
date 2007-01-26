@@ -1,7 +1,0 @@
-var x,y;
-x:=new(int,int).insert(1,1);
-x.print();
-y:=x.project(nil).reverse();
-y.print();
-y:=y.seqbase(100@0);
-y.print();
