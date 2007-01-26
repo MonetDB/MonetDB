@@ -1,4 +1,4 @@
-%define name MonetDB-XQuery
+%define name MonetDB4-XQuery
 %define version @VERSION@
 %define release 1_@LINUX_DIST@.oid@oids@
 
@@ -39,7 +39,7 @@ accellerators, SQL- and XQuery- frontends.
 %package devel
 Summary: MonetDB XQuery development package 
 Group: System 
-Requires: MonetDB-server>=4.15<5.0
+Requires: MonetDB4-server>=4.15<5.0
 
 %description devel
 Add the MonetDB devel description here
@@ -87,7 +87,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/MonetDB4/*.mil
 %{prefix}/bin/Mbeddedxq
 %{_libdir}/libembeddedxq.*
-%{_datadir}/doc/%{name}-%{version}/*
+%{_datadir}/doc/MonetDB-XQuery-%{version}/*
+#%{_datadir}/doc/%{name}-%{version}/*
 
 %files devel
 %defattr(-,monetdb,monetdb) 
