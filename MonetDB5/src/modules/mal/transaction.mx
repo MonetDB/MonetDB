@@ -87,6 +87,9 @@ transaction_export str TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNsubcommit(int *ret, int *bid);
+transaction_export str TRNtrans_prev(int *ret, int *bid);
+transaction_export str TRNtrans_alpha(int *ret, int *bid);
+transaction_export str TRNtrans_delta(int *ret, int *bid);
 
 @
 @include prelude.mx
