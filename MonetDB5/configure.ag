@@ -18,7 +18,7 @@ dnl -*- mode: autoconf -*-
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
-AC_INIT([MonetDB Server], [5.0.0_beta2], [monet@cwi.nl], [MonetDB5])
+AC_INIT([MonetDB Server], [5.0.0_beta2-1], [monet@cwi.nl], [MonetDB5])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET

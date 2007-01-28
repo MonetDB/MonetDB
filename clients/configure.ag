@@ -19,7 +19,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([MonetDB clients], [1.17.0], [monet@cwi.nl], [clients])
+AC_INIT([MonetDB clients], [1.17.1], [monet@cwi.nl], [clients])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
