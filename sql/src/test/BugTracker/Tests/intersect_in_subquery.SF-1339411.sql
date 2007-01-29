@@ -15,3 +15,5 @@ select * from urls where urlid in
 	((select urlid from urls where a < 100 and b <200)
 	intersect
 	(select urlid from urls where a < 100 and b <300));
+
+drop table urls;
