@@ -1,0 +1,126 @@
+stdout of test 'BugConcurrent_clients_SF_1504657` in directory 'src/jdbc/tests` itself:
+
+
+# 18:38:06 >  
+# 18:38:06 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=33137 --set monet_prompt= --trace "--dbname=mTests_src_jdbc_tests" --dbinit='include sql;' ; echo ; echo Over..
+# 18:38:06 >  
+
+# MonetDB Server v5.0.0_beta1-1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_jdbc_tests
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+
+Over..
+
+# 18:38:06 >  
+# 18:38:06 >  Mtimeout -timeout 60 ./BugConcurrent_clients_SF_1504657.SQL BugConcurrent_clients_SF_1504657 
+# 18:38:06 >  
+
+
+# 18:38:06 >  
+# 18:38:06 >  java -classpath /ufs/goncalve/scratch/MonetDB/Stable/clients/share/MonetDB/lib/monetdb-1.5-jdbc.jar:/ufs/goncalve/scratch/MonetDB/Stable/clients/share/MonetDB/Tests BugConcurrent_clients_SF_1504657 jdbc:monetdb://localhost:33137/mTests_src_jdbc_tests?user=monetdb&password=monetdb
+# 18:38:06 >  
+
+0. true	true
+0. true	true
+0. true	true
+1.1. create table t1 using client 1...
+passed :)
+1.2. check table existence in client 2...
+8523, t1
+passed :)
+1.3. check table existence in client 3...
+8523, t1
+passed :)
+2 insert into t1 using client 1...
+passed :)
+passed :)
+passed :)
+2.1. check table status with client 1...
+1, monetdb
+2, monet
+3, mon
+passed :)
+2.2. check table status with client 2...
+1, monetdb
+2, monet
+3, mon
+passed :)
+2.3. check table status with client 3...
+1, monetdb
+2, monet
+3, mon
+passed :)
+3 insert into t1 using client 2...
+passed :)
+passed :)
+passed :)
+3.1. check table status with client 1...
+1, monetdb
+2, monet
+3, mon
+4, monetdb
+5, monet
+6, mon
+passed :)
+3.2. check table status with client 2...
+1, monetdb
+2, monet
+3, mon
+4, monetdb
+5, monet
+6, mon
+passed :)
+3.3. check table status with client 3...
+1, monetdb
+2, monet
+3, mon
+4, monetdb
+5, monet
+6, mon
+passed :)
+4 insert into t1 using client 3...
+passed :)
+passed :)
+passed :)
+4.1. check table status with client 1...
+1, monetdb
+2, monet
+3, mon
+4, monetdb
+5, monet
+6, mon
+7, monetdb
+8, monet
+9, mon
+passed :)
+4.2. check table status with client 2...
+1, monetdb
+2, monet
+3, mon
+4, monetdb
+5, monet
+6, mon
+7, monetdb
+8, monet
+9, mon
+passed :)
+4.3. check table status with client 3...
+1, monetdb
+2, monet
+3, mon
+4, monetdb
+5, monet
+6, mon
+7, monetdb
+8, monet
+9, mon
+passed :)
+
+# 18:38:07 >  
+# 18:38:07 >  Done.
+# 18:38:07 >  
+
