@@ -1,0 +1,37 @@
+stdout of test 'add_constraint_1643522` in directory 'src/test/BugConstraints` itself:
+
+
+# 12:55:03 >  
+# 12:55:03 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=33669 --set monet_prompt= --trace "--dbname=mTests_src_test_BugConstraints" --dbinit='include sql;' ; echo ; echo Over..
+# 12:55:03 >  
+
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB Server v5.0.0_beta1-1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_BugConstraints
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+
+Over..
+
+# 12:55:03 >  
+# 12:55:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < add_constraint_1643522.sql
+# 12:55:03 >  
+
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% id,	table_id,	type,	name,	rkey # name
+% int,	int,	int,	varchar,	int # type
+% 4,	4,	1,	4,	2 # length
+[ 4778,	4775,	0,	"id_p",	-1	]
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% id,	table_id,	type,	name,	rkey # name
+% int,	int,	int,	varchar,	int # type
+% 1,	1,	1,	0,	1 # length
+
+# 12:55:04 >  
+# 12:55:04 >  Done.
+# 12:55:04 >  
+
