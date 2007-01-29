@@ -739,6 +739,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         (void)  PFprintMILtemp (croot, 1, module_base, num_fun, timing, 
                                 prologue, query, epilogue, url, PFstate.standoff_axis_steps);
 #else
+        (void) url;
 
         /* compile into logical algebra */
         laroot = PFcore2alg (croot);

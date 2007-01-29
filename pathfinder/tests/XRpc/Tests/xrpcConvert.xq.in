@@ -1,0 +1,4 @@
+import module namespace xrpc = "xrpc-fun" at
+"$TSTSRCDIR/xrpcfun.xq";
+
+execute at {"localhost"} {xrpc:xrpcConvert(100)}
