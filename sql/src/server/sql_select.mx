@@ -1406,7 +1406,6 @@ sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	if (f == sql_where) 
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
 
-	printf("rank func %s\n", aggrstr);
 	/* Partition By */
 	if (window_specification->h->data.sym) {
 		grp = query_groupby(sql, scp, window_specification->h->data.sym, subset, NULL /* cannot use (selection) column references, as this result is a selection column */ );
@@ -1420,6 +1419,7 @@ sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		/* for now only row_number */
 		s = stmt_mark(s, 0);
 	} else {
+ 		s = sql_aggrop(sql, scp, window_function, grp, subset, f);
 		return s;
 	}
 	return s;
