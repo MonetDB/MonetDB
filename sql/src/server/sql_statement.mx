@@ -2137,6 +2137,7 @@ head_type(stmt *st)
 
 	case st_temp:
 	case st_bat:
+	case st_idxbat:
 	case st_const:
 	case st_rs_column:
 		return sql_bind_localtype("oid");
@@ -2495,6 +2496,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			fprintf(fp," aggr=%d", (int)s->aggr);
 		if (s->flag)
 			fprintf(fp," flag=%d", (int)s->flag);
+		fprintf(fp," ptr=%p", s);
 
 		switch (s->type) {
 		case st_bat:
@@ -2553,12 +2555,10 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
 				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
 					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
-				do not print the parent of the ptable 
-			if (s->op2.lval) 
-			    for (j=1, n=s->op2.lval->h; n; n=n->next, j++)
-				fprintf(fp, "id%d -> id%d [headlabel=\"2.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
 			*/
+			if (s->op2.stval) 
+				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
+					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
 			if (s->op3.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
 					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));

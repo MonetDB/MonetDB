@@ -362,7 +362,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(obj_id), cmp_equal));
 
 	s = stmt_mark(stmt_reverse(s), 0);
-	s = sql_delete(sql, ptv, pt, s, 0);
+	s = sql_delete(sql, ptv, pt, s, 0, 0);
 	scope_close(scp);
 	return s;
 }
@@ -953,10 +953,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		case SQL_UNIQUE:
 		case SQL_PRIMARY_KEY:
 			{
-				key_type kt;
+				key_type kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
 				sql_key *k;
 
-				if (s->token == SQL_PRIMARY_KEY && t->pkey) {
+				if (kt == pkey && t->pkey) {
 					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 					return res;
 				}
@@ -964,7 +964,6 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
 					return res;
 				}
-				kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
 				k = mvc_create_key(sql, t, name, kt, NULL);
 
 				mvc_create_kc(sql, k, cs);
@@ -1216,8 +1215,11 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		list *sl = NULL;
 		sql_column *cs = NULL;
 
-		cs = mvc_create_column(sql, t, cname, ctype);
+		cs = find_sql_column(t, cname);
+		if (cs) 
+			return sql_error(sql, 02, "%s TABLE: A with name '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 
+		cs = mvc_create_column(sql, t, cname, ctype);
 		if (column_options(sql, opt_list, ss, t, cs, alter, &sl) == SQL_ERR) {
 			if (sl) 
 				list_destroy(sl);
@@ -1351,9 +1353,15 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		case SQL_PRIMARY_KEY:
 		{
 			key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
-			sql_key *k = mvc_create_key(sql, t, name, kt, NULL);
 			dnode *nms = s->data.lval->h;
+			sql_key *k;
 
+			if (kt == pkey && t->pkey) 
+				return sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+			if (name && mvc_bind_key(sql, ss, name)) 
+				return sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
+			
+ 			k = mvc_create_key(sql, t, name, kt, NULL);
 			for (; nms; nms = nms->next) {
 				char *nm = nms->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, nm);
@@ -1468,6 +1476,18 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return sql_error(sql, 02, "cannot drop column %s (%s is a view)\n", cname, t->base.name);
 		if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY))
 			return sql_error(sql, 02, "unable to drop column %s (there are database objects which depend on it)\n", cname);
+		if (t->keys.set) {
+			node *n, *m;
+
+			for (n = t->keys.set->h; n; n = n->next) {
+				sql_key *k = n->data;
+				for (m = k->columns->h; m; m = m->next) {
+					sql_kc *kc = m->data;
+					if (strcmp(kc->c->base.name, cname)==0) 
+						return sql_error(sql, 02, "unable to drop column %s (there are constraints which depend on it)\n", cname);
+				}
+			}
+		}
 		mvc_drop_column(sql, t, cname);
 		res = stmt_none();
 	} break;

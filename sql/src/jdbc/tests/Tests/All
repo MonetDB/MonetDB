@@ -13,3 +13,4 @@ HAVE_JAVA?Test_Rmetadata
 HAVE_JAVA?BugConcurrent_clients_1504657
 HAVE_JAVA?Test_Cmanycon
 HAVE_JAVA?Test_JdbcClient
+HAVE_JAVA?BugConcurrent_clients_SF_1504657

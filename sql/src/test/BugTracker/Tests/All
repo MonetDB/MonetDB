@@ -38,3 +38,4 @@ blob_corner_cases.SF-1613902
 like_exp.SF-1613949
 crash_on_delete.SF-1639108.sql
 crash_on_insert.SF-1639113.sql
+create_column.SF-1643542

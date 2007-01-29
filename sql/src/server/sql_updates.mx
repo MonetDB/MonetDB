@@ -34,7 +34,7 @@ extern stmt *updates(mvc *sql, scope *scp, symbol *sym);
 extern void cleanup_stmts(stmt **stmts, int cnt);
 extern stmt *sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output);
 extern stmt *sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l);
-extern stmt *sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output);
+extern stmt *sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output, int all);
 extern stmt *sql_update(mvc *sql, sql_table *t, stmt **updates, list *l);
 
 /* the single result value needs to be multiplexed count(rows) times */
@@ -677,12 +677,107 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 }
 
 static stmt *
-sql_update_key(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol)
+join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 {
+	char buf[BUFSIZ];
+	int nulls = 0;
+	node *m, *o;
+	sql_idx *ri = ((sql_fkey*)k)->rkey->k.idx;
+	stmt *s = NULL, *ts = stmt_basetable(ri->t, ri->t->base.name), *fts;
+	stmt *null = NULL, *rows;
+	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *bt = sql_bind_localtype("bit");
+	sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
+	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
+
+	fts = stmt_basetable(k->idx->t, k->idx->t->base.name);
+	s = stmt_reljoin_init();
+
+	rows = stmt_idxbat(k->idx, RDONLY);
+	rows = stmt_semijoin(stmt_reverse(rows), stmt_dup(updates[updcol]));
+
+	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
+		sql_kc *fc = m->data;
+		sql_kc *c = o->data;
+		stmt *upd;
+
+		if (updates[c->c->colnr]) {
+			upd = stmt_dup(updates[c->c->colnr]->op2.stval);
+		} else {
+			upd = stmt_dup(updates[updcol]->op2.stval);
+			upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
+		}
+		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
+			stmt *nn = stmt_dup(upd);
+
+			nn = stmt_uselect(nn, stmt_atom(atom_general(&c->c->type, NULL, 0)), cmp_equal);
+			if (null)
+				null = stmt_semijoin(null, nn);
+			else
+				null = nn;
+			nulls = 1;
+		}
+		stmt_reljoin_fill(s, upd, stmt_semijoin(stmt_dup(
+		  stmt_bat(fc->c, stmt_dup(fts), RDONLY)), stmt_dup(rows) ));
+
+	}
+	/* add missing nulls */
+	if (nulls)
+		s = stmt_union(s, stmt_const(null, stmt_atom(atom_general(sql_bind_localtype("oid"), NULL, 0))));
+
+	stmt_destroy(ts);
+	stmt_destroy(fts);
+
+	/* reljoin.count <> updates[updcol].count */
+	s = stmt_binop(stmt_aggr(stmt_dup(s), NULL, cnt), stmt_aggr(rows, NULL, sql_dup_aggr(cnt)), ne);
+
+	/* s should be empty */
+	snprintf(buf, BUFSIZ, "UPDATE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
+	return stmt_exception(s, _strdup(buf), 00001);
+}
+
+
+static void 
+sql_update_ukey(mvc *sql, stmt **updates, sql_key *k, int updcol, list *l) 
+{
+	sql_ukey *uk = (sql_ukey*)k;
+
+	if (uk->keys && list_length(uk->keys) > 0) {
+		node *n;
+		for(n = uk->keys->h; n; n = n->next) {
+			sql_key *fk = n->data;
+			stmt *s = NULL;
+
+			/* here we should handle UPDATE ACTIONs:
+					no action,
+					restrict
+					cascade
+					set null
+					set default
+			 */
+			/* Current implementation is just 'restrict' */
+			/* All rows of the foreign key table which are
+			   affected by the primary key update should all
+			   match one of the updated primary keys again.
+			 */
+			s = join_updated_pkey(sql, fk, updates, updcol);
+			list_prepend(l, s);
+		}
+	}
+}
+
+static void
+sql_update_key(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol, list *l)
+{
+	stmt *ckeys;
+
 	if (k->type == pkey || k->type == ukey) {
-		return update_check_ukey(sql, updates, k, idx_updates, updcol);
+		ckeys = update_check_ukey(sql, updates, k, idx_updates, updcol);
+		sql_update_ukey(sql, updates, k, updcol, l);
+		list_prepend(l, ckeys);
 	} else {		/* foreign keys */
-		return update_check_fkey(sql, updates, k, idx_updates, updcol);
+		ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
+		list_prepend(l, ckeys);
 	}
 }
 
@@ -798,12 +893,8 @@ sql_update_idxs(mvc *sql, sql_table *t, stmt **updates, list *l)
 		} else if (i->type == join_idx) {
 			is = join_idx_update(i, updates, updcol);
 		}
-		if (i->key) {
-			stmt *ckeys = sql_update_key(sql, updates, i->key, is, updcol);
-
-			if (ckeys)
-				list_prepend(l, ckeys);
-		}
+		if (i->key)
+			sql_update_key(sql, updates, i->key, is, updcol, l);
 		if (is) 
 			list_append(l, stmt_insert(stmt_idxbat(i, UPD), is));
 	}
@@ -1538,33 +1629,98 @@ sql_delete_triggers(mvc *sql, sql_table *t, stmt *deletes, list *l)
 	return res;
 }
 
+
+static void 
+sql_delete_key(mvc *sql, stmt *deletes, sql_key *k, list *l) 
+{
+	sql_ukey *uk = (sql_ukey*)k;
+
+	if (uk->keys && list_length(uk->keys) > 0) {
+		char buf[BUFSIZ];
+		sql_subtype *it = sql_bind_localtype("int");
+		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
+		sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
+		node *n;
+		for(n = uk->keys->h; n; n = n->next) {
+			sql_key *fk = n->data;
+			stmt *s;
+			/* here we should handle DELETE ACTIONs:
+					no action,
+					restrict
+					cascade
+					set null
+					set default
+			 */
+			/* Current implementation is just 'restrict' */
+			s = stmt_idxbat(fk->idx, RDONLY);
+			s = stmt_semijoin(stmt_reverse(s), stmt_dup(deletes));
+			/* The overlap between deleted primaries and foreign
+			   should be empty */
+			s = stmt_binop(stmt_aggr(s, NULL, cnt), stmt_atom_int(0), ne);
+			snprintf(buf, BUFSIZ, "DELETE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
+			s = stmt_exception(s, _strdup(buf), 00001);
+			list_prepend(l, s);
+		}
+	}
+}
+
+static int
+sql_delete_keys(mvc *sql, sql_table *t, stmt *deletes, list *l)
+{
+	int res = 1;
+	node *n;
+
+	if (!t->keys.set)
+		return res;
+
+	for (n = t->keys.set->h; n; n = n->next) {
+		sql_key *k = n->data;
+
+		if (k->type == pkey || k->type == ukey) 
+			sql_delete_key(sql, deletes, k, l);
+	}
+	return res;
+}
+
 stmt *
-sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output)
+sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output, int all)
 {
 	list *l = create_stmt_list();
-	sql_subtype to;
-	stmt *v;
-	stmt *subset;
+	stmt *v = NULL;
+	stmt *subset = NULL;
 
-	(void)t;
-	sql_find_subtype(&to, "oid", 0, 0);
-	if (s->type == st_ptable)
-		subset = first_subset(s);
-	else /* simple select */
-		subset = s;
-	v = stmt_const(stmt_reverse(subset), stmt_atom(atom_general(&to, NULL, 0)));
-	list_append(l, stmt_append(stmt_tbat(basetable_table(tv->s), INS), stmt_reverse(v)));
+	if (!all) {
+		sql_subtype to;
+
+		sql_find_subtype(&to, "oid", 0, 0);
+		if (s->type == st_ptable)
+			subset = first_subset(s);
+		else /* simple select */
+			subset = s;
+		v = stmt_const(stmt_reverse(subset), stmt_atom(atom_general(&to, NULL, 0)));
+		list_append(l, stmt_append(stmt_tbat(basetable_table(tv->s), INS), stmt_reverse(v)));
+	} else {
+		/* first column */
+		v = stmt_mirror(stmt_bat(t->columns.set->h->data, stmt_dup(tv->s), RDONLY));
+		s = stmt_table_clear(t);
+		list_append(l, stmt_dup(s));
+	}
 
 	if (!sql_delete_triggers(sql, t, v, l)) {
 		list_destroy(l);
 		return sql_error(sql, 02, "DELETE: triggers failed for table '%s'", t->base.name);
 	}
+	if (!sql_delete_keys(sql, t, v, l)) {
+		list_destroy(l);
+		return sql_error(sql, 02, "DELETE: failed to delete indexes for table '%s'", t->base.name);
+	}
 
 	if (output) {
-		stmt *t = stmt_aggr(stmt_dup(subset), NULL,
-				    sql_bind_aggr(sql->session->schema, "count", NULL));
-
-		list_append(l, stmt_affected_rows(t));
+		if (!all) 
+			s = stmt_aggr(stmt_dup(subset), NULL,
+			    sql_bind_aggr(sql->session->schema, "count", NULL));
+		list_append(l, stmt_affected_rows(s));
 	}
 	return stmt_list(l);
 }
@@ -1615,6 +1771,10 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 		if (opt_where) {
 			stmt *subset = NULL;
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
+			if (s && s->type == st_filter) { /* filter on table ? */
+				ptable_statements(scp->ptable) = stmt_set(s);
+				s = stmt_dup(scope_first_column(scp)->s);
+			}
 			if (s && s->type != st_set && s->type != st_sets) {
 				s = stmt_set(s);
 			}
@@ -1634,11 +1794,10 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 				scope_close(scp);
 				return NULL;
 			}
-			s = sql_delete(sql, tv, t, subset, 1);
+			s = sql_delete(sql, tv, t, subset, 1, 0);
 			stmt_destroy(subset);
 		} else {	/* delete all */
-			s = stmt_table_clear(t);
-			s = stmt_affected_rows(s);
+			s = sql_delete(sql, tv, t, NULL, 1, 1);
 		}
 
 		assert(isbasetable(tv->s));
