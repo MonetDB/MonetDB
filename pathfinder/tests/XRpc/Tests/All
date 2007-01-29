@@ -20,5 +20,7 @@ returnParent
 returnPreceding
 returnPrecedingSibling
 returnSelf
+xrpcConvert
+xrpcConvert2
 
 insertNode
