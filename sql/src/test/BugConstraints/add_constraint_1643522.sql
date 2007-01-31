@@ -3,8 +3,8 @@ alter table t1 add constraint id_p primary key(id);
 
 alter table t1 add constraint id_p primary key(id);
 
-select * from keys;
+select name from keys;
 
 drop table t1;
 
-select * from keys;
+select name from keys;

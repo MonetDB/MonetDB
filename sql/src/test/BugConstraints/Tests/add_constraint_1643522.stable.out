@@ -17,21 +17,21 @@ Ready.
 
 Over..
 
-# 12:55:03 >  
-# 12:55:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < add_constraint_1643522.sql
-# 12:55:03 >  
+# 16:28:34 >  
+# 16:28:34 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33925  < add_constraint_1643522.sql
+# 16:28:34 >  
 
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% id,	table_id,	type,	name,	rkey # name
-% int,	int,	int,	varchar,	int # type
-% 4,	4,	1,	4,	2 # length
-[ 4778,	4775,	0,	"id_p",	-1	]
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% id,	table_id,	type,	name,	rkey # name
-% int,	int,	int,	varchar,	int # type
-% 1,	1,	1,	0,	1 # length
+% sys.keys # table_name
+% name # name
+% varchar # type
+% 4 # length
+[ "id_p"	]
+% sys.keys # table_name
+% name # name
+% varchar # type
+% 0 # length
 
-# 12:55:04 >  
-# 12:55:04 >  Done.
-# 12:55:04 >  
+# 16:28:34 >  
+# 16:28:34 >  Done.
+# 16:28:34 >  
 
