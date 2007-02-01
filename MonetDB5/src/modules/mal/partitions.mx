@@ -15,14 +15,16 @@
 @' All Rights Reserved.
 
 @f partitions
-@v 0.0
+@v 0.1
 @a M.L.Kersten
 @* BAT Partition Manager
+
+[OUT OF DATE, NEW VERSION IS BPM]
 In real-life database applications the BATs tend to grow beyond
 the memory size. This leads to a heavy IO dominated behavior,
 which can partly be avoided by breaking up the query into a sequence
-of subqueries using a map-reduce strategy.
-The BAT partition manager (BPT) module is designed to 
+of subqueries using a map-reduce strategy over partitiong.
+The BAT partition manager module is designed to 
 support this strategy using range- and hash-partitioning.
 
 Consider we want to reorganize R:bat[:oid,:int] into three range partitions,
