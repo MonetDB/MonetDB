@@ -552,14 +552,12 @@ view_bbp_name(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_name");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
-			if (BBPvalid(i)) {
-				BUNins(b, &i, BBPname(i), FALSE);
-				if (BBPvalid(-i)) {
-					int j = -i;
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
+			BUNins(b, &i, BBPname(i), FALSE);
+			if (BBPvalid(-i)) {
+				int j = -i;
 
-					BUNins(b, &j, BBPname(j), FALSE);
-				}
+				BUNins(b, &j, BBPname(j), FALSE);
 			}
 		}
 	BBPunlock("view_bbp_name");
@@ -582,7 +580,7 @@ view_bbp_@1(BAT** retval)	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_@1");
         for (i = 1; i < BBPsize; i++) {
-		if (i != b->batCacheid) {
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
 			BAT *bn = (BAT*) BBPgetdesc(i);
 			if (bn ) {
 				str tpe = ATOMname(bn->@1);
@@ -611,9 +609,8 @@ view_bbp_count(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_count");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
 			BAT *bn = (BAT *) BBPgetdesc(ABS(i));
-
 			if (bn) {
 				lng cnt = BATcount(bn);
 
@@ -641,9 +638,8 @@ view_bbp_location(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_location");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
-			if (BBPvalid(i))
-				BUNins(b, &i, BBP_physical(i), FALSE);
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
+			BUNins(b, &i, BBP_physical(i), FALSE);
 		}
 	BBPunlock("view_bbp_location");
 	@:Pseudo(bbp,location)@
@@ -666,12 +662,12 @@ view_bbp_heat(BAT **retval	/* put pointer to BAT[int,int] record here. */
 
 	BBPlock("view_bbp_heat");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
 			if (BBP_cache(i) && !monet_modulesilent) {
 				int heat = BBP_lastused(i);
 
 				BUNins(b, &i, &heat, FALSE);
-			} else if (BBPvalid(i)) {
+			} else {
 				int zero = 0;
 
 				BUNins(b, &i, &zero, FALSE);
@@ -698,12 +694,10 @@ view_bbp_dirty(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_dirty");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
-			if (BBPvalid(i)) {
-				BAT *bn = BBP_cache(i);
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
+			BAT *bn = BBP_cache(i);
 
-				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "swapped" : "clean", FALSE);
-			}
+			BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "swapped" : "clean", FALSE);
 		}
 	BBPunlock("view_bbp_dirty");
 	@:Pseudo(bbp,dirty)@
@@ -726,12 +720,10 @@ view_bbp_status(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_status");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
-			if (BBPvalid(i)) {
-				char *loc = BBP_cache(i) ? "load" : "disk";
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
+			char *loc = BBP_cache(i) ? "load" : "disk";
 
-				BUNins(b, &i, loc, FALSE);
-			}
+			BUNins(b, &i, loc, FALSE);
 		}
 	BBPunlock("view_bbp_status");
 	@:Pseudo(bbp,status)@
@@ -751,20 +743,18 @@ view_bbp_kind(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_kind");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
-			if (BBPvalid(i)) {
-				char *mode = NULL;
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
+			char *mode = NULL;
 
-				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT)) {
-					BAT *b = (BAT*)BBPgetdesc(i);
+			if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT)) {
+				BAT *b = (BAT*)BBPgetdesc(i);
 
-					mode = (b && b->batPersistence == SESSION) ? "sess" : "tran";
-				} else {
-					mode = "pers";
-				}
-				if (mode)
-					BUNins(b, &i, mode, FALSE);
+				mode = (b && b->batPersistence == SESSION) ? "sess" : "tran";
+			} else {
+				mode = "pers";
 			}
+			if (mode)
+				BUNins(b, &i, mode, FALSE);
 		}
 	BBPunlock("view_bbp_kind");
 	@:Pseudo(bbp,kind)@
@@ -784,12 +774,9 @@ view_bbp_refcnt(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_refcnt");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
-			if (BBPvalid(i)) {
-				int refs = BBP_refs(i);
-
-				BUNins(b, &i, &refs, FALSE);
-			}
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
+			int refs = BBP_refs(i);
+			BUNins(b, &i, &refs, FALSE);
 		}
 	BBPunlock("view_bbp_refcnt");
 	@:Pseudo(bbp,refcnt)@
@@ -810,12 +797,10 @@ view_bbp_lrefcnt(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	BBPlock("view_bbp_lrefcnt");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid) {
-			if (BBPvalid(i)) {
-				int lrefcnt = BBP_lrefs(i);
+		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
+			int lrefcnt = BBP_lrefs(i);
 
-				BUNins(b, &i, &lrefcnt, FALSE);
-			}
+			BUNins(b, &i, &lrefcnt, FALSE);
 		}
 	BBPunlock("view_bbp_lrefcnt");
 	@:Pseudo(bbp,lrefcnt)@
@@ -1535,7 +1520,8 @@ get_mem_usage(BAT **ret, lng *minsize)
 	if (bn == NULL)
 		return GDK_FAIL;
 	BBPlock("get_mem_usage");
-	for (i = 1; i < BBPsize; i++) {
+	for (i = 1; i < BBPsize; i++) 
+	    if (i != bn->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
 		BAT *b = BBP_cache(i);
 		str s;
 
@@ -1629,7 +1615,8 @@ get_vm_usage(BAT **ret, lng *minsize)
 	if (bn == NULL)
 		return GDK_FAIL;
 	BBPlock("get_vm_usage");
-	for (i = 1; i < BBPsize; i++) {
+	for (i = 1; i < BBPsize; i++) 
+	    if (i != bn->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
 		BAT *b;
 		str s;
 
@@ -1780,7 +1767,7 @@ view_gdk_bbp(BAT **retval)
 		return GDK_FAIL;
 
 	for (i = 1; i < BBPsize; i++) {
-		if (BBPvalid(i)) {
+	        if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
 			pbat++;
 			if (BBP_cache(i)) {
 				pheat += BBP_lastused(i);
