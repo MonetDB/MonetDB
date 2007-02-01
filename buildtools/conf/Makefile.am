@@ -16,6 +16,6 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-dist_pkgdata_SCRIPTS = conf.bash
+dist_pkgdata_SCRIPTS = conf.bash MonetDB.m4
 dist_pkgdata_DATA = rules.mk
 dist_bin_SCRIPTS = Mdebootstrap Mbootstrap buildtools-config
