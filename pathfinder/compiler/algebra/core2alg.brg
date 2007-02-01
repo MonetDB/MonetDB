@@ -2662,6 +2662,12 @@ PFcore2alg (PFcnode_t *r)
     /* Initialize stack recording the active user-defined functions */
     fun_active = PFarray (sizeof (PFcnode_t *));
 
+    /* Initialize remaining global variables */
+    map = NULL;
+    map_count = 0;
+    map_dir = 0;
+    seq_count = 0;
+
     /* label the core tree bottom up */
     PFcore2alg_label (r);
 
