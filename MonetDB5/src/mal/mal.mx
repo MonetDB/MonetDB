@@ -15,30 +15,6 @@
 @' All Rights Reserved.
 
 @f mal
-@* MonetDB Version 5
-The MonetDB product family consists of a large number of components
-developed within our group over the last decade. Some components have
-already been shipped to happy customers, some are still in the making,
-and others have found a resting place in the attic.
-
-The MonetDB architecture is designed to accommodate a wide-spectrum 
-of standardized query language front-ends (SQL, XQuery),
-a variety of query transformation schemes, and
-different execution platforms (interpreted materialized or
-pipelined, dynamic compilation).
-
-MonetDB Version 5 is a major release of our software infrastructure.
-The most notable differences are its greatly
-improved software stack and a new interface language,
-which turns the database server back-end into an
-abstract database machine with its associated assembly language (MAL).
-It supports backward compatibility of interfaces, tools, and 
-source sharing where feasible within the limited scope of resources available.
-
-In the remainder of this section we shortly introduce the
-MonetDB Version 5 design considerations and
-a quick overview of its architecture.
-
 @node  Design Considerations, Architecture Overview, Design Overview, Design Overview
 @+ Design Considerations
 Redesign of the MonetDB software stack was driven by the need to
