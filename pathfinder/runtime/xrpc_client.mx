@@ -38,10 +38,6 @@ the "AmbientDB" project.
 @m
 .MODULE xrpc_client;
 
-.USE pathfinder;
-.USE pf_support;
-.USE url;
-
 @- HTTP client function(s)
 @m
 .COMMAND http_post(

@@ -68,14 +68,15 @@ if (clientid() != 0) {
 module(mapi);       # remote client access
 module(pf_support);
 module(logger);
+module(xrpc_server);
+module(xrpc_client);
 module(pf_standoff);
+CATCH((*"module")("pftijah")); # only load pftijah if available
 
-# standoff extensions
+# standoff is only available if you ask for it
 var standoff := false;
-if (monet_environment.exist("standoff")) {
-     standoff := =(monet_environment.find("standoff"),"enabled"); 
-}
-
+if (monet_environment.exist("standoff"))
+  standoff := =(monet_environment.find("standoff"),"enabled"); 
 
 # The XML Meta-Database #############################################################
 #
@@ -2317,7 +2318,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
             lock_unset(pf_short);
 
             # add extra created pages to the freelist
-            if (isnil(err) and (new_pid < last_pid)) {
+            if (isnil(err)) {
                 lock_set(coll_shortlock);
                 err := CATCH(pages_free.insert(newpids));
                 lock_unset(coll_shortlock);
@@ -2423,7 +2424,7 @@ PROC _ws_open(lng wsid,
               BAT[void,timestamp] idx_timestamps, # inout param
               BAT[void,str] idx_colname,    # out param  
               BAT[void,oid] idx_coll,       # out param
-              BAT[void,oid] idx_doc) : void # out param
+              BAT[void,oid] idx_doc) : void 
 {
     # get all the doc-id, coll-id's and collection names of known documents. The ones with nil-tail are unknown.
     var idx_doc_ := idx_names.outerjoin(reverse(doc_name)).access(BAT_WRITE);
@@ -2439,8 +2440,8 @@ PROC _ws_open(lng wsid,
     # check the timestamps
     var sel_del := [>](sel_idx.leftfetchjoin(idx_timestamps), sel_lim).ord_uselect(true);
     if (count(sel_del) > 0) { # delete stale documents
-	var sel_name := mirror(sel_del).leftfetchjoin(sel_idx).leftjoin(idx_doc_).leftjoin(doc_name);
-	del_doc_base(bit_nil,sel_name,false);
+        var sel_name := mirror(sel_del).leftfetchjoin(sel_idx).leftjoin(idx_doc_).leftjoin(doc_name);
+        del_doc_base(bit_nil,sel_name,false);
         idx_doc.append(idx_names.outerjoin(reverse(doc_name)));
         idx_doc.replace(idx_doc.ord_uselect(oid_nil).mirror().leftfetchjoin(idx_names).join(reverse(doc_location)));
     } else {
@@ -2467,45 +2468,52 @@ PROC _ws_open(lng wsid,
 
 # this function processes only URIs still unknown to this ws; returns OPEN ids (point into OPEN_* ws entries) 
 PROC ws_open(BAT[void,BAT] ws,
-             BAT[void,str] idx_names) : BAT[void,oid]
+             BAT[void,str] idx_names,
+             BAT[void,str] idx_colname,
+             BAT[void,oid] idx_coll,
+             BAT[void,oid] idx_doc,
+             bit check_cache) : BAT[void,oid]
 {
-    var idx_filenames := copy(idx_names).access(BAT_WRITE);
+    var idx_timestamps, idx_filenames := idx_names;
     var open_docid    := ws.fetch(OPEN_DOCID);
     var open_name     := ws.fetch(OPEN_NAME);
     var open_cont     := ws.fetch(OPEN_CONT);
     var wsid := ws_id(ws);
 
-    # create filenames from URIs (str_nil if not a filename-URI)
-    { var selidx_isurl  := [search](idx_names, "://").ord_select(0,int_nil);
-      var selidx_match  := selidx_isurl.ord_uselect(4).mirror().leftfetchjoin(idx_names);
-      var selidx_isfile := [startsWith](selidx_match, "file").ord_uselect(true).mirror().leftfetchjoin(idx_names).[string](7);
-      var selidx_isFILE := [startsWith](selidx_match, "FILE").ord_uselect(true).mirror().leftfetchjoin(idx_names).[string](7);
-      idx_filenames.replace(selidx_isurl.project(str_nil)).replace(selidx_isfile).replace(selidx_isFILE).access(BAT_READ); }
+    if (check_cache) {
+        # create filenames from URIs (str_nil if not a filename-URI)
+        var selidx_isurl  := [search](idx_names, "://").ord_select(0,int_nil);
+        var selidx_match  := selidx_isurl.ord_uselect(4).mirror().leftfetchjoin(idx_names);
+        var selidx_isfile := [startsWith](selidx_match, "file").ord_uselect(true).mirror().leftfetchjoin(idx_names).[string](7);
+        var selidx_isFILE := [startsWith](selidx_match, "FILE").ord_uselect(true).mirror().leftfetchjoin(idx_names).[string](7);
+        idx_filenames := copy(idx_filenames).access(BAT_WRITE);
+        idx_filenames.replace(selidx_isurl.project(str_nil)).replace(selidx_isfile).replace(selidx_isFILE).access(BAT_READ);
 
-    # get the actual timestamp of the document cached in the database. 
-    var idx_timestamps := idx_filenames.project(current_timestamp()).access(BAT_WRITE);
-    idx_timestamps.replace([lastmod_time](idx_filenames.select(str_nil,str_nil)).select(timestamp_nil,timestamp_nil));
+        # get the actual timestamp of the document cached in the database. 
+        idx_timestamps := idx_filenames.project(current_timestamp()).access(BAT_WRITE);
+        idx_timestamps.replace([lastmod_time](idx_filenames.select(str_nil,str_nil)).select(timestamp_nil,timestamp_nil));
 
-    # get the lock and pin all existing documents; return info from meta tables in (idx_colname, idx_coll, idx_doc)
-    var idx_colname := bat(void,str).seqbase(0@0);
-    var idx_coll    := bat(void,oid).seqbase(0@0);
-    var idx_doc     := bat(void,oid).seqbase(0@0);
-    lock_set(pf_short);
-    var err := CATCH(_ws_open(wsid, idx_names, idx_filenames, idx_timestamps, idx_colname, idx_coll, idx_doc));
-    lock_unset(pf_short);
-    if (not(isnil(err))) ERROR(err);
+        # get the lock and pin all existing documents; return info from meta tables in (idx_colname, idx_coll, idx_doc)
+        lock_set(pf_short);
+        var err := CATCH(_ws_open(wsid, idx_names, idx_filenames, idx_timestamps, idx_colname, idx_coll, idx_doc));
+        lock_unset(pf_short);
+        if (not(isnil(err))) ERROR(err);
+    }
 
     # add all available but not-yet-present collections to the ws
-    var coll_colname := reverse(idx_coll.select(oid_nil,oid_nil).tdiff(ws.fetch(CONT_COLL))).kunique().leftfetchjoin(idx_colname);
+    var coll_colname := reverse(reverse(reverse(idx_coll).kunique()).ord_select(oid_nil,oid_nil).tdiff(ws.fetch(CONT_COLL))).leftfetchjoin(idx_colname);
     coll_colname@batloop() {
         var docBAT := [bat]([+](str(int($h)), ws_dsk).reverse().mirror()); # get master bats
         ws_opencoll(ws, docBAT, $t, $h); # collections are loaded one-by-one
     }
-    var idx_cont := idx_coll.outerjoin(reverse(ws.fetch(CONT_COLL))).access(BAT_WRITE);
+    var selidx_names, idx_cont := idx_coll.outerjoin(reverse(ws.fetch(CONT_COLL))).access(BAT_WRITE);
 
     # all still unknown documents (if any) are shredded one-by-one into one temporary collection
-    var selidx_names := idx_doc.ord_uselect(oid_nil);
-    if (bit(count(selidx_names))) {
+    if (check_cache) { 
+        selidx_names := idx_doc.ord_uselect(oid_nil);
+        check_cache := (bit(count(selidx_names)));
+    }
+    if (check_cache) {
         selidx_names  := selidx_names.mirror().leftfetchjoin(idx_names);
         var selidx_unq:= selidx_names.reverse().kunique().reverse();
         var commitBAT := bat(void,str);
@@ -2551,17 +2559,21 @@ PROC ws_open(BAT[void,BAT] ws,
 }
 
 # fn:doc() support. 
-# - it filters out all documents already in the working set, and walls ws_open on the unknown ones. 
+# - it filters out all documents already in the working set, and calls ws_open on the unknown ones. 
 #   this filtering step is important, as open collections may have been deleted in the meantime.
 #   while the running query lasts, such collections remain available (collection-wise snapshot isolation)
 # - it looks up the document-root PRE (i.e. document node) for each opened document. With multi-document 
 #   collections, the value of the PRE is no longer trivial (1@0).
 PROC ws_opendoc(BAT[void,BAT] ws,
-                BAT[void,str] idx_names) : BAT[oid,oid]
+                BAT[void,str] idx_names,
+                BAT[void,str] idx_colname,
+                BAT[void,oid] idx_coll,
+                BAT[void,oid] idx_doc,
+                bit check_cache) : BAT[oid,oid]
 {
     var idx_open  := idx_names.outerjoin(reverse(ws.fetch(OPEN_NAME))).tmark(0@0);
     var new_names := idx_open.uselect(oid_nil).mirror().leftfetchjoin(idx_names.tmark(0@0));
-    var new_open  := new_names.mark(0@0).leftfetchjoin(ws_open(ws, new_names.tmark(0@0)));
+    var new_open  := new_names.mark(0@0).leftfetchjoin(ws_open(ws, new_names.tmark(0@0), idx_colname, idx_coll, idx_doc, check_cache));
     idx_open := idx_open.copy().access(BAT_WRITE).replace(new_open).access(BAT_READ);
 
     # return the resulting [rootpre,cont] combinations
@@ -2582,17 +2594,48 @@ PROC ws_opendoc(BAT[void,BAT] ws,
     }
     return reverse(idx_root).leftfetchjoin(idx_cont);
 }
+PROC ws_opendoc(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[oid,oid] 
+{   
+    return ws_opendoc(ws,idx_names, bat(void,str).seqbase(0@0),
+                                    bat(void,oid).seqbase(0@0),
+                                    bat(void,oid).seqbase(0@0), true); 
+}
 
-# fn:collection(), get document nodes of all documents in a collection
-PROC ws_collection(BAT[void,BAT] ws, BAT[any,str] nms, BAT[void,oid] map) : BAT[oid,oid]
+# pf:collection(), get 'collection root' as a single startpoint to query an entire collection
+PROC ws_collection_root(BAT[void,BAT] ws, BAT[void,str] colnames) : BAT[oid,oid]
 {
     pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var idx_names, err := CATCH(idx_names := nms.tmark(0@0).leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftjoin(doc_name)); 
+    var colname_coll, err := CATCH(colname_coll := reverse(colnames).mirror().leftjoin(reverse(collection_name)));
+    lock_unset(pf_short);
+    var notfound := colname_coll.kdiff(reverse(colnames));
+    if (count(notfound) > 0) ERROR("pf:collection() %s not found (%d such errors).\n", notfound.fetch(0), count(notfound));
+
+    colname_coll@batloop() {
+        var docBAT := [bat]([+](str(int($t)), ws_dsk).reverse().mirror()); # get master bats
+        ws_opencoll(ws, docBAT, $h, $t); # collections are loaded one-by-one
+    }
+    return reverse(colname_coll.leftjoin(reverse(ws.fetch(CONT_COLL)))).project(0@0); # [CONT,PRE]
+}
+
+# fn:collection(), get document nodes of all documents in a collection
+PROC ws_collection(BAT[void,BAT] ws, BAT[oid,str] nms, BAT[void,oid] map) : BAT[oid,oid]
+{
+    var err, idx_coll, idx_doc, idx_colname, idx_names;
+    nms := nms.fetch(nms.tmark(0@0).[startsWith]("::").ord_uselect(false));
+
+    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
+    lock_set(pf_short);
+    err := CATCH({ var doc := nms.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).tsort();
+                   idx_names := doc.leftjoin(doc_name);
+                   idx_doc := doc.tmark(0@0).tmark(0@0);
+                   idx_coll := idx_doc.leftjoin(doc_collection).tmark(0@0);
+                   idx_colname := idx_coll.leftjoin(collection_name).tmark(0@0); 
+                   colname_pins.insert(reverse(nms).kunique().project(ws_id(ws))); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
     map.append(idx_names.hmark(0@0)); # map = SECOND RESULT VALUE
-    return ws_opendoc(ws, idx_names.tmark(0@0)); 
+    return ws_opendoc(ws, idx_names.tmark(0@0), idx_colname, idx_coll, idx_doc, false); 
 }
 
 # fn:collections(), get all collection *names*
