@@ -1247,6 +1247,10 @@ Beware, the symbol table structure assumes that it is relatively
 cheap to perform a linear search to a variable or constant.
 
 @= makeVarSpace
+	if( mb->vtop >= (1<<15)-2 ){
+		mb->vtop = (1<<15)-2 ;
+		GDKerror("newVariable: too many variables\n");
+	} else
 	if( mb->vtop >= mb->vsize){
 		VarPtr *new;
         int s= mb->vtop + MAXVARS;
