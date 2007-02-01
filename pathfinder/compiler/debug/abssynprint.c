@@ -279,7 +279,7 @@ static char     label[DOT_LABELS];
  * @param node Name of the parent node.
  */
 static void 
-abssyn_dot (FILE *f, PFpnode_t *n, char *node)
+abssyn_dot (FILE *f, PFpnode_t *n, char *node, bool qnames_resolved)
 {
     int c;
     char s[sizeof ("4294967285")];
@@ -335,7 +335,9 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
         case p_fun_ref:
         case p_fun_decl:
         case p_tag:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
+            L2 (p_id[n->kind], qnames_resolved
+                               ? PFqname_str (n->sem.qname)
+                               : PFqname_raw_str (n->sem.qname_raw), n->loc);
             break;
 
         case p_apply:
@@ -389,7 +391,7 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
         sprintf (child, "node%u", ++no);
         fprintf (f, "%s -> %s;\n", node, child);
 
-        abssyn_dot (f, n->child[c], child);
+        abssyn_dot (f, n->child[c], child, qnames_resolved);
     }
 }
 
@@ -402,12 +404,12 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
  * @param root root of abstract syntax tree
  */
 void
-PFabssyn_dot (FILE *f, PFpnode_t *root)
+PFabssyn_dot (FILE *f, PFpnode_t *root, bool qnames_resolved)
 {
     if (root) {
         fprintf (f, "digraph XQuery {\n");
         fprintf (f, "node [shape=box];\n");
-        abssyn_dot (f, root, "node0");
+        abssyn_dot (f, root, "node0", qnames_resolved);
         fprintf (f, "}\n");
     }
 }
@@ -419,7 +421,7 @@ PFabssyn_dot (FILE *f, PFpnode_t *root)
  * @param n abstract syntax tree to prettyprint
  */
 static void
-abssyn_pretty (PFpnode_t *n)
+abssyn_pretty (PFpnode_t *n, bool qnames_resolved)
 {
     int c;
     bool comma;
@@ -448,7 +450,9 @@ abssyn_pretty (PFpnode_t *n)
             PFprettyprintf ("%s", axis[n->sem.axis]);
             break;
         case p_varref:
-            PFprettyprintf ("$%s", PFqname_str (n->sem.qname));
+            PFprettyprintf ("$%s", qnames_resolved
+                                   ? PFqname_str (n->sem.qname)
+                                   : PFqname_raw_str (n->sem.qname_raw));
             break;
         case p_var:
             PFprettyprintf ("$%s", PFqname_str (n->sem.var->qname));
@@ -469,22 +473,24 @@ abssyn_pretty (PFpnode_t *n)
             PFprettyprintf ("%s", kind[n->sem.kind]);
             break;
         case p_atom_ty:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
-            break;
         case p_named_ty:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
-            break;
         case p_req_name:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
+            PFprettyprintf ("%s", qnames_resolved
+                                  ? PFqname_str (n->sem.qname)
+                                  : PFqname_raw_str (n->sem.qname_raw));
             break;
         case p_apply:
             PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
             break;
         case p_fun_ref:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
+            PFprettyprintf ("%s", qnames_resolved
+                                  ? PFqname_str (n->sem.qname)
+                                  : PFqname_raw_str (n->sem.qname_raw));
             break;
         case p_tag:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
+            PFprettyprintf ("%s", qnames_resolved
+                                  ? PFqname_str (n->sem.qname)
+                                  : PFqname_raw_str (n->sem.qname_raw));
             break;
         case p_pi:
             PFprettyprintf ("%s", n->sem.str);
@@ -496,7 +502,9 @@ abssyn_pretty (PFpnode_t *n)
             PFprettyprintf ("%s", n->sem.str);
             break;
         case p_fun_decl:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
+            PFprettyprintf ("%s", qnames_resolved 
+                                  ? PFqname_str (n->sem.qname)
+                                  : PFqname_raw_str (n->sem.qname_raw));
             break;
         case p_fun:
             PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
@@ -535,7 +543,7 @@ abssyn_pretty (PFpnode_t *n)
             PFprettyprintf (",%c %c", END_BLOCK, START_BLOCK);
         comma = true;
 
-        abssyn_pretty (n->child[c]);
+        abssyn_pretty (n->child[c], qnames_resolved);
     }
 
     PFprettyprintf ("%c)", END_BLOCK);
@@ -549,10 +557,10 @@ abssyn_pretty (PFpnode_t *n)
  * @param t root of abstract syntax tree
  */
 void
-PFabssyn_pretty (FILE *f, PFpnode_t *t)
+PFabssyn_pretty (FILE *f, PFpnode_t *t, bool qnames_resolved)
 {
     PFprettyprintf ("%c", START_BLOCK);
-    abssyn_pretty (t);
+    abssyn_pretty (t, qnames_resolved);
     PFprettyprintf ("%c", END_BLOCK);
 
     (void) PFprettyp (f);

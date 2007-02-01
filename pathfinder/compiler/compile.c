@@ -338,6 +338,15 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* Resolve NS usage */
     PFns_resolve (proot);
 
+    /*
+     * NOTE: Abstract syntax tree printing requires the information
+     *       whether namespaces have been resolved already (rather,
+     *       if abstract syntax tree nodes contain PFqname_t structs
+     *       or PFqname_raw_t structs).  This information is passed
+     *       further down at bailout, based on the constant 4 that
+     *       you see here.  If you change the constant, don't forget
+     *       to change the value further down.
+     */
     STOP_POINT(4);
     
     /* Check variable scoping and replace QNames by PFvar_t pointers */
@@ -588,10 +597,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
             if (status->print_pretty) {
                 if (! status->quiet)
                     printf ("Parse tree %s:\n", phases[status->stop_after]);
-                PFabssyn_pretty (pfout, proot);
+                /* last_stage >= 4   <==>  namespaces resolved already? */
+                PFabssyn_pretty (pfout, proot, last_stage >= 4);
             }
             if (status->print_dot)
-                PFabssyn_dot (pfout, proot);
+                /* last_stage >= 4   <==>  namespaces resolved already? */
+                PFabssyn_dot (pfout, proot, last_stage >= 4);
         }
         else
             PFinfo (OOPS_NOTICE,

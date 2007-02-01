@@ -44,9 +44,9 @@
 /** Node names to print out for all the abstract syntax tree nodes. */
 extern char *p_id[];
 
-void PFabssyn_dot (FILE *f, PFpnode_t *root);
+void PFabssyn_dot (FILE *f, PFpnode_t *root, bool qnames_resolved);
 
-void PFabssyn_pretty (FILE *f, PFpnode_t *root);
+void PFabssyn_pretty (FILE *f, PFpnode_t *root, bool qnames_resolved);
 
 #endif
 
