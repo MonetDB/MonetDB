@@ -73,6 +73,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "qname.h"
 
@@ -175,14 +176,7 @@ PFqname (PFns_t ns, const char *loc)
     PFarray_t    *bucket;
 
     /* initialize QName table and inverted (hash) list if neccessary */
-    if (!qnames) {
-        qnames = PFarray (sizeof (qname_internal_t));
-        qname_hash = PFarray (sizeof (PFarray_t *));
-
-        for (unsigned int i = 0; i < HASH_BUCKETS; i++)
-            *((PFarray_t **) PFarray_at (qname_hash, i))
-                = PFarray (sizeof (qname_hash_entry_t));
-    }
+    assert (qnames); assert (qname_hash);
 
     /* see if we can find the given ns/loc pair */
     bucket = *((PFarray_t **) PFarray_at (qname_hash, h));
@@ -209,6 +203,20 @@ PFqname (PFns_t ns, const char *loc)
 
     /* and return the index of the new entry */
     return PFarray_last (qnames) - 1;
+}
+
+/**
+ * Initialize the #qnames and #qname_hash structs.
+ */
+void
+PFqname_init (void)
+{
+    qnames = PFarray (sizeof (qname_internal_t));
+    qname_hash = PFarray (sizeof (PFarray_t *));
+
+    for (unsigned int i = 0; i < HASH_BUCKETS; i++)
+        *((PFarray_t **) PFarray_at (qname_hash, i))
+            = PFarray (sizeof (qname_hash_entry_t));
 }
 
 /**
@@ -468,6 +476,5 @@ PFqname_raw_str (PFqname_raw_t q)
 
     return s;
 }
-
 
 /* vim:set shiftwidth=4 expandtab: */

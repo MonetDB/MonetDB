@@ -101,6 +101,8 @@ int PFqname_raw_eq (PFqname_raw_t, PFqname_raw_t);
 
 PFqname_t PFqname (PFns_t, const char *);
 
+void PFqname_init (void);
+
 #endif   /* QNAME_H */
 
 /* vim:set shiftwidth=4 expandtab: */

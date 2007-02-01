@@ -49,6 +49,7 @@
 #include "abssyn.h"
 #include "varscope.h"     /* variable scoping */
 #include "normalize.h"    /* parse tree normalization */
+#include "qname.h"        /* Pathfinder's QName handling */
 #include "ns.h"           /* namespaces */
 #include "nsres.h"        /* namespace resolution */
 #include "xquery_fo.h"    /* built-in XQuery F&O */
@@ -329,6 +330,9 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(3);
     
+    /* Initialize data structures in the QName department */
+    PFqname_init ();
+
     tm = PFtimer_start ();
 
     /* Resolve NS usage */
@@ -725,6 +729,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         num_fun = PFparse (xquery, &proot);
         module_base = PFparse_modules (proot);
         proot = PFnormalize_abssyn (proot);
+        PFqname_init ();
         PFns_resolve (proot);
         PFvarscope (proot);
         PFfun_xquery_fo ();
