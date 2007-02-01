@@ -43,14 +43,14 @@ public class BugConcurrent_clients_SF_1504657 {
 			stmt1.executeUpdate("CREATE TABLE t1 ( id int, name varchar(1024) )");
 			System.out.println("passed :)");
 			System.out.println("1.2. check table existence in client 2...");
-			rs2 = stmt2.executeQuery("SELECT * FROM tables where name LIKE 't1'");
+			rs2 = stmt2.executeQuery("SELECT name FROM tables where name LIKE 't1'");
 			while (rs2.next())
-				System.out.println(rs2.getInt("id")+", "+ rs2.getString("name"));
+				System.out.println(rs2.getString("name"));
 			System.out.println("passed :)");
 			System.out.println("1.3. check table existence in client 3...");
-			rs3 = stmt3.executeQuery("SELECT * FROM tables where name LIKE 't1'");
+			rs3 = stmt3.executeQuery("SELECT name FROM tables where name LIKE 't1'");
 			while (rs3.next())
-				System.out.println(rs3.getInt("id")+", "+ rs3.getString("name"));
+				System.out.println(rs3.getString("name"));
 			System.out.println("passed :)");
 		} catch (SQLException e) {
 			// this means we failed (table not there perhaps?)
