@@ -410,6 +410,11 @@ infer_key (PFla_op_t *n)
             break;
 
         case la_scjoin:
+            if (n->sem.scjoin.axis == alg_chld &&
+                PFprop_key (R(n)->prop, n->sem.scjoin.iter) &&
+                PFprop_key (R(n)->prop, n->sem.scjoin.item))
+                union_ (n->prop->keys, n->sem.scjoin.item_res);
+
             /*
             if (n->sem.scjoin.axis == alg_attr &&
                 ! (PFQNAME_NS_WILDCARD (n->sem.scjoin.ty.name)
@@ -422,7 +427,7 @@ infer_key (PFla_op_t *n)
 
         case la_dup_scjoin:
             if (PFprop_card (R(n)->prop) == 1)
-                union_ (n->prop->keys, n->sem.doc_tbl.item_res);
+                union_ (n->prop->keys, n->sem.scjoin.item_res);
             break;
 
         case la_doc_tbl:
