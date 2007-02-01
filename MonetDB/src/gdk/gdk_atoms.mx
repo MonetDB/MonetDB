@@ -942,6 +942,7 @@ the commit tremendously complicated.
 #define GDK_STRHASHTABLE	(1<<10)
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
 #define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(var_t))
+#define GDK_STRHASHCREDIT(h)	(((var_t*) (h)->base)[GDK_STRHASHTABLE])
 #define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
 #define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)
 #define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
@@ -1999,13 +2000,18 @@ strPut(Heap *h, var_t *dst, str v)
 
 		if (GDK_STRCMP(v, x) == 0) {
 			*dst = *l + (var_t) sizeof(var_t);	/* already in heap; do not insert! */
+        		if (GDK_ELIMDOUBLES(h) == 0 && GDK_STRHASHCREDIT(h)) GDK_STRHASHCREDIT(h) += 4;
 			return *dst;
 		}
 	}
 
 	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */
 	if (h->free + len >= elimlimit) {
-	        memset(h->base, 0, GDK_STRHASHSIZE);
+                /* if we are not hash-inserting anymore, h->free may no longer be var_t aligned */
+                int mask = h->free & (sizeof(var_t)-1); 
+                if (mask) h->free += sizeof(var_t) - mask; /* realign */
+	       	memset(h->base, 0, GDK_STRHASHSIZE); /* start over hash inserting in a pristine hash table */
+		GDK_STRHASHCREDIT(h) = 32; /* only tolerate limited misses in the future */
 	}
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
@@ -2031,17 +2037,27 @@ strPut(Heap *h, var_t *dst, str v)
 		if (HEAPextend(h, newsize) < 0) {
 			return 0;
 		}
+		/* fill should solve initialisation problems within valgrind */
+                memset(h->base+h->free, 0, h->size-h->free);
 	}
+
+        if (!GDK_ELIMDOUBLES(h)) {
+                if (GDK_STRHASHCREDIT(h) == 0) { 
+                        /* if credits are gone, we do not hash insert at all */
+			memcpy(h->base + (*dst = h->free), v, i);
+	                h->free += i; /* in this case, we do not round to var_t either */ 
+			return *dst;
+                }
+		GDK_STRHASHCREDIT(h)--;
+	} 
 
 	/* insert string in hash table and copy into the heap */
 	l = (var_t *) (h->base + h->free);
 	*(l++) = ((var_t *) h->base)[off];
 	((var_t *) h->base)[off] = h->free;
-	*dst = h->free + sizeof(var_t);
+        *dst = h->free + sizeof(var_t);
 	h->free += len;
 	memcpy((char *) l, v, i);
-	len -= sizeof(var_t);
-	memset(((char*)l)+i, 0, len-i); /* fill remainder, should solve initialisation problems within valgrind */
 
 	return *dst;
 }
