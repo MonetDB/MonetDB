@@ -2318,7 +2318,7 @@ opt_db_alias:
  ;
 
 user_passwd:
- |  USER string PASSWORD string		{ dlist *l = L(); 
+ USER string PASSWORD string		{ dlist *l = L(); 
 					append_string(l, $2);
 					append_string(l, $4);
 					$$ = _symbol_create_list(SQL_USER, l);
