@@ -464,6 +464,7 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
                     str v)
 {
     shredBAT *sb = & shredCtx->dstBAT[idx];
+    size_t oldsize, newsize;
 
     if (sb->def->compress) {
         BAT *mb = BBP_cache(-(sb->bat->batCacheid));
@@ -483,9 +484,14 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
         BAThash(BATmirror(sb->bat), 2*BATcount(sb->bat));
     }
 
+    oldsize = sb->bat->batBuns->free & (REMAP_PAGE_MAXSIZE-1);
     if (!BUNappend(sb->bat,(ptr)v, TRUE)) {
         GDKerror("shredBAT_append_str: APPEND-STR[%s](%s), BUNappend fails\n", sb->def->name, v);
         return oid_nil;
+    }
+    newsize = sb->bat->batBuns->free & (REMAP_PAGE_MAXSIZE-1);
+    if (oldsize > newsize) { /* try to use mmap() */
+        BATmmap(sb->bat, STORE_MMAP, 0, GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP);
     }
     return BATcount(sb->bat)-1;
 }

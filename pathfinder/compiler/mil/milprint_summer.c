@@ -4858,7 +4858,8 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "  iter := map.leftfetchjoin(iter%03u);\n"
             "  kind := map.leftfetchjoin(cont.set_kind(ELEM));\n"
             "  pos := tmark_grp_unique(iter, ipik);\n"
-            "} else {\n", op, counter, counter, counter, counter, idref, counter, item_ext, counter, counter);
+            "} else {\n",
+               op, counter, counter, counter, counter, idref, counter, item_ext, counter, counter);
     translateEmpty (f);
     milprintf(f,
             "} # end of fn:id%s\n",
@@ -6335,7 +6336,6 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
      * message node: (item=0@0, kind=~cont)
      */
     milprintf(f, 
-            "  \nmodule(\"xrpc_client\");\n"
             "  var iterc_total := count(int(rpc_iter));\n"
             /* remove the base number of fun_vid-s, in XRPC request
              * message, we need the offsets of each non-empty
@@ -6495,32 +6495,31 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"collection")))
     {
-        if (fun->arity) { 
-            rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-            item_ext = kind_str(rc);
-
-            milprintf(f, 
-                "{ # translate fn:collection (string) as node*\n"
-                "  var map := bat(void,oid).seqbase(0@0);\n"
-                "  var ret := ws_collection(ws, item%s.materialize(ipik), map);\n"
-                "  iter := map.leftfetchjoin(iter);\n"
-                "  item := ret.hmark(0@0);\n"
-                "  kind := ret.tmark(0@0).set_kind(ELEM);\n", (rc)?item_ext:val_join(STR));
-        } else {
-            milprintf(f, 
-                "{ # translate fn:collection (string) as node*\n"
-                "  var map := bat(void,oid).seqbase(0@0);\n"
-                "  var ret := ws_collection(ws, collection_name, map);\n"
-                "  var loop := reverse(loop%03u).project(0@0);\n"
-                "  map := reverse(project(reverse(map),0@0));\n"
-                "  iter := loop.leftjoin(map).hmark(0@0);\n"
-                "  item := loop.leftjoin(reverse(ret.project(0@0))).tmark(0@0);\n"
-                "  kind := loop.leftjoin(reverse(reverse(ret.tmark(0@0).set_kind(ELEM)).project(0@0))).tmark(0@0);\n", cur_level);
-       }
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        item_ext = kind_str(rc);
         milprintf(f, 
-                "  ipik := item;\n"
-                "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate fn:collection (string) as node*\n"); 
+            "{ # translate fn:collection (string) as node*\n"
+            "  var map := bat(void,oid).seqbase(0@0);\n"
+            "  var ret := ws_collection(ws, item%s.materialize(ipik), map);\n"
+            "  iter := map.leftfetchjoin(iter);\n"
+            "  item := ret.hmark(0@0);\n"
+            "  kind := ret.tmark(0@0).set_kind(ELEM);\n"
+            "  ipik := item;\n"
+            "  pos  := tmark_grp_unique(iter,ipik);\n"
+            "} # end of translate fn:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
+        return NORMAL;
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"collection")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        item_ext = kind_str(rc);
+        milprintf(f, 
+            "{ # translate pf:collection (string) as node\n"
+            "  var ret := ws_collection_root(ws, item%s.materialize(ipik));\n"
+            "  item := ret.tmark(0@0);\n"
+            "  kind := ret.hmark(0@0).set_kind(ELEM);\n"
+            "  ipik := item;\n"
+            "  pos  := 1@0;\n"
+            "} # end of translate pf:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"documents")))
     {
@@ -10913,14 +10912,12 @@ const char* PFinitMIL(void) {
     return 
         "module(\"pathfinder\");\n"
 #ifdef HAVE_PFTIJAH
-        "module(\"pftijah\");\n"
 	"\n"
 	"var tID := 9999@0; # start counter at an arbitrary number\n"
 	"var tijah_tID := new(void,oid).seqbase(0@0);\n"
 	"var tijah_frag := new(void,oid).seqbase(0@0);\n"
 	"var tijah_pre := new(void,oid).seqbase(0@0);\n"
 	"var tijah_score := new(void,dbl).seqbase(0@0);\n"
-
 #endif
         "\n"
         "# value containers for literal values\n"

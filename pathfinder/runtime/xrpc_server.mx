@@ -38,10 +38,6 @@ remote XQuery execution using HTTP connection on top of MonetDB for the
 @m
 .MODULE xrpc_server;
 
-.USE pathfinder;
-.USE pf_support;
-.USE url;
-
 @- HTTP server function(s)
 @m
 .COMMAND httpd_start(int port, str option) : void = CMDhttpd_start;
