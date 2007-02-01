@@ -229,7 +229,7 @@ BATappend(BAT *b, BAT *n, bit force)
 {
 	ssize_t sz = BATcount(n);
 	ssize_t needed = 0;
-	int fastpath = 0;
+	int fastpath = 1;
 	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	if (b == NULL || n == NULL || sz == 0) {
@@ -239,8 +239,6 @@ BATappend(BAT *b, BAT *n, bit force)
 	BATcompatible(b, n);
 
 	b->batDirty = 1;
-	if (b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))) 
-		fastpath = 1;
 
 	needed = sz - (((b)->batBuns->size - (b)->batBuns->free) / BUNsize(b));
 	if (!countonly && needed > 0) {
@@ -253,6 +251,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (BATextend(b, grows) == NULL)
 			fastpath = 0;
 	}
+
 
 	/* append two void,void bats */
 	if (b->ttype == TYPE_void && BATtdense(b)) { 
@@ -290,9 +289,12 @@ BATappend(BAT *b, BAT *n, bit force)
 	if (b->hhash) 
 		HASHremove(b);
 
-	if (b->thash && 2 * b->thash->mask < BATcount(b)+sz) {
+	if (b->thash && (2* b->thash->mask) < (BATcount(b)+sz)) {
 		HASHremove(BATmirror(b));
 	}
+	if (!(b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid)))) 
+		fastpath = 0;
+
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b);
 		int xx, yy = BUNsize(b);
@@ -355,9 +357,9 @@ BATappend(BAT *b, BAT *n, bit force)
 		BUN p, q;
 		int xx;
 		size_t i = BUNindex(b, BUNlast(b));
+		BAT *bm = BBP_cache(-b->batCacheid);
 
 		if (b->tkey & BOUND2BTRUE) {
-			BAT *bm = BBP_cache(-b->batCacheid);
 
 			b->tdense = b->tsorted = 0;
 			if (b->hseqbase != oid_nil) {
@@ -368,7 +370,7 @@ BATappend(BAT *b, BAT *n, bit force)
 					if (!BUNfnd(bm, t)) { 
 						bunfastins(b ,&h, t);
 						if (b->thash) {
-							HASHins(b->thash, (hash_t) i, t);
+							HASHins(bm, (hash_t) i, t);
 						}
 						h++;
 						i++;
@@ -382,7 +384,7 @@ BATappend(BAT *b, BAT *n, bit force)
 					if (!BUNfnd(bm, t)) {
 						bunfastins(b ,&on, t);
 						if (b->thash) {
-							HASHins(b->thash, (hash_t) i, t);
+							HASHins(bm, (hash_t) i, t);
 						}
 						i++;
 					}
@@ -398,7 +400,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 				bunfastins(b ,&h, t);
 				if (b->thash) {
-					HASHins(b->thash, (hash_t) i, t);
+					HASHins(bm, (hash_t) i, t);
 				}
 				i++;
 				h++;
@@ -413,7 +415,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 				bunfastins(b ,&on, t);
 				if (b->thash) {
-					HASHins(b->thash, (hash_t) i, t);
+					HASHins(bm, (hash_t) i, t);
 				}
 				i++;
 			}

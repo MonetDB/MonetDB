@@ -246,6 +246,7 @@ BATundo(BAT *b)
 	bunlast = b->batFirst;
 	if (bunlast > b->batDeleted) {
 		size_t i = BUNindex(b, bunfirst);
+                BAT *bm = BBP_cache(-b->batCacheid);
 
 		/* elements are 'inserted' => zap properties */
 		if (b->hsorted & 1 || b->hsorted == (bit)GDK_SORTED_REV)
@@ -262,10 +263,10 @@ BATundo(BAT *b)
 			ptr t = BUNtail(b, p);
 
 			if (b->hhash) {
-				HASHins(b->hhash, i, h);
+				HASHins(b, i, h);
 			}
 			if (b->thash) {
-				HASHins(b->thash, i, t);
+				HASHins(bm, i, t);
 			}
 		}
 	}

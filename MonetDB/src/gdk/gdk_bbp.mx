@@ -957,7 +957,7 @@ BBPinsert(BAT *b)
 	b->batStamp = BBP_curstamp;
 	b->creator_tid = BBP_getpid();
 
-	BBP_status_set(i, 0, "BBPentry");
+	BBP_status_set(i, BBPDELETING, "BBPentry");
 	BBP_cache(i) = NULL;
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
@@ -998,7 +998,7 @@ BBPcacheit(BAT *b)
 	}
 	if (lock)
 		gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPcacheit");
-	mode = (BBP_status(i) | BBPLOADED) & ~BBPWAITING;
+	mode = (BBP_status(i) | BBPLOADED) & ~(BBPWAITING|BBPUNSTABLE);
 	BBP_status_set(i, mode, "BBPcacheit");
 	BBP_lastused(i) = BBPLASTUSED(BBPstamp() + ((mode == BBPLOADED) ? 150 : 0));
 	BBP_desc(i) = (BATstore *) b;

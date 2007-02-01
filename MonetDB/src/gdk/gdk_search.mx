@@ -79,6 +79,7 @@ gdk_export hash_t HASHmask(size_t cnt);
 gdk_export BAT *HASHprint(BAT *b);
 gdk_export void HASHremove(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
+gdk_export int HASHgonebad(BAT *b, ptr v);
 gdk_export hash_t HASHprobe(Hash *h, ptr v);
 gdk_export hash_t HASHlist(Hash *h, size_t i);
 
@@ -164,11 +165,16 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 	h->hash[_c] = i;			\
 }
 
-#define HASHins(h,i,v) {			\
+#define HASHins_any(h,i,v) {			\
 	hash_t _c = HASHprobe(h, v);		\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
 }
+
+/* HASHins now receives a BAT* param and has become adaptive; killing wrongly configured hash tables */
+/* use HASHins_any or HASHins_<tpe> instead if you know what you're doing or want to keep the hash whatever */
+#define HASHins(b,i,v) \
+	if ((i & 1023) == 1023 && HASHgonebad(b,v)) { HASHremove(b); } else  { HASHins_any(b->hhash,i,v); }
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
@@ -183,9 +189,8 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 #endif
 #define HASHins_flt(h,i,v)	HASHins_int(h,i,v)
 #define HASHins_dbl(h,i,v)	HASHins_lng(h,i,v)
-#define HASHins_any(h,i,v)	HASHins(h,i,v)
-#define HASHinsvar(h,i,v)	HASHins(h,i,v)
-#define HASHinsloc(h,i,v)	HASHins(h,i,v)
+#define HASHinsvar(h,i,v)	HASHins_any(h,i,v)
+#define HASHinsloc(h,i,v)	HASHins_any(h,i,v)
 
 @:hashins(chr)@
 @:hashins(bte)@
@@ -360,7 +365,7 @@ BAThash(BAT *b, size_t masksize)
 		}
                 if (mask < 1024) mask = 1024;
 		do {
-			size_t nslots = mask >> 1;	/* 1/2 full is too full */
+			size_t nslots = mask >> 3;	/* 1/2 full is too full */
 
 			r = BUNfirst(b);
 			i = BUNindex(b, r);
@@ -553,6 +558,25 @@ HASHdestroy(BAT *b)
 	HASHremove(b);
 	if (BATmirror(b))
 		HASHremove(BATmirror(b));
+}
+
+int HASHgonebad(BAT *b, ptr v)
+{
+    Hash *h = b->hhash;
+    if (h == NULL) return 1; /* no hash is bad hash? */
+
+    if (h->mask*2 < BATcount(b)) {
+        int (*cmp)(ptr, ptr) = BATatoms[b->htype].atomCmp;
+	hash_t cnt, hit, i = h->hash[HASHprobe(h, v)];
+        for(cnt=hit=1; i != HASH_MAX; i = h->link[i], cnt++) 
+	    hit += ((*cmp)(v,BUNhead(b,BUNptr(b,i))) == 0);
+
+        if (cnt/hit > 4) return 1; /* linked list too long */
+
+        /* in this case, linked lists are long but contain the desired values 
+         * such hash tables may be useful for locating all duplicates */
+    }
+    return 0;  /* a-ok */
 }
 
 @}

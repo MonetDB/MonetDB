@@ -831,7 +831,7 @@ Below are help macro's that actually move the BUNs
 around and adapt search accelerator structures.
  
 @h
-#define hashins(h,i,v,n) HASHins(h,i,v)
+#define hashins(h,i,v,n) HASHins_any(h,i,v)
 #define hashdel(h,i,v,n) HASHdel(h,i,v,n)
 
 @= bun_move
@@ -1065,11 +1065,11 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 		 * REASON: some accelerator updates (qsignature) use the hashes! 
 		 */
 		if (b->hhash) {
-			HASHins(b->hhash, (hash_t) i, h);
+			HASHins(b, (hash_t) i, h);
 			if (hsize && hsize != b->hheap->size) HEAPwarm(b->hheap);
 		}
 		if (b->thash) {
-			HASHins(b->thash, (hash_t) i, t);
+			HASHins(bm, (hash_t) i, t);
 			if (tsize && tsize != b->theap->size) HEAPwarm(b->theap);
 		}
 	}
@@ -1239,11 +1239,11 @@ BUNappend(BAT *b, ptr t, bit force)
 	 * REASON: some accelerator updates (qsignature) use the hashes! 
 	 */
 	if (b->hhash && h) {
-		HASHins(b->hhash, (hash_t) i, h);
+		HASHins(b, (hash_t) i, h);
 		if (hsize && hsize != b->hheap->size) HEAPwarm(b->hheap);
 	}
 	if (b->thash) {
-		HASHins(b->thash, (hash_t) i, t);
+		HASHins(bm, (hash_t) i, t);
 		if (tsize && tsize != b->theap->size) HEAPwarm(b->theap);
 	}
 	return b;
@@ -2921,7 +2921,7 @@ for determining which algebra commands set properties sub-optimally.
 						@:hash_disprove(_lng,loc)@
 #endif
 					default:
-						@:hash_disprove(,ead)@
+						@:hash_disprove(_any,ead)@
 					}
 					BATDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): used hashtable of size " SZFMT "\n", BATgetId(b), b->batCacheid, lim);
 				}
