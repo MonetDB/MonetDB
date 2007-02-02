@@ -1170,6 +1170,7 @@ mvc_check_dependency(mvc * m, int id, int type)
 		case SCHEMA_DEPENDENCY : dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
 					break;
 		case TABLE_DEPENDENCY : dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY);
+		case VIEW_DEPENDENCY : dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY);
 					break;
 		default: dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY);
 	}
