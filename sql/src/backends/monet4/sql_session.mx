@@ -839,6 +839,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 		GDKerror("Couldn't start sqlconsole");
 		return GDK_FAIL;
 	}
+	m->argfixed = 1;
 	schema = mvc_login(m, "monetdb", "monetdb");
 
 	if (!schema) {
@@ -883,6 +884,7 @@ sql_client_alloc(mapi_client *fc)
 
 	if (!m) 
 		return "!couldn't allocate sql catalog";
+	m->argfixed = 1;
 	fc->fc = be;
 
 	/* add myc and Output, Input to the stack */
@@ -1024,7 +1026,7 @@ mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	rs = bstream_create(in, 0);
 	m = mvc_create(0, (backend_stack) stk, SQLdebug, rs, out);
-
+	m->argfixed = 1;
 	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;
 	m->session->schema = mvc_bind_schema(m, "sys");

@@ -77,8 +77,10 @@ typedef struct mvc {
 	int topvars; 
 	int sizevars;
 	int frame;
-	atom *args[MAXPARAMS];
+	atom **args;
 	int argc;
+	int argmax;
+	int argfixed;
 	struct symbol *sym;
 
 	int user_id;
@@ -536,7 +538,10 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->topvars = 0;
 	m->sizevars = MAXPARAMS;
 	m->frame = 1;
+	m->args = NEW_ARRAY(atom*,MAXPARAMS);
 	m->argc = 0;
+	m->argmax = MAXPARAMS;
+	m->argfixed = 0;
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
@@ -663,6 +668,8 @@ mvc_destroy(mvc *m)
 		qc_destroy(m->qc);
 	m->qc = NULL;
 
+	_DELETE(m->args);
+	m->args = NULL;
 	_DELETE(m);
 }
 
@@ -1170,6 +1177,7 @@ mvc_check_dependency(mvc * m, int id, int type)
 		case SCHEMA_DEPENDENCY : dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
 					break;
 		case TABLE_DEPENDENCY : dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY);
+		case VIEW_DEPENDENCY : dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY);
 					break;
 		default: dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY);
 	}

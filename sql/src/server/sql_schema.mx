@@ -721,7 +721,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	list * id_l = NULL;
+	list * id_l = NULL, *view_id_l = NULL;
 	int instantiate = (sql->mode == m_execute || !persistent);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -754,6 +754,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		if (!sq)
 			return NULL;
 
+
 		if (!instantiate) {
 			t = mvc_create_view(sql, s, name, q, 0);
 			as_subquery( sql, t, sq, column_spec );
@@ -761,9 +762,12 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		if (!persistent && column_spec) 
 			sq = view_rename_columns( name, sq, column_spec);
 		if (!instantiate && sq) {
+			view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
 			id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
 			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
+			mvc_create_dependencies(sql, view_id_l, t->base.id, VIEW_DEPENDENCY);
 			list_destroy(id_l);
+			list_destroy(view_id_l);
 			stmt_destroy(sq);
 			return stmt_none();
 		}
@@ -1856,8 +1860,8 @@ schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = alter_user(sql, l->h->data.sval,	/* user */
-				 l->h->next->data.sval,	/* passwd */
-				 l->h->next->next->data.sval	/* schema */
+				 l->h->next->data.lval->h->data.sval,	/* passwd */
+				 l->h->next->data.lval->h->next->data.sval	/* schema */
 		    );
 		sql->type = Q_SCHEMA;
 	}

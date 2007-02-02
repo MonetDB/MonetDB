@@ -396,8 +396,6 @@ int yydebug=1;
 	opt_using
 	string
 	type_alias
-	opt_schema
-	opt_passwd
 	varchar
 	clob
 	blob
@@ -406,6 +404,7 @@ int yydebug=1;
 	target_specification
 
 %type <l>
+	passwd_schema
 	object_privileges
 	privileges
 	schema_name_clause
@@ -988,22 +987,27 @@ alter_statement:
 	  append_list(l, $3);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER USER ident opt_passwd opt_schema
+ | ALTER USER ident passwd_schema
 	{ dlist *l = L();
 	  append_string(l, $3);
-	  append_string(l, $4);
-	  append_string(l, $5);
+	  append_list(l, $4);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
   ;
 
-opt_passwd:
-	/* empty */		{ $$ = NULL; }
-  |	WITH PASSWORD string	{ $$ = $3; }
-  ;
-
-opt_schema:
-	/* empty */		{ $$ = NULL; }
-  |	SET SCHEMA ident	{ $$ = $3; }
+passwd_schema:
+  	WITH PASSWORD string	{ dlist * l = L();
+				  append_string(l, $3);
+				  append_string(l, NULL);
+				  $$ = l; }
+  |	SET SCHEMA ident	{ dlist * l = L();
+				  append_string(l, NULL);
+				  append_string(l, $3);
+				  $$ = l; }
+  |	WITH PASSWORD string SET SCHEMA ident	
+				{ dlist * l = L();
+				  append_string(l, $3);
+				  append_string(l, $6);
+				  $$ = l; }
   ;
 
 alter_table_element:
@@ -2406,7 +2410,8 @@ simple_atom:
 	 { 
 	   mvc *m = (mvc*)parm;
 
-	   if (CACHE_MODE(m->mode) && m->argc < MAXPARAMS-2 && m->cache){
+	   if (CACHE_MODE(m->mode) && 
+	      (!m->argfixed || m->argc < MAXPARAMS-2) && m->cache){
 		/* replace by argument */
 		atom *a = atom_general( sql_bind_localtype("str"), NULL, 0);
 
@@ -3309,7 +3314,8 @@ atom:
 	{ 
 	  mvc *m = (mvc*)parm;
 	
-	  if (CACHE_MODE(m->mode) && m->argc < MAXPARAMS-2 && m->cache){
+	  if (CACHE_MODE(m->mode) && 
+	      (!m->argfixed || m->argc < MAXPARAMS-2) && m->cache){
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	
