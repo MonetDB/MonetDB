@@ -17,11 +17,11 @@ dnl All Rights Reserved.
 dnl Defaults that differ between development trunk and release branch:
 AC_DEFUN([AM_MONETDB_DEFAULTS],
 [
-dft_strict=no
-dft_assert=no
-dft_optimi=yes
+dft_strict=yes
+dft_assert=yes
+dft_optimi=no
 dft_warning=no
-dft_netcdf=no
+dft_netcdf=auto
 
 dnl small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
 dnl set GCC=yes if we use icc.
@@ -56,7 +56,7 @@ MONETDB_MODS=""
 MONETDB_MOD_PATH=""
 MONETDB_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB_REQUIRED_VERSION="1.16.1"
+  MONETDB_REQUIRED_VERSION="1.17.1"
 else
   MONETDB_REQUIRED_VERSION="$1"
 fi
@@ -118,7 +118,7 @@ CLIENTS_MODS=""
 CLIENTS_MOD_PATH=""
 CLIENTS_PREFIX="."
 if test "x$1" = "x"; then
-  CLIENTS_REQUIRED_VERSION="1.16.0"
+  CLIENTS_REQUIRED_VERSION="1.17.0"
 else
   CLIENTS_REQUIRED_VERSION="$1"
 fi
@@ -180,7 +180,7 @@ MONETDB4_MODS=""
 MONETDB4_MOD_PATH=""
 MONETDB4_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB4_REQUIRED_VERSION="4.16.0"
+  MONETDB4_REQUIRED_VERSION="4.17.0"
 else
   MONETDB4_REQUIRED_VERSION="$1"
 fi
@@ -247,7 +247,7 @@ MONETDB5_MODS=""
 MONETDB5_MOD_PATH=""
 MONETDB5_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB5_REQUIRED_VERSION="5.0.0_beta1"
+  MONETDB5_REQUIRED_VERSION="5.0.0_beta2"
 else
   MONETDB5_REQUIRED_VERSION="$1"
 fi
@@ -2450,6 +2450,57 @@ fi
 ]) dnl AC_DEFUN AM_MONETDB_LIBS
 
 AC_DEFUN([AM_MONETDB_UTILS],[
+
+AC_ARG_WITH(buildtools,
+    AC_HELP_STRING([--with-buildtools=DIR],
+                   [MonetDB Buildtools are installed in DIR]),
+    with_buildtools="$withval",
+    with_buildtools="auto")
+
+if test "x$with_buildtools" != xno
+then
+
+    if test "x$with_buildtools" = x -o "x$with_buildtools" = xauto
+    then
+        buildtools_path=$PATH
+    else
+        buildtools_path="$with_buildtools/bin"
+    fi
+
+    AC_PATH_PROG(BUILDTOOLS_CONFIG,buildtools-config,,$buildtools_path)
+
+    if test "x$BUILDTOOLS_CONFIG" = x
+    then
+
+        if test "x$with_buildtools" != xauto
+        then
+            AC_MSG_ERROR([MonetDB Buildtools could not be found,
+                          although you requested to use them.])
+        else
+            AC_MSG_WARN([MonetDB Buildtools could not be found.
+                         You won't be able to compile $PACKAGE_NAME
+                         from CVS sources.])
+        fi
+
+    else
+
+        have_mx=`"$BUILDTOOLS_CONFIG" --bindir`/Mx$EXEEXT
+        have_mel=`"$BUILDTOOLS_CONFIG" --bindir`/mel$EXEEXT
+
+        BUILDTOOLS_CONFDIR=`"$BUILDTOOLS_CONFIG" --pkgdatadir`
+        AC_SUBST(BUILDTOOLS_CONFDIR)
+        rules_mk=$BUILDTOOLS_CONFDIR/rules.mk
+
+        AC_CHECK_FILE($rules_mk,
+            [have_buildtools=yes],
+            [AC_MSG_WARN([$rules_mk could not be found.
+                          You won't be able to compile $PACKAGE_NAME
+                          from CVS sources.])])
+
+    fi
+fi
+
+AM_CONDITIONAL(HAVE_BUILDTOOLS, test "x$have_buildtools" = xyes)
 
 if test -f "$srcdir"/vertoo.data; then
         dnl check for Mx if we find the not distributed vertoo.data 
