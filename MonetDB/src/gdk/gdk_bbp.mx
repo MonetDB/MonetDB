@@ -2922,15 +2922,17 @@ BBPrecover()
 	struct dirent *dent;
 	long_str path, dstpath;
 	bat i;
-	size_t j;
+	size_t j = strlen(BATDIR);
 	int ret = 0, dirseen = FALSE;
 	str dstdir;
 
 	if (dirp == NULL) {
 		return 0;		/* nothing to do */
 	}
-	strcpy(dstpath, BATDIR);
-	dstdir = dstpath + strlen(dstpath);
+	memcpy(dstpath, BATDIR, j);
+	dstpath[j] = DIR_SEP;
+	dstpath[++j] = 0;
+	dstdir = dstpath + j;
 	IODEBUG THRprintf(GDKout, "#BBPrecover(start)\n");
 
 	mkdir(LEFTDIR, 0755);
