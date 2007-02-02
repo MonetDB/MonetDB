@@ -12,7 +12,6 @@ DROP VIEW Run ;
 DROP VIEW PhotoSecondary ;
 DROP VIEW PhotoFamily ;
 DROP VIEW PhotoObj ;
-DROP VIEW PhotoPrimary ;
 DROP VIEW PhotoAux ;
 DROP VIEW PhotoStatus ;
 DROP VIEW PrimTarget ;
@@ -40,5 +39,6 @@ DROP VIEW Star ;
 DROP VIEW Galaxy ;
 DROP VIEW Sky ;
 DROP VIEW Unknown ;
+DROP VIEW PhotoPrimary ;
 
 COMMIT;
