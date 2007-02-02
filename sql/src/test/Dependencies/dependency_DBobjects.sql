@@ -2,6 +2,8 @@ CREATE TABLE t1(id int, name varchar(1024), age int, PRIMARY KEY(id));
 
 CREATE VIEW v1 as select id, age from t1 where name like 'monet%';
 
+CREATE VIEW v2 as select * from v1;
+
 
 CREATE FUNCTION f1(num int)
 RETURNS int
@@ -140,6 +142,10 @@ DROP INDEX id_age_index;
 DROP TABLE t2; 
 
 DROP FUNCTION f1;
+
+DROP VIEW v1;
+
+DROP VIEW v2;
 
 DROP VIEW v1;
 
