@@ -57,8 +57,10 @@
 #define seq( si, ce )                 PFsql_seq( si, ce )
 
 /*............ SQL aggregat functions ............*/ 
-
 #define count(b, e)                    PFsql_count(b, e)
+#define max( c )                       PFsql_max( c )
+#define sum( c )                       PFsql_sum( c )
+
 /* SQL rownumber aggrfun construction. */
 #define rownumber( )                   PFsql_rownumber( )
 #define over( a, b )                   PFsql_over( a, b )
@@ -66,7 +68,8 @@
 #define part_expressions( ... )        PFsql_part_expressions( __VA_ARGS__ )
 #define part_expressions_empty()       PFsql_part_expressions_empty()
 #define part_expressions_add(l, i)     PFsql_part_expressions_add(l, i)
-#define order_by( a )               PFsql_order_by( a )
+#define order_by( a )                  PFsql_order_by( a )
+#define sortkey_expressions(...)       PFsql_sortkey_expressions( __VA_ARGS__ )
 #define sortkey_expressions_empty()    PFsql_sortkey_expressions_empty()
 #define sortkey_expressions_add(l, i)  PFsql_sortkey_expressions_add(l, i)
 #define window_clause(p, o)            PFsql_window_clause(p, o)
@@ -126,17 +129,24 @@
 /** Add an item to an existing fromlist. */
 #define from_list_add( list, item )    PFsql_from_list_add( list, item )
 /** A sequence of columns */
-#define column_list( l, i )             PFsql_column_list( l, i )
+#define column_list(...)             PFsql_column_list( __VA_ARGS__ )
 
+#define where_list( ... )              PFsql_where_list( __VA_ARGS__ )
 #define where_list_empty( )            PFsql_where_list_empty( )
 #define where_list_add( l, i )         PFsql_where_list_add( l, i )
 
 /*.......... Schema Information ..............*/
-#define schema_information( l, i )     PFsql_schema_information( l, i )
+#define schema_information(...)     PFsql_schema_information( __VA_ARGS__ )
 #define schema_expression( s, c )      PFsql_schema_expression( s, c )
 #define schema_result()                PFsql_schema_result()
 #define schema_doc()                   PFsql_schema_document()
 #define schema_comment( s )            PFsql_schema_comment( s )
+
+/*......... Join ..........*/
+#define on(jn, ex)                     PFsql_on(jn, ex)
+#define inner_join(tbl1, tbl2)         PFsql_inner_join(tbl1, tbl2)
+#define outer_join(tbl1, tbl2)         PFsql_outer_join(tbl1, tbl2)
+#define right_outer_join(tbl1, tbl2)   PFsql_right_outer_join(tbl1, tbl2)
 
 /*.......... Arithmetic operator constructors ........*/
 

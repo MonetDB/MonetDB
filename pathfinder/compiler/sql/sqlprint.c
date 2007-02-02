@@ -81,6 +81,7 @@ static void print_column_name(PFsql_t*);
 static void print_schema_information(PFsql_t*);
 static void print_schema_table(PFsql_t*);
 static void print_schema_relcol(PFsql_t*);
+static void print_join(PFsql_t*);
 
 
 /**
@@ -313,22 +314,44 @@ static void
 print_from_list(PFsql_t *n)
 {
     assert( n );
-    
-    if( !((n->kind == sql_frm_list) ||
-            (n->kind == sql_list_terminator)) )
-    {
-        PFoops( OOPS_FATAL,
-                "Pathfinder failed to print from list (%u)", n->kind );
-    }
-   
-    if( (n->kind == sql_list_terminator) &&
-            (n->child[0] == NULL) && (n->child[1] == NULL) )
-        return;
 
-    print_tablereference(n->child[0]);
-    if(!(n->child[1]->kind == sql_list_terminator ))
-        sqlprintf(", ");
-    print_from_list(n->child[1]);
+    switch( n->kind ) {
+        case sql_frm_list:
+            print_from_list( n->child[0] );
+            sqlprintf(", ");
+            print_from_list( n->child[1] );
+            break;
+        case sql_alias:
+        case sql_tb_name:
+        case sql_tbl_name:
+        case sql_select:
+            print_tablereference( n );
+            break;
+        case sql_on:
+            print_join( n );
+            break;
+        default:
+            PFoops( OOPS_FATAL,
+                    "This kind (%u) of statement is not supported by "
+                    "fromlist", n->kind);
+            break;
+    }
+//    
+//    if( !((n->kind == sql_frm_list) ||
+//            (n->kind == sql_list_terminator)) )
+//    {
+//        PFoops( OOPS_FATAL,
+//                "Pathfinder failed to print from list (%u)", n->kind );
+//    }
+//   
+//    if( (n->kind == sql_list_terminator) &&
+//            (n->child[0] == NULL) && (n->child[1] == NULL) )
+//        return;
+//
+//    print_tablereference(n->child[0]);
+//    if(!(n->child[1]->kind == sql_list_terminator ))
+//        sqlprintf(", ");
+//    print_from_list(n->child[1]);
 }
 
 static void
@@ -337,17 +360,10 @@ print_tablereference(PFsql_t* n)
     assert( n );
 
     switch( n->kind ) {
-        case sql_select:
-        case sql_union:
-        {
-            sqlprintf("TABLE (");
-            print_fullselect( n );
-            sqlprintf(")");
-        } break;
         case sql_alias:
         {
           print_tablereference( n->child[0] );
-          sqlprintf(" ");
+          sqlprintf(" AS ");
           print_correlation( n->child[1]);
         } break;
         case sql_tbl_name:
@@ -362,8 +378,9 @@ print_tablereference(PFsql_t* n)
         } break;
         default:
         {
-            PFoops( OOPS_FATAL, "Tablereference not supported"
-                    " (%u)", n->kind);
+            sqlprintf("(");
+            print_fullselect( n );
+            sqlprintf(")");
         } break;
     }
 }
@@ -412,14 +429,14 @@ print_expr(PFsql_t *n)
 {
     assert( n );
 
-    if( n->kind == sql_list_terminator )
-        return;
-    if( (n->child[1]) && (n->child[1]->kind == sql_list_terminator) ) {
-        print_expr( n->child[0]);
-        return;
-    }
     switch( n->kind )
     {
+        case sql_max:
+        {
+            sqlprintf("MAX (");
+            print_expr( n->child[0] );
+            sqlprintf(")");
+        } break;
         case sql_and:
         {
            sqlprintf("(");
@@ -500,21 +517,31 @@ print_select_list(PFsql_t *n)
 {
     assert( n);
     
-    if( !((n->kind == sql_slct_list) ||
-            (n->kind == sql_list_terminator)) )
-    {
-        PFoops( OOPS_FATAL,
-                "Pathfinder failed to print attribute list" );
+    switch( n->kind ) {
+        case sql_slct_list:
+            print_select_list( n->child[0] );
+            sqlprintf(", ");
+            print_select_list( n->child[1] );
+            break;
+        default:
+            print_statement(n);
+            break;
     }
-   
-    if( (n->kind == sql_list_terminator) &&
-            (n->child[0] == NULL) && (n->child[1] == NULL) )
-        return;
-
-    print_statement(n->child[0]);
-    if(!(n->child[1]->kind == sql_list_terminator ))
-        sqlprintf(", ");
-    print_select_list(n->child[1]);
+//    if( !((n->kind == sql_slct_list) ||
+//            (n->kind == sql_list_terminator)) )
+//    {
+//        PFoops( OOPS_FATAL,
+//                "Pathfinder failed to print attribute list" );
+//    }
+//   
+//    if( (n->kind == sql_list_terminator) &&
+//            (n->child[0] == NULL) && (n->child[1] == NULL) )
+//        return;
+//
+//    print_statement(n->child[0]);
+//    if(!(n->child[1]->kind == sql_list_terminator ))
+//        sqlprintf(", ");
+//    print_select_list(n->child[1]);
 }
 
 static void
@@ -541,25 +568,69 @@ print_part_expression(PFsql_t *n)
 }
 
 static void
+print_join( PFsql_t *n )
+{
+    assert( n );
+
+    switch( n->kind ) {
+        case sql_on:
+            print_join( n->child[0] );
+            sqlprintf(" ON ");
+            print_expr( n->child[1] );
+            break;
+        case sql_innr_join:
+            print_join( n->child[0] );
+            sqlprintf(" INNER JOIN ");
+            print_join( n->child[1] );
+            break;
+        case sql_outr_join:
+            print_join( n->child[0] );
+            sqlprintf(" RIGHT OUTER JOIN ");
+            print_join( n->child[1] ); 
+            break;
+        case sql_alias:
+        case sql_tb_name:
+        case sql_tbl_name:
+        case sql_select:
+            print_tablereference( n );
+            break;
+        default:
+            PFoops( OOPS_FATAL,
+                    "SQL genereation doesn't support this kind "
+                    "of join attribute (%u)", n->kind);
+    }
+}
+
+static void
 print_sort_key_expressions(PFsql_t *n)
 {
     assert( n);
     
-    if( !((n->kind == sql_srtky_expr) ||
-            (n->kind == sql_list_terminator)) )
-    {
-        PFoops( OOPS_FATAL,
-                "Pathfinder failed to print attribute list" );
+    switch( n->kind ) {
+        case sql_srtky_expr:
+            print_sort_key_expressions( n->child[0] );
+            sqlprintf(", ");
+            print_sort_key_expressions( n->child[1] );
+            break;
+        default:
+            print_statement( n );
+            break;
     }
-   
-    if( (n->kind == sql_list_terminator) &&
-            (n->child[0] == NULL) && (n->child[1] == NULL) )
-        return;
-
-    print_statement(n->child[0]);
-    if(!(n->child[1]->kind == sql_list_terminator ))
-        sqlprintf(", ");
-    print_sort_key_expressions(n->child[1]);
+//    if( !((n->kind == sql_srtky_expr) ||
+//            (n->kind == sql_list_terminator)) )
+//    {
+//        PFoops( OOPS_FATAL,
+//                "Pathfinder failed to print attribute list" );
+//    }
+//   
+//    if( (n->kind == sql_list_terminator) &&
+//            (n->child[0] == NULL) && (n->child[1] == NULL) )
+//        return;
+//
+//    print_statement(n->child[0]);
+//    if(!(n->child[1]->kind == sql_list_terminator ))
+//        sqlprintf(", ");
+//    print_sort_key_expressions(n->child[1]);
 }
 
 static void
@@ -612,6 +683,17 @@ static void
 print_statement(PFsql_t *n)
 {
     switch( n->kind ) {
+        case sql_sum:
+            sqlprintf("SUM(");
+            print_statement( n->child[0] );
+            sqlprintf(")");
+            break;
+        case sql_max:
+        {
+            sqlprintf("MAX (");
+            print_statement( n->child[0] );
+            sqlprintf(")");
+        } break;
         case sql_count:
         {
             sqlprintf("COUNT (");

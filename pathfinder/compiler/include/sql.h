@@ -30,8 +30,8 @@
  * $Id$
  */
 
-#ifndef __SQL_H__
-#define __SQL_H__
+#ifndef SQL_H
+#define SQL_H
 
 
 #include "algebra.h"
@@ -160,7 +160,13 @@ enum PFsql_kind_t {
    sql_schm_res         = 55,
    sql_schm_cmmnt       = 56,
    sql_schm_expr        = 57,
-   sql_seq              = 58
+   sql_seq              = 58,
+   sql_max              = 59,
+   sql_on               = 60,
+   sql_innr_join        = 61,
+   sql_outr_join        = 62,
+   sql_rght_outr_join   = 62,
+   sql_sum              = 63
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -319,6 +325,10 @@ PFsql_t* PFsql_seq(const PFsql_t *schm_inf, const PFsql_t *cmtblexpr);
 
 PFsql_t* PFsql_count(bool dist, const PFsql_t *expr);
 
+PFsql_t* PFsql_max(const PFsql_t *clmn);
+
+PFsql_t* PFsql_sum(const PFsql_t *clmn);
+
 /**
  * Construct a SQL `rownumber' operator.
  */
@@ -444,6 +454,15 @@ PFsql_t* PFsql_list_terminator(void);
 PFsql_t* PFsql_select_list_(unsigned int count, const PFsql_t **list);
 
 /**
+ * A sequence of sortkey-expressions.
+ */
+#define PFsql_sortkey_expressions(...) \
+   PFsql_sortkey_expressions_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+            sizeof(PFsql_t*), (const PFsql_t *[]) \
+            {__VA_ARGS__})
+PFsql_t* PFsql_sortkey_expressions_(unsigned int count, const PFsql_t **list);
+
+/**
  * Create an empty select_list.
  */
 PFsql_t* PFsql_select_list_empty(void);
@@ -496,11 +515,19 @@ PFsql_t* PFsql_where_list_add(const PFsql_t *list,
 /**
  * A sequence of columns.
  */
-PFsql_t* PFsql_column_list(PFsql_t *list, PFsql_t *item);
+#define PFsql_column_list(...) \
+   PFsql_column_list_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+                  sizeof(PFsql_t*), (const PFsql_t *[]) \
+                  {__VA_ARGS__})
+PFsql_t* PFsql_column_list_(unsigned int count, const PFsql_t **clmn);
 
 /*..............Schema Information ............*/
 
-PFsql_t* PFsql_schema_information(PFsql_t *list, PFsql_t *item);
+#define PFsql_schema_information(...) \
+   PFsql_schema_information_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+                  sizeof(PFsql_t*), (const PFsql_t *[]) \
+                  {__VA_ARGS__})
+PFsql_t* PFsql_schema_information_(unsigned int count, const PFsql_t **list);
 
 PFsql_t* PFsql_schema_expression(PFsql_t *schm, PFsql_t *clmn);
 
@@ -509,6 +536,16 @@ PFsql_t* PFsql_schema_document(void);
 PFsql_t* PFsql_schema_result(void);
 
 PFsql_t* PFsql_schema_comment(char *cmmnt);
+
+/*................ Join ................*/
+
+PFsql_t* PFsql_on(PFsql_t *join, PFsql_t *expr);
+
+PFsql_t* PFsql_inner_join(PFsql_t *tblref1, PFsql_t *tblref2);
+
+PFsql_t* PFsql_outer_join(PFsql_t *tblref1, PFsql_t *tblref2);
+
+PFsql_t* PFsql_right_outer_join(PFsql_t *tblref1, PFsql_t *tblref2);
 
 /*................ Aritmethic ..............*/
 

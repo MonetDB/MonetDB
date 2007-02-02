@@ -284,6 +284,18 @@ PFsql_count(bool dist, const PFsql_t *expr)
     return ret;
 }
 
+PFsql_t*
+PFsql_max(const PFsql_t *clmn)
+{
+    return wire1(sql_max, clmn);
+}
+
+PFsql_t*
+PFsql_sum(const PFsql_t *clmn)
+{
+    return wire1(sql_sum, clmn);
+}
+
 /**
  * Create a SQL tree node representing SQL
  * `rownumber()' aggregat function.
@@ -353,6 +365,23 @@ PFsql_sortkey_expressions_empty()
 {
     return terminator();
 }
+
+PFsql_t*
+PFsql_sortkey_expressions_(unsigned int count, const PFsql_t **list)
+{
+    assert( count > 0 );
+
+    if( list[0] == NULL )
+        return PFsql_sortkey_expressions_(count-1, list+1);
+    else if( count ==  1)
+        return (PFsql_t*)list[0];
+    else 
+        return wire2(sql_srtky_expr,
+                PFsql_sortkey_expressions_(count-1, list+1),
+                list[0]);
+    return NULL; /* satisfy picky compilers */
+}
+
 
 PFsql_t*
 PFsql_sortkey_expressions_add(const PFsql_t *list, const PFsql_t *item)
@@ -675,16 +704,25 @@ PFsql_select_list_(unsigned int count, const PFsql_t **list)
 {
     assert( count > 0 );
 
-    if( count == 1 )
-    {
-        return wire2(sql_slct_list, list[0], terminator());
-    }
+    if(list[0] == NULL)
+        return PFsql_select_list_(count-1, list+1);
+    else if( count == 1 )
+        return (PFsql_t*)list[0];
     else
-    {
-        return wire2(sql_slct_list, list[0],
-                PFsql_select_list_(count - 1, list + 1));
-    }
-    return NULL;
+        return wire2(sql_slct_list,
+                PFsql_select_list_(count-1,list+1),
+                list[0]);
+    return NULL; /* satisfy picky compilers */
+    //if( count == 1 )
+    //{
+    //    return wire2(sql_slct_list, list[0], terminator());
+    //}
+    //else
+    //{
+    //    return wire2(sql_slct_list, list[0],
+    //            PFsql_select_list_(count - 1, list + 1));
+    //}
+    //return NULL;
 }
 
 /**
@@ -729,16 +767,26 @@ PFsql_from_list_(unsigned int count, const PFsql_t **list)
 {
     assert( count > 0 );
 
-    if( count == 1)
-    {
-        return wire2(sql_frm_list, list[0], terminator());
-    }
+    if(list[0] == NULL)
+        return PFsql_from_list_( count-1, list+1 );
+    else if ( count == 1 )
+        return (PFsql_t*)list[0];
     else
-    {
-        return wire2(sql_frm_list, list[0],
-                PFsql_from_list_(count - 1, list + 1));
-    }
+        return wire2(sql_frm_list, 
+                PFsql_from_list_( count-1, list+1 ),
+                list[0]);
     return NULL; /* satisfy picky compilers */
+
+    //if( count == 1)
+    //{
+    //    return wire2(sql_frm_list, list[0], terminator());
+    //}
+    //else
+    //{
+    //    return wire2(sql_frm_list, list[0],
+    //            PFsql_from_list_(count - 1, list + 1));
+    //}
+    //return NULL; /* satisfy picky compilers */
 }
 
 /**
@@ -783,15 +831,14 @@ PFsql_where_list_(unsigned int count, const PFsql_t **list)
 {
     assert( count > 0 );
 
-    if( count == 1 )
-    {
-        return wire2(sql_whr_list, list[0], terminator());
-    }
+    if(list[0] == NULL)
+        return PFsql_where_list_(count-1, list+1);
+    else if(count == 1)
+        return (PFsql_t*)list[0];
     else
-    {
-        return wire2(sql_whr_list, list[0],
-                PFsql_where_list_(count - 1, list + 1));
-    }
+        return wire2(sql_and,
+                PFsql_where_list_(count-1, list+1),
+                list[0]);
     return NULL; /* satisfy picky compilers */
 }
 
@@ -833,33 +880,43 @@ PFsql_where_list_add(const PFsql_t *list, const PFsql_t *item)
  * @return        A chain of column nodes.
  */
 PFsql_t*
-PFsql_column_list(PFsql_t* list, PFsql_t* item)
+PFsql_column_list_(unsigned int count, const PFsql_t **clmns)
 {
-    assert( item );
-    if( list == NULL )
-    {
-        return (PFsql_t*) item;
-    }
+    assert( count > 0 );
+    if(clmns[0] == NULL)
+        return PFsql_column_list_( count-1, clmns+1);
+    else if( count == 1 )
+        return (PFsql_t*) clmns[0];
     else
-    {
-        return wire2(sql_clmn_list, item, list); 
-    }
+        return wire2(sql_clmn_list,
+                PFsql_column_list_(count-1, clmns+1),
+                clmns[0]);
     return NULL; /* satisfy picky compilers */
 }
 
 /*.......... Schema Information .........*/
 
 PFsql_t*
-PFsql_schema_information(PFsql_t *list, PFsql_t *item)
+PFsql_schema_information_(unsigned int count, const PFsql_t **list)
 {
-    assert( item );
-    if( list == NULL ) {
-        return (PFsql_t*) item;
-    }
-    else {
-        return wire2(sql_schm_inf, item, list);
-    }
+    assert( count > 0 );
+
+    if( list[0] == NULL )
+        return PFsql_schema_information_( count-1, list+1);
+    else if( count == 1 )
+        return (PFsql_t*)list[0];
+    else
+        return wire2(sql_schm_inf,
+                PFsql_schema_information_(count-1, list+1),
+                list[0]);
     return NULL; /* satisfy picky compilers */
+    //if( list == NULL ) {
+    //    return (PFsql_t*) item;
+    //}
+    //else {
+    //    return wire2(sql_schm_inf, item, list);
+    //}
+    //return NULL; /* satisfy picky compilers */
 }
 
 PFsql_t*
@@ -889,6 +946,28 @@ PFsql_schema_comment(char *cmmnt)
     PFsql_t *ret = leaf(sql_schm_cmmnt);
     ret->sem.comment = cmmnt;
     return ret;
+}
+
+/*........... Join ..........*/
+
+PFsql_t* PFsql_on(PFsql_t *join, PFsql_t *expr)
+{
+    return wire2(sql_on, join, expr);
+}
+
+PFsql_t* PFsql_inner_join(PFsql_t *tblref1, PFsql_t *tblref2)
+{
+    return wire2(sql_innr_join, tblref1, tblref2);
+}
+
+PFsql_t* PFsql_outer_join(PFsql_t *tblref1, PFsql_t *tblref2)
+{
+    return wire2(sql_outr_join, tblref1, tblref2);
+}
+
+PFsql_t* PFsql_right_outer_join(PFsql_t *tblref1, PFsql_t *tblref2)
+{
+    return wire2(sql_rght_outr_join, tblref1, tblref2);
 }
 
 /*........... Arithmetic .............*/
