@@ -34,19 +34,19 @@ The following MAL program illustrates the snippet of actions needed:
 	Ralias:= bpm.deposit("myversion",R:bat[:oid,:int]);
 	bpm.rangePartition(Ralias,nil:int,100);
 	bpm.rangePartition(Ralias,101,200);
-	bpm.rangePartition(Ralias,201,nil:int);
 	bpm.close();
 @end example
 The command @sc{bpm.deposit} registers a BAT as one 
 for which a partitioned copy is required.
-The side effect is that R is empty after this call.
-The remainder are the partition definitions based
-on slices from the table using a simple range condition.
+The first partition call breaks the orginal BAT into
+two pieces: (nil:int,100) and (101,nil:int).
+The second call breaks the latter into (101,200)
+and (201,nil:int).
 The BAT partitions share the persistency properties.
 Partitioning on the head simple calls for a reverse operation
 on the source BAT first.
 
-The partitions are given a number by which they can be retrieved.
+The partitions are given an index number by which they can be retrieved.
 This number remains stable until a new partitioning command
 is issued.
 
@@ -151,8 +151,7 @@ The easiest solution is to remember the partitions as temporary
 variables during optimization, e.g. as properties of all fragment variables.
 
 However, a persistent partitioned BAT can also be created first,
-whose partitions are empty. Subsequently, we insert the
-temporary results. 
+whose partitions are empty. Subsequently, we insert the temporary results. 
 Depending on the fragmentation criteria, pieces may align
 with the pieces known, or lead to a redistribution of the
 buns to the correct bats.
@@ -163,7 +162,6 @@ The previous plan for this becomes
 	Tmp := bpm.take("tmp",:bat[:oid,:int]);
 	bpm.rangePartition(Tmp,nil,100);
 	bpm.rangePartition(Tmp,101,200);
-	bpm.rangePartition(Tmp,201,nil);
 
 	Ralias:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
 	R0:= bpm.take(Ralias, 0);
@@ -189,15 +187,15 @@ be used to reduce the plan size.
 @example
 	bpm.open();
 	Ralias:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
-	R0{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:= bpm.take(Ralias, 0);
+	R0{hlow=nil:oid,hhigh=nil:oid,tlow=nil:int,thigh=100}:= bpm.take(Ralias, 0);
 	T0:=algebra.select(R0,0,100);
 
-	R1{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:= bpm.take(Ralias, 1);
+	R1{hlow=nil:oid,hhigh=nil:oid,tlow=101,thigh=200}:= bpm.take(Ralias, 1);
 	T1:= algebra.select(R1,0,100);
 
-	R2{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:=  bpm.take(Ralias, 2);
-	T2:= :=algebra.select(R2,0,100);
+	R2{hlow=nil:oid,hhigh=nil:oid,tlow=201,thigh=nil:int}:=  bpm.take(Ralias, 2);
 	R:= mat.new(T0,T1,T2);
+	T2:=algebra.select(R2,0,100);
 @end example
 
 @- Partition selection
