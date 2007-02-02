@@ -1201,8 +1201,9 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
             if ( right.reverse().fetch(0) = virtRoot )
                 return new(oid,dbl);
     }
-        
-    var anc_desc := anc_desc( left, right );
+    # TODO: fragmentation
+    var pre_size := load( "tj_" + collName + "_size1");
+    var anc_desc := anc_desc( left, right, pre_size );
 
     # Attach the scores to the resulting nodes again:
     var result := anc_desc.mirror().kunique().join(left);
@@ -1655,8 +1656,11 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     if (tid_pre.count() = 0) { return new(oid,dbl); }
     tid_pre := tid_pre.tsort();
     
+    # TODO: fragmentation
+    var pre_size := bat("tj_" + collName + "_size1");
+    
     # See which document contain the query terms we create a bat of [doc, term-id]:
-    var doc_tid := _containing_desc(ctx.mark(0@0), tid_pre);
+    var doc_tid := _containing_desc(ctx.mark(0@0).sort(), tid_pre.reverse(), pre_size);
     
     # len(doc): [doc, size]
     var doc_len := [dbl](bat("tj_" + collName + "_size1").semijoin(doc_tid));
@@ -1754,7 +1758,9 @@ PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,db
     
     var ctx_tmp2 := new( oid, int, ENTITY_NUM );
    
-    ctx_tmp2 := anc_desc( left, right );
+    # TODO: fragmentation
+    var pre_size := load( "tj_" + collName + "_size1");
+    ctx_tmp2 := anc_desc( left, right, pre_size );
     
     # Containment count: for each region from left, count how many regions from right it contains
     var num_terms := {count}(ctx_tmp2);
@@ -1847,7 +1853,9 @@ PROC p_contained_by_sum(bat[oid,dbl] region) : bat[oid,dbl] :=
     # Candidates: all nodes
     var candidates := select_node();
 
-    var ctx_res := anc_desc( region, candidates );
+    # TODO: fragmentation
+    var pre_size := load( "tj_" + collName + "_size1");
+    var ctx_res := anc_desc( region, candidates, pre_size );
 
     var ctx := ctx_res.reverse().mirror();
 
@@ -1870,7 +1878,9 @@ PROC p_contained_by_sum(bat[oid,dbl] region) : bat[oid,dbl] :=
 PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] := 
 {
     if ( trace ) tj_trace( "BEGIN p_contained_by_sum_2" );
-    var ctx_res := anc_desc( right, left );
+    # TODO: fragmentation
+    var pre_size := load( "tj_" + collName + "_size1");
+    var ctx_res := anc_desc( right, left, pre_size );
     
     var reg_score;
     var res_reg;
@@ -1907,7 +1917,9 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : 
     }
 
     # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
-    var ctx_res := anc_desc( left, right );
+    # TODO: fragmentation
+    var pre_size := load( "tj_" + collName + "_size1");
+    var ctx_res := anc_desc( left, right, pre_size );
 
     # calculating the score for each region
     # ERROR LINE BATkey must be dense
