@@ -1053,6 +1053,8 @@ BBPuncacheit_(bat i, int unloaddesc)
 				BATDEBUG THRprintf(GDKout, "#uncache %d (%s)\n", (int) i, BBPname(i));
 
 				BBP_cache(i) = BBP_cache(-i) = NULL;
+
+				/* clearing bits can be done without the lock */
 				BBP_status_off(i, BBPLOADED, "BBPuncacheit");
 			}
 			if (unloaddesc) {
@@ -1235,16 +1237,16 @@ incref(bat i, int logical, int lock)
 	if (i < 0)
 		i = -i;
 	if (BBPcheck(i, "BBPincref")) {
-		if (lock)
+		if (lock) {
 			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref");
 
-		while (BBP_status(i) & BBPUNSTABLE) {
-			if (lock)
+			while (BBP_status(i) & BBPUNSTABLE) {
 				gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
-			MT_sleep_ms(1);
-			if (lock)
+				MT_sleep_ms(1);
 				gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+			}
 		}
+
 		/* got the lock */
 		if (logical) {
 			refs = ++BBP_lrefs(i);
@@ -1261,7 +1263,7 @@ int
 BBPincref(bat i, int logical)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-	return incref(i, logical,lock);
+	return incref(i, logical, lock);
 }
 
 void
@@ -1617,11 +1619,8 @@ BBPsave(BAT *b)
 			BBPout++;
 			ret = (BATsave(b) == NULL);
 		}
-		if (lock)
-			gdk_set_lock(GDKswapLock[bid & BBPLOCKMASK], "BBPsave");
+		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPSAVING, "BBPsave");
-		if (lock)
-			gdk_unset_lock(GDKswapLock[bid & BBPLOCKMASK], "BBPsave");
 	}
 	return ret;
 }
@@ -1697,6 +1696,7 @@ BBPfree(BAT *b, str calledFrom )
 		        b->batMapdirty = 0;
 	        }
 	}
+	/* clearing bits can be done without the lock */
 	BBP_status_off(bid, BBPUNLOADING, calledFrom);
 	BBP_unload_dec(bid, calledFrom);
 	
@@ -2329,6 +2329,8 @@ batcache_get(int bin) {
 		/* revive the bat */
 		*BBP_logical(bid) = 't';
 		BBP_refs(bid)++;
+
+		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPUNLOADING, "BBPrecycle");
 		return bid;
 	}	
