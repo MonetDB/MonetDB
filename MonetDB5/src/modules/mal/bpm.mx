@@ -26,47 +26,41 @@ The BAT partition manager (BPM) module is designed to
 support this strategy using range- and hash-partitioning.
 
 Consider we want to reorganize R:bat[:oid,:int] into three range partitions,
-based on splitting on the head. Two partitions are stable
+based on splitting by tail value. Two partitions are stable
 and the third partition is reserved for appends.
 The following MAL program illustrates the snippet of actions needed:
 @example
 	bpm.open();
-	bpm.deposit("myversion",R);	# creates side effects
-	Ralias:= bpm.take("myversion",:bat[:oid,:int]);
-	bpm.rangePartition(Ralias,nil:oid,100:oid,nil:int,nil:int);
-	bpm.rangePartition(Ralias,101:oid,200:oid,nil:int,nil:int);
-	bpm.rangePartition(Ralias,201:oid,nil:oid,nil:int,nil:int);
+	Ralias:= bpm.deposit("myversion",R:bat[:oid,:int]);
+	bpm.rangePartition(Ralias,nil:int,100);
+	bpm.rangePartition(Ralias,101,200);
+	bpm.rangePartition(Ralias,201,nil:int);
 	bpm.close();
 @end example
-The command @sc{bpm.deposit} registers a BAT as one to be partitioned.
+The command @sc{bpm.deposit} registers a BAT as one 
+for which a partitioned copy is required.
 The side effect is that R is empty after this call.
 The remainder are the partition definitions based
 on slices from the table using a simple range condition.
 The BAT partitions share the persistency properties.
+Partitioning on the head simple calls for a reverse operation
+on the source BAT first.
 
-Beware that now there are four components R, R1, R2, and R3.
-The BAT R is is turned into an empty bat, its content is
-taken over by the @sc{bpm} and broken into pieces.
-The partitioned version is referenced with a BAT variable
-initialized with the @sc{take} operation.
-The call @sc{bpm.discard(Ralias)} removes all partitions.
+The partitions are given a number by which they can be retrieved.
+This number remains stable until a new partitioning command
+is issued.
 
 The partition manager also supports hash-based partitioning.
-It accepts two arguments, which denote the number of hash buckets
-on the head and tail respectively.
+Its argument is the number of hash buckets on the tail
+and the prime multiplier for spreading.
 @example
 	bpm.open();
-	bpm.deposit("myHashVersion",R);	# creates side effects
-	Ralias:= bpm.take("myHashVersion",:bat[:oid,:int]);
-	bpm.hashPartition(Ralias,5,2);
+	Rrev:= bat.reverse(R:bat[:oid,:int]);
+	Ralias:= bpm.deposit("myHashVersion",Rev);	# creates side effects
+	bpm.hashPartition(Ralias,5,1023);
 	bpm.close();
 @end example
-This example leads to 10 partitions.
-Re-partitioning automatically occurs when a new hash size is given.
-
-It should not come as a surprise, that a combination of
-hashing and range is also provided using the
-commands @sc{bpm.hashRangePartition()} and @sc{bpm.rangeHashPartition()}.
+This example creates a hash-partition based on the head.
 
 The design is based on the assumption that partitions
 are reasonably large. This helps to limit plan explosion.
@@ -77,7 +71,7 @@ A relational front-end would benefit from derived horizontal
 fragmentation. It would enable grouping together related
 fragments on the same site. 
 Assume a relation R(A,B) which is already partitioned on A
-the derived fragmentation on the oid head is enforced with
+the derived fragmentation on the head is enforced with
 @example
 bpm.derivedPartition(B,A);
 @end example
@@ -115,22 +109,17 @@ The same problem handled by an optimizer produces the plan:
 	optimizer.bpm();
 	T:= algebra.select(R,0,100);
 @end example
-is translated into 
+is translated into to obtain the
 @example
 	bpm.open();
 	Ralias:= bpm.take("myversion",:bat[:oid,:int]);
-	R0:= bpm.take(Ralias, 0@0, 100@0, nil:int,nil:int); 
-	R1:= bpm.take(Ralias, 101@0, 200@0, nil:int,nil:int); 
-	R2:= bpm.take(Ralias, 201@0, nil:oid, nil:int,nil:int); 
+	R0:= bpm.take(Ralias, 0); #get first partition
+	R1:= bpm.take(Ralias, 1); #get second partition
+	R2:= bpm.take(Ralias, 2); #get third partition
 	R:= mat.new(R0,R1,R2);
 @end example
 It is up to the @sc{mat} optimizer to decide about
-plan expansion or an iterator approach.
-
-A decision should be made over what happens if you
-take out a fragment dat does not align with any
-of the boundaries. For now, it generates an exception.
-
+further plan expansion or an iterator approach.
 
 @- Partition updates
 The content of the partitions is preferrable updated in bulk.
@@ -140,16 +129,14 @@ Once the transaction is commited, the updates are propagated
 (in parallel) to all partitions.
 @example
 	bpm.open();
-	R := bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
-	bpm.insert(R, Rinsert);	# handle pending inserts
-	bpm.delete(R, Rdelete);	# handle pending deletes
-	bpm.deposit(R, Rinsert);# handle pending inserts and forget content 
+	Ralias := bpm.take("myversion",:bat[:oid,:int]); 
+	bpm.insert(Ralias, Rinsert);	# handle pending inserts
+	bpm.delete(Ralias, Rdelete);	# handle pending deletes
+	bpm.replace(Ralias, Rold, Rnew);	# handle pending updates
 	bpm.close();
 @end example
-
-The @sc{bpm.deposit(R,Rinsert)} takes over the content
-of the bat Rinsert, leaving an empty BAT behind.
-This does not hold for the insert and delete cases.
+The @sc{replace} operator works on the assumption that
+the head of @sc{Rold} and @sc{Rnew} is unique.
 
 It remains possible to retrieve a partition and directly
 insert elements, but then it is up to the compiler to
@@ -172,20 +159,20 @@ The previous plan for this becomes
 @example
 	bpm.open();
 	Tmp := bpm.take("tmp",:bat[:oid,:int]);
-	bpm.rangePartition(Tmp,nil:oid,100:oid,nil:int,nil:int);
-	bpm.rangePartition(Tmp,101:oid,200:oid,nil:int,nil:int);
-	bpm.rangePartition(Tmp,201:oid,nil:oid,nil:int,nil:int);
+	bpm.rangePartition(Tmp,nil,100);
+	bpm.rangePartition(Tmp,101,200);
+	bpm.rangePartition(Tmp,201,nil);
 
 	Ralias:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
-	R0:= bpm.take(Ralias, 0@0, 100@0, nil:int,nil:int); 
+	R0:= bpm.take(Ralias, 0);
 	T0:= algebra.select(R0,0,100);
 	bpm.deposit(Tmp,T0);
 
-	R1:= bpm.take(Ralias, 101@0, 200@0, nil:int,nil:int); 
+	R1:= bpm.take(Ralias, 1);
 	T1:= algebra.select(R1,0,100);
 	bpm.deposit(Tmp,T1);
 
-	R2:= bpm.take(Ralias, 201@0, nil:oid, nil:int,nil:int); 
+	R2:= bpm.take(Ralias, 2);
 	T2:= algebra.select(R2,0,100);
 	bpm.deposit(Tmp,T2);
 @end example
@@ -200,14 +187,14 @@ be used to reduce the plan size.
 @example
 	bpm.open();
 	Ralias:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
-	R0:= bpm.take(Ralias, 0@0, 100@0, nil:int,nil:int); 
-	T0{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:=algebra.select(R0,0,100);
+	R0{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:= bpm.take(Ralias, 0);
+	T0:=algebra.select(R0,0,100);
 
-	R1:= bpm.take(Ralias, 101@0, 200@0, nil:int,nil:int); 
-	T1{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:=algebra.select(R1,0,100);
+	R1{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:= bpm.take(Ralias, 1);
+	T1:= algebra.select(R1,0,100);
 
-	R2:= bpm.take(Ralias, 201@0, nil:oid, nil:int,nil:int); 
-	T2{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:=algebra.select(R2,0,100);
+	R2{hlow=0@0,hhigh=0@0,tlow=nil:int,thigh=nil:int}:=  bpm.take(Ralias, 2);
+	T2:= :=algebra.select(R2,0,100);
 	R:= mat.new(T0,T1,T2);
 @end example
 
@@ -242,12 +229,8 @@ address BPMdestroy
 comment "Destroy the BAT partition box";
 
 command deposit(nme:str,b:bat[:oid,:any_2]) :void
-address BPMdepositName
-comment "Create a new partitioned BAT by name";
-command deposit(alias:bat[:oid,:any_2],b:bat[:oid,:any_2]) :void
 address BPMdeposit
-comment "Enter the content of a BAT into a partitioned one.
-The side effice is that the argument BAT is empty afterwards.";
+comment "Create a new partitioned BAT by name";
 
 @-
 The partitioning is handled inside the module.
@@ -261,43 +244,16 @@ comment "Create a range partition on a BAT";
 command hashPartition(pb:bat[:oid,:any_2], slots:int):void
 address BPMhash
 comment "Create a hash partition on a BAT";
-command rangeHashPartition(pb:bat[:oid,:any_2],
-		ll:oid, lh:oid, slots:int):void
-address BPMrangeHash
-comment "Create a range and hash index partition on a BAT";
-command hashRangePartition(pb:bat[:oid,:any_2],
-		slots:int, rl:any_2, lh:any_2):void
-address BPMhashRange
-comment "Create a range and hash index partition on a BAT";
-command derivedPartition(pb:bat[:oid,:any_2], src:bat[:oid,:any_3]):void
+command derivePartition(pb:bat[:oid,:any_2], src:bat[:oid,:any_2]):bat[:oid,:any_2]
 address BPMderived
 comment "Create a derived fragmentation over the head using src.";
 
 command take(pb:str, b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address BPMtake
 comment "Retrieve the alias for a partitioned BAT";
-
-command take(pb:bat[:oid,:any_2],
-		ll:oid, lh:oid, slot:int):bat[:oid,:any_2]
-address BPMtakeRangeHash
-comment "Retrieve a single component of a partitioned BAT 
-	by range and hash index";
-command take(pb:bat[:oid,:any_2], slot:int, 
-	rl:any_2, rh:any_2) :bat[:oid,:any_2]
-address BPMtakeHashRange
-comment "Retrieve a single component of a partitoined BAT 
-	by hash index and range";
-command take(pb:bat[:oid,:any_2], ll:oid, lh:oid, 
-	rl:any_2, rh:any_2):bat[:oid,:any_2]
-address BPMtakeRange
-comment "Retrieve a single component of a MAT by range";
-command take(pb:bat[:oid,:any_2],hh:int,th:int):bat[:oid,:any_2]
-address BPMtakeHash
-comment "Retrieve a single component of a MAT by hash indices";
-
-command take(pb:bat[:oid,:any_2],idx:int):bat[:oid,:any_2]
+command take(alias:bat[:oid,:any_2],index:int) :bat[:oid,:any_2]
 address BPMtakePartition
-comment "Retrieve a single component of a MAT by index";
+comment "Retrieve a single component of a partitioned BAT by index";
 
 command insert(pb:bat[:oid,:any_2],b:bat[:oid,:any_2]) :void
 address BPMinsert
@@ -305,25 +261,18 @@ comment "Insert elements into the BAT partitions";
 command delete(pb:bat[:oid,:any_2],b:bat[:oid,:any_2]) :void
 address BPMdelete
 comment "Delete elements from the BAT partitions";
-command replace(pb:bat[:oid,:any_2],i:bat[:oid,:any_2],
-		d:bat[:oid,:any_2]) :void
+command replace(pb:bat[:oid,:any_2],old:bat[:oid,:any_2],
+		nwe:bat[:oid,:any_2]) :void
 address BPMreplace
 comment "Replace the content of the BAT partitions";
 
-command getNames():bat[:void,:str]
+command getNames():bat[:oid,:str]
 address BPMgetNames
 comment "Retrieve the names of all known partitioned BATs";
 
 command discard(alias:bat[:oid,:any_2]) :void
 address BPMdiscard
 comment "Release a partitioned BAT from the box";
-
-command newIterator()(:int,:str)
-address BPMnewIteratorBase
-comment "Create an iterator over the partition box";
-command hasMoreElements()(:int,:str)
-address BPMhasMoreElementsBase
-comment "Locate next element in the partition box";
 
 @-
 In most situations we would like to iterator over
@@ -335,7 +284,7 @@ command newIterator(grp:bat[:oid,:any_2]):bat[:oid,:any_2]
 address BPMnewIterator
 comment "Create an iterator over the BAT partitions.";
 
-command newIterator(grp:bat[:oid,:any_2],first:oid,last:oid)
+command newIterator(grp:bat[:oid,:any_2],first:any_2,last:any_2)
 		:bat[:oid,:any_2]
 address BPMnewIteratorRng
 comment "Create an iterator over the BAT partitions.";
@@ -349,6 +298,10 @@ command hasMoreElements(grp:bat[:oid,:any_2]) :bat[:oid,:any_2]
 address BPMhasMoreElements
 comment "Localize the next partition for processing.";
 
+command hasMoreElements(pb:bat[:oid,:any_2], 
+		low:any_2, hgh:any_2) :bat[:oid,:any_2]
+address BPMhasMoreElementsRng2
+comment "Localize the next partition for processing.";
 command hasMoreElements(pb:bat[:oid,:any_2], first:oid,last:oid,
 		vlow:any_2, vhgh:any_2) :bat[:oid,:any_2]
 address BPMhasMoreElementsRng4
@@ -360,7 +313,8 @@ address BPMgetDimension
 comment "Obtain the partition boundary values.";
 
 command dump(alias:bat[:oid,:any_2])
-address BPMdumpAlias;
+address BPMdumpAlias
+comment "Give the details of the partition tree";
 command dump()
 address BPMdump;
 
@@ -373,8 +327,6 @@ address BPMepilogue;
 bpm.prelude();
 @-
 @{
-BEWARE, it is not protected against concurrent access yet.
-
 @include ../kernel/kprelude.mx
 @+ BAT Partition Manager Implementation
 The implementation is organized around a shared box, which should
@@ -403,21 +355,13 @@ The internal data structure is used as a cache for improved access.
 bpm_export str BPMopen(void);
 bpm_export str BPMclose(int *ret);
 bpm_export str BPMdestroy(int *ret);
-bpm_export str BPMdepositName(int *ret, str *nme, int *src);
-bpm_export str BPMdeposit(int *ret, int *bid, int *src);
+bpm_export str BPMdeposit(int *ret, str *nme, int *src);
 
-bpm_export str BPMrange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th);
-bpm_export str BPMhash(int *ret, int *bid, int *hslots, int *tslots);
-bpm_export str BPMrangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots);
-bpm_export str BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th);
+bpm_export str BPMrange(int *ret, int *bid, ptr *low, ptr *hgh);
+bpm_export str BPMhash(int *ret, int *bid, int *slots, int *prime);
 bpm_export str BPMderived(int *ret, int *bid, int *src);
 
 bpm_export str BPMtake(int *ret, str *nme);
-bpm_export str BPMtakeRange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th);
-bpm_export str BPMtakeHash(int *ret, int *bid, int *hslots, int *tslots);
-bpm_export str BPMtakeRangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots);
-bpm_export str BPMtakeHashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th);
-
 bpm_export str BPMtakePartition(int *ret, int *bid, int *idx);
 
 bpm_export str BPMinsert(int *ret, int *bid, int *ins);
@@ -427,16 +371,13 @@ bpm_export str BPMreplace(int *ret, int *bid, int *ins, int *del);
 bpm_export str BPMgetNames(int *bid);
 bpm_export str BPMdiscard(int *ret, int *bid);
 
-bpm_export str BPMnewIteratorBase(int *ret, str *grp);
-bpm_export str BPMhasMoreElementsBase(int *ret, str *nme);
-
 bpm_export str BPMnewIterator(int *res, int *grp);
 bpm_export str BPMnewIteratorRng(int *res, int *grp, ptr *first, ptr *last);
 bpm_export str BPMnewIteratorRng4(int *res, int *grp, ptr *first, ptr *last,
 	ptr *vlow, ptr *vhgh);
 
 bpm_export str BPMhasMoreElements(int *res, int *grp);
-bpm_export str BPMhasMoreElementsRng(int *res, int *grp, ptr *first, ptr *last);
+bpm_export str BPMhasMoreElementsRng2(int *res, int *grp, ptr *first, ptr *last);
 bpm_export str BPMhasMoreElementsRng4(int *res, int *grp, ptr *first, ptr *last,
 	ptr *vlow, ptr *vhgh);
 
@@ -455,64 +396,107 @@ They are further administered  by type
 #include "mal_config.h"
 #include "bpm.h"
 
-static BAT *bpmName;		/* bat[:bat,:str] */
-static BAT *bpmPartition;	/* bat[:bat,:bat] */
-static BAT *bpmHeadLow[TYPE_any]; /*bat[:bat,:type_i] */
-static BAT *bpmHeadHigh[TYPE_any]; /*bat[:bat,:type_i] */
-static BAT *bpmTailLow[TYPE_any]; /*bat[:bat,:type_i] */
-static BAT *bpmTailHigh[TYPE_any]; /*bat[:bat,:type_i] */
-static BAT *bpmHeadSlots; /*bat[:bat,:int] */
-static BAT *bpmTailSlots; /*bat[:bat,:int] */
+@-
+Partitions are organized in a tree structure where
+each node describes how it derives its chidren.
+For range-based partitions it simply means the range bounds,
+for hash-based partitions we need the hash properties, e.g.
+the bucket number and the hash mask.
 
+@c
+#define	RANGE	1
+#define HASH	2
+
+typedef struct PARTITIONREC {
+	bat alias;		/* BAT identifier */
+	bat bid;		/* partition BAT */
+	int index;
+@-
+Each partition is described by a range or hash bucket
+@c
+	int	kind; /* the partition step */
+	int reversed; /* on head or tail(=default=0) */
+	ValRecord hlow,hhgh; /* head range */
+	ValRecord rlow,rhgh; /* tail range */
+	int bucket; /* for hashing */
+	int prime; /* multiplier before masking */
+@-
+Depending on the partition kind, we have three descendants or
+a list of hash-based children.
+@c
+	struct PARTITIONREC *left, *middle, *right;
+	struct PARTITIONREC *link;	/* list of all partitions*/
+} *Partition, PartitionRec;
+
+@-
+The number of partitioned BATs is considered low and
+a straight forward array with linear search seems
+sufficient to find the alias versions. The first entry
+is not used for defensive code reasons.
+@c
+static Partition *bpmcat= 0;
+static int bpmcatsize, bpmcattop;
+
+static Partition getAlias(int bid){
+	int i;
+	for(i=0;i<bpmcattop; i++)
+		if( bpmcat[i] && bpmcat[i]->bid== bid) return bpmcat[i];
+	return 0;
+}
+static void delAlias(int bid){
+	int i;
+	for(i=0;i<bpmcattop; i++)
+		if( bpmcat[i] && bpmcat[i]->bid== bid) bpmcat[i]=0;
+	/* remainder is taken care elsewhere */
+}
+static int getFreeAlias(){
+	int i;
+	for(i=0;i<bpmcattop; i++)
+		if( bpmcat[i]== 0) return i;
+	if( bpmcattop < bpmcatsize)
+		return bpmcattop++;
+	/* reallocate the catalog */
+	bpmcat= (Partition*) GDKzalloc(sizeof(PartitionRec)* (bpmcatsize+1024));
+	bpmcatsize +=1024;
+	return bpmcattop++;
+}
+
+static Partition getPartition(Partition p, int index){
+	while(p && index--){
+		p= p->link;
+	}
+	return p;
+}
 @- Box administration
 The box currently does not carry any client protection.
 This should later be added or being provided by the BAT access.
 
+The partition catalog is saved between sessions as a collection
+of BATs.
 @= openCat
 @c
 str
 BPMopen()
 {
-	int i;
-
-	if( bpmName )
-		return MAL_SUCCEED;
-
-	/* open all BATs available in the catalog */
+	if(bpmcat) return MAL_SUCCEED;
     mal_set_lock(mal_contextLock, "bpm");
-	bpmName= BATdescriptor(BBPindex("bpmName"));
-	if( bpmName == NULL)
-		throw(MAL, "bpm.open", "failed to access bpmName");
-	bpmPartition= BATdescriptor(BBPindex("bpmPartition"));
-	if( bpmPartition == NULL)
-		throw(MAL, "bpm.open", "failed to access bpmName");
-	bpmHeadSlots= BATdescriptor(BBPindex("bpmHeadSlots"));
-	if( bpmHeadSlots == NULL)
-		throw(MAL, "bpm.open", "failed to access bpmHeadSlots");
-	bpmTailSlots= BATdescriptor(BBPindex("bpmTailSlots"));
-	if( bpmTailSlots == NULL)
-		throw(MAL, "bpm.open", "failed to access bpmTailSlots");
-
-	for(i=0; i< GDKatomcnt; i++){
-		char buf[PATHLENGTH];
-		snprintf(buf,PATHLENGTH,"pbmHeadLow_%i",i);
-		bpmHeadLow[i]= BATdescriptor(BBPindex(buf));
-		snprintf(buf,PATHLENGTH,"pbmHeadHigh%i",i);
-		bpmHeadHigh[i]= BATdescriptor(BBPindex(buf));
-		snprintf(buf,PATHLENGTH,"pbmTailLow_%i",i);
-		bpmTailLow[i]= BATdescriptor(BBPindex(buf));
-		snprintf(buf,PATHLENGTH,"pbmTailHigh%i",i);
-		bpmTailHigh[i]= BATdescriptor(BBPindex(buf));
-	}
+	/* read the partition table structure */
+	bpmcat= (Partition *) GDKzalloc(sizeof(PartitionRec)*1024);
+	bpmcatsize= 1024;
+	bpmcattop= 0;
     mal_unset_lock(mal_contextLock, "bpm");
 	return MAL_SUCCEED;
 }
-
+@-
+The remainder contains the implementation.
+@c
 str
 BPMclose(int *ret)
 {
 	(void) ret;
-	/* save the catalog using a subtransaction */
+    mal_set_lock(mal_contextLock, "bpm");
+	/* save the partition table structure */
+    mal_unset_lock(mal_contextLock, "bpm");
 	throw(MAL, "bpm.close","NYI");
 }
 
@@ -525,7 +509,7 @@ BPMdestroy(int *ret)
 }
 
 str
-BPMdepositName(int *ret, str *nme, int *src)
+BPMdeposit(int *ret, str *nme, int *src)
 {
 	BAT *b;
 	BPMopen();
@@ -537,75 +521,32 @@ BPMdepositName(int *ret, str *nme, int *src)
 	*ret= 0;
 	throw(MAL, "bpm.deposit","NYI");
 }
-str
-BPMdeposit(int *ret, int *bid, int *src)
-{
-	BAT *b, *bn;
-	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.deposit");
-	@:getBATdescriptor(src,bn,"bpm.deposit");
-	/* Distribued content of src to alias */
-	(void) b;
-	(void) bn;
-	*ret= 0;
-	throw(MAL, "bpm.deposit","NYI");
-}
 
 str
-BPMrange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
+BPMrange(int *ret, int *bid, ptr *low, ptr *hgh)
 {
 	BAT *b;
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.range")@
 	/* determine the partitioning scheme */
 	(void) b;
-	(void) hl;
-	(void) hh;
-	(void) tl;
-	(void) th;
+	(void) low;
+	(void) hgh;
 	*ret= 0;
 	throw(MAL, "bpm.range","NYI");
 }
 str
-BPMhash(int *ret, int *bid, int *hslots, int *tslots)
+BPMhash(int *ret, int *bid, int *slots, int *prime)
 {
 	BAT *b;
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.hash")@
 	/* get hash slot administration */
 	(void) b;
-	(void) hslots;
-	(void) tslots;
+	(void) slots;
+	(void) prime;
 	*ret= 0;
 	throw(MAL, "bpm.hash","NYI");
-}
-str
-BPMrangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
-{
-	BAT *b;
-	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.rangeHash")@
-	/* partition into two direction */
-	(void) b;
-	(void) hl;
-	(void) hh;
-	(void) tslots;
-	*ret= 0;
-	throw(MAL, "bpm.rangeHash","NYI");
-}
-str
-BPMhashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
-{
-	BAT *b;
-	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.hashRange")@
-	/* partition into two direction */
-	(void) b;
-	(void) hslots;
-	(void) tl;
-	(void) th;
-	*ret= 0;
-	throw(MAL, "bpm.hashRange","NYI");
 }
 str
 BPMderived(int *ret, int *bid, int *src)
@@ -631,69 +572,11 @@ BPMtake(int *ret, str *nme)
 	throw(MAL, "bpm.take","NYI");
 }
 str
-BPMtakeRange(int *ret, int *bid, ptr *hl, ptr *hh, ptr *tl, ptr *th)
+BPMtakePartition(int *ret, int *bid, int *index)
 {
-	BAT *b;
 	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.take");
-	(void) b;
-	(void) hl;
-	(void) hh;
-	(void) tl;
-	(void) th;
-	*ret =0;
-	throw(MAL, "bpm.take","NYI");
-}
-
-str
-BPMtakeHash(int *ret, int *bid, int *hslots, int *tslots)
-{
-	BAT *b;
-	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.take");
-	(void) b;
-	(void) hslots;
-	(void) tslots;
-	*ret =0;
-	throw(MAL, "bpm.take","NYI");
-}
-
-str
-BPMtakeRangeHash(int *ret, int *bid, ptr *hl, ptr *hh, int *tslots)
-{
-	BAT *b;
-	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.take");
-	(void) b;
-	(void) hl;
-	(void) hh;
-	(void) tslots;
-	*ret =0;
-	throw(MAL, "bpm.take","NYI");
-}
-
-str
-BPMtakeHashRange(int *ret, int *bid, int *hslots, ptr *tl, ptr *th)
-{
-	BAT *b;
-	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.take");
-	(void) b;
-	(void) tl;
-	(void) th;
-	(void) hslots;
-	*ret =0;
-	throw(MAL, "bpm.take","NYI");
-}
-
-str
-BPMtakePartition(int *ret, int *bid, int *idx)
-{
-	BAT *b;
-	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.take")@
-	(void) b;
-	(void) idx;
+	(void) bid;
+	(void) index;
 	*ret =0;
 	throw(MAL, "bpm.take","NYI");
 }
@@ -762,24 +645,7 @@ control variables, which means that the BATview is accessible
 to determine how far to advance when the next chunk is retrieved.
 The number of elements in the chunk is limited by the granule
 size.
-@c
-str
-BPMnewIteratorBase(int *ret, str *nme)
-{
-	(void) nme;
-	*ret = 0;
-	throw(MAL, "bpm.newIterator","NYI");
-}
 
-str
-BPMhasMoreElementsBase(int *ret, str *nme)
-{
-	(void) nme;
-	*ret = 0;
-	throw(MAL, "bpm.hasMoreElements","NYI");
-}
-
-@-
 Iterations over partitioned BATs can be valued constrainted.
 @c
 str
@@ -823,7 +689,7 @@ BPMhasMoreElements(int *ret, int *bid)
 }
 
 str
-BPMhasMoreElementsRng(int *ret, int *bid, ptr *first, ptr *last)
+BPMhasMoreElementsRng2(int *ret, int *bid, ptr *first, ptr *last)
 {
 	(void) first;
 	(void) last;
@@ -860,14 +726,6 @@ BPMgetDimension(ptr *first, ptr *last, ptr *vlow, ptr *vhgh, int *bid)
 str
 BPMdump(int *ret)
 {
-	stream *fd = GDKout;
-	ptr p,q;
-	BATloop(bpmName,p,q){
-		str nme= (str) BUNtail(bpmName,p);
-		stream_printf(fd,"[ \"%s\"",nme);
-		/* localize partition details */
-		stream_printf(fd,"]\n");
-	}
 	(void) ret;
 	throw(MAL, "bpm.dump","NYI");
 }
@@ -884,10 +742,6 @@ str
 BPMprelude(int *ret)
 {
     mal_set_lock(mal_contextLock, "bpm.prelude");
-	bpmName= BATdescriptor(BBPindex("bpmName"));
-	if( bpmName == NULL){
-		/* initialize the bpm catalog */
-	}
 	*ret =0;
     mal_unset_lock(mal_contextLock, "bpm.prelude");
 	return MAL_SUCCEED;
@@ -901,11 +755,6 @@ BPMepilogue(int *ret)
 	/* TODO: Make sure these are used. This is needed by icc only. And 
 	   should be removed once the implementation matures.
 	 */
-	(void)bpmHeadLow[0];
-	(void)bpmHeadHigh[0];
-	(void)bpmTailLow[0];
-	(void)bpmTailHigh[0];
-
 	*ret =0;
 	return MAL_SUCCEED;
 }

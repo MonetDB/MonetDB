@@ -14,19 +14,19 @@ exit Rp;
 end pr;
 
 # add the stuff to the BPM and dump it
-bpm.deposit("myR",R);
-Ra:= bpm.take("myR",:bat[:oid,:int]);
+Ra:= bpm.deposit("myR",R);
 user.pr(Ra);
 
-io.print("Partition it into two value ranges");
-bpm.rangePartition(Ra,nil:oid,nil:oid,0,5);
-bpm.rangePartition(Ra,nil:oid,nil:oid,6,nil:int);
+io.print("Range partition it into two value ranges");
+bpm.rangePartition(Ra,0,5);
+bpm.rangePartition(Ra,6,nil:int);
 bpm.dump(Ra);
 user.pr(Ra);
 
+Rrev:= bat.reverse(Ra);
 io.print("Repartition it further into two oid ranges");
-bpm.rangePartition(Ra,nil:oid,1@0,nil:int,nil:int);
-bpm.rangePartition(Ra,3@0,nil:oid,nil:int,nil:int);
+bpm.rangePartition(Rrev,nil:oid,1@0);
+bpm.rangePartition(Rrev,3@0,nil:oid);
 # we should have 4 partitions
 bpm.dump(Ra);
 user.pr(Ra);
