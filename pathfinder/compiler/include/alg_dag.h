@@ -35,6 +35,13 @@
 
 #include <logical.h>
 
+/*
+ * Mark the DAG bit of the logical algebra tree.
+ * (it requires a clean dag bit to traverse
+ *  the logical tree as DAG.)
+ */
+void PFla_dag_mark (PFla_op_t *n);
+
 /**
  * Reset the DAG bit of the logical algebra tree.
  * (it requires a clean reset bit to traverse

@@ -42,6 +42,7 @@
 #include "subtyping.h"
 #include "qname.h"
 #include "mem.h"
+#include "alg_dag.h"
 
 /* PFvar_t */
 #include "variable.h"
@@ -353,6 +354,8 @@ static PFarray_t *fun_args = NULL;
  * Stack recording the active user-defined functions
  */
 static PFarray_t *fun_active = NULL;
+
+#define SEEN(n) ((n)->bit_dag)
 
 /**
  * Reducer function. This is the heart of this source file. It
@@ -2135,6 +2138,7 @@ reduce (PFcnode_t * p, int goalnt)
 
             unsigned int   i;
             int            strategy = STRATEGY;
+            bool           x_used, loop_used;
             PFla_env_t     e;
             PFarray_t     *old_env;
             PFalg_schema_t schema, res_schema;
@@ -2142,7 +2146,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFla_op_t     *res_seed, *res_body, *delta, *res;
             PFla_op_t     *new_map;    
             PFla_op_t     *old_loop, *base_loop, *updated_loop;
-            PFla_op_t     *loop_rec_param, *body;
+            PFla_op_t     *res_rec_param, *loop_rec_param, *x_rec_param, *body;
 
             /* initiate translation of e1 */
             reduce (kids[0], nts[0]);
@@ -2231,6 +2235,14 @@ reduce (PFcnode_t * p, int goalnt)
                 PFprop_check_rec_delta (A(RR(p)).rel))
                 strategy = DELTA;
                 
+            /* check whether $x and loop are used 
+               (the result of the checks are used later 
+               to discard recursion parameters if possible) */
+            PFla_dag_mark (A(RR(p)).rel);
+            x_used = SEEN(base_x);
+            loop_used = SEEN(base_loop);
+            PFla_dag_reset (A(RR(p)).rel);
+            
             /* the result of the recursion body */
             res_body = distinct (project (A(RR(p)).rel,
                                           proj (att_iter, att_iter),
@@ -2283,13 +2295,19 @@ reduce (PFcnode_t * p, int goalnt)
             /* create a new result seed */
             res_seed = PFla_empty_tbl_ (res_schema);
 #endif
+            res_rec_param = rec_param (
+                                rec_arg (
+                                    res_seed,
+                                    res,
+                                    base_res),
+                                rec_nil ());
             
             /* ------------------- LOOP ------------------- */
             
             /* for strategy IFP we do not need to update the
                loop relation ... */
-            if (strategy == IFP || strategy == IFP_OR_DELTA) {
-                loop_rec_param = rec_nil ();
+            if (strategy == IFP || strategy == IFP_OR_DELTA || !loop_used) {
+                loop_rec_param = res_rec_param;
 
                 /* ... instead we have to make sure that the 'real'
                    loop relation is used already at the beginning */
@@ -2310,30 +2328,29 @@ reduce (PFcnode_t * p, int goalnt)
                 loop_rec_param = rec_param (rec_arg (old_loop,
                                                      updated_loop,
                                                      base_loop),
-                                            rec_nil ());
+                                            res_rec_param);
             }
+            
+            /* -------------------- $x -------------------- */
+            if (x_used)
+                x_rec_param = rec_param (
+                                  rec_arg (
+                                      A(RL(p)).rel,
+                                      rownum (
+                                          body,
+                                          att_pos,
+                                          sortby (att_item),
+                                          att_iter),
+                                      base_x),
+                                  loop_rec_param);
+            else
+                x_rec_param = loop_rec_param;
             
             /* ---------------- RECURSION ----------------- */
             
             A(p) = (struct PFla_pair_t) {
                      .rel = rownum (
-                                rec_fix (
-                                    rec_param (
-                                        rec_arg (
-                                            A(RL(p)).rel,
-                                            rownum (
-                                                body,
-                                                att_pos,
-                                                sortby (att_item),
-                                                att_iter),
-                                            base_x),
-                                        rec_param (
-                                            rec_arg (
-                                                res_seed,
-                                                res,
-                                                base_res),
-                                            loop_rec_param)),
-                                    res),
+                                rec_fix (x_rec_param, res),
                                 att_pos, sortby (att_item), att_iter),
                      .frag = A(RR(p)).frag };
 

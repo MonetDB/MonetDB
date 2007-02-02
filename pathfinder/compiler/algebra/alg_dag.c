@@ -143,6 +143,24 @@ out_bit_reset (PFla_op_t *n)
 }
 
 /*
+ * Mark the DAG bit of the logical algebra tree.
+ * (it requires a clean dag bit to traverse
+ *  the logical tree as DAG.)
+ */
+void
+PFla_dag_mark (PFla_op_t *n)
+{
+    assert (n);
+    if (n->bit_dag)
+        return;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        PFla_dag_mark (n->child[i]);
+
+    n->bit_dag = true;
+}
+
+/*
  * Reset the DAG bit of the logical algebra tree.
  * (it requires a clean reset bit to traverse
  *  the logical tree as DAG.)
