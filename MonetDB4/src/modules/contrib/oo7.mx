@@ -1046,7 +1046,7 @@ BATgraphtraverse(ptr v, BAT *bn, BAT *dag)
 	HASHloop_int(dag, dag->hhash, i, v, w) {
 		t = BUNtloc(dag, w);
 		BUNfastins(bn, v, t);
-		HASHins(bn->hhash, BUNindex(bn, BUNlast(bn)) - 1, v);
+		HASHins(bn, (BUNindex(bn, BUNlast(bn)) - 1), v);
 		j++;
 	}
 	return j;
