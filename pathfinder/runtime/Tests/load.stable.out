@@ -105,6 +105,8 @@ loading module 'pathfinder'
 [ "streams",	  3		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "xrpc_client",  1		  ]
+[ "xrpc_server",  1		  ]
 [ "xtables",	  3		  ]
 dropping module 'pathfinder'
 #---------------------------------#
