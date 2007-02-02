@@ -299,17 +299,12 @@ actions are to go on unlocked while other entries in the BBP may be modified).
 #define BBP_status_off(bid, flags, nme) \
 		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme);
 
-#define BBP_unload_cnt(bid, nme) {						\
+#define BBP_unload_inc(bid, nme) {						\
 		gdk_set_lock(GDKunloadLock, nme);				\
 		BBPunloadCnt++;							\
 		gdk_unset_lock(GDKunloadLock, nme); 				}
 
-#define BBP_unload_on(bid, nme) {						\
-		BBP_status_on(bid, BBPUNLOADING, nme);				\
-		BBP_unload_cnt(bid, nme); 					}
-
-#define BBP_unload_off(bid, nme) {						\
-		BBP_status_off(bid, BBPUNLOADING, nme);				\
+#define BBP_unload_dec(bid, nme) {						\
 		gdk_set_lock(GDKunloadLock, nme);				\
 		if (--BBPunloadCnt == 0) gdk_signal_cond(GDKunloadCond, nme);	\
 		assert(BBPunloadCnt >= 0);					\
@@ -1341,7 +1336,7 @@ decref(bat i, int logical, int lock)
 		if (destroy) {
 			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
-			BBP_unload_cnt(i, "BBPdecref");
+			BBP_unload_inc(i, "BBPdecref");
 			BBPfree(b, "BBPdecref" );	/* free memory of transient */
 		}
 	}
@@ -1484,6 +1479,7 @@ BBPreclaim(BAT *b)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 	bat i = ABS(b->batCacheid);
+	int reclaim_while_unloading = 0;
 	int ret = 0;
 
 	if (lock)
@@ -1494,7 +1490,10 @@ BBPreclaim(BAT *b)
 	if (BBP_refs(b->batCacheid) > 1) {
 		GDKerror("BBPreclaim: %d refs > 1 (%d)\n", i, BBP_refs(i));
 		ret = -1;
-	} else {
+	} else if (BBP_status(i) & BBPUNLOADING) {
+                /* BBPtrim was unloading this bat that just now is getting killed. */
+                reclaim_while_unloading = TRUE; 
+        } else {
 		/* unload whatever the LRU in the BBP */
 		BBP_refs(b->batCacheid) = 0;
 		BBP_status_on(i, BBPUNLOADING, "BBPreclaim");
@@ -1502,13 +1501,18 @@ BBPreclaim(BAT *b)
 	if (lock)
 		gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPreclaim");
 
+        if (reclaim_while_unloading) {
+		BBPspin(i, "BBPreclaim", BBPUNLOADING);  /* wait for unload to complete */
+		return BBPreclaim(b);
+	}
+
 	/* BBPfree potentially saves the BAT. Do this after releasing the short-term lock */
 	if (ret == 0) {
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 		if (destroy) {
 			ret = BBPdestroy(BBP_cache(i));
 		} else {
-			BBP_unload_cnt(i, "BBPreclaim");
+			BBP_unload_inc(i, "BBPreclaim");
 			ret = BBPfree(b, "BBPreclaim" );
 		}
 	}
@@ -1679,25 +1683,26 @@ BBPfree(BAT *b, str calledFrom )
 	assert(BBPswappable(b));
 
 	/* write dirty BATs before being unloaded */
-	if ((ret = BBPsave(b)) != 0)
-		return ret;	/* error while saving: no go */
-
-	if (VIEWparent(b)) { /* physical view */
-		VIEWdestroy(b);
-	} else {
-		assert(b->batSharecnt == 0);
- 		if (BBP_cache(bid)) BATfree(b);	/* free memory */
+	ret = BBPsave(b);
+        if (ret == 0) {
+                if (VIEWparent(b)) { /* physical view */
+		        VIEWdestroy(b);
+	        } else {
+	   	        assert(b->batSharecnt == 0);
+ 		        if (BBP_cache(bid)) BATfree(b);	/* free memory */
+	        }
+	        BBPuncacheit_(bid, FALSE);
+	        if (b->batMapdirty) {
+		        DESCsetmodes(b, b);
+		        b->batMapdirty = 0;
+	        }
 	}
-	BBPuncacheit_(bid, FALSE);
-	if (b->batMapdirty) {
-		DESCsetmodes(b, b);
-		b->batMapdirty = 0;
-	}
-	BBP_unload_off(bid, calledFrom);
-
+	BBP_status_off(bid, BBPUNLOADING, calledFrom);
+	BBP_unload_dec(bid, calledFrom);
+	
 	/* parent released when completely done with child */
-	if (parent) unshare(parent);
-	return 0;
+	if (ret == 0 && parent) unshare(parent);
+	return ret;
 }
 @}
 @- Storage trimming
@@ -1869,7 +1874,8 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int dirty)
 				MEMDEBUG {
 					THRprintf(GDKout, "#TRIMSELECT: unload %s [" SZFMT "," SZFMT "] bytes [" SZFMT "," SZFMT "] dirty\n", BBPname(b->batCacheid), memdelta, vmdelta, memdirty, vmdirty);
 				}
-				BBP_unload_on(bbptrim[cur].bid, "BBPtrim_select");
+				BBP_status_on(bbptrim[cur].bid, BBPUNLOADING, "BBPtrim_select");
+				BBP_unload_inc(bbptrim[cur].bid, "BBPtrim_select"); 					
 				*memtarget = *memtarget > memdelta ? *memtarget - memdelta : 0;
 				*vmtarget = *vmtarget > vmdelta ? *vmtarget - vmdelta : 0;
 
