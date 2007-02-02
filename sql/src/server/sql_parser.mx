@@ -2410,7 +2410,8 @@ simple_atom:
 	 { 
 	   mvc *m = (mvc*)parm;
 
-	   if (CACHE_MODE(m->mode) && m->argc < MAXPARAMS-2 && m->cache){
+	   if (CACHE_MODE(m->mode) && 
+	      (!m->argfixed || m->argc < MAXPARAMS-2) && m->cache){
 		/* replace by argument */
 		atom *a = atom_general( sql_bind_localtype("str"), NULL, 0);
 
@@ -3313,7 +3314,8 @@ atom:
 	{ 
 	  mvc *m = (mvc*)parm;
 	
-	  if (CACHE_MODE(m->mode) && m->argc < MAXPARAMS-2 && m->cache){
+	  if (CACHE_MODE(m->mode) && 
+	      (!m->argfixed || m->argc < MAXPARAMS-2) && m->cache){
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	

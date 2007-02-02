@@ -1093,12 +1093,11 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 	parc = q->paramlen;
 
 	if (argc != parc) {
-		sql_error(c, 0002, "wrong number of arguments for prepared statement\n");
 		if( pci->argc >= MAXARG)
 			GDKfree(argv);
 		if( pci->retc >= MAXARG)
 			GDKfree(argrec);
-		return MAL_SUCCEED;
+		return GDKstrdup("wrong number of arguments for prepared statement\n");
 	} else {
 		for (i = 0; i<c->argc; i++){
 			atom *arg = c->args[i];
@@ -1124,7 +1123,7 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 	if( pci->argc >= MAXARG)
 		GDKfree(argv);
 	if( pci->retc >= MAXARG)
-			GDKfree(argrec);
+		GDKfree(argrec);
 	return ret;
 }
 
