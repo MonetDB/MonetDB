@@ -99,7 +99,6 @@ rm -fr $RPM_BUILD_ROOT
 %files devel
 %defattr(-,root,root) 
 %{prefix}/bin/monetdb-config
-%{prefix}/share/%{name}/conf/*
 %{prefix}/share/%{name}/python/*
 
 %{prefix}/include/%{name}/*.h
