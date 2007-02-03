@@ -18,8 +18,7 @@ EXTRA_DIST = \
 	bootstrap \
 	config.guess config.sub \
 	install-sh missing \
-	ltmain.sh config.h.in \
-	conf.bash
+	ltmain.sh config.h.in
 
 scripts_sh = {
 	EXT = ""
