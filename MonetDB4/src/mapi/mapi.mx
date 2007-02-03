@@ -992,10 +992,12 @@ id_function(void)
 bat *
 mapi_prelude(void)
 {
-	init_client_cache();
 #ifdef HAVE_OPENSSL
 	int i, nlocks;
+#endif
 
+	init_client_cache();
+#ifdef HAVE_OPENSSL
 	nlocks = CRYPTO_num_locks();
 	mutex_buf = GDKmalloc(nlocks * sizeof(*mutex_buf));
 	if (mutex_buf == NULL) {
