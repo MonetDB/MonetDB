@@ -522,28 +522,26 @@ yes-*-*)
 		;;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -Wall -W"
+	CFLAGS="$CFLAGS -Wall -Wextra -W"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
-	X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
-	X_CFLAGS="$X_CFLAGS -Werror"
+	    X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
+	    X_CFLAGS="$X_CFLAGS -Werror"
+	dnl  Make sure that gcc is as strict as icc, MSVC++, etc.:
+	    X_CFLAGS="$X_CFLAGS -Wpointer-arith"
+	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement"
+	dnl  Our code it not (yet?) up to these:
+	dnl X_CFLAGS="$X_CFLAGS -Wundef"
+	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
+	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
+	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
+	dnl X_CFLAGS="$X_CFLAGS -Wold-style-definition"
+	dnl X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
+	dnl X_CFLAGS="$X_CFLAGS -Wmissing-declarations"
+	dnl X_CFLAGS="$X_CFLAGS -Wmissing-format-attribute"
+	dnl X_CFLAGS="$X_CFLAGS -Wredundant-decls"
+	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
+	dnl X_CFLAGS="$X_CFLAGS -Wunreachable-code"
 	dnl  ... however, some things are beyond our control:
-	case "$gcc_ver" in
-		dnl  Some versions of flex and bison require these:
-	3.4.*)	dnl  (Don't exist for gcc < 3.4.)
-		CFLAGS="$CFLAGS -fno-strict-aliasing"
-		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
-		;;
-	[[34]].*)
-		dnl  (Don't exist for gcc < 3.0.)
-		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
-		;;
-	*)	dnl  gcc < 3.0 also complains about "value computed is not used"
-		dnl  in src/monet/monet_context.mx:
-		dnl  #define VARfixate(X)   ((X) && ((X)->constant=(X)->frozen=TRUE)==TRUE)
-		dnl  But there is no "-Wno-unused-value" switch for gcc < 3.0 either...
-		X_CFLAGS="$X_CFLAGS -Wno-unused"
-		;;
-	esac
 	case $gcc_ver-$host_os in
 	2.9*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
@@ -560,13 +558,6 @@ yes-*-*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
-		;;
-	3.3*-*)
-		dnl  gcc 3.3* --- at least on Linux64 (Red Hat Enterprise
-		dnl  Linux release 2.9.5AS (Taroon)) and the cross-compiler
-		dnl  for arm-linux --- seem to require this to avoid
-		dnl  "warning: dereferencing type-punned pointer will break strict-aliasing rules"
-		X_CFLAGS="$X_CFLAGS -Wno-strict-aliasing"
 		;;
 	esac
 	;;
