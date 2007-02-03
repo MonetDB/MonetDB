@@ -2,7 +2,7 @@ EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh missing \
 	ltmain.sh config.h.in \
-	conf.bash monetdb5.conf.in
+	monetdb5.conf.in
 
 scripts_conf = {
 	DIR = sysconfdir
