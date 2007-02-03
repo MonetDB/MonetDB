@@ -19,7 +19,7 @@ EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh missing \
 	ltmain.sh config.h.in \
-	conf.bash rules.mk
+	rules.mk
 
 scripts_mk = {
 	DIR = pkgdatadir/conf
