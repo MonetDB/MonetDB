@@ -815,7 +815,7 @@ schema_name_clause:
  ;
 
 authorization_identifier:
-	ident	/* role name | user identifier */
+	ident	/* role name | user identifier */ ;
 
 opt_schema_default_char_set:
     /* empty */			{ $$ = NULL; }
