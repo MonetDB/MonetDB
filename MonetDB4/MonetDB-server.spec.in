@@ -82,7 +82,6 @@ mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB4/dbfarm
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
 
 # cleanup stuff we don't want to install
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/MonetDB4/conf/conf.bash
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb4-config.bat
 
