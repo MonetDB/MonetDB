@@ -524,7 +524,7 @@ yes-*-*)
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall"
 	case "$gcc_ver-$host_os" in
-	[[4-9]].*-*)
+	3.[[4-9]].*-*|[[4-9]].*-*)
 		CFLAGS="$CFLAGS -Wextra";;
 	*)
 		CFLAGS="$CFLAGS -W";;
@@ -535,7 +535,7 @@ yes-*-*)
 	dnl  Make sure that gcc is as strict as icc, MSVC++, etc.:
 	    X_CFLAGS="$X_CFLAGS -Wpointer-arith"
 	case "$gcc_ver-$host_os" in
-	[[4-9]].*-*)
+	3.[[4-9]].*-*|[[4-9]].*-*)
 	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement";;
 	esac
 	dnl  Our code it not (yet?) up to these:
