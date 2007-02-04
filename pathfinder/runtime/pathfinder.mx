@@ -561,7 +561,7 @@ const ws_update := bat(int,str)
 	.insert(oid,"text")
 	.insert(bat,"nid_qn_ins")
 	.insert(bat,"nid_qn_del")
-	.insert(wrd,"modified_nid")
+	.insert(lng,"modified_nid")
 	.insert(oid,"ancestor_nid")
 	.insert(oid,"modified_attr")
 	.insert(oid,"modified_page")
@@ -1582,7 +1582,7 @@ PROC _ws_opencoll(lng wsid,
     var colname := collection_name.find(coll_oid);
     var runtime := _runtime_get(colname);
 
-    if (and(wsid,WSID_UPDATE) != 0LL) {
+    if (and(wsid, WSID_UPDATE) != 0LL) {
         # clean up the query change lists (pages, attributes) by removing no longer overlapping queries
         if (count(runtime) > RT_ATTR_WS) {
             var page_ws := runtime.fetch(RT_PAGE_WS);
@@ -2067,18 +2067,34 @@ PROC ws_findnodes(BAT[void,bat] ws,
     return result.fetch(srt_unq); # map back to [base,pre] result
 }
 
-PROC _ws_coll_isolate(BAT[void,bat] ws,
+PROC _ws_coll_isolate(lng wsid,
+                      BAT[void,bat] ws,
                       str colname,
                       BAT[void,oid] ancestor_nid,
                       BAT[void,oid] modified_nid,
                       BAT[void,oid] modified_page,
                       BAT[void,oid] modified_attr) : void 
 {
+    var ws_logtime := usec(); 
+    if (ws_log_active) 
+        ws_log(wsid, "ws_coll_isolate-" + str(ws_id(ws)));
 
     # it may be that the other thread has done _ws_open_coll (adding itself to 
     # ws_overlaps_ws, so we noticed it) but not yet __ws_open_coll(), which
     # requires the coll_shortlock (possed by ws_isolate())
     if (not(isnil(ws.seqbase())) and ws.fetch(CONT_NAME).texist(colname)) {
+        if (ws_log_active) { 
+            ancestor_nid@batloop() 
+                ws_log(wsid, "ws_coll_isolate: ancestor_nid-" + str($t));
+            modified_attr@batloop() 
+                ws_log(wsid, "ws_coll_isolate: modified_attr-" + str($t));
+            modified_page@batloop() 
+                ws_log(wsid, "ws_coll_isolate: modified_page-" + str($t));
+            ws_log(wsid, "ws_coll_isolate: modified_nid-" + str(count(modified_nid)));
+            modified_nid.slice(0,20)@batloop() 
+                ws_log(wsid, "ws_coll_isolate: modified_nid-" + str($t));
+        }
+
         # get columns of a concurrent query (ws)
         var cont      := ws.fetch(CONT_NAME).reverse().find(colname);
         var attr_own  := ws.fetch(ATTR_OWN).fetch(cont);
@@ -2110,12 +2126,14 @@ PROC _ws_coll_isolate(BAT[void,bat] ws,
         attr_qn.isolate(modified_attr, false);
         attr_prop.isolate(modified_attr, false);
     }
+    if (ws_log_active) 
+        ws_log(wsid, "ws_coll_isolate: exec-" + str(ws_logtime - usec()));
 }
 
 PROC ws_precommit(BAT[void,BAT] ws,
-                    oid cont,
-                    BAT[void,oid] modified_page,
-                    BAT[void,oid] modified_attr) : void
+                  oid cont,
+                  BAT[void,oid] modified_page,
+                  BAT[void,oid] modified_attr) : void
 {
     var wsid := ws_id(ws);
     var overlap := reverse(ws_overlaps_ws).uselect(wsid).kunique().mirror();
@@ -2126,17 +2144,17 @@ PROC ws_precommit(BAT[void,BAT] ws,
 
     if (ws_log_active) {
         ws_logtime := usec(); 
-        ws_log(wsid, "precommit-begin()");
+        ws_log(wsid, "ws_precommit");
         overlap@batloop() 
-            ws_log(wsid, sprintf("precommit-overlaps(%s)", str($t)));
+            ws_log(wsid, "ws_precommit: overlaps-" + str($t));
         modified_attr@batloop() 
-            ws_log(wsid, sprintf("precommit-modified(attr-%s)", str($t)));
+            ws_log(wsid, "ws_precommit: modified_attr-" + str($t));
         attr_ws@batloop() 
-            ws_log(wsid, sprintf("precommit-attr_ws(%s,%s)", str($h), str($t)));
+            ws_log(wsid, sprintf("ws_precommit: attr_ws-%s,%s", str($h), str($t)));
         modified_page@batloop() 
-            ws_log(wsid, sprintf("precommit-modified(page-%s)", str($t)));
+            ws_log(wsid, "ws_precommit: modified_page-" + str($t));
         page_ws@batloop() 
-            ws_log(wsid, sprintf("precommit-page_ws(%s,%s)", str($h), str($t)));
+            ws_log(wsid, sprintf("ws_precommit: page_ws-%s,%s", str($h), str($t)));
     }
 
     # concurrency control: abort conflicting queries
@@ -2163,7 +2181,7 @@ PROC ws_precommit(BAT[void,BAT] ws,
     attr_ws.insert(reverse(modified_attr).project(wsid));
 
     if (ws_log_active)
-        ws_log(wsid, "precommit-end() exec=" + str(usec() - ws_logtime)); 
+        ws_log(wsid, "ws_precommit: exec=" + str(usec() - ws_logtime)); 
 }
 
 PROC __ws_isolate(BAT[void,BAT] ws,
@@ -2197,8 +2215,8 @@ PROC __ws_isolate(BAT[void,BAT] ws,
     # isolate these working sets against our intended updates. 
     # copying pages can take time, thus we introduced pf_free: it allows to do the isolation without claiming pf_short
     if (isnil(err) and bit(count(other_ws)))
-        err := CATCH([_ws_coll_isolate](other_ws, colname, const ancestor_nid,  const modified_nid,
-                                                           const modified_page, const modified_attr));
+        err := CATCH([_ws_coll_isolate](wsid, other_ws, colname, const ancestor_nid,  const modified_nid,
+                                                                 const modified_page, const modified_attr));
     pf_free_held := 0LL;
     lock_unset(pf_free);
 

@@ -646,23 +646,19 @@ PROC get_attr_own(BAT[void,bat] ws, any nids, any cont) : BAT[oid,oid]
     var shared := mvaljoin(nids, cont, ws.fetch(ATTR_OWN_SHARED));
     var cnt_p := count(int(private));
     var cnt_s := count(int(shared));
-    if (cnt_s = 0LL) {
-        # private is all we got.
-        return private;
-    }
+    if (cnt_s = 0LL) return private; # private is all we got.
+
     var hshared := shared.hmark(0@0);
     var tshared := shared.tmark(0@0);
     shared := shared.fetch(mposjoin(tshared, hshared.leftfetchjoin(cont), ws.fetch(ATTR_OWN)).ord_uselect(oid_nil,oid_nil));
     cnt_s := count(int(shared));
-    if (cnt_s = 0LL) {
-        # private is all we got.
-        return private;
-    }
-    if (cnt_p = 0LL) {
-        # shared is all we got.
-        return shared;
-    }
-    return bat(oid,oid,cnt_p + cnt_s).insert(shared).insert(private).access(BAT_READ);
+
+    if (cnt_s = 0LL) return private; # private is all we got.
+    if (cnt_p = 0LL) return shared; # shared is all we got.
+
+    # merge-union shared and private
+    var res := merged_union(shared.hmark(0@0), private.hmark(0@0), shared.tmark(0@0), private.tmark(0@0));
+    return reverse(res.fetch(0)).leftfetchjoin(res.fetch(1));
 }
 
 
@@ -1979,7 +1975,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(cont);
     nid_rid_update.myupdate(update_nid);
     modified_nid.reverse().accbuild("hash");
-    modified_nid.insert(update_nid.project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
+    modified_nid.insert([lng](update_nid.project(cont).reverse()).[>>](OID_PAGE_BITS));
   }
   extend_unprotect(ws, cont);
 }
@@ -2195,7 +2191,7 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
       var start := oid(lng($t) << REMAP_PAGE_BITS);
       var end := oid(lng(start) + REMAP_PAGE_MASK);
       var rids := sel_ancestor_rid.reverse().select(start, end).reverse();
-      var nids := reverse(rids.mirror().join(sel_ancestor_nid).[wrd]().[>>](OID_PAGE_BITS));
+      var nids := reverse([lng](rids.mirror().join(sel_ancestor_nid)).[>>](OID_PAGE_BITS));
       modified_nid.reverse().insert(nids.project(cont));
       del_ancestor_nid.append(sel_ancestor_nid.tintersect(rids.mirror().join(sel_ancestor_nid)));
     }
@@ -2404,11 +2400,11 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       {
         var modified_nid := ws.fetch(MODIFIED_NID);
         modified_nid.reverse().accbuild("hash");
-        modified_nid.insert(epres.join(pre_nid).reverse().project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
+        modified_nid.insert([lng](epres.join(pre_nid).reverse().project(cont).reverse()).[>>](OID_PAGE_BITS));
       }
       {
         var modified_page := ws.fetch(MODIFIED_PAGE);
-        modified_page.insert(reverse(project(tunique([oid]([>>]([wrd](erids), REMAP_PAGE_BITS))), cont)));
+        modified_page.insert(reverse(project(tunique([oid]([>>]([lng](erids), REMAP_PAGE_BITS))), cont)));
       }
       if (eelem.count() > 0) {
         var eqn := eelem.leftjoin(update_rename); # [i,newQName]
@@ -2493,12 +2489,12 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
       {
         var modified_nid := ws.fetch(MODIFIED_NID);
         modified_nid.reverse().accbuild("hash");
-        modified_nid.insert(epres.join(pre_nid).reverse().project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
+        modified_nid.insert([lng](epres.join(pre_nid).reverse().project(cont).reverse()).[>>](OID_PAGE_BITS));
       }
       var erids := [swizzle](epres, pid_map); # [i,RID]
       {
         var modified_page := ws.fetch(MODIFIED_PAGE);
-        modified_page.insert(reverse(project(tunique([oid]([>>]([wrd](erids), REMAP_PAGE_BITS))), cont)));
+        modified_page.insert(reverse(project(tunique([oid]([>>]([lng](erids), REMAP_PAGE_BITS))), cont)));
       }
       if (etext.count() > 0) {
         var elval := etext.leftjoin(update_replace); # [i,update_replace]
@@ -2854,7 +2850,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 rid_size_data := rid_size_data.copy().access(BAT_WRITE).key(true).myupdate(rid_size_update_data);
                 # all these moved nodes are modified
                 modified_nid.reverse().accbuild("hash");
-                modified_nid.insert(rid_nid_data.select(oid_nil, oid_nil).reverse().project(doccont).reverse().[wrd]().[>>](OID_PAGE_BITS));
+                modified_nid.insert([lng](rid_nid_data.select(oid_nil, oid_nil).reverse().project(doccont).reverse()).[>>](OID_PAGE_BITS));
               } else {
                 var cpend_rid := oid((lng(cpstart_rid) + cpsize) - 1);
                 extend_protect(ws, doccont);
@@ -3414,7 +3410,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
     var nid_rid_updates := rid_nid_page.select(oid_nil, oid_nil).reverse().project(oid_nil);
     nid_rid_update := myupdate(nid_rid_update, nid_rid_updates);
     modified_nid.reverse().accbuild("hash");
-    modified_nid.insert(nid_rid_update.project(cont).reverse().[wrd]().[>>](OID_PAGE_BITS));
+    modified_nid.insert([lng](nid_rid_update.project(cont).reverse()).[>>](OID_PAGE_BITS));
 
     delsize :-= pgsize + 1;
     newpre := oid((lng(newpre) + pgsize) + 1);
