@@ -522,7 +522,7 @@ yes-*-*)
 		;;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -Wall -Wextra -W"
+	CFLAGS="$CFLAGS -Wall -W"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	    X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
 	    X_CFLAGS="$X_CFLAGS -Werror"
