@@ -25,9 +25,8 @@ of subqueries using a map-reduce strategy.
 The BAT partition manager (BPM) module is designed to 
 support this strategy using range- and hash-partitioning.
 
-Consider we want to reorganize R:bat[:oid,:int] into three range partitions,
-based on splitting by tail value. Two partitions are stable
-and the third partition is reserved for appends.
+Consider we want to reorganize R:bat[:oid,:int] into three partitions,
+based on splitting by tail value. 
 The following MAL program illustrates the snippet of actions needed:
 @example
 	bpm.open();
@@ -44,9 +43,11 @@ The second call breaks the latter into (101,200)
 and (201,nil:int).
 The BAT partitions share the persistency properties.
 Partitioning on the head simple calls for a reverse operation
-on the source BAT first.
+on the source BAT first. Beware that subsequent updates may
+materialize the header.
 
-The partitions are given an index number by which they can be retrieved.
+The partitions are given an index number by which they can be
+more easily retrieved.
 This number remains stable until a new partitioning command
 is issued.
 
@@ -73,7 +74,7 @@ fragments on the same site.
 Assume a relation R(A,B) which is already partitioned on A
 the derived fragmentation on the head is enforced with
 @example
-bpm.derivedPartition(B,A);
+bpm.derivePartition(B,A);
 @end example
 @- Using partitions
 The partitioned BAT can be used in two ways. A query plan can be
@@ -346,6 +347,8 @@ The internal data structure is used as a cache for improved access.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
+#define _DEBUG_BPM_
+
 #ifdef WIN32
 #ifndef LIBBPM
 #define bpm_export extern __declspec(dllimport)
@@ -402,76 +405,98 @@ They are further administered  by type
 #include "bpm.h"
 
 @-
-Partitions are organized in a tree structure where
-each node describes how it derives its chidren.
+Every partition is the result of at most four operations:
+range/hash partition on head/tail.
+The consolidated properties are administered for use
+by the compiler/optimizer.
 For range-based partitions it simply means the range bounds,
 for hash-based partitions we need the hash properties, e.g.
-the bucket number and the hash mask.
+the hash prime number and the hash mask.
 
 @c
 #define	RANGE	1
 #define HASH	2
 
 typedef struct PARTITIONREC {
-	bat alias;		/* BAT identifier */
+	char *name;	
+	bat alias;		/* partition BAT alias */
 	bat bid;		/* partition BAT */
 	int index;
-@-
-Each partition is described by a range or hash bucket
-@c
-	int	kind; /* the partition step */
-	int reversed; /* on head or tail(=default=0) */
+
 	ValRecord hlow,hhgh; /* head range */
-	ValRecord rlow,rhgh; /* tail range */
-	int bucket; /* for hashing */
-	int prime; /* multiplier before masking */
-@-
-Depending on the partition kind, we have three descendants or
-a list of hash-based children.
-@c
-	struct PARTITIONREC *left, *middle, *right;
-	struct PARTITIONREC *link;	/* list of all partitions*/
+	ValRecord tlow,thgh; /* tail range */
+	int hprime, tprime; /* hashing prime multiplier */
+	int hbucket, tbucket; /* hash bucket */
+	int nxt, prv;	/* list of all partitions*/
 } *Partition, PartitionRec;
 
+/* NOT USED YET
+static void BPMprintRecord(stream *f, Partition p){
+	stream_printf(f,"partition: %s alias %d bid %d index %d ",
+		p->name, p->alias, p->bid, p->index);
+	stream_printf(f,"hprime %d tprime %d ", p->hprime,p->tprime);
+	stream_printf(f,"hbucket %d tbucket %d ", p->hbucket,p->tbucket);
+	stream_printf(f,"nxt %d prv %d\n", p->nxt,p->prv);
+}
+*/
 @-
 The number of partitioned BATs is considered low and
 a straight forward array with linear search seems
 sufficient to find the alias versions. The first entry
 is not used for defensive code reasons.
 @c
-static Partition *bpmcat= 0;
+static Partition bpmcat= 0;
 static int bpmcatsize, bpmcattop;
 
-static Partition getAlias(int bid){
+static int getPartitionName(str nme){
 	int i;
-	for(i=0;i<bpmcattop; i++)
-		if( bpmcat[i] && bpmcat[i]->bid== bid) return bpmcat[i];
+	for(i=0; i< bpmcattop; i++)
+		if( bpmcat[i].alias && strcmp(bpmcat[i].name,nme)==0)
+			return i;
 	return 0;
 }
+
+static int getPartitionIndex(int bid, int idx){
+	int i;
+	for(i=1;i<bpmcattop; i++)
+		if( bpmcat[i].alias== bid) {
+			while( bpmcat[i].nxt && bpmcat[i].index <idx)
+				i=  bpmcat[i].nxt;
+			while( bpmcat[i].prv && bpmcat[i].index >idx)
+				i=  bpmcat[i].prv;
+			if( bpmcat[i].index != idx)
+				return 0;
+			return i;
+		}
+	return 0;
+}
+/* NOT USED YET
+static Partition getPartition(int bid, int idx){
+	return bpmcat+getPartitionIndex(bid,idx);
+}
+static Partition getAlias(int bid){
+	return getPartition(bid,0);
+}
+
 static void delAlias(int bid){
 	int i;
-	for(i=0;i<bpmcattop; i++)
-		if( bpmcat[i] && bpmcat[i]->bid== bid) bpmcat[i]=0;
-	/* remainder is taken care elsewhere */
+	i= getPartitionIndex(bid,0);
+	(void) i;
 }
+*/
+
 static int getFreeAlias(){
 	int i;
-	for(i=0;i<bpmcattop; i++)
-		if( bpmcat[i]== 0) return i;
+	for(i=1;i<bpmcattop; i++)
+		if( bpmcat[i].alias == 0) return i;
 	if( bpmcattop < bpmcatsize)
 		return bpmcattop++;
 	/* reallocate the catalog */
-	bpmcat= (Partition*) GDKzalloc(sizeof(PartitionRec)* (bpmcatsize+1024));
+	bpmcat= (Partition) GDKzalloc(sizeof(PartitionRec)* (bpmcatsize+1024));
 	bpmcatsize +=1024;
 	return bpmcattop++;
 }
 
-static Partition getPartition(Partition p, int index){
-	while(p && index--){
-		p= p->link;
-	}
-	return p;
-}
 @- Box administration
 The box currently does not carry any client protection.
 This should later be added or being provided by the BAT access.
@@ -485,10 +510,10 @@ BPMopen()
 {
 	if(bpmcat) return MAL_SUCCEED;
     mal_set_lock(mal_contextLock, "bpm");
-	/* read the partition table structure */
-	bpmcat= (Partition *) GDKzalloc(sizeof(PartitionRec)*1024);
+	/* read the partition table structure, post-poned */
+	bpmcat= (Partition) GDKzalloc(sizeof(PartitionRec)*1024);
 	bpmcatsize= 1024;
-	bpmcattop= 0;
+	bpmcattop= 1; /* first one never used */
     mal_unset_lock(mal_contextLock, "bpm");
 	return MAL_SUCCEED;
 }
@@ -509,21 +534,67 @@ str
 BPMdestroy(int *ret)
 {
 	(void) ret;
-	/* re-initialize the partition table */
+    mal_set_lock(mal_contextLock, "bpm");
+	/* remove a partition table */
+    mal_unset_lock(mal_contextLock, "bpm");
 	throw(MAL, "bpm.destroy","NYI");
 }
-
+@-
+Before you enter a BAT for partitioning
+we should assure it is not already partitioned.
+@c
 str
 BPMdeposit(int *ret, str *nme, int *src)
 {
-	BAT *b;
+	BAT *b,*bn;
+	int i;
+	Partition p;
+
 	BPMopen();
-	@:getBATdescriptor(src,b,"bpm.deposit");
+
 	/* test for duplicate names */
-	/* a nil-nil range partition*/
-	(void) nme;
-	(void) b;
-	*ret= 0;
+	i= getPartitionName(*nme);
+	if( i){
+		throw(MAL,"pbm.deposit","Duplicate partitioned BAT");
+	}
+	/* get target bat */
+	@:getBATdescriptor(src,b,"bpm.deposit");
+
+	i= getPartitionIndex(b->batCacheid, 0);
+	if( i != 0){
+		BBPunfix(b->batCacheid);
+		throw(MAL,"pbm.deposit","Duplicate partitioned BAT");
+	}
+	/* we can enter a new partition */
+	i= getFreeAlias();
+#ifdef _DEBUG_BPM_
+	stream_printf(GDKout,"Enter the partition '%s' at %d\n",*nme,i);
+#endif
+	p= bpmcat+i;
+	p->name= GDKstrdup(*nme);
+	p->bid= b->batCacheid;
+	p->index= 0;
+
+	/* default range */
+	VALset(&p->hlow, b->htype, ATOMnil(b->htype) );
+	VALset(&p->hhgh, b->htype, ATOMnil(b->htype) );
+	VALset(&p->tlow, b->ttype, ATOMnil(b->ttype) );
+	VALset(&p->thgh, b->ttype, ATOMnil(b->ttype) );
+
+	/* default hash */
+	p->hprime= p->tprime= 0;
+	p->hbucket= p->tbucket= 0;
+
+	p->nxt = p->prv = 0;
+	/* clear the boundaries */
+
+	bn= BATcopy(b, b->htype,b->ttype,1);
+	if( bn == 0){
+		throw(MAL,"pbm.deposit","Can not create partitioned BAT");
+	}
+
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "bpm.deposit","NYI");
 }
 
