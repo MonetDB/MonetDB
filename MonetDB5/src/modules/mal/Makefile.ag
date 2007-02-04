@@ -120,17 +120,6 @@ lib__transaction = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-lib__partitions = {
-	DIR = pkglibdir
-	SOURCES = partitions.mx 
-
-	HEADERS = h 
-	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
 lib__statistics = {
 	DIR = pkglibdir
 	SOURCES = statistics.mx
@@ -151,7 +140,7 @@ scripts_mal = {
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		urlbox.mx statistics.mx transaction.mx \
-		partitions.mx pbm.mx mserver.mx sabaoth.mx \
+		pbm.mx mserver.mx sabaoth.mx \
 		radix.mx bpm.mx
 	#datacell.mx 
 }

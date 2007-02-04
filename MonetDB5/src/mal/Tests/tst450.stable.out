@@ -115,7 +115,6 @@ end main;	# 16
 [ "mserver",	  nil	  ]
 [ "mtime",	  nil	  ]
 [ "optimizer",	  nil	  ]
-[ "partitions",	  nil	  ]
 [ "pbm",	  nil	  ]
 [ "pcre",	  nil	  ]
 [ "pqueue",	  nil	  ]
@@ -419,15 +418,6 @@ command io.import(b:bat[:any_1,:any_2],filepath:str):bat[:any_1,:any_2] address 
 #Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 #parameter BAT. You have to create it! Its signature must match the dump,
 #else parsing errors will occur and FALSE is returned.
-
-command partitions.insert(b:bat[:oid,:any_1],p:bat[:oid,:any_1]):bat[:oid,:any_1] address BPTinsertBAT;
-#Add a BAT as a partition to the end of the list.
-
-command partitions.insert(b:bat[:oid,:any_1],t:any_1):bat[:oid,:any_1] address BPTinsert_void_bun;
-#Add a tuple to the last partition
-
-command partitions.insert(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] address BPTinsert;
-#Add a tuple to the last partition
 
 command str.insert(s:str,start:int,l:int,s2:str):str address STRinsert;
 #Insert a string into another
