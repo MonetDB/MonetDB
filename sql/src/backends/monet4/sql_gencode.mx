@@ -1626,6 +1626,13 @@ backend_fastpath(backend *be, mvc *c, cq *q)
 						a->data.val.pval = NULL;
 					}
 				}
+			/* cast DEC into FLT */
+			} else if (a->data.vtype != argv[i].vtype && argv[i].vtype == TYPE_dbl) { 
+				a->data.vtype = argv[i].vtype;
+				a->data.val.dval = a->d;
+			} else if (a->data.vtype != argv[i].vtype && argv[i].vtype == TYPE_flt) { 
+				a->data.vtype = argv[i].vtype;
+				a->data.val.fval = a->d;
 			}
 			argv[i] = a->data;
 		}

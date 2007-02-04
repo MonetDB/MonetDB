@@ -594,6 +594,24 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 				sql_convert_arg(sql, s->flag, ct);
 			}
 		}
+		/* cheap convert decimal into float */
+		if (ct->type->eclass == EC_FLT && st->type->eclass == EC_DEC) {
+			atom *a = sql_bind_arg(sql, s->flag);
+
+			r = stmt_varnr(s->flag, ct);
+
+			if (atom_null(a)) {
+				sql_convert_arg(sql, s->flag, ct);
+			} else {
+				assert(a->d != dbl_nil);
+				if (ct->type->localtype == TYPE_dbl)
+					a->data.val.dval = a->d;
+				else
+					a->data.val.fval = a->d;
+				a->data.vtype = ct->type->localtype;
+				a->tpe = *ct;
+			}
+		}
 		if (r != s)
 			stmt_destroy(s);
 		return r;
