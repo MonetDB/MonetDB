@@ -2022,7 +2022,7 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 static sql_rel *
 rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, char *compare_op, int f )
 {
-	sql_exp *rs, *ls;
+	sql_exp *rs = 0, *ls;
 
 	if (lo->token == SQL_SELECT) { /* swap subquery to the right handside */
 		symbol *tmp = lo;
