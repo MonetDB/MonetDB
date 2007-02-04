@@ -1639,10 +1639,10 @@ sql_delete_key(mvc *sql, stmt *deletes, sql_key *k, list *l)
 		char buf[BUFSIZ];
 		sql_subtype *it = sql_bind_localtype("int");
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
-		sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 		node *n;
 		for(n = uk->keys->h; n; n = n->next) {
+			sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
+			sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 			sql_key *fk = n->data;
 			stmt *s;
 			/* here we should handle DELETE ACTIONs:
