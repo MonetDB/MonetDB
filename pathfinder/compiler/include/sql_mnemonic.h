@@ -111,6 +111,8 @@
 #define lit_str( s )          PFsql_lit_str( s )
 /** Literal boolean construction. */
 #define lit_bln( b )          PFsql_lit_bln( b )
+/** Literal decimal construction. */
+#define lit_dec( d )          PFsql_lit_dec( d )
 
 /* ............ List construction ..............*/
 

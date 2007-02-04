@@ -166,7 +166,8 @@ enum PFsql_kind_t {
    sql_innr_join        = 61,
    sql_outr_join        = 62,
    sql_rght_outr_join   = 62,
-   sql_sum              = 63
+   sql_sum              = 63,
+   sql_lit_dec          = 64
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -214,6 +215,7 @@ union PFsql_sem_t {
                                                     literal string. */
             bool             b;                /**< Boolean containing
                                                     literal boolean. */
+            double           dec;
       } val;
     } atom;
     char             *table;           /**< string identifying
@@ -436,6 +438,11 @@ PFsql_t* PFsql_lit_str(const char* s);
  * Construct a literal boolean value.
  */
 PFsql_t* PFsql_lit_bln(bool b);
+
+/**
+ * Construct a literal decimal value.
+ */
+PFsql_t* PFsql_lit_dec(float dec);
 
 /*............. List construction ............*/
 

@@ -573,11 +573,12 @@ PFsql_simple_type_str(PFalg_simple_type_t type)
 {
     switch( type ) {
         case aat_nat:
-        case aat_int:   return "INTEGER";
-        case aat_str:    return "VARCHAR(100)";
-        default:              return "unknown";
+        case aat_int: return "INTEGER";
+        case aat_str: return "VARCHAR(100)";
+        case aat_dec: return "DECIMAL"; 
+        default:      return "unknown";
     }
-    return "unknown";
+    return NULL; /* satisfy picky compiler */
 }
 
 /**
@@ -670,6 +671,20 @@ PFsql_lit_bln(bool b)
     PFsql_t *ret = leaf(sql_lit_bln);
     
     ret->sem.atom.val.b = b;
+    return ret;
+}
+
+/**
+ * Create a SQL tree node representing a literal decimal value.
+ *
+ * @param dec The decimal value to represent in SQL.
+ */
+PFsql_t*
+PFsql_lit_dec(float dec)
+{
+    PFsql_t *ret = leaf(sql_lit_dec);
+
+    ret->sem.atom.val.dec = dec;
     return ret;
 }
 

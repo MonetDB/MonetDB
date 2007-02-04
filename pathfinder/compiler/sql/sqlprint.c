@@ -800,6 +800,10 @@ print_statement(PFsql_t *n)
             sqlprintf(" AS ");
             print_statement( n->child[1]);
         } break;
+        case sql_lit_dec:
+        {
+            sqlprintf("%g", n->sem.atom.val.dec);
+        } break;
         case sql_lit_int:
         {
             sqlprintf("%i", n->sem.atom.val.i);
