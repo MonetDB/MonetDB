@@ -179,8 +179,13 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
 		atom *a2 = atoms[i];
 
 		/* NULL values match any type */
-		if (!atom_null(a2) && param_cmp(t1, atom_type(a2)) != 0)
-			return -1;
+		if (!atom_null(a2) && param_cmp(t1, atom_type(a2)) != 0) {
+			/* FLT == DEC */
+			if (t1->type->eclass != EC_FLT || 
+		 	    a2->d == dbl_nil || 
+			    atom_type(a2)->type->eclass != EC_DEC) 
+				return -1;
+		}
 	}
 	return 0;
 }

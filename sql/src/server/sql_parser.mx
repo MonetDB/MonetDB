@@ -347,6 +347,7 @@ int yydebug=1;
 	insert_atom
 	simple_atom
 	literal
+	null
 	interval_expression
 	ordering_spec
 	simple_table
@@ -2404,9 +2405,8 @@ atom_commalist:
 			{ $$ = append_symbol($1, $3); }
  ;
 
-simple_atom:
-    scalar_exp
- |  NULLX
+null:
+   NULLX
 	 { 
 	   mvc *m = (mvc*)parm;
 
@@ -2422,6 +2422,12 @@ simple_atom:
 		$$ = _symbol_create(SQL_NULL, NULL );
 	   }
 	}
+ ;
+
+
+simple_atom:
+    scalar_exp
+ |  null
  ;
 
 insert_atom:
@@ -3292,9 +3298,9 @@ column_exp:
   		  append_symbol(l, $1);
   		  append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
- |  NULLX opt_alias_name
+ |  null opt_alias_name
 		{ dlist *l = L();
-  		  append_symbol(l, _newAtomNode(NULL) );
+  		  append_symbol(l, $1 );
   		  append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  |  search_condition opt_alias_name
@@ -3573,12 +3579,13 @@ literal:
 		  sql_subtype t;
 
 		  if (digits <= 18) {
+		  	double val = strtod($1,NULL);
 		  	lng value = decimal_from_str(s);
 
 		  	if (*s == '+' || *s == '-')
 				digits --;
 		  	sql_find_subtype(&t, "decimal", digits, scale );
-		  	$$ = _newAtomNode( atom_int(&t, value)); 
+		  	$$ = _newAtomNode( atom_dec(&t, value, val)); 
 		   } else { 
 		  	double val = strtod($1,NULL);
 
@@ -3804,7 +3811,7 @@ cast_exp:
 cast_value:
 	scalar_exp
  | 	search_condition
- | 	NULLX	 { $$ = _newAtomNode(NULL); }
+ | 	null	 
  ;
 
 case_exp:

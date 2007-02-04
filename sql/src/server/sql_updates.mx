@@ -1198,18 +1198,28 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 		} else {
 			node *m, *n;
 
+			/* first copy (else inplace converts fail!) */
 			for (n = s->op1.lval->h, m = collist->h; n && m; n = n->next, m = m->next) {
 				sql_column *c = m->data;
-				stmt *ins = check_types(sql, &c->type, stmt_dup(n->data), type_equal);
-
-				if (!ins) {
-					stmt_destroy(s);
-					scp = scope_close(scp);
-					cleanup_stmts(inserts, len);
-					return NULL;
-				}
-				inserts[c->colnr] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), ins);
+				inserts[c->colnr] = stmt_dup(n->data);
 				inscol = c->colnr;
+			}
+			stmt_destroy(s);
+			s = NULL;
+			for (m = collist->h; m; m = m->next) {
+				sql_column *c = m->data;
+				stmt *ins = inserts[c->colnr];
+
+				if (ins) {
+					ins = check_types(sql, &c->type, ins, type_equal);
+					inserts[c->colnr] = ins;
+					if (!ins) {
+						scp = scope_close(scp);
+						cleanup_stmts(inserts, len);
+						return NULL;
+					}
+					inserts[c->colnr] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), ins);
+				}
 			}
 		}
 		if (s)
@@ -1639,10 +1649,10 @@ sql_delete_key(mvc *sql, stmt *deletes, sql_key *k, list *l)
 		char buf[BUFSIZ];
 		sql_subtype *it = sql_bind_localtype("int");
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
-		sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 		node *n;
 		for(n = uk->keys->h; n; n = n->next) {
+			sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
+			sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 			sql_key *fk = n->data;
 			stmt *s;
 			/* here we should handle DELETE ACTIONs:

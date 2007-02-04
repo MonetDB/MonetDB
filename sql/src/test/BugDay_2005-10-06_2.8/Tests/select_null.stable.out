@@ -22,7 +22,7 @@ Over..
 # 11:50:14 >  
 
 % . # table_name
-% NULL # name
+% single_value # name
 % char # type
 % 0 # length
 [ NULL	]

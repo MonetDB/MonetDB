@@ -30,6 +30,7 @@ typedef struct atom {
 	int isnull;
 	sql_subtype tpe;
 	ValRecord data;
+	dbl d;
 } atom;
 
 #define atom_null(a) a->isnull
@@ -39,6 +40,7 @@ extern atom *atom_int( sql_subtype *tpe, lng val);
 extern atom *atom_float( sql_subtype *tpe, double val);
 extern atom *atom_string( sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_general( sql_subtype *tpe, char *val, int destroy);
+extern atom *atom_dec( sql_subtype *tpe, lng val, double dval);
 
 /* duplicate atom */
 extern atom *atom_dup( atom *a);
@@ -73,6 +75,7 @@ atom_create()
 
 	a->destroy = 0;
 	memset(&a->data, 0, sizeof(a->data));
+	a->d = dbl_nil;
 	return a;
 }
 
@@ -92,7 +95,7 @@ atom_bool(sql_subtype *tpe, bit val)
 atom *
 atom_int(sql_subtype *tpe, lng val)
 {
-	if (tpe->type->localtype == TYPE_dbl || tpe->type->localtype == TYPE_flt) {
+	if (tpe->type->eclass == EC_FLT) {
 		return atom_float(tpe, (double) val);
 	} else {
 		atom *a = atom_create();
@@ -120,6 +123,15 @@ atom_int(sql_subtype *tpe, lng val)
 		return a;
 	}
 	return NULL;
+}
+
+atom *
+atom_dec(sql_subtype *tpe, lng val, double dval)
+{
+	atom *a = atom_int(tpe, val);
+	if (a) 
+		a -> d = dval;
+	return a;
 }
 
 atom *
@@ -151,8 +163,11 @@ atom_float(sql_subtype *tpe, double val)
 
 	a->isnull = 0;
 	a->tpe = *tpe;
-	a->data.val.dval = val;
-	a->data.vtype = TYPE_dbl;
+	if (tpe->type->localtype == TYPE_dbl)
+		a->data.val.dval = val;
+	else
+		a->data.val.fval = val;
+	a->data.vtype = tpe->type->localtype;
 	a->data.len = 0;
 	if (atom_debug)
 		fprintf(stderr, "atom_float(%s,%f)\n", tpe->type->sqlname, val);
@@ -242,6 +257,8 @@ atom2string(atom *a)
 			return _strdup("true");
 		return _strdup("false");
 	case TYPE_flt:
+		sprintf(buf, "%f", a->data.val.fval);
+		break;
 	case TYPE_dbl:
 		sprintf(buf, "%f", a->data.val.dval);
 		break;
@@ -306,8 +323,10 @@ atom2sql(atom *a)
 		return decimal_to_str(v, &a->tpe);
 	}
 	case EC_FLT:
-		assert (a->data.vtype == TYPE_dbl);
-		sprintf(buf, "%f", a->data.val.dval);
+		if (a->data.vtype == TYPE_dbl)
+			sprintf(buf, "%f", a->data.val.dval);
+		else
+			sprintf(buf, "%f", a->data.val.fval);
 		break;
 	case EC_TIME:
 	case EC_DATE:
@@ -401,30 +420,36 @@ atom_cast(atom *a, sql_subtype *tp)
 			return 1;
 		}
 		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_FLT) {
-			ptr p = &a->data.val.dval;
-			char *s;
-			lng dec = 0;
-			int len = 0, res = 0;
-			/* cast decimals to doubles */
-			switch( at->type->localtype) {
-			case TYPE_sht:
-				dec = a->data.val.shval;
-				break;
-			case TYPE_int:
-				dec = a->data.val.ival;
-				break;
-			case TYPE_lng:
-				dec = a->data.val.lval;
-				break;
-			default:
-				return 0;
+			if (a->d == dbl_nil) {
+				ptr p = &a->d;
+				char *s;
+				lng dec = 0;
+				int len = 0, res = 0;
+				/* cast decimals to doubles */
+				switch( at->type->localtype) {
+				case TYPE_sht:
+					dec = a->data.val.shval;
+					break;
+				case TYPE_int:
+					dec = a->data.val.ival;
+					break;
+				case TYPE_lng:
+					dec = a->data.val.lval;
+					break;
+				default:
+					return 0;
+				}
+				s = decimal_to_str(dec, at);
+				len = sizeof(double);
+				res = ATOMfromstr(TYPE_dbl, &p, &len, s);
+				GDKfree(s);
+				if (res <= 0)
+					return 0;
 			}
-			s = decimal_to_str(dec, at);
-			len = sizeof(double);
-			res = ATOMfromstr(TYPE_dbl, &p, &len, s);
-			GDKfree(s);
-			if (res <= 0)
-				return 0;
+			if (tp->type->localtype == TYPE_dbl)
+				a->data.val.dval = a->d;
+			else
+				a->data.val.fval = a->d;
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
 			return 1;
@@ -434,7 +459,6 @@ atom_cast(atom *a, sql_subtype *tp)
 
 		a->tpe = *tp;
 		a->data.vtype = tp->type->localtype;
-	
 		p = ATOMnilptr(a->data.vtype);
 		VALset(&a->data, a->data.vtype, p);
 		a->destroy = 0;
