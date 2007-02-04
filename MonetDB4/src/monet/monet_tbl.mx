@@ -441,6 +441,7 @@ MSP_locate_script(const char *mod_name)
 	return locate_file(mod_name, MIL_EXT);
 }
 
+#ifndef STATIC
 static char *
 MSP_locate_module(const char *mod_name)
 {
@@ -460,6 +461,7 @@ MSP_locate_module(const char *mod_name)
 	GDKfree(lib_name);
 	return fullname;
 }
+#endif
 
 void *
 DL_open(char *nme, int mode)
