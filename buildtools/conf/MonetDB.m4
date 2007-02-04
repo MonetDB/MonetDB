@@ -522,13 +522,22 @@ yes-*-*)
 		;;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -Wall -W"
+	CFLAGS="$CFLAGS -Wall"
+	case "$gcc_ver-$host_os" in
+	[[4-9]].*-*)
+		CFLAGS="$CFLAGS -Wextra";;
+	*)
+		CFLAGS="$CFLAGS -W";;
+	esac
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	    X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
 	    X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  Make sure that gcc is as strict as icc, MSVC++, etc.:
 	    X_CFLAGS="$X_CFLAGS -Wpointer-arith"
-	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement"
+	case "$gcc_ver-$host_os" in
+	[[4-9]].*-*)
+	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement";;
+	esac
 	dnl  Our code it not (yet?) up to these:
 	dnl X_CFLAGS="$X_CFLAGS -Wundef"
 	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
