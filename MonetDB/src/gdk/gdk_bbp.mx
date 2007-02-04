@@ -98,7 +98,7 @@ parent is memory resident as required because of the 'pointer' sharing.
 #define BBPUNLOADING	128	/* set while we are unloading */
 #define BBPLOADING	256	/* set while we are loading */
 #define BBPSAVING       512	/* set while we are saving */
-#define BBPWAITING      896
+#define BBPWAITING      2944
 #define BBPRENAMED	1024	/* set when bat is renamed in this transaction */
 
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
@@ -993,7 +993,7 @@ BBPcacheit(BAT *b)
 	}
 	if (lock)
 		gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPcacheit");
-	mode = (BBP_status(i) | BBPLOADED) & ~(BBPWAITING|BBPUNSTABLE);
+	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING|BBPDELETING);
 	BBP_status_set(i, mode, "BBPcacheit");
 	BBP_lastused(i) = BBPLASTUSED(BBPstamp() + ((mode == BBPLOADED) ? 150 : 0));
 	BBP_desc(i) = (BATstore *) b;
@@ -1310,7 +1310,6 @@ decref(bat i, int logical, int lock)
 	if (BBP_refs(i) > 0 || (BBP_lrefs(i) > 0 && BBP_lastused(i) != 0)) {
 		/* bat cannot be swapped out. renew its last usage stamp for the BBP LRU policy */
 		int sec = BBPLASTUSED(BBPstamp());
-
 		if (sec > BBPLASTUSED(BBP_lastused(i)))
 			BBP_lastused(i) = sec;
 	} else if (b || (BBP_status(i) & BBPTMP)) {
