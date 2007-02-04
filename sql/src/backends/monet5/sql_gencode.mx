@@ -425,6 +425,7 @@ disconnect(MalBlkPtr mb, list *l)
 The big code generation switch. The sections are aligned to the
 Monet version4 code generation block for ease of comparison.
 @c
+#define SMALLBUFSIZ 64
 static int 
 _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 {
@@ -475,9 +476,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q->retc++;
 				}
 			} else {
-				char buf[32];
+				char *buf;
 
-				(void) snprintf(buf, 32, "A%d", s->flag);
+				buf = alloca(SMALLBUFSIZ);
+				(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
 				q = newAssignment(mb);
 				q = pushArgumentId(mb, q, _strdup(buf));
 			}
@@ -1030,13 +1032,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		}
 		case st_group:{
-			char nme[BUFSIZ];
+			char *nme;
 			int ext, grp, o1 = _dumpstmt(sql, mb, s->op1.stval);
 
+			nme = alloca(SMALLBUFSIZ);
 			@:SQLprelude@
 			q = newStmt(mb, "group", "new");
 			ext = getDestVar(q);
-			snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
+			snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
         		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
 			grp = getArg(q, 1);
 			q = pushArgument(mb, q, o1);
@@ -1045,16 +1048,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, grp);
 			s->nr = getDestVar(q);
 			
-			snprintf( nme, BUFSIZ, "ext%d", s->nr);
+			snprintf( nme, SMALLBUFSIZ, "ext%d", s->nr);
 			renameVariable(mb, ext, _strdup(nme));
 
 			@:SQLpostlude@
 		} 	break;
 		case st_group_ext:{
-			char ext[BUFSIZ];
+			char *ext;
 			int e = -1, g = _dumpstmt(sql, mb, s->op1.stval);
 
-			snprintf( ext, BUFSIZ, "ext%d", g);
+			ext = alloca(SMALLBUFSIZ);
+			snprintf( ext, SMALLBUFSIZ, "ext%d", g);
 			e = findVariable(mb, ext);
 			assert(e >= 0);
 
@@ -1065,18 +1069,20 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLpostlude@
 		} break;
 		case st_derive:{
-			char nme[32], buf[32];
+			char *nme, *buf;
 			int ext, grp;
 			int g = _dumpstmt(sql, mb, s->op1.stval);
 			int l = _dumpstmt(sql, mb, s->op2.stval);
 
+			nme = alloca(SMALLBUFSIZ);
+			buf = alloca(SMALLBUFSIZ);
 			@:SQLprelude@
 			q = newStmt(mb, "group", "derive");
 			ext = getDestVar(q);
-			snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
+			snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
         		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
 			grp = getArg(q, 1);
-			(void) snprintf(buf, 32, "ext%d", g);
+			(void) snprintf(buf, SMALLBUFSIZ, "ext%d", g);
 			q = pushArgumentId(mb, q, _strdup(buf));
 			q = pushArgument(mb, q, g);
 			q = pushArgument(mb, q, l);
@@ -1085,7 +1091,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, grp);
 			s->nr = getDestVar(q);
 
-			snprintf( nme, BUFSIZ, "ext%d", s->nr);
+			snprintf( nme, SMALLBUFSIZ, "ext%d", s->nr);
 			renameVariable(mb, ext, _strdup(nme));
 
 			@:SQLpostlude@
@@ -1095,21 +1101,23 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op2.stval) {
-				char nme[BUFSIZ], buf[32];
+				char *nme, *buf;
 				int e, e1, g = _dumpstmt(sql, mb, s->op2.stval);
 
+				nme = alloca(SMALLBUFSIZ);
+				buf = alloca(SMALLBUFSIZ);
 				q = newStmt(mb, "group", "new");
 				e1 = getDestVar(q);
-				snprintf( nme, BUFSIZ, "grp%d", e1);
+				snprintf( nme, SMALLBUFSIZ, "grp%d", e1);
         			q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
 				q = pushArgument(mb, q, g);
 
 				q = newStmt(mb, "group", "derive");
 				e = getDestVar(q);
-				snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
+				snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
         			q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
 				q = pushArgument(mb, q, e1);
-				(void) snprintf(buf, 32, "grp%d", e1);
+				(void) snprintf(buf, SMALLBUFSIZ, "grp%d", e1);
 				q = pushArgumentId(mb, q, _strdup(buf));
 				q = pushArgument(mb, q, l);
 
@@ -1844,7 +1852,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 
 	if (m->argc) { /* we shouldn't come here as we aren't caching statements */
 		int argc=0;
-		char arg[32];
+		char arg[SMALLBUFSIZ];
 
 		for (; argc < m->argc; argc++) {
 			atom *a = m->args[argc];
@@ -1852,7 +1860,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 			int varid = 0;
 
 			curInstr = newAssignment(curBlk);
-			snprintf(arg, 32, "A%d", argc);
+			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
 			varid = getDestVar(curInstr);
 			renameVariable(curBlk, varid, _strdup(arg));
 			setVarType(curBlk, varid, type);
@@ -1880,7 +1888,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
 	int argc = 0;
-	char arg[32];
+	char arg[SMALLBUFSIZ];
 	node *n;
 /*
 	InstrPtr q;
@@ -1909,7 +1917,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int type = atom_type(a)->type->localtype;
 			int varid = 0;
 
-			snprintf(arg, 32, "A%d", argc);
+			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
 			varid = newVariable(curBlk, _strdup(arg), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -1922,7 +1930,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int type = a->type.type->localtype;
 			int varid = 0;
 
-			snprintf(arg, 32, "A%d", argc);
+			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
 			varid = newVariable(curBlk, _strdup(arg), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
