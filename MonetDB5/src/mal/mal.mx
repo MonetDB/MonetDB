@@ -15,6 +15,7 @@
 @' All Rights Reserved.
 
 @f mal
+@-
 @node  Design Considerations, Architecture Overview, Design Overview, Design Overview
 @+ Design Considerations
 Redesign of the MonetDB software stack was driven by the need to
