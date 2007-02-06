@@ -177,7 +177,7 @@ var collHeight := 10;
 var retNum := 100;
 
 var trace := false;
-var timing := true;
+var timing := false;
 
 ##
 # For retrieval models: 
