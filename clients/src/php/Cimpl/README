@@ -37,7 +37,5 @@ environment, and then configure and install php e.g.:
 Possibly in the (near) future it will be possible to compile it independently,
 within MonetDB compiling/testing facilities.
 
-examples/monetdb.php is a demonstration of current features available
-in this module. A wrapper for the PEAR database abstraction layer can
-be found in DB/monetdb.php. To see the PEAR version in action, try
-examples/pear.php.
+examples/monetdb_query_demo.php is a demonstration of current features 
+available in this module. 
