@@ -1379,7 +1379,7 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      var pre_size := bat("tj_" + collName + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
-     var elem_tid := _containing_desc(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
@@ -3285,7 +3285,7 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
 	res->batBuns->free = dst - res->batBuns->base;
      	BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/SRs);
 	size_t sz = BATgrows(res);
-	if (BATextend(res, BATgrows(res)) == NULL)
+	if (BATextend(res, sz) == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
           return(GDK_FAIL);
