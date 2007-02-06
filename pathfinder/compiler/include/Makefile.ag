@@ -44,7 +44,6 @@ EXTRA_DIST = \
 	fs.h \
 	func_chk.h \
 	functions.h \
-	hsk_parser.h \
 	import.h \
         intro_rec_border.h \
 	la_proxy.h \
