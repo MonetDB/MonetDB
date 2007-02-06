@@ -27,7 +27,7 @@ monetdb_la_LDFLAGS = -module
 # but we certainly have to override the default X_CFLAGS:
 X_CFLAGS = -DCOMPILE_DL_MONETDB=1 -D_GNU_SOURCE
 
-SUBDIRS = HAVE_PEAR?DB examples 
+SUBDIRS = examples 
 
 lib_monetdb = {
 	PREFIX =
