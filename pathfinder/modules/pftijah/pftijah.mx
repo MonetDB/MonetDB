@@ -1888,7 +1888,9 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 
     # calculating the score for each region
     reg_score := {sum}(ctx_res.reverse().join(right));
-    #reg_score := kunion(reg_score, ctx);
+    
+    if ( returnAllElements )
+        reg_score := kunion(reg_score, ctx);
 
 	if (scoreBase = 0)
 		res_reg := [+](reg_score, left);
@@ -1933,7 +1935,8 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : 
 
     reg_score := [/](reg_score,norm_reg);
 
-    reg_score := kunion(reg_score,ctx);
+    if ( returnAllElements )
+        reg_score := kunion(reg_score,ctx);
 
     if (scoreBase = 0)
         res_reg := [+](left, reg_score);
