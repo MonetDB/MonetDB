@@ -196,12 +196,6 @@ PHP
 	the flag ``HAVE_PHP=1`` to the ``nmake`` command line.  Note
 	that only PHP version 5.1.4 has been tried recently.
 
-Pear:
-	Pear is the PHP Extension and Application Repository.  At the
-	MonetDB5 side of things, nothing more than what is described
-	for PHP needs to be done.  PEAR support is automatically
-	enabled.
-
 Java:
 	The Java SDK (JDK) can be found at http://java.sun.com/.
 	After installing, make sure that the directory with java.exe
