@@ -1923,18 +1923,24 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : 
     var pre_size := load( "tj_" + collName + "_size1");
     var ctx_res := anc_desc( left, right, pre_size );
 
-    # calculating the score for each region
-    # ERROR LINE BATkey must be dense
-    reg_score := {sum}(ctx_res.join([*](size_reg,right)).sort());
-    norm_reg := [dbl]({sum}(ctx_res.join(size_reg).sort()));
-
-    # Select all values > 0
-    norm_reg := norm_reg.select(dbl(0),dbl(nil),false,true);
-
-    reg_score := norm_reg.mirror().join(reg_score);
-
-    reg_score := [/](reg_score,norm_reg);
-
+    # Special case for empty ancestor-descendant relation:
+    # a BATkey error error occurs when running the following code on an 
+    # empty ancestor-descendant relation
+    if ( ctx_res.count() > 0 ) {
+        # calculating the score for each region
+        reg_score := {sum}(ctx_res.join([*](size_reg,right)).sort());
+        norm_reg := [dbl]({sum}(ctx_res.join(size_reg).sort()));
+    
+        # Select all values > 0
+        norm_reg := norm_reg.select(dbl(0),dbl(nil),false,true);
+    
+        reg_score := norm_reg.mirror().join(reg_score);
+    
+        reg_score := [/](reg_score,norm_reg);
+    } else {
+        reg_score := bat(oid,dbl);
+    }
+    
     if ( returnAllElements )
         reg_score := kunion(reg_score,ctx);
 
