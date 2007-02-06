@@ -18,8 +18,8 @@
 
 rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 
-@HAVE_PEAR_FALSE@php=--without php
-@HAVE_PEAR_TRUE@php=--with php
+@HAVE_PHP_FALSE@php=--without php
+@HAVE_PHP_TRUE@php=--with php
 @HAVE_PERL_SWIG_FALSE@perl=--without perl
 @HAVE_PERL_SWIG_TRUE@perl=--with perl
 @HAVE_PYTHON_SWIG_FALSE@python=--without python

@@ -19,7 +19,7 @@ MTSAFE
 scripts_php = {
 	EXT = php
 	DIR = datadir/MonetDB/php
-	SOURCES = monetdb.php pear.php
+	SOURCES = monetdb_query_demo.php
 }
 
 scripts_ini = {

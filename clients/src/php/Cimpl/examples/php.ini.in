@@ -1,7 +1,6 @@
 [PHP]
 safe_mode = Off
 safe_mode_gid = Off
-include_path = ".:@XPHP_PEARDIR@:/usr/share/pear"
 extension_dir = @XPHP_EXTENSIONDIR@
 
 ;;;;
