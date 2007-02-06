@@ -16,8 +16,8 @@ if (!defined('LEGAL_CALL'))
 // the db_conf array for whatever you enter here should be set!
 define('DATABASE', 'mysql');
 
-//If persistent connections are supported, we will use them
-define('PERSISTENT',TRUE);
+// If persistent connections are supported, we will use them
+define('PERSISTENT', TRUE);
 
 
 // mysql database

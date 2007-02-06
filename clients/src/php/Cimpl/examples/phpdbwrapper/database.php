@@ -70,7 +70,7 @@ function db_connect() {
 				dl($prefix.'monetdb.'.PHP_SHLIB_SUFFIX) or
 					die("Unable to load monetdb module!");
 			}
-			if (defined('PERSISTENT') && constant('PERSISTENT')==TRUE )
+			if (defined('PERSISTENT') && constant('PERSISTENT') == TRUE )
 			{
 				$db_resource = monetdb_pconnect(
 					'sql',
@@ -90,7 +90,7 @@ function db_connect() {
 					$db_conf[DATABASE]['pass']
 				);
 			}
-			// todo: do something with the database, perhaps create a
+			// TODO: do something with the database, perhaps create a
 			//       warning stack...
 		break;
 		default:
@@ -116,7 +116,7 @@ function db_disconnect() {
 		break;
 		case 'monetdb4':
 		case 'monetdb5':
-			if (defined(PERSISTENT) && constant('PERSISTENT')== FALSE)
+			if (defined(PERSISTENT) && constant('PERSISTENT') == FALSE)
 				$ret = monetdb_close($db_resource);
 			else
 				$ret = TRUE;
