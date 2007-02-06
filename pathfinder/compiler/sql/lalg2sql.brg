@@ -1821,15 +1821,15 @@ reduce(PFla_op_t *p, int goalnt)
                    ), /* level */
                    column_assign
                    (
-                    sum
-                    (
-                     add
+                     sum
                      (
-                      column_name (sql_special_name_new (
-                          sql_col_size)->ident),
-                      lit_int (1)
-                     )
-                    ),
+                      add
+                      (
+                       column_name (sql_special_name_new (
+                           sql_col_size)->ident),
+                       lit_int (1)
+                      )
+                     ),
                     column_name (sql_special_name_new (
                         sql_col_size)->ident)
                    ), /* size */
@@ -2303,6 +2303,10 @@ reduce(PFla_op_t *p, int goalnt)
                  p->dirty = true;
 
         } break;
+        /* Rel:   string_join (Rel, Rel) */
+        case 88:
+        /* even string_join is implemented as identity operator,
+         * so it will handle most of the queries */
         /* FragRel:  merge_adjacent (Frag, Rel) */
         case 107:
         {
@@ -2643,8 +2647,7 @@ type_of(PFla_op_t *n, PFalg_att_t att)
 
 static PFsql_t* 
 bin_cmp (PFsql_t* (*op) (const PFsql_t *, const PFsql_t*),
-         PFla_op_t *p, PFalg_simple_type_t arg_ty,
-         PFalg_simple_type_t res_ty)
+         PFla_op_t *p, PFalg_simple_type_t arg_ty)
 {
     for (unsigned int i=0;
             i < PFarray_last (L(p)->sql_ann->colmap); i++) {
@@ -2899,7 +2902,7 @@ bin_comp (PFsql_t* (*op) (const PFsql_t*, const PFsql_t*),
     assert ( ty == aat_int || ty == aat_dec ||
             ty == aat_dbl || ty == aat_str ||
             ty == aat_bln);
-    return bin_cmp (op, p, ty, aat_bln);
+    return bin_cmp (op, p, ty);
 }
 
 #if 0
