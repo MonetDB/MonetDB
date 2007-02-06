@@ -2391,50 +2391,6 @@ fi
 AC_SUBST(XPHP_EXTENSIONDIR)
 AM_CONDITIONAL(HAVE_PHP, test x"$have_php" != xno)
 
-PHP_PEARDIR=""
-AC_ARG_WITH(pear,
-	AC_HELP_STRING([--with-pear=FILE], [Path to pear]),
-	have_pear="$withval" PEAR="$withval/bin/pear",
-	have_pear=auto PEAR="pear")
-
-if test x"$have_php" = xno; then
-	have_pear=no
-fi
-if test "x$have_pear" != xno; then
-	if test "x$PEAR" != xno; then
-		AC_PATH_PROG(PEAR, $PEAR, no)
-	fi
-	if test $PEAR = no; then
-		AC_MSG_RESULT(Cannot find pear. Please use --with-pear=PATH)
-		have_pear=no
-	fi
-fi
-if test "x$have_pear" != xno; then
-	AC_MSG_CHECKING(for $PEAR's php_dir)
-	php_peardir="`$PEAR config-get php_dir | grep php_dir`"
-	if test -z "$php_peardir"; then
-		dnl  newer pear version simply give the plain php_dir,
-		dnl  i.e., without "php_dir=" ...
-		php_peardir="`$PEAR config-get php_dir | head -n1`"
-	fi
-	if test -z "$php_peardir"; then
-		have_pear=no
-		AC_MSG_RESULT(not found)
-	else
-		PHP_PEARDIR="`echo "$php_peardir" | sed -e "s+^php_dir *= *++" -e "s+^$php_prefix/++"`"
-		have_pear=yes
-		AC_MSG_RESULT(\$prefix/$PHP_PEARDIR)
-	fi
-fi
-AC_SUBST(PHP_PEARDIR)
-if test "$PHP_PEARDIR"; then
-	XPHP_PEARDIR="`$translatepath "$PHP_PEARDIR"`"
-else
-	XPHP_PEARDIR=''
-fi
-AC_SUBST(XPHP_PEARDIR)
-AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
-
 AC_SUBST(CFLAGS)
 
 have_problem=no

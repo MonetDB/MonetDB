@@ -1,3 +1,10 @@
+# automake 1.10 complains about GNU-isms, ignore them for now, chosing
+# the lazy approach from
+# http://www.nabble.com/warning-about-GNU-make-extension-with-automake-1.10-t2934239.html
+# Disable as long as we deal with automakes from the stone-age on e.g.
+# Darwin
+#AUTOMAKE_OPTIONS = -Wno-portability 
+
 MX = @MX@
 bin_PROGRAMS = mel
 nodist_mel_SOURCES = any_arg.cc any_arg.h atom_arg.cc atom_arg.h      \
