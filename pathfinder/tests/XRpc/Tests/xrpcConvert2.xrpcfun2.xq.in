@@ -2,7 +2,7 @@ module namespace bar = "bar";
 
 import module namespace foo = "xrpc-fun"
     at
-    "/ufs/zhang/src/monet/dev/pathfinder/tests/XRpc/Tests/xrpcfun.xq";
+    "$TSTSRCDIR/xrpcfun.xq";
 
 declare function bar:xrpcConvert($v as xs:decimal?) as xs:decimal?
 {

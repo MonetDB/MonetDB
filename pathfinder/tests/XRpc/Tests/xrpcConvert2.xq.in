@@ -1,4 +1,4 @@
 import module namespace xrpc = "bar" at
-"$TSTSRCDIR/xrpcfun2.xq";
+"$TSTTRGDIR/xrpcConvert2.xrpcfun2.xq";
 
 execute at {"localhost"} {xrpc:xrpcConvert(100)}

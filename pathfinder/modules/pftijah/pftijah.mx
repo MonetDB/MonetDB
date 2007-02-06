@@ -1379,7 +1379,7 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      var pre_size := bat("tj_" + collName + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
-     var elem_tid := _containing_desc(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
@@ -1888,7 +1888,9 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 
     # calculating the score for each region
     reg_score := {sum}(ctx_res.reverse().join(right));
-    #reg_score := kunion(reg_score, ctx);
+    
+    if ( returnAllElements )
+        reg_score := kunion(reg_score, ctx);
 
 	if (scoreBase = 0)
 		res_reg := [+](reg_score, left);
@@ -1921,19 +1923,26 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : 
     var pre_size := load( "tj_" + collName + "_size1");
     var ctx_res := anc_desc( left, right, pre_size );
 
-    # calculating the score for each region
-    # ERROR LINE BATkey must be dense
-    reg_score := {sum}(ctx_res.join([*](size_reg,right)).sort());
-    norm_reg := [dbl]({sum}(ctx_res.join(size_reg).sort()));
-
-    # Select all values > 0
-    norm_reg := norm_reg.select(dbl(0),dbl(nil),false,true);
-
-    reg_score := norm_reg.mirror().join(reg_score);
-
-    reg_score := [/](reg_score,norm_reg);
-
-    reg_score := kunion(reg_score,ctx);
+    # Special case for empty ancestor-descendant relation:
+    # a BATkey error error occurs when running the following code on an 
+    # empty ancestor-descendant relation
+    if ( ctx_res.count() > 0 ) {
+        # calculating the score for each region
+        reg_score := {sum}(ctx_res.join([*](size_reg,right)).sort());
+        norm_reg := [dbl]({sum}(ctx_res.join(size_reg).sort()));
+    
+        # Select all values > 0
+        norm_reg := norm_reg.select(dbl(0),dbl(nil),false,true);
+    
+        reg_score := norm_reg.mirror().join(reg_score);
+    
+        reg_score := [/](reg_score,norm_reg);
+    } else {
+        reg_score := bat(oid,dbl);
+    }
+    
+    if ( returnAllElements )
+        reg_score := kunion(reg_score,ctx);
 
     if (scoreBase = 0)
         res_reg := [+](left, reg_score);
@@ -3195,6 +3204,7 @@ struct stack_item {
 int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) {
 
     /* ---------------------------- declarations ------------------------------------ */
+    char *name = "TJ_treemergejoin_sort";
     BAT *res = *result;
     oid *D_cur_start, *D_last_start, 
         *A_cur_start, *A_last_start;
@@ -3206,16 +3216,16 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
     int SDs;
     int SRs;
     int *size;
-    
+    int free;	
     BUN dst = NULL;
     
     /* ------------------------------- checks ---------------------------------------- */
     if (!(BATtordered(Astart)&1)) { 
-        GDKerror("treemergejoin_sort_proper: Ancestor pre BAT not sorted (on start).\n"); 
+        GDKerror("%s: Ancestor pre BAT not sorted (on start).\n",name); 
         return(GDK_FAIL);
     }
     if (!(BATtordered(Dstart)&1)) { 
-        GDKerror("treemergejoin_sort_proper: Descendant BAT not sorted (on start).\n"); 
+        GDKerror("%s: Descendant BAT not sorted (on start).\n",name); 
         return(GDK_FAIL);
     }
 
@@ -3227,7 +3237,13 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
     }
 
     // the size of the bat may not be correct (could be more, could be less)
-    res = BATnew(TYPE_oid, TYPE_oid, BATcount(Dstart)); 
+    free = BATcount(Dstart);
+    res = BATnew(TYPE_oid, TYPE_oid, free); 
+    if (res == NULL) 
+    { 
+       GDKerror("%s: could not allocate result BAT.\n", name);
+       return(GDK_FAIL);
+    }
     
     /* todo: what if size is not a multiple of sizeof(oid)  (BUNsize(...) % sizeof(oid) != 0) */
     SAs = BUNsize(Astart) / SIZEOF_OID;
@@ -3260,20 +3276,31 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
 	A_cur_start += SAs;
       }
       
-      /* printf("2.stacksize: %d\n", stack_top); */
-
       /* output everything that is on the stack (the ancestors) */
       /* It has started before Dstart and since it's a tree, */
       /* it has to end after Dend. */
-      /* for (; D_cur_start < D_last_start && *D_cur_start < *A_cur_start; D_cur_start += SDs) { */
-        for (i=0;i<stack_top;i++) {
-          /* printf("3. anc/desc: (%d/%d)\n", stack[i].ctx, *D_cur_start); */
-          *(oid*)dst              = stack[i].ctx;
-          *(oid*)(dst+SIZEOF_OID) = *D_cur_start;
-          dst += SRs;
-        }
-      /*} */
-        D_cur_start += SDs;
+      free -= stack_top;
+      if (free < 0)
+      {
+	res->batBuns->free = dst - res->batBuns->base;
+     	BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/SRs);
+	size_t sz = BATgrows(res);
+	if (BATextend(res, sz) == NULL)
+    	{ 
+       	  GDKerror("%s: could not extend result BAT.\n", name);
+          return(GDK_FAIL);
+    	}
+	dst = BUNlast(res);
+	free = sz - BATcount(res) - stack_top;
+      }
+     
+      for (i=0;i<stack_top;i++) {
+        /* printf("3. anc/desc: (%d/%d)\n", stack[i].ctx, *D_cur_start); */
+        *(oid*)dst              = stack[i].ctx;
+        *(oid*)(dst+SIZEOF_OID) = *D_cur_start;
+        dst += SRs;
+      }
+      D_cur_start += SDs;
     }
     
     /* ----------------------------- tidy up -------------------------------------- */
@@ -3283,6 +3310,7 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
      BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/SRs);
      res->batDirty = TRUE;
      res->tsorted = GDK_SORTED;
+     res->hsorted = FALSE;
      BATset(res, TRUE);
      
      *result = res;    

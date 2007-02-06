@@ -142,8 +142,8 @@ int dbat_finalize(dbat* dbat) {
 	return 1;
 }
 
-#define MINCHUNK 1024
-#define MAXCHUNK 16777216
+#define MINCHUNK 8192
+#define MAXCHUNK 67108864
 
 int dbat_extend(dbat* dbat, int i_mark) {
     /* CHECK THIS if ( i_mark ) i = i_mark - dbat->oid_mark; */
@@ -168,7 +168,6 @@ int dbat_extend(dbat* dbat, int i_mark) {
         return -1;
     }
     dbat->cast.voidCAST = (void*)BUNfirst(dbat->bat);
-
     /*
      * now check if there's a default value handler used  
      *
@@ -213,29 +212,37 @@ int dbat_sizeHint(dbat* dbat, int sizeHint_mark) {
 }
 
 INLINE static int dbat_set_oid(dbat* dbat, int pos_mark, oid v) {
-	int pos = pos_mark - dbat->oid_mark;
-	if ( pos >= dbat->max_i ) {
-		if ( pos >= dbat->max_sz ) {
-			if ( dbat_extend(dbat,pos) < 0 )
-				return -1;
-		}
-		dbat->max_i = pos + 1;
+	register int pos;
+
+	if ( (pos=pos_mark - dbat->oid_mark) < dbat->max_i ) {
+	    dbat->cast.oidCAST[pos] = v;
+	    return 1;
+	} else {
+	    if ( pos >= dbat->max_sz ) {
+		if ( dbat_extend(dbat,pos) < 0 )
+		    return -1;
+	    }
+	    dbat->max_i = pos + 1;
+	    dbat->cast.oidCAST[pos] = v;
+	    return 1;
 	}
-	dbat->cast.oidCAST[pos] = v;
-	return 1;
 }
 
 INLINE static int dbat_set_int(dbat* dbat, int pos_mark, int v) {
-	int pos = pos_mark - dbat->oid_mark;
-	if ( pos >= dbat->max_i ) {
-		if ( pos >= dbat->max_sz ) {
-		    if ( dbat_extend(dbat,pos) < 0 )
-			return -1;
-		}
-		dbat->max_i = pos + 1;
+	register int pos;
+
+	if ( (pos=pos_mark - dbat->oid_mark) < dbat->max_i ) {
+	    dbat->cast.intCAST[pos] = v;
+	    return 1;
+	} else {
+	    if ( pos >= dbat->max_sz ) {
+		if ( dbat_extend(dbat,pos) < 0 )
+		    return -1;
+	    }
+	    dbat->max_i = pos + 1;
+	    dbat->cast.intCAST[pos] = v;
+	    return 1;
 	}
-	dbat->cast.intCAST[pos] = v;
-	return 1;
 }
 
 /************************************************
@@ -291,7 +298,7 @@ typedef struct tijahContextStruct {
 
 #define DOEMIT(TJCTX)	((TJCTX)->selTagDepth)
 
-static int
+static INLINE int
 tj_pushTag(tjCtx* tjctx, oid start) {
 	if ( tjctx->tagStackPtr > MAXTAGDEPTH ) {
 	     GDKerror("tj_pushTag: MAXTAGDEPTH exceeded.\n");
@@ -313,74 +320,68 @@ tj_popTag(tjCtx* tjctx) {
  *
  */
 
-static oid
+INLINE static oid
 tj_tagOid(tjCtx* tjctx, str t) {
-    oid res;
+#ifdef USE_TERMDB
+    return tdb_lookupTag(tjctx->tdb,t);
+#else
     BUN bun;
 
-    if ( (bun = BUNfnd(tjctx->hm_globalTag,t)) )
-        res = *(oid*)BUNtail(tjctx->hm_globalTag,bun);
+    HASHfnd_str(bun, tjctx->hm_globalTag, (str)t);
+    if ( bun )
+    /* if ( (bun = BUNfnd(tjctx->hm_globalTag,t)) ) OLD */
+        return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
     else {
     	if ( !BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
     	    GDKerror("INSERT OF \"%s\" in globalTag fails.\n");
     	    return oid_nil;
         } else
-    	    res = tjctx->n_globalTag++;
-    }
-#ifdef USE_TERMDB
-    oid to = tdb_lookupTag(tjctx->tdb,t);
-    if ( to == oid_nil ) {
-    	GDKerror("LOOKUP OF TAG \"%s\" in TERMDB failed.\n",t);
-    	return oid_nil;
-    }
-    if ( res != to ) {
-    	stream_printf(GDKout,"#ERROR: tag \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
-    } else {
-    	if ( 0 ) stream_printf(GDKout,"#OK: tag \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
+    	    return tjctx->n_globalTag++;
     }
 #endif
-    return res;
 }
 
-static oid
+INLINE static oid
+tj_checkTerm(tjCtx* tjctx, char *t) {
+#ifdef USE_TERMDB
+   INCOMPLETE
+#endif
+   BUN bun;
+
+   HASHfnd_str(bun, tjctx->hm_globalTerm, (str)t);
+   if ( bun ) {
+       return *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
+   } else
+       return oid_nil;
+}
+
+INLINE static oid
 tj_termOid(tjCtx* tjctx, char *t) {
-    oid res;
+#ifdef USE_TERMDB
+    return tdb_lookupTerm(tjctx->tdb,t);
+#else
     BUN bun;
 
-    if ( (bun = BUNfnd(tjctx->hm_globalTerm,t)) )
-        res = *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
+    HASHfnd_str(bun, tjctx->hm_globalTerm, (str)t);
+    if ( bun )
+        return *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
     else {
     	if ( !BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t, FALSE)){
     	    GDKerror("INSERT OF \"%s\" in globalTerm fails.\n");
     	    return oid_nil;
         } else 
-    	    res = tjctx->n_globalTerm++;
-    }
-#ifdef USE_TERMDB
-    oid to = tdb_lookupTerm(tjctx->tdb,t);
-    if ( to == oid_nil ) {
-    	GDKerror("LOOKUP OF TERM \"%s\" in TERMDB failed.\n",t);
-    	return oid_nil;
-    }
-    if ( res != to ) {
-    	stream_printf(GDKout,"#ERROR: term \"%s\" has org(" OIDFMT ") and termdb(" OIDFMT ").\n",t,res,to);
-    } else {
-    	if ( 0 ) stream_printf(GDKout,"#OK: term \"%s\" has res(" OIDFMT ") and to(" OIDFMT ").\n",t,res,to);
+    	    return tjctx->n_globalTerm++;
     }
 #endif
-    return res;
 }
 
-INLINE static oid
-tj_add2plane(tjCtx* tjctx, oid o) {
-    return (dbat_set_oid(&tjctx->dbat_collPre, tjctx->tijahPre, o) < 0)
-    	   	? oid_nil : ((oid)tjctx->tijahPre++);
-}
+#define tj_add2plane(TJCTX,O) \
+    ((dbat_set_oid(&(TJCTX)->dbat_collPre, (TJCTX)->tijahPre, O) < 0) \
+    	   	? oid_nil : ((oid)(TJCTX)->tijahPre++))
 
-INLINE static int
-insertPreSize(tjCtx* tjctx, oid pos, int size) {
-     return dbat_set_int(&tjctx->dbat_collSize, (int)pos, size);
-}
+#define insertPreSize(TJCTX,POS,SIZE) \
+    dbat_set_int(&TJCTX->dbat_collSize,(int)POS,SIZE)
+
 
 int
 handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
@@ -388,18 +389,19 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
 
     /* is this DOEMIT here really necessary ??? */
     if ( DOEMIT(tjctx) ) {
-        if ( tjctx->stemCtx->stem) {
+        if ( (termOid = tj_checkTerm(tjctx, term)) == oid_nil ) {
+          if ( tjctx->stemCtx->stem) {
     	    if ( !(term = (char*)tjctx->stemCtx->stem(tjctx->stemCtx,(char*)term)) ) {
 	        /* must be a stopword */
 	        return 1;
 	    }
-        }
-        if ( (termOid = tj_termOid(tjctx, term)) == oid_nil )
+          }
+          if ( (termOid = tj_termOid(tjctx, term)) == oid_nil )
     	    return 0;
+	}
 	if ( termOid ) { /* term is not a stopword */
             if ( (tjPre = tj_add2plane(tjctx, termOid)) == oid_nil )
     	        return 0;
-
             if ( insertPreSize(tjctx,tjPre,0) < 0 )
        	        return -1;
 #ifdef TJ_TRACE
@@ -849,8 +851,10 @@ pftijah_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value) {
     return 1;
 }
 
-int checkSelectTag(tjCtx* tjctx, str t, int plusormin) {
-    if ( tjctx->b_selectTags ) {
+static int checkSelectTag(tjCtx* tjctx, str t, int plusormin) {
+    if ( !tjctx->b_selectTags ) {
+        return 1;
+    } else {
         BAT* mb = BATmirror(tjctx->b_selectTags);
 
         BUN bun;
@@ -858,21 +862,25 @@ int checkSelectTag(tjCtx* tjctx, str t, int plusormin) {
         if ( bun ) { /* found */
     		tjctx->selTagDepth += plusormin;
     	}
+        return 1;
     }
-    return 1;
 }
+
+#define EMPTY_CHECK 
+
 /**
  * Output generation handler. Handles equivalent of * SAX startElement() event.
  */
 static bool
 pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     (void)ns;
+    EMPTY_CHECK;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     oid termOid, tjPre;
 
     if ( ++tjctx->doc_height > tjctx->max_doc_height )
         tjctx->max_doc_height = tjctx->doc_height;
-    if ( !checkSelectTag(tjctx,name,1) ) return 0;
+    if ( tjctx->b_selectTags && !checkSelectTag(tjctx,name,1) ) return 0;
     /* if ( DOEMIT(tjctx) ) { */
         if ( (termOid = tj_tagOid(tjctx, name)) == oid_nil )
     	    return 0;
@@ -889,6 +897,7 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
 
 static bool
 pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
+    EMPTY_CHECK;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     --tjctx->doc_height;
     oid start = tj_popTag(tjctx); /* oid of the first node of the element */
@@ -908,6 +917,7 @@ static bool
 pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
     (void)ns;
     (void)name;
+    EMPTY_CHECK;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     --tjctx->doc_height;
     /* if ( DOEMIT(tjctx) ) { */
@@ -919,7 +929,7 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endElement: \"%s\"\n", tjctx->name,name);
 #endif
     /* } */
-    if ( !checkSelectTag(tjctx,name,-1) ) return 0;
+    if ( tjctx->b_selectTags && !checkSelectTag(tjctx,name,-1) ) return 0;
     return 1;
 }
 
@@ -930,23 +940,21 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
  */
 static bool
 pftijah_handle_characters(XqueryCtx* ctx, str ch) {
-    int res = 1;
+    EMPTY_CHECK;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters(%s) start\n",tjctx->name, (char*)ch);
 #endif
 
-    if ( DOEMIT(tjctx) )
+    if ( DOEMIT(tjctx) ) {
 #ifdef USE_FLEX
-        res = useFlexScanner((char*)ch,strlen((char*)ch),tjctx);
+        return useFlexScanner((char*)ch,strlen((char*)ch),tjctx);
 #else
-        res = useStrtokScanner(tjctx,(char*)ch);
+        return useStrtokScanner(tjctx,(char*)ch);
 #endif
-#ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters() end\n",tjctx->name);
-#endif
-    return res;
+    }
+    return 1;
 }
 
 char* normalizeTerm(struct tijahContextStruct *tjctx, char* term ) {

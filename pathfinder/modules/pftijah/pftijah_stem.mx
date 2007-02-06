@@ -40,6 +40,8 @@ extern tjStemCtx* getStemmingContext(char* name);
 @c
 #include <pf_config.h>
 
+#include <gdk.h>
+
 /*******************************************
  * pftijah_stem.c : stemming support for pftijah
  *		    the current implementation is non-reentrant and single
