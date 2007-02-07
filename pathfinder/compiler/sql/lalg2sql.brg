@@ -2257,6 +2257,8 @@ reduce(PFla_op_t *p, int goalnt)
                  NULL
                 );
 
+            max_pre_frag = table_name_default (elem_tbl->name);
+
             sql_column_env_add( p->sql_ann->colmap,
                             p->sem.elem.item_res,
                             type_of(p, p->sem.elem.item_res),
