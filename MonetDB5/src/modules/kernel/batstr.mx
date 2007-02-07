@@ -32,7 +32,7 @@ command batcalc.length( s:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatLength
 comment "Return the length of a string.";
 
-command batcalc.bytes( s:bat[:oid,:str] ) :bat[:oid,:int]
+command batcalc.nbytes( s:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
 
