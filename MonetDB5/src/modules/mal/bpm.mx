@@ -363,7 +363,7 @@ bpm_export str BPMclose(int *ret);
 bpm_export str BPMdestroy(int *ret);
 bpm_export str BPMdeposit(int *ret, str *nme, int *src);
 
-bpm_export str BPMrange(int *ret, int *bid, ptr *low, ptr *hgh);
+bpm_export str BPMrange(int *ret, int *bid, ptr low, ptr hgh);
 bpm_export str BPMrangeVector(int *ret, int *bid, int *pv);
 bpm_export str BPMhash(int *ret, int *bid, int *slots);
 bpm_export str BPMderived(int *ret, int *bid, int *src);
@@ -486,8 +486,8 @@ static void delAlias(int bid){
 
 static int getFreeAlias(){
 	int i;
-	Partition new;
-    mal_set_lock(mal_contextLock, "bpm");
+
+	mal_set_lock(mal_contextLock, "bpm");
 	for(i=1;i<bpmcattop; i++)
 		if( bpmcat[i].alias == 0) {
 			mal_unset_lock(mal_contextLock, "bpm");
@@ -495,14 +495,13 @@ static int getFreeAlias(){
 		}
 	if( bpmcattop >= bpmcatsize){
 		/* reallocate the catalog */
-		new= (Partition) GDKzalloc(sizeof(PartitionRec)* (bpmcatsize+1024));
-		memcpy( (char*) new, (char*) bpmcat, sizeof(PartitionRec)* bpmcatsize);
-		bpmcat= new;
 		bpmcatsize +=1024;
+		bpmcat = (Partition) GDKrealloc(bpmcat, sizeof(PartitionRec)* bpmcatsize);
+
 	}
 	bpmcattop++;
-    mal_unset_lock(mal_contextLock, "bpm");
-	return bpmcattop;
+	mal_unset_lock(mal_contextLock, "bpm");
+	return i;
 }
 
 @- Box administration
@@ -611,7 +610,7 @@ The 'critical' part is to detect overlap of the range
 and the bounds of the partition.
 @c
 str
-BPMrange(int *ret, int *bid, ptr *low, ptr *hgh){
+BPMrange(int *ret, int *bid, ptr low, ptr hgh){
 	BAT *b;
 	int i, tpe;
 	int (*cmp) (ptr, ptr);
@@ -631,8 +630,8 @@ BPMrange(int *ret, int *bid, ptr *low, ptr *hgh){
 	tpe= *bid >0? b->htype:b->ttype;
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
-	low_nil = ((*cmp) (*low, nilptr) == 0);
-	hgh_nil = ((*cmp) (*hgh, nilptr) == 0);
+	low_nil = ((*cmp) (low, nilptr) == 0);
+	hgh_nil = ((*cmp) (hgh, nilptr) == 0);
 
 	BBPunfix(b->batCacheid);	/* don't need it anymore */
 
@@ -641,8 +640,8 @@ BPMrange(int *ret, int *bid, ptr *low, ptr *hgh){
 
 		/* determine overlag by excluding outliers */
 		if( *bid > 0 ){
-			if( (*cmp) ((ptr) &bpmcat[i].thgh, *low) < 0 ||
-				(*cmp) ((ptr) &bpmcat[i].tlow, *hgh) > 0 
+			if( (*cmp) ((ptr) &bpmcat[i].thgh, low) < 0 ||
+				(*cmp) ((ptr) &bpmcat[i].tlow, hgh) > 0 
 			){
 				/* this fragment need not be split */
 			} else {
@@ -653,8 +652,8 @@ BPMrange(int *ret, int *bid, ptr *low, ptr *hgh){
 			}
 		} else {
 			/* use reversed bat */
-			if( (*cmp) ((ptr) &bpmcat[i].hhgh, *low) < 0 ||
-				(*cmp) ((ptr) &bpmcat[i].hlow, *hgh) > 0 
+			if( (*cmp) ((ptr) &bpmcat[i].hhgh, low) < 0 ||
+				(*cmp) ((ptr) &bpmcat[i].hlow, hgh) > 0 
 			){
 				/* this fragment need not be split */
 			} else {
