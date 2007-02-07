@@ -490,14 +490,23 @@ static void delAlias(int bid){
 
 static int getFreeAlias(){
 	int i;
+	Partition new;
+    mal_set_lock(mal_contextLock, "bpm");
 	for(i=1;i<bpmcattop; i++)
-		if( bpmcat[i].alias == 0) return i;
-	if( bpmcattop < bpmcatsize)
-		return bpmcattop++;
-	/* reallocate the catalog */
-	bpmcat= (Partition) GDKzalloc(sizeof(PartitionRec)* (bpmcatsize+1024));
-	bpmcatsize +=1024;
-	return bpmcattop++;
+		if( bpmcat[i].alias == 0) {
+			mal_unset_lock(mal_contextLock, "bpm");
+			return i;
+		}
+	if( bpmcattop >= bpmcatsize){
+		/* reallocate the catalog */
+		new= (Partition) GDKzalloc(sizeof(PartitionRec)* (bpmcatsize+1024));
+		memcpy( (char*) new, (char*) bpmcat, sizeof(PartitionRec)* bpmcatsize);
+		bpmcat= new;
+		bpmcatsize +=1024;
+	}
+	bpmcattop++;
+    mal_unset_lock(mal_contextLock, "bpm");
+	return bpmcattop;
 }
 
 @- Box administration
