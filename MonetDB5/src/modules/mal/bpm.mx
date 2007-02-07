@@ -52,13 +52,12 @@ This number remains stable until a new partitioning command
 is issued.
 
 The partition manager also supports hash-based partitioning.
-Its argument is the number of hash buckets on the tail
-and the prime multiplier for spreading.
-@example
+Its argument is the number of hash bucket bits.
+example
 	bpm.open();
 	Rrev:= bat.reverse(R:bat[:oid,:int]);
 	Ralias:= bpm.deposit("myHashVersion",Rev);	# creates side effects
-	bpm.hashPartition(Ralias,5,1023);
+	bpm.hashPartition(Ralias,2);
 	bpm.close();
 @end example
 This example creates a hash-partition based on the head.
@@ -366,7 +365,7 @@ bpm_export str BPMdeposit(int *ret, str *nme, int *src);
 
 bpm_export str BPMrange(int *ret, int *bid, ptr *low, ptr *hgh);
 bpm_export str BPMrangeVector(int *ret, int *bid, int *pv);
-bpm_export str BPMhash(int *ret, int *bid, int *slots, int *prime);
+bpm_export str BPMhash(int *ret, int *bid, int *slots);
 bpm_export str BPMderived(int *ret, int *bid, int *src);
 
 bpm_export str BPMtake(int *ret, str *nme);
@@ -411,8 +410,7 @@ range/hash partition on head/tail.
 The consolidated properties are administered for use
 by the compiler/optimizer.
 For range-based partitions it simply means the range bounds,
-for hash-based partitions we need the hash properties, e.g.
-the hash prime number and the hash mask.
+for hash-based partitions we need the hash bucket properties.
 
 @c
 #define	RANGE	1
@@ -426,16 +424,14 @@ typedef struct PARTITIONREC {
 
 	ValRecord hlow,hhgh; /* head range */
 	ValRecord tlow,thgh; /* tail range */
-	int hprime, tprime; /* hashing prime multiplier */
-	int hbucket, tbucket; /* hash bucket */
+	int hbits, tbits; /* linear hashing bits */
 	int nxt, prv;	/* list of all partitions*/
 } *Partition, PartitionRec;
 
 static void BPMprintRecord(stream *f, Partition p){
 	stream_printf(f,"partition: %s alias %d bid %d index %d ",
 		p->name, p->alias, p->bid, p->index);
-	stream_printf(f,"hprime %d tprime %d ", p->hprime,p->tprime);
-	stream_printf(f,"hbucket %d tbucket %d ", p->hbucket,p->tbucket);
+	stream_printf(f,"hbits %d tbits %d ", p->hbits,p->tbits);
 	stream_printf(f,"nxt %d prv %d\n", p->nxt,p->prv);
 }
 @-
@@ -596,8 +592,7 @@ BPMdeposit(int *ret, str *nme, int *src)
 	VALset(&p->thgh, b->ttype, ATOMnil(b->ttype) );
 
 	/* default hash */
-	p->hprime= p->tprime= 0;
-	p->hbucket= p->tbucket= 0;
+	p->hbits= p->tbits= 0;
 
 	p->nxt = p->prv = 0;
 	/* clear the boundaries */
@@ -717,15 +712,14 @@ BPMrangeVector(int *ret, int *bid, int *pv)
 	return MAL_SUCCEED;
 }
 str
-BPMhash(int *ret, int *bid, int *slots, int *prime)
+BPMhash(int *ret, int *bid, int *bits)
 {
 	BAT *b;
 	BPMopen();
 	@:getBATdescriptor(bid,b,"bpm.hash")@
 	/* get hash slot administration */
 	(void) b;
-	(void) slots;
-	(void) prime;
+	(void) bits;
 	*ret= 0;
 	throw(MAL, "bpm.hash","NYI");
 }
