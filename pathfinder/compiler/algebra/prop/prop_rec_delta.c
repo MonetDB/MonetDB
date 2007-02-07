@@ -214,7 +214,8 @@ check_op (PFla_op_t *n)
                based on the old input sequence.
                This column is needed to ensure that we do not
                use the cardinality to generate new nodes */
-            if (ITER(L(n)) & att_iter &&
+            if ((ITER(L(n)) & att_iter ||
+                 INNER(L(n)) & att_iter) &&
                 n->sem.number.attname == att_inner &&
                 !n->sem.number.part)
                 INNER(n) |= att_inner;
