@@ -1083,6 +1083,8 @@ reduce (PFcnode_t * p, int goalnt)
             }
             break;
 
+        /* SequenceTypeCast:   seqcast (SequenceType, CoreExpr) */
+        case 23:
         /* CoreExpr:           cast (SequenceType, CoreExpr) */
         case 72:
             if (PFty_subtype (TY(L(p)), TY(R(p))) &&
