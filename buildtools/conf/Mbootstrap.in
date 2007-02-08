@@ -21,8 +21,8 @@
 # this is not meant to go into the distributions
 
 
-dir=`dirname $0`
-CONFDIR="-I $dir/../share/MonetDB"
+prefix="@prefix@"
+CONFDIR="-I @datadir@/@PACKAGE@"
 
 AUTOGEN=`type -p autogen.py`
 if [ "$AUTOGEN" -a -x "$AUTOGEN" ]; then
@@ -43,7 +43,7 @@ if [ "`uname`" = Darwin  -a  "`type -p glibtool 2>/dev/null`"  -a  "`type -p gli
 fi
 
 
-find . -name .incs.\* \-exec rm {} \;
+find . -name .incs.\* -exec rm {} \;
 rm -rf autom4*.cache
 
 
