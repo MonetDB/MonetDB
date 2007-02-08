@@ -23,6 +23,7 @@ use IO::Handle;
 sub new {
   my ($mapi,$server,$user,$passwd,$language) = @_;
   my $mapi = {};
+  my $version = "";
 
   $mapi->{trace} = 0;
   print "new:$server,$user,$passwd,$language\n" if ($mapi->{trace});
@@ -33,12 +34,11 @@ sub new {
   $mapi->{SOCKET} = new IO::Socket::INET($server)
     || die "!ERROR can't connect to $server : $!";
   binmode($mapi->{SOCKET},":utf8");
-  print "Connection to socket established\n" if ($mapi->{trace});
+  $mapi->{SOCKET}->recv($version,256);
+  print "Connection to socket established ($version)\n" if ($mapi->{trace});
   bless($mapi,"Mapi");
   $mapi->doCmd("$user:$passwd:$language:line\n");
   print "logged on:$user:$passwd:$language:line\n" if ($mapi->{trace});
-#  print "switch to $language scenario\n";
-#  $mapi->doCmd("sql();") if ($language eq 'sql');
   return $mapi;
 }
 
@@ -106,6 +106,7 @@ sub doRequest {
   $cmd =~ s/\n/ /g;
   $cmd .= "\n";
   $cmd = "S" . $cmd if ($mapi->{LANG} eq 'sql');
+  $cmd = "S" . $cmd if ($mapi->{LANG} eq 'xquery');
   $mapi->resetState();
   print "Send:$cmd\n" if ($mapi->{trace});
   $mapi->{SOCKET}->send($cmd) || die "!ERROR can't send $cmd: $!";
