@@ -366,6 +366,13 @@ if [ "${os}" = "Darwin" ] ; then
 			conf_opts="${conf_opts} --with-iconv=/Users/monet/soft/local"
 		fi
 	fi
+	if [ "${host}" = "horizon.cs.umass.edu" ] ; then
+		# gcc now(?) seems to default to gcc-3.3,
+		# but with gcc-3.3 configure fail for MonetDB;
+		# hence, we use gcc-4.0 explicitly.
+		cc='gcc-4.0'
+		cxx='g++-4.0'
+	fi
 fi
 
 if [ "${os}" = "SunOS" -a "${hw}" = "i86pc" ] ; then
