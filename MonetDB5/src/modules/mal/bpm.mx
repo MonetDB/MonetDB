@@ -243,6 +243,9 @@ comment "Create a range partition on a BAT";
 command rangePartition(pb:bat[:any_1,:any_2], pv:bat[:oid,:any_2]):void
 address BPMrangeVector
 comment "Create the partitions based on a range vector";
+command splitPartition(pb:bat[:any_1,:any_2], idx:int, val:any_2):void
+address BPMsplitpartition
+comment "Create a range partition on a BAT";
 
 command hashPartition(pb:bat[:any_1,:any_2], slots:int):void
 address BPMhash
@@ -327,7 +330,6 @@ address BPMprelude;
 
 command epilogue()
 address BPMepilogue;
-
 bpm.prelude();
 @-
 @{
@@ -364,6 +366,7 @@ bpm_export str BPMdestroy(int *ret);
 bpm_export str BPMdeposit(int *ret, str *nme, int *src);
 
 bpm_export str BPMrange(int *ret, int *bid, ptr low, ptr hgh);
+bpm_export str BPMsplitpartition(int *ret, int *bid, int *idx, ptr val);
 bpm_export str BPMrangeVector(int *ret, int *bid, int *pv);
 bpm_export str BPMhash(int *ret, int *bid, int *slots);
 bpm_export str BPMderived(int *ret, int *bid, int *src);
@@ -504,6 +507,17 @@ static int getFreeAlias(){
 	return i;
 }
 
+/* Return max index in the partition chain for alias bid, assuming non-sorted list */
+
+static int getLastIndex(int bid){
+	int maxidx=0, i;
+
+	for( i= getAliasList(bid); i ; i= bpmcat[i].nxt)
+		if (maxidx < bpmcat[i].index) 
+			maxidx = bpmcat[i].index;
+	return maxidx;
+}
+
 @- Box administration
 The box currently does not carry any client protection.
 This should later be added or being provided by the BAT access.
@@ -603,6 +617,71 @@ BPMdeposit(int *ret, str *nme, int *src)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+str
+BPMsplitpartition(int *ret, int *bid, int *idx, ptr val)
+{
+	BAT *b,*bn, *bdiff;
+	int i;
+	Partition ps, p;
+
+	BPMopen();
+
+	ps= getPartition(*bid, *idx);
+/*	if( ps != 0){
+		throw(MAL,"pbm.deposit","Duplicate partitioned BAT");
+	}
+*/	@:getBATdescriptor(&ps->bid,b,"bpm.split");
+
+
+	/* TO DO val should be between tlow and thigh */
+
+
+	/* we can enter a new partition */
+	bn= BAT_select_(b, val, (ptr) &(ps->thgh), TRUE, FALSE, TRUE, FALSE);
+
+	if( bn == 0)
+		throw(MAL,"pbm.split","Can not create new partition");
+	BBPkeepref(*ret= bn->batCacheid);
+
+	i= getFreeAlias();
+	p= bpmcat+i;
+	p->name= GDKstrdup(ps->name);
+	p->alias= ps->alias;
+	p->bid= bn->batCacheid;
+	p->index = getLastIndex(*bid)+1;
+
+	/* link to the partition chain */
+	p->nxt= ps->nxt;
+	ps->nxt = i;
+	p->prv = getPartitionIndex(*bid,*idx);
+	bpmcat[p->nxt].prv = i;
+
+	/* for now assume only partitioning on tail. Range on head remains as in the orig. */
+	VALset(&p->hlow, b->htype, &ps->hlow );
+	VALset(&p->hhgh, b->htype, &ps->hhgh  );
+	VALset(&p->tlow, b->ttype, val );
+	VALset(&p->thgh, b->ttype, &ps->thgh );
+	VALset(&ps->thgh, b->ttype, val );
+
+	/* default hash */
+	p->hbits= p->tbits= 0;
+
+	
+#ifdef _DEBUG_BPM_
+	stream_printf(GDKout,"New partition '%s' at %d\n",p->name,i);
+	BPMprintRecord(GDKout,p);
+#endif
+
+	bdiff = BATkdiff(b,bn);
+	ps->bid= bdiff->batCacheid;
+
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	BBPunfix(bdiff->batCacheid);
+	return MAL_SUCCEED;
+}
+
 @-
 Range partitioning simply runs through all partitions
 and creates new ones, keeping the partitions in order.
