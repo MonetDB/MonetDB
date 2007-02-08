@@ -162,7 +162,8 @@ typedef struct XqueryCtx {
 typedef struct serializeFunStruct {
     const char* name;
     /* the initialization handler */
-    bool (*init)(XqueryCtx* ctx, char* args, char* restag, char* resprefix);
+    bool (*init)(XqueryCtx* ctx, char* args, char* restag,
+                 char* resprefix, char* module, char* method);
     /* the clean up handler */
     bool (*cleanup)(XqueryCtx* ctx);
 
@@ -226,6 +227,8 @@ extern struct serializeFunStruct
 pf_support_export int
 xquery_print_result_loop (
     str  mode,
+    str  moduleNS,
+    str  method,
     BAT* ws,
     BAT* loop, 
     BAT* iter, 
@@ -259,6 +262,8 @@ xquery_print_doc_DRIVER (
 pf_support_export int
 xquery_print_result_DRIVER (
     str                 mode,
+    str                 moduleNS,
+    str                 method,
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
@@ -276,6 +281,8 @@ pf_support_export int
 xquery_print_result_driver (
     Stream              fp,
     str                 mode,
+    str                 module,
+    str                 method,
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
@@ -1273,6 +1280,8 @@ static bool
 createWsContext (XqueryCtx*        ctx,
                  BAT*              ws,
                  str               mode,
+                 str               module,
+                 str               method,
                  serializeFunStruct*    driverFun,
                  char*             driverArg,
                  Stream            fp)
@@ -1326,6 +1335,18 @@ createWsContext (XqueryCtx*        ctx,
         /* we may wrap each item in an element
            specifying its type */
         if (match(mode, "xrpc")) {
+            if (!module) {
+                fatal_err (ctx,
+                        "the namespace of called module is "
+                        "required in \"xrpc\" mode");
+                return PROBLEM;
+            }
+            if (!method) {
+                fatal_err (ctx,
+                        "the name of called function is "
+                        "required in \"xrpc\" mode");
+                return PROBLEM;
+            }
             resprefix = "xrpc";
             ctx->modes = ctx->modes | MODE_XRPC;
             /* in "XRPC" mode, the line "<?xml ...?>" is printed by
@@ -1403,7 +1424,7 @@ createWsContext (XqueryCtx*        ctx,
     else
         return PROBLEM;
     
-    if ( !ctx->driverFun->init(ctx, driverArg, restag, resprefix) )
+    if ( !ctx->driverFun->init(ctx, driverArg, restag, resprefix, module, method) )
         return PROBLEM;
 
     return SUCCESS;
@@ -1485,7 +1506,7 @@ xquery_print_doc_DRIVER (
         GDKerror("serialize.mx: unable to find document \"%s\" in working set!\n", docName);
     } else { 
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
-        if (createWsContext(ctx,ws,mode,driverFun,driverArg,GDKout)) {
+        if (createWsContext(ctx,ws,mode,NULL,NULL,driverFun,driverArg,GDKout)) {
             if (ctx->driverFun->handle_startDocument(ctx)) {
                 ptr p;
                 getWsValue(p, ctx, docIndex, PRE_SIZE, 0 /* start */);
@@ -1564,6 +1585,8 @@ int
 xquery_print_result_driver (
     Stream              fp,
     str                 mode,
+    str                 module,
+    str                 method,
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
@@ -1583,7 +1606,7 @@ xquery_print_result_driver (
     static BUN (*fun_k) (BAT *, oid);
 
     /* prepare serialization */ 
-    if ( !createWsContext (ctx, ws, mode, driverFun, driverArg, fp) )
+    if ( !createWsContext (ctx, ws, mode, module, method, driverFun, driverArg, fp) )
         return GDK_FAIL;
 
     curcnt = 0;
@@ -1841,6 +1864,8 @@ xquery_print_result_driver (
 int 
 xquery_print_result_DRIVER (
     str                 mode,
+    str                 moduleNS,
+    str                 method,
     serializeFunStruct *driverFun,
     char               *driverArg,
     BAT                *ws,
@@ -1858,6 +1883,8 @@ xquery_print_result_DRIVER (
     return xquery_print_result_driver (
                GDKout,
                mode,
+               moduleNS,
+               method,
                driverFun, /* set of printing callback function */
                driverArg, /* optional arguments for the callback functions */
                ws,
@@ -1874,6 +1901,8 @@ xquery_print_result_DRIVER (
 int
 xquery_print_result_loop (
     str  mode,
+    str  moduleNS,
+    str  method,
     BAT* ws,
     BAT* loop, 
     BAT* iter, 
@@ -1886,6 +1915,8 @@ xquery_print_result_loop (
     size_t niters = BATcount (loop);
     return xquery_print_result_DRIVER (
                mode,
+               moduleNS,
+               method,
                NULL, /* set of printing callback function */
                NULL, /* optional arguments for the callback functions */
                ws,
@@ -1914,6 +1945,8 @@ xquery_print_result_main (
     
     return xquery_print_result_DRIVER (
                mode,
+               NULL, /* module */
+               NULL, /* method */
                NULL, /* set of printing callback function */
                NULL, /* optional arguments for the callback functions */
                ws,
@@ -1962,6 +1995,8 @@ xquery_print_result_file (
                         ret = xquery_print_result_driver (
                              s,
                              mode,
+                             NULL, /* module */
+                             NULL, /* method */
                              NULL, /* set of printing callback function */
                              NULL, /* optional arguments for the callback functions */
                              ws,

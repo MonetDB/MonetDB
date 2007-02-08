@@ -165,10 +165,13 @@ emit_SAX_event (XqueryCtx *ctx, char* eventName, char* val, int escaped)
  * Default driver initialization function
  */
 static bool
-sax_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix)
+sax_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *module, char *method)
 {
     (void) args;
     (void) resprefix;
+    (void) module;
+    (void) method;
+
     ctx->driverWs = (void *) restag; /* store result tag */
     sax_init_isspecial();
 

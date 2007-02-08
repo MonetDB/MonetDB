@@ -478,13 +478,6 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 #define MAX_POST_HEADER_SIZE    1024
 #define NR_RETRIES              3
 
-#define SOAP_NS  "http://www.w3.org/2003/05/soap-envelope"
-#define XDT_NS   "http://www.w3.org/2005/xpath-datatypes"
-#define XS_NS    "http://www.w3.org/2001/XMLSchema"
-#define XSI_NS   "http://www.w3.org/2001/XMLSchema-instance"
-#define XRPC_LOC "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
-#define XRPC_NS  "http://monetdb.cwi.nl/XQuery"
-
 #endif /* XRPC_CLIENT_H */
 
 @c
@@ -1023,7 +1016,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                             return GDK_FAIL;
                         }
                         xquery_print_result_driver(bs,
-                                "xml-noheader-noroot", NULL, NULL, ws, 1,
+                                "xml-noheader-noroot", NULL, NULL, NULL, NULL,
+                                ws, 1,
                                 node_item, node_item, node_item, node_kind,
                                 int_values, dbl_values, str_values);
 

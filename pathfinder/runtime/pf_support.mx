@@ -59,24 +59,26 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
 
-.COMMAND print_result(str mode, BAT[oid,bat] ws,
+.COMMAND print_result(str mode, str moduleNS, str method,
+                      BAT[oid,bat] ws,
                       BAT[oid,any] loop, BAT[void,oid] iter,
                       BAT[void,oid] item, BAT[void,int] kind, 
                       BAT[oid,lng] int_values, BAT[oid,dbl] dbl_values, 
-                      BAT[oid,str] str_values) : void = xquery_print_result_loop;
+                      BAT[oid,str] str_values) :
+                            void = xquery_print_result_loop;
  "C interface to Workset result print routine, that can print multiple iters"
 
 .COMMAND print_result(str mode, BAT[void,bat] ws,
                       BAT[void,oid] item, BAT[void,int] kind,
                       BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
-                      BAT[void,dbl] dec_values, BAT[void,str] str_values) : 
+                      BAT[void,dbl] dec_values, BAT[void,str] str_values) :
                             void = xquery_print_result_main;
  "C interface to Workset result print routine"
 
 .COMMAND print_result(str file, str mode, BAT[void,bat] ws,
                       oid item, int kind,
                       BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
-                      BAT[void,dbl] dec_values, BAT[void,str] str_values) : 
+                      BAT[void,dbl] dec_values, BAT[void,str] str_values) :
                             void = xquery_print_result_file;
  "C interface to Workset result print routine, but print to a file"
 
@@ -692,7 +694,7 @@ PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
                    const int_values, 
                    const dbl_values, 
                    const dec_values, 
-                   const str_values);    
+                   const str_values);
 }
 
 

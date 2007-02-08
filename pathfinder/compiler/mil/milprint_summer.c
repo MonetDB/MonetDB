@@ -10942,6 +10942,10 @@ const char* PFinitMIL(void) {
         "var time_print := 0LL;\n"
         "var time_exec := 0LL;\n"
         "var time_start := 0LL;\n"
+        "# To print XRPC response message, we need to know the module\n"
+        "# and the method specified in the request message.\n"
+        "var moduleNS := str_nil;\n"
+        "var method := str_nil;\n"
         "var genType := \"xml\";\n";
 }
 
@@ -11040,11 +11044,6 @@ const char* PFstartMIL(int statement_type) {
                                    (PF_STARTMIL_NORMAL("1"));
 }
 
-const char* PFdocbatMIL(void) {
-    /* NjN why isn't this moved to the pathfinder.mx file */
-    return  " ws_opencoll(ws, bat(shredBAT), \"\", TEMP_DOC);\n";
-}
-
 /* debug statement for PFstopMIL to print result set 
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
 */
@@ -11055,7 +11054,7 @@ const char* PFdocbatMIL(void) {
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\
            "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
            "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
-           "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
+           "   print_result(genType,moduleNS,method,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
            PF_STOPMIL_END("Print ")
 #define PF_STOPMIL_UPDATE PF_STOPMIL_START\
            "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")

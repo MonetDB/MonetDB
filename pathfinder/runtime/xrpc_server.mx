@@ -391,7 +391,7 @@ static int
 handle_rpc_request(struct shttpd_callback_arg *arg)
 {
     char errstr[1024], *module = NULL, *location = NULL, *method = NULL;
-    int sock = -1, k = 0;
+    int sock = -1, k = 0, simple_param = 1;
     stream *out = NULL;
     lng i = 0, j = 0, time_servDeSeria = 0;
 
@@ -650,6 +650,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
                     }
 
                     snprintf(argval[nr_args], 32, OIDFMT, val_node_pre);
+                    simple_param = 0;
                 } else {
                     /* 32-bytes is enough to hold the string
                      * representation of the largest 64bits OID value */
@@ -703,6 +704,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
 
                     snprintf(argval[nr_args], 32, OIDFMT, val_node_pre);
                     frag_root = BUNappend(frag_root, (ptr)&val_node_pre, TRUE);
+                    simple_param = 0;
 
                     /* reassign level values for the ELEM nodes */
                     level_diff = pre_levelT[val_node_pre];
@@ -736,9 +738,11 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
             "Content-Type: application/soap+xml; "
             "charset=\"utf-8\"\r\n\r\n");
     char *err = xquery_method(out, timing, module, location, method,
-            argc, iterc, argcnt, argtpe, argval, shredBAT);
-    time_servApp = GDKusec() - time_servApp; /* Stop timing Server
-                                                Application */
+            argc, iterc, argcnt, argtpe, argval,
+            simple_param?NULL:shredBAT);
+
+    /* Stop timing Server Application */
+    time_servApp = GDKusec() - time_servApp;
 
     if (err) {
         send_err(out, 0, "", "env:Sender", err);

@@ -24,7 +24,7 @@ var r := ws_opendoc(ws, bat(void,str,1).append(docname));
 var item := r.hmark(0@0);
 var kind := r.tmark(0@0).set_kind(ELEM);
 var iter := new(void,oid).seqbase(0@0).append(1@0);
-print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_values,str_values);
+print_result("xml","","",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_values,str_values);
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><document><?pi0000 foo?>
 <element author="Sjoerd Mullender" title="test element" attr="0000" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0000">element content 0000</element>

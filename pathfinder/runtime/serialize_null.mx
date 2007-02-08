@@ -34,7 +34,7 @@
 
 #include "serialize.h"
 
-bool null_init (XqueryCtx *ctx, char *args, char *restag, char *resprefix);
+bool null_init (XqueryCtx *ctx, char *args, char *restag, char *resprefix, char *module, char *method);
 bool null_cleanup (XqueryCtx *ctx);
 bool null_startSerialize (XqueryCtx *ctx);
 bool null_endSerialize (XqueryCtx *ctx);
@@ -76,12 +76,15 @@ bool null_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2);
  * NULL driver initialization function
  */
 bool
-null_init (XqueryCtx *ctx, char *args, char *restag, char *resprefix)
+null_init (XqueryCtx *ctx, char *args, char *restag, char *resprefix, char *module, char *method)
 {
     (void) ctx;
     (void) args;
     (void) restag;
     (void) resprefix;
+    (void) module;
+    (void) method;
+
     ctx->driverWs = NULL; /* driverWs not used */
     return SUCCESS;
 }
