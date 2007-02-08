@@ -25,8 +25,17 @@ default: all
 all: @abs_builddir@/setup.py
 	@PYTHON@ setup.py build
 
-@abs_builddir@/setup.py:
-	cp -R "$(SRCDIR)"/* @abs_builddir@
+@abs_builddir@/setup.py: \
+	$(SRCDIR)/setup.py \
+	$(SRCDIR)/autogen.py \
+	$(SRCDIR)/autogen/am.py \
+	$(SRCDIR)/autogen/msc.py \
+	$(SRCDIR)/autogen/var.py \
+	$(SRCDIR)/autogen/codegen.py \
+	$(SRCDIR)/autogen/__init__.py
+	mkdir -p @abs_builddir@/autogen
+	cp "$(SRCDIR)"/*.py @abs_builddir@
+	cp "$(SRCDIR)"/autogen/*.py @abs_builddir@/autogen
 
 install: all
 	@PYTHON@ setup.py $@ --prefix="$(DESTDIR)$(PREFIX)"
