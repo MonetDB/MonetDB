@@ -504,6 +504,13 @@ print_expr(PFsql_t *n)
         {
             sqlprintf("'%s'", n->sem.atom.val.s);
         } break;
+        case sql_cst:
+            sqlprintf("CAST(");
+            print_statement(n->child[0]);
+            sqlprintf(" AS ");
+            print_statement(n->child[1]);
+            sqlprintf(")");
+        break;
         default:
         {
             PFoops( OOPS_FATAL, "expression screwed up (%u)",
@@ -877,22 +884,28 @@ print_aggrfunction(PFsql_t *n)
     }
 }
 
-#if 0
-        gcc: defined but never used
-
 static void
 print_expression(PFsql_t *n)
 {
     assert( n );
     switch( n->kind ) {
-        /* expression : Variable */
-        case sql_crrltn_name:
+        case sql_expr_list:
         {
-            print_loc_variable( n );
+            print_expression(n->child[0]);
+            sqlprintf(", ");
+            print_expression(n->child[1]);
         } break;
         case sql_tbl_name:
         {
-            print_variable( n );
+            print_variable (n);
+        } break;
+        case sql_sum:
+        {
+            sqlprintf("(");
+            print_statement(n->child[0]);
+            sqlprintf(" %s ", ID[n->kind]);
+            print_statement(n->child[1]);
+            sqlprintf(")");
         } break;
         default:
         {
@@ -906,7 +919,6 @@ print_expression(PFsql_t *n)
         } break;
     }
 }
-#endif
 
 static void
 print_variable( PFsql_t *n )
