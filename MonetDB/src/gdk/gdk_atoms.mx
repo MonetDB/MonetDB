@@ -888,7 +888,7 @@ the commit tremendously complicated.
 				if ((*BATatoms[t_].atomPut) (P2, (var_t *) P3, P4) == 0) \
 					goto bunins_failed;		\
 			} else {					\
-				memcpy(P3, P4, ATOMsize(P1));		\
+				memcpy(P3, P4, (size_t) ATOMsize(P1));	\
 			}						\
 			ATOMfix(t_, P4);				\
 		}							\
@@ -933,7 +933,7 @@ the commit tremendously complicated.
 			ATOMfix(t_, P4);				\
 		} else {						\
 			ATOMunfix(t_, P3);				\
-			memcpy(P3, P4, ATOMsize(P1));			\
+			memcpy(P3, P4, (size_t) ATOMsize(P1));		\
 			ATOMfix(t_, P4);				\
 		}							\
 	}								\
@@ -1672,7 +1672,7 @@ dblFromStr(char *src, int *len, dbl **dst)
 @:atomtostr(dbl,"%.17g",double)@
 @:atom_io(dbl,Lng,lng)@
 
-#if HAVE_STRTOF && !HAVE_DECL_STRTOF
+#if defined(HAVE_STRTOF) && !HAVE_DECL_STRTOF
 extern float strtof(const char *, char **);
 #endif
 

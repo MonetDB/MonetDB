@@ -31,7 +31,7 @@
 
 #include "monet_options.h"
 
-void
+static void
 showUsage(char *name)
 {
 	printf("Usage:  %s [-I<exp>] [-C<num>] [-A<num>] [-t<text>] [-r<rev>] <oldfile> <newfile> [<outfile>]\n", name);

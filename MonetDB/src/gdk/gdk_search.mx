@@ -174,7 +174,7 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 /* HASHins now receives a BAT* param and has become adaptive; killing wrongly configured hash tables */
 /* use HASHins_any or HASHins_<tpe> instead if you know what you're doing or want to keep the hash whatever */
 #define HASHins(b,i,v) \
-	if ((i & 1023) == 1023 && HASHgonebad(b,v)) { HASHremove(b); } else  { HASHins_any(b->hhash,i,v); }
+	do if (((i) & 1023) == 1023 && HASHgonebad((b),(v))) { HASHremove(b); } else  { HASHins_any((b)->hhash,(i),(v)); } while (0)
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
@@ -272,7 +272,7 @@ HASHmask(size_t cnt)
 	return m;
 }
 
-void
+static void
 HASHclear(Hash *h)
 {
 	hash_t *i, *j;

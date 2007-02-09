@@ -477,7 +477,6 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
    Must also have that *pb < *pa, that pa[na-1] belongs at the end of the
    merge, and should have na <= nb.  See listsort.txt for more info.
    Return 0 if successful, -1 if error. */
-		ssize_t k;
 		void *dest;
 		ssize_t min_gallop = ms->min_gallop;
 
@@ -601,7 +600,6 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
    Must also have that *pb < *pa, that pa[na-1] belongs at the end of the
    merge, and should have na >= nb.  See listsort.txt for more info.
    Return 0 if successful, -1 if error. */
-		ssize_t k;
 		void *dest;
 		void *basea;
 		void *baseb;

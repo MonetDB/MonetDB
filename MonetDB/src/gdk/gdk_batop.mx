@@ -47,11 +47,11 @@ of the srcbat, but testing only once where they reside.
 
 @= updateloop
 {
-	BUN p, q;
+	BUN p1, p2;
 	int xx;
 
-	BATloopFast(@2, p, q, xx) {
-		@3(@1, BUNhead(@2, p), BUNtail(@2, p));
+	BATloopFast(@2, p1, p2, xx) {
+		@3(@1, BUNhead(@2, p1), BUNtail(@2, p1));
 	}
 }
 @}
@@ -669,7 +669,7 @@ through is the "isnil" predicate). So we implement it here.
 		break;
 	}
 @c
-BAT *
+static BAT *
 BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 {
 	int ht = bn->htype, tt = bn->ttype;
@@ -1109,11 +1109,11 @@ An index is exploited when possible.
 @= restrict1
 	if (BAThordered(b)&1) {
 		int offset;
-		BUN p,q;
+		BUN p1, p2;
 
 		b= BATmirror(b);
-		SORTloop(b, p, q, hl, hh, offset) {
-			*m++ = p;
+		SORTloop(b, p1, p2, hl, hh, offset) {
+			*m++ = p1;
 		}
 		b= BATmirror(b);
 	} else {
@@ -1600,7 +1600,7 @@ BAT@6order@3(BAT *b)
 BAT *
 BATrevert(BAT *b)
 {
-	int xx;
+	size_t xx;
 	char *buf;
 	BUN p, q;
 
@@ -1610,7 +1610,7 @@ BATrevert(BAT *b)
 		b = BATmaterialize(b, BATcount(b));
 	}
 	ALIGNdel(b, "BATrevert", FALSE);
-	xx = BUNsize(b);
+	xx = (size_t) BUNsize(b);
 	buf = (char *) GDKmalloc(xx);
 	for (p = BUNlast(b) - xx, q = BUNfirst(b); p > q; p -= xx, q += xx) {
 		memcpy(buf, p, xx);
@@ -1644,7 +1644,7 @@ partitioning operators: @%BATsplithash@ and @%BATsplitrange@.
 @-
 The @%part_bat@ function creates a partition BAT.
 @c
-BAT *
+static BAT *
 part_bat(BAT *b, int ht, int tt, size_t expected_size, int respect_order)
 {
 	BAT *bn = BATnew(ht, tt, (size_t) ((double) expected_size * BATMARGIN));
@@ -1714,9 +1714,9 @@ BAThashsplit(BAT *b, size_t n, int unary)
 		}
 		@:updateloop(metabat,b,BUNhash)@
 		BATloop(metabat, p, q) {
-			bat bf = *(bat *) BUNtail(metabat, p);
+			bat bt = *(bat *) BUNtail(metabat, p);
 
-			BBPunfix(bf);
+			BBPunfix(bt);
 		}
 	}
 	return metabat;

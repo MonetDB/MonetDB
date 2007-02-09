@@ -538,7 +538,7 @@ MT_mmap_empty(int i)
 }
 
 static void
-MT_mmap_init()
+MT_mmap_init(void)
 {
 	int i;
 
@@ -740,7 +740,8 @@ MT_mmap_save_tile(int i, size_t tile, stream* err) {
 }
 
 /* round-robin next. this is to ensure some fairness if multiple large results are produced simultaneously */
-int MT_mmap_next(int i) {
+static int
+MT_mmap_next(int i) {
 	if (i != -1) { 
 		i = MT_mmap_tab[i].next;
 		if (i == -1) i = MT_mmap_first;
@@ -948,7 +949,7 @@ MT_init_posix(int alloc_map)
 }
 
 size_t
-MT_getrss()
+MT_getrss(void)
 {
 	/* get RSS  -- linux only for the moment */
 	static char MT_mmap_procfile[128] = { 0 };

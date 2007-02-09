@@ -208,7 +208,7 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 				goto bunins_failed;			\
 			}						\
 		} else {						\
-			memcpy(dst, src, ATOMsize(tpe));		\
+			memcpy(dst, src, (size_t) ATOMsize(tpe));	\
 		}							\
 		ATOMfix(tpe, src);					\
 	}
