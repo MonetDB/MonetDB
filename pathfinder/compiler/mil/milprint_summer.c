@@ -6224,13 +6224,11 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
     PFcnode_t *args = RD(xrpc);
 
     if (fun->builtin){
-        milprintf(f,
-                "{ERROR (\"XRPC calls to builtin functions"
-                " are not allowed.\"); }\n");
+        PFoops (OOPS_NOTSUPPORTED,
+                "RPC calls to built-in functions not supported by XRPC.");
     } else if (fun->qname.ns.uri == NULL) {
-        milprintf(f,
-                "{ERROR (\"Functions called via XRPC should defined"
-                " in a module definition.\"); }\n");
+        PFoops (OOPS_NOTSUPPORTED,
+                "RPC calls to in-line functions not supported by XRPC.");
     }
 
     milprintf(f, "{ # begin of XRPC function call\n");
