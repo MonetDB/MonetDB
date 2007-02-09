@@ -811,11 +811,14 @@ static tjCtx* GLOBAL_TJCTX; /* INCOMPLETE, CODE NOT REENTRANT */
  * Default driver initialization function
  */
 static bool
-pftijah_init(XqueryCtx* ctx, char* args, char* restag, char* resprefix) {
+pftijah_init(XqueryCtx* ctx, char* args, char* restag, char* resprefix, char* module, char* method) {
     (void) ctx;
     (void) args;
     (void) restag;
     (void) resprefix;
+    (void) module;
+    (void) method;
+
     ctx->driverWs = GLOBAL_TJCTX;
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:pftijah_init()\n",GLOBAL_TJCTX->name);

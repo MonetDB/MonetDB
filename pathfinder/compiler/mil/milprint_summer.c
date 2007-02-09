@@ -6224,13 +6224,11 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
     PFcnode_t *args = RD(xrpc);
 
     if (fun->builtin){
-        milprintf(f,
-                "{ERROR (\"XRPC calls to builtin functions"
-                " are not allowed.\"); }\n");
+        PFoops (OOPS_NOTSUPPORTED,
+                "RPC calls to built-in functions not supported by XRPC.");
     } else if (PFqname_uri (fun->qname) == NULL) {
-        milprintf(f,
-                "{ERROR (\"Functions called via XRPC should defined"
-                " in a module definition.\"); }\n");
+        PFoops (OOPS_NOTSUPPORTED,
+                "RPC calls to in-line functions not supported by XRPC.");
     }
 
     milprintf(f, "{ # begin of XRPC function call\n");
@@ -6534,12 +6532,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n", (rc)?item_ext:val_join(STR));
         } else {
             milprintf(f, 
-                "{ # translate pf:documents (string*) as string*\n"
-                "  var ret := ws_documents(ws);\n"
-                "  var loop := reverse(loop%03u).project(0@0);\n"
-                "  ret := loop.leftjoin(reverse(project(reverse(ret),0@0)));\n"
-                "  item_str_ := ret.tmark(0@0);\n"
-                "  iter := ret.hmark(0@0);\n", cur_level);
+                "{ # translate pf:documents () as string*\n"
+                "  var ret := reverse(loop%03u).project(0@0).leftjoin(ws_documents(ws));\n"
+                "  iter := ret.hmark(0@0);\n"
+                "  item_str_ := ret.tmark(0@0);\n", cur_level);
         }
         milprintf(f,
                 "  ipik := item_str_;\n"
@@ -6555,8 +6551,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate pf:collections () as string*\n"
                 "  var ret := reverse(loop%03u).project(0@0).leftjoin(ws_collections(ws));\n"
                 "  iter := ret.hmark(0@0);\n"
-                "  ipik := iter;\n"
                 "  item_str_ := ret.tmark(0@0);\n"
+                "  ipik := item_str;\n"
                 "  kind := STR;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate fn:collections () as string*\n", cur_level);
@@ -10944,6 +10940,10 @@ const char* PFinitMIL(void) {
         "var time_print := 0LL;\n"
         "var time_exec := 0LL;\n"
         "var time_start := 0LL;\n"
+        "# To print XRPC response message, we need to know the module\n"
+        "# and the method specified in the request message.\n"
+        "var moduleNS := str_nil;\n"
+        "var method := str_nil;\n"
         "var genType := \"xml\";\n";
 }
 
@@ -11042,11 +11042,6 @@ const char* PFstartMIL(int statement_type) {
                                    (PF_STARTMIL_NORMAL("1"));
 }
 
-const char* PFdocbatMIL(void) {
-    /* NjN why isn't this moved to the pathfinder.mx file */
-    return  " ws_opencoll(ws, bat(shredBAT), \"\", TEMP_DOC);\n";
-}
-
 /* debug statement for PFstopMIL to print result set 
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
 */
@@ -11057,7 +11052,7 @@ const char* PFdocbatMIL(void) {
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\
            "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
            "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
-           "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
+           "   print_result(genType,moduleNS,method,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
            PF_STOPMIL_END("Print ")
 #define PF_STOPMIL_UPDATE PF_STOPMIL_START\
            "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")

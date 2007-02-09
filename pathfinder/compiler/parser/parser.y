@@ -2671,9 +2671,11 @@ ReplaceExpr               : "do replace" TargetExpr "with" ExprSingle
                           ;
 
 /* [145] */
-/* FIXME: "with" is wrong syntax here.  But we get problems with our
-          lexical state machine if we use "as". */
-RenameExpr                : "do rename" TargetExpr "with" NewNameExpr
+/* FIXME: "into" is wrong syntax here.  But we get problems with our
+          lexical state machine if we use "as". 
+   it has also been noted a bug at W3C: http://www.w3.org/Bugs/Public/show_bug.cgi?id=4176
+ */
+RenameExpr                : "do rename" TargetExpr "into" NewNameExpr
                             { $$ = p_wire2 (p_rename, @$, $2, $4); }
                           ;
 

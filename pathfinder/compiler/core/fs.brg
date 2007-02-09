@@ -3421,8 +3421,10 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *v4     = new_var (NULL);
             PFvar_t *ins    = new_var (NULL);
 
+            PFfun_t *exactly_one
+                = function (PFqname (PFns_fn, "exactly-one"));
             PFfun_t *is2ns
-                = function (PFqname (PFns_pf,"item-sequence-to-node-sequence"));
+                = function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
             PFfun_t *matn
                 = function (PFqname (PFns_pf, "merge-adjacent-text-nodes"));
             PFfun_t *insert = NULL;
@@ -3484,7 +3486,7 @@ reduce (PFpnode_t * p, int goalnt)
                      */
                     C(p)
                         = flwr (
-                            let (letbind (var (target), C(R(p))),
+                            let (letbind (var (target), APPLY(exactly_one, C(R(p)))),
                             let (letbind (var (v1), C(L(p))),
                             let (letbind (var (v2), APPLY (is2ns, var (v1))),
                             let (letbind (var (v3), APPLY (matn, var (v2))),
@@ -3596,6 +3598,8 @@ reduce (PFpnode_t * p, int goalnt)
                 PFvar_t *pi       = new_var (NULL);
                 PFvar_t *c        = new_var (NULL);
 
+                PFfun_t *exactly_one
+                    = function (PFqname (PFns_fn, "exactly-one"));
                 PFfun_t *is2uA
                     = function (PFqname (PFns_pf,
                                          "item-sequence-to-untypedAtomic"));
@@ -3611,7 +3615,7 @@ reduce (PFpnode_t * p, int goalnt)
                             let (letbind (var (string), fn_data (var (expr))),
                                 let (letbind (var (step1),
                                               APPLY (is2uA, var (string))),
-                                    let (letbind (var (target), C(L(p))),
+                                    let (letbind (var (target), APPLY(exactly_one, C(L(p)))),
                                          nil())))),
                         typeswitch (
                             var (target),
@@ -3757,6 +3761,8 @@ reduce (PFpnode_t * p, int goalnt)
                 PFvar_t *repl   = new_var (NULL);
                 PFvar_t *parent = new_var (NULL);
 
+                PFfun_t *exactly_one
+                    = function (PFqname (PFns_fn, "exactly-one"));
                 PFfun_t *is2ns
                     = function (PFqname (PFns_pf,
                                          "item-sequence-to-node-sequence"));
@@ -3772,7 +3778,7 @@ reduce (PFpnode_t * p, int goalnt)
 
                 C(p)
                   = flwr (
-                      let (letbind (var (target), C(L(p))),
+                      let (letbind (var (target), APPLY(exactly_one, C(L(p)))),
                       let (letbind (var (v1), C(R(p))),
                       let (letbind (var (v2), APPLY (is2ns, var (v1))),
                       let (letbind (var (v3), APPLY (matn, var (v2))),
@@ -3857,7 +3863,7 @@ reduce (PFpnode_t * p, int goalnt)
         case 222:
         {
             /*
-             * [[ do rename <TargetExpr> as <NewNameExpr> ]]
+             * [[ do rename <TargetExpr> into <NewNameExpr> ]]
              *  ==
              * let $target := [[ <TargetExpr> ]] return
              *   let $newName := [[ <NewNameExpr ]] return
@@ -3866,8 +3872,9 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *target  = new_var (NULL);
             PFvar_t *newName = new_var (NULL);
             PFfun_t *rename  = function (PFqname (PFns_upd, "rename"));
+            PFfun_t *exactly_one = function (PFqname (PFns_fn, "exactly-one"));
 
-            C(p) = flwr (let (letbind (var (target), C(L(p))),
+            C(p) = flwr (let (letbind (var (target), APPLY(exactly_one, C(L(p)))),
                               nil ()),
                          flwr (let (letbind (var (newName), C(R(p))),
                                     nil ()),

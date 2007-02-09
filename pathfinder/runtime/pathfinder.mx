@@ -2622,9 +2622,9 @@ PROC ws_opendoc(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[oid,oid]
 # pf:collection(), get 'collection root' as a single startpoint to query an entire collection
 PROC ws_collection_root(BAT[void,BAT] ws, BAT[void,str] colnames) : BAT[oid,oid]
 {
-    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var colname_coll, err := CATCH(colname_coll := reverse(colnames).mirror().leftjoin(reverse(collection_name)));
+    var colname_coll, err := CATCH({ colname_coll := reverse(colnames).mirror().leftjoin(reverse(collection_name));
+                                     colname_pins.insert(colname_coll.kunique().project(ws_id(ws))); });
     lock_unset(pf_short);
     var notfound := colname_coll.kdiff(reverse(colnames));
     if (count(notfound) > 0) ERROR("pf:collection() %s not found (%d such errors).\n", notfound.fetch(0), count(notfound));
@@ -2642,7 +2642,6 @@ PROC ws_collection(BAT[void,BAT] ws, BAT[oid,str] nms, BAT[void,oid] map) : BAT[
     var err, idx_coll, idx_doc, idx_colname, idx_names;
     nms := nms.fetch(nms.tmark(0@0).[startsWith]("::").ord_uselect(false));
 
-    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
     err := CATCH({ var doc := nms.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).tsort();
                    idx_names := doc.leftjoin(doc_name);
@@ -2661,7 +2660,7 @@ PROC ws_collections(BAT[void,BAT] ws) : BAT[oid,str]
 {
     pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var res, err := CATCH(res := reverse(reverse(collection_name).project(0@0)));
+    var res, err := CATCH(res := reverse(collection_name.[startsWith]("::").uselect(false).project(0@0)).leftjoin(collection_name));
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
     return res;
@@ -2678,12 +2677,12 @@ PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme) : BAT[void,str]
     return res;
 }
 
-# fn:documents(), get all document *names* in a collection
+# fn:documents(), get all document *names* 
 PROC ws_documents(BAT[void,BAT] ws) : BAT[void,str]
 {
     pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var res, err := CATCH(res := doc_name.tmark(0@0));
+    var res, err := CATCH(res := reverse(doc_name.[startsWith]("::").uselect(false).project(0@0)).leftjoin(doc_name));
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
     return res;
@@ -3264,6 +3263,13 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 @:ws(c_decl)@
 @:ws_decl(c)@
 
+#define SOAP_NS  "http://www.w3.org/2003/05/soap-envelope"
+#define XDT_NS   "http://www.w3.org/2005/xpath-datatypes"
+#define XS_NS    "http://www.w3.org/2001/XMLSchema"
+#define XSI_NS   "http://www.w3.org/2001/XMLSchema-instance"
+#define XRPC_NS  "http://monetdb.cwi.nl/XQuery"
+#define XRPC_LOC "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
+
 #define XTRACT_KIND(X)     (X & 63)
 #define XTRACT_CONT(X)     (X >> 6)
 #define SET_CONT_KIND(X,Y) (X << 6 | Y)
@@ -3284,7 +3290,7 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 pathfinder_export char *
 xquery_method(stream *out, 
               int timing,
-              char* module, 
+              char* moduleNS, 
               char* uri, 
               char *method, 
               lng argc, 
@@ -3475,6 +3481,8 @@ typedef struct {
     lng *time_shred; 
     lng *time_exec; 
     lng *time_print; 
+    char **moduleNS;
+    char **method;
     char **genType;
 
     /* counts used to remove query (non-module) procs and stacks after execution */
@@ -3961,7 +3969,7 @@ xquery_function_call(xquery_client *ctx,
 
             if (shredBAT) {
                 /* add shredded RPC request message to the working set */
-                src = (char*) PFdocbatMIL();
+                src = " ws_opencoll(ws, bat(shredBAT), \"\", TEMP_DOC);\n";
                 while(*src && cur < end) *cur++ = *src++;
             }
 
@@ -4340,6 +4348,8 @@ xquery_client_alloc_(xquery_client *ctx)
 
     @:find_var(shredBAT,int,ival)@
     @:find_var(genType,str,sval)@
+    @:find_var(moduleNS,str,sval)@
+    @:find_var(method,str,sval)@
     @:find_var(time_compile,lng,lval)@
     @:find_var(time_exec,lng,lval)@
     @:find_var(time_print,lng,lval)@
@@ -4824,8 +4834,7 @@ xquery_prepare(xquery_client *ctx,
         } else {
             /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq" */
             p = xquery_parse_space(p+6);
-            if ( (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) ||
-                 (strncmp(p, "rpc-module", 10) == 0 && ISSPACE(p[10])) ){
+            if ( (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) ){
                 len = p[0] == 'm' ? 6 : 10;
                 p = xquery_parse_space(p+len);
                 if (strncmp(p, "namespace", 9) == 0 && ISSPACE(p[9])) {
@@ -5263,7 +5272,7 @@ xquery_method(stream *out,
               int timing,
               char* module,
               char* uri,
-              char *method,
+              char* method,
               lng argc,
               lng itercnt,
               lng** argcnt,
@@ -5274,7 +5283,7 @@ xquery_method(stream *out,
     lng usec = GDKusec();
     MT_Id XQthread_id = THRgettid(), old_tid;
     Thread XQthread = THRget(XQthread_id), old_thread;
-    char *err, *ns = "fn", *mode = "xml-noheader-xrpc";
+    char *err, *buf, *ns = "fn", *mode = "xml-noheader-xrpc";
     stream *s = NULL;
     mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
     xquery_client *ctx;
@@ -5286,6 +5295,11 @@ xquery_method(stream *out,
     ctx = mc->fc;
     ctx->fderr = GDKerr;
     ctx->mode = 0;
+
+    buf = GDKstrdup(module);
+    (*ctx->moduleNS) = buf;
+    buf = GDKstrdup(method);
+    (*ctx->method) = buf;
 
     if (timing){
         mode = "timing-xml-noheader-xrpc";

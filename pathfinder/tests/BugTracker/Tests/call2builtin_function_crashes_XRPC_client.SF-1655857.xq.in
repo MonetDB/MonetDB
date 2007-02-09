@@ -1,0 +1,4 @@
+execute at { "localhost" }
+    {
+        pf:add-doc("$TSTSRCDIR/call2builtin_function_crashes_XRPC_client.SF-1655857.xml", "hello.xml")
+    }
