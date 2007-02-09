@@ -509,7 +509,8 @@ int yydebug=1;
 	opt_cache
 	opt_cycle
 	opt_ref_action
-	ref_on
+	ref_on_delete
+        ref_on_update
 	with_or_without_data
 	trigger_action_time
 	opt_for_each
@@ -1561,15 +1562,20 @@ ref_action:
  |	SET DEFAULT		{ $$ = 4; }
  ;
 
-ref_on:
-   ON UPDATE ref_action		{ $$ = ($3 << 8); }
- | ON sqlDELETE ref_action	{ $$ = $3; }
+ref_on_update:
+   ON UPDATE ref_action         { $$ = ($3 << 8); }
+;
+
+ref_on_delete:
+   ON sqlDELETE ref_action      { $$ = $3; }
  ;
 
 opt_ref_action:
-   /* empty */		{ $$ = (2 << 8) + 2; /* defaults are RESTRICT */ }
- | ref_on		{ $$ = $1; }
- | ref_on ref_on	{ $$ = $1 + $2;	}
+   /* empty */                          { $$ = (2 << 8) + 2; /* defaults are RESTRICT */ }
+ | ref_on_update                        { $$ = $1; }
+ | ref_on_delete                        { $$ = $1; }
+ | ref_on_delete ref_on_update          { $$ = $1 + $2; }
+ | ref_on_update ref_on_delete          { $$ = $1 + $2; }
  ;
 
 opt_match_type:

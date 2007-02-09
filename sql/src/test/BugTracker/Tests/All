@@ -43,3 +43,4 @@ crash_on_insert.SF-1639113
 create_column.SF-1643542
 cache
 caching.SF-1651599
+decimal_prepare.SF-1655818

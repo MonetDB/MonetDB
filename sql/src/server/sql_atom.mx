@@ -380,6 +380,27 @@ atom_copy(atom *a, sql_allocator *sa)
 	return na;
 }
 
+static lng scales[] = {
+	1,
+	10,
+	100,
+	1000,
+	10000,
+	100000,
+	1000000,
+	10000000,
+	100000000,
+	1000000000,
+	10000000000,
+	100000000000,
+	1000000000000,
+	10000000000000,
+	100000000000000,
+	1000000000000000,
+	10000000000000000,
+	100000000000000000,
+	1000000000000000000
+};
 /* cast atom a to type tp (success == 1, fail == 0) */
 int 
 atom_cast(atom *a, sql_subtype *tp) 
@@ -417,6 +438,42 @@ atom_cast(atom *a, sql_subtype *tp)
 			}
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
+			return 1;
+		}
+		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
+		    at->type->localtype <= tp->type->localtype &&
+		    at->type->digits <= tp->type->digits &&
+		    at->type->scale <= tp->type->scale) {
+			lng mul = 1;
+			/* cast numerics */
+			switch( tp->type->localtype) {
+			case TYPE_int:
+				if (at->type->localtype == TYPE_sht) 
+					a->data.val.ival = a->data.val.shval;
+				else
+					return 0;
+				break;
+			case TYPE_lng:
+				if (at->type->localtype == TYPE_sht) 
+					a->data.val.lval = a->data.val.shval;
+				else if (at->type->localtype == TYPE_int) 
+					a->data.val.lval = a->data.val.ival;
+				else
+					return 0;
+				break;
+			default:
+				return 0;
+			}
+			a->tpe = *tp;
+			a->data.vtype = tp->type->localtype;
+			/* fix scale */
+			mul = scales[tp->type->scale-at->type->scale];
+			if (a->data.vtype == TYPE_lng)
+				a->data.val.lval *= mul;
+			else if (a->data.vtype == TYPE_int)
+				a->data.val.ival *= mul;
+			else if (a->data.vtype == TYPE_sht)
+				a->data.val.shval *= mul;
 			return 1;
 		}
 		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_FLT) {
