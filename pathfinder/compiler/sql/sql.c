@@ -277,6 +277,12 @@ PFsql_seq( const PFsql_t *schm_inf, const PFsql_t *cmtblexpr )
 /*............ Aggregat Functions ...........*/
 
 PFsql_t*
+PFsql_coalesce(PFsql_t* expr)
+{
+   return wire1 (sql_clsc, expr);
+}
+
+PFsql_t*
 PFsql_count(bool dist, const PFsql_t *expr)
 {
     PFsql_t* ret = wire1(sql_count, expr);
@@ -791,17 +797,22 @@ PFsql_from_list_(unsigned int count, const PFsql_t **list)
                 PFsql_from_list_( count-1, list+1 ),
                 list[0]);
     return NULL; /* satisfy picky compilers */
+}
 
-    //if( count == 1)
-    //{
-    //    return wire2(sql_frm_list, list[0], terminator());
-    //}
-    //else
-    //{
-    //    return wire2(sql_frm_list, list[0],
-    //            PFsql_from_list_(count - 1, list + 1));
-    //}
-    //return NULL; /* satisfy picky compilers */
+PFsql_t*
+PFsql_expression_list_(unsigned int count, const PFsql_t **list)
+{
+    assert (count > 0);
+
+    if (list[0] == NULL)
+        return PFsql_expression_list_ (count-1, list+1);
+    else if (count == 1)
+        return (PFsql_t*)list[0];
+    else
+        return wire2(sql_expr_list,
+                PFsql_expression_list_ (count-1, list+1),
+                list[0]);
+    return NULL; /* satisfy picky compilers */
 }
 
 /**

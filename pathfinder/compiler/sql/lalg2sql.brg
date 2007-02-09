@@ -2305,6 +2305,7 @@ reduce(PFla_op_t *p, int goalnt)
                  p->dirty = true;
 
         } break;
+        /* FIXME stringjoin is false */
         /* Rel:   string_join (Rel, Rel) */
         case 88:
         /* even string_join is implemented as identity operator,

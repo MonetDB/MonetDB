@@ -57,6 +57,7 @@
 #define seq( si, ce )                 PFsql_seq( si, ce )
 
 /*............ SQL aggregat functions ............*/ 
+#define coalesce (e)                   PFsql_coalesce(e)
 #define count(b, e)                    PFsql_count(b, e)
 #define max( c )                       PFsql_max( c )
 #define sum( c )                       PFsql_sum( c )

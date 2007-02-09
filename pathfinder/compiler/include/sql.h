@@ -167,7 +167,9 @@ enum PFsql_kind_t {
    sql_outr_join        = 62,
    sql_rght_outr_join   = 62,
    sql_sum              = 63,
-   sql_lit_dec          = 64
+   sql_lit_dec          = 64,
+   sql_clsc             = 65,
+   sql_expr_list        = 66
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -324,6 +326,8 @@ PFsql_t* PFsql_cast(const PFsql_t *expr, const PFsql_t *t);
 PFsql_t* PFsql_seq(const PFsql_t *schm_inf, const PFsql_t *cmtblexpr);
 
 /*............ Aggregat Functions ............*/
+
+PFsql_t* PFsql_coalesce(PFsql_t *expr);
 
 PFsql_t* PFsql_count(bool dist, const PFsql_t *expr);
 
@@ -487,6 +491,12 @@ PFsql_t* PFsql_select_list_add(const PFsql_t *list, const PFsql_t *item);
             sizeof(PFsql_t*), (const PFsql_t *[]) \
             {__VA_ARGS__})
 PFsql_t* PFsql_from_list_(unsigned int count, const PFsql_t **list);
+
+#define PFsql_expression_list(...) \
+PFsql_expression_list_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+        sizeof(PFsql_t*), (const PFsql_t *[]) \
+        {__VA_ARGS__})
+PFsql_t* PFsql_expression_list_(unsigned int count, const PFsql_t **list);
 
 /**
  * Create an empty from_list.
