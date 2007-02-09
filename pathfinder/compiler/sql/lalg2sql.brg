@@ -202,7 +202,6 @@ Rel:    number (project (number (Rel)))           =  53 (10);
 Rel:    type (Rel)                                =  54 (10);
 Rel:    type_assert (Rel)                         =  55 (10);
 Rel:    cast (cast (Rel))                         =  56 (10);
-Rel:    cast (project (cast (Rel)))               =  57 (10);
 Rel:    cast (Rel)                                =  58 (10);
 Rel:    seqty1 (Rel)                              =  59 (10);
 Rel:    all (Rel)                                 =  60 (10);
@@ -525,7 +524,8 @@ sql_column_env_add (PFarray_t *env, PFalg_att_t att,
     assert (ty == aat_nat || ty == aat_int ||
             ty == aat_str || ty == aat_bln ||
             ty == aat_pre || ty == aat_qname ||
-            ty == aat_dec);
+            ty == aat_dec || ty == aat_uA ||
+            ty == aat_dbl);
 
     *(sql_column_env_t*)PFarray_add (env) = (sql_column_env_t) {
         .type = ty,
@@ -2305,11 +2305,35 @@ reduce(PFla_op_t *p, int goalnt)
                  p->dirty = true;
 
         } break;
-        /* FIXME stringjoin is false */
         /* Rel:   string_join (Rel, Rel) */
         case 88:
+        {
         /* even string_join is implemented as identity operator,
          * so it will handle most of the queries */
+         sql_column_env_add (p->sql_ann->colmap,
+                 p->sem.string_join.iter_res,
+                 type_of (p, p->sem.string_join.iter_res),
+                 sql_expression (R(p)->sql_ann->colmap,
+                     p->sem.string_join.iter_sep,
+                     type_of (R(p), p->sem.string_join.iter_sep))
+                 );
+
+         sql_column_env_add (p->sql_ann->colmap,
+                 p->sem.string_join.item_res,
+                 type_of (p, p->sem.string_join.item_res),
+                 sql_expression (R(p)->sql_ann->colmap,
+                     p->sem.string_join.item_sep,
+                     type_of (R(p), p->sem.string_join.item_sep))
+                 );
+         
+         sql_stmt = select
+             (
+              NULL,
+              from_list (R(p)->sql_ann->sfw->sem.select.from_list),
+              NULL,
+              NULL
+             );
+        } break;
         /* FragRel:  merge_adjacent (Frag, Rel) */
         case 107:
         {
@@ -2904,7 +2928,8 @@ bin_comp (PFsql_t* (*op) (const PFsql_t*, const PFsql_t*),
     assert ( ty == type_of(L(p), p->sem.binary.att1));
     assert ( ty == aat_int || ty == aat_dec ||
             ty == aat_dbl || ty == aat_str ||
-            ty == aat_bln);
+            ty == aat_bln || ty == aat_nat ||
+            ty == aat_qname || aat_pre);
     return bin_cmp (op, p, ty);
 }
 
