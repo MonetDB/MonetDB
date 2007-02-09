@@ -28,8 +28,6 @@ Over..
 [ "timestamp",	7,	0	]
 [ "decimal",	5,	2	]
 [ "decimal",	5,	2	]
-
-% to be validated, should probably do something like:
 [ 1	]
 
 # 11:47:08 >  
