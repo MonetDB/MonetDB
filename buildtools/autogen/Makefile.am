@@ -22,20 +22,20 @@ DESTDIR=
 
 default: all
 
-all: @abs_builddir@/setup.py
-	@PYTHON@ setup.py build
+@abs_builddir@/autogen:
+	mkdir -p $@
 
-@abs_builddir@/setup.py: \
-	$(SRCDIR)/setup.py \
-	$(SRCDIR)/autogen.py \
-	$(SRCDIR)/autogen/am.py \
-	$(SRCDIR)/autogen/msc.py \
-	$(SRCDIR)/autogen/var.py \
-	$(SRCDIR)/autogen/codegen.py \
-	$(SRCDIR)/autogen/__init__.py
-	mkdir -p @abs_builddir@/autogen
-	cp "$(SRCDIR)"/*.py @abs_builddir@
-	cp "$(SRCDIR)"/autogen/*.py @abs_builddir@/autogen
+@abs_builddir@/%.py:  $(SRCDIR)/%.py @abs_builddir@/autogen
+	cp $< $@
+
+all:	@abs_builddir@/setup.py \
+	@abs_builddir@/autogen.py \
+	@abs_builddir@/autogen/am.py \
+	@abs_builddir@/autogen/msc.py \
+	@abs_builddir@/autogen/var.py \
+	@abs_builddir@/autogen/codegen.py \
+	@abs_builddir@/autogen/__init__.py
+	@PYTHON@ setup.py build
 
 install: all
 	@PYTHON@ setup.py $@ --prefix="$(DESTDIR)$(PREFIX)"
