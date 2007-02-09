@@ -61,8 +61,8 @@ This module contains a simple interface for network connections.
 	PROC listen(int port, int maxusers, bit open) : void {
 		mapi_listen(port,str(nil),maxusers,open);
 	}
-	ADDHELP("listen", "sjoerd", "May 23 2005",
-		"Start the Mapi listener on <port> for <maxusers>.\nIf <open> is true, accept connections from everywhere, otherwise only from localhost.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+	ADDHELP("listen", "sjoerd", "May  23 2005",
+		"Start the Mapi listener on <port> for <maxusers>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
 
 	PROC listen(int port, int maxusers) : void {
@@ -70,13 +70,6 @@ This module contains a simple interface for network connections.
 	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.",
-		mod());
-
-	PROC listen(int port, int maxusers, bit open) : void {
-		mapi_listen(port,str(nil),maxusers,open);
-	}
-	ADDHELP("listen", "sjoerd", "May  23 2005",
-		"Start the Mapi listener on <port> for <maxusers>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
 
 	PROC listen(int port, int maxusers) : void {
