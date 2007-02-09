@@ -6532,12 +6532,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n", (rc)?item_ext:val_join(STR));
         } else {
             milprintf(f, 
-                "{ # translate pf:documents (string*) as string*\n"
-                "  var ret := ws_documents(ws);\n"
-                "  var loop := reverse(loop%03u).project(0@0);\n"
-                "  ret := loop.leftjoin(reverse(project(reverse(ret),0@0)));\n"
-                "  item_str_ := ret.tmark(0@0);\n"
-                "  iter := ret.hmark(0@0);\n", cur_level);
+                "{ # translate pf:documents () as string*\n"
+                "  var ret := reverse(loop%03u).project(0@0).leftjoin(ws_documents(ws));\n"
+                "  iter := ret.hmark(0@0);\n"
+                "  item_str_ := ret.tmark(0@0);\n", cur_level);
         }
         milprintf(f,
                 "  ipik := item_str_;\n"
@@ -6553,8 +6551,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate pf:collections () as string*\n"
                 "  var ret := reverse(loop%03u).project(0@0).leftjoin(ws_collections(ws));\n"
                 "  iter := ret.hmark(0@0);\n"
-                "  ipik := iter;\n"
                 "  item_str_ := ret.tmark(0@0);\n"
+                "  ipik := item_str;\n"
                 "  kind := STR;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate fn:collections () as string*\n", cur_level);
