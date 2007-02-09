@@ -42,7 +42,7 @@ esac
 AM_CONDITIONAL([ENABLE_MEL], [test "$enable_mel" = yes])
 
 
-AC_CONFIG_FILES([Makefile autogen/Makefile conf/Makefile
+AC_CONFIG_FILES([Makefile autogen/Makefile conf/Makefile conf/Mbootstrap
                  conf/buildtools-config])
 AM_CONFIG_HEADER([dummy.h])
 

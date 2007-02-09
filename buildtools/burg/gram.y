@@ -26,8 +26,6 @@ extern void doGram(List);
 %token K_GRAM
 %token K_START
 %token K_PPERCENT
-%token INT
-%token ID
 
 %token <y_string> ID
 %token <y_int> INT
