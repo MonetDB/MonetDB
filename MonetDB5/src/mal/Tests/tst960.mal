@@ -9,7 +9,7 @@ io.print(S);
 
 L:= batcalc.length(S);
 io.print(L);
-L:= batcalc.bytes(S);
+L:= batcalc.nbytes(S);
 io.print(L);
 
 B:= batcalc.==(S,"hello");

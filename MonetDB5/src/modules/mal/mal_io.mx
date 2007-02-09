@@ -277,7 +277,7 @@ IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl,
 	if (hd)
 		stream_printf(fp, "%s", hd);
 
-	if (ATOMstorage(tpe) == TYPE_str || ATOMstorage(tpe) > TYPE_str)
+	if (ATOMvarsized(tpe))
 		ATOMprint(tpe, *(str *) val, fp);
 	else
 		ATOMprint(tpe, val, fp);
