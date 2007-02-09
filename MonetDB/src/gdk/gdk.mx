@@ -322,37 +322,37 @@ An error at this stage normally lead to an abort.
 
 /* standard includes upon which all configure tests depend */
 #include <stdio.h>
-#if HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
-#if HAVE_SYS_STAT_H
+#ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif
-#if STDC_HEADERS
+#ifdef STDC_HEADERS
 # include <stdlib.h>
 # include <stddef.h>
 #else
-# if HAVE_STDLIB_H
+# ifdef HAVE_STDLIB_H
 #  include <stdlib.h>
 # endif
 #endif
-#if HAVE_STRING_H
-# if !STDC_HEADERS && HAVE_MEMORY_H
+#ifdef HAVE_STRING_H
+# if !defined(STDC_HEADERS) && defined(HAVE_MEMORY_H)
 #  include <memory.h>
 # endif
 # include <string.h>
 #endif
-#if HAVE_STRINGS_H
+#ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#if HAVE_INTTYPES_H
+#ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #else
-# if HAVE_STDINT_H
+# ifdef HAVE_STDINT_H
 #  include <stdint.h>
 # endif
 #endif
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
 
@@ -365,24 +365,24 @@ An error at this stage normally lead to an abort.
 # include <sys/param.h>		/* MAXPATHLEN */
 #endif
 
-#if HAVE_DIRENT_H
+#ifdef HAVE_DIRENT_H
 # include <dirent.h>
 # define NAMLEN(dirent) strlen((dirent)->d_name)
 #else
 # define dirent direct
 # define NAMLEN(dirent) (dirent)->d_namlen
-# if HAVE_SYS_NDIR_H
+# ifdef HAVE_SYS_NDIR_H
 #  include <sys/ndir.h>
 # endif
-# if HAVE_SYS_DIR_H
+# ifdef HAVE_SYS_DIR_H
 #  include <sys/dir.h>
 # endif
-# if HAVE_NDIR_H
+# ifdef HAVE_NDIR_H
 #  include <ndir.h>
 # endif
 #endif
 
-#if HAVE_SYS_WAIT_H
+#ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
 #ifndef WEXITSTATUS
@@ -509,6 +509,7 @@ typedef size_t oid;
 typedef ssize_t wrd;
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
+#define SIZEOF_PTR	SIZEOF_VOID_P
 typedef float flt;
 typedef double dbl;
 typedef char *str;
@@ -1151,7 +1152,6 @@ gdk_export int BATfree(BAT *b);
 gdk_export void BATdestroy(BAT *b);
 gdk_export int BATelmshift(BAT *b);
 gdk_export void BATsetdims(BAT *b);
-gdk_export int BBPreclaim(BAT *b);
 @
 @}
 
@@ -1757,7 +1757,6 @@ gdk_export bat BBPmaxsize;
 gdk_export bat BBPlimit;
 gdk_export bat BBP_free;
 gdk_export int BBP_dirty;	/* BBP table dirty? */
-gdk_export bat BBPsize;	/* current size of BBP tables */
 gdk_export BBPrec *BBP;
 
 /* fast defines without checks; internal use only  */
@@ -1790,16 +1789,11 @@ gdk_export BBPrec *BBP;
 
 gdk_export void BBPlock(str s);
 
-gdk_export int BBPrename(bat b, str s);
-gdk_export int BBPincref(bat b, int logical);
-gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPhot(bat b);
 gdk_export void BBPcold(bat b);
 gdk_export void BBPtrim(size_t memdelta, size_t vmdelta);
 gdk_export void BBPunlock(str s);
 
-gdk_export bat BBPindex(str nme);
-gdk_export BAT *BBPdescriptor(bat b);
 gdk_export str BBPlogical(bat b, str buf);
 gdk_export str BBPphysical(bat b, str buf);
 gdk_export int BBP_curstamp;
@@ -2290,7 +2284,6 @@ gdk_export MT_Lock GDKtmLock;
 #define DEADBEEFCHK     if (!(GDKdebug&33554432))
 
 gdk_export int GDKnrofthreads;
-gdk_export int GDKdebug;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;
 gdk_export void GDKprotect(void);
@@ -2630,7 +2623,6 @@ materialization is usually needed for updates.
 @h
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 gdk_export int ALIGNrelated(BAT *b1, BAT *b2);
-gdk_export int ALIGNsetH(BAT *dst, BAT *src);
 
 gdk_export BAT *BATpropcheck(BAT *b, int mode);
 

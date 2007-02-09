@@ -211,7 +211,7 @@ BATins_kunique(BAT *bn, BAT *b)
 	return NULL;
 }
 
-BAT *
+static BAT *
 BATins_sunique(BAT *bn, BAT *b)
 {
 	bit unique = FALSE;
@@ -531,7 +531,7 @@ TODO synced/key case..
 	break;
 
 @= batcheck
-BAT*
+static BAT*
 BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 {
 	int hash = TRUE, (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
@@ -681,7 +681,7 @@ double elimination.
 #define KEYk	TRUE
 #define KEYs	FALSE
 
-BAT *
+static BAT *
 BATmaterialize_(BAT *b, size_t size)
 {
 	BAT *bn = BATnew(TYPE_oid, b->ttype, size);

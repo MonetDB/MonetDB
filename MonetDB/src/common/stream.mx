@@ -1505,7 +1505,7 @@ socket_close(stream *s)
 }
 
 static stream *
-socket_open(SOCKET socket, const char *name)
+socket_open(SOCKET sock, const char *name)
 {
 	stream *s;
 
@@ -1516,13 +1516,13 @@ socket_open(SOCKET socket, const char *name)
 	s->write = socket_write;
 	s->close = socket_close;
 	s->flush = NULL;
-	s->stream_data.s = socket;
+	s->stream_data.s = sock;
 
 	errno = 0;
 #if defined(SO_KEEPALIVE) && !defined(WIN32)
 	{
 		int opt = 0;
-		if (setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt, sizeof(opt)) < 0) {
+		if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt, sizeof(opt)) < 0) {
 			s->errnr = OPEN_ERROR;
 			return s;
 		}
@@ -1532,7 +1532,7 @@ socket_open(SOCKET socket, const char *name)
 	{
 		int tos = IPTOS_THROUGHPUT;
 
-		if (setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos)) < 0) {
+		if (setsockopt(sock, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos)) < 0) {
 			s->errnr = OPEN_ERROR;
 			return s;
 		}
@@ -1542,7 +1542,7 @@ socket_open(SOCKET socket, const char *name)
 	{
 		int nodelay = 1;
 
-		if (setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay)) < 0) {
+		if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay)) < 0) {
 			s->errnr = OPEN_ERROR;
 			return s;
 		}
@@ -1550,10 +1550,10 @@ socket_open(SOCKET socket, const char *name)
 #endif
 #ifdef HAVE_FCNTL
 	{
-		int fl = fcntl(socket, F_GETFL);
+		int fl = fcntl(sock, F_GETFL);
 
 		fl &= ~O_NONBLOCK;
-		if (fcntl(socket, F_SETFL, fl) < 0) {
+		if (fcntl(sock, F_SETFL, fl) < 0) {
 			s->errnr = OPEN_ERROR;
 			return s;
 		}
@@ -1564,14 +1564,14 @@ socket_open(SOCKET socket, const char *name)
 }
 
 stream *
-socket_rstream(SOCKET socket, const char *name)
+socket_rstream(SOCKET sock, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_rstream " SSZFMT " %s\n", (ssize_t) socket, name);
+	printf("socket_rstream " SSZFMT " %s\n", (ssize_t) sock, name);
 #endif
-	if ((s = socket_open(socket, name)) == NULL)
+	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR)
@@ -1580,14 +1580,14 @@ socket_rstream(SOCKET socket, const char *name)
 }
 
 stream *
-socket_wstream(SOCKET socket, const char *name)
+socket_wstream(SOCKET sock, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_wstream " SSZFMT " %s\n", (ssize_t) socket, name);
+	printf("socket_wstream " SSZFMT " %s\n", (ssize_t) sock, name);
 #endif
-	if ((s = socket_open(socket, name)) == NULL)
+	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
@@ -1597,27 +1597,27 @@ socket_wstream(SOCKET socket, const char *name)
 }
 
 stream *
-socket_rastream(SOCKET socket, const char *name)
+socket_rastream(SOCKET sock, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_rastream " SSZFMT " %s\n", (ssize_t) socket, name);
+	printf("socket_rastream " SSZFMT " %s\n", (ssize_t) sock, name);
 #endif
-	if ((s = socket_open(socket, name)) != NULL)
+	if ((s = socket_open(sock, name)) != NULL)
 		s->type = ST_ASCII;
 	return s;
 }
 
 stream *
-socket_wastream(SOCKET socket, const char *name)
+socket_wastream(SOCKET sock, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_wastream " SSZFMT " %s\n", (ssize_t) socket, name);
+	printf("socket_wastream " SSZFMT " %s\n", (ssize_t) sock, name);
 #endif
-	if ((s = socket_open(socket, name)) == NULL)
+	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
@@ -2435,14 +2435,14 @@ stream *
 block_stream(stream *s)
 {
 	stream *ns;
-	bs *bs;
+	bs *b;
 
 #ifdef STREAM_DEBUG
 	printf("block_stream %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	if ((ns = create_stream(s->name)) == NULL)
 		return NULL;
-	if ((bs = bs_create(s)) == NULL)
+	if ((b = bs_create(s)) == NULL)
 		ns->errnr = OPEN_ERROR;
 	ns->type = s->type;
 	ns->access = s->access;
@@ -2451,7 +2451,7 @@ block_stream(stream *s)
 	ns->close = bs_close;
 	ns->flush = bs_flush;
 	ns->destroy = bs_destroy;
-	ns->stream_data.p = (void *) bs;
+	ns->stream_data.p = (void *) b;
 
 	return ns;
 }

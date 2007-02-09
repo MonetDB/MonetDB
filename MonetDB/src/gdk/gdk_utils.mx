@@ -241,26 +241,28 @@ received.
 @c
 #ifndef NATIVE_WIN32
 #include <signal.h>
-RETSIGTYPE
+#if 0 /* these are unused */
+static RETSIGTYPE
 BATSIGignore(int nr)
 {
 	GDKsyserror("! ERROR signal %d caught by thread %lx\n", nr, (size_t) MT_getpid());
 }
 
-RETSIGTYPE
+static RETSIGTYPE
 BATSIGabort(int nr)
 {
 	GDKfatal("BATSIGabort: signal %d caught by thread %lx\n", nr, (size_t) MT_getpid());
 }
+#endif
 
-RETSIGTYPE
+static RETSIGTYPE
 BATSIGinterrupt(int nr)
 {
 	GDKexit(nr);
 }
 
 #ifdef SIGCHLD
-RETSIGTYPE
+static RETSIGTYPE
 BATSIGchild(int nr)
 {
 	int status;
@@ -276,7 +278,7 @@ BATSIGchild(int nr)
 #endif
 
 
-RETSIGTYPE
+static RETSIGTYPE
 BATSIGcrash(int nr)
 {
 	static int crash = 0;
@@ -292,7 +294,7 @@ BATSIGcrash(int nr)
 	}
 }
 
-int
+static int
 BATSIGinit(void)
 {
 #ifdef SIGBUS
@@ -442,7 +444,7 @@ GDKmem_heapsize(void)
 }
 
 size_t
-GDKmem_inuse()
+GDKmem_inuse(void)
 {
 	/* RAM/swapmem that Monet is really using now */
 	ssize_t mem_cursize = GDK_mem_cursize;
@@ -455,7 +457,7 @@ GDKmem_inuse()
 }
 
 size_t
-GDKmem_cursize()
+GDKmem_cursize(void)
 {
 	/* RAM/swapmem that Monet has claimed from OS */
 	ssize_t mem_cursize = GDK_mem_cursize;
@@ -467,7 +469,7 @@ GDKmem_cursize()
 }
 
 size_t
-GDKvm_cursize()
+GDKvm_cursize(void)
 {
 	/* current Monet VM address space usage */
 	ssize_t vm_cursize = GDK_vm_cursize;
@@ -596,7 +598,7 @@ GDKmem_heapcheck(int t)
 		gdk_unset_lock(GDKthreadLock, @3);
 	}
 @c
-void
+static void
 GDKmemdump(void)
 {
 	struct mallinfo m = MT_mallinfo();
@@ -637,7 +639,7 @@ GDKmemdump(void)
 }
 
 
-void
+static void
 GDKmemchk(int memchk, int vmchk)
 {
 	size_t memtarget = GDKmem_inuse();
@@ -717,7 +719,7 @@ mtrace_test()
 }
 
 
-int
+static int
 GDKmtrace(bit *enable)
 {
 	if (*enable) {
@@ -822,7 +824,7 @@ print_address(ptr address)
 	printf(PTRFMT "\t%s\t%s\n", PTRFMTCAST address, dlip.dli_sname, filename ? filename + 1 : dlip.dli_fname);
 }
 
-int
+static int
 GDKmprint(int *pidx)
 {
 	int idx = *pidx;
@@ -893,20 +895,6 @@ del_mem(BAT *b, mem_t mem)
 	}
 	printf("Free of unknown memory " PTRFMT ", size: " SSZFMT "\n", PTRFMTCAST(void *) mem, ((ssize_t *) mem)[-1]);
 }
-#else
-int
-GDKmtrace(bit *enable)
-{
-	(void) enable;
-	return GDK_SUCCEED;
-}
-
-int
-GDKmprint(int *pidx)
-{
-	(void) pidx;
-	return GDK_SUCCEED;
-}
 #endif
 @}
 
@@ -961,7 +949,7 @@ This causes corruption of mallinfo stats. As we depend on those, we should keep 
 malloc arena small. Thus, VM redirection is now quickly applied: for all mallocs > 1MB.
 @{
 @c
-void
+static void
 GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 {
 	int bak = GDKdebug;
@@ -1376,7 +1364,7 @@ gdk_export int GDKinit(char *dbname, char *dbfarm, int alloc_map);
 
 @c
 void
-GDKprotect()
+GDKprotect(void)
 {
 	int i;
 
@@ -1398,7 +1386,7 @@ GDKprotect()
 }
 
 #ifndef WIN32
-void
+static void
 GDKvmtrim(void *limit)
 {
 	int wait = 1;

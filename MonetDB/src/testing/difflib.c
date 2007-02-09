@@ -122,7 +122,7 @@ HTMLsave(char *s)
 }
 
 
-void
+static void
 markNL(FILE *fp, int k)
 {
 	int i;
@@ -232,7 +232,7 @@ u_diff2l_diff(char *u_diff_fn, char *l_diff_fn)
 /* u_diff2l_diff */
 
 
-int
+static int
 lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 {
 	FILE *lw_diff_fp, *wc_diff_fp, *fp[2], *pipe_fp;

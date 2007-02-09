@@ -272,7 +272,7 @@ HASHmask(size_t cnt)
 	return m;
 }
 
-void
+static void
 HASHclear(Hash *h)
 {
 	hash_t *i, *j;

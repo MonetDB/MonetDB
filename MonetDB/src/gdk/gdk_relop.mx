@@ -511,7 +511,7 @@ The aftermath -- property setting -- is relatively straightforward here.
 	T@2put(bn, BUNtloc(bn, dst));
 @c
 @= fetchjoin
-BAT *
+static BAT *
 densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, dst;
@@ -544,7 +544,7 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	return ret;
 }
 
-BAT *
+static BAT *
 orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, dst;
@@ -576,7 +576,7 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	return ret;
 }
 
-BAT *
+static BAT *
 defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, dst;
