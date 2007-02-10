@@ -205,7 +205,6 @@ procs();
 [ "listen(int, int) : void"																  ]
 [ "listen(int, int) : void"																  ]
 [ "listen(int, int, bit) : void"															  ]
-[ "listen(int, int, bit) : void"															  ]
 [ "listen(int, str, int) : void"															  ]
 [ "ll_htordered_unique_thetajoin(int, BAT[oid,any::2], BAT[oid,any::2], BAT[void,oid], BAT[void,oid], any, any) : BAT[any,any]"				  ]
 [ "ll_standoff_select_narrow(BAT[void,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"									  ]
