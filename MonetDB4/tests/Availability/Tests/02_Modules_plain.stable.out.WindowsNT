@@ -757,9 +757,9 @@ Module: "logger"
 
 Module: "mapi"
 
-[ 27 ]
-[ 27 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 26 ]
+[ 26 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																																								  # name
 # str			str		str										str																																								  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -777,7 +777,6 @@ Module: "mapi"
 [ "listen",		  "PROC:      ",  "listen(int, int) : void",						  "Start the Mapi listener on <port> for <maxusers>."																							  ]
 [ "listen",		  "PROC:      ",  "listen(int, int) : void",							  "Start the Mapi listener on <port> for <maxusers>."																																		  ]
 [ "listen",		  "PROC:      ",  "listen(int, int, bit) : void",						  "Start the Mapi listener on <port> for <maxusers>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."																												  ]
-[ "listen",		  "PROC:      ",  "listen(int, int, bit) : void",					  "Start the Mapi listener on <port> for <maxusers>.\nIf <open> is true, accept connections from everywhere, otherwise only from localhost.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."	  ]
 [ "listen",		  "PROC:      ",  "listen(int, str, int) : void",					  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>."																					  ]
 [ "mapi_listen",	  "BUILTIN:   ",  "mapi_listen(int port, str sockfile, int maxusers, bit open) ",	  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."				  ]
 [ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile) ",  "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format."								  ]
