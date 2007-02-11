@@ -159,7 +159,7 @@ command bat.setKey(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] address BKC
 #function does not automatically eliminate duplicates. 
 #Use b := b.kunique;
 
-command bpm.insert(pb:bat[:oid,:any_2],b:bat[:oid,:any_2]):void address BPMinsert;
+command bpm.insert(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]):void address BPMinsert;
 #Insert elements into the BAT partitions
 
 command crackers.insertionsBOnNeedGraduallyRipple(b:bat[:any_1,:date],c:bat[:any_1,:date]):void address CRKmergeInsertionsB_OnNeedGraduallyRipple;

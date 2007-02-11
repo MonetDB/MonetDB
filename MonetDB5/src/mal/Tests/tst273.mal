@@ -1,0 +1,36 @@
+# the multiplex code blocks.
+
+t0:= alarm.usec();
+b:= bat.new(:oid,:lng);
+barrier (go,i):= language.newRange(0:lng);
+	k:= mmath.rand();
+	l:= calc.lng(k);
+	bat.insert(b,nil:oid,l);
+	redo (go,i):= language.nextElement(1:lng,10000:lng);
+exit (go,i);
+
+profiler.setFilter(b);
+profiler.startMonitor();
+io.printf("#monitor \n");
+mx:= aggr.max(b); 
+(clk,rdbytes,wrbytes):= profiler.getEvent();
+io.printf("# clk %d\n",clk);
+io.printf("# rdbytes %d\n",rdbytes);
+io.printf("# wrbytes %d\n",wrbytes);
+io.printf("#max %d\n",mx);
+algebra.select(b,nil:lng,mx); 
+(clk,rdbytes,wrbytes):= profiler.getEvent();
+io.printf("# clk %d\n",clk);
+io.printf("# rdbytes %d\n",rdbytes);
+io.printf("# wrbytes %d\n",wrbytes);
+algebra.select(b,mx,nil:lng); 
+(clk,rdbytes,wrbytes):= profiler.getEvent();
+io.printf("# clk %d\n",clk);
+io.printf("# rdbytes %d\n",rdbytes);
+io.printf("# wrbytes %d\n",wrbytes);
+d:= mmath.sin(0.2:dbl);
+(clk,rdbytes,wrbytes):= profiler.getEvent();
+io.printf("# clk %d\n",clk);
+io.printf("# rdbytes %d\n",rdbytes);
+io.printf("# wrbytes %d\n",wrbytes);
+profiler.stopMonitor();
