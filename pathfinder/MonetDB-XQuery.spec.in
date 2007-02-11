@@ -89,6 +89,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedxq.*
 %{_datadir}/doc/MonetDB-XQuery-%{version}/*
 #%{_datadir}/doc/%{name}-%{version}/*
+%{_datadir}/MonetDB/xrpc/admin/*
+%{_datadir}/MonetDB/xrpc/export/*
 
 %files devel
 %defattr(-,monetdb,monetdb) 
