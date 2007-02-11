@@ -2655,37 +2655,102 @@ PROC ws_collection(BAT[void,BAT] ws, BAT[oid,str] nms, BAT[void,oid] map) : BAT[
     return ws_opendoc(ws, idx_names.tmark(0@0), idx_colname, idx_coll, idx_doc, false); 
 }
 
-# fn:collections(), get all collection *names*
-PROC ws_collections(BAT[void,BAT] ws) : BAT[oid,str]
+# create a sequence of elements with 2 attributes, out of a four-column table
+PROC xmltab2(BAT[void,bat] ws, BAT[any,any] b) : BAT[void,oid]
 {
+  var eltqn := add_qname ("", "", "bun", ws);
+  var at1qn := add_qname ("", "", "head", ws);
+  var at2qn := add_qname ("", "", "tail", ws);
+  var attr1 := [str](b.hmark(0@0));
+  var attr2 := [str](b.tmark(0@0));
+  var attrid := new(void,oid,2*count(attr1)).seqbase(0@0).append(attr1.project(oid_nil)).append(attr1.project(oid_nil));
+  attrid.replace(reverse([oid]([lng](reverse(attr_constr(attr1.project(at1qn),attr1,ws).fetch(1))).[*](2LL))));
+  attrid.replace(reverse([oid]([lng](reverse(attr_constr(attr1.project(at2qn),attr2,ws).fetch(1))).[*](2LL).[+](1LL))));
+  return elem_constr(attr1.mark(1@0),attr1.project(eltqn), attrid.mirror().[lng]().[/](2LL).[oid](),
+                                                           attrid.project(oid_nil), attrid.project(oid_nil),
+                                                           attrid, attrid.project(WS), ws).fetch(1);
+}
+
+# execute any mil command..
+PROC ws_mil(BAT[void,BAT] ws, str mil) : any
+{
+   var res := eval(mil);
+   if (type(res) != bat) return str(res);
+   return xmltab2(ws,res);
+}
+
+# create a sequence of elements with 3 attributes, out of a four-column table
+PROC xmltab4(BAT[void,bat] ws,
+             str eltname, BAT[void,str] item,
+             str at1name, BAT[void,str] attr1,
+             str at2name, BAT[void,str] attr2,
+             str at3name, BAT[void,str] attr3) : BAT[void,oid]
+{
+  var eltqn := add_qname ("", "", eltname, ws);
+  var at1qn := add_qname ("", "", at1name, ws);
+  var at2qn := add_qname ("", "", at2name, ws);
+  var at3qn := add_qname ("", "", at3name, ws);
+  var elemid := new(void,oid,4*count(item)).seqbase(0@0)
+                                           .append(item.project(oid_nil)).append(item.project(oid_nil))
+                                           .append(item.project(oid_nil)).append(item.project(oid_nil));
+  var attrid := elemid.copy().access(BAT_WRITE);
+  elemid.replace(reverse([oid]([lng](reverse(text_constr(item, ws).fetch(1))).[*](4LL))));
+  attrid.replace(reverse([oid]([lng](reverse(attr_constr(attr1.project(at1qn),attr1,ws).fetch(1))).[*](4LL).[+](1LL))));
+  attrid.replace(reverse([oid]([lng](reverse(attr_constr(attr2.project(at2qn),attr2,ws).fetch(1))).[*](4LL).[+](2LL))));
+  attrid.replace(reverse([oid]([lng](reverse(attr_constr(attr2.project(at3qn),attr3,ws).fetch(1))).[*](4LL).[+](3LL))));
+  return elem_constr(item.mark(1@0),item.project(eltqn), elemid.mirror().[lng]().[/](4LL).[+](1LL).[oid](),
+                                                         elemid, [isnil](elemid).[ifthenelse](oid_nil,WS),
+                                                         attrid, [isnil](attrid).[ifthenelse](oid_nil,WS), ws).fetch(1);
+}
+
+# fn:collections(), get all collection *names*
+PROC ws_collections(BAT[void,BAT] ws) : BAT[void,oid]
+{
+    var coll_nme, coll_sze, coll_mbs, coll_upd; 
     pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var res, err := CATCH(res := reverse(collection_name.[startsWith]("::").uselect(false).project(0@0)).leftjoin(collection_name));
+    var err := CATCH( { coll_nme := mirror(collection_name.[startsWith]("::").uselect(false));
+                        coll_sze := coll_nme.leftjoin(doc_collection.histogram()).tmark(0@0).[str]();
+                        coll_mbs := [/](coll_nme.leftjoin(collection_size), 1024LL * 1024LL).tmark(0@0).[str]().[+](" MB"); 
+                        coll_upd := coll_nme.[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+                        coll_nme := coll_nme.leftjoin(collection_name).tmark(0@0); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
-    return res;
+    return xmltab4(ws, "collection", coll_nme, "numDocs", coll_sze, "size", coll_mbs, "updatable", coll_upd);
 }
 
 # fn:documents(), get all document *names* in a collection
-PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme) : BAT[void,str]
+PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme) : BAT[oid,oid]
 {
+    var doc_nme, doc_col, doc_url, doc_upd; 
     pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var res, err := CATCH(res := coll_nme.tmark(0@0).leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftjoin(doc_name));
+    var err := CATCH( { doc_nme := coll_nme.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection));
+                        doc_url := doc_nme.leftjoin(doc_location).tmark(0@0);
+                        doc_col := doc_nme.leftjoin(doc_collection).tmark(0@0);
+                        doc_upd := doc_col.[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+                        doc_col := doc_col.leftjoin(collection_name).tmark(0@0); 
+                        doc_nme := doc_nme.leftjoin(doc_name); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
-    return res;
+    return doc_nme.mark(0@0).leftfetchjoin(xmltab4(ws, "document", doc_nme.tmark(0@0), "collection", doc_col, "url", doc_url, "updatable", doc_upd));
 }
 
 # fn:documents(), get all document *names* 
-PROC ws_documents(BAT[void,BAT] ws) : BAT[void,str]
+PROC ws_documents(BAT[void,BAT] ws) : BAT[void,oid]
 {
+    var doc_nme, doc_col, doc_url, doc_upd; 
     pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var res, err := CATCH(res := reverse(doc_name.[startsWith]("::").uselect(false).project(0@0)).leftjoin(doc_name));
+    var err := CATCH( { doc_nme := mirror(doc_name.[startsWith]("::").uselect(false));
+                        doc_url := doc_nme.leftjoin(doc_location).tmark(0@0);
+                        doc_col := doc_nme.leftjoin(doc_collection).tmark(0@0);
+                        doc_upd := doc_col.[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+                        doc_nme := doc_nme.leftjoin(doc_name).tmark(0@0); 
+                        doc_col := doc_col.leftjoin(collection_name).tmark(0@0); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
-    return res;
+    return xmltab4(ws, "document", doc_nme, "collection", doc_col, "url", doc_url, "updatable", doc_upd);
 }
 
 

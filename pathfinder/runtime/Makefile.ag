@@ -23,6 +23,8 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
+SUBDIRS = xrpc
+
 EXTRA_DIST_DIR = Tests
 
 INCLUDES = $(MONETDB_INCS) $(MONETDB4_INCS) $(LIBXML2_CFLAGS) ../compiler/include

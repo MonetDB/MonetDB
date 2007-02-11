@@ -6528,36 +6528,51 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             milprintf(f, 
                 "{ # translate pf:documents (string*) as string*\n"
                 "  var ret := ws_documents(ws, item%s.materialize(ipik));\n"
-                "  item_str_ := ret.tmark(0@0);\n"
+                "  item := ret.tmark(0@0);\n"
                 "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n", (rc)?item_ext:val_join(STR));
         } else {
             milprintf(f, 
                 "{ # translate pf:documents () as string*\n"
-                "  var ret := reverse(loop%03u).project(0@0).leftjoin(ws_documents(ws));\n"
+                "  var ret := reverse(loop%03u).cross(ws_documents(ws));\n"
                 "  iter := ret.hmark(0@0);\n"
-                "  item_str_ := ret.tmark(0@0);\n", cur_level);
+                "  item := ret.tmark(0@0);\n", cur_level);
         }
         milprintf(f,
-                "  ipik := item_str_;\n"
-                "  kind := STR;\n"
+                "  ipik := item;\n"
+                "  kind := set_kind(WS,ELEM);\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n" 
                 "} # end of translate fn:documents (string?) as string*\n");
-        if (code) return STR;
-        addValues (f, str_container(), "item_str_", "item");
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"collections")))
     {
         milprintf(f,
                 "{ # translate pf:collections () as string*\n"
-                "  var ret := reverse(loop%03u).project(0@0).leftjoin(ws_collections(ws));\n"
+                "  var ret := reverse(loop%03u).cross(ws_collections(ws));\n"
                 "  iter := ret.hmark(0@0);\n"
-                "  item_str_ := ret.tmark(0@0);\n"
-                "  ipik := item_str;\n"
-                "  kind := STR;\n"
+                "  item := ret.tmark(0@0);\n"
+                "  ipik := item;\n"
+                "  kind := set_kind(WS,ELEM);\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate fn:collections () as string*\n", cur_level);
-        if (code) return STR;
-        addValues (f, str_container(), "item_str_", "item");
+        return NORMAL;
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"mil")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        item_ext = kind_str(rc);
+        milprintf(f,
+                "{ # translate pf:mil (string) as item*\n"
+                "  if (count(loop%03u) != 1) ERROR(\"pf:mil can only be called in a single iteration\");\n"
+                "  kind := ELEM;\n"
+                "  item := ws_mil(ws, item%s.fetch(0));\n"
+                "  if (type(item) = str) {\n"
+                "     item := addValues(str_values,item);\n"
+                "     kind := STR;\n"
+                "  }\n"
+                "  kind := set_kind(WS,kind);\n"
+                "  iter := item.materialize(ipik).project(1@0);\n"
+                "  ipik := iter;\n"
+                "  pos  := ipik.tmark(1@0);\n"
+                "} # end of translate fn:mil (string) as item*\n", cur_level, rc?item_ext:val_join(STR));
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"put")))
     {
@@ -11065,10 +11080,9 @@ const char* PFstartMIL(int statement_type) {
            " ws_destroy(ws);\n"\
            "}\n"\
            "if (not(isnil(err))) ERROR(err);\n"\
-           "time_print := usec() - time_print;\n"\
-           "if (genType.startsWith(\"timing\"))\n"\
+           "else if (genType.startsWith(\"timing\"))\n"\
            "  printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
-           "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print)/1000.0);\n"
+           "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print := usec() - time_print)/1000.0);\n"
 const char* PFstopMIL(int statement_type) {
     return (statement_type==0)?
                (PF_STOPMIL_RDONLY):
