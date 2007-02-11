@@ -1166,6 +1166,7 @@ str
 SQLengineIntern(Client c, backend *be) 
 {
 	str msg = MAL_SUCCEED;
+	MalBlkPtr mb;
 	MalStkPtr oldglb = c->glb;
 	char oldlang= be->language;
 	mvc *m = be->mvc;
@@ -1180,7 +1181,8 @@ SQLengineIntern(Client c, backend *be)
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
-	if (c->curprg->def->errors){
+	mb= c->curprg->def;
+	if (mb->errors){
 		sqlcleanup(be->mvc, 0);
 		throw(SQL, "SQLengine", "Program contains errors");
 	}
@@ -1188,7 +1190,7 @@ SQLengineIntern(Client c, backend *be)
 	stream_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
 
-	if( c->curprg->def->stop == 1 ){
+	if( mb->stop == 1 ){
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
@@ -1208,12 +1210,12 @@ cached routine, which may be hidden . For now we take a shortcut.
 @c
 		if( be->q) {
 			InstrPtr p;
-			p = getInstrPtr(c->curprg->def,1);
+			p = getInstrPtr(mb,1);
 			if( p->blk)
 				printFunction(c->fdout, p->blk, c->listing);
 
 		}
-		c->curprg->def->errors = -1; /* don;t execute */
+		mb->errors = -1; /* don;t execute */
 	} 
 	c->glb = 0;
 	be->language= 'D';
@@ -1222,18 +1224,18 @@ The code below is copied from MALengine, which handles execution
 in the context of a user global environment. We have a private
 environment.
 @c
-	if( MALcommentsOnly(c->curprg->def)) {
+	if( MALcommentsOnly(mb)) {
 		msg= MAL_SUCCEED;
 	} else {
-		msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+		msg = (str) runMAL(c, mb, 1, 0, 0, 0);
 	}
 
 cleanup_engine:
 	if (msg) {
 		if (getExceptionType(msg) == OPTIMIZER) {
-			resetMalBlk( c->curprg->def, 1);
-			/* resetInstructions(c->curprg->def, 1);*/
-			freeVariables(c->curprg->def, c->glb, be->vtop);
+			resetMalBlk( mb, 1);
+			/* resetInstructions(mb, 1);*/
+			freeVariables(mb, c->glb, be->vtop);
 			be->language = oldlang;
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
@@ -1245,11 +1247,18 @@ cleanup_engine:
 		showErrors();
 		m->session->status = -10;
 	}
+@-
+If we are dealing with a {runonce} plan, the query cache should
+be adjusted too.
+@c
+	if( fndArgProperty(mb, getInstrPtr(mb,0),0,putName("runonce",7))){
+		/* remove this plan from the cache */
+	}
 	be->q = NULL;
 	sqlcleanup(be->mvc, 0);
-	resetMalBlk( c->curprg->def, 1);
-	/* resetInstructions(c->curprg->def, 1);*/
-	freeVariables(c->curprg->def, c->glb, be->vtop);
+	resetMalBlk( mb, 1);
+	/* resetInstructions(mb, 1);*/
+	freeVariables(mb, c->glb, be->vtop);
 	be->language = oldlang;
 @-
 Any error encountered during execution should block further processing
@@ -1273,9 +1282,9 @@ SQLrecompile(Client c, backend *be)
 	stmt *s;
 	int ret = 0;
 	mvc *m = be->mvc;
-
-	int oldvtop = c->curprg->def->vtop;
-	int oldstop = c->curprg->def->stop;
+	MalBlkPtr mb= c->curprg->def;
+	int oldvtop = mb->vtop;
+	int oldstop = mb->stop;
 
 	SQLCacheRemove(&ret, &be->q->name);
 	s = sql_symbol2stmt(m, be->q->s);
@@ -1283,15 +1292,15 @@ SQLrecompile(Client c, backend *be)
 	be->q->stk = 0;
 	stmt_destroy(s);
 
-	pushEndInstruction(c->curprg->def);
+	pushEndInstruction(mb);
 
-	chkTypes(c->nspace, c->curprg->def); /* resolve types */
-	if (c->curprg->def->errors) {
+	chkTypes(c->nspace, mb); /* resolve types */
+	if (mb->errors) {
 		showErrors();
 		/* restore the state */
-		resetMalBlk(c->curprg->def, oldstop);
-		freeVariables(c->curprg->def, c->glb, oldvtop);
-		c->curprg->def->errors = 0;
+		resetMalBlk(mb, oldstop);
+		freeVariables(mb, c->glb, oldvtop);
+		mb->errors = 0;
 		throw(SQL, "SQLrecompile", "Semantic errors");
 	}
 	return SQLengineIntern(c, be);
