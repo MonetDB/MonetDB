@@ -2954,40 +2954,23 @@ str
 doALGfetch(ptr ret, BAT *b, lng *pos)
 {
 	lng i = *pos;
+	BAT *bn;
+	int *res;
 
 	if ((i < 0) || (i >= (lng) BATcount(b)))
 		throw(MAL, "algebra.fetch", " idx out of range\n");
 	i += BUNindex(b, BUNfirst(b));
-	@:putTailALG(BUNptr(b,i))@
-
-@= putTailALG
-		if (b->theap) {
-			ptr _src = BUNtvar(b,@1); /*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
-			int _len = ATOMlen(b->ttype, _src);
-			ptr _dst = GDKmalloc(_len);
-			memcpy(_dst, _src, _len);
-			*(ptr*) ret = _dst;
-		} else {
-			int _s = ATOMsize(ATOMtype(b->ttype));
-			if (ATOMvarsized(b->ttype)) {
-				memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
-			} else if (b->ttype == TYPE_bat) {
-				bat bid = *(bat*) BUNtail(b, @1);
-				*(bat*) ret = bid;
-				BBPincref(bid,TRUE);
-			} else if (_s == 4) {
-				*(int*) ret = *(int*) BUNtail(b, @1);
-			} else if (_s == 1) {
-				*(chr*) ret = *(chr*) BUNtail(b, @1);
-			} else if (_s == 2) {
-				*(sht*) ret = *(sht*) BUNtail(b, @1);
-			} else if (_s == 8) {
-				*(lng*) ret = *(lng*) BUNtail(b, @1);
-			} else {
-				memcpy(ret, BUNtloc(b, @1), _s);
-			}
-		}
-@c
+	
+	if( b->ttype== TYPE_bat){
+		res= (int*) ret;
+		ret= &bn;
+		@:putTail(BUNptr(b,i))@
+		if( bn)
+			BBPkeepref(*res = bn->batCacheid);
+		else *res = 0;
+	} else {
+		@:putTail(BUNptr(b,i))@
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3087,15 +3070,32 @@ algebra_export str ALGfind(ptr ret, int *bid, ptr val);
 str
 ALGfind(ptr ret, int *bid, ptr val)
 {
-	BAT *b;
+	BAT *b,*bn;
+	ptr p;
+	BUN q;
+	int *res;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.find", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,val)@
-	if (CMDfind(ret, b, val) == GDK_FAIL) {
+	p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
+	q = BUNfnd(b, p);
+
+	if (q == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.find", "can not find element");
+	}
+	
+	if( b->ttype== TYPE_bat){
+		res= (int*) ret;
+		ret= &bn;
+		@:putTail(q)@
+		if( bn)
+			BBPkeepref(*res = bn->batCacheid);
+		else *res = 0;
+	} else {
+		@:putTail(q)@
 	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
