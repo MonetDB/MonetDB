@@ -71,7 +71,8 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
-static void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd);
+static void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd);
+static int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 @-
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
@@ -1465,18 +1466,20 @@ See @url{The MAL Profiler} for more details.
 @= performanceVariables
 #ifdef MALprofiler
 	lng newclk=0;
+	int ppc=0;
 #endif
 @= beginProfile
 #ifdef MALprofiler
 	if( malProfileMode == 0)
 		/* mostly true */;
-	else {
-		if( mb->profiler== NULL)
-			initProfiler(mb);
-		mb->profiler[stkpc].clk= GDKusec();
-		time(&mb->profiler[stkpc].clock);
+	else 
+	if( mb->profiler != NULL && mb->profiler[stkpc].trace)
+	{
+		ppc= stkpc;
+		mb->profiler[ppc].clk= GDKusec();
+		time(&mb->profiler[ppc].clock);
 #ifdef HAVE_TIMES
-		times(&mb->profiler[stkpc].timer);
+		times(&mb->profiler[ppc].timer);
 #endif
 	}
 #endif
@@ -1484,14 +1487,16 @@ See @url{The MAL Profiler} for more details.
 #ifdef MALprofiler
 	if( malProfileMode == 0)
 		/* mostly true */;
-	else{
-		if( mb->profiler== NULL)
-			initProfiler(mb);
+	else
+	if( mb->profiler != NULL && mb->profiler[ppc].trace)
+	{
 		newclk= GDKusec();
-		mb->profiler[stkpc].counter++;
-		mb->profiler[stkpc].ticks += (long) (newclk - mb->profiler[stkpc].clk);
-		if( mb->profiler[stkpc].clk)
-			profilerEvent(cntxt->nspace,mb,stk,stkpc);
+		mb->profiler[ppc].counter++;
+		mb->profiler[ppc].clk = (long) (newclk - mb->profiler[ppc].clk);
+		mb->profiler[ppc].ticks += mb->profiler[ppc].clk;
+		mb->profiler[ppc].rdbytes= getVolume(stk,pci,0);
+		mb->profiler[ppc].wrbytes= getVolume(stk,pci,1);
+		profilerEvent(cntxt->nspace,mb,stk,ppc);
 	}
 #endif
 
@@ -1522,9 +1527,9 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & flowFlag){
 		/* calculate the read/write byte flow */
 		stream_printf(cntxt->fdout,"# ");
-		getVolume(cntxt,mb,stk,pci,0);
-		getVolume(cntxt,mb,stk,pci,1);
-		/* getVolume(cntxt,mb,stk,pci,2);*/
+		showVolume(cntxt,stk,pci,0);
+		showVolume(cntxt,stk,pci,1);
+		/* showVolume(cntxt,stk,pci,2);*/
 	}
 	if( cntxt->flags & timerFlag){
 		printTraceCall(cntxt,mb,stk,stkpc);
@@ -1537,11 +1542,11 @@ maximal amount of bytes read/written. The actual
 amount is harder to guess, because it too much
 depends on the operation.
 @c
-void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd){
+int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
+{
 	int i, limit, vol=0;
 	BAT *b;
 
-	(void) mb;
 	limit= rd ==0? pci->retc: pci->argc;
 	i= rd? pci->retc:0;
 	for(; i<limit; i++)
@@ -1551,6 +1556,12 @@ void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd){
 		vol += BATcount(b) * BUNsize(b);
 		BBPunfix(b->batCacheid);
 	}
+	return vol;
+}
+
+void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd){
+	int vol;
+	vol= getVolume(stk,pci,rd);
 	if( vol <1024)
 		stream_printf(cntxt->fdout,"%3d",vol);
 	else

@@ -386,6 +386,8 @@ typedef struct PERF {
 	long counter;
 	long ticks;		/* micro seconds spent */
 	bit trace;		/* facilitate filter-based profiling */
+	int	rdbytes;		/* bytes read by an instruction */
+	int wrbytes;		/* bytes written by an instruction */
 } *ProfPtr, ProfRecord;
 
 typedef struct MALBLK {

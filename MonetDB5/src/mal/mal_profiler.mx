@@ -56,7 +56,7 @@ Therefore, it is of primary interest to single user sessions.
 The example below illustrates how the different performance
 counter groups are activated, instructions are filtered for
 tracking, and where the profile information is retained for
-a posteriori analysis. The tuple format is chosen.
+a posteriori analysis. The tuple format is choosen.
 @example
 profiler.activate("time");
 profiler.activate("ticks");
@@ -144,6 +144,21 @@ The result of the program execution becomes:
 [ 2,      "$6 := bat.insert(<tmp_22>,1,15);",     16      ]
 [ 3,      "$9 := io.print(<tmp_22>);",            189     ]
 @end verbatim
+
+@+ Monitoring Variables
+The easiest scheme to obtain performance data is to
+retrieve the performance properties of an instruction
+directly after it has been executed using getEvent().
+It reads the profiling stack maintained, provided you
+have started monitoring.
+@example
+profiler setFilter(b);
+profiler.startMonitor();
+....
+b:= algebra.select(a,0 1000); # some expensive operation
+(clk, memread, memwrite):= profiler.getEvent();
+...
+profiler.stopMonitor();
 @{
 The profiler is activated by defining MALprofiler in the source tree.
 This leads to securing space for the counters and for code
@@ -193,7 +208,9 @@ mal_export str cleanupProfiler(void);
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export void setFilter(Module cntxt, str mod, str fcn);
-mal_export void resetFilter(Module cntxt, str mod, str fcn);
+mal_export void clrFilter(Module cntxt, str mod, str fcn);
+mal_export void setFilterVariable(MalBlkPtr mb, int i);
+mal_export void clrFilterVariable(MalBlkPtr mb, int i);
 
 mal_export void profileReport(Module cntxt, int outer, stream *out);
 mal_export void MPresetProfiler(stream *fdout);
@@ -204,6 +221,9 @@ mal_export void startTrace(void);
 mal_export void stopTrace(void);
 mal_export void clearTrace(void);
 mal_export BAT *getTrace(str ev);
+
+mal_export void startMonitor(void);
+mal_export void stopMonitor(void);
 
 #define DEBUG_MAL_PROFILER
 
@@ -997,7 +1017,7 @@ MPresetProfiler(stream *fdout)
 Performance tracing is triggered on an instruction basis
 or a the global flag 'profileAll' being set.
 Calling setFilter(M,F) switches the performance tracing
-bit in the instruction record. The routine resetFilter
+bit in the instruction record. The routine clrFilter
 clears all performance bits.
 
 The routines rely on waking their way through the
@@ -1074,7 +1094,7 @@ the private main(). The profiler setFilter should explicitly called in
 each separate top level routine.
 @c
 void
-resetFilter(Module cntxt, str mod, str fcn)
+clrFilter(Module cntxt, str mod, str fcn)
 {
 #ifdef MALprofiler
 	int j, k;
@@ -1111,6 +1131,38 @@ resetFilter(Module cntxt, str mod, str fcn)
 #else
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
 #endif
+}
+@-
+The instructions to be monitored can also be identified
+using a variable. Any instruction that references it
+is traced.
+@c
+void
+setFilterVariable(MalBlkPtr mb, int arg){
+	int i,k;
+	InstrPtr p;
+
+	for(i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for( k=0; k<p->argc; k++)
+		if( getArg(p,k) == arg){
+				initProfiler(mb);
+				mb->profiler[i].trace = TRUE;
+		}
+	}
+}
+void
+clrFilterVariable(MalBlkPtr mb, int arg){
+	int i,k;
+	InstrPtr p;
+
+	for(i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for( k=0; k<p->argc; k++)
+		if( getArg(p,k) == arg){
+				mb->profiler[i].trace = FALSE;
+		}
+	}
 }
 
 @+ Tracing
@@ -1176,10 +1228,22 @@ cleanupProfiler(){
 	return MAL_SUCCEED;
 }
 void
+startMonitor(void)
+{
+	malProfileMode = TRUE;
+}
+
+void
+stopMonitor(void)
+{
+	malProfileMode = FALSE;
+}
+
+void
 startTrace(void)
 {
 	initTrace();
-	malProfileMode = TRUE;
+	startMonitor();
 	cachedProfiling = TRUE;
 }
 
@@ -1187,7 +1251,7 @@ void
 stopTrace(void)
 {
 	initTrace();
-	malProfileMode = FALSE;
+	stopMonitor();
 	cachedProfiling = FALSE;
 }
 
