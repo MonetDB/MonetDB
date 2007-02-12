@@ -46,6 +46,14 @@ remote XQuery execution using HTTP connection on top of MonetDB for the
 .END xrpc_server;
 
 @mil
+# initialize xrpcd_admin: IPs that can execute modules from the special admin/ directory
+var xrpc_admin := bat(str,void);
+xrpc_admin.insert(reverse(split(monet_environment.find("xrpc_admin"),";"))).bbpname("xrpc_admin");
+
+# initialize xrpcd_trusted: URL prefixes for modules that anybody can execute
+var xrpc_trusted := bat(str,void);
+xrpc_trusted.insert(reverse(split(monet_environment.find("xrpc_trusted"),";"))).bbpname("xrpc_trusted");
+
 PROC rpcd_start(int port, str options) : void {
     fork(httpd_start(port, options));
 }
@@ -68,12 +76,24 @@ Start XRPC receiver on the specified port",
 "xrpc_server");
 
 PROC rpcd_start() : void {
-    rpcd_start( int(monet_environment.find("xquery_httpd_port")), "");
+    var mapi_port := int(monet_environment.find("mapi_port"));
+    var xrpc_port := int_nil;
+    if (monet_environment.exist("xrpc_port"))
+       xrpc_port := int(monet_environment.find("xrpc_port"));
+    if (isnil(xrpc_port))
+       xrpc_port := mapi_port+1;
+
+    var xrpc_open := "";
+    if (monet_environment.exist("xrpc_open"))
+       if (monet_environment.find("xrpc_open") = "yes")
+          xrpc_open := "open"; 
+
+    rpcd_start( xrpc_port, xrpc_open);
 }
 ADDHELP("rpcd_start", "zhang", "November 2005",
 "DESCRIPTION:\n\
 Start XPRC receiver on the default port as specified in \
-\"monet_environment\" by \"xquery_httpd_port\"",
+\"monet_environment\" by \"xrpc_port\"",
 "xrpc_server");
 
 @h

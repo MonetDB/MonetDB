@@ -1,4 +1,4 @@
-@' pathfinder.mx
+@f pathfinder.mx
 @'
 @' XQuery runtime environment
 @'
@@ -65,6 +65,13 @@
 if (clientid() != 0) {
     ERROR("pathfinder module must be loaded in Mserver console first.");
 }
+
+const XQUERY_STATUS_INITIALIZING := 0; 
+const XQUERY_STATUS_RECOVERING   := 1; 
+const XQUERY_STATUS_GARBAGECOLL  := 2; 
+const XQUERY_STATUS_READY        := 3; 
+var xquery_status := XQUERY_STATUS_INITIALIZING;
+
 module(mapi);       # remote client access
 module(pf_support);
 module(logger);
@@ -77,6 +84,7 @@ CATCH((*"module")("pftijah")); # only load pftijah if available
 var standoff := false;
 if (monet_environment.exist("standoff"))
   standoff := =(monet_environment.find("standoff"),"enabled"); 
+
 
 # The XML Meta-Database #############################################################
 #
@@ -533,10 +541,6 @@ var pf_chkpt := lock_create(); # protects the counter
 var pf_chkpt_cnt := 0; # counter is used by nonexclusive acces (first gets barrier, last releases)
 var pf_chkpt_barrier := sema_create(1); # the barrier 
 
-# initialize the logger
-var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
-                                            monet_environment.find("gdk_dbname"), LOGGER_VERSION);
-
 # all update bats in the ws (tail-type + name)
 const ws_update := bat(int,str)
 	.insert(bat,"map_pid")
@@ -643,12 +647,6 @@ PROC pf_logmanager() : void {
     }
 }
 
-# delete tmp files in DBFARM/DBNAME/tmp
-cleantmpdir(msec() / 1000LL);
-
-# synchronize the starting of the log
-fork(pf_logmanager());
-
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
 var collection_size;  # bat[oid,lng] collection size in bytes
@@ -692,6 +690,11 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
     pf_checkpoint(bat(void,str).append("uri_lifetime"));
 }
+
+# initialize uri_lifetime
+{ var b := split(monet_environment.find("xquery_cacherules"),";").seqbase(0@0);
+  var i := [r_search](b,"=").select(2,int_nil);
+  uri_lifetime.insert(reverse(b.[string](0,[-](i,1))).leftfetchjoin([lng](b.[string]([+](i,1))))); }
 
 # runtime collection acccess control (TRANSIENT)
 var colname_runtime  := bat(str,bat).rename("colname_runtime"); 
@@ -738,14 +741,6 @@ var ws_mem := [oid]([int](mirror(ws_dsk)).[-](_RID_SIZE - PRE_SIZE)).access(BAT_
 var ws_rid := ws_mem.slice(PRE_SIZE, PRE_NID).rename("ws_rid");
               # of those, all master rid_* bats, and their (remapped) pre_* views
     ws_mem := ws_mem.slice(NID_RID, INT_MAX).rename("ws_mem");
-
-# silently clean up the repository
-collection_cleanup(_collection_cleanup());
-
-# start the background processes 
-xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
-mapi_register(xquery_frontend());
-
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
 PROC _collection_cleanup() : BAT[str,str]
@@ -3248,6 +3243,7 @@ The name of a cached document is the same as its location (URI). For explicitly\
 shredded documents (with 'shred_doc(location,name)'), the name is an 'alias' and\n\
 may differ from the URI. Explicitly shredded documents fall outside the XML document\n\
 cache; documents are only removed at explicit user request (with 'delete_doc(name)').";
+@mil
 
 PROC xmlcache_add_rule(str uri, 
                        any lifetime) : void 
@@ -3305,6 +3301,24 @@ PROC xmldb_print() : void
 }
 ADDHELP("xmldb_print", "boncz", "May 2005",
 "DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
+
+@- startup sequence
+@mil
+# start the query cache 
+xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
+
+xquery_status := XQUERY_STATUS_RECOVERING;
+var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
+                                            monet_environment.find("gdk_dbname"), LOGGER_VERSION);
+
+xquery_status := XQUERY_STATUS_GARBAGECOLL;
+cleantmpdir(msec() / 1000LL);              # delete tmp files in DBFARM/DBNAME/tmp
+collection_cleanup(_collection_cleanup()); # silently clean up the repository
+
+xquery_status := XQUERY_STATUS_READY;
+mapi_register(xquery_frontend()); # open up mapi client access
+rpcd_start();                     # open up xrpc access
+fork(pf_logmanager());            # start checkpointing thread
 
 
 @= ws_c_decl
