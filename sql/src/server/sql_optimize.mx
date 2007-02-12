@@ -188,6 +188,8 @@ select_count(stmt *s)
 	case st_append:
 	case st_diff:
 	case st_union:
+	case st_mark:   
+	case st_var:    
 		return 0;
 	default:
 #ifndef NDEBUG
