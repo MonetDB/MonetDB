@@ -435,6 +435,7 @@ const PROP_TEXT_UPDATE := PROP_VAL_UPDATE + 1;
 const PROP_COM_UPDATE := PROP_TEXT_UPDATE + 1;
 const PROP_INS_UPDATE := PROP_COM_UPDATE + 1;
 const PROP_TGT_UPDATE := PROP_INS_UPDATE + 1;
+# the next 6 entries must be in the same order as QN_HISTOGRAM through QN_LOC above
 const QN_HISTOGRAM_UPDATE := PROP_TGT_UPDATE + 1;
 const QN_PREFIX_URI_LOC_UPDATE := QN_HISTOGRAM_UPDATE + 1;
 const QN_URI_LOC_UPDATE := QN_PREFIX_URI_LOC_UPDATE + 1;
@@ -449,6 +450,7 @@ const ANCESTOR_NID := MODIFIED_NID + 1;
 const MODIFIED_ATTR := ANCESTOR_NID + 1;
 const MODIFIED_PAGE := MODIFIED_ATTR + 1;
 const NEW_PAGE := MODIFIED_PAGE + 1;
+const DEL_PAGE := NEW_PAGE + 1;
 
 
 # transaction debugging / performance profiling 
@@ -565,7 +567,8 @@ const ws_update := bat(int,str)
 	.insert(oid,"ancestor_nid")
 	.insert(oid,"modified_attr")
 	.insert(oid,"modified_page")
-	.insert(oid,"new_page").access(BAT_READ).rename("ws_update");
+	.insert(oid,"new_page")
+	.insert(oid,"del_page").access(BAT_READ).rename("ws_update");
 
 # the bats that get changed using the logger in case of updates reach up until qn_histogram
 # (i.e. these are the ones that need to be registered in the logger)

@@ -2249,7 +2249,8 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     __ws_postcommit(ws, cont, 
                     ws.fetch(NID_QN_INS_UPDATE).find(cont).reverse(), 
                     ws.fetch(NID_QN_DEL_UPDATE).find(cont).reverse(), 
-                    ws.fetch(QN_URI_UPDATE).find(cont).hmark(0@0), empty_bat);
+                    ws.fetch(QN_URI_UPDATE).find(cont).hmark(0@0),
+                    ws.fetch(DEL_PAGE).reverse().uselect(cont).hmark(0@0));
 
     if (ws_log_active)
       ws_log(ws, "commit-idx exec" + str(ws_logtime - usec())); 
@@ -2639,8 +2640,9 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         var docinsertafter_oldpre := update_node_item.fetch(idx);
         var pre_nid := ws.fetch(PRE_NID).find(doccont);
         var pre_kind := ws.fetch(PRE_KIND).find(doccont);
-        if (pre_kind.find(docinsertafter_oldpre) >= DOCUMENT)
-    	  ERROR("cannot insert into a document node\n");
+        if (pre_kind.find(docinsertafter_oldpre) >= DOCUMENT) {
+          ERROR("cannot insert into a document node\n");
+        }
         var nid_rid := ws.fetch(NID_RID).find(doccont);
         var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(doccont);
         var docinsertafter_rid := findupdate(nid_rid, nid_rid_update, pre_nid.find(docinsertafter_oldpre));
@@ -3253,6 +3255,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
   var pre_kind := ws.fetch(PRE_KIND).find(cont);
   var rid_kind := ws.fetch(_RID_KIND).find(cont);
   var rid_kind_update := ws.fetch(RID_KIND_UPDATE).find(cont);
+  var pre_level := ws.fetch(PRE_LEVEL).find(cont);
   var rid_level := ws.fetch(_RID_LEVEL).find(cont);
   var rid_level_update := ws.fetch(RID_LEVEL_UPDATE).find(cont);
   var pre_prop := ws.fetch(PRE_PROP).find(cont);
@@ -3264,6 +3267,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
   var nid_qn_ins_update := ws.fetch(NID_QN_INS_UPDATE).find(cont);
   var nid_qn_del_update := ws.fetch(NID_QN_DEL_UPDATE).find(cont);
   var modified_page := ws.fetch(MODIFIED_PAGE);
+  var modified_nid := ws.fetch(MODIFIED_NID);
 
   var pageno := oid(lng(newpre) >> REMAP_PAGE_BITS);
   var pageid := map_pid_update.reverse().find(pageno);
@@ -3271,6 +3275,34 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
   var isoldpage := false;
   if (map_pid.exist(pageid)) {
     isoldpage := not(isnil(map_pid.find(pageid)));
+  }
+  var rid := oid((lng(newpre) and REMAP_PAGE_MASK) or (lng(pageid) << REMAP_PAGE_BITS));
+  var ancestors_newpre;
+  var nid;
+  if (isoldpage) {
+    if (rid_nid_update.exist(rid)) {
+      nid := rid_nid_update.find(rid);
+    } else {
+      nid := pre_nid.find(newpre);
+    }
+  } else {
+    nid := rid_nid.find(rid);
+  }
+  if (not(isnil(nid))) {
+    if (nid_rid.exist(nid)) {
+      var oldrid := nid_rid.find(nid);
+      if (not(isnil(oldrid))) {
+        var oldpre := swizzle(oldrid, map_pid);
+        var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(oldpre), pre_size, pre_level));
+        var ancestors_nid := ancestors_oldpre.join(pre_nid);
+        var ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
+        ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
+      }
+    }
+  }
+  if (isnil(ancestors_newpre)) {
+    # if we could not use the fast ll_ancestor, use the slow(er) mil_ancestor
+    ancestors_newpre := mil_ancestor(ws, cont, newpre);
   }
   while (delsize >= 0) {
     var rid := oid((lng(newpre) and REMAP_PAGE_MASK) or (lng(pageid) << REMAP_PAGE_BITS));
@@ -3309,7 +3341,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
     }
 
     if (isoldpage) {
-      modified_page.insert(cont, oid(lng(rid) >> REMAP_PAGE_BITS));
+      modified_page.insert(cont, pageid);
     }
 
     var update_data;
@@ -3324,8 +3356,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
       } else {
         oldpre := swizzle(rid, map_pid);
       }
-    }
-    if (isoldpage) {
+
       var pid_map := ws.fetch(PID_MAP).find(cont);
       if (not(isnil(oldpre))) {
         update_data := [swizzle](pre_nid.reverse().select(oldpre, oid(lng(oldpre) + pgsize)), pid_map).hmark(rid);
@@ -3363,40 +3394,6 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
       nid_qn_del_update.insert(nid_qn_del);
     }
 
-    update_data := [nilor]([-](update_data.project(nsize), [int](update_data.mark(0@0))), int_nil);
-    if (isoldpage) {
-      rid_size_update.myupdate(update_data);
-    } else {
-      rid_size.replace(update_data, true);
-    }
-
-    update_data := update_data.project(cast(nil, rid_level_update.ttype()));
-    if (isoldpage) {
-      rid_level_update.myupdate(update_data);
-    } else {    
-      rid_level.replace(update_data, true);
-    }
-
-    update_data := update_data.project(cast(nil, rid_kind_update.ttype()));
-    if (isoldpage) {
-      rid_kind_update.myupdate(update_data);
-    } else {
-      rid_kind.replace(update_data, true);
-    }
-
-    update_data := update_data.project(oid_nil);
-    if (isoldpage) {
-      rid_prop_update.myupdate(update_data);
-    } else {
-      rid_prop.replace(update_data, true);
-    }
-
-    update_data := update_data.project(oid_nil);
-    if (isoldpage) {
-      rid_nid_update.myupdate(update_data);
-    } else {
-      rid_nid.replace(update_data, true);
-    }
     var rid_nid_page;
     if (isoldpage) {
       if (isnil(oldpre)) {
@@ -3409,10 +3406,98 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
     } else {
       rid_nid_page := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
     }
+
     var nid_rid_updates := rid_nid_page.select(oid_nil, oid_nil).reverse().project(oid_nil);
     nid_rid_update := myupdate(nid_rid_update, nid_rid_updates);
     modified_nid.reverse().accbuild("hash");
     modified_nid.insert([lng](nid_rid_update.project(cont).reverse()).[>>](OID_PAGE_BITS));
+
+    if (lng(nsize) = REMAP_PAGE_MASK) {
+      # deleting whole page
+      var del_page := ws.fetch(DEL_PAGE);
+      del_page.insert(cont, pageid);
+      # use the *before* version of map_pid_update (not that this is
+      # particularly important: we're dealing with ancestors which
+      # necessarily come before the to-be-deleted page)
+      var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
+      # now update map_pid_update
+      map_pid_update.replace([oid]([-]([int](map_pid_update.select(pageno, oid_nil, false, true)), 1)), true);
+      map_pid_update.replace(pageid, oid_nil, true);
+      # figure out which ancestors' sizes need to adjusted
+      var ancestors_newrid := [swizzle](ancestors_newpre, pid_map_update);
+      var ancestors_isnewpage := [isnil](outerjoin([oid]([>>]([lng](ancestors_newrid), REMAP_PAGE_BITS)), map_pid));
+      var ancestors_nid;
+      {
+        # distinguish the three cases:
+        # rid is on new page
+        var a := ancestors_isnewpage.uselect(true).mirror().join(ancestors_newrid).join(rid_nid);
+        # rid is on old page and was modified
+        var b := ancestors_isnewpage.uselect(false).mirror().join(ancestors_newrid).join(rid_nid_update);
+        # rid is on old page and was not modified
+        var c := ancestors_isnewpage.uselect(false).kdiff(b).mirror().join(ancestors_newrid).[swizzle](map_pid).join(pre_nid);
+        # combine
+        ancestors_nid := a.access(BAT_WRITE).insert(b).insert(c).order().tmark(0@0);
+      }
+      var ancestors_oldpre := ancestors_nid.join(nid_rid).[swizzle](map_pid);
+      var ancestors_size := ancestors_oldpre.join(pre_size).access(BAT_WRITE).myupdate(ancestors_newrid.join(rid_size_update));
+      # now figure out which ancestors get smaller
+      var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size));
+      var inpage := ancestors_end.uselect(newpre, oid(lng(newpre) + REMAP_PAGE_SIZE), true, false);
+      var afterpage := ancestors_end.uselect(oid(lng(newpre) + REMAP_PAGE_SIZE), oid_nil, true, false);
+      # nodes that end in the deleted page are truncated to end at the deleted node
+      var ancestors_newsize := [int]([-](lng(newpre), [lng](inpage.mirror().join(ancestors_newpre))));
+      # nodes that end beyond the deleted page are just made smaller
+      ancestors_newsize.access(BAT_WRITE).insert([-](afterpage.mirror().join(ancestors_size), int(REMAP_PAGE_SIZE)));
+      var old_page := ancestors_isnewpage.uselect(false);
+      if (old_page.count() > 0) {
+         rid_size_update.myupdate(ancestors_newrid.reverse().join(old_page.mirror().join(ancestors_newsize)));
+      }
+      var new_page := ancestors_isnewpage.uselect(true);
+      if (new_page.count() > 0) {
+        rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(ancestors_newsize)));
+      }
+      # remember which ancestors were changed
+      var ancestor_nid := ws.fetch(ANCESTOR_NID);
+      ancestor_nid.insert(ancestors_newpre.project(cont).reverse().join(ancestors_nid));
+      # compensate for per-page house keeping below
+      newpre := oid((lng(newpre) - pgsize) - 1);
+      next_pagebase := oid(lng(next_pagebase) - REMAP_PAGE_SIZE);
+    } else {
+      update_data := [nilor]([-](update_data.project(nsize), [int](update_data.mark(0@0))), int_nil);
+      if (isoldpage) {
+        rid_size_update.myupdate(update_data);
+      } else {
+        rid_size.replace(update_data, true);
+      }
+
+      update_data := update_data.project(cast(nil, rid_level_update.ttype()));
+      if (isoldpage) {
+        rid_level_update.myupdate(update_data);
+      } else {    
+        rid_level.replace(update_data, true);
+      }
+
+      update_data := update_data.project(cast(nil, rid_kind_update.ttype()));
+      if (isoldpage) {
+        rid_kind_update.myupdate(update_data);
+      } else {
+        rid_kind.replace(update_data, true);
+      }
+
+      update_data := update_data.project(oid_nil);
+      if (isoldpage) {
+        rid_prop_update.myupdate(update_data);
+      } else {
+        rid_prop.replace(update_data, true);
+      }
+
+      update_data := update_data.project(oid_nil);
+      if (isoldpage) {
+        rid_nid_update.myupdate(update_data);
+      } else {
+        rid_nid.replace(update_data, true);
+      }
+    }
 
     delsize :-= pgsize + 1;
     newpre := oid((lng(newpre) + pgsize) + 1);
@@ -3457,11 +3542,9 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
   }
 
   if (elems.count() > 0) {
-    # extract the update_node_item and conts values that refer to
-    # elements and renumber them so that the tables have dense heads
+    # extract the update_node_item values that refer to elements
     elems := elems.mirror();
     update_node_item := elems.leftjoin(update_node_item);
-    var modified_nid := ws.fetch(MODIFIED_NID);
 
     # the "update_node_item" parameter contains PRE values
     # instead of NID values; the PRE values refer to the unmodified
@@ -3470,16 +3553,16 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       var oldpre := $t;         # the original PRE value of the to-be-deleted node
       var cont := conts.fetch($h);
       var pre_kind := ws.fetch(PRE_KIND).find(cont);
-      if (pre_kind.find(oldpre) >= DOCUMENT)
+      if (pre_kind.find(oldpre) >= DOCUMENT) {
         ERROR("document nodes cannot be deleted");
-      if (ws.fetch(PRE_LEVEL).find(cont).find(oldpre) = chr(0))
+      }
+      if (ws.fetch(PRE_LEVEL).find(cont).find(oldpre) = chr(0)) {
         ERROR("root nodes cannot be deleted");
+      }
 
       # translate PRE value to NID value which is also valid in the modified document
       var pre_nid := ws.fetch(PRE_NID).find(cont);
       var nid := pre_nid.find(oldpre);
-      var map_pid := ws.fetch(MAP_PID).find(cont);
-      var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
       var nid_rid := ws.fetch(NID_RID).find(cont);
       var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(cont);
       var rid;
@@ -3490,11 +3573,12 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       }
       # if (isnil(rid)) the element is already gone, so nothing more to do
       if (not(isnil(rid))) {
+        var map_pid := ws.fetch(MAP_PID).find(cont);
+        var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
         var pre := swizzle(rid, map_pid_update);
         var pre_size := ws.fetch(PRE_SIZE).find(cont);
         var rid_size := ws.fetch(_RID_SIZE).find(cont);
         var rid_size_update := ws.fetch(RID_SIZE_UPDATE).find(cont);
-        var pageno := oid(lng(pre) >> REMAP_PAGE_BITS);
         var pageid := oid(lng(rid) >> REMAP_PAGE_BITS);
         var isoldpage := false;
         if (map_pid.exist(pageid)) {
@@ -3514,20 +3598,10 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
         }
 
         if (not(isnil(niland(size, int_nil)))) { # result of niland(size, int_nil) is either 0 or int_nil
-          var next_pagebase := oid((lng(pageno) + 1) << REMAP_PAGE_BITS);
-          var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(cont);
           var rid_kind := ws.fetch(_RID_KIND).find(cont);
           var rid_kind_update := ws.fetch(RID_KIND_UPDATE).find(cont);
-          var rid_level := ws.fetch(_RID_LEVEL).find(cont);
-          var rid_level_update := ws.fetch(RID_LEVEL_UPDATE).find(cont);
-          var pre_prop := ws.fetch(PRE_PROP).find(cont);
-          var rid_prop := ws.fetch(_RID_PROP).find(cont);
-          var rid_prop_update := ws.fetch(RID_PROP_UPDATE).find(cont);
-          var pre_nid := ws.fetch(PRE_NID).find(cont);
           var rid_nid := ws.fetch(_RID_NID).find(cont);
           var rid_nid_update := ws.fetch(RID_NID_UPDATE).find(cont);
-          var nid_qn_ins_update := ws.fetch(NID_QN_INS_UPDATE).find(cont);
-          var nid_qn_del_update := ws.fetch(NID_QN_DEL_UPDATE).find(cont);
 
           # record where we're deleting a node
           {
@@ -3598,7 +3672,7 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
           }
 
           # do the actual deleting in a subroutine
-	  do_delete_nodes(ws, cont, pre, size);
+          do_delete_nodes(ws, cont, pre, size);
         }
         extend_unprotect(ws, cont);
       }
@@ -3714,12 +3788,12 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
       coll_lock_unset(ws, cont, COLL_SHORTLOCK, "find_qn_bulk", ws_logtime);
 
       # log new values
-      ws.fetch(QN_LOC+UPDATE).find(cont).insert(_loc);
-      ws.fetch(QN_URI+UPDATE).find(cont).insert(_uri);
-      ws.fetch(QN_PREFIX+UPDATE).find(cont).insert(_pref);
-      ws.fetch(QN_URI_LOC+UPDATE).find(cont).insert(_uri_loc);
-      ws.fetch(QN_PREFIX_URI_LOC+UPDATE).find(cont).insert(_pref_uri_loc);
-      ws.fetch(QN_HISTOGRAM+UPDATE).find(cont).insert(_histogram);
+      ws.fetch(QN_LOC + UPDATE).find(cont).insert(_loc);
+      ws.fetch(QN_URI + UPDATE).find(cont).insert(_uri);
+      ws.fetch(QN_PREFIX + UPDATE).find(cont).insert(_pref);
+      ws.fetch(QN_URI_LOC + UPDATE).find(cont).insert(_uri_loc);
+      ws.fetch(QN_PREFIX_URI_LOC + UPDATE).find(cont).insert(_pref_uri_loc);
+      ws.fetch(QN_HISTOGRAM + UPDATE).find(cont).insert(_histogram);
     }
   }
   return qn_map;
