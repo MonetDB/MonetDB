@@ -10,7 +10,7 @@ lib_optimizer = {
 	SOURCES =  opt_prelude.mx \
 		opt_support.mx  opt_crack.mx optimizer.mx  opt_factorize.mx \
 		opt_deadcode.mx opt_garbageCollector.mx opt_strengthReduction.mx \
-		opt_aliases.mx opt_commonTerms.mx opt_partitionedQuery.mx \
+		opt_aliases.mx opt_commonTerms.mx opt_iterators.mx \
 		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
@@ -31,7 +31,7 @@ scripts_mal = {
 	SOURCES =  opt_prelude.mx \
 		opt_support.mx  opt_crack.mx optimizer.mx  opt_factorize.mx \
 		opt_deadcode.mx opt_garbageCollector.mx opt_strengthReduction.mx \
-		opt_aliases.mx opt_commonTerms.mx opt_partitionedQuery.mx \
+		opt_aliases.mx opt_commonTerms.mx opt_iterators.mx \
 		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \

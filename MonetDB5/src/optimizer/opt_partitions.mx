@@ -14,63 +14,81 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
-@f opt_partitionedQuery
+@f opt_partitions
 @a M. Kersten
-@- Partitioned Tables
+@- BAT Partitions
 Limitations on the addressing space in older PCs and the need
 for distributed storage makes that BATs ideally should be 
 looked upon as a union of smaller BATs which are processed
 within the (memory) resource limitations given.
 
-In the previous section, we already introduced the concept of
-a MAT, as the named union of a number of BATs to form a single
-virtual BAT.
-It can be used as a basis for incremental processing as well.
-For this to work, we assume that the MAT components each satisfy
-the (memory) resource contraints. 
-
-The operation @sc{optimizer.partitionedQuery} takes these definitions
-and encapsulate them in iterator blocks, thereby minimizing the
-MAL program footprint.
-
-The optimizer is designed incrementally. The focus is
+The @sc{partition()} optimizer with supportive libraries
+addresses the issue with an adaptive database segmentation algorithm.
+It is designed incrementally with a the focus 
 on supporting the SQL front-end. In particularly, the
 operators considered is a limited subset of MAL. Occurrence
 of an operator outside this set terminates the optimizer
 activities.
 
-The general strategy is to select a portion of the workflow
-related to a MAT variable and encapsulate it with
-an iterator over the BAT partitions. In doing so, we replace
-operators with their incremental counter part, alike the
-MAT optimizer.
+The operation @sc{optimizer.partitions()} hunts for bindings
+of SQL column BATs and prepare code for using partitioned
+versions instead.
 
-A snippet of the partitioning optimizer is shown below. It assumes
-that the MAT @sc{a0} consists of the components @sc{a1,a2,a3}.
-A subsequent call of the partition optimizer will replace
-the print command with an iterator.
-@verbatim
+A walk through of a simplified SQL query plan is shown below.
+The first time a column is used, the partition optimizer
+checks its properties and decides on turning it into a 
+partitioned BAT of two pieces. They are glued together
+as a merge-BAT, such that logically the query plan works
+on a single object still.
 
-function qry(a:bat[:oid,:any_1]{mat});
-	io.print(b);
-end qry;
-optimizer.partitionedQuery("user","qry");
-@end verbatim
-The query is transformed into the following version.
 @verbatim
-function user.qry(a:bat[:oid,:any_1]{mat}):void;
-barrier (_5,_6):= mat.newIterator(a);
-	io.print(_6);
-	redo (_5,_6):= mat.hasMoreElements(a);
-exit (_5,_6);
+function user.qry():void;
+	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);
+	t:= algebra.select(b,nil:int,100);
+	io.print(t);
+	optimizer.partitions();
 end qry;
 @end verbatim
+The query is transformed into a plan that is valid only for one run.
+After the select operation it is up to the partition manager to
+decide on keeping the partition suggestion or not.
+@verbatim
+function user.qry{runonce} ():void
+	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);
+	bm:= bpm.deposit("sys_voyages_captain",b)
+	t:= bpm.select(bm,nil:int,100);
+	io.print(t);
+end qry;
+@end verbatim
+The second time this query is called, we simple can pick up
+the two partitions from the catalog. 
+@example
+function user.qry{runonce} ():void
+	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);
+	bm:= bpm.take("sys_voyages_captain")
+	(b0,b1):= bpm.getPartitions(bm);
+	mbm:= mat.new(b0,b1);
+	t:= algebra.select(mbm,nil:int,100);
+	io.print(t);
+end qry;
+@end example
+The translation ignored the boundaries for the partitions,
+which might be handy for symbolic optimization.
+Furthermore, it can prune one partition as not being relevant.
+@example
+function user.qry{runonce} ():void
+	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);
+	bm:= bpm.take("sys_voyages_captain")
+	b0:= bpm.getPartition(bm,0);
+	t:= algebra.select(b0,0,100);
+	io.print(t);
+end qry;
 @{
 @mal
-pattern optimizer.partitionedQuery():str
-address OPTpartitionedQuery;
-pattern optimizer.partitionedQuery(mod:str, fcn:str):str
-address OPTpartitionedQuery
+pattern optimizer.partitions():str
+address OPTpartitions;
+pattern optimizer.partitions(mod:str, fcn:str):str
+address OPTpartitions
 comment "Experiment with partitioned databases";
 @h
 #ifndef _OPT_PARTITIONED_
@@ -82,13 +100,13 @@ comment "Experiment with partitioned databases";
 #endif
 @c
 #include "mal_config.h"
-#include "opt_partitionedQuery.h"
+#include "opt_partitions.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
 extern int OPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid);
 @-
 The first implementation takes a query block and replaces the first
-bat variable with its partitioned equivalent.
+bat variable with its partitions equivalent.
 The external references should be adjusted to permit working
 your way through the complete graph incrementally.
 They denote an inclusive range.
@@ -119,9 +137,9 @@ OPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
 		pushInstruction(mb, old[i]);
 
 	actions++;
-	/* barrier (idx,bid):= partitions.newIterator(var); */
+	/* barrier (idx,bid):= bpm.newIterator(var); */
 	p = newInstruction(mb,ASSIGNsymbol);
-	setModuleId(p, putName("partitions", 10));
+	setModuleId(p, putName("bpm", 10));
 	setFunctionId(p, putName("newIterator", 11));
 	p->barrier = BARRIERsymbol;
 	idx = newTmpVariable(mb, TYPE_int);
@@ -141,9 +159,9 @@ to partitions as well. Where necessary they should be replaced by an
 accumulated version.
 @c
 	/* finalize the loop */
-	/* redo (idx,bid):= partitions.hasMoreElements(var); */
+	/* redo (idx,bid):= bpm.hasMoreElements(var); */
 	p = newInstruction(mb,REDOsymbol);
-	setModuleId(p, putName("partitions", 10));
+	setModuleId(p, putName("bpm", 10));
 	setFunctionId(p, putName("hasMoreElements", 15));
 	pushReturn(mb, p, idx);
 	pushReturn(mb, p, bid);
@@ -166,7 +184,7 @@ accumulated version.
 	if (bid != -1)
 		replaceAlias(mb, pcf, pcl, varid, bid);
 	/* and have to check the baked program */
-	optimizerCheck(mb,"partitionedQuery",1,GDKusec()-clk,OPT_CHECK_ALL);
+	optimizerCheck(mb,"partitions",1,GDKusec()-clk,OPT_CHECK_ALL);
 	return MAL_SUCCEED;
 }
 @-
@@ -209,7 +227,7 @@ Calling the optimizer from the MAL context is currently
 focussed on replacing the BAT arguments only.
 @c
 static int
-OPTpartitionedQueryImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	InstrPtr p;
@@ -280,7 +298,7 @@ OPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid)
 
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(partitionedQuery)@
+@:exportOptimizer(partitions)@
 @c
-@:wrapOptimizer(partitionedQuery,OPT_CHECK_ALL)@
+@:wrapOptimizer(partitions,OPT_CHECK_ALL)@
 @}
