@@ -761,7 +761,7 @@ BPMrange(int *ret, int *bid, ptr low, ptr hgh){
 		sb = &bpmcat[i].bid;
 		@:getBATdescriptor(sb,b,"bpm.range")@
 
-		/* overlag by excluding outliers */
+		/* overlap by excluding outliers */
 		if( *bid > 0 ){
 			if( ((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)!=0 &&
 			     (*cmp) ((ptr) &bpmcat[i].thgh, low) < 0) ||
@@ -818,44 +818,106 @@ value pairs. (STILL TO BE DECIDED)
 We should ensure that the range vector is sorted first.
 @c
 
-
-
 str
 BPMrangeVector(int *ret, int *bid, int *pv)
 {
-	BAT *b, *bpv;
-	BUN p,q;
-	/* ptr ph=0; */
+	BAT *b, *bpv, *bnew, *b0;
+	BUN cur,q;
+	int i,inew,tpe, k=0,j;
+	int tlow_nil, thgh_nil;
+	Partition pprev, p, pnew;
+	int (*cmp) (ptr, ptr);
+	ptr nilptr, val;
+	ptr * v;
 
 	BPMopen();
-	@:getBATdescriptor(bid,b,"bpm.range")@
+
+	i= getPartitionIndexNoAlias(*bid);
+	if( i == 0)
+		throw(MAL,"bpm.rangeVector","Partitioned BAT not found");
+	p = bpmcat + i;
+	@:getBATdescriptor(&p->bid,b,"bpm.rangeVector");
+
 	@:getBATdescriptor(pv,bpv,"bpm.range")@
 	if( bpv == 0){
 		BBPunfix(b->batCacheid);
 		throw(MAL,"bpm.range","Cannot access BAT");
 	}
-	/* Apply the range partition using pairs */
-	BATloop(b,p,q){
-		ptr ph= BUNhead(b,p);
-		ptr pt= BUNtail(b,p);
-		BPMrange(ret, bid, &ph, &pt);
-	}
-	/* Apply the range partition using single column
-	BATloop(b,p,q){
-		if( ph){
-			ph= BUNtail(b,p);
-		} else {
-			ptr pt= BUNtail(b,p);
-			BPMrange(ret, bid,&ph,&pt);
-			ph= BUNtail(b,p);
-		}
-	}
-	 */
 
+	tpe= p->bid >0? b->ttype:b->htype;
+	cmp= BATatoms[tpe].atomCmp;
+	nilptr = ATOMnilptr(tpe);
+	
+	tlow_nil = ((*cmp)((ptr)&bpmcat[i].tlow, nilptr)==0);
+	thgh_nil = ((*cmp)((ptr)&bpmcat[i].thgh, nilptr)==0);
+
+	v= (ptr *) GDKzalloc(sizeof(ptr)*(BATcount(bpv)+2));
+	//if (! tlow_nil) 
+	v[k++]=(ptr)&bpmcat[i].tlow;
+		 
+	BATloop(bpv,cur,q){
+		val= BUNtail(bpv,cur);
+		// check for overlap: tlow <= val < thgh
+		if ((*cmp) (val, nilptr) != 0 && 
+		   (tlow_nil || 
+		    (!tlow_nil && (*cmp)(val,(ptr)&p->tlow)>=0)) &&
+		   (thgh_nil || 
+		    (!thgh_nil && (*cmp)(val,(ptr)&p->thgh)<0)))
+		v[k++]=val;
+	}
+	//if (! thgh_nil)
+	v[k++]=(ptr)&bpmcat[i].thgh;
+
+	pprev=p;
+	//to do check when it is necessary
+	for( j=1;j<k-1;j++){
+		//new partition [v[j], v[j+1])
+		bnew= BAT_select_(b, v[j], v[j+1], TRUE, FALSE, TRUE, FALSE);
+		if( bnew == 0)
+			throw(MAL,"pbm.split","Can not create new partition");
+		BBPkeepref( bnew->batCacheid);
+
+		inew= getFreeAlias();
+		pnew= bpmcat+inew;
+		pnew->name= GDKstrdup(p->name);
+		pnew->alias= p->alias;
+		pnew->bid= bnew->batCacheid;
+
+		/* link to the partition chain */
+		pnew->nxt= pprev->nxt;
+		pprev->nxt = inew;
+		pnew->prv = pprev-bpmcat;
+		bpmcat[pnew->nxt].prv = inew;
+
+		VALset(&pnew->hlow, b->htype, &p->hlow );
+		VALset(&pnew->hhgh, b->htype, &p->hhgh  );
+		VALset(&pnew->tlow, b->ttype, v[j] );
+		VALset(&pnew->thgh, b->ttype, v[j+1] );
+	
+		/* default hash */
+		pnew->hbits= pnew->tbits= 0;
+					
+		pprev=pnew;
+		BBPunfix(bnew->batCacheid);
+	}
+
+	//first partition [tlow, v[0]) replaces the origibal bid 
+	b0= BAT_select_(b, v[0], v[1], TRUE, FALSE, TRUE, FALSE);
+	if( b0 == 0)
+		throw(MAL,"pbm.split","Can not create new partition");
+	BBPkeepref( b0->batCacheid);
+	p->bid = b0->batCacheid;
+	VALset(&p->thgh, b0->ttype, v[1]);
+	
 	BBPunfix(b->batCacheid);
 	BBPunfix(bpv->batCacheid);
+	BBPunfix(b0->batCacheid);
+
+	GDKfree(v);
+	*ret= 0;
 	return MAL_SUCCEED;
 }
+
 str
 BPMhash(int *ret, int *bid, int *bits)
 {
