@@ -730,9 +730,9 @@ and the bounds of the partition.
 str
 BPMrange(int *ret, int *bid, ptr low, ptr hgh){
 	BAT *b;
-	int i, tpe;
+	int i, tpe, r, *sb;
 	int (*cmp) (ptr, ptr);
-	ptr nilptr;
+	ptr nilptr, tmp;
 	int low_nil, hgh_nil;
 	Partition p;
 
@@ -745,7 +745,7 @@ BPMrange(int *ret, int *bid, ptr low, ptr hgh){
 	@:getBATdescriptor(&p->bid,b,"bpm.range")@
 
 	/* get the comparison function */
-	tpe= *bid >0? b->htype:b->ttype;
+	tpe= *bid >0? b->ttype:b->htype;
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 	low_nil = ((*cmp) (low, nilptr) == 0);
@@ -753,17 +753,42 @@ BPMrange(int *ret, int *bid, ptr low, ptr hgh){
 
 	BBPunfix(b->batCacheid);	/* don't need it anymore */
 
-	for( i= getAliasIndex(*bid); i ; i= bpmcat[i].nxt){
-		@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.range")@
+	if (!low_nil && !hgh_nil && (*cmp)(hgh, low) < 0 ) {
+		tmp = low; low = hgh; hgh = tmp;	
+	}
 
-		/* determine overlag by excluding outliers */
+	for( i= getAliasIndex(*bid); i ; i= bpmcat[i].nxt){
+		sb = &bpmcat[i].bid;
+		@:getBATdescriptor(sb,b,"bpm.range")@
+
+		/* overlag by excluding outliers */
 		if( *bid > 0 ){
-			if( (*cmp) ((ptr) &bpmcat[i].thgh, low) < 0 ||
-				(*cmp) ((ptr) &bpmcat[i].tlow, hgh) > 0 
+			if( ((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)!=0 &&
+			     (*cmp) ((ptr) &bpmcat[i].thgh, low) < 0) ||
+			    ((*cmp) ((ptr)&bpmcat[i].tlow, nilptr)!=0 &&
+			     (*cmp) ((ptr) &bpmcat[i].tlow, hgh) > 0) 
 			){
 				/* this fragment need not be split */
 			} else {
 				/* break the fragment */
+
+				if (!low_nil && 
+				    ((*cmp)((ptr)&bpmcat[i].tlow, nilptr)==0 ||
+				    (*cmp)((ptr) &bpmcat[i].tlow, low) < 0)  &&
+				    ((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)==0 ||
+				    (*cmp)((ptr) &bpmcat[i].thgh, low) > 0) ) {
+				
+					BPMsplitpartition(&r,sb,low);
+					sb=&r;
+				}
+				
+				if (!hgh_nil && 
+				   ((*cmp)((ptr)&bpmcat[i].tlow, nilptr)==0 ||
+				    (*cmp)((ptr) &bpmcat[i].tlow, hgh) < 0)  &&
+				    ((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)==0 ||
+				    (*cmp)((ptr) &bpmcat[i].thgh, hgh) > 0) )
+				BPMsplitpartition(&r,sb,hgh);	
+
 #ifdef _DEBUG_BPM_
 				stream_printf(GDKout, "break fragment %d\n",i);
 #endif
@@ -792,6 +817,9 @@ of ordered split points, or a double column with (low,hgh)
 value pairs. (STILL TO BE DECIDED)
 We should ensure that the range vector is sorted first.
 @c
+
+
+
 str
 BPMrangeVector(int *ret, int *bid, int *pv)
 {

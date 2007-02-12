@@ -22,4 +22,9 @@ bpm.splitPartition(Ra,5);
 bpm.dump(Ra);
 user.pr(Ra);
 
+
+bpm.rangePartition(Ra,4,8);
+bpm.dump(Ra);
+user.pr(Ra);
+
 #bpm.discard(Ra);
