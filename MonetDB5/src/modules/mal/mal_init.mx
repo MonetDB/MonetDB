@@ -114,7 +114,6 @@ include opt_macro;
 include opt_accessmode;
 include opt_multiplex;
 include opt_mergetable;
-include opt_partitionedQuery;
 include opt_peephole;
 include opt_qep;
 include opt_pushranges;
