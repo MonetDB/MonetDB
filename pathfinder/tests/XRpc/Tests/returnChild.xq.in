@@ -1,5 +1,5 @@
 import module namespace xrpc = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
 
 for $i in (1, 2)
-    return execute at { "localhost" }
+    return execute at { "localhost:$XRPCPORT" }
         { xrpc:returnChild(doc("hello.xml")) }

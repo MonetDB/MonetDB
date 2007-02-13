@@ -3,5 +3,5 @@ import module namespace xrpc = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
 (: last parameter is always empty :)
 for $str in ("hello", "world")
     for $i in (<a/>, (), <b/>)
-        return execute at {"localhost"}
+        return execute at {"localhost:$XRPCPORT"}
             {xrpc:echoVoidWithParams($str, $i, ())}
