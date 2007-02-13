@@ -156,7 +156,7 @@ monet_hello(opt *set, int setlen)
 	char *msg = mo_find_option(set, setlen, "monet_welcome");
 
 	if (msg && strcmp(msg, "yes") == 0) {
-		printf("# MonetDB Server v%s\n", GDKgetenv("gdk_version"));
+		printf("# MonetDB Server v" VERSION "\n");
 		printf("# Copyright (c) 1993-2007 CWI, all rights reserved\n");
 		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
 #ifdef MONET_GLOBAL_DEBUG
