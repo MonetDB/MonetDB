@@ -23,6 +23,7 @@ extern void sequences_init(void);
 extern void sequences_exit(void);
 
 extern int seq_next_value(sql_sequence *seq, lng *val);
+extern int seq_get_value(sql_sequence *seq, lng *val);
 extern int seq_restart(sql_sequence *seq, lng start);
 
 #endif /* BAT_SEQ_H */
@@ -174,5 +175,33 @@ seq_next_value(sql_sequence *seq, lng *val)
 	}
 	assert(nr<s->cached);
 	store_unlock(); 
+	return 1;
+}
+
+int
+seq_get_value(sql_sequence *seq, lng *val)
+{
+	node *n = NULL;
+	bat_sequence *s;
+
+	*val = 0;
+	store_lock();
+	for ( n = sql_seqs->h; n; n = n ->next ) {
+		s = n->data;
+		if (s->seqid == seq->base.id)
+			break;
+	}
+	if (!n) {
+		s = sql_create_sequence(seq);
+		if (!s) {
+			store_unlock();
+			return 0;
+		}
+		list_append(sql_seqs, s);
+	} else {
+		s = n->data;
+	}
+	*val = s->cur;
+	store_unlock();
 	return 1;
 }

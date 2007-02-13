@@ -93,6 +93,10 @@ command next_value( sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
+command get_value( sequence:str ):lng
+address mvc_get_value
+comment "return the current value of the sequence";
+
 command restart( sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
@@ -583,6 +587,7 @@ sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_variables(int *res);
 sql5_export str mvc_next_value(lng *res, str *seqname);
+sql5_export str mvc_get_value(lng *res, str *seqname);
 sql5_export str mvc_restart_seq(lng *res, str *seqname, lng *start);
 sql5_export str mvc_affected_rows_int(int *r, int *nr, str *w);
 sql5_export str zero_or_one(ptr ret, int *bid);
@@ -948,6 +953,25 @@ mvc_next_value(lng *res, str *seqname)
 			return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.next_value", "error");
+}
+
+str
+mvc_get_value(lng *res, str *seqname)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	sql_schema *s;
+
+	if (msg)
+		return msg;
+ 	s = m->session->schema;
+	if (s) {
+		sql_sequence *seq = find_sql_sequence(s, *seqname);
+
+		if (seq && seq_get_value(seq, res))
+			return MAL_SUCCEED;
+	}
+	throw(SQL, "sql.get_value", "error");
 }
 
 str
