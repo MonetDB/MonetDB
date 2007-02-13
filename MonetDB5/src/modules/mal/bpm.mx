@@ -420,7 +420,7 @@ for hash-based partitions we need the hash bucket properties.
 #define HASH	2
 
 typedef struct PARTITIONREC {
-	char *name;	
+	char *name;		/* propably inherit from alias */
 	bat alias;		/* partition BAT alias */
 	bat bid;		/* partition BAT */
 
@@ -453,23 +453,6 @@ static int getPartitionName(str nme){
 	return 0;
 }
 
-/*
-static int getPartitionIndex(int bid, int idx){
-	int i;
-	for(i=1;i<bpmcattop; i++)
-		if( bpmcat[i].alias== bid) {
-			while( bpmcat[i].nxt && bpmcat[i].index <idx)
-				i=  bpmcat[i].nxt;
-			while( bpmcat[i].prv && bpmcat[i].index >idx)
-				i=  bpmcat[i].prv;
-			if( bpmcat[i].index != idx)
-				return 0;
-			return i;
-		}
-	return 0;
-}
-*/
-
 /* Return cat. index for partition for alias als with bat bid */
 static int getPartitionIndex(int als, int bid){
 	int i;
@@ -485,12 +468,6 @@ static int getPartitionIndex(int als, int bid){
 		}
 	return 0;
 }
-
-/*
-static Partition getPartition(int als, int bid){
-	return bpmcat+getPartitionIndex(als,bid);
-}
-*/
 
 /* Return cat. index of the first partition in the chain for alias als */
 static int getAliasIndex(int als){
@@ -546,19 +523,6 @@ static int getFreeAlias(){
 	mal_unset_lock(mal_contextLock, "bpm");
 	return i;
 }
-
-/* Return max index in the partition chain for alias bid, assuming non-sorted list */
-/* No indexing now
-static int getLastIndex(int bid){
-	int maxidx=0, i;
-
-	for( i= getAliasList(bid); i ; i= bpmcat[i].nxt)
-		if (maxidx < bpmcat[i].index) 
-			maxidx = bpmcat[i].index;
-	return maxidx;
-}
-
-*/
 
 @- Box administration
 The box currently does not carry any client protection.
@@ -629,8 +593,10 @@ BPMdeposit(int *ret, str *nme, int *src)
 	}
 	/* we can enter a new partition */
 	bn= BATcopy(b, b->htype,b->ttype,1);
-	if( bn == 0)
+	if( bn == 0){
+		BBPunfix(b->batCacheid);
 		throw(MAL,"pbm.deposit","Can not create partitioned BAT");
+	}
 	BBPkeepref(*ret= bn->batCacheid);
 
 	i= getFreeAlias();
@@ -649,7 +615,7 @@ BPMdeposit(int *ret, str *nme, int *src)
 	p->hbits= p->tbits= 0;
 
 	p->nxt = p->prv = 0;
-	/* clear the boundaries */
+
 #ifdef _DEBUG_BPM_
 	stream_printf(GDKout,"Enter the partition '%s' at %d\n",*nme,i);
 	BPMprintRecord(GDKout,p);
@@ -659,6 +625,10 @@ BPMdeposit(int *ret, str *nme, int *src)
 	return MAL_SUCCEED;
 }
 
+@-
+Given a particular partition, split it into two
+pieces based on the val referenced
+@c
 str
 BPMsplitpartition(int *ret, int *bid, ptr val)
 {
@@ -679,8 +649,10 @@ BPMsplitpartition(int *ret, int *bid, ptr val)
 	/* we can enter a new partition */
 	bn= BAT_select_(b, val, (ptr) &(ps->thgh), TRUE, FALSE, TRUE, FALSE);
 
-	if( bn == 0)
+	if( bn == 0){
+		BBPunfix(b->batCacheid);
 		throw(MAL,"pbm.split","Can not create new partition");
+	}
 	BBPkeepref(*ret= bn->batCacheid);
 
 	i= getFreeAlias();
@@ -700,10 +672,12 @@ BPMsplitpartition(int *ret, int *bid, ptr val)
 	VALset(&p->hhgh, b->htype, &ps->hhgh  );
 	VALset(&p->tlow, b->ttype, val );
 	VALset(&p->thgh, b->ttype, &ps->thgh );
+
 	VALset(&ps->thgh, b->ttype, val );
 
 	/* default hash */
-	p->hbits= p->tbits= 0;
+	p->hbits= ps->hbits;
+	p->tbits= ps->tbits;
 
 	
 #ifdef _DEBUG_BPM_
@@ -711,13 +685,11 @@ BPMsplitpartition(int *ret, int *bid, ptr val)
 	BPMprintRecord(GDKout,p);
 #endif
 
-	bdiff = BATkdiff(b,bn);
-	ps->bid= bdiff->batCacheid;
-	BBPkeepref(bdiff->batCacheid);
+	bdiff = BATkdiff(b,bn); /* assume unique heads */
+	BBPkeepref( ps->bid = bdiff->batCacheid);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	BBPunfix(bdiff->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -852,12 +824,12 @@ BPMrangeVector(int *ret, int *bid, int *pv)
 	thgh_nil = ((*cmp)((ptr)&bpmcat[i].thgh, nilptr)==0);
 
 	v= (ptr *) GDKzalloc(sizeof(ptr)*(BATcount(bpv)+2));
-	//if (! tlow_nil) 
+	/*if (! tlow_nil)  */
 	v[k++]=(ptr)&bpmcat[i].tlow;
 		 
 	BATloop(bpv,cur,q){
 		val= BUNtail(bpv,cur);
-		// check for overlap: tlow <= val < thgh
+		/* check for overlap: tlow <= val < thgh */
 		if ((*cmp) (val, nilptr) != 0 && 
 		   (tlow_nil || 
 		    (!tlow_nil && (*cmp)(val,(ptr)&p->tlow)>=0)) &&
@@ -865,13 +837,13 @@ BPMrangeVector(int *ret, int *bid, int *pv)
 		    (!thgh_nil && (*cmp)(val,(ptr)&p->thgh)<0)))
 		v[k++]=val;
 	}
-	//if (! thgh_nil)
+	/*if (! thgh_nil) */
 	v[k++]=(ptr)&bpmcat[i].thgh;
 
 	pprev=p;
-	//to do check when it is necessary
+	/*to do check when it is necessary */
 	for( j=1;j<k-1;j++){
-		//new partition [v[j], v[j+1])
+		/*new partition [v[j], v[j+1]) */
 		bnew= BAT_select_(b, v[j], v[j+1], TRUE, FALSE, TRUE, FALSE);
 		if( bnew == 0)
 			throw(MAL,"pbm.split","Can not create new partition");
@@ -901,17 +873,19 @@ BPMrangeVector(int *ret, int *bid, int *pv)
 		BBPunfix(bnew->batCacheid);
 	}
 
-	//first partition [tlow, v[0]) replaces the origibal bid 
+	/*first partition [tlow, v[0]) replaces the origibal bid */
 	b0= BAT_select_(b, v[0], v[1], TRUE, FALSE, TRUE, FALSE);
-	if( b0 == 0)
+	if( b0 == 0){
+		BBPunfix(b->batCacheid);
+		BBPunfix(bpv->batCacheid);
+		GDKfree(v);
 		throw(MAL,"pbm.split","Can not create new partition");
-	BBPkeepref( b0->batCacheid);
-	p->bid = b0->batCacheid;
+	}
+	BBPkeepref( p->bid=  b0->batCacheid);
 	VALset(&p->thgh, b0->ttype, v[1]);
 	
 	BBPunfix(b->batCacheid);
 	BBPunfix(bpv->batCacheid);
-	BBPunfix(b0->batCacheid);
 
 	GDKfree(v);
 	*ret= 0;
