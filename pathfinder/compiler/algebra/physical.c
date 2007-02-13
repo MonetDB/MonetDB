@@ -53,6 +53,12 @@
 /** mnemonic for a sort specification list */
 #define sortby(...)     PFord_order_intro (__VA_ARGS__)
 
+#define INIT_COST 10
+#define DEFAULT_COST INIT_COST
+#define AGGR_COST 50
+#define JOIN_COST 100
+#define SORT_COST 100
+
 /**
  * Create an algebra operator (leaf) node.
  *
@@ -230,7 +236,7 @@ PFpa_lit_tbl (PFalg_attlist_t attlist,
     }
 
     /* ---- literal table costs ---- */
-    ret->cost = 1;
+    ret->cost = INIT_COST;
 
     return ret;
 }
@@ -280,7 +286,7 @@ PFpa_empty_tbl (PFalg_schema_t schema)
        generates all permutations also for the directions. */
     ret->orderings = PFord_permutations (ord);
 
-    ret->cost = 1;
+    ret->cost = INIT_COST;
 
     return ret;
 }
@@ -389,7 +395,7 @@ PFpa_attach (const PFpa_op_t *n,
     }
 
     /* ---- ColumnAttach: costs ---- */
-    ret->cost = 1 + n->cost;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -471,7 +477,7 @@ PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
     }
 
     /* ---- cross product costs ---- */
-    ret->cost = a->cost * b->cost + a->cost + b->cost;
+    ret->cost = 4 * JOIN_COST + a->cost + b->cost;
 
     return ret;
 }
@@ -600,7 +606,7 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
     ret->orderings = PFord_unique (ret->orderings);
 
     /* ---- LeftJoin: costs ---- */
-    ret->cost = (n1->cost / 10 * n2->cost / 10) + n1->cost + n2->cost;
+    ret->cost = 2 * JOIN_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -644,7 +650,7 @@ PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
     ret->orderings = PFord_set ();
 
     /* ---- EqJoin: costs ---- */
-    ret->cost = (n1->cost / 10 * n2->cost / 10) / 2 + n1->cost + n2->cost;
+    ret->cost = 1.5 * JOIN_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -688,7 +694,7 @@ PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
     /* We have no alternative implmementation for this operator
        and it should be cheaper than a join plus a distinct operator
        --> dummy cost: + 10 */;
-    ret->cost = n1->cost + n2->cost + 10;
+    ret->cost = JOIN_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -827,7 +833,7 @@ PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- Select: costs ---- */
-    ret->cost = n->cost + 1;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -905,7 +911,7 @@ PFpa_append_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
     ret->orderings = PFord_unique (ret->orderings);
 
     /* ---- AppendUnion: costs ---- */
-    ret->cost = 1 + n1->cost + n2->cost;
+    ret->cost = DEFAULT_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -1062,7 +1068,7 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
     ret->orderings = PFord_unique (ret->orderings);
 
     /* ---- MergeUnion: costs ---- */
-    ret->cost = 1 + PFord_count (ord) + n1->cost + n2->cost;
+    ret->cost = 2 * DEFAULT_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -1112,7 +1118,7 @@ PFpa_intersect (const PFpa_op_t *n1, const PFpa_op_t *n2)
 
     /* ---- Intersect: costs ---- */
     /* FIXME: Is this a reasonable cost estimate for Intersect? */
-    ret->cost = ret->schema.count + n1->cost + n2->cost;
+    ret->cost = JOIN_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -1158,7 +1164,7 @@ PFpa_difference (const PFpa_op_t *n1, const PFpa_op_t *n2)
 
     /* ---- Difference: costs ---- */
     /* FIXME: What is a sensible cost value for Difference? */
-    ret->cost = 1 + n1->cost + n2->cost;
+    ret->cost = JOIN_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -1185,7 +1191,7 @@ PFpa_sort_distinct (const PFpa_op_t *n, PFord_ordering_t ord)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- SortDistinct: costs ---- */
-    ret->cost = n->cost + 1;
+    ret->cost = JOIN_COST + n->cost;
 
     return ret;
 }
@@ -1218,8 +1224,11 @@ PFpa_std_sort (const PFpa_op_t *n, PFord_ordering_t required)
     PFord_set_add (ret->orderings, required);
 
     /* ---- StandardSort: costs ---- */
-    ret->cost = (log (n->cost) * n->cost / log (2));
-    ret->cost = ret->cost > n->cost ? ret->cost : 2 * n->cost;
+    ret->cost = PFord_count (required) * SORT_COST + n->cost;
+
+    for (unsigned int i = 0; i < PFord_count (required); i++)
+        if (PFord_order_dir_at (required, i) == DIR_DESC)
+            ret->cost += SORT_COST;
 
     return ret;
 }
@@ -1252,7 +1261,13 @@ PFpa_refine_sort (const PFpa_op_t *n,
     PFord_set_add (ret->orderings, required);
 
     /* ---- StandardSort: costs ---- */
-    ret->cost = n->cost + n->cost;
+    ret->cost = PFord_count (required) * SORT_COST 
+              - PFord_count (existing) * SORT_COST
+              + n->cost;
+
+    for (unsigned int i = 0; i < PFord_count (required); i++)
+        if (PFord_order_dir_at (required, i) == DIR_DESC)
+            ret->cost += SORT_COST;
 
     return ret;
 }
@@ -1373,7 +1388,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- costs ---- */
-    ret->cost = n->cost + 1;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -1440,7 +1455,8 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
      */
 
     /* ---- NumAdd: costs ---- */
-    ret->cost = n->cost + 2;    /* 2 as we want NumAddConst to be cheaper */
+    /* 2 as we want NumAddConst to be cheaper */
+    ret->cost = 2 * DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -1505,7 +1521,7 @@ bin_comp_atom (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
      */
 
     /* ---- NumAdd: costs ---- */
-    ret->cost = n->cost + 1;    /* cheaper than NumAdd */
+    ret->cost = DEFAULT_COST + n->cost;    /* cheaper than NumAdd */
 
     return ret;
 }
@@ -1614,7 +1630,7 @@ unary_arith (PFpa_op_kind_t op,
      */
 
     /* ---- NumAdd: costs ---- */
-    ret->cost = n->cost + 1;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -1667,7 +1683,7 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
     /* HashCount does not provide any orderings. */
 
     /* ---- HashCount: costs ---- */
-    ret->cost = n->cost * 3 / 2;
+    ret->cost = AGGR_COST + n->cost;
 
     return ret;
 }
@@ -1737,7 +1753,7 @@ PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
     /* Aggr does not provide any orderings. */
 
     /* ---- Aggr: costs ---- */
-    ret->cost = n->cost * 3 / 2;
+    ret->cost = AGGR_COST + n->cost;
 
     return ret;
 }
@@ -1801,7 +1817,7 @@ PFpa_number (const PFpa_op_t *n,
         PFord_set_add (ret->orderings, sortby (new_att));
 
     /* ---- MergeRowNum: costs ---- */
-    ret->cost = 1 + n->cost;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -1839,7 +1855,7 @@ PFpa_type (const PFpa_op_t *n,
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
     /* costs */
-    ret->cost = n->cost + 1;
+    ret->cost = DEFAULT_COST + 1;
 
     return ret;
 }
@@ -1881,7 +1897,7 @@ PFpa_type_assert (const PFpa_op_t *n,
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
     /* costs */
-    ret->cost = n->cost + 1;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -1910,7 +1926,7 @@ PFpa_cast (const PFpa_op_t *n, PFalg_att_t res,
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- Cast: costs ---- */
-    ret->cost = n->cost + 1;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -2003,11 +2019,11 @@ llscj_cost (PFpa_op_t *n, unsigned long ctx_cost)
 
         if (PFord_implies (n->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            n->cost = 3 * ctx_cost;
+            n->cost = 3 * SORT_COST + ctx_cost;
         }
         else {
             /* output has item|iter ordering */
-            n->cost = 2 * ctx_cost;
+            n->cost = 2 * SORT_COST + ctx_cost;
         }
 
     }
@@ -2016,13 +2032,13 @@ llscj_cost (PFpa_op_t *n, unsigned long ctx_cost)
 
         if (PFord_implies (n->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            n->cost = 1 * ctx_cost;
+            n->cost = 1 * SORT_COST + ctx_cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            n->cost = 0 * ctx_cost;
+            n->cost = 0 * SORT_COST + ctx_cost;
         }
     }
 
@@ -2084,7 +2100,7 @@ PFpa_llscj_attr (const PFpa_op_t *frag,
 {
     PFpa_op_t *ret = llscj_worker (pa_llscj_attr, frag, ctx, test, in, out,
                                    iter, item);
-    llscj_cost (ret, ctx->cost);
+    ret-> cost = DEFAULT_COST + ctx->cost;
 
     return ret;
 }
@@ -2307,7 +2323,7 @@ PFpa_doc_tbl (const PFpa_op_t *rel, PFalg_att_t iter, PFalg_att_t item)
     }
 
     /* ---- doc_tbl: costs ---- */
-    ret->cost = 10 * rel->cost;
+    ret->cost = DEFAULT_COST + rel->cost;
 
     return ret;
 }
@@ -2346,7 +2362,7 @@ PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
     for (unsigned int i = 0; i < PFord_set_count (alg->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (alg->orderings, i));
     /* costs */
-    ret->cost = doc->cost + alg->cost + 1;
+    ret->cost = DEFAULT_COST + doc->cost + alg->cost;
 
     return ret;
 }
@@ -2420,7 +2436,7 @@ PFpa_element (const PFpa_op_t *fragment,
 
     /* ---- attribute: costs ---- */
     /* dummy costs as we have only this version */
-    ret->cost = 1 + fragment->cost + qname->cost + content->cost;
+    ret->cost = DEFAULT_COST + fragment->cost + qname->cost + content->cost;
 
     return ret;
 }
@@ -2475,7 +2491,7 @@ PFpa_attribute (const PFpa_op_t *rel,
 
     /* ---- attribute: costs ---- */
     /* dummy costs as we have only this version */
-    ret->cost = 1 + rel->cost;
+    ret->cost = DEFAULT_COST + rel->cost;
 
     return ret;
 }
@@ -2512,7 +2528,7 @@ PFpa_textnode (const PFpa_op_t *rel, PFalg_att_t res,
 
     /* ---- textnode: costs ---- */
     /* dummy costs as we have only this version */
-    ret->cost = 1 + rel->cost;
+    ret->cost = DEFAULT_COST + rel->cost;
 
     return ret;
 }
@@ -2538,7 +2554,7 @@ PFpa_merge_adjacent (const PFpa_op_t *fragment, const PFpa_op_t *n,
     /* result is in iter|pos order */
     PFord_set_add (ret->orderings, sortby (iter, pos));
     /* costs */
-    ret->cost = fragment->cost + n->cost + 1;
+    ret->cost = DEFAULT_COST + fragment->cost + n->cost;
 
     return ret;
 }
@@ -2567,7 +2583,7 @@ PFpa_roots (const PFpa_op_t *n)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- Roots: costs ---- */
-    ret->cost = 10;
+    ret->cost = n->cost;
 
     return ret;
 }
@@ -2651,7 +2667,7 @@ PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
     /* costs */
-    ret->cost = n->cost + err->cost + 1;
+    ret->cost = DEFAULT_COST + n->cost + err->cost;
 
     return ret;
 }
@@ -2685,7 +2701,7 @@ PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
         PFord_set_add (ret->orderings, PFord_set_at (res->orderings, i));
 
     /* costs */
-    ret->cost = res->cost + paramList->cost + 1;
+    ret->cost = DEFAULT_COST + res->cost + paramList->cost;
 
     return ret;
 }
@@ -2712,7 +2728,7 @@ PFpa_op_t *PFpa_rec_param (const PFpa_op_t *arguments,
     ret->schema.items = NULL;
     
     /* costs */
-    ret->cost = arguments->cost + paramList->cost + 1;
+    ret->cost = DEFAULT_COST + arguments->cost + paramList->cost;
 
     return ret;
 }
@@ -2835,7 +2851,7 @@ PFpa_op_t *PFpa_rec_arg (const PFpa_op_t *seed,
         PFord_set_add (ret->orderings, PFord_set_at (base->orderings, i));
 
     /* costs */
-    ret->cost = seed->cost + recursion->cost + 1;
+    ret->cost = DEFAULT_COST + seed->cost + recursion->cost;
 
     return ret;
 }
@@ -2879,7 +2895,7 @@ PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
     PFord_set_add (ret->orderings, ord);
 
     /* costs */
-    ret->cost = 1;
+    ret->cost = INIT_COST;
 
     return ret;
 }
@@ -2945,7 +2961,7 @@ PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2,
     /* ... and automatically also in iter|item order */
     PFord_set_add (ret->orderings, sortby (iter, item));
     /* costs */
-    ret->cost = n1->cost + n2->cost + 1;
+    ret->cost = DEFAULT_COST + n1->cost + n2->cost;
 
     return ret;
 }
