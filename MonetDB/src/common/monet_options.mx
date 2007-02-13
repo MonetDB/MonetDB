@@ -284,7 +284,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 		set = (opt *) realloc(set, (setlen + 1) * sizeof(opt));
 		set[setlen].kind = opt_config;
 		set[setlen].name = strdup(s);
-		set[setlen].value = malloc(t - val);
+		set[setlen].value = malloc((size_t) (t - val));
 		for (t = val, s = set[setlen].value; *t; t++)
 			if (*t != '"')
 				*s++ = *t;

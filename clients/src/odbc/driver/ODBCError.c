@@ -285,11 +285,11 @@ getMessage(ODBCError *error)
 	if (error->message == NULL) {
 		/* No error message was set, use the default error msg
 		   for the set sqlState (if a msg is available) */
-		const char *SQLStateMsg = getStandardSQLStateMsg(error->sqlState);
+		const char *StandardSQLStateMsg = getStandardSQLStateMsg(error->sqlState);
 
-		assert(SQLStateMsg);
+		assert(StandardSQLStateMsg);
 		/* use this message instead of the NULL */
-		error->message = strdup(SQLStateMsg);
+		error->message = strdup(StandardSQLStateMsg);
 	}
 
 	return error->message;

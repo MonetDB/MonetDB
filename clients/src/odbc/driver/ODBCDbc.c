@@ -128,8 +128,6 @@ addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nativeEr
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	extern const char *getStandardSQLStateMsg(const char *);
-
 	ODBCLOG("addDbcError " PTRFMT " %s %s %d\n", PTRFMTCAST dbc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidDbc(dbc));

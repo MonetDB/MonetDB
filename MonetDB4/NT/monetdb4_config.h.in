@@ -88,22 +88,6 @@
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 /* #undef HAVE_CTIME_R3 */
 
-/* Define to 1 if you have the declaration of `strdup', and to 0 if you don't.
-   */
-#define HAVE_DECL_STRDUP 1
-
-/* Define to 1 if you have the declaration of `strtof', and to 0 if you don't.
-   */
-#define HAVE_DECL_STRTOF 0
-
-/* Define to 1 if you have the declaration of `strtoll', and to 0 if you
-   don't. */
-/* #undef HAVE_DECL_STRTOLL */
-
-/* Define to 1 if you have the declaration of `strtoull', and to 0 if you
-   don't. */
-/* #undef HAVE_DECL_STRTOULL */
-
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 /* #undef HAVE_DIRENT_H */
@@ -423,9 +407,6 @@
 /* Define to 1 if you have the `strtod' function. */
 #define HAVE_STRTOD 1
 
-/* Define to 1 if you have the `strtof' function. */
-/* #undef HAVE_STRTOF */
-
 /* Define to 1 if you have the `strtol' function. */
 #define HAVE_STRTOL 1
 
@@ -433,7 +414,6 @@
 #if _MSC_VER >= 1300
 #define HAVE_STRTOLL 1
 #define strtoll _strtoi64
-#define HAVE_DECL_STRTOLL 1
 #else
 /* #undef HAVE_STRTOLL */
 #endif
@@ -442,7 +422,6 @@
 #if _MSC_VER >= 1300
 #define HAVE_STRTOULL
 #define strtoull _strtoui64
-#define HAVE_DECL_STRTOULL 1
 #else
 /* #undef HAVE_STRTOULL */
 #endif

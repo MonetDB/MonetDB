@@ -16,6 +16,7 @@
  * All Rights Reserved.
  */
 
+#include "clients_config.h"	/* we need SIZEOF_INT and SIZEOF_LONG for sql.h */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sql.h>
@@ -25,7 +26,7 @@
 #define snprintf _snprintf
 #endif
 
-void
+static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 {
 	SQLCHAR state[6];
@@ -55,7 +56,7 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 	}
 }
 
-void
+static void
 check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 {
 	switch (ret) {

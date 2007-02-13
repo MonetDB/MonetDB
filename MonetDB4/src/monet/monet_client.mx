@@ -234,7 +234,7 @@ scheduleClient(Client c)
 		GDKfatal("scheduleClient: Daemon mode without startup script\n");
 }
 
-void
+static void
 rescheduleClient(Client c)
 {
 	Request rm = newRequest(c->stk, c->mil_accept, 0);

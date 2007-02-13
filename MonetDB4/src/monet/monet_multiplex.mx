@@ -110,7 +110,7 @@ typedef struct {
 	int cnt;		/* number of errors that have occurred sofar */
 } bulkerror_t;
 
-void
+static void
 bulkerror_init(bulkerror_t *bulkerror)
 {
 	bulkerror->bak = GDKerrbuf;
@@ -119,7 +119,7 @@ bulkerror_init(bulkerror_t *bulkerror)
 	GDKsetbuf(bulkerror->buf);
 }
 
-void
+static void
 bulkerror_handle(bulkerror_t *bulkerror, str msg)
 {
 	if (bulkerror->cnt++ == 0) {
@@ -132,7 +132,7 @@ bulkerror_handle(bulkerror_t *bulkerror, str msg)
 	bulkerror->buf[0] = 0;
 }
 
-void
+static void
 bulkerror_format(bulkerror_t *bulkerror, int tpe, ptr val)
 {
 	char *buf = NULL;
@@ -142,7 +142,7 @@ bulkerror_format(bulkerror_t *bulkerror, int tpe, ptr val)
 	GDKfree(buf);
 }
 
-void
+static void
 bulkerror_finish(bulkerror_t *bulkerror, str fcn_nme)
 {
 	GDKsetbuf(bulkerror->bak);
@@ -161,7 +161,7 @@ BATunfix(ptr i)
 }
 
 /* call an interpret tree, and return <0 only on error */
-int
+static int
 interpret_interpret(Cntxt stk, YYSTREE tt, ValPtr argv)
 {
 	int ret_val = interpret(stk, tt, argv);
@@ -1383,8 +1383,7 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	}
 	if (ret_val >= 0 && argv->vtype != sig->ret_tpe) {
 		/* fully destroy the return value of the illegal type */
-		ptr _p = VALptr(argv);
-
+		_p = VALptr(argv);
 		if (_p) {
 			ATOMunfix(argv->vtype, _p);
 			if (ATOMextern(argv->vtype)) GDKfree(_p);
@@ -1399,10 +1398,10 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	}
 	if (argv->vtype == TYPE_bat) {
 		/* terrible+true; we must check for views (on nested) */
-		BAT *b = BBP_cache(argv->val.bval);
+		BAT *_b = BBP_cache(argv->val.bval);
 
-		if (VIEWparent(b))
-			VIEWreset(b);
+		if (VIEWparent(_b))
+			VIEWreset(_b);
 		if (BUNfastins(ret, @1, _p = VALptr(argv)) == 0)
 			ret_val = -1;
 		BBPdecref(*(bat*) _p, !packed_call); /* TOK_COMMAND=hard unfix, proc=logical */
@@ -1835,11 +1834,12 @@ call and we have the additional knowledge (through the atom heap trick) that:
 
 @= bunins_unary
 	if (batbuns->free >= batbuns->size) {
-		int ret;
+		int err;
+
 		DELTAsave(nested);
-		ret = HEAPextend(batbuns, batbuns->size*2);
+		err = HEAPextend(batbuns, batbuns->size*2);
 		DELTAload(nested);
-		if (ret < 0)
+		if (err < 0)
 			goto bunins_failed;
 		nested->batDeleted = nested->batDeleted = nested->batFirst = batbuns->base;
 	}

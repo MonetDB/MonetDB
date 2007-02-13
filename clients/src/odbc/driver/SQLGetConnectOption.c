@@ -61,7 +61,7 @@ SQLGetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	default:
 		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
-		return SQL_ERROR;
+		break;
 	}
 
 	return SQL_ERROR;

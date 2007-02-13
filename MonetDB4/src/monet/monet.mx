@@ -411,8 +411,6 @@ monet_exit(int status)
 	GDKexit(status);
 }
 
-extern BAT *TBL_mod_load;
-
 @- Monet Init
 Startup the monet server. This is the moment that modules that
 are hardwired into the kernel are activated. The below macro is
@@ -454,8 +452,9 @@ The client that notices the request for an upgrade is put on halt.
 This client could be running processing a MIL program or awaiting
 input from the user.
 @c
+#if 0
 void
-protectMonetClient()
+protectMonetClient(void)
 {
 	if (GDKprotected)
 		return;
@@ -464,6 +463,7 @@ protectMonetClient()
 		MT_sleep_ms(1000);
 	}
 }
+#endif
 
 Client
 monet_init(void)
@@ -829,20 +829,20 @@ monet_sprintf(str *res, str format, va_list ap)
 #endif /* HAVE_SNPRINTF */
 				@:sprintf(dval)@
 			} else if (*cur == 's') {
-				int len;
+				int length;
 
 				if (extra) {
 					return_error(format_error);
 				} else if (type != TYPE_str) {
 					return_error(type_error);
 				}
-				len = strLen(p);
+				length = strLen(p);
 				width++;
 				prec++;	/* account for '\0' */
-				if (dotseen && prec < len)
-					len = prec;
-				if ((size_t) len > width)
-					width = (size_t) len;
+				if (dotseen && prec < length)
+					length = prec;
+				if ((size_t) length > width)
+					width = (size_t) length;
 				@:sprintf(p)@
 			} else {
 				return_error(format_error);

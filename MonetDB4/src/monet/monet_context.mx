@@ -135,7 +135,7 @@ CNTXTinit(void)
 }
 
 
-int
+static int
 CNTXTrealloc(flt factor)
 {
 	/* extend the VM region; make it start at the same base address */

@@ -75,7 +75,7 @@ SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
-		return SQL_ERROR;
+		break;
 	}
 
 	return SQL_ERROR;

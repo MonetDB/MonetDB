@@ -721,7 +721,7 @@ unpack_call::gen_command(ostream &o, const Command &d)
 ostream &
 unpack::gen_command(ostream &o, const Command &d)
 {
-	o << "int " << d.fcn() << "_unpack" << d.Id();
+	o << "static int " << d.fcn() << "_unpack" << d.Id();
 	o << "( int argc, ValPtr argv ){\n";
 	o << "   if (argc > " << MAXPARAMS + 1 << ") {\n";
 	o << "      GDKerror(\"%s: too many arguments.\\n\", \"";

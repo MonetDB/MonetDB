@@ -470,9 +470,9 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 		return 1;
 	}
 	if (mapi_fetch_row(hdl)) {
-		char *cnt = mapi_fetch_field(hdl, 0);
+		char *cntfld = mapi_fetch_field(hdl, 0);
 
-		fprintf(toConsole, "COPY %s RECORDS INTO ", cnt);
+		fprintf(toConsole, "COPY %s RECORDS INTO ", cntfld);
 		quoted_print(toConsole, tname);
 		fprintf(toConsole, " FROM stdin USING DELIMITERS '\\t';\n");
 	}

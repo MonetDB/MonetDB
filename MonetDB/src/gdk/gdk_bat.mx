@@ -1179,28 +1179,28 @@ BUNappend(BAT *b, ptr t, bit force)
 			}
 		} else if (b->tseqbase != oid_nil){ /* virtual ids */ 
 			if (b->tseqbase + BATcount(b) != *(oid*)t) {
-				size_t i = BATcount(b);
+				size_t cnt = BATcount(b);
 
 				b = BATmaterializet(b, BATcount(b)+1);
 				countonly=0;
-				b->T->nodense = i;
+				b->T->nodense = cnt;
 				b->tdense = FALSE;
 				if (b->tsorted & 1) {
-					if (b->tseqbase + i > *(oid*)t || *(oid*)t == oid_nil) {
+					if (b->tseqbase + cnt > *(oid*)t || *(oid*)t == oid_nil) {
 						b->T->nosorted = 1;
 						b->tsorted = FALSE;
 
-						b->T->nokey[0] = i - 1;
-						b->T->nokey[1] = i;
+						b->T->nokey[0] = cnt - 1;
+						b->T->nokey[1] = cnt;
 						b->tkey = bm->hkey = b->tdense = FALSE;
 					}
 				} else if (b->tsorted == (bit)GDK_SORTED_REV){
-					if (b->tseqbase + i < *(oid*)t) {
+					if (b->tseqbase + cnt < *(oid*)t) {
 						b->T->nosorted = 1;
 						b->tsorted = FALSE;
 
-						b->T->nokey[0] = i - 1;
-						b->T->nokey[1] = i;
+						b->T->nokey[0] = cnt - 1;
+						b->T->nokey[1] = cnt;
 						b->tkey = bm->hkey = b->tdense = FALSE;
 					}
 				}
@@ -2438,14 +2438,14 @@ BATsetaccess(BAT *b, int mode)
 		}
 		if (remap && b->batCopiedtodisk && dirty) {
 			/* make sure any disk images are clean */
-			int dirty = b->batDirtydesc;
+			int dirtydesc = b->batDirtydesc;
 
 			b->batDirtydesc = FALSE;
 
 			/* TODO? saving entire bat may be a bit overkill if only one heap needs it.. */
 			if (BBPsave(b)) {
 				/* deal with BAT write errors: no access mode change */
-				b->batDirtydesc = dirty;
+				b->batDirtydesc = dirtydesc;
 				return NULL;
 			}
 		}

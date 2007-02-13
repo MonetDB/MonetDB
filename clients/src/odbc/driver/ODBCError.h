@@ -135,4 +135,8 @@ void prependODBCError(ODBCError **head, ODBCError *err);
  */
 void deleteODBCErrorList(ODBCError **err);
 
+#ifdef ODBCDEBUG
+const char *getStandardSQLStateMsg(const char *SQLState);
+#endif
+
 #endif /* _H_ODBCERROR */

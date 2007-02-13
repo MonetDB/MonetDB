@@ -2145,11 +2145,12 @@ mapi_start_talking(Mapi mid)
 			 * sequence is used.
 			 */
 			unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
-			int len = strlen(mid->password) + strlen(chal);
-			char key[len];
+			int n = strlen(mid->password) + strlen(chal);
+			char key[n];
+
 			strcpy(key, mid->password);
 			strncat(key, chal, strlen(chal));
-			SHA1((unsigned char*)key, len, md);
+			SHA1((unsigned char*)key, n, md);
 			hash = malloc(sizeof(char) * (/*{SHA1}*/6 + 20 * 2 + 1));
 			sprintf(hash, "{SHA1}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2164,11 +2165,12 @@ mapi_start_talking(Mapi mid)
 			 * sequence is used.
 			 */
 			unsigned char md[16]; /* should be MD5_DIGEST_LENGTH */
-			int len = strlen(mid->password) + strlen(chal);
-			char key[len];
+			int n = strlen(mid->password) + strlen(chal);
+			char key[n];
+
 			strcpy(key, mid->password);
 			strncat(key, chal, strlen(chal));
-			MD5((unsigned char*)key, len, md);
+			MD5((unsigned char*)key, n, md);
 			hash = malloc(sizeof(char) * (/*{MD5}*/5 + 16 * 2 + 1));
 			sprintf(hash, "{MD5}%02x%02x%02x%02x%02x%02x%02x%02x"
 					"%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2189,22 +2191,22 @@ mapi_start_talking(Mapi mid)
 			char key[8]; /* NULL termination is not necessary */
 			char salt[3]; /* NULL termination is a necessity! */
 			char* cr;
-			int len;
+			int n;
 
 			/* prepare the key */
-			len = strlen(mid->password);
-			if (len >= 8) {
+			n = strlen(mid->password);
+			if (n >= 8) {
 				strncpy(key, mid->password, 8);
 			} else {
 				/* pad with the challenge, we know it is always 8+ chars */
-				strncpy(key, mid->password, len);
-				strncpy(key + len, chal, 8 - len);
+				strncpy(key, mid->password, n);
+				strncpy(key + n, chal, 8 - n);
 			}
 
 			/* prepare the salt */
-			len = strlen(chal);
-			salt[0] = chal[len - 2];
-			salt[1] = chal[len - 1];
+			n = strlen(chal);
+			salt[0] = chal[n - 2];
+			salt[1] = chal[n - 1];
 			salt[2] = '\0';
 
 			/* call crypt to do the work */
@@ -2708,11 +2710,11 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 
 
 MapiMsg
-mapi_timeout(Mapi mid, int time)
+mapi_timeout(Mapi mid, int timeout)
 {
 	mapi_check(mid, "mapi_timeout");
 	if (mid->trace == MAPI_TRACE)
-		printf("Set timeout to %d\n", time);
+		printf("Set timeout to %d\n", timeout);
 	return mapi_setError(mid, "Operation not yet implemented", "mapi_timeout", MERROR);
 }
 
@@ -3262,34 +3264,34 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	char **anchors;
 
 	if (line[0] == '&') {
-		char *n = line;
+		char *nline = line;
 		int qt;
 
 		/* handle fields &qt */
 
-		n++;		/* query type */
-		qt = strtol(n, &n, 0);
+		nline++;	/* query type */
+		qt = strtol(nline, &nline, 0);
 
 		if (qt != Q_BLOCK || result == NULL)
 			result = new_result(hdl);
 		result->querytype = qt;
 
-		n++;		/* skip space */
+		nline++;		/* skip space */
 		switch (qt) {
 		case Q_TRANS:
-			if (*n == 'f')
+			if (*nline == 'f')
 				hdl->mid->auto_commit = 0;
 			else
 				hdl->mid->auto_commit = 1;
 			break;
 		case Q_UPDATE:
-			result->row_count = strtol(n, &n, 0);
+			result->row_count = strtol(nline, &nline, 0);
 			break;
 		case Q_TABLE:
 		case Q_PREPARE: {
 			int ntuples;	/* not used */
 
-			sscanf(n, "%d %d %d %d", &result->tableid, &result->row_count, &result->fieldcnt, &ntuples);
+			sscanf(nline, "%d %d %d %d", &result->tableid, &result->row_count, &result->fieldcnt, &ntuples);
 			break;
 		}
 		case Q_BLOCK:
@@ -4274,13 +4276,13 @@ The values of a row are delivered to any bounded variable before
 fetch_row returns. Automatic conversion based on common types
 simplifies the work for the programmers.
 @c
-#if HAVE_STRTOF && !HAVE_DECL_STRTOF
+#if defined(HAVE_STRTOF) && !HAVE_DECL_STRTOF
 extern float strtof(const char *, char **);
 #endif
-#if HAVE_STRTOLL && !HAVE_DECL_STRTOLL
+#if defined(HAVE_STRTOLL) && !HAVE_DECL_STRTOLL
 extern long long strtoll(const char *, char **, int);
 #endif
-#if HAVE_STRTOLL && !HAVE_DECL_STRTOLL
+#if defined(HAVE_STRTOLL) && !HAVE_DECL_STRTOLL
 extern unsigned long long strtoull(const char *, char **, int);
 #endif
 

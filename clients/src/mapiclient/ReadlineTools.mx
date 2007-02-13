@@ -107,16 +107,16 @@ static char *
 sql_command_generator(const char *text, int state)
 {
 
-	static int index, len;
+	static int idx, len;
 	const char *name;
 
 	if (!state) {
-		index = 0;
+		idx = 0;
 		len = strlen(text);
 	}
 
 
-	while ((name = sql_commands[index++])) {
+	while ((name = sql_commands[idx++])) {
 #ifdef HAVE_STRNCASECMP
 		if (strncasecmp(name, text, len) == 0)
 #else
@@ -261,7 +261,7 @@ static char *
 mal_command_generator(const char *text, int state)
 {
 
-	static int index;
+	static int idx;
 	static int seekpos, len, rowcount;
 	static MapiHdl table_hdl;
 	char *name, buf[BUFSIZ];
@@ -271,14 +271,14 @@ mal_command_generator(const char *text, int state)
 	while( text > rl_line_buffer && ! isspace((int) *text)) 
 		text--;
 	if (!state) {
-		index = 0;
+		idx = 0;
 		len = strlen(text);
 	}
 
 /*	printf("expand test:%s\n",text);
 	printf("currentline:%s\n",rl_line_buffer); */
 
-	while ( mal_commands[index] && (name = mal_commands[index++])) {
+	while ( mal_commands[idx] && (name = mal_commands[idx++])) {
 #ifdef HAVE_STRNCASECMP
 		if (strncasecmp(name, text, len) == 0)
 #else

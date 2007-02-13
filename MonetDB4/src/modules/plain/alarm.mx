@@ -82,7 +82,7 @@ is OS-dependent. The timer should be initialized as long as there
 are outstanding timer events.
 @c
 #ifdef SIGALRM
-void
+static void
 CLKinitTimer(int sec, int usec)
 {
 	int i = sec - time(0);
@@ -98,7 +98,7 @@ A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
 @c
 #ifdef SIGALRM
-void
+static void
 CLKalarm(time_t t, str action)
 {
 	int j;

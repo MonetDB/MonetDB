@@ -355,7 +355,7 @@ Myylogpop(void)
 }
 
 void 
-Myylogclean() 
+Myylogclean(void)
 {
 	yy_backup = sizeof(char*);
 	yy_sync = NULL;
@@ -507,8 +507,11 @@ the new values just have to be assembled in the array, without having to
 traverse the MIL tree.
 @c
 /* debug/yysubst: get GDKmalloc block length from pointer */
-size_t yysize(void* p) {
+static size_t
+yysize(void* p)
+{
 	ssize_t n = ((ssize_t*) (p))[-1];
+
 	return (n<0)?-n:n; 
 }
 
@@ -779,7 +782,6 @@ Myysize(YYSTREE t, size_t *attached)
 	*attached = me_attached + sons_attached;	
 	return me_attached + tot;
 }
-extern str LEXNAME(int);
 
 static void
 yyprint(YYSTREE yytree, unsigned int level)

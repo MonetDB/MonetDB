@@ -43,7 +43,7 @@
 #include "ODBCError.h"
 
 
-SQLRETURN
+static SQLRETURN
 ODBCFreeEnv_(ODBCEnv *env)
 {
 	if (env->sql_attr_odbc_version == 0) {
@@ -64,7 +64,7 @@ ODBCFreeEnv_(ODBCEnv *env)
 	return SQL_SUCCESS;
 }
 
-SQLRETURN
+static SQLRETURN
 ODBCFreeDbc_(ODBCDbc *dbc)
 {
 	/* check if connection is not active */
@@ -103,7 +103,7 @@ ODBCFreeStmt_(ODBCStmt *stmt)
 	return SQL_SUCCESS;
 }
 
-SQLRETURN
+static SQLRETURN
 ODBCFreeDesc_(ODBCDesc *desc)
 {
 	ODBCStmt *stmt;

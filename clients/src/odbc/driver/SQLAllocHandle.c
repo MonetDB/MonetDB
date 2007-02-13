@@ -46,7 +46,7 @@
 #include "ODBCStmt.h"
 #include "ODBCError.h"
 
-SQLRETURN
+static SQLRETURN
 SQLAllocEnv_(SQLHANDLE *pnOutputHandle)
 {
 	if (pnOutputHandle == NULL) {
@@ -59,7 +59,7 @@ SQLAllocEnv_(SQLHANDLE *pnOutputHandle)
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
-SQLRETURN
+static SQLRETURN
 SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *pnOutputHandle)
 {
 	if (env->sql_attr_odbc_version == 0) {
@@ -99,7 +99,7 @@ SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
-SQLRETURN
+static SQLRETURN
 SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
 {
 	if (!dbc->Connected) {

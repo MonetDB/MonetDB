@@ -87,7 +87,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLI
 	default:
 		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
-		return SQL_ERROR;
+		break;
 	}
 
 	return SQL_SUCCESS;

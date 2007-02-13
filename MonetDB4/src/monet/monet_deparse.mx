@@ -112,11 +112,11 @@ lex_name(Client c, char *buf, char *end, YYSTREE t, ValPtr v)
 		break;
 	case TOK_CONSTANT:
 	{
-		char *p = NULL;
+		char *s = NULL;
 
-		ATOMformat(v->vtype, VALptr(v), &p);
-		strcpy(buf, p);
-		GDKfree(p);
+		ATOMformat(v->vtype, VALptr(v), &s);
+		strcpy(buf, s);
+		GDKfree(s);
 	}
 	}
 	return t->token;

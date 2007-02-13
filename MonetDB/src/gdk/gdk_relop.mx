@@ -928,7 +928,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		/* propagation of void columns in the result */
 		int nondense = 0;
 		int tpe = r->ttype;
-		BAT *ret = NULL;
+
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
 		if (ATOMstorage(tpe) == TYPE_str /*&& GDK_ELIMDOUBLES(r->theap)*/) {
@@ -981,6 +981,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			}
 			if (HEAPcopy(bn->theap, r->theap) < 0) {
 				BBPreclaim(bn);
+				ret = NULL;
 				goto ready;
 			}
 			bn->ttype = bm->htype = r->ttype;
@@ -1691,7 +1692,7 @@ differ significantly.
 }
 break;
 @c
-BAT *
+static BAT *
 BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 {
 	BAT *bn, *del = NULL;
@@ -1826,7 +1827,7 @@ iff BAThkey(r) and one on l to find the matching tuples.
 }
 break;
 @c
-BAT *
+static BAT *
 BATrevsemijoin(BAT *l, BAT *r)
 {
 	int any, rdoubles = (BAThkey(r) == 0), merge = rdoubles & BAThordered(r);
@@ -2080,7 +2081,7 @@ head-value from the 'left' operand and then tail-value from the 'right'
 provided the tail-head pair do not (!) match.
 @{
 @= antijoin2
-BAT*
+static BAT *
 antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, r_end, dst;
@@ -2255,7 +2256,7 @@ head-value from the 'left' operand and then tail-value from the 'right'
 operand.
 @{
 @= cross2
-BAT*
+static BAT *
 cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, r_end, dst;

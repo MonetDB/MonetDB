@@ -93,8 +93,6 @@ addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg, int nativ
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	extern const char *getStandardSQLStateMsg(const char *);
-
 	ODBCLOG("addDescError " PTRFMT " %s %s %d\n", PTRFMTCAST desc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidDesc(desc));
