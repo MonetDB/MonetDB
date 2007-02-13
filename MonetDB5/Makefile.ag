@@ -14,13 +14,6 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-# 
-# Contributor(s):
-# 		Martin Kersten <Martin.Kersten@cwi.nl>
-# 		Peter Boncz <Peter.Boncz@cwi.nl>
-# 		Niels Nes <Niels.Nes@cwi.nl>
-# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 SUBDIRS = src conf
 # scripts tests 
 
