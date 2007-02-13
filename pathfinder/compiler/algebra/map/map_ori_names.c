@@ -597,8 +597,22 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
             
         case la_rec_param:
-            res = rec_param (O(L(p)), O(R(p)));
-            break;
+        {
+            PFla_op_t *arg = NULL;
+
+            /* In case the recursion argument is not referenced anymore
+               we can safely throw it away. */
+            for (unsigned int i = 0; i < PFarray_last (map); i++)
+                if (((ori_unq_map *) PFarray_at (map, i))->unq == L(p)) {
+                    arg = ((ori_unq_map *) PFarray_at (map, i))->ori;
+                    break;
+                }
+                    
+            if (arg)
+                res = rec_param (arg, O(R(p)));
+            else
+                res = O(R(p));
+        }   break;
             
         case la_rec_nil:
             res = rec_nil ();
@@ -611,6 +625,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
            (Schema L -> Schema Base and Schema R -> Schema Base)
            if necessary. */
         {
+            PFla_op_t *base = NULL;
             PFalg_att_t unq, base_ori, seed_ori, rec_ori;
             unsigned int count = p->schema.count;
             bool seed_rename = false, rec_rename = false;
@@ -636,13 +651,25 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                 rec_rename  = rec_rename  || (base_ori != rec_ori);
             }
                     
-            res = rec_arg (seed_rename 
-                               ? PFla_project_ (O(L(p)), count, seed_proj)
-                               : O(L(p)),
-                           rec_rename
-                               ? PFla_project_ (O(R(p)), count, rec_proj)
-                               : O(R(p)),
-                           O(p->sem.rec_arg.base));
+            /* In case the recursion base is not referenced anymore
+               we do not need to include the recursion argument. */
+            for (unsigned int i = 0; i < PFarray_last (map); i++)
+                if (((ori_unq_map *) PFarray_at (map, i))->unq
+                    == p->sem.rec_arg.base) {
+                    base = ((ori_unq_map *) PFarray_at (map, i))->ori;
+                    break;
+                }
+                    
+            if (base)
+                res = rec_arg (seed_rename 
+                                   ? PFla_project_ (O(L(p)), count, seed_proj)
+                                   : O(L(p)),
+                               rec_rename
+                                   ? PFla_project_ (O(R(p)), count, rec_proj)
+                                   : O(R(p)),
+                               base);
+            else
+                return;
         }   break;
 
         case la_rec_base:

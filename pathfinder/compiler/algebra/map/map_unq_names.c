@@ -288,13 +288,26 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             /* Transform semi-join operations into equi-joins
                as these semi-joins might be superfluous as well. */
             if (PFprop_set (p->prop)) {
-                res = PFla_eqjoin_clone (
-                          U(L(p)),
-                          U(R(p)),
-                          UNAME (p, p->sem.eqjoin.att1),
-                          PFprop_unq_name_right (p->prop, 
-                                                 p->sem.eqjoin.att2),
-                          UNAME (p, p->sem.eqjoin.att1));
+                /* we have to make sure that only the columns from
+                   the left side are visible */
+                PFalg_proj_t *projlist;
+                PFla_op_t    *left = U(L(p));
+
+                projlist  = PFmalloc (left->schema.count *
+                                      sizeof (PFalg_proj_t));
+                for (unsigned int i = 0; i < left->schema.count; i++)
+                    projlist[i] = proj (left->schema.items[i].name,
+                                        left->schema.items[i].name);
+                res = PFla_project_ (
+                          PFla_eqjoin_clone (
+                              left,
+                              U(R(p)),
+                              UNAME (p, p->sem.eqjoin.att1),
+                              PFprop_unq_name_right (p->prop, 
+                                                     p->sem.eqjoin.att2),
+                              UNAME (p, p->sem.eqjoin.att1)),
+                          left->schema.count,
+                          projlist);
             } else {
                 res = semijoin (U(L(p)), U(R(p)),
                                 UNAME (p, p->sem.eqjoin.att1),
@@ -599,8 +612,22 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
             
         case la_rec_param:
-            res = rec_param (U(L(p)), U(R(p)));
-            break;
+        {
+            PFla_op_t *arg = NULL;
+
+            /* In case the recursion argument is not referenced anymore
+               we can safely throw it away. */
+            for (unsigned int i = 0; i < PFarray_last (map); i++)
+                if (((ori_unq_map *) PFarray_at (map, i))->ori == L(p)) {
+                    arg = ((ori_unq_map *) PFarray_at (map, i))->unq;
+                    break;
+                }
+                    
+            if (arg)
+                res = rec_param (arg, U(R(p)));
+            else
+                res = U(R(p));
+        }   break;
             
         case la_rec_nil:
             res = rec_nil ();
@@ -612,16 +639,31 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
            projection that transforms the recursion schema into the seed 
            (and base) schema. */
         {
+            PFla_op_t *base = NULL;
             PFalg_proj_t *projlist = PFmalloc (p->schema.count *
                                                sizeof (PFalg_proj_t));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
                 projlist[i] = proj (UNAME(p, p->schema.items[i].name),
                                     UNAME(R(p), p->schema.items[i].name));
+            
+            /* In case the recursion base is not referenced anymore
+               we do not need to include the recursion argument. */
+            for (unsigned int i = 0; i < PFarray_last (map); i++)
+                if (((ori_unq_map *) PFarray_at (map, i))->ori 
+                    == p->sem.rec_arg.base) {
+                    base = ((ori_unq_map *) PFarray_at (map, i))->unq;
+                    break;
+                }
                     
-            res = rec_arg (U(L(p)),
-                           PFla_project_ (U(R(p)), p->schema.count, projlist),
-                           U(p->sem.rec_arg.base));
+            if (base)
+                res = rec_arg (U(L(p)),
+                               PFla_project_ (U(R(p)),
+                                              p->schema.count,
+                                              projlist),
+                               base);
+            else
+                return;
         }   break;
 
         case la_rec_base:

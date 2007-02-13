@@ -590,10 +590,16 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     PFmilgen_kids (p, rule, kids);
     
     switch (rule) {
+        /* Rel:      rec_fix (Rec, Rel) */
+        case 132:
+            /* only follow the parameters */
+            reduce_border (kids[0], nts[0], border_vars);
+            break;
+            
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
         case 133:
             /* only follow the seeds */
-            reduce (kids[0], nts[0]);
+            reduce_border (kids[0], nts[0], border_vars);
             /* and the rest of the parameter list */
             reduce_border (kids[2], nts[2], border_vars);
             break;
@@ -838,7 +844,7 @@ reduce2 (PFpa_op_t * p, int goalnt)
             pos_body = 1; /* discard the seed */
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
         case 134:
-            /* only generate MIL code for the seed */
+            /* only generate MIL code for the body */
             reduce (kids[pos_body], nts[pos_body]);
             /* translate all the remaining parts of the body */
             reduce2 (kids[pos_body + 1], nts[pos_body + 1]);
