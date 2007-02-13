@@ -182,7 +182,6 @@ union PFsql_sem_t {
     } type;
     struct {
         PFsql_ident_t ident;
-        struct PFsql_t    *clmn_list;
     } tablename;
     struct {
         char *str;
@@ -196,10 +195,6 @@ union PFsql_sem_t {
     struct {
         bool distinct;                  /**< No equal tuples in result
                                              relation */
-        struct PFsql_t   *select_list;  /**< Select list. */
-        struct PFsql_t   *from_list;    /**< Select from list. */
-        struct PFsql_t   *where_list;   /**< Select where list. */
-        struct PFsql_t   *grpby_list;   /**< Select group by list. */
     } select;
     struct {
          bool distinct;
@@ -226,7 +221,7 @@ union PFsql_sem_t {
 typedef union PFsql_sem_t PFsql_sem_t; 
 
 /** Each node has at most for childs */
-#define PFSQL_OP_MAXCHILD  3 
+#define PFSQL_OP_MAXCHILD  4 
 
 /**
  * SQL operator node.

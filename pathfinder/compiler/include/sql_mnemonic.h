@@ -171,10 +171,10 @@
 /** Construct boolean `equal' operator.  */
 #define eq( a, b )                  PFsql_eq( a, b )
 /** Construct boolean `not' operator. */
-#define not( a, b )                 PFsql_not( a, b )
+#define not_( a )                 PFsql_not( a )
 /** Construct a boolean `and' operator. */
-#define and( a, b )                 PFsql_and( a, b )
+#define and_( a, b )                 PFsql_and( a, b )
 /** Construct a boolean `or' operator. */
-#define or( a, b )                  PFsql_or( a, b )
+#define or_( a, b )                  PFsql_or( a, b )
 
 #endif /* __SQL_MNEMONIC_H__ */

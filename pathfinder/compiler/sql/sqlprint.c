@@ -270,9 +270,9 @@ print_table_name(PFsql_t *n)
 
     sqlprintf("%s", PFsql_table_str( n->sem.tablename.ident ));
     /* the column-list has not to be specified in every case */ 
-    if( n->sem.tablename.clmn_list ) {
+    if( n->child[0]) {
         sqlprintf("(");
-        print_clm_list(n->sem.tablename.clmn_list);
+        print_clm_list(n->child[0]);
         sqlprintf(")");
     }
 }
@@ -287,18 +287,18 @@ print_subselect(PFsql_t *n)
             sqlprintf("SELECT ");
             sqlprintf("%s", ( n->sem.select.distinct )?
                     "DISTINCT ":"");
-            print_select_list( n->sem.select.select_list );
+            print_select_list( n->child[0] );
             sqlprintf(" FROM ");
-            print_from_list( n->sem.select.from_list );
+            print_from_list( n->child[1] );
             /* where list is optional, we leave the where list
                to zero when its not specified */
-            if( n->sem.select.where_list ) {
+            if( n->child[2]) {
                 sqlprintf(" WHERE ");
-                print_expr( n->sem.select.where_list );
+                print_expr( n->child[2]);
             }
-            if( n->sem.select.grpby_list ) {
+            if( n->child[4]) {
                 sqlprintf(" GROUP BY ");
-                print_clm_list( n->sem.select.grpby_list );
+                print_clm_list( n->child[3] );
             }
         } break;
         default:
@@ -431,6 +431,11 @@ print_expr(PFsql_t *n)
 
     switch( n->kind )
     {
+        case sql_not:
+         sqlprintf("NOT (");
+         print_expr( n->child[0] );
+         sqlprintf(")");
+         break;
         case sql_max:
         {
             sqlprintf("MAX (");
@@ -452,23 +457,6 @@ print_expr(PFsql_t *n)
           sqlprintf(" = ");
           print_expr( n->child[1] );
           sqlprintf(")");
-        } break;
-        case sql_add:
-        {
-          sqlprintf("(");
-          print_expr( n->child[0] );
-          sqlprintf(" + ");
-          print_expr( n->child[1] );
-          sqlprintf(")");
-        } break;
-        case sql_sub:
-        {
-          sqlprintf("(");
-          print_expr( n->child[0] );
-          sqlprintf(" - ");
-          print_expr( n->child[1] );
-          sqlprintf(")");
-
         } break;
         case sql_gt:
         {
@@ -511,6 +499,18 @@ print_expr(PFsql_t *n)
             print_statement(n->child[1]);
             sqlprintf(")");
         break;
+        /* expression : '(' expression '+' expression ')' */
+        case sql_add:
+        case sql_sub:
+        case sql_mul:
+        case sql_div:
+        {
+            sqlprintf("(");
+            print_statement(n->child[0]);
+            sqlprintf(" %s ", ID[n->kind]);
+            print_statement(n->child[1]);
+            sqlprintf(")");
+        } break;
         default:
         {
             PFoops( OOPS_FATAL, "expression screwed up (%u)",
@@ -831,8 +831,8 @@ print_statement(PFsql_t *n)
         {
             sqlprintf("SELECT ");
             if( n->sem.select.distinct ) sqlprintf("DISTINCT ");
-            print_select_list(n->sem.select.select_list);
-            if(n->sem.select.from_list)
+            print_select_list(n->child[0]);
+            if(n->child[1])
             {
                 sqlprintf(" FROM ");
             }
@@ -849,6 +849,23 @@ print_statement(PFsql_t *n)
             print_statement(n->child[1]);
             sqlprintf(")");
         } break;
+        case sql_gt:
+        {
+          sqlprintf("(");
+          print_expr( n->child[0] );
+          sqlprintf(" > ");
+          print_expr( n->child[1] );
+          sqlprintf(")");
+        } break;
+        case sql_gteq:
+        {
+          sqlprintf("(");
+          print_expr( n->child[0] );
+          sqlprintf(" >= ");
+          print_expr( n->child[1] );
+          sqlprintf(")");
+        } break;
+
         default:
         {
             PFoops( OOPS_FATAL,
@@ -927,9 +944,9 @@ print_variable( PFsql_t *n )
     assert( n->kind == sql_tbl_name );
 
     sqlprintf("%s", PFsql_table_str( n->sem.tablename.ident ));
-    if( n->sem.tablename.clmn_list ) {
+    if( n->child[0]) {
         sqlprintf("(");
-        print_clm_list(n->sem.tablename.clmn_list);
+        print_clm_list(n->child[0]);
         sqlprintf(")");
     }
 }

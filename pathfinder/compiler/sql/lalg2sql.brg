@@ -197,8 +197,6 @@ Rel:    sum (Rel)                                 =  44 (10);
 Rel:    count (Rel)                               =  45 (10);
 Rel:    rownum (Rel)                              =  50 (10);
 Rel:    number (Rel)                              =  51 (10);
-Rel:    number (number (Rel))                     =  52 (10);
-Rel:    number (project (number (Rel)))           =  53 (10);
 Rel:    type (Rel)                                =  54 (10);
 Rel:    type_assert (Rel)                         =  55 (10);
 Rel:    cast (cast (Rel))                         =  56 (10);
@@ -956,12 +954,12 @@ reduce(PFla_op_t *p, int goalnt)
                     p->sem.attach.attname, p->sem.attach.value.type,
                     literal (p->sem.attach.value));
 
-            assert (L(p)->sql_ann->sfw);
-            
+            assert (L(p)->sql_ann->sfw->child[1]);
+
             sql_stmt = select
                 (
                  NULL, /* no selectlist provided */
-                 L(p)->sql_ann->sfw->sem.select.from_list,
+                 L(p)->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 );
@@ -992,7 +990,7 @@ reduce(PFla_op_t *p, int goalnt)
             sql_stmt = select
                 (
                  NULL,
-                 L(p)->sql_ann->sfw->sem.select.from_list,
+                 L(p)->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 );
@@ -1068,7 +1066,7 @@ reduce(PFla_op_t *p, int goalnt)
                 );
 
             /* preparing fromlist */
-            PFsql_t *fromlist = L(p)->sql_ann->sfw->sem.select.from_list;
+            PFsql_t *fromlist = L(p)->sql_ann->sfw->child[1];
             fromlist = from_list_add(fromlist,
                     alias
                     (
@@ -1153,7 +1151,7 @@ reduce(PFla_op_t *p, int goalnt)
                  ),
                  from_list
                  (
-                  L(p)->sql_ann->sfw->sem.select.from_list,
+                  L(p)->sql_ann->sfw->child[1],
                   alias
                   (
                    select
@@ -1191,7 +1189,7 @@ reduce(PFla_op_t *p, int goalnt)
                  NULL,
                  from_list
                  (
-                  L(p)->sql_ann->sfw->sem.select.from_list,
+                  L(p)->sql_ann->sfw->child[1],
                   /* get maximal pre value from current max_pre_frag
                    * relation */
                   alias
@@ -1268,7 +1266,7 @@ reduce(PFla_op_t *p, int goalnt)
             sql_stmt = select
                 (
                  NULL,
-                 L(p)->sql_ann->sfw->sem.select.from_list,
+                 L(p)->sql_ann->sfw->child[1],
                  NULL,
                  (p->sem.aggr.part)?
                      column_list (sql_expression (L(p)->sql_ann->colmap,
@@ -1298,7 +1296,7 @@ reduce(PFla_op_t *p, int goalnt)
                 select_distinct
                 (
                  NULL,
-                 p->sql_ann->sfw->sem.select.from_list,
+                 p->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 ):
@@ -1325,7 +1323,7 @@ reduce(PFla_op_t *p, int goalnt)
                 select_distinct
                 (
                  NULL,
-                 p->sql_ann->sfw->sem.select.from_list,
+                 p->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 ):
@@ -1337,7 +1335,7 @@ reduce(PFla_op_t *p, int goalnt)
             sql_stmt = select_distinct
                 (
                  NULL,
-                 p->sql_ann->sfw->sem.select.from_list,
+                 p->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 );
@@ -1519,7 +1517,7 @@ reduce(PFla_op_t *p, int goalnt)
             sql_stmt = select
                 (
                  NULL,
-                 L(p)->sql_ann->sfw->sem.select.from_list,
+                 L(p)->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 );
@@ -1553,7 +1551,7 @@ reduce(PFla_op_t *p, int goalnt)
             sql_stmt = select_distinct
                 (
                  NULL,
-                 L(p)->sql_ann->sfw->sem.select.from_list,
+                 L(p)->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 );
@@ -1585,7 +1583,7 @@ reduce(PFla_op_t *p, int goalnt)
             sql_stmt = select
                 (
                  NULL, /* no selectlist provided */
-                 L(p)->sql_ann->sfw->sem.select.from_list,
+                 L(p)->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 );
@@ -1702,7 +1700,7 @@ reduce(PFla_op_t *p, int goalnt)
                 sql_stmt = select
                     (
                      NULL,
-                     L(p)->sql_ann->sfw->sem.select.from_list,
+                     L(p)->sql_ann->sfw->child[1],
                      NULL,
                      NULL
                     );
@@ -1751,7 +1749,7 @@ reduce(PFla_op_t *p, int goalnt)
              sql_stmt = select
                  (
                   NULL,
-                  L(p)->sql_ann->sfw->sem.select.from_list,
+                  L(p)->sql_ann->sfw->child[1],
                   NULL,
                   NULL
                  );
@@ -1762,6 +1760,7 @@ reduce(PFla_op_t *p, int goalnt)
         case 65:
         {
             sql_stmt = doc_access (p);
+            p->dirty = true;
         } break;
         /* Rel:   element_tag (Rel, Rel) */
         case 500:
@@ -2039,7 +2038,7 @@ reduce(PFla_op_t *p, int goalnt)
                       correlation_name (t3loc_crrl->name)
                      )
                     ),
-                    and
+                    and_ 
                     (
                      eq
                      (
@@ -2054,7 +2053,7 @@ reduce(PFla_op_t *p, int goalnt)
                               ->sem.column.ident),
                           eloc_crrl->name)
                      ),
-                     and
+                     and_
                      (
                       gteq
                       (
@@ -2313,23 +2312,23 @@ reduce(PFla_op_t *p, int goalnt)
          sql_column_env_add (p->sql_ann->colmap,
                  p->sem.string_join.iter_res,
                  type_of (p, p->sem.string_join.iter_res),
-                 sql_expression (R(p)->sql_ann->colmap,
-                     p->sem.string_join.iter_sep,
-                     type_of (R(p), p->sem.string_join.iter_sep))
+                 sql_expression (L(p)->sql_ann->colmap,
+                     p->sem.string_join.iter,
+                     type_of (L(p), p->sem.string_join.iter))
                  );
 
          sql_column_env_add (p->sql_ann->colmap,
                  p->sem.string_join.item_res,
                  type_of (p, p->sem.string_join.item_res),
-                 sql_expression (R(p)->sql_ann->colmap,
-                     p->sem.string_join.item_sep,
-                     type_of (R(p), p->sem.string_join.item_sep))
+                 sql_expression (L(p)->sql_ann->colmap,
+                     p->sem.string_join.item,
+                     type_of (L(p), p->sem.string_join.item))
                  );
          
          sql_stmt = select
              (
               NULL,
-              from_list (R(p)->sql_ann->sfw->sem.select.from_list),
+              from_list (L(p)->sql_ann->sfw->child[1]),
               NULL,
               NULL
              );
@@ -2361,7 +2360,7 @@ reduce(PFla_op_t *p, int goalnt)
             sql_stmt = select
                 (
                  NULL,
-                 R(p)->sql_ann->sfw->sem.select.from_list,
+                 R(p)->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 );
@@ -2406,14 +2405,66 @@ reduce(PFla_op_t *p, int goalnt)
             sql_stmt = select
                 (
                  NULL,
-                 L(p)->sql_ann->sfw->sem.select.from_list,
+                 L(p)->sql_ann->sfw->child[1],
                  NULL,
                  NULL
                 );
         } break;
+        /* Rel: conderr (Rel) */
+        case 80:
+        {
+            for (unsigned int i = 0; i < PFarray_last (
+                    L(p)->sql_ann->colmap); i++) {
+                sql_column_env_t entry = sql_column_env_at (
+                        L(p)->sql_ann->colmap, i);
+                sql_column_env_add (p->sql_ann->colmap,
+                        entry.att, entry.type,
+                        entry.expression);
+            }
+
+            sql_stmt = select
+                (
+                 NULL,
+                 from_list (L(p)->sql_ann->sfw->child[1]),
+                 NULL,
+                 NULL
+                );
+        } break;
+        /* Rel: bool_not (Rel) */
+        case 40:
+        {
+             /* copy all existing expressions */
+             for (unsigned int i = 0;
+                     i < PFarray_last (L(p)->sql_ann->colmap); i++) {
+                 sql_column_env_t entry = sql_column_env_at (
+                         L(p)->sql_ann->colmap, i);
+                 sql_column_env_add (p->sql_ann->colmap,
+                         entry.att, entry.type,
+                         entry.expression);
+             }   
+
+             sql_column_env_add (p->sql_ann->colmap,
+                     p->sem.unary.res, type_of (p, p->sem.unary.res),
+                     not_
+                     (
+                      sql_expression (L(p)->sql_ann->colmap,
+                          p->sem.unary.att,
+                          type_of (L(p), p->sem.unary.att))
+                     )
+                     );
+             where_env_copy (p->sql_ann->wheremap, L(p)->sql_ann->wheremap);
+
+             sql_stmt = select
+                 (
+                  NULL,
+                  from_list (L(p)->sql_ann->sfw->child[1]),
+                  NULL,
+                  NULL
+                 );
+        } break;
         default:
         {
-            /** TODO add OOPS here to indicate an unimplemented rule */
+            /** add OOPS here to indicate an unimplemented rule */
             PFoops (OOPS_FATAL,
                     "SQLgen: Logical algebra rule (%u) not supported",
                     rule);
@@ -2538,8 +2589,8 @@ reduce(PFla_op_t *p, int goalnt)
         p->sql_ann->wheremap = sql_where_env_new ();
        
         if (sql_stmt->kind == sql_select) {
-            sql_stmt->sem.select.select_list = selectlist1;
-            sql_stmt->sem.select.where_list  = 
+            sql_stmt->child[0] = selectlist1;
+            sql_stmt->child[3] = 
                 (!wherelist)?
                 NULL:
                 wherelist;
@@ -2641,6 +2692,7 @@ literal (PFalg_atom_t atom)
         case aat_int:   return lit_int (atom.val.nat_);
         case aat_str:   return lit_str (atom.val.str);
         case aat_bln:   return lit_bln (atom.val.bln);
+        case aat_dbl:
         case aat_dec:   return lit_dec (atom.val.dec_);
         case aat_qname: return lit_str (PFqname_loc (atom.val.int_));
         default:
@@ -2707,7 +2759,7 @@ bin_cmp (PFsql_t* (*op) (const PFsql_t *, const PFsql_t*),
     return select
         (
          NULL, /* no selectlist provided */
-         L(p)->sql_ann->sfw->sem.select.from_list,
+         L(p)->sql_ann->sfw->child[1],
          NULL,
          NULL
         );
@@ -2754,7 +2806,7 @@ bin_op (PFsql_t* (*op) (const PFsql_t *, const PFsql_t*),
     return select
         (
          NULL, /* no selectlist provided */
-         L(p)->sql_ann->sfw->sem.select.from_list,
+         from_list (L(p)->sql_ann->sfw->child[1]),
          NULL,
          NULL
         );
@@ -2885,14 +2937,14 @@ if( L(p)->sql_ann->sfw && R(p)->sql_ann->sfw )
          select
          (
           selectlist1,
-          l->sql_ann->sfw->sem.select.from_list,
+          l->sql_ann->sfw->child[1],
           wherelist1,
           NULL
          ),
          select
          (
           selectlist2,
-          r->sql_ann->sfw->sem.select.from_list,
+          r->sql_ann->sfw->child[1],
           wherelist2,
           NULL
          ) 
@@ -3725,7 +3777,7 @@ llscj(PFalg_axis_t axis, const PFla_op_t *frag, const PFla_op_t *p)
             ));
 
 
-    PFsql_t *fromlist = R(p)->sql_ann->sfw->sem.select.from_list;
+    PFsql_t *fromlist = R(p)->sql_ann->sfw->child[1];
     /* this new relation we need to get the attributes beside the pre
        value */
     fromlist = from_list_add( fromlist, alias(frag->sql_ann->fragment,
@@ -3796,7 +3848,7 @@ llscj(PFalg_axis_t axis, const PFla_op_t *frag, const PFla_op_t *p)
     }
 
     ret->sfw = gen_select(p, ret);
-    ret->sfw->sem.select.from_list = fromlist;
+    ret->sfw->child[1] = fromlist;
  
     return ret;
 }
@@ -3923,7 +3975,7 @@ doc_access (PFla_op_t *p)
             break;
     }
     
-    PFsql_t * fromlist = R(p)->sql_ann->sfw->sem.select.from_list;
+    PFsql_t * fromlist = R(p)->sql_ann->sfw->child[1];
     fromlist = from_list_add
         (
          fromlist,

@@ -163,10 +163,10 @@ PFsql_select(const PFsql_t *selectlist, const PFsql_t *fromlist,
     /* distinct flag is false */
     ret->sem.select.distinct = false;
     /* initialize select lists  */
-    ret->sem.select.select_list  = (PFsql_t*)selectlist;
-    ret->sem.select.from_list    = (PFsql_t*)fromlist;
-    ret->sem.select.where_list   = (PFsql_t*)wherelist;
-    ret->sem.select.grpby_list   = (PFsql_t*)grpbylist;
+    ret->child[0] = (PFsql_t*)selectlist;
+    ret->child[1] = (PFsql_t*)fromlist;
+    ret->child[2] = (PFsql_t*)wherelist;
+    ret->child[3] = (PFsql_t*)grpbylist;
 
     return ret;
 }
@@ -412,7 +412,7 @@ PFsql_table_name(PFsql_ident_t name, PFsql_t *clmnlist)
 {
     PFsql_t *ret = leaf(sql_tbl_name);
     ret->sem.tablename.ident = name;
-    ret->sem.tablename.clmn_list = clmnlist;
+    ret->child[0] = clmnlist;
     return ret;
 }
 
@@ -580,7 +580,9 @@ PFsql_simple_type_str(PFalg_simple_type_t type)
     switch( type ) {
         case aat_nat:
         case aat_int: return "INTEGER";
-        case aat_str: return "VARCHAR(100)";
+        case aat_uA:
+        case aat_str: return "CHAR(100)";
+        case aat_dbl:
         case aat_dec: return "DECIMAL"; 
         default:      return "unknown";
     }
@@ -888,7 +890,7 @@ PFsql_where_list_empty(void)
 PFsql_t*
 PFsql_where_list_add(const PFsql_t *list, const PFsql_t *item)
 {
-    return and( item, list);
+    return and_( item, list);
 }
 
 /**
