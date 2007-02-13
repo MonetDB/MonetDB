@@ -425,7 +425,7 @@ reduce (PFcnode_t * p, int goalnt)
             else if (PFty_subtype (TY(R(p)), PFty_star (PFty_docmgmt ())))
                 /* okay, this is a document management query */
                 ;
-            else if (PFty_subtype (TY(R(p)), PFty_star (PFty_none ())))
+            else if (PFty_subtype (TY(R(p)), PFty_none ()))
                 /* not really okay, but we let it go through with
                  * a warning: the query *statically* evaluated to
                  * the error type (none). */
