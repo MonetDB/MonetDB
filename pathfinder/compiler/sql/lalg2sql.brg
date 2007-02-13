@@ -2296,7 +2296,6 @@ reduce(PFla_op_t *p, int goalnt)
                         correlation_name(e_crrl->name)
                        )
                       ),
-                      
                       NULL,
                       NULL
                      );
@@ -2590,7 +2589,7 @@ reduce(PFla_op_t *p, int goalnt)
        
         if (sql_stmt->kind == sql_select) {
             sql_stmt->child[0] = selectlist1;
-            sql_stmt->child[3] = 
+            sql_stmt->child[2] = 
                 (!wherelist)?
                 NULL:
                 wherelist;

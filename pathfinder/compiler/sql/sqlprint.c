@@ -296,7 +296,7 @@ print_subselect(PFsql_t *n)
                 sqlprintf(" WHERE ");
                 print_expr( n->child[2]);
             }
-            if( n->child[4]) {
+            if( n->child[3]) {
                 sqlprintf(" GROUP BY ");
                 print_clm_list( n->child[3] );
             }
