@@ -56,10 +56,14 @@ Over..
 [ "config"	]
 [ "gdk_embedded"	]
 [ "mapi_open"	]
-[ "xquery_httpd_port"	]
 [ "xquery_output"	]
 [ "xquery_cacheMB"	]
+[ "xquery_cacherules"	]
 [ "xquery_procMB"	]
+[ "xrpc_port"	]
+[ "xrpc_open"	]
+[ "xrpc_admin"	]
+[ "xrpc_trusted"	]
 [ "monet_cwd"	]
 
 # 13:22:15 >  
