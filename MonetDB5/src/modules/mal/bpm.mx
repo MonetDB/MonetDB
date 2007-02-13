@@ -255,9 +255,9 @@ command derivePartition(pb:bat[:any_1,:any_2],
 address BPMderived
 comment "Create a derived fragmentation over the head using src.";
 
-command take(pb:str, b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+command take(pb:str):bat[:any_1,:any_2]
 address BPMtake
-comment "Retrieve the alias for a partitioned BAT";
+comment "Retrieve the alias given the name of a partitioned BAT";
 command take(alias:bat[:any_1,:any_2],index:int) :bat[:any_1,:any_2]
 address BPMtakePartition
 comment "Retrieve a single component of a partitioned BAT by index";
@@ -294,7 +294,7 @@ comment "Create an iterator over the BAT partitions.";
 pattern newIterator(grp:bat[:any_1,:any_2],first:any_2,last:any_2)
 		:bat[:any_1,:any_2]
 address BPMnewIteratorRng
-comment "Create an iterator over the BAT partitions.";
+comment "Create an iterator over the BAT partitions overlapping with range.";
 
 pattern newIterator(pb:bat[:any_1,:any_2], first:any_1,last:any_1,
 		vlow:any_2, vhgh:any_2) :bat[:oid,:any_2]
@@ -307,8 +307,9 @@ comment "Localize the next partition for processing.";
 
 pattern hasMoreElements(pb:bat[:any_1,:any_2], 
 		low:any_2, hgh:any_2) :bat[:any_1,:any_2]
-address BPMhasMoreElementsRng2
-comment "Localize the next partition for processing.";
+address BPMhasMoreElementsRng
+comment "Localize the next partition overlapping with range.";
+
 pattern hasMoreElements(pb:bat[:any_1,:any_2], first:any_1,last:any_1,
 		vlow:any_2, vhgh:any_2) :bat[:any_1,:any_2]
 address BPMhasMoreElementsRng4
@@ -382,14 +383,12 @@ bpm_export str BPMgetNames(int *bid);
 bpm_export str BPMdiscard(int *ret, int *bid);
 
 bpm_export str BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMnewIteratorRng(int *res, int *grp, ptr *first, ptr *last);
-bpm_export str BPMnewIteratorRng4(int *res, int *grp, ptr *first, ptr *last,
-	ptr *vlow, ptr *vhgh);
+bpm_export str BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnewIteratorRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 bpm_export str BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMhasMoreElementsRng2(int *res, int *grp, ptr *first, ptr *last);
-bpm_export str BPMhasMoreElementsRng4(int *res, int *grp, ptr *first, ptr *last,
-	ptr *vlow, ptr *vhgh);
+bpm_export str BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMhasMoreElementsRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 bpm_export str BPMgetDimension(ptr *first, ptr *last,
 	ptr *vlow, ptr *vhgh, int *bid);
@@ -433,7 +432,8 @@ typedef struct PARTITIONREC {
 static void BPMprintRecord(stream *f, Partition p){
 	stream_printf(f,"partition: %s alias %d bid %d ",
 		p->name, p->alias, p->bid);
-	stream_printf(f,"hbits %d tbits %d ", p->hbits,p->tbits);
+/*	stream_printf(f,"hbits %d tbits %d ", p->hbits,p->tbits); 
+	stream_printf(f,"tlow %d thgh %d ", VALget(&p->tlow),VALget(&p->thgh)); */
 	stream_printf(f,"nxt %d prv %d\n", p->nxt,p->prv);
 }
 @-
@@ -935,14 +935,19 @@ str
 BPMtakePartition(int *ret, int *bid, int *index)
 {
 	BAT *b;
-	int i;
+	int i,j;
 
 	BPMopen();
-	i= getPartitionIndex(*bid, *index);
+	i= getAliasIndex(*bid);
 	if( i== 0){
 		throw(MAL,"pbm.take","Partitioned BAT does not exist");
 	}
-	@:getBATdescriptor(bid,b,"bpm.take")@
+
+	for(j=1;i && j<*index;j++,i=bpmcat[i].nxt);
+	if(i== 0){
+		throw(MAL,"pbm.takePartition","No partition number %d",*index);
+	} 
+	@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.take")@
 	BBPkeepref(*ret =b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1088,65 +1093,75 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BPMnewIteratorRng(int *ret, int *bid, ptr *low, ptr *hgh)
+BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b;
-	int i, tpe;
-	int (*cmp) (ptr, ptr);
-	ptr nilptr;
-	int low_nil, hgh_nil;
+	int *ret, *bid;
 	Partition p;
+	BAT *b;
+	int i, tpe, low_nil, hgh_nil;
+	int (*cmp) (ptr, ptr);
+	ptr nilptr, low, hgh;
+	(void) mb;
+
+	ret= (int *)getArgReference(stk, pci, 0);
+	bid= (int *)getArgReference(stk, pci, 1);
+	low= (ptr) getArgReference(stk, pci, 2);
+	hgh= (ptr) getArgReference(stk, pci, 3);
 
 	BPMopen();
-
 	p= getAlias(*bid);
+	
 	if( p==0)
-		throw(MAL, "bpm.newIterator","Partition not known");
-	@:getBATdescriptor(&p->alias,b,"bpm.range")@
+		throw(MAL,"bpm.newIterator","Can not alias BAT");
+	@:getBATdescriptor(&p->bid,b,"bpm.newIterator")@
 
 	/* get the comparison function */
-	tpe= *bid >0? b->htype:b->ttype;
+	tpe= *bid >0? b->ttype:b->htype;
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
-	low_nil = ((*cmp) (*low, nilptr) == 0);
-	hgh_nil = ((*cmp) (*hgh, nilptr) == 0);
+	low_nil = ((*cmp) (low, nilptr) == 0);
+	hgh_nil = ((*cmp) (hgh, nilptr) == 0);
 
 	BBPunfix(b->batCacheid);	/* don't need it anymore */
 
 	for( i= getAliasIndex(*bid); i ; i= bpmcat[i].nxt){
 		@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.range")@
 
-		/* determine overlag by excluding outliers */
+		/* determine overlap by excluding outliers */
 		if( *bid > 0 ){
-			if( (*cmp) ((ptr) &bpmcat[i].thgh, *low) < 0 ||
-				(*cmp) ((ptr) &bpmcat[i].tlow, *hgh) > 0 
+			if (((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)!=0 &&
+			     !low_nil && 
+			     (*cmp) ((ptr) &bpmcat[i].thgh, low) < 0 ) ||
+			    ((*cmp) ((ptr)&bpmcat[i].tlow, nilptr)!=0 &&
+			     !hgh_nil &&
+			     (*cmp) ((ptr) &bpmcat[i].tlow, hgh) > 0) 
 			){
 				/* this fragment is not needed*/
 			} else {
 #ifdef _DEBUG_BPM_
 				stream_printf(GDKout, "got matching fragment %d\n",i);
 #endif
-				@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.range")@
 				BBPkeepref(*ret= b->batCacheid);
 				return MAL_SUCCEED;
 			}
 		} else {
-			/* use reversed bat */
-			if( (*cmp) ((ptr) &bpmcat[i].hhgh, *low) < 0 ||
-				(*cmp) ((ptr) &bpmcat[i].hlow, *hgh) > 0 
+				/* use reversed bat */
+			if (((*cmp) ((ptr)&bpmcat[i].hhgh, nilptr)!=0 &&
+			     !low_nil && 
+			     (*cmp) ((ptr) &bpmcat[i].hhgh, low) < 0 ) ||
+			    ((*cmp) ((ptr)&bpmcat[i].hlow, nilptr)!=0 &&
+			     !hgh_nil &&
+			     (*cmp) ((ptr) &bpmcat[i].hlow, hgh) > 0) 
 			){
 				/* this fragment is not needed*/
 			} else {
 #ifdef _DEBUG_BPM_
-				stream_printf(GDKout, "break fragment %d\n",i);
+				stream_printf(GDKout, "got matching fragment %d\n",i);
 #endif
-				@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.range")@
 				BBPkeepref(*ret= b->batCacheid);
 				return MAL_SUCCEED;
 			}
 		}
-
-		/* determine range overlap */
 		BBPunfix(b->batCacheid);
 	}
 	*ret= 0;
@@ -1155,15 +1170,11 @@ BPMnewIteratorRng(int *ret, int *bid, ptr *low, ptr *hgh)
 
 
 str
-BPMnewIteratorRng4(int *ret, int *bid, ptr *first, ptr *last,
-	ptr *vlow, ptr *vhgh)
+BPMnewIteratorRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) first;
-	(void) last;
-	(void) vlow;
-	(void) vhgh;
-	(void) bid;
-	*ret = 0;
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	throw(MAL, "bpm.newIterator","NYI");
 }
 
@@ -1198,27 +1209,90 @@ BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BPMhasMoreElementsRng2(int *ret, int *bid, ptr *first, ptr *last)
+BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) first;
-	(void) last;
-	(void) bid;
-	*ret = 0;
-	throw(MAL, "bpm.hasMoreElements","NYI");
+	int *ret, *bid;
+	BAT *b;
+	int i, tpe, low_nil, hgh_nil;
+	int (*cmp) (ptr, ptr);
+	ptr nilptr, low, hgh;
+	(void) mb;
+
+	ret= (int *)getArgReference(stk, pci, 0);
+	bid= (int *)getArgReference(stk, pci, 1);
+	low= (ptr) getArgReference(stk, pci, 2);
+	hgh= (ptr) getArgReference(stk, pci, 3);
+
+	BPMopen();
+
+	/* get last returned partition */
+	i= getPartitionIndex(*bid, *ret);
+	if(i==0)
+		throw(MAL,"bpm.hasMoreElements","No more partitions");
+	@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.newIterator")@
+
+	/* get the comparison function */
+	tpe= *bid >0? b->ttype:b->htype;
+	cmp= BATatoms[tpe].atomCmp;
+	nilptr = ATOMnilptr(tpe);
+	low_nil = ((*cmp) (low, nilptr) == 0);
+	hgh_nil = ((*cmp) (hgh, nilptr) == 0);
+
+	BBPunfix(b->batCacheid);	/* don't need it anymore */
+
+	for( i= bpmcat[i].nxt; i ; i= bpmcat[i].nxt){
+		@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.range")@
+
+		/* determine overlap by excluding outliers */
+		if( *bid > 0 ){
+			if (((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)!=0 &&
+			     !low_nil && 
+			     (*cmp) ((ptr) &bpmcat[i].thgh, low) < 0 ) ||
+			    ((*cmp) ((ptr)&bpmcat[i].tlow, nilptr)!=0 &&
+			     !hgh_nil &&
+			     (*cmp) ((ptr) &bpmcat[i].tlow, hgh) > 0) 
+			){
+				/* this fragment is not needed*/
+			} else {
+#ifdef _DEBUG_BPM_
+				stream_printf(GDKout, "got matching fragment %d\n",i);
+#endif
+				BBPkeepref(*ret= b->batCacheid);
+				return MAL_SUCCEED;
+			}
+		} else {
+				/* use reversed bat */
+			if (((*cmp) ((ptr)&bpmcat[i].hhgh, nilptr)!=0 &&
+			     !low_nil && 
+			     (*cmp) ((ptr) &bpmcat[i].hhgh, low) < 0 ) ||
+			    ((*cmp) ((ptr)&bpmcat[i].hlow, nilptr)!=0 &&
+			     !hgh_nil &&
+			     (*cmp) ((ptr) &bpmcat[i].hlow, hgh) > 0) 
+			){
+				/* this fragment is not needed*/
+			} else {
+#ifdef _DEBUG_BPM_
+				stream_printf(GDKout, "got matching fragment %d\n",i);
+#endif
+				BBPkeepref(*ret= b->batCacheid);
+				return MAL_SUCCEED;
+			}
+		}
+		BBPunfix(b->batCacheid);
+	}
+	*ret= 0;
+	return MAL_SUCCEED;
+
 }
 
 
 str
-BPMhasMoreElementsRng4(int *ret, int *bid, ptr *first, ptr *last,
-	ptr *vlow, ptr *vhgh)
+BPMhasMoreElementsRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) first;
-	(void) last;
-	(void) vlow;
-	(void) vhgh;
-	(void) bid;
-	*ret = 0;
-	throw(MAL, "bpm.hasMoreElements","NYI");
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL, "bpm.newIterator","NYI");
 }
 
 str
