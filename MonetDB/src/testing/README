@@ -123,15 +123,15 @@ have changed since my proposal.
   * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB [TST.prelude] < TST.mil(M|S)
-  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --dbinit="module(mapi); mil_start();" [TST.prologue] &
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(mapi); mil_start();" [TST.prologue] &
          MapiClient -lmil < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
-  * Mserver --dbname=TSTDB --set sql_port=$SQLPORT --dbinit="module(sql_server);" [TST.prologue] &
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(sql_server);" [TST.prologue] &
          MapiClient -lsql < TST[_(s|p)XX].sql
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
-  * Mserver --dbname=TSTDB --set xquery_port=$XQUERYPORT --dbinit="module(pathfinder);" [TST.prologue] &
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="module(pathfinder);" [TST.prologue] &
          MapiClient -lxquery -oxml < TST[_(s|p)XX].xq
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
@@ -148,7 +148,7 @@ have changed since my proposal.
   (Mserver is called with "--config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH --set monet_prompt=".
    See below and "Mserver --help" for details.)
 
-  (MapiClient is called with "--port=$<l>PORT", where <l> in {"MAPI", "SQL", "XQUERY"}.
+  (MapiClient is called with "--port=$MAPIPORT".
    See "MapiClient --help" for details.)
 
 
@@ -254,14 +254,13 @@ have changed since my proposal.
 	OSVER		`uname``uname -r`
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
 	MDIFF		"$MTIMEOUT Mdiff"
-	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR $setXQUERY_LOGDIR --set mapi_port=$MAPIPORT --set sql_port=$SQLPORT --set xquery_port=$XQUERYPORT --set monet_prompt= --trace"
+	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR $setXQUERY_LOGDIR --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --set monet_prompt= --trace"
 	MAPI_CLIENT	"$MTIMEOUT $MAPICLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
-	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$SQLPORT --trace"
-	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$SQLPORT --trace"
-	XQUERY_CLIENT	"$MTIMEOUT $XQUERYCLIENT -u monetdb -P monetdb --host=$HOST --port=$XQUERYPORT"
+	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
+	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
+	XQUERY_CLIENT	"$MTIMEOUT $XQUERYCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
 	MAPIPORT	the MAPI   port (random number between 30000 and 39999)
-	SQLPORT		the SQL    port (random number between 40000 and 49999)
-	XQUERYPORT	the XQUERY port (random number between 50000 and 59999)
+	XRPCPORT	the XRPC   port (random number between 40000 and 49999)
 	TST		name of the current test
   	TSTDB		name of default test database, unique for each directory
 	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
