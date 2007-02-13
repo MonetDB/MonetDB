@@ -15,7 +15,7 @@ Pathfinder's "milprint_summer" back-end.
 Due to some problem's with Pathfinder's XQuery parser, note that
 "our" syntax for rename expression is
 
-  "do rename" TargetExpr "with" NewNameExpr
+  "do rename" TargetExpr "into" NewNameExpr
 
 while the Update Facility uses "as" instead of "with".  Sorry
 for the inconvenience.
