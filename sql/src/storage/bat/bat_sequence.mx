@@ -205,12 +205,12 @@ seq_get_value(sql_sequence *seq, lng *val)
 	if (s->called)
 		*val += seq->increment;
 	/* handle min/max and cycle */
-	if ((seq->maxvalue && val > seq->maxvalue) ||
-	    (seq->minvalue && val < seq->minvalue))
+	if ((seq->maxvalue && *val > seq->maxvalue) ||
+	    (seq->minvalue && *val < seq->minvalue))
 	{
 		if (seq->cycle) {
 			/* cycle to the min value again */
-			val = seq->minvalue;
+			*val = seq->minvalue;
 		} else { /* we're out of numbers */
 			store_unlock();
 			return(0);
