@@ -170,6 +170,13 @@ AC_SUBST(Qinfodir)
 dnl what is the host byte-order
 AC_C_BIGENDIAN()
 
+dnl allow to keep track of how we are going to build this thing
+compilercall="$CC $CFLAGS $X_CFLAGS"
+AC_SUBST(compilercall)
+linkercall="$LD $LDFLAGS"
+AC_SUBST(linkercall)
+builtby="${USER}@`hostname`"
+AC_SUBST(builtby)
+
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-

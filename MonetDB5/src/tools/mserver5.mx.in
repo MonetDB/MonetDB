@@ -43,6 +43,7 @@ usage: mserver5 [options] [script]
     --delay=<number>          delay between mguardian tests [300]
     --set <option>=<value>    set environment value
     --help                    this list of options
+    --version                 version and compile time info
 @end verbatim
 
 The server options have the following meaning:
@@ -138,6 +139,7 @@ usage2(char *prog)
 	fprintf(stderr, "    --daemon=yes|no           run in background [no]\n");
 	fprintf(stderr, "    --set <option>=<value>    set environment value\n");
 	fprintf(stderr, "    --help                    this list of options \n");
+    fprintf(stderr, "    --version                 version and compile time info\n");
 	exit(0);
 }
 
@@ -166,6 +168,20 @@ monet_hello(opt *set, int setlen)
 		printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
 		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 	}
+}
+
+@-
+Version information, and compile time options.
+@c
+void
+monet_version()
+{
+	printf("MonetDB Server v%s\n", VERSION);
+	printf("Copyright (c) 1993-2007 CWI, all rights reserved\n");
+	printf("Compiled by: %s\n", "@builtby@");
+	printf("Compilation: %s\n", "@compilercall@");
+	printf("Linking:     %s\n", "@linkercall@");
+	exit(0);
 }
 
 str
@@ -290,7 +306,7 @@ main(int argc, char **av)
 	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 
-	static struct option long_options[12] = {
+	static struct option long_options[13] = {
 		{"config", 1, 0, 'c'},
 		{"dbname", 1, 0, 0},
 		{"dbfarm", 1, 0, 0},
@@ -300,6 +316,7 @@ main(int argc, char **av)
 		{"delay", 1, 0, 0},
 		{"help", 2, 0, 'h'},
 		{"help", 0, 0, '?'},
+		{"version", 0, 0, 0},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
 		{0, 0, 0, 0}
@@ -393,6 +410,10 @@ faster system start.
 			}
 			if (strcmp(long_options[option_index].name, "daemon") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_daemon", optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "version") == 0) {
+				monet_version();
 				break;
 			}
 			usage(prog);
