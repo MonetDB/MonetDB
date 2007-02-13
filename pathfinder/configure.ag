@@ -35,6 +35,8 @@ AM_CONFIG_HEADER(pf_config.h:conf/config.h.in)
 CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)
 
+AM_CONDITIONAL(HAVE_EXTRA_MK, true)
+
 dnl Check for Monet
 req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
