@@ -2144,6 +2144,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFalg_schema_t schema, res_schema;
             PFla_op_t     *base_x, *base_res;
             PFla_op_t     *res_seed, *res_body, *delta, *res;
+            PFla_op_t     *seed;
             PFla_op_t     *new_map;    
             PFla_op_t     *old_loop, *base_loop, *updated_loop;
             PFla_op_t     *res_rec_param, *loop_rec_param, *x_rec_param, *body;
@@ -2171,6 +2172,13 @@ reduce (PFcnode_t * p, int goalnt)
                             "Input schema contains other "
                             "columns than iter, pos, item");
             }
+            
+            seed = distinct (
+                       project (A(RL(p)).rel,
+                                proj (att_iter, 
+                                      att_iter),
+                                proj (att_item,
+                                      att_item)));
 
             /* create a new base for variable $x */
             base_x = rec_base (schema);
@@ -2286,11 +2294,7 @@ reduce (PFcnode_t * p, int goalnt)
                     
             /* ------------------ RESULT ------------------ */
 #if RESULT == STAR
-            res_seed = project (A(RL(p)).rel,
-                                proj (att_iter, 
-                                      att_iter),
-                                proj (att_item,
-                                      att_item));
+            res_seed = seed;
 #else /* PLUS */
             /* create a new result seed */
             res_seed = PFla_empty_tbl_ (res_schema);
@@ -2335,7 +2339,11 @@ reduce (PFcnode_t * p, int goalnt)
             if (x_used)
                 x_rec_param = rec_param (
                                   rec_arg (
-                                      A(RL(p)).rel,
+                                      rownum (
+                                          seed,
+                                          att_pos,
+                                          sortby (att_item),
+                                          att_iter),
                                       rownum (
                                           body,
                                           att_pos,
