@@ -156,8 +156,8 @@ seq_next_value(sql_sequence *seq, lng *val)
 	    (seq->minvalue && s->cur < seq->minvalue))
 	{
 		if (seq->cycle) {
-			/* cycle to the start value again */
-			s->cur = seq->start;
+			/* cycle to the min value again */
+			s->cur = seq->minvalue;
 			save = 1;
 		} else { /* we're out of numbers */
 			store_unlock();
@@ -202,6 +202,20 @@ seq_get_value(sql_sequence *seq, lng *val)
 		s = n->data;
 	}
 	*val = s->cur;
+	if (s->called)
+		*val += seq->increment;
+	/* handle min/max and cycle */
+	if ((seq->maxvalue && val > seq->maxvalue) ||
+	    (seq->minvalue && val < seq->minvalue))
+	{
+		if (seq->cycle) {
+			/* cycle to the min value again */
+			val = seq->minvalue;
+		} else { /* we're out of numbers */
+			store_unlock();
+			return(0);
+		}
+	}
 	store_unlock();
 	return 1;
 }
