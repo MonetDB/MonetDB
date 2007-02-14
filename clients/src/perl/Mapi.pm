@@ -17,29 +17,60 @@
 package Mapi;
 
 use strict;
+use Socket;
 use IO::Socket;
-use IO::Handle;
+#use IO::Handle;
+
+sub putline {
+  my($mapi,$cmd) = @_;
+
+  print "putline: $cmd\n" if ($mapi->{trace});
+  $mapi->{socket}->write($cmd) || die "!ERROR can't send $cmd: $!";
+  # ignore all answers except error messages
+  my $block = $mapi->getblock();
+  print "putline getAnswer:".$block."\n" if ($mapi->{trace});
+}
 
 sub new {
-  my ($mapi,$server,$user,$passwd,$language) = @_;
-  my $mapi = {};
-  my $version = "";
+  my $mapi = shift;
+  my $host  = shift || 'localhost';
+  my $port  = shift || 50000;
+  my $user  = shift || 'monetdb';
+  my $passwd  = shift || 'monetdb';
+  my $lang  = shift || 'sql';
+  my $db  = shift || '';
+  my $trace  = shift || 0;
+  my $self = {};
 
-  $mapi->{trace} = 0;
-  print "new:$server,$user,$passwd,$language\n" if ($mapi->{trace});
-  $mapi->{SERVER} = $server;
-  $mapi->{USER} = $user;
-  $mapi->{LANG} = $language;
-  #print "new mapi:$server\n";
-  $mapi->{SOCKET} = new IO::Socket::INET($server)
-    || die "!ERROR can't connect to $server : $!";
-  binmode($mapi->{SOCKET},":utf8");
-  $mapi->{SOCKET}->recv($version,256);
-  print "Connection to socket established ($version)\n" if ($mapi->{trace});
-  bless($mapi,"Mapi");
-  $mapi->doCmd("$user:$passwd:$language:line\n");
-  print "logged on:$user:$passwd:$language:line\n" if ($mapi->{trace});
-  return $mapi;
+  bless( $self, $mapi );
+
+  $self->{trace} = $trace;
+
+  print "new:$host,$port,$user,$passwd,$lang,$db\n" if ($self->{trace});
+  $self->{host} = $host;
+  $self->{port} = $port;
+  $self->{user} = $user;
+  $self->{passwd} = $passwd;
+  $self->{lang} = $lang;
+  $self->{db} = $db;
+  $self->{socket} = IO::Socket::INET->new(
+        PeerAddr => $host,
+        PeerPort => $port,
+        Proto    => 'tcp'
+  ) || die "!ERROR can't connect to $host:$port $!";
+
+  #binmode($self->{socket},":utf8");
+
+  #my $block = $self->getblock();
+  #block len:challenge:mserver:7:cypher(s):content_byteorder(BIG/LIT)\n");
+  my $block = $self->{socket}->getline();	# still in line mode
+  my @challenge = split(/:/, $block);
+  print "Connection to socket established ($block)\n" if ($self->{trace});
+
+  # content_byteorder(BIG/LIT):user:{cypher_algo}mypasswordchallenge_cyphered:lang:database: 
+  $self->putline("LIT:$user:{plain}$passwd" . @challenge[1] . ":$lang:$db:\n");
+  print "logged on:$user:{plain}$passwd" . @challenge[1] . ":$lang:$db:\n" if ($self->{trace});
+  return $self;
 }
 
 # How to create a duplicate
@@ -47,9 +78,13 @@ sub clone {
   my ($mapi,$src)= @_;
   bless($mapi,"Mapi");
   print "cloning\n" if ($mapi->{trace});
-  $mapi->{SERVER} = $src->{SERVER};
-  $mapi->{USER} = $src->{USER};
-  $mapi->{SOCKET} = $src->{SOCKET};
+  $mapi->{host} = $src->{host};
+  $mapi->{port} = $src->{port};
+  $mapi->{user} = $src->{user};
+  $mapi->{passwd} = $src->{passwd};
+  $mapi->{lang} = $src->{lang};
+  $mapi->{db} = $src->{db};
+  $mapi->{socket} = $src->{socket};
   $mapi->resetState();
 }
 
@@ -74,9 +109,7 @@ sub portnr {
 sub disconnect {
   my ($mapi) = @_;
   print "disconnect\n" if ($mapi->{trace});
-  $mapi->wrapup();
-#   $mapi->doRequest("quit();\n");
-  $mapi->{SOCKET}->close;
+  $mapi->{socket}->close;
   print "Disconnected from server\n" if ($mapi->{trace});
 }
 
@@ -101,38 +134,12 @@ sub resetState {
 #packge the request and ship it, the back-end reads blocks!
 sub doRequest {
   my($mapi,$cmd) = @_;
-#   my($missing) = 256 - length($cmd) % 256;
-#   my($blk) = $cmd . ' ' x $missing; 
-  $cmd =~ s/\n/ /g;
-  $cmd .= "\n";
-  $cmd = "S" . $cmd if ($mapi->{LANG} eq 'sql');
-  $cmd = "S" . $cmd if ($mapi->{LANG} eq 'xquery');
+
+  $cmd =~ s/\n/ /g;		# remove newlines ???
+  $cmd = "S" . $cmd if ($mapi->{lang} eq 'sql' || $mapi->{lang} eq 'xquery');
+  print "doRequest:$cmd\n" if ($mapi->{trace});
+  $mapi->putblock($cmd); # TODO handle exceptions || die "!ERROR can't send $cmd: $!";
   $mapi->resetState();
-  print "Send:$cmd\n" if ($mapi->{trace});
-  $mapi->{SOCKET}->send($cmd) || die "!ERROR can't send $cmd: $!";
-}
-
-# reading the next answer may require removal of the left-overs
-# of the previous instruction
-sub wrapup {
-  my($mapi) = @_;
-  print "wrapup:".$mapi->{active}." buf:".$mapi->{BUF}."\n" if ($mapi->{trace});
-  while ($mapi->{active} > 0) {
-    $mapi->getReply();		
-    print "change:".$mapi->{active}." buf:".$mapi->{BUF}."\n" if ($mapi->{trace});
-  }
-}
-
-# read the remainder of the answer and consume the next prompt.
-sub getFirstAnswer {
-  my($self) = @_;
-  my $res;
-  return $self->{row} if ($self->getReply());
-  if ($self->{trace}) {
-    $self->showState();
-    print "getFirstAnswer:".$res."\n";
-  }
-  return $res;
 }
 
 # Analyse a single line for errors
@@ -169,82 +176,117 @@ sub propertyTest {
   return 0;
 }
 
-# read a single line from the server
-sub getLine {
+
+sub getSQL {
   my ($mapi)= @_;
-  my $buf= $mapi->{BUF};
-  if ($mapi->{trace}) {
-    my $i= index($buf,"\n");
-    print "getLine start $i\n";
-  }
-  while (index($buf,"\n") <0) {
-    $mapi->{SOCKET}->recv($buf,256);
-    if (length($buf) == 0) {
-      print "received empty\n" if ($mapi->{trace});
-      die "!ERROR can't receive: $!";
-    }
-    print "received:".$buf."\n" if ($mapi->{trace});
-    $mapi->{BUF} = "$mapi->{BUF}$buf";
-  }
-  print "getLine[".length($mapi->{BUF})."]:".$mapi->{BUF}."\n" if ($mapi->{trace});
-}
-sub getReply {
-  my ($mapi)= @_;
-  my $doit =1;
-  print "getReply\n" if ($mapi->{trace});
-#   return 0 if $mapi->active == 0;
-#   return 0 if ($mapi->active == undef || $mapi->active == 0);
-  while ($doit > 0) {
-#     if ($mapi->{trace}) {
-#       my $i= $mapi->{BUF};
-#       my $l= length($i);
-#       print "doit leftover:$l:$i!\n";
-#     }
-    $mapi->{BUF} =~ s/ //g;
-#     $mapi->getLine() if ($mapi->{BUF} eq "");
-    $mapi->getLine();
-    my $row= $mapi->{BUF};
-    my $e = index($row,"\001\001");
-#     print "002 not found\n" if ($e == undef);
-#     print "002 not found (-1)\n" if ($e < 0);
-    my $n = index($row,"\n");
-#     print "e=$e n=$n \n";
-    if ($e < 0 || $n < $e) {
-      $row = substr($mapi->{BUF},0,$n);
-      print "new row:".$row."\n" if ($mapi->{trace});
-      $n= $n+1;
-      $mapi->{BUF} = substr($mapi->{BUF},$n,length($mapi->{BUF}));
-    }
-    if ($e >= 0 && $e < $n) {
-      $mapi->{BUF}= undef;
-      $mapi->{row}= undef;
-      $mapi->{active} = 0;
-      $doit = 0;
-      print "getreply finished:".$row."\n" if ($mapi->{trace});
-    } else  {
-      $mapi->{active} = 1;
-      $mapi->{row}= $row;
-      # decode the line
-      $doit = $mapi->errorTest();
-      $doit = 1 if ($mapi->propertyTest() > 0);
-      print "getreply :".$row."\n" if ($mapi->{trace});
-    }
-  }
+  print "getSQL $mapi->{active}\n" if ($mapi->{trace});
+  my $block = $mapi->getblock();
+  @{$mapi->{lines}} = split(/\n/, $block);
+  my $header = $mapi->{lines}[0];
+  if ($header =~ '&1') {
+	# &1 id result-count nr-cols rows-in-this-block
+	my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+	$mapi->{id} = $id;
+	$mapi->{count} = $cnt;
+	$mapi->{nrcols} = $nrcols;
+	$mapi->{replysize} = $replysize;
+
+	# for now skip table header information
+	my $i = 1;
+  	while ($mapi->{lines}[$i] =~ '%') {
+		$i++;
+	}
+	$mapi->{next} = $i;
+	$mapi->{row} = $mapi->{lines}[$mapi->{next}++];
+  	$mapi->{active} = 1;
+  } 
+# todo all the other result types
+# handle errors
   return $mapi->{active};
 }
 
-sub doCmd {
-  my($mapi,$cmd) = @_;
-  my $res;
-  print "doCmd: ".$cmd."\n" if ($mapi->{trace});
-  $mapi->resetState();
-  $mapi->{SOCKET}->send($cmd) || die "!ERROR can't send $cmd: $!";
-  # ignore all answers except error messages
-  while ($mapi->getReply()) {
-    print "getAnswer:".$res."\n" if ($mapi->{trace});
-  }
-#   $mapi->showState();
-  return $mapi->{rows};
-}
-1;
+sub getXQUERY {
+  my ($mapi)= @_;
+  print "getXQUERY $mapi->{active}\n" if ($mapi->{trace});
+  my $block = $mapi->getblock();
+  @{$mapi->{lines}} = split(/\n/, $block);
+  $mapi->{count} = scalar(@{$mapi->{lines}}); 
+  $mapi->{nrcols} = 1;
+  $mapi->{replysize} = $mapi->{count};
 
+  $mapi->{next} = 0;
+  $mapi->{row} = substr($mapi->{lines}[$mapi->{next}++], 1); # skip = 
+  $mapi->{active} = 1;
+# handle errors
+  return $mapi->{active};
+}
+
+sub getReply {
+  	my ($mapi)= @_;
+
+	if ($mapi->{active} == 0) {
+		if ($mapi->{lang} eq 'sql') {
+			$mapi->getSQL();
+		} elsif ($mapi->{lang} eq 'xquery') {
+			$mapi->getXQUERY();
+		}
+		# todo mal / mil 
+	} elsif ($mapi->{next} < $mapi->{replysize}) {
+		$mapi->{row} = $mapi->{lines}[$mapi->{next}++];
+	} else {
+		# todo check if we are on the end, if not ask for more rows
+		$mapi->{active} = 0;
+	} 
+	return $mapi->{active};
+
+}
+
+sub getblock {
+    my ($self) = @_;
+
+    # now read back the same way
+    my $result;
+    my $last_block = 0;
+    do {
+        my $flag;
+
+        $self->{socket}->sysread( $flag, 2 );	# read block info
+
+        my $unpacked = unpack( 'v', $flag );	# unpack (little endian short)
+        my $len = ( $unpacked >> 1 );		# get length
+        $last_block = $unpacked & 1;		# get last-block-flag
+
+  	print "getblock: $last_block $len\n" if ($self->{trace});
+	if ($len > 0 ) {
+        	my $data;
+        	$self->{socket}->sysread( $data, $len );# read
+        	$result .= $data;
+  		print "getblock: $data\n" if ($self->{trace});
+	}
+    } while ( !$last_block );
+    return $result;
+}
+
+sub putblock {
+    my ($self,$blk) = @_;
+
+    my $pos        = 0;
+    my $last_block = 0;
+    my $blocksize  = 0xffff >> 1;       # max len per block
+    my $data;
+
+    # create blocks of data with max 0xffff length,
+    # then loop over the data and send it.
+    while ( $data = substr( $blk, $pos, $blocksize ) ) {
+	my $len = length($data);
+	# set last-block-flag
+        $last_block = 1 if ( $len < $blocksize );    
+	my $flag = pack( 'v', ( $len << 1 ) + $last_block );
+  	print "putblock: $last_block ".$data."\n" if ($self->{trace});
+        $self->{socket}->syswrite($flag);	# len<<1 + last-block-flag
+        $self->{socket}->syswrite($data);	# send it
+        $pos += $len;		# next block
+    }
+}
+
+1;

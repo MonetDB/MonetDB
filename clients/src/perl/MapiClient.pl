@@ -19,14 +19,13 @@
 use Mapi;
 
 my ($monet, $line);
-$monet = new Mapi( 
-  Mapi::hostname() . ':' . Mapi::portnr(), 'monetdb', 'monetdb', 'xquery' );
+$monet = new Mapi('localhost', 50000, 'monetdb', 'monetdb', 'xquery', '', 0);
 
 print "> ";
-while ( !(($line=<>) =~ /quit;/) ){
+while ( !(($line=<>) =~ /\q/) ){
 	$monet->doRequest($line);
 	while( $monet->getReply() )  {
-		print $monet->{row};
+		print $monet->{row} . "\n";
 	}
 	print "> ";
 }
