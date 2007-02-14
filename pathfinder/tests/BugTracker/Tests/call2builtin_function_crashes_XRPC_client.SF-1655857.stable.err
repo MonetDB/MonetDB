@@ -75,9 +75,9 @@ stderr of test 'call2builtin_function_crashes_XRPC_client.SF-1655857` in directo
 # 11:12:09 >  
 
 MAPI  = monetdb@localhost:35820
-QUERY = execute at { "localhost" }
+QUERY = execute at { "localhost:48080" }
             {
-                pf:add-doc("/ufs/zhang/src/monet/dev/pathfinder/tests/BugTracker/Tests/call2builtin_function_crashes_XRPC_client.SF-1655857.xml", "hello.xml")
+                fn:doc("hello.xml")
             }
 
 ERROR = !unsupported feature: RPC calls to built-in functions not supported by XRPC.
