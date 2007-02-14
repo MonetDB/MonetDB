@@ -705,7 +705,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 		GDKfree(c->user);
 	if (c->passwd)
 		GDKfree(c->passwd);
-	c->user = GDKstrdup(buf);
+	c->user = GDKstrdup(user);
 	c->passwd = GDKstrdup(passwd);
 
 	if ((err = f->f_init(fc)) != NULL) {
