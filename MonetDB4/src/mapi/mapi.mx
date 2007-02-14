@@ -514,17 +514,6 @@ mapi_client_engine(void *FC )
 	mapi_client_free(fc);
 }
 
-
-static void
-prompt(stream *fdout, int blocked)
-{
-	if (!blocked)
-		stream_write(fdout, PROMPT1, sizeof(PROMPT1) - 1, 1);
-	else
-		stream_flush(fdout);
-}
-
-
 mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang ) 
 {
 	mapi_client *fc = NULL;
@@ -581,61 +570,121 @@ static mapi_client*
 xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new_client)
 {
 	char buf[BLOCK];
-	char *user, *passwd = NULL, *lang = NULL, *mode = NULL, *db = NULL;
-	int blocked = 0;
-	char *challenge, *err;
-	ssize_t len;
+	char *s, *user, *passwd = NULL, *lang = NULL, *algo = NULL, *database = NULL;
+	int bigendian = -1, i;
+	char *err;
 	mapi_client *fc = NULL;
 	mapi_frontend *f = NULL;
 	Client c;
 
-	user = buf;
-
-	/* write challenge string, the challenge is currently empty */
-	challenge = "::mserver:6\n";
-	snprintf(buf, BLOCK, "%2u%s", 
-		(unsigned int)strlen(challenge), challenge);
+	/* write challenge string, the challenge is currently empty, and we
+	 * only offer "plain" cypher algorithm to fake proto 7 support */
+	snprintf(buf, BLOCK, "%2u::mserver:7:plain:%d\n", 
+			(unsigned int) (13 + 5 + 5),
+#ifdef WORDS_BIGENDIAN
+			1234
+#else
+			3412
+#endif
+			);
 	stream_write(fdout, buf, strlen(buf), 1);
-		
-	/* get user:passwd:language:blocked|line[:database]\n */
-	if ((len = stream_readline(fdin, user, BLOCK)) < 0) 
-		return NULL;
-	user[len] = 0;
-	passwd = strchr(user, ':');
-	if (passwd) {
-		*passwd++ = 0;
-		lang = strchr(passwd, ':');
-	}
-	if (lang) {
-		*lang++ = 0;
-		mode = strchr(lang, ':');
-	}
-	if (mode) {
-		*mode++ = 0;
-		db = strchr(mode, ':');
-	}
-	if (db) 
-		*db++ = 0;
 
-	if (mode && strncmp(mode, "blocked", 7) == 0) 
-		blocked = 1;
+	/* get response */
+	s = buf;
+	stream_read(fdin, s, 1, 1);
+	for (i = 0; !stream_errnr(fdin) && i < BLOCK && *s != '\n'; i++) {
+		s++;
+		stream_read(fdin, s, 1, 1);
+	}
+	*s = '\0';
 
-	if (!user || !passwd || !lang || !mode) { 
-		stream_printf(fdout, "!ERROR: client: protocol error\n");
-		prompt(fdout, 0);
+	/* decode first 1234:user:password:lang:database line */
+
+	/* byte order */
+	user = buf;
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		bigendian = strcmp(user, "1234") == 0;
+		user = s + 1;
+	} else {
+		/* no inspiration on how to signal this case properly
+		stream_printf(fdout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fdout);
+		*/
 		return NULL;
 	}
 
-	if (blocked) {
-		fdin = block_stream(stream_rstream(fdin));
-		fdout = block_stream(stream_wstream(fdout));
+	/* create blockstreams so further errors and notices will be
+	 * readable by the client */
+	fdin = block_stream(stream_rstream_byteorder(fdin, bigendian));
+	fdout = block_stream(stream_wstream_nohandshake(fdout));
+
+	/* passwd */
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		passwd = s + 1;
+		/* decode algorithm, i.e. {plain}mypasswordchallenge */
+		if (*passwd != '{') {
+			stream_printf(fdout, "!invalid password entry\n");
+			stream_flush(fdout);
+			return NULL;
+		}
+		algo = passwd + 1;
+		s = strchr(algo, '}');
+		if (!s) {
+			stream_printf(fdout, "!invalid password entry\n");
+			stream_flush(fdout);
+			return NULL;
+		}
+		*s = 0;
+		if (strcmp(algo, "plain") != 0) {
+			stream_printf(fdout, "!algorithm %s not supported (client violated the protocol)\n", algo);
+			stream_flush(fdout);
+			return NULL;
+		}
+		passwd = s + 1;
+	} else {
+		stream_printf(fdout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fdout);
+		return NULL;
 	}
+
+	/* lang */
+	s = strchr(passwd, ':');
+	if (s) {
+		*s = 0;
+		lang = s + 1;
+	} else {
+		stream_printf(fdout, "!incomplete challenge, missing language\n");
+		stream_flush(fdout);
+		return NULL;
+	}
+
+	/* database */
+	s = strchr(lang, ':');
+	if (s) {
+		*s = 0;
+		database = s + 1;
+		/* we can have stuff following, make it void */
+		s = strchr(database, ':');
+		if (s)
+			*s = 0;
+		if (strlen(database) > 0) {
+			stream_printf(fdout, "#MonetDB v4 doesn't have multiple database support, argument ignored\n");
+			stream_flush(fdout);
+			return NULL;
+		}
+	}
+
+
 	f = find_frontend(lang);
 
 	if (!f) {
 		stream_printf(fdout,
-		 "!ERROR: xchange_challenge: frontend %s not found\n", lang);
-		prompt(fdout, blocked);
+		 "!xchange_challenge: frontend %s not found\n", lang);
+		stream_flush(fdout);
 		return NULL;
 	}
 
@@ -651,7 +700,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	c = fc->c;
 	c->fdin = fdin;
 	c->fdout = fdout;
-	c->blocked = blocked;
+	c->blocked = 1;
 	if (c->user)
 		GDKfree(c->user);
 	if (c->passwd)
@@ -661,8 +710,8 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 
 	if ((err = f->f_init(fc)) != NULL) {
 		fc->inuse = 0; 
-		stream_printf(fdout, "!ERROR: %s\n", err);
-		prompt(fdout, blocked);
+		stream_printf(fdout, "!%s\n", err);
+		stream_flush(fdout);
 		return NULL;
 	}
 	return fc;
