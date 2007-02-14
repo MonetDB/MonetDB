@@ -162,6 +162,9 @@ typedef struct mapi_client
 	MT_Id t;	/* 0 (no thread assigned), or thread for this client */
 	MT_Sema s;	/* sema to (de)activate thread */ 
 	Thread thread;	/* monet thread */
+
+	void (*engine)(struct mapi_client *fc);  
+	void *arg;
 } mapi_client;
 
 typedef struct frontend
@@ -494,12 +497,13 @@ mapi_client_engine(void *FC )
 
 	fc->thread = THRnew(MT_getpid(), "mapi_client_engine"); 
 	while(1) {
+		fc->engine = f->f_engine;
 		MT_down_sema(fc->s, "mapi_client_engine"); /* wait for work */
 		if (fc->inuse == 2)
 			break;
 		fc->thread->data[0] = fc->c->fdout;
 		fc->thread->data[1] = fc->c->fdin;
-		f->f_engine(fc);
+		fc->engine(fc);
 		fc->c->mode = STARTING;
 	
 		mapi_client_end(fc, 1);
@@ -530,6 +534,7 @@ mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang )
 		if (!(fc = mapi_client_alloc(f, monet_clients, 0, fdout))) 
 			return NULL;
 	}
+        fc->arg = NULL;
 	c = fc->c;
 	c->fdin = fdin;
 	c->fdout = fdout;
