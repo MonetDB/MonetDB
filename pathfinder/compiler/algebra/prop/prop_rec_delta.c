@@ -51,6 +51,9 @@
 #define INNER(n) ((n)->prop->l_icols)
 #define POS(n) ((n)->prop->r_icols)
 
+#define REFS(n) ((n)->state_label)
+#define NOT_USED(n) ((n)->prop->set)
+
 /**
  * check the operator @a n based on the properties
  * of its children; worker for prop_check().
@@ -117,16 +120,76 @@ check_op (PFla_op_t *n)
         case la_difference:
             /* check for a reference to iter */
             if (n->schema.count == 1 &&
-                n->schema.items[0].name & ITER(R(n)))
-                return true;
-            /* fall through */
-        case la_distinct:
-            /* check for a reference to iter */
-            if (n->schema.count == 1 &&
                 n->schema.items[0].name & ITER(L(n)))
                 return true;
 
+            /******************************************************************/
+            /*                                                                */
+            /* We can also allow difference operators if R(n) contains        */
+            /* column that is marked ITER if no column in L(n) is marked      */
+            /* ITER.                                                          */
+            /* To make this change effective we need to get rid of distinct   */
+            /* operators (that appear next to the difference operators in     */
+            /* many scenarios -- e.g., exists, empty). Using the required     */
+            /* value property to ignore the unused distinct operator makes    */
+            /* this change effective (see also case difference and the        */
+            /* introduction of NOT_USED in prop_check()).                    .*/
+            /*                                                                */
+            /* Applying the difference inside the DELTA approach would not    */
+            /* result in wrong results as each loop relation on the left side */
+            /* of the difference is adjusted during the recursion. Thus we    */
+            /* still maintain the same syntax as the IFP variant:             */
+            /*                                                                */
+            /* R \ (X u Y u Z) = ((R \ X) \ Y) \ Z                            */
+            /*                                                                */
+            /* (The right side of the difference is X in the first recursive  */
+            /* call and Y and Z in the respective second and third recursive  */
+            /* call. Thus the union of X, Y, and Z is the input of the third  */
+            /* recursive call using the IFP variant. The delta variant uses   */
+            /* only Z to calculate the difference. Because the loop relation  */
+            /* is already affected by X and Y in the previous recursive calls */
+            /* the difference operator produces the same result.)             */
+            /*                                                                */
+            /******************************************************************/
+
+            /* check for a reference to iter */
+            if (n->schema.count == 1 &&
+                n->schema.items[0].name & ITER(L(n)) &&
+                n->schema.items[0].name & ITER(R(n)))
+                return true;
+            
             ITER (n) = ITER (L(n));
+            POS  (n) = POS  (L(n));
+            INNER(n) = INNER(L(n));
+            break;
+            
+        case la_distinct:
+            /******************************************************************/
+            /*                                                                */
+            /* Ignore conflicts in distinct operator if its result is never   */
+            /* used. This usage is decided using the required value property. */
+            /* Also look for the introduction of NOT_USED in prop_check.      */
+            /*                                                                */
+            /* This additional rule extends the XQuery subset that can be     */
+            /* translated using the DELTA approach. It allows more than the   */
+            /* queries that fulfill the distributivity property (see also     */
+            /* case difference for further information).                      */
+            /*                                                                */
+            /******************************************************************/
+            if (!NOT_USED(n) &&
+                /* check for a reference to iter */
+                n->schema.count == 1 &&
+                n->schema.items[0].name & ITER(L(n)))
+                return true;
+            else if (NOT_USED(n) &&
+                n->schema.count == 1 &&
+                n->schema.items[0].name & ITER(L(n)))
+                PFlog ("recursion strategy detection: "
+                       "DISTINCT operator ignored.");
+                /* do not infer the ITER column */
+            else
+                ITER (n) = ITER (L(n));
+
             POS  (n) = POS  (L(n));
             INNER(n) = INNER(L(n));
             break;
@@ -134,7 +197,6 @@ check_op (PFla_op_t *n)
         case la_eqjoin:
             /* get the iter column through the map relation */
             if (n->sem.eqjoin.att1 & ITER(L(n)) &&
-                n->sem.eqjoin.att2 & ITER(R(n)) &&
                 n->sem.eqjoin.att2 == att_outer &&
                 /* as consistency check make sure the map 
                    relation has the schema inner|outer */
@@ -144,8 +206,7 @@ check_op (PFla_op_t *n)
                 (R(n)->schema.items[1].name == att_inner ||
                  R(n)->schema.items[1].name == att_outer))
                 ITER(n) = att_inner;
-            else if (n->sem.eqjoin.att1 & ITER(L(n)) &&
-                n->sem.eqjoin.att2 & ITER(R(n)) &&
+            else if (n->sem.eqjoin.att2 & ITER(R(n)) &&
                 n->sem.eqjoin.att1 == att_outer &&
                 /* as consistency check make sure the map 
                    relation has the schema inner|outer */
@@ -338,6 +399,35 @@ prop_check (PFla_op_t *n)
     if (n->bit_dag)
         return false;
 
+    /******************************************************************/
+    /*                                                                */
+    /* Mark distinct operators whose result is filtered out by a      */
+    /* subsequent selection as NOT_USED. This allows us to be less    */
+    /* restrictive with the DELTA recursion check. To decide whether  */
+    /* a distinct operator is used we look at the required value      */
+    /* property. If an attach operator that produces the filtered     */
+    /* Boolean value sits on top of the distinct operator the         */
+    /* result of the distinct operator will be ignored. (For more     */
+    /* information see also case difference and case distinct in      */
+    /* check_op()).                                                   */
+    /*                                                                */
+    /******************************************************************/
+    if (L(n) && L(n)->kind == la_distinct) NOT_USED(L(n)) = false;
+    if (R(n) && R(n)->kind == la_distinct) NOT_USED(R(n)) = false;
+
+    if (n->kind == la_attach &&
+        L(n)->kind == la_distinct &&
+        n->schema.count == 2 &&
+        /* this reference is the only one */
+        REFS(L(n)) == 1 &&
+        /* column item generates a value that may be required */
+        PFprop_reqval (n->prop, n->sem.attach.attname) &&
+        /* the required value differs from the attached value */
+        PFprop_reqval_val (n->prop, n->sem.attach.attname) !=
+        n->sem.attach.value.val.bln)
+        /* mark the distinct operator as unused */
+        NOT_USED(L(n)) = true;
+        
     /* check properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         if (prop_check (n->child[i]))
@@ -353,13 +443,47 @@ prop_check (PFla_op_t *n)
     return check_op (n);
 }
 
+/* worker for PFprop_check_rec_delta that counts the number 
+   of incoming edges for each operator */
+static void
+prop_count_refs (PFla_op_t *n)
+{
+    REFS(n)++;
+
+    /* nothing to do if we already visited that node */
+    if (n->bit_dag)
+        return;
+    /* otherwise initialize edge counter (first occurrence) */
+    else
+        REFS(n) = 1;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        prop_count_refs (n->child[i]);
+
+    n->bit_dag = true;
+}
+
 /**
  * Check whether applying the delta approach in the recursion
  * body (@a root) is possible without conflicts.
  */
 bool
 PFprop_check_rec_delta (PFla_op_t *root) {
-    bool found_conflict = prop_check (root);
+    bool found_conflict;
+    
+    /* infer the required value property to make 
+       the delta recursion check less restrictive
+       for distinct operators */
+    PFprop_infer_reqval (root);
+    PFla_dag_reset (root);
+
+    /* infer the number of incoming edges to be
+       sure that we do not mark a distinct operator
+       NOT_USED if it is referenced multiple times */
+    prop_count_refs (root);
+    PFla_dag_reset (root);
+
+    found_conflict = prop_check (root);
     PFla_dag_reset (root);
 
     PFlog ("DELTA recursion strategy: %s",
