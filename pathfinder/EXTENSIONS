@@ -17,8 +17,11 @@ Due to some problem's with Pathfinder's XQuery parser, note that
 
   "do rename" TargetExpr "into" NewNameExpr
 
-while the Update Facility uses "as" instead of "with".  Sorry
+while the Update Facility uses "as" instead of "into".  Sorry
 for the inconvenience.
+
+(The same issue has been discussed in the W3C XQuery bug
+tracking system: http://www.w3.org/Bugs/Public/show_bug.cgi?id=4176.)
 
 We do not currently support the upd:put() operator.
 
