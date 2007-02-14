@@ -2102,7 +2102,7 @@ mapi_start_talking(Mapi mid)
 	}
 	pversion = atoi(protover);
 
-	if (pversion <= 5) {
+	if (pversion < 7) {
 		/* because the headers changed, and because it makes no sense to
 		 * try and be backwards compatible, we bail out with a friendly
 		 * message saying so.
@@ -2112,14 +2112,6 @@ mapi_start_talking(Mapi mid)
 				"Sorry, can't help you here!", pversion);
 		mapi_setError(mid, buf,	"mapi_start_talking", MERROR);
 		return mid->error;
-	} else if (pversion == 6) {
-		/* proto 6 has technically support for database, but it was
-		 * never really used in Mserver itself, only M5 benefits from it */
-		snprintf(buf, BLOCK, "%s:%s:%s:%s\n",
-				mid->username,
-				mid->password,
-				mid->language,
-				(mid->blocked ? "blocked" : "linemode"));
 	} else if (pversion == 7) {
 		char* hash = NULL;
 		char* hashes = NULL;
@@ -2262,20 +2254,12 @@ mapi_start_talking(Mapi mid)
 	stream_flush(mid->to);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
 	if (mid->blocked) {
-		if (pversion == 7) {
-			mid->to = stream_wstream_nohandshake(mid->to);
-		} else {
-			mid->to = stream_wstream(mid->to);
-		}
+		mid->to = stream_wstream_nohandshake(mid->to);
 		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
 		mid->to = block_stream(mid->to);
 		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
 
-		if (pversion == 7) {
-			mid->from = stream_rstream_byteorder(mid->from, serv_bigendian);
-		} else {
-			mid->from = stream_rstream(mid->from);
-		}
+		mid->from = stream_rstream_byteorder(mid->from, serv_bigendian);
 		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
 		mid->from = block_stream(mid->from);
 		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
