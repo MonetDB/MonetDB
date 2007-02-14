@@ -182,6 +182,9 @@ enum PFptype_t {
 
     /* Pathfinder extension: XRPC */
     , p_xrpc             = 128  /**< XRPC: "execute at" */
+
+    /* Pathfinder extension: document management (ret type for docmgmt func.) */
+    , p_docmgmt_ty       = 129  /**< "item" type `docmgmt' (funct. decls.) */
 };
 
 typedef enum PFptype_t PFptype_t;

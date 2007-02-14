@@ -209,6 +209,7 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    recursion      = 126
 %term    seed           = 127
 %term    xrpc           = 128
+%term    docmgmt_ty     = 129
 
 %%
 
@@ -620,6 +621,9 @@ OptTypeDeclForRec:      SequenceType                                = 234 (10);
 
 /* Pathfinder extension: XRPC */
 XRPCCall:               xrpc (Expr, FunctionCall)                   = 235 (10);
+
+/* Pathfinder extension: statement type for document management functions */
+SequenceType:           seq_ty (docmgmt_ty (nil))                   = 236 (10);
 
 %%
 
@@ -4016,6 +4020,14 @@ reduce (PFpnode_t * p, int goalnt)
                               nil ()))),
                          xrpc (var (v3), C(R(p))));
         } break;
+
+        /* SequenceType:           seq_ty (docmgmt_ty (nil)) */
+        case 236:
+            /*
+             * statement type for document managemtn user-defined functions.
+             */
+            C(p) = seqtype (PFty_star (PFty_docmgmt ()));
+            break;
 
         default:
             PFoops_loc (OOPS_FATAL, p->loc, "untranslated expression");
