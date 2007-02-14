@@ -69,6 +69,7 @@ test = (
 ##                    r"^server listening on port [0-9]*$",
 ##                    r"^SQL  connected to database .* using schema .*$",
                       r"^MAPI  = .*@.*:[0-9]*$",
+                      r'^QUERY = execute at { "localhost:[0-9]*" }$',
                     r"^Pathfinder (?:XQuery Compiler|XML Shredder) \(.Revision: .* .\)$",
 ##                    r"^SQL  .* affected$",
 ##                    r": Symbol .(?:exit|_setjmp). causes overflow in R_X86_64_PC32 relocation$",
