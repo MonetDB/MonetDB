@@ -292,8 +292,23 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             break;
 
-        case la_type:
         case la_cast:
+            if (n->sem.type.ty == aat_bln) {
+                bool att_bln = false;
+                for (unsigned int i = 0; i < n->schema.count; i++)
+                    if (n->sem.type.att == n->schema.items[i].name) {
+                        att_bln = (n->schema.items[i].type == aat_bln);
+                        break;
+                    }
+
+                if (att_bln && PFprop_reqval (n->prop, n->sem.type.res)) {
+                    rv.name = union_ (rv.name, n->sem.type.att);
+                    if (PFprop_reqval_val (n->prop, n->sem.type.res))
+                        rv.val = union_ (rv.val, n->sem.type.att);
+                }
+            }
+            /* fall through */
+        case la_type:
             rv.name = diff (rv.name, n->sem.type.res);
             rv.val = diff (rv.val, n->sem.type.res);
             prop_infer_reqvals (L(n), rv);
