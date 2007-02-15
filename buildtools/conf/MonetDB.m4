@@ -2458,6 +2458,10 @@ fi
 
 AM_CONDITIONAL(HAVE_BUILDTOOLS, test "x$have_buildtools" = xyes)
 
+dnl Add a dummy define for HAVE_EXTRA_MK (that is used in am.py).
+dnl It has to be overwritten by any project that uses an extra.mk file.
+AM_CONDITIONAL(HAVE_EXTRA_MK, false)
+
 if test -f "$srcdir"/vertoo.data; then
         dnl check for Mx if we find the not distributed vertoo.data 
         dnl having (this) file means we're compiling from CVS
