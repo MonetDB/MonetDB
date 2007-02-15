@@ -200,7 +200,9 @@ yycopy(YYSTREE t, int kill_orig, int func_parent, char** next, char** end)
 	}
 	if (!t->noyyval) {
 		tn->yyval = t->yyval;
-		if (kill_orig) {
+		if (kill_orig == 2) {
+			VALcopy(&tn->yyval,&t->yyval);
+		} else if (kill_orig) {
 			/* steal the memory from the copied node */ 
 			t->yyval.val.pval = NULL;
 			t->yyval.vtype = 0;
@@ -489,7 +491,7 @@ Myycopy(YYSTREE t)
 	/* make a memory-tight copy of the tree constructed by the parser, and steal the pointers */ 
 	char *t_next = NULL, *t_size = NULL;
 
-	return yycopy(t, 0, 0, &t_next, &t_size);
+	return yycopy(t, 2, 0, &t_next, &t_size);
 }
 
 
