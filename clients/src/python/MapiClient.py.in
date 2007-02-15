@@ -39,6 +39,11 @@ def main(argv) :
     cmd_options = [
         ('host',None,'host','hostname','host to connect to (default: localhost)'),
         ('port',None,'mapi_port','port','port to connect to (default: 50000)'),
+        ('user',None,'user','user','login as user (default: monetdb)'),
+        ('passwd',None,'passwd','passwd','password (default: monetdb)'),
+        ('language',None,'language','language','language (default: sql)'),
+        ('database',None,'database','database','database (default: "")'),
+        ('mapi_trace',None,'mapi_trace', None, 'mapi_trace'),
         ]
 
     try:
@@ -48,19 +53,23 @@ def main(argv) :
         sys.exit(1)
 
     s = server(opt.get("host", "localhost"),
-               int(opt.get("mapi_port", 50000)),
-               os.environ['USER'])
+               int(opt.get("mapi_port", 50000)), 
+               opt.get("user", "monetdb"), 
+               opt.get("passwd", "monetdb"), 
+               opt.get("language", "sql"), 
+               opt.get("database", ""), 
+               opt.get("mapi_trace", None)!=None); 
     print "#MapiClient (python) connected to %s:%d as %s" % \
           (opt.get("host", "localhost"),
            int(opt.get("mapi_port", 50000)),
-           os.environ['USER'])
+           opt.get("user", "monetdb"))
 
     #fi = fileinput.FileInput()
     fi = sys.stdin
 
-    sys.stdout.write(s.prompt)
+    sys.stdout.write(s.prompt.encode('utf-8'))
     line = fi.readline()
-    while line and line != "quit;\n":
+    while line and line != "\q\n":
         res = s.cmd(line)
         print res
         sys.stdout.write(s.prompt.encode('utf-8'))
