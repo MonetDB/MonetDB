@@ -37,6 +37,7 @@
 
 #include "pf_config.h"
 #include "serialize.h"
+#include "xrpc_server.h"
 /* contains dummy callback functions */
 #include "serialize_null.h"
 

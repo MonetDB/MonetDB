@@ -194,7 +194,17 @@ char *PFurlcache (char *uri, int keep)
     urlcache_t *cache = urlcache;
     xmlParserInputBufferPtr  buf;
     char *ret, url[1024];  
-    strncpy(url, uri, 1024);
+
+    /* support for the xrpc://x.y.z/doc.xml URI naming scheme (maps to http://x.y.z/xrpc/doc.xml) */
+    if (strncmp(uri, "xrpc://", 7) == 0) {
+        char *p = strchr(uri+7, '/');
+        if (p) *p = '0';
+        snprintf(url, 1024, "http://%s/xrpc/%s", uri+7, p?(p+1):"");
+        if (p) *p = '/';
+    } else {
+        strncpy(url, uri, 1024);
+    }
+
     if (keep) {
         int len = strlen(url);
     	/* 

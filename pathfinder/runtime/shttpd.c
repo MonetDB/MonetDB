@@ -464,7 +464,7 @@ isregistered(const char *url)
 	struct userurl	*p;
 
 	for (p = urls; p != NULL; p = p->next)
-		if (strcmp(p->url, url) == 0)
+		if (strncmp(p->url, url, strlen(p->url)) == 0)
 			return (p);
 
 	return (NULL);
@@ -486,41 +486,8 @@ ismountpoint(const char *url)
 #include <pthread.h>
 #endif /* _WIN32 */
 
-struct thrarg {
-	struct userurl			userurl;
-	struct shttpd_callback_arg	arg;
-};
 
-/*
- * This function is run in dedicated thread.
- * It executes user-defined callback function, and exits.
- * Return value is discarded.
- */
-static void * WINAPI
-do_thread(struct thrarg *p)
-{
-	/* Put client socket to blocking mode */
-#ifdef _WIN32
-	u_long flags = 0;
-	(void) ioctlsocket(p->arg.connection->sock, FIONBIO, &flags);
-#else
-	int flags = fcntl(p->arg.connection->sock, F_GETFL);
-	flags &= ~O_NONBLOCK;
-	(void) fcntl(p->arg.connection->sock, F_SETFL, flags);
-	(void) signal(SIGPIPE, SIG_IGN);
-#endif /* _WIN32 */
 
-	/* Call user function */
-	p->userurl.func(&p->arg);
-
-	/* Free up the resources XXX what about concurency here ? */
-	p->arg.connection->flags |= FLAG_FINISHED;
-	free(p);
-
-	pthread_exit(0);
-
-	return (NULL);
-}
 
 /*
  * The URI should be handled is user-registered callback function.
@@ -530,19 +497,18 @@ do_thread(struct thrarg *p)
  * number of bytes copied to the local IO buffer. Mark local IO as done,
  * and shttpd will take care about passing data back to client.
  */
+
 static void
 do_embedded(struct conn *c)
 {
-	struct shttpd_callback_arg	arg;
+	struct shttpd_callback_arg	*arg = malloc(sizeof(struct shttpd_callback_arg));
 	const struct userurl		*p = c->userurl;
 	unsigned long			n;
-	pthread_t			thr;
-	struct thrarg			*param;
 
-	arg.connection		= c;
-	arg.callback_data	= p->data;
-	arg.buf			= c->local.buf;
-	arg.buflen		= sizeof(c->local.buf);
+	arg->connection		= c;
+	arg->callback_data	= p->data;
+	arg->buf		= c->local.buf;
+	arg->buflen		= sizeof(c->local.buf);
 
 	if (c->http_method == METHOD_POST && c->cclength) {
 		if (c->query == NULL) {
@@ -581,16 +547,21 @@ do_embedded(struct conn *c)
 		/* Null-terminate query data */
 		c->query[c->cclength] = '\0';
 	}
-	/* Multi-Threaded scenario. Run dedicated thread for connection. */
-	if ((param = malloc(sizeof(*param))) == NULL)
-		return;
-	param->userurl	= *p;
-	param->arg	= arg;
-
 	/* FIXME check return value */
 	c->flags |= FLAG_THREADED;
-	(void) pthread_create(&thr, 0,(LPTHREAD_START_ROUTINE)do_thread, param);
-	(void) pthread_detach(thr);
+
+	/* Put client socket to blocking mode */
+#ifdef _WIN32
+	u_long flags = 0;
+	(void) ioctlsocket(arg->connection->sock, FIONBIO, &flags);
+#else
+	int flags = fcntl(arg->connection->sock, F_GETFL);
+	flags &= ~O_NONBLOCK;
+	(void) fcntl(arg->connection->sock, F_SETFL, flags);
+	(void) signal(SIGPIPE, SIG_IGN);
+#endif /* _WIN32 */
+
+	p->func(arg);
 }
 
 /*
@@ -654,6 +625,7 @@ io_inc_nwritten(struct io *io, size_t n)
 /*
  * Change all occurences of '/' characters to OS-specific directory separator
  */
+
 static void
 copypath(const char *src, char *dst, size_t dstlen)
 {
@@ -3069,8 +3041,7 @@ shttpd_init(const char *fname)
 	/* If document_root is not set, set it to current directory */
 	if (STROPT(OPT_DOCROOT) == NULL){
         char tmp[8192];
-        char *docroot = NULL;
-		docroot = getcwd(tmp, 8192);
+        char *docroot = getcwd(tmp, 8192); 
         if (docroot == NULL) {
             elog(ERR_FATAL, "unable to set document_root: %s", strerror(errno));
             return;  /* force abort */
@@ -3257,6 +3228,26 @@ int
 shttpd_get_socket(struct shttpd_callback_arg *arg)
 {
     return arg->connection->sock;
+}
+
+char* 
+shttpd_get_method(struct shttpd_callback_arg *arg)
+{
+    return arg->connection->method;
+}
+
+char* 
+shttpd_get_uri(struct shttpd_callback_arg *arg)
+{
+    return arg->connection->uri;
+}
+
+void 
+shttpd_finish(struct shttpd_callback_arg *arg)
+{
+    /* Free up the resources XXX what about concurency here ? */
+    arg->connection->flags |= FLAG_FINISHED;
+    free(arg);
 }
 
 static void

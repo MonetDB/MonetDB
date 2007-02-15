@@ -436,46 +436,9 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 #ifndef XRPC_CLIENT_H
 #define XRPC_CLIENT_H
 
-#include "pathfinder.h"
+#include "xrpc_server.h"
 
-#include <gdk.h>
-#include <stream.h>
-#include <time.h>
-
-#ifdef _WIN32   /* Windows specific */
-    #include <winsock.h>
-    #define snprintf _snprintf
-    #ifndef __MINGW32__
-        #pragma comment(lib, "ws2_32")
-    #endif
-    #define sleep(s) Sleep(1000*(s))
-#else           /* UNIX specific */
-    #include <sys/select.h>
-    #include <sys/types.h>	/* used by socket */
-    #include <sys/socket.h>
-    #include <unistd.h>
-    #include <netinet/in.h> /* hton and ntoh */
-    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
-    #include <netdb.h>		/* convert domain names into IP addr */
-    #include <errno.h>
-    #include <ctype.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "pf_support.h"
-#include "shredder.h"
-#include "serialize.h"
-
-#define PFTEXT                  1
-#define ELEMENT                 0
-#define MAX_NR_PARAMS           32
-#define HTTP_PORT               48080
-#define HTTPD_FUNC              "/xrpc"
-#define MIN_RESPONSE_SIZE       16
 #define MAX_BUF_SIZE            (1024*1024)
-#define MAX_POST_HEADER_SIZE    1024
 #define NR_RETRIES              3
 
 #endif /* XRPC_CLIENT_H */
@@ -575,7 +538,7 @@ setup_connection(str dst)
     struct in_addr      addr;
     struct sockaddr_in  sockaddr;
     struct hostent     *resolv = NULL;
-    int i, ret, sock, port = HTTP_PORT;
+    int i, ret, sock, port = HTTPD_DEFAULT_PORT;
     str strptr = NULL;
 
     errno = 0;
@@ -801,12 +764,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         return GDK_FAIL;
     }
 
-    b->pos = snprintf(b->buf, b->len,
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-            "<env:Envelope xmlns:env=\"%s\" xmlns:xrpc=\"%s\" "
-            "xmlns:xs=\"%s\" xmlns:xsi=\"%s\" "
-            "xsi:schemaLocation=\"%s %s\"><env:Body><xrpc:request "
-            "xrpc:module=\"%s\" xrpc:location=\"%s\" xrpc:method=\"%s\">",
+    b->pos = snprintf(b->buf, b->len, XRPC_HEADER,
             SOAP_NS, XRPC_NS, XS_NS, XSI_NS, XRPC_NS, XRPC_LOC,
             rpc_module, rpc_uri, rpc_method);
 
@@ -1063,7 +1021,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         }
         str2buf(b, "</xrpc:call>");
     }
-    str2buf(b, "</xrpc:request></env:Body></env:Envelope>");
+    str2buf(b, XRPC_FOOTER);
     b->buf[b->pos] = 0;
     /* Stop timing Client Serialisation */
     time_clntSeria = GDKusec() - time_clntSeria;
