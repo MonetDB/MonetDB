@@ -1251,7 +1251,8 @@ cleanup_engine:
 If we are dealing with a {runonce} plan, the query cache should
 be adjusted too.
 @c
-	if( fndArgProperty(mb, getInstrPtr(mb,0),0,putName("runonce",7))){
+	if( be->q &&
+		fndArgProperty(mb, getInstrPtr(mb,0),0,putName("runonce",7))){
 		/* remove this plan from the cache */
 	}
 	be->q = NULL;
