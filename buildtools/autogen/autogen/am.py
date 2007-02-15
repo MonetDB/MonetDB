@@ -1092,9 +1092,6 @@ endif
 if HAVE_BUILDTOOLS
   include $(BUILDTOOLS_CONFDIR)/rules.mk
 endif
-if HAVE_EXTRA_MK
-  include $(top_builddir)/extra.mk
-endif
 include $(top_builddir)/rpm.mk
 ''')
     fd.close()
