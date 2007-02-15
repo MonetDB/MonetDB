@@ -234,7 +234,12 @@ Initialize the global pftijah environment.",
 "pftijah");
 PROC tj_init_global(BAT[str,str] param) : void :=
 {
-    lock_set(tj_adm_lock);
+    tj_init_global(param,false);
+}
+
+PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
+{
+    if (doLock) lock_set(tj_adm_lock);
     var err := CATCH({
       if ( verbose ) printf("#TJ: tj_init_global() called.\n");
       param@batloop() {
@@ -251,7 +256,7 @@ PROC tj_init_global(BAT[str,str] param) : void :=
       new(oid,str).persists(true).bbpname("tj_globalTags");
       new(oid,str).persists(true).bbpname("tj_collName");
     });
-    lock_unset(tj_adm_lock);
+    if (doLock) lock_unset(tj_adm_lock);
     if (not(isnil(err))) ERROR(err);
 }
 
@@ -607,7 +612,7 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
     bat("tj_" + collName + "_param").replace("height", max(height1,height2).str());
     bat("tj_" + collName + "_param").replace("status","building");
     commit();	
-    if ( verbose ) printf("#TJ:_tj_add2collectiontj_init_collection(\"%s\") finish.\n",collName);
+    if ( verbose ) printf("#TJ:_tj_add2collectiont(\"%s\") finish.\n",collName);
     if ( timing ) {
 	ms := (usec()-t_start)/1000;
         printf("#C[%s]:add2coll(\"%s\"): total time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
