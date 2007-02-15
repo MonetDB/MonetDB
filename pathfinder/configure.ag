@@ -35,8 +35,6 @@ AM_CONFIG_HEADER(pf_config.h:conf/config.h.in)
 CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)
 
-AM_CONDITIONAL(HAVE_EXTRA_MK, true)
-
 dnl Check for Monet
 req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
@@ -61,6 +59,10 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
+
+dnl overwrite CONDITIONAL HAVE_EXTRA_MK
+dnl defined false in AM_MONETDB_UTILS()
+AM_CONDITIONAL(HAVE_EXTRA_MK, true)
 
 dnl Test for MonetDB4 and MonetDB5 (only if MonetDB base was found)
 
