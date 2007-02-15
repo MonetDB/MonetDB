@@ -12,10 +12,9 @@ stdout of test 'qmil2` in directory 'modules/pftijah` itself:
 module(pftijah);
 
 # test long queries
-var res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\" txtmodel_model=\"NLLR\" debug=\"0\" top=\"99\"/> let $x := pf:tijah-query-id($opt,(),\"//panel[about(.,dilbert Geschwindigkeit ist der Schluessel zum Erfolg speed is the key to success)]\") let $n := pf:tijah-nodes($x) for $i in $n return (fn:round(100*pf:tijah-score($x,$i)),$i)");
+var res := xquery("dm"," let $opt:=<TijahOptions collection=\"testcoll1\" txtmodel_model=\"NLLR\" debug=\"0\" top=\"99\"/> return pf:tijah-query($opt,(),\"//panel[about(.,dilbert Geschwindigkeit ist der Schluessel zum Erfolg speed is the key to success)]\") ");
 
 printf("%s",res);
-42.000000,
 <panel id="d4">
     <dat>19910216</dat>
     <speech>
@@ -23,7 +22,6 @@ printf("%s",res);
       <bubble>Geschwindigkeit ist der Schluessel zum Erfolg.</bubble>
     </speech>
   </panel>,
-23.000000,
 <panel id="d1">
     <dat>19930216</dat>
     <speech>
@@ -31,7 +29,6 @@ printf("%s",res);
       <bubble>Speed is the key to success.</bubble>
     </speech>
   </panel>,
-7.000000,
 <panel id="d5">
     <dat>19920216</dat>
     <speech>
@@ -39,7 +36,6 @@ printf("%s",res);
       <bubble>Ist es in Ordnung, Fehler zu machen, wenn wir dafuer wirklich wirklich schnell sind?</bubble>
     </speech>
   </panel>,
-5.000000,
 <panel id="d2">
     <dat>19940216</dat>
     <speech>
