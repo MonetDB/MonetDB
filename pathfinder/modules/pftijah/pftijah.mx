@@ -234,7 +234,7 @@ Initialize the global pftijah environment.",
 "pftijah");
 PROC tj_init_global(BAT[str,str] param) : void :=
 {
-    tj_init_global(param,false);
+    tj_init_global(param,true);
 }
 
 PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
@@ -333,7 +333,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
       if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") called.\n",collName);
 
       if (not(view_bbp_name().reverse().exist("tj_collName"))) {
-    	tj_init_global(); # just in case 
+    	tj_init_global(new(str,str),false); # just in case 
       }
       if (bat("tj_collName").reverse().exist(collName)) {
     	ERROR("tj_init_collection, pftijah collection already exists: %s\n",collName);
