@@ -534,6 +534,13 @@ mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang )
 		if (!(fc = mapi_client_alloc(f, monet_clients, 0, fdout))) 
 			return NULL;
 	}
+	if (strcmp(lang, "xquery") == 0 &&
+            fc->t == ~(MT_Id) 0 && 
+	    MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) 
+        {
+	    GDKsyserror("MAPIlisten:mapi_client failed\n");
+	    fc->t = ~(MT_Id) 0;
+        }
         fc->arg = NULL;
 	c = fc->c;
 	c->fdin = fdin;
