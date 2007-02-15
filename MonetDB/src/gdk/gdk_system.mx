@@ -178,7 +178,7 @@ gdk_export void    pthread_sema_down(pthread_sema_t *s);
 #define pthread_sema_init    sem_init
 #define pthread_sema_destroy sem_destroy
 #define pthread_sema_up      sem_post
-#define pthread_sema_down    sem_wait
+#define pthread_sema_down(x) while(sem_wait(x)) 
 #endif
 
 typedef pthread_sema_t MT_Sema;
