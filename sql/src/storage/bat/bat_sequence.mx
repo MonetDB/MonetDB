@@ -109,7 +109,7 @@ int seq_restart(sql_sequence *seq, lng start)
 	}
 	s->called = 0;
 	s->cur = start;
-	s->cached = start + seq->cacheinc;
+	s->cached = start;
 	/* handle min/max and cycle */
 	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
 	    (seq->minvalue && s->cur < seq->minvalue))
@@ -168,7 +168,7 @@ seq_next_value(sql_sequence *seq, lng *val)
 	nr = s->cur;
 	*val = nr;
 	if (save || nr == s->cached) {
-		s->cached = nr + seq->cacheinc;
+		s->cached = nr + seq->cacheinc*seq->increment;
 		sql_update_sequence_cache(seq, s->cached);
 		store_unlock(); 
 		return 1;
