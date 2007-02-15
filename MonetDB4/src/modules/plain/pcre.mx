@@ -671,9 +671,9 @@ pcre_null(void)
 }
 
 void
-pcre_del(Heap *h, var_t *index)
+pcre_del(Heap *h, var_t *idx)
 {
-	HEAP_free(h, *index);
+	HEAP_free(h, *idx);
 }
 
 #define pcresize(val) ((sht*)val)[0]

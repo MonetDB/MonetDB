@@ -41,22 +41,16 @@ The generator can be loaded as a module into any running server.
 
 @{
 @* Implementation
-@h
-#ifndef _WISC_H_
-#define _WISC_H_
-
-#include "wisc.proto.h"
-
-#endif
 @c
 #include "monetdb4_config.h"
 #include "gdk.h"
+#include "wisc.proto.h"
 
 static char string1[54] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 static char *rndstr;
 /* static oid count; */
 
-void
+static void
 WISCinitRndStr(int u1)
 {
 	int i;
@@ -87,7 +81,7 @@ WISCinitRndStr(int u1)
 }
 
 
-char *
+static char *
 rndStr(int i)
 {
 	int j;
@@ -112,7 +106,7 @@ char string4[4][54] = {
 
 int *rnd;
 
-void
+static void
 WISCinitUniq(int cnt)
 {
 	int *src = (int *) malloc(sizeof(int) * cnt);

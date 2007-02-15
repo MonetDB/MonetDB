@@ -213,11 +213,11 @@ stream_stream_@1(Stream *Sout, Stream *Sin)
 
 @= open_socket
 int
-stream_socket_@1(Stream *S, int *socket, str name)
+stream_socket_@1(Stream *S, int *sockp, str name)
 {
 	stream *s;
 
-	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)) {
+	if ((s = socket_@1( *sockp, name )) == NULL || stream_errnr(s)) {
 		if (s)
 			stream_destroy(s);
 		GDKerror("Could not open socket %s\n", name );
@@ -372,6 +372,7 @@ io_fprintf(Stream *filepp, str format, ...)
 	return GDK_SUCCEED;
 }
 
+#if 0
 int
 io_fprint(Stream *filepp, ...)
 {
@@ -416,6 +417,7 @@ io_fprint(Stream *filepp, ...)
 	va_end(ap);
 	return GDK_SUCCEED;
 }
+#endif
 
 int
 io_ftable(Stream *filepp, int *orderspec, ...)
@@ -488,6 +490,7 @@ io_fgets(str *res, Stream *S)
 	return stream_errnr(s) ? GDK_FAIL : GDK_SUCCEED;
 }
 
+#if 0
 int
 io_fputc(int *c, stream *S)
 {
@@ -498,6 +501,7 @@ io_fputc(int *c, stream *S)
 	data[1] = 0;
 	return stream_write(s, data, 1, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
 }
+#endif
 
 int
 io_fwrite(Stream *S, str buf, int *nbytes)

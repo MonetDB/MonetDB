@@ -416,7 +416,7 @@ clusterhashNull(void)
 	return clusterhashNil(ch_nil);
 }
 
-str
+static str
 clusterhashName(int batId)
 {
 	BUN bun;
@@ -458,7 +458,7 @@ clusterhashToStr(char **dst, int *len, clusterhash *ch)
 	return (int) strlen(*dst);
 }
 
-int
+static int
 clusterhashByName(clusterhash *res, char *chname)
 {
 	BUN bun;
@@ -551,7 +551,7 @@ DICTclear(dict_entry *d, size_t n)
 
 @c
 /* return a newly allocated and assigned name */
-str
+static str
 salgebra_CHname(char *ch_basename, int batId)
 {
 	size_t l = strlen(ch_basename);
@@ -568,7 +568,7 @@ salgebra_CHname(char *ch_basename, int batId)
 }
 
 /* fill the proper structures */
-char *
+static char *
 salgebra_CHadmin(clusterhash *ch)
 {
 	char *hvname = NULL, *result = NULL;
@@ -593,7 +593,7 @@ salgebra_CHadmin(clusterhash *ch)
 }
 
 /* should we indeed protect the insert with a lock? */
-void
+static void
 salgebra_cacheIt(clusterhash *ch)
 {
 	int refCnt = 0;
@@ -610,7 +610,7 @@ salgebra_cacheIt(clusterhash *ch)
 	MT_unset_lock(salgebra_cacheLock, "cacheIt");
 }
 
-void
+static void
 salgebra_uncacheIt(clusterhash *ch)
 {
 	int bid = ABS(ch->b);
@@ -624,7 +624,7 @@ salgebra_uncacheIt(clusterhash *ch)
 	MT_unset_lock(salgebra_cacheLock, "uncacheIt");
 }
 
-int
+static int
 salgebra_isCached(int batId)
 {
 	int bid = ABS(batId);
@@ -658,7 +658,7 @@ Build a clusterhash for bat b, deriving the clustering from a hash
 defined for b.
 @c
 
-int
+static int
 salgebra_CHbuild(clusterhash *ch, BAT *b)
 {
 	Hash *h = NULL;
@@ -787,7 +787,7 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
    post: res[1..na+nb] is the (merge-)sorted union of a[1..na] and b[1..nb]
 */
 
-void
+static void
 salgebra_mergesort_matches(oid *res, oid *a, int na, oid *b, int nb)
 {
 	oid *ae = a + na, *be = b + nb;
@@ -855,7 +855,7 @@ salgebra_collect_matches_perfect(oid *res, clusterhash *ch, hash_t bucket)
 	return n;
 }
 
-int
+static int
 salgebra_collect_matches(oid *res, clusterhash *ch, ptr v)
 {
 	int nres = 0;

@@ -116,7 +116,7 @@ gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 static int malloc_init = 1;
 #endif
 @c
-void
+static void
 usage(char *prog, int debug, opt *set, int setlen)
 {
 	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
@@ -307,13 +307,12 @@ capabilities depend on the malloc implementation used at run time.
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::?s:",
-				    long_options, &option_index);
+		int opt = getopt_long(argc, av, "c:d::?s:", long_options, &option_index);
 
-		if (c == -1)
+		if (opt == -1)
 			break;
 
-		switch (c) {
+		switch (opt) {
 		case 0:
 			if (strcmp(long_options[option_index].name, "dbname") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
@@ -363,7 +362,7 @@ capabilities depend on the malloc implementation used at run time.
 		case '?':
 			usage(prog, debug, set, setlen);
 		default:
-			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", c);
+			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", opt);
 			usage(prog, debug, set, setlen);
 		}
 	}

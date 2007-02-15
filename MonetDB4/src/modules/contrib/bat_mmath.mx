@@ -65,6 +65,7 @@ Only the dbl type is supported.
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "bat_arith.proto.h"
+#include "bat_mmath.proto.h"
 
 #include <math.h>
 
@@ -76,7 +77,9 @@ Only the dbl type is supported.
 	   	binary: pow            	mathematical function
 */
 @= unaryimplementations
-int bat_@1_@2(BAT **ret, BAT *b) {
+int
+bat_@1_@2(BAT **ret, BAT *b)
+{
 	REGISTER chr *bp, *bq;
 	REGISTER @1 *bnp;
 	REGISTER int bs = BUNsize(b);
@@ -110,7 +113,9 @@ int bat_@1_@2(BAT **ret, BAT *b) {
 }
 
 @= binaryimplementations
-int batbat_@1_@2(BAT **ret, BAT *l, BAT *r) {
+int
+batbat_@1_@2(BAT **ret, BAT *l, BAT *r)
+{
 	REGISTER @1 *bnp;
 	BAT *bn;
 
@@ -202,7 +207,9 @@ int batbat_@1_@2(BAT **ret, BAT *l, BAT *r) {
         *ret = bn;
         return GDK_SUCCEED;
 }
-int valbat_@1_@2(BAT **ret, @1 *v, BAT *b) {
+int
+valbat_@1_@2(BAT **ret, @1 *v, BAT *b)
+{
 	REGISTER chr *bp, *bq;
 	REGISTER @1 *bnp;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
@@ -242,7 +249,9 @@ int valbat_@1_@2(BAT **ret, @1 *v, BAT *b) {
         *ret = bn;
         return GDK_SUCCEED;
 }
-int batval_@1_@2(BAT **ret, BAT *b, @1 *v) {
+int
+batval_@1_@2(BAT **ret, BAT *b, @1 *v)
+{
 	REGISTER chr *bp, *bq;
 	REGISTER @1 *bnp;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);

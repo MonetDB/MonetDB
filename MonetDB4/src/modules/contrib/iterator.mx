@@ -223,9 +223,8 @@ Compareable with BATloopFast
 
 @- Iterator Interface
 @c
-static
-ITER *
-ITERinit(ITER *input, str name, NEXTfcn next, FREEfcn free, GUESSfcn guess, BAT *b, BAT *h, BAT *t)
+static ITER *
+ITERinit(ITER *input, str name, NEXTfcn next, FREEfcn freefcn, GUESSfcn guess, BAT *b, BAT *h, BAT *t)
 {
 	ITER *it = (ITER *) GDKmalloc(sizeof(ITER));
 	BAT *v = VIEWcreate_(b, TRUE);
@@ -234,7 +233,7 @@ ITERinit(ITER *input, str name, NEXTfcn next, FREEfcn free, GUESSfcn guess, BAT 
 
 	it->name = name;
 	it->next = next;
-	it->free = free;
+	it->free = freefcn;
 	it->guess = guess;
 	if (h) {
 		BAT *m = BATmirror(v);
@@ -344,7 +343,7 @@ typedef struct {
 } ScanHandle;
 
 @c
-size_t
+static size_t
 ScanNext(ITER *it)
 {
 	size_t cnt = MIN(chunksize, it->hdl.scan.tuples_left);
@@ -355,7 +354,7 @@ ScanNext(ITER *it)
 	return cnt;
 }
 
-size_t
+static size_t
 ScanGuess(ITER *it)
 {
 	return it->hdl.scan.tuples_left;	/* no guess: it's for sure */
@@ -383,19 +382,19 @@ iter_scan(iter *res, BAT *b)
 This passes through the mirrored results of its input. No buns need to be copied as
 their BAT buffers are views of each other; hence share the same data structures. 
 @c
-size_t
+static size_t
 ViewNext(ITER *it)
 {
 	return ITERnext((ITER *) it->input);
 }
 
-size_t
+static size_t
 ViewGuess(ITER *it)
 {
 	return ITERguess((ITER *) it->input);
 }
 
-void
+static void
 ViewFree(ITER *it)
 {
 	(void) ITERfree((ITER *) it->input);
@@ -476,23 +475,25 @@ typedef struct {
    (*it->hdl.sel.fcn)(&_zz, BUNtail(b,p), it->hdl.sel.v1, it->hdl.sel.v2);
    if (_zz) 
 @= select
-size_t SelectNext_@1_@2(ITER *it) {
-    ITER *input = (ITER*) it->input;
-    BAT *b = input->result;
-    BUN p, q, r = BUNfirst(it->result);
-    int xx;
-    size_t yy = 0;
+static size_t
+SelectNext_@1_@2(ITER *it)
+{
+	ITER *input = (ITER*) it->input;
+	BAT *b = input->result;
+	BUN p, q, r = BUNfirst(it->result);
+	int xx;
+	size_t yy = 0;
 
-    ITERloop(input, p, q, xx) {
-        @:select_@2(@3,@4,@5)@ {
-            buncopy(it, r, BUNhead(b,p), BUN@3(b,p)); 
-            ITERbreak(input, p+xx, ++yy);
-        } 
-    }
-    return yy;
+	ITERloop(input, p, q, xx) {
+		@:select_@2(@3,@4,@5)@ {
+			buncopy(it, r, BUNhead(b,p), BUN@3(b,p)); 
+			ITERbreak(input, p+xx, ++yy);
+		} 
+	}
+	return yy;
 }
 @c
-size_t
+static size_t
 SelectGuess(ITER *it)
 {
 	ITER *input = (ITER *) it->input;
@@ -626,33 +627,34 @@ typedef struct {
 @:join(atom,var,it->hdl.join.inner->htype,var)@
 
 @= join
-size_t JoinNext_@2(ITER *it) {
-    ITER *outer = (ITER*) it->input;
-    BUN p, q, r = BUNfirst(it->result);
-    int xx;
-    size_t yy = 0;
+static size_t
+JoinNext_@2(ITER *it)
+{
+	ITER *outer = (ITER*) it->input;
+	BUN p, q, r = BUNfirst(it->result);
+	int xx;
+	size_t yy = 0;
 
-    ITERloop(outer, p, q, xx) {
-	if (it->hdl.join.hashnum == 0) {
-            it->hdl.join.hashnum =  
-	        it->hdl.join.hash[iterator_hash@2(@3, BUNh@4(outer->result,p), it->hdl.join.mask)];
+	ITERloop(outer, p, q, xx) {
+		if (it->hdl.join.hashnum == 0) {
+			it->hdl.join.hashnum = it->hdl.join.hash[iterator_hash@2(@3, BUNh@4(outer->result,p), it->hdl.join.mask)];
+		}
+		while(it->hdl.join.hashnum != 0) { 
+			BUN t = BUNptr(it->hdl.join.inner, it->hdl.join.hashnum);
+			it->hdl.join.hashnum = it->hdl.join.link[it->hdl.join.hashnum];
+			if (@1_EQ(BUNt@4(outer->result, p), BUNh@4(it->hdl.join.inner,t), @3)) {
+				buncopy(it, r, BUNhead(outer->result,p), BUNtail(it->hdl.join.inner,t)); 
+				ITERbreak(outer, p, ++yy);
+			}
+		}
 	}
-        while(it->hdl.join.hashnum != 0) { 
-            BUN t = BUNptr(it->hdl.join.inner, it->hdl.join.hashnum);
-            it->hdl.join.hashnum = it->hdl.join.link[it->hdl.join.hashnum];
-            if (@1_EQ(BUNt@4(outer->result, p), BUNh@4(it->hdl.join.inner,t), @3)) {
-                buncopy(it, r, BUNhead(outer->result,p), BUNtail(it->hdl.join.inner,t)); 
-                ITERbreak(outer, p, ++yy);
-            }
-        }
-    }
-    return yy;
+	return yy;
 }
 
 @- postional-join
 Here we can look up an OID by its position, because it resides in a VOID column.
 @c
-size_t
+static size_t
 JoinNextVoid(ITER *it)
 {
 	ITER *outer = (ITER *) it->input;
@@ -676,18 +678,18 @@ JoinNextVoid(ITER *it)
 	return yy;
 }
 
-size_t
+static size_t
 JoinGuess(ITER *it)
 {
 	ITER *outer = (ITER *) it->input;
 	flt lsize = (flt) (*outer->guess) (outer);
 	flt rsize = (flt) BATcount(it->hdl.join.inner);
-	flt div = (flt) MAX(1.0, lsize / MAX(1.0, rsize));
+	flt dv = (flt) MAX(1.0, lsize / MAX(1.0, rsize));
 
 	if (it->next == JoinNextVoid) {
 		return (size_t) lsize;
 	}
-	return (size_t) (lsize / MAX(div, ((flt) outer->tuples_seen) / (flt) MAX(1, it->tuples_seen)));
+	return (size_t) (lsize / MAX(dv, ((flt) outer->tuples_seen) / (flt) MAX(1, it->tuples_seen)));
 }
 
 int
@@ -806,7 +808,7 @@ the aggregate function into an init-value, an add-macro and a finish-macro.
 @:groupby_valtpe(avg)@
 @:groupby_valtpe(sum)@
 
-BATfcn
+static BATfcn
 groupby_fcn(str aggr, int valtpe, int grptpe)
 {
 	if (strcmp(aggr, "count") == 0) {
@@ -833,7 +835,9 @@ groupby_fcn(str aggr, int valtpe, int grptpe)
 @:groupby_grptpe(@1,lng)@
 @:groupby_grptpe(@1,dbl)@
 
-BATfcn groupby_fcn_@1(int valtpe, int grptpe) {
+static BATfcn
+groupby_fcn_@1(int valtpe, int grptpe)
+{
     BATfcn f = NULL;
     switch(valtpe) {
     case TYPE_chr: f = groupby_fcn_@1_chr(grptpe); break;
@@ -854,7 +858,9 @@ BATfcn groupby_fcn_@1(int valtpe, int grptpe) {
 @:groupby_hash(@1,@2,int,tloc)@
 @:groupby_hash(@1,@2,any,tail)@
 
-BATfcn groupby_fcn_@1_@2(int grptpe) {
+static BATfcn
+groupby_fcn_@1_@2(int grptpe)
+{
     BATfcn f = groupby_@1_@2_any;
     switch(grptpe) {
     case TYPE_bte: f = groupby_@1_@2_char; break;
@@ -870,7 +876,9 @@ There is one optimized version for integers, and an unoptimized version
 that works with ADT calls.
 
 @= groupby_hash
-BAT *groupby_@1_@2_@3(ITER *input, BAT *attr) {
+static BAT *
+groupby_@1_@2_@3(ITER *input, BAT *attr)
+{
     size_t idx, yy = 0, maxgrps = 100;
     int xx; 
     BAT *bn = BATnew(BATttype(input->result), attr->ttype, maxgrps);
@@ -911,7 +919,9 @@ array for the aggregate totals, that is indexed with this small integer number
 (no hashing needed).
 
 @= groupby_direct
-BAT* groupby_@1_@2_@3(ITER *input, BAT *attr) {
+static BAT *
+groupby_@1_@2_@3(ITER *input, BAT *attr)
+{
     int ngrps = 0, maxgrps = 1 << (ATOMsize(input->result->ttype)*8);
     BAT *bn = BATnew(TYPE_oid, attr->ttype, maxgrps); 
     int *cnt = (int*) alloca(maxgrps*(int)sizeof(int));

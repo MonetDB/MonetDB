@@ -168,7 +168,7 @@ int oo7genAssembly(int mod_oid, int level);
 /**** Randomize functions ****/
 /*****************************/
 
-int
+static int
 RandomCpBuildDate(void)
 {
 	static int c = 0;
@@ -180,47 +180,47 @@ RandomCpBuildDate(void)
 		return MinOldCompDate + rand() % (MaxOldCompDate - MinOldCompDate + 1);	/* old */
 }
 
-int
+static int
 RandomAtomBuildDate(void)
 {
 	return MinAtomicDate + rand() % (MaxAtomicDate - MinAtomicDate + 1);
 }
 
-int
+static int
 RandomBaBuildDate(void)
 {
 
 	return MinAssmDate + rand() % (MaxAssmDate - MinAssmDate + 1);
 }
 
-int
+static int
 RandomBaId(void)
 {
 	return (rbaid++);
 }
 
-char *
+static char *
 RandomBaType(void)
 {
 	strcpy(rbatype, "anytype");
 	return (rbatype);
 }
 
-char *
+static char *
 RandomType(void)
 {
 	strcpy(rtype, "anytype");
 	return rtype;
 }
 
-char *
+static char *
 RandomTitle(void)
 {
 	sprintf(rtitle, "any title you like here (%d)", rdocid);
 	return (rtitle);
 }
 
-char *
+static char *
 RandomDocText(void)
 {
 	int i;
@@ -232,106 +232,106 @@ RandomDocText(void)
 
 }
 
-int
+static int
 RandomDocId(void)
 {
 	return (rdocid++);
 }
 
-int
+static int
 RandomCpId(void)
 {
 	return (rcpid++);
 }
 
-int
+static int
 RandomAtomId(void)
 {
 	return (ratomid++);
 }
 
-int
+static int
 RandomAtomDocId(void)
 {
 	return (ratomdocid++);
 }
 
-char *
+static char *
 RandomAtomType(void)
 {
 	strcpy(ratomtype, "anytype");
 	return (ratomtype);
 }
 
-int
+static int
 RandomAtomX(void)
 {
 	return (rand());
 }
 
-int
+static int
 RandomAtomY(void)
 {
 	return (rand());
 }
 
-char *
+static char *
 RandomConnType(void)
 {
 	return (connType[rand() % connTypeSize]);
 }
 
-int
+static int
 RandomConnLen(void)
 {
 	return (rand());
 }
 
-int
+static int
 RandomCpaId(void)
 {
 	return (rcpaid++);
 }
 
-int
+static int
 RandomCpaBuildDate(void)
 {
 	return (MinAssmDate + rand() % (MaxAssmDate - MinAssmDate + 1));
 }
 
-char *
+static char *
 RandomCpaType(void)
 {
 	strcpy(rcpatype, "anytype");
 	return (rcpatype);
 }
 
-int
+static int
 RandomModId(void)
 {
 	return (rmodid++);
 }
 
-char *
+static char *
 RandomModType(void)
 {
 	strcpy(rmodtype, "anytype");
 	return (rmodtype);
 }
 
-int
+static int
 RandomModBuildDate(void)
 {
 	return (rand());
 }
 
-int
+static int
 RandomManId(void)
 {
 	return (rmanid++);
 }
 
-char *
+static char *
 RandomManText(void)
 {
 	int i;
@@ -348,7 +348,7 @@ RandomManText(void)
 @* oo7 create
 
 @c
-BAT *
+static BAT *
 createBat(char *name, int ht, int tt)
 {
 	int i;
@@ -838,7 +838,7 @@ does not affect the BATloop [it doesn't!]
 
 @= closure
 
-int
+static int
 ANTICHECK_@1_@2_@3_@4(BAT *src, BUN p, BAT *chk, int tpe) 
 {
     BUN w,u=BUNh@1(src, p);
@@ -854,7 +854,7 @@ ANTICHECK_@1_@2_@3_@4(BAT *src, BUN p, BAT *chk, int tpe)
     return 0;
 }
 
-void
+static void
 INSERT_ANTICHECK_@1_@2_@3_@4(BAT *dst, BAT *src, BAT *chk) 
 {
         BUN p, q;
@@ -871,7 +871,7 @@ INSERT_ANTICHECK_@1_@2_@3_@4(BAT *dst, BAT *src, BAT *chk)
 	BBPreclaim(src); 
 }
 
-void
+static void
 closure_@1_@2_@3_@4( BAT *bn, BAT *delta ) 
 {
 	int tpe = bn->htype;
@@ -895,13 +895,12 @@ closure_@1_@2_@3_@4( BAT *bn, BAT *delta )
 @:closure(loc,simple,sht,_sht)@
 @:closure(loc,simple,int,_int)@
 @:closure(loc,simple,lng,_lng)@
-@:closure(loc,simple,wrd,_wrd)@
 @:closure(loc,simple,ptr,_ptr)@
 @:closure(loc,simple,oid,_oid)@
 @:closure(var,atom,tpe,var)@
 @:closure(loc,atom,tpe,loc)@
 
-BAT *
+static BAT *
 BATclosure(BAT *b)
 {
 	BAT *bn, *delta;
@@ -976,7 +975,7 @@ Some performance is lost when we have to check for it.
 Code expansion on type later.
 
 @c
-BAT *
+static BAT *
 BATtraverse(BAT *b, BAT *dag)
 {
 	BAT *bn, *delta;
@@ -1032,7 +1031,7 @@ is not orthogonal. works for INTs, OIDs, only
 Notice that the bat has to be reconstructed when the BAT grows.
 Perhaps this should become part of BATexpand.
 @c
-int
+static int
 BATgraphtraverse(ptr v, BAT *bn, BAT *dag)
 {
 	ptr w, t;
@@ -1063,7 +1062,7 @@ The routine works its waau through the graph in a semi-breadth search.
 An older version was based on a recursive call to BATgraphtraverse.
 The routine works its way through the graph recursively.
 @c
-BAT *
+static BAT *
 BATsubgraph(BAT *b, BAT *dag)
 {
 	BAT *bn;

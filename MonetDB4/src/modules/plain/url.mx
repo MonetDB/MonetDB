@@ -115,9 +115,6 @@ typedef str url;
 
 #include "url.proto.h"
 
-url_export int escape_str(str *retval, str s);
-url_export int unescape_str(str *retval, str s);
-
 #endif /* URL_H */
 
 @c
@@ -656,7 +653,9 @@ url_isaURL(bit *retval,		/* put return atom here. */
 	return GDK_SUCCEED;
 }
 
-int needEscape(char c){
+static int
+needEscape(char c)
+{
     if( isalnum((int)c) )
         return 0;
     if( c == '#' || c == '-' || c == '_' || c == '.' || c == '!' || 
@@ -808,7 +807,8 @@ getword(char *word, char *line, char stop)
 		;
 }
 
-char *
+#if 0
+static char *
 makeword(char *line, char stop)
 {
 	int x = 0, y;
@@ -826,6 +826,7 @@ makeword(char *line, char stop)
 		;
 	return word;
 }
+#endif
 
 char
 x2c(char *what)
@@ -839,13 +840,13 @@ x2c(char *what)
 }
 
 void
-plustospace(char *str)
+plustospace(char *s)
 {
 	int x;
 
-	for (x = 0; str[x]; x++)
-		if (str[x] == '+')
-			str[x] = ' ';
+	for (x = 0; s[x]; x++)
+		if (s[x] == '+')
+			s[x] = ' ';
 }
 
 @}

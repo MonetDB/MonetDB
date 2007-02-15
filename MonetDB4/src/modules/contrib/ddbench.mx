@@ -2100,9 +2100,11 @@ bits_subhisto(BAT **res, BAT *b, ...)
 	/* initialization */
 	enum_table(&map, &xx);
 	@2 {
-		size_t xx = BATcount(map);
-		cnt@3 = (int*) GDKmalloc(xx<<2);
-		for(yy=cnt@3; xx--; yy++) *yy = 0;
+		size_t n = BATcount(map);
+
+		cnt@3 = (int*) GDKmalloc(n << 2);
+		for (yy = cnt@3; n--; yy++)
+			*yy = 0;
 	}
 
 	/* the algorithm */
@@ -2145,7 +2147,8 @@ bits_subhisto(BAT **res, BAT *b, ...)
                 bn@3 = BATnew(map->htype, TYPE_int, BATcount(map));
                 yy = cnt@3;
                 BATloopFast(map, p, q, xx) {
-                        if (*yy) BUNfastins(bn@3, BUNhead(map,p), yy);
+                        if (*yy)
+				BUNfastins(bn@3, BUNhead(map, p), yy);
                         yy++;
                 }
 		bn@3->hsorted = BAThordered(map);

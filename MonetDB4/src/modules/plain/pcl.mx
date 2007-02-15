@@ -193,17 +193,18 @@ later add low level api
 @c
 #include "monetdb4_config.h"
 #include "gdk.h"
+#include "pcl.proto.h"
 
 #ifndef HAVE_LIBPCL
 
 bat *
-pcl_init()
+pcl_init(void)
 {
 	return NULL;
 }
 
 void
-pcl_exit()
+pcl_exit(void)
 {
 }
 

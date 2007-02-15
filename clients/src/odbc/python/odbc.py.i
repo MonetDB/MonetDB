@@ -290,7 +290,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 		o = PyInt_FromLong((long) * (int *) $5);
 		break;
 	default:
-		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? $3 - sizeof(SQLWCHAR) : *$4) / sizeof(SQLWCHAR));
+		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? (SQLSMALLINT) ($3 - sizeof(SQLWCHAR)) : *$4) / sizeof(SQLWCHAR));
 		break;
 	}
 	$result = t_output_helper($result, o);
@@ -581,7 +581,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	case SQL_ATTR_TRACEFILE:
 	case SQL_ATTR_TRANSLATE_LIB:
 		/* string */
-		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? $3 - sizeof(SQLWCHAR) : *$4) / sizeof(SQLWCHAR));
+		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? (SQLINTEGER) ($3 - sizeof(SQLWCHAR)) : *$4) / sizeof(SQLWCHAR));
 		break;
 	case SQL_ATTR_QUIET_MODE:
 	case SQL_ATTR_APP_PARAM_DESC:
@@ -757,7 +757,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 		if (*$4 == SQL_NO_TOTAL)
 			o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, ($3 - sizeof(SQLWCHAR)) / sizeof(SQLWCHAR));
 		else
-			o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? $3 - sizeof(SQLWCHAR) : *$4) / sizeof(SQLWCHAR));
+			o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? (SQLLEN) ($3 - sizeof(SQLWCHAR)) : *$4) / sizeof(SQLWCHAR));
 		break;
 	case SQL_C_BIT:
 		o = PyBool_FromLong((long) * (SQLCHAR *) $2);
@@ -968,7 +968,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	case SQL_DESC_TABLE_NAME:
 	case SQL_DESC_TYPE_NAME:
 		/* string */
-		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? $3 - sizeof(SQLWCHAR) : *$4) / sizeof(SQLWCHAR));
+		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? (SQLINTEGER) ($3 - sizeof(SQLWCHAR)) : *$4) / sizeof(SQLWCHAR));
 		break;
 	case SQL_DESC_ARRAY_STATUS_PTR:
 	case SQL_DESC_BIND_OFFSET_PTR:
@@ -1063,7 +1063,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	case SQL_DIAG_SQLSTATE:
 	case SQL_DIAG_SUBCLASS_ORIGIN:
 		/* string */
-		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? $3 - sizeof(SQLWCHAR) : *$4) / sizeof(SQLWCHAR));
+		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? (SQLSMALLINT) ($3 - sizeof(SQLWCHAR)) : *$4) / sizeof(SQLWCHAR));
 		break;
 	case SQL_DIAG_CURSOR_ROW_COUNT:
 	case SQL_DIAG_DYNAMIC_FUNCTION_CODE:
@@ -1378,7 +1378,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	case SQL_USER_NAME:
 	case SQL_XOPEN_CLI_YEAR:
 		/* string */
-		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? $3 - sizeof(SQLWCHAR) : *$4) / sizeof(SQLWCHAR));
+		o = PyUnicode_FromSqlWChar((SQLWCHAR *) $2, (*$4 >= $3 ? (SQLSMALLINT) ($3 - sizeof(SQLWCHAR)) : *$4) / sizeof(SQLWCHAR));
 		break;
 	case SQL_ACTIVE_ENVIRONMENTS:
 	case SQL_CATALOG_LOCATION:
@@ -1637,7 +1637,6 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	if (PyUnicode_Check($input)) {
 		$1 = ($1_type) (size_t) SqlWChar_FromPyUnicode($input, NULL);
 	} else {
-		SQLUINTEGER u;
 		u = (SQLUINTEGER) PyInt_AsUnsignedLongMask($input);
 		if (!PyErr_Occurred()) {
 			$1 = ($1_type) u;

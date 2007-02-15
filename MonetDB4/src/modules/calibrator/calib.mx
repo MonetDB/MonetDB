@@ -85,6 +85,7 @@ The remainder is a wrapper around the calibrator library.
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
+#include "calib.proto.h"
 
 
 #define NUMLOADS 100000
@@ -232,7 +233,7 @@ CMDcalib_info(BAT **retval)
 
 
 int
-CMDcalib_free()
+CMDcalib_free(void)
 {
 	if (!calibInfo)
 		return GDK_FAIL;

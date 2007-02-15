@@ -1196,7 +1196,7 @@ CMDprint_val(ptr val, int tpe)
 	return stream_write(fp, " ]\n", 3, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int
+static int
 CMDprint_bats(int argc, BAT *argv[], int order)
 {
 	stream *fp = GDKout;

@@ -702,9 +702,9 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1,@2,@3);\n");
 	BATloopFast(l, l_cur, l_end, xx) {
-		size_t yy = offset + *(oid*) BUNtloc(l,l_cur);
+		size_t _yy = offset + *(oid*) BUNtloc(l,l_cur);
 
-		r_cur = BUNptr(r, yy);
+		r_cur = BUNptr(r, _yy);
 		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
 		dst += zz;
 	}
@@ -712,16 +712,16 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3);\n");
 	BATloopFast(l, l_cur, l_end, xx) {
-		size_t yy = offset + *(oid*) BUNtloc(l,l_cur);
+		size_t _yy = offset + *(oid*) BUNtloc(l,l_cur);
 
-		if (yy < base || yy >= end) {
+		if (_yy < base || _yy >= end) {
 			bn->batBuns->free = dst - bn->batBuns->base;
 			BATsetcount(bn,bn->batBuns->free/zz);
 			BBPreclaim(bn);
 			nondense = 1;
 			break;
 		}
-		r_cur = BUNptr(r, yy);
+		r_cur = BUNptr(r, _yy);
 		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
 		dst += zz;
 	}
@@ -734,12 +734,12 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		dst = BUNfirst(bn);
 		zz = BUNsize(bn);
 		BATloopFast(l, l_cur, l_end, xx) {
-			size_t yy = offset + *(oid*) BUNtail(l,l_cur);
+			size_t _yy = offset + *(oid*) BUNtail(l,l_cur);
 
-			if (yy < base || yy >= end) {
+			if (_yy < base || _yy >= end) {
 				continue;
 			}
-			r_cur = BUNptr(r, yy);
+			r_cur = BUNptr(r, _yy);
 			ATOMput(bn->htype, bn->hheap, BUNhloc(bn, dst), BUNhead(l, l_cur));
 			@3put(@2, bn->theap, BUNtloc(bn, dst), BUN@1(r, r_cur));
 			dst += zz;

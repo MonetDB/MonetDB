@@ -25,7 +25,7 @@ typedef struct {
 
 #define SMP_TOLERANCE 0.30
 #define SMP_ROUNDS 1024*1024*64
-caliblng
+static caliblng
 checkNrCpus(void)
 {
 	caliblng i, curr = 1, lasttime = 0, thistime, cpus=0;
@@ -67,7 +67,7 @@ checkNrCpus(void)
 	return cpus;
 }
 
-void
+static void
 checkSMP(SMPinfo * smp)
 {
 	smp->nrCpus = checkNrCpus();

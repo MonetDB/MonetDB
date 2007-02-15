@@ -100,6 +100,8 @@ proto::gen_module(ostream &o, const Module &d)
 	o << "/*\n";
 	o << " * This module is generated using the mel -proto utility\n";
 	o << " */\n\n"; 
+	o << "#ifndef _" << upper(d.Name()) << "_PROTO_H_INCLUDED\n";
+	o << "#define _" << upper(d.Name()) << "_PROTO_H_INCLUDED\n\n";
 	o << "#include <gdk.h>\n\n";
 
 	o << "#ifdef WIN32\n";
@@ -125,6 +127,7 @@ proto::gen_module(ostream &o, const Module &d)
 	o << "#ifdef __cplusplus\n";
 	o << "}\n";
 	o << "#endif\n\n";
+	o << "#endif\n";
 	return o; 
 }
 

@@ -237,11 +237,13 @@ SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGE
 }
 
 #ifdef WITH_WCHAR
+#if 0				/* no prototype so probably not used */
 SQLRETURN SQL_API
 SQLSetStmtAttrA(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER StringLength)
 {
 	return SQLSetStmtAttr(hStmt, Attribute, Value, StringLength);
 }
+#endif
 
 SQLRETURN SQL_API
 SQLSetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER StringLength)

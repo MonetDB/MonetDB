@@ -214,8 +214,8 @@ static mapi_client mapi_clients[MAXCLIENTS + 1];
 static int nr_mapi_clients = 0;
 static MT_Lock mapi_cache_lock;
 
-void
-init_client_cache()
+static void
+init_client_cache(void)
 {
 	int i;
 
@@ -236,7 +236,7 @@ init_client_cache()
 }
 
 static void
-exit_client_cache()
+exit_client_cache(void)
 {
 	int i;
 
@@ -1349,13 +1349,13 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream **In, **Out;
 	stream *in, *out;
 	mapi_client *mc;
-	Client client;
+	Client klient;
 	char *old_in; 
 
-	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
+	CNTXTclient((Cntxt) (ptrdiff_t) stk, &klient);
 	/* get the streams from the argument list */
 	if (lt->cnt != 2) {
-		closeClient(client, 0);
+		closeClient(klient, 0);
 		return handle_argerror(res, lt->cnt, 2);
 	}
 	@:builtin_operand(0,TYPE_Stream,In)@
@@ -1364,31 +1364,31 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 	out = *Out;
 	if (in == 0) {
 		GDKsyserror("client:stream-r problems\n");
-		closeClient(client, 0);
+		closeClient(klient, 0);
 		return GDK_FAIL;
 	}
 	if (out == 0) {
 		GDKsyserror("client:stream-w problems\n");
-		closeClient(client, 0);
+		closeClient(klient, 0);
 		return GDK_FAIL;
 	}
- 	mc = xchange_challenge(client, stk, in, out, 0);
+ 	mc = xchange_challenge(klient, stk, in, out, 0);
 	if (mc == NULL) {
 		GDKsyserror("client:stream-w problems\n");
-		closeClient(client, 0);
+		closeClient(klient, 0);
 		return GDK_FAIL;
 	}
 
 	f = mapi_frontends[mc->frontend];
 	monetSetChannel(mc->thread, mc->c->fdin, mc->c->fdout);
-	old_in = client -> input; 
-	client->input = (str) GDKmalloc(4096);
-	client->limit = client->input + 4096;
-	client->top = client->input;
-	*client->top = 0;
+	old_in = klient -> input; 
+	klient->input = (str) GDKmalloc(4096);
+	klient->limit = klient->input + 4096;
+	klient->top = klient->input;
+	*klient->top = 0;
 	f->f_engine(mc);
-	GDKfree(client->input);
-	client->input = old_in;
+	GDKfree(klient->input);
+	klient->input = old_in;
 	mapi_client_end(mc, 0); 	
 	return GDK_SUCCEED;
 }

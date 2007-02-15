@@ -613,13 +613,13 @@ dump_tables(Mapi mid, FILE *toConsole)
 
 	while (mapi_fetch_row(hdl) != 0) {
 		char *name = mapi_fetch_field(hdl, 0);
-		char *start = mapi_fetch_field(hdl, 1);
+		char *restart = mapi_fetch_field(hdl, 1);
 		char *minvalue = mapi_fetch_field(hdl, 2);
 		char *maxvalue = mapi_fetch_field(hdl, 3);
 		char *increment = mapi_fetch_field(hdl, 4);
 		char *cycle = mapi_fetch_field(hdl, 5);
 
-		fprintf(toConsole, "ALTER SEQUENCE \"%s\" RESTART WITH %s", name, start);
+		fprintf(toConsole, "ALTER SEQUENCE \"%s\" RESTART WITH %s", name, restart);
 		if (strcmp(increment, "1") != 0)
 			fprintf(toConsole, " INCREMENT BY %s", increment);
 		if (strcmp(minvalue, "0") != 0)

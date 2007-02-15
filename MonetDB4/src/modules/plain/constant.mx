@@ -297,14 +297,6 @@ CMDconstSecond(ptr ret, ptr v1, int t1, ptr v2, int t2)
 	return CMDconstCopy(ret, v2, t2);
 }
 
-int
-CMDconstAggr(ptr ret, ptr v, int t, BAT *b1, BAT *b2)
-{
-	(void) b1;
-	(void) b2;
-	return CMDconstCopy(ret, v, t);
-}
-
 int 
 CMDconstUnique(BAT** ret, ptr v, int t)
 {
@@ -380,7 +372,7 @@ CMDconstouterjoinLeftCopy(ptr ret, ptr val, int res, BAT *b)
 	BAT* bn = BATuselect(BATmirror(b), val, val);
         res = GDK_FAIL;
         if (bn) {
-		ptr val = ATOMnilptr(b->ttype);
+		val = ATOMnilptr(b->ttype);
 		if (BATcount(bn) == 1) {
 			val = BUNhead(bn,BUNfirst(bn));
 		} else if (BATcount(bn) > 1) {

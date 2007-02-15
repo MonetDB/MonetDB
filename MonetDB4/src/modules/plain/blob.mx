@@ -154,9 +154,9 @@ blob_nequal(blob *l, blob *r)
 }
 
 void
-blob_del(Heap *h, var_t *index)
+blob_del(Heap *h, var_t *idx)
 {
-	HEAP_free(h, *index);
+	HEAP_free(h, *idx);
 }
 
 hash_t
@@ -625,9 +625,9 @@ PETER: set the blob size.
 #endif /* OLDSTYLE */
 
 int
-fromblob_idx(str *retval, blob *b, int *index)
+fromblob_idx(str *retval, blob *b, int *idx)
 {
-	str s, p = b->data + *index;
+	str s, p = b->data + *idx;
 	str r, q = b->data + b->nitems;
 
 	for (r = p; r < q; r++) {

@@ -130,13 +130,13 @@ Too many bugs.
 #include "malalgebra.proto.h"
 
 /* don't reorder! */
-BAT *
+static BAT *
 BATmalleftjoin(BAT *l, BAT *r)
 {
 	return BATleftjoin(l, r, oid_nil);
 }
 
-BAT *
+static BAT *
 BATmalfetchjoin(BAT *l, BAT *r)
 {
 	int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
@@ -152,7 +152,7 @@ BATmalfetchjoin(BAT *l, BAT *r)
 }
 
 /* don't reorder! */
-BAT *
+static BAT *
 BATmalleftfetchjoin(BAT *l, BAT *r)
 {
 	int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
@@ -164,7 +164,7 @@ BATmalleftfetchjoin(BAT *l, BAT *r)
 	return NULL;
 }
 
-BAT *
+static BAT *
 BATmalhashjoin(BAT *l, BAT *r)
 {
 	size_t lsize = l->batBuns->size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
@@ -177,13 +177,13 @@ BATmalhashjoin(BAT *l, BAT *r)
 }
 
 /* don't reorder! */
-BAT *
+static BAT *
 BATmallefthashjoin(BAT *l, BAT *r)
 {
 	return BAThashjoin(l, r, oid_nil);
 }
 
-BAT *
+static BAT *
 BATmalmergejoin(BAT *l, BAT *r)
 {
 	if (!((BATtordered(l) & 1) || (BAThordered(r) & 1))) {
@@ -202,7 +202,7 @@ BATmalmergejoin(BAT *l, BAT *r)
 }
 
 /* don't reorder! */
-BAT *
+static BAT *
 BATmalleftmergejoin(BAT *l, BAT *r)
 {
 	if (!(BAThordered(r) & 1)) {

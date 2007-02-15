@@ -1641,11 +1641,11 @@ int
 codeset(str *res)
 {
 #ifdef HAVE_NL_LANGINFO
-	char *codeset = nl_langinfo(CODESET);
+	char *code_set = nl_langinfo(CODESET);
 
-	if (!codeset)
+	if (!code_set)
 		return GDK_FAIL;
-	*res = GDKstrdup(codeset);
+	*res = GDKstrdup(code_set);
 	return GDK_SUCCEED;
 #else
 	*res = GDKstrdup("UTF-8");
