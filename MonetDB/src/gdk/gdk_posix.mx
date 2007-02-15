@@ -272,7 +272,9 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define stat(x,y)	win_stat(x,y)
 #define mkdir		win_mkdir
 #define rmdir		win_rmdir
+#if _WIN32_WINNT >= 0x500
 #define link		win_link
+#endif
 
 #define NAME_MAX 255
 
@@ -1683,11 +1685,13 @@ win_mkdir(const char *pathname, const int mode)
 	return ret;
 }
 
+#if _WIN32_WINNT >= 0x500
 /* NTFS does support symbolic links */
 int win_link(const char* oldpath, const char* newpath) 
 {
 	return CreateHardLink(newpath, oldpath, NULL)?-1:0;
 } 
+#endif
 
 typedef struct {
 	int w;			/* windows version of error */
