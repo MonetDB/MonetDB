@@ -373,7 +373,7 @@ sqlclient(backend *sql, bstream *in, stream *out)
 
 			assert(in->pos == in->len);
 
-			if (in->eof || !isa_block_stream(in->s)) {
+			if (in->eof) {
 				language = (sql->console) ? 'S' : 0;
 
 				/* auto_commit on end of statement */
@@ -387,7 +387,7 @@ sqlclient(backend *sql, bstream *in, stream *out)
 					}
 				}
 
-				if ( (!isa_block_stream(in->s) && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1) || stream_flush(out)) {
+				if (stream_flush(out)) {
 					go = FALSE;
 					break;
 				}
@@ -914,7 +914,7 @@ sql_client_init(mapi_client *fc)
 	char *schema;
 	Variable v;
 
-	rs = bstream_create(fc->c->fdin, fc->c->blocked ? (128 * BLOCK) : 0);
+	rs = bstream_create(fc->c->fdin, 128 * BLOCK);
 	mvc_reset(m, rs, fc->c->fdout, SQLdebug, 10);
 	schema = mvc_login(m, fc->c->user, fc->c->passwd);
 	if (!schema) {
