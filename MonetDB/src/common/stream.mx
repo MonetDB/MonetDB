@@ -116,6 +116,7 @@ stream_export int stream_readLngArray(stream *s, lng *val, size_t cnt);
 stream_export int stream_writeLngArray(stream *s, const lng *val, size_t cnt);
 stream_export int stream_printf(stream *s, const char *format, ...);
 stream_export ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt);
+/* read block of data including the end of block marker */
 stream_export ssize_t stream_readline(stream *s, void *buf, size_t maxcnt);
 stream_export ssize_t stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
 stream_export void stream_close(stream *s);
@@ -130,7 +131,7 @@ stream_export int stream_byteorder(stream *s);
 stream_export stream *stream_rstream(stream *s);
 stream_export stream *stream_wstream(stream *s);
 stream_export stream *stream_rstream_byteorder(stream *s, char bigendian);
-stream_export stream *stream_wstream_nohandshake(stream *s);
+stream_export stream *stream_wstream_byteorder(stream *s, char bigendian);
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
@@ -227,6 +228,7 @@ stream_export buffer *stream_get_buffer(stream *s);
 stream_export stream *block_stream(stream *s);
 stream_export ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
 stream_export int isa_block_stream(stream *s);
+stream_export ssize_t stream_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
 
 @+ buffered streams
 
@@ -603,13 +605,18 @@ stream_wstream(stream *s)
 }
 
 stream *
-stream_wstream_nohandshake(stream *s)
+stream_wstream_byteorder(stream *s, char bigendian)
 {
 #ifdef STREAM_DEBUG
-	printf("stream_wstream_nohandshake %s, %d\n", s->name ? s->name : "<unnamed>");
+	printf("stream_wstream_byteorder %s, %d\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_WRITE);
 	s->type = ST_BIN;
+#ifdef WORDS_BIGENDIAN
+	s->byteorder = bigendian ? 1234 : 3412;
+#else
+	s->byteorder = bigendian ? 3412 : 1234;
+#endif
 	return s;
 }
 
@@ -2460,6 +2467,19 @@ int
 isa_block_stream(stream *s)
 {
 	return s->read == bs_read || s->write == bs_write;
+}
+
+ssize_t 
+stream_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	int len = 0;
+	char x = 0;
+	assert( s->read == bs_read || s->write == bs_write );
+	len = stream_read(s, buf, elmsize, cnt);
+	stream_read(s, &x, 0, 0); /* read prompt */
+	if (x > 0)
+		return -1;
+	return len;
 }
 
 @= stream_readVal
