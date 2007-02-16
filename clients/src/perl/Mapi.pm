@@ -63,7 +63,7 @@ sub new {
 
   #my $block = $self->getblock();
   #block len:challenge:mserver:7:cypher(s):content_byteorder(BIG/LIT)\n");
-  my $block = $self->{socket}->getline();	# still in line mode
+  my $block = $self->{socket}->getline();  # still in line mode
   my @challenge = split(/:/, $block);
   print "Connection to socket established ($block)\n" if ($self->{trace});
 
@@ -128,14 +128,14 @@ sub resetState {
   print "resetState\n" if ($mapi->{trace});
   $mapi->{errstr}="";
   $mapi->{error}=0;
-  $mapi->{active}=0;	
+  $mapi->{active}=0;  
 }
 
 #packge the request and ship it, the back-end reads blocks!
 sub doRequest {
   my($mapi,$cmd) = @_;
 
-  $cmd =~ s/\n/ /g;		# remove newlines ???
+  $cmd =~ s/\n/ /g;    # remove newlines ???
   $cmd = "S" . $cmd if ($mapi->{lang} eq 'sql' || $mapi->{lang} eq 'xquery');
   print "doRequest:$cmd\n" if ($mapi->{trace});
   $mapi->putblock($cmd); # TODO handle exceptions || die "!ERROR can't send $cmd: $!";
@@ -184,21 +184,21 @@ sub getSQL {
   @{$mapi->{lines}} = split(/\n/, $block);
   my $header = $mapi->{lines}[0];
   if ($header =~ '&1') {
-	# &1 id result-count nr-cols rows-in-this-block
-	my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
-	$mapi->{id} = $id;
-	$mapi->{count} = $cnt;
-	$mapi->{nrcols} = $nrcols;
-	$mapi->{replysize} = $replysize;
+  # &1 id result-count nr-cols rows-in-this-block
+  my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+  $mapi->{id} = $id;
+  $mapi->{count} = $cnt;
+  $mapi->{nrcols} = $nrcols;
+  $mapi->{replysize} = $replysize;
 
-	# for now skip table header information
-	my $i = 1;
-  	while ($mapi->{lines}[$i] =~ '%') {
-		$i++;
-	}
-	$mapi->{next} = $i;
-	$mapi->{row} = $mapi->{lines}[$mapi->{next}++];
-  	$mapi->{active} = 1;
+  # for now skip table header information
+  my $i = 1;
+    while ($mapi->{lines}[$i] =~ '%') {
+    $i++;
+  }
+  $mapi->{next} = $i;
+  $mapi->{row} = $mapi->{lines}[$mapi->{next}++];
+    $mapi->{active} = 1;
   } 
 # todo all the other result types
 # handle errors
@@ -222,71 +222,71 @@ sub getXQUERY {
 }
 
 sub getReply {
-  	my ($mapi)= @_;
+  my ($mapi)= @_;
 
-	if ($mapi->{active} == 0) {
-		if ($mapi->{lang} eq 'sql') {
-			$mapi->getSQL();
-		} elsif ($mapi->{lang} eq 'xquery') {
-			$mapi->getXQUERY();
-		}
-		# todo mal / mil 
-	} elsif ($mapi->{next} < $mapi->{replysize}) {
-		$mapi->{row} = $mapi->{lines}[$mapi->{next}++];
-	} else {
-		# todo check if we are on the end, if not ask for more rows
-		$mapi->{active} = 0;
-	} 
-	return $mapi->{active};
+  if ($mapi->{active} == 0) {
+    if ($mapi->{lang} eq 'sql') {
+      $mapi->getSQL();
+    } elsif ($mapi->{lang} eq 'xquery') {
+      $mapi->getXQUERY();
+    }
+    # todo mal / mil 
+  } elsif ($mapi->{next} < $mapi->{replysize}) {
+    $mapi->{row} = $mapi->{lines}[$mapi->{next}++];
+  } else {
+    # todo check if we are on the end, if not ask for more rows
+    $mapi->{active} = 0;
+  } 
+  return $mapi->{active};
 
 }
 
 sub getblock {
-    my ($self) = @_;
+  my ($self) = @_;
 
-    # now read back the same way
-    my $result;
-    my $last_block = 0;
-    do {
-        my $flag;
+  # now read back the same way
+  my $result;
+  my $last_block = 0;
+  do {
+    my $flag;
 
-        $self->{socket}->sysread( $flag, 2 );	# read block info
+    $self->{socket}->sysread( $flag, 2 );  # read block info
 
-        my $unpacked = unpack( 'v', $flag );	# unpack (little endian short)
-        my $len = ( $unpacked >> 1 );		# get length
-        $last_block = $unpacked & 1;		# get last-block-flag
+    my $unpacked = unpack( 'v', $flag );  # unpack (little endian short)
+    my $len = ( $unpacked >> 1 );    # get length
+    $last_block = $unpacked & 1;    # get last-block-flag
 
-  	print "getblock: $last_block $len\n" if ($self->{trace});
-	if ($len > 0 ) {
-        	my $data;
-        	$self->{socket}->sysread( $data, $len );# read
-        	$result .= $data;
-  		print "getblock: $data\n" if ($self->{trace});
-	}
-    } while ( !$last_block );
-    return $result;
+    print "getblock: $last_block $len\n" if ($self->{trace});
+    if ($len > 0 ) {
+      my $data;
+      $self->{socket}->sysread( $data, $len );# read
+      $result .= $data;
+      print "getblock: $data\n" if ($self->{trace});
+    }
+  } while ( !$last_block );
+  return $result;
 }
 
 sub putblock {
-    my ($self,$blk) = @_;
+  my ($self,$blk) = @_;
 
-    my $pos        = 0;
-    my $last_block = 0;
-    my $blocksize  = 0xffff >> 1;       # max len per block
-    my $data;
+  my $pos        = 0;
+  my $last_block = 0;
+  my $blocksize  = 0xffff >> 1;       # max len per block
+  my $data;
 
-    # create blocks of data with max 0xffff length,
-    # then loop over the data and send it.
-    while ( $data = substr( $blk, $pos, $blocksize ) ) {
-	my $len = length($data);
-	# set last-block-flag
-        $last_block = 1 if ( $len < $blocksize );    
-	my $flag = pack( 'v', ( $len << 1 ) + $last_block );
-  	print "putblock: $last_block ".$data."\n" if ($self->{trace});
-        $self->{socket}->syswrite($flag);	# len<<1 + last-block-flag
-        $self->{socket}->syswrite($data);	# send it
-        $pos += $len;		# next block
-    }
+  # create blocks of data with max 0xffff length,
+  # then loop over the data and send it.
+  while ( $data = substr( $blk, $pos, $blocksize ) ) {
+    my $len = length($data);
+    # set last-block-flag
+    $last_block = 1 if ( $len < $blocksize );    
+    my $flag = pack( 'v', ( $len << 1 ) + $last_block );
+    print "putblock: $last_block ".$data."\n" if ($self->{trace});
+    $self->{socket}->syswrite($flag);  # len<<1 + last-block-flag
+    $self->{socket}->syswrite($data);  # send it
+    $pos += $len;    # next block
+  }
 }
 
 1;
