@@ -859,7 +859,6 @@ struct MapiStruct {
 
 	int profile;		/* profile Mapi interaction */
 	int trace;		/* Trace Mapi interaction */
-	int blocked;		/* blocked mode */
 	int auto_commit;
 	char *noexplain;	/* on error, don't explain, only print result */
 	MapiMsg error;		/* Error occurred */
@@ -1087,7 +1086,6 @@ mapi_export char *mapi_get_mapi_version(Mapi mid);
 mapi_export char *mapi_get_monet_version(Mapi mid);
 mapi_export int mapi_get_monet_versionId(Mapi mid);
 mapi_export char *mapi_get_motd(Mapi mid);
-mapi_export int mapi_is_blocked(Mapi mid);
 mapi_export int mapi_is_connected(Mapi mid);
 mapi_export char *mapi_get_table(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_name(MapiHdl hdl, int fnr);
@@ -1150,16 +1148,6 @@ typedef __int64 mapi_int64;
 The server side code works with a common/stream package, a fast buffered IO scheme.
 However, this package is not always available for every language runtime system.
 For those cases a simple line-based protocol is also supported by the server.
-
-To enable debugging in either blocked and line mode the user can set a global
-variable before initiating a connection.
-@c
-static int blocked = 1;		/* the default */
-void
-mapi_setBlocking(int b)
-{
-	blocked = b != 0;
-}
 
 @- Error Handling
 All externally visible functions should first call mapi_clrError (usually
@@ -1729,7 +1717,6 @@ mapi_new(void)
 	memset(mid, 0, sizeof(*mid));
 
 	/* then fill in some details */
-	mid->blocked = blocked;
 	mid->auto_commit = 1;
 	mid->error = MOK;
 	mid->hostname = strdup("localhost");
@@ -2069,15 +2056,10 @@ mapi_start_talking(Mapi mid)
 	char *server;
 	char *protover;
 	char *rest;
-	char serv_bigendian = -1;
 
-	mid->to = stream_wstream_byteorder(mid->to, 0 /* little endian*/);
-	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
 	mid->to = block_stream(mid->to);
 	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
 
-	mid->from = stream_rstream_byteorder(mid->from, 0 /* little endian*/);
-	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
 	mid->from = block_stream(mid->from);
 	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
 
@@ -2233,7 +2215,7 @@ mapi_start_talking(Mapi mid)
 		}
 
 		/* in rest now should be the byte order of the server */
-		serv_bigendian = strncmp(rest, "BIG", 4) == 0;
+		stream_set_byteorder(mid->to, strncmp(rest, "BIG", 3) == 0);
 		
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
@@ -2248,8 +2230,6 @@ mapi_start_talking(Mapi mid)
 				mid->language,
 				mid->database == NULL ? "" : mid->database);
 
-		/* proto 8 always uses blocked connections */
-		mid->blocked = 1;
 		free(hash);
 	}
 	if (mid->trace == MAPI_TRACE) {
@@ -2659,10 +2639,6 @@ mapi_check_query(MapiHdl hdl)
 			while (*c && *c != '\n')
 				c++;
 		}
-		if (*c == '\n' && !hdl->mid->blocked) {
-			mapi_setError(hdl->mid, "Newline in query string not allowed", "mapi_check_query", MERROR);
-			*c = ' ';
-		}
 	}
 	if (comm) {
 		/* remove comment and white space before comment start */
@@ -2955,6 +2931,8 @@ read_line(Mapi mid)
 	mid->blk.eos = 0;
 	s = mid->blk.buf + mid->blk.nxt;
 	while ((nl = strchr(s, '\n')) == NULL && !mid->blk.eos) {
+		ssize_t len;
+
 		if (mid->blk.lim - mid->blk.end < BLOCK) {
 			int len;
 
@@ -2974,39 +2952,25 @@ read_line(Mapi mid)
 
 		s = mid->blk.buf + mid->blk.end;
 
-		if (mid->blocked) {
-			ssize_t len;
-
-			/* fetch one more block */
-			if (mid->trace == MAPI_TRACE)
-				printf("fetch next block: start at:%d\n", mid->blk.end);
-			len = stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
-			check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
-			mid->blk.buf[mid->blk.end + len] = 0;
-			if (mid->trace == MAPI_TRACE) {
-				printf("got next block: length:" SSZFMT "\n", len);
-				printf("text:%s\n", mid->blk.buf + mid->blk.end);
-			}
-			if (!len) { /* add prompt */
-				len = 2;
-				mid->blk.buf[mid->blk.end] = PROMPTBEG;
-				mid->blk.buf[mid->blk.end+1] = '\n';
-				mid->blk.buf[mid->blk.end+2] = 0;
-				if (!nl)
-					nl = mid->blk.buf + mid->blk.end + 1;
-			}
-			mid->blk.end += (int) len;
-		} else {
-			/* fetch one more line */
-			while (stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, 1) == 1) {
-				if (mid->blk.buf[mid->blk.end++] == '\n')
-					break;
-				if (mid->blk.end == mid->blk.lim)
-					break;
-			}
-			check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
-			mid->blk.buf[mid->blk.end] = 0;
+		/* fetch one more block */
+		if (mid->trace == MAPI_TRACE)
+			printf("fetch next block: start at:%d\n", mid->blk.end);
+		len = stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
+		check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
+		mid->blk.buf[mid->blk.end + len] = 0;
+		if (mid->trace == MAPI_TRACE) {
+			printf("got next block: length:" SSZFMT "\n", len);
+			printf("text:%s\n", mid->blk.buf + mid->blk.end);
 		}
+		if (!len) { /* add prompt */
+			len = 2;
+			mid->blk.buf[mid->blk.end] = PROMPTBEG;
+			mid->blk.buf[mid->blk.end+1] = '\n';
+			mid->blk.buf[mid->blk.end+2] = 0;
+			if (!nl)
+				nl = mid->blk.buf + mid->blk.end + 1;
+		}
+		mid->blk.end += (int) len;
 	}
 	if (mid->trace == MAPI_TRACE) {
 		printf("got complete block: \n");
@@ -3410,10 +3374,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				copy++;
 			}
 			if (*copy == '\n' || *copy == 0) {
-				if (mid->blocked) { /* skip end of block */
-					mid->active = hdl;
-					read_line(mid);
-				}
+				/* skip end of block */
+				mid->active = hdl;
+				read_line(mid);
 				hdl->needmore = 1;
 				mid->active = hdl;
 			}
@@ -4709,13 +4672,6 @@ mapi_get_motd(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_motd");
 	return mid->motd;
-}
-
-int
-mapi_is_blocked(Mapi mid)
-{
-	mapi_check0(mid, "mapi_is_blocked");
-	return mid->blocked;
 }
 
 int
