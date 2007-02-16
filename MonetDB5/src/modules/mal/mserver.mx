@@ -435,12 +435,8 @@ doChallenge(str cmd, int msgsock) {
 		char *buf = (char *) GDKmalloc(BLOCK);
 		char *challenge;
 		char *algos;
-		stream *fdin = 
-			block_stream(stream_rstream_byteorder(
-				socket_rastream(msgsock, "Server read"), 0));
-		stream *fdout =
-			block_stream(stream_wstream_byteorder(
-				socket_wastream(msgsock, "Server write"), 0));
+		stream *fdin = block_stream( socket_rastream(msgsock, "Server read"));
+		stream *fdout = block_stream( socket_wastream(msgsock, "Server write"));
 		bstream *bs;
 
 		if (!fdin || !fdout) {
