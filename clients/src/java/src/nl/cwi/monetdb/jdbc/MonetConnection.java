@@ -238,6 +238,8 @@ public class MonetConnection implements Connection {
 					throw new IOException("Connection to server lost!");
 				if ((lineType = monet.getLineType()) == MonetSocketBlockMode.ERROR) {
 					err += "\n" + tmp.substring(1);
+				} else if (lineType == MonetSocketBlockMode.INFO) {
+					addWarning(tmp.substring(1));
 				} else if (lineType == MonetSocketBlockMode.REDIRECT) {
 					if (redirects == null)
 						redirects = new ArrayList();
