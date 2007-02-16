@@ -3345,6 +3345,9 @@ fork(pf_logmanager());            # start checkpointing thread
 
 #define is_fake_project(b) (((b)->htype==TYPE_void) && (BATcount(b)==1) && ((b)->hseqbase==oid_nil))
 
+#ifdef TEXT			/* Windows defines a symbol TEXT */
+#undef TEXT
+#endif
 @:ws(c_decl)@
 @:ws_decl(c)@
 
