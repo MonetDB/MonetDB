@@ -116,7 +116,6 @@ stream_export int stream_readLngArray(stream *s, lng *val, size_t cnt);
 stream_export int stream_writeLngArray(stream *s, const lng *val, size_t cnt);
 stream_export int stream_printf(stream *s, const char *format, ...);
 stream_export ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt);
-/* read block of data including the end of block marker */
 stream_export ssize_t stream_readline(stream *s, void *buf, size_t maxcnt);
 stream_export ssize_t stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
 stream_export void stream_close(stream *s);
@@ -128,10 +127,9 @@ stream_export char *stream_name(stream *s);
 stream_export int stream_errnr(stream *s);
 stream_export int stream_type(stream *s);
 stream_export int stream_byteorder(stream *s);
+stream_export void stream_set_byteorder(stream *s, char bigendian);
 stream_export stream *stream_rstream(stream *s);
 stream_export stream *stream_wstream(stream *s);
-stream_export stream *stream_rstream_byteorder(stream *s, char bigendian);
-stream_export stream *stream_wstream_byteorder(stream *s, char bigendian);
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
@@ -228,6 +226,7 @@ stream_export buffer *stream_get_buffer(stream *s);
 stream_export stream *block_stream(stream *s);
 stream_export ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
 stream_export int isa_block_stream(stream *s);
+/* read block of data including the end of block marker */
 stream_export ssize_t stream_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
 
 @+ buffered streams
@@ -555,6 +554,22 @@ stream_byteorder(stream *s)
 	return s->byteorder;
 }
 
+void 
+stream_set_byteorder(stream *s, char bigendian)
+{
+#ifdef STREAM_DEBUG
+	printf("stream_set_byteorder %s, %d\n", s->name ? s->name : "<unnamed>");
+#endif
+	assert(s->access == ST_READ);
+	s->type = ST_BIN;
+#ifdef WORDS_BIGENDIAN
+	s->byteorder = bigendian ? 1234 : 3412;
+#else
+	s->byteorder = bigendian ? 3412 : 1234;
+#endif
+}
+
+
 void
 close_stream(stream *s)
 {
@@ -576,22 +591,6 @@ stream_rstream(stream *s)
 }
 
 stream *
-stream_rstream_byteorder(stream *s, char bigendian)
-{
-#ifdef STREAM_DEBUG
-	printf("stream_rstream_byteorder %s, %d\n", s->name ? s->name : "<unnamed>", bigendian);
-#endif
-	assert(s->access == ST_READ);
-	s->type = ST_BIN;
-#ifdef WORDS_BIGENDIAN
-	s->byteorder = bigendian ? 1234 : 3412;
-#else
-	s->byteorder = bigendian ? 3412 : 1234;
-#endif
-	return s;
-}
-
-stream *
 stream_wstream(stream *s)
 {
 #ifdef STREAM_DEBUG
@@ -601,22 +600,6 @@ stream_wstream(stream *s)
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR)
 		s->write(s, (void *) &s->byteorder, sizeof(s->byteorder), 1);
-	return s;
-}
-
-stream *
-stream_wstream_byteorder(stream *s, char bigendian)
-{
-#ifdef STREAM_DEBUG
-	printf("stream_wstream_byteorder %s, %d\n", s->name ? s->name : "<unnamed>");
-#endif
-	assert(s->access == ST_WRITE);
-	s->type = ST_BIN;
-#ifdef WORDS_BIGENDIAN
-	s->byteorder = bigendian ? 1234 : 3412;
-#else
-	s->byteorder = bigendian ? 3412 : 1234;
-#endif
 	return s;
 }
 
@@ -2222,6 +2205,9 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 			/* the last bit tells whether a flush is in there, it's not
 			 * at this moment, so shift it to the left */
 			blksize <<= 1;
+#ifdef WORDS_BIGENDIAN
+			blksize = short_int_SWAP(blksize);
+#endif
 			if (!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = WRITE_ERROR;
 				return -1;
@@ -2451,6 +2437,10 @@ block_stream(stream *s)
 		return NULL;
 	if ((b = bs_create(s)) == NULL)
 		ns->errnr = OPEN_ERROR;
+	/* blocksizes have a fixed little endian byteorder */ 
+#ifdef WORDS_BIGENDIAN
+	s->byteorder = 3412; /* simply != 1234 */
+#endif
 	ns->type = s->type;
 	ns->access = s->access;
 	ns->read = bs_read;
