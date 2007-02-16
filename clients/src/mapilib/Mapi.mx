@@ -2108,7 +2108,7 @@ mapi_start_talking(Mapi mid)
 		 * message saying so.
 		 */
 		snprintf(buf, BLOCK, "Unsupported protocol version: %d.  "
-				"This client only supports version 6 and up.  "
+				"This client only supports version 7 and up.  "
 				"Sorry, can't help you here!", pversion);
 		mapi_setError(mid, buf,	"mapi_start_talking", MERROR);
 		return mid->error;
@@ -2225,15 +2225,15 @@ mapi_start_talking(Mapi mid)
 		}
 
 		/* in rest now should be the byte order of the server */
-		serv_bigendian = strncmp(rest, "1234", 4) == 0;
+		serv_bigendian = strncmp(rest, "BIG", 4) == 0;
 		
-		/* note: database can be appended here (:database).  If we omit
-		 * it we get the default (and don't ever get redirects) */
-		snprintf(buf, BLOCK, "%s:%s:%s:%s:%s\n",
+		/* note: if we make the database field an empty string, it
+		 * means we want the default.  However, it *should* be there. */
+		snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
 #ifdef WORDS_BIGENDIAN
-				"1234",
+				"BIG",
 #else
-				"3412",
+				"LIT",
 #endif
 				mid->username,
 				hash,

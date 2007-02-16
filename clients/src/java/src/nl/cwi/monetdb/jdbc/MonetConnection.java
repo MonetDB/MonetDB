@@ -406,10 +406,10 @@ public class MonetConnection implements Connection {
 				} else {
 					throw new SQLException("no supported password hashes in " + hashes);
 				}
-				if (chaltok[5].equals("1234")) {
+				if (chaltok[5].equals("BIG")) {
 					// byte-order of server is big-endian
 					monet.setByteOrder(ByteOrder.BIG_ENDIAN);
-				} else if (chaltok[5].equals("3412")) {
+				} else if (chaltok[5].equals("LIT")) {
 					// byte-order of server is little-endian
 					monet.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 				} else {
@@ -417,9 +417,9 @@ public class MonetConnection implements Connection {
 				}
 
 				// generate response
-				response = "1234:";	// JVM byte-order is big-endian
+				response = "BIG:";	// JVM byte-order is big-endian
 				response += username + ":" + pwhash + ":" + language;
-				response += ":" + database;
+				response += ":" + database + ":";
 
 				monet.write(response + "\n");
 				monet.flush();
