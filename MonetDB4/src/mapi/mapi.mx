@@ -545,7 +545,6 @@ mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang )
 	c = fc->c;
 	c->fdin = fdin;
 	c->fdout = fdout;
-	c->blocked = 0;
 	if (c->user)
 		GDKfree(c->user);
 	if (c->passwd)
@@ -583,25 +582,23 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 {
 	char buf[BLOCK+1];
 	char *s, *user, *passwd = NULL, *lang = NULL, *algo = NULL, *database = NULL;
-	//int bigendian = -1
 	char *err;
 	mapi_client *fc = NULL;
 	mapi_frontend *f = NULL;
 	Client c;
 	int len = 0;
 
-	/* create blockstreams so further errors and notices will be
-	 * readable by the client */
-	fdin = block_stream(stream_rstream_byteorder(fdin, 0/*little endian*/));
-	fdout = block_stream(stream_wstream_byteorder(fdout, 0/*litte endian*/));
+	/* create blockstreams */
+	fdin = block_stream(fdin);
+	fdout = block_stream(fdout);
 
 	/* write challenge string, the challenge is currently empty, and we
 	 * only offer "plain" cypher algorithm to fake proto 8 support */
 	s = ":mserver:8:plain:" 
 #ifdef WORDS_BIGENDIAN
-			"BIG\n"
+			"BIG"
 #else
-			"LIT\n"
+			"LIT"
 #endif
 	;
 	stream_write(fdout, s, strlen(s), 1);
@@ -610,7 +607,6 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	/* get response */
 	s = buf;
 	len = stream_read_block(fdin, buf, 1, BLOCK);
-	
 	assert(len <= BLOCK);
 	buf[len] = 0;
 
@@ -621,13 +617,12 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	s = strchr(user, ':');
 	if (s) {
 		*s = 0;
-		//bigendian = strcmp(user, "BIG") == 0;
+		stream_set_byteorder(fdin, strcmp(user, "BIG") == 0);
 		user = s + 1;
 	} else {
-		/* no inspiration on how to signal this case properly
+		/* no inspiration on how to signal this case properly */
 		stream_printf(fdout, "!incomplete challenge '%s'\n", user);
 		stream_flush(fdout);
-		*/
 		return NULL;
 	}
 
@@ -682,7 +677,8 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 		s = strchr(database, ':');
 		if (s)
 			*s = 0;
-		if (strlen(database) > 0) {
+		if (strlen(database) > 0 &&
+			strcmp(database, GDKgetenv("gdk_dbname")) != 0) {
 			stream_printf(fdout, "#MonetDB v4 doesn't have multiple database support, argument ignored\n");
 		}
 	}
@@ -709,7 +705,6 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	c = fc->c;
 	c->fdin = fdin;
 	c->fdout = fdout;
-	c->blocked = 1;
 	if (c->user)
 		GDKfree(c->user);
 	if (c->passwd)
