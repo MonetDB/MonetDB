@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -19,7 +19,7 @@
 use Mapi;
 
 my ($monet, $line);
-$monet = new Mapi('localhost', 50000, 'monetdb', 'monetdb', 'xquery', '', 0);
+$monet = new Mapi('localhost', 50000, 'monetdb', 'monetdb', 'sql', '', 0);
 
 print "> ";
 while ( !(($line=<>) =~ /\q/) ){

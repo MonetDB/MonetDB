@@ -51,7 +51,7 @@ import java.net.*;
  * block in a sequence.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 2.9
+ * @version 2.10
  */
 final class MonetSocketBlockMode {
 	/** Stream from the Socket for reading */
@@ -99,9 +99,6 @@ final class MonetSocketBlockMode {
 
 	/** A short in two bytes for holding the block size in bytes */
 	private byte[] blklen = new byte[2];
-	/** A boolean indicating whether the server sends us big-endian
-	 * multi-byte sequences */
-	private boolean bigEndian = true;	// we default to yes
 
 	MonetSocketBlockMode(String host, int port)
 		throws IOException
@@ -221,16 +218,16 @@ final class MonetSocketBlockMode {
 					// always fits, because of BLOCK's size
 					blocksize = (short)todo;
 					// this is the last block, so encode least
-					// significant bit in the last byte (big-endian)
-					blklen[0] = (byte)(blocksize >> 7);
-					blklen[1] = (byte)(blocksize << 1 & 0xFF | 1);
+					// significant bit in the first byte (little-endian)
+					blklen[0] = (byte)(blocksize << 1 & 0xFF | 1);
+					blklen[1] = (byte)(blocksize >> 7);
 				} else {
 					// always fits, because of BLOCK's size
 					blocksize = (short)BLOCK;
 					// another block will follow, encode least
-					// significant bit in the last byte (big-endian)
-					blklen[0] = (byte)(blocksize >> 7);
-					blklen[1] = (byte)(blocksize << 1 & 0xFF);
+					// significant bit in the first byte (little-endian)
+					blklen[0] = (byte)(blocksize << 1 & 0xFF);
+					blklen[1] = (byte)(blocksize >> 7);
 				}
 
 				toMonetRaw.write(blklen);
@@ -340,19 +337,11 @@ final class MonetSocketBlockMode {
 					// Get the int-value and store it in the readState.
 					// We store having the last block or not, for later
 					// to generate a prompt message.
-					if (bigEndian) {
-						readState = (short)(
-								(blklen[0] & 0xFF) << 7 |
-								(blklen[1] & 0xFF) >> 1
-							);
-						lastBlock = (blklen[1] & 0x1) == 1;
-					} else {
-						readState = (short)(
-								(blklen[0] & 0xFF) >> 1 |
-								(blklen[1] & 0xFF) << 7
-							);
-						lastBlock = (blklen[0] & 0x1) == 1;
-					}
+					readState = (short)(
+							(blklen[0] & 0xFF) >> 1 |
+							(blklen[1] & 0xFF) << 7
+						);
+					lastBlock = (blklen[0] & 0x1) == 1;
 
 					if (debug) {
 						if (lastBlock) {
@@ -471,16 +460,6 @@ final class MonetSocketBlockMode {
 			if (lineType == ERROR) ret += "\n" + tmp.substring(1);
 		}
 		return(ret == "" ? null : ret.trim());
-	}
-
-	/**
-	 * Sets the byte-order to reading data from the server.  By default
-	 * the byte order is big-endian or network order.
-	 *
-	 * @param order either ByteOrder.BIG_ENDIAN or ByteOrder.LITTLE_ENDIAN
-	 */
-	public synchronized void setByteOrder(ByteOrder order) {
-		bigEndian = order == ByteOrder.BIG_ENDIAN;
 	}
 
 	/**

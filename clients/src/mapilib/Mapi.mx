@@ -2071,19 +2071,25 @@ mapi_start_talking(Mapi mid)
 	char *rest;
 	char serv_bigendian = -1;
 
-	/* consume server challenge */
-	len = stream_read(mid->from, buf, 1, 2);
-	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
-	buf[2] = 0;
-	len = atoi(buf);
-	assert(len < BLOCK);
-	stream_read(mid->from, buf, 1, len);
-	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
-	buf[len] = 0;
+	mid->to = stream_wstream_byteorder(mid->to, 0 /* little endian*/);
+	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
+	mid->to = block_stream(mid->to);
+	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
 
-	/* buf at this point looks like ":challenge:servertype:protover[:.*]" */
-	chal = alloca(sizeof(char) * (strlen(buf + 1) + 1));
-	strcpy(chal, buf + 1);
+	mid->from = stream_rstream_byteorder(mid->from, 0 /* little endian*/);
+	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
+	mid->from = block_stream(mid->from);
+	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
+
+	/* consume server challenge */
+	len = stream_read_block(mid->from, buf, 1, BLOCK);
+
+	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
+
+	assert(len < BLOCK);
+
+	/* buf at this point looks like "challenge:servertype:protover[:.*]" */
+	chal = buf;
 	server = strchr(chal, ':');
 	if (server == NULL) {
 		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
@@ -2102,17 +2108,17 @@ mapi_start_talking(Mapi mid)
 	}
 	pversion = atoi(protover);
 
-	if (pversion < 7) {
+	if (pversion < 8) {
 		/* because the headers changed, and because it makes no sense to
 		 * try and be backwards compatible, we bail out with a friendly
 		 * message saying so.
 		 */
 		snprintf(buf, BLOCK, "Unsupported protocol version: %d.  "
-				"This client only supports version 7 and up.  "
+				"This client only supports version 8 and up.  "
 				"Sorry, can't help you here!", pversion);
 		mapi_setError(mid, buf,	"mapi_start_talking", MERROR);
 		return mid->error;
-	} else if (pversion == 7) {
+	} else if (pversion == 8) {
 		char* hash = NULL;
 		char* hashes = NULL;
 		/* the database has sent a list of supported hashes to us, it's
@@ -2218,8 +2224,10 @@ mapi_start_talking(Mapi mid)
 		}
 		/* could use else here, but below looks cleaner */
 		if (hash == NULL) {
+			char *algo = strdup(rest);
 			/* the server doesn't support what we do (no plain?!?) */
-			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", rest);
+			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", algo);
+			free(algo);
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		}
@@ -2240,7 +2248,7 @@ mapi_start_talking(Mapi mid)
 				mid->language,
 				mid->database == NULL ? "" : mid->database);
 
-		/* proto 7 always uses blocked connections */
+		/* proto 8 always uses blocked connections */
 		mid->blocked = 1;
 		free(hash);
 	}
@@ -2253,17 +2261,6 @@ mapi_start_talking(Mapi mid)
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
 	stream_flush(mid->to);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
-	if (mid->blocked) {
-		mid->to = stream_wstream_nohandshake(mid->to);
-		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
-		mid->to = block_stream(mid->to);
-		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
-
-		mid->from = stream_rstream_byteorder(mid->from, serv_bigendian);
-		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
-		mid->from = block_stream(mid->from);
-		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
-	}
 
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);

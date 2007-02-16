@@ -61,15 +61,21 @@ sub new {
 
   #binmode($self->{socket},":utf8");
 
+<<<<<<< Mapi.pm
+  #block challenge:mserver:8:cypher(s):content_byteorder(BIG/LIT)\n");
+  my $block = $self->getblock();
+=======
   #my $block = $self->getblock();
   #block len:challenge:mserver:7:cypher(s):content_byteorder(BIG/LIT)\n");
   my $block = $self->{socket}->getline();  # still in line mode
+>>>>>>> 1.2.2.3
   my @challenge = split(/:/, $block);
   print "Connection to socket established ($block)\n" if ($self->{trace});
 
   # content_byteorder(BIG/LIT):user:{cypher_algo}mypasswordchallenge_cyphered:lang:database: 
-  $self->putline("LIT:$user:{plain}$passwd" . @challenge[1] . ":$lang:$db:\n");
-  print "logged on:$user:{plain}$passwd" . @challenge[1] . ":$lang:$db:\n" if ($self->{trace});
+  $self->putblock("LIT:$user:{plain}$passwd" . @challenge[0] . ":$lang:$db:\n");
+  my $prompt = $self->getblock();
+  print "Logged on $user\@$db with $lang\n" if ($self->{trace});
   return $self;
 }
 
@@ -183,25 +189,39 @@ sub getSQL {
   my $block = $mapi->getblock();
   @{$mapi->{lines}} = split(/\n/, $block);
   my $header = $mapi->{lines}[0];
-  if ($header =~ '&1') {
-  # &1 id result-count nr-cols rows-in-this-block
-  my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
-  $mapi->{id} = $id;
-  $mapi->{count} = $cnt;
-  $mapi->{nrcols} = $nrcols;
-  $mapi->{replysize} = $replysize;
+  my @chars = split(//, $header);
 
-  # for now skip table header information
-  my $i = 1;
-    while ($mapi->{lines}[$i] =~ '%') {
-    $i++;
+  if (@chars[0] eq '!') { 
+	# error line
+  } elsif (@chars[0] eq '&') {
+	if (@chars[1] eq '1') {
+		# &1 id result-count nr-cols rows-in-this-block
+		my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+		$mapi->{id} = $id;
+		$mapi->{count} = $cnt;
+		$mapi->{nrcols} = $nrcols;
+		$mapi->{replysize} = $replysize;
+
+		# for now skip table header information
+		my $i = 1;
+  		while ($mapi->{lines}[$i] =~ '%') {
+			$i++;
+		}
+		$mapi->{next} = $i;
+		$mapi->{row} = $mapi->{lines}[$mapi->{next}++];
+  		$mapi->{active} = 1;
+  	} 
+  } elsif (@chars[0] eq '%') {
+	# header line
+  } elsif (@chars[0] eq '[') {
+	# row result
+  } elsif (@chars[0] eq '=') {
+	# xml result line
+  } elsif (@chars[0] eq '=') {
+	# ^ redirect, ie use different server
+  } elsif (@chars[0] eq '#') {
+	# warnings etc
   }
-  $mapi->{next} = $i;
-  $mapi->{row} = $mapi->{lines}[$mapi->{next}++];
-    $mapi->{active} = 1;
-  } 
-# todo all the other result types
-# handle errors
   return $mapi->{active};
 }
 

@@ -200,34 +200,19 @@ public class MonetConnection implements Connection {
 				}
 			}
 
-			// log in
-			String challenge = null;
-
-			// read the challenge from the server
-			byte[] chal = new byte[2];
-			monet.read(chal);
-			int len = 0;
-			try {
-				len = Integer.parseInt(new String(chal, "UTF-8"));
-			} catch (NumberFormatException e) {
-				throw new SQLException("Server challenge length unparsable " +
-						"(" + new String(chal, "UTF-8") + ")");
-			}
-			// read the challenge string
-			chal = new byte[len];
-			monet.read(chal);
-
-			challenge = new String(chal, "UTF-8");
-
-			sendChallengeResponse(
-					monet,
-					challenge,
-					username,
-					password,
-					language,
-					database,
-					hash
-				);
+			// read challenge, send response
+			String[] nulltempl = {null, null, null};
+			monet.writeLine(nulltempl,
+					getChallengeResponse(
+						monet,
+						monet.readLine(),
+						username,
+						password,
+						language,
+						database,
+						hash
+						)
+					);
 
 			// read monet response till prompt
 			List redirects = null;
@@ -338,7 +323,7 @@ public class MonetConnection implements Connection {
 	 * @param hash the hash method(s) to use, or NULL for all supported
 	 *             hashes
 	 */
-	private void sendChallengeResponse(
+	private String getChallengeResponse(
 			MonetSocketBlockMode monet,
 			String chalstr,
 			String username,
@@ -350,16 +335,18 @@ public class MonetConnection implements Connection {
 		int version = 0;
 		String response;
 		
+		// hack alert
+		monet.readLine(); /* prompt */
 		// parse the challenge string, split it on ':'
 		String[] chaltok = chalstr.trim().split(":");
-		if (chaltok.length < 4) throw
+		if (chaltok.length != 5) throw
 			new SQLException("Server challenge string unusable!");
 
 		// challenge string to use as salt/key
-		String challenge = chaltok[1];
-		// chaltok[2]; // server type, not needed yet 
+		String challenge = chaltok[0];
+		// chaltok[1]; // server type, not needed yet 
 		try {
-			version = Integer.parseInt(chaltok[3].trim());	// protocol version
+			version = Integer.parseInt(chaltok[2].trim());	// protocol version
 		} catch (NumberFormatException e) {
 			throw new SQLException("Protocol version unparseable: " + chaltok[3]);
 		}
@@ -368,14 +355,18 @@ public class MonetConnection implements Connection {
 		switch (version) {
 			default:
 				throw new SQLException("Unsupported protocol version: " + version);
-			case 7:
-				// proto 7 (finally) uses the challenge and works with a
+			case 8:
+				// proto 7 (finally) used the challenge and works with a
 				// password hash.  The supported implementations come
 				// from the server challenge.  We chose the best hash
 				// we can find, in the order SHA1, MD5, plain.  Also,
 				// the byte-order is reported in the challenge string,
 				// which makes sense, since only blockmode is supported.
-				String hashes = (hash == null ? chaltok[4] : hash);
+				// proto 8 made this obsolete, but retained the
+				// byteorder report for future "binary" transports.  In
+				// proto 8, the byteorder of the blocks is always little
+				// endian because most machines today are.
+				String hashes = (hash == null ? chaltok[3] : hash);
 				String pwhash;
 				if (hashes.indexOf("SHA1") != -1) {
 					try {
@@ -406,12 +397,12 @@ public class MonetConnection implements Connection {
 				} else {
 					throw new SQLException("no supported password hashes in " + hashes);
 				}
-				if (chaltok[5].equals("BIG")) {
+				// TODO: some day when we need this, we should store
+				// this
+				if (chaltok[4].equals("BIG")) {
 					// byte-order of server is big-endian
-					monet.setByteOrder(ByteOrder.BIG_ENDIAN);
-				} else if (chaltok[5].equals("LIT")) {
+				} else if (chaltok[4].equals("LIT")) {
 					// byte-order of server is little-endian
-					monet.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 				} else {
 					throw new SQLException("Invalid byte-order: " + chaltok[5]);
 				}
@@ -421,9 +412,7 @@ public class MonetConnection implements Connection {
 				response += username + ":" + pwhash + ":" + language;
 				response += ":" + database + ":";
 
-				monet.write(response + "\n");
-				monet.flush();
-			break;
+				return(response);
 		}
 	}
 

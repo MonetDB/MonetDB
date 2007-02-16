@@ -28,7 +28,8 @@ class MapiError(Exception):
     pass
 
 class server:
-    def __init__(self, host="localhost", port=50000, user="monetdb", passwd="monetdb", lang="mil", db="", trace=0):
+    def __init__(self, host="localhost", port=50000, user="monetdb",
+            passwd="monetdb", lang="sql", db="", trace=0):
         self.prompt = '>'
         self.host = host
         self.port = port
@@ -44,10 +45,15 @@ class server:
         except (IOError, error), e:
             raise MapiError, e.args
 
-        #block len:challenge:mserver:7:cypher(s):content_byteorder(BIG/LIT)\n");
-        chal = self.readline()
-        (len,challenge,host,proto,cyphers,endian) = chal.split(':')
-        self.cmd_intern("LIT:%s:{plain}%s%s:%s:%s:\n" % (user,passwd,challenge,lang,db))
+        #block :challenge:mserver:8:cypher(s):content_byteorder(BIG/LIT):");
+        chal = self.getblock().split(':')
+        challenge  = chal[0]
+        servertype = chal[1]
+        protover   = chal[2]
+        cyphers    = chal[3]
+        endian     = chal[4]
+        self.putblock("LIT:%s:{plain}%s%s:%s:%s:" % (user,passwd,challenge,lang,db))
+
         if self.trace:
             print "Logged on %s@%s with %s\n" % (user,db,lang)
         self.getblock()
@@ -56,81 +62,49 @@ class server:
             print 'connected ', self.socket
 
     def getblock(self):
-        # now read back the same way
-        result = ""
-        last_block = 0
+    	# now read back the same way
+        result = "";
+        last_block = 0;
         while not last_block:
-            flag = self.socket.recv(2)        # read block info
-            unpacked = struct.unpack( '<H', flag ) # unpack (little endian short)
-            unpacked = unpacked[0]            # get first result from tuple
-            len = ( unpacked >> 1 )           # get length
-            last_block = unpacked & 1         # get last-block-flag
+            flag = self.socket.recv(2);	# read block info
+            unpacked = struct.unpack( '<H', flag );	# unpack (little endian short)
+            unpacked = unpacked[0];		# get first result from tuple
+            len = ( unpacked >> 1 );	# get length
+            last_block = unpacked & 1;	# get last-block-flag
 
             if self.trace:
-                print("getblock: %d %d\n" % (last_block, len))
+  			    print("getblock: %d %d\n" % (last_block, len));
             if len > 0:
-                data = self.socket.recv(len)  # read
-                result += data
-                if self.trace:
-                    print("getblock: %s\n" % data)
-            return result
+        	    data = self.socket.recv(len);# read
+        	    result += data;
+        if self.trace:
+  		    print("getblock: %s\n" % result);
+    	return result;
 
     def putblock(self, blk):
-        pos        = 0
-        last_block = 0
-        blocksize  = 0xffff >> 1       # max len per block
+    	pos        = 0;
+    	last_block = 0;
+    	blocksize  = 0xffff >> 1;       # max len per block
 
         # create blocks of data with max 0xffff length,
         # then loop over the data and send it.
-        while not last_block:
-			data = blk[pos:blocksize]
-            # set last-block-flag
+    	while not last_block:
+            data = blk[pos:blocksize]
+		    # set last-block-flag
             if len(data) < blocksize:
-				last_block = 1 
+                last_block = 1 
             flag = struct.pack( '<h', ( len(data) << 1 ) + last_block )
             if self.trace:
-				print ("putblock: %d %s\n" % (last_block, data))
-            self.socket.send(flag)   # len<<1 + last-block-flag
-            self.socket.send(data)   # send it
-            pos += len(data)         # next block
-
-    def cmd_intern(self, cmd):
-        # convert to UTF-8 encoding
-        if type(cmd) is types.UnicodeType:
-            cmd = cmd.encode('utf-8')
-        try:
-            self.socket.send(cmd)
-        except (IOError, error), e:
-            raise MapiError, e.args
-
-        if self.trace:
-            print 'cmd ', cmd
-
-    def readline(self):
-        buffer = ""
-        while buffer[-1:] != "\n":
-            try:
-                buffer += self.socket.recv(8096)
-            except (IOError, error), e:
-                raise MapiError, e.args
-            if self.trace:
-                print buffer
-
-        if self.trace:
-            print buffer
-
-        try:
-            buffer = unicode(buffer, 'utf-8')
-        except UnicodeError, e:
-            raise MapiError, e.args
-
-        return buffer
+                print ("putblock: %d %s\n" % (last_block, data))
+            self.socket.send(flag);	# len<<1 + last-block-flag
+            self.socket.send(data); # send it
+            pos += len(data);	# next block
 
     def disconnect(self):
         """disconnect()
         Disconnect from the MonetDB server.
         """
-        self.result = self.cmd_intern('quit();\n')
+        self.result = self.putblock('quit();\n')
         try:
             self.socket.close()
         except (IOError, error), e:
@@ -165,3 +139,5 @@ if __name__ == '__main__':
         sys.stdout.write(s.prompt)
         line = sys.stdin.readline()
     s.disconnect()
+
+# vim: set ts=4 sw=4 expandtab:

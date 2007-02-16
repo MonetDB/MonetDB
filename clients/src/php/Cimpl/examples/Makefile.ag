@@ -16,6 +16,8 @@
 
 MTSAFE
 
+EXTRA_DIST_DIR = phpdbwrapper
+
 scripts_php = {
 	EXT = php
 	DIR = datadir/MonetDB/php
