@@ -466,10 +466,7 @@ doChallenge(str cmd, int msgsock) {
 				);
 		stream_flush(fdout);
 		/* get response */
-		/** TODO: need to be able to do "readline" here */
-		/** WARNING: this is a crude hack */
 		stream_read_block(fdin, buf, BLOCK, 1);
-		/** WARNING: not a single sanity check here! */
 
 		/* in embedded mode we allow just one client */
 		if (GDKembedded && MCcountClients() > 1) {
