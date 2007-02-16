@@ -685,8 +685,6 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 			*s = 0;
 		if (strlen(database) > 0) {
 			stream_printf(fdout, "#MonetDB v4 doesn't have multiple database support, argument ignored\n");
-			stream_flush(fdout);
-			return NULL;
 		}
 	}
 
