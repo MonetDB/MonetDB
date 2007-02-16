@@ -286,9 +286,12 @@ final class MonetSocketBlockMode {
 	private int readPos = 0;
 	private boolean lastBlock = false;
 	/**
-	 * readLine reads one line terminated by a newline character and returns
-	 * it without the newline character. This operation can be blocking if there
-	 * is no information available (yet)
+	 * readLine reads one line terminated by a newline character and
+	 * returns it without the newline character.  This operation can be
+	 * blocking if there is no information available (yet).  If a block
+	 * is marked as the last one, and the (left over) data does not end
+	 * in a newline, it is returned as the last "line" before returning
+	 * the prompt.
 	 *
 	 * @return a string representing the next line from the stream
 	 * @throws IOException if reading from the stream fails
@@ -318,6 +321,19 @@ final class MonetSocketBlockMode {
 				// start reading a new block of data if appropriate
 				if (readState == 0) {
 					if (lastBlock) {
+						if (readPos < readBuffer.length()) {
+							// there is still some stuff, but not
+							// terminated by a \n, send it to the user
+							String line = readBuffer.substring(readPos);
+
+							setLineType(readBuffer.charAt(readPos), line);
+
+							// move the cursor position
+							readPos = readBuffer.length();
+
+							return(line);
+						}
+
 						lastBlock = false;
 						// emit a fake prompt message
 						if (debug) logRd("generating prompt");
