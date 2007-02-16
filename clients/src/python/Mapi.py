@@ -45,7 +45,7 @@ class server:
         except (IOError, error), e:
             raise MapiError, e.args
 
-        #block :challenge:mserver:8:cypher(s):content_byteorder(BIG/LIT):");
+        #block challenge:mserver:8:cypher(s):content_byteorder(BIG/LIT):");
         chal = self.getblock().split(':')
         challenge  = chal[0]
         servertype = chal[1]
@@ -88,9 +88,9 @@ class server:
 
         # create blocks of data with max 0xffff length,
         # then loop over the data and send it.
-    	while not last_block:
+        while not last_block:
             data = blk[pos:blocksize]
-		    # set last-block-flag
+            # set last-block-flag
             if len(data) < blocksize:
                 last_block = 1 
             flag = struct.pack( '<h', ( len(data) << 1 ) + last_block )
