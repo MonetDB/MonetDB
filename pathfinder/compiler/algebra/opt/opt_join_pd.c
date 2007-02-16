@@ -199,14 +199,19 @@ modify_unary_op (PFla_op_t *p,
 static bool
 join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 {
-    PFla_op_t  *lp,
-               *rp;
-    PFalg_att_t latt,
-                ratt;
-    PFla_op_t  *next_join = NULL;
-    bool        modified  = false;
+    PFla_op_t   *lp,
+                *rp;
+    PFalg_att_t  latt,
+                 ratt;
+    unsigned int lp_child;
+    PFla_op_t   *next_join = NULL;
+    bool         modified  = false;
 
     assert (p);
+
+#define LP (p->child[lp_child])
+/* check whether a column att is already generated */
+#define GEN(att) (!is_join_att (p, (att)) && PFprop_ocol (rp, (att)))
 
     /* only process equi-joins */
     assert (p->kind == la_eqjoin_unq);
@@ -249,11 +254,13 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             rp = R(p);
             latt = p->sem.eqjoin_unq.att1;
             ratt = p->sem.eqjoin_unq.att2;
+            lp_child = 0;
         } else {
             lp = R(p);
             rp = L(p);
             latt = p->sem.eqjoin_unq.att2;
             ratt = p->sem.eqjoin_unq.att1;
+            lp_child = 1;
         }
         
         /* In case the join does nothing we may safely discard it. */
@@ -272,6 +279,153 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
         if (LEFT(lp) && RIGHT(lp))
             continue;
      
+        /* Throw away lp whenever lp creates a column 
+           that is also in the schema of rp. In this case
+           the new column is also created in the subtree 
+           of rp. (Pushing lp above the eqjoin would result
+           in conflicting columns otherwise.) */
+        switch (lp->kind) {
+            case la_serialize:
+            case la_lit_tbl:
+            case la_empty_tbl:
+            case la_cross:
+            case la_eqjoin:
+            case la_eqjoin_unq:
+            case la_semijoin:
+            case la_project:
+            case la_select:
+            case la_disjunion:
+            case la_intersect:
+            case la_difference:
+            case la_distinct:
+            case la_avg:
+            case la_max:
+            case la_min:
+            case la_sum:
+            case la_count:
+            case la_type_assert:
+            case la_seqty1:
+            case la_all:
+            case la_scjoin:
+            case la_doc_tbl:
+            case la_element:
+            case la_element_tag:
+            case la_attribute: /* treated in case la_root */
+            case la_textnode: /* treated in case la_root */
+            case la_docnode:
+            case la_comment:
+            case la_processi:
+            case la_merge_adjacent:
+            case la_fragment:
+            case la_frag_union:
+            case la_empty_frag:
+            case la_cond_err:
+            case la_rec_fix:
+            case la_rec_param:
+            case la_rec_nil:
+            case la_rec_arg:
+            case la_rec_base:
+            case la_proxy:
+            case la_proxy_base:
+            case la_cross_mvd:
+            case la_string_join:
+            case la_dummy:
+                /* nothing to do -- can't throw away lp */
+                break;
+
+            case la_attach:
+                if ((modified = GEN(lp->sem.attach.attname))) LP = L(lp);
+                break;
+                
+            case la_fun_1to1:
+                if ((modified = GEN(lp->sem.fun_1to1.res))) LP = L(lp);
+                break;
+                
+            case la_num_eq:
+            case la_num_gt:
+            case la_bool_and:
+            case la_bool_or:
+                if ((modified = GEN(lp->sem.binary.res))) LP = L(lp);
+                break;
+                
+            case la_bool_not:
+                if ((modified = GEN(lp->sem.unary.res))) LP = L(lp);
+                break;
+
+            case la_rownum:
+                if (!PFprop_key (rp->prop, ratt) ||
+                    !PFprop_subdom (rp->prop,
+                                    PFprop_dom (lp->prop, latt),
+                                    PFprop_dom (rp->prop, ratt)))
+                    /* Ensure that the values of the left join argument
+                       are a subset of the values of the right join argument
+                       and that the right join argument is keyed. These
+                       two tests make sure that we have exactly one match per
+                       tuple in the left relation and thus the result of the
+                       rownum operator stays stable. */
+                    break;
+
+                if ((modified = GEN(lp->sem.rownum.attname))) LP = L(lp);
+                break;
+
+            case la_number:
+                if (!PFprop_key (rp->prop, ratt) ||
+                    !PFprop_subdom (rp->prop,
+                                    PFprop_dom (lp->prop, latt),
+                                    PFprop_dom (rp->prop, ratt)))
+                    /* Ensure that the values of the left join argument
+                       are a subset of the values of the right join argument
+                       and that the right join argument is keyed. These
+                       two tests make sure that we have exactly one match per
+                       tuple in the left relation and thus the result of the
+                       number operator stays stable. */
+                    break;
+
+                if ((modified = GEN(lp->sem.number.attname))) LP = L(lp);
+                break;
+
+            case la_type:
+            case la_cast:
+                if ((modified = GEN(lp->sem.type.res))) LP = L(lp);
+                break;
+                
+            case la_dup_scjoin:
+                if ((modified = GEN(lp->sem.scjoin.item_res))) LP = R(lp);
+                break;
+
+            case la_doc_access:
+                if ((modified = GEN(lp->sem.doc_access.res))) LP = R(lp);
+                break;
+
+            case la_roots:
+                if (!PFprop_key (rp->prop, ratt) ||
+                    !PFprop_subdom (rp->prop,
+                                    PFprop_dom (lp->prop, latt),
+                                    PFprop_dom (rp->prop, ratt)))
+                    /* Ensure that the values of the left join argument
+                       are a subset of the values of the right join argument
+                       and that the right join argument is keyed. These
+                       two tests make sure that we have exactly one match per
+                       tuple in the left relation and thus the result of the
+                       attribute/textnode constructor stays stable. */
+                    break;
+
+                /* attributes */
+                if (L(lp)->kind == la_attribute &&
+                    (modified = GEN(L(lp)->sem.attr.res))) LP = LL(lp);
+                
+                /* textnodes */
+                if (L(lp)->kind == la_textnode &&
+                    (modified = GEN(L(lp)->sem.textnode.res))) LP = LL(lp);
+                break;
+        }
+        /* If a child of p was replaced ... */
+        if (modified) {
+            /* ... start another round with p. */
+            join_pushdown_worker (p, clean_up_list);
+            return true;
+        }
+
         switch (lp->kind) {
             case la_serialize:
             case la_lit_tbl:
@@ -1673,6 +1827,11 @@ join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
         modified = true;
     }
 
+    /* We need to make sure that the eqjoin operator does not reference
+       itself after the rewrite. Thus we make sure that no forbidden rewrite
+       happens by marking all reachable nodes in the LEFT and the
+       RIGHT subtree and prohibit any rewrite for algebra nodes that are
+       marked LEFT and RIGHT. */
     if (p->kind == la_eqjoin_unq) {
         /* mark nodes in the left child as 'LEFT' */
         if (PFprop_key (p->prop, p->sem.eqjoin.att1) &&
