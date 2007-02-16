@@ -46,6 +46,7 @@ import re
 import random
 import time
 import socket
+import struct
 import select
 #import signal
 #import getpass
@@ -2068,8 +2069,11 @@ def mapi_ping(port,lang) :
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((host, port))
-            r = sock.makefile('r').readline();
-            sock.makefile('w').write("ping:ping:"+lang+":line\n");
+	    flag = sock.recv(2);
+            unpacked = struct.unpack( '<H', flag )[0];	# little endian short
+            len = ( unpacked >> 1 );	# get length
+	    data = sock.recv(len);
+	    # we don't send 
             return True
         except socket.error, (Serrno,Serrstr):
             pass
