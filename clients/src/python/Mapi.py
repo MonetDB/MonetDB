@@ -36,7 +36,7 @@ class server:
         self.passwd = passwd
         self.lang = lang
         self.db = db
-	self.trace = trace;
+        self.trace = trace
 
         try:
             self.socket = socket(AF_INET, SOCK_STREAM)
@@ -44,55 +44,55 @@ class server:
         except (IOError, error), e:
             raise MapiError, e.args
 
-  	#block len:challenge:mserver:7:cypher(s):content_byteorder(BIG/LIT)\n");
+        #block len:challenge:mserver:7:cypher(s):content_byteorder(BIG/LIT)\n");
         chal = self.readline()
-	(len,challenge,host,proto,cyphers,endian) = chal.split(':');
+        (len,challenge,host,proto,cyphers,endian) = chal.split(':')
         self.cmd_intern("LIT:%s:{plain}%s%s:%s:%s:\n" % (user,passwd,challenge,lang,db))
-	if self.trace:
-	    print "Logged on %s@%s with %s\n" % (user,db,lang)
+        if self.trace:
+            print "Logged on %s@%s with %s\n" % (user,db,lang)
         self.getblock()
 
         if self.trace:
             print 'connected ', self.socket
 
     def getblock(self):
-    	# now read back the same way
-    	result = "";
-    	last_block = 0;
-	while not last_block:
-        	flag = self.socket.recv(2);	# read block info
-        	unpacked = struct.unpack( '<H', flag );	# unpack (little endian short)
-		unpacked = unpacked[0];		# get first result from tuple
-        	len = ( unpacked >> 1 );	# get length
-        	last_block = unpacked & 1;	# get last-block-flag
+        # now read back the same way
+        result = ""
+        last_block = 0
+        while not last_block:
+            flag = self.socket.recv(2)        # read block info
+            unpacked = struct.unpack( '<H', flag ) # unpack (little endian short)
+            unpacked = unpacked[0]            # get first result from tuple
+            len = ( unpacked >> 1 )           # get length
+            last_block = unpacked & 1         # get last-block-flag
 
-		if self.trace:
-  			print("getblock: %d %d\n" % (last_block, len));
-		if len > 0:
-        		data = self.socket.recv(len);# read
-        		result += data;
-			if self.trace:
-  				print("getblock: %s\n" % data);
-    	return result;
+            if self.trace:
+                print("getblock: %d %d\n" % (last_block, len))
+            if len > 0:
+                data = self.socket.recv(len)  # read
+                result += data
+                if self.trace:
+                    print("getblock: %s\n" % data)
+            return result
 
     def putblock(self, blk):
-    	pos        = 0;
-    	last_block = 0;
-    	blocksize  = 0xffff >> 1;       # max len per block
+        pos        = 0
+        last_block = 0
+        blocksize  = 0xffff >> 1       # max len per block
 
-	# create blocks of data with max 0xffff length,
-	# then loop over the data and send it.
-    	while not last_block:
-		data = blk[pos:blocksize]
-		# set last-block-flag
-		if len(data) < blocksize:
-        		last_block = 1 
-		flag = struct.pack( '<h', ( len(data) << 1 ) + last_block )
-		if self.trace:
-  			print ("putblock: %d %s\n" % (last_block, data))
-        	self.socket.send(flag);	# len<<1 + last-block-flag
-        	self.socket.send(data); # send it
-        	pos += len(data);	# next block
+        # create blocks of data with max 0xffff length,
+        # then loop over the data and send it.
+        while not last_block:
+			data = blk[pos:blocksize]
+            # set last-block-flag
+            if len(data) < blocksize:
+				last_block = 1 
+            flag = struct.pack( '<h', ( len(data) << 1 ) + last_block )
+            if self.trace:
+				print ("putblock: %d %s\n" % (last_block, data))
+            self.socket.send(flag)   # len<<1 + last-block-flag
+            self.socket.send(data)   # send it
+            pos += len(data)         # next block
 
     def cmd_intern(self, cmd):
         # convert to UTF-8 encoding
