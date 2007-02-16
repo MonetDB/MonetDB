@@ -581,43 +581,47 @@ int active_clients(char *lang)
 static mapi_client*
 xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new_client)
 {
-	char buf[BLOCK];
+	char buf[BLOCK+1];
 	char *s, *user, *passwd = NULL, *lang = NULL, *algo = NULL, *database = NULL;
-	int bigendian = -1, i;
+	//int bigendian = -1
 	char *err;
 	mapi_client *fc = NULL;
 	mapi_frontend *f = NULL;
 	Client c;
+	int len = 0;
+
+	/* create blockstreams so further errors and notices will be
+	 * readable by the client */
+	fdin = block_stream(stream_rstream_byteorder(fdin, 0/*little endian*/));
+	fdout = block_stream(stream_wstream_byteorder(fdout, 0/*litte endian*/));
 
 	/* write challenge string, the challenge is currently empty, and we
-	 * only offer "plain" cypher algorithm to fake proto 7 support */
-	snprintf(buf, BLOCK, "%2u::mserver:7:plain:%d\n", 
-			(unsigned int) (13 + 5 + 5),
+	 * only offer "plain" cypher algorithm to fake proto 8 support */
+	s = ":mserver:8:plain:" 
 #ifdef WORDS_BIGENDIAN
-			1234
+			"BIG\n"
 #else
-			3412
+			"LIT\n"
 #endif
-			);
-	stream_write(fdout, buf, strlen(buf), 1);
+	;
+	stream_write(fdout, s, strlen(s), 1);
+	stream_flush(fdout);
 
 	/* get response */
 	s = buf;
-	stream_read(fdin, s, 1, 1);
-	for (i = 0; !stream_errnr(fdin) && i < BLOCK && *s != '\n'; i++) {
-		s++;
-		stream_read(fdin, s, 1, 1);
-	}
-	*s = '\0';
+	len = stream_read_block(fdin, buf, 1, BLOCK);
+	
+	assert(len <= BLOCK);
+	buf[len] = 0;
 
-	/* decode first 1234:user:password:lang:database line */
+	/* decode first BIG/LIT:user:{cypher}passwordchal:lang:database line */
 
 	/* byte order */
 	user = buf;
 	s = strchr(user, ':');
 	if (s) {
 		*s = 0;
-		bigendian = strcmp(user, "1234") == 0;
+		//bigendian = strcmp(user, "BIG") == 0;
 		user = s + 1;
 	} else {
 		/* no inspiration on how to signal this case properly
@@ -626,11 +630,6 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 		*/
 		return NULL;
 	}
-
-	/* create blockstreams so further errors and notices will be
-	 * readable by the client */
-	fdin = block_stream(stream_rstream_byteorder(fdin, bigendian));
-	fdout = block_stream(stream_wstream_nohandshake(fdout));
 
 	/* passwd */
 	s = strchr(user, ':');
