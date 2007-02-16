@@ -7,6 +7,7 @@
 # Where MonetDB is installed
 prefix=@Xprefix@
 exec_prefix=@Xexec_prefix@
+datadir=@Xexec_prefix@
 
 # GDK Section
 #============
