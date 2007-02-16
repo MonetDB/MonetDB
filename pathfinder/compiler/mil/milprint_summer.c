@@ -8051,6 +8051,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var optbat := new(str,str,32);\n");
 
 	  milprintf(f,
+		"    var coll := collName;\n"
+		"    if ( optbat.exist(\"collection\") ) { coll := optbat.find(\"collection\"); }\n"
+		"    tijah_lock := tj_get_collection_lock(coll);\n"
+		"    lock_set(tijah_lock);\n"
 		"    var startNodes;\n"
 	        "    iter := iter%03u.materialize(ipik%03u);\n"
 		"    if (iter.count() > 0) {\n"  
@@ -8062,8 +8066,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	        "        iter := iter.tmark(0@0);\n"
 	        "        item := item.tmark(0@0);\n"
 	        "        kind := kind.tmark(0@0);\n"
-		"        var coll := collName;\n"
-		"        if ( optbat.exist(\"collection\") ) { coll := optbat.find(\"collection\"); }\n"
 		"        var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
 		"        var xdoc_firstpre := bat(\"tj_\" + coll + \"_doc_firstpre\");\n"
 		"        var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
@@ -8086,6 +8088,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
                 "    item := item.join(pfpre).sort().tmark();\n"
                 "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
+		"    lock_unset(tijah_lock); tijah_lock := lock_nil;\n"
                 "    var loaded_docs := ws.fetch(OPEN_NAME).reverse();\n"
                 "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
 		"    ws_opendoc(ws, docs_to_load);\n"
@@ -10923,10 +10926,11 @@ const char* PFinitMIL(void) {
 #ifdef HAVE_PFTIJAH
 	"\n"
 	"var tID := 9999@0; # start counter at an arbitrary number\n"
-	"var tijah_tID := new(void,oid).seqbase(0@0);\n"
-	"var tijah_frag := new(void,oid).seqbase(0@0);\n"
-	"var tijah_pre := new(void,oid).seqbase(0@0);\n"
+	"var tijah_tID   := new(void,oid).seqbase(0@0);\n"
+	"var tijah_frag  := new(void,oid).seqbase(0@0);\n"
+	"var tijah_pre   := new(void,oid).seqbase(0@0);\n"
 	"var tijah_score := new(void,dbl).seqbase(0@0);\n"
+	"var tijah_lock  := lock_nil; # pftijah collection lock\n"
 #endif
         "\n"
         "# value containers for literal values\n"
@@ -11059,6 +11063,12 @@ const char* PFstartMIL(int statement_type) {
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
 */
 
+#ifdef HAVE_PFTIJAH
+#define PF_STOP_PFTIJAH " if (not(isnil(tijah_lock))) lock_unset(tijah_lock);\n"
+#else
+#define PF_STOP_PFTIJAH " \n"
+#endif
+
 #define PF_STOPMIL_START \
            "  time_print := usec();\n"\
            "  time_exec := time_print - time_start;\n"
@@ -11077,6 +11087,7 @@ const char* PFstartMIL(int statement_type) {
            " if (not(isnil(err))) ws_log(ws, err);\n"\
            " ws_destroy(ws);\n"\
            "}\n"\
+	   PF_STOP_PFTIJAH\
            "if (not(isnil(err))) ERROR(err);\n"\
            "else if (genType.startsWith(\"timing\"))\n"\
            "  printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
