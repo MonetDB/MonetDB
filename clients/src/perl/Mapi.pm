@@ -61,14 +61,8 @@ sub new {
 
   #binmode($self->{socket},":utf8");
 
-<<<<<<< Mapi.pm
   #block challenge:mserver:8:cypher(s):content_byteorder(BIG/LIT)\n");
   my $block = $self->getblock();
-=======
-  #my $block = $self->getblock();
-  #block len:challenge:mserver:7:cypher(s):content_byteorder(BIG/LIT)\n");
-  my $block = $self->{socket}->getline();  # still in line mode
->>>>>>> 1.2.2.3
   my @challenge = split(/:/, $block);
   print "Connection to socket established ($block)\n" if ($self->{trace});
 
@@ -310,3 +304,5 @@ sub putblock {
 }
 
 1;
+
+# vim: set ts=2 sw=2 expandtab:
