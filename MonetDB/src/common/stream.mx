@@ -2253,6 +2253,9 @@ bs_flush(stream *ss)
 		   setting the low-order bit */
 		blksize |= (short) 1;
 		/* allways flush (even empty blocks) needed for the protocol) */
+#ifdef WORDS_BIGENDIAN
+		blksize = short_int_SWAP(blksize);
+#endif
 		if ((!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) {
 			ss->errnr = WRITE_ERROR;
 			return -1;
