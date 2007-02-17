@@ -163,12 +163,12 @@ Start XPRC receiver on the default port as specified in \
                                " xrpc:method=\"%s\">"
 #define XRPC_HTTP_CALL "<xrpc:call>"\
                         "<xrpc:sequence>"\
-                         "<xrpc:atomic-value xsi:type=\"xs:string\">%s</xrpc:atomic-value>"\
+                         "<xrpc:atomic-value xsi:type=\"xs:string\">\"%s\"</xrpc:atomic-value>"\
                         "</xrpc:sequence>"\
                        "</xrpc:call>"
 #define XRPC_PUT_CALL  "<xrpc:call>"\
                         "<xrpc:sequence>"\
-                         "<xrpc:atomic-value xsi:type=\"xs:string\">%s</xrpc:atomic-value>"\
+                         "<xrpc:atomic-value xsi:type=\"xs:string\">\"%s\"</xrpc:atomic-value>"\
                         "</xrpc:sequence>"\
                         "<xrpc:sequence>"\
                          "<xrpc:element>%s</xrpc:element>"\
@@ -245,29 +245,28 @@ request2bat(struct shttpd_callback_arg *arg, stream *out)
         size_t len = 2000 + strlen(docname);
         if (strcmp(shttpd_get_method(arg), "PUT") == 0) len += strlen(req_msg);
 
-        strptr = del = p = (char*) GDKmalloc(len);
+        req_msg = del = p = (char*) GDKmalloc(len);
         if (del == NULL) {
             send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
             return NULL;
         }
 
         /* the PUT, GET and DELETE methods are implemented in this module */
-        sprintf(uri, "http://localhost:%d/admin/http.xq", rpcd_running);
+        sprintf(uri, "http://localhost:%d/admin/admin.xq", rpcd_running);
 
         /* create a fake XRPC message for  GET/PUT/DELETE (=method) that invoke xrpc:method(URI) */
         p += sprintf(p, XRPC_HEADER, SOAP_NS, XRPC_NS, XS_NS, XSI_NS, XRPC_NS, XRPC_LOC,
-            "http", uri, shttpd_get_method(arg));
+            "http://monetdb.cwi.nl/XQuery/admin/", uri, shttpd_get_method(arg));
         p += sprintf(p, body_format, docname, req_msg);   
         strcpy(p, XRPC_FOOTER);
-    } else {
-        /* Remove the first line of the message, which containing
-         * "<?xml...?>", so that the message we pass to CMDshred2bats starts
-         * directly with <env:Envelope ...> */
-        strptr  = req_msg + 7; /* strlen("<?xml...?>") >= 7 */
-        if ((strstr(req_msg, "<?xml") != req_msg) || (strptr = strchr(strptr, (int)'<')) == NULL ) {
-            send_err(out, 1, ERR404, "env:Sender", NOT_WELL_FORMED);
-            return NULL;
-        }
+    }
+    /* Remove the first line of the message, which containing
+     * "<?xml...?>", so that the message we pass to CMDshred2bats starts
+     * directly with <env:Envelope ...> */
+    strptr = req_msg + 7; /* strlen("<?xml...?>") >= 7 */
+    if ((strstr(req_msg, "<?xml") != req_msg) || (strptr = strchr(strptr, (int)'<')) == NULL ) {
+        send_err(out, 1, ERR404, "env:Sender", NOT_WELL_FORMED);
+        return NULL;
     }
     if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))) {
         send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
@@ -869,6 +868,7 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg) {
     return -1;
 }
 
+extern int xrpc_port;
 int
 CMDhttpd_start(int* port, str option)
 {
@@ -876,14 +876,14 @@ CMDhttpd_start(int* port, str option)
     char *s = "/usr/share/", docdir[1024]; /* httpd serves out /usr/share/MonetDB/xrpc/ */
     BUN p = BUNfnd(GDKenv, "datadir"); /* normally use 'datadir' iso /usr/share  (often datdir = prefix/share) */
     if (p) s = BUNtail(GDKenv,p); 
-    snprintf(docdir, 1024, "%s%cMonetDB%cxrpc%c", s, DIR_SEP, DIR_SEP, DIR_SEP);
+    snprintf(docdir, 1024, "%s%cshare%cMonetDB%cxrpc%c", s, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
        
     if (rpcd_running) {
         GDKerror("CMDhttpd_start: RPC receiver already running\n");
         return GDK_FAIL;
     }
 
-    rpcd_running = *port;
+    xrpc_port = rpcd_running = *port;
 
     if (option && strstr(option, "timing") != NULL)
         timing = 1;

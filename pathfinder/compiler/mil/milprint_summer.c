@@ -6488,7 +6488,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  var r := ws_opendoc(ws, item%s.materialize(ipik));\n"
                 "  kind  := r.tmark(0@0).set_kind(ELEM);\n"
                 "  item  := r.hmark(0@0);\n"
-                "  time_shred :+= usec() - t;\n"
+                "  time_shred := time_shred + usec() - t;\n"
                 "} # end of translate fn:doc (string?) as document?\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"collection")))
@@ -6597,7 +6597,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  fn_put(ws, item_str_.materialize(ipik), item%03u.materialize(ipik%03u), kind%03u.materialize(ipik%03u), int_values, dbl_values, dec_values, str_values);\n"
                 "  item := bat(void,oid).seqbase(0@0);\n"
                 "  kind := bat(void,int).seqbase(0@0);\n"
-                "  iter := 1;\n"
+                "  iter := 1@0;\n"
                 "  pos := 1;\n"
                 "  ipik := item;\n"
                 "} # end of translate fn:put (node, string) as stmt\n", counter, counter, counter, counter);
@@ -10874,7 +10874,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* ============================================== */
 
         /* finish name by printing start (hashed name), connecting and terminating it */
-        sprintf(c->sem.fun->sig, "%s%08X", (stmt==1)?"up":"fn", hash);
+        sprintf(c->sem.fun->sig, "%s%08X", (stmt==1)?"up":(stmt==2)?"dm":"fn", hash);
         c->sem.fun->sig[10] = '_';
         c->sem.fun->sig[j] = 0;
 

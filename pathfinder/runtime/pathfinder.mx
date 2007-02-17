@@ -631,19 +631,21 @@ PROC exit() : void { # redefine exit to do a checkpoint first
     quit(); 
 }
 
+
 # the logger background thread
+var logger_base := 0;
 PROC pf_logmanager() : void {
-    var base := logger_changes(pf_logger);
+    logger_base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
         var changes := logger_changes(pf_logger);
-        var delta := changes - base;
+        var delta := changes - logger_base;
         if (((cnt :+= 1) % 10) = 0) { 
             cleantmpdir((msec() / 1000LL) - 3600LL);
         }
         if (((delta < 0) or (delta > 100000)) and (cnt > 10)) { 
             pf_logflush(0LL);
-            base = changes;
+            logger_base = changes;
             cnt := 0;
         } 
         sleep(30);  
@@ -1576,6 +1578,14 @@ PROC _ws_pinnedcoll(lng wsid,
                        .project(wsid).reverse();                           
 }
 
+# throw away all index structures! Running queries keep referencing all runtime bats they already opened.
+PROC _runtime_flush() : void
+{
+    var shortlocks := [fetch]([reverse](colname_runtime), RT_LOCK_FREELIST);
+    var longlocks := [fetch]([reverse](colname_runtime), RT_NID_FREELIST);
+    var runtimes := [_runtime_create](colname_runtime.mirror(), shortlocks, longlocks);
+    colname_runtime.delete().insert(runtimes); 
+}
 
 PROC _ws_opencoll(lng wsid, 
                   oid coll_oid) : BAT[lock,bat]
@@ -1609,12 +1619,7 @@ PROC _ws_opencoll(lng wsid,
         var indices := [count](reverse(colname_runtime).mirror()).ord_uselect(RT_QN_NID_UNQ, int_nil);
         if (bit(count(indices))) {
             var totsize := [fetch](reverse(indices), RT_QN_NID_UNQ).[seqbase]().[lng]().sum();
-            if (totsize > (mem_maxsize()/4LL)) {
-                var shortlocks := [fetch]([reverse](colname_runtime), RT_LOCK_FREELIST);
-                var longlocks := [fetch]([reverse](colname_runtime), RT_NID_FREELIST);
-                var runtimes := [_runtime_create](colname_runtime.mirror(), shortlocks, longlocks);
-                colname_runtime.delete().insert(runtimes); 
-            }
+            if (totsize > (mem_maxsize()/4LL)) _runtime_flush();
         }
     }
     return runtime;
@@ -3823,9 +3828,10 @@ xquery_sig_init(char *proc)
     xquery_sig* sig;
     int update = 0, len = 0;
 
-    /* proc names string with 'up' are updating functions */
     if (proc[0] == 'u' && proc[1] == 'p') {
-        update = 1;
+        update = 1; /* proc names starting with 'up' are updating functions */
+    } else if (proc[0] == 'd' && proc[1] == 'm') {
+        update = 2; /* proc names starting with 'dm' are document management functions */
     } else if (proc[0] != 'f' || proc[1] != 'n') {
         return NULL;
     }
@@ -5362,7 +5368,7 @@ xquery_method(mapi_client *mc,
 {
     xquery_client *ctx = (xquery_client*) mc->fc;
     lng usec = GDKusec();
-    char *mode = (flags&2)?"timing-xml-noheader":"timing-xml-noheader-xrpc";
+    char *mode = (flags&2)?"timing-xml":"timing-xml-noheader-xrpc";
     char *err, *buf, *ns = "fn";
     stream *s = NULL;
 
