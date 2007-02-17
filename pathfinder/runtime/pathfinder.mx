@@ -5105,11 +5105,6 @@ xquery_client_engine(mapi_client *mc)
     ctx->mode = XQ_MAPI;
     while (1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
-        if (!mc->c->blocked && 
-                stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
-            msg = "could not write prompt"; 
-            break;
-        }
         if (stream_flush(out)) {
             msg = "could not flush prompt"; 
             break;
@@ -5152,11 +5147,6 @@ xquery_client_engine(mapi_client *mc)
                         p += sizeof("copy ")-1;
 
                         /* start shredder (first character should be skipped) */
-                        if (!mc->c->blocked && 
-                                stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
-                                msg = "could not write prompt"; 
-                                break;
-                        }
                         if (stream_flush(out)) {
                                 msg = "could not flush prompt"; 
                                 break;
@@ -5254,7 +5244,6 @@ xquery_frontend( ptr *F)
     }
     return GDK_FAIL;
 }
-
 
 /*
  * execute xquery and return the result in a string.
