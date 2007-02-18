@@ -30,7 +30,7 @@ while ( !(($line=<>) =~ /\q/) ){
 	}
 	if ($res < 0) {
 		if ($res == -1) {
-			print $monet->{error};
+			print $monet->{errstr};
 		} elsif ($res == -2) {
 			print "$monet->{count} rows affected\n";
 		}

@@ -269,7 +269,7 @@ sub getBlock {
       $self->{next} = $cnt; # all done
     }
   } else {
-    return getLine();
+    return $self->getRow();
   } 
   return $self->{active};
 }
