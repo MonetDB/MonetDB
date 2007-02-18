@@ -60,6 +60,7 @@ sub new {
   # content_byteorder(BIG/LIT):user:{cypher_algo}mypasswordchallenge_cyphered:lang:database: 
   $self->putblock("LIT:$user:{plain}$passwd" . @challenge[0] . ":$lang:$db:\n");
   my $prompt = $self->getblock();
+  die $prompt if ($prompt ne "");
   print "Logged on $user\@$db with $lang\n" if ($self->{trace});
   return $self;
 }
