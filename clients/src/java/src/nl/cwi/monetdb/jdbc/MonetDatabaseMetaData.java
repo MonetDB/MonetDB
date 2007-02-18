@@ -113,7 +113,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 */
 	public String getURL() throws SQLException {
 		return("jdbc:monetdb://" + getEnv("host") +
-			":" + getEnv("sql_port") + "/" +
+			":" + getEnv("mapi_port") + "/" +
 			getEnv("gdk_dbname"));
 	}
 
@@ -2413,10 +2413,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"\"digits\" AS \"PRECISION\", " +
 				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('" +
 				escapeQuotes("'") + "' AS char) " +
-					"ELSE cast(NULL AS char) END) AS \"LITERAL_PREFIX\", " +
+					"ELSE cast(NULL AS char) END AS char) AS \"LITERAL_PREFIX\", " +
 				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('" +
 				escapeQuotes("'") + "' AS char) " +
-					"ELSE cast(NULL AS char) END) AS \"LITERAL_SUFFIX\", " +
+					"ELSE cast(NULL AS char) END AS char) AS \"LITERAL_SUFFIX\", " +
 				"cast(NULL AS varchar(1)) AS \"CREATE_PARAMS\", " +
 				"cast(CASE WHEN \"systemname\" = 'oid' THEN " + DatabaseMetaData.typeNoNulls + " " +
 					"ELSE " + DatabaseMetaData.typeNullable + " END AS smallint) AS \"NULLABLE\", " +
