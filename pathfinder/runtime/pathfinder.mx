@@ -5213,13 +5213,6 @@ xquery_client_end(mapi_client *mc, char *err)
     xquery_client *ctx = (xquery_client*) mc->fc;
 
     xquery_client_reset(ctx, err); 
-
-    stream_close(mc->c->fdin);
-    stream_destroy(mc->c->fdin);
-    mc->c->fdin = NULL;
-    stream_close(mc->c->fdout);
-    stream_destroy(mc->c->fdout);
-    mc->c->fdout = NULL;
     monetSetChannel(THRget(THRgettid()), NULL, NULL);
 }
 
