@@ -348,7 +348,7 @@ find_frontend( char *l )
 }
 
 static void
-mapi_client_end(mapi_client *fc, int keep_open)
+mapi_client_end(mapi_client *fc)
 {
 	Variable v;
 	
@@ -357,12 +357,12 @@ mapi_client_end(mapi_client *fc, int keep_open)
 		VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
 		VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
 	}
-	if (!keep_open && fc->c->fdout) {
+	if (fc->c->fdout) {
 		stream_close(fc->c->fdout);
 		stream_destroy(fc->c->fdout);
 		fc->c->fdout = NULL;
 	}
-	if (!keep_open && fc->c->fdin) {
+	if (fc->c->fdin) {
 		stream_close(fc->c->fdin);
 		stream_destroy(fc->c->fdin);
 		fc->c->fdin = NULL;
@@ -409,7 +409,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 			stream_printf(s, "!ERROR: %s\n", err);
 			stream_flush(s);
 		}
-		mapi_client_end(mc, 0); 
+		mapi_client_end(mc); 
 		mapi_client_free(mc);
 		return NULL;
 	}
@@ -506,7 +506,7 @@ mapi_client_engine(void *FC )
 		fc->engine(fc);
 		fc->c->mode = STARTING;
 	
-		mapi_client_end(fc, 1);
+		mapi_client_end(fc);
 		/* possible race condition, but net result is limited */
 		if (f->clients > f->cache_limit) { 
 			break;
@@ -610,10 +610,10 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	assert(len <= BLOCK);
 	buf[len] = 0;
 
-	/* decode first BIG/LIT:user:{cypher}passwordchal:lang:database line */
+	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
+	user = buf;
 
 	/* byte order */
-	user = buf;
 	s = strchr(user, ':');
 	if (s) {
 		*s = 0;
@@ -1381,7 +1381,7 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 	f->f_engine(mc);
 	GDKfree(klient->input);
 	klient->input = old_in;
-	mapi_client_end(mc, 0); 	
+	mapi_client_end(mc); 	
 	return GDK_SUCCEED;
 }
 
