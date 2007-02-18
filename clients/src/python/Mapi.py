@@ -29,7 +29,7 @@ class MapiError(Exception):
 
 class server:
     def __init__(self, host="localhost", port=50000, user="monetdb",
-            passwd="monetdb", lang="sql", db="", trace=0):
+            passwd="monetdb", lang="mil", db="", trace=0):
         self.prompt = '>'
         self.host = host
         self.port = port
