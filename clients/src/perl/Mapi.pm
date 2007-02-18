@@ -21,16 +21,6 @@ use Socket;
 use IO::Socket;
 #use IO::Handle;
 
-sub putline {
-  my($mapi,$cmd) = @_;
-
-  print "putline: $cmd\n" if ($mapi->{trace});
-  $mapi->{socket}->write($cmd) || die "!ERROR can't send $cmd: $!";
-  # ignore all answers except error messages
-  my $block = $mapi->getblock();
-  print "putline getAnswer:".$block."\n" if ($mapi->{trace});
-}
-
 sub new {
   my $mapi = shift;
   my $host  = shift || 'localhost';
@@ -58,6 +48,7 @@ sub new {
         PeerPort => $port,
         Proto    => 'tcp'
   ) || die "!ERROR can't connect to $host:$port $!";
+  $self->{piggyback} = "";
 
   #binmode($self->{socket},":utf8");
 
@@ -75,17 +66,17 @@ sub new {
 
 # How to create a duplicate
 sub clone {
-  my ($mapi,$src)= @_;
-  bless($mapi,"Mapi");
-  print "cloning\n" if ($mapi->{trace});
-  $mapi->{host} = $src->{host};
-  $mapi->{port} = $src->{port};
-  $mapi->{user} = $src->{user};
-  $mapi->{passwd} = $src->{passwd};
-  $mapi->{lang} = $src->{lang};
-  $mapi->{db} = $src->{db};
-  $mapi->{socket} = $src->{socket};
-  $mapi->resetState();
+  my ($self,$src)= @_;
+  bless($self,"Mapi");
+  print "cloning\n" if ($self->{trace});
+  $self->{host} = $src->{host};
+  $self->{port} = $src->{port};
+  $self->{user} = $src->{user};
+  $self->{passwd} = $src->{passwd};
+  $self->{lang} = $src->{lang};
+  $self->{db} = $src->{db};
+  $self->{socket} = $src->{socket};
+  $self->resetState();
 }
 
 sub mapiport_intern {
@@ -107,151 +98,202 @@ sub portnr {
 }
 
 sub disconnect {
-  my ($mapi) = @_;
-  print "disconnect\n" if ($mapi->{trace});
-  $mapi->{socket}->close;
-  print "Disconnected from server\n" if ($mapi->{trace});
+  my ($self) = @_;
+  print "disconnect\n" if ($self->{trace});
+  $self->{socket}->close;
+  print "Disconnected from server\n" if ($self->{trace});
 }
 
 sub showState {
-  my ($mapi) = @_;
-  if ($mapi->{trace}) {
-    print "mapi.error :".$mapi->{error}."\n";
-    print "mapi.errstr:".$mapi->{errstr}."\n";
-    print "mapi.active:".$mapi->{active}."\n";
-    print "mapi.BUF[".length($mapi->{BUF})."]:".$mapi->{BUF}."\n";
+  my ($self) = @_;
+  if ($self->{trace}) {
+    print "mapi.error :".$self->{error}."\n";
+    print "mapi.errstr:".$self->{errstr}."\n";
+    print "mapi.active:".$self->{active}."\n";
+    print "mapi.row[".length($self->{row})."]:".$self->{row}."\n";
   }
 }
 
 sub resetState {
-  my ($mapi) = @_;
-  print "resetState\n" if ($mapi->{trace});
-  $mapi->{errstr}="";
-  $mapi->{error}=0;
-  $mapi->{active}=0;  
+  my ($self) = @_;
+  print "resetState\n" if ($self->{trace});
+  $self->{errstr}="";
+  $self->{error}=0;
+  $self->{active}=0;  
 }
 
 #packge the request and ship it, the back-end reads blocks!
 sub doRequest {
-  my($mapi,$cmd) = @_;
+  my($self,$cmd) = @_;
 
   $cmd =~ s/\n/ /g;    # remove newlines ???
-  $cmd = "S" . $cmd if ($mapi->{lang} eq 'sql' || $mapi->{lang} eq 'xquery');
-  print "doRequest:$cmd\n" if ($mapi->{trace});
-  $mapi->putblock($cmd); # TODO handle exceptions || die "!ERROR can't send $cmd: $!";
-  $mapi->resetState();
+  $cmd = "S" . $cmd if ($self->{lang} eq 'sql' || $self->{lang} eq 'xquery');
+  print "doRequest:$cmd\n" if ($self->{trace});
+  $self->putblock($cmd); # TODO handle exceptions || die "!ERROR can't send $cmd: $!";
+  $self->resetState();
 }
 
 # Analyse a single line for errors
-sub errorTest {
-  my ($mapi) =@_;
-  my $err= $mapi->{errstr};
-  $err= "$err\n" if (length($err) > 0);
-  my $row= $mapi->{row};
-#   $mapi->showState();
-  if ($row =~ /^!/) {
-    $mapi->{errstr} = "$err$row";
-    $mapi->{row}= "";
-    $mapi->{error} = 1;
-    print "Error found\n" if ($mapi->{trace});
-    return 1;
-  }
-  return 0;
+sub error {
+  my ($self,$line) = @_;
+  my $err = $self->{errstr};
+  $err = "$err\n" if (length($err) > 0);
+  $self->{errstr} = $err . $line;
+# $self->showState();
+  $self->{row}= "";
+  $self->{error} = 1;
+  print "Error found $self->{error}\n" if ($self->{trace});
 }
 
 # analyse commentary lines for auxiliary information
 sub propertyTest {
-  my ($mapi) =@_;
-  my $err= $mapi->{error};
-  my $row= $mapi->{row};
-#   $mapi->showState();
+  my ($self) =@_;
+  my $err= $self->{error};
+  my $row= $self->{row};
+#   $self->showState();
   if ($row =~ /^\#---/) {
-    $mapi->{row}= "";
+    $self->{row}= "";
     return 1;
   }
   if ($row =~ /^\#.*\#/) {
-    $mapi->{row}= "";
+    $self->{row}= "";
     return 1;
   }
   return 0;
 }
 
 
-sub getSQL {
-  my ($mapi)= @_;
-  print "getSQL $mapi->{active}\n" if ($mapi->{trace});
-  my $block = $mapi->getblock();
-  @{$mapi->{lines}} = split(/\n/, $block);
-  my $header = $mapi->{lines}[0];
-  my @chars = split(//, $header);
+sub getRow {
+  my ($self)= @_;
+  my $row = $self->{lines}[$self->{next}++];
+  my @chars = split(//, $row);
 
   if (@chars[0] eq '!') { 
-	# error line
-  } elsif (@chars[0] eq '&') {
-	if (@chars[1] eq '1') {
-		# &1 id result-count nr-cols rows-in-this-block
-		my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
-		$mapi->{id} = $id;
-		$mapi->{count} = $cnt;
-		$mapi->{nrcols} = $nrcols;
-		$mapi->{replysize} = $replysize;
-
-		# for now skip table header information
+    $self->error($row);
 		my $i = 1;
-  		while ($mapi->{lines}[$i] =~ '%') {
-			$i++;
+  	while ($self->{lines}[$i] =~ '!') {
+      $self->error($self->{lines}[$i]);
+      $i++;
 		}
-		$mapi->{next} = $i;
-		$mapi->{row} = $mapi->{lines}[$mapi->{next}++];
-  		$mapi->{active} = 1;
-  	} 
+    $self->{active} = 0;
+    return -1
+  } elsif (@chars[0] eq '&') {
+    # not expected
   } elsif (@chars[0] eq '%') {
-	# header line
+	  # header line
   } elsif (@chars[0] eq '[') {
-	# row result
+	  # row result
+    $self->{row} = $row;
+    $self->{active} = 1;
   } elsif (@chars[0] eq '=') {
-	# xml result line
-  } elsif (@chars[0] eq '=') {
-	# ^ redirect, ie use different server
+	  # xml result line
+    $self->{row} = substr($row, 1); # skip = 
+    $self->{active} = 1;
+  } elsif (@chars[0] eq '^') {
+	  # ^ redirect, ie use different server
   } elsif (@chars[0] eq '#') {
-	# warnings etc
+	  # warnings etc
   }
-  return $mapi->{active};
+  return $self->{active};
 }
 
-sub getXQUERY {
-  my ($mapi)= @_;
-  print "getXQUERY $mapi->{active}\n" if ($mapi->{trace});
-  my $block = $mapi->getblock();
-  @{$mapi->{lines}} = split(/\n/, $block);
-  $mapi->{count} = scalar(@{$mapi->{lines}}); 
-  $mapi->{nrcols} = 1;
-  $mapi->{replysize} = $mapi->{count};
+sub getBlock {
+  my ($self)= @_;
+  print "getBlock $self->{active}\n" if ($self->{trace});
+  my $block = $self->getblock();
+  @{$self->{lines}} = split(/\n/, $block);
 
-  $mapi->{next} = 0;
-  $mapi->{row} = substr($mapi->{lines}[$mapi->{next}++], 1); # skip = 
-  $mapi->{active} = 1;
-# handle errors
-  return $mapi->{active};
+  my $header = $self->{lines}[0];
+  my @chars = split(//, $header);
+
+	$self->{id} = -1;
+  $self->{count} = scalar(@{$self->{lines}}); 
+  $self->{nrcols} = 1;
+  $self->{replysize} = $self->{count};
+  $self->{active} = 0;
+  $self->{skip} = 0; # next+skip is current result row
+  $self->{next} = 0; # all done
+  $self->{offset} = 0;
+
+  if (@chars[0] eq '&') {
+	  if (@chars[1] eq '1' || @chars[1] eq 6) {
+	    if (@chars[1] eq '1') {
+		    # &1 id result-count nr-cols rows-in-this-block
+		    my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+		    $self->{id} = $id;
+		    $self->{count} = $cnt;
+		    $self->{nrcols} = $nrcols;
+		    $self->{replysize} = $replysize;
+      } else {
+		    # &6 id nr-cols,rows-in-this-block,offset
+		    my ($dummy,$id,$nrcols,$replysize,$offset) = split(' ', $header);
+		    $self->{id} = $id;
+		    $self->{nrcols} = $nrcols;
+		    $self->{replysize} = $replysize;
+        $self->{offset} = $offset;
+      }
+		  # for now skip table header information
+		  my $i = 1;
+  		  while ($self->{lines}[$i] =~ '%') {
+			  $i++;
+		  }
+      $self->{skip} = $i;
+		  $self->{next} = $i;
+		  $self->{row} = $self->{lines}[$self->{next}++];
+
+  		$self->{active} = 1;
+  	} elsif (@chars[1] eq '2') { # updates
+		  my ($dummy,$cnt) = split(' ', $header);
+		  $self->{count} = $cnt;
+		  $self->{nrcols} = 1;
+		  $self->{replysize} = 1;
+      $self->{row} = "" . $cnt;
+      $self->{next} = $cnt; # all done
+      return -2;
+  	} elsif (@chars[1] eq '3') { # transaction 
+      # nothing todo
+  	} elsif (@chars[1] eq '4') { # auto_commit 
+		  my ($dummy,$ac) = split(' ', $header);
+      if ($ac eq 't') {
+        $self->{auto_commit} = 1;
+      } else {
+        $self->{auto_commit} = 0;
+      }
+  	} elsif (@chars[1] eq '5') { # prepare 
+		  my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+      # TODO parse result, rows (type, digits, scale)
+		  $self->{count} = $cnt;
+		  $self->{nrcols} = $nrcols;
+		  $self->{replysize} = $replysize;
+      $self->{row} = "";
+      $self->{next} = $cnt; # all done
+    }
+  } else {
+    return getLine();
+  } 
+  return $self->{active};
 }
 
 sub getReply {
-  my ($mapi)= @_;
+  my ($self)= @_;
 
-  if ($mapi->{active} == 0) {
-    if ($mapi->{lang} eq 'sql') {
-      $mapi->getSQL();
-    } elsif ($mapi->{lang} eq 'xquery') {
-      $mapi->getXQUERY();
-    }
-    # todo mal / mil 
-  } elsif ($mapi->{next} < $mapi->{replysize}) {
-    $mapi->{row} = $mapi->{lines}[$mapi->{next}++];
+  if ($self->{active} == 0) {
+    return $self->getBlock();
+  } elsif ($self->{next} < $self->{replysize} + $self->{skip}) {
+    return $self->getRow();
+  } elsif (${self}->{offset} + $self->{replysize} < $self->{count}) {
+    # get next slice
+    my $rs = $self->{replysize};
+    my $offset = $self->{offset} + $rs;
+    putblock("Xexport $self->{id} $offset $rs");
+    return $self->getBlock();
   } else {
-    # todo check if we are on the end, if not ask for more rows
-    $mapi->{active} = 0;
+    # close large results, but only send on next query
+    $self->{piggyback} .= "Xclose $self->{id}" 
+      if ($self->{id} > 0 && $self->{count} != $self->{replysize});
+    $self->{active} = 0;
   } 
-  return $mapi->{active};
+  return $self->{active};
 
 }
 
@@ -288,6 +330,10 @@ sub putblock {
   my $last_block = 0;
   my $blocksize  = 0xffff >> 1;       # max len per block
   my $data;
+
+  # there maybe something in the piggyback buffer
+  $blk = $self->{piggyback} . $blk if ($self->{piggyback} ne "");
+  $self->{piggyback} = "";
 
   # create blocks of data with max 0xffff length,
   # then loop over the data and send it.

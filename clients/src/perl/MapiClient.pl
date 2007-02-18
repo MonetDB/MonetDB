@@ -23,9 +23,17 @@ $monet = new Mapi('localhost', 50000, 'monetdb', 'monetdb', 'sql', '', 0);
 
 print "> ";
 while ( !(($line=<>) =~ /\q/) ){
+	my $res = 0;
 	$monet->doRequest($line);
-	while( $monet->getReply() )  {
+	while( ($res = $monet->getReply()) > 0 )  {
 		print $monet->{row} . "\n";
+	}
+	if ($res < 0) {
+		if ($res == -1) {
+			print $monet->{error};
+		} elsif ($res == -2) {
+			print "$monet->{count} rows affected\n";
+		}
 	}
 	print "> ";
 }
