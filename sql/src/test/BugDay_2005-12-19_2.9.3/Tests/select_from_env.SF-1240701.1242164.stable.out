@@ -55,6 +55,7 @@ Over..
 [ "standoff_end"	]
 [ "config"	]
 [ "xrpc_port"	]
+[ "datadir"	]
 [ "gdk_embedded"	]
 [ "mapi_open"	]
 [ "xquery_output"	]
