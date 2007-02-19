@@ -309,6 +309,7 @@ PROC tj_get_collection_lock(str colname) : lock
     return collection_lock;
 }
 
+
 ADDHELP("tj_init_collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
 - str collName: the name of the collection
@@ -378,12 +379,14 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
 	  if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
 	  if ( $h = "stemmer" ) {
 	      stemmer := $t;
+	  } else if ( $h = "pf_collection" ) {
+              bat("tj_" + collName + "_param").insert($h,$t);
 	  } else if ( $h = "fragmentSize" ) {
               bat("tj_" + collName + "_param").insert($h,$t);
 	  } else if ( $h = "tagFilter" ) {
               tagfilter := $t;
 	  } else {
-	      ERROR("# tj_init_global() unkonwn parameter [%s].\n",$h);
+	      ERROR("# tj_init_collection() unknown parameter [%s].\n",$h);
 	  }
       }
       #
@@ -578,6 +581,7 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
            
     var i_start;
     if ( store ) {
+	var pf_collection := tj_get_parameter(collName,"pf_collection");
         if ( isnil(uri_name) ) {
 	  uri_name := uri_loc;
 	} else if ( uri_name = "" ) {
@@ -586,7 +590,11 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
         var ws := ws_create();
         if (not(bat("doc_name").reverse().exist(uri_name))) {
             var s_start := usec();
-    	    shred_doc(uri_loc,uri_name);
+	    if ( isnil(pf_collection) ) {
+    	        shred_doc(uri_loc,uri_name);
+	    } else {
+    	        shred_doc(uri_loc,uri_name,pf_collection,0LL);
+	    }
             if ( timing ) {
 	      ms := (usec()-s_start)/1000;
               printf("#C[%s]:add2coll(\"%s\"): shred time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
@@ -700,6 +708,18 @@ PROC tj_set_parameter(str collName, str par, str val) : void
 	    parbat.replace(par,val);
 	} else {
 	    parbat.insert(par,val);
+	}
+}
+
+# set a collection parameter
+PROC tj_get_parameter(str collName, str par) : str
+{
+	var parbat := bat("tj_" + collName + "_param");
+
+	if ( parbat.exist(par) ) {
+	    return parbat.find(par);
+	} else {
+	    return str(nil);
 	}
 }
 

@@ -890,6 +890,7 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
         if ( (tjPre = tj_add2plane(tjctx, termOid)) == oid_nil )
     	    return 0;
         if ( tj_pushTag(tjctx,tjPre) < 0 ) return 0;
+        if ( 0 ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #ifdef TJ_TRACE
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif
