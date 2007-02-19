@@ -364,7 +364,7 @@ The internal data structure is used as a cache for improved access.
 bpm_export str BPMopen(void);
 bpm_export str BPMclose(int *ret);
 bpm_export str BPMdestroy(int *ret);
-bpm_export str BPMdeposit(int *ret, str *nme, bat *src);
+bpm_export str BPMdeposit(bat *ret, str *nme, bat *src);
 
 bpm_export str BPMrange(bat *ret, bat *bid, ptr low, ptr hgh);
 bpm_export str BPMsplitpartition(bat *ret, bat *bid, ptr val);
@@ -1303,12 +1303,11 @@ BPMhasMoreElementsRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 BPMgetDimension(ptr *first, ptr *last, ptr *vlow, ptr *vhgh, int *bid)
 {
-	BAT *b;
-	@:getBATdescriptor(bid,b,"bpm.getDimension")@
 	(void) first;
 	(void) last;
 	(void) vlow;
 	(void) vhgh;
+	(void) bid;
 	throw(MAL, "bpm.getDimension","NYI");
 }
 
