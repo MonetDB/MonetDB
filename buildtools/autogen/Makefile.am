@@ -25,7 +25,7 @@ default: all
 @abs_builddir@/autogen:
 	mkdir -p $@
 
-@abs_builddir@/%.py:  $(SRCDIR)/%.py @abs_builddir@/autogen
+@abs_builddir@/%.py:  $(SRCDIR)/%.py
 	cp $< $@
 
 all:	@abs_builddir@/setup.py \
