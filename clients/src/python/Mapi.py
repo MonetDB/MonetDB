@@ -53,10 +53,12 @@ class server:
         cyphers    = chal[3]
         endian     = chal[4]
         self.putblock("LIT:%s:{plain}%s%s:%s:%s:" % (user,passwd,challenge,lang,db))
-
         if self.trace:
             print "Logged on %s@%s with %s\n" % (user,db,lang)
-        self.getblock()
+        prompt = self.getblock()
+        if prompt != '':
+            print("%s" % prompt)
+            sys.exit(-1);
 
         if self.trace:
             print 'connected ', self.socket
@@ -104,7 +106,6 @@ class server:
         """disconnect()
         Disconnect from the MonetDB server.
         """
-        self.result = self.putblock('quit();\n')
         try:
             self.socket.close()
         except (IOError, error), e:
