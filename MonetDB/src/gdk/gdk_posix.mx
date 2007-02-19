@@ -1150,7 +1150,7 @@ MT_getrss()
 	MEMORYSTATUSEX state;
 	state.dwLength = sizeof(state);
 	GlobalMemoryStatusEx (&state);
-	return state.ullTotalPhys - state.ullAvailPhys;
+	return (size_t) (state.ullTotalPhys - state.ullAvailPhys);
 #else
 	MEMORYSTATUS state;
 	GlobalMemoryStatus (&state);
