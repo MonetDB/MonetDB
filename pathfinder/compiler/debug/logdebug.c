@@ -1203,7 +1203,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "        <annotation>result of the operation"
                                     "</annotation>\n"
                             "      </column>\n",
-                            PFatt_str (n->sem.fun_1to1.kind),
+                            PFalg_fun_str (n->sem.fun_1to1.kind),
                             PFatt_str (n->sem.fun_1to1.res));
             
             for (c = 0; c < n->sem.fun_1to1.refs.count; c++)
