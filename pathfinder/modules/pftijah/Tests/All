@@ -12,4 +12,6 @@ qmil2
 qmapi1
 test_lms_returnall
 test_lms_returnmatching
+test_lms_and
+test_lms_or
 cleanup
