@@ -2215,7 +2215,7 @@ mapi_start_talking(Mapi mid)
 		}
 
 		/* in rest now should be the byte order of the server */
-		stream_set_byteorder(mid->to, strncmp(rest, "BIG", 3) == 0);
+		stream_set_byteorder(mid->from, strncmp(rest, "BIG", 3) == 0);
 		
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
