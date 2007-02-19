@@ -399,6 +399,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	int i = (int) (c - monet_clients);
 
 	mc = mapi_clients+i;
+    mc->engine = f->f_engine;
 	mc->frontend = f->nr;
 	mc->inuse = 1;
 	mc->t = ~(MT_Id)0;
@@ -497,7 +498,6 @@ mapi_client_engine(void *FC )
 
 	fc->thread = THRnew(MT_getpid(), "mapi_client_engine"); 
 	while(1) {
-		fc->engine = f->f_engine;
 		MT_down_sema(fc->s, "mapi_client_engine"); /* wait for work */
 		if (fc->inuse == 2)
 			break;
