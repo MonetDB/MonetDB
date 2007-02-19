@@ -4,4 +4,7 @@ let $opt := <TijahOptions
                 txtmodel_returnall="false"
                 debug="0"/>
 
-return pf:tijah-query($opt,(),"//title[about(.,pathfinder) or about(.,tijah)]")
+let $query := "//title[about(.,pathfinder) or about(.,tijah)]"
+
+for $n at $r in pf:tijah-query($opt,(),$query)
+return <node rank="{$r}">{$n}</node>

@@ -22,29 +22,29 @@ Over..
 # 12:04:30 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><section id="sec3"><title>Pathfinder</title>
+<XQueryResult><node rank="1"><section id="sec3"><title>Pathfinder</title>
             <para id="par7">This section is about the Pathfinder XML database. This section is 
                   more about Pathfinder than any other section is about Pathfinder.</para>
-        </section><section id="sec5"><title>XML definitions</title>
+        </section></node><node rank="2"><section id="sec5"><title>XML definitions</title>
             <para id="par9">This section contains definitions that are used in XML databases 
                   and XML information retrieval</para>
-        </section><section id="sec4"><title>TIJAH</title>
+        </section></node><node rank="3"><section id="sec4"><title>TIJAH</title>
             <para id="par8">This section is about the TIJAH XML information retrieval 
                   system. This section is more about TIJAH than any other section is 
                   about TIJAH.</para>
-        </section><section id="sec2"><title>XML Information retrieval</title>
+        </section></node><node rank="4"><section id="sec2"><title>XML Information retrieval</title>
             <para id="par4">This section is about XML information retrieval.</para>
             <para id="par5">It contains the words XML, information and retrieval many times, 
                   more than say databases. 
                   It should be more relevant to XML information retrieval 
                   than the previous section.</para>
-        </section><section id="sec1"><title>XML databases</title>
+        </section></node><node rank="5"><section id="sec1"><title>XML databases</title>
             <para id="par2">This section is about XML databases.</para>
             <para id="par3">It contains the words XML and databases many times, 
                   more than say information and retrieval. 
                   It should be more relevant to XML databases than 
                   the next section.</para>
-        </section></XQueryResult>
+        </section></node></XQueryResult>
 
 # 12:04:30 >  
 # 12:04:30 >  Done.

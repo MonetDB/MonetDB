@@ -22,10 +22,10 @@ Over..
 # 12:04:30 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><section id="sec3"><title>Pathfinder</title>
+<XQueryResult><node rank="1"><section id="sec3"><title>Pathfinder</title>
             <para id="par7">This section is about the Pathfinder XML database. This section is 
                   more about Pathfinder than any other section is about Pathfinder.</para>
-        </section></XQueryResult>
+        </section></node></XQueryResult>
 
 # 12:04:30 >  
 # 12:04:30 >  Done.
