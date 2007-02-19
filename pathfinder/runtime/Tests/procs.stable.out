@@ -57,6 +57,7 @@ procs();
 [ "_del_doc(bit, BAT[any,str], BAT[oid,str], BAT[oid,str]) : void"											  ]
 [ "_del_doc_replace(BAT[oid,str], BAT[oid,str]) : void"												  ]
 [ "_runtime_create(str, lock, lock) : BAT[lock,BAT]"													  ]
+[ "_runtime_flush() : void"															  ]
 [ "_runtime_get(str) : BAT[lock,BAT]"														  ]
 [ "_shred_doc_base(BAT[oid,str], BAT[void,str], BAT[void,str], lng) : BAT[oid,BAT]"									  ]
 [ "_shred_doc_cleanup(lng, bit) : BAT[any,any]"													  ]
