@@ -295,14 +295,6 @@ SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT
 }
 
 #ifdef WITH_WCHAR
-#if 0				/* no prototype so probably not used */
-SQLRETURN SQL_API
-SQLSetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
-{
-	return SQLSetDescField(DescriptorHandle, RecordNumber, FieldIdentifier, Value, BufferLength);
-}
-#endif
-
 SQLRETURN SQL_API
 SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
 {
