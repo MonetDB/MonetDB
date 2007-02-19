@@ -2114,31 +2114,38 @@ PROC scale(bat region, flt importance) : bat :=
 # PROBABILISTIC SET OPERATORS
 ################################################################################
 
+# Compute symmetric difference between two sets: all element that are not in the intersection
+PROC ksymmdiff(bat left, bat right) : bat := 
+{
+    var onlyleft  := left.kdiff(right);
+    var onlyright := right.kdiff(left);
+    return onlyleft.kunion(onlyright);
+}
+
 PROC or_sum(bat left, bat right) : bat :=
 {
 
-	return [+](left,right);
-	#var inters    := [+](left,right);
-	#var onlyleft  := left.kdiff(inters);
-	#var onlyright := right.kdiff(inters);
-	#var result    := inters.kunion(onlyleft).kunion(onlyright).sort();
+	var inters := [+](left,right);
 
-	#var inters := nil; var onlyleft := nil; var onlyright := nil;
-	
-        #return result;
+    return inters.kunion(ksymmdiff(left,right)).sort();
+
 }
 
 PROC or_max(bat left, bat right) : bat :=
 {
 
-	return [max](left,right);
+    var inters := [max](left,right);
+
+    return inters.kunion(ksymmdiff(left,right)).sort();
 
 }
 
 PROC or_prob(bat left, bat right) : bat :=
 {
 
-	return [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right)));
+	var inters := [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right)));
+
+    return inters.kunion(ksymmdiff(left,right)).sort();
 
 }
 
@@ -2161,14 +2168,18 @@ PROC or_exp(bat left, bat right, int A) : bat :=
 PROC or_min(bat left, bat right) : bat :=
 {
 
-	return [min](left,right);
+    var inters := [min](left,right);
+
+    return inters.kunion(ksymmdiff(left,right)).sort();
 
 }
 
 PROC or_prod(bat left, bat right) : bat :=
 {
 
-	return [*](left,right);
+    var inters := [*](left,right);
+
+    return inters.kunion(ksymmdiff(left,right)).sort();
 
 }
 
