@@ -1,5 +1,6 @@
 load
 sigs
+loadthesis
 createcoll0
 createcoll1
 test_split2frag
@@ -9,4 +10,6 @@ qmil0
 qmil1
 qmil2
 qmapi1
+test_lms_returnall
+test_lms_returnmatching
 cleanup
