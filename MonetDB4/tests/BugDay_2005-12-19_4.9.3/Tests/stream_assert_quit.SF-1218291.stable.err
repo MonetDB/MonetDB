@@ -68,10 +68,6 @@ stderr of test 'stream_assert_quit.SF-1218291` in directory 'tests/BugDay_2005-1
 # 10:39:41 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --host=localhost --port=31034 < stream_assert_quit.SF-1218291.milC
 # 10:39:41 >  
 
-MAPI  = monetdb@localhost:31034
-ACTION= read_line
-QUERY = quit();
-ERROR = Connection terminated
 
 # 10:39:42 >  
 # 10:39:42 >  Done.

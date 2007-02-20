@@ -25,6 +25,8 @@ table(Unknown_mods.reverse().col_name(sprintf("%i modules",Unknown_mods.count())
 #-----------------#
 # 0 modules	  #
 #-----------------#
+[ "backup"	  ]
+[ "restore"	  ]
 Unknown_mods@batloop() {
 	var The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
@@ -78,6 +80,64 @@ Unknown_mods@batloop() {
 	Fhelp.delete();
 	Fnts.delete();
 }
+
+Module: "backup"
+
+[ 27 ]
+[ 27 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature								help			  # name
+# str			str		str									str			  # type
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+[ "CTderive",		  "PROC:      ",  "CTderive(BAT[oid,any], BAT[oid,any]) : grp",				  "not available"	  ]
+[ "CTgroup",		  "PROC:      ",  "CTgroup(BAT[oid,any], BAT[oid,any]) : grp",				  "not available"	  ]
+[ "CTorderby",		  "PROC:      ",  "CTorderby(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",		  "not available"	  ]
+[ "CTorderby_rev",	  "PROC:      ",  "CTorderby_rev(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",		  "not available"	  ]
+[ "CTsubgroup",		  "PROC:      ",  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",  "not available"	  ]
+[ "backup",		  "PROC:      ",  "backup(str) : void",							  "not available"	  ]
+[ "bat_ttype",		  "PROC:      ",  "bat_ttype(BAT[any,any]) : str",					  "not available"	  ]
+[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], BAT[str,BAT], str, int) : void",		  "not available"	  ]
+[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], str, int) : void",				  "not available"	  ]
+[ "dump_format",	  "PROC:      ",  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",			  "not available"	  ]
+[ "dump_seps",		  "PROC:      ",  "dump_seps(BAT[void,BAT]) : BAT[void,str]",				  "not available"	  ]
+[ "export",		  "PROC:      ",  "export(BAT[any,any], str) : void",					  "not available"	  ]
+[ "extend",		  "PROC:      ",  "extend(grp) : BAT[any,int]",						  "not available"	  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",						  "not available"	  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",						  "not available"	  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",						  "not available"	  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",						  "not available"	  ]
+[ "grp_dump",		  "PROC:      ",  "grp_dump(BAT[any,any]) : str",					  "not available"	  ]
+[ "histogram",		  "PROC:      ",  "histogram(grp) : BAT[any,int]",					  "not available"	  ]
+[ "import",		  "PROC:      ",  "import(BAT[any,any], str) : BAT[any,any]",				  "not available"	  ]
+[ "map",		  "PROC:      ",  "map(grp) : BAT[oid,oid]",						  "not available"	  ]
+[ "orderby_table",	  "PROC:      ",  "orderby_table(str, str, ..BAT[any::1,any]..) : void",		  "not available"	  ]
+[ "print",		  "PROC:      ",  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",		  "not available"	  ]
+[ "seqinfo",		  "PROC:      ",  "seqinfo(BAT[any,any]) : str",					  "not available"	  ]
+[ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",		  "not available"	  ]
+[ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",	  "not available"	  ]
+[ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",	  "not available"	  ]
+
+Module: "restore"
+
+[ 13 ]
+[ 13 ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature							help			  # name
+# str			str		str								str			  # type
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ "bat_ttype",		  "PROC:      ",  "bat_ttype(BAT[any,any]) : str",				  "not available"	  ]
+[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], BAT[str,BAT], str, int) : void",	  "not available"	  ]
+[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], str, int) : void",			  "not available"	  ]
+[ "dump_format",	  "PROC:      ",  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",		  "not available"	  ]
+[ "dump_seps",		  "PROC:      ",  "dump_seps(BAT[void,BAT]) : BAT[void,str]",			  "not available"	  ]
+[ "export",		  "PROC:      ",  "export(BAT[any,any], str) : void",				  "not available"	  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",					  "not available"	  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",					  "not available"	  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",					  "not available"	  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",					  "not available"	  ]
+[ "import",		  "PROC:      ",  "import(BAT[any,any], str) : BAT[any,any]",			  "not available"	  ]
+[ "load_persistent",	  "PROC:      ",  "load_persistent(str) : int",					  "not available"	  ]
+[ "restore",		  "PROC:      ",  "restore(str) : void",					  "not available"	  ]
 
 quit();
 

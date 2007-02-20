@@ -70,7 +70,7 @@ stderr of test 'MapiClient_hang_on_rename.SF-852148` in directory 'tests/BugDay_
 
 MAPI  = monetdb@localhost:33066
 QUERY = var b:= new(int,int).rename("a");
-ERROR = !ERROR: rename(<tmp_42>,a): operation failed
+ERROR = !ERROR: rename(<tmp_41>,a): operation failed
 
 # 14:59:36 >  
 # 14:59:36 >  Done.
