@@ -21,6 +21,8 @@ set MOD_PATH=%MOD_PATH%;%builddir%\src\mapi\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\mapi
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mnetcdf\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mnetcdf
+set MOD_PATH=%MOD_PATH%;%builddir%\scripts
+set MOD_PATH=%MOD_PATH%;%builddir%\scripts\tools
 
 set PATH=@XCLIENTS_PREFIX@\lib\MonetDB\Tests;%PATH%
 set PATH=@XCLIENTS_PREFIX@\bin;%PATH%
