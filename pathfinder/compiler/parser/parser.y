@@ -1284,7 +1284,7 @@ FunctionDecl              : "declare function" QName_LParen
                                                  c1->sem.oci = p_zero_or_more,
                                                  c1)),
                                          $5);
-                              c->sem.qname = $2;
+                              c->sem.qname_raw = $2;
                               $$ = c;
 
 #ifdef ENABLE_MILPRINT_SUMMER
