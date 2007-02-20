@@ -1156,6 +1156,18 @@ set_theory (pd_ineq_t *pd)
  * - 0 indicates not (t1 <: t2)
  * - 1 indicates t1 <: t2
  * - _ indicates <: must be decided using Antimirov's algorithm.
+ *
+ * NOTE: `none' is a subtype of all other types (but no other type is
+ *       a subtype of `none').  This is an outcome of the XOBE algorithm
+ *       and seems to be most consistent with choice types:
+ *
+ *         ( t1 | t2 )  <:  t3   ==>  t1 <: t3 /\ t2 <: t3.
+ *
+ *       i.e.,
+ *
+ *         (t1 | none)  <:  t1   ==>  t1 <: t1 /\ none <: t1.
+ *
+ *       (Note that `none' is the identity with respect to `|'.)
  */
 #define _ -1
 
@@ -1175,7 +1187,7 @@ char hierarchy[ty_types][ty_types] = {
                      o p m             t A m m r g m b i e a o l t d x   o t g
                      n t e             e n i i i e a l n a m d e t o e p m m m
                      e y d ? + * , | & m y c c c r l e g n e e m r c t i m t t*/
- [ty_none   ]      ={1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ [ty_none   ]      ={1,1,_,_,_,_,_,_,_,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 }
 ,[ty_empty  ]      ={0,1,_,1,_,1,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
 ,[ty_named  ]      ={_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
 ,[ty_opt    ]      ={0,_,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
@@ -1232,7 +1244,7 @@ char equality[ty_types][ty_types] = {
                      o p m             t A m m r g m b i e a o l t d x   o t g
                      n t e             e n i i i e a l n a m d e t o e p m m m
                      e y d ? + * , | & m y c c c r l e g n e e m r c t i m t t*/
- [ty_none   ]      ={1,0,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ [ty_none   ]      ={1,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
 ,[ty_empty  ]      ={0,1,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
 ,[ty_named  ]      ={_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,0,0 }
 ,[ty_opt    ]      ={0,_,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }

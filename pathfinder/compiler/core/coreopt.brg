@@ -427,20 +427,6 @@ reduce (PFcnode_t * p, int goalnt)
                 rewritten |= reduce (kids[1], nts[1]);
                 rewritten |= reduce (kids[0], nts[0]);
 
-                /*
-                 * If we know (from static typing) that we are iterating
-                 * over the empty sequence, replace the whole thing by
-                 * the empty sequence.
-                 */
-                if (PFty_subtype (TY(p), PFty_empty ())) {
-                    *p = *empty ();
-
-                    /* assign new node a state label */
-                    relabel (p, kids);
-                    rewritten = true;
-                    break;
-                }
-
                 break;
 
             /* CoreExpr:           flwr (OptBindExpr,
