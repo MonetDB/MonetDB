@@ -214,11 +214,11 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
 	/* where necessary, calculate min/max oid with minimal effort */
 	if (e->htype == TYPE_void) {
-		oid nil = oid_nil;
-		(void) nil;	/* silence compiler about unused variable */
+		oid onil = oid_nil;
+		(void) onil;	/* silence compiler about unused variable */
 		ALGODEBUG THRprintf(GDKout, "#init_result(@1): e->htype == TYPE_void, e->hseqbase=" SZFMT "\n", (size_t) e->hseqbase);
 		BATloopFast(e, p, q, xx) {
-			void@1_bunfastins_nocheck_noinc(bn, _p, &nil, &zero);
+			void@1_bunfastins_nocheck_noinc(bn, _p, &onil, &zero);
 			_p += _bunsize;
 		}
 		BATseqbase(bn,e->hseqbase);

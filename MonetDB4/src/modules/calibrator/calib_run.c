@@ -23,13 +23,13 @@
 #define	CYperIt(t)	(((calibdbl)((t) * MHz)) / ((calibdbl)NUMLOADS))
 
 long use_result_dummy;		/* !static for optimizers. */
-void
+static void
 use_pointer(void *result)
 {
 	use_result_dummy += (long) result;
 }
 
-void
+static void
 loads_nodelay(char **P, caliblng * j, caliblng * best)
 {
 	register char **p = P;
@@ -62,7 +62,7 @@ loads_nodelay(char **P, caliblng * j, caliblng * best)
 	}
 }
 
-void
+static void
 loads_delay(char **P, caliblng * j, caliblng * best)
 {
 	register char **p = P;
@@ -97,7 +97,7 @@ loads_delay(char **P, caliblng * j, caliblng * best)
 	}
 }
 
-caliblng
+static caliblng
 loads(char *array, caliblng range, caliblng stride, caliblng MHz, FILE *fp, int delay)
 {
 	register char **p = 0;
@@ -168,7 +168,7 @@ loads(char *array, caliblng range, caliblng stride, caliblng MHz, FILE *fp, int 
 	return best;
 }
 
-caliblng **
+static caliblng **
 runCache(char *array, caliblng maxrange, caliblng minstride, caliblng MHz, FILE *fp, caliblng * maxstride)
 {
 	caliblng i, r, x=0, y, z, range, stride = minstride / 2;
@@ -278,7 +278,7 @@ runCache(char *array, caliblng maxrange, caliblng minstride, caliblng MHz, FILE 
 	return result;
 }
 
-caliblng **
+static caliblng **
 runTLB(char *array, caliblng maxrange, caliblng minstride, caliblng shift, caliblng mincachelines, caliblng MHz, FILE *fp, caliblng * maxstride)
 {
 	caliblng i, x=0, y, z, stride, minspots, maxspots, p;
@@ -407,7 +407,7 @@ runTLB(char *array, caliblng maxrange, caliblng minstride, caliblng shift, calib
 	return result;
 }
 
-caliblng **
+static caliblng **
 runAsso(char *array, caliblng maxrange, caliblng minstride, caliblng shift, caliblng mincachelines, caliblng MHz, FILE *fp, caliblng * maxstride)
 {
 	caliblng i, x=0, y, z, stride, minspots, maxspots, p;

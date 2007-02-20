@@ -278,6 +278,7 @@ proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
 @c
 #include "monetdb4_config.h"
 #include <monet.h>
+#include "mkey.proto.h"
 
 #define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
 

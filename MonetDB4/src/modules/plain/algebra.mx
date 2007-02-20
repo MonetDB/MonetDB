@@ -1740,7 +1740,6 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:binary(sunion,BATsunion)@
 @:binary(kunion,BATkunion)@
 @:binary(sintersect,BATsintersect)@
-@:binary(kintersect,BATkintersect)@
 @:binary(tintersect,BATtintersect)@
 @:binary(sdiff,BATsdiff)@
 @:binary(kdiff,BATkdiff)@

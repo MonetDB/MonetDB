@@ -146,7 +146,7 @@ int pqueue_enqueue_@1@2(BAT *h,
 
 /* moves down the root element */
 /* used by dequeue (see below) */
-int pqueue_movedowntop_@1@2(BAT *h)
+static int pqueue_movedowntop_@1@2(BAT *h)
 {
   BUN hbase;
   BUN swp,cur;
@@ -337,7 +337,7 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
 
 /* moves down the root element */
 /* used by dequeue (see below) */
-int pqueue_movedowntop_any@1(BAT *h)
+static int pqueue_movedowntop_any@1(BAT *h)
 {
   BUN hbase;
   BUN swp,cur;

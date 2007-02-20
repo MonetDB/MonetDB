@@ -54,7 +54,6 @@ typedef struct CLIENT {
 	str passwd;		/* passwd name. */
 	time_t login;		/* session start time */
 	int permission;		/* not yet used. */
-	int blocked;		/* blocked stream ? */
 	stream *fdin, *fdout;	/* streams from and to user. */
 	stream *bkin, *bkout;	/* backup stream storage */
 	int listing;		/* echo input */
@@ -234,7 +233,7 @@ scheduleClient(Client c)
 		GDKfatal("scheduleClient: Daemon mode without startup script\n");
 }
 
-void
+static void
 rescheduleClient(Client c)
 {
 	Request rm = newRequest(c->stk, c->mil_accept, 0);

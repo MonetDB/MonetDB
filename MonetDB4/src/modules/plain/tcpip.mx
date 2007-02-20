@@ -330,7 +330,7 @@ atom_type(str s)
 The reverse is @%atom_name()@: it provides the clean name
 (without {\tt <user>_} prepended) of a type.
 @c
-str
+static str
 atom_name(int tpe)
 {
 	char *nme, *p;
@@ -824,7 +824,6 @@ the standard mechanism.
 					if (*errbuf) {
 						char msg[16384];
 						size_t len;
-						SOCKET fd = connections[i].sock;
 
 						snprintf(msg, 16384, "err:%s:" SZFMT "\n", nm, strlen(errbuf) + 1);
 						len = strlen(msg);
@@ -971,9 +970,10 @@ First stop to examine its type, and heap sizes.
 					}
 @= getoid
                 if (ts && (ts = strchr(ts,':'))) {
-                        int len = sizeof(oid);
-                        oid *dst = &(@1);
-                        OIDfromStr(++ts, &len, &dst);
+                        int _len = sizeof(oid);
+                        oid *_dst = &(@1);
+
+                        OIDfromStr(++ts, &_len, &_dst);
                 }
 @c
 					@:getoid(b->halign)@
@@ -1370,7 +1370,6 @@ TCPopen(int *retval, str address)
 	}
 
 	if (strcmp(host,"localhost") == 0 || strcmp(host,hostname()) == 0) {
-		int i;
 		for (i = 0; i < MAX_LISTENERS; i++) {
 			if (ports[i] == port) {
 				GDKerror("There is no support for loopback communication\n");
@@ -1587,7 +1586,7 @@ int
 TCPimport(ptr retval,		/* put pointer atom here */
 	  int *rettpe,		/* put type of atom here */
 	  str name,		/* string: pointer to char. */
-	  bit *remove		/* remove from the cache */
+	  bit *rm		/* remove from the cache */
     )
 {
 	cache_t *c;
@@ -1651,7 +1650,7 @@ Copy from the cache into the return value.
 	} else {
 		memcpy(retval, c->val.pval, ATOMsize(c->tpe));
 	}
-	if (*remove) {
+	if (*rm) {
 		cache_del(c);
 	} else if (c->locked) {
 		MT_up_sema(c->barrier, "TCPimport");

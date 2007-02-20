@@ -152,28 +152,31 @@ typedef struct mapi_client
 {
 	int frontend; 	/* which frontend (> MAX_FRONTENDS == UNUSED) */
 	int inuse;
-    	Cntxt stk; 
+	Cntxt stk; 
 	Client c;	/* monet client */
 
-    	Variable 
-	       lastvar; /* last MIL variable that should be cleared after execution */
+	Variable 
+		lastvar; /* last MIL variable that should be cleared after execution */
 
 	void *fc; 	/* frontend client */
 	MT_Id t;	/* 0 (no thread assigned), or thread for this client */
 	MT_Sema s;	/* sema to (de)activate thread */ 
 	Thread thread;	/* monet thread */
+
+	void (*engine)(struct mapi_client *fc);  
+	void *arg;
 } mapi_client;
 
 typedef struct frontend
 {
 	int nr;
 	int clients;
-	int cache_limit;		    /* max number of cached clients */
+	int cache_limit;		/* max number of cached clients */
 	char *name; 		
 	char *(*f_alloc)(mapi_client *fc);  /* returns error string (NULL if ok) */  
 	char *(*f_init)(mapi_client *fc);   /* returns error string (NULL if ok) */
 	void (*f_engine)(mapi_client *fc);  /* read/parse/execute loop */
-	void (*f_free)(mapi_client *fc);    /* free any resources used by the client of this frontend */
+	void (*f_free)(mapi_client *fc);	/* free any resources used by the client of this frontend */
 
 } mapi_frontend;
 
@@ -211,8 +214,8 @@ static mapi_client mapi_clients[MAXCLIENTS + 1];
 static int nr_mapi_clients = 0;
 static MT_Lock mapi_cache_lock;
 
-void
-init_client_cache()
+static void
+init_client_cache(void)
 {
 	int i;
 
@@ -233,7 +236,7 @@ init_client_cache()
 }
 
 static void
-exit_client_cache()
+exit_client_cache(void)
 {
 	int i;
 
@@ -345,7 +348,7 @@ find_frontend( char *l )
 }
 
 static void
-mapi_client_end(mapi_client *fc, int keep_open)
+mapi_client_end(mapi_client *fc)
 {
 	Variable v;
 	
@@ -354,12 +357,12 @@ mapi_client_end(mapi_client *fc, int keep_open)
 		VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
 		VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
 	}
-	if (!keep_open && fc->c->fdout) {
+	if (fc->c->fdout) {
 		stream_close(fc->c->fdout);
 		stream_destroy(fc->c->fdout);
 		fc->c->fdout = NULL;
 	}
-	if (!keep_open && fc->c->fdin) {
+	if (fc->c->fdin) {
 		stream_close(fc->c->fdin);
 		stream_destroy(fc->c->fdin);
 		fc->c->fdin = NULL;
@@ -396,17 +399,18 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	int i = (int) (c - monet_clients);
 
 	mc = mapi_clients+i;
+	mc->engine = f->f_engine;
 	mc->frontend = f->nr;
 	mc->inuse = 1;
 	mc->t = ~(MT_Id)0;
-        MT_init_sema(mc->s, 0);
+	MT_init_sema(mc->s, 0);
 	mc->lastvar = monet_cntxt[mc->stk].var;
 	if ((err = f->f_alloc(mc)) != NULL){
 		if (s) {
 			stream_printf(s, "!ERROR: %s\n", err);
 			stream_flush(s);
 		}
-		mapi_client_end(mc, 0); 
+		mapi_client_end(mc); 
 		mapi_client_free(mc);
 		return NULL;
 	}
@@ -499,10 +503,10 @@ mapi_client_engine(void *FC )
 			break;
 		fc->thread->data[0] = fc->c->fdout;
 		fc->thread->data[1] = fc->c->fdin;
-		f->f_engine(fc);
+		fc->engine(fc);
 		fc->c->mode = STARTING;
 	
-		mapi_client_end(fc, 1);
+		mapi_client_end(fc);
 		/* possible race condition, but net result is limited */
 		if (f->clients > f->cache_limit) { 
 			break;
@@ -513,17 +517,6 @@ mapi_client_engine(void *FC )
 	f->f_free(fc);
 	mapi_client_free(fc);
 }
-
-
-static void
-prompt(stream *fdout, int blocked)
-{
-	if (!blocked)
-		stream_write(fdout, PROMPT1, sizeof(PROMPT1) - 1, 1);
-	else
-		stream_flush(fdout);
-}
-
 
 mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang ) 
 {
@@ -541,10 +534,17 @@ mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang )
 		if (!(fc = mapi_client_alloc(f, monet_clients, 0, fdout))) 
 			return NULL;
 	}
+	if (strcmp(lang, "xquery") == 0 &&
+			fc->t == ~(MT_Id) 0 && 
+			MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) 
+	{
+		GDKsyserror("MAPIlisten:mapi_client failed\n");
+		fc->t = ~(MT_Id) 0;
+	}
+	fc->arg = NULL;
 	c = fc->c;
 	c->fdin = fdin;
 	c->fdout = fdout;
-	c->blocked = 0;
 	if (c->user)
 		GDKfree(c->user);
 	if (c->passwd)
@@ -580,62 +580,116 @@ int active_clients(char *lang)
 static mapi_client*
 xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new_client)
 {
-	char buf[BLOCK];
-	char *user, *passwd = NULL, *lang = NULL, *mode = NULL, *db = NULL;
-	int blocked = 0;
-	char *challenge, *err;
-	ssize_t len;
+	char buf[BLOCK+1];
+	char *s, *user, *passwd = NULL, *lang = NULL, *algo = NULL, *database = NULL;
+	char *err;
 	mapi_client *fc = NULL;
 	mapi_frontend *f = NULL;
 	Client c;
+	int len = 0;
 
+	/* create blockstreams */
+	fdin = block_stream(fdin);
+	fdout = block_stream(fdout);
+
+	/* write challenge string, the challenge is currently empty, and we
+	 * only offer "plain" cypher algorithm to fake proto 8 support */
+	s = ":mserver:8:plain:" 
+#ifdef WORDS_BIGENDIAN
+			"BIG"
+#else
+			"LIT"
+#endif
+	;
+	stream_write(fdout, s, strlen(s), 1);
+	stream_flush(fdout);
+
+	/* get response */
+	s = buf;
+	len = stream_read_block(fdin, buf, 1, BLOCK);
+	assert(len <= BLOCK);
+	buf[len] = 0;
+
+	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 	user = buf;
 
-	/* write challenge string, the challenge is currently empty */
-	challenge = "::mserver:6\n";
-	snprintf(buf, BLOCK, "%2u%s", 
-		(unsigned int)strlen(challenge), challenge);
-	stream_write(fdout, buf, strlen(buf), 1);
-		
-	/* get user:passwd:language:blocked|line[:database]\n */
-	if ((len = stream_readline(fdin, user, BLOCK)) < 0) 
-		return NULL;
-	user[len] = 0;
-	passwd = strchr(user, ':');
-	if (passwd) {
-		*passwd++ = 0;
-		lang = strchr(passwd, ':');
-	}
-	if (lang) {
-		*lang++ = 0;
-		mode = strchr(lang, ':');
-	}
-	if (mode) {
-		*mode++ = 0;
-		db = strchr(mode, ':');
-	}
-	if (db) 
-		*db++ = 0;
-
-	if (mode && strncmp(mode, "blocked", 7) == 0) 
-		blocked = 1;
-
-	if (!user || !passwd || !lang || !mode) { 
-		stream_printf(fdout, "!ERROR: client: protocol error\n");
-		prompt(fdout, 0);
+	/* byte order */
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		stream_set_byteorder(fdin, strcmp(user, "BIG") == 0);
+		user = s + 1;
+	} else {
+		/* no inspiration on how to signal this case properly */
+		stream_printf(fdout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fdout);
 		return NULL;
 	}
 
-	if (blocked) {
-		fdin = block_stream(stream_rstream(fdin));
-		fdout = block_stream(stream_wstream(fdout));
+	/* passwd */
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		passwd = s + 1;
+		/* decode algorithm, i.e. {plain}mypasswordchallenge */
+		if (*passwd != '{') {
+			stream_printf(fdout, "!invalid password entry\n");
+			stream_flush(fdout);
+			return NULL;
+		}
+		algo = passwd + 1;
+		s = strchr(algo, '}');
+		if (!s) {
+			stream_printf(fdout, "!invalid password entry\n");
+			stream_flush(fdout);
+			return NULL;
+		}
+		*s = 0;
+		if (strcmp(algo, "plain") != 0) {
+			stream_printf(fdout, "!algorithm %s not supported (client violated the protocol)\n", algo);
+			stream_flush(fdout);
+			return NULL;
+		}
+		passwd = s + 1;
+	} else {
+		stream_printf(fdout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fdout);
+		return NULL;
 	}
+
+	/* lang */
+	s = strchr(passwd, ':');
+	if (s) {
+		*s = 0;
+		lang = s + 1;
+	} else {
+		stream_printf(fdout, "!incomplete challenge, missing language\n");
+		stream_flush(fdout);
+		return NULL;
+	}
+
+	/* database */
+	s = strchr(lang, ':');
+	if (s) {
+		*s = 0;
+		database = s + 1;
+		/* we can have stuff following, make it void */
+		s = strchr(database, ':');
+		if (s)
+			*s = 0;
+		if (strlen(database) > 0 &&
+			strcmp(database, GDKgetenv("gdk_dbname")) != 0) {
+			stream_printf(fdout, "#MonetDB v4 doesn't have multiple database support, argument ignored\n");
+		}
+	}
+
+
 	f = find_frontend(lang);
 
 	if (!f) {
 		stream_printf(fdout,
-		 "!ERROR: xchange_challenge: frontend %s not found\n", lang);
-		prompt(fdout, blocked);
+		 "!xchange_challenge: frontend %s not found\n", lang);
+		stream_flush(fdout);
 		return NULL;
 	}
 
@@ -651,32 +705,32 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	c = fc->c;
 	c->fdin = fdin;
 	c->fdout = fdout;
-	c->blocked = blocked;
 	if (c->user)
 		GDKfree(c->user);
 	if (c->passwd)
 		GDKfree(c->passwd);
-	c->user = GDKstrdup(buf);
+	c->user = GDKstrdup(user);
 	c->passwd = GDKstrdup(passwd);
 
 	if ((err = f->f_init(fc)) != NULL) {
 		fc->inuse = 0; 
-		stream_printf(fdout, "!ERROR: %s\n", err);
-		prompt(fdout, blocked);
+		stream_printf(fdout, "!%s\n", err);
+		stream_flush(fdout);
 		return NULL;
 	}
 	return fc;
 }
 
 @= builtin_operand
-{       int _k = interpret(stk, arg(lt, @1), res);
-        if (_k < 0) {
-                return _k;
-        }
-        @3 = VALconvert(@2, res);
-        if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
-                return handle_paramerror(res,@1,res->vtype,@2);
-        }
+{
+	int _k = interpret(stk, arg(lt, @1), res);
+	if (_k < 0) {
+		return _k;
+	}
+	@3 = VALconvert(@2, res);
+	if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+		return handle_paramerror(res,@1,res->vtype,@2);
+	}
 }
 @c
 
@@ -884,7 +938,7 @@ Get the new information for the server socket and start listening.
 
 
 			if (fc->t == ~(MT_Id) 0 && 
-		            MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
+					MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
 				GDKsyserror("MAPIlisten:mapi_client failed\n");
 				fc->t = ~(MT_Id) 0;
 			}
@@ -898,7 +952,7 @@ Get the new information for the server socket and start listening.
 		unlink(usockfile);
 #endif
 	return GDK_SUCCEED;
-      error:
+error:
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
@@ -1219,7 +1273,7 @@ Get the new information for the server socket and start listening.
 			}
 
 			if (fc->t == ~(MT_Id) 0 && 
-		            MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
+					MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
 				GDKsyserror("MAPIlisten:mapi_client failed\n");
 				fc->t = ~(MT_Id) 0;
 			}
@@ -1227,12 +1281,12 @@ Get the new information for the server socket and start listening.
 			MT_up_sema(fc->s, "MAPIlisten");
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}
-	      end_loop:;
+end_loop:;
 	} while (1);
 	SSL_CTX_free(ctx);
 	close(sock);
 	return GDK_SUCCEED;
-      fail:;
+fail:;
 	if (sock >= 0)
 		close(sock);
 	if (ctx)
@@ -1288,13 +1342,13 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream **In, **Out;
 	stream *in, *out;
 	mapi_client *mc;
-	Client client;
+	Client klient;
 	char *old_in; 
 
-	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
+	CNTXTclient((Cntxt) (ptrdiff_t) stk, &klient);
 	/* get the streams from the argument list */
 	if (lt->cnt != 2) {
-		closeClient(client, 0);
+		closeClient(klient, 0);
 		return handle_argerror(res, lt->cnt, 2);
 	}
 	@:builtin_operand(0,TYPE_Stream,In)@
@@ -1303,32 +1357,32 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 	out = *Out;
 	if (in == 0) {
 		GDKsyserror("client:stream-r problems\n");
-		closeClient(client, 0);
+		closeClient(klient, 0);
 		return GDK_FAIL;
 	}
 	if (out == 0) {
 		GDKsyserror("client:stream-w problems\n");
-		closeClient(client, 0);
+		closeClient(klient, 0);
 		return GDK_FAIL;
 	}
- 	mc = xchange_challenge(client, stk, in, out, 0);
+ 	mc = xchange_challenge(klient, stk, in, out, 0);
 	if (mc == NULL) {
 		GDKsyserror("client:stream-w problems\n");
-		closeClient(client, 0);
+		closeClient(klient, 0);
 		return GDK_FAIL;
 	}
 
 	f = mapi_frontends[mc->frontend];
 	monetSetChannel(mc->thread, mc->c->fdin, mc->c->fdout);
-	old_in = client -> input; 
-	client->input = (str) GDKmalloc(4096);
-	client->limit = client->input + 4096;
-	client->top = client->input;
-	*client->top = 0;
+	old_in = klient -> input; 
+	klient->input = (str) GDKmalloc(4096);
+	klient->limit = klient->input + 4096;
+	klient->top = klient->input;
+	*klient->top = 0;
 	f->f_engine(mc);
-	GDKfree(client->input);
-	client->input = old_in;
-	mapi_client_end(mc, 0); 	
+	GDKfree(klient->input);
+	klient->input = old_in;
+	mapi_client_end(mc); 	
 	return GDK_SUCCEED;
 }
 

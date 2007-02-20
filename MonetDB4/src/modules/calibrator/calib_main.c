@@ -34,7 +34,7 @@ struct fullInfo {
 	AssoInfo *Asso;
 };
 
-struct fullInfo *
+static struct fullInfo *
 mainRun(caliblng MHz, caliblng maxrange, char *fname)
 {
 	caliblng align = 0;
@@ -271,7 +271,7 @@ mainRun(caliblng MHz, caliblng maxrange, char *fname)
 
 }
 
-void
+static void
 freeFullInfo(struct fullInfo *caliInfo)
 {
 	free(caliInfo->cache);

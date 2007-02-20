@@ -427,7 +427,7 @@ str ll_mod = NULL;
 
 
 void
-ll_reset()
+ll_reset(void)
 {
 	ll_insert = NULL;
 }
@@ -456,7 +456,7 @@ ll_push(str s, str mod)
 	return 1;
 }
 
-int
+static int
 ll_pop(void)
 {
 	strstack *sp = ll_stack;
@@ -478,7 +478,7 @@ ll_pop(void)
 }
 
 str
-ll_parent_module()
+ll_parent_module(void)
 {
 	if (ll_mod)
 		return ll_mod;
@@ -630,7 +630,6 @@ ll_lastline(void)
 
 m_export int ll_modcmds;	/* are "module" cmd or tokens? */
 m_export int ll_resolution;	/* perform ident-->MIL resolution */
-m_export Client ll_client;
 m_export int ll_nlines;		/* current number of string chunks */
 m_export int ll_maxlines;	/* maximum number of string chunks */
 m_export str *ll_lines;		/* string chunks */
@@ -651,6 +650,10 @@ m_export int ll_getstring(char *buf, int max_size);
 m_export int ll_push(str s, str mod);
 m_export void ll_reset(void);
 m_export str ll_parent_module(void);
+
+extern YYSTREE yysugar(YYSTREE);
+extern int yywrap(void);
+extern char *LEXNAME(int);
 
 #endif /* _MONET_PARSE_H */
 
@@ -716,8 +719,6 @@ extern int yylex(void);
 
 #undef yyerror
 #define yyerror(X)	ll_parserror(NULL);
-
-extern YYSTREE yysugar(YYSTREE node);
 %}
 
 %token TOK_ITERTEMP TOK_TEMPLATE TOK_VARTEMP TOK_RANGETEMP

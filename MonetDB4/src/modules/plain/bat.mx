@@ -1212,7 +1212,7 @@ local_utoa(size_t i)
 
 #define COLLISION 6
 
-void
+static void
 HASHinfo(BAT *bn, Hash *h, str s)
 {
 	hash_t i;
@@ -1286,7 +1286,7 @@ int
 CMDinfo(BAT **retval, BAT *b)
 {
 	BAT *bn;
-	char mode[1024], *access;
+	char mode[1024], *accessmode;
 
 	if (!(bn = BATnew(TYPE_str, TYPE_str, 128)))
 		return GDK_FAIL;
@@ -1304,16 +1304,16 @@ CMDinfo(BAT **retval, BAT *b)
 
 	switch (b->batRestricted) {
 	case BAT_READ:
-		access = "read-only";
+		accessmode = "read-only";
 		break;
 	case BAT_WRITE:
-		access = "updatable";
+		accessmode = "updatable";
 		break;
 	case BAT_APPEND:
-		access = "append-only";
+		accessmode = "append-only";
 		break;
 	default:
-		access = "unknown";
+		accessmode = "unknown";
 	}
 
 	BUNins(bn, "version", local_itoa(b->GDKversion),FALSE);
@@ -1324,7 +1324,7 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "head", ATOMname(b->htype),FALSE);
 	BUNins(bn, "tail", ATOMname(b->ttype),FALSE);
 	BUNins(bn, "batPersistence", mode,FALSE);
-	BUNins(bn, "batRestricted", access,FALSE);
+	BUNins(bn, "batRestricted", accessmode,FALSE);
 	BUNins(bn, "batRefcnt", local_itoa(BBP_refs(b->batCacheid)),FALSE);
 	BUNins(bn, "batLRefcnt", local_itoa(BBP_lrefs(b->batCacheid)),FALSE);
 	BUNins(bn, "batDirty", BATdirty(b) ? "dirty" : "clean",FALSE);
@@ -1872,7 +1872,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	MT_mmap_hdl hdl;
 
    	/* try to use fast page-wise memory mapping technique on read-only mmapped [void,X] bats */ 
-        char* mmap = (((BUNfirst(b) - b->batBuns->base) & REMAP_PAGE_MASK) == 0 &&
+        char* mmappath = (((BUNfirst(b) - b->batBuns->base) & REMAP_PAGE_MASK) == 0 &&
                     (b->batRestricted != BAT_WRITE) &&
 	            (b->batBuns->storage == STORE_MMAP))?path:NULL;
 
@@ -1892,8 +1892,8 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 		if (bn == NULL) return GDK_FAIL;
 		BATseqbase(bn, 0);
 		if (cnt) {
-			oid pid = *(oid*) BUNtail(map,BUNfirst(map));
-			BATseqbase(BATmirror(bn), pid << REMAP_PAGE_BITS);
+			oid mpid = *(oid*) BUNtail(map,BUNfirst(map));
+			BATseqbase(BATmirror(bn), mpid << REMAP_PAGE_BITS);
 		}
         	BATsetcount(bn,cnt <<= REMAP_PAGE_BITS);
 		bn->batBuns->free += cnt*BUNsize(bn);
@@ -1947,15 +1947,15 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 		}
 	}
 	/* try to get a reserved mmap region */
-	if (mmap) {
+	if (mmappath) {
 		void *base;
 		if (bn->batBuns->filename)
 			GDKfree(bn->batBuns->filename); 
 		bn->batBuns->filename = GDKstrdup(b->batBuns->filename); 
 		if (bn->batBuns->filename == NULL)
 			goto error;
-                GDKfilepath(mmap, BATDIR, bn->batBuns->filename, NULL);
-		base = MT_mmap_open(&hdl, mmap, mode, 0, n, cnt);
+                GDKfilepath(mmappath, BATDIR, bn->batBuns->filename, NULL);
+		base = MT_mmap_open(&hdl, mmappath, mode, 0, n, cnt);
 		if (base == (void*) -1) goto error;
 
 		bn->batBuns->base = base;
@@ -1975,16 +1975,16 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	/* go over all pages and copy them in segments that unite consecutively mapped pages */
 	for(xx=1; xx<cnt; xx++) {
 		if (pid[xx]-1 != pid[xx-1]) {
-			if (!copy_segment(mmap ? &hdl : NULL, bn, b, pid[zz], zz, xx-zz))
+			if (!copy_segment(mmappath ? &hdl : NULL, bn, b, pid[zz], zz, xx-zz))
 				break;
 			zz = xx;
 		}
 	}
-	if (xx < cnt || !copy_segment(mmap ? &hdl : NULL, bn, b, pid[zz], zz, cnt-zz)) {
+	if (xx < cnt || !copy_segment(mmappath ? &hdl : NULL, bn, b, pid[zz], zz, cnt-zz)) {
 		HEAPfree(bn->batBuns);
 		goto error;
 	}
-	if (mmap) {
+	if (mmappath) {
 		MT_mmap_close(&hdl);
 		GDKvminc(n);
 	}
@@ -1996,7 +1996,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 		}
 	}
 	BBPcacheit(bn);
-	if (mmap) {
+	if (mmappath) {
 		/* if copy-on-write was used, make bn a logical view on b */
 		bn->batLview = TRUE;
 		bn->batBuns->copied = TRUE;
@@ -2004,7 +2004,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	}
 	return GDK_SUCCEED;
   error:
-	if (mmap)
+	if (mmappath)
 		MT_mmap_close(&hdl);
 	if (bn->theap) {
 		HEAPfree(bn->theap);
@@ -2030,7 +2030,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 #define SWIZZLE(idx) ((map[idx >> REMAP_PAGE_BITS] << REMAP_PAGE_BITS) | (idx & REMAP_PAGE_MASK))  
 #define SWIZZLE_CHECK(idx) ((map[(idx >> REMAP_PAGE_BITS) & (ok &= ((idx >= max) - 1))] << REMAP_PAGE_BITS) | (idx & REMAP_PAGE_MASK))  
 
-int 
+static int 
 swizzle(oid max, int htpe, oid tbase, size_t cnt, size_t delta,
         oid *__r dst, oid *__r map, oid *__r head, oid *__r tail) 
 {
@@ -2218,19 +2218,19 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 
 		/* write an idempotent byte into all pages that need isolation */
 		for(xx=0; xx<yy; xx++) {
-			unsigned int idx = bitmask[xx];
-			if (idx) {
+			unsigned int msk = bitmask[xx];
+			if (msk) {
 				chr *touch = ((chr*) b->batBuns->base) + xx * (pagesize << 5);
 				do {
-					if ((idx&127) == 0) { /* skip 7 clean pages */
-						idx >>=7; touch += (pagesize<<3)-pagesize;
+					if ((msk&127) == 0) { /* skip 7 clean pages */
+						msk >>=7; touch += (pagesize<<3)-pagesize;
 					} 
-					if (idx&1) {
+					if (msk&1) {
 						/* do LOAD/STORE; bit-AND with all-ones to fool compiler */
 						*(int*)touch = (*(int*)touch)&bogus; /* causes OS trap (copy-on-write) */
 					} 
-					idx >>= 1; touch += pagesize;
-				} while(idx);
+					msk >>= 1; touch += pagesize;
+				} while(msk);
 			} /* else: skip 32 clean pages */
 		}
 		GDKfree(bitmask);

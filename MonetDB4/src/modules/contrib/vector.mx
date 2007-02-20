@@ -318,7 +318,7 @@ typedef struct {
 #define convert_dbl long_long_SWAP
 
 @= varsized_c
-    size_t @1ssize(int dim) {
+    static size_t @1ssize(int dim) {
       return(sizeof(@1s) + (((dim > 0) ? (dim - 1) : (0)) * sizeof(@1)));
     }
 
@@ -409,9 +409,10 @@ typedef struct {
 			return NULL;
 		}
 		if (stream_byteorder(s) != 1234){
-			int i;
-			for (i=0;i<dim;i++) {
-				@6 *p = (@6 *) &a->data[i];
+			int n;
+
+			for (n = 0; n < dim; n++) {
+				@6 *p = (@6 *) &a->data[n];
 				*p = convert_@1(*p);
 			}
 		}
@@ -444,8 +445,8 @@ typedef struct {
         return(1);
     }
 
-    void atom_@1s_del(Heap* h,var_t* index) {
-        HEAP_free(h,(size_t)*index);
+    void atom_@1s_del(Heap* h,var_t* idx) {
+        HEAP_free(h,(size_t)*idx);
     }
 
     @1s *atom_@1s_null(void) {
@@ -729,12 +730,12 @@ typedef struct {
         return GDK_SUCCEED;
     }
 
-    int cmd_@1s_getval(@1 *rval, @1s *I, int *index) {
-        if((*index > I->dimension) || (*index < 0)) {
+    int cmd_@1s_getval(@1 *rval, @1s *I, int *idx) {
+        if((*idx > I->dimension) || (*idx < 0)) {
             GDKwarning("[cmd_@1s_getval]: Index out of bounds.\n");
             return(GDK_FAIL);
         }
-        *rval = I->data[*index];
+        *rval = I->data[*idx];
         return(GDK_SUCCEED);
     }
 

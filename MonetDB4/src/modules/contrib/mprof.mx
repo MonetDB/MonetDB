@@ -497,6 +497,7 @@ and all its children.
 #include "mprof.h"
 #include "algebra.h"
 #include <stdlib.h>
+#include "mprof.proto.h"
 
 static Tms Tmsnullval;
 
@@ -1051,7 +1052,7 @@ static int Mprof_init = 0;
 
 #define MprofOK (Mprof_init == 13)
 
-void
+static void
 pmBat(BAT **keep, str name, int typ1, int typ2)
 {
 	BAT *b;

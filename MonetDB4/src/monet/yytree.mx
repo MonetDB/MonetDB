@@ -200,7 +200,9 @@ yycopy(YYSTREE t, int kill_orig, int func_parent, char** next, char** end)
 	}
 	if (!t->noyyval) {
 		tn->yyval = t->yyval;
-		if (kill_orig) {
+		if (kill_orig == 2) {
+			VALcopy(&tn->yyval,&t->yyval);
+		} else if (kill_orig) {
 			/* steal the memory from the copied node */ 
 			t->yyval.val.pval = NULL;
 			t->yyval.vtype = 0;
@@ -355,7 +357,7 @@ Myylogpop(void)
 }
 
 void 
-Myylogclean() 
+Myylogclean(void)
 {
 	yy_backup = sizeof(char*);
 	yy_sync = NULL;
@@ -489,7 +491,7 @@ Myycopy(YYSTREE t)
 	/* make a memory-tight copy of the tree constructed by the parser, and steal the pointers */ 
 	char *t_next = NULL, *t_size = NULL;
 
-	return yycopy(t, 0, 0, &t_next, &t_size);
+	return yycopy(t, 2, 0, &t_next, &t_size);
 }
 
 
@@ -507,8 +509,11 @@ the new values just have to be assembled in the array, without having to
 traverse the MIL tree.
 @c
 /* debug/yysubst: get GDKmalloc block length from pointer */
-size_t yysize(void* p) {
+static size_t
+yysize(void* p)
+{
 	ssize_t n = ((ssize_t*) (p))[-1];
+
 	return (n<0)?-n:n; 
 }
 
@@ -779,7 +784,6 @@ Myysize(YYSTREE t, size_t *attached)
 	*attached = me_attached + sons_attached;	
 	return me_attached + tot;
 }
-extern str LEXNAME(int);
 
 static void
 yyprint(YYSTREE yytree, unsigned int level)

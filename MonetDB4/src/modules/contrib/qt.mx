@@ -275,15 +275,15 @@ qt_prelude(void)
 				idtoxy->id_x = idtoxy->id_y = 0;
 
 				for (b = nbits - 1; b >= 0; b--) {
-					int bit;
+					int flag;
 
-					bit = (j >> b) & 1;
+					flag = (j >> b) & 1;
 
 					if (b % 2)
-						idtoxy->id_y = (idtoxy->id_y << 1) | bit;
+						idtoxy->id_y = (idtoxy->id_y << 1) | flag;
 
 					else
-						idtoxy->id_x = (idtoxy->id_x << 1) | bit;
+						idtoxy->id_x = (idtoxy->id_x << 1) | flag;
 				}
 
 				levels[n].lvl_xytoid[idtoxy->id_y * levels[n].lvl_nid_dir + idtoxy->id_x] = j;
@@ -498,8 +498,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
 			printf("[y %d]: ", y);
 			for (x = 0; x != spot_w; x++)
 				if (spot[y * spot_w + x] & QTE_VALID) {
-					int color = get_color(spot[y * spot_w + x], ColorSpace_IR_12);
-
+					color = get_color(spot[y * spot_w + x], ColorSpace_IR_12);
 					if (color !=lcolor)
 						printf("%d ", color);
 					lcolor = color;

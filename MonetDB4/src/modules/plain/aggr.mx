@@ -724,7 +724,7 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 
 
 @= extreme
-int
+static int
 CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));

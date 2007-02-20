@@ -240,15 +240,15 @@ proc CTderive(BAT[oid,any] ct, BAT[oid,any] attr) : grp {
 
 @+ groups
 
-@c
-#include "monetdb4_config.h"
-#include "algebra.h"
-
+@h
 typedef struct grp_t {
 	bat map;
 	bat histo;
 } grp;
-
+@c
+#include "monetdb4_config.h"
+#include "algebra.h"
+#include "xtables.h"
 #include "xtables.proto.h"
 
 @- Implementation
@@ -277,7 +277,7 @@ CThistogram(BAT **b, grp *g )
 	return GDK_SUCCEED;
 }
 
-int 
+static int 
 grp_new( grp *g, BAT *b, BAT *h ) 
 {
 	g->map = b->batCacheid;
@@ -409,28 +409,30 @@ typedef struct {
 	if (m) {							\
 		map = m->map; hash = m->hash; mask = m->mask;		\
 	} else {							\
-		hash_t yy;						\
+		hash_t _yy;						\
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
 		hash = (hash_t*) GDKmalloc((int)(sizeof(hash_t)*((mask=@2)+1))); \
-		for (yy=0; yy<=@2; yy++) {				\
-			hash[yy] = HASH_MAX;				\
+		for (_yy=0; _yy<=@2; _yy++) {				\
+			hash[_yy] = HASH_MAX;				\
 		}							\
 	}								\
 	entry.cnt = 1;							\
 	mapsize = BUNindex(map, BUNlast(map));
 @c
-void
+#if 0
+static void
 map_free(map_T m)
 {
 	BBPreclaim(m.map);
 	HEAPfree(&m.hp);
 }
+#endif
 
 #ifndef offsetof
 #define offsetof(type, member)	((size_t) &((type *) 0)->member)
 #endif
 
-BAT *
+static BAT *
 map2histo(BAT *map)
 {
 	if (map == NULL || map->htype != TYPE_mapentry || VIEWparent(map) || map->batSharecnt > 1 || BATgetaccess(map) != BAT_WRITE) {
@@ -483,7 +485,7 @@ settings differ significantly from the original datamining application.
 #define group_params_CUSTOM   hash_t custom_MASK, int custom_rng,
 
 @= group
-BAT *
+static BAT *
 CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 {
 	oid *dst = (oid*) BUNfirst(bn);
@@ -546,7 +548,7 @@ bunins_failed:
 	return NULL;
 }
 @c
-int
+static int
 tailtype(BAT *b, int str_trick)
 {
 	int tpe = ATOMstorage(b->ttype);	/* standard type remappings */
@@ -700,7 +702,7 @@ bits(size_t i)
 	}
 
 @= derive
-BAT *
+static BAT *
 CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 {
 	oid *dst = (oid*) BUNfirst(bn);
@@ -809,7 +811,7 @@ bunins_failed:
 		break;
 	}
 @c
-int
+static int
 derive(grp *g, grp *ct, BAT *b, int tt, map_T *m)
 {
 	BAT *ct_map = BATdescriptor(ct->map); 

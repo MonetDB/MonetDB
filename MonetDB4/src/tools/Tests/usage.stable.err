@@ -10,7 +10,7 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
 # 16:36:12 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/devel/MonetDB/Linux/src/tools/.libs/lt-Mserver [ options ] [ script+ ]                   
+Usage: Mserver [ options ] [ script+ ]                   
 Options are:                                        
  -c <config_file>    | --config=<config_file>       
                        --dbname=<database_name>     
@@ -24,7 +24,7 @@ Options are:
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient -?
 # 16:36:12 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/devel/MonetDB/Linux/src/mapi/clients/C/.libs/lt-MapiClient [ options ]
+Usage: MapiClient [ options ]
 Options are:
  -b t/f      | --blocked=true/false /* blocked mode */
  -c config   | --config=file    /* config filename */
@@ -61,12 +61,22 @@ Options are:
 	host to connect to (default: localhost)
 --port port
 	port to connect to (default: 50000)
+--user user
+	login as user (default: monetdb)
+--passwd passwd
+	password (default: monetdb)
+--language language
+	language (default: sql)
+--database database
+	database (default: "")
+--mapi_trace
+	mapi_trace
 
-# 15:14:07 >  
-# 15:14:07 >  Mtimeout -timeout 60 msqldump -?
-# 15:14:07 >  
+# 07:35:51 >  
+# 07:35:51 >  Mtimeout -timeout 60 msqldump -?
+# 07:35:51 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/devel/MonetDB/Linux/src/mapi/clients/C/.libs/lt-msqldump [ options ]
+Usage: msqldump [ options ]
 Options are:
  -c config   | --config=file    /* config filename */
  -h hostname | --host=hostname  /* host to connect to */

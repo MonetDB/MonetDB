@@ -96,7 +96,7 @@ Provides basic similarity metrics for strings.
  * Get a pointer to the specified cell of the matrix
  **************************************************/
 
-inline int *
+static inline int *
 levenshtein_GetCellPointer(int *pOrigin, int col, int row, int nCols)
 {
 	return pOrigin + col + (row * (nCols + 1));
@@ -106,7 +106,7 @@ levenshtein_GetCellPointer(int *pOrigin, int col, int row, int nCols)
  * Get the contents of the specified cell in the matrix 
  *****************************************************/
 
-inline int
+static inline int
 levenshtein_GetAt(int *pOrigin, int col, int row, int nCols)
 {
 	int *pCell;
@@ -120,7 +120,7 @@ levenshtein_GetAt(int *pOrigin, int col, int row, int nCols)
  * Fill the specified cell in the matrix with the value x
  *******************************************************/
 
-inline void
+static inline void
 levenshtein_PutAt(int *pOrigin, int col, int row, int nCols, int x)
 {
 	int *pCell;
@@ -257,7 +257,7 @@ SCode(unsigned char c)
 	return (Code[toupper(c) - 'A']);
 }
 
-void
+static void
 soundex_code(char *Name, char *Key)
 {
 	char LastLetter;

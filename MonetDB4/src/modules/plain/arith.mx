@@ -367,6 +367,7 @@ The constants defined in limit.h are defined using autoloaded mil code.
 @c
 #include "monetdb4_config.h"
 #include "arith.h"
+#include "arith.proto.h"
 #include "stdlib.h"
 
 int

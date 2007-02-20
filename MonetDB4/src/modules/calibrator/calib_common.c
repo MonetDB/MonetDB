@@ -83,7 +83,7 @@ now(void)
 
 struct timeval oldtp = { 0, 0 };
 
-caliblng
+static caliblng
 now(void)
 {
 	struct timeval tp;
@@ -97,7 +97,7 @@ now(void)
 
 #endif
 
-void
+static void
 ErrXit(char *format, ...)
 {
 	va_list ap;
@@ -111,34 +111,13 @@ ErrXit(char *format, ...)
 	exit(1);
 }
 
-caliblng
+static caliblng
 cround(calibdbl x)
 {
 	return (caliblng) (x + 0.5);
 }
 
-char
-last(char *s)
-{
-	while (*s++) ;
-	return (s[-2]);
-}
-
-caliblng
-bytes(char *s)
-{
-	caliblng n = atoi(s);
-
-	if ((last(s) == 'k') || (last(s) == 'K'))
-		n *= 1024;
-	if ((last(s) == 'm') || (last(s) == 'M'))
-		n *= (1024 * 1024);
-	if ((last(s) == 'g') || (last(s) == 'G'))
-		n *= (1024 * 1024 * 1024);
-	return (n);
-}
-
-caliblng
+static caliblng
 getMINTIME(void)
 {
 	caliblng t0 = 0, t1 = 0;

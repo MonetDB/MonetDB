@@ -1468,7 +1468,7 @@ int
 M4_RDX_BATinteger(BAT **ret, BAT *b, int *width)
 {
 	BAT *bn, *m;
-	int tpe, log = 0;
+	int tpe, lg = 0;
 	int val = *width;
 
 	while (val) {
@@ -1477,13 +1477,13 @@ M4_RDX_BATinteger(BAT **ret, BAT *b, int *width)
 		val >>= 1;
 		if (stop)
 			break;
-		log++;
+		lg++;
 	}
-	if (*width <= 0 || log > 8 || val) {
+	if (*width <= 0 || lg > 8 || val) {
 		GDKerror("BATinteger: unknown width %d\n", *width);
 		return GDK_FAIL;
 	}
-	tpe = TYPE_integer1 + log * 2;
+	tpe = TYPE_integer1 + lg * 2;
 	if (ATOMsize(tpe) <= ATOMsize(b->ttype)) {
 		/* view implementation */
 		bn = VIEWcreate(b);
@@ -1838,12 +1838,12 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 
 		while (src < end) {
 			hash_t x = any_RADIX(BUNtail(b, src), mask) >> shift;
-			BUN p = base + dst[x];
+			BUN bun = base + dst[x];
 
 			if (dst[x] == lim[x])
 				break;
-			integerCopy((int *) BUNhloc(bn, p), b, src, width, distance);
-			ATOMput(ttpe, bn->theap, BUNtloc(bn, p), BUNtail(b, src));
+			integerCopy((int *) BUNhloc(bn, bun), b, src, width, distance);
+			ATOMput(ttpe, bn->theap, BUNtloc(bn, bun), BUNtail(b, src));
 			dst[x] += dst_bunsize;
 			src += src_bunsize;
 		}
@@ -1852,12 +1852,12 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 
 		while (src < end) {
 			hash_t x = any_RADIX(BUNtail(b, src), mask) >> shift;
-			BUN p = base + dst[x];
+			BUN bun = base + dst[x];
 
 			if (dst[x] == lim[x])
 				break;
-			ATOMput(htpe, bn->hheap, BUNhloc(bn, p), BUNhead(b, src));
-			ATOMput(ttpe, bn->theap, BUNtloc(bn, p), BUNtail(b, src));
+			ATOMput(htpe, bn->hheap, BUNhloc(bn, bun), BUNhead(b, src));
+			ATOMput(ttpe, bn->theap, BUNtloc(bn, bun), BUNtail(b, src));
 			dst[x] += dst_bunsize;
 			src += src_bunsize;
 		}
@@ -1968,7 +1968,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 	int shift = ABS(*nbits), total_shift, res = 0;
 	size_t n;
 	size_t cap = BATcount(b);
-	int radix[MAXPARAMS], argc = 1, *p;
+	int radix[MAXPARAMS], argc = 1, *arg;
 	size_t *lim;
 	oid maxbits = 0;
 	bat limitid = BBPindex(nme);
@@ -1998,10 +1998,10 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 
 	radix[0] = *nbits;
 	/*va_start(ap, nbits);*/
-	while ((p = va_arg(ap, int *)) != NULL) {
-		ALGODEBUG THRprintf(GDKout, ",%d", *p);
+	while ((arg = va_arg(ap, int *)) != NULL) {
+		ALGODEBUG THRprintf(GDKout, ",%d", *arg);
 
-		radix[argc] = *p;
+		radix[argc] = *arg;
 		shift += ABS(radix[argc]);
 		argc++;
 	}

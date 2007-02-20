@@ -264,7 +264,7 @@ int
 interpret_file(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	int i;
-	char *ptr, *buf;
+	char *p, *buf;
 	Client c;
 
 	if (lt->cnt != 1) {
@@ -281,11 +281,11 @@ interpret_file(Cntxt stk, YYSTREE lt, ValPtr res)
 		GDKerror("interpret_file: string argument expected.\n");
 		return -1;
 	}
-	ptr = res->val.sval;
+	p = res->val.sval;
 
 	CNTXTclient(stk, &c);
 
-	buf = monet_load_script(ptr, NULL);
+	buf = monet_load_script(p, NULL);
 
 	if (buf) {
 		i = interpret_str(stk, buf, res);
@@ -318,7 +318,7 @@ The params macro above examines BATs that are used and creates VIEWs
 were appropiate. The below macro is called after execution and
 cleans up the created views.
 @c
-BAT *
+static BAT *
 interpret_pin(batrec *r, int force, str s)
 {
 	BAT *b;
@@ -353,7 +353,7 @@ interpret_pin(batrec *r, int force, str s)
 	return b;
 }
 
-void
+static void
 interpret_unpin(batrec *r, str s)
 {
 	BAT *b = BBP_cache(r->id);
@@ -383,7 +383,7 @@ interpret_unpin(batrec *r, str s)
 this macro interprets all parameters of name={operator,function,etc} 'lt'
 placing the parameter count in  'argc' and the result values in 'argv[1..argc]'
 @c
-int
+static int
 interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme)
 {
 	ValPtr val_array = params + 1;
@@ -444,7 +444,7 @@ interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme)
 	return argc;
 }
 
-void
+static void
 interpret_params_unpin(int argc, ValPtr argv, str op_name)
 {
 	int i = 0;
@@ -455,7 +455,7 @@ interpret_params_unpin(int argc, ValPtr argv, str op_name)
 		}
 }
 
-int
+static int
 interpret_params_pin(int argc, ValPtr argv, str op_name)
 {
 	int i, j;
@@ -535,7 +535,7 @@ startProfiler(stream *o)
 	return 0;
 }
 
-void 
+static void 
 commitProfiler(void)
 {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 3);
@@ -589,19 +589,19 @@ setProfilerMode(int mode)
 	}
 }
 BAT *
-getProfilerCount()
+getProfilerCount(void)
 {
 	return profilerCount;
 }
 
 BAT *
-getProfilerTicks()
+getProfilerTicks(void)
 {
 	return profilerTicks;
 }
 
 void
-resetProfiler()
+resetProfiler(void)
 {
 	if (profilerCount)
 		BATclear(profilerCount);
@@ -2090,7 +2090,7 @@ iterator_maketrees(Iteration handle, YYSTREE body, int parallel, int ht, int tt)
 	}
 }
 
-ptr
+static ptr
 interpret_fcn(int ht, int tt, int parallel)
 {
 	ptr addr;
@@ -2104,6 +2104,9 @@ interpret_fcn(int ht, int tt, int parallel)
 		break;
 	case TYPE_sht:
 		@:switch_ht(fshval)@
+		break;
+	case TYPE_wrd:
+		@:switch_ht(fwval)@
 		break;
 #if SIZEOF_OID == SIZEOF_INT
 	case TYPE_void:
@@ -2136,6 +2139,9 @@ interpret_fcn(int ht, int tt, int parallel)
 	case TYPE_sht:
 		@:switch_tt(@1,fshval)@
 		break;
+	case TYPE_wrd:
+		@:switch_tt(@1,fwval)@
+		break;
 #if SIZEOF_OID == SIZEOF_INT
 	case TYPE_void:
 #endif
@@ -2157,7 +2163,7 @@ interpret_fcn(int ht, int tt, int parallel)
 			@:switch_tt(@1,fpval)@
 	}
 @= switch_tt
-	addr = (ptr) ((parallel)?par_collect_@1_@2:tuple_interpret_@1_@2);
+	addr = (ptr) (parallel ? par_collect_@1_@2 : tuple_interpret_@1_@2);
 @c
 	return addr;
 }
@@ -2269,7 +2275,6 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 	 */
 	if (parallel > 1) {
 		YYSTREE t;
-		int i;
 
 		/* limit tree size to handle->parcnt, by 'hiding' child nodes, hacking the yystree->cnt field */
 		for (t = handle->tree, i = handle->parcnt; t; t = YYOVERFLOW(t), i -= YYMAXSONS) {
@@ -2306,7 +2311,7 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 Directly execute the body with head and tail substituted in.
 
 @= tuple_interpret
-int
+static int
 tuple_interpret_@1@2_@3@4(ptr head, ptr tail, Iteration handle)
 {
 	ValRecord res;
@@ -2331,7 +2336,7 @@ have been interpreted.
 The M is user-defined as in: <bat-expr>@[M]<iterator><stmt>
 @c
 @= par_collect
-int
+static int
 par_collect_@1@2_@3@4(ptr head, ptr tail, Iteration handle)
 {
 	ValPtr params = handle->params+handle->parcnt+handle->parcnt;
@@ -2347,20 +2352,20 @@ par_collect_@1@2_@3@4(ptr head, ptr tail, Iteration handle)
 }
 @= par_interpret
 	if (@1->parcnt > 0) {
-		YYSTREE t;
-		unsigned i;
+		YYSTREE _t;
+		unsigned _i;
 
-		for (t = @1->tree; t; t = YYOVERFLOW(t))
-			for (i = 0; i < t->cnt; i++)
-				t->yysons[i]->par_retval = 0;
+		for (_t = @1->tree; _t; _t = YYOVERFLOW(_t))
+			for (_i = 0; _i < _t->cnt; _i++)
+				_t->yysons[_i]->par_retval = 0;
 
 		interpret_parblock(@1->stk, @1->tree, 0);
 
 		@1->status = 0;
-		for (t = @1->tree; t; t = YYOVERFLOW(t))
-			for (i = 0; i < t->cnt; i++)
-				if (t->yysons[i]->par_retval < 0)
-					@1->status = t->yysons[i]->par_retval;
+		for (_t = @1->tree; _t; _t = YYOVERFLOW(_t))
+			for (_i = 0; _i < _t->cnt; _i++)
+				if (_t->yysons[_i]->par_retval < 0)
+					@1->status = _t->yysons[_i]->par_retval;
 	}
 
 

@@ -95,6 +95,7 @@ ADDHELP("startProfiler", "manegold", "Feb 05 2004",
 #include "monet_queue.h"
 #include "monet_interpreter.h"
 #include "streams.h"
+#include "profiler.proto.h"
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
@@ -128,9 +129,8 @@ nouse(
 @+ Modules
 @c
 int
-startProfilerCMD(int *res)
+startProfilerCMD(void)
 {
-	(void) res;
 	setProfilerMode(2);
 	return GDK_SUCCEED;
 }
@@ -195,7 +195,7 @@ getProfilerTicksCMD(BAT **res)
 }
 
 int
-resetProfilerCMD()
+resetProfilerCMD(void)
 {
 	resetProfiler();
 	return GDK_SUCCEED;

@@ -217,7 +217,7 @@ BBPtmpname(str s, int len, bat i)
 }
 
 
-int
+static int
 fix_heap( BAT *b )
 {
 	if (b) {
@@ -328,7 +328,7 @@ fix_heap( BAT *b )
 	return GDK_SUCCEED;
 }
 
-int 
+static int 
 copy_heap(int storage, char *dst, char *dir, char *src, char *ext) 
 {
 	size_t res;
@@ -364,7 +364,7 @@ copy_heap(int storage, char *dst, char *dir, char *src, char *ext)
 	return 0;
 }
  
-int
+static int
 bat_convert(bat i, char *dir, char *physical, char **name ) 
 {
 	char path[PATHLENGTH], np[BUFSIZ], *new_physical = np;

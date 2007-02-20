@@ -621,7 +621,7 @@ QMclient(Request start, Client c)
 Dequeuing a request cascades to its dependents (in all directions).
 This way the user need not keep track of all requests generated on the fly.
 @c
-void
+static void
 QMdequeue(int qkey)
 {
 	Request q, p = QMrequest(qkey);

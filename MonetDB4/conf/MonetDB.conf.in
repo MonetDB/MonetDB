@@ -7,6 +7,7 @@
 # Where MonetDB is installed
 prefix=@Xprefix@
 exec_prefix=@Xexec_prefix@
+datadir=@Xdatadir@
 
 # GDK Section
 #============
@@ -119,9 +120,6 @@ sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@sql_logs
 # XQuery Interface Section
 #=========================
 
-# default port to address the HTTP server for pathfinder
-xquery_httpd_port=48080
-
 #output mode "dm" = pretty printed, 
 #            "xml" = enforce XML with enclosing <XQueryResult> tags
 xquery_output=dm                          
@@ -129,20 +127,38 @@ xquery_output=dm
 #limit the document cache on disk to 100MB
 xquery_cacheMB=100                      
 
+#rules like {URL=seconds;}* e.g. cache w3c for a day, CNN for 5 minutes
+#xquery_cacherules="http://www.w3.org/=79200;http://www.cnn.com=300"
+xquery_cacherules=""
+
 #limit the function cache in memory to 128MB
 xquery_procMB=128                    
-
-# standoff annotation XPath extension
-#standoff_ns=http://monetdb.cwi.nl/standoff
-standoff_ns=
-standoff_start=start
-standoff_end=end
 
 # Place to store transaction logs
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
 # it should be different directory as used for sql!
 xquery_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@xquery_logs
+
+
+# if not set port to address the HTTP server for pathfinder = mapi_port+1
+xrpc_port=""
+
+# xrpc daemon is open for outside connections by default
+xrpc_open="yes"
+
+# IP addresses separated by ';' who can execute scripts from /share/MonetDB/www/admin/
+xrpc_admin="127.0.0.1"
+
+# url prefixes of trusted modules separated by ';'
+xrpc_trusted="http://monetdb.cwi.nl;@Xexec_prefix@@DIRSEP@share@DIRSEP@MonetDB@DIRSEP@www@DIRSEP@export"
+
+
+# standoff annotation XPath extension
+#standoff_ns=http://monetdb.cwi.nl/standoff
+standoff_ns=
+standoff_start=start
+standoff_end=end
 
 # Profile Interface Section
 #====================================

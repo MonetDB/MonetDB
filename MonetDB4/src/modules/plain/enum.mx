@@ -623,14 +623,14 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 @= encode
 	{
 		BAT *bn = BATnew(src->htype, *enum_t, BATcount(src));
-		BUN p,q,r; int xx;
+		BUN p,q,r; int _xx;
 		@1 idx;
 
 		if (bn == NULL)
 			return GDK_FAIL;
 		if (BAThordered(b)&1) {
-			BATloopFast(src, p, q, xx) {
-				BUN r = (BUN) SORTfnd@3(b, BUNt@2(src,p));
+			BATloopFast(src, p, q, _xx) {
+				r = (BUN) SORTfnd@3(b, BUNt@2(src,p));
 				if (r == NULL) {
 					idx = @1_nil;
 				} else {
@@ -643,7 +643,7 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 				}
 			}
 		} else {
-			BATloopFast(src, p, q, xx) {
+			BATloopFast(src, p, q, _xx) {
 				HASHfnd@3(r, b, BUNt@2(src,p));
 				if (r == NULL) {
 					idx = @1_nil;
@@ -745,12 +745,12 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 @= decode
 {
 	BAT *bn = BATnew(src->htype, b->htype, BATcount(src));
-	BUN p,q; int xx;
+	BUN p,q; int _xx;
 	ptr w,nil = ATOMnilptr(b->htype);
 
 	if (bn == NULL)
 		return GDK_FAIL;
-	BATloopFast(src, p, q, xx) {
+	BATloopFast(src, p, q, _xx) {
 		@1 *idx = (@1*) BUNtloc(src,p);
 		if (*(@1*) idx == @1_nil) {
 			w = nil;

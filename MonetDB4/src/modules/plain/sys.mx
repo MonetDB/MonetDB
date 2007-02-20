@@ -747,9 +747,9 @@ view_bbp_kind(BAT **retval	/* put pointer to BAT[int,str] record here. */
 			char *mode = NULL;
 
 			if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT)) {
-				BAT *b = (BAT*)BBPgetdesc(i);
+				BAT *bt = (BAT*)BBPgetdesc(i);
 
-				mode = (b && b->batPersistence == SESSION) ? "sess" : "tran";
+				mode = (bt && bt->batPersistence == SESSION) ? "sess" : "tran";
 			} else {
 				mode = "pers";
 			}
@@ -1843,14 +1843,14 @@ format_fcn_sig(str *sig, oid *fid)
 }
 
 int
-print_mem_map()
+print_mem_map(void)
 {
 	MT_alloc_print();
 	return GDK_SUCCEED;
 }
 
 int
-print_color_map()
+print_color_map(void)
 {
 	MT_alloc_table();
 	return GDK_SUCCEED;

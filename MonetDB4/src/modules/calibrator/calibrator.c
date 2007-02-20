@@ -105,6 +105,27 @@ caliblng MINTIME = 10000;
 #include "calib_print.c"
 #include "calib_main.c"
 
+static char
+last(char *s)
+{
+	while (*s++) ;
+	return (s[-2]);
+}
+
+static caliblng
+bytes(char *s)
+{
+	caliblng n = atoi(s);
+
+	if ((last(s) == 'k') || (last(s) == 'K'))
+		n *= 1024;
+	if ((last(s) == 'm') || (last(s) == 'M'))
+		n *= (1024 * 1024);
+	if ((last(s) == 'g') || (last(s) == 'G'))
+		n *= (1024 * 1024 * 1024);
+	return (n);
+}
+
 int
 main(int ac, char **av)
 {

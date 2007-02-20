@@ -27,7 +27,7 @@ typedef struct {
 	caliblng latency2[MAXLEVELS];
 } cacheInfo;
 
-cacheInfo *
+static cacheInfo *
 analyzeCache(caliblng ** result1, caliblng ** result2, caliblng MHz)
 {
 	caliblng x, y, xx, yy, range, lastrange, stride, level, a, l, n;
@@ -221,7 +221,7 @@ typedef struct {
 	caliblng latency2[MAXLEVELS];
 } TLBinfo;
 
-TLBinfo *
+static TLBinfo *
 analyzeTLB(caliblng ** result1, caliblng ** result2, caliblng shift, caliblng mincachelines, caliblng MHz)
 {
 	caliblng x, y, xx, yy, spots, lastspots, stride, level, a, l, limit = 0, top, n;
@@ -442,7 +442,7 @@ typedef struct {
 	caliblng latency2[MAXLEVELS];
 } AssoInfo;
 
-AssoInfo *
+static AssoInfo *
 analyzeAsso(caliblng ** result1, caliblng ** result2, caliblng shift, caliblng minTLBentries, caliblng maxLevels, caliblng MHz)
 {
 	caliblng X, x, y, xx, yy, spots, lastspots, stride, level, a, l, limit = 0, top, n;

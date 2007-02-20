@@ -164,12 +164,6 @@ proc pi() : dbl 	{return M_PI; }
 #include "mmath.h"
 #include <math.h>
 
-extern double sqrt(double x);
-extern double cbrt(double x);
-extern double sin(double x);
-extern double cos(double x);
-extern double fabs(double x);
-
 #define acos_unary(x, z)      *z = acos(*x)
 #define asin_unary(x, z)      *z = asin(*x)
 #define atan_unary(x, z)      *z = atan(*x)

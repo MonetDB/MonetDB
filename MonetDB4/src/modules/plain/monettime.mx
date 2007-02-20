@@ -759,7 +759,6 @@ tzone tzone_local;
 
 monettime_export void fromdate(int n, int *d, int *m, int *y);
 monettime_export void fromtime(int n, int *hour, int *min, int *sec, int *msec);
-monettime_export int daytime_tz_fromstr(str buf, int *len, daytime **ret);
 
 #ifdef __cplusplus
 }
@@ -1036,7 +1035,6 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2))
 
-int timestamp_add(timestamp *ret, timestamp *v, lng *msecs);
 static INLINE int
 timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 {
@@ -1170,7 +1168,7 @@ date_tostr(str *buf, int *len, date *val)
 
 @- daytime
 @c
-int
+static int
 daytime_fromstr(str buf, int *len, daytime **ret)
 {
 	int hour, min, sec = 0, msec = 0, pos = 0;
@@ -1370,7 +1368,7 @@ timestamp_tostr(str *buf, int *len, timestamp *val)
 	return (int) (s - *buf);
 }
 
-str
+static str
 count1(int i)
 {
 	static char buf[16];
@@ -2014,8 +2012,6 @@ timestamp_extract_date_default(date *ret, timestamp *t)
 {
 	return timestamp_extract_date(ret, t, &tzone_local);
 }
-
-int date_adddays(date *ret, date *v, int *delta);
 
 /* returns the date that comes a number of years after 'v' (or before iff *delta < 0). */
 int

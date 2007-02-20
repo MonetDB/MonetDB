@@ -463,7 +463,7 @@ MSP_locate_module(const char *mod_name)
 }
 #endif
 
-void *
+static void *
 DL_open(char *nme, int mode)
 {
 	dltable *tbl = NULL;
@@ -529,7 +529,7 @@ DL_sym(void *handle, const char *nme)
 }
 
 
-int
+static int
 DL_close(void *handle)
 {
 	int ret = 0;
@@ -561,7 +561,7 @@ static short_str DL_errormsg[3] = { "no error occured (STATIC)", "library not fo
 };
 
 
-const char *
+static const char *
 DL_error(void)
 {
 #ifndef STATIC
@@ -574,7 +574,7 @@ DL_error(void)
 }
 
 
-ptr
+static ptr
 TBL_openmod(Client client, str module)
 {
 	ptr ret = 0;
@@ -612,7 +612,7 @@ TBL_module_lookup(str module)
 	return midp ? *midp : 0;
 }
 
-int
+static int
 TBL_M_cinstalled(Client client, oid mid)
 {
 	int cid = (int) (client - monet_clients);
@@ -622,7 +622,7 @@ TBL_M_cinstalled(Client client, oid mid)
 
 #define BATfakeAbort(b)	((b) && ((b)->batInserted = BUNfirst(b)))
 
-int
+static int
 TBL_M_lock(Client c)
 {
 	dlPRINT("  -->TBL_M_lock\n");
@@ -654,7 +654,7 @@ TBL_M_lock(Client c)
 	return 1;
 }
 
-int
+static int
 TBL_M_unlock(Client c)
 {
 	dlPRINT("  -->TBL_M_unlock\n");
@@ -827,7 +827,7 @@ typedef struct {
 	}							\
 }
 
-int
+static int
 TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 {
 	int i;
@@ -908,7 +908,7 @@ TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str ltp, str tp2, bit void_
 	return FALSE;
 }
 
-int
+static int
 TBL_checkparams(paramcheck_t *pt, oid op)
 {
 	str params[1 + MAXPARAMS], v;
@@ -1165,7 +1165,7 @@ Thus, procs introduces by a module that are explicitly 'undef-ed' by the user ke
 Thus, a second user that loads the module (logical load only, as he is the second user) still
 gets this proc as expected.
 @c
-void
+static void
 TBL_incproc(oid pid)
 {
 	int cnt = *(int *) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
@@ -1175,7 +1175,7 @@ TBL_incproc(oid pid)
 		assert(0);
 }
 
-void
+static void
 TBL_decproc(oid pid)
 {
 	int cnt = *(int *) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
@@ -1487,7 +1487,7 @@ Since all code will move to modules this function will be come obsolute.
 	TBL_@1_@2 = TBL_create(monet_clients,"@1_@2",@5,TYPE_@3,TYPE_@4,@6,@7);
 @c
 void
-TBL_protect()
+TBL_protect(void)
 {
 	TMDEBUG printf("# TBL locks created\n");
 
@@ -1544,7 +1544,7 @@ saved on disk so no commit is needed.
 
 @+ Loading and Dropping Modules
 @c
-oid
+static oid
 TBL_M_load(TBLinstall *inst, Client client, str module)
 {
 	ptr hdl = NULL;
@@ -1583,7 +1583,7 @@ TBL_M_load(TBLinstall *inst, Client client, str module)
 	return mid;
 }
 
-oid
+static oid
 TBL_load_script(TBLinstall *inst, Client client, str module, str *initscript)
 {
 	oid mid = 0;
@@ -1656,7 +1656,7 @@ countusage(Client client, oid mid)
 	return yy;
 }
 
-int
+static int
 TBL_M_directloaded(Client client, oid mid, str module)
 {
 	int xx, yy = 0, zz = 0;
@@ -1690,7 +1690,7 @@ TBL_M_clientrefs(oid mid, Client c)
 	return yy;
 }
 
-int
+static int
 TBL_M_countref(oid mid)
 {
 	int xx, yy = 0;
@@ -1726,7 +1726,7 @@ TBL_M_incref(Client client, oid mid)
 	return 1;
 }
 
-int
+static int
 TBL_M_decref(Client client, oid mid)
 {
 	int cid = (int) (client - monet_clients);
@@ -1754,7 +1754,7 @@ TBL_M_decref(Client client, oid mid)
 	return i;
 }
 
-void
+static void
 TBL_inc_mod_use(Client client, Client father)
 {
 	int cid = (int) (father - monet_clients);
@@ -1972,7 +1972,7 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 }
 
 
-int
+static int
 TBL_module_atoms(Client client, oid mid, int **Tpes) 
 {
 	hash_t i;

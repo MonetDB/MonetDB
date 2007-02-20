@@ -929,42 +929,22 @@ client again.
 int
 CMDquit(Cntxt stk, YYSTREE lt, ValPtr res)
 {
+	int status = 0, *statusp = &status;
 	Client c;
 
 	CNTXTclient(stk, &c);
 	while (c->father >= 0) {
 		c = monet_clients + c->father;
 	}
-	if (c == monet_clients) {
-		int status = 0, *statusp = &status;
 
-		if (lt->cnt > 0) {
-			@:builtin_operand(0,TYPE_int,statusp)@
-		}
-		monet_running = 0;
-		stopProfiler();
-		/*
-		   freeClient(c);
-		   monet_exit(*statusp);
-		 */
-		stream_flush(GDKout);
-		stream_destroy(GDKout);
-		MT_global_exit(*statusp);
+	if (lt->cnt > 0) {
+		@:builtin_operand(0,TYPE_int,statusp)@
 	}
-	c->mode = FINISHING;
-	if (GDKembedded && monet_forks > 0)
-		return 0;
-	/* TODO: this is still needed for forked clients 
-	Request q, r;
-	q = topRequest(c);
-	if (q) {
-		q->ev_kill = 1 + c->stk;
-		r = q->ev_wakeup;
-		if (r)
-			rmRequest(r);
-		q->ev_wakeup = NULL;
-	}
-	*/
+	monet_running = 0;
+	stopProfiler();
+	stream_flush(GDKout);
+	stream_destroy(GDKout);
+	MT_global_exit(*statusp);
 	return 0;
 }
 
@@ -1196,7 +1176,7 @@ CMDprint_val(ptr val, int tpe)
 	return stream_write(fp, " ]\n", 3, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int
+static int
 CMDprint_bats(int argc, BAT *argv[], int order)
 {
 	stream *fp = GDKout;
