@@ -162,21 +162,21 @@ SQLprelude(void)
 	s->engine = "SQLengine";
 	(void)SABAOTHmarchScenario(&res, &s->name);
 
-        s = getFreeScenario();
-        if (!s)
-                return NULL; /* should be an error */
+	s = getFreeScenario();
+	if (!s)
+		return NULL; /* should be an error */
 
-        s->name = "msql";
-        s->language = "msql";
-        s->initSystem = "SQLinit";
-        s->exitSystem = "SQLexit";
-        s->initClient = "SQLinitClient";
-        s->exitClient = "SQLexitClient";
-        s->reader = "MALreader";
-        s->parser = "MALparser";
-        s->optimizer = "MALoptimizer";
-        /* s->tactics = .. */
-        s->engine = "MALengine";
+	s->name = "msql";
+	s->language = "msql";
+	s->initSystem = "SQLinit";
+	s->exitSystem = "SQLexit";
+	s->initClient = "SQLinitClient";
+	s->exitClient = "SQLexitClient";
+	s->reader = "MALreader";
+	s->parser = "MALparser";
+	s->optimizer = "MALoptimizer";
+	/* s->tactics = .. */
+	s->engine = "MALengine";
 	return SABAOTHmarchScenario(&res, &s->name);
 }
 
@@ -710,8 +710,8 @@ Distinguish between console reading and MapiClient connections.
 The former comes with readline functionality.
 @c
 	while(more) {
-	    more = FALSE;
-	    if (go && in->pos >= in->len) {
+		more = FALSE;
+		if (go && in->pos >= in->len) {
 		ssize_t rd;
 
 		if (c->bak) {
@@ -759,7 +759,7 @@ The former comes with readline functionality.
 #ifdef _SQL_READER_DEBUG
 		stream_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
 #endif
-	    }
+		}
 	}
 	if (!go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
