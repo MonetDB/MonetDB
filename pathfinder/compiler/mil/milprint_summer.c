@@ -7027,12 +7027,14 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         counter = prep_str_funs(f, cur_level, counter, args);
         milprintf(f,
                 "{ # fn:substring-before\n"
-                "var res := [stringleft](item%s%03u, "
-                                        "[locate](item%s, "
-                                                 "item%s%03u).[-](1));\n",
-                item_ext, counter,
+                "var search_result%s := [search](item%s%03u, item%s);\n"
+                "var res := [ifthenelse]([<](search_result%s, 0), \"\", "
+					 "[stringleft](item%s%03u, search_result%s));\n"
+                "search_result%s := nil;\n",
+                item_ext, item_ext, counter, item_ext,
                 item_ext,
-                item_ext, counter);
+                item_ext, counter, item_ext,
+                item_ext);
 
         return_str_funs (f, code, cur_level, "fn:substring-before");
         deleteResult_ (f, counter, STR);
@@ -7045,17 +7047,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # fn:substring-after\n"
                 "var length_item%s := [length](item%s);\n"
-                "var res := [string](item%s%03u, "
-                                        "[+](length_item%s, "
-                                            "[locate](item%s, "
-                                                     "item%s%03u).[-](1)));\n"
-                "length_item%s := nil;\n",
-                item_ext, item_ext, 
-                item_ext, counter, 
-		item_ext,
-		item_ext,
-                item_ext, counter,
-		item_ext);
+                "var search_result%s := [search](item%s%03u, item%s);\n"
+                "var res := [ifthenelse]([<](search_result%s, 0), \"\", [string](item%s%03u, "
+                                        "[+](length_item%s, search_result%s)));\n"
+                "length_item%s := nil;\n"
+                "search_result%s := nil;\n",
+                item_ext, item_ext,
+                item_ext, item_ext, counter, item_ext,
+		item_ext, item_ext, counter,
+                item_ext, item_ext,
+                item_ext,
+                item_ext);
                 
         return_str_funs (f, code, cur_level, "fn:substring-after");
         deleteResult_ (f, counter, STR);
