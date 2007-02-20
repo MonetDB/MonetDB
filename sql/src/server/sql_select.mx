@@ -127,9 +127,10 @@ sql_table_func(mvc *sql, scope *scp, symbol *query)
 	for (m = st->comp_type->columns.set->h; m; m = m->next) {
 		sql_column *c = m->data;
 		char *cname = _strdup(c->base.name);
+		char *_tname = (tname)?_strdup(tname):NULL;
 		stmt *sc = stmt_rs_column(stmt_dup(sq), stmt_atom_string(cname), &c->type);
 
-		sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
+		sc = stmt_alias(sc, _tname, _strdup(c->base.name));
 		sc = stmt_column(sc, stmt_dup(sq), NULL);
 		table_add_column(tv, sc, NULL, cname);
 	}
@@ -3197,9 +3198,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			stmt *t, *oref = stmt_dup(o->next->data);
 
 			/* need to fix the oref tail */
+			/*
 			t = stmt_dup(oref->t->t);
 			stmt_destroy(oref->t);
 			oref->t = t;
+			*/
 
 			t = stmt_reverse(oref);
 			if (sc->token == SQL_NOT_EXISTS)
@@ -3501,6 +3504,34 @@ set2table( mvc *sql, scope *scp, stmt *s)
 			tmp = stmt_join(stmt_dup(cur), 
 					stmt_reverse(tmp), cmp_all);
 			s = sql_and(sql, scp, s, tmp, sql_where);
+		} else if (tmp) {
+			stmt_destroy(tmp);
+		}
+	}
+			/* just add a select whole column */
+	for (n = scp->outers->h; n; n = n->next) {
+		stmt *o = n->data;
+		stmt *tmp = complex_find_subset(s, o);
+
+		if (!tmp) {
+			tmp = stmt_column(stmt_const(stmt_dup(o), stmt_atom_int(0)), stmt_dup(o), NULL);
+			pending = 1;
+			if (!cur) {
+				cur = tmp;
+				continue;
+			}
+		} else if (!cur) {
+			cur = tmp;
+			continue;
+		}
+		if (pending) {
+			pending = 0;
+			tmp = stmt_join(stmt_dup(cur), 
+					stmt_reverse(tmp), cmp_all);
+			if (s)
+				s = sql_and(sql, scp, s, tmp, sql_where);
+			else
+				s = stmt_set(tmp);
 		} else if (tmp) {
 			stmt_destroy(tmp);
 		}

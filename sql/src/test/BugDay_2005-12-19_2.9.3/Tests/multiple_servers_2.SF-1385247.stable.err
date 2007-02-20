@@ -874,14 +874,14 @@ server 31 : "module(sql_server);module(mapi);", client 1: SQL
 server 31 : "module(sql_server);module(mapi);", client 2: (SQL) SQL
 
 server 31 : "module(sql_server);module(mapi);", client 3: (SQL) (SQL) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 31 : "module(sql_server);module(mapi);", client 4: (SQL) (SQL) (MAPI) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 32 : "module(sql_server);module(mapi);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -938,16 +938,16 @@ server 32 : "module(sql_server);module(mapi);"
 server 32 : "module(sql_server);module(mapi);", client 1: SQL
 
 server 32 : "module(sql_server);module(mapi);", client 2: (SQL) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 32 : "module(sql_server);module(mapi);", client 3: (SQL) (MAPI) SQL
 
 server 32 : "module(sql_server);module(mapi);", client 4: (SQL) (MAPI) (SQL) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 33 : "module(sql_server);module(mapi);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -1002,18 +1002,18 @@ server 33 : "module(sql_server);module(mapi);"
 # cmdline opt 	monet_prompt = 
 
 server 33 : "module(sql_server);module(mapi);", client 1: MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 33 : "module(sql_server);module(mapi);", client 2: (MAPI) SQL
 
 server 33 : "module(sql_server);module(mapi);", client 3: (MAPI) (SQL) SQL
 
 server 33 : "module(sql_server);module(mapi);", client 4: (MAPI) (SQL) (SQL) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 34 : "module(sql_server);module(mapi);"
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
@@ -1070,14 +1070,14 @@ server 34 : "module(sql_server);module(mapi);"
 server 34 : "module(sql_server);module(mapi);", client 1: SQL
 
 server 34 : "module(sql_server);module(mapi);", client 2: (SQL) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 34 : "module(sql_server);module(mapi);", client 3: (SQL) (MAPI) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 34 : "module(sql_server);module(mapi);", client 4: (SQL) (MAPI) (MAPI) SQL
 
@@ -1134,16 +1134,16 @@ server 35 : "module(sql_server);module(mapi);"
 # cmdline opt 	monet_prompt = 
 
 server 35 : "module(sql_server);module(mapi);", client 1: MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 35 : "module(sql_server);module(mapi);", client 2: (MAPI) SQL
 
 server 35 : "module(sql_server);module(mapi);", client 3: (MAPI) (SQL) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 35 : "module(sql_server);module(mapi);", client 4: (MAPI) (SQL) (MAPI) SQL
 
@@ -1200,14 +1200,14 @@ server 36 : "module(sql_server);module(mapi);"
 # cmdline opt 	monet_prompt = 
 
 server 36 : "module(sql_server);module(mapi);", client 1: MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 36 : "module(sql_server);module(mapi);", client 2: (MAPI) MAPI
-MAPI  = monetdb@localhost:36732
+MAPI  = monetdb@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: xchange_challenge: frontend mil not found
+ERROR = !xchange_challenge: frontend mil not found
 
 server 36 : "module(sql_server);module(mapi);", client 3: (MAPI) (MAPI) SQL
 

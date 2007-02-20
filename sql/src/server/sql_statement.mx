@@ -1392,7 +1392,7 @@ stmt_select(stmt *op1, stmt *op2, comp_type cmptype)
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;
-	s->nrcols = 1;
+        s->nrcols = (op1->nrcols==2)?2:1;
 	s->h = stmt_dup(s->op1.stval->h);
 	s->t = stmt_dup(s->op1.stval->t);
 	return s;
@@ -1407,7 +1407,7 @@ stmt_likeselect(stmt *op1, stmt *op2, stmt *op3, comp_type cmptype)
 	s->op2.stval = op2;
 	s->op3.stval = op3;
 	s->flag = cmptype;
-	s->nrcols = 1;
+        s->nrcols = (op1->nrcols==2)?2:1;
 	s->h = stmt_dup(s->op1.stval->h);
 	s->t = stmt_dup(s->op1.stval->t);
 	return s;
@@ -1422,7 +1422,7 @@ stmt_select2(stmt *op1, stmt *op2, stmt *op3, int cmp)
 	s->op2.stval = op2;
 	s->op3.stval = op3;
 	s->flag = cmp;
-	s->nrcols = 1;
+        s->nrcols = (op1->nrcols==2)?2:1;
 	s->h = stmt_dup(s->op1.stval->h);
 	s->t = stmt_dup(s->op1.stval->t);
 	return s;
@@ -1437,7 +1437,7 @@ stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype)
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;
-	s->nrcols = 1;
+        s->nrcols = (op1->nrcols==2)?2:1;
 	s->h = stmt_dup(s->op1.stval->h);
 	return s;
 }
@@ -1451,7 +1451,7 @@ stmt_uselect2(stmt *op1, stmt *op2, stmt *op3, int cmp)
 	s->op2.stval = op2;
 	s->op3.stval = op3;
 	s->flag = cmp;
-	s->nrcols = 1;
+        s->nrcols = (op1->nrcols==2)?2:1;
 	s->h = stmt_dup(s->op1.stval->h);
 	return s;
 }
@@ -2147,6 +2147,9 @@ head_type(stmt *st)
 		return tail_type(st->op1.stval);
 	case st_atom:
 		return atom_type(st->op1.aval);
+	case st_var:
+		if (st->op2.typeval.type)
+			return &st->op2.typeval;
 	default:
 		fprintf(stderr, "missing head type %u: %s\n", st->type, st_type2string(st->type));
 		return NULL;
@@ -2496,6 +2499,10 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			fprintf(fp," aggr=%d", (int)s->aggr);
 		if (s->flag)
 			fprintf(fp," flag=%d", (int)s->flag);
+		if (s->h)
+			fprintf(fp," h=%p", s->h);
+		if (s->t)
+			fprintf(fp," t=%p", s->t);
 		fprintf(fp," ptr=%p", s);
 
 		switch (s->type) {
@@ -2656,7 +2663,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			fprintf(fp, "id%d -> id%d [headlabel=\"h\",color=green];\n",
 				stmt_stmt2dot(s->h, l, i, fp), -(s->optimized));
 		if (s->t) 
-			fprintf(fp, "id%d -> id%d [headlabel=\"t\",color=green];\n",
+			fprintf(fp, "id%d -> id%d [headlabel=\"t\",color=orange];\n",
 				stmt_stmt2dot(s->t, l, i, fp), -(s->optimized));
 	}
 

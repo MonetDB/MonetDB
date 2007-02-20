@@ -66,9 +66,9 @@ stderr of test 'mapi_connect_errors_vanish.SF-1432134` in directory 'src/test/Bu
 # 14:02:05 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb --config=/ufs/sjoerd/Monet/etc/MonetDB.conf --host=localhost --port=36772 -uinvalid -Pinvalid
 # 14:02:05 >  
 
-MAPI  = invalid@localhost:36415
+MAPI  = invalid@localhost:30463
 ACTION= mapi_start_talking
-ERROR = !ERROR: schema authorization error
+ERROR = !schema authorization error
 
 # 14:02:05 >  
 # 14:02:05 >  Done.

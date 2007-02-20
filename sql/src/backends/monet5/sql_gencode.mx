@@ -317,7 +317,7 @@ dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1
 		match = 1;
 	if( (match && type <= TYPE_str) || match==2){
 		q = newStmt1(mb, batcalcRef, name);
-		setVarType(mb,getArg(q,0), newBatType(TYPE_any,rtype));
+		/*setVarType(mb,getArg(q,0), newBatType(TYPE_any,rtype));*/
 		freezeVarType(mb,getArg(q,0));
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);

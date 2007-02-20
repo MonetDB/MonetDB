@@ -23,6 +23,7 @@ extern void sequences_init(void);
 extern void sequences_exit(void);
 
 extern int seq_next_value(sql_sequence *seq, lng *val);
+extern int seq_get_value(sql_sequence *seq, lng *val);
 extern int seq_restart(sql_sequence *seq, lng start);
 
 #endif /* BAT_SEQ_H */
@@ -108,7 +109,7 @@ int seq_restart(sql_sequence *seq, lng start)
 	}
 	s->called = 0;
 	s->cur = start;
-	s->cached = start + seq->cacheinc;
+	s->cached = start;
 	/* handle min/max and cycle */
 	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
 	    (seq->minvalue && s->cur < seq->minvalue))
@@ -155,8 +156,8 @@ seq_next_value(sql_sequence *seq, lng *val)
 	    (seq->minvalue && s->cur < seq->minvalue))
 	{
 		if (seq->cycle) {
-			/* cycle to the start value again */
-			s->cur = seq->start;
+			/* cycle to the min value again */
+			s->cur = seq->minvalue;
 			save = 1;
 		} else { /* we're out of numbers */
 			store_unlock();
@@ -167,12 +168,54 @@ seq_next_value(sql_sequence *seq, lng *val)
 	nr = s->cur;
 	*val = nr;
 	if (save || nr == s->cached) {
-		s->cached = nr + seq->cacheinc;
+		s->cached = nr + seq->cacheinc*seq->increment;
 		sql_update_sequence_cache(seq, s->cached);
 		store_unlock(); 
 		return 1;
 	}
 	assert(nr<s->cached);
 	store_unlock(); 
+	return 1;
+}
+
+int
+seq_get_value(sql_sequence *seq, lng *val)
+{
+	node *n = NULL;
+	bat_sequence *s;
+
+	*val = 0;
+	store_lock();
+	for ( n = sql_seqs->h; n; n = n ->next ) {
+		s = n->data;
+		if (s->seqid == seq->base.id)
+			break;
+	}
+	if (!n) {
+		s = sql_create_sequence(seq);
+		if (!s) {
+			store_unlock();
+			return 0;
+		}
+		list_append(sql_seqs, s);
+	} else {
+		s = n->data;
+	}
+	*val = s->cur;
+	if (s->called)
+		*val += seq->increment;
+	/* handle min/max and cycle */
+	if ((seq->maxvalue && *val > seq->maxvalue) ||
+	    (seq->minvalue && *val < seq->minvalue))
+	{
+		if (seq->cycle) {
+			/* cycle to the min value again */
+			*val = seq->minvalue;
+		} else { /* we're out of numbers */
+			store_unlock();
+			return(0);
+		}
+	}
+	store_unlock();
 	return 1;
 }
