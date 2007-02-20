@@ -399,7 +399,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	int i = (int) (c - monet_clients);
 
 	mc = mapi_clients+i;
-    mc->engine = f->f_engine;
+	mc->engine = f->f_engine;
 	mc->frontend = f->nr;
 	mc->inuse = 1;
 	mc->t = ~(MT_Id)0;
