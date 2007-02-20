@@ -152,11 +152,11 @@ typedef struct mapi_client
 {
 	int frontend; 	/* which frontend (> MAX_FRONTENDS == UNUSED) */
 	int inuse;
-    	Cntxt stk; 
+	Cntxt stk; 
 	Client c;	/* monet client */
 
-    	Variable 
-	       lastvar; /* last MIL variable that should be cleared after execution */
+	Variable 
+		lastvar; /* last MIL variable that should be cleared after execution */
 
 	void *fc; 	/* frontend client */
 	MT_Id t;	/* 0 (no thread assigned), or thread for this client */
@@ -171,12 +171,12 @@ typedef struct frontend
 {
 	int nr;
 	int clients;
-	int cache_limit;		    /* max number of cached clients */
+	int cache_limit;		/* max number of cached clients */
 	char *name; 		
 	char *(*f_alloc)(mapi_client *fc);  /* returns error string (NULL if ok) */  
 	char *(*f_init)(mapi_client *fc);   /* returns error string (NULL if ok) */
 	void (*f_engine)(mapi_client *fc);  /* read/parse/execute loop */
-	void (*f_free)(mapi_client *fc);    /* free any resources used by the client of this frontend */
+	void (*f_free)(mapi_client *fc);	/* free any resources used by the client of this frontend */
 
 } mapi_frontend;
 
@@ -403,7 +403,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	mc->frontend = f->nr;
 	mc->inuse = 1;
 	mc->t = ~(MT_Id)0;
-        MT_init_sema(mc->s, 0);
+	MT_init_sema(mc->s, 0);
 	mc->lastvar = monet_cntxt[mc->stk].var;
 	if ((err = f->f_alloc(mc)) != NULL){
 		if (s) {
@@ -535,13 +535,13 @@ mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang )
 			return NULL;
 	}
 	if (strcmp(lang, "xquery") == 0 &&
-            fc->t == ~(MT_Id) 0 && 
-	    MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) 
-        {
-	    GDKsyserror("MAPIlisten:mapi_client failed\n");
-	    fc->t = ~(MT_Id) 0;
-        }
-        fc->arg = NULL;
+			fc->t == ~(MT_Id) 0 && 
+			MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) 
+	{
+		GDKsyserror("MAPIlisten:mapi_client failed\n");
+		fc->t = ~(MT_Id) 0;
+	}
+	fc->arg = NULL;
 	c = fc->c;
 	c->fdin = fdin;
 	c->fdout = fdout;
@@ -722,14 +722,15 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 }
 
 @= builtin_operand
-{       int _k = interpret(stk, arg(lt, @1), res);
-        if (_k < 0) {
-                return _k;
-        }
-        @3 = VALconvert(@2, res);
-        if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
-                return handle_paramerror(res,@1,res->vtype,@2);
-        }
+{
+	int _k = interpret(stk, arg(lt, @1), res);
+	if (_k < 0) {
+		return _k;
+	}
+	@3 = VALconvert(@2, res);
+	if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+		return handle_paramerror(res,@1,res->vtype,@2);
+	}
 }
 @c
 
@@ -937,7 +938,7 @@ Get the new information for the server socket and start listening.
 
 
 			if (fc->t == ~(MT_Id) 0 && 
-		            MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
+					MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
 				GDKsyserror("MAPIlisten:mapi_client failed\n");
 				fc->t = ~(MT_Id) 0;
 			}
@@ -951,7 +952,7 @@ Get the new information for the server socket and start listening.
 		unlink(usockfile);
 #endif
 	return GDK_SUCCEED;
-      error:
+error:
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
@@ -1272,7 +1273,7 @@ Get the new information for the server socket and start listening.
 			}
 
 			if (fc->t == ~(MT_Id) 0 && 
-		            MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
+					MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
 				GDKsyserror("MAPIlisten:mapi_client failed\n");
 				fc->t = ~(MT_Id) 0;
 			}
@@ -1280,12 +1281,12 @@ Get the new information for the server socket and start listening.
 			MT_up_sema(fc->s, "MAPIlisten");
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}
-	      end_loop:;
+end_loop:;
 	} while (1);
 	SSL_CTX_free(ctx);
 	close(sock);
 	return GDK_SUCCEED;
-      fail:;
+fail:;
 	if (sock >= 0)
 		close(sock);
 	if (ctx)
