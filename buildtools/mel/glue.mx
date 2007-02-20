@@ -496,7 +496,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 	}
 	switch (op) {
 	case OP_TOSTR:
-		o << "int " << atom;
+		o << "static int " << atom;
 
 		o << "_tostr(char **dst, int *len, char *src ){\n";
 		o << "   int i = 0; char *buf = 0;\n";
@@ -519,7 +519,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "}\n\n";
 		break;
 	case OP_FROMSTR:
-		o << "int " << atom;
+		o << "static int " << atom;
 
 		o << "_fromstr(char *src, int *len, char **dst ){\n";
 		o << "   int i = 0; char *buf = 0;\n";
@@ -543,7 +543,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		break;
 
 	case OP_READ:
-		o << "char * " << atom;
+		o << "static char * " << atom;
 
 		o << "_read( char *a, stream *s, size_t cnt) {\n";
 		o << "   (void) a; (void) s; (void) cnt;";
@@ -551,7 +551,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "}\n\n";
 		break;
 	case OP_WRITE:
-		o << "void " << atom;
+		o << "static void " << atom;
 
 		o << "_write( char *a, stream *s, size_t cnt) {\n";
 		o << "   (void) a; (void) s; (void) cnt;";
@@ -560,7 +560,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 
 	case OP_COMP:
 	case OP_NEQUAL:
-		o << "int " << atom;
+		o << "static int " << atom;
 
 		o << "_cmp( unsigned char *v1, unsigned char *v2 ){\n";
 		o << "   int i;\n";
@@ -571,7 +571,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "}\n\n";
 		break;
 	case OP_HASH:
-		o << "hash_t " << atom;
+		o << "static hash_t " << atom;
 
 		o << "_hash( unsigned char *v ){\n";
 		o << "   hash_t i=0,s=" << len << ";\n";
@@ -582,10 +582,10 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "}\n\n";
 		break;
 	case OP_NULL:
-		o << "char *" << atom <<"_nil = NULL;\n";
-		o << "ptr " << atom;
+		o << "static char *" << atom <<"_nil = NULL;\n";
+		o << "static ptr " << atom;
 
-		o << "_null(){\n";
+		o << "_null(void){\n";
 		o << "   char *p1,*p2;\n";
 		o << "   if (" << atom <<"_nil == NULL)\n";
 		o << "      " << atom <<"_nil = (char*)GDKmalloc(" << len << ");\n";
@@ -598,21 +598,21 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "}\n\n";
 		break;
 	case OP_FIX:
-		o << "int " << atom;
+		o << "static int " << atom;
 
 		o << "_fix(char *src){\n";
 		o << "   return 0;\n";
 		o << "}\n\n";
 		break;
 	case OP_UNFIX:
-		o << "int " << atom;
+		o << "static int " << atom;
 
 		o << "_unfix(char *src){\n";
 		o << "   return 0;\n";
 		o << "}\n\n";
 		break;
 	case OP_PUT:
-		o << "var_t " << atom;
+		o << "static var_t " << atom;
 
 		o << "_put(Heap *hp, char *dst, char *src ){\n";
 		o << "   memcpy(dst, src, " << len << ");\n";
@@ -620,12 +620,12 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "}\n\n";
 		break;
 	case OP_CONVERT:
-		o << "void " << atom;
+		o << "static void " << atom;
 
 		o << "_convert( char *a, int direction ){ (void)a; (void) direction; }\n\n";
 		break;
 	case OP_HCONVERT:
-		o << "void " << atom;
+		o << "static void " << atom;
 
 		o << "_heap_convert( Heap *hp ){ (void)hp; }\n\n";
 		break;
@@ -721,7 +721,7 @@ unpack_call::gen_command(ostream &o, const Command &d)
 ostream &
 unpack::gen_command(ostream &o, const Command &d)
 {
-	o << "int " << d.fcn() << "_unpack" << d.Id();
+	o << "static int " << d.fcn() << "_unpack" << d.Id();
 	o << "( int argc, ValPtr argv ){\n";
 	o << "   if (argc > " << MAXPARAMS + 1 << ") {\n";
 	o << "      GDKerror(\"%s: too many arguments.\\n\", \"";
