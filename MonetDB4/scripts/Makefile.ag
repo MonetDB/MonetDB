@@ -14,13 +14,6 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-EXTRA_DIST = general.mil quit.mil 
 EXTRA_DIST_DIR = gold 
 
 SUBDIRS = tools
-
-scripts_mil = {
-	DIR = pkglibdir
-	SOURCES = general.mil quit.mil
-}
-
