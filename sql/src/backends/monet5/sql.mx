@@ -30,6 +30,10 @@ command start():void
 address SQLsession
 comment "Switch to processing SQL statements";
 
+command start2():void
+address SQLsession2
+comment "Switch to processing precompiled sql statements";
+
 command trace():void 
 address SQLtrace
 comment "Enable/disable saving the sql statement traces on a client basis.";

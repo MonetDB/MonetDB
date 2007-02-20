@@ -34,6 +34,7 @@ phase of the scenario.
 /* #define _SQL_PARSER_DEBUG */
 
 sql5_export str SQLsession(str *ret);
+sql5_export str SQLsession2(str *ret);
 sql5_export str SQLprelude(void);
 sql5_export str SQLepilogue(void);
 sql5_export str SQLstartQuery(int *ret, str *qry);
@@ -132,6 +133,16 @@ SQLsession(str *ret)
 }
 
 str
+SQLsession2(str *ret)
+{
+	str msg = MAL_SUCCEED;
+
+	msg = setScenario(MCgetClient(), "msql");
+	*ret = 0;
+	return msg;
+}
+
+str
 SQLprelude(void)
 {
 	int res = 0;
@@ -149,6 +160,23 @@ SQLprelude(void)
 	/* s->optimizer = "SQLoptimizer";
 	 * s->tactics = .. */
 	s->engine = "SQLengine";
+	(void)SABAOTHmarchScenario(&res, &s->name);
+
+        s = getFreeScenario();
+        if (!s)
+                return NULL; /* should be an error */
+
+        s->name = "msql";
+        s->language = "msql";
+        s->initSystem = "SQLinit";
+        s->exitSystem = "SQLexit";
+        s->initClient = "SQLinitClient";
+        s->exitClient = "SQLexitClient";
+        s->reader = "MALreader";
+        s->parser = "MALparser";
+        s->optimizer = "MALoptimizer";
+        /* s->tactics = .. */
+        s->engine = "MALengine";
 	return SABAOTHmarchScenario(&res, &s->name);
 }
 
