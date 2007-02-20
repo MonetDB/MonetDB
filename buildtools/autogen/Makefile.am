@@ -28,7 +28,8 @@ default: all
 @abs_builddir@/%.py:  $(SRCDIR)/%.py
 	cp $< $@
 
-all:	@abs_builddir@/setup.py \
+all:	@abs_builddir@/autogen \
+	@abs_builddir@/setup.py \
 	@abs_builddir@/autogen.py \
 	@abs_builddir@/autogen/am.py \
 	@abs_builddir@/autogen/msc.py \
