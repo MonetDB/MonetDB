@@ -20,4 +20,8 @@ test_select_star3
 test_upprop
 test_downprop
 test_union
+test_nllr_allfeatures
+test_lms_allfeatures
+test_nllr_manyqueries
+test_lms_manyqueries
 cleanup
