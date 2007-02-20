@@ -1,4 +1,4 @@
-@' pathfinder.mx
+@f pathfinder.mx
 @'
 @' XQuery runtime environment
 @'
@@ -65,6 +65,13 @@
 if (clientid() != 0) {
     ERROR("pathfinder module must be loaded in Mserver console first.");
 }
+
+const XQUERY_STATUS_INITIALIZING := 0; 
+const XQUERY_STATUS_RECOVERING   := 1; 
+const XQUERY_STATUS_GARBAGECOLL  := 2; 
+const XQUERY_STATUS_READY        := 3; 
+var xquery_status := XQUERY_STATUS_INITIALIZING;
+
 module(mapi);       # remote client access
 module(pf_support);
 module(logger);
@@ -77,6 +84,7 @@ CATCH((*"module")("pftijah")); # only load pftijah if available
 var standoff := false;
 if (monet_environment.exist("standoff"))
   standoff := =(monet_environment.find("standoff"),"enabled"); 
+
 
 # The XML Meta-Database #############################################################
 #
@@ -360,9 +368,10 @@ BEWARE: the logger version number below needs to be incremented whenever the wor
 @:ws_@1_decl(NODE,    32)@
 @:ws_@1_decl(ATTR,    33)@
 @:ws_@1_decl(ELEM,    34)@
+@:ws_kind_decl(@1)@
 
 @= ws_mil_decl
-const @1 := @2;
+const @1 := @2@8;
 @mil
 @:ws(mil_decl)@
 @:ws_decl(mil)@
@@ -373,13 +382,15 @@ const LOGGER_VERSION := 1;
 # KIND constants, carefully chosen
 # atomic value items can be retrieved with 'kind.select(int_nil,ATOMIC)'
 # NODE is not a type but all node types can be retrieved with 'kind.select(NODE,int_nil)'
-const ELEMENT          := chr(0);
-const TEXT             := chr(1);
-const COMMENT          := chr(2);
-const PI               := chr(3);
-const DOCUMENT         := chr(4);
-const COLLECTION       := chr(5);
+@= ws_kind_decl
+@:ws_@1_decl(ELEMENT,   0,,,,,,.chr())@
+@:ws_@1_decl(TEXT,      1,,,,,,.chr())@
+@:ws_@1_decl(COMMENT,   2,,,,,,.chr())@
+@:ws_@1_decl(PI,        3,,,,,,.chr())@
+@:ws_@1_decl(DOCUMENT,  4,,,,,,.chr())@
+@:ws_@1_decl(COLLECTION,5,,,,,,.chr())@
 
+@mil
 # zero
 const WS               := 0@0; # first container in ws = transient doc container
 const PRE_BASE         := 0@0; # all our PRE bats start at 0 (the super-root)
@@ -435,6 +446,7 @@ const PROP_TEXT_UPDATE := PROP_VAL_UPDATE + 1;
 const PROP_COM_UPDATE := PROP_TEXT_UPDATE + 1;
 const PROP_INS_UPDATE := PROP_COM_UPDATE + 1;
 const PROP_TGT_UPDATE := PROP_INS_UPDATE + 1;
+# the next 6 entries must be in the same order as QN_HISTOGRAM through QN_LOC above
 const QN_HISTOGRAM_UPDATE := PROP_TGT_UPDATE + 1;
 const QN_PREFIX_URI_LOC_UPDATE := QN_HISTOGRAM_UPDATE + 1;
 const QN_URI_LOC_UPDATE := QN_PREFIX_URI_LOC_UPDATE + 1;
@@ -449,6 +461,7 @@ const ANCESTOR_NID := MODIFIED_NID + 1;
 const MODIFIED_ATTR := ANCESTOR_NID + 1;
 const MODIFIED_PAGE := MODIFIED_ATTR + 1;
 const NEW_PAGE := MODIFIED_PAGE + 1;
+const DEL_PAGE := NEW_PAGE + 1;
 
 
 # transaction debugging / performance profiling 
@@ -531,10 +544,6 @@ var pf_chkpt := lock_create(); # protects the counter
 var pf_chkpt_cnt := 0; # counter is used by nonexclusive acces (first gets barrier, last releases)
 var pf_chkpt_barrier := sema_create(1); # the barrier 
 
-# initialize the logger
-var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
-                                            monet_environment.find("gdk_dbname"), LOGGER_VERSION);
-
 # all update bats in the ws (tail-type + name)
 const ws_update := bat(int,str)
 	.insert(bat,"map_pid")
@@ -565,7 +574,8 @@ const ws_update := bat(int,str)
 	.insert(oid,"ancestor_nid")
 	.insert(oid,"modified_attr")
 	.insert(oid,"modified_page")
-	.insert(oid,"new_page").access(BAT_READ).rename("ws_update");
+	.insert(oid,"new_page")
+	.insert(oid,"del_page").access(BAT_READ).rename("ws_update");
 
 # the bats that get changed using the logger in case of updates reach up until qn_histogram
 # (i.e. these are the ones that need to be registered in the logger)
@@ -621,30 +631,26 @@ PROC exit() : void { # redefine exit to do a checkpoint first
     quit(); 
 }
 
+
 # the logger background thread
+var logger_base := 0;
 PROC pf_logmanager() : void {
-    var base := logger_changes(pf_logger);
+    logger_base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
         var changes := logger_changes(pf_logger);
-        var delta := changes - base;
+        var delta := changes - logger_base;
         if (((cnt :+= 1) % 10) = 0) { 
             cleantmpdir((msec() / 1000LL) - 3600LL);
         }
         if (((delta < 0) or (delta > 100000)) and (cnt > 10)) { 
             pf_logflush(0LL);
-            base = changes;
+            logger_base = changes;
             cnt := 0;
         } 
         sleep(30);  
     }
 }
-
-# delete tmp files in DBFARM/DBNAME/tmp
-cleantmpdir(msec() / 1000LL);
-
-# synchronize the starting of the log
-fork(pf_logmanager());
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
@@ -689,6 +695,11 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
     pf_checkpoint(bat(void,str).append("uri_lifetime"));
 }
+
+# initialize uri_lifetime
+{ var b := split(monet_environment.find("xquery_cacherules"),";").seqbase(0@0);
+  var i := [r_search](b,"=").select(2,int_nil);
+  uri_lifetime.insert(reverse(b.[string](0,[-](i,1))).leftfetchjoin([lng](b.[string]([+](i,1))))); }
 
 # runtime collection acccess control (TRANSIENT)
 var colname_runtime  := bat(str,bat).rename("colname_runtime"); 
@@ -735,14 +746,6 @@ var ws_mem := [oid]([int](mirror(ws_dsk)).[-](_RID_SIZE - PRE_SIZE)).access(BAT_
 var ws_rid := ws_mem.slice(PRE_SIZE, PRE_NID).rename("ws_rid");
               # of those, all master rid_* bats, and their (remapped) pre_* views
     ws_mem := ws_mem.slice(NID_RID, INT_MAX).rename("ws_mem");
-
-# silently clean up the repository
-collection_cleanup(_collection_cleanup());
-
-# start the background processes 
-xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
-mapi_register(xquery_frontend());
-
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
 PROC _collection_cleanup() : BAT[str,str]
@@ -1575,6 +1578,14 @@ PROC _ws_pinnedcoll(lng wsid,
                        .project(wsid).reverse();                           
 }
 
+# throw away all index structures! Running queries keep referencing all runtime bats they already opened.
+PROC _runtime_flush() : void
+{
+    var shortlocks := [fetch]([reverse](colname_runtime), RT_LOCK_FREELIST);
+    var longlocks := [fetch]([reverse](colname_runtime), RT_NID_FREELIST);
+    var runtimes := [_runtime_create](colname_runtime.mirror(), shortlocks, longlocks);
+    colname_runtime.delete().insert(runtimes); 
+}
 
 PROC _ws_opencoll(lng wsid, 
                   oid coll_oid) : BAT[lock,bat]
@@ -1608,12 +1619,7 @@ PROC _ws_opencoll(lng wsid,
         var indices := [count](reverse(colname_runtime).mirror()).ord_uselect(RT_QN_NID_UNQ, int_nil);
         if (bit(count(indices))) {
             var totsize := [fetch](reverse(indices), RT_QN_NID_UNQ).[seqbase]().[lng]().sum();
-            if (totsize > (mem_maxsize()/4LL)) {
-                var shortlocks := [fetch]([reverse](colname_runtime), RT_LOCK_FREELIST);
-                var longlocks := [fetch]([reverse](colname_runtime), RT_NID_FREELIST);
-                var runtimes := [_runtime_create](colname_runtime.mirror(), shortlocks, longlocks);
-                colname_runtime.delete().insert(runtimes); 
-            }
+            if (totsize > (mem_maxsize()/4LL)) _runtime_flush();
         }
     }
     return runtime;
@@ -3245,6 +3251,7 @@ The name of a cached document is the same as its location (URI). For explicitly\
 shredded documents (with 'shred_doc(location,name)'), the name is an 'alias' and\n\
 may differ from the URI. Explicitly shredded documents fall outside the XML document\n\
 cache; documents are only removed at explicit user request (with 'delete_doc(name)').";
+@mil
 
 PROC xmlcache_add_rule(str uri, 
                        any lifetime) : void 
@@ -3303,6 +3310,24 @@ PROC xmldb_print() : void
 ADDHELP("xmldb_print", "boncz", "May 2005",
 "DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
 
+@- startup sequence
+@mil
+# start the query cache 
+xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
+
+xquery_status := XQUERY_STATUS_RECOVERING;
+var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
+                                            monet_environment.find("gdk_dbname"), LOGGER_VERSION);
+
+xquery_status := XQUERY_STATUS_GARBAGECOLL;
+cleantmpdir(msec() / 1000LL);              # delete tmp files in DBFARM/DBNAME/tmp
+collection_cleanup(_collection_cleanup()); # silently clean up the repository
+
+xquery_status := XQUERY_STATUS_READY;
+mapi_register(xquery_frontend()); # open up mapi client access
+rpcd_start();                     # open up xrpc access
+fork(pf_logmanager());            # start checkpointing thread
+
 
 @= ws_c_decl
 #define @1 @2
@@ -3325,45 +3350,20 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 
 #define is_fake_project(b) (((b)->htype==TYPE_void) && (BATcount(b)==1) && ((b)->hseqbase==oid_nil))
 
+#ifdef TEXT			/* Windows defines a symbol TEXT */
+#undef TEXT
+#endif
 @:ws(c_decl)@
 @:ws_decl(c)@
-
-#define SOAP_NS  "http://www.w3.org/2003/05/soap-envelope"
-#define XDT_NS   "http://www.w3.org/2005/xpath-datatypes"
-#define XS_NS    "http://www.w3.org/2001/XMLSchema"
-#define XSI_NS   "http://www.w3.org/2001/XMLSchema-instance"
-#define XRPC_NS  "http://monetdb.cwi.nl/XQuery"
-#define XRPC_LOC "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
 
 #define XTRACT_KIND(X)     (X & 63)
 #define XTRACT_CONT(X)     (X >> 6)
 #define SET_CONT_KIND(X,Y) (X << 6 | Y)
 
-/* xquery_method : execute a loop-lifted xquery function
- *
- * argc          = #params
- * itercnt       = #iterations
- * argcnt[iter]  = #items per param 
- * argtpe[]      = xquery type of each parameter (as string, e.g. 'xs:integer')
- * argval[]      = str representation of item (e.g. '42')
- *
- * shredBAT   = optional shredded document table, that is added to working set
- *              params of type xs:anyNode are represented as int pre-numbers.
- *
- * we return an error string, or NULL iff everything went A-OK  
- */
-pathfinder_export char *
-xquery_method(stream *out, 
-              int timing,
-              char* moduleNS, 
-              char* uri, 
-              char *method, 
-              lng argc, 
-              lng itercnt, 
-              lng** argcnt, 
-              str* argtpe, 
-              str* argval, 
-              BAT* shredBAT);
+/* exports for XRPC */
+pathfinder_export void  xquery_client_engine(mapi_client*);
+pathfinder_export char* xquery_method(mapi_client*, int, char*, char*, char*, lng, lng, lng**, str*, str*, BAT*);
+pathfinder_export void  xquery_client_end(mapi_client *, char *); 
 
 #endif
 @c
@@ -3828,9 +3828,10 @@ xquery_sig_init(char *proc)
     xquery_sig* sig;
     int update = 0, len = 0;
 
-    /* proc names string with 'up' are updating functions */
     if (proc[0] == 'u' && proc[1] == 'p') {
-        update = 1;
+        update = 1; /* proc names starting with 'up' are updating functions */
+    } else if (proc[0] == 'd' && proc[1] == 'm') {
+        update = 2; /* proc names starting with 'dm' are document management functions */
     } else if (proc[0] != 'f' || proc[1] != 'n') {
         return NULL;
     }
@@ -4355,16 +4356,20 @@ CMDxquery_start_query_cache(lng *maxsize)
  * =================== client session management ================================
  *
  * xquery_client *
- * xquery_client_alloc(mapi_client *fc);
+ * xquery_client_alloc(mapi_client *mc);
  * - allocate a new xquery client, returns error message (NULL on success)
  *
  * char*
- * xquery_client_init(mapi_client *fc);
+ * xquery_client_init(mapi_client *mc);
  * - initialize a new xquery cache context, returns error string (NULL if ok)
  *
  * void
- * xquery_client_free(mapi_client *fc);
+ * xquery_client_free(mapi_client *mc);
  * - free a xquery cache context (terminate)
+ *
+ * void
+ * xquery_client_reset(xquery_client *ctx, char *err);
+ * - reset xquery execution for next statement
  *
  * void
  * xquery_client_end(xquery_client *ctx, char *err);
@@ -4458,11 +4463,11 @@ xquery_client_alloc_(xquery_client *ctx)
  * allocate a new xquery client, returns client cntxt (0 on error)
  */
 static char* 
-xquery_client_alloc(mapi_client *fc)
+xquery_client_alloc(mapi_client *mc)
 {
-    xquery_client *ctx = xquery_client_new(fc->stk);
+    xquery_client *ctx = xquery_client_new(mc->stk);
 
-    fc->fc = ctx;
+    mc->fc = ctx;
     if (!ctx) {
         return "!ERROR: no space to allocate xquery client\n";
     } else {
@@ -4532,9 +4537,9 @@ xquery_client_free_(xquery_client *ctx)
 }
 
 static void 
-xquery_client_free(mapi_client *fc) 
+xquery_client_free(mapi_client *mc) 
 {
-    xquery_client_free_(fc->fc);
+    xquery_client_free_(mc->fc);
 }
 
 
@@ -4555,12 +4560,12 @@ xquery_client_init_(xquery_client *ctx )
 
 
 static char* 
-xquery_client_init(mapi_client *fc) 
+xquery_client_init(mapi_client *mc) 
 { 
-    xquery_client *ctx = fc->fc;
+    xquery_client *ctx = mc->fc;
     char* err = xquery_client_init_(ctx);
 
-    ctx->fderr = fc->c->fdout;
+    ctx->fderr = mc->c->fdout;
 
     if (err == 0 && (ctx->cacheid != xquery_cacheid || ctx->cachesize > xquery_client_bytes)) {
         /* re-initialize everything */
@@ -4568,7 +4573,7 @@ xquery_client_init(mapi_client *fc)
         err = xquery_client_alloc_(ctx);
     }
     if (err)
-        fprintf(stderr, "xquery_client_init: client %d %s\n", fc->stk, err);
+        fprintf(stderr, "xquery_client_init: client %d %s\n", mc->stk, err);
     return err;
 }
 
@@ -4578,7 +4583,7 @@ xquery_client_init(mapi_client *fc)
  * end of xquery execution (struct stays alive for reuse).
  */
 static void 
-xquery_client_end(xquery_client *ctx, char *err) 
+xquery_client_reset(xquery_client *ctx, char *err) 
 {
     oid zero = 0, one = 1;
 
@@ -4620,7 +4625,7 @@ xquery_client_end(xquery_client *ctx, char *err)
     *ctx->shredBAT = int_nil; 
 
 
-    MT_set_lock(pf_cache_lock, "xquery_client_end");
+    MT_set_lock(pf_cache_lock, "xquery_client_reset");
     /* only deactivate the loaded modules */
     xquery_loaded_module *mod= ctx->loaded_modules; 
     while(mod) {
@@ -4628,7 +4633,7 @@ xquery_client_end(xquery_client *ctx, char *err)
             mod->ns = NULL; 
             mod = mod->next;
     }
-    MT_unset_lock(pf_cache_lock, "xquery_client_end");
+    MT_unset_lock(pf_cache_lock, "xquery_client_reset");
 
     if (err) 
         fprintf(stderr, "xquery_server: client %d %s\n", ctx->stk, err);
@@ -5081,13 +5086,13 @@ xquery_change_genType(xquery_client *ctx, char* magic_string) {
     return NULL;
 }
 
-static void
-xquery_client_engine(mapi_client *fc )
+void
+xquery_client_engine(mapi_client *mc)
 {
     ssize_t n = 0;
     size_t curlen;
-    xquery_client *ctx = fc->fc;
-    stream *in = fc->c->fdin, *out = fc->c->fdout;
+    xquery_client *ctx = mc->fc;
+    stream *in = mc->c->fdin, *out = mc->c->fdout;
     char *p, *xquery, *err = (char*) -1, *msg = NULL;
 
     /* buf is the mode string that is available during execution in the MIL genType var */
@@ -5100,11 +5105,6 @@ xquery_client_engine(mapi_client *fc )
     ctx->mode = XQ_MAPI;
     while (1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
-        if (!fc->c->blocked && 
-                stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
-            msg = "could not write prompt"; 
-            break;
-        }
         if (stream_flush(out)) {
             msg = "could not flush prompt"; 
             break;
@@ -5147,11 +5147,6 @@ xquery_client_engine(mapi_client *fc )
                         p += sizeof("copy ")-1;
 
                         /* start shredder (first character should be skipped) */
-                        if (!fc->c->blocked && 
-                                stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
-                                msg = "could not write prompt"; 
-                                break;
-                        }
                         if (stream_flush(out)) {
                                 msg = "could not flush prompt"; 
                                 break;
@@ -5195,7 +5190,7 @@ xquery_client_engine(mapi_client *fc )
                 /* memory debugging */
                 xquery_prepared_function *fun = ctx->prepared_functions;
                 BAT *b = NULL;
-                view_client_size(&b, &fc->stk);
+                view_client_size(&b, &mc->stk);
                 if (b) {
                    while(fun) {
                       BUNins(b, fun->def->proc, &fun->def->size, FALSE);
@@ -5207,19 +5202,18 @@ xquery_client_engine(mapi_client *fc )
             }
         }
         /* second and on queries also need a cleared context */
-        xquery_client_end(ctx, NULL); 
+        xquery_client_reset(ctx, NULL); 
     }
-    xquery_client_end(ctx, msg); 
+    xquery_client_end(mc, msg); 
+}
 
-    /* for some reason, mapi_client_end sets keep_open=1 so it continuously leaks streams */
-    stream_close(fc->c->fdin);
-    stream_destroy(fc->c->fdin);
-    fc->c->fdin = NULL;
-    stream_close(fc->c->fdout);
-    stream_destroy(fc->c->fdout);
-    fc->c->fdout = NULL;
+void 
+xquery_client_end(mapi_client *mc, char *err) 
+{ 
+    xquery_client *ctx = (xquery_client*) mc->fc;
+
+    xquery_client_reset(ctx, err); 
     monetSetChannel(THRget(THRgettid()), NULL, NULL);
-
 }
 
 int
@@ -5243,7 +5237,6 @@ xquery_frontend( ptr *F)
     }
     return GDK_FAIL;
 }
-
 
 /*
  * execute xquery and return the result in a string.
@@ -5329,12 +5322,22 @@ CMDxquery(Cntxt stk,
     return GDK_SUCCEED;
 }
 
-/*
- * call a method in a temporary xquery client context
- */  
+/* xquery_method : execute a loop-lifted xquery function
+ *
+ * argc          = #params
+ * itercnt       = #iterations
+ * argcnt[iter]  = #items per param
+ * argtpe[]      = xquery type of each parameter (as string, e.g. 'xs:integer')
+ * argval[]      = str representation of item (e.g. '42')
+ *
+ * shredBAT   = optional shredded document table, that is added to working set
+ *              params of type xs:anyNode are represented as int pre-numbers.
+ *
+ * we return an error string, or NULL iff everything went A-OK
+ */
 char*
-xquery_method(stream *out,
-              int timing,
+xquery_method(mapi_client *mc,
+              int flags,
               char* module,
               char* uri,
               char* method,
@@ -5345,38 +5348,24 @@ xquery_method(stream *out,
               str* argval,
               BAT* shredBAT)
 {
+    xquery_client *ctx = (xquery_client*) mc->fc;
     lng usec = GDKusec();
-    MT_Id XQthread_id = THRgettid(), old_tid;
-    Thread XQthread = THRget(XQthread_id), old_thread;
-    char *err, *buf, *ns = "fn", *mode = "xml-noheader-xrpc";
+    char *mode = (flags&2)?"timing-xml":"timing-xml-noheader-xrpc";
+    char *err, *buf, *ns = "fn";
     stream *s = NULL;
-    mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
-    xquery_client *ctx;
-    Variable v;
 
-    if (mc == NULL || mc->fc == NULL)
-        return "xquery_method: out of client slots.\n";
-
-    ctx = mc->fc;
-    ctx->fderr = GDKerr;
     ctx->mode = 0;
-
     buf = GDKstrdup(module);
     (*ctx->moduleNS) = buf;
     buf = GDKstrdup(method);
     (*ctx->method) = buf;
 
-    if (timing){
-        mode = "timing-xml-noheader-xrpc";
+    if ((flags&1) == 0){
+        mode += 7; /* no "timing-" */
     }
     err = xquery_change_genType(ctx, mode);
     if (err) return err;
 
-    old_tid = mc->t;
-    old_thread = mc->thread;
-    mc->t = XQthread_id;
-    mc->thread = XQthread;
-    monetSetChannel(XQthread, GDKin, out);
     if (argc >= 1000) {
         /* hack: pass argc+1000 and you get debug output */
         s = open_wastream("/tmp/xrpc.mil");
@@ -5400,31 +5389,8 @@ xquery_method(stream *out,
     if (s) {
         stream_close(ctx->fderr);
         stream_destroy(ctx->fderr);
+        ctx->fderr = GDKerr;
     }
-    monetSetChannel(XQthread, GDKin, GDKout);
-
-    mc->t = old_tid;
-    mc->thread = old_thread;
-    xquery_client_end(ctx, NULL);
-
-    for (v = monet_cntxt[mc->stk].var; v && v != mc->lastvar; v = v->next) {
-        ATOMunfix(v->binding.vtype, VALptr(&v->binding));
-        VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
-        VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
-    }
-    /*
-    if (mc->c->fdout) {
-        stream_close(mc->c->fdout);
-        stream_destroy(mc->c->fdout);
-        mc->c->fdout = NULL;
-    }
-    if (mc->c->fdin) {
-        stream_close(mc->c->fdin);
-        stream_destroy(mc->c->fdin);
-        mc->c->fdin = NULL;
-    }
-    */
-    mc->inuse = 0;
     return err;
 }
 

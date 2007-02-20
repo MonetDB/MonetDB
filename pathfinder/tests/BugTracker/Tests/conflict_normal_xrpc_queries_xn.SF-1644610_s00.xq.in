@@ -1,4 +1,4 @@
 import module namespace test = "bugtracker-function"
     at "$TSTSRCDIR/conflict_normal_xrpc_queries.SF-1644610.module.xq";
 
-test:add("localhost", 13, 14)
+test:add("localhost:$XRPCPORT", 13, 14)

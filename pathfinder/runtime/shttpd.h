@@ -167,8 +167,12 @@ extern void shttpd_merge_fds(shttpd_socket *ctx, fd_set *rset, fd_set *wset,int 
 extern void shttpd_poll(shttpd_socket *ctx, unsigned milliseconds);
 extern const char *shttpd_get_var(struct conn *, const char *varname);
 extern int shttpd_template(struct conn *, const char *headers, const char *file, ...);
+
 extern char *shttpd_get_msg(struct shttpd_callback_arg *arg);
+extern char *shttpd_get_method(struct shttpd_callback_arg *arg);
+extern char *shttpd_get_uri(struct shttpd_callback_arg *arg);
 extern int shttpd_get_socket(struct shttpd_callback_arg *arg);
+extern void shttpd_finish(struct shttpd_callback_arg *arg);
 
 #ifdef MT
 extern int shttpd_printf(struct conn *, const char *fmt, ...);

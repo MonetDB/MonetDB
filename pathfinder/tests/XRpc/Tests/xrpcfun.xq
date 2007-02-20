@@ -6,9 +6,9 @@ declare function xrpcfun:convert($v as xs:decimal?) as xs:decimal?
     2.20371 * $v
 };
 
-declare function xrpcfun:xrpcConvert($v as xs:decimal?) as xs:decimal?
+declare function xrpcfun:xrpcConvert($u as xs:string, $v as xs:decimal?) as xs:decimal?
 {
-    execute at {"localhost"}{xrpcfun:convert($v)}
+    execute at {$u}{xrpcfun:convert($v)}
 };
 
 declare function xrpcfun:add($v1 as xs:decimal, 

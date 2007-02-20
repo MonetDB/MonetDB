@@ -501,6 +501,8 @@ _                                {S}
 "declare"{_}"construction"{_}"strip" { yield (declare_construction_strip); }
 "declare"{_}"function"             { yield (declare_function); }
 "declare"{_}"updating"{_}"function" { yield (declare_updating_function); }
+"declare"{_}"document"{_}"management"{_}"function" { yield (declare_docmgmt_function); }
+"declare"{_}"docmgmt"{_}"function" { yield (declare_docmgmt_function); }
 "declare"{_}"option"               { yield (declare_option); }
 "declare"{_}"revalidation"{_}"strict" { yield (declare_revalidation_strict); }
 "declare"{_}"revalidation"{_}"lax"    { yield (declare_revalidation_lax); }

@@ -1,5 +1,7 @@
 load
 sigs
+loadthesis
+createcoll0
 createcoll1
 test_split2frag
 test_indexmerge
@@ -8,4 +10,18 @@ qmil0
 qmil1
 qmil2
 qmapi1
+test_lms_returnall
+test_lms_returnmatching
+test_lms_and
+test_lms_or
+test_select_star1
+test_select_star2
+test_select_star3
+test_upprop
+test_downprop
+test_union
+test_nllr_allfeatures
+test_lms_allfeatures
+test_nllr_manyqueries
+test_lms_manyqueries
 cleanup

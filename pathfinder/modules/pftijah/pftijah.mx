@@ -152,6 +152,10 @@ const DEBUG := false;
 const SIZE_ENTITY := 1;
 const SIZE_TERM := 2;
 
+# locks
+var tj_adm_lock     := lock_create(); # tijah top administration lock
+var tj_coll_lockbat := new(str,lock); # locks for all active collections
+
 # Comparisons
 const GREATER := 10;
 const LESS := 11;
@@ -215,7 +219,10 @@ debugging, when this help is removed Mtest/Mapi fails ",
 "pftijah");
 PROC tj_ping() : void :=
 {
-  printf("# *** ping *****\n");
+  lock_set(tj_adm_lock);
+  var err := CATCH({printf("# *** ping *****\n");} );
+  lock_unset(tj_adm_lock);
+  if (not(isnil(err))) ERROR(err);
 }
 
 ADDHELP("tj_init_global", "flokstra & rode", "Jan 2007",
@@ -227,8 +234,15 @@ Initialize the global pftijah environment.",
 "pftijah");
 PROC tj_init_global(BAT[str,str] param) : void :=
 {
-    if ( verbose ) printf("#TJ: tj_init_global() called.\n");
-    param@batloop() {
+    tj_init_global(param,true);
+}
+
+PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
+{
+    if (doLock) lock_set(tj_adm_lock);
+    var err := CATCH({
+      if ( verbose ) printf("#TJ: tj_init_global() called.\n");
+      param@batloop() {
 	if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
 	if ( $h = "term_frag" ) {
 	    # incomplete, handle term frag
@@ -237,10 +251,13 @@ PROC tj_init_global(BAT[str,str] param) : void :=
 	} else {
 	    ERROR("# tj_init_global() unkonwn parameter [%s].\n",$h);
 	}
-    }
-    new(oid,str).persists(true).bbpname("tj_globalTerms");
-    new(oid,str).persists(true).bbpname("tj_globalTags");
-    new(oid,str).persists(true).bbpname("tj_collName");
+      }
+      new(oid,str).persists(true).bbpname("tj_globalTerms");
+      new(oid,str).persists(true).bbpname("tj_globalTags");
+      new(oid,str).persists(true).bbpname("tj_collName");
+    });
+    if (doLock) lock_unset(tj_adm_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 
 PROC tj_init_global() : void :=
@@ -255,16 +272,43 @@ Delete all pftijah collections and remove the global pftijah settings.",
 "pftijah");
 PROC tj_delete_global() : void :=
 {
-    if ( verbose ) printf("#TJ: tj_delete_global() called.\n");
-    #
-    bat("tj_collName")@batloop(){
-    	tj_delete_collection($t);
-    }
-    bat("tj_globalTerms").persists(false);
-    bat("tj_globalTags").persists(false);
-    bat("tj_collName").persists(false);
-    commit();
+    lock_set(tj_adm_lock);
+    var err := CATCH({
+      if ( verbose ) printf("#TJ: tj_delete_global() called.\n");
+      #
+      bat("tj_collName")@batloop(){
+  	  tj_delete_collection($t,false);
+      }
+      bat("tj_globalTerms").persists(false);
+      bat("tj_globalTags").persists(false);
+      bat("tj_collName").persists(false);
+    });
+    lock_unset(tj_adm_lock);
+    if (not(isnil(err))) ERROR(err);
 }
+
+# protext the lookup/insert of the per-collection-locks
+
+var tj_coll_mutex := lock_create();
+
+PROC tj_get_collection_lock(str colname) : lock
+{
+    var collection_lock;
+
+    lock_set(tj_coll_mutex);
+    var err := CATCH({
+      if (tj_coll_lockbat.exist(colname))
+        collection_lock := tj_coll_lockbat.find(colname);
+      else {
+        collection_lock := lock_create();
+	tj_coll_lockbat.insert(colname,collection_lock);
+      }
+    });
+    lock_unset(tj_coll_mutex);
+    if (not(isnil(err))) ERROR(err);
+    return collection_lock;
+}
+
 
 ADDHELP("tj_init_collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
@@ -280,62 +324,87 @@ Create a new tijah collection.",
 "pftijah");
 PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
 {
-    if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") called.\n",collName);
+    var coll_lock;
 
-    if (not(view_bbp_name().reverse().exist("tj_collName"))) {
-    	tj_init_global(); # just in case 
-    }
-    if (bat("tj_collName").reverse().exist(collName)) {
+    #
+    # first handle the global administration stuff
+    #
+    lock_set(tj_adm_lock);
+    var err := CATCH({
+      if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") called.\n",collName);
+
+      if (not(view_bbp_name().reverse().exist("tj_collName"))) {
+    	tj_init_global(new(str,str),false); # just in case 
+      }
+      if (bat("tj_collName").reverse().exist(collName)) {
     	ERROR("tj_init_collection, pftijah collection already exists: %s\n",collName);
-    }
-    new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_name");
-    new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_firstpre");
-    new(str,str).persists(true).bbpname("tj_" + collName + "_param");
-    
-    new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_tid1");
-    new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_size1");
-    # bat contains the start oid of every tid/size frag. Head is postfix
-    # string to _tid/_size. Normally "", "2", "3"
-    new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_fragments");
-    bat("tj_" + collName + "_fragments").append(1@0);
-    new(oid,oid).persists(true).bbpname("tj_" + collName + "_pfpre");
-       
-    var coll_oid;
-    if (bat("tj_collName").count() = 0) { coll_oid := 0@0; }
-        	else { coll_oid := oid(int(bat("tj_collName").reverse().max()) + 1); }
-    bat("tj_collName").insert(coll_oid, collName);
+      }
+      #
+      var coll_oid;
+      if (bat("tj_collName").count() = 0) { 
+        coll_oid := 0@0;
+      } else {
+        coll_oid := oid(int(bat("tj_collName").reverse().max()) + 1);
+      }
+      bat("tj_collName").insert(coll_oid, collName);
+      #
+      coll_lock := tj_get_collection_lock(collName);
+    });
+    lock_unset(tj_adm_lock);
+    if (not(isnil(err))) ERROR(err);
     #
-    # now read the param file
+    # now the collection stuff 
     #
-    var stemmer  := "nostemming";
-    var tagfilter := "";
-
-    param@batloop() {
-	if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
-	if ( $h = "stemmer" ) {
-	    stemmer := $t;
-	} else if ( $h = "fragmentSize" ) {
-            bat("tj_" + collName + "_param").insert($h,$t);
-	} else if ( $h = "tagFilter" ) {
-            tagfilter := $t;
-	} else {
-	    ERROR("# tj_init_global() unkonwn parameter [%s].\n",$h);
-	}
-    }
-    #
-    # now set the parameters for this collection
-    #
-    bat("tj_" + collName + "_param").insert("_version","1.01");
-    bat("tj_" + collName + "_param").insert("name",collName);
-    bat("tj_" + collName + "_param").insert("height","0");
-    bat("tj_" + collName + "_param").insert("stemmer",stemmer);
-    bat("tj_" + collName + "_param").insert("tagFilter",tagfilter);
-    bat("tj_" + collName + "_param").insert("preExpansion","4");
-    bat("tj_" + collName + "_param").insert("status","building");
-    bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
-    bat("tj_" + collName + "_param").insert("_last_finalizedPre","0");
-    #
-    commit();
+    lock_set(coll_lock);
+    var err := CATCH({
+      new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_name");
+      new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_firstpre");
+      new(str,str).persists(true).bbpname("tj_" + collName + "_param");
+      
+      new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_tid1");
+      new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_size1");
+      # bat contains the start oid of every tid/size frag. Head is postfix
+      # string to _tid/_size. Normally "", "2", "3"
+      new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_fragments");
+      bat("tj_" + collName + "_fragments").append(1@0);
+      new(oid,oid).persists(true).bbpname("tj_" + collName + "_pfpre");
+         
+      #
+      # now read the param file
+      #
+      var stemmer   := "nostemming";
+      var tagfilter := "";
+  
+      param@batloop() {
+	  if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
+	  if ( $h = "stemmer" ) {
+	      stemmer := $t;
+	  } else if ( $h = "pf_collection" ) {
+              bat("tj_" + collName + "_param").insert($h,$t);
+	  } else if ( $h = "fragmentSize" ) {
+              bat("tj_" + collName + "_param").insert($h,$t);
+	  } else if ( $h = "tagFilter" ) {
+              tagfilter := $t;
+	  } else {
+	      ERROR("# tj_init_collection() unknown parameter [%s].\n",$h);
+	  }
+      }
+      #
+      # now set the parameters for this collection
+      #
+      bat("tj_" + collName + "_param").insert("_version","1.01");
+      bat("tj_" + collName + "_param").insert("name",collName);
+      bat("tj_" + collName + "_param").insert("height","0");
+      bat("tj_" + collName + "_param").insert("stemmer",stemmer);
+      bat("tj_" + collName + "_param").insert("tagFilter",tagfilter);
+      bat("tj_" + collName + "_param").insert("preExpansion","4");
+      bat("tj_" + collName + "_param").insert("status","building");
+      bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
+      bat("tj_" + collName + "_param").insert("_last_finalizedPre","0");
+      #
+    });
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 
 ADDHELP("tj_delete_collection", "flokstra & rode", "Jan 2007",
@@ -346,6 +415,39 @@ Delete the collection with name \"collName\".",
 "pftijah");
 PROC tj_delete_collection(str collName) : void
 {
+    tj_delete_collection(collName,true);
+}
+
+PROC tj_delete_collection(str collName, bit doAdmLock) : void
+{
+    var coll_lock;
+
+    #
+    # first handle the global administration stuff
+    #
+    if ( doAdmLock ) lock_set(tj_adm_lock);
+    var err := CATCH({
+      if ( verbose ) printf("#TJ: tj_delete_collection(\"%s\") called.\n",collName);
+
+      if (not(view_bbp_name().reverse().exist("tj_collName"))) {
+    	ERROR("tj_delete_collection: pftijah not initialized.\n");
+      }
+      if (not(bat("tj_collName").reverse().exist(collName))) {
+    	ERROR("tj_delete_collection, pftijah collection does not exist: %s\n",collName);
+      }
+      #
+      var coll_oid := bat("tj_collName").reverse().find(collName);
+      bat("tj_collName").delete(coll_oid);
+      #
+      coll_lock := tj_get_collection_lock(collName);
+    });
+    if ( doAdmLock ) lock_unset(tj_adm_lock);
+    if (not(isnil(err))) ERROR(err);
+    #
+    # now remove the collection stuff 
+    #
+    lock_set(coll_lock);
+    var err := CATCH({
 	bat("tj_" + collName + "_doc_name").persists(false);
 	bat("tj_" + collName + "_doc_firstpre").persists(false);
 	bat("tj_" + collName + "_param").persists(false);
@@ -362,10 +464,9 @@ PROC tj_delete_collection(str collName) : void
 		bat("tj_" + collName + "_TagIndex").persists(false);
 		bat("tj_" + collName + "_Tags").persists(false);
 	}
-        
-	var coll_oid := bat("tj_collName").reverse().find(collName);
-	bat("tj_collName").delete(coll_oid);
-	commit();
+    });
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 
 # internal method which return all relevant data about a collection in a
@@ -413,15 +514,21 @@ The index is automatically finalized at the end of the method.",
 "pftijah");
 PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
 {
-    var t_start := usec();
-    bat("tj_globalTerms").access(BAT_WRITE);
-    bat("tj_globalTags").access(BAT_WRITE);
-    _tj_add2collection(collName,_tj_collection(collName),uri_loc,uri_name,store);
-    _tj_finalize_collection(collName);
-    if ( timing ) {
-       var ms := (usec()-t_start)/1000;
-       printf("#C[%s]:tj_add2collection(): + aggregate time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
-     }
+    var coll_lock := tj_get_collection_lock(collName);
+    lock_set(coll_lock);
+    var err := CATCH({
+      var t_start := usec();
+      bat("tj_globalTerms").access(BAT_WRITE);
+      bat("tj_globalTags").access(BAT_WRITE);
+      _tj_add2collection(collName,_tj_collection(collName),uri_loc,uri_name,store);
+      _tj_finalize_collection(collName);
+      if ( timing ) {
+         var ms := (usec()-t_start)/1000;
+         printf("#C[%s]:tj_add2collection(): + aggregate time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
+       }
+    });
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 
 ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
@@ -438,18 +545,24 @@ xml documents in the bat are added to the collection.",
 "pftijah");
 PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
 {
-    var t_start := usec();
-    bat("tj_globalTerms").access(BAT_WRITE);
-    bat("tj_globalTags").access(BAT_WRITE);
-    # var cb := _tj_collection(collName);
-    uri@batloop() {
-      _tj_add2collection(collName,_tj_collection(collName),$h,$t,store);
-    }
-    _tj_finalize_collection(collName);
-    if ( timing ) {
-       var ms := (usec()-t_start)/1000;
-       printf("#C[%s]:tj_add2collection(BAT): + aggregate time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
-     }
+    var coll_lock := tj_get_collection_lock(collName);
+    lock_set(coll_lock);
+    var err := CATCH({
+      var t_start := usec();
+      bat("tj_globalTerms").access(BAT_WRITE);
+      bat("tj_globalTags").access(BAT_WRITE);
+      # var cb := _tj_collection(collName);
+      uri@batloop() {
+        _tj_add2collection(collName,_tj_collection(collName),$h,$t,store);
+      }
+      _tj_finalize_collection(collName);
+      if ( timing ) {
+         var ms := (usec()-t_start)/1000;
+         printf("#C[%s]:tj_add2collection(BAT): + aggregate time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
+       }
+    });
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 
 PROC _timestr(lng v) : str
@@ -468,6 +581,7 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
            
     var i_start;
     if ( store ) {
+	var pf_collection := tj_get_parameter(collName,"pf_collection");
         if ( isnil(uri_name) ) {
 	  uri_name := uri_loc;
 	} else if ( uri_name = "" ) {
@@ -476,7 +590,11 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
         var ws := ws_create();
         if (not(bat("doc_name").reverse().exist(uri_name))) {
             var s_start := usec();
-    	    shred_doc(uri_loc,uri_name);
+	    if ( isnil(pf_collection) ) {
+    	        shred_doc(uri_loc,uri_name);
+	    } else {
+    	        shred_doc(uri_loc,uri_name,pf_collection,0LL);
+	    }
             if ( timing ) {
 	      ms := (usec()-s_start)/1000;
               printf("#C[%s]:add2coll(\"%s\"): shred time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
@@ -502,7 +620,7 @@ PROC _tj_add2collection(str collName, BAT[void,bat] collBats, str uri_loc, str u
     bat("tj_" + collName + "_param").replace("height", max(height1,height2).str());
     bat("tj_" + collName + "_param").replace("status","building");
     commit();	
-    if ( verbose ) printf("#TJ:_tj_add2collectiontj_init_collection(\"%s\") finish.\n",collName);
+    if ( verbose ) printf("#TJ:_tj_add2collectiont(\"%s\") finish.\n",collName);
     if ( timing ) {
 	ms := (usec()-t_start)/1000;
         printf("#C[%s]:add2coll(\"%s\"): total time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
@@ -519,7 +637,13 @@ added to the collection. This is now done automagically",
 "pftijah");
 PROC tj_finalize_collection(str collName) : void
 {
-    _tj_finalize_collection(collName);
+    var coll_lock := tj_get_collection_lock(collName);
+    lock_set(coll_lock);
+    var err := CATCH({
+      _tj_finalize_collection(collName);
+    });
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 
 # internal finalize function
@@ -587,8 +711,23 @@ PROC tj_set_parameter(str collName, str par, str val) : void
 	}
 }
 
+# set a collection parameter
+PROC tj_get_parameter(str collName, str par) : str
+{
+	var parbat := bat("tj_" + collName + "_param");
+
+	if ( parbat.exist(par) ) {
+	    return parbat.find(par);
+	} else {
+	    return str(nil);
+	}
+}
+
 PROC tj_dump_collection(str collName) : void
 {
+    var coll_lock := tj_get_collection_lock(collName);
+    lock_set(coll_lock);
+    var err := CATCH({
 	bat("tj_" + collName + "_param").print();
 	bat("tj_" + collName + "_doc_name").print();
 	bat("tj_" + collName + "_doc_firstpre").print();
@@ -600,6 +739,9 @@ PROC tj_dump_collection(str collName) : void
 	print(bat("tj_" + collName + "_pfpre"));
 	print(bat("tj_" + collName + "_fragments"));
 	# print(bat("tj_" + collName + "_height"));
+    });
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 
 #####################################################################
@@ -612,7 +754,7 @@ ADDHELP("tj_setCollName", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
 - the name of the collection to be set.\n\
 DESCRIPTION:\n\
-debugging, when this help is removed Mtest/Mapi fails ",
+function should be obsolete in the future (no locking impl) ",
 "pftijah");
 # SUGAR: this function should not be necessary in the future but it
 #        first has to be removed from the generated scripts.
@@ -633,7 +775,7 @@ PROC tj_setCollName(str name) : void :=
         } 
 }
 
-# INCOMPLETE: henning, what should I do about this.
+# INCOMPLETE: henning, what should I do about this (no locking impl).
 PROC tj_setBackgroundCollName(str name) : void := 
 {
 	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
@@ -1992,31 +2134,38 @@ PROC scale(bat region, flt importance) : bat :=
 # PROBABILISTIC SET OPERATORS
 ################################################################################
 
+# Compute symmetric difference between two sets: all element that are not in the intersection
+PROC ksymmdiff(bat left, bat right) : bat := 
+{
+    var onlyleft  := left.kdiff(right);
+    var onlyright := right.kdiff(left);
+    return onlyleft.kunion(onlyright);
+}
+
 PROC or_sum(bat left, bat right) : bat :=
 {
 
-	return [+](left,right);
-	#var inters    := [+](left,right);
-	#var onlyleft  := left.kdiff(inters);
-	#var onlyright := right.kdiff(inters);
-	#var result    := inters.kunion(onlyleft).kunion(onlyright).sort();
+	var inters := [+](left,right);
 
-	#var inters := nil; var onlyleft := nil; var onlyright := nil;
-	
-        #return result;
+    return inters.kunion(ksymmdiff(left,right)).sort();
+
 }
 
 PROC or_max(bat left, bat right) : bat :=
 {
 
-	return [max](left,right);
+    var inters := [max](left,right);
+
+    return inters.kunion(ksymmdiff(left,right)).sort();
 
 }
 
 PROC or_prob(bat left, bat right) : bat :=
 {
 
-	return [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right)));
+	var inters := [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right)));
+
+    return inters.kunion(ksymmdiff(left,right)).sort();
 
 }
 
@@ -2039,14 +2188,18 @@ PROC or_exp(bat left, bat right, int A) : bat :=
 PROC or_min(bat left, bat right) : bat :=
 {
 
-	return [min](left,right);
+    var inters := [min](left,right);
+
+    return inters.kunion(ksymmdiff(left,right)).sort();
 
 }
 
 PROC or_prod(bat left, bat right) : bat :=
 {
 
-	return [*](left,right);
+    var inters := [*](left,right);
+
+    return inters.kunion(ksymmdiff(left,right)).sort();
 
 }
 
@@ -2273,7 +2426,6 @@ PROC order_regions(bat region) : bat :=
 #"Order regions in descending order based on their score values.",
 #"TIJAH");
 
-
 ##########################################
 # Collection Management Functions
 #
@@ -2282,12 +2434,14 @@ PROC order_regions(bat region) : bat :=
 # SUGAR, REMOVE IN FUTURE
 PROC tj_global_init() : void 
 {
+        printf("WARNING: the use of function tj_global_init() is deprecated.\n");
 	tj_init_global();
 }
 
 # SUGAR, REMOVE IN FUTURE
 PROC tj_coll_init(str collName, str stemmer) : void
 {
+        printf("WARNING: the use of function tj_coll_init() is deprecated.\n");
 	var collpar := new(str,str);
 	collpar.insert("stemmer",stemmer);
 	tj_init_collection(collName,collpar);
@@ -2296,12 +2450,14 @@ PROC tj_coll_init(str collName, str stemmer) : void
 # SUGAR, REMOVE IN FUTURE
 PROC tj_global_remove() : void
 {
+        printf("WARNING: the use of function tj_global_remove() is deprecated.\n");
 	tj_delete_global();
 }
 
 # SUGAR, REMOVE IN FUTURE
 PROC tj_coll_remove(str collName) : void
 {
+        printf("WARNING: the use of function tj_coll_remove() is deprecated.\n");
 	tj_delete_collection(collName);
 	commit();
 }
@@ -2309,18 +2465,21 @@ PROC tj_coll_remove(str collName) : void
 # SUGAR, REMOVE IN FUTURE
 PROC tj_collection(str collName) : BAT[void,bat]
 {
+        printf("WARNING: the use of function tj_collection() is deprecated.\n");
 	return _tj_collection(collName);
 }
 
 # SUGAR, REMOVE IN FUTURE
 PROC tj_url2Collection(str doc, str url, str selTagList) : void
 {
+        printf("WARNING: the use of function tj_url2Collection() is deprecated.\n");
 	tj_url2Collection(collName, doc, url, selTagList);
 }
 
 # SUGAR, REMOVE IN FUTURE
 PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 { 
+        printf("WARNING: the use of function tj_url2Collection() is deprecated.\n");
 	tj_set_parameter(collName,"tagFilter",selTagList);
 	_tj_add2collection(collName,_tj_collection(collName),url,doc,true);
 }
@@ -2328,6 +2487,7 @@ PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 # SUGAR, REMOVE IN FUTURE
 PROC tj_url2Collection_index(str collName, str url, str selTagList) : void
 {
+        printf("WARNING: the use of function tj_url2Collection_index() is deprecated.\n");
 	tj_set_parameter(collName,"tagFilter",selTagList);
 	_tj_add2collection(collName,_tj_collection(collName),url,url,false);
 }
@@ -2335,6 +2495,7 @@ PROC tj_url2Collection_index(str collName, str url, str selTagList) : void
 # SUGAR, REMOVE IN FUTURE
 PROC tj_finalize(str collName) : void
 {
+        printf("WARNING: the use of function tj_finalize() is deprecated.\n");
 }
 
 PROC _buildIRindex(str collName) : void :=

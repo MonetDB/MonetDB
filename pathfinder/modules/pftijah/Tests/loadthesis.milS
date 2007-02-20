@@ -1,0 +1,9 @@
+module(pftijah);
+module(unix);
+
+# should run if you set TSTTRGDIR to pwd
+var path:=getenv("TSTSRCDIR");
+
+# index thesis collection
+tj_init_collection("thesis", new(str,str).insert("stemmer","snowball-english"));
+tj_add2collection("thesis",path+"/xml-docs/thesis.xml","thesis.xml",true);

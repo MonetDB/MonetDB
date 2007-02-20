@@ -1,0 +1,30 @@
+stdout of test 'test_nllr_manyqueries` in directory 'modules/pftijah` itself:
+
+
+# 11:05:55 >  
+# 11:05:55 >  Mtimeout -timeout 180 Mserver "--config=/local/os/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local/os/MonetDB/lib/MonetDB4:/local/os/MonetDB/lib/MonetDB4/lib:/local/os/MonetDB/lib/MonetDB4/bin" --set "gdk_dbfarm=/local/os/MonetDB/var/MonetDB4/dbfarm" --set "sql_logdir=/local/os/MonetDB/var/MonetDB4/sql_logs" --set "xquery_logdir=/local/os/MonetDB/var/MonetDB4/xquery_logs" --set mapi_port=33137 --set xrpc_port=40197 --set monet_prompt= --trace "--dbname=mTests_modules_pftijah" --dbinit="module(pathfinder);module(pftijah); module(pathfinder);" ; echo ; echo Over..
+# 11:05:55 >  
+
+# Monet Database Server V4.16.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-suse-linux/64bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 11:05:55 >  
+# 11:05:55 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=33137 test_nllr_manyqueries.xq
+# 11:05:55 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 11:06:10 >  
+# 11:06:10 >  Done.
+# 11:06:10 >  
+

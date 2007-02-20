@@ -25,6 +25,8 @@ string_join.SF-1505520
 nested_doc.SF-1446426
 nlthetajoin.SF-1437299
 noroot.SF-1452237
+nodelist_function.SF-1463558
+default_ns.SF-1511195
 where-clause.SF-1524344a
 where-clause.SF-1524344b
 where-clause.SF-1524344c
@@ -50,6 +52,7 @@ xs_untypedAtomic.SF-1509806.mps
 xs_untypedAtomic.SF-1509806.alg
 polymorphic_sequences.SF-1497419.mps
 polymorphic_sequences.SF-1497419.alg
+boolean_string_cast.SF-1525175
 bogus_text_step.SF-1537500.mps
 bogus_text_step.SF-1537500.alg
 item_sequence_creation.SF-1543871a.mps
@@ -91,3 +94,6 @@ predicate_selects_too_few_nodes.SF-1636588_ws
 seqcast_opt_int_to_numeric.SF-1637867
 entities_dtd.SF-1642663
 entities_dtd.SF-1642665
+call2builtin_function_crashes_XRPC_client.SF-1655857
+conflict_normal_xrpc_queries_nx.SF-1644610
+conflict_normal_xrpc_queries_xn.SF-1644610

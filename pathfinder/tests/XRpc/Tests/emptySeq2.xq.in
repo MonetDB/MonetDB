@@ -2,5 +2,5 @@ import module namespace xrpc = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
 
 (: the middle parameter is sometimes empty :)
 for $i in (<a/>, (), <b/>)
-    return execute at {"localhost"}
+    return execute at {"localhost:$XRPCPORT"}
         {xrpc:echoVoidWithParams(("abc", (), "xyz"), $i, 100)}

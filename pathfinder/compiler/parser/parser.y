@@ -311,6 +311,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token declare_default_element         "declare default element"
 %token declare_default_function        "declare default function"
 %token declare_default_order           "declare default order"
+%token declare_docmgmt_function        "declare document management function"
 %token declare_function                "declare function"
 %token declare_updating_function       "declare updating function"
 %token declare_copy_namespaces         "declare copy-namespaces"
@@ -1266,6 +1267,28 @@ FunctionDecl              : "declare function" QName_LParen
                                    ->sem.qname_raw = $2;
 
 #ifdef ENABLE_MILPRINT_SUMMER
+                              if (module_base)
+                                  module_base
+                                      = 1 | (module_base ^ (unsigned long) $$);
+#endif
+                            }
+/* Pathfinder extens. */  | "declare document management function" QName_LParen
+                            OptParamList_ ")" EnclosedExpr
+                            { c = wire2 (p_fun_decl, @$,
+                                         wire2 (p_fun_sig, loc_rng (@2, @4),
+                                                $3, 
+                                                (c1 = wire1 (
+                                                       p_seq_ty, @$,
+                                                       wire1 (p_docmgmt_ty, @$,
+                                                              nil (@4))),
+                                                 c1->sem.oci = p_zero_or_more,
+                                                 c1)),
+                                         $5);
+                              c->sem.qname = $2;
+                              $$ = c;
+
+#ifdef ENABLE_MILPRINT_SUMMER
+                              num_fun++;
                               if (module_base)
                                   module_base
                                       = 1 | (module_base ^ (unsigned long) $$);

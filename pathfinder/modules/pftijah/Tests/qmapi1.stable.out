@@ -22,7 +22,7 @@ Over..
 # 16:05:50 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>112.000000<panel id="d1">
+<XQueryResult><panel id="d1">
     <dat>19930216</dat>
     <speech>
       <character>Pointy-Haired Boss</character>

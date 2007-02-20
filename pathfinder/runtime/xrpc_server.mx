@@ -43,9 +43,18 @@ remote XQuery execution using HTTP connection on top of MonetDB for the
 .COMMAND httpd_start(int port, str option) : void = CMDhttpd_start;
 "Start the HTTP server for RPC calls on the specified port."
 
+.EPILOGUE = xrpc_epilogue;
 .END xrpc_server;
 
 @mil
+# initialize xrpcd_admin: IPs that can execute modules from the special admin/ directory
+var xrpc_admin := bat(str,void);
+xrpc_admin.insert(reverse(split(monet_environment.find("xrpc_admin"),";"))).bbpname("xrpc_admin");
+
+# initialize xrpcd_trusted: URL prefixes for modules that anybody can execute
+var xrpc_trusted := bat(str,void);
+xrpc_trusted.insert(reverse(split(monet_environment.find("xrpc_trusted"),";"))).bbpname("xrpc_trusted");
+
 PROC rpcd_start(int port, str options) : void {
     fork(httpd_start(port, options));
 }
@@ -68,12 +77,24 @@ Start XRPC receiver on the specified port",
 "xrpc_server");
 
 PROC rpcd_start() : void {
-    rpcd_start( int(monet_environment.find("xquery_httpd_port")), "");
+    var mapi_port := int(monet_environment.find("mapi_port"));
+    var xrpc_port := int_nil;
+    if (monet_environment.exist("xrpc_port"))
+       xrpc_port := int(monet_environment.find("xrpc_port"));
+    if (isnil(xrpc_port))
+       xrpc_port := mapi_port+1;
+
+    var xrpc_open := "";
+    if (monet_environment.exist("xrpc_open"))
+       if (monet_environment.find("xrpc_open") = "yes")
+          xrpc_open := "open"; 
+
+    rpcd_start( xrpc_port, xrpc_open);
 }
 ADDHELP("rpcd_start", "zhang", "November 2005",
 "DESCRIPTION:\n\
 Start XPRC receiver on the default port as specified in \
-\"monet_environment\" by \"xquery_httpd_port\"",
+\"monet_environment\" by \"xrpc_port\"",
 "xrpc_server");
 
 @h
@@ -84,6 +105,7 @@ Start XPRC receiver on the default port as specified in \
 
 #include <gdk.h>
 #include <stream.h>
+#include <mapi.h>
 #include <time.h>
 
 #ifdef _WIN32   /* Windows specific */
@@ -98,6 +120,9 @@ Start XPRC receiver on the default port as specified in \
     #include <sys/types.h>	/* used by socket */
     #include <sys/socket.h>
     #include <unistd.h>
+    #include <netinet/in.h> /* hton and ntoh */
+    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
+    #include <netdb.h>                /* convert domain names into IP addr */
     #include <errno.h>
     #include <ctype.h>
 #endif
@@ -105,43 +130,64 @@ Start XPRC receiver on the default port as specified in \
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "pathfinder.h"
 #include "pf_support.h"
 #include "shredder.h"
 #include "serialize.h"
 #include "shttpd.h"
 
-#define MAXPARAMS       32
-#define HTTPD_FUNC      "/xrpc"
-#define ERR404          "404 Bad Request"
-#define ERR500          "500 Internal Server Error"
-#define OUT_OF_MEM      "Internal Receiver Error: out-of memory"
-#define NOT_WELL_FORMED "Request XML message not well-formed"
+#define HTTPD_DEFAULT_PORT      48080
+#define HTTPD_FUNC              "/xrpc"
+#define ERR404                  "404 Bad Request"
+#define ERR500                  "500 Internal Server Error"
+#define OUT_OF_MEM              "Internal Receiver Error: out-of memory"
+#define NOT_WELL_FORMED         "Request XML message not well-formed"
+#define MAX_NR_PARAMS           32
 
-/* TODO: why don't we define this in pathfinder.mx??? */
-#define ELEMENT         0
-#define PFTEXT          1
-#define COMMENT         2
-#define PI              3
-#define DOCUMENT        4
-#define COLLECTION      5
+#define SOAP_NS     "http://www.w3.org/2003/05/soap-envelope"
+#define XDT_NS      "http://www.w3.org/2005/xpath-datatypes"
+#define XS_NS       "http://www.w3.org/2001/XMLSchema"
+#define XSI_NS      "http://www.w3.org/2001/XMLSchema-instance"
+#define XRPC_NS     "http://monetdb.cwi.nl/XQuery"
+#define XRPC_LOC    "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
 
-#define SOAP_NS  "http://www.w3.org/2003/05/soap-envelope"
-#define XRPC_NS  "http://monetdb.cwi.nl/XQuery"
-#define XRPC_LOC "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
-#define XS_NS    "http://www.w3.org/2001/XMLSchema"
-#define XSI_NS   "http://www.w3.org/2001/XMLSchema-instance"
-
-/* To prevent starting the HTTP server twice */
-int rpcd_running = 0;
-int timing = 0;
+#define XRPC_HEADER "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"\
+                    "<env:Envelope xmlns:env=\"%s\""\
+                                 " xmlns:xrpc=\"%s\""\
+                                 " xmlns:xs=\"%s\""\
+                                 " xmlns:xsi=\"%s\""\
+                                 " xsi:schemaLocation=\"%s %s\">"\
+                     "<env:Body>"\
+                      "<xrpc:request xrpc:module=\"%s\""\
+                               " xrpc:location=\"%s\""\
+                               " xrpc:method=\"%s\">"
+#define XRPC_HTTP_CALL "<xrpc:call>"\
+                        "<xrpc:sequence>"\
+                         "<xrpc:atomic-value xsi:type=\"xs:string\">\"%s\"</xrpc:atomic-value>"\
+                        "</xrpc:sequence>"\
+                       "</xrpc:call>"
+#define XRPC_PUT_CALL  "<xrpc:call>"\
+                        "<xrpc:sequence>"\
+                         "<xrpc:atomic-value xsi:type=\"xs:string\">\"%s\"</xrpc:atomic-value>"\
+                        "</xrpc:sequence>"\
+                        "<xrpc:sequence>"\
+                         "<xrpc:element>%s</xrpc:element>"\
+                        "</xrpc:sequence>"\
+                       "</xrpc:call>"
+#define XRPC_FOOTER   "</xrpc:request>"\
+                     "</env:Body>"\
+                    "</env:Envelope>"
 
 #endif /* XQUERY_RPC_H */
 
 @c
 #include "pf_config.h"
 #include "xrpc_server.h"
-/*    stream_close(s); stream_destroy(s);                             \
- *    */
+
+/* To prevent starting the HTTP server twice */
+int rpcd_running = 0;
+int timing = 0;
+
 
 #define clean_up(s, argcnt, argtpe, argval, iterc, nr_args) {       \
     lng i = 0;                                                      \
@@ -185,37 +231,51 @@ int timing = 0;
 static BAT*
 request2bat(struct shttpd_callback_arg *arg, stream *out)
 {
-    char *strptr = NULL, *req_msg = NULL;
+    char *strptr = NULL, *del = NULL, *req_msg = shttpd_get_msg(arg); 
     lng percentage = 0;
     BAT *shredBAT = NULL;
     bit verbose = FALSE;
 
+    if (strcmp(shttpd_get_method(arg), "POST")) {
+        /* support GET, PUT and DEL by redirecting those to a predefined XRPC module */
+        char *docname = shttpd_get_uri(arg) + 6; /* skip "/xrpc/" prefix that directed us here */
+        char *body_format = XRPC_HTTP_CALL;
+        char *p, uri[128];
+
+        size_t len = 2000 + strlen(docname);
+        if (strcmp(shttpd_get_method(arg), "PUT") == 0) len += strlen(req_msg);
+
+        req_msg = del = p = (char*) GDKmalloc(len);
+        if (del == NULL) {
+            send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
+            return NULL;
+        }
+
+        /* the PUT, GET and DELETE methods are implemented in this module */
+        sprintf(uri, "http://localhost:%d/admin/admin.xq", rpcd_running);
+
+        /* create a fake XRPC message for  GET/PUT/DELETE (=method) that invoke xrpc:method(URI) */
+        p += sprintf(p, XRPC_HEADER, SOAP_NS, XRPC_NS, XS_NS, XSI_NS, XRPC_NS, XRPC_LOC,
+            "http://monetdb.cwi.nl/XQuery/admin/", uri, shttpd_get_method(arg));
+        p += sprintf(p, body_format, docname, req_msg);   
+        strcpy(p, XRPC_FOOTER);
+    }
     /* Remove the first line of the message, which containing
      * "<?xml...?>", so that the message we pass to CMDshred2bats starts
      * directly with <env:Envelope ...> */
-    req_msg = shttpd_get_msg(arg);
-    strptr  = req_msg + 7; /* strlen("<?xml...?>") >= 7 */
-    if ( (strstr(req_msg, "<?xml") != req_msg) ||
-         (strptr = strchr(strptr, (int)'<')) == NULL ) {
+    strptr = req_msg + 7; /* strlen("<?xml...?>") >= 7 */
+    if ((strstr(req_msg, "<?xml") != req_msg) || (strptr = strchr(strptr, (int)'<')) == NULL ) {
         send_err(out, 1, ERR404, "env:Sender", NOT_WELL_FORMED);
         return NULL;
     }
-
-    if(!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))){
+    if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))) {
         send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
-        return NULL;
-    }
-
-    if (CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL) {
-        if(BBPreclaim(shredBAT) == -1){
-            GDKerror("request2bat: failed to destroy shredBAT on error, "
-                    "because it is used by other process!");
-            GDKerror("THIS SHOULD NEVER HAPPEN!!!");
-        }
+    } else if (CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL) {
+        BBPreclaim(shredBAT);
+        shredBAT = NULL;
         send_err(out, 1, ERR404, "env:Sender", NOT_WELL_FORMED);
-        return NULL;
     }
-
+    if (del) GDKfree(del);
     return shredBAT;
 }
 
@@ -387,9 +447,8 @@ get_type(oid tpe_node_pre, oid *pre_prop, BAT *qn_loc, BAT *qn_prefix)
  * @return GDK_SUCCEED, or
  *         GDK_FAIL if an error has occurred.
  */
-static int
-handle_rpc_request(struct shttpd_callback_arg *arg)
-{
+static int 
+xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg) {
     char errstr[1024], *module = NULL, *location = NULL, *method = NULL;
     int sock = -1, k = 0, simple_param = 1;
     stream *out = NULL;
@@ -425,12 +484,14 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
     char level_diff = 0; /* indicates how many levels each pre_level
                             value of a node should be reduced. */
 
-    THRnew(MT_getpid(), "rpc_req_handler"); /* register this thread */
+    int serializeMode = timing; 
+    /* GET,PUT,DELETE HTTP requests get serializeMode|=2 to avoid XRPC serialization */ 
+    if (strcmp(shttpd_get_method(arg), "POST")) serializeMode |= 2; 
 
     /* Create our own output stream for further data transfer. */
     sock = shttpd_get_socket(arg);
     if (!(out = socket_wastream(sock, "rpc_response"))) {
-        GDKerror("handle_rpc_request: failed to create "
+        GDKerror("xrpc_handle_request: failed to create "
                 "socket_wastream for socket %d", sock);
         close(sock);
         return GDK_FAIL;
@@ -540,7 +601,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
             argcnt[i][j] = 0;
     }
 
-    max_args = iterc * MAXPARAMS;
+    max_args = iterc * MAX_NR_PARAMS;
     argval = GDKmalloc(max_args * sizeof(char *));
     argtpe = GDKmalloc(max_args * sizeof(char *));
     if (!argval || !argtpe) {
@@ -577,7 +638,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
 
                 if (nr_args == max_args) {
                     snprintf(errstr, 1024, "XRPC request: too many "
-                            "parameters, maximum is %d", MAXPARAMS);
+                            "parameters, maximum is %d", MAX_NR_PARAMS);
                     send_err(out, 1, ERR404, "env:Sender", errstr);
                     clean_up(out,argcnt,argtpe,argval,iterc,nr_args);
                     return GDK_FAIL;
@@ -609,7 +670,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
 
                     val_node_pre = tpe_node_pre + 1;
                     if( (tpe_node_size != 1) || 
-                        (pre_kindT[val_node_pre] != PFTEXT) ) {
+                        (pre_kindT[val_node_pre] != TEXT) ) {
                         snprintf(errstr, 1024, "XRPC request: "
                                 "iteration%lld/parameter%lld/value%d "
                                 "of type \"%s\" is expected to have a "
@@ -667,7 +728,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
                                 pre_kindT);
                     } else if (strcmp(argtpe[nr_args], "xs:text") == 0) {
                         val_node_pre = get_elem_pre(tpe_node_pre+1,
-                                (tpe_node_pre+tpe_node_size), PFTEXT,
+                                (tpe_node_pre+tpe_node_size), TEXT,
                                 pre_kindT);
                     } else if (strcmp(argtpe[nr_args], "xs:comment") == 0) {
                         val_node_pre = get_elem_pre(tpe_node_pre+1,
@@ -737,7 +798,7 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
     stream_printf(out, "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/soap+xml; "
             "charset=\"utf-8\"\r\n\r\n");
-    char *err = xquery_method(out, timing, module, location, method,
+    char *err = xquery_method(mc, serializeMode, module, location, method,
             argc, iterc, argcnt, argtpe, argval,
             simple_param?NULL:shredBAT);
 
@@ -757,26 +818,72 @@ handle_rpc_request(struct shttpd_callback_arg *arg)
     }
 
     clean_up(out, argcnt, argtpe, argval, iterc, nr_args);
-    if(BBPreclaim(shredBAT) == -1){
-        GDKerror("handle_rpc_request: failed to destroy BAT \"shredBAT\", because it is in use by other process");
-        GDKerror("THIS SHOULD NEVER HAPPEN!!!");
-        return GDK_FAIL;
-    }
-
+    BBPreclaim(shredBAT);
     return GDK_SUCCEED;
 }
 
+
+/*
+ * xrpc MAPI client handler (overrides the xquery_client_engine)
+ */
+static void 
+xrpc_client_engine(mapi_client *mc) {
+    struct shttpd_callback_arg *arg = (struct shttpd_callback_arg *) mc->arg;
+
+    /* do the work */
+    (void) xrpc_handle_request(mc, arg);
+
+    /* clean up */
+    mc->engine = xquery_client_engine; 
+    xquery_client_end(mc, NULL);
+    shttpd_finish(arg); 
+}
+
+
+/*
+ * handle request asynchronously using a MAPI xquery client
+ */
+static int
+xrpc_fork_mapiclient(struct shttpd_callback_arg *arg) {
+    /* get me a MAPI thread from the xquery client pool */
+    int sock = shttpd_get_socket(arg);
+    stream *fdin = socket_rastream(sock, "XRPC read");
+    if (fdin && stream_errnr(fdin) == 0) {
+        stream *fdout = socket_wastream(sock, "XRPC write");
+        if (fdout && stream_errnr(fdout) == 0) {
+            mapi_client *mc = MAPIclient(fdin, fdout, "xquery");
+            if (mc) {
+                mc->engine = xrpc_client_engine; /* override xquery_client_engine (will be restored later) */ 
+                mc->arg = (char*) arg; /* HACK! pass xrpc arg */
+                MT_up_sema(mc->s, "XRPC"); /* activate the thread */
+                return 0;
+            }
+            stream_close(fdout);
+            stream_destroy(fdout);
+        }
+        stream_close(fdin);
+        stream_destroy(fdin);
+    }
+    shttpd_finish(arg);
+    return -1;
+}
+
+extern int xrpc_port;
 int
 CMDhttpd_start(int* port, str option)
 {
     shttpd_socket ctx;
+    char *s = "/usr/share/", docdir[1024]; /* httpd serves out /usr/share/MonetDB/xrpc/ */
+    BUN p = BUNfnd(GDKenv, "datadir"); /* normally use 'datadir' iso /usr/share  (often datdir = prefix/share) */
+    if (p) s = BUNtail(GDKenv,p); 
+    snprintf(docdir, 1024, "%s%cshare%cMonetDB%cxrpc%c", s, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
        
     if (rpcd_running) {
         GDKerror("CMDhttpd_start: RPC receiver already running\n");
         return GDK_FAIL;
     }
 
-    rpcd_running = 1;
+    xrpc_port = rpcd_running = *port;
 
     if (option && strstr(option, "timing") != NULL)
         timing = 1;
@@ -784,9 +891,10 @@ CMDhttpd_start(int* port, str option)
     /* Initialize with specific config file, pass NULL to use default
      * values */
     shttpd_init(NULL);
+    shttpd_setopt("document_root", docdir);
 
     /* Register call back function */
-    shttpd_register_url(HTTPD_FUNC, &handle_rpc_request, NULL);
+    shttpd_register_url(HTTPD_FUNC, xrpc_fork_mapiclient, NULL);
 
     /* Open listening socket */
     ctx = shttpd_open_port(*port);
@@ -795,10 +903,6 @@ CMDhttpd_start(int* port, str option)
     for ( ; rpcd_running; ) shttpd_poll(&ctx, 200);
 
     return GDK_SUCCEED;
-}
-
-bat* xrpc_prelude() {
-    return NULL;        /* Nothing to do here. */
 }
 
 void xrpc_epilogue() {

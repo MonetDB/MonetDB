@@ -199,6 +199,7 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    recursion      = 126
 %term    seed           = 127
 %term    xrpc           = 128
+%term    docmgmt_ty     = 129
 
 %%
 
@@ -601,6 +602,10 @@ RecursiveExpr:          recursion (
 /* Pathfinder extension: XRPC */
 XRPCCall:               xrpc (Expr, FunctionCall)                   = 246 (10);
 
+/* Pathfinder extension: document management function declarations */
+FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
+                                           seq_ty (docmgmt_ty (nil))),
+                                  OptExpr)                          = 247 (10);
 
 
 %%

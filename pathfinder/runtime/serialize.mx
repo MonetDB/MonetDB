@@ -829,6 +829,26 @@ disposeWsMatrix(XqueryCtx* ctx)
     return SUCCESS;
 }
 
+static BAT *
+fetchWsBaseBAT(XqueryCtx* ctx, BAT* ws, int batID)
+{
+    BUN bun;
+    oid BATid = (oid)batID;
+
+    if ( !(bun = BUNfnd(ws,&BATid)) ) {
+        fatal_err(ctx,"fetchWsContextBAT: NOT FOUND BAT[%d]",batID);
+        return NULL;
+    }
+    BAT* batbat;
+    if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
+        fatal_err(ctx,
+                  "fetchWsBaseBAT:FETCH BASEBAT for WS[%d] FAILED\n",
+                  batID);
+        return NULL;
+    }
+    return batbat;
+}
+
 /* lookup a BAT referenced in the working set BAT ws by batID and contID */
 static BAT *
 fetchWsContextBAT (XqueryCtx* ctx, BAT* ws, int contID, int batID)
@@ -1491,6 +1511,33 @@ ws_documentIndex (BAT* ws, str docName)
     return res;
 }
 
+oid doc_startOid(XqueryCtx* ctx, oid docIndex) {
+    BUN bun;
+
+    BAT* open_docid;
+    
+    if ( !(open_docid = fetchWsBaseBAT(ctx,ctx->ws,OPEN_DOCID)) )
+    	return oid_nil;
+    if ( 0 ) BATprintf(GDKout,open_docid);
+
+    oid bloody_guess = 0;
+    if ( !(bun = BUNfnd(open_docid,&bloody_guess)) ) {
+            fatal_err(ctx,"doc_startOid: cannot find startOid for doc[" OIDFMT "]",docIndex);
+	          return oid_nil;
+    }
+    oid icdocId = *(oid*)BUNtail(open_docid,bun);
+    /* stream_printf(GDKout,"# icdocId = " OIDFMT ".\n",icdocId); */
+    BAT* frag_root;
+    getWsBAT(frag_root, ctx, docIndex,FRAG_ROOT);
+    if ( 0 ) BATprintf(GDKout,frag_root);
+    /* */
+    if ( !(bun = BUNfnd(frag_root,&icdocId)) ) {
+            fatal_err(ctx,"doc_startOid: cannot find startOid for doc[" OIDFMT "]",docIndex);
+	    return oid_nil;
+    }
+    return *(oid*)BUNtail(frag_root,bun);
+}
+
 int
 xquery_print_doc_DRIVER (
     str                 mode, 
@@ -1509,12 +1556,24 @@ xquery_print_doc_DRIVER (
         if (createWsContext(ctx,ws,mode,NULL,NULL,driverFun,driverArg,GDKout)) {
             if (ctx->driverFun->handle_startDocument(ctx)) {
                 ptr p;
-                getWsValue(p, ctx, docIndex, PRE_SIZE, 0 /* start */);
-                if (emitNodesInRange (ctx, 0/*start*/,  *(int*) p, NULL, docIndex)) {
+
+		oid start_oid = doc_startOid(ctx,docIndex);
+		if ( start_oid == oid_nil )
+		    return GDK_FAIL;
+                if ( 0 /* old implementation, restore if necessary */ ) {
+                  getWsValue(p, ctx, docIndex, PRE_SIZE, 0 /* start */);
+		  if (emitNodesInRange (ctx, 0,  *(int*) p, NULL, docIndex))
+		    if (ctx->driverFun->handle_endDocument(ctx))
+		        res = GDK_SUCCEED;
+		} else { /* the new container implementation */
+                  getWsValue(p, ctx, docIndex, PRE_SIZE, start_oid);
+		  oid sz = *(int*) p;
+                  if (emitNodesInRange (ctx, start_oid,start_oid+sz, NULL, docIndex)) {
                     if (ctx->driverFun->handle_endDocument(ctx)) {
                         res = GDK_SUCCEED;
                     }
-                }
+                  }
+	        }
             }
         }
         if (!disposeWsContext(ctx)) {

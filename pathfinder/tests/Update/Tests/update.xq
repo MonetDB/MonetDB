@@ -21,16 +21,16 @@ for $elem in $testdoc/document/element
 		do insert attribute attr {text{$elem/@attribute}} into exactly-one($elem),
 		do insert attribute copyright {text{$elem/../@copyright}} into exactly-one($elem),
 
-		do rename exactly-one($elem/@attribute) with "Attribute",
+		do rename exactly-one($elem/@attribute) into "Attribute",
 
-		do rename exactly-one($elem/@dummy) with "foo",
+		do rename exactly-one($elem/@dummy) into "foo",
 		do replace value of exactly-one($elem/@xyzzy) with "hgulp",
 		do replace value of exactly-one($elem/@dummy) with "bar")
 ,
 do delete ($testdoc/document/@title, $testdoc/document/@copyright, $testdoc/document/@foo)
 ,
 for $elem in $testdoc/document/element[@attribute = 50]
-	return do rename exactly-one($elem) with "Element"
+	return do rename exactly-one($elem) into "Element"
 ,
 (: test changing comment value with the following test:
 -- new text
@@ -51,9 +51,9 @@ for $elem in $testdoc/document/element/text()
 -- rename instruction and replace target
 :)
 (do replace value of exactly-one($testdoc//processing-instruction(pi0000)) with "foo",
- do rename exactly-one($testdoc//processing-instruction(pi1000)) with "bar",
+ do rename exactly-one($testdoc//processing-instruction(pi1000)) into "bar",
  do replace exactly-one($testdoc//processing-instruction(pi2000)) with (: <?target instruction?> :) exactly-one($testdoc//processing-instruction(pi4000)),
- do rename exactly-one($testdoc//processing-instruction(pi5000)) with "xyzzy",
+ do rename exactly-one($testdoc//processing-instruction(pi5000)) into "xyzzy",
  do replace value of exactly-one($testdoc//processing-instruction(pi5000)) with "plugh")
 ,
 (: test delete with the following tests:

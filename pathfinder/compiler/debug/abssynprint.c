@@ -182,6 +182,9 @@ char *p_id[]  = {
     
     /* Pathfinder extension: XRPC */
     , [p_xrpc]              = "xrpc"
+
+    /* docmgmt type (for user-defined doc mgmt functions) */
+    , [p_docmgmt_ty]        = "docmgmt_ty"
 };
 
 /** Names of XPath axes */
