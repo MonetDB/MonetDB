@@ -146,9 +146,10 @@ str
 SQLprelude(void)
 {
 	int res = 0;
+	str tmp;
 	Scenario s = getFreeScenario();
 	if (!s)
-		return NULL; /* should be an error */
+		throw(MAL, "sql.start", "out of scenario slots");
 	s->name = "sql";
 	s->language = "sql";
 	s->initSystem = "SQLinit";
@@ -160,11 +161,13 @@ SQLprelude(void)
 	/* s->optimizer = "SQLoptimizer";
 	 * s->tactics = .. */
 	s->engine = "SQLengine";
-	(void)SABAOTHmarchScenario(&res, &s->name);
+	tmp = SABAOTHmarchScenario(&res, &s->name);
+	if (tmp != MAL_SUCCEED)
+		return(tmp);
 
 	s = getFreeScenario();
 	if (!s)
-		return NULL; /* should be an error */
+		throw(MAL, "sql.start", "out of scenario slots");
 
 	s->name = "msql";
 	s->language = "msql";
