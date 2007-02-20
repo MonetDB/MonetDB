@@ -2,7 +2,7 @@ This directory contains tools that are needed to build (parts of) the
 MonetDB suite.
 
 Mx - The tool to extract sources and documentation from .mx files.
-mel - The MonetDB Extension Language tool.
+mel - The MonetDB Extension Language tool (used in MonetDB4, sql, and pathfinder).
 autogen - A tool to create Makefiles from Makefile.ag.
 burg - A tool to help produce parsers (only used in pathfinder).
 
@@ -22,7 +22,6 @@ To build the various tools in one go on Windows using the Microsoft
 compiler, simply run
 	nmake /f Makefile.msc
 in a cmd window.
-Note that compiling burg using the Microsoft tools is not supported.
 
 To build the various tools individually (except for autogen), change into
 the tool's directory, and execute the command
