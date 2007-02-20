@@ -863,15 +863,15 @@ merge_compute_minrun(ssize_t n)
 				struct slice *p = ms.pending;
 
 				while (ms.n > 1) {
-					ssize_t n = ms.n - 2;
+					ssize_t i = ms.n - 2;
 
-					if (n > 0 && p[n - 1].len <= p[n].len + p[n + 1].len) {
-						if (p[n - 1].len < p[n + 1].len)
-							--n;
-						if (merge_at_@1@2(&ms, n) < 0)
+					if (i > 0 && p[i - 1].len <= p[i].len + p[i + 1].len) {
+						if (p[i - 1].len < p[i + 1].len)
+							--i;
+						if (merge_at_@1@2(&ms, i) < 0)
 							goto fail;
-					} else if (p[n].len <= p[n + 1].len) {
-						 if (merge_at_@1@2(&ms, n) < 0)
+					} else if (p[i].len <= p[i + 1].len) {
+						 if (merge_at_@1@2(&ms, i) < 0)
 							goto fail;
 					} else
 						break;

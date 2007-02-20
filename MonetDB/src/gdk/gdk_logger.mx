@@ -1467,21 +1467,21 @@ bm_commit(logger *lg)
 	/* remove the destroyed bats */
 	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
 		bat bid = *(log_bid *) BUNhead(b, p);
-		BAT *b = BATdescriptor(bid);
+		BAT *lb = BATdescriptor(bid);
 
-		BATmode(b, TRANSIENT);
+		BATmode(lb, TRANSIENT);
 		BBPdecref(bid, TRUE);
-		logbat_destroy(b);
+		logbat_destroy(lb);
 	}
 
 	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
 		log_bid bid = *(log_bid *) BUNhead(b, p);
-		BAT *b = BATdescriptor(bid);
+		BAT *lb = BATdescriptor(bid);
 
-		BATmode(b, PERSISTENT);
-		if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
-        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
-		logbat_destroy(b);
+		BATmode(lb, PERSISTENT);
+		if (BATcount(lb) > (size_t) REMAP_PAGE_MAXSIZE)
+        		BATmmap(lb, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+		logbat_destroy(lb);
 	}
 	if (bm_subcommit(lg->catalog, lg->catalog) != 0)  
 		return LOG_ERR;

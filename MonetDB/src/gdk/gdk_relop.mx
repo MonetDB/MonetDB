@@ -702,9 +702,9 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1,@2,@3);\n");
 	BATloopFast(l, l_cur, l_end, xx) {
-		size_t yy = offset + *(oid*) BUNtloc(l,l_cur);
+		size_t _yy = offset + *(oid*) BUNtloc(l,l_cur);
 
-		r_cur = BUNptr(r, yy);
+		r_cur = BUNptr(r, _yy);
 		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
 		dst += zz;
 	}
@@ -712,16 +712,16 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3);\n");
 	BATloopFast(l, l_cur, l_end, xx) {
-		size_t yy = offset + *(oid*) BUNtloc(l,l_cur);
+		size_t _yy = offset + *(oid*) BUNtloc(l,l_cur);
 
-		if (yy < base || yy >= end) {
+		if (_yy < base || _yy >= end) {
 			bn->batBuns->free = dst - bn->batBuns->base;
 			BATsetcount(bn,bn->batBuns->free/zz);
 			BBPreclaim(bn);
 			nondense = 1;
 			break;
 		}
-		r_cur = BUNptr(r, yy);
+		r_cur = BUNptr(r, _yy);
 		@3put(@2, bn->theap, dst, BUN@1(r, r_cur));
 		dst += zz;
 	}
@@ -734,12 +734,12 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		dst = BUNfirst(bn);
 		zz = BUNsize(bn);
 		BATloopFast(l, l_cur, l_end, xx) {
-			size_t yy = offset + *(oid*) BUNtail(l,l_cur);
+			size_t _yy = offset + *(oid*) BUNtail(l,l_cur);
 
-			if (yy < base || yy >= end) {
+			if (_yy < base || _yy >= end) {
 				continue;
 			}
-			r_cur = BUNptr(r, yy);
+			r_cur = BUNptr(r, _yy);
 			ATOMput(bn->htype, bn->hheap, BUNhloc(bn, dst), BUNhead(l, l_cur));
 			@3put(@2, bn->theap, BUNtloc(bn, dst), BUN@1(r, r_cur));
 			dst += zz;
@@ -928,7 +928,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		/* propagation of void columns in the result */
 		int nondense = 0;
 		int tpe = r->ttype;
-		BAT *ret = NULL;
+
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
 		if (ATOMstorage(tpe) == TYPE_str /*&& GDK_ELIMDOUBLES(r->theap)*/) {
@@ -981,6 +981,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			}
 			if (HEAPcopy(bn->theap, r->theap) < 0) {
 				BBPreclaim(bn);
+				ret = NULL;
 				goto ready;
 			}
 			bn->ttype = bm->htype = r->ttype;
@@ -1691,7 +1692,7 @@ differ significantly.
 }
 break;
 @c
-BAT *
+static BAT *
 BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 {
 	BAT *bn, *del = NULL;
@@ -1826,7 +1827,7 @@ iff BAThkey(r) and one on l to find the matching tuples.
 }
 break;
 @c
-BAT *
+static BAT *
 BATrevsemijoin(BAT *l, BAT *r)
 {
 	int any, rdoubles = (BAThkey(r) == 0), merge = rdoubles & BAThordered(r);
@@ -2080,7 +2081,7 @@ head-value from the 'left' operand and then tail-value from the 'right'
 provided the tail-head pair do not (!) match.
 @{
 @= antijoin2
-BAT*
+static BAT *
 antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, r_end, dst;
@@ -2255,7 +2256,7 @@ head-value from the 'left' operand and then tail-value from the 'right'
 operand.
 @{
 @= cross2
-BAT*
+static BAT *
 cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BUN l_cur, l_end, r_cur, r_end, dst;

@@ -48,12 +48,10 @@ gdk_export BAT *GDKenv;
 #undef GDKmalloc
 #undef GDKrealloc
 #undef GDKfree
-#undef GDKcalloc
 
 #define GDKmalloc(size)	malloc(size)
 #define GDKrealloc(buf,size)	realloc(buf,size)
 #define GDKfree(buf)	free(buf)
-#define GDKcalloc(nmemb,size) calloc(nmemb,size);
 #endif
 
 int gdk_alloc_map = 1;
@@ -1203,20 +1201,6 @@ GDKrealloc(void *blk, size_t size)
 	return GDKreallocmax(blk, size, &size, 1);
 }
 
-void *
-GDKcalloc(size_t nmemb, size_t size)
-{
-	if (nmemb && size) {
-		size_t n = nmemb * size;	/* wdk XXX: overflow? */
-		void *res = GDKmalloc(n);
-
-		if (res) {
-			return memset(res, 0, n);
-		}
-	}
-	return 0;
-}
-
 
 char *
 GDKstrdup(const char *s)
@@ -1389,17 +1373,17 @@ GDKprotect(void)
 static void
 GDKvmtrim(void *limit)
 {
-	int wait = 1;
+	int wt = 1;
 
 	do {
 		stream *fp = NULL;
 
-		MT_sleep_ms(wait?5000:500);
+		MT_sleep_ms(wt ? 5000 : 500);
 		MEMDEBUG {
 			fp = GDKout;
 			THRprintf(fp, "#GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
 		}
-		wait = !MT_mmap_trim(*(size_t *) limit, fp);
+		wt = !MT_mmap_trim(*(size_t *) limit, fp);
 	} while (!GDKstopped);
 }
 #endif

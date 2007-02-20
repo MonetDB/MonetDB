@@ -272,6 +272,9 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define stat(x,y)	win_stat(x,y)
 #define mkdir		win_mkdir
 #define rmdir		win_rmdir
+#if _WIN32_WINNT >= 0x500
+#define link		win_link
+#endif
 
 #define NAME_MAX 255
 
@@ -1147,7 +1150,7 @@ MT_getrss()
 	MEMORYSTATUSEX state;
 	state.dwLength = sizeof(state);
 	GlobalMemoryStatusEx (&state);
-	return state.ullTotalPhys - state.ullAvailPhys;
+	return (size_t) (state.ullTotalPhys - state.ullAvailPhys);
 #else
 	MEMORYSTATUS state;
 	GlobalMemoryStatus (&state);
@@ -1190,6 +1193,7 @@ remap_find(char* base, int delete) {
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	return map;
 }
+
 	
 void*
 MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps)
@@ -1680,6 +1684,14 @@ win_mkdir(const char *pathname, const int mode)
 		free(p);
 	return ret;
 }
+
+#if _WIN32_WINNT >= 0x500
+/* NTFS does support symbolic links */
+int win_link(const char* oldpath, const char* newpath) 
+{
+	return CreateHardLink(newpath, oldpath, NULL)?-1:0;
+} 
+#endif
 
 typedef struct {
 	int w;			/* windows version of error */

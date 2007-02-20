@@ -963,9 +963,9 @@ the commit tremendously complicated.
 int
 ATOMlen(int t, ptr src)
 {
-	int (*l) () = BATatoms[t].atomLen;
+	int (*l)(ptr) = BATatoms[t].atomLen;
 
-	return (l) ? (*l) (src) : ATOMsize(t);
+	return l ? (*l)(src) : ATOMsize(t);
 }
 
 int

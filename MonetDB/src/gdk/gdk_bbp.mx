@@ -356,7 +356,7 @@ BBPunlock(str nme)
 }
 
 
-void
+static void
 BBPinithash(void)
 {
 	bat i = BBPsize;
@@ -462,7 +462,7 @@ BBPinit(void)
 	FILE *fp = GDKfilelocate("BBP", "rb", "dir");
 	int i = 0, max_stamp = 0, min_stamp = 0x7fffffff;
 	char *s, logical[1024], batname[1024], path[1024];
-	char *c, buffer[3000];
+	char *c, buf[3000];
 	struct stat st;
 	oid BBPoid = 0;
 
@@ -499,7 +499,7 @@ BBPinit(void)
 	/* scan the BBP.dir to obtain its current size */
 	BBPlimit = BBPINIT;
 	BBPsize = 1;
-	if ((c = fgets(buffer, sizeof(buffer), fp)) != NULL) {
+	if ((c = fgets(buf, sizeof(buf), fp)) != NULL) {
 		int ptrsize, oidsize;
 		if (sscanf(c, "%d %d", &ptrsize, &oidsize) != 2) {
 #ifdef CONTINUE_IF_NO_SIZES_IN_BBP
@@ -515,7 +515,7 @@ BBPinit(void)
 			exit(1);
 #endif
 		} else {
-			c = fgets(buffer, sizeof(buffer), fp);
+			c = fgets(buf, sizeof(buf), fp);
 		}
 		if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
 			GDKerror("database created with incompatible Mserver");
@@ -555,7 +555,7 @@ BBPinit(void)
 	MT_mmap_pin(BBP, BBPlimit * sizeof(BBPrec));
 
 	/* scan the BBP.dir, and insert the BATs into the BBP */
-	while ((c = fgets(buffer, sizeof(buffer), fp)) != NULL) {
+	while ((c = fgets(buf, sizeof(buf), fp)) != NULL) {
 		int j = 0;
 
 		while (*c != '[')
@@ -575,7 +575,7 @@ BBPinit(void)
 				for (c++; *c != ','; c++)
 					;
 		} else {
-			GDKerror("BBPinit: ignore line %s\n", buffer);
+			GDKerror("BBPinit: ignore line %s\n", buf);
 			continue;
 		}
 		if (i >= BBPsize) {
@@ -2176,7 +2176,7 @@ static batcache_int batcache_last = -1;
 static batcache_int batcache_free = -1; /* misuses ->fifo_next for connecting the list */
 
 static void
-BBPinitcache()
+BBPinitcache(void)
 {
 	batcache_int i;
 	int j;
@@ -2239,7 +2239,8 @@ BBPinitcache()
 
 /* throw the LRU bat out using the fifo list */
 static INLINE batcache_int 
-batcache_del() {
+batcache_del(void)
+{
 	batcache_int i = batcache_first;
 	bat bid = batcache[i].bid;
 	BAT *b = BBP_cache(bid);
@@ -2923,7 +2924,7 @@ force_move(str srcdir, str dstdir, str name)
 }
 
 int
-BBPrecover()
+BBPrecover(void)
 {
 	DIR *dirp = opendir(BAKDIR);
 	struct dirent *dent;
@@ -2949,13 +2950,13 @@ BBPrecover()
 		str q = strchr(dent->d_name, '.');
 
 		if (q == dent->d_name) {
-			int j;
+			int uret;
 
 			if (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0)
 				continue;
 			GDKfilepath(path, BAKDIR, dent->d_name, NULL);
-			j = unlink(path);
-			IODEBUG THRprintf(GDKout, "#unlink %s = %d\n", path, j);
+			uret = unlink(path);
+			IODEBUG THRprintf(GDKout, "#unlink %s = %d\n", path, uret);
 
 			continue;
 		} else if (strcmp(dent->d_name, "BBP.dir") == 0) {
@@ -3007,7 +3008,7 @@ SUBDIR recovery is quite mindlessly moving all files back to the parent (BAKDIR)
 We do recognize moving back BBP.dir and set backed_up_subdir accordingly.
 @c
 int
-BBPrecover_subdir()
+BBPrecover_subdir(void)
 {
 	DIR *dirp = opendir(SUBDIR);
 	struct dirent *dent;
@@ -3070,7 +3071,7 @@ getdesc(int bid)
 	return b;
 }
 
-lng
+static lng
 BBPdiskscan_r(str parent)
 {
 	str dir = parent ? parent : BATDIR;
@@ -3185,6 +3186,7 @@ new image. Now we have BATmaterialize (converts void into oid) and VIEWreset
 (make a view independent of its parent) also use this interface.
 @{
 @c
+#if 0				/* this function isn't actually used anywhere */
 void
 BBPreplace(BAT *b, BAT *bn)
 {
@@ -3270,6 +3272,7 @@ BBPreplace(BAT *b, BAT *bn)
 	}
 	gdk_unset_lock(GDKtrimLock, "BBPreplace");
 }
+#endif /* 0 */
 
 void 
 BBPatom_drop(int atom)
