@@ -1,0 +1,11 @@
+@echo off
+
+setlocal
+
+set builddir=@XCLIENTS_BUILD@
+
+set PATH=%builddir%\src\mapiclient;%builddir%\src\mapilib;%PATH%
+
+"%builddir%\src\mapiclient\MapiClient.exe" %*
+
+endlocal

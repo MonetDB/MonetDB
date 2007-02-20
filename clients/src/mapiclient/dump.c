@@ -52,13 +52,13 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 	fprintf(toConsole, " (\n");
 
 	snprintf(query, maxquerylen,
-		 "SELECT c.\"name\","			/* 0 */
-			"c.\"type\","			/* 1 */
-			"c.\"type_digits\","		/* 2 */
-			"c.\"type_scale\","		/* 3 */
-			"c.\"null\","			/* 4 */
-			"c.\"default\","		/* 5 */
-			"c.\"number\" "			/* 6 */
+		 "SELECT \"c\".\"name\","		/* 0 */
+			"\"c\".\"type\","		/* 1 */
+			"\"c\".\"type_digits\","	/* 2 */
+			"\"c\".\"type_scale\","		/* 3 */
+			"\"c\".\"null\","		/* 4 */
+			"\"c\".\"default\","		/* 5 */
+			"\"c\".\"number\" "		/* 6 */
 		 "FROM \"columns\" \"c\",\"tables\" \"t\" "
 		 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
 		 "AND '%s' = \"t\".\"name\" ORDER BY \"number\"", tname);
@@ -174,7 +174,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 		if (strcmp(c_null, "false") == 0)
 			fprintf(toConsole, " NOT NULL");
 		if (c_default != NULL)
-			fprintf(toConsole, " DEFAULT '%s'", c_default);
+			fprintf(toConsole, " DEFAULT %s", c_default);
 		cnt++;
 	}
 	if (mapi_error(mid)) {
@@ -470,9 +470,9 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 		return 1;
 	}
 	if (mapi_fetch_row(hdl)) {
-		char *cnt = mapi_fetch_field(hdl, 0);
+		char *cntfld = mapi_fetch_field(hdl, 0);
 
-		fprintf(toConsole, "COPY %s RECORDS INTO ", cnt);
+		fprintf(toConsole, "COPY %s RECORDS INTO ", cntfld);
 		quoted_print(toConsole, tname);
 		fprintf(toConsole, " FROM stdin USING DELIMITERS '\\t';\n");
 	}
@@ -531,6 +531,10 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 int
 dump_tables(Mapi mid, FILE *toConsole)
 {
+	const char *start = "START TRANSACTION";
+	const char *end = "COMMIT";
+	const char *sequences1 = "SELECT \"name\" FROM \"sequences\"";
+	const char *sequences2 = "SELECT \"name\",get_value_for(\"name\"),\"minvalue\",\"maxvalue\",\"increment\",\"cycle\" FROM \"sequences\"";
 	const char *tables = "SELECT \"name\" FROM \"_tables\" WHERE "
 		"\"type\" = 0 AND \"system\" = FALSE";
 	const char *views = "SELECT \"name\",\"query\" FROM \"_tables\" WHERE "
@@ -542,6 +546,38 @@ dump_tables(Mapi mid, FILE *toConsole)
 
 	/* start a transaction for the dump */
 	fprintf(toConsole, "START TRANSACTION;\n");
+
+	if ((hdl = mapi_query(mid, start)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
+	/* dump sequences, part 1 */
+	if ((hdl = mapi_query(mid, sequences1)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+
+	while (mapi_fetch_row(hdl) != 0) {
+		char *name = mapi_fetch_field(hdl, 0);
+
+		fprintf(toConsole, "CREATE SEQUENCE \"%s\" AS INTEGER;\n", name);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
 
 	/* dump tables */
 	if ((hdl = mapi_query(mid, tables)) == NULL || mapi_error(mid)) {
@@ -557,6 +593,40 @@ dump_tables(Mapi mid, FILE *toConsole)
 		char *tname = mapi_fetch_field(hdl, 0);
 
 		rc += dump_table(mid, tname, toConsole);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
+	/* dump sequences, part 2 */
+	if ((hdl = mapi_query(mid, sequences2)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+
+	while (mapi_fetch_row(hdl) != 0) {
+		char *name = mapi_fetch_field(hdl, 0);
+		char *restart = mapi_fetch_field(hdl, 1);
+		char *minvalue = mapi_fetch_field(hdl, 2);
+		char *maxvalue = mapi_fetch_field(hdl, 3);
+		char *increment = mapi_fetch_field(hdl, 4);
+		char *cycle = mapi_fetch_field(hdl, 5);
+
+		fprintf(toConsole, "ALTER SEQUENCE \"%s\" RESTART WITH %s", name, restart);
+		if (strcmp(increment, "1") != 0)
+			fprintf(toConsole, " INCREMENT BY %s", increment);
+		if (strcmp(minvalue, "0") != 0)
+			fprintf(toConsole, " MINVALUE %s", minvalue);
+		if (strcmp(maxvalue, "0") != 0)
+			fprintf(toConsole, " MAXVALUE %s", maxvalue);
+		fprintf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -606,6 +676,16 @@ dump_tables(Mapi mid, FILE *toConsole)
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
+	if ((hdl = mapi_query(mid, end)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
 		return 1;
 	}
 	mapi_close_handle(hdl);

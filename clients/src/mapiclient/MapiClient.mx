@@ -459,8 +459,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					if (line[length - 1] == '\r')
 						line[--length] = 0;
 					if (line[2]) {
+						fprintf(toConsole, "START TRANSACTION;\n");
 						dump_table(mid, line + 2, toConsole);
-						fprintf(toConsole, "COMMIT\n");
+						fprintf(toConsole, "COMMIT;\n");
 					} else {
 						dump_tables(mid, toConsole);
 					}
@@ -675,7 +676,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:C:ei::l:u::p:o:P::d:qHh:s:Dt::TX:?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:C:ei::l:u::p:o:P::d:qHh:s:t::TX:?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')

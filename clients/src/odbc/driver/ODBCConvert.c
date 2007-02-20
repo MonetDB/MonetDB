@@ -1197,7 +1197,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 		}
 		case SQL_DOUBLE:
 		case SQL_REAL: {
-			int i;
 			data = (char *) ptr;
 
 			for (i = 0; i < 18; i++) {
@@ -1293,18 +1292,18 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			if (lenp)
 				*lenp = sz;
 			if (tsval.fraction) {
-				int scale = 9;
+				int fscale = 9;
 
 				data += sz;
 				buflen += sz;
 				while (tsval.fraction % 10 == 0) {
 					tsval.fraction /= 10;
-					scale--;
+					fscale--;
 				}
 				if (lenp)
-					*lenp += scale + 1;
+					*lenp += fscale + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*u", scale, tsval.fraction);
+					sz = snprintf(data, buflen, ".%0*u", fscale, tsval.fraction);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */

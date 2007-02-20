@@ -296,12 +296,6 @@ SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
-{
-	return SQLSetDescField(DescriptorHandle, RecordNumber, FieldIdentifier, Value, BufferLength);
-}
-
-SQLRETURN SQL_API
 SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
 {
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;

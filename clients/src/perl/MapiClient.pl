@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -19,14 +19,21 @@
 use Mapi;
 
 my ($monet, $line);
-$monet = new Mapi( 
-  Mapi::hostname() . ':' . Mapi::portnr(), 'monetdb', 'monetdb', 'xquery' );
+$monet = new Mapi('localhost', 50000, 'monetdb', 'monetdb', 'sql', '', 0);
 
 print "> ";
-while ( !(($line=<>) =~ /quit;/) ){
+while ( !(($line=<>) =~ /\q/) ){
+	my $res = 0;
 	$monet->doRequest($line);
-	while( $monet->getReply() )  {
-		print $monet->{row};
+	while( ($res = $monet->getReply()) > 0 )  {
+		print $monet->{row} . "\n";
+	}
+	if ($res < 0) {
+		if ($res == -1) {
+			print $monet->{errstr};
+		} elsif ($res == -2) {
+			print "$monet->{count} rows affected\n";
+		}
 	}
 	print "> ";
 }

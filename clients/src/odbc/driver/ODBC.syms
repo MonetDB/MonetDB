@@ -125,7 +125,6 @@ SQLSetCursorName
 SQLSetCursorNameA
 SQLSetCursorNameW
 SQLSetDescField
-SQLSetDescFieldA
 SQLSetDescFieldW
 SQLSetDescRec
 SQLSetEnvAttr
@@ -133,7 +132,6 @@ SQLSetParam
 SQLSetPos
 SQLSetScrollOptions
 SQLSetStmtAttr
-SQLSetStmtAttrA
 SQLSetStmtAttrW
 SQLSetStmtOption
 SQLSpecialColumns

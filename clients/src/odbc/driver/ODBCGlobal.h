@@ -146,13 +146,13 @@ SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT r
 #ifdef ODBCDEBUG
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define ODBCLOG(...)	do {						\
-				char *s = getenv("ODBCDEBUG");		\
-				if (s && *s) {				\
-					FILE *f;			\
-					f = fopen(s, "a");		\
-					if (f) {			\
-						fprintf(f, __VA_ARGS__); \
-						fclose(f);		\
+				char *_s = getenv("ODBCDEBUG");		\
+				if (_s && *_s) {			\
+					FILE *_f;			\
+					_f = fopen(_s, "a");		\
+					if (_f) {			\
+						fprintf(_f, __VA_ARGS__); \
+						fclose(_f);		\
 					}				\
 				}					\
 			} while (0)

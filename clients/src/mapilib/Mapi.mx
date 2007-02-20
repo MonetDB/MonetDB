@@ -859,7 +859,6 @@ struct MapiStruct {
 
 	int profile;		/* profile Mapi interaction */
 	int trace;		/* Trace Mapi interaction */
-	int blocked;		/* blocked mode */
 	int auto_commit;
 	char *noexplain;	/* on error, don't explain, only print result */
 	MapiMsg error;		/* Error occurred */
@@ -1087,7 +1086,6 @@ mapi_export char *mapi_get_mapi_version(Mapi mid);
 mapi_export char *mapi_get_monet_version(Mapi mid);
 mapi_export int mapi_get_monet_versionId(Mapi mid);
 mapi_export char *mapi_get_motd(Mapi mid);
-mapi_export int mapi_is_blocked(Mapi mid);
 mapi_export int mapi_is_connected(Mapi mid);
 mapi_export char *mapi_get_table(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_name(MapiHdl hdl, int fnr);
@@ -1099,7 +1097,6 @@ mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 mapi_export MapiHdl mapi_get_active (Mapi mid);
 
-mapi_export void mapi_setBlocking(int b);
 #ifdef __cplusplus
 }
 #endif
@@ -1150,16 +1147,6 @@ typedef __int64 mapi_int64;
 The server side code works with a common/stream package, a fast buffered IO scheme.
 However, this package is not always available for every language runtime system.
 For those cases a simple line-based protocol is also supported by the server.
-
-To enable debugging in either blocked and line mode the user can set a global
-variable before initiating a connection.
-@c
-static int blocked = 1;		/* the default */
-void
-mapi_setBlocking(int b)
-{
-	blocked = b != 0;
-}
 
 @- Error Handling
 All externally visible functions should first call mapi_clrError (usually
@@ -1729,7 +1716,6 @@ mapi_new(void)
 	memset(mid, 0, sizeof(*mid));
 
 	/* then fill in some details */
-	mid->blocked = blocked;
 	mid->auto_commit = 1;
 	mid->error = MOK;
 	mid->hostname = strdup("localhost");
@@ -2069,21 +2055,22 @@ mapi_start_talking(Mapi mid)
 	char *server;
 	char *protover;
 	char *rest;
-	char serv_bigendian = -1;
+
+	mid->to = block_stream(mid->to);
+	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
+
+	mid->from = block_stream(mid->from);
+	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
 
 	/* consume server challenge */
-	len = stream_read(mid->from, buf, 1, 2);
-	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
-	buf[2] = 0;
-	len = atoi(buf);
-	assert(len < BLOCK);
-	stream_read(mid->from, buf, 1, len);
-	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
-	buf[len] = 0;
+	len = stream_read_block(mid->from, buf, 1, BLOCK);
 
-	/* buf at this point looks like ":challenge:servertype:protover[:.*]" */
-	chal = alloca(sizeof(char) * (strlen(buf + 1) + 1));
-	strcpy(chal, buf + 1);
+	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
+
+	assert(len < BLOCK);
+
+	/* buf at this point looks like "challenge:servertype:protover[:.*]" */
+	chal = buf;
 	server = strchr(chal, ':');
 	if (server == NULL) {
 		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
@@ -2102,25 +2089,17 @@ mapi_start_talking(Mapi mid)
 	}
 	pversion = atoi(protover);
 
-	if (pversion <= 5) {
+	if (pversion < 8) {
 		/* because the headers changed, and because it makes no sense to
 		 * try and be backwards compatible, we bail out with a friendly
 		 * message saying so.
 		 */
 		snprintf(buf, BLOCK, "Unsupported protocol version: %d.  "
-				"This client only supports version 6 and up.  "
+				"This client only supports version 8 and up.  "
 				"Sorry, can't help you here!", pversion);
 		mapi_setError(mid, buf,	"mapi_start_talking", MERROR);
 		return mid->error;
-	} else if (pversion == 6) {
-		/* proto 6 has technically support for database, but it was
-		 * never really used in Mserver itself, only M5 benefits from it */
-		snprintf(buf, BLOCK, "%s:%s:%s:%s\n",
-				mid->username,
-				mid->password,
-				mid->language,
-				(mid->blocked ? "blocked" : "linemode"));
-	} else if (pversion == 7) {
+	} else if (pversion == 8) {
 		char* hash = NULL;
 		char* hashes = NULL;
 		/* the database has sent a list of supported hashes to us, it's
@@ -2145,11 +2124,12 @@ mapi_start_talking(Mapi mid)
 			 * sequence is used.
 			 */
 			unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
-			int len = strlen(mid->password) + strlen(chal);
-			char key[len];
+			int n = strlen(mid->password) + strlen(chal);
+			char key[n];
+
 			strcpy(key, mid->password);
 			strncat(key, chal, strlen(chal));
-			SHA1((unsigned char*)key, len, md);
+			SHA1((unsigned char*)key, n, md);
 			hash = malloc(sizeof(char) * (/*{SHA1}*/6 + 20 * 2 + 1));
 			sprintf(hash, "{SHA1}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2164,11 +2144,12 @@ mapi_start_talking(Mapi mid)
 			 * sequence is used.
 			 */
 			unsigned char md[16]; /* should be MD5_DIGEST_LENGTH */
-			int len = strlen(mid->password) + strlen(chal);
-			char key[len];
+			int n = strlen(mid->password) + strlen(chal);
+			char key[n];
+
 			strcpy(key, mid->password);
 			strncat(key, chal, strlen(chal));
-			MD5((unsigned char*)key, len, md);
+			MD5((unsigned char*)key, n, md);
 			hash = malloc(sizeof(char) * (/*{MD5}*/5 + 16 * 2 + 1));
 			sprintf(hash, "{MD5}%02x%02x%02x%02x%02x%02x%02x%02x"
 					"%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2189,22 +2170,22 @@ mapi_start_talking(Mapi mid)
 			char key[8]; /* NULL termination is not necessary */
 			char salt[3]; /* NULL termination is a necessity! */
 			char* cr;
-			int len;
+			int n;
 
 			/* prepare the key */
-			len = strlen(mid->password);
-			if (len >= 8) {
+			n = strlen(mid->password);
+			if (n >= 8) {
 				strncpy(key, mid->password, 8);
 			} else {
 				/* pad with the challenge, we know it is always 8+ chars */
-				strncpy(key, mid->password, len);
-				strncpy(key + len, chal, 8 - len);
+				strncpy(key, mid->password, n);
+				strncpy(key + n, chal, 8 - n);
 			}
 
 			/* prepare the salt */
-			len = strlen(chal);
-			salt[0] = chal[len - 2];
-			salt[1] = chal[len - 1];
+			n = strlen(chal);
+			salt[0] = chal[n - 2];
+			salt[1] = chal[n - 1];
 			salt[2] = '\0';
 
 			/* call crypt to do the work */
@@ -2224,30 +2205,30 @@ mapi_start_talking(Mapi mid)
 		}
 		/* could use else here, but below looks cleaner */
 		if (hash == NULL) {
+			char *algo = strdup(rest);
 			/* the server doesn't support what we do (no plain?!?) */
-			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", rest);
+			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", algo);
+			free(algo);
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		}
 
 		/* in rest now should be the byte order of the server */
-		serv_bigendian = strncmp(rest, "1234", 4) == 0;
+		stream_set_byteorder(mid->from, strncmp(rest, "BIG", 3) == 0);
 		
-		/* note: database can be appended here (:database).  If we omit
-		 * it we get the default (and don't ever get redirects) */
-		snprintf(buf, BLOCK, "%s:%s:%s:%s:%s\n",
+		/* note: if we make the database field an empty string, it
+		 * means we want the default.  However, it *should* be there. */
+		snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
 #ifdef WORDS_BIGENDIAN
-				"1234",
+				"BIG",
 #else
-				"3412",
+				"LIT",
 #endif
 				mid->username,
 				hash,
 				mid->language,
 				mid->database == NULL ? "" : mid->database);
 
-		/* proto 7 always uses blocked connections */
-		mid->blocked = 1;
 		free(hash);
 	}
 	if (mid->trace == MAPI_TRACE) {
@@ -2259,25 +2240,6 @@ mapi_start_talking(Mapi mid)
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
 	stream_flush(mid->to);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
-	if (mid->blocked) {
-		if (pversion == 7) {
-			mid->to = stream_wstream_nohandshake(mid->to);
-		} else {
-			mid->to = stream_wstream(mid->to);
-		}
-		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
-		mid->to = block_stream(mid->to);
-		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
-
-		if (pversion == 7) {
-			mid->from = stream_rstream_byteorder(mid->from, serv_bigendian);
-		} else {
-			mid->from = stream_rstream(mid->from);
-		}
-		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
-		mid->from = block_stream(mid->from);
-		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
-	}
 
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);
@@ -2676,10 +2638,6 @@ mapi_check_query(MapiHdl hdl)
 			while (*c && *c != '\n')
 				c++;
 		}
-		if (*c == '\n' && !hdl->mid->blocked) {
-			mapi_setError(hdl->mid, "Newline in query string not allowed", "mapi_check_query", MERROR);
-			*c = ' ';
-		}
 	}
 	if (comm) {
 		/* remove comment and white space before comment start */
@@ -2708,11 +2666,11 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 
 
 MapiMsg
-mapi_timeout(Mapi mid, int time)
+mapi_timeout(Mapi mid, int timeout)
 {
 	mapi_check(mid, "mapi_timeout");
 	if (mid->trace == MAPI_TRACE)
-		printf("Set timeout to %d\n", time);
+		printf("Set timeout to %d\n", timeout);
 	return mapi_setError(mid, "Operation not yet implemented", "mapi_timeout", MERROR);
 }
 
@@ -2972,6 +2930,8 @@ read_line(Mapi mid)
 	mid->blk.eos = 0;
 	s = mid->blk.buf + mid->blk.nxt;
 	while ((nl = strchr(s, '\n')) == NULL && !mid->blk.eos) {
+		ssize_t len;
+
 		if (mid->blk.lim - mid->blk.end < BLOCK) {
 			int len;
 
@@ -2991,39 +2951,25 @@ read_line(Mapi mid)
 
 		s = mid->blk.buf + mid->blk.end;
 
-		if (mid->blocked) {
-			ssize_t len;
-
-			/* fetch one more block */
-			if (mid->trace == MAPI_TRACE)
-				printf("fetch next block: start at:%d\n", mid->blk.end);
-			len = stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
-			check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
-			mid->blk.buf[mid->blk.end + len] = 0;
-			if (mid->trace == MAPI_TRACE) {
-				printf("got next block: length:" SSZFMT "\n", len);
-				printf("text:%s\n", mid->blk.buf + mid->blk.end);
-			}
-			if (!len) { /* add prompt */
-				len = 2;
-				mid->blk.buf[mid->blk.end] = PROMPTBEG;
-				mid->blk.buf[mid->blk.end+1] = '\n';
-				mid->blk.buf[mid->blk.end+2] = 0;
-				if (!nl)
-					nl = mid->blk.buf + mid->blk.end + 1;
-			}
-			mid->blk.end += (int) len;
-		} else {
-			/* fetch one more line */
-			while (stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, 1) == 1) {
-				if (mid->blk.buf[mid->blk.end++] == '\n')
-					break;
-				if (mid->blk.end == mid->blk.lim)
-					break;
-			}
-			check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
-			mid->blk.buf[mid->blk.end] = 0;
+		/* fetch one more block */
+		if (mid->trace == MAPI_TRACE)
+			printf("fetch next block: start at:%d\n", mid->blk.end);
+		len = stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
+		check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
+		mid->blk.buf[mid->blk.end + len] = 0;
+		if (mid->trace == MAPI_TRACE) {
+			printf("got next block: length:" SSZFMT "\n", len);
+			printf("text:%s\n", mid->blk.buf + mid->blk.end);
 		}
+		if (!len) { /* add prompt */
+			len = 2;
+			mid->blk.buf[mid->blk.end] = PROMPTBEG;
+			mid->blk.buf[mid->blk.end+1] = '\n';
+			mid->blk.buf[mid->blk.end+2] = 0;
+			if (!nl)
+				nl = mid->blk.buf + mid->blk.end + 1;
+		}
+		mid->blk.end += (int) len;
 	}
 	if (mid->trace == MAPI_TRACE) {
 		printf("got complete block: \n");
@@ -3262,34 +3208,34 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	char **anchors;
 
 	if (line[0] == '&') {
-		char *n = line;
+		char *nline = line;
 		int qt;
 
 		/* handle fields &qt */
 
-		n++;		/* query type */
-		qt = strtol(n, &n, 0);
+		nline++;	/* query type */
+		qt = strtol(nline, &nline, 0);
 
 		if (qt != Q_BLOCK || result == NULL)
 			result = new_result(hdl);
 		result->querytype = qt;
 
-		n++;		/* skip space */
+		nline++;		/* skip space */
 		switch (qt) {
 		case Q_TRANS:
-			if (*n == 'f')
+			if (*nline == 'f')
 				hdl->mid->auto_commit = 0;
 			else
 				hdl->mid->auto_commit = 1;
 			break;
 		case Q_UPDATE:
-			result->row_count = strtol(n, &n, 0);
+			result->row_count = strtol(nline, &nline, 0);
 			break;
 		case Q_TABLE:
 		case Q_PREPARE: {
 			int ntuples;	/* not used */
 
-			sscanf(n, "%d %d %d %d", &result->tableid, &result->row_count, &result->fieldcnt, &ntuples);
+			sscanf(nline, "%d %d %d %d", &result->tableid, &result->row_count, &result->fieldcnt, &ntuples);
 			break;
 		}
 		case Q_BLOCK:
@@ -3427,10 +3373,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				copy++;
 			}
 			if (*copy == '\n' || *copy == 0) {
-				if (mid->blocked) { /* skip end of block */
-					mid->active = hdl;
-					read_line(mid);
-				}
+				/* skip end of block */
+				mid->active = hdl;
+				read_line(mid);
 				hdl->needmore = 1;
 				mid->active = hdl;
 			}
@@ -4274,13 +4219,13 @@ The values of a row are delivered to any bounded variable before
 fetch_row returns. Automatic conversion based on common types
 simplifies the work for the programmers.
 @c
-#if HAVE_STRTOF && !HAVE_DECL_STRTOF
+#if defined(HAVE_STRTOF) && !HAVE_DECL_STRTOF
 extern float strtof(const char *, char **);
 #endif
-#if HAVE_STRTOLL && !HAVE_DECL_STRTOLL
+#if defined(HAVE_STRTOLL) && !HAVE_DECL_STRTOLL
 extern long long strtoll(const char *, char **, int);
 #endif
-#if HAVE_STRTOLL && !HAVE_DECL_STRTOLL
+#if defined(HAVE_STRTOLL) && !HAVE_DECL_STRTOLL
 extern unsigned long long strtoull(const char *, char **, int);
 #endif
 
@@ -4726,13 +4671,6 @@ mapi_get_motd(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_motd");
 	return mid->motd;
-}
-
-int
-mapi_is_blocked(Mapi mid)
-{
-	mapi_check0(mid, "mapi_is_blocked");
-	return mid->blocked;
 }
 
 int

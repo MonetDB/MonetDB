@@ -11,7 +11,7 @@ prefix = $(MAKEDIR)
 
 UNISTD_H = unistd.h
 
-all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H)
+all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMapiClient.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
 check: "$(SRCDIR)\Makefile.msc"
@@ -41,6 +41,9 @@ unistd.h:
 	$(ECHO) #define getpid _getpid >> unistd.h
 	$(ECHO) #define umask _umask >> unistd.h
 	$(ECHO) #endif >> unistd.h
+
+RunMapiClient.bat: "$(SRCDIR)\RunMapiClient.bat.in"
+	$(CONFIGURE) "$(SRCDIR)\RunMapiClient.bat.in" > RunMapiClient.bat
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"

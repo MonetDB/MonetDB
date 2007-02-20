@@ -155,7 +155,6 @@ addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg, int nativ
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	extern const char *getStandardSQLStateMsg(const char *);
 	ODBCLOG("addStmtError " PTRFMT " %s %s %d\n", PTRFMTCAST stmt, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidStmt(stmt));
