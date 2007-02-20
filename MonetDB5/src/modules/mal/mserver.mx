@@ -432,51 +432,37 @@ static void generateChallenge(str buf, int min, int max) {
 static void 
 doChallenge(str cmd, int msgsock) {
 	if (cmd == NULL) {
-		int i = 0, bigendian = -1;
-		char *buf = (char *) GDKmalloc(BLOCK), *s;
+		char *buf = (char *) GDKmalloc(BLOCK);
 		char *challenge;
 		char *algos;
-		stream *fdin = socket_rastream(msgsock, "Server read");
-		stream *fdout = socket_wastream(msgsock, "Server write");
+		stream *fdin = block_stream( socket_rastream(msgsock, "Server read"));
+		stream *fdout = block_stream( socket_wastream(msgsock, "Server write"));
 		bstream *bs;
 
-		assert(buf);
-		memset(buf, 0, BLOCK);
-		if (fdin == 0 || stream_errnr(fdin)) {
-			GDKsyserror("SERVERlisten:fdin problems\n");
+		if (!fdin || !fdout) {
+			GDKsyserror("SERVERlisten:fdin or fdout problems");
 			return;
 		}
+
+		assert(buf);
+
 		/* generate the challenge string */
 		challenge = alloca(sizeof(char) * (12 + 1));
 		generateChallenge(challenge, 8, 12);
 		if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert (0);
-		/* note that we claim to speak proto 7 here */
-		snprintf(buf, BLOCK, "%2u:%s:mserver:7:%s:%d\n",
-				(unsigned int) (strlen(challenge) + 13 + strlen(algos) + 5),
-				challenge, algos,
+		/* note that we claim to speak proto 8 here */
+		stream_printf(fdout, "%s:mserver:8:%s:%s",
+				challenge,
+				algos,
 #ifdef WORDS_BIGENDIAN
-				1234
+				"BIG"
 #else
-				3412
+				"LIT"
 #endif
 				);
-		stream_write(fdout, buf, strlen(buf), 1);
+		stream_flush(fdout);
 		/* get response */
-		s = buf;
-		stream_read(fdin, s, 1, 1);
-		for (i = 0; !stream_errnr(fdin) && i < BLOCK && *s != '\n'; i++) {
-			s++;
-			stream_read(fdin, s, 1, 1);
-		}
-		if (stream_errnr(fdin)) {
-			GDKsyserror("SERVERlisten: fdin problems\n");
-			stream_close(fdin);
-			stream_destroy(fdin);
-			stream_close(fdout);
-			stream_destroy(fdout);
-			return;
-		}
-		*s = '\0';
+		stream_read_block(fdin, buf, BLOCK, 1);
 
 		/* in embedded mode we allow just one client */
 		if (GDKembedded && MCcountClients() > 1) {
@@ -489,16 +475,7 @@ doChallenge(str cmd, int msgsock) {
 #ifdef DEBUG_SERVER
 		printf("mserver:Client accepted %s\n", name);
 		fflush(stdout);
-#endif
-		bigendian = strncmp(buf, "1234:", 5) == 0;
-		fdin = block_stream(stream_rstream_byteorder(fdin, bigendian));
-		fdout = block_stream(stream_wstream_nohandshake(fdout));
-		if (!fdin || !fdout) {
-			GDKsyserror("SERVERlisten:fdout problems\n");
-			return;
-		}
 
-#ifdef DEBUG_SERVER
 		THRprintf(GDKout, "#SERVERlisten:client accepted %d\n", msgsock);
 		THRprintf(GDKout, "#SERVERlisten:client string %s\n", name);
 #endif

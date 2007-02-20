@@ -156,7 +156,7 @@ of the client named 'guest' to a session previously started under identity 23.
 
 @{
 The scheduleClient receives a challenge response consisting of
-1234:user:password:lang:database.
+BIG:user:password:lang:database:.
 @c
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
@@ -167,15 +167,13 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	Client c;
 	MT_Id p;
 
-	/* decode first 1234:user:password:lang:database line */
-	s = strchr(command, '\n');
-	if (s)
-		*s = 0;
+	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
-	/* byte order, which we're not interested in */
+	/* byte order */
 	s = strchr(user, ':');
 	if (s) {
 		*s = 0;
+		stream_set_byteorder(fin->s, strcmp(user, "BIG") == 0);
 		user = s + 1;
 	} else {
 		stream_printf(fout, "!incomplete challenge '%s'\n", user);
@@ -183,7 +181,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		GDKfree(command);
 		return;
 	}
-
 
 	/* passwd */
 	s = strchr(user, ':');
