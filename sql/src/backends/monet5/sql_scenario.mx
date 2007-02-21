@@ -90,19 +90,10 @@ static int SQLdebug = 0;
 static void
 monet5_freestack(backend_stack stk)
 {
-	(void) stk;
+	if (stk)
+		GDKfree(stk);
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#monet5_freestack\n");
-#endif
-}
-
-static void
-monet5_parse(backend_stack stk, char *cmd)
-{
-	(void) stk;
-	(void) cmd;
-#ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#monet5_parse:%s\n", cmd);
 #endif
 }
 
@@ -219,7 +210,6 @@ SQLinit(Client c)
 	be_funcs = GDKzalloc(sizeof(backend_functions));
 	be_funcs->fstack		= &monet5_freestack;
 	be_funcs->fcode			= &monet5_freecode;
-	be_funcs->finterpret	= &monet5_parse;
 	monet5_user_init(be_funcs);
 	backend_init(be_funcs); /* be_funcs probably leaks */
 

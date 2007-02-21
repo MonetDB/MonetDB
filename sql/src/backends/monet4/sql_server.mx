@@ -328,7 +328,6 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	memset((char *)be_funcs, '\0', sizeof(backend_functions));
 	be_funcs->fstack = &monet4_freestack;
 	be_funcs->fcode = &monet4_freecode;
-	be_funcs->finterpret = &monet4_parse;
 	monet4_user_init(be_funcs);
 	backend_init(be_funcs);	/* we probably leak be_funcs here */
 	CNTXTclient(stk, &father);
@@ -878,7 +877,8 @@ str_cast(str *res, mvc *M, int *eclass, int *d, int *s, int *has_tz, ptr v, int 
 			r = GDKstrdup(v);
 	}
 	if (*len > 0 && sz > *len) {
-		GDKfree(r);
+		if (r) 
+			GDKfree(r);
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
 			GDKerror("str_cast: value too long for type (var)char(%d)\n", *len);
 			return GDK_FAIL;

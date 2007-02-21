@@ -1,12 +1,12 @@
 create
 check0
-check0a
+HAVE_MONETDB4?check0a
 #load
 insert_MODEL
 insert_ATOM
 insert_BOND
 check1
-check1a
+HAVE_MONETDB4?check1a
 01
 02
 03

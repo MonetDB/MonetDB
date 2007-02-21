@@ -1849,7 +1849,7 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tpe = getArgType(mb, pci, 5);
 	int len   = *(int *) getArgReference(stk, pci, 6);
 	int sz = len + 1;
-	char *r = GDKmalloc(sz);
+	char *r = NULL;
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
 
@@ -1865,7 +1865,8 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			r = GDKstrdup(v);
 	}
 	if (len > 0 && sz > len) {
-		GDKfree(r);
+		if (r) 
+			GDKfree(r);
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), p) != 0) {
 			throw(SQL, "str_cast", "value too long for type (var)char(%d)", len);
 		} else {
