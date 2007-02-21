@@ -16,10 +16,14 @@ sigs("xrpc_server");
 #---------------------------------#
 # signature																						  # name
 # str																							  # type
-#---------------------------------#
-[ "httpd_start(int, str) : void"																				  ]
+#-----------------------------------------#
+[ "get_xrpc_open() : bit"		  ]
+[ "get_xrpc_port() : int"		  ]
 [ "rpcd_start() : void"																									  ]
+[ "rpcd_start(bit, str) : void"		  ]
 [ "rpcd_start(int) : void"																								  ]
+[ "rpcd_start(int, bit) : void"		  ]
+[ "rpcd_start(int, bit, str) : void"	  ]
 [ "rpcd_start(int, str) : void"																								  ]
 drop("xrpc_server");
 printf("module '%s'\n","xrpc_client");
