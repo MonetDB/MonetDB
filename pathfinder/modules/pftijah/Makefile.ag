@@ -52,6 +52,10 @@ lib__pftijah = {
 		stem_UTF_8_english.c \
 		stem_UTF_8_porter.h \
 		stem_UTF_8_porter.c \
+		porter_eng.h \
+		porter_eng.c \
+		porter_dutch.h \
+		porter_dutch.c \
 		pftijah_tokenize.l \
 		pftijah_util.mx \
 		serialize_pftijah.mx \
