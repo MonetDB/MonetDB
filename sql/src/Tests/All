@@ -1,2 +1,2 @@
-load
-sigs
+HAVE_MONETDB4?load
+HAVE_MONETDB4?sigs

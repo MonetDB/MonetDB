@@ -55,7 +55,6 @@ typedef list*  (*schema_user_dependencies) (ptr mvc, int schema_id);
 typedef struct _backend_functions {
 	freestack_fptr fstack;
 	freecode_fptr fcode;
-	interpret_fptr finterpret;
 	create_user_fptr fcuser;
 	drop_user_fptr fduser;
 	find_user_fptr ffuser;
@@ -68,7 +67,6 @@ typedef struct _backend_functions {
 extern void backend_init(backend_functions *funcs);
 extern void backend_freestack(backend_stack stk);
 extern void backend_freecode(backend_code code, backend_stack stk, int nr, char *name);
-extern void backend_interpret(backend_stack stk, char *code);
 
 extern char *backend_create_user(list *l, char *user, char *passwd, char *fullname, sqlid defschemid, sqlid grantor);
 extern int  backend_drop_user(ptr mvc, char *user);
@@ -108,14 +106,6 @@ backend_freecode(backend_code code, backend_stack stk, int nr, char *name)
 	assert(be_funcs != NULL);
 	if (be_funcs->fcode != NULL)
 		be_funcs->fcode(code, stk, nr, name);
-}
-
-void
-backend_interpret(backend_stack stk, char *code)
-{
-	assert(be_funcs != NULL);
-	if (be_funcs->finterpret != NULL)
-		be_funcs->finterpret(stk, code);
 }
 
 char *

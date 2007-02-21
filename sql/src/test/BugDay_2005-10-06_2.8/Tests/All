@@ -1,5 +1,5 @@
 select_null
-mserver_exit_at_EOF-SQ.904042
+HAVE_MONETDB4?mserver_exit_at_EOF-SQ.904042
 MapiClient-dump.SF-905851
 double_commit.SF-916584
 mixed_type.SF-917372

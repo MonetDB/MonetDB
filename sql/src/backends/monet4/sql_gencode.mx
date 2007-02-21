@@ -40,7 +40,6 @@ sql_server_export int backend_explain(backend *be, stmt *s, stream *out);
 sql_server_export int backend_exec_prepared_stmt( backend *be, cq *q );
 
 sql_server_export void monet4_freecode(backend_code code, backend_stack stk, int nr, char *name);
-sql_server_export void monet4_parse(backend_stack stk, char *code);
 
 #endif /*_SQL_GENCODE_H_*/
 
@@ -1655,12 +1654,6 @@ backend_parse(Cntxt stack, char *cmd)
 		err = interpret_str(stack, cmd, &v);
 	}
 	return err;
-}
-
-void
-monet4_parse(backend_stack stack, char *cmd)
-{
-	backend_parse((Cntxt) stack, cmd);
 }
 
 void monet4_set_string(mvc *m, char *name, char *val)
