@@ -44,6 +44,7 @@ All_mods@batloop() {
       str: loaded.
     stats: loading... done.
  salgebra: loading... done.
+  restore: loading... done.
     radix: loading... done.
        qt: loading... done.
  profiler: loading... done.
@@ -77,7 +78,8 @@ bat_mmath: loading... done.
  bat_cast: loading... done.
 bat_arith: loading... done.
       bat: loaded.
- ascii_io: loading... done.
+   backup: loading... done.
+ ascii_io: loaded.
     array: loading... done.
     arith: loaded.
   algebra: loaded.
@@ -96,6 +98,7 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "arith"	  ]
 [ "array"	  ]
 [ "ascii_io"	  ]
+[ "backup"	  ]
 [ "bat"		  ]
 [ "bat_arith"	  ]
 [ "bat_cast"	  ]
@@ -130,6 +133,7 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "profiler"	  ]
 [ "qt"		  ]
 [ "radix"	  ]
+[ "restore"	  ]
 [ "salgebra"	  ]
 [ "stats"	  ]
 [ "str"		  ]

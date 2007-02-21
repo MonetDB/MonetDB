@@ -19,6 +19,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "arith",	  "static"	  ]
 [ "array",	  "contrib"	  ]
 [ "ascii_io",	  "plain"	  ]
+[ "backup",	  "UNKNOWN"	  ]
 [ "bat",	  "static"	  ]
 [ "bat_arith",	  "plain"	  ]
 [ "bat_cast",	  "contrib"	  ]
@@ -52,6 +53,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "profiler",	  "plain"	  ]
 [ "qt",		  "contrib"	  ]
 [ "radix",	  "plain"	  ]
+[ "restore",	  "UNKNOWN"	  ]
 [ "salgebra",	  "contrib"	  ]
 [ "stats",	  "plain"	  ]
 [ "str",	  "static"	  ]
@@ -73,16 +75,16 @@ ls();
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  55,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",	  "str",  "str",  57,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 
 dir();
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  55,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",		  "str",  "str",  57,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_atomtbl",	  "str",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  1016,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  40,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_environment",	  "str",  "str",  41,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_aut",	  "oid",  "str",  948,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  1016,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
 [ "monet_fcn_dat",	  "oid",  "str",  948,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
@@ -129,6 +131,7 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "alarm"		  ]
 [ "array"		  ]
 [ "ascii_io"		  ]
+[ "backup"		  ]
 [ "bat_arith"		  ]
 [ "bat_cast"		  ]
 [ "bat_mmath"		  ]
@@ -159,6 +162,7 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "profiler"		  ]
 [ "qt"			  ]
 [ "radix"		  ]
+[ "restore"		  ]
 [ "salgebra"		  ]
 [ "stats"		  ]
 [ "streams"		  ]

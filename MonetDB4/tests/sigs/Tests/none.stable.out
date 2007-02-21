@@ -53,6 +53,7 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "arith",	  nil	  ]
 [ "array",	  nil	  ]
 [ "ascii_io",	  nil	  ]
+[ "backup",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "bat_arith",	  nil	  ]
 [ "bat_cast",	  nil	  ]
@@ -86,6 +87,7 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "profiler",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "radix",	  nil	  ]
+[ "restore",	  nil	  ]
 [ "salgebra",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "str",	  nil	  ]
@@ -168,6 +170,7 @@ others.mark(oid(nil)).print();
 [ "streams",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "salgebra",	  nil	  ]
+[ "restore",	  nil	  ]
 [ "radix",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "profiler",	  nil	  ]
@@ -198,6 +201,7 @@ others.mark(oid(nil)).print();
 [ "bat_mmath",	  nil	  ]
 [ "bat_cast",	  nil	  ]
 [ "bat_arith",	  nil	  ]
+[ "backup",	  nil	  ]
 [ "ascii_io",	  nil	  ]
 [ "array",	  nil	  ]
 [ "alarm",	  nil	  ]
@@ -651,7 +655,56 @@ others@batloop(){
 	dropping salgebra
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading restore
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "restore",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "restore",	  nil	  ]
+[ "ascii_io",	  nil	  ]
+[ "streams",	  nil	  ]
+
+	dropping restore
+
+
+	dropping ascii_io
+
+
+	dropping streams
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1922,7 +1975,65 @@ others@batloop(){
 	dropping bat_arith
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading backup
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
+[ "backup",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "backup",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "ascii_io",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
+
+	dropping backup
+
+
+	dropping xtables
+
+
+	dropping ascii_io
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]

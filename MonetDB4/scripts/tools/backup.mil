@@ -1,19 +1,21 @@
 module(xtables);module(ascii_io);
 
-backup_dir := "";
+var backup_dir := "";
 
 proc seqinfo(BAT b) : str {
-	return b.info.find("hseqbase");
+	return b.info().find("hseqbase");
 }
-PROC grp_dump(b) : str {
-	var bats := [~b];
-	var first := bats.find(nil);
-	if (first.htype != void){
-		var r := [first~].reverse.copy;
+PROC grp_dump(BAT b) : str {
+	var bats := mark(b).reverse();
+	var first := bats.fetch(0);
+	print(first);
+	if (first.htype() != void){
+		var r := first.mark().reverse().copy();
 		r.rename("key");
 		bats.access(BAT_APPEND);
 		bats.append(r);
 	}
+	print(bats);
 	var name := bbpname(first);
 	var file := backup_dir + name;
 	bats := dump_format( bats, file + ".fmt" );
@@ -22,22 +24,33 @@ PROC grp_dump(b) : str {
 }
 PROC backup( str Dir ) : void {
 	backup_dir := Dir; 
-        var nme := view_bbp_name;
-        var prs := nme.semijoin(view_bbp_kind.select("pers"));
-	rprs := [oid](prs.reverse);
-	prs := rprs.reverse.copy;
+        var nme := view_bbp_name();
+        var prs := nme.semijoin(view_bbp_kind().select("pers"));
+	print(prs);
+	var rprs := [oid](prs.reverse());
+	prs := rprs.reverse().copy();
 	var bats := [load](prs);
+	if (count(bats) = 0) {
+		return;
+	}
 	var cnts := [count](bats);
 	var seqs := [seqinfo](bats);
-	notvoid := seqs.select("-2147483648").mark(0@0);
+	print(bats);
+	print(cnts);
+	print(seqs);
+	var notvoid := seqs.select(str(oid(nil))).mark(0@0);
+	print(notvoid);
 	seqs := seqs.kdiff(notvoid);
+	print(cnts);
+	print(seqs);
+	print("ct");
 	var grps := CTgroup(cnts,seqs);
-	var files := {grp_dump}(grps.reverse.join(bats));
+	var files := {grp_dump}(map(grps).reverse().join(bats));
 	bats := bats.semijoin(notvoid);
-	files.insert( {grp_dump}(notvoid.reverse.join(bats) ));
+	files.insert( {grp_dump}(notvoid.reverse().join(bats) ));
 	files.rename("files");
 	bats := new(bat,bat);
 	bats.insert(files,files);
 	grp_dump(bats);
 }
-backup("/tmp/bup/");
+#backup("/tmp/bup/");

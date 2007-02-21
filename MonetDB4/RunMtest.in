@@ -22,7 +22,7 @@ srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/plain:${srcdir}/src/modules/plain:${builddir}/src/modules/contrib/.libs:${builddir}/src/modules/contrib:${srcdir}/src/modules/contrib:${builddir}/src/modules/calibrator/.libs:${builddir}/src/modules/calibrator:${srcdir}/src/modules/calibrator:${builddir}/src/mapi/.libs:${builddir}/src/mapi:${srcdir}/src/mapi"
+MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/plain:${srcdir}/src/modules/plain:${builddir}/src/modules/contrib/.libs:${builddir}/src/modules/contrib:${srcdir}/src/modules/contrib:${builddir}/src/modules/calibrator/.libs:${builddir}/src/modules/calibrator:${srcdir}/src/modules/calibrator:${builddir}/src/mapi/.libs:${builddir}/src/mapi:${srcdir}/src/mapi:${srcdir}/scripts:${srcdir}/scripts/tools"
 @HAVE_NETCDF_TRUE@ MOD_PATH="${MOD_PATH}:${builddir}/src/modules/mnetcdf/.libs:${builddir}/src/modules/mnetcdf:${srcdir}/src/modules/mnetcdf"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
@@ -73,4 +73,4 @@ type -a @PYTHON@
 # if the environment variable MTEST_AT is set (value does not matter),
 # pass the --at flag to Mtest.py so that it uses the at command as a
 # watchdog.
-exec Mtest.py --config="${builddir}/conf/MonetDB.conf" --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="${srcdir}" --TSTBLDBASE="${builddir}" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"
+exec Mtest.py --config="${builddir}/conf/MonetDB.conf" --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTSRCBASE="${srcdir}" --TSTBLDBASE="${builddir}" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
