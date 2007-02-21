@@ -34,9 +34,9 @@ The @sc{macro} and @sc{orcam} transformations provide
 a basis to develop front-end specific code generation templates.
 The prototypical test case is the following template:
 @example
-function user.joinPath( a:bat[:any$1,:any$2],
-                b:bat[:any$2,:any$3],
-                c:bat[:any$3,:any4]):bat[:any$1,:any$4]
+function user.joinPath( a:bat[:any_1,:any_2],
+                b:bat[:any_2,:any_3],
+                c:bat[:any_3,:any_4]):bat[:any_1,:any_4]
 address fastjoinpath;
     z:= join(a,b);
     zz:= join(z,c);
