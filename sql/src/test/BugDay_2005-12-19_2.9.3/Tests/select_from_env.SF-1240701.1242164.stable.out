@@ -64,6 +64,7 @@ Over..
 [ "xquery_procMB"	]
 [ "xrpc_open"	]
 [ "xrpc_admin"	]
+[ "xrpc_user"	]
 [ "xrpc_trusted"	]
 [ "monet_cwd"	]
 
