@@ -159,7 +159,7 @@ extern void shttpd_fini(void);
 extern void shttpd_setopt(const char *variable, const char *value);
 extern void shttpd_addmimetype(const char *ext, const char *mime);
 extern void shttpd_register_mountpoint(const char *uri, const char *system_path);
-extern shttpd_socket shttpd_open_port(int port);
+extern shttpd_socket shttpd_open_port(int port, int accept_any);
 extern void shttpd_register_url(const char *url, 
                                 shttpd_callback_t callback, void *callback_data);
 extern void shttpd_protect_url(const char *url, const char *file);
@@ -172,6 +172,7 @@ extern char *shttpd_get_msg(struct shttpd_callback_arg *arg);
 extern char *shttpd_get_method(struct shttpd_callback_arg *arg);
 extern char *shttpd_get_uri(struct shttpd_callback_arg *arg);
 extern int shttpd_get_socket(struct shttpd_callback_arg *arg);
+extern struct in_addr shttpd_get_inAddr(struct shttpd_callback_arg *arg);
 extern void shttpd_finish(struct shttpd_callback_arg *arg);
 
 #ifdef MT
