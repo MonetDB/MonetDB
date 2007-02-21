@@ -26,8 +26,8 @@ module 'pftijah'
 # signature	  # name
 # str		  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "_tj_throw2collection(BAT[oid,BAT], BAT[oid,BAT], str, str) : void"													  ]
-[ "_tj_throw2collection_index(BAT[oid,BAT], str) : void"														  ]
+[ "_tj_throw2collection(BAT[str,BAT], BAT[oid,BAT], str, str) : void"													  ]
+[ "_tj_throw2collection_index(BAT[str,BAT], str) : void"														  ]
 [ "indexfetchjoin(BAT[any,oid], BAT[void,oid], BAT[void,oid]) : BAT[void,oid]"												  ]
 [ "mergeindex(BAT[oid,oid], BAT[void,oid], BAT[void,oid], int) : BAT[void,BAT]"												  ]
 [ "offsetindex(BAT[void,oid], int) : BAT[void,oid]"															  ]

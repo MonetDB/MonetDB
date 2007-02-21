@@ -513,17 +513,15 @@ static int replaceCollParam(tjCtx* tjctx, str param, str val) {
 }
 
 static BAT*
-getBAT(BAT* batbat, int i) {
+getBAT(BAT* batbat, str bname) {
 	BUN bun;
-	oid index = (oid)i;
-
-	if ( !(bun=BUNfnd(batbat,&index)) ) {
-	    stream_printf(GDKerr,"getBAT:BUNfnd(%d) failed.\n",i);
+	if ( !(bun=BUNfnd(batbat,bname)) ) {
+	    stream_printf(GDKerr,"getBAT:BUNfnd(%s) failed.\n",bname);
 	    return NULL;
 	}
-	BAT* res = BATdescriptor( *(bat*)bun);
+	BAT* res = BATdescriptor( *(bat*)BUNtail(batbat,bun));
 	if ( !res )
-	    stream_printf(GDKerr,"getBAT:BATdescriptor() for %d failed.\n",i);
+	    stream_printf(GDKerr,"getBAT:BATdescriptor() for %s failed.\n",bname);
 	return res;
 }
 
@@ -570,7 +568,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	 */
 
 	/* set parameter bat first */
-	if ( !(res->b_collParam   = getBAT(tjCtx_BAT,4)) ) return NULL;
+	if ( !(res->b_collParam   = getBAT(tjCtx_BAT,"_param")) ) return NULL;
 
 	res->preExpansion = 1;
 	str str_preExpansion = readCollParam(res,"preExpansion");
@@ -627,17 +625,17 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	if ( !(res->tdb = tdb_open("termDB")) )
 	    return NULL;
 #endif
-	if ( !(res->b_globalTerm  = getBAT(tjCtx_BAT,0)) ) return NULL;
+	if ( !(res->b_globalTerm  = getBAT(tjCtx_BAT,"_globalTerms")) ) return NULL;
 	res->n_globalTerm = (oid)BATcount(res->b_globalTerm);
-	if ( !(res->b_globalTag   = getBAT(tjCtx_BAT,1)) ) return NULL;
+	if ( !(res->b_globalTag   = getBAT(tjCtx_BAT,"_globalTags")) ) return NULL;
 	res->n_globalTag = (oid)BATcount(res->b_globalTag);
 	/*
 	 *
 	 */
-	if ( !(res->b_docName     = getBAT(tjCtx_BAT,2)) ) return NULL;
-	if ( !(res->b_docFirstPre = getBAT(tjCtx_BAT,3)) ) return NULL;
-	if ( !(res->b_collPre     = getBAT(tjCtx_BAT,5)) ) return NULL;
-	if ( !(res->b_collSize    = getBAT(tjCtx_BAT,6)) ) return NULL;
+	if ( !(res->b_docName     = getBAT(tjCtx_BAT,"_doc_name")) ) return NULL;
+	if ( !(res->b_docFirstPre = getBAT(tjCtx_BAT,"_doc_firstpre")) ) return NULL;
+	if ( !(res->b_collPre     = getBAT(tjCtx_BAT,"_tid")) ) return NULL;
+	if ( !(res->b_collSize    = getBAT(tjCtx_BAT,"_size")) ) return NULL;
 	if ( (res->tijahPre = getPreSize(res)) == oid_nil )
 	     return NULL;;
 	/* check here for new fragmentation */
@@ -647,7 +645,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: loadTijahContext() [b_collPre|b_collSize] too big(%d), create new fragment\n",res->name,BATcount(res->b_collPre));
 #endif
 		BAT* fragments;
-	        if ( !(fragments = getBAT(tjCtx_BAT,8)) )
+	        if ( !(fragments = getBAT(tjCtx_BAT,"_fragments")) )
 		    return NULL;
 	        int newFragments  = (int)BATcount(fragments) + 1;
 		/* */
@@ -673,7 +671,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 		return NULL;
 	if ( dbat_init("b_collSize", &res->dbat_collSize, res->b_collSize) < -1 )
 		return NULL;
-	if ( !(res->b_collPfPre   = getBAT(tjCtx_BAT,7)) ) return NULL;
+	if ( !(res->b_collPfPre   = getBAT(tjCtx_BAT,"_pfpre")) ) return NULL;
 	if ( !loadSelectionTagList(res,selTagList) ) return NULL;
 	/* */
 	res->tagStackPtr = 0;
