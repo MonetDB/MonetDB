@@ -210,9 +210,9 @@ static char instring;
  * (if set, every token received is printed to stderr)
  */
 #ifdef DEBUG_SCANNER
-#define yield(t) PFlog ("token: " #t); return (t)
+#define pf_yield(t) PFlog ("token: " #t); return (t)
 #else
-#define yield(t) return (t)
+#define pf_yield(t) return (t)
 #endif
 
 /* lexical state stack */
@@ -460,349 +460,349 @@ _                                {S}
 
 <INITIAL,DEFAULT>{
 
-"xquery"{_}"version"               { yield (xquery_version); }
+"xquery"{_}"version"               { pf_yield (xquery_version); }
 
 "module"{_}"namespace"             { gotoState (NAMESPACEDECL);
-                                     yield (module_namespace); }
+                                     pf_yield (module_namespace); }
 
-";"                                { yield (semicolon); }
+";"                                { pf_yield (semicolon); }
 
 "declare"{_}"namespace"            { gotoState (NAMESPACEDECL);
-                                     yield (declare_namespace); }
+                                     pf_yield (declare_namespace); }
 
 "declare"{_}"boundary-space"{_}"preserve" {
-                                     yield (declare_boundary_space_preserve); }
+                                     pf_yield (declare_boundary_space_preserve); }
 "declare"{_}"boundary-space"{_}"strip"   {
-                                     yield (declare_boundary_space_strip); }
+                                     pf_yield (declare_boundary_space_strip); }
 
 "declare"{_}"default"{_}"element"  { gotoState (NAMESPACEKEYWORD);
-                                     yield (declare_default_element); }
+                                     pf_yield (declare_default_element); }
 "declare"{_}"default"{_}"function" { gotoState (NAMESPACEKEYWORD);
-                                     yield (declare_default_function); }
-"declare"{_}"ordering"{_}"ordered" { yield (declare_ordering_ordered); }
-"declare"{_}"ordering"{_}"unordered" { yield (declare_ordering_unordered); }
-"declare"{_}"default"{_}"order"    { yield (declare_default_order); }
+                                     pf_yield (declare_default_function); }
+"declare"{_}"ordering"{_}"ordered" { pf_yield (declare_ordering_ordered); }
+"declare"{_}"ordering"{_}"unordered" { pf_yield (declare_ordering_unordered); }
+"declare"{_}"default"{_}"order"    { pf_yield (declare_default_order); }
 "declare"{_}"copy-namespaces"      { gotoState (PRESERVE_MODE);
-                                     yield (declare_copy_namespaces); }
-"empty"{_}"greatest"               { yield (empty_greatest); }
-"empty"{_}"least"                  { yield (empty_least); }
-"declare"{_}"default"{_}"collation" { yield (declare_default_collation); }
-"declare"{_}"base-uri"             { yield (declare_base_uri); }
+                                     pf_yield (declare_copy_namespaces); }
+"empty"{_}"greatest"               { pf_yield (empty_greatest); }
+"empty"{_}"least"                  { pf_yield (empty_least); }
+"declare"{_}"default"{_}"collation" { pf_yield (declare_default_collation); }
+"declare"{_}"base-uri"             { pf_yield (declare_base_uri); }
 "import"{_}"schema"                { gotoState (NAMESPACEKEYWORD);
-                                     yield (import_schema); }
+                                     pf_yield (import_schema); }
 "import"{_}"module"                { gotoState (NAMESPACEKEYWORD);
-                                     yield (import_module); }
+                                     pf_yield (import_module); }
 "at"{_}{StringLiteral}             { pflval.str = extract_string (yytext);
-                                     yield (at_URILiteral);
+                                     pf_yield (at_URILiteral);
                                    }
 "declare"{_}"variable"{_}"$"       { gotoState (VARNAME);
-                                     yield (declare_variable_dollar); }
-"declare"{_}"construction"{_}"preserve" { yield (declare_construction_preserve); }
-"declare"{_}"construction"{_}"strip" { yield (declare_construction_strip); }
-"declare"{_}"function"             { yield (declare_function); }
-"declare"{_}"updating"{_}"function" { yield (declare_updating_function); }
-"declare"{_}"document"{_}"management"{_}"function" { yield (declare_docmgmt_function); }
-"declare"{_}"docmgmt"{_}"function" { yield (declare_docmgmt_function); }
-"declare"{_}"option"               { yield (declare_option); }
-"declare"{_}"revalidation"{_}"strict" { yield (declare_revalidation_strict); }
-"declare"{_}"revalidation"{_}"lax"    { yield (declare_revalidation_lax); }
-"declare"{_}"revalidation"{_}"skip"   { yield (declare_revalidation_skip); }
-"$"                                { gotoState (VARNAME); yield (dollar); }
-")"                                { gotoState (OPERATOR); yield (rparen); }
-"{"                                { yield (lbrace); }
-"}"                                { popState (); yield (rbrace); }
-","                                { yield (comma); }
+                                     pf_yield (declare_variable_dollar); }
+"declare"{_}"construction"{_}"preserve" { pf_yield (declare_construction_preserve); }
+"declare"{_}"construction"{_}"strip" { pf_yield (declare_construction_strip); }
+"declare"{_}"function"             { pf_yield (declare_function); }
+"declare"{_}"updating"{_}"function" { pf_yield (declare_updating_function); }
+"declare"{_}"document"{_}"management"{_}"function" { pf_yield (declare_docmgmt_function); }
+"declare"{_}"docmgmt"{_}"function" { pf_yield (declare_docmgmt_function); }
+"declare"{_}"option"               { pf_yield (declare_option); }
+"declare"{_}"revalidation"{_}"strict" { pf_yield (declare_revalidation_strict); }
+"declare"{_}"revalidation"{_}"lax"    { pf_yield (declare_revalidation_lax); }
+"declare"{_}"revalidation"{_}"skip"   { pf_yield (declare_revalidation_skip); }
+"$"                                { gotoState (VARNAME); pf_yield (dollar); }
+")"                                { gotoState (OPERATOR); pf_yield (rparen); }
+"{"                                { pf_yield (lbrace); }
+"}"                                { popState (); pf_yield (rbrace); }
+","                                { pf_yield (comma); }
 
 
-"for"{_}"$"                        { gotoState (VARNAME); yield (for_dollar); }
-"let"{_}"$"                        { gotoState (VARNAME); yield (let_dollar); }
-"some"{_}"$"                       { gotoState (VARNAME); yield (some_dollar); }
-"every"{_}"$"                      { gotoState (VARNAME); yield (every_dollar);}
+"for"{_}"$"                        { gotoState (VARNAME); pf_yield (for_dollar); }
+"let"{_}"$"                        { gotoState (VARNAME); pf_yield (let_dollar); }
+"some"{_}"$"                       { gotoState (VARNAME); pf_yield (some_dollar); }
+"every"{_}"$"                      { gotoState (VARNAME); pf_yield (every_dollar);}
 
 "with"{_}"$"                       { /* Pathfinder extension: recursion */
-                                     gotoState (VARNAME); yield (with_dollar); }
+                                     gotoState (VARNAME); pf_yield (with_dollar); }
 
-"typeswitch"{_}?"("/[^:]           { yield (typeswitch_lparen); }
-"if"{_}?"("/[^:]                   { yield (if_lparen); }
-"+"                                { yield (plus); /* unary plus */ }
-"-"                                { yield (minus); /* unary minus */ }
+"typeswitch"{_}?"("/[^:]           { pf_yield (typeswitch_lparen); }
+"if"{_}?"("/[^:]                   { pf_yield (if_lparen); }
+"+"                                { pf_yield (plus); /* unary plus */ }
+"-"                                { pf_yield (minus); /* unary minus */ }
 "validate"{_}?"{"                  { pushState (OPERATOR);
-                                     yield (validate_lbrace); }
+                                     pf_yield (validate_lbrace); }
 "validate"{_}"lax"{_}?"{"          { pushState (OPERATOR);
-                                     yield (validate_lax_lbrace); }
+                                     pf_yield (validate_lax_lbrace); }
 "validate"{_}"strict"{_}?"{"       { pushState (OPERATOR);
-                                     yield (validate_strict_lbrace); }
-"/"                                { yield (slash); }
-"//"                               { yield (slash_slash); }
-"child::"                          { yield (child_colon_colon); }
-"descendant::"                     { yield (descendant_colon_colon); }
-"attribute::"                      { yield (attribute_colon_colon); }
-"self::"                           { yield (self_colon_colon); }
-"descendant-or-self::"             { yield (descendant_or_self_colon_colon); }
-"following-sibling::"              { yield (following_sibling_colon_colon); }
-"following::"                      { yield (following_colon_colon); }
-"@"                                { yield (atsign); }
-"parent::"                         { yield (parent_colon_colon); }
-"ancestor::"                       { yield (ancestor_colon_colon); }
-"preceding-sibling::"              { yield (preceding_sibling_colon_colon); }
-"preceding::"                      { yield (preceding_colon_colon); }
-"ancestor-or-self::"               { yield (ancestor_or_self_colon_colon); }
-"select-narrow::"                  { yield (select_narrow_colon_colon); }
-"select-wide::"                    { yield (select_wide_colon_colon); }
-"reject-narrow::"                  { yield (reject_narrow_colon_colon); }
-"reject-wide::"                    { yield (reject_wide_colon_colon); }
-".."                               { gotoState (OPERATOR); yield (dot_dot); }
-"."                                { gotoState (OPERATOR); yield (dot); }
-"*"                                { gotoState (OPERATOR); yield (star); }
+                                     pf_yield (validate_strict_lbrace); }
+"/"                                { pf_yield (slash); }
+"//"                               { pf_yield (slash_slash); }
+"child::"                          { pf_yield (child_colon_colon); }
+"descendant::"                     { pf_yield (descendant_colon_colon); }
+"attribute::"                      { pf_yield (attribute_colon_colon); }
+"self::"                           { pf_yield (self_colon_colon); }
+"descendant-or-self::"             { pf_yield (descendant_or_self_colon_colon); }
+"following-sibling::"              { pf_yield (following_sibling_colon_colon); }
+"following::"                      { pf_yield (following_colon_colon); }
+"@"                                { pf_yield (atsign); }
+"parent::"                         { pf_yield (parent_colon_colon); }
+"ancestor::"                       { pf_yield (ancestor_colon_colon); }
+"preceding-sibling::"              { pf_yield (preceding_sibling_colon_colon); }
+"preceding::"                      { pf_yield (preceding_colon_colon); }
+"ancestor-or-self::"               { pf_yield (ancestor_or_self_colon_colon); }
+"select-narrow::"                  { pf_yield (select_narrow_colon_colon); }
+"select-wide::"                    { pf_yield (select_wide_colon_colon); }
+"reject-narrow::"                  { pf_yield (reject_narrow_colon_colon); }
+"reject-wide::"                    { pf_yield (reject_wide_colon_colon); }
+".."                               { gotoState (OPERATOR); pf_yield (dot_dot); }
+"."                                { gotoState (OPERATOR); pf_yield (dot); }
+"*"                                { gotoState (OPERATOR); pf_yield (star); }
 {NCName}":*"                       { pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR);
-                                     yield (NCName_Colon_Star); }
+                                     pf_yield (NCName_Colon_Star); }
 "*:"{NCName}                       { pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR); 
-                                     yield (Star_Colon_NCName); }
+                                     pf_yield (Star_Colon_NCName); }
 "document-node"{_}?"("/[^:]        { pushState (OCCURRENCEINDICATOR);
-                                     yield (document_node_lparen); }
+                                     pf_yield (document_node_lparen); }
 "text"{_}?"("/[^:]                 { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (text_lparen); }
+                                     pf_yield (text_lparen); }
 "comment"{_}?"("/[^:]              { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (comment_lparen); }
+                                     pf_yield (comment_lparen); }
 "processing-instruction"{_}?"("/[^:] { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTESTFORPI);
-                                     yield (pi_lparen); }
+                                     pf_yield (pi_lparen); }
 "attribute"{_}?"("/[^:]            { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (attribute_lparen); }
+                                     pf_yield (attribute_lparen); }
 "schema-attribute"{_}?"("/[^:]     { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (schema_attribute_lparen); }
+                                     pf_yield (schema_attribute_lparen); }
 "element"{_}?"("/[^:]              { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (element_lparen); }
+                                     pf_yield (element_lparen); }
 "schema-element"{_}?"("/[^:]       { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (schema_element_lparen); }
+                                     pf_yield (schema_element_lparen); }
 "node"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
-                                     yield (node_lrparens); }
+                                     pf_yield (node_lrparens); }
 "empty-sequence"{_}?"("{_}?")"     { gotoState (OPERATOR);
-                                     yield (empty_sequence); }
+                                     pf_yield (empty_sequence); }
 "item"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
-                                     yield (item_lrparens); }
-"("                                { yield (lparen); }
+                                     pf_yield (item_lrparens); }
+"("                                { pf_yield (lparen); }
 "ordered"{_}?"{"                   { pushState (OPERATOR);
-                                     yield (ordered_lbrace); }
+                                     pf_yield (ordered_lbrace); }
 "unordered"{_}?"{"                 { pushState (OPERATOR);
-                                     yield (unordered_lbrace); }
+                                     pf_yield (unordered_lbrace); }
 "<"                                { pushState (OPERATOR);
-                                     gotoState (START_TAG); yield (less_than); }
+                                     gotoState (START_TAG); pf_yield (less_than); }
 "document"{_}?"{"                  { pushState (OPERATOR);
-                                     yield (document_lbrace); }
+                                     pf_yield (document_lbrace); }
 "element"{_}?"{"                   { pushState (OPERATOR); pushState (DEFAULT);
-                                     yield (element_lbrace); }
+                                     pf_yield (element_lbrace); }
 "execute"{_}"at"                   { pushState (OPERATOR); pushState (DEFAULT);
-                                     yield (execute_at); }
+                                     pf_yield (execute_at); }
 "attribute"{_}?"{"                 { pushState (OPERATOR); pushState (DEFAULT);
-                                     yield (attribute_lbrace); }
+                                     pf_yield (attribute_lbrace); }
 "text"{_}?"{"                      { pushState (OPERATOR);
-                                     yield (text_lbrace); }
+                                     pf_yield (text_lbrace); }
 "comment"{_}?"{"                   { pushState (OPERATOR);
-                                     yield (comment_lbrace); }
+                                     pf_yield (comment_lbrace); }
 "processing-instruction"{_}?"{"    { pushState (OPERATOR);
-                                     yield (pi_lbrace); }
+                                     pf_yield (pi_lbrace); }
 "element"{_}{QName}{_}?"{"         { pflval.qname_raw
                                        = extract_qname (yytext, 1);
                                      pushState (OPERATOR);
-                                     yield (Element_QName_LBrace);
+                                     pf_yield (Element_QName_LBrace);
                                    }
 "attribute"{_}{QName}{_}?"{"       { pflval.qname_raw
                                        = extract_qname (yytext, 1);
                                      pushState (OPERATOR);
-                                     yield (Attribute_QName_LBrace);
+                                     pf_yield (Attribute_QName_LBrace);
                                    }
 "processing-instruction"{_}{NCName}{_}?"{" {
                                      pflval.str = extract_ncname (yytext, 1);
                                      pushState (OPERATOR);
-                                     yield (PI_NCName_LBrace);
+                                     pf_yield (PI_NCName_LBrace);
                                    }
 
 "<!--"                             { pushState (OPERATOR);
                                      gotoState (XML_COMMENT);
-                                     yield (xml_comment_start); }
+                                     pf_yield (xml_comment_start); }
 "<?"                               { pushState (OPERATOR);
                                      gotoState (PROCESSING_INSTRUCTION);
-                                     yield (lt_question_mark); }
+                                     pf_yield (lt_question_mark); }
 "<![CDATA["                        { pushState (OPERATOR);
                                      gotoState (CDATA_SECTION);
-                                     yield (cdata_start); }
+                                     pf_yield (cdata_start); }
 
 "(#"                               { gotoState (PRAGMA_TARGET);
-                                     yield (paren_hash); }
+                                     pf_yield (paren_hash); }
 
-"do"{_}"delete"                    { yield (do_delete); }
-"do"{_}"insert"                    { yield (do_insert); }
-"do"{_}"rename"                    { yield (do_rename); }
-"do"{_}"replace"                   { yield (do_replace); }
-"do"{_}"replace"{_}"value"{_}"of"  { yield (do_replace_value_of); }
-"transform"{_}"copy"{_}"$"         { yield (transform_copy_dollar); }
+"do"{_}"delete"                    { pf_yield (do_delete); }
+"do"{_}"insert"                    { pf_yield (do_insert); }
+"do"{_}"rename"                    { pf_yield (do_rename); }
+"do"{_}"replace"                   { pf_yield (do_replace); }
+"do"{_}"replace"{_}"value"{_}"of"  { pf_yield (do_replace_value_of); }
+"transform"{_}"copy"{_}"$"         { pf_yield (transform_copy_dollar); }
 
 {QName}{_}?"("/[^:]                { pflval.qname_raw
                                        = extract_qname (yytext, 0);
-                                     yield (QName_LParen);
+                                     pf_yield (QName_LParen);
                                    }
 {IntegerLiteral}                   { pflval.num = atoll (yytext);
                                      gotoState (OPERATOR);
-                                     yield (IntegerLiteral);
+                                     pf_yield (IntegerLiteral);
                                    }
 {DecimalLiteral}                   { pflval.dec = atof (yytext);
                                      gotoState (OPERATOR);
-                                     yield (DecimalLiteral);
+                                     pf_yield (DecimalLiteral);
                                    }
 {DoubleLiteral}                    { pflval.dbl = atof (yytext);
                                      gotoState (OPERATOR);
-                                     yield (DoubleLiteral);
+                                     pf_yield (DoubleLiteral);
                                    }
 {QName}                            { pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR);
-                                     yield (QName);
+                                     pf_yield (QName);
                                    }
 {StringLiteral}                    { pflval.str = extract_string (yytext);
                                      gotoState (OPERATOR);
-                                     yield (StringLiteral);
+                                     pf_yield (StringLiteral);
                                    }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <OPERATOR>{
 "encoding"{_}{StringLiteral}       { pflval.str = extract_string (yytext);
                                      gotoState (DEFAULT);
-                                     yield (encoding_StringLiteral);
+                                     pf_yield (encoding_StringLiteral);
                                    }
 
-"as"                               { gotoState (ITEMTYPE); yield (as); }
-":="                               { gotoState (DEFAULT); yield (colon_equals);}
-"external"                         { gotoState (DEFAULT); yield (external_); }
+"as"                               { gotoState (ITEMTYPE); pf_yield (as); }
+":="                               { gotoState (DEFAULT); pf_yield (colon_equals);}
+"external"                         { gotoState (DEFAULT); pf_yield (external_); }
 
-"at"{_}"$"                         { gotoState (VARNAME); yield (at_dollar); }
-"for"{_}"$"                        { gotoState (VARNAME); yield (for_dollar); }
-"let"{_}"$"                        { gotoState (VARNAME); yield (let_dollar); }
-"in"                               { gotoState (DEFAULT); yield (in_); }
+"at"{_}"$"                         { gotoState (VARNAME); pf_yield (at_dollar); }
+"for"{_}"$"                        { gotoState (VARNAME); pf_yield (for_dollar); }
+"let"{_}"$"                        { gotoState (VARNAME); pf_yield (let_dollar); }
+"in"                               { gotoState (DEFAULT); pf_yield (in_); }
 
 "seeded"{_}"by"                    { /* Pathfinder extension: recursion */
-                                     gotoState (DEFAULT); yield (seeded_by); }
+                                     gotoState (DEFAULT); pf_yield (seeded_by); }
 
 "{"                                { pushState (OPERATOR);
                                      gotoState (DEFAULT);
-                                     yield (lbrace); }
-"}"                                { popState (); yield (rbrace); }
-";"                                { gotoState (DEFAULT); yield (semicolon); }
-","                                { gotoState (DEFAULT); yield (comma); }
-"return"                           { gotoState (DEFAULT); yield (return_); }
+                                     pf_yield (lbrace); }
+"}"                                { popState (); pf_yield (rbrace); }
+";"                                { gotoState (DEFAULT); pf_yield (semicolon); }
+","                                { gotoState (DEFAULT); pf_yield (comma); }
+"return"                           { gotoState (DEFAULT); pf_yield (return_); }
 
 "recurse"                          { /* Pathfinder extension: recursion */
-                                     gotoState (DEFAULT); yield (recurse); }
+                                     gotoState (DEFAULT); pf_yield (recurse); }
 
-"where"                            { gotoState (DEFAULT); yield (where); }
-"order"{_}"by"                     { gotoState (DEFAULT); yield (order_by); }
+"where"                            { gotoState (DEFAULT); pf_yield (where); }
+"order"{_}"by"                     { gotoState (DEFAULT); pf_yield (order_by); }
 "stable"{_}"order"{_}"by"          { gotoState (DEFAULT);
-                                     yield (stable_order_by); }
-"ascending"                        { yield (ascending); }
-"descending"                       { yield (descending); }
-"collation"                        { yield (collation); }
-"empty"{_}"greatest"               { yield (empty_greatest); }
-"empty"{_}"least"                  { yield (empty_least); }
+                                     pf_yield (stable_order_by); }
+"ascending"                        { pf_yield (ascending); }
+"descending"                       { pf_yield (descending); }
+"collation"                        { pf_yield (collation); }
+"empty"{_}"greatest"               { pf_yield (empty_greatest); }
+"empty"{_}"least"                  { pf_yield (empty_least); }
 {StringLiteral}                    { pflval.str = extract_string (yytext);
-                                     yield (StringLiteral);
+                                     pf_yield (StringLiteral);
                                    }
-"satisfies"                        { gotoState (DEFAULT); yield (satisfies); }
-")"                                { yield (rparen); }
-"case"                             { gotoState (ITEMTYPE); yield (case_); }
-"default"                          { yield (default_); }
-"$"                                { gotoState (VARNAME); yield (dollar); }
-"then"                             { gotoState (DEFAULT); yield (then); }
-"else"                             { gotoState (DEFAULT); yield (else_); }
-"or"                               { gotoState (DEFAULT); yield (or); }
-"and"                              { gotoState (DEFAULT); yield (and); }
-"to"                               { gotoState (DEFAULT); yield (to_); }
-"union"                            { gotoState (DEFAULT); yield (union_); }
-"|"                                { gotoState (DEFAULT); yield (pipe_); }
-"intersect"                        { gotoState (DEFAULT); yield (intersect); }
-"except"                           { gotoState (DEFAULT); yield (except); }
-"+"                                { gotoState (DEFAULT); yield (plus); }
-"-"                                { gotoState (DEFAULT); yield (minus); }
-"*"                                { gotoState (DEFAULT); yield (star); }
-"div"                              { gotoState (DEFAULT); yield (div_); }
-"idiv"                             { gotoState (DEFAULT); yield (idiv); }
-"mod"                              { gotoState (DEFAULT); yield (mod); }
-"instance"{_}"of"                  { gotoState (ITEMTYPE); yield (instance_of);}
-"treat"{_}"as"                     { gotoState (ITEMTYPE); yield (treat_as); }
+"satisfies"                        { gotoState (DEFAULT); pf_yield (satisfies); }
+")"                                { pf_yield (rparen); }
+"case"                             { gotoState (ITEMTYPE); pf_yield (case_); }
+"default"                          { pf_yield (default_); }
+"$"                                { gotoState (VARNAME); pf_yield (dollar); }
+"then"                             { gotoState (DEFAULT); pf_yield (then); }
+"else"                             { gotoState (DEFAULT); pf_yield (else_); }
+"or"                               { gotoState (DEFAULT); pf_yield (or); }
+"and"                              { gotoState (DEFAULT); pf_yield (and); }
+"to"                               { gotoState (DEFAULT); pf_yield (to_); }
+"union"                            { gotoState (DEFAULT); pf_yield (union_); }
+"|"                                { gotoState (DEFAULT); pf_yield (pipe_); }
+"intersect"                        { gotoState (DEFAULT); pf_yield (intersect); }
+"except"                           { gotoState (DEFAULT); pf_yield (except); }
+"+"                                { gotoState (DEFAULT); pf_yield (plus); }
+"-"                                { gotoState (DEFAULT); pf_yield (minus); }
+"*"                                { gotoState (DEFAULT); pf_yield (star); }
+"div"                              { gotoState (DEFAULT); pf_yield (div_); }
+"idiv"                             { gotoState (DEFAULT); pf_yield (idiv); }
+"mod"                              { gotoState (DEFAULT); pf_yield (mod); }
+"instance"{_}"of"                  { gotoState (ITEMTYPE); pf_yield (instance_of);}
+"treat"{_}"as"                     { gotoState (ITEMTYPE); pf_yield (treat_as); }
 "castable"{_}"as"                  { gotoState (SINGLETYPE);
-                                     yield (castable_as); }
-"cast"{_}"as"                      { gotoState (SINGLETYPE); yield (cast_as); }
-"="                                { gotoState (DEFAULT); yield (equals); }
-"!="                               { gotoState (DEFAULT); yield (excl_equals); }
-"<"                                { gotoState (DEFAULT); yield (less_than); }
+                                     pf_yield (castable_as); }
+"cast"{_}"as"                      { gotoState (SINGLETYPE); pf_yield (cast_as); }
+"="                                { gotoState (DEFAULT); pf_yield (equals); }
+"!="                               { gotoState (DEFAULT); pf_yield (excl_equals); }
+"<"                                { gotoState (DEFAULT); pf_yield (less_than); }
 "<="                               { gotoState (DEFAULT);
-                                     yield (less_than_equal); }
-">"                                { gotoState (DEFAULT); yield (greater_than);}
+                                     pf_yield (less_than_equal); }
+">"                                { gotoState (DEFAULT); pf_yield (greater_than);}
 ">="                               { gotoState (DEFAULT);
-                                     yield (greater_than_equal); }
-"eq"                               { gotoState (DEFAULT); yield (eq); }
-"ne"                               { gotoState (DEFAULT); yield (ne); }
-"lt"                               { gotoState (DEFAULT); yield (lt); }
-"le"                               { gotoState (DEFAULT); yield (le); }
-"gt"                               { gotoState (DEFAULT); yield (gt); }
-"ge"                               { gotoState (DEFAULT); yield (ge); }
-"is"                               { gotoState (DEFAULT); yield (is); }
-"<<"                               { gotoState (DEFAULT); yield (lt_lt); }
-">>"                               { gotoState (DEFAULT); yield (gt_gt); }
-"/"                                { gotoState (DEFAULT); yield (slash); }
-"//"                               { gotoState (DEFAULT); yield (slash_slash); }
-"["                                { gotoState (DEFAULT); yield (lbracket); }
-"]"                                { yield (rbracket); }
-"?"                                { yield (question_mark); }
+                                     pf_yield (greater_than_equal); }
+"eq"                               { gotoState (DEFAULT); pf_yield (eq); }
+"ne"                               { gotoState (DEFAULT); pf_yield (ne); }
+"lt"                               { gotoState (DEFAULT); pf_yield (lt); }
+"le"                               { gotoState (DEFAULT); pf_yield (le); }
+"gt"                               { gotoState (DEFAULT); pf_yield (gt); }
+"ge"                               { gotoState (DEFAULT); pf_yield (ge); }
+"is"                               { gotoState (DEFAULT); pf_yield (is); }
+"<<"                               { gotoState (DEFAULT); pf_yield (lt_lt); }
+">>"                               { gotoState (DEFAULT); pf_yield (gt_gt); }
+"/"                                { gotoState (DEFAULT); pf_yield (slash); }
+"//"                               { gotoState (DEFAULT); pf_yield (slash_slash); }
+"["                                { gotoState (DEFAULT); pf_yield (lbracket); }
+"]"                                { pf_yield (rbracket); }
+"?"                                { pf_yield (question_mark); }
 "as"{_}"first"{_}"into"            { gotoState (DEFAULT);
-                                     yield (as_first_into);}
-"as"{_}"last"{_}"into"             { gotoState (DEFAULT); yield (as_last_into);}
-"into"                             { gotoState (DEFAULT); yield (into);}
-"after"                            { gotoState (DEFAULT); yield (after);}
-"before"                           { gotoState (DEFAULT); yield (before);}
-"with"                             { gotoState (DEFAULT); yield (with);}
-"modify"                           { gotoState (DEFAULT); yield (modify);}
+                                     pf_yield (as_first_into);}
+"as"{_}"last"{_}"into"             { gotoState (DEFAULT); pf_yield (as_last_into);}
+"into"                             { gotoState (DEFAULT); pf_yield (into);}
+"after"                            { gotoState (DEFAULT); pf_yield (after);}
+"before"                           { gotoState (DEFAULT); pf_yield (before);}
+"with"                             { gotoState (DEFAULT); pf_yield (with);}
+"modify"                           { gotoState (DEFAULT); pf_yield (modify);}
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <NAMESPACEDECL>{
 {StringLiteral}                    { pflval.str = extract_string (yytext);
                                      gotoState (DEFAULT);
-                                     yield (StringLiteral);
+                                     pf_yield (StringLiteral);
                                    }
 {NCName}                           { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (NCName);
+                                     pf_yield (NCName);
                                    }
-"="                                { yield (equals); }
+"="                                { pf_yield (equals); }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <NAMESPACEKEYWORD>{
 "namespace"                        { gotoState (NAMESPACEDECL);
-                                     yield (namespace); }
-"default"{_}"element"              { yield (default_element); }
+                                     pf_yield (namespace); }
+"default"{_}"element"              { pf_yield (default_element); }
 {StringLiteral}                    { pflval.str = extract_string (yytext);
                                      gotoState (DEFAULT);
-                                     yield (StringLiteral);
+                                     pf_yield (StringLiteral);
                                    }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <VARNAME>{
@@ -810,9 +810,9 @@ _                                {S}
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR);
-                                     yield (QName);
+                                     pf_yield (QName);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <SINGLETYPE>{
@@ -820,62 +820,62 @@ _                                {S}
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OPERATOR);
-                                     yield (QName);
+                                     pf_yield (QName);
                                    }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <ITEMTYPE>{
-"$"                                { gotoState (VARNAME); yield (dollar); }
+"$"                                { gotoState (VARNAME); pf_yield (dollar); }
 {QName}                            { pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
                                      gotoState (OCCURRENCEINDICATOR);
-                                     yield (QName);
+                                     pf_yield (QName);
                                    }
 "document-node"{_}?"("/[^:]        { pushState (OCCURRENCEINDICATOR);
-                                     yield (document_node_lparen); }
+                                     pf_yield (document_node_lparen); }
 "text"{_}?"("/[^:]                 { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (text_lparen); }
+                                     pf_yield (text_lparen); }
 "comment"{_}?"("/[^:]              { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (comment_lparen); }
+                                     pf_yield (comment_lparen); }
 "processing-instruction"{_}?"("/[^:] { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTESTFORPI);
-                                     yield (pi_lparen); }
+                                     pf_yield (pi_lparen); }
 "attribute"{_}?"("/[^:]            { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (attribute_lparen); }
+                                     pf_yield (attribute_lparen); }
 "schema-attribute"{_}?"("/[^:]     { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (schema_attribute_lparen); }
+                                     pf_yield (schema_attribute_lparen); }
 "element"{_}?"("/[^:]              { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (element_lparen); }
+                                     pf_yield (element_lparen); }
 "schema-element"{_}?"("/[^:]       { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
-                                     yield (schema_element_lparen); }
+                                     pf_yield (schema_element_lparen); }
 "node"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
-                                     yield (node_lrparens); }
+                                     pf_yield (node_lrparens); }
 "empty-sequence"{_}?"("{_}?")"     { gotoState (OPERATOR);
-                                     yield (empty_sequence); }
+                                     pf_yield (empty_sequence); }
 "item"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
-                                     yield (item_lrparens); }
+                                     pf_yield (item_lrparens); }
 ")"                                { gotoState (OCCURRENCEINDICATOR);
-                                     yield (rparen); }
+                                     pf_yield (rparen); }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <OCCURRENCEINDICATOR>{
 "*"                                { gotoState (OPERATOR);
-                                     yield (star); }
+                                     pf_yield (star); }
 "?"                                { gotoState (OPERATOR);
-                                     yield (question_mark); }
+                                     pf_yield (question_mark); }
 "+"                                { gotoState (OPERATOR);
-                                     yield (plus); }
+                                     pf_yield (plus); }
 {_}                                ;
 .                                  { unput (yytext[yyleng-1]);
                                      gotoState (OPERATOR); }
@@ -885,207 +885,207 @@ _                                {S}
 {QName}                            { pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
-                                     yield (QName);
+                                     pf_yield (QName);
                                    }
-","                                { yield (comma); }
-"?"                                { yield (question_mark); }
-")"                                { popState (); yield (rparen); }
-"*"                                { yield (star); }
+","                                { pf_yield (comma); }
+"?"                                { pf_yield (question_mark); }
+")"                                { popState (); pf_yield (rparen); }
+"*"                                { pf_yield (star); }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <KINDTESTFORPI>{
 {NCName}                           { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (NCName);
+                                     pf_yield (NCName);
                                    }
 {StringLiteral}                    { pflval.str = extract_string (yytext);
-                                     yield (StringLiteral);
+                                     pf_yield (StringLiteral);
                                    }
-")"                                { popState (); yield (rparen); }
+")"                                { popState (); pf_yield (rparen); }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <START_TAG>{
 {QName}                            { pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
-                                     yield (QName);
+                                     pf_yield (QName);
                                    }
-{S}                                { yield (S); }
-"="                                { yield (equals); }
+{S}                                { pf_yield (S); }
+"="                                { pf_yield (equals); }
 "\""                               { gotoState (QUOT_ATTRIBUTE_CONTENT);
-                                     yield (quot_); }
+                                     pf_yield (quot_); }
 "'"                                { gotoState (APOS_ATTRIBUTE_CONTENT);
-                                     yield (apos); }
-"/>"                               { popState (); yield (slash_gt); }
+                                     pf_yield (apos); }
+"/>"                               { popState (); pf_yield (slash_gt); }
 ">"                                { gotoState (ELEMENT_CONTENT);
-                                     yield (greater_than); }
-.                                  { yield (invalid_character); }
+                                     pf_yield (greater_than); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <QUOT_ATTRIBUTE_CONTENT>{
-"\""                               { gotoState (START_TAG); yield (quot_); }
-"\"\""                             { yield (EscapeQuot); }
-"{{"                               { yield (lbrace_lbrace); }
-"}}"                               { yield (rbrace_rbrace); }
+"\""                               { gotoState (START_TAG); pf_yield (quot_); }
+"\"\""                             { pf_yield (EscapeQuot); }
+"{{"                               { pf_yield (lbrace_lbrace); }
+"}}"                               { pf_yield (rbrace_rbrace); }
 "{"                                { pushState (QUOT_ATTRIBUTE_CONTENT);
                                      gotoState (DEFAULT);
-                                     yield (lbrace); }
+                                     pf_yield (lbrace); }
 {QuotAttrContentChar}              { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (AttrContentChar);
+                                     pf_yield (AttrContentChar);
                                    }
 {PredefinedEntityRef}              { pflval.str = entity_ref (yytext, NULL);
-                                     yield (PredefinedEntityRef);
+                                     pf_yield (PredefinedEntityRef);
                                    }
 {CharRef}                          { pflval.str = entity_ref (yytext, NULL);
-                                     yield (CharRef);
+                                     pf_yield (CharRef);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <APOS_ATTRIBUTE_CONTENT>{
 "'"                                { gotoState (START_TAG);
-                                     yield (apos); }
-"''"                               { yield (EscapeApos); }
-"{{"                               { yield (lbrace_lbrace); }
-"}}"                               { yield (rbrace_rbrace); }
+                                     pf_yield (apos); }
+"''"                               { pf_yield (EscapeApos); }
+"{{"                               { pf_yield (lbrace_lbrace); }
+"}}"                               { pf_yield (rbrace_rbrace); }
 "{"                                { pushState (APOS_ATTRIBUTE_CONTENT);
                                      gotoState (DEFAULT);
-                                     yield (lbrace); }
+                                     pf_yield (lbrace); }
 {AposAttrContentChar}              { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (AttrContentChar);
+                                     pf_yield (AttrContentChar);
                                    }
 {PredefinedEntityRef}              { pflval.str = entity_ref (yytext, NULL);
-                                     yield (PredefinedEntityRef);
+                                     pf_yield (PredefinedEntityRef);
                                    }
 {CharRef}                          { pflval.str = entity_ref (yytext, NULL);
-                                     yield (CharRef);
+                                     pf_yield (CharRef);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <ELEMENT_CONTENT>{
-"</"                               { gotoState (END_TAG); yield (lt_slash); }
-"{{"                               { yield (lbrace_lbrace); }
-"}}"                               { yield (rbrace_rbrace); }
+"</"                               { gotoState (END_TAG); pf_yield (lt_slash); }
+"{{"                               { pf_yield (lbrace_lbrace); }
+"}}"                               { pf_yield (rbrace_rbrace); }
 "{"                                { pushState (ELEMENT_CONTENT);
                                      gotoState (DEFAULT);
-                                     yield (lbrace); }
+                                     pf_yield (lbrace); }
 "<!--"                             { pushState (ELEMENT_CONTENT);
                                      gotoState (XML_COMMENT);
-                                     yield (xml_comment_start); }
+                                     pf_yield (xml_comment_start); }
 "<?"                               { pushState (ELEMENT_CONTENT);
                                      gotoState (PROCESSING_INSTRUCTION);
-                                     yield (lt_question_mark); }
+                                     pf_yield (lt_question_mark); }
 "<![CDATA["                        { pushState (ELEMENT_CONTENT);
                                      gotoState (CDATA_SECTION);
-                                     yield (cdata_start); }
+                                     pf_yield (cdata_start); }
 "<"                                { pushState (ELEMENT_CONTENT);
-                                     gotoState (START_TAG); yield (less_than); }
+                                     gotoState (START_TAG); pf_yield (less_than); }
 {PredefinedEntityRef}              { pflval.str = entity_ref (yytext, NULL);
-                                     yield (PredefinedEntityRef);
+                                     pf_yield (PredefinedEntityRef);
                                    }
 {CharRef}                          { pflval.str = entity_ref (yytext, NULL);
-                                     yield (CharRef);
+                                     pf_yield (CharRef);
                                    }
 {ElementContentChar}               { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (ElementContentChar);
+                                     pf_yield (ElementContentChar);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <XML_COMMENT>{
-"-->"                              { popState (); yield (xml_comment_end); }
+"-->"                              { popState (); pf_yield (xml_comment_end); }
 {Char}                             { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (PFChar);
+                                     pf_yield (PFChar);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <PROCESSING_INSTRUCTION>{
 {S}                                { gotoState (PROCESSING_INSTRUCTION_CONTENT);
-                                     yield (S); }
-"?>"                               { popState (); yield (question_mark_gt); }
+                                     pf_yield (S); }
+"?>"                               { popState (); pf_yield (question_mark_gt); }
 {PITarget}                         { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (PITarget);
+                                     pf_yield (PITarget);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <PROCESSING_INSTRUCTION_CONTENT>{
-"?>"                               { popState (); yield (question_mark_gt); }
+"?>"                               { popState (); pf_yield (question_mark_gt); }
 {Char}                             { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (PFChar);
+                                     pf_yield (PFChar);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <CDATA_SECTION>{
-"]]>"                              { popState (); yield (cdata_end); }
+"]]>"                              { popState (); pf_yield (cdata_end); }
 {Char}                             { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (PFChar);
+                                     pf_yield (PFChar);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <END_TAG>{
-">"                                { popState (); yield (greater_than); }
+">"                                { popState (); pf_yield (greater_than); }
 {QName}                            { pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
-                                     yield (QName);
+                                     pf_yield (QName);
                                    }
-{S}                                { yield (S); }
-.                                  { yield (invalid_character); }
+{S}                                { pf_yield (S); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <PRESERVE_MODE>{
-"preserve"                         { yield (copy_ns_preserve); }
-"no-preserve"                      { yield (copy_ns_nopreserve); }
+"preserve"                         { pf_yield (copy_ns_preserve); }
+"no-preserve"                      { pf_yield (copy_ns_nopreserve); }
 ","                                { gotoState (INHERIT_MODE);
-                                     yield (comma); }
+                                     pf_yield (comma); }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <INHERIT_MODE>{
-"inherit"                          { yield (copy_ns_inherit); }
-"no-inherit"                       { yield (copy_ns_noinherit); }
+"inherit"                          { pf_yield (copy_ns_inherit); }
+"no-inherit"                       { pf_yield (copy_ns_noinherit); }
 ";"                                { gotoState (DEFAULT);
-                                     yield (semicolon); }
+                                     pf_yield (semicolon); }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <PRAGMA_TARGET>{
-{S}                                { yield (S); }
+{S}                                { pf_yield (S); }
 {QName}                            { gotoState (PRAGMA_CONTENT);
                                      pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
-                                     yield (QName);
+                                     pf_yield (QName);
                                    }
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <PRAGMA_CONTENT>{
 {PragmaContent}                    { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (PragmaContents); }
+                                     pf_yield (PragmaContents); }
 "#)"                               { gotoState (NEXT_PRAGMA);
-                                     yield (hash_paren); }
-.                                  { yield (invalid_character); }
+                                     pf_yield (hash_paren); }
+.                                  { pf_yield (invalid_character); }
 }
 
 <NEXT_PRAGMA>{
 "(#"                               { gotoState (PRAGMA_TARGET);
-                                     yield (paren_hash); }
+                                     pf_yield (paren_hash); }
 "{"                                { pushState (OPERATOR);
                                      gotoState (DEFAULT);
-                                     yield (lbrace); }
+                                     pf_yield (lbrace); }
 {_}                                ;
-.                                  { yield (invalid_character); }
+.                                  { pf_yield (invalid_character); }
 }
 %%
 
