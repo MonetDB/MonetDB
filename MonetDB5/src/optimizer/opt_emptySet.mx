@@ -31,7 +31,6 @@ to arrive at a smaller and therefore faster evaluation.
 
 For example, consider the following MAL test 
 @example
-@verbatim
     V1 := bat.new(:oid,:int);
     V7 := bat.new(:oid,:int);
     V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:oid);
@@ -42,7 +41,6 @@ For example, consider the following MAL test
     bat.append(V1,V17);
 	optimizer.costModel();
 	optimizer.emptySet();
-@end verbatim
 @end example
 Calling the optimizers replaces this program
 by the following code snippet. 
