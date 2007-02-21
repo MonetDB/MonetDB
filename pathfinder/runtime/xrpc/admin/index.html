@@ -1,1 +1,376 @@
-<!-- To be filled in -->
+<html>
+<head>
+<title>MonetDB/XQuery Document Manager</title>
+	
+<script type="text/javascript">
+
+const ADMIN_CALLBACK = "mxqadmin";
+const XRPC_SERVER_ADDR = (new String(document.location)).replace("admin",ADMIN_CALLBACK);
+const MODULE = "http://monetdb.cwi.nl/XQuery/admin/";
+const LOCATION = document.location + "admin.xq";
+const REQ_HEADER = '<?xml version="1.0" encoding="utf-8"?>\n' +
+                   '<env:Envelope ' +
+                       'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
+                       'xmlns:xrpc="http://monetdb.cwi.nl/XQuery" ' +
+                       'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
+                       'xsi:schemaLocation="http://monetdb.cwi.nl/XQuery ' +
+                                           'http://monetdb.cwi.nl/XQuery/XRPC.xsd" ' +
+                       'xmlns:xs="http://www.w3.org/2001/XMLSchema">' +
+                     '<env:Body>' +
+                       '<xrpc:request xrpc:module="' + MODULE + '" ' +
+                                     'xrpc:location="' + LOCATION + '" ';
+const REQ_FOOTER = '</xrpc:request></env:Body></env:Envelope>';
+
+XRPCWebClient = function () {
+    if (window.XMLHttpRequest) {
+        this.xmlhttp = new XMLHttpRequest();
+    } else if (window.ActiveXObject) {
+        try {
+            this.xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+        } catch(e) {
+            this.xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+    }
+}
+
+XRPCWebClient.prototype.getValue = function (element) {
+    //some DOM's add a text Node, some don't
+    var s = (element.firstChild) ? element.firstChild.nodeValue : element.nodeValue;
+    s = s.replace( /^\s+/g, "" );
+    s = s.replace( /\s+$/g, "" );
+    return s;
+}
+
+XRPCWebClient.prototype.sendRequest = function(method, request) {
+//    alert("sendRequest: "+method+"\n"+request);
+
+    try {
+        this.xmlhttp.open("POST", XRPC_SERVER_ADDR, true);
+        this.xmlhttp.send(request);
+//alert('request '+method+' sent');
+
+        var app = this;
+        this.xmlhttp.onreadystatechange = function() {
+            if (app.xmlhttp.readyState == 4 ) {
+/*
+                if(app.xmlhttp.responseText){
+alert('response of: '+method+':\n'+app.xmlhttp.responseText);
+                } else {
+alert('response of: '+method+' is empty.');
+                }
+                */
+
+                if (app.xmlhttp.status == 200) {
+                    var response = app.xmlhttp.responseXML;
+
+                    if(method == "collections") {
+                        doCollections("getResult", response);
+                    } else if (method == "documents") {
+                        doDocuments("getResults", null, response);
+                    } else if (method == "GET") {
+                        doGET("getResults", null, response);
+                    } else if (method == "add-doc" ||
+                               method == "del-doc" ||
+                               method == "del-col" ||
+                               method == "PUT" ||
+                               method == "DELETE") {
+                        if(app.xmlhttp.responseText){
+                            alert(app.xmlhttp.responseText);
+                        } else {
+                            alert("DONE! Please reload the page to view result");
+                            if(method == "add-doc"){
+                                document.getElementById("myform").reset();
+                            }
+                            //doCollections("doRequest", null);
+                        }
+                    } else {
+                        alert('getResult(): unknown method "' +method +'"');
+                    }
+                } else {
+                    var errmsg =
+                        '!ERROR: failed to execute "' + method + '"\n\n' +
+                        '!ERROR: HTTP/1.1 ' + app.xmlhttp.status + '\n' +
+                        '!ERROR: HTTP Response:\n\n\t' + app.xmlhttp.responseText;
+                    alert(errmsg);
+                }
+            }
+        };
+    } catch (e) {
+        alert('sendRequest('+method+'): '+e);
+    }
+}
+
+function serializeXML(xml) {
+    try {
+        var xmlSerializer = new XMLSerializer();
+        return xmlSerializer.serializeToString(xml);
+    } catch(e){
+        alert("Failed to create xmlSerializer or to serialize XML document:\n" + e);
+    }
+}
+
+function doAddDoc() {
+    var url = document.getElementById("newURL").value;
+    var name = document.getElementById("newName").value;
+    var col = document.getElementById("newCol").value;
+    var perct = document.getElementById("newFree").value;
+
+    var xrpcRequest = REQ_HEADER+
+        'xrpc:method="add-doc">'+
+        '<xrpc:call>'+
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:string">"'+url+'"</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:string">"'+name+'"</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:string">"'+col+'"</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:integer">'+perct+'</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+        '</xrpc:call>'+
+        REQ_FOOTER;
+    clnt.sendRequest("add-doc", xrpcRequest);
+}
+
+var getDocName;
+function doGET(action, docName, response) {
+    alert("Implementation is still under construction.\n"+
+            "Sorry for the inconvenience!");
+    return;
+
+
+    if(action == "doRequest"){
+        getDocName = docName;
+        var xrpcRequest = REQ_HEADER +
+            'xrpc:method="GET">' +
+            '<xrpc:call>' +
+              '<xrpc:sequence>'+
+                '<xrpc:atomic-value xsi:type="xs:string">"'+docName+'"</xrpc:atomic-value>'+
+              '</xrpc:sequence>'+
+              '</xrpc:call>' +
+              REQ_FOOTER;
+        clnt.sendRequest("GET", xrpcRequest);
+    } else { /* action == "getResult" */
+alert("doGET response: "+response+"\n\n"+serializeXML(response));
+        var docNode = response.getElementsByTagName("document");
+//alert("doGET doc: " + docNode[0].firstChild.nodeValue + docNode.length);
+        alert("doGET:\ndocNode: " + docNode + docNode.length +
+                "\ndocNode[0]: " + docNode +
+                "\ndocNode[0].firstChild: " + docNode[0].firstChild +
+                "\ndocNode[0].firstChild.nodeValue: " + docNode[0].firstChild.nodeValue);
+        alert(docNode[0].firstChild.tagName);
+
+        var docTA = document.getElementById("docView");
+        docTA.innerHTML = 
+            '<h2>' + getDocName + '</h2>\n' +
+            '<textarea id="docTextArea" row="20" cols="100">\n'+
+            docNode[0].firstChild.nodeValue +
+            '</textarea>\n';
+    }
+}
+
+function doDelDoc(docName) {
+    alert("Implementation is still under construction.\n"+
+            "Sorry for the inconvenience!");
+    return;
+
+    var confirmMsg =
+        'Are you sure you want to delete the document "' +
+        docName + '"?';
+
+    if(!window.confirm(confirmMsg)){
+        return;
+    }
+
+    var xrpcRequest = REQ_HEADER +
+        'xrpc:method="del-doc">' +
+        '<xrpc:call>' +
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:string">"'+docName+'"</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+        '</xrpc:call>' +
+        REQ_FOOTER;
+    clnt.sendRequest("del-doc", xrpcRequest);
+}
+
+function doDelCol(colName) {
+    alert("Implementation is still under construction.\n"+
+            "Sorry for the inconvenience!");
+    return;
+
+    var confirmMsg =
+        'Are you sure you want to delete the collection "' +
+        colName + '" and all documents in it?';
+
+    if(!window.confirm(confirmMsg)){
+        return;
+    }
+
+    var xrpcRequest = REQ_HEADER +
+        'xrpc:method="del-col">' +
+        '<xrpc:call>' +
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:string">"'+colName+'"</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+        '</xrpc:call>' +
+        REQ_FOOTER;
+    clnt.sendRequest("del-col", xrpcRequest);
+}
+
+function doCollections(action, response) {
+    if(action == "doRequest"){
+        var xrpcRequest = REQ_HEADER +
+            'xrpc:method="collections">' +
+            '<xrpc:call/>' +
+            REQ_FOOTER;
+        clnt.sendRequest("collections", xrpcRequest);
+    } else { /* action == "getResult" */
+        var i;
+        var cols = response.getElementsByTagName("collection");
+        var cTableBody = "";
+        for(i = 0; i < cols.length; i++){
+            var colName = cols[i].firstChild.nodeValue;
+            cTableBody += '<tr>\n';
+            cTableBody += '<td>'+colName+'</td>\n';
+            cTableBody += '<td>'+cols[i].getAttribute("updatable")+'</td>\n';
+            cTableBody += '<td>'+cols[i].getAttribute("size")+'</td>\n';
+            cTableBody += '<td>'+cols[i].getAttribute("numDocs")+'</td>\n';
+            cTableBody +=
+                '<td>'+
+                '<input type="button" name="viewCol" value="view" onclick="doDocuments(\'doRequest\',\''+colName+'\',null)" />'+
+                '</td>\n';
+            cTableBody +=
+                '<td>'+
+                '<input type="button" name="delCol" value="delete" onclick="doDelCol(\''+colName+'\')" />'+
+                '</td>\n';
+            cTableBody += '</tr>\n';
+        }
+
+        var cTable = document.getElementById("collectionsTable");
+        cTable.innerHTML = 
+            '<table width="30%" border="1">\n' +
+              '<tr>\n' +
+                '<th>Name</th>\n' +
+                '<th>Updatable</th>\n' +
+                '<th>Size</th>\n' +
+                '<th>#Docs</th>\n' +
+                '<th>&nbsp;</th>\n' +
+                '<th>&nbsp;</th>\n' +
+              '</tr>\n' +
+              cTableBody +
+            '</table>\n';
+    }
+}
+
+function doDocuments(action, colName, response) {
+    if(action == "doRequest"){
+        var xrpcRequest = REQ_HEADER +
+            'xrpc:method="documents">' +
+            '<xrpc:call>' +
+              '<xrpc:sequence>'+
+                '<xrpc:atomic-value xsi:type="xs:string">"'+colName+'"</xrpc:atomic-value>'+
+              '</xrpc:sequence>'+
+              '</xrpc:call>' +
+              REQ_FOOTER;
+        clnt.sendRequest("documents", xrpcRequest);
+    } else { /* action == "getResult" */
+        var docs = response.getElementsByTagName("document");
+        var i;
+        var dTableBody = "";
+        var cName = docs[0].getAttribute("collection");
+        for(i = 0; i < docs.length; i++){
+            var docName = docs[i].firstChild.nodeValue;
+            dTableBody += '<tr>\n';
+            dTableBody += '<td>'+docName+'</td>\n';
+            dTableBody += '<td>'+docs[i].getAttribute("updatable")+'</td>\n';
+            dTableBody += '<td>'+docs[i].getAttribute("url")+'</td>\n';
+            dTableBody +=
+                '<td>'+
+                '<input type="button" name="viewDoc" value="view" onclick="doGET(\'doRequest\',\''+docName+'\',null)" />'+
+                '</td>\n';
+            dTableBody +=
+                '<td>'+
+                '<input type="button" name="delDoc" value="delete" onclick="doDelDoc(\''+docName+'\')" />'+
+                '</td>\n';
+            dTableBody += '</tr>\n';
+        }
+
+        var dTable = document.getElementById("documentsTable");
+        dTable.innerHTML = 
+            '<h2>Documents In The Collection \"' + cName + '\"</h2>\n' +
+            '<table width="30%" border="1">\n' +
+              '<tr>\n' +
+                '<th>Name</th>\n' +
+                '<th>Updatable</th>\n' +
+                '<th>URL</th>\n' +
+                '<th>&nbsp;</th>\n' +
+                '<th>&nbsp;</th>\n' +
+              '</tr>\n' +
+              dTableBody +
+            '</table>\n';
+    }
+}
+
+var clnt = new XRPCWebClient();
+
+</script>
+</head>
+
+<body onload='doCollections("doRequest",null)'>
+
+<center>
+    <h1>MonetDB/XQuery Document Manager</h1>
+</center>
+
+<form name="xrpc-demo" id="myform" method="post" onSubmit="">
+    <table width="100%">
+        <tr>
+            <td width="50%" valign="top">
+                <h2>Collections</h2>
+                <div id="collectionsTable"></div>
+            </td>
+            <td valign="top">
+                <h2>Add Document</h2>
+                <table>
+                    <tr>
+                        <td>URL:</td>
+                        <td><input type="text" id="newURL" value=""/></td>
+                    </tr>
+                    <tr>
+                        <td>Name:</td>
+                        <td><input type="text" id="newName" value=""/></td>
+                    </tr>
+                    <tr>
+                        <td>Collection:</td>
+                        <td><input type="text" id="newCol" value=""/></td>
+                    </tr>
+                    <tr>
+                        <td>%Free:</td>
+                        <td><input type="text" id="newFree" value="0"/></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="center">
+                            <input type="button" name="addDoc" value="Add" onClick="doAddDoc()"/>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <div id="documentsTable"></div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <div id="docView"></div>
+            </td>
+        </tr>
+    </table>
+</form>
+
+</body>
+</html>

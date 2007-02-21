@@ -28,3 +28,9 @@ scripts_html = {
 	DIR = datadir/MonetDB/xrpc/export
 	SOURCES = index.html
 }
+
+scripts_xq = {
+	EXT = xq
+	DIR = datadir/MonetDB/xrpc/export
+	SOURCES = export.xq
+}
