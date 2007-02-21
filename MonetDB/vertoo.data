@@ -1,4 +1,1 @@
 monetdb = major:1; minor:17; release:1; rc:x; build:1;
-monetdb4 = major:4; minor:17; release:0; rc:x; build:1;
-clients = major:1; minor:17; release:0; rc:x; build:1;
-monetdb5 = major:5; minor:0; release:0; rc:_beta; build:2;
