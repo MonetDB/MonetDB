@@ -845,7 +845,10 @@ def AddSubToHtmlIndex (env, TSTDIR, diff) :
 def SkipTest(env, TST, EXT, REASON) :
     TSTDIR = env['TSTDIR']
     TEXT = "Skipping test %s%s %s" % (TST, EXT, REASON)
-    Warn(TEXT)
+    if not env['QUIET']:
+    	Warn(TEXT)
+    else:
+        STDOUT.write("-");
     f = open("."+TST+".SKIPPED","w")
     f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
     f.close()
