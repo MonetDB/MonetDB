@@ -653,7 +653,7 @@ reduce (PFcnode_t * p, int goalnt)
              * If we statically know that the type of an expression matches
              * a typeswitch case, we can remove the typeswitch.
              */
-            if (PFty_subtype (L(p)->type, RLL(p)->type)) {
+            if (PFty_subtype (TY(L(p)), TY(RLL(p)))) {
                 *p = *RLR(p);
                 rewritten = true;
             }
@@ -662,9 +662,45 @@ reduce (PFcnode_t * p, int goalnt)
              * can never match a typeswitch case, we can remove the
              * typeswitch.
              */
-            else if (PFty_disjoint (L(p)->type, RLL(p)->type)) {
+            else if (PFty_disjoint (TY(L(p)), TY(RLL(p)))) {
                 *p = *RRL(p);
                 rewritten = true;
+            }
+
+            /*
+             * If the opt occurrence indicator is the only part
+             * in the typeswitch we cannot decide statically
+             * we can replace the typeswitch by a call to fn:exists ().
+             */
+            else if (L(p)->kind == c_var &&
+                R(p)->kind == c_cases &&
+                RL(p)->kind == c_case &&
+                PFty_subtype (TY(RLL(p)), PFty_item ()) &&
+                PFty_subtype (TY(L(p)), PFty_opt(TY(RLL(p))))) {
+                PFvar_t *v = PFcore_new_var (NULL);
+                PFfun_t *fn_exists
+                    = PFcore_function (PFqname (PFns_fn, "exists"));
+
+                /* if the input is not empty choose the case branch
+                   else choose the default branch */
+                *p = *flwr (let (letbind (
+                                     var (v),
+                                     apply (fn_exists, arg (L(p), nil ()))),
+                                 nil ()),
+                            if_ (var (v), then_else (RLR(p), RRL(p))));
+
+                /* type-check what we just created */
+                PFty_check (p);
+
+                rewritten = true;
+
+                /*
+                 * Re-label entire subtree. Type-checking may have
+                 * modified all the state labels in the subtree, so
+                 * we have to restore them.
+                 */
+                PFcoreopt_label (p);
+                break;
             }
 
             break;

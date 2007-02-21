@@ -109,6 +109,20 @@ lib__xrpc_server = {
 				  shttpd.c shttpd.h \
 				  xrpc_server.mx
         LIBS = \
+                ../compiler/libcompiler1 \
+                ../compiler/schema/libschema \
+                ../compiler/debug/libdebug \
+                ../compiler/parser/libparser \
+                ../compiler/semantics/libsemantics \
+                ../compiler/core/libcore \
+                ../compiler/algebra/libalgebra \
+                ../compiler/algebra/map/libmap \
+                ../compiler/algebra/prop/libprop \
+                ../compiler/algebra/opt/libopt \
+                ../compiler/mil/libmil \
+                ../compiler/mem/libmem \
+                ../compiler/libcompiler2 \
+                ../compiler/sql/libsql \
 			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
 			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet -lpthread \
 			   $(MONETDB4_MODS) -l_mapi -l_streams -l_builtin -l_ascii_io

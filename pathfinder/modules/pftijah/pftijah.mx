@@ -1061,7 +1061,7 @@ PROC select_node(str name) : bat[oid,dbl] :=
     var tids := bat("tj_globalTags").select(name);
     if (tids.count() = 0) return new(oid,dbl);
     var tid := tids.reverse().fetch(0);
-    var result := indexfetchjoin( new(int,oid).insert(0,tid),
+    var result := indexfetchjoin( new(void,oid).append(tid).seqbase(oid(0)),
     				  bat("tj_" + collName + "_TagIndex"),
     				  bat("tj_" + collName + "_Tags") );
     result := result.reverse().sort().project(dbl(scoreBase)); 
@@ -1512,7 +1512,7 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd)
     if ( trace ) tj_trace( "END   p_containing_q_NLLR_frag" );
     var t2 := time();
     if (timing) printf("# p_containing_q_NLLR_frag(): total time: %d\n", t2 - t1);
-    
+
     return res;
 }
 
@@ -2568,7 +2568,7 @@ PROC _buildIRindex(str collName) : void :=
         else # create new index
         {       
 	        var tmp := tids.kdiff(bat("tj_" + collName + "_pfpre"));
-                tmp := tmp.reverse().sort();
+                tmp := tmp.reverse().ssort();
 	        var termindex := tmp.hmark(0@0).offsetindex(bat("tj_globalTerms").count() + 1);
 	        var terms := tmp.tmark(0@0);
 	        # create _TermIndex and _Terms here
@@ -2584,7 +2584,7 @@ PROC _buildIRindex(str collName) : void :=
 	        commit();
 	        
 	        tmp := tids.semijoin(bat("tj_" + collName + "_pfpre"));
-                tmp := tmp.reverse().sort();
+                tmp := tmp.reverse().ssort();
 	        var tagindex := tmp.hmark(0@0).offsetindex(bat("tj_globalTags").count() + 1);
 	        var tags := tmp.tmark(0@0);
 	        # create _Tags and _Tagindex here

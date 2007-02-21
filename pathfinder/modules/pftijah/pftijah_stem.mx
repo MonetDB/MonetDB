@@ -628,6 +628,78 @@ static int snb_dutch_clear(void* ctx) {
 static tjStemCtx snb_dutch = { "snowball-dutch", snb_dutch_init, snb_dutch_stem, snb_dutch_clear, NULL , NULL_STOPWORDS };
 
 /*
+ *
+ * a fast porter stemmer experiment
+ *
+ */
+
+#include "porter_eng.h"
+
+static int porter_english_init(void* ctx, char* s) {
+	(void)ctx;
+	(void)s;
+	return 1;
+}
+
+static const char* porter_english_stem(void* ctx, const char* s) {
+	(void)ctx;
+#ifdef STEMMING_DEBUG
+	stream_printf(GDKout,"+ stem-porter_english(%s)=",s);
+#endif
+	if ( Stem( (char *) s ) ) {
+#ifdef STEMMING_DEBUG
+	    stream_printf(GDKout,"\"%s\"\n",s);
+#endif
+	    return s;
+	} else {
+#ifdef STEMMING_DEBUG
+	    stream_printf(GDKout,"\<FAIL>\"%s\"\n",s);
+#endif
+	    return s;
+        }
+}
+
+static int porter_english_clear(void* ctx) {
+	(void)ctx;
+	return 1;
+}
+
+static tjStemCtx porter_english = { "porter-english", porter_english_init, porter_english_stem, porter_english_clear, NULL , ENGLISH_STOPWORDS };
+
+#include "porter_dutch.h"
+
+static int porter_dutch_init(void* ctx, char* s) {
+	(void)ctx;
+	(void)s;
+	return 1;
+}
+
+static const char* porter_dutch_stem(void* ctx, const char* s) {
+	(void)ctx;
+#ifdef STEMMING_DEBUG
+	stream_printf(GDKout,"+ stem-porter_dutch(%s)=",s);
+#endif
+	dStem( (char *) s );
+#ifdef STEMMING_DEBUG
+	stream_printf(GDKout,"\"%s\"\n",s);
+#endif
+	return s;
+}
+
+static int porter_dutch_clear(void* ctx) {
+	(void)ctx;
+	return 1;
+}
+
+static tjStemCtx porter_dutch = { "porter-dutch", porter_dutch_init, porter_dutch_stem, porter_dutch_clear, NULL , NULL_STOPWORDS };
+
+/*
+ *
+ * end of fast porter stemmer experiment
+ *
+ */
+
+/*
  * The getStemmingContext() function is the extern function called to get
  * the stemming context.
  */
@@ -648,6 +720,10 @@ tjStemCtx* getStemmingContext(char* name) {
 	    res = & snb_english;
 	else if ( strcmp(name,"snowball-dutch")==0 )
 	    res = & snb_dutch;
+	else if ( strcmp(name,"porter-english")==0 )
+	    res = & porter_english;
+	else if ( strcmp(name,"porter-dutch")==0 )
+	    res = & porter_dutch;
 	else {
 	    stream_printf(GDKerr,"# WARNING: stemmer \"%s\" unknown, using nostemming\n",name);
 	    res = & nostemming;
