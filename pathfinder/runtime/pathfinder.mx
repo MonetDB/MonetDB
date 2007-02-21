@@ -2710,31 +2710,43 @@ PROC xmltab4(BAT[void,bat] ws,
 }
 
 # fn:collections(), get all collection *names*
-PROC ws_collections(BAT[void,BAT] ws) : BAT[void,oid]
+PROC ws_collections(BAT[void,BAT] ws, bit consistent) : BAT[void,oid]
 {
     var coll_nme, coll_sze, coll_mbs, coll_upd; 
-    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
+    if (consistent) pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
     var err := CATCH( { coll_nme := mirror(collection_name.[startsWith]("::").uselect(false));
-                        coll_sze := coll_nme.leftjoin(doc_collection.histogram()).tmark(0@0).[str]();
+                        coll_sze := doc_name.uselect(str_nil,str_nil).mirror().leftjoin(doc_collection).histogram();
+                        coll_sze := coll_nme.leftjoin(coll_sze).tmark(0@0).[str]();
                         coll_mbs := [/](coll_nme.leftjoin(collection_size), 1024LL * 1024LL).tmark(0@0).[str]().[+](" MB"); 
                         coll_upd := coll_nme.[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
-                        coll_nme := coll_nme.leftjoin(collection_name).tmark(0@0); });
+                        coll_nme := coll_nme.leftjoin(collection_name).tmark(0@0); 
+                        if (not(consistent)) { # here we include info about shredding in progress
+                            var shred := mirror(colname_shredlock).[startsWith]("::").uselect(false).hmark(0@0);
+                            var tmp := shred.tdiff(coll_nme); # new collection names being shredded
+                            coll_nme := coll_nme.copy().access(BAT_APPEND).append(tmp);
+                            coll_upd := coll_upd.copy().access(BAT_APPEND).append(tmp := tmp.project("unknown"));
+                            coll_mbs := coll_mbs.copy().access(BAT_APPEND).append(tmp);
+                            coll_sze := coll_sze.copy().access(BAT_APPEND).append(tmp);
+                            coll_upd := [+](coll_upd, [isnil](coll_nme.outerjoin(reverse(shred))).[ifthenelse](""," (shredding..)"));
+                        }});
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
     return xmltab4(ws, "collection", coll_nme, "numDocs", coll_sze, "size", coll_mbs, "updatable", coll_upd);
 }
 
 # fn:documents(), get all document *names* in a collection
-PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme) : BAT[oid,oid]
+PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme, bit consistent) : BAT[oid,oid]
 {
     var doc_nme, doc_col, doc_url, doc_upd; 
-    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
+    if (consistent) pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var err := CATCH( { doc_nme := coll_nme.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection));
+    var err := CATCH( { var col_upd := collection_name.mirror().[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+                        doc_nme := doc_name.uselect(str_nil,str_nil).mirror().leftjoin(doc_collection);
+                        doc_nme := coll_nme.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_nme));
                         doc_url := doc_nme.leftjoin(doc_location).tmark(0@0);
                         doc_col := doc_nme.leftjoin(doc_collection).tmark(0@0);
-                        doc_upd := doc_col.[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+                        doc_upd := doc_col.leftjoin(col_upd).tmark(0@0); 
                         doc_col := doc_col.leftjoin(collection_name).tmark(0@0); 
                         doc_nme := doc_nme.leftjoin(doc_name); });
     lock_unset(pf_short);
@@ -2743,15 +2755,16 @@ PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme) : BAT[oid,oid]
 }
 
 # fn:documents(), get all document *names* 
-PROC ws_documents(BAT[void,BAT] ws) : BAT[void,oid]
+PROC ws_documents(BAT[void,BAT] ws, bit consistent) : BAT[void,oid]
 {
     var doc_nme, doc_col, doc_url, doc_upd; 
-    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
+    if (consistent) pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var err := CATCH( { doc_nme := mirror(doc_name.[startsWith]("::").uselect(false));
+    var err := CATCH( { var col_upd := collection_name.mirror().[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+                        doc_nme := mirror(doc_name.[startsWith]("::").uselect(false));
                         doc_url := doc_nme.leftjoin(doc_location).tmark(0@0);
                         doc_col := doc_nme.leftjoin(doc_collection).tmark(0@0);
-                        doc_upd := doc_col.[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+                        doc_upd := doc_col.leftjoin(col_upd).tmark(0@0); 
                         doc_nme := doc_nme.leftjoin(doc_name).tmark(0@0); 
                         doc_col := doc_col.leftjoin(collection_name).tmark(0@0); });
     lock_unset(pf_short);

@@ -1736,8 +1736,17 @@ PFfun_xquery_fo ()
       { .ns = PFns_lib, .loc = "documents",
         .arity = 0, .sig_count = 1, .sigs = { {
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
+    , /* pf:documents-unsafe () as element()* */
+      { .ns = PFns_lib, .loc = "documents-unsafe",
+        .arity = 0, .sig_count = 1, .sigs = { {
+            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
     , /* pf:documents (string*) as element()* */
       { .ns = PFns_lib, .loc = "documents",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_string ()) },
+            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
+    , /* pf:documents-unsafe (string*) as element()* */
+      { .ns = PFns_lib, .loc = "documents-unsafe",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_string ()) },
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
@@ -1748,6 +1757,10 @@ PFfun_xquery_fo ()
             .ret_ty = PFty_xs_anyNode () } } }
     , /* pf:collections () as element()* */
       { .ns = PFns_lib, .loc = "collections",
+        .arity = 0, .sig_count = 1, .sigs = { {
+            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
+    , /* pf:collections-unsafe () as element()* */
+      { .ns = PFns_lib, .loc = "collections-unsafe",
         .arity = 0, .sig_count = 1, .sigs = { {
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
     ,  /* pf:add-doc (string, string) as docmgmt */
