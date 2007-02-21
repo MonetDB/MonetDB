@@ -99,6 +99,27 @@ opt_dom (PFla_op_t *p)
             }
         }   break;
 
+        case la_semijoin:
+            /* if the semijoin operator does not prune a row
+               because the domains are identical we can safely
+               remove it. */
+            if (PFprop_subdom (
+                    p->prop,
+                    PFprop_dom_left (p->prop,
+                                     p->sem.eqjoin.att1),
+                    PFprop_dom_right (p->prop,
+                                      p->sem.eqjoin.att2)) &&
+                PFprop_subdom (
+                    p->prop,
+                    PFprop_dom_right (p->prop,
+                                      p->sem.eqjoin.att2),
+                    PFprop_dom_left (p->prop,
+                                     p->sem.eqjoin.att1))) {
+                *p = *L(p);
+                break;
+            }
+            break;
+
         default:
             break;
     }

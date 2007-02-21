@@ -202,6 +202,10 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
 
         case la_select:
             /* introduce new required value column */
+            n->prop->reqvals.name = union_ (n->prop->reqvals.name,
+                                            n->sem.select.att);
+            n->prop->reqvals.val = union_ (n->prop->reqvals.val,
+                                           n->sem.select.att);
             rv.name = union_ (rv.name, n->sem.select.att);
             rv.val = union_ (rv.val, n->sem.select.att);
             prop_infer_reqvals (L(n), rv);

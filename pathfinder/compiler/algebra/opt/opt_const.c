@@ -656,8 +656,8 @@ opt_const (PFla_op_t *p, bool no_attach)
             /* introduce attach if necessary */
             if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
                 L(p) = add_attach (L(p), p->sem.aggr.att,
-                                   PFprop_const_val (p->prop,
-                                                     p->sem.aggr.att));
+                                   PFprop_const_val_left (p->prop,
+                                                          p->sem.aggr.att));
             }
 
             /* if partitiong attribute is constant remove it
@@ -675,7 +675,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                                                p->sem.aggr.part);
 
                 PFla_op_t *ret = add_attach (op, p->sem.aggr.part,
-                                             PFprop_const_val (
+                                             PFprop_const_val_left (
                                                  p->prop,
                                                  p->sem.aggr.part));
                 op->sem.aggr.part = att_NULL;

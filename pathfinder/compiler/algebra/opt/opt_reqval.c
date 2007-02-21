@@ -43,10 +43,26 @@
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
 
+/*
+ * Easily access subtree-parts.
+ */
+/** starting from p, make a step left */
+#define L(p) ((p)->child[0])
+/** starting from p, make a step right */
+#define R(p) ((p)->child[1])
+#define LL(p) (L(L(p)))
+#define RL(p) (L(R(p)))
+#define LR(p) (R(L(p)))
+#define RR(p) (R(R(p)))
+
 /* worker for PFalgopt_reqval */
 static void
 opt_reqvals (PFla_op_t *p)
 {
+    unsigned int count = 0;
+    PFalg_att_t  att = 0;
+    bool         val = false;
+    
     assert (p);
 
     /* nothing to do if we already visited that node */
@@ -58,14 +74,53 @@ opt_reqvals (PFla_op_t *p)
        column has a constant value that differs its required value,
        by an empty table. */
     for (unsigned int i = 0; i < p->schema.count; i++) {
-        PFalg_att_t att = p->schema.items[i].name;
+        PFalg_att_t cur_att = p->schema.items[i].name;
 
-        if (PFprop_reqval (p->prop, att) && PFprop_const (p->prop, att) &&
-            (PFprop_const_val (p->prop, att)).val.bln !=
-            PFprop_reqval_val (p->prop, att)) {
+        if (PFprop_reqval (p->prop, cur_att) &&
+            PFprop_const (p->prop, cur_att) &&
+            (PFprop_const_val (p->prop, cur_att)).val.bln !=
+             PFprop_reqval_val (p->prop, cur_att)) {
             /* create an empty table instead */
             *p = *PFla_empty_tbl_ (p->schema);
             return;
+        }
+        
+        if (PFprop_reqval (p->prop, cur_att)) {
+            count++;
+            att = cur_att;
+            val = PFprop_reqval_val (p->prop, cur_att);
+        }
+            
+    }
+
+    if (count == 1) {
+        if (p->kind == la_project)
+            for (unsigned int i = 0; i < p->sem.proj.count; i++)
+                if (att == p->sem.proj.items[i].new) {
+                    att = p->sem.proj.items[i].old;
+                    break;
+                }
+
+        if (L(p) && L(p)->kind == la_disjunion &&
+            PFprop_const (LL(p)->prop, att) &&
+            PFprop_const (LR(p)->prop, att) &&
+            (PFprop_const_val (LL(p)->prop, att)).val.bln !=
+            (PFprop_const_val (LR(p)->prop, att)).val.bln) {
+            if ((PFprop_const_val (LL(p)->prop, att)).val.bln == val)
+                L(p) = LL(p);
+            else
+                L(p) = LR(p);
+        }
+        
+        if (R(p) && R(p)->kind == la_disjunion &&
+            PFprop_const (RL(p)->prop, att) &&
+            PFprop_const (RR(p)->prop, att) &&
+            (PFprop_const_val (RL(p)->prop, att)).val.bln !=
+            (PFprop_const_val (RR(p)->prop, att)).val.bln) {
+            if ((PFprop_const_val (RL(p)->prop, att)).val.bln == val)
+                R(p) = RL(p);
+            else
+                R(p) = RR(p);
         }
     }
 

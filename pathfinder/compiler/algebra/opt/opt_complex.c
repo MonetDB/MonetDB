@@ -198,7 +198,8 @@ opt_complex (PFla_op_t *p)
                                    p->prop, 
                                    L(p)->schema.items[i].name));
             }
-            if (PFprop_key_left (p->prop, p->sem.eqjoin.att1) &&
+            if ((PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
+                 PFprop_set (p->prop)) &&
                 PFprop_subdom (p->prop, 
                                PFprop_dom_right (p->prop,
                                                  p->sem.eqjoin.att2),
@@ -241,7 +242,8 @@ opt_complex (PFla_op_t *p)
                                      p->prop, 
                                      R(p)->schema.items[i].name));
             }
-            if (PFprop_key_right (p->prop, p->sem.eqjoin.att2) &&
+            if ((PFprop_key_right (p->prop, p->sem.eqjoin.att2) ||
+                 PFprop_set (p->prop)) &&
                 PFprop_subdom (p->prop, 
                                PFprop_dom_left (p->prop,
                                                 p->sem.eqjoin.att1),
@@ -341,6 +343,26 @@ opt_complex (PFla_op_t *p)
         }   break;
             
         case la_semijoin:
+            /* the following if statement is a copy of code in opt_dom.c */
+            /* if the semijoin operator does not prune a row
+               because the domains are identical we can safely
+               remove it. */
+            if (PFprop_subdom (
+                    p->prop,
+                    PFprop_dom_left (p->prop,
+                                     p->sem.eqjoin.att1),
+                    PFprop_dom_right (p->prop,
+                                      p->sem.eqjoin.att2)) &&
+                PFprop_subdom (
+                    p->prop,
+                    PFprop_dom_right (p->prop,
+                                      p->sem.eqjoin.att2),
+                    PFprop_dom_left (p->prop,
+                                     p->sem.eqjoin.att1))) {
+                *p = *L(p);
+                break;
+            }
+            
             if (!PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
                 !PFprop_subdom (p->prop, 
                                 PFprop_dom_right (p->prop,
@@ -511,6 +533,34 @@ opt_complex (PFla_op_t *p)
                       2, top_proj);
         }   break;
         
+        case la_difference: /* this case is a copy of code in opt_dom.c */
+        {   /**
+             * If the domains of the first relation are all subdomains
+             * of the corresponding domains in the second argument 
+             * the result of the difference operation will be empty.
+             */
+            unsigned int all_subdom = 0;
+            for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                for (unsigned int j = 0; j < R(p)->schema.count; j++)
+                    if (L(p)->schema.items[i].name ==
+                        R(p)->schema.items[j].name &&
+                        PFprop_subdom (
+                            p->prop,
+                            PFprop_dom_left (p->prop,
+                                             L(p)->schema.items[i].name),
+                            PFprop_dom_right (p->prop,
+                                              R(p)->schema.items[j].name))) {
+                        all_subdom++;
+                        break;
+                    }
+
+            if (all_subdom == p->schema.count) {
+                *p = *PFla_empty_tbl_ (p->schema);
+                SEEN(p) = true;
+                break;
+            }
+        }   break;
+
         case la_rownum:
             /* match the pattern rownum - (project -) rownum and
                try to merge both row number operators if the nested
