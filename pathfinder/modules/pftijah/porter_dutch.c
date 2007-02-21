@@ -122,7 +122,9 @@ static char *end;                  /* pointer to the end of the word */
 #ifdef __STDC__
 
 static int WordSize( char *word );
+#if 0
 static int ContainsVowel( char *word );
+#endif
 static int DupVCond( char *word );
 static int DuplicateV( char *word );
 static int EndsWithV( char *word );
@@ -137,7 +139,9 @@ static int RemoveDia( char *c );
 #else
 
 static int WordSize( /* word */ );
+#if 0
 static int ContainsVowel( /* word */ );
+#endif
 static int DupVCond( /* word */ );
 static int DuplicateV( /* word */ );
 static int EndsWithC( /* word */ );
@@ -377,6 +381,7 @@ WordSize( word )
 
    } /* WordSize */
 
+#if 0
 /*FN**************************************************************************
 
        ContainsVowel( word )
@@ -408,6 +413,7 @@ ContainsVowel( word )
 
 
    } /* ContainsVowel */
+#endif
 /*WK**************************************************************************
 
        DupVCond( word )

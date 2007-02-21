@@ -646,7 +646,7 @@ static const char* porter_english_stem(void* ctx, const char* s) {
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"+ stem-porter_english(%s)=",s);
 #endif
-	if ( Stem( s ) ) {
+	if ( Stem( (char *) s ) ) {
 #ifdef STEMMING_DEBUG
 	    stream_printf(GDKout,"\"%s\"\n",s);
 #endif
@@ -679,7 +679,7 @@ static const char* porter_dutch_stem(void* ctx, const char* s) {
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"+ stem-porter_dutch(%s)=",s);
 #endif
-	dStem( s );
+	dStem( (char *) s );
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"\"%s\"\n",s);
 #endif
