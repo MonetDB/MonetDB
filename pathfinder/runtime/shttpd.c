@@ -3108,8 +3108,6 @@ shttpd_fini(void)
 
 	/* Free configuration */
 	for (opt = options; opt->sw != 0; opt++) {
-		if (opt->type == OPT_STR && opt->value.value_str != NULL)
-			free(opt->value.value_str);
 		opt->set = 0;
 		opt->value.value_str = NULL;
 	}
