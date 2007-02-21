@@ -9276,13 +9276,20 @@ simplifyCoreTree (PFcnode_t *c)
                 input_type = TY(R(c));
             }
 
+            /* get rid of unnecessary numeric cast (the only place
+               where this cast is introduced are predicates) */
+            if (c->kind == c_seqcast &&
+                PFty_subtype (input_type, PFty_opt (PFty_numeric ())) &&
+                PFty_subtype (PFty_numeric (), L(c)->sem.type) &&
+                PFty_subtype (L(c)->sem.type, PFty_numeric ()))
+                *c = *(R(c));
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
             /* removes casts which are not necessary:
                - if types are the same
                - if the cast type has only a additional
                  occurence indicator compared to the
                  input type */
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
-            if (TY_EQ (input_type, cast_type) ||
+            else if (TY_EQ (input_type, cast_type) ||
                 TY_EQ (input_type, opt_cast_type) ||
                 ((cast_type.type == ty_opt ||
                   cast_type.type == ty_star) &&
@@ -9292,9 +9299,8 @@ simplifyCoreTree (PFcnode_t *c)
             }
             /* don't cast nodes - node type was only needed
                for static typing */
-            else
 #endif
-                if (c->kind == c_seqcast &&
+            else if (c->kind == c_seqcast &&
                      PFty_subtype (input_type, PFty_xs_anyNode ()) &&
                      PFty_subtype (cast_type, PFty_xs_anyNode ()))
             {
@@ -9309,6 +9315,14 @@ simplifyCoreTree (PFcnode_t *c)
                         PFty_str(cast_type));
             else
             {
+            /* get rid of unnecessary numeric cast (the only place
+               where this cast is introduced are predicates) */
+            if (c->kind == c_seqcast &&
+                PFty_subtype (input_type, PFty_opt (PFty_numeric ())) &&
+                PFty_subtype (PFty_numeric (), L(c)->sem.type) &&
+                PFty_subtype (L(c)->sem.type, PFty_numeric ()))
+                *c = *(R(c));
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
                 *c = *(R(c));
                 /*
                 PFlog ("cast from '%s' to '%s' ignored",
@@ -9323,6 +9337,7 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 unsigned int i = 0;
                 PFcnode_t *tmp = D(c);
+#endif
                 while (i < fun->arity)
                 {
                     simplifyCoreTree (L(tmp));
