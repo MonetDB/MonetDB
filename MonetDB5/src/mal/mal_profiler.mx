@@ -917,7 +917,7 @@ closeProfilerStream(void)
 
 	if (offlineProfiling)
 		log0("</MonetProfile>\n");
-	if (eventstream != c->fdout)
+	if (eventstream && eventstream != c->fdout)
 		close_stream(eventstream);
 	malProfileMode = FALSE;
 	eventstream = NULL;
