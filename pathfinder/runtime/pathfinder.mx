@@ -2741,14 +2741,14 @@ PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme, bit consistent) : BAT
     var doc_nme, doc_col, doc_url, doc_upd; 
     if (consistent) pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var err := CATCH( { var col_upd := collection_name.mirror().[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+    var err := CATCH( { var col_upd := collection_name.mirror().[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).[str]();
                         doc_nme := doc_name.uselect(str_nil,str_nil).mirror().leftjoin(doc_collection);
                         doc_nme := coll_nme.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_nme));
                         doc_url := doc_nme.leftjoin(doc_location).tmark(0@0);
                         doc_col := doc_nme.leftjoin(doc_collection).tmark(0@0);
                         doc_upd := doc_col.leftjoin(col_upd).tmark(0@0); 
                         doc_col := doc_col.leftjoin(collection_name).tmark(0@0); 
-                        doc_nme := doc_nme.leftjoin(doc_name); });
+                        doc_nme := doc_nme.leftjoin(doc_name).tmark(0@0); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
     return doc_nme.mark(0@0).leftfetchjoin(xmltab4(ws, "document", doc_nme.tmark(0@0), "collection", doc_col, "url", doc_url, "updatable", doc_upd));
@@ -2760,7 +2760,7 @@ PROC ws_documents(BAT[void,BAT] ws, bit consistent) : BAT[void,oid]
     var doc_nme, doc_col, doc_url, doc_upd; 
     if (consistent) pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var err := CATCH( { var col_upd := collection_name.mirror().[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).tmark(0@0).[str]();
+    var err := CATCH( { var col_upd := collection_name.mirror().[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).[str]();
                         doc_nme := mirror(doc_name.[startsWith]("::").uselect(false));
                         doc_url := doc_nme.leftjoin(doc_location).tmark(0@0);
                         doc_col := doc_nme.leftjoin(doc_collection).tmark(0@0);
