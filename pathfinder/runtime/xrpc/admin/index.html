@@ -42,24 +42,13 @@ XRPCWebClient.prototype.getValue = function (element) {
 }
 
 XRPCWebClient.prototype.sendRequest = function(method, request) {
-//    alert("sendRequest: "+method+"\n"+request);
-
     try {
         this.xmlhttp.open("POST", XRPC_SERVER_ADDR, true);
         this.xmlhttp.send(request);
-//alert('request '+method+' sent');
 
         var app = this;
         this.xmlhttp.onreadystatechange = function() {
             if (app.xmlhttp.readyState == 4 ) {
-/*
-                if(app.xmlhttp.responseText){
-alert('response of: '+method+':\n'+app.xmlhttp.responseText);
-                } else {
-alert('response of: '+method+' is empty.');
-                }
-                */
-
                 if (app.xmlhttp.status == 200) {
                     var response = app.xmlhttp.responseXML;
 
@@ -81,7 +70,6 @@ alert('response of: '+method+' is empty.');
                             if(method == "add-doc"){
                                 document.getElementById("myform").reset();
                             }
-                            //doCollections("doRequest", null);
                         }
                     } else {
                         alert('getResult(): unknown method "' +method +'"');
@@ -141,7 +129,6 @@ function doGET(action, docName, response) {
             "Sorry for the inconvenience!");
     return;
 
-
     if(action == "doRequest"){
         getDocName = docName;
         var xrpcRequest = REQ_HEADER +
@@ -154,29 +141,16 @@ function doGET(action, docName, response) {
               REQ_FOOTER;
         clnt.sendRequest("GET", xrpcRequest);
     } else { /* action == "getResult" */
-alert("doGET response: "+response+"\n\n"+serializeXML(response));
-        var docNode = response.getElementsByTagName("document");
-//alert("doGET doc: " + docNode[0].firstChild.nodeValue + docNode.length);
-        alert("doGET:\ndocNode: " + docNode + docNode.length +
-                "\ndocNode[0]: " + docNode +
-                "\ndocNode[0].firstChild: " + docNode[0].firstChild +
-                "\ndocNode[0].firstChild.nodeValue: " + docNode[0].firstChild.nodeValue);
-        alert(docNode[0].firstChild.tagName);
-
         var docTA = document.getElementById("docView");
         docTA.innerHTML = 
             '<h2>' + getDocName + '</h2>\n' +
-            '<textarea id="docTextArea" row="20" cols="100">\n'+
-            docNode[0].firstChild.nodeValue +
+            '<textarea id="docTextArea" row="50" cols="100">\n'+
+            serializeXML(response) +
             '</textarea>\n';
     }
 }
 
 function doDelDoc(docName) {
-    alert("Implementation is still under construction.\n"+
-            "Sorry for the inconvenience!");
-    return;
-
     var confirmMsg =
         'Are you sure you want to delete the document "' +
         docName + '"?';
@@ -228,16 +202,32 @@ function doCollections(action, response) {
             REQ_FOOTER;
         clnt.sendRequest("collections", xrpcRequest);
     } else { /* action == "getResult" */
-        var i;
         var cols = response.getElementsByTagName("collection");
+        var cTable = document.getElementById("collectionsTable");
         var cTableBody = "";
+
+        if(cols.length == 0){
+            cTable.innerHTML =
+                '<p>No (documents) collections in the database</p>\n';
+            return;
+        }
+
+        var i;
         for(i = 0; i < cols.length; i++){
             var colName = cols[i].firstChild.nodeValue;
+            var updatable = cols[i].getAttribute("updatable");
+            var size = cols[i].getAttribute("size");
+            var numDocs = cols[i].getAttribute("numDocs");
+
+            if(updatable == null) updatable = "UNKNOWN";
+            if(size == null) size = "UNKNOWN";
+            if(numDocs == null) numDocs = "UNKNOWN";
+
             cTableBody += '<tr>\n';
             cTableBody += '<td>'+colName+'</td>\n';
-            cTableBody += '<td>'+cols[i].getAttribute("updatable")+'</td>\n';
-            cTableBody += '<td>'+cols[i].getAttribute("size")+'</td>\n';
-            cTableBody += '<td>'+cols[i].getAttribute("numDocs")+'</td>\n';
+            cTableBody += '<td>'+updatable+'</td>\n';
+            cTableBody += '<td>'+size+'</td>\n';
+            cTableBody += '<td>'+numDocs+'</td>\n';
             cTableBody +=
                 '<td>'+
                 '<input type="button" name="viewCol" value="view" onclick="doDocuments(\'doRequest\',\''+colName+'\',null)" />'+
@@ -249,7 +239,6 @@ function doCollections(action, response) {
             cTableBody += '</tr>\n';
         }
 
-        var cTable = document.getElementById("collectionsTable");
         cTable.innerHTML = 
             '<table width="30%" border="1">\n' +
               '<tr>\n' +
@@ -278,15 +267,22 @@ function doDocuments(action, colName, response) {
         clnt.sendRequest("documents", xrpcRequest);
     } else { /* action == "getResult" */
         var docs = response.getElementsByTagName("document");
-        var i;
-        var dTableBody = "";
         var cName = docs[0].getAttribute("collection");
+        var dTableBody = "";
+
+        var i;
         for(i = 0; i < docs.length; i++){
-            var docName = docs[i].firstChild.nodeValue;
+            var docName   = docs[i].firstChild.nodeValue;
+            var updatable = docs[i].getAttribute("updatable");
+            var url       = docs[i].getAttribute("url");
+
+            if(updatable == null) updatable = "UNKNOWN";
+            if(url == null) url = "UNKNOWN";
+
             dTableBody += '<tr>\n';
             dTableBody += '<td>'+docName+'</td>\n';
-            dTableBody += '<td>'+docs[i].getAttribute("updatable")+'</td>\n';
-            dTableBody += '<td>'+docs[i].getAttribute("url")+'</td>\n';
+            dTableBody += '<td>'+updatable+'</td>\n';
+            dTableBody += '<td>'+url+'</td>\n';
             dTableBody +=
                 '<td>'+
                 '<input type="button" name="viewDoc" value="view" onclick="doGET(\'doRequest\',\''+docName+'\',null)" />'+
@@ -348,7 +344,7 @@ var clnt = new XRPCWebClient();
                         <td><input type="text" id="newCol" value=""/></td>
                     </tr>
                     <tr>
-                        <td>%Free:</td>
+                        <td>Free %:</td>
                         <td><input type="text" id="newFree" value="0"/></td>
                     </tr>
                     <tr>
