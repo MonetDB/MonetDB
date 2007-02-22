@@ -415,8 +415,10 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 					line[--length] = 0;
 
 				c = MCgetClient();
-				if (c->fdout != GDKout && c->fdout != GDKerr)
+				if (c->fdout && c->fdout != GDKout && c->fdout != GDKerr){
 					close_stream(c->fdout);
+					c->fdout= 0;
+				}
 				if (length == 0 || strcmp(line, "stdout") == 0)
 					c->fdout = GDKout;
 				else if (strcmp(line, "stderr") == 0)

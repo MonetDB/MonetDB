@@ -69,7 +69,7 @@ showed that the overhead can be kept within acceptable bounds.
 Moreover, a textual interface reduces the programming
 effort otherwise needed to develop test and application programs.
 The XML trend as the language for tool interaction supports our decision.
-
+@-
 @node Architecture Overview, MAL Synopsis, Design Considerations, Design  Overview
 @+ Architecture Overview
 The architecture is built around a few independent components:
@@ -104,7 +104,7 @@ share data between language paradigms.
 @image{base00,,,,.pdf}
 @emph{Figure 2.1}
 @end iftex
-
+@-
 @node MAL Synopsis, Execution Engine, Architecture Overview,  Design  Overview
 @+ MonetDB Assembly Language (MAL)
 The target language for a query compiler is 
@@ -356,8 +356,11 @@ void mal_exit(void){
 	str err;
 #ifdef MALprofiler
 	stream *f;
-	profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));
-	close_stream(f);
+	f= open_wastream("/tmp/Monet.prof");
+	if( f != NULL){
+		profileReport( cntxt->nspace,1, f);
+		close_stream(f);
+	}
 #endif
 
 #if 0
