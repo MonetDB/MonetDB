@@ -2588,16 +2588,14 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
 	var frag_last := fragments.count();
 	
 	var pre_tid := bat("tj_" + collName + "_tid" + str(frag_offset));
-	var tids := pre_tid.slice(int(offset), pre_tid.count() - 1);
+	var tids := pre_tid.slice(int(offset) - int(pre_tid.seqbase()), pre_tid.count() - 1);
 	tids.access(BAT_WRITE);
 	frag_offset :+= 1;
 	while (frag_offset <= frag_last)
 	{
 	    	tids.append(bat("tj_" + collName + "_tid" + str(frag_offset)));
 		frag_offset :+= 1;
-	}	
-	var tmp := tids.kdiff(collBat.find("_pfpre"));
-        tmp := tmp.reverse().sort();
+	}
         
 	# incremental index merge
 	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) 
@@ -2605,7 +2603,7 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
     		var replaceBats := collBat.find("replaceBats");
 		var tmp := tids.kdiff(collBat.find("_pfpre"));
                 tmp := tmp.reverse().ssort();
-                var i := mergeindex(tmp, collBat.find("_TermIndex"),
+		var i := mergeindex(tmp, collBat.find("_TermIndex"),
                                          collBat.find("_Terms"),
                                          collBat.find("_globalTerms").count() + 1);       
                 collBat.replace("_TermIndex", i.fetch(0));
