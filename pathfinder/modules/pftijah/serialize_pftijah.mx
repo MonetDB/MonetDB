@@ -649,11 +649,13 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 		    return NULL;
 	        int newFragments  = (int)BATcount(fragments) + 1;
 		/* */
+		BBPunfix(BBPcacheid(res->b_collPre));
 		res->b_collPre     = pftu_create_bat(pftu_batname1("tj_%s_tid%d",res->name,newFragments),TYPE_void,TYPE_oid,1);
 		if ( !res->b_collPre ) 
 		    return NULL;
 		BBPfix(BBPcacheid(res->b_collPre));
 	        BATseqbase(res->b_collPre,res->tijahPre);
+		BBPunfix(BBPcacheid(res->b_collSize));
 	        res->b_collSize    = pftu_create_bat(pftu_batname1("tj_%s_size%d",res->name,newFragments),TYPE_void,TYPE_int,1);
 		if ( !res->b_collSize )
 		    return NULL;
@@ -662,6 +664,13 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 		if ( !BUNappend(fragments,&res->tijahPre,0) )
 		    return NULL;
 		BBPunfix(BBPcacheid(fragments));
+		/* */
+		str pretag = "_tid";
+		bat prebat = BBPcacheid(res->b_collPre);
+		if ( !BUNreplace(tjCtx_BAT,pretag,&prebat,0) ) { return NULL; }
+		str sizetag = "_size";
+		bat sizebat = BBPcacheid(res->b_collSize);
+		if ( !BUNreplace(tjCtx_BAT,sizetag,&sizebat,0) ) { return NULL; }
 #ifdef TJ_TRACE
 	        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: loadTijahContext() finished creating new fragments\n",res->name);
 #endif

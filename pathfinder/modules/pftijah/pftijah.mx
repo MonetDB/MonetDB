@@ -53,6 +53,10 @@
 .COMMAND tj_dispose_termdb() : void = CMDtj_dispose_termdb;
  "INCOMPLETE"
 
+.COMMAND tj_log(str, int) : void = CMDtj_log;
+ "DEBUGGING function for difficult IO areas"
+
+
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
                       int	    niters,
@@ -617,7 +621,8 @@ PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
       var t_start := usec();
       bat("tj_globalTerms").access(BAT_WRITE);
       bat("tj_globalTags").access(BAT_WRITE);
-      var collBat := _tj_collection(collName);
+      var collBat;
+      collBat := _tj_collection(collName);
       uri@batloop() {
         _tj_add2collection(collName, collBat, $h, $t, store);
       }
@@ -725,8 +730,9 @@ PROC _tj_finalize_collection(str collName, BAT[str,bat] collBat) : void
     collBat.find("_size").access(BAT_APPEND).mmap(1);
     collBat.find("_tid").access(BAT_APPEND).mmap(1);
     collBat.find("_pfpre").access(BAT_APPEND).mmap(1);
-    collBat.find("submitBats").append("tj_" + collName + "_size1");
-    collBat.find("submitBats").append("tj_" + collName + "_tid1");
+    var fpfx := str(collBat.find("_fragments").count());
+    collBat.find("submitBats").append("tj_" + collName + "_size" + fpfx);
+    collBat.find("submitBats").append("tj_" + collName + "_tid" + fpfx);
     collBat.find("submitBats").append("tj_" + collName + "_pfpre");
     collBat.find("submitBats").append("tj_" + collName + "_fragments");
     collBat.find("submitBats").append("tj_" + collName + "_doc_name");
@@ -2568,6 +2574,7 @@ PROC _tj_chk_modified_fragments(str collName, BAT[str,bat] collBat) : BAT[void,s
 	{
 		mod_frags.append("tj_" + collName + "_tid" + str(frag_offset));
 		mod_frags.append("tj_" + collName + "_size" + str(frag_offset));
+		frag_offset :+= 1;
 	}
 	
 	return mod_frags;
@@ -2755,6 +2762,21 @@ int pftijah_debug = 0;
 
 int executeMIL(char* str) {
     return monet_exec(str);
+}
+
+#define LOGGERFILE "/tmp/TIJAH_LOGGER"
+
+/*
+ * the CMDtj_log is created to be able to print in very difficult IO areas
+ */
+int CMDtj_log(str format, int* i) {
+	FILE* f;
+	
+	if ( (f = fopen(LOGGERFILE,"a")) ) {
+	    fprintf(f,(const char*)format,*i);
+	    fclose(f);
+	}
+	return GDK_SUCCEED;
 }
 
 int CMDtijah_command(bit* res, str command) {
