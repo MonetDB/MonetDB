@@ -621,7 +621,7 @@ getCallValues(stream *out,
     bit isSimpleParam = 1;
     lng argc = 0, iterc = 0, nr_args = 0;
     lng **argcnt;
-    str *argtpe, *argval;
+    str *argtpe = NULL, *argval = NULL;
 
     lng i = 0, j = 0, k = 0, nattrs = 0;
     lng max_args = GDK_int_max;
