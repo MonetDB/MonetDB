@@ -140,19 +140,23 @@ xquery_procMB=128
 # it should be different directory as used for sql!
 xquery_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@xquery_logs
 
-
 # if not set port to address the HTTP server for pathfinder = mapi_port+1
 xrpc_port=""
 
 # xrpc daemon is open for outside connections by default
-xrpc_open="yes"
+xrpc_open=true
 
-# IP addresses separated by ';' who can execute scripts from /share/MonetDB/www/admin/
+# IP addresses or hostname separated by ';' who can execute scripts in
+# <datadir>/MonetDB/xrpc/admin/
 xrpc_admin="127.0.0.1"
 
-# url prefixes of trusted modules separated by ';'
-xrpc_trusted="http://monetdb.cwi.nl;@Xexec_prefix@@DIRSEP@share@DIRSEP@MonetDB@DIRSEP@www@DIRSEP@export"
+# IP addresses or hostname separated by ';' who can retrieve XML
+# documents stored in the database using a URL of the form:]
+#                   http://<host>[:port]/xrpc/<name>.xml
+xrpc_user="127.0.0.1"
 
+# url prefixes of trusted modules separated by ';'
+xrpc_trusted="http://monetdb.cwi.nl;@Xexec_prefix@@DIRSEP@share@DIRSEP@MonetDB@DIRSEP@xrpc@DIRSEP@export"
 
 # standoff annotation XPath extension
 #standoff_ns=http://monetdb.cwi.nl/standoff
