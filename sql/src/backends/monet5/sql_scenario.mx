@@ -90,8 +90,9 @@ static int SQLdebug = 0;
 static void
 monet5_freestack(backend_stack stk)
 {
-	if (stk)
-		GDKfree(stk);
+	ptr p = (ptr)stk;
+	if (p != NULL)
+		GDKfree(p);
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#monet5_freestack\n");
 #endif
