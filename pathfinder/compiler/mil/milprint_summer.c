@@ -6218,7 +6218,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 static void
 translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
-    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 1 ? 1 : 0;
+    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 0 ? 0 : 1;
     PFcnode_t *dsts = L(xrpc);
     PFfun_t   *fun  = R(xrpc)->sem.fun;
     PFcnode_t *args = RD(xrpc);
