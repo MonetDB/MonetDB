@@ -1,7 +1,7 @@
 @echo off
 
 if not "%1"=="" goto skip
-call %0 -r
+call %0 -rq
 goto end
 
 :skip
