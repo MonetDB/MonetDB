@@ -79,6 +79,7 @@
 #include "pftijah.h"
 #include "nexi.h"
 #include "pftijah.h"
+#include "pftijah_util.h"
 
 #define LOGFILE   GDKout
 #define LOGPRINTF if ( 0 ) stream_printf
@@ -97,14 +98,6 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
   parserCtx->collection   = "PFX";
   parserCtx->queryText    = query;
   parserCtx->errBUFF[0]   = 0;
-  parserCtx->useFragments = 0;
-  if ( 1 /* not fragmented */ ) {
-    parserCtx->ffPfx        = ""; /* "_frag"*/;
-    parserCtx->flastPfx     = ", str(1)"; /* */;
-  } else {
-    parserCtx->ffPfx        = "_frag"; /* "_frag"*/;
-    parserCtx->flastPfx     = ""; /* "_frag"*/;
-  }
   parserCtx->milFILEname  = NULL;
   /* initialize the lists */
   if ( ! (
@@ -273,24 +266,9 @@ int old_main(BAT* optbat, char* startNodes_name)
 	} else if ( strcmp(optName,"collection") == 0 ) {
             parserCtx->collection = optVal;
 	} else if ( strcmp(optName,"fragments") == 0 ) {
-	    if ( (strcmp(optVal,"true")==0) || 
-	         (strcmp(optVal,"TRUE")==0) ||
-	         (strcmp(optVal,"on")==0) ||
-	         (strcmp(optVal,"ON")==0) 
-	       ) {
-	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation ON.\n");
-              parserCtx->useFragments = 1;
-              parserCtx->ffPfx        = "_frag";
-              parserCtx->flastPfx     = "";
-	    } else {
-	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation OFF.\n");
-              parserCtx->useFragments = 0;
-              parserCtx->ffPfx        = "";
-              parserCtx->flastPfx     = ", str(1)";
-	    }
+	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: ignoring fragmentation setting.\n");
 	} else if ( strcmp(optName,"background_collection") == 0 ) {
             strcpy(background_collection, optVal);
-            
         } else if ( strcmp(optName,"returnNumber") == 0 || 
                     strcmp(optName,"retNum") == 0 || 
                     strcmp(optName,"top") == 0 ) {
@@ -470,8 +448,25 @@ int old_main(BAT* optbat, char* startNodes_name)
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
     }
-    
-    
+    /*
+     * Now find out if the collection is fragmented or not.
+     */
+    BAT* fb = pftu_lookup_bat(pftu_batname1("tj_%s_fragments",(char*)parserCtx->collection,0));
+    if ( ! fb ) {
+           stream_printf(GDKerr,"Error: cannot find fragments bat for collection \"%s\".\n",parserCtx->collection);
+           return 0;
+    }
+    if ( BATcount(fb) > 1 ) {
+	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation ON.\n");
+              parserCtx->useFragments = 1;
+              parserCtx->ffPfx        = "_frag";
+              parserCtx->flastPfx     = "";
+    } else {
+	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation OFF.\n");
+              parserCtx->useFragments = 0;
+              parserCtx->ffPfx        = "";
+              parserCtx->flastPfx     = ", str(1)";
+    }
     // Some special cases for NLLR, since NLLR only works with COARSE2 at the moment
     if ( txt_retr_model->model == MODEL_NLLR ) {
         // Switch to COARSE2 algebra for NLLR
