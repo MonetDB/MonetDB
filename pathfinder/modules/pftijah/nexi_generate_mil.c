@@ -1026,6 +1026,10 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
       if ( TDEBUG(5) ) {
           MILPRINTF(MILOUT,"printf(\"# tijah-mil-exec: computed R%d.\\n\");\n",com_num);
       }
+      if ( TDEBUG(98) ) {
+          MILPRINTF(MILOUT,"printf(\"# tijah-mil-exec: contents of R%d is:\\n\");\n",com_num);
+          MILPRINTF(MILOUT,"R%d.print();\n",com_num);
+      }
       
       POP_COMMAND();
       com_sp++;

@@ -332,11 +332,11 @@ static struct opt {
 	 * change enum that goes below!
 	 */
 	{'d', "document_root",	0, NULL, OPT_STR,  {0}, NULL		},
-	{'i', "index_files",	0, NULL, OPT_STR,  {0}, INDEX_FILES	},
-	{'D', "list_directories",0,NULL, OPT_BOOL, {0}, "1"		},
-	{'c', "cgi_extention",	0, NULL, OPT_STR,  {0}, CGI_EXTENTION	},
-	{'N', "server_name",	0, NULL, OPT_STR,  {0}, AUTH_REALM	},
-	{'p', "listen_port",	0, NULL, OPT_INT,  {0}, LISTEN_PORT	},
+	{'i', "index_files",	1, NULL, OPT_STR,  {INDEX_FILES}, INDEX_FILES	},
+	{'D', "list_directories",1,NULL, OPT_BOOL, {0}, "0"		},
+	{'c', "cgi_extention",	1, NULL, OPT_STR,  {CGI_EXTENTION}, CGI_EXTENTION	},
+	{'N', "server_name",	1, NULL, OPT_STR,  {AUTH_REALM}, AUTH_REALM	},
+	{'p', "listen_port",	1, NULL, OPT_INT,  {LISTEN_PORT}, LISTEN_PORT	},
 	{'l', "access_log",	0, NULL, OPT_STR,  {0}, NULL		},
 	{'e', "error_log",	0, NULL, OPT_STR,  {0}, NULL		},
 	{'m', "mime_types",	0, NULL, OPT_STR,  {0}, NULL		},
@@ -346,7 +346,7 @@ static struct opt {
 	{'I', "inetd_mode",	0, NULL, OPT_BOOL, {0}, "0"		},
 	{'u', "runtime_uid",	0, NULL, OPT_STR,  {0}, NULL		},
 	{'V', "show_stats",	0, NULL, OPT_BOOL, {0}, "0"		},
-	{'C', "config_file",	0, NULL, OPT_STR,  {0}, CONFIG		},
+	{'C', "config_file",	1, NULL, OPT_STR,  {CONFIG}, CONFIG		},
 	{0,   NULL,		0, NULL, OPT_BOOL, {0}, NULL		}
 };
 
@@ -1080,7 +1080,7 @@ nonblock(SOCKET fd)
  * Setup listening socket on given port, return socket
  */
 shttpd_socket
-shttpd_open_port(int port)
+shttpd_open_port(int port, int accept_any)
 {
     shttpd_socket ret;
     SOCKET		sock;
@@ -1092,10 +1092,10 @@ shttpd_open_port(int port)
 	if (port == 0)
 		port = INTOPT(OPT_LISTENPORT);
 
-	sa.len				= sizeof(sa.u.sin);
-	sa.u.sin.sin_family		= AF_INET;
-	sa.u.sin.sin_port		= htons((uint16_t) port);
-	sa.u.sin.sin_addr.s_addr	= htonl(INADDR_ANY);
+	sa.len = sizeof(sa.u.sin);
+	sa.u.sin.sin_family	= AF_INET;
+	sa.u.sin.sin_port = htons((uint16_t) port);
+	sa.u.sin.sin_addr.s_addr = accept_any?htonl(INADDR_ANY):htonl(INADDR_LOOPBACK);
 
 	if ((sock = socket(PF_INET, SOCK_STREAM, 6)) == -1)
 		elog(ERR_FATAL, "shttpd_open_port: socket: %s",strerror(ERRNO));
@@ -3108,8 +3108,6 @@ shttpd_fini(void)
 
 	/* Free configuration */
 	for (opt = options; opt->sw != 0; opt++) {
-		if (opt->type == OPT_STR && opt->value.value_str != NULL)
-			free(opt->value.value_str);
 		opt->set = 0;
 		opt->value.value_str = NULL;
 	}
@@ -3240,6 +3238,12 @@ char*
 shttpd_get_uri(struct shttpd_callback_arg *arg)
 {
     return arg->connection->uri;
+}
+
+struct in_addr
+shttpd_get_inAddr(struct shttpd_callback_arg *arg)
+{
+    return arg->connection->sa.u.sin.sin_addr;
 }
 
 void 

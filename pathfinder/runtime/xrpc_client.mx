@@ -375,8 +375,8 @@ PROC doLoopLiftedRPC(
             # where executions might have succeeded, so we only print a
             # WARNING by error, iso. terminate the execution with 'ERROR'
             printf("!WARNING: doLoopLiftedRPC: ");
-            printf("error occurred during RPC call to \"%s\".\n", $t);
-            printf("!WARNING: Received error was: \n%s\n", rpc_err);
+            printf("error occurred during RPC call to \"%s\"\n%s\n",
+                    $t, rpc_err);
         }
 
         var time_milClntDeSeriaEnd := usec();
@@ -538,9 +538,9 @@ setup_connection(str dst)
     struct in_addr      addr;
     struct sockaddr_in  sockaddr;
     struct hostent     *resolv = NULL;
-    int i, ret, sock, port = HTTPD_DEFAULT_PORT;
+    int i, ret, sock, port = 0;
     str strptr = NULL;
-
+    
     errno = 0;
 
     /* 'dst' has the form 'URL[:port]' */
@@ -551,6 +551,16 @@ setup_connection(str dst)
             GDKerror("setup_connection: invalid port number: %s\n",
                     strerror(errno));
             return -1;
+        }
+    } else { /* find the default port number from "monet_environment" */
+        if( !(strptr = GDKgetenv("xrpc_port")) || !(*strptr) ){
+            if( !(strptr = GDKgetenv("mapi_port")) ){
+                GDKerror("setup_connection: could not find \"mapi_port\"\n");
+                return -1;
+            }
+            port = atoi(strptr) + 1; 
+        } else {
+            port = atoi(strptr);
         }
     }
 
@@ -1036,7 +1046,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             "Content-Type: text/html; charset=\"utf-8\"\r\n"
             "Content-Length: " SZFMT "\r\n\r\n"
             "%s",
-            HTTPD_FUNC, dst, b->pos, b->buf);
+            XRPCD_CALLBACK, dst, b->pos, b->buf);
     if (bytes_sent < b->pos) {
         GDKerror("CMDhttp_post: failed to send XRPC request.");
         clean_up(sock, in, out, bs, b, argcnt, iterc);
@@ -1068,10 +1078,33 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     /* the HTTP header starts with "HTTP/1.x xxx", after the first
      * white space character, it is the 3-digits return code */
     strptr = strchr(b->buf, (int)' ') + 1;
-    if (!strptr || (strstr(strptr, "200") != strptr) ||
-        (strptr = strstr(strptr, "<env:Fault")) ) {
-        GDKerror("CMDhttp_post: remote execution failed\n");
-        GDKerror("%s\n", strptr?strptr:b->buf);
+    if (!strptr ||
+        (strstr(strptr, "200") != strptr) ||
+        strstr(strptr, "<env:Fault") ) {
+
+        /* get the error code, error string out of the message */
+        if(strptr){
+            char *ptr = strchr(strptr, '\r');
+            if (ptr){
+                ptr[0] = '\0';
+                GDKerror("HTTP Error Code  : %s\n", b->buf);
+                strptr = strstr(ptr+1, "<env:Fault");
+                if(strptr){
+                    strptr = strstr(strptr, "<env:Value>") + 11;
+                    ptr = strchr(strptr, '<');
+                    ptr[0] = '\0';
+                    GDKerror("SOAP Fault Code  : %s\n", strptr);
+                    strptr = strstr(ptr+1, "<env:Text") + 10;
+                    strptr = strchr(strptr, '>') + 1;
+                    ptr = strchr(strptr, '<');
+                    ptr[0] = '\0';
+                    GDKerror("SOAP Fault Reason: %s\n", strptr);
+                } 
+            }
+        } else {
+            GDKerror("CMDhttp_post: remote execution failed, "
+                     "no further information can be provided\n");
+        }
         clean_up(sock, in, out, bs, b, argcnt, iterc);
         return GDK_FAIL;
     }

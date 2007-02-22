@@ -6519,23 +6519,24 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             "  pos  := 1@0;\n"
             "} # end of translate pf:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
-    } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"documents")))
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"documents")) == 0 ||
+              (PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0 && (rc=1)))
     {
+        char *consistent = rc?"false":"true";
         if (fun->arity) {
             rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
             item_ext = kind_str(rc);
-        
             milprintf(f, 
                 "{ # translate pf:documents (string*) as string*\n"
-                "  var ret := ws_documents(ws, item%s.materialize(ipik));\n"
+                "  var ret := ws_documents(ws, item%s.materialize(ipik),%s);\n"
                 "  item := ret.tmark(0@0);\n"
-                "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n", (rc)?item_ext:val_join(STR));
+                "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n", (rc)?item_ext:val_join(STR), consistent);
         } else {
             milprintf(f, 
                 "{ # translate pf:documents () as string*\n"
-                "  var ret := reverse(loop%03u).cross(ws_documents(ws));\n"
+                "  var ret := reverse(loop%03u).cross(ws_documents(ws,%s));\n"
                 "  iter := ret.hmark(0@0);\n"
-                "  item := ret.tmark(0@0);\n", cur_level);
+                "  item := ret.tmark(0@0);\n", cur_level, consistent);
         }
         milprintf(f,
                 "  ipik := item;\n"
@@ -6543,17 +6544,19 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  pos  := tmark_grp_unique(iter,ipik);\n" 
                 "} # end of translate fn:documents (string?) as string*\n");
         return NORMAL;
-    } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"collections")))
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"collections")) == 0 ||
+              (PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0 && (rc=1)))
     {
+        char *consistent = rc?"false":"true";
         milprintf(f,
                 "{ # translate pf:collections () as string*\n"
-                "  var ret := reverse(loop%03u).cross(ws_collections(ws));\n"
+                "  var ret := reverse(loop%03u).cross(ws_collections(ws, %s));\n"
                 "  iter := ret.hmark(0@0);\n"
                 "  item := ret.tmark(0@0);\n"
                 "  ipik := item;\n"
                 "  kind := set_kind(WS,ELEM);\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate fn:collections () as string*\n", cur_level);
+                "} # end of translate fn:collections () as string*\n", cur_level, consistent);
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"mil")))
     {
@@ -6561,7 +6564,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         item_ext = kind_str(rc);
         milprintf(f,
                 "{ # translate pf:mil (string) as item*\n"
-                "  if (count(loop%03u) != 1) ERROR(\"pf:mil can only be called in a single iteration\");\n"
+                "  if (count(loop%03u) != 1) ERROR(\"pf:mil cannot be called from within a for-loop\");\n"
                 "  kind := ELEM;\n"
                 "  item := ws_mil(ws, item%s.fetch(0));\n"
                 "  if (type(item) = str) {\n"
