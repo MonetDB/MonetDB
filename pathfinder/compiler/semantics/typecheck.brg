@@ -416,7 +416,7 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[1], nts[1]);
             reduce (kids[0], nts[0]);
 
-            if (PFty_subtype (TY(R(p)), PFty_star (PFty_none ())))
+            if (PFty_subtype (TY(R(p)), PFty_plus (PFty_none ())))
                 /*
                  * Not really okay, but we let it go through with
                  * a warning: the query *statically* evaluated to
