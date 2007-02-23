@@ -6520,7 +6520,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             "} # end of translate pf:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"documents")) == 0 ||
-              (PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0 && (rc=1)))
+               (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0))
     {
         char *consistent = rc?"false":"true";
         if (fun->arity) {
@@ -6545,7 +6545,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "} # end of translate fn:documents (string?) as string*\n");
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"collections")) == 0 ||
-              (PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0 && (rc=1)))
+               (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0))
     {
         char *consistent = rc?"false":"true";
         milprintf(f,
