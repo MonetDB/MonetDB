@@ -73,7 +73,7 @@ lib__pftijah = {
 		nexi_generate_plan.c
 
 	LIBS = \
-		../../runtime/libserialize_null ../../runtime/lib_pf_support $(PF_LIBS) \
+		../../runtime/libserialize ../../runtime/lib_pf_support $(PF_LIBS) \
 		$(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
 		$(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
