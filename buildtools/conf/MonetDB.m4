@@ -406,6 +406,7 @@ yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 6
 esac
 AC_SUBST(oids)
 
+AC_C_BIGENDIAN()
 
 LINUX_DIST=''
 case "$host_os" in
