@@ -53,6 +53,10 @@
 .COMMAND tj_dispose_termdb() : void = CMDtj_dispose_termdb;
  "INCOMPLETE"
 
+.COMMAND tj_log(str, int) : void = CMDtj_log;
+ "DEBUGGING function for difficult IO areas"
+
+
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
                       int	    niters,
@@ -67,12 +71,12 @@
  "C interface to pftijah option serialize"
 
 .COMMAND pf2tijah_node(
-                      BAT[void,str] doc_name,
-                      BAT[void,int] doc_firstpre,
+                      BAT[oid,str] doc_name,
+                      BAT[oid,int] doc_firstpre,
                       BAT[oid,oid] pfpre,
-                      BAT[void,oid] item,
-		      BAT[void,int] kind,
-                      BAT[void,str]  doc_loaded)
+                      BAT[oid,oid] item,
+		      BAT[oid,int] kind,
+                      BAT[oid,str]  doc_loaded)
 		       : BAT[void,oid] = CMDpf2tijah_node;
  "Translate Pathfinder node sequence to tijah node sequence"
 
@@ -582,8 +586,8 @@ PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : voi
     lock_set(coll_lock);
     var err := CATCH({
       var t_start := usec();
-      bat("tj_globalTerms").access(BAT_WRITE);
-      bat("tj_globalTags").access(BAT_WRITE);
+      bat("tj_globalTerms").access(BAT_APPEND);
+      bat("tj_globalTags").access(BAT_APPEND);
       var collBat := _tj_collection(collName);
       _tj_add2collection(collName, collBat, uri_loc, uri_name, store);
       _tj_finalize_collection(collName, collBat);
@@ -615,9 +619,10 @@ PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
     lock_set(coll_lock);
     var err := CATCH({
       var t_start := usec();
-      bat("tj_globalTerms").access(BAT_WRITE);
-      bat("tj_globalTags").access(BAT_WRITE);
-      var collBat := _tj_collection(collName);
+      bat("tj_globalTerms").access(BAT_APPEND);
+      bat("tj_globalTags").access(BAT_APPEND);
+      var collBat;
+      collBat := _tj_collection(collName);
       uri@batloop() {
         _tj_add2collection(collName, collBat, $h, $t, store);
       }
@@ -725,8 +730,9 @@ PROC _tj_finalize_collection(str collName, BAT[str,bat] collBat) : void
     collBat.find("_size").access(BAT_APPEND).mmap(1);
     collBat.find("_tid").access(BAT_APPEND).mmap(1);
     collBat.find("_pfpre").access(BAT_APPEND).mmap(1);
-    collBat.find("submitBats").append("tj_" + collName + "_size1");
-    collBat.find("submitBats").append("tj_" + collName + "_tid1");
+    var fpfx := str(collBat.find("_fragments").count());
+    collBat.find("submitBats").append("tj_" + collName + "_size" + fpfx);
+    collBat.find("submitBats").append("tj_" + collName + "_tid" + fpfx);
     collBat.find("submitBats").append("tj_" + collName + "_pfpre");
     collBat.find("submitBats").append("tj_" + collName + "_fragments");
     collBat.find("submitBats").append("tj_" + collName + "_doc_name");
@@ -740,8 +746,11 @@ PROC _tj_finalize_collection(str collName, BAT[str,bat] collBat) : void
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
     #
     var gterm_sort := bat("tj_globalTerms").reverse().sort().reverse();
-    var gtag_sort := bat("tj_globalTags").reverse().sort().reverse();
+    gterm_sort.access(BAT_APPEND);
     gterm_sort.mmap(1);
+    var gtag_sort := bat("tj_globalTags").reverse().sort().reverse();
+    gtag_sort.access(BAT_APPEND);
+    gtag_sort.mmap(1);
 
     collBat.replace("_globalTerms", gterm_sort);
     collBat.replace("_globalTags", gtag_sort);
@@ -1362,7 +1371,7 @@ PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
     }
 
 
-    var ctx      := region;
+    var ctx      := region.sort();
     var pre_size := load( "tj_" + collName + "_size1");    
     var desc     := scj_desc( pre_size, ctx, count(pre_size) );
     var result   := nodes( desc ).project( dbl(scoreBase) );
@@ -1580,7 +1589,7 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      var pre_size := bat("tj_" + collName + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
-     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc3(left.sort().mark(0@0), pre_tid, pre_size);
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
@@ -1623,7 +1632,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc3(left.sort().mark(0@0), pre_tid, pre_size);
      var t3 := time();
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
@@ -1670,7 +1679,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc(left.sort().mark(0@0), pre_tid, pre_size);
      var t3 := time();
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
@@ -1861,7 +1870,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     var pre_size := bat("tj_" + collName + "_size1");
     
     # See which document contain the query terms we create a bat of [doc, term-id]:
-    var doc_tid := _containing_desc(ctx.mark(0@0).sort(), tid_pre.reverse(), pre_size);
+    var doc_tid := _containing_desc(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size);
     
     # len(doc): [doc, size]
     var doc_len := [dbl](bat("tj_" + collName + "_size1").semijoin(doc_tid));
@@ -2568,6 +2577,7 @@ PROC _tj_chk_modified_fragments(str collName, BAT[str,bat] collBat) : BAT[void,s
 	{
 		mod_frags.append("tj_" + collName + "_tid" + str(frag_offset));
 		mod_frags.append("tj_" + collName + "_size" + str(frag_offset));
+		frag_offset :+= 1;
 	}
 	
 	return mod_frags;
@@ -2581,16 +2591,14 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
 	var frag_last := fragments.count();
 	
 	var pre_tid := bat("tj_" + collName + "_tid" + str(frag_offset));
-	var tids := pre_tid.slice(int(offset), pre_tid.count() - 1);
+	var tids := pre_tid.slice(int(offset) - int(pre_tid.seqbase()), pre_tid.count() - 1);
 	tids.access(BAT_WRITE);
 	frag_offset :+= 1;
 	while (frag_offset <= frag_last)
 	{
 	    	tids.append(bat("tj_" + collName + "_tid" + str(frag_offset)));
 		frag_offset :+= 1;
-	}	
-	var tmp := tids.kdiff(collBat.find("_pfpre"));
-        tmp := tmp.reverse().sort();
+	}
         
 	# incremental index merge
 	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) 
@@ -2598,7 +2606,7 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
     		var replaceBats := collBat.find("replaceBats");
 		var tmp := tids.kdiff(collBat.find("_pfpre"));
                 tmp := tmp.reverse().ssort();
-                var i := mergeindex(tmp, collBat.find("_TermIndex"),
+		var i := mergeindex(tmp, collBat.find("_TermIndex"),
                                          collBat.find("_Terms"),
                                          collBat.find("_globalTerms").count() + 1);       
                 collBat.replace("_TermIndex", i.fetch(0));
@@ -2755,6 +2763,21 @@ int pftijah_debug = 0;
 
 int executeMIL(char* str) {
     return monet_exec(str);
+}
+
+#define LOGGERFILE "/tmp/TIJAH_LOGGER"
+
+/*
+ * the CMDtj_log is created to be able to print in very difficult IO areas
+ */
+int CMDtj_log(str format, int* i) {
+	FILE* f;
+	
+	if ( (f = fopen(LOGGERFILE,"a")) ) {
+	    fprintf(f,(const char*)format,*i);
+	    fclose(f);
+	}
+	return GDK_SUCCEED;
 }
 
 int CMDtijah_command(bit* res, str command) {

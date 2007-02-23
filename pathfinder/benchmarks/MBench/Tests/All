@@ -41,7 +41,7 @@ qs35
 qa01
 qa02
 _requires_>4GB_&_runs_>10min_?qa04
-qa04alg
+_requires_>4GB_&_runs_>10min_?qa04alg
 qa05
 qa06
 _grows_>4GB_within_1min_?qj01

@@ -242,6 +242,10 @@ int old_main(BAT* optbat, char* startNodes_name)
         MILPRINTF(MILOUT, "if ( view_bbp_name().reverse().exist(\"%s\") ) {\n", startNodes_name );
         MILPRINTF(MILOUT, "  startNodes := bat(\"%s\");\n", startNodes_name);
         MILPRINTF(MILOUT, "  bat(\"%s\").persists(false);\n", startNodes_name);
+        if ( TDEBUG(98) ) {
+          MILPRINTF(MILOUT,"  printf(\"# tijah-mil-exec: contents of startNodes is:\\n\");\n");
+          MILPRINTF(MILOUT,"  bat(\"%s\").print();\n",startNodes_name);
+        }
         MILPRINTF(MILOUT, "}\n" );
     } 
     

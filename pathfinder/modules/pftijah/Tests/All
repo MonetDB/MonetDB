@@ -3,6 +3,7 @@ sigs
 loadthesis
 createcoll0
 createcoll1
+createcoll1_frag
 test_split2frag
 test_indexmerge
 test_nllr

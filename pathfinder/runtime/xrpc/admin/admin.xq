@@ -16,6 +16,9 @@ declare namespace pf = 'http://www.pathfinder-xquery.org/';
 declare function admin:collections() 
 { pf:collections() };
 
+declare function admin:documents()
+{ pf:documents() };
+
 declare function admin:documents($collection as xs:string) 
 { pf:documents($collection) };
 
