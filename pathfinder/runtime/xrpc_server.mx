@@ -138,7 +138,7 @@ Start XRPC receiver on the specified port",
 "xrpc_server");
 
 PROC rpcd_start(int port, str options) : void {
-    fork(rpcdd_start(port, get_xrpc_open(), options));
+    fork(rpcd_start(port, get_xrpc_open(), options));
 }
 ADDHELP("rpcd_start", "zhang", "Febuary 2007",
 "PARAMETER:\n\
@@ -149,7 +149,7 @@ Start XRPC receiver on the specified port",
 "xrpc_server");
 
 PROC rpcd_start(bit open, str options) : void {
-    fork(rpcdd_start(get_xrpc_port(), open, options));
+    fork(rpcd_start(get_xrpc_port(), open, options));
 }
 ADDHELP("rpcd_start", "zhang", "Febuary 2007",
 "PARAMETER:\n\
