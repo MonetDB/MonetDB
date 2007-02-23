@@ -1408,7 +1408,7 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr p =  (ptr) getArgReference(stk, pci, 8);
 	int mtype = getArgType(mb, pci, 8);
 	str *w = (str *) getArgReference(stk, pci, 9);
-	backend *b;
+	backend *b = NULL;
 	mvc *c = NULL;
 	str msg = getContext(&c, &b);
 
