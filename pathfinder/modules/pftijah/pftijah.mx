@@ -71,12 +71,12 @@
  "C interface to pftijah option serialize"
 
 .COMMAND pf2tijah_node(
-                      BAT[void,str] doc_name,
-                      BAT[void,int] doc_firstpre,
+                      BAT[oid,str] doc_name,
+                      BAT[oid,int] doc_firstpre,
                       BAT[oid,oid] pfpre,
-                      BAT[void,oid] item,
-		      BAT[void,int] kind,
-                      BAT[void,str]  doc_loaded)
+                      BAT[oid,oid] item,
+		      BAT[oid,int] kind,
+                      BAT[oid,str]  doc_loaded)
 		       : BAT[void,oid] = CMDpf2tijah_node;
  "Translate Pathfinder node sequence to tijah node sequence"
 
@@ -586,8 +586,8 @@ PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : voi
     lock_set(coll_lock);
     var err := CATCH({
       var t_start := usec();
-      bat("tj_globalTerms").access(BAT_WRITE);
-      bat("tj_globalTags").access(BAT_WRITE);
+      bat("tj_globalTerms").access(BAT_APPEND);
+      bat("tj_globalTags").access(BAT_APPEND);
       var collBat := _tj_collection(collName);
       _tj_add2collection(collName, collBat, uri_loc, uri_name, store);
       _tj_finalize_collection(collName, collBat);
@@ -619,8 +619,8 @@ PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
     lock_set(coll_lock);
     var err := CATCH({
       var t_start := usec();
-      bat("tj_globalTerms").access(BAT_WRITE);
-      bat("tj_globalTags").access(BAT_WRITE);
+      bat("tj_globalTerms").access(BAT_APPEND);
+      bat("tj_globalTags").access(BAT_APPEND);
       var collBat;
       collBat := _tj_collection(collName);
       uri@batloop() {
@@ -746,8 +746,11 @@ PROC _tj_finalize_collection(str collName, BAT[str,bat] collBat) : void
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
     #
     var gterm_sort := bat("tj_globalTerms").reverse().sort().reverse();
-    var gtag_sort := bat("tj_globalTags").reverse().sort().reverse();
+    gterm_sort.access(BAT_APPEND);
     gterm_sort.mmap(1);
+    var gtag_sort := bat("tj_globalTags").reverse().sort().reverse();
+    gtag_sort.access(BAT_APPEND);
+    gtag_sort.mmap(1);
 
     collBat.replace("_globalTerms", gterm_sort);
     collBat.replace("_globalTags", gtag_sort);
