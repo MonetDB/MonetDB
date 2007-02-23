@@ -90,7 +90,6 @@ AC_PROG_LIBTOOL
 AC_CHECK_HEADERS([libintl.h stddef.h])
 AC_CHECK_HEADERS([fcntl.h io.h malloc.h pwd.h signal.h sys/file.h sys/mman.h sys/param.h sys/resource.h sys/socket.h sys/time.h sys/wait.h winsock.h])
 AM_MONETDB_LIBS()
-AC_C_BIGENDIAN()
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }]),
