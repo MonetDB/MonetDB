@@ -1371,7 +1371,7 @@ PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
     }
 
 
-    var ctx      := region;
+    var ctx      := region.sort();
     var pre_size := load( "tj_" + collName + "_size1");    
     var desc     := scj_desc( pre_size, ctx, count(pre_size) );
     var result   := nodes( desc ).project( dbl(scoreBase) );
@@ -1589,7 +1589,7 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      var pre_size := bat("tj_" + collName + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
-     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc3(left.sort().mark(0@0), pre_tid, pre_size);
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
@@ -1632,7 +1632,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc3(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc3(left.sort().mark(0@0), pre_tid, pre_size);
      var t3 := time();
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
@@ -1679,7 +1679,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc(left.mark(0@0), pre_tid, pre_size);
+     var elem_tid := _containing_desc(left.sort().mark(0@0), pre_tid, pre_size);
      var t3 := time();
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
@@ -1870,7 +1870,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     var pre_size := bat("tj_" + collName + "_size1");
     
     # See which document contain the query terms we create a bat of [doc, term-id]:
-    var doc_tid := _containing_desc(ctx.mark(0@0).sort(), tid_pre.reverse(), pre_size);
+    var doc_tid := _containing_desc(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size);
     
     # len(doc): [doc, size]
     var doc_len := [dbl](bat("tj_" + collName + "_size1").semijoin(doc_tid));
