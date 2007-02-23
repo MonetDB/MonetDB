@@ -28,6 +28,30 @@ command start():void
 address XQUERYsession
 comment "Switch to processing XQUERY statements";
 
+command start2():void 
+address XQUERYsession2
+comment "Switch to processing pre-cooked XQUERY statements";
+
+command bind( rootid:oid, tname:str, cname:str ):bat[:oid,:any_1]
+address xquery_bind
+comment "Bind to the xquery column";
+
+command doc( iter:bat[:oid,:oid], name:bat[:oid,:str] ) 
+		(resiter:bat[:oid,:oid], root:bat[:oid,:oid])
+address xquery_doc
+comment "Find the document roots";
+
+command ll_child( iter:bat[:oid,:oid], ctx:bat[:oid,:oid], preSize:bat[:oid,:oid], preKind:bat[:oid,:oid], oneIter:bit, oneCtx:bit, minIter:oid, maxIter:oid, noIterOrder:bit, kindTest:chr):bat[:oid,:oid]
+address ll_child
+comment "Loop Lifted child step";
+
+command print(mode:str, ws:bat[:oid,:bat],
+	item:bat[:oid,:oid], kind:bat[:oid,:int],
+        int_values:bat[:oid,:lng], dbl_values:bat[:oid,:dbl],
+        dec_values:bat[:oid,:dbl], str_values:bat[:oid,:str]) :void
+address xquery_print_result_main_wrap
+comment "C interface to Workset result print routine";
+
 command prelude()
 address XQUERYprelude;
 
@@ -65,8 +89,146 @@ typedef enum modes_xquery {
     xquery_inplace = 7
 } modes_xquery;
 
+xquery_export str xquery_doc( bat *resiter, bat *root, bat *iter, bat *name );
+xquery_export str xquery_bind( bat *res, oid *rootid, str *tname, str *cname /*, int access */ );
+xquery_export str ll_child( bat *res, bat *iter, bat *ctx, bat *preSize, bat *preKind, bit *oneIter, bit *oneCtx, oid *minIter, oid *maxIter, bit *noIterOrder, chr *kindTest);
+xquery_export str xquery_print_result_main_wrap(int *res /*dummy*/, str *mode, bat *ws, bat *item, bat *kind, bat *int_values, bat *dbl_values, bat *dec_values, bat *str_values); 
+
 #endif /* _XQUERY_H */
 
 @c
 #include "pf_config.h"
 #include "xquery.h"
+
+static BAT *
+BATfinddescriptor( str name ) 
+{
+	int bid = BBPindex(name);
+
+	if (bid != 0)
+		return BATdescriptor(bid);
+	return NULL;
+}
+
+/* loop lifted doc function, per iter find the rootid (if it exists) */
+str
+xquery_doc( bat *resiter, bat *root, bat *iter, bat *name )
+{
+	BAT *iterb, *nameb, *resiterb, *rootb;
+	BAT *doc_name, *doc_collection, *docids, *colids;
+
+	if( (iterb = BATdescriptor(*iter)) == NULL )
+		throw(MAL, "xquery.doc", "Cannot access (iter) descriptor");
+	if( (nameb = BATdescriptor(*name)) == NULL )
+		throw(MAL, "xquery.doc", "Cannot access (name) descriptor");
+	if ((doc_name = BATfinddescriptor("doc_name")) == NULL) 
+		throw(MAL, "xquery.doc", "Cannot access (doc_name) descriptor");
+	if ((doc_collection = BATfinddescriptor("doc_collection")) == NULL) 
+		throw(MAL, "xquery.doc", "Cannot access (doc_collection) descriptor");
+	docids = BATjoin( nameb, BATmirror(doc_name), BATcount(nameb));
+	colids = BATjoin( docids, doc_collection, BATcount(docids));
+	BBPunfix(docids->batCacheid);
+	
+	resiterb = BATmirror(BATmark(colids, 0));
+	rootb = BATmirror(BATmark(BATmirror(colids), 0));
+
+	BBPkeepref(*resiter = resiterb->batCacheid);
+	BBPkeepref(*root = rootb->batCacheid);
+	BBPunfix(doc_collection->batCacheid);
+	BBPunfix(doc_name->batCacheid);
+	BBPunfix(*iter);
+	BBPunfix(*name);
+	return MAL_SUCCEED;
+}
+
+str
+xquery_bind( bat *res, oid *rootid, str *Tname, str *cname /*, int access */ )
+{
+	char name[BUFSIZ+1];
+	char *tname = *Tname;
+
+	/* for readonly tables pre==rid (and currently we only have readonly) */
+	if (strcmp(tname, "pre") == 0)
+		tname = "rid";
+
+	snprintf(name, BUFSIZ, SSZFMT "_%s_%s", *rootid, tname, *cname);
+
+	*res = BBPindex(name);
+	if (!*res) {
+		*res = bat_nil;
+		throw(MAL, "xquery.bind", "xquery column (%s,%s) for document (" OIDFMT ") not found\n", tname, *cname, *rootid);
+	}
+	BBPincref(*res, TRUE);
+	return MAL_SUCCEED;
+}
+
+extern int PFll_child(BAT** res, BAT* iter, BAT* ctx, BAT* pre_size, BAT* cands, bit* one_iter, bit* one_ctx, oid* min_iter, oid* max_iter, bit* no_iter_order, chr* kind_test);
+
+str
+ll_child( bat *res, bat *iter, bat *ctx, bat *preSize, bat *preKind, bit *oneIter, bit *oneCtx, oid *minIter, oid *maxIter, bit *noIterOrder, chr *kindTest)
+{
+	BAT *resb, *iterb, *ctxb, *preSizeB, *preKindB; 
+
+	if( (iterb = BATdescriptor(*iter)) == NULL )
+		throw(MAL, "xquery.ll_child", "Cannot access (iter) descriptor");
+	if( (ctxb = BATdescriptor(*ctx)) == NULL )
+		throw(MAL, "xquery.ll_child", "Cannot access (ctx) descriptor");
+	if( (preSizeB = BATdescriptor(*preSize)) == NULL )
+		throw(MAL, "xquery.ll_child", "Cannot access (preSize) descriptor");
+	if( (preKindB = BATdescriptor(*preKind)) == NULL )
+		throw(MAL, "xquery.ll_child", "Cannot access (preKind) descriptor");
+	if (PFll_child(&resb, iterb, ctxb, preSizeB, preKindB, oneIter, oneCtx, minIter, maxIter, noIterOrder, kindTest) == GDK_FAIL) 
+		throw(MAL, "xquery.ll_child", "failed");
+	BBPunfix(*iter);
+	BBPunfix(*ctx);
+	BBPunfix(*preSize);
+	BBPunfix(*preKind);
+	BBPkeepref(*res = resb->batCacheid);
+	return MAL_SUCCEED;
+}
+
+extern int
+xquery_print_result_main (
+    str  mode,
+    BAT* ws,
+    BAT* item, 
+    BAT* kind,
+    BAT* intVAL,
+    BAT* dblVAL,
+    BAT* decVAL,
+    BAT* strVAL);
+
+str
+xquery_print_result_main_wrap(int *res /*dummy*/, str *mode, bat *ws, bat *item, bat *kind,  bat *int_values, bat *dbl_values, bat *dec_values, bat *str_values)
+{
+	BAT *wsb, *itemb, *kindb, *intb, *dblb, *decb, *strb;
+
+	
+	if( (wsb = BATdescriptor(*ws)) == NULL )
+		throw(MAL, "xquery.print", "Cannot access (ws) descriptor");
+	if( (itemb = BATdescriptor(*item)) == NULL )
+		throw(MAL, "xquery.print", "Cannot access (item) descriptor");
+	if( (kindb = BATdescriptor(*kind)) == NULL )
+		throw(MAL, "xquery.print", "Cannot access (kind) descriptor");
+	if( (intb = BATdescriptor(*int_values)) == NULL )
+		throw(MAL, "xquery.print", "Cannot access (int_values) descriptor");
+	if( (dblb = BATdescriptor(*dbl_values)) == NULL )
+		throw(MAL, "xquery.print", "Cannot access (dbl_values) descriptor");
+	if( (decb = BATdescriptor(*dec_values)) == NULL )
+		throw(MAL, "xquery.print", "Cannot access (dec_values) descriptor");
+	if( (strb = BATdescriptor(*str_values)) == NULL )
+		throw(MAL, "xquery.print", "Cannot access (str_values) descriptor");
+	
+	if (xquery_print_result_main(*mode, wsb, itemb, kindb, intb, dblb, decb, strb) == GDK_FAIL) {
+		throw(MAL, "xquery.print", "print failed");
+	}
+	BBPunfix(*ws);
+	BBPunfix(*item);
+	BBPunfix(*kind);
+	BBPunfix(*int_values);
+	BBPunfix(*dbl_values);
+	BBPunfix(*dec_values);
+	BBPunfix(*str_values);
+	(void)res;
+	return MAL_SUCCEED;
+}

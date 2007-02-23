@@ -36,8 +36,8 @@
 */
 
 #include "pf_config.h"
+#include "levelsteps.h"
 #include <gdk.h>
-#include "pathfinder.h"
 
 #if 0
 #define prefetch_loc(addr) \

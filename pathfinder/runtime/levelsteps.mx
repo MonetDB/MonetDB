@@ -27,6 +27,13 @@
 @a Henning Rode
 @t levelsteps
 
+@h
+#ifndef _LEVELSTEPS_H_
+#define _LEVELSTEPS_H_
+
+#define XML_DEPTH_MAX 128
+
+#endif /* _LEVELSTEPS_H_ */
 @c
 
 /*******************************************
@@ -34,8 +41,8 @@
 *
 */
 #include "pf_config.h"
+#include "levelsteps.h"
 #include <gdk.h>
-#include "pathfinder.h"
 
 /**
  * This file contains all axis step algoritms that work mainly on the

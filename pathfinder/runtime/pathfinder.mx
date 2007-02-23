@@ -3348,8 +3348,6 @@ fork(pf_logmanager());            # start checkpointing thread
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
-#define XML_DEPTH_MAX 128
-
 #include <monet.h>
 #include <monettime.h>
 #include <lock.h>

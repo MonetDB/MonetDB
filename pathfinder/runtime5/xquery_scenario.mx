@@ -30,6 +30,7 @@ The XQUERY scenario implementation is a derivative of the MAL session scenario.
 /* #define _XQUERY_PARSER_DEBUG */
 
 xquery_export str XQUERYsession(str *ret);
+xquery_export str XQUERYsession2(str *ret);
 xquery_export str XQUERYprelude(void);
 xquery_export str XQUERYepilogue(void);
 
@@ -63,11 +64,21 @@ XQUERYsession(str *ret)
 }
 
 str
+XQUERYsession2(str *ret)
+{
+	str msg = MAL_SUCCEED;
+
+	msg = setScenario(MCgetClient(), "mxquery");
+	*ret = 0;
+	return msg;
+}
+
+str
 XQUERYprelude()
 {
 	Scenario s = getFreeScenario();
 	if (!s)
-		return NULL; /* should be an error */
+		throw(MAL, "xquery.start", "out of scenario slots");
 	s->name = "xquery";
 	s->language = "xq";
 	s->initSystem = "XQUERYinit";
@@ -80,6 +91,21 @@ XQUERYprelude()
 	/* s->tactics = .. */
 	s->engine = "XQUERYengine";
 
+	s = getFreeScenario();
+	if (!s)
+		throw(MAL, "xquery.start", "out of scenario slots");
+
+	s->name = "mxquery";
+	s->language = "xq";
+	s->initSystem = "XQUERYinit";
+	s->exitSystem = "XQUERYexit";
+	s->initClient = "XQUERYinitClient";
+	s->exitClient = "XQUERYexitClient";
+	s->reader = "MALreader";
+	s->parser = "MALparser";
+	s->optimizer = "MALoptimizer";
+	/* s->tactics = .. */
+	s->engine = "MALengine";
 	return MAL_SUCCEED;
 }
 str

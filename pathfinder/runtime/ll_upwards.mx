@@ -91,7 +91,7 @@ pathfinder runtime.
 @c
 #include "pf_config.h"
 #include <gdk.h>
-#include "pathfinder.h"
+#include "levelsteps.h"
 
 static char LL_UPWARDS_PARENT[] = "parent";
 static char LL_UPWARDS_ANCESTOR[] = "ancestor";
