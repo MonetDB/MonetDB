@@ -1,6 +1,0 @@
-shutdown();
-killall();
-shutdownnow();
-shutup();
-kill_mserver();
-killall_mserver();

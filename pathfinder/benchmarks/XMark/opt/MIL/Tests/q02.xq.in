@@ -1,2 +1,0 @@
-import module namespace xmark = "http://www.cwi.nl/~boncz/xmark/opt/" at "$TSTTRGDIR/xmark.mil";
-xmark:q02("auctionG.xml")

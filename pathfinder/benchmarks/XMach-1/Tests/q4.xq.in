@@ -1,5 +1,0 @@
-let $doc :=
-	for $d in doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-	return doc($d)
-for $a in $doc/document10[@doc_id="d1"]//section10/head10
-return $a
