@@ -231,8 +231,7 @@ static RuleList step5b_rules[] =
 **/
 
 static int
-WordSize( word )
-   char *word;   /* in: word having its WordSize taken */
+WordSize( char *word )   /* in: word having its WordSize taken */
    {
    register int result;   /* WordSize of the word */
    register int state;    /* current state in machine */
@@ -280,8 +279,7 @@ WordSize( word )
 **/
 
 static int
-ContainsVowel( word )
-   char *word;   /* in: buffer with word checked */
+ContainsVowel( char *word )   /* in: buffer with word checked */
    {
 
    if ( EOS == *word )
@@ -309,8 +307,7 @@ ContainsVowel( word )
 **/
 
 static int
-EndsWithCVC( word )
-   char *word;   /* in: buffer with the word checked */
+EndsWithCVC( char *word )   /* in: buffer with the word checked */
    {
    int length;         /* for finding the last three characters */
 
@@ -341,8 +338,7 @@ EndsWithCVC( word )
 **/
 
 static int
-AddAnE( word )
-   char *word;
+AddAnE( char *word )
    {
 
    return( (1 == WordSize(word)) && EndsWithCVC(word) );
@@ -364,8 +360,7 @@ AddAnE( word )
 **/
 
 static int
-RemoveAnE( word )
-   char *word;
+RemoveAnE( char *word )
    {
 
    return( (1 == WordSize(word)) && !EndsWithCVC(word) );
@@ -393,9 +388,8 @@ RemoveAnE( word )
 **/
 
 static int
-ReplaceEnd( word, rule )
-   char *word;        /* in/out: buffer with the stemmed word */
-   RuleList *rule;    /* in: data structure with replacement rules */
+ReplaceEnd( char *word,        /* in/out: buffer with the stemmed word */
+	    RuleList *rule )    /* in: data structure with replacement rules */
    {
    register char *ending;   /* set to start of possible stemmed suffix */
    char tmp_ch;             /* save replaced character when testing */
@@ -458,8 +452,7 @@ ReplaceEnd( word, rule )
 **/
 
 int
-Stem( word )
-   char *word;  /* in/out: the word stemmed */
+Stem( char *word )  /* in/out: the word stemmed */
    {
    int rule;    /* which rule is fired in replacing an end */
 
