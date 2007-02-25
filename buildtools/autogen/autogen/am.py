@@ -19,7 +19,7 @@ import os
 from codegen import find_org
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
-automake_ext = ['o', 'lo', 'c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
+automake_ext = ['o', 'lo', 'c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.c', 'pm.c', 'def', '']
 buildtools_ext = ['mx', 'm', 'y', 'l', 'brg']
 
 am_assign = "+="
@@ -153,9 +153,11 @@ def am_find_srcs(target, deps, am, cond):
             pf = f
 
     # built source if has dep and ext != cur ext
+    print(pf)
     if not(cond) and deps.has_key(pf) and pf not in am['BUILT_SOURCES']:
         pfb, pfext = split_filename(pf)
         sfb, sfext = split_filename(deps[pf][0])
+        print('test %s' % pf)
         if sfext != pfext:
             if pfext in automake_ext:
                 dist = None
@@ -622,6 +624,7 @@ def am_mods_to_libs(fd, var, modmap, am):
 def am_library(fd, var, libmap, am):
     name = var[4:]
 
+    print("am_library\n");
     sep = ""
     pref = 'lib'
     if libmap.has_key("NAME"):
@@ -702,6 +705,7 @@ def am_library(fd, var, libmap, am):
     deps = []
     for target in libmap['TARGETS']:
         t, ext = split_filename(target)
+        print(t,ext)
         if ext in scripts_ext:
             if target not in SCRIPTS:
                 SCRIPTS.append(target)
