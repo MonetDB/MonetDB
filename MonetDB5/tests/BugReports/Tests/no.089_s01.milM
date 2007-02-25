@@ -1,9 +1,0 @@
-module(url);
-include "mil_algebra_procs";
-include "mil_insert";
-include "mil_system_procs";
-bat("Server").print();
-bat("Server2").print();
-bat("Clients").print();
-bat("Clients2").print();
-quit();

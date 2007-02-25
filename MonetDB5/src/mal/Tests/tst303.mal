@@ -1,9 +1,0 @@
-# recursively raise an exception passed upward
-raise	IllegalAccess := "an exception";
-	io.print("should not come here\n");
-catch	IllegalAccess;
-	io.printf("catched %s\n",IllegalAccess);
-raise	IllegalAccess:= "a second exception raised";
-	io.print("should not come here either\n");
-exit	IllegalAccess;
-	io.print("should not be done");
