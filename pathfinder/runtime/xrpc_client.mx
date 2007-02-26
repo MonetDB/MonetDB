@@ -87,14 +87,19 @@ PROC rpc_client(
                     updCall, arity, iterc, ws, fun_vid, fun_iter, fun_item,
                     fun_kind, int_values, dbl_values, dec_values, str_values);
 
-    var time_milClntDeSeriaStart := usec();
+    var time_xrpcClntDeSeria := usec();
+
+    var ret := oid_nil;
+    if (updCall != 1)
+        ret := ws_opencoll(ws, rpcres, local_name, TEMP_DOC);
+
+    time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
     if (options.search("timing") >= 0) {
-        printf("\nMIL_Client_DeSerialisation_Start: %lld microsec\n",
-                time_milClntDeSeriaStart);
+        printf("XRPC_Client_DeSerialisation:   %lld microsec\n",
+                time_xrpcClntDeSeria);
     }
 
-    if (updCall = 1) return oid_nil;
-    return ws_opencoll(ws, rpcres, local_name, TEMP_DOC);
+    return ret;
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\
@@ -325,7 +330,7 @@ PROC doLoopLiftedRPC(
     var rpc_iter := bat(void,bat).seqbase(0@0);
 
     unq_dsts @ [steps] batloop(){
-        var time_milClntSeria := usec();
+        var time_xrpcClntSeria := usec();
 
         # get iteration numbers for this destination
         var iter_dst := [oid](rpc_dsts.ord_uselect($t).reverse());
@@ -346,10 +351,10 @@ PROC doLoopLiftedRPC(
         fun_iter_dst := fun_iter_dst.leftjoin(iter_dst.mark(1@0));
         fun_iter_dst := [oid](fun_iter_dst.tmark(0@0));
 
-        time_milClntSeria := usec() - time_milClntSeria;
-        if (options.startsWith("timing")) {
-            printf("\nMIL_Client_Serialisation: %lld microsec\n",
-                    time_milClntSeria);
+        time_xrpcClntSeria := usec() - time_xrpcClntSeria;
+        if (options.search("timing") >= 0) {
+            printf("XRPC_Client_Serialisation:     %lld microsec\n",
+                    time_xrpcClntSeria);
         }
 
         var local_name := "rpc_res_00" + str(int($h)+1);
@@ -363,12 +368,19 @@ PROC doLoopLiftedRPC(
                          dec_values, str_values);
         });
 
+        var time_xrpcClntDeSeria := usec();
+
         if (isnil(rpc_err)) {
             if (updCall != 1) {
                 lock_set(mylock);
                 rpc_results.insert(local_name,rpc_oid);
                 rpc_iter.append(iter_dst.hmark(1@0));
                 lock_unset(mylock);
+            }
+            time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
+            if (options.search("timing") >= 0) {
+                printf("XRPC_Client_DeSerialisation:   %lld microsec\n",
+                        time_xrpcClntDeSeria);
             }
         } else {
             # We do not want to discard results from other destinations
@@ -378,14 +390,10 @@ PROC doLoopLiftedRPC(
             printf("error occurred during RPC call to \"%s\"\n%s\n",
                     $t, rpc_err);
         }
-
-        var time_milClntDeSeriaEnd := usec();
-        if (options.startsWith("timing")) {
-            printf("MIL_Client_DeSerialisation_End: %lld microsec\n\n",
-                    time_milClntDeSeriaEnd);
-        }
     }
     lock_destroy(mylock);
+
+    var time_xrpcClntDeSeria := usec();
 
     var res_iter := bat(void,oid).seqbase(0@0);
     var res_item := bat(void,oid).seqbase(0@0);
@@ -426,6 +434,13 @@ PROC doLoopLiftedRPC(
                                  res_bats.fetch(1), res_item.fetch(i), 
                                  res_bats.fetch(2), res_kind.fetch(i));
     }
+
+    time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
+    if (options.search("timing") >= 0) {
+        printf("XRPC_Client_DeSerialisation:   %lld microsec\n\n",
+                time_xrpcClntDeSeria);
+    }
+
     return res_bats;
 }
 ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
@@ -725,7 +740,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     lng percentage = 0;
     int ret, sock = -1;
     buffer *b = NULL;
-    str strptr=NULL, str_val = NULL;
+    str ptr = NULL, strptr=NULL, str_val = NULL;
     stream *in = NULL, *out = NULL, *bs = NULL;
     /* Hold the temp BATs after the RPC response has been shredded: */
     BAT *shredBAT = NULL;
@@ -743,7 +758,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     BAT *attr_qn = NULL, *attr_prop = NULL;
     BAT *qn_prefix = NULL, *qn_loc = NULL, *prop_val = NULL;
 
-    lng time_clntSeria = 0, time_clnt2Serv = 0, time_clntDeSeria = 0;
+    lng time_xrpcClntSeria = 0, time_xrpcClntDeSeria = 0;
+    lng time_xrpcClnt2Serv = 0;
     size_t bytes_sent = 0, bytes_received = 0;
 
     errCheck(iterc, argc, ws, fun_vid, fun_iter, fun_item, fun_kind,
@@ -764,7 +780,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     }
 
     /* Start timing Client Serialisation */
-    time_clntSeria = GDKusec();
+    time_xrpcClntSeria = GDKusec();
 
     /* Create buffer for the RPC request message */
     b = buffer_create(MAX_BUF_SIZE);
@@ -1034,10 +1050,10 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     str2buf(b, XRPC_FOOTER);
     b->buf[b->pos] = 0;
     /* Stop timing Client Serialisation */
-    time_clntSeria = GDKusec() - time_clntSeria;
+    time_xrpcClntSeria = GDKusec() - time_xrpcClntSeria;
 
     /* Start timing Network Send Client2Server */
-    time_clnt2Serv = GDKusec();
+    time_xrpcClnt2Serv = GDKusec();
     bytes_sent = stream_printf(out,
             "POST %s HTTP/1.1\r\n"
             "Host: %s\r\n"
@@ -1053,7 +1069,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         return GDK_FAIL;
     }
     /* Stop timing Network Send Client2Server */
-    time_clnt2Serv= GDKusec() - time_clnt2Serv;
+    time_xrpcClnt2Serv= GDKusec() - time_xrpcClnt2Serv;
 
     /*** Receive all response data ***/
     b->pos = b->buf[0] = 0;
@@ -1075,6 +1091,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         return GDK_FAIL;
     }
 
+    /* Start timing Client DeSerialisation */
+    time_xrpcClntDeSeria = GDKusec();
     /* the HTTP header starts with "HTTP/1.x xxx", after the first
      * white space character, it is the 3-digits return code */
     strptr = strchr(b->buf, (int)' ') + 1;
@@ -1084,7 +1102,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
 
         /* get the error code, error string out of the message */
         if(strptr){
-            char *ptr = strchr(strptr, '\r');
+            ptr = strchr(strptr, '\r');
             if (ptr){
                 ptr[0] = '\0';
                 GDKerror("HTTP Error Code  : %s\n", b->buf);
@@ -1109,8 +1127,6 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         return GDK_FAIL;
     }
 
-    /* Start timing Client DeSerialisation */
-    time_clntDeSeria = GDKusec();
     if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))){
         GDKerror("CMDhttp_post: failed to malloc shredBAT\n");
         clean_up(sock, in, out, bs, b, argcnt, iterc);
@@ -1119,6 +1135,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     if (!(*updCall)){
         bit verbose = FALSE;
         strptr = strstr(b->buf, "<env:Envelope");
+        ptr = strrchr(b->buf, '>'); /* Find end of "</env:Envelope>" */
+        ptr[1] = '\0';
         if (!strptr || CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL) {
             GDKerror("CMDhttp_post: invalid XRPC response received\n");
             GDKerror("%s\n", strptr?strptr:b->buf);
@@ -1132,16 +1150,27 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             return GDK_FAIL;
         }
     }
-    time_clntDeSeria = GDKusec() - time_clntDeSeria;
+    time_xrpcClntDeSeria = GDKusec() - time_xrpcClntDeSeria;
 
-    if (strstr(options, "timing")) {
-        printf("\n");
-        printf("Client_Serialisation: %lld microsec\n", time_clntSeria);
-        printf("Network_Client_2_Server: %lld microsec\n", time_clnt2Serv);
-        printf("Client_DeSerialisation: %lld microsec\n", time_clntDeSeria);
-        printf("\n");
-        printf("Data_Sent: " SZFMT " bytes\n", bytes_sent);
-        printf("Data_Received: " SZFMT " bytes\n", bytes_received);
+    if (options && strstr(options, "timing")) {
+        stream_printf(GDKout,
+                "XRPC_Client_Serialisation:     %lld microsec\n"
+                "XRPC_Network_Client_2_Server:  %lld microsec\n"
+                "XRPC_Client_DeSerialisation:   %lld microsec\n"
+                "\n"
+                "XRPC_Data_Sent:                " SZFMT " bytes\n"
+                "XRPC_Data_Received:            " SZFMT " bytes\n\n",
+                time_xrpcClntSeria,
+                time_xrpcClnt2Serv,
+                time_xrpcClntDeSeria,
+                bytes_sent,
+                bytes_received);
+    }
+
+    if( (ptr+= 2) && strstr(ptr, "XRPC_Server_Timing") ){
+        ptr += 19;
+        stream_printf(GDKout, strstr(ptr, "XRPC_"));
+        stream_printf(GDKout, "\n");
     }
 
     clean_up(sock, in, out, bs, b, argcnt, iterc);
