@@ -77,11 +77,11 @@
 
 /* some shortcuts for sets of letters */
 
-#define A_DIA       a\344\341\340\342
+#define A_DIA       "a\344\341\340\342"
 #define E_DIA       "e\353\351\350\352"
-#define I_DIA       i\357\355\354\356
-#define O_DIA       o\366\363\362\364
-#define U_DIA       u\374\372\371\373
+#define I_DIA       "i\357\355\354\356"
+#define O_DIA       "o\366\363\362\364"
+#define U_DIA       "u\374\372\371\373"
 #define AEIOU "a\344\341\340\342e\353\351\350\352i\357\355\354\356o\366\363\362\364u\374\372\371\373"
 #define AEIOUY "a\344\341\340\342e\353\351\350\352i\357\355\354\356o\366\363\362\364u\374\372\371\373y"
 #define AEIOUWXY "a\344\341\340\342e\353\351\350\352i\357\355\354\356o\366\363\362\364u\374\372\371\373wxy"
@@ -342,8 +342,7 @@ static RuleList step6_rules[] =
 **/
 
 static int
-WordSize( word )
-   char *word;   /* in: word having its WordSize taken */
+WordSize( char *word )   /* in: word having its WordSize taken */
    {
    register int result;   /* WordSize of the word */
    register int state;    /* current state in machine */
@@ -402,8 +401,7 @@ WordSize( word )
 **/
 
 static int
-ContainsVowel( word )
-   char *word;   /* in: buffer with word checked */
+ContainsVowel( char *word )   /* in: buffer with word checked */
    {
 
    if ( EOS == *word )
@@ -430,8 +428,7 @@ ContainsVowel( word )
 **/
 
 static int
-DupVCond( word )
-   char *word;   /* in: buffer with the word checked */
+DupVCond( char *word )   /* in: buffer with the word checked */
 {
    int length;
    char *butt; /* do not affect the global end pointer !! */
@@ -505,8 +502,7 @@ DupVCond( word )
 **/
 
 static int
-EndsWithV( word )
-   char *word;   /* in: buffer with the word checked */
+EndsWithV( char *word )   /* in: buffer with the word checked */
    {
      char *butt;
      int len;
@@ -525,8 +521,7 @@ EndsWithV( word )
 
 
 static int
-EndsWithVX( word )
-   char *word;   /* in: buffer with the word checked */
+EndsWithVX( char *word )   /* in: buffer with the word checked */
    {
      char *butt;
      int len;
@@ -560,8 +555,7 @@ EndsWithVX( word )
 **/
 
 static int
-EndsWithC( word )
-   char *word;   /* in: buffer with the word checked */
+EndsWithC( char *word )   /* in: buffer with the word checked */
    {
      char *butt;
      int len;
@@ -593,8 +587,7 @@ EndsWithC( word )
 
 
 static int
-gt2( word )
-   char *word;   /* in: buffer with the word checked */
+gt2( char *word )   /* in: buffer with the word checked */
    {
 
      int len;
@@ -619,8 +612,7 @@ gt2( word )
 **/
 
 static int
-DuplicateV( word )
-   char *word;   /* in: buffer with the word checked */
+DuplicateV( char *word )   /* in: buffer with the word checked */
    {
    int length;         /* for finding the last three characters */
 
@@ -665,9 +657,8 @@ DuplicateV( word )
 **/
 
 static int
-ReplaceSuffix( word, rule )
-   char *word;        /* in/out: buffer with the stemmed word */
-   RuleList *rule;    /* in: data structure with replacement rules */
+ReplaceSuffix( char *word,        /* in/out: buffer with the stemmed word */
+	       RuleList *rule )    /* in: data structure with replacement rules */
    {
    register char *ending;   /* set to start of possible stemmed suffix */
    char tmp_ch;             /* save replaced character when testing */
@@ -718,9 +709,8 @@ ReplaceSuffix( word, rule )
 **/
 
 static int
-ReplacePrefix( word, rule )
-   char *word;        /* in/out: buffer with the stemmed word */
-   RuleList *rule;    /* in: data structure with replacement rules */
+ReplacePrefix( char *word,        /* in/out: buffer with the stemmed word */
+	       RuleList *rule )    /* in: data structure with replacement rules */
    {
 
    register char *root;   /* set to end of possible stemmed prefix */
@@ -790,9 +780,8 @@ ReplacePrefix( word, rule )
 
 /* ReplaceInfix is derived from ReplacePrefix */
 static int
-ReplaceInfix( word, rule )
-   char *word;        /* in/out: buffer with the stemmed word */
-   RuleList *rule;    /* in: data structure with replacement rules */
+ReplaceInfix( char *word,        /* in/out: buffer with the stemmed word */
+	      RuleList *rule )    /* in: data structure with replacement rules */
 {
   register char *root;   /* set to end of possible stemmed prefix */
   register char *infix;
@@ -849,8 +838,7 @@ ReplaceInfix( word, rule )
 
 /* StripDashes is derived from ReplaceInfix */
 static int
-StripDashes( word)
-   char *word;        /* in/out: buffer with the stemmed word */
+StripDashes( char *word)        /* in/out: buffer with the stemmed word */
 {
   register char *infix;
 
@@ -919,8 +907,7 @@ StripDashes( word)
 /* RemoveDia removes tremas */
 
 static int
-RemoveDia( c)
-   char *c;        
+RemoveDia( char *c)
 {
     if (*c == '\353') *c = 'e';
     if (*c == '\357') *c = 'i';
@@ -964,8 +951,7 @@ RemoveDia( c)
 **/
 
 int
-dStem( word )
-   char *word;  /* in/out: the word stemmed */
+dStem( char *word )  /* in/out: the word stemmed */
    {
    int rule;    /* which rule is fired in replacing an end */
    int cleanup;

@@ -11,5 +11,5 @@ module namespace export = 'http://monetdb.cwi.nl/XQuery/export/';
 
 (: =================== HTTP =================== :)
 
-declare function admin:GET($uri as xs:string) 
+declare function export:GET($uri as xs:string) 
 { doc($uri) };
