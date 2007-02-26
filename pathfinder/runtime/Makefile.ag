@@ -124,7 +124,7 @@ lib__xrpc_server = {
                 ../compiler/algebra/prop/libprop \
                 ../compiler/algebra/opt/libopt \
                 ../compiler/mil/libmil \
-                ../compiler/mem/libmem \
+                ../compiler/mem/libmem_embedded \
                 ../compiler/libcompiler2 \
                 ../compiler/sql/libsql \
 			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
