@@ -29,7 +29,7 @@ An illustrative example is:
 @example
 function user.helloWorld(msg:str):str;
     io.print(msg);
-	msg:= "done";
+    msg:= "done";
     return msg;
 end user.hellowWorld;
 @end example
@@ -435,7 +435,8 @@ An example of a parameterised function is shown below:
 @example
 function user.helloWorld(msg:any_1):any_1;
     io.print(msg);
-return user.helloWorld;
+    return user.helloWorld;
+end helloWorld;
 @end example
 The type variables ensure that the return type equals the
 argument type. Type variables can be used at any place
