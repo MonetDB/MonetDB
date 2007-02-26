@@ -118,11 +118,6 @@ check_op (PFla_op_t *n)
             break;
 
         case la_difference:
-            /* check for a reference to iter */
-            if (n->schema.count == 1 &&
-                n->schema.items[0].name & ITER(L(n)))
-                return true;
-
             /******************************************************************/
             /*                                                                */
             /* We can also allow difference operators if R(n) contains        */
@@ -151,12 +146,11 @@ check_op (PFla_op_t *n)
             /* the difference operator produces the same result.)             */
             /*                                                                */
             /******************************************************************/
-
-            /* check for a reference to iter */
+            /*
             if (n->schema.count == 1 &&
-                n->schema.items[0].name & ITER(L(n)) &&
                 n->schema.items[0].name & ITER(R(n)))
                 return true;
+            */
             
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
@@ -302,7 +296,7 @@ check_op (PFla_op_t *n)
             
         case la_element_tag:
             /* we may not allow a reference to the input sequence */
-            if (ITER(R(n)) & n->sem.elem.iter_val)
+            if (ITER(R(n)) & att_iter)
                 return true;
             /* fall through */
         case la_attribute:
