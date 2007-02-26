@@ -2094,7 +2094,7 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
     
     var reg_score;
     var res_reg;
-    #var ctx := left.project(dbl(0));
+    var ctx := left.project(dbl(0));
 
     # calculating the score for each region
     reg_score := {sum}(ctx_res.reverse().join(right));
