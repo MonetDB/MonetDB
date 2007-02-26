@@ -1364,7 +1364,7 @@ mvc_affected_rows_int(int *r, int *nr, str *w)
 str
 mvc_export_result_wrap(int *ret, int *res_id, str *w)
 {
-	backend *b;
+	backend *b = NULL;
 	mvc *c = NULL;
 	str msg = getContext(&c, &b);
 
@@ -1380,7 +1380,7 @@ mvc_export_result_wrap(int *ret, int *res_id, str *w)
 str
 mvc_export_operation_wrap(int *ret, str *w)
 {
-	backend *b;
+	backend *b = NULL;
 	mvc *c = NULL;
 	str msg = getContext(&c, &b);
 
