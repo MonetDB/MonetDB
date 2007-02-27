@@ -4156,15 +4156,6 @@ xquery_function_call(xquery_client *ctx,
     
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
-/*
-        if (strstr(*(ctx->genType), "rpcdtime") != NULL) {
-           printf("\nServer_Application: %.3f msec\n", (*ctx->time_compile + *ctx->time_exec) / 1000.0 );
-           printf("\tTrans: %.3f msec\n", (*ctx->time_compile) / 1000.0 );
-           printf("\tShred: %.3f msec\n", (*ctx->time_shred) / 1000.0 );
-           printf("\tQuery: %.3f msec\n", (*ctx->time_exec - *ctx->time_shred) / 1000.0 );
-           printf("Server_Serialisation + Network_Server_2_Client: %.3f msec\n", (*ctx->time_print) / 1000.0 );
-        }
-*/
         return NULL;
     }
     return xquery_function_error;
@@ -5359,9 +5350,10 @@ xquery_method(mapi_client *mc,
               str* argval,
               BAT* shredBAT)
 {
-    xquery_client *ctx = (xquery_client*) mc->fc;
+    lng time_xrpcServApp = GDKusec();
     lng usec = GDKusec();
-    char *mode = (flags&2)?"timing-xml":"timing-xml-noheader-xrpc";
+    xquery_client *ctx = (xquery_client*) mc->fc;
+    char *mode = (flags&2)?"xml":"xml-noheader-xrpc";
     char *err, *buf, *ns = "fn";
     stream *s = NULL;
 
@@ -5371,9 +5363,6 @@ xquery_method(mapi_client *mc,
     buf = GDKstrdup(method);
     (*ctx->method) = buf;
 
-    if ((flags&1) == 0){
-        mode += 7; /* no "timing-" */
-    }
     err = xquery_change_genType(ctx, mode);
     if (err) return err;
 
@@ -5395,6 +5384,17 @@ xquery_method(mapi_client *mc,
     if (err == NULL) { 
         err = xquery_function_call(ctx, usec, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
+    }
+
+    time_xrpcServApp = GDKusec() - time_xrpcServApp;
+
+    if (flags&1){
+        /* print timing ourselves */
+        stream_printf(GDKout, "\nXRPC_Server_Timing:\n"
+               "XRPC_Server_Application:       %lld microsec\n"
+               "XRPC_Network_Server_2_Client:  %lld microsec\n",
+               (*ctx->time_shred + *ctx->time_compile + *ctx->time_exec),
+               *ctx->time_print);
     }
 
     if (s) {

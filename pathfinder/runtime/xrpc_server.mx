@@ -946,6 +946,19 @@ execQuery(mapi_client *mc,
           str *argval,
           BAT *shredBAT)
 {
+    /* Possible values of serializeMode:
+     * 0: xml-noheader-xrpc
+     *    This is the normal serialize mode used for XRPC calls
+     * 1: timing-xml-noheader-xrpc
+     *    Let the XRPC server print the time of XRPC_Server_Application
+     *    and XRPC_Network_Server_2_Client at the server side.
+     * 2: xml
+     *    Used for the GET, PUT, DELETE HTTP requests to avoid "xrpc"
+     *    mode of serialization
+     * 3. timing-xml
+     *    Again, print time info at the XRPC server side, but is usually
+     *    not used.
+     */
     stream_printf(mc->c->fdout, "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/soap+xml; "
             "charset=\"utf-8\"\r\n\r\n");
@@ -974,12 +987,12 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     char *module = NULL, *location = NULL, *method = NULL;
     bit isSimpleParam = 1;
     lng argc = 0, iterc = 0, nr_args = 0;
-    lng time_servDeSeria, time_servApp;
+    lng time_xrpcServDeSeria;
     lng **argcnt = NULL; /* argcnt[iterc][argc] */
     str *argtpe = NULL, *argval = NULL;
     int serializeMode = timing; 
 
-    time_servDeSeria = GDKusec();
+    time_xrpcServDeSeria = GDKusec();
     shredBAT = request2bat(mc->c->fdout, shttpd_get_msg(arg));
     if(!shredBAT)
         return GDK_FAIL;
@@ -991,10 +1004,9 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
         BBPreclaim(shredBAT);
         return GDK_FAIL;
     }
-    time_servDeSeria = GDKusec() - time_servDeSeria;
+    time_xrpcServDeSeria = GDKusec() - time_xrpcServDeSeria;
     
     /* Execute the query and send XRPC response */
-    time_servApp = GDKusec();
     if(execQuery(mc, serializeMode, module, location, method,
                  argc, iterc, argcnt, argtpe, argval,
                  isSimpleParam?NULL:shredBAT) == GDK_FAIL) {
@@ -1002,12 +1014,11 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
         BBPreclaim(shredBAT);
         return GDK_FAIL;
     }
-    time_servApp = GDKusec() - time_servApp;
 
     if (timing) {
-        printf("Server_DeSerialisation: %lld microsec\n"
-               "Server_Application: %lld microsec\n",
-               time_servDeSeria, time_servApp);
+        stream_printf(GDKout,
+                "XRPC_Server_DeSerialisation:    %lld microsec\n",
+                time_xrpcServDeSeria);
     }
 
     clean_up(argcnt, argtpe, argval, iterc, nr_args);
@@ -1162,8 +1173,8 @@ CMDrpcd_start(int *port, bit *open, str option)
     char *s;
     
     if (rpcd_running) {
-        GDKerror("CMDrpcd_start: RPC receiver already running\n");
-        return GDK_FAIL;
+        stream_printf(GDKout, "\nRPC receiver already running\n");
+        return GDK_SUCCEED;
     }
 
     xrpc_port = rpcd_running = *port;
