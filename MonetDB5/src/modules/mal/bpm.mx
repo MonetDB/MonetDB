@@ -349,7 +349,7 @@ The internal data structure is used as a cache for improved access.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-#define _DEBUG_BPM_
+/* #define _DEBUG_BPM_*/
 
 #ifdef WIN32
 #ifndef LIBBPM
@@ -690,7 +690,7 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	BBPkeepref( ps->bid = bdiff->batCacheid);
 
 	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
+/*	BBPunfix(bn->batCacheid);*/
 	return MAL_SUCCEED;
 }
 
@@ -848,13 +848,11 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 		bnew= BAT_select_(b, v[j], v[j+1], TRUE, FALSE, TRUE, FALSE);
 		if( bnew == 0)
 			throw(MAL,"pbm.split","Can not create new partition");
-		BBPkeepref( bnew->batCacheid);
-
 		inew= getFreeAlias();
 		pnew= bpmcat+inew;
+		BBPkeepref(pnew->bid= bnew->batCacheid);
 		pnew->name= GDKstrdup(p->name);
 		pnew->alias= p->alias;
-		pnew->bid= bnew->batCacheid;
 
 		/* link to the partition chain */
 		pnew->nxt= pprev->nxt;
@@ -869,12 +867,10 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 	
 		/* default hash */
 		pnew->hbits= pnew->tbits= 0;
-					
 		pprev=pnew;
-		BBPunfix(bnew->batCacheid);
 	}
 
-	/*first partition [tlow, v[0]) replaces the origibal bid */
+	/*first partition [tlow, v[0]) replaces the original bid */
 	b0= BAT_select_(b, v[0], v[1], TRUE, FALSE, TRUE, FALSE);
 	if( b0 == 0){
 		BBPunfix(b->batCacheid);
@@ -1138,7 +1134,7 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( *bid > 0 ){
 			if (((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)!=0 &&
 			     !low_nil && 
-			     (*cmp) ((ptr) &bpmcat[i].thgh, low) < 0 ) ||
+			     (*cmp) ((ptr) &bpmcat[i].thgh, low) <= 0 ) ||
 			    ((*cmp) ((ptr)&bpmcat[i].tlow, nilptr)!=0 &&
 			     !hgh_nil &&
 			     (*cmp) ((ptr) &bpmcat[i].tlow, hgh) > 0) 
@@ -1155,7 +1151,7 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* use reversed bat */
 			if (((*cmp) ((ptr)&bpmcat[i].hhgh, nilptr)!=0 &&
 			     !low_nil && 
-			     (*cmp) ((ptr) &bpmcat[i].hhgh, low) < 0 ) ||
+			     (*cmp) ((ptr) &bpmcat[i].hhgh, low) <= 0 ) ||
 			    ((*cmp) ((ptr)&bpmcat[i].hlow, nilptr)!=0 &&
 			     !hgh_nil &&
 			     (*cmp) ((ptr) &bpmcat[i].hlow, hgh) > 0) 
