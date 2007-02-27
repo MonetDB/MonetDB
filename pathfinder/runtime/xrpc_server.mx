@@ -1017,7 +1017,7 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 
     if (timing) {
         stream_printf(GDKout,
-                "XRPC_Server_DeSerialisation:    %lld microsec\n",
+                "XRPC_Server_DeSerialisation:   %lld microsec\n",
                 time_xrpcServDeSeria);
     }
 
