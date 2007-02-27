@@ -14,7 +14,7 @@ LIBS = {
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  pbm.mx \
 		urlbox.mx mat.mx \
-		sabaoth.mx radix.mx bpm.mx
+		sabaoth.mx radix.mx
 		#datacell.mx 
 
 	HEADERS = h 
@@ -27,6 +27,16 @@ lib_batExtensions = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = batExtensions.mx
+	HEADERS = h
+	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib_bpm = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = bpm.mx
 	HEADERS = h
 	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
