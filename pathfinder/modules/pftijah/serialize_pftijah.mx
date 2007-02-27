@@ -31,8 +31,8 @@ struct tijahContextStruct;
 
 extern int handleTijahTerm(struct tijahContextStruct *ctx, char* term);
 
-extern int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx); /* FLEX */
-extern char* flexScanOneTerm(char* buf, int len);
+extern int useFlexScanner(char* buf, struct tijahContextStruct* tjCtx); /* FLEX */
+extern char* flexScanOneTerm(char* buf);
 
 extern char* normalizeTerm(struct tijahContextStruct *ctx, char* term );
 
@@ -70,15 +70,10 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
 typedef struct dbat_struct {
 	const char*	name;
 	BAT*		bat;
-	int		oid_mark;
-	int		max_i;
-	int		max_sz;
-	bit		dflt;	  /* fill with default value during extend */
-	int		dflt_int; /* the default int value */
-	chr		dflt_chr; /* the default chr value */
-	oid		dflt_oid; /* the default oid value */
-	/* */
-        union { /* cast to perform direct indexex insert in [void,any] BATs */
+	oid		raw_max;
+	oid		seqbase;
+	oid		seq_max;
+        union { /* cast to perform direct indexe insert in [void,any] BATs */
             void* voidCAST; /* the basecast */
             chr*  chrCAST;  /* cast for [void,chr] BAT */
             int*  intCAST;  /* cast for [void,int] BAT */
@@ -89,7 +84,6 @@ typedef struct dbat_struct {
 int dbat_init(const char* name, dbat* dbat, BAT* b) {
 	dbat->name = name;
 	dbat->bat  = b;
-	dbat->dflt = FALSE;
 	if ( dbat->bat->htype != TYPE_void ) {
 	    stream_printf(GDKerr,"ERROR: dbat_init(%s) non void BAT\n",dbat->name);
 	    return 0;
@@ -98,31 +92,25 @@ int dbat_init(const char* name, dbat* dbat, BAT* b) {
 	    stream_printf(GDKerr,"ERROR: dbat_init(%s) unknown ttype(%d)\n",dbat->name,dbat->bat->ttype);
 	    return 0;
 	}
-        dbat->oid_mark = b->hseqbase;
-	dbat->max_i = dbat->max_sz = BATcount(dbat->bat);
+        dbat->seqbase = (oid)b->hseqbase;
+	dbat->raw_max = (oid)BATcount(dbat->bat);
+	dbat->seq_max = dbat->raw_max + dbat->seqbase;
 	dbat->cast.voidCAST = (void*)BUNfirst(dbat->bat);
 	/* */
 	return 1;
 }
 
-int dbat_finalize(dbat* dbat) {
-        BAT* b = dbat->bat;
 
+int dbat_finalize(dbat* dbat, int topidx) {
         void* top;
+        BAT* b = dbat->bat;
         
-        int bottomTop = dbat->max_i;
-	if ( 0 ) stream_printf(GDKout,"dbat_finalize(size=%d)\n",dbat->max_i);
+	topidx -= (int)dbat->seqbase;
+        int bottomTop = topidx;
         switch( b->ttype ) {
          case TYPE_int :
                 top = &dbat->cast.intCAST[bottomTop];
                 break;
-         case TYPE_chr: {
-                b->batBuns->free = dbat->max_i; 
-                BATsetcount(b, dbat->max_i);
-                b->tsorted = 0;
-		b->batDirty = TRUE; /* VERY important this one */
-                return 1;
-                }
          case TYPE_oid:
                 top = &dbat->cast.oidCAST[bottomTop];
                 break;
@@ -137,7 +125,7 @@ int dbat_finalize(dbat* dbat) {
 	/* */
 	dbat->name  = NULL;
 	dbat->bat   = NULL;
-	dbat->max_i = dbat->max_sz = 0;
+	dbat->raw_max = dbat->seqbase = 0;
 	/* */
 	return 1;
 }
@@ -145,9 +133,14 @@ int dbat_finalize(dbat* dbat) {
 #define MINCHUNK 8192
 #define MAXCHUNK 67108864
 
-int dbat_extend(dbat* dbat, int i_mark) {
-    /* CHECK THIS if ( i_mark ) i = i_mark - dbat->oid_mark; */
-    size_t newsize = MAX(MIN(MAX(MINCHUNK,dbat->max_sz*2),(size_t)(dbat->max_sz+MAXCHUNK)),(size_t)i_mark);
+int dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
+    size_t newsize;
+    
+    if ( forced_size ) {
+       newsize = forced_size;
+    } else {
+       newsize = MAX(MIN(MAX(MINCHUNK,dbat->raw_max*2),(size_t)(dbat->raw_max+MAXCHUNK)),(size_t)min_i);
+    }
 
     /* first check if the number of BUN's < INT_MAX. If this was the case
      * and the previous time INT_MAX was returned this means the BAT cannot
@@ -156,94 +149,34 @@ int dbat_extend(dbat* dbat, int i_mark) {
     if ( newsize > INT_MAX ) {
     	newsize = INT_MAX;
 
-	if ( dbat->max_sz == INT_MAX ) {
+	if ( dbat->raw_max == INT_MAX ) {
         	GDKerror("dbat_extend: BATextend[\"%s\"](size>INT_MAX) fails\n","incomplete");
 		return -1;
 	}
     }
-    if ( 0 ) { stream_printf(GDKout,"dbat_extend[%s](%d -> %d)\n",dbat->name,dbat->max_sz,newsize); }
-    dbat->max_sz= newsize;
+#if 0
+    stream_printf(GDKout,"dbat_extend[%s](%d -> %d)\n",dbat->name,dbat->raw_max,newsize);
+#endif
+    dbat->raw_max= newsize;
+    dbat->seq_max = dbat->raw_max + dbat->seqbase;
     if ( !(dbat->bat = BATextend(dbat->bat,newsize)) ) {
         GDKerror("dbat_extend: BATextend[\"%s\"](to %d) fails\n","incomplete",newsize);
         return -1;
     }
     dbat->cast.voidCAST = (void*)BUNfirst(dbat->bat);
-    /*
-     * now check if there's a default value handler used  
-     *
-     */
-    if ( dbat->dflt ) {
-        switch( dbat->bat->ttype ) {
-         case TYPE_int : {
-		int v   = dbat->dflt_int;
-		int *to = &dbat->cast.intCAST[dbat->max_sz];
-		for(register int *p = &dbat->cast.intCAST[dbat->max_i]; p<to;)
-		    *p++ = v;
-                break;
-		}
-         case TYPE_chr: {
-		chr v   = dbat->dflt_chr;
-		chr *to = &dbat->cast.chrCAST[dbat->max_sz];
-		for(register chr *p = &dbat->cast.chrCAST[dbat->max_i]; p<to;)
-		    *p++ = v;
-                break;
-                }
-         case TYPE_oid: {
-		oid v   = dbat->dflt_oid;
-		oid *to = &dbat->cast.oidCAST[dbat->max_sz];
-		for(register oid *p = &dbat->cast.oidCAST[dbat->max_i]; p<to;)
-		    *p++ = v;
-                break;
-		}
-         default:
-                GDKerror("dbat_extend: bad ttype\n");
-                return -1;
-        }
-    }
-    /* */
     return 1;
 }
 
 int dbat_sizeHint(dbat* dbat, int sizeHint_mark) {
-        int sizeHint = sizeHint_mark - dbat->oid_mark;
-	int estimate = dbat->max_i + sizeHint;
+        int sizeHint = sizeHint_mark - dbat->seqbase;
+	int estimate = dbat->raw_max + sizeHint;
 
-	return dbat_extend(dbat, estimate);
+	return dbat_extend(dbat, estimate, 0);
 }
 
-INLINE static int dbat_set_oid(dbat* dbat, int pos_mark, oid v) {
-	register int pos;
+#define dbat_set_oid(DBAT,I,V) (DBAT)->cast.oidCAST[I-(DBAT)->seqbase] = V
 
-	if ( (pos=pos_mark - dbat->oid_mark) < dbat->max_i ) {
-	    dbat->cast.oidCAST[pos] = v;
-	    return 1;
-	} else {
-	    if ( pos >= dbat->max_sz ) {
-		if ( dbat_extend(dbat,pos) < 0 )
-		    return -1;
-	    }
-	    dbat->max_i = pos + 1;
-	    dbat->cast.oidCAST[pos] = v;
-	    return 1;
-	}
-}
-
-INLINE static int dbat_set_int(dbat* dbat, int pos_mark, int v) {
-	register int pos;
-
-	if ( (pos=pos_mark - dbat->oid_mark) < dbat->max_i ) {
-	    dbat->cast.intCAST[pos] = v;
-	    return 1;
-	} else {
-	    if ( pos >= dbat->max_sz ) {
-		if ( dbat_extend(dbat,pos) < 0 )
-		    return -1;
-	    }
-	    dbat->max_i = pos + 1;
-	    dbat->cast.intCAST[pos] = v;
-	    return 1;
-	}
-}
+#define dbat_set_int(DBAT,I,V) (DBAT)->cast.intCAST[I-(DBAT)->seqbase] = V
 
 /************************************************
  *
@@ -315,9 +248,6 @@ tj_popTag(tjCtx* tjctx) {
 
 /************************************************
  *
- *
- * First the temporary shredder for Tijah by JF
- *
  */
 
 INLINE static oid
@@ -328,15 +258,15 @@ tj_tagOid(tjCtx* tjctx, str t) {
     BUN bun;
 
     HASHfnd_str(bun, tjctx->hm_globalTag, (str)t);
-    if ( bun )
-    /* if ( (bun = BUNfnd(tjctx->hm_globalTag,t)) ) OLD */
+    if ( bun ) {
         return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
-    else {
-    	if ( !BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
+    } else {
+    	if ( BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
+    	    return tjctx->n_globalTag++;
+        } else {
     	    GDKerror("INSERT OF \"%s\" in globalTag fails.\n");
     	    return oid_nil;
-        } else
-    	    return tjctx->n_globalTag++;
+        }
     }
 #endif
 }
@@ -349,10 +279,7 @@ tj_checkTerm(tjCtx* tjctx, char *t) {
    BUN bun;
 
    HASHfnd_str(bun, tjctx->hm_globalTerm, (str)t);
-   if ( bun ) {
-       return *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
-   } else
-       return oid_nil;
+   return ( bun ? *(oid*)BUNtail(tjctx->hm_globalTerm,bun) : oid_nil );
 }
 
 INLINE static oid
@@ -366,22 +293,35 @@ tj_termOid(tjCtx* tjctx, char *t) {
     if ( bun )
         return *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
     else {
-    	if ( !BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t, FALSE)){
+    	if ( BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t, FALSE)){
+    	    return tjctx->n_globalTerm++;
+        } else { 
     	    GDKerror("INSERT OF \"%s\" in globalTerm fails.\n");
     	    return oid_nil;
-        } else 
-    	    return tjctx->n_globalTerm++;
+        }
     }
 #endif
 }
 
-#define tj_add2plane(TJCTX,O) \
-    ((dbat_set_oid(&(TJCTX)->dbat_collPre, (TJCTX)->tijahPre, O) < 0) \
-    	   	? oid_nil : ((oid)(TJCTX)->tijahPre++))
+INLINE oid tj_extend_plane(struct tijahContextStruct *tjctx) {
+    oid base = tjctx->tijahPre - tjctx->dbat_collPre.seqbase; 
 
-#define insertPreSize(TJCTX,POS,SIZE) \
-    dbat_set_int(&TJCTX->dbat_collSize,(int)POS,SIZE)
+    if ( base >= tjctx->dbat_collPre.raw_max ) {
+	if ( dbat_extend(&tjctx->dbat_collPre,base, 0) < 0 )
+	    return oid_nil;
+	/* IMPORTANT: the size of the two bats is synchronized by the use
+	 * of the forced size (last) parameter of dbat_extend
+	 */
+	if ( dbat_extend(&tjctx->dbat_collSize,base,tjctx->dbat_collPre.raw_max) < 0 )
+	    return oid_nil;
+    }
+    return tjctx->tijahPre++;
+}
 
+#define tj_newPre(TJCTX) \
+	(((TJCTX)->tijahPre < (TJCTX)->dbat_collPre.seq_max) \
+	? \
+	((oid)(TJCTX)->tijahPre++) : tj_extend_plane(TJCTX))
 
 int
 handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
@@ -397,13 +337,13 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
 	    }
           }
           if ( (termOid = tj_termOid(tjctx, term)) == oid_nil )
-    	    return 0;
+    	    return -1;
 	}
 	if ( termOid ) { /* term is not a stopword */
-            if ( (tjPre = tj_add2plane(tjctx, termOid)) == oid_nil )
+            if ( (tjPre = tj_newPre(tjctx) ) == oid_nil )
     	        return 0;
-            if ( insertPreSize(tjctx,tjPre,0) < 0 )
-       	        return -1;
+            dbat_set_oid(&tjctx->dbat_collPre, tjPre, termOid);
+            dbat_set_int(&tjctx->dbat_collSize,(int)tjPre,0);
 #ifdef TJ_TRACE
             if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:TERM: \"%s\", termoid=%d, tjPre=%d\n",tjctx->name,term,termOid,tjPre);
 #endif
@@ -416,40 +356,13 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
      return 1;
 }
 
-/************
- *
- * The part where the Strings from Pathfinder are shredded into words
- * by Tijah. The USE_FLEX macro determines if the strings is shredded
- * by Hennings fancy flex scanner or Jan's simple strtok() scanner.
- */
-
-const char* obsoleteNexiChars = " \t\n\r,:;&*%$#!@=";
-
-int 
-useStrtokScanner(tjCtx* tjctx, char* s)
-{
-    char *t;
-    int  sz = 0;
-
-#ifdef TJ_TRACE
-    if (TJ_TRACE) stream_printf(GDKout,"C[%s]:CHARACTERS:\n",tjctx->name);
-#endif
-    if ( (t = strtok(s,obsoleteNexiChars)) ) do {
-	/* not the empty string here */
-        if ( handleTijahTerm(tjctx,t) < 0 )
-             return -1;
-    	sz++;
-    } while ( (t=strtok(NULL,obsoleteNexiChars)) );
-    return 1;
-}
-
 /************************************************
  *
  * Now the real output handlers
  */
 
 
-#ifdef notused
+#if 0
 static int
 handle_sizeHint(XqueryCtx* ctx, int hinted_size) {
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
@@ -502,14 +415,12 @@ static str readCollParam(tjCtx* tjctx, str param) {
 	    return (str)str_nil;
 }
 
-#define GUESSFORCE FALSE
-
 /* 
  * Replace the value of a collection parameter int the collection parameter
  * bat
  */
 static int replaceCollParam(tjCtx* tjctx, str param, str val) {
-	return ( BUNreplace(tjctx->b_collParam,param,val,GUESSFORCE) != NULL );
+	return ( BUNreplace(tjctx->b_collParam,param,val,FALSE) != NULL );
 }
 
 static BAT*
@@ -894,10 +805,10 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     /* if ( DOEMIT(tjctx) ) { */
         if ( (termOid = tj_tagOid(tjctx, name)) == oid_nil )
     	    return 0;
-        if ( (tjPre = tj_add2plane(tjctx, termOid)) == oid_nil )
+        if ( (tjPre = tj_newPre(tjctx) ) == oid_nil )
     	    return 0;
+        dbat_set_oid(&tjctx->dbat_collPre, tjPre, termOid);
         if ( tj_pushTag(tjctx,tjPre) < 0 ) return 0;
-        if ( 0 ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #ifdef TJ_TRACE
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif
@@ -913,8 +824,7 @@ pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
     --tjctx->doc_height;
     oid start = tj_popTag(tjctx); /* oid of the first node of the element */
     int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
-    if ( insertPreSize(tjctx,start,size) < 0 )
-	    return 0;
+    dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:empty_endElement: \"%s\"\n", tjctx->name,"");
 #endif
@@ -934,8 +844,7 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
     /* if ( DOEMIT(tjctx) ) { */
         oid start = tj_popTag(tjctx); /* oid of the first node of the element */
         int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
-	if ( insertPreSize(tjctx,start,size) < 0 )
-	    return 0;
+	dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
 #ifdef TJ_TRACE
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endElement: \"%s\"\n", tjctx->name,name);
 #endif
@@ -943,8 +852,6 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
     if ( tjctx->b_selectTags && !checkSelectTag(tjctx,name,-1) ) return 0;
     return 1;
 }
-
-#define USE_FLEX 1
 
 /**
  * Output generation handler. Handles equivalent of * SAX characters() event.
@@ -954,28 +861,23 @@ pftijah_handle_characters(XqueryCtx* ctx, str ch) {
     EMPTY_CHECK;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
+    register char* p = (char*)ch;
+    while( *p && isspace(*p) ) p++;
+    if ( !*p )
+        return 1;
 #ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters(%s) start\n",tjctx->name, (char*)ch);
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters(%s) start\n",tjctx->name, p);
 #endif
 
     if ( DOEMIT(tjctx) ) {
-#ifdef USE_FLEX
-        return useFlexScanner((char*)ch,strlen((char*)ch),tjctx);
-#else
-        return useStrtokScanner(tjctx,(char*)ch);
-#endif
+        return useFlexScanner(p,tjctx);
     }
     return 1;
 }
 
 char* normalizeTerm(struct tijahContextStruct *tjctx, char* term ) {
 	char *res;
-#ifdef USE_FLEX
-        res = flexScanOneTerm((char*)term,strlen((char*)term));
-#else
-	res = strtok(term,obsoleteNexiChars);
-#endif
-	/* INCOMPLETE, should make shure tijahContext is always avail. here */
+        res = flexScanOneTerm((char*)term);
         if ( res && tjctx && tjctx->stemCtx->stem) {
     	    if ( !(res = (char*)tjctx->stemCtx->stem(tjctx->stemCtx,(char*)res)) ) {
 	        /* must be a stopword */
@@ -986,14 +888,6 @@ char* normalizeTerm(struct tijahContextStruct *tjctx, char* term ) {
 }
 
 int CMDtj_normalizeTerm(char** res, str term, str stemmer) {
-//Leave tokenization disabled for now
-//    char* tokenized;
-//#ifdef USE_FLEX
-//    tokenized = flexScanOneTerm(term,strlen(term));
-//#else
-//    tokenized = strtok(term,obsoleteNexiChars);
-//#endif
-
     tjStemCtx* stemCtx = getStemmingContext( stemmer );
 
     if ( stemCtx->stem ) {
@@ -1123,13 +1017,9 @@ MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINISH INDEXING\n",tjctx->name);
 #endif
-
-        /* feature not used anymore ????? */
-	if ( 0 /* ROEL CHANGE VIRTUAL ROOT SIZE HERE */ )
-	        insertPreSize(tjctx,0,tjctx->tijahPre - 1);
-	if ( dbat_finalize(&tjctx->dbat_collPre) < 0 )
+	if ( dbat_finalize(&tjctx->dbat_collPre, tjctx->tijahPre) < 0 )
 		return GDK_FAIL;
-	if ( dbat_finalize(&tjctx->dbat_collSize) < 0 )
+	if ( dbat_finalize(&tjctx->dbat_collSize, tjctx->tijahPre) < 0 )
 		return GDK_FAIL;
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);

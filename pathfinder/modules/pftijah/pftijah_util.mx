@@ -73,6 +73,7 @@ BAT *pftu_lookup_bat(str name) {
     if ( b == bat_nil ) {
     	return NULL;
     } else {
+        BBPfix(b);
     	return BBPdescriptor(b);
     }
 }

@@ -455,6 +455,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     /*
      * Now find out if the collection is fragmented or not.
      */
+    /* INCOMPLETE, ERROR HERE WITH REFCOUNTS IN HEAD */
     BAT* fb = pftu_lookup_bat(pftu_batname1("tj_%s_fragments",(char*)parserCtx->collection,0));
     if ( ! fb ) {
            stream_printf(GDKerr,"Error: cannot find fragments bat for collection \"%s\".\n",parserCtx->collection);
@@ -471,6 +472,8 @@ int old_main(BAT* optbat, char* startNodes_name)
               parserCtx->ffPfx        = "";
               parserCtx->flastPfx     = ", str(1)";
     }
+    BBPunfix(BBPcacheid(fb));
+    fb = NULL;
     // Some special cases for NLLR, since NLLR only works with COARSE2 at the moment
     if ( txt_retr_model->model == MODEL_NLLR ) {
         // Switch to COARSE2 algebra for NLLR

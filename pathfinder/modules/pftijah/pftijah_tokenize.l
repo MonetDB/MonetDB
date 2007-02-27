@@ -115,7 +115,40 @@ S                                   {WhiteSpaceChar}+
 
 %%
 
-int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx) {
+int OPT0useFlexScanner(char* buf, struct tijahContextStruct* tjCtx) {
+  /* UPDATE: this delivers very strange testset results and should not be
+   * used I think.
+   */
+  /* This is an optimized version of the flex scanner which does not copy the
+   * input buffer. The only strange thing about this interface is that it
+   * requires 2 YY_END_OF_BUFFER_CHAR (eg. 0) at the end of the buffer. The
+   * size of the buffer is inclusive the 2 0's.
+   * The last zero is toggled with its original value to prevent corruption
+   * of memory management tables. This was for me the only way to prevent
+   * copying here.
+   */
+  int len = strlen(buf);
+  char remember = buf[len+1];
+  buf[len+1] = YY_END_OF_BUFFER_CHAR;
+  YY_BUFFER_STATE myBuf = yy_scan_buffer(buf, len+2);
+
+  if ( !myBuf ) {
+      stream_printf(GDKout,"# useFlexScanner: unable to get setup non-copy buffer.");
+      return 0;
+  }
+  while ( pftijah_tokenizelex() ) {
+      /* stream_printf(GDKout,"# scan(%s).\n",pftijah_tokenizetext); */
+      if ( !handleTijahTerm(tjCtx, pftijah_tokenizetext) )
+          return 0;
+  }
+  yy_delete_buffer(myBuf);
+  buf[len+1] = remember;
+  return 1;
+}
+
+int useFlexScanner(char* buf, struct tijahContextStruct* tjCtx) {
+  // the original
+  int len = strlen(buf);
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
   while (pftijah_tokenizelex()) {
       if ( !handleTijahTerm(tjCtx, pftijah_tokenizetext) )
@@ -123,6 +156,40 @@ int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx) {
   }
   yy_delete_buffer(myBuf);
   return 1;
+}
+
+int OPT2useFlexScanner(char* input, struct tijahContextStruct* tjctx)
+{
+    /* the fast function. This function is in the pftijah context with lots
+     * of small strings to tokenize many times faster as the flex and the 
+     * strtok() methods which seem to have a rather larger overhead
+     */
+    register char* s = input;
+    register char x;
+// #define EMIT x=*s; *s=0; stream_printf(GDKout,"#[%s]\n",base);if (!handleTijahTerm(tjctx,base)) return 0; *s=x
+#define EMIT x=*s; *s=0; if (!handleTijahTerm(tjctx,base)) return 0; *s=x
+
+    while ( 1 ) {
+      while ( isspace( *s ) ) s++;
+      if ( *s ) {
+	  char* base = s;
+	  if ( isalnum(*s) ) {
+	      if ( isdigit(*s) ) {
+	          while ( isdigit(*++s) ) ;
+		  EMIT;
+	      } else {
+	          if (isupper(*s)) *s=tolower(*s);
+	          while ( isalnum(*++s) ) if (isupper(*s)) *s=tolower(*s);
+		  EMIT;
+	      }
+	  } else {
+	      // INCOMPLETE, ENTITIES HERE
+	      // stream_printf(GDKout,"#[SKIPPING:%c]\n",*s);
+	      s++;
+	  }
+      } else 
+          return 1;
+    }
 }
 
 char* tijah_tokenize_string(char* buf, int len, char* outbuf) {
@@ -137,9 +204,10 @@ char* tijah_tokenize_string(char* buf, int len, char* outbuf) {
   return outbuf;
 }
 
-char* flexScanOneTerm(char* buf, int len) {
+char* flexScanOneTerm(char* buf) {
   char *res;
   char resBUFF[256];
+  int len = strlen(buf);
 
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
   if ( pftijah_tokenizelex() ) {
