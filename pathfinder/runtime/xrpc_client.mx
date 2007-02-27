@@ -1149,6 +1149,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             }
             return GDK_FAIL;
         }
+    } else {
+        ptr = b->buf;
     }
     time_xrpcClntDeSeria = GDKusec() - time_xrpcClntDeSeria;
 
@@ -1163,8 +1165,11 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                 bytes_sent, bytes_received);
     }
 
-    if( (ptr+= 2) && strstr(ptr, "XRPC_Server_Timing") ){
-        ptr += 19;
+    ptr = strstr(ptr, "XRPC_Server_Timing");
+    if (ptr) {
+        ptr += 18; /* Skip "XRPC_Server_Timing" */
+        /* Find the start of the real timing info */
+        ptr = strstr(ptr, "XRPC");
         stream_printf(GDKout, strstr(ptr, "XRPC_"));
         stream_printf(GDKout, "\n");
     }
