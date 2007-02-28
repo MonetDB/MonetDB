@@ -4074,8 +4074,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB-XQuery"
-        "ProductCode" = "8:{27D88C92-6592-481F-A46B-7F0E2FE10059}"
-        "PackageCode" = "8:{7C294CDE-0D5D-4349-BEE5-5F0C04C9EF09}"
+        "ProductCode" = "8:{AF4DC311-EDA9-4CF7-A14F-FA73DFFBD25C}"
+        "PackageCode" = "8:{85B85570-FA04-41AA-A5D2-552A8D25250E}"
         "UpgradeCode" = "8:{F5909DE2-4B01-4D0C-BE5C-92D694F80476}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"

@@ -467,6 +467,8 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
     shredBAT *sb = & shredCtx->dstBAT[idx];
     size_t oldsize, newsize;
 
+    if ( v == 0 )
+        v = (str)str_nil;
     if (sb->def->compress) {
         BAT *mb = BBP_cache(-(sb->bat->batCacheid));
         BUN bun;

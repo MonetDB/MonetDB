@@ -3283,7 +3283,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
     if (rid_nid_update.exist(rid)) {
       nid := rid_nid_update.find(rid);
     } else {
-      nid := pre_nid.find(newpre);
+      nid := pre_nid.find(swizzle(rid, map_pid));
     }
   } else {
     nid := rid_nid.find(rid);

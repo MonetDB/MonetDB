@@ -437,7 +437,7 @@ PROC doLoopLiftedRPC(
 
     time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
     if (options.search("timing") >= 0) {
-        printf("XRPC_Client_DeSerialisation:   %lld microsec\n\n",
+        printf("XRPC_Client_DeSerialisation:   %lld microsec\n",
                 time_xrpcClntDeSeria);
     }
 
@@ -1149,6 +1149,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             }
             return GDK_FAIL;
         }
+    } else {
+        ptr = b->buf;
     }
     time_xrpcClntDeSeria = GDKusec() - time_xrpcClntDeSeria;
 
@@ -1156,21 +1158,26 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         stream_printf(GDKout,
                 "XRPC_Client_Serialisation:     %lld microsec\n"
                 "XRPC_Network_Client_2_Server:  %lld microsec\n"
-                "XRPC_Client_DeSerialisation:   %lld microsec\n"
-                "\n"
-                "XRPC_Data_Sent:                " SZFMT " bytes\n"
-                "XRPC_Data_Received:            " SZFMT " bytes\n\n",
+                "XRPC_Data_Sent/Received:       " SZFMT " / "
+                                                  SZFMT " bytes\n\n",
                 time_xrpcClntSeria,
                 time_xrpcClnt2Serv,
-                time_xrpcClntDeSeria,
-                bytes_sent,
-                bytes_received);
+                bytes_sent, bytes_received);
     }
 
-    if( (ptr+= 2) && strstr(ptr, "XRPC_Server_Timing") ){
-        ptr += 19;
+    ptr = strstr(ptr, "XRPC_Server_Timing");
+    if (ptr) {
+        ptr += 18; /* Skip "XRPC_Server_Timing" */
+        /* Find the start of the real timing info */
+        ptr = strstr(ptr, "XRPC");
         stream_printf(GDKout, strstr(ptr, "XRPC_"));
         stream_printf(GDKout, "\n");
+    }
+
+    if (options && strstr(options, "timing")) {
+        stream_printf(GDKout,
+                "XRPC_Client_DeSerialisation:   %lld microsec\n",
+                time_xrpcClntDeSeria);
     }
 
     clean_up(sock, in, out, bs, b, argcnt, iterc);
