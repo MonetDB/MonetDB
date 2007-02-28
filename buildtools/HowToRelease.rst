@@ -6,13 +6,32 @@ How to Prepare a Release
    Use ``rst2html.py`` to convert this file to HTML.
 
 This document gives step-by-step instructions on how to prepare a
-release for the MonetDB suite of programs.
+release for the MonetDB suite of programs. 
+
+Release Etiquette
+-----------------
+- A release is a major time investment of several people. 
+  Cooperation of all developers is essential to live to 
+  our charter: deliver state-of-the-art database technology 
+  to the community.
+- Strictly adhire to bug-fixes and feature updates. Nothing
+  is a bugfix unless it is covered by a bugreport.
+- Remember that after every release there will be uncountable
+  opportunities to get your favoured feature in.
+- Refrain from any act that complicates the process.
 
 Well before the release
 -----------------------
-
+- Identify a release manager, who has the authority to decide on
+  the precise release content and  date, rollback upgrades, 
+  block upgrades,..  i.e. everything that puts the release in danger.
+- Prepare a draft release note to finalize the scope of the
+  release and inform those affected/responsible for parts to
+  fix errors and prepare/update documentation.
+- All other developers leave the stable branch.
 - Get all the bug fixes (and new features for a major release) in long
   before continuing with the rest of the steps.
+- Announce freeze dates and planned release dates on the developers list.
 - Regularly try building the release on Windows during this stage.
   This includes trying to create installers and trying out the
   installers.
@@ -86,3 +105,24 @@ Post Release
 - Update the propagation synchronization tags on the stable branch for
   the files that were changed in the previous step (e.g. ``cvs tag -F
   MonetDB_1-16-1 vertoo.data``).
+
+
+Post Minor Release
+------------------
+- Roll forward the MonetDB web to reflect the changes.
+- Announce the availability of the minor release through the
+  MonetDB mail channels
+
+Post Major Release
+------------------
+- Roll forward the MonetDB web to reflect the changes.
+- Announce the availability of the minor release through the
+  MonetDB mail channels
+- Announce the availability on www.dbworld.org, www.freshmeat.net
+  http://www.hollandopen.nl/, http://www.eosj.com/
+  http://www.freesoftwaremagazine.com 
+  http://www.eweek.com/, http://www.linuxworld.com/,
+  http://www.pcmag.com/, http://www.heise.de/ct/ 
+  www.computable.nl/, http://www.dbforums.com/
+  comp.databases, Database Magazine (Array Publications)
+  cwi announcement CPI, slashdot, W3C
