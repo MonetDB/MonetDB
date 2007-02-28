@@ -295,7 +295,9 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
                         subins = install
 
                 if mlen > 0:
-                    inc = re.sub(re.escape(subsrc), re.sub('includedir','..',subins),inc)
+                    inc = re.sub(re.escape(subsrc),
+                                 re.escape(re.sub('includedir', '..', subins)),
+                                 inc)
                 nvals.append(inc)
         installincs[k] = nvals
     installincs.close()
