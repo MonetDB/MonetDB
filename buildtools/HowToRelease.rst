@@ -12,7 +12,7 @@ Release Etiquette
 -----------------
 
 - A release is a major time investment of several people.  Cooperation
-  of all developers is essential to live up to our charter: deliver
+  of all developers is essential to live up to our charter: to deliver
   state-of-the-art database technology to the community.
 - Strictly adhere to bug fixes and feature updates.  Nothing
   is a bug fix unless it is covered by a bug report.
@@ -123,7 +123,7 @@ Post Major Release
 - Announce the availability of the release through the MonetDB mail
   channels.
 - Announce the availability on http://www.dbworld.org/,
-  http://www.freshmeat.net/ http://www.hollandopen.nl/,
+  http://www.freshmeat.net/, http://www.hollandopen.nl/,
   http://www.eosj.com/, http://www.freesoftwaremagazine.com/,
   http://www.eweek.com/, http://www.linuxworld.com/,
   http://www.pcmag.com/, http://www.heise.de/ct/,
