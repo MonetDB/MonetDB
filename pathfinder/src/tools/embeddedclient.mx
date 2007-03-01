@@ -38,7 +38,7 @@ between 25-50%.
 #include "monet_options.h"
 
 #ifdef WIN32
-#ifndef LIBEMBEDDEDCLIENT
+#ifndef LIBEMBEDDEDXQ
 #define embeddedclient_export extern __declspec(dllimport)
 #else
 #define embeddedclient_export extern __declspec(dllexport)
@@ -56,9 +56,8 @@ embeddedclient_export Mapi embedded_xquery(opt *set, int len);
 @c
 #include "pf_config.h"
 #include "monet.h"
-#include "monet_options.h"
+#include "embeddedclient.h"
 #include "initmodules.h"
-#include "Mapi.h"
 
 #ifdef HAVE_PTHREAD_H
 /* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
@@ -170,7 +169,7 @@ start_xq_server(void *arg)
 	snprintf(buf, sizeof(buf), "client(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
 	monet_exec("module(pathfinder);");
 	monet_exec("xquery_start_query_cache(16000000LL);");
-	monet_exec("mapi_register(xquery_frontend());");
+/*      monet_exec("mapi_register(xquery_frontend());"); */
 	monet_exec(buf);
 	return NULL;
 }

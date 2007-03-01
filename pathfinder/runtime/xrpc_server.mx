@@ -1179,9 +1179,6 @@ CMDrpcd_start(int *port, bit *open, str option)
 
     xrpc_port = rpcd_running = *port;
 
-    /* Initialize with specific config file, pass NULL to use default
-     * values */
-    shttpd_init(NULL);
     /* find 'datadir' (often datadir = <prefix>/share), otherwise use
      * "/usr/share", hence, httpd serves out <datadir>/MonetDB/xrpc */
     if( !(s = GDKgetenv("datadir")) ){
@@ -1191,6 +1188,12 @@ CMDrpcd_start(int *port, bit *open, str option)
         snprintf(datadir, 1024, "%s%cMonetDB%cxrpc", s, DIR_SEP, DIR_SEP);
     }
     shttpd_setopt("document_root", datadir);
+/*
+    shttpd_setopt("error_log", "c:\\tmp\\err.txt");
+    shttpd_setopt("debug", "1");
+ */
+
+    shttpd_init(NULL); /* Initialize httpsd thread */
 
     if (option && strstr(option, "timing") != NULL)
         timing = 1;

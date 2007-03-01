@@ -651,7 +651,7 @@ _                                {S}
 {QName}{_}?"("/[^:]                { pflval.qname = extract_qname (yytext, 0);
                                      yield (QName_LParen);
                                    }
-{IntegerLiteral}                   { pflval.num = atoll (yytext);
+{IntegerLiteral}                   { pflval.num = (long long) atof (yytext);
                                      gotoState (OPERATOR);
                                      yield (IntegerLiteral);
                                    }
