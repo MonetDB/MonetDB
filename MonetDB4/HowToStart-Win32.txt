@@ -143,7 +143,8 @@ PHP
 	necessary to remove the line ``#include "arpa/inet.h"`` from
 	the file ``main\php_network.h``.  When compiling MonetDB, add
 	the flag ``HAVE_PHP=1`` to the ``nmake`` command line.  Note
-	that only PHP version 5.1.4 has been tried recently.
+	that only PHP versions 5.1.4 and 5.2.1 have been tried
+	recently.
 
 Java:
 	The Java SDK (JDK) can be found at http://java.sun.com/.
