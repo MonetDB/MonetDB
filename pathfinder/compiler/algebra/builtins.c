@@ -2372,27 +2372,27 @@ struct PFla_pair_t
 PFbui_op_except (const PFla_op_t *loop, bool ordering,
                  struct PFla_pair_t *args)
 {
-    PFla_op_t *distinct;
+    PFla_op_t *difference;
 
     (void) loop;
 
-    distinct = distinct (difference (
-                             project (args[0].rel,
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_item)),
-                             project (args[1].rel,
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_item))));
+    difference = difference (
+                     distinct (project (args[0].rel,
+                                        proj (att_iter, att_iter),
+                                        proj (att_item, att_item))),
+                     project (args[1].rel,
+                              proj (att_iter, att_iter),
+                              proj (att_item, att_item)));
     
     if (ordering)
         return (struct  PFla_pair_t) {
-            .rel = rownum (distinct,
+            .rel = rownum (difference,
                            att_pos, sortby (att_item), att_iter),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_iter),
+            .rel = number (difference, att_pos, att_iter),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
 }
