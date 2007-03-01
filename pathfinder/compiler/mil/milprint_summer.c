@@ -8083,6 +8083,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	/* execute tijah query */
 	milprintf(f,
                 "    var nexi_score := run_tijah_query(optbat,startNodes,item%s%03u.fetch(int($h)));\n"
+		"    if ( optbat.exist(\"returnNumber\") ) {\n"
+		"        var retNum := int(optbat.find(\"returnNumber\"));\n"
+		"        nexi_score := nexi_score.slice(0, retNum - 1);\n"
+		"    }\n"
 		, item_ext, str_counter);
 	
 	    /* translate tijah-pre to pf-pre */
