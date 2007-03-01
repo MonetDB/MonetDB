@@ -8082,10 +8082,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
           
 	/* execute tijah query */
 	milprintf(f,
-                "    var nexi_score := run_tijah_query(optbat,startNodes,item%s%03u.fetch(int($h)));\n"
+                "    var nexi_allscores := run_tijah_query(optbat,startNodes,item%s%03u.fetch(int($h)));\n"
+		"    var nexi_score;\n"
 		"    if ( optbat.exist(\"returnNumber\") ) {\n"
 		"        var retNum := int(optbat.find(\"returnNumber\"));\n"
-		"        nexi_score := nexi_score.slice(0, retNum - 1);\n"
+		"        nexi_score := nexi_allscores.slice(0, retNum - 1);\n"
+		"    } else {\n"
+		"        nexi_score := nexi_allscores;\n"
 		"    }\n"
 		, item_ext, str_counter);
 	
@@ -8111,6 +8114,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	    /* store scores and nodes */
 	    milprintf(f,
 	        "    tID := oid(int(tID) + 1);\n" 
+		"    tijah_resultsz.insert(lng(tID),lng(nexi_allscores.count()));\n"
 	        "    tijah_tID.append(item.project(tID));\n"
 	        "    tijah_frag.append(frag);\n"
 	        "    tijah_pre.append(item);\n"
@@ -8298,6 +8302,32 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, str_counter, STR);
 	counter--;
         return (code)?STR:NORMAL;
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"tijah-resultsize")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (rc == NORMAL)
+        {
+            assert (fun->sig_count == 1); 
+            rc = get_kind(fun->sigs[0].ret_ty);
+            milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
+        }
+        char *item_ext = kind_str(rc);
+        /* because functions are only allowed for dbl
+           we need to cast integers */
+        type_co t_co = kind_container(rc);
+    
+        milprintf(f,
+                "if (ipik.count() != 0) { # pf:tijah-resultsize\n"
+                "var res := item%s.join(tijah_resultsz);\n"
+		,item_ext);
+        if (code)
+            milprintf(f, "item%s := res;\n", item_ext);
+        else 
+            addValues (f, t_co, "res", "item");
+    
+        item_ext = (code)?item_ext:"";
+        milprintf(f, "} # end of pf:tijah-resultsize\n");
+        return rc;
     }
 #endif /* PFTIJAH */
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
@@ -10956,6 +10986,7 @@ const char* PFinitMIL(void) {
 	"var tijah_frag  := new(void,oid).seqbase(0@0);\n"
 	"var tijah_pre   := new(void,oid).seqbase(0@0);\n"
 	"var tijah_score := new(void,dbl).seqbase(0@0);\n"
+	"var tijah_resultsz := new(lng,lng);\n"
 	"var tijah_lock  := lock_nil; # pftijah collection lock\n"
 #endif
         "\n"

@@ -1956,6 +1956,11 @@ PFfun_xquery_fo ()
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_string () },
              .ret_ty = PFty_xs_string () } } }
+    , /* pf:tijah-resultsize(integer) as integer */
+      { .ns = PFns_lib, .loc = "tijah-resultsize",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_integer () },
+            .ret_ty = PFty_xs_integer () } } }
 #endif
     , { .loc = 0 }
     };
