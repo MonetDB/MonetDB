@@ -102,7 +102,7 @@ lib__xrpc_client = {
         DIR = libdir/MonetDB4
         SOURCES = xrpc_client.mx
         LIBS = \
-			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
+			   libserialize $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
 			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet -lpthread \
 			   $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io
 }
