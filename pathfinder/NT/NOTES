@@ -7,15 +7,14 @@ compiling environment:
 
 then, set in your environment (Control Panel->System->Advanced->Environment):
 
-CC="icl -Qc99 -GR- -Qsafeseh- -Gd"
-CXX="icl -Qc99 -GR- -Qsafeseh- -Gd"
+CC="icl -Qc99 -GR- -Qsafeseh-"
+CXX="icl -Qc99 -GR- -Qsafeseh-"
 
 some notes on the flags:
 - Qc99 ==> the coveted C-99 support, needed by pathfinder
 - the latter three switches where added in reponse to crashes in pthreads
   -GR- disable  ==>  disable C++ RTTI
   -Qsafeseh-    ==>  disable structured exception handling
-  -Gd           ==>  make __cdecl the staandard calling convention 
 
   crash would occur when connecting a MIL MapiClient. With these flags: no problem.
 
