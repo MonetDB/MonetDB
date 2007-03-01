@@ -328,7 +328,10 @@ def am_scripts(fd, var, scripts, am):
             fd.write(" C_%s = %s\n" % (mkname,script))
             fd.write(" C_script_%s = script_%s\n" % (mkname, script))
             fd.write("endif\n")
-            am['BUILT_SOURCES'].append("$(C_" +mkname+ ")")
+            if not os.path.exists(script):
+                am['BUILT_SOURCES'].append("$(C_" +mkname+ ")")
+            am['EXTRA_DIST'].append(script)
+        elif os.path.exists(script):
             am['EXTRA_DIST'].append(script)
         else:
             am['BUILT_SOURCES'].append(script)
