@@ -21,6 +21,7 @@ CFLAGS = -I. -GF -W3 -MD -nologo -Zi
 !ENDIF
 
 MV=copy
+MT=mt
 DEL=del
 YACC=bison -b y -y
 YFLAGS=-d
@@ -36,7 +37,8 @@ BURG_OBJS = be.obj burs.obj closure.obj delta.obj fe.obj gram.obj item.obj \
 	    table.obj trim.obj zalloc.obj
 
 burg.exe: $(BURG_OBJS)
-	$(CC) $(CFLAGS) /Feburg.exe $(BURG_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
+	$(CC) $(CFLAGS) /Feburg.exe $(BURG_OBJS) /link /subsystem:console 
+	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1
 
 burg_config.h: winconfig.h
 	copy winconfig.h burg_config.h

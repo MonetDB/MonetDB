@@ -20,6 +20,8 @@ CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 CFLAGS = -I. -GF -W3 -MD -nologo -Zi
 !ENDIF
 
+MT=mt
+
 all: Mx.exe prefixMxFile.exe idxmx.exe
 
 clean:
@@ -29,6 +31,7 @@ MX_OBJS = Mx.obj Index.obj Def.obj Form.obj Tok.obj Code.obj Display.obj \
 	  Print.obj Io.obj Sys.obj disclaimer.obj Tex2Html.obj getopt.obj
 Mx.exe: $(MX_OBJS)
 	$(CC) $(CFLAGS) /FeMx.exe $(MX_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
+	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1
 
 PREFIXMXFILE_OBJS = prefixMxFile.obj disclaimer.obj getopt.obj
 prefixMxFile.exe: $(PREFIXMXFILE_OBJS)

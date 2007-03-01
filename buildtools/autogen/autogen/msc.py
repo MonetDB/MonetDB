@@ -26,9 +26,9 @@ MAKEFILE_HEAD = '''
 
 # cl -help describes the options
 !IFDEF DEBUG
-CC = cl -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
+CC = $(CC) -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 !ELSE
-CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -Ox
+CC = $(CC) -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -Ox
 !ENDIF
 ARCHIVER = lib
 GENDLL =
@@ -366,7 +366,7 @@ def msc_dep(fd, tar, deplist, msc):
     if ext == "tab.c":
         fd.write(getsrc)
         fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
-        fd.write('\t$(MV) y.tab.c "%s.tab.c"\n' % b)
+        fd.write('\t$(FILTER) "    ;" y.tab.c > "%s.tab.c"\n' % b)
         fd.write("\t$(DEL) y.tab.h\n")
     if ext == "yy.c":
         fd.write(getsrc)
