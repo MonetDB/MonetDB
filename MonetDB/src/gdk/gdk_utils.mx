@@ -368,8 +368,6 @@ the memory consumption.
 
 #if SIZEOF_VOID_P==8
 #define GDK_VM_MAXSIZE	LL_CONSTANT(137438953472)	/* :-) a 64-bit OS: 128 GB */
-#elif defined(WIN32)
-#define GDK_VM_MAXSIZE	LL_CONSTANT(536870912)	/* :-( New Technology DOS extender: 512MB */
 #else
 #define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736)	/* :-| a 32-bit OS: 1.5GB */
 #endif
