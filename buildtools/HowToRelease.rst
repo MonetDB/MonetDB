@@ -6,38 +6,40 @@ How to Prepare a Release
    Use ``rst2html.py`` to convert this file to HTML.
 
 This document gives step-by-step instructions on how to prepare a
-release for the MonetDB suite of programs. 
+release for the MonetDB suite of programs.
 
 Release Etiquette
 -----------------
-- A release is a major time investment of several people. 
-  Cooperation of all developers is essential to live to 
-  our charter: deliver state-of-the-art database technology 
-  to the community.
-- Strictly adhire to bug-fixes and feature updates. Nothing
-  is a bugfix unless it is covered by a bugreport.
+
+- A release is a major time investment of several people.  Cooperation
+  of all developers is essential to live up to our charter: deliver
+  state-of-the-art database technology to the community.
+- Strictly adhere to bug fixes and feature updates.  Nothing
+  is a bug fix unless it is covered by a bug report.
 - Remember that after every release there will be uncountable
-  opportunities to get your favoured feature in.
-- Refrain from any act that complicates the process.
+  opportunities to get your favorite feature in.
+- Refrain from any act that may complicate the process.
 
 Well before the release
 -----------------------
-- Identify a release manager, who has the authority to decide on
-  the precise release content and  date, rollback upgrades, 
-  block upgrades,..  i.e. everything that puts the release in danger.
-- Prepare a draft release note to finalize the scope of the
-  release and inform those affected/responsible for parts to
-  fix errors and prepare/update documentation.
+
+- Identify a release manager who has the authority to decide on the
+  precise release content and date, rollback updates, block updates,
+  etc.  i.e. anything that could put the release in danger.
+- Prepare a draft release note to finalize the scope of the release
+  and inform those affected/responsible for parts to fix errors and
+  prepare/update documentation.
 - All other developers leave the stable branch.
 - Get all the bug fixes (and new features for a major release) in long
   before continuing with the rest of the steps.
-- Announce freeze dates and planned release dates on the developers list.
+- Announce freeze dates and planned release dates on the developers
+  list.
 - Regularly try building the release on Windows during this stage.
   This includes trying to create installers and trying out the
   installers.
 
-Prepartion of a Major Release
------------------------------
+Preparation of a Major Release
+------------------------------
 
 - Create a tag on the head of the current branch to identify the
   branch point (e.g. ``cvs tag MonetDB_1-16_root``).
@@ -109,20 +111,22 @@ Post Release
 
 Post Minor Release
 ------------------
+
 - Roll forward the MonetDB web to reflect the changes.
-- Announce the availability of the minor release through the
-  MonetDB mail channels
+- Announce the availability of the minor release through the MonetDB
+  mail channels.
 
 Post Major Release
 ------------------
+
 - Roll forward the MonetDB web to reflect the changes.
-- Announce the availability of the minor release through the
-  MonetDB mail channels
-- Announce the availability on www.dbworld.org, www.freshmeat.net
-  http://www.hollandopen.nl/, http://www.eosj.com/
-  http://www.freesoftwaremagazine.com 
+- Announce the availability of the release through the MonetDB mail
+  channels.
+- Announce the availability on http://www.dbworld.org/,
+  http://www.freshmeat.net/ http://www.hollandopen.nl/,
+  http://www.eosj.com/, http://www.freesoftwaremagazine.com/,
   http://www.eweek.com/, http://www.linuxworld.com/,
-  http://www.pcmag.com/, http://www.heise.de/ct/ 
-  www.computable.nl/, http://www.dbforums.com/
-  comp.databases, Database Magazine (Array Publications)
-  cwi announcement CPI, slashdot, W3C
+  http://www.pcmag.com/, http://www.heise.de/ct/,
+  http://www.computable.nl/, http://www.dbforums.com/,
+  news:comp.databases, Database Magazine (Array Publications), CWI
+  announcement, CPI, slashdot, W3C.
