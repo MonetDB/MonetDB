@@ -141,6 +141,26 @@ cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample
 @end verbatim
 @end example
 
+It assumes that the dynamic loadable libraries are in public places.
+If, however, the system is installed in your private environment
+then either one of the two following options can be used.
+
+@example
+@verbatim
+cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample \
+-Wl,rpath,`monetdb-clients-config --libdir`
+./sample
+@end verbatim
+@end example
+
+@example
+@verbatim
+export LD_LIBRARY_PATH=`monetdb-clients-config --libdir`
+cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample
+./sample
+@end verbatim
+@end example
+
 The compilation on Windows is slightly more complicated. It requires
 more attention towards the location of the include files and libraries.
 
