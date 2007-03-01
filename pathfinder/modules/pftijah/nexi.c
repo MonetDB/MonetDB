@@ -226,8 +226,10 @@ int old_main(BAT* optbat, char* startNodes_name)
     txt_retr_model->next        = NULL;
     
     /** Compiler parameters **/
+#if 0
     // The number of elements to return
     int retNum          = -1; // -1 = unlimited
+#endif
     algebra_type        = COARSE2;
     preproc_type        = PLAIN;
     scale_on            = FALSE;
@@ -273,11 +275,13 @@ int old_main(BAT* optbat, char* startNodes_name)
 	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: ignoring fragmentation setting.\n");
 	} else if ( strcmp(optName,"background_collection") == 0 ) {
             strcpy(background_collection, optVal);
-        } else if ( strcmp(optName,"returnNumber") == 0 || 
-                    strcmp(optName,"retNum") == 0 || 
-                    strcmp(optName,"top") == 0 ) {
-            retNum = atoi( optVal );
-            
+#if 0
+        } else if ( strcmp(optName,"returnNumber") == 0 ) {
+            int xx = atoi( optVal );
+	    if ( xx < 0 ) {
+	    	// incomplete should check if number is OK
+	    }
+#endif
         } else if ( strcmp(optName,"algebraType") == 0 ) {
             if ( strcasecmp( optVal, "ASPECT" ) == 0 ) {
                 algebra_type = ASPECT;
@@ -448,6 +452,8 @@ int old_main(BAT* optbat, char* startNodes_name)
                 txt_retr_model->prior_type  = NO_PRIOR;
             }
             
+        } else if (strcmp(optName, "returnNumber") == 0) {
+	    // ignore, is handled by milprint_summer
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
@@ -483,7 +489,9 @@ int old_main(BAT* optbat, char* startNodes_name)
     
     // Prepend some variables to the MIL code.
     MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", parserCtx->collection);
+#if 0
     MILPRINTF(MILOUT, "retNum := %d;\n", retNum);
+#endif
     MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ collName +\"_param\").find(\"stemmer\");\n");
     if (strcmp(background_collection,""))
     { MILPRINTF(MILOUT, "tj_setBackgroundCollName(\"%s\");\n", background_collection); }

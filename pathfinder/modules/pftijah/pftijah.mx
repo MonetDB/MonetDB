@@ -328,6 +328,7 @@ ADDHELP("tj_init_collection", "flokstra & rode", "Jan 2007",
 - str collName: the name of the collection
 - BAT[str,str] param: initialization parameter for collection.\n\
   possible values are:\n\
+  tokenizer = { flex, fast }\n\
   stemmer = { nostemming, snowball-english, snowball-porter, snowball-dutch }\n\
   fragmentSize = [number] == the maximum size of a [pre|item] fragment\n\
   tagFilter = [comma seperated list of tags to be indexed]\n\
@@ -385,13 +386,16 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
       #
       # now read the param file
       #
-      var stemmer   := "nostemming";
-      var tagfilter := "";
+      var stemmer    := "nostemming";
+      var tokenizer  := "flex";
+      var tagfilter  := "";
   
       param@batloop() {
 	  if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
 	  if ( $h = "stemmer" ) {
 	      stemmer := $t;
+	  } else if ( $h = "tokenizer" ) {
+	      tokenizer := $t;
 	  } else if ( $h = "pf_collection" ) {
               bat("tj_" + collName + "_param").insert($h,$t);
 	  } else if ( $h = "fragmentSize" ) {
@@ -408,6 +412,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
       bat("tj_" + collName + "_param").insert("_version","1.01");
       bat("tj_" + collName + "_param").insert("name",collName);
       bat("tj_" + collName + "_param").insert("height","0");
+      bat("tj_" + collName + "_param").insert("tokenizer",tokenizer);
       bat("tj_" + collName + "_param").insert("stemmer",stemmer);
       bat("tj_" + collName + "_param").insert("tagFilter",tagfilter);
       bat("tj_" + collName + "_param").insert("preExpansion","4");
@@ -1069,13 +1074,13 @@ PROC terms( bat[oid,any] ctx ) : bat[oid,any] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scoreBase global variable.
 ##
-PROC select_root() : bat[oid,dbl] :=
+PROC select_root(bat[void,oid] par_startNodes) : bat[oid,dbl] :=
 {
-    if ( not( isnil( startNodes ) ) ) {
+    if ( not( isnil( par_startNodes ) ) ) {
         # Start from a set of starting nodes if available. 
         # It is assumed that the startNodes are [any, pre]
-        if ( count( startNodes ) > 0 ) {
-            var root_reg := startNodes.reverse().sort().project( dbl(scoreBase) );
+        if ( count( par_startNodes ) > 0 ) {
+            var root_reg := par_startNodes.reverse().sort().project( dbl(scoreBase) );
             return root_reg;
         } else {
             var root_reg := new(oid,dbl,1);
@@ -1094,11 +1099,11 @@ PROC select_root() : bat[oid,dbl] :=
     }
 }
 
-PROC select_root_frag() : bat[oid,bat] := 
+PROC select_root_frag(bat[void,oid] par_startNodes) : bat[oid,bat] := 
 {
     var res := new(oid,bat);
     
-    res.insert(0@0, select_root() );
+    res.insert(0@0, select_root(par_startNodes) );
     return res;
 }
 

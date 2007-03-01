@@ -115,7 +115,8 @@ S                                   {WhiteSpaceChar}+
 
 %%
 
-int OPT0useFlexScanner(char* buf, struct tijahContextStruct* tjCtx) {
+#if 0
+int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
   /* UPDATE: this delivers very strange testset results and should not be
    * used I think.
    */
@@ -133,7 +134,7 @@ int OPT0useFlexScanner(char* buf, struct tijahContextStruct* tjCtx) {
   YY_BUFFER_STATE myBuf = yy_scan_buffer(buf, len+2);
 
   if ( !myBuf ) {
-      stream_printf(GDKout,"# useFlexScanner: unable to get setup non-copy buffer.");
+      stream_printf(GDKout,"# tokenize_flex: unable to get setup non-copy buffer.");
       return 0;
   }
   while ( pftijah_tokenizelex() ) {
@@ -145,8 +146,9 @@ int OPT0useFlexScanner(char* buf, struct tijahContextStruct* tjCtx) {
   buf[len+1] = remember;
   return 1;
 }
+#endif
 
-int useFlexScanner(char* buf, struct tijahContextStruct* tjCtx) {
+int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
   // the original
   int len = strlen(buf);
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
@@ -158,17 +160,68 @@ int useFlexScanner(char* buf, struct tijahContextStruct* tjCtx) {
   return 1;
 }
 
-int OPT2useFlexScanner(char* input, struct tijahContextStruct* tjctx)
+/*
+ * Implementation of the fast tokenizer in "C"
+ *
+ */
+
+/* */
+/* #define  TFDEBUG 1 */
+
+#ifdef TFDEBUG
+#define EMIT \
+    tmpc=*s; *s=0; \
+    if (TFDEBUG) stream_printf(GDKout,"#[%s]\n",base); \
+    if (!handleTijahTerm(tjctx,base)) \
+        return 0; \
+    *s=tmpc
+#else
+#define EMIT \
+    tmpc=*s; *s=0; \
+    if (!handleTijahTerm(tjctx,base)) \
+        return 0; \
+    *s=tmpc
+#endif
+
+#define TOLOWER(C) if (isupper(C)) C=tolower(C);
+/* */
+
+char* scan_ENTITY(char* s) {
+    if ( *s++ == '&' ) {
+        if ( *s == '#' ) {
+            // scan [&][#]{Digits}[;]
+	    if (isdigit(*++s) ) {
+	    	s++;
+		while( isdigit(*s) ) s++;
+		if ( *s == ';' )
+		    return ++s; // return one past the entity
+	    }
+	} else if (isalpha(*s) ) {
+	    // scan [&]{Letter}+[;] 
+	    s++;
+	    while( isalpha(*s) ) s++;
+	    if ( *s == ';' )
+	        return ++s; // return one past the entity
+	}
+    }
+    return NULL;
+}
+
+
+int tokenize_fast(char* input, struct tijahContextStruct* tjctx)
 {
     /* the fast function. This function is in the pftijah context with lots
      * of small strings to tokenize many times faster as the flex and the 
-     * strtok() methods which seem to have a rather larger overhead
+     * strtok() methods which seem to have a rather larger overhead.
+     * In the future I will implement contraction and other goodies but there's
+     * no time for that yet.
      */
     register char* s = input;
-    register char x;
-// #define EMIT x=*s; *s=0; stream_printf(GDKout,"#[%s]\n",base);if (!handleTijahTerm(tjctx,base)) return 0; *s=x
-#define EMIT x=*s; *s=0; if (!handleTijahTerm(tjctx,base)) return 0; *s=x
+    register char tmpc, *tmpp;
 
+#ifdef TFDEBUG
+    if (TFDEBUG) stream_printf(GDKout,"#[TOKENIZE-FAST:%s\n",s);
+#endif
     while ( 1 ) {
       while ( isspace( *s ) ) s++;
       if ( *s ) {
@@ -178,13 +231,24 @@ int OPT2useFlexScanner(char* input, struct tijahContextStruct* tjctx)
 	          while ( isdigit(*++s) ) ;
 		  EMIT;
 	      } else {
-	          if (isupper(*s)) *s=tolower(*s);
-	          while ( isalnum(*++s) ) if (isupper(*s)) *s=tolower(*s);
+	          TOLOWER(*s);
+		  if ( isalnum(*++s) ) { // the length 2 check
+		     TOLOWER(*s);
+	             while ( isalnum(*++s) ) TOLOWER(*s);
+		     EMIT;
+		  }
+	      }
+	  } else if ( *s == '&' ) {
+	      if ( (tmpp = scan_ENTITY(s)) ) {
+	          s = tmpp; // emit entity till here
 		  EMIT;
+	      } else {
+	          s++; // no entity, just skip
 	      }
 	  } else {
-	      // INCOMPLETE, ENTITIES HERE
-	      // stream_printf(GDKout,"#[SKIPPING:%c]\n",*s);
+#ifdef TFDEBUG
+	      if (TFDEBUG) stream_printf(GDKout,"#[SKIPPING:%c]\n",*s);
+#endif
 	      s++;
 	  }
       } else 

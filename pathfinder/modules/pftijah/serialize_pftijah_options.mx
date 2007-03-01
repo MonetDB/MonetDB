@@ -115,10 +115,13 @@ static bool
 pftijah_options_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value) {
     struct PTOS* ptoctx = (struct PTOS*)ctx->driverWs;
     (void)prefix;
-    if ( 1 && strcmp(loc,"debug") == 0 ) {
+    if ( strcmp(loc,"debug") == 0 ) {
 	int v = atoi(value);
 	SET_TDEBUG(v);
 	if (TDEBUG(1)) stream_printf(GDKout,"# pftijah_option_handler: setting debug value to %d.\n",v);
+    } else if ( (strcmp(loc,"top")==0) || (strcmp(loc,"retNum")==0) ) {
+    	// INCOMPLETE, check if it is a correct number
+	loc = (str)"returnNumber";
     }
     if ( !BUNins(ptoctx->bat, loc, value, FALSE) ) {
         stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_attribute(%s,%s) FAILS[BUNins].\n",loc,value);

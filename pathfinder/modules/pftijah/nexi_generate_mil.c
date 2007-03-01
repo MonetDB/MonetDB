@@ -300,7 +300,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
         if (p_com->left == NULL && p_com->right == NULL) {
 
           if (!strcmp(p_com->argument,"\"Root\"")) {
-            MILPRINTF(MILOUT, "R%d := select_root%s();\n", com_num,parserCtx->ffPfx);
+            MILPRINTF(MILOUT, "R%d := select_root%s(startNodes);\n", com_num,parserCtx->ffPfx);
           }
           else {
             MILPRINTF(MILOUT, "R%d := select_node%s(%s,%s);\n", com_num, parserCtx->ffPfx,p_com->argument, txt_retr_model->e_class);
@@ -1046,7 +1046,9 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
       MILPRINTF(MILOUT, "collect := nil;\n");
     }
     MILPRINTF(MILOUT, "R%d := R%d.tsort_rev();\n", com_num, com_num);
+#if 0
     MILPRINTF(MILOUT, "if ( retNum >= 0 ) { R%d := R%d.slice(0, retNum - 1); }\n", com_num, com_num);
+#endif
     MILPRINTF(MILOUT, "R%d.persists(true).rename(\"nexi_result\");\n", com_num);
     MILPRINTF(MILOUT, "}\n");
       

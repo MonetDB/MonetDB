@@ -31,7 +31,9 @@ struct tijahContextStruct;
 
 extern int handleTijahTerm(struct tijahContextStruct *ctx, char* term);
 
-extern int useFlexScanner(char* buf, struct tijahContextStruct* tjCtx); /* FLEX */
+extern int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx);
+extern int tokenize_fast(char* buf, struct tijahContextStruct* tjCtx);
+
 extern char* flexScanOneTerm(char* buf);
 
 extern char* normalizeTerm(struct tijahContextStruct *ctx, char* term );
@@ -224,6 +226,7 @@ typedef struct tijahContextStruct {
 	int  tagStackPtr;
 	/* */
 	int preExpansion;	/* estimation for #TijahPre/PfPre */
+	int tokenize_fast;	/* boolean to indicate fast tokenizer */
 	char* stemmer;	/* name of the stemmer used for this collection */
 	tjStemCtx* stemCtx;
 	char	checkStopWords;
@@ -503,6 +506,11 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	/* */
 	str str_name = readCollParam(res,"name");
 	res->name = (char*)str_name;
+
+	res->tokenize_fast = 0;
+	str str_tokenizer = readCollParam(res,"tokenizer");
+	if ( strcmp(str_tokenizer,"fast") == 0 )
+		res->tokenize_fast = 1;
 
 	/* */
         res->checkStopWords = 1;
@@ -870,7 +878,10 @@ pftijah_handle_characters(XqueryCtx* ctx, str ch) {
 #endif
 
     if ( DOEMIT(tjctx) ) {
-        return useFlexScanner(p,tjctx);
+	if ( tjctx->tokenize_fast)
+            return tokenize_fast(p,tjctx);
+	else
+            return tokenize_flex(p,tjctx);
     }
     return 1;
 }
