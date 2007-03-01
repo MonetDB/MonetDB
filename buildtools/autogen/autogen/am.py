@@ -700,6 +700,7 @@ def am_library(fd, var, libmap, am):
     nsrcs = "nodist_"+fullpref+"_SOURCES ="
     srcs = "dist_"+fullpref+"_SOURCES ="
     deps = []
+    has_def_file = False
     for target in libmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
@@ -717,10 +718,13 @@ def am_library(fd, var, libmap, am):
                 fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, fullpref, basename, basename, basename))
             elif target[-4:] == '.def':
                 ldflags.append("-export-symbols")
-                ldflags.append(target)
+                ldflags.append('$(def_srcdir)' + target)
                 deps.append(target)
+                has_def_file = True
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
+    if has_def_file:
+        fd.write('if NEED_MX\ndef_srcdir =\nelse\ndef_srcdir = $(srcdir)/\nendif\n')
 
     if deps:
         fd.write(am_additional_deps(libname, sep, "LIB", deps, am, pref))
