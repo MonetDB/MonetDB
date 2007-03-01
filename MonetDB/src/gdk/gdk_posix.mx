@@ -588,6 +588,7 @@ MT_mmap_idx(void *base, size_t len)
 	return -1;
 }
 
+#ifndef NATIVE_WIN32
 static int
 MT_mmap_new(char *path, void *base, size_t len, int fd, int writable)
 {
@@ -690,6 +691,7 @@ MT_fadvise(void *base, size_t len, int advice)
 #endif
 	return ret;
 }
+#endif	/* NATIVE_WIN32 */
 
 
 static void
