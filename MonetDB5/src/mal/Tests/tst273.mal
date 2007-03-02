@@ -10,7 +10,7 @@ barrier (go,i):= language.newRange(0:lng);
 exit (go,i);
 
 profiler.setFilter(b);
-profiler.startMonitor();
+profiler.start();
 io.printf("#monitor \n");
 mx:= aggr.max(b); 
 (clk,rdbytes,wrbytes):= profiler.getEvent();
@@ -33,4 +33,4 @@ d:= mmath.sin(0.2:dbl);
 io.printf("# clk %d\n",clk);
 io.printf("# rdbytes %d\n",rdbytes);
 io.printf("# wrbytes %d\n",wrbytes);
-profiler.stopMonitor();
+profiler.stop();

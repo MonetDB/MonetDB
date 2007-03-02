@@ -1505,7 +1505,7 @@ See @url{The MAL Profiler} for more details.
 @= performanceVariables
 #ifdef MALprofiler
 	lng newclk=0;
-	int ppc=0;
+	int ppc= -1;
 #endif
 @= beginProfile
 #ifdef MALprofiler
@@ -1527,7 +1527,7 @@ See @url{The MAL Profiler} for more details.
 	if( malProfileMode == 0)
 		/* mostly true */;
 	else
-	if( mb->profiler != NULL && mb->profiler[ppc].trace)
+	if(ppc!= -1 && mb->profiler != NULL && mb->profiler[ppc].trace)
 	{
 		newclk= GDKusec();
 		mb->profiler[ppc].counter++;
@@ -1536,6 +1536,7 @@ See @url{The MAL Profiler} for more details.
 		mb->profiler[ppc].rdbytes= getVolume(stk,pci,0);
 		mb->profiler[ppc].wrbytes= getVolume(stk,pci,1);
 		profilerEvent(cntxt->nspace,mb,stk,ppc);
+		ppc= -1;
 	}
 #endif
 

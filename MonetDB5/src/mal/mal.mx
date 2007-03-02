@@ -351,19 +351,11 @@ This seemingly superflous action is necessary to simplify analyis of
 memory leakage problems later on.
 @c
 void mal_exit(void){
-	Client cntxt = mal_clients;
 	int t = 0;
 	str err;
-#ifdef MALprofiler
-	stream *f;
-	f= open_wastream("/tmp/Monet.prof");
-	if( f != NULL){
-		profileReport( cntxt->nspace,1, f);
-		close_stream(f);
-	}
-#endif
 
 #if 0
+	Client cntxt = mal_clients;
 	/* skip this to solve random crashes, needs work */
 	freeBoxes();
 	freeModuleList(cntxt->nspace);

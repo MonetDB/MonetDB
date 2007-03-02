@@ -1,0 +1,38 @@
+# the multiplex code blocks.
+
+t0:= alarm.usec();
+b:= bat.new(:oid,:lng);
+barrier (go,i):= language.newRange(0:lng);
+	k:= mmath.rand();
+	l:= calc.lng(k);
+	bat.insert(b,nil:oid,l);
+	redo (go,i):= language.nextElement(1:lng,10000:lng);
+exit (go,i);
+
+profiler.activate("ticks");
+profiler.activate("statement");
+profiler.activate("rdbytes");
+profiler.activate("wrbytes");
+profiler.activate("diskspace");
+profiler.setAll();
+
+profiler.start();
+io.printf("#monitor \n");
+mx:= aggr.max(b); 
+algebra.select(b,nil:lng,mx); 
+algebra.select(b,mx,nil:lng); 
+d:= mmath.sin(0.2:dbl);
+profiler.stop();
+
+stmt:= profiler.getTrace("statement");
+io.print(stmt);
+ticks:= profiler.getTrace("ticks");
+#io.print(ticks);
+rdbytes:= profiler.getTrace("rdbytes");
+io.print(rdbytes);
+wrbytes:= profiler.getTrace("wrbytes");
+#io.print(wrbytes);
+diskspace:= profiler.getTrace("diskspace");
+#io.print(diskspace);
+io.print(rdbytes,wrbytes,stmt);
+#io.print(ticks,rdbytes,wrbytes,diskspace,stmt);

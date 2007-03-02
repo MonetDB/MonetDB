@@ -690,7 +690,7 @@ call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				GDKfree(tpe);
 			}
 			/* in performance monitoring mode we show more details */
-			if( cntxt->flags && isaBatType(v->type)){
+			if( (cntxt->flags || malProfileMode) && isaBatType(v->type)){
 				str tpe= getTypeName(v->type);
 				BAT *b;
 				strcat(msg,tpe);

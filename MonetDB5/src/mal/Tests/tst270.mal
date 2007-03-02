@@ -6,7 +6,6 @@ profiler.activate("pc");
 profiler.activate("statement");
 #profiler.setFilter("*","*");
 profiler.setFilter("*","insert");
-#profiler.setFilter("*","print");
 profiler.openStream("/tmp/MonetEvents");
 
 o:= calc.oid(20000000);

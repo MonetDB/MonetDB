@@ -58,7 +58,7 @@ barrier (go,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-
     redo (go,i):= language.nextElement(1:lng,10000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_13:lng)(_14:lng) jump 5
 exit (go,i);	# 9  (go:bit)(i:lng)
     profiler.setFilter(b);	# 10 CMDsetFilterVariable (_15:void)<-(b:bat[:oid,:lng])
-    profiler.startMonitor();	# 11 CMDstartMonitor (_16:void)
+    profiler.start();	# 11 CMDstartProfiler (_16:void)
     io.printf("#monitor \n");	# 12 IOprint_str (_17:void)<-(_18:str)
     mx := aggr.max(b);	# 13 ALGmax_lng (mx:lng)<-(b:bat[:oid,:lng])
     (clk,rdbytes,wrbytes):= profiler.getEvent();	# 14 CMDgetEvent (clk:lng)(rdbytes:int)(wrbytes:int)
@@ -81,7 +81,7 @@ exit (go,i);	# 9  (go:bit)(i:lng)
     io.printf("# clk %d\n",clk);	# 31 IOprint_formatted_lng (_42:void)<-(_24:str)(clk:lng)
     io.printf("# rdbytes %d\n",rdbytes);	# 32 IOprint_formatted_int (_43:void)<-(_26:str)(rdbytes:int)
     io.printf("# wrbytes %d\n",wrbytes);	# 33 IOprint_formatted_int (_44:void)<-(_28:str)(wrbytes:int)
-    profiler.stopMonitor();	# 34 CMDstopMonitor (_45:void)
+    profiler.stop();	# 34 CMDstopProfiler (_45:void)
 end main;	# 35  
 #monitor 
 # clk 225
