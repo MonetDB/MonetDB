@@ -761,3 +761,5 @@
 
 #define HAVE_GLOBALMEMORYSTATUSEX 1 /* only on >= NT 5 */
 #define HAVE_GLOBALMEMORYSTATUS 1
+
+#define DEBUG_ALLOC 1

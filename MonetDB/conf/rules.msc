@@ -63,6 +63,7 @@ MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
 CP=copy
 MV=copy
 DEL=del
+EDITBIN=editbin
 NATIVE_WIN32 = 1
 
 # often, we use unixtools, replacing the win32 find utility by the unix variant (so we have to use grep)
