@@ -7957,29 +7957,159 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return NORMAL;
     }
 #ifdef HAVE_PFTIJAH
-    else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"tijah-command")))
+    else if (
+          ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-create-collection"))) ||
+          ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-delete-collection")))
+	)
     {
+	int is_delete   = !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-delete-collection"));
+        int opt_counter  = 0;
+	int str_counter  = 0;
         char *item_ext = kind_str(STR);
-
-        int rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+	
+	milprintf(f, 
+                "{ # translate pf:tijah-create-collection\n"
+	);
+        /* get query string */
+	rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
-            milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
         add_empty_strings (f, STR, cur_level);
+        saveResult_ (f, ++counter, STR);
+	str_counter = counter;
+
+	if (fun->arity == 2) {
+	  /* translate the options parameter*/
+          translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+	  saveResult(f, ++counter);
+	  opt_counter = counter;
+        } else {
+	  opt_counter = 0;
+	}
+	  
+	/* generate the serialization code */
+	milprintf(f,
+	        "loop%03u@batloop() { # begin batloop over collection creator\n"
+                , cur_level);
+  
+	milprintf(f,
+	        "    iter := iter%03u.slice(int($h),int($h));\n"
+	        "    item := item%03u.slice(int($h),int($h));\n"
+		"    kind := constant2bat(kind%03u).slice(int($h),int($h));\n"
+		, opt_counter, opt_counter, opt_counter);
+	if ( opt_counter ) {
+		milprintf(f, "    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n");
+	} else {
+		milprintf(f, "    var optbat := new(str,str);\n");
+	}
+	/* execute tj_init_collection */
+	milprintf(f,
+		"    var cname := item%s%03u.fetch(int($h));\n"
+		, item_ext, str_counter);
+	if ( is_delete ) {
+	  milprintf(f,
+                "    tj_delete_collection(cname);\n"
+		"}\n");
+	} else {
+	  milprintf(f,
+                "    tj_init_collection(cname,optbat);\n"
+		"}\n");
+	}
+
+	translateEmpty(f);
+	
+        deleteResult_ (f, str_counter, STR);
+	if ( opt_counter )
+	    deleteResult(f, opt_counter);
+        milprintf(f, "} # end of translate pf:tijah_query\n");
+        return (code)?INT:NORMAL;
+    }
+    else if (PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-add-doc")) == 0)
+    {
+        /*
+         * Method was adapted from the pf:add-doc() function. It returns an
+	 * empry document tape but add's the argument documents to the 
+	 * collection.
+	 */
+        milprintf(f, "# pf:add-doc (str, str [, str] [, int]) as add_stmt\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
-        saveResult_ (f, counter, STR);
-    
+        saveResult(f, counter);
+        translate2MIL(f, NORMAL, cur_level, counter, RL(args));
+        counter++;
+        saveResult(f, counter);
+        if (fun->arity == 2) {
+            counter++;
+            milprintf(f,
+                      "# collection is default same as document name\n"
+                      "var item%03u := item%03u;\n"
+                      "var kind%03u := kind%03u;\n"
+                      "# percentage default is 0\n"
+                      "item := int_values.addValues(0LL);\n"
+                      "kind := INT;\n",
+                      counter, counter - 1, counter, counter - 1);
+        } else {
+            translate2MIL(f, NORMAL, cur_level, counter, RRL(args));
+            counter++;
+            saveResult(f, counter);
+            if (fun->arity == 3) {
+                milprintf(f,
+                          "if (kind%03u.fetch(0) = INT) {\n"
+                          "  # collection was omitted, but percentage provided\n"
+                          "  kind := kind%03u;\n"
+                          "  item := item%03u;\n"
+                          "  kind%03u := kind%03u;\n"
+                          "  item%03u := item%03u;\n"
+                          "} else {\n"
+                          "  item := int_values.addValues(0LL);\n"
+                          "  kind := INT;\n"
+                          "}\n",
+                          counter, counter, counter, counter, counter - 1, counter, counter - 1);
+            } else {
+                translate2MIL(f, NORMAL, cur_level, counter, RRRL(args));
+            }
+        }
         milprintf(f,
-            "{ # pf:tijah-command\n"
-            "var strings := item%s%03u;\n"
-            "item := [run_tijah_command](strings).[oid]();\n"
-            "iter := loop%03u;\n"
-            "ipik := iter;\n"
-            "pos := 1@0;\n"
-            "kind := BOOL;\n"
-            "} # end of fn:starts-with\n",
-            item_ext, counter,
-            cur_level);
-        deleteResult_ (f, counter, STR);
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item%03u, item%03u,\n"
+                  "                           kind%03u, kind%03u,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item%03u, item,\n"
+                  "                           kind%03u, kind,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+		  " var col_uri_nm := merge.fetch(1).leftfetchjoin(str_values);\n"
+		  " var col_cluster := new(str,bat);\n"
+		  " var ai := 0;\n"
+		  " while ( ai < col_uri_nm.count() ) {\n"
+  		  "     var cn := col_uri_nm.find(oid(ai));\n"
+  		  "     var cb;\n"
+  		  "     if ( col_cluster.exist(cn) ) {\n"
+    		  "       cb := col_cluster.find(cn);\n"
+  		  "     } else {\n"
+    		  "       cb := new(str,str);\n"
+    		  "       col_cluster.insert(cn,cb);\n"
+  		  "     }\n"
+  		  "     cb.insert(col_uri_nm.find(oid(ai+1)),col_uri_nm.find(oid(ai+2)));\n"
+  		  "     ai := ai + 4;\n"
+		  " }\n"
+		  " if ( false) ai.print();\n" /* DATAFLOW BUG do not remove */
+		  " col_cluster@batloop() {\n"
+		  "     tj_add2collection($h,$t,true);\n"
+		  " }\n"
+		  , counter - 2, counter - 1, counter - 2, counter - 1, counter, counter);
+
+	translateEmpty(f);
+
+        if (fun->arity > 2) {
+            deleteResult(f, counter);
+        }
+        deleteResult(f, counter - 1);
+        deleteResult(f, counter - 2);
         return NORMAL;
     }
     else if (

@@ -597,6 +597,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     else
         phrase_in = FALSE;
 
+    parserCtx->milFILEdesc = NULL;
     if ( parserCtx->milFILEname ) {
       if ( !(parserCtx->milFILEdesc = fopen(parserCtx->milFILEname,"w")) ) {
         LOGPRINTF(LOGFILE,"Error: cannot find file for writing mil code.\n");
@@ -628,8 +629,6 @@ int old_main(BAT* optbat, char* startNodes_name)
     LOGPRINTF(LOGFILE,"\tGenerated MIL in string, size=%d\n",strlen(parserCtx->milBUFF));
      if ( parserCtx->milFILEdesc ) {
        fprintf(parserCtx->milFILEdesc,"%s",parserCtx->milBUFF);
-     }
-     if ( parserCtx->milFILEdesc ) {
        fclose(parserCtx->milFILEdesc);
      }
 

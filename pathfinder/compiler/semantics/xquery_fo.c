@@ -1905,11 +1905,35 @@ PFfun_xquery_fo ()
 
 #ifdef HAVE_PFTIJAH
 /* #4. PFTIJAH FUNCTIONS */
-    , /* pf:tijah-command(string*) as boolean */
-      { .ns = PFns_lib, .loc = "tijah-command",
+    ,  /* pf:tijah-create-collection(string) as docmgmt */
+      { .ns = PFns_lib, .loc = "tijah-create-collection",
         .arity = 1, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()) },
-             .ret_ty = PFty_xs_boolean () } } }
+            .par_ty = (PFty_t[]) { PFty_xs_string () },
+            .ret_ty = PFty_docmgmt () } } }
+    ,  /* pf:tijah-create-collection(string,item) as docmgmt */
+      { .ns = PFns_lib, .loc = "tijah-create-collection",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                   PFty_xs_anyNode () },
+            .ret_ty = PFty_docmgmt () } } }
+    ,  /* pf:tijah-delete-collection(string) as docmgmt */
+      { .ns = PFns_lib, .loc = "tijah-delete-collection",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string () },
+            .ret_ty = PFty_docmgmt () } } }
+    ,  /* pf:tijah-add-doc(string, string) as docmgmt */
+      { .ns = PFns_lib, .loc = "tijah-add-doc",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                   PFty_xs_string () },
+            .ret_ty = PFty_docmgmt () } } }
+    ,  /* pf:tijah-add-doc(string, string, string) as docmgmt */
+      { .ns = PFns_lib, .loc = "tijah-add-doc",
+        .arity = 3, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                   PFty_xs_string (),
+                                   PFty_xs_string () },
+            .ret_ty = PFty_docmgmt () } } }
     , /* pf:tijah-query-id(item*, string) as integer */
       { .ns = PFns_lib, .loc = "tijah-query-id",
         .arity = 2, .sig_count = 1, .sigs = { {

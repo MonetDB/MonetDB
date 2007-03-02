@@ -390,7 +390,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
       var tagfilter  := "";
   
       param@batloop() {
-	  if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
+	  if ( verbose ) printf("#TJ: tj_init_collection():param[%s]=\"%s\"\n",$h,$t);
 	  if ( $h = "stemmer" ) {
 	      stemmer := $t;
 	  } else if ( $h = "tokenizer" ) {
@@ -521,6 +521,9 @@ PROC _tj_collection_str(str collName) : BAT[void,bat]
 # a single [void,bat] bat
 PROC _tj_collection(str collName) : BAT[str, bat]
 {
+        if (not(view_bbp_name().reverse().exist("tj_" + collName + "_param"))) {
+	     ERROR("_tj_collection(): collection(\""+collName+"\") does not exist!\n");
+	}
 	var tjCollBat := new(str,bat);
 
 	var parbat := bat("tj_" + collName + "_param");
@@ -586,6 +589,7 @@ The index is automatically finalized at the end of the method.",
 "pftijah");
 PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
 {
+    if ( verbose ) printf("#TJ: tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",collName,uri_loc,uri_name);
     var coll_lock := tj_get_collection_lock(collName);
     lock_set(coll_lock);
     var err := CATCH({
