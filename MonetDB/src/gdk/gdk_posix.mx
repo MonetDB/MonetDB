@@ -1143,6 +1143,7 @@ MT_init_posix(int alloc_map)
 	(void)alloc_map;
 #endif
 	MT_mmap_init();
+        (void) SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER) 1);
 }
 
 size_t
