@@ -1,0 +1,174 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
+# All Rights Reserved.
+
+!INCLUDE $(TOPDIR)\..\..\MonetDB\conf\rules.msc
+
+MONET4=1
+MONETDB4_INCS= -I$(TOPDIR)\..\..\MonetDB4\NT\include\plain -I$(TOPDIR)\..\..\MonetDB4\NT\include\contrib \
+               -I$(TOPDIR)\..\..\MonetDB4\NT\include\mapi -I$(TOPDIR)\..\..\MonetDB4\NT\include\monet -I$(TOPDIR)\..\..\MonetDB4\NT\include
+MONETDB4_LIBS=/libpath:$(TOPDIR)\..\..\MonetDB4\NT\lib /libpath:$(TOPDIR)\..\..\MonetDB4\NT\lib\MonetDB4 
+MONETDB_INCS=-I$(TOPDIR)\..\..\MonetDB\NT\include -I$(TOPDIR)\..\..\MonetDB\NT\include\common -I$(TOPDIR)\..\..\MonetDB\NT\include\gdk
+MONETDB_LIBS=/libpath:$(TOPDIR)\..\..\MonetDB\NT\lib
+CLIENTS_INCS=-I$(TOPDIR)\..\..\clients\NT\include -I$(TOPDIR)\..\..\clients\NT\include\MonetDB\mapilib
+CLIENTS_LIBS=/libpath:$(TOPDIR)\..\..\clients\NT\lib
+
+# burg is part of the buildtools
+BURG=burg
+
+# This is the location of libxml2 and its dependencies (depends how it was compiled; sometimes iconv and zlib are needed)
+LIBXML2 = C:\libxml2-2.6.27.win32
+LIBXML2_ICONV = C:\iconv-1.9.2.win32
+LIBXML2_ZLIB  = C:\zlib-1.2.3.win32
+LIBXML2_CFLAGS = "-I$(LIBXML2)\include" "-I$(LIBXML2_ICONV)\include" "-I$(LIBXML2_ZLIB)\include"
+LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBXML2_ICONV)\lib\iconv.lib" "$(LIBXML2_ZLIB)\lib\zlib.lib"
+
+CONFIG_H = pf_config.h
+
+# not need to edit beyond here..
+
+pkg = MonetDB
+exec_prefix = $(prefix)
+
+bindir = $(exec_prefix)\bin
+sbindir = $(exec_prefix)\sbin
+libexecdir = $(exec_prefix)\libexec
+datadir = $(prefix)\share
+sysconfdir = $(prefix)\etc
+sharedstatedir = $(prefix)\com
+localstatedir = $(prefix)\var
+libdir = $(exec_prefix)\lib
+infodir = $(prefix)\info
+mandir = $(prefix)\man
+includedir = $(prefix)\include
+oldincludedir = \usr\include
+pkgdatadir = $(datadir)\$(pkg)
+pkglibdir = $(libdir)\$(pkg)
+pkgincludedir = $(includedir)\$(pkg)
+
+#-FI$(TOPDIR)\config.h 
+LIBC_INCS = $(PTHREAD_INCS) $(LIBXML_INCS)
+SOCKET_LIBS = wsock32.lib
+
+COMPILE_MEL=1
+COMPILE_MX=1
+MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
+MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
+CP=copy
+MV=copy
+DEL=del
+!IFDEF HAVE_JAVA
+CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" -DHAVE_JAVA "$(TOPDIR)" "$(prefix)"
+!ELSE
+CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" "$(TOPDIR)" "$(prefix)"
+!ENDIF
+
+# Use "nmake DEBUG=1" to get a debug build (assertions enabled);
+# use "nmake NDEBUG=1" to get a release build (assertions disabled);
+# use plain "nmake" to get the default.
+!IFNDEF DEBUG
+!IFDEF NDEBUG
+CFLAGS = $(CFLAGS) -DNDEBUG
+!ELSE
+# default in case neither NDEBUG nor DEBUG are defined
+CFLAGS = $(CFLAGS)
+!ENDIF
+!ENDIF
+
+PHP_INCS = -I$(PHP_SRCDIR) -I$(PHP_SRCDIR)\main -I$(PHP_SRCDIR)\TSRM -I$(PHP_SRCDIR)\Zend -DPHP_WIN32 -DZEND_WIN32 -DZEND_DEBUG=0 -DZTS=1
+PHP_LIBS = $(PHP_INSTDIR)\php5embed.lib
+# there's nothing special about PEAR on Windows
+HAVE_PEAR = 1
+
+{$(SRCDIR)}.mx.h:
+	$(MX) $(MXFLAGS) -x h $<
+
+.mx.h:
+	$(MX) $(MXFLAGS) -x h $<
+
+{$(SRCDIR)}.mx.c:
+	$(MX) $(MXFLAGS) -x c $<
+
+.mx.c:
+	$(MX) $(MXFLAGS) -x c $<
+
+{$(SRCDIR)}.mx.m:
+	$(MX) $(MXFLAGS) -x m $<
+
+.mx.m:
+	$(MX) $(MXFLAGS) -x m $<
+
+.m.mil: 
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+	type $*.tmpmil >> $@
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) $@ .libs\$@
+
+.m.mil:
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) $@ .libs\$@
+
+{$(SRCDIR)}.mx.tmpmil:
+	$(MX) $(MXFLAGS) -l -x mil $<
+	$(MV) $*.mil $*.tmpmil
+	$(DEL) $*.mil
+
+{$(SRCDIR)}.mx.mil:
+	$(MX) $(MXFLAGS) -l -x mil $<
+
+.mx.tmpmil:
+	$(MX) $(MXFLAGS) -l -x mil $<
+	$(MV) $*.mil $*.tmpmil
+	$(DEL) $*.mil
+
+.mx.mil:
+	$(MX) $(MXFLAGS) -l -x mil $<
+
+{$(SRCDIR)}.mx.y:
+	$(MX) $(MXFLAGS) -x y $<
+
+.mx.y:
+	$(MX) $(MXFLAGS) -x y $<
+
+{$(SRCDIR)}.mx.l:
+	$(MX) $(MXFLAGS) -x l $<
+
+.mx.l:
+	$(MX) $(MXFLAGS) -x l $<
+
+{$(SRCDIR)}.mx.yy:
+	$(MX) $(MXFLAGS) -x Y $<
+
+.mx.yy:
+	$(MX) $(MXFLAGS) -x Y $<
+
+{$(SRCDIR)}.mx.ll:
+	$(MX) $(MXFLAGS) -x L $<
+
+.mx.ll:
+	$(MX) $(MXFLAGS) -x L $<
+
+{$(SRCDIR)}.c.obj:
+	$(CC) $(CFLAGS) $(INCLUDES) -c $<
+
+.c.obj:
+	$(CC) $(CFLAGS) $(INCLUDES) -c $<
+
+{$(SRCDIR)}.brg.c:
+	$(BURG) -c 1000 -d -I -p PF$* -o $@ < $<
+
+.SUFFIXES: .m .mx .proto_h .mil .glue_c .brg
+.PRECIOUS: .m 

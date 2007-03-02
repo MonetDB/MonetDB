@@ -654,7 +654,7 @@ _                                {S}
                                        = extract_qname (yytext, 0);
                                      pf_yield (QName_LParen);
                                    }
-{IntegerLiteral}                   { pflval.num = atoll (yytext);
+{IntegerLiteral}                   { pflval.num = (long long) atof (yytext);
                                      gotoState (OPERATOR);
                                      pf_yield (IntegerLiteral);
                                    }

@@ -2938,7 +2938,7 @@ shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 		elog(ERR_DEBUG, "select: %s", strerror(errno));
 	} else {
 		/* If listening socket is ready, accept new connection */
-		if (listen_socket != -1 && FD_ISSET(listen_socket, &rset) &&
+			if (listen_socket != -1 && FD_ISSET(listen_socket, &rset) &&
 		    (sock = accept(listen_socket, &sa.u.sa, &sa.len)) != 0)
 			newconnection(ctx, sock, &sa);
 
@@ -2954,10 +2954,11 @@ shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 			 * If the connection is removed, keep the previous
 			 * connection in chain (pc) unchanged.
 			 */
-			if ((c->flags & FLAG_FINISHED) || c->expire < now)
-				disconnect(c, pc);
-			else 
-				pc = c;
+            if ( (c->io != do_embedded) && 
+                    ((c->flags & FLAG_FINISHED) || c->expire < now) )
+                disconnect(c, pc);
+            else
+                pc = c;
 		}
 	}
 }

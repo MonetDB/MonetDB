@@ -77,8 +77,6 @@ pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, l
 #define DOCUMENT  4
 #define COLLECTION 5
 
-#include <strings.h>
-
 /* SAX parser interface(libxml2) */
 #include "libxml/parser.h"
 #include "libxml/parserInternals.h"

@@ -33,13 +33,13 @@ EXTRA_HEADERS = pf_config.h
 
 scripts_txt = {
 	SOURCES = HowToStart-MinGW.txt
-	DIR = datadir/doc/MonetDB-XQuery-${VERSION}
+	DIR = datadir/doc/MonetDB-XQuery-$(VERSION)
 }
 
 scripts_docs = {
 	EXT = ""
 	SOURCES = HowToStart-PF 
-	DIR = datadir/doc/MonetDB-XQuery-${VERSION}
+	DIR = datadir/doc/MonetDB-XQuery-$(VERSION)
 }
 
 TESTS = RunMtest

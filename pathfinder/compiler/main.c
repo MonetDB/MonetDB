@@ -535,6 +535,20 @@ static const char
 
 #else
 
+#ifndef HAVE_GETOPT_H 
+
+#include "win32_getopt.c" /* fall back on a standalone impl */
+
+#define getopt win32_getopt
+#define getopt_long win32_getopt_long
+#define getopt_long_only win32_getopt_long_only
+#define _getopt_internal _win32_getopt_internal
+#define opterr win32_opterr
+#define optind win32_optind
+#define optopt win32_optopt
+#define optarg win32_optarg
+#endif
+
 /* no long option names w/o GNU getopt */
 #include <unistd.h>
 

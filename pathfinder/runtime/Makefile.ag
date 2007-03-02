@@ -103,7 +103,7 @@ lib__xrpc_client = {
         SOURCES = xrpc_client.mx
         LIBS = \
 			   libserialize $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet -lpthread \
+			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
 			   $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io
 }
 
@@ -128,7 +128,7 @@ lib__xrpc_server = {
                 ../compiler/libcompiler2 \
                 ../compiler/sql/libsql \
 			   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet -lpthread \
+			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet $(PTHREAD_LIBS) \
 			   $(MONETDB4_MODS) -l_mapi -l_streams -l_builtin -l_ascii_io
 }
 
