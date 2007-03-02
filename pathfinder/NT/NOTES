@@ -12,7 +12,7 @@ CXX="icl -Qc99 -GR- -Qsafeseh-"
 
 some notes on the flags:
 - Qc99 ==> the coveted C-99 support, needed by pathfinder
-- the latter three switches where added in reponse to crashes in pthreads
+- the latter three switches were added in reponse to crashes in pthreads
   -GR- disable  ==>  disable C++ RTTI
   -Qsafeseh-    ==>  disable structured exception handling
 
