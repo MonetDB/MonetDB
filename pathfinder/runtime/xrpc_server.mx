@@ -1016,7 +1016,7 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     }
 
     if (timing) {
-        stream_printf(GDKout,
+        fprintf(stdout,
                 "XRPC_Server_DeSerialisation:   %lld microsec\n",
                 time_xrpcServDeSeria);
     }
@@ -1188,10 +1188,6 @@ CMDrpcd_start(int *port, bit *open, str option)
         snprintf(datadir, 1024, "%s%cMonetDB%cxrpc", s, DIR_SEP, DIR_SEP);
     }
     shttpd_setopt("document_root", datadir);
-/*
-    shttpd_setopt("error_log", "c:\\tmp\\err.txt");
-    shttpd_setopt("debug", "1");
- */
 
     shttpd_init(NULL); /* Initialize httpsd thread */
 
