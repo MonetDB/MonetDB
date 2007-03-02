@@ -31,7 +31,7 @@ int pr_hide = 0;
 int pr_hide_text = 0;
 int pr_env = 0;
 int pr_math = 0;
-int pr_pos = 0;
+size_t pr_pos = 0;
 
 void
 PrEnv(int env)
@@ -216,7 +216,7 @@ void
 PrChr(char c)
 {
 	extern int opt_column;
-	int start_pos = pr_pos;
+ 	size_t start_pos = pr_pos;
 
 	if (Hide())
 		return;

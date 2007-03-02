@@ -86,7 +86,7 @@ PrModeStr(char *s, char c)
 void
 PrCmd(char *s)
 {
-	extern int pr_pos;
+	extern size_t pr_pos;
 
 	if (Hide())
 		return;

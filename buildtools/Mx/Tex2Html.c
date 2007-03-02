@@ -133,7 +133,7 @@ char *translation[] = {
 
 typedef struct {
 	char *str;
-	int len;
+	ptrdiff_t len;
 	int nested[512];
 	int nchildren;
 } texblock_t;

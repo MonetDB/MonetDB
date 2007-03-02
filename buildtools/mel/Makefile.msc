@@ -22,6 +22,7 @@ CFLAGS = -I. -GF -wd4273 -wd4102 -W3 -MD -nologo -Zi
 !ENDIF
 CXXFLAGS = $(CFLAGS) -EHsc
 MV=copy
+MT=mt
 DEL=del
 ECHO=echo
 YACC=bison -b y -y
@@ -50,6 +51,7 @@ clean:
 
 mel.exe: $(MEL_OBJS)
 	$(CC) $(CFLAGS) /Femel.exe $(MEL_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
+	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1
 
 mel_config.h: winconfig.h
 	copy winconfig.h mel_config.h
