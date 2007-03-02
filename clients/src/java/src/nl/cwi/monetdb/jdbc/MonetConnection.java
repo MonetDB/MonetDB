@@ -339,7 +339,7 @@ public class MonetConnection implements Connection {
 		monet.readLine(); /* prompt */
 		// parse the challenge string, split it on ':'
 		String[] chaltok = chalstr.split(":");
-		if (chaltok.length < 4) throw
+		if (chaltok.length <= 4) throw
 			new SQLException("Server challenge string unusable!");
 
 		// challenge string to use as salt/key
