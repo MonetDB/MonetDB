@@ -608,6 +608,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	s = buf;
 	len = stream_read_block(fdin, buf, 1, BLOCK);
 	assert(len <= BLOCK);
+        if (len < 0) len=0;
 	buf[len] = 0;
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
