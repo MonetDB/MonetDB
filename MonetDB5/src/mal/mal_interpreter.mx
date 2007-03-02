@@ -1511,15 +1511,18 @@ See @url{The MAL Profiler} for more details.
 #ifdef MALprofiler
 	if( malProfileMode == 0)
 		/* mostly true */;
-	else 
-	if( mb->profiler != NULL && mb->profiler[stkpc].trace)
-	{
-		ppc= stkpc;
-		mb->profiler[ppc].clk= GDKusec();
-		time(&mb->profiler[ppc].clock);
+	else {
+		if( mb->profiler == NULL)
+			setFilterOnBlock(mb, 0, 0);
+		if( mb->profiler != NULL && mb->profiler[stkpc].trace)
+		{
+			ppc= stkpc;
+			mb->profiler[ppc].clk= GDKusec();
+			time(&mb->profiler[ppc].clock);
 #ifdef HAVE_TIMES
-		times(&mb->profiler[ppc].timer);
+			times(&mb->profiler[ppc].timer);
 #endif
+		}
 	}
 #endif
 @= endProfile

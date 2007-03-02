@@ -199,6 +199,7 @@ mal_export str cleanupProfiler(void);
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export void setFilter(Module cntxt, str mod, str fcn);
+mal_export void setFilterOnBlock(MalBlkPtr mb, str mod, str fcn);
 mal_export void clrFilter(Module cntxt, str mod, str fcn);
 mal_export void setFilterVariable(MalBlkPtr mb, int i);
 mal_export void clrFilterVariable(MalBlkPtr mb, int i);
@@ -337,12 +338,18 @@ The parameter of getEventStream is the return value of the enclosing function:
 	}
 @- Event dispatching
 The profiler strategy is encapsulated here
+Note that the profiler itself should lead to event generations.
 @c
+static str myname=0;
 void
 profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 #ifdef MALprofiler
 	if( mb->profiler == NULL) return;
+	if( myname == 0)
+		myname= putName("profiler",8);
+	if( getModuleId(getInstrPtr(mb,pc)) == myname)
+		return;
 	if (offlineProfiling)
 		offlineProfilerEvent(cntxt, mb, stk, pc);
 	if (cachedProfiling)
@@ -354,10 +361,10 @@ profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 The offline processing structure is the easiest. We merely have to
 produce a correct tuple format for the front-end.
 @c
-#define log(X,Y) stream_printf(eventstream,X,Y);
-#define log0(X) stream_printf(eventstream,X);
-#define log2(X,Y,Z) stream_printf(eventstream,X,Y,Z);
-#define flushLog() stream_flush(eventstream);
+#define log(X,Y) if(eventstream) stream_printf(eventstream,X,Y);
+#define log0(X) if(eventstream) stream_printf(eventstream,X);
+#define log2(X,Y,Z) if(eventstream) stream_printf(eventstream,X,Y,Z);
+#define flushLog() if(eventstream) stream_flush(eventstream);
 
 #ifdef MALprofiler
 
@@ -367,8 +374,8 @@ offlineProfilerHeader(void)
 	@:getEventStream()@	/* profilerEvent -> void */
 	log0("# ");
 	if (profileCounter[PROFpc].status) {
-		log0("caller,line\t");
-		log0("callee,function\t");
+		log0("caller,line,\t");
+		log0("callee,function,\t");
 	}
 	if (profileCounter[PROFtime].status) {
 		log0("time,\t");
@@ -415,7 +422,6 @@ offlineProfilerHeader(void)
 		log0("event\t# name\n");
 	} else
 		log0("# name\n");
-	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
 }
 
@@ -442,7 +448,6 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		/* first call to profiled */
 		offlineProfilerHeader();
 		delayswitch--;
-		return;
 	}
 	@:getEventStream()@	/* profilerEvent -> void */
 	if (delayswitch == 0) {
@@ -497,7 +502,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		log(" \"%s\",\t", c);
 	}
 #ifdef HAVE_TIMES
-	if (profileCounter[PROFcpu].status) {
+	if (profileCounter[PROFcpu].status && delayswitch<0) {
 		log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
 		log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
 		log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
@@ -505,7 +510,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #endif
 
-	if (profileCounter[PROFmemory].status) {
+	if (profileCounter[PROFmemory].status && delayswitch<0) {
 #ifdef HAVE_SYS_RESOURCE_H
 		log("%d,\t", infoUsage.ru_maxrss);
 #endif
@@ -519,7 +524,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		prevMalloc = infoMalloc;
 	}
 #ifdef HAVE_SYS_RESOURCE_H
-	if (profileCounter[PROFio].status) {
+	if (profileCounter[PROFio].status && delayswitch<0) {
 		log("%d,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
 		log("%d,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
 		log("%d,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
@@ -531,10 +536,10 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #endif
 	if (profileCounter[PROFrdbytes].status) {
-		log("%d,", mb->profiler[pc-1].rdbytes);
+		log("%d,", mb->profiler[pc].rdbytes);
 	}
 	if (profileCounter[PROFwrbytes].status) {
-		log("%d,", mb->profiler[pc-1].wrbytes);
+		log("%d,", mb->profiler[pc].wrbytes);
 	}
 	if (profileCounter[PROFdisk].status) {
 		log("%d,", getDiskSpace());
@@ -545,7 +550,6 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		log0(" ]\n");
 	}
 	eventcounter++;
-	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
 }
 #endif
@@ -663,6 +667,12 @@ stopProfiling(void)
 }
 
 @-
+A front-end may request the information using a
+polling operation, i.e. sending an empty command.
+A semaphore can be used to notify threads that
+a new element has become available for shipping.
+@c
+@-
 The resetProfiler is called when the owner of the event stream
 leaves the scene. (Unclear if parallelism may cause errors)
 @c
@@ -672,9 +682,8 @@ MPresetProfiler(stream *fdout)
 	if (fdout != eventstream)
 		return;
 	mal_set_lock(profileLock, "profileLock");
-	eventstream = 0;
+	/* eventstream = 0;*/
 	mal_unset_lock(profileLock, "profileLock");
-	clrFilter(MCgetClient()->nspace,"*","*");
 }
 
 @-
@@ -692,11 +701,10 @@ int
 instrFilter(InstrPtr pci, str mod, str fcn)
 {
 #ifdef MALprofiler
-	if (getFunctionId(pci) && (*fcn == '*' || strcmp(fcn, getFunctionId(pci)) == 0)) {
-		if (getModuleId(pci) && (*mod == '*' || strcmp(mod, getModuleId(pci)) == 0))
-			return 1;
-	}
-	if (getModuleId(pci) && *fcn == '*' && (*mod == '*' || strcmp(mod, getModuleId(pci)) == 0))
+	if (getFunctionId(pci) &&  fcn && mod &&
+		(*fcn == '*' || strcmp(fcn, getFunctionId(pci)) == 0) &&
+		(*mod == '*' || strcmp(mod, getModuleId(pci)) == 0)
+	)
 		return 1;
 #else
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
@@ -704,16 +712,41 @@ instrFilter(InstrPtr pci, str mod, str fcn)
 	return 0;
 }
 
+@-
+The last filter values are saved as replacement for missing
+arguments. It can be used to set the profile bits for modules
+that has not been checked yet, e.g created on the fly.
+@c
+static str modFilter[32], fcnFilter[32];
+static int topFilter;
+
+void
+setFilterOnBlock(MalBlkPtr mb, str mod, str fcn){
+	int cnt,k,i;
+	InstrPtr p;
+
+	initProfiler(mb);
+	for (k = 0; k < mb->stop; k++) {
+		p = getInstrPtr(mb, k);
+		cnt =0;
+		for(i=0;i<topFilter; i++)
+		cnt += instrFilter(p,modFilter[i],fcnFilter[i]);
+		mb->profiler[k].trace = mb->profiler[k].trace || 
+								profileAll || cnt ||
+								(mod && fcn && instrFilter(p, mod, fcn));
+	}
+}
+
 void
 setFilter(Module cntxt, str mod, str fcn)
 {
 #ifdef MALprofiler
-	int j, k, moduleOnly = 0;
+	int j;
 	Module s = cntxt;
 	MalBlkPtr mb;
 	Symbol t;
-	InstrPtr p;
 
+	(void) cntxt;
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
 	if( ! profileLockInitialized) {
@@ -721,22 +754,17 @@ setFilter(Module cntxt, str mod, str fcn)
 		profileLockInitialized= 1;
 	}
 	mal_set_lock(profileLock, "profileLock");
+	if( mod && fcn && topFilter<32){
+		modFilter[topFilter]= GDKstrdup(mod);
+		fcnFilter[topFilter++]= GDKstrdup(fcn);
+	} 
+
 	while (s != NULL) {
 		if (s->subscope)
 			for (j = 0; j < MAXSCOPE; j++)
 				if (s->subscope[j]) {
-					for (t = s->subscope[j]; t != NULL; t = t->peer) {
-						p = getInstrPtr(mb=t->def, 0);
-						moduleOnly = getModuleId(p) && strcmp(getModuleId(p), mod) == 0;
-						initProfiler(mb);
-						for (k = 0; k < t->def->stop; k++) {
-							p = getInstrPtr(t->def, k);
-							mb->profiler[k].trace = mb->profiler[k].trace || 
-													moduleOnly || 
-													profileAll ||
-													instrFilter(p, mod, fcn);
-						}
-					}
+					for (t = s->subscope[j]; t != NULL; t = t->peer)
+						setFilterOnBlock(mb,mod,fcn);
 				}
 		s = s->outer;
 	}
@@ -768,13 +796,18 @@ clrFilter(Module cntxt, str mod, str fcn)
 		profileLockInitialized= 1;
 	}
 	mal_set_lock(profileLock, "profileLock");
+	for(j=0; j<topFilter; j++){
+		GDKfree(modFilter[j]);
+		GDKfree(fcnFilter[j]);
+	}
+	topFilter=0;
 	profileAll = FALSE;
 	while (s != NULL) {
 		if (s->subscope)
 			for (j = 0; j < MAXSCOPE; j++)
 				if (s->subscope[j]) {
 					for (t = s->subscope[j]; t != NULL; t = t->peer) {
-						if( (mb=t->def)->profiler)
+						if(t->def && (mb=t->def)->profiler)
 						for (k = 0; k < t->def->stop; k++)
 						if( instrFilter(getInstrPtr(t->def, k), mod, fcn) ){
 							mb->profiler[k].trace = FALSE;
@@ -1050,10 +1083,10 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 */
 	if (profileCounter[PROFrdbytes].status) {
-		BUNins(TRACE_id_rdbytes, &evnt, &mb->profiler[pc-1].rdbytes, FALSE);
+		BUNins(TRACE_id_rdbytes, &evnt, &mb->profiler[pc].rdbytes, FALSE);
 	}
 	if (profileCounter[PROFwrbytes].status) {
-		BUNins(TRACE_id_wrbytes, &evnt, &mb->profiler[pc-1].wrbytes, FALSE);
+		BUNins(TRACE_id_wrbytes, &evnt, &mb->profiler[pc].wrbytes, FALSE);
 	}
 	if (profileCounter[PROFdisk].status) {
 		int disk= getDiskSpace();
