@@ -32,6 +32,14 @@ bin_merovingian = {
 		   $(MALLOC_LIBS)
 }
 
+bin_mspy = {
+	SOURCES = mspy.mx
+	LIBS = @SHARED_LIBS@ -lbat -lmutils -lstream \
+			$(MONETDB_LIBS) $(CLIENTS_LIBS) -lMapi \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
 lib_embeddedmal = {
 	SOURCES = embeddedclient.mx
 	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \

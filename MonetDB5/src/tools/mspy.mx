@@ -1,0 +1,204 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f mspy
+@a Martin Kersten
+@v 1.0
+@+ The MonetDB Spy
+The MonetDB kernel carries a profiler infrastructure, which
+can be precisely controlled through a MAL program. 
+Often, however, inclusion of profiling is an after thought.
+
+The @code{mspy} program  addresses this situation by providing
+a simple application that can attach itself to a running
+server and extracts the profiler events from a running server.
+
+The arguments to @code{mspy} are the properties to be traced
+and the applicable filter expressions. For example,
+@example
+mspy -t bat.insert algebra.join
+@end example
+tracks the usec ticks of two specific MAL instructions.
+
+Ideally, the stream of events should be piped into a tool
+like xosview (Linux).
+
+BUGS: The connection arguments are still hardwired.
+
+BUGS: After @code{mspy} is closed, the server may crash
+upon the next statement, because an assertion is raised attempting to write to
+the broken eventstream.
+
+
+@c
+#include <Mapi.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+
+
+static struct {
+	char tag;
+    char *name;       /* which logical counter is needed */
+    int status;     /* trace it or not */
+} profileCounter[] = {
+    /*  0  */  {'T', "time", 0},
+    /*  1  */  {'t', "ticks", 1},
+    /*  2  */  {'c', "cpu", 0},
+    /*  3  */  {'m', "memory", 0},
+    /*  4  */  {'i', "io", 0},
+    /*  5  */  {'p', "pc", 0},
+    /*  6  */  {'e', "event", 0},
+    /*  7  */  {'s', "statement", 2},
+    /*  8  */  {'r', "rdbytes", 3},
+    /*  9  */  {'w', "wrbytes", 4},
+    /*  10 */  {'d', "diskspace", 0},
+    /*  11 */  {0,  0, 0}
+};
+
+
+#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
+						   dbh?mapi_explain(dbh,stderr):			\
+							   fprintf(stderr,"command failed\n"),	\
+					   exit(-1))
+
+#define doQ(X) \
+	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
+		die(dbh, hdl);
+
+void
+usage(){
+	printf("mtop -[Ttcmipesrwd] {<mod>.<fcn>}\n");
+    printf("T -time\n");
+    printf("t -ticks\n");
+    printf("c -cpu\n");
+    printf("m -memory\n");
+    printf("i -io\n");
+    printf("p -pc\n");
+    printf("e -event\n");
+    printf("s -statement\n");
+    printf("r -rdbytes\n");
+    printf("w -wrbytes\n");
+    printf("d -diskspace\n");
+}
+
+void setCounter(char *nme){
+	int i,k=1;
+	
+	printf("update fields;%s\n",nme);
+	for(i=0; profileCounter[i].tag; i++)
+		profileCounter[i].status=0;
+
+	for( ; *nme; nme++)
+	for(i=0; profileCounter[i].tag; i++)
+		if( profileCounter[i].tag == *nme)
+			profileCounter[i].status= k++;
+}
+char *
+getFieldName(int k){
+	int i;
+	for(i=0; profileCounter[i].tag; i++)
+		if( profileCounter[i].status== k)
+			return profileCounter[i].name;
+	return "unknown";
+}
+
+int main(int argc, char **argv)
+{
+	Mapi dbh;
+	MapiHdl hdl = NULL;
+	int a=1,i=1;
+	char * response, *error, *c;
+	char buffer[1024];
+	char *mod, *fcn;
+
+	if(argc>1 && argv[a][0]=='-'){
+		if( argv[a][1]=='?'){
+			usage();
+			exit(0);
+		} else
+			setCounter(argv[a++]+1);
+	}
+
+	/* set up the profiler */
+	dbh = mapi_connect("localhost", 50000, "monetdb", "monetdb", "mal", NULL);
+	if (mapi_error(dbh))
+		die(dbh, hdl);
+	/* mapi_trace(dbh,1);*/
+
+	/* set counters */
+	for(i=0; profileCounter[i].tag; i++){
+		snprintf(buffer,1024,"profiler.activate(\"%s\");",
+			profileCounter[i].name);
+		if( profileCounter[i].status){
+			doQ(buffer);
+		}
+	}
+
+	/* Set Filters */
+	doQ("profiler.openStream(\"stdout\");");
+	if(a== argc) {
+		doQ("profiler.setAll();");
+	} else
+	for(; a <argc; a++){
+		c= strchr(argv[a],'.');
+		if(  c ){
+			mod= argv[a];
+			fcn= c+1;
+			*c=0;
+		} else {
+			fcn= argv[a];
+			mod= "*";
+		}
+		snprintf(buffer,1024, "profiler.setFilter(\"%s\",\"%s\");",mod,fcn);
+		printf("%s\n",buffer);
+		doQ(buffer);
+	}
+	doQ("profiler.start();");
+
+	for(; mapi_error(dbh) == MOK ; ){
+		while ( (response= mapi_fetch_line(hdl)) ) {
+			printf("%s\n",response);
+		}
+/*
+		while ( mapi_fetch_row(hdl) ) {
+			k= mapi_get_field_count(hdl);
+			for(i=0; i<k; i++){
+				response= mapi_fetch_field(hdl,i);
+				printf("%s:%s\n", getFieldName(i), response);
+			}
+			printf("\n");
+		}
+*/
+		if( (error = mapi_result_error(hdl)) != NULL){
+			mapi_explain_result(hdl,stderr);
+			break;
+		}
+		sleep(1);
+		doQ("");
+	} 
+	if (mapi_error(dbh) != MOK)
+		die(dbh, hdl);
+	mapi_close_handle(hdl);
+	if (mapi_error(dbh) != MOK)
+		die(dbh, hdl);
+	mapi_destroy(dbh);
+
+	return 0;
+}
+
