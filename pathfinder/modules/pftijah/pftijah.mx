@@ -214,7 +214,6 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 
 var verbose := false;
 
-
 ADDHELP("tj_ping", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
 - none.\n\
@@ -785,6 +784,25 @@ PROC _tj_set_parameter(BAT[str,bat] collBat, str par, str val) : void
 }
 
 # set a collection parameter
+PROC tj_set_parameter(str collName, str par, str val) : void
+{
+    if ( verbose ) printf("#TJ: tj_set_parameterl(%s,%s,%s) called.\n",collName,par,val);
+    var coll_lock := tj_get_collection_lock(collName);
+    lock_set(coll_lock);
+    var err := CATCH({
+	var parbat := bat("tj_" + collName + "_param");
+
+	if ( parbat.exist(par) ) {
+	    parbat.replace(par,val);
+	} else {
+	    parbat.insert(par,val);
+	}
+    });
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
+}
+
+# get a collection parameter
 PROC _tj_get_parameter(BAT[str,bat] collBat, str par) : str
 {
 	var parbat := collBat.find("_param");
