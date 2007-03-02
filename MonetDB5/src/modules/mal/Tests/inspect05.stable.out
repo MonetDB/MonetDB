@@ -505,6 +505,7 @@ end main;	# 11
 [ "deactivate",				  "command",	  "profiler",	  "(name:str):void ",														  "CMDdeactivateProfiler;"			  ]
 [ "getEvent",				  "pattern",	  "profiler",	  "() (_1:lng,_2:int,_3:int) ",												  "CMDgetEvent;"				  ]
 [ "getTrace",				  "command",	  "profiler",	  "(e:str):bat[:int,:any_1] ",													  "CMDgetTrace;"				  ]
+[ "noop",				  "command",	  "profiler",	  "():void ",											  "CMDnoopProfiler;"				  ]
 [ "openStream",				  "command",	  "profiler",	  "(fnme:str):void ",														  "CMDsetProfilerStream;"			  ]
 [ "openStream",				  "command",	  "profiler",	  "():void ",															  "CMDopenProfilerStream;"			  ]
 [ "reset",			  "command",	  "profiler",	  "():void ",												  "CMDclearTrace;"				  ]

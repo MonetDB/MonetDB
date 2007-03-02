@@ -125,6 +125,10 @@ command start():void
 address CMDstartProfiler
 comment "Start performance tracing";
 
+command noop():void
+address CMDnoopProfiler
+comment "Fetch any pending performance events";
+
 command stop():void
 address CMDstopProfiler
 comment "Stop performance tracing";
@@ -195,6 +199,7 @@ profiler_export str CMDstartPointProfiler(int *res, str *mod, str *fcn);
 profiler_export str CMDendPointProfiler(int *res, str *mod, str *fcn);
 profiler_export str CMDstopProfiler(int *res);
 profiler_export str CMDstartProfiler(int *res);
+profiler_export str CMDnoopProfiler(int *res);
 profiler_export str CMDclearTrace(int *res);
 profiler_export str CMDdumpTrace(int *res);
 profiler_export str CMDgetTrace(int *res, str *ev);
@@ -343,6 +348,13 @@ CMDstartProfiler(int *res)
 	checkProfiler("start");
 	stream_printf(c->fdout, "# Start performance profiling\n");
 	startProfiling();
+	return MAL_SUCCEED;
+}
+str
+CMDnoopProfiler(int *res)
+{
+	(void) res;		/* fool compiler */
+	checkProfiler("noop");
 	return MAL_SUCCEED;
 }
 
