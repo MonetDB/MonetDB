@@ -176,6 +176,9 @@ comment "Utility for debugging MAL interpreter";
 command getLRefCount(b:bat[:any_1,:any_2]) :int
 address CMDgetBATlrefcnt
 comment "Utility for debugging MAL interpreter";
+command getDiskSpace() :int
+address CMDbbpDiskSpace
+comment "Estimate the amount of diskspace occupied by dbfarm";
 @-
 @{
 @include prelude.mx
@@ -188,6 +191,7 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "mal_box.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "mal_profiler.h"
 #include "bat5.h"
 #include "algebra.h"
 
@@ -221,6 +225,7 @@ bbp_export str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpDiskSpace(int *ret);
 bbp_export str CMDbbpNames(int *ret);
 bbp_export str CMDbbpName(str *ret, int *bid);
 bbp_export str CMDbbpRNames(int *ret);
@@ -738,6 +743,12 @@ CMDbbpNames(int *ret)
 	BBPunlock("CMDbbpNames");
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo2(bbp,name)@
+	return MAL_SUCCEED;
+}
+str
+CMDbbpDiskSpace(int *ret)
+{
+	*ret= getDiskSpace();
 	return MAL_SUCCEED;
 }
 

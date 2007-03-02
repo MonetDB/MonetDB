@@ -61,9 +61,6 @@ The profiler event can be handled in several ways.
 The default strategy is to ship the event record immediately over a stream
 to a performance monitor, eg. Mknife.
 An alternative strategy is preparation of off-line performance analysis.
-For this case the event record is turned into a XML structure and
-sent over the stream (most likely linked with a file)
-or the information is gathered in a BAT group for online analysis.
 
 To reduce the  interference of performance measurement with
 the experiments, the user can use an event cache, which is
@@ -132,29 +129,9 @@ command stop():void
 address CMDstopProfiler
 comment "Stop performance tracing";
 
-command clearTrace():void
+command reset():void
 address CMDclearTrace
-comment "Clear the profiler tables";
-
-command startTrace():void
-address CMDstartTrace
-comment "Prepare for online tracing using the profile filter";
-
-command stopTrace():void
-address CMDstopTrace
-comment "Stop online tracing";
-
-command setCachedProfiling():void
-address CMDsetCachedProfiling
-comment "use cached events rather then online";
-
-command setOnlineProfiling():void
-address CMDsetOnlineProfiling
-comment "Sent events over stream";
-
-command setOfflineProfiling():void
-address CMDsetOfflineProfiling
-comment "Sent events over stream";
+comment "Clear the profiler traces";
 
 command dumpTrace():void
 address CMDdumpTrace
@@ -164,13 +141,6 @@ command getTrace(e:str):bat[:int,:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
 
-command startMonitor()
-address CMDstartMonitor
-comment "Start collecting performance data";
-command stopMonitor()
-address CMDstopMonitor
-comment "Stop collection of performance data";
-
 pattern getEvent()(:lng, :int,:int)
 address CMDgetEvent
 comment "Retrieve the performance indicators of the previous instruction";
@@ -178,6 +148,7 @@ comment "Retrieve the performance indicators of the previous instruction";
 command cleanup():void
 address CMDcleanup
 comment "Remove the temporary tables for profiling";
+
 @{
 @-
 @+ Implementation
@@ -224,19 +195,12 @@ profiler_export str CMDstartPointProfiler(int *res, str *mod, str *fcn);
 profiler_export str CMDendPointProfiler(int *res, str *mod, str *fcn);
 profiler_export str CMDstopProfiler(int *res);
 profiler_export str CMDstartProfiler(int *res);
-profiler_export str CMDstartTrace(int *res);
-profiler_export str CMDstopTrace(int *res);
 profiler_export str CMDclearTrace(int *res);
 profiler_export str CMDdumpTrace(int *res);
 profiler_export str CMDgetTrace(int *res, str *ev);
-profiler_export str CMDsetCachedProfiling(int *ret);
-profiler_export str CMDsetOnlineProfiling(int *ret);
-profiler_export str CMDsetOfflineProfiling(int *ret);
 profiler_export str CMDopenProfilerStream(int *res);
 profiler_export str CMDcloseProfilerStream(int *res);
 profiler_export str CMDcleanup(int *ret);
-profiler_export str CMDstartMonitor(int *ret);
-profiler_export str CMDstopMonitor(int *ret);
 profiler_export str CMDgetEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDclearEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -386,24 +350,6 @@ CMDstartProfiler(int *res)
 Tracing an active system.
 @c
 str
-CMDstartTrace(int *res)
-{
-	(void) res;		/* fool compiler */
-	checkProfiler("start");
-	startTrace();
-	return MAL_SUCCEED;
-}
-
-str
-CMDstopTrace(int *res)
-{
-	(void) res;		/* fool compiler */
-	checkProfiler("stop");
-	stopTrace();
-	return MAL_SUCCEED;
-}
-
-str
 CMDclearTrace(int *res)
 {
 	(void) res;		/* fool compiler */
@@ -417,8 +363,7 @@ CMDdumpTrace(int *res)
 {
 	(void) res;		/* fool compiler */
 	checkProfiler("dump");
-	stopTrace();
-	return MAL_SUCCEED;
+	throw(MAL, "profiler.dump", "not yet implemented");
 }
 
 str
@@ -437,47 +382,9 @@ CMDgetTrace(int *res, str *ev)
 }
 
 str
-CMDsetCachedProfiling(int *ret)
-{
-	(void) ret;
-	setCachedProfiling();
-	return MAL_SUCCEED;
-}
-
-str
-CMDsetOnlineProfiling(int *ret)
-{
-	(void) ret;
-	setOnlineProfiling();
-	return MAL_SUCCEED;
-}
-
-str
-CMDsetOfflineProfiling(int *ret)
-{
-	(void) ret;
-	setOnlineProfiling();
-	return MAL_SUCCEED;
-}
-
-str
 CMDcleanup(int *ret){
 	(void) ret;
 	cleanupProfiler();
-	return MAL_SUCCEED;
-}
-
-str
-CMDstartMonitor(int *ret){
-	(void) ret;
-	startMonitor();
-	return MAL_SUCCEED;
-}
-
-str
-CMDstopMonitor(int *ret){
-	(void) ret;
-	stopMonitor();
 	return MAL_SUCCEED;
 }
 
