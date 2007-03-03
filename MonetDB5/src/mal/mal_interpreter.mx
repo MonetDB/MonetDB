@@ -198,16 +198,18 @@ prepareMALstack(MalBlkPtr mb){
 str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, 
 	   MalStkPtr env, InstrPtr pcicaller){
 	MalStkPtr stk= NULL;
-	int i;
+	int i,stkpc=0;
 	ValPtr lhs,rhs;
-	InstrPtr pci=0;
+	InstrPtr pci=getInstrPtr(mb,0);
 	str ret;
+	@:performanceVariables@
 
 	if (mb->errors) {
 		showErrors();
 		if (cntxt->itrace == 0) /* permit debugger analysis */
 			return createScriptException(mb, 0, MAL, NULL, "Syntax error in script");
 	}
+	@:beginProfile@
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
 the minimum amount of stack space needed, some slack resources
@@ -292,6 +294,7 @@ we should first remove garbage.
 	if(stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
 	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(mb,stk, env != stk);
+	@:endProfile@
 	return ret;
 }
 @-
@@ -331,16 +334,19 @@ The call does not return values, they are ignored.
 str 
 callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	MalStkPtr stk;
-	str ret;
+	str ret= MAL_SUCCEED;
 	int i;
 	ValPtr lhs,rhs;
-	InstrPtr p= getInstrPtr(mb,0);
+	InstrPtr pci= getInstrPtr(mb,0);
+	int stkpc=0;
+	@:performanceVariables@
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(GDKout,"callMAL\n");
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 #endif
-	switch( p->token){
+	@:beginProfile@
+	switch( pci->token){
 	case FUNCTIONsymbol:
 	case FCNcall:
 @-
@@ -355,44 +361,32 @@ all arguments and return values.
 			stk->stksize= mb->vsize;
 			stk->blk= mb;
 			stk->up = 0;
-			@:initStack(p->argc)@
+			@:initStack(pci->argc)@
 			stk->keepAlive = TRUE;
 			*env= stk;
 		} else stk = *env;
 		assert(stk);
-		for(i=p->retc; i<p->argc; i++){
-			lhs= &stk->stk[p->argv[i]];
+		for(i=pci->retc; i<pci->argc; i++){
+			lhs= &stk->stk[pci->argv[i]];
 			VALcopy2(lhs, argv[i]);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id,TRUE);
 		}
-#ifdef STACKTRACE
-	stream_printf(GDKout,"before execution\n");
-	printStack(GDKout,mb,stk,0); 
-	printFunction(GDKout,mb,LIST_MAL_ALL);
-#endif
 		stk->cmd = debug;
-
-#ifdef DEBUG_CALLMAL
-	stream_printf(GDKout,"start evaluation\n");
-#endif
 		ret = runMALsequence(cntxt, mb, 1,  0, stk, 0, 0);
-
-#ifdef STACKTRACE
-		stream_printf(GDKout,"Stack after loop\n");
-		printStack(GDKout,mb,stk,0); 
-#endif
-		return ret;
+		break;
 	case FACTORYsymbol:
 	case FACcall:
-		return callFactory(cntxt, mb, argv,debug);
+		ret= callFactory(cntxt, mb, argv,debug);
+		break;
 	case PATcall:
 	case CMDcall:
 	default:
 		throw(MAL, "mal.interpreter",
 				"Non-supported call the MAL interpreter");
 	}
-	return MAL_SUCCEED;
+	@:endProfile@
+	return ret;
 }
 @-
 The core of the interpreter is presented next. It takes the context information
@@ -1536,8 +1530,10 @@ See @url{The MAL Profiler} for more details.
 		mb->profiler[ppc].counter++;
 		mb->profiler[ppc].clk = (long) (newclk - mb->profiler[ppc].clk);
 		mb->profiler[ppc].ticks += mb->profiler[ppc].clk;
-		mb->profiler[ppc].rdbytes= getVolume(stk,pci,0);
-		mb->profiler[ppc].wrbytes= getVolume(stk,pci,1);
+		if( pci){
+			mb->profiler[ppc].rdbytes= getVolume(stk,pci,0);
+			mb->profiler[ppc].wrbytes= getVolume(stk,pci,1);
+		}
 		profilerEvent(cntxt->nspace,mb,stk,ppc);
 		ppc= -1;
 	}
