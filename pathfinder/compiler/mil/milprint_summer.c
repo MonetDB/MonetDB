@@ -160,8 +160,8 @@ static void mps_error(const char *format, ...)
 
 static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c);
-static int var_is_used (PFvar_t *v, PFcnode_t *e);
-static int var_is_used2 (PFvar_t *v, PFcnode_t *e);
+static int 
+var_is_used (PFvar_t *v, PFcnode_t *e);
 int PFqueryType(PFcnode_t *c);
 
 /* throw away out-of date flwr information. return the relevant level */
@@ -1229,14 +1229,17 @@ static void
 project (opt_t *f, int cur_level)
 {
     /* create an order that points back to the last flwro block */
-    int cur, lim = get_flwr_level(f, cur_level);
     milprintf(f, "# project ()\n");
     milprintf(f, "iter := iter.materialize(ipik);\n");
     milprintf(f, "var order_%03u := iter;\n", cur_level);
+
+/* DISABLED 
+    int cur, lim = get_flwr_level(f, cur_level);
     if (lim == 0 || f->flwr_level[lim-1] == -1) 
     for(cur=cur_level; cur > lim; cur--)
         if (cur >= f->flwr_depth || f->flwr_level[cur] == -1) 
             milprintf(f, "order_%03u := order_%03u.leftjoin(reverse(inner%03u)).leftfetchjoin(outer%03u);\n", cur_level, cur_level, cur-1, cur-1);
+   DISABLED */
 
     /* create a new loop / outer|inner relation
        and adjust iter, pos from for loop binding */
@@ -6218,7 +6221,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 static void
 translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
-    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 0 ? 0 : 1;
+    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 1 ? 1 : 0;
     PFcnode_t *dsts = L(xrpc);
     PFfun_t   *fun  = R(xrpc)->sem.fun;
     PFcnode_t *args = RD(xrpc);
@@ -6520,7 +6523,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             "} # end of translate pf:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"documents")) == 0 ||
-               (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0))
+              (PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0 && (rc=1)))
     {
         char *consistent = rc?"false":"true";
         if (fun->arity) {
@@ -6545,7 +6548,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "} # end of translate fn:documents (string?) as string*\n");
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"collections")) == 0 ||
-               (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0))
+              (PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0 && (rc=1)))
     {
         char *consistent = rc?"false":"true";
         milprintf(f,
@@ -8904,40 +8907,45 @@ noTijahFun (PFcnode_t *c)
 #endif
 
 /**
- * noForBetween tests wether between the declaration of a variable and
- * its usage is a for loop, which stops a bound element construction
- * from expanding.
+ * var_only_in_for tests whether a variable is used to iterate over
  *
  * @param v the variable which is tested
- * @param c the subtree of the variable binding
- * @return 0 if for-node is between (> 1 else)
+ * @param e the subtree of the variable binding
+ * @return 1 if used in for-iteration (0 else)
  */
 static int
-noForBetween (PFvar_t *v, PFcnode_t *c)
+var_only_in_for (PFvar_t *v, PFcnode_t *e)
 {
-    int i;
-    if (c->kind == c_for)
-    {
-        if (noForBetween (v, LR(c)) == 0)
-                return 0;
-        if (var_is_used2 (v, R(c)))
-                return 0;
-    }
-    else if (c->kind == c_apply &&
-             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
-    {
-        if (var_is_used2 (v, D(c)))
-                return 0;
-    } 
-    else
-        for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
-            if (noForBetween (v, c->child[i]) == 0)
-                return 0;
-    return 1;
+  int i;
+  int usage = 0;
+
+  assert (v && e);
+
+  if (e->kind == c_var && e->sem.var == v) {
+      return 0;
+  }
+  if (strcmp(v->qname.loc,"sigmod") == 0) {
+      if (e->kind == c_apply) {
+        usage = 1;
+      }
+  }
+
+  /* if variable is used to iterate over (in a user-written loop), ignore it as use */
+  if (e->kind == c_for &&
+      L(e) && L(e)->kind == c_forbind &&
+      LL(e) && LL(e)->kind == c_forvars &&
+      LLL(e) && LLL(e)->kind == c_var && strcmp(LLL(e)->sem.var->qname.ns.prefix, "#pf") &&
+      LR(e) && LR(e)->kind == c_var && LR(e)->sem.var == v)
+  {
+      return var_only_in_for (v,R(e));
+  }
+  for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
+      if (!var_only_in_for (v, e->child[i])) return 0;
+  return 1;
 }
                                                                                                                                                              
 /**
- * expandable tests whether a variable can be expanded without causing
+ * expandable tests wether a variable can be expanded without causing
  * any problems and returns the result of the functions noConstructor and
  * noForBetween
  *
@@ -8951,8 +8959,9 @@ expandable (PFcnode_t *c)
     if (!noTijahFun(LR(c))) return 0;
 #endif
     if (strcmp(LL(c)->sem.var->qname.ns.prefix, "#pf") == 0) 
-        if (noConstructor(LR(c))) return 1;
-    return noForBetween(LL(c)->sem.var, R(c));
+        return noConstructor(LR(c));
+
+    return var_only_in_for(LL(c)->sem.var, R(c)); 
 }
 
 /**
@@ -9010,30 +9019,6 @@ var_is_used (PFvar_t *v, PFcnode_t *e)
   return usage;
 }
 
-static int
-var_is_used2 (PFvar_t *v, PFcnode_t *e)
-{
-  int i;
-  int usage = 0;
-
-  assert (v && e);
-
-  /* if variable is used to iterate over, ignore it as use */
-  if (e->kind == c_for &&
-      L(e) && L(e)->kind == c_forbind &&
-      LR(e) && LR(e)->kind == c_var && LR(e)->sem.var == v)
-  {
-      return 0; /* speculate that var will be recognized as a join-side */
-  }
-
-  if (e->kind == c_var && e->sem.var == v)
-      return 1;
-  else
-      for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
-          usage += var_is_used2 (v, e->child[i]);
-
-  return usage;
-}
 
 #define assert_exp(e) (assert (e), (e))
 
@@ -11133,11 +11118,10 @@ const char* PFstartMIL(int statement_type) {
            " ws_destroy(ws);\n"\
            "}\n"\
 	   PF_STOP_PFTIJAH\
-           "time_print := usec() -time_print;\n"\
            "if (not(isnil(err))) ERROR(err);\n"\
            "else if (genType.startsWith(\"timing\"))\n"\
            "  printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
-           "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print)/1000.0);\n"
+           "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print := usec() - time_print)/1000.0);\n"
 const char* PFstopMIL(int statement_type) {
     return (statement_type==0)?
                (PF_STOPMIL_RDONLY):
