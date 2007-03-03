@@ -32,8 +32,8 @@ bin_merovingian = {
 		   $(MALLOC_LIBS)
 }
 
-bin_mspy = {
-	SOURCES = mspy.mx
+bin_stethoscope = {
+	SOURCES = stethoscope.mx
 	LIBS = @SHARED_LIBS@ -lbat -lmutils -lstream \
 			$(MONETDB_LIBS) $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \

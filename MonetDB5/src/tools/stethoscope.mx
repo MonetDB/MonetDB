@@ -14,36 +14,36 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
-@f mspy
+@f stethoscope
 @a Martin Kersten
 @v 1.0
-@+ The MonetDB Spy
+@+ The MonetDB stethoscope
 The MonetDB kernel carries a profiler infrastructure, which
 can be precisely controlled through a MAL program. 
-Often, however, inclusion of profiling is an after thought.
+Often, however, inclusion of profiling statements in a proram
+is an after thought.
 
-The @code{mspy} program  addresses this situation by providing
+The program @code{stethoscope} addresses this situation by providing
 a simple application that can attach itself to a running
-server and extracts the profiler events from a running server.
+server and extracts the profiler events.
 
-The arguments to @code{mspy} are the properties to be traced
+The arguments to @code{stethoscope} are the properties to be traced
 and the applicable filter expressions. For example,
 @example
-mspy -t bat.insert algebra.join
+stethoscope -t bat.insert algebra.join
 @end example
 tracks the usec ticks of two specific MAL instructions.
 
 Ideally, the stream of events should be piped into a tool
 like xosview (Linux).
 
-BUGS: The connection arguments are still hardwired.
-
-BUGS: After @code{mspy} is closed, the server may crash
+BUGS: After @code{stethoscope} is closed, the server may crash
 upon the next statement, because an assertion is raised attempting to write to
 the broken eventstream.
 
-
 @c
+#include "mal_config.h"
+#include "monet_options.h"
 #include <Mapi.h>
 #include <stdio.h>
 #include <string.h>
@@ -71,6 +71,8 @@ static struct {
     /*  11 */  {0,  0, 0}
 };
 
+static Mapi dbh;
+static MapiHdl hdl = NULL;
 
 #define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
 						   dbh?mapi_explain(dbh,stderr):			\
@@ -83,18 +85,38 @@ static struct {
 
 void
 usage(){
-	printf("mtop -[Ttcmipesrwd] {<mod>.<fcn>}\n");
-    printf("T -time\n");
-    printf("t -ticks\n");
-    printf("c -cpu\n");
-    printf("m -memory\n");
-    printf("i -io\n");
-    printf("p -pc\n");
-    printf("e -event\n");
-    printf("s -statement\n");
-    printf("r -rdbytes\n");
-    printf("w -wrbytes\n");
-    printf("d -diskspace\n");
+	fprintf(stderr,"stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}\n");
+	fprintf(stderr,"-d | --dbname=<database_name>\n");
+	fprintf(stderr,"-u | --user=<user>\n");
+	fprintf(stderr,"-P | --password=<password>\n");
+	fprintf(stderr,"-p | --port=<portnr>\n");
+	fprintf(stderr,"-h | --host=<hostname>\n");
+
+    fprintf(stderr,"T -time\n");
+    fprintf(stderr,"t -ticks\n");
+    fprintf(stderr,"c -cpu\n");
+    fprintf(stderr,"m -memory\n");
+    fprintf(stderr,"i -io\n");
+    fprintf(stderr,"p -pc\n");
+    fprintf(stderr,"e -event\n");
+    fprintf(stderr,"s -statement\n");
+    fprintf(stderr,"r -rdbytes\n");
+    fprintf(stderr,"w -wrbytes\n");
+    fprintf(stderr,"d -diskspace\n");
+}
+@-
+Any signal should be captured and turned into a graceful
+termination of the profiling session.
+@c
+void
+stopListening(int i){
+	fprintf(stderr,"SHUTTING DOWN: %d\n",i);
+	fflush(stderr);
+	signal(i, SIG_IGN);
+	doQ("profiler.stop();");
+	doQ("profiler.closeStream();");
+	sleep(2);
+	exit(0);
 }
 
 void setCounter(char *nme){
@@ -120,14 +142,63 @@ getFieldName(int k){
 
 int main(int argc, char **argv)
 {
-	Mapi dbh;
-	MapiHdl hdl = NULL;
 	int a=1,i=1;
-	char * response, *error, *c;
+	char * response, *error;
 	char buffer[1024];
 	char *mod, *fcn;
+	char *host="localhost";
+	int	portnr= 50000;
+	char *dbname= NULL;
+	char *user= "monetdb";
+	char *passwrd= "monetdb";
 
-	if(argc>1 && argv[a][0]=='-'){
+    static struct option long_options[13] = {
+        {"dbname", 1, 0, 'd'},
+        {"user", 1, 0, 'u'},
+        {"passwrd", 1, 0, 'P'},
+        {"port", 1, 0, 'p'},
+        {"host", 1, 0, 'h'},
+        {0, 0, 0, 0}
+    };
+	for(;;){
+		int option_index=0;
+		int c=  getopt_long(argc, argv, "d:u:P:p:h:",
+                    long_options, &option_index);
+		if( c == -1)
+			break;
+		switch(c){
+		case 'd':
+			if (strcmp(long_options[option_index].name, "dbname") == 0) {
+				dbname= optarg;
+				break;
+			}
+		case 'u':
+			if (strcmp(long_options[option_index].name, "user") == 0) {
+				user= optarg;
+				break;
+			}
+		case 'P':
+			if (strcmp(long_options[option_index].name, "passwrd") == 0) {
+				passwrd= optarg;
+				break;
+			}
+		case 'p':
+			if (strcmp(long_options[option_index].name, "port") == 0) {
+				portnr= atol(optarg);
+				break;
+			}
+		case 'h':
+			if (strcmp(long_options[option_index].name, "host") == 0) {
+				passwrd= optarg;
+				break;
+			}
+		default:
+			usage();
+		}
+	}
+
+	a= optind;
+	if(argc>1 && argv[a][0]=='+'){
 		if( argv[a][1]=='?'){
 			usage();
 			exit(0);
@@ -135,8 +206,16 @@ int main(int argc, char **argv)
 			setCounter(argv[a++]+1);
 	}
 
+	signal(SIGABRT, stopListening);
+	signal(SIGPIPE, stopListening);
+	signal(SIGHUP, stopListening);
+	signal(SIGTERM, stopListening);
+	signal(SIGKILL, stopListening);
+	signal(SIGINT, stopListening);
+
 	/* set up the profiler */
-	dbh = mapi_connect("localhost", 50000, "monetdb", "monetdb", "mal", NULL);
+
+	dbh = mapi_connect(host, portnr, user, passwrd, "mal", NULL);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
@@ -156,6 +235,7 @@ int main(int argc, char **argv)
 		doQ("profiler.setAll();");
 	} else
 	for(; a <argc; a++){
+		char *c;
 		c= strchr(argv[a],'.');
 		if(  c ){
 			mod= argv[a];
