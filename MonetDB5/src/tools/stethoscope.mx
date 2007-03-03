@@ -21,7 +21,7 @@
 The MonetDB kernel carries a profiler infrastructure, which
 can be precisely controlled through a MAL program. 
 Often, however, inclusion of profiling statements in a proram
-is an after thought.
+is an afterthought.
 
 The program @code{stethoscope} addresses this situation by providing
 a simple application that can attach itself to a running
@@ -35,24 +35,24 @@ stethoscope -t bat.insert algebra.join
 tracks the usec ticks of two specific MAL instructions.
 A synopsis of the calling conventions:
 @verbatim
-	stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}
+	stethoscope [options] +[efoTtcmibds] {<mod>.<fcn>}
 	-d | --dbname=<database_name>
 	-u | --user=<user>
 	-P | --password=<password>
 	-p | --port=<portnr>
 	-h | --host=<hostname>
 
+    e =event
+    f =function 
+    o =operation called
     T =time
     t =ticks
-    c =cpu
-    m =memory
-    i =io
-    p =pc
-    e =event
+    c =cpu statistics
+    m =memory resources
+    i =io resources
+    b =bytes read/written
+    d =diskspace needed
     s =statement
-    r =rdbytes
-    w =wrbytes
-    d =diskspace
 @end verbatim
 
 Ideally, the stream of events should be piped into a
@@ -62,6 +62,7 @@ Ideally, the stream of events should be piped into a
 @c
 #include "mal_config.h"
 #include "monet_options.h"
+#include <gdk.h>
 #include <Mapi.h>
 #include <stdio.h>
 #include <string.h>
@@ -72,21 +73,39 @@ Ideally, the stream of events should be piped into a
 
 static struct {
 	char tag;
+    char *ptag;       /* which profiler counter is needed */
     char *name;       /* which logical counter is needed */
     int status;     /* trace it or not */
 } profileCounter[] = {
-    /*  0  */  {'T', "time", 0},
-    /*  1  */  {'t', "ticks", 1},
-    /*  2  */  {'c', "cpu", 0},
-    /*  3  */  {'m', "memory", 0},
-    /*  4  */  {'i', "io", 0},
-    /*  5  */  {'p', "pc", 0},
-    /*  6  */  {'e', "event", 0},
-    /*  7  */  {'s', "statement", 2},
-    /*  8  */  {'r', "rdbytes", 3},
-    /*  9  */  {'w', "wrbytes", 4},
-    /*  10 */  {'d', "diskspace", 0},
-    /*  11 */  {0,  0, 0}
+    /*  6  */  {'e', "event", "event id", 0},
+    /*  5  */  {'f', "pc", "function", 0},
+    /*  5  */  {'f', "pc", "pc", 0},
+    /*  5  */  {'o', "operation","operation", 0},
+    /*  0  */  {'T', "time", "time stamp", 0},
+    /*  1  */  {'t', "ticks", "usec ticks", 1},
+    /*  2  */  {'c', "cpu", "utime", 0},
+    /*  2  */  {'c', "cpu", "cutime", 0},
+    /*  2  */  {'c', "cpu", "stime", 0},
+    /*  2  */  {'c', "cpu", "cstime", 0},
+    /*  3  */  {'m', "memory", "arena", 0},
+    /*  3  */  {'m', "memory", "ordblks", 0},
+    /*  3  */  {'m', "memory", "smblks", 0},
+    /*  3  */  {'m', "memory", "hblkhd", 0},
+    /*  3  */  {'m', "memory", "hblks", 0},
+    /*  3  */  {'m', "memory", "fsmblks", 0},
+    /*  3  */  {'m', "memory", "uordblks", 0},
+    /*  4  */  {'i', "io","pg reclaim", 0},
+    /*  4  */  {'i', "io","pg faults", 0},
+    /*  4  */  {'i', "io","swaps", 0},
+    /*  4  */  {'i', "io","blk reads", 0},
+    /*  4  */  {'i', "io","blk writes", 0},
+    /*  4  */  {'i', "io","ctxt switch", 0},
+    /*  4  */  {'i', "io","inv switch", 0},
+    /*  8  */  {'b', "bytes", "rdbytes", 0},
+    /*  9  */  {'b', "bytes", "wrbytes", 0},
+    /*  10 */  {'d', "disk", "diskspace", 0},
+    /*  7  */  {'s', "statement", "statement", 2},
+    /*  11 */  {0, 0,  0, 0}
 };
 
 static Mapi dbh;
@@ -110,17 +129,17 @@ usage(){
 	fprintf(stderr,"-p | --port=<portnr>\n");
 	fprintf(stderr,"-h | --host=<hostname>\n");
 
-    fprintf(stderr,"T -time\n");
-    fprintf(stderr,"t -ticks\n");
-    fprintf(stderr,"c -cpu\n");
-    fprintf(stderr,"m -memory\n");
-    fprintf(stderr,"i -io\n");
-    fprintf(stderr,"p -pc\n");
-    fprintf(stderr,"e -event\n");
-    fprintf(stderr,"s -statement\n");
-    fprintf(stderr,"r -rdbytes\n");
-    fprintf(stderr,"w -wrbytes\n");
-    fprintf(stderr,"d -diskspace\n");
+	fprintf(stderr,"    e =event\n");
+	fprintf(stderr,"    f =function \n");
+	fprintf(stderr,"    o =operation called\n");
+	fprintf(stderr,"    T =time\n");
+	fprintf(stderr,"    t =ticks\n");
+	fprintf(stderr,"    c =cpu statistics\n");
+	fprintf(stderr,"    m =memory resources\n");
+	fprintf(stderr,"    i =io resources\n");
+	fprintf(stderr,"    b =bytes read/written\n");
+	fprintf(stderr,"    d =diskspace needed\n");
+	fprintf(stderr,"    s =statement\n");
 }
 @-
 Any signal should be captured and turned into a graceful
@@ -129,13 +148,10 @@ termination of the profiling session.
 void
 stopListening(int i){
 	(void) i;
-	fprintf(stderr,"SHUTTING DOWN\n");
-	fflush(stderr);
 	signal(i, SIG_IGN);
 	doQ("profiler.setNone();");
 	doQ("profiler.stop();");
 	doQ("profiler.closeStream();");
-	sleep(1);
 	exit(0);
 }
 
@@ -178,11 +194,12 @@ int main(int argc, char **argv)
         {"passwrd", 1, 0, 'P'},
         {"port", 1, 0, 'p'},
         {"host", 1, 0, 'h'},
+        {"help", 1, 0, '?'},
         {0, 0, 0, 0}
     };
 	for(;;){
 		int option_index=0;
-		int c=  getopt_long(argc, argv, "d:u:P:p:h:",
+		int c=  getopt_long(argc, argv, "d:u:P:p:?:h:",
                     long_options, &option_index);
 		if( c == -1)
 			break;
@@ -214,6 +231,7 @@ int main(int argc, char **argv)
 			}
 		default:
 			usage();
+			exit(0);
 		}
 	}
 
@@ -243,7 +261,7 @@ int main(int argc, char **argv)
 	/* set counters */
 	for(i=0; profileCounter[i].tag; i++){
 		snprintf(buffer,1024,"profiler.activate(\"%s\");",
-			profileCounter[i].name);
+			profileCounter[i].ptag);
 		if( profileCounter[i].status){
 			doQ(buffer);
 		}
@@ -275,21 +293,11 @@ int main(int argc, char **argv)
 		while ( (response= mapi_fetch_line(hdl)) ) {
 			printf("%s\n",response);
 		}
-/*
-		while ( mapi_fetch_row(hdl) ) {
-			k= mapi_get_field_count(hdl);
-			for(i=0; i<k; i++){
-				response= mapi_fetch_field(hdl,i);
-				printf("%s:%s\n", getFieldName(i), response);
-			}
-			printf("\n");
-		}
-*/
 		if( (error = mapi_result_error(hdl)) != NULL){
 			mapi_explain_result(hdl,stderr);
 			break;
 		}
-		sleep(1);
+		MT_sleep_ms(20);	/* 20 milliseconds seems enough */
 		doQ("");
 	} 
 	if (mapi_error(dbh) != MOK)
