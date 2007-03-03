@@ -595,14 +595,8 @@ openProfilerStream(void)
 str
 closeProfilerStream(void)
 {
-	Client c = MCgetClient();
-
-	if (eventstream && eventstream != c->fdout){
-		close_stream(eventstream);
-		eventstream= 0;
-	}
-	malProfileMode = FALSE;
 	eventstream = NULL;
+	malProfileMode = FALSE;
 	return MAL_SUCCEED;
 }
 
@@ -682,7 +676,7 @@ MPresetProfiler(stream *fdout)
 	if (fdout != eventstream)
 		return;
 	mal_set_lock(profileLock, "profileLock");
-	/* eventstream = 0;*/
+	eventstream = 0;
 	mal_unset_lock(profileLock, "profileLock");
 }
 

@@ -17,7 +17,7 @@
 @f stethoscope
 @a Martin Kersten
 @v 1.0
-@+ The MonetDB stethoscope
+@+ The Stethoscope
 The MonetDB kernel carries a profiler infrastructure, which
 can be precisely controlled through a MAL program. 
 Often, however, inclusion of profiling statements in a proram
@@ -25,22 +25,40 @@ is an after thought.
 
 The program @code{stethoscope} addresses this situation by providing
 a simple application that can attach itself to a running
-server and extracts the profiler events.
+server and extracts the profiler events from concurrent running queries.
 
-The arguments to @code{stethoscope} are the properties to be traced
+The arguments to @code{stethoscope} are the profiler properties to be traced
 and the applicable filter expressions. For example,
 @example
 stethoscope -t bat.insert algebra.join
 @end example
 tracks the usec ticks of two specific MAL instructions.
+A synopsis of the calling conventions:
+@verbatim
+	stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}
+	-d | --dbname=<database_name>
+	-u | --user=<user>
+	-P | --password=<password>
+	-p | --port=<portnr>
+	-h | --host=<hostname>
 
-Ideally, the stream of events should be piped into a tool
-like xosview (Linux).
+    T =time
+    t =ticks
+    c =cpu
+    m =memory
+    i =io
+    p =pc
+    e =event
+    s =statement
+    r =rdbytes
+    w =wrbytes
+    d =diskspace
+@end verbatim
 
-BUGS: After @code{stethoscope} is closed, the server may crash
-upon the next statement, because an assertion is raised attempting to write to
-the broken eventstream.
+Ideally, the stream of events should be piped into a
+2D graphical tool, like xosview (Linux).
 
+@{
 @c
 #include "mal_config.h"
 #include "monet_options.h"
@@ -110,12 +128,14 @@ termination of the profiling session.
 @c
 void
 stopListening(int i){
-	fprintf(stderr,"SHUTTING DOWN: %d\n",i);
+	(void) i;
+	fprintf(stderr,"SHUTTING DOWN\n");
 	fflush(stderr);
 	signal(i, SIG_IGN);
+	doQ("profiler.setNone();");
 	doQ("profiler.stop();");
 	doQ("profiler.closeStream();");
-	sleep(2);
+	sleep(1);
 	exit(0);
 }
 
@@ -282,3 +302,4 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+@}
