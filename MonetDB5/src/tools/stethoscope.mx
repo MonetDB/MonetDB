@@ -277,7 +277,9 @@ int main(int argc, char **argv)
 		c= strchr(argv[a],'.');
 		if(  c ){
 			mod= argv[a];
+			if( mod==c) mod="*";
 			fcn= c+1;
+			if( *fcn == 0) fcn="*";
 			*c=0;
 		} else {
 			fcn= argv[a];
