@@ -61,30 +61,29 @@ barrier (go,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-
 exit (go,i);	# 9  (go:bit)(i:lng)
     profiler.activate("ticks");	# 10 CMDactivateProfiler (_15:void)<-(_16:str)
     profiler.activate("statement");	# 11 CMDactivateProfiler (_17:void)<-(_18:str)
-    profiler.activate("rdbytes");	# 12 CMDactivateProfiler (_19:void)<-(_20:str)
-    profiler.activate("wrbytes");	# 13 CMDactivateProfiler (_21:void)<-(_22:str)
-    profiler.activate("diskspace");	# 14 CMDactivateProfiler (_23:void)<-(_24:str)
-    profiler.setAll();	# 15 CMDsetAllProfiler (_25:void)
-    profiler.start();	# 16 CMDstartProfiler (_26:void)
-    io.printf("#monitor \n");	# 17 IOprint_str (_27:void)<-(_28:str)
-    mx := aggr.max(b);	# 18 ALGmax_lng (mx:lng)<-(b:bat[:oid,:lng])
-    algebra.select(b,nil:lng,mx);	# 19 ALGselect (_30:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_31:lng)(mx:lng)
-    algebra.select(b,mx,nil:lng);	# 20 ALGselect (_32:bat[:oid,:lng])<-(b:bat[:oid,:lng])(mx:lng)(_31:lng)
-    d := mmath.sin(0.20000000298023224:dbl);	# 21 MATHunary_SINdbl (d:dbl)<-(_34:dbl)
-    profiler.stop();	# 22 CMDstopProfiler (_35:void)
-    stmt := profiler.getTrace("statement");	# 23 CMDgetTrace (stmt:bat[:int,:any])<-(_18:str)
-    io.print(stmt);	# 24 IOprint_val (_37:void)<-(stmt:bat[:int,:any])
-    ticks := profiler.getTrace("ticks");	# 25 CMDgetTrace (ticks:bat[:int,:any])<-(_16:str)
-#io.print(ticks); 	# 26  (_39:str)
-    rdbytes := profiler.getTrace("rdbytes");	# 27 CMDgetTrace (rdbytes:bat[:int,:any])<-(_20:str)
-    io.print(rdbytes);	# 28 IOprint_val (_41:void)<-(rdbytes:bat[:int,:any])
-    wrbytes := profiler.getTrace("wrbytes");	# 29 CMDgetTrace (wrbytes:bat[:int,:any])<-(_22:str)
-#io.print(wrbytes); 	# 30  (_43:str)
-    diskspace := profiler.getTrace("diskspace");	# 31 CMDgetTrace (diskspace:bat[:int,:any])<-(_24:str)
-#io.print(diskspace); 	# 32  (_45:str)
-    io.print(rdbytes,wrbytes,stmt);	# 33 IOtable (_46:void)<-(rdbytes:bat[:int,:any])(wrbytes:bat[:int,:any])(stmt:bat[:int,:any])
-#io.print(ticks,rdbytes,wrbytes,diskspace,stmt); 	# 34  (_47:str)
-end main;	# 35  
+    profiler.activate("bytes");	# 12 CMDactivateProfiler (_19:void)<-(_20:str)
+    profiler.activate("disk");	# 13 CMDactivateProfiler (_21:void)<-(_22:str)
+    profiler.setAll();	# 14 CMDsetAllProfiler (_23:void)
+    profiler.start();	# 15 CMDstartProfiler (_24:void)
+    io.printf("#monitor \n");	# 16 IOprint_str (_25:void)<-(_26:str)
+    mx := aggr.max(b);	# 17 ALGmax_lng (mx:lng)<-(b:bat[:oid,:lng])
+    algebra.select(b,nil:lng,mx);	# 18 ALGselect (_28:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_29:lng)(mx:lng)
+    algebra.select(b,mx,nil:lng);	# 19 ALGselect (_30:bat[:oid,:lng])<-(b:bat[:oid,:lng])(mx:lng)(_29:lng)
+    d := mmath.sin(0.20000000298023224:dbl);	# 20 MATHunary_SINdbl (d:dbl)<-(_32:dbl)
+    profiler.stop();	# 21 CMDstopProfiler (_33:void)
+    stmt := profiler.getTrace("statement");	# 22 CMDgetTrace (stmt:bat[:int,:any])<-(_18:str)
+    io.print(stmt);	# 23 IOprint_val (_35:void)<-(stmt:bat[:int,:any])
+    ticks := profiler.getTrace("ticks");	# 24 CMDgetTrace (ticks:bat[:int,:any])<-(_16:str)
+#io.print(ticks); 	# 25  (_37:str)
+    rdbytes := profiler.getTrace("rdbytes");	# 26 CMDgetTrace (rdbytes:bat[:int,:any])<-(_39:str)
+    io.print(rdbytes);	# 27 IOprint_val (_40:void)<-(rdbytes:bat[:int,:any])
+    wrbytes := profiler.getTrace("wrbytes");	# 28 CMDgetTrace (wrbytes:bat[:int,:any])<-(_42:str)
+#io.print(wrbytes); 	# 29  (_43:str)
+    diskspace := profiler.getTrace("diskspace");	# 30 CMDgetTrace (diskspace:bat[:int,:any])<-(_45:str)
+#io.print(diskspace); 	# 31  (_46:str)
+    io.print(rdbytes,wrbytes,stmt);	# 32 IOtable (_47:void)<-(rdbytes:bat[:int,:any])(wrbytes:bat[:int,:any])(stmt:bat[:int,:any])
+#io.print(ticks,rdbytes,wrbytes,diskspace,stmt); 	# 33  (_48:str)
+end main;	# 34  
 # Start performance profiling
 #monitor 
 # Performance profiling stopped
@@ -92,11 +91,11 @@ end main;	# 35
 # h	t											  # name
 # int	str											  # type
 #-------------------------------------------------------------------------------------------------#
-[ 1,	  "#    io.printf(_28=\"#monitor \\n\")"						  ]
+[ 1,	  "#    io.printf(_26=\"#monitor \\n\")"						  ]
 [ 2,	  "#    mx := aggr.max(b=<tmp_7>bat[:oid,:lng]{10000})"					  ]
-[ 3,	  "#    algebra.select(b=<tmp_7>bat[:oid,:lng]{10000}, _31=nil:lng, mx=2147469841)"	  ]
-[ 4,	  "#    algebra.select(b=<tmp_7>bat[:oid,:lng]{10000}, mx=2147469841, _31=nil:lng)"	  ]
-[ 5,	  "#    d := mmath.sin(_34=0.20000000298023224)"					  ]
+[ 3,	  "#    algebra.select(b=<tmp_7>bat[:oid,:lng]{10000}, _29=nil:lng, mx=2147469841)"	  ]
+[ 4,	  "#    algebra.select(b=<tmp_7>bat[:oid,:lng]{10000}, mx=2147469841, _29=nil:lng)"	  ]
+[ 5,	  "#    d := mmath.sin(_32=0.20000000298023224)"					  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -110,11 +109,11 @@ end main;	# 35
 # h	t	t	t											  # name
 # int	int	int	str											  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 1,	  0,	  0,	  "#    io.printf(_28=\"#monitor \\n\")"						  ]
+[ 1,	  0,	  0,	  "#    io.printf(_26=\"#monitor \\n\")"						  ]
 [ 2,	  0,	  160000, "#    mx := aggr.max(b=<tmp_7>bat[:oid,:lng]{10000})"					  ]
-[ 3,	  160000, 160000, "#    algebra.select(b=<tmp_7>bat[:oid,:lng]{10000}, _31=nil:lng, mx=2147469841)"	  ]
-[ 4,	  16,	  160000, "#    algebra.select(b=<tmp_7>bat[:oid,:lng]{10000}, mx=2147469841, _31=nil:lng)"	  ]
-[ 5,	  0,	  0,	  "#    d := mmath.sin(_34=0.20000000298023224)"					  ]
+[ 3,	  160000, 160000, "#    algebra.select(b=<tmp_7>bat[:oid,:lng]{10000}, _29=nil:lng, mx=2147469841)"	  ]
+[ 4,	  16,	  160000, "#    algebra.select(b=<tmp_7>bat[:oid,:lng]{10000}, mx=2147469841, _29=nil:lng)"	  ]
+[ 5,	  0,	  0,	  "#    d := mmath.sin(_32=0.20000000298023224)"					  ]
 
 # 08:46:49 >  
 # 08:46:49 >  Done.

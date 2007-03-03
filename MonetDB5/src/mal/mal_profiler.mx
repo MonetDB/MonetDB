@@ -58,15 +58,15 @@ counter groups are activated, instructions are filtered for
 tracking, and where the profile information is retained for
 a posteriori analysis. 
 @example
+#profiler.activate("event");
+#profiler.activate("pc");
+#profiler.activate("operation");
 profiler.activate("time");
 profiler.activate("ticks");
 #profiler.activate("cpu");
 #profiler.activate("memory");
 #profiler.activate("io");
-#profiler.activate("pc");
-#profiler.activate("event");
-#profiler.activate("rdbytes");
-#profiler.activate("wrbytes");
+#profiler.activate("bytes");
 #profiler.activate("diskspace");
 profiler.activate("statement");
 profiler.setFilter("*","insert");
@@ -94,11 +94,11 @@ Execution of the sample leads to the creation of a file with
 the following content. The ticks are measured in micro-seconds.
 
 @verbatim
-# time, ticks,  stmt,   # name
-[ "15:17:56",   12,      "_27 := bat.insert(<tmp_15>{3},1,15);",    ]
-[ "15:17:56",   2,       "_30 := bat.insert(<tmp_15>{3},2,4);",     ]
-[ "15:17:56",   2,       "_33 := bat.insert(<tmp_15>{3},3,9);",     ]
-[ "15:17:56",   245,     "_36 := io.print(<tmp_15>{3});",   ]
+# time, ticks,  stmt  # name
+[ "15:17:56",   12,   "_27 := bat.insert(<tmp_15>{3},1,15);" ]
+[ "15:17:56",   2,    "_30 := bat.insert(<tmp_15>{3},2,4);"  ]
+[ "15:17:56",   2,    "_33 := bat.insert(<tmp_15>{3},3,9);"  ]
+[ "15:17:56",   245,  "_36 := io.print(<tmp_15>{3});",   ]
 @end verbatim
 
 @node Event Caching, The MAL Modules, Event Filtering, The MAL Profiler
@@ -268,33 +268,33 @@ static int profileAll = 0;	/* all instructions should be profiled */
 static int delayswitch = 0;	/* to wait before sending the profile info */
 
 @c
-#define PROFtime    0
-#define PROFlabel   1
-#define PROFcpu     2
-#define PROFmemory  3
-#define PROFio      4
-#define PROFpc      5
-#define PROFevent   6
-#define PROFstmt    7
-#define PROFrdbytes 8
-#define PROFwrbytes 9
-#define PROFdisk   10	
+#define PROFevent   0
+#define PROFpc      1
+#define PROFoper    2
+#define PROFtime    3
+#define PROFticks   4
+#define PROFcpu     5
+#define PROFmemory  6
+#define PROFio      7
+#define PROFbytes   8
+#define PROFdisk    9	
+#define PROFstmt   10
 
 static struct {
 	str name;		/* which logical counter is needed */
 	int status;		/* trace it or not */
 } profileCounter[] = {
-	/*  0 */  { "time", 0},
-	/*  1 */  { "ticks", 0},
-	/*  2 */  { "cpu", 0},
-	/*  3 */  { "memory", 0},
-	/*  4 */  { "io", 0},
-	/*  5 */  { "pc", 0},
-	/*  6 */  { "event", 0},
-	/*  7 */  { "statement", 0},
-	/*  8 */  { "rdbytes", 0},
-	/*  9 */  { "wrbytes", 0},
-	/*  10 */  { "diskspace", 0},
+	/*  0 */  { "event", 0},
+	/*  1 */  { "pc", 0},
+	/*  2 */  { "operation", 0},
+	/*  3 */  { "time", 0},
+	/*  4 */  { "ticks", 0},
+	/*  5 */  { "cpu", 0},
+	/*  6 */  { "memory", 0},
+	/*  7 */  { "io", 0},
+	/*  8 */  { "bytes", 0},
+	/*  9 */  { "disk", 0},
+	/*  10 */  { "statement", 0},
 	/*  11 */  { 0, 0}
 };
 
@@ -373,18 +373,17 @@ offlineProfilerHeader(void)
 {
 	@:getEventStream()@	/* profilerEvent -> void */
 	log0("# ");
+	if (profileCounter[PROFevent].status) {
+		log0("event\t");
+	} 
 	if (profileCounter[PROFpc].status) {
-		log0("caller,line,\t");
-		log0("callee,function,\t");
+		log0("function,\tline,\t");
 	}
 	if (profileCounter[PROFtime].status) {
 		log0("time,\t");
 	}
-	if (profileCounter[PROFlabel].status) {
-		log0("ticks,\t");
-	}
-	if (profileCounter[PROFstmt].status) {
-		log0("stmt,\t");
+	if (profileCounter[PROFticks].status) {
+		log0("usec,\t");
 	}
 	if (profileCounter[PROFcpu].status) {
 		log0("utime,\t");
@@ -404,24 +403,22 @@ offlineProfilerHeader(void)
 		log0("uordblks,\t");
 	}
 	if (profileCounter[PROFio].status) {
-		log0("page reclaim,\t");
-		log0("page faults,\t");
+		log0("pg reclaim,\t");
+		log0("pg faults,\t");
 		log0("swaps,\t");
-		log0("block reads,\t");
-		log0("block writes,\t");
-		log0("context switch,\t");
-		log0("involunarty switch,\t");
+		log0("blk reads,\t");
+		log0("blk writes,\t");
+		log0("ctxt switch,\t");
+		log0("inv switch,\t");
 	}
-	if (profileCounter[PROFrdbytes].status) 
-		log0("rdbytes,\t");
-	if (profileCounter[PROFwrbytes].status)
-		log0("wrbytes,\t");
+	if (profileCounter[PROFbytes].status)
+		log0("rdbytes,\t wrbytes,\t");
 	if (profileCounter[PROFdisk].status)
 		log0("diskspace,\t");
-	if (profileCounter[PROFevent].status) {
-		log0("event\t# name\n");
-	} else
-		log0("# name\n");
+	if (profileCounter[PROFstmt].status) {
+		log0("stmt,\t");
+	}
+	log0("# name\n");
 	mal_unset_lock(profileLock, "profileLock");
 }
 
@@ -465,17 +462,26 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	/* make basic profile event tuple  */
 	log0("[ ");
+	if (profileCounter[PROFevent].status) {
+		log("%d,\t", eventcounter);
+	} 
 	if (profileCounter[PROFpc].status) {
-		str nme = "";
+		str mod = "";
+		str fcn = "";
 
-		if (stk->blk)
-			nme = getFunctionId(getInstrPtr(stk->blk, 0));
-
-		/* get identity of caller */
-		log2("\"%s\",%d,\t", nme, getPC(mb, pci));
-		if (getModuleId(pci) && getFunctionId(pci)) {
-			log2("\"%s\",\"%s\",\t", getModuleId(pci), getFunctionId(pci));
-		} 
+		if (stk->blk){
+			mod = getModuleId(getInstrPtr(stk->blk, 0));
+			fcn = getFunctionId(getInstrPtr(stk->blk, 0));
+		}
+		log2("\"%s.%s\",\t", mod,fcn);
+		log("%d,\t", getPC(mb, pci));
+	}
+	if (profileCounter[PROFoper].status) {
+		if( getModuleId(pci) && getFunctionId(pci)){
+			log2("\"%s.%s\",\t",
+					getModuleId(pci), getFunctionId(pci));
+		} else
+			log0(",\t"); 
 	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
@@ -489,17 +495,8 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		tbuf[10] = '"';
 		log("%s,\t", tbuf + 10);
 	}
-	if (profileCounter[PROFlabel].status) {
+	if (profileCounter[PROFticks].status) {
 		log("%d,\t", mb->profiler[pc].ticks);
-	}
-	if (profileCounter[PROFstmt].status) {
-		/* generate actual call statement */
-		stmt = call2str(MCgetClient(),mb, stk, getPC(mb, pci));
-		c = stmt+1;
-
-		while (c && *c && isspace((int) *c))
-			c++;
-		log(" \"%s\",\t", c);
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch<0) {
@@ -535,20 +532,23 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		prevUsage = infoUsage;
 	}
 #endif
-	if (profileCounter[PROFrdbytes].status) {
-		log("%d,", mb->profiler[pc].rdbytes);
-	}
-	if (profileCounter[PROFwrbytes].status) {
-		log("%d,", mb->profiler[pc].wrbytes);
+	if (profileCounter[PROFbytes].status) {
+		log("%d,\t", mb->profiler[pc].rdbytes);
+		log("%d,\t", mb->profiler[pc].wrbytes);
 	}
 	if (profileCounter[PROFdisk].status) {
-		log("%d,", getDiskSpace());
+		log("%d,\t", getDiskSpace());
 	}
-	if (profileCounter[PROFevent].status) {
-		log("%d ]\n", eventcounter);
-	} else {
-		log0(" ]\n");
+	if (profileCounter[PROFstmt].status) {
+		/* generate actual call statement */
+		stmt = call2str(MCgetClient(),mb, stk, getPC(mb, pci));
+		c = stmt+1;
+
+		while (c && *c && isspace((int) *c))
+			c++;
+		log(" \"%s\"", c);
 	}
+	log0(" ]\n");
 	eventcounter++;
 	mal_unset_lock(profileLock, "profileLock");
 }
@@ -1027,7 +1027,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		tbuf[10] = '"';
 		BUNins(TRACE_id_time, &evnt, tbuf + 10, FALSE);
 	}
-	if (profileCounter[PROFlabel].status) {
+	if (profileCounter[PROFticks].status) {
 		BUNins(TRACE_id_ticks, &evnt, &mb->profiler[pc].ticks, FALSE);
 	}
 	if (profileCounter[PROFstmt].status) {
@@ -1076,10 +1076,8 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 #endif
 	}
 */
-	if (profileCounter[PROFrdbytes].status) {
+	if (profileCounter[PROFbytes].status) {
 		BUNins(TRACE_id_rdbytes, &evnt, &mb->profiler[pc].rdbytes, FALSE);
-	}
-	if (profileCounter[PROFwrbytes].status) {
 		BUNins(TRACE_id_wrbytes, &evnt, &mb->profiler[pc].wrbytes, FALSE);
 	}
 	if (profileCounter[PROFdisk].status) {

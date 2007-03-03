@@ -11,9 +11,8 @@ exit (go,i);
 
 profiler.activate("ticks");
 profiler.activate("statement");
-profiler.activate("rdbytes");
-profiler.activate("wrbytes");
-profiler.activate("diskspace");
+profiler.activate("bytes");
+profiler.activate("disk");
 profiler.setAll();
 
 profiler.start();
