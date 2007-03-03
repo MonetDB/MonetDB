@@ -160,8 +160,8 @@ static void mps_error(const char *format, ...)
 
 static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c);
-static int
-var_is_used (PFvar_t *v, PFcnode_t *e);
+static int var_is_used (PFvar_t *v, PFcnode_t *e);
+static int var_is_used2 (PFvar_t *v, PFcnode_t *e);
 int PFqueryType(PFcnode_t *c);
 
 /* throw away out-of date flwr information. return the relevant level */
@@ -8920,13 +8920,13 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
     {
         if (noForBetween (v, LR(c)) == 0)
                 return 0;
-        if (var_is_used (v, R(c)))
+        if (var_is_used2 (v, R(c)))
                 return 0;
     }
     else if (c->kind == c_apply &&
              !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
     {
-        if (var_is_used (v, D(c)))
+        if (var_is_used2 (v, D(c)))
                 return 0;
     } 
     else
@@ -8937,7 +8937,7 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
 }
                                                                                                                                                              
 /**
- * expandable tests wether a variable can be expanded without causing
+ * expandable tests whether a variable can be expanded without causing
  * any problems and returns the result of the functions noConstructor and
  * noForBetween
  *
@@ -9006,6 +9006,31 @@ var_is_used (PFvar_t *v, PFcnode_t *e)
   else
       for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
           usage += var_is_used (v, e->child[i]);
+
+  return usage;
+}
+
+static int
+var_is_used2 (PFvar_t *v, PFcnode_t *e)
+{
+  int i;
+  int usage = 0;
+
+  assert (v && e);
+
+  /* if variable is used to iterate over, ignore it as use */
+  if (e->kind == c_for &&
+      L(e) && L(e)->kind == c_forbind &&
+      LR(e) && LR(e)->kind == c_var && LR(e)->sem.var == v)
+  {
+      return 0; /* speculate that var will be recognized as a join-side */
+  }
+
+  if (e->kind == c_var && e->sem.var == v)
+      return 1;
+  else
+      for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
+          usage += var_is_used2 (v, e->child[i]);
 
   return usage;
 }
