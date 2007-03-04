@@ -753,7 +753,9 @@ response2bat(int sock,
     int ret;
     stream *in;
     BAT *shredBAT;
-    if (!(in = socket_rastream(sock, "http_receive"))) {
+
+    in = block_stream(socket_rastream(sock, "http_receive"));
+    if(!in){
         GDKerror("response2bat: failed to create socket_rastream\n");
         return NULL;
     }
@@ -767,7 +769,16 @@ response2bat(int sock,
         stream_close(in); stream_destroy(in);
         return NULL;
     }
-    if (strncmp(b->buf+9, "200", 3) != 0) {
+
+    strptr = strchr(b->buf, ' ');
+    if (!strptr) {
+        GDKerror("response2bat: invalid response from %s\n%s\n",
+                dst, b->buf);
+        stream_close(in); stream_destroy(in);
+        return NULL;
+    }
+
+    if (strncmp(++strptr, "200", 3) != 0) {
         b->buf[ret] = '\0';
         GDKerror("HTTP Error Code  : %s\n", b->buf + 9);
         strptr = b->buf + b->pos + 1;

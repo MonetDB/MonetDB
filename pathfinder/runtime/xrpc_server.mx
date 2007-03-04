@@ -965,11 +965,11 @@ execQuery(mapi_client *mc,
     char *err = xquery_method(mc, serializeMode, module, location,
                               method, argc, iterc, argcnt, argtpe,
                               argval, shredBAT);
-
     if (err) {
         send_err(mc->c->fdout, 0, "", "env:Sender", err);
         return GDK_FAIL;
     }
+    stream_flush(mc->c->fdout);
 
     return GDK_SUCCEED;
 }
@@ -1093,14 +1093,90 @@ xrpc_handle_admin_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 static int 
 xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 {
-    (void)mc;
-    (void)arg;
+    char *method = NULL, *uri = NULL, *docname = NULL;
+    char location[1024];
+    int i = 0, len = 0, ret = GDK_FAIL;
+    lng **argcnt = NULL;
 
-    /* GET,PUT,DELETE HTTP requests get serializeMode|=2 to avoid XRPC
-     * serialization */ 
-    /* if(strcmp(conn->method, "POST") != 0) serializeMode |= 2; */
+    /* skip "/xrpc/" prefix that has directed us here */
+    uri = shttpd_get_uri(arg) + 5;
+    /* we don't always have the second '/' */
+    if(uri[0] == '/') uri++;
+    if(uri[0] == '\0'){
+        send_err(mc->c->fdout, 1, ERR403, "env:Sender",
+                "Directory listing denied");
+        return GDK_FAIL;
+    }
+    len = strlen(uri);
+    docname = GDKmalloc(len + 3);
+    docname[0] = '\"';
+    for(i = 0; i < len; i++)
+        docname[i+1] = uri[i];
+    docname[len+1] = '\"';
+    docname[len+2] = '\0';
 
-    return GDK_SUCCEED;
+    snprintf(location, 1024, "http://localhost:%d/admin/admin.xq", xrpc_port);
+    method = shttpd_get_method(arg);
+    argcnt = GDKmalloc(sizeof(lng*));
+    if (!argcnt){
+        send_err(mc->c->fdout, 1, ERR500,
+                "env:Receiver", OUT_OF_MEM);
+        GDKfree(docname);
+        return GDK_FAIL;
+    }
+    argcnt[0] = GDKmalloc(2 * sizeof(lng));
+    if (!argcnt[0]){
+        send_err(mc->c->fdout, 1, ERR500,
+                "env:Receiver", OUT_OF_MEM);
+        GDKfree(argcnt);
+        GDKfree(docname);
+        return GDK_FAIL;
+    }
+    argcnt[0][0] = argcnt[0][1] = 1;
+
+    if (strcmp(method, "PUT") == 0) {
+        lng percentage = 1;
+        bit verbose = FALSE;
+        BAT *shredBAT = BATnew(TYPE_str, TYPE_bat, 32);
+        if (!shredBAT){
+            send_err(mc->c->fdout, 1, ERR500,
+                    "env:Receiver", OUT_OF_MEM);
+            GDKfree(argcnt[0]);
+            GDKfree(argcnt);
+            GDKfree(docname);
+            return GDK_FAIL;
+        }
+
+        ret = CMDshred_str(shredBAT, shttpd_get_msg(arg), &percentage,
+                NULL, &verbose);
+        if (ret == GDK_FAIL) {
+            BBPreclaim(shredBAT);
+            shredBAT = NULL;
+            send_err(mc->c->fdout, 1, ERR404, "env:Sender",
+                    NOT_WELL_FORMED);
+            GDKfree(argcnt[0]);
+            GDKfree(argcnt);
+            GDKfree(docname);
+            return ret;
+        }
+
+        str argtpe[2] = { "xs:string", "xs:document" };
+        str argval[2] = { docname , "0" };
+        ret = execQuery(mc, 2, MXQ_ADMIN, location, method, 2, 1,
+                argcnt, argtpe, argval, shredBAT);
+        BBPreclaim(shredBAT);
+    } else { /* GET/DELETE */
+        str argtpe[1] = { "xs:string" };
+        str argval[1] = { docname };
+
+        ret = execQuery(mc, 2, MXQ_ADMIN, location, method, 1, 1,
+                argcnt, argtpe, argval, NULL);
+    }
+
+    GDKfree(argcnt[0]);
+    GDKfree(argcnt);
+    GDKfree(docname);
+    return ret;
 }
 
 /*
@@ -1117,14 +1193,10 @@ xrpc_client_engine(mapi_client *mc)
 
     if(strncmp(uri, XRPCD_CALLBACK, 5) == 0) {
         method = shttpd_get_method(arg);
-        if(strcmp(method, "POST") == 0) {
-            /* do the work */
+        if(strcmp(method, "POST") == 0) { /* req = XRPC function call */
             (void) xrpc_handle_request(mc, arg);
-        } else if (strcmp(method, "GET") == 0) {
+        } else { /* method = GET/PUT/DELETE */
             (void) xrpc_handle_file_request(mc, arg);
-        } else {
-            send_err(mc->c->fdout, 1, ERR403, "env:Sender",
-                    "operation no allowed");
         }
     } else if (strncmp(uri, MXQ_ADMIN_CALLBACK, 9) == 0) {
         (void) xrpc_handle_admin_request(mc, arg);
@@ -1144,9 +1216,18 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
 {
     /* get a MAPI thread from the xquery client pool */
     int sock = shttpd_get_socket(arg);
+    int use_block_stream = 0;
+    
+    /* Use block_stream for the serialization of XRPC call results */
+    if( (strncmp(shttpd_get_uri(arg), XRPCD_CALLBACK, 5) == 0) &&
+        (strcmp(shttpd_get_method(arg), "POST") == 0) )
+        use_block_stream = 1;
+
     stream *fdin = socket_rastream(sock, "XRPC read");
     if (fdin && stream_errnr(fdin) == 0) {
-        stream *fdout = socket_wastream(sock, "XRPC write");
+        stream *fdout = use_block_stream ?
+            block_stream(socket_wastream(sock, "XRPC write")) :
+            socket_wastream(sock, "XRPC write");
         if (fdout && stream_errnr(fdout) == 0) {
             mapi_client *mc = MAPIclient(fdin, fdout, "xquery");
             if (mc) {
@@ -1177,7 +1258,8 @@ CMDrpcd_start(int *port, bit *open, str option)
         return GDK_SUCCEED;
     }
 
-    xrpc_port = rpcd_running = *port;
+    xrpc_port = *port;
+    rpcd_running = 1;
 
     /* find 'datadir' (often datadir = <prefix>/share), otherwise use
      * "/usr/share", hence, httpd serves out <datadir>/MonetDB/xrpc */
