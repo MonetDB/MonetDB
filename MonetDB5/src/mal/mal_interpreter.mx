@@ -333,7 +333,7 @@ The call does not return values, they are ignored.
 @c
 str 
 callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
-	MalStkPtr stk;
+	MalStkPtr stk= NULL;
 	str ret= MAL_SUCCEED;
 	int i;
 	ValPtr lhs,rhs;
