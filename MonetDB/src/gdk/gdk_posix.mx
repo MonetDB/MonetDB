@@ -2363,10 +2363,10 @@ MT_alloc_table(void)
 	return 0;
 }
 
+#ifdef DEBUG_ALLOC
 static void
 MT_alloc_init(void)
 {
-#ifdef DEBUG_ALLOC
 	char *p = NULL;
 	int i;
 
@@ -2391,6 +2391,6 @@ MT_alloc_init(void)
 #endif
 		MT_alloc_map[i] = mode;
 	}
-#endif
 }
+#endif
 @}
