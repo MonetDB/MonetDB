@@ -26,7 +26,13 @@
 scripts_html = {
 	EXT = html
 	DIR = datadir/MonetDB/xrpc/admin
-	SOURCES = index.html
+	SOURCES = index.html title.html menu.html content.html
+}
+
+scripts_js = {
+	EXT = js
+	DIR = datadir/MonetDB/xrpc/admin
+	SOURCES = admin.js xrpcwebclient.js
 }
 
 scripts_xq = {

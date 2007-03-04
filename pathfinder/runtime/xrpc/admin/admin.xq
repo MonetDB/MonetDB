@@ -29,7 +29,7 @@ declare document management function admin:del-doc($document as xs:string)
 { pf:del-doc($document) };
 
 declare document management function admin:del-col($collection as xs:string) 
-{ let $docs := pf:documents($collection) 
+{ let $docs := pf:documents-unsafe($collection) 
   return if (count($docs) = 0) 
     then error("collection not found")
     else for $document in $docs 
@@ -100,7 +100,7 @@ declare function admin:db-restart()
 { pf:mil('fork({ sleep(5); exit();}); return "Mserver will restart in 5 seconds..";') };
 
 declare function admin:db-checkpoint() as xs:string 
-{ string(exactly-one(pf:mil('var t := usec(), logMB := (logger_changes(pf_logger)- logger_base)/131072; pf_logflush(); return "flushed " + str(logMB) + "MB log in " + str(flt(usec() - t)/1000.0) + "ms";'))) };
+{ string(exactly-one(pf:mil('var t := usec(), logMB := (logger_changes(pf_logger)- logger_base)/131072; pf_logflush(lng(logMB)); return "flushed " + str(logMB) + "MB log in " + str(flt(usec() - t)/1000.0) + "ms";'))) };
 
 
 

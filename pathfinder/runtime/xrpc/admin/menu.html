@@ -1,0 +1,98 @@
+<html>
+    <body>
+        <form name="admin-menu" id="myform" method="post" onSubmit=""
+            target="content">
+            <table width="100%">
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="collections" value="List Collections"
+                        onClick="top.doCollections()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="documents" value="List All Documents"
+                        onClick="top.doAllDocuments()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="adddoc" value="Add Document"
+                        onClick="top.makeAddDocForm()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="dbstats" value="View Database Statistics"
+                        onClick="top.doDbStats()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="dbstats" value="View DB Environment"
+                        onClick="top.doDbEnv()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="dbstats" value="Flush Database Cache"
+                        onClick="top.doDbFlush()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="dbstats" value="Restart DB Server"
+                        onClick="top.doDbRestart()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="dbstats" value="Make Checkpoint"
+                        onClick="top.doDbCheckpoint()"/>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </body>
+</html>
+<!--
+<td>
+    <input type="file" id="addlocalfile" value="Add
+    Local File" onClick="top.doAddDoc()"/>
+</td>
+
+<td valign="top">
+    <h2>Add Document</h2>
+    <table>
+        <tr>
+            <td>URL:</td>
+            <td><input type="text" id="newURL" value=""/></td>
+        </tr>
+        <tr>
+            <td>Name:</td>
+            <td><input type="text" id="newName" value=""/></td>
+        </tr>
+        <tr>
+            <td>Collection:</td>
+            <td><input type="text" id="newCol" value=""/></td>
+        </tr>
+        <tr>
+            <td>Free %:</td>
+            <td><input type="text" id="newFree" value="0"/></td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                <input type="button" name="addDoc" value="Add" onClick="doAddDoc()"/>
+            </td>
+        </tr>
+    </table>
+</td>
+-->
