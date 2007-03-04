@@ -4,11 +4,11 @@
 	
 <script type="text/javascript">
 
-const ADMIN_CALLBACK = "mxqadmin";
-const XRPC_SERVER_ADDR = (new String(document.location)).replace("admin",ADMIN_CALLBACK);
-const MODULE = "http://monetdb.cwi.nl/XQuery/admin/";
-const LOCATION = document.location + "admin.xq";
-const REQ_HEADER = '<?xml version="1.0" encoding="utf-8"?>\n' +
+var ADMIN_CALLBACK = "mxqadmin";
+var XRPC_SERVER_ADDR = (new String(document.location)).replace("admin",ADMIN_CALLBACK);
+var MODULE = "http://monetdb.cwi.nl/XQuery/admin/";
+var LOCATION = document.location + "admin.xq";
+var REQ_HEADER = '<?xml version="1.0" encoding="utf-8"?>\n' +
                    '<env:Envelope ' +
                        'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
                        'xmlns:xrpc="http://monetdb.cwi.nl/XQuery" ' +
@@ -19,7 +19,7 @@ const REQ_HEADER = '<?xml version="1.0" encoding="utf-8"?>\n' +
                      '<env:Body>' +
                        '<xrpc:request xrpc:module="' + MODULE + '" ' +
                                      'xrpc:location="' + LOCATION + '" ';
-const REQ_FOOTER = '</xrpc:request></env:Body></env:Envelope>';
+var REQ_FOOTER = '</xrpc:request></env:Body></env:Envelope>';
 
 XRPCWebClient = function () {
     if (window.XMLHttpRequest) {
