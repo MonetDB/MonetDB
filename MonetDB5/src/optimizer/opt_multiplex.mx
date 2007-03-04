@@ -115,7 +115,6 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i = 2, k, mloop, resB, iter = 0, cr;
 	int hvar, tvar;
 	str mod, fcn;
-	str msg = MAL_SUCCEED;
 	int alias[MAXARG];
 	InstrPtr q;
 	int ht, tt;
@@ -125,15 +124,17 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mod = putName(mod,strlen(mod));
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
 	fcn = putName(fcn,strlen(fcn));
-	/* search the iterator bat */
-	iter = getArg(pci, 3);
 
+	/* search the iterator bat */
 	for (i = 3; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			iter = getArg(pci, i);
-
 			break;
 		}
+	if( i == pci->argc)
+		return createException(MAL, "optimizer.multiplex", 
+								"Iterator BAT type is missing");
+
 #ifdef DEBUG_OPT_MULTIPLEX
 	printf("calling the optimize multiplex script routine\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
@@ -146,10 +147,12 @@ because in the end we issue a recursive function call that should
 find the actual arguments at the proper place of the callee.
 @c
 	/* resB := new(refBat) */
+	if (isAnyExpression(getArgType(mb, pci, 0)))
+		return createException(MAL, "optimizer.multiplex", 
+								"Target type is missing");
 	q = newFcnCall(mb, batRef, newRef);
 	resB = getArg(q, 0);
-	if (isAnyExpression(getArgType(mb, pci, 0)))
-		msg = createException(MAL, "optimizer.multiplex", "Target type is missing");
+
 	ht = getHeadType(getArgType(mb, pci, 0));
 	tt = getTailType(getArgType(mb, pci, 0));
 	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -236,7 +239,7 @@ find the actual arguments at the proper place of the callee.
 	q = newAssignment(mb);
 	getArg(q, 0) = getArg(pci, 0);
 	pushArgument(mb, q, resB);
-	return msg;
+	return MAL_SUCCEED;
 }
 
 @-
@@ -250,34 +253,34 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
 	InstrPtr *old, p;
-	int i,j, limit,doit= 0, init=0;
+	int i, limit,doit= 0;
 	lng clk=GDKusec();
+	str msg= MAL_SUCCEED;
 
 	(void) stk;
 	(void) pci;
 	old = mb->stmt;
-
 	limit = mb->stop;
+	newMalBlkStmt(mb, mb->stop);
+
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (getModuleId(p) == optimizerRef && getFunctionId(p) == multiplexRef) {
-			if(init==0){
-				newMalBlkStmt(mb, mb->stop);
-				for(j= 0; j<i; j++)
-					pushInstruction(mb,old[j]);
-				init++;
+		if (msg == MAL_SUCCEED &&
+			getModuleId(p) == optimizerRef && 
+			getFunctionId(p) == multiplexRef) {
+			msg= OPTexpandMultiplex(mb, stk, p);
+			if( msg== MAL_SUCCEED){
+				freeInstruction(p); 
+			} else {
+				pushInstruction(mb, p);
 			}
-			OPTexpandMultiplex(mb, stk, p);
-			/* freeInstruction(p);*/
 			doit++;
 		} else
-		if( init )
 			pushInstruction(mb, p);
 	}
-	if( init){
-		GDKfree(old);
+	GDKfree(old);
+	if( doit)
 		optimizerCheck(mb, "optimizer.multiplex", doit, GDKusec() - clk,OPT_CHECK_ALL);
-	}
 	return MAL_SUCCEED;
 }
 @}

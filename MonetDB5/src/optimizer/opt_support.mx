@@ -590,15 +590,18 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 }
 @-
 Limit the loop count in the optimizer.
+Beware, the multiplex optimizer should only be called once.
+Each call will handle all occurrences.
 @c
 str
 optimizeMALBlock(MalBlkPtr mb)
 {
 	InstrPtr p;
-	int pc, qot = 0;
+	int pc, qot = 0, mopt=0;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 	InstrPtr *optimizers= alloca(sizeof(InstrPtr)*256);
+	str multiplex= putName("multiplex",9);
 
 #ifdef DEBUG_OPT_OPTIMIZER
 	int oldstop = mb->stop;
@@ -610,8 +613,14 @@ optimizeMALBlock(MalBlkPtr mb)
 		qot = 0;
 		for (pc = 0; pc < mb->stop && qot<256; pc++) {
 			p = getInstrPtr(mb, pc);
-			if (getModuleId(p) == optimizerRef && p->fcn) 
-				optimizers[qot++]= p;
+			if (getModuleId(p) == optimizerRef && p->fcn) {
+				if( getFunctionId(p)!= multiplex)
+					optimizers[qot++]= p;
+				else if(mopt==0){
+					optimizers[qot++]= p;
+					mopt++;
+				}
+			}
 		}
 		/* we collected all optimizers known so far */
 		for( pc=0; pc<qot; pc++)
