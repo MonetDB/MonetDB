@@ -434,7 +434,7 @@ ssize_t
 stream_readline(stream *s, void *buf, size_t maxcnt)
 {
 #ifdef STREAM_DEBUG
-	printf("readline %s " SZFMT "\n", s->name ? s->name : "<unnamed>", cnt);
+	printf("readline %s " SZFMT "\n", s->name ? s->name : "<unnamed>", maxcnt);
 #endif
 	assert(s->access == ST_READ);
 	if (s->errnr) return s->errnr;
@@ -558,7 +558,7 @@ void
 stream_set_byteorder(stream *s, char bigendian)
 {
 #ifdef STREAM_DEBUG
-	printf("stream_set_byteorder %s, %d\n", s->name ? s->name : "<unnamed>");
+	printf("stream_set_byteorder %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_READ);
 	s->type = ST_BIN;
