@@ -785,6 +785,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	int pc,i, k,l;
 	InstrPtr p;
 	short s, blks[MAXDEPTH], top= 0, blkId=1;
+	str fcn;
 
 	blks[top] = 1;
 	blks[++top]= 0;
@@ -810,11 +811,13 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			"Function name missing in signature");
 		return;
 	}
+	fcn= getFunctionId(p);
 		
 	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
+		/* check correct use of the arguments*/
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
 			if( isConstant(mb, l) || isTypeVar(mb,l) ){
@@ -828,16 +831,18 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			} else 
 			if( getVarDepth(mb,l) >= top){
 						showScriptException(mb,pc,TYPE,
-							"'%s' may not be used before being set in %s[%d]",
+							"'%s' may not be used before being set",
 							getVarName(mb,l));
 						mb->errors++;
 			}
 			assert( isTmpVar(mb,l) < mb->vtop);
 		}
+		/* introduce new variables or propagate them to lower depth */
 		for(k=0; k<p->retc; k++){
 			l= getArg(p,k);
 			assert( isTmpVar(mb,l) < mb->vtop);
 			if( getVarScope(mb, l) == 0){
+				/* variable has not been defined yet */
 				if( (p->barrier== RETURNsymbol || p->barrier== YIELDsymbol) &&
 					getVarType(mb,l) != TYPE_void  && p->retc==p->argc){
 			            showScriptException(mb,pc,TYPE,
@@ -845,6 +850,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 							getVarName(mb,l));
 						mb->errors++;
 				}
+				/* declare its scope */
 			    getVarScope(mb, l) = blks[top-1];
 			    getVarDepth(mb, l) = top-1;
 			} else {
@@ -858,6 +864,11 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 							getVarName(mb,l));
 			        mb->errors++;
 			    }
+				/* declare its new scope */
+				if( getVarDepth(mb,l) > top -1){
+					getVarScope(mb, l) = blks[top-1];
+					getVarDepth(mb, l) = top-1;
+				}
 			}
 		}
 		if( p->barrier){
