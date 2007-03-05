@@ -336,22 +336,6 @@ print_from_list(PFsql_t *n)
                     "fromlist", n->kind);
             break;
     }
-//    
-//    if( !((n->kind == sql_frm_list) ||
-//            (n->kind == sql_list_terminator)) )
-//    {
-//        PFoops( OOPS_FATAL,
-//                "Pathfinder failed to print from list (%u)", n->kind );
-//    }
-//   
-//    if( (n->kind == sql_list_terminator) &&
-//            (n->child[0] == NULL) && (n->child[1] == NULL) )
-//        return;
-//
-//    print_tablereference(n->child[0]);
-//    if(!(n->child[1]->kind == sql_list_terminator ))
-//        sqlprintf(", ");
-//    print_from_list(n->child[1]);
 }
 
 static void
@@ -404,7 +388,7 @@ print_fullselect(PFsql_t *n)
         {
             sqlprintf("(");
             print_fullselect(n->child[0]);
-            sqlprintf(") UNION (");
+            sqlprintf(") UNION ALL (");
             print_fullselect(n->child[1]);
             sqlprintf(")");
         } break;
@@ -412,7 +396,7 @@ print_fullselect(PFsql_t *n)
         {
             sqlprintf("(");
             print_fullselect(n->child[0]);
-            sqlprintf(") EXCEPT (");
+            sqlprintf(") EXCEPT ALL (");
             print_fullselect(n->child[1]);
             sqlprintf(")");
         } break;
@@ -511,6 +495,17 @@ print_expr(PFsql_t *n)
             print_statement(n->child[1]);
             sqlprintf(")");
         } break;
+	case sql_like:
+	{
+	    sqlprintf("(");
+	    print_statement(n->child[0]);
+	    sqlprintf(" LIKE  '%%");
+	    /* write the string without beginning and 
+	       trailing ' */
+	    assert (n->child[1]->kind == sql_lit_str);
+	    sqlprintf("%s", n->child[1]->sem.atom.val.s); 
+	    sqlprintf("\%%')");
+	} break;
         default:
         {
             PFoops( OOPS_FATAL, "expression screwed up (%u)",
@@ -534,21 +529,6 @@ print_select_list(PFsql_t *n)
             print_statement(n);
             break;
     }
-//    if( !((n->kind == sql_slct_list) ||
-//            (n->kind == sql_list_terminator)) )
-//    {
-//        PFoops( OOPS_FATAL,
-//                "Pathfinder failed to print attribute list" );
-//    }
-//   
-//    if( (n->kind == sql_list_terminator) &&
-//            (n->child[0] == NULL) && (n->child[1] == NULL) )
-//        return;
-//
-//    print_statement(n->child[0]);
-//    if(!(n->child[1]->kind == sql_list_terminator ))
-//        sqlprintf(", ");
-//    print_select_list(n->child[1]);
 }
 
 static void
@@ -623,21 +603,6 @@ print_sort_key_expressions(PFsql_t *n)
             print_statement( n );
             break;
     }
-//    if( !((n->kind == sql_srtky_expr) ||
-//            (n->kind == sql_list_terminator)) )
-//    {
-//        PFoops( OOPS_FATAL,
-//                "Pathfinder failed to print attribute list" );
-//    }
-//   
-//    if( (n->kind == sql_list_terminator) &&
-//            (n->child[0] == NULL) && (n->child[1] == NULL) )
-//        return;
-//
-//    print_statement(n->child[0]);
-//    if(!(n->child[1]->kind == sql_list_terminator ))
-//        sqlprintf(", ");
-//    print_sort_key_expressions(n->child[1]);
 }
 
 static void
@@ -690,6 +655,17 @@ static void
 print_statement(PFsql_t *n)
 {
     switch( n->kind ) {
+	case sql_asc:
+	    sqlprintf("ASC");
+	    break;
+   	case sql_desc:
+	    sqlprintf("DESC");
+	    break;
+	case sql_order:
+	    print_statement (n->child[0]);
+	    sqlprintf(" ");
+	    print_statement (n->child[1]);
+	    break;
         case sql_sum:
             sqlprintf("SUM(");
             print_statement( n->child[0] );
@@ -745,7 +721,7 @@ print_statement(PFsql_t *n)
             {
                 sqlprintf("(");
                 print_statement( n->child[0] );
-                sqlprintf(") UNION (");
+                sqlprintf(") UNION ALL (");
                 print_statement( n->child[1] );
                 sqlprintf(")");
             } break;
@@ -753,7 +729,7 @@ print_statement(PFsql_t *n)
             {
                 sqlprintf("(");
                 print_statement( n->child[0] );
-                sqlprintf(") EXCEPT (");
+                sqlprintf(") EXCEPT ALL (");
                 print_statement( n->child[1] );
                 sqlprintf(")");
             } break;
@@ -849,6 +825,17 @@ print_statement(PFsql_t *n)
             print_statement(n->child[1]);
             sqlprintf(")");
         } break;
+	case sql_like:
+	{
+	    sqlprintf("(");
+	    print_statement(n->child[0]);
+	    sqlprintf(" LIKE  '%%");
+	    /* write the string without beginning and 
+	       trailing ' */
+	    assert (n->child[1]->kind == sql_lit_str);
+	    sqlprintf("%s", n->child[1]->sem.atom.val.s); 
+	    sqlprintf("\%%')");
+	} break;
         case sql_gt:
         {
           sqlprintf("(");

@@ -396,6 +396,24 @@ PFsql_sortkey_expressions_add(const PFsql_t *list, const PFsql_t *item)
 }
 
 PFsql_t*
+PFsql_order(PFsql_t *a, PFsql_t *sort)
+{
+    return wire2(sql_order, a, sort);
+}
+
+PFsql_t*
+PFsql_asc()
+{
+    return leaf(sql_asc);
+}
+
+PFsql_t*
+PFsql_desc()
+{
+    return leaf(sql_desc);
+}
+
+PFsql_t*
 PFsql_window_clause(const PFsql_t *partcls, const PFsql_t *ordercls)
 {
     return wire2(sql_wnd_clause, partcls, ordercls);
@@ -579,11 +597,11 @@ PFsql_simple_type_str(PFalg_simple_type_t type)
 {
     switch( type ) {
         case aat_nat:
-        case aat_int: return "INTEGER";
+        case aat_int: return "DECIMAL(20,10)";
         case aat_uA:
         case aat_str: return "CHAR(100)";
         case aat_dbl:
-        case aat_dec: return "DECIMAL"; 
+        case aat_dec: return "DECIMAL(20,10)"; 
         default:      return "unknown";
     }
     return NULL; /* satisfy picky compiler */
@@ -1050,6 +1068,12 @@ PFsql_t*
 PFsql_div(const PFsql_t *a, const PFsql_t *b)
 {
     return wire2(sql_div, a, b);
+}
+
+PFsql_t*
+PFsql_like(const PFsql_t *a, const PFsql_t *b)
+{
+   return wire2(sql_like, a, b);
 }
 
 /*............ Boolean operator constructors ...........*/
