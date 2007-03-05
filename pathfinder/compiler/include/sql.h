@@ -169,7 +169,11 @@ enum PFsql_kind_t {
    sql_sum              = 63,
    sql_lit_dec          = 64,
    sql_clsc             = 65,
-   sql_expr_list        = 66
+   sql_expr_list        = 66,
+   sql_order		= 67,
+   sql_asc              = 68,
+   sql_desc             = 69,
+   sql_like             = 70
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -361,6 +365,10 @@ PFsql_t* PFsql_sortkey_expressions_empty(void);
 
 PFsql_t* PFsql_sortkey_expressions_add(const PFsql_t *list,
         const PFsql_t *item);
+
+PFsql_t* PFsql_order(PFsql_t *a, PFsql_t *sort);
+PFsql_t* PFsql_asc();
+PFsql_t* PFsql_desc();
 
 PFsql_t* PFsql_window_clause(const PFsql_t *partcls, const PFsql_t *ordercls);
 
@@ -580,6 +588,11 @@ PFsql_t* PFsql_mul(const PFsql_t *a, const PFsql_t *b);
  * Construct an arithmetic division operator.
  */
 PFsql_t* PFsql_div(const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Construct an like operator.
+ */
+PFsql_t* PFsql_like(const PFsql_t *a, const PFsql_t *b);
 
 /*.............. Boolean operator constructors ............ */
 

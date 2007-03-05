@@ -73,6 +73,9 @@
 #define sortkey_expressions(...)       PFsql_sortkey_expressions( __VA_ARGS__ )
 #define sortkey_expressions_empty()    PFsql_sortkey_expressions_empty()
 #define sortkey_expressions_add(l, i)  PFsql_sortkey_expressions_add(l, i)
+#define order(a,s)		       PFsql_order(a,s)
+#define asc()			       PFsql_asc()
+#define desc()			       PFsql_desc()
 #define window_clause(p, o)            PFsql_window_clause(p, o)
 
 /*........... Tables .............*/
@@ -161,6 +164,8 @@
 #define mul( a, b )                 PFsql_mul( a, b )
 /** Construct arithmetic `division' operator. */
 #define div( a, b )                 PFsql_div( a, b )
+/** Construct a like operator. */
+#define like( a, b )		    PFsql_like( a, b ) 
 
 /*......... Boolean operator constructors .......*/
 
