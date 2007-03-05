@@ -57,6 +57,10 @@ A synopsis of the calling conventions:
 
 Ideally, the stream of events should be piped into a
 2D graphical tool, like xosview (Linux).
+A short term solution is to generate a gnuplot script
+to display the numerics organized as time lines.
+With a backup of the event lists give you all the
+information needed for a descent post-mortem analysis.
 
 @{
 @c
@@ -108,6 +112,37 @@ static struct {
     /*  11 */  {0, 0,  0, 0}
 };
 
+static struct{
+	int bitmask, flag;
+	char *title;
+} debugmap[]={
+	{ 0,  0, ""},
+	{ 1,  1, ""},
+	{ 2,  2, ""},
+	{ 4,  3, ""},
+	{ 8,  4, ""},
+	{ 16,  5, ""},
+	{ 32,  6, ""},
+	{ 64,  7, ""},
+	{ 128,  8, ""},
+	{ 256,  9, ""},
+	{ 512, 10, ""},
+	{ 1024, 11, ""},
+	{ 2048, 12, ""},
+	{ 4096, 13, ""},
+	{ 8192, 14, ""},
+	{ 16384, 15, ""},
+	{ 32768, 16, ""},
+	{ 65536, 17, ""},
+	{ 131072, 18, ""},
+	{ 262144, 19, ""},
+	{ 524288, 20, ""},
+	{ 1048576, 21, ""},
+	{ 4194304, 22, ""},
+	{ 8388608, 23, ""},
+	{ 0, 0, 0}
+};
+
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 
@@ -122,6 +157,7 @@ static MapiHdl hdl = NULL;
 
 void
 usage(){
+	int i;
 	fprintf(stderr,"stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}\n");
 	fprintf(stderr,"-d | --dbname=<database_name>\n");
 	fprintf(stderr,"-u | --user=<user>\n");
@@ -140,6 +176,53 @@ usage(){
 	fprintf(stderr,"    b =bytes read/written\n");
 	fprintf(stderr,"    d =diskspace needed\n");
 	fprintf(stderr,"    s =statement\n");
+
+	fprintf(stderr," -g || --graphics=<filename.gp>\n");
+
+	fprintf(stderr," --debug=<topics>\n");
+@-
+The debug options are taken from the monetdb configuration file
+and only includes those relevant for M5. The have been reorganized
+to have clearer topic groups, mapping them to the required bits
+in the startup.
+We should also make the SQL debugger flags accessible
+@c
+	fprintf(stderr,"The <topics> is a comma separated flag list from:\n");
+	for(i=0; debugmap[i].title; i++)
+		fprintf(stderr,"%s\n", debugmap[i].title);
+
+	/* to be added to the debug mask table */
+	fprintf(stderr," 0 = thread-specific\n");
+	fprintf(stderr," 7 = POSIX thread management\n");
+
+	fprintf(stderr," 2 = memory allocation\n");
+
+	fprintf(stderr," 1 = property enforcing on new BATs\n");
+	fprintf(stderr," 3 = property checking on all values\n");
+	fprintf(stderr,"23 = extended property checking: tells also ab\n");
+	fprintf(stderr," 5 = BAT handling\n");
+
+	fprintf(stderr," 4 = major IO activity\n");
+	fprintf(stderr,"12 = BBP performance \n");
+
+	fprintf(stderr," 6 = <not used> MIL parser debugging\n");
+	fprintf(stderr,"15 = <not used> Yacc specific error messages\n");
+
+	fprintf(stderr," 8 = <not used> Event management\n");
+	fprintf(stderr," 9 = Transaction management\n");
+	fprintf(stderr,"10 = Locks and Triggers\n");
+	fprintf(stderr,"13 = <not used> Delta debugging (?)\n");
+
+	fprintf(stderr,"11 = <not used> Dynamic loading\n");
+
+	fprintf(stderr,"14 = <not used > Module loading\n");
+	fprintf(stderr,"16 = <not used>\n");
+	fprintf(stderr,"17 = <not used>\n");
+	fprintf(stderr,"18 = <not used>\n");
+	fprintf(stderr,"19 = <not used>\n");
+	fprintf(stderr,"20 = <not used>\n");
+	fprintf(stderr,"21 = join/select algorithm chosen\n");
+	fprintf(stderr,"22 = result size estimations (for join,select)\n");
 }
 @-
 Any signal should be captured and turned into a graceful
@@ -158,7 +241,6 @@ stopListening(int i){
 void setCounter(char *nme){
 	int i,k=1;
 	
-	printf("update fields;%s\n",nme);
 	for(i=0; profileCounter[i].tag; i++)
 		profileCounter[i].status=0;
 
