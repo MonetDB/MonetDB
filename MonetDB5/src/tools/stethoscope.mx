@@ -42,6 +42,7 @@ A synopsis of the calling conventions:
 	-p | --port=<portnr>
 	-h | --host=<hostname>
 
+	a =aggregates
     e =event
     f =function 
     o =operation called
@@ -81,6 +82,8 @@ static struct {
     char *name;       /* which logical counter is needed */
     int status;     /* trace it or not */
 } profileCounter[] = {
+    /*  11  */  {'a', "aggregate", "total count", 0},
+    /*  11  */  {'a', "aggregate", "total ticks", 0},
     /*  6  */  {'e', "event", "event id", 0},
     /*  5  */  {'f', "pc", "function", 0},
     /*  5  */  {'f', "pc", "pc", 0},
@@ -165,6 +168,7 @@ usage(){
 	fprintf(stderr,"-p | --port=<portnr>\n");
 	fprintf(stderr,"-h | --host=<hostname>\n");
 
+	fprintf(stderr,"    a =aggregates\n");
 	fprintf(stderr,"    e =event\n");
 	fprintf(stderr,"    f =function \n");
 	fprintf(stderr,"    o =operation called\n");
