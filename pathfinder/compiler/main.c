@@ -718,9 +718,7 @@ main (int argc, char *argv[])
                 for (i = 1; i < (sizeof (phases) / sizeof (char *)); i++)
                     printf ("        %2u  %s\n", i, phases[i]);
 
-                printf ("  -g%s: generate SQL code\n"
-                        "        (works best with -Algs16 flags).\n"
-                        "        Current version doesn't support documents.\n",
+                printf ("  -g%s: generate SQL code\n",
                         long_option (opt_buf, ", --%s", 'g'));
 
 #ifndef NDEBUG
@@ -917,6 +915,8 @@ main (int argc, char *argv[])
                 status->print_types = true;
                 break;
             case 'g':
+                status->summer_branch = false;
+                status->stop_after = 19;
                 status->generate_sql = true;
                 break;
             default:

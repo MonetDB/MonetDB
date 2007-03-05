@@ -57,6 +57,7 @@
 #include "prettyp.h"
 #include "abssynprint.h"
 #include "coreprint.h"
+#include "prettysql.h"
 #include "logdebug.h"
 #include "timer.h"
 #include "fs.h"           /* core mapping (formal semantics) */
@@ -693,11 +694,15 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
          if(laroot) {
              /* this is not the final semantic of this function */
              PFsql_t* sqlroot = PFlalg2sql(laroot);
-
-             if( sqlroot ) {
-                 PFarray_t *sqlprog = PFsql_serialize( sqlroot );
-                 if( sqlprog )
-                     PFsqlprint(pfout, sqlprog);
+             if (sqlroot) {
+                 if (status->print_pretty) {
+                     PFsql_pretty(pfout, sqlroot);
+                 }
+                 else {
+                     PFarray_t *sqlprog = PFsql_serialize( sqlroot );
+                     if( sqlprog )
+                         PFsqlprint(pfout, sqlprog);
+                 }
              }
          }
          else
