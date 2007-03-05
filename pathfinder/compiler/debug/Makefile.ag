@@ -34,6 +34,7 @@ lib_debug = {
 		coreprint.c \
 		logdebug.c \
 		physdebug.c \
-		prettyp.c 
+		prettyp.c \
+		prettysql.c
 }
 
