@@ -515,7 +515,7 @@ print_expr(PFsql_t *n)
 	       trailing ' */
 	    assert (n->child[1]->kind == sql_lit_str);
 	    PFprettyprintf("%s", n->child[1]->sem.atom.val.s); 
-	    PFprettyprintf("\%%')");
+	    PFprettyprintf("%%')");
 	} break;
         default:
         {
@@ -847,7 +847,7 @@ print_statement(PFsql_t *n)
 	       trailing ' */
 	    assert (n->child[1]->kind == sql_lit_str);
 	    PFprettyprintf("%s", n->child[1]->sem.atom.val.s); 
-	    PFprettyprintf("\%%')");
+	    PFprettyprintf("%%')");
 	} break;
         case sql_gt:
         {
@@ -961,12 +961,8 @@ print_variable( PFsql_t *n )
  */
 static void sql_pretty(PFsql_t *n)
 {
-    bool comma;
-
     if (!n)
         return;
-
-    comma = true;
 
     print_sequence(n);
 }
