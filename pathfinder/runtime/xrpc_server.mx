@@ -107,56 +107,25 @@ ADDHELP("get_xrpc_port", "zhang", "Febuary 2007",
 find/calculate the port number to be used by the XRPC server",
 "xrpc_server");
 
+proc get_xrpc_options() : str {
+    if (monet_environment.exist("xrpc_options")){
+        return str(monet_environment.find("xrpc_options"));
+    }
+    return "";
+}
+ADDHELP("get_xrpc_options", "zhang", "March 2007",
+"DESCRIPTION:\n\
+Find the options that should be pass to the XRPC server, currently only\
+\"timing\"",
+"xrpc_server");
+
 PROC rpcd_start() : void {
-    fork( rpcd_start(get_xrpc_port(), get_xrpc_open(), "") );
+    fork( rpcd_start(get_xrpc_port(), get_xrpc_open(), get_xrpc_options()) );
 }
 ADDHELP("rpcd_start", "zhang", "Febuary 2007",
 "DESCRIPTION:\n\
-Start XPRC receiver on the default port as specified in \
-\"monet_environment\" by \"xrpc_port\"",
-"xrpc_server");
-
-PROC rpcd_start(int port) : void {
-    fork(rpcd_start(port, get_xrpc_open(), ""));
-}
-ADDHELP("rpcd_start", "zhang", "Febuary 2007",
-"PARAMETER:\n\
-int: port number\n\
-DESCRIPTION:\n\
-Start XRPC receiver on the specified port",
-"xrpc_server");
-
-PROC rpcd_start(int port, bit open) : void {
-    fork(rpcd_start(port, open, ""));
-}
-ADDHELP("rpcd_start", "zhang", "Febuary 2007",
-"PARAMETER:\n\
-int: port number\n\
-bit: allow connections from outside the server machine or not\n\
-DESCRIPTION:\n\
-Start XRPC receiver on the specified port",
-"xrpc_server");
-
-PROC rpcd_start(int port, str options) : void {
-    fork(rpcd_start(port, get_xrpc_open(), options));
-}
-ADDHELP("rpcd_start", "zhang", "Febuary 2007",
-"PARAMETER:\n\
-int: port number\n\
-str: options, currently, only \"timing\"\n\
-DESCRIPTION:\n\
-Start XRPC receiver on the specified port",
-"xrpc_server");
-
-PROC rpcd_start(bit open, str options) : void {
-    fork(rpcd_start(get_xrpc_port(), open, options));
-}
-ADDHELP("rpcd_start", "zhang", "Febuary 2007",
-"PARAMETER:\n\
-bit: allow connections from outside the server machine or not\n\
-str: options, currently, only \"timing\"\n\
-DESCRIPTION:\n\
-Start XRPC receiver on the specified port",
+Start XPRC receiver using the default values as specified in \
+\"monet_environment\"",
 "xrpc_server");
 
 @h
@@ -290,6 +259,8 @@ char datadir[1024];
             "<env:Reason><env:Text xml:lang=\"en\">%s</env:Text>"   \
             "</env:Reason></env:Fault></env:Body></env:Envelope>",  \
             soap_err, err_reason);                                  \
+    if(isa_block_stream(out))                                       \
+        stream_flush(out);                                          \
 }
 
 /**

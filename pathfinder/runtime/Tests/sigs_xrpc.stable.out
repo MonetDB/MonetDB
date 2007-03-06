@@ -18,13 +18,10 @@ sigs("xrpc_server");
 # str																							  # type
 #-----------------------------------------#
 [ "get_xrpc_open() : bit"		  ]
+[ "get_xrpc_options() : str"		  ]
 [ "get_xrpc_port() : int"		  ]
 [ "rpcd_start() : void"																									  ]
-[ "rpcd_start(bit, str) : void"		  ]
-[ "rpcd_start(int) : void"																								  ]
-[ "rpcd_start(int, bit) : void"		  ]
 [ "rpcd_start(int, bit, str) : void"	  ]
-[ "rpcd_start(int, str) : void"																								  ]
 drop("xrpc_server");
 printf("module '%s'\n","xrpc_client");
 module 'xrpc_client'

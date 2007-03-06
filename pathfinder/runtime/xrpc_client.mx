@@ -95,7 +95,7 @@ PROC rpc_client(
 
     time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
     if (options.search("timing") >= 0) {
-        printf("XRPC_Client_DeSerialisation:   %lld microsec\n",
+        printf("XRPC_Client_DeSerialisation (ws_opencoll):    %lld microsec\n",
                 time_xrpcClntDeSeria);
     }
 
@@ -165,11 +165,14 @@ PROC get_rpc_res (
     var xrpc_ns := "http://monetdb.cwi.nl/XQuery";
     var xsi_ns := "http://www.w3.org/2001/XMLSchema-instance";
  
-    # To reduce #iter in batloop: everything before the first "sequence" is
+    # To reduce #iter: everything before the first "sequence" is
     # not used, so do not iterate over them.
-    pre_size.slice(int(seq_prop), pre_size.count()-1)@batloop() {
-        if (not(isnil($t))) { # Skip holes in the BATs
-            var pre   := $h;
+    var i := int(seq_prop);
+    var size := pre_size.fetch(0);
+    while(i <= size){
+        var inc := 1;
+        if (not(isnil(pre_size.fetch(i)))) { # Skip holes in the BATs
+            var pre   := oid(i);
             var level := pre_level.fetch(pre).int();
             var kind  := pre_kind.fetch(pre);
             var prop  := pre_prop.fetch(pre);
@@ -183,7 +186,7 @@ PROC get_rpc_res (
             } else if (level = tpe_node_level) {
                 var tpe_node_ns := qn_uri.fetch(prop);
                 if (tpe_node_ns != xrpc_ns) {
-                    ERROR("get_rpc_res (batloop %d): invalid " +
+                    ERROR("get_rpc_res (pre %d): invalid " +
                           "namespace of a type node.  Expected " +
                           "\"%s\", got \"%s\".\n",
                           pre, xrpc_ns, tpe_node_ns);
@@ -208,29 +211,31 @@ PROC get_rpc_res (
                 } else if (tpe = "document") {
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.find(pre));
-                    var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(i);
+                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
+                    res_kind.append(k);
                     # Replace the values of this type node with values
                     # for a document node
-                    pre_level := replace(pre_level, $h, ('\000' - '\001'));
-                    pre_prop  := replace(pre_prop,  $h, oid_nil);
-                    pre_kind  := replace(pre_kind,  $h, '\004');
+                    pre_level := replace(pre_level, pre, ('\000' - '\001'));
+                    pre_prop  := replace(pre_prop,  pre, oid_nil);
+                    pre_kind  := replace(pre_kind,  pre, '\004');
+                    inc := pre_size.fetch(i);
                 } else if (tpe = "attribute") {
                     var attr := attr_own.select(pre);
                     var aprop := attr.mirror().join(attr_prop);
 
                     res_iter.append(oid(itercnt));
                     res_item.append(aprop);
-                    var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ATTR);
-                    res_kind.append(i);
+                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ATTR);
+                    res_kind.append(k);
                 }
             } else if (level = (tpe_node_level + 1)) {
                 # 'tpe' was set during the previous iteration of 'batloop'
                 if (tpe = "element"){
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.find(pre));
-                    var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(i);
+                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
+                    res_kind.append(k);
+                    inc := pre_size.fetch(i);
                 } else if (tpe = "text") { # text value of a text node
                     if (kind != '\001'){
                         ERROR("get_rpc_res (batloop %d): a text node " +
@@ -239,8 +244,8 @@ PROC get_rpc_res (
                     # FIXME: does this work?
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.find(pre));
-                    var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(i);
+                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
+                    res_kind.append(k);
                 } else if (tpe = "atomic-value") { # string value of an atomic-value
                     var val := prop_text.fetch(prop); # value in str
                     if (subtpe = "boolean"){ # FIXME: does this work?
@@ -278,24 +283,21 @@ PROC get_rpc_res (
                                "ignored.\n", subtpe);
                     }
                 } else if (tpe = "comment") { # text value of a comment node                
-                    # FIXME: does this work?
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.find(pre));
-                    var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(i);
+                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
+                    res_kind.append(k);
                 } else if (tpe = "processing-instruction") { # text value of a PI node
-                    # FIXME: does this work?
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.find(pre));
-                    var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(i);
+                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
+                    res_kind.append(k);
                 } 
                 tpe := ""; # clean up type info
             } # END 'if (level = ...)'
-        } # END 'if (not(isnil($t)))'
-    } # END 'pre_size@batloop'
-
-
+        } # END 'if (not(isnil(pre_size.fetch(i))))'
+        i := i + inc;
+    } # END 'while(i < size)'
 
     pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
     pre_prop  := ws.fetch(PRE_PROP).fetch(cont);
@@ -364,7 +366,7 @@ PROC doLoopLiftedRPC(
 
         time_xrpcClntSeria := usec() - time_xrpcClntSeria;
         if (options.search("timing") >= 0) {
-            printf("XRPC_Client_Serialisation:     %lld microsec\n",
+            printf("XRPC_Client_Serialisation (get_dst_params):   %lld microsec\n",
                     time_xrpcClntSeria);
         }
 
@@ -390,7 +392,7 @@ PROC doLoopLiftedRPC(
             }
             time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
             if (options.search("timing") >= 0) {
-                printf("XRPC_Client_DeSerialisation:   %lld microsec\n",
+                printf("XRPC_Client_DeSerialisation (insert_rpc_oid): %lld microsec\n",
                         time_xrpcClntDeSeria);
             }
         } else {
@@ -447,7 +449,7 @@ PROC doLoopLiftedRPC(
 
     time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
     if (options.search("timing") >= 0) {
-        printf("XRPC_Client_DeSerialisation:   %lld microsec\n",
+        printf("XRPC_Client_DeSerialisation (get_rpc_res):    %lld microsec\n",
                 time_xrpcClntDeSeria);
     }
 
@@ -907,7 +909,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
 
     lng time_xrpcClntSeria = 0, time_xrpcClntDeSeria = 0;
     lng time_xrpcClnt2Serv = 0;
-    size_t bytes_sent = 0, bytes_received = 0;
+    size_t bytes_sent = 0;
 
     errCheck(iterc, argc, ws, fun_vid, fun_iter, fun_item, fun_kind,
             int_values, dbl_values, dec_values, str_values);
@@ -1221,14 +1223,13 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
 
     if (options && strstr(options, "timing")) {
         stream_printf(GDKout,
-                "XRPC_Client_Serialisation:     %lld microsec\n"
+                "XRPC_Client_Serialisation (create_req_msg):   %lld microsec\n"
                 "XRPC_Network_Client_2_Server:  %lld microsec\n"
-                "XRPC_Data_Sent/Received:       " SZFMT " / "
-                                                  SZFMT " bytes\n\n"
-                "XRPC_Client_DeSerialisation:   %lld microsec\n",
+                "XRPC_Data_Sent:                " SZFMT " bytes\n\n"
+                "XRPC_Client_DeSerialisation (response2bat):   %lld microsec\n",
                 time_xrpcClntSeria,
                 time_xrpcClnt2Serv,
-                bytes_sent, bytes_received,
+                bytes_sent,
                 time_xrpcClntDeSeria);
     }
 

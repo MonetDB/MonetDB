@@ -950,7 +950,7 @@ disconnect(struct conn *c, struct conn *prev)
 	if (c->ssl)		SSL_free(c->ssl);
 #endif /* WITH_SSL */
 
-	if (c->sock >= 0) closesocket(c->sock);
+    if (c->sock >= 0 && c->io != do_embedded) closesocket(c->sock);
 	free(c);
 
 	/* In inetd mode, exit if request is finished. */
@@ -2954,8 +2954,8 @@ shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 			 * If the connection is removed, keep the previous
 			 * connection in chain (pc) unchanged.
 			 */
-            if ( (c->io != do_embedded) && 
-                    ((c->flags & FLAG_FINISHED) || c->expire < now) )
+            if ( (c->flags & FLAG_FINISHED) ||
+                 ((c->io != do_embedded) && c->expire < now) )
                 disconnect(c, pc);
             else
                 pc = c;
