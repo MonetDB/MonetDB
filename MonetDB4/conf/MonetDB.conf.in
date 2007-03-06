@@ -146,12 +146,16 @@ xrpc_port=""
 # xrpc daemon is open for outside connections by default
 xrpc_open=true
 
+# Additional options to be passed to the XRPC server, currently only
+# "timing".
+xrpc_options=""
+
 # IP addresses or hostname separated by ';' who can execute scripts in
 # <datadir>/MonetDB/xrpc/admin/
 xrpc_admin="127.0.0.1"
 
 # IP addresses or hostname separated by ';' who can retrieve XML
-# documents stored in the database using a URL of the form:]
+# documents stored in the database using a URL of the form:
 #                   http://<host>[:port]/xrpc/<name>.xml
 xrpc_user="127.0.0.1"
 
