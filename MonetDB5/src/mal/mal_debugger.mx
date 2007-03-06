@@ -464,8 +464,8 @@ mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s, int lifespan);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
-mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
-mal_export str call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export void printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
+mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
 
 mal_export str runMALDebugger(Symbol s);
 mal_export void printBBPinfo(stream *out);
@@ -681,7 +681,7 @@ Prepare a string for an instruction call.
 We rely on the buffersize of instruction2str.
 @c
 str
-call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 {
 	int k,len;
 	str msg,w;
@@ -716,7 +716,7 @@ call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				GDKfree(tpe);
 			}
 			/* in performance monitoring mode we show more details */
-			if( (cntxt->flags || malProfileMode) && isaBatType(v->type)){
+			if( (flags || malProfileMode) && isaBatType(v->type)){
 				str tpe= getTypeName(v->type);
 				BAT *b;
 				strcat(msg,tpe);
@@ -742,7 +742,7 @@ void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
-	msg = call2str(cntxt,mb, stk, pc);
+	msg = call2str(mb, stk, pc, cntxt->flags);
 	stream_printf(cntxt->mdbout, "%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);
@@ -754,11 +754,11 @@ Beware, the printTraceCall is a rather expensive routine and obscures
 the actual timing. We therefore compensate the global timing maintained
 @c
 void
-printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 {
 	str msg;
-	msg= call2str(cntxt,mb,stk,pc);
-	stream_printf(cntxt->mdbout, "%s\n", msg);
+	msg= call2str(mb,stk,pc,flags);
+	stream_printf(out, "%s\n", msg);
 	GDKfree(msg);
 }
 
@@ -826,27 +826,22 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		if (cntxt != mal_clients) 
 			/* help MapiClients with fake prompt */
 			stream_printf(out,"mdb>");
-		printTraceCall(cntxt,mb,stk,pc);
+		printTraceCall(out,mb,stk,pc,cntxt->flags);
 	}
 	if (cntxt == mal_clients) {
 		cntxt->prompt = "mdb>";
 		cntxt->promptlength = 4;
 	}
 	do {
+		int r;
+
 		if (cntxt->phase[READER]) {
-			if ((*cntxt->phase[READER]) (cntxt)) {
+			b= (char*) (*cntxt->phase[READER]) (cntxt);
+			if( b != 0)
 				break;
-			}
 		} else {
 			/* switch to mdb streams */
-			bstream *in= cntxt->fdin;
-			stream *ou= cntxt->fdout;
-			int r;
-			cntxt->fdin= cntxt->mdbin;
-			cntxt->fdout= cntxt->mdbout;
 			r= readConsole(cntxt);
-			cntxt->fdin= in;
-			cntxt->fdout= ou;
 			if( r <= 0)
 				break;
 		}
@@ -1385,7 +1380,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				nme = getTypeName(n->type);
 				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
 				if (strcmp(nme, nmeOnStk)) {
-					printTraceCall(cntxt,mb,stk,pc);
+					printTraceCall(cntxt->mdbout,mb,stk,pc,cntxt->flags);
 					stream_printf(cntxt->mdbout, "!ERROR: %s != :%s\n",
 						nme, nmeOnStk);
 					stk->cmd='n';
@@ -1413,7 +1408,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			if (cntxt != mal_clients) 
 				/* help MapiClients with fake prompt */
 				stream_printf(cntxt->mdbout,"mdb>");
-			printTraceCall(cntxt,mb,stk,pc);
+			printTraceCall(cntxt->mdbout,mb,stk,pc,cntxt->flags);
 		} else if( ch )
 			mdbCommand(cntxt, mb, stk, p, pc);
 		break;
@@ -1438,6 +1433,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 	mdbSessionActive= 0; /* for name completion */
+	stream_flush(cntxt->mdbout);
 }
 
 @-

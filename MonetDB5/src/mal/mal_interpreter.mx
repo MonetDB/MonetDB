@@ -1572,7 +1572,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		/* showVolume(cntxt,stk,pci,2);*/
 	}
 	if( cntxt->flags & timerFlag){
-		printTraceCall(cntxt,mb,stk,stkpc);
+		printTraceCall(cntxt->fdout,mb,stk,stkpc, cntxt->flags);
 		cntxt->timer = GDKusec();
 	}
 }
