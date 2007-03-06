@@ -634,9 +634,9 @@ skip_c_comment(struct scanner * lc)
 	       !(cur == '/' && prev == '*')) 
 		prev = cur;
 	lc->yysval = lc->yycur;
+	lc->started = started;
 	if (cur == '/')
 		cur = scanner_getc(lc);
-	lc->started = started;
 	return cur;
 }
 
@@ -644,10 +644,13 @@ static int
 skip_sql_comment(struct scanner * lc)
 {
 	int cur;
+	int started = lc->started;
 
+	lc->started = 1;
 	while ((cur = scanner_getc(lc)) != EOF && (cur != '\n'))
 		;
 	lc->yysval = lc->yycur;
+	lc->started = started;
 	if (cur == '\n')
 		cur = scanner_getc(lc);
 	return cur;
