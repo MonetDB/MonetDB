@@ -402,13 +402,13 @@ PFsql_order(PFsql_t *a, PFsql_t *sort)
 }
 
 PFsql_t*
-PFsql_asc()
+PFsql_asc(void)
 {
     return leaf(sql_asc);
 }
 
 PFsql_t*
-PFsql_desc()
+PFsql_desc(void)
 {
     return leaf(sql_desc);
 }

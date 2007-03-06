@@ -367,8 +367,8 @@ PFsql_t* PFsql_sortkey_expressions_add(const PFsql_t *list,
         const PFsql_t *item);
 
 PFsql_t* PFsql_order(PFsql_t *a, PFsql_t *sort);
-PFsql_t* PFsql_asc();
-PFsql_t* PFsql_desc();
+PFsql_t* PFsql_asc(void);
+PFsql_t* PFsql_desc(void);
 
 PFsql_t* PFsql_window_clause(const PFsql_t *partcls, const PFsql_t *ordercls);
 
