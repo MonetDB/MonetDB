@@ -35,7 +35,7 @@ lib__xquery = {
         LIBS = \
                 $(PF_LIBS) \
                 $(MONETDB5_MODS) -l_optimizer -l_bat5 \
-		$(MONETDB_LIBS) -lmal -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+		$(MONETDB_LIBS) $(MONETDB5_LIBS) -lmal -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 scripts_mal = {
