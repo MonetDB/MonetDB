@@ -93,7 +93,7 @@ print_sequence(PFsql_t *n)
    assert( n->kind == sql_seq );
 
    print_schema_information(n->child[0]);
-   PFprettyprintf("\n");
+   fprintf(out, "\n");
    print_statements(n->child[1]);
 }   
 
