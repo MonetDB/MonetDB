@@ -72,10 +72,6 @@ command getUsers( ):bat[:int,:str]
 address CLTusers
 comment "Pseudo bat of users logged in.";
 
-command setTrace(flag:bit):void
-address CLTtrace
-comment "Trace messages from all users.";
-
 @-
 @{
 @include prelude.mx
@@ -111,7 +107,6 @@ clients_export str CLTquitDefault(int *ret);
 clients_export str CLTLogin(int *ret);
 clients_export str CLTInfo(int *ret);
 
-clients_export str CLTtrace(int *res, int *flg);
 clients_export str CLTstop(int *ret, str *nme);
 
 clients_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
@@ -338,14 +333,6 @@ str
 CLTquitDefault(int *ret){
 	int timeout = 0;
 	return CLTquit(ret,&timeout);
-}
-
-str
-CLTtrace(int *res, int *flg)
-{
-    (void) res;     /* fool compiler */
-    (void) MCtraceAllClients(*flg);
-    return MAL_SUCCEED;
 }
 
 str

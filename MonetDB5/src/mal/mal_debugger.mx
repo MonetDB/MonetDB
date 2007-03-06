@@ -30,6 +30,7 @@ assess its behavior.
 * Profile Switches::
 * Program Inspection::
 * Runtime Inspection::
+* Debugger Attachment::
 @end menu
 @node Program Debugging, Handling Breakpoints, The MAL Debugger, The MAL Debugger
 @+ Program Debugging
@@ -300,7 +301,7 @@ The result is shown in the figure below:
 Since the flow graphs become rather complex, an optional variable
 list limits its size.[TODO]
 
-@node Runtime Inspection, The MAL Profiler, Program Inspection,  The MAL Debugger
+@node Runtime Inspection, Debugger Attachment, Program Inspection,  The MAL Debugger
 @+ Runtime Inspection and Reflection
 Part of the debugger functionality can also be used directly with
 MAL instructions. 
@@ -398,6 +399,31 @@ Access to the stack frames may be helpful in the context of exception handling.
 The operation @sc{mdb.getStackDepth()} gives the depth and individual
 elements can be accessed as BATs using @sc{mdb.getStackFrame(@emph{n})}.
 The top stack frame is accessed using @sc{mdb.getStackFrame()}.
+
+@node Debugger Attachment, The MAL Profiler, Runtime Inspection,  The MAL Debugger
+@+ Debugger Attachment
+Debugging a running MAL process is simplified with a few
+hooks in the kernel. It is illustrated with a short example.
+
+First open a client connection with the user using MAL as
+preferred language. Then the state of the system can be inspected,
+in particular, the clients active can be looked up.
+@example
+> b:= clients.getLogins();
+> c:= clients.getUsers();
+> io.print(b,c);
+@end example
+Locate the process you are interested in and obtain its identifier,
+say N (the first column in the list above).
+The next step is to gracefully put the running process into
+debugging mode without jeopardizing the application running.
+@example
+> mdb.start(N);
+@end example
+As soon as the MAL instruction of process N is finished the
+debugger gains control over its state. All debugger actions
+are available for inspection of the runtime state.
+
 @{
 @- Compilation control
 Being able to debug comes at a price.
@@ -517,7 +543,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	if( *request == '#' ){
 		i= atoi(request+1);
 		if( i<0 || i>= mb->stop)
-			stream_printf(cntxt->fdout, "breakpoint on #%d (<%d) not set\n", 
+			stream_printf(cntxt->mdbout, "breakpoint on #%d (<%d) not set\n", 
 				i, mb->stop);
 		else  {
 			mdb->brkBlock[mdb->brkTop] = mb;
@@ -555,7 +581,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	/* the final step is to break on a variable */
 	i= findVariable(mb,request);
 	if( i< 0)
-		stream_printf(cntxt->fdout, "breakpoint on %s not set\n", request);
+		stream_printf(cntxt->mdbout, "breakpoint on %s not set\n", request);
 	else {
 		mdb->brkBlock[mdb->brkTop] = mb;
 		mdb->brkPc[mdb->brkTop] = -1;
@@ -597,7 +623,7 @@ mdbShowBreakpoints(Client cntxt)
 	mdbState mdb = mdbTable + cntxt->idx;
 
 	for (i = 0; i < mdb->brkTop; i++)
-		stream_printf(cntxt->fdout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
+		stream_printf(cntxt->mdbout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
 }
 
 void
@@ -717,7 +743,7 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
 	msg = call2str(cntxt,mb, stk, pc);
-	stream_printf(cntxt->fdout, "%s at %s.%s[%d]\n", msg, 
+	stream_printf(cntxt->mdbout, "%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);
 	GDKfree(msg);
@@ -732,7 +758,7 @@ printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
 	msg= call2str(cntxt,mb,stk,pc);
-	stream_printf(cntxt->fdout, "%s\n", msg);
+	stream_printf(cntxt->mdbout, "%s\n", msg);
 	GDKfree(msg);
 }
 
@@ -744,8 +770,8 @@ The commands are self-explanatory.
 
 The prompt string sent to the user indicates the debugger mode.
 @c
-#define MDBstatus(X) if(cntxt->fdout) \
-	stream_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
+#define MDBstatus(X) if(cntxt->mdbout) \
+	stream_printf(cntxt->mdbout,"#MonetDB Debugger %s\n", (X?"on":"off"));
 
 static MalBlkPtr
 mdbLocateMalBlk(MalBlkPtr mb, str b, stream *out){
@@ -791,7 +817,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
 	int m = 1;
 	char *b, *c;
-	stream *out = cntxt->fdout;
+	stream *out = cntxt->mdbout;
 	/* int listing = cntxt->listing;*/
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
@@ -811,8 +837,18 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if ((*cntxt->phase[READER]) (cntxt)) {
 				break;
 			}
-		} else if (readConsole(cntxt) <= 0) {
-			break;
+		} else {
+			/* switch to mdb streams */
+			bstream *in= cntxt->fdin;
+			stream *ou= cntxt->fdout;
+			int r;
+			cntxt->fdin= cntxt->mdbin;
+			cntxt->fdout= cntxt->mdbout;
+			r= readConsole(cntxt);
+			cntxt->fdin= in;
+			cntxt->fdout= ou;
+			if( r <= 0)
+				break;
 		}
 		b = CURRENT(cntxt);
 
@@ -820,9 +856,9 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		c = strchr(b, '\n');
 		if (c) {
 			*c = 0;
-			cntxt->fdin->pos += (c - b) + 1;
+			cntxt->mdbin->pos += (c - b) + 1;
 		} else {
-			cntxt->fdin->pos = cntxt->fdin->len;
+			cntxt->mdbin->pos = cntxt->mdbin->len;
 		}
 
 		skipBlanc(cntxt, b);
@@ -874,6 +910,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				su->cmd = 0;
 			cntxt->itrace = 0;
 			cntxt->flags = 0;
+			cntxt->mdbin= cntxt->fdin;
+			cntxt->mdbout= cntxt->fdout;
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
@@ -1348,7 +1386,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
 				if (strcmp(nme, nmeOnStk)) {
 					printTraceCall(cntxt,mb,stk,pc);
-					stream_printf(cntxt->fdout, "!ERROR: %s != :%s\n",
+					stream_printf(cntxt->mdbout, "!ERROR: %s != :%s\n",
 						nme, nmeOnStk);
 					stk->cmd='n';
 				}
@@ -1374,7 +1412,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		if( ch == 't'){
 			if (cntxt != mal_clients) 
 				/* help MapiClients with fake prompt */
-				stream_printf(cntxt->fdout,"mdb>");
+				stream_printf(cntxt->mdbout,"mdb>");
 			printTraceCall(cntxt,mb,stk,pc);
 		} else if( ch )
 			mdbCommand(cntxt, mb, stk, p, pc);

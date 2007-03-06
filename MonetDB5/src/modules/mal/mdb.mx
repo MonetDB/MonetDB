@@ -50,6 +50,9 @@ module mdb;
 pattern start():void 
 address MDBstart
 comment "Start interactive debugger";
+pattern start(pid:int):void 
+address MDBstart
+comment "Start interactive debugger on a running process";
 
 pattern stop():void
 address MDBstop
@@ -243,9 +246,21 @@ MDBtoggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client cntxt = MCgetClient();
+	Client c,cntxt = MCgetClient();
+	int pid;
 
-	stk->cmd = 'n';
+	if( p->argc == 2){
+		/* debug running process */
+		pid = *(int *) getArgReference(stk, p, 1);
+		if( pid< 0 || pid > MAL_MAXCLIENTS || mal_clients[pid].mode <= FINISHING)
+			throw(MAL, "mdb.start", "Illegal process id");
+		c= mal_clients+pid;
+		/* make client aware of being debugged */
+		c->mdbin= cntxt->fdin;
+		c->mdbout= cntxt->fdout;
+		cntxt= c;
+	} else
+		stk->cmd = 'n';
 	cntxt->itrace = 'n';
 	cntxt->debugOptimizer= TRUE;
 	(void) mb;

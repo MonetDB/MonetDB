@@ -422,8 +422,9 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	(void)exceptionPC; /* TODO maybe we should use this variable somewhere*/
 	while(stkpc < mb->stop && stkpc != stoppc ){
 		pci = getInstrPtr(mb,stkpc);
-		if( stk->cmd  ) {
+		if( cntxt->itrace  ) {
 			lng t=0;
+			if( stk->cmd== 0) stk->cmd= cntxt->itrace;
 			if( oldtimer)
 				t= GDKusec();
 			mdbStep(cntxt,mb,stk,stkpc);

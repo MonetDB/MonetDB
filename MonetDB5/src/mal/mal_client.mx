@@ -157,9 +157,6 @@ Future releases may support a re-connect facility.  [TODO]
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.
 It will simple terminate after consuming the input buffer.
-The monitor file descriptor can be set to trace the input received
-from a particular client. This facility is used by Mapi to trace
-the interaction on the system console (sysmon). 
 @h
 	bstream  *fdin;
 	bstream	 *console;	/* always available for reading */
@@ -199,8 +196,8 @@ on the debugger features.
 @{
 @h
 	bitset debug;
-	stream  *sysmon;        /* trace interaction */
-	stream  *journal;
+	bstream  *mdbin;        /* debugger channels */
+	stream  *mdbout;
 	str  history;			/* where to keep console history */
 	short mode;           /* FREECLIENT..BLOCKED */
 	str cwd;            /* working directory of client */
@@ -417,8 +414,8 @@ Client MCinitClient(oid user, bstream *fin, stream *fout) {
 
 	c->listing = 0;
 	c->fdout = fout ? fout : GDKstdout;
-	c->sysmon = mal_clients[0].sysmon ? mal_clients[0].fdout : 0;
-	c->journal = NULL;
+	c->mdbin = c->fdin;
+	c->mdbout = c->fdout;
 	c->history = 0;
 @-
 The output buffer is currently not used. Beware to garbage
@@ -613,6 +610,13 @@ void MCcloseClient(Client c) {
 #endif
 	/* kill living background clients */
 	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
+		if( k->mode > FINISHING){
+			/* reset the debugger streams */
+			if( k->mdbout== c->fdout)
+				k->mdbout= k->fdout;
+			if( k->mdbin== c->fdin)
+				k->mdbin= k->fdin;
+		}
 		if ((k->mode > FINISHING) && (k->father == c)) 
 			MCkillClient(k, PROCESSTIMEOUT);
 	}
@@ -773,42 +777,7 @@ int MCrunEmbedded(Client c){
 	/* to be defined */
 	return 0;
 }
-@-
-@}
-@+ Spying on clients
-During system monitoring with multiple clients active it is
-often hard to detect who or what is causing a system degradation. 
-Therefore a spying scheme for the system administrator is
-available. He can enable tracing interactions from the internet connections
-to the system console.
-@{
-@= sysTrace
-	if( c->sysmon){
-		stream_printf(c->sysmon,"#[%d]",c->user);
-		stream_printf(c->sysmon, @1);
-		stream_printf(c->sysmon,"\n");
-	}
-@-
-@c
-void MCtraceClient(oid which, int flag){
-	Client c;
-	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-		if( c->user == which ){
-#ifdef MAL_CLIENT_DEBUG
-			printf("trace client %d\n",c-mal_clients);
-#endif
-			if( flag) c->sysmon= mal_clients[0].fdout;
-			else c->sysmon= NULL;
-		}
-}
-void MCtraceAllClients(int flag){
-	Client c;
-	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-		if( c->user != oid_nil ){
-			if( flag) c->sysmon= mal_clients[0].fdout;
-			else c->sysmon= NULL;
-		}
-}
+
 @}
 @+ Client input
 Input to be processed is collected in a Client specific buffer.
@@ -913,12 +882,7 @@ int MCreadClient(Client c){
 		showHelp(c->nspace, CURRENT(c)+1, c->fdout);
 		in->pos= in->len;
 		return MCreadClient(c);
-	} else {
-#ifdef MAL_CLIENT_DEBUG
-		printf("#finished\n");
-#endif
-		@:sysTrace(CURRENT(c))@
-	}
+	} 
 	return 1;
 }
 @}
