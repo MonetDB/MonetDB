@@ -22,14 +22,14 @@ pkg = pathfinder
 CONFIG_H=pf_config.h
 
 # burg is part of the buildtools
-BURG=burg
+BURG="$(TOPDIR)\..\..\buildtools\burg\burg.exe"
 
 # This is the location of libxml2 and its dependencies (depends how it was compiled; sometimes iconv and zlib are needed)
 LIBXML2 = C:\libxml2-2.6.27.win32
-LIBXML2_ICONV = C:\iconv-1.9.2.win32
-LIBXML2_ZLIB  = C:\zlib-1.2.3.win32
-LIBXML2_CFLAGS = "-I$(LIBXML2)\include" "-I$(LIBXML2_ICONV)\include" "-I$(LIBXML2_ZLIB)\include"
-LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBXML2_ICONV)\lib\iconv.lib" "$(LIBXML2_ZLIB)\lib\zlib.lib"
+LIBICONV = C:\iconv-1.9.2.win32
+LIBZLIB  = C:\zlib-1.2.3.win32
+LIBXML2_CFLAGS = "-I$(LIBXML2)\include" "-I$(LIBICONV)\include" "-I$(LIBZLIB)\include"
+LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBICONV)\lib\iconv.lib" "$(LIBZLIB)\lib\zlib.lib"
 
 # override value from global rules.msc
 LIBC_INCS = $(PTHREAD_INCS) $(LIBXML_INCS)

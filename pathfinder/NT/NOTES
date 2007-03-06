@@ -31,6 +31,7 @@ basics:
 
 - libxml2
   http://xmlsoft.org
+  (binaries are at http://www.zlatkovic.com/projects/libxml/index.html.  Also get iconv and zlib libraries)
   edit LIBXML2 paths in pathfinder/NT/rules.msc!!
 
 - UnxUtils
