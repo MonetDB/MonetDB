@@ -127,15 +127,9 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 #define MT_VMUNITLOG 	16
 #define MT_VMUNITSIZE 	(1 << MT_VMUNITLOG)
 
-#ifdef DEBUG_ALLOC
 gdk_export int MT_alloc_register(void *p, size_t size, char mode);
 gdk_export int MT_alloc_print(void);
 gdk_export int MT_alloc_table(void);
-#else
-#define MT_alloc_register(p, size, mode) (void)p; (void)size; (void)mode
-#define MT_alloc_print()
-#define MT_alloc_table()
-#endif 
 
 /* make sure POSIX_MADV_* and posix_madvise() are defined somehow */
 #ifdef HAVE_SYS_MMAN_H
@@ -309,11 +303,14 @@ gdk_export int closedir(DIR *dir);
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
-
 #include <stdio.h>
 
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
+#endif
+
+#if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
+#undef DEBUG_ALLOC
 #endif
 
 #ifdef WIN32
@@ -926,6 +923,37 @@ int gprof_pthread_create(pthread_t *__restrict thread,
 #endif
 #endif
 
+#ifdef DEBUG_ALLOC
+static void
+MT_alloc_init(void)
+{
+	char *p = NULL;
+	int i;
+
+	for (i = 0; i < 65536; i++, p += MT_VMUNITSIZE) {
+		int mode = '.';
+
+#ifdef WIN32
+		if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
+			mode |= 128;
+		} else {
+			VirtualFree(p, 0, MEM_RELEASE);
+		}
+#else
+		MMAP_OPEN_DEV_ZERO;
+		void *q = (char *) mmap(p, MT_VMUNITSIZE, PROT_NONE, MMAP_FLAGS(MAP_NORESERVE), MMAP_FD, 0);
+
+		MMAP_CLOSE_DEV_ZERO;
+		if (q != p)
+			mode |= 128;
+		if (q != (char *) -1L)
+			munmap(q, MT_VMUNITSIZE);
+#endif
+		MT_alloc_map[i] = mode;
+	}
+}
+#endif
+
 void
 MT_init_posix(int alloc_map)
 {
@@ -943,8 +971,6 @@ MT_init_posix(int alloc_map)
 	MT_heapbase = (char *) sbrk(0);
 
 #ifdef DEBUG_ALLOC
-	static void MT_alloc_init(void);
-
 	if (alloc_map)
 		MT_alloc_init();
 #else
@@ -1135,8 +1161,6 @@ MT_init_posix(int alloc_map)
 	_set_sbh_threshold(MT_SMALLBLOCK);
 */
 #ifdef DEBUG_ALLOC
-	static void MT_alloc_init(void);
-
 	if (alloc_map)
 		MT_alloc_init();
 #else
@@ -2203,24 +2227,59 @@ systems, this administration is dysfunctional.
 @{
 @c
 #ifdef DEBUG_ALLOC
-
-#if SIZEOF_VOID_P == 4
 unsigned char MT_alloc_map[65536] = { 0 };
+
+#define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
+
+/* The memory table dump can also be produced in tuple format to enable 
+ * front-ends to analyze it more easily.
+ */
+struct {
+	char tag;
+	char *color;
+	char *info;
+} Encoding[] = {
+	{
+	'.', "0x00FFFDFE", "free"}, {
+	'0', "0x000035FC", "thread stack space of thread 0"}, {
+	'1', "0x000067FE", "thread stack space of thread 1"}, {
+	'2', "0x000095FE", "thread stack space of thread 2"}, {
+	'3', "0x0000BDFC", "thread stack space of thread 3"}, {
+	'4', "0x0000DCF8", "thread stack space of thread 4"}, {
+	'5', "0x002735FC", "thread stack space of thread 5"}, {
+	'6', "0x002767FE", "thread stack space of thread 6"}, {
+	'7', "0x002795FE", "thread stack space of thread 7"}, {
+	'8', "0x0027BDFC", "thread stack space of thread 8"}, {
+	'9', "0x0027DCF8", "thread stack space of thread 9"}, {
+	'B', "0x0000672D", "in use for a large BAT heap."}, {
+	'b', "0x004EF2A7", "free (last usage was B)"}, {
+	'S', "0x00B4006E", "in use for a malloc block"}, {
+	's', "0x00F2BDE0", "free (last usage was S)"}, {
+	'P', "0x00F26716", "in use for the BBP array"}, {
+	'p', "0x00F2BD16", "free (last usage was P)"}, {
+	'M', "0x00959516", "in use as memory mapped region"}, {
+	'm', "0x00CEDC16", "free (last usage was M)"}, {
+	'C', "0x004EFDC7", "in use as MIL context buffer"}, {
+	'c', "0x00FFFD2D", "free (last usage was M)"}, {
+	0, "0x00FFFDFE", "free"}
+};
 #endif
 
 int
 MT_alloc_register(void *addr, size_t size, char mode)
 {
-#if SIZEOF_VOID_P == 4
-	size_t p = (size_t) addr;
+#ifdef DEBUG_ALLOC
+	if (MT_alloc_map[0]) {
+   	        size_t p = (size_t) addr;
 
-	if (size > 0) {
-		size_t i, base = p >> 16;
+	        if (size > 0) {
+	  		size_t i, base = p >> 16;
 
-		size = (size - 1) >> 16;
-		assert(p && ((lng) p) + size < (LL_CONSTANT(1) << 32));
-		for (i = 0; i <= size; i++)
-			MT_alloc_map[base + i] = (MT_alloc_map[base + i] & 128) | mode;
+			size = (size - 1) >> 16;
+			assert(p && ((long long) p) + size < (LL_CONSTANT(1) << 32));
+			for (i = 0; i <= size; i++)
+				MT_alloc_map[base + i] = (MT_alloc_map[base + i] & 128) | mode;
+		}
 	}
 #else
 	(void) addr;
@@ -2230,12 +2289,11 @@ MT_alloc_register(void *addr, size_t size, char mode)
 	return 0;
 }
 
-#define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
 
 int
 MT_alloc_print(void)
 {
-#if SIZEOF_VOID_P == 4
+#ifdef DEBUG_ALLOC
 #ifdef WIN32
 	char *p = NULL;
 #endif
@@ -2277,44 +2335,10 @@ MT_alloc_print(void)
 	return 0;
 }
 
-@-
-The memory table dump can also be produced in tuple format
-to enable front-ends to analyze it more easily.
-@c
-struct {
-	char tag;
-	char *color;
-	char *info;
-} Encoding[] = {
-	{
-	'.', "0x00FFFDFE", "free"}, {
-	'0', "0x000035FC", "thread stack space of thread 0"}, {
-	'1', "0x000067FE", "thread stack space of thread 1"}, {
-	'2', "0x000095FE", "thread stack space of thread 2"}, {
-	'3', "0x0000BDFC", "thread stack space of thread 3"}, {
-	'4', "0x0000DCF8", "thread stack space of thread 4"}, {
-	'5', "0x002735FC", "thread stack space of thread 5"}, {
-	'6', "0x002767FE", "thread stack space of thread 6"}, {
-	'7', "0x002795FE", "thread stack space of thread 7"}, {
-	'8', "0x0027BDFC", "thread stack space of thread 8"}, {
-	'9', "0x0027DCF8", "thread stack space of thread 9"}, {
-	'B', "0x0000672D", "in use for a large BAT heap."}, {
-	'b', "0x004EF2A7", "free (last usage was B)"}, {
-	'S', "0x00B4006E", "in use for a malloc block"}, {
-	's', "0x00F2BDE0", "free (last usage was S)"}, {
-	'P', "0x00F26716", "in use for the BBP array"}, {
-	'p', "0x00F2BD16", "free (last usage was P)"}, {
-	'M', "0x00959516", "in use as memory mapped region"}, {
-	'm', "0x00CEDC16", "free (last usage was M)"}, {
-	'C', "0x004EFDC7", "in use as MIL context buffer"}, {
-	'c', "0x00FFFD2D", "free (last usage was M)"}, {
-	0, "0x00FFFDFE", "free"}
-};
-
 int
 MT_alloc_table(void)
 {
-#if SIZEOF_VOID_P == 4
+#ifdef DEBUG_ALLOC
 #ifdef WIN32
 	char *p = NULL;
 #endif
@@ -2365,37 +2389,4 @@ MT_alloc_table(void)
 #endif
 	return 0;
 }
-
-static void
-MT_alloc_init(void)
-{
-#if SIZEOF_VOID_P == 4
-	char *p = NULL;
-	int i;
-
-	for (i = 0; i < 65536; i++, p += MT_VMUNITSIZE) {
-		int mode = '.';
-
-#ifdef WIN32
-		if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
-			mode |= 128;
-		} else {
-			VirtualFree(p, 0, MEM_RELEASE);
-		}
-#else
-		MMAP_OPEN_DEV_ZERO;
-		void *q = (char *) mmap(p, MT_VMUNITSIZE, PROT_NONE, MMAP_FLAGS(MAP_NORESERVE), MMAP_FD, 0);
-
-		MMAP_CLOSE_DEV_ZERO;
-		if (q != p)
-			mode |= 128;
-		if (q != (char *) -1L)
-			munmap(q, MT_VMUNITSIZE);
-#endif
-		MT_alloc_map[i] = mode;
-	}
-#endif
-}
-#endif /* DEBUG_ALLOC */
-
 @}

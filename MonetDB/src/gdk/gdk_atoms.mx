@@ -97,7 +97,7 @@ gdk_export int lngFromStr(str src, int *len, lng **dst);
 gdk_export int lngToStr(str *dst, int *len, lng *src);
 gdk_export lng *lngRead(lng *a, stream *s, size_t cnt);
 gdk_export int lngWrite(lng *a, stream *s, size_t cnt);
-int lngCmp(lng *r, lng *l);
+gdk_export int lngCmp(lng *r, lng *l);
 hash_t lngHash(lng *l);
 
 gdk_export int intFromStr(str src, int *len, int **dst);
