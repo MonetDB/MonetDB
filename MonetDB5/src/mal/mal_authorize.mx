@@ -287,8 +287,8 @@ AUTHcheckCredentials(
 		str *scenario)
 {
 	str tmp;
-	str pwd;
-	str hash;
+	str pwd = NULL;
+	str hash = NULL;
 	BAT *b;
 	BUN p, q;
 	oid *id;
