@@ -309,6 +309,10 @@ gdk_export int closedir(DIR *dir);
 # include <fcntl.h>
 #endif
 
+#if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
+#undef DEBUG_ALLOC
+#endif
+
 #ifdef WIN32
 size_t  GDK_mem_pagebits = 16; /* on windows, the mmap addresses can be set by the 64KB */
 #else
@@ -919,6 +923,37 @@ int gprof_pthread_create(pthread_t *__restrict thread,
 #endif
 #endif
 
+#ifdef DEBUG_ALLOC
+static void
+MT_alloc_init(void)
+{
+	char *p = NULL;
+	int i;
+
+	for (i = 0; i < 65536; i++, p += MT_VMUNITSIZE) {
+		int mode = '.';
+
+#ifdef WIN32
+		if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
+			mode |= 128;
+		} else {
+			VirtualFree(p, 0, MEM_RELEASE);
+		}
+#else
+		MMAP_OPEN_DEV_ZERO;
+		void *q = (char *) mmap(p, MT_VMUNITSIZE, PROT_NONE, MMAP_FLAGS(MAP_NORESERVE), MMAP_FD, 0);
+
+		MMAP_CLOSE_DEV_ZERO;
+		if (q != p)
+			mode |= 128;
+		if (q != (char *) -1L)
+			munmap(q, MT_VMUNITSIZE);
+#endif
+		MT_alloc_map[i] = mode;
+	}
+}
+#endif
+
 void
 MT_init_posix(int alloc_map)
 {
@@ -936,8 +971,6 @@ MT_init_posix(int alloc_map)
 	MT_heapbase = (char *) sbrk(0);
 
 #ifdef DEBUG_ALLOC
-	static void MT_alloc_init(void);
-
 	if (alloc_map)
 		MT_alloc_init();
 #else
@@ -1128,8 +1161,6 @@ MT_init_posix(int alloc_map)
 	_set_sbh_threshold(MT_SMALLBLOCK);
 */
 #ifdef DEBUG_ALLOC
-	static void MT_alloc_init(void);
-
 	if (alloc_map)
 		MT_alloc_init();
 #else
@@ -2196,9 +2227,6 @@ systems, this administration is dysfunctional.
 @{
 @c
 #ifdef DEBUG_ALLOC
-#if SIZEOF_VOID_P > 4
-#undef DEBUG_ALLOC
-#else
 unsigned char MT_alloc_map[65536] = { 0 };
 
 #define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
@@ -2235,7 +2263,6 @@ struct {
 	'c', "0x00FFFD2D", "free (last usage was M)"}, {
 	0, "0x00FFFDFE", "free"}
 };
-#endif
 #endif
 
 int
@@ -2362,35 +2389,4 @@ MT_alloc_table(void)
 #endif
 	return 0;
 }
-
-#ifdef DEBUG_ALLOC
-static void
-MT_alloc_init(void)
-{
-	char *p = NULL;
-	int i;
-
-	for (i = 0; i < 65536; i++, p += MT_VMUNITSIZE) {
-		int mode = '.';
-
-#ifdef WIN32
-		if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
-			mode |= 128;
-		} else {
-			VirtualFree(p, 0, MEM_RELEASE);
-		}
-#else
-		MMAP_OPEN_DEV_ZERO;
-		void *q = (char *) mmap(p, MT_VMUNITSIZE, PROT_NONE, MMAP_FLAGS(MAP_NORESERVE), MMAP_FD, 0);
-
-		MMAP_CLOSE_DEV_ZERO;
-		if (q != p)
-			mode |= 128;
-		if (q != (char *) -1L)
-			munmap(q, MT_VMUNITSIZE);
-#endif
-		MT_alloc_map[i] = mode;
-	}
-}
-#endif
 @}
