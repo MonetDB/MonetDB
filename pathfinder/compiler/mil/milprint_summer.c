@@ -9090,7 +9090,7 @@ var_only_in_for (PFvar_t *v, PFcnode_t *e)
   if (e->kind == c_var && e->sem.var == v) {
       return 0;
   }
-  if (strcmp(v->qname.loc,"sigmod") == 0) {
+  if (strcmp(PFqname_loc(v->qname),"sigmod") == 0) {
       if (e->kind == c_apply) {
         usage = 1;
       }
@@ -9100,7 +9100,7 @@ var_only_in_for (PFvar_t *v, PFcnode_t *e)
   if (e->kind == c_for &&
       L(e) && L(e)->kind == c_forbind &&
       LL(e) && LL(e)->kind == c_forvars &&
-      LLL(e) && LLL(e)->kind == c_var && strcmp(LLL(e)->sem.var->qname.ns.prefix, "#pf") &&
+      LLL(e) && LLL(e)->kind == c_var && strcmp(PFqname_prefix(LLL(e)->sem.var->qname), "#pf") &&
       LR(e) && LR(e)->kind == c_var && LR(e)->sem.var == v)
   {
       return var_only_in_for (v,R(e));
