@@ -491,7 +491,7 @@ MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int *ret = (int *) getArgReference(s, p, 0);
 	int k = 0,pc;
 
-	msg = call2str(MCgetClient(),s->blk, s, pc=getPC(m, p));
+	msg = call2str(s->blk, s, pc=getPC(m, p),MCgetClient()->flags);
 	snprintf(buf,8192,"%s at %s.%s[%d]", msg+5,
 		getModuleId(getInstrPtr(m,0)),
 		getFunctionId(getInstrPtr(m,0)), pc);
@@ -499,7 +499,7 @@ MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	GDKfree(msg);
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
-		msg = call2str(MCgetClient(),s->blk, s, s->pcup);
+		msg = call2str(s->blk, s, s->pcup,MCgetClient()->flags);
 		snprintf(buf,8192,"%s at %s.%s[%d]", msg+5,
 			getModuleId(getInstrPtr(s->blk,0)),
 			getFunctionId(getInstrPtr(s->blk,0)), s->pcup);
