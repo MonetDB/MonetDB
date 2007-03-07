@@ -2138,6 +2138,8 @@ typedef struct bs {
 	stream *s;		/* underlying stream */
 	unsigned nr;		/* how far we got in buf */
 	unsigned itotal;	/* amount available in current read block */
+	size_t blks;		/* read/writen blocks (possibly partial) */
+	size_t bytes;		/* read/writen bytes */
 	char buf[BLOCK];	/* the buffered data (minus the size of
 	                           size-short */
 } bs;
@@ -2153,6 +2155,8 @@ bs_create(stream *s)
 	ns->s = s;
 	ns->nr = 0;
 	ns->itotal = 0;
+	ns->blks = 0;
+	ns->bytes = 0;
 	return ns;
 }
 
@@ -2202,6 +2206,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 			/* since the block is at max BLOCK (8K) - 2 size we can
 			   store it in a two byte integer */
 			blksize = (short) s->nr;
+			s->bytes += s->nr;
 			/* the last bit tells whether a flush is in there, it's not
 			 * at this moment, so shift it to the left */
 			blksize <<= 1;
@@ -2212,6 +2217,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 				ss->errnr = WRITE_ERROR;
 				return -1;
 			}
+			s->blks ++;
 			s->nr = 0;
 		}
 	}
@@ -2249,6 +2255,7 @@ bs_flush(stream *ss)
 		}
 #endif
 		blksize = (short) (s->nr << 1);
+		s->bytes += s->nr;
 		/* indicate that this is the last buffer of a block by
 		   setting the low-order bit */
 		blksize |= (short) 1;
@@ -2260,6 +2267,7 @@ bs_flush(stream *ss)
 			ss->errnr = WRITE_ERROR;
 			return -1;
 		}
+		s->blks ++;
 		s->nr = 0;
 	}
 	return 0;
@@ -2313,6 +2321,8 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		s->itotal = (unsigned) (blksize >> 1); /* amount readable */
 		/* store whether this was the last block or not */
 		s->nr = blksize & 1;
+		s->bytes += s->itotal;
+		s->blks ++;
 	}
 
 	/* Fill the caller's buffer. */
@@ -2370,6 +2380,8 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			s->itotal = (unsigned) (blksize >> 1); /* amount readable */
 			/* store whether this was the last block or not */
 			s->nr = blksize & 1;
+			s->bytes += s->itotal;
+			s->blks ++;
 		}
 	}
 	/* if we got an empty block with the end-of-sequence marker
