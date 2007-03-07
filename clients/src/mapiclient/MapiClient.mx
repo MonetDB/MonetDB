@@ -100,6 +100,7 @@ limit the access permisions of 'monetdb' to the level of a guest account.
 #endif
 #include "msqldump.h"
 #include "mprompt.h"
+#include "stream.h"
 
 #ifndef S_ISCHR
 #define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
@@ -224,6 +225,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 			return 1;					\
 		}
 
+
 static int
 doFile(Mapi mid, const char *file, int xquery)
 {
@@ -241,7 +243,7 @@ doFile(Mapi mid, const char *file, int xquery)
 		return 1;
 	}
 
-	bufsize = BUFSIZ;
+	bufsize = BLOCK-1;
 	buf = malloc(bufsize);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
