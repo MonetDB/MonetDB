@@ -16,159 +16,74 @@
 
 !INCLUDE $(TOPDIR)\..\..\MonetDB\conf\rules.msc
 
-MONET4=1
-MONETDB4_INCS= -I$(TOPDIR)\..\..\MonetDB4\NT\include\plain -I$(TOPDIR)\..\..\MonetDB4\NT\include\contrib \
-               -I$(TOPDIR)\..\..\MonetDB4\NT\include\mapi -I$(TOPDIR)\..\..\MonetDB4\NT\include\monet -I$(TOPDIR)\..\..\MonetDB4\NT\include
-MONETDB4_LIBS=/libpath:$(TOPDIR)\..\..\MonetDB4\NT\lib /libpath:$(TOPDIR)\..\..\MonetDB4\NT\lib\MonetDB4 
-MONETDB_INCS=-I$(TOPDIR)\..\..\MonetDB\NT\include -I$(TOPDIR)\..\..\MonetDB\NT\include\common -I$(TOPDIR)\..\..\MonetDB\NT\include\gdk
-MONETDB_LIBS=/libpath:$(TOPDIR)\..\..\MonetDB\NT\lib
-CLIENTS_INCS=-I$(TOPDIR)\..\..\clients\NT\include -I$(TOPDIR)\..\..\clients\NT\include\MonetDB\mapilib
-CLIENTS_LIBS=/libpath:$(TOPDIR)\..\..\clients\NT\lib
+VERSION = 0.16.3
+
+pkg = pathfinder
+CONFIG_H=pf_config.h
 
 # burg is part of the buildtools
-BURG=burg
+BURG="$(TOPDIR)\..\..\buildtools\burg\burg.exe"
 
 # This is the location of libxml2 and its dependencies (depends how it was compiled; sometimes iconv and zlib are needed)
 LIBXML2 = C:\libxml2-2.6.27.win32
-LIBXML2_ICONV = C:\iconv-1.9.2.win32
-LIBXML2_ZLIB  = C:\zlib-1.2.3.win32
-LIBXML2_CFLAGS = "-I$(LIBXML2)\include" "-I$(LIBXML2_ICONV)\include" "-I$(LIBXML2_ZLIB)\include"
-LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBXML2_ICONV)\lib\iconv.lib" "$(LIBXML2_ZLIB)\lib\zlib.lib"
+LIBICONV = C:\iconv-1.9.2.win32
+LIBZLIB  = C:\zlib-1.2.3.win32
+LIBXML2_CFLAGS = "-I$(LIBXML2)\include" "-I$(LIBICONV)\include" "-I$(LIBZLIB)\include"
+LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBICONV)\lib\iconv.lib" "$(LIBZLIB)\lib\zlib.lib"
 
-CONFIG_H = pf_config.h
-
-# not need to edit beyond here..
-
-pkg = MonetDB
-exec_prefix = $(prefix)
-
-bindir = $(exec_prefix)\bin
-sbindir = $(exec_prefix)\sbin
-libexecdir = $(exec_prefix)\libexec
-datadir = $(prefix)\share
-sysconfdir = $(prefix)\etc
-sharedstatedir = $(prefix)\com
-localstatedir = $(prefix)\var
-libdir = $(exec_prefix)\lib
-infodir = $(prefix)\info
-mandir = $(prefix)\man
-includedir = $(prefix)\include
-oldincludedir = \usr\include
-pkgdatadir = $(datadir)\$(pkg)
-pkglibdir = $(libdir)\$(pkg)
-pkgincludedir = $(includedir)\$(pkg)
-
-#-FI$(TOPDIR)\config.h 
+# override value from global rules.msc
 LIBC_INCS = $(PTHREAD_INCS) $(LIBXML_INCS)
-SOCKET_LIBS = wsock32.lib
 
-COMPILE_MEL=1
-COMPILE_MX=1
-MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
-MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
-CP=copy
-MV=copy
-DEL=del
-!IFDEF HAVE_JAVA
-CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" -DHAVE_JAVA "$(TOPDIR)" "$(prefix)"
+MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include
+MONETDB_INCS="-I$(MONETDB_INCLUDEDIR)" "-I$(MONETDB_INCLUDEDIR)\common" "-I$(MONETDB_INCLUDEDIR)\gdk" "-I$(MONETDB_INCLUDEDIR)\monet" "-I$(MONETDB_INCLUDEDIR)\plain" "-I$(MONETDB_INCLUDEDIR)\mapi"
+
+!IF [$(MAKE) /help 2>&1 | grep -q 6.]
+MONETDB_LIBS="/LIBPATH:$(MONETDB_PREFIX)\lib"
+MONETDB_MODS="/LIBPATH:$(MONETDB_PREFIX)\lib\MonetDB"
 !ELSE
-CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" "$(TOPDIR)" "$(prefix)"
+MONETDB_LIBS="\"/LIBPATH:$(MONETDB_PREFIX)\lib\""
+MONETDB_MODS="\"/LIBPATH:$(MONETDB_PREFIX)\lib\MonetDB\""
 !ENDIF
 
-# Use "nmake DEBUG=1" to get a debug build (assertions enabled);
-# use "nmake NDEBUG=1" to get a release build (assertions disabled);
-# use plain "nmake" to get the default.
-!IFNDEF DEBUG
-!IFDEF NDEBUG
-CFLAGS = $(CFLAGS) -DNDEBUG
+CLIENTS_INCS=-I$(TOPDIR)\..\..\clients\NT\include -I$(TOPDIR)\..\..\clients\NT\include\MonetDB\mapilib
+!IF [$(MAKE) /help 2>&1 | grep -q 6.]
+CLIENTS_LIBS="/LIBPATH:$(CLIENTS_PREFIX)\lib"
+CLIENTS_MODS="/LIBPATH:$(CLIENTS_PREFIX)\lib\MonetDB"
 !ELSE
-# default in case neither NDEBUG nor DEBUG are defined
-CFLAGS = $(CFLAGS)
+CLIENTS_LIBS="\"/LIBPATH:$(CLIENTS_PREFIX)\lib\""
+CLIENTS_MODS="\"/LIBPATH:$(CLIENTS_PREFIX)\lib\MonetDB\""
 !ENDIF
+
+!IFNDEF NO_MONETDB4
+HAVE_MONETDB4=yes
 !ENDIF
 
-PHP_INCS = -I$(PHP_SRCDIR) -I$(PHP_SRCDIR)\main -I$(PHP_SRCDIR)\TSRM -I$(PHP_SRCDIR)\Zend -DPHP_WIN32 -DZEND_WIN32 -DZEND_DEBUG=0 -DZTS=1
-PHP_LIBS = $(PHP_INSTDIR)\php5embed.lib
-# there's nothing special about PEAR on Windows
-HAVE_PEAR = 1
+!IFDEF HAVE_MONETDB4
+MONET4=1
+MONETDB4_INCLUDEDIR=$(MONETDB4_PREFIX)\include
+MONETDB4_INCS="-I$(MONETDB4_INCLUDEDIR)" "-I$(MONETDB4_INCLUDEDIR)\monet" "-I$(MONETDB4_INCLUDEDIR)\plain" "-I$(MONETDB4_INCLUDEDIR)\contrib" "-I$(MONETDB4_INCLUDEDIR)\mapi"
+!IF [$(MAKE) /help 2>&1 | grep -q 6.]
+MONETDB4_LIBS="/LIBPATH:$(MONETDB4_PREFIX)\lib"
+MONETDB4_MODS="/LIBPATH:$(MONETDB4_PREFIX)\lib\MonetDB4"
+!ELSE
+MONETDB4_LIBS="\"/LIBPATH:$(MONETDB4_PREFIX)\lib\""
+MONETDB4_MODS="\"/LIBPATH:$(MONETDB4_PREFIX)\lib\MonetDB4\""
+!ENDIF
+!ELSE
+MONETDB4_INCS=
+!ENDIF
 
-{$(SRCDIR)}.mx.h:
-	$(MX) $(MXFLAGS) -x h $<
-
-.mx.h:
-	$(MX) $(MXFLAGS) -x h $<
-
-{$(SRCDIR)}.mx.c:
-	$(MX) $(MXFLAGS) -x c $<
-
-.mx.c:
-	$(MX) $(MXFLAGS) -x c $<
-
-{$(SRCDIR)}.mx.m:
-	$(MX) $(MXFLAGS) -x m $<
-
-.mx.m:
-	$(MX) $(MXFLAGS) -x m $<
-
-.m.mil: 
-	$(MEL) $(INCLUDES) -mil $*.m > $@
-	type $*.tmpmil >> $@
-	if not exist .libs $(MKDIR) .libs
-	$(INSTALL) $@ .libs\$@
-
-.m.mil:
-	$(MEL) $(INCLUDES) -mil $*.m > $@
-	if not exist .libs $(MKDIR) .libs
-	$(INSTALL) $@ .libs\$@
-
-{$(SRCDIR)}.mx.tmpmil:
-	$(MX) $(MXFLAGS) -l -x mil $<
-	$(MV) $*.mil $*.tmpmil
-	$(DEL) $*.mil
-
-{$(SRCDIR)}.mx.mil:
-	$(MX) $(MXFLAGS) -l -x mil $<
-
-.mx.tmpmil:
-	$(MX) $(MXFLAGS) -l -x mil $<
-	$(MV) $*.mil $*.tmpmil
-	$(DEL) $*.mil
-
-.mx.mil:
-	$(MX) $(MXFLAGS) -l -x mil $<
-
-{$(SRCDIR)}.mx.y:
-	$(MX) $(MXFLAGS) -x y $<
-
-.mx.y:
-	$(MX) $(MXFLAGS) -x y $<
-
-{$(SRCDIR)}.mx.l:
-	$(MX) $(MXFLAGS) -x l $<
-
-.mx.l:
-	$(MX) $(MXFLAGS) -x l $<
-
-{$(SRCDIR)}.mx.yy:
-	$(MX) $(MXFLAGS) -x Y $<
-
-.mx.yy:
-	$(MX) $(MXFLAGS) -x Y $<
-
-{$(SRCDIR)}.mx.ll:
-	$(MX) $(MXFLAGS) -x L $<
-
-.mx.ll:
-	$(MX) $(MXFLAGS) -x L $<
-
-{$(SRCDIR)}.c.obj:
-	$(CC) $(CFLAGS) $(INCLUDES) -c $<
-
-.c.obj:
-	$(CC) $(CFLAGS) $(INCLUDES) -c $<
-
-{$(SRCDIR)}.brg.c:
-	$(BURG) -c 1000 -d -I -p PF$* -o $@ < $<
-
-.SUFFIXES: .m .mx .proto_h .mil .glue_c .brg
-.PRECIOUS: .m 
+!IFDEF HAVE_MONETDB5
+MONET5=1
+MONETDB5_INCLUDEDIR=$(MONETDB5_PREFIX)\include
+MONETDB5_INCS="-I$(MONETDB5_INCLUDEDIR)" "-I$(MONETDB5_INCLUDEDIR)\atoms" "-I$(MONETDB5_INCLUDEDIR)\compiler" "-I$(MONETDB5_INCLUDEDIR)\kernel" "-I$(MONETDB5_INCLUDEDIR)\mal" "-I$(MONETDB5_INCLUDEDIR)\mil" "-I$(MONETDB5_INCLUDEDIR)\optimizer" "-I$(MONETDB5_INCLUDEDIR)\scheduler"
+!IF [$(MAKE) /help 2>&1 | grep -q 6.]
+MONETDB5_LIBS="/LIBPATH:$(MONETDB5_PREFIX)\lib"
+MONETDB5_MODS="/LIBPATH:$(MONETDB5_PREFIX)\lib\MonetDB5"
+!ELSE
+MONETDB5_LIBS="\"/LIBPATH:$(MONETDB5_PREFIX)\lib\""
+MONETDB5_MODS="\"/LIBPATH:$(MONETDB5_PREFIX)\lib\MonetDB5\""
+!ENDIF
+!ELSE
+MONETDB5_INCS=
+!ENDIF

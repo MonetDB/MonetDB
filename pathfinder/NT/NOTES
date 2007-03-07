@@ -31,6 +31,7 @@ basics:
 
 - libxml2
   http://xmlsoft.org
+  (binaries are at http://www.zlatkovic.com/projects/libxml/index.html.  Also get iconv and zlib libraries)
   edit LIBXML2 paths in pathfinder/NT/rules.msc!!
 
 - UnxUtils
@@ -78,9 +79,6 @@ SET PATH=C:\Python25;C:\Python25\scripts;%PATH%
 
 REM apache ant
 SET PATH=C:\apache-ant-1.7.0\bin;%PATH%
-
-REM burg weirdness: copying the burg.exe file elsewhere corrupted it! Use in place.
-SET PATH=%HOME%\buildtools\burg;%PATH%
 
 REM bison2.1 in GnuWin32; other UnxTools in wbin
 SET PATH=C:\Program Files\GnuWin32\bin;C:\usr\local\wbin;%PATH%
