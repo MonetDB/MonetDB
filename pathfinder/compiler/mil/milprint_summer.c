@@ -172,6 +172,7 @@ add_flwr_level(opt_t *f, int cur_level)
     f->flwr_depth = cur_level+1;
 }
 
+#if 0 /* DISABLED */
 static int 
 get_flwr_level(opt_t *f, int cur_level) 
 {
@@ -181,6 +182,7 @@ get_flwr_level(opt_t *f, int cur_level)
         if (f->flwr_level[i] > 0) return f->flwr_level[i];
     return 0;
 }
+#endif
 
 /* tests type equality (not only structural 'PFty_eq' 
    and without hierarchy 'PFty_subtype' */
@@ -1233,13 +1235,13 @@ project (opt_t *f, int cur_level)
     milprintf(f, "iter := iter.materialize(ipik);\n");
     milprintf(f, "var order_%03u := iter;\n", cur_level);
 
-/* DISABLED 
+#if 0 /* DISABLED */
     int cur, lim = get_flwr_level(f, cur_level);
     if (lim == 0 || f->flwr_level[lim-1] == -1) 
     for(cur=cur_level; cur > lim; cur--)
         if (cur >= f->flwr_depth || f->flwr_level[cur] == -1) 
             milprintf(f, "order_%03u := order_%03u.leftjoin(reverse(inner%03u)).leftfetchjoin(outer%03u);\n", cur_level, cur_level, cur-1, cur-1);
-   DISABLED */
+#endif
 
     /* create a new loop / outer|inner relation
        and adjust iter, pos from for loop binding */
