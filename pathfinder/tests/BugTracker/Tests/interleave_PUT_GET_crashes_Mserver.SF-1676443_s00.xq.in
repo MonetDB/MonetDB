@@ -1,0 +1,4 @@
+import module namespace cq = "utwente"
+    at "$TSTSRCDIR/interleave_PUT_GET_crashes_Mserver.SF-1676443.module.xq";
+
+cq:PUT("tmp/test.xml",<bladieboe/>)
