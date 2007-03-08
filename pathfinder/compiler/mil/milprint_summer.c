@@ -7963,19 +7963,22 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
 #ifdef HAVE_PFTIJAH
     else if (
-          ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-create-collection"))) ||
-          ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-delete-collection")))
+          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"create-ft-index"))) ||
+          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"delete-ft-index")))
 	)
     {
-	int is_delete   = !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-delete-collection"));
+	int is_delete   = !PFqname_eq(fnQname, PFqname (PFns_tijah,"delete-ft-index"));
         int opt_counter  = 0;
+        int opt_used     = 0;
+        int csq_counter  = 0;
+        int csq_used     = 0;
 	int str_counter  = 0;
         char *item_ext = kind_str(STR);
 	
 	milprintf(f, 
                 "{ # translate pf:tijah-create-collection\n"
 	);
-        /* get query string */
+        /* get ft-index name string */
 	rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
              milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
@@ -7983,27 +7986,69 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult_ (f, ++counter, STR);
 	str_counter = counter;
 
-	if (fun->arity == 2) {
+        /* now check how the rest of the fun is overloaded */
+        if ( fun->arity > 1 ) {
+	    if ( fun->arity == 2 ) {
+                if ( TY_EQ(TY(RL(args)), PFty_star(PFty_xs_string())) ) {
+	            /* check if the type of the 2nd arg is the collseq */
+	    	     csq_used = 1;
+	        } else {
+	    	     opt_used = 1;
+		}
+	    } else {
+	    	opt_used = csq_used = 1;
+	    }
+	}
+
+	if ( opt_used ) {
 	  /* translate the options parameter*/
-          translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+          if ( fun->arity == 3 )
+	      translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
+	  else
+	      translate2MIL (f, NORMAL, cur_level, counter, RL(args));
 	  saveResult(f, ++counter);
 	  opt_counter = counter;
         } else {
 	  opt_counter = 0;
 	}
-	  
+
+	if ( csq_used ) {
+	  /* translate the collection sequence parameter */
+          translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+	  saveResult(f, ++counter);
+	  csq_counter = counter;
+        } else {
+	  csq_counter = 0;
+	}
+
 	/* generate the serialization code */
 	milprintf(f,
 	        "loop%03u@batloop() { # begin batloop over collection creator\n"
-                , cur_level);
+                ,cur_level);
+        if ( csq_counter ) {
+	    milprintf(f,
+                "var csqiter := iter%03u.materialize(ipik%03u).uselect(oid($t));\n"
+                "var csqitem := item%03u.materialize(ipik%03u);\n"
+		"var pfcollnm := csqiter.reverse().leftfetchjoin(csqitem).leftfetchjoin(str_values).tmark(0@0);\n"
+		,csq_counter,csq_counter,csq_counter,csq_counter);
   
-	milprintf(f,
-	        "    iter := iter%03u.slice(int($h),int($h));\n"
-	        "    item := item%03u.slice(int($h),int($h));\n"
-		"    kind := constant2bat(kind%03u).slice(int($h),int($h));\n"
-		, opt_counter, opt_counter, opt_counter);
+	} else {
+	    milprintf(f,
+	        "    var pfcollnm := new(void,str);\n"
+		"    pfcollnm.append(\"*\");\n"
+	    );
+	}
+
 	if ( opt_counter ) {
-		milprintf(f, "    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n");
+	    milprintf(f,
+	        "    iter := iter%03u.select($t);\n"
+	        "    item := item%03u.materialize(ipik%03u).semijoin(iter);\n"
+	        "    kind := kind%03u.materialize(ipik%03u).semijoin(iter);\n"
+	        "    iter := iter.tmark(0@0);\n"
+	        "    item := item.tmark(0@0);\n"
+	        "    kind := kind.tmark(0@0);\n"
+		,opt_counter,opt_counter, opt_counter,opt_counter,opt_counter);
+	    milprintf(f, "    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n");
 	} else {
 		milprintf(f, "    var optbat := new(str,str);\n");
 	}
@@ -8017,7 +8062,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"}\n");
 	} else {
 	  milprintf(f,
-                "    tj_init_collection(cname,optbat);\n"
+#if 0
+		"    optbat.print();\n"
+		"    pfcollnm.print();\n"
+#endif
+                "    tj_init_collection(cname,optbat,pfcollnm);\n"
 		"}\n");
 	}
 
@@ -8026,96 +8075,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, str_counter, STR);
 	if ( opt_counter )
 	    deleteResult(f, opt_counter);
-        milprintf(f, "} # end of translate pf:tijah_query\n");
+	if ( csq_counter )
+	    deleteResult(f, csq_counter);
+        milprintf(f, "} # end of translate pf:tijah-ft-index\n");
         return (code)?INT:NORMAL;
-    }
-    else if (PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-add-doc")) == 0)
-    {
-        /*
-         * Method was adapted from the pf:add-doc() function. It returns an
-	 * empry document tape but add's the argument documents to the 
-	 * collection.
-	 */
-        milprintf(f, "# pf:add-doc (str, str [, str] [, int]) as add_stmt\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult(f, counter);
-        translate2MIL(f, NORMAL, cur_level, counter, RL(args));
-        counter++;
-        saveResult(f, counter);
-        if (fun->arity == 2) {
-            counter++;
-            milprintf(f,
-                      "# collection is default same as document name\n"
-                      "var item%03u := item%03u;\n"
-                      "var kind%03u := kind%03u;\n"
-                      "# percentage default is 0\n"
-                      "item := int_values.addValues(0LL);\n"
-                      "kind := INT;\n",
-                      counter, counter - 1, counter, counter - 1);
-        } else {
-            translate2MIL(f, NORMAL, cur_level, counter, RRL(args));
-            counter++;
-            saveResult(f, counter);
-            if (fun->arity == 3) {
-                milprintf(f,
-                          "if (kind%03u.fetch(0) = INT) {\n"
-                          "  # collection was omitted, but percentage provided\n"
-                          "  kind := kind%03u;\n"
-                          "  item := item%03u;\n"
-                          "  kind%03u := kind%03u;\n"
-                          "  item%03u := item%03u;\n"
-                          "} else {\n"
-                          "  item := int_values.addValues(0LL);\n"
-                          "  kind := INT;\n"
-                          "}\n",
-                          counter, counter, counter, counter, counter - 1, counter, counter - 1);
-            } else {
-                translate2MIL(f, NORMAL, cur_level, counter, RRRL(args));
-            }
-        }
-        milprintf(f,
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item%03u, item%03u,\n"
-                  "                           kind%03u, kind%03u,\n"
-                  "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item%03u, item,\n"
-                  "                           kind%03u, kind,\n"
-                  "                           iter, iter);\n"
-                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
-                  "                          merge1.fetch(1), merge2.fetch(1),\n"
-                  "                          merge1.fetch(2), merge2.fetch(2),\n"
-                  "                          merge1.fetch(3), merge2.fetch(3));\n"
-		  " var col_uri_nm := merge.fetch(1).leftfetchjoin(str_values);\n"
-		  " var col_cluster := new(str,bat);\n"
-		  " var ai := 0;\n"
-		  " while ( ai < col_uri_nm.count() ) {\n"
-  		  "     var cn := col_uri_nm.find(oid(ai));\n"
-  		  "     var cb;\n"
-  		  "     if ( col_cluster.exist(cn) ) {\n"
-    		  "       cb := col_cluster.find(cn);\n"
-  		  "     } else {\n"
-    		  "       cb := new(str,str);\n"
-    		  "       col_cluster.insert(cn,cb);\n"
-  		  "     }\n"
-  		  "     cb.insert(col_uri_nm.find(oid(ai+1)),col_uri_nm.find(oid(ai+2)));\n"
-  		  "     ai := ai + 4;\n"
-		  " }\n"
-		  " if ( false) ai.print();\n" /* DATAFLOW BUG do not remove */
-		  " col_cluster@batloop() {\n"
-		  "     tj_add2collection($h,$t,true);\n"
-		  " }\n"
-		  , counter - 2, counter - 1, counter - 2, counter - 1, counter, counter);
-
-	translateEmpty(f);
-
-        if (fun->arity > 2) {
-            deleteResult(f, counter);
-        }
-        deleteResult(f, counter - 1);
-        deleteResult(f, counter - 2);
-        return NORMAL;
     }
     else if (
           ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-query"))) ||
@@ -8181,11 +8144,14 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 , cur_level);
 	if (opt_counter)
 	  milprintf(f,
-	        "    iter := iter%03u.slice(int($h),int($h));\n"
-	        "    item := item%03u.slice(int($h),int($h));\n"
-		"    kind := constant2bat(kind%03u).slice(int($h),int($h));\n"
+	        "    iter := iter%03u.select($t);\n"
+	        "    item := item%03u.materialize(ipik%03u).semijoin(iter);\n"
+	        "    kind := kind%03u.materialize(ipik%03u).semijoin(iter);\n"
+	        "    iter := iter.tmark(0@0);\n"
+	        "    item := item.tmark(0@0);\n"
+	        "    kind := kind.tmark(0@0);\n"
 		"    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n"
-		, opt_counter, opt_counter, opt_counter);
+		,opt_counter,opt_counter, opt_counter,opt_counter,opt_counter);
 	else  
           milprintf(f, 
                 "    var optbat := new(str,str,32);\n");
@@ -11264,8 +11230,10 @@ const char* PFstartMIL(int statement_type) {
 
 #ifdef HAVE_PFTIJAH
 #define PF_STOP_PFTIJAH " if (not(isnil(tijah_lock))) lock_unset(tijah_lock);\n"
+#define PF_PLAY_TIJAH_TAPE " tj_play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
 #else
-#define PF_STOP_PFTIJAH " \n"
+#define PF_STOP_PFTIJAH    " \n"
+#define PF_PLAY_TIJAH_TAPE " \n"
 #endif
 
 #define PF_STOPMIL_START \
@@ -11279,7 +11247,7 @@ const char* PFstartMIL(int statement_type) {
 #define PF_STOPMIL_UPDATE PF_STOPMIL_START\
            "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")
 #define PF_STOPMIL_DOCMGT PF_STOPMIL_START\
-           "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")
+           "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_PLAY_TIJAH_TAPE PF_STOPMIL_END("Update")
 #define PF_STOPMIL_END(LASTPHASE) \
            " });\n"\
            " ws_log_wsid := ws_id(ws);\n"\

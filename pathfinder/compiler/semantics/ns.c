@@ -156,6 +156,12 @@ PFns_t PFns_lib = { .prefix = "pf",
                     .uri    = "http://www.pathfinder-xquery.org/" };
 
 /** 
+ * Pathfinder's namespace for additional tijah functions.
+ */ 
+PFns_t PFns_tijah = { .prefix = "tijah",  
+                      .uri    = "http://db.cs.utwente.nl/" };
+
+/** 
  * Pathfinder's own internal NS (pf:...).
  * Note that the prefix contains a character that cannot be entered in
  * a query. 
@@ -996,6 +1002,7 @@ PFns_resolve (PFpnode_t *root)
     ns_add (PFns_xdt);
     ns_add (PFns_local);
     ns_add (PFns_lib);
+    ns_add (PFns_tijah);
 
     /* bring the function and operator NS into scope
      * and make fn:... the default function NS

@@ -158,6 +158,7 @@ const SIZE_TERM := 2;
 
 # locks
 var tj_adm_lock     := lock_create(); # tijah top administration lock
+var tj_dep_lock     := lock_create(); # tijah top dependency adm lock
 var tj_coll_lockbat := new(str,lock); # locks for all active collections
 
 # Comparisons
@@ -258,10 +259,14 @@ PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
       new(oid,str).persists(true).bbpname("tj_globalTerms");
       new(oid,str).persists(true).bbpname("tj_globalTags");
       new(oid,str).persists(true).bbpname("tj_collName");
+      new(str,str).persists(true).bbpname("tj_pfc_fti_dep");
+      new(str,str).persists(true).bbpname("tj_pfc_fti_dep_star");
       var globals := new(void,str).seqbase(0@0);
       globals.append("tj_globalTerms");
       globals.append("tj_globalTags");
       globals.append("tj_collName");
+      globals.append("tj_pfc_fti_dep");
+      globals.append("tj_pfc_fti_dep_star");
       subcommit(globals);
     });
     if (doLock) lock_unset(tj_adm_lock);
@@ -290,10 +295,14 @@ PROC tj_delete_global() : void :=
       bat("tj_globalTerms").persists(false);
       bat("tj_globalTags").persists(false);
       bat("tj_collName").persists(false);
+      bat("tj_pfc_fti_dep").persists(false);
+      bat("tj_pfc_fti_dep_star").persists(false);
       var globals := new(void,str).seqbase(0@0);
       globals.append("tj_globalTerms");
       globals.append("tj_globalTags");
       globals.append("tj_collName");
+      globals.append("tj_pfc_fti_dep");
+      globals.append("tj_pfc_fti_dep_star");
       subcommit(globals);
     });
     lock_unset(tj_adm_lock);
@@ -332,10 +341,11 @@ ADDHELP("tj_init_collection", "flokstra & rode", "Jan 2007",
   fragmentSize = [number] == the maximum size of a [pre|item] fragment\n\
   tagFilter = [comma seperated list of tags to be indexed]\n\
   etc.\n\
+- BAT[void,str] v_pfc, list of pathfinder collection to index 
 DESCRIPTION:\n\
 Create a new tijah collection.",
 "pftijah");
-PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
+PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) : void :=
 {
     var coll_lock;
 
@@ -419,11 +429,81 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
       bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
       bat("tj_" + collName + "_param").insert("_last_finalizedPre","0");
       #
+      create_pfc_fti(collName,v_pfc);
     });
     subcommit(_tj_collection_str(collName));
     lock_unset(coll_lock);
+    #
+    if (not(isnil(err))) ERROR(err);
+    #
+    if ( true ) {
+      #
+      # Now compute the list of existing docs which need to be added to the 
+      # ft-index because of the associations.
+      # WARNING: this piece of code is not yet very safe but is requires
+      # a very close cooperation with Pathfinder locks to make it safe.
+      #
+      if ( v_pfc.count() > 0 ) {
+        var doclist;
+        if ( v_pfc.uselect("*").count() > 0 ) {
+           doclist := bat("doc_name").reverse().project(str(nil)).reverse();
+	} else {
+           doclist := bat("doc_name").reverse().join(bat("doc_collection").join(bat("collection_name").join(v_pfc.reverse())));
+           doclist := doclist.project(str(nil)).reverse();
+	}
+        if ( doclist.count() > 0 ) {
+	    tj_add2collection(collName,doclist,true);
+        }
+      }
+    }
+}
+
+PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
+{
+    tj_init_collection(collName,param,new(void,str));
+}
+
+#
+# Start of ft-index / pf-collection dependency module
+#
+
+PROC create_pfc_fti(str fti_name, BAT[void,str]  v_pfc) :void :=
+{
+    lock_set(tj_dep_lock);
+    var err := CATCH({
+	var new_fti_pfc := v_pfc.tunique().project(fti_name).reverse().sunique();
+	var sz := new_fti_pfc.count();
+	var glb_fti_pfc := bat("tj_pfc_fti_dep");
+	if ( sz > 0 ) {
+	    if ( sz = 1 ) {
+		glb_fti_pfc.insert(new_fti_pfc);
+		bat("tj_pfc_fti_dep_star").insert(new_fti_pfc);
+	    } else {
+	    	if ( new_fti_pfc.uselect("*").count() > 0 ) {
+		    ERROR("# pfc_fti_dep: when using * it must be the only collection dependency.\n");
+		}
+		glb_fti_pfc.insert(new_fti_pfc);
+	    }
+	}
+    });
+    lock_unset(tj_dep_lock);
     if (not(isnil(err))) ERROR(err);
 }
+
+PROC delete_pfc_fti(str fti_name) :void :=
+{
+    lock_set(tj_dep_lock);
+    var err := CATCH({
+	bat("tj_pfc_fti_dep").delete(fti_name);
+	bat("tj_pfc_fti_dep_star").delete(fti_name);
+    });
+    lock_unset(tj_dep_lock);
+    if (not(isnil(err))) ERROR(err);
+}
+
+#
+# End of ft-index / pf-collection dependency module
+#
 
 ADDHELP("tj_delete_collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
@@ -448,7 +528,7 @@ PROC tj_delete_collection(str collName, bit doAdmLock) : void
       if ( verbose ) printf("#TJ: tj_delete_collection(\"%s\") called.\n",collName);
 
       if (not(view_bbp_name().reverse().exist("tj_collName"))) {
-    	ERROR("tj_delete_collection: pftijah not initialized.\n");
+    	qERROR("tj_delete_collection: pftijah not initialized.\n");
       }
       if (not(bat("tj_collName").reverse().exist(collName))) {
     	ERROR("tj_delete_collection, pftijah collection does not exist: %s\n",collName);
@@ -482,6 +562,7 @@ PROC tj_delete_collection(str collName, bit doAdmLock) : void
 		bat("tj_" + collName + "_TagIndex").persists(false);
 		bat("tj_" + collName + "_Tags").persists(false);
 	}
+        delete_pfc_fti(collName);
         subcommit(_tj_collection_str(collName));
     });
     lock_unset(coll_lock);
@@ -655,13 +736,16 @@ PROC _tj_add2collection(str collName, BAT[str,bat] collBat, str uri_loc, str uri
 { 
     var ms;
     var t_start := usec();
-    if ( verbose ) printf("#TJ: _tj_add2collection(\"%s\") start.\n",collName);
+    if ( verbose ) printf("#TJ: _tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",collName,uri_loc,uri_name);
 
     var selTagList := _tj_get_parameter(collBat, "tagFilter");
            
     var i_start;
     if ( store ) {
 	var pf_collection := _tj_get_parameter(collBat,"pf_collection");
+	if ( isnil(uri_loc) and isnil(uri_name) ) {
+	    ERROR("_tj_add2collection: should specify doc_name or doc_uri.");
+	}
         if ( isnil(uri_name) ) {
 	  uri_name := uri_loc;
 	} else if ( uri_name = "" ) {
@@ -919,6 +1003,60 @@ PROC tj_trace( str s ) : void :=
         tracefile_handle.stream_flush();
     }
 }
+
+
+#
+#
+#
+
+PROC tj_play_doc_tape(BAT[void,BAT] ws,
+                      BAT[void,oid] item, 
+                      BAT[void,int] kind, 
+                      BAT[void,lng] int_values, 
+                      BAT[void,str] str_values) : void
+{
+    var IDoid       := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).hmark(0@0);
+    var IDlng       := IDoid.[lng]();
+    var locations   := IDoid.leftfetchjoin(item).leftfetchjoin(str_values);
+    var names       := [+](IDlng, 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+    var colnames    := [+](IDlng, 2).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+    var percentages := [+](IDlng, 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values);
+    var del_doc     := percentages.ord_uselect(-1LL).hmark(0@0); 
+    var add_doc     := percentages.ord_uselect(0LL,lng_nil).hmark(0@0); 
+    #
+    var pfc_name   := names.reverse().leftfetchjoin(colnames);
+    var pfdep      := bat("tj_pfc_fti_dep");
+    var pfdep_star := bat("tj_pfc_fti_dep_star");
+    var fti_dname  := pfdep.join(pfc_name.reverse());
+    if ( pfdep_star.count() > 0 ) {
+        fti_dname.insert(pfdep_star.cross(pfc_name.reverse()));
+    }
+
+    var fti_cluster := new(str,bat);
+    fti_dname@batloop() {
+        var cb;
+        if ( fti_cluster.exist($h) ) {
+          cb := fti_cluster.find($h);
+        } else {
+          cb := new(str,str);
+          fti_cluster.insert($h,cb);
+        }
+        cb.insert(str(nil),$t);
+    }
+    fti_cluster@batloop() {
+        # $h.print();
+        # $t.print();
+        tj_add2collection($h,$t,true);
+    }
+    # shred_doc_base(del_doc(bit_nil, del_doc.leftfetchjoin(names), true),
+    #                add_doc.leftfetchjoin(locations), 
+    #                add_doc.leftfetchjoin(names), 
+    #                add_doc.leftfetchjoin(colnames), 
+    #                add_doc.leftfetchjoin(percentages),
+    #                stream_nil, ws_id(ws));
+    # add_doc.leftfetchjoin(names).print();
+}
+
 
 const virtRoot := 0@0;
 

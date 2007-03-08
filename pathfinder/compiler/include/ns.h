@@ -97,6 +97,11 @@ extern PFns_t PFns_op;
  */ 
 extern PFns_t PFns_lib;
 
+/**
+ * Pathfinder's namespace for additional tijah functions.
+ */ 
+extern PFns_t PFns_tijah;
+
 /** 
  * Pathfinder's own internal NS (pf:...).
  */ 

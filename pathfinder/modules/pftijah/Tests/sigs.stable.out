@@ -44,7 +44,7 @@ module 'pftijah'
 [ "tj_delete_global() : void"																		  ]
 [ "tj_dispose_termdb() : void"																		  ]
 [ "tj_finalize_collection(str) : void"																	  ]
-[ "tj_init_collection(str, BAT[str,str]) : void"															  ]
+[ "tj_init_collection(str, BAT[str,str], BAT[void,str]) : void"														  ]
 [ "tj_init_global(BAT[str,str]) : void"																	  ]
 [ "tj_log(str, int) : void"																		  ]
 [ "tj_normalizeTerm(str, str) : str"																	  ]
