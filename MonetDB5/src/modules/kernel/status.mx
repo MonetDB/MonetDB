@@ -209,6 +209,10 @@ status_export int set_mem_maxsize(lng *num);
 # endif
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define access _access
+#endif
+
 extern lng GDKcur_cursize(void);
 status_export str SYSgetmem_cursize(lng *num);
 str

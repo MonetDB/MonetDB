@@ -79,6 +79,10 @@ The server options have the following meaning:
 #include <errno.h>
 #include <string.h> /* strerror */
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define getcwd _getcwd
+#endif
+
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
    our definition of new and delete clashes with the one if

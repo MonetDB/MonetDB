@@ -44,6 +44,9 @@ machine and redirect to each other when necessary.
 #include <string.h> /* for getting error messages */
 #include <assert.h>
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define close _close
+#endif
 
 /** the directory where the databases are (aka dbfarm) */
 str _sabaoth_internal_dbfarm = NULL;

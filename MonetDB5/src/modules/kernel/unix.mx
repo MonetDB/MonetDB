@@ -45,6 +45,10 @@ facilities
 #include <stdlib.h>
 #include <stdarg.h>
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define putenv _putenv
+#endif
+
 /*----------------------------------------------------------------------------
  * The Basic UNIX commands.
  */
@@ -92,8 +96,6 @@ End:
 @- Wrapping
 The remainder simply wraps the old code.
 @c
-#include "mal.h"
-
 #ifdef WIN32
 #ifndef LIBUNIX
 #define unix_export extern __declspec(dllimport)

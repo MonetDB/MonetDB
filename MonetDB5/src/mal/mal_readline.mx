@@ -304,6 +304,10 @@ deinit_readline(void)
 #include <termios.h>
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define chdir _chdir
+#endif
+
 static void
 showCommands(void)
 {
