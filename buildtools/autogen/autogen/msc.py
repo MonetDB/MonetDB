@@ -34,7 +34,7 @@ ARCHIVER = lib
 GENDLL =
 RC = rc
 
-MT = mt
+MT = mt -nologo
 JAVAC = javac
 JAR = jar
 ANT = ant.bat
