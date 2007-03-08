@@ -44,9 +44,9 @@
 			SQLSMALLINT _l;					\
 			if (len < 0)					\
 				return SQL_ERROR;			\
-			_l = str ? (SQLSMALLINT) strlen((char *) str) : 0; \
-			if (buf)					\
-				strncpy((char *) buf, str ? (char *) str : "", len); \
+			_l = (SQLSMALLINT) strlen(str);			\
+			if (buf && len > 0)				\
+				strncpy((char *) buf, str, len);	\
 			if (lenp)					\
 				*lenp = _l;				\
 			if (buf == NULL || _l >= len)			\
