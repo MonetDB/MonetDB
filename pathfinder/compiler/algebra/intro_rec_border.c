@@ -45,7 +45,7 @@
 #define LR(p) (R(L(p)))
 
 #define SEEN(n) n->bit_dag
-#define IN(n) n->bit_in
+#define pfIN(n) n->bit_in
 
 /**
  * Worker that introduces border operators and 'in' flags.
@@ -60,7 +60,7 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
     bool base_path = false;
 
     /* short-cut in case n is already determined as 'inside' */
-    if (IN(n))
+    if (pfIN(n))
         return true;
 
     switch (n->kind)
@@ -105,7 +105,7 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
                the recursion while its left child is not.
                Make sure that no borders are introduced along the
                fragment information edge. */
-            if (base_path && L(n) && !IN(L(n)) && 
+            if (base_path && L(n) && !pfIN(L(n)) && 
                 L(n)->kind != pa_frag_union && 
                 L(n)->kind != pa_empty_frag) {
                 L(n) = PFpa_rec_border (L(n));
@@ -113,14 +113,14 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
             }
             /* Introduce border if the current node is 'inside'
                the recursion while its right child is not. */
-            if (base_path && R(n) && !IN(R(n))) {
+            if (base_path && R(n) && !pfIN(R(n))) {
                 R(n) = PFpa_rec_border (R(n));
                 R(n)->prop = L(R(n))->prop;
             }
             break;
     }
     if (base_path)
-        IN(n) = true;
+        pfIN(n) = true;
 
     return base_path;
 }
@@ -135,10 +135,10 @@ in_reset (PFpa_op_t *n)
 {
     unsigned int i;
 
-    if (!IN(n))
+    if (!pfIN(n))
         return;
     else
-        IN(n) = false;
+        pfIN(n) = false;
     
     for (i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
         in_reset (n->child[i]);
