@@ -206,6 +206,9 @@ mapi_export int active_clients(char *lang);
 #include <openssl/err.h>
 #endif
 
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
+#endif
 @c
 #define MAX_FRONTENDS 8
 static int nr_frontends = 0;
@@ -798,7 +801,7 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	if (port > 0) {
 		sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-		if (sock < 0) {
+		if (sock == INVALID_SOCKET) {
 			GDKsyserror("MAPIlisten:creation of stream socket failed\n");
 			return GDK_FAIL;
 		}
@@ -835,7 +838,7 @@ Get the new information for the server socket and start listening.
 #ifdef HAVE_SYS_UN_H
 	if (usockfile) {
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
-		if (usock < 0) {
+		if (usock == INVALID_SOCKET) {
 			GDKsyserror("MAPIlisten:creation of Unix socket failed\n");
 			return GDK_FAIL;
 		}
@@ -861,7 +864,7 @@ Get the new information for the server socket and start listening.
 		SOCKET msgsock;
 
 		FD_ZERO(&fds);
-		if (sock >= 0)
+		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
 #ifdef HAVE_SYS_UN_H
 		if (usock >= 0)
@@ -889,8 +892,8 @@ Get the new information for the server socket and start listening.
 			}
 			continue;
 		}
-		if (sock >= 0 && FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
+		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
+			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR) {
 					GDKsyserror("MAPIlisten:accept failed\n");
 					goto error;
@@ -899,7 +902,7 @@ Get the new information for the server socket and start listening.
 			}
 #ifdef HAVE_SYS_UN_H
 		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
-			if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
+			if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR) {
 					GDKsyserror("MAPIlisten:accept failed\n");
 					goto error;
@@ -1145,7 +1148,7 @@ MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sock < 0) {
+	if (sock == INVALID_SOCKET) {
 		GDKsyserror("MAPIlistenSSL:creation of stream socket failed\n");
 		goto fail;
 	}
@@ -1199,7 +1202,7 @@ Get the new information for the server socket and start listening.
 			GDKsyserror("MAPIlistenSSL:select failed\n");
 			goto fail;
 		}
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
+		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlistenSSL:accept failed\n");
 				goto fail;

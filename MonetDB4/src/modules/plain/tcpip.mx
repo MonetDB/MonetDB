@@ -152,6 +152,9 @@ only one will be created.
 
 #include <string.h>
 
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
+#endif
 @+ Auxiliary Functions
 @- Socket Management
 Some basic routines to open a remote socket, and to read
@@ -174,7 +177,7 @@ socket_open(str host, int port, str fcn)
 		return GDK_FAIL;
 	}
 	memcpy(&a.sin_addr, hp->h_addr, hp->h_length);
-	if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((fd = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 		GDKsyserror("%s(%s:%d): could not create socket.\n", fcn, host, port);
 	} else if (connect(fd, addr, len)) {
 		GDKsyserror("%s(%s:%d): could not connect with.\n", fcn, host, port);
@@ -1240,7 +1243,7 @@ Register ourselves
 @-
 create the socket
 @c
-	if (sock < 0) {
+	if (sock == INVALID_SOCKET) {
 		GDKsyserror("TCPserve: creation of stream socket failed\n");
 		return GDK_FAIL;
 	}
@@ -1257,7 +1260,7 @@ create the socket
 	} else if (listen(sock, 5) < 0) {
 		GDKsyserror("TCPlisten(%d): getting socket name\n", *port);
 	} else
-		while ((msgsock = accept(sock, (SOCKPTR) & client, &client_len)) > 0) {
+		while ((msgsock = accept(sock, (SOCKPTR) & client, &client_len)) != INVALID_SOCKET) {
 @-
 the listener heard something...
 @c

@@ -725,6 +725,10 @@ _CRTIMP char * __cdecl crypt(const char *key, const char *salt);
 # include <openssl/sha.h>
 # include <openssl/md5.h>
 #endif
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
+#endif
 @h
 #ifndef _MAPI_H_INCLUDED
 #define _MAPI_H_INCLUDED
@@ -1986,7 +1990,7 @@ connect_to_server(Mapi mid)
 	}
 #endif
 	s = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
-	if (s < 0) {
+	if (s == INVALID_SOCKET) {
 		return mapi_setError(mid, "Open socket failed", "mapi_reconnect", MERROR);
 	}
 
