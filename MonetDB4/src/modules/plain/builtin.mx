@@ -97,7 +97,7 @@ loading and unloading new modules.
 .BUILTIN varval(str) : any = CMDvarval;
 "(invoked on a simple variable): returns the variable name."
 
-.BUILTIN constant(IDENT varname, ..IDENT... ) = CMDconstant;
+.BUILTIN constant(IDENT varname, ..IDENT... ) = CMDconstant_stub;
 "Fix both type and value of a number of MIL variables."
 
 .BUILTIN freeze(IDENT varname, ..IDENT...) = CMDfreeze;
@@ -213,7 +213,7 @@ any client activity.
  the integer type number, and the tail a string representation. Each parameter
  value is obtained by doing a cast from string to that type."
 
-.BUILTIN source(str mil_file) : any = interpret_file;
+.BUILTIN source(str mil_file) : any = interpret_file_stub;
 "Read and evaluate a MIL-script from a file. Relative paths start from
  the database directory"
 
@@ -316,6 +316,18 @@ The @%CMDdrop@ command drops a module: functions and types defined
 by that module cease to be known for that user.
 
 @c
+/* stubs to get import/export declarations on Windows correct */
+int
+interpret_file_stub(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+	return interpret_file(stk, lt, res);
+}
+int
+CMDconstant_stub(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+	return CMDconstant(stk, lt, res);
+}
+
 int
 CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res)
 {
