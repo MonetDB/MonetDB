@@ -21,7 +21,12 @@
 #include <string.h>
 #include <Mapi.h>
 #ifdef _MSC_VER
+#if _MSC_VER >= 1400
+/* this happens to work in this file */
+#define snprintf(buf,cnt,fmt,arg) _snprintf_s(buf,sizeof(buf),cnt,fmt,arg)
+#else
 #define snprintf _snprintf
+#endif
 #endif
 
 #define die(dbh,hdl)	do {						\
