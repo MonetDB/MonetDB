@@ -38,9 +38,6 @@
 static char *DriverName = "MonetDB ODBC Driver";
 static HINSTANCE instance;
 
-#define strncasecmp(x,y,l) _strnicmp(x,y,l)
-
-
 static void
 ODBCLOG(const char *fmt, ...)
 {
@@ -198,7 +195,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	char *dsn = NULL;
 	BOOL rc;
 
-	ODBCLOG("ConfigDSN %d %s %s 0x%x\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (int) &data);
+	ODBCLOG("ConfigDSN %d %s %s 0x%I64x\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (unsigned __int64) &data);
 
 	if (strcmp(driver, DriverName) != 0) {
 		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
