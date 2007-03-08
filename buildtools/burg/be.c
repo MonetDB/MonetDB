@@ -1019,6 +1019,7 @@ startBurm()
 	fprintf(outfile, "#ifndef %s_PANIC\n", prefix);
 	fprintf(outfile, "#define %s_PANIC\tPANIC\n", prefix);
 	fprintf(outfile, "#endif /* %s_PANIC */\n", prefix);
+	fprintf(outfile, "#include <stdlib.h> /* for abort() */\n");
 	fprintf(outfile, "#ifdef NDEBUG\n");
  	fprintf(outfile, "#define %s_assert(x,y)\t;\n", prefix);
 	fprintf(outfile, "#else\n");
