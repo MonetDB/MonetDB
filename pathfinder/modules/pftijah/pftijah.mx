@@ -443,6 +443,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
       # WARNING: this piece of code is not yet very safe but is requires
       # a very close cooperation with Pathfinder locks to make it safe.
       #
+      if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") checking collection to index.\n",collName);
       if ( v_pfc.count() > 0 ) {
         var doclist;
         if ( v_pfc.uselect("*").count() > 0 ) {
@@ -452,10 +453,13 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
            doclist := doclist.project(str(nil)).reverse();
 	}
         if ( doclist.count() > 0 ) {
+
+            if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") indexing existing collections.\n",collName);
 	    tj_add2collection(collName,doclist,true);
         }
       }
     }
+    if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") finished.\n",collName);
 }
 
 PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
@@ -763,10 +767,14 @@ PROC _tj_add2collection(str collName, BAT[str,bat] collBat, str uri_loc, str uri
 	      ms := (usec()-s_start)/1000;
               printf("#C[%s]:add2coll(\"%s\"): shred time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
             }
-        }
+        } else {
+            if ( verbose ) printf("#TJ:_tj_add2collection(%s,..) doc(\"%s\") already shredded.\n",collName,uri_name);
+	}
         ws_opendoc(ws, bat(void,str,1).append(uri_name));
 	i_start := usec();
+        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") 2call.\n",collName,uri_name);
         _tj_throw2collection(collBat,ws,uri_name,selTagList);
+        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") called.\n",collName,uri_name);
         ws_destroy(ws);
     } else {
 	i_start := usec();
@@ -1015,46 +1023,50 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
                       BAT[void,lng] int_values, 
                       BAT[void,str] str_values) : void
 {
-    var IDoid       := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).hmark(0@0);
-    var IDlng       := IDoid.[lng]();
-    var locations   := IDoid.leftfetchjoin(item).leftfetchjoin(str_values);
-    var names       := [+](IDlng, 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
-    var colnames    := [+](IDlng, 2).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
-    var percentages := [+](IDlng, 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values);
-    var del_doc     := percentages.ord_uselect(-1LL).hmark(0@0); 
-    var add_doc     := percentages.ord_uselect(0LL,lng_nil).hmark(0@0); 
-    #
-    var pfc_name   := names.reverse().leftfetchjoin(colnames);
-    var pfdep      := bat("tj_pfc_fti_dep");
-    var pfdep_star := bat("tj_pfc_fti_dep_star");
-    var fti_dname  := pfdep.join(pfc_name.reverse());
-    if ( pfdep_star.count() > 0 ) {
-        fti_dname.insert(pfdep_star.cross(pfc_name.reverse()));
-    }
-
-    var fti_cluster := new(str,bat);
-    fti_dname@batloop() {
-        var cb;
-        if ( fti_cluster.exist($h) ) {
-          cb := fti_cluster.find($h);
-        } else {
-          cb := new(str,str);
-          fti_cluster.insert($h,cb);
+    if (view_bbp_name().reverse().exist("tj_pfc_fti_dep")) {
+      if ( bat("tj_pfc_fti_dep").count() > 0 ) {
+        var IDoid       := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).hmark(0@0);
+        var IDlng       := IDoid.[lng]();
+        var locations   := IDoid.leftfetchjoin(item).leftfetchjoin(str_values);
+        var names       := [+](IDlng, 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+        var colnames    := [+](IDlng, 2).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+        var percentages := [+](IDlng, 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values);
+        var del_doc     := percentages.ord_uselect(-1LL).hmark(0@0); 
+        var add_doc     := percentages.ord_uselect(0LL,lng_nil).hmark(0@0); 
+        #
+        var pfc_name   := names.reverse().leftfetchjoin(colnames);
+        var pfdep      := bat("tj_pfc_fti_dep");
+        var pfdep_star := bat("tj_pfc_fti_dep_star");
+        var fti_dname  := pfdep.join(pfc_name.reverse());
+        if ( pfdep_star.count() > 0 ) {
+            fti_dname.insert(pfdep_star.cross(pfc_name.reverse()));
         }
-        cb.insert(str(nil),$t);
+
+        var fti_cluster := new(str,bat);
+        fti_dname@batloop() {
+            var cb;
+            if ( fti_cluster.exist($h) ) {
+              cb := fti_cluster.find($h);
+            } else {
+              cb := new(str,str);
+              fti_cluster.insert($h,cb);
+            }
+            cb.insert(str(nil),$t);
+        }
+        fti_cluster@batloop() {
+            # $h.print();
+            # $t.print();
+            tj_add2collection($h,$t,true);
+        }
+        # shred_doc_base(del_doc(bit_nil, del_doc.leftfetchjoin(names), true),
+        #                add_doc.leftfetchjoin(locations), 
+        #                add_doc.leftfetchjoin(names), 
+        #                add_doc.leftfetchjoin(colnames), 
+        #                add_doc.leftfetchjoin(percentages),
+        #                stream_nil, ws_id(ws));
+        # add_doc.leftfetchjoin(names).print();
+      }
     }
-    fti_cluster@batloop() {
-        # $h.print();
-        # $t.print();
-        tj_add2collection($h,$t,true);
-    }
-    # shred_doc_base(del_doc(bit_nil, del_doc.leftfetchjoin(names), true),
-    #                add_doc.leftfetchjoin(locations), 
-    #                add_doc.leftfetchjoin(names), 
-    #                add_doc.leftfetchjoin(colnames), 
-    #                add_doc.leftfetchjoin(percentages),
-    #                stream_nil, ws_id(ws));
-    # add_doc.leftfetchjoin(names).print();
 }
 
 
