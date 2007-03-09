@@ -1494,7 +1494,9 @@ OrderSpecList             : ExprSingle OrderModifier
 /* [41] */
 OrderModifier             : OptAscendingDescending_ OptEmptyGreatestLeast_
                             OptCollationStringLiteral_
-                            { $$.dir = $1, $$.empty = $2; $$.coll = $3; }
+                            { $$.dir = $1 == 0 ? p_asc : p_desc;
+                              $$.empty = $2 == 0 ? p_greatest : p_least;
+                              $$.coll = $3; }
                           ;
 
 OptAscendingDescending_   : /* empty */   { $$ = p_asc; }

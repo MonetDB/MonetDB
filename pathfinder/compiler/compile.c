@@ -198,26 +198,17 @@ char *PFurlcache (char *uri, int keep)
     xmlParserInputBufferPtr  buf;
     char *ret, url[1024];  
 
-    /* support for the xrpc://x.y.z/URI naming scheme (maps to http://x.y.z:<xrpc_port>[/xrpc]/URI) */
+    /* support for the xrpc://x.y.z/URI naming scheme (maps to http://x.y.z:<xrpc_port>/URI) */
     if (strncmp(uri, "xrpc://", 7) == 0) {
-        char *xrpc = "";
         char *p = strchr(uri+7, '/');
         char *q = strchr(uri+7, ':');
         int port = xrpc_port;
-        if (p) { 
-            char *suffix = p + strlen(p) - 4;
-            if (suffix > p && !(strcmp(suffix,".xml") && strcmp(suffix,".XML"))) { 
-                /* GET requests on XML get magically mapped on fn:doc(). Add xrpc/ to URI. */
-                xrpc = "/xrpc";
-            }   /* else: request is simply redirected to xrpc HTTP server (file serving) */ 
-            *p = 0; 
-        }
-        if (q) {
+        if (q && (p == NULL || p > q)) {
             /* if a specific port is omitted, we use the current xrpcd port number */
             port = atoi(q+1); 
             *q = 0;
         }
-        snprintf(url, 1024, "http://%s:%d%s/%s", uri+7, port, xrpc, p?(p+1):"");
+        snprintf(url, 1024, "http://%s:%d/%s", uri+7, port, p?(p+1):"");
         if (p) *p = '/';
         if (q) *q = ':';
     } else {

@@ -6525,7 +6525,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             "} # end of translate pf:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"documents")) == 0 ||
-              (PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0 && (rc=1)))
+               (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0))
     {
         char *consistent = rc?"false":"true";
         if (fun->arity) {
@@ -6550,7 +6550,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "} # end of translate fn:documents (string?) as string*\n");
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"collections")) == 0 ||
-              (PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0 && (rc=1)))
+               (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0))
     {
         char *consistent = rc?"false":"true";
         milprintf(f,
@@ -9040,7 +9040,7 @@ noTijahFun (PFcnode_t *c)
 #endif
 
 /**
- * var_only_in_for tests whether a variable is used to iterate over
+ * var_only_in_for tests whether a variable is only used to iterate over
  *
  * @param v the variable which is tested
  * @param e the subtree of the variable binding
@@ -9057,20 +9057,15 @@ var_only_in_for (PFvar_t *v, PFcnode_t *e)
   if (e->kind == c_var && e->sem.var == v) {
       return 0;
   }
-  if (strcmp(PFqname_loc(v->qname),"sigmod") == 0) {
-      if (e->kind == c_apply) {
-        usage = 1;
-      }
-  }
-
-  /* if variable is used to iterate over (in a user-written loop), ignore it as use */
+  /* if variable is used to iterate over (in a *user* written for-loop loop), ignore it as use */
   if (e->kind == c_for &&
       L(e) && L(e)->kind == c_forbind &&
       LL(e) && LL(e)->kind == c_forvars &&
-      LLL(e) && LLL(e)->kind == c_var && strcmp(PFqname_prefix(LLL(e)->sem.var->qname), "#pf") &&
+      LLL(e) && LLL(e)->kind == c_var && 
+      strcmp(PFqname_prefix(LLL(e)->sem.var->qname), "#pf") &&  /* not a Core-introduced loop */
       LR(e) && LR(e)->kind == c_var && LR(e)->sem.var == v)
   {
-      return var_only_in_for (v,R(e));
+      return var_only_in_for (v, R(e)); /* we ignore L(e), then */
   }
   for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
       if (!var_only_in_for (v, e->child[i])) return 0;
@@ -9091,9 +9086,22 @@ expandable (PFcnode_t *c)
 #ifdef HAVE_PFTIJAH
     if (!noTijahFun(LR(c))) return 0;
 #endif
-    if (strcmp (PFqname_prefix (LL(c)->sem.var->qname), "#pf") == 0) 
-        return noConstructor(LR(c));
+    /* where possible, expand all pathfinder variables (introduced by XQuery Core 
+     * normalization) back to where they came from; to simplify the plan again
+     */
+    if (strcmp(PFqname_prefix (LL(c)->sem.var->qname), "#pf") == 0) 
+        return noConstructor(LR(c)); 
 
+    /* let-variables written by the user are materialized beforehand (i.e. *not* expanded).
+     * This assumes that the user 'knows what [s]he is doing' and has used the let to
+     * specifically identify 'expensive' (to compute) expressions.
+     *
+     * The exception on this heuristic is when the variable is the potential 
+     * partner in a join. In that case, the variable is better expanded in the plan
+     * to defer execution (in case of a join, we then escape loop-lifting the result
+     * during variable expansion). As the expansion decisions are made before
+     * recognizing joins, we are not sure this actually happens, regrettably.
+     */
     return var_only_in_for(LL(c)->sem.var, R(c)); 
 }
 

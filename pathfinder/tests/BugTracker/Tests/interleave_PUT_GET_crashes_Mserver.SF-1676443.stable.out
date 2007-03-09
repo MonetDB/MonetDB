@@ -1,0 +1,46 @@
+stdout of test 'interleave_PUT_GET_crashes_Mserver.SF-1676443` in directory 'tests/BugTracker` itself:
+
+
+# 14:58:58 >  
+# 14:58:58 >  Mtimeout -timeout 360 Mserver "--config=/net/andorea/export/scratch1/zhang/monet/stable/G.64.64.d.debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/andorea/export/scratch1/zhang/monet/stable/G.64.64.d.debug/lib/MonetDB4:/net/andorea/export/scratch1/zhang/monet/stable/G.64.64.d.debug/lib/MonetDB4/lib:/net/andorea/export/scratch1/zhang/monet/stable/G.64.64.d.debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/andorea/export/scratch1/zhang/monet/stable/G.64.64.d.debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/andorea/export/scratch1/zhang/monet/stable/G.64.64.d.debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/andorea/export/scratch1/zhang/monet/stable/G.64.64.d.debug/var/MonetDB4/xquery_logs" --set mapi_port=35620 --set xrpc_port=44671 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" interleave_PUT_GET_crashes_Mserver.SF-1676443.prologue ; echo ; echo Over..
+# 14:58:58 >  
+
+# Monet Database Server V4.16.3
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+
+Over..
+
+# 14:58:59 >  
+# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s00.xq
+# 14:58:59 >  
+
+
+# 14:58:59 >  
+# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s01.xq
+# 14:58:59 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><bladieboe/></XQueryResult>
+
+# 14:58:59 >  
+# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s03.xq
+# 14:58:59 >  
+
+
+# 14:58:59 >  
+# 14:58:59 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35620 interleave_PUT_GET_crashes_Mserver.SF-1676443_s04.xq
+# 14:58:59 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><bladieboe1/></XQueryResult>
+
+# 14:58:59 >  
+# 14:58:59 >  Done.
+# 14:58:59 >  
+

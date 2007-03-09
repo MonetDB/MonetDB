@@ -39,6 +39,9 @@
  *    Typedef socklen_t		-DNO_SOCKLEN_T
  */
 
+#ifdef VERSION
+#undef VERSION
+#endif
 #define	VERSION		"1.28"			/* Version */
 #ifndef CONFIG
 #define	CONFIG		"shttpd.conf"		/* Configuration file */
@@ -95,6 +98,14 @@ typedef	DWORD			pthread_t;
 #define	pthread_detach(x)	0
 #define	_POSIX_
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define open _open
+#define close _close
+#define read _read
+#define lseek _lseek
+#define strdup _strdup
+#endif
+
 /* POSIX dirent interface */
 struct dirent {
 	char	*d_name;
@@ -140,6 +151,10 @@ typedef struct DIR {
 #include <limits.h>
 #include <stddef.h>
 #include <fcntl.h>
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
+#endif
 
 #ifdef WITH_SSL
 
@@ -463,9 +478,17 @@ isregistered(const char *url)
 {
 	struct userurl	*p;
 
-	for (p = urls; p != NULL; p = p->next)
-		if (strncmp(p->url, url, strlen(p->url)) == 0)
-			return (p);
+	for (p = urls; p != NULL; p = p->next) {
+		int p_len = strlen(p->url);
+                if (p->url[0] == '.') {
+		        int len = strlen(url);
+			if (len > p_len && strcmp(url+len-p_len,p->url) == 0)
+				return (p);
+                } else {
+			if (strncmp(p->url, url, p_len) == 0)
+				return (p);
+                }
+        }
 
 	return (NULL);
 }
@@ -855,7 +878,7 @@ mysocketpair(SOCKET sp[2])
 	sa.sin_port		= htons(0);
 	sa.sin_addr.s_addr	= htonl(INADDR_LOOPBACK);
 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 6)) == -1) {
+	if ((sock = socket(AF_INET, SOCK_STREAM, 6)) == INVALID_SOCKET) {
 		elog(ERR_INFO, "mysocketpair: socket(): %d", ERRNO);
 	} else if (bind(sock, (struct sockaddr *) &sa, len) != 0) {
 		elog(ERR_INFO, "mysocketpair: bind(): %d", ERRNO);
@@ -866,14 +889,14 @@ mysocketpair(SOCKET sp[2])
 	} else if (getsockname(sock, (struct sockaddr *) &sa, &len) != 0) {
 		elog(ERR_INFO, "mysocketpair: getsockname(): %d", ERRNO);
 		(void) closesocket(sock);
-	} else if ((sp[0] = socket(AF_INET, SOCK_STREAM, 6)) == -1) {
+	} else if ((sp[0] = socket(AF_INET, SOCK_STREAM, 6)) == INVALID_SOCKET) {
 		elog(ERR_INFO, "mysocketpair: socket(): %d", ERRNO);
 		(void) closesocket(sock);
 	} else if (connect(sp[0], (struct sockaddr *) &sa, len) != 0) {
 		elog(ERR_INFO, "mysocketpair: connect(): %d", ERRNO);
 		(void) closesocket(sock);
 		(void) closesocket(sp[0]);
-	} else if ((sp[1] = accept(sock,(struct sockaddr *) &sa, &len)) == -1) {
+	} else if ((sp[1] = accept(sock,(struct sockaddr *) &sa, &len)) == INVALID_SOCKET) {
 		elog(ERR_INFO, "mysocketpair: accept(): %d", ERRNO);
 		(void) closesocket(sock);
 		(void) closesocket(sp[0]);
@@ -950,7 +973,7 @@ disconnect(struct conn *c, struct conn *prev)
 	if (c->ssl)		SSL_free(c->ssl);
 #endif /* WITH_SSL */
 
-	if (c->sock >= 0 && c->io != do_embedded) closesocket(c->sock);
+	if (c->sock != INVALID_SOCKET && c->io != do_embedded) closesocket(c->sock);
 	free(c);
 
 	/* In inetd mode, exit if request is finished. */
@@ -1097,7 +1120,7 @@ shttpd_open_port(int port, int accept_any)
 	sa.u.sin.sin_port = htons((uint16_t) port);
 	sa.u.sin.sin_addr.s_addr = accept_any?htonl(INADDR_ANY):htonl(INADDR_LOOPBACK);
 
-	if ((sock = socket(PF_INET, SOCK_STREAM, 6)) == -1)
+	if ((sock = socket(PF_INET, SOCK_STREAM, 6)) == INVALID_SOCKET)
 		elog(ERR_FATAL, "shttpd_open_port: socket: %s",strerror(ERRNO));
 	else if (nonblock(sock) != 0)
 		elog(ERR_FATAL, "shttpd_open_port: nonblock");
@@ -2881,7 +2904,7 @@ shttpd_merge_fds(shttpd_socket *ctx, fd_set *rfds, fd_set *wfds, int *maxfd)
 	do {FD_SET(fd, set); if (fd > *maxfd) *maxfd=fd; } while (0)
 
 	for (c = ctx->connections; c != NULL; c = c->next) {
-        if (c->sock < 0) continue;
+        if (c->sock == INVALID_SOCKET) continue;
 
 		/* Remote socket always in read set */
 		MERGEFD(c->sock, rfds); 

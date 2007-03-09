@@ -215,6 +215,10 @@ static char instring;
 #define pf_yield(t) return (t)
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define fileno _fileno
+#endif
+
 /* lexical state stack */
 static PFarray_t *lexical_stack = NULL;
 static unsigned int lexical_sp = 0;

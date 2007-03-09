@@ -60,9 +60,9 @@
 #define LL(p) (L(L(p)))
 #define RL(p) (L(R(p)))
 
-#define SEEN(p) ((p)->bit_dag)
-#define IN(p)   ((p)->bit_in)
-#define OUT(p)  ((p)->bit_out)
+#define SEEN(p)  ((p)->bit_dag)
+#define pfIN(p)  ((p)->bit_in)
+#define pfOUT(p) ((p)->bit_out)
 
 
 
@@ -2745,7 +2745,7 @@ find_proxy_exit (PFla_op_t *p,
     /* check the exit criterion */
     if (check_exit (p, entry)) {
         SEEN(p) = true;
-        IN(p) = true;
+        pfIN(p) = true;
         return p;
     }
     /* Avoid following the fragment information (and marking it as
@@ -2760,7 +2760,7 @@ find_proxy_exit (PFla_op_t *p,
 
     /* Mark nodes as seen and 'in'side the proxy. */
     SEEN(p) = true;
-    IN(p) = true;
+    pfIN(p) = true;
 
     /* traverse children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++) {
@@ -2797,9 +2797,9 @@ find_conflicts (PFla_op_t *p, PFarray_t *conflict_list)
     assert (p);
     assert (conflict_list);
 
-    OUT(p) = true;
+    pfOUT(p) = true;
 
-    if (OUT(p) && IN(p)) {
+    if (pfOUT(p) && pfIN(p)) {
         *(PFla_op_t **) PFarray_add (conflict_list) = p;
         SEEN(p) = true; /* this stops the traversal in the next line */
     }
@@ -2811,7 +2811,7 @@ find_conflicts (PFla_op_t *p, PFarray_t *conflict_list)
         SEEN(p) = true;
 
     if (p->kind == la_rec_arg &&
-        IN(p->sem.rec_arg.base))
+        pfIN(p->sem.rec_arg.base))
         *(PFla_op_t **) PFarray_add (conflict_list) = p->sem.rec_arg.base;
 
     /* traverse children */

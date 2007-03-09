@@ -361,12 +361,12 @@ static PFsql_t* literal(PFalg_atom_t);
 #define IS_PRE(ident)   ( ((ident) >> (ATT_BITS+TYPE_BITS) \
             & 0x00000007) == 1) 
 
-#define ELEM   1
-#define ATTR   2
-#define TEXT   3
-#define COMM   4
-#define PI     5
-#define DOC    6
+#define ELEM    1
+#define ATTR    2
+#define PF_TEXT 3
+#define COMM    4
+#define PI      5
+#define DOC     6
 typedef unsigned int sql_kind_t;
 
 /*................. SQL Variable ................ */
@@ -1139,7 +1139,7 @@ reduce(PFla_op_t *p, int goalnt)
                       type_of (L(p), p->sem.textnode.item)),
                       column_name (sql_special_name_new (
                               sql_col_prop)->ident)), /* prop */
-                  column_assign (lit_int(TEXT),
+                  column_assign (lit_int(PF_TEXT),
                       column_name (sql_special_name_new (
                               sql_col_kind)->ident)), /* kind */
                   column_assign (lit_int (0),
@@ -4126,7 +4126,7 @@ llscj_text(PFalg_axis_t axis, PFsql_correlation_name_t c1,
              column_name(
                  sql_special_name_new(sql_col_kind)->ident),
              c1),
-         lit_int(TEXT)
+         lit_int(PF_TEXT)
         ));
 
     llscj_axis(axis, c1, c2, fromlist, frag, ann);    
@@ -4436,7 +4436,7 @@ doc_access (PFla_op_t *p)
                      column_name (
                          sql_special_name_new (sql_col_kind)->ident),
                      crrl->name),
-                 lit_int (TEXT)
+                 lit_int (PF_TEXT)
                 ));
             break;
         default:
