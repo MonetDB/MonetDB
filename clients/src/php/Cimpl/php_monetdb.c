@@ -496,7 +496,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 	char *database = NULL;
 	int port = MG(default_port);
 
-	zval **args[5];
+	zval **args[7];
 	int argc, i, connect_type = 0;
 	smart_str str = {0};
 
