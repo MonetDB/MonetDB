@@ -230,6 +230,9 @@ int timing = 0;
 int listen_socket = -1;
 char datadir[1024];
 
+BAT* xrpc_trusted = NULL;
+BAT* xrpc_admin = NULL;
+
 #define clean_up(argcnt, argtpe, argval, iterc, nr_args) {          \
     lng i = 0;                                                      \
                                                                     \
@@ -259,8 +262,6 @@ char datadir[1024];
             "<env:Reason><env:Text xml:lang=\"en\">%s</env:Text>"   \
             "</env:Reason></env:Fault></env:Body></env:Envelope>",  \
             soap_err, err_reason);                                  \
-    if(isa_block_stream(out))                                       \
-        stream_flush(out);                                          \
 }
 
 /**
@@ -306,6 +307,23 @@ request2bat(stream *out, char *reqmsg)
 }
 
 /**
+ * Checks if a prefix of 'key' is present in a bat with a list of allowed prefixes
+ *
+ * Return 1 if yes, 0 otherwise.
+ */
+static int 
+isAllowed(BAT *allowed, char* key)
+{
+    BUN p,q;
+    BATloop(allowed, p, q) {
+        char* prefix = BUNtail(allowed,q);
+        if (strncmp(key, prefix, strlen(prefix)) == 0)  
+            return 1;
+    }
+    return (BATcount(allowed) == 0);
+}
+
+/**
  * Checks if the prefix of 'location' is listed in "xrpc_trusted".
  *
  * Return 1 if yes, 0 otherwise.
@@ -313,28 +331,11 @@ request2bat(stream *out, char *reqmsg)
 static int
 isTrusted(stream *out, char *location)
 {
-    BAT *trusted = BATload("xrpc_trusted");
-    char *ptr, *loc;
-    
-    if(BUNfnd(trusted, location)) return 1;
-
-    loc = GDKstrdup(location);
-    while( (ptr = strrchr(loc, DIR_SEP)) ){
-        ptr[1] = '\0';
-        if(BUNfnd(trusted, loc)){
-            GDKfree(loc);
-            return 1;
-        }
-        ptr[0] = '\0';
-        if(BUNfnd(trusted, loc)){
-            GDKfree(loc);
-            return 1;
-        }
+    if (!isAllowed(xrpc_trusted, location)) {
+        send_err(out, 1, ERR403, "env:Sender", "Called module not allowed.");
+        return 0;
     }
-
-    send_err(out, 1, ERR403, "env:Sender", "Called module not allowed.");
-    GDKfree(loc);
-    return 0;
+    return 1;
 }
 
 /**
@@ -997,6 +998,7 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     return GDK_SUCCEED;
 }
 
+
 /**
  * The MonetDB/XQuery Document Management callback function.
  *
@@ -1009,16 +1011,15 @@ xrpc_handle_admin_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     char *module = NULL, *location = NULL, *method = NULL;
     int ret, serializeMode = 0;
     bit isSimpleParam = 1;
-    BAT *shredBAT, *adminHosts;
+    BAT *shredBAT;
     lng argc = 0, iterc = 0, nr_args = 0;
     lng **argcnt;
     str *argtpe, *argval;
+    char dotted[80];
 
-    adminHosts = BATload("xrpc_admin");
-    char *dotted = inet_ntoa(shttpd_get_inAddr(arg));
-    assert(adminHosts && dotted);
-
-    if(!BUNfnd(adminHosts, dotted)) {
+    struct in_addr addr = shttpd_get_inAddr(arg);
+    (void) inet_ntop(AF_INET, (void*) &addr, dotted, 80);
+    if (!isAllowed(xrpc_admin, dotted)) {
         char err[1024];
         snprintf(err, 1024, "Permission denied: your host (%s) "
                 "does not have admin rights", dotted);
@@ -1069,8 +1070,7 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     int i = 0, len = 0, ret = GDK_FAIL;
     lng **argcnt = NULL;
 
-    /* skip "/xrpc/" prefix that has directed us here */
-    uri = shttpd_get_uri(arg) + 5;
+    uri = shttpd_get_uri(arg);
     /* we don't always have the second '/' */
     if(uri[0] == '/') uri++;
     if(uri[0] == '\0'){
@@ -1157,20 +1157,17 @@ static void
 xrpc_client_engine(mapi_client *mc)
 {
     struct shttpd_callback_arg *arg = NULL;
-    char *uri = NULL, *method = NULL;
+    char *uri = NULL;
 
     arg = (struct shttpd_callback_arg *) mc->arg;
     uri = shttpd_get_uri(arg);
 
     if(strncmp(uri, XRPCD_CALLBACK, 5) == 0) {
-        method = shttpd_get_method(arg);
-        if(strcmp(method, "POST") == 0) { /* req = XRPC function call */
-            (void) xrpc_handle_request(mc, arg);
-        } else { /* method = GET/PUT/DELETE */
-            (void) xrpc_handle_file_request(mc, arg);
-        }
+        (void) xrpc_handle_request(mc, arg);
     } else if (strncmp(uri, MXQ_ADMIN_CALLBACK, 9) == 0) {
         (void) xrpc_handle_admin_request(mc, arg);
+    } else { /* GET/PUT/DELETE file request */
+        (void) xrpc_handle_file_request(mc, arg);
     }
 
     /* clean up */
@@ -1178,6 +1175,7 @@ xrpc_client_engine(mapi_client *mc)
     xquery_client_end(mc, NULL);
     shttpd_finish(arg);
 }
+
 
 /*
  * handle request asynchronously using a MAPI xquery client
@@ -1187,18 +1185,10 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
 {
     /* get a MAPI thread from the xquery client pool */
     int sock = shttpd_get_socket(arg);
-    int use_block_stream = 0;
     
-    /* Use block_stream for the serialization of XRPC call results */
-    if( (strncmp(shttpd_get_uri(arg), XRPCD_CALLBACK, 5) == 0) &&
-        (strcmp(shttpd_get_method(arg), "POST") == 0) )
-        use_block_stream = 1;
-
     stream *fdin = socket_rastream(sock, "XRPC read");
     if (fdin && stream_errnr(fdin) == 0) {
-        stream *fdout = use_block_stream ?
-            block_stream(socket_wastream(sock, "XRPC write")) :
-            socket_wastream(sock, "XRPC write");
+        stream *fdout = wbstream(socket_wastream(sock, "XRPC write"));
         if (fdout && stream_errnr(fdout) == 0) {
             mapi_client *mc = MAPIclient(fdin, fdout, "xquery");
             if (mc) {
@@ -1247,9 +1237,18 @@ CMDrpcd_start(int *port, bit *open, str option)
     if (option && strstr(option, "timing") != NULL)
         timing = 1;
 
-    /* Register call back function */
+    /* Register call back function, for XRPC (admin) requests, and XML (get/put/delete) file handling */
     shttpd_register_url(XRPCD_CALLBACK,     xrpc_fork_mapiclient, NULL);
     shttpd_register_url(MXQ_ADMIN_CALLBACK, xrpc_fork_mapiclient, NULL);
+    shttpd_register_url(".xml",             xrpc_fork_mapiclient, NULL);
+    shttpd_register_url(".XML",             xrpc_fork_mapiclient, NULL);
+
+    /* get admin bats */
+    if (xrpc_trusted == NULL)
+        xrpc_trusted = BATdescriptor(BBPindex("xrpc_trusted"));
+    if (xrpc_admin == NULL) 
+        xrpc_admin = BATdescriptor(BBPindex("xrpc_admin"));
+    assert(xrpc_trusted && xrpc_admin);
 
     /* Open listening socket */
     ctx = shttpd_open_port(xrpc_port, *open);
@@ -1261,10 +1260,19 @@ CMDrpcd_start(int *port, bit *open, str option)
     return GDK_SUCCEED;
 }
 
+
 void xrpc_epilogue()
 {
     shttpd_fini();      /* Shut down the HTTP server. */
     rpcd_running = 0;   /* Stop RPC server */
     close(listen_socket);
+    if (xrpc_trusted) {
+        BBPunfix(xrpc_trusted->batCacheid);
+        xrpc_trusted = NULL;
+    }
+    if (xrpc_admin) {
+        BBPunfix(xrpc_trusted->batCacheid);
+        xrpc_admin = NULL;
+    }
 }
 /* vim:set shiftwidth=4 expandtab: */
