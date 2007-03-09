@@ -245,9 +245,9 @@ PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
 {
     if (doLock) lock_set(tj_adm_lock);
     var err := CATCH({
-      if ( verbose ) printf("#TJ: tj_init_global() called.\n");
+      if ( verbose ) printf("#TJ:tj_init_global() called.\n");
       param@batloop() {
-	if ( verbose ) printf("#TJ: tj_init_global():param[%s]=\"%s\"\n",$h,$t);
+	if ( verbose ) printf("#TJ:tj_init_global():param[%s]=\"%s\"\n",$h,$t);
 	if ( $h = "term_frag" ) {
 	    # incomplete, handle term frag
 	} else if ( $h = "term_frag_size" ) {
@@ -287,7 +287,7 @@ PROC tj_delete_global() : void :=
 {
     lock_set(tj_adm_lock);
     var err := CATCH({
-      if ( verbose ) printf("#TJ: tj_delete_global() called.\n");
+      if ( verbose ) printf("#TJ:tj_delete_global() called.\n");
       #
       bat("tj_collName")@batloop(){
   	  tj_delete_collection($t,false);
@@ -354,7 +354,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
     #
     lock_set(tj_adm_lock);
     var err := CATCH({
-      if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") called.\n",collName);
+      if ( verbose ) printf("#TJ tj_init_collection(\"%s\") called.\n",collName);
 
       if (not(view_bbp_name().reverse().exist("tj_collName"))) {
     	tj_init_global(new(str,str),false); # just in case 
@@ -400,7 +400,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
       var tagfilter  := "";
   
       param@batloop() {
-	  if ( verbose ) printf("#TJ: tj_init_collection():param[%s]=\"%s\"\n",$h,$t);
+	  if ( verbose ) printf("#TJ:tj_init_collection():param[%s]=\"%s\"\n",$h,$t);
 	  if ( $h = "stemmer" ) {
 	      stemmer := $t;
 	  } else if ( $h = "tokenizer" ) {
@@ -443,7 +443,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
       # WARNING: this piece of code is not yet very safe but is requires
       # a very close cooperation with Pathfinder locks to make it safe.
       #
-      if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") checking collection to index.\n",collName);
+      if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") checking collection to index.\n",collName);
       if ( v_pfc.count() > 0 ) {
         var doclist;
         if ( v_pfc.uselect("*").count() > 0 ) {
@@ -454,12 +454,13 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
 	}
         if ( doclist.count() > 0 ) {
 
-            if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") indexing existing collections.\n",collName);
+            if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") indexing existing collections.\n",collName);
 	    tj_add2collection(collName,doclist,true);
+            if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finish indexing existing collections.\n",collName);
         }
       }
     }
-    if ( verbose ) printf("#TJ: tj_init_collection(\"%s\") finished.\n",collName);
+    if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finished.\n",collName);
 }
 
 PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
@@ -481,7 +482,9 @@ PROC create_pfc_fti(str fti_name, BAT[void,str]  v_pfc) :void :=
 	if ( sz > 0 ) {
 	    if ( sz = 1 ) {
 		glb_fti_pfc.insert(new_fti_pfc);
-		bat("tj_pfc_fti_dep_star").insert(new_fti_pfc);
+		if ( new_fti_pfc.uselect("*").count() > 0 ) {
+		    bat("tj_pfc_fti_dep_star").insert(new_fti_pfc);
+	        }
 	    } else {
 	    	if ( new_fti_pfc.uselect("*").count() > 0 ) {
 		    ERROR("# pfc_fti_dep: when using * it must be the only collection dependency.\n");
@@ -490,6 +493,11 @@ PROC create_pfc_fti(str fti_name, BAT[void,str]  v_pfc) :void :=
 	    }
 	}
     });
+    if ( false ) {
+    	printf("# Dependence BATs are [STAR|ALL]:\n");
+	bat("tj_pfc_fti_dep_star").print();
+	bat("tj_pfc_fti_dep").print();
+    }
     lock_unset(tj_dep_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -529,7 +537,7 @@ PROC tj_delete_collection(str collName, bit doAdmLock) : void
     #
     if ( doAdmLock ) lock_set(tj_adm_lock);
     var err := CATCH({
-      if ( verbose ) printf("#TJ: tj_delete_collection(\"%s\") called.\n",collName);
+      if ( verbose ) printf("#TJ:tj_delete_collection(\"%s\") called.\n",collName);
 
       if (not(view_bbp_name().reverse().exist("tj_collName"))) {
     	qERROR("tj_delete_collection: pftijah not initialized.\n");
@@ -674,7 +682,7 @@ The index is automatically finalized at the end of the method.",
 "pftijah");
 PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
 {
-    if ( verbose ) printf("#TJ: tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",collName,uri_loc,uri_name);
+    if ( verbose ) printf("#TJ:tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",collName,uri_loc,uri_name);
     var coll_lock := tj_get_collection_lock(collName);
     lock_set(coll_lock);
     var err := CATCH({
@@ -740,7 +748,7 @@ PROC _tj_add2collection(str collName, BAT[str,bat] collBat, str uri_loc, str uri
 { 
     var ms;
     var t_start := usec();
-    if ( verbose ) printf("#TJ: _tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",collName,uri_loc,uri_name);
+    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",collName,uri_loc,uri_name);
 
     var selTagList := _tj_get_parameter(collBat, "tagFilter");
            
@@ -772,9 +780,8 @@ PROC _tj_add2collection(str collName, BAT[str,bat] collBat, str uri_loc, str uri
 	}
         ws_opendoc(ws, bat(void,str,1).append(uri_name));
 	i_start := usec();
-        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") 2call.\n",collName,uri_name);
+        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",collName,uri_name);
         _tj_throw2collection(collBat,ws,uri_name,selTagList);
-        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") called.\n",collName,uri_name);
         ws_destroy(ws);
     } else {
 	i_start := usec();
@@ -786,7 +793,7 @@ PROC _tj_add2collection(str collName, BAT[str,bat] collBat, str uri_loc, str uri
     }
            
     _tj_set_parameter(collBat, "status", "building");
-    if ( verbose ) printf("#TJ:_tj_add2collectiont(\"%s\") finish.\n",collName);
+    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\") finish.\n",collName);
     if ( timing ) {
 	ms := (usec()-t_start)/1000;
         printf("#C[%s]:add2coll(\"%s\"): total time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
@@ -817,7 +824,7 @@ PROC tj_finalize_collection(str collName) : void
 PROC _tj_finalize_collection(str collName, BAT[str,bat] collBat) : void
 {
     var t_start := usec();
-    if ( verbose ) printf("#TJ: _tj_finalize_collection(\"%s\") called.\n",collName);
+    if ( verbose ) printf("#TJ:_tj_finalize_collection(\"%s\") called.\n",collName);
     #
     var mod_frags := _tj_chk_modified_fragments(collName, collBat); 
     # set all fragments except the last one to BAT_READ
@@ -882,7 +889,7 @@ PROC _tj_set_parameter(BAT[str,bat] collBat, str par, str val) : void
 # set a collection parameter
 PROC tj_set_parameter(str collName, str par, str val) : void
 {
-    if ( verbose ) printf("#TJ: tj_set_parameterl(%s,%s,%s) called.\n",collName,par,val);
+    if ( verbose ) printf("#TJ:tj_set_parameterl(%s,%s,%s) called.\n",collName,par,val);
     var coll_lock := tj_get_collection_lock(collName);
     lock_set(coll_lock);
     var err := CATCH({
@@ -1025,6 +1032,7 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
 {
     if (view_bbp_name().reverse().exist("tj_pfc_fti_dep")) {
       if ( bat("tj_pfc_fti_dep").count() > 0 ) {
+        if ( verbose ) printf("#TJ:tj_play_doc_tape() start.\n");
         var IDoid       := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).hmark(0@0);
         var IDlng       := IDoid.[lng]();
         var locations   := IDoid.leftfetchjoin(item).leftfetchjoin(str_values);
@@ -1056,6 +1064,7 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
         fti_cluster@batloop() {
             # $h.print();
             # $t.print();
+            if ( verbose ) { printf("#TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
             tj_add2collection($h,$t,true);
         }
         # shred_doc_base(del_doc(bit_nil, del_doc.leftfetchjoin(names), true),
@@ -1065,6 +1074,7 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
         #                add_doc.leftfetchjoin(percentages),
         #                stream_nil, ws_id(ws));
         # add_doc.leftfetchjoin(names).print();
+        if ( verbose ) printf("#TJ:tj_play_doc_tape() finished.\n");
       }
     }
 }
