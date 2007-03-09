@@ -7989,7 +7989,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* now check how the rest of the fun is overloaded */
         if ( fun->arity > 1 ) {
 	    if ( fun->arity == 2 ) {
-                if ( TY_EQ(TY(RL(args)), PFty_star(PFty_xs_string())) ) {
+                if ( (TY_EQ(TY(RL(args)), PFty_star(PFty_xs_string()))) ||
+		      (TY_EQ(TY(RL(args)), PFty_xs_string())) ) {
 	            /* check if the type of the 2nd arg is the collseq */
 	    	     csq_used = 1;
 	        } else {
