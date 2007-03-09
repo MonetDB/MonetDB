@@ -286,7 +286,6 @@ typedef enum stream_errors {
 # include <netdb.h>
 #endif
 #ifdef NATIVE_WIN32
-#include <winsock.h>
 #include <io.h>
 #endif
 #ifdef HAVE_FCNTL_H
@@ -311,6 +310,10 @@ typedef enum stream_errors {
 
 #ifndef EINTR
 #define EINTR 	EAGAIN
+#endif
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
 #endif
 
 struct stream {
@@ -1474,7 +1477,7 @@ socket_close(stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 
-	if (fd >= 0) {
+	if (fd != INVALID_SOCKET) {
 		/* Related read/write (in/out, from/to) streams
 		 * share a single socket which is not dup'ed (anymore)
 		 * as Windows' dup doesn't work on sockets;
@@ -1491,7 +1494,7 @@ socket_close(stream *s)
 			closesocket(fd);
 		}
 	}
-	s->stream_data.s = -1;
+	s->stream_data.s = INVALID_SOCKET;
 }
 
 static stream *

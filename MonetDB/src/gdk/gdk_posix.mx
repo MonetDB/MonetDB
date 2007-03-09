@@ -276,7 +276,7 @@ gdk_export int win_mkdir(const char *, const int mode);
 struct DIR {
 	char *dir_name;
 	int just_opened;
-	unsigned int find_file_handle;
+	HANDLE find_file_handle;
 	char *find_file_data;
 };
 
@@ -842,6 +842,39 @@ MT_mmap(char *path, int mode, off_t off, size_t len)
 	return ret;
 }
 
+#ifdef DEBUG_ALLOC
+static unsigned char MT_alloc_map[65536] = { 0 };
+
+static void
+MT_alloc_init(void)
+{
+	char *p = NULL;
+	int i;
+
+	for (i = 0; i < 65536; i++, p += MT_VMUNITSIZE) {
+		int mode = '.';
+
+#ifdef WIN32
+		if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
+			mode |= 128;
+		} else {
+			VirtualFree(p, 0, MEM_RELEASE);
+		}
+#else
+		MMAP_OPEN_DEV_ZERO;
+		void *q = (char *) mmap(p, MT_VMUNITSIZE, PROT_NONE, MMAP_FLAGS(MAP_NORESERVE), MMAP_FD, 0);
+
+		MMAP_CLOSE_DEV_ZERO;
+		if (q != p)
+			mode |= 128;
+		if (q != (char *) -1L)
+			munmap(q, MT_VMUNITSIZE);
+#endif
+		MT_alloc_map[i] = mode;
+	}
+}
+#endif
+
 #ifndef NATIVE_WIN32
 #ifdef HAVE_POSIX_FADVISE
 #ifdef HAVE_UNAME
@@ -921,37 +954,6 @@ int gprof_pthread_create(pthread_t *__restrict thread,
     return i_return;
 }
 #endif
-#endif
-
-#ifdef DEBUG_ALLOC
-static void
-MT_alloc_init(void)
-{
-	char *p = NULL;
-	int i;
-
-	for (i = 0; i < 65536; i++, p += MT_VMUNITSIZE) {
-		int mode = '.';
-
-#ifdef WIN32
-		if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
-			mode |= 128;
-		} else {
-			VirtualFree(p, 0, MEM_RELEASE);
-		}
-#else
-		MMAP_OPEN_DEV_ZERO;
-		void *q = (char *) mmap(p, MT_VMUNITSIZE, PROT_NONE, MMAP_FLAGS(MAP_NORESERVE), MMAP_FD, 0);
-
-		MMAP_CLOSE_DEV_ZERO;
-		if (q != p)
-			mode |= 128;
-		if (q != (char *) -1L)
-			munmap(q, MT_VMUNITSIZE);
-#endif
-		MT_alloc_map[i] = mode;
-	}
-}
 #endif
 
 void
@@ -1153,13 +1155,16 @@ MT_path_absolute(char *pathname)
 
 #define MT_SMALLBLOCK 256
 
+static LONG 
+MT_ignore_exceptions(struct _EXCEPTION_POINTERS* ExceptionInfo) {
+    (void) ExceptionInfo;
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
 void
 MT_init_posix(int alloc_map)
 {
 	MT_heapbase = 0;
-/*
-	_set_sbh_threshold(MT_SMALLBLOCK);
-*/
 #ifdef DEBUG_ALLOC
 	if (alloc_map)
 		MT_alloc_init();
@@ -1167,7 +1172,7 @@ MT_init_posix(int alloc_map)
 	(void)alloc_map;
 #endif
 	MT_mmap_init();
-        (void) SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER) 1);
+	SetUnhandledExceptionFilter(MT_ignore_exceptions);
 }
 
 size_t
@@ -1493,10 +1498,10 @@ opendir(const char *dirname)
 	mask = malloc(strlen(result->dir_name) + 3);
 	sprintf(mask, "%s\\*", result->dir_name);
 
-	result->find_file_handle = (unsigned int) FindFirstFile(mask, (LPWIN32_FIND_DATA) result->find_file_data);
+	result->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) result->find_file_data);
 	free(mask);
 
-	if (result->find_file_handle == (unsigned int) INVALID_HANDLE_VALUE) {
+	if (result->find_file_handle == INVALID_HANDLE_VALUE) {
 		free(result->dir_name);
 		free(result->find_file_data);
 		free(result);
@@ -1538,7 +1543,7 @@ readdir(DIR *dir)
 	if (dir->just_opened)
 		dir->just_opened = FALSE;
 	else {
-		if (!FindNextFile((HANDLE) dir->find_file_handle, (LPWIN32_FIND_DATA) dir->find_file_data)) {
+		if (!FindNextFile(dir->find_file_handle, (LPWIN32_FIND_DATA) dir->find_file_data)) {
 			int error = GetLastError();
 
 			if (error) {
@@ -1562,15 +1567,15 @@ rewinddir(DIR *dir)
 	if (dir == NULL)
 		return;
 
-	if (!FindClose((HANDLE) dir->find_file_handle))
+	if (!FindClose(dir->find_file_handle))
 		stream_printf(GDKerr, "rewinddir(): FindClose() failed\n");
 
 	mask = malloc(strlen(dir->dir_name) + 3);
 	sprintf(mask, "%s\\*", dir->dir_name);
-	dir->find_file_handle = (unsigned int) FindFirstFile(mask, (LPWIN32_FIND_DATA) dir->find_file_data);
+	dir->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) dir->find_file_data);
 	free(mask);
 
-	if (dir->find_file_handle == (unsigned int) INVALID_HANDLE_VALUE) {
+	if (dir->find_file_handle == INVALID_HANDLE_VALUE) {
 		SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
 		return;
 	}
@@ -1583,7 +1588,7 @@ closedir(DIR *dir)
 	if (dir == NULL)
 		return -1;
 
-	if (!FindClose((HANDLE) dir->find_file_handle)) {
+	if (!FindClose(dir->find_file_handle)) {
 		SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
 		return -1;
 	}
@@ -2227,8 +2232,6 @@ systems, this administration is dysfunctional.
 @{
 @c
 #ifdef DEBUG_ALLOC
-unsigned char MT_alloc_map[65536] = { 0 };
-
 #define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
 
 /* The memory table dump can also be produced in tuple format to enable 
