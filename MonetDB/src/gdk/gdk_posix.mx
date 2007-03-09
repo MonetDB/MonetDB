@@ -1153,10 +1153,12 @@ MT_path_absolute(char *pathname)
 #include <io.h>
 #endif /* _MSC_VER */
 
+#define MT_SMALLBLOCK 256
+
 static LONG 
 MT_ignore_exceptions(struct _EXCEPTION_POINTERS* ExceptionInfo) {
     (void) ExceptionInfo;
-    return EXCEPTION_EXECUTE_HANDLER
+    return EXCEPTION_EXECUTE_HANDLER;
 }
 
 void
