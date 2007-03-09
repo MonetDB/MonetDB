@@ -1,6 +1,11 @@
 aclocal.m4
 autom4te.cache
 burg
+burg.exe.manifest
+burg.exp
+burg.ilk
+burg.lib
+burg.pdb
 burg_config.h
 burg_config.h.in
 config.status
@@ -14,4 +19,6 @@ install-sh
 Makefile
 missing
 stamp-h1
+vc70.pdb
+y.tab.h
 ylwrap
