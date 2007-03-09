@@ -762,5 +762,7 @@
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
 
+#if _WIN32_WINNT >= 0x500
 #define HAVE_GLOBALMEMORYSTATUSEX 1 /* only on >= NT 5 */
+#endif
 #define HAVE_GLOBALMEMORYSTATUS 1
