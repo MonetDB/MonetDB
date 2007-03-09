@@ -115,7 +115,7 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 
 
 #ifdef WIN32
-#ifndef HAVE_LIBPCRE
+#ifndef LIBPCRE
 #define pcre_export extern __declspec(dllimport)
 #else
 #define pcre_export extern __declspec(dllexport)

@@ -470,9 +470,7 @@ mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
 mal_export str runMALDebugger(Symbol s);
 mal_export void printBBPinfo(stream *out);
 
-mal_export void resetOptimizerDebugger(void);
 mal_export void optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec);
-mal_export str optimizeMALBlock(MalBlkPtr mb);
 mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework

@@ -461,11 +461,9 @@ comment "Handle simple replacements";
 
 opt_export str MALoptimizer(Client c);
 opt_export int optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag);
-opt_export void resetOptimizerDebugger(void);
 opt_export str optimizeMALBlock(MalBlkPtr mb);
 opt_export void showOptimizerStep(str fnme,int i, int flg);
 opt_export void showOptimizerHistory(void);
-opt_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export void replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias);
 
 opt_export int isUnsafeInstruction(InstrPtr q);

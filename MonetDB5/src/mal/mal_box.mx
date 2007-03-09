@@ -260,6 +260,11 @@ only.
 #include "mal_debugger.h"	/* for printStack() */
 #include "mal_import.h"		/* for malInclude() */
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define access _access
+#define chmod _chmod
+#endif
+
 #define MAXSPACES 64		/* >MAXCLIENTS+ max modules !! */
 Box box[MAXSPACES];
 

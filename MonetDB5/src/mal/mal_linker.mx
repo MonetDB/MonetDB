@@ -91,6 +91,11 @@ the consistency of this counter.
 #include "mal_function.h"	/* for throwException() */
 #include "mal_import.h"		/* for slash_2_dir_sep() */
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define open _open
+#define close _close
+#endif
+
 static int noDlopen;
 #define MAXMODULES 256
 

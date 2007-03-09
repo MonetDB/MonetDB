@@ -47,8 +47,9 @@ z:= selectHead(x,R,l,h)
 During a final pass through the program, we can convert all combinators 
 back into their elementary steps.
 @= fndOperator
-	(( getModuleId(@1)==0 || (@2 && idcmp(getModuleId(@1),@2)==0) ) &&
-		 (getFunctionId(@1)==0 || (@3 && idcmp(getFunctionId(@1),@3)==0) ))
+/* commented out the tests for @2 and @3 since in practice they are constants */
+	(( getModuleId(@1)==0 || (/* @2 && */ idcmp(getModuleId(@1),@2)==0) ) &&
+		 (getFunctionId(@1)==0 || (/* @3 && */ idcmp(getFunctionId(@1),@3)==0) ))
 @-
 A more complete implementation should als push the selection through
 multiple operators. In particular, a reverse operator may obscure
