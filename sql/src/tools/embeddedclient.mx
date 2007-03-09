@@ -47,6 +47,7 @@ between 25-50%.
 #define embeddedclient_export extern
 #endif
 
+#include <stream.h>
 #include <Mapi.h>
 
 embeddedclient_export Mapi monetdb_sql(char *dbfarm, char *dbname);
@@ -71,7 +72,6 @@ embeddedclient_export Mapi embedded_sql(opt *set, int len);
 #include "monet.h"
 #include "monet_options.h"
 #include "initmodules.h"
-#include "Mapi.h"
 
 static Client
 Monet_init(opt *set, int setlen)
