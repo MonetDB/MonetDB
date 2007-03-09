@@ -73,7 +73,7 @@ decimal columns is their use as foreign key on tables imported from another DBMS
       .PUT     = decimal_put;
       .DEL     = decimal_del;
       .HEAP    = decimal_heap;
-      .CHECK   = HEAP_check;
+      .CHECK   = HEAP_check_stub;
 .END;
 
 @- construction
@@ -359,6 +359,13 @@ decimal *decimal_lng_min, *decimal_lng_max;
 decimal *decimal_flt_min, *decimal_flt_max;
 decimal *decimal_dbl_min, *decimal_dbl_max;
 int decimal_minrepeat = 2000000000;
+
+/* stub to get import/export declarations on Windows correct */
+int
+HEAP_check_stub(Heap *h, HeapRepair *hr)
+{
+	return HEAP_check(h, hr);
+}
 
 /* 10-folds are recognized by a leading one and all trailing zeros */
 static INLINE int
