@@ -223,6 +223,7 @@ stream_export buffer *stream_get_buffer(stream *s);
    of bytes can be read the end of the major block is found. The next
    read will then start with a new major block.
  */
+stream_export stream *wbstream(stream *s);
 stream_export stream *block_stream(stream *s);
 stream_export ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
 stream_export int isa_block_stream(stream *s);
@@ -2770,6 +2771,79 @@ bstream_destroy(bstream *s)
 {
 	free(s->buf);
 	free(s);
+}
+
+
+#define WBUFSTREAM_BUFSIZE 8192
+typedef struct {
+        stream *s;
+        size_t pos;
+        char buf[WBUFSTREAM_BUFSIZE];
+} wbs_stream;
+
+static int wbs_flush(stream *s) {
+       wbs_stream *wbs = (wbs_stream*) s->stream_data.p;
+       ssize_t len = wbs->pos; 
+       wbs->pos = 0;
+       if ((*wbs->s->write)(wbs->s, wbs->buf, 1, len) != len) 
+		return -1;
+       if (wbs->s->flush)
+		return (*wbs->s->flush)(wbs->s);
+	return 0;
+}
+
+static ssize_t wbs_write(stream *s, const void *buf, size_t elmsize, size_t cnt) {
+        wbs_stream *wbs = (wbs_stream*) s->stream_data.p;
+        size_t nbytes, reqsize = cnt*elmsize, todo = reqsize;
+        while(todo > 0) {
+                int flush = 1;
+                nbytes = WBUFSTREAM_BUFSIZE - wbs->pos;
+                if (nbytes > todo) {
+			nbytes = todo;  
+			flush = 0;
+		}
+                memcpy(wbs->buf + wbs->pos, buf, nbytes);
+                todo -= nbytes;
+                buf = (void*) (((char*) buf) + nbytes);
+                wbs->pos += nbytes;
+                if (flush) wbs_flush(s);
+        }
+        return reqsize;
+}
+
+static void wbs_close(stream *s) {
+        wbs_stream *wbs = (wbs_stream*) s->stream_data.p;
+        wbs_flush(s);
+        (*wbs->s->close)(wbs->s);
+}
+
+static void wbs_destroy(stream *s) {
+        wbs_stream *wbs = (wbs_stream*) s->stream_data.p;
+        (*wbs->s->destroy)(wbs->s);
+        free(wbs);
+        destroy(s);
+}
+
+stream* wbstream(stream *s) {
+        stream *ns = create_stream(s->name);
+        if (ns) {
+                wbs_stream *wbs = (wbs_stream*) malloc(sizeof(wbs_stream));
+                if (wbs) {
+			ns->type = s->type;
+			ns->access = s->access;
+                        ns->write = wbs_write;
+                        ns->flush = wbs_flush;
+                        ns->close = wbs_close;
+                        ns->destroy = wbs_destroy;
+                        ns->stream_data.p = (void *) wbs;
+                        wbs->s = s;
+                        wbs->pos = 0;
+                } else {
+                        stream_destroy(ns);
+                        ns = NULL;
+                }
+        }
+        return ns;
 }
 
 #ifdef HAVE_PIPE
