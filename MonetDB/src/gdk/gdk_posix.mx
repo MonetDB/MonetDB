@@ -1153,15 +1153,16 @@ MT_path_absolute(char *pathname)
 #include <io.h>
 #endif /* _MSC_VER */
 
-#define MT_SMALLBLOCK 256
+static LONG 
+MT_ignore_exceptions(struct _EXCEPTION_POINTERS* ExceptionInfo) {
+    (void) ExceptionInfo;
+    return EXCEPTION_EXECUTE_HANDLER
+}
 
 void
 MT_init_posix(int alloc_map)
 {
 	MT_heapbase = 0;
-/*
-	_set_sbh_threshold(MT_SMALLBLOCK);
-*/
 #ifdef DEBUG_ALLOC
 	if (alloc_map)
 		MT_alloc_init();
@@ -1169,7 +1170,7 @@ MT_init_posix(int alloc_map)
 	(void)alloc_map;
 #endif
 	MT_mmap_init();
-        (void) SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER) 1);
+	SetUnhandledExceptionFilter(MT_ignore_exceptions);
 }
 
 size_t
