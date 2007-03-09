@@ -1477,7 +1477,7 @@ socket_close(stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 
-	if (fd == INVALID_SOCKET) {
+	if (fd != INVALID_SOCKET) {
 		/* Related read/write (in/out, from/to) streams
 		 * share a single socket which is not dup'ed (anymore)
 		 * as Windows' dup doesn't work on sockets;
