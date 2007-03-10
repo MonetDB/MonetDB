@@ -64,10 +64,27 @@ and the total volume processed.
 A complete plan likely includes other expressions to
 prepare or use the target variables before reaching the next
 choice point. It is the task of the choice operator
-to avoid any superfluous.
+to avoid any superfluous operation.
 
 The MAL block should be privately owned by the caller,
 which can be assured with @code{scheduler.isolation()}.
+
+A refinement of the scheme is to make cost analysis
+part of the plan as well. Then you don't have to 
+include a cost function module.
+@example
+	Acost:= aggr.count(A);
+	Bcost:= aggr.count(B);
+	Ccost:= aggr.count(C);
+	T1cost:= Acost+Bcost;
+	T2cost:= Bcost+Ccost;
+	T3cost:= Ccost+Dcost;
+	scheduler.choice(T1,T1cost, T2,T2cost, T3,T3cost);
+	T1:= algebra.join(A,B);
+	T2:= algebra.join(B,C);
+	T3:= algebra.join(C,D);
+	...
+@end example
 @{
 @mal
 pattern choice():void
