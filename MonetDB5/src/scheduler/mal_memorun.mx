@@ -157,30 +157,27 @@ propagateNonTarget(MalBlkPtr mb, int pc, int target){
 str
 RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int nt, target;
-	lng cost, mincost;
+	int target;
+	int cost, mincost;
 	int i,pc;
 	(void) stk;
 
-	if( getArgType(mb,p,1)== TYPE_lng && p->argc>=3 && (p->argc-1)%2 ==0){
+	if( getArgType(mb,p,1)== TYPE_int && p->argc>=3 && (p->argc-1)%2 ==0){
 		/* choice pairs */
 		pc= getPC(mb,p);
-		mincost= *(lng*) getArgReference(stk,p,1);
-		target= *(int*)getArgReference(stk,p,2);
+		mincost= *(int*) getArgReference(stk,p,1);
+		target= 2;
 		for(i=3; i<p->argc; i+= 2){
-			cost= *(lng*) getArgReference(stk,p,i);
-			nt= *(int*)getArgReference(stk,p,i+1);
+			cost= *(int*) getArgReference(stk,p,i);
 			if( cost <mincost){
 				mincost= cost;
-				target= nt;
+				target= getArg(p,i);
 			}
 		}
 		/* remove non-qualifying instructions */
-		for(i=3; i<p->argc; i+= 2){
-			nt= *(int*)getArgReference(stk,p,i+1);
-			if( nt != target)
-				propagateNonTarget(mb,pc,nt);
-		}
+		for(i=3; i<p->argc; i+= 2)
+			if( getArg(p,i) != target)
+				propagateNonTarget(mb,pc,getArg(p,i));
 #ifdef DEBUG_RUN_MEMORUN
 		stream_printf(GDKout,"cost choice selected %d\n",target);
 		printFunction(GDKout,mb,0);
