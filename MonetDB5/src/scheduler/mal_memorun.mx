@@ -96,15 +96,15 @@ include a cost function module.
 The current implementation assumes a regular plan
 and unique use of variables.
 @mal
-pattern choice(arg:any...):void
+pattern scheduler.choice(arg:any...):void
 address RUNchoice
 comment "Select the next step in a query memo plan";
 
-pattern volumeCost(a:any):lng
+pattern scheduler.volumeCost(a:any):lng
 address RUNvolumeCost
 comment "A sample cost function based on materialized results";
 
-pattern costPrediction(a:any):lng
+pattern scheduler.costPrediction(a:any):lng
 address RUNcostPrediction
 comment "A sample cost prediction function";
 @h
