@@ -146,12 +146,15 @@ propagateNonTarget(MalBlkPtr mb, int pc, int target){
 	for(; pc< mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
 		for(i=0; i<p->retc; i++)
-			if( getArg(p,i)== target)
+			if( getArg(p,i)== target && p->token >=0 )
 				p->token = -p->token; /* temporary NOOP */
 		for(i= p->retc; i<p->argc; i++)
-			if( getArg(p,i)== target)
+			if( getArg(p,i)== target){
+				if( p->token >=0 )
+					p->token = -p->token; /* temporary NOOP */
 				for(j=0; j<p->retc; j++)
 					propagateNonTarget(mb,pc+1,getArg(p,j));
+			}
 	}
 }
 str
@@ -180,7 +183,7 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				propagateNonTarget(mb,pc,getArg(p,i));
 #ifdef DEBUG_RUN_MEMORUN
 		stream_printf(GDKout,"cost choice selected %d\n",target);
-		printFunction(GDKout,mb,0);
+		printFunction(GDKout,mb,1);
 #endif
 	} else
 	if( getArgType(mb,p,1)== TYPE_str){
