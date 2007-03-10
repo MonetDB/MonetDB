@@ -16,27 +16,28 @@
 
 @f mal_memorun
 @a M. Kersten
-@+ Memo-based Execution
-Modern cost-based query optimizers use a memoization structure
-to organize the search space for an efficient query plan.
+@+ Query Memo-based Execution
+Modern cost-based query optimizers use a memo structure
+to organize the search space for an efficient query execution plan.
 For example, consider an oid join path 'A.B.C.D'.
 We can start the evaluation at any point in this path.
 
 Its memo structure can be represented by a (large) MAL program. 
-The levels are separated by the choice operator,
+The memo levels are separated by the choice operator,
 which accepts a cost function and the list of target variables.
 @example
-	scheduler.choice("myCostFcn",T1,T2,T3);
+	...
+	scheduler.choice("scheduler.volumeCost",T1,T2,T3);
 	T1:= algebra.join(A,B);
 	T2:= algebra.join(B,C);
 	T3:= algebra.join(C,D);
-	scheduler.choice("myCostFcn",T4,T5,T6,T7,T8);
+	scheduler.choice("scheduler.volumeCost",T4,T5,T6,T7,T8);
 	T4:= algebra.join(T1,C);
 	T5:= algebra.join(A,T2);
 	T6:= algebra.join(T2,D);
 	T7:= algebra.join(B,T3);
 	T8:= algebra.join(C,D);
-	scheduler.choice("myCostFcn",T9,T10,T11,T12,T13);
+	scheduler.choice("scheduler.volumeCost",T9,T10,T11,T12,T13);
 	T9:= algebra.join(T4,D);
 	T10:= algebra.join(T5,D);
 	T11:= algebra.join(A,T6);
@@ -49,17 +50,23 @@ which accepts a cost function and the list of target variables.
 	answer:= T13
 @end example
 
-The @code{scheduler.choice()} operator calls "myCostFcn"
+The @code{scheduler.choice()} operator calls @code{scheduler.volumeCost}
 for each target variable and expects an integer-valued cost. 
-The target variable with the lowest
-cost is chosen for execution and non-eligible instructions
-up to the next choice point are turned into a temporary 
-NOOP operation.(You may want to re-use the memo)
+In this case it returns the total number of bytes uses as arguments.
 
-The private cost function should be defined as a @code{pattern},
-because it receives the complete context to provide a cost.
-A first approximation could be to estimate the result size
-and the total volume processed.
+The target variable with the lowest
+cost is chosen for execution and remaining variables are turned into
+are into a temporary NOOP operation.(You may want to re-use the memo)
+They are skipped by the interpreter, but also in subsequent
+calls to the scheduler. It reduces the alternatives as we proceed
+in the plan.
+
+A private cost function should be defined as a @code{pattern}
+with a polymorphic argument for the target and a @code{:lng} result.
+Its implementation can use the complete context information to
+make a decision. For example, it can trace the potential use
+of the target variable in subsequent statements to determine
+a total cost when this step is taken towards the final result.
 
 A complete plan likely includes other expressions to
 prepare or use the target variables before reaching the next
@@ -79,22 +86,32 @@ include a cost function module.
 	T1cost:= Acost+Bcost;
 	T2cost:= Bcost+Ccost;
 	T3cost:= Ccost+Dcost;
-	scheduler.choice(T1,T1cost, T2,T2cost, T3,T3cost);
+	scheduler.choice(T1cost,T1, T2cost,T2, T3cost,T3);
 	T1:= algebra.join(A,B);
 	T2:= algebra.join(B,C);
 	T3:= algebra.join(C,D);
 	...
 @end example
 @{
+The current implementation assumes a regular plan
+and unique use of variables.
 @mal
-pattern choice():void
+pattern choice(arg:any...):void
 address RUNchoice
-comment "Select the next step in the memo";
+comment "Select the next step in a query memo plan";
+
+pattern volumeCost(a:any):lng
+address RUNvolumeCost
+comment "A sample cost function based on materialized results";
+
+pattern costPrediction(a:any):lng
+address RUNcostPrediction
+comment "A sample cost prediction function";
 @h
 #ifndef _RUN_MEMORUN
 #define _RUN_MEMORUN
 #include "mal.h"
-#include "mal_instruction.h"
+#include "mal_interpreter.h"
 #include "mal_client.h"
 
 #define DEBUG_RUN_MEMORUN
@@ -109,20 +126,100 @@ comment "Select the next step in the memo";
 #define sched_export extern
 #endif
 
-sched_export str RUNisolation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+sched_export str RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+sched_export str RUNvolumeCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+sched_export str RUNcostPrediction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_MEMORUN */
 
 @+ Memorun implementation
+The code below is a mixture of generic routines and
+sample implementations to run the tests.
 @c
 #include "mal_config.h"
 #include "mal_memorun.h"
 
+static void
+propagateNonTarget(MalBlkPtr mb, int pc, int target){
+	int i,j;
+	InstrPtr p;
+
+	for(; pc< mb->stop; pc++){
+		p= getInstrPtr(mb,pc);
+		for(i=0; i<p->retc; i++)
+			if( getArg(p,i)== target)
+				p->token = -p->token; /* temporary NOOP */
+		for(i= p->retc; i<p->argc; i++)
+			if( getArg(p,i)== target)
+				for(j=0; j<p->retc; j++)
+					propagateNonTarget(mb,pc+1,getArg(p,j));
+	}
+}
 str
 RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	int nt, target;
+	lng cost, mincost;
+	int i,pc;
 	(void) stk;
-	(void) mb;
-	(void) p;
+
+	if( getArgType(mb,p,1)== TYPE_lng && p->argc>=3 && (p->argc-1)%2 ==0){
+		/* choice pairs */
+		pc= getPC(mb,p);
+		mincost= *(lng*) getArgReference(stk,p,1);
+		target= *(int*)getArgReference(stk,p,2);
+		for(i=3; i<p->argc; i+= 2){
+			cost= *(lng*) getArgReference(stk,p,i);
+			nt= *(int*)getArgReference(stk,p,i+1);
+			if( cost <mincost){
+				mincost= cost;
+				target= nt;
+			}
+		}
+		/* remove non-qualifying instructions */
+		for(i=3; i<p->argc; i+= 2){
+			nt= *(int*)getArgReference(stk,p,i+1);
+			if( nt != target)
+				propagateNonTarget(mb,pc,nt);
+		}
+#ifdef DEBUG_RUN_MEMORUN
+		stream_printf(GDKout,"cost choice selected %d\n",target);
+		printFunction(GDKout,mb,0);
+#endif
+	} else
+	if( getArgType(mb,p,1)== TYPE_str){
+		/* cost function  */
+#ifdef DEBUG_RUN_MEMORUN
+		stream_printf(GDKout,"function choice selected %d\n",target);
+#endif
+	} else
+		throw(MAL,"scheduler.choice","Illegal signature");
 	return MAL_SUCCEED;
 }
+@-
+The routine below calculates a cost based on the BAT volume in bytes.
+The MAL compiler ensures that all arguments have been
+assigned a value.
+@c
+str
+RUNvolumeCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	lng *cost= (lng*) getArgReference(stk,p,0);
+	(void) mb;
+
+	*cost = getVolume(stk,p,0); /* calculate total input size */
+	return MAL_SUCCEED;
+}
+@-
+The second example shows how you can look into the remaining
+instructions to assess the total cost if you follow the path
+starting at the argument given.
+@c
+str
+RUNcostPrediction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    lng *cost= (lng*) getArgReference(stk,p,0);
+    (void) mb;
+
+    *cost = 0;
+    return MAL_SUCCEED;
+}
+
 @}

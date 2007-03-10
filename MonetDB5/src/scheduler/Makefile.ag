@@ -10,7 +10,7 @@ LIBS = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
-	mal_isolation.mx mal_scheduler.mx mal_mes.mx
+	mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
@@ -21,7 +21,7 @@ LIBS = {
 
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = mal_isolation.mx mal_scheduler.mx mal_mes.mx
+	SOURCES = mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
 }
 
 EXTRA_DIST_DIR = Tests
