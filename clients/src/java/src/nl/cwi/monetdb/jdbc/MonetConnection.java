@@ -98,7 +98,7 @@ public class MonetConnection implements Connection {
 	/** the MIL language (officially *NOT* supported) */
 	final static int LANG_MIL = 2;
 	/** the MAL language (officially *NOT* supported) */
-	final static int LANG_MAL = 2;
+	final static int LANG_MAL = 3;
 	/** an unknown language */
 	final static int LANG_UNKNOWN = -1;
 	/** The language which is used */
