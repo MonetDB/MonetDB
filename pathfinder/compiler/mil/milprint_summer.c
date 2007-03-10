@@ -3188,7 +3188,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "kind := ELEM;\n"
        
                 /* add the new constructed roots to the FRAG_ROOT bat of the working set, and adapt max height */ 
-                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(item.project(oid_nil)));\n",
+                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(item).project(oid_nil)));\n",
                 kind_str(rc));
     }
     milprintf(f,
