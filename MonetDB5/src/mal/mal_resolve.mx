@@ -696,6 +696,7 @@ using the target type.
 			
 			rhs= isaBatType(lhs)?TYPE_bat:lhs;
 			p->argv[i]= defConstant(mb, rhs, &cst);
+			rhs= lhs;
 		} 
 
 		if( !isFixed(mb,getArg(p,k))) {
