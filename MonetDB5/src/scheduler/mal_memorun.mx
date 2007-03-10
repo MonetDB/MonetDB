@@ -1,0 +1,111 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' All Rights Reserved.
+
+@f mal_memorun
+@a M. Kersten
+@+ Memo-based Execution
+Modern cost-based query optimizers use a memoization structure
+to organize the search space for an efficient query plan.
+For example, consider an oid join path 'A.B.C.D'.
+We can start the evaluation at any point in this path.
+
+Its memo structure can be represented by a (large) MAL program. 
+The levels are separated by the choice operator,
+which accepts a cost function and the list of target variables.
+@example
+	scheduler.choice("myCostFcn",T1,T2,T3);
+	T1:= algebra.join(A,B);
+	T2:= algebra.join(B,C);
+	T3:= algebra.join(C,D);
+	scheduler.choice("myCostFcn",T4,T5,T6,T7,T8);
+	T4:= algebra.join(T1,C);
+	T5:= algebra.join(A,T2);
+	T6:= algebra.join(T2,D);
+	T7:= algebra.join(B,T3);
+	T8:= algebra.join(C,D);
+	scheduler.choice("myCostFcn",T9,T10,T11,T12,T13);
+	T9:= algebra.join(T4,D);
+	T10:= algebra.join(T5,D);
+	T11:= algebra.join(A,T6);
+	T12:= algebra.join(A,T7);
+	T13:= algebra.join(T1,T8);
+	answer:= T9;
+	answer:= T10;
+	answer:= T11;
+	answer:= T12;
+	answer:= T13
+@end example
+
+The @code{scheduler.choice()} operator calls "myCostFcn"
+for each target variable and expects an integer-valued cost. 
+The target variable with the lowest
+cost is chosen for execution and non-eligible instructions
+up to the next choice point are turned into a temporary 
+NOOP operation.(You may want to re-use the memo)
+
+The private cost function should be defined as a @code{pattern},
+because it receives the complete context to provide a cost.
+A first approximation could be to estimate the result size
+and the total volume processed.
+
+A complete plan likely includes other expressions to
+prepare or use the target variables before reaching the next
+choice point. It is the task of the choice operator
+to avoid any superfluous.
+
+The MAL block should be privately owned by the caller,
+which can be assured with @code{scheduler.isolation()}.
+@{
+@mal
+pattern choice():void
+address RUNchoice
+comment "Select the next step in the memo";
+@h
+#ifndef _RUN_MEMORUN
+#define _RUN_MEMORUN
+#include "mal.h"
+#include "mal_instruction.h"
+#include "mal_client.h"
+
+#define DEBUG_RUN_MEMORUN
+
+#ifdef WIN32
+#ifndef LIBRUN_MEMORUN
+#define sched_export extern __declspec(dllimport)
+#else
+#define sched_export extern __declspec(dllexport)
+#endif
+#else
+#define sched_export extern
+#endif
+
+sched_export str RUNisolation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#endif /* MAL_RUN_MEMORUN */
+
+@+ Memorun implementation
+@c
+#include "mal_config.h"
+#include "mal_memorun.h"
+
+str
+RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) stk;
+	(void) mb;
+	(void) p;
+	return MAL_SUCCEED;
+}
+@}

@@ -41,7 +41,7 @@ runtime stack for the about-to-be-executed plan, and system resources,
 such as globally cached results. Moreover, a scheduler can be called at any time
 during a MAL interpreter loop to re-consider the actions to be taken.
 This gives many more opportunities to improve performance.
-This does not hold for e.g. compiled code, nor X100 back ends)
+This does not hold for e.g. compiled code, nor X100 back ends.
 
 Much like the optimizer framework, there are many aspects you can deal with
 at scheduling time. The easiest is to simply do nothing and rely on
@@ -75,7 +75,7 @@ there may be a different situation to take care off. This is achieved by
 replacing the current program with a private copy.
 Note that this process may involve a deep analysis to identify the pieces
 needed for isolation, e.g. for SQL we would extract a copy from the SQL query
-cache using code expension.
+cache using code expansion.
 Just massaging the call to the cached plan is not effective.
 Impact: cost of program copying may become an issue.
 
@@ -253,40 +253,6 @@ str
 MALscheduler(Client c)
 {
 	return schedulerMALBlock(c->curprg->def);
-}
-
-@}
-@+ Run isolation
-Run isolation involves making available a private copy for further massaging.
-The easiest is to duplicate the MAL program attached to the Client record.
-After scheduling and execution, it can be simply thrown away, bringing the
-original request into view again from the backup associated with the client
-record. 
-The minor problem is that the program could call itself recursively.
-This niche problem is ignored for now.
-
-The first example create a private copy, leaving out the scheduler call.
-@example
-function main();
-	print("start running\n");
-	scheduler.isolate();
-	print("done\n");
-	showFunction();
-@end example
-@{
-@c
-str
-RUNisolate(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	Client cntxt = MCgetClient();
-
-	(void) stk;
-	if (cntxt->backup)
-		throw(MAL, "scheduler.isolation", "no space for backup");
-	cntxt->backup = cntxt->curprg;
-	cntxt->curprg->def = copyMalBlk(mb);
-	removeInstruction(cntxt->curprg->def, p);
-	return MAL_SUCCEED;
 }
 
 @}
