@@ -11263,9 +11263,10 @@ const char* PFstartMIL(int statement_type) {
            "}\n"\
 	   PF_STOP_PFTIJAH\
            "if (not(isnil(err))) ERROR(err);\n"\
-           "else if (genType.startsWith(\"timing\"))\n"\
+           "else if (genType.startsWith(\"timing\")) {\n"\
+           "  time_print := usec() - time_print;\n"\
            "  printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
-           "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print := usec() - time_print)/1000.0);\n"
+           "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, time_print/1000.0);\n}"
 const char* PFstopMIL(int statement_type) {
     return (statement_type==0)?
                (PF_STOPMIL_RDONLY):
