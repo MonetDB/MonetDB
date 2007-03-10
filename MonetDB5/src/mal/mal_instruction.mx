@@ -2297,9 +2297,15 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 
 	len = 8196;
 	s = GDKmalloc(len);
-	if (flg && p->token>=0) {
-		s[0] = 0;
-		t = s;
+	if (flg ) {
+		if( p->token<0){
+			s[0] = '$';
+			s[1] = 0;
+			t = s+1;
+		}else{
+			s[0] = 0;
+			t = s;
+		}
 	} else {
 		s[0] = '#';
 		if (p->typechk == TYPE_UNKNOWN) {
@@ -2335,7 +2341,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		advance(t);
 	} else if (!functionStart(p) && !functionExit(p))
 		@:tabulate@
-	switch (p->token) {
+	switch (p->token<0?-p->token:p->token) {
 	case NOOPsymbol:
 	case FCNcall:
 	case FACcall:
