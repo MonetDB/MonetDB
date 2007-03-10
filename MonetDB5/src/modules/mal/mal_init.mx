@@ -125,9 +125,12 @@ include chopper;
 
 #include logger;
 include transaction;
-@-
-Not in alpha 5
-@mal
+
+#scheduler components
+include mal_isolation;
+include mal_memorun;
+
+# Cracker schemes
 include opt_crack;
 include opt_joinselect;
 include opt_remoteQueries;

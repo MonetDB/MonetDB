@@ -37,7 +37,10 @@ end main;	# 11
 # h					symbol		symbol		 symbol																 symbol						  # name
 # str					str		str		str																str						  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "costPrediction",			  "pattern",	  "user",	  "(a:any):lng ",														  "RUNcostPrediction;"				  ]
+[ "choice",				  "pattern",	  "user",	  "(arg:any...):void ",														  "RUNchoice;"					  ]
 [ "main",				  "function",	  "user",	  "():void;",															  "nil"						  ]
+[ "volumeCost",				  "pattern",	  "user",	  "(a:any):lng ",														  "RUNvolumeCost;"				  ]
 [ "InsertAVLIndex",			  "command",	  "crackers",	  "(b:bat[:any_1,:date],u:bat[:any_1,:date]):void ",										  "CRKInsertAVLIndex_date;"			  ]
 [ "InsertAVLIndex",			  "command",	  "crackers",	  "(b:bat[:any_1,:dbl],u:bat[:any_1,:dbl]):void ",										  "CRKInsertAVLIndex_dbl;"			  ]
 [ "InsertAVLIndex",			  "command",	  "crackers",	  "(b:bat[:any_1,:flt],u:bat[:any_1,:flt]):void ",										  "CRKInsertAVLIndex_flt;"			  ]
@@ -399,6 +402,7 @@ end main;	# 11
 [ "zcrackUnordered",			  "command",	  "crackers",	  "(b:bat[:oid,:sht],mid:sht):bat[:oid,:sht] ",											  "CRKcrackUnorderedZero_sht;"			  ]
 [ "zcrackUnordered",			  "command",	  "crackers",	  "(b:bat[:oid,:chr],low:chr,hgh:chr):bat[:oid,:chr] ",										  "CRKcrackUnorderedThree_chr;"			  ]
 [ "zcrackUnordered",			  "command",	  "crackers",	  "(b:bat[:oid,:chr],mid:chr):bat[:oid,:chr] ",											  "CRKcrackUnorderedZero_chr;"			  ]
+[ "isolation",				  "pattern",	  "scheduler",	  "():void ",															  "RUNisolation;"				  ]
 [ "alpha",				  "command",	  "transaction",  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",											  "TRNtrans_alpha;"				  ]
 [ "abort",				  "pattern",	  "transaction",  "(c:any...):void ",														  "TRNtrans_abort;"				  ]
 [ "abort",				  "command",	  "transaction",  "():bit ",															  "TRNglobal_abort;"				  ]
