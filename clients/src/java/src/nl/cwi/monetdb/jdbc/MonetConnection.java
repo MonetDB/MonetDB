@@ -97,6 +97,8 @@ public class MonetConnection implements Connection {
 	final static int LANG_XQUERY = 1;
 	/** the MIL language (officially *NOT* supported) */
 	final static int LANG_MIL = 2;
+	/** the MAL language (officially *NOT* supported) */
+	final static int LANG_MAL = 2;
 	/** an unknown language */
 	final static int LANG_UNKNOWN = -1;
 	/** The language which is used */
@@ -248,6 +250,8 @@ public class MonetConnection implements Connection {
 				lang = LANG_XQUERY;
 			} else if ("mil".equals(language)) {
 				lang = LANG_MIL;
+			} else if ("mal".equals(language)) {
+				lang = LANG_MAL;
 			} else {
 				lang = LANG_UNKNOWN;
 			}
@@ -274,7 +278,7 @@ public class MonetConnection implements Connection {
 			commandTempl[0] = "X";		// pre
 			commandTempl[1] = null;		// post
 			commandTempl[2] = "\nX";	// separator
-		} else if (lang == LANG_MIL) {
+		} else if (lang == LANG_MIL || lang == LANG_MAL) {
 			queryTempl[0] = null;
 			queryTempl[1] = ";";
 			queryTempl[2] = ";\n";
@@ -1058,6 +1062,7 @@ public class MonetConnection implements Connection {
 		String language = "";
 		if (lang == LANG_XQUERY) language = "?language=xquery";
 		else if (lang == LANG_MIL) language = "?language=mil";
+		else if (lang == LANG_MAL) language = "?language=mal";
 		return("MonetDB Connection (jdbc:monetdb://" + hostname +
 				":" + port + "/" + database + language + ") " + 
 				(closed ? "connected" : "disconnected"));
