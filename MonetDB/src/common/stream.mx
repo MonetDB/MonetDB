@@ -223,7 +223,7 @@ stream_export buffer *stream_get_buffer(stream *s);
    of bytes can be read the end of the major block is found. The next
    read will then start with a new major block.
  */
-stream_export stream *wbstream(stream *s);
+stream_export stream *wbstream(stream *s, size_t buflen);
 stream_export stream *block_stream(stream *s);
 stream_export ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
 stream_export int isa_block_stream(stream *s);
@@ -2773,12 +2773,13 @@ bstream_destroy(bstream *s)
 	free(s);
 }
 
-
-#define WBUFSTREAM_BUFSIZE 8192
+/*
+ * Buffered write stream batches subsequent write requests in order to optimize write bandwidth
+ */
 typedef struct {
         stream *s;
-        size_t pos;
-        char buf[WBUFSTREAM_BUFSIZE];
+        size_t len,pos;
+        char buf[1]; /* NOTE: buf extends beyond array for wbs->len bytes */
 } wbs_stream;
 
 static int wbs_flush(stream *s) {
@@ -2797,7 +2798,7 @@ static ssize_t wbs_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
         size_t nbytes, reqsize = cnt*elmsize, todo = reqsize;
         while(todo > 0) {
                 int flush = 1;
-                nbytes = WBUFSTREAM_BUFSIZE - wbs->pos;
+                nbytes = wbs->len - wbs->pos;
                 if (nbytes > todo) {
 			nbytes = todo;  
 			flush = 0;
@@ -2824,10 +2825,10 @@ static void wbs_destroy(stream *s) {
         destroy(s);
 }
 
-stream* wbstream(stream *s) {
+stream* wbstream(stream *s, size_t buflen) {
         stream *ns = create_stream(s->name);
         if (ns) {
-                wbs_stream *wbs = (wbs_stream*) malloc(sizeof(wbs_stream));
+                wbs_stream *wbs = (wbs_stream*) malloc(sizeof(wbs_stream) + buflen-1);
                 if (wbs) {
 			ns->type = s->type;
 			ns->access = s->access;
@@ -2838,6 +2839,7 @@ stream* wbstream(stream *s) {
                         ns->stream_data.p = (void *) wbs;
                         wbs->s = s;
                         wbs->pos = 0;
+                        wbs->len = buflen;
                 } else {
                         stream_destroy(ns);
                         ns = NULL;

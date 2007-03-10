@@ -1188,7 +1188,7 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
     
     stream *fdin = socket_rastream(sock, "XRPC read");
     if (fdin && stream_errnr(fdin) == 0) {
-        stream *fdout = wbstream(socket_wastream(sock, "XRPC write"));
+        stream *fdout = wbstream(socket_wastream(sock, "XRPC write"), 8192);
         if (fdout && stream_errnr(fdout) == 0) {
             mapi_client *mc = MAPIclient(fdin, fdout, "xquery");
             if (mc) {
