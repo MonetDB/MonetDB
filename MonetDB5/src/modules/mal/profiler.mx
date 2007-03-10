@@ -411,7 +411,7 @@ CMDgetEvent( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL,"profiler.getEvent","Monitor not active");
 
 	pc= getPC(mb,pci)-1; /* take previous instruction */
-	*clk = mb->profiler[pc].clk;
+	*clk = mb->profiler[pc].ticks;
 	*reads = mb->profiler[pc].rdbytes;
 	*writes = mb->profiler[pc].wrbytes;
 	return MAL_SUCCEED;
