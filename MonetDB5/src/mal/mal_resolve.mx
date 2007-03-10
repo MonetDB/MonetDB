@@ -246,9 +246,9 @@ looking for.
 @-
 The last argument type could be a polymorphic variable list. It should only be
 allowed for patterns, where it can deal with the stack.
-We also know that at least one element of the argument list
-has been resolved and its type information is consolidated in the
-type administration. 
+If the type is specified as :any then any mix of arguments is allowed.
+If the type is a new numbered type variable then the first element
+in the list determines the required type of all.
 @c
 	  if( sig->varargs ) {
 		if( sig->token != PATTERNsymbol )
@@ -694,7 +694,8 @@ using the target type.
 			cst.vtype= TYPE_void;
 			cst.val.oval= void_nil;
 			
-			p->argv[i]= defConstant(mb, (isaBatType(lhs)?TYPE_bat:lhs), &cst);
+			rhs= isaBatType(lhs)?TYPE_bat:lhs;
+			p->argv[i]= defConstant(mb, rhs, &cst);
 		} 
 
 		if( !isFixed(mb,getArg(p,k))) {

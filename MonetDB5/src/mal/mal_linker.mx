@@ -153,6 +153,7 @@ getAddress(str filename, str modnme, str fcnname, int silent)
 @-
 Search for occurrence of the function in the library identified by the filename.
 @c
+	if( filename)
 	for(idx =0; idx < lastfile && filesLoaded[idx].filename; idx++)
 		if( strcmp(filename, filesLoaded[idx].filename)==0) {
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);

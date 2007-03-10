@@ -56,6 +56,7 @@ mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb,
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
+mal_export int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
@@ -72,7 +73,6 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 static void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd);
-static int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 @-
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
@@ -724,6 +724,10 @@ elements in the value stack.
 		stkpc= mb->stop;
 		continue;
 	default:
+		if( pci->token < 0 ){
+			/* temporary NOOP instruction */
+			break;
+		}
 		ret = createScriptException(mb, stkpc,MAL,
 				NULL, "unkown operation");
 		@:endProfile@

@@ -2297,7 +2297,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 
 	len = 8196;
 	s = GDKmalloc(len);
-	if (flg) {
+	if (flg && p->token>=0) {
 		s[0] = 0;
 		t = s;
 	} else {
@@ -2580,6 +2580,9 @@ void showMalBlkHistory(MalBlkPtr mb)
 			stream_printf(GDKout,"%s.%s[%2d] %s\n", 
 				getModuleId(sig), getFunctionId(sig),j++,msg+3);
 			GDKfree(msg);
+		} else {
+			stream_printf(GDKout,"%s.%s[%2d]\n", 
+				getModuleId(sig), getFunctionId(sig),j++);
 		}
 		m= m->history;
 	}

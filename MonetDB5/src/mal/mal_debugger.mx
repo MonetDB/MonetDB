@@ -492,7 +492,7 @@ int MDBdelay;			/* do not immediately react */
 
 #define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; }
 #define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; }
-#define skipWord(c,X) 	  skipNonBlanc(c,X); skipBlanc(c,X);
+#define skipWord(c,X) 	  while(*(X) && isalnum((int) *X)){X++;} skipBlanc(c,X);
 @-
 Each client has its own breakpoint administration, kept in a global table.
 Although a little space consumptive, it is the easiest to maintain
@@ -876,10 +876,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			stk->cmd = 'c';
 			skipWord(cntxt, b);
 			m = 0;
-			break;
-		case 'h':
-			if (strncmp("help", b, 2) == 0) 
-				mdbHelp(out);
 			break;
 		case 'e':
 		{
@@ -1319,8 +1315,12 @@ signatures satisfying the pattern.
 				printFunction(out, mb, lstng);
 			continue;
 		}
+		case 'h':
+			if (strncmp("help", b, 2) == 0) 
+				mdbHelp(out);
+			/* assume history */
 		case 'o':
-		case 'O':	/* optimizer steps */
+		case 'O':	/* optimizer and scheduler steps */
 		{
 			MalBlkPtr mdot=mb;
 			skipWord(cntxt, b);

@@ -129,6 +129,11 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 			cntxt->glb = 0;
 			return;
 		}
+		/* remove any MAL history */
+		if( mb->history){
+			freeMalBlk(mb->history);
+			mb->history=0;
+		}
 	}
 	cntxt->curprg = newFunction(putName(nme, strlen(nme)), FUNCTIONsymbol);
 	mb = cntxt->curprg->def;
