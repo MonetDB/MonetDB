@@ -6475,7 +6475,8 @@ int CMDpflock_meta(lng *wsid)
         /* SPECIAL CASE: a meta function inside a docmgt function. 
          * now we must wait for potential other docmgts to finish first 
          */
-        int reapply_barrier = (pf_ndocmgt-- > 1);
+        int reapply_barrier = (pf_ndocmgt > 1);
+        if (reapply_barrier) pf_ndocmgt--; 
         MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: metaLock precheck");
         if (reapply_barrier) {
             MT_down_sema(PF_META_BARRIER, "pflock_meta: metaBarrier for convert");
