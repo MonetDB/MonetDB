@@ -255,6 +255,7 @@ in the list determines the required type of all.
 			unmatched = i;
 		else
 		for(k=i-1; i<p->argc; i++){
+			/* the type of the last one has already been set */
 			int actual = getArgType(mb,p,i);
 			int formal = getArgType(s->def,sig,k);
 			formal= getPolyType(formal,polytype);
@@ -850,6 +851,9 @@ malType getPolyType(malType t,int *polytype){
 	int head, tail;
 
 	ti = getTailIndex(t);
+	if( !isaBatType(t) && ti > 0 )
+		return polytype[ti];
+
 	tail= ti == 0? getTailType(t): polytype[ti];
 	if( isaBatType(t)){
 		hi = getHeadIndex(t);
@@ -862,7 +866,7 @@ malType getPolyType(malType t,int *polytype){
 Each argument is checked for binding of polymorphic arguments.
 This routine assumes that the type index is indeed smaller than maxarg. 
 (The parser currently enforces a single digit from 1-9 )
-The polymorphic type 'any', i.e. any$0, does never constraint an operation
+The polymorphic type 'any', i.e. any_0, does never constraint an operation
 it can match with all polymorphic types.
 The routine returns the instanciated formal type for subsequent
 type resolution.
@@ -879,6 +883,11 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 #endif
 
 	if( (h=getTailIndex(formal))  ){
+		if( isaBatType(actual) && !isaBatType(formal) && polytype[h]== TYPE_any){
+			polytype[h]= actual;
+			ret=0;
+			goto updLabel;
+		}
 		t= getTailType(actual);
 		if( t != polytype[h]){
 			if( polytype[h]== TYPE_bat && isaBatType(actual))

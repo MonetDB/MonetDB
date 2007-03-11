@@ -1726,7 +1726,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	int i, k;
 	ValPtr vr;
 
-	if (cst->vtype != type){
+	if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)){
 		int otype= cst->vtype;
 		i= convertConstant(type, cst);
 		if( i ) {
@@ -2299,7 +2299,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	s = GDKmalloc(len);
 	if (flg ) {
 		if( p->token<0){
-			s[0] = '$';
+			s[0] = '#';
 			s[1] = 0;
 			t = s+1;
 		}else{
