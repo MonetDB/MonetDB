@@ -5642,7 +5642,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 {
     unsigned int lev_fst, lev_snd,
         fst_res, snd_res, 
-        snd_var, 
+        snd_var, snd_pos_var, 
         cast_fst, cast_snd,
         switched_args, fid,
         rc, rc1, rc2;
@@ -5743,6 +5743,12 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             "var item%03u;\n"
             "var kind%03u;\n",
             snd_var, snd_var, snd_var, snd_var, snd_var);
+    counter++;
+    snd_pos_var = counter;
+    if ((LLR(snd)->kind == c_var)
+        && (LLR(snd)->sem.var->used))
+        milprintf(f, "var item%03u;\n", snd_pos_var);
+
     counter++;
     fst_res = counter;
     milprintf(f,
@@ -5959,6 +5965,9 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         && (LLR(snd)->sem.var->used))
     {
         createEnumeration (f, cur_level);
+        milprintf(f,
+                "item%03u := item;\n",
+                snd_pos_var);
         insertVar (f, cur_level, LLR(snd)->sem.var->vid);
     }
 
@@ -6184,11 +6193,12 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     }
     if (LLR(snd)->kind == c_var && var_is_used (LLR(snd)->sem.var, res))
     {
-        addValues (f, int_container(), "snd_iter.[lng]()", "item");
         milprintf(f,
                 "iter := ipik.mark(1@0);\n"
                 "pos := 1@0;\n"
-                "kind := INT;\n");
+                "item := order_snd.leftfetchjoin(item%03u);\n"
+                "kind := INT;\n",
+                snd_pos_var);
         insertVar (f, cur_level, LLR(snd)->sem.var->vid);
     }
 
