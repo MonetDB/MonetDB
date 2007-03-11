@@ -1,0 +1,46 @@
+stdout of test 'ID.1648854` in directory 'tests/BugsViaSourgeforce` itself:
+
+
+# 10:12:20 >  
+# 10:12:20 >  Mtimeout -timeout 180 Mserver "--config=/local_tmp/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/pathfinder/Linux/lib/MonetDB:/local_tmp/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/local_tmp/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/local_tmp/MonetDB/Linux/var/MonetDB/log" --set mapi_port=36932 --set monet_prompt= --trace "--dbname=mTests_tests_BugsViaSourgeforce" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 10:12:20 >  
+
+# Monet Database Server V4.13.0
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+quit();
+
+Over..
+
+# 10:13:54 >  
+# 10:13:54 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=36060 ID.1491723.xq
+# 10:13:54 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><r><a/><eq>true</eq></r><r><b/><eq>false</eq></r><r><c><d/></c><eq>false</eq></r></XQueryResult>
+
+# 10:13:54 >  
+# 10:13:54 >  Done.
+# 10:13:54 >  
+
