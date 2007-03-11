@@ -5793,7 +5793,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             for (i = 0; i < cur_level; i++)
             {
                 milprintf(f, 
-                    "mapping := mapping.leftjoin(outer%03u.reverse());\n"
+                    "mapping := mapping.leftmergejoin(assert_order(outer%03u).reverse());\n"
                     "mapping := mapping.leftfetchjoin(inner%03u);\n",
                     i+1, i+1);
             }
@@ -6112,7 +6112,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         for (i = 0; i < cur_level; i++)
         {
             milprintf(f, 
-                "mapping := mapping.leftjoin(outer%03u.reverse());\n"
+                "mapping := mapping.leftmergejoin(assert_order(outer%03u).reverse());\n"
                 "mapping := mapping.leftfetchjoin(inner%03u);\n",
                 i+1, i+1);
         }
@@ -9055,6 +9055,17 @@ var_only_in_for (PFvar_t *v, PFcnode_t *e)
   if (e->kind == c_var && e->sem.var == v) {
       return 0;
   }
+
+  /* do not expand if later used in aggregate */
+  if (e->kind == c_apply && e->sem.fun->arity == 1 && e->sem.fun->builtin && 
+      e->sem.fun->sigs->par_ty->type == ty_star && 
+      e->sem.fun->sigs->ret_ty.type != ty_star &&
+      L(e) && L(e)->kind == c_arg && 
+      LL(e) && LL(e)->kind == c_var && LL(e)->sem.var == v) 
+  {
+      return 1;
+  }
+
   /* if variable is used to iterate over (in a *user* written for-loop loop), ignore it as use */
   if (e->kind == c_for &&
       L(e) && L(e)->kind == c_forbind &&
