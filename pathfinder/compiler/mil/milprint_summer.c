@@ -8929,7 +8929,6 @@ static int
 var_only_in_for (PFvar_t *v, PFcnode_t *e)
 {
   int i;
-  int usage = 0;
 
   assert (v && e);
 
