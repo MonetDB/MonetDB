@@ -1411,6 +1411,14 @@ operator:
 builtin:
 	TOK_BUILTIN
 	{   $$ = $1;							      }
+    |	TOK_MODULE
+	{   int t; $$ = Myylognode(TOK_BUILTIN,TYPE_ptr); 
+            $$->yyval.val.pval = TBL_search("module", &t, FALSE, TRUE, FALSE, FALSE); 
+            assert(t == TOK_BUILTIN);                                         }
+    |	TOK_DROP
+	{   int t; $$ = Myylognode(TOK_BUILTIN,TYPE_ptr); 
+            $$->yyval.val.pval = TBL_search("drop", &t, FALSE, TRUE, FALSE, FALSE); 
+            assert(t == TOK_BUILTIN);                                         }
     |	TOK_TRG
 	{   $$ = $1;							      }
     ;
