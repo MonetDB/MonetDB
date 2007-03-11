@@ -16,7 +16,7 @@
 
 @f mal_memorun
 @a M. Kersten
-@+ Query Memo-based Execution
+@+ Memo-based Query Execution
 Modern cost-based query optimizers use a memo structure
 to organize the search space for an efficient query execution plan.
 For example, consider an oid join path 'A.B.C.D'.
@@ -27,27 +27,23 @@ The memo levels are separated by the choice operator,
 which accepts a cost function and the list of target variables.
 @example
 	...
-	scheduler.choice("scheduler.volumeCost",T1,T2,T3);
+	scheduler.choice("getVolume",T1,T2,T3);
 	T1:= algebra.join(A,B);
 	T2:= algebra.join(B,C);
 	T3:= algebra.join(C,D);
-	scheduler.choice("scheduler.volumeCost",T4,T5,T6,T7,T8);
+	scheduler.choice("getVolume",T4,T5,T6,T7,T8);
 	T4:= algebra.join(T1,C);
 	T5:= algebra.join(A,T2);
 	T6:= algebra.join(T2,D);
 	T7:= algebra.join(B,T3);
 	T8:= algebra.join(C,D);
-	scheduler.choice("scheduler.volumeCost",T9,T10,T11,T12,T13);
+	scheduler.choice("getVolume",T9,T10,T11,T12,T13);
 	T9:= algebra.join(T4,D);
 	T10:= algebra.join(T5,D);
 	T11:= algebra.join(A,T6);
 	T12:= algebra.join(A,T7);
 	T13:= algebra.join(T1,T8);
-	answer:= T9;
-	answer:= T10;
-	answer:= T11;
-	answer:= T12;
-	answer:= T13
+	answer:= scheduler.pick(T9, T10, T11, T12, T13);
 @end example
 
 The @code{scheduler.choice()} operator calls @code{scheduler.volumeCost}
@@ -61,7 +57,9 @@ They are skipped by the interpreter, but also in subsequent
 calls to the scheduler. It reduces the alternatives as we proceed
 in the plan.
 
-A private cost function should be defined as a @code{pattern}
+A built-in cost function is used.
+It would be nice if the user could provide a
+private cost function defined as a @code{pattern}
 with a polymorphic argument for the target and a @code{:lng} result.
 Its implementation can use the complete context information to
 make a decision. For example, it can trace the potential use
@@ -78,7 +76,7 @@ which can be assured with @code{scheduler.isolation()}.
 
 A refinement of the scheme is to make cost analysis
 part of the plan as well. Then you don't have to 
-include a cost function module.
+include a hardwired cost function.
 @example
 	Acost:= aggr.count(A);
 	Bcost:= aggr.count(B);
@@ -116,9 +114,10 @@ comment "A sample cost prediction function";
 #define _RUN_MEMORUN
 #include "mal.h"
 #include "mal_interpreter.h"
+#include "mal_linker.h"
 #include "mal_client.h"
 
-#define DEBUG_RUN_MEMORUN
+/* #define DEBUG_RUN_MEMORUN*/
 
 #ifdef WIN32
 #ifndef LIBRUN_MEMORUN
@@ -166,8 +165,8 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int target;
 	int cost, mincost;
-	int i,pc;
-	(void) stk;
+	int i,j,pc;
+	char *nme;
 
 	if( getArgType(mb,p,1)== TYPE_int && p->argc>=3 && (p->argc-1)%2 ==0){
 		/* choice pairs */
@@ -181,26 +180,46 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				target= getArg(p,i+1);
 			}
 		}
-		/* remove non-qualifying variables */
-		for(i=2; i<p->argc; i+= 2)
-			if( getArg(p,i) != target){
-				setVarUsed(mb,getArg(p,i-1),-1);
-				setVarUsed(mb,getArg(p,i),-1);
-			}
-		propagateNonTarget(mb,pc+1);
-#ifdef DEBUG_RUN_MEMORUN
-		stream_printf(GDKout,"#cost choice selected %s %d\n",
-			getVarName(mb,target),mincost);
-		printFunction(GDKout,mb,1);
-#endif
 	} else
 	if( getArgType(mb,p,1)== TYPE_str){
-		/* cost function  */
+		nme= *(str*) getArgReference(stk,p,1);
+		/* should be generalized to allow an arbitrary user defined function */
+		if( strcmp(nme,"getVolume")!= 0)
+			throw(MAL,"scheduler.choice","Illegal cost function");
+
+		pc= getPC(mb,p);
+		target= getArg(p,2);
+		mincost= -1;
+		for(j=2;j<p->argc; j++){
+			if(	isVarUsed(mb,getArg(p,j))> -1 )
+			for(i= pc+1; i<mb->stop; i++){
+				InstrPtr q= getInstrPtr(mb,i);
+				if(p->token >=0 && getArg(q,0)== getArg(p,j)){
+					cost= getVolume(stk,q,1);
+					if( cost>0 && (cost<mincost || mincost== -1)){
+						mincost= cost;
+						target= getArg(p,j);
 #ifdef DEBUG_RUN_MEMORUN
-		stream_printf(GDKout,"#function choice selected %d\n",target);
+		stream_printf(GDKout,"#function target %s cost %d\n",getVarName(mb,target),mincost);
 #endif
-	} else
-		throw(MAL,"scheduler.choice","Illegal signature");
+					}
+					break;
+				}
+			}
+		}
+	}
+	/* remove non-qualifying variables */
+	for(i=2; i<p->argc; i+= 2)
+		if( getArg(p,i) != target){
+			setVarUsed(mb,getArg(p,i-1),-1);
+			setVarUsed(mb,getArg(p,i),-1);
+		}
+	propagateNonTarget(mb,pc+1);
+#ifdef DEBUG_RUN_MEMORUN
+	stream_printf(GDKout,"#cost choice selected %s %d\n",
+		getVarName(mb,target),mincost);
+	printFunction(GDKout,mb,1);
+#endif
 	return MAL_SUCCEED;
 }
 @-

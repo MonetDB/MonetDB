@@ -1,0 +1,85 @@
+stdout of test 'memo02` in directory 'src/scheduler` itself:
+
+
+# 22:34:44 >  
+# 22:34:44 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=32539 --set xrpc_port=46725 --set monet_prompt= --trace --dbname=mTests_src_scheduler  memo02.mal < /dev/null
+# 22:34:44 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_scheduler
+# Visit http://monetdb.cwi.nl/ for further information
+## The first memo driven execution
+## use a generic cost function
+#
+#	A:= bat.new(:int,:int);
+#	bat.insert(A,1,1);
+#	B:= bat.copy(A);
+#	bat.insert(B,2,2);
+#	C:= bat.copy(B);
+#	bat.insert(C,3,3);
+#	D:= bat.copy(C);
+#	bat.insert(D,3,3);
+#
+#	scheduler.choice("scheduler.volumeCost",T1,T2,T3);
+#	T1:= algebra.join(A,B);
+#	T2:= algebra.join(B,C);
+#	T3:= algebra.join(C,D);
+#	scheduler.choice("scheduler.volumeCost",T4,T5,T6,T7,T8);
+#	T4:= algebra.join(T1,C);
+#	T5:= algebra.join(A,T2);
+#	T6:= algebra.join(T2,D);
+#	T7:= algebra.join(B,T3);
+#	T8:= algebra.join(C,D);
+#	scheduler.choice("scheduler.volumeCost",T9,T10,T11,T12,T13);
+#	T9:= algebra.join(T4,D);
+#	T10:= algebra.join(T5,D);
+#	T11:= algebra.join(A,T6);
+#	T12:= algebra.join(A,T7);
+#	T13:= algebra.join(T1,T8);
+#	answer:= T9;
+#	answer:= T10;
+#	answer:= T11;
+#	answer:= T12;
+#	answer:= T13
+!SyntaxException:parseError:
+!SyntaxException:parseError:^operator expected
+function user.main():void;	# 0  (main:void)
+# The first memo driven execution 	# 1  unknown (_1:str)
+# use a generic cost function 	# 2  unknown (_2:str)
+    A := bat.new(:int,:int);	# 3  unknown (A:any)<-(_4:int)(_4:int)
+    bat.insert(A,1,1);	# 4  unknown (_5:any)<-(A:any)(_6:int)(_6:int)
+    B := bat.copy(A);	# 5  unknown (B:any)<-(A:any)
+    bat.insert(B,2,2);	# 6  unknown (_8:any)<-(B:any)(_9:int)(_9:int)
+    C := bat.copy(B);	# 7  unknown (C:any)<-(B:any)
+    bat.insert(C,3,3);	# 8  unknown (_11:any)<-(C:any)(_12:int)(_12:int)
+    D := bat.copy(C);	# 9  unknown (D:any)<-(C:any)
+    bat.insert(D,3,3);	# 10  unknown (_14:any)<-(D:any)(_12:int)(_12:int)
+    scheduler.choice("scheduler.volumeCost",T1,T2,T3);	# 11  unknown (_15:any)<-(_16:str)(T1:any)(T2:any)(T3:any)
+    T1 := algebra.join(A,B);	# 12  unknown (T1:any)<-(A:any)(B:any)
+    T2 := algebra.join(B,C);	# 13  unknown (T2:any)<-(B:any)(C:any)
+    T3 := algebra.join(C,D);	# 14  unknown (T3:any)<-(C:any)(D:any)
+    scheduler.choice("scheduler.volumeCost",T4,T5,T6,T7,T8);	# 15  unknown (_20:any)<-(_16:str)(T4:any)(T5:any)(T6:any)(T7:any)(T8:any)
+    T4 := algebra.join(T1,C);	# 16  unknown (T4:any)<-(T1:any)(C:any)
+    T5 := algebra.join(A,T2);	# 17  unknown (T5:any)<-(A:any)(T2:any)
+    T6 := algebra.join(T2,D);	# 18  unknown (T6:any)<-(T2:any)(D:any)
+    T7 := algebra.join(B,T3);	# 19  unknown (T7:any)<-(B:any)(T3:any)
+    T8 := algebra.join(C,D);	# 20  unknown (T8:any)<-(C:any)(D:any)
+    scheduler.choice("scheduler.volumeCost",T9,T10,T11,T12,T13);	# 21  unknown (_26:any)<-(_16:str)(T9:any)(T10:any)(T11:any)(T12:any)(T13:any)
+    T9 := algebra.join(T4,D);	# 22  unknown (T9:any)<-(T4:any)(D:any)
+    T10 := algebra.join(T5,D);	# 23  unknown (T10:any)<-(T5:any)(D:any)
+    T11 := algebra.join(A,T6);	# 24  unknown (T11:any)<-(A:any)(T6:any)
+    T12 := algebra.join(A,T7);	# 25  unknown (T12:any)<-(A:any)(T7:any)
+    T13 := algebra.join(T1,T8);	# 26  unknown (T13:any)<-(T1:any)(T8:any)
+    answer := T9;	# 27  unknown (answer:any)<-(T9:any)
+    answer := T10;	# 28  unknown (answer:any)<-(T10:any)
+    answer := T11;	# 29  unknown (answer:any)<-(T11:any)
+    answer := T12;	# 30  unknown (answer:any)<-(T12:any)
+    answer := T13;	# 31  unknown (answer:any)<-(T13:any)
+end main;	# 32  unknown 
+
+# 22:34:44 >  
+# 22:34:44 >  Done.
+# 22:34:44 >  
+
