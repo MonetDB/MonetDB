@@ -1,5 +1,5 @@
 var mods := new(void,str);
-mods.insert(nil,"pftijah");
+mods.insert(nil,"pathfinder");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);

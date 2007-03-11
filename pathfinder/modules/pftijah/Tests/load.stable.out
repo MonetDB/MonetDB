@@ -10,7 +10,7 @@ stdout of test 'load` in directory 'modules/pftijah` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 var mods := new(void,str);
-mods.insert(nil,"pftijah");
+mods.insert(nil,"pathfinder");
 
 loaded();
 #---------------------------------#
@@ -34,42 +34,7 @@ mods@batloop(){
 	drop($t);
 	loaded();
 }
-loading module 'pftijah'
-
-
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "aggrX3",	  5		  ]
-[ "alarm",	  7		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bat_arith",	  3		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "lock",	  4		  ]
-[ "logger",	  5		  ]
-[ "main",	  1		  ]
-[ "malalgebra",	  6		  ]
-[ "mapi",	  2		  ]
-[ "mmath",	  5		  ]
-[ "monettime",	  5		  ]
-[ "pathfinder",	  2		  ]
-[ "pcre",	  3		  ]
-[ "pf_standoff",  2		  ]
-[ "pf_support",	  3		  ]
-[ "pftijah",	  1		  ]
-[ "str",	  1		  ]
-[ "streams",	  5		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "xrpc_client",  2		  ]
-[ "xrpc_server",  2		  ]
-[ "xtables",	  5		  ]
-dropping module 'pftijah'
+loading module 'pathfinder'
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type
@@ -93,6 +58,7 @@ dropping module 'pftijah'
 [ "pcre",	  2		  ]
 [ "pf_standoff",  1		  ]
 [ "pf_support",	  2		  ]
+[ "pftijah",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  3		  ]
 [ "sys",	  1		  ]
@@ -100,6 +66,32 @@ dropping module 'pftijah'
 [ "xrpc_client",  1		  ]
 [ "xrpc_server",  1		  ]
 [ "xtables",	  3		  ]
+dropping module 'pathfinder'
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  2		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  2		  ]
+[ "logger",	  1		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  2		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  2		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
 
 quit();
 

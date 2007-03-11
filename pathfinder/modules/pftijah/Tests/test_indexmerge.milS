@@ -1,4 +1,4 @@
-module(pftijah);
+module(pathfinder);
 
 var pre := new(void,oid).seqbase(0@0);
 pre.append(2@0);

@@ -1,4 +1,4 @@
-module(pftijah);
+module(pathfinder);
 var trace := false;
 var returnAllElements := false;
 var scoreBase := 0;

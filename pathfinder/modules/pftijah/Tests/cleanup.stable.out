@@ -9,7 +9,7 @@ stdout of test 'cleanup` in directory 'modules/pftijah` itself:
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(pftijah);
+module(pathfinder);
 
 tj_delete_global();
 quit();

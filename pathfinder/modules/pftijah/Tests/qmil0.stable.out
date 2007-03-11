@@ -9,7 +9,7 @@ stdout of test 'qmil0` in directory 'modules/pftijah` itself:
 # Copyright (c) 1993-2007, CWI. All rights reserved.
 # Compiled for x86_64-suse-linux/64bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(pftijah);
+module(pathfinder);
 
 var res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\"/> let $x := pf:tijah-query-id($opt,(),\"//panel[about(.,humbug)]\") let $n := pf:tijah-nodes($x) for $i in $n return (fn:round(100*pf:tijah-score($x,$i)),$i)");
 printf("%s",res);

@@ -1,4 +1,4 @@
-module(pftijah);
+module(pathfinder);
 
 # test handling of not existing query terms
 var res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\"/> let $x := pf:tijah-query-id($opt,(),\"//panel[about(.,humbug)]\") let $n := pf:tijah-nodes($x) for $i in $n return (fn:round(100*pf:tijah-score($x,$i)),$i)");

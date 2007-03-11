@@ -27,8 +27,6 @@
 @m
 .MODULE pftijah;
 
-.USE pathfinder;
-
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
@@ -134,9 +132,6 @@ The function calculates NLLR scores for all elements in e and all terms in tid_c
 
 .END pftijah;
 @mil
-module("pathfinder");
-module("monettime");
-
 ###
 # This file contains implementations of some of the SRA operators 
 # to run on the TIJAH Light index.

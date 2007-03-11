@@ -1,4 +1,4 @@
-module(pftijah);
+module(pathfinder);
 
 var nodes := new(oid,dbl);
 nodes.insert(2@0,dbl(0.0));

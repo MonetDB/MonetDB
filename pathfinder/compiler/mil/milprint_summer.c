@@ -11106,6 +11106,7 @@ const char* PFinitMIL(void) {
     return 
         "module(\"pathfinder\");\n"
 #ifdef HAVE_PFTIJAH
+        "module(\"pftijah\");\n"
 	"\n"
 	"var tID := 9999@0; # start counter at an arbitrary number\n"
 	"var tijah_tID   := new(void,oid).seqbase(0@0);\n"

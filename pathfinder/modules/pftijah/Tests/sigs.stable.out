@@ -10,7 +10,7 @@ stdout of test 'sigs` in directory 'modules/pftijah` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 var mods := new(void,str);
-mods.insert(nil,"pftijah");
+mods.insert(nil,"pathfinder");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);
@@ -18,39 +18,24 @@ mods@batloop(){
 	sigs($t);
 	drop($t);
 }
-module 'pftijah'
-
-
-
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+module 'pathfinder'
+#---------------------------------------------------------------------------------#
 # signature	  # name
 # str		  # type
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "_tj_throw2collection(BAT[str,BAT], BAT[oid,BAT], str, str) : void"													  ]
-[ "_tj_throw2collection_index(BAT[str,BAT], str) : void"														  ]
-[ "indexfetchjoin(BAT[any,oid], BAT[void,oid], BAT[void,oid]) : BAT[void,oid]"												  ]
-[ "mergeindex(BAT[oid,oid], BAT[void,oid], BAT[void,oid], int) : BAT[void,BAT]"												  ]
-[ "offsetindex(BAT[void,oid], int) : BAT[void,oid]"															  ]
-[ "pf2tijah_node(BAT[oid,str], BAT[oid,int], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,str]) : BAT[void,oid]"							  ]
-[ "run_tijah_command(str) : bit"																	  ]
-[ "run_tijah_query(BAT[str,str], BAT[void,oid], str) : BAT[oid,dbl]"													  ]
-[ "score_NLLR(BAT[oid,oid], BAT[void,int], BAT[oid,int], BAT[oid,int], BAT[oid,any], dbl, int) : BAT[oid,dbl]"								  ]
-[ "serialize_tijah_opt(BAT[void,BAT], int, BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[str,str]"	  ]
-[ "tijah_tokenize(str) : str"																		  ]
-[ "tj_add2collection(str, BAT[str,str], bit) : void"															  ]
-[ "tj_add2collection(str, str, str, bit) : void"															  ]
-[ "tj_create_termdb(int, oid) : void"																	  ]
-[ "tj_delete_collection(str) : void"																	  ]
-[ "tj_delete_global() : void"																		  ]
-[ "tj_dispose_termdb() : void"																		  ]
-[ "tj_finalize_collection(str) : void"																	  ]
-[ "tj_init_collection(str, BAT[str,str], BAT[void,str]) : void"														  ]
-[ "tj_init_global(BAT[str,str]) : void"																	  ]
-[ "tj_log(str, int) : void"																		  ]
-[ "tj_normalizeTerm(str, str) : str"																	  ]
-[ "tj_ping() : void"																			  ]
-[ "tj_setCollName(str) : void"																		  ]
-[ "treemergejoin_sort(BAT[void,oid], BAT[void,int], BAT[void,oid]) : BAT[oid,oid]"											  ]
+#---------------------------------------------------------------------------------#
+[ "delete_all_docs(bit) : void"							  ]
+[ "delete_doc(BAT[void,str]) : void"						  ]
+[ "shred_doc(BAT[void,str], BAT[void,str], BAT[void,str], BAT[void,lng]) : void"  ]
+[ "shred_doc(str, str) : void"							  ]
+[ "shred_doc(str, str, str, lng) : void"					  ]
+[ "xmlcache_add_rule(str, any) : void"						  ]
+[ "xmlcache_del_rule(str) : void"						  ]
+[ "xmlcache_print() : void"							  ]
+[ "xmlcache_print_rules() : void"						  ]
+[ "xmldb_print() : void"							  ]
+[ "xquery(mode str, xquery str, is_url bit) : str "				  ]
+[ "xquery_frontend() : ptr"							  ]
+[ "xquery_start_query_cache(lng) : void"					  ]
 
 quit();
 

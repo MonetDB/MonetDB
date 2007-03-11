@@ -1,4 +1,4 @@
-module(pftijah);
+module(pathfinder);
 module(unix);
 
 # should run if you set TSTTRGDIR to pwd

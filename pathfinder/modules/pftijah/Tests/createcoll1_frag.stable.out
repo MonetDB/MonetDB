@@ -9,7 +9,7 @@ stdout of test 'createcoll1_frag` in directory 'modules/pftijah` itself:
 # Copyright (c) 1993-2007, CWI. All rights reserved.
 # Compiled for x86_64-suse-linux/64bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(pftijah);
+module(pathfinder);
 module(unix);
 
 # should run if you set TSTTRGDIR to pwd

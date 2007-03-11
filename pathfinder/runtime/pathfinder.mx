@@ -72,13 +72,14 @@ const XQUERY_STATUS_GARBAGECOLL  := 2;
 const XQUERY_STATUS_READY        := 3; 
 var xquery_status := XQUERY_STATUS_INITIALIZING;
 
+CATCH(module("pftijah")); # load pftijah only if available
+
 module(mapi);       # remote client access
 module(pf_support);
 module(logger);
 module(xrpc_server);
 module(xrpc_client);
 module(pf_standoff);
-CATCH((*"module")("pftijah")); # only load pftijah if available
 
 # standoff is only available if you ask for it
 var standoff := false;
