@@ -1,0 +1,33 @@
+# The first memo driven execution
+# use a generic cost function
+
+	A:= bat.new(:int,:int);
+	bat.insert(A,1,1);
+	B:= bat.copy(A);
+	bat.insert(B,2,2);
+	C:= bat.copy(B);
+	bat.insert(C,3,3);
+	D:= bat.copy(C);
+	bat.insert(D,3,3);
+
+	scheduler.choice("scheduler.volumeCost",T1,T2,T3);
+	T1:= algebra.join(A,B);
+	T2:= algebra.join(B,C);
+	T3:= algebra.join(C,D);
+	scheduler.choice("scheduler.volumeCost",T4,T5,T6,T7,T8);
+	T4:= algebra.join(T1,C);
+	T5:= algebra.join(A,T2);
+	T6:= algebra.join(T2,D);
+	T7:= algebra.join(B,T3);
+	T8:= algebra.join(C,D);
+	scheduler.choice("scheduler.volumeCost",T9,T10,T11,T12,T13);
+	T9:= algebra.join(T4,D);
+	T10:= algebra.join(T5,D);
+	T11:= algebra.join(A,T6);
+	T12:= algebra.join(A,T7);
+	T13:= algebra.join(T1,T8);
+	answer:= T9;
+	answer:= T10;
+	answer:= T11;
+	answer:= T12;
+	answer:= T13
