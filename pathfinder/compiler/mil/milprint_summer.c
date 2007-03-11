@@ -11208,14 +11208,14 @@ const char* PFvarMIL(void) {
         "time_start := usec();\n"
 #define PF_STARTMIL_NORMAL(STMT) PF_STARTMIL_START\
         "var err;\n"\
-        "{ var ws := empty_bat;\n"\
+        "{{var ws := empty_bat;\n"\
         "  err := CATCH({\n"\
         "  ws := ws_create(" STMT ");\n" PF_STARTMIL_END
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var try := 1;\n"\
         "var err := \"!ERROR: conflicting update\";\n"\
         "var ws_log_wsid := 0LL;\n"\
-        "while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
+        "{ while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " var ws := empty_bat;\n"\
         " err := CATCH({\n"\
@@ -11271,7 +11271,7 @@ const char* PFstartMIL(int statement_type) {
            " ws_log_wsid := ws_id(ws);\n"\
            " if (not(isnil(err))) ws_log(ws, err);\n"\
            " ws_destroy(ws);\n"\
-           "}\n"\
+           "}}\n"\
 	   PF_STOP_PFTIJAH\
            "if (not(isnil(err))) ERROR(err);\n"\
            "else if (genType.startsWith(\"timing\")) {\n"\
