@@ -100,6 +100,10 @@ pattern scheduler.choice(arg:any...):void
 address RUNchoice
 comment "Select the next step in a query memo plan";
 
+pattern scheduler.pick(arg:any_1...):any_1
+address RUNpickResult
+comment "Pick up the first result";
+
 pattern scheduler.volumeCost(a:any):lng
 address RUNvolumeCost
 comment "A sample cost function based on materialized results";
@@ -129,6 +133,7 @@ comment "A sample cost prediction function";
 sched_export str RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 sched_export str RUNvolumeCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 sched_export str RUNcostPrediction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+sched_export str RUNpickResult(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_MEMORUN */
 
 @+ Memorun implementation
@@ -139,22 +144,21 @@ sample implementations to run the tests.
 #include "mal_memorun.h"
 
 static void
-propagateNonTarget(MalBlkPtr mb, int pc, int target){
-	int i,j;
+propagateNonTarget(MalBlkPtr mb, int pc){
+	int i;
 	InstrPtr p;
+	str scheduler= putName("scheduler",9);
 
 	for(; pc< mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
-		for(i=0; i<p->retc; i++)
-			if( getArg(p,i)== target && p->token >=0 )
+		if( getModuleId(p)== scheduler)
+			continue;
+		for(i=0; i<p->argc; i++)
+			if( isVarUsed(mb,getArg(p,i)) && p->token >=0 )
 				p->token = -p->token; /* temporary NOOP */
-		for(i= p->retc; i<p->argc; i++)
-			if( getArg(p,i)== target){
-				if( p->token >=0 )
-					p->token = -p->token; /* temporary NOOP */
-				for(j=0; j<p->retc; j++)
-					propagateNonTarget(mb,pc+1,getArg(p,j));
-			}
+		if( p->token<0)
+			for(i=0; i<p->retc; i++)
+				setVarUsed(mb,getArg(p,i),-1);
 	}
 }
 str
@@ -169,31 +173,58 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* choice pairs */
 		pc= getPC(mb,p);
 		mincost= *(int*) getArgReference(stk,p,1);
-		target= 2;
+		target= getArg(p,2);
 		for(i=3; i<p->argc; i+= 2){
 			cost= *(int*) getArgReference(stk,p,i);
-			if( cost <mincost){
+			if( cost <mincost && isVarUsed(mb,getArg(p,i+1))> -1 ){
 				mincost= cost;
-				target= getArg(p,i);
+				target= getArg(p,i+1);
 			}
 		}
-		/* remove non-qualifying instructions */
-		for(i=3; i<p->argc; i+= 2)
-			if( getArg(p,i) != target)
-				propagateNonTarget(mb,pc,getArg(p,i));
+		/* remove non-qualifying variables */
+		for(i=2; i<p->argc; i+= 2)
+			if( getArg(p,i) != target){
+				setVarUsed(mb,getArg(p,i-1),-1);
+				setVarUsed(mb,getArg(p,i),-1);
+			}
+		propagateNonTarget(mb,pc+1);
 #ifdef DEBUG_RUN_MEMORUN
-		stream_printf(GDKout,"cost choice selected %d\n",target);
+		stream_printf(GDKout,"#cost choice selected %s %d\n",
+			getVarName(mb,target),mincost);
 		printFunction(GDKout,mb,1);
 #endif
 	} else
 	if( getArgType(mb,p,1)== TYPE_str){
 		/* cost function  */
 #ifdef DEBUG_RUN_MEMORUN
-		stream_printf(GDKout,"function choice selected %d\n",target);
+		stream_printf(GDKout,"#function choice selected %d\n",target);
 #endif
 	} else
 		throw(MAL,"scheduler.choice","Illegal signature");
 	return MAL_SUCCEED;
+}
+@-
+At the end of the query plan we save the result in
+a separate variable.
+@c
+str
+RUNpickResult(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	ValPtr lhs,rhs;
+	int i;
+
+	lhs= &stk->stk[getArg(p,0)];
+	for(i=p->retc; i<p->argc; i++)
+		if( isVarUsed(mb,getArg(p,i))> -1){
+			rhs= &stk->stk[getArg(p,i)];
+			if( (rhs)->vtype < TYPE_str) 
+				*lhs = *rhs; 
+			else VALcopy(lhs,rhs);
+			if( lhs->vtype == TYPE_bat)
+				BBPincref(lhs->val.br.id, TRUE);
+			return MAL_SUCCEED;
+		}
+	throw(MAL,"scheduler.pick","No result available");
 }
 @-
 The routine below calculates a cost based on the BAT volume in bytes.
