@@ -1018,7 +1018,13 @@ xrpc_handle_admin_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     char dotted[80];
 
     struct in_addr addr = shttpd_get_inAddr(arg);
-    (void) inet_ntop(AF_INET, (void*) &addr, dotted, 80);
+#ifdef HAVE_INET_NTOP
+    (void) inet_ntop(AF_INET, (void*) &addr, dotted, sizeof(dotted));
+#else
+    /* not normally thread safe, but on Windows where we need this it
+     * actually *is* thread safe */
+    strncpy(dotted, inet_ntoa(addr), sizeof(dotted));
+#endif
     if (!isAllowed(xrpc_admin, dotted)) {
         char err[1024];
         snprintf(err, 1024, "Permission denied: your host (%s) "

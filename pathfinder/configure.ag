@@ -229,6 +229,8 @@ dnl Check for type socklen_t
 AC_CHECK_TYPE(socklen_t, AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]), , [#include <sys/types.h>
 #include <sys/socket.h>])
 
+AC_CHECK_FUNCS(inet_ntop)
+
 dnl Check for libgen.h and function basename
 AC_CHECK_HEADERS([libgen.h])
 AC_CHECK_FUNCS(basename)
