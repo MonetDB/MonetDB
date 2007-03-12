@@ -23,6 +23,7 @@ CFLAGS = -I. -GF -W3 -MD -nologo -Zi
 MV=copy
 MT=mt
 DEL=del
+FILTER=grep -v
 YACC=bison -b y -y
 YFLAGS=-d
 
@@ -54,5 +55,4 @@ gram.h: gram.y
 
 gram.c: gram.y
 	$(YACC) $(YFLAGS) gram.y
-	$(DEL) y.tab.h
-	$(MV) y.tab.c gram.c
+        $(FILTER) "    ;" y.tab.c > gram.c
