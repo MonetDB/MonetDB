@@ -331,10 +331,13 @@ int main(int argc, char **argv)
 	}
 
 	signal(SIGABRT, stopListening);
+#ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
+#endif
+#ifdef SIGHUP
 	signal(SIGHUP, stopListening);
+#endif
 	signal(SIGTERM, stopListening);
-	signal(SIGKILL, stopListening);
 	signal(SIGINT, stopListening);
 
 	/* set up the profiler */
