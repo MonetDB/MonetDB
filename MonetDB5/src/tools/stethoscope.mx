@@ -262,10 +262,39 @@ getFieldName(int k){
 	return "unknown";
 }
 
+void
+plottemplate(int * colind, int n){
+	FILE *pl,*pld;
+	float sz= 1.0/n;
+	int i;
+
+	pl= fopen("stet.gp","w");
+	fprintf(pl,"load \"stet_dyn.gp\"\n");
+	fprintf(pl,"pause 1\nreread \n");
+	fclose(pl); 
+/*	pld= fopen("stet_dyn_tmpl.gp","w");*/
+	pld= fopen("stet_dyn.gp","w");
+	fprintf(pld,"set multiplot\n\n");
+	for(i=0;i<n;i++){
+		fprintf(pld,"set size 1.0, 1.0 \nset origin 0.0, 0.0 \n");
+		fprintf(pld,"set size 1.0,%4.2f\n",sz);
+		fprintf(pld,"set origin 0.0,%4.2f\n",1-(i+1)*sz);
+		fprintf(pld,"set ylabel \"%s\"\n", profileCounter[colind[i]].name);
+		fprintf(pld,"unset key\n");
+		fprintf(pld,"plot \"stet_cur.dat\" using 1:%d with boxes fs solid 0.7\n\n",i+2);
+	}
+	fprintf(pld,"\nunset multiplot"); 
+	
+	fclose(pld); 
+
+	}
+
+
+
 int main(int argc, char **argv)
 {
-	int a=1,i=1;
-	char * response, *error;
+	int a=1,i=1,ln=1;
+	char * response, *error, *x;
 	char buffer[1024];
 	char *mod, *fcn;
 	char *host="localhost";
@@ -273,6 +302,9 @@ int main(int argc, char **argv)
 	char *dbname= NULL;
 	char *user= "monetdb";
 	char *passwrd= "monetdb";
+	FILE *d;
+	char cmd[100];
+	int colind[30],colcnt=0;
 
     static struct option long_options[13] = {
         {"dbname", 1, 0, 'd'},
@@ -327,7 +359,7 @@ int main(int argc, char **argv)
 			usage();
 			exit(0);
 		} else
-			setCounter(argv[a++]+1);
+			setCounter(argv[a]+1);
 	}
 
 	signal(SIGABRT, stopListening);
@@ -353,8 +385,15 @@ int main(int argc, char **argv)
 			profileCounter[i].ptag);
 		if( profileCounter[i].status){
 			doQ(buffer);
+			colind[colcnt++]=i;
 		}
 	}
+
+/*	printf("Column index \n");
+	for(j=0;j<colcnt;j++)
+		printf("%d\t",colind[j]);
+	printf("\n");  */
+	if (strchr(argv[a++],'s'))  colcnt--; /* exclude statement from plot*/
 
 	/* Set Filters */
 	doQ("profiler.openStream(\"stdout\");");
@@ -380,9 +419,33 @@ int main(int argc, char **argv)
 	}
 	doQ("profiler.start();");
 
+
+	
+	plottemplate(colind,colcnt);
+
 	for(; mapi_error(dbh) == MOK ; ){
 		while ( (response= mapi_fetch_line(hdl)) ) {
 			printf("%s\n",response);
+			x=strchr(response,'[');
+			if (x){
+				d= fopen("stet.dat","a+");
+				fprintf(d,"%d\t",ln++);
+				for(;*x!='\0';x++)
+					if (strchr("[],\"",*x)==NULL)
+						fprintf(d,"%c",*x);
+				fprintf(d,"\n");
+				fclose(d);
+				
+			/* update plot file */
+						
+				if (ln > 20)
+					sprintf(cmd,"sed '1, %d d' stet.dat > stet_cur.dat",ln-20);
+				else 
+					sprintf(cmd,"cp stet.dat stet_cur.dat");
+			/*	printf("%s \n",cmd);*/
+				system(cmd); 
+			}
+			
 		}
 		if( (error = mapi_result_error(hdl)) != NULL){
 			mapi_explain_result(hdl,stderr);
@@ -391,6 +454,7 @@ int main(int argc, char **argv)
 		MT_sleep_ms(20);	/* 20 milliseconds seems enough */
 		doQ("");
 	} 
+
 	if (mapi_error(dbh) != MOK)
 		die(dbh, hdl);
 	mapi_close_handle(hdl);
