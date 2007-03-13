@@ -142,7 +142,7 @@ static void mps_error(const char *format, ...)
                     i = j + 1;
             else            /* old C */
                     i *= 2;
-            msg = PFrealloc(i, msg);
+            msg = PFrealloc(msg, i);
             va_start(ap, format);
             j = vsnprintf(msg, i, format, ap);
             va_end (ap);
@@ -9471,9 +9471,9 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 *c = *(R(c));
             }
+#endif
             /* don't cast nodes - node type was only needed
                for static typing */
-#endif
             else if (c->kind == c_seqcast &&
                      PFty_subtype (input_type, PFty_xs_anyNode ()) &&
                      PFty_subtype (cast_type, PFty_xs_anyNode ()))
@@ -9496,7 +9496,6 @@ simplifyCoreTree (PFcnode_t *c)
                 PFty_subtype (PFty_numeric (), L(c)->sem.type) &&
                 PFty_subtype (L(c)->sem.type, PFty_numeric ()))
                 *c = *(R(c));
-#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
                 *c = *(R(c));
                 /*
                 PFlog ("cast from '%s' to '%s' ignored",
@@ -9505,13 +9504,13 @@ simplifyCoreTree (PFcnode_t *c)
                 */
             }
             break;
+
         case c_apply:
             /* handle the promotable types explicitly by casting them */
             fun = c->sem.fun;
             {
                 unsigned int i = 0;
                 PFcnode_t *tmp = D(c);
-#endif
                 while (i < fun->arity)
                 {
                     simplifyCoreTree (L(tmp));

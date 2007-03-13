@@ -37,9 +37,9 @@
 #include <stdlib.h>
 
 /* malloc to return result buffers with */
-#define EXTERN_MALLOC(n)	malloc(n)
-#define EXTERN_REALLOC(p, n)	realloc(p, n)
-#define EXTERN_FREE(p)		free(p)
+#define EXTERN_MALLOC(n)	PFmalloc(n)
+#define EXTERN_REALLOC(p, n)	PFrealloc(p, n)
+#define EXTERN_FREE(p)		
 
 /* malloc for internal use in milopt structures */
 #define INTERN_MALLOC(n)	PFmalloc(n)
@@ -906,7 +906,7 @@ int milprintf(opt_t *o, const char *format, ...)
                 else            /* old C */
                         i *= 2;
 
-                milbuf = INTERN_REALLOC(i, milbuf);
+                milbuf = INTERN_REALLOC(milbuf, i);
 		if (milbuf == NULL) return -1;
 
                 va_start(ap, format);
@@ -943,9 +943,9 @@ int opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
 	*epilogue = o->buf[OPT_SEC_EPILOGUE];
 	EXTERN_FREE(o);
 	if (*prologue == NULL || *query == NULL || *epilogue == NULL) {
-		if (*prologue) EXTERN_FREE(*prologue);
-		if (*query)    EXTERN_FREE(*query);
-		if (*epilogue) EXTERN_FREE(*epilogue);
+		/* if (*prologue) */ EXTERN_FREE(*prologue);
+		/* if (*query)    */ EXTERN_FREE(*query);
+		/* if (*epilogue) */ EXTERN_FREE(*epilogue);
 		*prologue = *query = *epilogue = NULL;
 		return -1;
 	}

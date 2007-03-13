@@ -733,10 +733,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         PFmil_t    *mroot  = NULL;
         PFarray_t  *serialized_mil_code = NULL;
 #endif
-
-        *prologue = NULL;
-        *query = NULL;
-        *epilogue = NULL;
+        char *intern_prologue = NULL,
+             *intern_query = NULL,
+             *intern_epilogue = NULL;
 
         PFmem_init ();
 
@@ -776,7 +775,17 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
     	croot = PFcoreopt (croot);
 #if MILPRINT_SUMMER_IS_DEFAULT
         (void)  PFprintMILtemp (croot, 1, module_base, num_fun, timing, 
-                                prologue, query, epilogue, url, PFstate.standoff_axis_steps);
+                                &intern_prologue, &intern_query, &intern_epilogue,
+                                url, PFstate.standoff_axis_steps);
+
+        /* make sure that we do use memory that is allocated 
+           in the pathfinder heap -- MonetDB will use (and free) it */
+        *prologue = malloc (strlen (intern_prologue) + 1);
+        *query    = malloc (strlen (intern_query) + 1);
+        *epilogue = malloc (strlen (intern_epilogue) + 1);
+        strcpy (*prologue, intern_prologue);
+        strcpy (*query, intern_query);
+        strcpy (*epilogue, intern_epilogue);
 #else
         (void) url;
 

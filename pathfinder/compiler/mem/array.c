@@ -126,7 +126,7 @@ PFarray_at (PFarray_t *a, unsigned int i)
     nbytes = ((i + 1) * a->esize + ACHUNK) & (~ACHUNK + 1);
 
     assert(a->base);
-    a->base = PFrealloc (nbytes, a->base);
+    a->base = PFrealloc (a->base, nbytes);
 
     a->bound = nbytes / a->esize;
   }

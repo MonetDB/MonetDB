@@ -858,9 +858,9 @@ main (int argc, char *argv[])
                 if (!status->format)
                     status->format = PFstrdup (optarg);
                 else {
-                    status->format = PFrealloc (strlen (status->format)
-                                                    + strlen (optarg) +1,
-                                                status->format);
+                    status->format = PFrealloc (status->format,
+                                                strlen (status->format)
+                                                    + strlen (optarg) +1);
                     strcat (status->format, optarg);
                 }
 

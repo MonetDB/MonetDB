@@ -158,7 +158,7 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
  * Worker for #PFrealloc ().
  */
 void *
-PFrealloc_ (size_t n, void *mem, 
+PFrealloc_ (void *mem, size_t n,
 	    const char *file, const char *func, const int line) 
 {
     /* resize garbage collected heap memory to requested size */

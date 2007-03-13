@@ -72,9 +72,9 @@ void *PFmalloc_ (size_t, const char *, const char *, const int);
  * @param mem pointer to already allocated heap memory
  * @return pointer to garbage collected memory of @a n bytes
  */
-#define PFrealloc(n,mem) PFrealloc_ ((n), (mem), __FILE__, __func__, __LINE__)
+#define PFrealloc(mem,n) PFrealloc_ ((mem), (n), __FILE__, __func__, __LINE__)
 
-void *PFrealloc_ (size_t, void *, const char *, const char *, const int);
+void *PFrealloc_ (void *, size_t, const char *, const char *, const int);
 
 char *PFstrndup (const char *str, size_t n);
 
