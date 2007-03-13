@@ -6512,6 +6512,142 @@ int CMDpflock_free(bit *res, bit* doCommit) {
     return GDK_SUCCEED;
 }
 
+#include "serialize.h"
+
+int
+xquery_print_result_loop (
+    str  mode,
+    str  moduleNS,
+    str  method,
+    BAT* ws,
+    BAT* loop, 
+    BAT* iter, 
+    BAT* item, 
+    BAT* kind,
+    BAT* intVAL,
+    BAT* dblVAL,
+    BAT* strVAL)
+{
+    size_t niters = BATcount (loop);
+    return xquery_print_result_DRIVER (
+               mode,
+               moduleNS,
+               method,
+               NULL, /* set of printing callback function */
+               NULL, /* optional arguments for the callback functions */
+               ws,
+               niters?niters:1, /* number of iterations */
+               loop, /* loop relation */
+               iter, /* iter relation */
+               item, /* item relation */
+               kind, /* kind relation */
+               intVAL,
+               dblVAL,
+               strVAL);
+}
+
+int
+xquery_print_result_main (
+    str  mode,
+    BAT* ws,
+    BAT* item, 
+    BAT* kind,
+    BAT* intVAL,
+    BAT* dblVAL,
+    BAT* decVAL,
+    BAT* strVAL)
+{
+    (void) decVAL;
+    
+    return xquery_print_result_DRIVER (
+               mode,
+               NULL, /* module */
+               NULL, /* method */
+               NULL, /* set of printing callback function */
+               NULL, /* optional arguments for the callback functions */
+               ws,
+               1, /* number of iterations */
+               item, /* loop relation */
+               item, /* iter relation */
+               item, /* item relation */
+               kind, /* kind relation */
+               intVAL,
+               dblVAL,
+               strVAL);
+}
+
+int
+xquery_print_result_file (
+    str  file,
+    str  mode,
+    BAT* ws,
+    oid* item, 
+    int* kind,
+    BAT* intVAL,
+    BAT* dblVAL,
+    BAT* decVAL,
+    BAT* strVAL)
+{
+    int len = strlen(file);
+    int ret = GDK_FAIL;
+    (void) decVAL;
+    if (DIR_SEP != '/') {
+        char *s = file; /* normalize path on windows to windows DIR_SEP */
+        do { if (*s == '/') *s = DIR_SEP; } while(*(++s));
+    }
+    if (*file == DIR_SEP) {
+        GDKerror("xquery_print_result_file: %s cannot have an absolute name.\n", file);
+    } else if (len < 4 || (strcmp(file+len-4, ".xml") && strcmp(file+len-4, ".XML"))) {
+        GDKerror("xquery_print_result_file: %s name does not end in .xml\n", file);
+    } else if (GDKcreatedir(file)) {
+        FILE *fp = fopen(file, "wb");
+        if (fp) {
+            Stream s = file_wastream(fp, file);
+            if (s) {
+                BAT* i = BATnew(TYPE_void,TYPE_oid,1);
+                if (i) {
+                    BAT* k = BATnew(TYPE_void,TYPE_int,1);
+                    if (k) {
+                        BATseqbase(k, 0);
+                        BATseqbase(i, 0);
+                        BUNappend(k, kind, FALSE);
+                        BUNappend(i, item, FALSE);
+                        ret = xquery_print_result_driver (
+                             s,
+                             mode,
+                             NULL, /* module */
+                             NULL, /* method */
+                             NULL, /* set of printing callback function */
+                             NULL, /* optional arguments for the callback functions */
+                             ws,
+                             1, /* number of iterations */
+                             i, /* loop relation */
+                             i, /* iter relation */
+                             i, /* item relation */
+                             k, /* kind relation */
+                             intVAL,
+                             dblVAL,
+                             strVAL);
+                         stream_destroy(s);
+                    }
+                    BBPreclaim(k);
+                }
+                BBPreclaim(i);
+            } 
+            fclose(fp);
+        } else {
+            GDKsyserror("xquery_print_result_file: %s", file);
+        }
+    }
+    return ret;
+}
+
+int
+xquery_print_doc_main (str mode, BAT* ws, str docName)
+{
+    return xquery_print_doc_DRIVER(mode,NULL,NULL,ws,docName);
+}
+
 bat* pf_support_prelude() {
     MT_init_lock(pf_runtime_lock[0]);
     MT_init_lock(pf_runtime_lock[1]);

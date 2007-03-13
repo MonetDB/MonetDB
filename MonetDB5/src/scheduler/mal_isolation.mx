@@ -60,16 +60,16 @@ comment "Run a private copy of the MAL program";
 #define DEBUG_RUN_ISOLATION
 
 #ifdef WIN32
-#ifndef LIBRUN_ISOLATION
-#define sched_export extern __declspec(dllimport)
+#ifndef LIBMAL_ISOLATION
+#define isolation_export extern __declspec(dllimport)
 #else
-#define sched_export extern __declspec(dllexport)
+#define isolation_export extern __declspec(dllexport)
 #endif
 #else
-#define sched_export extern
+#define isolation_export extern
 #endif
 
-sched_export str RUNisolation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+isolation_export str RUNisolation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_ISOLATION */
 
 @+ Isolation implementation

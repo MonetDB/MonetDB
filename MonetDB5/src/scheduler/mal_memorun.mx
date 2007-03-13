@@ -120,19 +120,19 @@ comment "A sample cost prediction function";
 /* #define DEBUG_RUN_MEMORUN*/
 
 #ifdef WIN32
-#ifndef LIBRUN_MEMORUN
-#define sched_export extern __declspec(dllimport)
+#ifndef LIBMAL_MEMORUN
+#define memorun_export extern __declspec(dllimport)
 #else
-#define sched_export extern __declspec(dllexport)
+#define memorun_export extern __declspec(dllexport)
 #endif
 #else
-#define sched_export extern
+#define memorun_export extern
 #endif
 
-sched_export str RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-sched_export str RUNvolumeCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-sched_export str RUNcostPrediction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-sched_export str RUNpickResult(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+memorun_export str RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+memorun_export str RUNvolumeCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+memorun_export str RUNcostPrediction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+memorun_export str RUNpickResult(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_MEMORUN */
 
 @+ Memorun implementation
