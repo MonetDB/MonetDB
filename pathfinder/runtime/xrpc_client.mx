@@ -756,7 +756,7 @@ response2bat(int sock,
     stream *in;
     BAT *shredBAT;
 
-    in = block_stream(socket_rastream(sock, "http_receive"));
+    in = socket_rastream(sock, "http_receive");
     if(!in){
         GDKerror("response2bat: failed to create socket_rastream\n");
         return NULL;
