@@ -4107,21 +4107,20 @@ xquery_function_call(xquery_client *ctx,
                 c = xquery_types[t].loc;
 
 		if (xquery_types[t].monet_tpe == TYPE_str) {
-		    /* do some escaping in strings */
+                    /* we no longer do fancy strTostr for strings; just copied as is */
 		    char *t, *s = argval[l];
 		    int len = strlen(s)*2;
-                    int sep =  (*s == '"' || *s == '\'');
+                    int sep = *s++;
 		    if (len <= ctx->vallen) {
 			if (ctx->val) GDKfree(ctx->val);
 			ctx->val = GDKmalloc(len+1);
 			if (ctx->val == NULL) return "xquery_function_call: malloc failure.\n";
 		    }
-                    if (sep) s++;
-		    for(t=(char*) ctx->val; *s; s++) {
-			if (*s == '\\') *t++ = '\\';
+		    for(t=(char*) ctx->val; *s && *s != sep; s++) {
+			if (*s == '\\') *t++ = '\\'; /* very usefule on windows for conserving paths */ 
 			*t++ = *s;
 		    }
-                    t[-sep] = 0;
+                    *t = 0;
                 } else if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
                     return "xquery_function_call: illegal parameter value.\n";
 
