@@ -778,7 +778,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
                                 &intern_prologue, &intern_query, &intern_epilogue,
                                 url, PFstate.standoff_axis_steps);
 
-        /* make sure that we do use memory that is allocated 
+        /* make sure that we do NOT use memory that lies 
            in the pathfinder heap -- MonetDB will use (and free) it */
         *prologue = malloc (strlen (intern_prologue) + 1);
         *query    = malloc (strlen (intern_query) + 1);
