@@ -151,7 +151,7 @@ xquery_bind( bat *res, oid *rootid, str *Tname, str *cname /*, int access */ )
 	if (strcmp(tname, "pre") == 0)
 		tname = "rid";
 
-	snprintf(name, BUFSIZ, SSZFMT "_%s_%s", *rootid, tname, *cname);
+	snprintf(name, BUFSIZ, SSZFMT "_%s_%s", (ssize_t) *rootid, tname, *cname);
 
 	*res = BBPindex(name);
 	if (!*res) {
