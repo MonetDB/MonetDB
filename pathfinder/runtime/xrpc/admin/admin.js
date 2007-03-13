@@ -413,7 +413,7 @@ function doDelDoc(docName) {
     var xrpcRequest = REQ_HEADER +
         'xrpc:method="del-doc">' +
         '<xrpc:call><xrpc:sequence>'+
-            ATOM_STR + docName + ATOM_END +
+            ATOM_STR + '"' + docName + '"' + ATOM_END +
         '</xrpc:sequence></xrpc:call>' +
         REQ_FOOTER;
     clnt.sendReceive("del-doc", xrpcRequest, doDelDocCallback);
