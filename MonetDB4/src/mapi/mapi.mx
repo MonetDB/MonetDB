@@ -224,7 +224,7 @@ init_client_cache(void)
 
 	MT_init_lock(mapi_cache_lock);
 
-	for(i=0; i<=MAX_FRONTENDS; i++)  
+	for(i = 0; i < MAX_FRONTENDS; i++)
 		mapi_frontends[i] = 0;
 	nr_frontends = 0;
 	
