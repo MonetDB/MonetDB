@@ -5642,7 +5642,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 {
     unsigned int lev_fst, lev_snd,
         fst_res, snd_res, 
-        snd_var, 
+        snd_var, snd_pos_var, 
         cast_fst, cast_snd,
         switched_args, fid,
         rc, rc1, rc2;
@@ -5743,6 +5743,12 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             "var item%03u;\n"
             "var kind%03u;\n",
             snd_var, snd_var, snd_var, snd_var, snd_var);
+    counter++;
+    snd_pos_var = counter;
+    if ((LLR(snd)->kind == c_var)
+        && (LLR(snd)->sem.var->used))
+        milprintf(f, "var item%03u;\n", snd_pos_var);
+
     counter++;
     fst_res = counter;
     milprintf(f,
@@ -5959,6 +5965,9 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         && (LLR(snd)->sem.var->used))
     {
         createEnumeration (f, cur_level);
+        milprintf(f,
+                "item%03u := item;\n",
+                snd_pos_var);
         insertVar (f, cur_level, LLR(snd)->sem.var->vid);
     }
 
@@ -6184,11 +6193,12 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     }
     if (LLR(snd)->kind == c_var && var_is_used (LLR(snd)->sem.var, res))
     {
-        addValues (f, int_container(), "snd_iter.[lng]()", "item");
         milprintf(f,
                 "iter := ipik.mark(1@0);\n"
                 "pos := 1@0;\n"
-                "kind := INT;\n");
+                "item := order_snd.leftfetchjoin(item%03u);\n"
+                "kind := INT;\n",
+                snd_pos_var);
         insertVar (f, cur_level, LLR(snd)->sem.var->vid);
     }
 
@@ -9050,6 +9060,7 @@ static int
 var_only_in_for (PFvar_t *v, PFcnode_t *e)
 {
   int i;
+
   assert (v && e);
 
   if (e->kind == c_var && e->sem.var == v) {
@@ -9057,11 +9068,11 @@ var_only_in_for (PFvar_t *v, PFcnode_t *e)
   }
 
   /* do not expand if later used in aggregate */
-  if (e->kind == c_apply && e->sem.fun->arity == 1 && e->sem.fun->builtin && 
-      e->sem.fun->sigs->par_ty->type == ty_star && 
+  if (e->kind == c_apply && e->sem.fun->arity == 1 && e->sem.fun->builtin &&
+      e->sem.fun->sigs->par_ty->type == ty_star &&
       e->sem.fun->sigs->ret_ty.type != ty_star &&
-      L(e) && L(e)->kind == c_arg && 
-      LL(e) && LL(e)->kind == c_var && LL(e)->sem.var == v) 
+      L(e) && L(e)->kind == c_arg &&
+      LL(e) && LL(e)->kind == c_var && LL(e)->sem.var == v)
   {
       return 1;
   }
@@ -11216,7 +11227,7 @@ const char* PFvarMIL(void) {
         "var try := 1;\n"\
         "var err := \"!ERROR: conflicting update\";\n"\
         "var ws_log_wsid := 0LL;\n"\
-        "{ while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
+        "{while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " var ws := empty_bat;\n"\
         " err := CATCH({\n"\
