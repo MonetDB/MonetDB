@@ -4106,7 +4106,23 @@ xquery_function_call(xquery_client *ctx,
                  */
                 c = xquery_types[t].loc;
 
-                if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
+		if (xquery_types[t].monet_tpe == TYPE_str) {
+		    /* do some escaping in strings */
+		    char *t, *s = argval[l];
+		    int len = strlen(s)*2;
+                    int sep =  (*s == '"' || *s == '\'');
+		    if (len <= ctx->vallen) {
+			if (ctx->val) GDKfree(ctx->val);
+			ctx->val = GDKmalloc(len+1);
+			if (ctx->val == NULL) return "xquery_function_call: malloc failure.\n";
+		    }
+                    if (sep) s++;
+		    for(t=(char*) ctx->val; *s; s++) {
+			if (*s == '\\') *t++ = '\\';
+			*t++ = *s;
+		    }
+                    t[-sep] = 0;
+                } else if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
                     return "xquery_function_call: illegal parameter value.\n";
 
                 @:bunappend(fun_vid000, &vid, (size_t) *(oid*), SZFMT, "@0")@

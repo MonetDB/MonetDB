@@ -2034,7 +2034,11 @@ xquery_print_result_file (
     int len = strlen(file);
     int ret = GDK_FAIL;
     (void) decVAL;
-    if (*file == DIR_SEP || *file == '/') {
+    if (DIR_SEP != '/') {
+        char *s = file; /* normalize path on windows to windows DIR_SEP */
+        do { if (*s == '/') *s = DIR_SEP; } while(*(++s));
+    }
+    if (*file == DIR_SEP) {
         GDKerror("xquery_print_result_file: %s cannot have an absolute name.\n", file);
     } else if (len < 4 || (strcmp(file+len-4, ".xml") && strcmp(file+len-4, ".XML"))) {
         GDKerror("xquery_print_result_file: %s name does not end in .xml\n", file);

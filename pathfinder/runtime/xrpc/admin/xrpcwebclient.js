@@ -21,6 +21,8 @@ XRPCWebClient.prototype.sendReceive = function(method, request, callback) {
         var app = this;
         this.xmlhttp.onreadystatechange = function() {
             if (app.xmlhttp.readyState == 4 ) {
+                if (app.xmlhttp.responseText.indexOf("!ERROR") >= 0)
+                    alert(app.xmlhttp.responseText);
                 if (app.xmlhttp.status == 200) {
                     callback(app.xmlhttp.responseXML);
                 } else {

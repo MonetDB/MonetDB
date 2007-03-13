@@ -17,10 +17,14 @@ var ATOM_END = '</xrpc:atomic-value>';
 
 function serializeXML(xml) {
     try {
-        var xmlSerializer = new XMLSerializer();
-        return xmlSerializer.serializeToString(xml);
+        return xml.xml;
     } catch(e){
-        alert("Failed to create xmlSerializer or to serialize XML document:\n" + e);
+        try {
+            var xmlSerializer = new XMLSerializer();
+            return xmlSerializer.serializeToString(xml);
+        } catch(e){
+            alert("Failed to create xmlSerializer or to serialize XML document:\n" + e);
+        }
     }
 }
 
@@ -36,6 +40,7 @@ function doCollectionsCallback(response) {
     var cols = response.getElementsByTagName("collection");
     var cTable = top.content.document.getElementById("div1");
     var cTableBody = "";
+
 
     if(cols.length == 0){
         cTable.innerHTML =
@@ -81,7 +86,7 @@ function doCollectionsCallback(response) {
         '<th>&nbsp;</th>\n' +
         '<th>&nbsp;</th>\n' +
         '</tr>\n' +
-        cTableBody +
+        cTableBody + response.xml + 
         '</table>\n';
     top.content.document.getElementById("div2").innerHTML = "";
 }
@@ -111,12 +116,10 @@ function doAllDocumentsCallback(response) {
         dTableBody += '<td>'+cName+'</td>\n';
         dTableBody += '<td>'+updatable+'</td>\n';
         dTableBody += '<td>'+url+'</td>\n';
-        /*
         dTableBody +=
             '<td>'+
-            '<input type="button" name="viewDoc" value="view" onclick="top.doGET(\'doRequest\',\''+docName+'\',null)" />'+
+            '<input type="button" name="viewDoc" value="view" onclick="open(\'/'+docName+'\',\'_blank\',\'directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
             '</td>\n';
-         */
         dTableBody +=
             '<td>'+
             '<input type="button" name="delDoc" value="delete" onclick="top.doDelDoc(\''+docName+'\')" />'+
@@ -169,7 +172,7 @@ function doDocumentsCallback(response) {
         dTableBody += '<td>'+url+'</td>\n';
         dTableBody +=
             '<td>'+
-            '<input type="button" name="viewDoc" value="view" onclick="top.doGET(\'doRequest\',\''+docName+'\',null)" />'+
+            '<input type="button" name="viewDoc" value="view" onclick="open(\'/'+docName+'\',\'_blank\',\'directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
             '</td>\n';
         dTableBody +=
             '<td>'+
@@ -218,16 +221,20 @@ function doBackupColCallback(response){
     alert("Sorry, function doBackupColCallback() not implemented yet");
 }
 
-function doBackupCallback(response){
-    alert("Sorry, function doBackupCallback() not implemented yet");
-}
-
 function doRestoreColCallback(response){
     alert("Sorry, function doRestoreColCallback() not implemented yet");
 }
 
+function doBackupCallback(response){
+    if(response != null) {
+        alert("Backup DONE!\n");
+    } 
+}
+
 function doRestoreCallback(response){
-    alert("Sorry, function doRestoreCallback() not implemented yet");
+    if(response != null) {
+        alert("Restore DONE!\n");
+    } 
 }
 
 function doDbStatsCallback(response){
@@ -276,7 +283,7 @@ function doDbEnvCallback(response){
     var buns = response.getElementsByTagName("bun");
     var dTableBody = "";
 
-    var i;
+    var i, configPath;
     for(i = 0; i < buns.length; i++){
         var envVar = buns[i].getAttribute("head");
         var envVarVal = buns[i].getAttribute("tail");
@@ -364,7 +371,7 @@ function doDocuments(colName) {
     var xrpcRequest = REQ_HEADER +
         'xrpc:method="documents">' +
         '<xrpc:call><xrpc:sequence>' +
-        ATOM_STR + '"' + colName + '"' + ATOM_END +
+        ATOM_STR + '"'+ colName + '"'+ ATOM_END +
         '</xrpc:sequence></xrpc:call>' +
         REQ_FOOTER;
     clnt.sendReceive("documents", xrpcRequest, doDocumentsCallback);
@@ -393,6 +400,7 @@ function doAddDoc() {
           '</xrpc:sequence>'+
         '</xrpc:call>'+
         REQ_FOOTER;
+alert(xrpcRequest);
     clnt.sendReceive("add-doc", xrpcRequest, doAddDocCallback);
 }
 
@@ -405,7 +413,6 @@ function doDelDoc(docName) {
     var xrpcRequest = REQ_HEADER +
         'xrpc:method="del-doc">' +
         '<xrpc:call><xrpc:sequence>'+
-          '<xrpc:atomic-value xsi:type="xs:string">"'
             ATOM_STR + docName + ATOM_END +
         '</xrpc:sequence></xrpc:call>' +
         REQ_FOOTER;
@@ -433,16 +440,40 @@ function doBackupCol(){
     alert("Sorry, function doBackupCol() not implemented yet");
 }
 
-function doBackup(){
-    alert("Sorry, function doBackup() not implemented yet");
-}
-
 function doRestoreCol(){
     alert("Sorry, function doRestoreCol() not implemented yet");
 }
 
+function doBackup(){
+    var id = top.content.document.getElementById("ID").value;
+
+    var xrpcRequest = REQ_HEADER+
+        'xrpc:method="backup">'+
+        '<xrpc:call>'+
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:string">"'+id+'"</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+        '</xrpc:call>'+
+        REQ_FOOTER;
+    clnt.sendReceive("backup", xrpcRequest, doBackupCallback);
+}
+
 function doRestore(){
-    alert("Sorry, function doRestore() not implemented yet");
+    var id = top.content.document.getElementById("ID").value;
+    var perct = top.content.document.getElementById("dfltFree").value;
+
+    var xrpcRequest = REQ_HEADER+
+        'xrpc:method="restore">'+
+        '<xrpc:call>'+
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:string">"'+id+'"</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+          '<xrpc:sequence>'+
+            '<xrpc:atomic-value xsi:type="xs:integer">'+perct+'</xrpc:atomic-value>'+
+          '</xrpc:sequence>'+
+        '</xrpc:call>'+
+        REQ_FOOTER;
+    clnt.sendReceive("restore", xrpcRequest, doRestoreCallback);
 }
 
 function doDbStats(){
@@ -484,42 +515,6 @@ function doPUT() {
     alert("Sorry, function not implemented yet");
 }
 
-function doGET(docName) {
-    alert("Implementation is still under construction.\n"+
-            "Sorry for the inconvenience!");
-    return;
-
-    var xrpcRequest = REQ_HEADER +
-        'xrpc:method="GET">' +
-        '<xrpc:call><xrpc:sequence>'+
-          '<xrpc:atomic-value xsi:type="xs:string">"'
-            ATOM_STR + docName + ATOM_END +
-        '</xrpc:sequence></xrpc:call>' +
-        REQ_FOOTER;
-
-    var response = clnt.sendReceive("GET", xrpcRequest);
-    if(response == null) {
-        alert('Failed to get document "' + docName + '"');
-        return;
-    }
-
-//alert("doGET response: "+response+"\n\n"+serializeXML(response));
-        //var docNode = response.getElementsByTagName("document");
-//alert("doGET doc: " + docNode[0].firstChild.nodeValue + docNode.length);
-        //alert("doGET:\ndocNode: " + docNode + docNode.length +
-                //"\ndocNode[0]: " + docNode +
-                //"\ndocNode[0].firstChild: " + docNode[0].firstChild +
-                //"\ndocNode[0].firstChild.nodeValue: " + docNode[0].firstChild.nodeValue);
-        //alert(docNode[0].firstChild.tagName);
-
-    var docTA = document.getElementById("docView");
-    docTA.innerHTML = 
-        '<h2>' + getDocName + '</h2>\n' +
-        '<textarea id="docTextArea" row="50" cols="100">\n'+
-        serializeXML(response) +
-        '</textarea>\n';
-}
-
 function makeAddDocForm(){
     var dTable = top.content.document.getElementById("div1");
 
@@ -528,7 +523,7 @@ function makeAddDocForm(){
         '<table>\n' +
           '<tr>\n' +
             '<td>Original URL:</td>\n' +
-            '<td><input type="text" id="newURL" value=""/></td>\n' +
+            '<td><input type="file" id="newURL" value=""/></td>\n' +
           '</tr>\n' +
           '<tr>\n' +
             '<td>New Name:</td>\n' +
@@ -547,23 +542,49 @@ function makeAddDocForm(){
               '<input type="button" name="addDoc" value="Add" onClick="top.doAddDoc()"/>\n' +
             '</td>\n' +
           '</tr>\n' +
-        '</table>\n' +
-        '<h2>Store an XML document on the server machine:</h2>\n' +
+        '</table>\n';
+
+    top.content.document.getElementById("div2").innerHTML = "";
+}
+
+function makeBackupForm(){
+    var dTable = top.content.document.getElementById("div1");
+
+    dTable.innerHTML =
+        '<h2>Backup The Database</h2>\n' +
         '<table>\n' +
           '<tr>\n' +
-            '<td>Local File:</td>\n' +
-            '<td><input type="file" id="localFilePath" value=""/></td>\n' +
-          '</tr>\n' +
-          '<tr>\n' +
-            '<td>New Name:</td>\n' +
-            '<td><input type="text" id="putDocName" value=""/></td>\n' +
+            '<td>Backup ID</td>\n' +
+            '<td><input type="text" id="ID" value=""/></td>\n' +
           '</tr>\n' +
           '<tr>\n' +
             '<td colspan="2" align="center">\n' +
-              '<input type="button" name="putFile" value="Put File" onClick="doPUT()"/>\n' +
+              '<input type="button" name="backup" value="Backup" onClick="top.doBackup()"/>\n' +
             '</td>\n' +
           '</tr>\n' +
         '</table>\n';
+    top.content.document.getElementById("div2").innerHTML = "";
+}
 
+function makeRestoreForm(){
+    var dTable = top.content.document.getElementById("div1");
+
+    dTable.innerHTML =
+        '<h2>Restore The Database</h2>\n' +
+        '<table>\n' +
+          '<tr>\n' +
+            '<td>Backup ID</td>\n' +
+            '<td><input type="text" id="ID" value=""/></td>\n' +
+          '</tr>\n' +
+          '<tr>\n' +
+            '<td>Default Free %:</td>\n' +
+            '<td><input type="text" id="dfltFree" value="10"/></td>\n' +
+          '</tr>\n' +
+          '<tr>\n' +
+            '<td colspan="2" align="center">\n' +
+              '<input type="button" name="restore" value="Restore" onClick="top.doRestore()"/>\n' +
+            '</td>\n' +
+          '</tr>\n' +
+        '</table>\n';
     top.content.document.getElementById("div2").innerHTML = "";
 }

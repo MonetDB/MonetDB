@@ -55,8 +55,22 @@
                 <tr>
                     <td>
                         <input type="button" style="width:250px"
-                        id="dbstats" value="Make Checkpoint"
+                        id="dbstats" value="Checkpoint DB Server"
                         onClick="top.doDbCheckpoint()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="backup" value="Backup Database"
+                        onClick="top.makeBackupForm()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" style="width:250px"
+                        id="restore" value="Restore Database"
+                        onClick="top.makeRestoreForm()"/>
                     </td>
                 </tr>
             </table>
