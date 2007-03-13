@@ -38,46 +38,49 @@ stdout of test 'memo02` in directory 'src/scheduler` itself:
 #	T11:= algebra.join(A,T6);
 #	T12:= algebra.join(A,T7);
 #	T13:= algebra.join(T1,T8);
-#	answer:= T9;
-#	answer:= T10;
-#	answer:= T11;
-#	answer:= T12;
-#	answer:= T13
-!SyntaxException:parseError:
-!SyntaxException:parseError:^operator expected
+#	scheduler.choice("getVolume",T9,T10,T11,T12,T13);
+#	answer:= scheduler.pick(T9,T10,T11,T12,T13);
+#	io.print(answer);
+#
 function user.main():void;	# 0  (main:void)
-# The first memo driven execution 	# 1  unknown (_1:str)
-# use a generic cost function 	# 2  unknown (_2:str)
-    A := bat.new(:int,:int);	# 3  unknown (A:any)<-(_4:int)(_4:int)
-    bat.insert(A,1,1);	# 4  unknown (_5:any)<-(A:any)(_6:int)(_6:int)
-    B := bat.copy(A);	# 5  unknown (B:any)<-(A:any)
-    bat.insert(B,2,2);	# 6  unknown (_8:any)<-(B:any)(_9:int)(_9:int)
-    C := bat.copy(B);	# 7  unknown (C:any)<-(B:any)
-    bat.insert(C,3,3);	# 8  unknown (_11:any)<-(C:any)(_12:int)(_12:int)
-    D := bat.copy(C);	# 9  unknown (D:any)<-(C:any)
-    bat.insert(D,3,3);	# 10  unknown (_14:any)<-(D:any)(_12:int)(_12:int)
-    scheduler.choice("scheduler.volumeCost",T1,T2,T3);	# 11  unknown (_15:any)<-(_16:str)(T1:any)(T2:any)(T3:any)
-    T1 := algebra.join(A,B);	# 12  unknown (T1:any)<-(A:any)(B:any)
-    T2 := algebra.join(B,C);	# 13  unknown (T2:any)<-(B:any)(C:any)
-    T3 := algebra.join(C,D);	# 14  unknown (T3:any)<-(C:any)(D:any)
-    scheduler.choice("scheduler.volumeCost",T4,T5,T6,T7,T8);	# 15  unknown (_20:any)<-(_16:str)(T4:any)(T5:any)(T6:any)(T7:any)(T8:any)
-    T4 := algebra.join(T1,C);	# 16  unknown (T4:any)<-(T1:any)(C:any)
-    T5 := algebra.join(A,T2);	# 17  unknown (T5:any)<-(A:any)(T2:any)
-    T6 := algebra.join(T2,D);	# 18  unknown (T6:any)<-(T2:any)(D:any)
-    T7 := algebra.join(B,T3);	# 19  unknown (T7:any)<-(B:any)(T3:any)
-    T8 := algebra.join(C,D);	# 20  unknown (T8:any)<-(C:any)(D:any)
-    scheduler.choice("scheduler.volumeCost",T9,T10,T11,T12,T13);	# 21  unknown (_26:any)<-(_16:str)(T9:any)(T10:any)(T11:any)(T12:any)(T13:any)
-    T9 := algebra.join(T4,D);	# 22  unknown (T9:any)<-(T4:any)(D:any)
-    T10 := algebra.join(T5,D);	# 23  unknown (T10:any)<-(T5:any)(D:any)
-    T11 := algebra.join(A,T6);	# 24  unknown (T11:any)<-(A:any)(T6:any)
-    T12 := algebra.join(A,T7);	# 25  unknown (T12:any)<-(A:any)(T7:any)
-    T13 := algebra.join(T1,T8);	# 26  unknown (T13:any)<-(T1:any)(T8:any)
-    answer := T9;	# 27  unknown (answer:any)<-(T9:any)
-    answer := T10;	# 28  unknown (answer:any)<-(T10:any)
-    answer := T11;	# 29  unknown (answer:any)<-(T11:any)
-    answer := T12;	# 30  unknown (answer:any)<-(T12:any)
-    answer := T13;	# 31  unknown (answer:any)<-(T13:any)
-end main;	# 32  unknown 
+# The first memo driven execution 	# 1  (_1:str)
+# use a generic cost function 	# 2  (_2:str)
+    A := bat.new(:int,:int);	# 3 CMDBATnew (A:bat[:int,:int])<-(_4:int)(_4:int)
+    bat.insert(A,1,1);	# 4 BKCinsert_bun (_5:void)<-(A:bat[:int,:int])(_6:int)(_6:int)
+    B := algebra.copy(A);	# 5 ALGcopy (B:bat[:int,:int])<-(A:bat[:int,:int])
+    bat.setWriteMode(B);	# 6 BKCsetWriteMode (_8:bat[:int,:int])<-(B:bat[:int,:int])
+    bat.insert(B,2,2);	# 7 BKCinsert_bun (_9:void)<-(B:bat[:int,:int])(_10:int)(_10:int)
+    C := algebra.copy(B);	# 8 ALGcopy (C:bat[:int,:int])<-(B:bat[:int,:int])
+    bat.setWriteMode(C);	# 9 BKCsetWriteMode (_12:bat[:int,:int])<-(C:bat[:int,:int])
+    bat.insert(C,3,3);	# 10 BKCinsert_bun (_13:void)<-(C:bat[:int,:int])(_14:int)(_14:int)
+    D := algebra.copy(C);	# 11 ALGcopy (D:bat[:int,:int])<-(C:bat[:int,:int])
+    bat.setWriteMode(D);	# 12 BKCsetWriteMode (_16:bat[:int,:int])<-(D:bat[:int,:int])
+    bat.insert(D,3,3);	# 13 BKCinsert_bun (_17:void)<-(D:bat[:int,:int])(_14:int)(_14:int)
+    scheduler.choice();	# 14 RUNchoice (_18:void)
+    T1 := algebra.join(A,B);	# 15 ALGjoin (T1:bat[:int,:int])<-(A:bat[:int,:int])(B:bat[:int,:int])
+    T2 := algebra.join(B,C);	# 16 ALGjoin (T2:bat[:int,:int])<-(B:bat[:int,:int])(C:bat[:int,:int])
+    T3 := algebra.join(C,D);	# 17 ALGjoin (T3:bat[:int,:int])<-(C:bat[:int,:int])(D:bat[:int,:int])
+    scheduler.choice("getVolume",T1,T2,T3);	# 18 RUNchoice (_22:void)<-(_23:str)(T1:bat[:int,:int])(T2:bat[:int,:int])(T3:bat[:int,:int])
+    T4 := algebra.join(T1,C);	# 19 ALGjoin (T4:bat[:int,:int])<-(T1:bat[:int,:int])(C:bat[:int,:int])
+    T5 := algebra.join(A,T2);	# 20 ALGjoin (T5:bat[:int,:int])<-(A:bat[:int,:int])(T2:bat[:int,:int])
+    T6 := algebra.join(T2,D);	# 21 ALGjoin (T6:bat[:int,:int])<-(T2:bat[:int,:int])(D:bat[:int,:int])
+    T7 := algebra.join(B,T3);	# 22 ALGjoin (T7:bat[:int,:int])<-(B:bat[:int,:int])(T3:bat[:int,:int])
+    T8 := algebra.join(C,D);	# 23 ALGjoin (T8:bat[:int,:int])<-(C:bat[:int,:int])(D:bat[:int,:int])
+    scheduler.choice("getVolume",T4,T5,T6,T7,T8);	# 24 RUNchoice (_29:void)<-(_23:str)(T4:bat[:int,:int])(T5:bat[:int,:int])(T6:bat[:int,:int])(T7:bat[:int,:int])(T8:bat[:int,:int])
+    T9 := algebra.join(T4,D);	# 25 ALGjoin (T9:bat[:int,:int])<-(T4:bat[:int,:int])(D:bat[:int,:int])
+    T10 := algebra.join(T5,D);	# 26 ALGjoin (T10:bat[:int,:int])<-(T5:bat[:int,:int])(D:bat[:int,:int])
+    T11 := algebra.join(A,T6);	# 27 ALGjoin (T11:bat[:int,:int])<-(A:bat[:int,:int])(T6:bat[:int,:int])
+    T12 := algebra.join(A,T7);	# 28 ALGjoin (T12:bat[:int,:int])<-(A:bat[:int,:int])(T7:bat[:int,:int])
+    T13 := algebra.join(T1,T8);	# 29 ALGjoin (T13:bat[:int,:int])<-(T1:bat[:int,:int])(T8:bat[:int,:int])
+    scheduler.choice("getVolume",T9,T10,T11,T12,T13);	# 30 RUNchoice (_35:void)<-(_23:str)(T9:bat[:int,:int])(T10:bat[:int,:int])(T11:bat[:int,:int])(T12:bat[:int,:int])(T13:bat[:int,:int])
+    answer := scheduler.pick(T9,T10,T11,T12,T13);	# 31 RUNpickResult (answer:bat[:int,:int])<-(T9:bat[:int,:int])(T10:bat[:int,:int])(T11:bat[:int,:int])(T12:bat[:int,:int])(T13:bat[:int,:int])
+    io.print(answer);	# 32 IOprint_val (_37:void)<-(answer:bat[:int,:int])
+end main;	# 33  
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 1,	  1	  ]
 
 # 22:34:44 >  
 # 22:34:44 >  Done.

@@ -23,30 +23,32 @@ For example, consider an oid join path 'A.B.C.D'.
 We can start the evaluation at any point in this path.
 
 Its memo structure can be represented by a (large) MAL program. 
-The memo levels are separated by the choice operator,
-which accepts a cost function and the list of target variables.
+The memo levels are encapsulated with a @code{choice} operator.
+The arguments of the second dictate which instructions to consider
+for cost evaluation.
 @example
 	...
-	scheduler.choice("getVolume",T1,T2,T3);
+	scheduler.choice("getVolume");
 	T1:= algebra.join(A,B);
 	T2:= algebra.join(B,C);
 	T3:= algebra.join(C,D);
-	scheduler.choice("getVolume",T4,T5,T6,T7,T8);
+	scheduler.choice("getVolume",T1,T2,T3);
 	T4:= algebra.join(T1,C);
 	T5:= algebra.join(A,T2);
 	T6:= algebra.join(T2,D);
 	T7:= algebra.join(B,T3);
 	T8:= algebra.join(C,D);
-	scheduler.choice("getVolume",T9,T10,T11,T12,T13);
+	scheduler.choice("getVolume",T4,T5,T6,T7,T8);
 	T9:= algebra.join(T4,D);
 	T10:= algebra.join(T5,D);
 	T11:= algebra.join(A,T6);
 	T12:= algebra.join(A,T7);
 	T13:= algebra.join(T1,T8);
+	scheduler.choice("getVolume",T9,T10,T11,T12,T13);
 	answer:= scheduler.pick(T9, T10, T11, T12, T13);
 @end example
 
-The @code{scheduler.choice()} operator calls @code{scheduler.volumeCost}
+The @code{scheduler.choice()} operator calls a builtin @code{getVolume}
 for each target variable and expects an integer-valued cost. 
 In this case it returns the total number of bytes uses as arguments.
 
@@ -94,6 +96,9 @@ include a hardwired cost function.
 The current implementation assumes a regular plan
 and unique use of variables.
 @mal
+pattern scheduler.choice():void
+address RUNchoice
+comment "Select the next step in a query memo plan";
 pattern scheduler.choice(arg:any...):void
 address RUNchoice
 comment "Select the next step in a query memo plan";
@@ -160,6 +165,11 @@ propagateNonTarget(MalBlkPtr mb, int pc){
 				setVarUsed(mb,getArg(p,i),-1);
 	}
 }
+@-
+THe choice operator first searches the next one to identify
+the fragment to be optimized and to gain access to the variables
+without the need to declare them upfront.
+@c
 str
 RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -167,10 +177,21 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int cost, mincost;
 	int i,j,pc;
 	char *nme;
+	InstrPtr q;
 
+	pc= getPC(mb,p);
+	for(i=pc+1; i<mb->stop; i++){
+		q= getInstrPtr(mb,i);
+		if( getModuleId(p)== getModuleId(q) &&
+			getFunctionId(p) == getFunctionId(q)){
+			p=q;
+			break;
+		}
+	}
+	if( i == mb->stop)
+		return MAL_SUCCEED;
 	if( getArgType(mb,p,1)== TYPE_int && p->argc>=3 && (p->argc-1)%2 ==0){
 		/* choice pairs */
-		pc= getPC(mb,p);
 		mincost= *(int*) getArgReference(stk,p,1);
 		target= getArg(p,2);
 		for(i=3; i<p->argc; i+= 2){
@@ -187,7 +208,6 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if( strcmp(nme,"getVolume")!= 0)
 			throw(MAL,"scheduler.choice","Illegal cost function");
 
-		pc= getPC(mb,p);
 		target= getArg(p,2);
 		mincost= -1;
 		for(j=2;j<p->argc; j++){

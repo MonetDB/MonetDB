@@ -22,7 +22,7 @@
 	T2cost:= Bcost+Ccost;
 	T3cost:= Ccost+Dcost;
 
-	scheduler.choice2();
+	scheduler.choice();
 
 	T1:= algebra.join(A,B);
 	T1cost:= aggr.count(T1);
@@ -31,7 +31,7 @@
 	T3:= algebra.join(C,D);
 	T3cost:= aggr.count(T3);
 
-	scheduler.choice2(T1cost,T1, T2cost,T2, T3cost,T3);
+	scheduler.choice(T1cost,T1, T2cost,T2, T3cost,T3);
 
 	T4cost:=T1cost+Ccost; 
 	T5cost:=Acost+T2cost; 
@@ -50,7 +50,7 @@
 	T8:= algebra.join(C,D);
 	T8cost:= aggr.count(T8);
 
-	scheduler.choice2(T4cost,T4,T5cost,T5,T6cost,T6,T7cost,T7,T8cost,T8);
+	scheduler.choice(T4cost,T4,T5cost,T5,T6cost,T6,T7cost,T7,T8cost,T8);
 
 	T9cost:=T2cost+Dcost;  
 	T10cost:=T5cost+Dcost;  
@@ -64,6 +64,6 @@
 	T12:= algebra.join(A,T7);
 	T13:= algebra.join(T1,T8);
 
-	scheduler.choice2(T9cost,T9,T10cost,T10,T11cost,T11,T12cost,T12,T13cost,T13);
+	scheduler.choice(T9cost,T9,T10cost,T10,T11cost,T11,T12cost,T12,T13cost,T13);
 	answer:= scheduler.pick(T9,T10,T11,T12,T13);
 	io.print(answer);
