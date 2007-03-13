@@ -1,3 +1,10 @@
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../MonetDB4/tests/BugTracker/Tests/
+
 ID.602271
 ID.602463
 ID.605953
@@ -32,3 +39,10 @@ ID.1200626
 ID.1247428
 append_empty_oid_bat.SF-1334536
 making_void-void_BAT_appendable.SF-1340615
+
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../MonetDB4/tests/BugTracker/Tests/
