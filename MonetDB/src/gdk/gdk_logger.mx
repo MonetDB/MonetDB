@@ -103,6 +103,7 @@ typedef struct logger {
 	char *fn;
 	char *dir;
 	stream *log;
+	size_t end;	/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog;	/* int, str */
 	BAT *seqs; 	/* int, lng */
@@ -918,6 +919,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->log = NULL;
+	lg->end = 0;
 	lg->catalog = NULL;
 
 	if (catalog == 0) {
@@ -1387,6 +1389,36 @@ log_tstart(logger *lg)
 	return log_write_format(lg, &l);
 }
 
+#define DBLKSZ 8192
+#define DBLKMASK 8191
+#define SEGSZ 16*DBLKSZ
+static char zeros [DBLKSZ] = { 0 };
+
+static void 
+pre_allocate(logger *lg)
+{
+	size_t p;
+
+	stream_fgetpos(lg->log, &p);
+	if (p + DBLKSZ > lg->end) {
+	    size_t s = p;
+	    if (p > lg->end) {   
+		lg->end = p&~DBLKMASK;
+		if (p > DBLKSZ)
+			p -= DBLKSZ;
+	    }
+	    if (p < lg->end) {
+		p = (lg->end - p);
+	    	stream_write(lg->log, zeros, p, 1);
+		lg->end += p;
+	    	p = 0;
+	    }
+	    for (;p < SEGSZ; p += DBLKSZ, lg->end += DBLKSZ ) 
+	    	stream_write(lg->log, zeros, DBLKSZ, 1);
+	    stream_fsetpos(lg->log, s);
+	}
+}
+
 int
 log_tend(logger *lg)
 {
@@ -1410,7 +1442,7 @@ log_tend(logger *lg)
 	    stream_flush(lg->log) ||
 	    stream_fsync(lg->log))
 		 return LOG_ERR;
-
+	pre_allocate(lg);
 	return LOG_OK;
 }
 
@@ -1455,6 +1487,7 @@ log_sequence(logger *lg, int seq, lng id)
 	    stream_flush(lg->log) ||
 	    stream_fsync(lg->log))
 		 return LOG_ERR;
+	pre_allocate(lg);
 	return LOG_OK;
 }
 

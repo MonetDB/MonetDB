@@ -123,6 +123,8 @@ stream_export void stream_destroy(stream *s);
 stream_export char *stream_error(stream *s);
 stream_export int stream_flush(stream *s);
 stream_export int stream_fsync(stream *s);
+stream_export int stream_fgetpos(stream *s, size_t *p);
+stream_export int stream_fsetpos(stream *s, size_t p);
 stream_export char *stream_name(stream *s);
 stream_export int stream_errnr(stream *s);
 stream_export int stream_type(stream *s);
@@ -272,6 +274,7 @@ typedef enum stream_errors {
 	READ_ERROR,
 	WRITE_ERROR
 } stream_errors;
+
 #endif /*_STREAM_H_*/
 @c
 #include "monetdb_config.h"
@@ -336,6 +339,8 @@ struct stream {
 	void (*destroy) (stream *s);
 	int (*flush) (stream *s);
 	int (*fsync) (stream *s);
+	int (*fgetpos) (stream *s, size_t *p);
+	int (*fsetpos) (stream *s, size_t p);
 };
 
 #if !HAVE_DECL_STRDUP
@@ -526,6 +531,35 @@ stream_fsync(stream *s)
 	return 0;
 }
 
+int
+stream_fgetpos(stream *s, size_t *p)
+{
+#ifdef STREAM_DEBUG
+	printf("fgetpos %s\n", s->name ? s->name : "<unnamed>");
+#endif
+	if (!s) return -1;
+	assert(s->access == ST_WRITE);
+	if (s->errnr) return s->errnr;
+	if (s->fgetpos)
+		return (*s->fgetpos) (s, p);
+	return 0;
+}
+
+int
+stream_fsetpos(stream *s, size_t p)
+{
+#ifdef STREAM_DEBUG
+	printf("fsetpos %s\n", s->name ? s->name : "<unnamed>");
+#endif
+	if (!s) return -1;
+	assert(s->access == ST_WRITE);
+	if (s->errnr) return s->errnr;
+	if (s->fsetpos)
+		return (*s->fsetpos) (s, p);
+	return 0;
+}
+
+
 char *
 stream_name(stream *s)
 {
@@ -664,6 +698,8 @@ create_stream(const char *name)
 	s->destroy = destroy;
 	s->flush = NULL;
 	s->fsync = NULL;
+	s->fgetpos = NULL;
+	s->fsetpos = NULL;
 #ifdef STREAM_DEBUG
 	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
 #endif
@@ -733,7 +769,8 @@ file_fsync(stream *s)
 #ifdef NATIVE_WIN32
 	    _commit(_fileno(fp)) < 0
 #else
-	    fsync(fileno(fp)) < 0
+/* TODO, use config to chose between fsync, fdatasync and none */
+	    fdatasync(fileno(fp)) < 0
 #endif
 		){
 		s->errnr = WRITE_ERROR;
@@ -741,6 +778,24 @@ file_fsync(stream *s)
 	}
 	return 0;
 }
+
+static int
+file_fgetpos(stream *s, size_t *p)
+{
+	FILE *fp = (FILE*)s->stream_data.p;
+
+	*p = ftell(fp);
+	return 0;
+}
+
+static int
+file_fsetpos(stream *s, size_t p)
+{
+	FILE *fp = (FILE*)s->stream_data.p;
+
+	return fseek(fp, p, SEEK_SET);
+}
+
 
 static stream *
 open_stream(const char *filename, const char *flags)
@@ -758,6 +813,8 @@ open_stream(const char *filename, const char *flags)
 	s->close = file_close;
 	s->flush = file_flush;
 	s->fsync = file_fsync;
+	s->fgetpos = file_fgetpos;
+	s->fsetpos = file_fsetpos;
 	s->stream_data.p = (void *) fp;
 	return s;
 }
@@ -1903,9 +1960,12 @@ file_stream(const char *name)
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
 	s->read = file_read;
+	s->readline = NULL;
 	s->write = file_write;
 	s->close = file_close;
 	s->flush = file_flush;
+	s->fgetpos = file_fgetpos;
+	s->fsetpos = file_fsetpos;
 	return s;
 }
 
