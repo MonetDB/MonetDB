@@ -1063,7 +1063,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                         i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
                         str_val = BUNtail(str_values, BUNptr(str_values, i));
                         b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
-                                        "<xrpc:atomic-value xsi:type=\"xs:string\">\"%s\""
+                                        "<xrpc:atomic-value xsi:type=\"xs:string\">%s"
                                         "</xrpc:atomic-value>", str_val);
                         break;
                     case U_A:
@@ -1072,7 +1072,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                         b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
                                         "<xrpc:atomic-value xmlns:xdt=\"%s\" "
                                         "xsi:type=\"xdt:untypedAtomic\">"
-                                        "\"%s\"</xrpc:atomic-value>",
+                                        "%s</xrpc:atomic-value>",
                                         XDT_NS, str_val);
                         break;
                     case ATTR:

@@ -1743,12 +1743,12 @@ PFfun_xquery_fo ()
     , /* pf:documents (string*) as element()* */
       { .ns = PFns_lib, .loc = "documents",
         .arity = 1, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_string ()) },
+            .par_ty = (PFty_t[]) { PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
     , /* pf:documents-unsafe (string*) as element()* */
       { .ns = PFns_lib, .loc = "documents-unsafe",
         .arity = 1, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_string ()) },
+            .par_ty = (PFty_t[]) { PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
     , /* pf:collection (string) as node */
       { .ns = PFns_lib, .loc = "collection",

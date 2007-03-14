@@ -529,7 +529,7 @@ dflt_seqEmitDbl (XqueryCtx* ctx, dbl dv)
 static bool
 dflt_seqEmitStr (XqueryCtx* ctx, str sv)
 {
-    emit_escaped (ctx, sv);
+    stream_printf (ctx->out, "%s", sv);
 
     return SUCCESS;
 }
@@ -540,9 +540,9 @@ dflt_seqEmitStr (XqueryCtx* ctx, str sv)
 static bool
 esc_seqEmitStr (XqueryCtx* ctx, str sv)
 {
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    emit_escaped (ctx, sv);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    /* stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1); */
+    emit_escaped_entities (ctx, sv);
+    /* stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1); */
 
     return SUCCESS;
 }
@@ -1229,7 +1229,7 @@ struct serializeFunStruct xrpc_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
-    dflt_seqEmitStr,
+    esc_seqEmitStr,
     dflt_handle_attribute,
     dflt_handle_characters,
 
@@ -1265,7 +1265,7 @@ struct serializeFunStruct mapi_xrpc_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
-    dflt_seqEmitStr,
+    esc_seqEmitStr,
     dflt_handle_attribute,
     dflt_handle_characters,
 

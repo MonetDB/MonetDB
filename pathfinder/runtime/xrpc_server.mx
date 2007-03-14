@@ -198,7 +198,7 @@ Start XPRC receiver using the default values as specified in \
 #define XRPC_HTTP_CALL "<xrpc:call>"                                    \
                          "<xrpc:sequence>"                              \
                            "<xrpc:atomic-value xsi:type=\"xs:string\">" \
-                             "\"%s\""                                   \
+                             "%s"                                       \
                            "</xrpc:atomic-value>"                       \
                          "</xrpc:sequence>"                             \
                        "</xrpc:call>"
@@ -206,7 +206,7 @@ Start XPRC receiver using the default values as specified in \
 #define XRPC_PUT_CALL  "<xrpc:call>"                                    \
                          "<xrpc:sequence>"                              \
                            "<xrpc:atomic-value xsi:type=\"xs:string\">" \
-                             "\"%s\""                                   \
+                             "%s"                                       \
                            "</xrpc:atomic-value>"                       \
                          "</xrpc:sequence>"                             \
                          "<xrpc:sequence>"                              \
@@ -1071,12 +1071,11 @@ xrpc_handle_admin_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 static int 
 xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 {
-    char *method = NULL, *uri = NULL, *docname = NULL;
+    char *method = NULL, *uri = shttpd_get_uri(arg);
     char location[1024];
-    int i = 0, len = 0, ret = GDK_FAIL;
+    int i = 0, ret = GDK_FAIL;
     lng **argcnt = NULL;
 
-    uri = shttpd_get_uri(arg);
     /* we don't always have the second '/' */
     if(uri[0] == '/') uri++;
     if(uri[0] == '\0'){
@@ -1084,21 +1083,12 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
                 "Directory listing denied");
         return GDK_FAIL;
     }
-    len = strlen(uri);
-    docname = GDKmalloc(len + 3);
-    docname[0] = '\"';
-    for(i = 0; i < len; i++)
-        docname[i+1] = uri[i];
-    docname[len+1] = '\"';
-    docname[len+2] = '\0';
-
     snprintf(location, 1024, "http://localhost:%d/admin/admin.xq", xrpc_port);
     method = shttpd_get_method(arg);
     argcnt = GDKmalloc(sizeof(lng*));
     if (!argcnt){
         send_err(mc->c->fdout, 1, ERR500,
                 "env:Receiver", OUT_OF_MEM);
-        GDKfree(docname);
         return GDK_FAIL;
     }
     argcnt[0] = GDKmalloc(2 * sizeof(lng));
@@ -1106,7 +1096,6 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
         send_err(mc->c->fdout, 1, ERR500,
                 "env:Receiver", OUT_OF_MEM);
         GDKfree(argcnt);
-        GDKfree(docname);
         return GDK_FAIL;
     }
     argcnt[0][0] = argcnt[0][1] = 1;
@@ -1120,7 +1109,6 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
                     "env:Receiver", OUT_OF_MEM);
             GDKfree(argcnt[0]);
             GDKfree(argcnt);
-            GDKfree(docname);
             return GDK_FAIL;
         }
 
@@ -1133,18 +1121,17 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
                     NOT_WELL_FORMED);
             GDKfree(argcnt[0]);
             GDKfree(argcnt);
-            GDKfree(docname);
             return ret;
         }
 
         str argtpe[2] = { "xs:string", "xs:document" };
-        str argval[2] = { docname , "0" };
+        str argval[2] = { uri , "0" };
         ret = execQuery(mc, 2, MXQ_ADMIN, location, method, 2, 1,
                 argcnt, argtpe, argval, shredBAT);
         BBPreclaim(shredBAT);
     } else { /* GET/DELETE */
         str argtpe[1] = { "xs:string" };
-        str argval[1] = { docname };
+        str argval[1] = { uri };
 
         ret = execQuery(mc, 2, MXQ_ADMIN, location, method, 1, 1,
                 argcnt, argtpe, argval, NULL);
@@ -1152,7 +1139,6 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 
     GDKfree(argcnt[0]);
     GDKfree(argcnt);
-    GDKfree(docname);
     return ret;
 }
 
@@ -1162,11 +1148,8 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 static void 
 xrpc_client_engine(mapi_client *mc)
 {
-    struct shttpd_callback_arg *arg = NULL;
-    char *uri = NULL;
-
-    arg = (struct shttpd_callback_arg *) mc->arg;
-    uri = shttpd_get_uri(arg);
+    struct shttpd_callback_arg *arg = (struct shttpd_callback_arg *) mc->arg;
+    char *uri = shttpd_get_uri(arg);
 
     if(strncmp(uri, XRPCD_CALLBACK, 5) == 0) {
         (void) xrpc_handle_request(mc, arg);

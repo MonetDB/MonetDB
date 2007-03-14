@@ -6542,10 +6542,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
             item_ext = kind_str(rc);
             milprintf(f, 
-                "{ # translate pf:documents (string*) as string*\n"
-                "  var ret := ws_documents(ws, item%s.materialize(ipik),%s);\n"
+                "{ # translate pf:documents (string) as string*\n"
+                "  var ret := ws_documents(ws, iter.materialize(ipik).reverse().leftfetchjoin(item%s),%s);\n"
                 "  item := ret.tmark(0@0);\n"
-                "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n", (rc)?item_ext:val_join(STR), consistent);
+                "  iter := ret.hmark(0@0);\n", (rc)?item_ext:val_join(STR), consistent);
         } else {
             milprintf(f, 
                 "{ # translate pf:documents () as string*\n"

@@ -1,50 +1,30 @@
-var MODULE = "http://monetdb.cwi.nl/XQuery/admin/";
-var LOCATION = document.location + "admin.xq";
-var REQ_HEADER = '<?xml version="1.0" encoding="utf-8"?>\n' +
-                   '<env:Envelope ' +
-                       'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
-                       'xmlns:xrpc="http://monetdb.cwi.nl/XQuery" ' +
-                       'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
-                       'xsi:schemaLocation="http://monetdb.cwi.nl/XQuery ' +
-                                           'http://monetdb.cwi.nl/XQuery/XRPC.xsd" ' +
-                       'xmlns:xs="http://www.w3.org/2001/XMLSchema">' +
-                     '<env:Body>' +
-                       '<xrpc:request xrpc:module="' + MODULE + '" ' +
-                                     'xrpc:location="' + LOCATION + '" ';
-var REQ_FOOTER = '</xrpc:request></env:Body></env:Envelope>';
-var ATOM_STR = '<xrpc:atomic-value xsi:type="xs:string">';
-var ATOM_END = '</xrpc:atomic-value>';
+/* set the proper URLs for the admin GUI */
+var protocol= "file:";
+if (document.location.protocol != null && document.location.protocol != "")
+   protocol = document.location.protocol
 
-function serializeXML(xml) {
-    try {
-        return xml.xml;
-    } catch(e){
-        try {
-            var xmlSerializer = new XMLSerializer();
-            return xmlSerializer.serializeToString(xml);
-        } catch(e){
-            alert("Failed to create xmlSerializer or to serialize XML document:\n" + e);
-        }
-    }
-}
+var port    = "";
+if (document.location.port != null && document.location.port != "")
+   port = ":" + document.location.port
+
+var href    = protocol + "//" + document.location.hostname + port; 
+var mod     = "http://monetdb.cwi.nl/XQuery/admin/";
+var modurl  = href + "/admin/admin.xq";
+var posturl = href + "/mxqadmin";
+
+function myXRPC(method,call,callback) { XRPC(posturl,mod,modurl,method,call,callback); }
 
 /**********************************************************************
           Callback functions of the admin functions in admin.xq
 ***********************************************************************/
-function doCollectionsCallback(response) {
-    if(response == null){
-        alert('Execution of "collections()" failed');
-        return;
-    }
 
+function doCollectionsCallback(response) {
     var cols = response.getElementsByTagName("collection");
     var cTable = top.content.document.getElementById("div1");
     var cTableBody = "";
 
-
     if(cols.length == 0){
-        cTable.innerHTML =
-            '<h3>No (documents) collections in the database</h3>\n';
+        cTable.innerHTML = '<h3>No (documents) collections in the database</h3>\n';
         return;
     }
 
@@ -92,11 +72,6 @@ function doCollectionsCallback(response) {
 }
 
 function doAllDocumentsCallback(response) {
-    if(response == null){
-        alter('Execution of "documents()" failed');
-        return;
-    }
-
     var docs = response.getElementsByTagName("document");
     var dTableBody = "";
 
@@ -118,7 +93,7 @@ function doAllDocumentsCallback(response) {
         dTableBody += '<td>'+url+'</td>\n';
         dTableBody +=
             '<td>'+
-            '<input type="button" name="viewDoc" value="view" onclick="open(\'/'+docName+'\',\'_blank\',\'directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
+            '<input type="button" name="viewDoc" value="view" onclick="open(\'/'+docName+'\',\'_blank\',\'scrollbars=yes,resizable=yes,directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
             '</td>\n';
         dTableBody +=
             '<td>'+
@@ -148,11 +123,6 @@ function doAllDocumentsCallback(response) {
 }
 
 function doDocumentsCallback(response) {
-    if(response == null){
-        alter('Execution of "documents()" failed');
-        return;
-    }
-
     var docs = response.getElementsByTagName("document");
     var cName = docs[0].getAttribute("collection");
     var dTableBody = "";
@@ -172,7 +142,7 @@ function doDocumentsCallback(response) {
         dTableBody += '<td>'+url+'</td>\n';
         dTableBody +=
             '<td>'+
-            '<input type="button" name="viewDoc" value="view" onclick="open(\'/'+docName+'\',\'_blank\',\'directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
+            '<input type="button" name="viewDoc" value="view" onclick="open(\'/'+docName+'\',\'_blank\',\'scrollbars=yes,resizable=yes,directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
             '</td>\n';
         dTableBody +=
             '<td>'+
@@ -196,53 +166,7 @@ function doDocumentsCallback(response) {
         '</table>\n';
 }
 
-function doAddDocCallback(response){
-    if(response != null) {
-        alert("Shred document DONE!\n"+
-              "Please reload the collections list to view result");
-    }
-}
-
-function doDelDocCallback(response){
-    if(response != null) {
-        alert("Delete document DONE!\n"+
-              "Please reload the documents list to view result");
-    }
-}
-
-function doDelColCallback(response){
-    if(response != null) {
-        alert("Delete collection DONE!\n"+
-              "Please reload the collections list to view result");
-    }
-}
-
-function doBackupColCallback(response){
-    alert("Sorry, function doBackupColCallback() not implemented yet");
-}
-
-function doRestoreColCallback(response){
-    alert("Sorry, function doRestoreColCallback() not implemented yet");
-}
-
-function doBackupCallback(response){
-    if(response != null) {
-        alert("Backup DONE!\n");
-    } 
-}
-
-function doRestoreCallback(response){
-    if(response != null) {
-        alert("Restore DONE!\n");
-    } 
-}
-
 function doDbStatsCallback(response){
-    if(response == null){
-        alter('Execution of "db-stats()" failed');
-        return;
-    }
-
     var buns = response.getElementsByTagName("bun");
     var dTableBody = "";
 
@@ -275,11 +199,6 @@ function doDbStatsCallback(response){
 }
 
 function doDbEnvCallback(response){
-    if(response == null){
-        alter('Execution of "db-env()" failed');
-        return;
-    }
-
     var buns = response.getElementsByTagName("bun");
     var dTableBody = "";
 
@@ -302,10 +221,9 @@ function doDbEnvCallback(response){
     var dTable = top.content.document.getElementById("div1");
     dTable.innerHTML = 
         '<h2>MonetDB environment variables:</h2>\n' +
-        '<p>The complete MonetDB configuration file "MonetDB.conf" ' +
-           'can be found on the servers local system via the path "' +
-           configPath +
-        '"</p>\n' +
+        '<p>You can change these values by modifying the MonetDB configuration file <a href="' 
+            + configPath + '">MonetDB.conf</a> followed by a DB restart.' +
+        '</p>\n' +
         '<table width="30%" border="1">\n' +
         '<tr>\n' +
         '<th>Variable Name</th>\n' +
@@ -316,203 +234,79 @@ function doDbEnvCallback(response){
     top.content.document.getElementById("div2").innerHTML = "";
 }
 
-function doDbFlushCallback(response){
-    if(response == null){
-        alter('Execution of "db-flush()" failed');
-        return;
-    }
+function doCollections()  { 
+    XRPC(posturl, mod, modurl, 'collections',  XRPC_CALL(), doCollectionsCallback); 
+}
 
+/* methods expected to take 'long' (use popup window) */
+function asyncCallback(response, method) { 
+    alert(method + " DONE!\n"); 
+    top.doCollections();
+}
+function doAddDocCallback(response)      { asyncCallback(response, "Add Document"); }
+function doDelDocCallback(response)      { asyncCallback(response, "Delete Document"); }
+function doDelColCallback(response)      { asyncCallback(response, "Delete Collection"); }
+function doBackupColCallback(response)   { asyncCallback(response, "Backup Collection"); }
+function doRestoreColCallback(response)  { asyncCallback(response, "Restore Collection"); }
+function doBackupCallback(response)      { asyncCallback(response, "Backup"); }
+function doRestoreCallback(response)     { asyncCallback(response, "Restore"); }
+
+/* expected to return 'immediately' */
+function reportCallback(response, method) { 
     var dTable = top.content.document.getElementById("div1");
     dTable.innerHTML = serializeXML(response);
     top.content.document.getElementById("div2").innerHTML = "";
 }
 
-function doDbRestartCallback(response){
-    if(response == null){
-        alter('Execution of "db-restart()" failed');
-        return;
-    }
-
-    var dTable = top.content.document.getElementById("div1");
-    dTable.innerHTML = serializeXML(response);
-    top.content.document.getElementById("div2").innerHTML = "";
-}
-
-function doDbCheckpointCallback(response){
-    if(response == null){
-        alter('Execution of "db-checkpoint()" failed');
-        return;
-    }
-
-    var dTable = top.content.document.getElementById("div1");
-    dTable.innerHTML = serializeXML(response);
-    top.content.document.getElementById("div2").innerHTML = "";
-}
 
 /**********************************************************************
           Implementation of the functions defined in admin.xq
 ***********************************************************************/
-function doCollections() {
-    var xrpcRequest = REQ_HEADER +
-                      'xrpc:method="collections"><xrpc:call/>'
-                      + REQ_FOOTER;
-    clnt.sendReceive("collections", xrpcRequest, doCollectionsCallback);
-}
 
-function doAllDocuments() {
-    var xrpcRequest = REQ_HEADER +
-        'xrpc:method="documents">' +
-        '<xrpc:call/>' +
-        REQ_FOOTER;
-    clnt.sendReceive("documents", xrpcRequest, doAllDocumentsCallback);
-}
+function doDocuments(colName) 
+                          { myXRPC('documents', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', colName))), doDocumentsCallback); }
+function doAllDocuments() { myXRPC('documents', XRPC_CALL(), doAllDocumentsCallback); }
+function doDbStats()      { myXRPC('db-stats',     XRPC_CALL(), doDbStatsCallback); }
+function doDbEnv()        { myXRPC('db-env',       XRPC_CALL(), doDbEnvCallback); }
+function doDbRestart()    { myXRPC('db-restart',   XRPC_CALL(), reportCallback);  }
 
-function doDocuments(colName) {
-    var xrpcRequest = REQ_HEADER +
-        'xrpc:method="documents">' +
-        '<xrpc:call><xrpc:sequence>' +
-        ATOM_STR + '"'+ colName + '"'+ ATOM_END +
-        '</xrpc:sequence></xrpc:call>' +
-        REQ_FOOTER;
-    clnt.sendReceive("documents", xrpcRequest, doDocumentsCallback);
-}
+function doBackupCol()    { alert("Sorry, function doBackupCol() not implemented yet"); }
+function doRestoreCol()   { alert("Sorry, function doRestoreCol() not implemented yet"); }
 
 function doAddDoc() {
-    var url = top.content.document.getElementById("newURL").value;
-    var name = top.content.document.getElementById("newName").value;
-    var col = top.content.document.getElementById("newCol").value;
+    var url =   top.content.document.getElementById("newURL").value;
+    var name =  top.content.document.getElementById("newName").value;
+    var col =   top.content.document.getElementById("newCol").value;
     var perct = top.content.document.getElementById("newFree").value;
-
-    var xrpcRequest = REQ_HEADER+
-        'xrpc:method="add-doc">'+
-        '<xrpc:call>'+
-          '<xrpc:sequence>'+
-            '<xrpc:atomic-value xsi:type="xs:string">"'+url+'"</xrpc:atomic-value>'+
-          '</xrpc:sequence>'+
-          '<xrpc:sequence>'+
-            '<xrpc:atomic-value xsi:type="xs:string">"'+name+'"</xrpc:atomic-value>'+
-          '</xrpc:sequence>'+
-          '<xrpc:sequence>'+
-            '<xrpc:atomic-value xsi:type="xs:string">"'+col+'"</xrpc:atomic-value>'+
-          '</xrpc:sequence>'+
-          '<xrpc:sequence>'+
-            '<xrpc:atomic-value xsi:type="xs:integer">'+perct+'</xrpc:atomic-value>'+
-          '</xrpc:sequence>'+
-        '</xrpc:call>'+
-        REQ_FOOTER;
-alert(xrpcRequest);
-    clnt.sendReceive("add-doc", xrpcRequest, doAddDocCallback);
+    myXRPC('add-doc', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', url)) +
+                                XRPC_SEQ(XRPC_ATOM('string', name)) +
+                                XRPC_SEQ(XRPC_ATOM('string', col)) +
+                                XRPC_SEQ(XRPC_ATOM('integer', perct))), doAddDocCallback);
 }
 
 function doDelDoc(docName) {
-    var confirmMsg =
-        'Are you sure you want to delete the document "' +
-        docName + '"?';
-    if(!window.confirm(confirmMsg)) return;
-
-    var xrpcRequest = REQ_HEADER +
-        'xrpc:method="del-doc">' +
-        '<xrpc:call><xrpc:sequence>'+
-            ATOM_STR + '"' + docName + '"' + ATOM_END +
-        '</xrpc:sequence></xrpc:call>' +
-        REQ_FOOTER;
-    clnt.sendReceive("del-doc", xrpcRequest, doDelDocCallback);
+    if (!window.confirm('Are you sure you want to delete the document "' + docName + '"?')) return;
+    myXRPC('del-doc', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', docName))), doDelDocCallback);
 }
 
 function doDelCol(colName) {
-    var confirmMsg =
-        'Are you sure you want to delete the collection "' +
-        colName + '" and all documents in it?';
-    if(!window.confirm(confirmMsg)) return;
-
-    var xrpcRequest = REQ_HEADER +
-        'xrpc:method="del-col">' +
-        '<xrpc:call>' +
-          '<xrpc:sequence>'+
-            '<xrpc:atomic-value xsi:type="xs:string">"'+colName+'"</xrpc:atomic-value>'+
-          '</xrpc:sequence>'+
-        '</xrpc:call>' +
-        REQ_FOOTER;
-    clnt.sendReceive("del-col", xrpcRequest, doDelColCallback);
-}
-
-function doBackupCol(){
-    alert("Sorry, function doBackupCol() not implemented yet");
-}
-
-function doRestoreCol(){
-    alert("Sorry, function doRestoreCol() not implemented yet");
+    if (!window.confirm('Are you sure you want to delete the collection "' + colName + '" and all documents in it?')) return;
+    myXRPC('del-col', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', colName))), doDelColCallback);
 }
 
 function doBackup(){
     var id = top.content.document.getElementById("ID").value;
-
-    var xrpcRequest = REQ_HEADER+
-        'xrpc:method="backup">'+
-        '<xrpc:call>'+
-          '<xrpc:sequence>'+
-            '<xrpc:atomic-value xsi:type="xs:string">"'+id+'"</xrpc:atomic-value>'+
-          '</xrpc:sequence>'+
-        '</xrpc:call>'+
-        REQ_FOOTER;
-    clnt.sendReceive("backup", xrpcRequest, doBackupCallback);
+    myXRPC('backup', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', id))), doBackupCallback);
+    top.content.document.getElementById("div1").innerHTML = "Backup in progress..";
 }
 
 function doRestore(){
-    var id = top.content.document.getElementById("ID").value;
+    var id =    top.content.document.getElementById("ID").value;
     var perct = top.content.document.getElementById("dfltFree").value;
 
-    var xrpcRequest = REQ_HEADER+
-        'xrpc:method="restore">'+
-        '<xrpc:call>'+
-          '<xrpc:sequence>'+
-            '<xrpc:atomic-value xsi:type="xs:string">"'+id+'"</xrpc:atomic-value>'+
-          '</xrpc:sequence>'+
-          '<xrpc:sequence>'+
-            '<xrpc:atomic-value xsi:type="xs:integer">'+perct+'</xrpc:atomic-value>'+
-          '</xrpc:sequence>'+
-        '</xrpc:call>'+
-        REQ_FOOTER;
-    clnt.sendReceive("restore", xrpcRequest, doRestoreCallback);
-}
-
-function doDbStats(){
-    var xrpcRequest = REQ_HEADER +
-                      'xrpc:method="db-stats"><xrpc:call/>'
-                      + REQ_FOOTER;
-    clnt.sendReceive("db-stats", xrpcRequest, doDbStatsCallback);
-}
-
-function doDbEnv(){
-    var xrpcRequest = REQ_HEADER +
-                      'xrpc:method="db-env"><xrpc:call/>'
-                      + REQ_FOOTER;
-    clnt.sendReceive("db-env", xrpcRequest, doDbEnvCallback);
-}
-
-function doDbFlush(){
-    var xrpcRequest = REQ_HEADER +
-                      'xrpc:method="db-flush"><xrpc:call/>'
-                      + REQ_FOOTER;
-    clnt.sendReceive("db-flush", xrpcRequest, doDbFlushCallback);
-}
-
-function doDbRestart(){
-    var xrpcRequest = REQ_HEADER +
-                      'xrpc:method="db-restart"><xrpc:call/>'
-                      + REQ_FOOTER;
-    clnt.sendReceive("db-restart", xrpcRequest, doDbRestartCallback);
-}
-
-function doDbCheckpoint(){
-    var xrpcRequest = REQ_HEADER +
-                      'xrpc:method="db-checkpoint"><xrpc:call/>'
-                      + REQ_FOOTER;
-    clnt.sendReceive("db-checkpoint", xrpcRequest, doDbCheckpointCallback);
-}
-
-function doPUT() {
-    alert("Sorry, function not implemented yet");
+    myXRPC('restore', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', id)) + 
+                                XRPC_SEQ(XRPC_ATOM('integer', perct))), doRestoreCallback);
+    top.content.document.getElementById("div1").innerHTML = "Restore in progress..";
 }
 
 function makeAddDocForm(){

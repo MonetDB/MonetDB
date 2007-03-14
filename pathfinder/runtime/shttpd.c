@@ -2905,6 +2905,7 @@ shttpd_merge_fds(shttpd_socket *ctx, fd_set *rfds, fd_set *wfds, int *maxfd)
 
 	for (c = ctx->connections; c != NULL; c = c->next) {
         if (c->sock == INVALID_SOCKET) continue;
+	if ((c->flags & FLAG_THREADED)) continue;
 
 		/* Remote socket always in read set */
 		MERGEFD(c->sock, rfds); 

@@ -14,13 +14,13 @@ declare namespace pf = 'http://www.pathfinder-xquery.org/';
 (: =================== document management =================== :)
 
 declare function admin:collections() 
-{ pf:collections() };
+{ pf:collections-unsafe() };
 
 declare function admin:documents()
-{ pf:documents() };
+{ pf:documents-unsafe() };
 
 declare function admin:documents($collection as xs:string) 
-{ pf:documents($collection) };
+{ pf:documents-unsafe($collection) };
 
 declare document management function admin:add-doc($uri as xs:string, $document as xs:string, $collection as xs:string, $percentage as xs:integer) 
 { pf:add-doc($uri, $document, $collection, $percentage) };
@@ -93,16 +93,8 @@ declare function admin:db-stats()
 declare function admin:db-env() 
 { pf:mil('return environment().access(BAT_WRITE).delete("exec_prefix").delete("prefix").delete("gdk_debug").delete("gdk_embedded").delete("gdk_vm_minsize").delete("mapi_debug").delete("mapi_noheaders").delete("monet_daemon").delete("monet_mod_path").delete("monet_pid").delete("monet_prompt").delete("monet_welcome").delete("sql_debug").delete("sql_logdir").insert("gdk_mem_maxsize", str(mem_maxsize())).sort();') };
 
-declare function admin:db-flush() 
-{ pf:mil('{ lock_set(pf_short); if (count(colname_runtime) > 0) _runtime_flush(); lock_unset(pf_short); delete_all_docs(true); return "cache flushed";}') };
-
 declare function admin:db-restart() 
 { pf:mil('fork({ sleep(5); exit();}); return "Mserver will restart in 5 seconds..";') };
-
-declare function admin:db-checkpoint() as xs:string 
-{ string(exactly-one(pf:mil('var t := usec(), logMB := (logger_changes(pf_logger)- logger_base)/131072; pf_logflush(lng(logMB)); return "flushed " + str(logMB) + "MB log in " + str(flt(usec() - t)/1000.0) + "ms";'))) };
-
-
 
 (: =================== HTTP =================== :)
 

@@ -2739,12 +2739,13 @@ PROC ws_collections(BAT[void,BAT] ws, bit consistent) : BAT[void,oid]
 # fn:documents(), get all document *names* in a collection
 PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme, bit consistent) : BAT[oid,oid]
 {
-    var doc_nme, doc_col, doc_url, doc_upd; 
+    var doc_nme, doc_col, doc_url, doc_upd, doc_itr; 
     if (consistent) pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
     var err := CATCH( { var col_upd := collection_name.mirror().[lng]().[str]().[+]("_map_pid").[bat]().[int]().[ttype]().[=](oid).[str]();
                         doc_nme := doc_name.uselect(str_nil,str_nil).mirror().leftjoin(doc_collection);
                         doc_nme := coll_nme.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_nme));
+                        doc_itr := doc_nme.hmark(0@0);
                         doc_url := doc_nme.leftjoin(doc_location).tmark(0@0);
                         doc_col := doc_nme.leftjoin(doc_collection).tmark(0@0);
                         doc_upd := doc_col.leftjoin(col_upd).tmark(0@0); 
@@ -2752,7 +2753,7 @@ PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme, bit consistent) : BAT
                         doc_nme := doc_nme.leftjoin(doc_name).tmark(0@0); });
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
-    return doc_nme.mark(0@0).leftfetchjoin(xmltab4(ws, "document", doc_nme.tmark(0@0), "collection", doc_col, "url", doc_url, "updatable", doc_upd));
+    return reverse(doc_itr).leftfetchjoin(xmltab4(ws, "document", doc_nme.tmark(0@0), "collection", doc_col, "url", doc_url, "updatable", doc_upd));
 }
 
 # fn:documents(), get all document *names* 
@@ -2952,6 +2953,11 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
     if (count(selidx_colname) > 0)
         selidx_colname := reverse(reverse(idx_colnames).kunique().sort());
 
+    # we now want .xml document names (in order for the HTTP doc access to work always)
+    var illegal := [or]([endsWith](idx_names, ".xml"), [endsWith](idx_names, ".XML")).select(false);
+    if (bit(count(illegal)))
+        ERROR("add-doc(%s): document name must end in .xml (%d such errors)!\n", 
+                                 illegal.fetch(0), count(illegal));
 
     lock_set(pf_short);
     err := CATCH(pivot := _shred_doc_base(selidx_colname, idx_names, idx_colnames, wsid));
@@ -4107,19 +4113,15 @@ xquery_function_call(xquery_client *ctx,
                 c = xquery_types[t].loc;
 
 		if (xquery_types[t].monet_tpe == TYPE_str) {
-                    /* we no longer do fancy strTostr for strings; just copied as is */
+                    /* we no longer do fancy strTostr for strings; just copied as-is */
 		    char *t, *s = argval[l];
 		    int len = strlen(s)*2;
-                    int sep = *s++;
 		    if (len <= ctx->vallen) {
 			if (ctx->val) GDKfree(ctx->val);
 			ctx->val = GDKmalloc(len+1);
 			if (ctx->val == NULL) return "xquery_function_call: malloc failure.\n";
 		    }
-		    for(t=(char*) ctx->val; *s && *s != sep; s++) {
-			if (*s == '\\') *t++ = '\\'; /* very usefule on windows for conserving paths */ 
-			*t++ = *s;
-		    }
+		    for(t=(char*) ctx->val; *s; s++) { *t++ = *s; }
                     *t = 0;
                 } else if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
                     return "xquery_function_call: illegal parameter value.\n";
@@ -4743,7 +4745,6 @@ xquery_parse_string(char *src,
     char *p = src, *q = buf, *r = buf+len-1;
     int sep1 = *p++;
     int sep2 = (sep1=='"')?'\'':'"';
-    int has_escapes = 0;
     int escape = 0;
     if (sep1 != '\'' && sep1 != '"') return src;
     while(*p) {
@@ -4755,7 +4756,6 @@ xquery_parse_string(char *src,
             if (p[0] == sep1) break;
             if (q+1 > r) return src; /* no room */
             if (p[0] == sep2) {
-                has_escapes = 1;
                 if (p[1] == sep1 && p[2] == sep1 && p[3] == sep2) {
                     *q++ = sep1; p += 4;
                 } else {
@@ -4837,8 +4837,6 @@ xquery_parse_string(char *src,
         }
     }
     if (*p != sep1) return src;
-    /* normalize simple 'x' strings to "x", only if no quoting happens inside x */
-    if (!has_escapes) *src = *p = '"'; /* only "x" string parameters are recognized by the cached function path that relies on ATOMfromstr() */ 
     *q = 0;
     return p+1;
 }
@@ -4993,22 +4991,29 @@ xquery_prepare(xquery_client *ctx,
             lng cnt[MAXPARAMS];
             char* tpe[MAXPARAMS];
             char* param[MAXPARAMS];
-            lng argc = 0;
+            lng i, argc = 0;
     
             /* e.g. ns:function(1,2,3) */
             p = xquery_parse_space(p+1);
             if (*p == ')') {
                p++;
             } else do {
+                int strsep = *p;
                 param[argc] = p;
                 tpe[argc] = "xs:string";
                 cnt[argc] = 1;
-                if (*param[argc] == '"' || *param[argc] == '\'') {
-                    p = xquery_parse_string(param[argc], val, 256);
+                if (strsep == '"' || strsep == '\'') {
+                    char *dst = val+1;
+                    p = xquery_parse_string(param[argc], dst, 254);
                     if (p <= param[argc]) {
                         err = "xquery_prepare: could not parse string literal.\n";
                         break;
                     }
+                    /* get the properly escaped string and use it as parameter later */
+                    while(*dst) dst++;
+                    param[argc] = (char*) alloca(dst+2-val);
+                    *dst++ = *val = strsep;
+                    *dst++ = 0;
                 } else if (*p == '-' || *p == '+' || *p == '.' || (*p >= '0' && *p <= '9')) {
                     p = xquery_parse_numeric(param[argc], tpe+argc);
                     if (p <= param[argc]) {
@@ -5024,6 +5029,7 @@ xquery_prepare(xquery_client *ctx,
                     err = "xquery_prepare: too many parameters.\n";
                     break;
                 }
+                param[argc] = NULL;
                 p = xquery_parse_space(p);
                 if (*p == ')') {
                     p++; 
@@ -5400,6 +5406,7 @@ xquery_method(mapi_client *mc,
     if (err == NULL) { 
         err = xquery_function_call(ctx, usec, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
+        else if (err == xquery_nondescriptive_error) err = xquery_function_error;
     }
 
     time_xrpcServApp = GDKusec() - time_xrpcServApp;
