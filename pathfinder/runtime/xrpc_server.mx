@@ -120,7 +120,9 @@ Find the options that should be pass to the XRPC server, currently only\
 "xrpc_server");
 
 PROC rpcd_start() : void {
-    fork( rpcd_start(get_xrpc_port(), get_xrpc_open(), get_xrpc_options()) );
+    var port := get_xrpc_port();
+    printf("# XRPC administrative console at http://localhost:%d/admin\n", port);
+    fork( rpcd_start(port, get_xrpc_open(), get_xrpc_options()) );
 }
 ADDHELP("rpcd_start", "zhang", "Febuary 2007",
 "DESCRIPTION:\n\
@@ -1210,6 +1212,7 @@ CMDrpcd_start(int *port, bit *open, str option)
 
     xrpc_port = *port;
     rpcd_running = 1;
+
 
     /* find 'datadir' (often datadir = <prefix>/share), otherwise use
      * "/usr/share", hence, httpd serves out <datadir>/MonetDB/xrpc */
