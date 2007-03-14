@@ -1233,7 +1233,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                 time_xrpcClntDeSeria);
     }
 
-    clean_up(sock, out, bs, b, argcnt, iterc);
+    clean_up(-1, out, bs, b, argcnt, iterc);
     *res = shredBAT;
     return GDK_SUCCEED;
 }

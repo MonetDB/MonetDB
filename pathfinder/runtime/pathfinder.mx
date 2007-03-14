@@ -5424,7 +5424,7 @@ xquery_method(mapi_client *mc,
 /*
  * module initialization
  */
-extern void xmlInitThreads(void);
+extern void xmlInitParser(void);
 bat *
 xquery_prelude(void)
 {
@@ -5432,7 +5432,7 @@ xquery_prelude(void)
     MT_init_lock(pf_module_lock);
     MT_init_lock(pf_cache_lock);
 
-    xmlInitThreads();
+    xmlInitParser();
    
     xquery_compiled_modules = NULL;
     return NULL;

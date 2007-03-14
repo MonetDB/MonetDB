@@ -1263,6 +1263,8 @@ xmlSAXHandler shredder = {
 #define XML_PARSE_NOXINCNODE 0
 #endif
 
+#define XMLCHUNK 262144
+
 /**
  * Main shredder driver handling the libxml2 and buffer stuff
  */
@@ -1274,8 +1276,8 @@ shredder_parse(shredCtxStruct *shredCtx,
 {
     int print_error_newline = TRUE;
     int wellFormed = 0;
-    char buf[BUFSIZ];
     xmlParserCtxtPtr xmlCtx = NULL;
+    char buf[XMLCHUNK+1];
 
     /* reset libxml2 error handling */
     xmlSetGenericErrorFunc((void*)&print_error_newline, shred_error);
@@ -1298,7 +1300,7 @@ shredder_parse(shredCtxStruct *shredCtx,
     xmlSwitchEncoding(xmlCtx, XML_CHAR_ENCODING_UTF8);
     if (s) { 
         while(1) {
-            ssize_t len = stream_read(s, buf, 1, sizeof(buf));
+            ssize_t len = stream_read(s, buf, 1, XMLCHUNK);
             if (len < 0) {
                 stream_printf(GDKout, "!WARNING: shredder_parse: read() returned " SSZFMT " -> bailing out\n", len);
                 shredCtx->err = 1;
