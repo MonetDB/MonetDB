@@ -1424,8 +1424,9 @@ GDKinit(char *dbname, char *dbfarm, int alloc_map)
 	if (GDKembedded)
 		GDKprotected = 0;
 
-	/* Mserver intends to rob 95% of all memory as a default */
-	GDK_vm_minsize = GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
+	/* Mserver intends to rob 80% of all memory as a default */
+	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
+	GDK_vm_minsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.33);
 
 	GDKmemchk(TRUE, TRUE);
 	GDKremovedir(DELDIR);

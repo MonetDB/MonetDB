@@ -67,7 +67,7 @@ The options have the following meaning:
 
 #endif /* _MONET_GLOBAL_H_ */
 @c
-#include "pf_config.h"
+#include "monetdb4_config.h"
 #include "Mserver.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -116,7 +116,7 @@ gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 static int malloc_init = 1;
 #endif
 @c
-void
+static void
 usage(char *prog, int debug, opt *set, int setlen)
 {
 	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
@@ -213,15 +213,6 @@ Monet_init(opt *set, int setlen)
 		/* sanity check to avoid memory fragmentation */
 		GDK_mem_bigsize = (size_t) MIN(max_mem_bigsize, strtol(p, NULL, 10));
 	}
-	if ((p = GDKgetenv("gdk_vm_minsize"))){
-		/* when allocating HUGE regions, switch from vmalloc() to mmap() on a real file */
-		/* for 32-bits systems HUGE = RAM/8, for 64-bits systems HUGE = RAM/2 */
-		lng max_vm_minsize = ((lng)GDK_mem_maxsize*sizeof(void*)*sizeof(void*))/128;
-
-		/* sanity check to avoid running out of swap space */
-		GDK_vm_minsize = (size_t) MIN(max_vm_minsize, strtol(p, NULL, 10));
-	}
-
 	if (GDKgetenv_isyes("gdk_embedded") || GDKgetenv_isyes("embedded")) {
 		GDKembedded = 1;
 		monet_daemon = 1;
@@ -301,22 +292,18 @@ capabilities depend on the malloc implementation used at run time.
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog, debug, set, setlen);
 
-/*	* MONETDBPREFIX & MONETDBCONFIG are not (yet?) available for pathfinder;
-	* use "Mserver --config=`monetdb4-config --sysconfdir`/MonetDB.conf", instead.
 	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
-*/
 
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::?s:",
-				    long_options, &option_index);
+		int opt = getopt_long(argc, av, "c:d::?s:", long_options, &option_index);
 
-		if (c == -1)
+		if (opt == -1)
 			break;
 
-		switch (c) {
+		switch (opt) {
 		case 0:
 			if (strcmp(long_options[option_index].name, "dbname") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
@@ -366,7 +353,7 @@ capabilities depend on the malloc implementation used at run time.
 		case '?':
 			usage(prog, debug, set, setlen);
 		default:
-			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", c);
+			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", opt);
 			usage(prog, debug, set, setlen);
 		}
 	}
