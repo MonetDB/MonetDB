@@ -711,14 +711,16 @@ int scanner_symbol(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
 	int next = 0;
+	int started = lc->started;
 
 	if (cur == '/') {
+		lc->started = 1;
 		next = scanner_getc(lc);
 		if (next == '*') {
+			lc->started = started;
 			cur = skip_c_comment(lc);
 			return tokenize(c, cur);
 		} else {
-			lc->started = 1;
 			utf8_putchar(lc, next); 
 			return scanner_token(lc, cur);
 		}
@@ -733,8 +735,10 @@ int scanner_symbol(mvc * c, int cur)
 	}
 	switch (cur) {
 	case '-':
+		lc->started = 1;
 		next = scanner_getc(lc);
 		if (next == '-') {
+			lc->started = started;
 			if ((cur = skip_sql_comment(lc)) == EOF)
 				return cur;
 			return tokenize(c, cur);
@@ -892,7 +896,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 
 	if (token == IDENT || token == COMPARISON || token == AGGR || token == RANK || token == aTYPE || token == ALIAS)
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
-	if (token == STRING) {
+	else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 +1 );
 		assert(quote == '"' || quote == '\'');

@@ -982,9 +982,6 @@ flatten_outerrefs( mvc *sql, scope *scp, stmt *ls, stmt **R, stmt *subset, int f
 	return ls;
 }
 
-
-#define SQL_MAXDEPTH ((THREAD_STACK_SIZE/4096)/4)
-
 static stmt *
 sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 {
