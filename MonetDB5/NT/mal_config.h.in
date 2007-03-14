@@ -255,7 +255,6 @@
 
 /* Define to 1 if you have the `putenv' function. */
 #define HAVE_PUTENV 1
-#define putenv _putenv
 
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
