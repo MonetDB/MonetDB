@@ -88,6 +88,10 @@ The server options have the following meaning:
 #undef _CRTDBG_MAP_ALLOC
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define getcwd _getcwd
+#endif
+
 @-
 The architecture is setup to handle multiple streams of requests.
 The first thread started represents the server. It reads from standard input
