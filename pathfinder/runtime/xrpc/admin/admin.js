@@ -68,7 +68,6 @@ function doCollectionsCallback(response) {
         '</tr>\n' +
         cTableBody + response.xml + 
         '</table>\n';
-    top.content.document.getElementById("div2").innerHTML = "";
 }
 
 function doAllDocumentsCallback(response) {
@@ -118,8 +117,6 @@ function doAllDocumentsCallback(response) {
         '</tr>\n' +
         dTableBody +
         '</table>\n';
-
-    top.content.document.getElementById("div2").innerHTML = "";
 }
 
 function doDocumentsCallback(response) {
@@ -151,7 +148,7 @@ function doDocumentsCallback(response) {
         dTableBody += '</tr>\n';
     }
 
-    var dTable = top.content.document.getElementById("div2");
+    var dTable = top.content.document.getElementById("div1");
     dTable.innerHTML = 
         '<h2>Documents in the collection \"' + cName + '\"</h2>\n' +
         '<table width="30%" border="1">\n' +
@@ -195,7 +192,6 @@ function doDbStatsCallback(response){
         '</tr>\n' +
         dTableBody +
         '</table>\n';
-    top.content.document.getElementById("div2").innerHTML = "";
 }
 
 function doDbEnvCallback(response){
@@ -231,7 +227,6 @@ function doDbEnvCallback(response){
         '</tr>\n' +
         dTableBody +
         '</table>\n';
-    top.content.document.getElementById("div2").innerHTML = "";
 }
 
 function doCollections()  { 
@@ -255,7 +250,6 @@ function doRestoreCallback(response)     { asyncCallback(response, "Restore"); }
 function reportCallback(response, method) { 
     var dTable = top.content.document.getElementById("div1");
     dTable.innerHTML = serializeXML(response);
-    top.content.document.getElementById("div2").innerHTML = "";
 }
 
 
@@ -282,6 +276,8 @@ function doAddDoc() {
                                 XRPC_SEQ(XRPC_ATOM('string', name)) +
                                 XRPC_SEQ(XRPC_ATOM('string', col)) +
                                 XRPC_SEQ(XRPC_ATOM('integer', perct))), doAddDocCallback);
+    var dTable = top.content.document.getElementById("div1");
+    dTable.innerHTML = dTable.innerHTML + '<b>Started shredding '+ url + '...</b>';
 }
 
 function doDelDoc(docName) {
@@ -337,8 +333,6 @@ function makeAddDocForm(){
             '</td>\n' +
           '</tr>\n' +
         '</table>\n';
-
-    top.content.document.getElementById("div2").innerHTML = "";
 }
 
 function makeBackupForm(){
@@ -357,7 +351,6 @@ function makeBackupForm(){
             '</td>\n' +
           '</tr>\n' +
         '</table>\n';
-    top.content.document.getElementById("div2").innerHTML = "";
 }
 
 function makeRestoreForm(){
@@ -380,5 +373,4 @@ function makeRestoreForm(){
             '</td>\n' +
           '</tr>\n' +
         '</table>\n';
-    top.content.document.getElementById("div2").innerHTML = "";
 }
