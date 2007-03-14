@@ -34,10 +34,6 @@ LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2.lib" "$(LIBICONV)\lib\iconv.lib" "$(LIBZL
 # override value from global rules.msc
 LIBC_INCS = $(PTHREAD_INCS) $(LIBXML_INCS)
 
-MONETDB_PREFIX=C:\cygwin\home\Peter Boncz\MonetDB\NT
-CLIENTS_PREFIX=C:\cygwin\home\Peter Boncz\clients\NT
-MONETDB4_PREFIX=C:\cygwin\home\Peter Boncz\MonetDB4\NT
-
 MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include
 MONETDB_INCS="-I$(MONETDB_INCLUDEDIR)" "-I$(MONETDB_INCLUDEDIR)\common" "-I$(MONETDB_INCLUDEDIR)\gdk" "-I$(MONETDB_INCLUDEDIR)\monet" "-I$(MONETDB_INCLUDEDIR)\plain" "-I$(MONETDB_INCLUDEDIR)\mapi"
 
