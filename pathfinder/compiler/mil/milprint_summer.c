@@ -11114,10 +11114,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
 const char* PFinitMIL(void) {
     return 
-        "module(\"pathfinder\");\n"
 #ifdef HAVE_PFTIJAH
-        "module(\"pftijah\");\n"
-	"\n"
 	"var tID := 9999@0; # start counter at an arbitrary number\n"
 	"var tijah_tID   := new(void,oid).seqbase(0@0);\n"
 	"var tijah_frag  := new(void,oid).seqbase(0@0);\n"
