@@ -280,7 +280,7 @@ possible match for the non-polymorphic case.
 		for(i=p->retc;i<p->argc;i++){
 			int actual = getArgType(mb,p,i);
 			int formal = getArgType(s->def,sig,i);
-			if(formal!=actual ){
+			if( resolveType(formal,actual) == -1 ){
 #ifdef DEBUG_MAL_RESOLVE
 			stream_printf(GDKout,"unmatched %d formal %s actual %s\n",
 				i, getTypeName(formal), getTypeName(actual));
@@ -527,7 +527,7 @@ A bat reference can be coerced to bat type.
 		if( h2 == TYPE_any) h3= h1; 
 		else {
 #ifdef DEBUG_MAL_RESOLVE
-			if(tracefcn) stream_printf(GDKout,"Can not be resolved \n");
+			if(tracefcn) stream_printf(GDKout,"Head can not be resolved \n");
 #endif
 			return -1;
 		}
@@ -538,7 +538,7 @@ A bat reference can be coerced to bat type.
 		if( t2 == TYPE_any) t3= t1;
 		else {
 #ifdef DEBUG_MAL_RESOLVE
-			if(tracefcn) stream_printf(GDKout,"Can not be resolved \n");
+			if(tracefcn) stream_printf(GDKout,"Tail can not be resolved \n");
 #endif
 			return -1;
 		}
