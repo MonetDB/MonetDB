@@ -277,6 +277,9 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
 
     p = proxy_entry;
 
+    /* FIXME: This code hasn't been tested on semijoin operators */
+    if (p->kind == la_semijoin) return CONFLICT; 
+    
     /* This check is more restrictive as required... */
     if (!PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
         !PFprop_key_right (p->prop, p->sem.eqjoin.att2))
