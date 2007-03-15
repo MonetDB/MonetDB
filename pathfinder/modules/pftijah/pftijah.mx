@@ -27,8 +27,6 @@
 @m
 .MODULE pftijah;
 
-.USE pathfinder;
-
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
@@ -3752,12 +3750,18 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
 }
 @
 @c
-bat* pftijah_prelude() {
+bat *
+pftijah_prelude(void)
+{
+    if (!TBL_module_lookup("pathfinder"))
+        GDKerror("pathfinder must be loaded first.");
     termdb_prelude();
     return NULL;
 }
 
-void pftijah_epilogue() {
+void
+pftijah_epilogue(void)
+{
 }
 @
 
