@@ -2673,6 +2673,183 @@ PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
 }
 
 /**
+ * Constructor for the last item of a parameter list
+ */
+PFpa_op_t *PFpa_nil (void)
+{
+    PFpa_op_t     *ret;
+
+    /* create end of parameter list operator */
+    ret = leaf (pa_nil);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+    
+    /* costs */
+    ret->cost = 0;
+
+    return ret;
+}
+
+/**
+ * Constructor for a debug operator
+ */
+PFpa_op_t *
+PFpa_trace (const PFpa_op_t *n1,
+            const PFpa_op_t *n2,
+            PFalg_att_t iter,
+            PFalg_att_t item)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i, found = 0;
+
+    assert (n1);
+    assert (n2);
+
+    /* verify that iter and item are attributes of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+        if (iter == n1->schema.items[i].name ||
+            item == n1->schema.items[i].name)
+            found++;
+
+    /* did we find all attributes? */
+    if (found != 2)
+        PFoops (OOPS_FATAL,
+                "attributes referenced in trace operator not found");
+
+    /* create new trace node */
+    ret = wire2 (pa_trace, n1, n2);
+
+    /* insert semantic values (column names) into the result */
+    ret->sem.trace.iter     = iter;
+    ret->sem.trace.item     = item;
+
+    /* allocate memory for the result schema (= schema(n1)) */
+    ret->schema.count = n1->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+    
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (n1->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n1->orderings, i));
+    /* costs */
+    ret->cost = DEFAULT_COST + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * Constructor for a debug message operator
+ */
+PFpa_op_t *
+PFpa_trace_msg (const PFpa_op_t *n1,
+                const PFpa_op_t *n2,
+                PFalg_att_t iter,
+                PFalg_att_t item)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i, found = 0;
+
+    assert (n1);
+    assert (n2);
+
+    /* verify that iter and item are attributes of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+        if (iter == n1->schema.items[i].name ||
+            item == n1->schema.items[i].name)
+            found++;
+
+    /* did we find all attributes? */
+    if (found != 2)
+        PFoops (OOPS_FATAL,
+                "attributes referenced in trace message operator not found");
+
+    /* create new trace node */
+    ret = wire2 (pa_trace_msg, n1, n2);
+
+    /* insert semantic values (column names) into the result */
+    ret->sem.trace.iter     = iter;
+    ret->sem.trace.item     = item;
+
+    /* allocate memory for the result schema (= schema(n1)) */
+    ret->schema.count = n1->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+    
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (n1->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n1->orderings, i));
+    /* costs */
+    ret->cost = DEFAULT_COST + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * Constructor for debug relation map operator
+ * (A set of the trace_map operators link a trace operator
+ * to the correct scope.)
+ */
+PFpa_op_t *
+PFpa_trace_map (const PFpa_op_t *n1,
+                const PFpa_op_t *n2,
+                PFalg_att_t      inner,
+                PFalg_att_t      outer)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i, found = 0;
+
+    assert (n1);
+    assert (n2);
+
+    /* verify that inner and outer are attributes of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+        if (inner == n1->schema.items[i].name ||
+            outer == n1->schema.items[i].name)
+            found++;
+
+    /* did we find all attributes? */
+    if (found != 2)
+        PFoops (OOPS_FATAL,
+                "attributes referenced in trace operator not found");
+    
+    /* create new trace map node */
+    ret = wire2 (pa_trace_map, n1, n2);
+
+    /* insert semantic values (column names) into the result */
+    ret->sem.trace_map.inner    = inner;
+    ret->sem.trace_map.outer    = outer;
+    /* only initialize the trace id -- milgen.brg will do the rest */
+    ret->sem.trace_map.trace_id = 0;
+
+    /* allocate memory for the result schema (= schema(n1)) */
+    ret->schema.count = n1->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (n1->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n1->orderings, i));
+    /* costs */
+    ret->cost = DEFAULT_COST + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
  * Constructor for a tail recursion operator
  */
 PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
@@ -2729,27 +2906,6 @@ PFpa_op_t *PFpa_rec_param (const PFpa_op_t *arguments,
     
     /* costs */
     ret->cost = DEFAULT_COST + arguments->cost + paramList->cost;
-
-    return ret;
-}
-
-/**
- * Constructor for the last item of a parameter list
- * related to recursion
- */
-PFpa_op_t *PFpa_rec_nil (void)
-{
-    PFpa_op_t     *ret;
-
-    /* create end of recursion parameter list operator */
-    ret = leaf (pa_rec_nil);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = 0;
-    ret->schema.items = NULL;
-    
-    /* costs */
-    ret->cost = 0;
 
     return ret;
 }

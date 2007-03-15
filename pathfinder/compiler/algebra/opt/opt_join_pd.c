@@ -320,9 +320,12 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_frag_union:
             case la_empty_frag:
             case la_cond_err:
+            case la_nil:
+            case la_trace:
+            case la_trace_msg:
+            case la_trace_map:
             case la_rec_fix:
             case la_rec_param:
-            case la_rec_nil:
             case la_rec_arg:
             case la_rec_base:
             case la_proxy:
@@ -1470,9 +1473,73 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 */
                 break;
                 
+            case la_nil:
+                break;
+                
+            case la_trace:
+                if (!PFprop_key (rp->prop, ratt) ||
+                    !PFprop_subdom (rp->prop,
+                                    PFprop_dom (lp->prop, latt),
+                                    PFprop_dom (rp->prop, ratt)))
+                    /* Ensure that the values of the left join argument
+                       are a subset of the values of the right join argument
+                       and that the right join argument is keyed. These
+                       two tests make sure that we have exactly one match per
+                       tuple in the left relation and thus the result of the
+                       trace operator stays stable. */
+                    break;
+
+            {
+                PFalg_proj_t *proj_list;
+                PFalg_att_t cur;
+                unsigned int count = 0;
+                /* create projection list */
+                proj_list = PFmalloc (lp->schema.count *
+                                      sizeof (*(proj_list)));
+                                      
+                for (unsigned int i = 0; i < lp->schema.count; i++) {
+                    cur = lp->schema.items[i].name;
+                    if (cur != latt)
+                        proj_list[count++] = proj (cur, cur);
+                }
+                /* add join column with its original name
+                   to the projection list */
+                proj_list[count++] = proj (latt,
+                                           p->sem.eqjoin_unq.res);
+                                           
+                *p = *(trace (eqjoin_unq (L(lp), rp, latt, ratt,
+                                          p->sem.eqjoin_unq.res),
+                              R(lp),
+                              is_join_att(p, lp->sem.trace.iter)
+                                  ? p->sem.eqjoin_unq.res
+                                  : lp->sem.trace.iter,
+                              is_join_att(p, lp->sem.trace.pos)
+                                  ? p->sem.eqjoin_unq.res
+                                  : lp->sem.trace.pos,
+                              is_join_att(p, lp->sem.trace.item)
+                                  ? p->sem.eqjoin_unq.res
+                                  : lp->sem.trace.item));
+                
+                /* the schema of the new trace operator has to
+                   be pruned to maintain the schema of the original
+                   trace operator -- its pointer is replaced */
+                *lp = *(PFla_project_ (p, count, proj_list));
+                    
+                next_join = L(p);
+            }   break;
+                                                       
+            case la_trace_msg:
+                /* this operator will always be referenced 
+                   by a la_trace operator */
+                break;
+                
+            case la_trace_map:
+                /* this operator will always be referenced 
+                   by a la_trace_msg operator */
+                break;
+                
             case la_rec_fix:
             case la_rec_param:
-            case la_rec_nil:
             case la_rec_arg:
             case la_rec_base:
                 /* do not rewrite anything that has to do with recursion */
@@ -1537,9 +1604,11 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_frag_union:
         case la_empty_frag:
         case la_string_join:
+        case la_nil:
+        case la_trace_msg:
+        case la_trace_map:
         case la_rec_fix:
         case la_rec_param:
-        case la_rec_nil:
         case la_rec_arg:
         case la_rec_base:
         case la_proxy:
@@ -1555,6 +1624,7 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_eqjoin_unq:
         case la_semijoin:
         case la_roots:
+        case la_trace:
         case la_cond_err:
             /* name does not change */
             break;

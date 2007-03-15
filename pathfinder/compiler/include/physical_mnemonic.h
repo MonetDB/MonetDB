@@ -140,14 +140,17 @@
 #define empty_frag()      PFpa_empty_frag ()
 
 #define cond_err(a,b,c,d) PFpa_cond_err ((a), (b), (c), (d))
+#define nil()             PFpa_nil ()
+#define trace(a,b,c,d)    PFpa_trace ((a),(b),(c),(d))
+#define trace_msg(a,b,c,d) PFpa_trace_msg ((a), (b), (c), (d))
+#define trace_map(a,b,c,d) PFpa_trace_map ((a), (b), (c), (d))
 
 /* recursion operators */
-#define rec_fix(a,b) PFpa_rec_fix ((a),(b))
-#define rec_param(a,b) PFpa_rec_param ((a),(b))
-#define rec_nil() PFpa_rec_nil ()
-#define rec_arg(a,b,c) PFpa_rec_arg ((a),(b),(c))
-#define rec_base(a,b) PFpa_rec_base ((a),(b))
-#define rec_border(a) PFpa_rec_border (a)
+#define rec_fix(a,b)      PFpa_rec_fix ((a),(b))
+#define rec_param(a,b)    PFpa_rec_param ((a),(b))
+#define rec_arg(a,b,c)    PFpa_rec_arg ((a),(b),(c))
+#define rec_base(a,b)     PFpa_rec_base ((a),(b))
+#define rec_border(a)     PFpa_rec_border (a)
 
 #define fn_concat(a,b,c,d)  PFpa_fn_concat ((a), (b), (c), (d))
 #define fn_contains(a,b,c,d)  PFpa_fn_contains ((a), (b), (c), (d))

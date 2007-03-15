@@ -121,14 +121,16 @@ enum PFpa_op_kind_t {
     , pa_frag_union     = 132
     , pa_empty_frag     = 133
     , pa_cond_err       = 140 /**< conditional error operator */
-    , pa_rec_fix        = 141 /**< operator representing a tail recursion */
-    , pa_rec_param      = 142 /**< list of parameters of the recursion */
-    , pa_rec_nil        = 143 /**< end of the list of parameters of the 
-                                  recursion */
-    , pa_rec_arg        = 144 /**< reference to the arguments of a parameter
+    , pa_nil            = 141 /**< end of the list of parameters */
+    , pa_trace          = 142 /**< debug operator */
+    , pa_trace_msg      = 143 /**< debug message operator */
+    , pa_trace_map      = 144 /**< debug relation map operator */
+    , pa_rec_fix        = 145 /**< operator representing a tail recursion */
+    , pa_rec_param      = 146 /**< list of parameters of the recursion */
+    , pa_rec_arg        = 147 /**< reference to the arguments of a parameter
                                   in the recursion */
-    , pa_rec_base       = 145 /**< base of the DAG describing the recursion */
-    , pa_rec_border     = 146 /**< border of the DAG describing the recursion */
+    , pa_rec_base       = 148 /**< base of the DAG describing the recursion */
+    , pa_rec_border     = 149 /**< border of the DAG describing the recursion */
     , pa_string_join    = 150 /**< Concatenation of multiple strings */
 };
 /** algebra operator kinds */
@@ -275,27 +277,27 @@ union PFpa_op_sem_t {
         PFalg_att_t      item;    /**< item column */
     } scjoin;
 
-    /* reference iter and item columns */
+    /* store the column names necessary for accessing iter and item columns */
     struct {
         PFalg_att_t     iter;     /**< iter column */
         PFalg_att_t     item;     /**< item column */
     } ii;
 
-    /* reference columns for document access */
+    /* store the column names necessary for document access */
     struct {
         PFalg_att_t     res;      /**< attribute to hold the result */
         PFalg_att_t     att;      /**< name of the reference attribute */
         PFalg_doc_t     doc_col;  /**< referenced column in the document */
     } doc_access;
 
-    /* reference columns of attribute constructor */
+    /* store the column names necessary for an attribute constructor */
     struct {
         PFalg_att_t     qn;       /**< name of the qname item column */
         PFalg_att_t     val;      /**< name of the value item column */
         PFalg_att_t     res;      /**< attribute to hold the result */
     } attr;
 
-    /* reference columns of text constructor */
+    /* store the column names necessary for a text constructor */
     struct {
         PFalg_att_t     item;     /**< name of the item column */
         PFalg_att_t     res;      /**< attribute to hold the result */
@@ -307,6 +309,20 @@ union PFpa_op_sem_t {
         char *          str;     /**< error message */
     } err;
     
+    /* semantic content for debug operator */
+    struct {
+        PFalg_att_t     iter;      /**< iter column of input relation */
+        PFalg_att_t     item;      /**< item column of input relation */
+    } trace;
+    
+    /* semantic content for debug relation map operator */
+    struct {
+        PFalg_att_t      inner;    /**< name of the inner column */
+        PFalg_att_t      outer;    /**< name of the outer column */
+        unsigned int     trace_id; /**< the trace identifier 
+                                        (used in milgen.brg) */
+    } trace_map;
+
     /* semantic content for an argument of a recursion parameter */
     struct {
         PFpa_op_t      *base;    /**< reference to the base relation
@@ -747,6 +763,38 @@ PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
 /****************************************************************/
 
 /**
+ * Constructor for the last item of a parameter list
+ * related to recursion
+ */
+PFpa_op_t *PFpa_nil (void);
+
+/**
+ * Constructor for debug operator
+ */
+PFpa_op_t * PFpa_trace (const PFpa_op_t *n1,
+                        const PFpa_op_t *n2,
+                        PFalg_att_t iter,
+                        PFalg_att_t item);
+
+/**
+ * Constructor for debug message operator
+ */
+PFpa_op_t * PFpa_trace_msg (const PFpa_op_t *n1,
+                           const PFpa_op_t *n2,
+                           PFalg_att_t iter,
+                           PFalg_att_t item);
+
+/**
+ * Constructor for debug relation map operator
+ * (A set of the trace_map operators link a trace operator
+ * to the correct scope.)
+ */
+PFpa_op_t * PFpa_trace_map (const PFpa_op_t *n1,
+                            const PFpa_op_t *n2,
+                            PFalg_att_t      inner,
+                            PFalg_att_t      outer);
+
+/**
  * Constructor for a tail recursion operator
  */
 PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
@@ -758,12 +806,6 @@ PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
  */
 PFpa_op_t *PFpa_rec_param (const PFpa_op_t *arguments,
                            const PFpa_op_t *paramList);
-
-/**
- * Constructor for the last item of a parameter list
- * related to recursion
- */
-PFpa_op_t *PFpa_rec_nil (void);
 
 /**
  * Constructor for the arguments of a parameter (seed and recursion

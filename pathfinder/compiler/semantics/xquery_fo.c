@@ -210,6 +210,15 @@ PFfun_xquery_fo ()
             .ret_ty = PFty_none () } } }
 
     
+/* 4. THE TRACE FUNCTION */
+    , /* fn:trace (item*, string) as item* */
+      { .ns = PFns_fn, .loc = "trace",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
+                                   PFty_xs_string () },
+            .ret_ty = PFty_star (PFty_item ()) } } }
+
+
 /* 6. FUNCTIONS AND OPERATORS ON NUMERICS */
 /* 6.2. Operators on Numeric Values */
     , /* op:plus (integer, integer) as integer */

@@ -558,16 +558,22 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_cond_err:
+        case la_trace:
+        case la_trace_msg:
+        case la_trace_map:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
             break;
 
+        case la_nil:
+            /* nil does not have a schema */
+            break;
+            
         case la_rec_fix:
             /* get the schema of the overall result */
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)));
             break;
             
         case la_rec_param:
-        case la_rec_nil:
             /* recursion parameters do not have properties */
             break;
             
@@ -673,7 +679,7 @@ prop_infer_rec_seed (PFla_op_t *n)
                                                       ocols_count (L(n)));
             break;
 
-        case la_rec_nil:
+        case la_nil:
             break;
 
         default:
@@ -702,7 +708,7 @@ prop_infer_rec_body (PFla_op_t *n)
             prop_infer (R(n));
             break;
 
-        case la_rec_nil:
+        case la_nil:
             break;
 
         default:

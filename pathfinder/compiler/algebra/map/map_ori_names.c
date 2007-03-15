@@ -591,6 +591,35 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                             p->sem.err.str);
             break;
         
+        case la_nil:
+            res = nil ();
+            break;
+            
+        case la_trace:
+            res = trace (
+                      PROJ(LEFT, p),
+                      O(R(p)),
+                      ONAME(p, p->sem.trace.iter),
+                      ONAME(p, p->sem.trace.pos),
+                      ONAME(p, p->sem.trace.item));
+            break;
+
+        case la_trace_msg:
+            res = trace_msg (
+                      PROJ(LEFT, p),
+                      O(R(p)),
+                      ONAME(p, p->sem.trace_msg.iter),
+                      ONAME(p, p->sem.trace_msg.item));
+            break;
+
+        case la_trace_map:
+            res = trace_map (
+                      PROJ(LEFT, p),
+                      O(R(p)),
+                      ONAME(p, p->sem.trace_map.inner),
+                      ONAME(p, p->sem.trace_map.outer));
+            break;
+
         case la_rec_fix:
             res = rec_fix (O(L(p)),
                            PROJ(RIGHT, p));
@@ -613,10 +642,6 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             else
                 res = O(R(p));
         }   break;
-            
-        case la_rec_nil:
-            res = rec_nil ();
-            break;
             
         case la_rec_arg:
         /* The both inputs (seed and recursion) may not use the same 

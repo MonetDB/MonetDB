@@ -90,6 +90,9 @@ prop_infer_set (PFla_op_t *n, bool set)
     /* infer set property for children */
     switch (n->kind) {
         case la_serialize:
+        case la_trace:
+        case la_trace_msg:
+        case la_trace_map:
             l_set = false;
             r_set = false;
             break;
@@ -207,13 +210,15 @@ prop_infer_set (PFla_op_t *n, bool set)
                may overwrite the property after traversal */
             return;
 
+        case la_nil:
+            break;
+
         /* ignore this property for the recursion */
         case la_rec_fix:
         case la_rec_param:
         case la_rec_arg:
             l_set = false;
             r_set = false;
-        case la_rec_nil:
         case la_rec_base:
             break;
             

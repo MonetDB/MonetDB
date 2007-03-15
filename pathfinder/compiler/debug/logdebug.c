@@ -100,9 +100,12 @@ static char *a_id[]  = {
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_cond_err]         = "!ERROR"
+    , [la_nil]              = "nil"
+    , [la_trace]            = "trace"
+    , [la_trace_msg]        = "trace_msg"
+    , [la_trace_map]        = "trace_map"
     , [la_rec_fix]          = "rec fix"
     , [la_rec_param]        = "rec param"
-    , [la_rec_nil]          = "rec nil"
     , [la_rec_arg]          = "rec arg"
     , [la_rec_base]         = "rec base"
     , [la_proxy]            = "PROXY"
@@ -161,9 +164,12 @@ static char *xml_id[]  = {
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_cond_err]         = "!ERROR"
+    , [la_nil]              = "nil"
+    , [la_trace]            = "trace"
+    , [la_trace_msg]        = "trace_msg"
+    , [la_trace_map]        = "trace_map"
     , [la_rec_fix]          = "rec_fix"
     , [la_rec_param]        = "rec_param"
-    , [la_rec_nil]          = "rec_nil"
     , [la_rec_arg]          = "rec_arg"
     , [la_rec_base]         = "rec_base"
     , [la_proxy]            = "PROXY"
@@ -325,9 +331,12 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_frag_union]     = "\"#E0E0E0\""
         , [la_empty_frag]     = "\"#E0E0E0\""
         , [la_cond_err]       = "\"#C0C0C0\""
+        , [la_nil]            = "\"#FFFFFF\""
+        , [la_trace]          = "\"#FF5500\""
+        , [la_trace_msg]      = "\"#FF5500\""
+        , [la_trace_map]      = "\"#FF5500\""
         , [la_rec_fix]        = "\"#FF00FF\""
         , [la_rec_param]      = "\"#FF00FF\""
-        , [la_rec_nil]        = "\"#FF00FF\""
         , [la_rec_arg]        = "\"#BB00BB\""
         , [la_rec_base]       = "\"#BB00BB\""
         , [la_proxy]          = "\"#DFFFFF\""
@@ -662,6 +671,31 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.textnode.item));
             break;
 
+        case la_trace:
+            PFarray_printf (dot,
+                            "%s (%s, %s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.trace.iter),
+                            PFatt_str (n->sem.trace.pos),
+                            PFatt_str (n->sem.trace.item));
+            break;
+        
+        case la_trace_msg:
+            PFarray_printf (dot,
+                            "%s (%s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.trace_msg.iter),
+                            PFatt_str (n->sem.trace_msg.item));
+            break;
+        
+        case la_trace_map:
+            PFarray_printf (dot,
+                            "%s (%s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.trace_map.inner),
+                            PFatt_str (n->sem.trace_map.outer));
+            break;
+        
         case la_cond_err:
             PFarray_printf (dot, "%s (%s)\\n%s ...", a_id[n->kind],
                             PFatt_str (n->sem.err.att),
@@ -706,9 +740,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
+        case la_nil:
         case la_rec_fix:
         case la_rec_param:
-        case la_rec_nil:
         case la_rec_arg:
         case la_rec_base:
         case la_proxy_base:

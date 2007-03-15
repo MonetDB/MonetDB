@@ -691,9 +691,8 @@ xml_seqEnd (XqueryCtx* ctx)
 {
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
         dflt_handle_endElement (ctx, NULL, dflt_ws->restag);
+        stream_write (ctx->out, "\n", 1, 1);
     }
-
-    stream_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;
 }

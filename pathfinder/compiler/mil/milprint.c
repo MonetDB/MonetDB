@@ -21,6 +21,7 @@
                  | expression '.append (' expression ')'    <m_bappend>
                  | expression '.access (' restriction ')'   <m_access>
                  | 'serialize (...)'                        <m_serialize>
+                 | 'trace (...)'                            <m_trace>
                  | 'var' Variable                           <m_declare>
                  | 'ERROR (' expression ')'                 <m_error>
                  | 'print (' args ')'                       <m_print>
@@ -619,6 +620,12 @@ print_statement (PFmil_t * n)
 
         case m_serialize:
             milprintf ("print_result (");
+            print_args (n->child[0]);
+            milprintf (")");
+            break;
+
+        case m_trace:
+            milprintf ("trace (");
             print_args (n->child[0]);
             milprintf (")");
             break;
@@ -1310,14 +1317,15 @@ static void
 print_type (PFmil_t *n)
 {
     char *types[] = {
-          [m_oid]   = "oid"
-        , [m_void]  = "void"
-        , [m_int]   = "int"
-        , [m_str]   = "str"
-        , [m_lng]   = "lng"
-        , [m_dbl]   = "dbl"
-        , [m_bit]   = "bit"
-        , [m_chr]   = "chr"
+          [mty_oid]   = "oid"
+        , [mty_void]  = "void"
+        , [mty_int]   = "int"
+        , [mty_str]   = "str"
+        , [mty_lng]   = "lng"
+        , [mty_dbl]   = "dbl"
+        , [mty_bit]   = "bit"
+        , [mty_chr]   = "chr"
+        , [mty_bat]   = "bat"
     };
 
     if (n->kind != m_type) {

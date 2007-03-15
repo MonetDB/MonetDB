@@ -113,13 +113,15 @@ enum PFla_op_kind_t {
     , la_empty_frag     = 73 /**< representation of an empty fragment */
                             
     , la_cond_err       = 80 /**< facility to trigger runtime errors */
-    , la_rec_fix        = 81 /**< operator representing a tail recursion */
-    , la_rec_param      = 82 /**< list of parameters of the recursion */
-    , la_rec_nil        = 83 /**< end of the list of parameters of the 
-                                  recursion */
-    , la_rec_arg        = 84 /**< reference to the arguments of a parameter
+    , la_nil            = 81 /**< end of the list of parameters */
+    , la_trace          = 82 /**< debug operator */
+    , la_trace_msg      = 83 /**< debug operator */
+    , la_trace_map      = 84 /**< debug relation map operator */
+    , la_rec_fix        = 85 /**< operator representing a tail recursion */
+    , la_rec_param      = 86 /**< list of parameters of the recursion */
+    , la_rec_arg        = 87 /**< reference to the arguments of a parameter
                                   in the recursion */
-    , la_rec_base       = 85 /**< base of the DAG describing the recursion */
+    , la_rec_base       = 88 /**< base of the DAG describing the recursion */
     
     , la_proxy          = 96 /**< proxy operator that represents a group
                                   of operators */
@@ -249,21 +251,21 @@ union PFla_op_sem_t {
         PFalg_att_t     item_res; /**< column to store the resulting nodes */
     } scjoin;
 
-    /* reference columns for document lookup */
+    /* store the column names necessary for document lookup */
     struct {
         PFalg_att_t     iter;     /**< iter column to retain */
         PFalg_att_t     item;     /**< column that contains the references */
         PFalg_att_t     item_res; /**< column to store the document nodes */
     } doc_tbl;
 
-    /* reference columns for document access */
+    /* store the column names necessary for document access */
     struct {
         PFalg_att_t     res;      /**< result attribute */
         PFalg_att_t     att;      /**< name of the reference attribute */
         PFalg_doc_t     doc_col;  /**< referenced column in the document */
     } doc_access;
 
-    /* reference columns of element constructor */
+    /* store the column names necessary for an element constructor */
     struct {
         PFalg_att_t     iter_qn;  /**< iter column of qname relation */
         PFalg_att_t     item_qn;  /**< item column of qname relation */
@@ -274,20 +276,20 @@ union PFla_op_sem_t {
         PFalg_att_t     item_res; /**< item column of result relation */
     } elem;
 
-    /* reference columns of attribute constructor */
+    /* store the column names necessary for an attribute constructor */
     struct {
         PFalg_att_t     qn;       /**< name of the qname item column */
         PFalg_att_t     val;      /**< name of the value item column */
         PFalg_att_t     res;      /**< attribute to hold the result */
     } attr;
 
-    /* reference columns of text constructor */
+    /* store the column names necessary for a text constructor */
     struct {
         PFalg_att_t     item;     /**< name of the item column */
         PFalg_att_t     res;      /**< attribute to hold the result */
     } textnode;
 
-    /* reference columns of merge_adjacent operator */
+    /* store the column names necessary for a merge_adjacent operator */
     struct {
         PFalg_att_t     iter_in;  /**< iter column of input relation */
         PFalg_att_t     pos_in;   /**< pos column of input relation */
@@ -302,6 +304,25 @@ union PFla_op_sem_t {
         PFalg_att_t     att;     /**< name of the boolean attribute */
         char *          str;     /**< error message */
     } err;
+
+    /* semantic content for debug operator */
+    struct {
+        PFalg_att_t     iter;      /**< name of iter column */
+        PFalg_att_t     pos;       /**< name of pos column */
+        PFalg_att_t     item;      /**< name of item column */
+    } trace;
+    
+    /* semantic content for debug message operator */
+    struct {
+        PFalg_att_t     iter;      /**< name of iter column */
+        PFalg_att_t     item;      /**< name of message column */
+    } trace_msg;
+    
+    /* semantic content for debug relation map operator */
+    struct {
+        PFalg_att_t      inner;    /**< name of the inner column */
+        PFalg_att_t      outer;    /**< name of the outer column */
+    } trace_map;
 
     /* semantic content for an argument of a recursion parameter */
     struct {
@@ -321,7 +342,7 @@ union PFla_op_sem_t {
         PFalg_attlist_t new_cols;  /**< list of new generated columns */
     } proxy;
 
-    /* reference columns of string_join operator */
+    /* store the column names necessary for a string_join operator */
     struct {
         PFalg_att_t     iter;     /**< iter column of string relation */
         PFalg_att_t     pos;      /**< pos column of string relation */
@@ -803,7 +824,37 @@ PFla_op_t * PFla_empty_frag (void);
 PFla_op_t * PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
                            PFalg_att_t att, char *err_string);
 
-/****************************************************************/
+/**
+ * Constructor for the last item of a parameter list
+ */
+PFla_op_t *PFla_nil (void);
+
+/**
+ * Constructor for debug operator
+ */
+PFla_op_t * PFla_trace (const PFla_op_t *n1,
+                        const PFla_op_t *n2,
+                        PFalg_att_t iter,
+                        PFalg_att_t pos,
+                        PFalg_att_t item);
+
+/**
+ * Constructor for debug message operator
+ */
+PFla_op_t * PFla_trace_msg (const PFla_op_t *n1,
+                            const PFla_op_t *n2,
+                            PFalg_att_t iter,
+                            PFalg_att_t item);
+
+/**
+ * Constructor for debug relation map operator
+ * (A set of the trace_map operators link a trace operator
+ * to the correct scope.)
+ */
+PFla_op_t * PFla_trace_map (const PFla_op_t *n1,
+                            const PFla_op_t *n2,
+                            PFalg_att_t      inner,
+                            PFalg_att_t      outer);
 
 /**
  * Constructor for a tail recursion operator
@@ -817,12 +868,6 @@ PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
  */
 PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
                            const PFla_op_t *paramList);
-
-/**
- * Constructor for the last item of a parameter list
- * related to recursion
- */
-PFla_op_t *PFla_rec_nil (void);
 
 /**
  * Constructor for the arguments of a parameter (seed and recursion

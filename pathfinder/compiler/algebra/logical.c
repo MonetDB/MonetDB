@@ -2630,6 +2630,167 @@ PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
 
 
 /**
+ * Constructor for a debug operator
+ */
+PFla_op_t *
+PFla_trace (const PFla_op_t *n1,
+            const PFla_op_t *n2,
+            PFalg_att_t iter,
+            PFalg_att_t pos,
+            PFalg_att_t item)
+{
+    PFla_op_t     *ret;
+    unsigned int   i, found = 0;
+
+    assert (n1);
+    assert (n2);
+
+    /* verify that iter, pos, and item are attributes of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+        if (iter == n1->schema.items[i].name ||
+            pos  == n1->schema.items[i].name ||
+            item == n1->schema.items[i].name)
+            found++;
+
+    /* did we find all attributes? */
+    if (found != 3)
+        PFoops (OOPS_FATAL,
+                "attributes referenced in trace operator not found");
+
+    /* create new trace node */
+    ret = la_op_wire2 (la_trace, n1, n2);
+
+    /* insert semantic values (column names) into the result */
+    ret->sem.trace.iter = iter;
+    ret->sem.trace.pos  = pos;
+    ret->sem.trace.item = item;
+
+    /* allocate memory for the result schema (= schema(n1)) */
+    ret->schema.count = n1->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+    
+    return ret;
+}
+
+
+/**
+ * Constructor for a debug message operator
+ */
+PFla_op_t *
+PFla_trace_msg (const PFla_op_t *n1,
+                const PFla_op_t *n2,
+                PFalg_att_t iter,
+                PFalg_att_t item)
+{
+    PFla_op_t     *ret;
+    unsigned int   i, found = 0;
+
+    assert (n1);
+    assert (n2);
+
+    /* verify that iter and item are attributes of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+        if (iter == n1->schema.items[i].name ||
+            item == n1->schema.items[i].name)
+            found++;
+
+    /* did we find all attributes? */
+    if (found != 2)
+        PFoops (OOPS_FATAL,
+                "attributes referenced in trace message operator not found");
+
+    /* create new trace node */
+    ret = la_op_wire2 (la_trace_msg, n1, n2);
+
+    /* insert semantic values (column names) into the result */
+    ret->sem.trace_msg.iter = iter;
+    ret->sem.trace_msg.item = item;
+
+    /* allocate memory for the result schema (= schema(n1)) */
+    ret->schema.count = n1->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+    
+    return ret;
+}
+
+
+/**
+ * Constructor for debug relation map operator
+ * (A set of the trace_map operators link a trace operator
+ * to the correct scope.)
+ */
+PFla_op_t *
+PFla_trace_map (const PFla_op_t *n1,
+                const PFla_op_t *n2,
+                PFalg_att_t      inner,
+                PFalg_att_t      outer)
+{
+    PFla_op_t     *ret;
+    unsigned int   i, found = 0;
+
+    assert (n1);
+    assert (n2);
+
+    /* verify that inner and outer are attributes of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+        if (inner == n1->schema.items[i].name ||
+            outer == n1->schema.items[i].name)
+            found++;
+
+    /* did we find all attributes? */
+    if (found != 2)
+        PFoops (OOPS_FATAL,
+                "attributes referenced in trace operator not found");
+    
+    /* create new trace map node */
+    ret = la_op_wire2 (la_trace_map, n1, n2);
+
+    /* insert semantic values (column names) into the result */
+    ret->sem.trace_map.inner    = inner;
+    ret->sem.trace_map.outer    = outer;
+
+    /* allocate memory for the result schema (= schema(n1)) */
+    ret->schema.count = n1->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    return ret;
+}
+
+
+/**
+ * Constructor for the last item of a parameter list
+ */
+PFla_op_t *PFla_nil ()
+{
+    PFla_op_t     *ret;
+
+    /* create end of recursion parameter list operator */
+    ret = la_op_leaf (la_nil);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+    
+    return ret;
+}
+
+
+/**
  * Constructor for a tail recursion operator
  */
 PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
@@ -2673,25 +2834,6 @@ PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
     ret = la_op_wire2 (la_rec_param, arguments, paramList);
 
     assert (paramList->schema.count == 0);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = 0;
-    ret->schema.items = NULL;
-    
-    return ret;
-}
-
-
-/**
- * Constructor for the last item of a parameter list
- * related to recursion
- */
-PFla_op_t *PFla_rec_nil ()
-{
-    PFla_op_t     *ret;
-
-    /* create end of recursion parameter list operator */
-    ret = la_op_leaf (la_rec_nil);
 
     /* allocate memory for the result schema */
     ret->schema.count = 0;

@@ -168,10 +168,20 @@
 /* conditional error operator */
 #define cond_err(a,b,c,d) PFla_cond_err ((a),(b),(c),(d))
 
+#define nil() PFla_nil ()
+
+/* Constructor for debug operator */
+#define trace(a,b,c,d,e) PFla_trace ((a),(b),(c),(d),(e))
+
+/* Constructor for debug message operator */
+#define trace_msg(a,b,c,d) PFla_trace_msg ((a),(b),(c),(d))
+
+/* Constructor for debug relation map operator */
+#define trace_map(a,b,c,d) PFla_trace_map ((a),(b),(c),(d))
+
 /* recursion operators */
 #define rec_fix(a,b) PFla_rec_fix ((a),(b))
 #define rec_param(a,b) PFla_rec_param ((a),(b))
-#define rec_nil() PFla_rec_nil ()
 #define rec_arg(a,b,c) PFla_rec_arg ((a),(b),(c))
 #define rec_base(a) PFla_rec_base (a)
 

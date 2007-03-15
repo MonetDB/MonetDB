@@ -519,6 +519,7 @@
 
 /** serialization function */
 #define serialize(a) PFmil_ser (a)
+#define trace(a) PFmil_trace (a)
 #define print(a) PFmil_print (a)
 #define col_name(a,b) PFmil_col_name ((a), (b))
 #define comment(...) PFmil_comment (__VA_ARGS__)

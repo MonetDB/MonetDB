@@ -697,6 +697,371 @@ PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
                    const str_values);
 }
 
+# print whitespaces (used for indenting)
+PROC pws (int shift) : void
+{
+    while (shift > 0) {
+        printf("  ");
+        shift :-= 1;
+    }
+}
+
+# main trace routine (returns an XML document representing the trace)
+#
+# The generated XML document should be aligned to the following DTD
+# <!DOCTYPE scope [
+# 
+# <!ELEMENT scope (iteration*)>
+# <!ELEMENT iteration (scope*, trace*)>
+# <!ELEMENT trace (item*)>
+# <!ELEMENT item ANY>
+# 
+# <!ATTLIST scope id CDATA #REQUIRED>
+# 
+# <!ATTLIST iteration no CDATA #REQUIRED>
+# 
+# <!ATTLIST trace msg CDATA #REQUIRED>
+# <!ATTLIST trace id CDATA #REQUIRED>
+# 
+# <!ATTLIST item type (integer|string|decimal|
+#                      double|boolean|qname|
+#                      node|attribute) #REQUIRED>
+# <!ATTLIST item pos CDATA #REQUIRED>
+# <!ATTLIST item id CDATA #IMPLIED>
+# <!ATTLIST item fragment CDATA #IMPLIED>
+# <!ATTLIST item name CDATA #IMPLIED>
+# <!ATTLIST item value CDATA #IMPLIED>
+# 
+# ]>
+PROC trace (BAT[void,any] ws,
+            BAT[oid,bat] trace_outer,
+            BAT[oid,bat] trace_inner,
+            BAT[oid,bat] trace_iter,
+            BAT[oid,bat] trace_msg,
+            BAT[oid,bat] trace_item,
+            BAT[oid,int] trace_type,
+            BAT[oid,oid] trace_rel) : void
+{
+    # shift/indent counter
+    var s := 0;
+    # initial trace id
+    var init_id := 0@0;
+    # initial outer relation
+    var init_outer_val := 1@0;
+    
+    pws (s); printf("<scope id=\"%i\">\n", init_id); s :+= 1;
+    pws (s); printf("<iteration no=\"%i\">\n", init_outer_val);  s :+= 1;
+
+    # first print all trace information in nested scopes ...
+    trace_scopes (ws,
+                  trace_outer,
+                  trace_inner,
+                  trace_iter,
+                  trace_msg,
+                  trace_item,
+                  trace_type,
+                  trace_rel,
+                  s,
+                  init_id,
+                  init_outer_val);
+    # ... and then print the trace information for this scope.
+    trace_ops (ws,
+               trace_iter,
+               trace_msg,
+               trace_item,
+               trace_type,
+               trace_rel,
+               s,
+               init_id,
+               init_outer_val);
+           
+    s :-= 1; pws (s); printf("</iteration>\n");
+    s :-= 1; pws (s); printf("</scope>\n");
+}
+
+# worker for PROC trace. It recursively prints the structure of
+# the scopes and initiates the printing of trace information (trace_ops).
+PROC trace_scopes (BAT[void,any] ws,
+                   BAT[oid,bat] trace_outer,
+                   BAT[oid,bat] trace_inner,
+                   BAT[oid,bat] trace_iter,
+                   BAT[oid,bat] trace_msg,
+                   BAT[oid,bat] trace_item,
+                   BAT[oid,int] trace_type,
+                   BAT[oid,oid] trace_rel,
+                   int s, oid id, oid cur_outer) : void
+{
+    var rels := trace_rel.reverse().select(id).mirror();
+    var outer_rels := trace_outer.reverse().leftjoin(rels).reverse();
+    var inner_rels := trace_inner.reverse().leftjoin(rels).reverse();
+
+    var index1 := 0;
+    outer_rels@batloop () {
+        pws (s); printf("<scope id=\"%i\">\n", $h); s :+= 1;
+
+        var next_id := $h;
+        var inner_rel := inner_rels.fetch(index1);
+        var outer := $t.select(cur_outer);
+        var inner := outer.mirror().leftjoin(inner_rel);
+        
+        # iterate over the tuples of the outer|inner relation
+        inner@batloop () {
+            pws (s); printf("<iteration no=\"%i\">\n", $t);  s :+= 1;
+            
+            # first print all trace information in nested scopes ...
+            trace_scopes (ws,
+                          trace_outer,
+                          trace_inner,
+                          trace_iter,
+                          trace_msg,
+                          trace_item,
+                          trace_type,
+                          trace_rel,
+                          s,
+                          next_id,
+                          $t);
+            # ... and then print the trace information for this scope.
+            trace_ops (ws,
+                       trace_iter,
+                       trace_msg,
+                       trace_item,
+                       trace_type,
+                       trace_rel,
+                       s,
+                       next_id,
+                       $t);
+                   
+            s :-= 1; pws (s); printf("</iteration>\n");
+        }
+        
+        s :-= 1; pws (s); printf("</scope>\n");
+        index1 :+= 1;
+    }
+}
+
+# worker for PROC trace. It prints all trace operators. A worker
+# (trace_item) prints the item sequences that correspond to the trace
+# operators and the current iteration.
+PROC trace_ops (BAT[void,any] ws,
+                BAT[oid,bat] trace_iter,
+                BAT[oid,bat] trace_msg,
+                BAT[oid,bat] trace_item,
+                BAT[oid,int] trace_type,
+                BAT[oid,oid] trace_rel,
+                int s, oid id, oid cur_inner) : void
+{
+    var rels := trace_rel.reverse().select(id).mirror();
+    var msg_rels := trace_msg.reverse().leftjoin(rels).reverse();
+
+    # iterate over the available trace operators ...
+    msg_rels@batloop () {
+        # ... and pick the current iteration
+        var msg_row := $t.reverse().select(cur_inner).reverse();
+        if (msg_row.count() != 0) {
+            pws (s); printf("<trace msg=\"%s\" id=\"%i\">\n",
+                            msg_row.fetch(0),
+                            $h); s :+= 1;
+            
+            var iter := trace_iter.reverse().select($h).reverse().fetch(0);
+            if (iter.seqbase() != 0@0) {
+                printf ("\n");
+                ERROR ("Trace printing failed: wrong seqbase in trace_iter");
+            }
+            # Also make sure that we only use values from the current iteration
+            var iter_sel := iter.select(cur_inner);
+            var iter_count := iter_sel.count();
+            if (iter_count != 0) {
+                var item_set := trace_item.reverse().select($h).reverse();
+                var types := trace_type.reverse().select($h).reverse();
+                var iter_offset := iter_sel.reverse().min().int();
+                # generate an item sequence
+                trace_items (ws, item_set, types, iter_offset, iter_count);
+            }
+
+            s :-= 1; pws (s); printf("</trace>\n");
+        }
+    }
+}
+
+# worker for PROC trace_ops. It prints an item sequence starting
+# from ``offset'' until ``offset + count''. For nodes, attributes,
+# and qnames special printing is performed.
+PROC trace_items (BAT[void,any] ws,
+                  BAT[oid,bat] item_set,
+                  BAT[oid,int] types,
+                  int offset,
+                  int count) : void
+{
+    var item_set_count := item_set.count();
+    var i := 0;
+    # iterate over the tuples that are in the current iteration
+    while (i < count) {
+        pws (s); printf("<item pos=\"%i\"", i + 1);
+
+        # print item value
+        var j := 0;
+        var node_id := oid(nil);
+        var frag := oid(nil);
+        var kind;
+        # iterate over the list of item relations
+        # (to cope with polymorphic sequences)
+        while (j < item_set_count) {
+            var type_id := types.fetch(j);
+            var item := item_set.fetch(j).fetch(i + offset);
+            var type_str;
+            # the types are aligned with the aat_* types in
+            # struct PFalg_simple_type_t (compiler/include/algebra.h)
+            if (type_id = 2) {
+                type_str := "integer";
+            } else if (type_id = 4) {
+                type_str := "string";
+            } else if (type_id = 8) {
+                type_str := "decimal";
+            } else if (type_id = 16) {
+                type_str := "double";
+            } else if (type_id = 32) {
+                type_str := "boolean";
+                item := (item = 1@0);
+            } else if (type_id = 64) {
+                type_str := "QName";
+            } else if (type_id = 128) {
+                type_str := "untypedAtomic";
+            } else if (type_id = 256) {
+                type_str := "node";
+                frag := item;
+            } else if (type_id = 512) {
+                type_str := "node";
+                node_id := item;
+                kind := ELEM;
+            } else if (type_id = 1024) {
+                type_str := "attribute";
+                frag := item;
+            } else if (type_id = 2048) {
+                type_str := "attribute";
+                node_id := item;
+                kind := ATTR;
+            } else {
+                printf("\n");
+                ERROR ("unknown type (%i) appears in "
+                       + "trace output generation",
+                       type_id);
+            }
+            # we have found the correct type -- so generate output for it
+            if (not(isnil (item))) {
+                # qnames
+                if (type_id = 64) {
+                    printf (" type=\"%s\"", type_str);
+                    var name := trace_qname_uri (item, WS);
+                    printf (">%s", name);
+                    break;
+                # all primitive types
+                } else if (and (isnil (node_id), isnil (frag))) {
+                    printf (" type=\"%s\">", type_str);
+                    printf ("%s", item.str());
+                    break;
+                # nodes
+                } else if (and (not (isnil (node_id)),
+                                not (isnil (frag)))) {
+                    printf (" type=\"%s\"", type_str);
+                    printf (" id=\"%i\"", node_id);
+                    printf (" fragment=\"%i\"", frag);
+                    if (kind = ELEM) {
+                        # element, text, comment, pi, and doc nodes
+                        printf (">");
+                        print_result ("xml-noroot-noheader",
+                                      ws,
+                                      new (void,oid).seqbase(0@0)
+                                                    .append(node_id),
+                                      new (void,oid).seqbase(0@0)
+                                                    .append(frag)
+                                                    .set_kind(kind),
+                                      new (void,lng).seqbase(0@0),
+                                      new (void,dbl).seqbase(0@0),
+                                      new (void,dbl).seqbase(0@0),
+                                      new (void,str).seqbase(0@0));
+                    } else {
+                        # attribute nodes
+                        var qn_id := ws.fetch(ATTR_QN)
+                                       .fetch(frag)
+                                       .reverse()
+                                       .select(node_id)
+                                       .reverse()
+                                       .fetch(0);
+                        var qn_frag := ws.fetch(ATTR_CONT)
+                                         .fetch(frag)
+                                         .reverse()
+                                         .select(node_id)
+                                         .reverse()
+                                         .fetch(0);
+                        var prop := ws.fetch(ATTR_PROP)
+                                      .fetch(frag)
+                                      .reverse()
+                                      .select(node_id)
+                                      .reverse()
+                                      .fetch(0);
+                        var cont := ws.fetch(ATTR_CONT)
+                                      .fetch(frag)
+                                      .reverse()
+                                      .select(node_id)
+                                      .reverse()
+                                      .fetch(0);
+                        var val := ws.fetch(PROP_VAL)
+                                     .fetch(cont)
+                                     .reverse()
+                                     .select(prop)
+                                     .reverse()
+                                     .fetch(0);
+                        var name := trace_qname_uri (qn_id, qn_frag);
+                        printf (" name=\"%s\" value=\"%s\">", name, val);
+                    }
+                    break;
+                }
+            }
+            j :+= 1;
+        }
+            
+        printf("</item>\n");
+        i :+= 1;
+    }
+}
+
+# worker for PROC trace_ops. It looks up the qname values
+# and prints a namespace attribute (as side effect) if a prefix
+# is used. The return value is the string representation of the
+# qname.
+PROC trace_qname_uri (oid item, oid frag) : str
+{
+    var local := ws.fetch(QN_LOC)
+                   .fetch(frag)
+                   .reverse()
+                   .select(item)
+                   .reverse()
+                   .fetch(0);
+    var prefix := ws.fetch(QN_PREFIX)
+                    .fetch(frag)
+                    .reverse()
+                    .select(item)
+                    .reverse()
+                    .fetch(0);
+    var uri := ws.fetch(QN_URI)
+                 .fetch(frag)
+                 .reverse()
+                 .select(item)
+                 .reverse()
+                 .fetch(0);
+    if (and (prefix = "", uri = "")) {
+        return local;
+    } else if (prefix = "") {
+        printf (" xmlns:prefix=\"%s\"",
+                uri);
+        return "prefix:" + local;
+    } else {
+        printf (" xmlns:%s=\"%s\"",
+                prefix, uri);
+        return prefix + ":" + local;
+    }
+    break;
+}
 
 
 @- order-preserving xquery join with existential semantics
@@ -7181,7 +7546,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         var seqb := oid(count(ws.fetch(PRE_SIZE).fetch(WS))
                         + int(ws.fetch(PRE_SIZE).fetch(WS).seqbase()));
         root_size := root_size.seqbase(seqb);
-        root_prop := root_prop.seqbase(seqb);
+        root_prop := root_prop.reverse().mark(seqb).reverse();
         root_kind := root_kind.seqbase(seqb);
         root_cont := root_cont.seqbase(seqb);
         root_level := root_level.seqbase(seqb);

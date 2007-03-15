@@ -165,13 +165,27 @@ infer_card (PFla_op_t *n)
             n->prop->card = 0;
             break;
 
+        case la_nil:
+            /* there is no property to infer */
+            break;
+            
+        case la_trace:
+            /* we do not propagate the cardinality
+               to avoid that the operator is pruned */
+            n->prop->card = 0;
+            break;
+            
+        case la_trace_msg:
+        case la_trace_map:
+            /* there is no property to infer */
+            break;
+
         case la_rec_fix:
             /* get the cardinality of the overall result */
             n->prop->card = R(n)->prop->card;
             break;
             
         case la_rec_param:
-        case la_rec_nil:
             /* recursion parameters do not have properties */
             break;
             

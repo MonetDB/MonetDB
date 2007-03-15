@@ -1557,6 +1557,77 @@ plan_cond_err (const PFla_op_t *n)
 }
 
 /**
+ * Constructor for a debug operator
+ */
+static PFplanlist_t *
+plan_trace (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+    PFplanlist_t *sorted_n1 = new_planlist ();
+    PFalg_att_t   iter = n->sem.trace.iter;
+    PFalg_att_t   pos  = n->sem.trace.pos;
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plans (sorted_n1,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       sortby (iter, pos)));
+
+    for (unsigned int i = 0; i < PFarray_last (sorted_n1); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      trace (
+                          *(plan_t **) PFarray_at (sorted_n1, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          n->sem.trace.iter,
+                          n->sem.trace.item));
+
+    return ret;
+}
+
+/**
+ * Constructor for a debug message operator
+ */
+static PFplanlist_t *
+plan_trace_msg (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      trace_msg (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          n->sem.trace_msg.iter,
+                          n->sem.trace_msg.item));
+
+    return ret;
+}
+
+/**
+ * Constructor for debug relation map operator
+ * (A set of the trace_map operators link a trace operator
+ * to the correct scope.)
+ */
+static PFplanlist_t *
+plan_trace_map (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      trace_map (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          n->sem.trace_map.inner,
+                          n->sem.trace_map.outer));
+
+    return ret;
+}
+
+/**
  * Create physical equivalent for the string_join operator
  * (concatenates sets of strings using a seperator for each set)
  *
@@ -1643,7 +1714,7 @@ plan_recursion (PFla_op_t *n, PFord_ordering_t ord)
     /* get the first parameter */
     cur = L(n);
     /* start physical paramter list with the end of the list */
-    add_plan (params, rec_nil ());
+    add_plan (params, nil ());
 
     /* assign logical properties to physical node as well */
     for (unsigned int plan = 0; plan < PFarray_last (params); plan++)
@@ -1652,7 +1723,7 @@ plan_recursion (PFla_op_t *n, PFord_ordering_t ord)
     /* collect the plans for all parameters
        The inputs to the recursion all have to fulfill the ordering
        specified by @a ord. */
-    while (cur->kind != la_rec_nil) {
+    while (cur->kind != la_nil) {
         assert (cur->kind == la_rec_param &&
                 L(cur)->kind == la_rec_arg);
 
@@ -1835,7 +1906,7 @@ clean_up_body_plans (PFla_op_t *n)
 
     cur = L(n);
     /* collect base operators */
-    while (cur->kind != la_rec_nil) {
+    while (cur->kind != la_nil) {
         assert (cur->kind == la_rec_param && L(cur)->kind == la_rec_arg);
         *(PFla_op_t **) PFarray_add (bases) = L(cur)->sem.rec_arg.base;
         cur = R(cur);
@@ -1843,7 +1914,7 @@ clean_up_body_plans (PFla_op_t *n)
 
     cur = L(n);
     /* clean up the plans */
-    while (cur->kind != la_rec_nil) {
+    while (cur->kind != la_nil) {
         code = clean_up_body_plans_worker (LR(cur), bases);
         
         /* if a constructor was detected we can stop processing now. */
@@ -2153,6 +2224,7 @@ plan_subexpression (PFla_op_t *n)
             plan_subexpression (R(R(n)));
             plans = plan_element (n);
             break;
+
         case la_attribute:      plans = plan_attribute (n);    break;
         case la_textnode:       plans = plan_textnode (n);     break;
      /* case la_docnode:        */
@@ -2167,6 +2239,15 @@ plan_subexpression (PFla_op_t *n)
 
         case la_cond_err:       plans = plan_cond_err (n);     break;
 
+        case la_nil:
+            plans = new_planlist ();
+            add_plan (plans, nil ());
+            break;
+
+        case la_trace:          plans = plan_trace (n);        break;
+        case la_trace_msg:      plans = plan_trace_msg (n);    break;
+        case la_trace_map:      plans = plan_trace_map (n);    break;
+                                
         case la_rec_fix:
         {
             PFla_op_t       *rec_arg, *cur;
@@ -2178,7 +2259,7 @@ plan_subexpression (PFla_op_t *n)
 
             /* get the plans for all the seeds */
             cur = L(n);
-            while (cur->kind != la_rec_nil) {
+            while (cur->kind != la_nil) {
                 assert (cur->kind == la_rec_param &&
                         L(cur)->kind == la_rec_arg);
                 rec_arg = L(cur);
@@ -2205,7 +2286,7 @@ plan_subexpression (PFla_op_t *n)
                 cur = L(n);
 
                 /* create base operators with the correct ordering */
-                while (cur->kind != la_rec_nil) {
+                while (cur->kind != la_nil) {
                     assert (cur->kind == la_rec_param &&
                             L(cur)->kind == la_rec_arg);
                     rec_arg = L(cur);
@@ -2215,7 +2296,7 @@ plan_subexpression (PFla_op_t *n)
 
                 /* generate the plans for the body */
                 cur = L(n);
-                while (cur->kind != la_rec_nil) {
+                while (cur->kind != la_nil) {
                     assert (cur->kind == la_rec_param &&
                             L(cur)->kind == la_rec_arg);
                     rec_arg = L(cur);

@@ -579,13 +579,22 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
                            PFalg_ori_name (n->sem.err.att, ALL),
                            n->sem.err.att);
             break;
+            
+        case la_trace:
+        case la_trace_msg:
+        case la_trace_map:
+            n->prop->l_name_pairs = PFarray_copy (np_list);
+            break;
+            
+        case la_nil:
+            /* we do not have properties */
+            break;
 
         case la_rec_fix:
             n->prop->r_name_pairs = PFarray_copy (np_list);
             break;
             
         case la_rec_param:
-        case la_rec_nil:
             /* do not infer name pairs to the children */
             break;
             

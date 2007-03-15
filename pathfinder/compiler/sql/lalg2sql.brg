@@ -138,13 +138,16 @@ typedef struct PFla_op_t* NODEPTR_TYPE;
 %term empty_frag     = 73 /**< representation of an empty fragment */
 
 %term cond_err       = 80 /**< facility to trigger runtime errors */
-%term rec_fix        = 81 /**< operator representing a tail recursion */
-%term rec_param      = 82 /**< list of parameters of the recursion */
-%term rec_nil        = 83 /**< end of the list of parameters of the 
+%term nil            = 81 /**< end of the list of parameters of the 
                              recursion */
-%term rec_arg        = 84 /**< reference to the arguments of a parameter
+%term la_trace       = 82 /**< debug operator */
+%term la_trace_msg   = 83 /**< debug message operator */
+%term la_trace_map   = 84 /**< debug relation map operator */
+%term rec_fix        = 85 /**< operator representing a tail recursion */
+%term rec_param      = 86 /**< list of parameters of the recursion */
+%term rec_arg        = 87 /**< reference to the arguments of a parameter
                              in the recursion */
-%term rec_base       = 85 /**< base of the DAG describing the recursion */
+%term rec_base       = 88 /**< base of the DAG describing the recursion */
 
 %term proxy          = 96 /**< proxy operator that represents a group
                               of operators */
@@ -220,7 +223,7 @@ Rel:    cond_err (Rel, Rel)                       =  80 (10);
 Rel:    rec_fix (Rec, Rel)                        =  81 (10);
 Rel:    rec_base                                  =  82 (10);
 Rec:    rec_param (Arg, Rec)                      =  83 (10);
-Rec:    rec_nil                                   =  84 (10);
+Rec:    nil                                       =  84 (10);
 Arg:    rec_arg (Rel, Rel)                        =  85 (10);
 
 Rel:    concat (Rel)                              =  86 (10);

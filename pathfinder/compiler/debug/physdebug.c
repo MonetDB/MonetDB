@@ -114,9 +114,12 @@ static char *a_id[]  = {
     , [pa_frag_union]      = "FRAG_UNION"
     , [pa_empty_frag]      = "EMPTY_FRAG"
     , [pa_cond_err]        = "!ERROR"
+    , [pa_nil]             = "nil"
+    , [pa_trace]           = "trace"
+    , [pa_trace_msg]       = "trace_msg"
+    , [pa_trace_map]       = "trace_map"
     , [pa_rec_fix]         = "rec fix"
     , [pa_rec_param]       = "rec param"
-    , [pa_rec_nil]         = "rec nil"
     , [pa_rec_arg]         = "rec arg"
     , [pa_rec_base]        = "rec base"
     , [pa_rec_border]      = "rec border"
@@ -187,9 +190,12 @@ static char *xml_id[]  = {
     , [pa_frag_union]      = "frag_union"
     , [pa_empty_frag]      = "empty_frag"
     , [pa_cond_err]        = "!ERROR"
+    , [pa_nil]             = "nil"
+    , [pa_trace]           = "trace"
+    , [pa_trace_msg]       = "trace_msg"
+    , [pa_trace_map]       = "trace_map"
     , [pa_rec_fix]         = "rec_fix"
     , [pa_rec_param]       = "rec_param"
-    , [pa_rec_nil]         = "rec_nil"
     , [pa_rec_arg]         = "rec_arg"
     , [pa_rec_base]        = "rec_base"
     , [pa_rec_border]      = "rec_border"
@@ -360,9 +366,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_frag_union]      = "\"#E0E0E0\""
         , [pa_empty_frag]      = "\"#E0E0E0\""
         , [pa_cond_err]        = "\"#C0C0C0\""
+        , [pa_nil]             = "\"#FFFFFF\""
+        , [pa_trace]           = "\"#FF5500\""
+        , [pa_trace_msg]       = "\"#FF5500\""
+        , [pa_trace_map]       = "\"#FF5500\""
         , [pa_rec_fix]         = "\"#FF00FF\""
         , [pa_rec_param]       = "\"#FF00FF\""
-        , [pa_rec_nil]         = "\"#FF00FF\""
         , [pa_rec_arg]         = "\"#BB00BB\""
         , [pa_rec_base]        = "\"#BB00BB\""
         , [pa_rec_border]      = "\"#BB00BB\""
@@ -625,6 +634,23 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFstrndup (n->sem.err.str, 16));
             break;
 
+        case pa_trace:
+        case pa_trace_msg:
+            PFarray_printf (dot,
+                            "%s (%s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.trace.iter),
+                            PFatt_str (n->sem.trace.item));
+            break;
+        
+        case pa_trace_map:
+            PFarray_printf (dot,
+                            "%s (%s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.trace_map.inner),
+                            PFatt_str (n->sem.trace_map.outer));
+            break;
+        
         case pa_serialize:
         case pa_cross:
         case pa_append_union:
@@ -641,9 +667,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         case pa_fragment:
         case pa_frag_union:
         case pa_empty_frag:
+        case pa_nil:
         case pa_rec_fix:
         case pa_rec_param:
-        case pa_rec_nil:
         case pa_rec_arg:
         case pa_rec_base:
         case pa_rec_border:

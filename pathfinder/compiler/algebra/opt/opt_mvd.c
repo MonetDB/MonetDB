@@ -1246,9 +1246,13 @@ opt_mvd (PFla_op_t *p)
         }
         break;
         
+    case la_nil:
+    case la_trace:
+    case la_trace_msg:
+    case la_trace_map:
+        /* we may not modify the cardinality */
     case la_rec_fix:
     case la_rec_param:
-    case la_rec_nil:
     case la_rec_arg:
     case la_rec_base:
         /* do not rewrite anything that has to do with recursion */

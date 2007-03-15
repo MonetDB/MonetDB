@@ -317,11 +317,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     && a->sem.doc_access.doc_col == b->sem.doc_access.doc_col);
             break;
 
-        case la_cond_err:
-            return (a->sem.err.att == b->sem.err.att
-                    && a->sem.err.str == b->sem.err.str);
-            break;
-
         case la_doc_tbl:
             return (a->sem.doc_tbl.iter        == b->sem.doc_tbl.iter
                     && a->sem.doc_tbl.item     == b->sem.doc_tbl.item
@@ -388,9 +383,27 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return false;
             break;
 
+        case la_cond_err:
+            return (a->sem.err.att == b->sem.err.att
+                    && a->sem.err.str == b->sem.err.str);
+            break;
+
+        case la_nil:
+            return true;
+            break;
+            
+        case la_trace:
+        case la_trace_msg:
+            return false;
+            break;
+
+        case la_trace_map:
+            return (a->sem.trace_map.inner == b->sem.trace_map.inner &&
+                    a->sem.trace_map.outer == b->sem.trace_map.outer);
+            break;
+            
         case la_rec_fix:
         case la_rec_param:
-        case la_rec_nil:
         case la_rec_arg:
         case la_rec_base:
             /*

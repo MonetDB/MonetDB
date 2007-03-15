@@ -908,16 +908,22 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_cond_err:
+        case la_trace:
             bulk_add_dom (n->prop, L(n));
             break;
 
+        case la_nil:
+        case la_trace_msg:
+        case la_trace_map:
+            /* we have no properties */
+            break;
+            
         case la_rec_fix:
             /* get the domains of the overall result */
             bulk_add_dom (n->prop, R(n));
             break;
 
         case la_rec_param:
-        case la_rec_nil:
             /* recursion parameters do not have properties */
             break;
 

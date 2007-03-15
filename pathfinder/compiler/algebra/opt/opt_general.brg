@@ -123,11 +123,14 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  frag_union     =  72
 %term  empty_frag     =  73
 %term  cond_err       =  80
-%term  rec_fix        =  81
-%term  rec_param      =  82
-%term  rec_nil        =  83
-%term  rec_arg        =  84
-%term  rec_base       =  85
+%term  nil            =  81
+%term  trace          =  82
+%term  trace_msg      =  83
+%term  trace_map      =  84
+%term  rec_fix        =  85
+%term  rec_param      =  86
+%term  rec_arg        =  87
+%term  rec_base       =  88
 %term  string_join    = 102
 %term  dummy          = 120
 
@@ -195,17 +198,21 @@ Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
 
 Rel:    cond_err (Rel, Rel)                       =  80 (10);
 Rel:    cond_err (Rel, EmptyRel)                  =  81  (0);
+Rel:    trace (Rel, Msg)                          =  85 (10);
+Msg:    trace_msg (Rel, Map)                      =  86 (10);
+Map:    trace_map (Rel, Map)                      =  87 (10);
+Map:    nil                                       =  88 (10);
 
-Rel:    rec_fix (Rec, Rel)                        =  82 (10);
-Rel:    rec_base                                  =  83 (10);
-Rec:    rec_param (Arg, Rec)                      =  84 (10);
-Rec:    rec_nil                                   =  85 (10);
-Arg:    rec_arg (Rel, Rel)                        =  86 (10);
+Rel:    rec_fix (Rec, Rel)                        =  90 (10);
+Rel:    rec_base                                  =  91 (10);
+Rec:    rec_param (Arg, Rec)                      =  92 (10);
+Rec:    nil                                       =  93 (10);
+Arg:    rec_arg (Rel, Rel)                        =  94 (10);
 
-Rel:    string_join (Rel, Rel)                    =  88 (10);
-Rel:    dummy (Rel)                               =  89 (10);
+Rel:    string_join (Rel, Rel)                    =  95 (10);
+Rel:    dummy (Rel)                               =  96 (10);
 
-Rel:    EmptyRel                                  =  90  (0);
+Rel:    EmptyRel                                  =  99  (0);
 
 
 Frag:    fragment (doc_tbl (Rel))                 = 100 (10);
@@ -999,7 +1006,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    EmptyRel */
-        case 90:
+        case 99:
         {
             /*
              * Replace any sub-tree that we determined empty with these

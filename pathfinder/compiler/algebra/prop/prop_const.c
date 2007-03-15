@@ -262,6 +262,7 @@ infer_const (PFla_op_t *n)
         case la_attribute:
         case la_textnode:
         case la_roots:
+        case la_trace:
         case la_dummy:
 
             /* propagate information from both input operators */
@@ -579,13 +580,18 @@ infer_const (PFla_op_t *n)
                         PFprop_const_val (RL(n)->prop, n->sem.elem.iter_qn));
             break;
 
+        case la_nil:
+        case la_trace_msg:
+        case la_trace_map:
+            /* we have no have properties */
+            break;
+
         case la_rec_fix:
             /* get the constants of the overall result */
             copy (n->prop->constants, R(n)->prop->constants);
             break;
 
         case la_rec_param:
-        case la_rec_nil:
             /* recursion parameters do not have properties */
             break;
 
@@ -636,6 +642,7 @@ infer_const (PFla_op_t *n)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
+        case la_trace:
         case la_dummy:
             break;
 

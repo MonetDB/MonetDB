@@ -373,6 +373,25 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         case la_processi:
             assert (!"not implemented yet?");
 
+        case la_nil:
+            break;
+                
+        case la_trace:
+            prop_infer_reqvals (L(n), rv);
+
+            rv.name = 0;
+            rv.val = 0;
+            prop_infer_reqvals (R(n), rv);
+            break;
+            
+        case la_trace_msg:
+        case la_trace_map:
+            rv.name = 0;
+            rv.val = 0;
+            prop_infer_reqvals (L(n), rv);
+            prop_infer_reqvals (R(n), rv);
+            break;
+            
         case la_rec_fix:
             /* infer no required values */
             rv.name = 0;
@@ -389,7 +408,6 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             prop_infer_reqvals (R(n), rv);
             
-        case la_rec_nil:
         case la_rec_base:
             break;
             

@@ -492,7 +492,13 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
             
         case la_cond_err:
+        case la_trace:
+        case la_trace_msg:
+        case la_trace_map:
             bulk_add_name_pairs (np_list, L(n));
+            break;
+
+        case la_nil:
             break;
 
         case la_rec_fix:
@@ -501,7 +507,6 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
             
         case la_rec_param:
-        case la_rec_nil:
             /* recursion parameters do not have properties */
             break;
             
@@ -591,7 +596,7 @@ prop_infer_rec_seed (PFla_op_t *n, unsigned int cur_col_id)
                (Schema R -> Schema L). */
             break;
 
-        case la_rec_nil:
+        case la_nil:
             break;
 
         default:
@@ -627,7 +632,7 @@ prop_infer_rec_body (PFla_op_t *n, unsigned int cur_col_id)
                (Schema R -> Schema L). */
             break;
 
-        case la_rec_nil:
+        case la_nil:
             break;
 
         default:

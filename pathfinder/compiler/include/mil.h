@@ -44,30 +44,37 @@ typedef unsigned int oid;
 typedef unsigned int PFmil_ident_t;
 
 /* reserved identifiers. */
-#define PF_MIL_VAR_UNUSED      0
-#define PF_MIL_VAR_WS          1
-#define PF_MIL_VAR_ATTR        2
-#define PF_MIL_VAR_ELEM        3
-#define PF_MIL_VAR_STR         4
-#define PF_MIL_VAR_INT         5
-#define PF_MIL_VAR_DBL         6
-#define PF_MIL_VAR_DEC         7
-#define PF_MIL_VAR_BOOL        8
-#define PF_MIL_VAR_ATTR_OWN    9
-#define PF_MIL_VAR_ATTR_QN    10
-#define PF_MIL_VAR_ATTR_CONT  11
-#define PF_MIL_VAR_QN_LOC     12
-#define PF_MIL_VAR_QN_URI     13
-#define PF_MIL_VAR_ATTR_PROP  14
-#define PF_MIL_VAR_PROP_VAL   15
-#define PF_MIL_VAR_PRE_PROP   16
-#define PF_MIL_VAR_PRE_CONT   17
-#define PF_MIL_VAR_PROP_TEXT  18
-#define PF_MIL_VAR_PROP_COM   19
-#define PF_MIL_VAR_PROP_INS   20
-#define PF_MIL_VAR_TIME_LOAD  21
-#define PF_MIL_VAR_TIME_QUERY 22
-#define PF_MIL_VAR_TIME_PRINT 23
+#define PF_MIL_VAR_UNUSED       0
+#define PF_MIL_VAR_WS           1
+#define PF_MIL_VAR_ATTR         2
+#define PF_MIL_VAR_ELEM         3
+#define PF_MIL_VAR_STR          4
+#define PF_MIL_VAR_INT          5
+#define PF_MIL_VAR_DBL          6
+#define PF_MIL_VAR_DEC          7
+#define PF_MIL_VAR_BOOL         8
+#define PF_MIL_VAR_ATTR_OWN     9
+#define PF_MIL_VAR_ATTR_QN     10
+#define PF_MIL_VAR_ATTR_CONT   11
+#define PF_MIL_VAR_QN_LOC      12
+#define PF_MIL_VAR_QN_URI      13
+#define PF_MIL_VAR_ATTR_PROP   14
+#define PF_MIL_VAR_PROP_VAL    15
+#define PF_MIL_VAR_PRE_PROP    16
+#define PF_MIL_VAR_PRE_CONT    17
+#define PF_MIL_VAR_PROP_TEXT   18
+#define PF_MIL_VAR_PROP_COM    19
+#define PF_MIL_VAR_PROP_INS    20
+#define PF_MIL_VAR_TRACE_OUTER 21
+#define PF_MIL_VAR_TRACE_INNER 22
+#define PF_MIL_VAR_TRACE_ITER  23
+#define PF_MIL_VAR_TRACE_MSG   24
+#define PF_MIL_VAR_TRACE_ITEM  25
+#define PF_MIL_VAR_TRACE_TYPE  26
+#define PF_MIL_VAR_TRACE_REL   27
+#define PF_MIL_VAR_TIME_LOAD   28
+#define PF_MIL_VAR_TIME_QUERY  29
+#define PF_MIL_VAR_TIME_PRINT  30
 
 #define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_TIME_PRINT + 1)
 
@@ -354,20 +361,27 @@ enum PFmil_kind_t {
                           a simple MIL script that does the work mainly for
                           debugging purposes. */
     
+    , m_trace        /**< trace function.
+                          The trace function must be provided by the
+                          pathfinder extension module. For now we just have
+                          a simple MIL script that does the work mainly for
+                          debugging purposes. */
+    
     , m_module       /**< module loading */
 };
 typedef enum PFmil_kind_t PFmil_kind_t;
 
 /* enum values must not be zero (zero is used for some error detection) */
 enum PFmil_type_t {
-      m_oid   = 1
-    , m_void  = 2
-    , m_int   = 3
-    , m_str   = 4
-    , m_lng   = 5
-    , m_dbl   = 6
-    , m_bit   = 7
-    , m_chr   = 8
+      mty_oid   = 1
+    , mty_void  = 2
+    , mty_int   = 3
+    , mty_str   = 4
+    , mty_lng   = 5
+    , mty_dbl   = 6
+    , mty_bit   = 7
+    , mty_chr   = 8
+    , mty_bat   = 9
 };
 typedef enum PFmil_type_t PFmil_type_t;
 
@@ -391,23 +405,6 @@ union PFmil_sem_t {
     PFmil_type_t  t;       /**< MIL type (for #m_type nodes) */
     PFmil_ident_t ident;   /**< MIL identifier */
     PFmil_access_t access; /**< BAT access specifier, only for #m_access nodes*/
-
-    struct {
-        char *prefix;
-        bool has_nat_part;
-        bool has_int_part;
-        bool has_str_part;
-        bool has_node_part;
-        bool has_dec_part;
-        bool has_dbl_part;
-        bool has_bln_part;
-    } ser;               /**< Parameters for serialization function. This may
-                              change depending on the final serialization
-                              function in the pathfinder runtime module. For
-                              now we have a simple MIL script that does the
-                              work for debugging purposes and takes just these
-                              parameters.
-                          */
 };
 typedef union PFmil_sem_t PFmil_sem_t;
 
@@ -1210,14 +1207,9 @@ PFmil_t * PFmil_comment (const char *, ...)
 
 PFmil_t * PFmil_ser (const PFmil_t *);
 
+PFmil_t * PFmil_trace (const PFmil_t *);
+
 PFmil_t * PFmil_module (const PFmil_t *);
-/*
-PFmil_t * PFmil_ser (const char *prefix,
-                     const bool has_nat_part, const bool has_int_part,
-                     const bool has_str_part, const bool has_node_part,
-                     const bool has_dec_part, const bool has_dbl_part,
-                     const bool has_bln_part);
-*/
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \

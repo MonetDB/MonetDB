@@ -181,7 +181,7 @@ prop_infer_icols_rec_body (PFla_op_t *n)
         prop_infer_icols_rec_body (L(n));
         prop_infer_icols_rec_body (R(n));
     }
-    else if (n->kind == la_rec_nil)
+    else if (n->kind == la_nil)
         return;
     else if (n->kind == la_rec_arg) {
         /* the required columns of the body are all the 
@@ -296,11 +296,6 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_intersect:
             /* add both intersect columns to the inferred icols */
-            n->prop->l_icols = union_ (union_ (n->prop->icols, att_iter),
-                                       att_item);
-            n->prop->r_icols = n->prop->l_icols;
-            break;
-
         case la_difference:
             /* to support both scenarios where difference is
                used ((a) missing iterations and (b) except)
@@ -578,6 +573,26 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = n->sem.err.att;
             break;
 
+        case la_nil:
+            break;
+
+        case la_trace:
+            n->prop->l_icols = n->prop->icols;
+            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.trace.iter);
+            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.trace.pos);
+            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.trace.item);
+            break;
+
+        case la_trace_msg:
+            n->prop->l_icols = union_ (n->sem.trace_msg.iter,
+                                       n->sem.trace_msg.item);
+            break;
+
+        case la_trace_map:
+            n->prop->l_icols = union_ (n->sem.trace_map.inner,
+                                       n->sem.trace_map.outer);
+            break;
+            
         case la_rec_fix:
             /* infer the required columns of the result */
             n->prop->r_icols = n->prop->icols;
@@ -599,7 +614,6 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             break;
             
         case la_rec_param:
-        case la_rec_nil:
             /* infer empty list for parameter list */
             n->prop->l_icols = 0;
             n->prop->r_icols = 0;

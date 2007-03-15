@@ -1506,7 +1506,8 @@ specific (PFfun_t *fn, PFcnode_t *args)
                         PFty_prime (PFty_defn (TY(L(args))))));
     }
 
-    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "unordered"))) {
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "trace")) ||
+        ! PFqname_eq (fn->qname, PFqname (PFns_fn, "unordered"))) {
         return *PFty_simplify (
                     (PFty_quantifier (PFty_defn (TY(L(args))))
                          (PFty_prime (PFty_defn (TY(L(args)))))));

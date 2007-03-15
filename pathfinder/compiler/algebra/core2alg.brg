@@ -308,20 +308,35 @@ static PFarray_t  *env = NULL;
  */
 static PFla_op_t *loop = NULL;
 
+struct mapping_t {
+    PFla_op_t   *map;   /* map relation */
+    unsigned int count; /* attribute counter of the map relation */
+    unsigned int dir;   /* sort direction of the attributes in the
+                           map relation */
+};
+typedef struct mapping_t mapping_t;
+
+/**
+ * Mapping stack
+ */
+static PFarray_t *mapping = NULL;
+
 /**
  * Current map relation
  */
-static PFla_op_t *map = NULL;
+#define MAP (((mapping_t *) PFarray_top (mapping))->map)
 
 /**
  * Attribute counter of current map relation
  */
-static unsigned int map_count = 0;
+#define MAP_COUNT (((mapping_t *) PFarray_top (mapping))->count)
+
 /**
  * Sort direction of the attributes
  * of the current map relation
  */
-static unsigned int map_dir = 0;
+#define MAP_DIR (((mapping_t *) PFarray_top (mapping))->dir)
+
 
 /**
  * ordering mode indicator
@@ -735,15 +750,11 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* store current state information */
             PFla_op_t   *old_loop      = loop;
-            PFla_op_t   *old_map       = map;
-            unsigned int old_map_count = map_count;
-            unsigned int old_map_dir   = map_dir;
             PFarray_t    *old_env      = env;
         
             /* start with empty map relation */
-            map = 0;
-            map_count = 0;
-            map_dir   = 0;
+            *((mapping_t *) PFarray_add (mapping)) 
+                = (mapping_t) { .map = NULL, .count = 0, .dir = 0 }; 
 
             /* initiate translation of bindings */
             reduce (kids[0], nts[0]);
@@ -757,7 +768,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* the map relation has been changed by a for loop
                (and an order by) and therefore backmapping is
                required */
-            if (map) {
+            if (MAP) {
                 /* Note that ordering mode has no effect on a FLWOR 
                    expression if an order by clause is present, 
                    since order by takes precedence over ordering mode. */
@@ -767,7 +778,7 @@ reduce (PFcnode_t * p, int goalnt)
                        (in- and outside the flwor block). */
                     A(p) = (struct PFla_pair_t) {
                             .rel = project (rownum (eqjoin (A(R(p)).rel,
-                                                            map,
+                                                            MAP,
                                                             att_iter,
                                                             att_inner),
                                                     att_pos1,
@@ -798,11 +809,11 @@ reduce (PFcnode_t * p, int goalnt)
                         /* don't include columns inner and outer */
                         /* starting from attribute sort add consecutive
                            attributes ... */
-                        for (unsigned int i = 0; i < map_count - 2; i++) {
+                        for (unsigned int i = 0; i < MAP_COUNT - 2; i++) {
                             cur = att_sort << i;
                             sortby = PFord_refine (sortby,
                                                    cur,
-                                                   cur & map_dir 
+                                                   cur & MAP_DIR 
                                                    ? DIR_DESC : DIR_ASC);
                         }
 
@@ -814,7 +825,7 @@ reduce (PFcnode_t * p, int goalnt)
                         /* don't include columns inner and outer */
                         /* starting from attribute sort add consecutive
                            attributes ... */
-                        for (unsigned int i = 0; i < map_count - 2; i++)
+                        for (unsigned int i = 0; i < MAP_COUNT - 2; i++)
                             sortby = PFord_refine (sortby,
                                                    att_sort << i,
                                                    DIR_ASC);
@@ -825,7 +836,7 @@ reduce (PFcnode_t * p, int goalnt)
 
                     A(p) = (struct PFla_pair_t) {
                             .rel = project (rownum (eqjoin (A(R(p)).rel,
-                                                            map,
+                                                            MAP,
                                                             att_iter,
                                                             att_inner),
                                                     att_pos1,
@@ -842,9 +853,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* restore loop relation */
             loop = old_loop;
             /* restore map relation and its attribute counter */
-            map = old_map;
-            map_count = old_map_count;
-            map_dir   = old_map_dir;
+            PFarray_del (mapping);
             /* restore old environment */
             env = old_env;
 
@@ -978,17 +987,17 @@ reduce (PFcnode_t * p, int goalnt)
                     enventry (e.var, e.rel, new_map, e.frag);
             }
 
-            if (!map) {
+            if (!MAP) {
                 /* create a first backmapping relation */
-                map = var_map;
-                map_count = 3;
+                MAP = var_map;
+                MAP_COUNT = 3;
             } else {
                 /* extend the backmapping relation map with
                  * (a) position information of the for-loop input sequence and
                  * (b) the current iteration values */
 
-                map_count++;
-                PFalg_proj_t *atts = PFmalloc (map_count *
+                MAP_COUNT++;
+                PFalg_proj_t *atts = PFmalloc (MAP_COUNT *
                                                sizeof (PFalg_proj_t));
                 /* column outer remains the same */
                 atts[0].new = att_outer;
@@ -997,23 +1006,23 @@ reduce (PFcnode_t * p, int goalnt)
                 atts[1].new = att_inner;
                 atts[1].old = att_iter1;
                 /* copy all old sort columns */
-                for (unsigned i = 2; i < map_count - 1; i++)
+                for (unsigned i = 2; i < MAP_COUNT - 1; i++)
                     atts[i].new = 
                     atts[i].old = att_sort << (i - 2);
                 /* we now have on additional sort column generated 
                    from column pos */
                 /* the first sort criterion is column sort itself */
-                atts[map_count -1].new = att_sort << (map_count - 3);
-                atts[map_count -1].old = att_pos;
+                atts[MAP_COUNT -1].new = att_sort << (MAP_COUNT - 3);
+                atts[MAP_COUNT -1].old = att_pos;
 
-                map = PFla_project_ (eqjoin (map, 
+                MAP = PFla_project_ (eqjoin (MAP, 
                                              project (number,
                                                       proj (att_iter1, att_inner),
                                                       proj (att_iter, att_iter),
                                                       proj (att_pos, att_pos)),
                                              att_inner,
                                              att_iter),
-                                     map_count, atts);
+                                     MAP_COUNT, atts);
             }
             
             /* translate e2 under the specified conditions (updated
@@ -1333,15 +1342,20 @@ reduce (PFcnode_t * p, int goalnt)
         case 13:
         {   /* TOPDOWN */
 
-            /* throw away all sort criteria -- each orderspec
-               adds a new one instead */
-            map = project (map,
-                           proj (att_outer, att_outer),
-                           proj (att_inner, att_inner));
-            map_count = 2;
+            /* Having no map relation indicates that we have no
+               for loop. We have at most one item and thus can
+               skip sorting. */
+            if (MAP) {
+                /* throw away all sort criteria -- each orderspec
+                   adds a new one instead */
+                MAP = project (MAP,
+                               proj (att_outer, att_outer),
+                               proj (att_inner, att_inner));
+                MAP_COUNT = 2;
 
-            /* translate OrderSpecs */
-            reduce (kids[0], nts[0]);
+                /* translate OrderSpecs */
+                reduce (kids[0], nts[0]);
+            }
 
             /* translate return expression */
             reduce (kids[1], nts[1]);
@@ -1437,8 +1451,8 @@ reduce (PFcnode_t * p, int goalnt)
             /* extend the backmapping relation map with
              * (a) position information of the for-loop input sequence and
              * (b) the current iteration values */
-            map_count++;
-            atts = PFmalloc ((map_count + empty) * sizeof (PFalg_proj_t));
+            MAP_COUNT++;
+            atts = PFmalloc ((MAP_COUNT + empty) * sizeof (PFalg_proj_t));
             /* columns outer and inner remain the same */
             atts[0].new = att_outer;
             atts[0].old = att_outer;
@@ -1446,30 +1460,30 @@ reduce (PFcnode_t * p, int goalnt)
             atts[1].old = att_inner;
             
             /* copy all old sort columns */
-            for (unsigned i = 2; i < map_count - 1; i++)
+            for (unsigned i = 2; i < MAP_COUNT - 1; i++)
                 atts[i].new = 
                 atts[i].old = att_sort << (i - 2);
 
             /* we now have on additional sort column generated 
                from column item (and possible pos) */
             if (empty) {
-                sort_col = att_sort << (map_count - 3);
-                atts[map_count -1].new = sort_col;
-                atts[map_count -1].old = att_pos;
-                map_count++;
+                sort_col = att_sort << (MAP_COUNT - 3);
+                atts[MAP_COUNT -1].new = sort_col;
+                atts[MAP_COUNT -1].old = att_pos;
+                MAP_COUNT++;
             }
             /* the first sort criterion is column sort itself */
-            sort_col = att_sort << (map_count - 3);
-            atts[map_count -1].new = sort_col;
-            atts[map_count -1].old = att_item;
+            sort_col = att_sort << (MAP_COUNT - 3);
+            atts[MAP_COUNT -1].new = sort_col;
+            atts[MAP_COUNT -1].old = att_item;
             
             if (p->sem.mode.dir == p_desc)
                 /* mark the bit corresponding to the last 
                    entry to cope with descending order */
-                map_dir |= sort_col;
+                MAP_DIR |= sort_col;
 
-            map = PFla_project_ (eqjoin (map, sort_attr, att_inner, att_iter),
-                                 map_count, atts);
+            MAP = PFla_project_ (eqjoin (MAP, sort_attr, att_inner, att_iter),
+                                 MAP_COUNT, atts);
 
         /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
         /* case 301: */
@@ -1960,17 +1974,52 @@ reduce (PFcnode_t * p, int goalnt)
             /* All function arguments are now in the array `fun_args'. */
 
             if (p->sem.fun->builtin) {
-                /*
-                 * For built-in functions use this array to call the
-                 * algebraic representation of the function (builtins.c)
+                /**
+                 * Translation of fn:trace ()
                  */
-                if (!p->sem.fun->alg)
-                    PFoops (OOPS_FATAL,
+                if (! PFqname_eq (p->sem.fun->qname,
+                                  PFqname (PFns_fn, "trace"))) {
+                    /* For fn:trace we need to introduce for each map relation
+                       an additional trace operator. Thus we translate it here. */
+                    PFla_pair_t seq = *(PFla_pair_t *) PFarray_at (fun_args, 0);
+                    PFla_pair_t str = *(PFla_pair_t *) PFarray_at (fun_args, 1);
+                    PFla_op_t  *map_traces = nil ();
+                    
+                    for (unsigned int i = 0; i < PFarray_last (mapping); i++) {
+                        PFla_op_t *map =
+                            ((mapping_t *) PFarray_at (mapping, i))->map;
+                        
+                        if (map) {
+                            map_traces = trace_map (map,
+                                                    map_traces,
+                                                    att_inner,
+                                                    att_outer);
+                        }
+                    }
+
+                    A(p) = (struct PFla_pair_t) {
+                        .rel  = trace (seq.rel, 
+                                       trace_msg (str.rel,
+                                                  map_traces,
+                                                  att_iter,
+                                                  att_item),
+                                       att_iter,
+                                       att_pos,
+                                       att_item),
+                        .frag = seq.frag };
+                } else {
+                    /*
+                     * For built-in functions use this array to call the
+                     * algebraic representation of the function (builtins.c)
+                     */
+                    if (!p->sem.fun->alg)
+                        PFoops (
+                            OOPS_FATAL,
                             "Algebra implementation for function `%s' unknown.",
                             PFqname_str (p->sem.fun->qname));
 
-                A(p) = p->sem.fun->alg (loop, ordering, fun_args->base);
-
+                    A(p) = p->sem.fun->alg (loop, ordering, fun_args->base);
+                }
             }
             else {
                 /*
@@ -2070,7 +2119,7 @@ reduce (PFcnode_t * p, int goalnt)
              *  * rec_param: one item of a variable length parameter list 
              *               (thus coping with UDFs that have an arbitrary
              *                number or arguments)
-             *  * rec_nil:   the end of the parameter list
+             *  * nil:       the end of the parameter list
              *  * rec_arg:   the operator that manages the connections
              *               between seed argument, the recursive call, and
              *               both its input to the next recursion (base)
@@ -2093,7 +2142,7 @@ reduce (PFcnode_t * p, int goalnt)
              *    rec_arg                      \            |
              *    /  |  \                  rec_param        |
              *    |      \                  /      \        |
-             *   / \  \   \             rec_arg  rec_nil    /
+             *   / \  \   \             rec_arg    nil      /
              *  /q1 \      \            /  \  \___   ______/
              * /_____\ |    |     iter|item       \ /
              *              |     ----|----  \     U (2)
@@ -2304,7 +2353,7 @@ reduce (PFcnode_t * p, int goalnt)
                                     res_seed,
                                     res,
                                     base_res),
-                                rec_nil ());
+                                nil ());
             
             /* ------------------- LOOP ------------------- */
             
@@ -2688,9 +2737,7 @@ PFcore2alg (PFcnode_t *r)
     fun_active = PFarray (sizeof (PFcnode_t *));
 
     /* Initialize remaining global variables */
-    map = NULL;
-    map_count = 0;
-    map_dir = 0;
+    mapping = PFarray (sizeof (mapping_t));
     seq_count = 0;
 
     /* label the core tree bottom up */

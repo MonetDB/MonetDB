@@ -140,12 +140,15 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term frag_union     = 132
 %term empty_frag     = 133
 %term cond_err       = 140
-%term rec_fix        = 141
-%term rec_param      = 142
-%term rec_nil        = 143
-%term rec_arg        = 144
-%term rec_base       = 145
-%term rec_border     = 146
+%term nil            = 141
+%term trace          = 142
+%term trace_msg      = 143
+%term trace_map      = 144
+%term rec_fix        = 145
+%term rec_param      = 146
+%term rec_arg        = 147
+%term rec_base       = 148
+%term rec_border     = 149
 %term string_join    = 150
 
 %%
@@ -227,15 +230,19 @@ FragList: empty_frag                                               = 123 (10);
 
 Rel:      cond_err (Rel, Rel)                                      = 130 (10);
 Rel:      cond_err (Rel, empty_tbl)                                = 131 (10);
+Rel:      trace (Rel, trace_msg (Rel, Map))                        = 135 (10);
+Rel:      trace (Rel, trace_msg (Rel, nil))                        = 136 (10);
+Map:      trace_map (Rel, Map)                                     = 137 (10);
+Map:      trace_map (Rel, nil)                                     = 138 (10);
 
-Rel:      rec_fix (Rec, Rel)                                       = 132 (10);
-Rec:      rec_param (rec_arg (Rel, Rel), Rec)                      = 133 (10);
-Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec)                = 134 (10);
-Rec:      rec_nil                                                  = 135 (10);
-Rel:      rec_base                                                 = 136 (10);
-Rel:      rec_border (Rel)                                         = 137 (10);
+Rel:      rec_fix (Rec, Rel)                                       = 140 (10);
+Rec:      rec_param (rec_arg (Rel, Rel), Rec)                      = 141 (10);
+Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec)                = 142 (10);
+Rec:      nil                                                      = 143 (10);
+Rel:      rec_base                                                 = 144 (10);
+Rel:      rec_border (Rel)                                         = 145 (10);
 
-Rel:      string_join (Rel, Rel)                                   = 140 (10);
+Rel:      string_join (Rel, Rel)                                   = 150 (10);
 
 %%
 
@@ -283,6 +290,19 @@ typedef struct mvar_t mvar_t;
  * the list.
  */
 PFarray_t *mvars = NULL;
+
+/**
+ * Return a ``new'' trace id. This id is used to refer
+ * to a certain trace relation.
+ */
+static unsigned int
+new_trace_id (void)
+{
+    /* the trace_id corresponds to the oids
+       in the trace containers */
+    static unsigned int trace_id = 1;
+    return trace_id++;
+}
 
 /**
  * Return a ``new'' valid variable.  Will try to re-use an old,
@@ -532,18 +552,18 @@ static void aggr_function (PFmil_t * (*op) (const PFmil_t *),
 
 /** MIL implementation types for algebra types */
 static PFmil_type_t impl_types[] = {
-      [aat_nat]   = m_oid
-    , [aat_int]   = m_lng
-    , [aat_str]   = m_str
-    , [aat_uA]    = m_str
-    , [aat_dec]   = m_dbl
-    , [aat_dbl]   = m_dbl
-    , [aat_bln]   = m_bit
-    , [aat_qname] = m_oid
-    , [aat_pre]   = m_oid
-    , [aat_attr]  = m_oid
-    , [aat_pfrag] = m_oid
-    , [aat_afrag] = m_oid
+      [aat_nat]   = mty_oid
+    , [aat_int]   = mty_lng
+    , [aat_str]   = mty_str
+    , [aat_uA]    = mty_str
+    , [aat_dec]   = mty_dbl
+    , [aat_dbl]   = mty_dbl
+    , [aat_bln]   = mty_bit
+    , [aat_qname] = mty_oid
+    , [aat_pre]   = mty_oid
+    , [aat_attr]  = mty_oid
+    , [aat_pfrag] = mty_oid
+    , [aat_afrag] = mty_oid
 };
 
 /** implementation type for a given algebra type, as a MIL node */
@@ -591,13 +611,13 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     
     switch (rule) {
         /* Rel:      rec_fix (Rec, Rel) */
-        case 132:
+        case 140:
             /* only follow the parameters */
             reduce_border (kids[0], nts[0], border_vars);
             break;
             
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 133:
+        case 141:
             /* only follow the seeds */
             reduce_border (kids[0], nts[0], border_vars);
             /* and the rest of the parameter list */
@@ -605,18 +625,18 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
             break;
 
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 134:
+        case 142:
             /* follow the rest of the parameter list */
             reduce_border (kids[1], nts[1], border_vars);
             break;
 
-        /* Rec:      rec_nil */
-        case 135:
+        /* Rec:      nil */
+        case 143:
             /* nothing to be done */
             break;
             
         /* Rel:      rec_border (Rel) */
-        case 137:
+        case 145:
             if (!p->env) {
                 /* translate sub-DAG starting at the border */
                 reduce (p, goalnt);
@@ -682,7 +702,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
 
     switch (rule) {
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 133:
+        case 141:
             /* only generate MIL code for the seed */
             reduce (kids[0], nts[0]);
             
@@ -724,7 +744,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
             break;
 
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 134:
+        case 142:
             /* relink the enviroment of arg to its base */
             L(p)->sem.rec_arg.base->env = p->env;
 
@@ -734,7 +754,8 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
             for (unsigned int col = 0; col < LL(p)->schema.count; col++) {
                 if (!LL(p)->schema.items[col].type)
                     PFoops (OOPS_FATAL,
-                            "empty sequence should never occur in MIL generation.");
+                            "empty sequence should never "
+                            "occur in MIL generation.");
 
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & LL(p)->schema.items[col].type) {
@@ -744,7 +765,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
                         /* assign an empty BAT to the new variable */
                         execute (
                             assgn (var (tmp->name),
-                                   seqbase (new (type (m_void), implty (t)),
+                                   seqbase (new (type (mty_void), implty (t)),
                                             lit_oid (0))));
                         
                         /* add the variable to the current environment
@@ -764,8 +785,8 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
             reduce_border (kids[0], nts[0], border_vars);
             break;
 
-        /* Rec:      rec_nil */
-        case 135:
+        /* Rec:      nil */
+        case 143:
             /* no MIL code needed */
             break;
             
@@ -840,10 +861,10 @@ reduce2 (PFpa_op_t * p, int goalnt)
     
     switch (rule) {
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 133:
+        case 141:
             pos_body = 1; /* discard the seed */
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 134:
+        case 142:
             /* only generate MIL code for the body */
             reduce (kids[pos_body], nts[pos_body]);
             /* translate all the remaining parts of the body */
@@ -870,8 +891,8 @@ reduce2 (PFpa_op_t * p, int goalnt)
             }
             break;
 
-        /* Rec:      rec_nil */
-        case 135:
+        /* Rec:      nil */
+        case 143:
             /* no MIL code needed */
             break;
             
@@ -946,10 +967,10 @@ reduce3 (PFpa_op_t * p, int goalnt)
     
     switch (rule) {
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 133:
+        case 141:
             pos_list = 2; /* discard the seed */
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 134:
+        case 142:
             /* translate all the remaining parts of the list */
             reduce3 (kids[pos_list], nts[pos_list]);
             
@@ -961,8 +982,8 @@ reduce3 (PFpa_op_t * p, int goalnt)
             }
             break;
 
-        /* Rec:      rec_nil */
-        case 135:
+        /* Rec:      nil */
+        case 143:
             /* no MIL code needed */
             break;
             
@@ -1029,7 +1050,7 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Query:    serialize (FragList, empty_tbl) */
         case 2:
         /* Rel:      rec_fix (Rec, Rel) */
-        case 132:
+        case 140:
             topdown = true;
             break;
 
@@ -1107,29 +1128,35 @@ reduce (PFpa_op_t * p, int goalnt)
                 assgn (var (intVAL->name),
                        seqbase (
                            reverse (
-                               key (new (type (m_lng), type (m_void)), true)),
+                               key (new (type (mty_lng), type (mty_void)),
+                                    true)),
                            lit_oid (0))),
                 assgn (var (dblVAL->name),
                        seqbase (
                            reverse (
-                               key (new (type (m_dbl), type (m_void)), true)),
+                               key (new (type (mty_dbl), type (mty_void)),
+                                    true)),
                            lit_oid (0))),
                 /*
                 assgn (var (decVAL->name),
                        seqbase (
                            reverse (
-                               key (new (type (m_dbl), type (m_void)), true)),
+                               key (new (type (mty_dbl), type (mty_void)),
+                                true)),
                            lit_oid (0))),
                 */
                 assgn (var (strVAL->name),
                        seqbase (
                            reverse (
-                               key (new (type (m_str), type (m_void)), true)),
+                               key (new (type (mty_str), type (mty_void)),
+                                    true)),
                            lit_oid (0))),
                 assgn (var (item->name),
-                       seqbase (new (type (m_void), type (m_oid)), lit_oid(0))),
+                       seqbase (new (type (mty_void), type (mty_oid)),
+                                lit_oid(0))),
                 assgn (var (kind->name),
-                       seqbase (new (type (m_void), type (m_int)), lit_oid(0)))
+                       seqbase (new (type (mty_void), type (mty_int)),
+                                lit_oid(0)))
                 );
 
             ty = type_of (R(p), pa_item);
@@ -1152,16 +1179,16 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (var (item->name),
                                  select2 (
                                      VAR (R(p)->env, pa_item, aat_attr),
-                                     cast (type (m_oid), nil ()),
-                                     cast (type (m_oid), nil ()))),
+                                     cast (type (mty_oid), nil ()),
+                                     cast (type (mty_oid), nil ()))),
                         binsert (var (kind->name),
                                  select2 (
                                      set_kind (VAR (R(p)->env, 
                                                     pa_item,
                                                     aat_afrag),
                                                var (PF_MIL_VAR_ATTR)),
-                                     cast (type (m_int), nil ()),
-                                     cast (type (m_int), nil ())))
+                                     cast (type (mty_int), nil ()),
+                                     cast (type (mty_int), nil ())))
                         );
                 }
             }
@@ -1184,16 +1211,16 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (var (item->name),
                                  select2 (
                                      VAR (R(p)->env, pa_item, aat_pre),
-                                     cast (type (m_oid), nil ()),
-                                     cast (type (m_oid), nil ()))),
+                                     cast (type (mty_oid), nil ()),
+                                     cast (type (mty_oid), nil ()))),
                         binsert (var (kind->name),
                                  select2 (
                                      set_kind (VAR (R(p)->env, 
                                                     pa_item,
                                                     aat_pfrag),
                                                var (PF_MIL_VAR_ELEM)),
-                                     cast (type (m_int), nil ()),
-                                     cast (type (m_int), nil ())))
+                                     cast (type (mty_int), nil ()),
+                                     cast (type (mty_int), nil ())))
                         );
                 }
             }
@@ -1208,8 +1235,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                          select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_str),
-                                                  cast (type (m_str), nil ()),
-                                                  cast (type (m_str), nil ()))
+                                                  cast (type (mty_str), nil ()),
+                                                  cast (type (mty_str), nil ()))
                                          )))));
                 if (ty == aat_str) {
                     execute (
@@ -1233,8 +1260,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (
                             var (kind->name),
                             project (select2 (VAR (R(p)->env, pa_item, aat_str),
-                                              cast (type (m_str), nil ()),
-                                              cast (type (m_str), nil ())),
+                                              cast (type (mty_str), nil ()),
+                                              cast (type (mty_str), nil ())),
                                      var (PF_MIL_VAR_STR)))
                     );
                 }
@@ -1250,8 +1277,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                          select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_uA),
-                                                  cast (type (m_str), nil ()),
-                                                  cast (type (m_str), nil ()))
+                                                  cast (type (mty_str), nil ()),
+                                                  cast (type (mty_str), nil ()))
                                          )))));
                 if (ty == aat_uA) {
                     execute (
@@ -1275,8 +1302,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (
                             var (kind->name),
                             project (select2 (VAR (R(p)->env, pa_item, aat_uA),
-                                              cast (type (m_str), nil ()),
-                                              cast (type (m_str), nil ())),
+                                              cast (type (mty_str), nil ()),
+                                              cast (type (mty_str), nil ())),
                                      var (PF_MIL_VAR_STR)))
                     );
                 }
@@ -1292,8 +1319,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                          select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_int),
-                                                  cast (type (m_lng), nil ()),
-                                                  cast (type (m_lng), nil ()))
+                                                  cast (type (mty_lng), nil ()),
+                                                  cast (type (mty_lng), nil ()))
                                          )))));
                 if (ty == aat_int) {
                     execute (
@@ -1317,8 +1344,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (
                             var (kind->name),
                             project (select2 (VAR (R(p)->env, pa_item, aat_int),
-                                              cast (type (m_lng), nil ()),
-                                              cast (type (m_lng), nil ())),
+                                              cast (type (mty_lng), nil ()),
+                                              cast (type (mty_lng), nil ())),
                                      var (PF_MIL_VAR_INT)))
                     );
                 }
@@ -1334,8 +1361,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                          select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_dbl),
-                                                  cast (type (m_dbl), nil ()),
-                                                  cast (type (m_dbl), nil ()))
+                                                  cast (type (mty_dbl), nil ()),
+                                                  cast (type (mty_dbl), nil ()))
                                          )))));
                 if (ty == aat_dbl) {
                     execute (
@@ -1359,8 +1386,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (
                             var (kind->name),
                             project (select2 (VAR (R(p)->env, pa_item, aat_dbl),
-                                              cast (type (m_dbl), nil ()),
-                                              cast (type (m_dbl), nil ())),
+                                              cast (type (mty_dbl), nil ()),
+                                              cast (type (mty_dbl), nil ())),
                                      var (PF_MIL_VAR_DBL)))
                     );
                 }
@@ -1376,8 +1403,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                          select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_dec),
-                                                  cast (type (m_dbl), nil ()),
-                                                  cast (type (m_dbl), nil ()))
+                                                  cast (type (mty_dbl), nil ()),
+                                                  cast (type (mty_dbl), nil ()))
                                          )))));
                 if (ty == aat_dec) {
                     execute (
@@ -1401,8 +1428,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (
                             var (kind->name),
                             project (select2 (VAR (R(p)->env, pa_item, aat_dec),
-                                              cast (type (m_dbl), nil ()),
-                                              cast (type (m_dbl), nil ())),
+                                              cast (type (mty_dbl), nil ()),
+                                              cast (type (mty_dbl), nil ())),
                                      var (PF_MIL_VAR_DEC)))
                     );
                 }
@@ -1414,7 +1441,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (
                             var (item->name),
-                            mcast (type (m_oid),
+                            mcast (type (mty_oid),
                                    VAR (R(p)->env, pa_item, aat_bln))),
                         assgn (
                             var (kind->name),
@@ -1427,13 +1454,13 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         binsert (
                             var (item->name),
-                            mcast (type (m_oid),
+                            mcast (type (mty_oid),
                                    VAR (R(p)->env, pa_item, aat_bln))),
                         binsert (
                             var (kind->name),
                             project (select2 (VAR (R(p)->env, pa_item, aat_bln),
-                                              cast (type (m_bit), nil ()),
-                                              cast (type (m_bit), nil ())),
+                                              cast (type (mty_bit), nil ()),
+                                              cast (type (mty_bit), nil ())),
                                      var (PF_MIL_VAR_BOOL)))
                     );
                 }
@@ -1490,6 +1517,19 @@ reduce (PFpa_op_t * p, int goalnt)
                             var (time->name))));
             unpin (time, 1);
 
+            /* output trace information if available */
+            if (new_trace_id () != 1)
+                execute (
+                    trace (
+                        arg (var (PF_MIL_VAR_WS),
+                        arg (var (PF_MIL_VAR_TRACE_OUTER),
+                        arg (var (PF_MIL_VAR_TRACE_INNER),
+                        arg (var (PF_MIL_VAR_TRACE_ITER),
+                        arg (var (PF_MIL_VAR_TRACE_MSG),
+                        arg (var (PF_MIL_VAR_TRACE_ITEM),
+                        arg (var (PF_MIL_VAR_TRACE_TYPE),
+                             var (PF_MIL_VAR_TRACE_REL))))))))));
+            
             /* make the old mil program the active one */
             bodymilprog = milprog;
             milprog = oldmilprog;
@@ -1545,22 +1585,28 @@ reduce (PFpa_op_t * p, int goalnt)
                 assgn (var (PF_MIL_VAR_WS), new_ws ()),
                 assgn (
                     var (intVAL->name),
-                    seqbase (new (type (m_void), type (m_lng)), lit_oid (0))),
+                    seqbase (new (type (mty_void), type (mty_lng)),
+                             lit_oid (0))),
                 assgn (
                     var (dblVAL->name),                
-                    seqbase (new (type (m_void), type (m_dbl)), lit_oid (0))),
+                    seqbase (new (type (mty_void), type (mty_dbl)),
+                             lit_oid (0))),
                 assgn (
                     var (decVAL->name),                
-                    seqbase (new (type (m_void), type (m_dbl)), lit_oid (0))),
+                    seqbase (new (type (mty_void), type (mty_dbl)),
+                             lit_oid (0))),
                 assgn (
                     var (strVAL->name),                
-                    seqbase (new (type (m_void), type (m_str)), lit_oid (0))),
+                    seqbase (new (type (mty_void), type (mty_str)),
+                             lit_oid (0))),
                 assgn (
                     var (item->name),
-                    seqbase (new (type (m_void), type (m_oid)), lit_oid (0))),
+                    seqbase (new (type (mty_void), type (mty_oid)),
+                             lit_oid (0))),
                 assgn (
                     var (kind->name),
-                    seqbase (new (type (m_void), type (m_int)), lit_oid (0))),
+                    seqbase (new (type (mty_void), type (mty_int)),
+                             lit_oid (0))),
                 serialize (
                     arg (lit_str ("xml"),
                         arg (var (PF_MIL_VAR_WS),
@@ -1624,7 +1670,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                 assgn (
                                     var (v->name),
                                     seqbase (
-                                        new (type (m_void), implty (t)),
+                                        new (type (mty_void), implty (t)),
                                         lit_oid (0))));
 
                             for (unsigned int row = 0;
@@ -1663,7 +1709,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                 assgn (
                                     var (v->name),
                                     seqbase (
-                                        new (type (m_void), implty (t)),
+                                        new (type (mty_void), implty (t)),
                                         lit_oid (0))));
 
                             for (unsigned int row = 0;
@@ -2100,7 +2146,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                                  t)))),
                                 /* align with integer representation (lng) */
                                 assgn (var (v->name),
-                                       mcast (type (m_lng), var (v->name))),
+                                       mcast (type (mty_lng), var (v->name))),
                                 /* res := v.reverse ().mark (0@0).reverse (); */
                                 assgn (
                                     var (res->name),
@@ -2913,7 +2959,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     /* because functions are only allowed for dbl
                        we need to cast before and afterwards:
                        res := `input'.[dbl]().[`op']().[`res_type'](); */
-                    if (impl_types[res_type] == m_dbl)
+                    if (impl_types[res_type] == mty_dbl)
                         execute (
                             assgn (var (res->name),
                                    op (VAR (L(p)->env, att, res_type))));
@@ -2921,7 +2967,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         execute (
                             assgn (var (res->name),
                                    mcast (implty (res_type),
-                                          op (mcast (type (m_dbl),
+                                          op (mcast (type (mty_dbl),
                                                      VAR (L(p)->env,
                                                           att,
                                                           res_type))))));
@@ -3079,7 +3125,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                                       p->sem.count.part, t)))),
                                 /* align with integer representation (lng) */
                                 assgn (var (v->name),
-                                       mcast (type (m_lng), var (v->name))),
+                                       mcast (type (mty_lng), var (v->name))),
                                 /* res := v.reverse ().mark (0@0).reverse (); */
                                 assgn (
                                     var (res->name),
@@ -3107,11 +3153,11 @@ reduce (PFpa_op_t * p, int goalnt)
                            count (var (env_at (L(p)->env, 0).mvar->name))),
                     /* align with integer representation (lng) */
                     assgn (var (v->name),
-                           cast (type (m_lng), var (v->name))),
+                           cast (type (mty_lng), var (v->name))),
                     assgn (var (v->name),
                            append (
                                seqbase (
-                                   new (type (m_void), type (m_lng)),
+                                   new (type (mty_void), type (mty_lng)),
                                    lit_oid (0)),
                                var (v->name))));
                 env_add (p->env, p->sem.count.res, aat_int, v);
@@ -4022,7 +4068,7 @@ reduce (PFpa_op_t * p, int goalnt)
                  pre = var (tmp->name);
                  pfrag = VAR (R(R(p))->env, p->sem.ii.item, aat_pfrag);
             } else {
-                 pre = seqbase (new (type (m_void), type (m_oid)),
+                 pre = seqbase (new (type (mty_void), type (mty_oid)),
                                 lit_oid (0));
                  pfrag = pre;
             }
@@ -4034,7 +4080,7 @@ reduce (PFpa_op_t * p, int goalnt)
                  attr = var (tmp->name);
                  afrag = VAR (R(R(p))->env, p->sem.ii.item, aat_afrag);
             } else {
-                 attr = seqbase (new (type (m_void), type (m_oid)),
+                 attr = seqbase (new (type (mty_void), type (mty_oid)),
                                  lit_oid (0));
                  afrag = attr;
             }
@@ -4245,8 +4291,109 @@ reduce (PFpa_op_t * p, int goalnt)
             }
             break;
             
+        /* Rel:      trace (Rel, trace_msg (Rel, Map)) */
+        case 135:
+        /* Rel:      trace (Rel, trace_msg (Rel, nil)) */
+        case 136:
+        {
+            unsigned trace_id = new_trace_id ();
+            PFmil_t *iter = NULL,
+                    *item = NULL;
+            
+            /* copy all the attributes */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                pin (env_at (L(p)->env, i).mvar, p->refctr);
+                env_add (p->env,
+                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).ty,
+                         env_at (L(p)->env, i).mvar);
+
+                /* as a side effect fill in the trace information */ 
+                if (env_at (L(p)->env, i).att == p->sem.trace.iter) {
+                    /* fill in the iter information */
+                    execute (
+                        insert (var (PF_MIL_VAR_TRACE_ITER),
+                                lit_oid (trace_id),
+                                var (env_at (L(p)->env, i).mvar->name)));
+                }
+                else if (env_at (L(p)->env, i).att == p->sem.trace.item) {
+                    /* fill in the item information */
+                    execute (
+                        insert (var (PF_MIL_VAR_TRACE_ITEM),
+                                lit_oid (trace_id),
+                                var (env_at (L(p)->env, i).mvar->name)),
+                        insert (var (PF_MIL_VAR_TRACE_TYPE),
+                                lit_oid (trace_id),
+                                lit_int (env_at (L(p)->env, i).ty)));
+                }
+            }
+
+            /* collect the message information */
+            iter = VAR (RL(p)->env, R(p)->sem.trace.iter, aat_nat);
+            assert (iter);
+            item = VAR (RL(p)->env, R(p)->sem.trace.item, aat_str);
+            assert (item);
+            
+            execute (
+                insert (var (PF_MIL_VAR_TRACE_MSG),
+                        lit_oid (trace_id),
+                        leftjoin (reverse (iter), item)));
+
+            /* fill in the relationship between the trace and the
+               last map relation */
+            if (RR(p)->kind == pa_nil)
+                execute (
+                    insert (var (PF_MIL_VAR_TRACE_REL),
+                            lit_oid (0),
+                            lit_oid (trace_id)));
+            else
+                execute (
+                    insert (var (PF_MIL_VAR_TRACE_REL),
+                            lit_oid (RR(p)->sem.trace_map.trace_id),
+                            lit_oid (trace_id)));
+        }   break;
+
+        /* Map:      trace_map (Rel, Map) */
+        case 137:
+        /* Map:      trace_map (Rel, nil) */
+        case 138:
+        {
+            unsigned trace_id = new_trace_id ();
+            /* store the trace_id */
+            p->sem.trace_map.trace_id = trace_id;
+            
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                if (env_at (L(p)->env, i).att == p->sem.trace_map.outer) {
+                    /* fill in the iter information */
+                    execute (
+                        insert (var (PF_MIL_VAR_TRACE_OUTER),
+                                lit_oid (trace_id),
+                                var (env_at (L(p)->env, i).mvar->name)));
+                }
+                else if (env_at (L(p)->env, i).att == p->sem.trace_map.inner) {
+                    /* fill in the item information */
+                    execute (
+                        insert (var (PF_MIL_VAR_TRACE_INNER),
+                                lit_oid (trace_id),
+                                var (env_at (L(p)->env, i).mvar->name)));
+                }
+            }
+
+            /* fill in the relationship between the map relations */
+            if (R(p)->kind == pa_nil)
+                execute (
+                    insert (var (PF_MIL_VAR_TRACE_REL),
+                            lit_oid (0),
+                            lit_oid (trace_id)));
+            else
+                execute (
+                    insert (var (PF_MIL_VAR_TRACE_REL),
+                            lit_oid (R(p)->sem.trace_map.trace_id),
+                            lit_oid (trace_id)));
+        }   break;
+            
         /* Rel:      rec_fix (Rec, Rel) */
-        case 132:
+        case 140:
         {
             PFmil_t *oldmilprog, *bodymilprog;
             PFarray_t *res_env;
@@ -4333,16 +4480,16 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
-        case 133:
+        case 141:
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
-        case 134:
-        /* Rec:      rec_nil */
-        case 135:
+        case 142:
+        /* Rec:      nil */
+        case 143:
             /* the rules are called via reduce1, reduce2, and reduce3 */
             break;
 
         /* Rel:      rec_base */
-        case 136:
+        case 144:
             /* no MIL code needed */
 
             /* The environment already contains the bindings.
@@ -4354,7 +4501,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      rec_border (Rel) */
-        case 137:
+        case 145:
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
                 pin (env_at (L(p)->env, i).mvar, p->refctr);
                 
@@ -4366,7 +4513,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      string_join (Rel, Rel) */
-        case 140:
+        case 150:
         {
             mvar_t *str  = new_var (1);
             mvar_t *iter = new_var (p->refctr);
@@ -5345,7 +5492,7 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
                assgn (var (v->name),
                       append (
                            seqbase (
-                                new (type (m_void), implty (res_type)),
+                                new (type (mty_void), implty (res_type)),
                                 lit_oid (0)),
                            var (v->name))));
           env_add (p->env, res, res_type, v);
@@ -5425,6 +5572,31 @@ PFmilgen (PFpa_op_t *n)
     execute (declare (var (PF_MIL_VAR_WS)),
              assgn (unused (), nil ()));
 
+    /* prepare the storage structure for the side
+       effect of a trace operator: the trace output */
+    execute (comment ("trace structure"),
+             declare (var (PF_MIL_VAR_TRACE_OUTER)),
+             declare (var (PF_MIL_VAR_TRACE_INNER)),
+             declare (var (PF_MIL_VAR_TRACE_ITER )),
+             declare (var (PF_MIL_VAR_TRACE_MSG  )),
+             declare (var (PF_MIL_VAR_TRACE_ITEM )),
+             declare (var (PF_MIL_VAR_TRACE_TYPE )),
+             declare (var (PF_MIL_VAR_TRACE_REL  )),
+             assgn (var (PF_MIL_VAR_TRACE_OUTER),
+                    new (type (mty_oid), type (mty_bat))),
+             assgn (var (PF_MIL_VAR_TRACE_INNER),
+                    new (type (mty_oid), type (mty_bat))),
+             assgn (var (PF_MIL_VAR_TRACE_ITER ),
+                    new (type (mty_oid), type (mty_bat))),
+             assgn (var (PF_MIL_VAR_TRACE_MSG  ),
+                    new (type (mty_oid), type (mty_bat))),
+             assgn (var (PF_MIL_VAR_TRACE_ITEM ),
+                    new (type (mty_oid), type (mty_bat))),
+             assgn (var (PF_MIL_VAR_TRACE_TYPE ),
+                    new (type (mty_oid), type (mty_int))),
+             assgn (var (PF_MIL_VAR_TRACE_REL  ),
+                    new (type (mty_oid), type (mty_oid))));
+    
     /* start compilation */
     reduce (n, 1);
 
@@ -5475,17 +5647,17 @@ PFmilgen (PFpa_op_t *n)
                                var (PF_MIL_VAR_TIME_PRINT))),
                    assgn (var (PF_MIL_VAR_TIME_LOAD),
                           div (
-                              cast (type (m_dbl),
+                              cast (type (mty_dbl),
                                     var (PF_MIL_VAR_TIME_LOAD)),
                               lit_dbl (1000.0))),
                    assgn (var (PF_MIL_VAR_TIME_QUERY),
                           div (
-                              cast (type (m_dbl),
+                              cast (type (mty_dbl),
                                     var (PF_MIL_VAR_TIME_QUERY)),
                               lit_dbl (1000.0))),
                    assgn (var (PF_MIL_VAR_TIME_PRINT),
                           div (
-                              cast (type (m_dbl),
+                              cast (type (mty_dbl),
                                     var (PF_MIL_VAR_TIME_PRINT)),
                               lit_dbl (1000.0))));
 

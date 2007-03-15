@@ -289,30 +289,37 @@ PFmil_var (const PFmil_ident_t name)
 /** return the variable name as string */
 char * PFmil_var_str (PFmil_ident_t name) {
     switch (name) {
-        case PF_MIL_VAR_UNUSED:     return "unused";
-        case PF_MIL_VAR_WS:         return "ws";     
-        case PF_MIL_VAR_ATTR:       return "ATTR";   
-        case PF_MIL_VAR_ELEM:       return "ELEM";   
-        case PF_MIL_VAR_STR:        return "STR";    
-        case PF_MIL_VAR_INT:        return "INT";    
-        case PF_MIL_VAR_DBL:        return "DBL";    
-        case PF_MIL_VAR_DEC:        return "DEC";    
-        case PF_MIL_VAR_BOOL:       return "BOOL";
-        case PF_MIL_VAR_ATTR_OWN:   return "ATTR_OWN";
-        case PF_MIL_VAR_ATTR_QN:    return "ATTR_QN";  
-        case PF_MIL_VAR_ATTR_CONT:  return "ATTR_CONT";
-        case PF_MIL_VAR_QN_LOC:     return "QN_LOC";   
-        case PF_MIL_VAR_QN_URI:     return "QN_URI";   
-        case PF_MIL_VAR_ATTR_PROP:  return "ATTR_PROP";
-        case PF_MIL_VAR_PROP_VAL:   return "PROP_VAL"; 
-        case PF_MIL_VAR_PRE_PROP:   return "PRE_PROP"; 
-        case PF_MIL_VAR_PRE_CONT:   return "PRE_CONT"; 
-        case PF_MIL_VAR_PROP_TEXT:  return "PROP_TEXT";
-        case PF_MIL_VAR_PROP_COM:   return "PROP_COM"; 
-        case PF_MIL_VAR_PROP_INS:   return "PROP_INS";    
-        case PF_MIL_VAR_TIME_LOAD:  return "time_load";
-        case PF_MIL_VAR_TIME_QUERY: return "time_query";
-        case PF_MIL_VAR_TIME_PRINT: return "time_print";
+        case PF_MIL_VAR_UNUSED:      return "unused";
+        case PF_MIL_VAR_WS:          return "ws";     
+        case PF_MIL_VAR_ATTR:        return "ATTR";   
+        case PF_MIL_VAR_ELEM:        return "ELEM";   
+        case PF_MIL_VAR_STR:         return "STR";    
+        case PF_MIL_VAR_INT:         return "INT";    
+        case PF_MIL_VAR_DBL:         return "DBL";    
+        case PF_MIL_VAR_DEC:         return "DEC";    
+        case PF_MIL_VAR_BOOL:        return "BOOL";
+        case PF_MIL_VAR_ATTR_OWN:    return "ATTR_OWN";
+        case PF_MIL_VAR_ATTR_QN:     return "ATTR_QN";  
+        case PF_MIL_VAR_ATTR_CONT:   return "ATTR_CONT";
+        case PF_MIL_VAR_QN_LOC:      return "QN_LOC";   
+        case PF_MIL_VAR_QN_URI:      return "QN_URI";   
+        case PF_MIL_VAR_ATTR_PROP:   return "ATTR_PROP";
+        case PF_MIL_VAR_PROP_VAL:    return "PROP_VAL"; 
+        case PF_MIL_VAR_PRE_PROP:    return "PRE_PROP"; 
+        case PF_MIL_VAR_PRE_CONT:    return "PRE_CONT"; 
+        case PF_MIL_VAR_PROP_TEXT:   return "PROP_TEXT";
+        case PF_MIL_VAR_PROP_COM:    return "PROP_COM"; 
+        case PF_MIL_VAR_PROP_INS:    return "PROP_INS";    
+        case PF_MIL_VAR_TRACE_OUTER: return "trace_outer";
+        case PF_MIL_VAR_TRACE_INNER: return "trace_inner";
+        case PF_MIL_VAR_TRACE_ITER:  return "trace_iter";
+        case PF_MIL_VAR_TRACE_MSG:   return "trace_msg";
+        case PF_MIL_VAR_TRACE_ITEM:  return "trace_item";
+        case PF_MIL_VAR_TRACE_TYPE:  return "trace_type";
+        case PF_MIL_VAR_TRACE_REL:   return "trace_rel";
+        case PF_MIL_VAR_TIME_LOAD:   return "time_load";
+        case PF_MIL_VAR_TIME_QUERY:  return "time_query";
+        case PF_MIL_VAR_TIME_PRINT:  return "time_print";
         default:
         {
             assert (name >= PF_MIL_RES_VAR_COUNT);
@@ -2120,6 +2127,12 @@ PFmil_t *
 PFmil_ser (const PFmil_t *args)
 {
     return wire1 (m_serialize, args);
+}
+
+PFmil_t *
+PFmil_trace (const PFmil_t *args)
+{
+    return wire1 (m_trace, args);
 }
 
 PFmil_t *
