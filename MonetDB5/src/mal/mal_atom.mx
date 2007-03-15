@@ -103,7 +103,7 @@ else{
 	stream_printf(GDKout,"set the atom property %s.%s\n",
 		getModuleId(pci),getFunctionId(pci));
 #endif
-	BATatoms[tpe].@2= (@4) (*pci->fcn)();
+	BATatoms[tpe].@2= (* (@4 (*)(void)) pci->fcn)();
 	setAtomName(pci);
 	return 1;
 }
