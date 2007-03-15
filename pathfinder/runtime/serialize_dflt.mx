@@ -548,6 +548,17 @@ esc_seqEmitStr (XqueryCtx* ctx, str sv)
 }
 
 /**
+ * XRPC does not use \" around a string
+ */
+static bool
+xrpc_seqEmitStr (XqueryCtx* ctx, str sv)
+{
+    emit_escaped (ctx, sv);
+
+    return SUCCESS;
+}
+
+/**
  * Output generation handler. Handles top-level attributes.
  */
 static bool
@@ -1228,7 +1239,7 @@ struct serializeFunStruct xrpc_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
-    dflt_seqEmitStr,
+    xrpc_seqEmitStr,
     dflt_handle_attribute,
     dflt_handle_characters,
 
@@ -1264,7 +1275,7 @@ struct serializeFunStruct mapi_xrpc_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
-    dflt_seqEmitStr,
+    xrpc_seqEmitStr,
     dflt_handle_attribute,
     dflt_handle_characters,
 
