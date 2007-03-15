@@ -1076,7 +1076,7 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 {
     char *method = NULL, *uri = shttpd_get_uri(arg);
     char location[1024];
-    int i = 0, ret = GDK_FAIL;
+    int ret = GDK_FAIL;
     lng **argcnt = NULL;
 
     /* we don't always have the second '/' */
