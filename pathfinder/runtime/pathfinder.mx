@@ -4991,7 +4991,7 @@ xquery_prepare(xquery_client *ctx,
             lng cnt[MAXPARAMS];
             char* tpe[MAXPARAMS];
             char* param[MAXPARAMS];
-            lng i, argc = 0;
+            lng argc = 0;
     
             /* e.g. ns:function(1,2,3) */
             p = xquery_parse_space(p+1);
