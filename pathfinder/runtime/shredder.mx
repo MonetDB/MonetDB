@@ -34,6 +34,7 @@
 #define SHREDDER_H
 
 #include "serialize.h" /* for struct serializeFunStruct & struct XqueryCtx */
+#include "pf_support.h"
 
 /* for PFtijah */
 pf_support_export int shred(BAT *docBAT, str location, str buffer, stream *s, lng percentage, struct serializeFunStruct *serFun, struct XqueryCtx *serCtx, lock *collLock);

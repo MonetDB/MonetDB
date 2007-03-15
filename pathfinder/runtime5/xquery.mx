@@ -99,6 +99,7 @@ xquery_export str xquery_print_result_main_wrap(int *res /*dummy*/, str *mode, b
 @c
 #include "pf_config.h"
 #include "xquery.h"
+#include "serialize.h"
 
 static BAT *
 BATfinddescriptor( str name ) 
@@ -186,17 +187,6 @@ ll_child( bat *res, bat *iter, bat *ctx, bat *preSize, bat *preKind, bit *oneIte
 	BBPkeepref(*res = resb->batCacheid);
 	return MAL_SUCCEED;
 }
-
-extern int
-xquery_print_result_main (
-    str  mode,
-    BAT* ws,
-    BAT* item, 
-    BAT* kind,
-    BAT* intVAL,
-    BAT* dblVAL,
-    BAT* decVAL,
-    BAT* strVAL);
 
 str
 xquery_print_result_main_wrap(int *res /*dummy*/, str *mode, bat *ws, bat *item, bat *kind,  bat *int_values, bat *dbl_values, bat *dec_values, bat *str_values)

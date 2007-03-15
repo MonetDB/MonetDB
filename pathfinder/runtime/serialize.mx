@@ -68,11 +68,8 @@
 #ifndef SERIALIZE_H
 #define SERIALIZE_H
 
-/* monet.h and pathfinder.h implicitely included by pf_support.h
-#include <monet.h>
-#include "pathfinder.h"
-*/
-#include "pf_support.h"
+#include "gdk.h"
+#include "stream.h"
 
 /* boolean type `bool' and constants `true', `false' */
 #ifdef HAVE_STDBOOL_H
@@ -134,7 +131,7 @@ struct serializeFunStruct; /* forward */
  * accessed through this function.
  */
 typedef struct XqueryCtx {
-    Stream      out;       /* output stream */
+    stream*     out;      /* output stream */
     int         modes;     /* list of bit-wise encode modes */
     struct serializeFunStruct* driverFun; /* the output handling functions */
     void*       driverWs;  /* optional driver workspace */
@@ -254,7 +251,7 @@ xquery_print_result_DRIVER (
 /* hack to allow direct calls in xrpc_client.mx */
 int
 xquery_print_result_driver (
-    Stream              fp,
+    stream             *fp,
     str                 mode,
     str                 module,
     str                 method,
@@ -280,6 +277,7 @@ xquery_print_result_driver (
 
 #include <pf_config.h>
 #include "serialize.h"
+#include "pf_support.h"
 
 /**
  *
@@ -1279,7 +1277,7 @@ createWsContext (XqueryCtx*        ctx,
                  str               method,
                  serializeFunStruct*    driverFun,
                  char*             driverArg,
-                 Stream            fp)
+                 stream*           fp)
 {
     char *restag = NULL;
     char *resprefix = NULL;
@@ -1611,7 +1609,7 @@ lookup_bun (BAT *b, oid offset)
  */
 int 
 xquery_print_result_driver (
-    Stream              fp,
+    stream*             fp,
     str                 mode,
     str                 module,
     str                 method,
