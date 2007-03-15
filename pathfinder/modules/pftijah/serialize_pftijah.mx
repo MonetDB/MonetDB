@@ -51,6 +51,8 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
  *
  */
 
+#include "stream.h"
+#include "pf_support.h"
 #include "serialize.h"
 /* contains dummy callback functions */
 #include "serialize_null.h"
