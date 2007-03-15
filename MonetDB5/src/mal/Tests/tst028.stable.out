@@ -1,0 +1,61 @@
+stdout of test 'tst028` in directory 'src/mal` itself:
+
+
+# 08:29:21 >  
+# 08:29:21 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=37847 --set xrpc_port=44897 --set monet_prompt= --trace --dbname=mTests_src_mal  tst028.mal < /dev/null
+# 08:29:21 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information
+#function f(a:bat[:int,:any]):void;
+#	io.print(a);
+#end f;
+function user.f(a:bat[:int,:any]):void;	# 0  (f:void)<-(a:bat[:int,:any])
+    io.print(a);	# 1 IOprint_val (_2:void)<-(a:bat[:int,:any])
+end f;	# 2  
+#function h(a:bat[:any,:int]):void;
+#	io.print(a);
+#end h;
+function user.h(a:bat[:any,:int]):void;	# 0  (h:void)<-(a:bat[:any,:int])
+    io.print(a);	# 1 IOprint_val (_2:void)<-(a:bat[:any,:int])
+end h;	# 2  
+##function g(b:bat[:int,:any]):void;
+#	#f(b);
+##end g;
+#function g(b:any):void;
+#end g;
+function user.g(b:any):void;	# 0  (g:void)<-(b:any)
+end g;	# 1  
+#
+#z:= bat.new(:int,:str);
+#f(z);
+#g(z);
+#zrev:= bat.reverse(z);
+#h(zrev);
+#
+function user.main():void;	# 0  (main:void)
+#function g(b:bat[:int,:any]):void; 	# 1  (_1:str)
+#f(b); 	# 2  (_2:str)
+#end g; 	# 3  (_3:str)
+    z := bat.new(:int,:str);	# 4 CMDBATnew (z:bat[:int,:str])<-(_5:int)(_6:str)
+    user.f(z);	# 5  (_7:void)<-(z:bat[:int,:str])
+    user.g(z);	# 6  (_8:void)<-(z:bat[:int,:str])
+    zrev := bat.reverse(z);	# 7 BKCreverse (zrev:bat[:str,:int])<-(z:bat[:int,:str])
+    user.h(zrev);	# 8  (_10:void)<-(zrev:bat[:str,:int])
+end main;	# 9  
+#-----------------#
+# h	t	  # name
+# int	str	  # type
+#-----------------#
+#-----------------#
+# t	h	  # name
+# str	int	  # type
+#-----------------#
+
+# 08:29:21 >  
+# 08:29:21 >  Done.
+# 08:29:21 >  
+
