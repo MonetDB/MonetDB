@@ -3266,7 +3266,7 @@ struct PFla_pair_t
 PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
                             struct PFla_pair_t *args)
 {
-    PFla_op_t *node_scj, *nodes, *res;
+    PFla_op_t *node_scj, *nodes;
 
     (void) ordering;
 
@@ -3301,20 +3301,8 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
                 att_iter, att_item,
                 att_iter, att_item);
 
-    /* add empty strings for all empty sequences */
-    res = attach (
-              disjunion (
-                  nodes,
-                  attach (
-                      difference (
-                          loop,
-                          project (nodes,
-                                   proj (att_iter, att_iter))),
-                      att_item, lit_str (""))),
-              att_pos, lit_nat (1));
-
     return (struct PFla_pair_t) {
-        .rel  = res,
+        .rel  = attach (nodes, att_pos, lit_nat (1)), 
         .frag = PFla_empty_set () };
 }
 
@@ -3326,9 +3314,11 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
                                  struct PFla_pair_t *args)
 {
     PFla_op_t *sel_attr, *sel_node, *attributes, 
-              *node_scj, *nodes, *res;
+              *node_scj, *nodes;
 
-    (void) ordering;
+    /* we know that we have no empty sequences and 
+       thus can skip the treating for empty sequences */
+    (void) loop; (void) ordering;
 
     /* select all attributes and retrieve their string values */
     sel_attr = project (
@@ -3395,20 +3385,9 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
                 att_iter, att_item,
                 att_iter, att_item);
 
-    /* add empty strings for all empty sequences */
-    res = attach (
-              disjunion (
-                  disjunion (attributes, nodes),
-                  attach (
-                      difference (
-                          loop,
-                          project (disjunion (attributes, nodes),
-                                   proj (att_iter, att_iter))),
-                      att_item, lit_str (""))),
-              att_pos, lit_nat (1));
-
     return (struct PFla_pair_t) {
-        .rel  = res,
+        .rel  = attach (disjunion (attributes, nodes),
+                        att_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
