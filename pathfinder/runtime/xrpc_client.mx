@@ -143,13 +143,15 @@ PROC get_rpc_res (
             ERROR("get_rpc_res expects at least *one* \"<sequence>\" tag.\n");
         } else {
             var fault_value_pre := qn_loc.ord_select("Value").reverse().fetch(0);
-                fault_valut_pre := pre_prop.ord_select(fault_valut_pre).reverse().fetch(0);
-            var fault_value     := prop_text.fetch(fault_value_pre+1);
+                fault_value_pre := pre_prop.ord_select(fault_value_pre).reverse().fetch(0);
+                fault_value_pre := pre_prop.fetch(int(fault_value_pre)+1);
+            var fault_value     := prop_text.fetch(fault_value_pre);
 
             var fault_text_pre := qn_loc.ord_select("Text").reverse().fetch(0);
                 fault_text_pre := pre_prop.ord_select(fault_text_pre).reverse().fetch(0);
-            var fault_text     := prop_text.fetch(fault_text_pre+1);
-            ERROR("SOAP Fault Code  : %s\nSOAP Fault Reason: %d\n", fault_value, fault_text);
+                fault_text_pre := pre_prop.fetch(int(fault_text_pre)+1);
+            var fault_text     := prop_text.fetch(fault_text_pre);
+            ERROR("SOAP Fault Code  : %s\nSOAP Fault Reason: %s\n", fault_value, fault_text);
         }
     }
 

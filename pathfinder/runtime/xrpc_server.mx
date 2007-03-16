@@ -256,15 +256,19 @@ BAT* xrpc_admin = NULL;
 #define send_err(out, header, http_err, soap_err, err_reason) {     \
     if (header)                                                     \
         stream_printf(out, "HTTP/1.1 %s\r\n"                        \
-                "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n"                         \
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"      \
-                "<env:Envelope xmlns:env=\"%s\"><env:Body>",        \
-                http_err, SOAP_NS);                                 \
-    stream_printf(out, "<env:Fault>"                                \
+                "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n",\
+                http_err);                                          \
+    stream_printf(out,                                              \
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"          \
+            "<env:Envelope xmlns:env=\"%s\">"                       \
+            "<env:Body>"                                            \
+            "<env:Fault>"                                           \
             "<env:Code><env:Value>%s</env:Value></env:Code>"        \
-            "<env:Reason><env:Text xml:lang=\"en\">%s</env:Text>"   \
-            "</env:Reason></env:Fault></env:Body></env:Envelope>",  \
-            soap_err, err_reason);                                  \
+            "<env:Reason>"                                          \
+            "<env:Text xml:lang=\"en\">%s</env:Text>"               \
+            "</env:Reason>"                                         \
+            "</env:Fault></env:Body></env:Envelope>",               \
+            SOAP_NS, soap_err, err_reason);                         \
 }
 
 /**
