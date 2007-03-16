@@ -66,7 +66,7 @@ function doCollectionsCallback(response) {
         '<th>&nbsp;</th>\n' +
         '<th>&nbsp;</th>\n' +
         '</tr>\n' +
-        cTableBody + response.xml + 
+        cTableBody +
         '</table>\n';
 }
 
