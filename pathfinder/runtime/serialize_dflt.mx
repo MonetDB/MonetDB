@@ -136,7 +136,6 @@ static void init_isspecial (XqueryCtx* ctx,
     int i;
     for(i=0; i<32; i++) dflt_ws->isspecial_tab[i] = 1; /* write as octal */
 
-    dflt_ws->isspecial_tab[(int)(unsigned char)'\377'] = 1; /* write as octal */
     dflt_ws->isspecial_tab[(int)'\t'] = 9;
     dflt_ws->isspecial_tab[(int)'\\'] = 8;
     dflt_ws->isspecial_tab[(int)'\"'] = 7;
@@ -697,6 +696,21 @@ xml_seqEnd (XqueryCtx* ctx)
     return SUCCESS;
 }
 
+/**
+ * Handle the end() of an XQUERY/Pathfinder result sequence
+ */
+static bool
+xml_mapi_seqEnd (XqueryCtx* ctx)
+{
+    if ( !(ctx->modes & MODE_NO_ROOT) ) {
+        dflt_handle_endElement (ctx, NULL, dflt_ws->restag);
+    }
+    /* a result sequence in MapiClient always has to end with '\n' */
+    stream_write (ctx->out, "\n", 1, 1);
+
+    return SUCCESS;
+}
+
 static bool
 xml_seqItemSeparator (XqueryCtx* ctx, int kind_before, int kind_after)
 {
@@ -1126,7 +1140,7 @@ struct serializeFunStruct mapi_xmlSerializeFun = {
 
     xml_seqStart,
     xml_complete_seqStart,
-    xml_seqEnd,
+    xml_mapi_seqEnd,
     null_seqItemStart,
     null_seqItemEnd,
     xml_seqItemSeparator
