@@ -180,7 +180,7 @@ emit_escaped@1 (XqueryCtx* ctx, char* src) {
             start = end + 1;
 
             if ( isspecial_ch == 1 ) { /* print octal */
-                stream_printf(ctx->out,"\\%03o",(unsigned char)src[end]);
+		stream_printf(ctx->out,"&#%d;",(unsigned char)src[end]);
             } else {
                 char *emit_val = dflt_ws->special_val[(int)isspecial_ch];
                 int   emit_len = dflt_ws->special_len[(int)isspecial_ch];

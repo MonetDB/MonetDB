@@ -1,6 +1,6 @@
-# tests related to bug reports should be called
-# <descriptive-name>.SF-<bug-report-id>[.<ext>]
-# and should go to
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
 # ../../BugTracker/Tests/
 # i.e.
 # .../pathfinder/tests/BugTracker/Tests/
@@ -85,3 +85,10 @@ ID.1600704-a
 ID.1600704-b
 ID.1652527
 ID.1648854
+
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../pathfinder/tests/BugTracker/Tests/
