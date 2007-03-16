@@ -44,7 +44,7 @@ function XRPC_SEQ(sequence) {
 
 /* sequence values are either atomics of a xs:<TYPE> or elements */
 function XRPC_ATOM(type, value) {
-    if (type == 'string') value = value.xmlEscape();
+    if (type == 'string') value = value.xmlEscape(1);
     return  '<xrpc:atomic-value xsi:type="xs:' + type + '">' + value + '</xrpc:atomic-value>';
 }
 function XRPC_ELEMENT(type, value) {
@@ -114,7 +114,7 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
         for XRPC string parameters, we need to perform some escaping 
  ***********************************************************************/
 
-String.prototype.xmlEscape = function()
+String.prototype.xmlEscape = function(direction)
 {
   var nums = new Array (         '\001', '\002', '\003', '\004', '\005', '\006', '\007',
                          '\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',
@@ -151,17 +151,28 @@ String.prototype.xmlEscape = function()
                             'ordm','raquo','frac14','frac12','frac34');
 
   newString = this;
-  for (var i = 0; i < nums.length; i++)
-  {
-    myRegExp = new RegExp();
-    myRegExp.compile(nums[i],'g')
-    newString = newString.replace (myRegExp, octals[i]);
-  }
-  for (var i = 0; i < chars.length; i++)
-  {
-    myRegExp = new RegExp();
-    myRegExp.compile(chars[i],'g')
-    newString = newString.replace (myRegExp, '&' + entities[i] + ';');
+  if (direction == 1) {
+    for (var i = 0; i < nums.length; i++) {
+      var myRegExp = new RegExp();
+      myRegExp.compile(nums[i],'g');
+      newString = newString.replace (myRegExp, octals[i]);
+    }
+    for (var i = 0; i < chars.length; i++) {
+      var myRegExp = new RegExp();
+      myRegExp.compile(chars[i],'g');
+      newString = newString.replace (myRegExp, '&' + entities[i] + ';');
+    }
+  } else {
+    for (var i = nums.length - 1; i >= 0; i--) {
+      var myRegExp = new RegExp();
+      myRegExp.compile(octals[i],'g');
+      newString = newString.replace (myRegExp, nums[i]);
+    }
+    for (var i = chars.length - 1; i >= 0; i--) {
+      var myRegExp = new RegExp();
+      myRegExp.compile('&' + entities[i] + ';','g');
+      newString = newString.replace (myRegExp, chars[i]);
+    }
   }
   return newString;
 }
