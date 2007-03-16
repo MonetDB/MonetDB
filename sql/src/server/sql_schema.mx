@@ -584,6 +584,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		list_destroy(func_l);
 		list_destroy(view_id_l);
 		stmt_destroy(sq);
+		sq = NULL;
 	}
 	scope_close(scp);
 	
@@ -1788,6 +1789,9 @@ stmt *
 schemas(mvc *sql, symbol *s)
 {
 	stmt *ret = NULL;
+
+	if (!QUERY_MODE(sql->mode))
+		return sql_error(sql, 05, "Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement");
 
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
