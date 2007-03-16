@@ -534,7 +534,7 @@ dump_tables(Mapi mid, FILE *toConsole)
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
 	const char *sequences1 = "SELECT \"name\" FROM \"sequences\"";
-	const char *sequences2 = "SELECT \"name\",get_value_for(\"name\"),\"minvalue\",\"maxvalue\",\"increment\",\"cycle\" FROM \"sequences\"";
+	const char *sequences2 = "SELECT seq.\"name\",get_value_for(s.\"name\",seq.\"name\"),\"minvalue\",\"maxvalue\",\"increment\",\"cycle\" FROM \"sequences\" seq, \"schemas\" s WHERE s.id = seq.schema_id";
 	const char *tables = "SELECT \"name\" FROM \"_tables\" WHERE "
 		"\"type\" = 0 AND \"system\" = FALSE";
 	const char *views = "SELECT \"name\",\"query\" FROM \"_tables\" WHERE "
