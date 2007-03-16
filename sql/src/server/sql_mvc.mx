@@ -37,6 +37,8 @@
 #include <sql_keyword.h>
 #include <sql_atom.h>
 
+#define SQL_MAXDEPTH ((THREAD_STACK_SIZE/4096)/4)
+
 #define ERRSIZE 8192
 
 typedef enum modes_t {

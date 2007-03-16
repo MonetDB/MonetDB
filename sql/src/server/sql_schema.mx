@@ -750,10 +750,13 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
 		}
 
+		sql->depth++;
+		if (sql->depth > SQL_MAXDEPTH)
+			return sql_error(sql, 02, "CREATE VIEW: too many nested VIEWS");
 		sq = scope_subquery(sql, NULL, query, ek );
+		sql->depth--;
 		if (!sq)
 			return NULL;
-
 
 		if (!instantiate) {
 			t = mvc_create_view(sql, s, name, q, 0);

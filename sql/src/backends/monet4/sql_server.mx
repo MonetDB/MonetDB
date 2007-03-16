@@ -1395,7 +1395,7 @@ proc SQLgroup(BAT[oid,any] a) : grp {
 	# handle the grouping for unique checks with the special _CTgroup 
 	if (and(or((a.ttype()=int),(a.ttype()=lng)),(a.count()>(256*1024)))) {
 		var N := (max(a) - min(a));
-		if (isnil(N))
+		if (or((N.type()=lng),isnil(N)))
 			N := a.count();
 		if (or((N > a.count()),(N<0)))
 			N := a.count();
