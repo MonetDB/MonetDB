@@ -167,6 +167,15 @@ print_schema_information( PFsql_t *n )
     }
 }
 
+static bool
+boolean (int ident)
+{
+    PFalg_simple_type_t ty = (0x00000001 << (((0x000001E0) & ident) >>
+                ATT_BITS));
+    if (ty == aat_bln) return true;
+    return false;
+}
+
 static void 
 print_schema_relcol( PFsql_t *n )
 {
@@ -396,7 +405,7 @@ print_fullselect(PFsql_t *n)
         {
             sqlprintf("(");
             print_fullselect(n->child[0]);
-            sqlprintf(") EXCEPT ALL (");
+            sqlprintf(") EXCEPT (");
             print_fullselect(n->child[1]);
             sqlprintf(")");
         } break;
@@ -504,7 +513,7 @@ print_expr(PFsql_t *n)
 	       trailing ' */
 	    assert (n->child[1]->kind == sql_lit_str);
 	    sqlprintf("%s", n->child[1]->sem.atom.val.s); 
-	    sqlprintf("\%%')");
+	    sqlprintf("%%')");
 	} break;
         default:
         {
@@ -521,9 +530,15 @@ print_select_list(PFsql_t *n)
     
     switch( n->kind ) {
         case sql_slct_list:
+	    if (!(n->child[0]->kind == sql_clmn_name 
+		&& boolean(n->child[0]->sem.column.ident))) {
             print_select_list( n->child[0] );
             sqlprintf(", ");
+	    }
+	    if (!(n->child[1]->kind == sql_clmn_name 
+		&& boolean(n->child[1]->sem.column.ident))) {
             print_select_list( n->child[1] );
+            }
             break;
         default:
             print_statement(n);
@@ -626,9 +641,15 @@ print_clm_list(PFsql_t *n)
 
     switch( n->kind ) {
         case sql_clmn_list:
+	    if (!(n->child[0]->kind == sql_clmn_name 
+		&& boolean(n->child[0]->sem.column.ident))) {
             print_clm_list( n->child[0] );
             sqlprintf(", ");
+	    }
+	    if (!(n->child[1]->kind == sql_clmn_name 
+		&& boolean(n->child[1]->sem.column.ident))) {
             print_clm_list( n->child[1] );
+	    }
             break;
         default:
             print_column_name( n );
@@ -779,9 +800,9 @@ print_statement(PFsql_t *n)
         } break;
         case sql_clmn_assign:
         {
-            print_statement( n->child[0]);
-            sqlprintf(" AS ");
-            print_statement( n->child[1]);
+	    print_statement( n->child[0]);
+	    sqlprintf(" AS ");
+	    print_statement( n->child[1]);
         } break;
         case sql_lit_dec:
         {
@@ -834,25 +855,26 @@ print_statement(PFsql_t *n)
 	       trailing ' */
 	    assert (n->child[1]->kind == sql_lit_str);
 	    sqlprintf("%s", n->child[1]->sem.atom.val.s); 
-	    sqlprintf("\%%')");
+	    sqlprintf("%%')");
 	} break;
         case sql_gt:
-        {
-          sqlprintf("(");
-          print_expr( n->child[0] );
-          sqlprintf(" > ");
-          print_expr( n->child[1] );
-          sqlprintf(")");
-        } break;
+        //{
+        //  sqlprintf("(");
+        //  print_expr( n->child[0] );
+        //  sqlprintf(" > ");
+        //  print_expr( n->child[1] );
+        //  sqlprintf(")");
+        //}
+	break;
         case sql_gteq:
-        {
-          sqlprintf("(");
-          print_expr( n->child[0] );
-          sqlprintf(" >= ");
-          print_expr( n->child[1] );
-          sqlprintf(")");
-        } break;
-
+        //{
+        //  sqlprintf("(");
+        //  print_expr( n->child[0] );
+        //  sqlprintf(" >= ");
+        //  print_expr( n->child[1] );
+        //  sqlprintf(")");
+        //}
+	break;
         default:
         {
             PFoops( OOPS_FATAL,
