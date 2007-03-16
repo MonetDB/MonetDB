@@ -1228,7 +1228,7 @@ struct serializeFunStruct xrpc_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
-    dflt_seqEmitStr,
+    dflt_handle_characters,
     dflt_handle_attribute,
     dflt_handle_characters,
 
@@ -1264,7 +1264,7 @@ struct serializeFunStruct mapi_xrpc_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
-    dflt_seqEmitStr,
+    dflt_handle_characters,
     dflt_handle_attribute,
     dflt_handle_characters,
 
