@@ -9,8 +9,6 @@ module namespace admin = 'http://monetdb.cwi.nl/XQuery/admin/';
 
 declare namespace pf = 'http://www.pathfinder-xquery.org/';
 
-
-
 (: =================== document management =================== :)
 
 declare function admin:collections() 
@@ -43,11 +41,11 @@ declare updating function admin:backup-col($collection as xs:string, $bakname as
 {
   let $path  := concat('backup/', $bakname, '/', $collection, '/')
   let $index := 
-   element documents { text { "
-"},  for $document at $pos in pf:documents($collection)
+   element documents {
+     for $document at $pos in pf:documents($collection)
      let $uri := concat($path, string(10000 + (($pos div 10000)) cast as xs:integer), '/',  string($pos) , '.xml')
-     return (element document { attribute uri {$uri}, $document/text() }, text {"
-"})}
+     return (text { "&#10;  " }, element document { attribute uri {$uri}, $document/text() }),
+     text { "&#10;" } }
   return 
    (put($index, concat($path,'documents.xml')),
     for $document in $index/document
@@ -58,10 +56,10 @@ declare updating function admin:backup($bakname as xs:string)
 {
   let $path  := concat('backup/', $bakname, '/')
   let $index := 
-    element collections { text { "
-"},   for $collection in pf:collections() 
-      return (element collection { attribute updatable {$collection/@updatable}, $collection/text() }, text {"
-"})}
+    element collections {
+      for $collection in pf:collections() 
+      return (text { "&#10;  " }, element collection { attribute updatable {$collection/@updatable}, $collection/text() }),
+      text { "&#10;" } }
   return 
     (put($index, concat($path,'collections.xml')),
      for $collection in pf:collections() 
