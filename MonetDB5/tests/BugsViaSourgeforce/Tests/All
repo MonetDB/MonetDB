@@ -1,3 +1,10 @@
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../MonetDB5/tests/BugTracker/Tests/
+
 #ID.602271 cascaded insert
 #ID.602463 cascaded insert
 ID.605953
@@ -24,3 +31,10 @@ ID.914159
 #ID.1010729 cascaded
 ID.1023816
 ID.1024615
+
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../MonetDB5/tests/BugTracker/Tests/
