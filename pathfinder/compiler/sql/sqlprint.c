@@ -405,7 +405,7 @@ print_fullselect(PFsql_t *n)
         {
             sqlprintf("(");
             print_fullselect(n->child[0]);
-            sqlprintf(") EXCEPT (");
+            sqlprintf(") EXCEPT ALL (");
             print_fullselect(n->child[1]);
             sqlprintf(")");
         } break;
@@ -857,24 +857,6 @@ print_statement(PFsql_t *n)
 	    sqlprintf("%s", n->child[1]->sem.atom.val.s); 
 	    sqlprintf("%%')");
 	} break;
-        case sql_gt:
-        //{
-        //  sqlprintf("(");
-        //  print_expr( n->child[0] );
-        //  sqlprintf(" > ");
-        //  print_expr( n->child[1] );
-        //  sqlprintf(")");
-        //}
-	break;
-        case sql_gteq:
-        //{
-        //  sqlprintf("(");
-        //  print_expr( n->child[0] );
-        //  sqlprintf(" >= ");
-        //  print_expr( n->child[1] );
-        //  sqlprintf(")");
-        //}
-	break;
         default:
         {
             PFoops( OOPS_FATAL,
