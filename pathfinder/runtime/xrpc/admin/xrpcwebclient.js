@@ -3,7 +3,7 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               module,     /* module namespace (logical) URL. Must match XQuery module definition! */
               moduleurl,  /* module (physical) at-hint URL. Module file must be here! */
               method,     /* method name (matches function name in module) */
-              call,       /* one or more XRPC_CALL() requests (concatenated strings) */ 
+              call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
               callback)   /* callback function to call with the XML response */
 {
     clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,call), callback);
@@ -30,7 +30,7 @@ function XRPC_REQUEST(module, moduleurl, method, body) {
     return r;
 }
 
-/* a body consist of one or more calls */
+/* a body consists of one or more calls */
 function XRPC_CALL(parameters) {
    if (parameters == null || parameters == "") return '<xrpc:call/>' 
    return '<xrpc:call>'+ parameters + '</xrpc:call>';
@@ -44,6 +44,7 @@ function XRPC_SEQ(sequence) {
 
 /* sequence values are either atomics of a xs:<TYPE> or elements */
 function XRPC_ATOM(type, value) {
+    if (type == 'string') value = value.xmlEscape();
     return  '<xrpc:atomic-value xsi:type="xs:' + type + '">' + value + '</xrpc:atomic-value>';
 }
 function XRPC_ELEMENT(type, value) {
@@ -107,4 +108,60 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
     } catch (e) {
         alert('sendRequest('+method+'): '+e);
     }
+}
+
+/**********************************************************************
+        for XRPC string parameters, we need to perform some escaping 
+ ***********************************************************************/
+
+String.prototype.xmlEscape = function()
+{
+  var nums = new Array (         '\001', '\002', '\003', '\004', '\005', '\006', '\007',
+                         '\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',
+                         '\020', '\021', '\022', '\023', '\024', '\025', '\026', '\027',
+                         '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037');
+  var octals = new Array (            '\\001', '\\002', '\\003', '\\004', '\\005', '\\006', '\\007',
+                             '\\010', '\\011', '\\012', '\\013', '\\014', '\\015', '\\016', '\\017',
+                             '\\020', '\\021', '\\022', '\\023', '\\024', '\\025', '\\026', '\\027',
+                             '\\030', '\\031', '\\032', '\\033', '\\034', '\\035', '\\036', '\\037');
+
+
+  var chars = new Array ('&','à','á','â','ã','ä','å','æ','ç','è','é',
+                         'ê','ë','ì','í','î','ï','ð','ñ','ò','ó','ô',
+                         'õ','ö','ø','ù','ú','û','ü','ý','þ','ÿ','À',
+                         'Á','Â','Ã','Ä','Å','Æ','Ç','È','É','Ê','Ë',
+                         'Ì','Í','Î','Ï','Ð','Ñ','Ò','Ó','Ô','Õ','Ö',
+                         'Ø','Ù','Ú','Û','Ü','Ý','Þ','€','\"','ß','<',
+                         '>','¢','£','¤','¥','¦','§','¨','©','ª','«',
+                         '¬','­','®','¯','°','±','²','³','´','µ','¶',
+                         '·','¸','¹','º','»','¼','½','¾');
+
+  var entities = new Array ('amp','agrave','aacute','acirc','atilde','auml','aring',
+                            'aelig','ccedil','egrave','eacute','ecirc','euml','igrave',
+                            'iacute','icirc','iuml','eth','ntilde','ograve','oacute',
+                            'ocirc','otilde','ouml','oslash','ugrave','uacute','ucirc',
+                            'uuml','yacute','thorn','yuml','Agrave','Aacute','Acirc',
+                            'Atilde','Auml','Aring','AElig','Ccedil','Egrave','Eacute',
+                            'Ecirc','Euml','Igrave','Iacute','Icirc','Iuml','ETH','Ntilde',
+                            'Ograve','Oacute','Ocirc','Otilde','Ouml','Oslash','Ugrave',
+                            'Uacute','Ucirc','Uuml','Yacute','THORN','euro','quot','szlig',
+                            'lt','gt','cent','pound','curren','yen','brvbar','sect','uml',
+                            'copy','ordf','laquo','not','shy','reg','macr','deg','plusmn',
+                            'sup2','sup3','acute','micro','para','middot','cedil','sup1',
+                            'ordm','raquo','frac14','frac12','frac34');
+
+  newString = this;
+  for (var i = 0; i < nums.length; i++)
+  {
+    myRegExp = new RegExp();
+    myRegExp.compile(nums[i],'g')
+    newString = newString.replace (myRegExp, octals[i]);
+  }
+  for (var i = 0; i < chars.length; i++)
+  {
+    myRegExp = new RegExp();
+    myRegExp.compile(chars[i],'g')
+    newString = newString.replace (myRegExp, '&' + entities[i] + ';');
+  }
+  return newString;
 }
