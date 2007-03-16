@@ -877,6 +877,16 @@ AC_TYPE_SIGNAL()
 AC_CHECK_TYPES([ptrdiff_t, ssize_t],,,[#include <stddef.h>
 #include <sys/types.h>])
 AC_CHECK_TYPES([__int64, long long])
+case $host_os in
+*mingw*)
+	AC_DEFINE([LLFMT],["%I64d"],[Format to print 64 bit signed integers.])
+	AC_DEFINE([ULLFMT],["%I64u"],[Format to print 64 bit unsigned integers.])
+	;;
+*)
+	AC_DEFINE([LLFMT],["%lld"],[Format to print 64 bit signed integers.])
+	AC_DEFINE([ULLFMT],["%llu"],[Format to print 64 bit unsigned integers.])
+	;;
+esac
 AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
