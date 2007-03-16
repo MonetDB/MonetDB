@@ -122,6 +122,7 @@ extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, char *name);
+extern node *cs_find_id(changeset * cs, int id);
 extern node *cs_first_node(changeset * cs);
 
 typedef struct sql_schema {

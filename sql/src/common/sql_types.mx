@@ -104,6 +104,7 @@ extern void sql_subaggr_destroy(sql_subaggr *f);
 extern sql_subfunc *sql_find_func(sql_schema *s, char *name, int nrargs);
 extern sql_subfunc *sql_bind_member(sql_schema *s, char *name, sql_subtype *tp, int nrargs);
 extern sql_subfunc *sql_bind_func(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2);
+extern sql_subfunc *sql_bind_func3(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3);
 extern sql_subfunc *sql_bind_func_result(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
 extern sql_subfunc *sql_bind_func_result3(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res);
 
@@ -686,6 +687,24 @@ sql_bind_func(sql_schema *s, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2)
 	return fres;
 }
 
+sql_subfunc *
+sql_bind_func3(sql_schema *s, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3)
+{
+	list *l = list_create((fdestroy)NULL);
+	sql_subfunc *fres;
+
+	if (tp1)
+		list_append(l, tp1);
+	if (tp2)
+		list_append(l, tp2);
+	if (tp3)
+		list_append(l, tp3);
+
+	fres = sql_bind_func_(s, sqlfname, l);
+	list_destroy(l);
+	return fres;
+}
+
 int
 arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 {
@@ -1137,7 +1156,7 @@ sqltypeinit(void)
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *SHT, *INT, *LNG, *OID, *BIT, *DBL;
+	sql_type *STR, *SHT, *INT, *LNG, *OID, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 
@@ -1149,7 +1168,7 @@ sqltypeinit(void)
 
 	strings = t;
 	*t++ = sql_create_type("CHAR",    0, 0, 0, EC_CHAR,   "str");
-	*t++ = sql_create_type("VARCHAR", 0, 0, 0, EC_STRING, "str");
+	STR = *t++ = sql_create_type("VARCHAR", 0, 0, 0, EC_STRING, "str");
 	*t++ = sql_create_type("CLOB",    0, 0, 0, EC_STRING, "str");
 
 	numerical = t;
@@ -1381,9 +1400,9 @@ sqltypeinit(void)
 	sql_create_func("dayofmonth", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func("week", "mtime", "weekofyear", DTE, NULL, INT, SCALE_FIX);
 
-	sql_create_func("next_value_for", "sql", "next_value", *strings, NULL, LNG, SCALE_NONE);
-	sql_create_func("get_value_for", "sql", "get_value", *strings, NULL, LNG, SCALE_NONE);
-	sql_create_func("restart", "sql", "restart", *strings, LNG, LNG, SCALE_NONE);
+	sql_create_func("next_value_for", "sql", "next_value", STR, STR, LNG, SCALE_NONE);
+	sql_create_func("get_value_for", "sql", "get_value", STR, STR, LNG, SCALE_NONE);
+	sql_create_func3("restart", "sql", "restart", STR, STR, LNG, LNG, SCALE_NONE);
 	for (t = strings; t < numerical; t++) {
 		sql_create_func("locate", "str", "locate", *t, *t, INT, SCALE_NONE);
 		sql_create_func3("locate", "str", "locate", *t, *t, INT, INT, SCALE_NONE);

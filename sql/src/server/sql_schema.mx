@@ -95,7 +95,8 @@ grant_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int gra
 			   exception(count(r) > 0), "Role (%s,%s) already granted", role, grantee;
 			   relinsert(role_user,role_id,grantee_id,grantor,grant);
 			 */
-			sql_grant_role(sql, grantee, role);
+			if (!sql_grant_role(sql, grantee, role)) 
+				return sql_error(sql, 02, "GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, role );
 		}
 	}
 	return stmt_none();

@@ -27,12 +27,12 @@ Over..
 % 6,	3,	1,	1,	1,	1,	1,	5 # length
 [ "mytest",	"sys",	1,	0,	0,	1,	1,	false	]
 % . # table_name
-% next_value_for_mytest # name
+% next_value_for_sys # name
 % bigint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% next_value_for_mytest # name
+% next_value_for_sys # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -47,12 +47,12 @@ Over..
 % 6,	3,	2,	1,	1,	1,	1,	5 # length
 [ "mytest",	"sys",	10,	0,	0,	1,	1,	false	]
 % . # table_name
-% next_value_for_mytest # name
+% next_value_for_sys # name
 % bigint # type
 % 2 # length
 [ 10	]
 % . # table_name
-% next_value_for_mytest # name
+% next_value_for_sys # name
 % bigint # type
 % 2 # length
 [ 11	]

@@ -3189,18 +3189,21 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 		if (rollforward_updates) {
 			for (n = fs->set->h; ok == LOG_OK && n && n != fs->nelm; n = n->next) {
 				sql_base *fb = n->data;
-				node *tbn = cs_find_name(ts, fb->name);
 
-				if (tbn && fb->wtime && fb->flag == TR_OLD) {
-					sql_base *tb = tbn->data;
+				if (fb->wtime && fb->flag == TR_OLD) {
+					node *tbn = cs_find_id(ts, fb->id);
 
-					/* update timestamps */
-					if (fb->rtime && tr->stime > tb->rtime)
-						tb->rtime = tr->stime;
-					if (fb->wtime && tr->stime > tb->wtime)
-						tb->wtime = tr->stime;
+					if (tbn) {
+						sql_base *tb = tbn->data;
 
-					ok = rollforward_updates(tr, fb, tb);
+						/* update timestamps */
+						if (fb->rtime && tr->stime > tb->rtime)
+							tb->rtime = tr->stime;
+						if (fb->wtime && tr->stime > tb->wtime)
+							tb->wtime = tr->stime;
+
+						ok = rollforward_updates(tr, fb, tb);
+					}
 				}
 				fb->rtime = fb->wtime = 0;
 			}
@@ -3982,8 +3985,12 @@ validate_tables(sql_schema *s, sql_schema *os)
 	if (cs_size(&s->tables))
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
-			sql_table *ot = find_sql_table(os, t->base.name);
+			sql_table *ot;
 
+			if (!t->base.wtime && !t->base.rtime)
+				continue;
+
+ 			ot = find_sql_table(os, t->base.name);
 			if (ot && isTable(ot) && isTable(t)) {
 				if (t->base.wtime && (t->base.wtime < ot->base.rtime || (t->base.wtime < ot->base.wtime && t->base.rtime))) 
 					return 0;

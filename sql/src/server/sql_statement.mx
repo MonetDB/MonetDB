@@ -183,7 +183,6 @@ extern stmt *stmt_sql(char *query);
 #define VAR_GLOBAL(f) ((f>>1)==1)
 extern stmt *stmt_var(char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
-extern stmt *stmt_seq_next(char *seqname);
 
 extern stmt *stmt_table(stmt *cols, int temp);
 extern stmt *stmt_basetable(sql_table *t, char *tname);
@@ -1020,18 +1019,6 @@ stmt_varnr(int nr, sql_subtype *t)
 	s->flag = nr;
 	s->key = 1;
 	return s;
-}
-
-stmt *
-stmt_seq_next(char *seqname)
-{
-	sql_subtype *str_t = sql_bind_localtype("str");
-	stmt *seq = stmt_atom_string(seqname);
-	sql_subfunc *f;
-
-	f = sql_bind_func(NULL, "next_value_for", str_t, NULL);
-	assert(f);
-	return stmt_unop(seq, f);
 }
 
 stmt *

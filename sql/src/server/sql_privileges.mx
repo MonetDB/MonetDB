@@ -113,7 +113,7 @@ sql_grant_role(mvc *m, str grantee, str auth /*, grantor?, admin? */ )
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_table *roles = find_sql_table(sys, "user_role");
 	sql_column *auths_name = find_sql_column(auths, "name");
-	sql_column *auths_id = find_sql_column(auths, "name");
+	sql_column *auths_id = find_sql_column(auths, "id");
 
 	void *auth_id, *grantee_id;
 
@@ -144,7 +144,7 @@ sql_revoke_role(mvc *m, str grantee, str auth)
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_table *roles = find_sql_table(sys, "user_role");
 	sql_column *auths_name = find_sql_column(auths, "name");
-	sql_column *auths_id = find_sql_column(auths, "name");
+	sql_column *auths_id = find_sql_column(auths, "id");
 	sql_column *role_id = find_sql_column(roles, "role_id");
 	sql_column *login_id = find_sql_column(roles, "login_id");
 
@@ -330,15 +330,21 @@ mvc_set_role(mvc *m, char *role)
 
 	rid = column_find_row(m->session->tr, auths_name, role, NULL);
 	if (rid >= 0) {
+		sql_table *roles = find_sql_table(sys, "user_role");
+		sql_column *role_id = find_sql_column(roles, "role_id");
+		sql_column *login_id = find_sql_column(roles, "login_id");
+
 		sql_column *auths_id = find_sql_column(auths, "id");
 		void *p = column_find_value(m->session->tr, auths_id, rid);
 		int id = *(int *)p;
 
 		_DELETE(p);
-		/* todo check if user is part of this role */
-		m->role_id = id;
-
-		res = 1;
+		rid = column_find_row(m->session->tr, login_id, &m->user_id, role_id, &id, NULL);
+		
+		if (rid >= 0) {
+			m->role_id = id;
+			res = 1;
+		}
 	}
 	return res;
 }

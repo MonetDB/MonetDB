@@ -99,6 +99,7 @@ typedef struct mvc {
 
 	sql_session *session;	
 
+	/* current stmt variables */
 	int type;		/* query type */
 	unsigned int depth;	/* depth of the current expression */
 	int label;		/* numbers for relational projection labels */
