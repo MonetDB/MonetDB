@@ -190,10 +190,10 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	if( i == mb->stop)
 		return MAL_SUCCEED;
+	target= getArg(p,2);
 	if( getArgType(mb,p,1)== TYPE_int && p->argc>=3 && (p->argc-1)%2 ==0){
 		/* choice pairs */
 		mincost= *(int*) getArgReference(stk,p,1);
-		target= getArg(p,2);
 		for(i=3; i<p->argc; i+= 2){
 			cost= *(int*) getArgReference(stk,p,i);
 			if( cost <mincost && isVarUsed(mb,getArg(p,i+1))> -1 ){
@@ -208,7 +208,6 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if( strcmp(nme,"getVolume")!= 0)
 			throw(MAL,"scheduler.choice","Illegal cost function");
 
-		target= getArg(p,2);
 		mincost= -1;
 		for(j=2;j<p->argc; j++){
 			if(	isVarUsed(mb,getArg(p,j))> -1 )
