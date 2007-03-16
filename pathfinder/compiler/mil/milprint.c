@@ -1267,7 +1267,7 @@ print_literal (PFmil_t * n)
 
         /* literal : LongIntegerLiteral */
         case m_lit_lng:
-            milprintf ("%lldLL", n->sem.l);
+            milprintf (LLFMT "LL", n->sem.l);
             break;
 
         /* literal : StringLiteral */

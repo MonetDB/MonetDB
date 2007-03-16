@@ -507,7 +507,7 @@ dflt_seqEmitBool (XqueryCtx* ctx, int bv)
 static bool
 dflt_seqEmitInt (XqueryCtx* ctx, lng iv)
 {
-    stream_printf(ctx->out,"%lld",iv);
+    stream_printf(ctx->out,LLFMT,iv);
 
     return SUCCESS;
 }

@@ -289,7 +289,7 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
 
     switch (n->kind) {
         case p_lit_int:
-            snprintf (s, sizeof (s), "%lld", n->sem.num);
+            snprintf (s, sizeof (s), LLFMT, n->sem.num);
             L2 (p_id[n->kind], s, n->loc);
             break;
         case p_lit_dec:
@@ -436,7 +436,7 @@ abssyn_pretty (PFpnode_t *n)
 
     switch (n->kind) {
         case p_lit_int:
-            PFprettyprintf ("%lld", n->sem.num);
+            PFprettyprintf (LLFMT, n->sem.num);
             break;
         case p_lit_dec:
             PFprettyprintf ("%.5g", n->sem.dec);
