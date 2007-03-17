@@ -424,7 +424,9 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
       bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
       bat("tj_" + collName + "_param").insert("_last_finalizedPre","0");
       #
-      create_pfc_fti(collName,v_pfc);
+      # now modify the global fti pfc dependency administration. We may ignore
+      # the return value because all dependencies for this collection are new.
+      modify_pfc_fti(collName,v_pfc);
     });
     subcommit(_tj_collection_str(collName));
     lock_unset(coll_lock);
@@ -464,16 +466,40 @@ PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
 }
 
 #
+# The tj_extend_collection() adds new pf collection dependencies to an existing
+# collection.
+#
+PROC tj_extend_collection(str collName, BAT[void,str] v_pfc) : void :=
+{
+    if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") start.\n",collName);
+    var newdep := modify_pfc_fti(collName,v_pfc);
+
+    var doclist := bat("doc_name").reverse().join(bat("doc_collection").join(bat("collection_name").join(newdep.reverse())));
+    doclist := doclist.project(str(nil)).reverse();
+    if ( doclist.count() > 0 ) {
+        if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") indexing existing collections.\n",collName);
+        if ( verbose ) doclist.print();
+	tj_add2collection(collName,doclist,true);
+        if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finish indexing existing collections.\n",collName);
+    }
+    if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finished.\n",collName);
+}
+
+
+#
 # Start of ft-index / pf-collection dependency module
 #
 
-PROC create_pfc_fti(str fti_name, BAT[void,str]  v_pfc) :void :=
+PROC modify_pfc_fti(str fti_name, BAT[void,str]  v_pfc) : BAT[str,str] :=
 {
+    var result;
+
     lock_set(tj_dep_lock);
     var err := CATCH({
 	var new_fti_pfc := v_pfc.tunique().project(fti_name).reverse().sunique();
-	var sz := new_fti_pfc.count();
-	var glb_fti_pfc := bat("tj_pfc_fti_dep");
+	var glb_fti_pfc     := bat("tj_pfc_fti_dep");
+	var d := new_fti_pfc.sdiff(glb_fti_pfc); 
+	var sz := d.count();
 	if ( sz > 0 ) {
 	    if ( sz = 1 ) {
 		glb_fti_pfc.insert(new_fti_pfc);
@@ -487,14 +513,20 @@ PROC create_pfc_fti(str fti_name, BAT[void,str]  v_pfc) :void :=
 		glb_fti_pfc.insert(new_fti_pfc);
 	    }
 	}
+	result := d;
     });
-    if ( false ) {
+    if ( verbose ) {
+    	printf("\n# LOG modify_pfc_fti(\"%s\") START, v_pfc =\n", fti_name);
+	v_pfc.print();
     	printf("# Dependence BATs are [STAR|ALL]:\n");
 	bat("tj_pfc_fti_dep_star").print();
 	bat("tj_pfc_fti_dep").print();
+    	printf("# LOG modify_pfc_fti(\"%s\") END.\n", fti_name);
     }
     lock_unset(tj_dep_lock);
     if (not(isnil(err))) ERROR(err);
+    #
+    return result;
 }
 
 PROC delete_pfc_fti(str fti_name) :void :=

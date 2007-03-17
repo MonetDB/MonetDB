@@ -1938,6 +1938,12 @@ PFfun_xquery_fo ()
 				   PFty_star (PFty_xs_string ()),
                                    PFty_xs_anyNode () },
             .ret_ty = PFty_docmgmt () } } }
+    ,  /* tijah:extend-ft-index(string,string*) as docmgmt */
+      { .ns = PFns_tijah, .loc = "extend-ft-index",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                   PFty_star (PFty_xs_string ()) },
+            .ret_ty = PFty_docmgmt () } } }
     ,  /* tijah:delete-ft-index(string) as docmgmt */
       { .ns = PFns_tijah, .loc = "delete-ft-index",
         .arity = 1, .sig_count = 1, .sigs = { {

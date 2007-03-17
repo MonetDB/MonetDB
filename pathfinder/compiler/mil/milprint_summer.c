@@ -7974,10 +7974,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 #ifdef HAVE_PFTIJAH
     else if (
           ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"create-ft-index"))) ||
+          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"extend-ft-index"))) ||
           ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"delete-ft-index")))
 	)
     {
 	int is_delete   = !PFqname_eq(fnQname, PFqname (PFns_tijah,"delete-ft-index"));
+	int is_extend   = !PFqname_eq(fnQname, PFqname (PFns_tijah,"extend-ft-index"));
         int opt_counter  = 0;
         int opt_used     = 0;
         int csq_counter  = 0;
@@ -8041,6 +8043,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var csqiter := iter%03u.materialize(ipik%03u).uselect(oid($t));\n"
                 "var csqitem := item%03u.materialize(ipik%03u);\n"
 		"var pfcollnm := csqiter.reverse().leftfetchjoin(csqitem).leftfetchjoin(str_values).tmark(0@0);\n"
+		"if ( pfcollnm.select(\"*\").count() > 0 ) { ERROR(\"not possible to use wildcards for pfcollections.\"); }\n"
 		,csq_counter,csq_counter,csq_counter,csq_counter);
   
 	} else {
@@ -8071,7 +8074,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	  milprintf(f,
                 "    tj_delete_collection(cname);\n"
 		"}\n");
-	} else {
+	} else if ( is_extend ) {
+	  milprintf(f,
+                "    tj_extend_collection(cname,pfcollnm);\n"
+		"}\n");
+	} else { 
 	  milprintf(f,
 #if 0
 		"    optbat.print();\n"
