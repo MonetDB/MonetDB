@@ -108,6 +108,7 @@ la_op_leaf (PFla_op_kind_t kind)
 
     ret->sql_ann       = NULL;
     ret->dirty         = false;
+    ret->distinct      = false;
     /* initialize environment */
     ret->crrltn_cnt       = 0;
 
