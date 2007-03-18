@@ -910,9 +910,12 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     lng time_xrpcClntSeria = 0, time_xrpcClntDeSeria = 0;
     lng time_xrpcClnt2Serv = 0;
     size_t bytes_sent = 0;
+    char *protocol = strstr(dst, "//:");
+    if (protocol) dst = protocol+3; 
 
     errCheck(iterc, argc, ws, fun_vid, fun_iter, fun_item, fun_kind,
             int_values, dbl_values, dec_values, str_values);
+
 
     if ((sock = setup_connection(dst)) < 0) {
         return GDK_FAIL;
