@@ -123,7 +123,6 @@ PROC get_rpc_res (
     var pre_level := ws.fetch(PRE_LEVEL).fetch(cont).access(BAT_WRITE);
     var pre_prop  := ws.fetch(PRE_PROP).fetch(cont).access(BAT_WRITE);
     var pre_kind  := ws.fetch(PRE_KIND).fetch(cont).access(BAT_WRITE);
-    var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
 
     var qn_prefix := ws.fetch(QN_PREFIX).fetch(cont);
     var qn_uri    := ws.fetch(QN_URI).fetch(cont);
@@ -212,7 +211,7 @@ PROC get_rpc_res (
                     subtpe := subtpe.substring(subtpe.search(":") + 2); # remove the prefix
                 } else if (tpe = "document") {
                     res_iter.append(oid(itercnt));
-                    res_item.append(pre_nid.find(pre));
+                    res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
                     # Replace the values of this type node with values
@@ -234,7 +233,7 @@ PROC get_rpc_res (
                 # 'tpe' was set during the previous iteration of 'batloop'
                 if (tpe = "element"){
                     res_iter.append(oid(itercnt));
-                    res_item.append(pre_nid.find(pre));
+                    res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
                     inc := pre_size.fetch(i);
@@ -245,16 +244,15 @@ PROC get_rpc_res (
                     }
                     # FIXME: does this work?
                     res_iter.append(oid(itercnt));
-                    res_item.append(pre_nid.find(pre));
+                    res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
                 } else if (tpe = "atomic-value") { # string value of an atomic-value
                     var val := prop_text.fetch(prop); # value in str
-                    if (subtpe = "boolean"){ # FIXME: does this work?
-                        var i := lng(val);
-                        int_values.append(i);
+                    if (subtpe = "boolean"){ 
+                        var o := oid(toUpper(val) = "TRUE");
                         res_iter.append(oid(itercnt));
-                        res_item.append(int_values.reverse().find(i));
+                        res_item.append(o);
                         res_kind.append(BOOL);
                     } else if (subtpe = "integer"){
                         var i := lng(val);
@@ -286,12 +284,12 @@ PROC get_rpc_res (
                     }
                 } else if (tpe = "comment") { # text value of a comment node                
                     res_iter.append(oid(itercnt));
-                    res_item.append(pre_nid.find(pre));
+                    res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
                 } else if (tpe = "processing-instruction") { # text value of a PI node
                     res_iter.append(oid(itercnt));
-                    res_item.append(pre_nid.find(pre));
+                    res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
                 } 
