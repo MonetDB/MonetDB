@@ -78,9 +78,11 @@ struct stack {
  *
  * A new indentation level is indented by @a indent_by characters.
  */
-#define margin    60
+unsigned int margin;
 /** Format parameter for prettyprinting, see #margin */
-#define indent_by 2
+unsigned int indent_by;
+/** offset where printing starts */
+unsigned int offset;
 
 /** space left */
 static int space;
@@ -242,7 +244,7 @@ print (FILE *f, char *x, int l)
         if (isspace ((unsigned char) *x))
             if (l > space) {
                 space = top (&S) - indent_by;
-                indent (f, margin - space);
+                indent (f, offset + margin - space);
             }
             else {
                 fputc (*x, f);
@@ -444,6 +446,41 @@ PFprettyp (FILE *f)
         init (&S);
         init (&S1);
     
+        margin    = 60;
+        indent_by = 2;
+        offset    = 0;
+
+        space = margin;
+   
+        /* scan the collected material from its beginning and prettyprint */
+        PFarray_last (collect) = 0;
+        scan (f);
+
+        /* collect buffer has been printed, re-initialize for next
+         * prettyprint job 
+         */
+        collect = 0;
+    }
+}
+
+/**
+ * Prettyprint temporary buffer to file @a f.
+ * (You have to print to the buffer using PFprettyprintf () first.)
+ *
+ * @param f file to print to
+ */
+void
+PFprettyp_extended (FILE *f, unsigned int width, unsigned int indent)
+{
+    /* has material been collected yet? */
+    if (collect) {
+        init (&S);
+        init (&S1);
+    
+        margin    = width;
+        indent_by = 0;
+        offset    = indent;
+
         space = margin;
    
         /* scan the collected material from its beginning and prettyprint */

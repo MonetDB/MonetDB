@@ -60,6 +60,8 @@ void PFprettyprintf (const char *rep, ...)
 
 void PFprettyp (FILE *f);
 
+void PFprettyp_extended (FILE *f, unsigned int width, unsigned int indent);
+
 #endif   /* PRETTYP_H */
 
 /* vim:set shiftwidth=4 expandtab: */
