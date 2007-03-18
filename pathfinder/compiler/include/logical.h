@@ -394,6 +394,8 @@ struct PFla_op_t {
     struct PFsql_alg_ann_t    *sql_ann; /**< SQL annotations used during code
                                              generation. */
     unsigned            dirty:1;         /**< indicates nested SQL statements */
+    unsigned 		distinct:1;	 /**< checks if we should set the
+					      distinct flag in SQL select*/
     unsigned int        crrltn_cnt;       /**< count correlation
                                               names */
 };
