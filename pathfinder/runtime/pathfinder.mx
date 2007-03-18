@@ -4884,7 +4884,7 @@ xquery_prepare(xquery_client *ctx,
 {
     int nsbuf = 0, loaded_modules = 0, len;
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *q, *p = query;
-    char val[256], url1[256], url2[256];
+    char val[1024], url1[1024], url2[1024];
     char *err = NULL;
 
     if (ctx->mode&XQ_DEBUG) {
@@ -4937,7 +4937,7 @@ xquery_prepare(xquery_client *ctx,
                         break;
                     }
                 }
-                q = xquery_parse_string(p, url1, 256);
+                q = xquery_parse_string(p, url1, 1024);
                 if (q == p) {
                     err = "xquery_prepare: expecting URI after namespace declaration";
                     break;
@@ -4946,7 +4946,7 @@ xquery_prepare(xquery_client *ctx,
                 if (*p == 'a' && *(++p) == 't' && ISSPACE(p[1])) do {
                     char bak = *nsend;
                     loc = xquery_parse_space(p+1);
-                    locend = xquery_parse_string(loc, url2, 256);
+                    locend = xquery_parse_string(loc, url2, 1024);
                     if (locend == loc) {
                         err = "xquery_prepare: expecting URI after at-hint in module import";
                         break; 
@@ -5006,17 +5006,15 @@ xquery_prepare(xquery_client *ctx,
                 tpe[argc] = "xs:string";
                 cnt[argc] = 1;
                 if (strsep == '"' || strsep == '\'') {
-                    char *dst = val+1;
-                    p = xquery_parse_string(param[argc], dst, 254);
+                    p = xquery_parse_string(param[argc], val, 1024);
                     if (p <= param[argc]) {
                         err = "xquery_prepare: could not parse string literal.\n";
                         break;
                     }
                     /* get the properly escaped string and use it as parameter later */
-                    while(*dst) dst++;
-                    param[argc] = (char*) alloca(dst+2-val);
-                    *dst++ = *val = strsep;
-                    *dst++ = 0;
+                    len = strlen(val);
+                    param[argc] = (char*) alloca(len);
+                    memcpy(param[argc], val, len);
                 } else if (*p == '-' || *p == '+' || *p == '.' || (*p >= '0' && *p <= '9')) {
                     p = xquery_parse_numeric(param[argc], tpe+argc);
                     if (p <= param[argc]) {

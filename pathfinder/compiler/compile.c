@@ -202,12 +202,12 @@ char *PFurlcache (char *uri, int keep)
     if (strncmp(uri, "xrpc://", 7) == 0) {
         char *p = strchr(uri+7, '/');
         char *q = strchr(uri+7, ':');
-        int port = xrpc_port;
-        if (q && (p == NULL || p > q)) {
-            /* if a specific port is omitted, we use the current xrpcd port number */
-            port = atoi(q+1); 
+        int port = xrpc_port; /* if a specific port is omitted, we use the current xrpcd port number */
+        if (q) {
+            if (p == NULL || p > q) port = atoi(q+1);  /* it is a port only if ':' before the first '/' */
             *q = 0;
         }
+        if (p) *p = 0;
         snprintf(url, 1024, "http://%s:%d/%s", uri+7, port, p?(p+1):"");
         if (p) *p = '/';
         if (q) *q = ':';
