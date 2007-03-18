@@ -341,6 +341,7 @@ PROC doLoopLiftedRPC(
     var iterc := iterc_total / steps;
     var rpc_results := bat(str,oid);
     var rpc_iter := bat(void,bat).seqbase(0@0);
+    var off := count(ws.fetch(CONT_NAME));
 
     unq_dsts @ [steps] batloop(){
         var time_xrpcClntSeria := usec();
@@ -370,7 +371,7 @@ PROC doLoopLiftedRPC(
                     time_xrpcClntSeria);
         }
 
-        var local_name := "rpc_res_00" + str(int($h)+1);
+        var local_name := "rpc_res_00" + str(int($h)+off);
         var rpc_oid := oid(nil);
         var rpc_err := CATCH(
         {

@@ -5378,7 +5378,7 @@ xquery_method(mapi_client *mc,
     lng time_xrpcServApp = GDKusec();
     lng usec = GDKusec();
     xquery_client *ctx = (xquery_client*) mc->fc;
-    char *mode = (flags&2)?"xml":"xml-noheader-xrpc";
+    char *mode = (flags&2)?"xml-noheader-noroot":"xml-noheader-xrpc";
     char *err, *buf, *ns = "fn";
     stream *s = NULL;
 
