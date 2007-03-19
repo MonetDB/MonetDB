@@ -499,6 +499,7 @@ mal_export str getVarName(MalBlkPtr mb, int i);
 mal_export str getRefName(MalBlkPtr mb, int i);
 mal_export int newVariable(MalBlkPtr mb, str name, malType type);
 mal_export void renameVariable(MalBlkPtr mb, int i, str name);
+mal_export void resetVarName(MalBlkPtr mb, int i);
 mal_export void copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v);
 mal_export void removeVariable(MalBlkPtr mb, int varid);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
@@ -1067,6 +1068,24 @@ getVarName(MalBlkPtr mb, int i)
 	}
 	return nme;
 }
+
+INLINE void
+resetVarName(MalBlkPtr mb, int i){
+	str nme;
+	char buf[PATHLENGTH];
+
+	nme = mb->var[i]->name;
+	if( mb->var[i]->tmpindex && nme){
+		GDKfree(nme);
+		nme= 0;
+	}
+
+	if (nme == 0) {
+		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
+		mb->var[i]->name = GDKstrdup(buf);
+	} 
+}
+
 INLINE str
 getRefName(MalBlkPtr mb, int i)
 {
