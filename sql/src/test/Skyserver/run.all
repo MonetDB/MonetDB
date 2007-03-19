@@ -32,6 +32,7 @@ $SQL < create_user.sql
 
 echo tables
 $SQL1 < Skyserver_tables.sql
+$SQL1 < Skyserver_constraints.sql
 
 echo views
 $SQL1 < Skyserver_views.sql
@@ -40,9 +41,13 @@ echo functions
 $SQL1 < Skyserver_functions.sql
 
 echo Cleanup
-$SQL1 < Skyserver_dropViews.sql
-$SQL1 < Skyserver_dropTables.sql
 $SQL1 < Skyserver_dropFunctions.sql
+$SQL1 < Skyserver_dropMs_functions.sql
+$SQL1 < Skyserver_dropMath.sql
+$SQL1 < Skyserver_dropCache.sql
+$SQL1 < Skyserver_dropViews.sql
+$SQL1 < Skyserver_dropConstraints.sql
+$SQL1 < Skyserver_dropTables.sql
 
 echo Remove User
 $SQL < drop_user.sql

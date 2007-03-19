@@ -1,0 +1,5 @@
+START TRANSACTION;
+
+DROP FUNCTION query_cache;
+
+COMMIT;
