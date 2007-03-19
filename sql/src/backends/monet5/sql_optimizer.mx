@@ -368,9 +368,10 @@ the SQL set optimizer statement. The default list has been
 tested extensively and should provide overall good performance.
 @c
 str defaultPlan=
+	/*"inliners," */
 	"costModel,"
 	"coercions,"
-	/* "emptySet," */
+	/*"emptySet,"  */
 	/* "joinselect," */
 	"accessmode,"
 	"aliases,"

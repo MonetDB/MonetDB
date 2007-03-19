@@ -2012,6 +2012,7 @@ backend_create_func(backend *be, sql_func *f)
 	Client c = be->client;
 	Symbol backup = NULL;
 	stmt *s;
+	bit t = TRUE;
 
 	/* nothing to do for internal and ready functions */
 	if (!f->sql || f->sql > 1)
@@ -2032,6 +2033,10 @@ backend_create_func(backend *be, sql_func *f)
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
+
+	if (curBlk->var[0]->props == 0)
+		curBlk->var[0]->props = newPropertySet();
+	setProperty(getProps(curBlk,0),"inline", "=", TYPE_bit, &t);
 
 	if (f->res.type) { 
 		setVarType(curBlk, 0, f->res.type->localtype);
