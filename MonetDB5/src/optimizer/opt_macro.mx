@@ -241,7 +241,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	q = getInstrPtr(mc, 0);
 	k = 0;
 
-	/* add variables to target */
+	/* add all variables of the new block to the target environment */
 	for (n = 0; n < mc->vtop; n++) {
 		if (mc->var[n]->isaconstant ){
 			nv[n] = cpyConstant(mb,getVar(mc,n));
@@ -250,10 +250,20 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		k++;
 	}
 
-	/* keep track of the actual arguments */
-	for (n = 0; n < p->argc; n++)
+	/* use an alias mapping to keep track of the actual arguments */
+	for (n = p->retc; n < p->argc; n++)
 		nv[getArg(q,n)] = getArg(p, n);
 	k = 0;
+	/* find the return statement of the inline function */
+	for (i = 1; i < mc->stop - 1; i++) {
+		q = mc->stmt[i];
+		if( q->barrier== RETURNsymbol || q->barrier== YIELDsymbol){
+			/* add the mapping of the return variables */
+			for(n=0; n<p->retc; n++)
+				nv[getArg(q,n)] = getArg(p,n);
+			break;
+		}
+	}
 
 	/* copy the stable part */
 	for (i = 0; i < pc; i++)
@@ -261,30 +271,22 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	/* copying stops at the first return statement */
 	for (i = 1; i < mc->stop - 1; i++) {
-		p = mc->stmt[i];
+		q = mc->stmt[i];
 
 		/* copy the instruction and fix variable references */
-		ns[k] = copyInstruction(p);
-		for (n = 0; n < p->argc; n++) 
-			getArg(ns[k], n) = nv[getArg(p, n)];
+		ns[k] = copyInstruction(q);
+		for (n = 0; n < q->argc; n++) 
+			getArg(ns[k], n) = nv[getArg(q, n)];
 
-		if (p->barrier == RETURNsymbol || p->barrier == YIELDsymbol) {
+		if (q->barrier == RETURNsymbol || q->barrier == YIELDsymbol) {
 			ns[k]->barrier = 0;
-			if (p->token == RETURNsymbol || p->token == YIELDsymbol)
-				ns[k]->token = ASSIGNsymbol;
-			/* fix returns that do not evaluate an expression */
-			if( p->retc == p->argc){
-				for (n =0; n < p->retc; n++) {
-					pushArgument(mb,ns[k], nv[getArg(p,n)]);
-					getArg(ns[k],n)= getArg(getInstrPtr(mb,pc),n);
-				}
-			} 
+			ns[k]->token = ASSIGNsymbol;
 			k++;
 			break;
 		}
 		k++;
-	}
-	/* copy the stable part */
+	} 
+	/* copy the remainder of the stable part */
 	for (i = pc + 1; i < mb->stop; i++)
 		ns[k++] = mb->stmt[i];
 	GDKfree(mb->stmt);

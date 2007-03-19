@@ -39,7 +39,7 @@ comment "Expand inline functions";
 #include "mal_interpreter.h"
 #include "opt_macro.h"
 
-#define DEBUG_OPT_INLINE     /* show partial result */
+/* #define DEBUG_OPT_INLINE     show partial result */
 
 #endif
 @c
@@ -61,7 +61,7 @@ OPTinlinersImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			sig= getInstrPtr(q->blk,0);
 			ps= getVar(q->blk, getArg(sig,0))->props;
 			if( isPropertyDefined(ps,"inline") ){
-				inlineMALblock(mb,i,q->blk);
+				(void) inlineMALblock(mb,i,q->blk);
 				actions++;
 #ifdef DEBUG_OPT_INLINE
 				printFunction(GDKout, mb, LIST_MAL_ALL);

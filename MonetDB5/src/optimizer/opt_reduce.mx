@@ -123,6 +123,7 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				getVarTmp(mb,i) = cnt;
 			mb->var[cnt] = mb->var[i];
 			mb->var[i] = NULL;
+			resetVarName(mb,cnt);
 		}
 		vars[i] = cnt;
 		cnt++;
@@ -130,6 +131,8 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	actions = mb->vtop - cnt;
 #ifdef DEBUG_OPT_REDUCE
 	stream_printf(GDKout, "Reduction %d -> %d\n", mb->vtop, cnt);
+	for(i=0; i<mb->vtop;i++)
+		stream_printf(GDKout,"map %d->%d\n",i, vars[i]);
 #endif
 
 	/* remap all variable references to their new position. */
@@ -140,6 +143,10 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				getArg(q, j) = vars[getArg(q, j)];
 		}
 	}
+#ifdef DEBUG_OPT_REDUCE
+	stream_printf(GDKout, "After reduction \n");
+	printFunction(GDKout,mb,0);
+#endif
 	mb->vtop = cnt;
 	return actions;
 }
