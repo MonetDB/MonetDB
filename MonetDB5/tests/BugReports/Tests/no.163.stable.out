@@ -152,7 +152,7 @@ function user.tst(b:bat[:any_1,:int]):bat[:any_1,:int];	# 0  dynamic (tst:bat[:a
 barrier ca_a := true;	# 4  (ca_a:bit)<-(_7:bit) jump 13
 barrier da_a := calc.<(i,2);	# 5 CALCcompLTintint (da_a:bit)<-(i:int)(_9:int) jump 12
 #	io.print("  while (i < 2) {"); 	# 6  (_10:str)
-    b := batcalc.+(b,1);	# 7  (b:bat[:any_1,:int])<-(b:bat[:any_1,:int])(_11:int)
+    b := batcalc.+(b,1);	# 7 CMDbatADDcst_int_int_int (b:bat[:any_1,:int])<-(b:bat[:any_1,:int])(_11:int)
 #	io.print("    b := [+](b, 1);"); 	# 8  (_12:str)
     i := calc.+(i,1);	# 9 CALCbinaryADDintint (i:int)<-(i:int)(_11:int)
 #	mil.line("    i := i + 1;"); 	# 10  (_13:str)
