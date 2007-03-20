@@ -269,7 +269,7 @@ int old_main(BAT* optbat, char* startNodes_name)
 	} else if ( strcmp(optName,"milfile") == 0 ) {
 	    /* incomplete open file */
             parserCtx->milFILEname = optVal;
-	} else if ( strcmp(optName,"collection") == 0 ) {
+	} else if ( strcmp(optName,"ft-index") == 0 ) {
             parserCtx->collection = optVal;
 	} else if ( strcmp(optName,"fragments") == 0 ) {
 	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: ignoring fragmentation setting.\n");
@@ -291,7 +291,7 @@ int old_main(BAT* optbat, char* startNodes_name)
                 algebra_type = COARSE2;
             }
         
-        } else if ( strcmp(optName,"txtmodel_model") == 0 ) {
+        } else if ( strcmp(optName,"ir-model") == 0 ) { /* CHANGED: was txtmodel_model */
             if ( strcasecmp(optVal,"BOOL") == 0 ) {
                 txt_retr_model->model = MODEL_BOOL;
             } else if ( strcasecmp(optVal,"LM") == 0 ) {

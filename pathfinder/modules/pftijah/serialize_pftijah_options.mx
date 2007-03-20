@@ -122,6 +122,10 @@ pftijah_options_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value)
     } else if ( (strcmp(loc,"top")==0) || (strcmp(loc,"retNum")==0) ) {
     	// INCOMPLETE, check if it is a correct number
 	loc = (str)"returnNumber";
+    } else if ( (strcmp(loc,"collection")==0) ) {
+	loc = (str)"ft-index"; /* TEMPORARY helping transition */
+    } else if ( (strcmp(loc,"txtmodel_model")==0) ) {
+	loc = (str)"ir-model"; /* TEMPORARY helping transition */
     }
     if ( !BUNins(ptoctx->bat, loc, value, FALSE) ) {
         stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_attribute(%s,%s) FAILS[BUNins].\n",loc,value);

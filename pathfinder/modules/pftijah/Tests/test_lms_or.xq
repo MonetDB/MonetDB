@@ -6,5 +6,5 @@ let $opt := <TijahOptions
 
 let $query := "//title[about(.,pathfinder) or about(.,tijah)]"
 
-for $n at $r in pf:tijah-query($opt,(),$query)
+for $n at $r in tijah:query($opt,(),$query)
 return <node rank="{$r}">{$n}</node>

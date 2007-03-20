@@ -159,7 +159,7 @@ PFns_t PFns_lib = { .prefix = "pf",
  * Pathfinder's namespace for additional tijah functions.
  */ 
 PFns_t PFns_tijah = { .prefix = "tijah",  
-                      .uri    = "http://db.cs.utwente.nl/" };
+                      .uri    = "http://dbappl.cs.utwente.nl/pftijah/" };
 
 /** 
  * Pathfinder's own internal NS (pf:...).

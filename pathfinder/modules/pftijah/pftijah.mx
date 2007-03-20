@@ -210,6 +210,23 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 
 var verbose := false;
 
+const dflt_ft_index := "DFLT_FT_INDEX";
+
+PROC tj_get_ft_index(BAT[str,str] tj_options) : str :=
+{
+    var res := dflt_ft_index;
+    var b   := tj_options.reverse().select("ft-index").reverse();
+    if ( b.count() > 0 ) {
+        if ( b.count() = 1 ) {
+	     res := b.find("ft-index");
+	} else {
+	     ERROR("tj_get_ft_index: multiple ft-index tags in TijahOptions.\n");
+	}
+    }
+    if ( verbose ) printf("#TJ:tj_get_ft_index() = %s.\n",res);
+    return res;
+}
+
 ADDHELP("tj_ping", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
 - none.\n\
@@ -406,6 +423,8 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
               bat("tj_" + collName + "_param").insert($h,$t);
 	  } else if ( $h = "tagFilter" ) {
               tagfilter := $t;
+	  } else if ( $h = "ft-index" ) {
+	      # ignore this one here
 	  } else {
 	      ERROR("# tj_init_collection() unknown parameter [%s].\n",$h);
 	  }

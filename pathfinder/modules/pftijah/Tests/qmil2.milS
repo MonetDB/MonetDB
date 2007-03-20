@@ -1,7 +1,7 @@
 module(pathfinder);
 
 # test long queries
-var res := xquery("dm"," let $opt:=<TijahOptions collection=\"testcoll1\" txtmodel_model=\"NLLR\" debug=\"0\" top=\"99\"/> return pf:tijah-query($opt,(),\"//panel[about(.,dilbert Geschwindigkeit ist der Schluessel zum Erfolg speed is the key to success)]\") ");
+var res := xquery("dm"," let $opt:=<TijahOptions collection=\"testcoll1\" txtmodel_model=\"NLLR\" debug=\"0\" top=\"99\"/> return tijah:query($opt,(),\"//panel[about(.,dilbert Geschwindigkeit ist der Schluessel zum Erfolg speed is the key to success)]\") ");
 
 printf("%s",res);
 

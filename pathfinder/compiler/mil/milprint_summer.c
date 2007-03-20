@@ -7984,26 +7984,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         int opt_used     = 0;
         int csq_counter  = 0;
         int csq_used     = 0;
-	int str_counter  = 0;
-        char *item_ext = kind_str(STR);
 	
 	milprintf(f, 
-                "{ # translate pf:tijah-create-collection\n"
+                "{ # translate tijah:[create|extend|delete]-ft-index\n"
 	);
-        /* get ft-index name string */
-	rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (rc == NORMAL)
-             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
-        add_empty_strings (f, STR, cur_level);
-        saveResult_ (f, ++counter, STR);
-	str_counter = counter;
 
-        /* now check how the rest of the fun is overloaded */
-        if ( fun->arity > 1 ) {
-	    if ( fun->arity == 2 ) {
-                if ( (TY_EQ(TY(RL(args)), PFty_star(PFty_xs_string()))) ||
-		      (TY_EQ(TY(RL(args)), PFty_xs_string())) ) {
-	            /* check if the type of the 2nd arg is the collseq */
+        /* check how the function is overloaded */
+        if ( fun->arity > 0 ) {
+	    if ( fun->arity == 1 ) {
+                if ( (TY_EQ(TY(L(args)), PFty_star(PFty_xs_string()))) ||
+		      (TY_EQ(TY(L(args)), PFty_xs_string())) ) {
+	            /* check if the type of the first arg is the collseq */
 	    	     csq_used = 1;
 	        } else {
 	    	     opt_used = 1;
@@ -8015,10 +8006,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
 	if ( opt_used ) {
 	  /* translate the options parameter*/
-          if ( fun->arity == 3 )
-	      translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
-	  else
+          if ( fun->arity == 2 )
 	      translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+	  else
+	      translate2MIL (f, NORMAL, cur_level, counter, L(args));
 	  saveResult(f, ++counter);
 	  opt_counter = counter;
         } else {
@@ -8027,7 +8018,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
 	if ( csq_used ) {
 	  /* translate the collection sequence parameter */
-          translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+          translate2MIL (f, NORMAL, cur_level, counter, L(args));
 	  saveResult(f, ++counter);
 	  csq_counter = counter;
         } else {
@@ -8066,17 +8057,16 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	} else {
 		milprintf(f, "    var optbat := new(str,str);\n");
 	}
-	/* execute tj_init_collection */
 	milprintf(f,
-		"    var cname := item%s%03u.fetch(int($h));\n"
-		, item_ext, str_counter);
+		"    var fti_name := tj_get_ft_index(optbat);\n"
+		);
 	if ( is_delete ) {
 	  milprintf(f,
-                "    tj_delete_collection(cname);\n"
+                "    tj_delete_collection(fti_name);\n"
 		"}\n");
 	} else if ( is_extend ) {
 	  milprintf(f,
-                "    tj_extend_collection(cname,pfcollnm);\n"
+                "    tj_extend_collection(fti_name,pfcollnm);\n"
 		"}\n");
 	} else { 
 	  milprintf(f,
@@ -8084,23 +8074,22 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"    optbat.print();\n"
 		"    pfcollnm.print();\n"
 #endif
-                "    tj_init_collection(cname,optbat,pfcollnm);\n"
+                "    tj_init_collection(fti_name,optbat,pfcollnm);\n"
 		"}\n");
 	}
 
 	translateEmpty(f);
 	
-        deleteResult_ (f, str_counter, STR);
 	if ( opt_counter )
 	    deleteResult(f, opt_counter);
 	if ( csq_counter )
 	    deleteResult(f, csq_counter);
-        milprintf(f, "} # end of translate pf:tijah-ft-index\n");
+        milprintf(f, "} # end of translate tijah:[create|extend|delete]\n");
         return (code)?INT:NORMAL;
     }
     else if (
-          ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-query"))) ||
-          ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-query-id")))
+          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"query"))) ||
+          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"query-id")))
 	)
     {
         int opt_counter  = 0;
@@ -8108,9 +8097,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	int ctx_counter  = 0;
         char *item_ext = kind_str(STR);
 	
-	int storeScore = !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-query-id"));
+	int storeScore = !PFqname_eq(fnQname, PFqname (PFns_tijah,"query-id"));
 	milprintf(f, 
-                "{ # translate pf:tijah-query\n"
+                "{ # translate tijah:query\n"
 	);
         if (fun->arity == 3) {
 	  /* translate the first options parameter*/
@@ -8176,7 +8165,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
 	  milprintf(f,
 		"    var coll := collName;\n"
-		"    if ( optbat.exist(\"collection\") ) { coll := optbat.find(\"collection\"); }\n"
+		"    if ( optbat.exist(\"ft-index\") ) { coll := optbat.find(\"ft-index\"); }\n"
 		"    tijah_lock := tj_get_collection_lock(coll);\n"
 		"    lock_set(tijah_lock);\n"
 		"    var startNodes;\n"
@@ -8211,7 +8200,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"    }\n"
 		, item_ext, str_counter);
 	
-	    /* translate tijah-pre to pf-pre */
+	    /* translate tijah_pre to pf-pre */
 	    milprintf(f,
                 "    var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
                 "    var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
@@ -8283,12 +8272,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "} # end of translate pf:tijah_query\n");
         return (code && storeScore)?INT:NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-nodes")) )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"nodes")) )
     {
         char *item_int = kind_str(INT);
         
 	milprintf(f, 
-                "{ # translate pf:tijah-nodes\n"
+                "{ # translate tijah:nodes\n"
 	);
         /* get query id */
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -8320,11 +8309,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	return NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-score")) )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"score")) )
     {
         char *item_int = kind_str(INT);
         milprintf(f, 
-                "{ # translate pf:tijah-score\n"
+                "{ # translate tijah:score\n"
 	);
         /* get query id */
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -8381,10 +8370,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	/* clean up */
 	deleteResult_(f, counter, INT);
-        milprintf(f, "} # end of translate pf:tijah-score\n");
+        milprintf(f, "} # end of translate tijah:score\n");
         return (code)?DBL:NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-tokenize")) )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"tokenize")) )
     {
         char *item_ext;
         int str_counter, rc;
@@ -8400,7 +8389,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult_ (f, str_counter, STR);
 
         milprintf(f,
-                "{ # pf:tijah-tokenize\n"
+                "{ # tijah:tokenize\n"
                 "var res := [tijah_tokenize](item%s%03u);\n",
                 item_ext, str_counter);
 
@@ -8415,13 +8404,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             "ipik := iter;\n"
             "pos := 1@0;\n"
             "kind := STR;\n"
-            "} # end of pf:tijah-tokenize\n",
+            "} # end of tijah:tokenize\n",
             cur_level);
 
         deleteResult_ (f, str_counter, STR);
 	counter--;
         return (code)?STR:NORMAL;
-    } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"tijah-resultsize")))
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_tijah,"resultsize")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
@@ -8436,7 +8425,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         type_co t_co = kind_container(rc);
     
         milprintf(f,
-                "if (ipik.count() != 0) { # pf:tijah-resultsize\n"
+                "if (ipik.count() != 0) { # tijah:resultsize\n"
                 "var res := item%s.join(tijah_resultsz);\n"
 		,item_ext);
         if (code)
@@ -8445,7 +8434,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             addValues (f, t_co, "res", "item");
     
         item_ext = (code)?item_ext:"";
-        milprintf(f, "} # end of pf:tijah-resultsize\n");
+        milprintf(f, "} # end of tijah:resultsize\n");
         return rc;
     }
 #endif /* PFTIJAH */
@@ -9042,10 +9031,13 @@ noTijahFun (PFcnode_t *c)
 {
     int i;
     if (c->kind == c_apply && (
-	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_lib,"tijah-query"))) ||
-	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_lib,"tijah-query-id"))) ||
-	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_lib,"tijah-nodes"))) ||
-	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_lib,"tijah-score")))))
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_tijah,"create-ft-index"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_tijah,"extend-ft-index"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_tijah,"delete-ft-index"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_tijah,"query"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_tijah,"query-id"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_tijah,"nodes"))) ||
+	    (!PFqname_eq(c->sem.fun->qname, PFqname (PFns_tijah,"score")))))
         return 0;
     else 
         for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)

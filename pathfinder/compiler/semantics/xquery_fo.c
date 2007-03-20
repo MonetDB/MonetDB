@@ -1914,89 +1914,96 @@ PFfun_xquery_fo ()
 
 #ifdef HAVE_PFTIJAH
 /* #4. PFTIJAH FUNCTIONS */
-    ,  /* tijah:create-ft-index(string) as docmgmt */
+    ,  /* tijah:create-ft-index() as docmgmt */
+      { .ns = PFns_tijah, .loc = "create-ft-index",
+        .arity = 0, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { },
+            .ret_ty = PFty_docmgmt () } } }
+    ,  /* tijah:create-ft-index(string*) as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",
         .arity = 1, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_string () },
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()) },
             .ret_ty = PFty_docmgmt () } } }
-    ,  /* tijah:create-ft-index(string,string*) as docmgmt */
+    ,  /* tijah:create-ft-index(item) as docmgmt */
+      { .ns = PFns_tijah, .loc = "create-ft-index",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_anyNode () },
+            .ret_ty = PFty_docmgmt () } } }
+    ,  /* tijah:create-ft-index(string*,item) as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",
         .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_string (),
-                                   PFty_star (PFty_xs_string ()) },
-            .ret_ty = PFty_docmgmt () } } }
-    ,  /* tijah:create-ft-index(string,item) as docmgmt */
-      { .ns = PFns_tijah, .loc = "create-ft-index",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_string (),
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()),
                                    PFty_xs_anyNode () },
             .ret_ty = PFty_docmgmt () } } }
-    ,  /* tijah:create-ft-index(string,string*,item) as docmgmt */
-      { .ns = PFns_tijah, .loc = "create-ft-index",
-        .arity = 3, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_string (),
-				   PFty_star (PFty_xs_string ()),
-                                   PFty_xs_anyNode () },
+    ,  /* tijah:extend-ft-index(string*) as docmgmt */
+      { .ns = PFns_tijah, .loc = "extend-ft-index",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()) },
             .ret_ty = PFty_docmgmt () } } }
-    ,  /* tijah:extend-ft-index(string,string*) as docmgmt */
+    ,  /* tijah:extend-ft-index(string*,item) as docmgmt */
       { .ns = PFns_tijah, .loc = "extend-ft-index",
         .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_string (),
-                                   PFty_star (PFty_xs_string ()) },
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()),
+                                   PFty_xs_anyNode () },
             .ret_ty = PFty_docmgmt () } } }
-    ,  /* tijah:delete-ft-index(string) as docmgmt */
+    ,  /* tijah:delete-ft-index() as docmgmt */
+      { .ns = PFns_tijah, .loc = "delete-ft-index",
+        .arity = 0, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { },
+            .ret_ty = PFty_docmgmt () } } }
+    ,  /* tijah:delete-ft-index(item) as docmgmt */
       { .ns = PFns_tijah, .loc = "delete-ft-index",
         .arity = 1, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_string () },
+            .par_ty = (PFty_t[]) { PFty_xs_anyNode () },
             .ret_ty = PFty_docmgmt () } } }
-    , /* pf:tijah-query-id(item*, string) as integer */
-      { .ns = PFns_lib, .loc = "tijah-query-id",
+    , /* pf:query-id(item*, string) as integer */
+      { .ns = PFns_tijah, .loc = "query-id",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_xs_integer () },
 	     } }
-    , /* pf:tijah-query-id(item, item*, string) as integer */
-      { .ns = PFns_lib, .loc = "tijah-query-id",
+    , /* tijah:query-id(item, item*, string) as integer */
+      { .ns = PFns_tijah, .loc = "query-id",
         .arity = 3, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
 	     			    PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_xs_integer () },
 	     } }
-    , /* pf:tijah-query(item*, string) as node* */
-      { .ns = PFns_lib, .loc = "tijah-query",
+    , /* tijah:query(item*, string) as node* */
+      { .ns = PFns_tijah, .loc = "query",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* pf:tijah-query(item, item*, string) as node* */
-      { .ns = PFns_lib, .loc = "tijah-query",
+    , /* tijah:query(item, item*, string) as node* */
+      { .ns = PFns_tijah, .loc = "query",
         .arity = 3, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
 	     			    PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* pf:tijah-nodes(integer) as node* */
-      { .ns = PFns_lib, .loc = "tijah-nodes",
+    , /* tijah:nodes(integer) as node* */
+      { .ns = PFns_tijah, .loc = "nodes",
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_integer () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
-    , /* pf:tijah-score(integer, node) as double */
-      { .ns = PFns_lib, .loc = "tijah-score",
+    , /* tijah:score(integer, node) as double */
+      { .ns = PFns_tijah, .loc = "score",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_integer (),
 	                            PFty_xs_anyNode () },
              .ret_ty = PFty_xs_double () } } }
-    , /* pf:tijah-tokenize(string?) as string */
-      { .ns = PFns_lib, .loc = "tijah-tokenize",
+    , /* tijah:tokenize(string?) as string */
+      { .ns = PFns_tijah, .loc = "tokenize",
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_string () },
              .ret_ty = PFty_xs_string () } } }
-    , /* pf:tijah-resultsize(integer) as integer */
-      { .ns = PFns_lib, .loc = "tijah-resultsize",
+    , /* tijah:resultsize(integer) as integer */
+      { .ns = PFns_tijah, .loc = "resultsize",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_integer () },
             .ret_ty = PFty_xs_integer () } } }
