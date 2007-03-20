@@ -958,14 +958,17 @@ the bind(namespace, batname, mode) operation. [todo]
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			if( backup[i] ){
 				if( backup[i]== stk->stk[getArg(pci,i)].val.br.id){
-				/* target and source are identical, which means its
-				   logical reference count is one too high . */
+					/* target and source are identical, which means its
+				   	   logical reference count is one too high . */
 					BBPreleaselref(backup[i]);
-				} else /* possible garbage collect the variable */
+				} else { 
+					/* possible garbage collect the variable */
 					BBPdecref(backup[i],TRUE);
+				}
+				backup[i]=0;
+				sbackup[i]=0;
 			} 
-		} else 
-		if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
+		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
 				if( backup[i] > 0) 
