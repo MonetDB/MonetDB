@@ -267,7 +267,7 @@ of those seen already.  This can not be handled by the
 common term optimizer, because the first bind has a side-effect.
 @c
 typedef struct {
-	int idx,mode;
+	int idx,mode,bid;
 	str schema,table, column;
 } SQLbind;
 
@@ -279,7 +279,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 	InstrPtr *rest= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->stop);
 	int n=1,rtop=0;
 	SQLbind *bind= (SQLbind*) alloca(sizeof(SQLbind)*mb->stop/2);
-	int j,k=0;
+	int j,k=0, mode;
 
 	for(i=1; i<mb->stop; i++){
 		InstrPtr p = getInstrPtr(mb,i);
@@ -298,9 +298,11 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				for(j=0; j<k; j++)
 				if( strcmp(sname,bind[j].schema)==0 &&
 				    strcmp(tname,bind[j].table)==0 &&
-				    bind[j].mode == getVarConstant(mb, getArg(p,4)).val.ival
-					){
-					if(bind[j].column && strcmp(cname,bind[j].column)==0)
+					bind[j].column && strcmp(cname,bind[j].column)== 0
+				 ){
+					mode= getVarConstant(mb, getArg(p,4)).val.ival;
+					/* catch alias bindings */
+					if(	bind[j].mode == mode )
 						break;
 				}
 				if( j== k){
@@ -344,6 +346,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				int k = getArg(p,0);
 				bit t = TRUE;
 
+				bind[j].bid= b->batCacheid;
 				getVarConstant(mb, k).val.bval = b->batCacheid;
 				if (mb->var[k]->props == 0)
 					mb->var[k]->props = newPropertySet();
@@ -368,7 +371,7 @@ the SQL set optimizer statement. The default list has been
 tested extensively and should provide overall good performance.
 @c
 str defaultPlan=
-	/*"inliners," */
+	"inline,"
 	"costModel,"
 	"coercions,"
 	/*"emptySet,"  */
@@ -403,7 +406,7 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 			addOptimizers(c,mb,base);
 			GDKfree(base);
 		} else if ((nme = getName(optimizer,strlen(optimizer))) == 0) {
-			showException(SQL,"optimizer '%s' does not exist\n",optimizer);
+			showException(SQL,"optimizer"," '%s' does not exist\n",optimizer);
 			mb->errors++;
 		} else if (top<256)
 			optimizers[top++] = nme; 

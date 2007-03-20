@@ -1192,6 +1192,8 @@ SQLengineIntern(Client c, backend *be)
 	char oldlang= be->language;
 	mvc *m = be->mvc;
 	lng T0=0;
+	InstrPtr p;
+	MalBlkPtr mb;
 
 	if ( oldlang == 'X'){ 	/* return directly from X-commands */
 		sqlcleanup(be->mvc, 0);
@@ -1271,11 +1273,18 @@ cleanup_engine:
 If we are dealing with a {runonce} plan, the query cache should
 be adjusted too.
 @c
-/* postpone
-	if( be->q &&
-		fndArgProperty(c->curprg->def, getInstrPtr(c->curprg->def,0),0,putName("runonce",7))){
+/* postpone */
+
+	mb= c->curprg->def;
+	if( be->q && mb &&
+		fndArgProperty(mb, (p= getInstrPtr(mb,0)),0,putName("runonce",7)) ){
+		int ret;
+		SQLCacheRemove(&ret, &getFunctionId(p));
+		/* this should invalidate any match */
+		be->q->key= -1;
+		be->q->paramlen = -1;
+		/* qc_delete(be->q) */
 	}
-*/
 	be->q = NULL;
 	sqlcleanup(be->mvc, 0);
 	resetMalBlk( c->curprg->def, 1);
