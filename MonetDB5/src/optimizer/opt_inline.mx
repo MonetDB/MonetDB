@@ -14,10 +14,10 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
-@f opt_inliners
+@f opt_inline
 @a M. Kersten
 @subsection Function Inliners
-The routine @sc{optimizer.inliners()} searches MAL function definitions
+The routine @sc{optimizer.inline()} searches MAL function definitions
 whose property @{inline@}  is set. In addition, all MAL function calls
 whose primary target variable carry the @{inline@} property are inlined
 as well.
@@ -25,10 +25,10 @@ The code is expanded inline using the macro processor.
 
 @{
 @mal
-pattern optimizer.inliners():str
-address OPTinliners;
-pattern optimizer.inliners(mod:str, fcn:str):str
-address OPTinliners
+pattern optimizer.inline():str
+address OPTinline;
+pattern optimizer.inline(mod:str, fcn:str):str
+address OPTinline
 comment "Expand inline functions";
 
 @h
@@ -44,10 +44,10 @@ comment "Expand inline functions";
 #endif
 @c
 #include "mal_config.h"
-#include "opt_inliners.h"
+#include "opt_inline.h"
 
 static int
-OPTinlinersImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTinlineImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
 	InstrPtr q,sig;
@@ -84,7 +84,7 @@ OPTinlinersImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(inliners)@
+@:exportOptimizer(inline)@
 @c
-@:wrapOptimizer(inliners,OPT_CHECK_ALL)@
+@:wrapOptimizer(inline,OPT_CHECK_ALL)@
 @}
