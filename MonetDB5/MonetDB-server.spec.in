@@ -102,9 +102,8 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/monetdb
 %{prefix}/bin/mrecover
 
-%{_libdir}/lib*
-%{_libdir}/MonetDB5/lib/*.so* 
-%{_libdir}/MonetDB5/lib/*.la* 
+%{_libdir}/*.so.*
+%{_libdir}/MonetDB5/lib/*.so.* 
 %{_libdir}/MonetDB5/*.mal 
 
 %dir %{localstatedir}/MonetDB5
@@ -116,6 +115,10 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/monetdb5-config
 %{prefix}/include/MonetDB5/*.h
 %{prefix}/include/MonetDB5/*/*.[hcm]
+%{_libdir}/*.la
+%{_libdir}/*.so 
+%{_libdir}/MonetDB5/lib/*.la
+%{_libdir}/MonetDB5/lib/*.so 
 
 
 %pre 
