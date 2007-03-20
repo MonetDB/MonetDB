@@ -557,10 +557,6 @@ MALreader(Client c)
 {
 	int r= 1;
 
-	c->fdin->pos += c->yycur;
-	c->yycur = 0;
-	c->fdin->buf[c->fdin->pos] = 0;
-
 	if( c == mal_clients){
 		r= readConsole(c);
 		if (r <0 && c->fdin->eof == 0 )
@@ -595,7 +591,16 @@ MALparser(Client c)
 		showErrors();
 		@:restoreState@
 		throw(SYNTAX, "MAL.parser", "Syntax errors detected");
+
+		/* now the parsing is done we should advance the stream */
+        	c->fdin->pos += c->yycur;
+        	c->yycur = 0;
 	}
+
+	/* now the parsing is done we should advance the stream */
+        c->fdin->pos += c->yycur;
+        c->yycur = 0;
+
 	/* check for unfinished blocks */
 	if (c->blkmode)
 		return MAL_SUCCEED;

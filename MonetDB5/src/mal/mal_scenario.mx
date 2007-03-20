@@ -516,6 +516,7 @@ exitScenario(Client c)
 	scen = findScenario(c->scenario);
 	if (scen->exitSystemCmd)
 		(*scen->exitSystemCmd) (c);
+	c->scenario = NULL;
 }
 
 @}

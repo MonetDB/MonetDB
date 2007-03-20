@@ -253,6 +253,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	/* use an alias mapping to keep track of the actual arguments */
 	for (n = p->retc; n < p->argc; n++)
 		nv[getArg(q,n)] = getArg(p, n);
+
 	k = 0;
 	/* find the return statement of the inline function */
 	for (i = 1; i < mc->stop - 1; i++) {
@@ -261,13 +262,20 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			/* add the mapping of the return variables */
 			for(n=0; n<p->retc; n++)
 				nv[getArg(q,n)] = getArg(p,n);
-			break;
 		}
 	}
 
 	/* copy the stable part */
 	for (i = 0; i < pc; i++)
 		ns[k++] = mb->stmt[i];
+
+	/* make result variable(s) known, ie assign a nil value */
+	for (n = 0; n < p->retc; n++) {
+		q = ns[k++] = newInstruction(NULL, ASSIGNsymbol);
+		q->argc = q->retc = 0;
+		pushArgument(mb, q, getArg(p, n)); q->retc++;
+		pushNil(mb, q, getArgType(mb, p, n));
+	}
 
 	/* copying stops at the first return statement */
 	for (i = 1; i < mc->stop - 1; i++) {
@@ -281,8 +289,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		if (q->barrier == RETURNsymbol || q->barrier == YIELDsymbol) {
 			ns[k]->barrier = 0;
 			ns[k]->token = ASSIGNsymbol;
-			k++;
-			break;
 		}
 		k++;
 	} 

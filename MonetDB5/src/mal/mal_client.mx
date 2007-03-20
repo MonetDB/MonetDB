@@ -379,9 +379,8 @@ Client MCgetClient()
 	size_t pid= MT_getpid();
 	Thread tid;
 
-	for(c = mal_clients+1; c < mal_clients+MAL_MAXCLIENTS; c++) 
+	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
 		if( c->mypid == pid) return c;
-	if( mal_clients->mypid== pid) return mal_clients;
 
 	tid= THRget(THRgettid());
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
