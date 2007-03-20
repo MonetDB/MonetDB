@@ -52,9 +52,6 @@ static char *a_id[]  = {
     , [la_lit_tbl]          = "TBL"
     , [la_empty_tbl]        = "EMPTY_TBL"
     , [la_attach]           = "Attach"
-      /* note: dot does not like the sequence "×\nfoo", so we put spaces
-       * around the cross symbol.
-       */
     , [la_cross]            = "Cross"             /* \"#00FFFF\" */
     , [la_eqjoin]           = "Join"              /* \"#00FF00\" */
     , [la_eqjoin_unq]       = "Join"              /* \"#00FF00\" */
@@ -122,6 +119,7 @@ static char *xml_id[]  = {
     , [la_attach]           = "attach"
     , [la_cross]            = "cross"
     , [la_eqjoin]           = "eqjoin"
+    , [la_eqjoin_unq]       = "eqjoin_unq"
     , [la_semijoin]         = "semijoin"
     , [la_project]          = "project"
     , [la_select]           = "select"
@@ -143,14 +141,14 @@ static char *xml_id[]  = {
     , [la_rownum]           = "rownum"
     , [la_number]           = "number"
     , [la_type]             = "type"
-    , [la_type_assert]      = "type_assertion"
+    , [la_type_assert]      = "type assertion"
     , [la_cast]             = "cast"
     , [la_seqty1]           = "seqty1"
     , [la_all]              = "all"
-    , [la_scjoin]           = "staircase_join"
-    , [la_dup_scjoin]       = "staircase_join_with_duplicates"
+    , [la_scjoin]           = "XPath step"
+    , [la_dup_scjoin]       = "duplicate generating path step"
     , [la_doc_tbl]          = "fn:doc"
-    , [la_doc_access]       = "document_access"
+    , [la_doc_access]       = "#pf:string-value"
     , [la_element]          = "element_construction"
     , [la_element_tag]      = "element_tagname"
     , [la_attribute]        = "attribute_construction"
@@ -163,19 +161,19 @@ static char *xml_id[]  = {
     , [la_fragment]         = "FRAG"
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
-    , [la_cond_err]         = "!ERROR"
+    , [la_cond_err]         = "error"
     , [la_nil]              = "nil"
     , [la_trace]            = "trace"
-    , [la_trace_msg]        = "trace_msg"
-    , [la_trace_map]        = "trace_map"
-    , [la_rec_fix]          = "rec_fix"
-    , [la_rec_param]        = "rec_param"
-    , [la_rec_arg]          = "rec_arg"
-    , [la_rec_base]         = "rec_base"
-    , [la_proxy]            = "PROXY"
-    , [la_proxy_base]       = "PROXY_BASE"
-    , [la_string_join]      = "fn:string_join"
-    , [la_dummy]            = "DUMMY"
+    , [la_trace_msg]        = "trace msg"
+    , [la_trace_map]        = "trace map"
+    , [la_rec_fix]          = "recursion fix"
+    , [la_rec_param]        = "recursion param"
+    , [la_rec_arg]          = "recursion arg"
+    , [la_rec_base]         = "recursion base"
+    , [la_proxy]            = "proxy"
+    , [la_proxy_base]       = "proxy base"
+    , [la_string_join]      = "fn:string-join"
+    , [la_dummy]            = "dummy"
 };
 
 static char *
@@ -620,6 +618,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
 
             break;
 
+        case la_doc_tbl:
+            PFarray_printf (dot, "%s (%s, %s)", 
+                            a_id[n->kind],
+                            PFatt_str (n->sem.doc_tbl.iter),
+                            PFatt_str (n->sem.doc_tbl.item));
+            break;
+
         case la_doc_access:
             PFarray_printf (dot, "%s ", a_id[n->kind]);
 
@@ -671,6 +676,12 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.textnode.item));
             break;
 
+        case la_cond_err:
+            PFarray_printf (dot, "%s (%s)\\n%s ...", a_id[n->kind],
+                            PFatt_str (n->sem.err.att),
+                            PFstrndup (n->sem.err.str, 16));
+            break;
+            
         case la_trace:
             PFarray_printf (dot,
                             "%s (%s, %s, %s)",
@@ -696,12 +707,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.trace_map.outer));
             break;
         
-        case la_cond_err:
-            PFarray_printf (dot, "%s (%s)\\n%s ...", a_id[n->kind],
-                            PFatt_str (n->sem.err.att),
-                            PFstrndup (n->sem.err.str, 16));
-            break;
-            
         case la_proxy:
             PFarray_printf (dot, "%s %i (", a_id[n->kind], n->sem.proxy.kind);
 
@@ -730,7 +735,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         case la_intersect:
         case la_difference:
         case la_distinct:
-        case la_doc_tbl:
         case la_element_tag:
         case la_docnode:
         case la_comment:
@@ -795,6 +799,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                 for (unsigned int i = 0; i < icols.count; i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
                                     PFatt_str (icols.atts[i]));
+                /* FIXME */
+                if (n->prop->l_icols) 
+                    PFarray_printf (dot, "\\ninner: %i", n->prop->l_icols);
+                if (n->prop->r_icols)
+                    PFarray_printf (dot, "\\npos: %i", n->prop->r_icols);
             }
             if (*fmt == '+' || *fmt == 'K') {
                 PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
@@ -899,6 +908,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {      
+        /* FIXME: the next line is only used to make
+           the printed graph more readable. */
+        if (n->child[c]->kind == la_frag_union ||
+            n->child[c]->kind == la_empty_frag) continue;
+        
         /*
          * Label for child node has already been built, such that
          * only the edge between parent and child must be created
@@ -975,6 +989,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     n->bit_dag = true;
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {
+        /* FIXME: the next line is only used to make
+           the printed graph more readable. */
+        if (n->child[c]->kind == la_frag_union ||
+            n->child[c]->kind == la_empty_frag) continue;
+        
         if (!n->child[c]->bit_dag)
             node_id = la_dot (dot, n->child[c], node_id);
     }
@@ -1014,68 +1033,103 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
      */
     PFarray_printf (xml, "    <schema>\n");
     for (unsigned int i = 0; i < n->schema.count; i++) {
-        PFarray_printf (xml, "      <col name='%s' types='",
+        bool first = true;
+
+        PFarray_printf (xml, "      <col name=\"%s\" types=\"",
                         PFatt_str (n->schema.items[i].name));
         for (PFalg_simple_type_t t = 1; t; t <<= 1) {
             if (t & n->schema.items[i].type) {
+                /* hide fragment information */
                 switch (t) {
-                    case aat_nat:    PFarray_printf (xml, "nat");    break;
-                    case aat_int:    PFarray_printf (xml, "int");    break;
-                    case aat_str:    PFarray_printf (xml, "str");    break;
-                    case aat_dec:    PFarray_printf (xml, "dec");    break;
-                    case aat_dbl:    PFarray_printf (xml, "dbl");    break;
-                    case aat_bln:    PFarray_printf (xml, "bln");    break;
-                    case aat_qname:  PFarray_printf (xml, "qname");  break;
-                    case aat_uA:     PFarray_printf (xml, "uA");     break;
-                    case aat_node:   PFarray_printf (xml, "node");   break;
-                    case aat_anode:  PFarray_printf (xml, "anode");  break;
-                    case aat_attr:   PFarray_printf (xml, "attr");   break;
-                    case aat_afrag:  PFarray_printf (xml, "afrag");  break;
-                    case aat_pnode:  PFarray_printf (xml, "pnode");  break;
-                    case aat_pre:    PFarray_printf (xml, "pre");    break;
-                    case aat_pfrag:  PFarray_printf (xml, "pfrag");  break;
+                    case aat_afrag:
+                    case aat_pfrag:
+                        continue;
+                    default:
+                        break;
                 }
-                PFarray_printf (xml, " ");
+                
+                /* start printing spaces only after the first type */
+                if (!first)
+                    PFarray_printf (xml, " ");
+                else
+                    first = false;
+                
+                /* print the different types */
+                switch (t) {
+                    case aat_nat:    PFarray_printf (xml, "nat");   break;
+                    case aat_int:    PFarray_printf (xml, "int");   break;
+                    case aat_str:    PFarray_printf (xml, "str");   break;
+                    case aat_dec:    PFarray_printf (xml, "dec");   break;
+                    case aat_dbl:    PFarray_printf (xml, "dbl");   break;
+                    case aat_bln:    PFarray_printf (xml, "bln");   break;
+                    case aat_qname:  PFarray_printf (xml, "qname"); break;
+                    case aat_uA:     PFarray_printf (xml, "uA");    break;
+                    case aat_attr:   PFarray_printf (xml, "attr");  break;
+                    case aat_pre:    PFarray_printf (xml, "node");  break;
+                    default:                                        break;
+                }
             }
         }
-        PFarray_printf (xml, "'/>\n");
+        PFarray_printf (xml, "\"/>\n");
     }
     PFarray_printf (xml, "    </schema>\n");
 
     if (PFstate.format) {
 
         char *fmt = PFstate.format;
+        /* format character '+' overwrites all others */
         bool all = false;
+        while (*fmt) {
+            if (*fmt == '+') {
+                all = true;
+                break;
+            }
+            fmt++;
+        }
+
+        /* iterate over all format characters 
+           if we haven't found a '+' character */
+        if (!all)
+            fmt = PFstate.format;
 
         PFarray_printf (xml, "    <properties>\n");
-        while (*fmt) { 
-            if (*fmt == '+')
-            {
-                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
-                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
-
+        while (*fmt) {
+            if (*fmt == '+' || *fmt == 'A') {
                 /* if present print cardinality */
                 if (PFprop_card (n->prop))
                     PFarray_printf (xml, "      <card value=\"%i\"/>\n",
                                     PFprop_card (n->prop));
-
+            }
+            if (*fmt == '+' || *fmt == 'O') {
                 /* list attributes marked const */
                 for (unsigned int i = 0;
                         i < PFprop_const_count (n->prop); i++)
-                    PFarray_printf (xml, "      <const column=\"%s\"/>\n",
+                    PFarray_printf (xml,
+                                    "      <const column=\"%s\">\n"
+                                    "        %s\n"
+                                    "      </const>\n",
                                     PFatt_str (
-                                        PFprop_const_at (n->prop, i)));
+                                        PFprop_const_at (n->prop, i)),
+                                    xml_literal (
+                                        PFprop_const_val_at (n->prop, i)));
+            }
+            if (*fmt == '+' || *fmt == 'I') {
+                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
 
                 /* list icols attributes */
                 for (unsigned int i = 0; i < icols.count; i++)
                     PFarray_printf (xml, "      <icols column=\"%s\"/>\n",
                                     PFatt_str (icols.atts[i]));
+            }
+            if (*fmt == '+' || *fmt == 'K') {
+                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
 
                 /* list keys attributes */
                 for (unsigned int i = 0; i < keys.count; i++)
                     PFarray_printf (xml, "      <keys column=\"%s\"/>\n",
                                     PFatt_str (keys.atts[i]));
-
+            }
+            if (*fmt == '+' || *fmt == 'V') {
                 /* list required value columns and their values */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_att_t att = n->schema.items[i].name;
@@ -1086,7 +1140,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (att),
                             PFprop_reqval_val (n->prop, att)?"true":"false");
                 }
-
+            }
+            if (*fmt == '+' || *fmt == 'D') {
                 /* list attributes and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)
                     if (PFprop_dom (n->prop, n->schema.items[i].name)) {
@@ -1098,39 +1153,18 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             PFprop_dom (n->prop, n->schema.items[i].name));
                         PFarray_printf (xml, "\"/>\n");
                     }
-
+            }
+            if (*fmt == '+' || *fmt == 'S') {
+                /* print whether columns do have to respect duplicates */
                 if (PFprop_set (n->prop))
                     PFarray_printf (xml, "      <duplicates allowed=\"yes\"/>\n");
-
-                all = true;
             }
-            fmt++;
-        }
-        fmt = PFstate.format;
 
-        while (!all && *fmt) {
-            switch (*fmt) {
-                /* list attributes marked const if requested */
-                case 'c':
-                    for (unsigned int i = 0;
-                            i < PFprop_const_count (n->prop); i++)
-                        PFarray_printf (xml, 
-                                        "      <const column=\"%s\"/>\n",
-                                        PFatt_str (
-                                            PFprop_const_at (n->prop, i)));
-                    break;
-                /* list icols attributes if requested */
-                case 'i':
-                {
-                    PFalg_attlist_t icols = 
-                                    PFprop_icols_to_attlist (n->prop);
-                    for (unsigned int i = 0; i < icols.count; i++)
-                        PFarray_printf (xml, 
-                                        "      <icols column=\"%s\"/>\n",
-                                        PFatt_str (icols.atts[i]));
-                } break;
-            }
-            fmt++;
+            /* stop after all properties have been printed */
+            if (*fmt == '+')
+                break;
+            else
+                fmt++;
         }
         PFarray_printf (xml, "    </properties>\n");
     }
@@ -1149,7 +1183,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                 /* print out tuples in table, if table is not empty */
                 for (unsigned int i = 0; i < n->sem.lit_tbl.count; i++)
                     PFarray_printf (xml,
-                                    "          %s\n",
+                                    "        %s\n",
                                     xml_literal (n->sem.lit_tbl
                                                        .tuples[i].atoms[c]));
                 PFarray_printf (xml, "      </column>\n");
@@ -1195,6 +1229,28 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "    </content>\n",
                             PFatt_str (n->sem.eqjoin.att1),
                             PFatt_str (n->sem.eqjoin.att2));
+            break;
+
+        case la_eqjoin_unq:
+            PFarray_printf (xml, 
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " keep=\"%s\">\n"
+                            "        <annotation>first join argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " keep=\"%s\">\n"
+                            "        <annotation>second join argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.eqjoin_unq.att1),
+                            n->sem.eqjoin_unq.att1 == n->sem.eqjoin_unq.res
+                            ? "true" : "false",
+                            PFatt_str (n->sem.eqjoin_unq.att2),
+                            n->sem.eqjoin_unq.att2 == n->sem.eqjoin_unq.res
+                            ? "true" : "false");
             break;
 
         case la_project:
@@ -1653,6 +1709,38 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             PFstrdup (n->sem.err.str));
             break;
 
+        case la_trace:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"pos\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.trace.iter),
+                            PFatt_str (n->sem.trace.pos),
+                            PFatt_str (n->sem.trace.item));
+            break;
+        
+        case la_trace_msg:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.trace_msg.iter),
+                            PFatt_str (n->sem.trace_msg.item));
+            break;
+        
+        case la_trace_map:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"inner\"/>\n"
+                            "      <column name=\"%s\" function=\"outer\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.trace_map.inner),
+                            PFatt_str (n->sem.trace_map.outer));
+            break;
+        
         case la_string_join:
             PFarray_printf (xml,
                             "    <content>\n"
@@ -1745,7 +1833,7 @@ PFla_dot (FILE *f, PFla_op_t *root)
         if (PFstate.format) {
             char *fmt = PFstate.format;
             while (*fmt) { 
-                if (*fmt == '+') {
+                if (*fmt == '+' || *fmt == 'D') {
                         PFprop_write_dom_rel_dot (dot, root->prop);
                         break;
                 }
@@ -1780,7 +1868,7 @@ PFla_xml (FILE *f, PFla_op_t *root)
         if (PFstate.format) {
             char *fmt = PFstate.format;
             while (*fmt) { 
-                if (*fmt == '+') {
+                if (*fmt == '+' || *fmt == 'D') {
                         PFprop_write_dom_rel_xml (xml, root->prop);
                         break;
                 }
