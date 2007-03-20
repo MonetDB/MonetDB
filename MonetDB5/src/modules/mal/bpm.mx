@@ -30,7 +30,7 @@ based on splitting by tail value.
 The following MAL program illustrates the snippet of actions needed:
 @example
 	bpm.open();
-	Ralias:= bpm.deposit"myversion",R:bat[:oid,:int]);
+	Ralias:= bpm.deposit("myversion",R:bat[:oid,:int]);
 	bpm.rangePartition(Ralias,nil:int,100);
 	bpm.rangePartition(Ralias,101,200);
 	bpm.close();
@@ -218,7 +218,7 @@ module bpm;
 
 command open():void
 address BPMopen
-comment "Locate and open the BAT partition box;
+comment "Locate and open the BAT partition box";
 
 command close():void
 address BPMclose
