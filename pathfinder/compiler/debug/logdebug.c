@@ -799,11 +799,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                 for (unsigned int i = 0; i < icols.count; i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
                                     PFatt_str (icols.atts[i]));
-                /* FIXME */
-                if (n->prop->l_icols) 
-                    PFarray_printf (dot, "\\ninner: %i", n->prop->l_icols);
-                if (n->prop->r_icols)
-                    PFarray_printf (dot, "\\npos: %i", n->prop->r_icols);
             }
             if (*fmt == '+' || *fmt == 'K') {
                 PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
@@ -908,11 +903,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {      
-        /* FIXME: the next line is only used to make
-           the printed graph more readable. */
-        if (n->child[c]->kind == la_frag_union ||
-            n->child[c]->kind == la_empty_frag) continue;
-        
         /*
          * Label for child node has already been built, such that
          * only the edge between parent and child must be created
@@ -989,11 +979,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     n->bit_dag = true;
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {
-        /* FIXME: the next line is only used to make
-           the printed graph more readable. */
-        if (n->child[c]->kind == la_frag_union ||
-            n->child[c]->kind == la_empty_frag) continue;
-        
         if (!n->child[c]->bit_dag)
             node_id = la_dot (dot, n->child[c], node_id);
     }
