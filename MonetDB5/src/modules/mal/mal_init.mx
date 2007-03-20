@@ -108,7 +108,7 @@ include opt_emptySet;
 include opt_factorize;
 include opt_garbageCollector;
 include opt_generators;
-include opt_inliners;
+include opt_inline;
 include opt_joinpath;
 include opt_macro;
 include opt_accessmode;
