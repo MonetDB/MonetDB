@@ -57,10 +57,11 @@ OPTinlineImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if( q->blk){
+		if( q->blk ){
 			sig= getInstrPtr(q->blk,0);
 			ps= getVar(q->blk, getArg(sig,0))->props;
-			if( isPropertyDefined(ps,"inline") ){
+			if(	sig->token == FUNCTIONsymbol &&
+				isPropertyDefined(ps,"inline") ){
 				(void) inlineMALblock(mb,i,q->blk);
 				actions++;
 #ifdef DEBUG_OPT_INLINE

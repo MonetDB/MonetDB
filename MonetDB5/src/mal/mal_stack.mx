@@ -110,6 +110,8 @@ This can be recognized by the vtype component
 #include "mal_config.h"
 #include "mal_stack.h"
 
+/* #define DEBUG_MAL_STACK*/
+
 MalStkPtr
 newGlobalStack(int size)
 {
@@ -184,7 +186,9 @@ clearStack(MalStkPtr s)
 
 	for (v = s->stk; i >= 0; i--, v++)
 		if (ATOMextern(v->vtype) && v->val.pval) {
+#ifdef DEBUG_MAL_STACK
 			stream_printf(GDKout, "freeing %s\n", v->val.sval);
+#endif
 			GDKfree(v->val.pval);
 		}
 }

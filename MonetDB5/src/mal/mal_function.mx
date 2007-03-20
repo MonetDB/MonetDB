@@ -685,7 +685,7 @@ setLifespan(MalBlkPtr mb)
 
 			if (v->beginLifespan == 0)
 				v->beginLifespan = pc;
-			if (k < p->retc && p->retc<p->argc)
+			if (k < p->retc  && p->barrier != RETURNsymbol)
 				v->lastUpdate= pc;
 			if (pc > v->endLifespan) {
 				/* end only if the beginLifspan falls in the same blk */

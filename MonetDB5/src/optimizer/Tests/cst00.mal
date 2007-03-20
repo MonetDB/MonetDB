@@ -7,5 +7,5 @@ d:= calc.flt(c);io.print(d);
 e:= mmath.sin(d);io.print(e);
 
 optimizer.aliases();
-optimizer.constantExpression();
+optimizer.evaluate();
 mdb.list();

@@ -31,7 +31,7 @@ use of constant arguments
     d:= calc.flt(c);io.print(d);
     e:= mmath.sin(d);io.print(e);
     optimizer.aliasRemoval();
-    optimizer.constantExpression();
+    optimizer.evaluate();
 @end verbatim
 The code produced by the optimizer would be
 @verbatim
@@ -43,9 +43,9 @@ The code produced by the optimizer would be
 @end verbatim
 @{
 @mal
-pattern optimizer.constantExpression():str
+pattern optimizer.evaluate():str
 address OPTconstantExpression;
-pattern optimizer.constantExpression(mod:str, fcn:str):str
+pattern optimizer.evaluate(mod:str, fcn:str):str
 address OPTconstantExpression
 comment "Evaluate constant expressions once.";
 
@@ -71,7 +71,9 @@ OPTallConstant(MalBlkPtr mb, InstrPtr p){
 	for( i= p->retc; i < p->argc; i++)
 		if( isConstant(mb, getArg(p,i)) == FALSE)
 			return FALSE;
-	return ( getModuleId(p) == calcRef || getModuleId(p) == mmathRef);
+	return ( getModuleId(p) == calcRef || 
+			 getModuleId(p) == strRef ||
+			 getModuleId(p) == mmathRef);
 }
 static int
 OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -80,6 +82,7 @@ OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int first=0, nxt, i, j, k, limit, done=0, again=0;
 	Client c= MCgetClient();
 	MalStkPtr env;
+	str msg;
 
 	(void) stk;
 	(void) pci;
@@ -87,6 +90,7 @@ OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_OPT_CX
 	stream_printf(GDKout,"Constant expression optimizer started\n");
 #endif
+	setLifespan(mb);
 	
 	do{
 		again = 0;
@@ -96,31 +100,36 @@ OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		nxt= first;
 		for (k=i= first ; i < limit; i++) {
 			p = getInstrPtr(mb,i);
-			if( p->argc - p->retc > 0 )
-				j = OPTallConstant(mb,p);
-			else j = 0;
+			j = OPTallConstant(mb,p);
 			if(j && nxt == first) nxt=i;
 #ifdef DEBUG_OPT_CX
 			stream_printf(GDKout,"Constants:%d\n",j);
-			printInstruction(GDKout, mb, p, LIST_OPT_ALL);	
+			stream_printf(GDKout,"retc %d var %s\n",p->retc,getVarName(mb,getArg(p,0)));
+			stream_printf(GDKout,"last update:%d\n", getLastUpdate(mb,getArg(p,0)));
+			printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
-				getLastUpdate(mb,getArg(p,0)) == i &&
-				reenterMAL(c,mb,i,i+1,env,0,0) == MAL_SUCCEED){
+				getLastUpdate(mb,getArg(p,0)) == i ){
+				msg= reenterMAL(c,mb,i,i+1,env,0,0);
+#ifdef DEBUG_OPT_CX
+				stream_printf(GDKout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
+#endif
+				if( msg == MAL_SUCCEED){
 @-
 The last assignment of a constant expression turns the variable into
 a constant itself.
 @c
-				isConstant(mb,getArg(p,0))= TRUE;
-				setFixed(mb,getArg(p,0));
-				getVarConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
-				env->stk[getArg(p,0)].vtype= TYPE_int; /* no garbage */
-				freeInstruction(p);
+					isConstant(mb,getArg(p,0))= TRUE;
+					setFixed(mb,getArg(p,0));
+					getVarConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
+					env->stk[getArg(p,0)].vtype= TYPE_int; /* no garbage */
+					freeInstruction(p);
 #ifdef DEBUG_OPT_CX
-				stream_printf(GDKout,"Evaluated new constant=%d\n",getArg(p,0));
+					stream_printf(GDKout,"Evaluated new constant=%d\n",getArg(p,0));
 #endif
-				done++;
-				again++;
+					done++;
+					again++;
+				}
 			} else mb->stmt[k++]=p;
 		}
 		if( k != mb->stop){

@@ -313,6 +313,7 @@ mal_export Property cpyProperty(PropertySet * target, Property src);
 mal_export Property fndProperty(PropertySet ps, str nme);
 mal_export Property fndPropertyIndexed(PropertySet ps, int first, int last, str nme);
 mal_export Property setProperty(PropertySet ps, str nme, str op, int tpe, ptr val);
+mal_export void delProperty(PropertySet ps, str nme);
 mal_export ptr getPropertyValue(PropertySet ps, str nme);
 mal_export int getPropertyType(PropertySet ps, str nme);
 mal_export str propertySet2str(PropertySet ps);
@@ -457,6 +458,19 @@ Property
 setProperty(PropertySet ps, str nme, str op, int tpe, ptr val)
 {
 	return setPropertyIndexed(ps, 0, nme, op, tpe, val);
+}
+void
+delProperty(PropertySet ps, str nme){
+	Property pr, po;
+	pr = fndPropertyIndexed(ps, 0, 1, nme);
+	if( pr){
+		if( pr->nxt){
+			po= pr->nxt;
+			*pr = *pr->nxt;
+			GDKfree(po);
+		} else
+			pr->nme= NULL;
+	}
 }
 
 @-
