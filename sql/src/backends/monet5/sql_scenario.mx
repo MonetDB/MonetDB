@@ -344,9 +344,6 @@ SQLinitClient(Client c)
 		/* TODO reset global variables */
 	}
 
-	c->yycur = 0;		/* make sure we don't reuse the used input */
-	c->fdin->eof = 1;       /* force prompt on first iteration */
-
 	initSQLreferences();
 	return MAL_SUCCEED;
 }

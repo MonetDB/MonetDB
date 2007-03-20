@@ -267,8 +267,9 @@ of those seen already.  This can not be handled by the
 common term optimizer, because the first bind has a side-effect.
 @c
 typedef struct {
-	int idx,mode,bid;
+	int idx,mode;
 	str schema,table, column;
+	InstrPtr p;
 } SQLbind;
 
 static void
@@ -279,7 +280,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 	InstrPtr *rest= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->stop);
 	int n=1,rtop=0;
 	SQLbind *bind= (SQLbind*) alloca(sizeof(SQLbind)*mb->stop/2);
-	int j,k=0, mode;
+	int j,k=0;
 
 	for(i=1; i<mb->stop; i++){
 		InstrPtr p = getInstrPtr(mb,i);
@@ -292,20 +293,41 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			char *cname;
 			int not_null = 0;
 			BAT *b;
+			lng rows = 0;
 
 			cname = p->argc>3? getVarConstant(mb, getArg(p,3)).val.sval:0 ;
-			if(  f== bindRef){
-				for(j=0; j<k; j++)
-				if( strcmp(sname,bind[j].schema)==0 &&
-				    strcmp(tname,bind[j].table)==0 &&
-					bind[j].column && strcmp(cname,bind[j].column)== 0
-				 ){
-					mode= getVarConstant(mb, getArg(p,4)).val.ival;
-					/* catch alias bindings */
-					if(	bind[j].mode == mode )
-						break;
+			if (f == bindRef) {
+				int mode = getVarConstant(mb, getArg(p,4)).val.ival;
+				/* Mark to be updated columns */
+				if (mode == INS || mode == UPD)
+					rows++;
+				for(j=0; j<k; j++) {
+					if( strcmp(sname,bind[j].schema)==0 &&
+				   		strcmp(tname,bind[j].table)==0 &&
+						bind[j].column && strcmp(cname,bind[j].column)==0) {
+						if (bind[j].mode == mode ||
+						   (bind[j].mode == RD_INS && mode == INS) ||
+						   (bind[j].mode == RD_UPD && mode == UPD) ||
+						   (bind[j].mode == INS && mode == RD_INS) ||
+						   (bind[j].mode == UPD && mode == RD_UPD) ){
+							if (bind[j].mode != mode &&
+								(mode == INS || mode == UPD)) {
+								PropertySet ps;
+								lng *rows;
+								bind[j].mode = mode;
+								getArg(bind[j].p,4) = getArg(p,4);
+								ps = getProps(mb,bind[j].idx);
+								assert(ps);
+								rows = getPropertyValue(ps,"rows"); 
+								assert(rows);
+								(*rows) ++;
+							}
+							break;
+						}
+					}
 				}
 				if( j== k){
+					bind[k].p = p;
 					bind[k].idx= getArg(p,0);
 					bind[k].schema = sname;
 					bind[k].table = tname;
@@ -325,28 +347,26 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			mb->stmt[n++] = p;
 			if( f == binddbatRef) {
 				b= mvc_bind_dbat(m, sname, tname,
-				getVarConstant(mb, getArg(p,3)).val.ival);
+					getVarConstant(mb, getArg(p,3)).val.ival);
 			} else if( f == bindidxRef) {
 				b= mvc_bind_idxbat(m, sname, tname,
-				getVarConstant(mb, getArg(p,3)).val.sval,
-				getVarConstant(mb, getArg(p,4)).val.ival);
+					getVarConstant(mb, getArg(p,3)).val.sval,
+					getVarConstant(mb, getArg(p,4)).val.ival);
 			} else {
-				char *cname =
-				    getVarConstant(mb, getArg(p,3)).val.sval;
+				char *cname = getVarConstant(mb, getArg(p,3)).val.sval;
 				sql_schema *s = mvc_bind_schema(m, sname);
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 
 				b= mvc_bind(m, sname, tname, cname,
-				getVarConstant(mb, getArg(p,4)).val.ival);
+					getVarConstant(mb, getArg(p,4)).val.ival);
 				not_null = c->null;
 			}	
 			if( b ) {
-				lng rows = BATcount(b);
 				int k = getArg(p,0);
 				bit t = TRUE;
 
-				bind[j].bid= b->batCacheid;
+				rows += BATcount(b);
 				getVarConstant(mb, k).val.bval = b->batCacheid;
 				if (mb->var[k]->props == 0)
 					mb->var[k]->props = newPropertySet();
@@ -357,6 +377,37 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				BBPunfix(b->batCacheid);
 				actions++;
 			}
+		} else if (getModuleId(p) == sqlRef && 
+				f == appendRef && p->argc == 6 ) {
+			char *sname = getVarConstant(mb, getArg(p,1)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
+			char *cname = getVarConstant(mb, getArg(p,3)).val.sval;
+			int mode = getVarConstant(mb, getArg(p,4)).val.ival;
+			for(j=0; j<k; j++) {
+				if( strcmp(sname,bind[j].schema)==0 &&
+			   	    strcmp(tname,bind[j].table)==0 &&
+				    bind[j].column && strcmp(cname,bind[j].column)==0 &&
+				    (bind[j].mode == mode ||
+				    (bind[j].mode == RD_INS && mode == INS) ||
+				    (bind[j].mode == RD_UPD && mode == UPD) ||
+				    (bind[j].mode == INS && mode == RD_INS) ||
+				    (bind[j].mode == UPD && mode == RD_UPD)) ){
+					if (bind[j].mode != mode) { 
+						PropertySet ps;
+						lng *rows;
+
+						bind[j].mode = mode;
+						getArg(bind[j].p,4) = getArg(p,4);
+						ps = getProps(mb,bind[j].idx);
+						assert(ps);
+						rows = getPropertyValue(ps,"rows"); 
+						assert(rows);
+						(*rows) ++;
+					}
+					break;
+				}
+			}
+			rest[rtop++]= p;
 		} else {
 			rest[rtop++]= p;
 		}
@@ -374,7 +425,7 @@ str defaultPlan=
 	"inline,"
 	"costModel,"
 	"coercions,"
-	/*"emptySet,"  */
+	"emptySet," 
 	/* "joinselect," */
 	"accessmode,"
 	"aliases,"
