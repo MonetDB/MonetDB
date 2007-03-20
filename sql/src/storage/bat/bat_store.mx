@@ -72,6 +72,7 @@ extern BAT *temp_descriptor(log_bid b);
 logger *sql_logger = NULL;
 static MT_Lock bs_lock;
 static lng store_oid = 0;
+static lng prev_oid = 0;
 static int nr_sessions = 0;
 static int nr_active = 0;
 static int transactions = 0;
@@ -2388,6 +2389,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		return -1;
 
 	logger_sequence(sql_logger, OBJ_SID, &store_oid);
+	prev_oid = store_oid;
 	MT_lock_init(&bs_lock);
 
 	types_init(debug);
@@ -3189,18 +3191,21 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 		if (rollforward_updates) {
 			for (n = fs->set->h; ok == LOG_OK && n && n != fs->nelm; n = n->next) {
 				sql_base *fb = n->data;
-				node *tbn = cs_find_name(ts, fb->name);
 
-				if (tbn && fb->wtime && fb->flag == TR_OLD) {
-					sql_base *tb = tbn->data;
+				if (fb->wtime && fb->flag == TR_OLD) {
+					node *tbn = cs_find_id(ts, fb->id);
 
-					/* update timestamps */
-					if (fb->rtime && tr->stime > tb->rtime)
-						tb->rtime = tr->stime;
-					if (fb->wtime && tr->stime > tb->wtime)
-						tb->wtime = tr->stime;
+					if (tbn) {
+						sql_base *tb = tbn->data;
 
-					ok = rollforward_updates(tr, fb, tb);
+						/* update timestamps */
+						if (fb->rtime && tr->stime > tb->rtime)
+							tb->rtime = tr->stime;
+						if (fb->wtime && tr->stime > tb->wtime)
+							tb->wtime = tr->stime;
+
+						ok = rollforward_updates(tr, fb, tb);
+					}
 				}
 				fb->rtime = fb->wtime = 0;
 			}
@@ -3982,8 +3987,12 @@ validate_tables(sql_schema *s, sql_schema *os)
 	if (cs_size(&s->tables))
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
-			sql_table *ot = find_sql_table(os, t->base.name);
+			sql_table *ot;
 
+			if (!t->base.wtime && !t->base.rtime)
+				continue;
+
+			ot = find_sql_table(os, t->base.name);
 			if (ot && isTable(ot) && isTable(t)) {
 				if (t->base.wtime && (t->base.wtime < ot->base.rtime || (t->base.wtime < ot->base.wtime && t->base.rtime))) 
 					return 0;
@@ -4327,11 +4336,13 @@ sql_trans_validate(sql_trans *tr)
 	if (cs_size(&tr->schemas))
 		for (n = tr->schemas.set->h; n; n = n->next) {
 			sql_schema *s = n->data;
-			sql_schema *os = find_sql_schema(tr->parent, s->base.name);
+			sql_schema *os;
 
 			if (strcmp(s->base.name,"tmp") == 0)
 				continue;
-			if (os || (s->base.wtime == 0 && s->base.rtime == 0)) {
+
+ 			os = find_sql_schema(tr->parent, s->base.name);
+			if (os/* || (s->base.wtime == 0 && s->base.rtime == 0)*/) {
 				if (!validate_tables(s, os))
 					return 0;
 			}
@@ -4379,7 +4390,9 @@ sql_trans_commit(sql_trans *tr)
 		/*catalog_corrupt(tr->parent);*/
 	}
 	if (tr->parent == gtrans) {
-		ok = log_sequence(sql_logger, OBJ_SID, store_oid);
+		if (prev_oid != store_oid)
+			ok = log_sequence(sql_logger, OBJ_SID, store_oid);
+		prev_oid = store_oid;
 		if (ok == LOG_OK)
 			ok = log_tend(sql_logger);
 		tr->previous_schema_nr = tr->schema_number;

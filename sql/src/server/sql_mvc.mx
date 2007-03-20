@@ -108,6 +108,7 @@ typedef struct mvc {
 
 	int result_id;
 	res_table *results;
+	sql_column *last; 	/* last accessed column */
 } mvc;
 
 extern int mvc_init(int debug, backend_stack stk);
@@ -368,6 +369,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		store_unlock();
 		m->type = Q_TRANS;
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
+		m->last = NULL;
 		if (mvc_debug)
 			fprintf(stderr, "mvc_commit %s done\n", (name) ? name : "");
 		return 0;
@@ -473,6 +475,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 	}
 	store_unlock();
 	m->type = Q_TRANS;
+	m->last = NULL;
 	if (mvc_debug)
 		fprintf(stderr, "mvc_rollback %s done\n", (name) ? name : "");
 	return res;
@@ -515,6 +518,7 @@ mvc_release(mvc *m, char *name)
 	cur -> parent = tr;
 
 	m->type = res;
+	m->last = NULL;
 	return res;
 }
 
@@ -570,6 +574,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
 	m->result_id = 0;
 	m->results = NULL;
+	m->last = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
 	return m;
@@ -635,6 +640,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 
 	m->result_id = 0;
 	m->results = NULL;
+	m->last = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
 }
@@ -729,7 +735,11 @@ mvc_bind_schema(mvc *m, char *sname)
 
 	if (!tr)
 		return NULL;
- 	s = find_sql_schema(tr, sname);
+
+	if (m->last && strcmp(m->last->t->s->base.name, sname) == 0)
+		s = m->last->t->s;
+	else 
+ 		s = find_sql_schema(tr, sname);
 	if (!s)
 		return NULL;
 
@@ -741,9 +751,13 @@ mvc_bind_schema(mvc *m, char *sname)
 sql_table *
 mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 {
-	sql_table *t = find_sql_table(s, tname);
+	sql_table *t;
 
-	(void) m;
+	if (m->last && m->last->t->s == s &&
+		strcmp(m->last->t->base.name, tname) == 0)
+		t = m->last->t;
+	else 
+ 		t = find_sql_table(s, tname);
 	if (!t)
 		return NULL;
 	if (mvc_debug)
@@ -755,14 +769,19 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 sql_column *
 mvc_bind_column(mvc *m, sql_table *t, char *cname)
 {
-	sql_column *c = find_sql_column(t, cname);
+	sql_column *c;
 
-	(void) m;
+	if (m->last && m->last->t == t &&
+		strcmp(m->last->base.name, cname) == 0)
+		c = m->last;
+	else 
+		c = find_sql_column(t, cname);
 	if (!c)
 		return NULL;
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_column %s.%s\n", t->base.name, cname);
 
+	m->last = c;
 	return c;
 }
 

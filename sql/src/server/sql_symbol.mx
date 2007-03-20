@@ -110,12 +110,11 @@ extern symbol *newAtomNode(sql_allocator *sa, atom *a);
 
 int symbol_debug = 0;
 
-symbol *
-symbol_init(symbol *s, int token)
+static symbol *
+symbol_init(symbol *s, int token, int type )
 {
 	s->token = token;
-	s->type = type_symbol;
-	s->data.lval = NULL;
+	s->type = type;
 	return s;
 }
 
@@ -125,9 +124,8 @@ symbol_create(sql_allocator *sa, int token, char *data)
 	symbol *s = SA_NEW(sa, symbol);
 
 	if (s) {
-		symbol_init(s, token);
+		symbol_init(s, token, type_string);
 		s->data.sval = data;
-		s->type = type_string;
 		if (symbol_debug)
 			fprintf(stderr, "%ld = symbol_create_string(%s,%s)\n", (long) s, token2string(s->token), s->data.sval);
 	}
@@ -140,9 +138,8 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 	symbol *s = SA_NEW(sa, symbol);
 
 	if (s) {
-		symbol_init(s, token);
+		symbol_init(s, token, type_list);
 		s->data.lval = data;
-		s->type = type_list;
 		if (symbol_debug)
 			fprintf(stderr, "%ld = symbol_create_list(%s,%ld)\n", (long) s, token2string(s->token), (long) s->data.lval);
 	}
@@ -155,9 +152,8 @@ symbol_create_int(sql_allocator *sa, int token, lng data)
 	symbol *s = SA_NEW(sa, symbol);
 
 	if (s) {
-		symbol_init(s, token);
+		symbol_init(s, token, type_int);
 		s->data.ival = data;
-		s->type = type_int;
 		if (symbol_debug)
 			fprintf(stderr, "%ld = symbol_create_int(%s,%lld)\n", (long) s, token2string(s->token), data);
 	}
@@ -170,7 +166,7 @@ symbol_create_symbol(sql_allocator *sa, int token, symbol *data)
 	symbol *s = SA_NEW(sa, symbol);
 
 	if (s) {
-		symbol_init(s, token);
+		symbol_init(s, token, type_symbol);
 		s->data.sym = data;
 		if (symbol_debug)
 			fprintf(stderr, "%ld = symbol_create_symbol(%s,%s)\n", (long) s, token2string(s->token), token2string(data->token));
@@ -183,11 +179,8 @@ dnode_create(sql_allocator *sa )
 {
 	dnode *n = SA_NEW(sa, dnode);
 
-	if (n) {
+	if (n) 
 		n->next = NULL;
-		n->data.sval = NULL;
-		n->type = type_symbol;
-	}
 	return n;
 }
 
@@ -339,7 +332,7 @@ newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct d
 	symbol *s = (symbol *) sn;
 
 	if (s) {
-		symbol_init(s, SQL_SELECT);
+		symbol_init(s, SQL_SELECT, type_symbol);
 		sn->distinct = distinct;
 		sn->limit = limit;
 		sn->offset = offset;
@@ -362,7 +355,7 @@ newAtomNode(sql_allocator *sa, atom *data)
 	symbol *s = (symbol *) an;
 
 	if (s) {
-		symbol_init(s, SQL_ATOM);
+		symbol_init(s, SQL_ATOM, type_symbol);
 		an->a = data;
 	}
 	return s;

@@ -273,6 +273,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode)
 	stream *buf;
 
 	m->qc = NULL;
+	m->last = NULL;
 
 	m->cache = 0;
 	m->mode = mode;
@@ -327,6 +328,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode)
 	} else {
 		*m = o;
 	}
+	m->last = NULL;
 	return sq;
 }
 

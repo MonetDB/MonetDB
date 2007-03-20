@@ -44,6 +44,24 @@ list_find_name(list *l, char *name)
 }
 
 node *
+cs_find_id(changeset * cs, int id)
+{
+	node *n;
+	list *l = cs->set;
+
+	if (l)
+		for (n = l->h; n; n = n->next) {
+			sql_base *b = n->data;
+
+			/* check if names match */
+			if (b->id == id) {
+				return n;
+			}
+		}
+	return NULL;
+}
+
+node *
 list_find_id(list *l, int id)
 {
 	node *n;

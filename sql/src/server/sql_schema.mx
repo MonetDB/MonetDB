@@ -1988,5 +1988,6 @@ schemas(mvc *sql, symbol *s)
 	default:
 		return sql_error(sql, 01, "schema statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
+	sql->last = NULL;
 	return ret;
 }
