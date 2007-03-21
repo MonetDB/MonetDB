@@ -2189,7 +2189,7 @@ month_interval_str( int *ret, str *s, int *ek, int *sk ){
 		throw(SQL, "calc.month_interval",
 			"wrong format (%s)", *s);
 	*ret = res;
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 str 
@@ -2198,7 +2198,7 @@ second_interval_str( lng *res, str *s, int *ek, int *sk ){
 	if (interval_from_str( *s, *sk, *ek, res ) < 0)
 		throw(SQL, "calc.second_interval",
 			"wrong format (%s)", *s);
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 @= c_interval
@@ -2233,7 +2233,7 @@ second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 	case isec:
 		break;
 	default:
-		throw(ILLARG, "calc.month_interval","illegal argument");
+		throw(ILLARG, "calc.second_interval","illegal argument");
 	}
 	*res = r;
 	return MAL_SUCCEED;
