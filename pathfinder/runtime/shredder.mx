@@ -844,7 +844,7 @@ shred_start_document(void *xmlCtx)
         stream_printf(GDKout, "CALL %s:start_document()\n", shredCtx->serFun->name);
 #endif
             shredCtx->serFun->init(shredCtx->serCtx, "", NULL, NULL, NULL, NULL);
-            shredCtx->serFun->handle_startDocument(shredCtx->serCtx);
+            shredCtx->serFun->handle_startDocument(shredCtx->serCtx,shredCtx->nnode_pre);
     }
 }
 

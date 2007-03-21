@@ -312,8 +312,9 @@ dflt_cleanup (XqueryCtx* ctx)
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
 static bool
-dflt_handle_startDocument (XqueryCtx* ctx)
+dflt_handle_startDocument (XqueryCtx* ctx, oid pre)
 {
+    (void) pre;
     char *tmp;
     /* print string: <?xml version="1.0" encoding="utf-8"?> */ 
     tmp = "<?xml version="; stream_write (ctx->out, tmp, strlen (tmp), 1);

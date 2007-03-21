@@ -152,6 +152,7 @@
 #define CURRENT 21
 #define DSC 22
 #define STAR 23
+#define PARAMNODES 99
 #define JOURNAL_ROOT 24
 #define VAGUE 25
 #define IMAGE 26

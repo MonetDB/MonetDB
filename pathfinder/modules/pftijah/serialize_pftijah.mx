@@ -754,16 +754,57 @@ pftijah_init(XqueryCtx* ctx, char* args, char* restag, char* resprefix, char* mo
     return 1;
 }
 
+#define HANDLE_DOC_ROOT
+
 /**
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
 static bool
-pftijah_handle_startDocument(XqueryCtx* ctx) {
+pftijah_handle_startDocument(XqueryCtx* ctx, oid pre) {
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
+
     tjctx->doc_height = tjctx->max_doc_height = 0;
+#ifdef HANDLE_DOC_ROOT
+    oid termOid, tjPre;
+
+    if ( ++tjctx->doc_height > tjctx->max_doc_height )
+        tjctx->max_doc_height = tjctx->doc_height;
+    if ( (termOid = tj_tagOid(tjctx, "_DOCUMENT_ROOT")) == oid_nil )
+        return 0;
+    if ( (tjPre = tj_newPre(tjctx) ) == oid_nil )
+        return 0;
+    dbat_set_oid(&tjctx->dbat_collPre, tjPre, termOid);
+    if ( tj_pushTag(tjctx,tjPre) < 0 ) return 0;
+    if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre, FALSE) ) return 0;
+#else
+    (void)  pre;
+#endif
+
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startDocument()\n",tjctx->name);
+#endif
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX endDocument() event.
+ */
+static bool
+pftijah_handle_endDocument(XqueryCtx* ctx) {
+#ifdef HANDLE_DOC_ROOT
+    tjCtx* tjctx = (tjCtx*)ctx->driverWs;
+
+    --tjctx->doc_height;
+    oid start = tj_popTag(tjctx); /* oid of the first node of the element */
+    int size  = tjctx->tijahPre - start - 1; /* the Tijah document size */
+    dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
+#else
+    (void) ctx;
+#endif
+
+#ifdef TJ_TRACE
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endDocument()\n",tjctx->name);
 #endif
     return 1;
 }
@@ -946,7 +987,7 @@ struct serializeFunStruct pftijahSerializeFun = {
     null_endSerialize,
 
     pftijah_handle_startDocument,
-    null_handle_endDocument,
+    pftijah_handle_endDocument,
     pftijah_handle_startElement,
     pftijah_handle_endElement,
     pftijah_handle_characters,

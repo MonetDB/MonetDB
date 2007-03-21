@@ -38,7 +38,7 @@ bool null_init (XqueryCtx *ctx, char *args, char *restag, char *resprefix, char 
 bool null_cleanup (XqueryCtx *ctx);
 bool null_startSerialize (XqueryCtx *ctx);
 bool null_endSerialize (XqueryCtx *ctx);
-bool null_handle_startDocument (XqueryCtx* ctx);
+bool null_handle_startDocument (XqueryCtx* ctx, oid pre);
 bool null_handle_endDocument (XqueryCtx* ctx);
 bool null_handle_startElement (XqueryCtx* ctx, str prefix, str name, oid pre);
 bool null_handle_endElement (XqueryCtx* ctx, str prefix, str name);
@@ -121,9 +121,10 @@ bool null_endSerialize (XqueryCtx *ctx)
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
 bool
-null_handle_startDocument (XqueryCtx* ctx)
+null_handle_startDocument (XqueryCtx* ctx, oid pre)
 {
     (void) ctx;
+    (void) pre;
     return SUCCESS;
 }
 

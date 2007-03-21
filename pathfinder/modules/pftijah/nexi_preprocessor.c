@@ -113,7 +113,7 @@ int preprocess(int preproc_type) {
   com_var = compre->val[icp++];
   while ( icp <= compre->cnt ) {
 
-    if (com_var ==  QUERY_END || com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var ==  CURRENT || com_var == VAGUE) {
+    if (com_var ==  QUERY_END || com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var == PARAMNODES || com_var ==  CURRENT || com_var == VAGUE) {
 
       tnl_append(commain,com_var);
 
@@ -449,7 +449,7 @@ int process(char* stemmer, bool stem_stop, bool stop_quoted) {
     // while (!feof(command_file_pre)) {
     while ( icp <= compre->cnt ) {
 
-      if (com_var ==  QUERY_END || com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == QUOTE || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var ==  CURRENT || com_var == MINUS || com_var == PLUS || com_var == MUST_NOT || com_var == MUST || com_var == VAGUE) {
+      if (com_var ==  QUERY_END || com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == QUOTE || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var == PARAMNODES || com_var ==  CURRENT || com_var == MINUS || com_var == PLUS || com_var == MUST_NOT || com_var == MUST || com_var == VAGUE) {
 
       	if (com_var == QUOTE) {
 

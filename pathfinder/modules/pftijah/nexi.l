@@ -51,6 +51,7 @@ extern int char_number;
 #define CURRENT 21
 #define DSC 22
 #define STAR 23
+#define PARAMNODES 99
 #define VAGUE 25
 #define IMAGE 26
 
@@ -287,6 +288,12 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 	  return yytext[0];
 	}
 
+"%"    {
+	  char_number++;
+	  nexilval = yytext[0];
+	  WRITE_COMMAND(PARAMNODES);
+	  return yytext[0];
+	}
 
 "."     {
           char_number++;

@@ -170,7 +170,7 @@ typedef struct serializeFunStruct {
     bool (*handle_endSerialize)(XqueryCtx* ctx);
     
     /* the (part of) document handler functions */
-    bool (*handle_startDocument)(XqueryCtx* ctx);
+    bool (*handle_startDocument)(XqueryCtx* ctx, oid pre);
     bool (*handle_endDocument)(XqueryCtx* ctx);
     bool (*handle_startElement)(XqueryCtx* ctx,
                                 str prefix, str name, oid pre);
@@ -1527,12 +1527,12 @@ xquery_print_doc_DRIVER (
     } else { 
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
         if (createWsContext(ctx,ws,mode,NULL,NULL,driverFun,driverArg,GDKout)) {
-            if (ctx->driverFun->handle_startDocument(ctx)) {
+	    oid start_oid = doc_startOid(ctx,docIndex);
+	    if ( start_oid == oid_nil )
+	        return GDK_FAIL;
+            if (ctx->driverFun->handle_startDocument(ctx,start_oid)) {
                 ptr p;
 
-		oid start_oid = doc_startOid(ctx,docIndex);
-		if ( start_oid == oid_nil )
-		    return GDK_FAIL;
                 if ( 0 /* old implementation, restore if necessary */ ) {
                   getWsValue(p, ctx, docIndex, PRE_SIZE, 0 /* start */);
 		  if (emitNodesInRange (ctx, 0,  *(int*) p, NULL, docIndex))
@@ -1798,7 +1798,7 @@ xquery_print_result_driver (
                                if we have a document node */
                             if (node_kind == (char)4 /* DOCUMENT */)
                                 if ( !ctx->driverFun->handle_startDocument (
-                                                          ctx) )
+                                                          ctx,pre) )
                                     return GDK_FAIL;
 
                             BAT *b;

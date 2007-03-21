@@ -104,6 +104,8 @@ node_sequence: node | node_sequence node;
 
 any_node: NODE_QUALIFIER '*';
 
+param_node: NODE_QUALIFIER '%';
+
 attribute_node: NODE_QUALIFIER '@' tag;
 
 named_node: NODE_QUALIFIER tag;
@@ -112,7 +114,7 @@ tag_list: tag '|' tag | tag_list '|' tag;
 
 tag_list_node: NODE_QUALIFIER '(' tag_list ')';
 
-node: named_node | any_node | tag_list_node;
+node: named_node | any_node | param_node | tag_list_node;
 
 tag: alphanumeric | '~' alphanumeric | XMLTAG | '~' XMLTAG;
 

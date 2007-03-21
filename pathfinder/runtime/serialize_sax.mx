@@ -182,8 +182,10 @@ sax_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *modul
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
 static bool
-sax_handle_startDocument (XqueryCtx* ctx)
+sax_handle_startDocument (XqueryCtx* ctx, oid pre)
 {
+    (void) pre;
+
     if ( SAXOPHONE )
         return emit_SAX_header(ctx);
     else

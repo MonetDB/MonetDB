@@ -396,7 +396,7 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
 
       if (com_var != QUERY_END) {
 
-	if (com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var ==  CURRENT || com_var == VAGUE) {
+	if (com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var == PARAMNODES || com_var ==  CURRENT || com_var == VAGUE) {
 
 	  if (com_var == COMMA && (com_var_tmp == SELECT_NODE || com_var_tmp == CB)) {
 	    record = TRUE;
@@ -536,7 +536,7 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
 
       if (com_var != QUERY_END) {
      	
-	if (com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var ==  CURRENT || com_var == VAGUE) {
+	if (com_var ==  GR || com_var ==  LS || com_var == EQ || com_var == DSC || com_var == COMMA || com_var == OPEN || com_var == CLOSE || com_var == OB || com_var == CB || com_var ==  STRUCT_OR || com_var == STAR || com_var == PARAMNODES ||  com_var ==  CURRENT || com_var == VAGUE) {
 	  
 	  if (com_var == COMMA && (com_var_tmp == SELECT_NODE || com_var_tmp == CB)) {
 	    record = TRUE;
