@@ -83,6 +83,8 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Client c= MCgetClient();
 	MalStkPtr env;
 	str msg;
+	int debugstate= c->itrace;
+	c->itrace= 0;
 
 	(void) stk;
 	(void) pci;
@@ -141,6 +143,7 @@ a constant itself.
 	} while( again );
 	clearStack(env);	/* garbage collect */
 	freeStack(env);
+	c->itrace= debugstate;
 	return 1;
 }
 @include optimizerWrapper.mx
