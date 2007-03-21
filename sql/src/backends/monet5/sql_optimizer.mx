@@ -407,7 +407,7 @@ tested extensively and should provide overall good performance.
 @c
 str defaultPlan=
 	"inline,"
-	"evaluate,"
+	/*"evaluate,"*/
 	"costModel,"
 	"coercions,"
 	"emptySet," 
