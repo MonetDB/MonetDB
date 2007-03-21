@@ -235,10 +235,10 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 	printFunction(GDKout,mc,LIST_MAL_ALL);
 #endif
-	ns = GDKmalloc((l = (mb->ssize + mc->ssize - 3)) * sizeof(InstrPtr));
-	nv = alloca(mc->vtop * sizeof(int));
 	p = getInstrPtr(mb, pc);
 	q = getInstrPtr(mc, 0);
+	ns = GDKmalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
+	nv = alloca(mc->vtop * sizeof(int));
 	k = 0;
 
 	/* add all variables of the new block to the target environment */
