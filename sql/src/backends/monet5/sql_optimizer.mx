@@ -270,6 +270,7 @@ typedef struct {
 	int idx,mode;
 	str schema,table, column;
 	InstrPtr p;
+	char *f;
 } SQLbind;
 
 static void
@@ -290,76 +291,77 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
 			char *sname = getVarConstant(mb, getArg(p,1)).val.sval;
 			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
-			char *cname;
+			char *cname = NULL;
 			int not_null = 0;
 			BAT *b;
 			lng rows = 0;
+			int mode;
 
-			cname = p->argc>3? getVarConstant(mb, getArg(p,3)).val.sval:0 ;
-			if (f == bindRef) {
-				int mode = getVarConstant(mb, getArg(p,4)).val.ival;
-				/* Mark to be updated columns */
-				if (mode == INS || mode == UPD)
-					rows++;
-				for(j=0; j<k; j++) {
-					if( strcmp(sname,bind[j].schema)==0 &&
-				   		strcmp(tname,bind[j].table)==0 &&
-						bind[j].column && strcmp(cname,bind[j].column)==0) {
-						if (bind[j].mode == mode ||
-						   (bind[j].mode == RD_INS && mode == INS) ||
-						   (bind[j].mode == RD_UPD && mode == UPD) ||
-						   (bind[j].mode == INS && mode == RD_INS) ||
-						   (bind[j].mode == UPD && mode == RD_UPD) ){
-							if (bind[j].mode != mode &&
-								(mode == INS || mode == UPD)) {
-								PropertySet ps;
-								lng *rows;
-								bind[j].mode = mode;
-								getArg(bind[j].p,4) = getArg(p,4);
-								ps = getProps(mb,bind[j].idx);
-								assert(ps);
-								rows = getPropertyValue(ps,"rows"); 
-								assert(rows);
-								(*rows) ++;
-							}
-							break;
+			if (f == binddbatRef) {
+				mode = getVarConstant(mb, getArg(p,3)).val.ival;
+			} else {
+				cname = getVarConstant(mb, getArg(p,3)).val.sval;
+				mode = getVarConstant(mb, getArg(p,4)).val.ival;
+			}
+
+			/* Mark to be updated columns */
+			if (mode == INS || mode == UPD)
+				rows++;
+			for(j=0; j<k; j++) {
+				if( bind[j].f == f &&
+					strcmp(sname,bind[j].schema)==0 &&
+				 	strcmp(tname,bind[j].table)==0 &&
+					(f == binddbatRef || strcmp(cname,bind[j].column)==0)) {
+					if (bind[j].mode == mode ||
+					   (bind[j].mode == RD_INS && mode == INS) ||
+					   (bind[j].mode == RD_UPD && mode == UPD) ||
+					   (bind[j].mode == INS && mode == RD_INS) ||
+					   (bind[j].mode == UPD && mode == RD_UPD) ){
+						if (bind[j].mode != mode &&
+							(mode == INS || mode == UPD)) {
+							PropertySet ps;
+							lng *rows;
+							bind[j].mode = mode;
+							getArg(bind[j].p,4) = getArg(p,4);
+							ps = getProps(mb,bind[j].idx);
+							assert(ps);
+							rows = getPropertyValue(ps,"rows"); 
+							assert(rows);
+							(*rows) ++;
 						}
+						break;
 					}
 				}
-				if( j== k){
-					bind[k].p = p;
-					bind[k].idx= getArg(p,0);
-					bind[k].schema = sname;
-					bind[k].table = tname;
-					bind[k].mode = getVarConstant(mb, getArg(p,4)).val.ival;
-					bind[k++].column = cname;
-				} else {
-					p->argc=2;
-					p->token= ASSIGNsymbol;
-					setModuleId(p,NULL);
-					setFunctionId(p,NULL);
-					getArg(p,1)= bind[j].idx;
-					mb->stmt[n++] = p;
-					continue;
-				}
+			}
+			if( j== k){
+				bind[k].p = p;
+				bind[k].idx= getArg(p,0);
+				bind[k].schema = sname;
+				bind[k].table = tname;
+				bind[k].mode = mode;
+				bind[k].f = f;
+				bind[k++].column = cname;
+			} else {
+				p->argc=2;
+				p->token= ASSIGNsymbol;
+				setModuleId(p,NULL);
+				setFunctionId(p,NULL);
+				getArg(p,1)= bind[j].idx;
+				mb->stmt[n++] = p;
+				continue;
 			}
 
 			mb->stmt[n++] = p;
 			if( f == binddbatRef) {
-				b= mvc_bind_dbat(m, sname, tname,
-					getVarConstant(mb, getArg(p,3)).val.ival);
+				b= mvc_bind_dbat(m, sname, tname, mode);
 			} else if( f == bindidxRef) {
-				b= mvc_bind_idxbat(m, sname, tname,
-					getVarConstant(mb, getArg(p,3)).val.sval,
-					getVarConstant(mb, getArg(p,4)).val.ival);
+				b= mvc_bind_idxbat(m, sname, tname, cname, mode);
 			} else {
-				char *cname = getVarConstant(mb, getArg(p,3)).val.sval;
 				sql_schema *s = mvc_bind_schema(m, sname);
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 
-				b= mvc_bind(m, sname, tname, cname,
-					getVarConstant(mb, getArg(p,4)).val.ival);
+				b= mvc_bind(m, sname, tname, cname, mode);
 				not_null = c->null;
 			}	
 			if( b ) {

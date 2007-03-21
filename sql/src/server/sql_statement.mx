@@ -1132,7 +1132,7 @@ stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
 	if (access == RDONLY && isTable(c->t)) {
-		stmt *d = stmt_tbat(c->t, RDONLY);
+		stmt *d = stmt_tbat(c->t, RD_INS);
 		s = stmt_diff(s, stmt_reverse(d));
 	}
 	return s;
@@ -1142,6 +1142,8 @@ stmt *
 stmt_tbat(sql_table *t, int access)
 {
 	stmt *s = stmt_create(st_dbat);
+
+	assert(access == RD_INS || access == INS);
 
 	s->nrcols = 0;
 	s->flag = access;
@@ -1176,7 +1178,7 @@ stmt_delta_table_idxbat(sql_idx * idx, int access)
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
 	if (access == RDONLY && isTable(idx->t)) {
-		stmt *d = stmt_tbat(idx->t, RDONLY);
+		stmt *d = stmt_tbat(idx->t, RD_INS);
 		s = stmt_diff(s, stmt_reverse(d));
 	}
 	return s;
