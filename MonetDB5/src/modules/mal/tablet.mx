@@ -1508,14 +1508,6 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 				}
 				s = e + seplen;
 				done = 1;
-			} else if (b->eof && s + as->nr_attrs < end) {
-				if (insert_line(as, s) < 0) {
-					s = end;
-					b->pos = (s - b->buf);
-					res = -1;
-					break;
-				}
-				s = end;
 			} else {
 				if (!done) {	/* nothing found in current buf
 						 * ie. need to enlarge
@@ -1527,7 +1519,8 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 					if (read_more(b, out, size) == EOF) {
 						/* some data left? */
 						res = 1; 
-						if (b->len > b->pos) {
+						if (b->len > b->pos &&
+						    insert_line(as, s) < 0) {
 							GDKerror("ASCIIload_file: read error\n");
 							res = -1;
 						}
