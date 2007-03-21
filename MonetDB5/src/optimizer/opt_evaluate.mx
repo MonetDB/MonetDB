@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2007 CWI.
 @' All Rights Reserved.
 
-@f opt_constantExpression
+@f opt_evaluate
 @a M. Kersten
 @- Constant Expression Evaluation
 Expressions produced by compilers involving only constant
@@ -44,9 +44,9 @@ The code produced by the optimizer would be
 @{
 @mal
 pattern optimizer.evaluate():str
-address OPTconstantExpression;
+address OPTevaluate;
 pattern optimizer.evaluate(mod:str, fcn:str):str
-address OPTconstantExpression
+address OPTevaluate
 comment "Evaluate constant expressions once.";
 
 @h
@@ -61,7 +61,7 @@ comment "Evaluate constant expressions once.";
 #endif
 @c  
 #include "mal_config.h"
-#include "opt_constantExpression.h"
+#include "opt_evaluate.h"
 #include "opt_aliases.h"
 
 static int
@@ -76,7 +76,7 @@ OPTallConstant(MalBlkPtr mb, InstrPtr p){
 			 getModuleId(p) == mmathRef);
 }
 static int
-OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
 	int first=0, nxt, i, j, k, limit, done=0, again=0;
@@ -145,8 +145,8 @@ a constant itself.
 }
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(constantExpression)@
+@:exportOptimizer(evaluate)@
 @c
-@:wrapOptimizer(constantExpression,OPT_CHECK_ALL)@
+@:wrapOptimizer(evaluate,OPT_CHECK_ALL)@
 @}
 
