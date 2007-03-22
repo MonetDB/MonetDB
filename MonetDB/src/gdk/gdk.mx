@@ -538,6 +538,11 @@ typedef int gdk_int32;
 #ifdef HAVE_LONG_LONG
 typedef unsigned long long gdk_uint64;
 typedef long long gdk_int64;
+#else
+#ifdef HAVE___INT64
+typedef unsigned __int64 gdk_uint64;
+typedef __int64 gdk_int64;
+#endif
 #endif
 
 /* define printf formats for printing ptrdiff_t variables */

@@ -1994,6 +1994,20 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
     return pIn, pOut, pErr
 ### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
+if sys.platform == "win32":
+    def reader(i, inpipes, outpipes, outbuffers):
+        while True:
+            buf = inpipes[i].read(8192)
+            if not buf:
+                inpipes[i].close()
+                return
+            buf = buf.replace('\r\n', '\n')
+            buf = buf.replace('\r', '\n')
+            if outpipes is None:
+                outbuffers[i] += buf
+            else:
+                outpipes[i].write(buf)
+
 def ReadMultiple(inpipes, outpipes = None):
     if outpipes is None:
         # we will return a list of strings, one for each of the pipes,
@@ -2010,15 +2024,17 @@ def ReadMultiple(inpipes, outpipes = None):
             # we're done
             return
     if os.name == 'nt':
-        # On Windows, select only works on sockets.
-        # We must hope that reading the pipes in order won't cause
-        # deadlock.
+        # On Windows, select only works on sockets, so we use threading.
+        import threading
+
+        threads = []
         for i in range(len(inpipes)):
-            if outpipes is None:
-                outbuffers[i] = inpipes[i].read().replace('\r','')
-            else:
-                outpipes[i].write(inpipes[i].read())
-            inpipes[i].close()
+            thread = threading.Thread(target = reader, args = (i, inpipes, outpipes, outbuffers))
+            thread.setDaemon(True)
+            thread.start()
+            threads.append(thread)
+        for thread in threads:
+            thread.join()
     else:
         readlist = inpipes[:]
         while readlist:
