@@ -384,8 +384,8 @@ stream_init(void)
 	return 0;
 }
 
-/* #define STREAM_DEBUG 1  */
-/* #define BSTREAM_DEBUG 1 */
+/* #define STREAM_DEBUG 1   */
+/* #define BSTREAM_DEBUG 1 */ 
 
 #ifdef STREAM_DEBUG
 /* code adapted from gdk.mx */
@@ -1517,10 +1517,9 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 static ssize_t
 socket_readline(stream *s, void *buf, size_t maxcnt)
 {
-	size_t len = 0;
-	char *b = buf, *start = buf;
+	char *b = buf, *start = buf, *end = start + maxcnt;
 
-	while (socket_read(s, start, 1, 1) > 0 && len < maxcnt) {
+	while (socket_read(s, start, 1, 1) > 0 && start < end) {
 		if (*start == '\n')
 			break;
 		start++;
