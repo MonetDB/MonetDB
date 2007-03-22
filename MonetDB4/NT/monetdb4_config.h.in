@@ -539,6 +539,9 @@
    */
 /* #undef ICONV_CONST */
 
+/* Format to print 64 bit signed integers. */
+#define LLFMT "%I64d"
+
 /* architecture-dependent files */
 #define MONETDB4_EXEC_PREFIX "${prefix}"
 
@@ -686,6 +689,9 @@
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
+
+/* Format to print 64 bit unsigned integers. */
+#define ULLFMT "%I64u"
 
 /* Version number of package */
 #define VERSION "@VERSION@"

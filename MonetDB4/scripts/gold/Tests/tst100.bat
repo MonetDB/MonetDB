@@ -17,7 +17,7 @@
 
 @set TSTDB=%TSTDB%_%NAME%
 
-@rem if exists "%GDK_DBFARM%\%TSTDB%" rmdir /s/q "%GDK_DBFARM%\%TSTDB%"
+@if exist "%GDK_DBFARM%\%TSTDB%" rmdir /s/q "%GDK_DBFARM%\%TSTDB%"
 
 @mkdir "%GDK_DBFARM%\%TSTDB%"
 @rem  %MLOAD% test100k -db %TSTDB% -oid 30000000 -s 100000 -f format
