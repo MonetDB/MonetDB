@@ -424,6 +424,9 @@
 /* Host identifier */
 #define HOST "i686-pc-win32"
 
+/* Format to print 64 bit signed integers. */
+#define LLFMT "%I64d"
+
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""
 
@@ -502,6 +505,9 @@
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
+
+/* Format to print 64 bit unsigned integers. */
+#define ULLFMT "%I64u"
 
 /* Version number of package */
 #define VERSION "@VERSION@"
