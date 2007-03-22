@@ -1,0 +1,10 @@
+#Suggested by Nayden.
+
+b:= bat.new(:int,:int);
+bat.insert(b,4,2);
+bat.insert(b,9,5);
+bat.insert(b,6,3);
+b:= algebra.sort(b);
+#should throw out the last statement
+optimizer.deadcode();
+mdb.list();

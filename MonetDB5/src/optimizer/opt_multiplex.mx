@@ -57,13 +57,13 @@ exit (_11,_12,_13);
     c := _8;
 @end verbatim
 
+@{
 @-
 [WARNING] the semantics does not align precisely with M4.
 For, in search for efficient
 operators we assume aligned BATs and the script version does
 not deal with duplicates in the head of the bats.
 [/WARNING]
-@{
 @mal
 pattern optimizer.multiplex(CMD:str, a:any...):any
 address OPTmultiplex
@@ -154,7 +154,13 @@ find the actual arguments at the proper place of the callee.
 	resB = getArg(q, 0);
 
 	ht = getHeadType(getArgType(mb, pci, 0));
+	if (ht== TYPE_any)
+		return createException(MAL, "optimizer.multiplex", 
+								"Target head type is missing");
 	tt = getTailType(getArgType(mb, pci, 0));
+	if (tt== TYPE_any)
+		return createException(MAL, "optimizer.multiplex", 
+								"Target tail type is missing");
 	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 	q = pushNil(mb, q, ht);
 	freezeVarType(mb,getArg(q,q->argc-1));

@@ -1,0 +1,8 @@
+	b:= bat.new(:oid,:int);
+# a correct call
+	z:bat[:oid,:int]:= remap.multiplex("calc","+",b,1);
+
+# demonstrate an error
+	y:bat[:int,:int]:= remap.multiplex("calc","+",b,1);
+	optimizer.remap();
+	mdb.list();
