@@ -1569,6 +1569,9 @@ convertConstant(malType type, ValPtr vr)
 	
 	switch (type) {
 	case TYPE_any:
+#ifdef DEBUG_MAL_INSTR
+		showException(SYNTAX, "convertConstant", "missing type");
+#endif
 		assert(0);
 	case TYPE_bit:
 	case TYPE_chr:
