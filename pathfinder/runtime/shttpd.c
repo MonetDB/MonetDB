@@ -2699,7 +2699,7 @@ parse_request(struct conn *c, const char *s)
 {
 	char	fmt[32];
 
-	(void) snprintf(fmt, sizeof(fmt), "%%%llds %%%llds %%%llds",
+	(void) snprintf(fmt, sizeof(fmt), "%%" LLFMT "s %%" LLFMT "s %%" LLFMT "s",
 	    (long long)sizeof(c->method) - 1, (long long)sizeof(c->uri) - 1, (long long)sizeof(c->proto) - 1);
 
 	/* Get the request line */

@@ -1227,10 +1227,10 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
 
     if (options && strstr(options, "timing")) {
         stream_printf(GDKout,
-                "XRPC_Client_Serialisation (create_req_msg):   %lld microsec\n"
-                "XRPC_Network_Client_2_Server:  %lld microsec\n"
+                "XRPC_Client_Serialisation (create_req_msg):   " LLFMT " microsec\n"
+                "XRPC_Network_Client_2_Server:  " LLFMT " microsec\n"
                 "XRPC_Data_Sent:                " SZFMT " bytes\n\n"
-                "XRPC_Client_DeSerialisation (response2bat):   %lld microsec\n",
+                "XRPC_Client_DeSerialisation (response2bat):   " LLFMT " microsec\n",
                 time_xrpcClntSeria,
                 time_xrpcClnt2Serv,
                 bytes_sent,

@@ -72,13 +72,6 @@
 #include "subtyping.h"
 #include "mil_opt.h"
 
-/* format to print a long long */
-#if defined(HAVE___INT64) | defined(__MINGW32__)
-#define LLFMT "%I64d"           
-#else
-#define LLFMT "%lld"            
-#endif
-
 /* accessors to left and right child node */
 #define LEFT_CHILD(p)  ((p)->child[0])
 #define RIGHT_CHILD(p) ((p)->child[1])

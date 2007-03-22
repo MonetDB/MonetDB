@@ -5415,8 +5415,8 @@ xquery_method(mapi_client *mc,
     if (flags&1){
         /* print timing ourselves */
         fprintf(stdout, "\n"
-               "XRPC_Server_Application:       %lld microsec\n"
-               "XRPC_Network_Server_2_Client:  %lld microsec\n",
+               "XRPC_Server_Application:       " LLFMT " microsec\n"
+               "XRPC_Network_Server_2_Client:  " LLFMT " microsec\n",
                (*ctx->time_shred + *ctx->time_compile + *ctx->time_exec),
                *ctx->time_print);
     }

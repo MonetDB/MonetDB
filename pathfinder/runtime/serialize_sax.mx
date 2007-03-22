@@ -366,7 +366,7 @@ static bool
 sax_seqEmitInt(XqueryCtx* ctx, lng iv)
 {
     char buff[32];
-    sprintf(buff,"%lld",iv);
+    sprintf(buff,LLFMT,iv);
 
     return sax_handle_characters (ctx, buff);
 }

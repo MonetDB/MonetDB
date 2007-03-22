@@ -556,6 +556,9 @@
    */
 /* #undef ICONV_CONST */
 
+/* Format to print 64 bit signed integers. */
+#define LLFMT "%I64d"
+
 #define VERSION "@VERSION@"
 
 /* architecture-dependent files */
@@ -705,6 +708,9 @@
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
+
+/* Format to print 64 bit unsigned integers. */
+#define ULLFMT "%I64u"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32

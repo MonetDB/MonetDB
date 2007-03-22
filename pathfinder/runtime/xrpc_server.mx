@@ -779,7 +779,7 @@ getCallValues(stream *out,
                     if( (tpe_node_size != 1) || 
                         (pre_kindT[val_node_pre] != TEXT) ) {
                         snprintf(errstr, 1024, "XRPC request: "
-                                "iteration%lld/parameter%lld/value%lld "
+                                "iteration" LLFMT "/parameter" LLFMT "/value" LLFMT " "
                                 "of type \"%s\" is expected to have a "
                                 "simple value",
                                 i+1, j+1, k, argtpe[nr_args]);
@@ -809,7 +809,7 @@ getCallValues(stream *out,
                     }
                     if (val_node_pre == 0) {
                         snprintf(errstr, 1024, "XRPC request: "
-                                "iteration%lld/param%lld/value%lld "
+                                "iteration" LLFMT "/param" LLFMT "/value" LLFMT " "
                                 "does not contain a *node* value",
                                 i+1, j+1, k);
                         send_err(out, 1, ERR404, "env:Sender", errstr);
@@ -852,7 +852,7 @@ getCallValues(stream *out,
                         pre_propT[val_node_pre] = oid_nil;
                     } else {
                         snprintf(errstr, 1024, "XRPC request: "
-                                "iteration%lld/param%lld/value%lld "
+                                "iteration" LLFMT "/param" LLFMT "/value" LLFMT " "
                                 "contains unsupported type: %s\n",
                                 i+1, j+1, k, argtpe[nr_args]);
                         send_err(out, 1, ERR404, "env:Sender", errstr);
@@ -862,7 +862,7 @@ getCallValues(stream *out,
 
                     if (val_node_pre == 0) {
                         snprintf(errstr, 1024, "XRPC request: "
-                                "iteration%lld/param%lld/value%lld "
+                                "iteration" LLFMT "/param" LLFMT "/value" LLFMT " "
                                 "does not contain a *node* value",
                                 i+1, j+1, k);
                         send_err(out, 1, ERR404, "env:Sender", errstr);
@@ -996,7 +996,7 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 
     if (timing) {
         fprintf(stdout,
-                "XRPC_Server_DeSerialisation:   %lld microsec\n",
+                "XRPC_Server_DeSerialisation:   " LLFMT " microsec\n",
                 time_xrpcServDeSeria);
     }
 
