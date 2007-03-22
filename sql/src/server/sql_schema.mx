@@ -628,8 +628,8 @@ connect_catalog(mvc *sql, dlist *qname)
 	passwd = user_symb->data.lval->h->next->data.sval;
 	
 	if (db_alias == NULL){
-		snprintf(default_dbalias, BUFSIZ, "%s:%d_%s", server, port, db);
-		db_alias = default_dbalias;
+		snprintf(default_dbalias, BUFSIZ, "%s_%s_%s", server, db, user);
+		db_alias = GDKstrdup(default_dbalias);
 	}
 
 	if (lang == NULL){
