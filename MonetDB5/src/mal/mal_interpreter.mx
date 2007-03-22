@@ -1581,6 +1581,8 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag){
 		printTraceCall(cntxt->fdout,mb,stk,stkpc, cntxt->flags);
 		cntxt->timer = GDKusec();
+	} else if( cntxt->flags & flowFlag){
+		stream_printf(cntxt->fdout,"\n");
 	}
 }
 @-
