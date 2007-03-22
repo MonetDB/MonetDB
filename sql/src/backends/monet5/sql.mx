@@ -93,15 +93,15 @@ pattern getVariable( varname:str ):any_1
 address getVariable
 comment "Get the value of a session variable";
 
-command next_value( sequence:str ):lng
+command next_value( sname:str, sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
-command get_value( sequence:str ):lng
+command get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
 
-command restart( sequence:str, start:lng ):lng
+command restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
@@ -590,9 +590,9 @@ sql5_export str hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_variables(int *res);
-sql5_export str mvc_next_value(lng *res, str *seqname);
-sql5_export str mvc_get_value(lng *res, str *seqname);
-sql5_export str mvc_restart_seq(lng *res, str *seqname, lng *start);
+sql5_export str mvc_next_value(lng *res, str *sname, str *seqname);
+sql5_export str mvc_get_value(lng *res, str *sname, str *seqname);
+sql5_export str mvc_restart_seq(lng *res, str *sname, str *seqname, lng *start);
 sql5_export str mvc_affected_rows_int(int *r, int *nr, str *w);
 sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
@@ -941,7 +941,7 @@ sql_variables(int *res)
 }
 
 str
-mvc_next_value(lng *res, str *seqname)
+mvc_next_value(lng *res, str *sname, str *seqname)
 {
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
@@ -949,7 +949,7 @@ mvc_next_value(lng *res, str *seqname)
 
 	if (msg)
 		return msg;
- 	s = m->session->schema;
+ 	s = mvc_bind_schema(m, *sname);
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, *seqname);
 
@@ -960,7 +960,7 @@ mvc_next_value(lng *res, str *seqname)
 }
 
 str
-mvc_get_value(lng *res, str *seqname)
+mvc_get_value(lng *res, str *sname, str *seqname)
 {
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
@@ -968,7 +968,7 @@ mvc_get_value(lng *res, str *seqname)
 
 	if (msg)
 		return msg;
- 	s = m->session->schema;
+ 	s = mvc_bind_schema(m, *sname);
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, *seqname);
 
@@ -979,7 +979,7 @@ mvc_get_value(lng *res, str *seqname)
 }
 
 str
-mvc_restart_seq(lng *res, str *seqname, lng *start)
+mvc_restart_seq(lng *res, str *sname, str *seqname, lng *start)
 {
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
@@ -987,7 +987,7 @@ mvc_restart_seq(lng *res, str *seqname, lng *start)
 
 	if (msg)
 		return msg;
- 	s = m->session->schema;
+ 	s = mvc_bind_schema(m, *sname);
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, *seqname);
 

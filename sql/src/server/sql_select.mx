@@ -66,6 +66,7 @@ extern stmt *stmt2pivot(scope *scp, stmt *s);
 extern stmt *sql_compare(mvc *sql, scope *scp, stmt *ls, stmt *rs, char *compare_op, int f);
 extern stmt *complex_find_subset(stmt *subset, stmt *t);
 extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
+extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3);
 
 
 #endif /*_SQL_SELECT_H_*/
@@ -86,7 +87,6 @@ static stmt *sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, sym
 static stmt *sql_simple_select(mvc *sql, scope *scp, SelectNode *sn);
 static tvar *query_exp_optname(mvc *sql, scope *scp, symbol *q);
 static tvar *sql_subquery_optname(mvc *sql, scope *scp, symbol *query);
-static stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3);
 
 static void
 sql_select_cleanup(mvc *sql, stmt *s, stmt *subset, group *grp)
@@ -780,7 +780,7 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	return l;
 }
 
-static stmt *
+stmt *
 sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3)
 {
 	list *sl = create_stmt_list();
@@ -1493,6 +1493,15 @@ sql_table_exp(mvc *sql, scope *scp, symbol *sym )
 }
 
 stmt *
+stmt_seq_next(mvc *sql, char *sname, char *seqname)
+{
+	stmt *schema = stmt_atom_string(sname);
+	stmt *seq = stmt_atom_string(seqname);
+	return sql_binop_(sql, NULL, NULL, "next_value_for", schema, seq);
+}
+
+
+stmt *
 sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind ek)
 {
 
@@ -1581,12 +1590,18 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	}
 		break;
 	case SQL_NEXT:{
-		char *seq = se->data.sval;
+		char *seq = qname_table(se->data.lval);
+		char *sname = qname_schema(se->data.lval);
+		sql_schema *s = NULL;
 
-		if (!find_sql_sequence(sql->session->schema, seq)) 
+		if (sname && !(s = mvc_bind_schema(sql, sname)))
+			return sql_error(sql, 02, "NEXT VALUE FOR: no such schema '%s'", sname);
+		if (!s)
+			s = sql->session->schema;
+		if (!find_sql_sequence(s, seq)) 
 			return sql_error(sql, 02, "NEXT VALUE FOR: "
-			                 "no such sequence '%s'", seq);
-		return stmt_seq_next( _strdup(seq) );
+			                 "no such sequence '%s'.'%s'", s->base.name, seq);
+		return stmt_seq_next(sql, _strdup(s->base.name), _strdup(seq) );
 	}
 		break;
 	case SQL_CAST:

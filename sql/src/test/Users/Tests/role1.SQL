@@ -16,38 +16,6 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-PWD=`pwd`
-SQL='MapiClient -lsql -umonetdb -Pmonetdb'
-SQL1='MapiClient -lsql -uskyserver -Pskyserver'
-if [ $# -eq 1 ]; then
-	SQL=$1
-fi
+SQL="MapiClient -lsql -umy_user -Pp1 -h $HOST -p $MAPIPORT"
 
-#Generate Data...
-
-#Bulk-Load into SQL server...
-
-echo Create User
-$SQL < create_user.sql
-
-echo tables
-$SQL1 < Skyserver_tables.sql
-$SQL1 < Skyserver_constraints.sql
-
-echo views
-$SQL1 < Skyserver_views.sql
-
-echo functions
-$SQL1 < Skyserver_functions.sql
-
-echo Cleanup
-$SQL1 < Skyserver_dropFunctions.sql
-$SQL1 < Skyserver_dropMs_functions.sql
-$SQL1 < Skyserver_dropMath.sql
-$SQL1 < Skyserver_dropCache.sql
-$SQL1 < Skyserver_dropViews.sql
-$SQL1 < Skyserver_dropConstraints.sql
-$SQL1 < Skyserver_dropTables.sql
-
-echo Remove User
-$SQL < drop_user.sql
+$SQL < ${RELSRCDIR}/../role.sql

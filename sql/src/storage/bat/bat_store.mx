@@ -3992,7 +3992,7 @@ validate_tables(sql_schema *s, sql_schema *os)
 			if (!t->base.wtime && !t->base.rtime)
 				continue;
 
-			ot = find_sql_table(os, t->base.name);
+ 			ot = find_sql_table(os, t->base.name);
 			if (ot && isTable(ot) && isTable(t)) {
 				if (t->base.wtime && (t->base.wtime < ot->base.rtime || (t->base.wtime < ot->base.wtime && t->base.rtime))) 
 					return 0;

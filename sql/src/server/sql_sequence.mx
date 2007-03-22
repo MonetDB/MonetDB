@@ -52,16 +52,22 @@ sql_create_seq(
 	int cycle)
 {
 	char* name = qname_table(qname);
+	char *sname = qname_schema(qname);
+	sql_schema *s = NULL;
 
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "CREATE SEQUENCE: no such schema '%s'", sname);
+	if (s == NULL)
+		s = ss;
 	(void) tpe;
-	if (find_sql_sequence(sql->session->schema, name)) {
+	if (find_sql_sequence(s, name)) {
 		return sql_error(sql, 02,
 				"CREATE SEQUENCE: "
 				"name '%s' already in use", name);
-	} else if (!schema_privs(sql->role_id, ss)) {
+	} else if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02,
 				"CREATE SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
+				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	/* generate defaults */
@@ -71,7 +77,7 @@ sql_create_seq(
 	if (max < 0) max = 0;
 	if (cache <= 0) cache = 1;
 
-	sql_trans_create_sequence(sql->session->tr, ss, name, start, min, max, inc, cache, cycle);  
+	sql_trans_create_sequence(sql->session->tr, s, name, start, min, max, inc, cache, cycle);  
 	return stmt_none();
 }
 
@@ -89,30 +95,34 @@ sql_alter_seq(
 		int cycle)
 {
 	char* name = qname_table(qname);
+	char *sname = qname_schema(qname);
 	int start_type = start_list->h->data.ival;
 	sql_sequence *seq;
-	stmt *val = NULL, *seqname = NULL;
-	sql_subfunc *f = NULL;
-	sql_subtype *str_t = sql_bind_localtype("str");
+	stmt *val = NULL, *ssname = NULL, *seqname = NULL;
 	sql_subtype *lng_t = sql_bind_localtype("lng");
+	sql_schema *s = NULL;
 
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "CREATE SEQUENCE: no such schema '%s'", sname);
+	if (!s)
+		s = ss;
 	(void) tpe;
-	if (!(seq = find_sql_sequence(sql->session->schema, name))) {
+	if (!(seq = find_sql_sequence(s, name))) {
 		return sql_error(sql, 02,
 				"ALTER SEQUENCE: "
 				"no such sequence '%s'", name);
 	}
-	if (!schema_privs(sql->role_id, ss)) {
+	if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02,
 				"ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
+				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	/* first alter the known values */
 	sql_trans_alter_sequence(sql->session->tr, seq, min, max, inc, cache, cycle);
 
-	/* restart maybe a query, ie we create a binary statement 
-	   restart(seqname,value) */ 
+	/* restart maybe a query, ie we create a statement 
+	   restart(ssname,seqname,value) */ 
 
 	if (start_type == 0) {
 		val = stmt_atom_lng(seq->start);
@@ -125,23 +135,28 @@ sql_alter_seq(
 	} else if (start_type == 2) {
 		val = stmt_atom_lng(start_list->h->next->data.ival);
 	}
+	ssname = stmt_atom_string(_strdup(seq->s->base.name));
 	seqname = stmt_atom_string(_strdup(name));
-	f = sql_bind_func(ss, "restart", str_t, lng_t);
-	assert(f);
-	return stmt_binop(seqname, val, f);
+	return sql_Nop_(sql, "restart", ssname, seqname, val);
 }
 
 static stmt *
 sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
 {
 	char *name = qname_table(qname);
+	char *sname = qname_schema(qname);
+	sql_schema *s = NULL;
 
-	if (!find_sql_sequence(sql->session->schema, name)) {
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "CREATE SEQUENCE: no such schema '%s'", sname);
+	if (!s)
+		s = ss;
+	if (!find_sql_sequence(s, name)) {
 		return sql_error(sql, 02, "DROP SEQUENCE: no such sequence '%s'", name);
-	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"),  ss->base.name);
+	} else if (!schema_privs(sql->role_id, s)) {
+		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"),  s->base.name);
 	}
-	sql_trans_drop_sequence(sql->session->tr, ss, name);  
+	sql_trans_drop_sequence(sql->session->tr, s, name);  
 	return stmt_none();
 }
 

@@ -1057,13 +1057,15 @@ stmt *
 push_project(stmt *rows, stmt *val) 
 {
 	switch (val->type) {
-	case st_convert:
+	case st_binop:
+		val->op2.stval = push_project(rows, val->op2.stval);
 	case st_unop:
+	case st_convert:
 		val->op1.stval = push_project(rows, val->op1.stval);
 		val->nrcols = rows->nrcols;
 		return val;
 	default:
-		return stmt_const(rows, val);
+		return stmt_const(stmt_dup(rows), val);
 	}
 }
 
@@ -1268,7 +1270,7 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 						return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
 					}
 					if (ic && !(ic->key && ic->nrcols == 0))
-						s = push_project(stmt_dup(ic), s);
+						s = push_project(ic, s);
 					inserts[i] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), s);
 				}
 			}

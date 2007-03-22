@@ -29,8 +29,10 @@ $SQL < ${RELSRCDIR}/../create_user.sql
 
 echo tables
 $SQL1 < $RELSRCDIR/../../../sql/math.sql
+$SQL1 < $RELSRCDIR/../../../sql/cache.sql
 $SQL1 < $RELSRCDIR/../../../sql/ms_functions.sql
 $SQL1 < ${RELSRCDIR}/../Skyserver_tables.sql
+$SQL1 < ${RELSRCDIR}/../Skyserver_constraints.sql
 
 echo views
 $SQL1 < ${RELSRCDIR}/../Skyserver_views.sql
@@ -40,7 +42,11 @@ $SQL1 < ${RELSRCDIR}/../Skyserver_functions.sql
 
 echo Cleanup
 $SQL1 < ${RELSRCDIR}/../Skyserver_dropFunctions.sql
+$SQL1 < ${RELSRCDIR}/../Skyserver_dropMs_functions.sql
+$SQL1 < ${RELSRCDIR}/../Skyserver_dropMath.sql
+$SQL1 < ${RELSRCDIR}/../Skyserver_dropCache.sql
 $SQL1 < ${RELSRCDIR}/../Skyserver_dropViews.sql
+$SQL1 < ${RELSRCDIR}/../Skyserver_dropConstraints.sql
 $SQL1 < ${RELSRCDIR}/../Skyserver_dropTables.sql
 
 echo Remove User

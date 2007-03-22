@@ -74,13 +74,13 @@ access after being logged in.
 	.COMMAND setVariable( mvc m, str varname, any::1 val ) = setVariable;
 		"Set the value of a session variable in the mvc structure"
 
-	.COMMAND mvc_next_value( mvc m, str sequence ) : lng = mvc_next_value;
+	.COMMAND mvc_next_value( mvc m, str sname, str seqname ) : lng = mvc_next_value;
 		"return the next value of the sequence"
 
-	.COMMAND mvc_get_value( mvc m, str sequence ) : lng = mvc_get_value;
+	.COMMAND mvc_get_value( mvc m, str sname, str sequence ) : lng = mvc_get_value;
 		"return the current value of the sequence"
 
-	.COMMAND mvc_restart_seq( mvc m, str sequence, lng start ) : lng = mvc_restart_seq;
+	.COMMAND mvc_restart_seq( mvc m, str sname, str sequence, lng start ) : lng = mvc_restart_seq;
 		"restart the sequence with value start"
 @-
 The updates against the relational tables are collected in separate
@@ -414,10 +414,10 @@ getVariable(ptr value, int *type, mvc* M, str varname)
 
 /* TODO pass also the schema name */
 int
-mvc_next_value(lng *res, mvc *C, str seqname)
+mvc_next_value(lng *res, mvc *C, str sname, str seqname)
 {
 	mvc *c = *(mvc**)C;
-	sql_schema *s = c->session->schema;
+	sql_schema *s = mvc_bind_schema(c, sname);
 
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, seqname);
@@ -428,10 +428,10 @@ mvc_next_value(lng *res, mvc *C, str seqname)
 	return GDK_FAIL;
 }
 int
-mvc_get_value(lng *res, mvc *C, str seqname)
+mvc_get_value(lng *res, mvc *C, str sname, str seqname)
 {
 	mvc *c = *(mvc**)C;
-	sql_schema *s = c->session->schema;
+	sql_schema *s = mvc_bind_schema(c, sname);
 
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, seqname);
@@ -443,10 +443,10 @@ mvc_get_value(lng *res, mvc *C, str seqname)
 }
 
 int
-mvc_restart_seq(lng *res, mvc *C, str seqname, lng *start)
+mvc_restart_seq(lng *res, mvc *C, str sname, str seqname, lng *start)
 {
 	mvc *c = *(mvc**)C;
-	sql_schema *s = c->session->schema;
+	sql_schema *s = mvc_bind_schema(c, sname);
 
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, seqname);
@@ -1381,14 +1381,14 @@ proc log2(int i) : int {
 
 # forward reference, will be filled in the sql session 
 var myc := mvc(ptr(nil));
-proc next_value( str v ) : lng {
-	return mvc_next_value(myc, v);
+proc next_value( str sname, str v ) : lng {
+	return mvc_next_value(myc, sname, v);
 }
-proc get_value( str v ) : lng {
-	return mvc_get_value(myc, v);
+proc get_value( str sname, str v ) : lng {
+	return mvc_get_value(myc, sname, v);
 }
-proc restart( str seq, lng v ) : lng {
-	return mvc_restart_seq(myc, seq, v);
+proc restart( str sname, str seq, lng v ) : lng {
+	return mvc_restart_seq(myc, sname, seq, v);
 }
 
 proc SQLgroup(BAT[oid,any] a) : grp {

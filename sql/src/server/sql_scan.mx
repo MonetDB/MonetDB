@@ -46,6 +46,8 @@ struct scanner {
 	int key;		/* query hash */
 	int started;		/* found at least one token */
 	prot mode;		/* which mode (line (1,N), blocked) */
+	char *schema;		/* Keep schema name of create statement, 
+				   needed AUTO_INCREMENT, SERIAL */
 };
 
 #define QUERY(scanner) (scanner.rs->buf+scanner.rs->pos)
@@ -370,6 +372,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 	s->as = s->view_end = 0;
 
 	s->mode = LINE_N;
+	s->schema = NULL;
 }
 
 void
@@ -394,6 +397,7 @@ scanner_query_processed(struct scanner *s)
 	s->key = 0;		/* keep a hash key of the query */
 	s->started = 0;
 	s->as = s->view_end = 0;
+	s->schema = NULL;
 }
 
 static int

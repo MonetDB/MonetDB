@@ -53,6 +53,7 @@ typedef enum modes_t {
 } modes_t;
 
 #define CACHE_MODE(m) (m==m_normal||m==m_profile||m==m_debug||m==m_trace)
+#define QUERY_MODE(m) (m==m_normal||m==m_inplace||m==m_execute)
 
 typedef struct sql_var {
 	struct stmt *s;
@@ -99,6 +100,7 @@ typedef struct mvc {
 
 	sql_session *session;	
 
+	/* current stmt variables */
 	int type;		/* query type */
 	unsigned int depth;	/* depth of the current expression */
 	int label;		/* numbers for relational projection labels */

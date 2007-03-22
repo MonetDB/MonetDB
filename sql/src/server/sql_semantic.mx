@@ -986,9 +986,12 @@ char *symbol2string(mvc *sql, symbol *se)
 		break;
 	}
 	case SQL_NEXT:{
-		char *seq = se->data.sval;
-		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\"",
-				sql_escape_ident(seq)); 
+		char *seq = qname_table(se->data.lval);
+		char *sname = qname_schema(se->data.lval);
+		
+		if (!sname)
+			sname = sql->session->schema->base.name;
+		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, sql_escape_ident(seq)); 
 	}	break;
 	case SQL_COLUMN: {
 		/* can only be variables */ 

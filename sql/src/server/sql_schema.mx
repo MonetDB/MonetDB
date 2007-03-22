@@ -95,7 +95,8 @@ grant_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int gra
 			   exception(count(r) > 0), "Role (%s,%s) already granted", role, grantee;
 			   relinsert(role_user,role_id,grantee_id,grantor,grant);
 			 */
-			sql_grant_role(sql, grantee, role);
+			if (!sql_grant_role(sql, grantee, role)) 
+				return sql_error(sql, 02, "GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, role );
 		}
 	}
 	return stmt_none();
@@ -583,6 +584,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		list_destroy(func_l);
 		list_destroy(view_id_l);
 		stmt_destroy(sq);
+		sq = NULL;
 	}
 	scope_close(scp);
 	
@@ -1774,6 +1776,9 @@ stmt *
 schemas(mvc *sql, symbol *s)
 {
 	stmt *ret = NULL;
+
+	if (!QUERY_MODE(sql->mode))
+		return sql_error(sql, 05, "Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement");
 
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
