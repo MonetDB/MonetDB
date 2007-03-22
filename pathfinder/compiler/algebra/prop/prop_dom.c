@@ -525,8 +525,27 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_cross:
-            bulk_add_dom (n->prop, L(n));
-            bulk_add_dom (n->prop, R(n));
+            /* we have to make sure to assign subdomains as otherwise
+               dynamic empty relations might be ignored */
+
+            /* create new subdomains for all attributes */
+            for (unsigned int i = 0; i < L(n)->schema.count; i++) {
+                add_subdom (n->prop,
+                            PFprop_dom (L(n)->prop,
+                                        L(n)->schema.items[i].name),
+                            id);
+                add_dom (n->prop, L(n)->schema.items[i].name, id);
+                id++;
+            }
+            /* create new subdomains for all attributes */
+            for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                add_subdom (n->prop,
+                            PFprop_dom (R(n)->prop,
+                                        R(n)->schema.items[i].name),
+                            id);
+                add_dom (n->prop, R(n)->schema.items[i].name, id);
+                id++;
+            }
             break;
 
         case la_eqjoin:
