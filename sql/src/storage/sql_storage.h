@@ -117,6 +117,6 @@ extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int id);
 extern int sql_trans_connect_catalog(sql_trans *tr, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lng);
 extern int sql_trans_disconnect_catalog(sql_trans *tr, char *db_alias);
 extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
-extern list *sql_trans_get_connection(sql_trans *tr,int id, char *server, char *db, char *db_alias);
+extern list *sql_trans_get_connection(sql_trans *tr,int id, char *server, char *db, char *db_alias, char *user);
 
 #endif /*SQL_STORAGE_H */

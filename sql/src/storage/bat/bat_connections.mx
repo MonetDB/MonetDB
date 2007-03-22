@@ -44,10 +44,10 @@ create_connections_table(sql_trans *tr, sql_schema *s){
 	create_column(tr, t, "server", "char",1024);
 	create_column(tr, t, "port", "int",32);
 	create_column(tr, t, "db", "char",64);
-	create_column(tr, t, "db_alias", "char",64);
-	create_column(tr, t, "user", "char",64);
-	create_column(tr, t, "password", "char",64);
-	create_column(tr, t, "language", "char",64);
+	create_column(tr, t, "db_alias", "char",1024);
+	create_column(tr, t, "user", "char",1024);
+	create_column(tr, t, "password", "char",1024);
+	create_column(tr, t, "language", "char",1024);
         return 0;
 }
 
@@ -87,6 +87,8 @@ sql_trans_disconnect_catalog(sql_trans* tr, char * db_alias)
 		id = *(int *) column_find_value(tr, col_id, rid);
 		table_delete(tr, t, rid);
 	}
+	else 
+		id = 0;
 
 	return id;
 }
@@ -103,7 +105,7 @@ sql_trans_disconnect_catalog_ALL(sql_trans* tr)
 }
 
 list*
-sql_trans_get_connection(sql_trans* tr, int id, char *server, char *db, char *db_alias)
+sql_trans_get_connection(sql_trans* tr, int id, char *server, char *db, char *db_alias, char *user)
 {
 	ssize_t rid = -1;
 	sql_schema *s = find_sql_schema(tr, "sys");	
@@ -122,7 +124,7 @@ sql_trans_get_connection(sql_trans* tr, int id, char *server, char *db, char *db
 	col_lang = find_sql_column(con, "language");
 	
 	if (db_alias == NULL){
-		snprintf(dbalias, BUFSIZ, "%s_%s", server, db);
+		snprintf(dbalias, BUFSIZ, "%s_%s_%s", server, db, user);
 		db_alias = dbalias;
 	}
 
