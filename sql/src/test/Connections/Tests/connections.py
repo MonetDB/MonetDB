@@ -36,8 +36,6 @@ def client_load_file(clt, port, file):
 	line = line.replace('port_num', str(port+1))
 	line = line.replace('port_num_5', str(port+2))
 	line = line.replace('port_num_6', str(port+3))
-        sys.stdout.write('"%s"\n' % (line))
-    	sys.stdout.flush()
 	clt.write(line)
     
 
