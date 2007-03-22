@@ -123,8 +123,10 @@ pftijah_options_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value)
     	// INCOMPLETE, check if it is a correct number
 	loc = (str)"returnNumber";
     } else if ( (strcmp(loc,"collection")==0) ) {
+        stream_printf(GDKout,"# WARNING: TijahOptions attr: \"collection\" is DEPRECATED, use \"ft-index\".\n");
 	loc = (str)"ft-index"; /* TEMPORARY helping transition */
     } else if ( (strcmp(loc,"txtmodel_model")==0) ) {
+        stream_printf(GDKout,"# WARNING: TijahOptions attr: \"txtmodel_model\" is DEPRECATED, use \"ir-model\".\n");
 	loc = (str)"ir-model"; /* TEMPORARY helping transition */
     }
     if ( !BUNins(ptoctx->bat, loc, value, FALSE) ) {

@@ -515,10 +515,17 @@ PROC modify_pfc_fti(str fti_name, BAT[void,str]  v_pfc) : BAT[str,str] :=
 
     lock_set(tj_dep_lock);
     var err := CATCH({
-	var new_fti_pfc := v_pfc.tunique().project(fti_name).reverse().sunique();
 	var glb_fti_pfc     := bat("tj_pfc_fti_dep");
-	var d := new_fti_pfc.sdiff(glb_fti_pfc); 
-	var sz := d.count();
+	var fti_dep := glb_fti_pfc.reverse().select(fti_name).reverse();
+	if ( fti_dep.select("*").count() > 0 ) {
+	    ERROR("# pfc_fti_dep: unable to extend ft-index when created with *\n");
+	}
+	var new_fti_pfc := v_pfc.tunique().project(fti_name).reverse().sunique().tdiff(fti_dep);
+	if ( verbose ) {
+	    printf("#TJ:modify_pfc_fti: ***** added dep ***\n");
+	    new_fti_pfc.print();
+	}
+	var sz := new_fti_pfc.count();
 	if ( sz > 0 ) {
 	    if ( sz = 1 ) {
 		glb_fti_pfc.insert(new_fti_pfc);
@@ -532,7 +539,7 @@ PROC modify_pfc_fti(str fti_name, BAT[void,str]  v_pfc) : BAT[str,str] :=
 		glb_fti_pfc.insert(new_fti_pfc);
 	    }
 	}
-	result := d;
+	result := new_fti_pfc;
     });
     if ( verbose ) {
     	printf("\n# LOG modify_pfc_fti(\"%s\") START, v_pfc =\n", fti_name);
