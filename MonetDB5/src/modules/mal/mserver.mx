@@ -1307,7 +1307,8 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 	for(i=0; i<MAXSESSIONS; i++)
 		 if( SERVERsessions[i].dbalias &&
 			 strcmp(SERVERsessions[i].dbalias, *dbalias)==0){
-				SERVERsessions[i].c = NULL;
+				SERVERsessions[i].c = 0;
+				SERVERsessions[i].dbalias = NULL;
 				*key = SERVERsessions[i].key;
 				mapi_disconnect(SERVERsessions[i].mid);
 				break;
@@ -1315,7 +1316,7 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 
 	if( i==MAXSESSIONS){
 		mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
-		throw(IO, "mserver.disconnect", "Impossible to close session for db_alias: '%s'", dbalias);
+		throw(IO, "mserver.disconnect", "Impossible to close session for db_alias: '%s'", *dbalias);
 	}
 
 	mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
