@@ -88,7 +88,7 @@ static void
 print_comment (PFsql_t* n)
 {
      sqlprintf("--");
-     sqlprintf("%s", n->sem.comment);
+     sqlprintf("%s\n", n->sem.comment);
 }
 
 static void
@@ -210,20 +210,30 @@ static void
 print_common_table_expressions(PFsql_t *n)
 {
    assert( n );
+   /* keep stack to avoid printing a comma
+	  after last binding */
+   static unsigned int count = 0;
    switch( n->kind ) {
        case sql_cmmn_tbl_expr:
        {
+		   count++;
            print_common_table_expressions( n->child[0] );
-	   sqlprintf(", \n");
            print_common_table_expressions( n->child[1] );
+		   count--;
        } break;
        case sql_comment:
        {
-	    print_comment(n);
+	       print_comment (n);
+       } break;
+       case sql_bind:
+       {
+		   print_common_table_expression (n);
+		   if (count > 1) sqlprintf (",\n");
+		   sqlprintf("\n");
        } break;
        default:
        {
-           print_common_table_expression( n );
+			   PFoops (OOPS_FATAL, "SQL grammar seems to be incorrect.");
        } break;
    }
 }
