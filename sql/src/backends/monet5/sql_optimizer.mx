@@ -407,6 +407,7 @@ tested extensively and should provide overall good performance.
 @c
 str defaultPlan=
 	"inline,"
+	"remap,"
 	/*"evaluate,"*/
 	"costModel,"
 	"coercions,"
@@ -508,7 +509,7 @@ And before we actually execute the program, we should
 expand the macros (unless this has already been taken
 care of.
 @c
-	if( strcmp(optimizer,"off")==0 ){
+	if( strcmp(optimizer,"off")==0 ){ 
 		/* no optimization needed */
 		OPTmultiplex(mb,0,0);	/* always perform multiplex expansions */
 	} else {
