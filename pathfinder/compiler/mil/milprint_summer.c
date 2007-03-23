@@ -8051,8 +8051,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		milprintf(f, "    var optbat := new(str,str);\n");
 	}
 	milprintf(f,
-		"    var fti_name := tj_get_ft_index(optbat);\n"
-		);
+		"    var fti_name := tj_get_ft_index(optbat,%s);\n"
+		,((is_delete||is_extend)?"true":"false"));
 	if ( is_delete ) {
 	  milprintf(f,
                 "    tj_delete_collection(fti_name);\n"
@@ -8157,8 +8157,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var optbat := new(str,str,32);\n");
 
 	  milprintf(f,
-		"    var coll := collName;\n"
-		"    if ( optbat.exist(\"ft-index\") ) { coll := optbat.find(\"ft-index\"); }\n"
+	        "    var coll := tj_get_ft_index(optbat,true);\n"
 		"    tijah_lock := tj_get_collection_lock(coll);\n"
 		"    lock_set(tijah_lock);\n"
 		"    var startNodes;\n"

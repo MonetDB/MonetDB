@@ -212,16 +212,16 @@ var verbose := false;
 
 const dflt_ft_index := "DFLT_FT_INDEX";
 
-PROC tj_get_ft_index(BAT[str,str] tj_options) : str :=
+PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str :=
 {
     var res := dflt_ft_index;
-    var b   := tj_options.reverse().select("ft-index").reverse();
-    if ( b.count() > 0 ) {
-        if ( b.count() = 1 ) {
-	     res := b.find("ft-index");
-	} else {
-	     ERROR("tj_get_ft_index: multiple ft-index tags in TijahOptions.\n");
-	}
+    if ( tj_options.exist("ft-index") ) {
+        res := tj_options.find("ft-index");
+    }
+    if ( chk_exists ) {
+      if ( not(bat("tj_collName").reverse().exist(res)) ) {
+    	ERROR("tj_get_ft_index, ft-index \"%s\" does not exist\n",res);
+      }
     }
     if ( verbose ) printf("#TJ:tj_get_ft_index() = %s.\n",res);
     return res;
