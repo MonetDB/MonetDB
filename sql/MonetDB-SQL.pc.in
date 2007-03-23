@@ -23,6 +23,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 modpath=${libdir}/MonetDB:${libdir}/MonetDB/lib:${libdir}/MonetDB/bin
+classpath=${libdir}/MonetDB/java/MonetDB_JDBC.jar
 
 Name: ${pkg}
 Description: A SQL/ODBC/JDBC interface to MonetDB.
