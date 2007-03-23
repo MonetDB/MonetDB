@@ -1643,7 +1643,7 @@ sql_delete_triggers(mvc *sql, sql_table *t, stmt *deletes, list *l)
 
 
 static void 
-sql_delete_key(mvc *sql, stmt *deletes, sql_key *k, list *l) 
+sql_delete_ukey(mvc *sql, stmt *deletes, sql_key *k, list *l) 
 {
 	sql_ukey *uk = (sql_ukey*)k;
 
@@ -1690,7 +1690,7 @@ sql_delete_keys(mvc *sql, sql_table *t, stmt *deletes, list *l)
 		sql_key *k = n->data;
 
 		if (k->type == pkey || k->type == ukey) 
-			sql_delete_key(sql, deletes, k, l);
+			sql_delete_ukey(sql, deletes, k, l);
 	}
 	return res;
 }
