@@ -16,6 +16,6 @@ m:= bat.new(:oid,:str);
 bat.insert(m,10:oid,"ten");
 bat.insert(m,20:oid,"twenty");
 dir();
-r:bat[:oid,:bat]:= optimizer.multiplex("user","createBAT",m);
+r:bat[:oid,:bat]:= mal.multiplex("user","createBAT",m);
 dir();
 io.print(r);

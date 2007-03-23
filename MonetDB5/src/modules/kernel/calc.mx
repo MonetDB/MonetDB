@@ -447,23 +447,23 @@ This is a noop operation that should ideally be filtered out with
 the code squeezer. [TODO]
 @+ OID utility functions
 @mal
-command newoid() :oid 
+command newoid{unsafe}() :oid 
 address CALCnewoidBase
 comment "Generate a new oid. Equivalent to newoid(0,1)";
 
-command newoid(incr:lng) :oid 
+command newoid{unsafe}(incr:lng) :oid 
 address CALCnewoidInclng;
-command newoid(incr:int) :oid 
+command newoid{unsafe}(incr:int) :oid 
 address CALCnewoidInc
 comment "Reserves a range of consecutive unique OIDs; returns the lowest 
 		in range.  equivalent to newoid(0,incr)";
 
-command setoid(base:oid) :oid 
+command setoid{unsafe}(base:oid) :oid 
 address CALCsetoidInc
 comment "Sets the oid range of consecutive unique OIDs; returns the 
 		lowest in range.";
 
-command setoid() :oid 
+command setoid{unsafe}() :oid 
 address CALCsetoidBase
 comment "Equivalent to setoid(1:oid).";
 @+ Example script 

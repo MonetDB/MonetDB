@@ -21,7 +21,7 @@ towards their proper module of interest.
 A good example are is the
 multiplex instruction, which can be implemented in several ways.
 The bottom line implementation is the iterator produced
-in @code{optimizer.multiplex}. Often, however, there are
+in @code{mal.multiplex}. Often, however, there are
 already highly tuned multiplex implementations. 
 They have to be located amongst the modules.
 
@@ -34,7 +34,7 @@ An illustrative example is the following MAL snippet:
 	V2 := remap.multiplex("calc","+",V1,1);
 	optimizer.remap();
 @end verbatim
-The dead code removal trims this program to the following short block:
+The remap optimizer trims this program to the following short block:
 @verbatim
 	V1 := bat.new(:oid,:int);
 	V2 := batcalc.+(V1,1);
@@ -47,10 +47,9 @@ pattern optimizer.remap(mod:str, fcn:str):str
 address OPTremap
 comment "Remapping function calls to a their multiplex variant";
 @-
-Use a dummy module to catch the function calls.
+Use a dummy signature to catch the function calls of interest.
 @mal
-module remap;
-pattern multiplex(a:any...):any
+pattern mal.multiplex(a:any...):any
 address OPTremapMultiplex;
 @h
 #ifndef _OPT_REMAP_
@@ -62,8 +61,7 @@ address OPTremapMultiplex;
 #include "mal_function.h"
 #include "mal_exception.h"
 
-/* #define DEBUG_OPT_REMAP      trace its behavior */
-
+/* #define DEBUG_OPT_REMAP       trace its behavior */
 #endif
 @-
 The first attempt of the multiple optimizer is to locate
@@ -91,9 +89,10 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	stream_printf(GDKout,"found a candidate %s.%s\n",mod,fcn);
 #endif
 	snprintf(buf,1024,"bat%s",mod);
-	mod = putName(buf,strlen(buf));
-	fcn = putName(fcn,strlen(fcn));
-	p= newFcnCall(mb,mod,fcn);
+	p= newInstruction(mb,ASSIGNsymbol);
+	setModuleId(p,putName(buf, strlen(buf)));
+	setFunctionId(p,putName(fcn, strlen(fcn)));
+
 	for(i=0; i<pci->retc; i++)
 		getArg(p,0)= getArg(pci,i);
 	p->retc= p->argc= pci->retc;
@@ -105,9 +104,11 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	/* now see if we can resolve the instruction */
 	typeChecker(scope,mb,p,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
-		removeInstruction(mb,p);
+		freeInstruction(p);
+		mb->errors= 0;
 		return 0;
 	}
+	pushInstruction(mb,p);
 #ifdef DEBUG_OPT_REMAP
 	stream_printf(GDKout,"success\n");
 #endif
@@ -133,15 +134,12 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if (msg == MAL_SUCCEED &&
-			getModuleId(p) == remapRef && 
+			getModuleId(p) == malRef && 
 			getFunctionId(p) == multiplexRef) {
-			if(OPTremapDirect(mb, stk, p, scope)) {
+			if(mb->errors== 0 && OPTremapDirect(mb, stk, p, scope))
 				freeInstruction(p); 
-			} else {
-				/* moveit to the multiplex optimizer */
-				setModuleId(p, putName("optimizer",9));
+			else
 				pushInstruction(mb, p);
-			}
 			doit++;
 		} else
 			pushInstruction(mb, p);
@@ -157,7 +155,7 @@ OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void)stk;
 	(void) p;
-	throw(MAL,"remap.multiplex","no implementation present");
+	throw(MAL,"mal.multiplex","no implementation present");
 }
 @include optimizerWrapper.mx
 @h

@@ -5,5 +5,5 @@
 	bat.append(t,"sleep well");
 	io.print(t);
 
-	b:bat[:oid,:bit]:= optimizer.multiplex("str","startsWith",t,"");
+	b:bat[:oid,:bit]:= mal.multiplex("str","startsWith",t,"");
 	io.print(b);

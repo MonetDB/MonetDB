@@ -71,6 +71,9 @@ OPTallConstant(MalBlkPtr mb, InstrPtr p){
 	for( i= p->retc; i < p->argc; i++)
 		if( isConstant(mb, getArg(p,i)) == FALSE)
 			return FALSE;
+	for( i=0; i<p->retc; i++)
+		if( isaBatType(getArgType(mb,p,i)))
+			return FALSE;
 	return ( getModuleId(p) == calcRef || 
 			 getModuleId(p) == strRef ||
 			 getModuleId(p) == mmathRef);
@@ -111,7 +114,8 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
-				getLastUpdate(mb,getArg(p,0)) == i ){
+				getLastUpdate(mb,getArg(p,0)) == i  &&
+				!isUnsafeFunction(p)){
 				msg= reenterMAL(c,mb,i,i+1,env,0,0);
 #ifdef DEBUG_OPT_CX
 				stream_printf(GDKout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);

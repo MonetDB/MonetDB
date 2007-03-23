@@ -29,7 +29,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	stream_printf(GDKout,"apply @1\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
-	if( p && p->argc > 1 && getFunctionId(p) != multiplexRef){
+	if( p && p->argc > 1 ){
 #ifdef _DEBUG_OPTIMIZER_
 		stream_printf(GDKout,"locate function @1\n");
 #endif

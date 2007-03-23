@@ -197,10 +197,9 @@ command srand(seed:int) :void
 address MATHsrandint
 comment "initialize the rand() function with a seed";
 
-function mmath.pi():dbl;
-	pi := 3.14159265358979323846:dbl;
-	return pi;
-end pi;
+command pi():dbl
+address MATHpi
+comment "return an important mathematical value";
 
 @-
 The constants defined in math.h are defined in const.mx
@@ -604,4 +603,11 @@ MATHsrandint(int *seed)
 	return MAL_SUCCEED;
 }
 
+mmath_export str MATHpi(dbl *pi);
+str
+MATHpi(dbl *pi)
+{
+	*pi = 3.14159265358979323846;
+	return MAL_SUCCEED;
+}
 @}

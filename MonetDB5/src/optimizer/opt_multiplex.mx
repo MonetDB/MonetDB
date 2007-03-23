@@ -27,7 +27,7 @@ applied also as
 @sc{[CMD](bat[:any_1,:T1],...,bat[any_1,Tn]) :bat[any_1,Tr]}.
 
 The semantics of the multiplex is to perform the
-natural join on all bat-valued parameters, and to execute the 
+positional join on all bat-valued parameters, and to execute the 
 CMD for each combination of matching tuples. All results are 
 collected in a result BAT. 
 All but one argument may be replaced by a scalar value.
@@ -37,7 +37,8 @@ them to a MAL loop. A snippet of its behaviour:
 @verbatim
     b:= bat.new(:int,:int);
     bat.insert(b,1,1);
-    c:bat[:int,:int]:= optimizer.multiplex("calc.+",b,1);
+    c:bat[:int,:int]:= mal.multiplex("calc.+",b,1);
+	optimizer.multiplex();
 @end verbatim
 The current implementation requires the target type to be mentioned
 explicitly. The result of the optimizer is:
@@ -65,9 +66,14 @@ operators we assume aligned BATs and the script version does
 not deal with duplicates in the head of the bats.
 [/WARNING]
 @mal
-pattern optimizer.multiplex(CMD:str, a:any...):any
+pattern optimizer.multiplex():void
 address OPTmultiplex
 comment "Compiler for multiplexed instructions.";
+
+pattern optimizer.multiplex(mod:str,fcn:str):void
+address OPTmultiplex
+comment "Compiler for multiplexed instructions.";
+
 @h
 #ifndef _OPT_MULTIPLEX_H_
 #define _OPT_MULTIPLEX_H_
@@ -90,7 +96,7 @@ a valid program.
 @-
 The generic solution to the multiplex operators is to translate
 them to a MAL loop. 
-The call optimizer.multiplex(CMD,A1,...An) introduces the following code
+The call optimizer.multiplex(MOD,FCN,A1,...An) introduces the following code
 structure:
 
 @verbatim
@@ -99,7 +105,7 @@ barrier (mloop,h,t):= bat.newIterator(A1);
 	$1:= algebra.find(A1,h); 
 	$2:= A2;	# in case of constant?
 	...
-	cr:= mod.CMD($1,...,$n);
+	cr:= MOD.FCN($1,...,$n);
 	bat.insert(resB,h,cr);
 	redo (mloop,h,t):= bat.hasMoreElements(A1);
 end mloop;
@@ -252,15 +258,13 @@ find the actual arguments at the proper place of the callee.
 This optimizer is directly called for the current routine.
 It is more a code generator then an optimizer per se.
 @h
-opt_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export int OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
-str
-OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+int
+OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-
 	InstrPtr *old, p;
 	int i, limit,doit= 0;
-	lng clk=GDKusec();
 	str msg= MAL_SUCCEED;
 
 	(void) stk;
@@ -272,7 +276,7 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if (msg == MAL_SUCCEED &&
-			getModuleId(p) == optimizerRef && 
+			getModuleId(p) == malRef && 
 			getFunctionId(p) == multiplexRef) {
 			msg= OPTexpandMultiplex(mb, stk, p);
 			if( msg== MAL_SUCCEED){
@@ -285,8 +289,11 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, p);
 	}
 	GDKfree(old);
-	if( doit)
-		optimizerCheck(mb, "optimizer.multiplex", doit, GDKusec() - clk,OPT_CHECK_ALL);
-	return MAL_SUCCEED;
+	return doit;
 }
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(multiplex)@
+@c
+@:wrapOptimizer(multiplex,OPT_CHECK_ALL)@
 @}

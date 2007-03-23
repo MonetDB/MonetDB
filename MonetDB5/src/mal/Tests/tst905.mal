@@ -6,5 +6,5 @@ barrier (v,i):= language.newRange(0:lng);
 	redo (v,i):= language.nextElement(1:lng,10:lng);
 exit (v,i);
 c:= algebra.copy(b);
-x:bat[:lng,:lng]:= optimizer.multiplex("calc","+",b,c);
+x:bat[:lng,:lng]:= mal.multiplex("calc","+",b,c);
 io.print(x);

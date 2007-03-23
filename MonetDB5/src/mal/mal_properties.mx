@@ -98,7 +98,6 @@ is translated into the following code block;
 Property inspection and manipulation is strongly linked with the operators
 of interest. Optimizers continuously inspect and update the properties, while
 kernel operators should not be bothered with their existence.
-@{
 Property propagation is strongly linked with the actual operator 
 implementation.  We examine a few recurring cases.
 
@@ -283,6 +282,7 @@ The MAL language uses a few defaults, recognizable as properties
 @tab data can be appended
 @end multitable
 @-
+@{
 The code base supports multiple property sets.
 Not used right now.
 @h

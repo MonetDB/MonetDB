@@ -8,5 +8,5 @@ barrier (v,i):= language.newRange(0:lng);
 exit (v,i);
 io.print(b);
 c:= 1;
-xz:bat[:lng,:lng]:= optimizer.multiplex("calc","+",b,c);
+xz:bat[:lng,:lng]:= mal.multiplex("calc","+",b,c);
 io.print(xz);

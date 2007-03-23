@@ -37,6 +37,7 @@ end main;	# 11
 # h					symbol		symbol		 symbol																 symbol						  # name
 # str					str		str		str																str						  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "multiplex",				  "pattern",	  "user",	  "(a:any...):any ",													  "OPTremapMultiplex;"				  ]
 [ "main",				  "function",	  "user",	  "():void;",															  "nil"						  ]
 [ "InsertAVLIndex",			  "command",	  "crackers",	  "(b:bat[:any_1,:date],u:bat[:any_1,:date]):void ",										  "CRKInsertAVLIndex_date;"			  ]
 [ "InsertAVLIndex",			  "command",	  "crackers",	  "(b:bat[:any_1,:dbl],u:bat[:any_1,:dbl]):void ",										  "CRKInsertAVLIndex_dbl;"			  ]
@@ -453,7 +454,8 @@ end main;	# 11
 [ "joinPath",				  "pattern",	  "optimizer",	  "():str ",															  "OPTjoinPath;"				  ]
 [ "mergetable",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",												  "OPTmergetable;"				  ]
 [ "mergetable",			  "pattern",	  "optimizer",	  "():str ",														  "OPTmergetable;"				  ]
-[ "multiplex",				  "pattern",	  "optimizer",	  "(CMD:str,a:any...):any ",													  "OPTmultiplex;"				  ]
+[ "multiplex",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):void ",													  "OPTmultiplex;"				  ]
+[ "multiplex",			  "pattern",	  "optimizer",	  "():void ",															  "OPTmultiplex;"				  ]
 [ "macro",				  "pattern",	  "optimizer",	  "(mod:str,fcn:str,targetmod:str,targetfcn:str):void ",									  "OPTmacro;"					  ]
 [ "macro",				  "pattern",	  "optimizer",	  "(targetmod:str,targetfcn:str):void ",											  "OPTmacro;"					  ]
 [ "orcam",				  "pattern",	  "optimizer",	  "(mod:str,fcn:str,targetmod:str,targetfcn:str):void ",									  "OPTorcam;"					  ]
@@ -466,6 +468,8 @@ end main;	# 11
 [ "prelude",				  "pattern",	  "optimizer",	  "():void ",															  "optimizer_prelude;"				  ]
 [ "remoteQueries",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",													  "OPTremoteQueries;"				  ]
 [ "remoteQueries",			  "pattern",	  "optimizer",	  "():str ",															  "OPTremoteQueries;"				  ]
+[ "remap",				  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",												  "OPTremap;"					  ]
+[ "remap",				  "pattern",	  "optimizer",	  "():str ",														  "OPTremap;"					  ]
 [ "reduce",				  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",													  "OPTreduce;"					  ]
 [ "reduce",				  "pattern",	  "optimizer",	  "():str ",															  "OPTreduce;"					  ]
 [ "strengthReduction",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",													  "OPTstrengthReduction;"			  ]
@@ -3194,7 +3198,7 @@ end main;	# 11
 [ "log10",				  "command",	  "mmath",	  "(x:flt):flt ",														  "MATHunary_LOG10flt;"				  ]
 [ "log",				  "command",	  "mmath",	  "(x:dbl):dbl ",														  "MATHunary_LOGdbl;"				  ]
 [ "log",				  "command",	  "mmath",	  "(x:flt):flt ",														  "MATHunary_LOGflt;"				  ]
-[ "pi",					  "function",	  "mmath",	  "():dbl;",															  "nil"						  ]
+[ "pi",					  "command",	  "mmath",	  "():dbl ",														  "MATHpi;"					  ]
 [ "pow",				  "command",	  "mmath",	  "(x:dbl,y:dbl):dbl ",														  "MATHbinary_POWdbl;"				  ]
 [ "pow",				  "command",	  "mmath",	  "(x:flt,y:flt):flt ",														  "MATHbinary_POWflt;"				  ]
 [ "rand",				  "command",	  "mmath",	  "():int ",															  "MATHrandint;"				  ]

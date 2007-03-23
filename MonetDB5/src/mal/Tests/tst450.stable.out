@@ -119,7 +119,6 @@ end main;	# 16
 [ "pcre",	  nil	  ]
 [ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]
-[ "remap",	  nil	  ]
 [ "scheduler",	  nil	  ]
 [ "sema",	  nil	  ]
 [ "sqlblob",	  nil	  ]

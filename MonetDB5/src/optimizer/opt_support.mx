@@ -489,19 +489,19 @@ opt_export int allTargetsVisible(MalBlkPtr mb, int pc, int qc);
 @subsection Optimizer framework
 The large number of query transformers calls for a flexible scheme for
 the deploy them. The approach taken is to make all optimizers visible
-at the language level as a MAL pattern. Then (semantic) optimizer merely
+at the language level as a signature
+@code{optimizer.F()} and @code{optimizer.F(mod,fcn)}.
+The latter designates a target function to be inspected by
+the optimizer @code{F()}.
+Then (semantic) optimizer merely
 inspects a MAL block for their occurrences and activitates it.
 
-Furthermore, the default optimizer scheme can be associated with
-a client record. The strategic optimizer merely prepends each query with 
-this scheme before it searches/activates the optimizer routines.
-
 The optimizer routines have access to the client context, the MAL block,
-and the program counter where optimizer call was found. Each query
-transformer should remove itself from the MAL block;
+and the program counter where the optimizer call was found. Each optimizer
+should remove itself from the MAL block;
 
-The optimizer terminates when no optimizer transformer call remains.
-[Some of the optimizers above should be moved to the tactic level]
+The optimizer repeatedly runs through the program until
+no optimizer call is found.
 
 Note, all optimizer instructions are executed only once. This means that the
 instruction can be removed from further consideration. However, in the case
@@ -546,7 +546,7 @@ If one of the optimizers fails, we should not attempt others.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"
-
+#include "opt_multiplex.h"
 
 @-
 The optimizerCheck is defensive. In some cases, e.g. coercion,
@@ -587,70 +587,57 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 	return mb->errors;
 }
 @-
-Limit the loop count in the optimizer.
-Beware, the multiplex optimizer should only be called once.
-Each call will handle all occurrences.
+Limit the loop count in the optimizer to guard against indefinite
+recursion, provided the optimizer does not itself generate
+a growing list.
 @c
 str
 optimizeMALBlock(MalBlkPtr mb)
 {
 	InstrPtr p;
-	int pc, qot = 0, mopt=0;
+	int pc, qot = 0;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
-	InstrPtr *optimizers= alloca(sizeof(InstrPtr)*256);
-	str multiplex= putName("multiplex",9);
-
-#ifdef DEBUG_OPT_OPTIMIZER
-	int oldstop = mb->stop;
-#endif
 
 	optimizerInit();
 	/* assume the type and flow have been checked already */
 	do {
 		qot = 0;
-		for (pc = 0; pc < mb->stop && qot<256; pc++) {
+		for (pc = 0; pc < mb->stop ; pc++) {
 			p = getInstrPtr(mb, pc);
 			if (getModuleId(p) == optimizerRef && p->fcn) {
-				if( getFunctionId(p)!= multiplex)
-					optimizers[qot++]= p;
-				else if(mopt==0){
-					optimizers[qot++]= p;
-					mopt++;
-				}
-			}
-		}
-		/* we collected all optimizers known so far */
-		for( pc=0; pc<qot; pc++)
-			if (optimizers[pc]->fcn)
 				/* all optimizers should behave like patterns */
 				/* However, we don;t have a stack now */
-				msg = (str) (*optimizers[pc]->fcn) (mb, 0, optimizers[pc]);
-			else {
-				msg = createException(MAL, "optimizer", "Implementation missing");
-				printInstruction(GDKout,mb,optimizers[pc],LIST_MAL_ALL);
+				msg = (str) (*p->fcn) (mb, 0, p);
+				if (msg) {
+					str place = getExceptionPlace(msg);
+					showException(getExceptionType(msg), place, getExceptionMessage(msg));
+					GDKfree(place);
+					showErrors();
+					return msg;
+				}
+				pc= -1;
 			}
-			if (msg) {
-				str place = getExceptionPlace(msg);
-				showException(getExceptionType(msg), place, getExceptionMessage(msg));
-				GDKfree(place);
-				showErrors();
-				return msg;
-			}
-	} while (qot && cnt++ < 64);
-#ifdef DEBUG_OPT_OPTIMIZER
-	stream_printf(GDKout, "Optimizer effect %d -> %d instructions\n", 
-			oldstop, mb->stop);
-#endif
-	if (cnt >= 64)
+		}
+	} while (qot && cnt++ < mb->stop);
+	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", "too many optimization cycles\n");
 	return 0;
 }
 
+@-
+The default MAL optimizer includes a final call to
+the multiplex expander.
+@c
 str
 MALoptimizer(Client c)
 {
-	return optimizeMALBlock(c->curprg->def);
+	str msg;
+
+	msg= optimizeMALBlock(c->curprg->def);
+	if( msg == MAL_SUCCEED)
+		OPTmultiplex(c->curprg->def,0,0);
+	return msg;
 }
 
 int hasSameSignature(InstrPtr p, InstrPtr q){   
