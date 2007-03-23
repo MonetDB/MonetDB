@@ -287,9 +287,9 @@ PFsql_seq( const PFsql_t *schm_inf, const PFsql_t *cmtblexpr )
 /*............ Aggregat Functions ...........*/
 
 PFsql_t*
-PFsql_coalesce(PFsql_t* expr)
+PFsql_coalesce(PFsql_t* expr1, PFsql_t* expr2)
 {
-   return wire1 (sql_clsc, expr);
+   return wire2 (sql_clsc, expr1, expr2);
 }
 
 PFsql_t*

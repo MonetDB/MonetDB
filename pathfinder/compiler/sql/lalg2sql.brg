@@ -2553,19 +2553,23 @@ reduce(PFla_op_t *p, int goalnt)
                             sql_col_level)->ident)
                    ), /* level */
                    column_assign
-                       (
-                        sum
-                        (
-                         add
-                         (
-                          column_name (sql_special_name_new (
-                                  sql_col_size)->ident),
-                          lit_int (1)
-                         )
-                        ),
-                        column_name (sql_special_name_new (
-                                sql_col_size)->ident)
-                       ), /* size */
+                   (
+                    coalesce
+                    (
+                     sum
+                     (
+                      add
+                      (
+                       column_name (sql_special_name_new (
+                               sql_col_size)->ident),
+                       lit_int (1)
+                      )
+                     ),
+                     lit_int (0)
+                    ),
+                    column_name (sql_special_name_new (
+                            sql_col_size)->ident)
+                   ), /* size */
                    column_assign
                        (
                         lit_int (-2),

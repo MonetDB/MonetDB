@@ -403,6 +403,13 @@ static void
 print_statement(PFsql_t *n)
 {
     switch (n->kind) {
+        case sql_clsc:
+            PFprettyprintf ("COALESCE (");
+            print_statement (L(n));
+            PFprettyprintf (", ");
+            print_statement (R(n));
+            PFprettyprintf(")");
+            break;
         case sql_case:
             PFprettyprintf("CASE ");
             print_case (n);
@@ -411,7 +418,6 @@ print_statement(PFsql_t *n)
         case sql_asc:
             PFprettyprintf ("ASC");
             break;
-
         case sql_desc:
             PFprettyprintf ("DESC");
             break;
