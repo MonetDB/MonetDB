@@ -253,6 +253,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(variable\(s\) out of scope or unknown: at )(.*)\n',											# 18: 2
     r'^(bad usage of XML namespaces: at )(.*)\n',												# 19: 2
     r'^(QUERY = import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at ")(/.*)(/tests/XRpc/basic_queries/Tests/basicfunctions.xq";)\n',	# 20: 3
+    r"^(QUERY = connect)( to|)( ')(localhost)(' port )([0-9]+)( .*)\n",										# 21: 7
     r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)\n',											# 90: 3
     r'^(fatal error|ERROR)(: err:FORG0005, fn:exactly-one called with a sequence containing zero or more than one item..*)()\n',		# 99: 3
 ])+')',  re.MULTILINE)
@@ -279,6 +280,7 @@ norm_out = (
     None, '...',											# 18: 2
     None, '...',											# 19: 2
     None, '$TSTSRCBASE', None,										# 20: 3
+    None, None, None, '<HOST>', None, '<MAPIPORT>', None,						# 21: 7
     None, '...', None,											# 90: 3
     '=ERROR', None, '\n#',										# 99: 3
 ##    '=ERROR', None, '''
