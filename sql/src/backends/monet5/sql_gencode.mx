@@ -334,13 +334,16 @@ dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1
 }
 
 InstrPtr
-multiplexN(MalBlkPtr mb, char *name)
+multiplexN(MalBlkPtr mb, char *mod, char *name)
 {
 	InstrPtr q = NULL;
 
-	if (strcmp(name,"rotate_xor_hash") == 0) {
+	if( strcmp(name,"rotate_xor_hash") == 0 && strcmp(mod,"calc") == 0) 
 		q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
-	} 
+/*
+	else if (strcmp(mod, "str") == 0)
+		q = newStmt(mb, "batcalc", name);
+*/
 	return q;
 }
 
@@ -1239,8 +1242,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols) {
-				q= multiplex1(mb,mod,convertOperator(fimp),l,tail_type(s)->type->localtype, s->op4.funcval->func->res.type->localtype);
-				
+				int rtype = s->op4.funcval->func->res.type->localtype;
+
+				q = newStmt(mb, "remap","multiplex");
+				setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
+				freezeVarType(mb,getArg(q,0));
+				q = pushStr(mb, q, mod);
+				q = pushStr(mb, q, convertOperator(fimp));
+				q = pushArgument(mb, q, l);
 			} else {
 				q = newStmt(mb, mod, fimp);
 				q = pushArgument(mb, q, l);
@@ -1268,14 +1277,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (!special) {
 					q= dump_multiplex(mb,mod,convertOperator(fimp),l,r,tail_type(s->op2.stval)->type->localtype, s->op4.funcval->func->res.type->localtype);
 				} else {
-					mod= convertMultiplexMod(mod,fimp);
-					fimp= convertMultiplexFcn(fimp);
-					if( strcmp(fimp,"rotate_xor_hash")==0 &&
-						strcmp(mod,"calc")==0){
-						q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
-					} else q= NULL;
-					/* q = multiplexN(mb,fimp); */
-					q = newStmt(mb, "optimizer","multiplex");
+					mod = convertMultiplexMod(mod,fimp);
+					fimp = convertMultiplexFcn(fimp);
+
+					q = newStmt(mb, "optimizer", "multiplex");
 					setVarType(mb,getArg(q,0), 
 						newBatType(TYPE_oid,tail_type(s->op1.stval)->type->localtype));
 					freezeVarType(mb,getArg(q,0));
@@ -1311,11 +1316,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->nrcols) {
 				fimp = convertMultiplexFcn(fimp);
-				if( strcmp(fimp,"rotate_xor_hash")==0 &&
-					strcmp(mod,"calc")==0){
-					q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
-				} else q= NULL;
-				/* q = multiplexN(mb,fimp);*/
+				q = multiplexN(mb, mod, fimp);
 				if (!q) {
 					q = newStmt(mb, "optimizer","multiplex");
 					setVarType(mb,getArg(q,0), 
