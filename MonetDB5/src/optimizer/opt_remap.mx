@@ -62,7 +62,7 @@ address OPTremapMultiplex;
 #include "mal_function.h"
 #include "mal_exception.h"
 
-#define DEBUG_OPT_REMAP      /* trace its behavior */
+/* #define DEBUG_OPT_REMAP      trace its behavior */
 
 #endif
 @-
@@ -75,7 +75,7 @@ into the iterator code generation.
 #include "opt_remap.h"
 
 static int
-OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	str mod,fcn;
 	char buf[1024];
 	int i;
@@ -83,9 +83,7 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	(void) stk;
 	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
-	mod = putName(mod,strlen(mod));
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
-	fcn = putName(fcn,strlen(fcn));
 
 	if(strncmp(mod,"bat",3)==0)
 		return 0;
@@ -93,7 +91,9 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	stream_printf(GDKout,"found a candidate %s.%s\n",mod,fcn);
 #endif
 	snprintf(buf,1024,"bat%s",mod);
-	p= newFcnCall(mb,buf,fcn);
+	mod = putName(buf,strlen(buf));
+	fcn = putName(fcn,strlen(fcn));
+	p= newFcnCall(mb,mod,fcn);
 	for(i=0; i<pci->retc; i++)
 		getArg(p,0)= getArg(pci,i);
 	p->retc= p->argc= pci->retc;
@@ -103,7 +103,7 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 	/* now see if we can resolve the instruction */
-	typeChecker(0,mb,p,TRUE);
+	typeChecker(scope,mb,p,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
 		removeInstruction(mb,p);
 		return 0;
@@ -122,6 +122,8 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, limit,doit= 0;
 	lng clk=GDKusec();
 	str msg= MAL_SUCCEED;
+	Client cntxt = MCgetClient();
+        Module scope = cntxt->nspace;
 
 	(void) pci;
 	old = mb->stmt;
@@ -133,9 +135,9 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (msg == MAL_SUCCEED &&
 			getModuleId(p) == remapRef && 
 			getFunctionId(p) == multiplexRef) {
-			if(OPTremapDirect(mb, stk, p))
+			if(OPTremapDirect(mb, stk, p, scope)) {
 				freeInstruction(p); 
-			else{
+			} else {
 				/* moveit to the multiplex optimizer */
 				setModuleId(p, putName("optimizer",9));
 				pushInstruction(mb, p);
