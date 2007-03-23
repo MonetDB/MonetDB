@@ -668,219 +668,198 @@ static void print_case (PFsql_t *n)
 static void
 print_statement(PFsql_t *n)
 {
-    switch( n->kind ) {
-		case sql_clsc:
-				sqlprintf ("COALESCE (");
-				print_statement (n->child[0]);
-				sqlprintf (", ");
-				print_statement (n->child[1]);
-				sqlprintf(")");
-				break;
-		case sql_case:
-				sqlprintf("CASE ");
-				print_case (n);
-				sqlprintf(" END");
-				break;
-		case sql_asc:
-				sqlprintf("ASC");
-				break;
-		case sql_desc:
-				sqlprintf("DESC");
-				break;
-		case sql_order:
-				print_statement (n->child[0]);
-				sqlprintf(" ");
-				print_statement (n->child[1]);
-				break;
-		case sql_sum:
-				sqlprintf("SUM(");
-				print_statement( n->child[0] );
-				sqlprintf(")");
-				break;
-		case sql_max:
-				{
-						sqlprintf("MAX (");
-						print_statement( n->child[0] );
-						sqlprintf(")");
-				} break;
-		case sql_min:
-				{
-						sqlprintf("MIN (");
-						print_statement( n->child[0]);
-						sqlprintf(")");
-				} break;
-		case sql_avg:
-				{
-						sqlprintf("AVG (");
-						print_statement( n->child[0]);
-						sqlprintf(")");
-				} break;
-		case sql_count:
-				{
-						sqlprintf("COUNT (");
-						sqlprintf("%s", (n->sem.count.distinct)?"DISTINCT ":"");
-						print_statement( n->child[0] );
-						sqlprintf(")"); 
-				} break;
-		case sql_eq:
-				sqlprintf("(");
-				print_statement( n->child[0] );
-				sqlprintf(" = ");
-				print_statement( n->child[1] );
-				sqlprintf(")");
-				break;
-		case sql_prttn:
-				sqlprintf("PARTITION BY ");
-				print_part_expression(n->child[0]);
-				break;
-		case sql_ordr_by:
-				sqlprintf("ORDER BY ");
-				print_sort_key_expressions(n->child[0]);
-				break;
-		case sql_cst:
-				sqlprintf("CAST(");
-				print_statement(n->child[0]);
-				sqlprintf(" AS ");
-				print_statement(n->child[1]);
-				sqlprintf(")");
-				break;
-		case sql_type:
-				sqlprintf("%s", PFsql_simple_type_str(n->sem.type.t));
-				break;
-		case sql_tb_name:
-				print_schema_name( n->child[0] );
-				sqlprintf(".");
-				print_table_name( n->child[1] );
-				break;
-		case sql_star:
-				sqlprintf("*");
-				break;
-		case sql_union:
-				{
-						sqlprintf("(");
-						print_statement( n->child[0] );
-						sqlprintf(") UNION ALL (");
-						print_statement( n->child[1] );
-						sqlprintf(")");
-				} break;
-		case sql_diff:
-				{
-						sqlprintf("(");
-						print_statement( n->child[0] );
-						sqlprintf(") EXCEPT ALL (");
-						print_statement( n->child[1] );
-						sqlprintf(")");
-				} break;
-		case sql_alias:
-				{
-						if(n->child[0]->kind != sql_tbl_name ) {
-								sqlprintf("(");
-						}
-						print_statement( n->child[0] );
-						if(n->child[0]->kind != sql_tbl_name ){
-								sqlprintf(")");
-						} 
-						sqlprintf(" ");
-				} break;
-		case sql_dot:
-				{
-						sqlprintf(".");
-						print_statement( n->child[1] );
-				} break;
-		case sql_over:
-				{   
-						print_aggrfunction(n->child[0]);
-						sqlprintf(" OVER (");
-						print_window_clause(n->child[1]);
-						sqlprintf(")");
-				} break;
-		case sql_bind:
-				{
-						print_variable( n->child[0] );
-						sqlprintf(" AS (");
-						print_statement( n->child[1] );
-						sqlprintf(")");
-				} break;
-		case sql_clmn_name:
-				{
-						if( n->crrlname != PF_SQL_CORRELATION_UNBOUNDED ) {
-								sqlprintf("%s", 
-												PFsql_correlation_name_str(n->crrlname));
-								sqlprintf(".");
-						}
-						sqlprintf("%s",
-										PFsql_column_name_str(n->sem.column.ident));
-				} break;
-		case sql_tbl_name:
-				{
-						print_variable( n );
-				} break;
-		case sql_clmn_assign:
-				{
-						print_statement( n->child[0]);
-						sqlprintf(" AS ");
-						print_statement( n->child[1]);
-				} break;
-		case sql_lit_dec:
-				{
-						sqlprintf("%g", n->sem.atom.val.dec);
-				} break;
-		case sql_lit_int:
-				{
-						sqlprintf("%i", n->sem.atom.val.i);
-				} break;
-		case sql_lit_null:
-				{
-						sqlprintf("NULL");
-				} break;
-		case sql_lit_str:
-				{
-						sqlprintf("'%s'", n->sem.atom.val.s);
-				} break;
-		case sql_table_ref:
-				{
-						sqlprintf("%s", n->sem.table );
-				} break;
-		case sql_select:
-				{
-						sqlprintf("SELECT ");
-						if( n->sem.select.distinct ) sqlprintf("DISTINCT ");
-						print_select_list(n->child[0]);
-						if(n->child[1])
-						{
-								sqlprintf(" FROM ");
-						}
-				} break;
-				/* expression : '(' expression '+' expression ')' */
-		case sql_add:
-		case sql_sub:
-		case sql_mul:
-		case sql_div:
-				{
-						sqlprintf("(");
-						print_statement(n->child[0]);
-						sqlprintf(" %s ", ID[n->kind]);
-						print_statement(n->child[1]);
-						sqlprintf(")");
-				} break;
-		case sql_like:
-				{
-						sqlprintf("(");
-						print_statement(n->child[0]);
-						sqlprintf(" LIKE  '%%");
-						/* write the string without beginning and 
-						   trailing ' */
-						assert (n->child[1]->kind == sql_lit_str);
-						sqlprintf("%s", n->child[1]->sem.atom.val.s); 
-						sqlprintf("%%')");
-				} break;
-		default:
-				{
-						PFoops( OOPS_FATAL,
-										"Pathfinder doesn't support this kind "
-										"of SQL tree node (%i)", n->kind); 
-				} break;
-}
+    switch( n->kind ) 
+    {
+	case sql_clsc:
+	    sqlprintf ("COALESCE (");
+	    print_statement (n->child[0]);
+	    sqlprintf (", ");
+	    print_statement (n->child[1]);
+	    sqlprintf(")");
+	    break;
+	case sql_case:
+	    sqlprintf("CASE ");
+	    print_case (n);
+	    sqlprintf(" END");
+	    break;
+	case sql_asc:
+	    sqlprintf("ASC");
+	    break;
+	case sql_desc:
+	    sqlprintf("DESC");
+	    break;
+	case sql_order:
+	    print_statement (n->child[0]);
+	    sqlprintf(" ");
+	    print_statement (n->child[1]);
+	    break;
+	case sql_sum:
+	    sqlprintf("SUM(");
+	    print_statement( n->child[0] );
+	    sqlprintf(")");
+	    break;
+	case sql_max:
+	    sqlprintf("MAX (");
+	    print_statement( n->child[0] );
+	    sqlprintf(")");
+	    break;
+	case sql_min:
+	    sqlprintf("MIN (");
+	    print_statement( n->child[0]);
+	    sqlprintf(")");
+	    break;
+	case sql_avg:
+	    sqlprintf("AVG (");
+	    print_statement( n->child[0]);
+	    sqlprintf(")");
+	    break;
+	case sql_count:
+	    sqlprintf("COUNT (");
+	    sqlprintf("%s", (n->sem.count.distinct)?"DISTINCT ":"");
+	    print_statement( n->child[0] );
+	    sqlprintf(")"); 
+	    break;
+	case sql_eq:
+	    sqlprintf("(");
+	    print_statement( n->child[0] );
+	    sqlprintf(" = ");
+	    print_statement( n->child[1] );
+	    sqlprintf(")");
+	    break;
+	case sql_prttn:
+	    sqlprintf("PARTITION BY ");
+	    print_part_expression(n->child[0]);
+	    break;
+	case sql_ordr_by:
+	    sqlprintf("ORDER BY ");
+	    print_sort_key_expressions(n->child[0]);
+	    break;
+	case sql_cst:
+	    sqlprintf("CAST(");
+	    print_statement(n->child[0]);
+	    sqlprintf(" AS ");
+	    print_statement(n->child[1]);
+	    sqlprintf(")");
+	    break;
+	case sql_type:
+	    sqlprintf("%s", PFsql_simple_type_str(n->sem.type.t));
+	    break;
+	case sql_tb_name:
+	    print_schema_name( n->child[0] );
+	    sqlprintf(".");
+	    print_table_name( n->child[1] );
+	    break;
+	case sql_star:
+	    sqlprintf("*");
+	    break;
+	case sql_union:
+	    sqlprintf("(");
+	    print_statement( n->child[0] );
+	    sqlprintf(") UNION ALL (");
+	    print_statement( n->child[1] );
+	    sqlprintf(")");
+	    break;
+	case sql_diff:
+	    sqlprintf("(");
+	    print_statement( n->child[0] );
+	    sqlprintf(") EXCEPT ALL (");
+	    print_statement( n->child[1] );
+	    sqlprintf(")");
+	    break;
+	case sql_alias:
+	    if(n->child[0]->kind != sql_tbl_name ) {
+		sqlprintf("(");
+	    }
+	    print_statement( n->child[0] );
+	    if(n->child[0]->kind != sql_tbl_name ){
+		sqlprintf(")");
+	    } 
+	    sqlprintf(" ");
+	    break;
+	case sql_dot:
+	    sqlprintf(".");
+	    print_statement( n->child[1] );
+	    break;
+	case sql_over:
+	    print_aggrfunction(n->child[0]);
+	    sqlprintf(" OVER (");
+	    print_window_clause(n->child[1]);
+	    sqlprintf(")");
+	    break;
+	case sql_bind:
+	    print_variable( n->child[0] );
+	    sqlprintf(" AS (");
+	    print_statement( n->child[1] );
+	    sqlprintf(")");
+	    break;
+	case sql_clmn_name:
+	    if( n->crrlname != PF_SQL_CORRELATION_UNBOUNDED ) {
+		sqlprintf("%s", 
+			PFsql_correlation_name_str(n->crrlname));
+		sqlprintf(".");
+	    }
+	    sqlprintf("%s",
+		    PFsql_column_name_str(n->sem.column.ident));
+	    break;
+	case sql_tbl_name:
+	    print_variable( n );
+	    break;
+	case sql_clmn_assign:
+	    print_statement( n->child[0]);
+	    sqlprintf(" AS ");
+	    print_statement( n->child[1]);
+	    break;
+	case sql_lit_dec:
+	    sqlprintf("%g", n->sem.atom.val.dec);
+	    break;
+	case sql_lit_int:
+	    sqlprintf("%i", n->sem.atom.val.i);
+	    break;
+	case sql_lit_null:
+	    sqlprintf("NULL");
+	    break;
+	case sql_lit_str:
+	    sqlprintf("'%s'", n->sem.atom.val.s);
+	    break;
+	case sql_table_ref:
+	    sqlprintf("%s", n->sem.table );
+	    break;
+	case sql_select:
+	    sqlprintf("SELECT ");
+	    if( n->sem.select.distinct ) sqlprintf("DISTINCT ");
+	    print_select_list(n->child[0]);
+	    if(n->child[1])
+	    {
+		sqlprintf(" FROM ");
+	    }
+	    break;
+	    /* expression : '(' expression '+' expression ')' */
+	case sql_add:
+	case sql_sub:
+	case sql_mul:
+	case sql_div:
+	    sqlprintf("(");
+	    print_statement(n->child[0]);
+	    sqlprintf(" %s ", ID[n->kind]);
+	    print_statement(n->child[1]);
+	    sqlprintf(")");
+	    break;
+	case sql_like:
+	    sqlprintf("(");
+	    print_statement(n->child[0]);
+	    sqlprintf(" LIKE  '%%");
+	    /* write the string without beginning and 
+	       trailing ' */
+	    assert (n->child[1]->kind == sql_lit_str);
+	    sqlprintf("%s", n->child[1]->sem.atom.val.s); 
+	    sqlprintf("%%')");
+	    break;
+	default:
+	    PFoops( OOPS_FATAL,
+		    "Pathfinder doesn't support this kind "
+		    "of SQL tree node (%i)", n->kind); 
+	    break;
+    }
 }
 
 static void
@@ -1024,7 +1003,7 @@ PFsqlprint(FILE *stream, PFarray_t *sqlprog)
             case '}':
                 {
                     spaces = spaces > INDENT_WIDTH ?
-                              spaces - INDENT_WIDTH : 0;
+                        spaces - INDENT_WIDTH : 0;
                     indent -= 2 * INDENT_WIDTH;
                 }
             case '{':
@@ -1033,13 +1012,13 @@ PFsqlprint(FILE *stream, PFarray_t *sqlprog)
                 }
             default:
                 {
-                while (spaces > 0) {
-                    spaces--;
-                    fputc(' ', stream);
-                }
-                fputc(c, stream);
+                    while (spaces > 0) {
+                        spaces--;
+                        fputc(' ', stream);
+                    }
+                    fputc(c, stream);
                 } break;
         }
     }
 }
-
+/* vim:set shiftwidth=4 expandtab filetype=c: */
