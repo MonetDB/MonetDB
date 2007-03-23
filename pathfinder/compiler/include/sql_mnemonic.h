@@ -60,6 +60,8 @@
 #define coalesce (e)                   PFsql_coalesce(e)
 #define count(b, e)                    PFsql_count(b, e)
 #define max( c )                       PFsql_max( c )
+#define min( c )		       PFsql_min( c )
+#define avg( c )		       PFsql_avg( c )
 #define sum( c )                       PFsql_sum( c )
 
 /* SQL rownumber aggrfun construction. */
@@ -95,6 +97,7 @@
 #define alias( a, b )               PFsql_alias( a, b )
 #define correlation_name( i )       PFsql_correlation_name( i )
 #define crrl_deco( op, crrl )       PFsql_correlation_decorator( op, crrl )
+#define table_deco(op, f) 	    PFsql_table_decorator( op, f );
 #define CRRL_UNBOUNDED              PF_SQL_CORRELATION_UNBOUNDED
 
 /*........... Columns .............*/
@@ -130,6 +133,11 @@
 #define select_list_add( list, item )  PFsql_select_list_add( list, item )
 /** Construct a from_list-expression. */
 #define from_list( ... )               PFsql_from_list( __VA_ARGS__ )
+
+#define case_(...)		       PFsql_case(__VA_ARGS__)
+#define when(be, e)		       PFsql_when(be, e)
+#define else_(e)		       PFsql_else(e)
+
 /** Construct empty fromlist. */
 #define from_list_empty( )             PFsql_from_list_empty( )
 /** Add an item to an existing fromlist. */

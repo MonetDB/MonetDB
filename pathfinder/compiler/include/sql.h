@@ -173,7 +173,12 @@ enum PFsql_kind_t {
    sql_order		= 67,
    sql_asc              = 68,
    sql_desc             = 69,
-   sql_like             = 70
+   sql_like             = 70,
+   sql_min              = 71,
+   sql_avg              = 72,
+   sql_case             = 73,
+   sql_when             = 74,
+   sql_else             = 75
 };
 typedef enum PFsql_kind_t PFsql_kind_t;
 
@@ -239,6 +244,7 @@ struct PFsql_t {
     PFsql_correlation_name_t    crrlname;  /**< Each expression is bound to a
                                                 table identified by its
                                                 correlation name */
+    bool frag;
     struct PFsql_t   *child[PFSQL_OP_MAXCHILD]; /**< Childs of this
                                                         operator. */
 };
@@ -270,6 +276,8 @@ typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
  */
 PFsql_t* PFsql_correlation_decorator(PFsql_t *op,
                         PFsql_correlation_name_t crrl);
+
+PFsql_t* PFsql_table_decorator(PFsql_t *op, bool frag);
 
 /*.................... Constructors .....................*/
 
@@ -331,6 +339,10 @@ PFsql_t* PFsql_coalesce(PFsql_t *expr);
 PFsql_t* PFsql_count(bool dist, const PFsql_t *expr);
 
 PFsql_t* PFsql_max(const PFsql_t *clmn);
+
+PFsql_t* PFsql_min(const PFsql_t *clmn);
+
+PFsql_t* PFsql_avg(const PFsql_t *clmn);
 
 PFsql_t* PFsql_sum(const PFsql_t *clmn);
 
@@ -494,6 +506,16 @@ PFsql_t* PFsql_select_list_add(const PFsql_t *list, const PFsql_t *item);
             sizeof(PFsql_t*), (const PFsql_t *[]) \
             {__VA_ARGS__})
 PFsql_t* PFsql_from_list_(unsigned int count, const PFsql_t **list);
+
+#define PFsql_case(...) \
+    PFsql_case_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \
+        sizeof(PFsql_t*), (const PFsql_t *[]) \
+        {__VA_ARGS__})
+PFsql_t* PFsql_case_(unsigned int count, const PFsql_t **list);
+
+PFsql_t* PFsql_when(PFsql_t *boolexpr, PFsql_t *expr);
+
+PFsql_t* PFsql_else(PFsql_t *expr);
 
 #define PFsql_expression_list(...) \
 PFsql_expression_list_(sizeof((PFsql_t *[]) {__VA_ARGS__}) / \

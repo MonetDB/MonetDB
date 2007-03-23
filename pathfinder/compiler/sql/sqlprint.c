@@ -82,50 +82,13 @@ static void print_schema_information(PFsql_t*);
 static void print_schema_table(PFsql_t*);
 static void print_schema_relcol(PFsql_t*);
 static void print_join(PFsql_t*);
+static void print_comment(PFsql_t*);
 
-
-/**
-   * Convert the @a ident to a string.
-    *
-     * @param ident The identifier to convert.
-      */
-char*
-sql_column_name_str(PFsql_ident_t ident)
+static void
+print_comment (PFsql_t* n)
 {
-    char *attstr = NULL;
-    char *tystr = NULL;
-    char *res = NULL;
-    size_t len = 0;
-
-    /* check if special bits are set */
-    if( (ident >> (ATT_BITS + TYPE_BITS)) & 0x00000007 ) {
-        switch( (0x00000001) << ((ident >> (ATT_BITS + TYPE_BITS))
-             & 0x00000007) ) {
-            case sql_col_pre:    return "pre";
-            case sql_col_level:  return "level";
-            case sql_col_size: return "size";
-            case sql_col_kind: return "kind";
-            case sql_col_prop: return "prop";
-            case sql_col_tag: return "tag";
-            default: PFoops( OOPS_FATAL, 
-                             "unknown special flag set");
-        }
-    }
-    PFalg_att_t att = ((0x0000001F & ident) <= 0)?  0x00000000:
-            (0x00000001 << (((0x0000001F) & ident)-1));
-    PFalg_simple_type_t ty = (0x00000001 << (((0x000001E0) & ident)
-                >> ATT_BITS));
-
-    attstr = PFatt_str(att);
-    tystr  = PFalg_simple_type_str(ty);
-
-    len = strlen(attstr);
-    len += strlen(tystr);
-
-    res = (char*)PFmalloc(len * sizeof(char));
-    snprintf(res, len+2, "%s-%s", attstr, tystr);
-
-    return res;
+     sqlprintf("--");
+     sqlprintf("%s", n->sem.comment);
 }
 
 static void
@@ -167,6 +130,7 @@ print_schema_information( PFsql_t *n )
     }
 }
 
+#if 0
 static bool
 boolean (int ident)
 {
@@ -175,6 +139,7 @@ boolean (int ident)
     if (ty == aat_bln) return true;
     return false;
 }
+#endif
 
 static void 
 print_schema_relcol( PFsql_t *n )
@@ -184,7 +149,7 @@ print_schema_relcol( PFsql_t *n )
     sqlprintf("-");
     switch( n->kind ) {
         case sql_clmn_name:
-            sqlprintf("%s", sql_column_name_str( n->sem.column.ident ));
+            sqlprintf("%s", PFsql_column_name_str( n->sem.column.ident ));
             sqlprintf(": ");
             sqlprintf("%s", PFsql_column_name_str( n->sem.column.ident ));
             break;
@@ -249,8 +214,12 @@ print_common_table_expressions(PFsql_t *n)
        case sql_cmmn_tbl_expr:
        {
            print_common_table_expressions( n->child[0] );
-           sqlprintf(", \n");
-           print_common_table_expression( n->child[1] );
+	   sqlprintf(", \n");
+           print_common_table_expressions( n->child[1] );
+       } break;
+       case sql_comment:
+       {
+	    print_comment(n);
        } break;
        default:
        {
@@ -263,7 +232,7 @@ static void
 print_common_table_expression(PFsql_t *n)
 {
     assert( n );
-    assert( n->kind == sql_bind );
+    assert( n->kind == sql_bind);
 
     print_table_name( n->child[0] );
     sqlprintf(" AS (");
@@ -530,15 +499,9 @@ print_select_list(PFsql_t *n)
     
     switch( n->kind ) {
         case sql_slct_list:
-	    if (!(n->child[0]->kind == sql_clmn_name 
-		&& boolean(n->child[0]->sem.column.ident))) {
             print_select_list( n->child[0] );
             sqlprintf(", ");
-	    }
-	    if (!(n->child[1]->kind == sql_clmn_name 
-		&& boolean(n->child[1]->sem.column.ident))) {
             print_select_list( n->child[1] );
-            }
             break;
         default:
             print_statement(n);
@@ -641,15 +604,9 @@ print_clm_list(PFsql_t *n)
 
     switch( n->kind ) {
         case sql_clmn_list:
-	    if (!(n->child[0]->kind == sql_clmn_name 
-		&& boolean(n->child[0]->sem.column.ident))) {
             print_clm_list( n->child[0] );
             sqlprintf(", ");
-	    }
-	    if (!(n->child[1]->kind == sql_clmn_name 
-		&& boolean(n->child[1]->sem.column.ident))) {
             print_clm_list( n->child[1] );
-	    }
             break;
         default:
             print_column_name( n );
@@ -672,10 +629,41 @@ print_column_name( PFsql_t *n )
 
 }
 
+static void print_case (PFsql_t *n)
+{
+    assert (n);
+
+    switch (n->kind) {
+	    case sql_case:
+			print_case(n->child[0]);
+			print_case(n->child[1]);
+			break;
+		case sql_when:
+			sqlprintf("WHEN ");
+			print_expr (n->child[0]);
+			sqlprintf(" THEN ");
+			print_statement (n->child[1]);
+			break;
+		case sql_else:
+			sqlprintf(" ELSE ");
+			print_statement (n->child[0]);
+			break;
+		default:
+			PFoops (OOPS_FATAL, "Sqlgen: Pathfinder doesn't support this"
+			" kind of node (%i) in case statement",
+							n->kind);
+    }
+}
+
 static void
 print_statement(PFsql_t *n)
 {
     switch( n->kind ) {
+	case sql_case:
+		sqlprintf("CASE ");
+	    print_case (n);
+		sqlprintf(" END");
+	    break;
 	case sql_asc:
 	    sqlprintf("ASC");
 	    break;
@@ -698,6 +686,18 @@ print_statement(PFsql_t *n)
             print_statement( n->child[0] );
             sqlprintf(")");
         } break;
+	case sql_min:
+	{
+		sqlprintf("MIN (");
+		print_statement( n->child[0]);
+		sqlprintf(")");
+	} break;
+	case sql_avg:
+	{
+		sqlprintf("AVG (");
+		print_statement( n->child[0]);
+		sqlprintf(")");
+	} break;
         case sql_count:
         {
             sqlprintf("COUNT (");

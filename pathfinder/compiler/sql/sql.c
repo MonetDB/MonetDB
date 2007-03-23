@@ -60,6 +60,15 @@ PFsql_correlation_decorator(PFsql_t *op, PFsql_correlation_name_t crrl)
     return op;
 }
 
+PFsql_t*
+PFsql_table_decorator(PFsql_t *op, bool frag)
+{
+	assert (op);
+
+	op->frag = frag; 
+	return op;
+}	
+
 /*............... Constructors ..............*/ 
 
 /**
@@ -120,6 +129,7 @@ PFsql_op_leaf (PFsql_kind_t kind)
             sizeof( PFsql_t ) );
     ret->kind        =  kind;
     ret->crrlname    = PF_SQL_CORRELATION_UNBOUNDED;
+    ret->frag = false;
    
     /* initialize childs */
     for( unsigned int i = 0; i < PFSQL_OP_MAXCHILD; i++)
@@ -294,6 +304,18 @@ PFsql_t*
 PFsql_max(const PFsql_t *clmn)
 {
     return wire1(sql_max, clmn);
+}
+
+PFsql_t*
+PFsql_min(const PFsql_t *clmn)
+{
+    return wire1(sql_min, clmn);
+}
+
+PFsql_t*
+PFsql_avg(const PFsql_t *clmn)
+{
+    return wire1(sql_avg, clmn);
 }
 
 PFsql_t*
@@ -817,6 +839,38 @@ PFsql_from_list_(unsigned int count, const PFsql_t **list)
                 PFsql_from_list_( count-1, list+1 ),
                 list[0]);
     return NULL; /* satisfy picky compilers */
+}
+
+PFsql_t*
+PFsql_case_ (unsigned int count, const PFsql_t **list)
+{
+    assert (count > 0);
+
+    if (list[0] == NULL)
+        return PFsql_case_ (count-1, list+1);
+    else if (count==1)
+	return (PFsql_t*)list[0];
+    else
+	return wire2 (sql_case,
+		PFsql_case_ (count-1, list+1),
+	        list[0]);
+    return NULL; /* satisfy picky compilers */
+}
+
+PFsql_t*
+PFsql_when (PFsql_t *boolexpr, PFsql_t *expr)
+{
+    assert (boolexpr);
+    assert (expr);
+
+    return wire2 (sql_when, boolexpr, expr);
+}
+
+PFsql_t*
+PFsql_else (PFsql_t *expr)
+{
+    assert (expr);
+    return wire1 (sql_else, expr); 
 }
 
 PFsql_t*

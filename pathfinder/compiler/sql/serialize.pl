@@ -55,12 +55,12 @@ sub read_query {
                              document-prop|
                              document-tag|
                              result-relation|
-                             result-pos-nat|
-                             result-item-pre|
-                             result-item-int|
-                             result-item-str|
-                             result-item-dbl|
-                             result-item-dec):\s+
+                             result-pos_nat|
+                             result-item_pre|
+                             result-item_int|
+                             result-item_str|
+                             result-item_dbl|
+                             result-item_dec):\s+
                              \b(\w+)\b/x) {
                 $schema{$1} = $2;
             }
@@ -85,10 +85,10 @@ sub read_query {
                 && $schema{'document-prop'} && $schema{'document-tag'});
 
     die "Schema information on result relation incomplete.\n"
-        unless ($schema{'result-relation'} && $schema{'result-pos-nat'}
-                && ($schema{'result-item-pre'} || $schema{'result-item-int'}
-                    || $schema{'result-item-str'} || $schema{'result-item-dbl'}
-                    || $schema{'result-item-dec'}));
+        unless ($schema{'result-relation'} && $schema{'result-pos_nat'}
+                && ($schema{'result-item_pre'} || $schema{'result-item_int'}
+                    || $schema{'result-item_str'} || $schema{'result-item_dbl'}
+                    || $schema{'result-item_dec'}));
 }
 
 # read user input
@@ -99,10 +99,10 @@ my %idx;          # in which of the return columns can we find all of
                   # the values we are interested in?
 
 # set up the query we want to send to the database
-if (defined $schema{'result-item-pre'}
-    && (defined $schema{'result-item-int'} || defined $schema{'result-item-str'}
-        || defined $schema{'result-item-dbl'}
-        || defined $schema{'result-item-dec'})) {
+if (defined $schema{'result-item_pre'}
+    && (defined $schema{'result-item_int'} || defined $schema{'result-item_str'}
+        || defined $schema{'result-item_dbl'}
+        || defined $schema{'result-item_dec'})) {
 
     # This query contains atomic values AND nodes
     $query_type = 'ATOMIC_AND_NODES';
@@ -113,11 +113,11 @@ if (defined $schema{'result-item-pre'}
 
     foreach my $t ('int', 'str', 'dbl', 'dec') {
 
-        if (defined $schema{"result-item-$t"}) {
+        if (defined $schema{"result-item_$t"}) {
             if ($cur) { $final_query.= ',' }
             $idx{$t} = $cur;
             $cur++;
-            $final_query.= "\nr.".$schema{"result-item-$t"}." AS $t";
+            $final_query.= "\nr.".$schema{"result-item_$t"}." AS $t";
         }
     }
 
@@ -132,14 +132,14 @@ if (defined $schema{'result-item-pre'}
              d2.$schema{'document-tag'} AS tag
         FROM $schema{'result-relation'} AS r
              LEFT OUTER JOIN $schema{'document-relation'} AS d1
-               ON d1.pre = r.$schema{'result-item-pre'}
+               ON d1.pre = r.$schema{'result-item_pre'}
              LEFT OUTER JOIN $schema{'document-relation'} AS d2
                ON d2.pre >= d1.pre AND d2.pre <= d1.pre + d1.size
        ORDER BY r.pos_nat, d2.pre;
 EOT
 
 }
-elsif (defined $schema{'result-item-pre'}) {
+elsif (defined $schema{'result-item_pre'}) {
 
     # This query returns nodes, only
     $query_type = 'NODES_ONLY';
@@ -153,7 +153,7 @@ elsif (defined $schema{'result-item-pre'}) {
              d2.$schema{'document-tag'} AS tag
         FROM $schema{'result-relation'} AS r
              INNER JOIN $schema{'document-relation'} AS d1
-               ON d1.pre = r.$schema{'result-item-pre'}
+               ON d1.pre = r.$schema{'result-item_pre'}
              INNER JOIN $schema{'document-relation'} AS d2
                ON d2.pre >= d1.pre AND d2.pre <= d1.pre + d1.size
        ORDER BY r.pos_nat, d2.pre;
@@ -173,11 +173,11 @@ else {
 
     foreach my $t ('int', 'str', 'dbl', 'dec') {
 
-        if (defined $schema{"result-item-$t"}) {
+        if (defined $schema{"result-item_$t"}) {
             if ($cur) { $final_query.= ',' }
             $idx{$t} = $cur;
             $cur++;
-            $final_query.= "\nr.".$schema{"result-item-$t"}." AS $t";
+            $final_query.= "\nr.".$schema{"result-item_$t"}." AS $t";
         }
     }
 

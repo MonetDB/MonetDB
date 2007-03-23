@@ -527,12 +527,32 @@ sql_expression (const PFarray_t *env, PFalg_att_t att,
     return NULL; /* satisfy picky compilers */
 }
 
+static PFsql_correlation_name_t
+sql_search_frag(PFsql_t *n, sql_correlation_name_t crrl)
+{
+    PFsql_correlation_name_t ret;
+    assert (n);
+    switch (n->kind) {
+        case sql_frm_list:
+            ret = sql_search_frag (n->child[0], crrl);
+            if (ret) return ret;
+            return sql_search_frag (n->child[1], crrl);
+        case sql_alias:
+            if (n->frag) {
+                return (n->child[1]->sem.correlation.ident == crrl.name)?
+                    n->child[1]->sem.correlation.ident:0;
+            }
+        default:
+            return 0;
+    }
+    return 0;
+}
+
 static void
 sql_override_expr (PFarray_t *env, PFalg_att_t att,
         PFalg_simple_type_t ty, PFsql_ident_t colname,
         PFsql_correlation_name_t crrln)
 {
-    if (ty == aat_bln) return;
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         sql_column_env_t *entry = 
             (sql_column_env_t*)PFarray_at ((PFarray_t*)env, i);
@@ -601,9 +621,9 @@ substitute (PFla_op_t *p)
     if (p->refctr > 1) {
         if (p->sql_ann && p->kind != la_frag_union
                 && p->kind != la_fragment && p->kind != la_empty_frag
-                && p->kind != la_doc_tbl &&
-                p->kind != la_num_gt && p->kind != la_num_eq
-                && p->kind != la_bool_not) {
+                && p->kind != la_doc_tbl /*&&
+                num_gt && p->kind != la_num_eq
+                && p->kind != la_bool_not*/) {
             sql_correlation_name_t *crrl = sql_correlation_name_new();
             PFarray_t *colmap = sql_column_env_new();
             for (unsigned int i = 0;
@@ -744,6 +764,12 @@ reduce(PFla_op_t *p, int goalnt)
 
     if (L(p))
         substitute (L(p));
+
+#ifndef NDEBUG
+            execute (comment ("Begin rule (reduce1): \"%s\"",
+                        PFlalg2sql_string[rule]));
+#endif
+
     switch (rule) {
         /* Query:  serialize (Frag, Rel) */
         case 1:
@@ -1271,11 +1297,21 @@ reduce(PFla_op_t *p, int goalnt)
 
             /* copy existing wheremap */
             where_env_copy (L(p)->sql_ann->wheremap, p->sql_ann->wheremap);
-
-            sql_where_env_add (p->sql_ann->wheremap,
-                    sql_expression (L(p)->sql_ann->colmap,
+            PFsql_t *sqlnode = sql_expression (L(p)->sql_ann->colmap,
                         p->sem.select.att,
-                        type_of (p, p->sem.select.att)));
+                        type_of (p, p->sem.select.att));
+
+            if (sqlnode->kind != sql_clmn_name) {
+                    sql_where_env_add (p->sql_ann->wheremap,
+                            sqlnode);
+            } else {
+                sql_where_env_add( p->sql_ann->wheremap,
+                        eq
+                        (
+                         sqlnode,
+                         lit_int(1)
+                        ));
+            }
 
             assert (L(p)->sql_ann->sfw);
 
@@ -1405,13 +1441,22 @@ reduce(PFla_op_t *p, int goalnt)
                          entry.expression);
              }   
 
+             PFsql_t *sqlnode = sql_expression (L(p)->sql_ann->colmap,
+                          p->sem.unary.att,
+                          type_of (L(p), p->sem.unary.att));
+
+
              sql_column_env_add (p->sql_ann->colmap,
                      p->sem.unary.res, type_of (p, p->sem.unary.res),
                      not_
                      (
-                      sql_expression (L(p)->sql_ann->colmap,
-                          p->sem.unary.att,
-                          type_of (L(p), p->sem.unary.att))
+                       (sqlnode->kind != sql_clmn_name)?
+                                sqlnode:
+                                eq
+                                (
+                                 sqlnode,
+                                 lit_int(1)
+                                )                                
                      )
                      );
              where_env_copy (L(p)->sql_ann->wheremap, p->sql_ann->wheremap);
@@ -1434,7 +1479,6 @@ reduce(PFla_op_t *p, int goalnt)
 	case 27:
             assert (!"missing");
             break;
-
         /* Rel:    cast (Rel) */
         case 28:
         {
@@ -1472,27 +1516,138 @@ reduce(PFla_op_t *p, int goalnt)
                  NULL
                 );
         } break;
-
         /* Rel:    avg (Rel) */
         case 35:
-            assert (!"missing");
-            break;
+        {
+            sql_column_env_add (p->sql_ann->colmap,
+                    p->sem.aggr.res, type_of (p, p->sem.aggr.res),
+                    avg 
+                    (
+                     sql_expression (L(p)->sql_ann->colmap,
+                         p->sem.aggr.att, type_of(L(p),
+                             p->sem.aggr.att))
+                    ));
+            if (p->sem.aggr.part) {
+                sql_column_env_add (p->sql_ann->colmap,
+                        p->sem.aggr.part, type_of(p,p->sem.aggr.part),
+                        sql_expression (L(p)->sql_ann->colmap,
+                            p->sem.aggr.part, type_of (p, p->sem.aggr.part)));
+            }
 
+            where_env_copy (L(p)->sql_ann->wheremap, p->sql_ann->wheremap);
+
+            sql_stmt = select
+                (
+                 NULL,
+                 L(p)->sql_ann->sfw->child[1],
+                 NULL,
+                 (p->sem.aggr.part)?
+                     column_list (sql_expression (L(p)->sql_ann->colmap,
+                         p->sem.aggr.part, type_of (p, p->sem.aggr.part))):
+                     NULL
+                );
+
+            p->dirty = true;
+        } break;
         /* Rel:    max_ (Rel) */
         case 36:
-            assert (!"missing");
-            break;
+        {
+            sql_column_env_add (p->sql_ann->colmap,
+                    p->sem.aggr.res, type_of (p, p->sem.aggr.res),
+                    max 
+                    (
+                     sql_expression (L(p)->sql_ann->colmap,
+                         p->sem.aggr.att, type_of(L(p),
+                             p->sem.aggr.att))
+                    ));
+            if (p->sem.aggr.part) {
+                sql_column_env_add (p->sql_ann->colmap,
+                        p->sem.aggr.part, type_of(p,p->sem.aggr.part),
+                        sql_expression (L(p)->sql_ann->colmap,
+                            p->sem.aggr.part, type_of (p, p->sem.aggr.part)));
+            }
 
-        /* Rel:    min_ (Rel) */
+            where_env_copy (L(p)->sql_ann->wheremap, p->sql_ann->wheremap);
+
+            sql_stmt = select
+                (
+                 NULL,
+                 L(p)->sql_ann->sfw->child[1],
+                 NULL,
+                 (p->sem.aggr.part)?
+                     column_list (sql_expression (L(p)->sql_ann->colmap,
+                         p->sem.aggr.part, type_of (p, p->sem.aggr.part))):
+                     NULL
+                );
+
+            p->dirty = true;
+        } break;
+        /* Rel:   min_ (Rel) */
         case 37:
-            assert (!"missing");
-            break;
+        {
+            sql_column_env_add (p->sql_ann->colmap,
+                    p->sem.aggr.res, type_of (p, p->sem.aggr.res),
+                    min 
+                    (
+                     sql_expression (L(p)->sql_ann->colmap,
+                         p->sem.aggr.att, type_of(L(p),
+                             p->sem.aggr.att))
+                    ));
+            if (p->sem.aggr.part) {
+                sql_column_env_add (p->sql_ann->colmap,
+                        p->sem.aggr.part, type_of(p,p->sem.aggr.part),
+                        sql_expression (L(p)->sql_ann->colmap,
+                            p->sem.aggr.part, type_of (p, p->sem.aggr.part)));
+            }
 
+            where_env_copy (L(p)->sql_ann->wheremap, p->sql_ann->wheremap);
+
+            sql_stmt = select
+                (
+                 NULL,
+                 L(p)->sql_ann->sfw->child[1],
+                 NULL,
+                 (p->sem.aggr.part)?
+                     column_list (sql_expression (L(p)->sql_ann->colmap,
+                         p->sem.aggr.part, type_of (p, p->sem.aggr.part))):
+                     NULL
+                );
+
+            p->dirty = true;
+        } break;
         /* Rel:    sum (Rel) */
         case 38:
-            assert (!"missing");
-            break;
+        {
+            sql_column_env_add (p->sql_ann->colmap,
+                    p->sem.aggr.res, type_of (p, p->sem.aggr.res),
+                    sum 
+                    (
+                     sql_expression (L(p)->sql_ann->colmap,
+                         p->sem.aggr.att, type_of(L(p),
+                             p->sem.aggr.att))
+                    ));
+            if (p->sem.aggr.part) {
+                sql_column_env_add (p->sql_ann->colmap,
+                        p->sem.aggr.part, type_of(p,p->sem.aggr.part),
+                        sql_expression (L(p)->sql_ann->colmap,
+                            p->sem.aggr.part, type_of (p, p->sem.aggr.part)));
+            }
 
+            where_env_copy (L(p)->sql_ann->wheremap, p->sql_ann->wheremap);
+
+            sql_stmt = select
+                (
+                 NULL,
+                 L(p)->sql_ann->sfw->child[1],
+                 NULL,
+                 (p->sem.aggr.part)?
+                     column_list (sql_expression (L(p)->sql_ann->colmap,
+                         p->sem.aggr.part, type_of (p, p->sem.aggr.part))):
+                     NULL
+                );
+
+            p->dirty = true;
+        } break;
         /* Rel:    count (Rel) */
         case 39:
         {
@@ -1899,38 +2054,23 @@ reduce(PFla_op_t *p, int goalnt)
                          p->sem.doc_tbl.item,
                          type_of (L(p), p->sem.doc_tbl.item))
                     ));
-                            
-
 
             /* set the fragment relation */
             p->sql_ann->fragment = 
-                select
-                (
-                 select_list
-                 (
-                  column_name (sql_special_name_new(sql_col_prop)->ident),
-                  column_name (sql_special_name_new(sql_col_kind)->ident),
-                  column_name (sql_special_name_new(sql_col_level)->ident),
-                  column_name (sql_special_name_new(sql_col_size)->ident),
-                  column_name (sql_special_name_new(sql_col_pre)->ident),
-
-                 ),
-                 from_list
-                 (
-                  fragrelation ()
-                 ),
-                 NULL,
-                 NULL
-                );
+                  fragrelation ();
 
             /* preparing fromlist */
             PFsql_t *fromlist = L(p)->sql_ann->sfw->child[1];
-            fromlist = from_list_add(fromlist,
-                    alias
+            PFsql_t *fr = table_deco
                     (
-                     fragrelation (),
-                     correlation_name (crrl1->name)
-                    ));
+                     alias
+                     (
+                      fragrelation (),
+                      correlation_name (crrl1->name)
+                     ),
+                     true
+                    );
+            fromlist = from_list_add(fromlist, fr);
 
             sql_stmt = select
                 (
@@ -2888,8 +3028,7 @@ reduce(PFla_op_t *p, int goalnt)
                 );
 
             p->dirty = true;
-
-        } break;
+       } break;
 
         /* Constr: element (Frag, element_tag (Rel, empty_tbl)) */
 	case 72:
@@ -3268,7 +3407,7 @@ reduce(PFla_op_t *p, int goalnt)
     /* BINDING */
     /* execute the statement at the end if the node is dirty,
        and bind it to a new SQL variable */
-    if (sql_stmt)
+    if (sql_stmt) {
     if (DIRTY(p) && rule != 70) {
         /* create a new table name for binding */ 
         sql_table_name_t   *newvar = sql_table_name_new ();
@@ -3298,7 +3437,6 @@ reduce(PFla_op_t *p, int goalnt)
                      * att/type tuple */
                     PFsql_t *sqlnode = sql_expression (p->sql_ann->colmap,
                             p->schema.items[i].name, t);
-                    
                     sql_column_name_t *colname =
                         ((sqlnode->kind == sql_clmn_name ) &&
                             (eq_type(p->schema.items[i].name,t,
@@ -3307,23 +3445,45 @@ reduce(PFla_op_t *p, int goalnt)
                         sql_column_name_new (p->schema.items[i].name, t);
 
                     /* add the sql operation to the select list */
-                    if (p->schema.items[i].type != aat_bln)
-                    selectlist1 = select_list (selectlist1,
-                            ((sqlnode->kind == sql_clmn_name ) &&
-                            (eq_type(p->schema.items[i].name,t,
-                                     sqlnode->sem.column.ident)))?
-                            /* the column name get not affected
-                               by the new correlation name */
-                            crrl_deco (
-                                column_name (sqlnode->sem.column.ident),
-                                sqlnode->crrlname):
-                            column_assign (sqlnode,
-                                column_name (colname->ident)));
+                    
+                        
+
+                    /* we have a different strategy when our 
+                       when our item is boolean */
+                    if (p->schema.items[i].type != aat_bln) {
+                        selectlist1 = select_list (selectlist1,
+                                ((sqlnode->kind == sql_clmn_name ) &&
+                                 (eq_type(p->schema.items[i].name,t,
+                                          sqlnode->sem.column.ident)))?
+                                /* the column name get not affected
+                                   by the new correlation name */
+                                crrl_deco (
+                                    column_name (sqlnode->sem.column.ident),
+                                    sqlnode->crrlname):
+                                column_assign (sqlnode,
+                                    column_name (colname->ident)));
+                    } else {
+                        /* our item is boolean, we work around this problem
+                           with a case statement */
+                        selectlist1 = select_list (selectlist1,
+                                ((sqlnode->kind == sql_clmn_name) &&
+                                 (eq_type(p->schema.items[i].name,t,
+                                          sqlnode->sem.column.ident)))?
+                                crrl_deco (
+                                    column_name (sqlnode->sem.column.ident),
+                                    sqlnode->crrlname):
+                                column_assign (
+                                    case_
+                                    (
+                                     else_ (lit_int (0)),
+                                     when (sqlnode, lit_int (1))
+                                    ),
+                                    column_name (colname->ident)));
+                    }
 
                     /* create a column list for the variable
                        and for the select automatic generated
                        sfw statement in annotations. */
-                   if (p->schema.items[i].type != aat_bln)
                    selectlist2 = select_list (selectlist2,
                            crrl_deco (
                                ((sqlnode->kind == sql_clmn_name ) &&
@@ -3341,7 +3501,6 @@ reduce(PFla_op_t *p, int goalnt)
                                crrl->name));
 
                    /* create columnlist for the table name */
-                   if (p->schema.items[i].type != aat_bln)
                    columnlist = column_list (columnlist,
                         ((sqlnode->kind == sql_clmn_name ) &&
                             (eq_type(p->schema.items[i].name,t,
@@ -3387,6 +3546,8 @@ reduce(PFla_op_t *p, int goalnt)
                 wherelist;
         }
 
+
+
 	if(p->distinct)
 		sql_stmt->sem.select.distinct = true;
 
@@ -3411,8 +3572,29 @@ reduce(PFla_op_t *p, int goalnt)
              NULL,
              NULL
             );
+#ifndef NDEBUG
+        execute (comment ("Binding due to:"));
+        if (p->refctr > 1)
+            execute (comment ("refctr > 1"));
+        if (p->sql_ann->sfw->kind != sql_select)
+            execute (comment ("kind != sql_select"));
+        if (p->dirty)
+            execute (comment ("dirty node"));
+#endif 
     }
-    
+    else {
+#ifndef NDEBUG
+        execute (comment ("No binding for this rule",
+                    PFlalg2sql_string[rule]));
+#endif
+    }}
+
+    if(sql_stmt) {
+#ifndef NDEBUG
+        execute (comment ("End rule (reduce1): \"%s\"",
+                    PFlalg2sql_string[rule]));
+#endif
+    }
 }
 
 static PFsql_t*
@@ -4484,16 +4666,6 @@ llscj_elem_loc(PFalg_axis_t axis, PFsql_t *loc, PFsql_correlation_name_t c1,
             (
              crrl_deco(
                  column_name(
-                     sql_special_name_new(sql_col_kind)->ident),
-                 c1),
-             lit_int(ELEM)
-            ));
-
-    sql_where_env_add( ann->wheremap,
-            eq
-            (
-             crrl_deco(
-                 column_name(
                      sql_special_name_new(sql_col_prop)->ident),
                  c1),
              loc
@@ -4506,10 +4678,10 @@ static struct PFsql_alg_ann_t*
 llscj (PFalg_axis_t axis, const PFla_op_t *frag, const PFla_op_t *p)
 {
     assert( frag->sql_ann->fragment );
-    
+
     /* initialize the environment to fill */
     PFsql_alg_ann_t *ret = sql_alg_ann_new();
-    
+
     /* abbreviations for input expressions */
     PFty_t ty = p->sem.scjoin.ty;
     PFsql_t *iter;
@@ -4528,21 +4700,48 @@ llscj (PFalg_axis_t axis, const PFla_op_t *frag, const PFla_op_t *p)
     item = sql_expression( R(p)->sql_ann->colmap,
             pa_item, aat_pre); assert( item );
 
-    /*PFsql_correlation_name_t crrl = item->crrlname;*/ 
+    /* get the correlation name of item */
+    sql_correlation_name_t item_crrl;
+    item_crrl.name = item->crrlname;  
+
     /* get new correlation name for frag expression */
-    sql_correlation_name_t *crrl1 = sql_correlation_name_new();
-    sql_correlation_name_t *crrl2 = sql_correlation_name_new();
+    sql_correlation_name_t *leg_crrl = 
+            (sql_correlation_name_t*)PFmalloc(sizeof(sql_correlation_name_t));
+
+    /* check if the alias expression with item_crrl as correlation name
+        is marked with frag */
+    leg_crrl->name = sql_search_frag(R(p)->sql_ann->sfw->child[1], item_crrl);
+    sql_correlation_name_t *crrl1 = sql_correlation_name_new(); 
+
+    sql_correlation_name_t *crrl2 = 
+            (leg_crrl->name > 0)?leg_crrl:sql_correlation_name_new();
+
+    PFsql_t *fromlist = R(p)->sql_ann->sfw->child[1];
+
+    /* this new relation we need to get the attributes beside the pre
+       value */
+    if(leg_crrl->name == 0) {
+        PFsql_t *fr2 = table_deco(alias(frag->sql_ann->fragment,
+                    correlation_name(crrl2->name)),true); 
+        fromlist = from_list_add( fromlist, fr2);
+    }
+
+    /* this relation we need to get the new elements we want to find
+       with the axis steps */
+    PFsql_t *fr1 = table_deco(
+          alias(frag->sql_ann->fragment, correlation_name(crrl1->name)),true);
+    fromlist = from_list_add( fromlist, fr1);
 
     /* copy iter and item expression to current environment */
     sql_column_env_add(ret->colmap,
-                pa_iter, aat_nat,
-                iter
+            pa_iter, aat_nat,
+            iter
             );
     sql_column_env_add(ret->colmap,
-                pa_item, aat_pre,
-                crrl_deco(
-                    column_name(sql_special_name_new(sql_col_pre)->ident),
-                    crrl1->name
+            pa_item, aat_pre,
+            crrl_deco(
+                column_name(sql_special_name_new(sql_col_pre)->ident),
+                crrl1->name
                 )
             );
 
@@ -4555,26 +4754,16 @@ llscj (PFalg_axis_t axis, const PFla_op_t *frag, const PFla_op_t *p)
                 entry.expression );
     }
 
-    sql_where_env_add( ret->wheremap,
-            eq
-            (
-             crrl_deco(
-                 column_name(
-                     sql_special_name_new(sql_col_pre)->ident),
-                 crrl2->name),
-             item
-            ));
-
-
-    PFsql_t *fromlist = R(p)->sql_ann->sfw->child[1];
-    /* this new relation we need to get the attributes beside the pre
-       value */
-    fromlist = from_list_add( fromlist, alias(frag->sql_ann->fragment,
-                correlation_name(crrl2->name)));
-    /* this relation we need to get the new elements we want to find
-       with the axis steps */
-    fromlist = from_list_add( fromlist, alias(frag->sql_ann->fragment,
-                correlation_name(crrl1->name)));
+    if (leg_crrl->name == 0)
+        sql_where_env_add( ret->wheremap,
+                eq
+                (
+                 crrl_deco(
+                     column_name(
+                         sql_special_name_new(sql_col_pre)->ident),
+                     crrl2->name),
+                 item
+                ));
 
     if( PFty_subtype( ty, PFty_xs_anyElement ())) {
         /* This is a test for element nodes */
@@ -4638,7 +4827,7 @@ llscj (PFalg_axis_t axis, const PFla_op_t *frag, const PFla_op_t *p)
 
     ret->sfw = gen_select(p, ret);
     ret->sfw->child[1] = fromlist;
- 
+
     return ret;
 }
 
