@@ -211,7 +211,7 @@ mal_export int malProfileMode;
 mal_export void clearTrace(void);
 mal_export BAT *getTrace(str ev);
 
-mal_export int getDiskSpace();
+mal_export int getDiskSpace(void);
 #define DEBUG_MAL_PROFILER
 
 #endif
