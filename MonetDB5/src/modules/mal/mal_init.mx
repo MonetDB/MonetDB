@@ -113,6 +113,7 @@ include opt_joinpath;
 include opt_macro;
 include opt_accessmode;
 include opt_multiplex;
+include opt_remap;
 include opt_mergetable;
 include opt_peephole;
 include opt_qep;
