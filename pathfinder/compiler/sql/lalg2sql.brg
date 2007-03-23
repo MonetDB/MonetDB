@@ -765,11 +765,6 @@ reduce(PFla_op_t *p, int goalnt)
     if (L(p))
         substitute (L(p));
 
-#ifndef NDEBUG
-            execute (comment ("Begin rule (reduce1): \"%s\"",
-                        PFlalg2sql_string[rule]));
-#endif
-
     switch (rule) {
         /* Query:  serialize (Frag, Rel) */
         case 1:
@@ -844,7 +839,10 @@ reduce(PFla_op_t *p, int goalnt)
                     "START SCHEMA INFORMATION "
                     "** DO NOT EDIT THESE LINES" ));
 
-            execute (bind
+            execute (comment ("===================="),
+                     comment ("= RESULT RELATIONS ="),
+                     comment ("===================="),
+                     bind
                     (
                      result,
                      R(p)->sql_ann->sfw
@@ -2941,7 +2939,10 @@ reduce(PFla_op_t *p, int goalnt)
 
             sql_table_name_t *elem_tbl = sql_table_name_new ();
 
-            execute( bind
+            execute(comment ("======================="),
+                    comment ("= ELEMENT CONSTRUCTOR ="),
+                    comment ("======================="),
+                    bind
                     (
                      table_name
                      (
@@ -3195,7 +3196,10 @@ reduce(PFla_op_t *p, int goalnt)
                 );
 
             sql_table_name_t *fragtable = sql_table_name_new(); 
-            execute( bind
+            execute (comment ("========================"),
+                     comment ("= TEXTNODE CONSTRUCTOR ="),
+                     comment ("========================"),
+                     bind
                      (
                       table_name
                       (
@@ -3407,8 +3411,24 @@ reduce(PFla_op_t *p, int goalnt)
     /* BINDING */
     /* execute the statement at the end if the node is dirty,
        and bind it to a new SQL variable */
-    if (sql_stmt) {
-    if (DIRTY(p) && rule != 70) {
+    if (sql_stmt && DIRTY(p) && rule != 70) {
+#ifndef NDEBUG
+        execute (comment ("%s", PFlalg2sql_string[rule]),
+                 comment ("Binding due to: %s%s%s%s%s",
+                          (p->refctr > 1)
+                            ? "refctr > 1" : "",
+                          (p->refctr > 1 && 
+                           sql_stmt->kind != sql_select)
+                            ? " and " : "",
+                          (sql_stmt->kind != sql_select)
+                            ? "kind != sql_select" : "",
+                          ((p->refctr > 1 ||
+                            sql_stmt->kind != sql_select) &&
+                           p->dirty)
+                            ? " and " : "",
+                          (p->dirty)
+                            ? "dirty node" : ""));
+#endif 
         /* create a new table name for binding */ 
         sql_table_name_t   *newvar = sql_table_name_new ();
         /* bind the new variable to the sql annotation */
@@ -3572,29 +3592,8 @@ reduce(PFla_op_t *p, int goalnt)
              NULL,
              NULL
             );
-#ifndef NDEBUG
-        execute (comment ("Binding due to:"));
-        if (p->refctr > 1)
-            execute (comment ("refctr > 1"));
-        if (p->sql_ann->sfw->kind != sql_select)
-            execute (comment ("kind != sql_select"));
-        if (p->dirty)
-            execute (comment ("dirty node"));
-#endif 
     }
-    else {
-#ifndef NDEBUG
-        execute (comment ("No binding for this rule",
-                    PFlalg2sql_string[rule]));
-#endif
-    }}
 
-    if(sql_stmt) {
-#ifndef NDEBUG
-        execute (comment ("End rule (reduce1): \"%s\"",
-                    PFlalg2sql_string[rule]));
-#endif
-    }
 }
 
 static PFsql_t*

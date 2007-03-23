@@ -503,114 +503,101 @@ print_statement(PFsql_t *n)
             break;
 
         case sql_over:
-            {   
-                PFprettyprintf(" ROWNUMBER () OVER (%c", START_BLOCK );
-                print_window_clause(R(n));
-                PFprettyprintf("%c)", END_BLOCK);
-            } break;
+            PFprettyprintf(" ROWNUMBER () OVER (%c", START_BLOCK );
+            print_window_clause(R(n));
+            PFprettyprintf("%c)", END_BLOCK);
+            break;
+    
         case sql_bind:
-            {
-                print_table_name( L(n) );
-                PFprettyprintf(" AS (");
-                print_statement( R(n) );
-                PFprettyprintf(")");
-            } break;
+            print_table_name( L(n) );
+            PFprettyprintf(" AS (");
+            print_statement( R(n) );
+            PFprettyprintf(")");
+            break;
+
         case sql_clmn_name:
-            {
-                if( n->crrlname != PF_SQL_CORRELATION_UNBOUNDED ) {
-                    PFprettyprintf("%s", 
-                            PFsql_correlation_name_str(n->crrlname));
-                    PFprettyprintf(".");
-                }
-                PFprettyprintf("%s",
-                        PFsql_column_name_str(n->sem.column.ident));
-            } break;
+            if( n->crrlname != PF_SQL_CORRELATION_UNBOUNDED ) {
+                PFprettyprintf("%s", 
+                        PFsql_correlation_name_str(n->crrlname));
+                PFprettyprintf(".");
+            }
+            PFprettyprintf("%s",
+                    PFsql_column_name_str(n->sem.column.ident));
+            break;
+
         case sql_tbl_name:
-            {
-                print_table_name( n );
-            } break;
+            print_table_name( n );
+            break;
+            
         case sql_clmn_assign:
-            {
-                print_statement( L(n));
-                PFprettyprintf(" AS ");
-                print_statement( R(n));
-            } break;
+            print_statement( L(n));
+            PFprettyprintf(" AS ");
+            print_statement( R(n));
+            break;
+
         case sql_lit_dec:
-            {
-                PFprettyprintf("%g", n->sem.atom.val.dec);
-            } break;
+            PFprettyprintf("%g", n->sem.atom.val.dec);
+            break;
+
         case sql_lit_int:
-            {
-                PFprettyprintf("%i", n->sem.atom.val.i);
-            } break;
+            PFprettyprintf("%i", n->sem.atom.val.i);
+            break;
+
         case sql_lit_null:
-            {
-                PFprettyprintf("NULL");
-            } break;
+            PFprettyprintf("NULL");
+            break;
+            
         case sql_lit_str:
-            {
-                PFprettyprintf("'%s'", n->sem.atom.val.s);
-            } break;
+            PFprettyprintf("'%s'", n->sem.atom.val.s);
+            break;
+
         case sql_table_ref:
-            {
-                PFprettyprintf("%s", n->sem.table );
-            } break;
-            // case sql_select:
-            // {
-            //     PFprettyprintf("SELECT ");
-            //     if( n->sem.select.distinct ) PFprettyprintf("DISTINCT ");
-            //     print_select_list(L(n));
-            //     if(R(n))
-            //     {
-            //         PFprettyprintf(" FROM ");
-            //     }
-            // } break;
-            /* expression : '(' expression '+' expression ')' */
+            PFprettyprintf("%s", n->sem.table );
+            break;
+
         case sql_add:
         case sql_sub:
         case sql_mul:
         case sql_div:
-            {
-                PFprettyprintf("(");
-                print_statement(L(n));
-                PFprettyprintf(" %s ", ID[n->kind]);
-                print_statement(R(n));
-                PFprettyprintf(")");
-            } break;
+            PFprettyprintf("(");
+            print_statement(L(n));
+            PFprettyprintf(" %s ", ID[n->kind]);
+            print_statement(R(n));
+            PFprettyprintf(")");
+            break;
+
         case sql_like:
-            {
-                PFprettyprintf("(");
-                print_statement(L(n));
-                PFprettyprintf(" LIKE  '%%");
-                /* write the string without beginning and 
-                   trailing ' */
-                assert (R(n)->kind == sql_lit_str);
-                PFprettyprintf("%s", R(n)->sem.atom.val.s); 
-                PFprettyprintf("%%')");
-            } break;
+            PFprettyprintf("(");
+            print_statement(L(n));
+            PFprettyprintf(" LIKE  '%%");
+            /* write the string without beginning and 
+               trailing ' */
+            assert (R(n)->kind == sql_lit_str);
+            PFprettyprintf("%s", R(n)->sem.atom.val.s); 
+            PFprettyprintf("%%')");
+            break;
+
         case sql_gt:
-            {
-                PFprettyprintf("(");
-                print_expr (L(n));
-                PFprettyprintf(" > ");
-                print_expr (R(n));
-                PFprettyprintf(")");
-            } break;
+            PFprettyprintf("(");
+            print_expr (L(n));
+            PFprettyprintf(" > ");
+            print_expr (R(n));
+            PFprettyprintf(")");
+            break;
+
         case sql_gteq:
-            {
-                PFprettyprintf("(");
-                print_expr (L(n));
-                PFprettyprintf(" >= ");
-                print_expr (R(n));
-                PFprettyprintf(")");
-            } break;
+            PFprettyprintf("(");
+            print_expr (L(n));
+            PFprettyprintf(" >= ");
+            print_expr (R(n));
+            PFprettyprintf(")");
+            break;
 
         default:
-            {
-                PFoops( OOPS_FATAL,
-                        "Pathfinder doesn't support this kind "
-                        "of SQL tree node (%i)", n->kind); 
-            } break;
+            PFoops( OOPS_FATAL,
+                    "Pathfinder doesn't support this kind "
+                    "of SQL tree node (%i)", n->kind); 
+            break;
     }
 }
 
@@ -832,7 +819,7 @@ print_common_table_expression (FILE *f, PFsql_t *n)
 static void
 print_comment(FILE *f, PFsql_t *n)
 {
-    fprintf(f, "--%s", n->sem.comment);
+    fprintf(f, "-- %s\n", n->sem.comment);
 }
 
 /**
@@ -842,31 +829,32 @@ print_comment(FILE *f, PFsql_t *n)
 static void
 print_binding (FILE* f, PFsql_t *n)
 {
-    PFsql_t *next_binding;
+    /* keep a stack to avoid printing 
+       a comma after the last binding */
+    static unsigned count = 0;
 
     /* collect all bindings */
-    if (n->kind == sql_cmmn_tbl_expr) {
-        print_binding (f, L(n));
-        next_binding = R(n);
-        fprintf(f, ", \n");
-    }
-    else
-        next_binding = n;
-        
-    //assert (next_binding->kind == sql_bind);
-    
-    /* print a binding */
-    switch (next_binding->kind) {
-        case sql_comment:
-        {
-            print_comment(f, next_binding);
-        } break;
-        default:
-            print_common_table_expression (f, next_binding);
+    switch (n->kind) {
+        case sql_cmmn_tbl_expr:
+            count++; /* increase nesting */
+            print_binding (f, L(n));
+            print_binding (f, R(n));
+            count--; /* decrease nesting */
             break;
-    }
 
-//    fputc ('\n', f);
+        case sql_bind:
+            print_common_table_expression (f, n);
+            if (count > 1) fprintf (f, ",\n");
+            fputc ('\n', f);
+            break;
+
+        case sql_comment:
+            print_comment (f, n);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL, "SQL grammar seems to be incorrect.");
+    }
 }
 
 /**
