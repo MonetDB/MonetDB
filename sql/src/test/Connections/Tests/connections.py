@@ -1,13 +1,21 @@
 import os, time, sys
 
+def clean_ports(cmd,mapiport,xrpcport):
+    cmd = cmd.replace('--port=%s' % mapiport,'--port=<mapi_port>')
+    cmd = cmd.replace('--set mapi_port=%s' % mapiport,'--set mapi_port=<mapi_port>')
+    cmd = cmd.replace('--set xrpc_port=%s' % xrpcport,'--set xrpc_port=<xrpc_port>')
+    return cmd
+
 def remote_server_start(x,s,dbinit):
     port = os.getenv('MAPIPORT')
     srvcmd = '%s --dbname "%s_test1" --dbinit="%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),dbinit)
     srvcmd = srvcmd.replace(port,str(int(port)+1))
+    srvcmd_ = clean_ports(srvcmd,str(int(port)+1),os.getenv('XRPCPORT'))
     sys.stdout.write('\nserver %d%d : "%s"\n' % (x,s, dbinit))
     sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s, dbinit))
     sys.stderr.flush()
-    sys.stderr.write('\nremote mserver: "%s"\n' % (srvcmd))
+    sys.stderr.write('\nremote mserver: "%s"\n' % (srvcmd_))
+    sys.stderr.write('#remote mserver: "%s"\n' % (srvcmd))
     sys.stdout.flush()
     sys.stderr.flush()
     srv = os.popen(srvcmd, 'w')
@@ -17,10 +25,12 @@ def remote_server_start(x,s,dbinit):
 def server_start(x,s,dbinit):
     port = int(os.getenv('MAPIPORT'))
     srvcmd = '%s --dbname "%s" --dbinit="%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),dbinit)
+    srvcmd_ = clean_ports(srvcmd,port,os.getenv('XRPCPORT'))
     sys.stdout.write('\nserver %d%d : "%s"\n' % (x,s, dbinit))
     sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s, dbinit))
     sys.stderr.flush()
-    sys.stderr.write('\nmserver: "%s"\n' % (srvcmd))
+    sys.stderr.write('\nmserver: "%s"\n' % (srvcmd_))
+    sys.stderr.write('#mserver: "%s"\n' % (srvcmd))
     sys.stdout.flush()
     sys.stderr.flush()
     srv = os.popen(srvcmd, 'w')
@@ -42,10 +52,12 @@ def client_load_file(clt, port, file):
 
 def client(x,s, c, dbinit, lang, file):
     cltcmd = '%s' % os.getenv('%s_CLIENT' % lang)
+    cltcmd_ = clean_ports(cltcmd,os.getenv('MAPIPORT'),os.getenv('XRPCPORT'))
     sys.stdout.write('\nserver %d%d : "%s", client %d: %s\n' % (x,s,dbinit,c,lang))
     sys.stderr.write('\nserver %d%d : "%s", client %d: %s\n' % (x,s,dbinit,c,lang))
     sys.stderr.flush()
-    sys.stderr.write('\nclient%d: "%s"\n' % (x,cltcmd))
+    sys.stderr.write('\nclient%d: "%s"\n' % (x,cltcmd_))
+    sys.stderr.write('#client%d: "%s"\n' % (x,cltcmd))
     sys.stdout.flush()
     sys.stderr.flush()
     clt = os.popen(cltcmd, 'w')
