@@ -6,6 +6,23 @@ INCLUDES = \
 
 MTSAFE
 
+LIBS = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = \
+		calc.mx bat5.mx algebra.mx status.mx unix.mx \
+		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
+		batcast.mx batcalc.mx batmath.mx aggr.mx counters.mx \
+		pqueue.mx mkey.mx microbenchmark.mx
+
+	HEADERS = h 
+	#SCRIPTS = mal mil ""
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+	LDFLAGS = -lm
+}
+
 lib__batstr = {
 	DIR = pkglibdir
 	SEP = _
@@ -58,23 +75,6 @@ lib__array = {
 	LIBS = ./lib_algebra $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
-}
-
-LIBS = {
-	DIR = pkglibdir
-	SEP = _
-	SOURCES = \
-		calc.mx bat5.mx algebra.mx status.mx unix.mx \
-		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
-		batcast.mx batcalc.mx batmath.mx aggr.mx counters.mx \
-		pqueue.mx mkey.mx microbenchmark.mx
-
-	HEADERS = h 
-	#SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
-	LDFLAGS = -lm
 }
 
 lib__logger = {
