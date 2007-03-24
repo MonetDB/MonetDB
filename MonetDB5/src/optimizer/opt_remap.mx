@@ -76,7 +76,7 @@ static int
 OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	str mod,fcn;
 	char buf[1024];
-	int i;
+	int i,olderrors;
 	InstrPtr p;
 
 	(void) stk;
@@ -102,10 +102,11 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 	/* now see if we can resolve the instruction */
+	olderrors= mb->errors;
 	typeChecker(scope,mb,p,TRUE);
+	mb->errors= olderrors;
 	if( p->typechk== TYPE_UNKNOWN) {
 		freeInstruction(p);
-		mb->errors= 0;
 		return 0;
 	}
 	pushInstruction(mb,p);
@@ -120,11 +121,9 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
 	InstrPtr *old, p;
-	int i, limit,doit= 0;
-	lng clk=GDKusec();
-	str msg= MAL_SUCCEED;
+	int i, limit, doit= 0;
 	Client cntxt = MCgetClient();
-        Module scope = cntxt->nspace;
+	Module scope = cntxt->nspace;
 
 	(void) pci;
 	old = mb->stmt;
@@ -133,20 +132,18 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (msg == MAL_SUCCEED &&
-			getModuleId(p) == malRef && 
+		if ( getModuleId(p) == malRef && 
 			getFunctionId(p) == multiplexRef) {
-			if(mb->errors== 0 && OPTremapDirect(mb, stk, p, scope))
+			if(OPTremapDirect(mb, stk, p, scope)){
 				freeInstruction(p); 
-			else
+				doit++;
+			} else{
 				pushInstruction(mb, p);
-			doit++;
+			}
 		} else
 			pushInstruction(mb, p);
 	}
 	GDKfree(old);
-	if( doit)
-		optimizerCheck(mb, "optimizer.remap", doit, GDKusec() - clk,OPT_CHECK_ALL);
 	return doit;
 }
 
