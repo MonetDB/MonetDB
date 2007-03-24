@@ -104,11 +104,8 @@ factory structures.
 @c
 #include "sql_config.h"
 #include "mal_builder.h"
-#include "bat5.h"
-
-#include "opt_multiplex.h"
 #include "mal_debugger.h"
-#include "mal_namespace.h"
+#include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -421,7 +418,11 @@ str defaultPlan=
 	"joinPath,"
 	"deadcode,"
 	"reduce,"
-	"garbageCollector,";
+	"garbageCollector,"
+	"multiplex";
+
+static str minimalPlan=
+	"multiplex";
 	
 
 static void
@@ -510,8 +511,9 @@ expand the macros (unless this has already been taken
 care of.
 @c
 	if( strcmp(optimizer,"off")==0 ){ 
-		/* no optimization needed */
-		OPTmultiplex(mb,0,0);	/* always perform multiplex expansions */
+		/* no real optimization needed */
+		addOptimizers(c,mb, minimalPlan);
+		optimizeMALBlock(mb);
 	} else {
 		str base;
 		base= GDKstrdup(optimizer);
@@ -523,7 +525,6 @@ care of.
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
 		SQLgetStatistics((mvc *) c->state[OPTIMIZE],mb);
 		optimizeMALBlock(mb);
-		OPTmultiplex(mb,0,0);	/* always perform multiplex expansions */
 	}
 }
 
