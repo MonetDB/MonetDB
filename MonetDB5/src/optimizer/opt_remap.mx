@@ -49,6 +49,7 @@ comment "Remapping function calls to a their multiplex variant";
 @-
 Use a dummy signature to catch the function calls of interest.
 @mal
+module mal;
 pattern mal.multiplex(a:any...):any
 address OPTremapMultiplex;
 @h
@@ -76,7 +77,7 @@ static int
 OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	str mod,fcn;
 	char buf[1024];
-	int i,olderrors;
+	int i;
 	InstrPtr p;
 
 	(void) stk;
@@ -102,9 +103,7 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 	/* now see if we can resolve the instruction */
-	olderrors= mb->errors;
 	typeChecker(scope,mb,p,TRUE);
-	mb->errors= olderrors;
 	if( p->typechk== TYPE_UNKNOWN) {
 		freeInstruction(p);
 		return 0;

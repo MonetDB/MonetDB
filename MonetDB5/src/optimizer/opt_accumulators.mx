@@ -96,7 +96,6 @@ the replacement is aborted.
 	typeChecker(scope, mb, p, TRUE);
 	if (mb->errors || p->typechk == TYPE_UNKNOWN) {
 		/* reset instruction */
-		mb->errors= 0;
 		cntxt->errbuf[0]=0;
 		freeInstruction(p);
 		p=q;
