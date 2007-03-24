@@ -135,6 +135,9 @@ a constant itself.
 #endif
 					done++;
 					again++;
+				} else {
+					GDKfree(msg);
+					mb->stmt[k++]=p;
 				}
 			} else mb->stmt[k++]=p;
 		}
