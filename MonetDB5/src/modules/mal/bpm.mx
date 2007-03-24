@@ -336,6 +336,29 @@ comment "Give the details of the partition tree";
 command dump()
 address BPMdump;
 
+command mapName() :bat[:int,:str] 
+address BPMmapName;
+command mapBid() :bat[:int,:bat] 
+address BPMmapBid;
+command mapAlias() :bat[:int,:bat] 
+address BPMmapAlias;
+command mapNxt() :bat[:int,:int] 
+address BPMmapNxt;
+command mapPrv() :bat[:int,:int] 
+address BPMmapPrv;
+command mapTlowLng() :bat[:int,:lng] 
+address BPMmapTlowLng;
+command mapTlowDbl() :bat[:int,:dbl] 
+address BPMmapTlowDbl;
+command mapThghLng() :bat[:int,:lng] 
+address BPMmapThghLng;
+command mapThghDbl() :bat[:int,:dbl] 
+address BPMmapThghDbl;
+
+command savePartitions() 
+address BPMsavePartitions;
+
+
 command prelude()
 address BPMprelude;
 
@@ -406,6 +429,19 @@ bpm_export str BPMgetDimension(ptr *first, ptr *last,
 	ptr *vlow, ptr *vhgh, bat *bid);
 bpm_export str BPMdump(int *ret);
 bpm_export str BPMdumpAlias(int *ret, bat *bid);
+
+bpm_export str BPMmapName(int *ret);
+bpm_export str BPMmapBid(int *ret);
+bpm_export str BPMmapAlias(int *ret);
+bpm_export str BPMmapNxt(int *ret);
+bpm_export str BPMmapPrv(int *ret);
+bpm_export str BPMmapTlowLng(int *ret);
+bpm_export str BPMmapTlowDbl(int *ret);
+bpm_export str BPMmapThghLng(int *ret);
+bpm_export str BPMmapThghDbl(int *ret);
+
+bpm_export str BPMsavePartitions(int *ret);
+
 bpm_export str BPMprelude(int *ret);
 bpm_export str BPMepilogue(int *ret);
 #endif
@@ -1432,6 +1468,373 @@ BPMdumpAlias(int *ret, bat *bid)
 	(void) ret;
 	return MAL_SUCCEED;
 }
+
+@= getBPMbat
+if (idx == 0) {
+	b = BATnew(TYPE_int, TYPE_@2, bpmcattop);
+	if (b == 0)
+	throw(MAL, "bpm.map@1", "failed to create BAT");
+	idx= b->batCacheid;
+	msg= BKCsetName(&r,(int *)&idx, &nm);
+	if( msg != MAL_SUCCEED) return msg;
+		
+}else {
+	BKCdelete_all(&r,&idx);
+	b = BATdescriptor(idx);
+	if (b == 0)
+	throw(MAL, "bpm.map@1", "failed to get bpm_@1 BAT");
+}
+@c
+
+str
+BPMmapName(int *ret)
+{
+	BAT *b;
+	bat idx;
+	int i,r;
+	str msg = MAL_SUCCEED, nm="bpm_name";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(Name,str)@
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias)
+	 		BUNins(b, &i, bpmcat[i].name, FALSE);
+
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+		
+/* Which is preferable?	BATmode(b,PERSISTENT);*/
+
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+BPMmapBid(int *ret)
+{
+	BAT *b;
+	bat idx;
+	int i,r;
+	str msg = MAL_SUCCEED, nm="bpm_bid";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(Bid,int)@
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias)
+	 		BUNins(b, &i, &bpmcat[i].bid, FALSE);
+
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+BPMmapAlias(int *ret)
+{
+	BAT *b;
+	bat idx;
+	int i,r;
+	str msg = MAL_SUCCEED, nm="bpm_alias";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(Alias,int)@
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias)
+	 		BUNins(b, &i, &bpmcat[i].alias, FALSE);
+
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+		
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+BPMmapNxt(int *ret)
+{
+	BAT *b;
+	bat idx;
+	int i,r;
+	str msg = MAL_SUCCEED, nm="bpm_nxt";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(Nxt,int)@
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias)
+	 		BUNins(b, &i, &bpmcat[i].nxt, FALSE);
+		
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+
+str
+BPMmapPrv(int *ret)
+{
+	BAT *b;
+	bat idx;
+	int i,r;
+	str msg = MAL_SUCCEED, nm="bpm_prv";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(Prv,int)@
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias)
+	 		BUNins(b, &i, &bpmcat[i].prv, FALSE);
+
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+		
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+int nilval(ValPtr v)
+{
+	int tpe; 
+	int (*cmp) (ptr, ptr);
+	ptr nilptr;
+
+	tpe= v->vtype;
+	cmp= BATatoms[tpe].atomCmp;
+	nilptr = ATOMnilptr(tpe);
+	if ((*cmp) ((ptr)v, nilptr)==0) return 1;
+	else return 0;
+}
+
+str
+BPMmapTlowLng(int *ret)
+{
+	BAT *b;
+	int i,t,r;
+	lng val;
+	ValPtr v;
+	bat idx;
+	str msg = MAL_SUCCEED, nm="bpm_tlowlng";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(TlowLng,lng)@
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias){
+			v= &bpmcat[i].tlow;
+			if (!nilval(v)){
+				t= v->vtype;
+				switch  (ATOMstorage(t)) {
+					case TYPE_int: 	val= *(int *)VALget(v);
+							BUNins(b, &i, &val, FALSE);
+							break;
+			    		case TYPE_sht: 	val= *(sht *)VALget(v);
+							BUNins(b, &i, &val, FALSE);
+							break;
+					case TYPE_lng: 	val= *(lng *)VALget(v);
+							BUNins(b, &i, &val, FALSE);
+					}
+			}
+		}
+
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+
+str
+BPMmapTlowDbl(int *ret)
+{
+	BAT *b;
+	int i,t,r;
+	dbl val;
+	ValPtr v;
+	bat idx;
+	str msg = MAL_SUCCEED, nm="bpm_tlowdbl";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(TlowDbl,dbl)@	
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias){
+			v= &bpmcat[i].tlow;
+			if (!nilval(v)){
+			t= v->vtype;
+			switch  (ATOMstorage(t)) {
+				case TYPE_dbl: 	val= *(dbl *)VALget(v);
+						BUNins(b, &i, &val, FALSE);
+						break;
+			    	case TYPE_flt: 	val= *(flt *)VALget(v);
+						BUNins(b, &i, &val, FALSE);
+						break;
+			}}
+		
+		}
+
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+BPMmapThghLng(int *ret)
+{
+	BAT *b;
+	int i,t,r;
+	lng val;
+	ValPtr v;
+	bat idx;
+	str msg = MAL_SUCCEED, nm="bpm_thghlng";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(ThghLng,lng)@
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias){
+			v= &bpmcat[i].thgh;
+			if (!nilval(v)){
+				t= v->vtype;
+				switch  (ATOMstorage(t)) {
+					case TYPE_int: 	val= *(int *)VALget(v);
+							BUNins(b, &i, &val, FALSE);
+							break;
+			    		case TYPE_sht: 	val= *(sht *)VALget(v);
+							BUNins(b, &i, &val, FALSE);
+							break;
+					case TYPE_lng: 	val= *(lng *)VALget(v);
+							BUNins(b, &i, &val, FALSE);
+					}
+			}
+		}
+
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+
+str
+BPMmapThghDbl(int *ret)
+{
+	BAT *b;
+	int i,t,r;
+	dbl val;
+	ValPtr v;
+	bat idx;
+	str msg = MAL_SUCCEED, nm="bpm_thghdbl";
+
+	idx= BBPindex(nm);
+	@:getBPMbat(ThghDbl,dbl)@	
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias){
+			v= &bpmcat[i].thgh;
+			if (!nilval(v)){
+			t= v->vtype;
+			switch  (ATOMstorage(t)) {
+				case TYPE_dbl: 	val= *(dbl *)VALget(v);
+						BUNins(b, &i, &val, FALSE);
+						break;
+			    	case TYPE_flt: 	val= *(flt *)VALget(v);
+						BUNins(b, &i, &val, FALSE);
+						break;
+			}}
+		
+		}
+
+	msg= BKCsetPersistent(&r,(int *)&idx);
+	if( msg != MAL_SUCCEED) return msg;
+
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+
+str
+BPMsavePartitions(int *r)
+{	
+	int i,res,len;
+	bat bt,idx;
+	BAT *tr;
+	str nm;
+	str msg=MAL_SUCCEED;
+
+
+	/* store bat names to be comitted */
+	tr = BATnew(TYPE_void, TYPE_str, bpmcattop+10);
+	BATseqbase(tr,0);
+
+	for(i=1; i< bpmcattop; i++)
+		if( bpmcat[i].alias){
+			bt=bpmcat[i].bid;
+	                                                                              
+			len = strlen(bpmcat[i].name) + 30;
+		        nm = GDKmalloc(len);
+		        snprintf(nm, len, "bpm_%s%d",bpmcat[i].name, i);
+			printf("Name %s\n",nm);
+		
+			/* Check if the name exists already */
+			idx= BBPindex(nm);
+			if (idx == 0) {
+				msg= BKCsetName(r,(int *) &bt,(str *) &nm);
+				if( msg != MAL_SUCCEED) return msg;
+			} else {
+				if (bt!=idx)
+				throw(MAL, "bpm.savePartitions", "Inconsistency in partition names");
+			}
+	
+			msg= BKCsetPersistent(r, (int *)&bt);
+			if( msg != MAL_SUCCEED) return msg;
+			BUNappend(tr, BBPname(bt), FALSE);
+		}
+	
+	BPMmapName(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapAlias(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapBid(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapNxt(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapPrv(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapTlowLng(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapTlowDbl(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapThghLng(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapThghDbl(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+
+	res= TMsubcommit(tr);
+	BBPreclaim(tr);
+
+	return MAL_SUCCEED;
+}
+
 
 @c
 str
