@@ -972,6 +972,9 @@ the function definition in a particular module instead of the current one.
 	setModuleId(curInstr, modnme?putName(modnme,strlen(modnme)): 
 			putName(cntxt->nspace->name, strlen(cntxt->nspace->name)));
 
+	if(isModuleDefined(cntxt->nspace,getModuleId(curInstr)) == FALSE)
+		return (MalBlkPtr) parseError(cntxt, "<module> not defined\n");
+
 	/* get calling parameters */
 	ch= currChar(cntxt);
 	while( ch !=')' && ch && !NL(ch)){
@@ -1193,9 +1196,12 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	@:fcnHeader@
 	getInstrPtr(curBlk,0)->token= kind;
 	curPrg->kind = kind;
+	if(modnme && isModuleDefined(cntxt->nspace,modnme) == FALSE)
+		return (MalBlkPtr) parseError(cntxt, "<module> not defined\n");
 	modnme= modnme? modnme:cntxt->nspace->name;
-	insertSymbol(findModule(cntxt->nspace, 
-			putName(modnme,strlen(modnme))), curPrg);
+		
+	insertSymbol(findModule(cntxt->nspace, putName(modnme,strlen(modnme))),
+		curPrg);
 	trimMalBlk(curBlk);
 	chkProgram(cntxt->nspace,curBlk);
 	if( cntxt->backup){

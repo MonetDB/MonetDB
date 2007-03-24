@@ -594,10 +594,11 @@ A re-check after the optimizer call should reset the token
 to assignment.
 @c
 void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
-	int s1= -1, i,k;
+	int s1= -1, i,k, olderrors;
 	Module m=0;
-	p->typechk= TYPE_UNKNOWN;
 
+	p->typechk= TYPE_UNKNOWN;
+	olderrors= mb->errors;
 	if( p->fcn && p->token>= FCNcall && p->token<= PATcall){
 		p->token= ASSIGNsymbol;
 		p->fcn = NULL;
@@ -632,19 +633,6 @@ In all other cases we should generate a message, but only if we know
 that the error was not caused by checking the definition
 of a polymorphic function or the module or function name are variables,
 In those cases, the detailed analysis is performed upon an actual call.
-[ NOT ALLOWED ANYMORE
-		if( getModuleId(p) && (i=findVariable(mb,getModuleId(p))) != -1 &&
-					getVarType(mb,i) == TYPE_str){
-			for(i=0;i<p->retc;i++) setFixed(mb,getArg(p,i));
-			p->typechk= TYPE_UNKNOWN;
-			return;
-		} 
-		if( getFunctionId(p) && (i=findVariable(mb,getFunctionId(p))) != -1 &&
-					getVarType(mb,i) == TYPE_str){
-			for(i=0;i<p->retc;i++) setFixed(mb,getArg(p,i));
-			p->typechk= TYPE_UNKNOWN; 
-			return; 
-		}
 @c
 		if( ! isaSignature(p) && !getInstrPtr(mb,0)->polymorphic )  {
 			mb->errors++;
@@ -657,7 +645,8 @@ In those cases, the detailed analysis is performed upon an actual call.
 						(getModuleId(p)?getModuleId(p):""),
 						(getModuleId(p)?".":""),
 						getFunctionId(p), errsig);
-			}
+			} else
+				mb->errors= olderrors;
 			p->typechk= TYPE_UNKNOWN;
 		} else p->typechk= TYPE_RESOLVED;
 		return;

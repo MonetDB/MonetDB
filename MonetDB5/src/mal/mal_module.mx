@@ -76,6 +76,7 @@ mal_export void     deleteSymbol(Module scope, Symbol prg);
 mal_export void		setInheritanceMode(Module head,int flag);
 mal_export Module	setInheritance(Module head,Module first, Module second);
 mal_export Module   findModule(Module scope, str name);
+mal_export int 		isModuleDefined(Module scope, str name);
 mal_export Symbol   findSymbolInModule(Module v, str fcn);
 mal_export Symbol   findMALSymbol(str mod, str fcn);
 mal_export int      displayModule(stream *f, Module v, str fcn,int listing);
@@ -381,6 +382,17 @@ Module findModule(Module scope, str name){
 	/* default is always matched with current */
 	if( def->name==NULL) return NULL;
 	return def;
+}
+int isModuleDefined(Module scope, str name){
+	if( name==NULL || scope==NULL) return FALSE;
+	if( name == scope->name) return TRUE;
+	scope= scopeJump[(int)(*name)][(int)(*(name+1))];
+	while(scope != NULL){
+			if( name == scope->name )
+					return TRUE;
+			scope= scope->sibling;
+	}
+	return FALSE;
 }
 @-
 The routine @%findMALSymbol@ starts at the MAL scope level and searches 

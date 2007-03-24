@@ -107,6 +107,7 @@ end main;	# 16
 [ "io",		  nil	  ]
 [ "language",	  nil	  ]
 [ "lock",	  nil	  ]
+[ "mal",	  nil	  ]
 [ "manual",	  nil	  ]
 [ "mat",	  nil	  ]
 [ "mdb",	  nil	  ]
