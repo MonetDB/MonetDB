@@ -429,10 +429,11 @@ case "$host_os" in
 		LINUX_DIST="`cat /etc/SuSE-release   | head -n1 \
 			| sed 's|^.*\(SUSE\) LINUX Enterprise \([[SD]]\)[[ervsktop]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\3E\2|' \
 			| sed 's|^SUSE LINUX Enterprise \([[SD]]\)[[ervsktop]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|SLE\1:\2|' \
-			| sed 's|^.*\(SuSE\) Linux.* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
+			| sed 's|^.*\(SuSE\) Linux.* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|' \
+			| sed 's|^open\(SUSE\) \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
 	elif test -s /etc/gentoo-release ; then
 		LINUX_DIST="`cat /etc/gentoo-release | head -n1 \
-			| sed 's|^.*\(Gentoo\) Base System.* version \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+			| sed 's|^.*\(Gentoo\) Base System.* [[versionrelease]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
 	elif test -s /etc/debian_version ; then
 		LINUX_DIST="Debian:`cat /etc/debian_version | head -n1`"
 	else
