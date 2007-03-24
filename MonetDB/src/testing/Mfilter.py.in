@@ -18,11 +18,8 @@
 
 import sys
 import os
-import getopt
 import re
-import fileinput
-import string
-import time
+##import time
 
 #############################################################################
 #       FUNCTIONS
@@ -43,7 +40,7 @@ def warn(THISFILE,TEXT) :
 ### warn(THISFILE,TEXT) #
 
 def wlen(str) :
-    return len(string.join(string.split(str)))
+    return len(' '.join(str.split()))
 ### wlen(str) #
 
 test = (
@@ -310,7 +307,7 @@ def mFilter (FILE, IGNORE) :
     ftmp = []
     ig = n = 0
     il = iw = ic = el = ew = ec = al = aw = ac = 0
-    for iline in fileinput.input(FILE):
+    for iline in open(FILE):
 	iline = iline.replace('\r', '')
         oline = xline = ""
         if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
@@ -336,7 +333,7 @@ def mFilter (FILE, IGNORE) :
 ##            # differing error messages when loading non-existing modules in dynamic and static Mserver; see above
 ##            oline = iline
 ##            for i in -1, -2:
-##                w = len(string.split(ftmp[i]))
+##                w = len(ftmp[i].split())
 ##                c = wlen(ftmp[i])
 ##                il = il - 1
 ##                iw = iw - w
@@ -368,7 +365,7 @@ def mFilter (FILE, IGNORE) :
             ig = 0
         for ln in oline, xline:
             if len(ln):
-                w = len(string.split(ln))
+                w = len(ln.split())
                 c = wlen(ln)
                 al = al + 1
                 aw = aw + w
@@ -412,14 +409,15 @@ def mFilter (FILE, IGNORE) :
                         warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
         fout.flush()
     fout.close()
-    #if os.name == "nt":
-        #time.sleep(1)
+##    if os.name == "nt":
+##        time.sleep(1)
 ### mFilter (FILE, IGNORE) #
 
 #############################################################################
 #       MAIN
 
 def main(argv) :
+    import getopt
     THISFILE = os.path.basename(argv[0])
     try:
         opts, args = getopt.getopt(argv[1:], "?hI:", ["help"])
