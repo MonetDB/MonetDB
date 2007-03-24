@@ -101,6 +101,7 @@ loading module 'pathfinder'
 [ "pcre",	  2		  ]
 [ "pf_standoff",  1		  ]
 [ "pf_support",	  2		  ]
+[ "pftijah",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  3		  ]
 [ "sys",	  1		  ]
