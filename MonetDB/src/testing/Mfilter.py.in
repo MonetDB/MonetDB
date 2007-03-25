@@ -259,7 +259,7 @@ norm_out = (
 #   None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,					# 01: 5
     None, 'syntax/parse', None, '', '',									# 01: 5
     None, '...', None,											# 02: 3
-    None, '', None, ': ', None,										# 03: 5
+    None, ' !ERROR', '', ': ', None,										# 03: 5
     None, 'mserver_sql', None,										# 04: 3
     None, '...', None,											# 05: 3
     None, '...', None,											# 06: 3
