@@ -1775,7 +1775,7 @@ BPMmapThghDbl(int *ret)
 str
 BPMsavePartitions(int *r)
 {	
-	int i,res,len;
+	int i,len;
 	bat bt,idx;
 	BAT *tr;
 	str nm;
@@ -1829,7 +1829,7 @@ BPMsavePartitions(int *r)
 	BPMmapThghDbl(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
 
-	res= TMsubcommit(tr);
+	TMsubcommit(tr);
 	BBPreclaim(tr);
 
 	return MAL_SUCCEED;
