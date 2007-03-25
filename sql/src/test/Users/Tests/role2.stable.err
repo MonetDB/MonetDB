@@ -81,9 +81,9 @@ stderr of test 'role2` in directory 'src/test/Users` itself:
 # 15:30:50 >  Mtimeout -timeout 60 ./role2.SQL role2 
 # 15:30:50 >  
 
-MAPI  = my_user2@localhost:37763
+MAPI  = my_user2@localhost:38670
 QUERY = SET ROLE my_role;
-ERROR = !WARNING: Role (my_role) missing
+ERROR = !ERROR: Role (my_role) missing
         !ERROR: setVariable: updating variable 'current_role' failed
         !ERROR: setVariable: operation failed.
 
