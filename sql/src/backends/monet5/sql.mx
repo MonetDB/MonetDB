@@ -867,6 +867,7 @@ SQLrollback_wrap(int *ret){
 str
 setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	char buf[BUFSIZ];
 	mvc *m = NULL;
 	int mtype = getArgType(mb, pci, 2);
 	str varname   = *(str *) getArgReference(stk, pci, 1);
@@ -882,12 +883,14 @@ setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (stack_find_var(m, varname)) {
 		stack_set_var(m, varname, src);
 	} else {
-		char buf[BUFSIZ];
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
 		throw(SQL, "sql.setVariable", buf);
 	}
-	if (sql_update_var(m, varname) != GDK_SUCCEED)
-		throw(SQL, "sql.setVariable", "error");
+	if ((msg = sql_update_var(m, varname)) != NULL) {
+		snprintf(buf, BUFSIZ, "%s", msg);
+		_DELETE(msg);
+		throw(SQL, "sql.setVariable", buf);
+	}
 	return MAL_SUCCEED;
 }
 

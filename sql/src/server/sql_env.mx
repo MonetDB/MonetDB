@@ -59,7 +59,7 @@ called 'sessions'.
 
 extern int mvc_debug_on(mvc *m, int flag);
 
-extern int sql_update_var(mvc *sql, char *name);
+extern str sql_update_var(mvc *sql, char *name);
 
 extern int sql_create_env(mvc *sql, sql_schema *s);
 extern int sql_create_profile(mvc *sql, sql_schema *tmp);
@@ -87,24 +87,26 @@ mvc_debug_on(mvc *m, int flg)
 	return 0;
 }
 
-int
+str
 sql_update_var(mvc *m, char *name)
 {
+	char buf[BUFSIZ];
+
 	if (strcmp(name, "debug") == 0) {
 		m->debug = stack_get_number(m, "debug");
 	} else if (strcmp(name, "current_schema") == 0) {
 		char *schema = stack_get_string(m, "current_schema");
 
 		if (!mvc_set_schema(m, schema)) {
-			GDKerror("Schema (%s) missing\n", schema);
-			return GDK_FAIL;
+			snprintf(buf, BUFSIZ, "Schema (%s) missing\n", schema);
+			return _strdup(buf);
 		}
 	} else if (strcmp(name, "current_role") == 0) {
 		char *role = stack_get_string(m, "current_role");
 
 		if (!mvc_set_role(m, role)) {
-			GDKerror("Role (%s) missing\n", role);
-			return GDK_FAIL;
+			snprintf(buf, BUFSIZ, "Role (%s) missing\n", role);
+			return _strdup(buf);
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
 		m->timezone = stack_get_number(m, "current_timezone") / 60;
@@ -120,8 +122,8 @@ sql_update_var(mvc *m, char *name)
 		else if (strcmp(explain, "trace") == 0)
 			m->explain = m_trace;
 		else {
-			GDKwarning("Session variable explain can only be set to 'plan', 'profile' or to the empty string\n");
-			return GDK_FAIL;
+			snprintf(buf, BUFSIZ, "Session variable explain can only be set to 'plan', 'profile' or to the empty string\n");
+			return _strdup(buf);
 		}
 		m->mode = m_explain;
 	} else if (strcmp(name, "cache") == 0) {
@@ -131,7 +133,7 @@ sql_update_var(mvc *m, char *name)
 	}  else if (strcmp(name,"trace") == 0){
 		m->explain= stack_get_number(m, "trace")? m_trace:m_normal;
 	}
-	return GDK_SUCCEED;
+	return NULL;
 }
 
 

@@ -378,14 +378,18 @@ setVariable(mvc* M, str varname, ptr value, int type)
 {
 	mvc *m = *(mvc**)M;
 	ValRecord src;
+	str err;
 
 	VALset(&src, type, value);
 	if (stack_find_var(m, varname)) 
 		stack_set_var(m, varname, &src);
 	else
 		return GDKerror("setVariable: variable '%s' unknown", varname);
-	if (sql_update_var(m, varname) != GDK_SUCCEED)
-		return GDKerror("setVariable: updating variable '%s' failed", varname);
+	if ((err = sql_update_var(m, varname)) != NULL) {
+		GDKerror("%s", err);
+		_DELETE(err);
+		return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 }
 

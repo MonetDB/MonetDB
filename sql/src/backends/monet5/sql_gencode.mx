@@ -270,38 +270,19 @@ dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *name)
 }
 
 InstrPtr
-multiplex1(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, int type, int rtype)
+dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, int o2, int type, int rtype)
 {
 	InstrPtr q;
-	int match=0;
 
-	switch (*name){
-	case '+': case '-': case '!':
-		match=1;
-		break;
-	}
-	if (strcmp(name,"hash") == 0)
-		match = 1;
-	if( match && type <= TYPE_str){
-		q = newStmt1(mb, batcalcRef, name);
-		setVarType(mb,getArg(q,0), newBatType(TYPE_any,rtype));
-		freezeVarType(mb,getArg(q,0));
-		q = pushArgument(mb, q, o1);
-	} else {
+	(void)type;
 		q = newStmt(mb, "mal","multiplex");
 		setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
 		freezeVarType(mb,getArg(q,0));
 		q = pushStr(mb, q, convertMultiplexMod(mod,name));
 		q = pushStr(mb, q, convertMultiplexFcn(name));
 		q = pushArgument(mb, q, o1);
-	}
-	return q;
-}
-
-InstrPtr
-dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, int o2, int type, int rtype)
-{
-	InstrPtr q;
+		q = pushArgument(mb, q, o2);
+/*
 	int match=0;
 
 	switch (*name){
@@ -317,7 +298,7 @@ dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1
 		match = 1;
 	if( (match && type <= TYPE_str) || match==2){
 		q = newStmt1(mb, batcalcRef, name);
-		/*setVarType(mb,getArg(q,0), newBatType(TYPE_any,rtype));*/
+	setVarType(mb,getArg(q,0), newBatType(TYPE_any,rtype));
 		freezeVarType(mb,getArg(q,0));
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
@@ -330,17 +311,17 @@ dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	}
+*/
 	return q;
 }
 
 InstrPtr
-multiplexN(MalBlkPtr mb, char *name)
+multiplexN(MalBlkPtr mb, char *mod, char *name)
 {
 	InstrPtr q = NULL;
 
-	if (strcmp(name,"rotate_xor_hash") == 0) {
+	if (strcmp(name,"rotate_xor_hash") == 0 && strcmp(mod, "calc") == 0)
 		q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
-	} 
 	return q;
 }
 
@@ -1239,8 +1220,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols) {
-				q= multiplex1(mb,mod,convertOperator(fimp),l,tail_type(s)->type->localtype, s->op4.funcval->func->res.type->localtype);
-				
+				int rtype = s->op4.funcval->func->res.type->localtype;
+
+				q = newStmt(mb, "mal","multiplex");
+				setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
+				freezeVarType(mb,getArg(q,0));
+				q = pushStr(mb, q, convertMultiplexMod(mod,fimp));
+				q = pushStr(mb, q, convertMultiplexFcn(fimp));
+				q = pushArgument(mb, q, l);
 			} else {
 				q = newStmt(mb, mod, fimp);
 				q = pushArgument(mb, q, l);
@@ -1270,11 +1257,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				} else {
 					mod= convertMultiplexMod(mod,fimp);
 					fimp= convertMultiplexFcn(fimp);
-					if( strcmp(fimp,"rotate_xor_hash")==0 &&
-						strcmp(mod,"calc")==0){
-						q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
-					} else q= NULL;
-					/* q = multiplexN(mb,fimp); */
 					q = newStmt(mb, "mal","multiplex");
 					setVarType(mb,getArg(q,0), 
 						newBatType(TYPE_oid,tail_type(s->op1.stval)->type->localtype));
@@ -1311,11 +1293,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->nrcols) {
 				fimp = convertMultiplexFcn(fimp);
-				if( strcmp(fimp,"rotate_xor_hash")==0 &&
-					strcmp(mod,"calc")==0){
-					q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
-				} else q= NULL;
-				/* q = multiplexN(mb,fimp);*/
+				q = multiplexN(mb,mod,fimp);
 				if (!q) {
 					q = newStmt(mb, "mal","multiplex");
 					setVarType(mb,getArg(q,0), 
