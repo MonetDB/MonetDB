@@ -79,9 +79,12 @@ comment "Deactivate the counter";
 command openStream():void 
 address CMDopenProfilerStream
 comment "Sent the events to output stream";
-command openStream(fnme:str)
-address CMDsetProfilerStream
+command openStream(fnme:str):void
+address CMDsetProfilerFile
 comment "Send the log events to a file ";
+command openStream(host:str, port:int):void
+address CMDsetProfilerStream
+comment "Send the log events to a stream ";
 command closeStream():void 
 address CMDcloseProfilerStream
 comment "Stop sending the event records";
@@ -194,7 +197,8 @@ profiler_export str CMDsetFilterVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 profiler_export str CMDclrFilterVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 profiler_export str CMDclrFilterProfiler(int *res, str *mod, str *fcn);
 profiler_export str CMDsetNoneProfiler(int *res);
-profiler_export str CMDsetProfilerStream(int *res, str *fnme);
+profiler_export str CMDsetProfilerFile(int *res, str *fnme);
+profiler_export str CMDsetProfilerStream(int *res, str *host, int *port);
 profiler_export str CMDstartPointProfiler(int *res, str *mod, str *fcn);
 profiler_export str CMDendPointProfiler(int *res, str *mod, str *fcn);
 profiler_export str CMDstopProfiler(int *res);
@@ -301,11 +305,20 @@ CMDsetNoneProfiler(int *res)
 }
 
 str
-CMDsetProfilerStream(int *res, str *fnme)
+CMDsetProfilerFile(int *res, str *fnme)
 {
 	(void) res;		/* fool compiler */
 	checkProfiler("setProfiler");
 	setLogFile(MCgetClient()->nspace, *fnme);
+	return MAL_SUCCEED;
+}
+
+str
+CMDsetProfilerStream(int *res, str *host, int *port)
+{
+	(void) res;		/* fool compiler */
+	checkProfiler("setProfiler");
+	setLogStream(MCgetClient()->nspace, *host, *port);
 	return MAL_SUCCEED;
 }
 

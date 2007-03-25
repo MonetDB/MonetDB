@@ -189,6 +189,7 @@ mal_export str closeProfilerStream(void);
 mal_export void initProfiler(MalBlkPtr mb);
 mal_export void profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export str setLogFile(Module cntxt, str fname);
+mal_export str setLogStream(Module cntxt, str host, int port);
 mal_export str setStartPoint(Module cntxt, str mod, str fcn);
 mal_export str setEndPoint(Module cntxt, str mod, str fcn);
 
@@ -338,6 +339,15 @@ The parameter of getEventStream is the return value of the enclosing function:
 	    mal_unset_lock(profileLock,"profileLock");
 	    return @1;
 	}
+@+ Offline processing
+The offline processing structure is the easiest. We merely have to
+produce a correct tuple format for the front-end.
+@c
+#define log(X,Y) if(eventstream) stream_printf(eventstream,X,Y);
+#define log0(X) if(eventstream) stream_printf(eventstream,X);
+#define log2(X,Y,Z) if(eventstream) stream_printf(eventstream,X,Y,Z);
+#define flushLog() if(eventstream) stream_flush(eventstream);
+
 @- Event dispatching
 The profiler strategy is encapsulated here
 Note that the profiler itself should lead to event generations.
@@ -356,17 +366,9 @@ profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		offlineProfilerEvent(cntxt, mb, stk, pc);
 	if (cachedProfiling)
 		cachedProfilerEvent(cntxt, mb, stk, pc);
+	flushLog();
 #endif
 }
-
-@+ Offline processing
-The offline processing structure is the easiest. We merely have to
-produce a correct tuple format for the front-end.
-@c
-#define log(X,Y) if(eventstream) stream_printf(eventstream,X,Y);
-#define log0(X) if(eventstream) stream_printf(eventstream,X);
-#define log2(X,Y,Z) if(eventstream) stream_printf(eventstream,X,Y,Z);
-#define flushLog() if(eventstream) stream_flush(eventstream);
 
 #ifdef MALprofiler
 
@@ -583,7 +585,28 @@ setLogFile(Module cntxt, str fname)
 	}
 	mal_unset_lock(profileLock, "profileLock");
 #else
-	stream_printf(GDKout, "# Monet not compiled for profiling\n");
+	stream_printf(GDKout, "# MonetDB not compiled for profiling\n");
+#endif
+	return MAL_SUCCEED;
+}
+
+str
+setLogStream(Module cntxt, str host, int port)
+{
+	(void) cntxt;		/* still unused */
+#ifdef MALprofiler
+	if( ! profileLockInitialized) {
+		MT_lock_init(&profileLock);
+		profileLockInitialized= 1;
+	}
+	mal_set_lock(profileLock, "profileLock");
+	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL)
+		throw(IO, "mal.profiler", "Could not create event stream");
+	if (eventstream)
+		eventstream = wbstream(eventstream, BUFSIZ);
+	mal_unset_lock(profileLock, "profileLock");
+#else
+	stream_printf(GDKout, "# MonetDB not compiled for profiling\n");
 #endif
 	return MAL_SUCCEED;
 }

@@ -74,6 +74,7 @@ information needed for a descent post-mortem analysis.
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
+#include <stream.h>
 
 
 static struct {
@@ -115,6 +116,7 @@ static struct {
     /*  11 */  {0, 0,  0, 0}
 };
 
+/*
 static struct{
 	int bitmask, flag;
 	char *title;
@@ -145,6 +147,7 @@ static struct{
 	{ 8388608, 23, ""},
 	{ 0, 0, 0}
 };
+*/
 
 static Mapi dbh;
 static MapiHdl hdl = NULL;
@@ -160,7 +163,7 @@ static MapiHdl hdl = NULL;
 
 void
 usage(){
-	int i;
+//	int i;
 	fprintf(stderr,"stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}\n");
 	fprintf(stderr,"-d | --dbname=<database_name>\n");
 	fprintf(stderr,"-u | --user=<user>\n");
@@ -192,8 +195,10 @@ in the startup.
 We should also make the SQL debugger flags accessible
 @c
 	fprintf(stderr,"The <topics> is a comma separated flag list from:\n");
+/*
 	for(i=0; debugmap[i].title; i++)
 		fprintf(stderr,"%s\n", debugmap[i].title);
+*/
 
 	/* to be added to the debug mask table */
 	fprintf(stderr," 0 = thread-specific\n");
@@ -295,21 +300,22 @@ int main(int argc, char **argv)
 {
 	int a=1,i=1,ln=1;
 	char * response, *x;
-	char buffer[1024];
+	char buf[BUFSIZ];
 	char *mod, *fcn;
 	char *host="localhost";
 	int	portnr= 50000;
 	char *dbname= NULL;
 	char *user= "monetdb";
-	char *passwrd= "monetdb";
+	char *password= "monetdb";
 	FILE *d;
 	char cmd[100];
-	int colind[30],colcnt=0;
+	int colind[30],colcnt=0, len = 0;
+	stream *s;
 
     static struct option long_options[13] = {
         {"dbname", 1, 0, 'd'},
         {"user", 1, 0, 'u'},
-        {"passwrd", 1, 0, 'P'},
+        {"password", 1, 0, 'P'},
         {"port", 1, 0, 'p'},
         {"host", 1, 0, 'h'},
         {"help", 1, 0, '?'},
@@ -333,8 +339,8 @@ int main(int argc, char **argv)
 				break;
 			}
 		case 'P':
-			if (strcmp(long_options[option_index].name, "passwrd") == 0) {
-				passwrd= optarg;
+			if (strcmp(long_options[option_index].name, "password") == 0) {
+				password= optarg;
 				break;
 			}
 		case 'p':
@@ -344,7 +350,7 @@ int main(int argc, char **argv)
 			}
 		case 'h':
 			if (strcmp(long_options[option_index].name, "host") == 0) {
-				passwrd= optarg;
+				host= optarg;
 				break;
 			}
 		default:
@@ -374,17 +380,17 @@ int main(int argc, char **argv)
 
 	/* set up the profiler */
 
-	dbh = mapi_connect(host, portnr, user, passwrd, "mal", dbname);
+	dbh = mapi_connect(host, portnr, user, password, "mal", NULL);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
 
 	/* set counters */
 	for(i=0; profileCounter[i].tag; i++){
-		snprintf(buffer,1024,"profiler.activate(\"%s\");",
+		snprintf(buf,BUFSIZ,"profiler.activate(\"%s\");",
 			profileCounter[i].ptag);
 		if( profileCounter[i].status){
-			doQ(buffer);
+			doQ(buf);
 			colind[colcnt++]=i;
 		}
 	}
@@ -396,7 +402,12 @@ int main(int argc, char **argv)
 	if (strchr(argv[a++],'s'))  colcnt--; /* exclude statement from plot*/
 
 	/* Set Filters */
-	doQ("profiler.openStream(\"stdout\");");
+	//doQ("profiler.openStream(\"stdout\");");
+	doQ("profiler.openStream(\"localhost\", 50001);");
+
+	if ((s = udp_rastream("localhost", 50001, "profileStream")) == NULL)
+		perror("stream failed\n");
+
 	if(a== argc) {
 		doQ("profiler.setAll();");
 	} else
@@ -413,9 +424,9 @@ int main(int argc, char **argv)
 			fcn= argv[a];
 			mod= "*";
 		}
-		snprintf(buffer,1024, "profiler.setFilter(\"%s\",\"%s\");",mod,fcn);
-		printf("%s\n",buffer);
-		doQ(buffer);
+		snprintf(buf,BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");",mod,fcn);
+		printf("%s\n",buf);
+		doQ(buf);
 	}
 	doQ("profiler.start();");
 
@@ -423,9 +434,12 @@ int main(int argc, char **argv)
 	
 	plottemplate(colind,colcnt);
 
-	for(; mapi_error(dbh) == MOK ; ){
-		while ( (response= mapi_fetch_line(hdl)) ) {
-			printf("%s\n",response);
+	while( (len=stream_read(s, buf, 1, BUFSIZ)) ) {
+		char *e;
+		response = buf;
+		while((e=strchr(response,'\n')) != NULL) {
+			*e = 0;
+			printf("%s\n", response);
 			x=strchr(response,'[');
 			if (x){
 				d= fopen("stet.dat","a+");
@@ -445,16 +459,11 @@ int main(int argc, char **argv)
 			/*	printf("%s \n",cmd);*/
 				system(cmd); 
 			}
-			
+			response = e+1;
 		}
-		if( mapi_result_error(hdl) != NULL){
-			mapi_explain_result(hdl,stderr);
-			break;
-		}
-		MT_sleep_ms(20);	/* 20 milliseconds seems enough */
-		doQ("");
 	} 
 
+	doQ("profiler.closeStream();");
 	if (mapi_error(dbh) != MOK)
 		die(dbh, hdl);
 	mapi_close_handle(hdl);
