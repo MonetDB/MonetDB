@@ -3282,8 +3282,12 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	if (result == NULL)
 		result = new_result(hdl);
 
+	if (line[0] == '#' && hdl->mid->languageId != LANG_MAL && hdl->mid->languageId != LANG_MIL) {
+		/* comment */
+		return result;
+	}
+	
 	line = strdup(line);	/* make copy we can play with */
-
 	etag = strrchr(line, '#');
 	if (etag == 0 || etag == line) {
 		/* not a useful header line */
