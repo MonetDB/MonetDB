@@ -35,7 +35,7 @@ r:= bat.new(:oid,:int);
 bat.insert(r, 1:oid,1);
 bat.insert(r, 0:oid,2);
 
-z:bat[:oid,:int]:= optimizer.multiplex("calc","+",l2,r);
+z:bat[:oid,:int]:= mal.multiplex("calc","+",l2,r);
 c:= aggr.count(z);
 io.print(c);
 
@@ -46,7 +46,7 @@ n81r:= bat.reverse(n81);
 n81p:= algebra.project(n81r,0:oid);
 nr:= bat.reverse(n81p);
 rs:= algebra.sort(r);
-z:bat[:oid,:int]:= optimizer.multiplex("calc","+",nr,rs);
+z:bat[:oid,:int]:= mal.multiplex("calc","+",nr,rs);
 c:= aggr.count(z);
 io.print(c);
 
