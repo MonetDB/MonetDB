@@ -401,10 +401,10 @@ int main(int argc, char **argv)
 	if (strchr(argv[a++],'s'))  colcnt--; /* exclude statement from plot*/
 
 	/* Set Filters */
-	/*doQ("profiler.openStream(\"stdout\");");*/
-	doQ("profiler.openStream(\"localhost\", 50001);");
+	snprintf(buf,BUFSIZ,"profiler.openStream(\"%s\", %d);", host, portnr);
+	doQ(buf);
 
-	if ((s = udp_rastream("localhost", 50001, "profileStream")) == NULL)
+	if ((s = udp_rastream(host, portnr, "profileStream")) == NULL)
 		perror("stream failed\n");
 
 	if(a== argc) {
