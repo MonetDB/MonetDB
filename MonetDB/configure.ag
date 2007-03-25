@@ -111,7 +111,7 @@ int x = (m.usmblks < 0);], AC_DEFINE(HAVE_SIGNED_MALLINFO, 1, [Define if your ma
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([memset])
-AC_CHECK_FUNCS([fcntl ftime getopt getrlimit getuid kill lockf madvise nanosleep pipe posix_fadvise posix_madvise setenv shutdown strdup strtof sysconf uname strtoll])
+AC_CHECK_FUNCS([fcntl ftime getopt getrlimit getuid kill lockf madvise nanosleep pipe posix_fadvise posix_madvise setenv shutdown strdup strtof sysconf uname strtoll fsync fdatasync])
 AC_CHECK_DECLS([strdup, strtof])
 
 dnl provide different versions of the paths derived above
