@@ -96,14 +96,14 @@ sql_update_var(mvc *m, char *name)
 		char *schema = stack_get_string(m, "current_schema");
 
 		if (!mvc_set_schema(m, schema)) {
-			GDKwarning("Schema (%s) missing\n", schema);
+			GDKerror("Schema (%s) missing\n", schema);
 			return GDK_FAIL;
 		}
 	} else if (strcmp(name, "current_role") == 0) {
 		char *role = stack_get_string(m, "current_role");
 
 		if (!mvc_set_role(m, role)) {
-			GDKwarning("Role (%s) missing\n", role);
+			GDKerror("Role (%s) missing\n", role);
 			return GDK_FAIL;
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
