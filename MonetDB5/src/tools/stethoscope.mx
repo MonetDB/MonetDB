@@ -294,7 +294,7 @@ plottemplate(int * colind, int n){
 int main(int argc, char **argv)
 {
 	int a=1,i=1,ln=1;
-	char * response, *error, *x;
+	char * response, *x;
 	char buffer[1024];
 	char *mod, *fcn;
 	char *host="localhost";
@@ -374,7 +374,7 @@ int main(int argc, char **argv)
 
 	/* set up the profiler */
 
-	dbh = mapi_connect(host, portnr, user, passwrd, "mal", NULL);
+	dbh = mapi_connect(host, portnr, user, passwrd, "mal", dbname);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
@@ -447,7 +447,7 @@ int main(int argc, char **argv)
 			}
 			
 		}
-		if( (error = mapi_result_error(hdl)) != NULL){
+		if( mapi_result_error(hdl) != NULL){
 			mapi_explain_result(hdl,stderr);
 			break;
 		}
