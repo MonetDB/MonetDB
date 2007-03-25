@@ -101,12 +101,6 @@ ADDHELP("startProfiler", "manegold", "Feb 05 2004",
 # include <sys/times.h>
 #endif
 
-#ifndef NATIVE_WIN32
-# ifndef HZ
-#  define HZ CLK_TCK
-# endif
-#endif
-
 #define PARAM(x)        (argv+x)
 #define RETVAL          (argv)
 
