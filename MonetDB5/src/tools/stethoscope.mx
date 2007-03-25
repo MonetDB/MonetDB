@@ -163,7 +163,6 @@ static MapiHdl hdl = NULL;
 
 void
 usage(){
-//	int i;
 	fprintf(stderr,"stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}\n");
 	fprintf(stderr,"-d | --dbname=<database_name>\n");
 	fprintf(stderr,"-u | --user=<user>\n");
@@ -402,7 +401,7 @@ int main(int argc, char **argv)
 	if (strchr(argv[a++],'s'))  colcnt--; /* exclude statement from plot*/
 
 	/* Set Filters */
-	//doQ("profiler.openStream(\"stdout\");");
+	/*doQ("profiler.openStream(\"stdout\");");*/
 	doQ("profiler.openStream(\"localhost\", 50001);");
 
 	if ((s = udp_rastream("localhost", 50001, "profileStream")) == NULL)
