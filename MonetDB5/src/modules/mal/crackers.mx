@@ -223,39 +223,36 @@ address CRKselectValue_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command select(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_6,:@1]
+command select(b:bat[:oid,:@1],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
 address CRKselectBounds_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@1],l:@1,h:@1):bat[:any_2,:void]
+command uselect(b:bat[:any_1,:@1],l:@1,h:@1):bat[:any_1,:oid]
 address CRKuselect_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@1],l:@1):bat[:any_2,:void]
+command uselect(b:bat[:any_1,:@1],l:@1):bat[:any_1,:oid]
 address CRKuselectValue_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_6,:void]
+command uselect(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_1,:oid]
 address CRKuselectBounds_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-@:joinuselect(@1,v,v)@
-@:joinuselect(@1,v,)@
-@:joinuselect(@1,,v)@
-@:joinuselect(@1,,)@
+@:joinuselect(@1)@
 @
 @= joinuselect
-command joinuselect( right:bat[:@2oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:@3oid,:void] ):bat[:oid,:void]
+command joinuselect( right:bat[:oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:oid,:oid] ):bat[:oid,:oid]
 address CRKjoinSelectDefault_@1
 comment "Join left and right on head-OIDs.
 	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
 	The result is a new [:oid,:void] BAT.";
 
-command joinuselect( right:bat[:@2oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:@3oid,:void], inPlace:bit , isForeignKey:bit):bat[:oid,:void]
+command joinuselect( right:bat[:oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:oid,:oid], inPlace:bit , isForeignKey:bit):bat[:oid,:oid]
 address CRKjoinSelectBounds_@1
 comment "Join left and right on head-OIDs.
 	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
@@ -265,6 +262,42 @@ comment "Join left and right on head-OIDs.
 	and hence skip the respective check.
 	(NOTE: This may lead to CRASHES, if isForeignKey is incorrectly passed as TRUE!)";
 @
+
+@= crackAlgebraProjections
+command hselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
+address CRKhselectBoundsProjections_@1_@2
+comment "Retrieve the subset head using a cracker
+        index producing preferably a BATview.";
+
+command tselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKtselectBoundsProjections_@1_@2
+comment "Retrieve the subset tail using a cracker
+        index producing preferably a BATview.";
+
+command joinselect( b:bat[:oid,:@2],l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
+address CRKjoinSelectProjections_@2
+comment "From cpair, only those BUNs qualify that satisfy the range-restriction on the tail.
+        The result is a new [:oid,:bit] BAT that reflects the positions of buns in cpair. 
+	For each tuple that qualifies in cpair, the respective position in the pivot is marked with a 1";
+
+command joinselect( b:bat[:oid,:@1],bp:bat[:oid,:@2], pivot:bat[:oid,:bit], cl:@1, ch:@1, cli:bit, chi:bit, l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
+address CRKjoinSelectProjections_P_@1_@2
+comment "Use the pivot. For each tuple in pivot with a 1, check if the respective tuple (in the same position)
+	 in the tail of cpair satisfies the range restriction. If not mark the pivot BUN as 0.";
+
+command project( b:bat[:oid,:@1],bp:bat[:oid,:@2], l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKProjectCrack_@1_@2
+comment "Sync and project the tail of the cpair";
+
+command project( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
+address CRKProject_@1_@2
+comment "Sync the cracking pair and project the tail";
+
+command projectH( b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
+address CRKProjectH_@1_@2
+comment "Sync the cracking pair and project the head";
+@
+
 @mal
 @:crackAlgebra(chr)@
 @:crackAlgebra(sht)@
@@ -273,7 +306,20 @@ comment "Join left and right on head-OIDs.
 @:crackAlgebra(flt)@
 @:crackAlgebra(dbl)@
 @:crackAlgebra(date)@
-
+@:crackAlgebraProjections(int,chr)@
+@:crackAlgebraProjections(int,sht)@
+@:crackAlgebraProjections(int,int)@
+@:crackAlgebraProjections(int,lng)@
+@:crackAlgebraProjections(int,flt)@
+@:crackAlgebraProjections(int,dbl)@
+@:crackAlgebraProjections(int,date)@
+@:crackAlgebraProjections(date,chr)@
+@:crackAlgebraProjections(date,sht)@
+@:crackAlgebraProjections(date,int)@
+@:crackAlgebraProjections(date,lng)@
+@:crackAlgebraProjections(date,flt)@
+@:crackAlgebraProjections(date,dbl)@
+@:crackAlgebraProjections(date,date)@
 @-
 Direct access to the core cracking routines for cracking a complete BAT;
 mainly for testing/debugging.
@@ -436,6 +482,13 @@ typedef struct {
 												0 complete merge,
 												1 gradually,
 												2 ripple */
+			/* used only in the materialized projections scheme */
+	int 		pbid; 		/* the project bat. Together with the bid, they uniquely identify a cracking pair 
+					   when pid is -1 then chid stores the cracking history for all the cracking pairs where bid is head 
+				           and hiid is a [bit,bit] that stores inclusive information for each bound stored in chid */
+	lng 		nextCrack;	/* points in the next cracking operation that should be applied in thhis cracking pair so as to sync it */
+	int 		chid;
+	int 		hiid;
 } CrackTreeIndex;
 
 typedef struct {
@@ -1286,6 +1339,28 @@ existsTreeIndex(int bid)
 	return -1;
 }
 
+int
+getIndexGivenACrackingPair(int cpair)
+{
+	int i;
+
+        for (i = 0; i < maxCrackMap; i++)
+                if (TreeIndex[i].cbid == cpair)
+			return i;
+	return -1;
+}
+
+int
+existsTreeIndexProjections(int bid, int pbid)
+{
+	int i;
+	
+	for (i = 0; i < maxCrackMap; i++)
+		if (TreeIndex[i].bid == bid && TreeIndex[i].pbid == pbid)
+			return i;
+	return -1;
+}
+
 void
 printAVLTree(struct Node * current, BAT *b, BUN base, int xx){
 	
@@ -1334,6 +1409,106 @@ CRKprintAVLTree_int(int *k, int *bid){
 @= CreateNewIndex
 
 int
+newTreeIndexHistoryProjections_@1(int bid, int chid, int hiid)
+{
+        int i, freemap = -1, units = 1024;
+
+        for (i = 0; i < maxCrackMap; i++)
+                if (TreeIndex[i].bid == -1)
+                        freemap = i;
+
+        if (freemap != -1) {
+                TreeIndex[freemap].bid = bid;
+                TreeIndex[freemap].chid = chid;
+                TreeIndex[freemap].hiid = hiid;
+                return freemap;
+        }
+
+        if (i == maxCrackMap) {
+                CrackTreeIndex *x;
+
+                if (maxCrackMap > 0)
+                        units = (int) (1.2 * maxCrackMap);
+                x = (CrackTreeIndex *) GDKmalloc(sizeof(CrackTreeIndex) * units);
+                memset(x, 0, sizeof(CrackTreeIndex) * units);
+                if (TreeIndex) {
+                        fprintf(stderr, "reallocate index \n");
+                        memcpy(x, TreeIndex, sizeof(CrackTreeIndex) * i);
+                        GDKfree(TreeIndex);
+                }
+                TreeIndex = x;
+                maxCrackMap = units;
+        }
+
+        TreeIndex[i].chid = chid;
+        TreeIndex[i].hiid = hiid;
+        TreeIndex[i].pbid = -1;
+        TreeIndex[i].bid = bid;
+        TreeIndex[i].cbid = -1;
+        TreeIndex[i].cid = -1;
+        TreeIndex[i].iid = -1;
+        TreeIndex[i].did = -1;
+        TreeIndex[i].mergeInsertions = -1;
+        TreeIndex[i].reCreate = 0;
+        TreeIndex[i].Tree = NULL;
+        TreeIndex[i].deleteNodes = FALSE;
+        TreeIndex[i].mergeDeletions = -1;
+        return i;
+}
+
+
+int
+newTreeIndexProjections_@1(int bid, int cbid, int pbid)
+{
+	int i, freemap = -1, units = 1024;
+	BAT *b;
+	
+	for (i = 0; i < maxCrackMap; i++)
+		if (TreeIndex[i].bid == -1)
+			freemap = i;
+
+	if (freemap != -1) {
+		TreeIndex[freemap].bid = bid;
+		TreeIndex[i].pbid = pbid;
+		return freemap;
+	}
+
+	if (i == maxCrackMap) {
+		CrackTreeIndex *x;
+
+		if (maxCrackMap > 0)
+			units = (int) (1.2 * maxCrackMap);
+		x = (CrackTreeIndex *) GDKmalloc(sizeof(CrackTreeIndex) * units);
+		memset(x, 0, sizeof(CrackTreeIndex) * units);
+		if (TreeIndex) {
+			fprintf(stderr, "reallocate index \n");
+			memcpy(x, TreeIndex, sizeof(CrackTreeIndex) * i);
+			GDKfree(TreeIndex);
+		}
+		TreeIndex = x;
+		maxCrackMap = units;
+	}
+
+	TreeIndex[i].nextCrack = 0;
+	TreeIndex[i].chid = -1;
+	TreeIndex[i].hiid = -1;
+	TreeIndex[i].pbid = pbid;  /* this line is the only addittion compared to the non projections function */
+	TreeIndex[i].bid = bid;
+	TreeIndex[i].cbid = cbid;
+	b = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
+	BBPkeepref(b->batCacheid);
+	TreeIndex[i].cid = b->batCacheid;
+	TreeIndex[i].iid = -1;
+	TreeIndex[i].did = -1;
+	TreeIndex[i].mergeInsertions = -1;
+	TreeIndex[i].reCreate = 0;
+	TreeIndex[i].Tree = NULL;
+	TreeIndex[i].deleteNodes = FALSE;
+	TreeIndex[i].mergeDeletions = -1;
+	return i;
+}
+
+int
 newTreeIndex_@1(int bid, int cbid)
 {
 	int i, freemap = -1, units = 1024;
@@ -1364,6 +1539,9 @@ newTreeIndex_@1(int bid, int cbid)
 		maxCrackMap = units;
 	}
 
+	TreeIndex[i].chid = -1;
+	TreeIndex[i].hiid = -1;
+	TreeIndex[i].pbid = -1;
 	TreeIndex[i].bid = bid;
 	TreeIndex[i].cbid = cbid;
 	b = BATnew(TYPE_lng, TYPE_@1, IndexEntries);	/* TODO: size */
@@ -2694,6 +2872,163 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, lng first, lng last, ln
 }
 @
 
+@= shuffleProjections2
+	hdummy = *(@1*) @3;
+	*(@1*) @3= *(@1*) @4;
+        *(@1*) @4= hdummy;
+
+	tdummy= *(@2*) @5;
+        *(@2*) @5= *(@2*) @6;
+        *(@2*) @6 = tdummy;
+@
+@= crackInTwoUnorderedPiecesProjections
+crackers_export str CRKcrackUnorderedZeroProjections_@3_@1_@2( BAT *b, @1 mval, lng first, lng last, lng *pos);
+str
+CRKcrackUnorderedZeroProjections_@3_@1_@2( BAT *b, @1 mval, lng first, lng last, lng *pos){
+        BUN vm, vl;
+        BUN vmt, vlt;
+        int xx;
+        @1 hdummy;
+        @2 tdummy;
+
+        /* set bounds for the iterator */
+        xx = BUNsize(b);
+
+        vm = BUNhloc(b, BUNptr(b,first));
+        vl= BUNhloc(b,BUNptr(b,last));
+        vmt = BUNtloc(b, BUNptr(b,first));
+        vlt= BUNtloc(b,BUNptr(b,last));
+
+        while(vm<vl) {
+                if (@6_@4(vm, &mval,@7@1)){
+                        vm  += xx; 
+			vmt += xx;
+		}
+                else {
+                        while( @6_@5(vl, &mval,@7@1) && vl>vm){
+                                vl  -= xx; 
+				vlt -= xx;
+			}
+                        @:shuffleProjections2(@1,@2,vm,vl,vmt,vlt)@
+                        vl  -= xx;
+			vlt -= xx;
+                        vm  += xx;
+			vmt += xx;
+                }
+        }
+
+	if (vl == vm) {
+		if (@6_@5(vl, &mval,@7@1))
+			*pos = BUNindex(b,vl - xx); /*works for empty left piece also*/
+		else{
+			*pos = BUNindex(b,vl);
+			if (BUNindex(b,vl)==(size_t)last) /*empty right piece*/
+				*pos = *pos+1;
+		}
+	}
+	else
+		*pos = BUNindex(b,vl);
+		
+        return MAL_SUCCEED;
+}
+@
+
+@= crackInThreeUnorderedPiecesProjections
+
+crackers_export str CRKcrackUnorderedThreeProjections_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, lng first, lng last, lng *posl, lng *posh);
+str
+CRKcrackUnorderedThreeProjections_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, lng first, lng last, lng *posl, lng *posh){
+        BUN vm, vl, hmax;
+        BUN vmt, vlt, hmaxt;
+        int xx;
+        @1 hdummy;
+        @2 tdummy;
+
+        /* set bounds for the iterator */
+        xx = BUNsize(b);
+
+        vm = BUNhloc(b, BUNptr(b,first));
+        hmax = BUNhloc(b,BUNptr(b,last));
+        vmt = BUNtloc(b, BUNptr(b,first));
+        hmaxt = BUNtloc(b,BUNptr(b,last));
+        while( @9_@8(hmax, &hgh,@[10]@1) && hmax>vm){
+                hmax-= xx; hmaxt-= xx;
+	}
+
+	if (hmax == vm){
+		if (@9_@8(hmax, &hgh,@[10]@1)){ /*left and middle are empty*/
+			*posl =  1;
+			*posh = -1;
+		}
+		else if (@9_@6(hmax, &low,@[10]@1)){  /*result is one bun*/
+			*posl = *posh = BUNindex(b,hmax);
+		}
+		else{
+			*posl = BUNindex(b, hmax + xx);
+			*posh = BUNindex(b,hmax);
+		}
+		return MAL_SUCCEED;
+	}
+
+        vl = hmax; vlt = hmaxt;
+        while( @9_@6(vl, &low,@[10]@1) && vl>vm){
+                /* move all high values into their final place */
+                if( @9_@8(vl, &hgh,@[10]@1)){
+                        @:shuffleProjections2(@1,@2,vl,hmax,vlt,hmaxt)@
+                        hmax-=xx;hmaxt-=xx;
+                }
+                vl-= xx; vlt-= xx;
+        }
+	if (vl == vm){/*left piece is empty*/
+		if (@9_@8(vl, &hgh,@[10]@1)){
+			@:shuffleProjections2(@1,@2,vl,hmax,vlt,hmaxt)@
+			*posl = BUNindex(b,vl);
+		}
+		else if (@9_@6(vl, &low,@[10]@1)){
+			*posl = BUNindex(b,vl);
+
+		}
+		else{
+			*posl = BUNindex(b,vl + xx);
+			
+		}
+		*posh = BUNindex(b,hmax);
+		return MAL_SUCCEED;
+	}
+        /* vl point to the first <=low, all values >hg are beyond hmax */
+
+        /* perform Zero crack first */
+        while(vm<=vl) {
+                if (@9_@5(vm, &low,@[10]@1)){
+                        vm += xx; vmt += xx;
+                } else {
+                        @:shuffleProjections2(@1,@2,vm,vl,vmt,vlt)@
+                        while( @9_@6(vl, &low,@[10]@1) && vl>vm){
+                                if(@9_@8(vl, &hgh,@[10]@1) ){
+                                        @:shuffleProjections2(@1,@2,vl,hmax,vlt,hmaxt)@
+                                        hmax-=xx; hmaxt-=xx;
+                                }
+                                vl -= xx; vlt -= xx;
+                        }
+                }
+        }
+	if (vm ==  BUNhloc(b,BUNptr(b,last+1))){ /*right and middle are empty*/
+		*posl = -1;
+		*posh = -1;
+		return MAL_SUCCEED;
+	}	
+	if (hmax == vl){ /*then middle piece is empty*/
+		*posl = BUNindex(b,vl + xx);
+		*posh = BUNindex(b,hmax);
+		return MAL_SUCCEED;
+	}
+	*posl = BUNindex(b,vm);
+	*posh = BUNindex(b,hmax);
+
+	return MAL_SUCCEED;
+}
+@
+
 @= operationsOrdered
 @:crackInTwoOrderedPieces(@1,LE,<=,>)@
 @:crackInTwoOrderedPieces(@1,RE,<,>=)@
@@ -2783,6 +3118,7 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @:crackInThreeUnorderedPieces(@1,LO,RO,LE,GT,LT,GE,@2,@3)@
 @:crackInThreeUnorderedPieces(@1,LE,RO,LT,GE,LT,GE,@2,@3)@
 crackers_export str CRKcrackUnorderedZero_@1 (int *res, int *bid, @1 *mid);
+
 str
 CRKcrackUnorderedZero_@1 (int *res, int *bid, @1 *mid)
 {
@@ -2829,6 +3165,15 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 }
 
 
+@
+
+@= operationsProjections
+@:crackInTwoUnorderedPiecesProjections(@1,@2,LE,LE,GT,@3,@4)@
+@:crackInTwoUnorderedPiecesProjections(@1,@2,RE,LT,GE,@3,@4)@
+@:crackInThreeUnorderedPiecesProjections(@1,@2,LO,RE,LE,GT,LE,GT,@3,@4)@
+@:crackInThreeUnorderedPiecesProjections(@1,@2,LE,RE,LT,GE,LE,GT,@3,@4)@
+@:crackInThreeUnorderedPiecesProjections(@1,@2,LO,RO,LE,GT,LT,GE,@3,@4)@
+@:crackInThreeUnorderedPiecesProjections(@1,@2,LE,RO,LT,GE,LT,GE,@3,@4)@
 @
 
 
@@ -3004,6 +3349,20 @@ CRKcrack@2Three_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 @:operationsOrdered(lng,simple,)@
 @:operationsOrdered(flt,simple,)@
 @:operationsOrdered(dbl,simple,)@
+@:operationsProjections(int,int,simple,)@
+@:operationsProjections(int,sht,simple,)@
+@:operationsProjections(int,chr,simple,)@
+@:operationsProjections(int,lng,simple,)@
+@:operationsProjections(int,flt,simple,)@
+@:operationsProjections(int,dbl,simple,)@
+@:operationsProjections(int,date,simple,)@  /* TODO: add the rest of the type combinations once code is stable */
+@:operationsProjections(date,int,atom,TYPE_)@
+@:operationsProjections(date,sht,atom,TYPE_)@
+@:operationsProjections(date,chr,atom,TYPE_)@
+@:operationsProjections(date,lng,atom,TYPE_)@
+@:operationsProjections(date,flt,atom,TYPE_)@
+@:operationsProjections(date,dbl,atom,TYPE_)@
+@:operationsProjections(date,date,atom,TYPE_)@  /* TODO: add the rest of the type combinations once code is stable */
 @}
 
 @c
@@ -4943,6 +5302,241 @@ CRKmergeDeletions_OnNeed@1(int *k, int *bid, int *del){
 @:updatesOnNeed(Gradually,1)@
 @:updatesOnNeed(GraduallyRipple,2)@
 
+@= SyncOperation
+
+str
+Sync_@1_@2(int m, int h){
+	BAT *h1,*h2,*b, *c;
+	BUN h1head,h1tail,h2head,h2tail,idxFirst;
+	int h1size, h2size, xx, zz;
+	lng syncs;
+	lng size;
+
+        lng vl=-1, vh=-1;
+        lng cl1, ch1, cl2, ch2;
+        int _vl;
+        bit HBound, foundLow=0, foundHgh=0;
+        int gapL = 1;
+        int gapH = 1;
+	bit *inclusiveHgh,*inclusiveLow;
+	@1 *low, *hgh;
+
+        if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+	 /* Take the index of the bat */
+        if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+
+        if ((h1 = BATdescriptor(TreeIndex[h].chid)) == NULL) {
+                throw(MAL, "crackers.sync", "Cannot access descriptor");
+        }
+
+        if ((h2 = BATdescriptor(TreeIndex[h].hiid)) == NULL) {
+                throw(MAL, "crackers.sync", "Cannot access descriptor");
+        }
+
+	/* check if the current pair is already synced*/	
+	size = BATcount(h1);
+	if (TreeIndex[m].nextCrack == size)
+		goto done;
+
+	syncs = size - TreeIndex[m].nextCrack;
+	h1size = BUNsize(h1);
+	h2size = BUNsize(h2);
+
+	h1head = BUNhloc(h1, BUNfirst(h1)+h1size*TreeIndex[m].nextCrack);
+	h1tail = BUNtloc(h1, BUNfirst(h1)+h1size*TreeIndex[m].nextCrack);
+	h2head = BUNhloc(h2, BUNfirst(h2)+h2size*TreeIndex[m].nextCrack);
+	h2tail = BUNtloc(h2, BUNfirst(h2)+h2size*TreeIndex[m].nextCrack);
+        zz = BUNsize(c);
+        xx = BUNsize(b);
+        idxFirst = BUNfirst(c);
+
+	if (TreeIndex[m].nextCrack == 0){
+		low = (@1*)h1head;
+                hgh = (@1*)h1tail;
+                inclusiveLow = (bit*)h2head;
+                inclusiveHgh = (bit*)h2tail;
+                if (*inclusiveHgh == TRUE) HBound = FALSE;
+                else HBound = TRUE;
+
+		if ( (!(@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && (!(@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
+			lng posl = BUNindex(b,BUNfirst(b));
+        	        lng posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+	
+                	@:crkThreeTreeProjections(@1,@2,posl,posh)@
+
+		}
+
+		h1head += h1size;
+                h1tail += h1size; 
+                h2head += h2size;
+                h2tail += h2size;
+
+	}	
+
+	for (lng j=0; j<syncs; j++){
+		low = (@1*)h1head; 
+		hgh = (@1*)h1tail; 
+		inclusiveLow = (bit*)h2head; 
+		inclusiveHgh = (bit*)h2tail; 
+		if (*inclusiveHgh == TRUE) HBound = FALSE;
+		else HBound = TRUE;
+
+		if ( (!(@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && (!(@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
+        
+       		 	/* find out where in the index the low   falls */
+               	 	foundLow = GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+        
+        		/* find out where in the index the high falls */        
+			foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+                
+			/*need to increase one position for the low bound only since we always store the previous position in the index*/
+        		if (cl1 != 0) cl1++;
+        		if (cl2 != 0) cl2++;
+        
+       			 /* If one or both of the result view bounds were not found using the
+        		index then we have to crack */
+        		if (foundLow == 0 || foundHgh == 0){
+                		if (foundLow == 0 && foundHgh == 0){                         
+					/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/   
+                        		if (cl1 == cl2){
+                                		@:crkThreeTreeProjections(@1,@2,cl1,ch2)@
+                        		} else {
+                                		/* Else we have to do two cracks separatelly */
+                                
+                                		/* For the cl bound and the next one in the index*/
+                                		@:crkTwoLTreeProjections(@1,@2)@
+                                
+                                		/* For the ch bound and the previous one in the index*/
+                                		@:crkTwoRTreeProjections(@1,@2)@
+                                
+						if (vl>0) _vl=vl-1; 
+						else      _vl=vl;
+                                        	if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);                                
+                                        	if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
+                        		}
+                		} else
+                		if (foundLow == 0){
+                        		@:crkTwoLTreeProjections(@1,@2)@
+                                	if (vl>0) _vl=vl-1; else _vl=vl;
+					if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);
+                        		vh = ch2;
+                		} else
+                		if (foundHgh == 0){
+                        		@:crkTwoRTreeProjections(@1,@2)@
+                                	if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
+                       		 	vl = cl1;
+                		}
+        		} else {
+                		vl = cl1;
+                		vh = ch2;
+        		}
+		}	
+
+/* TODO fill in the rest of the cases */
+/*		if ( (!(@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && ((@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
+		}
+		if ( ((@3_EQ(h1head,ATOMnilptr(TYPE_@1),@4@1))) && (!(@3_EQ(h1tail,ATOMnilptr(TYPE_@1),@4@1)))){
+		}
+*/	
+		h1head += h1size;
+		h1tail += h1size;
+		h2head += h2size;
+		h2tail += h2size;
+	}		
+	
+	TreeIndex[m].nextCrack = size;
+
+	done:;
+	BBPunfix(h1->batCacheid);
+	BBPunfix(h2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(c->batCacheid);
+	return MAL_SUCCEED;
+}
+@
+
+@= AddHistoryOperations
+int
+CreateHistoryBats_@1(int bid)
+{
+	BAT *h1,*h2;
+	lng history_size= 200000;
+
+	h1 = BATnew(TYPE_@1,TYPE_@1,history_size);		
+	h2 = BATnew(TYPE_bit,TYPE_bit,history_size);		
+
+	h1->batBuns->free =  BUNfirst(h1) - h1->batBuns->base;
+        BATsetcount(h1, 0);
+	h2->batBuns->free =  BUNfirst(h2) - h2->batBuns->base;
+        BATsetcount(h2, 0);
+
+	BBPkeepref(h1->batCacheid);
+	BBPkeepref(h2->batCacheid);
+
+	return newTreeIndexHistoryProjections_@1(bid, h1->batCacheid, h2->batCacheid);				
+}
+str
+AddHistory_@1(int h, @1 low, @1 hgh, bit li, bit hi)
+{
+	BAT *h1,*h2;
+	lng size;	
+
+	if ((h1 = BATdescriptor(TreeIndex[h].chid)) == NULL) {
+                throw(MAL, "crackers.sync", "Cannot access descriptor");
+        }                                       
+                                                
+        if ((h2 = BATdescriptor(TreeIndex[h].hiid)) == NULL) {
+                throw(MAL, "crackers.sync", "Cannot access descriptor");
+        }                                       
+                                                
+
+        size = BATcount(h1);
+
+        *(@1*)BUNhloc(h1, BUNlast(h1)) = low;
+        *(@1*)BUNtloc(h1, BUNlast(h1)) = hgh;
+        *(bit*)BUNhloc(h2, BUNlast(h2)) = li;
+        *(bit*)BUNtloc(h2, BUNlast(h2)) = hi;
+
+	h1->batBuns->free =  (BUNlast(h1)+BUNsize(h1)) - h1->batBuns->base;
+        BATsetcount(h1, size+1);
+	h2->batBuns->free =  (BUNlast(h2)+BUNsize(h2)) - h2->batBuns->base;
+        BATsetcount(h2, size+1);
+	
+	BBPunfix(h1->batCacheid);
+        BBPunfix(h2->batCacheid);
+        return MAL_SUCCEED;
+
+}
+@
+
+@c
+@:SyncOperation(int,chr,simple,)@
+@:SyncOperation(int,sht,simple,)@
+@:SyncOperation(int,int,simple,)@
+@:SyncOperation(int,lng,simple,)@
+@:SyncOperation(int,flt,simple,)@
+@:SyncOperation(int,dbl,simple,)@
+@:SyncOperation(int,date,simple,)@
+@:SyncOperation(date,chr,atom,TYPE_)@
+@:SyncOperation(date,sht,atom,TYPE_)@
+@:SyncOperation(date,int,atom,TYPE_)@
+@:SyncOperation(date,lng,atom,TYPE_)@
+@:SyncOperation(date,flt,atom,TYPE_)@
+@:SyncOperation(date,dbl,atom,TYPE_)@
+@:SyncOperation(date,date,atom,TYPE_)@
+
+@:AddHistoryOperations(chr)@
+@:AddHistoryOperations(sht)@
+@:AddHistoryOperations(int)@
+@:AddHistoryOperations(lng)@
+@:AddHistoryOperations(flt)@
+@:AddHistoryOperations(dbl)@
+@:AddHistoryOperations(date)@
+
 @= verifyIndex
 str
 verifyCrackerIndex_@1(int *bid){
@@ -5082,6 +5676,59 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 This function takes a range and returns a view with the result. To do that, we first search the index to determine which parts of the result we already
 know and which parts we have to crack. Then we crack, if necessary,
 the appropriate pieces, update the index and return the result.
+
+@= crkTwoRTreeProjections
+        /*CRACK in two pieces cl2-ch2 using <incHgh bound*/
+        if (*inclusiveHgh == TRUE)
+                CRKcrackUnorderedZeroProjections_LE_@1_@2(b,*hgh, cl2, ch2,&vh);
+        else
+                CRKcrackUnorderedZeroProjections_RE_@1_@2(b,*hgh, cl2, ch2,&vh);
+
+        /*check for gaps*/
+        if (vh < cl2)
+                /*then the left piece is empty*/
+                gapH = -1;
+        if (vh > ch2){
+                /*then the right piece is empty*/
+                gapH = -1;
+                vh--;
+        }
+
+
+@= crkTwoLTreeProjections
+        /*CRACK in two pieces cl1-ch1 using >incLow bound*/
+        if (*inclusiveLow == TRUE)
+                CRKcrackUnorderedZeroProjections_RE_@1_@2(b,*low, cl1, ch1,&vl);
+        else
+                CRKcrackUnorderedZeroProjections_LE_@1_@2(b,*low, cl1, ch1,&vl);
+        if (vl < cl1){
+                /*then the left piece is empty*/
+                gapL = -1;
+        }
+        if (vl > ch1){
+                /*then the right piece is empty*/
+                vl--;
+                gapL = -1;
+        }
+        vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
+                Instead we want the first bun of the right piece*/
+
+@= crkThreeTreeProjections
+        if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
+                CRKcrackUnorderedThreeProjections_LE_RE_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
+                CRKcrackUnorderedThreeProjections_LE_RO_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
+                CRKcrackUnorderedThreeProjections_LO_RE_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
+        if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
+                CRKcrackUnorderedThreeProjections_LO_RO_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
+
+        if (vl != -1 && vh != -1){
+                if (vl>0) _vl=vl-1; else _vl=vl;
+                addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);
+                addTreeIndex_@1(m,hgh,HBound,vh,c);
+        }
+
 
 @= crkThreeTree
 /*printf("crack in three pieces\n");*/
@@ -5456,6 +6103,21 @@ createView:
 	BBPunfix(b->batCacheid);
 @
 
+@= CreateResultProjections
+createView:
+        view = BATslice(b, vl, vh+1);
+
+	if (tail)
+                view = BATslice(BATmirror(VIEWhead_(BATmirror(b), BAT_READ)), vl, vh+1);
+	else 
+                view = BATslice(BATmirror(VIEWhead_(b, BAT_READ)), vl, vh+1);
+
+        *vid = view->batCacheid;
+        BBPkeepref(*vid);
+
+        BBPunfix(b->batCacheid);
+@
+
 @= crackOperations
 lng
 shiftHoles_@1(struct Node *lowNode, struct Node *lowNodeNext, BAT *b, int xx, BAT *c, BUN idxFirst, int zz, @1 *hgh, bit *inclusiveHgh, int position){
@@ -5736,6 +6398,7 @@ selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit 
 
 	return NULL;
 }
+
 str
 CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail)
 {
@@ -6569,6 +7232,233 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 	@:CreateResult()@
 	return MAL_SUCCEED;
 }
+
+@
+
+@= CreateCrackingPair
+		BAT *bo, *bp;
+                lng size;
+                BUN ptail, ctail, nhead, ntail, nlast;
+                int csize, psize, nsize;
+                if ((bo = BATdescriptor(*bid)) == NULL)
+                        throw(MAL, "crackers.crackRange", "Cannot access descriptor");
+                if ((bp = BATdescriptor(*pbid)) == NULL)
+                        throw(MAL, "crackers.crackRange", "Cannot access pdescriptor");
+
+                size = BATcount(bo);
+		b = BATnew(bo->ttype, bp->ttype, size);
+
+                nsize = BUNsize(b);
+                csize = BUNsize(bo);
+                psize = BUNsize(bp);
+                nhead = BUNhloc(b,  BUNfirst(b));
+                ntail = BUNtloc(b,  BUNfirst(b));
+                ctail = BUNtloc(bo, BUNfirst(bo));
+                ptail = BUNtloc(bp, BUNfirst(bp));
+                for(lng j=0;j<size;j++){
+                        *(@1*)nhead = *(@1*)ctail;
+                        *(@2*)ntail = *(@2*)ptail;
+                        nhead+=nsize;
+                        ntail+=nsize;
+                        ctail+=csize;
+                        ptail+=psize;
+                }
+
+                b->hsorted = FALSE;
+                b->tsorted = FALSE;
+                b->hdense = FALSE;
+                b->tdense = FALSE;
+                /*BATkey(b,TRUE);*/
+                BATkey(BATmirror(b),FALSE);
+                b->batRestricted= BAT_READ;
+                BATmode(b,PERSISTENT);
+	
+		nlast = BUNfirst(b) + nsize*size;
+        	b->batBuns->free =  nlast - b->batBuns->base;
+        	BATsetcount(b, size);
+
+                m = newTreeIndexProjections_@1(*bid, b->batCacheid, *pbid);
+
+                bo->batRestricted= BAT_READ;
+                BBPunfix(bo->batCacheid);
+                BBPunfix(bp->batCacheid);
+@
+
+@= crackOperationsProjections
+/* Projections tryout code */
+str
+CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail)
+{
+        BAT *b,*c;
+        BAT *view;
+        int  m, h;
+        lng vl=-1, vh=-1, posl, posh;
+        /* vl and vh are the low and high index values to create the view with the result */
+        lng cl1, ch1, cl2, ch2;
+        /* index values in the case we have to crack
+                |cl1...........ch1|.....................|cl2.........ch2|
+                if we have to crack only one piece, i.e., if our range falls
+                in one piece only then we crack from cl to ch otherwise we use
+                the other indices as it is shown */
+        int xx, zz;
+        int _vl;
+        bit HBound, foundLow=0, foundHgh=0;
+        int gapL = 1;
+        int gapH = 1;
+        BUN idxFirst;
+
+
+        if (@3_GT(low,hgh,@4@1))
+                throw(MAL, "crackers.crack", "illegal range");
+
+        if (*inclusiveHgh == TRUE) HBound = FALSE;
+        else    HBound = TRUE;
+
+        m = existsTreeIndexProjections(*bid, *pbid);
+        h = existsTreeIndexProjections(*bid, -1);
+	if (h == -1)
+		h = CreateHistoryBats_@1(*bid); 
+
+
+        /* if this is the first time we select something from this bat pair, then we have to create it */
+        if (m == -1){
+	/*	lng T1,T2;
+		T1 = GDKusec();
+        */
+
+		@:CreateCrackingPair(@1,@2)@		
+
+	/*      T2 = GDKusec();
+		printf(" Time cost to create the cracking projection is: %lld \n", T2-T1);
+        */
+                if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
+                        throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+                posl = BUNindex(b,BUNfirst(b));
+                posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+
+                @:crkThreeTreeProjections(@1,@2,posl,posh)@
+
+                BBPincref(b->batCacheid,TRUE);
+		
+		AddHistory_@1(h, *low, *hgh, *inclusiveLow, *inclusiveHgh );
+		TreeIndex[m].nextCrack+=1;
+                goto createView;
+        }
+
+	 /* If an index exists for this bat (so it has been cracked before)
+                we search the index to find where our range falls after this
+                search if we have a match on the low range vl will hold the
+                index value, otherwise it will be -1. The same for hgh and vh
+                if there is no match for low then cl will hold the index that
+                from there on we have to crack. The same from hgh and ch
+                Note that in the case of the low range  we always have to increment
+                by one since we want the values that are after this index
+                (because of the way the crack index is created).
+                Also after the search l and h should point to the low and hgh indices
+                (in the crack index) found either as a match or to crack.
+                This is used later on to determine which pieces we have to crack*/
+        
+        /*Check if this bat was previously cracked but the map is not there anymore
+                this may happen if we chose to forget the index because of updates, so now we          
+                have to create a new one and crack in three pieces anyway*/
+
+        if (TreeIndex[m].reCreate == 1){
+                
+                reCreateMap_@1(m);
+                
+                /* Take the index of the bat */
+                if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)                        
+			throw(MAL, "crackers.crackRange", "Cannot access cracker index");
+                
+                /* Take the copy of the bat for which we maintain the index */
+                if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
+                        throw(MAL, "crackers.crackRange", "Cannot access cracker BAT");
+                
+                posl = BUNindex(b,BUNfirst(b));
+                posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+                
+                /*printf(" %lld \n ",posh-posl);*/
+                @:crkThreeTreeProjections(@1,@2,posl,posh)@
+                goto createView;
+        }
+
+	Sync_@1_@2(m,h);        
+        
+        /* Take the index of the bat */
+        if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+        
+        /* Take the copy of the bat for which we maintain the index */
+        if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+	xx = BUNsize(b);
+        zz = BUNsize(c);
+        idxFirst = BUNfirst(c);
+
+        
+        /* find out where in the index the low   falls */
+                foundLow = GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+        
+        /* find out where in the index the high falls */        
+		foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+                
+	/*need to increase one position for the low bound only since we always store the previous position in the index*/
+        if (cl1 != 0) cl1++;
+        if (cl2 != 0) cl2++;
+        
+        /* If one or both of the result view bounds were not found using the
+        index then we have to crack */
+        if (foundLow == 0 || foundHgh == 0){
+                if (foundLow == 0 && foundHgh == 0){                         
+			/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/   
+                        if (cl1 == cl2){
+                                @:crkThreeTreeProjections(@1,@2,cl1,ch2)@
+                        } else {
+                                /* Else we have to do two cracks separatelly */
+                                
+                                /* For the cl bound and the next one in the index*/
+                                @:crkTwoLTreeProjections(@1,@2)@
+                                
+                                /* For the ch bound and the previous one in the index*/
+                                @:crkTwoRTreeProjections(@1,@2)@
+                                
+                                if (IndexSize <IndexStop){                                        
+					if (vl>0) 
+						_vl=vl-1; 
+					else 
+						_vl=vl;
+                                        if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);                                
+                                        if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
+                                }
+                        }
+                } else
+                if (foundLow == 0){
+                        @:crkTwoLTreeProjections(@1,@2)@
+                        if (IndexSize <IndexStop){
+                                if (vl>0) _vl=vl-1; else _vl=vl;
+				if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);
+                        }
+                        vh = ch2;
+                } else
+                if (foundHgh == 0){
+                        @:crkTwoRTreeProjections(@1,@2)@
+                        if (IndexSize <IndexStop)
+                                if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
+                        vl = cl1;
+                }
+        } else {
+                vl = cl1;
+                vh = ch2;
+        }
+
+	AddHistory_@1(h, *low, *hgh, *inclusiveLow, *inclusiveHgh );
+	TreeIndex[m].nextCrack+=1;
+        @:CreateResultProjections()@
+        return MAL_SUCCEED;
+}
+
 @
 
 @= SelectFunctions
@@ -6649,6 +7539,37 @@ CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh)
 	bit inclusive = TRUE;
 	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
 }
+
+@
+
+@= SelectFunctionsProjections
+crackers_export str CRKhselectBoundsProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str
+CRKhselectBoundsProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{
+	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKselectBoundsProjections_@1_@2", "case not handled");
+	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
+        	throw(MAL, "crackers.CRKselectBoundsProjections_@1_@2", "case not handled");
+	else
+		return CRKRangeProjections_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+
+        throw(MAL, "crackers.CRKselectBoundsProjections_@1_@2", "case not handled");
+}
+crackers_export str CRKtselectBoundsProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str
+CRKtselectBoundsProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{
+	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1))
+       		throw(MAL, "crackers.CRKselectBoundsProjections_@1_@2", "case not handled");
+	else if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1))
+        	throw(MAL, "crackers.CRKselectBoundsProjections_@1_@2", "case not handled");
+	else
+		return CRKRangeProjections_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+
+        throw(MAL, "crackers.CRKselectBoundsProjections_@1_@2", "case not handled");
+}
+@
 
 @= JoinSelectBody
 /*
@@ -6873,6 +7794,229 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 }
 @
 
+@= JoinSelectBodyProjections
+
+        BAT *b, *p;     
+        BUN pairt, pivott, pivotlast;        
+	lng size;
+	int bsize, psize;
+
+        if ((b = BATdescriptor(*cpair)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
+        }  
+
+	size = BATcount(b);
+	p = BATnew(TYPE_void,TYPE_bit,size);
+
+	pairt = BUNtloc(b, BUNfirst(b));
+	pivott = BUNtloc(p, BUNfirst(p));
+	bsize = BUNsize(b);
+	psize = BUNsize(p);
+	for (lng j = 0; j<size; j++){
+		if (@3)	
+			*(bit*)pivott = (bit)TRUE;
+		else 
+			*(bit*)pivott = (bit)FALSE;
+
+		pairt  += bsize;
+		pivott += psize;	
+	}
+
+	pivotlast = BUNfirst(p) + psize*size;
+        p->batBuns->free =  pivotlast - p->batBuns->base;
+        BATsetcount(p, size);	
+	
+	p->hsorted = FALSE;
+        p->tsorted = FALSE;
+        p->hdense = FALSE;
+        p->tdense = FALSE;
+
+	BBPkeepref(p->batCacheid);
+	BBPunfix(b->batCacheid);
+	*res = p->batCacheid;
+	 return MAL_SUCCEED;
+
+@
+
+@= JoinSelectBodyProjectionsWithPivot
+
+        BAT *b, *p, *c, *pair;     
+        BUN pairt, pivott;        
+	lng size;
+	int bsize, psize;
+	lng skip;
+	int m;
+	lng cl1,cl2,ch1,ch2;
+
+	m = existsTreeIndexProjections(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackingPair(@1,@2)@		
+		BBPincref(b->batCacheid,TRUE);
+	}	
+
+	Sync_@1_@2(m,existsTreeIndexProjections(*bid, -1));
+
+	if ((pair = BATdescriptor(TreeIndex[m].cbid)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
+        }
+
+        if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+        GetLow_@1(*low1, *inclusiveLow1, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+        GetHgh_@1(*hgh1, *inclusiveHgh1, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+	if (cl1 != 0) cl1++;
+
+        b = BATslice(pair, cl1, ch2+1);
+
+        if ((p = BATdescriptor(*pivot)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
+        }  
+
+	
+	size = BATcount(p);
+	pairt = BUNtloc(b, BUNfirst(b));
+	pivott = BUNtloc(p, BUNfirst(p));
+	bsize = BUNsize(b);
+	psize = BUNsize(p);
+	skip = 0;
+	for (lng j = 0; j<size; j++){
+		if (*(bit*)pivott == TRUE){
+	        	pairt += skip*bsize;	
+			if (!(@3))	
+				*(bit*)pivott = FALSE;
+			skip = 0;
+		}
+		pivott += psize;	
+		skip++;
+	}
+
+	BBPunfix(pair->batCacheid);
+	BBPkeepref(p->batCacheid);
+	*res = p->batCacheid;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+
+@
+
+@= JoinSelectRProjectionsWithoutPivot
+str
+JoinSelectRangeProjections_@3_@4_@2(int *res, int *cpair, @2 *low, @2 *hgh)
+{
+        @:JoinSelectBodyProjections(,@2,@7_@5(pairt,low,@8@2) && @7_@6(pairt,hgh,@8@2))@
+}
+
+@= JoinSelectRProjections
+str
+JoinSelectRangeProjections_P_@3_@4_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1)
+{
+        @:JoinSelectBodyProjectionsWithPivot(@1,@2,@7_@5(pairt,low,@8@2) && @7_@6(pairt,hgh,@8@2))@
+}
+@
+
+@= JoinSelectSProjectionsWithoutPivot
+str
+JoinSelectSingleProjections_@3_@2(int *res, int *cpair, @2 *mid)
+{
+        @:JoinSelectBodyProjections(,@2,@5_@4(pairt,mid,@6@2))@
+}
+
+@= JoinSelectSProjections
+str
+JoinSelectSingleProjections_P_@3_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *mid, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1)
+{
+        @:JoinSelectBodyProjectionsWithPivot(@1,@2,@5_@4(pairt,mid,@6@2))@
+}
+@
+
+@= JoinSelectOperationsProjections
+@:JoinSelectRProjections(@1,@2,LO,RE,GT,LE,@3,@4)@
+@:JoinSelectRProjections(@1,@2,LE,RE,GE,LE,@3,@4)@
+@:JoinSelectRProjections(@1,@2,LO,RO,GT,LT,@3,@4)@
+@:JoinSelectRProjections(@1,@2,LE,RO,GE,LT,@3,@4)@
+@:JoinSelectSProjections(@1,@2,RO,LT,@3,@4)@
+@:JoinSelectSProjections(@1,@2,RE,LE,@3,@4)@
+@:JoinSelectSProjections(@1,@2,LO,GT,@3,@4)@
+@:JoinSelectSProjections(@1,@2,LE,GE,@3,@4)@
+@
+@= JoinSelectOperationsProjectionsWithoutPivot
+@:JoinSelectRProjectionsWithoutPivot(,@2,LO,RE,GT,LE,@3,@4)@
+@:JoinSelectRProjectionsWithoutPivot(,@2,LE,RE,GE,LE,@3,@4)@
+@:JoinSelectRProjectionsWithoutPivot(,@2,LO,RO,GT,LT,@3,@4)@
+@:JoinSelectRProjectionsWithoutPivot(,@2,LE,RO,GE,LT,@3,@4)@
+@:JoinSelectSProjectionsWithoutPivot(,@2,RO,LT,@3,@4)@
+@:JoinSelectSProjectionsWithoutPivot(,@2,RE,LE,@3,@4)@
+@:JoinSelectSProjectionsWithoutPivot(,@2,LO,GT,@3,@4)@
+@:JoinSelectSProjectionsWithoutPivot(,@2,LE,GE,@3,@4)@
+@
+
+@= JoinSelectFunctionsProjectionsWithoutPivot
+crackers_export str CRKjoinSelectProjections_@2(int *res, int *cpair, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str                     
+CRKjoinSelectProjections_@2(int *res, int *cpair, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{               
+        if (@3_EQ(low,ATOMnilptr(TYPE_@2),@4@2)){
+		if (*inclusiveHgh==TRUE)
+                	return JoinSelectSingleProjections_RE_@2(res, cpair, hgh);
+		else
+                	return JoinSelectSingleProjections_RO_@2(res, cpair, hgh);
+	}
+        else if (@3_EQ(hgh,ATOMnilptr(TYPE_@2),@4@2))
+		if (*inclusiveLow==TRUE)
+                	return JoinSelectSingleProjections_LE_@2(res, cpair, low);
+		else
+                	return JoinSelectSingleProjections_LO_@2(res, cpair, low);
+        else{
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRangeProjections_LE_RE_@2(res, cpair, low, hgh);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRangeProjections_LE_RO_@2(res, cpair, low, hgh);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRangeProjections_LO_RO_@2(res, cpair, low, hgh);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRangeProjections_LE_RE_@2(res, cpair, low, hgh);
+	}
+        throw(MAL, "crackers.crackJoinSelectProjections", "case not handled");
+}
+
+@= JoinSelectFunctionsProjections
+crackers_export str CRKjoinSelectProjections_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str                     
+CRKjoinSelectProjections_P_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{               
+        if (@3_EQ(low,ATOMnilptr(TYPE_@2),@4@2)){
+		if (*inclusiveHgh==TRUE)
+                	return JoinSelectSingleProjections_P_RE_@1_@2(res, bid, pbid, pivot, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+                	return JoinSelectSingleProjections_P_RO_@1_@2(res, bid, pbid, pivot, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+	}
+        else if (@3_EQ(hgh,ATOMnilptr(TYPE_@2),@4@2))
+		if (*inclusiveLow==TRUE)
+                	return JoinSelectSingleProjections_P_LE_@1_@2(res, bid, pbid, pivot, low, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+                	return JoinSelectSingleProjections_P_LO_@1_@2(res, bid, pbid, pivot, low, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+        else{
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRangeProjections_P_LE_RE_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRangeProjections_P_LE_RO_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
+                	return JoinSelectRangeProjections_P_LO_RO_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+		else
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	return JoinSelectRangeProjections_P_LE_RE_@1_@2(res, bid, pbid, pivot, low, hgh, low1, hgh1, inclusiveLow1, inclusiveHgh1);
+	}
+        throw(MAL, "crackers.crackJoinSelectProjections", "case not handled");
+}
+@
+
 @c
 @:crackOperations(chr,simple,,chr)@
 @:crackOperations(sht,simple,,sht)@
@@ -6906,4 +8050,295 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 @:JoinSelectFunctions(dbl,simple,)@
 @:JoinSelectFunctions(date,atom,TYPE_)@
 
+@:crackOperationsProjections(int,chr,simple,)@
+@:crackOperationsProjections(int,sht,simple,)@
+@:crackOperationsProjections(int,int,simple,)@
+@:crackOperationsProjections(int,lng,simple,)@
+@:crackOperationsProjections(int,flt,simple,)@
+@:crackOperationsProjections(int,dbl,simple,)@
+@:crackOperationsProjections(int,date,simple,)@
+@:crackOperationsProjections(date,chr,atom,TYPE_)@
+@:crackOperationsProjections(date,sht,atom,TYPE_)@
+@:crackOperationsProjections(date,int,atom,TYPE_)@
+@:crackOperationsProjections(date,lng,atom,TYPE_)@
+@:crackOperationsProjections(date,flt,atom,TYPE_)@
+@:crackOperationsProjections(date,dbl,atom,TYPE_)@
+@:crackOperationsProjections(date,date,atom,TYPE_)@
+
+@:SelectFunctionsProjections(int,chr,simple,)@
+@:SelectFunctionsProjections(int,sht,simple,)@
+@:SelectFunctionsProjections(int,int,simple,)@
+@:SelectFunctionsProjections(int,lng,simple,)@
+@:SelectFunctionsProjections(int,flt,simple,)@
+@:SelectFunctionsProjections(int,dbl,simple,)@
+@:SelectFunctionsProjections(int,date,simple,)@
+@:SelectFunctionsProjections(date,chr,atom,TYPE_)@
+@:SelectFunctionsProjections(date,sht,atom,TYPE_)@
+@:SelectFunctionsProjections(date,int,atom,TYPE_)@
+@:SelectFunctionsProjections(date,lng,atom,TYPE_)@
+@:SelectFunctionsProjections(date,flt,atom,TYPE_)@
+@:SelectFunctionsProjections(date,dbl,atom,TYPE_)@
+@:SelectFunctionsProjections(date,date,atom,TYPE_)@
+
+
+@:JoinSelectOperationsProjectionsWithoutPivot(,chr,simple,)@
+@:JoinSelectOperationsProjectionsWithoutPivot(,sht,simple,)@
+@:JoinSelectOperationsProjectionsWithoutPivot(,int,simple,)@
+@:JoinSelectOperationsProjectionsWithoutPivot(,lng,simple,)@
+@:JoinSelectOperationsProjectionsWithoutPivot(,flt,simple,)@
+@:JoinSelectOperationsProjectionsWithoutPivot(,dbl,simple,)@
+@:JoinSelectOperationsProjectionsWithoutPivot(,date,atom,TYPE_)@
+
+@:JoinSelectOperationsProjections(int,chr,simple,)@
+@:JoinSelectOperationsProjections(int,sht,simple,)@
+@:JoinSelectOperationsProjections(int,int,simple,)@
+@:JoinSelectOperationsProjections(int,lng,simple,)@
+@:JoinSelectOperationsProjections(int,flt,simple,)@
+@:JoinSelectOperationsProjections(int,dbl,simple,)@
+@:JoinSelectOperationsProjections(int,date,atom,TYPE_)@
+@:JoinSelectOperationsProjections(date,chr,atom,TYPE_)@
+@:JoinSelectOperationsProjections(date,sht,atom,TYPE_)@
+@:JoinSelectOperationsProjections(date,int,atom,TYPE_)@
+@:JoinSelectOperationsProjections(date,lng,atom,TYPE_)@
+@:JoinSelectOperationsProjections(date,flt,atom,TYPE_)@
+@:JoinSelectOperationsProjections(date,dbl,atom,TYPE_)@
+@:JoinSelectOperationsProjections(date,date,atom,TYPE_)@
+
+
+@:JoinSelectFunctionsProjectionsWithoutPivot(,chr,simple,)@
+@:JoinSelectFunctionsProjectionsWithoutPivot(,sht,simple,)@
+@:JoinSelectFunctionsProjectionsWithoutPivot(,int,simple,)@
+@:JoinSelectFunctionsProjectionsWithoutPivot(,lng,simple,)@
+@:JoinSelectFunctionsProjectionsWithoutPivot(,flt,simple,)@
+@:JoinSelectFunctionsProjectionsWithoutPivot(,dbl,simple,)@
+@:JoinSelectFunctionsProjectionsWithoutPivot(,date,atom,TYPE_)@
+
+@:JoinSelectFunctionsProjections(int,chr,simple,)@
+@:JoinSelectFunctionsProjections(int,sht,simple,)@
+@:JoinSelectFunctionsProjections(int,int,simple,)@
+@:JoinSelectFunctionsProjections(int,lng,simple,)@
+@:JoinSelectFunctionsProjections(int,flt,simple,)@
+@:JoinSelectFunctionsProjections(int,dbl,simple,)@
+@:JoinSelectFunctionsProjections(int,date,atom,TYPE_)@
+@:JoinSelectFunctionsProjections(date,chr,atom,TYPE_)@
+@:JoinSelectFunctionsProjections(date,sht,atom,TYPE_)@
+@:JoinSelectFunctionsProjections(date,int,atom,TYPE_)@
+@:JoinSelectFunctionsProjections(date,lng,atom,TYPE_)@
+@:JoinSelectFunctionsProjections(date,flt,atom,TYPE_)@
+@:JoinSelectFunctionsProjections(date,dbl,atom,TYPE_)@
+@:JoinSelectFunctionsProjections(date,date,atom,TYPE_)@
+
+@= Project
+crackers_export str CRKProjectCrack_@1(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str
+CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{
+        BAT *b, *c, *view;
+	int m;
+	lng cl1,cl2,ch1,ch2;
+
+	m = existsTreeIndexProjections(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackingPair(@1,@2)@		
+		BBPincref(b->batCacheid,TRUE);
+	}	
+
+	Sync_@1_@2(m,existsTreeIndexProjections(*bid, -1));
+
+        if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
+        }
+
+        if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+                
+        GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+                
+        GetHgh_@1(*hgh, *inclusiveHgh, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+
+	if (cl1 != 0) cl1++;
+
+        view = BATslice(BATmirror(VIEWhead_(BATmirror(b), BAT_READ)), cl1, ch2+1);
+
+        *res = view->batCacheid;
+        BBPkeepref(*res);
+
+        BBPunfix(b->batCacheid);
+        BBPunfix(c->batCacheid);
+        return MAL_SUCCEED;
+}
+
+crackers_export str CRKProjectH_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str
+CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{
+        BAT *b, *p, *r, *c, *pair;
+        BUN pairh, pivott, rest, reslast;
+        lng size, fsize;
+        int bsize, psize, rsize;
+        lng skip;
+	int m;
+	lng cl1,cl2,ch1,ch2;
+
+	m = existsTreeIndexProjections(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackingPair(@1,@2)@		
+		BBPincref(b->batCacheid,TRUE);
+	}	
+
+	Sync_@1_@2(m,existsTreeIndexProjections(*bid, -1));
+
+        if ((pair = BATdescriptor(TreeIndex[m].cbid)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
+        }
+
+	if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+        GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+        GetHgh_@1(*hgh, *inclusiveHgh, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+	if (cl1 != 0) cl1++;
+
+        b = BATslice(pair, cl1, ch2+1);
+	
+        if ((p = BATdescriptor(*pivot)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
+        }
+
+        size = BATcount(p);
+ 	r = BATnew(TYPE_void,b->htype,size);
+
+        pairh  = BUNhloc(b, BUNfirst(b));
+        pivott = BUNtloc(p, BUNfirst(p));
+        rest   = BUNtloc(r, BUNfirst(r));
+        bsize = BUNsize(b);
+        psize = BUNsize(p);
+        rsize = BUNsize(r);
+        skip = 0;
+	fsize = 0;
+        for (lng j = 0; j<size; j++){
+                if (*(bit*)pivott == TRUE){
+                        pairh += skip*bsize;
+			*(@1*)rest = *(@1*)pairh; 
+			rest += rsize;
+                        skip = 0;
+			fsize++;
+                }
+                pivott += psize;
+                skip++;
+        }
+
+        reslast = BUNfirst(r) + rsize*fsize;
+        r->batBuns->free =  reslast - r->batBuns->base;
+        BATsetcount(r, fsize);
+
+	r->hsorted = FALSE;
+        r->tsorted = FALSE;
+        r->hdense = FALSE;
+        r->tdense = FALSE;
+
+        BBPkeepref(r->batCacheid);
+        BBPunfix(p->batCacheid);
+        BBPunfix(b->batCacheid);
+        BBPunfix(pair->batCacheid);
+        *res = r->batCacheid;
+         return MAL_SUCCEED;
+}
+crackers_export str CRKProject_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str
+CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{
+        BAT *b, *p, *r, *c, *pair;
+        BUN pairt, pivott, rest, reslast;
+        lng size, fsize;
+        int bsize, psize, rsize;
+        lng skip;
+	int m;
+	lng cl1,cl2,ch1,ch2;
+
+	m = existsTreeIndexProjections(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackingPair(@1,@2)@		
+		BBPincref(b->batCacheid,TRUE);
+	}	
+
+	Sync_@1_@2(m,existsTreeIndexProjections(*bid, -1));
+
+        if ((pair = BATdescriptor(TreeIndex[m].cbid)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
+        }
+
+	if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
+                throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+        GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+        GetHgh_@1(*hgh, *inclusiveHgh, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
+
+	if (cl1 != 0) cl1++;
+
+        b = BATslice(pair, cl1, ch2+1);
+	
+        if ((p = BATdescriptor(*pivot)) == NULL) {
+                throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
+        }
+
+        size = BATcount(p);
+ 	r = BATnew(TYPE_void,b->ttype,size);
+
+        pairt  = BUNtloc(b, BUNfirst(b));
+        pivott = BUNtloc(p, BUNfirst(p));
+        rest   = BUNtloc(r, BUNfirst(r));
+        bsize = BUNsize(b);
+        psize = BUNsize(p);
+        rsize = BUNsize(r);
+        skip = 0;
+	fsize = 0;
+        for (lng j = 0; j<size; j++){
+                if (*(bit*)pivott == TRUE){
+                        pairt += skip*bsize;
+			*(@2*)rest = *(@2*)pairt; 
+			rest += rsize;
+                        skip = 0;
+			fsize++;
+                }
+                pivott += psize;
+                skip++;
+        }
+
+        reslast = BUNfirst(r) + rsize*fsize;
+        r->batBuns->free =  reslast - r->batBuns->base;
+        BATsetcount(r, fsize);
+
+	r->hsorted = FALSE;
+        r->tsorted = FALSE;
+        r->hdense = FALSE;
+        r->tdense = FALSE;
+
+        *res = r->batCacheid;
+        BBPkeepref(r->batCacheid);
+        BBPunfix(p->batCacheid);
+        BBPunfix(b->batCacheid);
+        BBPunfix(pair->batCacheid);
+        return MAL_SUCCEED;
+}
+@
+
+@c
+@:Project(int,chr)@
+@:Project(int,sht)@
+@:Project(int,int)@
+@:Project(int,lng)@
+@:Project(int,flt)@
+@:Project(int,dbl)@
+@:Project(int,date)@
+@:Project(date,chr,atom,TYPE_)@
+@:Project(date,sht,atom,TYPE_)@
+@:Project(date,int,atom,TYPE_)@
+@:Project(date,lng,atom,TYPE_)@
+@:Project(date,flt,atom,TYPE_)@
+@:Project(date,dbl,atom,TYPE_)@
+@:Project(date,date,atom,TYPE_)@
 
