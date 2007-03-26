@@ -478,17 +478,17 @@ isregistered(const char *url)
 {
 	struct userurl	*p;
 
-	for (p = urls; p != NULL; p = p->next) {
-		int p_len = strlen(p->url);
-                if (p->url[0] == '.') {
-		        int len = strlen(url);
-			if (len > p_len && strcmp(url+len-p_len,p->url) == 0)
-				return (p);
-                } else {
-			if (strncmp(p->url, url, p_len) == 0)
-				return (p);
-                }
+    for (p = urls; p != NULL; p = p->next) {
+        int p_len = strlen(p->url);
+        if (p->url[0] == '.') {
+            int len = strlen(url);
+            if (len > p_len && strcmp(url+len-p_len,p->url) == 0)
+                return (p);
+        } else {
+            if (strncmp(p->url, url, p_len) == 0)
+                return (p);
         }
+    }
 
 	return (NULL);
 }
