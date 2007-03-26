@@ -756,9 +756,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
                 PFmem_destroy ();
                 return PFerrbuf;
         }
-	timing = PFtimer_start ();
+        timing = PFtimer_start ();
 
-	/* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
+        /* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
         num_fun = PFparse (xquery, &proot);
         module_base = PFparse_modules (proot);
         proot = PFnormalize_abssyn (proot);
