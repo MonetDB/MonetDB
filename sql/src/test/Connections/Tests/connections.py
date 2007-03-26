@@ -42,12 +42,22 @@ def server_stop(srv):
 
 def client_load_file(clt, port, file):
     f = open(file, 'r')
+    sys_err = sys.stderr
+    clt_err = open('%s/err.log' % os.getenv('RELSRCDIR'), 'w')                       
+    sys.stderr = clt_err
     for line in f:
 	line = line.replace('port_num', str(port+1))
-	line = line.replace('port_num_5', str(port+2))
-	line = line.replace('port_num_6', str(port+3))
+	line = line.replace('port_num5', str(port+2))
 	clt.write(line)
-    
+        clt_err.close()
+    	clt_err = open('%s/err.log' % os.getenv('RELSRCDIR'), 'r')                       
+	for line1 in clt_err:
+		sys.stderr.write('%s\n' %  (line1.replace('port %s' %  str(port+1),'port <mapi_port>')))
+		sys.stderr.write('#%s\n' % line1)
+    	clt_err.close()
+    sys.stderr = sys_err
+    os.remove('%s/err.log' % os.getenv('RELSRCDIR'))
+    f.close()
 
 
 def client(x,s, c, dbinit, lang, file):

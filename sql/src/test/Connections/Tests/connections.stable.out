@@ -1,0 +1,86 @@
+stdout of test 'connections` in directory 'src/test/Connections` itself:
+
+
+# 12:08:28 >  
+# 12:08:28 >  Mtimeout -timeout 180 /usr/bin/python connections.py connections 
+# 12:08:28 >  
+
+
+server 11 : "include sql;"
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_Connections
+# Visit http://monetdb.cwi.nl/ for further information
+
+server 12 : "include sql;"
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_Connections_test1
+# Visit http://monetdb.cwi.nl/ for further information
+
+server 12 : "include sql;", client 1: SQL
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+
+server 12 : "include sql;", client 2: SQL
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+[ "localhost",	"mTests_src_test_Connections_test1",	"test_db",	"sql"	]
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+[ "localhost",	"mTests_src_test_Connections_test1",	"test_db",	"sql"	]
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+[ "localhost",	"mTests_src_test_Connections_test1",	"test_db",	"sql"	]
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+
+server 12 : "include sql;", client 3: SQL
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+[ "localhost",	"mTests_src_test_Connections_test1",	"localhost_mTests_src_test_Connections_test1_monetdb",	"sql"	]
+% sys.connections,	sys.connections,	sys.connections,	sys.connections # table_name
+% server,	db,	db_alias,	language # name
+% char,	char,	char,	char # type
+% 1024,	64,	1024,	1024 # length
+
+# 12:18:14 >  
+# 12:18:14 >  Done.
+# 12:18:14 >  
+
