@@ -381,8 +381,9 @@ The internal data structure is used as a cache for improved access.
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "algebra.h"
 
-/* #define _DEBUG_BPM_*/
+#define _DEBUG_BPM_
 
 #ifdef WIN32
 #ifndef LIBBPM
@@ -582,7 +583,7 @@ of BATs.
 @= openCat
 @c
 str
-BPMopen()
+BPMopen_org()
 {
 	if(bpmcat) return MAL_SUCCEED;
     mal_set_lock(mal_contextLock, "bpm");
@@ -593,6 +594,173 @@ BPMopen()
     mal_unset_lock(mal_contextLock, "bpm");
 	return MAL_SUCCEED;
 }
+
+@= loadBPMbat
+	idx= BBPindex("bpm_@1");
+        if ((b = BATdescriptor(idx)) == NULL) 
+                throw(MAL, "loadPartitions", "Cannot access descriptor");
+	BATloop(b, p, q) {
+		i = *(int *)BUNhead(b,p);
+		k = *(@2 *) BUNtail(b,p);
+		bpmcat[i].@1 = k;	
+	}
+	BBPunfix(b->batCacheid);
+
+@= openBPMbat
+	idx= BBPindex("bpm_@2");
+        if ((@1 = BATdescriptor(idx)) == NULL) 
+                throw(MAL, "loadPartitions", "Cannot access descriptor");
+
+@= BPMunfix
+	BBPunfix(bnxt->batCacheid);
+	BBPunfix(bprv->batCacheid);
+	BBPunfix(bll->batCacheid);
+	BBPunfix(bld->batCacheid);
+	BBPunfix(bhl->batCacheid);
+	BBPunfix(bhd->batCacheid);
+
+@c
+str
+BPMloadPartitions()
+{	
+	int i,mc,k,tp;
+	bat idx;
+	BAT *b, *bm, *pb;
+	BAT *bnxt, *bprv, *bld, *bll, *bhd, *bhl;
+	BUN p,q,r;
+	str nm;
+	ptr val;
+	size_t cnt,c;
+	
+	idx= BBPindex("bpm_name");
+
+        if ((b = BATdescriptor(idx)) == NULL) {
+                throw(MAL, "loadPartitions", "Cannot access descriptor");
+        }
+	bm = BATmirror(b);
+/*	ALGmax_int(&cnt,bm);*/
+/*	cnt=1024;*/
+
+	cnt=*(size_t *)BATmax(bm,(ptr)&c);
+/*	BBPunfix(bm->batCacheid); */
+
+	mc= (cnt+1)/1024  +1;      
+       	bpmcatsize= 1024*mc;
+	bpmcat= (Partition) GDKzalloc(sizeof(PartitionRec)*bpmcatsize);
+	bpmcattop= cnt+1; /* first one never used */
+
+#ifdef _DEBUG_BPM_
+	stream_printf(GDKout,"Stored partitions %ld\n",cnt);
+	stream_printf(GDKout,"Catalog size %d, top %d\n",bpmcatsize,bpmcattop);
+
+#endif
+
+	for( i=1; i<bpmcattop; i++)
+		bpmcat[i].alias=0;
+
+	BATloop(b, p, q) {
+		i = *(int *)BUNhead(b,p);
+		nm = (str) BUNtail(b,p);
+		bpmcat[i].name = GDKstrdup(nm);	
+	}
+	BBPunfix(b->batCacheid);
+
+	@:loadBPMbat(alias,int)@
+	@:loadBPMbat(bid,int)@
+
+	@:openBPMbat(bnxt,nxt)@
+	@:openBPMbat(bprv,prv)@
+	@:openBPMbat(bll,tlowlng)@
+	@:openBPMbat(bld,tlowdbl)@
+	@:openBPMbat(bhl,thghlng)@
+	@:openBPMbat(bhd,thghdbl)@
+
+/*  Initialize the remaining fields */
+	for( i=1; i<bpmcattop; i++)
+	   if( bpmcat[i].alias) {
+		if ((pb = BATdescriptor(bpmcat[i].bid)) == NULL) {
+			@:BPMunfix@
+                	throw(MAL, "loadPartitions", "Cannot access partitioned bat");}
+		r= BUNfnd(bprv,&i);
+		if (r)
+			bpmcat[i].prv= *(int *) BUNtail(bprv,r);
+		else {	
+			@:BPMunfix@
+			throw(MAL, "load partitions", "broken partition chain:prv");
+		}
+		r= BUNfnd(bnxt,&i);
+		if (r)
+			bpmcat[i].nxt= *(int *) BUNtail(bnxt,r);
+		else {
+			@:BPMunfix@	
+			throw(MAL, "load partitions", "broken partition chain:nxt");
+		}
+		
+		tp=pb->ttype;
+		switch (tp) {
+			case TYPE_int:
+			case TYPE_lng:
+			case TYPE_sht: 	r= BUNfnd(bll,&i); 
+					if (r){
+					   val= BUNtail(bll,r);
+					   VALset(&bpmcat[i].tlow, tp, val); 
+					} else 
+					   VALset(&bpmcat[i].tlow, tp, ATOMnil(tp) );
+
+				 	q= BUNfnd(bhl,&i);
+					if (q){
+					   val= BUNtail(bhl,q);
+					   VALset(&bpmcat[i].thgh, tp, val); 
+					} else 
+					   VALset(&bpmcat[i].thgh, tp, ATOMnil(tp) );
+
+					break;
+			case TYPE_dbl:
+			case TYPE_flt:	r= BUNfnd(bld,&i);
+					if (r){
+					   val= BUNtail(bld,r);
+					   VALset(&bpmcat[i].tlow, tp, val); 
+					} else 
+					   VALset(&bpmcat[i].tlow, tp, ATOMnil(tp) );
+
+				 	q= BUNfnd(bhd,&i);
+					if (q){
+					   val= BUNtail(bhd,q);
+					   VALset(&bpmcat[i].thgh, tp, val); 
+					} else 
+					   VALset(&bpmcat[i].thgh, tp, ATOMnil(tp) );
+
+ 			}
+		VALset(&bpmcat[i].hlow, b->htype, ATOMnil(b->htype) );
+		VALset(&bpmcat[i].hhgh, b->htype, ATOMnil(b->htype) );
+		bpmcat[i].hbits= bpmcat[i].tbits= 0;
+	}
+
+	@:BPMunfix@
+	return MAL_SUCCEED;
+}
+
+
+str
+BPMopen()
+{
+	bat idx;
+
+	if(bpmcat) return MAL_SUCCEED;
+    mal_set_lock(mal_contextLock, "bpm");
+	idx= BBPindex("bpm_name");
+	if (idx == 0){		/*no stored part. structure */
+		bpmcat= (Partition) GDKzalloc(sizeof(PartitionRec)*1024);
+		bpmcatsize= 1024;
+		bpmcattop= 1; /* first one never used */
+	} else  	/* read the partition table structure */
+		BPMloadPartitions();
+
+    mal_unset_lock(mal_contextLock, "bpm");
+	return MAL_SUCCEED;
+}
+
+
 @-
 The remainder contains the implementation.
 @c
@@ -1857,4 +2025,3 @@ BPMepilogue(int *ret)
 	*ret =0;
 	return MAL_SUCCEED;
 }
-
