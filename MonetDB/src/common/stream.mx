@@ -768,16 +768,15 @@ file_fsync(stream *s)
 
 	FILE *fp = (FILE*)s->stream_data.p;
 
-	if (s->access == ST_WRITE &&
+	if (s->access == ST_WRITE 
 #ifdef NATIVE_WIN32
-	    _commit(_fileno(fp)) < 0
+	    && _commit(_fileno(fp)) < 0
 #else
 #ifdef HAVE_FDATASYNC
-	    fdatasync(fileno(fp)) < 0
+	    && fdatasync(fileno(fp)) < 0
 #else
 #ifdef HAVE_FSYNC
-#else
-	    fsync(fileno(fp)) < 0
+	    && fsync(fileno(fp)) < 0
 #endif
 #endif
 #endif
