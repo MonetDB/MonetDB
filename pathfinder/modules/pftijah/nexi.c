@@ -95,7 +95,7 @@ extern int old_main(BAT* optbat, char* startNodes_name);
 char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF) {
   /* setup TijahParserContext structure */
   LOGPRINTF(LOGFILE,"- tijahParse([%s])\n",query);
-  parserCtx->collection   = "PFX";
+  parserCtx->collection   = "DFLT_FT_INDEX";
   parserCtx->queryText    = query;
   parserCtx->errBUFF[0]   = 0;
   parserCtx->milFILEname  = NULL;

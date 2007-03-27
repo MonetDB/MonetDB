@@ -175,8 +175,8 @@ var scoreBase := 0;
 
 const ENTITY_NUM := 10000;
 
-var collName := "PFX";
-var background_collName := "PFX";
+var collName := "DFLT_FT_INDEX";
+var background_collName := "DFLT_FT_INDEX";
 var collHeight := 10;
 var retNum := 100;
 
