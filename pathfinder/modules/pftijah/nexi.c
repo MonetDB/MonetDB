@@ -239,7 +239,8 @@ int old_main(BAT* optbat, char* startNodes_name)
     bool eq_init        = FALSE;
     
     /* startup of argument options */
-    MILPRINTF(MILOUT, "var startNodes := nil;\n");
+    /* INCOMPLETE, select_root() should distinguish between card(0) and nil */
+    MILPRINTF(MILOUT, "var startNodes := new(void,oid);\n");
     if ( use_startNodes ) {
         MILPRINTF(MILOUT, "if ( view_bbp_name().reverse().exist(\"%s\") ) {\n", startNodes_name );
         MILPRINTF(MILOUT, "  startNodes := bat(\"%s\");\n", startNodes_name);
