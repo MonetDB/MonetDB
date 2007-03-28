@@ -1,0 +1,12 @@
+delete_cascade
+delete_no_action
+delete_restrict
+delete_set_default
+delete_set_null
+update_cascade
+update_delete_cascade
+update_delete_set_null
+update_no_action
+update_restrict
+update_set_default
+update_set_null

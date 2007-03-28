@@ -1,0 +1,66 @@
+#!/bin/sh
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2007 CWI.
+# All Rights Reserved.
+
+PWD=`pwd`
+echo $PWD
+SQL='MapiClient -p500000 -lsql -umonetdb -Pmonetdb'
+M5='mserver5 --dbname=demo --set mapi_port=50000 --dbinit="include sql;"'
+if [ $# -eq 1 ]; then
+	SQL=$1
+fi
+
+#Generate Data...
+
+#Bulk-Load into SQL server...
+
+echo delete_cascade
+$SQL < Test/delete_cascade.sql
+
+echo delete_no_action
+$SQL < Test/delete_no_action.sql
+
+echo delete_restrict
+$SQL < Test/delete_restrict.sql
+
+echo delete_set_default
+$SQL < Test/delete_set_default.sql
+
+echo delete_set_null
+$SQL < Test/delete_set_null.sql
+
+echo update_cascade
+$SQL < Test/update_cascade.sql
+
+echo update_delete_cascade
+$SQL < Test/update_delete_cascade.sql
+
+echo update_delete_set_null
+$SQL < Test/update_delete_set_null.sql
+
+echo update_no_action
+$SQL < Test/update_no_action.sql
+
+echo update_restrict
+$SQL < Test/update_restrict.sql
+
+echo update_set_default
+$SQL < Test/update_set_default.sql
+
+echo update_set_null
+$SQL < Test/update_set_null.sql
+
