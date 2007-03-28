@@ -268,6 +268,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                                   true  /* key */,
                                   false /* ocols */, 
                                   false /* reqval */,
+                                  true  /* refctr */,
                                   true  /* original names */,
                                   false /* unique names */,
                                   root);
@@ -281,6 +282,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                                   true  /* key */,
                                   true  /* ocols */, 
                                   true  /* reqval */,
+                                  true  /* refctr */,
                                   false /* original names */,
                                   true  /* unique names */,
                                   root);

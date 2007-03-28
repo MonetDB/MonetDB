@@ -271,10 +271,9 @@ xml_literal (PFalg_atom_t a)
  * Print algebra tree in AT&T dot notation.
  * @param dot Array into which we print
  * @param n The current node to print (function is recursive)
- * @param node_id the next available node id.
  */
-static unsigned int 
-la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
+static void
+la_dot (PFarray_t *dot, PFla_op_t *n)
 {
     unsigned int c;
     assert(n->node_id);
@@ -903,13 +902,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {      
-        /*
-         * Label for child node has already been built, such that
-         * only the edge between parent and child must be created
-         */
-        if (n->child[c]->node_id == 0)
-            n->child[c]->node_id =  node_id++;
-
         PFarray_printf (dot, "node%i -> node%i;\n",
                         n->node_id, n->child[c]->node_id);
     }
@@ -919,9 +911,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     {
         case la_rec_arg:
             if (n->sem.rec_arg.base) {
-                if (n->sem.rec_arg.base->node_id == 0)
-                    n->sem.rec_arg.base->node_id = node_id++;
-                
                 PFarray_printf (dot, 
                                 "node%i -> node%i "
                                 "[style=dashed label=seed dir=back];\n",
@@ -932,43 +921,23 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                                 "[style=dashed label=recurse];\n",
                                 n->child[1]->node_id,
                                 n->sem.rec_arg.base->node_id);
-                if (!n->sem.rec_arg.base->bit_dag)
-                    node_id = la_dot (dot, n->sem.rec_arg.base, node_id);
             }
             break;
 
         case la_proxy:
-            if (n->sem.proxy.base1) {
-                if (n->sem.proxy.base1->node_id == 0)
-                    n->sem.proxy.base1->node_id = node_id++;
-                
+            if (n->sem.proxy.base1)
                 PFarray_printf (dot, "node%i -> node%i [style=dashed];\n",
                                 n->node_id, n->sem.proxy.base1->node_id);
-                if (!n->sem.proxy.base1->bit_dag)
-                    node_id = la_dot (dot, n->sem.proxy.base1, node_id);
-            }
             
-            if (n->sem.proxy.base2) {
-                if (n->sem.proxy.base2->node_id == 0)
-                    n->sem.proxy.base2->node_id = node_id++;
-                
+            if (n->sem.proxy.base2)
                 PFarray_printf (dot, "node%i -> node%i [style=dashed];\n",
                                 n->node_id, n->sem.proxy.base2->node_id);
-                if (!n->sem.proxy.base2->bit_dag)
-                    node_id = la_dot (dot, n->sem.proxy.base2, node_id);
-            }
             
-            if (n->sem.proxy.ref) {
-                if (n->sem.proxy.ref->node_id == 0)
-                    n->sem.proxy.ref->node_id = node_id++;
-                
+            if (n->sem.proxy.ref)
                 PFarray_printf (dot, 
                                 "node%i -> node%i "
                                 "[style=dashed label=ref];\n",
                                 n->node_id, n->sem.proxy.ref->node_id);
-                if (!n->sem.proxy.ref->bit_dag)
-                    node_id = la_dot (dot, n->sem.proxy.ref, node_id);
-            }
             break;
             
         default:
@@ -980,20 +949,17 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {
         if (!n->child[c]->bit_dag)
-            node_id = la_dot (dot, n->child[c], node_id);
+            la_dot (dot, n->child[c]);
     }
-
-    return node_id;
 }
 
 /**
  * Print algebra tree in XML notation.
  * @param xml Array into which we print
  * @param n The current node to print (function is recursive)
- * @param node_id the next available node id.
  */
-static unsigned int 
-la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
+static void 
+la_xml (PFarray_t *xml, PFla_op_t *n)
 {
     unsigned int c;
 
@@ -1144,6 +1110,12 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                 if (PFprop_set (n->prop))
                     PFarray_printf (xml, "      <duplicates allowed=\"yes\"/>\n");
             }
+            if (*fmt == '+') {
+                /* print the number of referenced columns */
+                if (PFprop_refctr (n))
+                    PFarray_printf (xml, "      <references count=\"%i\"/>\n",
+                                    PFprop_refctr (n));
+            }
 
             /* stop after all properties have been printed */
             if (*fmt == '+')
@@ -1157,6 +1129,18 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
     /* create label */
     switch (n->kind)
     {
+        case la_serialize:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"pos\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.serialize.pos),
+                            PFatt_str (n->sem.serialize.item));
+            break;
+
         case la_lit_tbl:
             /* list the attributes of this table */
             PFarray_printf (xml, "    <content>\n"); 
@@ -1627,19 +1611,10 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
             break;
     }
 
-    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++) {      
-
-        /*
-         * Label for child node has already been built, such that
-         * only the edge between parent and child must be created
-         */
-        if (n->child[c]->node_id == 0)
-            n->child[c]->node_id =  node_id++;
-
+    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++)
         PFarray_printf (xml,
                         "    <edge to=\"%i\"/>\n", 
                         n->child[c]->node_id);
-    }
 
     /* close up label */
     PFarray_printf (xml, "  </node>\n");
@@ -1647,16 +1622,36 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
     /* mark node visited */
     n->bit_dag = true;
 
-    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++) {      
-        if (!n->child[c]->bit_dag) {
-            node_id = la_xml (xml, n->child[c], node_id);
-        }
-    }
-    return node_id;
+    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++)
+        if (!n->child[c]->bit_dag)
+            la_xml (xml, n->child[c]);
+}
+
+static unsigned int
+create_node_id_worker (PFla_op_t *n, unsigned int i)
+{
+    if (n->bit_dag)
+        return i;
+    else
+        n->bit_dag = true;
+
+    n->node_id = i++;
+
+    for (unsigned int c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++)
+        i = create_node_id_worker (n->child[c], i);
+
+    return i;
 }
 
 static void
-reset_node_id (PFla_op_t *n)
+create_node_id (PFla_op_t *n)
+{
+    (void) create_node_id_worker (n, 1);
+    PFla_dag_reset (n);
+}
+
+static void
+reset_node_id_worker (PFla_op_t *n)
 {
     if (n->bit_dag)
         return;
@@ -1666,7 +1661,14 @@ reset_node_id (PFla_op_t *n)
     n->node_id = 0;
 
     for (unsigned int c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++)
-        reset_node_id (n->child[c]);
+        reset_node_id_worker (n->child[c]);
+}
+
+static void
+reset_node_id (PFla_op_t *n)
+{
+    reset_node_id_worker (n);
+    PFla_dag_reset (n);
 }
 
 /**
@@ -1693,11 +1695,10 @@ PFla_dot (FILE *f, PFla_op_t *root)
                              "node [fontsize=10];\n"
                              "edge [fontsize=9];\n");
 
-        root->node_id = 1;
-        la_dot (dot, root, root->node_id + 1);
+        create_node_id (root);
+        la_dot (dot, root);
         PFla_dag_reset (root);
         reset_node_id (root);
-        PFla_dag_reset (root);
 
         /* add domain subdomain relationships if required */
         if (PFstate.format) {
@@ -1746,9 +1747,8 @@ PFla_xml (FILE *f, PFla_op_t *root)
             }
         }
 
-
-        root->node_id = 1;
-        la_xml (xml, root, root->node_id + 1);
+        create_node_id (root);
+        la_xml (xml, root);
         PFla_dag_reset (root);
         reset_node_id (root);
         PFla_dag_reset (root);

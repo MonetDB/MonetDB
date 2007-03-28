@@ -45,6 +45,8 @@
 #include "alg_dag.h"
 #include "mem.h"
 
+#define SEEN(p) ((p)->bit_dag)
+
 /**
  * Create new property container.
  *
@@ -98,6 +100,48 @@ PFprop (void)
 }
 
 /**
+ * worker for PFprop_infer_refctr ().
+ */
+static void
+prop_infer_refctr (PFla_op_t *n)
+{
+    assert (n);
+
+    /* count number of incoming edges */
+    n->refctr++;
+
+    /* only descend once */
+    if (SEEN(n))
+        return;
+    else {
+        SEEN(n) = true;
+        n->refctr = 1;
+    }
+    
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        prop_infer_refctr (n->child[i]);
+}
+
+/**
+ * Collect the number of consuming parent operators.
+ */
+void
+PFprop_infer_refctr (PFla_op_t *root)
+{
+    prop_infer_refctr (root);
+    PFla_dag_reset (root);
+}
+
+/**
+ * Return the number of consuming parent operators.
+ */
+unsigned int
+PFprop_refctr (PFla_op_t *n)
+{
+    return n->refctr;
+}
+
+/**
  * Infer all properties of the current tree
  * rooted in root whose flag is set.
  */
@@ -105,6 +149,7 @@ void
 PFprop_infer (bool card, bool const_, bool set,
               bool dom, bool icol,
               bool key, bool ocols, bool reqval, 
+              bool refctr,
               bool ori_names, bool unq_names,
               PFla_op_t *root)
 {
@@ -132,6 +177,8 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_ori_names (root);
     if (unq_names)
         PFprop_infer_unq_names (root);
+    if (refctr)
+        PFprop_infer_refctr (root);
 }
 
 /* worker for PFprop_create_prop () */

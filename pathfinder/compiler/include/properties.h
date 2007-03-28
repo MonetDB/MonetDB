@@ -146,6 +146,7 @@ PFprop_t *PFprop (void);
 void PFprop_infer (bool card, bool const_, bool set, 
                    bool dom, bool icols,
                    bool key, bool ocols, bool reqval, 
+                   bool refctr,
                    bool ori_names, bool unq_names,
                    PFla_op_t *root);
 
@@ -169,6 +170,7 @@ void PFprop_infer_ocol (PFla_op_t *root);
 void PFprop_infer_reqval (PFla_op_t *root);
 void PFprop_infer_unq_names (PFla_op_t *root);
 void PFprop_infer_ori_names (PFla_op_t *root);
+void PFprop_infer_refctr (PFla_op_t *root);
 
 bool PFprop_check_rec_delta (PFla_op_t *root);
 
@@ -422,6 +424,13 @@ PFalg_att_t PFprop_ori_name_left (const PFprop_t *prop, PFalg_att_t attr);
  * in the right name mapping field of property container @a prop.
  */
 PFalg_att_t PFprop_ori_name_right (const PFprop_t *prop, PFalg_att_t attr);
+
+/* ------------------ reference counter property accessors ----------------- */
+
+/**
+ * Return the number of consuming parent operators.
+ */
+unsigned int PFprop_refctr (PFla_op_t *n);
 
 #endif  /* PROPERTIES_H */
 
