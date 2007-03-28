@@ -118,6 +118,9 @@ public class MonetConnection implements Connection {
 	/** Embedded properties */
 	private static Properties embeddedProps = null;
 
+	/** Whether or not to use a Java based PreparedStatement
+	 * implementation */
+	private final boolean javaPreparedStatements;
 
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the
@@ -146,6 +149,7 @@ public class MonetConnection implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
+		this.javaPreparedStatements = Boolean.valueOf(props.getProperty("java_prepared_statements", "false")).booleanValue();
 
 		String language = props.getProperty("language");
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
@@ -772,10 +776,17 @@ public class MonetConnection implements Connection {
 	{
 		try {
 			PreparedStatement ret;
-			// use a server-side PreparedStatement
-			ret = new MonetPreparedStatement(
+			if (!javaPreparedStatements) {
+				// use a server-side PreparedStatement
+				ret = new MonetPreparedStatement(
 					this, resultSetType, resultSetConcurrency, sql
-			);
+				);
+			} else {
+				// use a Java implementation of a PreparedStatement
+				ret = new MonetPreparedStatementJavaImpl(
+					this, resultSetType, resultSetConcurrency, sql
+				);
+			}
 			// store it in the map for when we close...
 			statements.put(ret, null);
 			return(ret);
@@ -2166,7 +2177,7 @@ public class MonetConnection implements Connection {
 												seqnr
 										);
 										// only add this resultset to
-										// the hashmap if can possibly
+										// the hashmap if it can possibly
 										// have an additional datablock
 										if (rowcount < tuplecount) {
 											if (rsresponses == null)
