@@ -1203,14 +1203,10 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_semijoin:
             PFarray_printf (xml, 
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>first join argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>second join argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " position=\"1\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " position=\"2\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.eqjoin.att1),
                             PFatt_str (n->sem.eqjoin.att2));
@@ -1220,15 +1216,9 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
             PFarray_printf (xml, 
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"false\""
-                                         " keep=\"%s\">\n"
-                            "        <annotation>first join argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                                         " keep=\"%s\" position=\"1\"/>\n"
                             "      <column name=\"%s\" new=\"false\""
-                                         " keep=\"%s\">\n"
-                            "        <annotation>second join argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                                         " keep=\"%s\" position=\"2\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.eqjoin_unq.att1),
                             n->sem.eqjoin_unq.att1 == n->sem.eqjoin_unq.res
@@ -1261,12 +1251,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_select:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>select on column %s results "
-                                    "in smaller relation</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
                             "    </content>\n",
-                            PFatt_str (n->sem.select.att),
                             PFatt_str (n->sem.select.att));
             break;
 
@@ -1274,19 +1260,14 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <kind name=\"%s\"/>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the operation"
-                                    "</annotation>\n"
-                            "      </column>\n",
+                            "      <column name=\"%s\" new=\"true\"/>\n",
                             PFalg_fun_str (n->sem.fun_1to1.kind),
                             PFatt_str (n->sem.fun_1to1.res));
             
             for (c = 0; c < n->sem.fun_1to1.refs.count; c++)
                 PFarray_printf (xml,
-                                "      <column name=\"%s\" new=\"false\">\n"
-                                "        <annotation>%i. argument"
-                                        "</annotation>\n"
-                                "      </column>\n",
+                                "      <column name=\"%s\" new=\"false\""
+                                             " position=\"%i\"/>\n",
                                 PFatt_str (n->sem.fun_1to1.refs.atts[c]),
                                 c + 1);
                         
@@ -1299,18 +1280,11 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_bool_or:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the operation"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>first argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>second argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " position=\"1\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " position=\"2\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
@@ -1320,14 +1294,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_bool_not:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the operation"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
@@ -1341,25 +1309,15 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_all:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the %s operator"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>argument for %s"
-                                    "</annotation>\n"
-                            "      </column>\n",
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\""
+                                         " function=\"item\"/>\n",
                             PFatt_str (n->sem.aggr.res),
-                            xml_id[n->kind],
-                            PFatt_str (n->sem.aggr.att),
-                            xml_id[n->kind]);
+                            PFatt_str (n->sem.aggr.att));
             if (n->sem.aggr.part != att_NULL)
                 PFarray_printf (xml,
                             "      <column name=\"%s\" function=\"partition\""
-                                    " new=\"false\">\n"
-                            "        <annotation>partitioning argument"
-                                    "</annotation>\n"
-                            "      </column>\n",
+                                    " new=\"false\"/>\n",
                             PFatt_str (n->sem.aggr.part));
             PFarray_printf (xml, "    </content>\n");
 
@@ -1368,18 +1326,12 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_count:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the count operator"
-                                    "</annotation>\n"
-                            "      </column>\n",
+                            "      <column name=\"%s\" new=\"true\"/>\n",
                             PFatt_str (n->sem.aggr.res));
             if (n->sem.aggr.part != att_NULL)
                 PFarray_printf (xml,
                             "      <column name=\"%s\" function=\"partition\""
-                                    " new=\"false\">\n"
-                            "        <annotation>partitioning argument"
-                                    "</annotation>\n"
-                            "      </column>\n",
+                                    " new=\"false\"/>\n",
                             PFatt_str (n->sem.aggr.part));
             PFarray_printf (xml, "    </content>\n");
             break;
@@ -1387,36 +1339,26 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_rownum:
             PFarray_printf (xml, 
                             "    <content>\n" 
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>new rownum column"
-                                    "</annotation>\n"
-                            "      </column>\n",
+                            "      <column name=\"%s\" new=\"true\"/>\n",
                             PFatt_str (n->sem.rownum.attname));
 
             for (c = 0; c < PFord_count (n->sem.rownum.sortby); c++)
                 PFarray_printf (xml, 
                                 "      <column name=\"%s\" function=\"sort\""
                                         " position=\"%u\" direction=\"%s\""
-                                        " new=\"false\">\n"
-                                "        <annotation>%u. sort argument"
-                                        "</annotation>\n"
-                                "      </column>\n",
+                                        " new=\"false\"/>\n",
                                 PFatt_str (
                                     PFord_order_col_at (
                                         n->sem.rownum.sortby, c)),
                                 c+1,
                                 PFord_order_dir_at (
                                     n->sem.rownum.sortby, c) == DIR_ASC
-                                ? "ascending" : "descending",
-                                c+1);
+                                ? "ascending" : "descending");
 
             if (n->sem.rownum.part != att_NULL)
                 PFarray_printf (xml,
                                 "      <column name=\"%s\" function=\"partition\""
-                                        " new=\"false\">\n"
-                                "        <annotation>partitioning argument"
-                                        "</annotation>\n"
-                                "      </column>\n",
+                                        " new=\"false\"/>\n",
                                 PFatt_str (n->sem.rownum.part));
 
             PFarray_printf (xml, "    </content>\n");
@@ -1425,19 +1367,13 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_number:
             PFarray_printf (xml, 
                             "    <content>\n" 
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the count operator"
-                                    "</annotation>\n"
-                            "      </column>\n",
+                            "      <column name=\"%s\" new=\"true\"/>\n",
                             PFatt_str (n->sem.number.attname));
 
             if (n->sem.number.part != att_NULL)
                 PFarray_printf (xml,
                                 "      <column name=\"%s\" function=\"partition\""
-                                        " new=\"false\">\n"
-                                "        <annotation>partitioning argument"
-                                        "</annotation>\n"
-                                "      </column>\n",
+                                        " new=\"false\"/>\n",
                                 PFatt_str (n->sem.number.part));
 
             PFarray_printf (xml, "    </content>\n");
@@ -1446,18 +1382,9 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_type:
             PFarray_printf (xml, 
                             "    <content>\n" 
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the type operator"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <type name=\"%s\">\n"
-                            "        <annotation>type to check"
-                                    "</annotation>\n"
-                            "      </type>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
+                            "      <type name=\"%s\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.type.res),
                             PFatt_str (n->sem.type.att),
@@ -1467,14 +1394,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_type_assert:
             PFarray_printf (xml, 
                             "    <content>\n" 
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>column to assign "
-                                    "more explicit type</annotation>\n"
-                            "      </column>\n"
-                            "      <type name=\"%s\">\n"
-                            "        <annotation>type to assign"
-                                    "</annotation>\n"
-                            "      </type>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
+                            "      <type name=\"%s\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.type.att),
                             PFalg_simple_type_str (n->sem.type.ty));
@@ -1483,18 +1404,9 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_cast:
             PFarray_printf (xml, 
                             "    <content>\n" 
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the cast operator"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <type name=\"%s\">\n"
-                            "        <annotation>type to cast"
-                                    "</annotation>\n"
-                            "      </type>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
+                            "      <type name=\"%s\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.type.res),
                             PFatt_str (n->sem.type.att),
@@ -1581,14 +1493,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_doc_access:
             PFarray_printf (xml, 
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the document access"
-                                    "</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>references to the document"
-                                    " relation</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
                             "      <column name=\"",
                             PFatt_str (n->sem.doc_access.res),
                             PFatt_str (n->sem.doc_access.att));
@@ -1611,10 +1517,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                         "unknown document access in dot output");
             }
             PFarray_printf (xml, 
-                            "\" new=\"false\">\n"
-                            "        <annotation>document relation"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                            "\" new=\"false\" function=\"document column\"/>\n"
                             "    </content>\n");
             break;
 
@@ -1633,20 +1536,11 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_attribute:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the attribute "
-                                    "construction</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
                             "      <column name=\"%s\" function=\"qname item\""
-                                    " new=\"false\">\n"
-                            "        <annotation>qname argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                                    " new=\"false\"/>\n"
                             "      <column name=\"%s\" function=\"content item"
-                                    "\" new=\"false\">\n"
-                            "        <annotation>value argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                                    "\" new=\"false\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.attr.res),
                             PFatt_str (n->sem.attr.qn),
@@ -1656,14 +1550,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_textnode:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the textnode "
-                                    "construction</annotation>\n"
-                            "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>value argument"
-                                    "</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"true\"/>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.textnode.res),
                             PFatt_str (n->sem.textnode.item));
@@ -1684,11 +1572,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
         case la_cond_err:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
-                            "        <error>%s</error>\n"
-                            "        <annotation>argument that triggers"
-                                    " error message</annotation>\n"
-                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\"/>\n"
+                            "      <error>%s</error>\n"
                             "    </content>\n",
                             PFatt_str (n->sem.err.att),
                             PFstrdup (n->sem.err.str));
