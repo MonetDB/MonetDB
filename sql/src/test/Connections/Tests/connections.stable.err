@@ -7,9 +7,7 @@ stderr of test 'connections` in directory 'src/test/Connections` itself:
 
 
 server 11 : "include sql;"
-
-mserver: "Mtimeout -timeout 60 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=<mapi_port> --set xrpc_port=<xrpc_port> --set monet_prompt= --trace --dbname "mTests_src_test_Connections" --dbinit="include sql;""
-#mserver: "Mtimeout -timeout 60 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=34118 --set xrpc_port=40549 --set monet_prompt= --trace --dbname "mTests_src_test_Connections" --dbinit="include sql;""
+#mserver: "Mtimeout -timeout 60 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=30247 --set xrpc_port=45413 --set monet_prompt= --trace --dbname "mTests_src_test_Connections" --dbinit="include sql;""
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 1.17.1
 # builtin opt 	monet_pid = 3601
@@ -75,9 +73,7 @@ mserver: "Mtimeout -timeout 60 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/
 #(see /ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf)
 
 server 12 : "include sql;"
-
-remote mserver: "Mtimeout -timeout 60 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=<mapi_port> --set xrpc_port=<xrpc_port> --set monet_prompt= --trace --dbname "mTests_src_test_Connections_test1" --dbinit="include sql;""
-#remote mserver: "Mtimeout -timeout 60 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=34119 --set xrpc_port=40549 --set monet_prompt= --trace --dbname "mTests_src_test_Connections_test1" --dbinit="include sql;""
+#remote mserver: "Mtimeout -timeout 60 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=30248 --set xrpc_port=45413 --set monet_prompt= --trace --dbname "mTests_src_test_Connections_test1" --dbinit="include sql;""
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 1.17.1
 # builtin opt 	monet_pid = 3611
@@ -147,45 +143,45 @@ server 12 : "include sql;", client 1: SQL
 client1: "Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=<mapi_port> "
 #client1: "Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35647 "
 !ERROR mapi_reconnect: connect: Connection refused
-MAPI  = monetdb@localhost:34118
+MAPI  = monetdb@localhost:32945
 QUERY = connect to 'localhost' port 34 database 'mTests_src_test_Connections_test1' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
 ERROR = !IOException:mserver.connect:Could not connect: Setup connection failed
-MAPI  = monetdb@localhost:34118
-QUERY = connect to 'localhost' port 34119 database 'mTests_src_test_Connections_test1' as 'test_db_1' language 'sql';
-ERROR = !syntax error, unexpected LANGUAGE, expecting USER in: "connect to 'localhost' port 34119 database 'mTests_src_test_Connections_test1' as 'test_db_1' language"
-MAPI  = monetdb@localhost:34118
+MAPI  = monetdb@localhost:32945
+QUERY = connect to 'localhost' port 32946 database 'mTests_src_test_Connections_test1' as 'test_db_1' language 'sql';
+ERROR = !syntax error, unexpected LANGUAGE, expecting USER in: "connect to 'localhost' port 32946 database 'mTests_src_test_Connections_test1' as 'test_db_1' language"
+MAPI  = monetdb@localhost:32945
 QUERY = connect to 'localhost' database 'mTests_src_test_Connections_test1';
 ERROR = !syntax error, unexpected SCOLON, expecting USER in: "connect to 'localhost' database 'mTests_src_test_Connections_test1';"
-MAPI  = monetdb@localhost:34118
-QUERY = connect 'localhost' port 34119 database 'mTests_src_test_Connections_test1' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
+MAPI  = monetdb@localhost:32945
+QUERY = connect 'localhost' port 32946 database 'mTests_src_test_Connections_test1' as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
 ERROR = !syntax error, unexpected STRING, expecting TO in: "connect 'localhost'"
-MAPI  = monetdb@localhost:34118
-QUERY = connect to 'localhost' port 34119 as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
-ERROR = !syntax error, unexpected AS, expecting DATABASE in: "connect to 'localhost' port 34119 as"
-MAPI  = monetdb@localhost:34118
-QUERY = connect to 'localhost' port 34119 database 'mTests_src_test_Connections_test1' as 'test_db' user 'monetdb' language 'sql';
-ERROR = !syntax error, unexpected LANGUAGE, expecting PASSWORD in: "connect to 'localhost' port 34119 database 'mTests_src_test_Connections_test1' as 'test_db' user 'monetdb' language"
-MAPI  = monetdb@localhost:34118
+MAPI  = monetdb@localhost:32945
+QUERY = connect to 'localhost' port 32946 as 'test_db_1' user 'monetdb' password 'monetdb' language 'sql';
+ERROR = !syntax error, unexpected AS, expecting DATABASE in: "connect to 'localhost' port 32946 as"
+MAPI  = monetdb@localhost:32945
+QUERY = connect to 'localhost' port 32946 database 'mTests_src_test_Connections_test1' as 'test_db' user 'monetdb' language 'sql';
+ERROR = !syntax error, unexpected LANGUAGE, expecting PASSWORD in: "connect to 'localhost' port 32946 database 'mTests_src_test_Connections_test1' as 'test_db' user 'monetdb' language"
+MAPI  = monetdb@localhost:32945
 QUERY = disconnect 'test_db_1';
 ERROR = !DISCONNECT CATALOG: no such db_alias 'test_db_1'
 
 server 12 : "include sql;", client 2: SQL
 
 client1: "Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=<mapi_port> "
-#client1: "Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34118 "
-MAPI  = monetdb@localhost:34118
-QUERY = connect to 'localhost' port 341195 database 'mTests_src_test_Connections_test1' as 'test_db' user 'monetdb' password 'monetdb' language 'sql';
+#client1: "Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32945 "
+MAPI  = monetdb@localhost:32945
+QUERY = connect to 'localhost' port 329465 database 'mTests_src_test_Connections_test1' as 'test_db' user 'monetdb' password 'monetdb' language 'sql';
 ERROR = !CONNECT TO: this connection already exists or the db_alias 'test_db' was already used!
-MAPI  = monetdb@localhost:34118
-QUERY = connect to 'localhost' port 34119 database 'mTests_src_test_Connections_test1' as 'test' user 'monetdb' password 'monetdb' language 'sql';
+MAPI  = monetdb@localhost:32945
+QUERY = connect to 'localhost' port 32946 database 'mTests_src_test_Connections_test1' as 'test' user 'monetdb' password 'monetdb' language 'sql';
 ERROR = !CONNECT TO: this connection already exists or the db_alias 'test' was already used!
-MAPI  = monetdb@localhost:34118
+MAPI  = monetdb@localhost:32945
 QUERY = connect to 'localhost' port 4000 database 'dmo' as 'test_db' user 'monetdb' password 'monetdb' language 'sql';
 ERROR = !CONNECT TO: this connection already exists or the db_alias 'test_db' was already used!
-MAPI  = monetdb@localhost:34118
+MAPI  = monetdb@localhost:32945
 QUERY = disconnect 'test_db';
 ERROR = !DISCONNECT CATALOG: no such db_alias 'test_db'
-MAPI  = monetdb@localhost:34118
+MAPI  = monetdb@localhost:32945
 QUERY = disconnect 'test_tb';
 ERROR = !DISCONNECT CATALOG: no such db_alias 'test_tb'
 

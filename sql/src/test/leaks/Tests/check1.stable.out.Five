@@ -26,7 +26,7 @@ Over..
 % 3,	3,	4 # length
 [ "int",	"int",	0	]
 [ "int",	"lng",	2	]
-[ "int",	"str",	299	]
+[ "int",	"str",	303	]
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	0	]
@@ -34,9 +34,11 @@ Over..
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	31	]
-[ "oid",	"bit",	180	]
+[ "oid",	"bit",	182	]
 [ "oid",	"bit",	1219	]
 [ "oid",	"bit",	1219	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
@@ -127,11 +129,11 @@ Over..
 [ "oid",	"int",	22	]
 [ "oid",	"int",	31	]
 [ "oid",	"int",	31	]
-[ "oid",	"int",	180	]
-[ "oid",	"int",	180	]
-[ "oid",	"int",	180	]
-[ "oid",	"int",	180	]
-[ "oid",	"int",	180	]
+[ "oid",	"int",	182	]
+[ "oid",	"int",	182	]
+[ "oid",	"int",	182	]
+[ "oid",	"int",	182	]
+[ "oid",	"int",	182	]
 [ "oid",	"int",	1219	]
 [ "oid",	"int",	1219	]
 [ "oid",	"int",	3342	]
@@ -235,9 +237,9 @@ Over..
 [ "oid",	"str",	22	]
 [ "oid",	"str",	31	]
 [ "oid",	"str",	31	]
-[ "oid",	"str",	180	]
-[ "oid",	"str",	180	]
-[ "oid",	"str",	180	]
+[ "oid",	"str",	182	]
+[ "oid",	"str",	182	]
+[ "oid",	"str",	182	]
 [ "oid",	"str",	1219	]
 [ "oid",	"str",	1219	]
 [ "oid",	"str",	1219	]
@@ -247,12 +249,12 @@ Over..
 % single_value,	count_ # name
 % char,	int # type
 % 9,	3 # length
-[ "transient",	527	]
+[ "transient",	534	]
 % .,	. # table_name
 % single_value,	count_ # name
 % char,	int # type
 % 10,	3 # length
-[ "persistent",	219	]
+[ "persistent",	221	]
 
 # 15:15:27 >  
 # 15:15:27 >  Done.

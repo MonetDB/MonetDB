@@ -1,19 +1,17 @@
 stdout of test 'innerjoin_multiple-bug-sf-943661` in directory 'src/test/bugs` itself:
 
 
-# 20:06:23 >  
-# 20:06:23 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib64/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=30596 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 20:06:23 >  
+# 12:30:54 >  
+# 12:30:54 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=30086 --set xrpc_port=44187 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit='include sql;' ; echo ; echo Over..
+# 12:30:54 >  
 
-# Monet Database Server V4.13.1
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_bugs
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -56,6 +54,7 @@ Over..
 [ "sys",	"keycolumns",	"id"	]
 [ "sys",	"keycolumns",	"nr"	]
 [ "sys",	"keycolumns",	"trunc"	]
+[ "sys",	"keys",	"action"	]
 [ "sys",	"keys",	"id"	]
 [ "sys",	"keys",	"name"	]
 [ "sys",	"keys",	"rkey"	]
@@ -78,6 +77,7 @@ Over..
 [ "tmp",	"keycolumns",	"id"	]
 [ "tmp",	"keycolumns",	"nr"	]
 [ "tmp",	"keycolumns",	"trunc"	]
+[ "tmp",	"keys",	"action"	]
 [ "tmp",	"keys",	"id"	]
 [ "tmp",	"keys",	"name"	]
 [ "tmp",	"keys",	"rkey"	]
@@ -118,6 +118,7 @@ Over..
 [ "sys",	"keycolumns",	"id"	]
 [ "sys",	"keycolumns",	"nr"	]
 [ "sys",	"keycolumns",	"trunc"	]
+[ "sys",	"keys",	"action"	]
 [ "sys",	"keys",	"id"	]
 [ "sys",	"keys",	"name"	]
 [ "sys",	"keys",	"rkey"	]
@@ -140,6 +141,7 @@ Over..
 [ "tmp",	"keycolumns",	"id"	]
 [ "tmp",	"keycolumns",	"nr"	]
 [ "tmp",	"keycolumns",	"trunc"	]
+[ "tmp",	"keys",	"action"	]
 [ "tmp",	"keys",	"id"	]
 [ "tmp",	"keys",	"name"	]
 [ "tmp",	"keys",	"rkey"	]
