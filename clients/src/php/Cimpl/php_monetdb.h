@@ -39,7 +39,7 @@ extern zend_module_entry monetdb_module_entry;
 #  define PHP_MONETDB_API /* nothing special */
 # endif
 
-# ifdef HAVE_PGSQL_WITH_MULTIBYTE_SUPPORT
+# ifdef HAVE_MONETDB_WITH_MULTIBYTE_SUPPORT
 const char * pg_encoding_to_char(int encoding);
 # endif
 
@@ -113,13 +113,13 @@ PHP_FUNCTION(monetdb_select);
 
 /* connection options - TODO: Add async connection option */
 #define MONETDB_CONNECT_FORCE_NEW     (1<<1)
-/* php_pgsql_convert options */
+/* php_monetdb_convert options */
 #define MONETDB_CONV_IGNORE_DEFAULT   (1<<1)     /* Do not use DEAFULT value by removing field from returned array */
 #define MONETDB_CONV_FORCE_NULL       (1<<2)     /* Convert to NULL if string is null string */
 #define MONETDB_CONV_IGNORE_NOT_NULL  (1<<3)     /* Ignore NOT NULL constraints */
 #define MONETDB_CONV_OPTS             (MONETDB_CONV_IGNORE_DEFAULT|MONETDB_CONV_FORCE_NULL|MONETDB_CONV_IGNORE_NOT_NULL)
-/* php_pgsql_insert/update/select/delete options */
-#define MONETDB_DML_NO_CONV           (1<<8)     /* Do not call php_pgsql_convert() */
+/* php_monetdb_insert/update/select/delete options */
+#define MONETDB_DML_NO_CONV           (1<<8)     /* Do not call php_monetdb_convert() */
 #define MONETDB_DML_EXEC              (1<<9)     /* Execute query */
 #define MONETDB_DML_ASYNC             (1<<10)    /* Do async query */
 #define MONETDB_DML_STRING            (1<<11)    /* Return query string */
@@ -243,4 +243,4 @@ ZEND_EXTERN_MODULE_GLOBALS(monetdb)
 
 #define phpext_monetdb_ptr monetdb_module_ptr
 
-#endif /* PHP_PGSQL_H */
+#endif /* PHP_MONETDB_H */

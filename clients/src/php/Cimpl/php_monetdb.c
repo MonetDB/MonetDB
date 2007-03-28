@@ -15,7 +15,7 @@
    | Authors: Zeev Suraski <zeev@zend.com>                                |
    |          Jouni Ahto <jouni.ahto@exdec.fi>                            |
    |          Yasuo Ohgaki <yohgaki@php.net>                              |
-   |          Youichi Iwakiri <yiwakiri@st.rim.or.jp> (pg_copy_*)         | 
+   |          Youichi Iwakiri <yiwakiri@st.rim.or.jp> (m_copy_*)         | 
    |          Chris Kings-Lynne <chriskl@php.net> (v3 protocol)           | 
    |          Fabian Groffen <fabian@cwi.nl> (MonetDB version)            |
    +----------------------------------------------------------------------+
@@ -128,11 +128,11 @@ zend_function_entry monetdb_functions[] = {
 	PHP_FE(monetdb_delete,				NULL)
 	PHP_FE(monetdb_select,				NULL)
 #endif
-	{NULL, NULL, NULL} 
+	{NULL, NULL, NULL, 0, 0 }
 };
 /* }}} */
 
-/* {{{ pgsql_module_entry
+/* {{{ monetdb_module_entry
  */
 zend_module_entry monetdb_module_entry = {
 	STANDARD_MODULE_HEADER,
@@ -388,11 +388,11 @@ PHP_MINIT_FUNCTION(monetdb)
 	le_string = zend_register_list_destructors_ex(_free_ptr, NULL, "monetdb string", module_number);
 	/* For connection option */
 	REGISTER_LONG_CONSTANT("MONETDB_CONNECT_FORCE_NEW", MONETDB_CONNECT_FORCE_NEW, CONST_CS | CONST_PERSISTENT);
-	/* For pg_fetch_array() */
+	/* For m_fetch_array() */
 	REGISTER_LONG_CONSTANT("MONETDB_ASSOC", MONETDB_ASSOC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_NUM", MONETDB_NUM, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_BOTH", MONETDB_BOTH, CONST_CS | CONST_PERSISTENT);
-	/* For pg_connection_status() */
+	/* For m_connection_status() */
 	REGISTER_LONG_CONSTANT("MONETDB_CONNECTION_BAD", MONETDB_CONNECTION_BAD, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_CONNECTION_OK", MONETDB_CONNECTION_OK, CONST_CS | CONST_PERSISTENT);
 #ifdef I_FEEL_LIKE_IMPLEMENTING_PREPARED_STUFF
@@ -409,11 +409,11 @@ PHP_MINIT_FUNCTION(monetdb)
 	REGISTER_LONG_CONSTANT("MONETDB_NONFATAL_ERROR", PGRES_NONFATAL_ERROR, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_FATAL_ERROR", PGRES_FATAL_ERROR, CONST_CS | CONST_PERSISTENT);
 #endif /* I_FEEL_LIKE_IMPLEMENTING_PREPARED_STUFF */
-	/* pg_convert options */
+	/* m_convert options */
 	REGISTER_LONG_CONSTANT("MONETDB_CONV_IGNORE_DEFAULT", MONETDB_CONV_IGNORE_DEFAULT, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_CONV_FORCE_NULL", MONETDB_CONV_FORCE_NULL, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_CONV_IGNORE_NOT_NULL", MONETDB_CONV_IGNORE_NOT_NULL, CONST_CS | CONST_PERSISTENT);
-	/* pg_insert/update/delete/select options */
+	/* m_insert/update/delete/select options */
 	REGISTER_LONG_CONSTANT("MONETDB_DML_NO_CONV", MONETDB_DML_NO_CONV, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_DML_EXEC", MONETDB_DML_EXEC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_DML_ASYNC", MONETDB_DML_ASYNC, CONST_CS | CONST_PERSISTENT);
@@ -498,7 +498,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 
 	zval **args[7];
 	int argc, i, connect_type = 0;
-	smart_str str = {0};
+	smart_str s = {NULL, 0, 0};
 
 	Mconn *monetdb;
 
@@ -538,22 +538,22 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 		break;
 	}
 
-	smart_str_appends(&str, "monetdb");
+	smart_str_appends(&s, "monetdb");
 	
 	for (i = 0; i < ZEND_NUM_ARGS(); i++) {
 		convert_to_string_ex(args[i]);
-		smart_str_appendc(&str, '_');
-		smart_str_appendl(&str, Z_STRVAL_PP(args[i]), Z_STRLEN_PP(args[i]));
+		smart_str_appendc(&s, '_');
+		smart_str_appendl(&s, Z_STRVAL_PP(args[i]), Z_STRLEN_PP(args[i]));
 	}
 
-	smart_str_0(&str);
+	smart_str_0(&s);
 
 	/* only allow persistant links if the global configuration allows it */
 	if (persistent && MG(allow_persistent)) {
 		zend_rsrc_list_entry *le;
 		
 		/* try to find if we already have this link in our persistent list */
-		if (zend_hash_find(&EG(persistent_list), str.c, str.len+1, (void **) &le)==FAILURE) {  /* we don't */
+		if (zend_hash_find(&EG(persistent_list), s.c, s.len+1, (void **) &le)==FAILURE) {  /* we don't */
 			zend_rsrc_list_entry new_le;
 			
 			if (MG(max_links)!=-1 && MG(num_links)>=MG(max_links)) {
@@ -582,7 +582,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 			/* hash it up */
 			Z_TYPE(new_le) = le_plink;
 			new_le.ptr = monetdb;
-			if (zend_hash_update(&EG(persistent_list), str.c, str.len+1, (void *) &new_le, sizeof(zend_rsrc_list_entry), NULL)==FAILURE) {
+			if (zend_hash_update(&EG(persistent_list), s.c, s.len+1, (void *) &new_le, sizeof(zend_rsrc_list_entry), NULL)==FAILURE) {
 				goto err;
 			}
 			MG(num_links)++;
@@ -604,7 +604,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 				mapi_reconnect(le->ptr);
 				if (mapi_is_connected(le->ptr) == 0) {
 					php_error_docref(NULL TSRMLS_CC, E_WARNING,"MonetDB link lost, unable to reconnect");
-					zend_hash_del(&EG(persistent_list),str.c,str.len+1);
+					zend_hash_del(&EG(persistent_list),s.c,s.len+1);
 					mapi_disconnect(le->ptr);
 					goto err;
 				}
@@ -622,7 +622,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 		 * with hashed_details as the key.
 		 */
 		if (!(connect_type & MONETDB_CONNECT_FORCE_NEW)
-			&& zend_hash_find(&EG(regular_list),str.c,str.len+1,(void **) &index_ptr)==SUCCESS) {
+			&& zend_hash_find(&EG(regular_list),s.c,s.len+1,(void **) &index_ptr)==SUCCESS) {
 			int type, link;
 			void *ptr;
 
@@ -638,7 +638,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 				Z_TYPE_P(return_value) = IS_RESOURCE;
 				goto cleanup;
 			} else {
-				zend_hash_del(&EG(regular_list),str.c,str.len+1);
+				zend_hash_del(&EG(regular_list),s.c,s.len+1);
 			}
 		}
 		if (MG(max_links)!=-1 && MG(num_links)>=MG(max_links)) {
@@ -658,7 +658,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 		/* add it to the hash */
 		new_index_ptr.ptr = (void *) Z_LVAL_P(return_value);
 		Z_TYPE(new_index_ptr) = le_index_ptr;
-		if (zend_hash_update(&EG(regular_list),str.c,str.len+1,(void *) &new_index_ptr, sizeof(zend_rsrc_list_entry), NULL)==FAILURE) {
+		if (zend_hash_update(&EG(regular_list),s.c,s.len+1,(void *) &new_index_ptr, sizeof(zend_rsrc_list_entry), NULL)==FAILURE) {
 			goto err;
 		}
 		MG(num_links)++;
@@ -671,11 +671,11 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 	php_monetdb_set_default_link(Z_LVAL_P(return_value) TSRMLS_CC);
 	
 cleanup:
-	smart_str_free(&str);
+	smart_str_free(&s);
 	return;
 	
 err:
-	smart_str_free(&str);
+	smart_str_free(&s);
 	RETURN_FALSE;
 }
 /* }}} */
@@ -697,7 +697,7 @@ PHP_FUNCTION(monetdb_pconnect)
 /* }}} */
 
 /* {{{ proto bool monetdb_close([resource connection])
-   Close a PostgreSQL connection */ 
+   Close a MonetDB/SQL connection */ 
 PHP_FUNCTION(monetdb_close)
 {
 	zval **monetdb_link = NULL;
@@ -993,7 +993,7 @@ PHP_FUNCTION(monetdb_query_params)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
 	convert_to_string_ex(query);
 	while ((monetdb_result = MgetResult(monetdb))) {
@@ -1001,7 +1001,7 @@ PHP_FUNCTION(monetdb_query_params)
 		leftover = 1;
 	}
 	if (leftover) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Found results on this connection. Use pg_get_result() to get these results first");
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Found results on this connection. Use m_get_result() to get these results first");
 	}
 
 	zend_hash_internal_pointer_reset(Z_ARRVAL_PP(pv_param_arr));
@@ -1112,7 +1112,7 @@ PHP_FUNCTION(monetdb_prepare)
 		RETURN_FALSE;
 	}	
 
-	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
 	convert_to_string_ex(stmtname);
 	convert_to_string_ex(query);
@@ -1121,7 +1121,7 @@ PHP_FUNCTION(monetdb_prepare)
 		leftover = 1;
 	}
 	if (leftover) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Found results on this connection. Use pg_get_result() to get these results first");
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Found results on this connection. Use m_get_result() to get these results first");
 	}
 	monetdb_result = PQprepare(monetdb, Z_STRVAL_PP(stmtname), Z_STRVAL_PP(query), 0, NULL);
 	if ((MG(auto_reset_persistent) & 2) && PQstatus(monetdb) != MONETDB_CONNECTION_OK) {
@@ -1204,7 +1204,7 @@ PHP_FUNCTION(monetdb_execute)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
 	convert_to_string_ex(stmtname);
 	while ((monetdb_result = MgetResult(monetdb))) {
@@ -1212,7 +1212,7 @@ PHP_FUNCTION(monetdb_execute)
 		leftover = 1;
 	}
 	if (leftover) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Found results on this connection. Use pg_get_result() to get these results first");
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Found results on this connection. Use m_get_result() to get these results first");
 	}
 
 	zend_hash_internal_pointer_reset(Z_ARRVAL_PP(pv_param_arr));
@@ -1352,7 +1352,7 @@ PHP_FUNCTION(monetdb_affected_rows)
 }
 /* }}} */
 
-/* {{{ proto string pg_last_notice(resource connection)
+/* {{{ proto string m_last_notice(resource connection)
    Returns the last notice set by the backend */
 PHP_FUNCTION(monetdb_last_notice) 
 {
@@ -2014,9 +2014,9 @@ PHP_FUNCTION(monetdb_connection_reset)
    Send null-terminated string to backend server */
 PHP_FUNCTION(monetdb_put_line)
 {
-	zval **query, **pgsql_link = NULL;
+	zval **query, **monetdb_link = NULL;
 	int id = -1;
-	Mconn *pgsql;
+	Mconn *monetdb;
 	int result = 0;
 
 	switch(ZEND_NUM_ARGS()) {
@@ -2028,7 +2028,7 @@ PHP_FUNCTION(monetdb_put_line)
 			CHECK_DEFAULT_LINK(id);
 			break;
 		case 2:
-			if (zend_get_parameters_ex(2, &pgsql_link, &query)==FAILURE) {
+			if (zend_get_parameters_ex(2, &monetdb_link, &query)==FAILURE) {
 				RETURN_FALSE;
 			}
 			break;
@@ -2036,16 +2036,16 @@ PHP_FUNCTION(monetdb_put_line)
 			WRONG_PARAM_COUNT;
 			break;
 	}
-	if (pgsql_link == NULL && id == -1) {
+	if (monetdb_link == NULL && id == -1) {
 		RETURN_FALSE;
 	}	
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
 	convert_to_string_ex(query);
-	result = PQputline(pgsql, Z_STRVAL_PP(query));
+	result = PQputline(monetdb, Z_STRVAL_PP(query));
 	if (result==EOF) {
-		PHP_PQ_ERROR("Query failed: %s", pgsql);
+		PHP_PQ_ERROR("Query failed: %s", monetdb);
 		RETURN_FALSE;
 	}
 	RETURN_TRUE;
@@ -2056,9 +2056,9 @@ PHP_FUNCTION(monetdb_put_line)
    Sync with backend. Completes the Copy command */
 PHP_FUNCTION(monetdb_end_copy)
 {
-	zval **pgsql_link = NULL;
+	zval **monetdb_link = NULL;
 	int id = -1;
-	Mconn *pgsql;
+	Mconn *monetdb;
 	int result = 0;
 
 	switch(ZEND_NUM_ARGS()) {
@@ -2067,7 +2067,7 @@ PHP_FUNCTION(monetdb_end_copy)
 			CHECK_DEFAULT_LINK(id);
 			break;
 		case 1:
-			if (zend_get_parameters_ex(1, &pgsql_link)==FAILURE) {
+			if (zend_get_parameters_ex(1, &monetdb_link)==FAILURE) {
 				RETURN_FALSE;
 			}
 			break;
@@ -2075,16 +2075,16 @@ PHP_FUNCTION(monetdb_end_copy)
 			WRONG_PARAM_COUNT;
 			break;
 	}
-	if (pgsql_link == NULL && id == -1) {
+	if (monetdb_link == NULL && id == -1) {
 		RETURN_FALSE;
 	}	
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	result = PQendcopy(pgsql);
+	result = PQendcopy(monetdb);
 
 	if (result!=0) {
-		PHP_PQ_ERROR("Query failed: %s", pgsql);
+		PHP_PQ_ERROR("Query failed: %s", monetdb);
 		RETURN_FALSE;
 	}
 	RETURN_TRUE;
@@ -2095,14 +2095,14 @@ PHP_FUNCTION(monetdb_end_copy)
    Copy table to array */
 PHP_FUNCTION(monetdb_copy_to)
 {
-	zval *pgsql_link;
-	char *table_name, *pg_delim = NULL, *pg_null_as = NULL;
-	int table_name_len, pg_delim_len, pg_null_as_len;
+	zval *monetdb_link;
+	char *table_name, *m_delim = NULL, *m_null_as = NULL;
+	int table_name_len, m_delim_len, m_null_as_len;
 	char *query;
 	char *query_template = "COPY \"\" TO STDOUT DELIMITERS ':' WITH NULL AS ''";
 	int id = -1;
-	Mconn *pgsql;
-	Mresult *pgsql_result;
+	Mconn *monetdb;
+	Mresult *monetdb_result;
 	ExecStatusType status;
 	int copydone = 0;
 #if !HAVE_PQGETCOPYDATA
@@ -2113,52 +2113,52 @@ PHP_FUNCTION(monetdb_copy_to)
 	int argc = ZEND_NUM_ARGS();
 
 	if (zend_parse_parameters(argc TSRMLS_CC, "rs|ss",
-							  &pgsql_link, &table_name, &table_name_len,
-							  &pg_delim, &pg_delim_len, &pg_null_as, &pg_null_as_len) == FAILURE) {
+							  &monetdb_link, &table_name, &table_name_len,
+							  &m_delim, &m_delim_len, &m_null_as, &m_null_as_len) == FAILURE) {
 		return;
 	}
-	if (!pg_delim) {
-		pg_delim = "\t";
+	if (!m_delim) {
+		m_delim = "\t";
 	}
-	if (!pg_null_as) {
-		pg_null_as = safe_estrdup("\\\\N");
+	if (!m_null_as) {
+		m_null_as = safe_estrdup("\\\\N");
 	}
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	query = (char *)emalloc(strlen(query_template) + strlen(table_name) + strlen(pg_null_as) + 1);
+	query = (char *)emalloc(strlen(query_template) + strlen(table_name) + strlen(m_null_as) + 1);
 	sprintf(query, "COPY \"%s\" TO STDOUT DELIMITERS '%c' WITH NULL AS '%s'",
-			table_name, *pg_delim, pg_null_as);
+			table_name, *m_delim, m_null_as);
 
-	while ((pgsql_result = MgetResult(pgsql))) {
-		Mclear(pgsql_result);
+	while ((monetdb_result = MgetResult(monetdb))) {
+		Mclear(monetdb_result);
 	}
-	pgsql_result = PQexec(pgsql, query);
-	efree(pg_null_as);
+	monetdb_result = PQexec(monetdb, query);
+	efree(m_null_as);
 	efree(query);
 
-	if (pgsql_result) {
-		status = PQresultStatus(pgsql_result);
+	if (monetdb_result) {
+		status = PQresultStatus(monetdb_result);
 	} else {
-		status = (ExecStatusType) PQstatus(pgsql);
+		status = (ExecStatusType) PQstatus(monetdb);
 	}
 
 	switch (status) {
 		case PGRES_COPY_OUT:
-			if (pgsql_result) {
-				Mclear(pgsql_result);
+			if (monetdb_result) {
+				Mclear(monetdb_result);
 				array_init(return_value);
 #if HAVE_PQGETCOPYDATA
 				while (!copydone)
 				{
-					ret = PQgetCopyData(pgsql, &csv, 0);
+					ret = PQgetCopyData(monetdb, &csv, 0);
 					switch (ret) {
 						case -1:
 							copydone = 1;
 							break;
 						case 0:
 						case -2:
-							PHP_PQ_ERROR("getline failed: %s", pgsql);
+							PHP_PQ_ERROR("getline failed: %s", monetdb);
 							RETURN_FALSE;
 							break;
 						default:
@@ -2170,8 +2170,8 @@ PHP_FUNCTION(monetdb_copy_to)
 #else
 				while (!copydone)
 				{
-					if ((ret = PQgetline(pgsql, copybuf, COPYBUFSIZ))) {
-						PHP_PQ_ERROR("getline failed: %s", pgsql);
+					if ((ret = PQgetline(monetdb, copybuf, COPYBUFSIZ))) {
+						PHP_PQ_ERROR("getline failed: %s", monetdb);
 						RETURN_FALSE;
 					}
 			
@@ -2204,22 +2204,22 @@ PHP_FUNCTION(monetdb_copy_to)
 						}
 					}
 				}
-				if (PQendcopy(pgsql)) {
-					PHP_PQ_ERROR("endcopy failed: %s", pgsql);
+				if (PQendcopy(monetdb)) {
+					PHP_PQ_ERROR("endcopy failed: %s", monetdb);
 					RETURN_FALSE;
 				}
 #endif
-				while ((pgsql_result = MgetResult(pgsql))) {
-					Mclear(pgsql_result);
+				while ((monetdb_result = MgetResult(monetdb))) {
+					Mclear(monetdb_result);
 				}
 			} else {
-				Mclear(pgsql_result);
+				Mclear(monetdb_result);
 				RETURN_FALSE;
 			}
 			break;
 		default:
-			Mclear(pgsql_result);
-			PHP_PQ_ERROR("Copy command failed: %s", pgsql);
+			Mclear(monetdb_result);
+			PHP_PQ_ERROR("Copy command failed: %s", monetdb);
 			RETURN_FALSE;
 			break;
 	}
@@ -2230,122 +2230,122 @@ PHP_FUNCTION(monetdb_copy_to)
    Copy table from array */
 PHP_FUNCTION(monetdb_copy_from)
 {
-	zval *pgsql_link = NULL, *pg_rows;
+	zval *monetdb_link = NULL, *m_rows;
 	zval **tmp;
-	char *table_name, *pg_delim = NULL, *pg_null_as = NULL;
-	int  table_name_len, pg_delim_len, pg_null_as_len;
-	int  pg_null_as_free = 0;
+	char *table_name, *m_delim = NULL, *m_null_as = NULL;
+	int  table_name_len, m_delim_len, m_null_as_len;
+	int  m_null_as_free = 0;
 	char *query;
 	char *query_template = "COPY \"\" FROM STDIN DELIMITERS ':' WITH NULL AS ''";
 	HashPosition pos;
 	int id = -1;
-	Mconn *pgsql;
-	Mresult *pgsql_result;
+	Mconn *monetdb;
+	Mresult *monetdb_result;
 	ExecStatusType status;
 	int argc = ZEND_NUM_ARGS();
 
 	if (zend_parse_parameters(argc TSRMLS_CC, "rs/a|ss",
-							  &pgsql_link, &table_name, &table_name_len, &pg_rows,
-							  &pg_delim, &pg_delim_len, &pg_null_as, &pg_null_as_len) == FAILURE) {
+							  &monetdb_link, &table_name, &table_name_len, &m_rows,
+							  &m_delim, &m_delim_len, &m_null_as, &m_null_as_len) == FAILURE) {
 		return;
 	}
-	if (!pg_delim) {
-		pg_delim = "\t";
+	if (!m_delim) {
+		m_delim = "\t";
 	}
-	if (!pg_null_as) {
-		pg_null_as = safe_estrdup("\\\\N");
-		pg_null_as_free = 1;
+	if (!m_null_as) {
+		m_null_as = safe_estrdup("\\\\N");
+		m_null_as_free = 1;
 	}
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	query = (char *)emalloc(strlen(query_template) + strlen(table_name) + strlen(pg_null_as) + 1);
+	query = (char *)emalloc(strlen(query_template) + strlen(table_name) + strlen(m_null_as) + 1);
 	sprintf(query, "COPY \"%s\" FROM STDIN DELIMITERS '%c' WITH NULL AS '%s'",
-			table_name, *pg_delim, pg_null_as);
-	while ((pgsql_result = MgetResult(pgsql))) {
-		Mclear(pgsql_result);
+			table_name, *m_delim, m_null_as);
+	while ((monetdb_result = MgetResult(monetdb))) {
+		Mclear(monetdb_result);
 	}
-	pgsql_result = PQexec(pgsql, query);
+	monetdb_result = PQexec(monetdb, query);
 
-	if (pg_null_as_free) {
-		efree(pg_null_as);
+	if (m_null_as_free) {
+		efree(m_null_as);
 	}
 	efree(query);
 
-	if (pgsql_result) {
-		status = PQresultStatus(pgsql_result);
+	if (monetdb_result) {
+		status = PQresultStatus(monetdb_result);
 	} else {
-		status = (ExecStatusType) PQstatus(pgsql);
+		status = (ExecStatusType) PQstatus(monetdb);
 	}
 
 	switch (status) {
 		case PGRES_COPY_IN:
-			if (pgsql_result) {
+			if (monetdb_result) {
 				int command_failed = 0;
-				Mclear(pgsql_result);
-				zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(pg_rows), &pos);
+				Mclear(monetdb_result);
+				zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(m_rows), &pos);
 #if HAVE_PQPUTCOPYDATA
-				while (zend_hash_get_current_data_ex(Z_ARRVAL_P(pg_rows), (void **) &tmp, &pos) == SUCCESS) {
+				while (zend_hash_get_current_data_ex(Z_ARRVAL_P(m_rows), (void **) &tmp, &pos) == SUCCESS) {
 					convert_to_string_ex(tmp);
 					query = (char *)emalloc(Z_STRLEN_PP(tmp) +2);
 					strcpy(query, Z_STRVAL_PP(tmp));
 					if(*(query+Z_STRLEN_PP(tmp)-1) != '\n')
 						strcat(query, "\n");
-					if (PQputCopyData(pgsql, query, strlen(query)) != 1) {
+					if (PQputCopyData(monetdb, query, strlen(query)) != 1) {
 						efree(query);
-						PHP_PQ_ERROR("copy failed: %s", pgsql);
+						PHP_PQ_ERROR("copy failed: %s", monetdb);
 						RETURN_FALSE;
 					}
 					efree(query);
-					zend_hash_move_forward_ex(Z_ARRVAL_P(pg_rows), &pos);
+					zend_hash_move_forward_ex(Z_ARRVAL_P(m_rows), &pos);
 				}
-				if (PQputCopyEnd(pgsql, NULL) != 1) {
-					PHP_PQ_ERROR("putcopyend failed: %s", pgsql);
+				if (PQputCopyEnd(monetdb, NULL) != 1) {
+					PHP_PQ_ERROR("putcopyend failed: %s", monetdb);
 					RETURN_FALSE;
 				}
 #else
-				while (zend_hash_get_current_data_ex(Z_ARRVAL_P(pg_rows), (void **) &tmp, &pos) == SUCCESS) {
+				while (zend_hash_get_current_data_ex(Z_ARRVAL_P(m_rows), (void **) &tmp, &pos) == SUCCESS) {
 					convert_to_string_ex(tmp);
 					query = (char *)emalloc(Z_STRLEN_PP(tmp) +2);
 					strcpy(query, Z_STRVAL_PP(tmp));
 					if(*(query+Z_STRLEN_PP(tmp)-1) != '\n')
 						strcat(query, "\n");
-					if (PQputline(pgsql, query)==EOF) {
+					if (PQputline(monetdb, query)==EOF) {
 						efree(query);
-						PHP_PQ_ERROR("copy failed: %s", pgsql);
+						PHP_PQ_ERROR("copy failed: %s", monetdb);
 						RETURN_FALSE;
 					}
 					efree(query);
-					zend_hash_move_forward_ex(Z_ARRVAL_P(pg_rows), &pos);
+					zend_hash_move_forward_ex(Z_ARRVAL_P(m_rows), &pos);
 				}
-				if (PQputline(pgsql, "\\.\n") == EOF) {
-					PHP_PQ_ERROR("putline failed: %s", pgsql);
+				if (PQputline(monetdb, "\\.\n") == EOF) {
+					PHP_PQ_ERROR("putline failed: %s", monetdb);
 					RETURN_FALSE;
 				}
-				if (PQendcopy(pgsql)) {
-					PHP_PQ_ERROR("endcopy failed: %s", pgsql);
+				if (PQendcopy(monetdb)) {
+					PHP_PQ_ERROR("endcopy failed: %s", monetdb);
 					RETURN_FALSE;
 				}
 #endif
-				while ((pgsql_result = MgetResult(pgsql))) {
-					if (PGRES_COMMAND_OK != PQresultStatus(pgsql_result)) {
-						PHP_PQ_ERROR("Copy command failed: %s", pgsql);
+				while ((monetdb_result = MgetResult(monetdb))) {
+					if (PGRES_COMMAND_OK != PQresultStatus(monetdb_result)) {
+						PHP_PQ_ERROR("Copy command failed: %s", monetdb);
 						command_failed = 1;
 					}
-					Mclear(pgsql_result);
+					Mclear(monetdb_result);
 				}
 				if (command_failed) {
 					RETURN_FALSE;
 				}
 			} else {
-				Mclear(pgsql_result);
+				Mclear(monetdb_result);
 				RETURN_FALSE;
 			}
 			RETURN_TRUE;
 			break;
 		default:
-			Mclear(pgsql_result);
-			PHP_PQ_ERROR("Copy command failed: %s", pgsql);
+			Mclear(monetdb_result);
+			PHP_PQ_ERROR("Copy command failed: %s", monetdb);
 			RETURN_FALSE;
 			break;
 	}
@@ -2358,12 +2358,12 @@ PHP_FUNCTION(monetdb_copy_from)
 #define PHP_PG_ASYNC_REQUEST_CANCEL 2
 /* {{{ php_monetdb_flush_query
  */
-static int php_monetdb_flush_query(Mconn *pgsql TSRMLS_DC) 
+static int php_monetdb_flush_query(Mconn *monetdb TSRMLS_DC) 
 {
 	Mresult *res;
 	int leftover = 0;
 	
-	while ((res = MgetResult(pgsql))) {
+	while ((res = MgetResult(monetdb))) {
 		Mclear(res);
 		leftover++;
 	}
@@ -2375,33 +2375,33 @@ static int php_monetdb_flush_query(Mconn *pgsql TSRMLS_DC)
  */
 static void php_monetdb_do_async(INTERNAL_FUNCTION_PARAMETERS, int entry_type) 
 {
-	zval *pgsql_link;
+	zval *monetdb_link;
 	int id = -1;
-	Mconn *pgsql;
-	Mresult *pgsql_result;
+	Mconn *monetdb;
+	Mresult *monetdb_result;
 
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS() TSRMLS_CC, "r",
-								 &pgsql_link) == FAILURE) {
+								 &monetdb_link) == FAILURE) {
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
 	switch(entry_type) {
 		case PHP_PG_ASYNC_IS_BUSY:
-			PQconsumeInput(pgsql);
-			Z_LVAL_P(return_value) = PQisBusy(pgsql);
+			PQconsumeInput(monetdb);
+			Z_LVAL_P(return_value) = PQisBusy(monetdb);
 			Z_TYPE_P(return_value) = IS_LONG;
 			break;
 		case PHP_PG_ASYNC_REQUEST_CANCEL:
-			Z_LVAL_P(return_value) = PQrequestCancel(pgsql);
+			Z_LVAL_P(return_value) = PQrequestCancel(monetdb);
 			Z_TYPE_P(return_value) = IS_LONG;
-			while ((pgsql_result = MgetResult(pgsql))) {
-				Mclear(pgsql_result);
+			while ((monetdb_result = MgetResult(monetdb))) {
+				Mclear(monetdb_result);
 			}
 			break;
 		default:
-			php_error_docref(NULL TSRMLS_CC, E_ERROR, "PostgreSQL module error, please report this error");
+			php_error_docref(NULL TSRMLS_CC, E_ERROR, "MonetDB/SQL module error, please report this error");
 			break;
 	}
 	convert_to_boolean_ex(&return_value);
@@ -2420,33 +2420,33 @@ PHP_FUNCTION(monetdb_connection_busy)
    Send asynchronous query */
 PHP_FUNCTION(monetdb_send_query)
 {
-	zval *pgsql_link;
+	zval *monetdb_link;
 	char *query;
 	int len;
 	int id = -1;
-	Mconn *pgsql;
+	Mconn *monetdb;
 	Mresult *res;
 	int leftover = 0;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs",
-							  &pgsql_link, &query, &len) == FAILURE) {
+							  &monetdb_link, &query, &len) == FAILURE) {
 		return;
 	}
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	while ((res = MgetResult(pgsql))) {
+	while ((res = MgetResult(monetdb))) {
 		Mclear(res);
 		leftover = 1;
 	}
 	if (leftover) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "There are results on this connection. Call pg_get_result() until it returns FALSE");
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "There are results on this connection. Call m_get_result() until it returns FALSE");
 	}
-	if (!PQsendQuery(pgsql, query)) {
-		if ((MG(auto_reset_persistent) & 2) && PQstatus(pgsql) != MONETDB_CONNECTION_OK) {
-			PQreset(pgsql);
+	if (!PQsendQuery(monetdb, query)) {
+		if ((MG(auto_reset_persistent) & 2) && PQstatus(monetdb) != MONETDB_CONNECTION_OK) {
+			PQreset(monetdb);
 		}
-		if (!PQsendQuery(pgsql, query)) {
+		if (!PQsendQuery(monetdb, query)) {
 			RETURN_FALSE;
 		}
 	}
@@ -2458,22 +2458,22 @@ PHP_FUNCTION(monetdb_send_query)
    Send asynchronous parameterized query */
 PHP_FUNCTION(monetdb_send_query_params)
 {
-	zval **pgsql_link;
+	zval **monetdb_link;
 	zval **pv_param_arr, **tmp;
 	int num_params = 0;
 	char **params = NULL;
 	unsigned char otype;
 	zval **query;
 	int id = -1;
-	Mconn *pgsql;
+	Mconn *monetdb;
 	Mresult *res;
 	int leftover = 0;
 
-	if (zend_get_parameters_ex(3, &pgsql_link, &query, &pv_param_arr) == FAILURE) {
+	if (zend_get_parameters_ex(3, &monetdb_link, &query, &pv_param_arr) == FAILURE) {
 		return;
 	}
 
-	if (pgsql_link == NULL && id == -1) {
+	if (monetdb_link == NULL && id == -1) {
 		RETURN_FALSE;
 	}	
 
@@ -2482,15 +2482,15 @@ PHP_FUNCTION(monetdb_send_query_params)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
 	convert_to_string_ex(query);
-	while ((res = MgetResult(pgsql))) {
+	while ((res = MgetResult(monetdb))) {
 		Mclear(res);
 		leftover = 1;
 	}
 	if (leftover) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "There are results on this connection. Call pg_get_result() until it returns FALSE");
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "There are results on this connection. Call m_get_result() until it returns FALSE");
 	}
 
 	zend_hash_internal_pointer_reset(Z_ARRVAL_PP(pv_param_arr));
@@ -2502,7 +2502,7 @@ PHP_FUNCTION(monetdb_send_query_params)
 		for(i = 0; i < num_params; i++) {
 			if (zend_hash_get_current_data(Z_ARRVAL_PP(pv_param_arr), (void **) &tmp) == FAILURE) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,"Error getting parameter");
-				_php_pgsql_free_params(params, num_params);
+				_php_monetdb_free_params(params, num_params);
 				RETURN_FALSE;
 			}
 
@@ -2510,7 +2510,7 @@ PHP_FUNCTION(monetdb_send_query_params)
 			convert_to_string(*tmp);
 			if (Z_TYPE_PP(tmp) != IS_STRING) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,"Error converting parameter");
-				_php_pgsql_free_params(params, num_params);
+				_php_monetdb_free_params(params, num_params);
 				RETURN_FALSE;
 			}
 
@@ -2525,16 +2525,16 @@ PHP_FUNCTION(monetdb_send_query_params)
 		}
 	}
 
-	if (!PQsendQueryParams(pgsql, Z_STRVAL_PP(query), num_params, NULL, (const char * const *)params, NULL, NULL, 0)) {
-		if ((MG(auto_reset_persistent) & 2) && PQstatus(pgsql) != MONETDB_CONNECTION_OK) {
-			PQreset(pgsql);
+	if (!PQsendQueryParams(monetdb, Z_STRVAL_PP(query), num_params, NULL, (const char * const *)params, NULL, NULL, 0)) {
+		if ((MG(auto_reset_persistent) & 2) && PQstatus(monetdb) != MONETDB_CONNECTION_OK) {
+			PQreset(monetdb);
 		}
-		if (!PQsendQueryParams(pgsql, Z_STRVAL_PP(query), num_params, NULL, (const char * const *)params, NULL, NULL, 0)) {
-			_php_pgsql_free_params(params, num_params);
+		if (!PQsendQueryParams(monetdb, Z_STRVAL_PP(query), num_params, NULL, (const char * const *)params, NULL, NULL, 0)) {
+			_php_monetdb_free_params(params, num_params);
 			RETURN_FALSE;
 		}
 	}
-	_php_pgsql_free_params(params, num_params);
+	_php_monetdb_free_params(params, num_params);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -2543,36 +2543,36 @@ PHP_FUNCTION(monetdb_send_query_params)
    Asynchronously prepare a query for future execution */
 PHP_FUNCTION(monetdb_send_prepare)
 {
-	zval **pgsql_link;
+	zval **monetdb_link;
 	zval **query, **stmtname;
 	int id = -1;
-	Mconn *pgsql;
+	Mconn *monetdb;
 	Mresult *res;
 	int leftover = 0;
 
-	if (zend_get_parameters_ex(3, &pgsql_link, &stmtname, &query) == FAILURE) {
+	if (zend_get_parameters_ex(3, &monetdb_link, &stmtname, &query) == FAILURE) {
 		return;
 	}
-	if (pgsql_link == NULL && id == -1) {
+	if (monetdb_link == NULL && id == -1) {
 		RETURN_FALSE;
 	}	
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
 	convert_to_string_ex(stmtname);
 	convert_to_string_ex(query);
-	while ((res = MgetResult(pgsql))) {
+	while ((res = MgetResult(monetdb))) {
 		Mclear(res);
 		leftover = 1;
 	}
 	if (leftover) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "There are results on this connection. Call pg_get_result() until it returns FALSE");
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "There are results on this connection. Call m_get_result() until it returns FALSE");
 	}
-	if (!PQsendPrepare(pgsql, Z_STRVAL_PP(stmtname), Z_STRVAL_PP(query), 0, NULL)) {
-		if ((MG(auto_reset_persistent) & 2) && PQstatus(pgsql) != MONETDB_CONNECTION_OK) {
-			PQreset(pgsql);
+	if (!PQsendPrepare(monetdb, Z_STRVAL_PP(stmtname), Z_STRVAL_PP(query), 0, NULL)) {
+		if ((MG(auto_reset_persistent) & 2) && PQstatus(monetdb) != MONETDB_CONNECTION_OK) {
+			PQreset(monetdb);
 		}
-		if (!PQsendPrepare(pgsql, Z_STRVAL_PP(stmtname), Z_STRVAL_PP(query), 0, NULL)) {
+		if (!PQsendPrepare(monetdb, Z_STRVAL_PP(stmtname), Z_STRVAL_PP(query), 0, NULL)) {
 			RETURN_FALSE;
 		}
 	}
@@ -2584,21 +2584,21 @@ PHP_FUNCTION(monetdb_send_prepare)
    Executes prevriously prepared stmtname asynchronously */
 PHP_FUNCTION(monetdb_send_execute)
 {
-	zval **pgsql_link;
+	zval **monetdb_link;
 	zval **pv_param_arr, **tmp;
 	int num_params = 0;
 	char **params = NULL;
 	unsigned char otype;
 	zval **stmtname;
 	int id = -1;
-	Mconn *pgsql;
+	Mconn *monetdb;
 	Mresult *res;
 	int leftover = 0;
 
-	if (zend_get_parameters_ex(3, &pgsql_link, &stmtname, &pv_param_arr)==FAILURE) {
+	if (zend_get_parameters_ex(3, &monetdb_link, &stmtname, &pv_param_arr)==FAILURE) {
 		return;
 	}
-	if (pgsql_link == NULL && id == -1) {
+	if (monetdb_link == NULL && id == -1) {
 		RETURN_FALSE;
 	}	
 
@@ -2607,15 +2607,15 @@ PHP_FUNCTION(monetdb_send_execute)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
 	convert_to_string_ex(stmtname);
-	while ((res = MgetResult(pgsql))) {
+	while ((res = MgetResult(monetdb))) {
 		Mclear(res);
 		leftover = 1;
 	}
 	if (leftover) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "There are results on this connection. Call pg_get_result() until it returns FALSE");
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "There are results on this connection. Call m_get_result() until it returns FALSE");
 	}
 
 	zend_hash_internal_pointer_reset(Z_ARRVAL_PP(pv_param_arr));
@@ -2627,7 +2627,7 @@ PHP_FUNCTION(monetdb_send_execute)
 		for(i = 0; i < num_params; i++) {
 			if (zend_hash_get_current_data(Z_ARRVAL_PP(pv_param_arr), (void **) &tmp) == FAILURE) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,"Error getting parameter");
-				_php_pgsql_free_params(params, num_params);
+				_php_monetdb_free_params(params, num_params);
 				RETURN_FALSE;
 			}
 
@@ -2635,7 +2635,7 @@ PHP_FUNCTION(monetdb_send_execute)
 			convert_to_string(*tmp);
 			if (Z_TYPE_PP(tmp) != IS_STRING) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,"Error converting parameter");
-				_php_pgsql_free_params(params, num_params);
+				_php_monetdb_free_params(params, num_params);
 				RETURN_FALSE;
 			}
 
@@ -2650,16 +2650,16 @@ PHP_FUNCTION(monetdb_send_execute)
 		}
 	}
 
-	if (!PQsendQueryPrepared(pgsql, Z_STRVAL_PP(stmtname), num_params, (const char * const *)params, NULL, NULL, 0)) {
-		if ((MG(auto_reset_persistent) & 2) && PQstatus(pgsql) != MONETDB_CONNECTION_OK) {
-			PQreset(pgsql);
+	if (!PQsendQueryPrepared(monetdb, Z_STRVAL_PP(stmtname), num_params, (const char * const *)params, NULL, NULL, 0)) {
+		if ((MG(auto_reset_persistent) & 2) && PQstatus(monetdb) != MONETDB_CONNECTION_OK) {
+			PQreset(monetdb);
 		}
-		if (!PQsendQueryPrepared(pgsql, Z_STRVAL_PP(stmtname), num_params, (const char * const *)params, NULL, NULL, 0)) {
-			_php_pgsql_free_params(params, num_params);
+		if (!PQsendQueryPrepared(monetdb, Z_STRVAL_PP(stmtname), num_params, (const char * const *)params, NULL, NULL, 0)) {
+			_php_monetdb_free_params(params, num_params);
 			RETURN_FALSE;
 		}
 	}
-	_php_pgsql_free_params(params, num_params);
+	_php_monetdb_free_params(params, num_params);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -2668,27 +2668,27 @@ PHP_FUNCTION(monetdb_send_execute)
    Get asynchronous query result */
 PHP_FUNCTION(monetdb_get_result)
 {
-	zval *pgsql_link;
+	zval *monetdb_link;
 	int id = -1;
-	Mconn *pgsql;
-	Mresult *pgsql_result;
+	Mconn *monetdb;
+	Mresult *monetdb_result;
 	php_monetdb_result_handle *monetdb_result_h;
 
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS() TSRMLS_CC, "r",
-								 &pgsql_link) == FAILURE) {
+								 &monetdb_link) == FAILURE) {
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 	
-	pgsql_result = MgetResult(pgsql);
-	if (!pgsql_result) {
+	monetdb_result = MgetResult(monetdb);
+	if (!monetdb_result) {
 		/* no result */
 		RETURN_FALSE;
 	}
 	monetdb_result_h = (php_monetdb_result_handle *) emalloc(sizeof(php_monetdb_result_handle));
-	monetdb_result_h->conn = pgsql;
-	monetdb_result_h->result = pgsql_result;
+	monetdb_result_h->conn = monetdb;
+	monetdb_result_h->result = monetdb_result;
 	monetdb_result_h->row = 0;
 	ZEND_REGISTER_RESOURCE(return_value, monetdb_result_h, le_result);
 }
@@ -2701,7 +2701,7 @@ PHP_FUNCTION(monetdb_result_status)
 	zval *result;
 	long result_type = MONETDB_STATUS_LONG;
 	ExecStatusType status;
-	Mresult *pgsql_result;
+	Mresult *monetdb_result;
 	php_monetdb_result_handle *monetdb_result_h;
 
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS() TSRMLS_CC, "r|l",
@@ -2709,15 +2709,15 @@ PHP_FUNCTION(monetdb_result_status)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE(monetdb_result_h, php_monetdb_result_handle *, &result, -1, "PostgreSQL result", le_result);
+	ZEND_FETCH_RESOURCE(monetdb_result_h, php_monetdb_result_handle *, &result, -1, "MonetDB/SQL result", le_result);
 
-	pgsql_result = monetdb_result_h->result;
+	monetdb_result = monetdb_result_h->result;
 	if (result_type == MONETDB_STATUS_LONG) {
-		status = PQresultStatus(pgsql_result);
+		status = PQresultStatus(monetdb_result);
 		RETURN_LONG((int)status);
 	}
 	else if (result_type == MONETDB_STATUS_STRING) {
-		RETURN_STRING(PQcmdStatus(pgsql_result), 1);
+		RETURN_STRING(PQcmdStatus(monetdb_result), 1);
 	}
 	else {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Optional 2nd parameter should be MONETDB_STATUS_LONG or MONETDB_STATUS_STRING");
@@ -2731,18 +2731,18 @@ PHP_FUNCTION(monetdb_result_status)
 /* {{{ php_monetdb_meta_data
  * TODO: Add meta_data cache for better performance
  */
-PHP_MONETDB_API int php_monetdb_meta_data(Mconn *pg_link, const char *table_name, zval *meta TSRMLS_DC) 
+PHP_MONETDB_API int php_monetdb_meta_data(Mconn *m_link, const char *table_name, zval *meta TSRMLS_DC) 
 {
 	Mresult *monetdb_result_h;
 	char *tmp_name;
-	smart_str querystr = {0};
+	smart_str querystr = {NULL, 0, 0};
 	int new_len;
 	int i, num_rows;
 	zval *elem;
 	
 	smart_str_appends(&querystr, 
 			"SELECT a.attname, a.attnum, t.typname, a.attlen, a.attnotNULL, a.atthasdef, a.attndims "
-			"FROM pg_class as c, pg_attribute a, pg_type t "
+			"FROM m_class as c, m_attribute a, m_type t "
 			"WHERE a.attnum > 0 AND a.attrelid = c.oid AND c.relname = '");
 	
 	tmp_name = php_addslashes((char *)table_name, strlen(table_name), &new_len, 0 TSRMLS_CC);
@@ -2752,7 +2752,7 @@ PHP_MONETDB_API int php_monetdb_meta_data(Mconn *pg_link, const char *table_name
 	smart_str_appends(&querystr, "' AND a.atttypid = t.oid ORDER BY a.attnum;");
 	smart_str_0(&querystr);
 	
-	monetdb_result_h = PQexec(pg_link, querystr.c);
+	monetdb_result_h = PQexec(m_link, querystr.c);
 	if (PQresultStatus(monetdb_result_h) != PGRES_TUPLES_OK || (num_rows = PQntuples(monetdb_result_h)) == 0) {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Failed to query meta_data for '%s' table %s", table_name, querystr.c);
 		smart_str_free(&querystr);
@@ -2795,21 +2795,21 @@ PHP_MONETDB_API int php_monetdb_meta_data(Mconn *pg_link, const char *table_name
    Get meta_data */
 PHP_FUNCTION(monetdb_meta_data)
 {
-	zval *pgsql_link;
+	zval *monetdb_link;
 	char *table_name;
 	uint table_name_len;
-	Mconn *pgsql;
+	Mconn *monetdb;
 	int id = -1;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs",
-							  &pgsql_link, &table_name, &table_name_len) == FAILURE) {
+							  &monetdb_link, &table_name, &table_name_len) == FAILURE) {
 		return;
 	}
 
-	ZEND_FETCH_RESOURCE2(pgsql, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 	
 	array_init(return_value);
-	if (php_pgsql_meta_data(pgsql, table_name, return_value TSRMLS_CC) == FAILURE) {
+	if (php_monetdb_meta_data(monetdb, table_name, return_value TSRMLS_CC) == FAILURE) {
 		zval_dtor(return_value); /* destroy array */
 		RETURN_FALSE;
 	}
@@ -2951,7 +2951,7 @@ static int php_monetdb_convert_match(const char *str, const char *regex , int ic
  */
 static int php_monetdb_add_quotes(zval *src, zend_bool should_free TSRMLS_DC) 
 {
-	smart_str str = {0};
+	smart_str str = {NULL, 0, 0};
 	
 	assert(Z_TYPE_P(src) == IS_STRING);
 	assert(should_free == 1 || should_free == 0);
@@ -2991,7 +2991,7 @@ static int php_monetdb_add_quotes(zval *src, zend_bool should_free TSRMLS_DC)
 /* {{{ php_monetdb_convert
  * check and convert array values (fieldname=>vlaue pair) for sql
  */
-PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, const zval *values, zval *result, ulong opt TSRMLS_DC) 
+PHP_MONETDB_API int php_monetdb_convert(Mconn *m_link, const char *table_name, const zval *values, zval *result, ulong opt TSRMLS_DC) 
 {
 	HashPosition pos;
 	char *field = NULL;
@@ -3000,7 +3000,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 	zval *meta, **def, **type, **not_null, **has_default, **val, *new_val;
 	int new_len, key_type, err = 0, skip_field;
 	
-	assert(pg_link != NULL);
+	assert(m_link != NULL);
 	assert(Z_TYPE_P(values) == IS_ARRAY);
 	assert(Z_TYPE_P(result) == IS_ARRAY);
 	assert(!(opt & ~MONETDB_CONV_OPTS));
@@ -3010,7 +3010,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 	}
 	MAKE_STD_ZVAL(meta);
 	array_init(meta);
-	if (php_pgsql_meta_data(pg_link, table_name, meta TSRMLS_CC) == FAILURE) {
+	if (php_monetdb_meta_data(m_link, table_name, meta TSRMLS_CC) == FAILURE) {
 		zval_dtor(meta);
 		FREE_ZVAL(meta);
 		return FAILURE;
@@ -3059,7 +3059,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 			break; /* break out for() */
 		}
 		ALLOC_INIT_ZVAL(new_val);
-		switch(php_pgsql_get_data_type(Z_STRVAL_PP(type), Z_STRLEN_PP(type)))
+		switch(php_monetdb_get_data_type(Z_STRVAL_PP(type), Z_STRLEN_PP(type)))
 		{
 			case PG_BOOL:
 				switch (Z_TYPE_PP(val)) {
@@ -3083,7 +3083,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 								ZVAL_STRING(new_val, "'f'", 1);
 							}
 							else {
-								php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Detected invalid value (%s) for PostgreSQL %s field (%s)", Z_STRVAL_PP(val), Z_STRVAL_PP(type), field);
+								php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Detected invalid value (%s) for MonetDB/SQL %s field (%s)", Z_STRVAL_PP(val), Z_STRVAL_PP(type), field);
 								err = 1;
 							}
 						}
@@ -3108,7 +3108,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects string, null, long or boolelan value for PostgreSQL '%s' (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects string, null, long or boolelan value for MonetDB/SQL '%s' (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 					
@@ -3123,7 +3123,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 						}
 						else {
 							/* FIXME: better regex must be used */
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val), "^([+-]{0,1}[0-9]+)$", 0 TSRMLS_CC) == FAILURE) {
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val), "^([+-]{0,1}[0-9]+)$", 0 TSRMLS_CC) == FAILURE) {
 								err = 1;
 							}
 							else {
@@ -3150,7 +3150,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL, string, long or double value for pgsql '%s' (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL, string, long or double value for monetdb '%s' (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 
@@ -3165,7 +3165,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 						}
 						else {
 							/* FIXME: better regex must be used */
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val), "^([+-]{0,1}[0-9]+)|([+-]{0,1}[0-9]*[\\.][0-9]+)|([+-]{0,1}[0-9]+[\\.][0-9]*)$", 0 TSRMLS_CC) == FAILURE) {
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val), "^([+-]{0,1}[0-9]+)|([+-]{0,1}[0-9]*[\\.][0-9]+)|([+-]{0,1}[0-9]+[\\.][0-9]*)$", 0 TSRMLS_CC) == FAILURE) {
 								err = 1;
 							}
 							else {
@@ -3191,7 +3191,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL, string, long or double value for PostgreSQL '%s' (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL, string, long or double value for MonetDB/SQL '%s' (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 
@@ -3215,7 +3215,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 								Z_STRLEN_P(new_val) = (int)PQescapeString(tmp, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
 								Z_STRVAL_P(new_val) = tmp;
 							}
-							php_pgsql_add_quotes(new_val, 1 TSRMLS_CC);
+							php_monetdb_add_quotes(new_val, 1 TSRMLS_CC);
 						}
 						break;
 						
@@ -3238,7 +3238,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL, string, long or double value for PostgreSQL '%s' (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL, string, long or double value for MonetDB/SQL '%s' (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 					
@@ -3252,7 +3252,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 						}
 						else {
 							/* FIXME: Better regex must be used */
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val), "^[0-9]+$", 0 TSRMLS_CC) == FAILURE) {
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val), "^[0-9]+$", 0 TSRMLS_CC) == FAILURE) {
 								err = 1;
 							} 
 							else {
@@ -3293,12 +3293,12 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 						}
 						else {
 							/* FIXME: Better regex must be used */
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val), "^([0-9]{1,3}\\.){3}[0-9]{1,3}(/[0-9]{1,2}){0,1}$", 0 TSRMLS_CC) == FAILURE) {
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val), "^([0-9]{1,3}\\.){3}[0-9]{1,3}(/[0-9]{1,2}){0,1}$", 0 TSRMLS_CC) == FAILURE) {
 								err = 1;
 							}
 							else {
 								ZVAL_STRING(new_val, Z_STRVAL_PP(val), 1);
-								php_pgsql_add_quotes(new_val, 1 TSRMLS_CC);
+								php_monetdb_add_quotes(new_val, 1 TSRMLS_CC);
 							}
 						}
 						break;
@@ -3326,12 +3326,12 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 						}
 						else {
 							/* FIXME: better regex must be used */
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val), "^([0-9]{4}[/-][0-9]{1,2}[/-][0-9]{1,2})([ \\t]+(([0-9]{1,2}:[0-9]{1,2}){1}(:[0-9]{1,2}){0,1}(\\.[0-9]+){0,1}([ \\t]*([+-][0-9]{1,2}(:[0-9]{1,2}){0,1}|[a-zA-Z]{1,5})){0,1})){0,1}$", 1 TSRMLS_CC) == FAILURE) {
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val), "^([0-9]{4}[/-][0-9]{1,2}[/-][0-9]{1,2})([ \\t]+(([0-9]{1,2}:[0-9]{1,2}){1}(:[0-9]{1,2}){0,1}(\\.[0-9]+){0,1}([ \\t]*([+-][0-9]{1,2}(:[0-9]{1,2}){0,1}|[a-zA-Z]{1,5})){0,1})){0,1}$", 1 TSRMLS_CC) == FAILURE) {
 								err = 1;
 							}
 							else {
 								ZVAL_STRING(new_val, Z_STRVAL_PP(val), 1);
-								php_pgsql_add_quotes(new_val, 1 TSRMLS_CC);
+								php_monetdb_add_quotes(new_val, 1 TSRMLS_CC);
 							}
 						}
 						break;
@@ -3345,7 +3345,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for PostgreSQL %s field (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for MonetDB/SQL %s field (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 				
@@ -3357,12 +3357,12 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 						}
 						else {
 							/* FIXME: better regex must be used */
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val), "^([0-9]{4}[/-][0-9]{1,2}[/-][0-9]{1,2})$", 1 TSRMLS_CC) == FAILURE) {
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val), "^([0-9]{4}[/-][0-9]{1,2}[/-][0-9]{1,2})$", 1 TSRMLS_CC) == FAILURE) {
 								err = 1;
 							}
 							else {
 								ZVAL_STRING(new_val, Z_STRVAL_PP(val), 1);
-								php_pgsql_add_quotes(new_val, 1 TSRMLS_CC);
+								php_monetdb_add_quotes(new_val, 1 TSRMLS_CC);
 							}
 						}
 						break;
@@ -3376,7 +3376,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for PostgreSQL %s field (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for MonetDB/SQL %s field (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 
@@ -3388,12 +3388,12 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 						}
 						else {
 							/* FIXME: better regex must be used */
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val), "^(([0-9]{1,2}:[0-9]{1,2}){1}(:[0-9]{1,2}){0,1})){0,1}$", 1 TSRMLS_CC) == FAILURE) {
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val), "^(([0-9]{1,2}:[0-9]{1,2}){1}(:[0-9]{1,2}){0,1})){0,1}$", 1 TSRMLS_CC) == FAILURE) {
 								err = 1;
 							}
 							else {
 								ZVAL_STRING(new_val, Z_STRVAL_PP(val), 1);
-								php_pgsql_add_quotes(new_val, 1 TSRMLS_CC);
+								php_monetdb_add_quotes(new_val, 1 TSRMLS_CC);
 							}
 						}
 						break;
@@ -3407,7 +3407,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for PostgreSQL %s field (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for MonetDB/SQL %s field (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 
@@ -3435,7 +3435,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 							   unit markings. For example, '1 12:59:10' is read the same as '1 day 12 hours 59 min 10
 							   sec'.
 							*/							  
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val),
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val),
 														"^(@?[ \\t]+)?("
 														
 														/* Textual time units and their abbreviations: */
@@ -3472,7 +3472,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 							}
 							else {
 								ZVAL_STRING(new_val, Z_STRVAL_PP(val), 1);
-								php_pgsql_add_quotes(new_val, 1 TSRMLS_CC);
+								php_monetdb_add_quotes(new_val, 1 TSRMLS_CC);
 							}
 						}	
 						break;
@@ -3486,7 +3486,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for PostgreSQL %s field (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for MonetDB %s field (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 			case PG_BYTEA:
@@ -3504,7 +3504,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 							Z_STRVAL_P(new_val) = emalloc(to_len);
 							memcpy(Z_STRVAL_P(new_val), tmp, to_len);
 							free(tmp);
-							php_pgsql_add_quotes(new_val, 1 TSRMLS_CC);
+							php_monetdb_add_quotes(new_val, 1 TSRMLS_CC);
 								
 						}
 						break;
@@ -3528,7 +3528,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL, string, long or double value for PostgreSQL '%s' (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL, string, long or double value for MonetDB/SQL '%s' (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 				
@@ -3539,12 +3539,12 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 							ZVAL_STRING(new_val, "NULL", 1);
 						}
 						else {
-							if (php_pgsql_convert_match(Z_STRVAL_PP(val), "^([0-9a-f]{2,2}:){5,5}[0-9a-f]{2,2}$", 1 TSRMLS_CC) == FAILURE) {
+							if (php_monetdb_convert_match(Z_STRVAL_PP(val), "^([0-9a-f]{2,2}:){5,5}[0-9a-f]{2,2}$", 1 TSRMLS_CC) == FAILURE) {
 								err = 1;
 							}
 							else {
 								ZVAL_STRING(new_val, Z_STRVAL_PP(val), 1);
-								php_pgsql_add_quotes(new_val, 1 TSRMLS_CC);
+								php_monetdb_add_quotes(new_val, 1 TSRMLS_CC);
 							}
 						}
 						break;
@@ -3558,7 +3558,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 				}
 				MONETDB_CONV_CHECK_IGNORE();
 				if (err) {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for PostgreSQL %s field (%s)", Z_STRVAL_PP(type), field);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Expects NULL or string for MonetDB/SQL %s field (%s)", Z_STRVAL_PP(type), field);
 				}
 				break;
 
@@ -3573,7 +3573,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 			case PG_PATH:
 			case PG_POLYGON:
 			case PG_CIRCLE:
-				php_error_docref(NULL TSRMLS_CC, E_NOTICE, "PostgreSQL '%s' type (%s) is not supported", Z_STRVAL_PP(type), field);
+				php_error_docref(NULL TSRMLS_CC, E_NOTICE, MonetDB/SQL '%s' type (%s) is not supported", Z_STRVAL_PP(type), field);
 				err = 1;
 				break;
 				
@@ -3608,18 +3608,18 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *pg_link, const char *table_name, 
 /* }}} */
 
 /* {{{ proto array monetdb_convert(resource db, string table, array values[, int options])
-   Check and convert values for PostgreSQL SQL statement */
+   Check and convert values for MonetDB/SQL SQL statement */
 PHP_FUNCTION(monetdb_convert)
 {
-	zval *pgsql_link, *values;
+	zval *monetdb_link, *values;
 	char *table_name;
 	int table_name_len;
 	ulong option = 0;
-	Mconn *pg_link;
+	Mconn *m_link;
 	int id = -1;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-							  "rsa|l", &pgsql_link, &table_name, &table_name_len, &values, &option) == FAILURE) {
+							  "rsa|l", &monetdb_link, &table_name, &table_name_len, &values, &option) == FAILURE) {
 		return;
 	}
 	if (option & ~MONETDB_CONV_OPTS) {
@@ -3631,13 +3631,13 @@ PHP_FUNCTION(monetdb_convert)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE2(pg_link, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(m_link, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	if (php_pgsql_flush_query(pg_link TSRMLS_CC)) {
+	if (php_monetdb_flush_query(m_link TSRMLS_CC)) {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Detected unhandled result(s) in connection");
 	}
 	array_init(return_value);
-	if (php_pgsql_convert(pg_link, table_name, values, return_value, option TSRMLS_CC) == FAILURE) {
+	if (php_monetdb_convert(m_link, table_name, values, return_value, option TSRMLS_CC) == FAILURE) {
 		zval_dtor(return_value);
 		RETURN_FALSE;
 	}
@@ -3645,17 +3645,17 @@ PHP_FUNCTION(monetdb_convert)
 /* }}} */
 
 //{{{ do_exec
-static int do_exec(smart_str *querystr, int expect, Mconn *pg_link, ulong opt TSRMLS_DC)
+static int do_exec(smart_str *querystr, int expect, Mconn *m_link, ulong opt TSRMLS_DC)
 {
 	if (opt & MONETDB_DML_ASYNC) {
-		if (PQsendQuery(pg_link, querystr->c)) {
+		if (PQsendQuery(m_link, querystr->c)) {
 			return 0;
 		}
 	}
 	else {
 		Mresult *monetdb_result_h;
 
-		monetdb_result_h = PQexec(pg_link, querystr->c);
+		monetdb_result_h = PQexec(m_link, querystr->c);
 		if (PQresultStatus(monetdb_result_h) == expect) {
 			Mclear(monetdb_result_h);
 			return 0;
@@ -3671,18 +3671,18 @@ static int do_exec(smart_str *querystr, int expect, Mconn *pg_link, ulong opt TS
 
 /* {{{ php_monetdb_insert
  */
-PHP_MONETDB_API int php_monetdb_insert(Mconn *pg_link, const char *table, zval *var_array, ulong opt, char **sql TSRMLS_DC)
+PHP_MONETDB_API int php_monetdb_insert(Mconn *m_link, const char *table, zval *var_array, ulong opt, char **sql TSRMLS_DC)
 {
 	zval **val, *converted = NULL;
 	char buf[256];
 	char *fld;
-	smart_str querystr = {0};
+	smart_str querystr = {NULL, 0, 0};
 	int key_type, ret = FAILURE;
 	uint fld_len;
 	ulong num_idx;
 	HashPosition pos;
 
-	assert(pg_link != NULL);
+	assert(m_link != NULL);
 	assert(table != NULL);
 	assert(Z_TYPE_P(var_array) == IS_ARRAY);
 
@@ -3694,7 +3694,7 @@ PHP_MONETDB_API int php_monetdb_insert(Mconn *pg_link, const char *table, zval *
 	if (!(opt & MONETDB_DML_NO_CONV)) {
 		MAKE_STD_ZVAL(converted);
 		array_init(converted);
-		if (php_pgsql_convert(pg_link, table, var_array, converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
+		if (php_monetdb_convert(m_link, table, var_array, converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
 			goto cleanup;
 		}
 		var_array = converted;
@@ -3748,7 +3748,7 @@ PHP_MONETDB_API int php_monetdb_insert(Mconn *pg_link, const char *table, zval *
 	smart_str_0(&querystr);
 
 	if ((opt & (MONETDB_DML_EXEC|MONETDB_DML_ASYNC)) &&
-		do_exec(&querystr, PGRES_COMMAND_OK, pg_link, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == 0) {
+		do_exec(&querystr, PGRES_COMMAND_OK, m_link, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == 0) {
 		ret = SUCCESS;
 	}
 	else if (opt & MONETDB_DML_STRING) {
@@ -3774,15 +3774,15 @@ cleanup:
    Insert values (filed=>value) to table */
 PHP_FUNCTION(monetdb_insert)
 {
-	zval *pgsql_link, *values;
+	zval *monetdb_link, *values;
 	char *table, *sql = NULL;
 	int table_len;
 	ulong option = MONETDB_DML_EXEC;
-	Mconn *pg_link;
+	Mconn *m_link;
 	int id = -1, argc = ZEND_NUM_ARGS();
 
 	if (zend_parse_parameters(argc TSRMLS_CC, "rsa|l",
-							  &pgsql_link, &table, &table_len, &values, &option) == FAILURE) {
+							  &monetdb_link, &table, &table_len, &values, &option) == FAILURE) {
 		return;
 	}
 	if (option & ~(MONETDB_CONV_OPTS|MONETDB_DML_NO_CONV|MONETDB_DML_EXEC|MONETDB_DML_ASYNC|MONETDB_DML_STRING)) {
@@ -3790,12 +3790,12 @@ PHP_FUNCTION(monetdb_insert)
 		RETURN_FALSE;
 	}
 	
-	ZEND_FETCH_RESOURCE2(pg_link, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(m_link, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	if (php_pgsql_flush_query(pg_link TSRMLS_CC)) {
+	if (php_monetdb_flush_query(m_link TSRMLS_CC)) {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Detected unhandled result(s) in connection");
 	}
-	if (php_pgsql_insert(pg_link, table, values, option, &sql TSRMLS_CC) == FAILURE) {
+	if (php_monetdb_insert(m_link, table, values, option, &sql TSRMLS_CC) == FAILURE) {
 		RETURN_FALSE;
 	}
 	if (option & MONETDB_DML_STRING) {
@@ -3852,13 +3852,13 @@ static inline int build_assignment_string(smart_str *querystr, HashTable *ht, co
 
 /* {{{ php_monetdb_update
  */
-PHP_MONETDB_API int php_monetdb_update(Mconn *pg_link, const char *table, zval *var_array, zval *ids_array, ulong opt, char **sql TSRMLS_DC) 
+PHP_MONETDB_API int php_monetdb_update(Mconn *m_link, const char *table, zval *var_array, zval *ids_array, ulong opt, char **sql TSRMLS_DC) 
 {
 	zval *var_converted = NULL, *ids_converted = NULL;
-	smart_str querystr = {0};
+	smart_str querystr = {NULL, 0, 0};
 	int ret = FAILURE;
 
-	assert(pg_link != NULL);
+	assert(m_link != NULL);
 	assert(table != NULL);
 	assert(Z_TYPE_P(var_array) == IS_ARRAY);
 	assert(Z_TYPE_P(ids_array) == IS_ARRAY);
@@ -3872,13 +3872,13 @@ PHP_MONETDB_API int php_monetdb_update(Mconn *pg_link, const char *table, zval *
 	if (!(opt & MONETDB_DML_NO_CONV)) {
 		MAKE_STD_ZVAL(var_converted);
 		array_init(var_converted);
-		if (php_pgsql_convert(pg_link, table, var_array, var_converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
+		if (php_monetdb_convert(m_link, table, var_array, var_converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
 			goto cleanup;
 		}
 		var_array = var_converted;
 		MAKE_STD_ZVAL(ids_converted);
 		array_init(ids_converted);
-		if (php_pgsql_convert(pg_link, table, ids_array, ids_converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
+		if (php_monetdb_convert(m_link, table, ids_array, ids_converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
 			goto cleanup;
 		}
 		ids_array = ids_converted;
@@ -3899,7 +3899,7 @@ PHP_MONETDB_API int php_monetdb_update(Mconn *pg_link, const char *table, zval *
 	smart_str_appendc(&querystr, ';');	
 	smart_str_0(&querystr);
 
-	if ((opt & MONETDB_DML_EXEC) && do_exec(&querystr, PGRES_COMMAND_OK, pg_link, opt TSRMLS_CC) == 0) {
+	if ((opt & MONETDB_DML_EXEC) && do_exec(&querystr, PGRES_COMMAND_OK, m_link, opt TSRMLS_CC) == 0) {
 		ret = SUCCESS;
 	} else if (opt & MONETDB_DML_STRING) {
 		ret = SUCCESS;
@@ -3928,15 +3928,15 @@ cleanup:
    Update table using values (field=>value) and ids (id=>value) */
 PHP_FUNCTION(monetdb_update)
 {
-	zval *pgsql_link, *values, *ids;
+	zval *monetdb_link, *values, *ids;
 	char *table, *sql = NULL;
 	int table_len;
 	ulong option =  MONETDB_DML_EXEC;
-	Mconn *pg_link;
+	Mconn *m_link;
 	int id = -1, argc = ZEND_NUM_ARGS();
 
 	if (zend_parse_parameters(argc TSRMLS_CC, "rsaa|l",
-							  &pgsql_link, &table, &table_len, &values, &ids, &option) == FAILURE) {
+							  &monetdb_link, &table, &table_len, &values, &ids, &option) == FAILURE) {
 		return;
 	}
 	if (option & ~(MONETDB_CONV_OPTS|MONETDB_DML_NO_CONV|MONETDB_DML_EXEC|MONETDB_DML_STRING)) {
@@ -3944,12 +3944,12 @@ PHP_FUNCTION(monetdb_update)
 		RETURN_FALSE;
 	}
 	
-	ZEND_FETCH_RESOURCE2(pg_link, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(m_link, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	if (php_pgsql_flush_query(pg_link TSRMLS_CC)) {
+	if (php_monetdb_flush_query(m_link TSRMLS_CC)) {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Detected unhandled result(s) in connection");
 	}
-	if (php_pgsql_update(pg_link, table, values, ids, option, &sql TSRMLS_CC) == FAILURE) {
+	if (php_monetdb_update(m_link, table, values, ids, option, &sql TSRMLS_CC) == FAILURE) {
 		RETURN_FALSE;
 	}
 	if (option & MONETDB_DML_STRING) {
@@ -3961,13 +3961,13 @@ PHP_FUNCTION(monetdb_update)
 
 /* {{{ php_monetdb_delete
  */
-PHP_MONETDB_API int php_monetdb_delete(Mconn *pg_link, const char *table, zval *ids_array, ulong opt, char **sql TSRMLS_DC) 
+PHP_MONETDB_API int php_monetdb_delete(Mconn *m_link, const char *table, zval *ids_array, ulong opt, char **sql TSRMLS_DC) 
 {
 	zval *ids_converted = NULL;
-	smart_str querystr = {0};
+	smart_str querystr = {NULL, 0, 0};
 	int ret = FAILURE;
 
-	assert(pg_link != NULL);
+	assert(m_link != NULL);
 	assert(table != NULL);
 	assert(Z_TYPE_P(ids_array) == IS_ARRAY);
 	assert(!(opt & ~(MONETDB_CONV_FORCE_NULL|MONETDB_DML_EXEC|MONETDB_DML_STRING)));
@@ -3979,7 +3979,7 @@ PHP_MONETDB_API int php_monetdb_delete(Mconn *pg_link, const char *table, zval *
 	if (!(opt & MONETDB_DML_NO_CONV)) {
 		MAKE_STD_ZVAL(ids_converted);
 		array_init(ids_converted);
-		if (php_pgsql_convert(pg_link, table, ids_array, ids_converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
+		if (php_monetdb_convert(m_link, table, ids_array, ids_converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
 			goto cleanup;
 		}
 		ids_array = ids_converted;
@@ -3995,7 +3995,7 @@ PHP_MONETDB_API int php_monetdb_delete(Mconn *pg_link, const char *table, zval *
 	smart_str_appendc(&querystr, ';');
 	smart_str_0(&querystr);
 
-	if ((opt & MONETDB_DML_EXEC) && do_exec(&querystr, PGRES_COMMAND_OK, pg_link, opt TSRMLS_CC) == 0) {
+	if ((opt & MONETDB_DML_EXEC) && do_exec(&querystr, PGRES_COMMAND_OK, m_link, opt TSRMLS_CC) == 0) {
 		ret = SUCCESS;
 	} else if (opt & MONETDB_DML_STRING) {
 		ret = SUCCESS;
@@ -4020,15 +4020,15 @@ cleanup:
    Delete records has ids (id=>value) */
 PHP_FUNCTION(monetdb_delete)
 {
-	zval *pgsql_link, *ids;
+	zval *monetdb_link, *ids;
 	char *table, *sql = NULL;
 	int table_len;
 	ulong option = MONETDB_DML_EXEC;
-	Mconn *pg_link;
+	Mconn *m_link;
 	int id = -1, argc = ZEND_NUM_ARGS();
 
 	if (zend_parse_parameters(argc TSRMLS_CC, "rsa|l",
-							  &pgsql_link, &table, &table_len, &ids, &option) == FAILURE) {
+							  &monetdb_link, &table, &table_len, &ids, &option) == FAILURE) {
 		return;
 	}
 	if (option & ~(MONETDB_CONV_FORCE_NULL|MONETDB_DML_NO_CONV|MONETDB_DML_EXEC|MONETDB_DML_STRING)) {
@@ -4036,12 +4036,12 @@ PHP_FUNCTION(monetdb_delete)
 		RETURN_FALSE;
 	}
 	
-	ZEND_FETCH_RESOURCE2(pg_link, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(m_link, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	if (php_pgsql_flush_query(pg_link TSRMLS_CC)) {
+	if (php_monetdb_flush_query(m_link TSRMLS_CC)) {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Detected unhandled result(s) in connection");
 	}
-	if (php_pgsql_delete(pg_link, table, ids, option, &sql TSRMLS_CC) == FAILURE) {
+	if (php_monetdb_delete(m_link, table, ids, option, &sql TSRMLS_CC) == FAILURE) {
 		RETURN_FALSE;
 	}
 	if (option & MONETDB_DML_STRING) {
@@ -4058,23 +4058,23 @@ PHP_MONETDB_API int php_monetdb_result2array(Mresult *monetdb_result, zval *ret_
 	zval *row;
 	char *field_name, *element, *data;
 	size_t num_fields, element_len, data_len;
-	int pg_numrows, pg_row;
+	int m_numrows, m_row;
 	uint i;
 	assert(Z_TYPE_P(ret_array) == IS_ARRAY);
 
-	if ((pg_numrows = PQntuples(monetdb_result)) <= 0) {
+	if ((m_numrows = PQntuples(monetdb_result)) <= 0) {
 		return FAILURE;
 	}
-	for (pg_row = 0; pg_row < pg_numrows; pg_row++) {
+	for (m_row = 0; m_row < m_numrows; m_row++) {
 		MAKE_STD_ZVAL(row);
 		array_init(row);
-		add_index_zval(ret_array, pg_row, row);
+		add_index_zval(ret_array, m_row, row);
 		for (i = 0, num_fields = PQnfields(monetdb_result); i < num_fields; i++) {
-			if (PQgetisnull(monetdb_result, pg_row, i)) {
+			if (PQgetisnull(monetdb_result, m_row, i)) {
 				field_name = PQfname(monetdb_result, i);
 				add_assoc_null(row, field_name);
 			} else {
-				element = PQgetvalue(monetdb_result, pg_row, i);
+				element = PQgetvalue(monetdb_result, m_row, i);
 				element_len = (element ? strlen(element) : 0);
 				if (element) {
 					data = safe_estrndup(element, element_len);
@@ -4092,14 +4092,14 @@ PHP_MONETDB_API int php_monetdb_result2array(Mresult *monetdb_result, zval *ret_
 
 /* {{{ php_monetdb_select
  */
-PHP_MONETDB_API int php_monetdb_select(Mconn *pg_link, const char *table, zval *ids_array, zval *ret_array, ulong opt, char **sql TSRMLS_DC) 
+PHP_MONETDB_API int php_monetdb_select(Mconn *m_link, const char *table, zval *ids_array, zval *ret_array, ulong opt, char **sql TSRMLS_DC) 
 {
 	zval *ids_converted = NULL;
-	smart_str querystr = {0};
+	smart_str querystr = {NULL, 0, 0};
 	int ret = FAILURE;
 	Mresult *monetdb_result;
 
-	assert(pg_link != NULL);
+	assert(m_link != NULL);
 	assert(table != NULL);
 	assert(Z_TYPE_P(ids_array) == IS_ARRAY);
 	assert(Z_TYPE_P(ret_array) == IS_ARRAY);
@@ -4112,7 +4112,7 @@ PHP_MONETDB_API int php_monetdb_select(Mconn *pg_link, const char *table, zval *
 	if (!(opt & MONETDB_DML_NO_CONV)) {
 		MAKE_STD_ZVAL(ids_converted);
 		array_init(ids_converted);
-		if (php_pgsql_convert(pg_link, table, ids_array, ids_converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
+		if (php_monetdb_convert(m_link, table, ids_array, ids_converted, (opt & MONETDB_CONV_OPTS) TSRMLS_CC) == FAILURE) {
 			goto cleanup;
 		}
 		ids_array = ids_converted;
@@ -4128,9 +4128,9 @@ PHP_MONETDB_API int php_monetdb_select(Mconn *pg_link, const char *table, zval *
 	smart_str_appendc(&querystr, ';');
 	smart_str_0(&querystr);
 
-	monetdb_result = PQexec(pg_link, querystr.c);
+	monetdb_result = PQexec(m_link, querystr.c);
 	if (PQresultStatus(monetdb_result) == PGRES_TUPLES_OK) {
-		ret = php_pgsql_result2array(monetdb_result, ret_array TSRMLS_CC);
+		ret = php_monetdb_result2array(monetdb_result, ret_array TSRMLS_CC);
 	} else {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Failed to execute '%s'", querystr.c);
 	}
@@ -4155,15 +4155,15 @@ cleanup:
    Select records that has ids (id=>value) */
 PHP_FUNCTION(monetdb_select)
 {
-	zval *pgsql_link, *ids;
+	zval *monetdb_link, *ids;
 	char *table, *sql = NULL;
 	int table_len;
 	ulong option = MONETDB_DML_EXEC;
-	Mconn *pg_link;
+	Mconn *m_link;
 	int id = -1, argc = ZEND_NUM_ARGS();
 
 	if (zend_parse_parameters(argc TSRMLS_CC, "rsa|l",
-							  &pgsql_link, &table, &table_len, &ids, &option) == FAILURE) {
+							  &monetdb_link, &table, &table_len, &ids, &option) == FAILURE) {
 		return;
 	}
 	if (option & ~(MONETDB_CONV_FORCE_NULL|MONETDB_DML_NO_CONV|MONETDB_DML_EXEC|MONETDB_DML_ASYNC|MONETDB_DML_STRING)) {
@@ -4171,13 +4171,13 @@ PHP_FUNCTION(monetdb_select)
 		RETURN_FALSE;
 	}
 	
-	ZEND_FETCH_RESOURCE2(pg_link, Mconn *, &pgsql_link, id, "PostgreSQL link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(m_link, Mconn *, &monetdb_link, id, "MonetDB/SQL link", le_link, le_plink);
 
-	if (php_pgsql_flush_query(pg_link TSRMLS_CC)) {
+	if (php_monetdb_flush_query(m_link TSRMLS_CC)) {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Detected unhandled result(s) in connection");
 	}
 	array_init(return_value);
-	if (php_pgsql_select(pg_link, table, ids, return_value, option, &sql TSRMLS_CC) == FAILURE) {
+	if (php_monetdb_select(m_link, table, ids, return_value, option, &sql TSRMLS_CC) == FAILURE) {
 		zval_dtor(return_value);
 		RETURN_FALSE;
 	}
