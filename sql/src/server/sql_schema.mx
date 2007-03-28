@@ -363,7 +363,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(obj_id), cmp_equal));
 
 	s = stmt_mark(stmt_reverse(s), 0);
-	s = sql_delete(sql, ptv, pt, s, 0, 0);
+	s = sql_delete(sql, ptv, ss, pt, s, 0, 0);
 	scope_close(scp);
 	return s;
 }
@@ -782,7 +782,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 }
 
 static stmt *
-drop_view(mvc *sql, dlist *qname)
+drop_view(mvc *sql, dlist *qname, int cascade)
 {
 	char *tname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -808,8 +808,8 @@ drop_view(mvc *sql, dlist *qname)
 	} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY)) {
 			return sql_error(sql, 02, "unable to drop view %s (there are database objects which depend on it)\n", t->base.name);
 	} else {
+		mvc_drop_table(sql, ss, t->base.name, cascade);
 		mvc_drop_dependencies(sql, t->base.id);
-		mvc_drop_table(sql, ss, t->base.name, 0);
 		return stmt_none();
 	}
 }
@@ -973,7 +973,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
 					return res;
 				}
-				k = mvc_create_key(sql, t, name, kt, NULL);
+				k = mvc_create_ukey(sql, t, name, kt);
 
 				mvc_create_kc(sql, k, cs);
 				res = SQL_OK;
@@ -997,7 +997,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				sql_fkey *fk;
 				list *cols;
 				sql_table *rt = mvc_bind_table(sql, cur_schema(sql), rtname);
-				sql_key *k, *rk;
+				sql_key *rk;
 
 				if (!rt) {
 					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
@@ -1015,17 +1015,14 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rtname, rcname);
 					return res;
 				}
-				k = mvc_create_key(sql, t, name, fkey, rk);
-				fk = (sql_fkey*)k;
-				fk->on_delete = ref_actions & 255;
-				fk->on_update = (ref_actions>>8) & 255;
-				mvc_create_kc(sql, k, cs);
+				fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+				mvc_create_fkc(sql, fk, cs);
 				res = SQL_OK;
 				if (alter) {
 					stmt *s;
 					list *l = create_stmt_list();
 
-					s = sql_insert_add_idx(sql, t, k->idx, l);
+					s = sql_insert_add_idx(sql, t, ((sql_key *) fk)->idx, l);
 					if (!(*sl))
 						*sl = create_stmt_list();
 					list_append(*sl, s);
@@ -1295,7 +1292,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 	if (!ft) {
 		return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 	} else {
-		sql_key *k, *rk = NULL;
+		sql_key *rk = NULL;
 		sql_fkey *fk;
 		dnode *nms = n->next->data.lval->h;
 		node *fnms;
@@ -1321,10 +1318,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 		if (!rk) {
 			return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
 		}
-		k = mvc_create_key(sql, t, name, fkey, rk);
-		fk = (sql_fkey*)k;
-		fk->on_delete = ref_actions & 255;
-		fk->on_update = (ref_actions>>8) & 255;
+		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
 			char *nm = nms->data.sval;
@@ -1333,7 +1327,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 			if (!c) {
 				return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
 			}
-			mvc_create_kc(sql, k, c);
+			mvc_create_fkc(sql, fk, c);
 		}
 		if (nms || fnms) {
 			return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
@@ -1341,7 +1335,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 		if (alter) {
 			list *l = create_stmt_list();
 
-			res = sql_insert_add_idx(sql, t, k->idx, l);
+			res = sql_insert_add_idx(sql, t, ((sql_key *) fk)->idx, l);
 		} else {
 			res = stmt_none();
 		}
@@ -1370,7 +1364,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			if (name && mvc_bind_key(sql, ss, name)) 
 				return sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
 			
- 			k = mvc_create_key(sql, t, name, kt, NULL);
+ 			k = mvc_create_ukey(sql, t, name, kt);
 			for (; nms; nms = nms->next) {
 				char *nm = nms->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, nm);
@@ -1474,7 +1468,6 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		int action = l->h->next->data.ival;
 		sql_column *col = mvc_bind_column(sql, t, cname);
 
-		(void)action;
 		if (col == NULL)
 			return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
 		if (cs_size(&t->columns) <= 1)
@@ -1497,7 +1490,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				}
 			}
 		}
-		mvc_drop_column(sql, t, cname);
+		mvc_drop_column(sql, t, cname, action);
 		res = stmt_none();
 	} break;
 	case SQL_DROP_CONSTRAINT:
@@ -1506,10 +1499,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		char *kname = l->h->data.sval;
 		int action = l->h->next->data.ival;
 
-		(void)action;
 		if (mvc_bind_key(sql, ss, kname ) == NULL)
 			return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
-		mvc_drop_key(sql, ss, kname);
+		mvc_drop_key(sql, ss, kname, action);
 		res = stmt_none();
 	} break;
 	}
@@ -1766,8 +1758,7 @@ drop_schema(mvc *sql, dlist *qname, int dropaction)
 	} else if (sql_schema_has_user(sql, s)) {
 		return sql_error(sql, 02, "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", name);
 	} else {
-		/* TODO use dropaction */
-		mvc_drop_schema(sql, name);
+		mvc_drop_schema(sql, name, dropaction);
 		return stmt_none();
 	}
 }
@@ -1811,7 +1802,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = drop_view(sql, l);
+		ret = drop_view(sql, l->h->data.lval, l->h->next->data.ival);
 		sql->type = Q_SCHEMA;
 	}
 		break;
