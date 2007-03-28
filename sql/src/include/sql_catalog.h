@@ -23,6 +23,12 @@
 #include <sql_list.h>
 #include <stream.h>
 
+#define ACT_NO_ACTION 0
+#define ACT_CASCADE 1
+#define ACT_RESTRICT 2
+#define ACT_SET_NULL 3
+#define ACT_SET_DEFAULT 4
+
 #define PRIV_SELECT 1
 #define PRIV_UPDATE 2
 #define PRIV_INSERT 4
@@ -39,6 +45,8 @@
 #define FUNC_DEPENDENCY 7
 #define TRIGGER_DEPENDENCY 8
 #define OWNER_DEPENDENCY 9
+#define INDEX_DEPENDENCY 10
+#define FKEY_DEPENDENCY 11
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
@@ -474,29 +482,29 @@ extern void idx_destroy(sql_idx * i);
 extern node *list_find_name(list *l, char *name);
 extern node *list_find_id(list *l, int id);
 
-extern node *find_sql_key_node(sql_table *t, char *kname);
+extern node *find_sql_key_node(sql_table *t, char *kname, int id);
 extern sql_key *find_sql_key(sql_table *t, char *kname);
 
-extern node *find_sql_idx_node(sql_table *t, char *kname);
+extern node *find_sql_idx_node(sql_table *t, char *kname, int id);
 extern sql_idx *find_sql_idx(sql_table *t, char *kname);
 
-extern node *find_sql_column_node(sql_table *t, char *cname);
+extern node *find_sql_column_node(sql_table *t, char *cname, int id);
 extern sql_column *find_sql_column(sql_table *t, char *cname);
 
-extern node *find_sql_table_node(sql_schema *s, char *tname);
+extern node *find_sql_table_node(sql_schema *s, char *tname, int id);
 extern sql_table *find_sql_table(sql_schema *s, char *tname);
 
-extern node *find_sql_sequence_node(sql_schema *s, char *sname);
+extern node *find_sql_sequence_node(sql_schema *s, char *sname, int id);
 extern sql_sequence *find_sql_sequence(sql_schema *s, char *sname);
 
-extern node *find_sql_schema_node(sql_trans *t, char *sname);
+extern node *find_sql_schema_node(sql_trans *t, char *sname, int id);
 extern sql_schema *find_sql_schema(sql_trans *t, char *sname);
 
-extern node *find_sql_type_node(sql_schema * s, char *tname);
+extern node *find_sql_type_node(sql_schema * s, char *tname, int id);
 extern sql_type *find_sql_type(sql_schema * s, char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
 
-extern node *find_sql_func_node(sql_schema * s, char *tname);
+extern node *find_sql_func_node(sql_schema * s, char *tname, int id);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
 

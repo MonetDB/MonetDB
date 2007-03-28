@@ -155,6 +155,29 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type)
 
 /*It checks if there are dependency between two ID's */
 int
+sql_trans_get_dependency_type(sql_trans *tr, int id, short depend_type)
+{
+	ssize_t rid;
+	sql_schema *s;
+	sql_table *dep;
+	sql_column *dep_id, *dep_dep_id, *dep_dep_type;
+
+	s = find_sql_schema(tr, "sys");	
+
+	dep = find_sql_table(s, "dependencies");
+
+	dep_id = find_sql_column(dep, "id");
+	dep_dep_id = find_sql_column(dep, "depend_id");
+	dep_dep_type = find_sql_column(dep, "depend_type");
+
+	rid = column_find_row(tr, dep_id, &id, dep_dep_type, &depend_type, NULL);
+	if (rid != -1)	
+		return *(int *) column_find_value(tr, dep_dep_id, rid);
+	else return -1;
+}
+
+/*It checks if there are dependency between two ID's */
+int
 sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_type)
 {
 	ssize_t rid;

@@ -79,15 +79,18 @@ list_find_id(list *l, int id)
 
 
 node *
-find_sql_key_node(sql_table *t, char *kname)
+find_sql_key_node(sql_table *t, char *kname, int id)
 {
-	return cs_find_name(&t->keys, kname);
+	if (kname)
+		return cs_find_name(&t->keys, kname);
+	else
+		return cs_find_id(&t->keys, id);
 }
 
 sql_key *
 find_sql_key(sql_table *t, char *kname)
 {
-	node *n = find_sql_key_node(t, kname);
+	node *n = find_sql_key_node(t, kname, -1);
 
 	if (n)
 		return n->data;
@@ -95,15 +98,18 @@ find_sql_key(sql_table *t, char *kname)
 }
 
 node *
-find_sql_idx_node(sql_table *t, char *kname)
+find_sql_idx_node(sql_table *t, char *kname, int id)
 {
-	return cs_find_name(&t->idxs, kname);
+	if (kname)
+		return cs_find_name(&t->idxs, kname);
+	else
+		return cs_find_id(&t->idxs, id);
 }
 
 sql_idx *
 find_sql_idx(sql_table *t, char *kname)
 {
-	node *n = find_sql_idx_node(t, kname);
+	node *n = find_sql_idx_node(t, kname, -1);
 
 	if (n)
 		return n->data;
@@ -111,15 +117,18 @@ find_sql_idx(sql_table *t, char *kname)
 }
 
 node *
-find_sql_column_node(sql_table *t, char *cname)
+find_sql_column_node(sql_table *t, char *cname, int id)
 {
-	return cs_find_name(&t->columns, cname);
+	if (cname)
+		return cs_find_name(&t->columns, cname);
+	else
+		return cs_find_id(&t->columns, id);
 }
 
 sql_column *
 find_sql_column(sql_table *t, char *cname)
 {
-	node *n = find_sql_column_node(t, cname);
+	node *n = find_sql_column_node(t, cname, -1);
 
 	if (n)
 		return n->data;
@@ -127,15 +136,18 @@ find_sql_column(sql_table *t, char *cname)
 }
 
 node *
-find_sql_table_node(sql_schema *s, char *tname)
+find_sql_table_node(sql_schema *s, char *tname, int id)
 {
-	return cs_find_name(&s->tables, tname);
+	if (tname)
+		return cs_find_name(&s->tables, tname);
+	else
+		return cs_find_id(&s->tables, id);
 }
 
 sql_table *
 find_sql_table(sql_schema *s, char *tname)
 {
-	node *n = find_sql_table_node(s, tname);
+	node *n = find_sql_table_node(s, tname, -1);
 
 	if (n)
 		return n->data;
@@ -143,15 +155,18 @@ find_sql_table(sql_schema *s, char *tname)
 }
 
 node *
-find_sql_sequence_node(sql_schema *s, char *sname)
+find_sql_sequence_node(sql_schema *s, char *sname, int id)
 {
-	return cs_find_name(&s->seqs, sname);
+	if (sname)
+		return cs_find_name(&s->seqs, sname);
+	else
+		return cs_find_id(&s->seqs, id);
 }
 
 sql_sequence *
 find_sql_sequence(sql_schema *s, char *sname)
 {
-	node *n = find_sql_sequence_node(s, sname);
+	node *n = find_sql_sequence_node(s, sname, -1);
 
 	if (n)
 		return n->data;
@@ -159,15 +174,18 @@ find_sql_sequence(sql_schema *s, char *sname)
 }
 
 node *
-find_sql_schema_node(sql_trans *t, char *sname)
+find_sql_schema_node(sql_trans *t, char *sname, int id)
 {
-	return cs_find_name(&t->schemas, sname);
+	if (sname)
+		return cs_find_name(&t->schemas, sname);
+	else
+		return cs_find_id(&t->schemas, id);
 }
 
 sql_schema *
 find_sql_schema(sql_trans *t, char *sname)
 {
-	node *n = find_sql_schema_node(t, sname);
+	node *n = find_sql_schema_node(t, sname, -1);
 
 	if (n)
 		return n->data;
@@ -175,15 +193,18 @@ find_sql_schema(sql_trans *t, char *sname)
 }
 
 node *
-find_sql_type_node(sql_schema * s, char *tname)
+find_sql_type_node(sql_schema * s, char *tname, int id)
 {
-	return cs_find_name(&s->types, tname);
+	if (tname)
+		return cs_find_name(&s->types, tname);
+	else 
+		return cs_find_id(&s->types, id);
 }
 
 sql_type *
 find_sql_type(sql_schema * s, char *tname)
 {
-	node *n = find_sql_type_node(s, tname);
+	node *n = find_sql_type_node(s, tname, -1);
 
 	if (n)
 		return n->data;
@@ -213,15 +234,18 @@ sql_trans_bind_type(sql_trans *tr, sql_schema *c, char *name)
 }
 
 node *
-find_sql_func_node(sql_schema * s, char *tname)
+find_sql_func_node(sql_schema * s, char *tname, int id)
 {
-	return cs_find_name(&s->funcs, tname);
+	if (tname)
+		return cs_find_name(&s->funcs, tname);
+	else
+		return cs_find_id(&s->funcs, id);
 }
 
 sql_func *
 find_sql_func(sql_schema * s, char *tname)
 {
-	node *n = find_sql_func_node(s, tname);
+	node *n = find_sql_func_node(s, tname, -1);
 
 	if (n)
 		return n->data;
