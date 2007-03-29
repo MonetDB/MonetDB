@@ -421,10 +421,10 @@ AC_TRY_COMPILE([$ac_includes_default
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
 
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
 dnl  pathfinder code is not (yet?) up to this
 case "$GCC-$gcc_ver-$host_os" in
 yes-3.[[4-9]].*-*|yes-[[4-9]].*-*)
-	X_CFLAGS="$X_CFLAGS -Wno-declaration-after-statement";;
+	CFLAGS="$CFLAGS -Wno-declaration-after-statement";;
 esac
-dnl  CFLAGS for our code are stricter than what autoconf can cope with.
-CFLAGS="$CFLAGS \$(X_CFLAGS)"
