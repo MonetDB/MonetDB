@@ -5307,8 +5307,8 @@ CRKmergeDeletions_OnNeed@1(int *k, int *bid, int *del){
 str
 Sync_@1_@2(int m, int h){
 	BAT *h1,*h2,*b, *c;
-	BUN h1head,h1tail,h2head,h2tail,idxFirst;
-	int h1size, h2size, xx, zz;
+	BUN h1head,h1tail,h2head,h2tail;
+	int h1size, h2size, zz;
 	lng syncs;
 	lng size;
 
@@ -5351,8 +5351,6 @@ Sync_@1_@2(int m, int h){
 	h2head = BUNhloc(h2, BUNfirst(h2)+h2size*TreeIndex[m].nextCrack);
 	h2tail = BUNtloc(h2, BUNfirst(h2)+h2size*TreeIndex[m].nextCrack);
         zz = BUNsize(c);
-        xx = BUNsize(b);
-        idxFirst = BUNfirst(c);
 
 	if (TreeIndex[m].nextCrack == 0){
 		low = (@1*)h1head;
@@ -7300,12 +7298,11 @@ CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *
                 if we have to crack only one piece, i.e., if our range falls
                 in one piece only then we crack from cl to ch otherwise we use
                 the other indices as it is shown */
-        int xx, zz;
+        int zz;
         int _vl;
         bit HBound, foundLow=0, foundHgh=0;
         int gapL = 1;
         int gapH = 1;
-        BUN idxFirst;
 
 
         if (@3_GT(low,hgh,@4@1))
@@ -7393,10 +7390,7 @@ CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *
         if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
                 throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
-	xx = BUNsize(b);
         zz = BUNsize(c);
-        idxFirst = BUNfirst(c);
-
         
         /* find out where in the index the low   falls */
                 foundLow = GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
