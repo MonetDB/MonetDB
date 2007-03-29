@@ -39,7 +39,11 @@ dnl Check for Monet
 req_monetdb_ver='1.16.2'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
-	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+	if test "x$MONETDBVERS" = "x"; then
+		AC_MSG_ERROR([MonetDB was not found. Pathfinder requires at least version $req_monetdb_ver of MonetDB.])
+	else
+		AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+	fi
 fi
 
 dnl must check for compiler before checking for MonetDB4
@@ -52,7 +56,11 @@ fi
 req_monetdb4_ver='4.16.2'
 AM_MONETDB4($req_monetdb4_ver)
 if test "x$have_monetdb4" != xyes; then
-	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb4_ver of MonetDB4, but only version $MONETDB4VERS was found.])
+	if test "x$MONETDB4VERS" = "x"; then
+		AC_MSG_ERROR([MonetDB4 was not found. Pathfinder requires at least version $req_monetdb4_ver of MonetDB4.])
+	else
+		AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb4_ver of MonetDB4, but only version $MONETDB4VERS was found.])
+	fi
 fi
 req_clients_ver='1.16.2'
 AM_MONETDB_CLIENTS($req_clients_ver)
@@ -413,10 +421,10 @@ AC_TRY_COMPILE([$ac_includes_default
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
 
-dnl  CFLAGS for our code are stricter than what autoconf can cope with.
-CFLAGS="$CFLAGS \$(X_CFLAGS)"
 dnl  pathfinder code is not (yet?) up to this
 case "$GCC-$gcc_ver-$host_os" in
 yes-3.[[4-9]].*-*|yes-[[4-9]].*-*)
-	CFLAGS="$CFLAGS -Wno-declaration-after-statement";;
+	X_CFLAGS="$X_CFLAGS -Wno-declaration-after-statement";;
 esac
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
