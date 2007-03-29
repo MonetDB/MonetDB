@@ -2015,6 +2015,10 @@ public class MonetConnection implements Connection {
 		 * @return the next Response available or null
 		 */
 		Response getNextResponse() throws SQLException {
+			if (rstype == ResultSet.TYPE_FORWARD_ONLY) {
+				// free resources if we're running forward only
+				responses.set(curResponse, null);
+			}
 			curResponse++;
 			if (curResponse >= responses.size()) {
 				// ResponseList is obviously completed so, there are no
