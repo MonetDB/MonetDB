@@ -5013,8 +5013,9 @@ xquery_prepare(xquery_client *ctx,
                     }
                     /* get the properly escaped string and use it as parameter later */
                     len = strlen(val);
-                    param[argc] = (char*) alloca(len);
+                    param[argc] = (char*) alloca(len+1);
                     memcpy(param[argc], val, len);
+		    param[argc][len] = 0;
                 } else if (*p == '-' || *p == '+' || *p == '.' || (*p >= '0' && *p <= '9')) {
                     p = xquery_parse_numeric(param[argc], tpe+argc);
                     if (p <= param[argc]) {
