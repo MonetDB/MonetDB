@@ -753,11 +753,11 @@ sql_update_cascade_Fkeys_set(mvc *sql, sql_schema *schema, sql_key *fk, int set_
 	sql_table *t = NULL;
 	int len = 0, i = 0;
 	stmt *s = NULL;
-	node *n;
+	node *n = NULL;
 	stmt **updates;
-	scope *scp;
-	tvar *tv;
-	list * l;
+	scope *scp = NULL;
+	tvar *tv = NULL;
+	list * l = NULL;
 	
 	l = create_stmt_list();
 	len = list_length(fk->columns);
