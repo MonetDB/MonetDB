@@ -73,7 +73,11 @@ AC_SUBST(Qexec_prefix)
 req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
-	AC_MSG_ERROR([Clients requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+	if test "x$MONETDBVERS" = "x"; then
+		AC_MSG_ERROR([MonetDB was not found. Clients requires at least version $req_monetdb_ver of MonetDB.])
+	else
+		AC_MSG_ERROR([Clients requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+	fi
 fi
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()

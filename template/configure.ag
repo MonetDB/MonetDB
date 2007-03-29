@@ -34,7 +34,11 @@ dnl Check for Monet
 req_monetdb_ver='1.17.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
-	AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+	if test "x$MONETDBVERS" = "x"; then
+		AC_MSG_ERROR([MonetDB was not found. Template requires at least version $req_monetdb_ver of MonetDB.])
+	else
+		AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+	fi
 fi
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
@@ -48,7 +52,17 @@ req_monetdb5_ver='5.0.0_beta2'
 AM_MONETDB5($req_monetdb5_ver)
 
 if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
-	AC_MSG_ERROR([Template requires at least version $req_monetdb4_ver of MonetDB4 (found $MONETDB4VERS) or version $req_monetdb5_ver of MonetDB5 (found $MONETDB5VERS).])
+	if test "x$MONETDB4VERS" = "x" -a "x$MONETDB5VERS" = "x"; then
+		AC_MSG_ERROR([Neither MonetDB4 nor MonetDB5 was not found. Template requires at least version $req_monetdb4_ver of MonetDB4 or version $req_monetdb5_ver of MonetDB5.])
+	else
+		if test "x$MONETDB4VERS" = "x"; then
+			MONETDB4VERS='none'
+		fi
+		if test "x$MONETDB5VERS" = "x"; then
+			MONETDB5VERS='none'
+		fi
+		AC_MSG_ERROR([Template requires at least version $req_monetdb4_ver of MonetDB4 (found $MONETDB4VERS) or version $req_monetdb5_ver of MonetDB5 (found $MONETDB5VERS).])
+	fi
 fi
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
