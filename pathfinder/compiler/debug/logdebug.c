@@ -965,6 +965,10 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
 
     assert(n->node_id);
 
+    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++)
+        if (!n->child[c]->bit_dag)
+            la_xml (xml, n->child[c]);
+
     /* open up label */
     PFarray_printf (xml,
                     "  <node id=\"%i\" kind=\"%s\">\n",
@@ -1621,10 +1625,6 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
 
     /* mark node visited */
     n->bit_dag = true;
-
-    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++)
-        if (!n->child[c]->bit_dag)
-            la_xml (xml, n->child[c]);
 }
 
 static unsigned int
