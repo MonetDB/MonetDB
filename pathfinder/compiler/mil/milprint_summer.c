@@ -6550,7 +6550,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  ipik := item;\n"
                 "  kind := set_kind(WS,ELEM);\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n" 
-                "} # end of translate fn:documents (string?) as string*\n");
+                "} # end of translate pf:documents (string?) as string*\n");
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"collections")) == 0 ||
                (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0))
