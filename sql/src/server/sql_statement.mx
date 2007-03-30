@@ -2218,6 +2218,8 @@ column_name(stmt *st)
 {
 	switch (st->type) {
 	case st_reverse:
+	case st_order:
+	case st_reorder:
 		return column_name(st->op1.stval);
 	case st_const:
 	case st_join:
