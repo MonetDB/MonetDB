@@ -777,7 +777,7 @@ sql_update_cascade_Fkeys_set(mvc *sql, sql_schema *schema, sql_key *fk, int set_
 	
 		if ((set_type == ACT_SET_DEFAULT) && c->def) {
 			stmt *sq;
-       	         char buf[BUFSIZ];
+			char buf[BUFSIZ];
 	
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			sq = scope_sqlparse(sql, NULL, buf, sql->mode);
@@ -848,14 +848,6 @@ sql_update_ukey(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, int up
 			sql_key *fk = n->data;
 			stmt *s = NULL;
 
-			/* here we should handle UPDATE ACTIONs:
-					no action,
-					restrict
-					cascade
-					set null
-					set default
-			 */
-			/* Current implementation is just 'restrict' */
 			/* All rows of the foreign key table which are
 			   affected by the primary key update should all
 			   match one of the updated primary keys again.
@@ -1806,17 +1798,9 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 			sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 			sql_key *fk = n->data;
 			stmt *s;
-			/* here we should handle DELETE ACTIONs:
-					no action,
-					restrict
-					cascade
-					set null
-					set default
-			 */
-			/* Current implementation is just 'restrict' */
+
 			s = stmt_idxbat(fk->idx, RDONLY);
 			s = stmt_semijoin(stmt_reverse(s), stmt_dup(deletes));
-			
 			switch (((sql_fkey*)fk)->on_delete) {
 				case ACT_NO_ACTION: 
 					break;
