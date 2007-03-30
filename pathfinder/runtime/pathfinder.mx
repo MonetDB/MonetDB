@@ -2740,7 +2740,7 @@ PROC ws_collections(BAT[void,BAT] ws, bit consistent) : BAT[void,oid]
     return xmltab4(ws, "collection", coll_nme, "numDocs", coll_sze, "size", coll_mbs, "updatable", coll_upd);
 }
 
-# fn:documents(), get all document *names* in a collection
+# pf:documents(), get all document *names* in a collection
 PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme, bit consistent) : BAT[oid,oid]
 {
     var doc_nme, doc_col, doc_url, doc_upd, doc_itr; 
@@ -2760,7 +2760,7 @@ PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme, bit consistent) : BAT
     return reverse(doc_itr).leftfetchjoin(xmltab4(ws, "document", doc_nme.tmark(0@0), "collection", doc_col, "url", doc_url, "updatable", doc_upd));
 }
 
-# fn:documents(), get all document *names* 
+# pf:documents(), get all document *names* 
 PROC ws_documents(BAT[void,BAT] ws, bit consistent) : BAT[void,oid]
 {
     var doc_nme, doc_col, doc_url, doc_upd; 
