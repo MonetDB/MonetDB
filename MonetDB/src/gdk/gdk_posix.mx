@@ -1156,10 +1156,10 @@ MT_path_absolute(char *pathname)
 #define MT_SMALLBLOCK 256
 
 static LONG WINAPI
-MT_ignore_exceptions(struct _EXCEPTION_POINTERS *ExceptionInfo)
+MT_ignore_exceptions(struct _EXCEPTION_POINTERS* ExceptionInfo)
 {
-    (void) ExceptionInfo;
-    return EXCEPTION_EXECUTE_HANDLER;
+	(void) ExceptionInfo;
+	return EXCEPTION_EXECUTE_HANDLER;
 }
 
 void
