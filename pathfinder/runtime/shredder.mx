@@ -688,12 +688,12 @@ handle_pfx_uri_loc(shredCtxStruct *shredCtx,
     if (a_uri == NULL) a_uri = "";
     if (a_tag == NULL) a_tag = "";
 
-    /* concatenate pfx:uri:loc */
+    /* concatenate pfx|uri|loc */
     for(src=a_pfx; *src && cur < end; src++,cur++) *cur = *src;
-    *cur++ =(char) ':';
+    *cur++ =(char) NS_ACCEL_SEP;
     uri = cur;
     for(src=a_uri; *src && cur < end; src++,cur++) *cur = *src;
-    *cur++ =(char) ':';
+    *cur++ =(char) NS_ACCEL_SEP;
     for(src=a_tag; *src && cur < end; src++,cur++) *cur = *src;
     *cur++ =  0;
 

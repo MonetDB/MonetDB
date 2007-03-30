@@ -1655,7 +1655,7 @@ if (postfilter) {
 	result_part_item := tmp_res.leftfetchjoin(result_part_item);
 	tmp_res := nil;
 @= nsloc_post
-      { var nsloc := ns + ":" + loc; @:postfilter(QN_URI_LOC,nsloc,ELEMENT)@ }
+      { var nsloc := ns + NS_ACCEL_SEP + loc; @:postfilter(QN_URI_LOC,nsloc,ELEMENT)@ }
 @= loc_post
         @:postfilter(QN_LOC,loc,ELEMENT)@
 @= ns_post
@@ -1673,7 +1673,7 @@ if (postfilter) {
 @= kind_pre
       { cands := ws.fetch(PRE_KIND).fetch(contID); kind_test := kind; }
 @= nsloc_pre
-      { var nsloc := ns + ":" + loc; @:prefilter(nsloc,QN_URI_LOC)@ }
+      { var nsloc := ns + NS_ACCEL_SEP + loc; @:prefilter(nsloc,QN_URI_LOC)@ }
 @= loc_pre
       { @:prefilter(loc,QN_LOC)@ }
 @= ns_pre
@@ -2734,7 +2734,7 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       var cont := $h;
       var list := aconts.ord_uselect(cont).mirror(); # [i,i] (attributes in current container)
       var aqn := list.leftjoin(update_rename); # [i,newQName]
-      var aqnid := find_qn_bulk(ws, cont, [+]("::", aqn), bit_nil); # [i,newQNID]
+      var aqnid := find_qn_bulk(ws, cont, [+](NS_ACCEL_SEP + NS_ACCEL_SEP, aqn), bit_nil); # [i,newQNID]
       var attr_qn_updates := ws.fetch(ATTR_QN_UPDATE).find(cont);
       # list.leftjoin(aitem) [i,ATID]
       # list.leftjoin(aitem).reverse() [ATID,i]
@@ -2776,7 +2776,7 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       }
       if (eelem.count() > 0) {
         var eqn := eelem.leftjoin(update_rename); # [i,newQName]
-        var eqnid := find_qn_bulk(ws, cont, [+]("::", eqn), bit_nil); # [i,newQNID]
+        var eqnid := find_qn_bulk(ws, cont, [+](NS_ACCEL_SEP + NS_ACCEL_SEP, eqn), bit_nil); # [i,newQNID]
         {
           var eelempre := eelem.leftjoin(epres); # [i,PRE]
           var eelemnid := eelempre.leftjoin(pre_nid); # [i,NID]
@@ -4083,10 +4083,10 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
 {
   coll_lock_set(ws, cont, COLL_SHORTLOCK, "add_pi_bulk");
   var ws_logtime := usec();
-  var instgtbat := [+]([+](insbat, ":"), tgtbat);
+  var instgtbat := [+]([+](insbat, NS_ACCEL_SEP), tgtbat);
   var prop_ins := ws.fetch(_PROP_INS).find(cont);
   var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
-  var prop_ins_tgt := [+]([+](prop_ins, ":"), prop_tgt);
+  var prop_ins_tgt := [+]([+](prop_ins, NS_ACCEL_SEP), prop_tgt);
   var idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
   var newidlist := idbat.uselect(oid_nil);
   if (newidlist.count() > 0) {
@@ -4094,14 +4094,14 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
     # first figure out unique combinations
     var instgtunique := newidlist.mirror().join(instgtbat).tunique().reverse().seqbase(0@0);
     # then extract instruction and target
-    var instgtuniquesplit := instgtunique.splitbat(":");
+    var instgtuniquesplit := instgtunique.splitbat(NS_ACCEL_SEP);
     # add them to respective BATs
 
     pf_assert(CATCH({ prop_ins.append(instgtuniquesplit.fetch(0), true);
                       prop_tgt.append(instgtuniquesplit.fetch(1), true); }), "master update failed (add_pi)");
 
     # recalculate ids
-    prop_ins_tgt := [+]([+](prop_ins, ":"), prop_tgt);
+    prop_ins_tgt := [+]([+](prop_ins, NS_ACCEL_SEP), prop_tgt);
     idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
     # we also need to log the new values
     ws.fetch(PROP_INS_UPDATE).find(cont).insert(prop_ins.join(instgtuniquesplit.fetch(0).reverse().mirror()));
@@ -4136,11 +4136,11 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
       var _delta := reverse(miss).join(pref_uri_loc).histogram();
       var _pref_uri_loc := _delta.hmark(_base);
       var _histogram := [lng](_delta.tmark(_base));
-      var _split := splitbat(_pref_uri_loc, ":");
+      var _split := splitbat(_pref_uri_loc, NS_ACCEL_SEP);
       var _pref  := _split.fetch(0);
       var _uri   := _split.fetch(1);
       var _loc   := _split.fetch(2);
-      var _uri_loc := [+]([+](_uri, ":"), _loc);
+      var _uri_loc := [+]([+](_uri, NS_ACCEL_SEP), _loc);
       pf_assert(CATCH({ qn_loc.append(_loc, true); 
                         qn_uri.append(_uri, true); 
                         qn_prefix.append(_pref, true);
@@ -7170,7 +7170,7 @@ PROC add_qnames (BAT[void,str] prefix,
                  BAT[void,str] local,
                  BAT[void,BAT] ws) : BAT[void,oid]
 {
-    var pref_uri_loc := prefix.[+](":").[+](uri).[+](":").[+](local); # [void,str]
+    var pref_uri_loc := prefix.[+](NS_ACCEL_SEP).[+](uri).[+](NS_ACCEL_SEP).[+](local); # [void,str]
     pref_uri_loc := [isnil](local).ord_uselect(false).mirror().leftfetchjoin(pref_uri_loc); # [oid,str] (sorted subset)
     return mirror(local).outerjoin(find_qn_bulk(ws, WS, pref_uri_loc, true)).tmark(seqbase(local)); # [void,oid]
 }
@@ -7192,12 +7192,12 @@ NOTE: the working set 'ws' is changed as side effect!",
 PROC add_qname (str prefix, str uri, str local, BAT[void,BAT] ws) : oid
 {
     var props := ws.fetch(QN_PREFIX_URI_LOC).fetch(WS);
-    var key := prefix + ":" + uri + ":" + local;
+    var key := prefix + NS_ACCEL_SEP + uri + NS_ACCEL_SEP + local;
     var itemID := oid(count(props));
     if (not(isnil(CATCH(itemID := reverse(props).find(key))))) {
         props.insert(itemID, key);
         ws.fetch(QN_HISTOGRAM).fetch(WS).insert(itemID, 1LL);
-        ws.fetch(QN_URI_LOC).fetch(WS).insert(itemID, uri + ":" + local);
+        ws.fetch(QN_URI_LOC).fetch(WS).insert(itemID, uri + NS_ACCEL_SEP + local);
         ws.fetch(QN_URI).fetch(WS).insert(itemID, uri);
         ws.fetch(QN_PREFIX).fetch(WS).insert(itemID, prefix);
         ws.fetch(QN_LOC).fetch(WS).insert(itemID, local);

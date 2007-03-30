@@ -148,8 +148,8 @@ if (monet_environment.exist("standoff"))
 # qn_* tables contain qualified names (elements, attributes). 
 # They are double-eliminated on (prefix_uri_loc) and we keep a histogram statistic 
 # on them, that is used for indexing only 'relatively infrequent' qnames:
-# - qn_prefix_uri_loc: BAT[void,str]          qname-ID / prefix:uri:loc
-# - qn_uri_loc         BAT[void,str]          qname-ID / uri:loc only
+# - qn_prefix_uri_loc: BAT[void,str]          qname-ID / prefix|uri|loc
+# - qn_uri_loc         BAT[void,str]          qname-ID / uri|loc only
 # - qn_prefix          BAT[void,str]          qname-ID / prefix
 # - qn_ns              BAT[void,str]          qname-ID / namespace URI
 # - qn_loc             BAT[void,str]          qname-ID / local name (e.g. element name)
@@ -370,6 +370,7 @@ BEWARE: the logger version number below needs to be incremented whenever the wor
 @:ws_@1_decl(ATTR,    33)@
 @:ws_@1_decl(ELEM,    34)@
 @:ws_kind_decl(@1)@
+@:ws_@1_decl(NS_ACCEL_SEP,'|',,,,,,.str())@
 
 @= ws_mil_decl
 const @1 := @2@8;
