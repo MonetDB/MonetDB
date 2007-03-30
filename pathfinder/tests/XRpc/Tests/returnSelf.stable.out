@@ -27,14 +27,12 @@ Over..
   <!-- a comment node -->
   <?pi action=beep?>
   <world/>
-</hello>
-<hello x="y" lang="en">
+</hello><hello x="y" lang="en">
   <foo>text of node foo<bar>text of node bar</bar></foo>
   <!-- a comment node -->
   <?pi action=beep?>
   <world/>
-</hello>
-</XQueryResult>
+</hello></XQueryResult>
 
 # 16:13:53 >  
 # 16:13:53 >  Done.

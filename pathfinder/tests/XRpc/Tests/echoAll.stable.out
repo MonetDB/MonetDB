@@ -23,11 +23,9 @@ Over..
 
 # Elapsed time = 001ms 038us [173us/node]
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult lang="en" x="y"><foo><bar/></foo>a text node
-<!-- a comment node --><?pi action=beep?><hallo lang="nl">
+<XQueryResult lang="en" x="y"><foo><bar/></foo>a text node<!-- a comment node --><?pi action=beep?><hallo lang="nl">
   <allemaal/>
-</hallo>
-</XQueryResult>
+</hallo></XQueryResult>
 
 # 11:13:04 >  
 # 11:13:04 >  Done.
