@@ -1,0 +1,14 @@
+stderr of test 'operator-precedence-2` in directory 'tests/XQuery` itself:
+
+
+
+
+# 16:02:12 >  
+# 16:02:12 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32216 operator-precedence-2.xq
+# 16:02:12 >  
+
+
+# 16:02:12 >  
+# 16:02:12 >  Done.
+# 16:02:12 >  
+

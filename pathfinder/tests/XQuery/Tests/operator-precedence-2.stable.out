@@ -1,0 +1,27 @@
+stdout of test 'operator-precedence-2` in directory 'tests/XQuery` itself:
+
+
+
+# Monet Database Server V4.16.3
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 16:02:12 >  
+# 16:02:12 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32216 operator-precedence-2.xq
+# 16:02:12 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>1.000000</XQueryResult>
+
+# 16:02:12 >  
+# 16:02:12 >  Done.
+# 16:02:12 >  
+

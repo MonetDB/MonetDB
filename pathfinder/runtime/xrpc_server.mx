@@ -445,7 +445,8 @@ get_elem_pre_by_name(char *node_name,
  *         NULL if attribute with such name was not found.
  */
 static char *
-get_attr_val(char  *attr_name,
+get_attr_val(stream *out,
+             char  *attr_name,
              char  *ns,
              oid    pre,
              size_t nattrs,
@@ -453,27 +454,41 @@ get_attr_val(char  *attr_name,
              oid   *attr_qn,
              oid   *attr_prop,
              BAT   *qn_loc,
+             BAT   *qn_uri,
              BAT   *prop_val)
 {
-    /* TODO: check if the namespace of 'attr_name' matches given
-     * namespace 'ns' */
-    (void)ns;
-
     oid qn = oid_nil ;
     size_t i = 0;
-    int first = 0;
+    int first = 0, len = 0;
+    char *err = NULL;
 
-    /* BUNfnd finds value in the head column, so we need to reverse the
-     * 'qn_loc' BAT with BATmirror which actually does BATreverse. */
-    BUN p = BUNfnd(BATmirror(qn_loc), attr_name);
-    if (!p) return NULL;
+    len = strlen(attr_name) + strlen(ns) + 128;
+    err = alloca(len);  assert(err);
 
-    /* Get the 'qn' of 'attr_name' */
-    qn = *(oid*) BUNhead(qn_loc, p);
+    /* Get the 'qn' of 'attr_name'.  For now, all XRPC attributes may
+     * appear only once in the message, so the combination of ns+loc
+     * should be unique. */
+    BAT *qns = BATselect(qn_loc, attr_name, attr_name);
+    BAT *nss = BATselect(qn_uri, ns, ns);
+    BAT *match = BATkintersect(qns, nss);
+    if(BATcount(match) > 1){
+        snprintf(err, len, "Invalid XRPC request message: multiple "
+                "definitions of attribute %s:%s\n", ns, attr_name);
+        send_err(out, 1, ERR404, "env:Sender", err);
+        BBPreclaim(qns);
+        BBPreclaim(nss);
+        BBPreclaim(match);
+        return NULL;
+    }
+    qn = *(oid*) BUNhead(match, BUNfirst(match));
+
+    BBPreclaim(qns);
+    BBPreclaim(nss);
+    BBPreclaim(match);
 
     /* try to find the attribute value */
     for (i = 0; i < nattrs; i++) {
-        if (attr_own[i] > pre) return NULL;
+        if (attr_own[i] > pre) break;
         if (attr_own[i] == pre && attr_qn[i] == qn) {
                 first = BUNindex(prop_val, BUNfirst(prop_val)) +
                             attr_prop[i];
@@ -481,6 +496,10 @@ get_attr_val(char  *attr_name,
                                 BUNptr(prop_val, first));
         }
     }
+
+    snprintf(err, len, "Could not find attribute \"%s:%s\"",
+            ns, attr_name);
+    send_err(out, 1, ERR404, "env:Sender", err);
     return NULL;
 }
 
@@ -544,33 +563,27 @@ getFunctionInfo(stream *out,
                 oid *attr_qnT,
                 oid *attr_propT,
                 BAT *qn_loc,
+                BAT *qn_uri,
                 BAT *prop_val,
                 str *_module,
                 str *_location,
                 str *_method) {
     char *module = NULL, *location = NULL, *method = NULL;
 
-    if (!(module = get_attr_val("module", XRPC_NS, pre, nattrs,
-                    attr_ownT, attr_qnT, attr_propT, qn_loc, prop_val)))
-    {
-        send_err(out, 1, ERR404, "env:Sender",
-                "\"module\" attribute not found");
+    if (!(module = get_attr_val(out, "module", XRPC_NS, pre, nattrs,
+                    attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri,
+                    prop_val)))
         return GDK_FAIL;
-    }
-    if (!(method = get_attr_val("method", XRPC_NS, pre, nattrs,
-                    attr_ownT, attr_qnT, attr_propT, qn_loc, prop_val)))
-    {
-        send_err(out, 1, ERR404, "env:Sender",
-                "\"method\" attribute not found");
+
+    if (!(method = get_attr_val(out, "method", XRPC_NS, pre, nattrs,
+                    attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri,
+                    prop_val)))
         return GDK_FAIL;
-    }
-    if (!(location = get_attr_val("location", XRPC_NS, pre, nattrs,
-                    attr_ownT, attr_qnT, attr_propT, qn_loc, prop_val)))
-    {
-        send_err(out, 1, ERR404, "env:Sender",
-                "\"location\" attribute not found");
+
+    if (!(location = get_attr_val(out, "location", XRPC_NS, pre, nattrs,
+                    attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri,
+                    prop_val)))
         return GDK_FAIL;
-    }
 
     *_module = module;
     *_location = location;
@@ -608,7 +621,7 @@ getCallValues(stream *out,
 
     BAT *frag_root = NULL, *pre_size = NULL;
     BAT *pre_level = NULL, *pre_kind = NULL,  *pre_prop = NULL;
-    BAT *qn_loc   = NULL,  *qn_prefix = NULL;
+    BAT *qn_loc   = NULL,  *qn_prefix = NULL, *qn_uri = NULL;
     BAT *prop_val = NULL,  *prop_text = NULL;
     BAT *attr_own = NULL,  *attr_qn = NULL, *attr_prop = NULL;
     /* Arrays holding the Tail values of some of the BATs above. */
@@ -640,6 +653,7 @@ getCallValues(stream *out,
     text_base  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_TEXT)))->theap->base;
     prop_val   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_VAL) ));
     qn_loc     = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_LOC)   ));
+    qn_uri     = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_URI)   ));
     qn_prefix  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_PREFIX)));
     frag_root  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+FRAG_ROOT)));
     attr_own   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_OWN) ));
@@ -674,7 +688,7 @@ getCallValues(stream *out,
 
     if(getFunctionInfo(out, pre, nattrs,
                         attr_ownT, attr_qnT, attr_propT,
-                        qn_loc, prop_val,
+                        qn_loc, qn_uri, prop_val,
                         module, location, method) == GDK_FAIL ||
         (!isAdmin && !isTrusted(out, *location)) )
         return GDK_FAIL;
@@ -762,10 +776,10 @@ getCallValues(stream *out,
                 if(strcmp(argtpe[nr_args], "xrpc:atomic-value") == 0) {
                     GDKfree(argtpe[nr_args]); /* find sub-type of the
                                                  atomic-value */
-                    char *tptr = get_attr_val("type", XSI_NS,
+                    char *tptr = get_attr_val(out, "type", XSI_NS,
                                     tpe_node_pre, nattrs, attr_ownT,
                                     attr_qnT, attr_propT, qn_loc,
-                                    prop_val);
+                                    qn_uri, prop_val);
                     if(!tptr){
                         send_err(out, 1, ERR404, "env:Sender",
                                 "XRPC request: an \"atomic-value\" "

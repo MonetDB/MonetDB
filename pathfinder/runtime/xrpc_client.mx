@@ -616,7 +616,7 @@ setup_connection(str dst)
     }
 
     ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
-    for (i = 0; i < NR_RETRIES && ret < 0; i++) {
+    for (i = NR_RETRIES; i > 0 && ret < 0; i--) {
         if (ret < 0){
             GDKwarning("setup_connection: could not set up connection with %s:%d : %s\n",
                     dst, port, errno?strerror(errno):".");

@@ -6216,9 +6216,11 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
  *
  *              xrpc (query type)
  *             /    \
- *            URI (FunctionCall)->sem.fun
- *                   |
- *                  args
+ *           URI    let?
+ *                 /    \
+ *          letbind?    (FunApp)->sem.fun
+ *                       |
+ *                      args
  *
  * @param apply the function application information
  * @param args the head of the argument list
@@ -6228,8 +6230,19 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
     int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 1 ? 1 : 0;
     PFcnode_t *dsts = L(xrpc);
-    PFfun_t   *fun  = R(xrpc)->sem.fun;
-    PFcnode_t *args = RD(xrpc);
+    PFcnode_t *funApp = R(xrpc);
+    PFfun_t   *fun  = NULL;
+    PFcnode_t *args = NULL;
+
+    /* Find function application */
+    while(funApp->kind != c_apply) funApp = R(funApp);
+    fun  = funApp->sem.fun;
+    args = D(funApp);
+
+    if (R(xrpc)->kind != c_apply){
+        funApp->kind = c_nil;
+        translate2MIL(f,NORMAL, cur_level, counter, R(xrpc));
+    }
 
     if (fun->builtin){
         PFoops (OOPS_NOTSUPPORTED,
@@ -8817,12 +8830,6 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             }
             break;
         case c_xrpc:
-            /*              xrpc
-             *             /    \
-             *            URI (FunctionCall)->sem.fun
-             *                   |
-             *                  args
-             */
             translateXRPCCall(f, cur_level, counter, c);
             rc = NORMAL;
             break;
@@ -10988,6 +10995,19 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* ============================= */
         while (args->kind != c_nil)
         {
+            /* get the type name, and assure there *is* a namespace */ 
+            char *tpe = PFty_str(TY(LR(args)));
+            char *buf = (char*) alloca(4+strlen(tpe));
+            char *nme = buf;
+            if (strchr(tpe, ':') == NULL)  {
+                *buf++ = 'x'; 
+                *buf++ = 's'; 
+                *buf++ = ':'; 
+            }
+            strcpy(buf, tpe);
+            buf = strchr(nme, ' ');
+            if (buf) *buf = 0;
+
             assert (L(args) && L(args)->kind == c_param);
             assert (LR(args) && LR(args)->kind == c_var);
 
@@ -10999,8 +11019,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LR(args)->sem.var->used = 0;
 
             if (first == 0) first = vid;
-        strncat(sig, ",", 1024);
-            strncat(sig, PFty_str(TY(LR(args))), 1024);
+            strncat(sig, ",", 1024);
+            strncat(sig, nme, 1024);
 
             args = R(args);
         }

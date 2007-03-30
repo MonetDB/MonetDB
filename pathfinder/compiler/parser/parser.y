@@ -1592,13 +1592,13 @@ IfExpr                    : "if (" Expr ")" "then" ExprSingle "else" ExprSingle
 
 /* [46] */
 OrExpr                    : AndExpr { $$ = $1; }
-                          | AndExpr "or" OrExpr
+                          | OrExpr "or" AndExpr
                             { $$ = wire2 (p_or, @$, $1, $3); }
                           ;
 
 /* [47] */
 AndExpr                   : ComparisonExpr { $$ = $1; }
-                          | ComparisonExpr "and" AndExpr
+                          | AndExpr "and" ComparisonExpr
                             { $$ = wire2 (p_and, @$, $1, $3); }
                           ;
 
@@ -1620,15 +1620,15 @@ RangeExpr                 : AdditiveExpr { $$ = $1; }
 
 /* [50] */
 AdditiveExpr              : MultiplicativeExpr { $$ = $1; }
-                          | MultiplicativeExpr "+" AdditiveExpr
+                          | AdditiveExpr "+" MultiplicativeExpr
                             { $$ = wire2 (p_plus, @$, $1, $3); }
-                          | MultiplicativeExpr "-" AdditiveExpr
+                          | AdditiveExpr "-" MultiplicativeExpr
                             { $$ = wire2 (p_minus, @$, $1, $3); }
                           ;
 
 /* [51] */
 MultiplicativeExpr        : UnionExpr { $$ = $1; }
-                          | UnionExpr DivOp_ MultiplicativeExpr
+                          | MultiplicativeExpr DivOp_ UnionExpr
                             { $$ = wire2 ($2, @$, $1, $3); }
                           ;
 
@@ -1640,17 +1640,17 @@ DivOp_                    : "*"    { $$ = p_mult; }
 
 /* [52] */
 UnionExpr                 : IntersectExceptExpr { $$ = $1; }
-                          | IntersectExceptExpr "union" UnionExpr
+                          | UnionExpr "union" IntersectExceptExpr
                             { $$ = wire2 (p_union, @$, $1, $3); }
-                          | IntersectExceptExpr "|" UnionExpr
+                          | UnionExpr "|" IntersectExceptExpr
                             { $$ = wire2 (p_union, @$, $1, $3); }
                           ;
 
 /* [53] */
 IntersectExceptExpr       : InstanceofExpr { $$ = $1; }
-                          | InstanceofExpr "intersect" IntersectExceptExpr
+                          | IntersectExceptExpr "intersect" InstanceofExpr
                             { $$ = wire2 (p_intersect, @$, $1, $3); }
-                          | InstanceofExpr "except" IntersectExceptExpr
+                          | IntersectExceptExpr "except" InstanceofExpr
                             { $$ = wire2 (p_except, @$, $1, $3); }
                           ;
 
