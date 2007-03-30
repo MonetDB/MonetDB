@@ -181,4 +181,47 @@ public class MonetClob implements Clob {
 	public void truncate(long len) {
 		// this command is a no-op
 	}
+
+	//=== 1.6 methods
+
+	/**
+	 * This method frees the Clob object and releases the resources the
+	 * resources that it holds.  The object is invalid once the free
+	 * method is called.
+	 *
+	 * After free has been called, any attempt to invoke a method other
+	 * than free will result in a SQLException being thrown. If free is
+	 * called multiple times, the subsequent calls to free are treated
+	 * as a no-op.
+	 *
+	 * Note: Other methods will crash instead of throw an exception
+	 */
+	public void free() throws SQLException {
+		// empty the stringbuffer
+		buf = null;
+	}
+
+	/**
+	 * Returns a Reader object that contains a partial Clob value,
+	 * starting with the character specified by pos, which is length
+	 * characters in length.
+	 *
+	 * @param pos the offset to the first character of the partial value
+	 *        to be retrieved. The first character in the Clob is at
+	 *        position 1
+	 * @param length the length in characters of the partial value to be
+	 *        retrieved
+	 * @return Reader through which the partial Clob value can be read
+	 * @throws SQLException if pos is less than 1 or if pos is greater
+	 *         than the number of characters in the Clob or if pos +
+	 *         length is greater than the number of characters in the
+	 *         Clob 
+	 */
+	public Reader getCharacterStream(long pos, long length) throws SQLException {
+		if (pos < 1 || pos > buf.length() || pos + length > buf.length())
+			throw new SQLException("pos and/or length out of bounds");
+		return(new StringReader(buf.substring(
+						/* FIXME: mind these casts!!! */
+						(int)pos - 1, (int)pos - 1 + (int)length)));
+	}
 }
