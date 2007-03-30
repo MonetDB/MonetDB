@@ -2017,7 +2017,11 @@ public class MonetConnection implements Connection {
 		Response getNextResponse() throws SQLException {
 			if (rstype == ResultSet.TYPE_FORWARD_ONLY) {
 				// free resources if we're running forward only
-				responses.set(curResponse, null);
+				if (curResponse >= 0 && curResponse < responses.size()) {
+					Response tmp = (Response)(responses.get(curResponse));
+					if (tmp != null) tmp.close();
+					responses.set(curResponse, null);
+				}
 			}
 			curResponse++;
 			if (curResponse >= responses.size()) {
@@ -2247,7 +2251,11 @@ public class MonetConnection implements Connection {
 											);
 
 										t.addDataBlockResponse(offset, r);
-										res = r;
+										// it makes no sense to add this
+										// to the ResponseList, since
+										// you never want to retrieve it
+										// anyway
+										res = null;
 									} break;
 								}
 							} catch (java.text.ParseException e) {
@@ -2287,7 +2295,8 @@ public class MonetConnection implements Connection {
 								}
 							}
 							if (error != null) break;
-							responses.add(res);
+							if (res != null)
+								responses.add(res);
 
 							// read the next line (can be prompt, new
 							// result, error, etc.) before we start the
