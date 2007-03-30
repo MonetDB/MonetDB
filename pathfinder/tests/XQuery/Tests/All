@@ -247,6 +247,8 @@ ID.1490847
 translate1
 translate2
 translate3
+operator-precedence-1
+operator-precedence-2
 HAVE_PCRE?matches01
 HAVE_PCRE?matches02
 HAVE_PCRE?matches03
