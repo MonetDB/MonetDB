@@ -782,11 +782,17 @@ monet_session:
 
 session:
 	';'
-	{   $$ = 0 ;							      }
+	{
+		$$ = 0;
+	}
     |	definition
-	{   $$ = 0 ;							      }
+	{
+		$$ = 0;
+	}
     |	statement
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_MODULE { $$ = NULL; ll_resolution = 0; } '(' modident ')' ';'
 	{
 		YYSTREE lt = $4;
@@ -819,14 +825,20 @@ session:
 
 statement_seq:
 	/* empty */
-	{   $$ = Myylognode(TOK_SEQ,0);					      }
+	{
+		$$ = Myylognode(TOK_SEQ,0);
+	}
     |	statement_list
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 statement_list:
 	statement
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	statement_list statement
 	{
 		if ($1->token != TOK_SEQ) {
@@ -840,9 +852,13 @@ statement_list:
 
 statement:
 	nonvar_statement
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_VAR varidents ';'
-	{   $$ = $2; $2->token = TOK_VAR;				      }
+	{
+		$$ = $2; $2->token = TOK_VAR;
+	}
     |	TOK_CONST constidents ';'
 	{
 		YYSTREE t=$2,tt, n = Myylognode(TOK_BUILTIN, TYPE_ptr);
@@ -869,9 +885,13 @@ statement:
 nonvar_statement:
 	simple_expression { $$ = NULL; ll_firstnode = $1; } expr_rest
 	{ $$ = NULL; ll_sugarnode = $3; } expr_statement
-	{    $$ = $5;							      }
+	{
+		$$ = $5;
+	}
     |	blk_expression
-	{    $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_RETURN ret_value ';'
 	{
 		$$ = Myylognode(TOK_RETURN, 0);
@@ -893,12 +913,17 @@ nonvar_statement:
 			Myylogexpand($$, $6);
 	}
     |	TOK_BREAK ';'
-	{    $$ = Myylognode(TOK_BREAK, 0);				      }
+	{
+		$$ = Myylognode(TOK_BREAK, 0);
+	}
     ;
 
 expr_statement:
 	';'
-	{   $$ = ll_sugarnode; ll_sugarnode = NULL;			      }
+	{
+		$$ = ll_sugarnode;
+		ll_sugarnode = NULL;
+	}
     |	TOK_ITERATION parallel TOK_ITERATOR argument_list
 	{   $$ = ll_templates ? (YYSTREE)(size_t)1 /* non-NULL */ : (ptr) 0; ll_templates = 1; } nonvar_statement
 	{
@@ -913,23 +938,35 @@ expr_statement:
 
 else_statement:
 	TOK_ELSE nonvar_statement
-	{   $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     |	/* empty */
-	{   $$ = NULL;							      }
+	{
+		$$ = NULL;
+	}
     ;
 
 ret_value:
 	expression
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	    /* empty */
-	{   $$ = NULL;							      }
+	{
+		$$ = NULL;
+	}
     ;
 
 parallel:
 	'[' expression ']'
-	{   $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     |	/* empty */
-	{   $$ = NULL;							      }
+	{
+		$$ = NULL;
+	}
     ;
 
 sequential_block:
@@ -973,9 +1010,13 @@ parallel_block:
 
 assignment:
 	TOK_ASSIGNMENT expression
-	{   $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     |	/* empty */
-	{   $$ = NULL;							      }
+	{
+		$$ = NULL;
+	}
     ;
 
 variable_reference:
@@ -1037,34 +1078,64 @@ proc_definition:
 
 definition:
 	TOK_PROCDEF { Myylogpush(); } proc_definition 
-        { Myylogpop(); }
+        {
+		Myylogpop();
+	}
     |	TOK_UNDEF TOK_IDENT ';'
-	{   $$ = NULL; TBL_delproc(ll_client, $2->yyval.val.sval); }
+	{
+		$$ = NULL;
+		TBL_delproc(ll_client, $2->yyval.val.sval);
+	}
     ;
 
 proc_assign:
 	TOK_ASSIGNMENT
     |	/* empty */
-	{ $$ = NULL; }
+	{
+		$$ = NULL;
+	}
     ;
 
 proc_name:
 	TOK_IDENT
-	{ $$ = $1; $1->token = TOK_PROC;				      }
+	{
+		$$ = $1;
+		$1->token = TOK_PROC;
+	}
     |	TOK_STRING
-	{ $$ = $1; $1->token = TOK_PROC;				      }
+	{
+		$$ = $1;
+		$1->token = TOK_PROC;
+	}
     |	TOK_ATOM
-	{ $$ = $1; $1->token = TOK_PROC;				      }
+	{
+		$$ = $1;
+		$1->token = TOK_PROC;
+	}
     |	TOK_COMMAND
-	{ $$ = $1; $1->token = TOK_PROC;				      }
+	{
+		$$ = $1;
+		$1->token = TOK_PROC;
+	}
     |	TOK_OPERATOR0
-	{ $$ = $1; $1->token = TOK_PROC;				      }
+	{
+		$$ = $1;
+		$1->token = TOK_PROC;
+	}
     |	TOK_OPERATOR
-	{ $$ = $1; $1->token = TOK_PROC;				      }
+	{
+		$$ = $1;
+		$1->token = TOK_PROC;
+	}
     |	TOK_OPERATOR1
-	{ $$ = $1; $1->token = TOK_PROC;				      }
+	{
+		$$ = $1;
+		$1->token = TOK_PROC;
+	}
     |	TOK_PROC
-	{ $$ = $1; }
+	{
+		$$ = $1;
+	}
     ;
 
 proc_header:
@@ -1102,14 +1173,21 @@ mel_header:
 
 mel_tail:
 	',' mel_range
-	{   $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     |	/* empty */
-	{   $$ = NULL;							      }
+	{
+		$$ = NULL;
+	}
     ;
 
 mel_range:
 	TOK_RANGETEMP mel_type TOK_RANGETEMP
-	{   $$ = Myylognode(TOK_RANGETEMP,0); Myylogexpand($$,$2);	      }
+	{
+		$$ = Myylognode(TOK_RANGETEMP,0);
+		Myylogexpand($$,$2);
+	}
     ;
 
 mel_params:
@@ -1160,7 +1238,9 @@ mel_type:
 		}
 	}
     |	mel_other
-	{ $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 mel_bat:
@@ -1172,14 +1252,20 @@ mel_bat:
 		Myylogexpand($$,$4);
 	}
     |	/* empty */
-	{ $$ = NULL;							      }
+	{
+		$$ = NULL;
+	}
     ;
 
 mel_atom:
 	TOK_ATOM
-	{ $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	mel_other
-	{ $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 mel_other:
@@ -1200,7 +1286,9 @@ mel_any:
 			ll_parserror("any::<int> expected");
 	}
     |	/* empty */
-	{ $$ = NULL;							      }
+	{
+		$$ = NULL;
+	}
     ;
 
 mel_return:
@@ -1215,37 +1303,59 @@ mel_return:
 
 expression:
 	simple_expression { $$ = NULL; ll_firstnode = $1; } expr_rest
-	{   $$ = $3;							      }
+	{
+		$$ = $3;
+	}
     |	blk_expression
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 blk_expression:
 	sequential_block
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	parallel_block
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 expr_rest:
 	'.' {$$ = NULL; ll_sugarnode = ll_firstnode; } command_or_ident_expression
 	{ $$ = NULL; ll_firstnode = $3; } expr_rest
-	{   $$ = $5;							      }
+	{
+		$$ = $5;
+	}
     |	operator_expression { $$ = NULL; ll_firstnode = $1; } expr_rest
-	{   $$ = $3;							      }
+	{
+		$$ = $3;
+	}
     |	/* empty */
-	{   $$ = ll_firstnode;						      }
+	{
+		$$ = ll_firstnode;
+	}
     ;
 
 simple_expression:
 	deref_or_simple_expression
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	constant_expression
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	variable_reference
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
   |	{ $$ = NULL; ll_sugarnode = NULL; } command_expression
-	{   $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     ;
 
 deref_or_simple_expression:
@@ -1268,7 +1378,9 @@ deref_or_simple_expression:
 		Myylogexpand($$,$4);
 	}
     |	'(' expression ')'
-	{   $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     ;
 
 temptok:
@@ -1292,7 +1404,9 @@ temptok:
 
 template:
 	temptok
-	{   $$ = $1; }
+	{
+		$$ = $1;
+	}
     |	TOK_VARTEMP expression rangetemp
 	{
 		$$ = Myylognode((int)(size_t)$3, 0);
@@ -1302,16 +1416,25 @@ template:
 
 rangetemp:
 	')'
-	{ $$ = (YYSTREE) (size_t) TOK_VARTEMP; }
+	{
+		$$ = (YYSTREE) (size_t) TOK_VARTEMP;
+	}
     |	TOK_RANGETEMP ')'
-	{ $$ = (YYSTREE) (size_t) TOK_RANGETEMP; }
+	{
+		$$ = (YYSTREE) (size_t) TOK_RANGETEMP;
+	}
     ;
 
 constant_expression:
 	TOK_CONSTANT
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_STRING
-	{   $$ = $1; $$->token = TOK_CONSTANT;				      }
+	{
+		$$ = $1;
+		$$->token = TOK_CONSTANT;
+	}
     ;
 
 command_or_ident_expression:
@@ -1383,51 +1506,81 @@ operator_expression:
 
 command_or_operator_or_ident:
 	command_or_operator
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_IDENT
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 command_or_operator:
 	TOK_COMMAND
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_PROC
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	operator
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 operator:
 	TOK_ASSIGNOP
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_OPERATOR
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_OPERATOR0
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_OPERATOR1
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 builtin:
 	TOK_BUILTIN
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     |	TOK_MODULE
-	{   int t; $$ = Myylognode(TOK_BUILTIN,TYPE_ptr); 
-            $$->yyval.val.pval = TBL_search("module", &t, FALSE, TRUE, FALSE, FALSE); 
-            assert(t == TOK_BUILTIN);                                         }
+	{
+		int t; $$ = Myylognode(TOK_BUILTIN,TYPE_ptr); 
+		$$->yyval.val.pval = TBL_search("module", &t, FALSE, TRUE, FALSE, FALSE); 
+		assert(t == TOK_BUILTIN);                                         
+	}
     |	TOK_DROP
-	{   int t; $$ = Myylognode(TOK_BUILTIN,TYPE_ptr); 
-            $$->yyval.val.pval = TBL_search("drop", &t, FALSE, TRUE, FALSE, FALSE); 
-            assert(t == TOK_BUILTIN);                                         }
+	{
+		int t; $$ = Myylognode(TOK_BUILTIN,TYPE_ptr); 
+		$$->yyval.val.pval = TBL_search("drop", &t, FALSE, TRUE, FALSE, FALSE); 
+		assert(t == TOK_BUILTIN);
+	}
     |	TOK_TRG
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 argument_list:
 	'(' expressions ')'
-	{   $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     |	'(' ')'
-	{   $$ = (ptr) yysugar(ll_sugarnode);				      }
+	{
+		$$ = (ptr) yysugar(ll_sugarnode);
+	}
     |	 /* empty */
 	{
 		$$ = (ptr) yysugar(ll_sugarnode);
@@ -1440,9 +1593,13 @@ argument_list:
 
 argument_list_nocheck:
 	'(' expressions ')'
-	{   $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     |	'(' ')'
-	{   $$ = (ptr) yysugar(ll_sugarnode);				      }
+	{
+		$$ = (ptr) yysugar(ll_sugarnode);
+	}
     |	/* empty */ 
 	{   if (ll_sugarnode && !monet_nostalgic) {
 		ll_parserror("new MIL syntax (>=4.4) requires parentheses for all operators.\n");
@@ -1453,23 +1610,39 @@ argument_list_nocheck:
 
 expressions:
 	{ $$ = ll_sugarnode; } param_expression
-	{    $$ = (ptr) yysugar($1); Myylogexpand($$, $2);		      }
+	{
+		$$ = (ptr) yysugar($1);
+		Myylogexpand($$, $2);
+	}
     |	expressions ',' param_expression
-	{    Myylogexpand($1, $3); $$ = $1;				      }
+	{
+		Myylogexpand($1, $3);
+		$$ = $1;
+	}
     ;
 
 param_expression:
 	TOK_CONST expression
-	{    $$ = Myylognode(TOK_CONST,0); Myylogexpand($$, $2);	      }
+	{
+		$$ = Myylognode(TOK_CONST,0);
+		Myylogexpand($$, $2);
+	}
     |	expression
-	{    $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 modident:
 	TOK_STRING
-	{   $$ = $1; $$->token = TOK_CONSTANT;				      }
+	{
+		$$ = $1;
+		$$->token = TOK_CONSTANT;
+	}
     |	TOK_IDENT
-	{   $$ = $1;							      }
+	{
+		$$ = $1;
+	}
     ;
 
 constidents:
@@ -1495,16 +1668,26 @@ constidents:
 
 varidents:
 	ident_decl
-	{    $$ = Myylognode(0,0); Myylogexpand($$, $1);		      }
+	{
+		$$ = Myylognode(0,0);
+		Myylogexpand($$, $1);
+	}
     |	varidents ',' ident_decl
-	{    Myylogexpand($1, $3); $$ = $1;				      }
+	{
+		Myylogexpand($1, $3);
+		$$ = $1;
+	}
     ;
 
 initialization:
 	TOK_ASSIGNMENT expression
-	{    $$ = $2;							      }
+	{
+		$$ = $2;
+	}
     |	/* empty */
-	{    $$ = NULL;							      }
+	{
+		$$ = NULL;
+	}
     ;
 
 ident_decl:
