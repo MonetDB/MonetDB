@@ -526,6 +526,12 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				case cmp_gte:
 					op = ">=";
 					break;
+				case cmp_like:
+					op = "like";
+					break;
+				case cmp_notlike:
+					op = "notlike";
+					break;
 				default:
 					len = snprintf(buf, BUFSIZ, "error impossible\n");
 				}
