@@ -29,73 +29,73 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
-include mdb;
-include unix;
-include lock;
-include sema;
+library mdb; include mdb;
+library unix; include unix;
+library lock; include lock;
+library sema; include sema;
 include alarm;
-include mmath;
-include streams;
+library mmath; include mmath;
+library streams; include streams;
 @-
 The kernel stuff to make it work
 @mal
-include bat5;
-include batExtensions;
-include pcre;
-include algebra;
-include algebraExtensions;
-include calc;
-include status;
-include group;
-include aggr;
-include array;
-include pqueue;
-include mkey;
+library bat5; include bat5;
+library batExtensions; include batExtensions;
+library pcre; include pcre;
+library algebra; include algebra;
+library algebraExtensions; include algebraExtensions;
+library calc; include calc;
+library status; include status;
+library group; include group;
+library aggr; include aggr;
+library array; include array;
+library pqueue; include pqueue;
+library mkey; include mkey;
 
 @-
 Atom extensions
 @mal
-include blob;
-include color;
-include str;
-include url;
-include mtime; 
-include inet;
+library blob; include blob;
+library color; include color;
+library str; include str;
+library url; include url;
+library mtime; include mtime; 
+library inet; include inet;
 
 @-
 The hardwired multiplex extensions
 @mal
-include batmath;
-include batcalc;
-include batcast;
-include batifthen;
-include batmtime;
-include batstr;
-include batcolor;
+library batmath; include batmath;
+library batcalc; include batcalc;
+library batcast; include batcast;
+library batifthen; include batifthen;
+library batmtime; include batmtime;
+library batstr; include batstr;
+library batcolor; include batcolor;
 
 @-
 MAL related extensions
 @mal
-include clients;
-include mal_io;
-include tablet;
-include factory;
-include const; 
-include bbp;
-include box; 
-include pbm; # experimental
-include mat;
-include bpm; # the real partition handler
-include inspect;
-include manual;
-include language;
-include constraints;
-include mserver;
+library clients; include clients;
+library mal_io; include mal_io;
+library tablet; include tablet;
+library factory; include factory;
+library const; include const; 
+library bbp; include bbp;
+library box; include box; 
+library pbm; include pbm; # experimental
+library mat; include mat;
+library bpm; include bpm; # the real partition handler
+library inspect; include inspect;
+library manual; include manual;
+library language; include language;
+library constraints; include constraints;
+library mserver; include mserver;
 
-include profiler;
-include statistics;
+library profiler; include profiler;
+library statistics; include statistics;
 
-include optimizer;
+library optimizer; include optimizer;
 include opt_support;
 include opt_accumulators;
 include opt_aliases;
@@ -122,14 +122,14 @@ include opt_remap;
 include opt_singleton;
 include opt_strengthReduction;
 
-include chopper;
+library chopper; include chopper;
 
-#include logger;
-include transaction;
+#library logger; include logger;
+library transaction; include transaction;
 
 #scheduler components
-include mal_isolation;
-include mal_memorun;
+library mal_isolation; include mal_isolation;
+library mal_memorun; include mal_memorun;
 
 # Cracker schemes
 include opt_crack;

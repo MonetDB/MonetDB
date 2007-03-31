@@ -812,7 +812,7 @@ An atom statement does not introduce a new module.
 str 
 parseAtom(Client cntxt) 
 {
-	str modnme = 0,s;
+	str modnme = 0;
 	int l, tpe;
 	char *nxt= CURRENT(cntxt);
 
@@ -825,9 +825,6 @@ parseAtom(Client cntxt)
 	if (currChar(cntxt) != ':')
 		tpe= TYPE_void;	/* no type qualifier */
 	else tpe = parseTypeId(cntxt, TYPE_int);
-	s = loadLibrary(modnme);
-	if (s)
-		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
 	malAtomDefinition(modnme, tpe);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	cntxt->nspace->isAtomModule = TRUE;
@@ -835,9 +832,27 @@ parseAtom(Client cntxt)
 	return "";
 }
 
+str parseLibrary(Client cntxt) 
+{
+	str libnme = 0,s;
+	int l;
+	char *nxt;
+
+	nxt= CURRENT(cntxt);
+	if ((l = idLength(cntxt)) <= 0){
+		return parseError(cntxt, "<library path> expected\n");
+	}
+	libnme = putName(nxt, l);
+	s = loadLibrary(libnme);
+	libnme = putName(nxt, l);
+	if (s)
+		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
+	advance(cntxt,l);
+	return "";
+}
 str parseModule(Client cntxt) 
 {
-	str modnme = 0,s;
+	str modnme = 0;
 	int l;
 	char *nxt;
 
@@ -845,10 +860,6 @@ str parseModule(Client cntxt)
 	if ((l = idLength(cntxt)) <= 0)
 		return parseError(cntxt, "<module path> expected\n");
 	modnme = putName(nxt, l);
-	s = loadLibrary(modnme);
-	if (s)
-		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
-
 	advance(cntxt,l);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	@:helpInfo(cntxt->nspace->help)@
@@ -1727,6 +1738,10 @@ The deadcode optimizer removes all comment information.
 		case 'i': if( parseInclude(cntxt)) continue;
 			goto allLeft;
 		case 'L': case 'l': 
+			  if( MALkeyword(cntxt,"library",7)){
+				parseLibrary(cntxt);
+				continue;
+			  }
 			  if( MALkeyword(cntxt,"leave",5))
 				 cntrl= LEAVEsymbol;
 			  goto allLeft;
