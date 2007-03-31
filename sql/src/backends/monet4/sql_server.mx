@@ -1416,6 +1416,10 @@ proc in (bat[any::1,any::2] b, any::2 v) : bit { return b.reverse().exist(v); }
 proc in (any::2 b, any::2 v) : bit { return (b = v); }
 proc [identity](bat[oid,any::1] b) : bat[oid,oid] { return mirror(b); }
 
+proc {mark_grp}(BAT[oid,any::1] b, any::2 a, BAT[oid,oid] g) : BAT[oid,oid] {
+	return mark_grp(b,g,0@0);
+}
+
 tzone_local(TIMEZONE("GMT"));
 
 proc sql_server_start() : void {

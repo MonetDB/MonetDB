@@ -1262,6 +1262,7 @@ sqltypeinit(void)
 
 	sql_create_aggr("count_no_nil", "aggr", "count_no_nil", NULL, INT);
 	sql_create_aggr("count", "aggr", "count", NULL, INT);
+	sql_create_aggr("rownumber", "aggr", "mark_grp", NULL, OID);
 
 	sql_create_func("and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func("or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);

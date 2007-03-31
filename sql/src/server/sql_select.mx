@@ -1419,10 +1419,14 @@ sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			s = first_subset(subset);
 		else if (!s)
 			return s;
-		s = stmt_mark(s, 0);
+		if (grp) {
+			sql_subaggr *a = sql_bind_aggr(sql->session->schema, "rownumber", NULL);
+			s = stmt_aggr(stmt_dup(grp->grp), grp_dup(grp), a);
+		} else {
+			s = stmt_mark(stmt_reverse(s), 0);
+		}
 	} else {
  		s = sql_aggrop(sql, scp, window_function, grp, subset, f);
-		return s;
 	}
 	return s;
 }
