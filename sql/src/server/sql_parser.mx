@@ -904,7 +904,7 @@ revoke:
 	  append_list(l, $5);
 	  append_int(l, $6);
 	  append_int(l, $2);
-	$$ = _symbol_create_list( SQL_REVOKE, l); }
+	$$ = _symbol_create_list( SQL_REVOKE_ROLES, l); }
  ;
 
 opt_grant_for:

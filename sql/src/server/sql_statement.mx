@@ -2109,7 +2109,6 @@ head_type(stmt *st)
 	case st_insert:
 	case st_replace:
 	case st_pivot:
-	case st_mark:
 	case st_gen_group:
 	case st_group:
 	case st_group_ext:
@@ -2122,6 +2121,7 @@ head_type(stmt *st)
 	case st_list:
 		return head_type(st->op1.lval->h->data);
 
+	case st_mark:
 	case st_temp:
 	case st_bat:
 	case st_idxbat:
