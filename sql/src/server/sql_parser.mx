@@ -3972,7 +3972,7 @@ data_type:
 				if ($5 >= $3)
 					snprintf(buf, BUFSIZ, "scale (%lld) should be less than precision (%lld)", $5, $3);
 				else
-					snprintf(buf, BUFSIZ, "decimal(%lld,%lld) isn't supported", $5, $3);
+					snprintf(buf, BUFSIZ, "decimal(%lld,%lld) isn't supported because P=%lld + S=%lld > 18", $3, $5, $3, $5);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
