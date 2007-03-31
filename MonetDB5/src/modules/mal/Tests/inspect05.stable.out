@@ -1766,6 +1766,7 @@ end main;	# 11
 [ "int",				  "command",	  "batcalc",	  "(b:bat[:void,:sht]):bat[:void,:int] ",											  "CMDconvert_void_sht_int;"			  ]
 [ "int",				  "command",	  "batcalc",	  "(b:bat[:any_1,:sht]):bat[:any_1,:int] ",											  "CMDconvert_sht_int;"				  ]
 [ "int",				  "command",	  "batcalc",	  "(b:bat[:any_1,:int]):bat[:any_1,:int] ",											  "CMDconvert_int;"				  ]
+[ "isnil",			  "command",	  "batcalc",	  "(b:bat[:any_1,:str]):bat[:any_1,:bit] ",													  "CMDunaryISNIL;"				  ]
 [ "isnil",				  "command",	  "batcalc",	  "(b:bat[:any_1,:dbl]):bat[:any_1,:bit] ",							  "CMDunaryISNIL;"				  ]
 [ "isnil",				  "command",	  "batcalc",	  "(b:bat[:any_1,:flt]):bat[:any_1,:bit] ",							  "CMDunaryISNIL;"				  ]
 [ "isnil",				  "command",	  "batcalc",	  "(b:bat[:any_1,:sht]):bat[:any_1,:bit] ",							  "CMDunaryISNIL;"				  ]
