@@ -24,11 +24,11 @@ YFLAGS = -d -p sql -v
 #  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 #  that icc does not like; since the problem only occurs with
 #  sql/src/server/sql_parser.mx & amdb/src/lang/parser.y,
-#  we "mis-use" the NO_INLINE_CFLAGS
+#  we use ICC_BISON_CFLAGS
 #  to disable the respective warning as locally as possible
 #  via "-wd592" (#592: variable "." is used before its value is set)
 #  (see also MonetDB/conf/monet.m4 & amdb/src/lang/Makefile.ag).
-CFLAGS = $(NO_INLINE_CFLAGS)
+CFLAGS = $(ICC_BISON_CFLAGS)
 
 lib_sqlserver = {
 	NOINST
