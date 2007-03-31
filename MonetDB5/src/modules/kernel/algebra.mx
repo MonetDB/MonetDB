@@ -542,6 +542,24 @@ address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
 		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
 
+command mark_grp( b:bat[:any_1,:oid], g:bat[:oid,:oid]) :bat[:any_1,:oid]
+address ALGmark_grp_1
+comment "\"grouped mark\": Produces a new BAT with per group a locally unique dense
+ ascending sequence of OIDs in the tail. The tail of the first BAT (b)
+ identifies the group that each BUN of b belongs to. The second BAT (g)
+ represents the group extend, i.e., the head is the unique list of group IDs
+ from b's tail. The tail of g gives for each group the base value for the new
+ OID sequence.";
+
+command mark_grp(b:bat[:any_1,:oid], g:bat[:oid,:any_2], s:oid) :bat[:any_1,:oid]
+address ALGmark_grp_2
+comment "\"grouped mark\": Produces a new BAT with per group a locally unique dense
+ ascending sequense of OIDs in the tail. The tail of the first BAT (b)
+ identifies the group that each BUN of b belongs to. The second BAT (g)
+ represents the group extend, i.e., the head is the unique list of group IDs
+ from b's tail. The third argument (s) gives the base value for the new
+ OID sequence of each group.";
+
 command number( b:bat[:any_1,:any] ) :bat[:any_1,:int]  
 address ALGnumber
 comment "Produces a new BAT with identical head column, and consecutively 
@@ -1184,7 +1202,6 @@ CMD@1(BAT **result, BAT* b, int *param)
 #define BATwcopy(b) BATcopy(b, b->htype, b->ttype, 1)
 #define BATrcopy(b) BATcopy(b, b->htype, b->ttype, 2)
 
-@:unaryint(count,BATcount)@
 @:unary(histogram,BAThistogram)@
 @:unary(histogram_rev,BAThistogram_rev)@
 @:unary(sort,BATsort)@
@@ -1230,12 +1247,21 @@ CMDtunique(BAT **result, BAT* b)
 }
 
 int
+CMDcount(int *result, BAT *b)
+{
+/* 64bit: should return wrd */
+	*result = BATcount(b);
+	return GDK_SUCCEED;
+}
+
+int
 CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
 {
+/* 64bit: should return wrd */
 	if (*ignore_nils)
-		*result = (int) BATcount_no_nil(b);
+		*result = BATcount_no_nil(b);
 	else
-		*result = (int) BATcount(b);
+		*result = BATcount(b);
 	return GDK_SUCCEED;
 }
 
@@ -1257,20 +1283,20 @@ CMDgen_group(BAT **result, BAT *b )
 		BATloopFast(b, u, v, xx) {
 			int i, sz = *(int*)BUNtloc(b, u);
 			for(i = 0; i < sz; i++) {
-			if (BUNfastins(r, BUNhvar(b, u), NULL) == NULL) {
-				BBPreclaim(r);
-				return GDK_FAIL;
-			}
+				if (BUNfastins(r, BUNhvar(b, u), NULL) == NULL) {
+					BBPreclaim(r);
+					return GDK_FAIL;
+				}
 			}
 		}
 	} else {
 		BATloopFast(b, u, v, xx) {
 			int i, sz = *(int*)BUNtloc(b, u);
 			for(i = 0; i < sz; i++) {
-			if (BUNfastins(r, BUNhloc(b, u), NULL) == NULL) {
-				BBPreclaim(r);
-				return GDK_FAIL;
-			}
+				if (BUNfastins(r, BUNhloc(b, u), NULL) == NULL) {
+					BBPreclaim(r);
+					return GDK_FAIL;
+				}
 			}
 		}
 	}
@@ -1305,6 +1331,16 @@ CMDhmark(BAT **res, BAT *b, oid *base)
 	return (*res = BATmirror(BATmark(b, *base))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
+int CMDmark_grp_1( BAT** res, BAT *b, BAT *g )
+{
+	return (*res=BATmark_grp(b, g, NULL))?GDK_SUCCEED:GDK_FAIL;
+}
+
+int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
+{
+	return (*res=BATmark_grp(b, g, s))?GDK_SUCCEED:GDK_FAIL;
+}
+
 
 int
 CMDhashsplit(BAT **res, BAT *b, int *nfrag)
@@ -1335,7 +1371,7 @@ The string pattern matching routine has been added. It should be
 dynamically linked.
 A simple string matcher is included. It should be refined later on
 @c
-INLINE int
+static INLINE int
 like(char *x, char *y, int ylen)
 {
 	char *r;
@@ -1416,6 +1452,12 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 
 int
 CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
+{
+	return slice(retval, b, *start, *end);
+}
+
+int
+CMDslice_wrd(BAT **retval, BAT *b, wrd *start, wrd *end)
 {
 	return slice(retval, b, *start, *end);
 }
@@ -2763,6 +2805,58 @@ ALGmarkHead_default(int *result, int *bid)
 	oid o = oid_nil;
 
 	return ALGmarkHead(result, bid, &o);
+}
+
+algebra_export str ALGmark_grp_1(int *result, int *bid, int *gid);
+str 
+ALGmark_grp_1(int *result, int *bid, int *gid)
+{
+	BAT *g, *b, *bn = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.mark_grp", "Cannot access descriptor");
+	}
+	if ((g = BATdescriptor(*gid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.mark_grp", "Cannot access descriptor");
+	}
+	if (CMDmark_grp_1(&bn, b, g) == GDK_SUCCEED) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(g->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(g->batCacheid);
+	throw(MAL, "algebra.mark_grp", "marking group failed");
+}
+
+algebra_export str ALGmark_grp_2(int *result, int *bid, int *gid, oid *base);
+str 
+ALGmark_grp_2(int *result, int *bid, int *gid, oid *base)
+{
+	BAT *g, *b, *bn = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.mark_grp", "Cannot access descriptor");
+	}
+	if ((g = BATdescriptor(*gid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.mark_grp", "Cannot access descriptor");
+	}
+	if (CMDmark_grp_2(&bn, b, g, base) == GDK_SUCCEED) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(g->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(g->batCacheid);
+	throw(MAL, "algebra.mark_grp", "marking group failed");
 }
 
 algebra_export str ALGhashsplit(int *result, int *bid, int *nfrag);
