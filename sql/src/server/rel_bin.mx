@@ -202,7 +202,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		if (as2) 
 			s = stmt_aggr2(stmt_reverse(as), as2, sql_dup_aggr(a) );
 		else
-			s = stmt_aggr(as, g, sql_dup_aggr(a) );
+			s = stmt_aggr(as, g, sql_dup_aggr(a), 1 );
 	} 	break;
 	case e_relation: {
 		stmt *r = NULL;
@@ -610,9 +610,9 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 		rgrp = grp_create(column(n->data), rgrp, NULL);
 
  	a = sql_bind_aggr(sql->session->schema, "count", NULL);
-	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
+	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
 	a = sql_dup_aggr(a);
-	rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
+	rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a, 1); 
 
 	/* now find the matching groups */
 	s = stmt_reljoin_init();
@@ -725,9 +725,9 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 		rgrp = grp_create(column(n->data), rgrp, NULL);
 
  	a = sql_bind_aggr(sql->session->schema, "count", NULL);
-	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
+	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
 	a = sql_dup_aggr(a);
-	rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
+	rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a, 1); 
 
 	/* now find the matching groups */
 	s = stmt_reljoin_init();
