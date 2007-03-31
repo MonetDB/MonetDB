@@ -3947,7 +3947,7 @@ data_type:
 			{ if ($3 > 18) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "decimal of %lld digits are not supported", $3);
+				snprintf(buf, BUFSIZ, "decimal of " LLFMT " digits are not supported", $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -3960,9 +3960,9 @@ data_type:
 				char buf[BUFSIZ];
 
 				if ($5 >= $3)
-					snprintf(buf, BUFSIZ, "scale (%lld) should be less than precision (%lld)", $5, $3);
+					snprintf(buf, BUFSIZ, "scale (" LLFMT ") should be less than precision (" LLFMT ")", $5, $3);
 				else
-					snprintf(buf, BUFSIZ, "decimal(%lld,%lld) isn't supported because P=%lld + S=%lld > 18", $3, $5, $3, $5);
+					snprintf(buf, BUFSIZ, "decimal(" LLFMT ","LLFMT") isn't supported because P="LLFMT" + S="LLFMT" > 18", $3, $5, $3, $5);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -3988,7 +3988,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "precision(%lld) should be less than number of digits(%lld)", $5, $3);
+				snprintf(buf, BUFSIZ, "precision(" LLFMT ") should be less than number of digits(" LLFMT ")", $5, $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -4019,7 +4019,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "precision(%lld) should be less than number of digits(%lld)", $5, $3);
+				snprintf(buf, BUFSIZ, "precision(" LLFMT ") should be less than number of digits(" LLFMT ")", $5, $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
