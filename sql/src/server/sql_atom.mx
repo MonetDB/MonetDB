@@ -443,7 +443,7 @@ atom_cast(atom *a, sql_subtype *tp)
 		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
 		    at->type->localtype <= tp->type->localtype &&
 		    at->type->digits <= tp->type->digits &&
-		    at->type->scale <= tp->type->scale) {
+		    at->scale <= tp->scale) {
 			lng mul = 1;
 			/* cast numerics */
 			switch( tp->type->localtype) {
@@ -464,10 +464,10 @@ atom_cast(atom *a, sql_subtype *tp)
 			default:
 				return 0;
 			}
+			/* fix scale */
+			mul = scales[tp->scale-at->scale];
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
-			/* fix scale */
-			mul = scales[tp->type->scale-at->type->scale];
 			if (a->data.vtype == TYPE_lng)
 				a->data.val.lval *= mul;
 			else if (a->data.vtype == TYPE_int)
