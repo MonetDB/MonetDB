@@ -19,36 +19,27 @@ stdout of test 'remap` in directory 'src/optimizer` itself:
 #	optimizer.remap();
 #	mdb.list();
 #
-!TypeException:user.main[19]:'bat.insert' undefined in: _42:any := bat.insert(_34:bat[:int,:int], _38:oid, _41:int)
+!TypeException:user.main[10]:'bat.insert' undefined in: _27:any := bat.insert(_19:bat[:int,:int], _23:oid, _26:int)
 function user.main():void;	# 0  (main:void)
     b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
 # a correct call 	# 2  (_4:str)
     z:bat[:oid,:int]  := batcalc.+(b,1);	# 3 CMDbatADDcst_int_int_int (z:bat[:oid,:int])<-(b:bat[:oid,:int])(_8:int)
     d := bat.new(:oid,:str);	# 4 CMDBATnew (d:bat[:oid,:str])<-(_2:oid)(_10:str)
-    _19 := bat.new(nil:oid,nil:bit);	# 5 CMDBATnew (_19:bat[:oid,:bit])<-(_20:oid)(_21:bit)
-barrier (_23,_24,_25):= bat.newIterator(d);	# 6 CHPbunIterator (_23:lng)(_24:oid)(_25:str)<-(d:bat[:oid,:str]) jump 13
-    _27 := calc.isnil(_25);	# 7 CALCisnil_str (_27:bit)<-(_25:str)
-    bat.insert(_19,_24,_27);	# 8 BKCinsert_bun (_28:void)<-(_19:bat[:oid,:bit])(_24:oid)(_27:bit)
-    redo (_23,_24,_25):= bat.hasMoreElements(d);	# 9 CHPbunHasMoreElements (_23:lng)(_24:oid)(_25:str)<-(d:bat[:oid,:str]) jump 7
-catch MALException:str ;	# 10  (MALException:str) jump 12
-    redo (_23,_24,_25):= bat.hasMoreElements(d);	# 11 CHPbunHasMoreElements (_23:lng)(_24:oid)(_25:str)<-(d:bat[:oid,:str]) jump 7
-exit MALException:str ;	# 12  (MALException:str)
-exit (_23,_24,_25);	# 13  (_23:lng)(_24:oid)(_25:str)
-    a:bat[:oid,:bit]  := _19;	# 14  (a:bat[:oid,:bit])<-(_19:bat[:oid,:bit])
-# demonstrate an error 	# 15  (_13:str)
-    _34 := bat.new(nil:int,nil:int);	# 16 CMDBATnew (_34:bat[:int,:int])<-(_35:int)(_35:int)
-barrier (_37,_38,_39):= bat.newIterator(b);	# 17 CHPbunIterator (_37:lng)(_38:oid)(_39:int)<-(b:bat[:oid,:int]) jump 24
-    _41 := calc.+(_39,1);	# 18 CALCbinaryADDintint (_41:int)<-(_39:int)(_8:int)
-    bat.insert(_34,_38,_41);	# 19  unknown (_42:any)<-(_34:bat[:int,:int])(_38:oid)(_41:int)
-    redo (_37,_38,_39):= bat.hasMoreElements(b);	# 20 CHPbunHasMoreElements (_37:lng)(_38:oid)(_39:int)<-(b:bat[:oid,:int]) jump 18
-catch MALException:str ;	# 21  (MALException:str) jump 23
-    redo (_37,_38,_39):= bat.hasMoreElements(b);	# 22 CHPbunHasMoreElements (_37:lng)(_38:oid)(_39:int)<-(b:bat[:oid,:int]) jump 18
-exit MALException:str ;	# 23  (MALException:str)
-exit (_37,_38,_39);	# 24  (_37:lng)(_38:oid)(_39:int)
-    y:bat[:int,:int]  := _34;	# 25  (y:bat[:int,:int])<-(_34:bat[:int,:int])
-# it will be ignored by the optimizer 	# 26  (_16:str)
-    mdb.list();	# 27 MDBlist (_18:void)
-end main;	# 28  
+    a:bat[:oid,:bit]  := batcalc.isnil(d);	# 5 CMDunaryISNIL (a:bat[:oid,:bit])<-(d:bat[:oid,:str])
+# demonstrate an error 	# 6  (_13:str)
+    _19 := bat.new(nil:int,nil:int);	# 7 CMDBATnew (_19:bat[:int,:int])<-(_20:int)(_20:int)
+barrier (_22,_23,_24):= bat.newIterator(b);	# 8 CHPbunIterator (_22:lng)(_23:oid)(_24:int)<-(b:bat[:oid,:int]) jump 15
+    _26 := calc.+(_24,1);	# 9 CALCbinaryADDintint (_26:int)<-(_24:int)(_8:int)
+    bat.insert(_19,_23,_26);	# 10  unknown (_27:any)<-(_19:bat[:int,:int])(_23:oid)(_26:int)
+    redo (_22,_23,_24):= bat.hasMoreElements(b);	# 11 CHPbunHasMoreElements (_22:lng)(_23:oid)(_24:int)<-(b:bat[:oid,:int]) jump 9
+catch MALException:str ;	# 12  (MALException:str) jump 14
+    redo (_22,_23,_24):= bat.hasMoreElements(b);	# 13 CHPbunHasMoreElements (_22:lng)(_23:oid)(_24:int)<-(b:bat[:oid,:int]) jump 9
+exit MALException:str ;	# 14  (MALException:str)
+exit (_22,_23,_24);	# 15  (_22:lng)(_23:oid)(_24:int)
+    y:bat[:int,:int]  := _19;	# 16  (y:bat[:int,:int])<-(_19:bat[:int,:int])
+# it will be ignored by the optimizer 	# 17  (_16:str)
+    mdb.list();	# 18 MDBlist (_18:void)
+end main;	# 19  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.
