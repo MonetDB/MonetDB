@@ -216,6 +216,10 @@ Not used yet
 @:unary(sht)@
 @:unary(flt)@
 @:unary(dbl)@
+	command isnil(b:bat[:any_1,:str]):bat[:any_1,:bit] 
+	address CMDunaryISNIL
+	comment "Unary check for nil over the tail of the bat";
+@-
 @+ Comparison routines
 The command signatures are similar to those above, producing a bit result.
 @= comparison
@@ -1081,9 +1085,9 @@ str CMDunary@1(int *ret, int *bid){
 @= accumUnaryISNIL
 	while( p1 < hend ){
 		if( *(@1*)p2 == @1_nil )
-			*(@1*)p1 = TRUE;
+			*(bit*)p1 = TRUE;
 		else 
-			*(@1*)p1 = FALSE;
+			*(bit*)p1 = FALSE;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
@@ -1116,6 +1120,7 @@ str CMDunaryISNIL(int *ret, int *bid){
 	case TYPE_lng: @:accumUnaryISNIL(lng)@ break;
 	case TYPE_flt: @:accumUnaryISNIL(flt)@ break;
 	case TYPE_dbl: @:accumUnaryISNIL(dbl)@ break;
+	case TYPE_str: @:accumUnaryISNIL(str)@ break;
 	default: throw(MAL, "batcalc.isnil", "unexpected type");
 	}
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
