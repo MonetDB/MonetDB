@@ -1120,7 +1120,19 @@ str CMDunaryISNIL(int *ret, int *bid){
 	case TYPE_lng: @:accumUnaryISNIL(lng)@ break;
 	case TYPE_flt: @:accumUnaryISNIL(flt)@ break;
 	case TYPE_dbl: @:accumUnaryISNIL(dbl)@ break;
-	case TYPE_str: @:accumUnaryISNIL(str)@ break;
+	case TYPE_str: {
+		int xx;
+		BUN p,q;
+		BATloopFast(b, p, q, xx) {
+			str t = (str) BUNtail(b,p);
+			if( strcmp(t, str_nil)== 0 )
+				*(bit*)p1 = TRUE;
+			else 
+				*(bit*)p1 = FALSE;
+			p1= (ptr)( ((char *)p1) + s1);
+		}
+		}
+		break;
 	default: throw(MAL, "batcalc.isnil", "unexpected type");
 	}
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
