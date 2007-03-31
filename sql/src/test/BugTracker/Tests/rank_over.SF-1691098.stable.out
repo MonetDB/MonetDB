@@ -23,7 +23,7 @@ Over..
 
 % sys. # table_name
 % foo # name
-% smallint # type
+% oid # type
 % 2 # length
 [ 0@0	]
 [ 1@0	]
