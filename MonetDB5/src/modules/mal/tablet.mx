@@ -2148,7 +2148,7 @@ break;
 @c
 					switch (c->adt) {
 						@:setAggr(int,min,"%d")@
-						@:setAggr(lng,min,"%lld")@
+						@:setAggr(lng,min,LLFMT)@
 						@:setAggr(sht,min,"%d")@
 						@:setAggr(dbl,min,"%f")@
 
@@ -2159,7 +2159,7 @@ break;
 				if (strcmp(p, "max") == 0) {
 					switch (c->adt) {
 						@:setAggr(int,max,"%d")@
-						@:setAggr(lng,max,"%lld")@
+						@:setAggr(lng,max,LLFMT)@
 						@:setAggr(sht,max,"%d")@
 						@:setAggr(dbl,max,"%f")@
 

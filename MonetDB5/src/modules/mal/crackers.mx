@@ -1368,9 +1368,9 @@ printAVLTree(struct Node * current, BAT *b, BUN base, int xx){
 
 	cur = base + ((current->position) * xx);
 	if (current->deleted == FALSE) {
-		printf("\n %lld, %d  Hols:%lld ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
+		printf("\n "LLFMT", %d  Hols:"LLFMT" ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
 	} else
-		printf("\n DELETED %lld, %d  Hols:%lld ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
+		printf("\n DELETED "LLFMT", %d  Hols:"LLFMT" ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur), current->hols );
 	
 	if (current->left != NULL)
                 printAVLTree(current->left, b, base, xx);
@@ -3738,8 +3738,8 @@ struct tempBATNode{
 		b->batBuns->free = crkLast - b->batBuns->base; /* crkt should be the one after the last */
    		BATsetcount(b, b->batBuns->free/xx);
 /*	
-printf(" \n Total bun in are %lld \n", insDone+ extendedIns);
-printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);	
+printf(" \n Total bun in are "LLFMT" \n", insDone+ extendedIns);
+printf("size is "SZFMT"  --- prev: "LLFMT"", BATcount(b), prevcrsize);	
 */
 	}
 @
@@ -3790,7 +3790,7 @@ lng TotalSearchAVL = 0;
 		endPosition = BATcount(u) - 1;
 	insertions = endPosition - startPosition + 1;
 
-/* printf("\n inserting %lld", insertions);*/
+/* printf("\n inserting "LLFMT"", insertions);*/
 
 	/* sort in place the insertions bat */
 	if (u->tsorted == FALSE){
@@ -3840,7 +3840,7 @@ pieces++;
                 curPos = BUNhloc(c, cur);
 		curVal = BUNtloc(c, cur);
 /*
-printf("\n prevPos %lld, curPos %lld \n", prevPos, *(lng*)curPos);
+printf("\n prevPos "LLFMT", curPos "LLFMT" \n", prevPos, *(lng*)curPos);
 */
 		buns   = prevPos - (*(lng*)curPos) - (prevNode==NULL?0:prevNode->hols); /* find out how many values this piece has */
 
@@ -3861,9 +3861,9 @@ printf("\n prevPos %lld, curPos %lld \n", prevPos, *(lng*)curPos);
 		}
 /*
 if (prevNode == NULL)
-printf("\n Hols null, remaining %lld, buns %lld \n", remainingIns, buns);
+printf("\n Hols null, remaining "LLFMT", buns "LLFMT" \n", remainingIns, buns);
 else
-printf("\n Hols %lld, remaining %lld, buns %lld \n", prevNode->hols, remainingIns, buns);
+printf("\n Hols "LLFMT", remaining "LLFMT", buns "LLFMT" \n", prevNode->hols, remainingIns, buns);
 */
 		if (remainingIns == 0)
                 	goto mergeDone;
@@ -3885,7 +3885,7 @@ movements += buns;
 
 		}
 		
-		/*printf("updating index in position %lld to be %lld \n", *(lng*)curPos, *(lng*)curPos+remainingIns);*/
+		/*printf("updating index in position "LLFMT" to be "LLFMT" \n", *(lng*)curPos, *(lng*)curPos+remainingIns);*/
 		/* we always update the index to be +remainingIns since even if we move buns values we put them remainingIns positions ahead */
 		*(lng*)curPos =  *(lng*)curPos + remainingIns;
 		prevNode = IndexNode;
@@ -4222,7 +4222,7 @@ BBPunfix(shrinkCopy->batCacheid);
 	b->batBuns->free = crkLast - b->batBuns->base;
         BATsetcount(b, b->batBuns->free/xx);
 /*
-printf("\n joinCost %lld \n", joinCost);
+printf("\n joinCost "LLFMT" \n", joinCost);
 */
 @
 	
@@ -4316,7 +4316,7 @@ mergeInsertionsRipple_@1(int *bid, int *new, lng startPosition, @1* hgh, bit inc
 			}
 		}
 /*
-printf("\n -------Rippled %lld tuples \n", insDone+extendedIns);
+printf("\n -------Rippled "LLFMT" tuples \n", insDone+extendedIns);
 */
 	}
 
@@ -4434,7 +4434,7 @@ TstartInsert = GDKusec();
 	
 #ifdef DEBUG_CRACKERS_INSERTIONS		
 TendInsert = GDKusec();
-printf("\n Inserted %lld values, costs Insert: %lld, Index search: %lld,  went through %d pieces and did %d movements \n", insertions, TendInsert - TstartInsert, TotalSearchAVL,  pieces, movements);
+printf("\n Inserted "LLFMT" values, costs Insert: "LLFMT", Index search: "LLFMT",  went through %d pieces and did %d movements \n", insertions, TendInsert - TstartInsert, TotalSearchAVL,  pieces, movements);
 #endif	
 
 	BBPunfix(c->batCacheid);
@@ -4476,7 +4476,7 @@ TstartShrink = GDKusec();
 	@:shrinkInsertions(@1)@
 #ifdef DEBUG_CRACKERS_INSERTIONS
 TendShrink = GDKusec();
-printf("\n Inserted %lld values, costs Insert: %lld, Shrink: %lld, Index search: %lld, went through %d pieces and did %d movements \n", insertions, TendInsert - TstartInsert, TendShrink - TstartShrink, TotalSearchAVL,  pieces, movements);
+printf("\n Inserted "LLFMT" values, costs Insert: "LLFMT", Shrink: "LLFMT", Index search: "LLFMT", went through %d pieces and did %d movements \n", insertions, TendInsert - TstartInsert, TendShrink - TstartShrink, TotalSearchAVL,  pieces, movements);
 #endif
 
         BBPunfix(c->batCacheid);
@@ -4521,7 +4521,7 @@ TstartRipple = GDKusec();
 #endif
 
 /*
-printf("\n start %lld end %lld \n", startPosition, endPosition);
+printf("\n start "LLFMT" end "LLFMT" \n", startPosition, endPosition);
 BATprint(u);
 */
         /* Find out buns that should be rippled. Take this values out in a temporary BAT */
@@ -4557,7 +4557,7 @@ BATprint(u);
                 rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
 
 		NextNode->deleted = TRUE; /* TODO: consider not deleting this piece and instead extend it... */
-		/*printf("\n have to delete piece %lld  \n", *(lng*)curPos);*/
+		/*printf("\n have to delete piece "LLFMT"  \n", *(lng*)curPos);*/
 
                 crkh = BUNhloc(b,rnext);
                 crkt = BUNtloc(b,rnext);
@@ -4574,13 +4574,13 @@ BATprint(u);
 			values = buns - NextNode->hols;
 		}
 /*
-printf("\n prev %lld cur %lld \n", prevPos, *(lng*)curPos);
+printf("\n prev "LLFMT" cur "LLFMT" \n", prevPos, *(lng*)curPos);
 */
 		/* move values out. If we get into the next piece then we simply delete it */
 		for (i=0; i<toRippleBuns; i++){
 		
 /*	
-printf("\n i %d values %lld buns %lld \n", i, values, buns);
+printf("\n i %d values "LLFMT" buns "LLFMT" \n", i, values, buns);
 */
 			if (i == buns && crkt < crkLast){
 				NextNode->deleted = TRUE;
@@ -4616,7 +4616,7 @@ printf("\n i %d values %lld buns %lld \n", i, values, buns);
 		}
 		if (i == buns && NextNode != NULL) {
 			NextNode->deleted = TRUE;
-			/*printf("\n have to delete piece %lld  \n", *(lng*)curPos);*/
+			/*printf("\n have to delete piece "LLFMT"  \n", *(lng*)curPos);*/
 		}
 		ripple->batBuns->free = BUNfirst(ripple) + (i-usedHoles)*xx - ripple->batBuns->base;	
 		BATsetcount(ripple, i-usedHoles);
@@ -4802,7 +4802,7 @@ BATprint(u);
 */
 
 #ifdef DEBUG_CRACKERS_INSERTIONS		
-printf("\n Rippled "SZFMT" tuples  but extended the main bat for %lld \n", BATcount(ripple), exceedBuns);
+printf("\n Rippled "SZFMT" tuples  but extended the main bat for "LLFMT" \n", BATcount(ripple), exceedBuns);
 #endif
 		
 	} else {
@@ -4823,12 +4823,12 @@ lng t1unf = GDKusec();
 #ifdef DEBUG_CRACKERS_INSERTIONS
 lng t2unf = GDKusec();
 lng t2 = GDKusec();
-printf("\n costs ripple: %lld, Insert: %lld, Merge: %lld, Index search: %lld,  went through %d pieces and did %d movements \n", TendRipple-TstartRipple, TendInsert-TstartInsert, TendMerge-TstartMerge, TotalSearchAVL, pieces, movements);
-printf("\n  BAT new cost: %lld \n", t2B-t1B);
-printf("\n initialization cost: %lld \n", t2I-t1I);
-printf("\n unfix cost: %lld \n", t2unf-t1unf);
-printf("\n merge costs: A: %lld, B: %lld, C: %lld \n", TendM1-TstartM1, TendM2-TstartM2, TendM3-TstartM3 );
-printf("\n total cost: %lld \n", t2-t1);
+printf("\n costs ripple: "LLFMT", Insert: "LLFMT", Merge: "LLFMT", Index search: "LLFMT",  went through %d pieces and did %d movements \n", TendRipple-TstartRipple, TendInsert-TstartInsert, TendMerge-TstartMerge, TotalSearchAVL, pieces, movements);
+printf("\n  BAT new cost: "LLFMT" \n", t2B-t1B);
+printf("\n initialization cost: "LLFMT" \n", t2I-t1I);
+printf("\n unfix cost: "LLFMT" \n", t2unf-t1unf);
+printf("\n merge costs: A: "LLFMT", B: "LLFMT", C: "LLFMT" \n", TendM1-TstartM1, TendM2-TstartM2, TendM3-TstartM3 );
+printf("\n total cost: "LLFMT" \n", t2-t1);
 #endif
 
         return MAL_SUCCEED;
@@ -4904,7 +4904,7 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 
 	deletions = endPosition - startPosition + 1;
 /*
-printf("\n deletes received: delete from %lld to %lld \n", startPosition, endPosition);
+printf("\n deletes received: delete from "LLFMT" to "LLFMT" \n", startPosition, endPosition);
 printCrackerDeletions(*bid);
 */
 	remainingDel = deletions;
@@ -4947,7 +4947,7 @@ if (hghNode!=NULL){
 hgh    = idxFirst + (hghNode->position) * zz;
 hghVal = BUNtloc(c, hgh);
 hghPos = BUNhloc(c, hgh);
-printf("\n Node position %lld \n", *(lng*)hghPos);
+printf("\n Node position "LLFMT" \n", *(lng*)hghPos);
 if (hghNode->deleted == FALSE)  printf("\n EXISTS \n");
 else printf("\n deleted \n");
 }		
@@ -5007,7 +5007,7 @@ else printf("\n Node NULL \n");
 		holSize = deletions - remainingDel - notFound;
 		if (deletesForCurrentPiece != 0){
 /*
-printf("\n low %lld , hgh %lld, deletes here %lld \n", LposDe, HposDe, deletesForCurrentPiece);
+printf("\n low "LLFMT" , hgh "LLFMT", deletes here "LLFMT" \n", LposDe, HposDe, deletesForCurrentPiece);
 */
 /*
 u->hsorted=FALSE;
@@ -5095,7 +5095,7 @@ BATprint(positions);
 		buns = HposCr - LposCr + 1 - deletedFromCurrentPiece;
 		/* no need to to shift if nothing has been deleted from previous pieces */
 /*
-printf("\n deletions %lld, remaining %lld, deletedhere %lld, buns %lld \n", deletions, remainingDel, deletedFromCurrentPiece, buns);
+printf("\n deletions "LLFMT", remaining "LLFMT", deletedhere "LLFMT", buns "LLFMT" \n", deletions, remainingDel, deletedFromCurrentPiece, buns);
 */
 		if (holSize > 0 && buns > 0){
 			if (holSize >= buns)
@@ -5121,7 +5121,7 @@ printf("\n deletions %lld, remaining %lld, deletedhere %lld, buns %lld \n", dele
 			break;
 	}
 /*
-printf("\n deletions %lld , remaining %lld, notFound %lld \n", deletions, remainingDel, notFound);
+printf("\n deletions "LLFMT" , remaining "LLFMT", notFound "LLFMT" \n", deletions, remainingDel, notFound);
 */
 	if (hghNode == NULL){
 		crkLast = BUNlast(b) - (deletions -remainingDel)*xx + notFound*xx;
@@ -6082,7 +6082,7 @@ the appropriate pieces, update the index and return the result.
 
 @= CreateResult
 createView:
-/*	printf("vl: %lld, vh:%lld \n",vl,vh);*/
+/*	printf("vl: "LLFMT", vh:"LLFMT" \n",vl,vh);*/
 	view = BATslice(b, vl, vh+1);
 /*
 	BAT *cpy = BATcopy(b, b->htype, b->ttype, TRUE);
@@ -6457,7 +6457,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 		posl = BUNindex(b,BUNfirst(b));
 		posh = BUNindex(b,BUNlast(b)-BUNsize(b));
 
-		/*printf(" %lld \n ",posh-posl);*/
+		/*printf(" "LLFMT" \n ",posh-posl);*/
 		@:crkThreeTree(@1,posl,posh)@
 		
 		BBPincref(b->batCacheid,TRUE);
@@ -6496,7 +6496,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 		posl = BUNindex(b,BUNfirst(b));
 		posh = BUNindex(b,BUNlast(b)-BUNsize(b));
 
-		/*printf(" %lld \n ",posh-posl);*/
+		/*printf(" "LLFMT" \n ",posh-posl);*/
 		@:crkThreeTree(@1,posl,posh)@
 		goto createView;
 	}
@@ -6616,13 +6616,13 @@ verifyCrackerIndex_@1(bid);
 			/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/
 			if (cl1 == cl2){
 				/*CRACK in three pieces cl1-ch2 */
-				/*printf("crack %lld %lld %lld %lld",cl1,ch1,cl2,ch2);*/	
-				/*printf(" %lld \n",ch2-cl1);*/
+				/*printf("crack "LLFMT" "LLFMT" "LLFMT" "LLFMT"",cl1,ch1,cl2,ch2);*/	
+				/*printf(" "LLFMT" \n",ch2-cl1);*/
 				@:crkThreeTree(@1,cl1,ch2)@
 
 			} else {
 				/* Else we have to do two cracks separatelly */
-				/*printf("crack %lld %lld %lld %lld",cl1,ch1,cl2,ch2);*/	
+				/*printf("crack "LLFMT" "LLFMT" "LLFMT" "LLFMT"",cl1,ch1,cl2,ch2);*/	
 	
 				/* For the cl bound and the next one in the index*/
 				@:crkTwoLTree(@1)@
@@ -6630,7 +6630,7 @@ verifyCrackerIndex_@1(bid);
 				/* For the ch bound and the previous one in the index*/
 				@:crkTwoRTree(@1)@
 
-				/*printf(" %lld \n",(ch1-cl1)+(ch2-cl2));*/
+				/*printf(" "LLFMT" \n",(ch1-cl1)+(ch2-cl2));*/
 				if (IndexSize <IndexStop){
 					if (vl>0) _vl=vl-1; else _vl=vl;		
 					if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);
@@ -6639,9 +6639,9 @@ verifyCrackerIndex_@1(bid);
 			}
 		} else
 		if (foundLow == 0){
-			/*printf("crack %lld %lld",cl1, ch1);*/	
+			/*printf("crack "LLFMT" "LLFMT"",cl1, ch1);*/	
 			@:crkTwoLTree(@1)@
-			/*printf(" %lld \n",(ch1-cl1));*/
+			/*printf(" "LLFMT" \n",(ch1-cl1));*/
 			if (IndexSize <IndexStop){
 				if (vl>0) _vl=vl-1; else _vl=vl;		
 				if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);
@@ -6649,9 +6649,9 @@ verifyCrackerIndex_@1(bid);
 			vh = ch2;
 		} else
 		if (foundHgh == 0){
-			/*printf("crack %lld %lld",cl2,ch2);*/	
+			/*printf("crack "LLFMT" "LLFMT"",cl2,ch2);*/	
 			@:crkTwoRTree(@1)@
-			/*printf(" %lld \n",(ch2-cl2));*/
+			/*printf(" "LLFMT" \n",(ch2-cl2));*/
 			if (IndexSize <IndexStop)
 				if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
 			vl = cl1;
@@ -6706,7 +6706,7 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 
 		cl2 = BUNindex(b,BUNfirst(b));
 		ch2 = BUNindex(b,BUNlast(b)-BUNsize(b));
-		/*printf(" %lld \n ",ch2-cl2);*/
+		/*printf(" "LLFMT" \n ",ch2-cl2);*/
 		@:crkTwoRTree(@1)@
 		if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
 		vl = BUNindex(b,BUNfirst(b));
@@ -6730,7 +6730,7 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	
 		cl2 = BUNindex(b,BUNfirst(b));
 		ch2 = BUNindex(b,BUNlast(b)-BUNsize(b));
-		/*printf(" %lld \n ",ch2-cl2);*/
+		/*printf(" "LLFMT" \n ",ch2-cl2);*/
 		@:crkTwoRTree(@1)@
 		if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
 		vl = BUNindex(b,BUNfirst(b));
@@ -6757,17 +6757,17 @@ CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	/*need to increase one position for the low bound only since we always store the previous position in the index*/
 	if (cl2 != 0) cl2++;
 /*	
-printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
-printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
-printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+printf("lh: "LLFMT", lt:%d \n",*(lng*)lh,*(int*)lt);
+printf("hh: "LLFMT", ht:%d \n",*(lng*)hh,*(int*)ht);
+printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch:"LLFMT" \n",vl,vh,cl,ch);
 printf("\n  found Hgh=%d \n",foundHgh);
 */
 
 
 	if (foundHgh == 0){
-		/*printf("crack %lld %lld",cl2,ch2);*/	
+		/*printf("crack "LLFMT" "LLFMT"",cl2,ch2);*/	
 		@:crkTwoRTree(@1)@
-		/*printf(" %lld \n",(ch2-cl2));*/
+		/*printf(" "LLFMT" \n",(ch2-cl2));*/
 		if (IndexSize <IndexStop)
 			if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
 	} 	
@@ -6816,7 +6816,7 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 
 		cl1 = BUNindex(b,BUNfirst(b));
 		ch1 = BUNindex(b,BUNlast(b)-BUNsize(b));
-		/*printf(" %lld \n ",ch1-cl1);*/
+		/*printf(" "LLFMT" \n ",ch1-cl1);*/
 		@:crkTwoLTree(@1)@
 		if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,vl,c);
 		vh = BUNindex(b,BUNlast(b)-BUNsize(b));
@@ -6840,7 +6840,7 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 	
 		cl1 = BUNindex(b,BUNfirst(b));
 		ch1 = BUNindex(b,BUNlast(b)-BUNsize(b));
-		/*printf(" %lld \n ",ch2-cl2);*/
+		/*printf(" "LLFMT" \n ",ch2-cl2);*/
 		@:crkTwoLTree(@1)@
 		if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,vl,c);
 		vh = BUNindex(b,BUNlast(b)-BUNsize(b));
@@ -6868,17 +6868,17 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 	/*need to increase one position for the low bound only since we always store the previous position in the index*/
 	if (cl1 != 0) cl1++;
 /*	
-printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
-printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
-printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+printf("lh: "LLFMT", lt:%d \n",*(lng*)lh,*(int*)lt);
+printf("hh: "LLFMT", ht:%d \n",*(lng*)hh,*(int*)ht);
+printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch:"LLFMT" \n",vl,vh,cl,ch);
 printf("\n  found Low=%d \n",foundLow);
 */
 
 
 	if (foundLow == 0){
-		/*printf("crack %lld %lld",cl1,ch1);*/	
+		/*printf("crack "LLFMT" "LLFMT"",cl1,ch1);*/	
 		@:crkTwoLTree(@1)@
-		/*printf(" %lld \n",(ch1-cl1));*/
+		/*printf(" "LLFMT" \n",(ch1-cl1));*/
 		if (IndexSize <IndexStop)
 			if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,vl,c);
 	} 	
@@ -7000,9 +7000,9 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	@:searchForHgh(@1,@2,@3,@4)@
 	@:searchForGapsHgh(@1,@2,@3)@
 /*	
-printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
-printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
-printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+printf("lh: "LLFMT", lt:%d \n",*(lng*)lh,*(int*)lt);
+printf("hh: "LLFMT", ht:%d \n",*(lng*)hh,*(int*)ht);
+printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch:"LLFMT" \n",vl,vh,cl,ch);
 */
 	/* If one or both of the result view bounds were not found using the
 	index then we have to crack */
@@ -7040,7 +7040,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 /*
 printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,l), BUNindex(c,lt), BUNindex(c,lh));
 printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,h), BUNindex(c,ht), BUNindex(c,hh));
-printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1,cl2,ch);
+printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch1:"LLFMT", cl2:"LLFMT", ch:"LLFMT" \n",vl,vh,cl,ch1,cl2,ch);
 */	
 	@:CreateResult()@
 	/*if (firstCrack == 1) TMsubcommit(n);*/
@@ -7119,9 +7119,9 @@ CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	/* find out where in the index the high falls */
 	@:searchForHgh(@1,@2,@3,@4)@
 /*	
-printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
-printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
-printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+printf("lh: "LLFMT", lt:%d \n",*(lng*)lh,*(int*)lt);
+printf("hh: "LLFMT", ht:%d \n",*(lng*)hh,*(int*)ht);
+printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch:"LLFMT" \n",vl,vh,cl,ch);
 */
 	/* If one or both of the result view bounds were not found using the
 	index then we have to crack */
@@ -7133,7 +7133,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 /*
 printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,l), BUNindex(c,lt), BUNindex(c,lh));
 printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,h), BUNindex(c,ht), BUNindex(c,hh));
-printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1,cl2,ch);
+printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch1:"LLFMT", cl2:"LLFMT", ch:"LLFMT" \n",vl,vh,cl,ch1,cl2,ch);
 */	
 	@:CreateResult()@
 	return MAL_SUCCEED;
@@ -7211,9 +7211,9 @@ CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 	/* find out where in the index the high falls */
 	vh = BUNindex(b,BUNlast(b)-BUNsize(b));
 /*	
-printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
-printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
-printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+printf("lh: "LLFMT", lt:%d \n",*(lng*)lh,*(int*)lt);
+printf("hh: "LLFMT", ht:%d \n",*(lng*)hh,*(int*)ht);
+printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch:"LLFMT" \n",vl,vh,cl,ch);
 */
 	/* If one or both of the result view bounds were not found using the
 	index then we have to crack */
@@ -7225,7 +7225,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 /*
 printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,l), BUNindex(c,lt), BUNindex(c,lh));
 printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,h), BUNindex(c,ht), BUNindex(c,hh));
-printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1,cl2,ch);
+printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch1:"LLFMT", cl2:"LLFMT", ch:"LLFMT" \n",vl,vh,cl,ch1,cl2,ch);
 */	
 	@:CreateResult()@
 	return MAL_SUCCEED;

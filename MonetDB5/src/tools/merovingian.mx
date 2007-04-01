@@ -93,7 +93,7 @@ merlog(str fmt, ...)
 
 	va_start(ap, fmt);
 
-	len = snprintf(message, 4095, "[merovingian]:%lld ", (long long int)_merovingian_log_cnt++);
+	len = snprintf(message, 4095, "[merovingian]:"LLFMT" ", (long long int)_merovingian_log_cnt++);
 	len += vsnprintf(message + len, 4095 - len, fmt, ap);
 	message[len] = '\0';
 
