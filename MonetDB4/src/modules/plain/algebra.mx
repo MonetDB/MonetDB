@@ -416,6 +416,24 @@ hmark(b) = b.mark().reverse()
 "Produces a new BAT with fresh unique dense sequence of OIDs in the head, and old head as tail,
  that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
 
+.COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,oid] g)
+		: BAT[any::1,OID] = CMDmark_grp_1; 
+"\"grouped mark\": Produces a new BAT with per group a locally unique dense
+ ascending sequence of OIDs in the tail. The tail of the first BAT (b)
+ identifies the group that each BUN of b belongs to. The second BAT (g)
+ represents the group extend, i.e., the head is the unique list of group IDs
+ from b's tail. The tail of g gives for each group the base value for the new
+ OID sequence."
+
+.COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,any] g, oid s)
+		: BAT[any::1,OID] = CMDmark_grp_2; 
+"\"grouped mark\": Produces a new BAT with per group a locally unique dense
+ ascending sequense of OIDs in the tail. The tail of the first BAT (b)
+ identifies the group that each BUN of b belongs to. The second BAT (g)
+ represents the group extend, i.e., the head is the unique list of group IDs
+ from b's tail. The third argument (s) gives the base value for the new
+ OID sequence of each group."
+
 @- number tail column
 @m
 .COMMAND number( BAT[any::1,any] b ) :
@@ -1841,6 +1859,17 @@ CMDhmark(BAT **res, BAT *b, oid *base)
 	return (*res = BATmirror(BATmark(b, *base))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
+int CMDmark_grp_1( BAT** res, BAT *b, BAT *g )
+{
+	return (*res=BATmark_grp(b, g, NULL))?GDK_SUCCEED:GDK_FAIL;
+}
+
+int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
+{
+	return (*res=BATmark_grp(b, g, s))?GDK_SUCCEED:GDK_FAIL;
+}
+
+
 int
 CMDhashsplit(BAT **res, BAT *b, int *nfrag)
 {
@@ -1864,7 +1893,6 @@ CMDurangesplit(BAT **res, BAT *b, int *nfrag)
 {
 	return (*res = BATrangesplit(b, *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
 }
-
 
 @- Substring Select
 The string pattern matching routine has been added. It should be
