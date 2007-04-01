@@ -3824,6 +3824,8 @@ str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 		BUNfastins(bn,BUNhead(b,p),&v);
 	}
 	BBPkeepref(*ret = bn->batCacheid);
+	bn->tsorted = FALSE;
+
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
