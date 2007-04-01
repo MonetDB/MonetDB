@@ -219,6 +219,12 @@ Not used yet
 	command isnil(b:bat[:any_1,:str]):bat[:any_1,:bit] 
 	address CMDunaryISNIL
 	comment "Unary check for nil over the tail of the bat";
+	command isnil(b:bat[:any_1,:bit]):bat[:any_1,:bit] 
+	address CMDunaryISNIL
+	comment "Unary check for nil over the tail of the bat";
+	command isnil(b:bat[:any_1,:chr]):bat[:any_1,:chr] 
+	address CMDunaryISNIL
+	comment "Unary check for nil over the tail of the bat";
 @-
 @+ Comparison routines
 The command signatures are similar to those above, producing a bit result.
@@ -1114,6 +1120,8 @@ str CMDunaryISNIL(int *ret, int *bid){
 	BATsetcount(bn, BATcount(b));
 	hend = (ptr) BUNlast(bn);
 	switch(BATttype(b)){
+	case TYPE_bit: @:accumUnaryISNIL(bit)@ break;
+	case TYPE_chr: @:accumUnaryISNIL(chr)@ break;
 	case TYPE_oid: @:accumUnaryISNIL(oid)@ break;
 	case TYPE_sht: @:accumUnaryISNIL(sht)@ break;
 	case TYPE_int: @:accumUnaryISNIL(int)@ break;
