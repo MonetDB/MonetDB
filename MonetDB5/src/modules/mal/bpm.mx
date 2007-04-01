@@ -790,9 +790,10 @@ we should assure it is not already partitioned.
 str
 BPMdeposit(bat *ret, str *nme, bat *src)
 {
-	BAT *b,*bn;
-	int i;
+	BAT *b,*bn,*ba;
+	int i,r;
 	Partition p;
+	str msg;
 
 	BPMopen();
 
@@ -809,17 +810,25 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 		throw(MAL,"pbm.deposit","Duplicate partitioned BAT");
 	}
 	/* we can enter a new partition */
+	/* create persistent alias bat*/
+	ba= BATnew( b->htype,b->ttype,1024); 
+	if( ba == 0){
+		BBPunfix(b->batCacheid);
+		throw(MAL,"pbm.deposit","Can not create partitioned BAT");
+	}
+	msg= BKCsetPersistent(&r,(int *)&ba->batCacheid);
+	if( msg != MAL_SUCCEED) return msg;
+
 	bn= BATcopy(b, b->htype,b->ttype,1);
 	if( bn == 0){
 		BBPunfix(b->batCacheid);
 		throw(MAL,"pbm.deposit","Can not create partitioned BAT");
 	}
 	BBPkeepref(*ret= bn->batCacheid);
-
 	i= getFreeAlias();
 	p= bpmcat+i;
 	p->name= GDKstrdup(*nme);
-	p->alias= bn->batCacheid;
+	BBPkeepref(p->alias= ba->batCacheid);
 	p->bid= bn->batCacheid;
 
 	/* default range */
@@ -1385,10 +1394,10 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Partition p;
 	(void) mb;
 
-
 	ret= (bat *)getArgReference(stk, pci, 0);
 	bid= (bat *)getArgReference(stk, pci, 1);
-
+	
+	BPMopen();
 	p= getAlias(*bid);
 	
 	if( p== 0)
@@ -1423,7 +1432,7 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:getBATdescriptor(&p->bid,b,"bpm.newIterator")@
 
 	/* get the comparison function */
-	tpe= *bid >0? b->ttype:b->htype;
+	tpe= p->bid >0? b->ttype:b->htype;
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 	low_nil = ((*cmp) (low, nilptr) == 0);
@@ -1435,7 +1444,7 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.range")@
 
 		/* determine overlap by excluding outliers */
-		if( *bid > 0 ){
+		if( bpmcat[i].bid > 0 ){
 			if (((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)!=0 &&
 			     !low_nil && 
 			     (*cmp) ((ptr) &bpmcat[i].thgh, low) <= 0 ) ||
@@ -1500,6 +1509,7 @@ BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret= (bat *)getArgReference(stk, pci, 0);
 	bid= (bat *)getArgReference(stk, pci, 1);
 
+	BPMopen();
 	i= getPartitionIndex(*bid, *ret);
 	idx= bpmcat[i].nxt;
 	if( idx == 0){
@@ -1537,7 +1547,7 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.newIterator")@
 
 	/* get the comparison function */
-	tpe= *bid >0? b->ttype:b->htype;
+	tpe= bpmcat[i].bid >0? b->ttype:b->htype;
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 	low_nil = ((*cmp) (low, nilptr) == 0);
@@ -1549,7 +1559,7 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		@:getBATdescriptor(&bpmcat[i].bid,b,"bpm.range")@
 
 		/* determine overlap by excluding outliers */
-		if( *bid > 0 ){
+		if( bpmcat[i].bid > 0 ){
 			if (((*cmp) ((ptr)&bpmcat[i].thgh, nilptr)!=0 &&
 			     !low_nil && 
 			     (*cmp) ((ptr) &bpmcat[i].thgh, low) < 0 ) ||
