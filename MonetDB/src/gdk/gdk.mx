@@ -1462,7 +1462,7 @@ gdk_export int BATcheckmodes(BAT *b, int persistent, int unloadable);
 @item BAT *
 @tab BATmark (BAT *b, oid base)
 @item BAT *
-@tab BATmark_grp (BAT *b, BAT *g)
+@tab BATmark_grp (BAT *b, BAT *g, oid *s)
 @item BAT *
 @tab BATnumber (BAT *b)
 @item BAT *
@@ -1493,6 +1493,7 @@ exist at the same time.
 gdk_export BAT *BATclear(BAT *b);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable);
 gdk_export BAT *BATmark(BAT *b, oid base);
+gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
 gdk_export BAT *BATnumber(BAT *b);
 gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
 @

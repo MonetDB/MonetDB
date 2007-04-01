@@ -509,6 +509,7 @@ dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 : ${X_CFLAGS=} # initialize to empty if not set
 NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
+ICC_BISON_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
 if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
@@ -574,6 +575,7 @@ yes-*-*)
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
 		;;
 	esac
+	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
 -icc*-linux*|-ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
@@ -621,21 +623,22 @@ yes-*-*)
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 	dnl  that icc does not like; since the problem only occurs with
 	dnl  sql/src/server/sql_parser.mx & amdb/src/lang/parser.y, 
-	dnl  we "mis-use" the NO_INLINE_CFLAGS 
+	dnl  we use ICC_BISON_CFLAGS 
 	dnl  to disable the respective warning as locally as possible
 	dnl  (see also sql/src/server/Makefile.ag & amdb/src/lang/Makefile.ag).
 	case "`bison -V | head -n1`" in
 	*2.0*)
-		NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -wd592"
+		ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd592"
 		dnl  # 592: variable "." is used before its value is set
 	esac
 	
 	dnl  Some versions of flex & bison seem to generate code that icc does not like;
-	dnl  we "mis-use" the NO_INLINE_CFLAGS to disable the respective warning as
+	dnl  we use ICC_BISON_CFLAGS to disable the respective warning as
 	dnl  locally as possible via "-wd177"
 	dnl  (#177: label "." was declared but never referenced)
 	dnl  (see also pathfinder/modules/pftijah/Makefile.ag).
-	NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -wd177"
+	ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd177"
+	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
 -pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
@@ -1459,17 +1462,14 @@ if test "x$enable_optim" = xyes; then
                       ;;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
                       if test "$bits" = "64" ; then
-                        NO_INLINE_CFLAGS="-O1"
+                        NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O1"
                       fi
                       ;;
       *irix*)         CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
-                      NO_INLINE_CFLAGS="-fno-inline"
                       ;;
       *aix*)          CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
                       if test "$bits" = "64" ; then
-                        NO_INLINE_CFLAGS="-O0"
-                      else
-                        NO_INLINE_CFLAGS="-fno-inline"
+                        NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O0"
                       fi
                       ;;
       *)              CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions";;
@@ -1502,7 +1502,7 @@ if test "x$enable_optim" = xyes; then
                       CFLAGS_NO_OPT="-xO0"
                       ;;
       *aix*)          CFLAGS="$CFLAGS -O3"
-                      NO_INLINE_CFLAGS="-qnooptimize"
+                      NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -qnooptimize"
                       ;;
       esac   
     fi
@@ -1510,6 +1510,7 @@ if test "x$enable_optim" = xyes; then
 fi
 AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
+AC_SUBST(ICC_BISON_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,

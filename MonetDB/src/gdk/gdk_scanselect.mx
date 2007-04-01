@@ -304,6 +304,7 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(flt,oid,int)@
 @:HT_bunfastins_typemap(dbl,oid,int)@
 @:HT_bunfastins_typemap(any,oid,int)@
+#define oidoid_bunfastins_nocheck_noinc(b,p,h,t) intint_bunfastins_nocheck_noinc(b,p,h,t);
 #else
 @:HT_bunfastins_typemap(void,oid,lng)@
 @:HT_bunfastins_typemap(chr,oid,lng)@
@@ -315,6 +316,7 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(flt,oid,lng)@
 @:HT_bunfastins_typemap(dbl,oid,lng)@
 @:HT_bunfastins_typemap(any,oid,lng)@
+#define oidoid_bunfastins_nocheck_noinc(b,p,h,t) lnglng_bunfastins_nocheck_noinc(b,p,h,t);
 #endif /* SIZEOF_OID == SIZEOF_INT */
 
 #if SIZEOF_WRD == SIZEOF_INT
