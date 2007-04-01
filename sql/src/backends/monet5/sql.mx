@@ -464,6 +464,31 @@ comment "cast @1 to a month_interval and check for overflow";
 @:mal_interval(int)@
 @:mal_interval(lng)@
 
+function aggr.mark_grp( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
+	x := algebra.mark_grp(b,g,0:oid);
+	return batcalc.int(x);
+end aggr.mark_grp;
+
+function aggr.mark_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
+	x := algebra.markT(b,0:oid);
+	return batcalc.int(x);
+end aggr.mark_grp;
+
+function aggr.rank_grp( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
+	(h1,m1) := group.new(gp);
+	(hist,m) := group.derive(h1,m1,b);
+	ext := bat.mirror(hist);
+	e := batcalc.int(ext);
+	return algebra.join(m, e);
+end aggr.rank_grp;
+
+function aggr.rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
+	(hist,m) := group.new(b);
+	ext := bat.mirror(hist);
+	e := batcalc.int(ext);
+	return algebra.join(m, e);
+end aggr.rank_grp;
+
 @-
 Include the sql_cache functionality
 @mal

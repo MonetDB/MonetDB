@@ -1420,13 +1420,13 @@ proc in (bat[any::1,any::2] b, any::2 v) : bit { return b.reverse().exist(v); }
 proc in (any::2 b, any::2 v) : bit { return (b = v); }
 proc [identity](bat[oid,any::1] b) : bat[oid,oid] { return mirror(b); }
 
-proc {mark_grp}(BAT[oid,any::1] b, any::2 a, BAT[oid,oid] g) : BAT[oid,oid] {
+proc {mark_grp}(BAT[oid,any::1] b, any::2 a, BAT[oid,oid] g) : BAT[oid,int] {
 	return [int](mark_grp(b,g,0@0));
 }
-proc mark_grp(BAT[oid,any::1] b) : BAT[oid,oid] {
+proc mark_grp(BAT[oid,any::1] b) : BAT[oid,int] {
 	return [int](mark(b,0@0));
 }
-proc {rank_grp}(BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,oid] {
+proc {rank_grp}(BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,int] {
 	var g := CTderive(gp,b);
 	var m := g.map();
 	var e := [int](g.extend().mirror());
