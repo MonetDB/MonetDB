@@ -269,7 +269,7 @@ int yydebug=1;
 	index_def
 	seq_def
 	all_or_any_predicate
-	atom_exp
+	like_exp
 	between_predicate
 	comparison_predicate
 	opt_from_clause
@@ -343,7 +343,6 @@ int yydebug=1;
 	value_exp
 	column_exp
 	atom
-	atom2
 	insert_atom
 	simple_atom
 	literal
@@ -904,7 +903,7 @@ revoke:
 	  append_list(l, $5);
 	  append_int(l, $6);
 	  append_int(l, $2);
-	$$ = _symbol_create_list( SQL_REVOKE, l); }
+	$$ = _symbol_create_list( SQL_REVOKE_ROLES, l); }
  ;
 
 opt_grant_for:
@@ -2934,29 +2933,24 @@ opt_bounds:
  ;
 
 like_predicate:
-    pred_exp NOT LIKE atom_exp
+    pred_exp NOT LIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  $$ = _symbol_create_list(SQL_NOT_LIKE, l ); }
- |  pred_exp LIKE atom_exp
+ |  pred_exp LIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_LIKE, l ); }
  ;
 
-atom2:
-	'(' atom ')' 	{ $$ = $2; }
- |	atom
- ;
-
-atom_exp:
-    atom2
+like_exp:
+    scalar_exp
 	{ dlist *l = L();
 	  append_symbol(l, $1);
 	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
- |  atom2 ESCAPE string
+ |  scalar_exp ESCAPE string
  	{ char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
 		char buf[BUFSIZ];
@@ -2971,10 +2965,6 @@ atom_exp:
 		$$ = _symbol_create_list(SQL_ESCAPE, l);
 	  }
 	}
- |  '?'	
-	{ dlist *l = L();
-	  append_symbol(l, _symbol_create( SQL_PARAMETER, NULL ));
-	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  ;
 
 test_for_null:
@@ -3961,7 +3951,7 @@ data_type:
 			{ if ($3 > 18) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "decimal of %lld digits are not supported", $3);
+				snprintf(buf, BUFSIZ, "decimal of " LLFMT " digits are not supported", $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -3974,9 +3964,9 @@ data_type:
 				char buf[BUFSIZ];
 
 				if ($5 >= $3)
-					snprintf(buf, BUFSIZ, "scale (%lld) should be less than precision (%lld)", $5, $3);
+					snprintf(buf, BUFSIZ, "scale (" LLFMT ") should be less than precision (" LLFMT ")", $5, $3);
 				else
-					snprintf(buf, BUFSIZ, "decimal(%lld,%lld) isn't supported", $5, $3);
+					snprintf(buf, BUFSIZ, "decimal(" LLFMT ","LLFMT") isn't supported because P="LLFMT" + S="LLFMT" > 18", $3, $5, $3, $5);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -4002,7 +3992,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "precision(%lld) should be less than number of digits(%lld)", $5, $3);
+				snprintf(buf, BUFSIZ, "precision(" LLFMT ") should be less than number of digits(" LLFMT ")", $5, $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -4033,7 +4023,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "precision(%lld) should be less than number of digits(%lld)", $5, $3);
+				snprintf(buf, BUFSIZ, "precision(" LLFMT ") should be less than number of digits(" LLFMT ")", $5, $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;

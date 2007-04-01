@@ -46,3 +46,8 @@ caching.SF-1651599
 decimal_prepare.SF-1655818
 union_order
 rank_over.SF-1691098
+revoke_role.SF-1691646
+subquery_orderby.SF-1688915
+limits_of_decimal.SF-1685357
+like_join.SF-1684798
+prepare_decimal_float.SF-1675795

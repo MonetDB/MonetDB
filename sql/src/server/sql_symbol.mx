@@ -155,7 +155,7 @@ symbol_create_int(sql_allocator *sa, int token, lng data)
 		symbol_init(s, token, type_int);
 		s->data.ival = data;
 		if (symbol_debug)
-			fprintf(stderr, "%ld = symbol_create_int(%s,%lld)\n", (long) s, token2string(s->token), data);
+			fprintf(stderr, "%ld = symbol_create_int(%s,"LLFMT")\n", (long) s, token2string(s->token), data);
 	}
 	return s;
 }

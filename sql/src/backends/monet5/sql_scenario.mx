@@ -1164,7 +1164,7 @@ backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, ln
 
 	/* TODO use sql_prepare/execute */
 	snprintf(buf, BUFSIZ, "INSERT INTO \"profile\" "
-		 "VALUES(now,'%s',%lld,%lld,%lld,%lld,USER);\n",
+		 "VALUES(now,'%s',"LLFMT","LLFMT","LLFMT","LLFMT",USER);\n",
 		 q, parse, optimize, exec, total);
 	_DELETE(query);
 

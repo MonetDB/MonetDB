@@ -119,7 +119,7 @@ atom_int(sql_subtype *tpe, lng val)
 		}
 		a->data.len = 0;
 		if (atom_debug)
-			fprintf(stderr, "atom_int(%s,%lld)\n", tpe->type->sqlname, val);
+			fprintf(stderr, "atom_int(%s,"LLFMT")\n", tpe->type->sqlname, val);
 		return a;
 	}
 	return NULL;
@@ -244,7 +244,7 @@ atom2string(atom *a)
 
 	switch (a->data.vtype) { 
 	case TYPE_lng:
-		sprintf(buf, "%lld", a->data.val.lval);
+		sprintf(buf, LLFMT, a->data.val.lval);
 		break;
 	case TYPE_int:
 		sprintf(buf, "%d", a->data.val.ival);
@@ -301,7 +301,7 @@ atom2sql(atom *a)
 	case EC_NUM:
 		switch (a->data.vtype) {
 		case TYPE_lng:
-			sprintf(buf, "%lld", a->data.val.lval);
+			sprintf(buf, LLFMT, a->data.val.lval);
 			break;
 		case TYPE_int:
 			sprintf(buf, "%d", a->data.val.ival);
@@ -443,7 +443,7 @@ atom_cast(atom *a, sql_subtype *tp)
 		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
 		    at->type->localtype <= tp->type->localtype &&
 		    at->type->digits <= tp->type->digits &&
-		    at->type->scale <= tp->type->scale) {
+		    at->scale <= tp->scale) {
 			lng mul = 1;
 			/* cast numerics */
 			switch( tp->type->localtype) {
@@ -464,10 +464,10 @@ atom_cast(atom *a, sql_subtype *tp)
 			default:
 				return 0;
 			}
+			/* fix scale */
+			mul = scales[tp->scale-at->scale];
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
-			/* fix scale */
-			mul = scales[tp->type->scale-at->type->scale];
 			if (a->data.vtype == TYPE_lng)
 				a->data.val.lval *= mul;
 			else if (a->data.vtype == TYPE_int)

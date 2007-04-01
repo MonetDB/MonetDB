@@ -271,7 +271,7 @@ extern stmt *stmt_op(sql_subfunc *op);
 extern stmt *stmt_unop(stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(stmt *ops, sql_subfunc *op);
-extern stmt *stmt_aggr(stmt *op1, group *grp, sql_subaggr *op);
+extern stmt *stmt_aggr(stmt *op1, group *grp, sql_subaggr *op, int reduce);
 extern stmt *stmt_aggr2(stmt *op1, stmt *op2, sql_subaggr *op);
 extern stmt *stmt_unique(stmt *s, group *grp);
 
@@ -1934,7 +1934,7 @@ stmt_Nop(stmt *ops, sql_subfunc *op)
 }
 
 stmt *
-stmt_aggr(stmt *op1, group *grp, sql_subaggr *op)
+stmt_aggr(stmt *op1, group *grp, sql_subaggr *op, int reduce)
 {
 	stmt *s = stmt_create(st_aggr);
 
@@ -1946,11 +1946,12 @@ stmt_aggr(stmt *op1, group *grp, sql_subaggr *op)
 		s->h = stmt_dup(grp->grp->h);
 		grp_destroy(grp);
 	} else {
-		s->nrcols = 0;
+		if (!reduce)
+			s->nrcols = 1;
 		s->h = stmt_dup(op1->h);
 	}
-	s->key = 1;
-	s->aggr = 1;
+	s->key = reduce;
+	s->aggr = reduce;
 	s->op4.aggrval = op;
 	s->flag = 0;
 	return s;
@@ -2111,7 +2112,6 @@ head_type(stmt *st)
 	case st_insert:
 	case st_replace:
 	case st_pivot:
-	case st_mark:
 	case st_gen_group:
 	case st_group:
 	case st_group_ext:
@@ -2124,6 +2124,7 @@ head_type(stmt *st)
 	case st_list:
 		return head_type(st->op1.lval->h->data);
 
+	case st_mark:
 	case st_temp:
 	case st_bat:
 	case st_idxbat:

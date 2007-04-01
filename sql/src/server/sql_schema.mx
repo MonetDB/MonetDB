@@ -118,7 +118,8 @@ revoke_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int ad
 		for (g = grantees->h; g; g = g->next) {
 			char *grantee = g->data.sval;
 
-			sql_revoke_role(sql, grantee, role);
+			if (sql_revoke_role(sql, grantee, role) == FALSE) 
+				return sql_error(sql, 02, "REVOKE no such role '%s' or grantee '%s'", role, grantee);
 		}
 	}
 	return stmt_none();

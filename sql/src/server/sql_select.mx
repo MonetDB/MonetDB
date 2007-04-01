@@ -1123,7 +1123,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		}
 		if (grp) {
 			a = sql_bind_aggr(schema, aggrstr, NULL);
-			return stmt_aggr(stmt_dup(grp->grp), grp_dup(grp), a);
+			return stmt_aggr(stmt_dup(grp->grp), grp_dup(grp), a, 1);
 		}
 		cv = scope_first_column(scp);
 		if (cv && subset) {
@@ -1139,7 +1139,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 				s = stmt_unique(s, NULL);
 			}
 			a = sql_bind_aggr(schema, aggrstr, NULL);
-			return stmt_aggr(stmt_alias(s,NULL,_strdup("")),NULL,a);
+			return stmt_aggr(stmt_alias(s,NULL,_strdup("")),NULL,a,1);
 		} else if (!cv) { /* count(*) without from */
 			/* if we have a where (boolean only) */
 			if (!(s = scope_bind(scp, NULL, "row"))) 
@@ -1182,7 +1182,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			stmt *n = stmt_atom(atom_general(t, NULL, 0));
 			s = stmt_select2(s, n, stmt_dup(n), 0);
 		}
-		return fix_scale(sql, t, stmt_aggr(s, grp_dup(grp), a), 1, (t->type->scale == SCALE_FIX));
+		return fix_scale(sql, t, stmt_aggr(s, grp_dup(grp), a, 1), 1, (t->type->scale == SCALE_FIX));
 	} else {
 		char *type = tail_type(s)->type->sqlname;
 
@@ -1419,10 +1419,22 @@ sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			s = first_subset(subset);
 		else if (!s)
 			return s;
-		s = stmt_mark(s, 0);
+		if (grp) {
+			sql_subaggr *a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
+			if (!a)
+				return sql_error(sql, 02, "SELECT: function '%s' not found", aggrstr );
+			s = stmt_aggr(stmt_dup(grp->grp), grp_dup(grp), a, 0);
+		} else if (aggrstr) {
+			sql_subaggr *a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
+			if (!a)
+				return sql_error(sql, 02, "SELECT: function '%s' not found", aggrstr );
+			s = stmt_aggr(s, NULL, a, 0);
+		} else {
+			assert(0);
+			s = stmt_mark(stmt_reverse(s), 0);
+		}
 	} else {
  		s = sql_aggrop(sql, scp, window_function, grp, subset, f);
-		return s;
 	}
 	return s;
 }
@@ -1556,7 +1568,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 					
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(s));
 					assert(zero_or_one);
-					s = stmt_aggr(s, NULL, zero_or_one);
+					s = stmt_aggr(s, NULL, zero_or_one, 1);
 					/* we aggregated in the subquery not 
 					   in the outer */
 					s->aggr = 0;
@@ -1984,9 +1996,9 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			rgrp = grp_create(r, rgrp, NULL);
 		}
  		a = sql_bind_aggr(sql->session->schema, "count", NULL);
-		ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
+		ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
 		a = sql_dup_aggr(a);
-		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
+		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a, 1); 
 
 		/* now find the matching groups */
 		s = stmt_reljoin_init();
@@ -2094,9 +2106,9 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			rgrp = grp_create(r, rgrp, NULL);
 		}
  		a = sql_bind_aggr(sql->session->schema, "count", NULL);
-		ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
+		ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
 		a = sql_dup_aggr(a);
-		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
+		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a, 1); 
 
 		/* now find the matching groups */
 		s = stmt_reljoin_init();
@@ -2604,7 +2616,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 			if (!sqa->key) {
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(sqa));
 				assert(zero_or_one);
-				sqa = stmt_aggr(sqa, NULL, zero_or_one);
+				sqa = stmt_aggr(sqa, NULL, zero_or_one, 1);
 				/* we aggregated in the subquery not in the outer */
 				sqa->aggr = 0;
 			}
@@ -2649,7 +2661,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 					if (!cmp->key) {
 						sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(cmp));
 						assert(zero_or_one);
-						cmp = stmt_aggr(cmp, NULL, zero_or_one);
+						cmp = stmt_aggr(cmp, NULL, zero_or_one, 1);
 						/* we aggregated in the subquery not in the outer */
 						cmp->aggr = 0;
 					}
@@ -3196,7 +3208,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			}
 			cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
 			res = stmt_dup(s);
-			res = stmt_aggr(res, NULL, cnt);
+			res = stmt_aggr(res, NULL, cnt, 1);
 			if (sc->token == SQL_EXISTS) {
 				sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 

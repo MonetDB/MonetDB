@@ -1262,6 +1262,11 @@ sqltypeinit(void)
 
 	sql_create_aggr("count_no_nil", "aggr", "count_no_nil", NULL, INT);
 	sql_create_aggr("count", "aggr", "count", NULL, INT);
+	sql_create_aggr("rank", "aggr", "rank_grp", NULL, INT);
+	sql_create_aggr("dense_rank", "aggr", "dense_rank_grp", NULL, INT);
+	sql_create_aggr("percent_rank", "aggr", "precent_rank_grp", NULL, INT);
+	sql_create_aggr("cume_dist", "aggr", "cume_dist_grp", NULL, INT);
+	sql_create_aggr("row_number", "aggr", "mark_grp", NULL, INT);
 
 	sql_create_func("and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func("or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);
