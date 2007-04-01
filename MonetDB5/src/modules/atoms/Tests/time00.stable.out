@@ -1,0 +1,84 @@
+stdout of test 'time00` in directory 'src/modules/atoms` itself:
+
+
+# 23:38:23 >  
+# 23:38:23 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=37547 --set xrpc_port=46482 --set monet_prompt= --trace --dbname=mTests_src_modules_atoms  time00.mal
+# 23:38:23 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_modules_atoms
+# Visit http://monetdb.cwi.nl/ for further information
+## temporal stuff.
+#date_01:= mtime.date("5000-JAN-01");
+#date_02:= mtime.date("1968-FEBR-29");
+#date_03:= mtime.date("1-MARCH-01");
+#date_04:= mtime.date("-5867411-JAN-1");
+#date_05:= mtime.date("-768/octobe/01");
+#date_06:= mtime.date("5000\\novembe\\01");
+#date_07:= mtime.date("-1999/jun/01");
+#
+#b:= bat.new(:int,:date);
+#bat.insert(b,1,date_01);
+#bat.insert(b,2,date_02);
+#bat.insert(b,3,date_03);
+#bat.insert(b,4,date_04);
+#bat.insert(b,5,date_05);
+#bat.insert(b,6,date_06);
+#bat.insert(b,7,date_07);
+#io.print(b);
+#
+#zy:= batmtime.year(b);
+#io.print(zy);
+#
+#zm:= batmtime.month(b);
+#io.print(zm);
+#
+#zd:= batmtime.day(b);
+#io.print(zd);
+#
+function user.main():void;	# 0  (main:void)
+# temporal stuff. 	# 1  (_1:str)
+    date_01 := mtime.date("5000-JAN-01");	# 2 MTIMEdate_fromstr (date_01:date)<-(_3:str)
+    date_02 := mtime.date("1968-FEBR-29");	# 3 MTIMEdate_fromstr (date_02:date)<-(_5:str)
+    date_03 := mtime.date("1-MARCH-01");	# 4 MTIMEdate_fromstr (date_03:date)<-(_7:str)
+    date_04 := mtime.date("-5867411-JAN-1");	# 5 MTIMEdate_fromstr (date_04:date)<-(_9:str)
+    date_05 := mtime.date("-768/octobe/01");	# 6 MTIMEdate_fromstr (date_05:date)<-(_11:str)
+    date_06 := mtime.date("5000\\novembe\\01");	# 7 MTIMEdate_fromstr (date_06:date)<-(_13:str)
+    date_07 := mtime.date("-1999/jun/01");	# 8 MTIMEdate_fromstr (date_07:date)<-(_15:str)
+    b := bat.new(:int,:date);	# 9 CMDBATnew (b:bat[:int,:date])<-(_17:int)(_18:date)
+    bat.insert(b,1,date_01);	# 10 BKCinsert_bun (_19:void)<-(b:bat[:int,:date])(_20:int)(date_01:date)
+    bat.insert(b,2,date_02);	# 11 BKCinsert_bun (_21:void)<-(b:bat[:int,:date])(_22:int)(date_02:date)
+    bat.insert(b,3,date_03);	# 12 BKCinsert_bun (_23:void)<-(b:bat[:int,:date])(_24:int)(date_03:date)
+    bat.insert(b,4,date_04);	# 13 BKCinsert_bun (_25:void)<-(b:bat[:int,:date])(_26:int)(date_04:date)
+    bat.insert(b,5,date_05);	# 14 BKCinsert_bun (_27:void)<-(b:bat[:int,:date])(_28:int)(date_05:date)
+    bat.insert(b,6,date_06);	# 15 BKCinsert_bun (_29:void)<-(b:bat[:int,:date])(_30:int)(date_06:date)
+    bat.insert(b,7,date_07);	# 16 BKCinsert_bun (_31:void)<-(b:bat[:int,:date])(_32:int)(date_07:date)
+    io.print(b);	# 17 IOprint_val (_33:void)<-(b:bat[:int,:date])
+    zy := batmtime.year(b);	# 18 MTIMEdate_extract_year_bulk (zy:bat[:int,:int])<-(b:bat[:int,:date])
+    io.print(zy);	# 19 IOprint_val (_35:void)<-(zy:bat[:int,:int])
+    zm := batmtime.month(b);	# 20 MTIMEdate_extract_month_bulk (zm:bat[:int,:int])<-(b:bat[:int,:date])
+    io.print(zm);	# 21 IOprint_val (_37:void)<-(zm:bat[:int,:int])
+    zd := batmtime.day(b);	# 22 MTIMEdate_extract_day_bulk (zd:bat[:int,:int])<-(b:bat[:int,:date])
+    io.print(zd);	# 23 IOprint_val (_39:void)<-(zd:bat[:int,:int])
+end main;	# 24  
+#-------------------------#
+# h	t		  # name
+# int	date		  # type
+#-------------------------#
+[ 1,	  5000-01-01	  ]
+[ 2,	  1968-02-29	  ]
+[ 3,	  1-03-01	  ]
+[ 4,	  -5867411-01-01  ]
+[ 5,	  -768-10-01	  ]
+[ 6,	  5000-11-01	  ]
+[ 7,	  -1999-06-01	  ]
+!MALException:mal.propertyCheck:Errors found
+!WARNING: BATpropcheck: BAT tmp_10(-8) was incorrectly marked sorted!
+!WARNING: BATpropcheck: BAT tmp_10(-8) remains marked radix-clustered on 32 bits; not checked!
+
+# 23:38:23 >  
+# 23:38:23 >  Done.
+# 23:38:23 >  
+

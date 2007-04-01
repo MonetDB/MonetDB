@@ -390,6 +390,7 @@ address MTIMEruleDef2
 comment "Introduce a synomym timezone rule.";
 
 
+module batmtime; # for the multiplexes
 module mtime;
 command date_sub_sec_interval(t:date,s:int):date 
 address MTIMEdate_sub_sec_interval_wrap
@@ -520,25 +521,25 @@ command year(d:date) :int
 address MTIMEdate_extract_year 
 comment "extracts year from date (nonzero 
 	value between -5867411 and +5867411).";
-command year(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.year(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_year_bulk;
 
 command month(d:date) :int 
 address MTIMEdate_extract_month 
 comment "extracts month from date";
-command month(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.month(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_month_bulk;
 
 command day(d:date) :int 
 address MTIMEdate_extract_day 
 comment "extracts day from date ";
-command day(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.day(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_day_bulk;
 
 command hours(h:daytime) :int 
 address MTIMEdaytime_extract_hours 
 comment "extracts hour from daytime";
-command hours(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.hours(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_hours_bulk;
 
 command minutes(d:daytime) :int 
@@ -550,13 +551,13 @@ address MTIMEdaytime_extract_minutes_bulk;
 command seconds(d:daytime) :int 
 address MTIMEdaytime_extract_seconds 
 comment "extracts seconds from daytime";
-command seconds(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.seconds(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_seconds_bulk;
 
 command milliseconds(d:daytime) :int 
 address MTIMEdaytime_extract_milliseconds 
 comment "extracts milliseconds from daytime";
-command milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_milliseconds_bulk;
 
 command daytime(t:timestamp) :daytime 
@@ -3805,10 +3806,9 @@ speed.
 @= Extract
 str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 {       BAT *b,*bn;
-	int s1,xx;
+	int xx;
 	@3 v;
 	date d;
-	ptr p1;
 	BUN p,q;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -3818,18 +3818,12 @@ str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 
 	bn= BATnew(BAThtype(b),TYPE_@3, BATcount(b));
 
-	s1= BUNsize(bn);
-	p1= BUNfirst(bn);
-
 	BATloopFast(b,p,q,xx){
-		ptr h= BUNhead(b,p);
 		d= *(date*) BUNtail(b,p);
 		MTIME@1_extract_@2(&v,&d);
-		bunfastins_nocheck(bn,p1,h,&v,s1);
-		p1= (ptr)( ((char*)p1) + s1);
+		BUNfastins(bn,BUNhead(b,p),&v);
 	}
-bunins_failed:
-	BBPfix(*ret = bn->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

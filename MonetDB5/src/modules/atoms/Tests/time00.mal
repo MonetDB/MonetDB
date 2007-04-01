@@ -1,0 +1,27 @@
+# temporal stuff.
+date_01:= mtime.date("5000-JAN-01");
+date_02:= mtime.date("1968-FEBR-29");
+date_03:= mtime.date("1-MARCH-01");
+date_04:= mtime.date("-5867411-JAN-1");
+date_05:= mtime.date("-768/octobe/01");
+date_06:= mtime.date("5000\\novembe\\01");
+date_07:= mtime.date("-1999/jun/01");
+
+b:= bat.new(:int,:date);
+bat.insert(b,1,date_01);
+bat.insert(b,2,date_02);
+bat.insert(b,3,date_03);
+bat.insert(b,4,date_04);
+bat.insert(b,5,date_05);
+bat.insert(b,6,date_06);
+bat.insert(b,7,date_07);
+io.print(b);
+
+zy:= batmtime.year(b);
+io.print(zy);
+
+zm:= batmtime.month(b);
+io.print(zm);
+
+zd:= batmtime.day(b);
+io.print(zd);
