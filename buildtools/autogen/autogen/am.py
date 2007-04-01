@@ -718,7 +718,7 @@ def am_library(fd, var, libmap, am):
             if target[-2:] == '.o' and libmap['DEPS'].has_key(target):
                 am_dep(fd, target, libmap['DEPS'][target], am, fullpref+"-")
                 basename = target[:-2]
-                fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, fullpref, basename, basename, basename))
+                fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) $(%s_CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, basename, fullpref, basename, basename, basename))
             elif target[-4:] == '.def':
                 ldflags.append("-export-symbols")
                 ldflags.append('$(def_srcdir)' + target)

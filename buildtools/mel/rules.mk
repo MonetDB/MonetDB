@@ -191,9 +191,6 @@ HIDE=1
 %.eps: %.feps
 	$(CP) $< $@
 
-$(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
-	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
-
 $(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 	$(LTCOMPILE) -c -o $@ -O0 $<
 

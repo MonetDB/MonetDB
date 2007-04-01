@@ -18,7 +18,8 @@ MTSAFE
 
 INCLUDES = -I../common 
 
-NO_INLINE_FILES = gdk_scanselect.mx gdk_relop.mx
+gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
+# gdk_relop.mx
 
 lib_gdk = { 
 	NAME = bat

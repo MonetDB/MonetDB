@@ -398,8 +398,8 @@ def msc_dep(fd, tar, deplist, msc):
             d, dext = split_filename(deplist[0])
             if dext in ("c", "glue.c", "yy.c", "tab.c"):
                 # -DCOMPILE_DL_%s is for PHP extensions
-                fd.write('\t$(CC) $(CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s -Fo"%s" -c "%s"\n' %
-                         (name, name, t, src))
+                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s -Fo"%s" -c "%s"\n' %
+                         (split_filename(msc_basename(src))[0], name, name, t, src))
     if ext == 'py' and deplist[0].endswith('.py.i'):
         fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
     if ext == 'py.c' and deplist[0].endswith('.py.i'):

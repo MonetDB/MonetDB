@@ -190,11 +190,6 @@ endif # NEED_MX
 %.eps: %.feps
 	$(CP) $< $@
 
-ifdef NEED_MX
-$(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
-	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
-endif
-
 $(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 	$(LTCOMPILE) -c -o $@ $(CFLAGS_NO_OPT) $<
 

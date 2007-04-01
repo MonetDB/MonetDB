@@ -575,6 +575,7 @@ yes-*-*)
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
 		;;
 	esac
+	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
 -icc*-linux*|-ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
@@ -637,6 +638,7 @@ yes-*-*)
 	dnl  (#177: label "." was declared but never referenced)
 	dnl  (see also pathfinder/modules/pftijah/Makefile.ag).
 	ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd177"
+	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
 -pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
@@ -1460,17 +1462,14 @@ if test "x$enable_optim" = xyes; then
                       ;;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
                       if test "$bits" = "64" ; then
-                        NO_INLINE_CFLAGS="-O1"
+                        NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O1"
                       fi
                       ;;
       *irix*)         CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
-                      NO_INLINE_CFLAGS="-fno-inline"
                       ;;
       *aix*)          CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
                       if test "$bits" = "64" ; then
-                        NO_INLINE_CFLAGS="-O0"
-                      else
-                        NO_INLINE_CFLAGS="-fno-inline"
+                        NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O0"
                       fi
                       ;;
       *)              CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions";;
@@ -1503,7 +1502,7 @@ if test "x$enable_optim" = xyes; then
                       CFLAGS_NO_OPT="-xO0"
                       ;;
       *aix*)          CFLAGS="$CFLAGS -O3"
-                      NO_INLINE_CFLAGS="-qnooptimize"
+                      NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -qnooptimize"
                       ;;
       esac   
     fi
