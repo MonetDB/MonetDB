@@ -61,8 +61,6 @@ module 'pf_support'
 [ "ll_descendant_or_self(BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[void,any], bit, bit, oid, oid, bit, chr) : BAT[oid,oid]"				  ]
 [ "ll_parent(BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,chr]) : BAT[oid,oid]"									  ]
 [ "ll_tokenize(BAT[void,str], BAT[void,str]) : BAT[oid,str]"										  ]
-[ "mark_grp(BAT[any::1,oid], BAT[oid,any], oid) : BAT[any::1,oid]"									  ]
-[ "mark_grp(BAT[any::1,oid], BAT[oid,oid]) : BAT[any::1,oid]"										  ]
 [ "merge_adjacent_text_nodes(BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,oid]"						  ]
 [ "merged_union(any, any, ..any..) : BAT[void,BAT]"													  ]
 [ "movedata(BAT[void,BAT], oid, oid, int, int) : void"													  ]

@@ -30,11 +30,11 @@ LFLAGS = -olex.yy.c
 YFLAGS = -d -p nexi
 
 #  Some versions of flex & bison seem to generate code that icc does not like;
-#  we "mis-use" the NO_INLINE_CFLAGS to disable the respective warning as
+#  we use ICC_BISON_CFLAGS to disable the respective warning as
 #  locally as possible via "-wd177"
 #  (#177: label "." was declared but never referenced)
 #  (see also MonetDB/conf/monet.m4).
-CFLAGS = $(NO_INLINE_CFLAGS)
+CFLAGS = $(ICC_BISON_CFLAGS)
 
 lib__pftijah = {
 	DIR = libdir/MonetDB4

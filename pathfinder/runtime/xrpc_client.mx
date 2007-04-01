@@ -712,12 +712,12 @@ getWsBAT(BAT *ws, int contID, int batID)
  * @return the 'pre_kind' value, or
  *         GDK_chr_min by error
  */
-static char
+static chr
 getELEMkind(BAT *ws, int contID, oid item_index)
 {
     BAT *b  = NULL;
     BUN bun = NULL;
-    char ret;
+    chr ret;
 
     if(!(b = getWsBAT(ws, contID, PRE_KIND)))
         return GDK_chr_min;
@@ -735,7 +735,7 @@ getELEMkind(BAT *ws, int contID, oid item_index)
         return GDK_chr_min;
     }
 
-    ret = *(char*)BUNtail(b,bun);
+    ret = *(chr*)BUNtail(b,bun);
     BBPunfix( BBPcacheid(b));
     return ret;
 }
@@ -1034,7 +1034,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             int k;
             for (k= 0; k < argcnt[my_iter][my_argc]; k++) {
                 int cmbn_cont_kind = 0, cur_kind = 0, contID = 0;
-                char elem_kind = 0;
+                chr elem_kind = 0;
                 oid item;
 
                 a = arg_offset + k; /* index into fun_item|fun_kind */
