@@ -7326,7 +7326,7 @@ CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *
 		@:CreateCrackingPair(@1,@2)@		
 
 	/*      T2 = GDKusec();
-		printf(" Time cost to create the cracking projection is: %lld \n", T2-T1);
+		printf(" Time cost to create the cracking projection is: "LLFMT" \n", T2-T1);
         */
                 if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
                         throw(MAL, "crackers.crackRange", "Cannot access crack index");
@@ -7375,7 +7375,7 @@ CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *
                 posl = BUNindex(b,BUNfirst(b));
                 posh = BUNindex(b,BUNlast(b)-BUNsize(b));
                 
-                /*printf(" %lld \n ",posh-posl);*/
+                /*printf(" "LLFMT" \n ",posh-posl);*/
                 @:crkThreeTreeProjections(@1,@2,posl,posh)@
                 goto createView;
         }
