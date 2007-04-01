@@ -823,7 +823,7 @@ sql_update_cascade_Fkeys_set(mvc *sql, sql_schema *schema, sql_key *fk, int set_
 		list_append(l, stmt_dup(updates[c->colnr]));
 	}
 
-	list_append(l, stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->session->schema, "count", NULL))));
+	list_append(l, stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1)));
 	stmt_destroy(s);
 
         if ((s = sql_update(sql, schema, t, updates, l)) == NULL) {
