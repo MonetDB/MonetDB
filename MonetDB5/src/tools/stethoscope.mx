@@ -308,7 +308,7 @@ int main(int argc, char **argv)
 	char *password= "monetdb";
 	FILE *d;
 	char cmd[100];
-	int colind[30],colcnt=0, len = 0;
+	int colind[30],colcnt=0;
 	stream *s;
 
     static struct option long_options[13] = {
@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 
 	/* set up the profiler */
 
-	dbh = mapi_connect(host, portnr, user, password, "mal", NULL);
+	dbh = mapi_connect(host, portnr, user, password, "mal", dbname);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
@@ -433,7 +433,7 @@ int main(int argc, char **argv)
 	
 	plottemplate(colind,colcnt);
 
-	while( (len=stream_read(s, buf, 1, BUFSIZ)) ) {
+	while( stream_read(s, buf, 1, BUFSIZ) ) {
 		char *e;
 		response = buf;
 		while((e=strchr(response,'\n')) != NULL) {
