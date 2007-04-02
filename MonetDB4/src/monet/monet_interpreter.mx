@@ -1484,7 +1484,18 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 
 		/* propagate properties */
 		ALIGNsetH(bn, b);
-		if (BATcount(b) < 2) {
+                if (tpe == TYPE_oid && b->htype == TYPE_void && BATtdense(b)) {
+                        /* fast special case: materialize and oid column */
+                        oid *dst = (oid*) bn->batBuns->base;
+                        oid *lim = dst + BATcount(b);
+                        oid cur = b->tseqbase;
+                        while(dst < lim) *dst++ = cur++;
+                        bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
+                        BATsetcount(bn, BATcount(b));
+		        ALIGNsetT(bn, b);
+                        ok = 1;
+                        goto bunins_failed;
+		} else if (BATcount(b) < 2) {
 			/* trivial case */
 			bn->tsorted = GDK_SORTED;
 		} else if (!(BATtordered(b) & 1) ||
