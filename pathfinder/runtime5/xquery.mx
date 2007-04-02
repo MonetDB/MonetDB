@@ -126,6 +126,7 @@ xquery_doc( bat *resiter, bat *root, bat *iter, bat *name )
 		throw(MAL, "xquery.doc", "Cannot access (doc_name) descriptor");
 	if ((doc_collection = BATfinddescriptor("doc_collection")) == NULL) 
 		throw(MAL, "xquery.doc", "Cannot access (doc_collection) descriptor");
+	(void) iterb; /* pacify compilers */
 	docids = BATjoin( nameb, BATmirror(doc_name), BATcount(nameb));
 	colids = BATjoin( docids, doc_collection, BATcount(docids));
 	BBPunfix(docids->batCacheid);
@@ -209,6 +210,7 @@ xquery_print_result_main_wrap(int *res /*dummy*/, str *mode, bat *ws, bat *item,
 	if( (strb = BATdescriptor(*str_values)) == NULL )
 		throw(MAL, "xquery.print", "Cannot access (str_values) descriptor");
 	
+	(void) decb; /* pacify compilers */
 	if (xquery_print_result_DRIVER(*mode, NULL, NULL, NULL, NULL, wsb, 1, itemb, itemb, itemb, kindb, intb, dblb, strb) == GDK_FAIL) {
 		throw(MAL, "xquery.print", "print failed");
 	}
