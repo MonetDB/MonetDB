@@ -733,9 +733,11 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         PFmil_t    *mroot  = NULL;
         PFarray_t  *serialized_mil_code = NULL;
 #endif
+#if MILPRINT_SUMMER_IS_DEFAULT
         char *intern_prologue = NULL,
              *intern_query = NULL,
              *intern_epilogue = NULL;
+#endif
 
         PFmem_init ();
 
