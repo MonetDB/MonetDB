@@ -1,3 +1,6 @@
+bpm.open();
+bpm.dump();
+
 function user.partinfo(Ra:bat[:any_1,:any_2]):void;
 barrier Rp:= bpm.newIterator(Ra);
 	Ri:= bat.info(Rp);
@@ -8,4 +11,4 @@ end partinfo;
 
 f:bat[:oid,:flt]:=bpm.take("myflt");
 user.partinfo(f);
-bpm.dump();
+

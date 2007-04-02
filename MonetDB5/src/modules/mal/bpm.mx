@@ -1,3 +1,4 @@
+
 @' The contents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
@@ -791,9 +792,8 @@ str
 BPMdeposit(bat *ret, str *nme, bat *src)
 {
 	BAT *b,*bn,*ba;
-	int i,r;
+	int i;
 	Partition p;
-	str msg;
 
 	BPMopen();
 
@@ -816,8 +816,6 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 		BBPunfix(b->batCacheid);
 		throw(MAL,"pbm.deposit","Can not create partitioned BAT");
 	}
-	msg= BKCsetPersistent(&r,(int *)&ba->batCacheid);
-	if( msg != MAL_SUCCEED) return msg;
 
 	bn= BATcopy(b, b->htype,b->ttype,1);
 	if( bn == 0){
@@ -1369,10 +1367,12 @@ BPMdiscard(bat *ret, bat *bid)
 		throw(MAL,"bpm.discard","Can not alias BAT");
 	/* discard the content */
 	for( ; i && msg== MAL_SUCCEED; i= bpmcat[i].nxt){
+		BBPdecref(bpmcat[i].bid,TRUE);	
 		msg= BKCdestroy(&r, &bpmcat[i].bid);
 		bpmcat[i].alias = 0;	/* free entry */
 		GDKfree(bpmcat[i].name);
 	}
+	msg= BKCdestroy(&r, bid);
 
 	*ret =0;
 	return MAL_SUCCEED;
@@ -1966,8 +1966,30 @@ BPMsavePartitions(int *r)
 
 	for(i=1; i< bpmcattop; i++)
 		if( bpmcat[i].alias){
+		   if (bpmcat[i].prv==0){ 
+			/* save alias bat */
+			bt = bpmcat[i].alias;
+			len = strlen(bpmcat[i].name) + 5;
+		        nm = GDKmalloc(len);
+		        snprintf(nm, len, "bpm_%s",bpmcat[i].name);
+			printf("Alias Name %s\n",nm);
+		
+			/* Check if the name exists already */
+			idx= BBPindex(nm);
+			if (idx == 0) {
+				msg= BKCsetName(r,(int *) &bt,(str *) &nm);
+				if( msg != MAL_SUCCEED) return msg;
+			} else {
+				if (bt!=idx)
+				throw(MAL, "bpm.savePartitions", "Inconsistency in alias names");
+			}
+			msg= BKCsetPersistent(r,(int *)&bt);
+			if( msg != MAL_SUCCEED) return msg;
+			BUNappend(tr, BBPname(bt), FALSE);
+			}
+
 			bt=bpmcat[i].bid;
-	                                                                              
+                                                                              
 			len = strlen(bpmcat[i].name) + 30;
 		        nm = GDKmalloc(len);
 		        snprintf(nm, len, "bpm_%s%d",bpmcat[i].name, i);
