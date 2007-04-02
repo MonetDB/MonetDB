@@ -671,7 +671,7 @@ opt_mvd (PFla_op_t *p)
                 switch_left  = switch_left &&
                                att_present (LL(p),
                                             p->sem.fun_1to1.refs.atts[i]);
-                switch_right = switch_left &&
+                switch_right = switch_right &&
                                att_present (LR(p),
                                             p->sem.fun_1to1.refs.atts[i]);
             }
