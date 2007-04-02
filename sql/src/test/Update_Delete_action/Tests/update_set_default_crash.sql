@@ -1,8 +1,8 @@
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int DEFAULT 3, age int, PRIMARY KEY (ID), FOREIGN KEY(id) as REFERENCE (t1)) ON DELETE SET DEFAULT;
+create table t2 (id int DEFAULT 3, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCE (t1)) ON DELETE SET DEFAULT;
 
-create table t3 (id int DEFAULT 30, day int, FOREIGN KEY(id) as REFERENCE (t2)) ON DELETE SET DEFAULT;
+create table t3 (id int DEFAULT 30, day int, FOREIGN KEY(id) REFERENCE (t2)) ON DELETE SET DEFAULT;
 
 
 
@@ -44,9 +44,9 @@ drop table t1;
 
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int DEFAULT 3, age int, PRIMARY KEY (ID), FOREIGN KEY(id) as REFERENCE (t1)) ON DELETE SET DEFAULT;
+create table t2 (id int DEFAULT 3, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCE (t1)) ON DELETE SET DEFAULT;
 
-create table t3 (id int DEFAULT 3, day int, FOREIGN KEY(id) as REFERENCE (t2)) ON DELETE SET DEFAULT;
+create table t3 (id int DEFAULT 3, day int, FOREIGN KEY(id) REFERENCE (t2)) ON DELETE SET DEFAULT;
 
 
 

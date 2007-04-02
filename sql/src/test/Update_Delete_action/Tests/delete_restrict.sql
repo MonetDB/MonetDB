@@ -1,8 +1,8 @@
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int, age int, PRIMARY KEY (ID), FOREIGN KEY(id) as REFERENCE (t1));
+create table t2 (id int, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id));
 
-create table t3 (id int, day int, FOREIGN KEY(id) as REFERENCE (t2)) ON DELETE RESTRICT;
+create table t3 (id int, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE RESTRICT);
 
 
 
@@ -21,24 +21,24 @@ insert into t2 values(4, 26);
 insert into t2 values(5, 27);
 
 
-insert into t2 values(3, 5);
-insert into t2 values(3, 5);
-insert into t2 values(4, 6);
-insert into t2 values(5, 7);
+insert into t3 values(3, 5);
+insert into t3 values(3, 5);
+insert into t3 values(4, 6);
+insert into t3 values(5, 7);
 
-delete * from t1 where id > 2 and id < 5;
-
-select * from t1;
-select * from t2;
-select * from t3;
-
-delete * from t1;
+delete from t1 where id > 2 and id < 5;
 
 select * from t1;
 select * from t2;
 select * from t3;
 
-delete * from t1 where id = 6;
+delete from t1;
+
+select * from t1;
+select * from t2;
+select * from t3;
+
+delete from t1 where id < 2 and id > 5;
 
 select * from t1;
 select * from t2;
