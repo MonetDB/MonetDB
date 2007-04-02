@@ -2251,7 +2251,7 @@ public class MonetConnection implements Connection {
 											);
 
 										t.addDataBlockResponse(offset, r);
-										res = t;
+										res = r;
 									} break;
 								}
 							} catch (java.text.ParseException e) {
