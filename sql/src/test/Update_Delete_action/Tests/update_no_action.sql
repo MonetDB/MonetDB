@@ -32,8 +32,6 @@ update t1 set id = 11 where id =2;
 update t1 set id = 12 where id =3;
 update t1 set id = 13 where id =4;
 
-
-
 select * from t1;
 select * from t2;
 select * from t3;
