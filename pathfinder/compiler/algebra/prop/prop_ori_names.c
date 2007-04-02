@@ -217,10 +217,10 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             }
     }
     
+    EDGE(n)++;
     /* nothing to do if we haven't collected
        all incoming name pair lists of that node */
-    if (EDGE(n) > 1) {
-        EDGE(n)--;
+    if (EDGE(n) < PFprop_refctr (n)) {
         /* return the current mappings to the parent operator */
         return np_list;
     }
@@ -418,8 +418,11 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
 
         case la_type:
         case la_cast:
-        case la_type_assert:
             diff_np (n->prop->l_name_pairs, np_list, n->sem.type.res);
+            break;
+
+        case la_type_assert:
+            n->prop->l_name_pairs = PFarray_copy (np_list);
             break;
 
         case la_scjoin:
@@ -680,31 +683,19 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
 
 /* worker for PFprop_infer_ori_names */
 static void
-prop_infer (PFla_op_t *n)
+reset_fun (PFla_op_t *n)
 {
-    assert (n);
-
-    /* count number of incoming edges
-       (during first run) */
-    EDGE(n)++;
-
-    /* nothing to do if we already visited that node */
-    if (n->bit_dag)
-        return;
-    /* otherwise initialize edge counter (first occurrence) */
-    else
-        EDGE(n) = 1;
-
-    /* infer properties for children */
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prop_infer (n->child[i]);
-
-    n->bit_dag = true;
+    EDGE(n) = 0;
 
     /* reset the original name information */
-    n->prop->name_pairs = PFarray (sizeof (name_pair_t));
-    n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
-    n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+    if (n->prop->name_pairs) PFarray_last (n->prop->name_pairs) = 0;
+    else n->prop->name_pairs = PFarray (sizeof (name_pair_t));
+    
+    if (n->prop->l_name_pairs) PFarray_last (n->prop->l_name_pairs) = 0;
+    else n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
+
+    if (n->prop->r_name_pairs) PFarray_last (n->prop->r_name_pairs) = 0;
+    else n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
 
     /* reset the list of available column names */
     FREE(n) = ALL;
@@ -717,10 +708,12 @@ void
 PFprop_infer_ori_names (PFla_op_t *root)
 {
     /* collect number of incoming edges (parents) */
-    prop_infer (root);
-    PFla_dag_reset (root);
+    PFprop_infer_refctr (root);
+
+    /* reset the old property information */
+    PFprop_reset (root, reset_fun);
     
-    /* second run infers original names property */
+    /* infer new original names property */
     infer_ori_names (root,
                      PFarray (sizeof (name_pair_t)));
 }

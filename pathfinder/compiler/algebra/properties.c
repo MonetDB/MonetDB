@@ -100,48 +100,6 @@ PFprop (void)
 }
 
 /**
- * worker for PFprop_infer_refctr ().
- */
-static void
-prop_infer_refctr (PFla_op_t *n)
-{
-    assert (n);
-
-    /* count number of incoming edges */
-    n->refctr++;
-
-    /* only descend once */
-    if (SEEN(n))
-        return;
-    else {
-        SEEN(n) = true;
-        n->refctr = 1;
-    }
-    
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prop_infer_refctr (n->child[i]);
-}
-
-/**
- * Collect the number of consuming parent operators.
- */
-void
-PFprop_infer_refctr (PFla_op_t *root)
-{
-    prop_infer_refctr (root);
-    PFla_dag_reset (root);
-}
-
-/**
- * Return the number of consuming parent operators.
- */
-unsigned int
-PFprop_refctr (PFla_op_t *n)
-{
-    return n->refctr;
-}
-
-/**
  * Infer all properties of the current tree
  * rooted in root whose flag is set.
  */
@@ -181,6 +139,36 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_refctr (root);
 }
 
+/**
+ * worker for PFprop_reset ().
+ */
+static void
+prop_reset (PFla_op_t *n, void (*reset_fun) (PFla_op_t *))
+{
+    assert (n);
+
+    /* only descend once */
+    if (SEEN(n))
+        return;
+    else
+        SEEN(n) = true;
+    
+    reset_fun (n);
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        prop_reset (n->child[i], reset_fun);
+}
+
+/**
+ * Reset the property of an operator.
+ */
+void
+PFprop_reset (PFla_op_t *root, void (*reset_fun) (PFla_op_t *))
+{
+    prop_reset (root, reset_fun);
+    PFla_dag_reset (root);
+}
+
 /* worker for PFprop_create_prop () */
 static void
 create_prop (PFla_op_t *n)
@@ -207,6 +195,39 @@ PFprop_create_prop (PFla_op_t *root)
 {
     create_prop (root);
     /* reset dirty dag bit */
+    PFla_dag_reset (root);
+}
+
+/**
+ * worker for PFprop_infer_refctr ().
+ */
+static void
+prop_infer_refctr (PFla_op_t *n)
+{
+    assert (n);
+
+    /* count number of incoming edges */
+    n->refctr++;
+
+    /* only descend once */
+    if (SEEN(n))
+        return;
+    else {
+        SEEN(n) = true;
+        n->refctr = 1;
+    }
+    
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        prop_infer_refctr (n->child[i]);
+}
+
+/**
+ * Collect the number of consuming parent operators.
+ */
+void
+PFprop_infer_refctr (PFla_op_t *root)
+{
+    prop_infer_refctr (root);
     PFla_dag_reset (root);
 }
 

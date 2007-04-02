@@ -1600,9 +1600,9 @@ join_prepare (PFla_op_t *root)
 {
     PFprop_infer_key (root);
     /* key property inference already requires
-       the domain property inference. Thus we can
-       skip it:
-    PFprop_infer_dom (root);
+       the domain property inference for native
+       types. Thus we can skip it:
+    PFprop_infer_nat_dom (root);
     */
 }
 
@@ -1744,7 +1744,8 @@ generate_join_proxy (PFla_op_t *root,
     PFalg_att_t num_col, new_num_col, num_col_alias, new_num_col_alias,
                 icols = 0, used_cols = 0;
     unsigned int i, j, k, count, dist_count, base_count;
-    PFalg_attlist_t req_cols, new_cols;
+    PFalg_attlist_t req_cols, new_cols,
+                    trace_ori, trace_mod;
     PFla_op_t *num_op, *exit_op, *entry_op, *proxy_op, *base_op;
 
     /* over estimate the projection size */
@@ -1779,7 +1780,17 @@ generate_join_proxy (PFla_op_t *root,
     if (proxy_exit->kind == la_rownum)
         return false;
 
+    /* prepare the list of attributes that are input to the proxy operator */
+    trace_ori.count = proxy_entry->schema.count;
+    trace_ori.atts = PFmalloc (proxy_entry->schema.count *
+                               sizeof (PFalg_attlist_t));
+    for (i = 0; i < proxy_entry->schema.count; i++)
+        trace_ori.atts[i] = proxy_entry->schema.items[i].name;
+
     /* assign unique names to track the names inside the proxy body */
+    trace_mod = PFprop_trace_names (proxy_entry, proxy_exit, trace_ori);
+
+    /* assign unique names to find identical columns with different names */
     PFprop_infer_unq_names (root);
 
     /* short-hand for the key column name */
@@ -1790,6 +1801,7 @@ generate_join_proxy (PFla_op_t *root,
         names and generating a new free one). */
     count = 1;
     base_count = 0;
+
     /* collect the list of differing column names at the base 
        of the proxy, all the used column names and create a projection 
        list that reconstructs the schema of the proxy base except for 
@@ -1799,6 +1811,7 @@ generate_join_proxy (PFla_op_t *root,
         used_cols = used_cols | exit_col;
 
         for (j = 0; j < base_count; j++)
+            /* use unique names to get rid of duplicate columns */
             if (PFprop_unq_name (proxy_exit->prop, base_proj[j].new) == 
                 PFprop_unq_name (proxy_exit->prop, exit_col)) {
                 exit_proj[count++] = PFalg_proj (exit_col, base_proj[j].new);
@@ -1812,6 +1825,7 @@ generate_join_proxy (PFla_op_t *root,
             if (num_col != exit_col)
                 exit_proj[count++] = PFalg_proj (exit_col, exit_col);
         }
+
     }
     assert (proxy_exit->schema.count == count);
 
@@ -1860,6 +1874,7 @@ generate_join_proxy (PFla_op_t *root,
        For new columns create new 'free' names */
     for (i = 0; i < proxy_entry->schema.count; i++) {
         PFalg_att_t entry_col = proxy_entry->schema.items[i].name;
+        PFalg_att_t base_col = att_NULL;
 
         /* discard the second join argument in the projection lists.
            (It is already added to the outermost projection -- above_proj --
@@ -1867,12 +1882,17 @@ generate_join_proxy (PFla_op_t *root,
         if (entry_col == proxy_entry->sem.eqjoin.att2)
             continue;
 
+        /* look up the original name of the entry column */
+        for (j = 0; j < trace_ori.count; j++)
+            if (entry_col == trace_ori.atts[j])
+                base_col = trace_mod.atts[j];
+        
         /* check for duplicate column names */
         for (k = 0; k < dist_count; k++)
+            /* use unique names to get rid of duplicate columns */
             if (PFprop_unq_name (proxy_entry->prop, 
                                  entry_proj[k].old) ==
                 PFprop_unq_name (proxy_entry->prop, entry_col)) {
-                
                 /* Create a projection list that maps the output
                    columns of the proxy operator such that the
                    plan stays consistent. */
@@ -1888,8 +1908,7 @@ generate_join_proxy (PFla_op_t *root,
             for (j = 0; j < base_count; j++) {
                 PFalg_att_t exit_col = base_proj[j].new;
                 /* check whether this is an unchanged input column */
-                if (PFprop_unq_name (proxy_entry->prop, entry_col) ==
-                    PFprop_unq_name (proxy_exit->prop, exit_col)) {
+                if (base_col && base_col == exit_col) {
                     /* map output name to the same name as the input column */
                     entry_proj[dist_count] = PFalg_proj (exit_col, entry_col);
                     /* keep input names and replace the 'new_num_col'
@@ -2715,8 +2734,8 @@ find_proxy_entry (PFla_op_t *p, PFarray_t *checked_nodes,
 
     /* If node does not appear in the list of already checked nodes
        check the entry condition. */
-    if (!node_in_list (p, checked_nodes) &&
-        check_entry (p))
+    if (check_entry (p) &&
+        !node_in_list (p, checked_nodes))
         return p;
 
     return NULL;

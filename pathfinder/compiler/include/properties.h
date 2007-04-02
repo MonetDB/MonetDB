@@ -151,6 +151,11 @@ void PFprop_infer (bool card, bool const_, bool set,
                    PFla_op_t *root);
 
 /**
+ * Reset the property of an operator.
+ */
+void PFprop_reset (PFla_op_t *root, void (*reset_fun) (PFla_op_t *));
+
+/**
  * Create new property fields for a DAG rooted in @a root
  */
 void PFprop_create_prop (PFla_op_t *root);
@@ -164,6 +169,7 @@ void PFprop_infer_card (PFla_op_t *root);
 void PFprop_infer_const (PFla_op_t *root);
 void PFprop_infer_set (PFla_op_t *root);
 void PFprop_infer_dom (PFla_op_t *root);
+void PFprop_infer_nat_dom (PFla_op_t *root);
 void PFprop_infer_icol (PFla_op_t *root);
 void PFprop_infer_key (PFla_op_t *root);
 void PFprop_infer_ocol (PFla_op_t *root);
@@ -430,7 +436,18 @@ PFalg_att_t PFprop_ori_name_right (const PFprop_t *prop, PFalg_att_t attr);
 /**
  * Return the number of consuming parent operators.
  */
-unsigned int PFprop_refctr (PFla_op_t *n);
+#define PFprop_refctr(n) ((n)->refctr)
+
+/* --------------------- name tracing property accessors ------------------- */
+
+/**
+ * Start from node @a start and keep track of column name changes of the
+ * attributes in @a list. At the node @a goal return the updated column name
+ * list.
+ */
+PFalg_attlist_t PFprop_trace_names (PFla_op_t *start,
+                                    PFla_op_t *goal,
+                                    PFalg_attlist_t list);
 
 #endif  /* PROPERTIES_H */
 

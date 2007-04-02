@@ -2081,10 +2081,10 @@ PFalgopt_join_pd (PFla_op_t *root)
     /* Optimize algebra tree */
     while (modified || tries < max_tries) {
         PFprop_infer_key (root);
-        /* key property inference already requires 
-           the domain property inference. Thus we can
-           skip it:
-        PFprop_infer_dom (root);
+        /* key property inference already requires
+           the domain property inference for native
+           types. Thus we can skip it:
+        PFprop_infer_nat_dom (root);
         */
 
         modified = join_pushdown (root, clean_up_list);

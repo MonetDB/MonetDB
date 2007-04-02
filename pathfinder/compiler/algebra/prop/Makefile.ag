@@ -36,6 +36,7 @@ lib_prop = {
                 prop_card.c \
                 prop_const.c \
                 prop_dom.c \
+                prop_dom_nat.c \
                 prop_icol.c \
                 prop_key.c \
                 prop_ocol.c \
@@ -43,5 +44,6 @@ lib_prop = {
                 prop_rec_delta.c \
                 prop_reqval.c \
                 prop_set.c \
+                prop_trace_names.c \
                 prop_unq_names.c
 }

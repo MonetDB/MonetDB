@@ -813,11 +813,7 @@ PFalgopt_complex (PFla_op_t *root)
        properties first */
     PFprop_infer_key (root);
     PFprop_infer_icol (root);
-    /* key property inference already requires 
-       the domain property inference. Thus we can
-       skip it:
     PFprop_infer_dom (root);
-    */
     PFprop_infer_set (root);
     PFprop_infer_unq_names (root);
 

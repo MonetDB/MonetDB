@@ -561,7 +561,9 @@ PFprop_infer_key (PFla_op_t *root) {
        discover more key columns */
     PFprop_infer_card (root);
     PFprop_infer_const (root);
-    PFprop_infer_dom (root);
+    /* use the cheaper domain inference that only infers
+       domains for columns of the native type */
+    PFprop_infer_nat_dom (root);
 
     prop_infer (root);
     PFla_dag_reset (root);

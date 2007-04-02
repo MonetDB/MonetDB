@@ -366,7 +366,7 @@ struct PFla_op_t {
     PFla_op_sem_t      sem;        /**< semantic content for this operator */
     PFalg_schema_t     schema;     /**< result schema */
 
-    short              state_label;/**< Burg puts its state information here. */
+    unsigned short     state_label;/**< Burg puts its state information here. */
     short              child_state_label[PFLA_OP_MAXCHILD];
                                    /**< control information for Burg pattern
                                         matching */

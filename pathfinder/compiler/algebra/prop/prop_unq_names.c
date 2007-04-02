@@ -556,7 +556,11 @@ static void
 reset_property (PFla_op_t *n)
 {
     /* reset the unique name information */
-    n->prop->name_pairs = PFarray (sizeof (name_pair_t));
+    if (n->prop->name_pairs)
+        PFarray_last (n->prop->name_pairs) = 0;
+    else
+        n->prop->name_pairs = PFarray (sizeof (name_pair_t));
+
     n->prop->l_name_pairs = NULL;
     n->prop->r_name_pairs = NULL;
 }
