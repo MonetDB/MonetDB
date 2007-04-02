@@ -3115,6 +3115,18 @@ def main(argv) :
             print "Modules: ", env['TST_MODS']
         STDOUT.flush()
 
+        is_sql = False
+        am_init_sql = re.compile('AM_INIT_AUTOMAKE\("sql",.*,.*\)', re.MULTILINE)
+        configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
+        if os.path.isfile(configure_ag):
+            for l in open(configure_ag):
+                if am_init_sql.match(l) and not is_sql:
+                    is_sql = True
+        if is_sql:
+            MissingMods = CheckMods(env, '', 'SQL', '') 
+            if MissingMods:
+                ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
+
         is_pf = False
         am_init_pf = re.compile('AM_INIT_AUTOMAKE\("pathfinder",.*,.*\)', re.MULTILINE)
         configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
