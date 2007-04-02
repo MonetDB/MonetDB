@@ -2251,11 +2251,7 @@ public class MonetConnection implements Connection {
 											);
 
 										t.addDataBlockResponse(offset, r);
-										// it makes no sense to add this
-										// to the ResponseList, since
-										// you never want to retrieve it
-										// anyway
-										res = null;
+										res = t;
 									} break;
 								}
 							} catch (java.text.ParseException e) {
@@ -2295,7 +2291,10 @@ public class MonetConnection implements Connection {
 								}
 							}
 							if (error != null) break;
-							if (res != null)
+							// it is of no use to store
+							// DataBlockReponses, you never want to
+							// retrieve them directly anyway
+							if (!(res instanceof DataBlockResponse))
 								responses.add(res);
 
 							// read the next line (can be prompt, new
