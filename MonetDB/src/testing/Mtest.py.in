@@ -39,7 +39,11 @@ except NameError:
 
 import os
 import sys
-import subprocess
+try:
+    import subprocess
+except ImportError:
+    # use private copy for old Python versions
+    import subprocess26 as subprocess
 import shutil
 import re
 import random
