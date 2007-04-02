@@ -263,6 +263,9 @@ def am_dep(fd, t, deplist, am, pref = ''):
             fd.write(" " + am_translate_dir(d, am))
         else:
             print("!WARNING: dropped absolute dependency " + d)
+    # add dependency on library for mil modules
+    if ext == 'mil': # a bit of a hack ....
+        fd.write(" $(%s_LTLIBRARIES)" % os.path.basename(f))
     fd.write("\n")
 
 def am_deps(fd, deps, objext, am):
@@ -337,10 +340,7 @@ def am_scripts(fd, var, scripts, am):
             am['BUILT_SOURCES'].append(script)
 
         # add dependency on library for mil modules
-        if (is_mil_module(script, scripts['DEPS'])): # a bit of a hack ....
-            fd.write("script_%s: %s lib_%s.la\n" % (script, script, script[:-4]))
-        else:
-            fd.write("script_%s: %s\n" % (script, script))
+        fd.write("script_%s: %s\n" % (script, script)) # a bit of a hack ....
 
         if sd == "$(sysconfdir)":
             fd.write("install-exec-local-%s: %s\n" % (script, script))
