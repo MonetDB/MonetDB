@@ -147,6 +147,10 @@ include batcolor;
 MAL related extensions
 @mal
 include clients;
+include const;
+include bbp;
+include box;
+include pbm;
 include mal_io;
 include tablet;
 include factory;
@@ -156,6 +160,7 @@ include bbp;
 # experimental
 include mat;
 # the real partition handler
+include bpm;
 include inspect;
 include manual;
 include language;

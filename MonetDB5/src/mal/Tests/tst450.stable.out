@@ -87,6 +87,7 @@ end main;	# 16
 [ "batcalc",	  nil	  ]
 [ "batcolor",	  nil	  ]
 [ "batmath",	  nil	  ]
+[ "batmtime",	  nil	  ]
 [ "bbp",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "box",	  nil	  ]
