@@ -668,8 +668,10 @@ inc_refctr (PFla_op_t *n)
     /* only descend once */
     if (SEEN (n))
         return;
-    else
+    else {
         SEEN (n) = true;
+        n->refctr = 1;
+    }
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         inc_refctr (n->child[i]);
