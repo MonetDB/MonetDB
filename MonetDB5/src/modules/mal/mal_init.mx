@@ -28,74 +28,144 @@ It should be loaded after the bat module.
 The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
+The first part enumerates the libraries in
+their preferred loading sequence.
 @mal
-library mdb; include mdb;
-library unix; include unix;
-library lock; include lock;
-library sema; include sema;
+library mdb;
+library unix;
+library lock;
+library sema;
+library mmath;
+library streams;
+
+library bat5;
+library batExtensions;
+library pcre;
+library algebra;
+library algebraExtensions;
+library calc;
+library status;
+library group;
+library aggr;
+library array;
+library pqueue;
+library mkey;
+
+library blob;
+library color;
+library str;
+library url;
+library mtime;
+library inet;
+
+library batmath;
+library batcalc;
+library batcast;
+library batifthen;
+library batmtime;
+library batstr;
+library batcolor;
+
+library clients;
+library mal_io;
+library tablet;
+library factory;
+library const;
+library bbp;
+library box;
+library pbm;
+library mat;
+library bpm;
+library inspect;
+library manual;
+library language;
+library constraints;
+library mserver;
+
+library profiler;
+library statistics;
+
+library optimizer;
+
+library chopper;
+
+#library logger;
+library transaction;
+
+library mal_isolation;
+library mal_memorun;
+
+@-
+The remainder interprets the signatures and resolves the
+address bindings.
+@mal
+include mdb;
+include unix;
+include lock;
+include sema;
 include alarm;
-library mmath; include mmath;
-library streams; include streams;
+include mmath;
+include streams;
 @-
 The kernel stuff to make it work
 @mal
-library bat5; include bat5;
-library batExtensions; include batExtensions;
-library pcre; include pcre;
-library algebra; include algebra;
-library algebraExtensions; include algebraExtensions;
-library calc; include calc;
-library status; include status;
-library group; include group;
-library aggr; include aggr;
-library array; include array;
-library pqueue; include pqueue;
-library mkey; include mkey;
+include bat5;
+include batExtensions;
+include pcre;
+include algebra;
+include algebraExtensions;
+include calc;
+include status;
+include group;
+include aggr;
+include array;
+include pqueue;
+include mkey;
 
 @-
 Atom extensions
 @mal
-library blob; include blob;
-library color; include color;
-library str; include str;
-library url; include url;
-library mtime; include mtime; 
-library inet; include inet;
+include blob;
+include color;
+include str;
+include url;
+include mtime;
+include inet;
 
 @-
 The hardwired multiplex extensions
 @mal
-library batmath; include batmath;
-library batcalc; include batcalc;
-library batcast; include batcast;
-library batifthen; include batifthen;
-library batmtime; include batmtime;
-library batstr; include batstr;
-library batcolor; include batcolor;
+include batmath;
+include batcalc;
+include batcast;
+include batifthen;
+include batmtime;
+include batstr;
+include batcolor;
 
 @-
 MAL related extensions
 @mal
-library clients; include clients;
-library mal_io; include mal_io;
-library tablet; include tablet;
-library factory; include factory;
-library const; include const; 
-library bbp; include bbp;
-library box; include box; 
-library pbm; include pbm; # experimental
-library mat; include mat;
-library bpm; include bpm; # the real partition handler
-library inspect; include inspect;
-library manual; include manual;
-library language; include language;
-library constraints; include constraints;
-library mserver; include mserver;
+include clients;
+include mal_io;
+include tablet;
+include factory;
 
-library profiler; include profiler;
-library statistics; include statistics;
+include bbp;
 
-library optimizer; include optimizer;
+# experimental
+include mat;
+# the real partition handler
+include inspect;
+include manual;
+include language;
+include constraints;
+include mserver;
+
+include profiler;
+include statistics;
+
+include optimizer;
 include opt_support;
 include opt_accumulators;
 include opt_aliases;
@@ -122,14 +192,14 @@ include opt_remap;
 include opt_singleton;
 include opt_strengthReduction;
 
-library chopper; include chopper;
+include chopper;
 
-#library logger; include logger;
-library transaction; include transaction;
+#include logger;
+include transaction;
 
 #scheduler components
-library mal_isolation; include mal_isolation;
-library mal_memorun; include mal_memorun;
+include mal_isolation;
+include mal_memorun;
 
 # Cracker schemes
 include opt_crack;
