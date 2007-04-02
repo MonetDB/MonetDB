@@ -6,7 +6,9 @@ delete_set_null
 update_cascade
 update_delete_cascade
 update_delete_set_null
+update_delete_set_null_crash
 update_no_action
 update_restrict
 update_set_default
+update_set_default_crash
 update_set_null
