@@ -338,8 +338,9 @@ def am_scripts(fd, var, scripts, am):
 
         # add dependency on library for mil modules
         if (is_mil_module(script, scripts['DEPS'])): # a bit of a hack ....
-            fd.write("%s: lib_%s.la\n" % (script, script[:-4]))
-        fd.write("script_%s: %s\n" % (script, script))
+            fd.write("script_%s: %s lib_%s.la\n" % (script, script, script[:-4]))
+        else:
+            fd.write("script_%s: %s\n" % (script, script))
 
         if sd == "$(sysconfdir)":
             fd.write("install-exec-local-%s: %s\n" % (script, script))
