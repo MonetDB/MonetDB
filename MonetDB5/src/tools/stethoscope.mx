@@ -438,8 +438,6 @@ int main(int argc, char **argv)
 	}
 	doQ("profiler.start();");
 
-
-	
 	if(gnuplot)
 		plottemplate(colind,colcnt);
 

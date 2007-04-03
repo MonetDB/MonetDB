@@ -385,6 +385,10 @@ m_export str SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
+#endif
 
 #define SOCKPTR struct sockaddr *
 #if HAVE_SOCKLEN_T
