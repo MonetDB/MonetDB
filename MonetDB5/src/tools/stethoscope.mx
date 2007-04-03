@@ -35,13 +35,15 @@ stethoscope -t bat.insert algebra.join
 tracks the usec ticks of two specific MAL instructions.
 A synopsis of the calling conventions:
 @verbatim
-	stethoscope [options] +[efoTtcmibds] {<mod>.<fcn>}
+	stethoscope [options] +[aefoTtcmibds] {<mod>.<fcn>}
 	-d | --dbname=<database_name>
 	-u | --user=<user>
 	-P | --password=<password>
 	-p | --port=<portnr>
+	-g | --gnuplot=<boolean>
 	-h | --host=<hostname>
 
+Event selector:
 	a =aggregates
     e =event
     f =function 
@@ -83,37 +85,37 @@ static struct {
     char *name;       /* which logical counter is needed */
     int status;     /* trace it or not */
 } profileCounter[] = {
-    /*  11  */  {'a', "aggregate", "total count", 0},
-    /*  11  */  {'a', "aggregate", "total ticks", 0},
-    /*  6  */  {'e', "event", "event id", 0},
-    /*  5  */  {'f', "pc", "function", 0},
-    /*  5  */  {'f', "pc", "pc", 0},
+    /*  0  */  {'a', "aggregate", "total count", 0},
+    /*  1  */  {'a', "aggregate", "total ticks", 0},
+    /*  2  */  {'e', "event", "event id", 0},
+    /*  3  */  {'f', "pc", "function", 0},
+    /*  4  */  {'f', "pc", "pc", 0},
     /*  5  */  {'o', "operation","operation", 0},
-    /*  0  */  {'T', "time", "time stamp", 0},
-    /*  1  */  {'t', "ticks", "usec ticks", 1},
-    /*  2  */  {'c', "cpu", "utime", 0},
-    /*  2  */  {'c', "cpu", "cutime", 0},
-    /*  2  */  {'c', "cpu", "stime", 0},
-    /*  2  */  {'c', "cpu", "cstime", 0},
-    /*  3  */  {'m', "memory", "arena", 0},
+    /*  6  */  {'T', "time", "time stamp", 0},
+    /*  7  */  {'t', "ticks", "usec ticks", 1},
+    /*  8  */  {'c', "cpu", "utime", 0},
+    /*  9  */  {'c', "cpu", "cutime", 0},
+    /*  0  */  {'c', "cpu", "stime", 0},
+    /*  1  */  {'c', "cpu", "cstime", 0},
+    /*  2  */  {'m', "memory", "arena", 0},
     /*  3  */  {'m', "memory", "ordblks", 0},
-    /*  3  */  {'m', "memory", "smblks", 0},
-    /*  3  */  {'m', "memory", "hblkhd", 0},
-    /*  3  */  {'m', "memory", "hblks", 0},
-    /*  3  */  {'m', "memory", "fsmblks", 0},
-    /*  3  */  {'m', "memory", "uordblks", 0},
-    /*  4  */  {'i', "io","pg reclaim", 0},
-    /*  4  */  {'i', "io","pg faults", 0},
-    /*  4  */  {'i', "io","swaps", 0},
-    /*  4  */  {'i', "io","blk reads", 0},
-    /*  4  */  {'i', "io","blk writes", 0},
+    /*  4  */  {'m', "memory", "smblks", 0},
+    /*  5  */  {'m', "memory", "hblkhd", 0},
+    /*  6  */  {'m', "memory", "hblks", 0},
+    /*  7  */  {'m', "memory", "fsmblks", 0},
+    /*  8  */  {'m', "memory", "uordblks", 0},
+    /*  9  */  {'i', "io","pg reclaim", 0},
+    /*  0  */  {'i', "io","pg faults", 0},
+    /*  1  */  {'i', "io","swaps", 0},
+    /*  2  */  {'i', "io","blk reads", 0},
+    /*  3  */  {'i', "io","blk writes", 0},
     /*  4  */  {'i', "io","ctxt switch", 0},
-    /*  4  */  {'i', "io","inv switch", 0},
-    /*  8  */  {'b', "bytes", "rdbytes", 0},
-    /*  9  */  {'b', "bytes", "wrbytes", 0},
-    /*  10 */  {'d', "disk", "diskspace", 0},
-    /*  7  */  {'s', "statement", "statement", 2},
-    /*  11 */  {0, 0,  0, 0}
+    /*  5  */  {'i', "io","inv switch", 0},
+    /*  6  */  {'b', "bytes", "rdbytes", 0},
+    /*  7  */  {'b', "bytes", "wrbytes", 0},
+    /*  8  */  {'d', "disk", "diskspace", 0},
+    /*  9  */  {'s', "statement", "statement", 2},
+    /*  0  */  {0, 0,  0, 0}
 };
 
 /*
@@ -310,6 +312,7 @@ int main(int argc, char **argv)
 	char cmd[100];
 	int colind[30],colcnt=0;
 	stream *s;
+	int gnuplot=FALSE;
 
     static struct option long_options[13] = {
         {"dbname", 1, 0, 'd'},
@@ -318,6 +321,7 @@ int main(int argc, char **argv)
         {"port", 1, 0, 'p'},
         {"host", 1, 0, 'h'},
         {"help", 1, 0, '?'},
+        {"gnuplot", 1, 0, 'g'},
         {0, 0, 0, 0}
     };
 	for(;;){
@@ -347,6 +351,11 @@ int main(int argc, char **argv)
 				portnr= atol(optarg);
 				break;
 			}
+		case 'g':
+			if (strcmp(long_options[option_index].name, "gnuplot") == 0) {
+				gnuplot= TRUE;
+				break;
+			}
 		case 'h':
 			if (strcmp(long_options[option_index].name, "host") == 0) {
 				host= optarg;
@@ -359,12 +368,9 @@ int main(int argc, char **argv)
 	}
 
 	a= optind;
-	if(argc>1 && argv[a][0]=='+'){
-		if( argv[a][1]=='?'){
-			usage();
-			exit(0);
-		} else
-			setCounter(argv[a]+1);
+	if(argc>1 && a<argc && argv[a][0]=='+'){
+		setCounter(argv[a]+1);
+		a++;
 	}
 
 	signal(SIGABRT, stopListening);
@@ -386,6 +392,10 @@ int main(int argc, char **argv)
 
 	/* set counters */
 	for(i=0; profileCounter[i].tag; i++){
+		/* deactivate any left over counter first */
+		snprintf(buf,BUFSIZ,"profiler.deactivate(\"%s\");",
+			profileCounter[i].ptag);
+		doQ(buf);
 		snprintf(buf,BUFSIZ,"profiler.activate(\"%s\");",
 			profileCounter[i].ptag);
 		if( profileCounter[i].status){
@@ -398,8 +408,7 @@ int main(int argc, char **argv)
 	for(j=0;j<colcnt;j++)
 		printf("%d\t",colind[j]);
 	printf("\n");  */
-	if (strchr(argv[a++],'s'))  colcnt--; /* exclude statement from plot*/
-
+	
 	/* Set Filters */
 	snprintf(buf,BUFSIZ,"profiler.openStream(\"%s\", %d);", host, portnr);
 	doQ(buf);
@@ -431,7 +440,8 @@ int main(int argc, char **argv)
 
 
 	
-	plottemplate(colind,colcnt);
+	if(gnuplot)
+		plottemplate(colind,colcnt);
 
 	while( stream_read(s, buf, 1, BUFSIZ) ) {
 		char *e;
@@ -440,10 +450,12 @@ int main(int argc, char **argv)
 			*e = 0;
 			printf("%s\n", response);
 			x=strchr(response,'[');
-			if (x){
+			if (gnuplot && x){
 				d= fopen("stet.dat","a+");
 				fprintf(d,"%d\t",ln++);
 				for(;*x!='\0';x++)
+					if( *x == '"') break; /* stop at first string */
+					else
 					if (strchr("[],\"",*x)==NULL)
 						fprintf(d,"%c",*x);
 				fprintf(d,"\n");
