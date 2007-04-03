@@ -290,6 +290,9 @@ comment "Retrieve the names of all known partitioned BATs";
 command discard(alias:bat[:any_1,:any_2]) :void
 address BPMdiscard
 comment "Release a partitioned BAT from the box";
+command discard() :void
+address BPMdiscardAll
+comment "Release all partitioned BATs";
 
 @-
 In most situations we would like to iterator over
@@ -416,7 +419,8 @@ bpm_export str BPMdelete(bat *ret, bat *bid, bat *del);
 bpm_export str BPMreplace(bat *ret, bat *bid, bat *ins, bat *del);
 
 bpm_export str BPMgetNames(bat *bid);
-bpm_export str BPMdiscard(bat *ret, bat *bid);
+bpm_export str BPMdiscard(int *ret, bat *bid);
+bpm_export str BPMdiscardAll(int *ret);
 
 bpm_export str BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -820,12 +824,14 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 		BBPunfix(b->batCacheid);
 		throw(MAL,"pbm.deposit","Can not create partitioned BAT");
 	}
-	BBPkeepref(*ret= bn->batCacheid);
+
 	i= getFreeAlias();
 	p= bpmcat+i;
 	p->name= GDKstrdup(*nme);
 	BBPkeepref(p->alias= ba->batCacheid);
-	p->bid= bn->batCacheid;
+	BBPkeepref(p->bid= bn->batCacheid);
+	BBPincref(ba->batCacheid,TRUE);
+	*ret= ba->batCacheid;
 
 	/* default range */
 	VALset(&p->hlow, b->htype, ATOMnil(b->htype) );
@@ -1026,9 +1032,12 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 
 	BPMopen();
 
-	i= getPartitionIndexNoAlias(*bid);
+/*	i= getPartitionIndexNoAlias(*bid); */
+	i= getAliasIndex(*bid);
 	if( i == 0)
 		throw(MAL,"bpm.rangeVector","Partitioned BAT not found");
+	if(bpmcat[i].nxt)
+		throw(MAL,"bpm.rangeVector","Applies only on a single BAT");
 	p = bpmcat + i;
 	@:getBATdescriptor(&p->bid,b,"bpm.rangeVector");
 
@@ -1353,7 +1362,7 @@ BPMgetNames(bat *ret)
 }
 
 str
-BPMdiscard(bat *ret, bat *bid)
+BPMdiscard(int *ret, bat *bid)
 {
 	int i,r;
 	str msg= MAL_SUCCEED;
@@ -1376,6 +1385,31 @@ BPMdiscard(bat *ret, bat *bid)
 	*ret =0;
 	return MAL_SUCCEED;
 }
+
+str
+BPMdiscardAll(int *ret)
+{
+	int i,r,al;
+	str msg= MAL_SUCCEED;
+
+	BPMopen();
+
+	for( i=1; i<bpmcattop; i++)
+	   if((al=bpmcat[i].alias)){
+		 if (BBP_lrefs(al) > 0) {
+			BBPdecref(al,TRUE);	
+			msg= BKCsetTransient(&r,&al);
+		}
+		BBPdecref(bpmcat[i].bid,TRUE);	
+		msg= BKCsetTransient(&r,&bpmcat[i].bid);
+		bpmcat[i].alias = 0;	
+		GDKfree(bpmcat[i].name);
+	}
+
+	*ret =0;
+	return MAL_SUCCEED;
+}
+
 @- Iterations
 We start with the large chunk iterator.
 The definition of the control statements require the same
