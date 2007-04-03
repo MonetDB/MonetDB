@@ -694,6 +694,10 @@ by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
+#endif
 
 #include  <signal.h>
 #include  <string.h>

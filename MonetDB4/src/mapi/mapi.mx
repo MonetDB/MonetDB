@@ -198,6 +198,10 @@ mapi_export int active_clients(char *lang);
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
+#endif
 
 #define SOCKPTR struct sockaddr *
 

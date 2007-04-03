@@ -147,6 +147,7 @@ only one will be created.
 
 #ifdef HAVE_NETDB_H
 #include <netinet/in.h>
+#include <netdb.h>
 #endif
 #include "tcpip.h"
 
