@@ -39,11 +39,6 @@ except NameError:
 
 import os
 import sys
-try:
-    import subprocess
-except ImportError:
-    # use private copy for old Python versions
-    import subprocess26 as subprocess
 import shutil
 import re
 import random
@@ -55,6 +50,63 @@ import select
 #import getpass
 import Mfilter
 import prof
+
+def _configure(str):
+    # expand configure variables in str and return result
+    config = [
+        ('${source}', '@QXMONETDB_SOURCE@'),
+        ('${build}', '@QXMONETDB_BUILD@'),
+
+        ('${bindir}', '@QXbindir@'),
+##        ('${sbindir}', '@QXsbindir@'),
+        ('${libexecdir}', '@QXlibexecdir@'),
+        ('${datarootdir}', '@QXdatarootdir@'),
+        ('${datadir}', '@QXdatadir@'),
+        ('${sysconfdir}', '@QXsysconfdir@'),
+##        ('${sharedstatedir}', '@QXsharedstatedir@'),
+        ('${localstatedir}', '@QXlocalstatedir@'),
+        ('${libdir}', '@QXlibdir@'),
+        ('${includedir}', '@QXincludedir@'),
+##        ('${oldincludedir}', '@QXoldincludedir@'),
+        ('${infodir}', '@QXinfodir@'),
+        ('${mandir}', '@QXmandir@'),
+        ('${Qbindir}', '@QXbindir@'),
+##        ('${Qsbindir}', '@QXsbindir@'),
+        ('${Qlibexecdir}', '@QXlibexecdir@'),
+        ('${Qdatarootdir}', '@QXdatarootdir@'),
+        ('${Qdatadir}', '@QXdatadir@'),
+        ('${Qsysconfdir}', '@QXsysconfdir@'),
+##        ('${Qsharedstatedir}', '@QXsharedstatedir@'),
+        ('${Qlocalstatedir}', '@QXlocalstatedir@'),
+        ('${Qlibdir}', '@QXlibdir@'),
+        ('${Qincludedir}', '@QXincludedir@'),
+##        ('${Qoldincludedir}', '@QXoldincludedir@'),
+        ('${Qinfodir}', '@QXinfodir@'),
+        ('${Qmandir}', '@QXmandir@'),
+        # put these at end (in this order!) for efficiency
+        ('${exec_prefix}', '@QXexec_prefix@'),
+        ('${Qexec_prefix}', '@QXexec_prefix@'),
+        ('${prefix}', '@QXprefix@'),
+        ('${Qprefix}', '@QXprefix@'),
+        ]
+    changed = True
+    while '$' in str and changed:
+        changed = False
+        for key, val in config:
+            nstr = str.replace(key, val)
+            changed = changed or str != nstr
+            str = nstr
+    return str
+
+# add dir where monet_options, trace & subprocess26 are installed to sys.path
+# we must expand configure variables in the process
+sys.path.append(_configure(os.path.join('@QXdatadir@','@PACKAGE@','python')))
+import monet_options
+try:
+    import subprocess
+except ImportError:
+    # use private copy for old Python versions
+    import subprocess26 as subprocess
 
 F_SKIP = -1
 F_OK = 0
@@ -245,58 +297,6 @@ class Comment:
 
     def write(self, f, newline = False):
         f.write(str(self))
-
-def _configure(str):
-    # expand configure variables in str and return result
-    config = [
-        ('${source}', '@QXMONETDB_SOURCE@'),
-        ('${build}', '@QXMONETDB_BUILD@'),
-
-        ('${bindir}', '@QXbindir@'),
-##        ('${sbindir}', '@QXsbindir@'),
-        ('${libexecdir}', '@QXlibexecdir@'),
-        ('${datarootdir}', '@QXdatarootdir@'),
-        ('${datadir}', '@QXdatadir@'),
-        ('${sysconfdir}', '@QXsysconfdir@'),
-##        ('${sharedstatedir}', '@QXsharedstatedir@'),
-        ('${localstatedir}', '@QXlocalstatedir@'),
-        ('${libdir}', '@QXlibdir@'),
-        ('${includedir}', '@QXincludedir@'),
-##        ('${oldincludedir}', '@QXoldincludedir@'),
-        ('${infodir}', '@QXinfodir@'),
-        ('${mandir}', '@QXmandir@'),
-        ('${Qbindir}', '@QXbindir@'),
-##        ('${Qsbindir}', '@QXsbindir@'),
-        ('${Qlibexecdir}', '@QXlibexecdir@'),
-        ('${Qdatarootdir}', '@QXdatarootdir@'),
-        ('${Qdatadir}', '@QXdatadir@'),
-        ('${Qsysconfdir}', '@QXsysconfdir@'),
-##        ('${Qsharedstatedir}', '@QXsharedstatedir@'),
-        ('${Qlocalstatedir}', '@QXlocalstatedir@'),
-        ('${Qlibdir}', '@QXlibdir@'),
-        ('${Qincludedir}', '@QXincludedir@'),
-##        ('${Qoldincludedir}', '@QXoldincludedir@'),
-        ('${Qinfodir}', '@QXinfodir@'),
-        ('${Qmandir}', '@QXmandir@'),
-        # put these at end (in this order!) for efficiency
-        ('${exec_prefix}', '@QXexec_prefix@'),
-        ('${Qexec_prefix}', '@QXexec_prefix@'),
-        ('${prefix}', '@QXprefix@'),
-        ('${Qprefix}', '@QXprefix@'),
-        ]
-    changed = True
-    while '$' in str and changed:
-        changed = False
-        for key, val in config:
-            nstr = str.replace(key, val)
-            changed = changed or str != nstr
-            str = nstr
-    return str
-
-# add dir where monet_options is installed to sys.path
-# we must expand configure variables in the process
-sys.path.append(_configure(os.path.join('@QXdatadir@','@PACKAGE@','python')))
-import monet_options
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
