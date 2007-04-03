@@ -12,3 +12,6 @@ end partinfo;
 f:bat[:oid,:flt]:=bpm.take("myflt");
 user.partinfo(f);
 
+bpm.discard(f);
+bpm.savePartitions();
+bpm.dump();

@@ -1,4 +1,3 @@
-
 @' The contents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
@@ -639,11 +638,10 @@ BPMloadPartitions()
                 throw(MAL, "loadPartitions", "Cannot access descriptor");
         }
 	bm = BATmirror(b);
-/*	ALGmax_int(&cnt,bm);*/
-/*	cnt=1024;*/
-
-	cnt=*(size_t *)BATmax(bm,(ptr)&c);
-/*	BBPunfix(bm->batCacheid); */
+	
+	if (BATcount(b))
+		cnt=*(size_t *)BATmax(bm,(ptr)&c);
+	else cnt=0;
 
 	mc= (cnt+1)/1024  +1;      
        	bpmcatsize= 1024*mc;
@@ -1357,8 +1355,7 @@ BPMgetNames(bat *ret)
 str
 BPMdiscard(bat *ret, bat *bid)
 {
-	int i;
-	signed char r;
+	int i,r;
 	str msg= MAL_SUCCEED;
 
 	BPMopen();
@@ -1368,11 +1365,13 @@ BPMdiscard(bat *ret, bat *bid)
 	/* discard the content */
 	for( ; i && msg== MAL_SUCCEED; i= bpmcat[i].nxt){
 		BBPdecref(bpmcat[i].bid,TRUE);	
-		msg= BKCdestroy(&r, &bpmcat[i].bid);
+	/*	msg= BKCdestroy(&r, &bpmcat[i].bid); */
+		msg= BKCsetTransient(&r,&bpmcat[i].bid);
 		bpmcat[i].alias = 0;	/* free entry */
 		GDKfree(bpmcat[i].name);
 	}
-	msg= BKCdestroy(&r, bid);
+	BBPdecref(*bid,TRUE);	
+	msg= BKCsetTransient(&r,bid);
 
 	*ret =0;
 	return MAL_SUCCEED;
