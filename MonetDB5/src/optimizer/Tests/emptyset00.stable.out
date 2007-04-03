@@ -22,10 +22,10 @@ stdout of test 'emptyset00` in directory 'src/optimizer` itself:
 #mdb.list();
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(nil:oid,nil:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
+    b := bat.new(0@0:oid,nil:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
     s1 := algebra.select(b,80,90);	# 2 ALGselect (s1:bat[:oid,:int])<-(b:bat[:oid,:int])(_5:int)(_6:int)
-    s2{rows=0} := bat.new(nil:oid,nil:int);	# 3 CMDBATnew (s2:bat[:oid,:int])<-(_2:oid)(_3:int)
-    s3{rows=0} := bat.new(nil:oid,nil:int);	# 4 CMDBATnew (s3:bat[:oid,:int])<-(_2:oid)(_3:int)
+    s2{rows=0} := bat.new(0@0:oid,nil:int);	# 3 CMDBATnew (s2:bat[:oid,:int])<-(_2:oid)(_3:int)
+    s3{rows=0} := bat.new(0@0:oid,nil:int);	# 4 CMDBATnew (s3:bat[:oid,:int])<-(_2:oid)(_3:int)
     io.print(s3);	# 5 IOprint_val (_9:void)<-(s3:bat[:oid,:int])
     mdb.list();	# 6 MDBlist (_12:void)
 end main;	# 7  
@@ -34,10 +34,10 @@ end main;	# 7
 # void	int	  # type
 #-----------------#
 function user.main():void;
-    b := bat.new(nil:oid,nil:int);
+    b := bat.new(0@0:oid,nil:int);
     s1 := algebra.select(b,80,90);
-    s2{rows=0} := bat.new(nil:oid,nil:int);
-    s3{rows=0} := bat.new(nil:oid,nil:int);
+    s2{rows=0} := bat.new(0@0:oid,nil:int);
+    s3{rows=0} := bat.new(0@0:oid,nil:int);
     io.print(s3);
     mdb.list();
 end main;
