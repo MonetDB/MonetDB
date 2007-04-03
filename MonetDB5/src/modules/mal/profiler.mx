@@ -425,8 +425,8 @@ CMDgetEvent( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	pc= getPC(mb,pci)-1; /* take previous instruction */
 	*clk = mb->profiler[pc].ticks;
-	*reads = mb->profiler[pc].rdbytes;
-	*writes = mb->profiler[pc].wrbytes;
+	*reads = mb->profiler[pc].ibytes;
+	*writes = mb->profiler[pc].obytes;
 	return MAL_SUCCEED;
 }
 @}
