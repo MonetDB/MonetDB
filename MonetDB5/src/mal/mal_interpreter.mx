@@ -1539,8 +1539,8 @@ See @url{The MAL Profiler} for more details.
 		mb->profiler[ppc].ticks = (long) (newclk - mb->profiler[ppc].clk);
 		mb->profiler[ppc].clk += mb->profiler[ppc].clk;
 		if( pci){
-			mb->profiler[ppc].rdbytes= getVolume(stk,pci,0);
-			mb->profiler[ppc].wrbytes= getVolume(stk,pci,1);
+			mb->profiler[ppc].ibytes= getVolume(stk,pci,0);
+			mb->profiler[ppc].obytes= getVolume(stk,pci,1);
 		}
 		profilerEvent(cntxt->nspace,mb,stk,ppc);
 		ppc= -1;

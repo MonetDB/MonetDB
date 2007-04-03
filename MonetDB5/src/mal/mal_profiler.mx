@@ -101,7 +101,7 @@ the following content. The ticks are measured in micro-seconds.
 [ "15:17:56",   245,  "_36 := io.print(<tmp_15>{3});",   ]
 @end verbatim
 
-@node Event Caching, The MAL Modules, Event Filtering, The MAL Profiler
+@node Event Caching, Stethoscope, Event Filtering, The MAL Profiler
 @+ Event Caching
 Aside from shipping events to a separate process, the profiler
 can keep the events in a local @sc{BAT} group.
@@ -153,6 +153,11 @@ b:= algebra.select(a,0 1000); # some expensive operation
 (clk, memread, memwrite):= profiler.getEvent();
 ...
 profiler.stop();
+@node Stethoscope The MAL Modules, Event Caching, The MAL Profiler
+@+ Stethoscope
+The performance data can be obtained from a running server
+using the application @code{stethoscope}.
+For details on the calling convention use @code{--help}.
 @{
 The profiler is activated by defining MALprofiler in the source tree.
 This leads to securing space for the counters and for code
