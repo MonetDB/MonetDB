@@ -2178,8 +2178,20 @@ reduce (PFpnode_t * p, int goalnt)
         case 129:
         {
             PFfun_t *op_idiv = function (PFqname (PFns_op, "idiv"));
-            calculation_worker (p, op_idiv);
+            PFvar_t *v1 = new_var (NULL);
+            PFvar_t *v2 = new_var (NULL);
 
+            C(p) = flwr (
+                    let (letbind (
+                            var (v1),
+                            fs_convert_op_by_type (fn_data (C(L(p))),
+                                PFty_xs_integer ())), nil ()),
+                    flwr (let (letbind (
+                                var (v2),
+                                fs_convert_op_by_type (fn_data (C(R(p))),
+                                    PFty_xs_integer ())),
+                            nil ()),
+                        APPLY (op_idiv, var (v1), var (v2))));
         } break;
 
         /* MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr) */

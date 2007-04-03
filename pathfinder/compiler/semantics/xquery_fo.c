@@ -306,24 +306,12 @@ PFfun_xquery_fo ()
         .alg = PFbui_op_numeric_divide }
     , /* op:idiv (integer, integer) as integer */
       { .ns = PFns_op, .loc = "idiv",
-        .arity = 2, .sig_count = 6, .sigs = { {
+        .arity = 2, .sig_count = 2, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_integer (),
                                    PFty_xs_integer () },
             .ret_ty = PFty_xs_integer () }, {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_integer ()),
                                    PFty_opt (PFty_xs_integer ()) },
-            .ret_ty = PFty_opt (PFty_xs_integer ()) }, {
-            .par_ty = (PFty_t[]) { PFty_xs_decimal (),
-                                PFty_xs_decimal () },
-            .ret_ty = PFty_xs_integer () }, {
-            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()),
-                                   PFty_opt (PFty_xs_decimal ()) },
-            .ret_ty = PFty_opt (PFty_xs_integer ()) }, {
-            .par_ty = (PFty_t[]) { PFty_xs_double (),
-                                   PFty_xs_double () },
-            .ret_ty = PFty_xs_integer () }, {
-            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()),
-                                   PFty_opt (PFty_xs_double ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
         .alg = PFbui_op_numeric_idivide }
     , /* op:mod (integer, integer) as integer */
