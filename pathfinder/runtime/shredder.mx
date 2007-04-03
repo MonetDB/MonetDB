@@ -297,8 +297,6 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
  { PROP_INS,     "_prop_ins",         TYPE_void, TYPE_str,  0.0, 0}, 
  { PROP_TGT,     "_prop_tgt",         TYPE_void, TYPE_str,  0.0, 0}, 
  { PROP_VAL,     "_prop_val",         TYPE_void, TYPE_str,  0.1, 1}, 
- { ID_NID,       "_id_nid",           TYPE_str,  TYPE_oid,  0.0, 0}, 
- { IDREF_NID,    "_idref_nid",        TYPE_str,  TYPE_oid,  0.0, 0}, 
  { ATTR_OWN,     "_attr_own",         TYPE_void, TYPE_oid,  0.3, 0}, 
  { ATTR_OWN,     "_attr_qn",          TYPE_void, TYPE_oid,  0.3, 0}, 
  { ATTR_OWN,     "_attr_prop",        TYPE_void, TYPE_oid,  0.3, 0}
@@ -370,7 +368,6 @@ typedef struct shredCtxStruct {
     /* attributes for shred into collection */
     int      incremental;         /* boolean: incremental shred? */
     int      updatable;           /* boolean: is nid-rid-pre the identity mapping? */
-    char     *val_prefix;         /* temporary string buffer, includes val(at the end) */
     char     *val;                /* temporary PFSHRED_BUFLEN-byte string workspace */
     
     /* the database containing the ID|IDREF|IDREFS attributes */
@@ -650,7 +647,6 @@ emit_string(shredCtxStruct *shredCtx, char *s)
  * misc shredder helper functions
  * - handle_xml_chars()   buffered string reader
  * - handle_pfx_uri_loc() administer double-eliminated use of Q-Names 
- * - handle_idref()       register the definition of ID tags and their IDREF references
  * - handle_ext_subset()  handle a DTD (external subset), needed to identify ID/IDREF attrs
  * ==================================================================================== */
 
@@ -675,12 +671,13 @@ static oid
 handle_pfx_uri_loc(shredCtxStruct *shredCtx, 
                    char *a_pfx, 
                    char *a_uri, 
-                   char *a_tag)
+                   char *a_tag,
+                   char *idref_suffix)
 {
     char *key = shredCtx->val;
     char *cur = key;
     char *end = key + PFSHRED_BUFLEN-3;
-    char *src, *uri;
+    char *src, *uri, *idref;
     BAT *histo = shredCtx->dstBAT[QN_HISTOGRAM].bat;
     lng cnt = 1;
 
@@ -695,11 +692,18 @@ handle_pfx_uri_loc(shredCtxStruct *shredCtx,
     for(src=a_uri; *src && cur < end; src++,cur++) *cur = *src;
     *cur++ =(char) NS_ACCEL_SEP;
     for(src=a_tag; *src && cur < end; src++,cur++) *cur = *src;
+    idref = cur;
+    if (idref_suffix) {
+        *cur++ =(char) NS_ACCEL_SEP;
+        for(src=idref_suffix; *src && cur < end; src++,cur++) *cur = *src;
+        *cur++ =(char) NS_ACCEL_SEP;
+    }
     *cur++ =  0;
 
     oid lim = BATcount(shredCtx->dstBAT[QN_PREFIX_URI_LOC].bat); 
     oid res = shredBAT_append_str(shredCtx, QN_PREFIX_URI_LOC, key);
-    if (res == lim  &&
+    *idref = 0; /* cut off idref suffix part so uri points to uri:loc */
+    if (res == lim  && 
         res == shredBAT_append_str(shredCtx, QN_URI_LOC, uri) &&
         res == shredBAT_append_str(shredCtx, QN_PREFIX, a_pfx) &&
         res == shredBAT_append_str(shredCtx, QN_URI, a_uri) &&
@@ -712,63 +716,6 @@ handle_pfx_uri_loc(shredCtxStruct *shredCtx,
         return BUNinplace(histo, p, NULL, &cnt, TRUE)?res:oid_nil;
     }
     return oid_nil;
-}
-
-#define ISSPACE(x)(((x) == ' ') |((x) == '\t') |((x) == '\n'))
-
-static int 
-handle_idref(shredCtxStruct *shredCtx, 
-             char  *ownerTag, 
-             oid   pre, 
-             str   attrTag, 
-             str   attrVal, 
-             int   attrType)
-{
-#ifdef ADB_DEBUG
-    stream_printf(GDKout, "handle_idref(own=%s, pre=%d, pfxloc=%s, v=\"%s\") = %d\n", ownerTag, pre, attrTag, attrVal, attrType);
-#endif
-    shredBAT *sb = &shredCtx->dstBAT[(attrType == XML_ATTRIBUTE_ID) ? ID_NID : IDREF_NID];
-    char *src = attrVal;
-
-    while(*src) {
-        char *end, *dst = shredCtx->val; /* points into shredCtx->val_prefix that already contains '<rootnid>_' prefix */
-
-        while(*src && ISSPACE(*src)) src++; /* skip spaces */
-
-        /* copy '<ID>' until space or EOS */
-        for(end = src+PFSHRED_BUFLEN; *src && !ISSPACE(*src); src++) 
-                if (src < end) *dst++ = *src; /* truncate too long id's */
-        *dst = 0;
-        if (src >= end) {
-            stream_printf(GDKout, "!WARNING: handle_idref(own=%s, pre=%d, pfxloc=%s, v=\"%s\") TRUNCATED!\n", ownerTag, pre, attrTag, shredCtx->val);
-        }
-        if (attrType == XML_ATTRIBUTE_ID) {
-            src = dst; /* hack: makes it exit the loop */
-        }
-        if (!*shredCtx->val) continue; /* ignore IDs that are the empty string */
-
-        /* now the preallocated string buffer shredCtx->val_prefix contains '<rootnid>_<ID>' */
-        if (attrType == XML_ATTRIBUTE_ID) {
-            /* we must ignore duplicate IDs(see W3C XPath functions and operators spec) */
-            BUN bun;
-            HASHfnd_str(bun, sb->bat, shredCtx->val_prefix);
-            if (bun) {
-                sb->dupl++;
-                continue;
-            }
-            if (BATcount(sb->bat) > 4 * sb->bat->hhash->mask) {
-                HASHdestroy(sb->bat); /* keeps hash performance in check */
-                BAThash(BATmirror(sb->bat), 2*BATcount(sb->bat));
-            }
-        }
-        if (!BUNins(sb->bat, shredCtx->val_prefix, &pre, TRUE)) {
-            GDKerror("handle_idref: append() for handle_idref(own=%s, pre=" OIDFMT ", pfxloc=%s, v=\"%s\") = %d FAILED\n", 
-                     ownerTag, pre, attrTag, shredCtx->val_prefix, attrType);
-            return GDK_FAIL;
-        }
-        sb->size++;
-    }
-    return GDK_SUCCEED;
 }
 
 static int 
@@ -916,7 +863,7 @@ shred_start_element(void *xmlCtx,
     stream_printf(GDKout, "loc=%s", e_loc);
     stream_printf(GDKout, ")\n");
 #endif
-    if ((node.prop = handle_pfx_uri_loc(shredCtx, (char*) e_pfx, (char*) e_uri, (char*) e_loc)) == oid_nil) {
+    if ((node.prop = handle_pfx_uri_loc(shredCtx, (char*) e_pfx, (char*) e_uri, (char*) e_loc, NULL)) == oid_nil) {
         BAILOUT(shredCtx);
     }
     if (shredCtx->serFun) {
@@ -950,9 +897,15 @@ shred_start_element(void *xmlCtx,
           a_uri = NULL; /* attribute without prefix cannot have a namespace */
         }
 
+        int attrType;
+        char* idref_suffix = NULL;
+        if ((attrType = attrDB_check(&shredCtx->idrefAttrDB,(char*)e_loc,(char*)a_tag))) {
+            idref_suffix = (attrType == XML_ATTRIBUTE_ID)?"id":"idref";
+        }
+
         /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
         val_id = shredBAT_append_str(shredCtx, PROP_VAL,(char*)a_val);
-        qn_id  = handle_pfx_uri_loc(shredCtx, (char*) a_pfx, (char*) a_uri, (char*) a_tag);
+        qn_id  = handle_pfx_uri_loc(shredCtx, (char*) a_pfx, (char*) a_uri, (char*) a_tag, idref_suffix);
         oid ownerPre = node.nid;
 
         /* insert attribute tuple */
@@ -975,12 +928,6 @@ shred_start_element(void *xmlCtx,
         shredCtx->dstBAT[ATTR_QN].cast.oidCAST[nattr] = qn_id;
         shredCtx->dstBAT[ATTR_PROP].cast.oidCAST[nattr] = val_id;
 
-        int attrType;
-        if ((attrType = attrDB_check(&shredCtx->idrefAttrDB,(char*)e_loc,(char*)a_tag))) {
-            if (!handle_idref(shredCtx,(char*)e_loc, node.pre,(char*)a_tag,(char*)a_val, attrType)) {
-                BAILOUT(shredCtx);
-            }
-        }
         *(xmlChar*)a_end = qiChar;              /* restore the quote */
         /* process next attribute */
         if (shredCtx->serFun) {
@@ -1158,7 +1105,7 @@ shred_error(void *ctx,
 /** 
  * The shred_attribute_defAttributeDef() handles the DTD attribute definition callbacks
  * in the from the header of the XML file. This is used for the ID/IDREF
- * handeling of the shredder.
+ * handling of the shredder.
  */
 static void 
 shred_attribute_def(void *xmlCtx,
@@ -1370,8 +1317,8 @@ shredder_free(shredCtxStruct *shredCtx,
     if (shredCtx->content_buf) {
         GDKfree(shredCtx->content_buf);
     }
-    if (shredCtx->val_prefix) {
-        GDKfree(shredCtx->val_prefix);
+    if (shredCtx->val) {
+        GDKfree(shredCtx->val);
     }
     attrDB_free(&shredCtx->idrefAttrDB);
     GDKfree(shredCtx);
@@ -1599,31 +1546,19 @@ shredder_create(char *location,
     shredCtx->pre_nid = shredCtx->nnode_pre - shredCtx->nnode_nid;
 
     /* log start of fragment */
-    oid zero = 0; /* 0 is an impossible doc_id; the right docid is substoituted here later */
+    oid zero = 0; /* 0 is an impossible doc_id; the right docid is substituted here later */
     if (BUNins(shredCtx->dstBAT[FRAG_ROOT].bat, &zero, &shredCtx->nnode_nid, TRUE) == NULL) {
         GDKerror("shredder_create: saving frag_root fails!\n");
         return shredder_free(shredCtx,-shredCtx->updatable);
     }
 
-    /* To comply with XQuery semantics in multi-doc collections, the ID/IDREF identifiers 
-     * must be specific to each document in a collection. Our solution is to prefix
-     * the ids by the document root NID (as a string, and followed by a '_').
-     *
-     * The shredCtx->val_prefix is a pre-allocated string during shredding that holds a buffer 
-     * starting with this prefix ("nid_"). After it, there are PFSHRED_BUFLEN free bytes 
-     *(aka, shredCtx->val, that is shredCtx->val points *into* shredCtx->val_prefix).
-     */
-    char buf[32], *src=buf;
-    sprintf(buf, OIDFMT "@0_", shredCtx->nnode_nid); /* added "@0" saves one cast from oid to str in MIL */
-    shredCtx->val = shredCtx->val_prefix = (char*) GDKmalloc(1+strlen(buf)+PFSHRED_BUFLEN);
-    shredCtx->lifo =                    (node_t *) GDKmalloc((XML_DEPTH_MAX+1) * sizeof(node_t));
-    shredCtx->content_buf =                (char*) GDKmalloc(PFSHRED_STRLEN_MAX);
-    if (shredCtx->val_prefix == NULL || shredCtx->content_buf == NULL || shredCtx->lifo == NULL) {
+    /* allocate some buffers used during parse */
+    shredCtx->val = (char*) GDKmalloc(PFSHRED_BUFLEN+1);
+    shredCtx->lifo = (node_t *) GDKmalloc((XML_DEPTH_MAX+1) * sizeof(node_t));
+    shredCtx->content_buf = (char*) GDKmalloc(PFSHRED_STRLEN_MAX);
+    if (shredCtx->val == NULL || shredCtx->content_buf == NULL || shredCtx->lifo == NULL) {
         return shredder_free(shredCtx,-shredCtx->updatable);
     }
-    while(*src) *(shredCtx->val)++ = *src++; 
-    *(shredCtx->val) = 0;
-
     return shredCtx;
 }
 

@@ -122,7 +122,7 @@ Find the options that should be pass to the XRPC server, currently only\
 PROC rpcd_start() : void {
     var port := get_xrpc_port();
     if (monet_environment.find("monet_welcome") = "yes") 
-        printf("# XRPC administrative console at http://localhost:%d/admin\n", port);
+        printf("%c XRPC administrative console at http://localhost:%d/admin\n", int(35), port);
     fork( rpcd_start(port, get_xrpc_open(), get_xrpc_options()) );
 }
 ADDHELP("rpcd_start", "zhang", "Febuary 2007",

@@ -4830,7 +4830,7 @@ static void
 fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
 {
     char *item_ext = kind_str(STR);
-    char *idref = (op)?"REF":"";
+    char *idref = (op)?"false":"true";
     op = (op)?"ref":"";
     int rc;
 
@@ -4849,7 +4849,7 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "  item := map.leftfetchjoin(item);\n"
             "  kind := map.leftfetchjoin(kind);\n"
             "  var cont := kind.get_container();\n"
-            "  map := ws_findnodes(ws, ID%s_NID, iter%03u, item, kind, cont, item%s%03u);\n"
+            "  map := ws_findnodes(ws, iter%03u, item, kind, cont, item%s%03u, %s);\n"
             "  ipik := map.tmark(0@0);\n"
             "  map := map.hmark(0@0);\n"
             "  item := ipik;\n"
@@ -4857,7 +4857,7 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "  kind := map.leftfetchjoin(cont.set_kind(ELEM));\n"
             "  pos := tmark_grp_unique(iter, ipik);\n"
             "} else {\n",
-               op, counter, counter, counter, counter, idref, counter, item_ext, counter, counter);
+               op, counter, counter, counter, counter, counter, item_ext, counter, idref, counter);
     translateEmpty (f);
     milprintf(f,
             "} # end of fn:id%s\n",
@@ -6541,7 +6541,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             "} # end of translate pf:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"documents")) == 0 ||
-               (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0))
+               ((rc = 1) && (PFqname_eq(fnQname,PFqname (PFns_lib,"documents-unsafe")) == 0)))
     {
         char *consistent = rc?"false":"true";
         if (fun->arity) {
@@ -6566,7 +6566,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "} # end of translate pf:documents (string?) as string*\n");
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"collections")) == 0 ||
-               (rc = 1, PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0))
+               ((rc = 1) && (PFqname_eq(fnQname,PFqname (PFns_lib,"collections-unsafe")) == 0)))
     {
         char *consistent = rc?"false":"true";
         milprintf(f,
@@ -6578,6 +6578,51 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  kind := set_kind(WS,ELEM);\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate fn:collections () as string*\n", cur_level, consistent);
+        return NORMAL;
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"text")) == 0 ||
+               ((rc = 2) && (PFqname_eq(fnQname,PFqname (PFns_lib,"attribute")) == 0)))
+    {
+        /* index-powered element lookup by attribute or text-child on equal value (string) 
+         * - pf:text(NODES, VALUE, URI, LOC) 
+         *   delivers all URI:LOC elements from the fragments in NODES with a VALUE as text value
+         * - pf:attribute(NODES, VALUE, URI, LOC) 
+         *   all elements (any qname) from the fragments in NODES with a URI:LOC attribute with value "VALUE"
+         * within each iter, the returned pre-sequence is unique and in doc-order
+         */
+        int attr = (rc == 2);
+        char *fcn = attr?"attribute":"text"; 
+
+        /* NODES that solely identify the XML fragment(s) of interest */ 
+        rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f, "iter := iter.materialize(ipik);\nkind := kind.materialize(ipik);\n");
+        saveResult_ (f, ++counter, NORMAL);
+
+        /* VALUES to look for */
+        rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
+        saveResult_ (f, ++counter, STR);
+
+        /* element URI and LOC parameters are assumed to be constant value (no support for computed qnames) */
+        rc = translate2MIL (f, VALUES, cur_level, counter, RRL(args));
+        milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
+        saveResult_ (f, ++counter, STR);
+        rc = translate2MIL (f, VALUES, cur_level, counter, RRRL(args));
+        milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
+
+        milprintf(f,
+                "{ # translate pf:%s () as string*\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_%03u, item_str_%03u, item_str_, %s);\n"
+                "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
+                "  kind := id_pre.hmark(0@0).leftfetchjoin(kind%03u);\n"
+                "  item := id_pre.tmark(0@0);\n"
+                "  ipik := item;\n"
+                "  pos  := tmark_grp_unique(iter,ipik);\n"
+                "} # end of translate fn:%s () as element()*\n", 
+                fcn, counter-2, counter-2, counter-1, counter, (*fcn=='t')?"true":"false", counter-2, counter-2, fcn);
+
+        deleteResult_ (f, counter--, STR);
+        deleteResult_ (f, counter--, STR);
+        deleteResult_ (f, counter, NORMAL);
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"mil")))
     {

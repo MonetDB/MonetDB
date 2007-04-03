@@ -7060,7 +7060,7 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
                               .seqbase (0@0);
 
     { # adding new fragments to the FRAG_ROOT bat
-        reverse(ws.fetch(FRAG_ROOT).fetch(WS)).insert(reverse(reverse(item).project(oid_nil)));
+        ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(item).project(oid_nil)));
     }
 
     return res;
@@ -7168,7 +7168,7 @@ PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
                               .seqbase (0@0);
 
     { # adding new fragments to the WS_FRAG bat
-        reverse(ws.fetch(FRAG_ROOT).fetch(WS)).insert(reverse(reverse(qn).project(oid_nil)));
+        ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(qn).project(oid_nil)));
     }
 
     return res;
@@ -7373,7 +7373,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     # working set, that a following (preceding) step can check
     # the fragment boundaries
     {
-        reverse(ws.fetch(FRAG_ROOT).fetch(WS)).insert(reverse(reverse(roots).project(oid_nil)));
+        ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(roots).project(oid_nil)));
     }
 
     # ----------------------------------
