@@ -53,13 +53,6 @@ the various underlying storage types.
 #include <signal.h>
 #include <limits.h>
 
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#ifdef NATIVE_WIN32
-# include <winsock.h>
-#endif
-
 #ifdef NATIVE_WIN32
 #ifndef LIBSTREAM
 #define stream_export extern __declspec(dllimport)
@@ -292,8 +285,14 @@ typedef enum stream_errors {
 # include <netinet/tcp.h>
 # include <netdb.h>
 #endif
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
 #ifdef NATIVE_WIN32
 #include <io.h>
+#include <winsock.h>
 #endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>

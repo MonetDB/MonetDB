@@ -42,10 +42,6 @@ server.
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
-#ifdef HAVE_NETDB_H
-# include <netinet/in.h>
-# include <netdb.h>
-#endif
 
 #include <stdio.h>		/* NULL, printf etc. */
 #include <stdlib.h>
