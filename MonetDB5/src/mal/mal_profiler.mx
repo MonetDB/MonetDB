@@ -416,7 +416,7 @@ offlineProfilerHeader(void)
 		log0("inv switch,\t");
 	}
 	if (profileCounter[PROFbytes].status)
-		log0("rdbytes,\t wrbytes,\t");
+		log0("ibytes,\t obytes,\t");
 	if (profileCounter[PROFdisk].status)
 		log0("diskspace,\t");
 	if (profileCounter[PROFaggr].status)
@@ -539,8 +539,8 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #endif
 	if (profileCounter[PROFbytes].status) {
-		log("%d,\t", mb->profiler[pc].rdbytes);
-		log("%d,\t", mb->profiler[pc].wrbytes);
+		log("%d,\t", mb->profiler[pc].ibytes);
+		log("%d,\t", mb->profiler[pc].obytes);
 	}
 	if (profileCounter[PROFdisk].status) {
 		log("%d,\t", getDiskSpace());
@@ -893,8 +893,8 @@ static BAT *TRACE_id_ticks=0;
 static BAT *TRACE_id_pc=0;
 static BAT *TRACE_id_modfcn=0;
 static BAT *TRACE_id_stmt=0;
-static BAT *TRACE_id_rdbytes=0;
-static BAT *TRACE_id_wrbytes=0;
+static BAT *TRACE_id_ibytes=0;
+static BAT *TRACE_id_obytes=0;
 static BAT *TRACE_id_diskspace=0;
 
 static BAT *
@@ -930,8 +930,8 @@ initTrace(void)
 	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_int, TYPE_str);
 	TRACE_id_modfcn = TRACEcreate("id", "modfcn", TYPE_int, TYPE_str);
 	TRACE_id_stmt = TRACEcreate("id", "statement", TYPE_int, TYPE_str);
-	TRACE_id_rdbytes = TRACEcreate("id", "rdbytes", TYPE_int, TYPE_int);
-	TRACE_id_wrbytes = TRACEcreate("id", "wrbytes", TYPE_int, TYPE_int);
+	TRACE_id_ibytes = TRACEcreate("id", "ibytes", TYPE_int, TYPE_int);
+	TRACE_id_obytes = TRACEcreate("id", "obytes", TYPE_int, TYPE_int);
 	TRACE_id_diskspace = TRACEcreate("id", "diskspace", TYPE_int, TYPE_int);
 	TRACE_init = 1;
 	mal_unset_lock(mal_contextLock, "trace");
@@ -945,8 +945,8 @@ cleanupProfiler(){
 	CLEANUP( TRACE_id_pc );
 	CLEANUP( TRACE_id_modfcn );
 	CLEANUP( TRACE_id_stmt );
-	CLEANUP( TRACE_id_rdbytes );
-	CLEANUP( TRACE_id_wrbytes );
+	CLEANUP( TRACE_id_ibytes );
+	CLEANUP( TRACE_id_obytes );
 	CLEANUP( TRACE_id_diskspace );
 	TRACE_init = 0;
 	mal_unset_lock(mal_contextLock, "cleanup");
@@ -978,10 +978,10 @@ getTrace(str nme)
 		return TRACE_id_modfcn;
 	if (strcmp(nme, "statement") == 0)
 		return TRACE_id_stmt;
-	if (strcmp(nme, "rdbytes") == 0)
-		return TRACE_id_rdbytes;
-	if (strcmp(nme, "wrbytes") == 0)
-		return TRACE_id_wrbytes;
+	if (strcmp(nme, "ibytes") == 0)
+		return TRACE_id_ibytes;
+	if (strcmp(nme, "obytes") == 0)
+		return TRACE_id_obytes;
 	if (strcmp(nme, "diskspace") == 0)
 		return TRACE_id_diskspace;
 	return NULL;
@@ -1108,8 +1108,8 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 */
 	if (profileCounter[PROFbytes].status) {
-		BUNins(TRACE_id_rdbytes, &evnt, &mb->profiler[pc].rdbytes, FALSE);
-		BUNins(TRACE_id_wrbytes, &evnt, &mb->profiler[pc].wrbytes, FALSE);
+		BUNins(TRACE_id_ibytes, &evnt, &mb->profiler[pc].ibytes, FALSE);
+		BUNins(TRACE_id_obytes, &evnt, &mb->profiler[pc].obytes, FALSE);
 	}
 	if (profileCounter[PROFdisk].status) {
 		int disk= getDiskSpace();
