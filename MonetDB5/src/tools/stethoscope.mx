@@ -43,18 +43,6 @@ A synopsis of the calling conventions:
 	-g | --gnuplot=<boolean>
 	-h | --host=<hostname>
 
-Debug selector:
-	--threads
-	--memory
-	--properties
-	--io
-	--transaction
-	--modules
-	--algorithms
-	--estimates
-	--xproperties
-	--debug=<bitmask>
-
 Event selector:
 	a =aggregates
     e =event
@@ -130,56 +118,6 @@ static struct {
     /*  0  */  {0, 0,  0, 0}
 };
 
-@-
-The debug flags available in M5 are a subset of those mentioned
-in the monetdb configuration file.
-A few are made available for ease of use
-@c
-#define GRPthreads ((1) | (1<<8))
-#define GRPmemory ((1<<2) | (1<<25))
-#define GRPproperties ((1<<1) | (1<<3) | (1<<5) | (1<<23) | (1<<24))
-#define GRPio ((1<<4) | (1<<12))
-#define GRPtransactions ((1<<9) | (1<<10) | (1<<13))
-#define GRPmodules ((1<<11) | (1<<14))
-#define GRPalgorithms ((1<<22) )
-#define GRPestimates ((1<<23))
-#define GRPxproperties ((1<<24))
-
-@-
-These definitions were based on:
-static struct{
-	int bitmask, flag;
-	char *title;
-} debugmap[]={
-	{ 0,  0, ""},
-	{ 1,  1, "thread-specific debug output"},
-	{ 2,  2, "property enforcing on new BATs"},
-	{ 4,  3, "memory allocation"},
-	{ 8,  4, "property checking on all values: tells about wrongly set propertie"},
-	{ 16,  5, "major IO activity"},
-	{ 32,  6, "BAT handling"},
-	{ 64,  7, "MIL parser debugging"},
-	{ 128,  8, "Thread management"},
-	{ 256,  9, "Event management"},
-	{ 512, 10, "Transaction management"},
-	{ 1024, 11, "Locks and Triggers"},
-	{ 2048, 12, "Dynamic loading"},
-	{ 4096, 13, "BBP Performance"},
-	{ 8192, 14, "Delta debugging"},
-	{ 16384, 15, "Module loading"},
-	{ 32768, 16, "Yacc specific error messages"},
-	{ 65536, 17, "tcpip"},
-	{ 131072, 18, "monet_multiplex: setaggr debugging"},
-	{ 262144, 19, ""},
-	{ 524288, 20, ""},
-	{ 1048576, 21, ""},
-	{ 2097152, 22, "show join/select algorithm chosen"},
-	{ 4194304, 23, "result size estimates (for join,select)"},
-	{ 8388608, 24, "extended property checking: tells also about not set properties"},
-	{ 0, 0, 0}
-};
-@c
-
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 
@@ -202,18 +140,6 @@ usage(){
 	fprintf(stderr,"-h | --host=<hostname>\n");
 	fprintf(stderr,"-g | --gnuplot\n");
 
-	fprintf(stderr,"The debug options:\n");
-	fprintf(stderr," --threads\n");
-	fprintf(stderr," --memory\n");
-	fprintf(stderr," --properties\n");
-	fprintf(stderr," --io\n");
-	fprintf(stderr," --transaction\n");
-	fprintf(stderr," --modules\n");
-	fprintf(stderr," --algorithms\n");
-	fprintf(stderr," --estimates\n");
-	fprintf(stderr," --xproperties\n");
-	fprintf(stderr," --debug=<bitmask>\n");
-
 	fprintf(stderr,"The trace options:\n");
 	fprintf(stderr,"    a =aggregates\n");
 	fprintf(stderr,"    e =event\n");
@@ -227,14 +153,6 @@ usage(){
 	fprintf(stderr,"    b =bytes read/written\n");
 	fprintf(stderr,"    d =diskspace needed\n");
 	fprintf(stderr,"    s =statement\n");
-@-
-The debug options are taken from the monetdb configuration file
-and only includes those relevant for M5. The have been reorganized
-to have clearer topic groups, mapping them to the required bits
-in the startup.
-We should also make the SQL debugger flags accessible
-@c
-
 }
 @-
 Any signal should be captured and turned into a graceful
@@ -315,9 +233,8 @@ int main(int argc, char **argv)
 	int colind[30],colcnt=0;
 	stream *s;
 	int gnuplot=FALSE;
-	int debug=0;
 
-    static struct option long_options[18] = {
+    static struct option long_options[8] = {
         {"dbname", 1, 0, 'd'},
         {"user", 1, 0, 'u'},
         {"password", 1, 0, 'P'},
@@ -325,30 +242,16 @@ int main(int argc, char **argv)
         {"host", 0, 0, 'h'},
         {"help", 1, 0, '?'},
         {"gnuplot", 1, 0, 'g'},
-		{"threads",0,0,'t'},
-		{"memory",0,0,'m'},
-		{"properties",0,0,'p'},
-		{"io",0,0,'i'},
-		{"transaction",0,0,'t'},
-		{"modules",0,0,'m'},
-		{"algorithms",0,0,'a'},
-		{"estimates",0,0,'e'},
-		{"xproperties",0,0,'x'},
-		{"debug",1,0,'d'},
         {0, 0, 0, 0}
     };
 	for(;;){
 		int option_index=0;
-		int c=  getopt_long(argc, argv, "d:u:P:p:?:h:t:m:i:a:e:x",
+		int c=  getopt_long(argc, argv, "d:u:P:p:?:h",
                     long_options, &option_index);
 		if( c == -1)
 			break;
 		switch(c){
 		case 'd':
-			if (strcmp(long_options[option_index].name, "debug") == 0) {
-				debug |= atol(optarg);
-				break;
-			}
 			if (strcmp(long_options[option_index].name, "dbname") == 0) {
 				dbname= optarg;
 				break;
@@ -368,51 +271,9 @@ int main(int argc, char **argv)
 				portnr= atol(optarg);
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "properties") == 0) {
-				debug |=GRPproperties;
-				break;
-			}
-		case 'a':
-			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
-				debug|= GRPalgorithms;
-				break;
-			}
-		case 'x':
-			if (strcmp(long_options[option_index].name, "xproperties") == 0) {
-				debug|= GRPxproperties;
-				break;
-			}
-		case 'e':
-			if (strcmp(long_options[option_index].name, "estimates") == 0) {
-				debug|= GRPestimates;
-				break;
-			}
-		case 'i':
-			if (strcmp(long_options[option_index].name, "io") == 0) {
-				debug|= GRPio;
-				break;
-			}
 		case 'g':
 			if (strcmp(long_options[option_index].name, "gnuplot") == 0) {
 				gnuplot= TRUE;
-				break;
-			}
-		case 'm':
-			if (strcmp(long_options[option_index].name, "memory") == 0) {
-				debug|= GRPmemory;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "modules") == 0) {
-				debug|= GRPmodules;
-				break;
-			}
-		case 't':
-			if (strcmp(long_options[option_index].name, "transactions") == 0) {
-				debug|= GRPtransactions;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "threads") == 0) {
-				debug|= GRPthreads;
 				break;
 			}
 		case 'h':
@@ -451,13 +312,6 @@ int main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
-
-	/* set debugging flag in server */
-	if( debug){
-		printf("mdb.setDebug(%d);\n",debug);
-		snprintf(buf,BUFSIZ,"mdb.setDebug(%d);",debug);
-		doQ(buf);
-	}
 
 	/* set counters */
 	for(i=0; profileCounter[i].tag; i++){

@@ -150,7 +150,6 @@ usage2(char *prog)
 	fprintf(stderr, "    --password=<str>          Defaults to [monetdb]\n");
 	fprintf(stderr, "    --config=<config_file> \n");
 	fprintf(stderr, "    --delay=<number>          cycle delay [300]\n");
-	fprintf(stderr, "    --debug=<number>          trace server actions[0]\n");
 	fprintf(stderr, "    --daemon=yes|no           run in background [no]\n");
 	fprintf(stderr, "    --set <option>=<value>    set environment value\n");
 	fprintf(stderr, "    --help                    this list of options \n");
