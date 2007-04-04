@@ -418,11 +418,12 @@ say N (the first column in the list above).
 The next step is to gracefully put the running process into
 debugging mode without jeopardizing the application running.
 @example
-> mdb.start(N);
+> clients.suspend(N);
 @end example
-As soon as the MAL instruction of process N is finished the
-debugger gains control over its state. All debugger actions
-are available for inspection of the runtime state.
+As soon as the next MAL instruction of process N starts 
+the target process is put to sleep and the debugger gains
+control. You can now inspect the execution context.
+The control ends when you leave the debugger with a 'quit' command.
 
 @{
 @- Compilation control
@@ -451,6 +452,13 @@ typedef struct {
 	str		brkRequest[MAXBREAKS];
 	int		brkTop;
 } mdbStateRecord, *mdbState;
+
+typedef struct MDBSTATE{
+	MalBlkPtr mb;
+	MalStkPtr stk;
+	InstrPtr p;
+	int pc;
+} MdbState;
 
 mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, int pc, char cmd);
 mal_export void mdbClrBreakRequest(Client cntxt, str name);
@@ -541,7 +549,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	if( *request == '#' ){
 		i= atoi(request+1);
 		if( i<0 || i>= mb->stop)
-			stream_printf(cntxt->mdbout, "breakpoint on #%d (<%d) not set\n", 
+			stream_printf(cntxt->fdout, "breakpoint on #%d (<%d) not set\n", 
 				i, mb->stop);
 		else  {
 			mdb->brkBlock[mdb->brkTop] = mb;
@@ -579,7 +587,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	/* the final step is to break on a variable */
 	i= findVariable(mb,request);
 	if( i< 0)
-		stream_printf(cntxt->mdbout, "breakpoint on %s not set\n", request);
+		stream_printf(cntxt->fdout, "breakpoint on %s not set\n", request);
 	else {
 		mdb->brkBlock[mdb->brkTop] = mb;
 		mdb->brkPc[mdb->brkTop] = -1;
@@ -621,7 +629,7 @@ mdbShowBreakpoints(Client cntxt)
 	mdbState mdb = mdbTable + cntxt->idx;
 
 	for (i = 0; i < mdb->brkTop; i++)
-		stream_printf(cntxt->mdbout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
+		stream_printf(cntxt->fdout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
 }
 
 void
@@ -741,7 +749,7 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
 	msg = call2str(mb, stk, pc, cntxt->flags);
-	stream_printf(cntxt->mdbout, "%s at %s.%s[%d]\n", msg, 
+	stream_printf(cntxt->fdout, "%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);
 	GDKfree(msg);
@@ -768,8 +776,8 @@ The commands are self-explanatory.
 
 The prompt string sent to the user indicates the debugger mode.
 @c
-#define MDBstatus(X) if(cntxt->mdbout) \
-	stream_printf(cntxt->mdbout,"#MonetDB Debugger %s\n", (X?"on":"off"));
+#define MDBstatus(X) if(cntxt->fdout) \
+	stream_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
 
 static MalBlkPtr
 mdbLocateMalBlk(MalBlkPtr mb, str b, stream *out){
@@ -815,7 +823,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
 	int m = 1;
 	char *b, *c;
-	stream *out = cntxt->mdbout;
+	stream *out = cntxt->fdout;
 	/* int listing = cntxt->listing;*/
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
@@ -849,9 +857,9 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		c = strchr(b, '\n');
 		if (c) {
 			*c = 0;
-			cntxt->mdbin->pos += (c - b) + 1;
+			cntxt->fdin->pos += (c - b) + 1;
 		} else {
-			cntxt->mdbin->pos = cntxt->mdbin->len;
+			cntxt->fdin->pos = cntxt->fdin->len;
 		}
 
 		skipBlanc(cntxt, b);
@@ -899,8 +907,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				su->cmd = 0;
 			cntxt->itrace = 0;
 			cntxt->flags = 0;
-			cntxt->mdbin= cntxt->fdin;
-			cntxt->mdbout= cntxt->fdout;
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
@@ -1378,8 +1384,8 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				nme = getTypeName(n->type);
 				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
 				if (strcmp(nme, nmeOnStk)) {
-					printTraceCall(cntxt->mdbout,mb,stk,pc,cntxt->flags);
-					stream_printf(cntxt->mdbout, "!ERROR: %s != :%s\n",
+					printTraceCall(cntxt->fdout,mb,stk,pc,cntxt->flags);
+					stream_printf(cntxt->fdout, "!ERROR: %s != :%s\n",
 						nme, nmeOnStk);
 					stk->cmd='n';
 				}
@@ -1398,6 +1404,22 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	mdbSessionActive= 1; /* for name completion */
 	/* mdbSanityCheck(cntxt, mb, stk, pc); expensive */
+	/* process should sleep */
+	if( cntxt->itrace == 'S'){
+		MdbState state;
+		state.mb= mb;
+		state.stk= stk;
+		state.p = getInstrPtr(mb,pc);
+		state.pc= pc;
+		cntxt->mdb= &state;
+		stream_printf(cntxt->fdout,"#Process put to sleep\n");
+		cntxt->itrace= 'W';
+		while(cntxt->itrace== 'W')
+			MT_sleep_ms(cntxt->delay);
+		stream_printf(cntxt->fdout,"#Process woke up\n");
+		return;
+	}
+
 	switch (stk->cmd) {
 	case 'c':
 		p = getInstrPtr(mb, pc);
@@ -1405,8 +1427,8 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		if( ch == 't'){
 			if (cntxt != mal_clients) 
 				/* help MapiClients with fake prompt */
-				stream_printf(cntxt->mdbout,"mdb>");
-			printTraceCall(cntxt->mdbout,mb,stk,pc,cntxt->flags);
+				stream_printf(cntxt->fdout,"mdb>");
+			printTraceCall(cntxt->fdout,mb,stk,pc,cntxt->flags);
 		} else if( ch )
 			mdbCommand(cntxt, mb, stk, p, pc);
 		break;

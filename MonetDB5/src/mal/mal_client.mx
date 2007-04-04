@@ -131,6 +131,7 @@ information should be dealt with separately.[TODO]
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
 	char    itrace;     /* trace execution using interactive mdb */
+						/* if set to 'S' it will put the process to sleep */
 	short   debugOptimizer,debugScheduler;
 @-
 For program debugging we need information on the timer and memory
@@ -196,8 +197,8 @@ on the debugger features.
 @{
 @h
 	bitset debug;
-	bstream  *mdbin;        /* debugger channels */
-	stream  *mdbout;
+	void  *mdb;        /* context upon suspend */
+	void  *notused;
 	str  history;			/* where to keep console history */
 	short mode;           /* FREECLIENT..BLOCKED */
 	str cwd;            /* working directory of client */
@@ -236,6 +237,8 @@ mal_export int      MCreadClient  (Client c);
 mal_export str      MCstopClient(Client c, oid which);
 mal_export str      MCstopClientIndex(Client c, int id);
 mal_export void 	MCshutdown(Client c, int timeout);
+mal_export str	 	MCsuspendClient(int id, int timeout);
+mal_export str	 	MCawakeClient(int id);
 mal_export void     MCcleanupClients(void);
 mal_export void     MCtraceAllClients(int flag);
 mal_export void     MCtraceClient(oid which, int flag);
@@ -413,8 +416,8 @@ Client MCinitClient(oid user, bstream *fin, stream *fout) {
 
 	c->listing = 0;
 	c->fdout = fout ? fout : GDKstdout;
-	c->mdbin = c->fdin;
-	c->mdbout = c->fdout;
+	c->mdb = 0;
+	c->notused = 0;
 	c->history = 0;
 @-
 The output buffer is currently not used. Beware to garbage
@@ -609,13 +612,6 @@ void MCcloseClient(Client c) {
 #endif
 	/* kill living background clients */
 	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
-		if( k->mode > FINISHING){
-			/* reset the debugger streams */
-			if( k->mdbout== c->fdout)
-				k->mdbout= k->fdout;
-			if( k->mdbin== c->fdin)
-				k->mdbin= k->fdin;
-		}
 		if ((k->mode > FINISHING) && (k->father == c)) 
 			MCkillClient(k, PROCESSTIMEOUT);
 	}
@@ -758,6 +754,23 @@ str MCstopClient(Client c, oid which){
 	}
 	mal_unset_lock(mal_contextLock, "stopClient");
 	throw(ILLARG, "stop","Illegal client name");
+}
+str
+MCsuspendClient(int id, int timeout){
+	if( id<0 || id>MAL_MAXCLIENTS)
+		throw(MAL,"mal.clients","illegal client id");
+	if( timeout <-1 )
+		throw(MAL,"mal.clients","illegal timeout");
+	mal_clients[id].itrace='S';
+	mal_clients[id].delay=timeout;
+	return MAL_SUCCEED;
+}
+str
+MCawakeClient(int id){
+	if( id<0 || id>MAL_MAXCLIENTS)
+		throw(MAL,"mal.clients","illegal client id");
+	mal_clients[id].itrace=0;
+	return MAL_SUCCEED;
 }
 @-
 In embedded mode there can be at most one console client and one 

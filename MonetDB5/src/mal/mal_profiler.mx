@@ -492,7 +492,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			log2("\"%s.%s\",\t",
 					getModuleId(pci), getFunctionId(pci));
 		} else
-			log0(",\t"); 
+ 			log("\"%s\",\t",operatorName(pci->token));
 	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
