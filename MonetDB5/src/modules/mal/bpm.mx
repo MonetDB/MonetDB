@@ -1383,7 +1383,7 @@ BPMdiscard(int *ret, bat *bid)
 	msg= BKCsetTransient(&r,bid);
 
 	*ret =0;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -1407,7 +1407,7 @@ BPMdiscardAll(int *ret)
 	}
 
 	*ret =0;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 @- Iterations
