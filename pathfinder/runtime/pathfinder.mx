@@ -1905,25 +1905,25 @@ PROC __runtime_index(oid coll_oid,
     var vxm := ll_child(tmp, tmp, sze, knd, false, false, min(tmp), max(tmp), false, TEXT); 
     var vxt := vxm.tmark(0@0).leftfetchjoin(prp);  # prop_txt  
     var vxp := vxm.hmark(0@0);                     # parent-pre (i.e. element)
-        vxm := [hash](vxp.leftfetchjoin(prp)).access(BAT_WRITE);
+        vxm := [int](vxp.leftfetchjoin(prp)).access(BAT_WRITE);
         vxt := [:rotate_xor_hash=](vxm, 27, vxt.leftfetchjoin(prp_txt));
         vxp := vxp.leftfetchjoin(nid).access(BAT_APPEND);  
                # attribute indexing
-        tmp := [hash](attr_qn).access(BAT_WRITE);
+        tmp := [int](attr_qn).copy().access(BAT_WRITE);
         tmp := [:rotate_xor_hash=](tmp, 27, attr_prp.leftfetchjoin(prp_val));
                # finish index by union and sort
-        vxm := reverse(vxt.append(tmp)).leftfetchjoin(vxp.append(attr_own)).sort();
+        vxm := reverse(vxt.append(tmp)).leftfetchjoin(vxp.append(attr_own));
+        vxm := vxm.access(BAT_WRITE).order().access(BAT_READ);
         vxt := vxm.hmark(0@0);
         vxp := vxm.tmark(0@0);
         
     # filter out highly repeated hsh values from the hsh_nid index (they get represented just once as [hsh,nil])
     var lim := log2(lng(count(vxt)));
-        vxm := CTgroup(vxt);                          # efficient merge-based grouping
-        tmp := [<](reverse(reverse(CThistogram(vxm)).leftfetchjoin(vxt)), lim*lim);
-        tmp := vxt.leftjoin(tmp).tmark(0@0);          # true for infrequent values
+        tmp := [<](histogram(vxt), lim*lim);
+        tmp := vxt.leftjoin(tmp).tmark(0@0).access(BAT_WRITE); # true for infrequent values
         vxp := [ifthenelse](tmp, vxp, oid_nil);       # key for infrequent, nil for infrequent
-        vxm := [=](CTmap(vxm),[oid](mirror(vxt))).access(BAT_WRITE);
-        tmp := [:or=](vxm,tmp).uselect(true).hmark(0@0); # select first hsh occurrence anyway 
+        vxm := reverse(kunique(reverse(vxt))).project(true);
+        tmp := tmp.inplace(vxm).uselect(true).hmark(0@0); # select first hsh occurrence anyway 
         vxm := reverse(tmp.leftfetchjoin(vxt)).leftfetchjoin(tmp.leftfetchjoin(vxp));
 
     if (updatable) { # hash-index, created here each tiume document is first used
@@ -1943,8 +1943,8 @@ PROC __runtime_index(oid coll_oid,
 PROC __runtime_maintain(lng wsid, 
                         str colname, 
                         BAT[lock,bat] runtime, 
-                        BAT[int,oid] vx_ins, 
-                        BAT[int,oid] vx_del,
+                        BAT[int,oid] ins_vx, 
+                        BAT[int,oid] del_vx,
                         BAT[oid,oid] ins_qn_nid, 
                         BAT[oid,oid] del_qn_nid,
                         BAT[void,oid] new_qn,
@@ -2209,7 +2209,7 @@ PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri,
     # now we are going to assemble a list of candidate NIDs (of the elements we are looking for)
     if (use_index) {
         # for each iter, create a hash number (for each tuple in qns -- usually one of course)
-        var iter_hsh  := cross(iter_val, [hash](qns));
+        var iter_hsh  := cross(iter_val, [int](qns));
         var key_iter  := iter_hsh.hmark(0@0);
         var key_hsh   := iter_hsh.tmark(0@0).copy().access(BAT_WRITE);
             key_hsh   := [:rotate_xor_hash=](key_hsh, 27, key_iter.leftjoin(iter_val).tmark(0@0));
@@ -2551,23 +2551,40 @@ PROC __ws_isolate(BAT[void,BAT] ws,
     if (not(isnil(err))) ERROR(err);
 }
 
+# helper to compute [hsh,nid] combinations for the VX index
+PROC vx_maintain(BAT[oid,oid] parent,
+                 BAT[oid,oid] qn,
+                 BAT[oid,str] val) : BAT[int,oid]
+{
+    var hsh := [:rotate_xor_hash=]([int](qn).access(BAT_WRITE), 27, val);
+    return reverse(hsh).leftfetchjoin(parent);
+}
+
 
 # proc to call from the update code: add new nodes and remove deleted ones
 PROC __ws_postcommit(BAT[void,BAT] ws,
                      oid cont,  
-#BAT[int,oid] vx_ins, 
-#BAT[int,oid] vx_del,
-                     BAT[oid,oid] ins, 
-                     BAT[oid,oid] del,
+                     BAT[int,oid] attr_ins, 
+                     BAT[int,oid] attr_del,
+                     BAT[int,oid] text_ins, 
+                     BAT[int,oid] text_del,
+                     BAT[oid,oid] nsloc_ins, 
+                     BAT[oid,oid] nsloc_del,
                      BAT[void,oid] newqns,
                      BAT[void,oid] delpages) : void 
 {
-var vx_ins := empty_bat;
-var vx_del := empty_bat;
     # maintain the index while holding the collection lock
     var colname := ws.fetch(CONT_NAME).fetch(cont);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-    __runtime_maintain(ws_id(ws), colname, runtime, vx_ins, vx_del, ins, del, newqns, delpages);
+    __runtime_maintain(ws_id(ws),  
+                       colname, 
+                       runtime, 
+                       attr_ins.access(BAT_WRITE).insert(text_ins), 
+                       attr_del.access(BAT_WRITE).insert(text_del), 
+                       nsloc_ins, 
+                       nsloc_del, 
+                       newqns, 
+                       delpages);
 }
 
 # extend the master rid_* bats with new pages
