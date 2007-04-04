@@ -91,10 +91,15 @@ address MDBgetDebug
 comment "Get the kernel debugging bit-set.
 See the MonetDB configuration file for details";
 
+command setDebug(flg:str):int
+address MDBsetDebugStr
+comment "Set the kernel debugging bit-set and return its previous value.
+The recognized options are: threads, memory, properties,
+io, transactions, modules, algorithms, estimates, xproperties";
 command setDebug(flg:int):int
 address MDBsetDebug
-comment "Set the kernel debugging bit-set and return its previous value.
-See the MonetDB configuration file for details";
+comment "Set the kernel debugging bit-set and return its previous value.";
+
 command getException(s:str):str
 address MDBgetExceptionVariable
 comment "Extract the variable name from the exception message";
@@ -123,6 +128,10 @@ comment "Dump the symboltable of current routine on standard out.";
 pattern var(M:str,F:str):void 
 address MDBvar3
 comment "Dump the symboltable of routine M.F on standard out.";
+
+command grab(id:int):void
+address MDBgrabClient
+comment "Stop and debug a client process.";
 
 pattern dot(M:str,F:str,s:str):void 
 address MDBshowFlowGraph
@@ -182,6 +191,7 @@ mdb_export str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBgetDebug(int *ret);
 mdb_export str MDBsetDebug(int *ret, int *flg);
+mdb_export str MDBsetDebugStr(int *ret, str *nme);
 mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTimer(int *ret, bit *flag);
 mdb_export str MDBsetFlow(int *ret, bit *flag);
@@ -202,6 +212,7 @@ mdb_export str MDBgetStackFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBgetStackFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBgetDefinition(MalBlkPtr m, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBgrabClient(int *ret, int *id);
 
 @-
 The primary debugger controls
@@ -256,8 +267,6 @@ MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mdb.start", "Illegal process id");
 		c= mal_clients+pid;
 		/* make client aware of being debugged */
-		c->mdbin= cntxt->fdin;
-		c->mdbout= cntxt->fdout;
 		cntxt= c;
 	} else
 		stk->cmd = 'n';
@@ -318,6 +327,30 @@ MDBsetDebug(int *ret, int *flg)
 {
     *ret = GDKdebug;
     GDKdebug = *flg;
+    return MAL_SUCCEED;
+}
+str
+MDBsetDebugStr(int *ret, str *flg)
+{
+    *ret = GDKdebug;
+	if( strcmp("threads",*flg)==0)
+		GDKdebug |= GRPthreads;
+	if( strcmp("memory",*flg)==0)
+		GDKdebug |= GRPmemory;
+	if( strcmp("properties",*flg)==0)
+		GDKdebug |= GRPproperties;
+	if( strcmp("io",*flg)==0)
+		GDKdebug |= GRPio;
+	if( strcmp("transactions",*flg)==0)
+		GDKdebug |= GRPtransactions;
+	if( strcmp("modules",*flg)==0)
+		GDKdebug |= GRPmodules;
+	if( strcmp("algorithms",*flg)==0)
+		GDKdebug |= GRPalgorithms;
+	if( strcmp("estimates",*flg)==0)
+		GDKdebug |= GRPestimates;
+	if( strcmp("xproperties",*flg)==0)
+		GDKdebug |= GRPxproperties;
     return MAL_SUCCEED;
 }
 
@@ -703,6 +736,37 @@ MDBshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mdb.dot", buf);
 	}
 	showFlowGraph(s->def, stk, fname);
+	return MAL_SUCCEED;
+}
+@-
+Grab a client process by exchange of streams
+@c
+str
+MDBgrabClient(int *ret, int *id){
+	Client this,c;
+	ClientRec old;
+	this= MCgetClient();
+	old= *this;
+
+	if( *id<0 || *id>= MAL_MAXCLIENTS)
+		throw(MAL,"clients.grab","No client process");
+	fprintf(stderr,"grabber %d\n",*id);
+	c= mal_clients+ *id;
+	if( c == 0)
+		throw(MAL,"clients.grab","No client process");
+	/* suspend target */
+	c->itrace='S';
+	while( c->itrace == 'S' )
+		MT_sleep_ms(10);
+	this->fdin= c->fdin;
+	this->fdout= c->fdout;
+	this->console= c->console;
+	c->fdin= old.fdin;
+	c->fdout= old.fdout;
+	c->console= old.console;
+	c->itrace = 0;
+	stream_printf(this->fdout,"exchanged descriptors\n");
+	(void) ret;
 	return MAL_SUCCEED;
 }
 @}

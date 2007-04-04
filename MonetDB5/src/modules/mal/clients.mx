@@ -72,6 +72,14 @@ command getUsers( ):bat[:int,:str]
 address CLTusers
 comment "Pseudo bat of users logged in.";
 
+command suspend(id:int):void
+address CLTsuspend
+comment "Put a client process to sleep for some time.
+It will simple sleep for a second at a time, until
+the awake bit has been set in its descriptor";
+command wakeup(id:int):void
+address CLTwakeup
+comment "Wakeup a client process";
 @-
 @{
 @include prelude.mx
@@ -108,6 +116,8 @@ clients_export str CLTLogin(int *ret);
 clients_export str CLTInfo(int *ret);
 
 clients_export str CLTstop(int *ret, str *nme);
+clients_export str CLTsuspend(int *ret, int *id);
+clients_export str CLTwakeup(int *ret, int *id);
 
 clients_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
 clients_export str CLTremoveUser(int *ret, str *usr);
@@ -342,6 +352,18 @@ CLTstop(int *ret, str *nme)
 	(void) nme;
 /*    return stopClient(MCgetClient(), *nme);*/
 	return MAL_SUCCEED;
+}
+str
+CLTsuspend(int *ret, int *id)
+{
+    (void) ret;     /* fool compiler */
+    return MCsuspendClient(*id,-1);
+}
+str
+CLTwakeup(int *ret, int *id)
+{
+    (void) ret;     /* fool compiler */
+    return MCawakeClient(*id);
 }
 
 @+ User administration
