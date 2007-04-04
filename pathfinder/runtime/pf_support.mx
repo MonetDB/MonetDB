@@ -2585,7 +2585,9 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
       # only keep attributes that are set to new values (i.e. not deleted)
       attr_prop_update := attr_prop_update.ord_select(oid_nil, oid_nil).sort();	 # [ATID,PROP]
       var map_new_old := attr_prop_update.hmark(0@0); # [i,ATID]
-      var newval := attr_prop_update.tmark(0@0).leftfetchjoin(ws.fetch(PROP_VAL).find(cont));  # [i,str]
+      var newval := attr_prop_update.leftjoin(ws.fetch(PROP_VAL).find(cont)).access(BAT_WRITE); # [i,str]
+          newval.insert(attr_prop_update.leftjoin(ws.fetch(PROP_VAL_UPDATE).find(cont))).order().tmark(0@0); 
+
       var newqn := map_new_old.join(ws.fetch(ATTR_QN).find(cont)).copy().access(BAT_WRITE).key(true).myupdate(map_new_old.join(ws.fetch(ATTR_QN_UPDATE).find(cont))).order();  # [i,QNID]
       var newown := map_new_old.join(ws.fetch(ATTR_OWN).find(cont)).copy().access(BAT_WRITE).key(true).myupdate(map_new_old.join(ws.fetch(ATTR_OWN_UPDATE).find(cont))).order();  # [i,OWN]
       var newvx := vx_maintain(newown, newqn, newval);
@@ -2624,33 +2626,6 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
       }
       if (rids.count() > 0) {
         var pres := [swizzle](rids, ws.fetch(MAP_PID_UPDATE).find(cont));  # [i,newPRE]
-# this code (and the code further down) commented out because it is too slow
-# it shows what to do when vx_maintain must be called when the parent NID and QN should be passed
-#         var parpres := [mil_parent](const ws, cont, pres);	 # [i,parentNewPRE]
-#         var pid_map_update := ws.fetch(MAP_PID_UPDATE).find(cont).select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
-#         var parnids;
-#         var parqns;
-#         {
-#           var parrids := [swizzle](parpres, pid_map_update);
-#           # figure out where to get new value
-#           var isnewpage := [isnil](outerjoin([oid]([>>]([lng](parrids), REMAP_PAGE_BITS)), map_pid)); # [i,bit]
-#           # rid is on new page
-#           var a := isnewpage.uselect(true).mirror().join(parrids).join(ws.fetch(_RID_NID).find(cont));
-#           # rid is on old page and was modified
-#           var b := isnewpage.uselect(false).mirror().join(parrids).join(ws.fetch(RID_NID_UPDATE).find(cont));
-#           # rid is on old page and was unmodified
-#           var c := isnewpage.uselect(false).kdiff(b).mirror().join(parrids).[swizzle](map_pid).join(ws.fetch(PRE_NID).find(cont));
-#           # select text elements and combine
-#           parnids := a.access(BAT_WRITE).insert(b).insert(c).order().tmark(0@0); # [i,NID]
-#           # rid is on new page
-#           a := isnewpage.uselect(true).mirror().join(parrids).join(ws.fetch(_RID_PROP).find(cont));
-#           # rid is on old page and was modified
-#           b := isnewpage.uselect(false).mirror().join(parrids).join(ws.fetch(RID_PROP_UPDATE).find(cont));
-#           # rid is on old page and was unmodified
-#           c := isnewpage.uselect(false).kdiff(b).mirror().join(parrids).[swizzle](map_pid).join(ws.fetch(PRE_PROP).find(cont));
-#           # select text elements and combine
-#           parqns := a.access(BAT_WRITE).insert(b).insert(c).order().tmark(0@0); # [i,QN]
-#         }
         {
           var nid_rid := ws.fetch(NID_RID).find(cont);
           var oldnids := nids.leftjoin(nid_rid.uselect(oid_nil, oid_nil).mirror());  # [i,NID] (old nodes)
@@ -2659,16 +2634,12 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
           var map_new_old := oldtext.hmark(0@0); # [j,i]
           oldtext := oldtext.tmark(0@0); # [j,str]
           oldnids := oldnids.tmark(0@0);
-          var oldvx := vx_maintain(oldnids, oldnids.project(oid_nil), oldtext);
-#           var oldparnids := map_new_old.leftfetchjoin(oldpres.mirror()).leftfetchjoin(parnids);
-#           var oldparqns := map_new_old.leftfetchjoin(oldpres.mirror()).leftfetchjoin(parqns);
-#           var oldvx := vx_maintain(oldparnids, oldparqns, oldtext);
-          old_text.insert(cont, oldvx);
+          old_text.insert(cont, vx_maintain(oldnids, oldtext));
         }
-        var vals := rids.leftjoin(rid_prop_update).leftjoin(ws.fetch(PROP_TEXT).find(cont));
-#         var newvx := vx_maintain(parnids, parqns, vals);
-        var newvx := vx_maintain(nids, nids.project(oid_nil), vals);
-        new_text.insert(cont, newvx);
+            rids := rids.leftjoin(rid_prop_update);
+        var vals := rids.leftjoin(ws.fetch(PROP_TEXT).find(cont)).access(BAT_WRITE);
+            vals.insert(rids.leftjoin(ws.fetch(PROP_TEXT_UPDATE).find(cont))).order().tmark(0@0); 
+        new_text.insert(cont, vx_maintain(nids, vals));
       } else {
         old_text.insert(cont, new(int,oid));
         new_text.insert(cont, new(int,oid));

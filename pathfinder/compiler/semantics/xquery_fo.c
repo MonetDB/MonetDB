@@ -1770,12 +1770,10 @@ PFfun_xquery_fo ()
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
     ,  /* pf:text (node()*, string, string, string) as element()* */
       { .ns = PFns_lib, .loc = "text",
-        .arity = 4, .sig_count = 1, .sigs = { {
+        .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
-                                   PFty_xs_string (),
-                                   PFty_xs_string (),
                                    PFty_xs_string () },
-            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
+            .ret_ty = PFty_star( PFty_text()) } } }
     ,  /* pf:add-doc (string, string) as docmgmt */
       { .ns = PFns_lib, .loc = "add-doc",
         .arity = 2, .sig_count = 1, .sigs = { {

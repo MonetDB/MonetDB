@@ -6579,30 +6579,54 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate fn:collections () as string*\n", cur_level, consistent);
         return NORMAL;
-    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"text")) == 0 ||
-               (rc = 2, PFqname_eq(fnQname,PFqname (PFns_lib,"attribute")) == 0))
-    {
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"text")) == 0) {
         /* index-powered element lookup by attribute or text-child on equal value (string) 
-         * - pf:text(NODES, VALUE, URI, LOC) 
-         *   delivers all URI:LOC elements from the fragments in NODES with a VALUE as text value
-         * - pf:attribute(NODES, VALUE, URI, LOC) 
-         *   all elements (any qname) from the fragments in NODES with a URI:LOC attribute with value "VALUE"
+         * - pf:text(NODES, VALUE) 
+         *   delivers all text nodes from the fragments in NODES with a VALUE as text value
          * within each iter, the returned pre-sequence is unique and in doc-order
          */
-        int attr = (rc == 2);
-        char *fcn = attr?"attribute":"text"; 
 
         /* NODES that solely identify the XML fragment(s) of interest */ 
         rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f, "iter := iter.materialize(ipik);\nkind := kind.materialize(ipik);\n");
-        saveResult_ (f, ++counter, NORMAL);
 
         /* VALUES to look for */
+        saveResult_ (f, ++counter, NORMAL);
         rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
         milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
-        saveResult_ (f, ++counter, STR);
 
-        /* element URI and LOC parameters are assumed to be constant value (no support for computed qnames) */
+        milprintf(f,
+                "{ # translate pf:text () as string*\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_, str_nil, str_nil);\n"
+                "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
+                "  kind := id_pre.hmark(0@0).leftfetchjoin(kind%03u);\n"
+                "  item := id_pre.tmark(0@0);\n"
+                "  ipik := item;\n"
+                "  pos  := tmark_grp_unique(iter,ipik);\n"
+                "} # end of translate pf:text () as element()*\n", 
+                    counter, counter, counter, counter);
+
+        deleteResult_ (f, counter, NORMAL);
+        return NORMAL;
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"attribute")) == 0)
+    {
+        /* index-powered element lookup by attribute or text-child on equal value (string) 
+         * - pf:attribute(NODES, VALUE, URI, LOC) 
+         *   all elements (any qname) from the fragments in NODES with a URI:LOC attribute with value "VALUE"
+         * within each iter, the returned pre-sequence is unique and in doc-order
+         */
+
+        /* NODES that solely identify the XML fragment(s) of interest */ 
+        rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f, "iter := iter.materialize(ipik);\nkind := kind.materialize(ipik);\n");
+
+        /* VALUES to look for */
+        saveResult_ (f, ++counter, NORMAL);
+        rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
+
+        /* attribute URI and LOC parameters are assumed to be constant value (no support for computed qnames) */
+        saveResult_ (f, ++counter, STR);
         rc = translate2MIL (f, VALUES, cur_level, counter, RRL(args));
         milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
         saveResult_ (f, ++counter, STR);
@@ -6610,15 +6634,15 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
 
         milprintf(f,
-                "{ # translate pf:%s () as string*\n"
-                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_%03u, item_str_%03u, item_str_, %s);\n"
+                "{ # translate pf:attribute() as string*\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_%03u, item_str_%03u, item_str_);\n"
                 "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
                 "  kind := id_pre.hmark(0@0).leftfetchjoin(kind%03u);\n"
                 "  item := id_pre.tmark(0@0);\n"
                 "  ipik := item;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate fn:%s () as element()*\n", 
-                fcn, counter-2, counter-2, counter-1, counter, (*fcn=='t')?"true":"false", counter-2, counter-2, fcn);
+                "} # end of translate pf:attribute () as element()*\n",
+                   counter-2, counter-2, counter-1, counter, counter-2, counter-2);
 
         deleteResult_ (f, counter--, STR);
         deleteResult_ (f, counter--, STR);
