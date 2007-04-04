@@ -678,10 +678,9 @@ startProfiling(void)
 	if (eventstream != NULL) {
 		offlineProfiling=TRUE;
 		delayswitch = 1;
-	} else{
-		initTrace();
+	} else
 		cachedProfiling=TRUE;
-	}
+	initTrace();
 	malProfileMode = TRUE;
 	return MAL_SUCCEED;
 }
@@ -973,6 +972,7 @@ clearTrace(void)
 BAT *
 getTrace(str nme)
 {
+	initTrace();
 	if (strcmp(nme, "time") == 0)
 		return TRACE_id_time;
 	if (strcmp(nme, "ticks") == 0)
