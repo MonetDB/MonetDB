@@ -77,6 +77,12 @@ can be found in this module.
 .COMMAND order_rev(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDorder_rev;
 "Sorts the BAT itself, in place, on descending head values. Returns b."
 
+.COMMAND sorder(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDsorder;
+"Stable sorts the BAT itself, in place, on ascending head values. Returns b."
+
+.COMMAND sorder_rev(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDsorder_rev;
+"Stable sorts the BAT itself, in place, on descending head values. Returns b."
+
 .COMMAND revert(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDrevert;
 "Puts all BUNs in a BAT in reverse order. Returns b."
 
@@ -723,6 +729,24 @@ int
 CMDorder_rev(BAT **ret, BAT *b)
 {
 	if (BATorder_rev(*ret = b) == NULL)
+		return GDK_FAIL;
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+CMDsorder(BAT **ret, BAT *b)
+{
+	if (BATsorder(*ret = b) == NULL)
+		return GDK_FAIL;
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+CMDsorder_rev(BAT **ret, BAT *b)
+{
+	if (BATsorder_rev(*ret = b) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
