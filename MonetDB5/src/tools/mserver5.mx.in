@@ -92,15 +92,15 @@ The server options have the following meaning:
 #define getcwd _getcwd
 #endif
 
-#define GRPthreads ((1) | (1<<8))
-#define GRPmemory ((1<<2) | (1<<25))
-#define GRPproperties ((1<<1) | (1<<3) | (1<<5) | (1<<23) | (1<<24))
-#define GRPio ((1<<4) | (1<<12))
-#define GRPtransactions ((1<<9) | (1<<10) | (1<<13))
-#define GRPmodules ((1<<11) | (1<<14))
-#define GRPalgorithms ((1<<22) )
-#define GRPestimates ((1<<23))
-#define GRPxproperties ((1<<24))
+#define GRPthreads ( 1 | PARMASK)
+#define GRPmemory (MEMMASK | DEADBEEFMASK)
+#define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
+#define GRPio (IOMASK | PERFMASK )
+#define GRPtransactions ( TMMASK | DELTAMASK | TEMMASK)
+#define GRPmodules (DLMASK | LOADMASK)
+#define GRPalgorithms (ALGOMASK)
+#define GRPestimates (ESTIMASK)
+#define GRPxproperties (XPROPMASK | JOINPROPMASK)
 
 @-
 The architecture is setup to handle multiple streams of requests.
@@ -552,6 +552,7 @@ faster system start.
 #endif
 	if (monet_init(set, setlen) == 0 || mal_init())
 		return 0;
+	GDKdebug=debug;	/* overruled by command line */
 
 	/* configure sabaoth to use the right dbfarm and active database */
 	SABAOTHinit(GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
