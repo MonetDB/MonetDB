@@ -2260,21 +2260,36 @@ gdk_export MT_Lock GDKcacheLock;
 gdk_export MT_Lock GDKtrimLock;
 gdk_export MT_Lock GDKtmLock;
 
-#define CHECKDEBUG      if (GDKdebug&2)
-#define MEMDEBUG        if (GDKdebug&4)
-#define PROPDEBUG       if (GDKdebug&8)
-#define IODEBUG         if (GDKdebug&16)
-#define BATDEBUG        if (GDKdebug&32)
-#define PARSEDEBUG      if (GDKdebug&64)
-#define PARDEBUG        if (GDKdebug&128)
-#define TRGDEBUG        if (GDKdebug&256)
-#define TMDEBUG         if (GDKdebug&512)
-#define TEMDEBUG        if (GDKdebug&1024)
-#define DLDEBUG	        if (GDKdebug&2048)
-#define PERFDEBUG	if (GDKdebug&4096)
-#define DELTADEBUG	if (GDKdebug&8192)
-#define LOADDEBUG	if (GDKdebug&16384)
-#define YACCDEBUG	if (GDKdebug&32768)
+#define CHECKMASK         2
+#define CHECKDEBUG      if (GDKdebug & CHECKMASK)
+#define MEMMASK           4
+#define MEMDEBUG        if (GDKdebug & MEMMASK)
+#define PROPMASK          8
+#define PROPDEBUG       if (GDKdebug & PROPMASK)
+#define IOMASK            16
+#define IODEBUG         if (GDKdebug & IOMASK)
+#define BATMASK          32
+#define BATDEBUG        if (GDKdebug & BATMASK)
+#define PARSEMASK         64
+#define PARSEDEBUG      if (GDKdebug & PARSEMASK)
+#define PARMASK           128
+#define PARDEBUG        if (GDKdebug & PARMASK)
+#define TRGMASK           256
+#define TRGDEBUG        if (GDKdebug & TRGMASK)
+#define TMMASK            512
+#define TMDEBUG         if (GDKdebug & TMMASK)
+#define TEMMASK           1024
+#define TEMDEBUG        if (GDKdebug & TEMMASK)
+#define DLMASK	           2048
+#define DLDEBUG	        if (GDKdebug & DLMASK)
+#define PERFMASK	       4096
+#define PERFDEBUG	    if (GDKdebug & PERFMASK)
+#define DELTAMASK	       8192
+#define DELTADEBUG	    if (GDKdebug & DELTAMASK)
+#define LOADMASK	      16384
+#define LOADDEBUG	    if (GDKdebug & LOADMASK)
+#define YACCMASK	       32768
+#define YACCDEBUG	    if (GDKdebug & YACCMASK)
 /*
 #define ?tcpip?		if (GDKdebug&65536)
 #define ?monet_multiplex?	if (GDKdebug&131072)
@@ -2282,12 +2297,17 @@ gdk_export MT_Lock GDKtmLock;
 #define ?ddbench?	if (GDKdebug&524288)
 #define ?ddbench?	if (GDKdebug&1048576)
 */
-#define ALGODEBUG	if (GDKdebug&2097152)
-#define ESTIDEBUG	if (GDKdebug&4194304)
-#define XPROPDEBUG      if (GDKdebug&8388608)
+#define ALGOMASK	    2097152
+#define ALGODEBUG	    if (GDKdebug & ALGOMASK)
+#define ESTIMASK		4194304
+#define ESTIDEBUG		if (GDKdebug & ESTIMASK)
+#define XPROPMASK      	8388608
+#define XPROPDEBUG      if (GDKdebug & XPROPMASK)
 
-#define JOINPROPCHK     if (!(GDKdebug&16777216))
-#define DEADBEEFCHK     if (!(GDKdebug&33554432))
+#define JOINPROPMASK     16777216
+#define JOINPROPCHK     if (!(GDKdebug & JOINPROPMASK))
+#define DEADBEEFMASK     33554432
+#define DEADBEEFCHK     if (!(GDKdebug & DEADBEEFMASK))
 
 gdk_export int GDKnrofthreads;
 gdk_export int GDKembedded;
