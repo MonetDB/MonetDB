@@ -322,6 +322,7 @@ returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.
 BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
 BAT[void,int] pre_size (from the working set)
+BAT[void,int] pre_level (from the working set)
 DESCRIPTION:
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
 @m
@@ -1984,6 +1985,48 @@ PROC mil_ancestor(bat[void,bat] ws, oid cont, oid newpre) : bat[void,oid]
   return ancestors;
 }
 
+# # Find the parent of a given node in a document that is being modified.
+# # this function is called with extend_protect(ws, cont) set.
+# PROC mil_parent(bat[void,bat] ws, oid cont, oid newpre) : oid
+# {
+#   var parent := oid_nil;	# the result
+#   var pre_size := ws.fetch(PRE_SIZE).find(cont);
+#   var rid_size := ws.fetch(_RID_SIZE).find(cont);
+#   var rid_size_update := ws.fetch(RID_SIZE_UPDATE).find(cont);
+#   var map_pid := ws.fetch(MAP_PID).find(cont);
+#   var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
+#   var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
+
+#   var p := 0@0;
+#   while (p < newpre) {
+#     var pageid := pid_map_update.find(oid(lng(p) >> REMAP_PAGE_BITS));
+#     var isoldpage := false;
+#     if (map_pid.exist(pageid)) {
+#       isoldpage := not(isnil(map_pid.find(pageid)));
+#     }
+#     var r := swizzle(p, pid_map_update);
+#     var size;
+#     if (isoldpage) {
+#       if (rid_size_update.exist(r)) {
+#         size := rid_size_update.find(r);
+#       } else {
+#         size := pre_size.find(swizzle(r, map_pid));
+#       }
+#     } else {
+#       size := rid_size.find(r); # PETER: looks like this code path was untested
+#     }
+#     size := niland(size, INT_MAX);
+#     var e := oid(lng(p) + size);
+#     if (e >= newpre) {
+#       parent := p;
+#       p := oid(lng(p) + 1);
+#     } else {
+#       p := oid(lng(e) + 1);
+#     }
+#   }
+#   return parent;
+# }
+
 # Move data starting at "from" of length "size" by "delta".  The
 # destination *must* be a hole (XXX check this).
 # Delta can be positive (move data down) or negative (move data up).
@@ -2339,7 +2382,7 @@ changed already made to the BATs in the working set.",
 PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
 {
   # [void,oid] list of all conts of affected documents
-  var affected_conts := [and]([lng](item.mirror()), 3LL).ord_uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
+  var affected_conts := [and]([lng](item.mirror()), 3LL).ord_uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().hmark(0@0);  # [i,CONT]
 
   if (affected_conts.count() = 0) {
     # nothing to do
@@ -2514,6 +2557,129 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   var texts := ws.fetch(UPDATED_TEXT);
   #fix_consecutive_texts(ws, texts);
 
+  # prepare for postcommit
+  var old_attr := new(oid,bat);
+  var old_text := new(oid,bat);
+  var new_attr := new(oid,bat);
+  var new_text := new(oid,bat);
+
+  affected_conts@batloop() {
+    var cont := $t;
+
+    # first do attr
+    extend_protect(ws, cont);
+    var attr_prop_update := ws.fetch(ATTR_PROP_UPDATE).find(cont); # [ATID,PROPID]
+    if (attr_prop_update.count() > 0) {
+      var oldprop := attr_prop_update.mirror().leftjoin(ws.fetch(ATTR_PROP).find(cont)).ord_select(oid_nil, oid_nil); # [ATID,PROPID]
+      if (oldprop.count() > 0) {
+        var oldval := oldprop.leftfetchjoin(ws.fetch(PROP_VAL).find(cont)); # [ATID,str]
+        var map_new_old := oldprop.hmark(0@0); # [i,ATID]
+        oldval := oldval.tmark(0@0);  # [i,str]
+        var oldqn := map_new_old.leftfetchjoin(ws.fetch(ATTR_QN).find(cont));
+        var oldown := map_new_old.leftfetchjoin(ws.fetch(ATTR_OWN).find(cont));
+        var oldvx := vx_maintain(oldown, oldqn, oldval);
+        old_attr.insert(cont, oldvx);
+      } else {
+        old_attr.insert(cont, new(int,oid));
+      }
+      # only keep attributes that are set to new values (i.e. not deleted)
+      attr_prop_update := attr_prop_update.ord_select(oid_nil, oid_nil).sort();	 # [ATID,PROP]
+      var map_new_old := attr_prop_update.hmark(0@0); # [i,ATID]
+      var newval := attr_prop_update.tmark(0@0).leftfetchjoin(ws.fetch(PROP_VAL).find(cont));  # [i,str]
+      var newqn := map_new_old.join(ws.fetch(ATTR_QN).find(cont)).copy().access(BAT_WRITE).key(true).myupdate(map_new_old.join(ws.fetch(ATTR_QN_UPDATE).find(cont))).order();  # [i,QNID]
+      var newown := map_new_old.join(ws.fetch(ATTR_OWN).find(cont)).copy().access(BAT_WRITE).key(true).myupdate(map_new_old.join(ws.fetch(ATTR_OWN_UPDATE).find(cont))).order();  # [i,OWN]
+      var newvx := vx_maintain(newown, newqn, newval);
+      new_attr.insert(cont, newvx);
+    } else {
+      old_attr.insert(cont, new(int,oid));
+      new_attr.insert(cont, new(int,oid));
+    }
+
+    # then do text
+    var rid_prop_update := ws.fetch(RID_PROP_UPDATE).find(cont); # [RID,PROP] (updated properties)
+    if (rid_prop_update.count() > 0) {
+      var rids := rid_prop_update.hmark(0@0);  # [i,RID]
+      var map_pid := ws.fetch(MAP_PID).find(cont);
+      var nids;
+      {
+        # figure out where to get new value
+        var isnewpage := [isnil](outerjoin([oid]([>>]([lng](rids), REMAP_PAGE_BITS)), map_pid)); # [i,bit]
+        # rid is on new page
+        var a := isnewpage.uselect(true).mirror().join(rids).join(ws.fetch(_RID_KIND).find(cont));
+        # rid is on old page and was modified
+        var b := isnewpage.uselect(false).mirror().join(rids).join(ws.fetch(RID_KIND_UPDATE).find(cont));
+        # rid is on old page and was unmodified
+        var c := isnewpage.uselect(false).kdiff(b).mirror().join(rids).[swizzle](map_pid).join(ws.fetch(PRE_KIND).find(cont));
+        # select text elements and combine
+        var t := a.access(BAT_WRITE).insert(b).insert(c).uselect(TEXT).sort().mirror(); # [i,i] (text elems only)
+        rids := t.leftjoin(rids).tmark(0@0); # [i,RID] (only text elements, new numbering)
+        isnewpage := t.leftjoin(isnewpage).tmark(0@0);	 # [i,bit] (only text elements, new numbering)
+        a := isnewpage.uselect(true).mirror().join(rids).join(ws.fetch(_RID_NID).find(cont));
+        # rid is on old page and was modified
+        b := isnewpage.uselect(false).mirror().join(rids).join(ws.fetch(RID_NID_UPDATE).find(cont));
+        # rid is on old page and was unmodified
+        c := isnewpage.uselect(false).kdiff(b).mirror().join(rids).[swizzle](map_pid).join(ws.fetch(PRE_NID).find(cont));
+        # select text elements and combine
+        nids := a.access(BAT_WRITE).insert(b).insert(c).order().tmark(0@0); # [i,NID]
+      }
+      if (rids.count() > 0) {
+        var pres := [swizzle](rids, ws.fetch(MAP_PID_UPDATE).find(cont));  # [i,newPRE]
+# this code (and the code further down) commented out because it is too slow
+# it shows what to do when vx_maintain must be called when the parent NID and QN should be passed
+#         var parpres := [mil_parent](const ws, cont, pres);	 # [i,parentNewPRE]
+#         var pid_map_update := ws.fetch(MAP_PID_UPDATE).find(cont).select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
+#         var parnids;
+#         var parqns;
+#         {
+#           var parrids := [swizzle](parpres, pid_map_update);
+#           # figure out where to get new value
+#           var isnewpage := [isnil](outerjoin([oid]([>>]([lng](parrids), REMAP_PAGE_BITS)), map_pid)); # [i,bit]
+#           # rid is on new page
+#           var a := isnewpage.uselect(true).mirror().join(parrids).join(ws.fetch(_RID_NID).find(cont));
+#           # rid is on old page and was modified
+#           var b := isnewpage.uselect(false).mirror().join(parrids).join(ws.fetch(RID_NID_UPDATE).find(cont));
+#           # rid is on old page and was unmodified
+#           var c := isnewpage.uselect(false).kdiff(b).mirror().join(parrids).[swizzle](map_pid).join(ws.fetch(PRE_NID).find(cont));
+#           # select text elements and combine
+#           parnids := a.access(BAT_WRITE).insert(b).insert(c).order().tmark(0@0); # [i,NID]
+#           # rid is on new page
+#           a := isnewpage.uselect(true).mirror().join(parrids).join(ws.fetch(_RID_PROP).find(cont));
+#           # rid is on old page and was modified
+#           b := isnewpage.uselect(false).mirror().join(parrids).join(ws.fetch(RID_PROP_UPDATE).find(cont));
+#           # rid is on old page and was unmodified
+#           c := isnewpage.uselect(false).kdiff(b).mirror().join(parrids).[swizzle](map_pid).join(ws.fetch(PRE_PROP).find(cont));
+#           # select text elements and combine
+#           parqns := a.access(BAT_WRITE).insert(b).insert(c).order().tmark(0@0); # [i,QN]
+#         }
+        {
+          var nid_rid := ws.fetch(NID_RID).find(cont);
+          var oldnids := nids.leftjoin(nid_rid.uselect(oid_nil, oid_nil).mirror());  # [i,NID] (old nodes)
+          var oldpres := oldnids.leftjoin(nid_rid).[swizzle](map_pid);  # [i,oldPRE] (old nodes)
+          var oldtext := oldpres.leftjoin(ws.fetch(PRE_PROP).find(cont)).leftjoin(ws.fetch(PROP_TEXT).find(cont)); # [i,str]
+          var map_new_old := oldtext.hmark(0@0); # [j,i]
+          oldtext := oldtext.tmark(0@0); # [j,str]
+          oldnids := oldnids.tmark(0@0);
+          var oldvx := vx_maintain(oldnids, oldnids.project(oid_nil), oldtext);
+#           var oldparnids := map_new_old.leftfetchjoin(oldpres.mirror()).leftfetchjoin(parnids);
+#           var oldparqns := map_new_old.leftfetchjoin(oldpres.mirror()).leftfetchjoin(parqns);
+#           var oldvx := vx_maintain(oldparnids, oldparqns, oldtext);
+          old_text.insert(cont, oldvx);
+        }
+        var vals := rids.leftjoin(rid_prop_update).leftjoin(ws.fetch(PROP_TEXT).find(cont));
+#         var newvx := vx_maintain(parnids, parqns, vals);
+        var newvx := vx_maintain(nids, nids.project(oid_nil), vals);
+        new_text.insert(cont, newvx);
+      } else {
+        old_text.insert(cont, new(int,oid));
+        new_text.insert(cont, new(int,oid));
+      }
+    } else {
+      old_text.insert(cont, new(int,oid));
+      new_text.insert(cont, new(int,oid));
+    }
+    extend_unprotect(ws, cont);
+  }
+
   # get containers in the order in which we must commit them ([COLL_ID,CONT])
   var cont_order := affected_conts.reverse().mirror().leftfetchjoin(ws.fetch(CONT_COLL)).reverse().sort();
 
@@ -2553,6 +2719,7 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     # ws_precommit gives an ERROR if a conflicting transaction has committed already
     ws_precommit(ws, cont, sel_modified_page, sel_modified_attr);
   }
+
   var ws_logtime := usec();
 
   # WAL all changes: no error means a succesful commit
@@ -2593,7 +2760,11 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
       ws_log(ws, "commit-apply exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
     # ws_postcommit maintains the indices and releases the collection lock
-    __ws_postcommit(ws, cont, 
+    __ws_postcommit(ws, cont,
+                    new_attr.fetch(cont),
+                    old_attr.fetch(cont),
+                    new_text.fetch(cont),
+                    old_text.fetch(cont),
                     ws.fetch(NID_QN_INS_UPDATE).find(cont).reverse(), 
                     ws.fetch(NID_QN_DEL_UPDATE).find(cont).reverse(), 
                     ws.fetch(QN_URI_UPDATE).find(cont).hmark(0@0),
