@@ -111,7 +111,7 @@ extern symbol *newAtomNode(sql_allocator *sa, atom *a);
 int symbol_debug = 0;
 
 static symbol *
-symbol_init(symbol *s, int token, int type )
+symbol_init(symbol *s, int token, symtype type )
 {
 	s->token = token;
 	s->type = type;
