@@ -51,7 +51,7 @@ Debug selector:
 	--transaction
 	--modules
 	--algorithms
-	--estimations
+	--estimates
 	--xproperties
 	--debug=<bitmask>
 
@@ -142,7 +142,7 @@ A few are made available for ease of use
 #define GRPtransaction ((1<<9) | (1<<10) | (1<<13))
 #define GRPmodules ((1<<11) | (1<<14))
 #define GRPalgorithms ((1<<22) )
-#define GRPestimations ((1<<23))
+#define GRPestimates ((1<<23))
 #define GRPxproperties ((1<<24))
 
 @-
@@ -174,7 +174,7 @@ static struct{
 	{ 524288, 20, ""},
 	{ 1048576, 21, ""},
 	{ 2097152, 22, "show join/select algorithm chosen"},
-	{ 4194304, 23, "result size estimations (for join,select)"},
+	{ 4194304, 23, "result size estimates (for join,select)"},
 	{ 8388608, 24, "extended property checking: tells also about not set properties"},
 	{ 0, 0, 0}
 };
@@ -210,10 +210,11 @@ usage(){
 	fprintf(stderr," --transaction\n");
 	fprintf(stderr," --modules\n");
 	fprintf(stderr," --algorithms\n");
-	fprintf(stderr," --estimations\n");
+	fprintf(stderr," --estimates\n");
 	fprintf(stderr," --xproperties\n");
 	fprintf(stderr," --debug=<bitmask>\n");
 
+	fprintf(stderr,"The trace options:\n");
 	fprintf(stderr,"    a =aggregates\n");
 	fprintf(stderr,"    e =event\n");
 	fprintf(stderr,"    f =function \n");
@@ -316,33 +317,38 @@ int main(int argc, char **argv)
 	int gnuplot=FALSE;
 	int debug=0;
 
-    static struct option long_options[17] = {
+    static struct option long_options[18] = {
         {"dbname", 1, 0, 'd'},
         {"user", 1, 0, 'u'},
         {"password", 1, 0, 'P'},
         {"port", 1, 0, 'p'},
-        {"host", 1, 0, 'h'},
+        {"host", 0, 0, 'h'},
         {"help", 1, 0, '?'},
         {"gnuplot", 1, 0, 'g'},
-		{"threads",2,0,0},
-		{"memory",2,0,0},
-		{"properties",2,0,0},
-		{"io",2,0,0},
-		{"transaction",2,0,0},
-		{"modules",2,0,0},
-		{"algorithms",2,0,0},
-		{"estimations",2,0,0},
-		{"xproperties",2,0,0},
+		{"threads",0,0,'t'},
+		{"memory",0,0,'m'},
+		{"properties",0,0,'p'},
+		{"io",0,0,'i'},
+		{"transaction",0,0,'t'},
+		{"modules",0,0,'m'},
+		{"algorithms",0,0,'a'},
+		{"estimates",0,0,'e'},
+		{"xproperties",0,0,'x'},
+		{"debug",1,0,'d'},
         {0, 0, 0, 0}
     };
 	for(;;){
 		int option_index=0;
-		int c=  getopt_long(argc, argv, "d:u:P:p:?:h:",
+		int c=  getopt_long(argc, argv, "d:u:P:p:?:h:t:m:i:a:e:x",
                     long_options, &option_index);
 		if( c == -1)
 			break;
 		switch(c){
 		case 'd':
+			if (strcmp(long_options[option_index].name, "debug") == 0) {
+				debug |= atol(optarg);
+				break;
+			}
 			if (strcmp(long_options[option_index].name, "dbname") == 0) {
 				dbname= optarg;
 				break;
@@ -377,8 +383,8 @@ int main(int argc, char **argv)
 				break;
 			}
 		case 'e':
-			if (strcmp(long_options[option_index].name, "estimations") == 0) {
-				debug|= GRPestimations;
+			if (strcmp(long_options[option_index].name, "estimates") == 0) {
+				debug|= GRPestimates;
 				break;
 			}
 		case 'i':
@@ -406,6 +412,9 @@ int main(int argc, char **argv)
 				break;
 			}
 		case 'h':
+			if (strcmp(long_options[option_index].name, "help") == 0) {
+				printf("help\n");
+			}
 			if (strcmp(long_options[option_index].name, "host") == 0) {
 				host= optarg;
 				break;
@@ -438,6 +447,13 @@ int main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
+
+	/* set debugging flag in server */
+	if( debug){
+		printf("mdb.setDebug(%d);\n",debug);
+		snprintf(buf,BUFSIZ,"mdb.setDebug(%d);",debug);
+		doQ(buf);
+	}
 
 	/* set counters */
 	for(i=0; profileCounter[i].tag; i++){
