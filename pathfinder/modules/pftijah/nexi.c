@@ -240,8 +240,8 @@ int old_main(BAT* optbat, char* startNodes_name)
     
     /* startup of argument options */
     /* INCOMPLETE, select_root() should distinguish between card(0) and nil */
-    MILPRINTF(MILOUT, "var startNodes := new(void,oid);\n");
     if ( use_startNodes ) {
+        MILPRINTF(MILOUT, "var startNodes := new(void,oid);\n");
         MILPRINTF(MILOUT, "if ( view_bbp_name().reverse().exist(\"%s\") ) {\n", startNodes_name );
         MILPRINTF(MILOUT, "  startNodes := bat(\"%s\");\n", startNodes_name);
         MILPRINTF(MILOUT, "  bat(\"%s\").persists(false);\n", startNodes_name);
@@ -609,6 +609,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     if (phrase_in == TRUE)
         plan_ret = SRA_to_MIL(parserCtx, 
                               query_num, 
+			      use_startNodes,
                               txt_retr_model, 
                               img_retr_model, 
                               rel_feedback, 
@@ -619,6 +620,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     else
         plan_ret = SRA_to_MIL(parserCtx, 
                               query_num, 
+			      use_startNodes,
                               txt_retr_model, 
                               img_retr_model, 
                               rel_feedback, 

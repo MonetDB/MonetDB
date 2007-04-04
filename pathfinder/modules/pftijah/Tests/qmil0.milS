@@ -1,9 +1,9 @@
 module(pathfinder);
 
 # test handling of not existing query terms
-var res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\"/> let $x := tijah:query-id($opt,(),\"//panel[about(.,humbug)]\") let $n := tijah:nodes($x) for $i in $n return (fn:round(100*tijah:score($x,$i)),$i)");
+var res := xquery("dm","let $opt:=<TijahOptions ft-index=\"testcoll1\"/> let $x := tijah:query-id(\"//panel[about(.,humbug)]\",$opt) let $n := tijah:nodes($x) for $i in $n return (fn:round(100*tijah:score($x,$i)),$i)");
 printf("%s",res);
 
 # test handling of not existing tag names
-res := xquery("dm","let $opt:=<TijahOptions collection=\"testcoll1\"/> let $x := tijah:query-id($opt,(),\"//humbug[about(.,dilbert)]\") let $n := tijah:nodes($x) for $i in $n return (fn:round(100*tijah:score($x,$i)),$i)");
+res := xquery("dm","let $opt:=<TijahOptions ft-index=\"testcoll1\"/> let $x := tijah:query-id(\"//humbug[about(.,dilbert)]\",$opt) let $n := tijah:nodes($x) for $i in $n return (fn:round(100*tijah:score($x,$i)),$i)");
 printf("%s",res);

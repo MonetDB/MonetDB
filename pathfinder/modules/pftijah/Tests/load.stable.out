@@ -52,6 +52,7 @@ loading module 'pathfinder'
 [ "main",	  1		  ]
 [ "malalgebra",	  4		  ]
 [ "mapi",	  1		  ]
+[ "mkey",	  1		  ]
 [ "mmath",	  3		  ]
 [ "monettime",	  3		  ]
 [ "pathfinder",	  1		  ]

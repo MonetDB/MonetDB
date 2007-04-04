@@ -30,7 +30,7 @@
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
-.COMMAND run_tijah_query(BAT[str,str], BAT[void,oid], str q) : BAT[oid,dbl] = CMDtijah_query;
+.COMMAND run_tijah_query(BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes, str q) : BAT[oid,dbl] = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
@@ -3058,15 +3058,13 @@ extern char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** 
 
 static int nexiTmpCounter = 0;
 
-int CMDtijah_query(BAT** res, BAT* optbat, BAT* startNodes, str query) {
+int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes, str query) {
 	char* err;
 	char* mil;
 	char  nameBUFF[32], *startNodes_name;
-	int   use_startNodes;
 
 	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: start, query=\"%s\".\n",query);
-	use_startNodes = BATcount(optbat); /* INCOMPLETE, redesign this */
-	if ( use_startNodes ) {
+	if ( *use_startnodes ) {
 	    BATmode(startNodes,PERSISTENT);
 	    sprintf(&nameBUFF[0],"%s%d","nexi_start",nexiTmpCounter++);
 	    /* make persistent, the generated script should undo this again */

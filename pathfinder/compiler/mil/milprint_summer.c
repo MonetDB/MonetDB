@@ -8153,25 +8153,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate tijah:query\n"
 	);
         if (fun->arity == 3) {
-	  /* translate the first options parameter*/
-          translate2MIL (f, NORMAL, cur_level, counter, L(args));
-	  saveResult(f, ++counter);
-	  opt_counter = counter;
-
-          /* get query string */
-	  rc = translate2MIL (f, VALUES, cur_level, counter, RRL(args));
-          if (rc == NORMAL)
-             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
-          add_empty_strings (f, STR, cur_level);
-          saveResult_ (f, ++counter, STR);
-	  str_counter = counter;
-	  
-	  /* get nodes to start from */ 
-	  translate2MIL (f, code, cur_level, ++counter, RL(args));
+	  /* generate startnodes code */ 
+	  translate2MIL (f, code, cur_level, ++counter, L(args));
 	  saveResult(f, ++counter);
 	  ctx_counter = counter;
-	
-	} else {
+
           /* get query string */
 	  rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
           if (rc == NORMAL)
@@ -8179,13 +8165,52 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
           add_empty_strings (f, STR, cur_level);
           saveResult_ (f, ++counter, STR);
 	  str_counter = counter;
-	  
-	  /* get nodes to start from */ 
-	  translate2MIL (f, code, cur_level, ++counter, L(args));
-	  saveResult(f, ++counter);
-	  ctx_counter = counter;
-        }
 
+	  /* translate the TijahOptions parameter contruction */
+          translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
+	  saveResult(f, ++counter);
+	  opt_counter = counter;
+	} else if (fun->arity == 2) {
+	  int opt_variant;
+
+	  if ( (TY_EQ(TY(L(args)), PFty_star(PFty_xs_string()))) ||
+	       (TY_EQ(TY(L(args)), PFty_xs_string())) )
+	       opt_variant = 1; // query[-id](query:str,node:options) used
+	  else
+	       opt_variant = 0; // query[-id](startnodes:node*, query:str) used
+
+	  if ( opt_variant ) {
+	      /* translate the TijahOptions parameter contruction */
+              translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+	      saveResult(f, ++counter);
+	      opt_counter = counter;
+	  } else {
+	      /* generate startnodes code */ 
+	      translate2MIL (f, code, cur_level, ++counter, L(args));
+	      saveResult(f, ++counter);
+	      ctx_counter = counter;
+	  }
+
+          /* get query string */
+	  if ( opt_variant ) {
+	     rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+	  } else {
+	     rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+	  }
+          if (rc == NORMAL)
+             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+          add_empty_strings (f, STR, cur_level);
+          saveResult_ (f, ++counter, STR);
+	  str_counter = counter;
+	} else if (fun->arity == 1) {
+          /* get query string */
+	  rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+          if (rc == NORMAL)
+             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+          add_empty_strings (f, STR, cur_level);
+          saveResult_ (f, ++counter, STR);
+	  str_counter = counter;
+	} 
 	if ( storeScore )
 	  milprintf(f,
 	        "var result_id := new(void,lng).seqbase(0@0);");
@@ -8214,33 +8239,35 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
           milprintf(f, 
                 "    var optbat := new(str,str,32);\n");
 
-	  milprintf(f,
+	milprintf(f,
 	        "    var coll := tj_get_ft_index(optbat,true);\n"
-		"    tijah_lock := tj_get_collection_lock(coll);\n"
+	        "    tijah_lock := tj_get_collection_lock(coll);\n"
 		"    lock_set(tijah_lock);\n"
+	  );
+	  if ( ctx_counter ) {
+	    milprintf(f,
 		"    var startNodes;\n"
 	        "    iter := iter%03u.materialize(ipik%03u);\n"
-		"    if (iter.count() > 0) {\n"  
-		"        var iteration := iter%03u.fetch(int($h));\n"  
-	        "        iter := iter.select(iteration);\n"
-		"        iteration := nil;\n"
-	        "        item := item%03u.materialize(ipik%03u).semijoin(iter);\n"
-	        "        kind := kind%03u.materialize(ipik%03u).semijoin(iter);\n"
-	        "        iter := iter.tmark(0@0);\n"
-	        "        item := item.tmark(0@0);\n"
-	        "        kind := kind.tmark(0@0);\n"
-		"        var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
-		"        var xdoc_firstpre := bat(\"tj_\" + coll + \"_doc_firstpre\");\n"
-		"        var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
-		"        var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
-                "        startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
-	        "    } else {\n"
-                "    startNodes := new(void,oid); }\n"
+		"    var iteration := iter%03u.fetch(int($h));\n"  
+	        "    iter := iter.select(iteration);\n"
+		"    iteration := nil;\n"
+	        "    item := item%03u.materialize(ipik%03u).semijoin(iter);\n"
+	        "    kind := kind%03u.materialize(ipik%03u).semijoin(iter);\n"
+	        "    iter := iter.tmark(0@0);\n"
+	        "    item := item.tmark(0@0);\n"
+	        "    kind := kind.tmark(0@0);\n"
+		"    var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
+		"    var xdoc_firstpre := bat(\"tj_\" + coll + \"_doc_firstpre\");\n"
+		"    var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
+		"    var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
+                "    startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
 		, ctx_counter, ctx_counter, str_counter, ctx_counter, ctx_counter, ctx_counter, ctx_counter);
-          
+	} else {
+	  milprintf(f,"    var startNodes := new(void,oid);\n");
+	}
 	/* execute tijah query */
 	milprintf(f,
-                "    var nexi_allscores := run_tijah_query(optbat,startNodes,item%s%03u.fetch(int($h)));\n"
+                "    var nexi_allscores := run_tijah_query(optbat,%s,startNodes,item%s%03u.fetch(int($h)));\n"
 		"    var nexi_score;\n"
 		"    if ( optbat.exist(\"returnNumber\") ) {\n"
 		"        var retNum := int(optbat.find(\"returnNumber\"));\n"
@@ -8248,8 +8275,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"    } else {\n"
 		"        nexi_score := nexi_allscores;\n"
 		"    }\n"
-		, item_ext, str_counter);
-	
+		, (ctx_counter?"true":"false"),item_ext, str_counter);
 	    /* translate tijah_pre to pf-pre */
 	    milprintf(f,
                 "    var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
@@ -8315,10 +8341,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	}
 	
 	/* clean up */
-	deleteResult(f, ctx_counter);
-        deleteResult_ (f, str_counter, STR);
 	if ( opt_counter )
 	    deleteResult(f, opt_counter);
+        deleteResult_ (f, str_counter, STR);
+	if ( ctx_counter )
+	    deleteResult(f, ctx_counter);
         milprintf(f, "} # end of translate pf:tijah_query\n");
         return (code && storeScore)?INT:NORMAL;
     }

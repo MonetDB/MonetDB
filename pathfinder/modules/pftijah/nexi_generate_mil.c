@@ -156,7 +156,7 @@ char *split_terms(char *adj_term){
 
 }
 
-int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_retr_model, struct_RMI *img_retr_model, struct_RF *rel_feedback, char *mil_fname, char *sxqxl_fname, command_tree **p_command_array, bool phrase_in)
+int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes, struct_RMT *txt_retr_model, struct_RMI *img_retr_model, struct_RF *rel_feedback, char *mil_fname, char *sxqxl_fname, command_tree **p_command_array, bool phrase_in)
 {
   (void)rel_feedback;
   (void)mil_fname;
@@ -300,7 +300,11 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
         if (p_com->left == NULL && p_com->right == NULL) {
 
           if (!strcmp(p_com->argument,"\"Root\"")) {
-            MILPRINTF(MILOUT, "R%d := select_root%s(startNodes);\n", com_num,parserCtx->ffPfx);
+	    if ( use_startNodes ) {
+              MILPRINTF(MILOUT, "R%d := new_select_startnodes%s(startNodes);\n", com_num,parserCtx->ffPfx);
+	    } else {
+              MILPRINTF(MILOUT, "R%d := new_select_root%s();\n", com_num,parserCtx->ffPfx);
+	    }
           }
           else {
             MILPRINTF(MILOUT, "R%d := select_node%s(%s,%s);\n", com_num, parserCtx->ffPfx,p_com->argument, txt_retr_model->e_class);

@@ -384,4 +384,4 @@ int process(char* stemmer, bool stem_stop, bool stop_quoted);
 
 extern int COtoCPlan(int query_num, int type, struct_RMT *txt_retr_model, struct_RF *rel_feedback);
 int CAStoCPlan(int query_num, int type, bool rm_set);
-extern int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_retr_model, struct_RMI *img_retr_model, struct_RF *rel_feedback, char *mil_fname, char *sxqxl_fname, command_tree **p_command_array, bool phrase_in);
+extern int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes, struct_RMT *txt_retr_model, struct_RMI *img_retr_model, struct_RF *rel_feedback, char *mil_fname, char *sxqxl_fname, command_tree **p_command_array, bool phrase_in);
