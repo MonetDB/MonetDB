@@ -697,6 +697,7 @@ end main;	# 11
 [ "close",				  "command",	  "bpm",	  "():void ",															  "BPMclose;"					  ]
 [ "dump",				  "command",	  "bpm",	  "():void ",															  "BPMdump;"					  ]
 [ "dump",				  "command",	  "bpm",	  "(alias:bat[:any_1,:any_2]):void ",											  "BPMdumpAlias;"				  ]
+[ "discard",			  "command",	  "bpm",	  "():void ",																  "BPMdiscardAll;"				  ]
 [ "discard",				  "command",	  "bpm",	  "(alias:bat[:any_1,:any_2]):void ",											  "BPMdiscard;"					  ]
 [ "delete",				  "command",	  "bpm",	  "(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]):void ",									  "BPMdelete;"					  ]
 [ "derivePartition",			  "command",	  "bpm",	  "(pb:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",							  "BPMderived;"					  ]
