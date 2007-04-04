@@ -1338,7 +1338,35 @@ PROC select_root_frag(bat[void,oid] par_startNodes) : bat[oid,bat] :=
 {
     var res := new(oid,bat);
     
-    res.insert(0@0, select_root(par_startNodes) );
+    res.insert(virtRoot, select_root(par_startNodes) );
+    return res;
+}
+
+PROC new_select_root() : bat[oid,dbl] :=
+{
+    var res := new(oid,dbl,1);
+    res.insert(virtRoot, dbl(scoreBase));
+    return res;
+}
+
+PROC new_select_root_frag() : bat[oid,bat] :=
+{
+    var res := new(oid,bat,1);
+    res.insert(virtRoot, new_select_root());
+    return root;
+}
+
+PROC new_select_startnodes(bat[void,oid] startNodes) : bat[oid,dbl] :=
+{
+    var res := startNodes.reverse().sort().project(dbl(scoreBase));
+    if (res.count() = 0) tj_trace(sprintf("WARNING: start nodeset is empty")); 
+    return res;
+}
+
+PROC new_select_startnodes_frag(bat[void,oid] startNodes) : bat[oid,bat] :=
+{
+    var nodes := new_select_startnodes(startNodes);
+    var res := split2frag(nodes, bat("tj_" + collName + "_fragments"));
     return res;
 }
 
