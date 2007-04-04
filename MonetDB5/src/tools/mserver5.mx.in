@@ -91,17 +91,6 @@ The server options have the following meaning:
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define getcwd _getcwd
 #endif
-
-#define GRPthreads ( 1 | PARMASK)
-#define GRPmemory (MEMMASK | DEADBEEFMASK)
-#define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
-#define GRPio (IOMASK | PERFMASK )
-#define GRPtransactions ( TMMASK | DELTAMASK | TEMMASK)
-#define GRPmodules (DLMASK | LOADMASK)
-#define GRPalgorithms (ALGOMASK)
-#define GRPestimates (ESTIMASK)
-#define GRPxproperties (XPROPMASK | JOINPROPMASK)
-
 @-
 The architecture is setup to handle multiple streams of requests.
 The first thread started represents the server. It reads from standard input
