@@ -6579,10 +6579,16 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate fn:collections () as string*\n", cur_level, consistent);
         return NORMAL;
-    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"text")) == 0) {
+    } else if (fun->arity == 2 && ((PFqname_eq(fnQname,PFqname (PFns_lib,"text")) == 0) ||
+               (rc = 2, PFqname_eq(fnQname,PFqname (PFns_lib,"attribute")) == 0))) 
+    {
+        char *fcn = (rc == 2)?"attribute":"text";
+
         /* index-powered element lookup by attribute or text-child on equal value (string) 
          * - pf:text(NODES, VALUE) 
          *   delivers all text nodes from the fragments in NODES with a VALUE as text value
+         * - pf:attribute(NODES, VALUE) 
+         *   delivers all elemeny nodes from the fragments in NODES with a VALUE as attribute value
          * within each iter, the returned pre-sequence is unique and in doc-order
          */
 
@@ -6596,15 +6602,15 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
 
         milprintf(f,
-                "{ # translate pf:text () as string*\n"
-                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_, str_nil, str_nil);\n"
+                "{ # translate pf:%s () as string*\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_, str_nil, str_nil, %s);\n"
                 "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
                 "  kind := id_pre.hmark(0@0).leftfetchjoin(kind%03u);\n"
                 "  item := id_pre.tmark(0@0);\n"
                 "  ipik := item;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate pf:text () as element()*\n", 
-                    counter, counter, counter, counter);
+                "} # end of translate pf:%s () as element()*\n", 
+                    fcn, counter, counter, (*fcn=='a')?"false":"true", counter, counter, fcn);
 
         deleteResult_ (f, counter, NORMAL);
         return NORMAL;
@@ -6635,7 +6641,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         milprintf(f,
                 "{ # translate pf:attribute() as string*\n"
-                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_%03u, item_str_%03u, item_str_);\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, kind%03u, item_str_%03u, item_str_%03u, item_str_, false);\n"
                 "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
                 "  kind := id_pre.hmark(0@0).leftfetchjoin(kind%03u);\n"
                 "  item := id_pre.tmark(0@0);\n"

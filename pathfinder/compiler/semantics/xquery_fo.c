@@ -1760,7 +1760,7 @@ PFfun_xquery_fo ()
       { .ns = PFns_lib, .loc = "collections-unsafe",
         .arity = 0, .sig_count = 1, .sigs = { {
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
-    ,  /* pf:attr (node()*, string, string, string) as element()* */
+    ,  /* pf:attribute (node()*, string, string, string) as element()* */
       { .ns = PFns_lib, .loc = "attribute",
         .arity = 4, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
@@ -1768,7 +1768,13 @@ PFfun_xquery_fo ()
                                    PFty_xs_string (),
                                    PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
-    ,  /* pf:text (node()*, string, string, string) as element()* */
+    ,  /* pf:attribute (node()*, string) as element()* */
+      { .ns = PFns_lib, .loc = "attribute",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
+                                   PFty_xs_string () },
+            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
+    ,  /* pf:text (node()*, string) as text()* */
       { .ns = PFns_lib, .loc = "text",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),

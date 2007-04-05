@@ -2176,7 +2176,7 @@ PROC ws_lookup(BAT[void,bat] ws,
 }
 
 # loop-lifted (attr/text) key lookup, with iteration dependent 'val': thus can also power joins!  
-PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri, str loc) : BAT[oid,oid] 
+PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri, str loc, bit gettext) : BAT[oid,oid] 
 {
     var runtime        := ws.fetch(CONT_RUNTIME).fetch(cont);
     var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
@@ -2192,21 +2192,21 @@ PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri,
     var vx_hsh_nid_ins := ws.fetch(VX_HSH_NID_INS).fetch(cont);
     var vx_hsh_nid_del := ws.fetch(VX_HSH_NID_DEL).fetch(cont);
     var map_pid        := ws.fetch(MAP_PID).fetch(cont);
+    var uri_loc        := ws.fetch(QN_URI_LOC).fetch(cont);
+    var prefix_uri_loc := ws.fetch(QN_PREFIX_URI_LOC).fetch(cont);
+    var qns            := uri_loc;
     var use_index      := (cont != WS);
-    var gettext        := false;
     var iter_cand;
-    var qns;
  
     # lookup whether we know uri:loc in this collection
     if (isnil(uri) and isnil(loc)) { 
-        gettext := true; # text lookup
-        qns := reverse(bat(void,int).append(0)); # matches single dummy qn
+        if (gettext) qns := reverse(bat(void,int).append(0)); # matches single dummy qn
     } else if (isnil(uri)) { # ID access: get any qname that is marked as ID
-        qns := ws.fetch(QN_PREFIX_URI_LOC).fetch(cont).[endsWith](NS_ACCEL_SEP+"id"+NS_ACCEL_SEP).uselect(true);
+        qns := prefix_uri_loc.[endsWith](NS_ACCEL_SEP+"id"+NS_ACCEL_SEP).uselect(true);
     } else if (isnil(loc)) { # IDREF access: get any qname that is marked as IDREF
-        qns := ws.fetch(QN_PREFIX_URI_LOC).fetch(cont).[endsWith](NS_ACCEL_SEP+"idref"+NS_ACCEL_SEP).uselect(true);
+        qns := prefix_uri_loc.[endsWith](NS_ACCEL_SEP+"idref"+NS_ACCEL_SEP).uselect(true);
     } else {
-        qns := ws.fetch(QN_URI_LOC).fetch(cont).uselect(uri + NS_ACCEL_SEP + loc);
+        qns := uri_loc.uselect(uri + NS_ACCEL_SEP + loc);
     }
     qns := mirror(qns);
     if (count(qns) = 0) return empty_bat; # qn not present in the document, so there cannot be any matches
@@ -2285,14 +2285,14 @@ PROC vx_lookup(bat[void,bat] ws,
                bat[void,oid] id_iter,
                bat[void,int] id_kind,
                bat[void,str] iter_val,
-               str uri, str loc) : BAT[oid,oid]
+               str uri, str loc, bit gettext) : BAT[oid,oid]
 {
     var id_pre  := bat(oid,oid,10000);
     var id_cont := get_container(id_kind);
 
     id_cont.tunique().sort()@batloop() {
         var key_val := id_cont.ord_uselect($h).hmark(0@0).leftfetchjoin(id_iter).leftfetchjoin(iter_val.tmark(1@0));
-        var key_pre := vx_lookup_cont(ws, $h, key_val, uri, loc);
+        var key_pre := vx_lookup_cont(ws, $h, key_val, uri, loc, gettext);
         id_pre.insert(key_pre);
     }
     return id_pre; # sorted on pre 
@@ -2348,7 +2348,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
       { var id__val := id_split.leftjoin(split_tokens);
         var key_val := id__val.tmark(0@0);
         var key_id  := id__val.hmark(0@0);
-        var key_pre := vx_lookup_cont(ws, cont, key_val, uri, loc);
+        var key_pre := vx_lookup_cont(ws, cont, key_val, uri, loc, false);
 
         if (isid) { # for ID() we also perform NID access; merging with IDs, conserves pre-order
             id_pre  := id_split.leftjoin(split_nids).leftjoin(nid_rid).[swizzle](map_pid).tsort();
