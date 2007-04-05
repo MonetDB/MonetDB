@@ -4460,10 +4460,13 @@ xquery_function_call(xquery_client *ctx,
                     /* we no longer do fancy strTostr for strings; just copied as-is */
 		    char *t, *s = argval[l];
 		    int len = strlen(s)*2;
-		    if (len <= ctx->vallen) {
+		    if (len >= ctx->vallen) {
 			if (ctx->val) GDKfree(ctx->val);
-			ctx->val = GDKmalloc(len+1);
-			if (ctx->val == NULL) return "xquery_function_call: malloc failure.\n";
+			ctx->val = GDKmalloc(ctx->vallen = len+1);
+			if (ctx->val == NULL) {
+			    ctx->vallen = 0;
+			    return "xquery_function_call: malloc failure.\n";
+			}
 		    }
 		    for(t=(char*) ctx->val; *s; s++) { *t++ = *s; }
                     *t = 0;
@@ -4812,7 +4815,9 @@ xquery_client_alloc_(xquery_client *ctx)
     if (ctx->val == NULL || ctx->buf == NULL) {
             if (ctx->buf) GDKfree(ctx->buf);
             if (ctx->val) GDKfree(ctx->val);
+            ctx->buf = ctx->val = NULL;
             ctx->buflen = 0;
+            ctx->vallen = 0;
             return "xquery_client_alloc: failed to allocate.\n";
     }
     ctx->repeat_stk = CNTXTnew(ctx->stk);
