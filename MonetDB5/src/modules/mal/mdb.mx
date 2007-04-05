@@ -347,8 +347,8 @@ MDBsetDebugStr(int *ret, str *flg)
 		GDKdebug |= GRPmodules;
 	if( strcmp("algorithms",*flg)==0)
 		GDKdebug |= GRPalgorithms;
-	if( strcmp("estimates",*flg)==0)
-		GDKdebug |= GRPestimates;
+	if( strcmp("performance",*flg)==0)
+		GDKdebug |= GRPperformance;
 	if( strcmp("xproperties",*flg)==0)
 		GDKdebug |= GRPxproperties;
     return MAL_SUCCEED;

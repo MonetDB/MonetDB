@@ -209,14 +209,14 @@ mal_export int 				monet_daemon;
 #define mal_down_sema(X,Y) if(GDKprotected) MT_down_sema(X,Y)
 
 #define GRPthreads ( 1 | PARMASK)
-#define GRPmemory (MEMMASK | DEADBEEFMASK)
+#define GRPmemory (MEMMASK )
 #define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
 #define GRPio (IOMASK | PERFMASK )
 #define GRPtransactions ( TMMASK | DELTAMASK | TEMMASK)
 #define GRPmodules (DLMASK | LOADMASK)
-#define GRPalgorithms (ALGOMASK | JOINPROPMASK)
-#define GRPestimates (ESTIMASK)
+#define GRPalgorithms (ALGOMASK | ESTIMASK )
 #define GRPxproperties (XPROPMASK )
+#define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 @c 
 #include <mal_config.h>
 #include <mal.h>

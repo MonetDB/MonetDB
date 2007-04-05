@@ -454,8 +454,8 @@ faster system start.
 				debug|= GRPxproperties;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "estimates") == 0) {
-				debug|= GRPestimates;
+			if (strcmp(long_options[option_index].name, "performance") == 0) {
+				debug|= GRPperformance;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "io") == 0) {
