@@ -1268,7 +1268,7 @@ HASHinfo(BAT *bn, Hash *h, str s)
 
 	for (i = 0; i <= COLLISION + 1; i++)
 		if (cnt[i]) {
-			BUNins(bn, pre(s, local_utoa(i)), local_utoa(cnt[i]),FALSE);
+			BUNins(bn, pre(s, local_itoa((ssize_t) i)), local_utoa(cnt[i]),FALSE);
 		}
 	snprintf(buf, 32, SZFMT " on " SZFMT, largetot, largebuckets);
 	BUNins(bn, pre(s, "collision"), buf,FALSE);
