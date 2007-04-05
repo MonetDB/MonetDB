@@ -2235,6 +2235,9 @@ PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri,
            # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
            iter_cand.access(BAT_WRITE).insert(iter_ins).deleteBuns(iter_del).access(BAT_READ);
         }
+        # without any candidate NIDs, we are sure to find no matches 
+        if (count(iter_cand) = 0) return empty_bat;
+
         # check against finding nil NIDs. These indicate attribute values ommitted from the index
         if (isnil(min(iter_cand))) {
             if (gettext) iter_cand := iter_cand.ord_select(oid_nil,oid_nil);
