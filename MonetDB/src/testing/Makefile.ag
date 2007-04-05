@@ -47,7 +47,7 @@ scripts_py = {
 scripts_python = {
 	EXT = py
 	DIR = pkgdatadir/python
-	SOURCES = trace.py
+	SOURCES = trace.py subprocess26.py
 }
 
 scripts_lst = {
