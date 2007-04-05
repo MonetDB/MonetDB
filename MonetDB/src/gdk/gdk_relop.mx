@@ -1912,18 +1912,13 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	}
 	if (BAThvoid(l)) {
 		/* redirect semijoin on two dense regions to a select (and hence to BATslice) */
-		oid min = oid_nil, max = oid_nil;
-		BAT *other = (cpy == l) ? r : l;
-
-		if (BATcount(other)) {
-			min = *(oid *) BUNhead(l, BUNfirst(other));
-			max = *(oid *) BUNhead(l, BUNlast(other) - BUNsize(other));
-		}
+                oid min = l->hseqbase, max = min;
+                if (min != oid_nil) max += BATcount(l);
 		if (denselookup) {
 			min -= r->hseqbase;
 			max -= r->hseqbase;
 		}
-		return BATslice(cpy, min, 1+max);
+		return BATslice(cpy, min, max);
 	}
 	base = BUNindex(r, BUNfirst(r));
 	end = base + BATcount(r);
