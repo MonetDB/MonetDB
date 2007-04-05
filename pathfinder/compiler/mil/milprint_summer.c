@@ -11384,9 +11384,13 @@ const char* PFstartMIL(int statement_type) {
            "   print_result(genType,moduleNS,method,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
            PF_STOPMIL_END("Print ")
 #define PF_STOPMIL_UPDATE PF_STOPMIL_START\
-           "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")
+           "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
+           "  #print_result(genType,ws,bat(void,oid,0).seqbase(0@0),constant2bat(34),bat(void,lng,0).seqbase(0@0),bat(void,dbl,0).seqbase(0@0),bat(void,dbl,0).seqbase(0@0),bat(void,str,0).seqbase(0@0));\n"\
+           PF_STOPMIL_END("Update")
 #define PF_STOPMIL_DOCMGT PF_STOPMIL_START\
-           "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_PLAY_TIJAH_TAPE PF_STOPMIL_END("Update")
+           "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
+           PF_PLAY_TIJAH_TAPE\
+           PF_STOPMIL_END("Update")
 #define PF_STOPMIL_END(LASTPHASE) \
            " });\n"\
            " ws_log_wsid := ws_id(ws);\n"\
