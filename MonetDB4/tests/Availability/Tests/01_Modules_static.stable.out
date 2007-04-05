@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1017 ]
+[ 1019 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1017 ]
+[ 1019 ]
 
 var All:=0;
 
@@ -828,8 +828,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 88 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 90 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -915,6 +915,8 @@ Module: "bat"
 [ "seqbase",	  "COMMAND:   ",  "seqbase(BAT[void,any::1]) : oid",							  "Get the sequence base for the void vcolumn of a BAT."																																																						  ]
 [ "seqbase",	  "COMMAND:   ",  "seqbase(BAT[void,any::1], oid) : BAT[void,any::1]",					  "Set the sequence base for the void vcolumn of a BAT.\n Returns the BAT itself."																																																			  ]
 [ "set",	  "COMMAND:   ",  "set(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",				  "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel\n will silently block insertions that cause a duplicate BUN [head,tail] entries\n in the BAT.\n KNOWN BUG: when 'set' is set to TRUE, this function does not automatically\n eliminate duplicates. Use b := b.sunique();\n Returns the BAT itself."	  ]
+[ "sorder",	  "COMMAND:   ",  "sorder(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Stable sorts the BAT itself, in place, on ascending head values. Returns b."																																									  ]
+[ "sorder_rev",	  "COMMAND:   ",  "sorder_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Stable sorts the BAT itself, in place, on descending head values. Returns b."																																								  ]
 [ "synced",	  "COMMAND:   ",  "synced(BAT[any,any], BAT[any,any]) : bit",						  "Tests whether two BATs are synced or not. "																																																								  ]
 [ "tail",	  "COMMAND:   ",  "tail(BAT[any,any]) : str",								  "Returns the type of the tail column of a BAT, as a string."																																																								  ]
 [ "tail",	  "COMMAND:   ",  "tail(int) : str",											  "Returns the type of the tail column of a BAT, as a string."																														  ]
@@ -1162,7 +1164,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1017 ]
+[ 1019 ]
 
 quit();
 
