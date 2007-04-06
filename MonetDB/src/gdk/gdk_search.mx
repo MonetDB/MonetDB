@@ -414,7 +414,7 @@ BAThash(BAT *b, size_t masksize)
 			default:
 				@:starthash(any,head)@
 			}
-		} while (r < p && mask < cnt && (mask <<= 2));
+		} while (r < p && (mask <<= 2) && mask < cnt);
 
 		/* finish the hashtable with the current mask */
 		p = r;

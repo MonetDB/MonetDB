@@ -128,7 +128,7 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 			@3 = (size_t) ((double) (((lng) _tot) * ((lng) _lcount)) / (0.95 * (double) _sample));
 			l = _tmp1;
 		} else {
-			@3 = MAX(_lcount,_rcount);
+			@3 = MIN(32*MIN(_lcount,_rcount),MAX(_lcount,_rcount));
 		}
 	}
 @= joinbat
