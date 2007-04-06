@@ -2092,36 +2092,6 @@ PROC __runtime_addchunk(lng wsid,
 }
 
 
-PROC __ws_lookup(BAT[void,bat] ws,
-                 oid cont,
-                 BAT[oid,oid] qn_ids) : bat[oid,void] 
-{
-    var res, valid := false;
-    var ins, del, idx := reverse(ws.fetch(QN_NID).fetch(cont));
-    if (count(qn_ids) = 1) {
-        var qn_id := qn_ids.fetch(0);
-        valid := ws.fetch(QN_NID_UNQ).fetch(cont).texist(qn_id);
-        if (valid) {
-            res := idx.select(qn_id).assert_order();
-            ins := reverse(ws.fetch(QN_NID_INS).fetch(cont)).select(qn_id);
-            del := reverse(ws.fetch(QN_NID_DEL).fetch(cont)).select(qn_id);
-        }
-    } else {
-        valid := (count(qn_ids.kdiff(reverse(ws.fetch(QN_NID_UNQ).fetch(cont)))) = 0);
-        if (valid) {
-            res := idx.join(qn_ids);
-            ins := reverse(ws.fetch(QN_NID_INS).fetch(cont)).join(qn_ids);
-            del := reverse(ws.fetch(QN_NID_DEL).fetch(cont)).join(qn_ids);
-        }
-    }
-    if (valid and bit(count(ins) + count(del))) {
-        # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
-        res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
-    }
-    if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
-    return res;
-}
-
 
 PROC __runtime_newpage(BAT[lock,bat] runtime) : oid 
 {
@@ -2167,24 +2137,37 @@ PROC ws_lookup(BAT[void,bat] ws,
 {
     if (count(qn_ids) = 0) return empty_bat; # unknown qnames => empty result
 
-    var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-    var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
-
-    # get the lock and runtime inside the short lock
-    lock_set(coll_shortlock);
-    var res, err := CATCH(res := __ws_lookup(ws, cont, qn_ids));
-    lock_unset(coll_shortlock);
-    if (not(isnil(err))) ERROR(err);
+    var res, valid := false;
+    var ins, del, idx := reverse(ws.fetch(QN_NID).fetch(cont));
+    if (count(qn_ids) = 1) {
+        var qn_id := qn_ids.fetch(0);
+        valid := ws.fetch(QN_NID_UNQ).fetch(cont).texist(qn_id);
+        if (valid) {
+            res := idx.select(qn_id).assert_order();
+            ins := reverse(ws.fetch(QN_NID_INS).fetch(cont)).select(qn_id);
+            del := reverse(ws.fetch(QN_NID_DEL).fetch(cont)).select(qn_id);
+        }
+    } else {
+        valid := (count(qn_ids.kdiff(reverse(ws.fetch(QN_NID_UNQ).fetch(cont)))) = 0);
+        if (valid) {
+            res := idx.join(qn_ids);
+            ins := reverse(ws.fetch(QN_NID_INS).fetch(cont)).join(qn_ids);
+            del := reverse(ws.fetch(QN_NID_DEL).fetch(cont)).join(qn_ids);
+        }
+    }
+    if (valid and bit(count(ins) + count(del))) {
+        # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
+        res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
+    }
+    if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
 
     # SCJ must catch error and use sequential post-filter instead.
     return sort(res).hmark(oid_nil);
 }
 
 # loop-lifted (attr/text) key lookup, with iteration dependent 'val': thus can also power joins!  
-PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri, str loc, bit gettext) : BAT[oid,oid] 
+PROC vx_lookup(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri, str loc, bit gettext) : BAT[oid,oid] 
 {
-    var runtime        := ws.fetch(CONT_RUNTIME).fetch(cont);
-    var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     var nid_rid        := ws.fetch(NID_RID).fetch(cont);
     var pre_kind       := ws.fetch(PRE_KIND).fetch(cont);
     var pre_size       := ws.fetch(PRE_SIZE).fetch(cont);
@@ -2225,13 +2208,8 @@ PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri,
             key_hsh   := [:rotate_xor_hash=](key_hsh, 13, key_iter.leftjoin(iter_val).tmark(0@0));
             iter_hsh  := reverse(key_iter).leftfetchjoin(key_hsh);
 
-        # lookup uses the hash-index on vx_hsh_nid; provide isolation with _ins/_del bats
-        lock_set(coll_shortlock);
-        var err := CATCH(iter_cand := iter_hsh.leftjoin(vx_hsh_nid));
-        lock_unset(coll_shortlock);
-        if (not(isnil(err))) ERROR(err);
-
         # ins/del data structures are private to the transaction (no lock needed)
+            iter_cand := iter_hsh.leftjoin(vx_hsh_nid); # main lookup
         var iter_ins  := empty_bat;
         var iter_del  := empty_bat;
         if (count(vx_hsh_nid_ins) > 0) iter_hsh.leftjoin(vx_hsh_nid_ins);
@@ -2304,7 +2282,7 @@ PROC vx_lookup(bat[void,bat] ws,
 
     id_cont.tunique().sort()@batloop() {
         var key_val := id_cont.ord_uselect($h).hmark(0@0).leftfetchjoin(id_iter).leftfetchjoin(iter_val.tmark(1@0));
-        var key_pre := vx_lookup_cont(ws, $h, key_val, uri, loc, gettext);
+        var key_pre := vx_lookup(ws, $h, key_val, uri, loc, gettext);
         id_pre.insert(key_pre);
     }
     return id_pre; # sorted on pre 
@@ -2321,7 +2299,7 @@ PROC vx_lookup(bat[void,bat] ws,
 PROC ws_findnodes(BAT[void,bat] ws, 
                   BAT[void,oid] id_iter, any id_item, any id_kind, any id_cont, any id_tokens, bit isid) : BAT[oid,oid] 
 {
-    var loc := str_nil, uri := ""; # nil loc/uri tells vx_lookup_cont to look for *all* ID/IDREF attributes
+    var loc := str_nil, uri := ""; # nil loc/uri tells vx_lookup to look for *all* ID/IDREF attributes
 
     # get root nids, which identify the XML fragment in which we must look
     var id_root := get_root(ws, id_item, id_kind, id_cont).mposjoin(id_cont, ws.fetch(PRE_NID));
@@ -2360,7 +2338,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
       { var id__val := id_split.leftjoin(split_tokens);
         var key_val := id__val.tmark(0@0);
         var key_id  := id__val.hmark(0@0);
-        var key_pre := vx_lookup_cont(ws, cont, key_val, uri, loc, false);
+        var key_pre := vx_lookup(ws, cont, key_val, uri, loc, false);
 
         if (isid) { # for ID() we also perform NID access; merging with IDs, conserves pre-order
             id_pre  := id_split.leftjoin(split_nids).leftjoin(nid_rid).[swizzle](map_pid).tsort();
