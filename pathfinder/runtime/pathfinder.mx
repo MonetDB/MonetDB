@@ -2226,7 +2226,6 @@ PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri,
             iter_hsh  := reverse(key_iter).leftfetchjoin(key_hsh);
 
         # lookup uses the hash-index on vx_hsh_nid; provide isolation with _ins/_del bats
-CATCH(ERROR("pp"));
         lock_set(coll_shortlock);
         var err := CATCH(iter_cand := iter_hsh.leftjoin(vx_hsh_nid));
         lock_unset(coll_shortlock);
@@ -2258,6 +2257,13 @@ CATCH(ERROR("pp"));
         var tmp       := iter_cand.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
             my_iter   := tmp.hmark(0@0).leftfetchjoin(my_iter); # my_iter and my_pre synced
         var my_pre    := tmp.tmark(0@0);
+
+        # check if the candidates are indeed text nodes
+            tmp       := my_pre.leftfetchjoin(pre_kind).ord_uselect(TEXT).hmark(0@0);
+        if (count(tmp) < count(my_pre)) {
+            my_pre    := tmp.leftfetchjoin(my_pre);
+            my_iter   := tmp.leftfetchjoin(my_iter);
+        }
 
         { # check whether string value actually matches something in 'iter_val'
         var my_text   := my_pre.leftfetchjoin(pre_prop).leftfetchjoin(prop_text);
