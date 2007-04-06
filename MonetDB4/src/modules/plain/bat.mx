@@ -1234,17 +1234,15 @@ local_utoa(size_t i)
 	return buf;
 }
 
-#define COLLISION 6
+#define COLLISION 64 
 
 static void
 HASHinfo(BAT *bn, Hash *h, str s)
 {
 	hash_t i;
 	hash_t j;
+	hash_t k;
 	size_t cnt[COLLISION + 2];
-	size_t largebuckets = 0;
-	size_t largetot = 0;
-	char buf[32];
 
 	BUNins(bn, pre(s, "type"), ATOMname(h->type),FALSE);
 	BUNins(bn, pre(s, "mask"), local_utoa(h->mask),FALSE);
@@ -1258,20 +1256,17 @@ HASHinfo(BAT *bn, Hash *h, str s)
 			cnt[0]++;
 		} else if (h->hash[i] > h->lim) {
 			GDKerror("HASHinfo: hash consistency problem %d\n", i);
-		} else if ((j = HASHlist(h, h->hash[i])) <= COLLISION + 1) {
-			cnt[j]++;
 		} else {
-			largebuckets++;
-			largetot += j;
+                        j = HASHlist(h, h->hash[i]);
+                        for(k=0; j; k++) j >>= 1;
+			cnt[k]++;
 		}
 	}
 
 	for (i = 0; i <= COLLISION + 1; i++)
 		if (cnt[i]) {
-			BUNins(bn, pre(s, local_itoa((ssize_t) i)), local_utoa(cnt[i]),FALSE);
+			BUNins(bn, pre(s, local_itoa((ssize_t) (i?(1<<(i-1)):0))), local_utoa(cnt[i]), FALSE);
 		}
-	snprintf(buf, 32, SZFMT " on " SZFMT, largetot, largebuckets);
-	BUNins(bn, pre(s, "collision"), buf,FALSE);
 }
 
 static void
