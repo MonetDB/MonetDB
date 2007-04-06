@@ -1858,6 +1858,25 @@ PROC _runtime_get(str colname) : BAT[lock,bat]
 }
 
 
+PROC vx_reduce(BAT[oid,int] vxt, BAT[void,oid] vxp) : BAT[oid,oid]
+{
+    # sort on hash code, to make next stap bearable
+        vxt := vxt.tsort();
+        vxp := vxt.hmark(0@0).leftfetchjoin(vxp).access(BAT_WRITE);
+        vxt := vxt.tmark(0@0);
+
+    # eliminate too frequent values from the index
+    var lim := 16*log2(lng(count(vxt)));
+    var sel := histogram(vxt);
+        sel := [<](sel, lim);
+        sel := vxt.leftjoin(sel).tmark(0@0).access(BAT_WRITE); # true for infrequent values
+    var tmp := reverse(kunique(reverse(vxt))).project(true);   # true for first frequent value only
+        vxp := vxp.inplace(mirror(tmp).leftfetchjoin(sel).ord_uselect(false).project(oid_nil));
+        sel := sel.inplace(tmp).ord_uselect(true).mirror(); tmp := nil; # select first hsh occurrence anyway 
+
+    return reverse(sel.leftfetchjoin(vxt)).leftfetchjoin(vxp); 
+}
+
 # double-underscore __X() means we must have the RT_LOCK_FREELIST of this collection
 
 # this computes a new QN_NID and HSH_NID indices for a suffix of the PRE-table
@@ -1897,18 +1916,7 @@ PROC __runtime_index(oid coll_oid,
     var vxt := vxm.leftfetchjoin(prp); vxm := nil;
         vxt := vxt.leftfetchjoin(prp_txt);
         vxt := [hash](vxt).access(BAT_APPEND); 
-
-    # filter out highly repeated text values from the hsh_nid index 
-    var lim := log2(lng(count(vxt)));
-        vxm := histogram(vxt);
-        tmp := [<](vxm, lim*lim);
-        tmp := vxt.leftjoin(tmp).tmark(0@0).access(BAT_WRITE); # true for infrequent values
-        vxp := [ifthenelse](tmp, vxp, oid_nil);       # key for infrequent, nil for infrequent
-        vxm := kunique(reverse(vxt));
-        vxm := reverse(vxm).project(true);
-        tmp := tmp.inplace(vxm).uselect(true).hmark(0@0); vxm := nil; # select first hsh occurrence anyway 
-        vxt := tmp.leftfetchjoin(vxt);
-        vxp := tmp.leftfetchjoin(vxp); tmp := nil;
+        vxm := vx_reduce(vxt, vxp).access(BAT_WRITE); vxp := nil; vxt := nil;
 
     # add the newly shredded attributes. The new attributes are >att and have an attr_own > pre
         tmp := attr_own.reverse().ord_select(att,oid_nil).reverse();
@@ -1919,22 +1927,19 @@ PROC __runtime_index(oid coll_oid,
         tmp := tmp.[swizzle](map_pid); 
     }
         tmp := tmp.ord_uselect(pre,oid_nil).hmark(0@0);
-        vxm := [int](tmp.leftfetchjoin(attr_qn)).access(BAT_WRITE);
-        vxm := [:rotate_xor_hash=](vxm, 27, tmp.leftfetchjoin(attr_prp).leftfetchjoin(prp_val));
-
-    # combine text/attribute index 
-        vxt := vxt.access(BAT_APPEND).append(vxm); vxm := nil;
-        tmp := tmp.leftfetchjoin(attr_own);
-        vxp := vxp.access(BAT_APPEND).append(tmp); tmp := nil;
-        vxm := reverse(vxt).leftfetchjoin(vxp); vxp := nil; vxt := nil;
+        vxt := [int](tmp.leftfetchjoin(attr_qn)).access(BAT_WRITE);
+        vxt := [:rotate_xor_hash=](vxt, 13, tmp.leftfetchjoin(attr_prp).leftfetchjoin(prp_val));
+        vxp := tmp.leftfetchjoin(attr_own); tmp := nil;
+        tmp := vx_reduce(vxt, vxp); vxp := nil; vxt := nil;
 
     if (updatable) { # hash-index, created here each time document is first used
-        (idx := bat(oid, oid, (count(idx)*4)/3).insert(idx)).accbuild("hash");
-        (vxm := bat(int, oid, (count(vxm)*4)/3).insert(vxm)).accbuild("hash");
+        (idx := bat(oid, oid, (count(idx)*8)/7).insert(idx)).accbuild("hash");
+        (vxm := bat(int, oid, ((count(vxm)+count(tmp))*8)/7).insert(vxm).insert(tmp)).accbuild("hash");
     } else { # read-only case. indices are sorted (binary search) and persistent
         # idx [qn,pre] lexico-ordered (thanks to stable-sort)
         idx := idx.access(BAT_WRITE).sorder().access(BAT_READ).rename(nme).mmap(1).persists(true);
-        vxm := vxm.access(BAT_WRITE).order().access(BAT_READ).rename(vx_nme).mmap(1).persists(true);
+        tmp := merged_union(vxm.hmark(0@0), tmp.hmark(0@0), vxm.tmark(0@0), tmp.tmark(0@0)); vxm := nil; 
+        vxm := reverse(tmp.fetch(0)).leftfetchjoin(tmp.fetch(1)); 
         if (pre = 1@0) CATCH(pf_checkpoint(bat(void,str).append(nme).append(vx_nme))); # immediate commit
     }
     return new(void,bat).insert(nil,idx).insert(nil,vxm);
@@ -2217,10 +2222,11 @@ PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri,
         var iter_hsh  := cross(iter_val, [int](qns));
         var key_iter  := iter_hsh.hmark(0@0);
         var key_hsh   := iter_hsh.tmark(0@0).copy().access(BAT_WRITE);
-            key_hsh   := [:rotate_xor_hash=](key_hsh, 27, key_iter.leftjoin(iter_val).tmark(0@0));
+            key_hsh   := [:rotate_xor_hash=](key_hsh, 13, key_iter.leftjoin(iter_val).tmark(0@0));
             iter_hsh  := reverse(key_iter).leftfetchjoin(key_hsh);
 
         # lookup uses the hash-index on vx_hsh_nid; provide isolation with _ins/_del bats
+CATCH(ERROR("pp"));
         lock_set(coll_shortlock);
         var err := CATCH(iter_cand := iter_hsh.leftjoin(vx_hsh_nid));
         lock_unset(coll_shortlock);
@@ -2239,10 +2245,7 @@ PROC vx_lookup_cont(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri,
         if (count(iter_cand) = 0) return empty_bat;
 
         # check against finding nil NIDs. These indicate attribute values ommitted from the index
-        if (isnil(min(iter_cand))) {
-            if (gettext) iter_cand := iter_cand.ord_select(oid_nil,oid_nil);
-            else         use_index := false; # was omitted, we have to scan
-        }
+        if (isnil(min(iter_cand))) use_index := false; # was omitted, we have to scan
     }
     if (not(use_index)) { # everything is a candidate
         iter_cand := cross(iter_val,reverse(pre_kind));
@@ -2539,7 +2542,7 @@ PROC vx_maintain(BAT[oid,oid] nid,
                  BAT[oid,oid] qn,
                  BAT[oid,str] val) : BAT[int,oid]
 {
-    return reverse([:rotate_xor_hash=]([int](qn).access(BAT_WRITE), 27, val)).leftfetchjoin(nid);
+    return reverse([:rotate_xor_hash=]([int](qn).access(BAT_WRITE), 13, val)).leftfetchjoin(nid);
 }
 
 PROC vx_maintain(BAT[oid,oid] nid,
