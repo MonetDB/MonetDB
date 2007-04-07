@@ -2979,7 +2979,7 @@ shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 			 * connection in chain (pc) unchanged.
 			 */
             if ( (c->flags & FLAG_FINISHED) || ((c->io != do_embedded) && c->expire < now) ) {
-                if (0) disconnect(c, pc); 
+                disconnect(c, pc); 
             } else
                 pc = c;
 		}

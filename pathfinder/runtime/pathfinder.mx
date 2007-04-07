@@ -5456,6 +5456,7 @@ xquery_client_engine(mapi_client *mc)
     xquery_client *ctx = mc->fc;
     stream *in = mc->c->fdin, *out = mc->c->fdout;
     char *p, *xquery, *err = (char*) -1, *msg = NULL;
+    lng usec;
 
     /* buf is the mode string that is available during execution in the MIL genType var */
     char buf[113], *genType, *output; 
@@ -5466,6 +5467,8 @@ xquery_client_engine(mapi_client *mc)
 
     ctx->mode = XQ_MAPI;
     while (1) {
+        usec = GDKusec();
+
         /* use the MAPI protocol to read as much xquery buffer as possible */
         if (stream_flush(out)) {
             msg = "could not flush prompt"; 
@@ -5538,9 +5541,12 @@ xquery_client_engine(mapi_client *mc)
                 }
                 continue; 
         } else if (*p == 'S' || *p == 's') {
+    
             /* execute query */
-            lng usec = GDKusec();
             xquery = p+1;
+if (p[1] == '4' && p[2] == '2' && p[3] == '\n' && p[4] == 0 && genType == buf && output[2] == 0) { /* use '42' as latency query test */ 
+    stream_printf(GDKout, "42\n\nTrans       0.000 msec\nShred       0.000 msec\nQuery       0.000 msec\nPrint       0.000 msec\n"); 
+} else {
             err = xquery_change_genType(ctx, genType);
             if (err == NULL) 
                 err = xquery_prepare(ctx, usec, xquery);
@@ -5562,6 +5568,7 @@ xquery_client_engine(mapi_client *mc)
                    BBPreclaim(b);
                 } 
             }
+}
         }
         /* second and on queries also need a cleared context */
         xquery_client_reset(ctx, NULL); 
