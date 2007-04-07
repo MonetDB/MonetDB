@@ -467,13 +467,21 @@ INSPECTgetDefinition(int *ret, str *mod, str *fcn)
 {
 	Symbol s;
 	char buf[BUFSIZ];
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+	BAT *b;
+	Client c= MCgetClient();
+	Module m;
 
+	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
+	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	if (s == 0)
+		throw(MAL, "inspect.getDefinition", 
+				"failed to find <module>.<function>");
+
+	b = BATnew(TYPE_str, TYPE_str, 256);
 	if (b == 0)
 		throw(MAL, "inspect.getDefinition", "failed to create BAT");
 
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
-	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	while (s) {
 		int i;
 		str ps;
@@ -497,14 +505,18 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 	Symbol s;
 	char buf[BUFSIZ];
 	str ps, tail;
-	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+	BAT *b;
+	Client c= MCgetClient();
+	Module m;
 
+	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
+	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	if (s == 0)
+		throw(MAL, "inspect.getSignature", 
+				"failed to find <module>.<function>");
+	b = BATnew(TYPE_str, TYPE_str, 12);
 	if (b == 0)
 		throw(MAL, "inspect.getSignature", "failed to create BAT");
-
-	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
-	if (s == 0)
-		throw(MAL, "inspect.getSignature", "failed to find <module>.<function>");
 
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
@@ -536,14 +548,17 @@ INSPECTgetAddress(int *ret, str *mod, str *fcn)
 	Symbol s;
 	char buf[BUFSIZ];
 	str ps, tail;
-	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+	BAT *b;
+	Client c= MCgetClient();
+	Module m;
 
-	if (b == 0)
-		throw(MAL, "inspect.getAddress", "failed to create BAT");
-
-	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
+	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getAddress", "failed to find <module>.<function>");
+	b = BATnew(TYPE_str, TYPE_str, 12);
+	if (b == 0)
+		throw(MAL, "inspect.getAddress", "failed to create BAT");
 
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
@@ -576,14 +591,17 @@ INSPECTgetComment(int *ret, str *mod, str *fcn)
 {
 	Symbol s;
 	char buf[BUFSIZ];
-	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+	BAT *b;
+	Client c= MCgetClient();
+	Module m;
 
+	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
+	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	if (s == 0)
+		throw(MAL, "inspect.getComment", "failed to find <module>.<function>");
+	b = BATnew(TYPE_str, TYPE_str, 12);
 	if (b == 0)
 		throw(MAL, "inspect.getSignature", "failed to create BAT");
-
-	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
-	if (s == 0)
-		throw(MAL, "inspect.getSignature", "failed to find <module>.<function>");
 
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
@@ -603,15 +621,17 @@ INSPECTgetSource(str *ret, str *mod, str *fcn)
 	Symbol s;
 	char *buf;
 	size_t len,lim;
+	Client c= MCgetClient();
+	Module m;
 
-	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
+	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
 	if (s == 0)
-		throw(MAL, "inspect.getSignature", 
+		throw(MAL, "inspect.getSource", 
 			"Failed to find <module>.<function>");
 
 	buf= (char*) GDKmalloc(BUFSIZ);
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
-	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	buf[0]=0;
 	len= 0;
 	lim= BUFSIZ;
@@ -647,14 +667,18 @@ str
 INSPECTsymbolType(int *ret, str *mod, str *fcn)
 {
 	Symbol s;
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+	BAT *b;
+	Client c= MCgetClient();
+	Module m;
 
+	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
+	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
+	if (s == 0)
+		throw(MAL, "inspect.getSignature", 
+			"failed to find <module>.<function>");
+	b = BATnew(TYPE_str, TYPE_str, 256);
 	if (b == 0)
 		throw(MAL, "inspect.getType", "failed to create BAT");
-
-	s = findMALSymbol(*mod, *fcn);
-	if (s == 0)
-		throw(MAL, "inspect.getSignature", "failed to find <module>.<function>");
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
 			str t = getTypeName(getDestType(s->def, getSignature(s)));
@@ -799,8 +823,11 @@ str
 INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn)
 {
 	Symbol s;
+	Client c= MCgetClient();
+	Module m;
 
-	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
+	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSize", 
 			"failed to find <module>.<function>");

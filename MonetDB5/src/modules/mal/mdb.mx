@@ -564,8 +564,10 @@ MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 	Client c = MCgetClient();
+	Module mod;
 
-	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	mod= findModule(c->nspace, getName(modnme,strlen(modnme)) );
+	s = findSymbolInModule(mod, putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -592,8 +594,10 @@ MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 	Client c = MCgetClient();
+	Module mod;
 
-	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	mod= findModule(c->nspace, getName(modnme,strlen(modnme)) );
+	s = findSymbolInModule(mod, putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -620,8 +624,10 @@ MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 	Client c = MCgetClient();
+	Module mod;
 
-	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	mod= findModule(c->nspace, getName(modnme,strlen(modnme)) );
+	s = findSymbolInModule(mod, putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.var","Could not find %s.%s", modnme, fcnnme);
 	else

@@ -337,13 +337,18 @@ str
 meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	MALfcn f;
+	Client c= MCgetClient();
 
 	(void) stk;
 	(void) p;
-	f = findMALSymbol("algebra", "cross")->def->stmt[0]->fcn;
+	f = findSymbolInModule(
+			findModule(c->nspace,putName("algebra",7)),
+			putName("cross",5))->def->stmt[0]->fcn;
 
 	meo_loop_optimizerImpl(mb, f, "cross");
-	f = findMALSymbol("algebra", "join")->def->stmt[0]->fcn;
+	f = findSymbolInModule(
+			findModule(c->nspace,getName("algebra",7)),
+			putName("join",4))->def->stmt[0]->fcn;
 
 	meo_loop_optimizerImpl(mb, f, "join");
 	return MAL_SUCCEED;

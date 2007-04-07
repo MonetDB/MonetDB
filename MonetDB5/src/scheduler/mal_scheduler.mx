@@ -295,7 +295,9 @@ RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) stk;
 	(void) p;
-	qc = findMALSymbol(modnme, fcnnme);
+	qc = findSymbolInModule(
+			findModule(MCgetClient()->nspace, getName(modnme,strlen(modnme))),
+			putName(fcnnme,strlen(fcnnme)));
 
 	if (qc)
 		MACROprocessor(mb, qc);
@@ -313,7 +315,9 @@ RUNsqlbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i;
 	str msg = MAL_SUCCEED;
 	Client cntxt = MCgetClient();
-	Symbol sqlbind = findMALSymbol("sql", "bind");
+	Symbol sqlbind = findSymbolInModule(
+		findModule(MCgetClient()->nspace, getName("sql",3)),
+		getName("bind",4));
 	MALfcn f = getSignature(sqlbind)->fcn;
 
 	for (i = 0; i < mb->stop; i++) {

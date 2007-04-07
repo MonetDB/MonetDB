@@ -146,7 +146,9 @@ QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		modnme = getArgDefault(mb, pci, 1);
 		fcnnme = getArgDefault(mb, pci, 2);
 	}
-	s = findMALSymbol(modnme, fcnnme);
+	s = findSymbolInModule(
+		findModule(MCgetClient()->nspace, getName(modnme,strlen(modnme))),
+		fcnnme);
 	if (s == NULL)
 		throw(MAL, "optimizer.optimize", "operation not found\n");
 	removeInstruction(mb, pci);

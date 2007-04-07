@@ -64,7 +64,7 @@ typedef struct SCOPEDEF {
 } *Module, ModuleRecord;
 
 
-mal_export Module    mal_scope;  /* the start of the module list */
+mal_export Module    mal_scope;  /* the start of the shared module list */
 
 mal_export void     setModuleJump(str nme, Module cur);
 mal_export Module   newModule(Module scope, str nme);
@@ -78,7 +78,6 @@ mal_export Module	setInheritance(Module head,Module first, Module second);
 mal_export Module   findModule(Module scope, str name);
 mal_export int 		isModuleDefined(Module scope, str name);
 mal_export Symbol   findSymbolInModule(Module v, str fcn);
-mal_export Symbol   findMALSymbol(str mod, str fcn);
 mal_export int      displayModule(stream *f, Module v, str fcn,int listing);
 mal_export void     showModules(stream *f, Module v);
 mal_export void     debugModule(stream *f, Module v, str nme);
@@ -395,7 +394,7 @@ int isModuleDefined(Module scope, str name){
 	return FALSE;
 }
 @-
-The routine @%findMALSymbol@ starts at the MAL scope level and searches 
+The routine @%findSymbolInModule@ starts at a MAL scope level and searches 
 an element amongst the peers. If it fails, it will recursively
 inspect the outer scopes.
 
@@ -415,11 +414,6 @@ Symbol findSymbolInModule(Module v, str fcn){
 		s= s->skip;
 	}
 	return NULL;
-}
-Symbol findMALSymbol(str mod, str fcn){
-	Module v;
-	v= findModule(mal_scope, getName(mod,strlen(mod)) );
-	return findSymbolInModule(v,fcn);
 }
 int displayModule(stream *f, Module v, str fcn, int listing){
 	Symbol s;

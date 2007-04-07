@@ -9,4 +9,3 @@ stmt:= inspect.getDefinition("algebra","select");
 sig:= inspect.getSignature("algebra","select");
 
 n:= manual.search("insert"); io.print(n);
-d:= inspect.getDefinition("inspect","dir"); io.print(d);

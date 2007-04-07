@@ -163,9 +163,12 @@ str
 FCTshutdown(int *ret, str *mod, str *fcn)
 {
 	Symbol s;
+	Client c= MCgetClient();
+	Module m;
 
 	(void) ret;
-	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	m= findModule(c->nspace, getName(*mod,strlen(*mod)) );
+	s = findSymbolInModule(m, putName(*fcn, strlen(*fcn)));
 	if (s == NULL)
 		throw(MAL, "factory.shutdown", "Factory not found");
 	shutdownFactory(s->def);
