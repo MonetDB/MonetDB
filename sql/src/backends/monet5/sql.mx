@@ -489,8 +489,6 @@ function aggr.rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int];
 	return algebra.join(m, e);
 end aggr.rank_grp;
 
-@-
-Include the sql_cache functionality
 @mal
 
 command prelude()
@@ -499,7 +497,6 @@ address SQLprelude;
 command epilogue()
 address SQLepilogue;
 
-include sql_cache;
 sql.prelude();
 
 @h

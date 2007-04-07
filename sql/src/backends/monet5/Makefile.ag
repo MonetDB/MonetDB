@@ -25,7 +25,6 @@ lib__sql = {
 		sql_scenario.mx \
 		sql_gencode.mx \
 		sql_optimizer.mx \
-		sql_cache.mx \
 		sql_result.mx \
 		sql_readline.mx
 	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon \
@@ -48,12 +47,8 @@ lib__sql = {
 		#$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 #}
 
-lib__sql_cache = {
-	DIR = libdir/MonetDB5
-	SOURCES = dummy.c
-}
 
 scripts_mal = {
 	DIR = libdir/MonetDB5
-	SOURCES = sql.mx sql_cache.mx
+	SOURCES = sql.mx 
 }

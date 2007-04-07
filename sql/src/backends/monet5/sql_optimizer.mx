@@ -65,7 +65,6 @@ sql.assert
 sql.bind
 sql.bind_dbat
 sql.bind_idxbat
-sql_cache.???
 sql.clear_table
 sql.column
 sql.columnBind
@@ -94,7 +93,7 @@ sql5_export str defaultPlan;
 #endif /* _SQL_OPTIMIZER_H_ */
 
 @-
-The queries are stored in a cache after they have been
+The queries are stored in the user cache after they have been
 type checked and optimized.
 The Factory optimizer encapsulates the query with a re-entrance
 structure. However, this structure is only effective if
@@ -405,7 +404,7 @@ tested extensively and should provide overall good performance.
 str defaultPlan=
 	"inline,"
 	"remap,"
-	/*"evaluate,"*/
+	"evaluate,"
 	"costModel,"
 	"coercions,"
 	"emptySet," 
@@ -461,16 +460,11 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 void
 addQueryToCache(Client c)
 {
-	Module cache;
 	backend *be = ((backend *) c->state[PARSER]);
 	str optimizer;
 	MalBlkPtr mb;
 
-	cache = findModule(c->nspace, putName("sql_cache",9));
-	if (cache == 0) 
-		return;
-	
-	insertSymbol(cache, c->curprg);
+	insertSymbol(c->nspace, c->curprg);
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	mb= c->curprg->def;

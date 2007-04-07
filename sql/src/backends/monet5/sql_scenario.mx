@@ -55,6 +55,7 @@ sql5_export str SQLinitEnvironment(int *ret);
 sql5_export str SQLstatement(int *ret, str *expr);
 sql5_export str SQLcompile(str *ret, str *expr);
 sql5_export str SQLtrace(int *ret);
+sql5_export str SQLCacheRemove(Client c, str nme);
 
 #endif /* _SQL_SCENARIO_H_ */
 
@@ -68,7 +69,6 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_result.h"
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
-#include "sql_cache.h"
 #include "sql_env.h"
 #include "sql_mvc.h"
 #include "sql_readline.h"
@@ -101,13 +101,10 @@ monet5_freestack(backend_stack stk)
 static void
 monet5_freecode(backend_code code, backend_stack stk, int nr, char *name)
 {
-	int ret = 0;
-
 	(void) code;
 	(void) stk;
 	(void) nr;
-	SQLCacheRemove(&ret, &name);
-	(void) ret;
+	SQLCacheRemove(MCgetClient(), name);
 
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#monet5_free:%d\n", nr);
@@ -510,7 +507,7 @@ We don;t search the cache for a previous incarnation yet.
 		Symbol oldsym= c->curprg;
 		stmt *s = sql_symbol2stmt(m, m->sym);
 
-		MSinitClientPrg(c,"sql_cache",nme); 
+		MSinitClientPrg(c,"user",nme); 
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "%s\n", m->errstr);
 			if( m->errstr)
@@ -1275,8 +1272,7 @@ be adjusted too.
 	mb= c->curprg->def;
 	if( be->q && mb &&
 		fndArgProperty(mb, (p= getInstrPtr(mb,0)),0,putName("runonce",7)) ){
-		int ret;
-		SQLCacheRemove(&ret, &getFunctionId(p));
+		SQLCacheRemove(c, getFunctionId(p));
 		/* this should invalidate any match */
 		be->q->key= -1;
 		be->q->paramlen = -1;
@@ -1308,12 +1304,11 @@ str
 SQLrecompile(Client c, backend *be) 
 {
 	stmt *s;
-	int ret = 0;
 	mvc *m = be->mvc;
 	int oldvtop = c->curprg->def->vtop;
 	int oldstop = c->curprg->def->stop;
 
-	SQLCacheRemove(&ret, &be->q->name);
+	SQLCacheRemove(c, be->q->name);
 	s = sql_symbol2stmt(m, be->q->s);
 	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s);
 	be->q->stk = 0;
@@ -1368,5 +1363,24 @@ SQLassertLng(int *ret, lng *flg, str *msg)
 	(void) ret;
 	if (*flg)
 		throw(SQL, "assert", *msg);
+	return MAL_SUCCEED;
+}
+
+str
+SQLCacheRemove(Client c, str nme)
+{
+	Symbol s;
+
+#ifdef _SQL_CACHE_DEBUG
+	stream_printf(GDKout, "SQLCacheRemove %s\n", nme);
+#endif
+
+	s= findSymbolInModule(c->nspace, nme);
+	if (s == NULL)
+		throw(MAL, "cache.remove", "internal error, symbol missing\n");
+	if( getInstrPtr(s->def,0)->token == FACTORYsymbol)
+		shutdownFactoryByName(c->nspace, nme);
+	else
+		deleteSymbol(c->nspace,s);
 	return MAL_SUCCEED;
 }

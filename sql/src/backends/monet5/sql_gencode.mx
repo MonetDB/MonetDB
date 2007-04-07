@@ -104,17 +104,14 @@ This safes table lookups.
 static str exportValueRef;
 static str exportResultRef;
 static str exportOperationRef;
-static str sql_cacheRef;
 
 void initSQLreferences(void){
 	optimizerInit();
 	exportValueRef = putName("exportValue",11);
 	exportResultRef= putName("exportResult",12);
 	exportOperationRef= putName("exportOperation",15);
-	sql_cacheRef= putName("sql_cache",9);
 	if( algebraRef==NULL || exportValueRef==NULL ||
-		exportResultRef==NULL || exportOperationRef==NULL || 
-		sql_cacheRef== NULL)
+		exportResultRef==NULL || exportOperationRef==NULL )
 			GDKfatal("error initSQLreferences");
 }
 @-
@@ -1896,7 +1893,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	/* we do not return anything */
 	setVarType(curBlk, 0, TYPE_void);
 	freezeVarType(curBlk,0);
-	setModuleId(curInstr, sql_cacheRef);
+	setModuleId(curInstr, putName("user",4));
 
 	if (be->mvc->argc) {
 		for (argc = 0; argc < m->argc; argc++) {
@@ -1963,7 +1960,7 @@ backend_call(backend *be, Client c, cq *cq)
 	InstrPtr q;
 	MalBlkPtr mb = c->curprg->def;
 
-	q = newStmt2(mb, sql_cacheRef, cq->name);
+	q = newStmt2(mb, putName("user",4), cq->name);
 	/* cached (factorized queries return bit??) */
 	if (getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol ) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);
@@ -2032,7 +2029,7 @@ backend_create_func(backend *be, sql_func *f)
 		setVarType(curBlk, 0, TYPE_void);
 		freezeVarType(curBlk,0);
 	}
-	setModuleId(curInstr, sql_cacheRef);
+	setModuleId(curInstr, putName("user",4));
 
 	if (f->ops) {
 		int argc = 0;
