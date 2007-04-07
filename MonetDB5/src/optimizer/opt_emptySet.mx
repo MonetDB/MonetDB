@@ -68,9 +68,18 @@ During empty set propagation, new candidates may appear. For example,
 taking the intersection with an empty set creates a target variable
 that is empty too. It becomes an immediate target for optimization.
 The current implementation is conservative. A limited set of
-instructions is considered, geared at SQL.
-Any addition to the MonetDB instruction
+instructions is considered. Any addition to the MonetDB instruction
 set would call for assessment on their effect.
+@- SQL specifics
+The @code{bind} operations of SQL requires special care,
+because they refer to containers that might initially be empty,
+but aren't upon a second call.
+This calls for a defensive approach, where a constraint check
+is left behind to detect a plan whose conditions are not met
+anymore. Of course, we can drop the constraint if we know that
+a plan is used onlye once (and not recursively).
+This can be marked by the SQL compiler, who is in control
+over the query cache.
 @{
 The implementation differs slightly from other optimizers in that
 we need first to collect the BAT variables that are designated as being empty
@@ -122,6 +131,7 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	str kintersectRef = getName("kintersect", 10);
 	str fragmentRef = getName("fragment", 8);
 	int *alias;
+	int runonce= FALSE;
 
 	int limit = mb->stop, ctop=0;
 	InstrPtr *old = mb->stmt, *constraints;
@@ -131,6 +141,8 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	alias = (int*) alloca(sizeof(int)*mb->vtop);
 	for(i=0;i<mb->vtop; i++) alias[i]=i;
 
+	/* get query property */
+	runonce= fndArgProperty(mb,old[0],0,putName("runonce",7)) != NULL;
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
 	for (i = 0; i < limit; i++) {
@@ -158,7 +170,7 @@ sequences to filter and replace calls with empty arguments.
 The emptyset assertion is only needed once for relational insertions.
 We assume here that string constants have been matched already.
 @c
-			if( f == bindRef) {
+			if( f == bindRef && runonce == FALSE) {
 				for( j=ctop-1; j>=0; j--){
 					q= constraints[j];
 					if( strcmp(getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb,getArg(p,1)).val.sval)==0 &&
