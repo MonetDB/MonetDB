@@ -2978,10 +2978,9 @@ shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 			 * If the connection is removed, keep the previous
 			 * connection in chain (pc) unchanged.
 			 */
-            if ( (c->flags & FLAG_FINISHED) ||
-                    ((c->io != do_embedded) && c->expire < now) )
-                disconnect(c, pc);
-            else
+            if ( (c->flags & FLAG_FINISHED) || ((c->io != do_embedded) && c->expire < now) ) {
+                if (0) disconnect(c, pc); 
+            } else
                 pc = c;
 		}
 	}
