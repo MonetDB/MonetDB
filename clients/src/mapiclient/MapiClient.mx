@@ -278,13 +278,28 @@ doFile(Mapi mid, const char *file, int xquery)
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (length > 0) {
+			char *xquery_sep = buf; 
 			assert(hdl != NULL);
+
+			if (xquery) { /* support <>\n xquery separator in file mode (must be at start of line) */
+                                while(xquery_sep) {
+					xquery_sep = strstr(xquery_sep+1,"<>");
+					if (xquery_sep && (xquery_sep[-1] == 10 || xquery_sep[-1] == 13)) {
+						char *next = xquery_sep+2;
+						while(*next && isspace(*next)) next++;
+						fseek(fp, next - (buf+length), SEEK_CUR);
+						length = xquery_sep - buf;
+						buf[length] = 0;
+						break;
+					}
+                                }
+			}
+
 			mapi_query_part(hdl, buf, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 
 			/* in case of xquery; do the whole file in one go */
-			if (xquery && !feof(fp))
-				continue;
+			if (xquery_sep == NULL && !feof(fp)) continue;
 		}
 
 		assert(hdl != NULL);
@@ -404,7 +419,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 #endif
 			line = fgets(buf, BUFSIZ, fp);
 		}
-		if (line == NULL) {
+		if (line == NULL || (xquery && line[0] == '<' && line[1] == '>')) {
 			/* end of file */
 			if (hdl == NULL) {
 				/* nothing more to do */
