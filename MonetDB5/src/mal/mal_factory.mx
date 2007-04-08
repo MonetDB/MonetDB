@@ -85,7 +85,7 @@ between a co-routine and the client for which it works.
 
 The co-routine concept researched in Monet 5 is the notion of a 'factory',
 which consists of 'factory plants' at possibly different locations and
-with different policies to handle client requests.
+with different policies to handle requests.
 Factory management is limited to its owner, which is derived from the module
 in which it is placed. By default Admin is the owner of all modules.
 
@@ -288,7 +288,6 @@ typedef struct {
 	int inuse;		/* able to handle it */
 	int next;		/* next plant of same factory */
 	int policy;		/* flags to control behavior */
-	str location;		/* where the factoryMgr resides */
 
 	Client client;		/* who called it */
 	MalBlkPtr caller;	/* from routine */
@@ -355,9 +354,6 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 		if (pl == NULL)
 			throw(MAL, "factory.new", "No factory space left");
 	}
-	if (pl->location)
-		throw(INVCRED, "factory.new", "No remote access allowed");
-
 @-
 We have found a factory to process the request.
 Let's call it as a synchronous action, without concern on parallelism.

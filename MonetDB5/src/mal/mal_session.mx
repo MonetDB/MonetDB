@@ -80,7 +80,6 @@ malBootstrap()
 		bootfile = bf;
 	MSinitClientPrg(c,"user", "main");
 	malInclude(c, bootfile, 0);
-	mal_scope = c->nspace;
 	pushEndInstruction(c->curprg->def);
 	trimMalBlk(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
@@ -90,6 +89,8 @@ malBootstrap()
 		return 0;
 	}
 	MALengine(c);
+	/* keep the handle on the shared modules */
+	mal_scope = c->nspace->outer;
 	return 1;
 }
 

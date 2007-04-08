@@ -744,7 +744,7 @@ In that case we merely have to locate the function address and
 finalize the code for execution. Beware that we should be able to
 distinguish the function by module name, function name, and
 number of arguments only. Whether this is sufficient remains
-to be seen.
+to be seen. 
 @c
 int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p){
 	Module m=0;

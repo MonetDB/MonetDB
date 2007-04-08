@@ -463,7 +463,6 @@ void showModules(stream *f, Module s)
 {
 	for(; s; s= s->outer) {
 		stream_printf(f,"%s",s->name);
-		if( s== mal_scope) stream_printf(f,"(*)");
 		if( s->subscope==0) stream_printf(f,"?");
 		if(s->outer) stream_printf(f,",");
 	}

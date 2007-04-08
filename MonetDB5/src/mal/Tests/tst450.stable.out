@@ -37,9 +37,7 @@ function user.main():void;	# 0  (main:void)
     sig := inspect.getSignature("algebra","select");	# 11 INSPECTgetSignature (sig:bat[:str,:str])<-(_11:str)(_12:str)
     n := manual.search("insert");	# 12 MANUALsearch (n:void)<-(_15:str)
     io.print(n);	# 13 IOprint_val (_16:void)<-(n:void)
-    d := inspect.getDefinition("inspect","dir");	# 14 INSPECTgetDefinition (d:bat[:str,:str])<-(_18:str)(_19:str)
-    io.print(d);	# 15 IOprint_val (_20:void)<-(d:bat[:str,:str])
-end main;	# 16  
+end main;	# 14  
 #-------------------------#
 # view	atom		  # name
 # int	str		  # type

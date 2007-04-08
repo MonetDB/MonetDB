@@ -424,8 +424,10 @@ The output buffer is currently not used. Beware to garbage
 collect the buffer when in use.
 @c
 	c->output = 0;
+/*
 	if(c->nspace==0)
 		c->nspace = newModule(NULL, putName("guest",5));
+*/
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 
@@ -514,7 +516,8 @@ Client MCforkClient(Client father){
 		son->prompt = GDKstrdup(father->prompt);
 		son->promptlength= strlen(father->prompt);
 		/* reuse the scopes wherever possible */
-		son->nspace->name= GDKstrdup("Client-child");
+		if(son->nspace==0)
+			son->nspace = newModule(NULL, putName("child",5));
 		son->nspace->outer = mal_scope;
 	}
 	return son;

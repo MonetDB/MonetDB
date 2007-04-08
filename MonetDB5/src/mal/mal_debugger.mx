@@ -1416,11 +1416,11 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		state.p = getInstrPtr(mb,pc);
 		state.pc= pc;
 		cntxt->mdb= &state;
-		stream_printf(cntxt->fdout,"#Process put to sleep\n");
+		fprintf(stderr,"#Process put to sleep\n");
 		cntxt->itrace= 'W';
 		while(cntxt->itrace== 'W')
 			MT_sleep_ms(cntxt->delay);
-		stream_printf(cntxt->fdout,"#Process woke up\n");
+		fprintf(stderr,"#Process woke up\n");
 		return;
 	}
 
