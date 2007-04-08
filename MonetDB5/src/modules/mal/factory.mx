@@ -23,36 +23,25 @@ the commands provided here.
 @mal
 module factory;
 
-command getPlants():bat[:str,:str]
+command getPlants()(mod:bat[:oid,:str], fcn:bat[:oid,:str])
 address FCTgetPlants 
-comment "Retrieve the factory plant description
-        for all operational factories";
+comment "Retrieve the names for all active factories";
 
 command getCaller():int
 address FCTgetCaller
-comment "Retrieve the unique identity
-        of the factory caller";
+comment "Retrieve the unique identity of the factory caller";
 
-command getOwners():bat[:int,:str]
+command getOwners():bat[:oid,:str]
 address FCTgetOwners
 comment "Retrieve the factory owners table";
 
-command getTimeIn():date
-address FCTgetTimeStampIn
-comment "Retrieve the time stamp it was received by the factory";
+command getArrival():bat[:oid,:timestamp]
+address FCTgetArrival
+comment "Retrieve the time stamp the last call was made";
 
-command getTimeOut():date
-address FCTgetTimeStampOut
-comment "Retrieve the time stamp the answer was returned to the client";
-
-command setLocation(uri:str):void
-address FCTsetLocation
-comment "Set the location of the plant
-        manager.";
-command getLocations():bat[:int,:str]
-address FCTgetLocations
-comment "Retrieve the location of all
-        known plants";
+command getDeparture():bat[:oid,:timestamp]
+address FCTgetDeparture
+comment "Retrieve the time stamp the last answer was returned";
 
 command shutdown(m:str, f:str):void
 address FCTshutdown
@@ -79,11 +68,11 @@ comment "Close a factory";
 #define factory_export extern
 #endif
 
-factory_export str FCTgetPlants(int *ret);
+factory_export str FCTgetPlants(int *ret, int *ret2);
 factory_export str FCTgetCaller(int *ret);
 factory_export str FCTgetOwners(int *ret);
-factory_export str FCTgetTimeStampIn(int *ret);
-factory_export str FCTgetTimeStampOut(int *ret);
+factory_export str FCTgetArrival(int *ret);
+factory_export str FCTgetDeparture(int *ret);
 factory_export str FCTsetLocation(int *ret, str *loc);
 factory_export str FCTgetLocations(int *ret);
 factory_export str FCTshutdown(int *ret, str *mod, str *fcn);
@@ -96,14 +85,22 @@ factory_export str FCTshutdown(int *ret, str *mod, str *fcn);
 @+ Inspection
 @c
 str
-FCTgetPlants(int *ret)
+FCTgetPlants(int *ret, int *ret2)
 {
-	BAT *b;
+	BAT *bmod, *bfcn;
 
-	b = BATnew(TYPE_str, TYPE_str, 256);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(factory,name,plant)@
-	throw(MAL, "factory.getPlants", "not yet implemented");
+	bmod = BATnew(TYPE_oid, TYPE_str, 256);
+	if( bmod == NULL)
+		throw(MAL, "factory.getPlants", "Failed to create BAT");
+	if (!(bmod->batDirty&2)) bmod = BATsetaccess(bmod, BAT_READ);
+    BBPkeepref(*ret= bmod->batCacheid);
+
+	bfcn = BATnew(TYPE_oid, TYPE_str, 256);
+	if( bfcn == NULL)
+		throw(MAL, "factory.getPlants", "Failed to create BAT");
+	if (!(bfcn->batDirty&2)) bfcn = BATsetaccess(bfcn, BAT_READ);
+    BBPkeepref(*ret2= bfcn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
@@ -119,24 +116,35 @@ FCTgetOwners(int *ret)
 	BAT *b;
 
 	(void) ret;
-	b = BATnew(TYPE_int, TYPE_str, 256);
+	b = BATnew(TYPE_oid, TYPE_str, 256);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(factory,plantid,location)@
+    *ret = b->batCacheid;
+    BBPkeepref(*ret);
 	throw(MAL, "factory.getOwner", "not yet implemented");
 }
 
 str
-FCTgetTimeStampIn(int *ret)
+FCTgetArrival(int *ret)
 {
+	BAT *b;
+
 	(void) ret;
-	throw(MAL, "factory.getTimeStampIn", "not yet implemented");
+	b = BATnew(TYPE_oid, TYPE_str, 256);
+    *ret = b->batCacheid;
+    BBPkeepref(*ret);
+	throw(MAL, "factory.getArrival", "not yet implemented");
 }
 
 str
-FCTgetTimeStampOut(int *ret)
+FCTgetDeparture(int *ret)
 {
+	BAT *b;
+
 	(void) ret;
-	throw(MAL, "factory.getTimeStampOut", "not yet implemented");
+	b = BATnew(TYPE_oid, TYPE_str, 256);
+    *ret = b->batCacheid;
+    BBPkeepref(*ret);
+	throw(MAL, "factory.getDeparture", "not yet implemented");
 }
 
 str
@@ -174,5 +182,4 @@ FCTshutdown(int *ret, str *mod, str *fcn)
 	shutdownFactory(s->def);
 	return MAL_SUCCEED;
 }
-
 @}

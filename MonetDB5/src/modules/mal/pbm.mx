@@ -18,6 +18,7 @@
 @v 0.1
 @a M.L.Kersten
 @+ Partitioned BAT Manager
+OUTDATED
 In real-life database applications the BATs tend to grow beyond
 the memory size. Although in most situation this does not
 provide severe limitations, it helps to be able to work with

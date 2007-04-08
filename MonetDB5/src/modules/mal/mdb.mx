@@ -50,9 +50,12 @@ module mdb;
 pattern start():void 
 address MDBstart
 comment "Start interactive debugger";
-pattern start(pid:int):void 
+pattern start(clientid:int):void 
 address MDBstart
-comment "Start interactive debugger on a running process";
+comment "Start interactive debugger on a client";
+pattern start(mod:str,fcn:str):void 
+address MDBstartFactory
+comment "Start interactive debugger on a running factory";
 
 pattern stop():void
 address MDBstop
@@ -131,7 +134,7 @@ comment "Dump the symboltable of routine M.F on standard out.";
 
 command grab(id:int):void
 address MDBgrabClient
-comment "Stop and debug a client process.";
+comment "Stop and debug another client process.";
 
 pattern dot(M:str,F:str,s:str):void 
 address MDBshowFlowGraph
@@ -186,6 +189,7 @@ comment "Returns a string representation of the current function
 #endif
 
 mdb_export str MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBstartFactory(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -275,6 +279,15 @@ MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) p;
 	return MAL_SUCCEED;
+}
+
+str
+MDBstartFactory(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb;
+	(void) stk;
+	(void) p;
+		throw(MAL, "mdb.start", "Debugging factory not yet available");
 }
 
 str
@@ -756,22 +769,33 @@ MDBgrabClient(int *ret, int *id){
 
 	if( *id<0 || *id>= MAL_MAXCLIENTS)
 		throw(MAL,"clients.grab","No client process");
-	fprintf(stderr,"grabber %d\n",*id);
+	fprintf(stderr,"grab %d\n",*id);
 	c= mal_clients+ *id;
 	if( c == 0)
 		throw(MAL,"clients.grab","No client process");
 	/* suspend target */
 	c->itrace='S';
-	while( c->itrace == 'S' )
+	while( c->itrace == 'S' ){
 		MT_sleep_ms(10);
+	}
 	this->fdin= c->fdin;
+	this->fdin->pos= c->fdin->len;
 	this->fdout= c->fdout;
+	this->yycur= c->yycur;
+	this->output= c->output;
 	this->console= c->console;
+	this->prompt= c->prompt;
+	this->promptlength= c->promptlength;
 	c->fdin= old.fdin;
+	c->fdin->pos= old.fdin->len;
 	c->fdout= old.fdout;
+	c->yycur= old.yycur;
+	c->output= old.output;
 	c->console= old.console;
+	c->prompt= old.prompt;
+	c->promptlength= old.promptlength;
 	c->itrace = 0;
-	stream_printf(this->fdout,"exchanged descriptors\n");
+	fprintf(stderr,"exchanged descriptors\n");
 	(void) ret;
 	return MAL_SUCCEED;
 }
