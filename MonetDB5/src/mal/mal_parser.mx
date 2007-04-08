@@ -170,6 +170,7 @@ initParser()
 	}
 	idCharacter[TMPMARKER]=1;
 	idCharacter2[TMPMARKER]=1;
+	idCharacter2['@']=1;
 }
 
 #undef isdigit
@@ -185,6 +186,7 @@ idLength(Client cntxt)
 
 	if (!idCharacter[(int) (*s)])
 		return 0;
+	/* prepare escape of temporary names */
 	s++;
 	while (idCharacter2[(int) (*s)] ) 
 		s++;
