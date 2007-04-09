@@ -2144,19 +2144,18 @@ though I expect the gains to be smaller in general.
 @{
 @c
 #define BATCACHE_NOTYPE(t) 	(ATOMstorage(t) > TYPE_str || BATatoms[t].atomFix != NULL)
-#define BATCACHE_SIZE 		64 /* max size: 128 */ 
+#define BATCACHE_SIZE 		1023 /* max size: 32767 */ 
 #define BATCACHE_DIMS 		6 /* 0,1,2,4,8 byte types + str */
 #define BATCACHE_BIN(h,t) 	(batcache_headbin[ATOMstorage(h)]+batcache_tailbin[ATOMstorage(t)])
 
 Dimensions batcache_dims;  	/* fast void,void bat dims initialization */
 int batcache_headbin[TYPE_str+1], batcache_tailbin[TYPE_str+1]; /* fast bin computation */
 
-typedef signed char batcache_int; /* make compact, whole structure is < 500 bytes: CPU cache resident  */
+typedef signed short batcache_int; /* make compact, whole structure is < 500 bytes: CPU cache resident  */
 
 ssize_t batcache_minsize = BATTINY;
 
 /* O(1) lookup structure of normalized [htype,ttype] combination (a "bin") */
-static batcache_int  batcache_batbin  [BATCACHE_DIMS*BATCACHE_DIMS]; /* each bin starts a bin_next/prev list */
 static unsigned char batcache_widthbin[BATCACHE_DIMS*BATCACHE_DIMS]; /* bun width */
 static unsigned char batcache_locbin  [BATCACHE_DIMS*BATCACHE_DIMS]; /* tloc */
 
@@ -2165,15 +2164,24 @@ typedef struct {
 	bat bid;
 	batcache_int bin_next, bin_prev; /* doubly linked list that connects all BATs for a bin */ 
 	batcache_int fifo_next, fifo_prev; /* doubly linked list for getting the LRU BAT O(1) */
+} batcache_elt_t;
+
+typedef struct {
+    MT_Lock lock;
+
+    /* each bin starts a bin_next/prev list */
+    batcache_int  batbin[BATCACHE_DIMS*BATCACHE_DIMS]; 
+    batcache_elt_t elt[BATCACHE_SIZE]; /* main storage */
+
+    /* fifo queue */
+    batcache_int first, last;
+
+    /* free list */
+    batcache_int free; /* misuses ->fifo_next for connecting the list */
 } batcache_t;
-batcache_t batcache[BATCACHE_SIZE];
 
-/* fifo queue */
-static batcache_int batcache_first = -1; 
-static batcache_int batcache_last = -1;
-
-/* free list */
-static batcache_int batcache_free = -1; /* misuses ->fifo_next for connecting the list */
+/* we have multiple bat caches for better SMP performance */
+static batcache_t batcache[BBPBINSMASK+1];
 
 static void
 BBPinitcache(void)
@@ -2221,110 +2229,125 @@ BBPinitcache(void)
 	}
 	
 	/* initialize the cache */
-	for(i = 0; i < BATCACHE_SIZE; i++) {
-		batcache[i].bid = 0;
-		batcache[i].fifo_next = i+1;
-		batcache[i].fifo_prev = i-1;
-		batcache[i].bin_next = -1; 
-		batcache[i].bin_prev = -1; 
-	}
-	batcache[BATCACHE_SIZE-1].fifo_next = -1;
+	for(j = 0; j <= BBPBINSMASK; j++) {
+                MT_init_lock(batcache[j].lock, "GDKbinsLock");
+		for(i = 0; i < BATCACHE_SIZE; i++) {
+			batcache[j].elt[i].bid = 0;
+			batcache[j].elt[i].fifo_next = i+1;
+			batcache[j].elt[i].fifo_prev = i-1;
+			batcache[j].elt[i].bin_next = -1; 
+			batcache[j].elt[i].bin_prev = -1; 
+		}
+		batcache[j].elt[BATCACHE_SIZE-1].fifo_next = -1;
 
-	/* initialize the lookup mechanism */
-	for(j = 0; j < BATCACHE_DIMS*BATCACHE_DIMS; j++) {
-		batcache_batbin[j] = -1;
+		/* initialize the lookup mechanism */
+		for(i = 0; i < BATCACHE_DIMS*BATCACHE_DIMS; i++) {
+			batcache[j].batbin[i] = -1;
+		}
+		batcache[j].free = 0;
+    		batcache[j].first = -1; 
+    		batcache[j].last = -1;
 	}
-	batcache_free = 0;
 }
 
 /* throw the LRU bat out using the fifo list */
 static INLINE batcache_int 
-batcache_del(void)
+batcache_del(batcache_t *batcache)
 {
-	batcache_int i = batcache_first;
-	bat bid = batcache[i].bid;
+	batcache_int i = batcache->first;
+	bat bid = batcache->elt[i].bid;
 	BAT *b = BBP_cache(bid);
 	int bin = BATCACHE_BIN(b->htype,b->ttype);
 
 	/* manage bin-list */
-	batcache_int j = batcache[i].bin_prev;
+	batcache_int j = batcache->elt[i].bin_prev;
 	if (j >= 0) {
-		batcache[j].bin_next = -1;
+		batcache->elt[j].bin_next = -1;
 	} else {
-		batcache_batbin[bin] = -1; /* had a single entry only */
+		batcache->batbin[bin] = -1; /* had a single entry only */
 	}
-	assert(batcache[i].bin_next < 0); /* LRU: we are always deleting the last */
+	assert(batcache->elt[i].bin_next < 0); /* LRU: we are always deleting the last */
 
 	/* manage fifo-list */
-	batcache_first = batcache[i].fifo_next;
-	if (batcache_first >= 0) {
-		batcache[batcache_first].fifo_prev = -1;
+	batcache->first = batcache->elt[i].fifo_next;
+	if (batcache->first >= 0) {
+		batcache->elt[batcache->first].fifo_prev = -1;
 	} else {
-		batcache_last = -1;
+		batcache->last = -1;
 	}
 
 	/* revive and free the old bat */
-	*BBP_logical(bid) = 't';
 	assert(b->batParentid == 0);
+	gdk_set_lock(GDKcacheLock, "batcache_del");
 	BATfree(b);
+	*BBP_logical(bid) = 't';
 	bbpclear(bid);
+	gdk_unset_lock(GDKcacheLock, "batcache_del");
 	return i;
 }
 
 /* insert a new bat into the cache */
 static INLINE int 
-batcache_put(int bin, bat bid) {
+batcache_put(batcache_t *batcache, int bin, bat bid) {
 	/* get a free slot */
-	batcache_int j, i = batcache_free;
+	batcache_int j, i;
+        MT_set_lock(batcache->lock, "batcache_put");
+        i = batcache->free;
 	if (i >= 0) { 
-		batcache_free = batcache[i].fifo_next;
+		batcache->free = batcache->elt[i].fifo_next;
 	} else {
-		i = batcache_del(); /* delete a bat from the cache */
+		i = batcache_del(batcache); /* delete a bat from the cache */
 	}
 
 	/* fill in the batcache record */
-	batcache[i].bid = bid;
-	batcache[i].bin_next = j = batcache_batbin[bin];
-	if (j >= 0) batcache[j].bin_prev = i;
-	batcache[i].bin_prev = -1;
-	batcache[i].fifo_next = -1;
-	batcache[i].fifo_prev = batcache_last;
-	batcache_batbin[bin] = i;
-	if (batcache_first < 0) batcache_first = i;
-	if (batcache_last >= 0) batcache[batcache_last].fifo_next = i;
-	batcache_last = i;	
+	batcache->elt[i].bid = bid;
+	batcache->elt[i].bin_next = j = batcache->batbin[bin];
+	if (j >= 0) batcache->elt[j].bin_prev = i;
+	batcache->elt[i].bin_prev = -1;
+	batcache->elt[i].fifo_next = -1;
+	batcache->elt[i].fifo_prev = batcache->last;
+	batcache->batbin[bin] = i;
+	if (batcache->first < 0) batcache->first = i;
+	if (batcache->last >= 0) batcache->elt[batcache->last].fifo_next = i;
+	batcache->last = i;	
 
 	*BBP_logical(bid) = '.'; /* make the bat a zombie */
+        MT_unset_lock(batcache->lock, "batcache_put");
 	return i;
 }
 
 /* return and revive a cached bat from the cache */
 static INLINE bat 
-batcache_get(int bin) {
-	batcache_int i = batcache_batbin[bin];
+batcache_get(batcache_t *batcache, int bin) {
+	batcache_int i;
+	int bid = 0;
+
+        MT_set_lock(batcache->lock, "batcache_get");
+	i = batcache->batbin[bin];
 	if (i >= 0) {
 		/* manage fifo-list */  
-		int bid = batcache[i].bid;
-		batcache_int j = batcache[i].fifo_prev;
-		batcache_int k = batcache[i].fifo_next;
+		batcache_int j = batcache->elt[i].fifo_prev;
+		batcache_int k = batcache->elt[i].fifo_next;
+		bid = batcache->elt[i].bid;
+
 		if (j < 0) {
-			assert(batcache_first == i);
-			batcache_first = k;
+			assert(batcache->first == i);
+			batcache->first = k;
 		} else {
-			batcache[j].fifo_next = k;
+			batcache->elt[j].fifo_next = k;
 		}
 		if (k < 0) {
-			assert(batcache_last == i);
-			batcache_last = j;
+			assert(batcache->last == i);
+			batcache->last = j;
 		} else {
-			batcache[k].fifo_prev = j; 
+			batcache->elt[k].fifo_prev = j; 
 		}
-		batcache[i].fifo_next = batcache_free;
-		batcache_free = i;
+		batcache->elt[i].fifo_next = batcache->free;
+		batcache->free = i;
 
 		/* manage bin-list */  
-		batcache_batbin[bin] = j = batcache[i].bin_next;
-		if (j >= 0) batcache[j].bin_prev = -1;
+		batcache->batbin[bin] = j = batcache->elt[i].bin_next;
+		if (j >= 0) batcache->elt[j].bin_prev = -1;
 
 		/* revive the bat */
 		*BBP_logical(bid) = 't';
@@ -2332,9 +2355,9 @@ batcache_get(int bin) {
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPUNLOADING, "BBPrecycle");
-		return bid;
 	}	
-	return 0;
+        MT_unset_lock(batcache->lock, "batcache_get");
+	return bid;
 }
 
 extern char* BATstring_h;
@@ -2348,7 +2371,7 @@ BBPaddtobin(BAT *b)
 	char *s = BBP_logical(bid);
 	BAT *m = BBP_cache(-bid);
 
-	/* only cache simple non-saved non-renamed transient bats */
+        /* only cache simple non-saved non-renamed transient bats */
 	if (m == NULL || batcache_minsize == 0 || b->batCopiedtodisk || b->batLview || BBPtmpcheck(s) == 0 || b->htype > TYPE_str || b->ttype > TYPE_str) {
 		BATdelete(b); /* handles persistent case also (file deletes) */
 		return 1;
@@ -2404,9 +2427,7 @@ BBPaddtobin(BAT *b)
 	if (b->H->props) { PROPdestroy(b->H->props); b->H->props = NULL; }
 	if (b->T->props) { PROPdestroy(b->T->props); b->T->props = NULL; }
 
-	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
-	batcache_put(bin, b->batCacheid);
-	gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
+	batcache_put(batcache + (BBP_getpid()&BBPBINSMASK), bin, b->batCacheid);
 	return 0;
 }
 
@@ -2420,10 +2441,7 @@ BBPrecycle(int ht, int tt, ssize_t cap)
 	if (cap > batcache_minsize || BATCACHE_NOTYPE(ht) || BATCACHE_NOTYPE(tt))
 		return NULL;
 
-	gdk_set_lock(GDKcacheLock, "BBPrecycle");
-	bid = batcache_get(bin);
-	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
-
+	bid = batcache_get(batcache + (BBP_getpid()&BBPBINSMASK), bin);
 	b = BBP_cache(bid);
 	if (b) {
 		/* make the bat empty; do this extra work only if the bat is reused (not in BBPaddtobin) */
@@ -2464,18 +2482,20 @@ BBPrecycle(int ht, int tt, ssize_t cap)
 wrd
 BBPrecycle_minsize(wrd val)
 {
-	gdk_set_lock(GDKcacheLock, "BBPrecycle_minsize");
 	if (val != wrd_nil) {
-		/* flush the cache */
-		while(batcache_first >= 0) {
-			batcache_int i = batcache_del();
-			batcache[i].fifo_next = batcache_free;
-			batcache_free = i;
+        	int j; /* flush the caches */
+        	for(j=0; j<= BBPBINSMASK; j++) { 
+			gdk_set_lock(batcache[j].lock, "BBPrecycle_minsize");
+			while(batcache[j].first >= 0) {
+				batcache_int i = batcache_del(batcache+j);
+				batcache[j].elt[i].fifo_next = batcache[j].free;
+				batcache[j].free = i;
+			}
+			gdk_unset_lock(batcache[j].lock, "BBPrecycle_minsize");
 		}
 		batcache_minsize = val; 
 	}
 	val = (wrd) batcache_minsize;
-	gdk_unset_lock(GDKcacheLock, "BBPrecycle_minsize");
 	return val;
 }
 @}

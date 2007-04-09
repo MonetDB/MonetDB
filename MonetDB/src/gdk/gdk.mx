@@ -2231,7 +2231,8 @@ gdk_export int GDKfatal(const char *format, ...);
 gdk_export int GDKerrorCount(void);
 @
 @h
-#define BBPLOCKMASK     7
+#define BBPLOCKMASK     127 
+#define BBPBINSMASK     15 
 
 #include "gdk_delta.h"
 #include "gdk_search.h"

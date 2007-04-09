@@ -1353,16 +1353,16 @@ GDKprotect(void)
 	if (GDKprotected == 0) {
 		TMDEBUG printf("# GDKlocks created\n");
 
-		MT_init_lock(GDKthreadLock);
+		MT_init_lock(GDKthreadLock, "GDKthreadLock");
 		for (i = 0; i <= BBPLOCKMASK; i++) {
-			MT_init_lock(GDKswapLock[i]);
-			MT_init_lock(GDKhashLock[i]);
+			MT_init_lock(GDKswapLock[i], "GDKswapLock");
+			MT_init_lock(GDKhashLock[i], "GDKhashLock");
 		}
-		MT_init_lock(GDKcacheLock);
-		MT_init_lock(GDKunloadLock);
-		MT_init_cond(GDKunloadCond);
-		MT_init_lock(GDKtrimLock);
-		MT_init_lock(GDKtmLock);
+		MT_init_lock(GDKcacheLock, "GDKcacheLock");
+		MT_init_lock(GDKunloadLock, "GDKunloadLock");
+		MT_init_cond(GDKunloadCond, "GDKunloadCond");
+		MT_init_lock(GDKtrimLock, "GDKtrimLock");
+		MT_init_lock(GDKtmLock, "GDKtmLock");
 		GDKprotected = 1;
 	}
 }

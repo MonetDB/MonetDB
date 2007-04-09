@@ -99,6 +99,26 @@ gdk_export int GDKdebug;
 #define MT_geterrno()	errno
 #define MT_seterrno(x)	errno=x
 
+/* lock performance tracing */
+/* #define MT_LOCK_TRACE 1 */
+#ifdef MT_LOCK_TRACE
+gdk_export void MT_locktrace_start();
+gdk_export void MT_locktrace_end();
+gdk_export unsigned long long MT_locktrace_cnt[65536];
+gdk_export char* MT_locktrace_nme[65536];
+gdk_export unsigned long long MT_clock();
+
+#define MT_locktrace_hash(_id)  ((int) (((lng) _id)^(((lng) _id)>>16))&65535)
+#define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat) do { unsigned long long _c=0; if (MT_locktrace) _c=(MT_getpid() == MT_locktrace)?MT_clock():0; MT_log(_impl, _object, _action, _caller, _fp); if (_c) { MT_locktrace_cnt[MT_locktrace_hash(_pat)] += MT_clock() - _c; } } while(0)
+#define MT_locktrace_set(s,n) {int _i = MT_locktrace_hash(s); \
+                               if (MT_locktrace_nme[_i] && MT_locktrace_nme[_i] != (n)) { \
+                                  printf("MT_locktrace: name collision %s hides %s\n", MT_locktrace_nme[_i], (n)); \
+                               } else MT_locktrace_nme[_i] = (n); }
+#else
+#define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat) MT_log(_impl, _object, _action, _caller, _fp) 
+#define MT_locktrace_set(s,n) 
+#endif
+
 #define MT_log(_impl, _object, _action, _caller, _fp) do { if (GDKdebug & 1024) { fprintf(_fp, "%s: " _action "(" PTRFMT ")\n", _caller, PTRFMTCAST(void*) _object); fflush(_fp); } _impl; } while (0)
 
 /* virtual memory defines */
@@ -126,6 +146,8 @@ gdk_export int     MT_kill_thread(MT_Id t);
 gdk_export void    MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask);
 #endif
 
+gdk_export MT_Id   MT_locktrace;
+
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */
 /* to avoid address space fragmentation   */
@@ -143,15 +165,15 @@ gdk_export void    MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask);
 @h
 typedef pthread_mutex_t MT_Lock;
 
-#define MT_lock_init(l)      pthread_mutex_init((pthread_mutex_t*) l, 0)
+#define MT_lock_init(l,n)    { pthread_mutex_init((pthread_mutex_t*) l, 0); MT_locktrace_set(l,n); } 
 #define MT_lock_destroy(l)   pthread_mutex_destroy((pthread_mutex_t*) l)
-#define MT_lock_set(l,n)     MT_log(pthread_mutex_lock((pthread_mutex_t *) l), l, "MT_set_lock", n, stderr)
+#define MT_lock_set(l,n)     MT_log_trace(pthread_mutex_lock((pthread_mutex_t *) l), l, "MT_set_lock", n, stderr, l)
 #define MT_lock_unset(l,n)   MT_log(pthread_mutex_unlock((pthread_mutex_t *) l), l, "MT_unset_lock", n, stderr)
 #define MT_lock_try(l)       pthread_mutex_trylock((pthread_mutex_t *) l)
 #define MT_lock_dump(l,fp,n) MT_log(/*nothing*/, &l, "MT_dump_lock", n, fp)
 
 /* backward compatability API */
-#define MT_init_lock(l)      MT_lock_init(&l)   
+#define MT_init_lock(l,n)    MT_lock_init(&l,n)
 #define MT_destroy_lock(l)   MT_lock_destroy(&l)   
 #define MT_set_lock(l,n)     MT_lock_set(&l,n)     
 #define MT_unset_lock(l,n)   MT_lock_unset(&l,n)   
@@ -183,14 +205,14 @@ gdk_export void    pthread_sema_down(pthread_sema_t *s);
 
 typedef pthread_sema_t MT_Sema;
 
-#define MT_sema_init(s,nr)   pthread_sema_init(s,0,nr)
+#define MT_sema_init(s,nr,n) { pthread_sema_init(s,0,nr); MT_locktrace_set(s,n); }  
 #define MT_sema_destroy(s)   pthread_sema_destroy(s)
 #define MT_sema_up(s,n)      MT_log(pthread_sema_up(s), s, "MT_up_sema", n, stderr)
-#define MT_sema_down(s,n)    MT_log(pthread_sema_down(s), s, "MT_down_sema", n, stderr)
+#define MT_sema_down(s,n)    MT_log_trace(pthread_sema_down(s), s, "MT_down_sema", n, stderr, s)
 #define MT_sema_dump(s,fp,n) MT_log(/*nothing*/, s, "MT_dump_sema", n, fp)
 
 /* backward compatability API */
-#define MT_init_sema(s,nr)   MT_sema_init(&s,nr)
+#define MT_init_sema(s,nr,n) MT_sema_init(&s,nr,n)
 #define MT_destroy_sema(s)   MT_sema_destroy(&s)
 #define MT_up_sema(s,n)      MT_sema_up(&s,n)
 #define MT_down_sema(s,n)    MT_sema_down(&s,n)
@@ -200,13 +222,13 @@ typedef pthread_sema_t MT_Sema;
 @h
 typedef pthread_cond_t MT_Cond;
 
-#define MT_cond_init(c)      pthread_cond_init((pthread_cond_t*) c, NULL)
+#define MT_cond_init(c,n)    { pthread_cond_init((pthread_cond_t*) c, NULL); MT_locktrace_set(c,n); } 
 #define MT_cond_destroy(c)   pthread_cond_destroy((pthread_cond_t*) c)
 #define MT_cond_signal(c,n)  MT_log(pthread_cond_signal((pthread_cond_t*) c), c, "MT_signal_cond", n, stderr)
-#define MT_cond_wait(c,l,n)  MT_log(pthread_cond_wait((pthread_cond_t*) c, (pthread_mutex_t *) l), c, "MT_wait_cond", n, stderr)
+#define MT_cond_wait(c,l,n)  MT_log_trace(pthread_cond_wait((pthread_cond_t*) c, (pthread_mutex_t *) l), c, "MT_wait_cond", n, stderr, c)
 
 /* backward compatability API */
-#define MT_init_cond(c)      MT_cond_init(&c)
+#define MT_init_cond(c,n)    MT_cond_init(&c,n)
 #define MT_destroy_cond(c)   MT_cond_destroy(&c)   
 #define MT_signal_cond(c,n)  MT_cond_signal(&c,n)  
 #define MT_wait_cond(c,l,n)  MT_cond_wait(&c,&l,n)  
@@ -223,6 +245,63 @@ size_t _MT_pagesize = 0;	/* variable holding memory size */
 size_t _MT_npages = 0;		/* variable holding page size */
 
 MT_Lock MT_system_lock = PTHREAD_MUTEX_INITIALIZER;
+
+#ifdef MT_LOCK_TRACE
+unsigned long long MT_locktrace_cnt[65536] = {0};
+char* MT_locktrace_nme[65536] = {NULL};
+
+#if defined(ia64) && !defined(__GNUC__)
+#include "ia64regs.h"
+#endif
+
+unsigned long long MT_clock(){
+        unsigned long long tsc;
+#if defined(__x86_64__) && !defined(__PGI)
+        unsigned long long a, d;
+        __asm__ __volatile__("rdtsc" : "=a" (a), "=d" (d));
+        tsc = ((unsigned long)a) | (((unsigned long)d)<<32);
+        #define TICKNAME "rdtsc "
+#elif defined(__i386__) && !defined(__PGI)
+        __asm__ __volatile__("rdtsc" : "=A" (tsc));
+        #define TICKNAME "rdtsc "
+#elif !defined(ia64)
+        tsc = (unsigned long long) clock();
+        #define TICKNAME "clock "
+#elif defined(__GNUC__)
+        __asm__ __volatile__("mov %0=ar.itc" : "=r"(tsc) :: "memory");
+        #define TICKNAME "ar.itc"
+#else
+        tsc = (unsigned long long) __getReg(_IA64_REG_AR_ITC);
+        #define TICKNAME "AR_ITC"
+#endif /* defined(i386) */
+        return tsc;
+}
+#endif
+MT_Id MT_locktrace = 0;
+
+void MT_locktrace_start() {
+#ifdef MT_LOCK_TRACE
+    memset(MT_locktrace_cnt, 0, 65536*sizeof(unsigned long long));
+#endif
+    MT_locktrace = MT_getpid();
+}
+
+void MT_locktrace_end() {
+#ifdef MT_LOCK_TRACE
+    unsigned long long my_cnt[65536];
+    memset(my_cnt, 0, 65536*sizeof(unsigned long long));
+    for(int i=0; i<65536; i++) if (MT_locktrace_cnt[i]) {
+        int idx = MT_locktrace_hash(MT_locktrace_nme[i]); 
+        my_cnt[idx] += MT_locktrace_cnt[i];
+    }
+    for(int i=0; i<65536; i++) if (MT_locktrace_cnt[i]) {
+        int idx = MT_locktrace_hash(MT_locktrace_nme[i]); 
+        if (my_cnt[idx]) printf("%s %llu\n", MT_locktrace_nme[i], my_cnt[idx]);
+        my_cnt[idx] = 0;
+    }
+#endif
+    MT_locktrace = 0;
+}
 
 void
 MT_init(void)
