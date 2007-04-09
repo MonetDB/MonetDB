@@ -385,6 +385,7 @@ typedef struct shredCtxStruct {
 
      MT_Lock *coll_lock;
      MT_Sema *extend_sema;
+     BAT     *lock_barrier;
 } shredCtxStruct;
 
 /* some string buffer sizes */
@@ -523,17 +524,17 @@ emit_tuple(shredCtxStruct* shredCtx,
     if (shredCtx->coll_lock) { 
         /* yield the lock every so many nodes to queries that want to start and need the masters */
 #ifdef _POSIX_PRIORITY_SCHEDULING
-        if ((shredCtx->nnode_pre&1023) == 0) {
+        if ((shredCtx->nnode_pre&1023) == 0) do {
             MT_lock_unset(shredCtx->coll_lock, "shredder_yield"); 
             sched_yield();
             MT_lock_set(shredCtx->coll_lock, "shredder_yield"); 
-        }
+        } while (BUNfnd(shredCtx->lock_barrier, &shredCtx->coll_lock));
 #else
-        if ((shredCtx->nnode_pre&16383) == 0) {
+        if ((shredCtx->nnode_pre&16383) == 0) do {
             MT_lock_unset(shredCtx->coll_lock, "shredder_yield"); 
             MT_sleep_ms(1); 
             MT_lock_set(shredCtx->coll_lock, "shredder_yield"); 
-        }
+        } while (BUNfnd(shredCtx->lock_barrier, &shredCtx->coll_lock));
 #endif
     }
 
@@ -1320,6 +1321,9 @@ shredder_free(shredCtxStruct *shredCtx,
     if (shredCtx->val) {
         GDKfree(shredCtx->val);
     }
+    if (shredCtx->lock_barrier) {
+        BBPunfix(shredCtx->lock_barrier->batCacheid);
+    }
     attrDB_free(&shredCtx->idrefAttrDB);
     GDKfree(shredCtx);
     return NULL;
@@ -1361,6 +1365,18 @@ shredder_create(char *location,
     shredCtx->extend_sema = s;
     }
     shredCtx->incremental = (BATcount(docBAT) > 0);
+
+    /* as we want to release the lock once in a while, but having the lock alone does not guarantee
+     * excusive access (anynmore), we now after retaking it we must make sure the lock-barrier BAT does 
+     * not contain entries for our coll_lock
+     */
+    i = BBPindex("shortlock_barrier");
+    shredCtx->lock_barrier = i?BATdescriptor(i):NULL;
+    if (shredCtx->lock_barrier == NULL) {
+        if (i) BBPunfix(i);
+        GDKerror("shredder_create: could not open collection_rdonly.\n");
+        return shredder_free(shredCtx, 0);
+    }
 
     /* init the idref attribute database */
     attrDB_init(&shredCtx->idrefAttrDB);

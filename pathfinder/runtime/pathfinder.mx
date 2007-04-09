@@ -536,6 +536,10 @@ var pf_wal   := pflock_get(1); # lock that must be held while writing into the W
 var pf_free  := pflock_get(2); # lock held while freeing ws-es
 var pf_free_held := 0LL;       # contains wsid that has the lock (for robust resource release)
 
+# [coll-lock,barrier] bat for getting non-exclusive/exclusive coll-locks 
+var shortlock_barrier := bat(lock,sema,10000).rename("shortlock_barrier"); 
+var pf_collbarrier_lock := lock_create(); # proptector for shortlock_barrier bat
+
 # master bat *READS* must protect themselves against *independent* master bat updates, and
 # in particular extends. Such BATextends may reallocate the base address of the heaps.
 # Thus readers take a nonexclusive locks, and appends (that potentially extend) take
@@ -664,6 +668,7 @@ var collection_name;  # bat[oid,str] collection name
 var collection_size;  # bat[oid,lng] collection size in bytes
 var collection_zombie := bat(oid,lng).rename("collection_zombie"); 
                       # bat[oid,lng] contains ws still using the now defunct collection (TRANSIENT)
+
 
 var doc_collection;   # bat[oid,oid] collection-id 
 var doc_name;         # bat[oid,str] document name
@@ -1221,8 +1226,25 @@ PROC coll_lock_set(BAT[void,bat] ws,
         }
         if (bit(mode and COLL_SHORTLOCK)) {
             var coll_shortlock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
-            ws.fetch(CONT_LOCKED).append(coll_shortlock);
+
             lock_set(coll_shortlock);
+            lock_set(pf_collbarrier_lock);
+            if (shortlock_barrier.exist(coll_shortlock,sema_nil)) { # there are readers in ws_opencoll!!
+                var barrier := sema_create(0);
+                shortlock_barrier.insert(coll_shortlock,barrier); 
+                while(shortlock_barrier.exist(coll_shortlock,sema_nil)) {
+                    lock_unset(pf_collbarrier_lock);
+                    lock_unset(coll_shortlock);
+                    sema_down(barrier); # wait for the readers
+                    lock_set(coll_shortlock);
+                    lock_set(pf_collbarrier_lock);
+                }
+                shortlock_barrier.delete(coll_shortlock,barrier); 
+                sema_destroy(barrier); 
+            }
+            lock_unset(pf_collbarrier_lock);
+
+            ws.fetch(CONT_LOCKED).append(coll_shortlock);
             if (ws_log_active)
                 ws_log(ws, nme + " (coll_lock_set) shortlock" + str(ws_logtime - (ws_logtime := usec())));
             checkpoint_protect(ws);
@@ -1413,30 +1435,21 @@ PROC ws_destroy(BAT[void,bat] ws) : void
     ws_free(ws_id(ws)); # deregister working set from meta tables
 }
 
-# add a collection to the working set. 
-# - open all master bats (remap the rid_* bats into pre_*s).
-# - create a runtime index on persistent ocuments (we do not deem index creation
-#   worthwhile on temporary documents taht only exist during this query).
-PROC __ws_opencoll(BAT[void,bat] ws, 
-                   BAT[lock,bat] runtime, 
-                   BAT[str,bat] docBAT, 
-                   str colname, 
-                   oid coll_oid) : oid
+PROC __ws_opencoll(BAT[void,BAT] ws,
+                   BAT [str,bat] docBAT, 
+                   str colname, oid coll_oid, oid cont) : BAT[oid,oid]
 {
-    # get map, pre and mem from the master bats
+    # get the bats, isolate them, and add them to the working set
     var dsk := docBAT.tmark(oid(_MAP_PID));
     var map_pid := copy(dsk.fetch(MAP_PID));
     var pid_map := map_pid;
     var pre, mem, isolate := (ttype(map_pid) = oid);
-    var prefix := "runtime" + str(abs(int(runtime))) + "_" + str(int(coll_oid));
-    
+    var free_pages := empty_bat;
+
     if (isolate) {
         # on each document load, we update the free page list (i.e. garbage collection)
-        var free_pages := map_pid.ord_uselect(oid_nil).access(BAT_WRITE).revert(); # list of free pages
-        free_pages.bbpname(prefix + "_free_pages");
+        free_pages := map_pid.ord_uselect(oid_nil).access(BAT_WRITE).revert(); # list of free pages
         if ((free_pages.count() = 0) and (free_pages.htype() = void)) free_pages.seqbase(0@0); # give it a non-nil head
-        var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
-        runtime.replace(coll_shortlock, free_pages);
 
         # sort the non-nil entries to get used-page-list (avoids sorting using positional insert trick)
         pid_map := map_pid.slice(0,count(map_pid)-(1+count(free_pages))).copy().access(BAT_WRITE);
@@ -1452,7 +1465,6 @@ PROC __ws_opencoll(BAT[void,bat] ws,
     }
 
     # register new container in ws, and append all bats to it
-    var cont := oid(count(ws.fetch(CONT_COLL)));
     var cont_bat := constant2bat(cont);
     ws.fetch(MAP_PID).append(map_pid);
     ws.fetch(PID_MAP).append(pid_map);
@@ -1462,11 +1474,27 @@ PROC __ws_opencoll(BAT[void,bat] ws,
     ws.fetch(ATTR_CONT).append(cont_bat);
     ws.fetch(CONT_COLL).append(coll_oid);
     ws.fetch(CONT_NAME).append(colname);
-    ws.fetch(CONT_RUNTIME).append(runtime);
     mirror(ws_dsk).leftfetchjoin(ws).[append](dsk);
 
-    # initialize runtime on first load (this involves full table scans and may cost)
+    # region index (start/end attributes, standoff steps) left empty until first use
+    ws.fetch(REGION_PRE).append(empty_bat);
+    ws.fetch(REGION_START).append(empty_bat);
+    ws.fetch(REGION_END).append(empty_bat);
+
+    return free_pages;
+}
+
+# create a runtime index on persistent documents (we do not deem index creation
+# worthwhile on temporary documents that only exist during this query).
+PROC __ws_indexcoll(BAT[void,bat] ws, 
+                    BAT[lock,bat] runtime, 
+                    BAT[oid,any] free_pages, str colname, oid coll_oid, oid cont) : void
+{
+    var ws_logtime := usec(); 
+    var prefix := "runtime" + str(abs(int(runtime))) + "_" + colname + "_" + str(int(coll_oid));
     var idx, ins, del, own, unq, vxm, vxi, vxd;
+    var isolate := (ttype(ws.fetch(MAP_PID).fetch(cont)) = oid);
+
     if (count(runtime) > RT_QN_NID) {
         # a previous query already created the indices, just grab them
         own := runtime.fetch(RT_ATTR_OWN);
@@ -1478,6 +1506,10 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         vxi := runtime.fetch(RT_VX_HSH_NID_INS);
         vxd := runtime.fetch(RT_VX_HSH_NID_DEL);
     } else {
+        # insert list of free pages
+        free_pages.bbpname(prefix + "_free_pages");
+        runtime.replace(coll_shortlock, free_pages);
+
         # only index element qnames that occur <M times, such that M.log(M) < N
         var cnt   := ws.fetch(QN_HISTOGRAM).fetch(cont);
         var N     := count(ws.fetch(PRE_SIZE).fetch(cont));
@@ -1518,7 +1550,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
             if (isolate) { 
                 # create the shared hash table on ATTR_OWN (essential during serialization of anything)
                 reverse(own := copy(own)).accbuild("hash");
-                free_nids := dsk.fetch(NID_RID).uselect(oid_nil).access(BAT_WRITE).revert();
+                free_nids := ws.fetch(NID_RID).fetch(cont).uselect(oid_nil).access(BAT_WRITE).revert();
                 if ((free_nids.count() = 0) and (free_nids.htype() = void)) {
                   free_nids.seqbase(0@0);
                 } else {
@@ -1578,26 +1610,16 @@ PROC __ws_opencoll(BAT[void,bat] ws,
             runtime.insert(lock_nil,vxm);
             runtime.insert(lock_nil,vxi);
             runtime.insert(lock_nil,vxd);
+
+            # Set a unique number (mangled from the wsid in the runtime).
+            # it will be zapped by any update. therefore, precense of this id 
+            # proves absence of updates. We enforce an odd mangled number (or with 1)
+            # to avoid ever confusing such numbers with real lock values
+            # (the lock values in RT_LOCK_FREELIST and RT_NID_FREELIST runtime BUNs are 
+            #  sometimes used as lookup keys -- should not collide with this mangled id). 
+            reverse(runtime).replace(colname_locks, lock((ws_id(ws) >> 32) or 1LL));
         }
     }
-
-    # region index (start/end attributes, standoff steps)
-    ws.fetch(REGION_PRE).append(empty_bat);
-    ws.fetch(REGION_START).append(empty_bat);
-    ws.fetch(REGION_END).append(empty_bat);
-    #
-    # Set a unique number (mangled from the wsid in the runtime).
-    # it will be zapped by any update. therefore, precense of this id 
-    # proves absence of updates. We enforce an odd mangled number (or with 1)
-    # to avoid ever confusing such numbers with real lock values
-    # (the lock values in RT_LOCK_FREELIST and RT_NID_FREELIST runtime BUNs are 
-    #  sometimes used as lookup keys -- should not collide with this mangled id). 
-    reverse(runtime).replace(colname_locks, lock((ws_id(ws) >> 32) or 1LL));
-
-    # for accessing ATTR_OWN, we split it in an old (shared, hash-indexed) and new part.
-    ws.fetch(ATTR_OWN_SHARED).append(own);
-    ws.fetch(ATTR_OWN_PRIVATE).append(ws.fetch(ATTR_OWN).fetch(cont).slice(count(own),int_nil));
-
     # add the indices to the private transaction environment (ie ws)
     if (isolate) { # copy ins/del for isolation
         ins := ins.copy().access(BAT_WRITE);
@@ -1606,6 +1628,8 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         vxi := vxi.copy().access(BAT_WRITE);
         vxd := vxd.copy().access(BAT_WRITE);
     }
+    
+    # store the indices in the working set
     ws.fetch(QN_NID).append(idx);
     ws.fetch(QN_NID_INS).append(ins);
     ws.fetch(QN_NID_DEL).append(del);
@@ -1614,7 +1638,9 @@ PROC __ws_opencoll(BAT[void,bat] ws,
     ws.fetch(VX_HSH_NID_INS).append(vxi);
     ws.fetch(VX_HSH_NID_DEL).append(vxd);
 
-    return cont;
+    # for accessing ATTR_OWN, we split it in an old (shared, hash-indexed) and new part.
+    ws.fetch(ATTR_OWN_SHARED).append(own);
+    ws.fetch(ATTR_OWN_PRIVATE).append(ws.fetch(ATTR_OWN).fetch(cont).slice(count(own),int_nil));
 }
 
 # returns all other queries that have this collection open
@@ -1678,31 +1704,66 @@ PROC _ws_opencoll(lng wsid,
 
 PROC ws_opencoll(BAT[void,BAT] ws,
                  BAT[str,bat] docBAT, 
-                 str name, oid coll_oid) : oid
+                 str colname, oid coll_oid) : oid
 {
-    var ws_logtime := usec(), err, cont, coll_shortlock, runtime;
+    var err, ws_logtime := usec(), runtime;
 
+    # get a handle to the shared runtime bat (create if first access)
     if (coll_oid >= DOCID_MIN) {
          lock_set(pf_short);
-         err := CATCH(coll_shortlock := reverse(runtime := _ws_opencoll(ws_id(ws), coll_oid)).fetch(RT_LOCK_FREELIST));
+         if (ws_log_active) 
+             ws_log(ws, sprintf("ws_opencoll(%s) shortlock%s\n", colname, str(ws_logtime - usec())));
+         err := CATCH(runtime := _ws_opencoll(ws_id(ws), coll_oid));
          lock_unset(pf_short);
          if (not(isnil(err))) ERROR(err);
 
          if (ws_log_active)
-             ws_log(ws, sprintf("_ws_opencoll(%s) exec%s\n", name, str(ws_logtime - (ws_logtime := usec()))));
-
-         lock_set(coll_shortlock); # never lock a collection inside the short lock
-         if (ws_log_active) 
-             ws_log(ws, sprintf("opencoll(%s) shortlock%s\n", name, str(ws_logtime - usec())));
+             ws_log(ws, sprintf("_ws_opencoll(%s) exec%s\n", colname, str(ws_logtime - (ws_logtime := usec()))));
     } else {
          runtime := runtime(lock_nil,lock_nil);
     }
-    err := CATCH(cont := __ws_opencoll(ws, runtime, docBAT, name, coll_oid));
-    if (coll_oid >= DOCID_MIN) {
-         lock_unset(coll_shortlock); # release lock acquired for updatable bats
-    }
-    if (not(isnil(err))) ERROR(err);
+    ws.fetch(CONT_RUNTIME).append(runtime);
 
+    # first opener creates a collection barrier that will block write access (coll_lock_set)
+    var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+    var cont := oid(count(ws.fetch(CONT_COLL)));
+
+    # get non-exclusive read-only access
+    if (coll_oid >= DOCID_MIN) {
+        lock_set(coll_shortlock);
+        lock_set(pf_collbarrier_lock);
+        shortlock_barrier.insert(coll_shortlock, sema_nil);
+        lock_unset(pf_collbarrier_lock);
+        lock_unset(coll_shortlock); # allow concurrent __ws_opencoll()
+    }
+
+    # first get the isolated master bat images (NOTE: avoid coll_shortlock this bat access)
+    var free_pages;
+    err := CATCH(free_pages := __ws_opencoll(ws, docBAT, colname, coll_oid, cont));
+
+    # now add the indices. is fast if already created. But here we need exclusive collection access
+    if (coll_oid >= DOCID_MIN) lock_set(coll_shortlock); 
+    var ws_exectime := usec();
+    if (isnil(err))
+        err := CATCH(__ws_indexcoll(ws, runtime, free_pages, colname, coll_oid, cont));
+
+    # last non-exclusive accesser wakes up exclusive requests (coll_lock_set)
+    if (coll_oid >= DOCID_MIN) {
+        var barriers := empty_bat;
+        lock_set(pf_collbarrier_lock);
+        shortlock_barrier.delete(coll_shortlock, sema_nil);
+        if (not(shortlock_barrier.exist(coll_shortlock, sema_nil))) # is last?
+             barriers := reverse(shortlock_barrier).select(coll_shortlock);
+        lock_unset(pf_collbarrier_lock);
+        if (bit(count(barriers))) [sema_up](barriers);
+        lock_unset(coll_shortlock); 
+    }
+
+    # we made sure __ws_opencoll/__ws_indexcoll errors were caught to free the locks anyway.
+    if (not(isnil(err))) ERROR(err);
+    if (ws_log_active)
+        ws_log(ws, sprintf("__ws_opencoll(%s) shortlock%s exec %s\n", 
+                           colname, str(ws_logtime - ws_exectime)), str(ws_exectime - usec()));
     return cont;
 }
 
@@ -2090,8 +2151,6 @@ PROC __runtime_addchunk(lng wsid,
     }
     return commitbat;
 }
-
-
 
 PROC __runtime_newpage(BAT[lock,bat] runtime) : oid 
 {
@@ -2604,7 +2663,6 @@ PROC ws_newpage(BAT[void,BAT] ws,
 {
     var wsid := ws_id(ws);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-    var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
     # if there is a free page, then this is easy
     lock_set(coll_shortlock);
@@ -2629,10 +2687,9 @@ PROC ws_newpage(BAT[void,BAT] ws,
             var map_pid   := ws.fetch(_MAP_PID).find(cont);
 
             # fully protect/lock the collection during bat extend
-            lock_set(coll_shortlock);
-            checkpoint_protect(ws);
+            coll_lock_set(ws, cont, COLL_SHORTLOCK, "ws_newpage"); 
+            var ws_logtime := usec(); 
             sema_down(pf_extend_barrier);
-            ws.fetch(CONT_LOCKED).append(coll_shortlock).append(lock_nil);
  
             var last_pid, new_pid := 1 + ((count(rid_size) - 1) >> REMAP_PAGE_BITS);
 
@@ -2642,9 +2699,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
 
             # unprotect/lock the collection after bat extend
             sema_up(pf_extend_barrier);
-            checkpoint_unprotect(ws);
-            lock_unset(coll_shortlock);
-            ws.fetch(CONT_LOCKED).reverse().delete(lock_nil).delete(coll_shortlock);
+            coll_lock_unset(ws, cont, COLL_SHORTLOCK, "ws_newpage", ws_logtime); 
 
             var pages_free := reverse(runtime.fetch(RT_LOCK_FREELIST));
             var newpids := bat(void,oid);
@@ -2715,11 +2770,10 @@ PROC ws_newnids(BAT[void, BAT] ws,
             var nid_off := count(nid_rid);
             var nid_cnt;
 
-            lock_set(coll_shortlock);
-            checkpoint_protect(ws);
+            coll_lock_set(ws, cont, COLL_SHORTLOCK, "ws_newnids"); 
+            var ws_logtime := usec(); 
             pf_assert(CATCH(nid_cnt := __ws_newnids(nid_rid, cnt)), "master update failed (newnids)");
-            checkpoint_unprotect(ws);
-            lock_unset(coll_shortlock);
+            coll_lock_unset(ws, cont, COLL_SHORTLOCK, "ws_newnids", ws_logtime); 
 
             # put nids in reverse order in the freelist, so they are given out in order
             newnids.access(BAT_WRITE).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
@@ -5498,6 +5552,7 @@ xquery_client_engine(mapi_client *mc)
                 p++;
                 switch(*p) {
                 case 'p': /* profile */
+                        if (genType != buf) MT_locktrace_start();
                         genType = buf; /* now includes "timing-" prefix */
                         break;
                 case 'o': /* output format */
@@ -5574,6 +5629,7 @@ if (p[1] == '4' && p[2] == '2' && p[3] == '\n' && p[4] == 0 && genType == buf &&
         xquery_client_reset(ctx, NULL); 
     }
     xquery_client_end(mc, msg); 
+    if (genType == buf) MT_locktrace_end();
 }
 
 void 
@@ -5780,9 +5836,9 @@ extern void xmlInitParser(void);
 bat *
 xquery_prelude(void)
 {
-    MT_init_lock(pf_compiler_lock);
-    MT_init_lock(pf_module_lock);
-    MT_init_lock(pf_cache_lock);
+    MT_init_lock(pf_compiler_lock, "pf_compiler_lock");
+    MT_init_lock(pf_module_lock, "pf_module_lock");
+    MT_init_lock(pf_cache_lock, "pf_cache_lock");
 
     xmlInitParser();
    

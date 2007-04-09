@@ -432,6 +432,7 @@ const oid_nil       := oid(nil);
 const str_nil       := str(nil);
 const stream_nil    := Stream(nil);
 const lock_nil      := lock(nil);
+const sema_nil      := sema(nil);
 const timestamp_nil := timestamp(nil);
 
 PROC addValues(bat[void,any::1] container, any::1 delta) : oid
@@ -6946,15 +6947,15 @@ xquery_print_doc_main (str mode, BAT* ws, str docName)
 }
 
 bat* pf_support_prelude() {
-    MT_init_lock(pf_runtime_lock[0]);
-    MT_init_lock(pf_runtime_lock[1]);
-    MT_init_lock(pf_runtime_lock[2]);
-    MT_init_lock(pf_runtime_lock[3]);
-    MT_init_lock(pf_runtime_lock[4]);
-    MT_init_lock(pf_runtime_lock[5]);
-    MT_init_sema(pf_runtime_sema[0],1);
-    MT_init_sema(pf_runtime_sema[1],1);
-    MT_init_sema(pf_runtime_sema[2],1);
+    MT_init_lock(pf_runtime_lock[0], "PF_SHORT_LOCK");
+    MT_init_lock(pf_runtime_lock[1], "PF_WAL_LOCK");
+    MT_init_lock(pf_runtime_lock[2], "PF_FREE_LOCK");
+    MT_init_lock(pf_runtime_lock[3], "PF_EXTEND_LOCK");
+    MT_init_lock(pf_runtime_lock[5], "PF_META_LOCK");
+    MT_init_lock(pf_runtime_lock[4], "PF_UPDATE_LOCK");
+    MT_init_sema(pf_runtime_sema[0],1, "PF_META_BARRIER");
+    MT_init_sema(pf_runtime_sema[1],1, "PF_UPDATE_BARRIER");
+    MT_init_sema(pf_runtime_sema[2],1, "PF_EXTEND_BARRIER");
     ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
     BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
     (void) BATprepareHash(ws_overlaps_ws);
