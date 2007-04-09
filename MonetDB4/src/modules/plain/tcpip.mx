@@ -416,7 +416,7 @@ cache_new(str name)
 	c->tpe = TYPE_void;
 	c->conn = -1;
 	c->errbuf = NULL;
-	MT_init_sema(c->barrier,0);
+	MT_init_sema(c->barrier,0, "TCPsema");
 	return c;
 }
 
@@ -1160,7 +1160,7 @@ Init the global structures.
 bat *
 TCPprelude(void)
 {
-	MT_init_lock(TCPlock);
+	MT_init_lock(TCPlock, "TCPlock");
 	cache_idx = BATnew(TYPE_str, TYPE_ptr, 1000);
 	if (cache_idx == NULL)
 		return NULL;

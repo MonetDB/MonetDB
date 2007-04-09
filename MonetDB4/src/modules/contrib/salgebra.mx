@@ -1071,9 +1071,10 @@ salgebra_CMDdestroy(str chname)
 		return GDK_FAIL;
 	refcnt = salgebra_getRefCnt(ch);
 	ERRORcheck(refcnt > 1, "Still references around; cannot destroy ch\n");
-	MT_set_lock(salgebra_chashLock[ABS(bid = ch->b) & BBPLOCKMASK], "CMDdestroy");
+        bid = ABS(ch->b);
+	MT_set_lock(salgebra_chashLock[bid & BBPLOCKMASK], "CMDdestroy");
 	salgebra_uncacheIt(ch);
-	MT_unset_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CMDdestroy");
+	MT_unset_lock(salgebra_chashLock[bid & BBPLOCKMASK], "CMDdestroy");
 	return GDK_SUCCEED;
 }
 
@@ -1088,10 +1089,10 @@ salgebra_prelude(void)
 #endif
 	/* allocate locks */
 	for (i = 0; i <= BBPLOCKMASK; i++) {
-		MT_init_lock(salgebra_chashLock[i]);
+		MT_init_lock(salgebra_chashLock[i], "salgebra_chashLock");
 	}
-	MT_init_lock(salgebra_cacheLock);
-	MT_init_lock(salgebra_refcntLock);
+	MT_init_lock(salgebra_cacheLock, "salgebra_cacheLock");
+	MT_init_lock(salgebra_refcntLock, "salgebra_refcntLock");
 
 	salgebra_cache = BATnew(TYPE_int, TYPE_clusterhash, 10);
 	BBPrename(BBPcacheid(salgebra_cache), "ch_cache");

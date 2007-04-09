@@ -80,7 +80,7 @@ create_lock(monet_lock *l)
 {
         *l = (monet_lock) GDKmalloc(sizeof(MT_Lock));
 	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
-	MT_lock_init((MT_Lock*) *l);
+	MT_lock_init((MT_Lock*) *l, "create_lock");
 	return GDK_SUCCEED;
 }
 
@@ -122,7 +122,7 @@ create_sema(monet_sema *s, int *init)
 {
         *s = (monet_sema) GDKmalloc(sizeof(MT_Sema));
 	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
-	MT_sema_init((MT_Sema *) *s, *init);
+	MT_sema_init((MT_Sema *) *s, *init, "create_sema");
 	return GDK_SUCCEED;
 }
 

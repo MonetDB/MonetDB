@@ -841,7 +841,7 @@ enum_ishisto(bit *ret, int *enum_t, BAT *column)
 bat *
 enum_prelude(void)
 {
-	MT_init_lock(enum_lock);
+	MT_init_lock(enum_lock, "enum_lock");
 	return NULL;
 }
 

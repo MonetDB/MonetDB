@@ -432,14 +432,14 @@ protectMonet(void)
 		TMDEBUG printf("# protectMonet: upgrade protection %d>0\n", monet_forks);
 		TMDEBUG printf("# Monet locks created\n");
 
-		MT_init_lock(monet_critical);
-		MT_init_lock(monet_contextLock);
-		MT_init_lock(monet_parserLock);
-		MT_init_lock(monet_notifyLock);
-		MT_init_lock(monet_voidLock);
-		MT_init_sema(monet_available, 0);
-		MT_init_sema(monet_forksync, 0);
-		MT_init_lock(profilerLock);
+		MT_init_lock(monet_critical, "monet_critical");
+		MT_init_lock(monet_contextLock, "monet_contextLock");
+		MT_init_lock(monet_parserLock, "monet_parserLock");
+		MT_init_lock(monet_notifyLock, "monet_notifyLock");
+		MT_init_lock(monet_voidLock, "monet_voidLock");
+		MT_init_sema(monet_available, 0, "monet_available");
+		MT_init_sema(monet_forksync, 0, "monet_forksync");
+		MT_init_lock(profilerLock, "profilerLock");
 		TBL_protect();
 		GDKprotect();
 		monet_needshared = 0;

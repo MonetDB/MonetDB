@@ -244,7 +244,7 @@ qt_prelude(void)
 	zid_t lid;
 	int n;
 
-	MT_init_lock(qt_lock);
+	MT_init_lock(qt_lock, "qt_lock");
 
 	levels = (qtlevel_t *) GDKmalloc(nlevels * sizeof(qtlevel_t));
 	assert(levels);

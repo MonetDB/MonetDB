@@ -122,7 +122,7 @@ CLKalarm(time_t t, str action)
 		timer[k].action = GDKstrdup(action);
 	} else {
 		timer[k].action = 0;
-                MT_init_sema(timer[k].sema, 0);
+                MT_init_sema(timer[k].sema, 0, "timersema");
 	}
 	if (k == timerTop++) {
 		CLKinitTimer(t, 0);	/* set it sooner */

@@ -226,7 +226,7 @@ init_client_cache(void)
 {
 	int i;
 
-	MT_init_lock(mapi_cache_lock);
+	MT_init_lock(mapi_cache_lock, "mapi_cache_lock");
 
 	for(i = 0; i < MAX_FRONTENDS; i++)
 		mapi_frontends[i] = 0;
@@ -410,7 +410,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	mc->frontend = f->nr;
 	mc->inuse = 1;
 	mc->t = ~(MT_Id)0;
-	MT_init_sema(mc->s, 0);
+	MT_init_sema(mc->s, 0, "mapi_client_sema");
 	mc->lastvar = monet_cntxt[mc->stk].var;
 	if ((err = f->f_alloc(mc)) != NULL){
 		if (s) {
@@ -508,6 +508,7 @@ mapi_client_engine(void *FC )
 		MT_down_sema(fc->s, "mapi_client_engine"); /* wait for work */
 		if (fc->inuse == 2)
 			break;
+
 		fc->thread->data[0] = fc->c->fdout;
 		fc->thread->data[1] = fc->c->fdin;
 		fc->engine(fc);
@@ -866,7 +867,6 @@ Get the new information for the server socket and start listening.
 		struct timeval tv;
 		fd_set fds;
 		SOCKET msgsock;
-
 		FD_ZERO(&fds);
 		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
@@ -889,6 +889,7 @@ Get the new information for the server socket and start listening.
 			/* nothing interesting has happened */
 			continue;
 		}
+
 		if (retval < 0) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlisten:select failed\n");
@@ -1060,7 +1061,7 @@ mapi_prelude(void)
 		return NULL;
 	}
 	for (i = 0; i < nlocks; i++)
-		MT_init_lock(mutex_buf[i]);
+		MT_init_lock(mutex_buf[i], "mapi_mutex_buf");
 	CRYPTO_set_locking_callback(locking_function);
 	CRYPTO_set_id_callback(id_function);
 #endif
@@ -1190,7 +1191,6 @@ Get the new information for the server socket and start listening.
 		int retval;
 		struct timeval tv;
 		fd_set fds;
-
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
 		/* Wait up to 0.5 seconds. */

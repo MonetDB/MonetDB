@@ -328,16 +328,18 @@ interpret_pin(batrec *r, int force, str s)
 	if (b == NULL) {
 		return NULL;
 	} else if ((b->htype == TYPE_void) | (b->ttype == TYPE_void)) {
-		BAT *_b = BBP_cache(ABS(r->id));
+                bat bid = ABS(r->id);
+		BAT *_b = BBP_cache(bid);
 		int tid = THRgettid();
 
-		monet_set_lock(monet_voidLock, "pin");
+		monet_set_lock(GDKhashLock[bid & BBPLOCKMASK], "pin");
 		if (_b->void_cnt & (force | (_b->void_tid != tid))) {
 			BAT *v = VIEWcreate(b);
 			BBPunfix(r->id);
 
 			v->batStamp = b->batCacheid;
 			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) create %d[1,%d] on %d[%d,%d]\n", s, (int) v->batCacheid, tid, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
+THRprintf(GDKout, "interpret_pin(%s) create %d[1,%d] on %d[%d,%d]\n", s, (int) v->batCacheid, tid, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 
 			_b = b = v;
 		} else {
@@ -345,7 +347,7 @@ interpret_pin(batrec *r, int force, str s)
 		}
 		_b->void_cnt++;
 		_b->void_tid = tid;
-		monet_unset_lock(monet_voidLock, "pin");
+		monet_unset_lock(GDKhashLock[bid & BBPLOCKMASK], "pin");
 	}
 	r->id = b->batCacheid;
 
@@ -363,9 +365,10 @@ interpret_unpin(batrec *r, str s)
 		if (b->batStamp != r->stamp) {
 			GDKerror("interpret_unpin: %s bat=%d,stamp=%d OVERWRITTEN\n", s, r->id, r->stamp);
 		} else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
-			BAT *_b = BBPdescriptor(ABS(r->id));
+                        bat bid = ABS(r->id);
+			BAT *_b = BBPdescriptor(bid);
 
-			monet_set_lock(monet_voidLock, "unpin");
+		        monet_set_lock(GDKhashLock[bid & BBPLOCKMASK], "unpin");
 			if (--(_b->void_cnt) == 0) {
 				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[%d,%d]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 
@@ -373,7 +376,7 @@ interpret_unpin(batrec *r, str s)
 			} else {
 				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[%d,%d]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 			}
-			monet_unset_lock(monet_voidLock, "unpin");
+		        monet_unset_lock(GDKhashLock[bid & BBPLOCKMASK], "unpin");
 		}
 	}
 	BBPunfix(r->id);
