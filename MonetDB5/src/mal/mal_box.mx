@@ -250,7 +250,7 @@ only.
 	obj->name= GDKstrdup(name);
 	obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 	obj->val = newGlobalStack(MAXVARS);
-	MT_lock_init(&obj->lock);
+	MT_lock_init(&obj->lock,"M5_box_lock");
 @-
 @c
 #include "mal_config.h"

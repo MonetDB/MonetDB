@@ -336,7 +336,7 @@ The parameter of getEventStream is the return value of the enclosing function:
 	setEndPoint:    a str
 @= getEventStream
 	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock);
+		MT_lock_init(&profileLock,"M5_profileLock");
 		profileLockInitialized= 1;
 	}
 	mal_set_lock(profileLock,"profileLock");
@@ -577,7 +577,7 @@ setLogFile(Module cntxt, str fname)
 	(void) cntxt;		/* still unused */
 #ifdef MALprofiler
 	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock);
+		MT_lock_init(&profileLock,"M5_profileLock");
 		profileLockInitialized= 1;
 	}
 	mal_set_lock(profileLock, "profileLock");
@@ -601,7 +601,7 @@ setLogStream(Module cntxt, str host, int port)
 	(void) cntxt;		/* still unused */
 #ifdef MALprofiler
 	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock);
+		MT_lock_init(&profileLock,"M5_profileLock");
 		profileLockInitialized= 1;
 	}
 	mal_set_lock(profileLock, "profileLock");
@@ -777,7 +777,7 @@ setFilter(Module cntxt, str mod, str fcn)
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
 	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock);
+		MT_lock_init(&profileLock,"M5_profileLock");
 		profileLockInitialized= 1;
 	}
 	mal_set_lock(profileLock, "profileLock");
@@ -821,7 +821,7 @@ clrFilter(Module cntxt, str mod, str fcn)
 	(void) fcn;		/* still unused */
 
 	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock);
+		MT_lock_init(&profileLock,"M5_profileLock");
 		profileLockInitialized= 1;
 	}
 	mal_set_lock(profileLock, "profileLock");

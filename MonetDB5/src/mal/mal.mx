@@ -344,7 +344,7 @@ void tstAligned(void)
 #endif
 }
 int mal_init(){
-	MT_lock_init( &mal_contextLock);
+	MT_lock_init( &mal_contextLock, "mal_contextLock");
 
 	tstAligned();
 	initNamespace();

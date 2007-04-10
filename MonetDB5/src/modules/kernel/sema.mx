@@ -60,7 +60,7 @@ create_sema(monet_sema *s, int *init)
 {
 	*s = (monet_sema) GDKmalloc(sizeof(MT_Sema));
 	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
-	MT_sema_init((MT_Sema *) *s, *init);
+	MT_sema_init((MT_Sema *) *s, *init, "M5_create_sema");
 	return GDK_SUCCEED;
 }
 

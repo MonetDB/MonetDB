@@ -827,7 +827,7 @@ SERVERprelude(void)
 		return NULL;
 	}
 	for (i = 0; i < nlocks; i++)
-		MT_lock_init(&mutex_buf[i]);
+		MT_lock_init(&mutex_buf[i],"M5_mutex_lock");
 	CRYPTO_set_locking_callback(locking_function);
 	CRYPTO_set_id_callback(id_function);
 #endif

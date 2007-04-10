@@ -67,7 +67,7 @@ create_lock(monet_lock *l)
 {
 	*l = (monet_lock) GDKmalloc(sizeof(MT_Lock));
 	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
-	MT_lock_init((MT_Lock*) *l);
+	MT_lock_init((MT_Lock*) *l, "M5_create_lock");
 	return GDK_SUCCEED;
 }
 
