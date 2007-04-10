@@ -2400,7 +2400,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 
 	logger_sequence(sql_logger, OBJ_SID, &store_oid);
 	prev_oid = store_oid;
-	MT_lock_init(&bs_lock);
+	MT_lock_init(&bs_lock, "SQL_bs_lock");
 
 	types_init(debug);
 
