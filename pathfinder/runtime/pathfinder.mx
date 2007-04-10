@@ -5552,7 +5552,9 @@ xquery_client_engine(mapi_client *mc)
                 p++;
                 switch(*p) {
                 case 'p': /* profile */
+#ifdef MT_LOCK_TRACE
                         if (genType != buf) MT_locktrace_start();
+#endif
                         genType = buf; /* now includes "timing-" prefix */
                         break;
                 case 'o': /* output format */
@@ -5629,7 +5631,9 @@ if (p[1] == '4' && p[2] == '2' && p[3] == '\n' && p[4] == 0 && genType == buf &&
         xquery_client_reset(ctx, NULL); 
     }
     xquery_client_end(mc, msg); 
+#ifdef MT_LOCK_TRACE
     if (genType == buf) MT_locktrace_end();
+#endif
 }
 
 void 
