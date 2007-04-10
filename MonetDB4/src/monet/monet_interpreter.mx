@@ -339,7 +339,6 @@ interpret_pin(batrec *r, int force, str s)
 
 			v->batStamp = b->batCacheid;
 			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) create %d[1,%d] on %d[%d,%d]\n", s, (int) v->batCacheid, tid, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
-THRprintf(GDKout, "interpret_pin(%s) create %d[1,%d] on %d[%d,%d]\n", s, (int) v->batCacheid, tid, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 
 			_b = b = v;
 		} else {
