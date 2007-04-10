@@ -108,7 +108,7 @@ gdk_export unsigned long long MT_locktrace_cnt[65536];
 gdk_export char* MT_locktrace_nme[65536];
 gdk_export unsigned long long MT_clock();
 
-#define MT_locktrace_hash(_id)  ((int) (((lng) _id)^(((lng) _id)>>16))&65535)
+#define MT_locktrace_hash(_id)  ((int) (((lng) ((size_t) _id))^(((lng) ((size_t) _id))>>16))&65535)
 #define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat) do { unsigned long long _c=0; if (MT_locktrace) _c=(MT_getpid() == MT_locktrace)?MT_clock():0; MT_log(_impl, _object, _action, _caller, _fp); if (_c) { MT_locktrace_cnt[MT_locktrace_hash(_pat)] += MT_clock() - _c; } } while(0)
 #define MT_locktrace_set(s,n) {int _i = MT_locktrace_hash(s); \
                                if (MT_locktrace_nme[_i] && MT_locktrace_nme[_i] != (n)) { \
