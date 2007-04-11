@@ -19,34 +19,34 @@
 @d March 2006
 @* Cracker index
 
+Database cracking aims at enhancing query processing by adapting the way 
+data is stored to the query workload. Adaptation happens through physical 
+reorganization of data. Each query reorganized the data in such a way that 
+future queries can be answered faster.
 
-StM: This text is obsolete as of April 26, 2006, and needs to be updated!
+For each BAT b, the system creates on demand a cracker column c, i.e., 
+the first time a select operator is fired on b. From there on all queries that 
+perform a select operator on b will physically reorganize (i.e., crack) the cracker column c 
+such that the result set is in a consecutive area in c. 
+The result of the select operator is a non materialized view on c.
 
+For each cracker column c, there exists a cracker index, that maintains knowledge 
+on the various pieces created while cracking c. The cracker index is an AVLt-tree
+data structure. Each select operator uses the appropriate cracker index to determine 
+which pieces it should crack, and updates the index afterwards.
 
-A cracker index is a volatile datastructure which acts as
-a non-dense index into a BAT. The index is incrementally built
-based on the fragments needed by queries.
-Each select operation results in a partial re-clustering of the tuples
-such that the result set is a consecutive memory area in the BAT.
-This set can be returned as a BAT view for further processing.
+The more queries are fired on a bat b the more the cracker column c of b is cracked.
+This way the cracker index on c, is continuously enriched with information that helps speed up 
+future queries. This way query processing improves as more queries are answered by adapting to 
+the query and data workload.
 
-A cracker index is created with the command @sc{crackers.new}
-and destroyed using @sc{crackers.destroy}.
-Multiple calls to create/destroy the cracker index on the same
-argument are ignored.
+Initial performance shows an exptected gain of at least on order of magnitude, 
+due to analysing less data during the select operator and also due to non materializing 
+the select operator result set.
 
 The cracker index can be created for the time being on
-tail columns of type {int,lng,dbl,flt,time}. The head
+tail columns of type {int,lng,dbl,flt,time,date,sht}. The head
 is always of type @sc{oid}.
-
-Once a cracker index exist, portions can be extracted
-using @sc{crackers.select} and @sc{crackers.uselect},
-which semantically behave as their algebraic counterparts.
-Both operations may have to glue pieces from the cracked
-bat to satisfy the BAT semantics.
-
-Qst: are these operators overloaded to initiate a crack
-operation first?
 
 In addition, the cracker index can be used to feed a generator
 for pieces satisfying a range constraint.
@@ -54,34 +54,47 @@ A cracker partition is indicated by the index in the cidx
 table. It can be used to initialize a BATview to represent
 the partition during processing.
 
-Repeated cracking leads to an ever growing index. This process
-can be stopped by setting the granule size,
-i.e.  the minimum number of tuples in each piece,
-or the maximum number of pieces.
-The operations @sc{crackers.setGranule()} and @sc{crackers.setLimit()}
-implement them. The default is to allow an arbitrary number pieces
-with arbitrary sizes.
+Updates support for cracker columns happens again in a self-organizing way.
+Incoming updates (inserts,deletes or updates) are kept in separate columns for 
+each BAT as pending updates. While processing queries, if the crackers select 
+operator detects that some of the pending updates should be taken into account,
+then updates are "merged" into the cracker column on the fly by also updating the 
+cracker index accordingly.
 
-Pitfalls.
-The policy in the kernel to take a copy of a BAT when there
-is a need to write to it and there are also views around becomes
-an issue. Instead, it should isolate the views, giving them a
-private copy. This way the underlying base table becomes free to re-arrange.
-This issue is postponed to the future.
+Since the cracker columns are physically reorganized the result of a select operator is not 
+ordered in the same way as the rest of the bats of the same relation. This has side-effects 
+during projection operations. We cannot use ordered fetch joins anymore. 
+This decrades performance significantly
+when multiple projections exist in a query plan.
+
+This problem is solved by the second generation cracing, i.e., 
+sideways cracking that uses cracker maps instead of cracker columns.
+A cracker map contains the values of two attributes of the same relation. 
+These are attributes used together in query plans. The main idea is that 
+cracking based on one of these attributes (the head of the map) is forwarded on the tail. 
+This way projections can be performed by performing simple cracking operations on maps.
+Multiple maps can exist for each attribute A as head consisting the map set of A. All maps in the same 
+map set S are aligned before used in a query plan. Aligment happens by keeping a history of all cracking 
+operations in maps of S and ensuring that the same cracks have been applied to all necessary maps 
+and in the same order. Sideways cracking maintains the advantage of cracking even 
+in the presence of multiple projection operations.
+
+Ongoing work.
+Multitable cracking.
 
 The cracker module should be prepared to deal with any of the base types.
 For strings this becomes an issue.
-
-This module contains the experimental code to play with cracked tables.
-It supports int-based bats for the time being only.
 
 The current implementation uses an unprotected cracker
 index. This limits the interface at slightly more overhead
 of searching the cracker index upon each call.
 
-Initial performance indicates around 70 ms processing
-overhead on a 1M bat during the first crack operation.
-(Athlon 1400, 1Gb)
+Currently crakcer structures are in memory. They need to be stored in disk and become persistent.
+
+Repeated cracking leads to an ever growing index. This process
+can be stopped by setting the granule size,
+i.e.  the minimum number of tuples in each piece,
+or the maximum number of pieces.
 
 @= crackfcn
 command printCrackerIndex(b:bat[:any_1,:@1]):void
@@ -7283,27 +7296,15 @@ printf("vl: "LLFMT", vh:"LLFMT", cl:"LLFMT", ch1:"LLFMT", cl2:"LLFMT", ch:"LLFMT
 @
 
 @= crackOperationsProjections
-/* Projections tryout code */
 str
 CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail)
 {
-        BAT *b,*c;
-        BAT *view;
+        BAT *b, *c, *view;
         int  m, h;
-        lng vl=-1, vh=-1, posl, posh;
-        /* vl and vh are the low and high index values to create the view with the result */
-        lng cl1, ch1, cl2, ch2;
-        /* index values in the case we have to crack
-                |cl1...........ch1|.....................|cl2.........ch2|
-                if we have to crack only one piece, i.e., if our range falls
-                in one piece only then we crack from cl to ch otherwise we use
-                the other indices as it is shown */
-        int zz;
-        int _vl;
+        lng vl=-1, vh=-1, posl, posh, cl1, ch1, cl2, ch2;
+        int zz,_vl;
+        int gapL = 1, gapH = 1;
         bit HBound, foundLow=0, foundHgh=0;
-        int gapL = 1;
-        int gapH = 1;
-
 
         if (@3_GT(low,hgh,@4@1))
                 throw(MAL, "crackers.crack", "illegal range");
@@ -7311,54 +7312,39 @@ CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *
         if (*inclusiveHgh == TRUE) HBound = FALSE;
         else    HBound = TRUE;
 
-        m = existsTreeIndexProjections(*bid, *pbid);
+	/* get the cracker tape for this set or create one if it does not exist */
         h = existsTreeIndexProjections(*bid, -1);
 	if (h == -1)
 		h = CreateHistoryBats_@1(*bid); 
 
+	/* get the map */
+        m = existsTreeIndexProjections(*bid, *pbid);
 
-        /* if this is the first time we select something from this bat pair, then we have to create it */
+        /* create the map if it does not exist and perform the fist crack 
+	   without searching the index (it is empty at this point) */
         if (m == -1){
-	/*	lng T1,T2;
-		T1 = GDKusec();
-        */
-
 		@:CreateCrackingPair(@1,@2)@		
 
-	/*      T2 = GDKusec();
-		printf(" Time cost to create the cracking projection is: "LLFMT" \n", T2-T1);
-        */
                 if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
                         throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
+		/* crack the whole map based on the current restriction */
                 posl = BUNindex(b,BUNfirst(b));
                 posh = BUNindex(b,BUNlast(b)-BUNsize(b));
-
                 @:crkThreeTreeProjections(@1,@2,posl,posh)@
 
                 BBPincref(b->batCacheid,TRUE);
 		
+		/* update the cracker tape and the cursor of the map */
 		AddHistory_@1(h, *low, *hgh, *inclusiveLow, *inclusiveHgh );
 		TreeIndex[m].nextCrack+=1;
+
                 goto createView;
         }
 
-	 /* If an index exists for this bat (so it has been cracked before)
-                we search the index to find where our range falls after this
-                search if we have a match on the low range vl will hold the
-                index value, otherwise it will be -1. The same for hgh and vh
-                if there is no match for low then cl will hold the index that
-                from there on we have to crack. The same from hgh and ch
-                Note that in the case of the low range  we always have to increment
-                by one since we want the values that are after this index
-                (because of the way the crack index is created).
-                Also after the search l and h should point to the low and hgh indices
-                (in the crack index) found either as a match or to crack.
-                This is used later on to determine which pieces we have to crack*/
-        
-        /*Check if this bat was previously cracked but the map is not there anymore
-                this may happen if we chose to forget the index because of updates, so now we          
-                have to create a new one and crack in three pieces anyway*/
+        /*  Check if this map was previously cracked but the map is not there anymore.
+            This may happen if we chose to forget the index because of updates, so now we          
+            have to create a new one and crack in three pieces anyway. */
 
         if (TreeIndex[m].reCreate == 1){
                 
@@ -7375,35 +7361,50 @@ CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *
                 posl = BUNindex(b,BUNfirst(b));
                 posh = BUNindex(b,BUNlast(b)-BUNsize(b));
                 
-                /*printf(" "LLFMT" \n ",posh-posl);*/
                 @:crkThreeTreeProjections(@1,@2,posl,posh)@
+
                 goto createView;
         }
 
+	 /* If a map exists for this bat (so it has been cracked before)
+            we search its index to find where our range falls.
+            If we have a match on the low range vl will hold the
+            index value, otherwise it will be -1. The same for hgh and vh.
+            If there is no match for low, then cl will hold a position on the map that
+            from there on we have to crack. The same from hgh and ch.
+            
+            In the case of the low range we always have to increment
+            by one this position since we want the tuples that are after this position
+            (because of the way the crack index maintains information).
+            
+            After the search l and h point to the low and hgh positions
+            (in the cracker index) found either as a match or to crack.
+            This is used later on to determine which pieces we have to crack. */
+        
+	/* Align the map based on the position of its cursor in the cracker tape */
 	Sync_@1_@2(m,h);        
         
-        /* Take the index of the bat */
+        /* Take the index of the map */
         if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
                 throw(MAL, "crackers.crackRange", "Cannot access crack index");
         
-        /* Take the copy of the bat for which we maintain the index */
+        /* Take the map */
         if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
                 throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
         zz = BUNsize(c);
         
-        /* find out where in the index the low   falls */
+        /* find out where in the index the low falls */
                 foundLow = GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
         
         /* find out where in the index the high falls */        
 		foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), zz, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
                 
-	/*need to increase one position for the low bound only since we always store the previous position in the index*/
+	/* need to increase one position for the low bound only since we always store the previous position in the index */
         if (cl1 != 0) cl1++;
         if (cl2 != 0) cl2++;
         
-        /* If one or both of the result view bounds were not found using the
-        index then we have to crack */
+        /* If one or both of the selection bounds were not found, then we have to crack */
         if (foundLow == 0 || foundHgh == 0){
                 if (foundLow == 0 && foundHgh == 0){                         
 			/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/   
@@ -7447,9 +7448,13 @@ CRKRangeProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *
                 vh = ch2;
         }
 
+	/* Update the cracker tape and the cursor*/
 	AddHistory_@1(h, *low, *hgh, *inclusiveLow, *inclusiveHgh );
 	TreeIndex[m].nextCrack+=1;
+
+	/* Define resulting view: a contiguous area on the map */	
         @:CreateResultProjections()@
+
         return MAL_SUCCEED;
 }
 
@@ -7550,6 +7555,7 @@ CRKhselectBoundsProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hg
 
         throw(MAL, "crackers.CRKselectBoundsProjections_@1_@2", "case not handled");
 }
+
 crackers_export str CRKtselectBoundsProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 str
 CRKtselectBoundsProjections_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
@@ -7828,7 +7834,8 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 	BBPkeepref(p->batCacheid);
 	BBPunfix(b->batCacheid);
 	*res = p->batCacheid;
-	 return MAL_SUCCEED;
+
+	return MAL_SUCCEED;
 
 @
 
@@ -8238,8 +8245,10 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
         BBPunfix(b->batCacheid);
         BBPunfix(pair->batCacheid);
         *res = r->batCacheid;
-         return MAL_SUCCEED;
+
+        return MAL_SUCCEED;
 }
+
 crackers_export str CRKProject_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 str
 CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
@@ -8252,14 +8261,17 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
 	int m;
 	lng cl1,cl2,ch1,ch2;
 
+	/* If the necessary map does not exits, then create it */	
 	m = existsTreeIndexProjections(*bid, *pbid);
 	if (m==-1){	
 		@:CreateCrackingPair(@1,@2)@		
 		BBPincref(b->batCacheid,TRUE);
 	}	
 
+	/* Align the map based on the cracker tape of this set */
 	Sync_@1_@2(m,existsTreeIndexProjections(*bid, -1));
 
+	/* Get the map */
         if ((pair = BATdescriptor(TreeIndex[m].cbid)) == NULL) {
                 throw(MAL, "crackers.crackJoinSelectProjections", "Cannot access descriptor");
         }
@@ -8267,6 +8279,10 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
 	if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL)
                 throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
+	/* Get the result area on the map
+           Note. We know that this search leads to an exact match sice a project call always 
+           follows a select call with the same restriction in the same query. 
+           Then this restriction is on the cracker tape. */
         GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl1, &ch1, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
 
         GetHgh_@1(*hgh, *inclusiveHgh, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), BUNsize(c), &cl2, &ch2, 0, BUNindex(pair, BUNlast(pair)-BUNsize(pair)));
@@ -8316,6 +8332,7 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
         BBPunfix(p->batCacheid);
         BBPunfix(b->batCacheid);
         BBPunfix(pair->batCacheid);
+
         return MAL_SUCCEED;
 }
 @
