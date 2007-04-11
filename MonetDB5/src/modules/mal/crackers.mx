@@ -127,55 +127,65 @@ comment "Get the size of the pending deletions of the cracker BAT of b";
 
 command insertionsForget(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeInsertions_Forget
-comment "Append c to the cracked bat of b and completelly forget the cracker index";
+comment "Append c to the cracked BAT of b and completelly forget the cracker index";
 
 command insertionsPartiallyForget(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeInsertions_PartiallyForget_@1
-comment "Append c to the cracked bat of b and partially forget the cracker index, i.e., forget only what is affected";
+comment "Append c to the cracked BAT of b and partially forget 
+         the cracker index, i.e., forget only what is affected";
 
 command insertionsForce(b:bat[:any_1,:@1], c:bat[:any_1,:@1], deleteNodes:bit):void
 address CRKmergeInsertions_Force_@1
-comment "Merge the insertions bat with the cracker bat and update the cracker index";
+comment "Merge the insertions BAT with the cracker BAT and update the cracker index";
 
 command insertionsBForce(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeInsertionsB_Force_@1
-comment "Merge the insertions bat with the cracker bat and update the cracker index";
+comment "Merge the insertions BAT with the cracker bat and update the cracker index";
 
 command insertionsOnNeed(b:bat[:any_1,:@1], c:bat[:any_1,:@1], deleteNodes:bit):void
 address CRKmergeInsertions_OnNeed
-comment "Keep the insertions bat separatelly and do a complete merge only if a relevant query arrives in the future";
+comment "Keep the insertions BAT separatelly and do a complete merge only 
+         if a relevant query arrives in the future";
 
 command insertionsBOnNeed(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeInsertionsB_OnNeed
-comment "Keep the insertions bat separatelly and do a complete merge only if a relevant query arrives in the future";
+comment "Keep the insertions BAT separatelly and do a complete merge 
+         only if a relevant query arrives in the future";
 
 command insertionsOnNeedGradually(b:bat[:any_1,:@1], c:bat[:any_1,:@1], deleteNodes:bit):void
 address CRKmergeInsertions_OnNeedGradually
-comment "Keep the insertions bat separatelly and merge only what is needed if a relevant query arrives in the future";
+comment "Keep the insertions BAT separatelly and merge only 
+         what is needed if a relevant query arrives in the future";
 
 command insertionsBOnNeedGradually(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeInsertionsB_OnNeedGradually
-comment "Keep the insertions bat separatelly and merge only what is needed if a relevant query arrives in the future";
+comment "Keep the insertions BAT separatelly and merge only what is 
+         needed if a relevant query arrives in the future";
 
 command insertionsOnNeedGraduallyRipple(b:bat[:any_1,:@1], c:bat[:any_1,:@1], deleteNodes:bit):void
 address CRKmergeInsertions_OnNeedGraduallyRipple
-comment "Keep the insertions bat separatelly and merge only what is needed using the ripple strategy if a relevant query arrives in the future";
+comment "Keep the insertions BAT separatelly and merge only what is 
+         needed using the ripple strategy if a relevant query arrives in the future";
 
 command insertionsBOnNeedGraduallyRipple(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeInsertionsB_OnNeedGraduallyRipple
-comment "Keep the insertions bat separatelly and merge only what is needed using the ripple strategy if a relevant query arrives in the future";
+comment "Keep the insertions BAT separatelly and merge only what is needed 
+         using the ripple strategy if a relevant query arrives in the future";
 
 command deletionsOnNeed(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeDeletions_OnNeed
-comment "Keep the deletions bat separatelly and do a complete merge only if a relevant query arrives in the future";
+comment "Keep the deletions BAT separatelly and do a complete merge only 
+         if a relevant query arrives in the future";
 
 command deletionsOnNeedGradually(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeDeletions_OnNeedGradually
-comment "Keep the deletions bat separatelly and merge only what is needed if a relevant query arrives in the future";
+comment "Keep the deletions BAT separatelly and merge only what is 
+         needed if a relevant query arrives in the future";
 
 command deletionsOnNeedGraduallyRipple(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
 address CRKmergeDeletions_OnNeedGraduallyRipple
-comment "Keep the deletions bat separatelly and merge only what is needed using ripple if a relevant query arrives in the future";
+comment "Keep the deletions BAT separatelly and merge only what is 
+         needed using ripple if a relevant query arrives in the future";
 
 command verifyCrackerIndex(b:bat[:any_1,:@1]):void
 address CRKverifyCrackerIndex_@1
@@ -183,15 +193,15 @@ comment "Check the cracker index and column, whether each value is in the correc
 
 command extendCrackerBAT(b:bat[:any_1,:@1], P:lng):void
 address CRKextendCrackerBAT
-comment "extend the cracker column by P positions";
+comment "Extend the cracker column by P positions";
 
 command printAVLTree_int(b:bat[:any_1,:@1]):void
 address CRKprintAVLTree_int
-comment "print the AVL Tree";
+comment "Print the AVL Tree";
 
 command buildAVLIndex(b:bat[:any_1,:@1]):void
 address CRKmakeAVLIndex_@1
-comment "make an AVL tree index for this BAT";
+comment "Create an AVL tree index for this BAT";
 
 command InsertAVLIndex(b:bat[:any_1,:@1], u:bat[:any_1,:@1]):void
 address CRKInsertAVLIndex_@1
@@ -204,7 +214,6 @@ comment "Retrieve the subset using the AVL index";
 command deleteAVL(b:bat[:any_1,:@1],u:bat[:any_2,:@1]):void
 address CRKdeleteFromAVL_@1
 comment "Delete a collection of values from the index";
-
 @
 
 @mal
@@ -221,9 +230,7 @@ module crackers;
 @-
 
 A limited set of relational operators is overloaded to deal with
-cracked BATs. The relational select collects the pieces
-into a single BAT. Preferably using a BATview, otherwise
-the pieces are combined to form a new BAT.
+cracked BATs.
 
 @= crackAlgebra
 command select(b:bat[:any_1,:@1],l:@1,h:@1):bat[:any_2,:@1]
@@ -495,11 +502,15 @@ typedef struct {
 												0 complete merge,
 												1 gradually,
 												2 ripple */
-			/* used only in the materialized projections scheme */
-	int 		pbid; 		/* the project bat. Together with the bid, they uniquely identify a cracking pair 
-					   when pid is -1 then chid stores the cracking history for all the cracking pairs where bid is head 
-				           and hiid is a [bit,bit] that stores inclusive information for each bound stored in chid */
-	lng 		nextCrack;	/* points in the next cracking operation that should be applied in thhis cracking pair so as to sync it */
+			/* used only in the sideways cracking scheme */
+	int 		pbid; 		/* the project bat. Together with the bid, they uniquely identify 
+				           a cracking pair when pid is -1 then chid stores the cracking 
+                                           history for all the cracking pairs where bid is head 
+				           and hiid is a [bit,bit] that stores inclusive information 
+					   for each bound stored in chid */
+
+	lng 		nextCrack;	/* points in the next cracking operation that should be applied 
+                                           in thhis cracking pair so as to sync it */
 	int 		chid;
 	int 		hiid;
 } CrackTreeIndex;
@@ -564,6 +575,7 @@ Height(struct Node * x){
         else
                 return x->height;
 }
+
 /* for the comparison with an AVL Tree*/
 struct Node *
 SingleRotateLeftAVLIndex(int m, struct Node * node){
@@ -656,6 +668,7 @@ DoubleRotateRightAVLIndex(int m, struct Node * node){
             node->right = SingleRotateLeftAVLIndex(m, node->right);
             return SingleRotateRightAVLIndex(m, node);
 }
+
 /* end comparison with AVL tree*/
 
 struct Node *
@@ -749,7 +762,6 @@ DoubleRotateRight(int m, struct Node * node){
             node->right = SingleRotateLeft(m, node->right);
             return SingleRotateRight(m, node);
 }
-
 
 /* searching into the tree */
 
@@ -924,6 +936,7 @@ findNextPiece(struct Node * node){
 	
 	return res;
 }
+
 @= TreeOperations
 
 bit
@@ -1301,9 +1314,6 @@ InsertAVLIndex_@1(int m, int indexPosition, @1 value,  struct Node * current, BA
 @:TreeOperations(dbl,simple,)@
 @:TreeOperations(date,atom,TYPE_)@
 
-
-
-
 void
 FreeAVLTree(struct Node * current){
 
@@ -1339,7 +1349,6 @@ existsAVLIndex(int bid)
                         return i;
         return -1;
 }
-
 
 int
 existsTreeIndex(int bid)
@@ -1468,7 +1477,6 @@ newTreeIndexHistoryProjections_@1(int bid, int chid, int hiid)
         TreeIndex[i].mergeDeletions = -1;
         return i;
 }
-
 
 int
 newTreeIndexProjections_@1(int bid, int cbid, int pbid)
@@ -2451,6 +2459,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 	return MAL_SUCCEED;
 }
 @
+
 @= OThreeLateCopying
 {
 	BUN tmp1, tmp2;
@@ -2586,6 +2595,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
         }
 }
 @
+
 @= OrderedZero
 		while (tmpt @3 ht){
 			while (*(@1*)tmpt @4 mid){
@@ -2665,6 +2675,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 			tmph @5= xx;
 		}
 @
+
 @= crackInTwoOrderedPieces
 crackers_export str CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos);
 str
@@ -2894,6 +2905,7 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, lng first, lng last, ln
         *(@2*) @5= *(@2*) @6;
         *(@2*) @6 = tdummy;
 @
+
 @= crackInTwoUnorderedPiecesProjections
 crackers_export str CRKcrackUnorderedZeroProjections_@3_@1_@2( BAT *b, @1 mval, lng first, lng last, lng *pos);
 str
@@ -3176,8 +3188,6 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
         *res = *bid;
         return msg;
 }
-
-
 @
 
 @= operationsProjections
@@ -3189,13 +3199,13 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @:crackInThreeUnorderedPiecesProjections(@1,@2,LE,RO,LT,GE,LT,GE,@3,@4)@
 @
 
-
 @= validate_operations
 @:validate_operation_Zero(@1,@2)@
 @:validate_operation_One(@1,@2)@
 @:validate_operation_Two(@1,@2)@
 @:validate_operation_Three(@1,@2)@
 @
+
 @= validate_init_1
 	BAT *b,*c,*w;
 	BUN fst_bn, lst_bn, bn;
@@ -3213,18 +3223,21 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	lst_bn = BUNlast(b);
 	bn = fst_bn;
 @
+
 @= validate_init_2
 	if (low > hgh) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "crackers.@2crack_validate", "illegal range");
 	}
 @
+
 @= validate_checkUnordered
         while (bn < lst_bn @2 @3 ) {
                 bn += bs;
                 count[@1]++;
         }
 @
+
 @= validate_checkOrdered
 {	oid hd = 0;
 	while (bn < lst_bn && hd <= *(oid*)BUNhloc(b, bn) @2 @3 ) {
@@ -3233,12 +3246,15 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		count[@1]++;
 }	}
 @
+
 @= validate_check_1
 	@:validate_check@5(@2, && *(@1*)BUNtloc(b, bn) @3 @4 )@
 @
+
 @= validate_check_2
 	@:validate_check@7(@2, && *(@1*)BUNtloc(b, bn) @3 @4 , && *(@1*)BUNtloc(b, bn) @5 @6 )@
 @
+
 @= validate_end
 	count[0] = BATcount(b);
 	if (bn < lst_bn) {
@@ -3260,6 +3276,7 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	*res = TRUE;
 	return MAL_SUCCEED;
 @
+
 @= validate_operation_Zero
 crackers_export str CRKcrack@2Zero_validate_@1 (bit *res, int *bid, @1 *_mid);
 str
@@ -3277,6 +3294,7 @@ CRKcrack@2Zero_validate_@1 (bit *res, int *bid, @1 *_mid)
 	)@
 }
 @
+
 @= validate_operation_One
 crackers_export str CRKcrack@2One_validate_@1 (int *res, int *bid, @1 *_mid);
 str
@@ -3295,6 +3313,7 @@ CRKcrack@2One_validate_@1 (int *res, int *bid, @1 *_mid)
 	)@
 }
 @
+
 @= validate_operation_Two
 crackers_export str CRKcrack@2Two_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh);
 str
@@ -3316,6 +3335,7 @@ CRKcrack@2Two_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	)@
 }
 @
+
 @= validate_operation_Three
 crackers_export str CRKcrack@2Three_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh);
 str
@@ -3380,7 +3400,6 @@ CRKcrack@2Three_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 
 @c
 /* --Updates-- */
-
 
 str
 removeTreeIndex(int *bid){
@@ -3834,6 +3853,7 @@ lng TotalSearchAVL = 0;
 	crkFirst = BUNfirst(b);
 	prevPos = prevcrsize - 1;
 @
+
 @= mergeLoop
 
 		if ( IndexNode == NULL )
@@ -3903,6 +3923,7 @@ movements += buns;
 		*(lng*)curPos =  *(lng*)curPos + remainingIns;
 		prevNode = IndexNode;
 @
+
 @= mergeInsertionsFromTheEndBodyCG
 	/* merge for the last piece only */
 	if ( remainingIns > 0) {
