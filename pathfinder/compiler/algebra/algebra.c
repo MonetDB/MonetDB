@@ -625,7 +625,7 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
         case aat_dec:   return (a.val.dec_ == b.val.dec_ ? 0
                                 : (a.val.dec_ < b.val.dec_ ? -1 : 1));
         case aat_dbl:   return (a.val.dbl == b.val.dbl ? 0
-                                : (a.val.dbl < b.val.nat_ ? -1 : 1));
+                                : (a.val.dbl < b.val.dbl ? -1 : 1));
         case aat_bln:   return a.val.bln - b.val.bln;
         case aat_qname: return PFqname_eq (a.val.qname, b.val.qname);
         case aat_node: 
