@@ -2000,7 +2000,7 @@ PROC __runtime_index(oid coll_oid,
         # idx [qn,pre] lexico-ordered (thanks to stable-sort)
         idx := idx.access(BAT_WRITE).sorder().access(BAT_READ).rename(nme).mmap(1).persists(true);
         tmp := merged_union(vxm.hmark(0@0), tmp.hmark(0@0), vxm.tmark(0@0), tmp.tmark(0@0)); vxm := nil; 
-        vxm := reverse(tmp.fetch(0)).leftfetchjoin(tmp.fetch(1)); 
+        vxm := reverse(tmp.fetch(0)).leftfetchjoin(tmp.fetch(1)).rename(vx_nme).mmap(1).persists(true); 
         if (pre = 1@0) CATCH(pf_checkpoint(bat(void,str).append(nme).append(vx_nme))); # immediate commit
     }
     return new(void,bat).insert(nil,idx).insert(nil,vxm);
