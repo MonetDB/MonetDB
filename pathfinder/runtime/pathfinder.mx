@@ -1491,7 +1491,7 @@ PROC __ws_indexcoll(BAT[void,bat] ws,
                     BAT[oid,any] free_pages, str colname, oid coll_oid, oid cont) : void
 {
     var ws_logtime := usec(); 
-    var prefix := "runtime" + str(abs(int(runtime))) + "_" + colname + "_" + str(int(coll_oid));
+    var prefix := "runtime" + str(abs(int(runtime))) + "_" + str(int(coll_oid));
     var idx, ins, del, own, unq, vxm, vxi, vxd;
     var isolate := (ttype(ws.fetch(MAP_PID).fetch(cont)) = oid);
 
