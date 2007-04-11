@@ -69,6 +69,7 @@ mal_export Module    mal_scope;  /* the start of the shared module list */
 mal_export void     setModuleJump(str nme, Module cur);
 mal_export Module   newModule(Module scope, str nme);
 mal_export Module   fixModule(Module scope, str nme);
+mal_export void		deriveModule(Module scope, str nme);
 mal_export void     freeModule(Module cur);
 mal_export void     freeModuleList(Module cur);
 mal_export void     insertSymbol(Module scope, Symbol prg);
@@ -190,6 +191,25 @@ Module fixModule(Module scope, str nme){
 		s= s->outer;
 	}
 	return newModule(scope, nme);
+}
+@-
+A derived module inherits copies of all known
+functions in the parent module. These can be
+refined or expanded.
+@c
+void
+deriveModule(Module scope, str nme){
+	Module src= findModule(scope,nme);
+	Symbol s;
+	int i;
+	if( src == scope) return;
+	for(i=0; i<256; i++){
+		s= src->subscope[i];
+		while( s){
+			/* copy the symbol */
+			s= s->peer;
+		}
+	}
 }
 @-
 The freeModule operation throws away a symbol without

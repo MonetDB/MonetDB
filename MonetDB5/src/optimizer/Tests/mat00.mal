@@ -1,11 +1,11 @@
 # the Multi Assocation Tables
 	mdb.list();
     m0:= bat.new(:oid,:int);
-    bat.insert(m0,nil,0);
+    bat.insert(m0,nil:oid,0);
     m1:= bat.new(:oid,:int);
-    bat.insert(m1,nil,1);
+    bat.insert(m1,nil:oid,1);
     m2:= bat.new(:oid,:int);
-    bat.insert(m2,nil,2);
+    bat.insert(m2,nil:oid,2);
     b := mat.new(m0,m1,m2);
     s := algebra.select(b,0,2);
     i := aggr.count(s);
@@ -22,4 +22,4 @@
 io.print(b);
 io.print(c);
 
-optimizer.multitable();
+optimizer.mergetable();

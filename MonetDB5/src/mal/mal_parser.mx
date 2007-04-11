@@ -852,9 +852,14 @@ str parseLibrary(Client cntxt)
 	advance(cntxt,l);
 	return "";
 }
+@-
+It might be handy to clone a module.
+It gets a copy of all functions known
+at the point of creation.
+@c
 str parseModule(Client cntxt) 
 {
-	str modnme = 0;
+	str modnme = 0,parent;
 	int l;
 	char *nxt;
 
@@ -864,6 +869,16 @@ str parseModule(Client cntxt)
 	modnme = putName(nxt, l);
 	advance(cntxt,l);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
+	if (currChar(cntxt) == ':'){
+		nextChar(cntxt);
+		if( (l= idLength(cntxt)) > 0){
+			/* create a copy */
+			parent= putName(nxt,l);
+			advance(cntxt,l);
+			deriveModule(cntxt->nspace,parent);
+			return parseError(cntxt, "<derived module> not yet implemented\n");
+		}
+	}
 	@:helpInfo(cntxt->nspace->help)@
 	return "";
 }

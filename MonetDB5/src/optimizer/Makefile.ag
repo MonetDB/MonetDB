@@ -14,13 +14,13 @@ lib_optimizer = {
 		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
-		opt_generators.mx opt_remoteQueries.mx opt_joinselect.mx \
+		opt_remoteQueries.mx opt_joinselect.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
-	LIBS = ../mal/libmal $(MONETDB_LIBS) -lbat ../modules/mal/lib_pbm -lstream \
+	LIBS = ../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 	LDFLAGS = -lm
@@ -35,7 +35,7 @@ scripts_mal = {
 		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
-		opt_generators.mx opt_remoteQueries.mx opt_joinselect.mx \
+		opt_remoteQueries.mx opt_joinselect.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx
 }

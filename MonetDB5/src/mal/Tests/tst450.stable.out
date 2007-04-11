@@ -115,7 +115,6 @@ end main;	# 14
 [ "mserver",	  nil	  ]
 [ "mtime",	  nil	  ]
 [ "optimizer",	  nil	  ]
-[ "pbm",	  nil	  ]
 [ "pcre",	  nil	  ]
 [ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]

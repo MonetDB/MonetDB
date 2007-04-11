@@ -32,26 +32,26 @@ front-end to produce reasonable efficient code.
 @mal
 module mat;
 
-pattern new(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
+pattern new(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATnew
 comment "Define a Merge Association Table (MAT) ";
 
-pattern pack(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
+pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpack
 comment "Materialize the MAT into a single BAT";
 
-pattern print(b:bat[:oid,:any_2]...):void
+pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
 
-command expand(grp:str):bat[:oid,:any_2]
+command expand(grp:str):bat[:any_1,:any_2]
 address MATdummy
 comment "Replace the group by its components";
 
-command iterator(grp:str):bat[:oid,:any_2]
+command iterator(grp:str):bat[:any_1,:any_2]
 address MATdummy
 comment "Replace the group by its components";
 
-command info(g:str, e:str):bat[:oid,:any_2]
+command info(g:str, e:str):bat[:any_1,:any_2]
 address MATinfo
 comment "retrieve the definition from the partition catalogue";
 @-

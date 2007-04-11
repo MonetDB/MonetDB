@@ -12,7 +12,7 @@ LIBS = {
 		chopper.mx constraints.mx language.mx box.mx \
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx \
-		factory.mx mdb.mx  pbm.mx \
+		factory.mx mdb.mx  \
 		urlbox.mx mat.mx \
 		sabaoth.mx radix.mx
 		#datacell.mx 
@@ -150,7 +150,7 @@ scripts_mal = {
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		urlbox.mx statistics.mx transaction.mx \
-		pbm.mx mserver.mx sabaoth.mx \
+		mserver.mx sabaoth.mx \
 		radix.mx bpm.mx
 	#datacell.mx 
 }

@@ -22,7 +22,8 @@ for distributed storage makes that BATs ideally should be
 looked upon as a union of smaller BATs which are processed
 within the (memory) resource limitations given.
 
-The @sc{partition()} optimizer with supportive libraries
+The @sc{partition()} optimizer with the supportive 
+bat partition library @code{bpm}
 addresses the issue with an adaptive database segmentation algorithm.
 It is designed incrementally with a the focus 
 on supporting the SQL front-end. In particularly, the
@@ -36,10 +37,10 @@ versions instead.
 
 A walk through of a simplified SQL query plan is shown below.
 The first time a column is used, the partition optimizer
-checks its properties and decides on turning it into a 
-partitioned BAT of two pieces. They are glued together
-as a merge-BAT, such that logically the query plan works
-on a single object still.
+checks its properties and marking it for iterative evalation
+or expansion using a merge table approach.
+The decision is based on the number of partitions involved.
+[to be decided]
 
 @verbatim
 function user.qry():void;
@@ -50,18 +51,8 @@ function user.qry():void;
 end qry;
 @end verbatim
 The query is transformed into a plan that is valid only for one run.
-After the select operation it is up to the partition manager to
-decide on keeping the partition suggestion or not.
-@verbatim
-function user.qry{runonce} ():void
-	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);
-	bm:= bpm.deposit("sys_voyages_captain",b)
-	t:= bpm.select(bm,nil:int,100);
-	io.print(t);
-end qry;
-@end verbatim
-The second time this query is called, we simple can pick up
-the two partitions from the catalog. 
+For example, assume we have two partitions only. Then the plan
+can be rewritten into:
 @example
 function user.qry{runonce} ():void
 	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);

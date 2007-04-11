@@ -25,7 +25,7 @@ collection of temporary BATs within a program fragment.
 The MAT definition lives within the scope of a single block.
 The MAT optimizer simply expands the plan to
 deal with its components on an individual basis.
-Only when a blocking or aggregate operator is encounted,
+Only when a blocking operator is encounted,
 the underlying BAT is materialized.
 
 The MAT object can not be passed as an argument to any function
@@ -37,15 +37,15 @@ In the first approach of the MAT optimizer we assume that the
 last BAT in the MAT sequence is used as an accumulator.
 Furthermore, no semantic knowledge is used to reduce the
 possible superflous (semi)joins. Instead, we limit expansion
-to a single argument. The last one in the argument list.
+to a single argument. 
 This is changed at a later stage when a cost-based evaluation
 be decide differently.
 
 To illustrate, consider 
 @example
-	m0:= bat.new(:void,:int);
-	m1:= bat.new(:void,:int);
-	m2:= bat.new(:void,:int);
+	m0:= bat.new(:oid,:int);
+	m1:= bat.new(:oid,:int);
+	m2:= bat.new(:oid,:int);
 	b := mat.new(m0,m1,m2);
 	s := algebra.select(b,1,3);
 	i := algebra.count(s);
@@ -58,7 +58,7 @@ To illustrate, consider
 	io.print(j);
 @end example
 
-The selection and aggregate operations can simply be rewritten into a MAT.
+The selection and aggregate operations can simply be rewritten using a MAT.
 @example
 	_33 := algebra.select(m0,1,3);
 	_34 := algebra.select(m1,1,3);
@@ -74,8 +74,10 @@ The selection and aggregate operations can simply be rewritten into a MAT.
     io.print(i);
 @end example
 
-The print operation does not have MAT semantics yet, which
-calls for collection of the MAT components in a single BAT first.
+The print operation does not have MAT semantics yet.
+It requires a function that does not produce the header
+with each call.
+Instead, we can also pack the elements before printing.
 @example
     s := mat.pack(_33,_34,_35);
     io.print(s);
@@ -92,7 +94,7 @@ argument. This leads to
 @end example
 
 The drawback of this scheme is the explosion in MAL statements.
-It is choosen as a basis for experimentation. In a fullblown
+It is chosen as a basis for experimentation. In a fullfledge
 system we would also use iterators to avoid it.
 
 @{
@@ -117,9 +119,9 @@ comment "Resolve the multi-table definitions";
 #define _MAL_MERGETABLE_
 #include "opt_prelude.h"
 #include "opt_support.h"
+#include "mal_interpreter.h"
 #include "mal_builder.h"
 
-#include "pbm.h"
 /* #define DEBUG_OPT_MERGETABLE     show partial result */
 
 #endif
@@ -193,25 +195,9 @@ bat and prepares the instruction to expand it.
 		if( (getModuleId(p)== matRef && getFunctionId(p)==expandRef) &&
 			isConstant(mb,getArg(p,1)) && 
 			getVarType(mb,getArg(p,1))== TYPE_str){
-			openBox("pbm");
-			k= PBMfindPBAT(getVarConstant(mb,getArg(p,1)).val.sval);
-			if( k< 0){
-				pushInstruction(mb,p);
-				continue;
-			}
 			pushInstruction(mb,p);
 			p= copyInstruction(p);
 			p->argc--;
-			for(; k>=0; k= partitions[k].next){
-				r = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(r,bbpRef);
-				setFunctionId(r,bindRef);
-				j= newTmpVariable(mb, partitions[k].type );
-				getArg(r,0)= j;
-				pushStr(mb,r,BBPname(partitions[k].bid));
-				pushInstruction(mb,r);
-				pushArgument(mb,p,j);
-			}
 			getFunctionId(p)=newRef;
 			pushInstruction(mb,p);
 			mat[mtop]= p;

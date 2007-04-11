@@ -38,22 +38,6 @@ remap
 #mat03
 #mat04
 
-#pbm00
-#pbm01
-#pbm03
-#pbm20
-
-generator00
-generator01
-generator02
-generator03
-generator04
-generator05
-generator06
-generator07
-generator08
-generator09
-
 remote04
 remote05
 remote06
