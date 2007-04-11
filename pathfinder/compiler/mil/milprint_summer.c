@@ -6577,7 +6577,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  ipik := item;\n"
                 "  kind := set_kind(WS,ELEM);\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate fn:collections () as string*\n", cur_level, consistent);
+                "} # end of translate pf:collections () as string*\n", cur_level, consistent);
         return NORMAL;
     } else if (fun->arity == 2 && ((PFqname_eq(fnQname,PFqname (PFns_lib,"text")) == 0) ||
                (rc = 2, PFqname_eq(fnQname,PFqname (PFns_lib,"attribute")) == 0))) 
