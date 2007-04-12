@@ -1,0 +1,61 @@
+stdout of test 'drop_function_cascade` in directory 'src/test/DropCascade` itself:
+
+
+# 17:28:06 >  
+# 17:28:06 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=30730 --set xrpc_port=43841 --set monet_prompt= --trace "--dbname=mTests_src_test_DropCascade" --dbinit='include sql;' ; echo ; echo Over..
+# 17:28:06 >  
+
+
+
+
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_DropCascade
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+
+Over..
+
+# 17:28:07 >  
+# 17:28:07 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30730 
+# 17:28:07 >  
+
+% sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 4,	2,	4,	1,	1,	5,	1,	1 # length
+[ 4793,	"t1",	4585,	NULL,	0,	false,	0,	0	]
+% sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 4,	2,	4,	35,	1,	5,	1,	1 # length
+[ 4799,	"v1",	4585,	"create view v1 as select * from t1;",	1,	false,	0,	0	]
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	sql,	aggr,	schema_id # name
+% int,	varchar,	varchar,	varchar,	boolean,	boolean,	int # type
+% 1,	0,	0,	0,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	sql,	aggr,	schema_id # name
+% int,	varchar,	varchar,	varchar,	boolean,	boolean,	int # type
+% 1,	0,	0,	0,	5,	5,	1 # length
+% sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% id,	depend_id,	depend_type # name
+% int,	int,	smallint # type
+% 4,	4,	1 # length
+[ 4794,	4797,	4	]
+[ 4794,	4799,	5	]
+[ 4793,	4799,	5	]
+[ 4795,	4799,	5	]
+[ 4796,	4799,	5	]
+% sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% id,	depend_id,	depend_type # name
+% int,	int,	smallint # type
+% 1,	1,	1 # length
+
+# 17:28:07 >  
+# 17:28:07 >  Done.
+# 17:28:07 >  
+
