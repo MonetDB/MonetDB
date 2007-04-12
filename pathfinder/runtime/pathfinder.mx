@@ -2273,7 +2273,7 @@ PROC vx_lookup(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri, str 
         var iter_ins  := empty_bat;
         var iter_del  := empty_bat;
         if (count(vx_hsh_nid_ins) > 0) iter_ins := iter_hsh.leftjoin(vx_hsh_nid_ins);
-        if (count(vx_hsh_nid_del) > 0) iter_del := iter_hsh.leftjoin(vx_hsh_nid_del);
+        if (count(vx_hsh_nid_del) > 0) iter_del := sintersect(iter_hsh.leftjoin(vx_hsh_nid_del), iter_cand);
         if (bit(count(iter_ins) + count(iter_del))) {
            # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
            iter_cand.access(BAT_WRITE).insert(iter_ins).deleteBuns(iter_del).access(BAT_READ);
