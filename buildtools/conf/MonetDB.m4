@@ -50,7 +50,6 @@ AC_DEFUN([AM_MONETDB_COMMON],
 
 dnl check for MonetDB Common Libraries
 have_monetdb=auto
-MONETDB_CFLAGS=""
 MONETDB_LIBS=""
 MONETDB_MODS=""
 MONETDB_MOD_PATH=""
@@ -83,14 +82,12 @@ if test "x$have_monetdb" != xno; then
   fi
 
   if test "x$have_monetdb" != xyes; then
-    MONETDB_CFLAGS=""
     MONETDB_INCS=""
     MONETDB_INCLUDEDIR=""
     MONETDB_LIBS=""
     MONETDB_PREFIX=""
     MONETDB_CONFDIR=""
   else
-    MONETDB_CFLAGS=`$MONETDB_CONFIG --cflags`
     MONETDB_INCS=`$MONETDB_CONFIG --includes`
     MONETDB_INCLUDEDIR=`$MONETDB_CONFIG --pkgincludedir`
     MONETDB_LIBS=`$MONETDB_CONFIG --libs`
@@ -98,7 +95,6 @@ if test "x$have_monetdb" != xno; then
     MONETDB_CONFDIR=`$MONETDB_CONFIG --pkgdatadir`/conf
   fi
 fi
-AC_SUBST(MONETDB_CFLAGS)
 AC_SUBST(MONETDB_INCS)
 AC_SUBST(MONETDB_INCLUDEDIR)
 AC_SUBST(MONETDB_LIBS)
