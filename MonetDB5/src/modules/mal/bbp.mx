@@ -193,7 +193,6 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "mal_interpreter.h"
 #include "mal_profiler.h"
 #include "bat5.h"
-#include "algebra.h"
 
 #ifdef WIN32
 #ifndef LIBBBP

@@ -206,13 +206,14 @@ improve processing further. For example, the operation
 @end example
 extracts portions of all three partitions and creates 
 a non-partitioned result BAT. 
-There is no information on the partitions involved in this operation
-for the optimizer.
+If the partition bounds align with the selection criteria
+this operation becomes cheap. It can be used to convey
+information on the bounds to optimizers.
 
 
 The lifetime of a partitioned table is inherited from its components. 
 How to detect that a temporary BAT is removed from the BBP?
-
+@{
 @mal
 module bpm;
 
@@ -332,7 +333,25 @@ command getDimension(b:bat[:any_1,:any_2])(first:any_1,last:any_1,
 	vlow:any_2, vhgh:any_2)
 address BPMgetDimension
 comment "Obtain the partition boundary values.";
+@-
+Optimizers will be interested in properties for
+the partitions.
+@mal
+command getNumberOfPartitions(alias:bat[:any_1,:any_2]):int
+address BPMgetNumberOfPartitions
+comment "Return the number of partitions known";
 
+command select(part:bat[:any_1,:any_2], low:any_2, hgh:any_2):bat[:any_1,:any_2]
+address BPMselect
+comment "Partitioned based selection ";
+command select(part:bat[:any_1,:any_2], low:any_2, hgh:any_2, li:bit, hi:bit):bat[:any_1,:any_2]
+address BPMselectInclusive
+comment "Partitioned based selection ";
+@-
+command getCount(alias:bat[:any_1,:any_2]):bat[:ins,:int]
+address BPMgetCount
+comment "Return the number of tuples in each partition ";
+@mal
 command dump(alias:bat[:any_1,:any_2])
 address BPMdumpAlias
 comment "Give the details of the partition tree";
@@ -369,7 +388,6 @@ command epilogue()
 address BPMepilogue;
 bpm.prelude();
 @-
-@{
 @include ../kernel/kprelude.mx
 @+ BAT Partition Manager Implementation
 The implementation is organized around a shared box, which should
@@ -384,7 +402,6 @@ The internal data structure is used as a cache for improved access.
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
-#include "algebra.h"
 
 #define _DEBUG_BPM_
 
@@ -430,6 +447,10 @@ bpm_export str BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMhasMoreElementsRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+bpm_export str BPMgetNumberOfPartitions(int *ret, int *bid);
+bpm_export str BPMselect(int *ret, int *bid, ptr low, ptr hgh);
+bpm_export str BPMselectInclusive(int *ret, int *bid, ptr low, ptr hgh, bit *li, bit *hi);
+
 bpm_export str BPMgetDimension(ptr *first, ptr *last,
 	ptr *vlow, ptr *vhgh, bat *bid);
 bpm_export str BPMdump(int *ret);
@@ -458,6 +479,7 @@ They are further administered  by type
 #include "mal_config.h"
 #include "bpm.h"
 #include "bat5.h"
+#include "algebra.h"
 
 @-
 Every partition is the result of at most four operations:
@@ -1655,6 +1677,41 @@ BPMgetDimension(ptr *first, ptr *last, ptr *vlow, ptr *vhgh, int *bid)
 }
 
 str
+BPMgetNumberOfPartitions(int *ret, int *bid){
+	int i,cnt=0;
+	for( i= getAliasIndex(*bid); i; i= bpmcat[i].nxt)
+		cnt++;
+	*ret= cnt;
+	return MAL_SUCCEED;
+}
+@-
+Selections over partitioned BATs is encapsulated here.
+Note that we use the catalog to determine a match.
+This way the operation can be used to optimize programs
+more easily.
+@c
+str 
+BPMselect(int *ret, int *bid, ptr low, ptr hgh){
+	(void) ret;
+	(void) bid;
+	(void) low;
+	(void) hgh;
+	return MAL_SUCCEED;
+	/* return ALGselect(ret,bid,low,hgh);*/
+}
+str 
+BPMselectInclusive(int *ret, int *bid, ptr low, ptr hgh, bit *li, bit *ri){
+	(void) ret;
+	(void) bid;
+	(void) low;
+	(void) hgh;
+	(void) li;
+	(void) ri;
+	return MAL_SUCCEED;
+	/* return ALGselect(ret,bid,low,hgh,li,ri);*/
+}
+
+str
 BPMdump(int *ret)
 {
 	int i;
@@ -2090,3 +2147,4 @@ BPMepilogue(int *ret)
 	*ret =0;
 	return MAL_SUCCEED;
 }
+@}

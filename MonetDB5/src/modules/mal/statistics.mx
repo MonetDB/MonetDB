@@ -195,6 +195,7 @@ this interface.
 #include "mal_config.h"
 #include "statistics.h"
 #include "algebra.h"
+
 s_export str STATforceUpdateAll(int *ret);
 s_export str STATdrop(str nme);
 s_export str STATforceUpdateAll(int *ret);

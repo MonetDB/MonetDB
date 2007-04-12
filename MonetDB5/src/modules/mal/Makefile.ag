@@ -38,7 +38,7 @@ lib_bpm = {
 	SEP = _
 	SOURCES = bpm.mx
 	HEADERS = h
-	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
+	LIBS = ../../mal/libmal ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
