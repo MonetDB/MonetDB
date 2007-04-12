@@ -2742,6 +2742,8 @@ key_dup(sql_trans *tr, int flag, sql_key *k, sql_table *t)
 			}
 	}
 	list_append(t->s->keys, nk);
+	if (flag == TR_NEW && tr->parent == gtrans) 
+		k->base.flag = TR_OLD;
 	return nk;
 }
 
@@ -2846,6 +2848,8 @@ trigger_dup(sql_trans *tr, int flag, sql_trigger * i, sql_table *t)
 		list_append(nt->columns, kc_dup(tr, flag, okc, t));
 	}
 	list_append(t->s->triggers, nt);
+	if (flag == TR_NEW && tr->parent == gtrans) 
+		i->base.flag = TR_OLD;
 	return nt;
 }
 
