@@ -796,10 +796,14 @@ different situations as conditions.
 #else
 #define algebra_export extern
 #endif
+
 algebra_export ptr BATmax(BAT *b, ptr aggr);
 algebra_export ptr BATmin(BAT *b, ptr aggr);
 algebra_export int doCMDfetch(ptr ret, BAT *b, lng i);
 algebra_export str ALGprojectNIL(int *ret, int *bid);
+algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
+algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
+
 @= avg_export
 algebra_export str ALGavg_@1(dbl *res, int *bid);
 @h
@@ -2105,7 +2109,6 @@ ALGuselect1(int *result, int *bid, ptr value)
 	throw(MAL, "algebra.uselect", "GDKerror");
 }
 
-algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
 str
 ALGselect(int *result, int *bid, ptr low, ptr high)
 {
