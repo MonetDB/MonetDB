@@ -2284,7 +2284,7 @@ PROC vx_lookup(BAT[void,bat] ws, oid cont, BAT[void,str] iter_val, str uri, str 
         if (isnil(min(iter_cand))) use_index := false; # was omitted, we have to scan
     }
     if (not(use_index)) { # everything is a candidate
-        iter_cand := cross(iter_val,reverse(pre_kind));
+        iter_cand := cross(iter_val,reverse(nid_rid.ord_uselect(oid_nil, oid_nil)));
     }
 
     # we always have to check against false hits
