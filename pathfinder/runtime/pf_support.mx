@@ -2570,29 +2570,35 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     # first do attr
     extend_protect(ws, cont);
     var attr_prop_update := ws.fetch(ATTR_PROP_UPDATE).find(cont); # [ATID,PROPID]
-    if (attr_prop_update.count() > 0) {
-      var oldprop := attr_prop_update.mirror().leftjoin(ws.fetch(ATTR_PROP).find(cont)).ord_select(oid_nil, oid_nil); # [ATID,PROPID]
+    # delattr: attributes of deleted nodes
+    var delattr := ws.fetch(ATTR_OWN).find(cont).join(ws.fetch(NID_RID_UPDATE).find(cont).uselect(oid_nil));
+    if ((attr_prop_update.count() > 0) or (delattr.count() > 0)) {
+      # combine attrs from deleted nodes (delattr) with updated
+      # attributes (attr_prop_update) and figure out old values by
+      # joining with ATTR_PROP
+      var oldprop := kunion(delattr.mirror(), attr_prop_update.mirror()).leftjoin(ws.fetch(ATTR_PROP).find(cont)).ord_select(oid_nil, oid_nil); # [ATID,PROPID]
+      var oldvx;
       if (oldprop.count() > 0) {
         var oldval := oldprop.leftfetchjoin(ws.fetch(PROP_VAL).find(cont)); # [ATID,str]
         var map_new_old := oldprop.hmark(0@0); # [i,ATID]
         oldval := oldval.tmark(0@0);  # [i,str]
         var oldqn := map_new_old.leftfetchjoin(ws.fetch(ATTR_QN).find(cont));
         var oldown := map_new_old.leftfetchjoin(ws.fetch(ATTR_OWN).find(cont));
-        var oldvx := vx_maintain(oldown, oldqn, oldval);
-        old_attr.insert(cont, oldvx);
+        oldvx := vx_maintain(oldown, oldqn, oldval);
       } else {
-        old_attr.insert(cont, new(int,oid));
+        oldvx := new(int,oid);
       }
       # only keep attributes that are set to new values (i.e. not deleted)
       attr_prop_update := attr_prop_update.ord_select(oid_nil, oid_nil).sort();	 # [ATID,PROP]
       var map_new_old := attr_prop_update.hmark(0@0); # [i,ATID]
       var newval := attr_prop_update.leftjoin(ws.fetch(PROP_VAL).find(cont)).access(BAT_WRITE); # [i,str]
-          newval.insert(attr_prop_update.leftjoin(ws.fetch(PROP_VAL_UPDATE).find(cont))).order().tmark(0@0); 
+      newval := newval.insert(attr_prop_update.leftjoin(ws.fetch(PROP_VAL_UPDATE).find(cont))).order().tmark(0@0);
 
       var newqn := map_new_old.join(ws.fetch(ATTR_QN).find(cont)).copy().access(BAT_WRITE).key(true).myupdate(map_new_old.join(ws.fetch(ATTR_QN_UPDATE).find(cont))).order();  # [i,QNID]
       var newown := map_new_old.join(ws.fetch(ATTR_OWN).find(cont)).copy().access(BAT_WRITE).key(true).myupdate(map_new_old.join(ws.fetch(ATTR_OWN_UPDATE).find(cont))).order();  # [i,OWN]
       var newvx := vx_maintain(newown, newqn, newval);
-      new_attr.insert(cont, newvx);
+      old_attr.insert(cont, sdiff(oldvx, newvx));
+      new_attr.insert(cont, sdiff(newvx, oldvx));
     } else {
       old_attr.insert(cont, new(int,oid));
       new_attr.insert(cont, new(int,oid));
@@ -2603,6 +2609,16 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     if (rid_prop_update.count() > 0) {
       var rids := rid_prop_update.hmark(0@0);  # [i,RID]
       var map_pid := ws.fetch(MAP_PID).find(cont);
+      var oldpres := [swizzle](rids, map_pid);  # [i,PRE]
+      oldpres := oldpres.join(ws.fetch(PRE_KIND).find(cont)).uselect(TEXT).mirror().join(oldpres).tmark(0@0);  # [j,PRE] (original text nodes)
+      var oldvx;
+      if (oldpres.count() > 0) {
+        var oldtext := oldpres.leftjoin(ws.fetch(PRE_PROP).find(cont)).leftjoin(ws.fetch(PROP_TEXT).find(cont)); # [j,str]
+        var oldnids := oldpres.leftjoin(ws.fetch(PRE_NID).find(cont));
+        oldvx := vx_maintain(oldnids, oldtext);
+      } else {
+        oldvx := new(int,oid);
+      }
       var nids;
       {
         # figure out where to get new value
@@ -2627,22 +2643,14 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
       }
       if (rids.count() > 0) {
         var pres := [swizzle](rids, ws.fetch(MAP_PID_UPDATE).find(cont));  # [i,newPRE]
-        {
-          var nid_rid := ws.fetch(NID_RID).find(cont);
-          var oldnids := nids.leftjoin(nid_rid.uselect(oid_nil, oid_nil).mirror());  # [i,NID] (old nodes)
-          var oldpres := oldnids.leftjoin(nid_rid).[swizzle](map_pid);  # [i,oldPRE] (old nodes)
-          var oldtext := oldpres.leftjoin(ws.fetch(PRE_PROP).find(cont)).leftjoin(ws.fetch(PROP_TEXT).find(cont)); # [i,str]
-          var map_new_old := oldtext.hmark(0@0); # [j,i]
-          oldtext := oldtext.tmark(0@0); # [j,str]
-          oldnids := oldnids.tmark(0@0);
-          old_text.insert(cont, vx_maintain(oldnids, oldtext));
-        }
-            rids := rids.leftjoin(rid_prop_update);
+        rids := rids.leftjoin(rid_prop_update);
         var vals := rids.leftjoin(ws.fetch(PROP_TEXT).find(cont)).access(BAT_WRITE);
-            vals.insert(rids.leftjoin(ws.fetch(PROP_TEXT_UPDATE).find(cont))).order().tmark(0@0); 
-        new_text.insert(cont, vx_maintain(nids, vals));
+        vals.insert(rids.leftjoin(ws.fetch(PROP_TEXT_UPDATE).find(cont))).order().tmark(0@0); 
+        var newvx := vx_maintain(nids, vals);
+        old_text.insert(cont, sdiff(oldvx, newvx));
+        new_text.insert(cont, sdiff(newvx, oldvx));
       } else {
-        old_text.insert(cont, new(int,oid));
+        old_text.insert(cont, oldvx);
         new_text.insert(cont, new(int,oid));
       }
     } else {
