@@ -198,7 +198,7 @@ emit_escaped@1 (XqueryCtx* ctx, char* src) {
  *
  * Emit a string with all special character escaped.
  */
-@:emit_escaped(,)@
+@:emit_escaped(_all,)@
 /*
  * This function is responsible for the presentation of special characters
  * and XML entity characters in the result.
@@ -391,6 +391,17 @@ dflt_handle_characters (XqueryCtx* ctx, str chars)
 
 /**
  * Output generation handler. Handles equivalent of * SAX ignorableWhitespace()
+ * Output generation handler. Handles equivalent of * SAX characters() event.
+ */
+static bool
+seq_handle_characters (XqueryCtx* ctx, str chars)
+{
+    emit_escaped_all (ctx, chars);
+
+    return SUCCESS;
+}
+
+/**
  * event. I see no reason why it should be used here but I include it for
  * completeness.
  */
@@ -481,7 +492,7 @@ dflt_handle_attribute (XqueryCtx* ctx, str prefix, str loc, str value)
     }
     stream_write (ctx->out, &e_, 1, 1); /* = */
     stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    emit_escaped (ctx, value);
+    emit_escaped_all (ctx, value);
     stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
 
     return SUCCESS;
@@ -529,7 +540,7 @@ dflt_seqEmitDbl (XqueryCtx* ctx, dbl dv)
 static bool
 dflt_seqEmitStr (XqueryCtx* ctx, str sv)
 {
-    emit_escaped (ctx, sv);
+    emit_escaped_all (ctx, sv);
 
     return SUCCESS;
 }
@@ -541,7 +552,7 @@ static bool
 esc_seqEmitStr (XqueryCtx* ctx, str sv)
 {
     stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    emit_escaped (ctx, sv);
+    emit_escaped_all (ctx, sv);
     stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
 
     return SUCCESS;
@@ -582,6 +593,23 @@ dflt_seqEmitTextnode (XqueryCtx* ctx, str chars)
     stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     
     emit_escaped_entities (ctx, chars);
+
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    stream_write (ctx->out, textnodeEnd, tnE_sz, 1);
+    
+    return SUCCESS;
+}
+
+/**
+ * Output generation handler. Handles top-level textnodes.
+ */
+static bool
+seq_seqEmitTextnode (XqueryCtx* ctx, str chars)
+{
+    stream_write (ctx->out, textnodeStart, tnS_sz, 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    
+    emit_escaped_all (ctx, chars);
 
     stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     stream_write (ctx->out, textnodeEnd, tnE_sz, 1);
@@ -1303,8 +1331,8 @@ struct serializeFunStruct seqSerializeFun = {
     dflt_handle_endDocument,
     dflt_handle_startElement,
     dflt_handle_endElement,
-    dflt_handle_characters,
-    dflt_handle_ignorableWhitespace,
+    seq_handle_characters,
+    seq_handle_characters,
     dflt_handle_comment,
     dflt_handle_processingInstruction,
 
@@ -1317,7 +1345,7 @@ struct serializeFunStruct seqSerializeFun = {
     dflt_seqEmitDbl,
     esc_seqEmitStr,
     dflt_seqEmitAttribute,
-    dflt_seqEmitTextnode,
+    seq_seqEmitTextnode,
 
     seq_seqStart,
     null_complete_seqStart,
