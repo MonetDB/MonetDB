@@ -1755,7 +1755,7 @@ PROC ws_opencoll(BAT[void,BAT] ws,
         if (not(shortlock_barrier.exist(coll_shortlock, sema_nil))) # is last?
              barriers := reverse(shortlock_barrier).select(coll_shortlock);
         lock_unset(pf_collbarrier_lock);
-        if (bit(count(barriers))) [sema_up](barriers);
+        if (bit(count(barriers))) [sema_up](reverse(barriers));
         lock_unset(coll_shortlock); 
     }
 
