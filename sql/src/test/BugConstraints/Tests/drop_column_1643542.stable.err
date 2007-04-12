@@ -73,12 +73,13 @@ stderr of test 'drop_column_1643542` in directory 'src/test/BugConstraints` itse
 # 12:57:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31322  < drop_column_1643542.sql
 # 12:57:28 >  
 
-MAPI  = monetdb@localhost:31322
+MAPI  = monetdb@localhost:32978
 QUERY = alter table t2 add constraint id_p primary key(id_f);
 ERROR = !CONSTRAINT PRIMARY KEY: key id_p already exists
-MAPI  = monetdb@localhost:31322
+MAPI  = monetdb@localhost:32978
 QUERY = alter table t1 drop id;
-ERROR = !unable to drop column id (there are constraints which depend on it)
+ERROR = !unable to drop column id (there are database objects which depend on it)
+
 
 # 12:57:28 >  
 # 12:57:28 >  Done.
