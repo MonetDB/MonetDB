@@ -17,7 +17,7 @@
 MTSAFE
 
 SWIGFLAGS = -I../../mapilib
-INCLUDES = -I../../mapilib $(MONETDB_CFLAGS) $(PYTHON_INCS)
+INCLUDES = -I../../mapilib $(MONETDB_INCS) $(PYTHON_INCS)
 
 # with gcc we could use these
 #X_CFLAGS = -Wno-unused-parameter -Wno-unused-function

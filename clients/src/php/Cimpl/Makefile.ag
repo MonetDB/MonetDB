@@ -17,7 +17,7 @@
 MTSAFE
 
 SWIGFLAGS = -I../../mapilib
-INCLUDES = ../../mapilib $(MONETDB_CFLAGS) @PHP_INCS@
+INCLUDES = ../../mapilib $(MONETDB_INCS) @PHP_INCS@
 
 # we need this flag to allow for a name that does not start with "lib"
 monetdb_la_LDFLAGS = -module

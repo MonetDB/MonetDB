@@ -17,7 +17,7 @@
 INCLUDES = \
 	../include \
 	../../mapilib \
-	$(MONETDB_CFLAGS) \
+	$(MONETDB_INCS) \
 	$(ODBC_INCS)
 
 DEFS = @DEFS@

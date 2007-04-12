@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 SWIGFLAGS = -I../../mapilib
-INCLUDES = -I../../mapilib $(MONETDB_CFLAGS) $(PERL_INCS)
+INCLUDES = -I../../mapilib $(MONETDB_INCS) $(PERL_INCS)
 
 # we need this flag to allow for a name that does not start with "lib"
 MapiLib_la_LDFLAGS = -module
