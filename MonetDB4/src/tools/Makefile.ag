@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = $(MONETDB_CFLAGS) $(CLIENTS_INCS) ../monet ../modules/plain
+INCLUDES = $(MONETDB_INCS) $(CLIENTS_INCS) ../monet ../modules/plain
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 

@@ -16,7 +16,7 @@
 
 !INCLUDE $(TOPDIR)\..\..\MonetDB\conf\rules.msc
 
-MONETDB_CFLAGS=-I$(TOPDIR)\..\..\MonetDB\NT\include -I$(TOPDIR)\..\..\MonetDB\NT\include\common -I$(TOPDIR)\..\..\MonetDB\NT\include\gdk
+MONETDB_INCS=-I$(TOPDIR)\..\..\MonetDB\NT\include -I$(TOPDIR)\..\..\MonetDB\NT\include\common -I$(TOPDIR)\..\..\MonetDB\NT\include\gdk
 MONETDB_LIBS=/libpath:$(TOPDIR)\..\..\MonetDB\NT\lib
 CLIENTS_INCS=-I$(TOPDIR)\..\..\clients\NT\include -I$(TOPDIR)\..\..\clients\NT\include\MonetDB\mapilib
 CLIENTS_LIBS=/libpath:$(TOPDIR)\..\..\clients\NT\lib

@@ -14,7 +14,7 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-INCLUDES = $(MONETDB_CFLAGS) -I../../monet $(HWCOUNTERS_INCS) 
+INCLUDES = $(MONETDB_INCS) -I../../monet $(HWCOUNTERS_INCS) 
 MTSAFE
 
 CFLAGS = $(CFLAGS_NO_OPT)
