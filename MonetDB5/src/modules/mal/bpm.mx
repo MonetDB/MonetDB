@@ -539,8 +539,16 @@ static int getByName(str nme){
 	return 0;
 }
 
+static Partition getHead(bat i){
+	Partition p;
+	p= bpmcat[i];
+	if( p == 0) return 0;
+	while( p->prv) p= bpmcat[p->prv];
+	return p;
+}
+
 static Partition getAlias(bat i){
-	return bpmcat[i]? bpmcat[bpmcat[i]->alias]:0;
+	return getHead(i);
 }
 
 static Partition newPartition(int i){
