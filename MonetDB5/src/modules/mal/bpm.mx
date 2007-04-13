@@ -532,7 +532,9 @@ static int bpmcatsize;
 static int getByName(str nme){
 	int i;
 	for(i=0; i< bpmcatsize; i++)
-		if( bpmcat[i] && strcmp(bpmcat[i]->name,nme)==0)
+		if( bpmcat[i] && 
+			bpmcat[i]->name &&
+			strcmp(bpmcat[i]->name,nme)==0)
 			return i;
 	return 0;
 }
@@ -701,7 +703,9 @@ BPMopen()
 {
 	if(bpmcat) return MAL_SUCCEED;
 	mal_set_lock(mal_contextLock, "bpm");
-	BPMloadCatalog();
+	if(BBPindex("bpm_name"))
+		BPMloadCatalog();
+	else newPartition(0);
 	mal_unset_lock(mal_contextLock, "bpm");
 	return MAL_SUCCEED;
 }
@@ -743,7 +747,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	if( getByName(*nme) )
 		throw(MAL,"pbm.deposit","Duplicate partitioned BAT");
 	/* get target bat */
-	@:getBATdescriptor(src,b,"bpm.deposit");
+	@:getBATdescriptor(src,b,"bpm.deposit")@
 
 	if( bpmcat[b->batCacheid] != 0){
 		BBPunfix(b->batCacheid);
