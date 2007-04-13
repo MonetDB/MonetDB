@@ -112,7 +112,6 @@ comment "Symbolic evaluation of empty BAT expressions";
 	setModuleId(p,NULL); setFunctionId(p,NULL); } \
 	else {actions++;setModuleId(p,NULL); setFunctionId(p,NULL); alias[getArg(p,0)]= getArg(p,1); } }
 @-
-	else {actions++;setModuleId(p,algebraRef); setFunctionId(p,identityRef); } }
 Be aware to handle alias mapping.
 @c
 
@@ -241,6 +240,28 @@ We assume here that string constants have been matched already.
 						}
 						break;
 					} 
+				}
+@-
+If the target variable is empty and the function does not
+have a side-effect, we can replace it with a construction
+of the empty set. The dead-code optimizer will take care
+of removal of superflous constructions.
+@c
+				if( p->retc==1 && !hasSideEffects(p, FALSE) &&
+					isaBatType(getArgType(mb,p,0))){
+					int tpe=getArgType(mb,p,0);
+					setModuleId(p, batRef);
+					setFunctionId(p, newRef);
+					p->argc = 1;
+					p->token = ASSIGNsymbol;
+					p->typechk= TYPE_UNKNOWN;
+					p->fcn = NULL;
+					pushArgument(mb, p, 
+						newTypeVariable(mb, getHeadType(tpe)));
+					pushArgument(mb, p, 
+						newTypeVariable(mb, getTailType(tpe)));
+					actions++;
+					break;
 				}
 			}
 		}
