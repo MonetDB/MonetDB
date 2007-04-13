@@ -2571,12 +2571,12 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     extend_protect(ws, cont);
     var attr_prop_update := ws.fetch(ATTR_PROP_UPDATE).find(cont); # [ATID,PROPID]
     # delattr: attributes of deleted nodes
-    var delattr := ws.fetch(ATTR_OWN).find(cont).join(ws.fetch(NID_RID_UPDATE).find(cont).uselect(oid_nil));
+    var delattr := get_attr_own(ws, ws.fetch(NID_RID_UPDATE).find(cont).uselect(oid_nil).hmark(0@0), cont);
     if ((attr_prop_update.count() > 0) or (delattr.count() > 0)) {
       # combine attrs from deleted nodes (delattr) with updated
       # attributes (attr_prop_update) and figure out old values by
       # joining with ATTR_PROP
-      var oldprop := kunion(delattr.mirror(), attr_prop_update.mirror()).leftjoin(ws.fetch(ATTR_PROP).find(cont)).ord_select(oid_nil, oid_nil); # [ATID,PROPID]
+      var oldprop := kunion(delattr.reverse().mirror(), attr_prop_update.mirror()).leftjoin(ws.fetch(ATTR_PROP).find(cont)).ord_select(oid_nil, oid_nil); # [ATID,PROPID]
       var oldvx;
       if (oldprop.count() > 0) {
         var oldval := oldprop.leftfetchjoin(ws.fetch(PROP_VAL).find(cont)); # [ATID,str]
@@ -2741,10 +2741,10 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
 
     # ws_postcommit maintains the indices and releases the collection lock
     __ws_postcommit(ws, cont,
-                    new_attr.fetch(cont),
-                    old_attr.fetch(cont),
-                    new_text.fetch(cont),
-                    old_text.fetch(cont),
+                    new_attr.find(cont),
+                    old_attr.find(cont),
+                    new_text.find(cont),
+                    old_text.find(cont),
                     ws.fetch(NID_QN_INS_UPDATE).find(cont).reverse(), 
                     ws.fetch(NID_QN_DEL_UPDATE).find(cont).reverse(), 
                     ws.fetch(QN_URI_UPDATE).find(cont).hmark(0@0),
