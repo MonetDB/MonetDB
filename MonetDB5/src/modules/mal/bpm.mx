@@ -517,6 +517,8 @@ collected properly.
 #define	RANGE	1
 #define HASH	2
 
+#define rngType(B) (B==TYPE_void?TYPE_oid:B)
+
 typedef struct PARTITIONREC {
 	char *name;		/* only stored for the alias */
 	bat alias;		/* partition BAT alias, back into BBP*/
@@ -624,9 +626,11 @@ BPMopen_org()
         if ((b = BATdescriptor(idx)) == NULL) 
                 throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
 	BATloop(b, p, q) {
+		Partition pn;
 		i = *(int *)BUNhead(b,p);
 		k = *(@2 *) BUNtail(b,p);
-		newPartition(i)->@1 = k;	
+		(pn=newPartition(i))->@1 = k;	
+		@:defaultRange(pn)@
 	}
 	BBPunfix(b->batCacheid);
 
@@ -662,9 +666,11 @@ BPMloadCatalog(){
 	bm = BATmirror(b);
 	
 	BATloop(b, p, q) {
+		Partition pn;
 		i = *(int *)BUNhead(b,p);
 		nm = (str) BUNtail(b,p);
-		newPartition(i)->name = GDKstrdup(nm);	
+		(pn=newPartition(i))->name = GDKstrdup(nm);	
+		@:defaultRange(pn)@
 	}
 	BBPunfix(b->batCacheid);
 
@@ -707,9 +713,9 @@ BPMloadCatalog(){
 					r= BUNfnd(@1,&i); 
 					if (r){
 					   val= BUNtail(@1,r);
-					   VALset(&bpmcat[i]->@2, tp, val); 
+					   VALset(&bpmcat[i]->@2, rngType(tp), val); 
 					} else 
-					   VALset(&bpmcat[i]->@2, tp, ATOMnil(tp) );
+					   VALset(&bpmcat[i]->@2, rngType(tp), ATOMnil(rngType(tp)) );
 @c
 					@:getPartitionBound(bll,tlow)@
 					@:getPartitionBound(bhl,thgh)@
@@ -719,8 +725,8 @@ BPMloadCatalog(){
 					@:getPartitionBound(bld,tlow)@
 					@:getPartitionBound(bhd,thgh)@
  			}
-		VALset(&bpmcat[i]->hlow, b->htype, ATOMnil(b->htype) );
-		VALset(&bpmcat[i]->hhgh, b->htype, ATOMnil(b->htype) );
+		VALset(&bpmcat[i]->hlow, rngType(b->htype), ATOMnil(rngType(b->htype)) );
+		VALset(&bpmcat[i]->hhgh, rngType(b->htype), ATOMnil(rngType(b->htype)) );
 		bpmcat[i]->hbits= bpmcat[i]->tbits= 0;
 	}
 	@:BPMunfix@
@@ -763,6 +769,12 @@ BPMdestroy(int *ret)
 @-
 Before you enter a BAT for partitioning
 we should assure it is not already partitioned.
+@= defaultRange
+	/* default range */
+	VALset(&@1->hlow, rngType(b->htype), ATOMnil(rngType(b->htype)));
+	VALset(&@1->hhgh, rngType(b->htype), ATOMnil(rngType(b->htype)) );
+	VALset(&@1->tlow, rngType(b->ttype), ATOMnil(rngType(b->ttype)) );
+	VALset(&@1->thgh, rngType(b->ttype), ATOMnil(rngType(b->ttype)) );
 @c
 str
 BPMdeposit(bat *ret, str *nme, bat *src)
@@ -793,6 +805,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	pa->alias= pa->bid;
 	pa->name= GDKstrdup(*nme);
 	pa->nxt= pa->prv= pa->bid;
+	@:defaultRange(pa)@
 
 	bn= BATcopy(b, b->htype,b->ttype,TRUE);
 	if( bn == 0){
@@ -802,20 +815,12 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 
 	p = newPartition(bn->batCacheid);
 	p->alias= pa->bid;
+	@:defaultRange(p)@
 	insertPartition(pa,p);
 	BBPkeepref(p->alias= ba->batCacheid);
 	BBPkeepref(p->bid= bn->batCacheid);
 	BBPincref(ba->batCacheid,TRUE);
 	*ret= ba->batCacheid;
-
-@= defaultRange
-	/* default range */
-	VALset(&p->hlow, b->htype, ATOMnil(b->htype) );
-	VALset(&p->hhgh, b->htype, ATOMnil(b->htype) );
-	VALset(&p->tlow, b->ttype, ATOMnil(b->ttype) );
-	VALset(&p->thgh, b->ttype, ATOMnil(b->ttype) );
-@c
-	@:defaultRange@
 
 #ifdef _DEBUG_BPM_
 	stream_printf(GDKout,"Enter the partition '%s' at %d\n",*nme,bn->batCacheid);
@@ -853,23 +858,24 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 
 	p= newPartition(*ret);
 	p->alias= ps->alias;
+	@:defaultRange(p)@
 	insertPartition(ps,p);
 
 	/* for now assume only partitioning on tail. Range on head remains as in the orig. */
 	if( *bid> 0){
-		VALset(&p->hlow, b->htype, &ps->hlow );
-		VALset(&p->hhgh, b->htype, &ps->hhgh  );
-		VALset(&p->tlow, b->ttype, val );
-		VALset(&p->thgh, b->ttype, &ps->thgh );
+		VALset(&p->hlow, rngType(b->htype), &ps->hlow );
+		VALset(&p->hhgh, rngType(b->htype), &ps->hhgh  );
+		VALset(&p->tlow, rngType(b->ttype), val );
+		VALset(&p->thgh, rngType(b->ttype), &ps->thgh );
 
-		VALset(&ps->thgh, b->ttype, val );
+		VALset(&ps->thgh, rngType(b->ttype), val );
 	} else {
-		VALset(&p->tlow, b->ttype, &ps->tlow );
-		VALset(&p->thgh, b->ttype, &ps->thgh  );
-		VALset(&p->hlow, b->htype, val );
-		VALset(&p->hhgh, b->htype, &ps->hhgh );
+		VALset(&p->hlow, rngType(b->ttype), &ps->hlow );
+		VALset(&p->hhgh, rngType(b->ttype), &ps->hhgh  );
+		VALset(&p->tlow, rngType(b->htype), val );
+		VALset(&p->thgh, rngType(b->htype), &ps->thgh );
 
-		VALset(&ps->hhgh, b->htype, val );
+		VALset(&ps->thgh, rngType(b->htype), val );
 	}
 
 	/* default hash */
@@ -922,7 +928,7 @@ BPMrange(bat *ret, bat *bid, ptr low, ptr hgh){
 	@:getBATdescriptor(bid,b,"bpm.range")@
 
 	/* get the comparison function */
-	tpe= *bid >0? b->ttype:b->htype;
+	tpe= *bid >0? rngType(b->ttype):rngType(b->htype);
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 	low_nil = ((*cmp) (low, nilptr) == 0);
@@ -958,22 +964,34 @@ BPMrange(bat *ret, bat *bid, ptr low, ptr hgh){
 #endif
 			}
 		} else {
+#ifdef _DEBUG_BPM_
+			stream_printf(GDKout," break on "); VALprint(GDKout,low);
+			stream_printf(GDKout," - "); VALprint(GDKout,hgh);
+			stream_printf(GDKout," \n"); 
+			BPMprintRecord(GDKout,bpmcat[i]);
+#endif
 			if( right(i,hlow,hgh) || left(i,hhgh,low) ){
 				/* this fragment need not be split */
+#ifdef _DEBUG_BPM_
+				stream_printf(GDKout, "no break fragment %d\n",i);
+#endif
 			} else {
 				/* break the fragment */
 
 				if (!low_nil && inbetween(i,hlow,hhgh,low) ){
+#ifdef _DEBUG_BPM_
+				stream_printf(GDKout, "low break fragment %d\n",i);
+#endif
 					BPMsplitpartition(&r,sb,low);
 					sb=&r;
 				}
 				
 				if (!hgh_nil && inbetween(i,hlow,hhgh,hgh) ){
+#ifdef _DEBUG_BPM_
+				stream_printf(GDKout, "high break fragment %d\n",i);
+#endif
 						BPMsplitpartition(&r,sb,hgh);	
 				}
-#ifdef _DEBUG_BPM_
-				stream_printf(GDKout, "break fragment %d\n",i);
-#endif
 			}
 		}
 		BBPunfix(b->batCacheid);
@@ -1015,7 +1033,7 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 		throw(MAL,"bpm.range","Cannot access BAT");
 	}
 
-	tpe= p->bid >0? b->ttype:b->htype;
+	tpe= p->bid >0? rngType(b->ttype):rngType(b->htype);
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 	
@@ -1048,6 +1066,7 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 			throw(MAL,"pbm.split","Can not create new partition");
 		pnew= newPartition(bnew->batCacheid);
 		pnew->alias= p->alias;
+		@:defaultRange(pnew)@
 		insertPartition(pprev,pnew);
 
 		VALset(&pnew->hlow, b->htype, &p->hlow );
@@ -1106,11 +1125,10 @@ BPMaddPartition(bat *ret, str *nme, bat *src)
 
 	p= newPartition(*ret);
 	p->alias = bpmcat[i]->alias;
+	@:defaultRange(p)@
 
 	while( bpmcat[i]->nxt) i=  bpmcat[i]->nxt;
 	insertPartition(bpmcat[i],p);
-
-	@:defaultRange@
 
 #ifdef _DEBUG_BPM_
 	stream_printf(GDKout,"Added partition '%s' at %d\n",*nme,j);
@@ -1397,7 +1415,7 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:getBATdescriptor(&p->bid,b,"bpm.newIterator")@
 
 	/* get the comparison function */
-	tpe= p->bid >0? b->ttype:b->htype;
+	tpe= p->bid >0? rngType(b->ttype):rngType(b->htype);
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 	low_nil = ((*cmp) (low, nilptr) == 0);
@@ -1517,7 +1535,7 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:getBATdescriptor(&p->bid,b,"bpm.hasMoreElementsRng")@
 
 	/* get the comparison function */
-	tpe= p->bid >0? b->ttype:b->htype;
+	tpe= p->bid >0? rngType(b->ttype):rngType(b->htype);
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 	low_nil = ((*cmp) (low, nilptr) == 0);
