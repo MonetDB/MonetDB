@@ -25,7 +25,7 @@ user.pr(Ra);
 
 Rrev:= bat.reverse(Ra);
 io.print("Repartition it further into two oid ranges");
-bpm.rangePartition(Rrev,nil:oid,1@0);
+bpm.rangePartition(Rrev,nil:oid,2@0);
 bpm.rangePartition(Rrev,3@0,nil:oid);
 # we should have 4 partitions
 bpm.dump(Ra);

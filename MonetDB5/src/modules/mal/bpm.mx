@@ -540,9 +540,11 @@ static int bpmcatsize;
 static void BPMprintRecord(stream *f, Partition p){
 	stream_printf(f,"partition: %s alias %d bid %d ",
 		bpmcat[p->alias]->name, p->alias, p->bid);
-/*	stream_printf(f,"hbits %d tbits %d ", p->hbits,p->tbits); */
-	stream_printf(f,"tlow "); VALprint(f,&p->tlow);
-	stream_printf(f," thgh "); VALprint(f,&p->thgh);
+	stream_printf(f,"bits %d %d ", p->hbits,p->tbits);
+	stream_printf(f,"h "); VALprint(f,&p->hlow);
+	stream_printf(f," - "); VALprint(f,&p->hhgh);
+	stream_printf(f," t "); VALprint(f,&p->tlow);
+	stream_printf(f," - "); VALprint(f,&p->thgh);
 	stream_printf(f," nxt %d prv %d\n", p->nxt,p->prv);
 }
 
@@ -829,8 +831,7 @@ pieces based on the value referenced
 str
 BPMsplitpartition(bat *ret, bat *bid, ptr val)
 {
-	BAT *b,*bn, *bdiff;
-	int i;
+	BAT *b,*bn;
 	Partition ps, p;
 
 	BPMopen();
@@ -855,12 +856,21 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	insertPartition(ps,p);
 
 	/* for now assume only partitioning on tail. Range on head remains as in the orig. */
-	VALset(&p->hlow, b->htype, &ps->hlow );
-	VALset(&p->hhgh, b->htype, &ps->hhgh  );
-	VALset(&p->tlow, b->ttype, val );
-	VALset(&p->thgh, b->ttype, &ps->thgh );
+	if( *bid> 0){
+		VALset(&p->hlow, b->htype, &ps->hlow );
+		VALset(&p->hhgh, b->htype, &ps->hhgh  );
+		VALset(&p->tlow, b->ttype, val );
+		VALset(&p->thgh, b->ttype, &ps->thgh );
 
-	VALset(&ps->thgh, b->ttype, val );
+		VALset(&ps->thgh, b->ttype, val );
+	} else {
+		VALset(&p->tlow, b->ttype, &ps->tlow );
+		VALset(&p->thgh, b->ttype, &ps->thgh  );
+		VALset(&p->hlow, b->htype, val );
+		VALset(&p->hhgh, b->htype, &ps->hhgh );
+
+		VALset(&ps->hhgh, b->htype, val );
+	}
 
 	/* default hash */
 	p->hbits= ps->hbits;
@@ -868,13 +878,11 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 
 	
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"New partition '%s' at %d\n",p->name,i);
+	stream_printf(GDKout,"New partition '%s' at %d\n",bpmcat[p->alias]->name,*ret);
 	BPMprintRecord(GDKout,p);
 #endif
 
-	bdiff = BATkdiff(b,bn); /* assume unique heads */
-	BBPkeepref( bdiff->batCacheid);
-
+	BATdel(b,bn,FALSE); /* assume unique heads */
 	BBPunfix(b->batCacheid);
 /*	BBPunfix(bn->batCacheid);*/
 	return MAL_SUCCEED;
@@ -886,6 +894,18 @@ and creates new ones, keeping the partitions in order.
 The 'critical' part is to detect overlap of the range
 and the bounds of the partition.
 @c
+#define right(X,A,Y) \
+	   ((*cmp)((ptr)&bpmcat[X]->A, nilptr)!=0 && \
+		(*cmp)((ptr) &bpmcat[X]->A, Y) > 0)
+#define left(X,A,Y) \
+	   ((*cmp)((ptr)&bpmcat[X]->A, nilptr)!=0 && \
+		(*cmp)((ptr) &bpmcat[X]->A, Y) < 0)
+#define inbetween(X,A,B,Y) \
+	   ( ((*cmp)((ptr)&bpmcat[X]->A, nilptr)==0 || \
+		(*cmp)((ptr) &bpmcat[X]->A, Y) < 0)  && \
+		((*cmp) ((ptr)&bpmcat[X]->B, nilptr)==0 || \
+		(*cmp)((ptr) &bpmcat[X]->B, Y) > 0) )
+
 str
 BPMrange(bat *ret, bat *bid, ptr low, ptr hgh){
 	BAT *b;
@@ -919,50 +939,41 @@ BPMrange(bat *ret, bat *bid, ptr low, ptr hgh){
 		@:getBATdescriptor(sb,b,"bpm.range")@
 
 		/* overlap by excluding outliers */
-		if( *bid > 0 ){
-			if( ((*cmp) ((ptr)&bpmcat[i]->thgh, nilptr)!=0 &&
-			     (*cmp) ((ptr) &bpmcat[i]->thgh, low) < 0) ||
-			    ((*cmp) ((ptr)&bpmcat[i]->tlow, nilptr)!=0 &&
-			     (*cmp) ((ptr) &bpmcat[i]->tlow, hgh) > 0) 
-			){
+		if( *bid>0){
+			if( right(i,tlow,hgh) || left(i,thgh,low) ){
 				/* this fragment need not be split */
 			} else {
 				/* break the fragment */
 
-				if (!low_nil && 
-				    ((*cmp)((ptr)&bpmcat[i]->tlow, nilptr)==0 ||
-				    (*cmp)((ptr) &bpmcat[i]->tlow, low) < 0)  &&
-				    ((*cmp) ((ptr)&bpmcat[i]->thgh, nilptr)==0 ||
-				    (*cmp)((ptr) &bpmcat[i]->thgh, low) > 0) ) {
-				
+				if (!low_nil && inbetween(i,tlow,thgh,low) ){
 					BPMsplitpartition(&r,sb,low);
 					sb=&r;
 				}
 				
-				if (!hgh_nil && 
-				   ((*cmp)((ptr)&bpmcat[i]->tlow, nilptr)==0 ||
-				    (*cmp)((ptr) &bpmcat[i]->tlow, hgh) < 0)  &&
-				    ((*cmp) ((ptr)&bpmcat[i]->thgh, nilptr)==0 ||
-				    (*cmp)((ptr) &bpmcat[i]->thgh, hgh) > 0) ){
+				if (!hgh_nil && inbetween(i,tlow,thgh,hgh) ){
 						BPMsplitpartition(&r,sb,hgh);	
-						i= bpmcat[i]->nxt;
 				}
-
 #ifdef _DEBUG_BPM_
 				stream_printf(GDKout, "break fragment %d\n",i);
 #endif
 			}
 		} else {
-			/* use reversed bat */
-			if( (*cmp) ((ptr) &bpmcat[i]->hhgh, low) < 0 ||
-				(*cmp) ((ptr) &bpmcat[i]->hlow, hgh) > 0 
-			){
+			if( right(i,hlow,hgh) || left(i,hhgh,low) ){
 				/* this fragment need not be split */
 			} else {
+				/* break the fragment */
+
+				if (!low_nil && inbetween(i,hlow,hhgh,low) ){
+					BPMsplitpartition(&r,sb,low);
+					sb=&r;
+				}
+				
+				if (!hgh_nil && inbetween(i,hlow,hhgh,hgh) ){
+						BPMsplitpartition(&r,sb,hgh);	
+				}
 #ifdef _DEBUG_BPM_
 				stream_printf(GDKout, "break fragment %d\n",i);
 #endif
-				/* break the fragment */
 			}
 		}
 		BBPunfix(b->batCacheid);
