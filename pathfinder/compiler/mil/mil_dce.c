@@ -459,6 +459,137 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
 }
 
 /**
+ * Remove unnecessary materialize operators (the ones where the output
+ * of the materialize operator is only consumed by either a mposjoin or
+ * a mvaljoin).
+ */
+static void
+mil_materialize_elimination (PFmil_t *n, 
+                             PFbitset_t *used_vars,
+                             bool mark_used,
+                             bool change) 
+{
+    assert (n);
+    switch (n->kind) {
+        case m_seq:
+            /* descend in reverse pre-order, collect the used variables
+             * from the end to beginning of the program. */
+            for (int i = MIL_MAXCHILD; --i >= 0;)
+                if (n->child[i])
+                    mil_materialize_elimination (n->child[i],
+                                                 used_vars,
+                                                 true,
+                                                 change);
+            break;
+
+        case m_assgn:
+            assert(n->child[0]->kind == m_var);
+
+            /* Propagate the information whether the input has to
+               be materialized or not. */
+            mil_materialize_elimination (n->child[1],
+                                         used_vars,
+                                         PFbitset_get (used_vars,
+                                                       n->child[0]->sem.ident),
+                                         change);
+            
+            /* The variable is unused before the assignment. */
+            PFbitset_set (used_vars, n->child[0]->sem.ident, false);
+            break;
+
+        case m_var:
+            /* mark all variables as used if they should be marked as used */
+            if (mark_used)
+                PFbitset_set (used_vars, n->sem.ident, true);
+            break;
+            
+        case m_mposjoin:
+        case m_mvaljoin:
+            /* The inputs to this operators may be un-materialized */
+            for (unsigned int i = 0; i < MIL_MAXCHILD && n->child[i]; i++)
+                mil_materialize_elimination (n->child[i],
+                                             used_vars,
+                                             false,
+                                             change);
+            break;
+    
+        case m_materialize:
+            /* remove the materialize operator if we are
+               in the change mode and it the materialize
+               operator is not marked as used */
+            if (!mark_used && change)
+                *n = *(n->child[0]);
+            break;
+
+        case m_if:
+        {
+            /*
+             * to find the used variables of a if-then-else block, we must 
+             * find them for the if and for the else part and join the sets.
+             */
+            PFbitset_t *else_used_vars = PFbitset_copy (used_vars);
+
+            /* invoke recursive call on if part */
+            mil_materialize_elimination (n->child[1],
+                                         used_vars,
+                                         true,
+                                         change);
+
+            /* invoke recursive call on else part */
+            mil_materialize_elimination (n->child[2],
+                                         else_used_vars,
+                                         true,
+                                         change);
+
+            PFbitset_or (used_vars, else_used_vars);
+
+            /* the variables of the condition are required */
+            mil_materialize_elimination (n->child[0],
+                                         used_vars,
+                                         true,
+                                         change);
+        } break;
+
+        case m_while:
+            /* ONLY collect the variables required for an iteration */
+            mil_materialize_elimination (n->child[1],
+                                         used_vars,
+                                         true,
+                                         false);
+            /* the variables of the condition are required
+               for the next iteration */
+            mil_materialize_elimination (n->child[0],
+                                         used_vars,
+                                         true,
+                                         false);
+
+            /* invoke dce on the loop body (used_vars now contains the
+               variables in the condition as well as the ones required
+               for another pass through the body */
+            mil_materialize_elimination (n->child[1],
+                                         used_vars,
+                                         true,
+                                         true);
+
+            /* the variables of the condition are required for the first
+               check of the condition */
+            mil_materialize_elimination (n->child[0],
+                                         used_vars,
+                                         true,
+                                         true);
+            break;
+
+        default:
+            for (unsigned int i = 0; i < MIL_MAXCHILD && n->child[i]; i++)
+                mil_materialize_elimination (n->child[i],
+                                             used_vars,
+                                             true,
+                                             change);
+            break;
+    }
+}
+
+/**
  * Peform a dead MIL code elimination.
  * It reads the code from the end to the beginning of the program and
  * collects the used variables, starting from the serialize, error and
@@ -482,7 +613,10 @@ PFmil_dce (PFmil_t *root)
 {
 
     PFbitset_t *used_vars = PFbitset ();
+    PFbitset_t *used_vars2 = PFbitset ();
     PFbitset_t *dirty_vars = PFbitset ();
+
+    mil_materialize_elimination (root, used_vars2, true, true);
 
     /* variable unused is always used because it helps MonetDB to cleanup */
     PFbitset_set (used_vars, PF_MIL_VAR_UNUSED, true);
