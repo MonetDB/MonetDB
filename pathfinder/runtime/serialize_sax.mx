@@ -127,7 +127,7 @@ emit_SAX_header (XqueryCtx *ctx)
 }
 
 static bool
-emit_SAX_footer ()
+emit_SAX_footer (void)
 {
     return SUCCESS;
 }

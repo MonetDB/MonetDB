@@ -389,7 +389,7 @@ PFsql_order_by(const PFsql_t *a)
 }
 
 PFsql_t*
-PFsql_sortkey_expressions_empty()
+PFsql_sortkey_expressions_empty(void)
 {
     return terminator();
 }

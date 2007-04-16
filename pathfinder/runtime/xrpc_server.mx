@@ -1272,7 +1272,7 @@ CMDrpcd_start(int *port, bit *open, str option)
 }
 
 
-void xrpc_epilogue()
+void xrpc_epilogue(void)
 {
     shttpd_fini();      /* Shut down the HTTP server. */
     rpcd_running = 0;   /* Stop RPC server */

@@ -57,7 +57,7 @@ typedef uint8_t bitset_unit;
 #define UNIT_IDX(x) ((x) >> ADDR_BITS_PER_UNIT)
 #define BITSET_UNIT_AT(a, b) (*((bitset_unit *)PFarray_at ((a), (b))))
 
-PFbitset_t *PFbitset () 
+PFbitset_t *PFbitset (void) 
 {
     return PFarray (sizeof (bitset_unit)); 
 }

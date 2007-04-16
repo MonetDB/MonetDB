@@ -74,7 +74,7 @@ XQUERYsession2(str *ret)
 }
 
 str
-XQUERYprelude()
+XQUERYprelude(void)
 {
 	Scenario s = getFreeScenario();
 	if (!s)
@@ -109,7 +109,7 @@ XQUERYprelude()
 	return MAL_SUCCEED;
 }
 str
-XQUERYepilogue()
+XQUERYepilogue(void)
 {
 	return MAL_SUCCEED;
 }

@@ -74,7 +74,7 @@ struct entry_t {
  * @return pointer to scope data structure
  */
 PFscope_t *
-PFscope ()
+PFscope (void)
 {
     PFscope_t *s;
     unsigned int i;

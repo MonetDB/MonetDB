@@ -2776,7 +2776,7 @@ PFla_trace_map (const PFla_op_t *n1,
 /**
  * Constructor for the last item of a parameter list
  */
-PFla_op_t *PFla_nil ()
+PFla_op_t *PFla_nil (void)
 {
     PFla_op_t     *ret;
 

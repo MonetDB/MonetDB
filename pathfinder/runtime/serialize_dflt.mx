@@ -98,7 +98,7 @@ typedef struct dflt_ws_t dflt_ws_t;
  * constructor function for the default workspace
  */
 static dflt_ws_t *
-new_dflt_ws ()
+new_dflt_ws (void)
 {
     dflt_ws_t *dflt_ws_ = GDKmalloc (sizeof (dflt_ws_t));
 

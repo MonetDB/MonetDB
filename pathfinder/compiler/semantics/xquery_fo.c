@@ -61,7 +61,7 @@
  * Load XQuery built-in function signatures into function environment.
  */
 void
-PFfun_xquery_fo ()
+PFfun_xquery_fo (void)
 {
     struct {
         PFns_t ns;

@@ -351,7 +351,7 @@ struct type_co {
 typedef struct type_co type_co;
 
 static type_co
-int_container ()
+int_container (void)
 {
     type_co new_co;
     new_co.kind = INT;
@@ -364,7 +364,7 @@ int_container ()
 }
 
 static type_co
-dbl_container ()
+dbl_container (void)
 {
     type_co new_co;
     new_co.kind = DBL;
@@ -377,7 +377,7 @@ dbl_container ()
 }
 
 static type_co
-dec_container ()
+dec_container (void)
 {
     type_co new_co;
     new_co.kind = DEC;
@@ -390,7 +390,7 @@ dec_container ()
 }
 
 static type_co
-str_container ()
+str_container (void)
 {
     type_co new_co;
     new_co.kind = STR;
@@ -403,7 +403,7 @@ str_container ()
 }
 
 static type_co
-u_A_container ()
+u_A_container (void)
 {
     type_co new_co;
     new_co.kind = U_A;
@@ -416,7 +416,7 @@ u_A_container ()
 }
 
 static type_co
-bool_container ()
+bool_container (void)
 {
     type_co new_co;
     new_co.kind = BOOL;

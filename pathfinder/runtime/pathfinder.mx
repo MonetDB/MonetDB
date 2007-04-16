@@ -4729,7 +4729,7 @@ xquery_module_load(xquery_client *ctx,
  * (postponed to the next initialization of the record)
  */
 static void
-xquery_client_flushall()
+xquery_client_flushall(void)
 {
     int i, wait = 100;
     while(wait) {
