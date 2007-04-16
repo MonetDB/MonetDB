@@ -833,20 +833,59 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 Given a particular partition, split it into two
 pieces based on the value referenced
 @c
+#define equal(X,A,Y) \
+		((*cmp)((ptr) &bpmcat[X]->A, Y) == 0)
+#define right(X,A,Y) \
+	   ((*cmp)((ptr)&bpmcat[X]->A, nilptr)!=0 && \
+		(*cmp)((ptr) &bpmcat[X]->A, Y) > 0)
+#define left(X,A,Y) \
+	   ((*cmp)((ptr)&bpmcat[X]->A, nilptr)!=0 && \
+		(*cmp)((ptr) &bpmcat[X]->A, Y) < 0)
+#define inbetween(X,A,B,Y) \
+	   ( ((*cmp)((ptr)&bpmcat[X]->A, nilptr)==0 || \
+		(*cmp)((ptr) &bpmcat[X]->A, Y) < 0)  && \
+		((*cmp) ((ptr)&bpmcat[X]->B, nilptr)==0 || \
+		(*cmp)((ptr) &bpmcat[X]->B, Y) > 0) )
+
 str
 BPMsplitpartition(bat *ret, bat *bid, ptr val)
 {
 	BAT *b,*bn;
 	Partition ps, p;
+	int (*cmp) (ptr, ptr);
+	ptr nilptr;
+	int i,tpe,val_nil ;
 
 	BPMopen();
 
-	if( (ps= bpmcat[ABS(*bid)]) == 0)
+	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
 		throw(MAL,"pbm.split","Partitioned BAT not found");
 	@:getBATdescriptor(bid,b,"bpm.splitPartition");
-
-	/* TO DO val should be between tlow and thigh */
-
+	/* get the comparison function */
+	tpe= *bid >0? rngType(b->ttype):rngType(b->htype);
+	cmp= BATatoms[tpe].atomCmp;
+	nilptr = ATOMnilptr(tpe);
+	val_nil = ((*cmp) (val, nilptr) == 0);
+	/* overlap by excluding outliers */
+	if( *bid>0){
+		if( right(i,tlow,val) || equal(i,tlow,val) ||
+			left(i,thgh,val) || equal(i,thgh,val) ){
+				/* this fragment need not be split */
+				BBPunfix(b->batCacheid);
+				return MAL_SUCCEED;
+			}
+	} else
+		if( right(i,hlow,val) || equal(i,hlow,val) ||
+			left(i,hhgh,val) || equal(i,hhgh,val) ){
+				/* this fragment need not be split */
+				BBPunfix(b->batCacheid);
+				return MAL_SUCCEED;
+			}
+#ifdef _DEBUG_BPM_
+		stream_printf(GDKout," break on "); VALprint(GDKout,val);
+		stream_printf(GDKout," \n"); 
+		BPMprintRecord(GDKout,bpmcat[i]);
+#endif
 	/* we can enter a new partition */
 	bn= BAT_select_(b, val, (ptr) &(ps->thgh), TRUE, FALSE, TRUE, FALSE);
 
@@ -861,7 +900,6 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	@:defaultRange(p)@
 	insertPartition(ps,p);
 
-	/* for now assume only partitioning on tail. Range on head remains as in the orig. */
 	if( *bid> 0){
 		VALset(&p->hlow, rngType(b->htype), &ps->hlow );
 		VALset(&p->hhgh, rngType(b->htype), &ps->hhgh  );
@@ -897,28 +935,11 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 @-
 Range partitioning simply runs through all partitions
 and creates new ones, keeping the partitions in order.
-The 'critical' part is to detect overlap of the range
-and the bounds of the partition.
 @c
-#define right(X,A,Y) \
-	   ((*cmp)((ptr)&bpmcat[X]->A, nilptr)!=0 && \
-		(*cmp)((ptr) &bpmcat[X]->A, Y) > 0)
-#define left(X,A,Y) \
-	   ((*cmp)((ptr)&bpmcat[X]->A, nilptr)!=0 && \
-		(*cmp)((ptr) &bpmcat[X]->A, Y) < 0)
-#define inbetween(X,A,B,Y) \
-	   ( ((*cmp)((ptr)&bpmcat[X]->A, nilptr)==0 || \
-		(*cmp)((ptr) &bpmcat[X]->A, Y) < 0)  && \
-		((*cmp) ((ptr)&bpmcat[X]->B, nilptr)==0 || \
-		(*cmp)((ptr) &bpmcat[X]->B, Y) > 0) )
-
 str
 BPMrange(bat *ret, bat *bid, ptr low, ptr hgh){
 	BAT *b;
-	int i, tpe, r, *sb;
-	int (*cmp) (ptr, ptr);
-	ptr nilptr, tmp;
-	int low_nil, hgh_nil;
+	int i, r;
 	Partition p;
 
 	BPMopen();
@@ -927,75 +948,13 @@ BPMrange(bat *ret, bat *bid, ptr low, ptr hgh){
 		throw(MAL, "bpm.range","Partition not known");
 	@:getBATdescriptor(bid,b,"bpm.range")@
 
-	/* get the comparison function */
-	tpe= *bid >0? rngType(b->ttype):rngType(b->htype);
-	cmp= BATatoms[tpe].atomCmp;
-	nilptr = ATOMnilptr(tpe);
-	low_nil = ((*cmp) (low, nilptr) == 0);
-	hgh_nil = ((*cmp) (hgh, nilptr) == 0);
-
 	BBPunfix(b->batCacheid);	/* don't need it anymore */
 
-	if (!low_nil && !hgh_nil && (*cmp)(hgh, low) < 0 ) {
-		tmp = low; low = hgh; hgh = tmp;	
+	for(i= p->nxt ; i!=p->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
+		BPMsplitpartition(&r,&bpmcat[i]->bid,low);
+		BPMsplitpartition(&r,&bpmcat[i]->bid,hgh);
 	}
-
-	for( i= p->nxt; i != p->bid && i ; i= bpmcat[i]->nxt){
-		sb = &bpmcat[i]->bid;
-		@:getBATdescriptor(sb,b,"bpm.range")@
-
-		/* overlap by excluding outliers */
-		if( *bid>0){
-			if( right(i,tlow,hgh) || left(i,thgh,low) ){
-				/* this fragment need not be split */
-			} else {
-				/* break the fragment */
-
-				if (!low_nil && inbetween(i,tlow,thgh,low) ){
-					BPMsplitpartition(&r,sb,low);
-					sb=&r;
-				}
-				
-				if (!hgh_nil && inbetween(i,tlow,thgh,hgh) ){
-						BPMsplitpartition(&r,sb,hgh);	
-				}
-#ifdef _DEBUG_BPM_
-				stream_printf(GDKout, "break fragment %d\n",i);
-#endif
-			}
-		} else {
-#ifdef _DEBUG_BPM_
-			stream_printf(GDKout," break on "); VALprint(GDKout,low);
-			stream_printf(GDKout," - "); VALprint(GDKout,hgh);
-			stream_printf(GDKout," \n"); 
-			BPMprintRecord(GDKout,bpmcat[i]);
-#endif
-			if( right(i,hlow,hgh) || left(i,hhgh,low) ){
-				/* this fragment need not be split */
-#ifdef _DEBUG_BPM_
-				stream_printf(GDKout, "no break fragment %d\n",i);
-#endif
-			} else {
-				/* break the fragment */
-
-				if (!low_nil && inbetween(i,hlow,hhgh,low) ){
-#ifdef _DEBUG_BPM_
-				stream_printf(GDKout, "low break fragment %d\n",i);
-#endif
-					BPMsplitpartition(&r,sb,low);
-					sb=&r;
-				}
-				
-				if (!hgh_nil && inbetween(i,hlow,hhgh,hgh) ){
-#ifdef _DEBUG_BPM_
-				stream_printf(GDKout, "high break fragment %d\n",i);
-#endif
-						BPMsplitpartition(&r,sb,hgh);	
-				}
-			}
-		}
-		BBPunfix(b->batCacheid);
-	}
+	BBPunfix(b->batCacheid);
 	*ret= 0;
 	return MAL_SUCCEED;
 }
