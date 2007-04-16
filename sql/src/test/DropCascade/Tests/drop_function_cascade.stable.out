@@ -19,43 +19,30 @@ Ready.
 
 Over..
 
-# 17:28:07 >  
-# 17:28:07 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30730 
-# 17:28:07 >  
+# 18:06:32 >  
+# 18:06:32 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31889 
+# 18:06:32 >  
 
-% sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 4,	2,	4,	1,	1,	5,	1,	1 # length
-[ 4793,	"t1",	4585,	NULL,	0,	false,	0,	0	]
-% sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 4,	2,	4,	35,	1,	5,	1,	1 # length
-[ 4799,	"v1",	4585,	"create view v1 as select * from t1;",	1,	false,	0,	0	]
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	sql,	aggr,	schema_id # name
-% int,	varchar,	varchar,	varchar,	boolean,	boolean,	int # type
-% 1,	0,	0,	0,	5,	5,	1 # length
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	sql,	aggr,	schema_id # name
-% int,	varchar,	varchar,	varchar,	boolean,	boolean,	int # type
-% 1,	0,	0,	0,	5,	5,	1 # length
-% sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
-% id,	depend_id,	depend_type # name
-% int,	int,	smallint # type
-% 4,	4,	1 # length
-[ 4794,	4797,	4	]
-[ 4794,	4799,	5	]
-[ 4793,	4799,	5	]
-[ 4795,	4799,	5	]
-[ 4796,	4799,	5	]
-% sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
-% id,	depend_id,	depend_type # name
-% int,	int,	smallint # type
-% 1,	1,	1 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "t1"	]
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "v1"	]
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 0 # length
 
-# 17:28:07 >  
-# 17:28:07 >  Done.
-# 17:28:07 >  
+# 18:06:32 >  
+# 18:06:32 >  Done.
+# 18:06:32 >  
 

@@ -1,0 +1,52 @@
+stdout of test 'drop_table_cascade` in directory 'src/test/DropCascade` itself:
+
+
+# 18:02:48 >  
+# 18:02:48 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=37174 --set xrpc_port=40727 --set monet_prompt= --trace "--dbname=mTests_src_test_DropCascade" --dbinit='include sql;' ; echo ; echo Over..
+# 18:02:48 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_DropCascade
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+#01 #BBPdir: writing BBP.dir (515 bats).
+
+Over..
+
+# 18:02:48 >  
+# 18:02:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37174 
+# 18:02:48 >  
+
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "t2"	]
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.triggers # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.idxs # table_name
+% name # name
+% varchar # type
+% 0 # length
+
+# 18:02:48 >  
+# 18:02:48 >  Done.
+# 18:02:48 >  
+

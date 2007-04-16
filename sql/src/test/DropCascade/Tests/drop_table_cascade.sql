@@ -39,14 +39,23 @@ END;
 
 CREATE INDEX id_index ON t1(id);
 
+--just for debug
+--select * from dependencies;
+
 DROP TABLE t1 CASCADE;
 
-select * from tables where name = 't1';
-select * from tables where name = 't2';
-select * from tables where name = 'v1';
-select * from triggers where name = 'test1';
-select * from functions where name = 'f2';
-select * from idxs where name = 'id_index';
+select name from tables where name = 't1';
+select name from tables where name = 't2';
+select name from tables where name = 'v1';
+select name from triggers where name = 'test1';
+select name from functions where name = 'f2';
+select name from idxs where name = 'id_index';
 
-select * from dependencies;
+--just for debug
+--select * from dependencies;
+
+drop function f1;
+drop table t2;
+--just for debug
+--select * from dependencies;
 

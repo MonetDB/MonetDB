@@ -37,8 +37,17 @@ CREATE VIEW v2 as select * from v1;
 drop view v1 cascade;
 
 
-select * from tables where name = 'v1';
-select * from tables where name = 'v2';
-select * from functions where name = 'f2';
+select name from tables where name = 'v1';
+select name from tables where name = 'v2';
+select name from functions where name = 'f2';
 
-select * from dependencies;
+--just for debug
+--select * from dependencies;
+
+
+drop function f1;
+drop table t1;
+
+--just for debug
+--select * from dependencies;
+

@@ -41,12 +41,22 @@ CREATE INDEX id_index ON t1(id);
 
 ALTER TABLE t1 DROP COLUMN id CASCADE;
 
-select * from tables where name = 't1';
-select * from tables where name = 't2';
-select * from tables where name = 'v1';
-select * from functions where name = 'f2';
-select * from triggers where name = 'test1';
-select * from idxs where name = 'id_index';
+select name from tables where name = 't1';
+select name from tables where name = 't2';
+select name from tables where name = 'v1';
+select name from functions where name = 'f2';
+select name from triggers where name = 'test1';
+select name from idxs where name = 'id_index';
+select name from columns where name = 'id' and table_id in (select * from tables where name = 't1' or name = 't2');
+select name from keys;
 
-select * from dependencies;
 
+--Just for debug
+--select * from dependencies;
+
+drop table t1;
+drop table t2;
+drop function f1;
+
+--Just for debug
+--select * from dependencies;

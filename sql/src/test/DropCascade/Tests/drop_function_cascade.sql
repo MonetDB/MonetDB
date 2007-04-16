@@ -34,9 +34,15 @@ END;
 
 DROP FUNCTION f1 CASCADE;
 
-select * from tables where name = 't1';
-select * from tables where name = 'v1';
-select * from functions where name = 'f1';
-select * from functions where name = 'f2';
+select name from tables where name = 't1';
+select name from tables where name = 'v1';
+select name from functions where name = 'f1';
+select name from functions where name = 'f2';
 
-select * from dependencies;
+--just for debug
+--select * from dependencies;
+
+drop table t1 cascade;
+
+--just for debug
+--select * from dependencies;
