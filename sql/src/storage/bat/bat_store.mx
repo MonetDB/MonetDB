@@ -66,8 +66,8 @@ extern BAT *temp_descriptor(log_bid b);
 #include "bat_bm.h"
 #include "bat_sequence.h"
 
-/* version 03.02.01 of catalog */
-#define CATALOG_VERSION 30201
+/* version 03.03.01 of catalog */
+#define CATALOG_VERSION 30301
 
 logger *sql_logger = NULL;
 static MT_Lock bs_lock;

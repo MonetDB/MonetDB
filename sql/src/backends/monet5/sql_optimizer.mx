@@ -256,8 +256,8 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 {
 	int i, actions = 0;
 	lng clk = GDKusec();
-	InstrPtr *rest= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->stop);
 	int n=1,rtop=0;
+	InstrPtr *rest= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->stop);
 	SQLbind *bind= (SQLbind*) alloca(sizeof(SQLbind)*mb->stop/2);
 	int j,k=0;
 

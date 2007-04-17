@@ -1017,6 +1017,14 @@ alter_table_element:
 	  append_string(l, $2);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_DEFAULT, l); }
+ |	opt_column ident SET NULLX
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  $$ = _symbol_create_list( SQL_NULL, l); }
+ |	opt_column ident SET NOT NULLX
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
  |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
  ;

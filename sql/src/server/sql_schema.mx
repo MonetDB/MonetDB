@@ -1180,6 +1180,15 @@ column_option(
 			res = SQL_OK;
 		}
 		break;
+		case SQL_NOT_NULL:
+		case SQL_NULL:
+		{
+			int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
+
+			mvc_null(sql, cs, null);
+			res = SQL_OK;
+		}
+		break;
 	}
 	if (res == SQL_ERR) {
 		(void) sql_error(sql, 02, "unknown column option (%ld)->token = %s\n", (long) s, token2string(s->token));

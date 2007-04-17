@@ -267,48 +267,17 @@ dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *name)
 }
 
 InstrPtr
-dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, int o2, int type, int rtype)
+multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, int o2, int rtype)
 {
 	InstrPtr q;
 
-	(void)type;
-		q = newStmt(mb, "mal","multiplex");
-		setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
-		freezeVarType(mb,getArg(q,0));
-		q = pushStr(mb, q, convertMultiplexMod(mod,name));
-		q = pushStr(mb, q, convertMultiplexFcn(name));
-		q = pushArgument(mb, q, o1);
-		q = pushArgument(mb, q, o2);
-/*
-	int match=0;
-
-	switch (*name){
-	case '+': case '-': case '*': case '/': case '%':
-		match=2;
-		break;
-	case '<': case '>': case '=': case '!':
-		if( *(name+1) && *(name+1)=='=') match++; else
-		if( *(name+1) == 0) match++;
-		match= 2;
-	}
-	if (strcmp(name,"hash") == 0 || strcmp(name,"xor") == 0)
-		match = 1;
-	if( (match && type <= TYPE_str) || match==2){
-		q = newStmt1(mb, batcalcRef, name);
-	setVarType(mb,getArg(q,0), newBatType(TYPE_any,rtype));
-		freezeVarType(mb,getArg(q,0));
-		q = pushArgument(mb, q, o1);
-		q = pushArgument(mb, q, o2);
-	} else {
-		q = newStmt(mb, "mal","multiplex");
-		setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
-		freezeVarType(mb,getArg(q,0));
-		q = pushStr(mb, q, convertMultiplexMod(mod,name));
-		q = pushStr(mb, q, convertMultiplexFcn(name));
-		q = pushArgument(mb, q, o1);
-		q = pushArgument(mb, q, o2);
-	}
-*/
+	q = newStmt(mb, "mal","multiplex");
+	setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
+	freezeVarType(mb,getArg(q,0));
+	q = pushStr(mb, q, convertMultiplexMod(mod,name));
+	q = pushStr(mb, q, convertMultiplexFcn(name));
+	q = pushArgument(mb, q, o1);
+	q = pushArgument(mb, q, o2);
 	return q;
 }
 
@@ -739,7 +708,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				r = getDestVar(q);
 
-				q= dump_multiplex(mb,mod,convertOperator(op),l,r,tail_type(s->op2.stval)->type->localtype, TYPE_bit);
+				q = multiplex2(mb,mod,convertOperator(op),l,r,TYPE_bit);
 				k = getDestVar(q);
 
 				q = newStmt1(mb, algebraRef, "uselect");
@@ -1259,7 +1228,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
 				if (!special) {
-					q= dump_multiplex(mb,mod,convertOperator(fimp),l,r,tail_type(s->op2.stval)->type->localtype, s->op4.funcval->func->res.type->localtype);
+					q = multiplex2(mb,mod,convertOperator(fimp),l,r, s->op4.funcval->func->res.type->localtype);
 				} else {
 					mod= convertMultiplexMod(mod,fimp);
 					fimp= convertMultiplexFcn(fimp);
