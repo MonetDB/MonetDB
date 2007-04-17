@@ -3024,9 +3024,9 @@ static ssize_t wbs_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
                 todo -= nbytes;
                 buf = (void*) (((char*) buf) + nbytes);
                 wbs->pos += nbytes;
-                if (flush) wbs_flush(s);
+                if (flush && wbs_flush(s) < 0) return -1;
         }
-        return reqsize;
+        return cnt;
 }
 
 static void wbs_close(stream *s) {
