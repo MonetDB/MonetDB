@@ -674,6 +674,7 @@ by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 #include "clients_config.h"
 #include <monet_utils.h>
 #include <stream.h>		/* include before Mapi.h */
+#include <stream_socket.h>
 #include "Mapi.h"
 
 #ifdef HAVE_UNISTD_H
@@ -685,12 +686,6 @@ by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 #endif
 #include  <sys/types.h>
 
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef NATIVE_WIN32
-# include <winsock.h>
-#endif
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif

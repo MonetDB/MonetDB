@@ -474,6 +474,7 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 @c
 #include "pf_config.h"
 #include "xrpc_client.h"
+#include <stream_socket.h>
 
 #define errCheck(iterc, argc, ws,                                      \
             fvid, fiter, fitem, fkind,                                 \

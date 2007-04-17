@@ -98,6 +98,7 @@ GetFileVersion(char *filepath, char *version, int maxversionlen)
 	UINT length = 0;
 	char string[512] = "";
 	LPSTR versionstr;
+	PVOID ptr;
 
 	versioninfosize = GetFileVersionInfoSize(filepath, &handle);
 	if (!versioninfosize) {
@@ -115,7 +116,8 @@ GetFileVersion(char *filepath, char *version, int maxversionlen)
 		return FALSE;
 	}
 
-	if (!VerQueryValue(fileinfo, TEXT("\\VarFileInfo\\Translation"), (LPVOID *) & translation, &length)) {
+	ptr = (PVOID) &translation;
+	if (!VerQueryValue(fileinfo, TEXT("\\VarFileInfo\\Translation"), (LPVOID *) ptr, &length)) {
 		error = GetLastError();
 		free(fileinfo);
 		free(versioninfo);
@@ -124,7 +126,8 @@ GetFileVersion(char *filepath, char *version, int maxversionlen)
 
 	snprintf(string, sizeof(string), "\\StringFileInfo\\%04x%04x\\FileVersion", LOWORD(*translation), HIWORD(*translation));
 
-	if (!VerQueryValue(fileinfo, string, (PVOID *) & versionstr, &length)) {
+	ptr = (PVOID) &versionstr;
+	if (!VerQueryValue(fileinfo, string, (PVOID *) ptr, &length)) {
 		error = GetLastError();
 		free(fileinfo);
 		free(versioninfo);

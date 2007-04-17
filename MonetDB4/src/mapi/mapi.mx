@@ -189,12 +189,7 @@ mapi_export int active_clients(char *lang);
 #include <monet.h>
 #include "mapi.h"
 #include  <sys/types.h>
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef NATIVE_WIN32
-# include <winsock.h>
-#endif
+#include <stream_socket.h>
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
@@ -205,14 +200,6 @@ mapi_export int active_clients(char *lang);
 
 #define SOCKPTR struct sockaddr *
 
-#ifdef HAVE_OPENSSL
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#endif
-
-#ifndef INVALID_SOCKET
-#define INVALID_SOCKET (-1)
-#endif
 @c
 #define MAX_FRONTENDS 8
 static int nr_frontends = 0;

@@ -138,7 +138,6 @@ Start XPRC receiver using the default values as specified in \
 #include "pathfinder.h"
 
 #include <gdk.h>
-#include <stream.h>
 #include <mapi.h>
 #include <time.h>
 

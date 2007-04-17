@@ -69,7 +69,6 @@
 #define SERIALIZE_H
 
 #include "gdk.h"
-#include "stream.h"
 
 /* boolean type `bool' and constants `true', `false' */
 #ifdef HAVE_STDBOOL_H
