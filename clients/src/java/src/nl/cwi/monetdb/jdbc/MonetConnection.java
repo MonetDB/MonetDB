@@ -24,7 +24,6 @@ import java.io.*;
 import java.nio.*;
 import java.security.*;
 import nl.cwi.monetdb.jdbc.util.*;
-import nl.cwi.monetdb.mcl.net.*;
 
 /**
  * A Connection suitable for the MonetDB database.
@@ -65,11 +64,7 @@ public class MonetConnection implements Connection {
 	/** The password to use when authenticating */
 	private final String password;
 	/** A connection to Mserver using a TCP socket */
-	private final MapiSocket server;
-	/** The Reader from the server */
-	private final Reader in;
-	/** The Writer to the server */
-	private final Writer out;
+	private final MonetSocketBlockMode monet;
 
 	/** Whether this Connection is closed (and cannot be used anymore) */
 	private boolean closed;
@@ -141,7 +136,7 @@ public class MonetConnection implements Connection {
 	 */
 	MonetConnection(
 		Properties props)
-		throws SQLException, IllegalArgumentException
+		throws SQLException, IllegalArgumentException, MonetRedirectException
 	{
 		this.hostname = props.getProperty("host");
 		int port;
@@ -154,7 +149,8 @@ public class MonetConnection implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
-		this.javaPreparedStatements = Boolean.valueOf(props.getProperty("java_prepared_statements")).booleanValue();
+		this.javaPreparedStatements = Boolean.valueOf(props.getProperty("java_prepared_statements", "false")).booleanValue();
+
 		String language = props.getProperty("language");
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 		String hash = props.getProperty("hash");
@@ -180,11 +176,14 @@ public class MonetConnection implements Connection {
 		commandTempl = new String[3]; // pre, post, sep
 
 		try {
-			server = new MapiSocket();
+			monet = new MonetSocketBlockMode(hostname, port);
 
-			if (hash != null) server.setHash(hash);
-			if (database != null) server.setDatabase(database);
-			server.setLanguage(language);
+			/*
+			 * There is no need for a lock on the monet object here.
+			 * Since we just created the object, and the reference to
+			 * this object has not yet been returned to the caller,
+			 * noone can (in a legal way) know about the object.
+			 */
 
 			// we're debugging here... uhm, should be off in real life
 			if (debug) {
@@ -201,22 +200,51 @@ public class MonetConnection implements Connection {
 						f = new File(pre + "-" + i + suf);
 					}
 
-					server.debug(f.getAbsolutePath());
+					monet.debug(f.getAbsolutePath());
 				} catch (IOException ex) {
 					throw new SQLException("Opening logfile failed: " + ex.getMessage());
 				}
 			}
 
-			try {
-				String warning = 
-					server.connect(hostname, port, username, password);
-				if (warning != null) addWarning(warning);
-			} catch (Exception e) {
-				throw new SQLException(e.getMessage());
-			}
+			// read challenge, send response
+			String[] nulltempl = {null, null, null};
+			monet.writeLine(nulltempl,
+					getChallengeResponse(
+						monet,
+						monet.readLine(),
+						username,
+						password,
+						language,
+						database,
+						hash
+						)
+					);
 
-			in = server.getReader();
-			out = server.getWriter();
+			// read monet response till prompt
+			List redirects = null;
+			String err = "", tmp;
+			int lineType = 0;
+			while (lineType != MonetSocketBlockMode.PROMPT1) {
+				if ((tmp = monet.readLine()) == null)
+					throw new IOException("Connection to server lost!");
+				if ((lineType = monet.getLineType()) == MonetSocketBlockMode.ERROR) {
+					err += "\n" + tmp.substring(1);
+				} else if (lineType == MonetSocketBlockMode.INFO) {
+					addWarning(tmp.substring(1));
+				} else if (lineType == MonetSocketBlockMode.REDIRECT) {
+					if (redirects == null)
+						redirects = new ArrayList();
+					redirects.add(tmp.substring(1));
+				}
+			}
+			if (err != "") {
+				monet.disconnect();
+				throw new SQLException(err.trim());
+			}
+			if (redirects != null) {
+				monet.disconnect();
+				throw new MonetRedirectException(redirects);
+			}
 
 			// we seem to have managed to log in, let's store the
 			// language used
@@ -289,6 +317,131 @@ public class MonetConnection implements Connection {
 		closed = false;
 	}
 
+	/**
+	 * A little helper function that processes a challenge string, and
+	 * returns a response string for the server.  If the challenge
+	 * string is null, a challengeless response is returned.
+	 *
+	 * @param monet the MonetSocketBlockMode stream to write to
+	 * @param chalstr the challenge string
+	 * @param username the username to use
+	 * @param password the password to use
+	 * @param language the language to use
+	 * @param database the database to connect to
+	 * @param hash the hash method(s) to use, or NULL for all supported
+	 *             hashes
+	 */
+	private String getChallengeResponse(
+			MonetSocketBlockMode monet,
+			String chalstr,
+			String username,
+			String password,
+			String language,
+			String database,
+			String hash
+	) throws SQLException, IOException {
+		int version = 0;
+		String response;
+		
+		// hack alert
+		monet.readLine(); /* prompt */
+		// parse the challenge string, split it on ':'
+		String[] chaltok = chalstr.split(":");
+		if (chaltok.length <= 4) throw
+			new SQLException("Server challenge string unusable!");
+
+		// challenge string to use as salt/key
+		String challenge = chaltok[0];
+		// chaltok[1]; // server type, not needed yet 
+		try {
+			version = Integer.parseInt(chaltok[2].trim());	// protocol version
+		} catch (NumberFormatException e) {
+			throw new SQLException("Protocol version unparseable: " + chaltok[3]);
+		}
+
+		// handle the challenge according to the version it is
+		switch (version) {
+			default:
+				throw new SQLException("Unsupported protocol version: " + version);
+			case 8:
+				// proto 7 (finally) used the challenge and works with a
+				// password hash.  The supported implementations come
+				// from the server challenge.  We chose the best hash
+				// we can find, in the order SHA1, MD5, plain.  Also,
+				// the byte-order is reported in the challenge string,
+				// which makes sense, since only blockmode is supported.
+				// proto 8 made this obsolete, but retained the
+				// byteorder report for future "binary" transports.  In
+				// proto 8, the byteorder of the blocks is always little
+				// endian because most machines today are.
+				String hashes = (hash == null ? chaltok[3] : hash);
+				String pwhash;
+				if (hashes.indexOf("SHA1") != -1) {
+					try {
+						MessageDigest md = MessageDigest.getInstance("SHA-1");
+						md.update(password.getBytes("UTF-8"));
+						md.update(challenge.getBytes("UTF-8"));
+						byte[] digest = md.digest();
+						pwhash = "{SHA1}" + toHex(digest);
+					} catch (NoSuchAlgorithmException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					} catch (UnsupportedEncodingException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					}
+				} else if (hashes.indexOf("MD5") != -1) {
+					try {
+						MessageDigest md = MessageDigest.getInstance("MD5");
+						md.update(password.getBytes("UTF-8"));
+						md.update(challenge.getBytes("UTF-8"));
+						byte[] digest = md.digest();
+						pwhash = "{MD5}" + toHex(digest);
+					} catch (NoSuchAlgorithmException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					} catch (UnsupportedEncodingException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					}
+				} else if (hashes.indexOf("plain") != -1) {
+					pwhash = "{plain}" + password + challenge;
+				} else {
+					throw new SQLException("no supported password hashes in " + hashes);
+				}
+				// TODO: some day when we need this, we should store
+				// this
+				if (chaltok[4].equals("BIG")) {
+					// byte-order of server is big-endian
+				} else if (chaltok[4].equals("LIT")) {
+					// byte-order of server is little-endian
+				} else {
+					throw new SQLException("Invalid byte-order: " + chaltok[5]);
+				}
+
+				// generate response
+				response = "BIG:";	// JVM byte-order is big-endian
+				response += username + ":" + pwhash + ":" + language;
+				response += ":" + database + ":";
+
+				return(response);
+		}
+	}
+
+	/**
+	 * Small helper method to convert a byte string to a hexadecimal
+	 * string representation.
+	 *
+	 * @param digest the byte array to convert
+	 * @return the byte array as hexadecimal string
+	 */
+	private static String toHex(byte[] digest) {
+		StringBuffer r = new StringBuffer(digest.length * 2);
+		for (int i = 0; i < digest.length; i++) {
+			// zero out higher bits to get unsigned conversion
+			int b = digest[i] << 24 >>> 24;
+			if (b < 16) r.append("0");
+			r.append(Integer.toHexString(b));
+		}
+		return(r.toString());
+	}
+
 	//== methods of interface Connection
 
 	/**
@@ -319,7 +472,7 @@ public class MonetConnection implements Connection {
 			}
 		}
 		// close the socket
-		server.close();
+		monet.disconnect();
 		// report ourselves as closed
 		closed = true;
 	}
@@ -938,10 +1091,10 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if an IO exception or a database error occurs
 	 */
 	void sendIndependantCommand(String command) throws SQLException {
-		synchronized (server) {
+		synchronized (monet) {
 			try {
-				out.writeLine(queryTempl, command);
-				String error = out.waitForPrompt();
+				monet.writeLine(queryTempl, command);
+				String error = monet.waitForPrompt();
 				if (error != null) throw new SQLException(error);
 			} catch (IOException e) {
 				throw new SQLException(e.getMessage());
