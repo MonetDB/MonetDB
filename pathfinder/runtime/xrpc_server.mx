@@ -225,6 +225,7 @@ Start XPRC receiver using the default values as specified in \
 @c
 #include "pf_config.h"
 #include "xrpc_server.h"
+#include <stream_socket.h>
 
 extern int xrpc_port;
 int rpcd_running = 0;
