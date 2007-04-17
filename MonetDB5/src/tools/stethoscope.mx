@@ -76,7 +76,6 @@ information needed for a descent post-mortem analysis.
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
-#include <stream.h>
 
 
 static struct {

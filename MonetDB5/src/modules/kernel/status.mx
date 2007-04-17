@@ -198,7 +198,6 @@ status_export int set_mem_maxsize(lng *num);
 
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
-#include <stream.h>
 #endif
 
 #ifndef NATIVE_WIN32

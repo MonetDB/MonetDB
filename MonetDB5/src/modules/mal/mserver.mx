@@ -374,14 +374,9 @@ m_export str SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "mal_config.h"
 #include "mserver.h"
+#include <stream_socket.h>
 
 #include  <sys/types.h>
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_WIN32
-# include <winsock.h>
-#endif
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
@@ -401,11 +396,6 @@ m_export str SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #define s_close(s)	closesocket(s)
 #else
 #define s_close(s)	close(s)
-#endif
-
-#ifdef HAVE_OPENSSL
-#include <openssl/ssl.h>
-#include <openssl/err.h>
 #endif
 
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',

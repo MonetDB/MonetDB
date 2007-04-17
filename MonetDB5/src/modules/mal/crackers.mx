@@ -5525,6 +5525,7 @@ Sync_@1_@2(int m, int h){
         int gapH = 1;
 	bit *inclusiveHgh,*inclusiveLow;
 	@1 *low, *hgh;
+	lng j;
 
         if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL)
                 throw(MAL, "crackers.crackRange", "Cannot access crack index");
@@ -5578,7 +5579,7 @@ Sync_@1_@2(int m, int h){
                 h2tail += h2size;
 	}	
 
-	for (lng j=0; j<syncs; j++){
+	for (j=0; j<syncs; j++){
 		low = (@1*)h1head; 
 		hgh = (@1*)h1tail; 
 		inclusiveLow = (bit*)h2head; 
@@ -5755,6 +5756,7 @@ createView:
                 lng size;
                 BUN ptail, ctail, nhead, ntail, nlast;
                 int csize, psize, nsize;
+		lng j;
                 if ((bo = BATdescriptor(*bid)) == NULL)
                         throw(MAL, "crackers.crackRange", "Cannot access descriptor");
                 if ((bp = BATdescriptor(*pbid)) == NULL)
@@ -5770,7 +5772,7 @@ createView:
                 ntail = BUNtloc(b,  BUNfirst(b));
                 ctail = BUNtloc(bo, BUNfirst(bo));
                 ptail = BUNtloc(bp, BUNfirst(bp));
-                for(lng j=0;j<size;j++){
+                for(j=0;j<size;j++){
                         *(@1*)nhead = *(@1*)ctail;
                         *(@2*)ntail = *(@2*)ptail;
                         nhead+=nsize;
@@ -6025,6 +6027,7 @@ CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
         BUN pairt, pivott, pivotlast;        
 	lng size;
 	int bsize, psize;
+	lng j;
 
         if ((b = BATdescriptor(*cpair)) == NULL) {
                 throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
@@ -6037,7 +6040,7 @@ CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
 	pivott = BUNtloc(p, BUNfirst(p));
 	bsize = BUNsize(b);
 	psize = BUNsize(p);
-	for (lng j = 0; j<size; j++){
+	for (j = 0; j<size; j++){
 		if (@3)	
 			*(bit*)pivott = (bit)TRUE;
 		else 
@@ -6071,6 +6074,7 @@ CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
 	lng skip;
 	int m;
 	lng cl1,cl2,ch1,ch2;
+	lng j;
 
 	m = existsTreeIndexSideways(*bid, *pbid);
 	if (m==-1){	
@@ -6105,7 +6109,7 @@ CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
 	bsize = BUNsize(b);
 	psize = BUNsize(p);
 	skip = 0;
-	for (lng j = 0; j<size; j++){
+	for (j = 0; j<size; j++){
 		if (*(bit*)pivott == TRUE){
 	        	pairt += skip*bsize;	
 			if (!(@3))	
@@ -6329,6 +6333,7 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
         lng skip;
 	int m;
 	lng cl1,cl2,ch1,ch2;
+	lng j;
 
 	m = existsTreeIndexSideways(*bid, *pbid);
 	if (m==-1){	
@@ -6368,7 +6373,7 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
         rsize = BUNsize(r);
         skip = 0;
 	fsize = 0;
-        for (lng j = 0; j<size; j++){
+        for (j = 0; j<size; j++){
                 if (*(bit*)pivott == TRUE){
                         pairh += skip*bsize;
 			*(@1*)rest = *(@1*)pairh; 
@@ -6408,6 +6413,7 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
         lng skip;
 	int m;
 	lng cl1,cl2,ch1,ch2;
+	lng j;
 
 	/* If the necessary map does not exits, then create it */	
 	m = existsTreeIndexSideways(*bid, *pbid);
@@ -6454,7 +6460,7 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
         rsize = BUNsize(r);
         skip = 0;
 	fsize = 0;
-        for (lng j = 0; j<size; j++){
+        for (j = 0; j<size; j++){
                 if (*(bit*)pivott == TRUE){
                         pairt += skip*bsize;
 			*(@2*)rest = *(@2*)pairt; 

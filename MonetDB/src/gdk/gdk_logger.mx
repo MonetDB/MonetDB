@@ -71,7 +71,6 @@ the bats are made persistent, i.e. a bbp sub-commit is done.
 #define LOG_ERR (-1)
 
 #include <gdk.h>
-#include <stream.h>
 
 typedef struct logaction {
 	int type;   /* type of change */

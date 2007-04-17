@@ -33,7 +33,6 @@
 #include <sql_backend.h>
 #include <sql_catalog.h>
 #include <sql_storage.h>
-#include <stream.h>
 #include <sql_keyword.h>
 #include <sql_atom.h>
 

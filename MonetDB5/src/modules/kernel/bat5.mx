@@ -731,7 +731,6 @@ bat5_export int CMDbatsize(lng *tot, BAT *b);
 @c
 #include "mal_config.h"
 #include "bat5.h"
-#include <stream.h>
 #include "mal_exception.h"
 @-
 @= batconvert
