@@ -132,9 +132,9 @@ XQUERYexit(Client c)
 str
 XQUERYinitClient(Client c)
 {
-	if (c->state[PARSER] == NULL) {
+	if (c->state[MAL_SCENARIO_PARSER] == NULL) {
 		Xbackend  xb = newXbackend(c);
-		c->state[PARSER] = (void*)xb;
+		c->state[MAL_SCENARIO_PARSER] = (void*)xb;
 	}
 
 	c->yycur = 0;		/* make sure we don't reuse the used input */
@@ -145,9 +145,9 @@ XQUERYinitClient(Client c)
 str
 XQUERYexitClient(Client c)
 {
-	if (c->state[PARSER]) {
-		GDKfree(c->state[PARSER]); /* TODO destroyXbackend */
-		c->state[PARSER] = NULL;
+	if (c->state[MAL_SCENARIO_PARSER]) {
+		GDKfree(c->state[MAL_SCENARIO_PARSER]); /* TODO destroyXbackend */
+		c->state[MAL_SCENARIO_PARSER] = NULL;
 	}
 	return MAL_SUCCEED;
 }
@@ -157,7 +157,7 @@ XQUERYreader(Client c)
 {
 	int go = TRUE;
 	int more = TRUE;
-	Xbackend be = ((Xbackend) c->state[PARSER]);
+	Xbackend be = ((Xbackend) c->state[MAL_SCENARIO_PARSER]);
 	bstream *in = c->fdin;
 	int language = -1;
 	int blocked = isa_block_stream(in->s);
@@ -231,7 +231,7 @@ XQUERYparser(Client c)
 	stream_printf(c->fdout,"#start the xquery parser\n");
 #endif
 
-	xb = (Xbackend) c->state[PARSER];
+	xb = (Xbackend) c->state[MAL_SCENARIO_PARSER];
 	if(xb == NULL || c->curprg->def== NULL) 
 		return createException(MAL, "xquery.parser","No context available\n");
 
@@ -276,7 +276,7 @@ XQUERYengine(Client c)
 #ifdef _XQUERY_SCENARIO_DEBUG
 	stream_printf(c->fdout,"#start the xquery engine\n");
 #endif
-	xb= (Xbackend) c->state[PARSER];
+	xb= (Xbackend) c->state[MAL_SCENARIO_PARSER];
 	if (xb == NULL || c->curprg->def== NULL|| c->curprg->def->errors)
 		return MAL_SUCCEED;
 

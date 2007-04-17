@@ -854,11 +854,11 @@ getContext(mvc **c, backend **b )
 
 	if (_client == NULL ) 
 		throw(SQL, "mvc","Can not access client record");
-	if (_client->state[PARSER] == NULL || _client->state[OPTIMIZE] == NULL)
-		throw(SQL, "mvc","PARSER not initialized");
-	*c = ((mvc *) _client ->state[OPTIMIZE]); 
+	if (_client->state[MAL_SCENARIO_PARSER] == NULL || _client->state[MAL_SCENARIO_OPTIMIZE] == NULL)
+		throw(SQL, "mvc","MAL_SCENARIO_PARSER not initialized");
+	*c = ((mvc *) _client ->state[MAL_SCENARIO_OPTIMIZE]); 
 	if (b)
-		*b = ((backend*) _client->state[PARSER]);
+		*b = ((backend*) _client->state[MAL_SCENARIO_PARSER]);
 	return MAL_SUCCEED;
 }
 

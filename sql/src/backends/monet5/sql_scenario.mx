@@ -313,7 +313,7 @@ SQLinitClient(Client c)
 	if (!SQLinitialized && (msg = SQLinit(c)) != MAL_SUCCEED)
 		return msg;
 	
-	if ((backend *) c->state[PARSER] == 0) {
+	if ((backend *) c->state[MAL_SCENARIO_PARSER] == 0) {
 		m = mvc_create((c-mal_clients), 0, SQLdebug, c->fdin, c->fdout);
 
 		global_variables(m, "monetdb", "sys");
@@ -333,11 +333,11 @@ SQLinitClient(Client c)
 			snprintf(fn, BUFSIZ, "sql.%d", (int)(c - mal_clients));
 			m->scanner.log = open_wastream(fn);
 		}
-		c->state[PARSER] = (void *) backend_create(m, c);
-		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
-		c->state[OPTIMIZE] = m;
+		c->state[MAL_SCENARIO_PARSER] = (void *) backend_create(m, c);
+		((backend*)c->state[MAL_SCENARIO_PARSER])->language = 'S';	/*expect SQL text first */
+		c->state[MAL_SCENARIO_OPTIMIZE] = m;
 	} else {
-		m = c->state[OPTIMIZE];
+		m = c->state[MAL_SCENARIO_OPTIMIZE];
 		/* TODO reset global variables */
 	}
 
@@ -355,15 +355,15 @@ SQLexitClient(Client c)
 	if (SQLinitialized == FALSE) {
 		throw(SQL, "SQLinitClient", "Catalogue not available");
 	}
-	if ((backend *) c->state[PARSER] && (mvc *) c->state[OPTIMIZE]) {
-		m= (mvc *) c->state[OPTIMIZE];
+	if ((backend *) c->state[MAL_SCENARIO_PARSER] && (mvc *) c->state[MAL_SCENARIO_OPTIMIZE]) {
+		m= (mvc *) c->state[MAL_SCENARIO_OPTIMIZE];
 		res_tables_destroy(m->results);
 		m->results= NULL;
 		mvc_destroy(m);
-		backend_destroy((backend *) c->state[PARSER]);
+		backend_destroy((backend *) c->state[MAL_SCENARIO_PARSER]);
 		/* files are already closed */
-		c->state[OPTIMIZE] = NULL;
-		c->state[PARSER] = NULL;
+		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
+		c->state[MAL_SCENARIO_PARSER] = NULL;
 	}
 	return MAL_SUCCEED;
 }
@@ -436,7 +436,7 @@ SQLstatementIntern(str *expr, str nme, int execute)
 	char *n;
 	str msg = MAL_SUCCEED;
 	Client c= MCgetClient();
-	backend *sql = ((backend *) c->state[PARSER]);
+	backend *sql = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	int len = strlen(*expr);
 
 #ifdef _SQL_COMPILE
@@ -444,7 +444,7 @@ SQLstatementIntern(str *expr, str nme, int execute)
 #endif
 	if (!sql) {
 		msg = SQLinitEnvironment(&err);
-		sql = ((backend *) c->state[PARSER]);
+		sql = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	}
 	if (msg)
 		throw(SQL, "SQLstatement", "Catalogue not available");
@@ -537,11 +537,11 @@ We don;t search the cache for a previous incarnation yet.
 #endif
 
 		if ( execute) {
-			backend *be = c->state[PARSER];
+			backend *be = c->state[MAL_SCENARIO_PARSER];
 			sql->out = NULL; /* no output */
-			c->state[PARSER] = sql;
+			c->state[MAL_SCENARIO_PARSER] = sql;
 			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
-			c->state[PARSER] = be;
+			c->state[MAL_SCENARIO_PARSER] = be;
 			MSresetInstructions(c->curprg->def, 1);
 			freeVariables(c->curprg->def, 0, 0);
 			c->curprg= oldsym;
@@ -665,7 +665,7 @@ SQLreader(Client c)
 {
 	int go = TRUE;
 	int more = TRUE;
-	backend *be = ((backend *) c->state[PARSER]);
+	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	bstream *in = c->fdin;
 	int language = -1;
 	mvc *m = NULL;
@@ -821,7 +821,7 @@ SQLparser(Client c)
 	int err = 0;
 	prot oldmode;
 
-	be = ((backend *) c->state[PARSER]);
+	be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	if (be == 0) {
 		showException(SQL,"sql","SQL state descriptor missing\n");
 		throw(SQL, "SQLparser", "State descriptor missing");
@@ -1331,7 +1331,7 @@ SQLrecompile(Client c, backend *be)
 str
 SQLengine(Client c)
 {
-	backend *be = ((backend *) c->state[PARSER]);
+	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	return SQLengineIntern(c, be);
 }
 

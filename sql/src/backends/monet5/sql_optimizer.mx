@@ -460,7 +460,7 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 void
 addQueryToCache(Client c)
 {
-	backend *be = ((backend *) c->state[PARSER]);
+	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	str optimizer;
 	MalBlkPtr mb;
 
@@ -480,7 +480,7 @@ to allow inspection.
 @c
 	if (mb->errors) {
 		mvc *m;
-		m = ((mvc *) c->state[OPTIMIZE]);
+		m = ((mvc *) c->state[MAL_SCENARIO_OPTIMIZE]);
 		showErrors();
 
 		if (c->listing)
@@ -517,7 +517,7 @@ care of.
 		/* time to execute the optimizers */
 		if( c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-		SQLgetStatistics((mvc *) c->state[OPTIMIZE],mb);
+		SQLgetStatistics((mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
 		optimizeMALBlock(mb);
 	}
 }
