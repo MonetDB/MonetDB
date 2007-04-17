@@ -737,105 +737,66 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 }
 
 static stmt*
-sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, stmt **updates, list *l, sql_key *fk)
+sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, stmt **updates, list *l)
 {
-	sql_table *t = NULL;
+	int len = 0, i;
+	node *m, *o;
+	sql_idx *ri = ((sql_fkey*)k)->rkey->k.idx;
+	stmt *ts = stmt_basetable(ri->t, ri->t->base.name), *fts, **new_updates, *s;
+	stmt *rows;
+	sql_table *t = mvc_bind_table(sql, schema, k->t->base.name);
 
-	t = mvc_bind_table(sql, schema, fk->t->base.name);
-	
-	return sql_update(sql, schema, t, updates, l);
-}
+	fts = stmt_basetable(k->idx->t, k->idx->t->base.name);
 
-
-static stmt*
-sql_update_cascade_Fkeys_set(mvc *sql, sql_schema *schema, sql_key *fk, int set_type)
-{
-	sql_table *t = NULL;
-	int len = 0, i = 0;
-	stmt *s = NULL;
-	node *n = NULL;
-	stmt **updates;
-	scope *scp = NULL;
-	tvar *tv = NULL;
-	list * l = NULL;
-	
-	l = create_stmt_list();
-	len = list_length(fk->columns);
-        updates = NEW_ARRAY(stmt *, len);
-                
-	for (i = 0; i < len; i++)
-		updates[i] = NULL;
-
-
-	t = mvc_bind_table(sql, schema, fk->t->base.name);
-	scp = scope_open(scp);
-        tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
-
-	for (n = fk->columns->h, i = 0; n; n = n->next, i++) {
-		stmt *v = NULL;
-		sql_column *c = (sql_column *) n->data;
-	
-		if ((set_type == ACT_SET_DEFAULT) && c->def) {
-			stmt *sq;
-			char buf[BUFSIZ];
-	
-			snprintf(buf, BUFSIZ, "select %s;", c->def);
-			sq = scope_sqlparse(sql, NULL, buf, sql->mode);
+	rows = stmt_idxbat(k->idx, RDONLY);
+	rows = stmt_semijoin(stmt_reverse(rows), stmt_dup(updates[updcol]));
 		
-			if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
-				cond_stmt_destroy(sq);
-				cleanup_stmts(updates, 1);
+	len = list_length(t->columns.set);
+	new_updates = NEW_ARRAY(stmt *, len);
+
+	for (i = 0; i < len; i++)
+		new_updates[i] = NULL;
+
+	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
+		sql_kc *fc = m->data;
+		sql_kc *c = o->data;
+		stmt *upd;
+
+		if (updates[c->c->colnr]) {
+			upd = stmt_dup(updates[fc->c->colnr]->op2.stval);
+		} else
+			upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
+
+		if (!upd || (upd = check_types(sql, &fc->c->type, upd, type_equal)) == NULL) {
+				stmt_destroy(rows);
+				list_destroy(l);
+				cleanup_stmts(new_updates, len);
 				return NULL;
-			}
-       	                                         
-			v = stmt_dup(sq->op1.lval->h->data);
-			v = check_types(sql, &c->type, v, type_equal);
-	
-			stmt_destroy(sq);
-	
-		}
-		else 
-			v = stmt_atom(atom_general(&c->type, NULL, 0));
-
-		if (!v || (v = check_types(sql, &c->type, v, type_equal)) == NULL) {
-			stmt_destroy(v);
-       	         	list_destroy(l);
-       	         	cleanup_stmts(updates, 1);
-                	return NULL;
 		}
 
-		if (v->nrcols <= 0) {
-        		v = stmt_const(stmt_reverse(v ? first_subset(s) : stmt_bat(c, stmt_dup(tv->s), RDONLY)), v);
-        	} else {
-	        	/* s is a table result ie new oid, original oid
-                 	* v is a result based on subset s, new oid, val
-                 	* So a join is needed to get original oid, val
-                	*/
-                	v = stmt_join(stmt_reverse(first_subset(s)), v, cmp_equal);
-		}
-
+		if (upd->nrcols <= 0) 
+			upd = stmt_const(stmt_reverse(rows ? first_subset(rows) : stmt_bat(fc->c, stmt_dup(fts), RDONLY)), upd);
+		
 		/* new bats need values replaced */
-        	if (c->base.flag == TR_NEW)
-        		updates[c->colnr] = stmt_replace(stmt_bat(c, stmt_dup(tv->s), INS), stmt_dup(v));
-        	else
-                	updates[c->colnr] = stmt_insert(stmt_bat(c, stmt_dup(tv->s), UPD), stmt_dup(v));
-        
-		list_append(l, stmt_dup(updates[c->colnr]));
+		if (c->c->base.flag == TR_NEW)
+			new_updates[c->c->colnr] = stmt_replace(stmt_bat(fc->c, stmt_dup(fts), INS), stmt_dup(upd));
+		else
+			updates[c->c->colnr] = stmt_insert(stmt_bat(fc->c, stmt_dup(fts), UPD), stmt_dup(upd));
+		list_append(l, stmt_dup(new_updates[fc->c->colnr]));
 	}
 
-	list_append(l, stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1)));
-	stmt_destroy(s);
-
-        if ((s = sql_update(sql, schema, t, updates, l)) == NULL) {
-        	list_destroy(l);
-                cleanup_stmts(updates, len);
-                return NULL;
+	stmt_destroy(ts);
+	stmt_destroy(fts);
+	
+	if ((s = sql_update(sql, schema, t, new_updates, l)) == NULL) {
+		list_destroy(l);
+		cleanup_stmts(new_updates, len);
+		return NULL;
 	}
-        
-        scp = scope_close(scp);
-        cleanup_stmts(updates, len);
+	cleanup_stmts(new_updates, len);
 	return s;
 }
+
 
 static void 
 sql_update_ukey(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, int updcol, list *l) 
@@ -856,15 +817,11 @@ sql_update_ukey(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, int up
 				case ACT_NO_ACTION: 
 					break;
 				case ACT_SET_NULL: 
-					s = sql_update_cascade_Fkeys_set(sql, schema, fk, ACT_SET_NULL);
-					list_prepend(l, s);
 					break;
 				case ACT_SET_DEFAULT: 
-					s = sql_update_cascade_Fkeys_set(sql, schema, fk, ACT_SET_DEFAULT);
-					list_prepend(l, s);
 					break;
 				case ACT_CASCADE: 
-					s = sql_update_cascade_Fkeys(sql, schema, updates, l, fk);
+					s = sql_update_cascade_Fkeys(sql, schema, fk, updcol, updates, l);
 					list_prepend(l, s);
 					break;
 				default:	/*RESTRICT*/
@@ -983,7 +940,6 @@ sql_update_idxs(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list
 	int res = 1;
 	node *n;
 	int updcol;
-	list * keys = NULL;
 
 	if (!t->idxs.set)
 		return res;
@@ -1004,25 +960,20 @@ sql_update_idxs(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list
 		} else if (i->type == join_idx) {
 			is = join_idx_update(i, updates, updcol);
 		}
-		if (i->key && !list_find_id(sql->cascade_action, i->key->base.id)){
-			int id = i->key->base.id;
-
-			if ( sql->cascade_action) {
-				list_append(sql->cascade_action, &id); 
-			}
-			else {
-				keys = list_create((fdestroy) NULL);
-				keys = list_append(keys, &id);
-				sql->cascade_action = keys;
+		if (i->key) {
+			if (!sql->cascade_action) {
+				sql->cascade_action = list_create((fdestroy) NULL);
+			} else {
+				if (sql->cascade_action && !list_find_id(sql->cascade_action, i->key->base.id)) 
+					continue;
+				else {
+					int id = i->key->base.id;
+					list_append(sql->cascade_action, &id);
+				}
 			}
 
 			sql_update_key(sql, schema, updates, i->key, is, updcol, l);
 
-			if (keys) {
-				sql->cascade_action = NULL;
-				list_destroy(keys);	
-			}
-			keys = NULL;
 		}
 		if (is) 
 			list_append(l, stmt_insert(stmt_idxbat(i, UPD), is));
@@ -1666,8 +1617,16 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 
 		if ((s = sql_update(sql, schema, t, updates, l)) == NULL) {
 			list_destroy(l);
+			if (sql->cascade_action) {
+				list_destroy(sql->cascade_action);
+				sql->cascade_action = NULL;
+			}
 			cleanup_stmts(updates, len);
 			return NULL;
+		}
+		if (sql->cascade_action) {
+			list_destroy(sql->cascade_action);
+			sql->cascade_action = NULL;
 		}
 		scp = scope_close(scp);
 		cleanup_stmts(updates, len);
@@ -1805,12 +1764,8 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 				case ACT_NO_ACTION: 
 					break;
 				case ACT_SET_NULL: 
-					s = sql_update_cascade_Fkeys_set(sql, schema, fk, ACT_SET_NULL);
-					list_prepend(l, s);
 					break;
 				case ACT_SET_DEFAULT: 
-					s = sql_update_cascade_Fkeys_set(sql, schema, fk, ACT_SET_NULL);
-					list_prepend(l, s);
 					break;
 				case ACT_CASCADE: 
 					s = sql_delete_cascade_Fkeys(sql, schema, s, fk, k);
@@ -1833,7 +1788,6 @@ sql_delete_keys(mvc *sql, sql_schema *schema, sql_table *t, stmt *deletes, list 
 {
 	int res = 1;
 	node *n;
-	list *keys = NULL;
 
 	if (!t->keys.set)
 		return res;
@@ -1841,26 +1795,19 @@ sql_delete_keys(mvc *sql, sql_schema *schema, sql_table *t, stmt *deletes, list 
 	for (n = t->keys.set->h; n; n = n->next) {
 		sql_key *k = n->data;
 
-		if ((k->type == pkey || k->type == ukey) && !list_find_id(sql->cascade_action, k->base.id)) {
+		if ((k->type == pkey || k->type == ukey) && (!sql->cascade_action || !list_find_id(sql->cascade_action, k->base.id))) {
 			int id = k->base.id;
 
 			if ( sql->cascade_action) {
 				list_append(sql->cascade_action, &id); 
 			}
 			else {
-				keys = list_create((fdestroy) NULL);
-				keys = list_append(keys, &id);
-				sql->cascade_action = keys;
+				sql->cascade_action = list_create((fdestroy) NULL);
+				list_append(sql->cascade_action, &id);
 			}
 
 			sql_delete_ukey(sql, schema, deletes, k, l);
 
-			if (keys) {
-				sql->cascade_action = NULL;
-				list_destroy(keys);	
-			}
-			keys = NULL;
-			
 		}
 	}
 	return res;

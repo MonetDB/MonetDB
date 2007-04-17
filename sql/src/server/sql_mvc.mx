@@ -105,7 +105,7 @@ typedef struct mvc {
 	unsigned int depth;	/* depth of the current expression */
 	int label;		/* numbers for relational projection labels */
 	list *called_triggers;  /* protection against recursive triggers */
-	list *cascade_action;  /* protection against recursive cascade action*/
+	list *cascade_action;  /* protection against recursive cascade actions */
 
 	int opt_stats[MAXSTATS];/* keep statistics about optimizer rewrites */
 
@@ -184,7 +184,6 @@ extern void mvc_drop_trigger(mvc *m, sql_schema *s, char *name);
 
 /*dependency control*/
 extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
-extern void mvc_drop_dependencies(mvc *m, int depend_id);
 extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
 extern int mvc_check_dependency(mvc * m, int id, int type);
 extern int mvc_connect_catalog(mvc *m, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lng);
@@ -1038,7 +1037,7 @@ mvc_drop_idx(mvc *m, sql_schema *s, char *name)
 		fprintf(stderr, "mvc_drop_idx %s %s\n", s->base.name, name);
 
 	m->type = Q_SCHEMA;
-	sql_trans_drop_idx(m->session->tr, s, name, -1);
+	sql_trans_drop_idx(m->session->tr, s, name, -1, 0);
 }
 
 sql_trigger * 
@@ -1070,7 +1069,7 @@ mvc_drop_trigger(mvc *m, sql_schema *s, char *name)
 		fprintf(stderr, "mvc_drop_trigger %s %s\n", s->base.name, name);
 
 	m->type = Q_SCHEMA;
-	sql_trans_drop_trigger(m->session->tr, s, name, -1);
+	sql_trans_drop_trigger(m->session->tr, s, name, -1, 0);
 }
 
 
@@ -1178,16 +1177,6 @@ mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
 	if (id != depend_id)
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
 	
-}
-
-void
-mvc_drop_dependencies(mvc *m, int depend_id)
-{
-	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_dependencies on %d\n", depend_id);
-	m->type = Q_SCHEMA;
-
-	sql_trans_drop_dependencies(m->session->tr, depend_id);
 }
 
 void
