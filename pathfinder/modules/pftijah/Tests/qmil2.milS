@@ -1,7 +1,0 @@
-module(pathfinder);
-
-# test long queries
-var res := xquery("dm"," let $opt:=<TijahOptions ft-index=\"testcoll1\" ir-model=\"NLLR\" debug=\"0\" top=\"99\"/> return tijah:query(\"//panel[about(.,dilbert Geschwindigkeit ist der Schluessel zum Erfolg speed is the key to success)]\", $opt) ");
-
-printf("%s",res);
-

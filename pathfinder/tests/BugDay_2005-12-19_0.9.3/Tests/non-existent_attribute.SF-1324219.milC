@@ -1,5 +1,0 @@
-module(pathfinder);
-
-xquery("xml","<a><b></b></a>/@notexist").printf();
-xquery("xml","for $d in <a><b></b></a> return element { \"test\" } { max($d//@notexist) }").printf();
-

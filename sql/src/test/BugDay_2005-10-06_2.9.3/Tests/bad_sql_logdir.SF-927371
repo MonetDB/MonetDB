@@ -1,5 +1,0 @@
-#!/bin/sh
-
-Mlog "echo 'loaded(); quit();' \| eval \"Mserver --set mapi_port=$MAPIPORT $setMONETDB_MOD_PATH --set monet_prompt='' --set sql_logdir=/xyz --dbinit='module(sql_server); loaded();'\""
-      echo 'loaded(); quit();'  | eval  "Mserver --set mapi_port=$MAPIPORT $setMONETDB_MOD_PATH --set monet_prompt='' --set sql_logdir=/xyz --dbinit='module(sql_server); loaded();'"
-

@@ -1,7 +1,0 @@
-# how does an SQL schema become accessible.
-
-module sql_schema_demo;
-	person_key_name := bat.new(:oid,:str);
-	person_key_age  := bat.new(:oid,:int);
-	address_str := bat.new(:oid,:str);
-	address_city:= bat.new(:oid,:str);

@@ -1,4 +1,0 @@
-module(pathfinder);module(unix);
-var book := getenv("TSTSRCBASE")+"/tests/XQuery/Tests/book.xml";
-shred_doc(book,"ID.1207090.book.xml");
-quit();
