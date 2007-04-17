@@ -2426,7 +2426,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
         # for all specified document roots in this container (ONLY!), insert the found results
         split_rootpre.tsort().tunique()@batloop() {
             var pre   := $h;
-            var limit := oid(lng(pre) + lng(pre_size.find(pre)) - lng(1));
+            var limit := oid(lng(pre) + lng(pre_size.find(pre)));
             var ins   := id_pre.ord_select(pre,limit);
                          # make ins [iter,pre] unique; exploiting pre_order
             var unq   := kunique(reverse(CTrefine(ins.tmark(0@0), ins.hmark(0@0))));
