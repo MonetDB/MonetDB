@@ -654,7 +654,7 @@ BPMloadCatalog(){
 	int i,k,tp;
 	bat idx;
 	BAT *b, *bm, *pb;
-	BAT *alias,*nxt, *prv, *bld, *bll, *bhd, *bhl;
+	BAT *alias = NULL,*nxt, *prv, *bld, *bll, *bhd, *bhl;
 	BUN p,q,r;
 	str nm;
 	ptr val;
@@ -1058,7 +1058,7 @@ str
 BPMaddPartition(bat *ret, str *nme, bat *src)
 {
 	BAT *b,*bn;
-	int i,j;
+	int i=0,j;
 	Partition p;
 
 	BPMopen();
