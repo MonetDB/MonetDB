@@ -155,6 +155,7 @@ typedef ptr Bstream;
 #include "monetdb4_config.h"
 #include <monet.h>
 #include "streams.h"
+#include <stream_socket.h>
 #include <stdio.h>
 
 int
