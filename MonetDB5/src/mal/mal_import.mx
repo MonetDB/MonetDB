@@ -278,15 +278,15 @@ compileString(Symbol *fcn, Client c, str s){
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
 	MSinitClientPrg(c,"user", "main");	/* create new context */
-	/* runPhase(READER,restoreClient1) */
-	if(msg== MAL_SUCCEED && c->phase[READER] && 
-		(msg= (str) (*c->phase[READER])(c)) ){
+	/* runPhase(MAL_SCENARIO_READER,restoreClient1) */
+	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_READER] && 
+		(msg= (str) (*c->phase[MAL_SCENARIO_READER])(c)) ){
 		@:restoreClient1()@
 		return msg;
 	}
-	/* runPhase(PARSER,restoreClient1) */
-	if(msg== MAL_SUCCEED && c->phase[PARSER] && 
-		(msg= (str) (*c->phase[PARSER])(c)) ){
+	/* runPhase(MAL_SCENARIO_PARSER,restoreClient1) */
+	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER] && 
+		(msg= (str) (*c->phase[MAL_SCENARIO_PARSER])(c)) ){
 		/* error occurred  and ignored */
 		/* stream_printf(GDKout,"%s",msg);*/
 		@:restoreClient1()@
@@ -336,13 +336,13 @@ callString(Client c, str s, int listing)
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
 	MSinitClientPrg(c,"user", "main");	/* create new context */
-	@:runPhase(READER,restoreClient1)@
-	@:runPhase(PARSER,restoreClient1)@
+	@:runPhase(MAL_SCENARIO_READER,restoreClient1)@
+	@:runPhase(MAL_SCENARIO_PARSER,restoreClient1)@
 	/* restore IO channel */
 	@:restoreClient1()@
-	@:runPhase(OPTIMIZE,restoreClient2)@
-	@:runPhase(SCHEDULER,restoreClient2)@
-	@:runPhase(ENGINE,restoreClient2)@
+	@:runPhase(MAL_SCENARIO_OPTIMIZE,restoreClient2)@
+	@:runPhase(MAL_SCENARIO_SCHEDULER,restoreClient2)@
+	@:runPhase(MAL_SCENARIO_ENGINE,restoreClient2)@
 	@:restoreClient2()@
 	GDKfree(qry);
 }

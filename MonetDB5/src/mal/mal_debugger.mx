@@ -845,8 +845,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	do {
 		int r;
 
-		if (cntxt->phase[READER]) {
-			b= (char*) (*cntxt->phase[READER]) (cntxt);
+		if (cntxt->phase[MAL_SCENARIO_READER]) {
+			b= (char*) (*cntxt->phase[MAL_SCENARIO_READER]) (cntxt);
 			if( b != 0)
 				break;
 		} else {

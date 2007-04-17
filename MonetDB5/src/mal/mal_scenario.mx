@@ -107,13 +107,13 @@ defined for code modules in general.
 
 #include "mal_import.h"
 
-#define READER 0
-#define PARSER  1
-#define OPTIMIZE 2
-#define SCHEDULER 3
-#define ENGINE 4
-#define INITCLIENT 5
-#define EXITCLIENT 6
+#define MAL_SCENARIO_READER 0
+#define MAL_SCENARIO_PARSER  1
+#define MAL_SCENARIO_OPTIMIZE 2
+#define MAL_SCENARIO_SCHEDULER 3
+#define MAL_SCENARIO_ENGINE 4
+#define MAL_SCENARIO_INITCLIENT 5
+#define MAL_SCENARIO_EXITCLIENT 6
 
 /*#define MAL_SCENARIO_DEBUG*/
 @-
@@ -347,13 +347,13 @@ updateScenario(str nme, MALfcn fcn)
 	for (i = 0; i < MAXSCEN && scen->name; i++, scen++) {
 		@:updLine(initSystem, 0)@
 		@:updLine(exitSystem, 0)@
-		@:updLine(initClient, INITCLIENT)@
-		@:updLine(exitClient, EXITCLIENT)@
-		@:updLine(reader, READER)@
-		@:updLine(parser, PARSER)@
-		@:updLine(optimizer, OPTIMIZE)@
-		@:updLine(tactics, SCHEDULER)@
-		@:updLine(engine, ENGINE)@
+		@:updLine(initClient, MAL_SCENARIO_INITCLIENT)@
+		@:updLine(exitClient, MAL_SCENARIO_EXITCLIENT)@
+		@:updLine(reader, MAL_SCENARIO_READER)@
+		@:updLine(parser, MAL_SCENARIO_PARSER)@
+		@:updLine(optimizer, MAL_SCENARIO_OPTIMIZE)@
+		@:updLine(tactics, MAL_SCENARIO_SCHEDULER)@
+		@:updLine(engine, MAL_SCENARIO_ENGINE)@
 	}
 }
 
@@ -401,20 +401,20 @@ fillScenario(Client c, Scenario scen)
 {
 	c->scenario = scen->name;
 
-	c->phase[READER] = scen->readerCmd;
-	c->phase[PARSER] = scen->parserCmd;
-	c->phase[OPTIMIZE] = scen->optimizerCmd;
-	c->phase[SCHEDULER] = scen->tacticsCmd;
-	c->phase[ENGINE] = scen->engineCmd;
-	c->phase[INITCLIENT] = scen->initClientCmd;
-	c->phase[EXITCLIENT] = scen->exitClientCmd;
-	c->state[READER] = 0;
-	c->state[PARSER] = 0;
-	c->state[OPTIMIZE] = 0;
-	c->state[SCHEDULER] = 0;
-	c->state[ENGINE] = 0;
-	c->state[INITCLIENT] = 0;
-	c->state[EXITCLIENT] = 0;
+	c->phase[MAL_SCENARIO_READER] = scen->readerCmd;
+	c->phase[MAL_SCENARIO_PARSER] = scen->parserCmd;
+	c->phase[MAL_SCENARIO_OPTIMIZE] = scen->optimizerCmd;
+	c->phase[MAL_SCENARIO_SCHEDULER] = scen->tacticsCmd;
+	c->phase[MAL_SCENARIO_ENGINE] = scen->engineCmd;
+	c->phase[MAL_SCENARIO_INITCLIENT] = scen->initClientCmd;
+	c->phase[MAL_SCENARIO_EXITCLIENT] = scen->exitClientCmd;
+	c->state[MAL_SCENARIO_READER] = 0;
+	c->state[MAL_SCENARIO_PARSER] = 0;
+	c->state[MAL_SCENARIO_OPTIMIZE] = 0;
+	c->state[MAL_SCENARIO_SCHEDULER] = 0;
+	c->state[MAL_SCENARIO_ENGINE] = 0;
+	c->state[MAL_SCENARIO_INITCLIENT] = 0;
+	c->state[MAL_SCENARIO_EXITCLIENT] = 0;
 	if (scen->initClientCmd)
 		return((*scen->initClientCmd) (c));
 
@@ -427,20 +427,20 @@ clrScenario(Client c)
 	if (c->scenario == 0)
 		return;
 	c->scenario = 0;
-	c->phase[READER] = 0;
-	c->phase[PARSER] = 0;
-	c->phase[OPTIMIZE] = 0;
-	c->phase[SCHEDULER] = 0;
-	c->phase[ENGINE] = 0;
-	c->phase[INITCLIENT] = 0;
-	c->phase[EXITCLIENT] = 0;
-	c->state[READER] = 0;
-	c->state[PARSER] = 0;
-	c->state[OPTIMIZE] = 0;
-	c->state[SCHEDULER] = 0;
-	c->state[ENGINE] = 0;
-	c->state[INITCLIENT] = 0;
-	c->state[EXITCLIENT] = 0;
+	c->phase[MAL_SCENARIO_READER] = 0;
+	c->phase[MAL_SCENARIO_PARSER] = 0;
+	c->phase[MAL_SCENARIO_OPTIMIZE] = 0;
+	c->phase[MAL_SCENARIO_SCHEDULER] = 0;
+	c->phase[MAL_SCENARIO_ENGINE] = 0;
+	c->phase[MAL_SCENARIO_INITCLIENT] = 0;
+	c->phase[MAL_SCENARIO_EXITCLIENT] = 0;
+	c->state[MAL_SCENARIO_READER] = 0;
+	c->state[MAL_SCENARIO_PARSER] = 0;
+	c->state[MAL_SCENARIO_OPTIMIZE] = 0;
+	c->state[MAL_SCENARIO_SCHEDULER] = 0;
+	c->state[MAL_SCENARIO_ENGINE] = 0;
+	c->state[MAL_SCENARIO_INITCLIENT] = 0;
+	c->state[MAL_SCENARIO_EXITCLIENT] = 0;
 }
 
 @-
@@ -580,11 +580,11 @@ runScenarioBody(Client c)
 */
 	while (c->mode > FINISHING) {
 		msg = MAL_SUCCEED;
-		@:runPhase(READER)@
-		@:runPhase(PARSER)@
-		@:runPhase(OPTIMIZE)@
-		@:runPhase(SCHEDULER)@
-		@:runPhase(ENGINE)@
+		@:runPhase(MAL_SCENARIO_READER)@
+		@:runPhase(MAL_SCENARIO_PARSER)@
+		@:runPhase(MAL_SCENARIO_OPTIMIZE)@
+		@:runPhase(MAL_SCENARIO_SCHEDULER)@
+		@:runPhase(MAL_SCENARIO_ENGINE)@
 	}
 	return msg;
 }
@@ -595,7 +595,7 @@ runScenario(Client c)
 	str msg = MAL_SUCCEED;
 	Client c1;
 
-	if( c== 0 || c->phase[READER] == 0) return msg;
+	if( c== 0 || c->phase[MAL_SCENARIO_READER] == 0) return msg;
 
 	msg= runScenarioBody(c);
 	if( msg != MAL_SUCCEED)
@@ -612,11 +612,11 @@ have to call the scenario exit.
 			if (c1->scenario && strcmp(c->scenario, c1->scenario) == 0)
 				cnt++;
 
-	if (c->phase[EXITCLIENT]) {
+	if (c->phase[MAL_SCENARIO_EXITCLIENT]) {
 #ifdef MAL_SCENARIO_DEBUG
 		printf("Calling client exit function \n");
 #endif
-		(*c->phase[EXITCLIENT]) (c);
+		(*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
 	}
 #ifdef MAL_SCENARIO_DEBUG
 		printf("scenario client cnt %d\n",cnt);
