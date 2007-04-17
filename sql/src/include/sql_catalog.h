@@ -47,6 +47,8 @@
 #define OWNER_DEPENDENCY 9
 #define INDEX_DEPENDENCY 10
 #define FKEY_DEPENDENCY 11
+#define TYPE_DEPENDENCY 11
+#define SEQ_DEPENDENCY 11
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
@@ -450,6 +452,7 @@ typedef struct sql_trans {
 	int previous_schema_nr;	/* previous schema timestamp */
 	int schema_updates;	/* set on schema changes */
 	int status;		/* status of the last query */
+	list *dropped;  /* protection against recursive cascade action*/
 
 	changeset schemas;
 
@@ -481,6 +484,7 @@ extern void idx_destroy(sql_idx * i);
 
 extern node *list_find_name(list *l, char *name);
 extern node *list_find_id(list *l, int id);
+extern node *list_find_base_id(list *l, int id);
 
 extern node *find_sql_key_node(sql_table *t, char *kname, int id);
 extern sql_key *find_sql_key(sql_table *t, char *kname);
