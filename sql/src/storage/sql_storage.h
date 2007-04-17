@@ -92,14 +92,14 @@ extern void sql_trans_drop_key(sql_trans *tr, sql_schema *s, char *name, int id,
 
 extern sql_idx *sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it);
 extern sql_idx *sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options such as trunc */ );
-extern void sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name, int id);
+extern void sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name, int id, int cascade);
 
 extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement );
 extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
-extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name, int id);
+extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name, int id, int cascade);
 
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle );
-extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name);
+extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name, int cascade);
 extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle);
 extern lng sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 

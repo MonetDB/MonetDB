@@ -127,7 +127,7 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type)
 	{
 	
 		list_append(dep_list, id_node->data);
-		list_append(dep_list, type_node->data);
+		list_append(dep_list, (short *) type_node->data);
 		id_node = id_node->next;
 		type_node = type_node->next;
 	}

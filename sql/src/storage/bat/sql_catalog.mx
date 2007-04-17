@@ -77,6 +77,23 @@ list_find_id(list *l, int id)
 	return NULL;
 }
 
+node *
+list_find_base_id(list *l, int id)
+{
+	node *n;
+
+	if (l)
+		for (n = l->h; n; n = n->next) {
+			sql_base *b = n->data;
+
+			/* check if names match */
+			if (id == b->id) {
+				return n;
+			}
+		}
+	return NULL;
+}
+
 
 node *
 find_sql_key_node(sql_table *t, char *kname, int id)

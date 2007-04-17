@@ -156,7 +156,7 @@ sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
 	} else if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"),  s->base.name);
 	}
-	sql_trans_drop_sequence(sql->session->tr, s, name);  
+	sql_trans_drop_sequence(sql->session->tr, s, name, 0);  
 	return stmt_none();
 }
 

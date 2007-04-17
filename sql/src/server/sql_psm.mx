@@ -549,13 +549,12 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 }
 
 stmt* 
-drop_func(mvc *sql, dlist *qname)
+drop_func(mvc *sql, dlist *qname, int drop_action)
 {
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func * func;
-	int dependency;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "DROP FUNCTION: no such schema '%s'", sname);
@@ -572,13 +571,12 @@ drop_func(mvc *sql, dlist *qname)
 	if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "DROP FUNCTION: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
-	dependency = mvc_check_dependency(sql, func->base.id, FUNC_DEPENDENCY);
-	if (dependency == HAS_DEPENDENCY)
+	
+	
+	if (!drop_action && mvc_check_dependency(sql, func->base.id, FUNC_DEPENDENCY))
 		return sql_error(sql, 02, "DROP FUNCTION: there are functions dependent on function %s;", func->base.name);
-	else if (dependency == CICLE_DEPENDENCY)
-		return sql_error(sql, 02, "DROP FUNCTION: there are a cicle dependency, to drop this function you must use 'DROP FUNCTION %s CASCADE';", func->base.name);
-	mvc_drop_dependencies(sql, func->base.id);
-	mvc_drop_func(sql, s, name, 0);
+	
+	mvc_drop_func(sql, s, name, drop_action);
 
 	return stmt_none();
 }
@@ -601,7 +599,7 @@ psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-                ret = drop_func(sql, l->h->data.lval);
+                ret = drop_func(sql, l->h->data.lval, l->h->next->data.ival);
 		sql->type = Q_SCHEMA;
 	}	break;
 	case SQL_SET:

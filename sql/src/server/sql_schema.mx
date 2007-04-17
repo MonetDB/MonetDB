@@ -608,7 +608,6 @@ drop_trigger(mvc *sql, dlist *qname)
 		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	if ((t = mvc_bind_trigger(sql, ss, tname )) == NULL)
 		return sql_error(sql, 02, "DROP TRIGGER: unknown trigger %s\n", tname);
-	mvc_drop_dependencies(sql, t->base.id);
 	mvc_drop_trigger(sql, ss, tname);
 	return stmt_none();
 }
@@ -783,7 +782,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 }
 
 static stmt *
-drop_view(mvc *sql, dlist *qname, int cascade)
+drop_view(mvc *sql, dlist *qname, int drop_action)
 {
 	char *tname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -806,11 +805,10 @@ drop_view(mvc *sql, dlist *qname, int cascade)
 		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
 	} else if (t->system) {
 		return sql_error(sql, 02, "DROP VIEW: cannot drop system view '%s'", tname);
-	} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY)) {
+	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY)) {
 			return sql_error(sql, 02, "unable to drop view %s (there are database objects which depend on it)\n", t->base.name);
 	} else {
-		mvc_drop_table(sql, ss, t->base.name, cascade);
-		mvc_drop_dependencies(sql, t->base.id);
+		mvc_drop_table(sql, ss, t->base.name, drop_action);
 		return stmt_none();
 	}
 }
@@ -847,6 +845,7 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 				return sql_error(sql, 02, "CREATE INDEX: no such column '%s'", cname);
 			} else {
 				mvc_create_ic(sql, i, c);
+				mvc_create_dependency(sql, c->base.id, i->base.id, INDEX_DEPENDENCY);
 			}
 		}
 		return stmt_none();
@@ -1466,7 +1465,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	{
 		dlist *l = s->data.lval;
 		char *cname = l->h->data.sval;
-		int action = l->h->next->data.ival;
+		int drop_action = l->h->next->data.ival;
 		sql_column *col = mvc_bind_column(sql, t, cname);
 
 		if (col == NULL)
@@ -1477,9 +1476,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return sql_error(sql, 02, "cannot drop column %s (table is a system table)\n", cname);
 		if (isView(t))
 			return sql_error(sql, 02, "cannot drop column %s (%s is a view)\n", cname, t->base.name);
-		if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY))
+		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY))
 			return sql_error(sql, 02, "unable to drop column %s (there are database objects which depend on it)\n", cname);
-		if (t->keys.set) {
+		if (!drop_action  && t->keys.set) {
 			node *n, *m;
 
 			for (n = t->keys.set->h; n; n = n->next) {
@@ -1491,18 +1490,18 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				}
 			}
 		}
-		mvc_drop_column(sql, t, cname, action);
+		mvc_drop_column(sql, t, cname, drop_action);
 		res = stmt_none();
 	} break;
 	case SQL_DROP_CONSTRAINT:
 	{
 		dlist *l = s->data.lval;
 		char *kname = l->h->data.sval;
-		int action = l->h->next->data.ival;
+		int drop_action = l->h->next->data.ival;
 
 		if (mvc_bind_key(sql, ss, kname ) == NULL)
 			return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
-		mvc_drop_key(sql, ss, kname, action);
+		mvc_drop_key(sql, ss, kname, drop_action);
 		res = stmt_none();
 	} break;
 	}
@@ -1634,7 +1633,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 	} else if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
-	if (t->keys.set) {
+	if ( !drop_action && t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
 
@@ -1659,7 +1658,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 		}
 	}
 
-	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY))
+	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY))
 			return sql_error(sql, 02, "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 	
 	mvc_drop_table(sql, s, t->base.name, drop_action);
