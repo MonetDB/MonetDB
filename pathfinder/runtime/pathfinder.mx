@@ -542,8 +542,8 @@ var pf_collbarrier_lock := lock_create(); # proptector for shortlock_barrier bat
 
 # master bat *READS* must protect themselves against *independent* master bat updates, and
 # in particular extends. Such BATextends may reallocate the base address of the heaps.
-# Thus readers take a nonexclusive locks, and appends (that potentially extend) take
-# an exclusive extend-lock. We would prefereably have had this per-collection, but for now
+# Thus readers take a nonexclusive lock, and appends (that potentially extend) take
+# an exclusive extend-lock. We would preferably have had this per-collection, but for now
 # there is just a global lock for this.
 var pf_extend := pflock_get(3); # protects the counter
 var pf_extend_cnt := 0; # counter is used by nonexclusive acces (first gets barrier, last releases)
@@ -882,6 +882,16 @@ no changes at all (except new pages allocated to other transactions).
 occur. It is taken by read-transactions when they want to read stable
 master bats. It must also be taken by update transactions that modify
 stable portions of the master bats.
+
+Writers just lock coll_lock short to get exclusive access. Readers can 
+follow a non-exclusive mechanism wrt to other readers. This policy
+is used when opening collections (the lock is needed while the remap/rcopy
+isolation is done on the master bats). The non-exclusive variant releases
+the lock immediately, but after insert an entry [shortlock,nil] in the
+shortlock_barrier bat, and remove this when they are done. Exclusive writers 
+examine this BAT, and if [shortlock,nil] is present, create a new
+barrier and insert this [shortlock,sema] in the BAT, and block on the 
+semaphore. The last reader exiting wakes up all these semaphores.
 
 The long lock is taken by updating actions only. Holding it prevents
 other updates from proceeding on a commit to that collection. However, 
@@ -1228,6 +1238,8 @@ PROC coll_lock_set(BAT[void,bat] ws,
             var coll_shortlock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
 
             lock_set(coll_shortlock);
+            if (ws_log_active)
+                ws_log(ws, nme + " (coll_lock_set) shortlock" + str(ws_logtime - (ws_logtime := usec())));
             lock_set(pf_collbarrier_lock);
             if (shortlock_barrier.exist(coll_shortlock,sema_nil)) { # there are readers in ws_opencoll!!
                 var barrier := sema_create(0);
@@ -1236,8 +1248,12 @@ PROC coll_lock_set(BAT[void,bat] ws,
                     lock_unset(pf_collbarrier_lock);
                     lock_unset(coll_shortlock);
                     sema_down(barrier); # wait for the readers
+                    if (ws_log_active)
+                        ws_log(ws, nme + " (coll_lock_set) sema" + str(ws_logtime - (ws_logtime := usec())));
                     lock_set(coll_shortlock);
                     lock_set(pf_collbarrier_lock);
+                    if (ws_log_active)
+                        ws_log(ws, nme + " (coll_lock_set) shortlock-redo" + str(ws_logtime - (ws_logtime := usec())));
                 }
                 shortlock_barrier.delete(coll_shortlock,barrier); 
                 sema_destroy(barrier); 
@@ -1245,8 +1261,6 @@ PROC coll_lock_set(BAT[void,bat] ws,
             lock_unset(pf_collbarrier_lock);
 
             ws.fetch(CONT_LOCKED).append(coll_shortlock);
-            if (ws_log_active)
-                ws_log(ws, nme + " (coll_lock_set) shortlock" + str(ws_logtime - (ws_logtime := usec())));
             checkpoint_protect(ws);
             if (ws_log_active)
                 ws_log(ws, nme + " (coll_lock_set) checkpoint_lock" + str(ws_logtime - usec()));
@@ -2137,8 +2151,8 @@ PROC __runtime_addchunk(lng wsid,
         var qn_nid := commitbat + "_qn_nid";
         var vx_hsh_nid := commitbat + "_vx_hsh_nid";
         commitbat := "old_" + commitbat;
-        CATCH({ qn_nid.persists(false).rename(commitbat + "_qn_nid");
-                vx_hsh_nid.persists(false).rename(commitbat + "_vx_hsh_nid"); }); # delete idx in commit
+        CATCH({ bat(qn_nid).persists(false).rename(commitbat + "_qn_nid");
+                bat(vx_hsh_nid).persists(false).rename(commitbat + "_vx_hsh_nid"); }); # delete idx in commit
     } else {
         commitbat := str_nil; # incremental readonly shred, but no index to delete
     }
