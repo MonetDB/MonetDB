@@ -234,39 +234,51 @@ char datadir[1024];
 BAT* xrpc_trusted = NULL;
 BAT* xrpc_admin = NULL;
 
-#define clean_up(argcnt, argtpe, argval, iterc, nr_args) {          \
-    lng i = 0;                                                      \
-                                                                    \
-    if(argcnt){                                                     \
-        for(i = 0; i < iterc; i++) GDKfree(argcnt[i]);              \
-        GDKfree(argcnt);                                            \
-    }                                                               \
-    if(argtpe){                                                     \
-        for(i = 0; i < nr_args; i++) GDKfree(argtpe[i]);            \
-        GDKfree(argtpe);                                            \
-    }                                                               \
-    if(argval){                                                     \
-        for(i = 0; i < nr_args; i++) GDKfree(argval[i]);            \
-        GDKfree(argval);                                            \
-    }                                                               \
+static INLINE void
+clean_up(lng **argcnt,
+         char **argtpe,
+         char **argval,
+         lng iterc,
+         lng nr_args)
+{
+    lng i = 0;
+
+    if(argcnt){
+        for(i = 0; i < iterc; i++) GDKfree(argcnt[i]);
+        GDKfree(argcnt);
+    }
+    if(argtpe){
+        for(i = 0; i < nr_args; i++) GDKfree(argtpe[i]);
+        GDKfree(argtpe);
+    }
+    if(argval){
+        for(i = 0; i < nr_args; i++) GDKfree(argval[i]);
+        GDKfree(argval);
+    }
 }
 
-#define send_err(out, header, http_err, soap_err, err_reason) {     \
-    if (header)                                                     \
-        stream_printf(out, "HTTP/1.1 %s\r\n"                        \
-                "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n",\
-                http_err);                                          \
-    stream_printf(out,                                              \
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"          \
-            "<env:Envelope xmlns:env=\"%s\">"                       \
-            "<env:Body>"                                            \
-            "<env:Fault>"                                           \
-            "<env:Code><env:Value>%s</env:Value></env:Code>"        \
-            "<env:Reason>"                                          \
-            "<env:Text xml:lang=\"en\">%s</env:Text>"               \
-            "</env:Reason>"                                         \
-            "</env:Fault></env:Body></env:Envelope>",               \
-            SOAP_NS, soap_err, err_reason);                         \
+static INLINE void
+send_err(stream *out,
+         int header,
+         char *http_err,
+         char *soap_err,
+         char *err_reason)
+{
+    if (header)
+        stream_printf(out, "HTTP/1.1 %s\r\n"
+                "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n",
+                http_err);
+    stream_printf(out,
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+            "<env:Envelope xmlns:env=\"%s\">"
+            "<env:Body>"
+            "<env:Fault>"
+            "<env:Code><env:Value>%s</env:Value></env:Code>"
+            "<env:Reason>"
+            "<env:Text xml:lang=\"en\">%s</env:Text>"
+            "</env:Reason>"
+            "</env:Fault></env:Body></env:Envelope>",
+            SOAP_NS, soap_err, err_reason);
 }
 
 /**
@@ -937,6 +949,8 @@ execQuery(mapi_client *mc,
           str *argval,
           BAT *shredBAT)
 {
+	char errbuf[GDKMAXERRLEN], *errbuf_bak = GDKerrbuf;
+
     /* Possible values of serializeMode:
      * 0: xml-noheader-xrpc
      *    This is the normal serialize mode used for XRPC calls
@@ -953,14 +967,22 @@ execQuery(mapi_client *mc,
     stream_printf(mc->c->fdout, "HTTP/1.1 200 OK\r\n"
             "Content-type: text/xml; "
             "charset=\"utf-8\"\r\n\r\n");
+
+	*errbuf = 0;
+	GDKsetbuf(errbuf);
     char *err = xquery_method(mc, serializeMode, module, location,
                               method, argc, iterc, argcnt, argtpe,
                               argval, shredBAT);
     if (err) {
+        if(err == ((char*)-1)) {
+            err = strstr(errbuf, "first error was:"); assert(err);
+            err = strstr(err, "!ERROR"); assert(err);
+        }
         send_err(mc->c->fdout, 0, "", "env:Sender", err);
         return GDK_FAIL;
     }
     stream_flush(mc->c->fdout);
+	GDKsetbuf(errbuf_bak);
 
     return GDK_SUCCEED;
 }
@@ -1095,6 +1117,7 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     int ret = GDK_FAIL;
     lng **argcnt = NULL;
 
+    lng time_xrpcServDeSeria = GDKusec();
     /* we don't always have the second '/' */
     if(uri[0] == '/') uri++;
     if(uri[0] == '\0'){
@@ -1145,15 +1168,24 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
 
         str argtpe[2] = { "xs:string", "xs:document" };
         str argval[2] = { uri , "0" };
-        ret = execQuery(mc, 2, MXQ_ADMIN, location, method, 2, 1,
+        time_xrpcServDeSeria = GDKusec() - time_xrpcServDeSeria;
+
+        ret = execQuery(mc, 2|timing, MXQ_ADMIN, location, method, 2, 1,
                 argcnt, argtpe, argval, shredBAT);
         BBPreclaim(shredBAT);
     } else { /* GET/DELETE */
         str argtpe[1] = { "xs:string" };
         str argval[1] = { uri };
+        time_xrpcServDeSeria = GDKusec() - time_xrpcServDeSeria;
 
-        ret = execQuery(mc, 2, MXQ_ADMIN, location, method, 1, 1,
+        ret = execQuery(mc, 2|timing, MXQ_ADMIN, location, method, 1, 1,
                 argcnt, argtpe, argval, NULL);
+    }
+
+    if (timing && ret != GDK_FAIL) {
+        fprintf(stdout,
+                "XRPC_Server_DeSerialisation:   %lld microsec\n",
+                time_xrpcServDeSeria);
     }
 
     GDKfree(argcnt[0]);
@@ -1179,7 +1211,7 @@ xrpc_client_engine(mapi_client *mc)
     }
 
     /* clean up */
-    mc->engine = xquery_client_engine; 
+    mc->engine = xquery_client_engine;
     xquery_client_end(mc, NULL);
     shttpd_finish(arg);
 }
@@ -1223,13 +1255,14 @@ CMDrpcd_start(int *port, bit *open, str option)
     char *s;
     
     if (rpcd_running) {
-        stream_printf(GDKout, "\nRPC receiver already running\n");
+        stream_printf(GDKout,
+                "\nRPC receiver already running (on port %d)\n",
+                xrpc_port);
         return GDK_SUCCEED;
     }
 
     xrpc_port = *port;
     rpcd_running = 1;
-
 
     /* find 'datadir' (often datadir = <prefix>/share), otherwise use
      * "/usr/share", hence, httpd serves out <datadir>/MonetDB/xrpc */
@@ -1268,7 +1301,6 @@ CMDrpcd_start(int *port, bit *open, str option)
 
     return GDK_SUCCEED;
 }
-
 
 void xrpc_epilogue(void)
 {

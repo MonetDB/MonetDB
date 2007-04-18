@@ -4544,7 +4544,7 @@ xquery_function_call(xquery_client *ctx,
                 c = xquery_types[t].loc;
 
 		if (xquery_types[t].monet_tpe == TYPE_str) {
-                    /* we no longer do fancy strTostr for strings; just copied as-is */
+            /* we no longer do fancy strTostr for strings; just copied as-is */
 		    char *t, *s = argval[l];
 		    int len = strlen(s)*2;
 		    if (len >= ctx->vallen) {
@@ -5854,11 +5854,10 @@ xquery_method(mapi_client *mc,
     if (err == NULL) { 
         err = xquery_function_call(ctx, usec, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
-        else if (err == xquery_nondescriptive_error) err = xquery_function_error;
+        else if (err == xquery_function_error) err = xquery_nondescriptive_error;
     }
 
     time_xrpcServApp = GDKusec() - time_xrpcServApp;
-
     if (flags&1){
         /* print timing ourselves */
         fprintf(stdout, "\n"

@@ -150,7 +150,10 @@ PROC get_rpc_res (
                 fault_text_pre := pre_prop.ord_select(fault_text_pre).reverse().fetch(0);
                 fault_text_pre := pre_prop.fetch(int(fault_text_pre)+1);
             var fault_text     := prop_text.fetch(fault_text_pre);
-            ERROR("SOAP Fault Code  : %s\nSOAP Fault Reason: %s\n", fault_value, fault_text);
+            ERROR("Remote execution failed.\n" +
+                  "SOAP Fault Code: %s\n" +
+                  "SOAP Fault Reason:\n%s\n",
+                  fault_value, fault_text);
         }
     }
 
@@ -638,28 +641,6 @@ setup_connection(str dst)
 }
 
 /**
- * NOTE: this function is not used any more, as of Dec 06, 2006
- * @return cont-kind, or
- *         GDK_int_min by error
- */
-/*
-static int
-getContKind(BAT *itemBat, BAT *kindBat, int offset)
-{
-    BUN bres;
-    oid index  = *(oid*)BUNhead(itemBat, BUNptr(itemBat, offset));
-
-    BUNfndVOID(bres, kindBat, &index);
-    if(!bres){
-        GDKerror("getContKind: could not find BUN with head value "
-                "%d@0\n", index);
-        return GDK_int_min;
-    }
-    return *(int*) BUNtail(kindBat, bres);
-}
-*/
-
-/**
  * @return WS BAT, or
  *         NULL by error
  */
@@ -741,6 +722,46 @@ getELEMkind(BAT *ws, int contID, oid item_index)
     return ret;
 }
 
+static void
+handle_soap_fault_msg(char *errmsg)
+{
+    char *strptr, *strptr2;
+
+    strptr = strstr(errmsg, "<env:Value");
+    if(!strptr) {
+        GDKerror("handle_soap_fault_msg: SOAP Fault message not "
+                 "well-formed: could not find \"<env:Value\".\n%s\n",
+                 errmsg);
+    }
+    strptr = strchr(strptr, '>'); assert(strptr);
+    strptr2 = strstr(++strptr, "</env:Value>");
+    if( (!strptr) || (!strptr2) ) {
+        GDKerror("handle_soap_fault_msg: SOAP Fault message not "
+                 "well-formed at \"<env:Value>.\n%s\n", errmsg);
+        return;
+    }
+    strptr2[0] = '\0';
+    GDKerror("SOAP Fault Code  : %s\n", strptr);
+    strptr2[0] = '<';
+
+    strptr = strstr(strptr2+12, "<env:Text");
+    if(!strptr) {
+        GDKerror("handle_soap_fault_msg: SOAP Fault message not "
+                 "well-formed: could not find \"<env:Text\".\n%s\n",
+                 errmsg);
+        return;
+    }
+    strptr = strchr(strptr, '>') + 1;
+    strptr2 = strstr(strptr, "</env:Text>");
+    if( (!strptr) || (!strptr2) ) {
+        GDKerror("handle_soap_fault_msg: SOAP Fault message not "
+                 "well-formed at \"<env:Text>\".\n%s\n", errmsg);
+        return;
+    }
+    strptr2[0] = '\0';
+    GDKerror("SOAP Fault Reason:\n%s\n", strptr);
+}
+
 /**
  * try to receive the response message and shred it into shredBAT
  * Returns shredBAT, or
@@ -753,30 +774,28 @@ response2bat(int sock,
              int updCall,
              lng *time_xrpcClntDeSeria)
 {
-    char *strptr = NULL, *ptr = NULL;
+    char *strptr = NULL;
     int ret;
     stream *in;
     BAT *shredBAT;
 
-    in = socket_rastream(sock, "http_receive");
-    if(!in){
+    if( !(in = socket_rastream(sock, "http_receive")) ){
         GDKerror("response2bat: failed to create socket_rastream\n");
         return NULL;
     }
 
     b->pos = 0;
     errno = 0;
-    ret = stream_readline(in, b->buf, 1024);
-    if (ret < 0) {
-        GDKerror("response2bat: failed to receive response from %s: %s\n",
-                dst, errno?strerror(errno):".");
+    if( !(ret = stream_readline(in, b->buf, 1024)) ){
+        GDKerror("response2bat: failed to receive response from %s", dst);
+        if(errno) GDKerror(": %s", strerror(errno));
+        GDKerror(".\n");
         stream_close(in); stream_destroy(in);
         return NULL;
     }
 
-    strptr = strchr(b->buf, ' ');
-    if (!strptr) {
-        GDKerror("response2bat: invalid response from %s\n%s\n",
+    if( !(strptr = strchr(b->buf, ' ')) ){
+        GDKerror("response2bat: invalid response from %s:\n%s\n",
                 dst, b->buf);
         stream_close(in); stream_destroy(in);
         return NULL;
@@ -785,55 +804,22 @@ response2bat(int sock,
     if (strncmp(++strptr, "200", 3) != 0) {
         b->buf[ret] = '\0';
         GDKerror("HTTP Error Code  : %s\n", b->buf + 9);
-        strptr = b->buf + b->pos + 1;
-        do{ /* receive the whole error message */
+
+        b->pos = 0;
+        do{ /* read the SOAP Fault message */
             errno = 0;
             ret = stream_read(in, (b->buf + b->pos), 1, (b->len - b->pos));
-            b->pos += ret;
+            if (ret > 0) b->pos += ret;
         } while (ret > 0);
         if (ret < 0) {
-            GDKerror("response2bat: failed to receive response from %s: %s\n",
-                    dst, errno?strerror(errno):".");
-            stream_close(in); stream_destroy(in);
+            GDKerror("response2bat: failed to receive response from %s",
+                    dst);
+            if(errno) GDKerror(": %s", strerror(errno));
+            GDKerror(".\n");
             return NULL;
         }
         b->buf[b->pos] = 0;
-
-        strptr = strstr(strptr, "<env:Value");
-        if(!strptr) {
-            GDKerror("response2bat: SOAP Fault message not well-formed: "
-                     "could not find \"<env:Value\".\n");
-            stream_close(in); stream_destroy(in);
-            return NULL;
-        }
-        strptr = strchr(strptr, '>') + 1;
-        ptr = strstr(strptr, "</env:Value>");
-        if( (!strptr) || (!ptr) ) {
-            GDKerror("response2bat: SOAP Fault message not well-formed: "
-                     "could not find \"</env:Value>\".\n");
-            stream_close(in); stream_destroy(in);
-            return NULL;
-        }
-        ptr[0] = '\0';
-        GDKerror("SOAP Fault Code  : %s\n", strptr);
-
-        strptr = strstr(ptr+12, "<env:Text");
-        if(!strptr) {
-            GDKerror("response2bat: SOAP Fault message not well-formed: "
-                     "could not find \"<env:Text\".\n");
-            stream_close(in); stream_destroy(in);
-            return NULL;
-        }
-        strptr = strchr(strptr, '>') + 1;
-        ptr = strstr(strptr, "</env:Text>");
-        if( (!strptr) || (!ptr) ) {
-            GDKerror("response2bat: SOAP Fault message not well-formed: "
-                     "could not find \"</env:Text>\".\n");
-            stream_close(in); stream_destroy(in);
-            return NULL;
-        }
-        ptr[0] = '\0';
-        GDKerror("SOAP Fault Reason: %s\n", strptr);
+        handle_soap_fault_msg(b->buf);
         stream_close(in); stream_destroy(in);
         return NULL;
     }
@@ -846,8 +832,10 @@ response2bat(int sock,
             ret = 0; /* end-of-HTTP-header found */
     } while (ret > 0);
     if (ret < 0) {
-        GDKerror("response2bat: failed to receive response from %s: %s\n",
-                dst, errno?strerror(errno):".");
+        GDKerror("response2bat: failed to receive response from %s",
+                dst);
+        if(errno) GDKerror(": %s", strerror(errno));
+        GDKerror(".\n");
         stream_close(in); stream_destroy(in);
         return NULL;
     }
@@ -861,23 +849,34 @@ response2bat(int sock,
     }
 
     if (updCall) {
-        *time_xrpcClntDeSeria = GDKusec() - *time_xrpcClntDeSeria;
+        b->pos = 0;
+        do{ /* Check for error message */
+            errno = 0;
+            ret = stream_read(in, (b->buf + b->pos), 1, (b->len - b->pos));
+            if (ret > 0) b->pos += ret;
+        } while (ret > 0);
+        b->buf[b->pos] = 0;
         stream_close(in); stream_destroy(in);
-        return shredBAT;
+
+        if(b->pos == 0){ /* no error message => operation succeeded */
+            *time_xrpcClntDeSeria = GDKusec() - *time_xrpcClntDeSeria;
+            return shredBAT;
+        } else {
+            handle_soap_fault_msg(b->buf);
+            BBPreclaim(shredBAT);
+            return NULL;
+        }
     }
 
     if(shred(shredBAT, NULL, NULL, in, 0, NULL, NULL, NULL) ==GDK_FAIL) {
-        GDKerror("most probably, the XRPC response contains some MIL "
-                "error message\n");
-        if(BBPreclaim(shredBAT) == -1){
-            GDKerror("response2bat: failed to destroy \"shredBAT\"!");
-        }
+        GDKerror("response2bat: invalid XRPC response received\n");
+        BBPreclaim(shredBAT);
         stream_close(in); stream_destroy(in);
         return NULL;
     }
+
     /* Stop timing Client DeSerialisation */
     *time_xrpcClntDeSeria = GDKusec() - *time_xrpcClntDeSeria;
-
     stream_close(in); stream_destroy(in);
     return shredBAT;
 }
