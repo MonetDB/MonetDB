@@ -591,19 +591,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_ACAE5AC082704CB2A2E29D369B0B8EEB"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_ADC02DB83CE2498C8CE18E06BB5FC0E6"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_B18CBE8247D54A86A77DC85ACE74E379"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2879,50 +2867,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_ACAE5AC082704CB2A2E29D369B0B8EEB"
-            {
-            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\quit.mil"
-            "TargetName" = "8:quit.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_ADC02DB83CE2498C8CE18E06BB5FC0E6"
             {
             "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\bin\\lib_sys-0.dll"
             "TargetName" = "8:lib_sys-0.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B18CBE8247D54A86A77DC85ACE74E379"
-            {
-            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB4\\general.mil"
-            "TargetName" = "8:general.mil"
             "Tag" = "8:"
             "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
             "Condition" = "8:"
@@ -4189,6 +4137,20 @@
         }
         "Shortcut"
         {
+            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_038C719AE1E04072ADA3B609BEE4B70D"
+            {
+            "Name" = "8:XQuery Client"
+            "Arguments" = "8:-lxquery"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_6F797C72801B4E6A8BA5EC755D155572"
+            "Folder" = "8:_F96F721F2CFD47F0995E8FEAFBF113D9"
+            "WorkingFolder" = "8:_C303A8E825E64186A1E38ECE43939A84"
+            "Icon" = "8:"
+            "Feature" = "8:"
+            }
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_6E820113C9D445028B98ADD45B9DC961"
             {
             "Name" = "8:XQuery Server"
