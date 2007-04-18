@@ -11,43 +11,43 @@ stdout of test 'shred_doc_with_space.SF-1211372` in directory 'tests/BugDay_2005
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pathfinder);
 
-shred_doc("does_not_exist.xml","does_not_exist.0");
+shred_doc("does_not_exist.xml","does_not_exist.0.xml");
 !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 !ERROR: [shred_url]: first error was:
 !ERROR: shred: cannot stat `does_not_exist.xml': No such file or directory
 !ERROR: CMDshred_url: operation failed.
 
-shred_doc("/does_not_exist.xml","does_not_exist.1");
+shred_doc("/does_not_exist.xml","does_not_exist.1.xml");
 !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 !ERROR: [shred_url]: first error was:
 !ERROR: shred: cannot stat `/does_not_exist.xml': No such file or directory
 !ERROR: CMDshred_url: operation failed.
 
-shred_doc("/Documents and Settings/does_not_exist.xml","does_not_exist.2");
+shred_doc("/Documents and Settings/does_not_exist.xml","does_not_exist.2.xml");
 !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 !ERROR: [shred_url]: first error was:
 !ERROR: shred: cannot stat `/Documents and Settings/does_not_exist.xml': No such file or directory
 !ERROR: CMDshred_url: operation failed.
 
-shred_doc("c:\does_not_exist.xml","does_not_exist.3");
+shred_doc("c:\does_not_exist.xml","does_not_exist.3.xml");
 !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 !ERROR: [shred_url]: first error was:
 !ERROR: shred: cannot stat `c:does_not_exist.xml': No such file or directory
 !ERROR: CMDshred_url: operation failed.
 
-shred_doc("c:\Documents and Settings\does_not_exist.xml","does_not_exist.4");
+shred_doc("c:\Documents and Settings\does_not_exist.xml","does_not_exist.4.xml");
 !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 !ERROR: [shred_url]: first error was:
 !ERROR: shred: cannot stat `c:Documents and Settingsdoes_not_exist.xml': No such file or directory
 !ERROR: CMDshred_url: operation failed.
 
-shred_doc("c:\\does_not_exist.xml","does_not_exist.5");
+shred_doc("c:\\does_not_exist.xml","does_not_exist.5.xml");
 !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 !ERROR: [shred_url]: first error was:
 !ERROR: shred: cannot stat `c:\does_not_exist.xml': No such file or directory
 !ERROR: CMDshred_url: operation failed.
 
-shred_doc("c:\\Documents and Settings\\does_not_exist.xml","does_not_exist.6");
+shred_doc("c:\\Documents and Settings\\does_not_exist.xml","does_not_exist.6.xml");
 !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 !ERROR: [shred_url]: first error was:
 !ERROR: shred: cannot stat `c:\Documents and Settings\does_not_exist.xml': No such file or directory

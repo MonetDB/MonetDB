@@ -12,8 +12,8 @@ stdout of test 'ID.1200405` in directory 'tests/BugsViaSourgeforce` itself:
 module("pathfinder");
 module("unix");
 var doc := getenv("TSTSRCDIR")+"/ID.1200405.xml";
-shred_doc(doc,"doc");
-delete_doc("doc");
+shred_doc(doc,"doc.xml");
+delete_doc("doc.xml");
 quit();
 
 # 21:55:35 >  
