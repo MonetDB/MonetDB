@@ -5,11 +5,11 @@
 # used by other tests in this directory
 auctionG_xml
 
-corrupt-attributelist.SF-1483706.create_doc
-corrupt-attributelist.SF-1483706.shred_doc
-corrupt-attributelist.SF-1483706.cache_doc
-corrupt-attributelist.SF-1483706.remove_doc
-corrupt-attributelist.SF-1483706.check
+currently_crashes_FC6_machines?corrupt-attributelist.SF-1483706.create_doc
+currently_crashes_FC6_machines?corrupt-attributelist.SF-1483706.shred_doc
+currently_crashes_FC6_machines?corrupt-attributelist.SF-1483706.cache_doc
+currently_crashes_FC6_machines?corrupt-attributelist.SF-1483706.remove_doc
+currently_crashes_FC6_machines?corrupt-attributelist.SF-1483706.check
 #
 serialization_of_decimal.SF-1388225
 wrong_BATpropcheck_on_void_void_BATs.SF-1397840-d0
