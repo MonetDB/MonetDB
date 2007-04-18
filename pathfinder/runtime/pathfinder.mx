@@ -2162,7 +2162,7 @@ PROC __runtime_addchunk(lng wsid,
                                    sze, nid, knd, prp, unq, rid, attr_own, attr_qn, attr_prp, prp_val, prp_txt, map_pid, 
                                    pre, att, updatable);
         if (updatable)  
-            __runtime_maintain(wsid, colname, runtime, idx.fetch(1), empty_bat, idx.fetch(0), empty_bat, empty_bat, empty_bat);
+            __runtime_maintain(wsid, colname, runtime, idx.fetch(1), bat(int,oid,0).access(BAT_READ), idx.fetch(0), empty_bat, empty_bat, empty_bat);
     }
     return commitbat;
 }
