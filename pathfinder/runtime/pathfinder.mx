@@ -1938,7 +1938,15 @@ PROC vx_reduce(BAT[oid,int] vxt, BAT[void,oid] vxp) : BAT[oid,oid]
 {
     # sort on hash code, to make next stap bearable
         vxt := vxt.tsort();
-        vxp := vxt.hmark(0@0).leftfetchjoin(vxp).access(BAT_WRITE);
+        vxp := vxt.hmark(0@0).leftfetchjoin(vxp);
+        if ( ( vxp.head() = "void" ) and ( vxp.tail() = "void" ) ) {
+            # in case of [void,void] BATs, access(BAT_WRITE) materializes the head,
+            # which the inplace() later on does not like;
+            # adding a copy() that materializes the tail seems to help ...
+            vxp := vxp.copy().access(BAT_WRITE);
+        } else {
+            vxp := vxp.access(BAT_WRITE);
+        }
         vxt := vxt.tmark(0@0);
 
     # eliminate too frequent values from the index
@@ -1988,11 +1996,11 @@ PROC __runtime_index(oid coll_oid,
 
     # compute the text/attr index, starting with text values 
     var vxm := knd.reverse().ord_select(pre,oid_nil).reverse().ord_uselect(TEXT).hmark(0@0);   
-    var vxp := vxm.leftfetchjoin(nid).access(BAT_APPEND);
+    var vxp := vxm.leftfetchjoin(nid);
     var vxt := vxm.leftfetchjoin(prp); vxm := nil;
         vxt := vxt.leftfetchjoin(prp_txt);
-        vxt := [hash](vxt).access(BAT_APPEND); 
-        vxm := vx_reduce(vxt, vxp).access(BAT_WRITE); vxp := nil; vxt := nil;
+        vxt := [hash](vxt);
+        vxm := vx_reduce(vxt, vxp); vxp := nil; vxt := nil;
 
     # add the newly shredded attributes. The new attributes are >att and have an attr_own > pre
         tmp := attr_own.reverse().ord_select(att,oid_nil).reverse();
