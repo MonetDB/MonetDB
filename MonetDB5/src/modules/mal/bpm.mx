@@ -653,7 +653,7 @@ str
 BPMloadCatalog(){
 	int i,k,tp;
 	bat idx;
-	BAT *b, *bm, *pb;
+	BAT *b, *pb;
 	BAT *alias = NULL,*nxt, *prv, *bld, *bll, *bhd, *bhl;
 	BUN p,q,r;
 	str nm;
@@ -663,7 +663,6 @@ BPMloadCatalog(){
 
 	if ((b = BATdescriptor(idx)) == NULL) 
 		throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
-	bm = BATmirror(b);
 	
 	BATloop(b, p, q) {
 		Partition pn;
@@ -854,7 +853,7 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	Partition ps, p;
 	int (*cmp) (ptr, ptr);
 	ptr nilptr;
-	int i,tpe,val_nil ;
+	int i,tpe;
 
 	BPMopen();
 
@@ -865,7 +864,6 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	tpe= *bid >0? rngType(b->ttype):rngType(b->htype);
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
-	val_nil = ((*cmp) (val, nilptr) == 0);
 	/* overlap by excluding outliers */
 	if( *bid>0){
 		if( right(i,tlow,val) || equal(i,tlow,val) ||
