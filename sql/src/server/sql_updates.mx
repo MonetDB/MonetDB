@@ -844,10 +844,11 @@ sql_update_key(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, stmt *i
 		ckeys = update_check_ukey(sql, updates, k, idx_updates, updcol);
 		sql_update_ukey(sql, schema, updates, k, updcol, l);
 		list_prepend(l, ckeys);
-	} else {		/* foreign keys */
-		ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
-		list_prepend(l, ckeys);
-	}
+	} else 
+		if (((sql_fkey*)k)->on_update == ACT_RESTRICT) {		/* foreign keys */
+			ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
+			list_prepend(l, ckeys);
+		}
 }
 
 static stmt *
@@ -963,18 +964,16 @@ sql_update_idxs(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list
 			is = join_idx_update(i, updates, updcol);
 		}
 		if (i->key) {
-			if (!sql->cascade_action) {
-				sql->cascade_action = list_create((fdestroy) NULL);
-			} else {
-				if (sql->cascade_action && !list_find_id(sql->cascade_action, i->key->base.id)) 
-					continue;
-				else {
-					int id = i->key->base.id;
-					list_append(sql->cascade_action, &id);
-				}
-			}
+			if (!(sql->cascade_action && list_find_id(sql->cascade_action, i->key->base.id))) {
+				int *local_id = GDKmalloc(sizeof(int));
+				if (!sql->cascade_action) 
+					sql->cascade_action = list_create((fdestroy) NULL);
+				
+				memcpy(local_id, &i->key->base.id, sizeof(int));
+				list_append(sql->cascade_action, &local_id);
+				sql_update_key(sql, schema, updates, i->key, is, updcol, l);
 
-			sql_update_key(sql, schema, updates, i->key, is, updcol, l);
+			}
 
 		}
 		if (is) 
@@ -1797,18 +1796,18 @@ sql_delete_keys(mvc *sql, sql_schema *schema, sql_table *t, stmt *deletes, list 
 	for (n = t->keys.set->h; n; n = n->next) {
 		sql_key *k = n->data;
 
-		if ((k->type == pkey || k->type == ukey) && (!sql->cascade_action || !list_find_id(sql->cascade_action, k->base.id))) {
-			int id = k->base.id;
+		if (k->type == pkey || k->type == ukey) {
+			
+			if (!(sql->cascade_action && list_find_id(sql->cascade_action, k->base.id))) {
+				int *local_id = GDKmalloc(sizeof(int));
+				if (!sql->cascade_action) 
+					sql->cascade_action = list_create((fdestroy) NULL);
+				
+				memcpy(local_id, &k->base.id, sizeof(int));
+				list_append(sql->cascade_action, &local_id); 
+				sql_delete_ukey(sql, schema, deletes, k, l);
 
-			if ( sql->cascade_action) {
-				list_append(sql->cascade_action, &id); 
 			}
-			else {
-				sql->cascade_action = list_create((fdestroy) NULL);
-				list_append(sql->cascade_action, &id);
-			}
-
-			sql_delete_ukey(sql, schema, deletes, k, l);
 
 		}
 	}
