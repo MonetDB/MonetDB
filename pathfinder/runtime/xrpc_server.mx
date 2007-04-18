@@ -135,8 +135,6 @@ Start XPRC receiver using the default values as specified in \
 #ifndef XRPC_SERVER_H
 #define XRPC_SERVER_H
 
-#include "pathfinder.h"
-
 #include <gdk.h>
 #include <mapi.h>
 #include <time.h>
