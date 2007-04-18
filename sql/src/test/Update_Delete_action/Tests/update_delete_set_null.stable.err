@@ -1,13 +1,13 @@
-stderr of test 'delete_no_action` in directory 'src/test/Update_Delete_action` itself:
+stderr of test 'update_delete_set_null` in directory 'src/test/Update_Delete_action` itself:
 
 
-# 15:35:33 >  
-# 15:35:33 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/MonetDB4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4:/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4/lib:/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/xquery_logs" --set mapi_port=37767 --set xrpc_port=48239 --set monet_prompt= --trace "--dbname=mTests_src_test_Update_Delete_action" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 15:35:33 >  
+# 11:12:55 >  
+# 11:12:55 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/MonetDB4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4:/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4/lib:/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/xquery_logs" --set mapi_port=38399 --set xrpc_port=48718 --set monet_prompt= --trace "--dbname=mTests_src_test_Update_Delete_action" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 11:12:55 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 1.17.1
-# builtin opt 	monet_pid = 3855
+# builtin opt 	monet_pid = 6584
 # builtin opt 	prefix = /ufs/goncalve/scratch/MonetDB/MonetDB
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -73,17 +73,17 @@ stderr of test 'delete_no_action` in directory 'src/test/Update_Delete_action` i
 # cmdline opt 	gdk_dbfarm = /ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/dbfarm
 # cmdline opt 	sql_logdir = /ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/sql_logs
 # cmdline opt 	xquery_logdir = /ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/xquery_logs
-# cmdline opt 	mapi_port = 37767
-# cmdline opt 	xrpc_port = 48239
+# cmdline opt 	mapi_port = 38399
+# cmdline opt 	xrpc_port = 48718
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_Update_Delete_action
 
-# 15:35:33 >  
-# 15:35:33 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37767 
-# 15:35:33 >  
+# 11:12:56 >  
+# 11:12:56 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38399 
+# 11:12:56 >  
 
 
-# 15:35:33 >  
-# 15:35:33 >  Done.
-# 15:35:33 >  
+# 11:12:56 >  
+# 11:12:56 >  Done.
+# 11:12:56 >  
 

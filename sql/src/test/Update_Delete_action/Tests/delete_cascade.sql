@@ -4,8 +4,6 @@ create table t2 (id int, age int, PRIMARY KEY (id), FOREIGN KEY(id) REFERENCES t
 
 create table t3 (id int, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE CASCADE);
 
-
-
 insert into t1 values(1, 'monetdb');
 insert into t1 values(2, 'mon');
 insert into t1 values(3, 'monb');
@@ -41,4 +39,3 @@ select * from t3;
 drop table t3;
 drop table t2;
 drop table t1;
-
