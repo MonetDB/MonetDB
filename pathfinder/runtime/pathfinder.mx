@@ -3161,6 +3161,20 @@ PROC ws_documents(BAT[void,BAT] ws, bit consistent) : BAT[void,oid]
     return xmltab4(ws, "document", doc_nme, "collection", doc_col, "url", doc_url, "updatable", doc_upd);
 }
 
+PROC ws_docname(BAT[void,BAT] ws, BAT[void,oid] id_iter, BAT[void,oid] id_item, BAT[void,int] id_kind) : BAT[oid,str]
+{
+    var id_conts := get_container(id_kind);
+    var id_roots := get_root(ws, id_item, id_kind, id_conts).mposjoin(id_conts, ws.fetch(PRE_NID));
+    var res_cont := id_roots.tmark(0@0).leftfetchjoin(id_conts);
+    var res_iter := id_roots.tmark(0@0).leftfetchjoin(id_iter);
+    var res_docid:= id_roots.hmark(0@0).mvaljoin(res_cont, ws.fetch(FRAG_ROOT)).tmark(0@0);
+    var res := reverse(res_iter).leftfetchjoin(res_docid);
+    lock_set(pf_short);
+    var err := CATCH(res := res.leftjoin(doc_name));
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
+    return res;
+}
 
 @- shredding documents
 

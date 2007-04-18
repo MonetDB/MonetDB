@@ -1747,6 +1747,11 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
+    , /* pf:docname (node*) as string* */
+      { .ns = PFns_lib, .loc = "docname",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()) },
+            .ret_ty = PFty_star( PFty_xs_string ()) } } }
     , /* pf:collection (string) as node */
       { .ns = PFns_lib, .loc = "collection",
         .arity = 1, .sig_count = 1, .sigs = { {

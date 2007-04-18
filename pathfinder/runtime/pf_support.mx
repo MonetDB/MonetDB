@@ -548,13 +548,16 @@ PROC replace_root(BAT[void,oid] result, BAT[oid,oid] frag_item, BAT[oid,oid] fra
         var delta := 100000 / count(frag_frag); # generate 100K intermediate tuples max
         var cur := 0, end := count(frag_item);
         while(cur < end) {
-                result.replace(leftthetajoin(frag_item.slice(cur, cur+delta), frag_frag, GE).{max}(), true);
+                var batch := frag_item.slice(cur, cur+delta);
+                result.replace(leftthetajoin(batch, frag_frag, GE).{max}(), true);
+                result.replace(batch.ord_select(0@0), true); # get_root() on collection super-root (0@0) returns self
                 cur :+= delta + 1;
         }
 }
 
 PROC get_root(BAT[oid,bat] ws, oid item, int kind, oid cont) : oid
 {
+        if (item = 0@0) return 0@0; # get_root() on collection super-root (0@0) returns self
         var nid_rid   := ws.fetch(NID_RID).fetch(cont);
         var map_pid   := ws.fetch(MAP_PID).fetch(cont);
         var frag_root := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
@@ -563,7 +566,6 @@ PROC get_root(BAT[oid,bat] ws, oid item, int kind, oid cont) : oid
                 item := ws.fetch(ATTR_OWN).fetch(cont).find(item);
                 item := nid_rid.find(item).swizzle(map_pid);
         }
-
         item := max(frag_root.select(oid_nil,item));
         return item;
 }

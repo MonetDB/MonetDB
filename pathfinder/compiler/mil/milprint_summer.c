@@ -6654,6 +6654,18 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, counter--, STR);
         deleteResult_ (f, counter, NORMAL);
         return NORMAL;
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"docname")) == 0) {
+        rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f,
+                "{ # translate pf:docname (node*) as string*\n"
+                "  iter := ws_docname(ws, iter.materialize(ipik), item.materialize(ipik), kind.materialize(ipik));\n"
+                "  item := addValues(str_values, iter).tmark(0@0);\n"
+                "  iter := item.hmark(0@0);\n"
+                "  ipik := iter;\n"
+                "  kind := STR;\n"
+                "  pos  := tmark_grp_unique(iter,ipik);\n"
+                "} # end of translate fn:docname (node*) as string*\n");
+        return STR;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"mil")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
