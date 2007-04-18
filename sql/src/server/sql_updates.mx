@@ -737,8 +737,9 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 }
 
 static stmt*
-sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, stmt **updates, list *l)
+sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, stmt **updates)
 {
+	list *l = NULL;
 	int len = 0, i;
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey*)k)->rkey->k.idx;
@@ -764,14 +765,15 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 
 		if (updates[c->c->colnr]) {
 			upd = stmt_dup(updates[fc->c->colnr]->op2.stval);
-		} else
+		} else {
 			upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
+		}
 
 		if (!upd || (upd = check_types(sql, &fc->c->type, upd, type_equal)) == NULL) {
-				stmt_destroy(rows);
-				list_destroy(l);
-				cleanup_stmts(new_updates, len);
-				return NULL;
+			stmt_destroy(rows);
+			list_destroy(l);
+			cleanup_stmts(new_updates, len);
+			return NULL;
 		}
 
 		if (upd->nrcols <= 0) 
@@ -781,13 +783,13 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 		if (c->c->base.flag == TR_NEW)
 			new_updates[c->c->colnr] = stmt_replace(stmt_bat(fc->c, stmt_dup(fts), INS), stmt_dup(upd));
 		else
-			updates[c->c->colnr] = stmt_insert(stmt_bat(fc->c, stmt_dup(fts), UPD), stmt_dup(upd));
-		list_append(l, stmt_dup(new_updates[fc->c->colnr]));
+			new_updates[c->c->colnr] = stmt_insert(stmt_bat(fc->c, stmt_dup(fts), UPD), stmt_dup(upd));
 	}
 
 	stmt_destroy(ts);
 	stmt_destroy(fts);
 	
+	l = create_stmt_list();
 	if ((s = sql_update(sql, schema, t, new_updates, l)) == NULL) {
 		list_destroy(l);
 		cleanup_stmts(new_updates, len);
@@ -821,7 +823,7 @@ sql_update_ukey(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, int up
 				case ACT_SET_DEFAULT: 
 					break;
 				case ACT_CASCADE: 
-					s = sql_update_cascade_Fkeys(sql, schema, fk, updcol, updates, l);
+					s = sql_update_cascade_Fkeys(sql, schema, fk, updcol, updates);
 					list_prepend(l, s);
 					break;
 				default:	/*RESTRICT*/

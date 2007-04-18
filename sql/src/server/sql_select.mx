@@ -120,7 +120,10 @@ sql_table_func(mvc *sql, scope *scp, symbol *query)
 
 	/* colum or table function */
 	st = tail_type(sq);
-	assert(st->comp_type);
+	if (!st->comp_type) {
+		(void) sql_error(sql, 02, "SELECT: '%s' does not return a table", tname);
+		return NULL;
+	}
 	tv = scope_add_table(scp, sq, tname, NULL);
 
 	/* foreach column add column name */

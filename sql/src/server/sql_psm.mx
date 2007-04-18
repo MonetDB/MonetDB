@@ -523,7 +523,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 			} else {
 				sql_destroy_params(sql);
 
-				f = mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, "sql_cache", q);
+				f = mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, "user", q);
 				if (b) {
 					id_col_l = stmt_list_dependencies(b, COLUMN_DEPENDENCY);
 					id_func_l = stmt_list_dependencies(b, FUNC_DEPENDENCY);
