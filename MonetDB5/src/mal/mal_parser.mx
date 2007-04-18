@@ -1228,8 +1228,10 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 		return (MalBlkPtr) parseError(cntxt, "<module> not defined\n");
 	modnme= modnme? modnme:cntxt->nspace->name;
 		
-	insertSymbol(findModule(cntxt->nspace, putName(modnme,strlen(modnme))),
-		curPrg);
+	if( isModuleDefined(cntxt->nspace, putName(modnme,strlen(modnme))))
+		insertSymbol(findModule(cntxt->nspace, putName(modnme,strlen(modnme))), curPrg);
+	else
+		parseError(cntxt,"<module> not found\n");
 	trimMalBlk(curBlk);
 	chkProgram(cntxt->nspace,curBlk);
 	if( cntxt->backup){
