@@ -18,7 +18,7 @@
 
 MTSAFE
 
-EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c
+EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c stream_socket.h
 EXTRA_HEADERS = stream_socket.h
 
 lib_mutils = { 
