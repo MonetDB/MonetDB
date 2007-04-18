@@ -602,11 +602,10 @@ drop_trigger(mvc *sql, dlist *qname)
 {
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
-	sql_trigger * t= NULL;
 
 	if (!schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	if ((t = mvc_bind_trigger(sql, ss, tname )) == NULL)
+	if (mvc_bind_trigger(sql, ss, tname ) == NULL)
 		return sql_error(sql, 02, "DROP TRIGGER: unknown trigger %s\n", tname);
 	mvc_drop_trigger(sql, ss, tname);
 	return stmt_none();
