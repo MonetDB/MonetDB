@@ -518,7 +518,7 @@ Client MCforkClient(Client father){
 		/* reuse the scopes wherever possible */
 		if(son->nspace==0)
 			son->nspace = newModule(NULL, putName("child",5));
-		son->nspace->outer = mal_scope;
+		son->nspace->outer = father->nspace->outer;
 	}
 	return son;
 }

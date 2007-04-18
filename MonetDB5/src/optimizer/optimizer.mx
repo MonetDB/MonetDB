@@ -231,6 +231,7 @@ opt_export str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Module s;
 	Symbol t;
+	Client c;
 	int j;
 	str nme, fcn,msg=MAL_SUCCEED;
 
@@ -243,8 +244,8 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	removeInstruction(mb,p);
 
 
-	s= findModule(mal_scope, putName(nme,strlen(nme)));
-	if (s == 0) s= mal_scope;
+	c= MCgetClient();
+	s= findModule(c->nspace, putName(nme,strlen(nme)));
 	for(; s; s=s->outer)
 	if(strcmp(s->name,nme)== 0 && s->subscope){
 		j = getSubScope(fcn); 
@@ -272,7 +273,7 @@ str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) stk; 
 	removeInstruction(mb,p);
 	fcn= getVarConstant(mb, getArg(p,1)).val.sval;
-	s= findModule(mal_scope, putName(fcn,strlen(fcn)));
+	s= findModule(MCgetClient()->nspace, putName(fcn,strlen(fcn)));
 #ifdef DEBUG_OPT_MACRO
 	printf("@1optimizer: %s\n",fcn);
 #endif
@@ -304,7 +305,7 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #ifdef DEBUG_OPT_MACRO
 	printf("@1optimizer\n");
 #endif
-	for(s= mal_scope; s; s=s->outer)
+	for(s= MCgetClient()->nspace; s; s=s->outer)
 	if( s->subscope){
 		for(j=0;j<MAXSCOPE;j++)
 		if(s->subscope[j]){

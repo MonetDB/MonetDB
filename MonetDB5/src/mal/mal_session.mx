@@ -89,8 +89,6 @@ malBootstrap()
 		return 0;
 	}
 	MALengine(c);
-	/* keep the handle on the shared modules */
-	mal_scope = c->nspace->outer;
 	return 1;
 }
 
@@ -356,7 +354,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			return;
 		}
 		c->nspace = newModule(NULL, putName("user", 4));
-		c->nspace->outer = mal_scope;
+		c->nspace->outer = mal_clients[0].nspace->outer;
 		c->sessionkey = key;
 
 		if (!lang) {

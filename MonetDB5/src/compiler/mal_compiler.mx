@@ -502,9 +502,7 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	printf("MCdynamicCompiler: %s.%s\n", nme, fcn);
 #endif
 
-	s = findModule(mal_scope, nme);
-	if (s == 0)
-		s = mal_scope;
+	s = findModule(MCgetClient()->nspace, nme);
 	for (; s; s = s->outer)
 		if (strcmp(s->name, nme) == 0 && s->subscope) {
 			j = getSubScope(fcn);

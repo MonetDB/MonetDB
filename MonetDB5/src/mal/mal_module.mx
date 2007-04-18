@@ -64,8 +64,6 @@ typedef struct SCOPEDEF {
 } *Module, ModuleRecord;
 
 
-mal_export Module    mal_scope;  /* the start of the shared module list */
-
 mal_export void     setModuleJump(str nme, Module cur);
 mal_export Module   newModule(Module scope, str nme);
 mal_export Module   fixModule(Module scope, str nme);

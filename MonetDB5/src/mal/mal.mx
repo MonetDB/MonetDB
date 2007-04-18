@@ -382,7 +382,6 @@ void mal_exit(void){
 	/* skip this to solve random crashes, needs work */
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
-	mal_scope = 0;
 	unloadLibraries(); 
 
 	finishNamespace();

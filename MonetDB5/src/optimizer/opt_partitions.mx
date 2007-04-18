@@ -36,12 +36,6 @@ of SQL column BATs and prepare code for using partitioned
 versions instead.
 
 A walk through of a simplified SQL query plan is shown below.
-The first time a column is used, the partition optimizer
-checks its properties and marking it for iterative evalation
-or expansion using a merge table approach.
-The decision is based on the number of partitions involved.
-[to be decided]
-
 @verbatim
 function user.qry():void;
 	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);
@@ -56,8 +50,8 @@ can be rewritten into:
 @example
 function user.qry{runonce} ():void
 	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);
-	bm:= bpm.take("sys_voyages_captain")
-	(b0,b1):= bpm.getPartitions(bm);
+	b0:bat[:oid,:int]:= bpm.take("sys_voyages_captain",0);
+	b1:bat[:oid,:int]:= bpm.take("sys_voyages_captain",1);
 	mbm:= mat.new(b0,b1);
 	t:= algebra.select(mbm,nil:int,100);
 	io.print(t);
@@ -65,15 +59,19 @@ end qry;
 @end example
 The translation ignored the boundaries for the partitions,
 which might be handy for symbolic optimization.
-Furthermore, it can prune one partition as not being relevant.
+One way to make this known is with a (dummy) select operation,
+i.e. its execution is cheap.
 @example
 function user.qry{runonce} ():void
 	b:bat[:oid,:int]:= sql.bind("sys","voyages","captain",0,0);
-	bm:= bpm.take("sys_voyages_captain")
+	bm:bat[:oid,:int]:= bpm.take("sys_voyages_captain")
 	b0:= bpm.getPartition(bm,0);
-	t:= algebra.select(b0,0,100);
+	b1:= bpm.select(b0, 500,1000);
+	t:= algebra.select(b1,0,100);
 	io.print(t);
 end qry;
+@end example
+This code can be optimized away using the range-optimizer.
 @{
 @mal
 pattern optimizer.partitions():str
