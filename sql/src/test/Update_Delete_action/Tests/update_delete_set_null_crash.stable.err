@@ -1,13 +1,13 @@
-stderr of test 'delete_restrict` in directory 'src/test/Update_Delete_action` itself:
+stderr of test 'update_delete_set_null_crash` in directory 'src/test/Update_Delete_action` itself:
 
 
-# 15:54:02 >  
-# 15:54:02 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=38344 --set xrpc_port=43756 --set monet_prompt= --trace "--dbname=mTests_src_test_Update_Delete_action" --dbinit='include sql;' ; echo ; echo Over..
-# 15:54:02 >  
+# 18:09:59 >  
+# 18:09:59 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=31046 --set xrpc_port=40673 --set monet_prompt= --trace "--dbname=mTests_src_test_Update_Delete_action" --dbinit='include sql;' ; echo ; echo Over..
+# 18:09:59 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 1.17.1
-# builtin opt 	monet_pid = 29096
+# builtin opt 	monet_pid = 12442
 # builtin opt 	prefix = /ufs/goncalve/scratch/MonetDB/MonetDB
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -62,25 +62,19 @@ stderr of test 'delete_restrict` in directory 'src/test/Update_Delete_action` it
 # cmdline opt 	gdk_dbfarm = /ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm
 # cmdline opt 	sql_logdir = /ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs
 # cmdline opt 	xquery_logdir = /ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs
-# cmdline opt 	mapi_port = 38344
-# cmdline opt 	xrpc_port = 43756
+# cmdline opt 	mapi_port = 31046
+# cmdline opt 	xrpc_port = 40673
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_Update_Delete_action
 #warning: please don't forget to set your vault key!
 #(see /ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf)
 
-# 15:54:03 >  
-# 15:54:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38344 
-# 15:54:03 >  
+# 18:10:00 >  
+# 18:10:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31046 
+# 18:10:00 >  
 
-MAPI  = monetdb@localhost:31237
-QUERY = delete from t1;
-ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 't1.t1_id_pkey' violated
-MAPI  = monetdb@localhost:31237
-QUERY = delete from t1 where id > 2 and id < 5;
-ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 't1.t1_id_pkey' violated
 
-# 15:54:05 >  
-# 15:54:05 >  Done.
-# 15:54:05 >  
+# 18:10:02 >  
+# 18:10:02 >  Done.
+# 18:10:02 >  
 

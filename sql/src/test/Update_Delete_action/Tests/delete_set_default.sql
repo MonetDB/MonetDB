@@ -19,7 +19,6 @@ insert into t2 values(2, 24);
 insert into t2 values(3, 25);
 insert into t2 values(4, 26);
 insert into t2 values(5, 27);
-insert into t2 values(6, 28);
 
 
 insert into t3 values(3, 5);

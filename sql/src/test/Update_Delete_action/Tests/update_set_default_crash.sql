@@ -1,8 +1,8 @@
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int DEFAULT 3, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCE (t1)) ON DELETE SET DEFAULT;
+create table t2 (id int DEFAULT 3, age int, PRIMARY KEY (id), FOREIGN KEY(id) REFERENCES t1(id) ON DELETE SET DEFAULT);
 
-create table t3 (id int DEFAULT 30, day int, FOREIGN KEY(id) REFERENCE (t2)) ON DELETE SET DEFAULT;
+create table t3 (id int DEFAULT 30, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE SET DEFAULT);
 
 
 
@@ -19,13 +19,12 @@ insert into t2 values(2, 24);
 insert into t2 values(3, 25);
 insert into t2 values(4, 26);
 insert into t2 values(5, 27);
-insert into t2 values(6, 28);
 
 
-insert into t2 values(3, 5);
-insert into t2 values(3, 5);
-insert into t2 values(4, 6);
-insert into t2 values(5, 7);
+insert into t3 values(3, 5);
+insert into t3 values(3, 5);
+insert into t3 values(4, 6);
+insert into t3 values(5, 7);
 
 update t1 set id = 10 where id =1;
 update t1 set id = 11 where id =2;
@@ -44,9 +43,9 @@ drop table t1;
 
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int DEFAULT 3, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCE (t1)) ON DELETE SET DEFAULT;
+create table t2 (id int DEFAULT 3, age int, PRIMARY KEY (id), FOREIGN KEY(id) REFERENCES t1(id) ON DELETE SET DEFAULT);
 
-create table t3 (id int DEFAULT 3, day int, FOREIGN KEY(id) REFERENCE (t2)) ON DELETE SET DEFAULT;
+create table t3 (id int DEFAULT 3, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE SET DEFAULT);
 
 
 
@@ -63,13 +62,12 @@ insert into t2 values(2, 24);
 insert into t2 values(3, 25);
 insert into t2 values(4, 26);
 insert into t2 values(5, 27);
-insert into t2 values(6, 28);
 
 
-insert into t2 values(3, 5);
-insert into t2 values(3, 5);
-insert into t2 values(4, 6);
-insert into t2 values(5, 7);
+insert into t3 values(3, 5);
+insert into t3 values(3, 5);
+insert into t3 values(4, 6);
+insert into t3 values(5, 7);
 
 update t1 set id = 10 where id =1;
 update t1 set id = 11 where id =2;

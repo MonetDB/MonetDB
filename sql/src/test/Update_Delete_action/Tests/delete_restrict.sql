@@ -26,12 +26,6 @@ insert into t3 values(3, 5);
 insert into t3 values(4, 6);
 insert into t3 values(5, 7);
 
-delete from t1 where id < 2 or id > 5;
-
-select * from t1;
-select * from t2;
-select * from t3;
-
 delete from t1;
 
 select * from t1;

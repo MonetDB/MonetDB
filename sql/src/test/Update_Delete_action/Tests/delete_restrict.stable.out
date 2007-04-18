@@ -93,34 +93,6 @@ Over..
 [ 3,	5	]
 [ 4,	6	]
 [ 5,	7	]
-% sys.t1,	sys.t1 # table_name
-% id,	name # name
-% int,	varchar # type
-% 1,	7 # length
-[ 1,	"monetdb"	]
-[ 2,	"mon"	]
-[ 3,	"monb"	]
-[ 4,	"motdb"	]
-[ 5,	"mob"	]
-[ 6,	"moetdb"	]
-[ 7,	"mo"	]
-% sys.t2,	sys.t2 # table_name
-% id,	age # name
-% int,	int # type
-% 1,	2 # length
-[ 1,	23	]
-[ 2,	24	]
-[ 3,	25	]
-[ 4,	26	]
-[ 5,	27	]
-% sys.t3,	sys.t3 # table_name
-% id,	num # name
-% int,	int # type
-% 1,	1 # length
-[ 3,	5	]
-[ 3,	5	]
-[ 4,	6	]
-[ 5,	7	]
 [ 2	]
 % sys.t1,	sys.t1 # table_name
 % id,	name # name

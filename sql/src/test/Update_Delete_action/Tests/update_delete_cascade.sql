@@ -40,7 +40,6 @@ select * from t2;
 select * from t3;
 
 drop table t3;
-drop table t3;
 drop table t2;
 drop table t1;
 
