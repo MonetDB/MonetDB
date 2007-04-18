@@ -1942,7 +1942,7 @@ PROC vx_reduce(BAT[oid,int] vxt, BAT[void,oid] vxp) : BAT[oid,oid]
         vxt := vxt.tmark(0@0);
 
     # eliminate too frequent values from the index
-    var lim := 16*log2(lng(count(vxt)));
+    var lim := 8192; 
     var sel := histogram(vxt);
         sel := [<](sel, lim);
         sel := vxt.leftjoin(sel).tmark(0@0).access(BAT_WRITE); # true for infrequent values
@@ -3357,8 +3357,7 @@ PROC _shred_doc_cleanup(lng wsid, bit cleanup) : BAT[any,any]
     if (cleanup) return _collection_cleanup(); # garbage collect empty collections
     return new(str,str);
 }
-
-var pf_commit_shred := true;
+var pf_commit_docmgmt := true;
 
 PROC shred_doc_base(BAT[void,str] commitBAT,
                     BAT[void,str] idx_locations, 
@@ -3423,7 +3422,7 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
     }
 
     # checkpoint the new bats
-    if (pf_commit_shred)
+    if (pf_commit_docmgt)
     if (pf_checkpoint(commitBAT)) {
         # remove the in-memory undo log; and trim collection
         lock_set(pf_short);
@@ -3445,6 +3444,7 @@ PROC shred_stream(Stream s,
     ws_free(wsid); 
     if (not(isnil(err))) ERROR(err);
 }
+
 
 @- deleting documents
 
@@ -3509,11 +3509,13 @@ PROC del_doc_base(bit cachedOnly,
     var commitBAT := del_doc(cachedOnly, names, pf_short_req);
 
     # now here is our commit: checkpoint 2 bat descs and BBP.dir
-    var ok := false;
-    lock_set(pf_wal);
-    CATCH(ok := subcommit(commitBAT));
-    lock_unset(pf_wal);
-    if (not(ok)) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
+    if (pf_commit_docmgt) {
+        var ok := false;
+        lock_set(pf_wal);
+        CATCH(ok := subcommit(commitBAT));
+        lock_unset(pf_wal);
+        if (not(ok)) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
+    }
    
     if (pf_short_req) {
         # try to remove empty collections (non-critical)
