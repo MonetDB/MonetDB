@@ -151,7 +151,8 @@ OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void)stk;
 	(void) p;
-	throw(MAL,"mal.multiplex","no implementation present");
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	throw(MAL,"opt.remap","no implementation present");
 }
 @include optimizerWrapper.mx
 @h
