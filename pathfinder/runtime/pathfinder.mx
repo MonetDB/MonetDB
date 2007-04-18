@@ -3357,7 +3357,7 @@ PROC _shred_doc_cleanup(lng wsid, bit cleanup) : BAT[any,any]
     if (cleanup) return _collection_cleanup(); # garbage collect empty collections
     return new(str,str);
 }
-var pf_commit_docmgmt := true;
+var pf_commit_docmgt := true;
 
 PROC shred_doc_base(BAT[void,str] commitBAT,
                     BAT[void,str] idx_locations, 
