@@ -435,6 +435,8 @@ const lock_nil      := lock(nil);
 const sema_nil      := sema(nil);
 const timestamp_nil := timestamp(nil);
 
+PROC log2(any i) : int { return int(log(dbl(i))/M_LN2); }
+
 PROC addValues(bat[void,any::1] container, any::1 delta) : oid
 {
     container.append(delta);
@@ -1171,15 +1173,6 @@ PROC htordered_unique_thetajoin( int mode,
     return join_order;
 }
 
-PROC log2(lng i) : int 
-{
-  var n := 0;
-  while(i >= 1LL)  {
-     i >>= 1; n :+= 1;
-  }
-  return n;
-}
-
 var lng_oid := ifthenelse(isnil(oid(LNG_MAX)),lng,oid);
 
 # loop-lifted variant; lo and ro are the outer iteration numbers that should match
@@ -1667,7 +1660,7 @@ if (postfilter) {
 @= prefilter
 	       cands := ws.fetch(PRE_SIZE).fetch(contID).mirror();
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
-	if (is_constant(pre_cont)) {
+	if (is_constant(pre_cont) and (count(result_part_item) > 16*log2(count(cands)))) {
 		var qn_sel := ws.fetch(@2).fetch(bat2constant(pre_cont)).ord_uselect(@1);
                 if (isnil(CATCH(cands := ws_lookup(ws, contID, qn_sel.mirror())))) {
 	        	var map_pid  := ws.fetch(MAP_PID).fetch(contID);
