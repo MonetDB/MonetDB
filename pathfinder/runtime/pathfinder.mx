@@ -3358,6 +3358,8 @@ PROC _shred_doc_cleanup(lng wsid, bit cleanup) : BAT[any,any]
     return new(str,str);
 }
 
+var pf_commit_shred := true;
+
 PROC shred_doc_base(BAT[void,str] commitBAT,
                     BAT[void,str] idx_locations, 
                     BAT[void,str] idx_names, 
@@ -3421,6 +3423,7 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
     }
 
     # checkpoint the new bats
+    if (pf_commit_shred)
     if (pf_checkpoint(commitBAT)) {
         # remove the in-memory undo log; and trim collection
         lock_set(pf_short);
