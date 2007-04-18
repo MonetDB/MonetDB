@@ -404,10 +404,10 @@ tested extensively and should provide overall good performance.
 str defaultPlan=
 	"inline,"
 	"remap,"
-	"evaluate,"
+	/* "evaluate," */
 	"costModel,"
 	"coercions,"
-	"emptySet," 
+	/* "emptySet," */
 	/* "joinselect," */
 	"accessmode,"
 	"aliases,"
