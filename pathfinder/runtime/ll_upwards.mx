@@ -192,15 +192,7 @@ ll_upwards_@1(                            /* OUTPUT: */
             pre = skipholes(pre+1, pre_size);
   	    if (depth == XML_DEPTH_MAX || pre > limit) break; /* SANITY */
 
-        } else if (depth == 0) {
-
-            /* enter another fragment */
-            pre = skipholes(pre+1+pre_size[pre], pre_size);
-  	    if (pre > limit) break; /* SANITY */
-            root = pre;
-
-	
-        } else if (context[cur].pre <= stack[depth-1] + pre_size[stack[depth-1]]) {
+        } else if (depth == 0 || context[cur].pre <= stack[depth-1] + pre_size[stack[depth-1]]) {
             oid off = pre;
             int budget = PF_SIBLING_PROBES;
             int cnt = 0;
@@ -218,6 +210,8 @@ ll_upwards_@1(                            /* OUTPUT: */
                     off = pre; cnt = 0;
                 }
             }
+	    if (depth == 0)
+		    root = pre;
         } else {
 
             /* pop the stack */
