@@ -63,10 +63,10 @@ stderr of test 'copy_decimal.SF-1582957` in directory 'src/test/BugTracker` itse
 # 21:06:21 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32735  < copy_decimal.SF-1582957.sql
 # 21:06:21 >  
 
-MAPI  = monetdb@localhost:38505
+MAPI  = monetdb@localhost:36408
 QUERY = COPY 1 RECORDS INTO LINEITEM FROM stdin USING DELIMITERS '|','|\n';
 ERROR = !ERROR: decimal wrong format (17.000)
-        !ERROR: value 17.000|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|blithely regular ideas caj not inserted
+        !ERROR: value 17.000|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|blithely regular ideas caj from line 0 not inserted
         !ERROR: importTable: failed to import table
         !ERROR: mvc_import_table_wrap: operation failed.
 

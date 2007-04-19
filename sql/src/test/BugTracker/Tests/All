@@ -51,3 +51,4 @@ subquery_orderby.SF-1688915
 limits_of_decimal.SF-1685357
 like_join.SF-1684798
 prepare_decimal_float.SF-1675795
+crash_on_fkey_update.SF-1703497

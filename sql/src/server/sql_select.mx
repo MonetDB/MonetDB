@@ -56,6 +56,7 @@ extern stmt *selects(mvc *sql, scope *scp, symbol *sym);
 
 extern stmt *sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek);
 extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
+extern stmt *scope_subtable(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
 extern stmt *flat_subquery(mvc *sql, symbol *sq);
 extern stmt *sql_reorder(stmt *order, stmt *s);
 
@@ -120,7 +121,10 @@ sql_table_func(mvc *sql, scope *scp, symbol *query)
 
 	/* colum or table function */
 	st = tail_type(sq);
-	assert(st->comp_type);
+	if (!st->comp_type) {
+		(void) sql_error(sql, 02, "SELECT: '%s' does not return a table", tname);
+		return NULL;
+	}
 	tv = scope_add_table(scp, sq, tname, NULL);
 
 	/* foreach column add column name */
@@ -248,6 +252,34 @@ sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 		return sql_simple_select(sql, scp, sn);
 	}
 	return sql_select(sql, scp, sn, ek);
+}
+
+stmt *
+scope_subtable(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
+{
+	stmt *s;
+
+	scp = scope_open(scp);
+	s = sql_subquery(sql, scp, sq, ek);
+	/* create a table from a single value subquery result */
+	if (s->key && s->nrcols == 0) {
+		list *l = create_stmt_list();
+		node *n;
+
+		for (n = s->op1.lval->h; n; n = n->next) {
+			stmt *ns = stmt_dup(n->data);
+			char *cname = column_name(ns);
+			stmt *temp = stmt_temp(tail_type(ns));
+
+			ns = stmt_append(temp, ns);
+			ns = stmt_alias(ns, table_name(ns), cname);
+			list_append(l, ns);
+		}
+		stmt_destroy(s);
+		s = stmt_list(l);
+	}
+	scp = scope_close(scp);
+	return s;
 }
 
 stmt *

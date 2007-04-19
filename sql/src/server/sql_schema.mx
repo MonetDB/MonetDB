@@ -769,7 +769,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		sql->depth++;
 		if (sql->depth > SQL_MAXDEPTH)
 			return sql_error(sql, 02, "CREATE VIEW: too many nested VIEWS");
-		sq = scope_subquery(sql, NULL, query, ek );
+		sq = scope_subtable(sql, NULL, query, ek );
 		sql->depth--;
 		if (!sq)
 			return NULL;
@@ -1588,7 +1588,7 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		int with_data = as_sq->h->next->next->data.ival;
 		sql_table *t = NULL; 
 
-		sq = scope_subquery(sql, NULL, subquery, ek);
+		sq = scope_subtable(sql, NULL, subquery, ek);
 		/* make sure we get a list of ordered columns */
 		if (sq && sq->type == st_ordered) {
 			stmt *order = stmt_dup(sq->op1.stval);
