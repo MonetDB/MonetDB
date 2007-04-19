@@ -2101,7 +2101,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", \"pkkeycol\".\"column\" AS \"PKCOLUMN_NAME\", " +
 		"\"fkschema\".\"name\" AS \"FKTABLE_SCHEM\", " +
 		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", \"fkkeycol\".\"column\" AS \"FKCOLUMN_NAME\", " +
-		"((\"fkkeycol\".\"nr\" * 121) + \"pkkeycol\".\"nr\") AS \"KEY_SEQ\", " +
+		"\"pkkeycol\".\"nr\" AS \"KEY_SEQ\", " +
 		DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
 		"" + DatabaseMetaData.importedKeyNoAction + " AS \"DELETE_RULE\", " +
 		"\"fkkey\".\"name\" AS \"FK_NAME\", \"pkkey\".\"name\" AS \"PK_NAME\", " +
@@ -2112,7 +2112,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"WHERE \"fktable\".\"id\" = \"fkkey\".\"table_id\" AND \"pktable\".\"id\" = \"pkkey\".\"table_id\" AND " +
 			"\"fkkey\".\"id\" = \"fkkeycol\".\"id\" AND \"pkkey\".\"id\" = \"pkkeycol\".\"id\" AND " +
 			"\"fkschema\".\"id\" = \"fktable\".\"schema_id\" AND \"pkschema\".\"id\" = \"pktable\".\"schema_id\" AND " +
-			"\"fkkey\".\"rkey\" > -1 AND \"fkkey\".\"rkey\" = \"pkkey\".\"id\" ";
+			"\"fkkey\".\"rkey\" > -1 AND \"fkkey\".\"rkey\" = \"pkkey\".\"id\" AND " +
+			"\"fkkeycol\".\"nr\" = \"pkkeycol\".\"nr\" ";
 
 	static String keyQuery(String cat) {
 		return("SELECT '" + cat + "' AS \"PKTABLE_CAT\", '" + cat + "' AS \"FKTABLE_CAT\"" + keyQuery);
@@ -2183,7 +2184,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			query += "AND LOWER(\"fktable\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 
-		query += "ORDER BY \"PKTABLE_CAT\", \"PKTABLE_SCHEM\", \"PKTABLE_NAME\", \"KEY_SEQ\"";
+		query += "ORDER BY \"PKTABLE_CAT\", \"PKTABLE_SCHEM\", \"PKTABLE_NAME\", \"PK_NAME\", \"KEY_SEQ\"";
 
 		return(getStmt().executeQuery(query));
 	}
@@ -2253,7 +2254,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			query += "AND LOWER(\"pktable\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 
-		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"KEY_SEQ\"";
+		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"FK_NAME\", \"KEY_SEQ\"";
 
 		return(getStmt().executeQuery(query));
 	}
@@ -2344,7 +2345,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			query += "AND LOWER(\"fktable\".\"name\") LIKE '" + escapeQuotes(ftable).toLowerCase() + "' ";
 		}
 
-		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"KEY_SEQ\"";
+		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"FK_NAME\", \"KEY_SEQ\"";
 
 		return(getStmt().executeQuery(query));
 	}

@@ -193,9 +193,8 @@ public class SQLExporter extends Exporter {
 		// foreign keys
 		cols = dbmd.getImportedKeys(catalog, schema, name);
 		while (cols.next()) {
-			String fkname = cols.getString("FK_NAME");
 			out.println(",");
-			out.print("\tCONSTRAINT " + dq(fkname) + " FOREIGN KEY (");
+			out.print("\tCONSTRAINT " + dq(cols.getString("FK_NAME")) + " FOREIGN KEY (");
 
 			boolean next;
 			Set fk = new LinkedHashSet();
@@ -203,8 +202,8 @@ public class SQLExporter extends Exporter {
 			Set pk = new LinkedHashSet();
 			pk.add(cols.getString("PKCOLUMN_NAME").intern());
 
-			while ((next = cols.next()) && fkname != null &&
-				fkname.equals(cols.getString("FK_NAME")))
+			while ((next = cols.next()) &&
+				cols.getInt("KEY_SEQ") != 0)
 			{
 				fk.add(cols.getString("FKCOLUMN_NAME").intern());
 				pk.add(cols.getString("PKCOLUMN_NAME").intern());
