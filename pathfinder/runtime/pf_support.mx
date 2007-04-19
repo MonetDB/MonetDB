@@ -435,7 +435,7 @@ const lock_nil      := lock(nil);
 const sema_nil      := sema(nil);
 const timestamp_nil := timestamp(nil);
 
-PROC log2(any i) : int { return int(log(dbl(i))/M_LN2); }
+PROC log2(any i) : int { return int(log(dbl(i))/M_LN2) + 1; }
 
 PROC addValues(bat[void,any::1] container, any::1 delta) : oid
 {
