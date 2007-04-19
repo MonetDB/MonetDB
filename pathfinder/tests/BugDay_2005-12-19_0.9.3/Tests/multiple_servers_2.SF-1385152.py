@@ -1,7 +1,7 @@
 import os, time, sys
 
 def server_start(x,s,dbinit):
-    srvcmd = '%s --dbname "%s" --set mapi_port=%s --dbinit "%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),os.getenv('MAPIPORT'),dbinit)
+    srvcmd = '%s --dbname "%s" --dbinit "%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),dbinit)
     sys.stdout.write('\nserver %d%d : "%s"\n' % (x,s,dbinit))
     sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s,dbinit))
     sys.stdout.flush()
@@ -71,7 +71,6 @@ def clients(x,dbinit):
 
 def main():
     x = 0
-    x += 1; clients(x,"module(mapi); mil_start(); module(pathfinder);")
-    x += 1; clients(x,"module(mapi);module(pathfinder); mil_start();")
+    x += 1; clients(x,"module(pathfinder); mil_start();")
 
 main()

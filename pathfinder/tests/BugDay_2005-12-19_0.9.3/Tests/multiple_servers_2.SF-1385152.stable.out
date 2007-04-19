@@ -6,256 +6,130 @@ stdout of test 'multiple_servers_2.SF-1385152` in directory 'tests/BugDay_2005-1
 # 15:38:16 >  
 
 
-server 11 : "module(mapi); mil_start(); module(pathfinder);"
+server 11 : "module(pathfinder); mil_start();"
 # Monet Database Server V4.14.0
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 11 : "module(mapi); mil_start(); module(pathfinder);", client 1: XQUERY
+server 11 : "module(pathfinder); mil_start();", client 1: XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>111</XQueryResult>
 
-server 11 : "module(mapi); mil_start(); module(pathfinder);", client 2: (XQUERY) XQUERY
+server 11 : "module(pathfinder); mil_start();", client 2: (XQUERY) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>112</XQueryResult>
 
-server 11 : "module(mapi); mil_start(); module(pathfinder);", client 3: (XQUERY) (XQUERY) MAPI
+server 11 : "module(pathfinder); mil_start();", client 3: (XQUERY) (XQUERY) MAPI
 [ 113 ]
 
-server 11 : "module(mapi); mil_start(); module(pathfinder);", client 4: (XQUERY) (XQUERY) (MAPI) MAPI
+server 11 : "module(pathfinder); mil_start();", client 4: (XQUERY) (XQUERY) (MAPI) MAPI
 [ 114 ]
 quit();
 
-server 12 : "module(mapi); mil_start(); module(pathfinder);"
+server 12 : "module(pathfinder); mil_start();"
 # Monet Database Server V4.14.0
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 12 : "module(mapi); mil_start(); module(pathfinder);", client 1: XQUERY
+server 12 : "module(pathfinder); mil_start();", client 1: XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>121</XQueryResult>
 
-server 12 : "module(mapi); mil_start(); module(pathfinder);", client 2: (XQUERY) MAPI
+server 12 : "module(pathfinder); mil_start();", client 2: (XQUERY) MAPI
 [ 122 ]
 
-server 12 : "module(mapi); mil_start(); module(pathfinder);", client 3: (XQUERY) (MAPI) XQUERY
+server 12 : "module(pathfinder); mil_start();", client 3: (XQUERY) (MAPI) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>123</XQueryResult>
 
-server 12 : "module(mapi); mil_start(); module(pathfinder);", client 4: (XQUERY) (MAPI) (XQUERY) MAPI
+server 12 : "module(pathfinder); mil_start();", client 4: (XQUERY) (MAPI) (XQUERY) MAPI
 [ 124 ]
 quit();
 
-server 13 : "module(mapi); mil_start(); module(pathfinder);"
+server 13 : "module(pathfinder); mil_start();"
 # Monet Database Server V4.14.0
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 13 : "module(mapi); mil_start(); module(pathfinder);", client 1: MAPI
+server 13 : "module(pathfinder); mil_start();", client 1: MAPI
 [ 131 ]
 
-server 13 : "module(mapi); mil_start(); module(pathfinder);", client 2: (MAPI) XQUERY
+server 13 : "module(pathfinder); mil_start();", client 2: (MAPI) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>132</XQueryResult>
 
-server 13 : "module(mapi); mil_start(); module(pathfinder);", client 3: (MAPI) (XQUERY) XQUERY
+server 13 : "module(pathfinder); mil_start();", client 3: (MAPI) (XQUERY) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>133</XQueryResult>
 
-server 13 : "module(mapi); mil_start(); module(pathfinder);", client 4: (MAPI) (XQUERY) (XQUERY) MAPI
+server 13 : "module(pathfinder); mil_start();", client 4: (MAPI) (XQUERY) (XQUERY) MAPI
 [ 134 ]
 quit();
 
-server 14 : "module(mapi); mil_start(); module(pathfinder);"
+server 14 : "module(pathfinder); mil_start();"
 # Monet Database Server V4.14.0
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 14 : "module(mapi); mil_start(); module(pathfinder);", client 1: XQUERY
+server 14 : "module(pathfinder); mil_start();", client 1: XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>141</XQueryResult>
 
-server 14 : "module(mapi); mil_start(); module(pathfinder);", client 2: (XQUERY) MAPI
+server 14 : "module(pathfinder); mil_start();", client 2: (XQUERY) MAPI
 [ 142 ]
 
-server 14 : "module(mapi); mil_start(); module(pathfinder);", client 3: (XQUERY) (MAPI) MAPI
+server 14 : "module(pathfinder); mil_start();", client 3: (XQUERY) (MAPI) MAPI
 [ 143 ]
 
-server 14 : "module(mapi); mil_start(); module(pathfinder);", client 4: (XQUERY) (MAPI) (MAPI) XQUERY
+server 14 : "module(pathfinder); mil_start();", client 4: (XQUERY) (MAPI) (MAPI) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>144</XQueryResult>
 quit();
 
-server 15 : "module(mapi); mil_start(); module(pathfinder);"
+server 15 : "module(pathfinder); mil_start();"
 # Monet Database Server V4.14.0
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 15 : "module(mapi); mil_start(); module(pathfinder);", client 1: MAPI
+server 15 : "module(pathfinder); mil_start();", client 1: MAPI
 [ 151 ]
 
-server 15 : "module(mapi); mil_start(); module(pathfinder);", client 2: (MAPI) XQUERY
+server 15 : "module(pathfinder); mil_start();", client 2: (MAPI) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>152</XQueryResult>
 
-server 15 : "module(mapi); mil_start(); module(pathfinder);", client 3: (MAPI) (XQUERY) MAPI
+server 15 : "module(pathfinder); mil_start();", client 3: (MAPI) (XQUERY) MAPI
 [ 153 ]
 
-server 15 : "module(mapi); mil_start(); module(pathfinder);", client 4: (MAPI) (XQUERY) (MAPI) XQUERY
+server 15 : "module(pathfinder); mil_start();", client 4: (MAPI) (XQUERY) (MAPI) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>154</XQueryResult>
 quit();
 
-server 16 : "module(mapi); mil_start(); module(pathfinder);"
+server 16 : "module(pathfinder); mil_start();"
 # Monet Database Server V4.14.0
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 16 : "module(mapi); mil_start(); module(pathfinder);", client 1: MAPI
+server 16 : "module(pathfinder); mil_start();", client 1: MAPI
 [ 161 ]
 
-server 16 : "module(mapi); mil_start(); module(pathfinder);", client 2: (MAPI) MAPI
+server 16 : "module(pathfinder); mil_start();", client 2: (MAPI) MAPI
 [ 162 ]
 
-server 16 : "module(mapi); mil_start(); module(pathfinder);", client 3: (MAPI) (MAPI) XQUERY
+server 16 : "module(pathfinder); mil_start();", client 3: (MAPI) (MAPI) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>163</XQueryResult>
 
-server 16 : "module(mapi); mil_start(); module(pathfinder);", client 4: (MAPI) (MAPI) (XQUERY) XQUERY
+server 16 : "module(pathfinder); mil_start();", client 4: (MAPI) (MAPI) (XQUERY) XQUERY
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>164</XQueryResult>
-quit();
-
-server 21 : "module(mapi);module(pathfinder); mil_start();"
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-server 21 : "module(mapi);module(pathfinder); mil_start();", client 1: XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>211</XQueryResult>
-
-server 21 : "module(mapi);module(pathfinder); mil_start();", client 2: (XQUERY) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>212</XQueryResult>
-
-server 21 : "module(mapi);module(pathfinder); mil_start();", client 3: (XQUERY) (XQUERY) MAPI
-[ 213 ]
-
-server 21 : "module(mapi);module(pathfinder); mil_start();", client 4: (XQUERY) (XQUERY) (MAPI) MAPI
-[ 214 ]
-quit();
-
-server 22 : "module(mapi);module(pathfinder); mil_start();"
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-server 22 : "module(mapi);module(pathfinder); mil_start();", client 1: XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>221</XQueryResult>
-
-server 22 : "module(mapi);module(pathfinder); mil_start();", client 2: (XQUERY) MAPI
-[ 222 ]
-
-server 22 : "module(mapi);module(pathfinder); mil_start();", client 3: (XQUERY) (MAPI) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>223</XQueryResult>
-
-server 22 : "module(mapi);module(pathfinder); mil_start();", client 4: (XQUERY) (MAPI) (XQUERY) MAPI
-[ 224 ]
-quit();
-
-server 23 : "module(mapi);module(pathfinder); mil_start();"
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-server 23 : "module(mapi);module(pathfinder); mil_start();", client 1: MAPI
-[ 231 ]
-
-server 23 : "module(mapi);module(pathfinder); mil_start();", client 2: (MAPI) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>232</XQueryResult>
-
-server 23 : "module(mapi);module(pathfinder); mil_start();", client 3: (MAPI) (XQUERY) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>233</XQueryResult>
-
-server 23 : "module(mapi);module(pathfinder); mil_start();", client 4: (MAPI) (XQUERY) (XQUERY) MAPI
-[ 234 ]
-quit();
-
-server 24 : "module(mapi);module(pathfinder); mil_start();"
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-server 24 : "module(mapi);module(pathfinder); mil_start();", client 1: XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>241</XQueryResult>
-
-server 24 : "module(mapi);module(pathfinder); mil_start();", client 2: (XQUERY) MAPI
-[ 242 ]
-
-server 24 : "module(mapi);module(pathfinder); mil_start();", client 3: (XQUERY) (MAPI) MAPI
-[ 243 ]
-
-server 24 : "module(mapi);module(pathfinder); mil_start();", client 4: (XQUERY) (MAPI) (MAPI) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>244</XQueryResult>
-quit();
-
-server 25 : "module(mapi);module(pathfinder); mil_start();"
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-server 25 : "module(mapi);module(pathfinder); mil_start();", client 1: MAPI
-[ 251 ]
-
-server 25 : "module(mapi);module(pathfinder); mil_start();", client 2: (MAPI) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>252</XQueryResult>
-
-server 25 : "module(mapi);module(pathfinder); mil_start();", client 3: (MAPI) (XQUERY) MAPI
-[ 253 ]
-
-server 25 : "module(mapi);module(pathfinder); mil_start();", client 4: (MAPI) (XQUERY) (MAPI) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>254</XQueryResult>
-quit();
-
-server 26 : "module(mapi);module(pathfinder); mil_start();"
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-server 26 : "module(mapi);module(pathfinder); mil_start();", client 1: MAPI
-[ 261 ]
-
-server 26 : "module(mapi);module(pathfinder); mil_start();", client 2: (MAPI) MAPI
-[ 262 ]
-
-server 26 : "module(mapi);module(pathfinder); mil_start();", client 3: (MAPI) (MAPI) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>263</XQueryResult>
-
-server 26 : "module(mapi);module(pathfinder); mil_start();", client 4: (MAPI) (MAPI) (XQUERY) XQUERY
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>264</XQueryResult>
 quit();
 
 # 19:08:56 >  
