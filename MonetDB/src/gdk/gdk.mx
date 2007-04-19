@@ -1757,7 +1757,7 @@ typedef struct {
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	int lastused;		/* BBP LRU stamp */
 	volatile int status;	/* status mask used for spin locking */
-	MT_Id pid;		/* non-zero thread-id if this BAT is private */
+	/* MT_Id pid;		non-zero thread-id if this BAT is private */
 } BBPrec;
 
 gdk_export bat BBPmaxsize;
