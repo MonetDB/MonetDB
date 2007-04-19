@@ -1020,8 +1020,8 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 
 	if( getModuleId(p) == ioRef ||
-		getModuleId(p) == bstreamsRef ||
-		getModuleId(p) == bstreamsRef ||
+		getModuleId(p) == streamsRef ||
+		getModuleId(p) == bstreamRef ||
 		getModuleId(p) == mdbRef ||
 		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
