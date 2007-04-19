@@ -1092,10 +1092,14 @@ bbpclear(bat i, int idx, str lock)
 		BBP_lrefs(i) = 0;
 		if (lock) gdk_set_lock(GDKcacheLock(idx), lock);
 		if (BBPtmpcheck(BBP_logical(i)) == 0) {
+			gdk_set_lock(GDKnameLock, "bbpclear");
 			BBP_delete(i);
+			gdk_unset_lock(GDKnameLock, "bbpclear");
 		}
 		if (BBP_logical(-i)) {
+			gdk_set_lock(GDKnameLock, "bbpclear");
 			BBP_delete(-i);
+			gdk_unset_lock(GDKnameLock, "bbpclear");
 			if( BBP_logical(-i) != BBP[ABS(i)].bak[(-i)<0])
 				GDKfree(BBP_logical(-i));
 			BBP_logical(-i) = NULL;
