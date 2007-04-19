@@ -1661,8 +1661,6 @@ if (postfilter) {
 	       cands := ws.fetch(PRE_SIZE).fetch(contID).mirror();
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
 	if (is_constant(pre_cont) and (count(result_part_item) > 2048)) {
-print(count(result_part_item));
-print(count(cands));
 		var qn_sel := ws.fetch(@2).fetch(bat2constant(pre_cont)).ord_uselect(@1);
                 if (isnil(CATCH(cands := ws_lookup(ws, contID, qn_sel.mirror())))) {
 	        	var map_pid  := ws.fetch(MAP_PID).fetch(contID);
