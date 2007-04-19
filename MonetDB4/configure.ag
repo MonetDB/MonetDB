@@ -170,6 +170,9 @@ QXdatarootdir="`echo "$Xdatarootdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qdatarootdir)
 AC_SUBST(Xdatarootdir)
 AC_SUBST(QXdatarootdir)
+if test "${datadir}" = '${datarootdir}'; then
+	datadir="${datarootdir}"
+fi
 Qdatadir="$datadir"
 Xdatadir="`$translatepath "$datadir"`"
 QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
