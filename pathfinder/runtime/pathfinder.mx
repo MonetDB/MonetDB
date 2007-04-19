@@ -1950,7 +1950,7 @@ PROC vx_reduce(BAT[oid,int] vxt, BAT[void,oid] vxp) : BAT[oid,oid]
         vxt := vxt.tmark(0@0);
 
     # eliminate too frequent values from the index
-    var lim := 8192; 
+    var lim := 2048; 
     var sel := histogram(vxt);
         sel := [<](sel, lim);
         sel := vxt.leftjoin(sel).tmark(0@0).access(BAT_WRITE); # true for infrequent values
