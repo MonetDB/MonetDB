@@ -100,7 +100,7 @@ gdk_export int GDKdebug;
 #define MT_seterrno(x)	errno=x
 
 /* lock performance tracing */
-#define MT_LOCK_TRACE 1
+/* #define MT_LOCK_TRACE 1 */
 #ifdef MT_LOCK_TRACE
 gdk_export void MT_locktrace_start();
 gdk_export void MT_locktrace_end();
