@@ -18,7 +18,8 @@ LIBS = {
 		#datacell.mx 
 
 	HEADERS = h 
-	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
+	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream -lm \
+                $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
