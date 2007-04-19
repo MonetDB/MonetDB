@@ -9,7 +9,7 @@ LIBS = {
 
 	HEADERS = h 
 	#SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = $(MONETDB_LIBS) -lbat -lstream -lm \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
 }
