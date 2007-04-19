@@ -41,5 +41,5 @@
 #endif
 #endif
 
-#define MONETDBPREFIX "@Qprefix@"
-#define MONETDBCONFIG "@Qsysconfdir@@QDIRSEP@monetdb5.conf"
+#define MONETDBPREFIX "@QXprefix@"
+#define MONETDBCONFIG "@QXsysconfdir@@QDIRSEP@monetdb5.conf"
