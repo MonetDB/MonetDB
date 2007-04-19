@@ -1353,15 +1353,19 @@ GDKprotect(void)
 	if (GDKprotected == 0) {
 		TMDEBUG printf("# GDKlocks created\n");
 
-		MT_init_lock(GDKthreadLock, "GDKthreadLock");
-		for (i = 0; i <= BBPLOCKMASK; i++) {
-			MT_init_lock(GDKswapLock[i], "GDKswapLock");
-			MT_init_lock(GDKhashLock[i], "GDKhashLock");
+		for (i = 0; i <= BBP_BATMASK; i++) {
+			MT_init_lock(GDKbatLock[i].swap, "GDKswapLock");
+			MT_init_lock(GDKbatLock[i].hash, "GDKhashLock");
 		}
-		MT_init_lock(GDKcacheLock, "GDKcacheLock");
+		for (i = 0; i <= BBP_THREADMASK; i++) {
+			MT_init_lock(GDKbbpLock[i].alloc, "GDKcacheLock");
+			MT_init_lock(GDKbbpLock[i].trim, "GDKtrimLock");
+			GDKbbpLock[i].free = 0;
+		}
+		MT_init_lock(GDKnameLock, "GDKnameLock");
+		MT_init_lock(GDKthreadLock, "GDKthreadLock");
 		MT_init_lock(GDKunloadLock, "GDKunloadLock");
 		MT_init_cond(GDKunloadCond, "GDKunloadCond");
-		MT_init_lock(GDKtrimLock, "GDKtrimLock");
 		MT_init_lock(GDKtmLock, "GDKtmLock");
 		GDKprotected = 1;
 	}
@@ -1500,10 +1504,10 @@ int GDKdebug = 0;
 int GDKembedded = 0;
 int GDKprotected = 0;
 
+batlock_t GDKbatLock[BBP_BATMASK+1];
+bbplock_t GDKbbpLock[BBP_THREADMASK+1];
+MT_Lock GDKnameLock;
 MT_Lock GDKthreadLock;
-MT_Lock GDKswapLock[BBPLOCKMASK + 1];
-MT_Lock GDKhashLock[BBPLOCKMASK + 1];
-MT_Lock GDKcacheLock, GDKtrimLock;
 MT_Lock GDKunloadLock;
 MT_Lock GDKtmLock;
 MT_Cond GDKunloadCond;

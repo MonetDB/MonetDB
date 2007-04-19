@@ -1736,11 +1736,11 @@ BUNlocate(BAT *b, ptr x, ptr y)
 			}
 			@:swapif(v->hhash == NULL)@
 			if (v->hhash) {
-				gdk_set_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BUNlocate");
+				gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BUNlocate");
 				if (b->hhash == NULL) { /* give it to the parent */
 					b->hhash = BATmirror(b)->thash = v->hhash;
 				}
-				gdk_unset_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BUNlocate");
+				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BUNlocate");
 			}
 			BBPreclaim(v); v = NULL;
 		}
@@ -2541,7 +2541,7 @@ BATmode(BAT *b, int mode)
 		} else if (b->batPersistence == PERSISTENT) {
 			BBPdecref(bid, TRUE);
 		}
-		gdk_set_lock(GDKswapLock[bid & BBPLOCKMASK], "BATmode");
+		gdk_set_lock(GDKswapLock(bid & BBP_BATMASK), "BATmode");
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
@@ -2561,7 +2561,7 @@ BATmode(BAT *b, int mode)
 			}
 		}
 		b->batPersistence = mode;
-		gdk_unset_lock(GDKswapLock[bid & BBPLOCKMASK], "BATmode");
+		gdk_unset_lock(GDKswapLock(bid & BBP_BATMASK), "BATmode");
 	}
 	return b;
 }

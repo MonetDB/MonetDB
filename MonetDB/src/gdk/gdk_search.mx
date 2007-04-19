@@ -330,7 +330,7 @@ be stored under the hash function.
 BAT *
 BAThash(BAT *b, size_t masksize)
 {
-	gdk_set_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BAThash");
+	gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 	if (b->hhash == NULL) {
 		unsigned int xx, tpe = ATOMstorage(b->htype);
 		size_t i, cnt = BATcount(b);
@@ -380,7 +380,7 @@ BAThash(BAT *b, size_t masksize)
 			hp->filename = GDKmalloc(strlen(nme) + 12);
 			sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
 			if ((h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), (size_t) mask)) == NULL) {
-				gdk_unset_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BAThash");
+				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 				GDKfree(hp->filename);
 				GDKfree(hp);
 				return NULL;
@@ -446,7 +446,7 @@ BAThash(BAT *b, size_t masksize)
 		}
 		b->hhash = BATmirror(b)->thash = h;
 	}
-	gdk_unset_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BAThash");
+	gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 	return b;
 }
 

@@ -328,7 +328,7 @@ SWAP@1ptr(@1 **b1, @1 **b2) {
 @:SWAP(oid)@
 @:SWAP(BAT)@
 
-MT_Lock salgebra_chashLock[BBPLOCKMASK + 1];
+MT_Lock salgebra_chashLock[BBP_BATMASK + 1];
 MT_Lock salgebra_cacheLock;
 MT_Lock salgebra_refcntLock;
 
@@ -482,9 +482,9 @@ clusterhashByName(clusterhash *res, char *chname)
 		return GDK_FAIL;
 	}
 	/* copy data into output buf */
-	MT_set_lock(salgebra_chashLock[ABS(ch->b) & BBPLOCKMASK], "clusterhashByName");
+	MT_set_lock(salgebra_chashLock[ABS(ch->b) & BBP_BATMASK], "clusterhashByName");
 	memcpy(res, ch, clusterhash_size());
-	MT_unset_lock(salgebra_chashLock[ABS(ch->b) & BBPLOCKMASK], "clusterhashByName");
+	MT_unset_lock(salgebra_chashLock[ABS(ch->b) & BBP_BATMASK], "clusterhashByName");
 	MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
 	return GDK_SUCCEED;
 }
@@ -671,11 +671,11 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 	oid *hvs = NULL;
 
 	/* CHECK: existing clusterhash on this bat? */
-	MT_set_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CHbuild");
+	MT_set_lock(salgebra_chashLock[ABS(bid) & BBP_BATMASK], "CHbuild");
 	if (salgebra_isCached(ch->b = bid)) {
 		GDKerror("salgebra_CHbuild: Clusterhash already exists.\n");
 		(void) clusterhashNil(ch);
-		MT_unset_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CHbuild");
+		MT_unset_lock(salgebra_chashLock[ABS(bid) & BBP_BATMASK], "CHbuild");
 		return GDK_FAIL;
 	}
 	ch->bttype = BATttype(b);
@@ -692,7 +692,7 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 	ch->dict = (Heap *) GDKmalloc(sizeof(Heap));
 	ch->dict->filename = NULL;
 	if (HEAPalloc(ch->dict, chlen, sizeof(dict_entry)) < 0) {
-		MT_unset_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CHbuild");
+		MT_unset_lock(salgebra_chashLock[ABS(bid) & BBP_BATMASK], "CHbuild");
 		GDKfree(ch->bhash);
 		GDKfree(ch->dict);
 		ch->bhash = NULL;
@@ -776,7 +776,7 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 	salgebra_cacheIt(ch);
 	BBPcold(ch->b);
 
-	MT_unset_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CHbuild");
+	MT_unset_lock(salgebra_chashLock[ABS(bid) & BBP_BATMASK], "CHbuild");
 	return GDK_SUCCEED;
 }
 
@@ -1072,9 +1072,9 @@ salgebra_CMDdestroy(str chname)
 	refcnt = salgebra_getRefCnt(ch);
 	ERRORcheck(refcnt > 1, "Still references around; cannot destroy ch\n");
         bid = ABS(ch->b);
-	MT_set_lock(salgebra_chashLock[bid & BBPLOCKMASK], "CMDdestroy");
+	MT_set_lock(salgebra_chashLock[bid & BBP_BATMASK], "CMDdestroy");
 	salgebra_uncacheIt(ch);
-	MT_unset_lock(salgebra_chashLock[bid & BBPLOCKMASK], "CMDdestroy");
+	MT_unset_lock(salgebra_chashLock[bid & BBP_BATMASK], "CMDdestroy");
 	return GDK_SUCCEED;
 }
 
@@ -1088,7 +1088,7 @@ salgebra_prelude(void)
 	GDKwarning("salgebra prelude!\n");
 #endif
 	/* allocate locks */
-	for (i = 0; i <= BBPLOCKMASK; i++) {
+	for (i = 0; i <= BBP_BATMASK; i++) {
 		MT_init_lock(salgebra_chashLock[i], "salgebra_chashLock");
 	}
 	MT_init_lock(salgebra_cacheLock, "salgebra_cacheLock");
@@ -1128,7 +1128,7 @@ salgebra_epilogue(void)
 
 	MT_destroy_lock(salgebra_cacheLock);
 	MT_destroy_lock(salgebra_refcntLock);
-	for (i = 0; i <= BBPLOCKMASK; i++) {
+	for (i = 0; i <= BBP_BATMASK; i++) {
 		MT_destroy_lock(salgebra_chashLock[i]);
 	}
 }

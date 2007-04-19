@@ -1757,11 +1757,11 @@ typedef struct {
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	int lastused;		/* BBP LRU stamp */
 	volatile int status;	/* status mask used for spin locking */
+	MT_Id pid;		/* non-zero thread-id if this BAT is private */
 } BBPrec;
 
 gdk_export bat BBPmaxsize;
 gdk_export bat BBPlimit;
-gdk_export bat BBP_free;
 gdk_export int BBP_dirty;	/* BBP table dirty? */
 gdk_export BBPrec *BBP;
 
@@ -1775,6 +1775,7 @@ gdk_export BBPrec *BBP;
 #define BBP_lrefs(i)    BBP[ABS(i)].lrefs
 #define BBP_lastused(i) BBP[ABS(i)].lastused
 #define BBP_status(i)   BBP[ABS(i)].status
+#define BBP_pid(i)      BBP[ABS(i)].pid
 
 /* macros that nicely check parameters */
 #define BBPdirty(x)	 (BBP_dirty=(x))
@@ -2231,9 +2232,6 @@ gdk_export int GDKfatal(const char *format, ...);
 gdk_export int GDKerrorCount(void);
 @
 @h
-#define BBPLOCKMASK     127 
-#define BBPBINSMASK     15 
-
 #include "gdk_delta.h"
 #include "gdk_search.h"
 #include "gdk_atoms.h"
@@ -2252,13 +2250,32 @@ gdk_export int GDKerrorCount(void);
 #define strdup _strdup
 #endif
 
+#define BBP_BATMASK     511 
+#define BBP_THREADMASK   63 
+
+typedef struct {
+    MT_Lock swap;
+    MT_Lock hash;
+} batlock_t;
+
+typedef struct {
+    MT_Lock alloc;
+    MT_Lock trim;
+    bat free;
+} bbplock_t;
+
+#define GDKswapLock(x)  GDKbatLock[x].swap
+#define GDKhashLock(x)  GDKbatLock[x].hash
+#define GDKtrimLock(y)  GDKbbpLock[y].trim
+#define GDKcacheLock(y) GDKbbpLock[y].alloc
+#define BBP_free(y)     GDKbbpLock[y].free
+
+gdk_export batlock_t GDKbatLock[BBP_BATMASK+1];
+gdk_export bbplock_t GDKbbpLock[BBP_THREADMASK+1];
+gdk_export MT_Lock GDKnameLock;
 gdk_export MT_Lock GDKthreadLock;
-gdk_export MT_Lock GDKswapLock[BBPLOCKMASK + 1];
-gdk_export MT_Lock GDKhashLock[BBPLOCKMASK + 1];
 gdk_export MT_Lock GDKunloadLock;
 gdk_export MT_Cond GDKunloadCond;
-gdk_export MT_Lock GDKcacheLock;
-gdk_export MT_Lock GDKtrimLock;
 gdk_export MT_Lock GDKtmLock;
 
 #define CHECKMASK         2

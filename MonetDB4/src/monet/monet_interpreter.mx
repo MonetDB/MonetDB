@@ -332,7 +332,7 @@ interpret_pin(batrec *r, int force, str s)
 		BAT *_b = BBP_cache(bid);
 		int tid = THRgettid();
 
-		monet_set_lock(GDKhashLock[bid & BBPLOCKMASK], "pin");
+		monet_set_lock(GDKhashLock(bid & BBP_BATMASK), "pin");
 		if (_b->void_cnt & (force | (_b->void_tid != tid))) {
 			BAT *v = VIEWcreate(b);
 			BBPunfix(r->id);
@@ -346,7 +346,7 @@ interpret_pin(batrec *r, int force, str s)
 		}
 		_b->void_cnt++;
 		_b->void_tid = tid;
-		monet_unset_lock(GDKhashLock[bid & BBPLOCKMASK], "pin");
+		monet_unset_lock(GDKhashLock(bid & BBP_BATMASK), "pin");
 	}
 	r->id = b->batCacheid;
 
@@ -367,7 +367,7 @@ interpret_unpin(batrec *r, str s)
                         bat bid = ABS(r->id);
 			BAT *_b = BBPdescriptor(bid);
 
-		        monet_set_lock(GDKhashLock[bid & BBPLOCKMASK], "unpin");
+		        monet_set_lock(GDKhashLock(bid & BBP_BATMASK), "unpin");
 			if (--(_b->void_cnt) == 0) {
 				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[%d,%d]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 
@@ -375,7 +375,7 @@ interpret_unpin(batrec *r, str s)
 			} else {
 				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[%d,%d]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 			}
-		        monet_unset_lock(GDKhashLock[bid & BBPLOCKMASK], "unpin");
+		        monet_unset_lock(GDKhashLock(bid & BBP_BATMASK), "unpin");
 		}
 	}
 	BBPunfix(r->id);

@@ -559,8 +559,8 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 		BBP_logical(-i) = GDKstrdup(name[1]);
 	BBPincref(i, TRUE);
 	BBP_status_on(i, BBPNEW|BBPSWAPPED, "bat_convert");
-	if (BBP_free <= i)
-		BBP_free = i+1;
+	if (BBP_free(i & BBP_THREADMASK) <= i)
+		BBP_free(i & BBP_THREADMASK) = i+1;
 	if (b->htype == TYPE_str || b->ttype == TYPE_str) {
 		DELTAsave(b);
 		return fix_heap(BATdescriptor(b->batCacheid));

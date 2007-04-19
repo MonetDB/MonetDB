@@ -157,11 +157,13 @@ TMsubcommit(BAT* b) {
 
 	if (prelude(cnt, subcommit) == 0) { /* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global (sub-)commits */
-		gdk_set_lock(GDKtrimLock, "TMsubcommit");
+                for(xx=0; xx <= BBP_THREADMASK; xx++)
+			gdk_set_lock(GDKtrimLock(xx), "TMsubcommit");
  		if (BBPsync(cnt, subcommit) == 0) { /* write BBP.dir (++) */
 			ret = epilogue(cnt, subcommit);
 		}
-		gdk_unset_lock(GDKtrimLock, "TMsubcommit");
+                for(xx=BBP_THREADMASK; xx >= 0; xx--)
+			gdk_unset_lock(GDKtrimLock(xx), "TMsubcommit");
 	}
 	return ret;
 }
