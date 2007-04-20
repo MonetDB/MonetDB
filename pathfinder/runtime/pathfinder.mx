@@ -610,7 +610,11 @@ PROC pf_checkpoint(BAT[void,str] commitBAT) : bit
     lock_set(pf_wal);
     var err := CATCH(ok := subcommit(commitBAT));
     lock_unset(pf_wal);
-    if (not(ok)) ERROR(err + "XQDY0062a: checkpoint failed (in pf_checkpoint), query aborted.\n");
+    if (not(ok)) {
+        var msg := "XQDY0062: checkpoint failed (in pf_checkpoint), query aborted.\n";
+        if (not(isnil(err))) msg := err + msg;
+        ERROR(msg);
+    }
     return true;
 }
 
@@ -3531,7 +3535,11 @@ PROC del_doc_base(bit cachedOnly,
         lock_set(pf_wal);
         var err := CATCH(ok := subcommit(commitBAT));
         lock_unset(pf_wal);
-        if (not(ok)) ERROR(err + "XQDY0062: checkpoint failed (in del_doc_base), query aborted.\n");
+        if (not(ok)) {
+            var msg := "XQDY0062: checkpoint failed (in del_doc_base), query aborted.\n";
+            if (not(isnil(err))) msg := err + msg;
+            ERROR(msg);
+        }
     }
    
     if (pf_short_req) {
