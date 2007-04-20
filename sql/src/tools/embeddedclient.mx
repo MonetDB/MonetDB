@@ -174,7 +174,7 @@ start_sql_server(void *arg)
 	out = ((stream **) arg)[1];
 	free(arg);
 	snprintf(buf, sizeof(buf), "client(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
-	monet_exec("module(sql_server);mapi_register(sql_frontend());");
+	monet_exec("module(sql_server);");
 	monet_exec(buf);
 	return NULL;
 }
