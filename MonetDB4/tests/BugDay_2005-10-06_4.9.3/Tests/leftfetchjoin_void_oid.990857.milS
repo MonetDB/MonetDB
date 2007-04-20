@@ -1,6 +1,0 @@
-
-module(malalgebra);
-var a := bat(void,oid);
-a := a.reverse().mark(0@0).reverse();
-var b := a.reverse().mark(0@0).reverse().[int]();
-a.leftfetchjoin(b).htype().print();

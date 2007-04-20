@@ -1,4 +1,0 @@
-create table xy ( time timestamp, x decimal(6,4), y decimal(6,4));
-prepare insert into xy values (?,?,?);
-exec 0 (timestamp '2007-03-07 15:28:16.577', 0.6841, 0.684);
-select * from xy;
