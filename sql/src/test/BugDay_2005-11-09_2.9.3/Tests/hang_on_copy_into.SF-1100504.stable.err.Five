@@ -68,11 +68,11 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 # 13:11:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45907  < hang_on_copy_into.SF-1100504.sql
 # 13:11:12 >  
 
-MAPI  = monetdb@localhost:31292
+MAPI  = monetdb@localhost:30145
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t';
 ERROR = !SQLException:importTable:failed to import table
-        !ERROR: End of string (') missing in 'dwerg.net word volwassen, er is eindelijk content
-MAPI  = monetdb@localhost:31292
+        !ERROR: End of string (') missing in 'dwerg.net word volwassen, er is eindelijk content at line 1
+MAPI  = monetdb@localhost:30145
 QUERY = en het voicemail archief begint al aardig vol te lopen.
 ERROR = !syntax error, unexpected IDENT in: "en"
 
