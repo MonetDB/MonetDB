@@ -23,6 +23,7 @@ import java.io.*;
 import java.util.*;
 import java.math.*;
 import java.net.*;
+import nl.cwi.monetdb.mcl.parser.*;
 
 /**
  * A ResultSet suitable for the MonetDB database.
@@ -50,7 +51,7 @@ public class MonetResultSet implements ResultSet {
 	private int lastColumnRead = -1;
 	// the following have default access modifier for the MonetVirtualResultSet
 	/** The current line of the buffer split in columns */
-	String[] result;
+	final TupleLineParser tlp;
 	/** The current position of the cursor for this ResultSet object */
 	int curRow = 0;
 
@@ -103,7 +104,7 @@ public class MonetResultSet implements ResultSet {
 		tupleCount = header.tuplecount;
 
 		// create result array
-		result = new String[columns.length];
+		tlp = new TupleLineParser(columns.length);
 	}
 
 	/**
@@ -139,6 +140,8 @@ public class MonetResultSet implements ResultSet {
 		this.columns = columns;
 		this.types = types;
 		this.tupleCount = results;
+
+		this.tlp = new TupleLineParser(columns.length);
 	}
 
 	//== methods of interface ResultSet
@@ -191,123 +194,11 @@ public class MonetResultSet implements ResultSet {
 		curRow = row;
 
 		if (tmpLine == null) return(false);
-		int len = tmpLine.length();
-		char[] chrLine = new char[len];
-		tmpLine.getChars(0, len, chrLine, 0);
-
-		// extract separate fields by examining string, char for char
-		boolean inString = false, escaped = false;
-		int cursor = 2, column = 0, i = 2;
-		StringBuffer uesc = new StringBuffer();
-		for (; i < len; i++) {
-			switch(chrLine[i]) {
-				default:
-					escaped = false;
-				break;
-				case '\\':
-					escaped = !escaped;
-				break;
-				case '"':
-					/**
-					 * If all strings are wrapped between two quotes, a \" can
-					 * never exist outside a string. Thus if we believe that we
-					 * are not within a string, we can safely assume we're about
-					 * to enter a string if we find a quote.
-					 * If we are in a string we should stop being in a string if
-					 * we find a quote which is not prefixed by a \, for that
-					 * would be an escaped quote. However, a nasty situation can
-					 * occur where the string is like "test \\" as obvious, a
-					 * test for a \ in front of a " doesn't hold here for all
-					 * cases. Because "test \\\"" can exist as well, we need to
-					 * know if a quote is prefixed by an escaping slash or not.
-					 */
-					if (!inString) {
-						inString = true;
-					} else if (!escaped) {
-						inString = false;
-					}
-
-					// reset escaped flag
-					escaped = false;
-				break;
-				case '\t':
-					if (!inString &&
-						(i > 0 && chrLine[i - 1] == ',') ||
-						(i + 1 == len - 1 && chrLine[++i] == ']')) // dirty
-					{
-						// split!
-						if (chrLine[cursor] == '"' &&
-							chrLine[i - 2] == '"')
-						{
-							// reuse the StringBuffer by cleaning it
-							uesc.delete(0, uesc.length());
-							// prevent capacity increasements
-							uesc.ensureCapacity((i - 2) - (cursor + 1));
-							for (int pos = cursor + 1; pos < i - 2; pos++) {
-								if (chrLine[pos] == '\\' && pos + 1 < i - 2) {
-									pos++;
-									// strToStr and strFromStr in gdk_atoms.mx only
-									// support \t \n \\ \" and \377
-									switch (chrLine[pos]) {
-										case '\\':
-											uesc.append('\\');
-										break;
-										case 'n':
-											uesc.append('\n');
-										break;
-										case 't':
-											uesc.append('\t');
-										break;
-										case '"':
-											uesc.append('"');
-										break;
-										case '0': case '1': case '2': case '3':
-											// this could be an octal number, let's check it out
-											if (pos + 2 < i - 2 &&
-												chrLine[pos + 1] >= '0' && chrLine[pos + 1] <= '7' &&
-												chrLine[pos + 2] >= '0' && chrLine[pos + 2] <= '7'
-											) {
-												// we got the number!
-												try {
-													uesc.append((char)(Integer.parseInt("" + chrLine[pos] + chrLine[pos + 1] + chrLine[pos + 2], 8)));
-													pos += 2;
-													break;
-												} catch (NumberFormatException e) {
-													// hmmm, this point should never be reached actually...
-													throw new AssertionError("Flow error, should never try to parse non-number");
-												}
-											}
-											// do default action if number seems not to be correct
-										default:
-											// this is wrong, just ignore the escape, and print the char
-											uesc.append(chrLine[pos]);
-										break;
-									}
-								} else {
-									uesc.append(chrLine[pos]);
-								}
-							}
-
-							// put the unescaped string in the right place
-							result[column++] = uesc.toString();
-						} else if ((i - 1) - cursor == 4 &&
-								tmpLine.indexOf("NULL", cursor) == cursor)
-						{
-							result[column++] = null;
-						} else {
-							result[column++] =
-								tmpLine.substring(cursor, i - 1);
-						}
-						cursor = i + 1;
-					}
-
-					// reset escaped flag
-					escaped = false;
-				break;
-			}
+		try {
+			tlp.parse(tmpLine);
+		} catch (MCLParseException e) {
+			throw new SQLException(e.getMessage());
 		}
-		// check if this result is of the size we expected it to be
-		if (column != columns.length) throw new AssertionError("Illegal result length: " + column + "\nlast read: " + (column > 0 ? result[column - 1] : "<none>"));
 
 		// reset lastColumnRead
 		lastColumnRead = -1;
@@ -1332,7 +1223,7 @@ public class MonetResultSet implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Object getObject(int i, Map map) throws SQLException {
-		if (result[i - 1] == null) {
+		if (tlp.values[i - 1] == null) {
 			lastColumnRead = i - 1;
 			return(null);
 		}
@@ -1536,7 +1427,7 @@ public class MonetResultSet implements ResultSet {
 		// in the future this might change, and the lastColumnRead must
 		// be updated for the wasNull command to work properly!!!
 		try {
-			String ret = result[columnIndex - 1];
+			String ret = tlp.values[columnIndex - 1];
 			lastColumnRead = columnIndex - 1;
 			return(ret);
 		} catch (IndexOutOfBoundsException e) {
@@ -1606,7 +1497,7 @@ public class MonetResultSet implements ResultSet {
 		try {
 			switch(dataType) {
 				default:
-					throw new java.text.ParseException("Unsupported data type", 0);
+					throw new MCLParseException("unsupported data type", 0);
 
 				case Types.DATE:
 				case Types.TIMESTAMP:
@@ -1620,14 +1511,14 @@ public class MonetResultSet implements ResultSet {
 					tmp += getIntrinsicValue(monDate[pos], pos++);
 					cal.set(Calendar.YEAR, tmp);
 					if (monDate[pos++] != '-') throw
-						new java.text.ParseException("Expected '-'", pos - 1);
+						new MCLParseException("expected '-'", pos - 1);
 					// month
 					tmp = 0;
 					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
 					tmp += getIntrinsicValue(monDate[pos], pos++);
 					cal.set(Calendar.MONTH, tmp - 1);
 					if (monDate[pos++] != '-') throw
-						new java.text.ParseException("Expected '-'", pos - 1);
+						new MCLParseException("expected '-'", pos - 1);
 					// day of month
 					tmp = 0;
 					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
@@ -1645,14 +1536,14 @@ public class MonetResultSet implements ResultSet {
 					tmp += getIntrinsicValue(monDate[pos], pos++);
 					cal.set(Calendar.HOUR_OF_DAY, tmp);
 					if (monDate[pos++] != ':') throw
-						new java.text.ParseException("Expected ':'", pos - 1);
+						new MCLParseException("expected ':'", pos - 1);
 					// minute
 					tmp = 0;
 					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
 					tmp += getIntrinsicValue(monDate[pos], pos++);
 					cal.set(Calendar.MINUTE, tmp);
 					if (monDate[pos++] != ':') throw
-						new java.text.ParseException("Expected ':'", pos - 1);
+						new MCLParseException("expected ':'", pos - 1);
 					// second
 					tmp = 0;
 					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
@@ -1687,14 +1578,14 @@ public class MonetResultSet implements ResultSet {
 						// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
 						tmp = pos < monDate.length ? monDate[pos++] : 0;
 						if (tmp != '-' && tmp != '+') throw
-							new java.text.ParseException("Expected '+' or '-'", pos - 1);
+							new MCLParseException("expected '+' or '-'", pos - 1);
 						// hour
 						zone = 0;
 						zone += getIntrinsicValue(monDate[pos], pos++) * 10;
 						zone += getIntrinsicValue(monDate[pos], pos++);
 						zone *= 60; // translate into minutes
 						if (monDate[pos++] != ':') throw
-							new java.text.ParseException("Expected ':'", pos - 1);
+							new MCLParseException("expected ':'", pos - 1);
 						// minute
 						zone += getIntrinsicValue(monDate[pos], pos++) * 10;
 						zone += getIntrinsicValue(monDate[pos], pos++);
@@ -1704,7 +1595,7 @@ public class MonetResultSet implements ResultSet {
 					}
 				//break; (not needed because of the else/return)
 			}
-		} catch(java.text.ParseException e) {
+		} catch(MCLParseException e) {
 			addWarning(e.getMessage() +
 					 " found: '" + monDate[e.getErrorOffset()] + "'" +
 					 " in: \"" + monetDate + "\"" +
@@ -1718,23 +1609,23 @@ public class MonetResultSet implements ResultSet {
 
 	/**
 	 * Small helper method that returns the intrinsic value of a char if
-	 * it represents a digit.  If a non-digit character is encountered a
-	 * ParseException is thrown.
+	 * it represents a digit.  If a non-digit character is encountered
+	 * an MCLParseException is thrown.
 	 *
 	 * @param c the char
 	 * @param pos the position
 	 * @return the intrinsic value of the char
-	 * @throws java.text.ParseException if c is not a digit
+	 * @throws MCLParseException if c is not a digit
 	 */
-	final static int getIntrinsicValue(char c, int pos)
-		throws java.text.ParseException
+	private final static int getIntrinsicValue(char c, int pos)
+		throws MCLParseException
 	{
 		// note: don't use Character.isDigit() here, because
 		// we only want ISO-LATIN-1 digits
 		if (c >= '0' && c <= '9') {
 			return((int)c - (int)'0');
 		} else {
-			throw new java.text.ParseException("Expected a digit", pos);
+			throw new MCLParseException("Expected a digit", pos);
 		}
 	}
 
@@ -2204,7 +2095,7 @@ public class MonetResultSet implements ResultSet {
 	 *          otherwise
 	 */
 	public boolean wasNull() {
-		return(lastColumnRead != -1 ? result[lastColumnRead] == null : false);
+		return(lastColumnRead != -1 ? tlp.values[lastColumnRead] == null : false);
 	}
 
 	//== end methods of interface ResultSet

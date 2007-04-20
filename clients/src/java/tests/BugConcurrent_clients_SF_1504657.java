@@ -177,6 +177,13 @@ public class BugConcurrent_clients_SF_1504657 {
 		if (rs2 != null) rs2.close();
 		if (rs3 != null) rs3.close();
 
+		// cleanup
+		try {
+			stmt3.executeUpdate("DROP TABLE t1");
+		} catch (SQLException e) {
+			System.out.println("FAILED to clean up! :( " + e.getMessage());
+		}
+
 		con1.close();
 		con2.close();
 		con3.close();

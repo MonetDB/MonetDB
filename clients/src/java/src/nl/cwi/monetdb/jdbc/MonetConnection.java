@@ -24,6 +24,9 @@ import java.io.*;
 import java.nio.*;
 import java.security.*;
 import nl.cwi.monetdb.jdbc.util.*;
+import nl.cwi.monetdb.mcl.io.*;
+import nl.cwi.monetdb.mcl.net.*;
+import nl.cwi.monetdb.mcl.parser.*;
 
 /**
  * A Connection suitable for the MonetDB database.
@@ -64,7 +67,14 @@ public class MonetConnection implements Connection {
 	/** The password to use when authenticating */
 	private final String password;
 	/** A connection to Mserver using a TCP socket */
-	private final MonetSocketBlockMode monet;
+	private final MapiSocket server;
+	/** The Reader from the server */
+	private final BufferedMCLReader in;
+	/** The Writer to the server */
+	private final BufferedMCLWriter out;
+
+	/** A StartOfHeaderParser  declared for reuse. */
+	private StartOfHeaderParser sohp = new StartOfHeaderParser();
 
 	/** Whether this Connection is closed (and cannot be used anymore) */
 	private boolean closed;
@@ -104,15 +114,6 @@ public class MonetConnection implements Connection {
 	/** The language which is used */
 	final int lang;
 
-	/** Query types (copied from sql_query.mx) */
-	final static int Q_PARSE	= '0';
-	final static int Q_TABLE	= '1';
-	final static int Q_UPDATE	= '2';
-	final static int Q_SCHEMA	= '3';
-	final static int Q_TRANS	= '4';
-	final static int Q_PREPARE	= '5';
-	final static int Q_BLOCK	= '6';
-
 	/** Embedded instance */
 	private static MonetEmbeddedInstance embeddedInstance = null;
 	/** Embedded properties */
@@ -136,7 +137,7 @@ public class MonetConnection implements Connection {
 	 */
 	MonetConnection(
 		Properties props)
-		throws SQLException, IllegalArgumentException, MonetRedirectException
+		throws SQLException, IllegalArgumentException
 	{
 		this.hostname = props.getProperty("host");
 		int port;
@@ -149,8 +150,7 @@ public class MonetConnection implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
-		this.javaPreparedStatements = Boolean.valueOf(props.getProperty("java_prepared_statements", "false")).booleanValue();
-
+		this.javaPreparedStatements = Boolean.valueOf(props.getProperty("java_prepared_statements")).booleanValue();
 		String language = props.getProperty("language");
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 		String hash = props.getProperty("hash");
@@ -175,96 +175,64 @@ public class MonetConnection implements Connection {
 		queryTempl = new String[3]; // pre, post, sep
 		commandTempl = new String[3]; // pre, post, sep
 
-		try {
-			monet = new MonetSocketBlockMode(hostname, port);
+		server = new MapiSocket();
 
-			/*
-			 * There is no need for a lock on the monet object here.
-			 * Since we just created the object, and the reference to
-			 * this object has not yet been returned to the caller,
-			 * noone can (in a legal way) know about the object.
-			 */
+		if (hash != null) server.setHash(hash);
+		if (database != null) server.setDatabase(database);
+		server.setLanguage(language);
 
-			// we're debugging here... uhm, should be off in real life
-			if (debug) {
-				try {
-					String fname = props.getProperty("logfile", "monet_" +
-						System.currentTimeMillis() + ".log");
-					File f = new File(fname);
-					int ext = fname.lastIndexOf(".");
-					if (ext < 0) ext = fname.length();
-					String pre = fname.substring(0, ext);
-					String suf = fname.substring(ext);
+		// we're debugging here... uhm, should be off in real life
+		if (debug) {
+			try {
+				String fname = props.getProperty("logfile", "monet_" +
+					System.currentTimeMillis() + ".log");
+				File f = new File(fname);
+				int ext = fname.lastIndexOf(".");
+				if (ext < 0) ext = fname.length();
+				String pre = fname.substring(0, ext);
+				String suf = fname.substring(ext);
 
-					for (int i = 1; f.exists(); i++) {
-						f = new File(pre + "-" + i + suf);
-					}
-
-					monet.debug(f.getAbsolutePath());
-				} catch (IOException ex) {
-					throw new SQLException("Opening logfile failed: " + ex.getMessage());
+				for (int i = 1; f.exists(); i++) {
+					f = new File(pre + "-" + i + suf);
 				}
-			}
 
-			// read challenge, send response
-			String[] nulltempl = {null, null, null};
-			monet.writeLine(nulltempl,
-					getChallengeResponse(
-						monet,
-						monet.readLine(),
-						username,
-						password,
-						language,
-						database,
-						hash
-						)
-					);
-
-			// read monet response till prompt
-			List redirects = null;
-			String err = "", tmp;
-			int lineType = 0;
-			while (lineType != MonetSocketBlockMode.PROMPT1) {
-				if ((tmp = monet.readLine()) == null)
-					throw new IOException("Connection to server lost!");
-				if ((lineType = monet.getLineType()) == MonetSocketBlockMode.ERROR) {
-					err += "\n" + tmp.substring(1);
-				} else if (lineType == MonetSocketBlockMode.INFO) {
-					addWarning(tmp.substring(1));
-				} else if (lineType == MonetSocketBlockMode.REDIRECT) {
-					if (redirects == null)
-						redirects = new ArrayList();
-					redirects.add(tmp.substring(1));
-				}
+				server.debug(f.getAbsolutePath());
+			} catch (IOException ex) {
+				throw new SQLException("Opening logfile failed: " + ex.getMessage());
 			}
-			if (err != "") {
-				monet.disconnect();
-				throw new SQLException(err.trim());
-			}
-			if (redirects != null) {
-				monet.disconnect();
-				throw new MonetRedirectException(redirects);
-			}
-
-			// we seem to have managed to log in, let's store the
-			// language used
-			if ("sql".equals(language)) {
-				lang = LANG_SQL;
-			} else if ("xquery".equals(language)) {
-				lang = LANG_XQUERY;
-			} else if ("mil".equals(language)) {
-				lang = LANG_MIL;
-			} else if ("mal".equals(language)) {
-				lang = LANG_MAL;
-			} else {
-				lang = LANG_UNKNOWN;
-			}
-			
-			// we're ready for commands!
-		} catch (IOException e) {
-			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage());
 		}
 
+		try {
+			String warning = 
+				server.connect(hostname, port, username, password);
+			if (warning != null) addWarning(warning);
+
+			in = server.getReader();
+			out = server.getWriter();
+
+			String error = in.waitForPrompt();
+			if (error != null) throw new SQLException(error);
+		} catch (IOException e) {
+			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage());
+		} catch (Exception e) {
+			throw new SQLException(e.getMessage());
+		}
+
+
+		// we seem to have managed to log in, let's store the
+		// language used
+		if ("sql".equals(language)) {
+			lang = LANG_SQL;
+		} else if ("xquery".equals(language)) {
+			lang = LANG_XQUERY;
+		} else if ("mil".equals(language)) {
+			lang = LANG_MIL;
+		} else if ("mal".equals(language)) {
+			lang = LANG_MAL;
+		} else {
+			lang = LANG_UNKNOWN;
+		}
+		
 		// fill the query templates
 		if (lang == LANG_SQL) {
 			queryTempl[0] = "s";		// pre
@@ -317,131 +285,6 @@ public class MonetConnection implements Connection {
 		closed = false;
 	}
 
-	/**
-	 * A little helper function that processes a challenge string, and
-	 * returns a response string for the server.  If the challenge
-	 * string is null, a challengeless response is returned.
-	 *
-	 * @param monet the MonetSocketBlockMode stream to write to
-	 * @param chalstr the challenge string
-	 * @param username the username to use
-	 * @param password the password to use
-	 * @param language the language to use
-	 * @param database the database to connect to
-	 * @param hash the hash method(s) to use, or NULL for all supported
-	 *             hashes
-	 */
-	private String getChallengeResponse(
-			MonetSocketBlockMode monet,
-			String chalstr,
-			String username,
-			String password,
-			String language,
-			String database,
-			String hash
-	) throws SQLException, IOException {
-		int version = 0;
-		String response;
-		
-		// hack alert
-		monet.readLine(); /* prompt */
-		// parse the challenge string, split it on ':'
-		String[] chaltok = chalstr.split(":");
-		if (chaltok.length <= 4) throw
-			new SQLException("Server challenge string unusable!");
-
-		// challenge string to use as salt/key
-		String challenge = chaltok[0];
-		// chaltok[1]; // server type, not needed yet 
-		try {
-			version = Integer.parseInt(chaltok[2].trim());	// protocol version
-		} catch (NumberFormatException e) {
-			throw new SQLException("Protocol version unparseable: " + chaltok[3]);
-		}
-
-		// handle the challenge according to the version it is
-		switch (version) {
-			default:
-				throw new SQLException("Unsupported protocol version: " + version);
-			case 8:
-				// proto 7 (finally) used the challenge and works with a
-				// password hash.  The supported implementations come
-				// from the server challenge.  We chose the best hash
-				// we can find, in the order SHA1, MD5, plain.  Also,
-				// the byte-order is reported in the challenge string,
-				// which makes sense, since only blockmode is supported.
-				// proto 8 made this obsolete, but retained the
-				// byteorder report for future "binary" transports.  In
-				// proto 8, the byteorder of the blocks is always little
-				// endian because most machines today are.
-				String hashes = (hash == null ? chaltok[3] : hash);
-				String pwhash;
-				if (hashes.indexOf("SHA1") != -1) {
-					try {
-						MessageDigest md = MessageDigest.getInstance("SHA-1");
-						md.update(password.getBytes("UTF-8"));
-						md.update(challenge.getBytes("UTF-8"));
-						byte[] digest = md.digest();
-						pwhash = "{SHA1}" + toHex(digest);
-					} catch (NoSuchAlgorithmException e) {
-						throw new AssertionError("internal error: " + e.toString());
-					} catch (UnsupportedEncodingException e) {
-						throw new AssertionError("internal error: " + e.toString());
-					}
-				} else if (hashes.indexOf("MD5") != -1) {
-					try {
-						MessageDigest md = MessageDigest.getInstance("MD5");
-						md.update(password.getBytes("UTF-8"));
-						md.update(challenge.getBytes("UTF-8"));
-						byte[] digest = md.digest();
-						pwhash = "{MD5}" + toHex(digest);
-					} catch (NoSuchAlgorithmException e) {
-						throw new AssertionError("internal error: " + e.toString());
-					} catch (UnsupportedEncodingException e) {
-						throw new AssertionError("internal error: " + e.toString());
-					}
-				} else if (hashes.indexOf("plain") != -1) {
-					pwhash = "{plain}" + password + challenge;
-				} else {
-					throw new SQLException("no supported password hashes in " + hashes);
-				}
-				// TODO: some day when we need this, we should store
-				// this
-				if (chaltok[4].equals("BIG")) {
-					// byte-order of server is big-endian
-				} else if (chaltok[4].equals("LIT")) {
-					// byte-order of server is little-endian
-				} else {
-					throw new SQLException("Invalid byte-order: " + chaltok[5]);
-				}
-
-				// generate response
-				response = "BIG:";	// JVM byte-order is big-endian
-				response += username + ":" + pwhash + ":" + language;
-				response += ":" + database + ":";
-
-				return(response);
-		}
-	}
-
-	/**
-	 * Small helper method to convert a byte string to a hexadecimal
-	 * string representation.
-	 *
-	 * @param digest the byte array to convert
-	 * @return the byte array as hexadecimal string
-	 */
-	private static String toHex(byte[] digest) {
-		StringBuffer r = new StringBuffer(digest.length * 2);
-		for (int i = 0; i < digest.length; i++) {
-			// zero out higher bits to get unsigned conversion
-			int b = digest[i] << 24 >>> 24;
-			if (b < 16) r.append("0");
-			r.append(Integer.toHexString(b));
-		}
-		return(r.toString());
-	}
-
 	//== methods of interface Connection
 
 	/**
@@ -472,7 +315,7 @@ public class MonetConnection implements Connection {
 			}
 		}
 		// close the socket
-		monet.disconnect();
+		server.close();
 		// report ourselves as closed
 		closed = true;
 	}
@@ -1091,10 +934,13 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if an IO exception or a database error occurs
 	 */
 	void sendIndependantCommand(String command) throws SQLException {
-		synchronized (monet) {
+		synchronized (server) {
 			try {
-				monet.writeLine(queryTempl, command);
-				String error = monet.waitForPrompt();
+				out.writeLine(
+						(queryTempl[0] == null ? "" : queryTempl[0]) +
+						command +
+						(queryTempl[1] == null ? "" : queryTempl[1]));
+				String error = in.waitForPrompt();
 				if (error != null) throw new SQLException(error);
 			} catch (IOException e) {
 				throw new SQLException(e.getMessage());
@@ -1113,10 +959,13 @@ public class MonetConnection implements Connection {
 	 */
 	void sendControlCommand(String command) throws SQLException {
 		// send X command
-		synchronized (monet) {
+		synchronized (server) {
 			try {
-				monet.writeLine(commandTempl, command);
-				String error = monet.waitForPrompt();
+				out.writeLine(
+						(commandTempl[0] == null ? "" : commandTempl[0]) +
+						command +
+						(commandTempl[1] == null ? "" : commandTempl[1]));
+				String error = in.waitForPrompt();
 				if (error != null) throw new SQLException(error);
 			} catch (IOException e) {
 				throw new SQLException(e.getMessage());
@@ -1136,7 +985,7 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if a database error occurs
 	 */
 	Response copyToServer(String in, String name) throws SQLException {
-		synchronized (monet) {
+		synchronized (server) {
 			// TODO: maybe in the future add support for a second
 			// name which is a convenience "alias" (e.g. in XQuery)
 			// tell server we're going to "copy" data over to be
@@ -1187,31 +1036,6 @@ public class MonetConnection implements Connection {
 
 	/** An optional thread that is used for sending large queries */
 	private SendThread sendThread = null;
-
-	/**
-	 * Returns the numeric value in the given CharBuffer.  The value is
-	 * considered to end at the end of the CharBuffer or at a space.  If
-	 * a non-numeric character is encountered a ParseException is
-	 * thrown.
-	 *
-	 * @param str CharBuffer to read from
-	 * @throws java.text.ParseException if no numeric value could be
-	 * read
-	 */
-	private final int parseNumber(CharBuffer str)
-		throws java.text.ParseException
-	{
-		if (!str.hasRemaining()) throw
-			new java.text.ParseException("Unexpected end of string", str.position() - 1);
-		int tmp = MonetResultSet.getIntrinsicValue(str.get(), str.position() - 1);
-		char chr;
-		while (str.hasRemaining() && (chr = str.get()) != ' ') {
-			tmp *= 10;
-			tmp += MonetResultSet.getIntrinsicValue(chr, str.position() - 1);
-		}
-
-		return(tmp);
-	}
 
 	/**
 	 * A Response is a message sent by the server to indicate some
@@ -1306,6 +1130,9 @@ public class MonetConnection implements Connection {
 		/** the offset to be used on Xexport queries */
 		private int blockOffset = 0;
 
+		/** A parser for header lines */
+		HeaderLineParser hlp;
+
 		private final static int NAMES	= 0;
 		private final static int TYPES	= 1;
 		private final static int TABLES	= 2;
@@ -1352,6 +1179,8 @@ public class MonetConnection implements Connection {
 			this.resultBlocks =
 				new DataBlockResponse[(tuplecount / cacheSize) + 1];
 
+			hlp = new HeaderLineParser(columncount);
+
 			resultBlocks[0] = new DataBlockResponse(
 				rowcount,
 				parent.rstype == ResultSet.TYPE_FORWARD_ONLY
@@ -1375,90 +1204,31 @@ public class MonetConnection implements Connection {
 				return(resultBlocks[0].addLine(tmpLine, linetype));
 			}
 
-			if (linetype != MonetSocketBlockMode.HEADER)
+			if (linetype != BufferedMCLReader.HEADER)
 				return("header expected, got: " + tmpLine);
 
-			char[] chrLine = tmpLine.toCharArray();
-			int len = chrLine.length;
-
-			int pos = 0;
-			boolean foundChar = false;
-			boolean nameFound = false;
-			// find header name
-			for (int i = len - 1; i >= 0; i--) {
-				switch (chrLine[i]) {
-					case ' ':
-					case '\n':
-					case '\t':
-					case '\r':
-						if (!foundChar) {
-							len = i - 1;
-						} else {
-							pos = i + 1;
-						}
+			// depending on the name of the header, we continue
+			try {
+				switch (hlp.parse(tmpLine)) {
+					case HeaderLineParser.NAME:
+						name = (String[])(hlp.values.clone());
+						isSet[NAMES] = true;
 					break;
-					case '#':
-						// found!
-						nameFound = true;
-						if (pos == 0) pos = i + 1;
-						i = 0;	// force the loop to terminate
+					case HeaderLineParser.LENGTH:
+						columnLengths = (int[])(hlp.intValues.clone());
+						isSet[LENS] = true;
 					break;
-					default:
-						foundChar = true;
-						pos = 0;
+					case HeaderLineParser.TYPE:
+						type = (String[])(hlp.values.clone());
+						isSet[TYPES] = true;
+					break;
+					case HeaderLineParser.TABLE:
+						tableNames = (String[])(hlp.values.clone());
+						isSet[TABLES] = true;
 					break;
 				}
-			}
-			if (!nameFound)
-				return("illegal header: " + tmpLine);
-
-			// depending on the name of the header, we continue
-			switch (chrLine[pos]) {
-				default:
-					return("protocol violation: unknown header: " +
-							(new String(chrLine, pos, len - pos)));
-				case 'n':
-					if (len - pos == 4 &&
-							tmpLine.regionMatches(pos + 1, "name", 1, 3))
-					{
-						name = getValues(chrLine, 2, pos - 3);
-						isSet[NAMES] = true;
-					} else {
-						return("protocol violation: unknown header: " +
-								(new String(chrLine, pos, len - pos)));
-					}
-				break;
-				case 'l':
-					if (len - pos == 6 &&
-							tmpLine.regionMatches(pos + 1, "length", 1, 5))
-					{
-						try {
-							columnLengths = getIntValues(chrLine, 2, pos - 3);
-							isSet[LENS] = true;
-						} catch (SQLException e) {
-							return(e.getMessage());
-						}
-					} else {
-						return("protocol violation: unknown header: " +
-								(new String(chrLine, pos, len - pos)));
-					}
-				break;
-				case 't':
-					if (len - pos == 4 &&
-							tmpLine.regionMatches(pos + 1, "type", 1, 3))
-					{
-						type = getValues(chrLine, 2, pos - 3);
-						isSet[TYPES] = true;
-					} else if (len - pos == 10 &&
-							tmpLine.regionMatches(pos + 1, "table_name", 1, 9))
-					{
-						tableNames = getValues(chrLine, 2, pos - 3);
-						isSet[TABLES] = true;
-					} else {
-						return("protocol violation: unknown header: " +
-								(new String(chrLine, pos, len - pos)));
-					}
-				break;
+			} catch (MCLParseException e) {
+				return(e.getMessage());
 			}
 
 			// all is well
@@ -1505,66 +1275,6 @@ public class MonetConnection implements Connection {
 			values[elem++] = new String(chrLine, start, stop - start);
 
 			return(values);
-		}
-
-		/**
-		 * Returns an array of ints containing the values between
-		 * ',\t' separators.
-		 *
-		 * @param chrLine a character array holding the input data
-		 * @param start where the relevant data starts
-		 * @param stop where the relevant data stops
-		 * @return an array of ints
-		 */
-		final private int[] getIntValues(
-				char[] chrLine,
-				int start,
-				int stop
-			) throws SQLException
-		{
-			int elem = 0;
-			int tmp = 0;
-			int[] values = new int[columncount];
-
-			try {
-				for (int i = start; i < stop; i++) {
-					if (chrLine[i] == ',' && chrLine[i + 1] == '\t') {
-						values[elem++] = tmp;
-						tmp = 0;
-						start = ++i;
-					} else {
-						tmp *= 10;
-						tmp += MonetResultSet.getIntrinsicValue(chrLine[i], i);
-					}
-				}
-				// at the left over part
-				values[elem++] = tmp;
-			} catch (java.text.ParseException e) {
-				throw new SQLException(e.getMessage() +
-						" found: '" + chrLine[e.getErrorOffset()] + "'" +
-						" in: " + new String(chrLine) +
-						" at pos: " + e.getErrorOffset());
-			}
-
-			return(values);
-		}
-
-		/**
-		 * Returns an the first String that appears before the first
-		 * occurrence of the ',\t' separator.
-		 *
-		 * @param chrLine a character array holding the input data
-		 * @param start where the relevant data starts
-		 * @param stop where the relevant data stops
-		 * @return the first String found
-		 */
-		private final String getValue(char[] chrLine, int start, int stop) {
-			for (int i = start; i < stop; i++) {
-				if (chrLine[i] == '\t' && chrLine[i - 1] == ',') {
-					return(new String(chrLine, start, i - 1 - start));
-				}
-			}
-			return(new String(chrLine, start, stop - start));
 		}
 
 		/**
@@ -1841,7 +1551,7 @@ public class MonetConnection implements Connection {
 		 *         or additional lines are not allowed.
 		 */
 		public String addLine(String line, int linetype) {
-			if (linetype != MonetSocketBlockMode.RESULT)
+			if (linetype != BufferedMCLReader.RESULT)
 				return("protocol violation: unexpected line in data block: " + line);
 			// add to the backing array
 			data[++pos] = line;
@@ -2105,7 +1815,7 @@ public class MonetConnection implements Connection {
 				// have the prompt it is possible (and most likely) that we
 				// already have the prompt and do not have to skip any
 				// lines.  Ignore errors from previous result sets.
-				monet.waitForPrompt();
+				in.waitForPrompt();
 
 				int size;
 				// {{{ set reply size
@@ -2134,45 +1844,41 @@ public class MonetConnection implements Connection {
 				// as we are blocking an not consuming from it.  The result
 				// is a state where both client and server want to write,
 				// but block.
-				if (query.length() > MonetSocketBlockMode.BLOCK) {
+				if (query.length() > MapiSocket.BLOCK) {
 					// get a reference to the send thread
-					if (sendThread == null) sendThread = new SendThread(monet);
+					if (sendThread == null) sendThread = new SendThread(out);
 					// tell it to do some work!
 					sendThread.runQuery(templ, query);
 					sendThreadInUse = true;
 				} else {
 					// this is a simple call, which is a lot cheaper and will
 					// always succeed for small queries.
-					monet.writeLine(templ, query);
+					out.writeLine(
+							(templ[0] == null ? "" : templ[0]) +
+							query +
+							(templ[1] == null ? "" : templ[1]));
 				}
 
 				// go for new results
-				String tmpLine = monet.readLine();
-				int linetype = monet.getLineType();
+				String tmpLine = in.readLine();
+				int linetype = in.getLineType();
 				Response res = null;
-				while (linetype != MonetSocketBlockMode.PROMPT1) {
+				while (linetype != BufferedMCLReader.PROMPT) {
 					// each response should start with a start of header
 					// (or error)
 					switch (linetype) {
-						case MonetSocketBlockMode.SOHEADER:
+						case BufferedMCLReader.SOHEADER:
 							// make the response object, and fill it
-							// {{{ soh line parsing
-							// parse the start of header line
-							CharBuffer soh = CharBuffer.wrap(tmpLine);
-							soh.get();	// skip the &
 							try {
-								switch (soh.get()) {
-									default:
-										throw new java.text.ParseException("protocol violation: unknown header", 1);
-									case Q_PARSE:
-										throw new java.text.ParseException("Q_PARSE header not allowed here", 1);
-									case Q_TABLE:
-									case Q_PREPARE: {
-										soh.get();	// skip space
-										int id = parseNumber(soh);
-										int tuplecount = parseNumber(soh);
-										int columncount = parseNumber(soh);
-										int rowcount = parseNumber(soh);
+								switch (sohp.parse(tmpLine)) {
+									case StartOfHeaderParser.Q_PARSE:
+										throw new MCLParseException("Q_PARSE header not allowed here", 1);
+									case StartOfHeaderParser.Q_TABLE:
+									case StartOfHeaderParser.Q_PREPARE: {
+										int id = sohp.getNextAsInt();
+										int tuplecount = sohp.getNextAsInt();
+										int columncount = sohp.getNextAsInt();
+										int rowcount = sohp.getNextAsInt();
 										// enforce the maxrows setting
 										if (maxrows != 0 && tuplecount > maxrows)
 											tuplecount = maxrows;
@@ -2196,22 +1902,18 @@ public class MonetConnection implements Connection {
 											);
 										}
 									} break;
-									case Q_UPDATE:
-										soh.get();	// skip space
+									case StartOfHeaderParser.Q_UPDATE:
 										res = new AffectedRowsResponse(
-												parseNumber(soh)	// count
+												sohp.getNextAsInt()	// count
 												);
 										break;
-									case Q_SCHEMA:
+									case StartOfHeaderParser.Q_SCHEMA:
 										res = new AffectedRowsResponse(
 												Statement.SUCCESS_NO_INFO
 												);
 										break;
-									case Q_TRANS:
-										soh.get();	// skip space
-										if (soh.position() == soh.length()) throw
-											new java.text.ParseException("unexpected end of string", soh.position() - 1);
-										boolean ac = soh.get() == 't' ? true : false;
+									case StartOfHeaderParser.Q_TRANS:
+										boolean ac = sohp.getNextAsString().equals("t") ? true : false;
 										if (autoCommit && ac) {
 											addWarning("Server enabled auto commit " +
 													"mode while local state " +
@@ -2229,18 +1931,17 @@ public class MonetConnection implements Connection {
 												ac
 										);
 									break;
-									case Q_BLOCK: {
+									case StartOfHeaderParser.Q_BLOCK: {
 										// a new block of results for a
 										// response...
-										soh.get();	// skip space
-										int id = parseNumber(soh); 
-										parseNumber(soh);	// columncount
-										int rowcount = parseNumber(soh);
-										int offset = parseNumber(soh);
+										int id = sohp.getNextAsInt(); 
+										sohp.getNextAsInt();	// columncount
+										int rowcount = sohp.getNextAsInt();
+										int offset = sohp.getNextAsInt();
 										ResultSetResponse t =
 											(ResultSetResponse)rsresponses.get(new Integer(id));
 										if (t == null) {
-											error = "No ResultSetResponse with id " + id + " found";
+											error = "no ResultSetResponse with id " + id + " found";
 											break;
 										}
 
@@ -2254,24 +1955,23 @@ public class MonetConnection implements Connection {
 										res = r;
 									} break;
 								}
-							} catch (java.text.ParseException e) {
+							} catch (MCLParseException e) {
 								error = "error while parsing start of header:\n" +
 									e.getMessage() +
-									" found: '" + soh.get(e.getErrorOffset()) + "'" +
+									" found: '" + tmpLine.charAt(e.getErrorOffset()) + "'" +
 									" in: \"" + tmpLine + "\"" +
 									" at pos: " + e.getErrorOffset();
 								// flush all the rest
-								monet.waitForPrompt();
-								linetype = monet.getLineType();
+								in.waitForPrompt();
+								linetype = in.getLineType();
 								break;
 							}
-							// }}} soh line parsing
 
 							// immediately handle errors after parsing
 							// the header (res may be null)
 							if (error != null) {
-								monet.waitForPrompt();
-								linetype = monet.getLineType();
+								in.waitForPrompt();
+								linetype = in.getLineType();
 								break;
 							}
 
@@ -2279,14 +1979,14 @@ public class MonetConnection implements Connection {
 							// we can start filling
 							while (res.wantsMore()) {
 								error = res.addLine(
-										monet.readLine(),
-										monet.getLineType()
+										in.readLine(),
+										in.getLineType()
 								);
 								if (error != null) {
 									// right, some protocol violation,
 									// skip the rest of the result
-									monet.waitForPrompt();
-									linetype = monet.getLineType();
+									in.waitForPrompt();
+									linetype = in.getLineType();
 									break;
 								}
 							}
@@ -2300,30 +2000,30 @@ public class MonetConnection implements Connection {
 							// read the next line (can be prompt, new
 							// result, error, etc.) before we start the
 							// loop over
-							tmpLine = monet.readLine();
-							linetype = monet.getLineType();
+							tmpLine = in.readLine();
+							linetype = in.getLineType();
 						break;
-						case MonetSocketBlockMode.INFO:
+						case BufferedMCLReader.INFO:
 							addWarning(tmpLine.substring(1));
 
 							// read the next line (can be prompt, new
 							// result, error, etc.) before we start the
 							// loop over
-							tmpLine = monet.readLine();
-							linetype = monet.getLineType();
+							tmpLine = in.readLine();
+							linetype = in.getLineType();
 						break;
 						default:	// Yeah... in Java this is correct!
 							// we have something we don't
 							// expect/understand, let's make it an error
 							// message
 							tmpLine = "!protocol violation, unexpected line: " + tmpLine;
-						case MonetSocketBlockMode.ERROR:
+						case BufferedMCLReader.ERROR:
 							// read everything till the prompt (should be
 							// error) we don't know if we ignore some
 							// garbage here... but the log should reveal
 							// that
-							error = monet.waitForPrompt();
-							linetype = monet.getLineType();
+							error = in.waitForPrompt();
+							linetype = in.getLineType();
 							if (error != null) {
 								error = tmpLine.substring(1) + "\n" + error;
 							} else {
@@ -2379,7 +2079,7 @@ public class MonetConnection implements Connection {
 
 		private String[] templ;
 		private String query;
-		private MonetSocketBlockMode conn;
+		private BufferedMCLWriter out;
 		private String error;
 		private int state = WAIT;
 
@@ -2389,10 +2089,10 @@ public class MonetConnection implements Connection {
 		 *
 		 * @param monet the socket to write to
 		 */
-		public SendThread(MonetSocketBlockMode conn) {
+		public SendThread(BufferedMCLWriter conn) {
 			super("SendThread");
 			setDaemon(true);
-			this.conn = conn;
+			this.out = out;
 			start();
 		}
 
@@ -2413,7 +2113,10 @@ public class MonetConnection implements Connection {
 					// we issue notify here, so incase we get blocked on IO
 					// the thread that waits on us in runQuery can continue
 					this.notify();
-					conn.writeLine(templ, query);
+					out.writeLine(
+							(templ[0] == null ? "" : templ[0]) +
+							query +
+							(templ[1] == null ? "" : templ[1]));
 				} catch (IOException e) {
 					error = e.getMessage();
 				}

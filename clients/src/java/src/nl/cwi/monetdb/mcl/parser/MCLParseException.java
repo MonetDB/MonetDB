@@ -16,14 +16,25 @@
  * All Rights Reserved.
  */
 
-package nl.cwi.monetdb.mcl;
+package nl.cwi.monetdb.mcl.parser;
+
+import java.text.*;
 
 /**
- * A general purpose Exception class for MCL related problems.  This
- * class should be used if no more precise Exception class exists.
+ * When an MCLParseException is thrown, the MCL protocol is violated by
+ * the sender.  In general a stream reader throws an
+ * MCLParseException as soon as something that is read cannot be
+ * understood or does not conform to the specifications (e.g. like a
+ * missing field).  The instance that throws the exception will try to
+ * give an error offset whenever possible.  Alternatively it makes sure
+ * that the error message includes the offending data read.
  */
-public class MCLException extends Exception {
-	public MCLException(String e) {
-		super(e);
+public class MCLParseException extends ParseException {
+	public MCLParseException(String e) {
+		super(e, -1);
+	}
+
+	public MCLParseException(String e, int offset) {
+		super(e, offset);
 	}
 }

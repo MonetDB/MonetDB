@@ -47,6 +47,8 @@ All Rights Reserved.
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
   <property name="jdbcclient-jar"
     value="${jardir}/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
+  <property name="mcl-jar"
+    value="${jardir}/monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar" />
   <property name="xmldb-jar"
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-xmldb.jar" />
 
@@ -64,11 +66,12 @@ All Rights Reserved.
   </target>
 
   <!-- jar targets -->
-  <target name="jar_jdbc" depends="compile_jdbc"
+  <target name="jar_jdbc" depends="compile_mcl,compile_jdbc"
     unless="uptodate.jdbc-jar">
     <jar jarfile="${jdbc-jar}">
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
+        <include name="${mcl-package}/**/*.class" />
       </fileset>
     </jar>
   </target>
@@ -82,7 +85,7 @@ All Rights Reserved.
   </target>
 
   <target name="jar_mcl" depends="compile_mcl">
-    <jar jarfile="${jardir}/monetdb-mcl.jar">
+    <jar jarfile="${mcl-jar}">
       <fileset dir="${builddir}">
         <include name="${mcl-package}/**/*.class" />
       </fileset>
@@ -98,13 +101,13 @@ All Rights Reserved.
   </target>
 
   <!-- a convenience jar of JDBC plus the JdbcClient utililty -->
-  <target name="jar_jdbcclient" depends="jar_jdbc,compile_client"
+  <target name="jar_jdbcclient" depends="compile_mcl,compile_jdbc,compile_client"
     unless="uptodate.jdbcclient-jar">
     <echo message="Building JDBC + JdbcClient convenience jar" />
-    <unjar src="${jdbc-jar}" dest="${builddir}" />
     <jar jarfile="${jdbcclient-jar}">
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
+        <include name="${mcl-package}/**/*.class" />
         <include name="${client-package}/**/*.class" />
       </fileset>
       <manifest>

@@ -32,7 +32,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	private Connection con;
 	private Driver driver;
 	private Statement stmt;
-	private Map envs;
+	private static Map envs = new HashMap();
 
 	public MonetDatabaseMetaData(Connection parent) {
 		con = parent;
@@ -55,17 +55,21 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	private synchronized String getEnv(String key) throws SQLException {
 		String ret;
 
-		if (envs == null) {
+		// if due to concurrency on this Class envs is assigned twice, I
+		// just don't care here
+		Map menvs = (Map)(envs.get(con));
+		if (menvs == null) {
 			// make the env map, insert all entries from env()
-			envs = new HashMap();
+			menvs = new HashMap();
 			ResultSet env = getStmt().executeQuery(
 					"SELECT \"name\", \"value\" FROM sys.env() as env");
 			while (env.next()) {
-				envs.put(env.getString("name"), env.getString("value"));
+				menvs.put(env.getString("name"), env.getString("value"));
 			}
 			env.close();
+			envs.put(con, menvs);
 		}
-		if ((ret = (String)envs.get(key)) == null) {
+		if ((ret = (String)(menvs.get(key))) == null) {
 			// It might be some key from the "sessions" table, which is
 			// no longer there, but available as variables.  Just query
 			// for the variable, and hope that it is ok (not a user
@@ -77,7 +81,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 					"SELECT @\"" + key + "\" AS \"value\"");
 			if (env.next()) {
 				ret = env.getString("value");
-				envs.put(key, ret);
+				menvs.put(key, ret);
 			}
 			env.close();
 		}
@@ -2101,7 +2105,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", \"pkkeycol\".\"column\" AS \"PKCOLUMN_NAME\", " +
 		"\"fkschema\".\"name\" AS \"FKTABLE_SCHEM\", " +
 		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", \"fkkeycol\".\"column\" AS \"FKCOLUMN_NAME\", " +
-		"((\"fkkeycol\".\"nr\" * 121) + \"pkkeycol\".\"nr\") AS \"KEY_SEQ\", " +
+		"\"pkkeycol\".\"nr\" AS \"KEY_SEQ\", " +
 		DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
 		"" + DatabaseMetaData.importedKeyNoAction + " AS \"DELETE_RULE\", " +
 		"\"fkkey\".\"name\" AS \"FK_NAME\", \"pkkey\".\"name\" AS \"PK_NAME\", " +
@@ -2112,7 +2116,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"WHERE \"fktable\".\"id\" = \"fkkey\".\"table_id\" AND \"pktable\".\"id\" = \"pkkey\".\"table_id\" AND " +
 			"\"fkkey\".\"id\" = \"fkkeycol\".\"id\" AND \"pkkey\".\"id\" = \"pkkeycol\".\"id\" AND " +
 			"\"fkschema\".\"id\" = \"fktable\".\"schema_id\" AND \"pkschema\".\"id\" = \"pktable\".\"schema_id\" AND " +
-			"\"fkkey\".\"rkey\" > -1 AND \"fkkey\".\"rkey\" = \"pkkey\".\"id\" ";
+			"\"fkkey\".\"rkey\" > -1 AND \"fkkey\".\"rkey\" = \"pkkey\".\"id\" AND " +
+			"\"fkkeycol\".\"nr\" = \"pkkeycol\".\"nr\" ";
 
 	static String keyQuery(String cat) {
 		return("SELECT '" + cat + "' AS \"PKTABLE_CAT\", '" + cat + "' AS \"FKTABLE_CAT\"" + keyQuery);
@@ -2183,7 +2188,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			query += "AND LOWER(\"fktable\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 
-		query += "ORDER BY \"PKTABLE_CAT\", \"PKTABLE_SCHEM\", \"PKTABLE_NAME\", \"KEY_SEQ\"";
+		query += "ORDER BY \"PKTABLE_CAT\", \"PKTABLE_SCHEM\", \"PKTABLE_NAME\", \"PK_NAME\", \"KEY_SEQ\"";
 
 		return(getStmt().executeQuery(query));
 	}
@@ -2253,7 +2258,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			query += "AND LOWER(\"pktable\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 
-		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"KEY_SEQ\"";
+		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"FK_NAME\", \"KEY_SEQ\"";
 
 		return(getStmt().executeQuery(query));
 	}
@@ -2344,7 +2349,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			query += "AND LOWER(\"fktable\".\"name\") LIKE '" + escapeQuotes(ftable).toLowerCase() + "' ";
 		}
 
-		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"KEY_SEQ\"";
+		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"FK_NAME\", \"KEY_SEQ\"";
 
 		return(getStmt().executeQuery(query));
 	}
@@ -3144,7 +3149,9 @@ class MonetVirtualResultSet extends MonetResultSet {
 		// see if we have the row
 		if (row < 1 || row > tupleCount) return(false);
 
-		result = results[row - 1];
+		for (int i = 0; i < results[row - 1].length; i++) {
+			tlp.values[i] = results[row - 1][i];
+		}
 
 		return(true);
 	}

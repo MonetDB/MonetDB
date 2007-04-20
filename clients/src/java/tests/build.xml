@@ -87,7 +87,7 @@ All Rights Reserved.
   <target name="test">
     <antcall target="Test_Cautocommit" />
     <antcall target="Test_Csavepoints" />
-    <!-- antcall target="Test_Cmanycon" /-->
+    <antcall target="Test_Cmanycon" />
     <antcall target="Test_Ctransaction" />
     <antcall target="Test_Creplysize" />
     <antcall target="Test_Sbatching" />
