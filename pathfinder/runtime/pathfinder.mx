@@ -608,9 +608,9 @@ PROC pf_checkpoint(BAT[void,str] commitBAT) : bit
     commitBAT.append("uri_lifetime");
     var ok := false;
     lock_set(pf_wal);
-    CATCH(ok := subcommit(commitBAT));
+    var err := CATCH(ok := subcommit(commitBAT));
     lock_unset(pf_wal);
-    if (not(ok)) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
+    if (not(ok)) ERROR(err + "XQDY0062a: checkpoint failed (in pf_checkpoint), query aborted.\n");
     return true;
 }
 
@@ -3529,9 +3529,9 @@ PROC del_doc_base(bit cachedOnly,
     if (pf_commit_docmgt) {
         var ok := false;
         lock_set(pf_wal);
-        CATCH(ok := subcommit(commitBAT));
+        var err := CATCH(ok := subcommit(commitBAT));
         lock_unset(pf_wal);
-        if (not(ok)) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
+        if (not(ok)) ERROR(err + "XQDY0062: checkpoint failed (in del_doc_base), query aborted.\n");
     }
    
     if (pf_short_req) {
