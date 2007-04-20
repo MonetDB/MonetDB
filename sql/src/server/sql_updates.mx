@@ -737,7 +737,66 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 }
 
 static stmt*
-sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, stmt **updates)
+sql_delete_set_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, stmt *rows, int action)
+{
+	list *l = NULL;
+	int len = 0, i;
+	node *m, *o;
+	sql_idx *ri = ((sql_fkey*)k)->rkey->k.idx;
+	stmt *ts = stmt_basetable(ri->t, ri->t->base.name), *fts, **new_updates, *s;
+	sql_table *t = mvc_bind_table(sql, schema, k->t->base.name);
+
+	fts = stmt_basetable(k->idx->t, k->idx->t->base.name);
+
+	len = list_length(t->columns.set);
+	new_updates = NEW_ARRAY(stmt *, len);
+
+	for (i = 0; i < len; i++)
+		new_updates[i] = NULL;
+
+	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
+		sql_kc *fc = m->data;
+		stmt *upd;
+
+		if (action == ACT_SET_DEFAULT)
+			upd = stmt_atom(atom_general(&fc->c->type, fc->c->def, 0));
+		else
+			if(action == ACT_SET_NULL)
+				upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
+		
+
+		if (!upd || (upd = check_types(sql, &fc->c->type, upd, type_equal)) == NULL) {
+			stmt_destroy(rows);
+			list_destroy(l);
+			cleanup_stmts(new_updates, len);
+			return NULL;
+		}
+
+		if (upd->nrcols <= 0) 
+			upd = stmt_const(stmt_reverse(rows->type == st_ptable ? first_subset(rows) : stmt_bat(fc->c, stmt_dup(fts), RDONLY)), upd);
+		
+		/* new bats need values replaced */
+		if (fc->c->base.flag == TR_NEW)
+			new_updates[fc->c->colnr] = stmt_replace(stmt_bat(fc->c, stmt_dup(fts), INS), stmt_dup(upd));
+		else
+			new_updates[fc->c->colnr] = stmt_insert(stmt_bat(fc->c, stmt_dup(fts), UPD), stmt_dup(upd));
+	}
+
+	stmt_destroy(ts);
+	stmt_destroy(fts);
+	
+	l = create_stmt_list();
+	if ((s = sql_update(sql, schema, t, new_updates, l)) == NULL) {
+		list_destroy(l);
+		cleanup_stmts(new_updates, len);
+		return NULL;
+	}
+	cleanup_stmts(new_updates, len);
+	return s;
+}
+
+static stmt*
+sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, stmt **updates, int action)
 {
 	list *l = NULL;
 	int len = 0, i;
@@ -763,10 +822,13 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 		sql_kc *c = o->data;
 		stmt *upd;
 
-		if (updates[c->c->colnr]) {
-			upd = stmt_dup(updates[fc->c->colnr]->op2.stval);
+		if (updates[c->c->colnr] && action == ACT_CASCADE) {
+			upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 		} else {
-			upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
+			if (action == ACT_SET_DEFAULT)
+				upd = stmt_atom(atom_general(&fc->c->type, fc->c->def, 0));
+			else
+				upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
 		}
 
 		if (!upd || (upd = check_types(sql, &fc->c->type, upd, type_equal)) == NULL) {
@@ -777,13 +839,13 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 		}
 
 		if (upd->nrcols <= 0) 
-			upd = stmt_const(stmt_reverse(rows ? first_subset(rows) : stmt_bat(fc->c, stmt_dup(fts), RDONLY)), upd);
+			upd = stmt_const(stmt_reverse(rows->type == st_ptable ? first_subset(rows) : stmt_bat(fc->c, stmt_dup(fts), RDONLY)), upd);
 		
 		/* new bats need values replaced */
-		if (c->c->base.flag == TR_NEW)
-			new_updates[c->c->colnr] = stmt_replace(stmt_bat(fc->c, stmt_dup(fts), INS), stmt_dup(upd));
+		if (fc->c->base.flag == TR_NEW)
+			new_updates[fc->c->colnr] = stmt_replace(stmt_bat(fc->c, stmt_dup(fts), INS), stmt_dup(upd));
 		else
-			new_updates[c->c->colnr] = stmt_insert(stmt_bat(fc->c, stmt_dup(fts), UPD), stmt_dup(upd));
+			new_updates[fc->c->colnr] = stmt_insert(stmt_bat(fc->c, stmt_dup(fts), UPD), stmt_dup(upd));
 	}
 
 	stmt_destroy(ts);
@@ -819,11 +881,9 @@ sql_update_ukey(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, int up
 				case ACT_NO_ACTION: 
 					break;
 				case ACT_SET_NULL: 
-					break;
 				case ACT_SET_DEFAULT: 
-					break;
 				case ACT_CASCADE: 
-					s = sql_update_cascade_Fkeys(sql, schema, fk, updcol, updates);
+					s = sql_update_cascade_Fkeys(sql, schema, fk, updcol, updates, ((sql_fkey*)fk)->on_update);
 					list_prepend(l, s);
 					break;
 				default:	/*RESTRICT*/
@@ -1765,8 +1825,8 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 				case ACT_NO_ACTION: 
 					break;
 				case ACT_SET_NULL: 
-					break;
 				case ACT_SET_DEFAULT: 
+					s = sql_delete_set_Fkeys(sql, schema, fk, s, ((sql_fkey*)fk)->on_delete);
 					break;
 				case ACT_CASCADE: 
 					s = sql_delete_cascade_Fkeys(sql, schema, s, fk, k);
