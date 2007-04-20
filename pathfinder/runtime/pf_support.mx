@@ -4100,7 +4100,7 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
           {
             var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
             var docsize;                # current size of document
-            # if the size of item 0 was changed, used the new size, else use the original size
+            # if the size of item 0 was changed, use the new size, else use the original size
             # we assume that page 0 on which item 0 is located already exists...
             {
               var root_rid := swizzle(0@0, pid_map_update);
@@ -4113,7 +4113,11 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
             var nxtpre := oid(lng(pre) + size + 1), nxtrid, nxtsiz := 0;
             if (int(nxtpre) < docsize) {
               nxtrid := swizzle(nxtpre, pid_map_update);
+              var isoldpg := false;
               if (map_pid.exist(oid(lng(nxtrid) >> REMAP_PAGE_BITS))) {
+                isoldpg := not(isnil(map_pid.find(oid(lng(nxtrid) >> REMAP_PAGE_BITS))));
+              }
+              if (isoldpg) {
                 if (rid_size_update.exist(nxtrid)) {
                   nxtsiz := rid_size_update.find(nxtrid);
                 } else {
@@ -4127,7 +4131,11 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
               nxtpre := oid(lng(nxtpre) + niland(nxtsiz, INT_MAX) + 1);
               if (int(nxtpre) < docsize) {
                 nxtrid := swizzle(nxtpre, pid_map_update);
+                var isoldpg := false;
                 if (map_pid.exist(oid(lng(nxtrid) >> REMAP_PAGE_BITS))) {
+                  isoldpg := not(isnil(map_pid.find(oid(lng(nxtrid) >> REMAP_PAGE_BITS))));
+                }
+                if (isoldpg) {
                   if (rid_size_update.exist(nxtrid)) {
                     nxtsiz := rid_size_update.find(nxtrid);
                   } else {
@@ -4143,7 +4151,11 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
             if (int(nxtpre) < docsize) {
               var nxtknd;
               var nxtnid;
+              var isoldpg := false;
               if (map_pid.exist(oid(lng(nxtrid) >> REMAP_PAGE_BITS))) {
+                isoldpg := not(isnil(map_pid.find(oid(lng(nxtrid) >> REMAP_PAGE_BITS))));
+              }
+              if (isoldpg) {
                 if (rid_kind_update.exist(nxtrid)) {
                   nxtknd := rid_kind_update.find(nxtrid);
                 } else {
