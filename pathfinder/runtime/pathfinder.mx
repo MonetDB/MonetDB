@@ -3310,8 +3310,6 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
     }
 
     if (doCommit) {
-      [save](docBAT); # make persistent documents clean on disk outside the locks
-
       lock_set(pf_short);
 
       # possibly back off if auto-caching documents gets us into meta-data locking trouble
@@ -3367,7 +3365,7 @@ PROC _shred_doc_cleanup(lng wsid, bit cleanup) : BAT[any,any]
 }
 var pf_commit_docmgt := true;
 
-PROC shred_doc_base(BAT[void,str] commitBAT,
+PROC shred_doc_base(bit cleanup,
                     BAT[void,str] idx_locations, 
                     BAT[void,str] idx_names, 
                     BAT[void,str] idx_colnames, 
@@ -3375,7 +3373,8 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
                     Stream s,
                     lng wsid) : void
 {
-    var pivot, err, nr := 0, cleanup := bit(count(commitBAT));
+    var commitBAT := new(void,str);
+    var pivot, err, nr := 0;
     var selidx_colname := idx_colnames;
     if (count(selidx_colname) > 0)
         selidx_colname := reverse(reverse(idx_colnames).kunique().sort());
@@ -3417,6 +3416,9 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
                           idx.project(timestamp_nil),
                           colname, coll_oid, runtime, oid_nil, percentage, true, s, wsid);
 
+	if (pf_commit_docmgt)
+	  [save](docBAT); # make persistent documents clean on disk outside the locks
+
 	if (isnil(coll_oid)) {
             # register new bats with the logger
 	    newcoll.append([bbpname](logger_bats.join(docBAT)));
@@ -3448,7 +3450,7 @@ PROC shred_stream(Stream s,
 {
     var names := bat(void,str).append(name).access(BAT_READ).seqbase(0@0);
     var wsid := WS_MAXID + lng(clientid() + 1);
-    var err := CATCH(shred_doc_base(bat(void,str), names, names, names.project(colname), names.project(pageFree), s, wsid));
+    var err := CATCH(shred_doc_base(false, names, names, names.project(colname), names.project(pageFree), s, wsid));
     ws_free(wsid); 
     if (not(isnil(err))) ERROR(err);
 }
@@ -3473,9 +3475,10 @@ PROC _del_doc_replace(BAT[oid,str] bak_locations,
 PROC _del_doc(bit cachedOnly,  
               BAT[any,str] names, # dummy param iff not(isnil(cachedOnly)) 
               BAT[oid,str] bak_locations, 
-              BAT[oid,str] bak_names) : void
+              BAT[oid,str] bak_names) : bit
 {
     var del := doc_timestamp; # select all at first
+    var ret := false;
     if (isnil(cachedOnly)) {
         del := reverse(names.outerjoin(reverse(doc_name)));
         if (del.exist(oid_nil)) {
@@ -3484,6 +3487,11 @@ PROC _del_doc(bit cachedOnly,
                                  count(reverse(del).uselect(oid_nil)));
         }
         del := kunique(del);
+
+        # check if a document-id = its collection-id
+        # this detects del-doc()s on single-doc collections
+	var chk := mirror(del).leftjoin(doc_collection);
+        ret := [=](chk.hmark(0@0),chk.tmark(0@0)).texist(true);
     } else if (cachedOnly) {
         del := del.uselect(timestamp_nil,timestamp_nil);
     } 
@@ -3491,22 +3499,23 @@ PROC _del_doc(bit cachedOnly,
     bak_locations.insert(mirror(del).join(doc_location));
     bak_names.insert(mirror(del).join(doc_name));
     _del_doc_replace(del, del);
+    return ret; # returns whether we should force a cleanup
 }
 
 PROC del_doc(bit cachedOnly, 
              BAT[any,str] names,
-             bit pf_short_req) : BAT[void,str]
+             bit pf_short_req) : bit
 {
     var bak_locations := bat(oid,str);
     var bak_names := bat(oid,str);
 
     if (pf_short_req) lock_set(pf_short);
-    var err := CATCH(_del_doc(cachedOnly, names, bak_locations, bak_names));
+    var ret, err := CATCH(ret := _del_doc(cachedOnly, names, bak_locations, bak_names));
     if (not(isnil(err))) pf_assert(CATCH(_del_doc_replace(bak_locations, bak_names)), "in-memory recovery failed");
     if (pf_short_req) lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 
-    return bat(void,str).append("doc_name").append("doc_location");
+    return ret;
 }
 
 PROC del_doc_base(bit cachedOnly, 
@@ -3586,7 +3595,7 @@ PROC shred_doc(BAT[void,str] locations,
 {
     var us := usec();
     var wsid := WS_MAXID + lng(clientid() + 1);
-    var err := CATCH(shred_doc_base(bat(void,str), 
+    var err := CATCH(shred_doc_base(false, 
                                     locations.tmark(0@0), 
                                     names.tmark(0@0), 
                                     colnames.tmark(0@0), 
