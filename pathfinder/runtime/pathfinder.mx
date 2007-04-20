@@ -1778,7 +1778,7 @@ PROC ws_opencoll(BAT[void,BAT] ws,
     if (not(isnil(err))) ERROR(err);
     if (ws_log_active)
         ws_log(ws, sprintf("__ws_opencoll(%s) shortlock%s exec %s\n", 
-                           colname, str(ws_logtime - ws_exectime)), str(ws_exectime - usec()));
+                           colname, str(ws_logtime - ws_exectime), str(ws_exectime - usec())));
     return cont;
 }
 
