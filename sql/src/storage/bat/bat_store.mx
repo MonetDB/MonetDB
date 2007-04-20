@@ -1228,6 +1228,7 @@ load_type(sql_trans *tr, sql_schema * s, BAT *types, BUN j)
 	t->radix = *(int *) bun_find(type_radix, lid);
 	t->eclass = *(int *) bun_find(type_eclass, lid);
 	t->localtype = ATOMindex(t->base.name);
+	t->bits = 0;
 	t->s = s;
 
 	bat_destroy(type_id);
@@ -3018,6 +3019,8 @@ type_dup(sql_trans *tr, int flag, sql_type *ot, sql_schema * s)
 	t->digits = ot->digits;
 	t->scale = ot->scale;
 	t->radix = ot->radix;
+	t->eclass = ot->eclass;
+	t->bits = ot->bits;
 	t->localtype = ot->localtype;
 	t->s = s;
 	return t;
@@ -4824,6 +4827,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 	sql_type *t;
 	sql_table *systype;
 	int localtype = ATOMindex(impl);
+	int eclass = EC_ANY;
 
 	if (localtype < 0) 
 		return NULL;
@@ -4834,12 +4838,12 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
-	t->eclass = EC_ANY;
+	t->eclass = eclass;
 	t->localtype = localtype;
 	t->s = s;
 
 	cs_add(&s->types, t, TR_NEW);
-	table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &t->radix, &t->eclass, &s->base.id);
+	table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &s->base.id);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;

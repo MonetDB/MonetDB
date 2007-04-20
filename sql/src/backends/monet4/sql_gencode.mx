@@ -747,6 +747,11 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			size_t buflen = SMALLBUFSIZ;
 
+			/* external types have sqlname convert functions,
+			   these can generate errors (fromstr cannot) */
+			if (s->op4.typeval.type->eclass == EC_ANY)
+				convert = s->op4.typeval.type->sqlname;
+		
 			if (s->op4.typeval.type->localtype ==
 			    s->op3.typeval.type->localtype &&
 			    s->op4.typeval.type->eclass ==

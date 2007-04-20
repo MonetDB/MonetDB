@@ -210,10 +210,26 @@ find_sql_schema(sql_trans *t, char *sname)
 }
 
 node *
+find_sqlname(list *l, char *name)
+{
+	if (l) {
+		node *n;
+
+		for (n = l->h; n; n = n->next) {
+			sql_type *t = n->data;
+
+			if (strcmp(t->sqlname, name) == 0)
+				return n;
+		} 
+	}
+	return NULL;
+}
+
+node *
 find_sql_type_node(sql_schema * s, char *tname, int id)
 {
 	if (tname)
-		return cs_find_name(&s->types, tname);
+		return find_sqlname(s->types.set, tname);
 	else 
 		return cs_find_id(&s->types, id);
 }
