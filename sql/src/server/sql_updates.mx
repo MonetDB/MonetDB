@@ -756,7 +756,7 @@ sql_delete_set_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, stmt *rows, int a
 
 	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
-		stmt *upd;
+		stmt *upd = NULL;
 
 		if (action == ACT_SET_DEFAULT)
 			upd = stmt_atom(atom_general(&fc->c->type, fc->c->def, 0));
