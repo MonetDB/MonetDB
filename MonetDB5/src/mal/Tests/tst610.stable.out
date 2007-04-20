@@ -115,13 +115,13 @@ end main;	# 42
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
 #---------------------------------------------------------#
-[ 1,	  "monet_environment",	  1,	  0		  ]
-[ 2,	  "monet_unicode_case",	  1,	  0		  ]
-[ 3,	  "timezones",		  1,	  0		  ]
 [ 4,	  "M5system_auth_user",	  1,	  1		  ]
 [ 5,	  "M5system_auth_passwd", 1,	  1		  ]
 [ 6,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 7,	  "tasks",		  0,	  2		  ]
+[ 7,	  "monet_environment",	  1,	  0		  ]
+[ 8,	  "monet_unicode_case",	  1,	  0		  ]
+[ 9,	  "timezones",		  1,	  0		  ]
+[ 10,	  "tasks",		  0,	  2		  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -131,12 +131,12 @@ end main;	# 42
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
 #---------------------------------------------------------#
-[ 1,	  "monet_environment",	  1,	  0		  ]
-[ 2,	  "monet_unicode_case",	  1,	  0		  ]
-[ 3,	  "timezones",		  1,	  0		  ]
 [ 4,	  "M5system_auth_user",	  1,	  1		  ]
 [ 5,	  "M5system_auth_passwd", 1,	  1		  ]
 [ 6,	  "M5system_auth_scen",	  1,	  1		  ]
+[ 7,	  "monet_environment",	  1,	  0		  ]
+[ 8,	  "monet_unicode_case",	  1,	  0		  ]
+[ 9,	  "timezones",		  1,	  0		  ]
 [ nil ]
 [ "BAT was destroyed" ]
 [ "BAT was removed from the box" ]

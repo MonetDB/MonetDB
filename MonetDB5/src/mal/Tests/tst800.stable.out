@@ -66,7 +66,7 @@ end main;	# 22
 #-----------------#
 [ 1,	  2	  ]
 [ "zid" ]
-[ <tmp_7> ]
+[ <tmp_12> ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -82,9 +82,9 @@ end main;	# 22
 # h	t		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_7>	  ]
+[ 0,	  <tmp_12>	  ]
 [ "fetch it" ]
-[ <tmp_7> ]
+[ <tmp_12> ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type

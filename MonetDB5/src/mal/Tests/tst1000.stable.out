@@ -41,13 +41,13 @@ end main;	# 9
 # bbp	name			  # name
 # int	str			  # type
 #---------------------------------#
-[ 1,	  "monet_environment"	  ]
-[ 2,	  "monet_unicode_case"	  ]
-[ 3,	  "timezones"		  ]
 [ 4,	  "M5system_auth_user"	  ]
 [ 5,	  "M5system_auth_passwd"  ]
 [ 6,	  "M5system_auth_scen"	  ]
-[ 7,	  "mybat"		  ]
+[ 7,	  "monet_environment"	  ]
+[ 8,	  "monet_unicode_case"	  ]
+[ 9,	  "timezones"		  ]
+[ 10,	  "mybat"		  ]
 
 # 07:58:52 >  
 # 07:58:52 >  Done.

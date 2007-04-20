@@ -40,15 +40,15 @@ end main;	# 17
 # h	t		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_7>	  ]
-[ 1,	  <tmp_10>	  ]
+[ 0,	  <tmp_12>	  ]
+[ 1,	  <tmp_13>	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
-[ <tmp_7> ]
-[ <tmp_10> ]
+[ <tmp_12> ]
+[ <tmp_13> ]
 !MALException:algebra.find:can not find element
 
 # 14:58:46 >  

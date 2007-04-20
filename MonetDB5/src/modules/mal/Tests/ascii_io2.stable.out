@@ -82,8 +82,8 @@ end main;	# 28
 # h		t		  # name
 # str		BAT		  # type
 #---------------------------------#
-[ "tmpdocs",	  <tmp_12>	  ]
-[ "tmpterms",	  <tmp_13>	  ]
+[ "tmpdocs",	  <tmp_15>	  ]
+[ "tmpterms",	  <tmp_16>	  ]
 #-----------------------------------------#
 # h	t				  # name
 # void	str				  # type

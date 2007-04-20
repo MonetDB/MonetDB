@@ -117,24 +117,24 @@ end main;	# 9
 # bbp	h			htype	ttype		count	kind		refcnt	  # name
 # int	str			str	str		lng	str		int	  # type
 #-----------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  38,	  "transient",	  1	  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  "transient",	  1	  ]
-[ 3,	  "timezones",		  "str",  "timezone",	  24,	  "transient",	  1	  ]
 [ 4,	  "M5system_auth_user",	  "oid",  "str",	  1,	  "persistent",	  1	  ]
 [ 5,	  "M5system_auth_passwd", "oid",  "str",	  1,	  "persistent",	  1	  ]
 [ 6,	  "M5system_auth_scen",	  "oid",  "str",	  0,	  "persistent",	  1	  ]
-[ 7,	  "simplemind",		  "int",  "int",	  0,	  "transient",	  0	  ]
+[ 7,	  "monet_environment",	  "str",  "str",	  38,	  "transient",	  1	  ]
+[ 8,	  "monet_unicode_case",	  "int",  "int",	  732,	  "transient",	  1	  ]
+[ 9,	  "timezones",		  "str",  "timezone",	  24,	  "transient",	  1	  ]
+[ 10,	  "simplemind",		  "int",  "int",	  0,	  "transient",	  0	  ]
 [ "Search directory by name" ]
 #-------------------------#
 # h	t		  # name
 # int	str		  # type
 #-------------------------#
-[ 7,	  "simplemind"	  ]
+[ 10,	  "simplemind"	  ]
 #-------------------------------------------------------------------------#
 # h	h		htype	ttype	count	kind		refcnt	  # name
 # int	str		str	str	lng	str		int	  # type
 #-------------------------------------------------------------------------#
-[ 7,	  "simplemind",	  "int",  "int",  0,	  "transient",	  0	  ]
+[ 10,	  "simplemind",	  "int",  "int",  0,	  "transient",	  0	  ]
 
 # 18:09:04 >  
 # 18:09:04 >  Done.

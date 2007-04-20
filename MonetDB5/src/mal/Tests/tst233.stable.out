@@ -51,24 +51,24 @@ end main;	# 7
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
 #---------------------------------------------------------#
-[ 1,	  "monet_environment",	  1,	  0		  ]
-[ 2,	  "monet_unicode_case",	  1,	  0		  ]
-[ 3,	  "timezones",		  1,	  0		  ]
 [ 4,	  "M5system_auth_user",	  1,	  1		  ]
 [ 5,	  "M5system_auth_passwd", 1,	  1		  ]
 [ 6,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 7,	  "tmp_7",		  0,	  1		  ]
+[ 7,	  "monet_environment",	  1,	  0		  ]
+[ 8,	  "monet_unicode_case",	  1,	  0		  ]
+[ 9,	  "timezones",		  1,	  0		  ]
+[ 10,	  "tmp_12",		  0,	  1		  ]
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
 #---------------------------------------------------------#
-[ 1,	  "monet_environment",	  1,	  0		  ]
-[ 2,	  "monet_unicode_case",	  1,	  0		  ]
-[ 3,	  "timezones",		  1,	  0		  ]
 [ 4,	  "M5system_auth_user",	  1,	  1		  ]
 [ 5,	  "M5system_auth_passwd", 1,	  1		  ]
 [ 6,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 7,	  "tmp_7",		  0,	  1		  ]
+[ 7,	  "monet_environment",	  1,	  0		  ]
+[ 8,	  "monet_unicode_case",	  1,	  0		  ]
+[ 9,	  "timezones",		  1,	  0		  ]
+[ 10,	  "tmp_12",		  0,	  1		  ]
 
 # 09:04:28 >  
 # 09:04:28 >  Done.
