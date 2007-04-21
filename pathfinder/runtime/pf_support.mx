@@ -3862,28 +3862,47 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
       update_data := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
     }
     {
+      # Calculate updates for the QN_NID index.  In the end we need to
+      # provide two tables: QN_NID_INS for all new QN/NID combinations, and
+      # QN_NID_DEL for  all  deleted such  combinations.  We  calculate them
+      # into NID_QN_{INS,DEL} tables for our convenience.
+      # Since previous work in this transaction may have added nodes we
+      # are going to delete, some of the nodes may already appear in
+      # NID_QN_INS, so we need to remove them.  That's easy, however, since
+      # we can remove all entries that contain NIDs of nodes we're deleting.
+      # Harder is figuring out which NID/QN combinations of original nodes
+      # are being deleted.
+      # Note that update_data contains RID/NID values of nodes being
+      # deleted, where the RID refers to the new RID value.
       var nid_qn_del;
       if (isoldpage) {
-        var rk := update_data.mirror().outerjoin(rid_kind_update).access(BAT_WRITE); # [rid,KIND/nil]
-        rk.replace(rk.uselect(chr_nil).mirror().[swizzle](map_pid).join(pre_kind));  # [rid,KIND]
-        var r := rk.uselect(ELEMENT).mirror();                                       # [rid,rid] (elements)
-        var rn := r.outerjoin(rid_nid_update).access(BAT_WRITE);                     # [rid,NID/nil]
-        rn.replace(rn.uselect(oid_nil).mirror().[swizzle](map_pid).join(pre_nid));   # [rid,NID]
-        var rp := rn.join(nid_rid)          # [rid,oldRID]
-          .[swizzle](map_pid)               # [rid,oldPRE]
-          .join(pre_prop);                  # [rid,oldPROP]
+        var rk := update_data.mirror().outerjoin(rid_kind_update).access(BAT_WRITE); # [RID,KIND/nil]
+        rk.replace(rk.uselect(chr_nil).mirror().[swizzle](map_pid).join(pre_kind));  # [RID,KIND]
+        var r := rk.uselect(ELEMENT).mirror();                                       # [RID,RID] (elements)
+        var rn := r.outerjoin(rid_nid_update).access(BAT_WRITE);                     # [RID,NID/nil]
+        rn.replace(rn.uselect(oid_nil).mirror().[swizzle](map_pid).join(pre_nid));   # [RID,NID]
+        var rp := rn.join(nid_rid)          # [RID,oldRID]
+          .select(oid_nil, oid_nil)         # [RID,oldRID] (non-nil)
+          .[swizzle](map_pid)               # [RID,oldPRE]
+          .join(pre_prop);                  # [RID,oldPROP]
         nid_qn_del := rn.reverse().join(rp);
-        nid_qn_ins_update.delete(rn.reverse()); # in case we're deleting new nodes
       } else {
-        nid_qn_del := update_data.reverse() # [NID,rid]
-          .join(rid_kind)                   # [NID,KIND]
-          .uselect(ELEMENT)                 # [NID,nil] (only elements)
-          .mirror()                         # [NID,NID] (only elements)
+        nid_qn_del := update_data.mirror()  # [newRID,newRID]
+          .join(rid_kind)                   # [newRID,KIND]
+          .uselect(ELEMENT)                 # [newRID,nil] (elements)
+          .mirror()                         # [newRID,newRID]
+          .join(rid_nid)                    # [newRID,NID]
+          .reverse()                        # [NID,newRID]
+          .mirror()                         # [NID,NID]
           .join(nid_rid)                    # [NID,oldRID]
+          .select(oid_nil, oid_nil)         # [NID,oldRID] (non-nil)
           .[swizzle](map_pid)               # [NID,oldPRE]
-          .join(pre_prop);                  # [NID,oldPROP]
+          .join(pre_prop);                  # [NID,QN]
       }
-      nid_qn_ins_update.delete(nid_qn_del);
+      # remove all NIDs in update_data from the nid_qn_ins_update; no
+      # need to figure out which QNs go with them: we remove them all
+      nid_qn_ins_update.delete(update_data.reverse());
+      # add actual deleted NID/QN combinations to nid_qn_del_update
       nid_qn_del_update.insert(nid_qn_del);
     }
 
