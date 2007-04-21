@@ -121,7 +121,9 @@ rm -rf $RPM_BUILD_ROOT
 %files server4
 %defattr(-,root,root) 
 %{prefix}/bin/Mbeddedsql
+%{prefix}/bin/Mbeddedsql5
 %{_libdir}/libembeddedsql.*
+%{_libdir}/libembeddedsql5.*
 %{_libdir}/MonetDB4/lib/lib_sql_server*
 %{_libdir}/MonetDB4/*.mil
 %{prefix}/include/embeddedclient.h
