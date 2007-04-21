@@ -38,4 +38,4 @@ bpm.rangePartition(Ra,pv);
 bpm.dump();
 user.pr(Ra);
 
-bbp.discard(Ra);
+bpm.discard(Ra);

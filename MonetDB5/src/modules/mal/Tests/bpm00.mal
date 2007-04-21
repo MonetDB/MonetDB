@@ -17,16 +17,14 @@ end pr;
 Ra:= bpm.deposit("myR",R);
 user.pr(Ra);
 
-io.print("Range partition it into two value ranges");
-bpm.rangePartition(Ra,0,5);
-bpm.rangePartition(Ra,6,nil:int);
+io.print("Partition it into two ranges");
+bpm.partition(Ra,6);
 bpm.dump(Ra);
 user.pr(Ra);
 
 Rrev:= bat.reverse(Ra);
-io.print("Repartition it further into two oid ranges");
-bpm.rangePartition(Rrev,nil:oid,2@0);
-bpm.rangePartition(Rrev,3@0,nil:oid);
+io.print("Repartition it further into oid ranges");
+bpm.partition(Rrev,1@0);
 # we should have 4 partitions
 bpm.dump(Ra);
 user.pr(Ra);

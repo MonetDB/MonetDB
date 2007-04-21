@@ -245,9 +245,10 @@ comment "Create a range partition on a BAT";
 command rangePartition(pb:bat[:any_1,:any_2], pv:bat[:oid,:any_2]):void
 address BPMrangeVector
 comment "Create the partitions based on a range vector";
-command splitPartition(pb:bat[:any_1,:any_2], val:any_2):void
+
+command partition(pb:bat[:any_1,:any_2], val:any_2):void
 address BPMsplitpartition
-comment "Create a range partition on a BAT";
+comment "Split all partitions that cover the split value";
 
 command addPartition(nme:str,b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMaddPartition
@@ -406,7 +407,7 @@ The internal data structure is used as a cache for improved access.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-#define _DEBUG_BPM_
+/* #define _DEBUG_BPM_ */
 
 #ifdef WIN32
 #ifndef LIBBPM
@@ -528,6 +529,7 @@ typedef struct PARTITIONREC {
 	ValRecord tlow,thgh; /* tail range */
 	int hbits, tbits; /* linear hashing bits */
 	int nxt, prv;	/* list of all partitions*/
+	size_t cnt;	/* how many tuples */
 } *Partition, PartitionRec;
 @-
 The size of the BBP is relatively small, which can be
@@ -547,7 +549,7 @@ static void BPMprintRecord(stream *f, Partition p){
 	stream_printf(f," - "); VALprint(f,&p->hhgh);
 	stream_printf(f," t "); VALprint(f,&p->tlow);
 	stream_printf(f," - "); VALprint(f,&p->thgh);
-	stream_printf(f," nxt %d prv %d\n", p->nxt,p->prv);
+	stream_printf(f," nxt %d prv %d cnt %d\n", p->nxt,p->prv,p->cnt);
 }
 
 static Partition getByName(str nme){
@@ -846,6 +848,9 @@ pieces based on the value referenced
 		((*cmp) ((ptr)&bpmcat[X]->B, nilptr)==0 || \
 		(*cmp)((ptr) &bpmcat[X]->B, Y) > 0) )
 
+@-
+split partitions only if the range overlaps the split value
+@c
 str
 BPMsplitpartition(bat *ret, bat *bid, ptr val)
 {
@@ -853,7 +858,8 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	Partition ps, p;
 	int (*cmp) (ptr, ptr);
 	ptr nilptr;
-	int i,tpe;
+	int i;
+	(void) ret;
 
 	BPMopen();
 
@@ -861,72 +867,85 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 		throw(MAL,"pbm.split","Partitioned BAT not found");
 	@:getBATdescriptor(bid,b,"bpm.splitPartition");
 	/* get the comparison function */
-	tpe= *bid >0? rngType(b->ttype):rngType(b->htype);
-	cmp= BATatoms[tpe].atomCmp;
-	nilptr = ATOMnilptr(tpe);
+	cmp= BATatoms[b->ttype].atomCmp;
+	nilptr = ATOMnilptr(b->ttype);
+	BBPunfix(b->batCacheid);
+
+#ifdef _DEBUG_BPM_
+	stream_printf(GDKout,"reverse call?%d\n",*bid);
+	stream_printf(GDKout," break on "); VALprint(GDKout,val);
+	stream_printf(GDKout," \n"); 
+#endif
 	/* overlap by excluding outliers */
-	if( *bid>0){
+	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
+	if( *bid > 0){
 		if( right(i,tlow,val) || equal(i,tlow,val) ||
 			left(i,thgh,val) || equal(i,thgh,val) ){
 				/* this fragment need not be split */
-				BBPunfix(b->batCacheid);
-				return MAL_SUCCEED;
+				continue;
 			}
 	} else
 		if( right(i,hlow,val) || equal(i,hlow,val) ||
 			left(i,hhgh,val) || equal(i,hhgh,val) ){
 				/* this fragment need not be split */
-				BBPunfix(b->batCacheid);
-				return MAL_SUCCEED;
+				continue;
 			}
-#ifdef _DEBUG_BPM_
-		stream_printf(GDKout," break on "); VALprint(GDKout,val);
-		stream_printf(GDKout," \n"); 
-		BPMprintRecord(GDKout,bpmcat[i]);
-#endif
-	/* we can enter a new partition */
-	bn= BAT_select_(b, val, (ptr) &(ps->thgh), TRUE, FALSE, TRUE, FALSE);
 
-	if( bn == 0){
+#ifdef _DEBUG_BPM_
+			BPMprintRecord(GDKout,bpmcat[i]);
+#endif
+		/* we can enter a new partition */
+		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitPartition");
+		if( *bid > 0)
+			bn= BAT_select_(b, val, nilptr, TRUE, FALSE, TRUE, FALSE);
+		else{
+			bn= BAT_select_(BATmirror(b), val, nilptr, TRUE, FALSE, TRUE, FALSE);
+			bn= BATcopy(BATmirror(bn), bn->ttype,bn->htype,1);
+		}
+
+		if( bn == 0){
+			BBPunfix(b->batCacheid);
+			throw(MAL,"pbm.split","Can not create new partition");
+		}
+		BBPkeepref(ABS(bn->batCacheid));
+		p= newPartition(ABS(bn->batCacheid));
+		p->alias= bpmcat[i]->alias;
+		@:defaultRange(p)@
+		insertPartition(bpmcat[i],p);
+
+		bpmcat[p->bid]->cnt= BATcount(bn);
+		if( *bid> 0){
+			VALset(&p->hlow, rngType(b->htype), &bpmcat[i]->hlow );
+			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
+			VALset(&p->tlow, rngType(b->ttype), val );
+			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
+
+			VALset(& bpmcat[i]->thgh, rngType(b->ttype), val );
+		} else {
+			VALset(&p->hlow, rngType(b->htype), val );
+			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
+			VALset(&p->tlow, rngType(b->ttype), &bpmcat[i]->tlow );
+			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
+
+			VALset(& bpmcat[i]->hhgh, rngType(b->htype), val );
+		}
+
+		/* default hash */
+		p->hbits=  bpmcat[i]->hbits;
+		p->tbits=  bpmcat[i]->tbits;
+
+		
+	#ifdef _DEBUG_BPM_
+		stream_printf(GDKout,"Broke partition '%s' at %d\n", bpmcat[i]->name,i);
+		BPMprintRecord(GDKout, bpmcat[i]);
+		BPMprintRecord(GDKout,p);
+		stream_printf(GDKout,"Finished partition\n");
+	#endif
+
+		BATdel(b,bn,FALSE); /* assume unique heads */
+		bpmcat[i]->cnt= BATcount(b);
 		BBPunfix(b->batCacheid);
-		throw(MAL,"pbm.split","Can not create new partition");
 	}
-	BBPkeepref(*ret= bn->batCacheid);
-
-	p= newPartition(*ret);
-	p->alias= ps->alias;
-	@:defaultRange(p)@
-	insertPartition(ps,p);
-
-	if( *bid> 0){
-		VALset(&p->hlow, rngType(b->htype), &ps->hlow );
-		VALset(&p->hhgh, rngType(b->htype), &ps->hhgh  );
-		VALset(&p->tlow, rngType(b->ttype), val );
-		VALset(&p->thgh, rngType(b->ttype), &ps->thgh );
-
-		VALset(&ps->thgh, rngType(b->ttype), val );
-	} else {
-		VALset(&p->hlow, rngType(b->ttype), &ps->hlow );
-		VALset(&p->hhgh, rngType(b->ttype), &ps->hhgh  );
-		VALset(&p->tlow, rngType(b->htype), val );
-		VALset(&p->thgh, rngType(b->htype), &ps->thgh );
-
-		VALset(&ps->thgh, rngType(b->htype), val );
-	}
-
-	/* default hash */
-	p->hbits= ps->hbits;
-	p->tbits= ps->tbits;
-
-	
-#ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"New partition '%s' at %d\n",bpmcat[p->alias]->name,*ret);
-	BPMprintRecord(GDKout,p);
-#endif
-
-	BATdel(b,bn,FALSE); /* assume unique heads */
-	BBPunfix(b->batCacheid);
-/*	BBPunfix(bn->batCacheid);*/
 	return MAL_SUCCEED;
 }
 
@@ -936,52 +955,30 @@ and creates new ones, keeping the partitions in order.
 @c
 str
 BPMrange(bat *ret, bat *bid, ptr low, ptr hgh){
-	BAT *b;
-	int i, r;
-	Partition p;
-
 	BPMopen();
 
-	if( (p= getAlias(*bid)) == NULL)
+	if( getAlias(*bid) == NULL)
 		throw(MAL, "bpm.range","Partition not known");
-	@:getBATdescriptor(bid,b,"bpm.range")@
-
-	BBPunfix(b->batCacheid);	/* don't need it anymore */
-
-	for(i= p->nxt ; i!=p->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
-		BPMsplitpartition(&r,&bpmcat[i]->bid,low);
-		BPMsplitpartition(&r,&bpmcat[i]->bid,hgh);
-	}
-	BBPunfix(b->batCacheid);
-	*ret= 0;
+	BPMsplitpartition(ret,bid,low);
+	BPMsplitpartition(ret,bid,hgh);
 	return MAL_SUCCEED;
 }
 @-
-The vector approach could either use a single column
-of ordered split points, or a double column with (low,hgh)
-value pairs. (STILL TO BE DECIDED)
-We should ensure that the range vector is sorted first.
+The vector approach is simply a list of split points.
 @c
 
 str
 BPMrangeVector(bat *ret, bat *bid, bat *pv)
 {
-	BAT *b, *bpv, *bnew, *b0;
+	BAT *b, *bpv;
 	BUN cur,q;
-	int i,tpe, k=0,j;
-	int tlow_nil, thgh_nil;
-	Partition pprev, p, pnew;
-	int (*cmp) (ptr, ptr);
-	ptr nilptr, val;
-	ptr * v;
+	Partition p;
+	ptr val;
 
 	BPMopen();
 
-	i= ABS(*bid);
-	if( (p= bpmcat[i]) == 0)
+	if( (p= bpmcat[ABS(*bid)]) == 0)
 		throw(MAL,"bpm.rangeVector","Partitioned BAT not found");
-	if(bpmcat[i]->nxt)
-		throw(MAL,"bpm.rangeVector","Applies only on a single BAT");
 	@:getBATdescriptor(bid,b,"bpm.rangeVector");
 
 	@:getBATdescriptor(pv,bpv,"bpm.range")@
@@ -989,65 +986,10 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 		BBPunfix(b->batCacheid);
 		throw(MAL,"bpm.range","Cannot access BAT");
 	}
-
-	tpe= p->bid >0? rngType(b->ttype):rngType(b->htype);
-	cmp= BATatoms[tpe].atomCmp;
-	nilptr = ATOMnilptr(tpe);
-	
-	tlow_nil = ((*cmp)((ptr)&bpmcat[i]->tlow, nilptr)==0);
-	thgh_nil = ((*cmp)((ptr)&bpmcat[i]->thgh, nilptr)==0);
-
-	v= (ptr *) GDKzalloc(sizeof(ptr)*(BATcount(bpv)+2));
-	/*if (! tlow_nil)  */
-	v[k++]=(ptr)&bpmcat[i]->tlow;
-		 
 	BATloop(bpv,cur,q){
 		val= BUNtail(bpv,cur);
-		/* check for overlap: tlow <= val < thgh */
-		if ((*cmp) (val, nilptr) != 0 && 
-		   (tlow_nil || 
-		    (!tlow_nil && (*cmp)(val,(ptr)&p->tlow)>=0)) &&
-		   (thgh_nil || 
-		    (!thgh_nil && (*cmp)(val,(ptr)&p->thgh)<0)))
-		v[k++]=val;
+		BPMsplitpartition(ret,bid,val);
 	}
-	/*if (! thgh_nil) */
-	v[k++]=(ptr)&bpmcat[i]->thgh;
-
-	pprev=p;
-	/*to do check when it is necessary */
-	for( j=1;j<k-1;j++){
-		/*new partition [v[j], v[j+1]) */
-		bnew= BAT_select_(b, v[j], v[j+1], TRUE, FALSE, TRUE, FALSE);
-		if( bnew == 0)
-			throw(MAL,"pbm.split","Can not create new partition");
-		pnew= newPartition(bnew->batCacheid);
-		pnew->alias= p->alias;
-		@:defaultRange(pnew)@
-		insertPartition(pprev,pnew);
-
-		VALset(&pnew->hlow, b->htype, &p->hlow );
-		VALset(&pnew->hhgh, b->htype, &p->hhgh  );
-		VALset(&pnew->tlow, b->ttype, v[j] );
-		VALset(&pnew->thgh, b->ttype, v[j+1] );
-		pprev=pnew;
-	}
-
-	/*first partition [tlow, v[0]) replaces the original bid */
-	b0= BAT_select_(b, v[0], v[1], TRUE, FALSE, TRUE, FALSE);
-	if( b0 == 0){
-		BBPunfix(b->batCacheid);
-		BBPunfix(bpv->batCacheid);
-		GDKfree(v);
-		throw(MAL,"pbm.split","Can not create new partition");
-	}
-	BBPkeepref( p->bid=  b0->batCacheid);
-	VALset(&p->thgh, b0->ttype, v[1]);
-	
-	BBPunfix(b->batCacheid);
-	BBPunfix(bpv->batCacheid);
-
-	GDKfree(v);
 	*ret= 0;
 	return MAL_SUCCEED;
 }
