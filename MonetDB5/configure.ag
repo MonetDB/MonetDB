@@ -133,17 +133,23 @@ AC_SUBST(QMONETDB5_SOURCE)
 # wasn't set by --prefix
 if test "${prefix}x" = "NONEx"; then
 	Qprefix="${ac_default_prefix}"
+	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
 else
 	Qprefix="${prefix}"
+	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
 fi
 AC_SUBST(Qprefix)
+AC_SUBST(QXprefix)
 # exec_prefix is created very late, so let make do the expansion
 if test "${exec_prefix}x" = "NONEx"; then
 	Qexec_prefix='${prefix}'
+	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
 else
 	Qexec_prefix="${exec_prefix}"
+	QXexec_prefix="`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"
 fi
 AC_SUBST(Qexec_prefix)
+AC_SUBST(QXexec_prefix)
 Qsrcdir="$srcdir"
 Xsrcdir="`$translatepath "$srcdir"`"
 QXsrcdir="`echo "$Xsrcdir" | sed 's/\\\\/\\\\\\\\/g'`"
