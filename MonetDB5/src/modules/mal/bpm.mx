@@ -972,12 +972,11 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 {
 	BAT *b, *bpv;
 	BUN cur,q;
-	Partition p;
 	ptr val;
 
 	BPMopen();
 
-	if( (p= bpmcat[ABS(*bid)]) == 0)
+	if( bpmcat[ABS(*bid)] == 0)
 		throw(MAL,"bpm.rangeVector","Partitioned BAT not found");
 	@:getBATdescriptor(bid,b,"bpm.rangeVector");
 
