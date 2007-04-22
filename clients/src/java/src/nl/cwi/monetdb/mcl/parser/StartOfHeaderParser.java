@@ -122,7 +122,6 @@ public class StartOfHeaderParser {
 			new MCLParseException("unexpected end of string", soh.position() - 1);
 		int cnt = 0;
 		soh.mark();
-		soh.get();
 		while (soh.hasRemaining() && soh.get() != ' ') {
 			cnt++;
 		}
