@@ -96,6 +96,7 @@ module 'pf_support'
 [ "splitkind(BAT[oid,chr]) : BAT[oid,BAT]"														  ]
 [ "string_join(BAT[oid,str], BAT[oid,str]) : BAT[oid,str]"										  ]
 [ "text_constr(BAT[void,str], BAT[void,BAT]) : BAT[void,BAT]"												  ]
+[ "ws_bat(lng) : BAT[void,BAT]"																  ]
 module 'pathfinder'
 #-------------------------------------------------#
 # signature					  # name

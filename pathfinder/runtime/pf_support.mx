@@ -395,6 +395,12 @@ but does this in a single scan."
  "return false if there is an active document mgt query.
   NOTE: you *must* have the short lock when executing this!!"
 
+@- retrieve BAT ws that belongs to wsid; note that you must be sure that it is still alive
+@m
+.COMMAND ws_bat(lng wsid) : BAT[void,bat] = CMDws_bat; 
+ "retrieve BAT ws that belongs to wsid; note that you must be sure that it is still alive"
+
+
 .PRELUDE = pf_support_prelude;
 .EPILOGUE = pf_support_epilogue;
 
@@ -6842,6 +6848,19 @@ int CMDpflock_free(bit *res, bit* doCommit) {
         *res = (BUNfnd(BATmirror(ws_overlaps_ws), &nil) == NULL);
     }
     return GDK_SUCCEED;
+}
+
+/* retrieve BAT ws that belongs to wsid; note that you must be sure that it is still alive */
+int CMDws_bat(BAT **ret, lng* wsid)
+{
+    bat bid = *wsid & 1073741823LL;
+    BAT *v = NULL;
+    if (BBPfix(bid)) {
+        BAT *b = BBPdescriptor(bid);
+        if (b) *ret = v = VIEWcreate(b);
+        BBPunfix(bid);
+    }
+    return v?GDK_SUCCEED:GDK_FAIL;
 }
 
 #include "serialize.h"

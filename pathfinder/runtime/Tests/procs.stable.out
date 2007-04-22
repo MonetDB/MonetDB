@@ -638,7 +638,6 @@ procs();
 [ "vx_maintain(BAT[oid,oid], BAT[oid,oid], BAT[oid,str]) : BAT[int,oid]"																					  ]
 [ "vx_maintain(BAT[oid,oid], BAT[oid,str]) : BAT[int,oid]"																							  ]
 [ "vx_reduce(BAT[oid,int], BAT[void,oid]) : BAT[oid,oid]"																							  ]
-[ "ws_bat(lng) : BAT[void,BAT]"																  ]
 [ "ws_collection(BAT[void,BAT], BAT[oid,str], BAT[void,oid]) : BAT[oid,oid]"										  ]
 [ "ws_collection_root(BAT[void,BAT], BAT[void,str]) : BAT[oid,oid]"											  ]
 [ "ws_collections(BAT[void,BAT], bit) : BAT[void,oid]"																			  ]

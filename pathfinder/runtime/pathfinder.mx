@@ -1384,12 +1384,6 @@ PROC ws_id(BAT[void,bat] ws) : lng
     return lng(bbpname(ws));
 }
 
-# retrieve BAT ws that belongs to wsid; note that you must be sure that it is still alive
-PROC ws_bat(lng wsid) : BAT[void,bat] 
-{
-    return bat(and(wsid, 1073741823LL));
-}
-
 PROC _ws_free(lng wsid) : BAT[void,any]
 {
     # remove the dependencies of this query (modifies ws_overlaps_ws) 
