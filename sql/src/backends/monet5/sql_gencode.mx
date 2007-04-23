@@ -1118,6 +1118,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 
+			/* external types have sqlname convert functions,
+			   these can generate errors (fromstr cannot) */
+			if (s->op4.typeval.type->eclass == EC_ANY)
+				convert = s->op4.typeval.type->sqlname;
+		
 			if (s->op4.typeval.type->eclass == EC_INTERVAL) {
 				if (s->op4.typeval.type->localtype == TYPE_int)
 					convert = "month_interval";
