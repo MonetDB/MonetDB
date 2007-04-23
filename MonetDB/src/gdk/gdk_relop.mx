@@ -1193,6 +1193,7 @@ if no match can be found.
 	hash_t xx;
 	int yy;
 	BUN p, q, w;
+	@4
 
 	BATloopFast(l, p, q, yy) {
 		size_t i = 0;
@@ -1200,11 +1201,11 @@ if no match can be found.
 		v = (ptr) BUNtail(l, p);
 		if (!@1_EQ(v, nilh, @2))
 			HASHloop_@2(r, r->hhash, xx, v, w) {
-				bunfastins(bn, BUNhead(l, p), BUNtail(r, w));
+				@3(bn, s, BUNhead(l, p), BUNtail(r, w), zz);
 				i++;
 			}
 		if (i == 0) {
-			bunfastins(bn, BUNhead(l, p), nilt);
+			@3(bn, s, BUNhead(l, p), nilt, zz);
 		}
 	}
 }
@@ -1220,9 +1221,9 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	BAT *bn = NULL;
 
 	@:joincheck(BATouterjoin,l->ttype,r->htype)@
+	if (BAThkey(r) && (estimate == oid_nil || estimate < BATcount(l)))
+		estimate = BATcount(l);
 	if (BAThdense(l) && BAThkey(r)) {
-		if (estimate == oid_nil)
-			estimate = BATcount(l);
 		bn = BATnew(TYPE_void, ATOMtype(r->ttype), estimate);
 		if (bn == NULL)
 			return bn;
@@ -1275,32 +1276,39 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 			BBPreclaim(bn);
 			return NULL;
 		}
+		if (BAThkey(r)) {
+			@:outerjoinswitch(bunfastins_nocheck_inc, BUN s = BUNfirst(bn); int zz = BUNsize(bn);)@
+		} else {
+			@:outerjoinswitch(bunfastins_check,)@
+		}
+@= outerjoinswitch
 		switch (any) {
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
-			@:outerjoinloop(simple,chr)@
+			@:outerjoinloop(simple,chr,@1,@2)@
 #endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
-			@:outerjoinloop(simple,bte)@
+			@:outerjoinloop(simple,bte,@1,@2)@
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
-			@:outerjoinloop(simple,sht)@
+			@:outerjoinloop(simple,sht,@1,@2)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
 		case TYPE_flt:
-			@:outerjoinloop(simple,int)@
+			@:outerjoinloop(simple,int,@1,@2)@
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl:
 		case TYPE_lng:
-			@:outerjoinloop(simple,lng)@
+			@:outerjoinloop(simple,lng,@1,@2)@
 #endif
 		default:
-			@:outerjoinloop(atom,any)@
+			@:outerjoinloop(atom,any,@1,@2)@
 		}
+@c
 		bn->tsorted = 0;
 	}
 	BATmmap_unpin(r);

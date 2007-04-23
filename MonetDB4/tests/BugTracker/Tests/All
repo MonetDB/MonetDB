@@ -19,3 +19,4 @@ dense_multiplex.SF-1540019
 BATpropcheck-BATjoin.SF-1568652
 gold_crash.1411919
 leftfetchjoin_crash.SF-1705726
+outerjoin_bug.SF-1704972

@@ -1274,6 +1274,15 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 		bunfastins_nocheck(b, _p, h, t, _bunsize);		\
 	}
 
+#define bunfastins_check(b, p, h, t, s) {                               \
+		bunfastins(b, h, t);                                    \
+	}
+
+#define bunfastins_nocheck_inc(b, p, h, t, s) {                         \
+		bunfastins_nocheck(b, p, h, t, s);                      \
+		p += s;                                                 \
+	}
+
 gdk_export BAT *BUNfastins(BAT *b, ptr left, ptr right);
 gdk_export BAT *BUNins(BAT *b, ptr left, ptr right, bit force);
 gdk_export BAT *BUNappend(BAT *b, ptr right, bit force);
