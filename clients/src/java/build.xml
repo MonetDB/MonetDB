@@ -59,10 +59,7 @@ All Rights Reserved.
     <antcall target="jar_mcl" />
     <antcall target="jar_client" />
 
-    <antcall target="doc_jdbc" />
-    <antcall target="doc_xmldb" />
-    <antcall target="doc_mcl" />
-    <antcall target="doc_client" />
+    <antcall target="doc" />
   </target>
 
   <!-- jar targets -->
@@ -340,61 +337,20 @@ All Rights Reserved.
   </target>
 
 
-  <!-- documentation targets -->
-  <target name="doc_jdbc" depends="compile_jdbc">
+  <!-- documentation target -->
+  <target name="doc"
+    depends="compile_mcl,compile_jdbc,compile_xmldb,compile_client">
     <javadoc
-      destdir="${docdir}/jdbc"
+      destdir="${docdir}"
       author="true"
       version="true"
       use="true"
-      windowtitle="MonetDB JDBC API">
+      windowtitle="MonetDB Java APIs">
 
       <fileset dir="${srcdir}" defaultexcludes="yes">
-        <include name="${jdbc-package}/**/*.java" />
+        <include name="**/*.java" />
       </fileset>
     </javadoc>
   </target>
 
-  <target name="doc_xmldb" depends="compile_xmldb,jar_jdbc">
-    <javadoc
-      classpath="${libdir}/xmldb.jar:${jdbc-jar}"
-      destdir="${docdir}/xmldb"
-      author="true"
-      version="true"
-      use="true"
-      windowtitle="MonetDB XML:DB API">
-
-      <fileset dir="${srcdir}" defaultexcludes="yes">
-        <include name="${xmldb-package}/**/*.java" />
-      </fileset>
-    </javadoc>
-  </target>
-
-  <target name="doc_mcl" depends="compile_mcl">
-    <javadoc
-      destdir="${docdir}/mcl"
-      author="true"
-      version="true"
-      use="true"
-      windowtitle="MonetDB MCL API">
-
-      <fileset dir="${srcdir}" defaultexcludes="yes">
-        <include name="${mcl-package}/**/*.java" />
-      </fileset>
-    </javadoc>
-  </target>
-
-  <target name="doc_client" depends="compile_client">
-    <javadoc
-      destdir="${docdir}/client"
-      author="true"
-      version="true"
-      use="true"
-      windowtitle="MonetDB Clients">
-
-      <fileset dir="${srcdir}" defaultexcludes="yes">
-        <include name="${client-package}/**/*.java" />
-      </fileset>
-    </javadoc>
-  </target>
 </project>
