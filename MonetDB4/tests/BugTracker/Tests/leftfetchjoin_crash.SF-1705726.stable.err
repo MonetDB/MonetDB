@@ -1,0 +1,86 @@
+stderr of test 'leftfetchjoin_crash.SF-1705726` in directory 'tests/BugTracker` itself:
+
+
+# 12:22:14 >  
+# 12:22:14 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/conf/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/plain:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/src/modules/plain:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/contrib:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/src/modules/contrib:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/mapi/.libs:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/mapi:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/src/mapi:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/scripts:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/scripts/tools" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/xquery_logs" --set mapi_port=33646 --set xrpc_port=40672 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  
+# 12:22:14 >  
+
+# builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
+# builtin opt 	gdk_version = 1.17.1
+# builtin opt 	monet_pid = 28860
+# builtin opt 	prefix = /ufs/sjoerd/Monet
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mem_bigsize = 262144
+# builtin opt 	gdk_vm_minsize = 137438953472
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_mem_pagebits = 14
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${prefix}/lib64/MonetDB:${prefix}/lib64/bin
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/sql_logs
+# builtin opt 	xquery_logdir = ${prefix}/var/MonetDB/xquery_logs
+# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /ufs/sjoerd/Monet
+# config opt 	config = ${prefix}/etc/MonetDB.conf
+# config opt 	prefix = /ufs/sjoerd/Monet
+# config opt 	exec_prefix = ${prefix}
+# config opt 	datadir = ${prefix}/share
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB4/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_alloc_map = no
+# config opt 	gdk_embedded = no
+# config opt 	gdk_debug = 0
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = MonetDB>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${prefix}/lib64/MonetDB4:${prefix}/lib64/MonetDB4/lib:${prefix}/lib64/MonetDB4/bin
+# config opt 	monet_daemon = no
+# config opt 	mapi_port = 50000
+# config opt 	mapi_open = false
+# config opt 	mapi_debug = 0
+# config opt 	sql_debug = 0
+# config opt 	sql_logdir = ${prefix}/var/MonetDB4/sql_logs
+# config opt 	xquery_output = dm
+# config opt 	xquery_cacheMB = 100
+# config opt 	xquery_cacherules = 
+# config opt 	xquery_procMB = 128
+# config opt 	xquery_logdir = ${prefix}/var/MonetDB4/xquery_logs
+# config opt 	xrpc_port = 
+# config opt 	xrpc_open = true
+# config opt 	xrpc_options = 
+# config opt 	xrpc_admin = 127.0.0.1
+# config opt 	xrpc_user = 127.0.0.1
+# config opt 	xrpc_trusted = http://monetdb.cwi.nl;${prefix}/share/MonetDB/xrpc/export
+# config opt 	standoff_ns = 
+# config opt 	standoff_start = start
+# config opt 	standoff_end = end
+# cmdline opt 	config = /ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/conf/MonetDB.conf
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/plain:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/src/modules/plain:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/contrib:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/src/modules/contrib:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/mapi/.libs:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/src/mapi:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/src/mapi:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/scripts:/ufs/sjoerd/src/MonetDB/devel/MonetDB4/scripts/tools
+# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/dbfarm
+# cmdline opt 	sql_logdir = /ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/sql_logs
+# cmdline opt 	xquery_logdir = /ufs/sjoerd/src/MonetDB/devel/MonetDB4/Linux/xquery_logs
+# cmdline opt 	mapi_port = 33646
+# cmdline opt 	xrpc_port = 40672
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = mTests_tests_BugTracker
+
+
+
+# 12:25:53 >  
+# 12:25:53 >  Done.
+# 12:25:53 >  
+
