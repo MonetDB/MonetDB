@@ -1,0 +1,89 @@
+stderr of test 'char_escape_SF-1681921` in directory 'tests/BugTracker` itself:
+
+
+# 09:38:30 >  
+# 09:38:30 >  Mtimeout -timeout 180 Mserver "--config=/usr/local/flokstra/etc/MonetDB.conf" --debug=0 --set "monet_mod_path=/usr/local/flokstra/lib/MonetDB4:/usr/local/flokstra/lib/MonetDB4/lib:/usr/local/flokstra/lib/MonetDB4/bin" --set "gdk_dbfarm=/usr/local/flokstra/var/MonetDB4/dbfarm" --set "sql_logdir=/usr/local/flokstra/var/MonetDB4/sql_logs" --set "xquery_logdir=/usr/local/flokstra/var/MonetDB4/xquery_logs" --set mapi_port=30762 --set xrpc_port=44398 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 09:38:30 >  
+
+# builtin opt 	gdk_arch = 32biti686-suse-linux
+# builtin opt 	gdk_version = 1.17.1
+# builtin opt 	monet_pid = 497
+# builtin opt 	prefix = /usr/local/flokstra
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mem_bigsize = 262144
+# builtin opt 	gdk_vm_minsize = 137438953472
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_mem_pagebits = 14
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/sql_logs
+# builtin opt 	xquery_logdir = ${prefix}/var/MonetDB/xquery_logs
+# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /usr/local/flokstra
+# config opt 	config = ${prefix}/etc/MonetDB.conf
+# config opt 	prefix = /usr/local/flokstra
+# config opt 	exec_prefix = ${prefix}
+# config opt 	datadir = ${prefix}/share
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB4/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_alloc_map = no
+# config opt 	gdk_embedded = no
+# config opt 	gdk_debug = 0
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = MonetDB>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB4:${exec_prefix}/lib/MonetDB4/lib:${exec_prefix}/lib/MonetDB4/bin
+# config opt 	monet_daemon = no
+# config opt 	mapi_port = 50000
+# config opt 	mapi_open = false
+# config opt 	mapi_debug = 0
+# config opt 	sql_debug = 0
+# config opt 	sql_logdir = ${prefix}/var/MonetDB4/sql_logs
+# config opt 	xquery_output = dm
+# config opt 	xquery_cacheMB = 100
+# config opt 	xquery_cacherules = 
+# config opt 	xquery_procMB = 128
+# config opt 	xquery_logdir = ${prefix}/var/MonetDB4/xquery_logs
+# config opt 	xrpc_port = 
+# config opt 	xrpc_open = true
+# config opt 	xrpc_options = 
+# config opt 	xrpc_admin = 127.0.0.1
+# config opt 	xrpc_user = 127.0.0.1
+# config opt 	xrpc_trusted = http://monetdb.cwi.nl;${prefix}/share/MonetDB/xrpc/export
+# config opt 	standoff_ns = 
+# config opt 	standoff_start = start
+# config opt 	standoff_end = end
+# cmdline opt 	config = /usr/local/flokstra/etc/MonetDB.conf
+# cmdline opt 	gdk_debug = 0
+# cmdline opt 	monet_mod_path = /usr/local/flokstra/lib/MonetDB4:/usr/local/flokstra/lib/MonetDB4/lib:/usr/local/flokstra/lib/MonetDB4/bin
+# cmdline opt 	gdk_dbfarm = /usr/local/flokstra/var/MonetDB4/dbfarm
+# cmdline opt 	sql_logdir = /usr/local/flokstra/var/MonetDB4/sql_logs
+# cmdline opt 	xquery_logdir = /usr/local/flokstra/var/MonetDB4/xquery_logs
+# cmdline opt 	mapi_port = 30762
+# cmdline opt 	xrpc_port = 44398
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = mTests_tests_BugTracker
+
+# 09:38:31 >  
+# 09:38:31 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30762 char_escape_SF-1681921.xq
+# 09:38:31 >  
+
+
+# 09:38:31 >  
+# 09:38:31 >  Done.
+# 09:38:31 >  
+
