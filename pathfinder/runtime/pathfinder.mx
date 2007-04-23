@@ -3521,13 +3521,13 @@ PROC del_doc_base(bit cachedOnly,
                   bit pf_short_req) : void
 {
     # do the work in memory
-    var commitBAT := del_doc(cachedOnly, names, pf_short_req);
+    del_doc(cachedOnly, names, pf_short_req);
 
     # now here is our commit: checkpoint 2 bat descs and BBP.dir
     if (pf_commit_docmgt) {
         var ok := false;
         lock_set(pf_wal);
-        var err := CATCH(ok := subcommit(commitBAT));
+        var err := CATCH(ok := subcommit(bat(void,str).append("doc_name").append("doc_location")));
         lock_unset(pf_wal);
         if (not(ok)) {
             var msg := "XQDY0062: checkpoint failed (in del_doc_base), query aborted.\n";
