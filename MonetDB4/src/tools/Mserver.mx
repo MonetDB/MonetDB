@@ -333,9 +333,10 @@ capabilities depend on the malloc implementation used at run time.
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;
 		case 'd':
-			debug = 1;
 			if (optarg) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", optarg);
+			} else {
+				debug = 1;
 			}
 			break;
 		case 's':{
