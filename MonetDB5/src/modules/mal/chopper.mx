@@ -216,7 +216,8 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		VALinit(head, TYPE_oid, &o);
 	} else
 		VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
-	VALinit(tail, getArgType(mb, pci, 2), BUNtail(b, p));
+	assert(b->ttype == getArgType(mb,pci,2));
+	VALinit(tail, b->ttype, BUNtail(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -259,7 +260,7 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
 	}
 	assert(b->ttype == getArgType(mb,pci,2));
-	VALinit(tail, getArgType(mb, pci, 2), BUNtail(b, p));
+	VALinit(tail, b->ttype, BUNtail(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

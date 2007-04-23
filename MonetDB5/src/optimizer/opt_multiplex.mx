@@ -154,19 +154,16 @@ find the actual arguments at the proper place of the callee.
 @c
 	/* resB := new(refBat) */
 	if (isAnyExpression(getArgType(mb, pci, 0)))
-		return createException(MAL, "optimizer.multiplex", 
-								"Target type is missing");
+		return createException(MAL, "optimizer.multiplex", "Target type is missing");
 	q = newFcnCall(mb, batRef, newRef);
 	resB = getArg(q, 0);
 
 	ht = getHeadType(getArgType(mb, pci, 0));
 	if (ht== TYPE_any)
-		return createException(MAL, "optimizer.multiplex", 
-								"Target head type is missing");
+		return createException(MAL, "optimizer.multiplex", "Target head type is missing");
 	tt = getTailType(getArgType(mb, pci, 0));
 	if (tt== TYPE_any)
-		return createException(MAL, "optimizer.multiplex", 
-								"Target tail type is missing");
+		return createException(MAL, "optimizer.multiplex", "Target tail type is missing");
 	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 	q = pushNil(mb, q, ht);
 	freezeVarType(mb,getArg(q,q->argc-1));
@@ -221,7 +218,7 @@ find the actual arguments at the proper place of the callee.
 	pushReturn(mb, q, tvar);
 	pushArgument(mb, q, iter);
 
-/* catch   MALException and ignore them  and replace value with nil*/
+/* catch   MALException and ignore them  and replace value with nil */
 	q = newInstruction(mb,CATCHsymbol);
 	k = newVariable(mb, GDKstrdup(exceptionToString(MAL)), TYPE_str);
 	getVar(mb,k)->isudftype = 1;

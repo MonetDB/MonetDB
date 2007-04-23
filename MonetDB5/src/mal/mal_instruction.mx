@@ -1816,6 +1816,7 @@ setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid)
 InstrPtr
 pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
 {
+	assert(p->retc);
 	if (p->argv[p->retc - 1] == -1) {
 		p->argv[p->retc - 1] = varid;
 		return p;
