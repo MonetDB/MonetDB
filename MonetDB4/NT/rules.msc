@@ -16,10 +16,15 @@
 
 !INCLUDE $(TOPDIR)\..\..\MonetDB\conf\rules.msc
 
-MONETDB_INCS=-I$(TOPDIR)\..\..\MonetDB\NT\include -I$(TOPDIR)\..\..\MonetDB\NT\include\common -I$(TOPDIR)\..\..\MonetDB\NT\include\gdk
-MONETDB_LIBS=/libpath:$(TOPDIR)\..\..\MonetDB\NT\lib
-CLIENTS_INCS=-I$(TOPDIR)\..\..\clients\NT\include -I$(TOPDIR)\..\..\clients\NT\include\MonetDB\mapilib
-CLIENTS_LIBS=/libpath:$(TOPDIR)\..\..\clients\NT\lib
+MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include
+
+MONETDB_INCS=-I"$(MONETDB_INCLUDEDIR)" -I"$(MONETDB_INCLUDEDIR)\common" -I"$(MONETDB_INCLUDEDIR)\gdk"
+MONETDB_LIBS=/libpath:"$(MONETDB_PREFIX)\lib"
+
+CLIENTS_INCLUDEDIR=$(CLIENTS_PREFIX)\include
+
+CLIENTS_INCS=-I"$(CLIENTS_INCLUDEDIR)" -I"$(CLIENTS_INCLUDEDIR)\MonetDB\mapilib"
+CLIENTS_LIBS=/libpath:"$(CLIENTS_PREFIX)\lib"
 
 pkg = MonetDB4
 CONFIG_H=monetdb4_config.h
