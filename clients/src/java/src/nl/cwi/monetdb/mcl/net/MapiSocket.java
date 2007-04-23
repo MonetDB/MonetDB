@@ -103,26 +103,6 @@ public final class MapiSocket {
 	/** The Writer for the debug log-file */
 	private FileWriter log;
 
-	/** "there is currently no line", or the the type is unknown is
-	    represented by UNKNOWN */
-	public final static int UNKNOWN   = 0;
-	/** a line starting with ! indicates ERROR */
-	public final static int ERROR     = 1;
-	/** a line starting with % indicates HEADER */
-	public final static int HEADER    = 2;
-	/** a line starting with [ indicates RESULT */
-	public final static int RESULT    = 3;
-	/** a line which matches the pattern of prompt1 is a PROMPT1 */
-	public final static int PROMPT1   = 4;
-	/** a line which matches the pattern of prompt2 is a PROMPT2 */
-	public final static int PROMPT2   = 5;
-	/** a line starting with &amp; indicates the start of a header block */
-	public final static int SOHEADER  = 6;
-	/** a line starting with ^ indicates REDIRECT */
-	public final static int REDIRECT  = 7;
-	/** a line starting with # indicates INFO */
-	public final static int INFO      = 8;
-
 	/** The blocksize (hardcoded in compliance with stream.mx) */
 	public final static int BLOCK     = 8 * 1024 - 2;
 
