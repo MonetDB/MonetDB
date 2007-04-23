@@ -21,7 +21,6 @@ package nl.cwi.monetdb.jdbc;
 import java.sql.*;
 import java.util.*;
 import java.net.*;
-import nl.cwi.monetdb.jdbc.util.*;
 
 /**
  * A Driver suitable for the MonetDB database.

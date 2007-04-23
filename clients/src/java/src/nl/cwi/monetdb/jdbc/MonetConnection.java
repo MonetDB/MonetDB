@@ -23,7 +23,6 @@ import java.util.*;
 import java.io.*;
 import java.nio.*;
 import java.security.*;
-import nl.cwi.monetdb.jdbc.util.*;
 import nl.cwi.monetdb.mcl.io.*;
 import nl.cwi.monetdb.mcl.net.*;
 import nl.cwi.monetdb.mcl.parser.*;
