@@ -875,7 +875,25 @@ yyprint(YYSTREE yytree, unsigned int level)
 			sprintf(num, "%d", yytree->yyval.val.ival);
 		}
 	}
-	printf("%s [%s][%s]\n", LEXNAME(yytree->token), tpe, p);
+	printf("%s [%s][", LEXNAME(yytree->token), tpe);
+	while (*p) {
+		if (*p == '\n')
+			printf("\\n");
+		else if (*p == '\r')
+			printf("\\r");
+		else if (*p == '\t')
+			printf("\\t");
+		else if (*p == '\b')
+			printf("\\b");
+		else if (*p == '\\')
+			printf("\\\\");
+		else if (*p < 0x20)
+			printf("\\%03o", *p);
+		else
+			putchar(*p);
+		p++;
+	}
+	printf("]\n");
 	do {
 		for (i = 0; i < yytree->cnt; i++) {
 			if (yytree->yysons[i])
