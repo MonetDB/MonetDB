@@ -2089,8 +2089,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
 
         DBINIT=""
-        if os.path.isfile(TST+".dbinit"):
+        if os.path.isfile(TST+".dbinit") and env['VERSION'] < 49900:
             dbinit = TST+".dbinit"
+            DBINIT = open(dbinit).readline().strip()
+        if os.path.isfile(TST+".dbinit5") and env['VERSION'] >= 49900:
+            dbinit = TST+".dbinit5"
             DBINIT = open(dbinit).readline().strip()
 
         lang="mil"
@@ -2103,7 +2106,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 source = ""
                 if PROLOGUE:
                     source = ' language.source("%s");' % (os.path.join(env['TSTTRGDIR'],PROLOGUE[1:]))
-                Srvr = "%s --dbinit='include sql;%s'" % (Srvr,source)
+                Srvr = "%s --dbinit='%s include sql;%s'" % (Srvr, DBINIT, source)
             else:
                 Srvr = '%s --dbinit="%s module(sql_server);"' % (Srvr, DBINIT)
         if SERVER == "XQUERY":
