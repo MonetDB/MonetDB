@@ -473,10 +473,33 @@ else
 
     AC_MSG_NOTICE([PFtijah support disabled (no MonetDB4 support enabled).])
     enable_pftijah=no
-
 fi
 
 AM_CONDITIONAL(HAVE_PFTIJAH, test "x$enable_pftijah" == xyes)
+
+dnl Check for PROBXML support
+dnl --enable-probxml
+
+if test "x$have_monetdb4" = xyes; then
+
+    dft_probxml=no
+    AC_ARG_ENABLE(probxml,
+            AC_HELP_STRING([--enable-probxml],
+                    [enable support for PROBXML [default=$dft_probxml]]),
+            enable_probxml=$enableval,
+            enable_probxml=$dft_probxml)
+    case $enable_probxml in
+    yes)  AC_DEFINE(HAVE_PROBXML, 1, [Define if you want PROBXML])
+    ;;
+    esac
+
+else
+
+    AC_MSG_NOTICE([ProbXml support disabled (no MonetDB4 support enabled).])
+    enable_probxml=no
+fi
+
+AM_CONDITIONAL(HAVE_PROBXML, test "x$enable_probxml" == xyes)
 
 dnl Pathfinder has two different code generators: The
 dnl "milprint_summer" back-end directly translates XQuery Core
