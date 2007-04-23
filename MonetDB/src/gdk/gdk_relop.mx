@@ -800,8 +800,13 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 
 	if ( (lcount == 0) || (rcount == 0) ){
 		/* below range checking do not support empty bats. so treat them separately (easy) */
-		@:return_empty_join_result(l_orig,r, BATfetchjoin: |l|==0 or |r|==0)@
+		@:return_empty_join_result(l_orig,r, BATfetchjoin: |l|==0 or |r|==0,1)@
 @= return_empty_join_result
+#if @4
+		if (hitalways_check && lcount > 0) {
+			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|="SZFMT" != "SZFMT"=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), BATcount(bn), lcount);
+		}
+#endif
 		ALGODEBUG THRprintf(GDKout, "#@3 => empty result\n");
 		bn = BATnew(@1->htype, @2->ttype, 0);
 		bn->hsorted = bn->tsorted = GDK_SORTED;
@@ -832,7 +837,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		ALGODEBUG THRprintf(GDKout, "#r_lo=" OIDFMT ", r_hi=" OIDFMT ", l_lo=" OIDFMT ", l_hi=" OIDFMT ".\n", r_lo, r_hi, l_lo, l_hi);
 
 		if (r_lo > l_hi || r_hi < l_lo) {
-			@:return_empty_join_result(l_orig, r, BATfetchjoin: r_lo > l_hi || r_hi < l_lo)@
+			@:return_empty_join_result(l_orig, r, BATfetchjoin: r_lo > l_hi || r_hi < l_lo,1)@
 		}
 		if (r_lo > l_lo || r_hi < l_hi) {
 			ALGODEBUG THRprintf(GDKout, "#shrinking!\n");
@@ -846,7 +851,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 				if (l != l_orig) {
 					BBPreclaim(l);	/* was created as a temporary (slice) select on l */
 				}
-				@:return_empty_join_result(l_orig, r, BATfetchjoin: |l|==0)@
+				@:return_empty_join_result(l_orig, r, BATfetchjoin: |l|==0,1)@
 			}
 		}
 	}
@@ -1086,7 +1091,7 @@ batjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 
 	if ( (lcount == 0) || (rcount == 0) ){
                 BAT *bn;
-		@:return_empty_join_result(l,r, BATjoin: |l|==0 or |r|==0)@
+		@:return_empty_join_result(l,r, BATjoin: |l|==0 or |r|==0,0)@
 	}
 @-
 collect statistics that help us decide what to do
