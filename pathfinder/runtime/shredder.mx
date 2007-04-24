@@ -1644,6 +1644,24 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
     for(i=PRE_SIZE; i<=PRE_NID; i++) {
         shredBAT_setcount(&shredCtx->dstBAT[i], newsize);
     }
+    if (newsize > 1) {
+        /* Though we do not set the key-ness property here,
+         * property checking (BATpropcheck) might have detected and set the
+         * key property that "happens to hold" after an initial shred of a
+         * single document. When added more document(s) to the same
+         * collection, we need to make sure, that we unset the then (most
+         * probably, if not surely) no longer valid property.
+         * (Since we usually don't expect and hence exploit the key property
+         * in the size & kind BATs, we omit an expensive check to find out
+         * whether it might still hold...)
+         */
+        if (shredCtx->dstBAT[PRE_SIZE].bat->tkey == TRUE) {
+        	BATkey(BATmirror(shredCtx->dstBAT[PRE_SIZE].bat), FALSE);
+        }
+        if (shredCtx->dstBAT[PRE_KIND].bat->tkey == TRUE) {
+        	BATkey(BATmirror(shredCtx->dstBAT[PRE_KIND].bat), FALSE);
+        }
+    }
     assert((shredCtx->updatable && shredCtx->nnode_nid <= newsize) || (!shredCtx->updatable && shredCtx->nnode_nid == newsize));
     shredBAT_setcount(&shredCtx->dstBAT[NID_RID], shredCtx->nnode_nid);
     for(i=ATTR_OWN; i<=ATTR_PROP; i++) {
