@@ -568,34 +568,34 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 	} else {
 		switch(ATOMstorage(r->htype)) {
 #ifndef NOEXPAND_CHR
-			case TYPE_chr:
-				@:check(@2,loc,_chr,simple_CMP(h,h2,chr),@1)@
+		case TYPE_chr:
+			@:check(@2,loc,_chr,simple_CMP(h,h2,chr),@1)@
 #endif
 #ifndef NOEXPAND_BTE
-			case TYPE_bte:
-				@:check(@2,loc,_bte,simple_CMP(h,h2,bte),@1)@
+		case TYPE_bte:
+			@:check(@2,loc,_bte,simple_CMP(h,h2,bte),@1)@
 #endif
 #ifndef NOEXPAND_SHT
-			case TYPE_sht:
-				@:check(@2,loc,_sht,simple_CMP(h,h2,sht),@1)@
+		case TYPE_sht:
+			@:check(@2,loc,_sht,simple_CMP(h,h2,sht),@1)@
 #endif
 #ifndef NOEXPAND_INT
-			case TYPE_int:
-				@:check(@2,loc,_int,simple_CMP(h,h2,int),@1)@
+		case TYPE_int:
+			@:check(@2,loc,_int,simple_CMP(h,h2,int),@1)@
 #endif
 #ifndef NOEXPAND_FLT
-			case TYPE_flt:
-				@:check(@2,loc,_flt,simple_CMP(h,h2,flt),@1)@
+		case TYPE_flt:
+			@:check(@2,loc,_flt,simple_CMP(h,h2,flt),@1)@
 #endif
 #ifndef NOEXPAND_DBL
-			case TYPE_dbl:
-				@:check(@2,loc,_dbl,simple_CMP(h,h2,dbl),@1)@
+		case TYPE_dbl:
+			@:check(@2,loc,_dbl,simple_CMP(h,h2,dbl),@1)@
 #endif
 #ifndef NOEXPAND_LNG
-			case TYPE_lng:
-				@:check(@2,loc,_lng,simple_CMP(h,h2,lng),@1)@
+		case TYPE_lng:
+			@:check(@2,loc,_lng,simple_CMP(h,h2,lng),@1)@
 #endif
-			default:
+		default:
 			if (r->hvarsized) {
 				@:check(@2,var,var,((*merge)(h,h2)),@1)@
 			} else {
@@ -714,9 +714,9 @@ BATmaterialize_(BAT *b, size_t size)
 @:union(s)@
 
 @= bndense
-	/* r and l maybe void */
-	bn@1dense = (BAThdense(r)&BAThdense(l)&1) && ( !hdisjunct ||
-			( ( *(@3*)BUN@2(r,BUNfirst(r)) - *(@3*)BUN@2(l,BUNlast(l)-BUNsize(l)) ) == (@3)1 ) );
+	/* r and l may be void */
+	bn@1dense = (BAT@1dense(r)&BAT@1dense(l)&1) && @1disjunct &&
+			( ( *(@3*)BUN@2(r,BUNfirst(r)) - *(@3*)BUN@2(l,BUNlast(l)-BUNsize(l)) ) == (@3)1 );
 	break;
 @= union
 BAT *
@@ -756,15 +756,17 @@ BAT@1union(BAT *l, BAT *r)
 	   later, bte, sht, int, wrd, lng might become dense, too */
 	switch (bn->htype) {
 	case TYPE_oid:
+	case TYPE_void:
 		@:bndense(h,head,oid)@
 	default:
-	        bnhdense = (BAThdense(r)&BAThdense(l)&1) & !hdisjunct;
+	        bnhdense = 0;
 	}
 	switch (bn->ttype) {
 	case TYPE_oid:
+	case TYPE_void:
 		@:bndense(t,tail,oid)@
 	default:
-		bntdense = (BATtdense(r)&BATtdense(l)&1) & !tdisjunct;
+		bntdense = 0;
 	}
 
 	if (!hdisjunct) {

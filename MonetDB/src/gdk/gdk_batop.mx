@@ -1588,6 +1588,7 @@ BAT@6order@3(BAT *b)
 	b->hsorted = (bit) GDK_SORTED@2;
 	b->tsorted = FALSE;
 	b->hdense = FALSE;
+	b->tdense = FALSE;
 	b->batDirtydesc = b->batDirtybuns = TRUE;
 
 	return b;
@@ -1617,20 +1618,22 @@ BATrevert(BAT *b)
 		memcpy(p, q, xx);
 		memcpy(q, buf, xx);
 	}
+	GDKfree(buf);
 	HASHdestroy(b);
-	if (b->hsorted&GDK_SORTED) 
+	if (b->hsorted&GDK_SORTED)
 		b->hsorted = GDK_SORTED_REV;
 	else if (b->hsorted&GDK_SORTED_REV) 
 		b->hsorted = GDK_SORTED;
 	else
 		b->hsorted = FALSE;
-	if (b->tsorted&GDK_SORTED) 
+	b->hdense = FALSE;
+	if (b->tsorted&GDK_SORTED)
 		b->tsorted = GDK_SORTED_REV;
 	else if (b->tsorted&GDK_SORTED_REV) 
 		b->tsorted = GDK_SORTED;
 	else
 		b->tsorted = FALSE;
-	GDKfree(buf);
+	b->tdense = FALSE;
 	return b;
 }
 

@@ -1634,6 +1634,7 @@ quickbat(BAT *b, size_t cap)
 	if (bn == NULL)
 		return NULL;
 	bn->hsorted = bn->tsorted = 0;
+	bn->hdense = bn->tdense = 0;
 	if (b->hkey)
 		BATkey(bn, TRUE);
 	if (b->tkey)
@@ -2066,8 +2067,6 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 		bn = quickbat(prev, cap);
 		bn->batBuns->free = cap * BUNsize(bn);
 		BATsetcount(bn, cap);
-		bn->hdense = b->hdense;
-		bn->tdense = b->tdense;
 		p = BUNfirst(prev);
 		q = BUNfirst(bn);
 
