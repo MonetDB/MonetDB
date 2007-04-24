@@ -1699,6 +1699,50 @@ gdk_export int GDKssort_rev(void *a, void *base, size_t n, int width, int tpe, i
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
 #define BATsetcount(b,cnt)	((b)->batCount = (cnt),(b)->batDirtydesc = TRUE)
+
+/* set some properties that are trivial to deduce */
+#define BATsettrivprop(b)	do { \
+					int trivial = (b)->batCount <= 1; \
+					if (!(b)->hdense && (b)->htype == TYPE_void && (b)->hseqbase != oid_nil) { \
+						(b)->hdense = 1; \
+						(b)->batDirtydesc = TRUE; \
+					} \
+					if (!(b)->tdense && (b)->ttype == TYPE_void && (b)->tseqbase != oid_nil) { \
+						(b)->tdense = 1; \
+						(b)->batDirtydesc = TRUE; \
+					} \
+					if (trivial) { \
+						oid sqbs; \
+						if (!(b)->hdense && \
+						    (b)->htype == TYPE_oid && \
+						    (sqbs = (b)->batCount == 0 ? 0 : * (oid *) BUNhead((b), BUNfirst(b))) != oid_nil) { \
+							(b)->batDirtydesc = TRUE; \
+							(b)->hdense = 1; \
+							BATseqbase((b), sqbs); \
+						} \
+						if (!(b)->tdense && \
+						    (b)->ttype == TYPE_oid && \
+						    (sqbs = (b)->batCount == 0 ? 0 : * (oid *) BUNtail((b), BUNfirst(b))) != oid_nil) { \
+							(b)->batDirtydesc = TRUE; \
+							(b)->tdense = 1; \
+							BATseqbase(BATmirror(b), sqbs); \
+						} \
+					} \
+					if ((trivial && (b)->htype != TYPE_void) || (b)->hdense) { \
+						if ((b)->hsorted != GDK_SORTED) \
+							(b)->batDirtydesc = TRUE; \
+						(b)->hsorted = GDK_SORTED; \
+						if (!(b)->hkey) \
+							BATkey((b), TRUE); \
+					} \
+					if ((trivial && (b)->ttype != TYPE_void) || (b)->tdense) { \
+						if ((b)->tsorted != GDK_SORTED) \
+							(b)->batDirtydesc = TRUE; \
+						(b)->tsorted = GDK_SORTED; \
+						if (!(b)->tkey) \
+							BATkey(BATmirror(b), TRUE); \
+					} \
+				} while (0)
 @
 @}
 
