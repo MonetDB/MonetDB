@@ -51,4 +51,3 @@ scripts_mil = {
 	SOURCES = probxml.mx
 }
 
-EXTRA_DIST_DIR = Tests
