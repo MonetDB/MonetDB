@@ -562,7 +562,7 @@ We have to do it: create a new BAT and put everything into it.
 		if (BATcount(bn) == 0) {
 			bn->hdense = TRUE;
 			BATseqbase(bn, 0);
-		} else if (* (oid *) BUNhloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 == * (oid *) BUNhloc(bn, BUNlast(bn) - BUNsize(bn))) {
+		} else if ((bn->hsorted & 1) && * (oid *) BUNhloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 == * (oid *) BUNhloc(bn, BUNlast(bn) - BUNsize(bn))) {
 			bn->hdense = TRUE;
 			BATseqbase(bn, * (oid *) BUNhloc(bn, BUNfirst(bn)));
 		}
@@ -574,7 +574,7 @@ We have to do it: create a new BAT and put everything into it.
 		if (BATcount(bn) == 0) {
 			bn->tdense = TRUE;
 			BATseqbase(BATmirror(bn), 0);
-		} else if (* (oid *) BUNtloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 == * (oid *) BUNtloc(bn, BUNlast(bn) - BUNsize(bn))) {
+		} else if ((bn->tsorted & 1) && * (oid *) BUNtloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 == * (oid *) BUNtloc(bn, BUNlast(bn) - BUNsize(bn))) {
 			bn->tdense = TRUE;
 			BATseqbase(BATmirror(bn), * (oid *) BUNtloc(bn, BUNfirst(bn)));
 		}
