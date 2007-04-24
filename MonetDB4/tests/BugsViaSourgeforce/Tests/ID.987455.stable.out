@@ -38,7 +38,7 @@ d.print();
 x.reverse().seqbase().print();
 [ 0@0 ]
 c.seqbase().print();
-[ 1@0 ]
+[ nil ]
 d.seqbase().print();
 [ 0@0 ]
 var e:=x.join(c);
