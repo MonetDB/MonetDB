@@ -17,7 +17,7 @@ end pr;
 Ra:= bpm.deposit("myR",R);
 user.pr(Ra);
 
-io.print("Range partition it into two value ranges");
+io.print("Vector partition it ");
 pv:= bat.new(:oid,:int);
 bat.append(pv,0);
 bat.append(pv,5);
@@ -28,17 +28,19 @@ bpm.rangePartition(Ra,pv);
 bpm.dump();
 user.pr(Ra);
 
+io.print("Head vector partition it ");
 Rrev:= bat.reverse(Ra);
-pv:= bat.new(:oid,:oid);
-bat.append(pv,0@0);
-bat.append(pv,2@0);
-bat.append(pv,nil:oid);
+po:= bat.new(:oid,:oid);
+bat.append(po,0@0);
+bat.append(po,2@0);
+bat.append(po,nil:oid);
 
-bpm.rangePartition(Rrev,pv);
+bpm.rangePartition(Rrev,po);
 bpm.dump();
 user.pr(Rrev);
 
 # and what is now the result of this
+io.print("And redo tail vector partition ");
 pv:= bat.new(:oid,:int);
 bat.append(pv,0);
 bat.append(pv,3);

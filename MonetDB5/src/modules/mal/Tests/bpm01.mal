@@ -17,7 +17,7 @@ end pr;
 Ra:= bpm.deposit("myR",R);
 user.pr(Ra);
 
-io.print("Range partition it into two value ranges");
+io.print("Range partition it ");
 pv:= bat.new(:oid,:int);
 bat.append(pv,0);
 bat.append(pv,5);
