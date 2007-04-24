@@ -1007,7 +1007,7 @@ BPMaddPartition(bat *ret, str *nme, bat *src)
 
 	@:getBATdescriptor(src,b,"bpm.addPartition");
 
-	if( bpmcat[b->batCacheid] != 0){
+	if( bpmcat[ABS(b->batCacheid)] != 0){
 		BBPunfix(b->batCacheid);
 		throw(MAL,"bpm.addPartition","Duplicate partitioned BAT");
 	}
@@ -1040,8 +1040,10 @@ BPMaddPartitionDim(bat *ret, str *nme, bat *src, ptr hl, ptr hh, ptr tl, ptr th)
 {
 	BAT *b;
 	Partition p;
+	str msg;
 
-	BPMaddPartition(ret,nme,src);
+	if( (msg=BPMaddPartition(ret,nme,src)) != MAL_SUCCEED)
+		return msg;
 	if( (p=bpmcat[ABS(*ret)]) ==0)
 		throw(MAL,"bpm.addPartitionDim","Partition not created");
 	
