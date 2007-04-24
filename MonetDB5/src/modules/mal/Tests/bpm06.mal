@@ -1,6 +1,6 @@
 #testing the BAT partition manager
 # addPartition for incremental addition of partitioned resuls
-# savePartitions for persistency
+# saveCatalog for persistency
 
 d:=bat.new(:oid,:flt);
 bat.insert(d,1:oid,2.5);
@@ -25,7 +25,7 @@ end partinfo;
 f:bat[:oid,:flt]:=bpm.take("myflt");
 user.partinfo(f);
 
-bpm.savePartitions();
+bpm.saveCatalog();
 
 
 
