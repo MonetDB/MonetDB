@@ -968,6 +968,10 @@ the bind(namespace, batname, mode) operation. [todo]
 				backup[i]=0;
 				sbackup[i]=0;
 			} 
+			if ((b = BATdescriptor(bid)) != NULL) {
+				BATsettrivprop(b);
+				BBPunfix(bid);
+			}
 		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){

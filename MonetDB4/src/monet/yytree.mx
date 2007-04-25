@@ -688,6 +688,7 @@ if trees are more than 2-deep.
 		bat bid = res->val.bval;				\
 		BAT* _b = BBPdescriptor(bid);				\
 		assert(_b != NULL);					\
+		BATsettrivprop(_b);					\
 		if (_b->batStamp <= stamp) {				\
 			PROPDEBUG monet_checkbat(_b, FALSE);		\
 		} else if (_b->batStamp > 0) {				\
