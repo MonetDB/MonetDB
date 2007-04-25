@@ -25,11 +25,11 @@ activities.
 @mal
 module microbenchmark;
 
-command uniform(base:oid, size:int, domain:int):bat[:oid,:int]
+command uniform(base:oid, size:int, domain:int):bat[:void,:int]
 address MBMuniform
 comment "Create a BAT with uniform integer distribution";
 
-command normal(base:oid, size:int, domain:int, stddev:int, mean:int):bat[:oid,:int]
+command normal(base:oid, size:int, domain:int, stddev:int, mean:int):bat[:void,:int]
 address MBMnormal
 comment "Create a BAT with a normal integer distribution";
 @+ Experimentation Gimmicks
@@ -67,7 +67,6 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	BAT *b = NULL;
 	char *firstbun;
 	int bunsize;		/* initialized in BATloopFast */
-	oid bs = *base;
 	int j = 0;
 	BUN p, q;
 
@@ -76,12 +75,13 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 		return GDK_FAIL;
 	}
 
-	b = BATnew(TYPE_oid, TYPE_int, n);
+	b = BATnew(TYPE_void, TYPE_int, n);
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
 		b->tsorted = GDK_SORTED;
 		b->hsorted = GDK_SORTED;
+		b->tdense = FALSE;
 		b->hdense = TRUE;
 		BATseqbase(b, *base);
 		BATkey(b, TRUE);
@@ -96,8 +96,6 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	BATsetcount(b, n);
 	/* create BUNs with uniform distribution */
 	BATloopFast(b, p, q, bunsize) {
-		*(oid *) BUNhloc(b, p) = bs ++;
-
 		*(int *) BUNtloc(b, p) = j;
 		if (++j >= *domain)
 			j = 0;
@@ -113,10 +111,13 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 		*(int *) BUNtloc(b, p) = *(int *) BUNtloc(b, q);
 		*(int *) BUNtloc(b, q) = val;
 	}
-	b->tsorted = FALSE;
+	b->hsorted = GDK_SORTED;
 	b->hdense = TRUE;
 	BATseqbase(b, *base);
 	BATkey(b, TRUE);
+	b->tsorted = FALSE;
+	b->tdense = FALSE;
+	BATkey(BATmirror(b), *size <= *domain);
 	*bn = b;
 	return GDK_SUCCEED;
 }
@@ -141,7 +142,6 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	int bunsize;
 	BUN p, q;
 	int m = *mean, s = *stddev;
-	oid bs = *base;
 	int *itab;
 	flt *ftab, tot = 0.0;
 
@@ -150,12 +150,13 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 		return GDK_FAIL;
 	}
 
-        b = BATnew(TYPE_oid, TYPE_int, n);
+        b = BATnew(TYPE_void, TYPE_int, n);
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
 		b->tsorted = GDK_SORTED;
 		b->hsorted = GDK_SORTED;
+		b->tdense = FALSE;
 		b->hdense = TRUE;
 		BATseqbase(b, *base);
 		BATkey(b, TRUE);
@@ -189,8 +190,6 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	BATsetcount(b, n);
 	/* create BUNs with normal distribution */
 	BATloopFast(b, p, q, bunsize) {
-		*(oid *) BUNhloc(b, p) = bs ++;
-
 		while (itab[r] == 0)
 			r++;
 		itab[r]--;
@@ -209,10 +208,13 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 		*(int *) BUNtloc(b, p) = *(int *) BUNtloc(b, q);
 		*(int *) BUNtloc(b, q) = val;
 	}
-	b->tsorted = FALSE;
+	b->hsorted = GDK_SORTED;
 	b->hdense = TRUE;
 	BATseqbase(b, *base);
 	BATkey(b, TRUE);
+	b->tsorted = FALSE;
+	b->tdense = FALSE;
+	BATkey(BATmirror(b), n<2);
 	*bn = b;
 	return GDK_SUCCEED;
 }
