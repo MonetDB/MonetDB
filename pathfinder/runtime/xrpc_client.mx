@@ -147,7 +147,9 @@ PROC get_rpc_res (
     # value can appear more than once in the "pre_prop" bat.
     seq_prop := pre_prop.ord_select(seq_prop).reverse().fetch(0);
 
-    var tpe_node_level :=  pre_level.find(seq_prop).int() + 1;
+    var seq_node_level :=  pre_level.find(seq_prop).int();
+    var tpe_node_level :=  seq_node_level + 1;
+    var val_node_level :=  tpe_node_level + 1;
     var itercnt := 0;
     var tpe := "";
     var subtpe := "";
@@ -163,13 +165,13 @@ PROC get_rpc_res (
             var kind  := pre_kind.fetch(pre);
             var prop  := pre_prop.fetch(pre);
 
-            if (level = (tpe_node_level - 1)) {
+            if ( and(level = seq_node_level, kind='\000') ){
                 var loc := qn_loc.fetch(prop);
                 var uri := qn_uri.fetch(prop);
                 if (and((loc = "sequence"), (uri = xrpc_ns))) {
                     itercnt :+= 1; # A new iteration starts
                 }
-            } else if (level = tpe_node_level) {
+            } else if ( and(level = tpe_node_level, kind='\000') ){
                 var tpe_node_ns := qn_uri.fetch(prop);
                 if (tpe_node_ns != xrpc_ns) {
                     ERROR("get_rpc_res (batloop %d): invalid " +
@@ -213,13 +215,14 @@ PROC get_rpc_res (
                     var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ATTR);
                     res_kind.append(i);
                 }
-            } else if (level = (tpe_node_level + 1)) {
+            } else if (level = val_node_level) {
                 # 'tpe' was set during the previous iteration of 'batloop'
-                if (tpe = "element"){
+                if ( and(tpe = "element", kind='\000') ){
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.find(pre));
                     var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(i);
+                    tpe := ""; # clean up type info
                 } else if (tpe = "text") { # text value of a text node
                     if (kind != '\001'){
                         ERROR("get_rpc_res (batloop %d): a text node " +
@@ -230,6 +233,7 @@ PROC get_rpc_res (
                     res_item.append(pre_nid.find(pre));
                     var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(i);
+                    tpe := ""; # clean up type info
                 } else if (tpe = "atomic-value") { # string value of an atomic-value
                     var val := prop_text.fetch(prop); # value in str
                     if (subtpe = "boolean"){ # FIXME: does this work?
@@ -266,20 +270,22 @@ PROC get_rpc_res (
                                "value with unsupported type \"%s\" " +
                                "ignored.\n", subtpe);
                     }
+                    tpe := ""; # clean up type info
                 } else if (tpe = "comment") { # text value of a comment node                
                     # FIXME: does this work?
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.find(pre));
                     var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(i);
+                    tpe := ""; # clean up type info
                 } else if (tpe = "processing-instruction") { # text value of a PI node
                     # FIXME: does this work?
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.find(pre));
                     var i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(i);
+                    tpe := ""; # clean up type info
                 } 
-                tpe := ""; # clean up type info
             } # END 'if (level = ...)'
         } # END 'if (not(isnil($t)))'
     } # END 'pre_size@batloop'
