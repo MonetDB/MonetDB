@@ -2828,6 +2828,13 @@ PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
     # compute the size-delta on the ancestors of modified nodes, and apply those to the recent masters (and LOG it) 
     var sel_ancestor_nid := ws.fetch(ANCESTOR_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
     var anc_rid := sel_ancestor_nid.leftjoin(ws.fetch(NID_RID).find(cont));
+    # filter out ancestors that are on modified pages
+    var modified_page := ws.fetch(MODIFIED_PAGE).reverse().select(cont); # [PGID,cont]
+    var anc_pgid := [oid]([>>]([lng](anc_rid), REMAP_PAGE_BITS));
+    var anc := anc_pgid.outerjoin(modified_page).uselect(oid_nil).mirror();
+    sel_ancestor_nid := anc.leftfetchjoin(sel_ancestor_nid).tmark(0@0);
+    anc_rid := anc.leftfetchjoin(anc_rid).tmark(0@0);
+
     var anc_oldsize := [swizzle](anc_rid, ws.fetch(MAP_PID).find(cont)).join(ws.fetch(PRE_SIZE).find(cont));
         anc_rid.access(BAT_WRITE).replace(sel_ancestor_nid.join(ws.fetch(NID_RID_UPDATE).find(cont)));
     var anc_newsize := anc_rid.leftjoin(ws.fetch(RID_SIZE_UPDATE).find(cont));
@@ -3042,17 +3049,17 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
 
   # separate out attribute
   var types := update_insert_node_kind.get_types();
-  var attrs := types.ord_uselect(ATTR);
-  var elems := types.ord_uselect(ELEM);
+  var attributes := types.ord_uselect(ATTR);
+  var elements := types.ord_uselect(ELEM);
 
-  if ((attrs.count() + elems.count()) != types.count()) {
+  if ((attributes.count() + elements.count()) != types.count()) {
     ERROR("node must be of type ELEMENT or ATTRIBUTE\n");
   }
 
-  if (attrs.count() > 0) {
+  if (attributes.count() > 0) {
     # insert attributes into node
-    attrs := attrs.mirror(); # [i.i]
-    var attrconts := attrs.leftjoin(batdoccont);
+    attributes := attributes.mirror(); # [i.i]
+    var attrconts := attributes.leftjoin(batdoccont);
     attrconts.tunique()@batloop() {
       var cont := $h;
 
@@ -3109,14 +3116,14 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
     }
   }
 
-  if (elems.count() > 0) {
+  if (elements.count() > 0) {
     # insert new nodes
-    elems := elems.mirror(); # [i,i]
+    elements := elements.mirror(); # [i,i]
     var modified_nid := ws.fetch(MODIFIED_NID);
     var ancestor_nid := ws.fetch(ANCESTOR_NID);
     var new_page := ws.fetch(NEW_PAGE);
     # one at a time
-    elems.leftjoin(update_insert_node_item)@batloop() {
+    elements.leftjoin(update_insert_node_item)@batloop() {
 #       if (debug) printf("\nstart of loop for argument %d\n", int($h));
       # insertcont - container from which to insert an element
       # insertitem - item to insert
