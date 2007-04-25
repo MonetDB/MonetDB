@@ -162,7 +162,9 @@ PROC get_rpc_res (
     # value can appear more than once in the "pre_prop" bat.
     seq_prop := pre_prop.ord_select(seq_prop).reverse().fetch(0);
 
-    var tpe_node_level :=  pre_level.find(seq_prop).int() + 1;
+    var seq_node_level :=  pre_level.find(seq_prop).int();
+    var tpe_node_level :=  seq_node_level + 1;
+    var val_node_level :=  tpe_node_level + 1;
     var itercnt := 0;
     var tpe := "";
     var subtpe := "";
@@ -181,18 +183,19 @@ PROC get_rpc_res (
             var kind  := pre_kind.fetch(pre);
             var prop  := pre_prop.fetch(pre);
 
-            if (level = (tpe_node_level - 1)) {
+            if ( and(level=seq_node_level, kind='\000') ) {
                 var loc := qn_loc.fetch(prop);
                 var uri := qn_uri.fetch(prop);
                 if (and((loc = "sequence"), (uri = xrpc_ns))) {
                     itercnt :+= 1; # A new iteration starts
                 }
-            } else if (level = tpe_node_level) {
+            } else if ( and(level = tpe_node_level, kind = '\000') ) {
                 var tpe_node_ns := qn_uri.fetch(prop);
                 if (tpe_node_ns != xrpc_ns) {
-                    ERROR("get_rpc_res (pre %d): invalid " +
-                          "namespace of a type node.  Expected " +
-                          "\"%s\", got \"%s\".\n",
+                    ERROR("[get_rpc_res]: (pre=%d): " +
+                          "invalid namespace of a type node.\n" +
+                          "[get_rpc_res]: expected \"%s\", " +
+                          "got \"%s\".\n",
                           pre, xrpc_ns, tpe_node_ns);
                 }
                 tpe := qn_loc.fetch(prop);
@@ -232,14 +235,15 @@ PROC get_rpc_res (
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ATTR);
                     res_kind.append(k);
                 }
-            } else if (level = (tpe_node_level + 1)) {
-                # 'tpe' was set during the previous iteration of 'batloop'
-                if (tpe = "element"){
+            } else if (level = val_node_level) {
+                # 'tpe' was set during the previous iteration
+                if ( and(tpe="element", kind='\000') ){
                     res_iter.append(oid(itercnt));
                     res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
                     inc := pre_size.fetch(i);
+                    tpe := ""; # clean up type info
                 } else if (tpe = "text") { # text value of a text node
                     if (kind != '\001'){
                         ERROR("get_rpc_res (batloop %d): a text node " +
@@ -250,6 +254,7 @@ PROC get_rpc_res (
                     res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
+                    tpe := ""; # clean up type info
                 } else if (tpe = "atomic-value") { # string value of an atomic-value
                     var val := prop_text.fetch(prop); # value in str
                     if (subtpe = "boolean"){ 
@@ -285,18 +290,20 @@ PROC get_rpc_res (
                                "value with unsupported type \"%s\" " +
                                "ignored.\n", subtpe);
                     }
+                    tpe := ""; # clean up type info
                 } else if (tpe = "comment") { # text value of a comment node                
                     res_iter.append(oid(itercnt));
                     res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
+                    tpe := ""; # clean up type info
                 } else if (tpe = "processing-instruction") { # text value of a PI node
                     res_iter.append(oid(itercnt));
                     res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                     res_kind.append(k);
+                    tpe := ""; # clean up type info
                 } 
-                tpe := ""; # clean up type info
             } # END 'if (level = ...)'
         } # END 'if (not(isnil(pre_size.fetch(i))))'
         i := i + inc;
@@ -788,8 +795,7 @@ response2bat(int sock,
     errno = 0;
     if( !(ret = stream_readline(in, b->buf, 1024)) ){
         GDKerror("response2bat: failed to receive response from %s", dst);
-        if(errno) GDKerror(": %s", strerror(errno));
-        GDKerror(".\n");
+        if(errno) GDKerror("response2bat: %s", strerror(errno));
         stream_close(in); stream_destroy(in);
         return NULL;
     }
@@ -814,8 +820,7 @@ response2bat(int sock,
         if (ret < 0) {
             GDKerror("response2bat: failed to receive response from %s",
                     dst);
-            if(errno) GDKerror(": %s", strerror(errno));
-            GDKerror(".\n");
+            if(errno) GDKerror("response2bat: %s", strerror(errno));
             return NULL;
         }
         b->buf[b->pos] = 0;
@@ -834,8 +839,7 @@ response2bat(int sock,
     if (ret < 0) {
         GDKerror("response2bat: failed to receive response from %s",
                 dst);
-        if(errno) GDKerror(": %s", strerror(errno));
-        GDKerror(".\n");
+        if(errno) GDKerror("response2bat: %s", strerror(errno));
         stream_close(in); stream_destroy(in);
         return NULL;
     }
@@ -940,7 +944,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
 
     b->pos = snprintf(b->buf, b->len, XRPC_HEADER,
             SOAP_NS, XRPC_NS, XS_NS, XSI_NS, XRPC_NS, XRPC_LOC,
-            rpc_module, rpc_uri, rpc_method);
+            rpc_module, rpc_uri, rpc_method, argc, iterc,
+            updCall?"true":"false");
 
     if (!(argcnt = GDKmalloc(iterc * sizeof(lng*)))) {
         GDKerror("CMDhttp_post: failed to malloc argcnt\n");

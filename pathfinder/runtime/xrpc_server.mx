@@ -193,7 +193,10 @@ Start XPRC receiver using the default values as specified in \
                       "<env:Body>"                                  \
                         "<xrpc:request xrpc:module=\"%s\""          \
                                      " xrpc:location=\"%s\""        \
-                                     " xrpc:method=\"%s\">"
+                                     " xrpc:method=\"%s\""          \
+                                     " xrpc:arity=\"%lld\""         \
+                                     " xrpc:iter-count=\"%lld\""    \
+                                     " xrpc:updCall=\"%s\">"
 
 #define XRPC_HTTP_CALL "<xrpc:call>"                                    \
                          "<xrpc:sequence>"                              \
@@ -361,7 +364,7 @@ isTrusted(stream *out, char *location)
  *
  * @return the number of nodes found
  */
-static int
+static lng
 count_node(char *node_name,
            char *ns,
            oid   start_pre,
@@ -374,7 +377,7 @@ count_node(char *node_name,
      * namespace 'ns' */
     (void)ns;
 
-    int nr = 0;
+    lng nr = 0;
     oid i;
 
     for (i = start_pre; i <= end_pre; i++) {
@@ -601,6 +604,33 @@ getFunctionInfo(stream *out,
     return GDK_SUCCEED;
 }
 
+static lng
+my_strtoll(stream *out, char *val_ptr, char *attr_name)
+{
+    char err[2048];
+
+    errno = 0;
+    lng ret = strtoll(val_ptr, NULL, 10);
+
+    if(errno){
+        snprintf(err, 2048,
+                "Invalid value (\"%s\") of attribute \"%s\": %s",
+                val_ptr, attr_name, strerror(errno));
+        send_err(out, 1, ERR404, "env:Sender", err);
+        return -1;
+    }
+
+    if(ret < 0){
+        snprintf(err, 2048,
+                "Invalid value (\"%s\") of attribute \"%s\": "
+                "should not be negative",
+                val_ptr, attr_name);
+        send_err(out, 1, ERR404, "env:Sender", err);
+        return -1;
+    }
+    return ret;
+}
+
 /**
  * @return GDK_SUCCEED, or
  *         GDK_FAIL if an error has occurred.
@@ -703,15 +733,42 @@ getCallValues(stream *out,
         (!isAdmin && !isTrusted(out, *location)) )
         return GDK_FAIL;
 
-    if (!(iterc = count_node("call", XRPC_NS, pre+1, last_pre,
-                    pre_propT, pre_kindT, qn_loc))) {
-        send_err(out, 1, ERR404, "env:Sender",
-                "\"call\" node not found");
+    char *val_ptr = NULL;
+    val_ptr = get_attr_val(out, "iter-count", XRPC_NS, pre, nattrs,
+            attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri, prop_val);
+    if(!val_ptr)
+        return GDK_FAIL;
+    iterc = my_strtoll(out, val_ptr, "iter-count");
+    if(iterc < 0 )
+        return GDK_FAIL;
+    i = count_node("call", XRPC_NS, pre+1, last_pre, pre_propT,
+            pre_kindT, qn_loc);
+    if (iterc != i) {
+        snprintf(errstr, 1024, "The value (%lld) of the attribute "
+                "\"iter-count\" does not match the number of \"call\" "
+                "nodes (%lld) in the request message", iterc, i);
+        send_err(out, 1, ERR404, "env:Sender", errstr);
         return GDK_FAIL;
     }
 
-    argc = count_node("sequence", XRPC_NS, pre+2, last_pre,
-                       pre_propT, pre_kindT, qn_loc) / iterc;
+    val_ptr = get_attr_val(out, "arity", XRPC_NS, pre, nattrs,
+                    attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri,
+                    prop_val);
+    if(!val_ptr)
+        return GDK_FAIL;
+    argc = my_strtoll(out, val_ptr, "arity");
+    if(argc < 0 )
+        return GDK_FAIL;
+    i = count_node("sequence", XRPC_NS, pre+2, last_pre, pre_propT,
+            pre_kindT, qn_loc) / iterc;
+    if(argc != i){
+        snprintf(errstr, 1024, "The value (%lld) of the attribute "
+                "\"arity\" does not match the number of \"sequence\" "
+                "nodes (%lld) in each \"call\" node in the request "
+                "message", argc, i);
+        send_err(out, 1, ERR404, "env:Sender", errstr);
+        return GDK_FAIL;
+    }
 
     if (!(argcnt = GDKmalloc(iterc * sizeof(lng*)))) {
         send_err(out, 1, ERR500, "env:Receiver", OUT_OF_MEM);
@@ -827,7 +884,7 @@ getCallValues(stream *out,
                     int off;
                     for (off = 0; off < nattrs; off++) {
                         if (attr_ownT[off] == tpe_node_pre) {
-                            val_node_pre = attr_propT[off];
+                            val_node_pre = off;
                             break;
                         }
                     }
@@ -975,8 +1032,7 @@ execQuery(mapi_client *mc,
                               argval, shredBAT);
     if (err) {
         if(err == ((char*)-1)) {
-            err = strstr(errbuf, "first error was:"); assert(err);
-            err = strstr(err, "!ERROR"); assert(err);
+            err = errbuf;
         }
         send_err(mc->c->fdout, 0, "", "env:Sender", err);
         return GDK_FAIL;
