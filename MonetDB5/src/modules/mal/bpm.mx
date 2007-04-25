@@ -649,27 +649,61 @@ of BATs.
 	BBPunfix(bhl->batCacheid);
 	BBPunfix(bhd->batCacheid);
 
-@= getPartitionBound
-					r= BUNfnd(@1,&i); 
-					if (r){
-					   val= BUNtail(@1,r);
-					   VALset(&bpmcat[i]->@2, tp, val); 
-			
+@= getPartitionBoundLng
+			r= BUNfnd(bll,&i); 
+			if (r){
+			   val= BUNtail(bll,r);
+			   vl= * (lng *) val;	
+			   @2= (@1) vl;
+			   VALset(&bpmcat[i]->tlow, tp,&@2); 
+			} else 
+			   VALset(&bpmcat[i]->tlow, tp, ATOMnil(tp) );
+			r= BUNfnd(bhl,&i); 
+			if (r){
+			   val= BUNtail(bhl,r);
+			   vl= * (lng *) val;	
+			   @2= (@1) vl;
+			   VALset(&bpmcat[i]->thgh, tp,&@2); 
+			} else 
+			   VALset(&bpmcat[i]->thgh, tp, ATOMnil(tp) );
 
-					} else 
-					   VALset(&bpmcat[i]->@2, tp, ATOMnil(rngType(tp)) );
+@= getPartitionBoundDbl
+			r= BUNfnd(bld,&i); 
+			if (r){
+			   val= BUNtail(bld,r);
+			   vd= * (dbl *) val;	
+			   @2= (@1) vd;
+			   VALset(&bpmcat[i]->tlow, tp,&@2); 
+			} else 
+			   VALset(&bpmcat[i]->tlow, tp, ATOMnil(tp) );
+			r= BUNfnd(bhd,&i); 
+			if (r){
+			   val= BUNtail(bhd,r);
+			   vd= * (dbl *) val;	
+			   @2= (@1) vd;
+			   VALset(&bpmcat[i]->thgh, tp,&@2); 
+			} else 
+			   VALset(&bpmcat[i]->thgh, tp, ATOMnil(tp) );
+
+
+				
 
 @c
+
 str
 BPMloadCatalog(){
-	int i,k,tp;
+	int i,k,tp,vi;
 	bat idx;
 	BAT *b, *pb;
 	BAT *nxt, *prv, *bld, *bll, *bhd, *bhl;
 	BUN p,q,r;
 	str nm;
 	ptr val;
-	dbl vd; 
+	sht vs;
+	flt vf;
+	dbl vd;
+	lng vl;
+
 	
 	idx= BBPindex("bpm_name");
 
@@ -719,47 +753,37 @@ BPMloadCatalog(){
 		@:defaultRange(bpmcat[i],pb)@
 	
 		tp=pb->ttype;
+
 		switch (tp) {
-			case TYPE_int:
-			case TYPE_lng:
-			case TYPE_sht: 	r= BUNfnd(bll,&i); 
+			case TYPE_int:  @:getPartitionBoundLng(int,vi)@
+					break;
+			case TYPE_lng:  r= BUNfnd(bll,&i); 
 					if (r){
 					   val= BUNtail(bll,r);
-					   VALset(&bpmcat[i]->tlow, tp, val); 
-				
+					   vl= * (lng *) val;	
+					   VALset(&bpmcat[i]->tlow, tp,&vl); 
 					} else 
 					   VALset(&bpmcat[i]->tlow, tp, ATOMnil(tp) );
 
 				 	q= BUNfnd(bhl,&i);
 					if (q){
 					   val= BUNtail(bhl,q);
-					   VALset(&bpmcat[i]->thgh, tp, val); 
+					   vl= * (lng *) val;	
+					   VALset(&bpmcat[i]->thgh, tp, &vl); 
 					} else 
 					   VALset(&bpmcat[i]->thgh, tp, ATOMnil(tp) );
 
 					break;
-			case TYPE_dbl:
-			case TYPE_flt:	r= BUNfnd(bld,&i);
-					if (r){
-					   val= BUNtail(bld,r);
-					   VALset(&bpmcat[i]->tlow, tp, val); 
-					vd= * (dbl *) val;	
-					   	printf("%d %f ",i, vd);
-					vd= * (dbl *) VALget(&bpmcat[i]->tlow);	
-					   	printf(" Set to %f \n", vd);
-					} else 
-					   VALset(&bpmcat[i]->tlow, tp, ATOMnil(tp) );
-
-				 	q= BUNfnd(bhd,&i);
-					if (q){
-					   val= BUNtail(bhd,q);
-					   VALset(&bpmcat[i]->thgh, tp, val); 
-					} else 
-					   VALset(&bpmcat[i]->thgh, tp, ATOMnil(tp) );
+			case TYPE_sht: 	@:getPartitionBoundLng(sht,vs)@
+					break;
+			case TYPE_dbl: 	@:getPartitionBoundDbl(dbl,vd)@
+					break;
+			case TYPE_flt:	@:getPartitionBoundDbl(flt,vf)@
+					break;
 
  			}
 
-
+	
 	}
 	@:BPMunfix@
 	return MAL_SUCCEED;

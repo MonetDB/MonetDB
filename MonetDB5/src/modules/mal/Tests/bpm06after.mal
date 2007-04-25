@@ -11,7 +11,11 @@ end partinfo;
 
 f:bat[:oid,:flt]:=bpm.take("myflt");
 user.partinfo(f);
-
 bpm.discard(f);
-bpm.savePartitions();
+
+r:bat[:oid,:sht]:=bpm.take("myR");
+user.partinfo(r);
+bpm.discard(r);
+
+bpm.saveCatalog();
 bpm.dump();
