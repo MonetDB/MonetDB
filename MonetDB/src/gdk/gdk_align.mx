@@ -234,6 +234,11 @@ a void. Take care to zero the accelerator data, though.
 	*bn->T = *b->T;
 	assert(bn->U->buns.base == (char*)1 || bn->U->buns.base == NULL);
 	*bn->U = *b->U;
+	/* note: batBuns points into U which was just overwritten with a copy from the parent.
+	   clear the copied flag since our heap was not copied from
+	   our parent even if our parent's heap was copied from its
+	   parent. */
+	bn->batBuns->copied = 0;
 	bn->H->props = bn->T->props = NULL;
 	BATinit_idents(bn);
 @-
