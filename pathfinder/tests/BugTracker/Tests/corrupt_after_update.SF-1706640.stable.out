@@ -8274,29 +8274,29 @@ Over..
       <application>
         <name>MSN Messenger</name>
         <executable>msnmsgr.exe</executable>
-      <cluster id="3"/><cluster id="19"/><cluster id="52"/></application>
+      </application>
     </info><period prob="0.5" end="1154194440" start="1154194440"/></observation><observation prob="1" id="1779"><type>run.application.byExecutableFile</type><references>
       <file xid="235955"/>
-    </references></observation><info>
+    </references><info>
       <application>
-        <name>MSN Messenger</name></application></info>
+        <name>MSN Messenger</name>
         <executable>msnmsgr.exe</executable>
-      <cluster id="3"/><cluster id="19"/><cluster id="52"/>
-    <period prob="0.5" end="1162560680" start="1162560680"/><observation prob="1" id="1780"><type>install.application.byExecutableFile</type></observation><references>
-      <file xid="236606"/>
-    </references><info>
-      </info><application>
-        <name>Skype</name>
-        <executable>Skype.exe</executable>
-      <cluster id="13"/></application>
-    <period prob="0.5" end="1152777159" start="1152777159"/><observation prob="1" id="1781"><type>run.application.byExecutableFile</type><references>
+      </application>
+    </info><period prob="0.5" end="1162560680" start="1162560680"/></observation><observation prob="1" id="1780"><type>install.application.byExecutableFile</type><references>
       <file xid="236606"/>
     </references><info>
       <application>
         <name>Skype</name>
         <executable>Skype.exe</executable>
-      <cluster id="13"/></application></info></observation>
-    <period prob="0.5" end="1163691391" start="1163691391"/><observation prob="1" id="1782"><type>hibernate.computer.byFile</type><references>
+      </application>
+    </info><period prob="0.5" end="1152777159" start="1152777159"/></observation><observation prob="1" id="1781"><type>run.application.byExecutableFile</type><references>
+      <file xid="236606"/>
+    </references><info>
+      <application>
+        <name>Skype</name>
+        <executable>Skype.exe</executable>
+      </application>
+    </info><period prob="0.5" end="1163691391" start="1163691391"/></observation><observation prob="1" id="1782"><type>hibernate.computer.byFile</type><references>
       <file xid="66406"/>
     </references><info/><period prob="1" end="1162397135" start="1162397135"/></observation><observation prob="1" id="1783"><type>hibernate.computer.byFile</type><references>
       <file xid="66406"/>
@@ -8446,11 +8446,11 @@ Over..
       </application>
     </info><period prob="1" end="1095080618" start="1095080618"/></observation><observation prob="1" id="1808"><type>install.application.byProgramFilesFolder</type><references>
       <folder xid="235355"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <name>MSN Messenger</name>
-      </application></info><cluster id="3"/><cluster id="19"/><cluster id="52"/>
-    <period prob="1" end="1153467088" start="1153467088"/><observation prob="1" id="1809"><type>install.application.byProgramFilesFolder</type><references>
+      </application>
+    </info><period prob="1" end="1153467088" start="1153467088"/></observation><observation prob="1" id="1809"><type>install.application.byProgramFilesFolder</type><references>
       <folder xid="236183"/>
     </references><info>
       <application>
@@ -9606,161 +9606,161 @@ Over..
       <folder xid="10741"/>
     </references><info/><period prob="0.5" end="1162397128" start="1153467263"/></observation><observation prob="1" id="1855"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844780"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <ext>pl</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Mijn documenten\gen_test.pl</fullpath>
-      <cluster id="9"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162809371" start="1162809371"/><observation prob="1" id="1856"><type>open.document.byOpenSaveMRU</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162809371" start="1162809371"/></observation><observation prob="1" id="1856"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844786"/>
     </references><info>
       <application>
         <ext/>
       </application>
-      </info><document>
+      <document>
         <fullpath>C:\Documents and Settings\Karel\Mijn documenten\testfile</fullpath>
-      <cluster id="6"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162809371" start="1162809371"/><observation prob="1" id="1857"><type>open.document.byOpenSaveMRU</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162809371" start="1162809371"/></observation><observation prob="1" id="1857"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844789"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <ext>txt</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Mijn documenten\testfile.txt</fullpath>
-      <cluster id="6"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162809371" start="1162809371"/><observation prob="1" id="1858"><type>open.document.byOpenSaveMRU</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162809371" start="1162809371"/></observation><observation prob="1" id="1858"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844792"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <ext>exe</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Bureaublad\FirefoxGoogleToolbarSetup.exe</fullpath>
-      <cluster id="2"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162809371" start="1162809371"/><observation prob="1" id="1859"><type>open.document.byOpenSaveMRU</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162809371" start="1162809371"/></observation><observation prob="1" id="1859"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844795"/>
     </references><info>
       <application>
         <ext>pdf</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Bureaublad\ESCA98_arch.pdf</fullpath>
-      <cluster id="8"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162809371" start="1162809371"/><observation prob="1" id="1860"><type>open.document.byOpenSaveMRU</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162809371" start="1162809371"/></observation><observation prob="1" id="1860"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844798"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <ext>wav</ext>
       </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Bureaublad\a061106045424415.wav</fullpath>
-      <cluster id="3"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162809371" start="1162809371"/><observation prob="1" id="1861"><type>open.document.byOpenSaveMRU</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162809371" start="1162809371"/></observation><observation prob="1" id="1861"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844801"/>
-    </references></observation></info><info>
+    </references><info>
       <application>
         <ext>ps</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Bureaublad\text.ps</fullpath>
-      <cluster id="1"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162809371" start="1162809371"/><observation prob="1" id="1862"><type>open.document.byOpenSaveMRU</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162809371" start="1162809371"/></observation><observation prob="1" id="1862"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844807"/>
     </references><info>
       <application>
         <ext>exe</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Bureaublad\FirefoxGoogleToolbarSetup.exe</fullpath>
-      <cluster id="2"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1161942018" start="1161942018"/><observation prob="1" id="1863"><type>open.document.byOpenSaveMRU</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1161942018" start="1161942018"/></observation><observation prob="1" id="1863"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844817"/>
     </references><info>
       <application>
         <ext>pdf</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Bureaublad\ESCA98_arch.pdf</fullpath>
-      <cluster id="8"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162547845" start="1162547845"/><observation prob="1" id="1864"><type>open.document.byOpenSaveMRU</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162547845" start="1162547845"/></observation><observation prob="1" id="1864"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844827"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <ext>pl</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Mijn documenten\gen_test.pl</fullpath>
-      <cluster id="9"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1153469386" start="1153469386"/><observation prob="1" id="1865"><type>open.document.byOpenSaveMRU</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1153469386" start="1153469386"/></observation><observation prob="1" id="1865"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844837"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <ext>ps</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Bureaublad\text.ps</fullpath>
-      <cluster id="1"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162809371" start="1162809371"/><observation prob="1" id="1866"><type>open.document.byOpenSaveMRU</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162809371" start="1162809371"/></observation><observation prob="1" id="1866"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844847"/>
     </references><info>
       <application>
         <ext>txt</ext>
-      </application></info>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Mijn documenten\testfile.txt</fullpath>
-      <cluster id="6"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1153469501" start="1153469501"/><observation prob="1" id="1867"><type>open.document.byOpenSaveMRU</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1153469501" start="1153469501"/></observation><observation prob="1" id="1867"><type>open.document.byOpenSaveMRU</type><references>
       <value xid="844857"/>
     </references><info>
       <application>
         <ext>wav</ext>
-      </application></info></observation>
+      </application>
       <document>
         <fullpath>C:\Documents and Settings\Karel\Bureaublad\a061106045424415.wav</fullpath>
-      <cluster id="3"/></document>
+      </document>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162806999" start="1162806999"/><observation prob="1" id="1868"><type>run.application.byPrefetchLastStarted</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162806999" start="1162806999"/></observation><observation prob="1" id="1868"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="581753"/>
     </references><info>
       <application>
@@ -9868,31 +9868,31 @@ Over..
       <application>
         <executable/>
       </application>
-    </info><period prob="1" end="-11644473600" start="-11644473600"/></observation><observation prob="1" id="1886"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="-11644473600" start="-11644473600"/></observation><observation prob="1" id="1886"><type>run.application.byPrefetchCreate</type><references>
       <file xid="378889"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>ACRORD32.EXE</executable>
-      <cluster id="0"/></application>
-    <period prob="1" end="1162548095" start="1162548095"/><observation prob="1" id="1887"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162548095" start="1162548095"/></observation><observation prob="1" id="1887"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="378889"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>ACRORD32.EXE</executable>
-      <cluster id="0"/></application>
-    <period prob="1" end="1162807424" start="1162807424"/><observation prob="1" id="1888"><type>run.application.byPrefetchCreate</type><references>
+      </application>
+    </info><period prob="1" end="1162807424" start="1162807424"/></observation><observation prob="1" id="1888"><type>run.application.byPrefetchCreate</type><references>
       <file xid="378901"/>
     </references><info>
-      </info></observation><application>
+      <application>
         <executable>ADBERDR708_NL_NL.EXE</executable>
-      <cluster id="36"/></application>
-    <period prob="1" end="1162547998" start="1162547998"/><observation prob="1" id="1889"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162547998" start="1162547998"/></observation><observation prob="1" id="1889"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="378901"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>ADBERDR708_NL_NL.EXE</executable>
-      <cluster id="36"/></application>
-    <period prob="1" end="1162548014" start="1162548014"/><observation prob="1" id="1890"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162548014" start="1162548014"/></observation><observation prob="1" id="1890"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="378913"/>
     </references><info>
       <application>
@@ -9918,101 +9918,101 @@ Over..
       </application>
     </info><period prob="1" end="1159344016" start="1159344016"/></observation><observation prob="1" id="1894"><type>run.application.byPrefetchCreate</type><references>
       <file xid="378961"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <executable>CALC.EXE</executable>
-      <cluster id="20"/></application>
-    <period prob="1" end="1162568349" start="1162568349"/><observation prob="1" id="1895"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162568349" start="1162568349"/></observation><observation prob="1" id="1895"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="378961"/>
-    </references></info><info>
+    </references><info>
       <application>
         <executable>CALC.EXE</executable>
-      <cluster id="20"/></application></info>
-    <period prob="1" end="1162825934" start="1162825934"/><observation prob="1" id="1896"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="378973"/>
-    </references><info>
-      </info><application>
-        <executable>CMD.EXE</executable>
-      <cluster id="35"/></application>
-    <period prob="1" end="1153469249" start="1153469249"/><observation prob="1" id="1897"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162825934" start="1162825934"/></observation><observation prob="1" id="1896"><type>run.application.byPrefetchCreate</type><references>
       <file xid="378973"/>
     </references><info>
       <application>
         <executable>CMD.EXE</executable>
-      <cluster id="35"/></application></info>
-    <period prob="1" end="1162397088" start="1162397088"/><observation prob="1" id="1898"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1153469249" start="1153469249"/></observation><observation prob="1" id="1897"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="378973"/>
+    </references><info>
+      <application>
+        <executable>CMD.EXE</executable>
+      </application>
+    </info><period prob="1" end="1162397088" start="1162397088"/></observation><observation prob="1" id="1898"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="378985"/>
     </references><info>
       <application>
         <executable>COMPONENTMANAGER.EXE</executable>
       </application>
-    </info><period prob="1" end="1159458175" start="1159458175"/></observation><observation prob="1" id="1899"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="1159458175" start="1159458175"/></observation><observation prob="1" id="1899"><type>run.application.byPrefetchCreate</type><references>
       <file xid="378997"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>CSC.EXE</executable>
-      <cluster id="39"/></application>
-    <period prob="1" end="1157467358" start="1157467358"/><observation prob="1" id="1900"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1157467358" start="1157467358"/></observation><observation prob="1" id="1900"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="378997"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>CSC.EXE</executable>
-      <cluster id="39"/></application>
-    <period prob="1" end="1161335815" start="1161335815"/><observation prob="1" id="1901"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="379009"/>
-    </references><info>
-      </info><application>
-        <executable>CVTRES.EXE</executable>
-      <cluster id="17"/></application>
-    <period prob="1" end="1157467358" start="1157467358"/><observation prob="1" id="1902"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1161335815" start="1161335815"/></observation><observation prob="1" id="1901"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379009"/>
     </references><info>
       <application>
         <executable>CVTRES.EXE</executable>
-      <cluster id="17"/></application>
-    </info><period prob="1" end="1161335815" start="1161335815"/></observation><observation prob="1" id="1903"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="379021"/>
+      </application>
+    </info><period prob="1" end="1157467358" start="1157467358"/></observation><observation prob="1" id="1902"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379009"/>
     </references><info>
-      </info><application>
-        <executable>DEFRAG.EXE</executable>
-      <cluster id="11"/></application>
-    <period prob="1" end="1153291827" start="1153291827"/><observation prob="1" id="1904"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      <application>
+        <executable>CVTRES.EXE</executable>
+      </application>
+    </info><period prob="1" end="1161335815" start="1161335815"/></observation><observation prob="1" id="1903"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379021"/>
     </references><info>
       <application>
         <executable>DEFRAG.EXE</executable>
-      <cluster id="11"/></application></info>
-    <period prob="1" end="1163647694" start="1163647694"/><observation prob="1" id="1905"><type>run.application.byPrefetchCreate</type><references>
-      <file xid="379033"/>
-    </references></observation><info>
-      </info><application>
-        <executable>DFRGNTFS.EXE</executable>
-      <cluster id="21"/></application>
-    <period prob="1" end="1153291827" start="1153291827"/><observation prob="1" id="1906"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1153291827" start="1153291827"/></observation><observation prob="1" id="1904"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379021"/>
+    </references><info>
+      <application>
+        <executable>DEFRAG.EXE</executable>
+      </application>
+    </info><period prob="1" end="1163647694" start="1163647694"/></observation><observation prob="1" id="1905"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379033"/>
     </references><info>
       <application>
         <executable>DFRGNTFS.EXE</executable>
-      <cluster id="21"/></application></info>
-    <period prob="1" end="1163647694" start="1163647694"/><observation prob="1" id="1907"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1153291827" start="1153291827"/></observation><observation prob="1" id="1906"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379033"/>
+    </references><info>
+      <application>
+        <executable>DFRGNTFS.EXE</executable>
+      </application>
+    </info><period prob="1" end="1163647694" start="1163647694"/></observation><observation prob="1" id="1907"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379045"/>
     </references><info>
       <application>
         <executable>FIREFOX SETUP 1.5.0.6.EXE</executable>
       </application>
-    </info><period prob="1" end="1161942046" start="1161942046"/></observation><observation prob="1" id="1908"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="1161942046" start="1161942046"/></observation><observation prob="1" id="1908"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379057"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>FIREFOX.EXE</executable>
-      <cluster id="1"/></application>
-    <period prob="1" end="1161942074" start="1161942074"/><observation prob="1" id="1909"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1161942074" start="1161942074"/></observation><observation prob="1" id="1909"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379057"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>FIREFOX.EXE</executable>
-      <cluster id="1"/></application>
-    <period prob="1" end="1162828739" start="1162828739"/><observation prob="1" id="1910"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162828739" start="1162828739"/></observation><observation prob="1" id="1910"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379069"/>
     </references><info>
       <application>
@@ -10021,28 +10021,28 @@ Over..
     </info><period prob="1" end="1161942046" start="1161942046"/></observation><observation prob="1" id="1911"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379081"/>
     </references><info>
-      </info></observation><application>
+      <application>
         <executable>HELPSVC.EXE</executable>
-      <cluster id="48"/></application>
-    <period prob="1" end="1152858568" start="1152858568"/><observation prob="1" id="1912"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1152858568" start="1152858568"/></observation><observation prob="1" id="1912"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379081"/>
     </references><info>
-      </info><application>
-        <executable>HELPSVC.EXE</executable>
-      <cluster id="48"/></application>
-    <period prob="1" end="1163608535" start="1163608535"/><observation prob="1" id="1913"><type>run.application.byPrefetchCreate</type><references>
-      <file xid="379093"/>
-    </references></observation><info>
       <application>
-        <executable>HULLO.EXE</executable>
-      <cluster id="34"/></application>
-    <period prob="1" end="1161335788" start="1161335788"/><observation prob="1" id="1914"><type>run.application.byPrefetchLastStarted</type><references>
+        <executable>HELPSVC.EXE</executable>
+      </application>
+    </info><period prob="1" end="1163608535" start="1163608535"/></observation><observation prob="1" id="1913"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379093"/>
     </references><info>
       <application>
         <executable>HULLO.EXE</executable>
-      <cluster id="34"/></application>
-    <period prob="1" end="1161335815" start="1161335815"/><observation prob="1" id="1915"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1161335788" start="1161335788"/></observation><observation prob="1" id="1914"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379093"/>
+    </references><info>
+      <application>
+        <executable>HULLO.EXE</executable>
+      </application>
+    </info><period prob="1" end="1161335815" start="1161335815"/></observation><observation prob="1" id="1915"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379105"/>
     </references><info>
       <application>
@@ -10065,218 +10065,218 @@ Over..
     </references><info>
       <application>
         <executable>IEXPLORE.EXE</executable>
-      <cluster id="5"/></application>
-    </info><period prob="1" end="1152775898" start="1152775898"/></observation><observation prob="1" id="1919"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1152775898" start="1152775898"/></observation><observation prob="1" id="1919"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379141"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>IEXPLORE.EXE</executable>
-      <cluster id="5"/></application>
-    <period prob="1" end="1162828794" start="1162828794"/><observation prob="1" id="1920"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162828794" start="1162828794"/></observation><observation prob="1" id="1920"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379153"/>
     </references><info>
       <application>
         <executable>IGFXSRVC.EXE</executable>
-      <cluster id="14"/></application></info>
-    <period prob="1" end="1161335742" start="1161335742"/><observation prob="1" id="1921"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1161335742" start="1161335742"/></observation><observation prob="1" id="1921"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379153"/>
-    </references></observation><info>
-      </info><application>
+    </references><info>
+      <application>
         <executable>IGFXSRVC.EXE</executable>
-      <cluster id="14"/></application>
-    <period prob="1" end="1162542033" start="1162542033"/><observation prob="1" id="1922"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162542033" start="1162542033"/></observation><observation prob="1" id="1922"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379165"/>
     </references><info>
       <application>
         <executable>INSTALL_MESSENGER.EXE</executable>
       </application>
-    </info><period prob="1" end="1159344015" start="1159344015"/></observation><observation prob="1" id="1923"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="1159344015" start="1159344015"/></observation><observation prob="1" id="1923"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379177"/>
     </references><info>
       <application>
         <executable>IPCONFIG.EXE</executable>
-      <cluster id="18"/></application></info>
-    <period prob="1" end="1159458274" start="1159458274"/><observation prob="1" id="1924"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1159458274" start="1159458274"/></observation><observation prob="1" id="1924"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379177"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>IPCONFIG.EXE</executable>
-      <cluster id="18"/></application>
-    <period prob="1" end="1161344726" start="1161344726"/><observation prob="1" id="1925"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1161344726" start="1161344726"/></observation><observation prob="1" id="1925"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379189"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>JAVA.EXE</executable>
-      <cluster id="47"/></application>
-    <period prob="1" end="1159185069" start="1159185069"/><observation prob="1" id="1926"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1159185069" start="1159185069"/></observation><observation prob="1" id="1926"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379189"/>
     </references><info>
-      </info></observation><application>
+      <application>
         <executable>JAVA.EXE</executable>
-      <cluster id="47"/></application>
-    <period prob="1" end="1161777191" start="1161777191"/><observation prob="1" id="1927"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1161777191" start="1161777191"/></observation><observation prob="1" id="1927"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379201"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>JUCHECK.EXE</executable>
-      <cluster id="38"/></application>
-    <period prob="1" end="1159185071" start="1159185071"/><observation prob="1" id="1928"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1159185071" start="1159185071"/></observation><observation prob="1" id="1928"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379201"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <executable>JUCHECK.EXE</executable>
-      <cluster id="38"/></application>
-    <period prob="1" end="1161777191" start="1161777191"/><observation prob="1" id="1929"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="379213"/>
-    </references></info><info>
-      <application>
-        <executable>LAUNCHER.EXE</executable>
-      <cluster id="49"/></application></info>
-    <period prob="1" end="1157467814" start="1157467814"/><observation prob="1" id="1930"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1161777191" start="1161777191"/></observation><observation prob="1" id="1929"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379213"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>LAUNCHER.EXE</executable>
-      <cluster id="49"/></application>
-    <period prob="1" end="1157467817" start="1157467817"/><observation prob="1" id="1931"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1157467814" start="1157467814"/></observation><observation prob="1" id="1930"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379213"/>
+    </references><info>
+      <application>
+        <executable>LAUNCHER.EXE</executable>
+      </application>
+    </info><period prob="1" end="1157467817" start="1157467817"/></observation><observation prob="1" id="1931"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379237"/>
     </references><info>
       <application>
         <executable>LODCTR.EXE</executable>
-      <cluster id="45"/></application></info>
-    <period prob="1" end="1157468100" start="1157468100"/><observation prob="1" id="1932"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1157468100" start="1157468100"/></observation><observation prob="1" id="1932"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379237"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>LODCTR.EXE</executable>
-      <cluster id="45"/></application>
-    <period prob="1" end="1160614910" start="1160614910"/><observation prob="1" id="1933"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160614910" start="1160614910"/></observation><observation prob="1" id="1933"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379249"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>LOGON.SCR</executable>
-      <cluster id="44"/></application>
-    <period prob="1" end="1152812773" start="1152812773"/><observation prob="1" id="1934"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1152812773" start="1152812773"/></observation><observation prob="1" id="1934"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379249"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>LOGON.SCR</executable>
-      <cluster id="44"/></application>
-    <period prob="1" end="1163427418" start="1163427418"/><observation prob="1" id="1935"><type>run.application.byPrefetchCreate</type><references>
+      </application>
+    </info><period prob="1" end="1163427418" start="1163427418"/></observation><observation prob="1" id="1935"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379261"/>
     </references><info>
       <application>
         <executable>MOFCOMP.EXE</executable>
-      <cluster id="6"/></application>
-    </info><period prob="1" end="1157468007" start="1157468007"/></observation><observation prob="1" id="1936"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1157468007" start="1157468007"/></observation><observation prob="1" id="1936"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379261"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>MOFCOMP.EXE</executable>
-      <cluster id="6"/></application>
-    <period prob="1" end="1160614900" start="1160614900"/><observation prob="1" id="1937"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160614900" start="1160614900"/></observation><observation prob="1" id="1937"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379273"/>
     </references><info>
       <application>
         <executable>MRT.EXE</executable>
-      <cluster id="32"/></application></info>
-    <period prob="1" end="1155603658" start="1155603658"/><observation prob="1" id="1938"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1155603658" start="1155603658"/></observation><observation prob="1" id="1938"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379273"/>
-    </references></observation><info>
-      </info><application>
+    </references><info>
+      <application>
         <executable>MRT.EXE</executable>
-      <cluster id="32"/></application>
-    <period prob="1" end="1162396980" start="1162396980"/><observation prob="1" id="1939"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162396980" start="1162396980"/></observation><observation prob="1" id="1939"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379285"/>
     </references><info>
       <application>
         <executable>MRTSTUB.EXE</executable>
-      <cluster id="8"/></application></info>
-    <period prob="1" end="1160614815" start="1160614815"/><observation prob="1" id="1940"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160614815" start="1160614815"/></observation><observation prob="1" id="1940"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379297"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>MRTSTUB.EXE</executable>
-      <cluster id="8"/></application>
-    <period prob="1" end="1158195615" start="1158195615"/><observation prob="1" id="1941"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1158195615" start="1158195615"/></observation><observation prob="1" id="1941"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379309"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>MSCORSVW.EXE</executable>
-      <cluster id="29"/></application>
-    <period prob="1" end="1157468028" start="1157468028"/><observation prob="1" id="1942"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1157468028" start="1157468028"/></observation><observation prob="1" id="1942"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379309"/>
     </references><info>
-      </info></observation><application>
+      <application>
         <executable>MSCORSVW.EXE</executable>
-      <cluster id="29"/></application>
-    <period prob="1" end="1160615038" start="1160615038"/><observation prob="1" id="1943"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160615038" start="1160615038"/></observation><observation prob="1" id="1943"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379321"/>
     </references><info>
-      </info><application>
-        <executable>MSIEXEC.EXE</executable>
-      <cluster id="23"/></application>
-    <period prob="1" end="1152775667" start="1152775667"/><observation prob="1" id="1944"><type>run.application.byPrefetchLastStarted</type><references>
-      <file xid="379321"/>
-    </references></observation><info>
       <application>
         <executable>MSIEXEC.EXE</executable>
-      <cluster id="23"/></application>
-    <period prob="1" end="1162951215" start="1162951215"/><observation prob="1" id="1945"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1152775667" start="1152775667"/></observation><observation prob="1" id="1944"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379321"/>
+    </references><info>
+      <application>
+        <executable>MSIEXEC.EXE</executable>
+      </application>
+    </info><period prob="1" end="1162951215" start="1162951215"/></observation><observation prob="1" id="1945"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379333"/>
     </references><info>
       <application>
         <executable>MSNEXTENSIONSETUP_NL.EXE</executable>
       </application>
-    </info><period prob="1" end="1162951237" start="1162951237"/></observation></info><observation prob="1" id="1946"><type>run.application.byPrefetchLastStarted</type><references>
+    </info><period prob="1" end="1162951237" start="1162951237"/></observation><observation prob="1" id="1946"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379345"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <executable>MSNMSGR.EXE</executable>
-      <cluster id="3"/><cluster id="19"/></application></info><cluster id="37"/>
-    <period prob="1" end="1159458175" start="1159458175"/><observation prob="1" id="1947"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1159458175" start="1159458175"/></observation><observation prob="1" id="1947"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379357"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>MSNTBUP.EXE</executable>
-      <cluster id="7"/></application>
-    <period prob="1" end="1159459864" start="1159459864"/><observation prob="1" id="1948"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1159459864" start="1159459864"/></observation><observation prob="1" id="1948"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379357"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>MSNTBUP.EXE</executable>
-      <cluster id="7"/></application>
-    <period prob="1" end="1163687820" start="1163687820"/><observation prob="1" id="1949"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="379369"/>
-    </references><info>
-      </info><application>
-        <executable>MSN_SL.EXE</executable>
-      <cluster id="31"/></application>
-    <period prob="1" end="1159458183" start="1159458183"/><observation prob="1" id="1950"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1163687820" start="1163687820"/></observation><observation prob="1" id="1949"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379369"/>
     </references><info>
       <application>
         <executable>MSN_SL.EXE</executable>
-      <cluster id="31"/></application>
+      </application>
+    </info><period prob="1" end="1159458183" start="1159458183"/></observation><observation prob="1" id="1950"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379369"/>
+    </references><info>
+      <application>
+        <executable>MSN_SL.EXE</executable>
+      </application>
     </info><period prob="1" end="1162800887" start="1162800887"/></observation><observation prob="1" id="1951"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379381"/>
     </references><info>
       <application>
         <executable>NDP20</executable>
       </application>
-    </info><period prob="1" end="1160614833" start="1160614833"/></observation><observation prob="1" id="1952"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="379393"/>
-    </references><info>
-      </info><application>
-        <executable>NGEN.EXE</executable>
-      <cluster id="15"/></application>
-    <period prob="1" end="1157468037" start="1157468037"/><observation prob="1" id="1953"><type>run.application.byPrefetchLastStarted</type></observation><references>
+    </info><period prob="1" end="1160614833" start="1160614833"/></observation><observation prob="1" id="1952"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379393"/>
     </references><info>
       <application>
         <executable>NGEN.EXE</executable>
-      <cluster id="15"/></application></info>
-    <period prob="1" end="1160614873" start="1160614873"/><observation prob="1" id="1954"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1157468037" start="1157468037"/></observation><observation prob="1" id="1953"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379393"/>
+    </references><info>
+      <application>
+        <executable>NGEN.EXE</executable>
+      </application>
+    </info><period prob="1" end="1160614873" start="1160614873"/></observation><observation prob="1" id="1954"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379405"/>
     </references><info>
       <application>
@@ -10290,35 +10290,35 @@ Over..
       </application>
     </info><period prob="1" end="1162827452" start="1162827452"/></observation><observation prob="1" id="1956"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379429"/>
-    </references></observation><info>
-      </info><application>
+    </references><info>
+      <application>
         <executable>NTOSBOOT</executable>
-      <cluster id="12"/></application>
-    <period prob="1" end="1152775582" start="1152775582"/><observation prob="1" id="1957"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1152775582" start="1152775582"/></observation><observation prob="1" id="1957"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379429"/>
     </references><info>
       <application>
         <executable>NTOSBOOT</executable>
-      <cluster id="12"/></application></info>
-    <period prob="1" end="1162397127" start="1162397127"/><observation prob="1" id="1958"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162397127" start="1162397127"/></observation><observation prob="1" id="1958"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379441"/>
     </references><info>
       <application>
         <executable>PERL.EXE</executable>
       </application>
-    </info><period prob="1" end="1161337670" start="1161337670"/></observation><observation prob="1" id="1959"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="1161337670" start="1161337670"/></observation><observation prob="1" id="1959"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379453"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>PING.EXE</executable>
-      <cluster id="22"/></application>
-    <period prob="1" end="1159458236" start="1159458236"/><observation prob="1" id="1960"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1159458236" start="1159458236"/></observation><observation prob="1" id="1960"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379453"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>PING.EXE</executable>
-      <cluster id="22"/></application>
-    <period prob="1" end="1161349089" start="1161349089"/><observation prob="1" id="1961"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1161349089" start="1161349089"/></observation><observation prob="1" id="1961"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379465"/>
     </references><info>
       <application>
@@ -10339,82 +10339,82 @@ Over..
     </info><period prob="1" end="1160614904" start="1160614904"/></observation><observation prob="1" id="1964"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379501"/>
     </references><info>
-      </info></observation><application>
+      <application>
         <executable>REGSVR32.EXE</executable>
-      <cluster id="30"/></application>
-    <period prob="1" end="1152775656" start="1152775656"/><observation prob="1" id="1965"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1152775656" start="1152775656"/></observation><observation prob="1" id="1965"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379501"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>REGSVR32.EXE</executable>
-      <cluster id="30"/></application>
-    <period prob="1" end="1162397088" start="1162397088"/><observation prob="1" id="1966"><type>run.application.byPrefetchCreate</type><references>
+      </application>
+    </info><period prob="1" end="1162397088" start="1162397088"/></observation><observation prob="1" id="1966"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379513"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <executable>REGTLIBV12.EXE</executable>
-      <cluster id="16"/></application>
-    <period prob="1" end="1157468000" start="1157468000"/><observation prob="1" id="1967"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1157468000" start="1157468000"/></observation><observation prob="1" id="1967"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379513"/>
-    </references></info><info>
+    </references><info>
       <application>
         <executable>REGTLIBV12.EXE</executable>
-      <cluster id="16"/></application></info>
-    <period prob="1" end="1160614874" start="1160614874"/><observation prob="1" id="1968"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1160614874" start="1160614874"/></observation><observation prob="1" id="1968"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379525"/>
     </references><info>
       <application>
         <executable>RSSFINDERSETUP_NL.EXE</executable>
       </application>
-    </info><period prob="1" end="1162951234" start="1162951234"/></observation><observation prob="1" id="1969"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="379537"/>
-    </references><info>
-      </info><application>
-        <executable>RUNDLL32.EXE</executable>
-      <cluster id="43"/></application>
-    <period prob="1" end="1160961017" start="1160961017"/><observation prob="1" id="1970"><type>run.application.byPrefetchLastStarted</type></observation><references>
+    </info><period prob="1" end="1162951234" start="1162951234"/></observation><observation prob="1" id="1969"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379537"/>
     </references><info>
       <application>
         <executable>RUNDLL32.EXE</executable>
-      <cluster id="43"/></application></info>
-    <period prob="1" end="1161306741" start="1161306741"/><observation prob="1" id="1971"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160961017" start="1160961017"/></observation><observation prob="1" id="1970"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379537"/>
+    </references><info>
+      <application>
+        <executable>RUNDLL32.EXE</executable>
+      </application>
+    </info><period prob="1" end="1161306741" start="1161306741"/></observation><observation prob="1" id="1971"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379549"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>RUNDLL32.EXE</executable>
-      <cluster id="43"/></application>
-    <period prob="1" end="1161332140" start="1161332140"/><observation prob="1" id="1972"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1161332140" start="1161332140"/></observation><observation prob="1" id="1972"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379561"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>RUNDLL32.EXE</executable>
-      <cluster id="43"/></application>
-    <period prob="1" end="1162542038" start="1162542038"/><observation prob="1" id="1973"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162542038" start="1162542038"/></observation><observation prob="1" id="1973"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379573"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>RUNDLL32.EXE</executable>
-      <cluster id="43"/></application>
-    <period prob="1" end="1161345965" start="1161345965"/><observation prob="1" id="1974"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1161345965" start="1161345965"/></observation><observation prob="1" id="1974"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379585"/>
     </references><info>
       <application>
         <executable>RUNDLL32.EXE</executable>
-      <cluster id="43"/></application>
-    </info><period prob="1" end="1162809380" start="1162809380"/></observation><observation prob="1" id="1975"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="379597"/>
-    </references><info>
-      </info><application>
-        <executable>RUNONCE.EXE</executable>
-      <cluster id="4"/></application>
-    <period prob="1" end="1157467896" start="1157467896"/><observation prob="1" id="1976"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162809380" start="1162809380"/></observation><observation prob="1" id="1975"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379597"/>
     </references><info>
       <application>
         <executable>RUNONCE.EXE</executable>
-      <cluster id="4"/></application></info>
-    <period prob="1" end="1157467966" start="1157467966"/><observation prob="1" id="1977"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1157467896" start="1157467896"/></observation><observation prob="1" id="1976"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379597"/>
+    </references><info>
+      <application>
+        <executable>RUNONCE.EXE</executable>
+      </application>
+    </info><period prob="1" end="1157467966" start="1157467966"/></observation><observation prob="1" id="1977"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379609"/>
     </references><info>
       <application>
@@ -10422,65 +10422,65 @@ Over..
       </application>
     </info><period prob="1" end="1159343673" start="1159343673"/></observation><observation prob="1" id="1978"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379621"/>
-    </references></observation><info>
-      </info><application>
+    </references><info>
+      <application>
         <executable>SETUP.EXE</executable>
-      <cluster id="28"/></application>
-    <period prob="1" end="1161942048" start="1161942048"/><observation prob="1" id="1979"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1161942048" start="1161942048"/></observation><observation prob="1" id="1979"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379633"/>
     </references><info>
       <application>
         <executable>SETUP.EXE</executable>
-      <cluster id="28"/></application></info>
-    <period prob="1" end="1162548029" start="1162548029"/><observation prob="1" id="1980"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162548029" start="1162548029"/></observation><observation prob="1" id="1980"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379645"/>
     </references><info>
       <application>
         <executable>SETUP_WM.EXE</executable>
       </application>
-    </info><period prob="1" end="1162806308" start="1162806308"/></observation><observation prob="1" id="1981"><type>run.application.byPrefetchLastStarted</type></observation><references>
+    </info><period prob="1" end="1162806308" start="1162806308"/></observation><observation prob="1" id="1981"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379657"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>SKYPE.EXE</executable>
-      <cluster id="13"/></application>
-    <period prob="1" end="1161332128" start="1161332128"/><observation prob="1" id="1982"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1161332128" start="1161332128"/></observation><observation prob="1" id="1982"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379669"/>
     </references><info>
       <application>
         <executable>SMAMENSETUP_NL.EXE</executable>
       </application>
-    </info><period prob="1" end="1162951239" start="1162951239"/></observation><observation prob="1" id="1983"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="1162951239" start="1162951239"/></observation><observation prob="1" id="1983"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379681"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>SNDVOL32.EXE</executable>
-      <cluster id="24"/></application>
-    <period prob="1" end="1161336085" start="1161336085"/><observation prob="1" id="1984"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1161336085" start="1161336085"/></observation><observation prob="1" id="1984"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379681"/>
     </references><info>
-      </info></observation><application>
+      <application>
         <executable>SNDVOL32.EXE</executable>
-      <cluster id="24"/></application>
-    <period prob="1" end="1161938994" start="1161938994"/><observation prob="1" id="1985"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1161938994" start="1161938994"/></observation><observation prob="1" id="1985"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379693"/>
     </references><info>
-      </info><application>
-        <executable>SPUPDSVC.EXE</executable>
-      <cluster id="41"/></application>
-    <period prob="1" end="1152776002" start="1152776002"/><observation prob="1" id="1986"><type>run.application.byPrefetchLastStarted</type><references>
-      <file xid="379693"/>
-    </references></observation><info>
       <application>
         <executable>SPUPDSVC.EXE</executable>
-      <cluster id="41"/></application>
-    <period prob="1" end="1162397089" start="1162397089"/><observation prob="1" id="1987"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1152776002" start="1152776002"/></observation><observation prob="1" id="1986"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379693"/>
+    </references><info>
+      <application>
+        <executable>SPUPDSVC.EXE</executable>
+      </application>
+    </info><period prob="1" end="1162397089" start="1162397089"/></observation><observation prob="1" id="1987"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379705"/>
     </references><info>
       <application>
         <executable>SVCHOST.EXE</executable>
       </application>
-    </info><period prob="1" end="1159458184" start="1159458184"/></observation></info><observation prob="1" id="1988"><type>run.application.byPrefetchLastStarted</type><references>
+    </info><period prob="1" end="1159458184" start="1159458184"/></observation><observation prob="1" id="1988"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379717"/>
     </references><info>
       <application>
@@ -10492,241 +10492,241 @@ Over..
       <application>
         <executable>TASKMGR.EXE</executable>
       </application>
-    </info><period prob="1" end="1162568309" start="1162568309"/></observation><observation prob="1" id="1990"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="1162568309" start="1162568309"/></observation><observation prob="1" id="1990"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379741"/>
     </references><info>
       <application>
         <executable>UNPACK200.EXE</executable>
-      <cluster id="2"/></application></info>
-    <period prob="1" end="1157467814" start="1157467814"/><observation prob="1" id="1991"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1157467814" start="1157467814"/></observation><observation prob="1" id="1991"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379741"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UNPACK200.EXE</executable>
-      <cluster id="2"/></application>
-    <period prob="1" end="1157467817" start="1157467817"/><observation prob="1" id="1992"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1157467817" start="1157467817"/></observation><observation prob="1" id="1992"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379753"/>
     </references><info>
       <application>
         <executable>UNREGMP2.EXE</executable>
-      <cluster id="33"/></application></info>
-    <period prob="1" end="1152775657" start="1152775657"/><observation prob="1" id="1993"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1152775657" start="1152775657"/></observation><observation prob="1" id="1993"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379753"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UNREGMP2.EXE</executable>
-      <cluster id="33"/></application>
-    <period prob="1" end="1162806316" start="1162806316"/><observation prob="1" id="1994"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162806316" start="1162806316"/></observation><observation prob="1" id="1994"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379765"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1158135915" start="1158135915"/><observation prob="1" id="1995"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1158135915" start="1158135915"/></observation><observation prob="1" id="1995"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379765"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1158135921" start="1158135921"/><observation prob="1" id="1996"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1158135921" start="1158135921"/></observation><observation prob="1" id="1996"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379777"/>
     </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    </info><period prob="1" end="1160614916" start="1160614916"/></observation><observation prob="1" id="1997"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="379789"/>
-    </references><info>
-      </info><application>
-        <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1158135921" start="1158135921"/><observation prob="1" id="1998"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160614916" start="1160614916"/></observation><observation prob="1" id="1997"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379789"/>
     </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application></info>
-    <period prob="1" end="1158135925" start="1158135925"/><observation prob="1" id="1999"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1158135921" start="1158135921"/></observation><observation prob="1" id="1998"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379789"/>
+    </references><info>
+      <application>
+        <executable>UPDATE.EXE</executable>
+      </application>
+    </info><period prob="1" end="1158135925" start="1158135925"/></observation><observation prob="1" id="1999"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379801"/>
-    </references></observation><info>
-      </info><application>
+    </references><info>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160614924" start="1160614924"/><observation prob="1" id="2000"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160614924" start="1160614924"/></observation><observation prob="1" id="2000"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379813"/>
     </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application></info>
-    <period prob="1" end="1158135916" start="1158135916"/><observation prob="1" id="2001"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1158135916" start="1158135916"/></observation><observation prob="1" id="2001"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379813"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1158135923" start="1158135923"/><observation prob="1" id="2002"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1158135923" start="1158135923"/></observation><observation prob="1" id="2002"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379825"/>
     </references><info>
-      </info><application>
-        <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1162397015" start="1162397015"/><observation prob="1" id="2003"><type>run.application.byPrefetchCreate</type><references>
-      <file xid="379837"/>
-    </references><info>
-      </info></observation><application>
-        <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160607445" start="1160607445"/><observation prob="1" id="2004"><type>run.application.byPrefetchLastStarted</type></observation><references>
-      <file xid="379837"/>
-    </references><info>
-      </info><application>
-        <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160607453" start="1160607453"/><observation prob="1" id="2005"><type>run.application.byPrefetchCreate</type><references>
-      <file xid="379849"/>
-    </references></observation><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160607449" start="1160607449"/><observation prob="1" id="2006"><type>run.application.byPrefetchLastStarted</type></observation><references>
-      <file xid="379849"/>
-    </references></info><info>
+      </application>
+    </info><period prob="1" end="1162397015" start="1162397015"/></observation><observation prob="1" id="2003"><type>run.application.byPrefetchCreate</type><references>
+      <file xid="379837"/>
+    </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application></info>
-    <period prob="1" end="1160607457" start="1160607457"/><observation prob="1" id="2007"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160607445" start="1160607445"/></observation><observation prob="1" id="2004"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379837"/>
+    </references><info>
+      <application>
+        <executable>UPDATE.EXE</executable>
+      </application>
+    </info><period prob="1" end="1160607453" start="1160607453"/></observation><observation prob="1" id="2005"><type>run.application.byPrefetchCreate</type><references>
+      <file xid="379849"/>
+    </references><info>
+      <application>
+        <executable>UPDATE.EXE</executable>
+      </application>
+    </info><period prob="1" end="1160607449" start="1160607449"/></observation><observation prob="1" id="2006"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="379849"/>
+    </references><info>
+      <application>
+        <executable>UPDATE.EXE</executable>
+      </application>
+    </info><period prob="1" end="1160607457" start="1160607457"/></observation><observation prob="1" id="2007"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379861"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1162396998" start="1162396998"/><observation prob="1" id="2008"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162396998" start="1162396998"/></observation><observation prob="1" id="2008"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379873"/>
     </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application></info>
-    <period prob="1" end="1160607447" start="1160607447"/><observation prob="1" id="2009"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160607447" start="1160607447"/></observation><observation prob="1" id="2009"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379873"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160607455" start="1160607455"/><observation prob="1" id="2010"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160607455" start="1160607455"/></observation><observation prob="1" id="2010"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379885"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1162396990" start="1162396990"/><observation prob="1" id="2011"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162396990" start="1162396990"/></observation><observation prob="1" id="2011"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379897"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160614911" start="1160614911"/><observation prob="1" id="2012"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1160614911" start="1160614911"/></observation><observation prob="1" id="2012"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379909"/>
     </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    </info><period prob="1" end="1160614931" start="1160614931"/></observation><observation prob="1" id="2013"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160614931" start="1160614931"/></observation><observation prob="1" id="2013"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379921"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1159318814" start="1159318814"/><observation prob="1" id="2014"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1159318814" start="1159318814"/></observation><observation prob="1" id="2014"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379933"/>
     </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application></info>
-    <period prob="1" end="1160607452" start="1160607452"/><observation prob="1" id="2015"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1160607452" start="1160607452"/></observation><observation prob="1" id="2015"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379933"/>
-    </references></observation><info>
-      </info><application>
+    </references><info>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160607460" start="1160607460"/><observation prob="1" id="2016"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160607460" start="1160607460"/></observation><observation prob="1" id="2016"><type>run.application.byPrefetchCreate</type><references>
       <file xid="379945"/>
     </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application></info>
-    <period prob="1" end="1160607451" start="1160607451"/><observation prob="1" id="2017"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160607451" start="1160607451"/></observation><observation prob="1" id="2017"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379945"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160607458" start="1160607458"/><observation prob="1" id="2018"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160607458" start="1160607458"/></observation><observation prob="1" id="2018"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379957"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1160614824" start="1160614824"/><observation prob="1" id="2019"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1160614824" start="1160614824"/></observation><observation prob="1" id="2019"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379969"/>
     </references><info>
-      </info></observation><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1162396963" start="1162396963"/><observation prob="1" id="2020"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162396963" start="1162396963"/></observation><observation prob="1" id="2020"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379981"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1162397029" start="1162397029"/><observation prob="1" id="2021"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162397029" start="1162397029"/></observation><observation prob="1" id="2021"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="379993"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1158195625" start="1158195625"/><observation prob="1" id="2022"><type>run.application.byPrefetchCreate</type></observation><references>
-      <file xid="380005"/>
-    </references></info><info>
-      <application>
-        <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application></info>
-    <period prob="1" end="1159313565" start="1159313565"/><observation prob="1" id="2023"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1158195625" start="1158195625"/></observation><observation prob="1" id="2022"><type>run.application.byPrefetchCreate</type><references>
       <file xid="380005"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>UPDATE.EXE</executable>
-      <cluster id="51"/></application>
-    <period prob="1" end="1159313568" start="1159313568"/><observation prob="1" id="2024"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1159313565" start="1159313565"/></observation><observation prob="1" id="2023"><type>run.application.byPrefetchLastStarted</type><references>
+      <file xid="380005"/>
+    </references><info>
+      <application>
+        <executable>UPDATE.EXE</executable>
+      </application>
+    </info><period prob="1" end="1159313568" start="1159313568"/></observation><observation prob="1" id="2024"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380017"/>
     </references><info>
       <application>
         <executable>UPDATER.EXE</executable>
       </application>
-    </info><period prob="1" end="1162805952" start="1162805952"/></observation><observation prob="1" id="2025"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="1162805952" start="1162805952"/></observation><observation prob="1" id="2025"><type>run.application.byPrefetchCreate</type><references>
       <file xid="380029"/>
     </references><info>
       <application>
         <executable>VERCLSID.EXE</executable>
-      <cluster id="40"/></application></info>
-    <period prob="1" end="1152776647" start="1152776647"/><observation prob="1" id="2026"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1152776647" start="1152776647"/></observation><observation prob="1" id="2026"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380029"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>VERCLSID.EXE</executable>
-      <cluster id="40"/></application>
-    <period prob="1" end="1162824902" start="1162824902"/><observation prob="1" id="2027"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162824902" start="1162824902"/></observation><observation prob="1" id="2027"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380041"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WINDOWS</executable>
-      <cluster id="46"/></application>
-    <period prob="1" end="1158195614" start="1158195614"/><observation prob="1" id="2028"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1158195614" start="1158195614"/></observation><observation prob="1" id="2028"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380053"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WINDOWS</executable>
-      <cluster id="46"/></application>
-    <period prob="1" end="1160614814" start="1160614814"/><observation prob="1" id="2029"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1160614814" start="1160614814"/></observation><observation prob="1" id="2029"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380065"/>
     </references><info>
       <application>
@@ -10743,92 +10743,92 @@ Over..
     </references><info>
       <application>
         <executable>WMIADAP.EXE</executable>
-      <cluster id="42"/></application>
-    </info><period prob="1" end="1160614970" start="1160614970"/></observation><observation prob="1" id="2032"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1160614970" start="1160614970"/></observation><observation prob="1" id="2032"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380089"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WMIADAP.EXE</executable>
-      <cluster id="42"/></application>
-    <period prob="1" end="1162397208" start="1162397208"/><observation prob="1" id="2033"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162397208" start="1162397208"/></observation><observation prob="1" id="2033"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380101"/>
     </references><info>
       <application>
         <executable>WMIAPSRV.EXE</executable>
       </application>
-    </info><period prob="1" end="1161335787" start="1161335787"/></observation><observation prob="1" id="2034"><type>run.application.byPrefetchCreate</type></observation><references>
+    </info><period prob="1" end="1161335787" start="1161335787"/></observation><observation prob="1" id="2034"><type>run.application.byPrefetchCreate</type><references>
       <file xid="380113"/>
     </references><info>
       <application>
         <executable>WMIPRVSE.EXE</executable>
-      <cluster id="9"/></application></info>
-    <period prob="1" end="1152775789" start="1152775789"/><observation prob="1" id="2035"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1152775789" start="1152775789"/></observation><observation prob="1" id="2035"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380113"/>
-    </references></observation><info>
-      </info><application>
+    </references><info>
+      <application>
         <executable>WMIPRVSE.EXE</executable>
-      <cluster id="9"/></application>
-    <period prob="1" end="1163691045" start="1163691045"/><observation prob="1" id="2036"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1163691045" start="1163691045"/></observation><observation prob="1" id="2036"><type>run.application.byPrefetchCreate</type><references>
       <file xid="380125"/>
     </references><info>
       <application>
         <executable>WMPLAYER.EXE</executable>
-      <cluster id="26"/></application></info>
-    <period prob="1" end="1162807001" start="1162807001"/><observation prob="1" id="2037"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162807001" start="1162807001"/></observation><observation prob="1" id="2037"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380125"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WMPLAYER.EXE</executable>
-      <cluster id="26"/></application>
-    <period prob="1" end="1162824902" start="1162824902"/><observation prob="1" id="2038"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162824902" start="1162824902"/></observation><observation prob="1" id="2038"><type>run.application.byPrefetchCreate</type><references>
       <file xid="380137"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WMPLAYER.EXE</executable>
-      <cluster id="26"/></application>
-    <period prob="1" end="1162806308" start="1162806308"/><observation prob="1" id="2039"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162806308" start="1162806308"/></observation><observation prob="1" id="2039"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380137"/>
     </references><info>
-      </info></observation><application>
+      <application>
         <executable>WMPLAYER.EXE</executable>
-      <cluster id="26"/></application>
-    <period prob="1" end="1162807015" start="1162807015"/><observation prob="1" id="2040"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162807015" start="1162807015"/></observation><observation prob="1" id="2040"><type>run.application.byPrefetchCreate</type><references>
       <file xid="380149"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WORDPAD.EXE</executable>
-      <cluster id="10"/></application>
-    <period prob="1" end="1162809394" start="1162809394"/><observation prob="1" id="2041"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1162809394" start="1162809394"/></observation><observation prob="1" id="2041"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380149"/>
-    </references></observation><info>
+    </references><info>
       <application>
         <executable>WORDPAD.EXE</executable>
-      <cluster id="10"/></application>
-    <period prob="1" end="1162809411" start="1162809411"/><observation prob="1" id="2042"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1162809411" start="1162809411"/></observation><observation prob="1" id="2042"><type>run.application.byPrefetchCreate</type><references>
       <file xid="380161"/>
-    </references></info><info>
+    </references><info>
       <application>
         <executable>WSCNTFY.EXE</executable>
-      <cluster id="50"/></application></info>
-    <period prob="1" end="1152775664" start="1152775664"/><observation prob="1" id="2043"><type>run.application.byPrefetchLastStarted</type></observation><references>
+      </application>
+    </info><period prob="1" end="1152775664" start="1152775664"/></observation><observation prob="1" id="2043"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380161"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WSCNTFY.EXE</executable>
-      <cluster id="50"/></application>
-    <period prob="1" end="1163691391" start="1163691391"/><observation prob="1" id="2044"><type>run.application.byPrefetchCreate</type></observation><references>
+      </application>
+    </info><period prob="1" end="1163691391" start="1163691391"/></observation><observation prob="1" id="2044"><type>run.application.byPrefetchCreate</type><references>
       <file xid="380173"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WUAUCLT.EXE</executable>
-      <cluster id="25"/></application>
-    <period prob="1" end="1152775929" start="1152775929"/><observation prob="1" id="2045"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1152775929" start="1152775929"/></observation><observation prob="1" id="2045"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380173"/>
     </references><info>
-      </info><application>
+      <application>
         <executable>WUAUCLT.EXE</executable>
-      <cluster id="25"/></application></observation>
-    <period prob="1" end="1163691043" start="1163691043"/><observation prob="1" id="2046"><type>run.application.byPrefetchLastStarted</type><references>
+      </application>
+    </info><period prob="1" end="1163691043" start="1163691043"/></observation><observation prob="1" id="2046"><type>run.application.byPrefetchLastStarted</type><references>
       <file xid="380185"/>
     </references><info>
       <application>
@@ -10852,43 +10852,43 @@ Over..
       <application>
         <executable>XPINSTALL.EXE</executable>
       </application>
-    </info><period prob="1" end="1161949187" start="1161949187"/></observation><observation prob="1" id="2050"><type>run.application.byRegistryMRUList</type></observation><references>
+    </info><period prob="1" end="1161949187" start="1161949187"/></observation><observation prob="1" id="2050"><type>run.application.byRegistryMRUList</type><references>
       <value xid="845602"/>
     </references><info>
-      </info><application>
+      <application>
         <fullpath>cmd\1</fullpath>
       </application>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162827452" start="1162827452"/><observation prob="1" id="2051"><type>run.application.byRegistryMRUList</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162827452" start="1162827452"/></observation><observation prob="1" id="2051"><type>run.application.byRegistryMRUList</type><references>
       <value xid="845605"/>
     </references><info>
-      </info><application>
+      <application>
         <fullpath>cba</fullpath>
       </application>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162827452" start="1162827452"/><observation prob="1" id="2052"><type>run.application.byRegistryMRUList</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162827452" start="1162827452"/></observation><observation prob="1" id="2052"><type>run.application.byRegistryMRUList</type><references>
       <value xid="845609"/>
     </references><info>
       <application>
         <fullpath>calc\1</fullpath>
-      </application></info>
+      </application>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162827452" start="1162827452"/><observation prob="1" id="2053"><type>run.application.byRegistryMRUList</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162827452" start="1162827452"/></observation><observation prob="1" id="2053"><type>run.application.byRegistryMRUList</type><references>
       <value xid="845612"/>
     </references><info>
-      </info><application>
+      <application>
         <fullpath>notepad\1</fullpath>
       </application>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162827452" start="1162827452"/><observation prob="1" id="2054"><type>take.snapshot.byFolder</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162827452" start="1162827452"/></observation><observation prob="1" id="2054"><type>take.snapshot.byFolder</type><references>
       <folder xid="239278"/>
     </references><info>
       <snapshot>
@@ -11476,264 +11476,264 @@ Over..
       <snapshot>
         <name>RP99</name>
       </snapshot>
-    </info><period prob="1" end="1160702018" start="1160702016"/></observation><observation prob="1" id="2152"><type>synchronize.clock.bySysEventLog</type></observation><references>
+    </info><period prob="1" end="1160702018" start="1160702016"/></observation><observation prob="1" id="2152"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="742153"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.130.100</ip>
-      <cluster id="3"/></domain>
-    <period prob="1" end="1152775881" start="1152775881"/><observation prob="1" id="2153"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1152775881" start="1152775881"/></observation><observation prob="1" id="2153"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="743531"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1153380617" start="1153380617"/><observation prob="1" id="2154"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1153380617" start="1153380617"/></observation><observation prob="1" id="2154"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="744033"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1155195238" start="1155195238"/><observation prob="1" id="2155"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1155195238" start="1155195238"/></observation><observation prob="1" id="2155"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="744667"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1155799915" start="1155799915"/><observation prob="1" id="2156"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1155799915" start="1155799915"/></observation><observation prob="1" id="2156"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="745457"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1157614537" start="1157614537"/><observation prob="1" id="2157"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1157614537" start="1157614537"/></observation><observation prob="1" id="2157"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="745971"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1158219213" start="1158219213"/><observation prob="1" id="2158"><type>synchronize.clock.bySysEventLog</type><references>
+      </domain>
+    </info><period prob="1" end="1158219213" start="1158219213"/></observation><observation prob="1" id="2158"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="746151"/>
-    </references></observation><info>
+    </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.130.100</ip>
-      <cluster id="3"/></domain>
-    <period prob="1" end="1159428693" start="1159428693"/><observation prob="1" id="2159"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1159428693" start="1159428693"/></observation><observation prob="1" id="2159"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="746235"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1160033508" start="1160033508"/><observation prob="1" id="2160"><type>synchronize.clock.bySysEventLog</type><references>
+      </domain>
+    </info><period prob="1" end="1160033508" start="1160033508"/></observation><observation prob="1" id="2160"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="746869"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info></observation>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1160638536" start="1160638536"/><observation prob="1" id="2161"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1160638536" start="1160638536"/></observation><observation prob="1" id="2161"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="746893"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.130.100</ip>
-      <cluster id="3"/></domain>
-    <period prob="1" end="1161243211" start="1161243211"/><observation prob="1" id="2162"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1161243211" start="1161243211"/></observation><observation prob="1" id="2162"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="746989"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1161847892" start="1161847892"/><observation prob="1" id="2163"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1161847892" start="1161847892"/></observation><observation prob="1" id="2163"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="747383"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.232.189</ip>
-      <cluster id="2"/></domain>
-    <period prob="1" end="1162452688" start="1162452688"/><observation prob="1" id="2164"><type>synchronize.clock.bySysEventLog</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1162452688" start="1162452688"/></observation><observation prob="1" id="2164"><type>synchronize.clock.bySysEventLog</type><references>
       <event xid="747527"/>
     </references><info>
       <domain>
         <name>time.windows.com</name>
         <ip>195.169.99.137</ip>
-      <cluster id="0"/></domain></info>
+      </domain>
       <domain>
         <name>local</name>
         <ip>207.46.130.100</ip>
-      <cluster id="3"/></domain>
-    <period prob="1" end="1163057502" start="1163057502"/><observation prob="1" id="2165"><type>create.useraccount.byUserFolder</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1163057502" start="1163057502"/></observation><observation prob="1" id="2165"><type>create.useraccount.byUserFolder</type><references>
       <folder xid="1236"/>
     </references><info>
       <user>
         <name>Administrator</name>
-      <cluster id="0"/></user></info>
-    <period prob="1" end="1095081148" start="1095081148"/><observation prob="1" id="2166"><type>create.useraccount.byUserFolder</type></observation><references>
+      </user>
+    </info><period prob="1" end="1095081148" start="1095081148"/></observation><observation prob="1" id="2166"><type>create.useraccount.byUserFolder</type><references>
       <folder xid="6997"/>
     </references><info>
-      </info><user>
+      <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="1" end="1152775651" start="1152775651"/><observation prob="1" id="2167"><type>create.useraccount.byRegistryKey</type><references>
+      </user>
+    </info><period prob="1" end="1152775651" start="1152775651"/></observation><observation prob="1" id="2167"><type>create.useraccount.byRegistryKey</type><references>
       <key xid="878977"/>
     </references><info>
       <user>
         <name>Administrator</name>
-      <cluster id="0"/></user>
-    <period prob="1" end="1095083939" start="1095083939"/><observation prob="1" id="2168"><type>create.useraccount.byRegistryKey</type></observation><references>
+      </user>
+    </info><period prob="1" end="1095083939" start="1095083939"/></observation><observation prob="1" id="2168"><type>create.useraccount.byRegistryKey</type><references>
       <key xid="878989"/>
-    </references></info></observation><info>
-      </info><user>
+    </references><info>
+      <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="1" end="1152775632" start="1152775632"/><observation prob="1" id="2169"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="1" end="1152775632" start="1152775632"/></observation><observation prob="1" id="2169"><type>visit.website.byTypedURLs</type><references>
       <value xid="839614"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://mail.live.com/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2170"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2170"><type>visit.website.byTypedURLs</type><references>
       <value xid="839617"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://webmail.ru.nl/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2171"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2171"><type>visit.website.byTypedURLs</type><references>
       <value xid="839620"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://webmail.hccnet.nl/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2172"><type>visit.website.byTypedURLs</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2172"><type>visit.website.byTypedURLs</type><references>
       <value xid="839623"/>
-    </references></observation><info>
+    </references><info>
       <domain>
         <url>http://www.google.nl/search?hl=nl&amp;newwindow=1&amp;q=at%26t+speech+synthesis&amp;meta=</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2173"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2173"><type>visit.website.byTypedURLs</type><references>
       <value xid="839626"/>
-    </references></info><info>
+    </references><info>
       <domain>
         <url>http://www.cstr.ed.ac.uk/artic/</url>
-      </domain></info>
+      </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2174"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2174"><type>visit.website.byTypedURLs</type><references>
       <value xid="839629"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://scholar.google.com/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2175"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2175"><type>visit.website.byTypedURLs</type><references>
       <value xid="839632"/>
     </references><info>
       <domain>
         <url>scholar.google.n;</url>
-      </domain></info>
+      </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2176"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2176"><type>visit.website.byTypedURLs</type><references>
       <value xid="839635"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://www.wikipedia.org/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2177"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2177"><type>visit.website.byTypedURLs</type><references>
       <value xid="839638"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://www.interglot.com/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2178"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2178"><type>visit.website.byTypedURLs</type><references>
       <value xid="839641"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://www.wikipedia.com/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2179"><type>visit.website.byTypedURLs</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2179"><type>visit.website.byTypedURLs</type><references>
       <value xid="839644"/>
     </references><info>
       <domain>
@@ -11741,128 +11741,128 @@ Over..
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2180"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2180"><type>visit.website.byTypedURLs</type><references>
       <value xid="839647"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>https://webmail.hccnet.nl/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2181"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2181"><type>visit.website.byTypedURLs</type><references>
       <value xid="839650"/>
     </references><info>
       <domain>
         <url>http://search.live.com/results.aspx?q=inux+c+char+%26name&amp;src=IE-Address</url>
-      </domain></info>
+      </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2182"><type>visit.website.byTypedURLs</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2182"><type>visit.website.byTypedURLs</type><references>
       <value xid="839653"/>
-    </references></observation><info>
-      </info><domain>
+    </references><info>
+      <domain>
         <url>www.google.bl</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2183"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2183"><type>visit.website.byTypedURLs</type><references>
       <value xid="839656"/>
     </references><info>
       <domain>
         <url>http://www.hotmail.com/</url>
-      </domain></info>
+      </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2184"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2184"><type>visit.website.byTypedURLs</type><references>
       <value xid="839659"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://google.com/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2185"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2185"><type>visit.website.byTypedURLs</type><references>
       <value xid="839662"/>
     </references><info>
       <domain>
         <url>http://auto.search.msn.com/response.asp?MT=hullo+zoeken&amp;srch=3&amp;prov=&amp;utf8</url>
-      </domain></info>
+      </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2186"><type>visit.website.byTypedURLs</type><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2186"><type>visit.website.byTypedURLs</type><references>
       <value xid="839665"/>
-    </references></observation><info>
+    </references><info>
       <domain>
         <url>http://www.forensischinstituut.nl/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2187"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2187"><type>visit.website.byTypedURLs</type><references>
       <value xid="839668"/>
-    </references></info><info>
-      </info><domain>
+    </references><info>
+      <domain>
         <url>http://www.msn.com/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2188"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2188"><type>visit.website.byTypedURLs</type><references>
       <value xid="839671"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://www.skype.com/</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="1" id="2189"><type>visit.website.byTypedURLs</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="1" id="2189"><type>visit.website.byTypedURLs</type><references>
       <value xid="839674"/>
     </references><info>
-      </info><domain>
+      <domain>
         <url>http://www.microsoft.com/isapi/redir.dll?prd=ie&amp;pver=6&amp;ar=msnhome</url>
       </domain>
       <user>
         <name>Karel</name>
-      <cluster id="1"/></user>
-    <period prob="0.10000000000000001" end="1162828790" start="1162828790"/><observation prob="0.5" id="2190"><type>visit.website.byTempFiles</type></observation><references>
+      </user>
+    </info><period prob="0.10000000000000001" end="1162828790" start="1162828790"/></observation><observation prob="0.5" id="2190"><type>visit.website.byTempFiles</type><references>
       <file xid="20689"/>
     </references><info>
       <domain>
         <name>hotmail.com</name>
-      <cluster id="1"/></domain></info>
-    <period prob="1" end="1157467411" start="1157467411"/><observation prob="0.5" id="2191"><type>visit.website.byTempFiles</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1157467411" start="1157467411"/></observation><observation prob="0.5" id="2191"><type>visit.website.byTempFiles</type><references>
       <file xid="31937"/>
     </references><info>
-      </info><domain>
+      <domain>
         <name>hotmail.com</name>
-      <cluster id="1"/></domain>
-    <period prob="1" end="1157467411" start="1157467411"/><observation prob="0.5" id="2192"><type>visit.website.byTempFiles</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1157467411" start="1157467411"/></observation><observation prob="0.5" id="2192"><type>visit.website.byTempFiles</type><references>
       <file xid="31949"/>
     </references><info>
-      </info><domain>
+      <domain>
         <name>hotmail.com</name>
-      <cluster id="1"/></domain>
-    <period prob="1" end="1159867646" start="1159867646"/><observation prob="0.5" id="2193"><type>visit.website.byTempFiles</type><references>
+      </domain>
+    </info><period prob="1" end="1159867646" start="1159867646"/></observation><observation prob="0.5" id="2193"><type>visit.website.byTempFiles</type><references>
       <file xid="55094"/>
     </references><info>
-      </info><domain>
+      <domain>
         <name>hotmail.com</name>
-      <cluster id="1"/></domain>
-    </observation><period prob="1" end="1157467419" start="1157467419"/><observation prob="0.5" id="2194"><type>visit.website.byTempFiles</type></observation><references>
+      </domain>
+    </info><period prob="1" end="1157467419" start="1157467419"/></observation><observation prob="0.5" id="2194"><type>visit.website.byTempFiles</type><references>
       <file xid="55106"/>
     </references><info>
-      </info><domain>
+      <domain>
         <name>hotmail.com</name>
-      <cluster id="1"/></domain>
-    <period prob="1" end="1159867646" start="1159867646"/><observation prob="1" id="2195"><type>install.application.byExecutableFile</type><references>
+      </domain>
+    </info><period prob="1" end="1159867646" start="1159867646"/></observation><observation prob="1" id="2195"><type>install.application.byExecutableFile</type><references>
       <file xid="235955"/>
     </references><info>
       <application>
@@ -12190,7 +12190,7 @@ Over..
       <session>
         <pageperminute>136</pageperminute>
       </session>
-    </info><prob>1</prob><period prob="0.5" end="1162951233" start="1162951219"/></observation></info></observation></info></result></XQueryResult>
+    </info><prob>1</prob><period prob="0.5" end="1162951233" start="1162951219"/></observation></result></XQueryResult>
 
 # 17:33:46 >  
 # 17:33:46 >  Done.
