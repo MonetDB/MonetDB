@@ -842,7 +842,7 @@ getCallValues(stream *out,
                     int off;
                     for (off = 0; off < nattrs; off++) {
                         if (attr_ownT[off] == tpe_node_pre) {
-                            val_node_pre = attr_propT[off];
+                            val_node_pre = off;
                             break;
                         }
                     }
