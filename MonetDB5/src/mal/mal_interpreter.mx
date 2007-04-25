@@ -956,8 +956,10 @@ the bind(namespace, batname, mode) operation. [todo]
 	if( needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+			bat bid = stk->stk[getArg(pci,i)].val.br.id;
+			BAT *b;
 			if( backup[i] ){
-				if( backup[i]== stk->stk[getArg(pci,i)].val.br.id){
+				if( backup[i]== bid){
 					/* target and source are identical, which means its
 				   	   logical reference count is one too high . */
 					BBPreleaselref(backup[i]);
