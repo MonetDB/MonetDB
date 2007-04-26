@@ -56,6 +56,7 @@ pkglibdir = $(libdir)\$(pkg)
 pkgincludedir = $(includedir)\$(pkg)
 
 LIBC_INCS = $(PTHREAD_INCS)
+MATH_LIBS =
 SOCKET_LIBS = wsock32.lib
 
 MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
