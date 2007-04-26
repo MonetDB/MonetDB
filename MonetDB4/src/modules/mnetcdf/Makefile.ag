@@ -29,8 +29,7 @@ LIB_mnetcdf = {
 		../../monet/libmonet ../plain/lib_algebra \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		$(NETCDF_LIBS)
-	LDFLAGS = -lm $(NETCDF_LIBS)
+		$(NETCDF_LIBS) $(MATH_LIBS)
 }
 
 scripts_mnetcdf = {

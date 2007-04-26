@@ -79,8 +79,7 @@ LIBS = {
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-	LDFLAGS = -lm
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
 }
 
 lib__counters = {
