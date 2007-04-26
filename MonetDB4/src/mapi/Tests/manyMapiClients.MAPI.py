@@ -6,7 +6,7 @@ try:
     pOut,pIn = popen2.popen2('monetdb-clients-config --pkgdatadir')
     pIn.close()
     pdd = pOut.readlines()[0]
-    pdd = pdd.strip();
+    pdd = pdd.strip()
     pOut.close()
     sys.path.append(os.path.join(pdd,'python'))
 except:

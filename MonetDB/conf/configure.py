@@ -55,7 +55,7 @@ for key, val in subs[:]:
 
 def substitute(line):
     for (p,v) in subs:
-        line = line.replace(p, v);
+        line = line.replace(p, v)
     return line
 
 for line in fileinput.input(sys.argv[1]):

@@ -1,3 +1,3 @@
 import os
 
-os.remove("xid.xml");
+os.remove("xid.xml")

@@ -58,35 +58,35 @@ class server:
         prompt = self.getblock()
         if prompt != '':
             print("%s" % prompt)
-            sys.exit(-1);
+            sys.exit(-1)
 
         if self.trace:
             print 'connected ', self.socket
 
     def getblock(self):
         # now read back the same way
-        result = "";
-        last_block = 0;
+        result = ""
+        last_block = 0
         while not last_block:
-            flag = self.socket.recv(2); # read block info
-            unpacked = struct.unpack( '<H', flag ); # unpack (little endian short)
-            unpacked = unpacked[0];     # get first result from tuple
-            len = ( unpacked >> 1 );    # get length
-            last_block = unpacked & 1;  # get last-block-flag
+            flag = self.socket.recv(2)  # read block info
+            unpacked = struct.unpack( '<H', flag ) # unpack (little endian short)
+            unpacked = unpacked[0]      # get first result from tuple
+            len = ( unpacked >> 1 )     # get length
+            last_block = unpacked & 1   # get last-block-flag
 
             if self.trace:
-                print("getblock: %d %d\n" % (last_block, len));
+                print("getblock: %d %d\n" % (last_block, len))
             if len > 0:
-                data = self.socket.recv(len);# read
-                result += data;
+                data = self.socket.recv(len) # read
+                result += data
         if self.trace:
-            print("getblock: %s\n" % result);
-        return result;
+            print("getblock: %s\n" % result)
+        return result
 
     def putblock(self, blk):
-        pos        = 0;
-        last_block = 0;
-        blocksize  = 0xffff >> 1;       # max len per block
+        pos        = 0
+        last_block = 0
+        blocksize  = 0xffff >> 1        # max len per block
 
         # create blocks of data with max 0xffff length,
         # then loop over the data and send it.
@@ -98,9 +98,9 @@ class server:
             flag = struct.pack( '<h', ( len(data) << 1 ) + last_block )
             if self.trace:
                 print ("putblock: %d %s\n" % (last_block, data))
-            self.socket.send(flag);     # len<<1 + last-block-flag
-            self.socket.send(data); # send it
-            pos += len(data);       # next block
+            self.socket.send(flag)      # len<<1 + last-block-flag
+            self.socket.send(data)  # send it
+            pos += len(data)        # next block
 
     def disconnect(self):
         """disconnect()

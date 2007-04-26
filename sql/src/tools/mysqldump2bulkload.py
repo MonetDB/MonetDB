@@ -59,7 +59,7 @@ def main(write = write):
     status = 0
     base = ""
     l = 0
-    cnt = 0;
+    cnt = 0
     for line in fileinput.input():
         if status == INSERT:
             if line[0:l] == base:
@@ -69,8 +69,8 @@ def main(write = write):
             else:
                 print # empty line to end copy into
                 print "COMMIT;"
-                cnt = 0;
-                status = 0;
+                cnt = 0
+                status = 0
 
         if status != INSERT and line[0] != '#' and line[0:1] != '--':
             if status == CREATE:

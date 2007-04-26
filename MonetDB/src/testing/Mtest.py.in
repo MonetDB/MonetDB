@@ -850,7 +850,7 @@ def SkipTest(env, TST, EXT, REASON) :
     if not env['QUIET']:
         Warn(TEXT)
     else:
-        STDOUT.write("-");
+        STDOUT.write("-")
     f = open("."+TST+".SKIPPED","w")
     f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
     f.close()
@@ -2014,10 +2014,10 @@ def mapi_ping(port,lang) :
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((host, port))
-            flag = sock.recv(2);
-            unpacked = struct.unpack( '<H', flag )[0];  # little endian short
-            len = ( unpacked >> 1 );    # get length
-            data = sock.recv(len);
+            flag = sock.recv(2)
+            unpacked = struct.unpack( '<H', flag )[0]  # little endian short
+            len = ( unpacked >> 1 )     # get length
+            data = sock.recv(len)
             # we don't send
             return True
         except socket.error, (Serrno,Serrstr):
@@ -2039,7 +2039,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     if not quiet:
         STDOUT.write(prompt()+LogLine)
     else:
-        STDOUT.write(".");
+        STDOUT.write(".")
 
     try:
         STDOUT.flush()
@@ -3266,7 +3266,7 @@ VALUES (%s, '%s', '%s', '%s',
         ccname, ccopts, bits, oids, isStatic,
         product, TSTDIR, TST,
         tms, Fcodes[FtOut], Fcodes[FtErr])
-                fl.write(sql);
+                fl.write(sql)
         fl.close()
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
