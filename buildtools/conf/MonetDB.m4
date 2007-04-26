@@ -1819,6 +1819,10 @@ LIBS="$LIBS $MALLOC_LIBS"
 AC_CHECK_FUNCS(mallopt mallinfo)
 LIBS="$save_LIBS"
 
+MATH_LIBS=""
+AC_CHECK_LIB(m, sqrt, [ MATH_LIBS="-lm" ] )
+AC_SUBST(MATH_LIBS)
+
 SOCKET_LIBS=""
 have_setsockopt=no
 case "$host_os" in
