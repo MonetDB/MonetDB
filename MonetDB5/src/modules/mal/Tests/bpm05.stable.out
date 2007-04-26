@@ -92,7 +92,7 @@ function user.main():void;	# 0  (main:void)
     io.print(V);	# 16 IOprint_val (_28:void)<-(V:bat[:oid,:int])
     io.print("Range partition using sorted BAT of ranges");	# 17 IOprint_val (_29:void)<-(_30:str)
     bpm.rangePartition(Ra,V);	# 18 BPMrangeVector (_31:void)<-(Ra:bat[:oid,:int])(V:bat[:oid,:int])
-    bpm.dump(Ra);	# 19 BPMdumpAlias (_32:void)<-(Ra:bat[:oid,:int])
+#bpm.dump(Ra); 	# 19  (_32:str)
     user.pr(Ra);	# 20  (_33:void)<-(Ra:bat[:oid,:int])
     io.print("Iterate on range 3-9");	# 21 IOprint_val (_34:void)<-(_35:str)
     user.printrange(Ra,3,9);	# 22  (_36:void)<-(Ra:bat[:oid,:int])(_8:int)(_37:int)
@@ -122,11 +122,6 @@ end main;	# 30
 [ 2@0,	  8	  ]
 [ 3@0,	  10	  ]
 [ "Range partition using sorted BAT of ranges" ]
-partition: myR alias 11 bid 12 bits 0 0 h nil - nil t nil - 2 nxt 14 prv 11 cnt 1
-partition: myR alias 11 bid 14 bits 0 0 h nil - nil t 2 - 4 nxt 15 prv 12 cnt 1
-partition: myR alias 11 bid 15 bits 0 0 h nil - nil t 4 - 8 nxt 16 prv 14 cnt 2
-partition: myR alias 11 bid 16 bits 0 0 h nil - nil t 8 - 10 nxt 17 prv 15 cnt 0
-partition: myR alias 11 bid 17 bits 0 0 h nil - nil t 10 - nil nxt 11 prv 16 cnt 1
 #-----------------#
 # h	t	  # name
 # oid	int	  # type

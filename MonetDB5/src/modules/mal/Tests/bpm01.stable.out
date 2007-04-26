@@ -75,7 +75,7 @@ function user.main():void;	# 0  (main:void)
     bat.append(pv,5);	# 14 BKCappend_val_wrap (_24:void)<-(pv:bat[:oid,:int])(_10:int)
     bat.append(pv,nil:int);	# 15 BKCappend_val_wrap (_25:void)<-(pv:bat[:oid,:int])(_26:int)
     bpm.rangePartition(Ra,pv);	# 16 BPMrangeVector (_27:void)<-(Ra:bat[:oid,:int])(pv:bat[:oid,:int])
-    bpm.dump();	# 17 BPMdump (_28:void)
+#bpm.dump(); 	# 17  (_28:str)
     user.pr(Ra);	# 18  (_29:void)<-(Ra:bat[:oid,:int])
 #repartition 	# 19  (_30:str)
     pv := bat.new(:oid,:int);	# 20 CMDBATnew (pv:bat[:oid,:int])<-(_3:oid)(_4:int)
@@ -84,9 +84,9 @@ function user.main():void;	# 0  (main:void)
     bat.append(pv,6);	# 23 BKCappend_val_wrap (_33:void)<-(pv:bat[:oid,:int])(_34:int)
     bat.append(pv,nil:int);	# 24 BKCappend_val_wrap (_35:void)<-(pv:bat[:oid,:int])(_26:int)
     bpm.rangePartition(Ra,pv);	# 25 BPMrangeVector (_36:void)<-(Ra:bat[:oid,:int])(pv:bat[:oid,:int])
-    bpm.dump();	# 26 BPMdump (_37:void)
-    user.pr(Ra);	# 27  (_38:void)<-(Ra:bat[:oid,:int])
-    bpm.discard(Ra);	# 28 BPMdiscard (_39:void)<-(Ra:bat[:oid,:int])
+#bpm.dump(); 	# 26  (_28:str)
+    user.pr(Ra);	# 27  (_37:void)<-(Ra:bat[:oid,:int])
+    bpm.discard(Ra);	# 28 BPMdiscard (_38:void)<-(Ra:bat[:oid,:int])
 end main;	# 29  
 #-----------------#
 # h	t	  # name
@@ -98,10 +98,6 @@ end main;	# 29
 [ 3@0,	  7	  ]
 [ 4@0,	  11	  ]
 [ "Range partition it " ]
-partition: myR alias 11 bid 11 bits 0 0 h nil - nil t nil - nil nxt 12 prv 15 cnt 0
-partition: myR alias 11 bid 12 bits 0 0 h nil - nil t nil - 0 nxt 14 prv 11 cnt 0
-partition: myR alias 11 bid 14 bits 0 0 h nil - nil t 0 - 5 nxt 15 prv 12 cnt 2
-partition: myR alias 11 bid 15 bits 0 0 h nil - nil t 5 - nil nxt 11 prv 14 cnt 3
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
@@ -119,11 +115,6 @@ partition: myR alias 11 bid 15 bits 0 0 h nil - nil t 5 - nil nxt 11 prv 14 cnt 
 [ 2@0,	  5	  ]
 [ 3@0,	  7	  ]
 [ 4@0,	  11	  ]
-partition: myR alias 11 bid 11 bits 0 0 h nil - nil t nil - nil nxt 12 prv 17 cnt 0
-partition: myR alias 11 bid 12 bits 0 0 h nil - nil t nil - 0 nxt 14 prv 11 cnt 0
-partition: myR alias 11 bid 14 bits 0 0 h nil - nil t 0 - 5 nxt 15 prv 12 cnt 2
-partition: myR alias 11 bid 15 bits 0 0 h nil - nil t 5 - 6 nxt 17 prv 14 cnt 1
-partition: myR alias 11 bid 17 bits 0 0 h nil - nil t 6 - nil nxt 11 prv 15 cnt 2
 #-----------------#
 # h	t	  # name
 # oid	int	  # type

@@ -24,7 +24,7 @@ bat.append(pv,5);
 bat.append(pv,nil:int);
 
 bpm.rangePartition(Ra,pv);
-bpm.dump();
+#bpm.dump();
 user.pr(Ra);
 
 #repartition
@@ -35,7 +35,7 @@ bat.append(pv,6);
 bat.append(pv,nil:int);
 
 bpm.rangePartition(Ra,pv);
-bpm.dump();
+#bpm.dump();
 user.pr(Ra);
 
 bpm.discard(Ra);

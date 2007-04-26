@@ -1723,7 +1723,9 @@ BPMsaveCatalog(int *r)
 			bt=bpmcat[i]->bid;
   		        nm = GDKmalloc(12);
 		        snprintf(nm, 12, "bpm_%d", i);
-			printf("Name %s\n",nm);
+#ifdef _DEBUG_BPM_
+			printf("#Name %s\n",nm);
+#endif
 		
 			/* Check if the name exists already */
 			idx= BBPindex(nm);

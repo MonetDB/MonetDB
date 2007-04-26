@@ -87,7 +87,7 @@ function user.main():void;	# 0  (main:void)
     bat.append(pv,6);	# 15 BKCappend_val_wrap (_25:void)<-(pv:bat[:oid,:int])(_26:int)
     bat.append(pv,nil:int);	# 16 BKCappend_val_wrap (_27:void)<-(pv:bat[:oid,:int])(_28:int)
     bpm.rangePartition(Ra,pv);	# 17 BPMrangeVector (_29:void)<-(Ra:bat[:oid,:int])(pv:bat[:oid,:int])
-    bpm.dump();	# 18 BPMdump (_30:void)
+#bpm.dump(); 	# 18  (_30:str)
     user.pr(Ra);	# 19  (_31:void)<-(Ra:bat[:oid,:int])
     io.print("Head vector partition it ");	# 20 IOprint_val (_32:void)<-(_33:str)
     Rrev := bat.reverse(Ra);	# 21 BKCreverse (Rrev:bat[:int,:oid])<-(Ra:bat[:oid,:int])
@@ -96,18 +96,18 @@ function user.main():void;	# 0  (main:void)
     bat.append(po,2@0);	# 24 BKCappend_val_wrap (_38:void)<-(po:bat[:oid,:oid])(_39:oid)
     bat.append(po,nil:oid);	# 25 BKCappend_val_wrap (_40:void)<-(po:bat[:oid,:oid])(_41:oid)
     bpm.rangePartition(Rrev,po);	# 26 BPMrangeVector (_42:void)<-(Rrev:bat[:int,:oid])(po:bat[:oid,:oid])
-    bpm.dump();	# 27 BPMdump (_43:void)
-    user.pr(Rrev);	# 28  (_44:void)<-(Rrev:bat[:int,:oid])
-# and what is now the result of this 	# 29  (_45:str)
-    io.print("And redo tail vector partition ");	# 30 IOprint_val (_46:void)<-(_47:str)
+#bpm.dump(); 	# 27  (_30:str)
+    user.pr(Rrev);	# 28  (_43:void)<-(Rrev:bat[:int,:oid])
+# and what is now the result of this 	# 29  (_44:str)
+    io.print("And redo tail vector partition ");	# 30 IOprint_val (_45:void)<-(_46:str)
     pv := bat.new(:oid,:int);	# 31 CMDBATnew (pv:bat[:oid,:int])<-(_3:oid)(_4:int)
-    bat.append(pv,0);	# 32 BKCappend_val_wrap (_48:void)<-(pv:bat[:oid,:int])(_23:int)
-    bat.append(pv,3);	# 33 BKCappend_val_wrap (_49:void)<-(pv:bat[:oid,:int])(_50:int)
-    bat.append(pv,nil:int);	# 34 BKCappend_val_wrap (_51:void)<-(pv:bat[:oid,:int])(_28:int)
-    bpm.rangePartition(Ra,pv);	# 35 BPMrangeVector (_52:void)<-(Ra:bat[:oid,:int])(pv:bat[:oid,:int])
-    bpm.dump();	# 36 BPMdump (_53:void)
-    user.pr(Ra);	# 37  (_54:void)<-(Ra:bat[:oid,:int])
-    bpm.discard(Ra);	# 38 BPMdiscard (_55:void)<-(Ra:bat[:oid,:int])
+    bat.append(pv,0);	# 32 BKCappend_val_wrap (_47:void)<-(pv:bat[:oid,:int])(_23:int)
+    bat.append(pv,3);	# 33 BKCappend_val_wrap (_48:void)<-(pv:bat[:oid,:int])(_49:int)
+    bat.append(pv,nil:int);	# 34 BKCappend_val_wrap (_50:void)<-(pv:bat[:oid,:int])(_28:int)
+    bpm.rangePartition(Ra,pv);	# 35 BPMrangeVector (_51:void)<-(Ra:bat[:oid,:int])(pv:bat[:oid,:int])
+#bpm.dump(); 	# 36  (_30:str)
+    user.pr(Ra);	# 37  (_52:void)<-(Ra:bat[:oid,:int])
+    bpm.discard(Ra);	# 38 BPMdiscard (_53:void)<-(Ra:bat[:oid,:int])
 end main;	# 39  
 #-----------------#
 # h	t	  # name
@@ -119,11 +119,6 @@ end main;	# 39
 [ 3@0,	  7	  ]
 [ 4@0,	  11	  ]
 [ "Vector partition it " ]
-partition: myR alias 11 bid 11 bits 0 0 h nil - nil t nil - nil nxt 12 prv 16 cnt 0
-partition: myR alias 11 bid 12 bits 0 0 h nil - nil t nil - 0 nxt 14 prv 11 cnt 0
-partition: myR alias 11 bid 14 bits 0 0 h nil - nil t 0 - 5 nxt 15 prv 12 cnt 2
-partition: myR alias 11 bid 15 bits 0 0 h nil - nil t 5 - 6 nxt 16 prv 14 cnt 1
-partition: myR alias 11 bid 16 bits 0 0 h nil - nil t 6 - nil nxt 11 prv 15 cnt 2
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
@@ -146,19 +141,6 @@ partition: myR alias 11 bid 16 bits 0 0 h nil - nil t 6 - nil nxt 11 prv 15 cnt 
 [ 3@0,	  7	  ]
 [ 4@0,	  11	  ]
 [ "Head vector partition it " ]
-partition: myR alias 11 bid 11 bits 0 0 h nil - nil t nil - nil nxt 12 prv 33 cnt 0
-partition: myR alias 11 bid 12 bits 0 0 h nil - 0 t nil - 0 nxt 19 prv 11 cnt 0
-partition: myR alias 11 bid 14 bits 0 0 h nil - 0 t 0 - 5 nxt 21 prv 27 cnt 0
-partition: myR alias 11 bid 15 bits 0 0 h nil - 0 t 5 - 6 nxt 23 prv 29 cnt 0
-partition: myR alias 11 bid 16 bits 0 0 h nil - 0 t 6 - nil nxt 25 prv 31 cnt 0
-partition: myR alias 11 bid 19 bits 0 0 h 0 - 2 t nil - 0 nxt 27 prv 12 cnt 0
-partition: myR alias 11 bid 21 bits 0 0 h 0 - 2 t 0 - 5 nxt 29 prv 14 cnt 2
-partition: myR alias 11 bid 23 bits 0 0 h 0 - 2 t 5 - 6 nxt 31 prv 15 cnt 0
-partition: myR alias 11 bid 25 bits 0 0 h 0 - 2 t 6 - nil nxt 33 prv 16 cnt 0
-partition: myR alias 11 bid 27 bits 0 0 h 2 - nil t nil - 0 nxt 14 prv 19 cnt 0
-partition: myR alias 11 bid 29 bits 0 0 h 2 - nil t 0 - 5 nxt 15 prv 21 cnt 0
-partition: myR alias 11 bid 31 bits 0 0 h 2 - nil t 5 - 6 nxt 16 prv 23 cnt 1
-partition: myR alias 11 bid 33 bits 0 0 h 2 - nil t 6 - nil nxt 11 prv 25 cnt 2
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
@@ -213,22 +195,6 @@ partition: myR alias 11 bid 33 bits 0 0 h 2 - nil t 6 - nil nxt 11 prv 25 cnt 2
 [ 3@0,	  7	  ]
 [ 4@0,	  11	  ]
 [ "And redo tail vector partition " ]
-partition: myR alias 11 bid 11 bits 0 0 h nil - nil t nil - nil nxt 12 prv 33 cnt 0
-partition: myR alias 11 bid 12 bits 0 0 h nil - 0 t nil - 0 nxt 19 prv 11 cnt 0
-partition: myR alias 11 bid 14 bits 0 0 h nil - 0 t 0 - 3 nxt 35 prv 27 cnt 0
-partition: myR alias 11 bid 15 bits 0 0 h nil - 0 t 5 - 6 nxt 23 prv 37 cnt 0
-partition: myR alias 11 bid 16 bits 0 0 h nil - 0 t 6 - nil nxt 25 prv 31 cnt 0
-partition: myR alias 11 bid 19 bits 0 0 h 0 - 2 t nil - 0 nxt 27 prv 12 cnt 0
-partition: myR alias 11 bid 21 bits 0 0 h 0 - 2 t 0 - 3 nxt 36 prv 35 cnt 1
-partition: myR alias 11 bid 23 bits 0 0 h 0 - 2 t 5 - 6 nxt 31 prv 15 cnt 0
-partition: myR alias 11 bid 25 bits 0 0 h 0 - 2 t 6 - nil nxt 33 prv 16 cnt 0
-partition: myR alias 11 bid 27 bits 0 0 h 2 - nil t nil - 0 nxt 14 prv 19 cnt 0
-partition: myR alias 11 bid 29 bits 0 0 h 2 - nil t 0 - 3 nxt 37 prv 36 cnt 0
-partition: myR alias 11 bid 31 bits 0 0 h 2 - nil t 5 - 6 nxt 16 prv 23 cnt 1
-partition: myR alias 11 bid 33 bits 0 0 h 2 - nil t 6 - nil nxt 11 prv 25 cnt 2
-partition: myR alias 11 bid 35 bits 0 0 h nil - 0 t 3 - 5 nxt 21 prv 14 cnt 0
-partition: myR alias 11 bid 36 bits 0 0 h 0 - 2 t 3 - 5 nxt 29 prv 21 cnt 1
-partition: myR alias 11 bid 37 bits 0 0 h 2 - nil t 3 - 5 nxt 15 prv 29 cnt 0
 #-----------------#
 # h	t	  # name
 # oid	int	  # type

@@ -61,15 +61,15 @@ function user.main():void;	# 0  (main:void)
     user.pr(Ra);	# 10  (_18:void)<-(Ra:bat[:oid,:int])
     io.print("Partition it into two ranges");	# 11 IOprint_val (_19:void)<-(_20:str)
     bpm.partition(Ra,6);	# 12 BPMsplitpartition (_21:void)<-(Ra:bat[:oid,:int])(_22:int)
-    bpm.dump(Ra);	# 13 BPMdumpAlias (_23:void)<-(Ra:bat[:oid,:int])
+#bpm.dump(Ra); 	# 13  (_23:str)
     user.pr(Ra);	# 14  (_24:void)<-(Ra:bat[:oid,:int])
     Rrev := bat.reverse(Ra);	# 15 BKCreverse (Rrev:bat[:int,:oid])<-(Ra:bat[:oid,:int])
     io.print("Repartition it further into oid ranges");	# 16 IOprint_val (_26:void)<-(_27:str)
     bpm.partition(Rrev,1@0);	# 17 BPMsplitpartition (_28:void)<-(Rrev:bat[:int,:oid])(_29:oid)
 # we should have 4 partitions 	# 18  (_30:str)
-    bpm.dump(Ra);	# 19 BPMdumpAlias (_31:void)<-(Ra:bat[:oid,:int])
-    user.pr(Ra);	# 20  (_32:void)<-(Ra:bat[:oid,:int])
-    bpm.discard(Ra);	# 21 BPMdiscard (_33:void)<-(Ra:bat[:oid,:int])
+#bpm.dump(Ra); 	# 19  (_23:str)
+    user.pr(Ra);	# 20  (_31:void)<-(Ra:bat[:oid,:int])
+    bpm.discard(Ra);	# 21 BPMdiscard (_32:void)<-(Ra:bat[:oid,:int])
 end main;	# 22  
 #-----------------#
 # h	t	  # name
@@ -81,8 +81,6 @@ end main;	# 22
 [ 3@0,	  7	  ]
 [ 4@0,	  11	  ]
 [ "Partition it into two ranges" ]
-partition: myR alias 11 bid 12 bits 0 0 h nil - nil t nil - 6 nxt 13 prv 11 cnt 3
-partition: myR alias 11 bid 13 bits 0 0 h nil - nil t 6 - nil nxt 11 prv 12 cnt 2
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
@@ -97,10 +95,6 @@ partition: myR alias 11 bid 13 bits 0 0 h nil - nil t 6 - nil nxt 11 prv 12 cnt 
 [ 3@0,	  7	  ]
 [ 4@0,	  11	  ]
 [ "Repartition it further into oid ranges" ]
-partition: myR alias 11 bid 12 bits 0 0 h nil - 1 t nil - 6 nxt 15 prv 11 cnt 1
-partition: myR alias 11 bid 15 bits 0 0 h 1 - nil t nil - 6 nxt 13 prv 12 cnt 2
-partition: myR alias 11 bid 13 bits 0 0 h nil - 1 t 6 - nil nxt 17 prv 15 cnt 0
-partition: myR alias 11 bid 17 bits 0 0 h 1 - nil t 6 - nil nxt 11 prv 13 cnt 2
 #-----------------#
 # h	t	  # name
 # oid	int	  # type

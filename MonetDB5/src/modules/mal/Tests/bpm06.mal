@@ -17,7 +17,7 @@ bat.append(pv,0:sht);
 bat.append(pv,5:sht);
 
 bpm.rangePartition(Ra,pv);
-bpm.dump();
+#bpm.dump();
 
 function user.pr(Ra:bat[:any_1,:any_2]):void;
 barrier Rp:= bpm.newIterator(Ra);
@@ -39,8 +39,8 @@ pd:= bat.new(:oid,:flt);
 bat.append(pd,2.3);
 bat.append(pd,5.0);
 bpm.rangePartition(da,pd);
-bpm.dump();
 user.pr(da);
+#bpm.dump();
 
 bpm.saveCatalog();
 

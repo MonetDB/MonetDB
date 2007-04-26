@@ -33,7 +33,7 @@ io.print(V);
 
 io.print("Range partition using sorted BAT of ranges");
 bpm.rangePartition(Ra,V);
-bpm.dump(Ra);
+#bpm.dump(Ra);
 user.pr(Ra);
 
 io.print("Iterate on range 3-9");

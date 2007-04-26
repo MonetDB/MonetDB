@@ -19,13 +19,13 @@ user.pr(Ra);
 
 io.print("Partition it into two ranges");
 bpm.partition(Ra,6);
-bpm.dump(Ra);
+#bpm.dump(Ra);
 user.pr(Ra);
 
 Rrev:= bat.reverse(Ra);
 io.print("Repartition it further into oid ranges");
 bpm.partition(Rrev,1@0);
 # we should have 4 partitions
-bpm.dump(Ra);
+#bpm.dump(Ra);
 user.pr(Ra);
 bpm.discard(Ra);

@@ -25,7 +25,7 @@ bat.append(pv,6);
 bat.append(pv,nil:int);
 
 bpm.rangePartition(Ra,pv);
-bpm.dump();
+#bpm.dump();
 user.pr(Ra);
 
 io.print("Head vector partition it ");
@@ -36,7 +36,7 @@ bat.append(po,2@0);
 bat.append(po,nil:oid);
 
 bpm.rangePartition(Rrev,po);
-bpm.dump();
+#bpm.dump();
 user.pr(Rrev);
 
 # and what is now the result of this
@@ -47,6 +47,6 @@ bat.append(pv,3);
 bat.append(pv,nil:int);
 
 bpm.rangePartition(Ra,pv);
-bpm.dump();
+#bpm.dump();
 user.pr(Ra);
 bpm.discard(Ra);
