@@ -387,6 +387,10 @@ stmt_push_down_head(stmt *join, stmt *select)
 		printf("= TODO: common/optimize.c: push down head %s\n", st_type2string(join->type));
 #endif
 	}
+	if (join == select) {
+		stmt_destroy(select);
+		return join;
+	}
 	return stmt_semijoin(join, select);
 }
 

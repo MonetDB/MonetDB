@@ -1951,9 +1951,6 @@ bs_init_sequence(void)
 static void
 bs_init_type(void)
 {
-	int zero = 0;
-	node *n = NULL;
-
 	int istmp = 0;
 	BAT *type_id = sys_bat(Ccc(istmp,"tmp","sys","types_id"), TYPE_int);
 	BAT *type_sqlname = sys_bat(Ccc(istmp,"tmp","sys","types_sqlname"), TYPE_str);
@@ -1973,24 +1970,14 @@ bs_init_type(void)
 	BAT *U_type_systemname = sys_bat(Ucc(istmp,"tmp","sys","types_systemname"), TYPE_str);
 	BAT *D_type = sys_bat(Dcc(istmp,"tmp","sys","types"), TYPE_oid);
 
-	if (BATcount(type_sqlname) == 0) {
-		ssize_t rid = type_id->hseqbase + BATcount(type_id);
-		for (n = types->h; n; n = n->next, rid++) {
-			sql_type *t = n->data;
-			int radix = t->radix;
-			int eclass = t->eclass;
-
-			BUNins(type_id, &rid, &t->base.id, FALSE);
-
-			BUNins(type_sqlname, &rid, t->sqlname, FALSE);
-			BUNins(type_digits, &rid, &t->digits, FALSE);
-			BUNins(type_scale, &rid, &t->scale, FALSE);
-			BUNins(type_radix, &rid, &radix, FALSE);
-			BUNins(type_eclass, &rid, &eclass, FALSE);
-			BUNins(type_schema_id, &rid, &zero, FALSE);
-			BUNins(type_systemname, &rid, t->base.name, FALSE);
-		}
-	}
+	update_table_bat(type_id, U_type_id, D_type);
+	update_table_bat(type_sqlname, U_type_sqlname, D_type);
+	update_table_bat(type_digits, U_type_digits, D_type);
+	update_table_bat(type_scale, U_type_scale, D_type);
+	update_table_bat(type_radix, U_type_radix, D_type);
+	update_table_bat(type_eclass, U_type_eclass, D_type);
+	update_table_bat(type_schema_id, U_type_schema_id, D_type);
+	update_table_bat(type_systemname, U_type_systemname, D_type);
 
 	bat_destroy(type_id);
 	bat_destroy(type_sqlname);
@@ -2014,10 +2001,6 @@ bs_init_type(void)
 static void
 bs_init_func(void)
 {
-	bit T = TRUE, F = FALSE;
-	int zero = 0;
-	node *n = NULL, *m = NULL;
-
 	int istmp = 0;
 	BAT *func_id = sys_bat(Ccc(istmp,"tmp","sys","functions_id"), TYPE_int);
 	BAT *func_name = sys_bat(Ccc(istmp,"tmp","sys","functions_name"), TYPE_str);
@@ -2051,94 +2034,21 @@ bs_init_func(void)
 	BAT *U_arg_number = sys_bat(Ucc(istmp,"tmp","sys","args_number"), TYPE_int);
 	BAT *D_arg = sys_bat(Dcc(istmp,"tmp","sys","args"), TYPE_oid);
 
-	if (BATcount(func_name) == 0) {
-		ssize_t rid = func_id->hseqbase + BATcount(func_id);
-		for (n = funcs->h; n; n = n->next, rid++) {
-			sql_func *f = n->data;
-			bit sql = f->sql;
-			int id, nr = 0;
-			char arg_nme[] = "arg_0";
-			oid aid = arg_id->hseqbase + BATcount(arg_id);
+	update_table_bat(func_id, U_func_id, D_func);
+	update_table_bat(func_name, U_func_name, D_func);
+	update_table_bat(func_func, U_func_func, D_func);
+	update_table_bat(func_mod, U_func_mod, D_func);
+	update_table_bat(func_sql, U_func_sql, D_func);
+	update_table_bat(func_aggr, U_func_aggr, D_func);
+	update_table_bat(func_schema_id, U_func_schema_id, D_func);
 
-			BUNins(func_id, &rid, &f->base.id, FALSE);
-			BUNins(func_name, &rid, f->base.name, FALSE);
-			BUNins(func_func, &rid, f->imp, FALSE);
-			BUNins(func_mod, &rid, f->mod, FALSE);
-			BUNins(func_sql, &rid, &sql, FALSE);
-			BUNins(func_aggr, &rid, &F, FALSE);
-			BUNins(func_schema_id, &rid, &zero, FALSE);
-		
-			if (f->res.type) {
-				char *name = "result";
-
-				id = next_oid();
-				BUNins(arg_id, &aid, &id, FALSE);
-				BUNins(arg_func_id, &aid, &f->base.id, FALSE);
-				BUNins(arg_name, &aid, name, FALSE);
-				BUNins(arg_type, &aid, f->res.type->sqlname, FALSE);
-				BUNins(arg_type_digits, &aid, &f->res.scale, FALSE);
-				BUNins(arg_type_scale, &aid, &f->res.scale, FALSE);
-				BUNins(arg_number, &aid, &nr, FALSE);
-				nr++;
-				aid++;
-			}
-			for (m = f->ops->h; m; m = m->next, nr++, aid++) {
-				sql_arg *a = m->data;
-
-				id = next_oid();
-				BUNins(arg_id, &aid, &id, FALSE);
-				BUNins(arg_func_id, &aid, &f->base.id, FALSE);
-				if (a->name) {
-					BUNins(arg_name, &aid, a->name, FALSE);
-				} else {
-					arg_nme[4] = '0' + nr;
-					BUNins(arg_name, &aid, arg_nme, FALSE);
-				}
-				BUNins(arg_type, &aid, a->type.type->sqlname, FALSE);
-				BUNins(arg_type_digits, &aid, &a->type.scale, FALSE);
-				BUNins(arg_type_scale, &aid, &a->type.scale, FALSE);
-				BUNins(arg_number, &aid, &nr, FALSE);
-			}
-		}
-		for (n = aggrs->h; n; n = n->next, rid++) {
-			char *name1 = "result";
-			char *name2 = "arg";
-			sql_aggr *aggr = n->data;
-			int nr = 0, id;
-			oid aid = arg_id->hseqbase + BATcount(arg_id);
-
-			BUNins(func_id, &rid, &aggr->base.id, FALSE);
-			BUNins(func_name, &rid, aggr->base.name, FALSE);
-			BUNins(func_func, &rid, aggr->imp, FALSE);
-			BUNins(func_mod, &rid, aggr->mod, FALSE);
-			BUNins(func_sql, &rid, &F, FALSE);
-			BUNins(func_aggr, &rid, &T, FALSE);
-			BUNins(func_schema_id, &rid, &zero, FALSE);
-
-			id = next_oid();
-			BUNins(arg_id, &aid, &id, FALSE);
-			BUNins(arg_func_id, &aid, &aggr->base.id, FALSE);
-			BUNins(arg_name, &aid, name1, FALSE);
-			BUNins(arg_type, &aid, aggr->res.type->sqlname, FALSE);
-			BUNins(arg_type_digits, &aid, &aggr->res.scale, FALSE);
-			BUNins(arg_type_scale, &aid, &aggr->res.scale, FALSE);
-			BUNins(arg_number, &aid, &nr, FALSE);
-			nr++;
-			aid++;
-
-			if (aggr->tpe.type) {
-				id = next_oid();
-				BUNins(arg_id, &aid, &id, FALSE);
-				BUNins(arg_func_id, &aid, &aggr->base.id, FALSE);
-				BUNins(arg_name, &aid, name2, FALSE);
-				BUNins(arg_type, &aid, aggr->tpe.type->sqlname, FALSE);
-				BUNins(arg_type_digits, &aid, &aggr->tpe.scale, FALSE);
-				BUNins(arg_type_scale, &aid, &aggr->tpe.scale, FALSE);
-				BUNins(arg_number, &aid, &nr, FALSE);
-				aid++;
-			}
-		}
-	}
+	update_table_bat(arg_id, U_arg_id, D_arg);
+	update_table_bat(arg_func_id, U_arg_func_id, D_arg);
+	update_table_bat(arg_name, U_arg_name, D_arg);
+	update_table_bat(arg_type, U_arg_type, D_arg);
+	update_table_bat(arg_type_digits, U_arg_type_digits, D_arg);
+	update_table_bat(arg_type_scale, U_arg_type_scale, D_arg);
+	update_table_bat(arg_number, U_arg_number, D_arg);
 
 	bat_destroy(func_id);
 	bat_destroy(func_name);
@@ -2171,6 +2081,92 @@ bs_init_func(void)
 	bat_destroy(U_arg_type_scale);
 	bat_destroy(U_arg_number);
 	bat_destroy(D_arg);
+}
+
+static void
+insert_types(sql_trans *tr, sql_table *systype)
+{
+	int zero = 0;
+	node *n;
+
+	for (n = types->h; n; n = n->next) {
+		sql_type *t = n->data;
+		int radix = t->radix;
+		int eclass = t->eclass;
+
+		if (t->s)
+			table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &t->s->base.id);
+		else
+			table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &zero);
+	}
+}
+
+static void
+insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
+{
+	int zero = 0;
+	bit F = FALSE;
+	node *n = NULL, *m = NULL;
+
+	for (n = funcs->h; n; n = n->next) {
+		sql_func *f = n->data;
+		bit sql = f->sql;
+		int id, number = 0;
+		char arg_nme[] = "arg_0";
+
+		if (f->s)
+			table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &F, &f->s->base.id);
+		else
+			table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &F, &zero);
+		
+		if (f->res.type) {
+			char *name = "result";
+
+			id = next_oid();
+			table_insert(tr, sysarg, &id, &f->base.id, name, f->res.type->sqlname, &f->res.digits, &f->res.scale, &number);
+			number++;
+		}
+		for (m = f->ops->h; m; m = m->next, number++) {
+			sql_arg *a = m->data;
+
+			id = next_oid();
+			if (a->name) {
+				table_insert(tr, sysarg, &id, &f->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &number);
+			} else {
+				arg_nme[4] = '0' + number;
+				table_insert(tr, sysarg, &id, &f->base.id, arg_nme, a->type.type->sqlname, &a->type.digits, &a->type.scale, &number);
+			}
+		}
+	}
+}
+
+static void
+insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
+{
+	int zero = 0;
+	bit T = TRUE, F = FALSE;
+	node *n = NULL;
+
+	for (n = aggrs->h; n; n = n->next) {
+		char *name1 = "result";
+		char *name2 = "arg";
+		sql_aggr *aggr = n->data;
+		int id, number = 0;
+
+		if (aggr->s)
+			table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &aggr->s->base.id);
+		else
+			table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &zero);
+		
+		id = next_oid();
+		table_insert(tr, sysarg, &id, &aggr->base.id, name1, aggr->res.type->sqlname, &aggr->res.digits, &aggr->res.scale, &number);
+
+		if (aggr->tpe.type) {
+			number++;
+			id = next_oid();
+			table_insert(tr, sysarg, &id, &aggr->base.id, name2, aggr->tpe.type->sqlname, &aggr->tpe.digits, &aggr->tpe.scale, &number);
+		}
+	}
 }
 
 
@@ -2420,12 +2416,11 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		istmp++;
 	}
 	sequences_init();
-
 	gtrans = load_trans(stk);
 
 	if (!find_sql_schema(gtrans, "sys")) {
 		sql_schema *s, *p = NULL;
-		sql_table *t;
+		sql_table *t, *types, *funcs, *args;
 
 		sql_trans *tr = sql_trans_create(stk, NULL, NULL);
 
@@ -2438,7 +2433,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "authorization", "int", 32);
 		bootstrap_create_column(tr, t, "owner", "int", 32);
 
-		t = bootstrap_create_table(tr, s, "types");
+		types = t = bootstrap_create_table(tr, s, "types");
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "systemname", "varchar", 256);
 		bootstrap_create_column(tr, t, "sqlname", "varchar", 1024);
@@ -2448,7 +2443,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "eclass", "int", 32);
 		bootstrap_create_column(tr, t, "schema_id", "int", 32);
 
-		t = bootstrap_create_table(tr, s, "functions");
+		funcs = t = bootstrap_create_table(tr, s, "functions");
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "name", "varchar", 256);
 		bootstrap_create_column(tr, t, "func", "varchar", 8196);
@@ -2459,7 +2454,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "aggr", "boolean", 1);
 		bootstrap_create_column(tr, t, "schema_id", "int", 32);
 
-		t = bootstrap_create_table(tr, s, "args");
+		args = t = bootstrap_create_table(tr, s, "args");
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "func_id", "int", 32);
 		bootstrap_create_column(tr, t, "name", "varchar", 256);
@@ -2531,8 +2526,6 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 			bootstrap_create_column(tr, t, "column", "varchar", 1024);
 			bootstrap_create_column(tr, t, "trunc", "int", 32);
 			bootstrap_create_column(tr, t, "nr", "int", 32);
-			
-
 
 			if (!p) {
 				/*To create the dependency table*/
@@ -2548,6 +2541,10 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 				s = NULL;
 			}
 		}
+
+		insert_types(tr, types);
+		insert_functions(tr, funcs, args);
+		insert_aggrs(tr, funcs, args);
 
 		if (sql_trans_commit(tr) != SQL_OK)
 			fprintf(stderr, "cannot commit initial transaction\n");

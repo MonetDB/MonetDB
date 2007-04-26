@@ -36,7 +36,7 @@ easy to find something akin you intend to enter.
 #include <sql_storage.h>
 #include <stream.h>
 
-#define EC_MAX 		13
+#define EC_MAX 		14
 #define EC_ANY	 	0
 #define EC_TABLE 	1
 #define EC_BIT 		2
@@ -54,6 +54,7 @@ easy to find something akin you intend to enter.
 #define EC_DATE		11
 #define EC_TIMESTAMP	12
 #define EC_TEMP(e)	(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
+#define EC_EXTERNAL	13
 
 #define EC_FIXED(e)	(e==EC_BIT||e==EC_CHAR||\
 			 e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||EC_TEMP(e))
@@ -193,19 +194,20 @@ int bits2digits(int bits)
 /* 3 casts are allowed (requires dynamic checks) (sofar not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
 
-/* EC_ANY */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0 },
-/* EC_CHAR */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2 },
-/* EC_STRING */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2 },
-/* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0 },
-/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1 },
-/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0 },
-/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0 },
-/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0 },
-/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 3 },
-/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1 }
+/* EC_ANY */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0 },
+/* EC_CHAR */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 0 },
+/* EC_STRING */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 0 },
+/* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0 },
+/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0 },
+/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
+/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
+/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
+/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 3, 0 },
+/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0 },
+/* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
 int sql_type_convert (int from, int to) 
@@ -500,7 +502,9 @@ sql_bind_aggr(sql_schema *s, char *sqlaname, sql_subtype *type)
 	while (n) {
 		sql_aggr *a = n->data;
 
-		if (strcmp(a->base.name, name) == 0 && (!a->tpe.type || (type && is_subtype(type, &a->tpe )))) {
+		if (strcmp(a->base.name, name) == 0 && (!a->tpe.type ||
+		    a->tpe.type->eclass == EC_ANY || 
+		    (type && is_subtype(type, &a->tpe )))) {
 			int scale = 0;
 			int digits = 0;
 			sql_subaggr *ares = NEW(sql_subaggr);
@@ -515,7 +519,11 @@ sql_bind_aggr(sql_schema *s, char *sqlaname, sql_subtype *type)
 				digits = type->digits;
 				scale = type->scale;
 			}
-			sql_init_subtype(&ares->res, a->res.type, digits, scale);
+			/* same type as the input */
+			if (a->res.type->eclass == EC_ANY) 
+				sql_init_subtype(&ares->res, type->type, digits, scale);
+			else
+				sql_init_subtype(&ares->res, a->res.type, digits, scale);
 			return ares;
 		}
 		n = n->next;
@@ -708,6 +716,8 @@ sql_bind_func3(sql_schema *s, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2
 int
 arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 {
+	if (a->type.type->eclass == EC_ANY)
+		return 0;
 	return (is_subtype(t, &a->type )?0:-1);
 }
 
@@ -738,7 +748,20 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 					if (a && a->scale > scale)
 						scale = a->scale;
 				}
-				sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+				/* same type as the first input */
+				if (f->res.type->eclass == EC_ANY) {
+					node *m;
+					sql_subtype *a = NULL;
+					for (n = ops->h, m = f->ops->h; n; n = n->next, m = m->next) {
+						sql_arg *s = m->data;
+						if (s->type.type->eclass == EC_ANY) {
+							a = n->data;
+						}
+					}
+					sql_init_subtype(&fres->res, a->type, f->res.digits, scale);
+				} else {
+					sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+				}
 				return fres;
 			}
 		}
@@ -1151,14 +1174,15 @@ This routine is called once upon restart of the system.
 void
 sqltypeinit(void)
 {
-	int i;
-
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
 	sql_type *STR, *SHT, *INT, *LNG, *OID, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
+	sql_type *ANY;
+
+	ANY = sql_create_type("ANY", 0, 0, 0, EC_ANY, "any");
 
 	t = ts;
 	*t++ = sql_create_type("TABLE", 0, 0, 0, EC_TABLE, "bat");
@@ -1213,31 +1237,28 @@ sqltypeinit(void)
 	*t = NULL;
 
 	sql_create_aggr("not_unique", "sql", "not_unique", OID, BIT);
-	for (i = 0; ts[i]; i++) {
-		sql_create_func("hash", "calc", "hash", ts[i], NULL, INT, SCALE_FIX);
-		sql_create_func3("rotate_xor_hash", "calc", "rotate_xor_hash", INT, INT, ts[i], INT, SCALE_NONE);
-		sql_create_func("=", "calc", "=", ts[i], ts[i], BIT, SCALE_FIX);
-		sql_create_func("<>", "calc", "!=", ts[i], ts[i], BIT, SCALE_FIX);
-		sql_create_func("isnull", "calc", "isnil", ts[i], NULL, BIT, SCALE_FIX);
-		sql_create_func(">", "calc", ">", ts[i], ts[i], BIT, SCALE_FIX);
-		sql_create_func(">=", "calc", ">=", ts[i], ts[i], BIT, SCALE_FIX);
-		sql_create_func("<", "calc", "<", ts[i], ts[i], BIT, SCALE_FIX);
-		sql_create_func("<=", "calc", "<=", ts[i], ts[i], BIT, SCALE_FIX);
-		sql_create_aggr("zero_or_one", "sql", "zero_or_one", ts[i], ts[i]);
-		sql_create_aggr("exist", "aggr", "exist", ts[i], BIT);
-		sql_create_aggr("not_exist", "aggr", "not_exist", ts[i], BIT);
-		/* needed for relational version */
-		sql_create_func("in", "calc", "in", ts[i], ts[i], BIT, SCALE_NONE);
-		sql_create_func("identity", "batcalc", "identity", ts[i], NULL, OID, SCALE_NONE);
-	}
 
-	for (i = 0; ts[i]; i++) {
-		sql_create_aggr("min", "aggr", "min", ts[i], ts[i]);
-		sql_create_aggr("max", "aggr", "max", ts[i], ts[i]);
-		sql_create_func("sql_min", "calc", "min", ts[i], ts[i], ts[i], SCALE_FIX);
-		sql_create_func("sql_max", "calc", "max", ts[i], ts[i], ts[i], SCALE_FIX);
-		sql_create_func3("ifthenelse", "calc", "ifthenelse", BIT, ts[i], ts[i], ts[i], SCALE_NONE);
-	}
+	/* functions needed for all types */
+	sql_create_func("hash", "calc", "hash", ANY, NULL, INT, SCALE_FIX);
+	sql_create_func3("rotate_xor_hash", "calc", "rotate_xor_hash", INT, INT, ANY, INT, SCALE_NONE);
+	sql_create_func("=", "calc", "=", ANY, ANY, BIT, SCALE_FIX);
+	sql_create_func("<>", "calc", "!=", ANY, ANY, BIT, SCALE_FIX);
+	sql_create_func("isnull", "calc", "isnil", ANY, NULL, BIT, SCALE_FIX);
+	sql_create_func(">", "calc", ">", ANY, ANY, BIT, SCALE_FIX);
+	sql_create_func(">=", "calc", ">=", ANY, ANY, BIT, SCALE_FIX);
+	sql_create_func("<", "calc", "<", ANY, ANY, BIT, SCALE_FIX);
+	sql_create_func("<=", "calc", "<=", ANY, ANY, BIT, SCALE_FIX);
+	sql_create_aggr("zero_or_one", "sql", "zero_or_one", ANY, ANY);
+	sql_create_aggr("exist", "aggr", "exist", ANY, BIT);
+	sql_create_aggr("not_exist", "aggr", "not_exist", ANY, BIT);
+	/* needed for relational version */
+	sql_create_func("in", "calc", "in", ANY, ANY, BIT, SCALE_NONE);
+	sql_create_func("identity", "batcalc", "identity", ANY, NULL, OID, SCALE_NONE);
+	sql_create_aggr("min", "aggr", "min", ANY, ANY);
+	sql_create_aggr("max", "aggr", "max", ANY, ANY);
+	sql_create_func("sql_min", "calc", "min", ANY, ANY, ANY, SCALE_FIX);
+	sql_create_func("sql_max", "calc", "max", ANY, ANY, ANY, SCALE_FIX);
+	sql_create_func3("ifthenelse", "calc", "ifthenelse", BIT, ANY, ANY, ANY, SCALE_NONE);
 
 	for (t = numerical+1; t < decimals; t++) {
 		sql_create_aggr("sum", "aggr", "sum", *t, *t);

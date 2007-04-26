@@ -56,6 +56,7 @@ extern stmt *selects(mvc *sql, scope *scp, symbol *sym);
 
 extern stmt *sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek);
 extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
+extern stmt *scope_subtable(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
 extern stmt *flat_subquery(mvc *sql, symbol *sq);
 extern stmt *sql_reorder(stmt *order, stmt *s);
 
@@ -251,6 +252,34 @@ sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 		return sql_simple_select(sql, scp, sn);
 	}
 	return sql_select(sql, scp, sn, ek);
+}
+
+stmt *
+scope_subtable(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
+{
+	stmt *s;
+
+	scp = scope_open(scp);
+	s = sql_subquery(sql, scp, sq, ek);
+	/* create a table from a single value subquery result */
+	if (s->key && s->nrcols == 0) {
+		list *l = create_stmt_list();
+		node *n;
+
+		for (n = s->op1.lval->h; n; n = n->next) {
+			stmt *ns = stmt_dup(n->data);
+			char *cname = column_name(ns);
+			stmt *temp = stmt_temp(tail_type(ns));
+
+			ns = stmt_append(temp, ns);
+			ns = stmt_alias(ns, table_name(ns), cname);
+			list_append(l, ns);
+		}
+		stmt_destroy(s);
+		s = stmt_list(l);
+	}
+	scp = scope_close(scp);
+	return s;
 }
 
 stmt *
@@ -909,19 +938,33 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 		return stmt_binop(ls, rs, f);
 	} else {
 		int digits = t1->digits + t2->digits;
+		stmt *ols = stmt_dup(ls);
+		stmt *ors = stmt_dup(rs);
 
-		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL ||
-		   ((f = sql_find_func(s, fname, 2)) != NULL && f->func->sql)) {
-			/* try finding function based on first argument */
+		/* try finding function based on first argument */
+		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL) {
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
 			ls = check_types(sql, &a->type, ls, type_equal);
 			a = m->next->data;
 			rs = check_types(sql, &a->type, rs, type_equal);
-			if (ls && rs) 
+			if (ls && rs) {
+				stmt_destroy(ols);
+				stmt_destroy(ors);
 				return stmt_binop(ls, rs, f);
-		} else if (convert_types(sql, &ls, &rs, 1, type_equal) >= 0) {
+			}
+		}
+		if (ls)
+			stmt_destroy(ls);
+		if (rs)
+			stmt_destroy(rs);
+		ls = ols;
+		rs = ors;
+		ols = stmt_dup(ls);
+		ors = stmt_dup(rs);
+		/* try finding function based on both arguments */
+		if (convert_types(sql, &ls, &rs, 1, type_equal) >= 0) {
 			/* try operators */
 			t1 = tail_type(ls);
 			t2 = tail_type(rs);
@@ -937,8 +980,27 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 				} else if (f->func->res.scale == DIGITS_ADD) {
 					f->res.digits = digits;
 				}
+				stmt_destroy(ols);
+				stmt_destroy(ors);
 				return stmt_binop(ls, rs, f);
 			}
+		}
+		if (ls)
+			stmt_destroy(ls);
+		if (rs)
+			stmt_destroy(rs);
+		ls = ols;
+		rs = ors;
+		/* everything failed, fall back to bind on function name only */
+		if ((f = sql_find_func(s, fname, 2)) != NULL) {
+			node *m = f->func->ops->h;
+			sql_arg *a = m->data;
+
+			ls = check_types(sql, &a->type, ls, type_equal);
+			a = m->next->data;
+			rs = check_types(sql, &a->type, rs, type_equal);
+			if (ls && rs) 
+				return stmt_binop(ls, rs, f);
 		}
 	}
 	if (rs && ls)

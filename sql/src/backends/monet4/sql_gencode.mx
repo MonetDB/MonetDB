@@ -749,7 +749,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 			/* external types have sqlname convert functions,
 			   these can generate errors (fromstr cannot) */
-			if (s->op4.typeval.type->eclass == EC_ANY)
+			if (s->op4.typeval.type->eclass == EC_EXTERNAL)
 				convert = s->op4.typeval.type->sqlname;
 		
 			if (s->op4.typeval.type->localtype ==

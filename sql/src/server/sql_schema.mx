@@ -754,7 +754,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		sql->depth++;
 		if (sql->depth > SQL_MAXDEPTH)
 			return sql_error(sql, 02, "CREATE VIEW: too many nested VIEWS");
-		sq = scope_subquery(sql, NULL, query, ek );
+		sq = scope_subtable(sql, NULL, query, ek );
 		sql->depth--;
 		if (!sq)
 			return NULL;
@@ -1533,7 +1533,6 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		commit_action = CA_DELETE;
 	
 	if (temp != SQL_PERSIST) {
-		/* if (s != NULL) warn("discarding schema %s", s->base.name; */
 		s = mvc_bind_schema(sql, "tmp");
 	} else if (s == NULL) {
 		s = ss;
@@ -1574,7 +1573,7 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		int with_data = as_sq->h->next->next->data.ival;
 		sql_table *t = NULL; 
 
-		sq = scope_subquery(sql, NULL, subquery, ek);
+		sq = scope_subtable(sql, NULL, subquery, ek);
 		/* make sure we get a list of ordered columns */
 		if (sq && sq->type == st_ordered) {
 			stmt *order = stmt_dup(sq->op1.stval);
@@ -1776,6 +1775,7 @@ schemas(mvc *sql, symbol *s)
 {
 	stmt *ret = NULL;
 
+	/* TODO everything should be done via the backend language */ 
 	if (!QUERY_MODE(sql->mode))
 		return sql_error(sql, 05, "Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement");
 

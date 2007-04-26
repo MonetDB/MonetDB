@@ -1120,7 +1120,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			/* external types have sqlname convert functions,
 			   these can generate errors (fromstr cannot) */
-			if (s->op4.typeval.type->eclass == EC_ANY)
+			if (s->op4.typeval.type->eclass == EC_EXTERNAL)
 				convert = s->op4.typeval.type->sqlname;
 		
 			if (s->op4.typeval.type->eclass == EC_INTERVAL) {
@@ -1200,7 +1200,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols) {
-				int rtype = s->op4.funcval->func->res.type->localtype;
+				int rtype = s->op4.funcval->res.type->localtype;
 
 				q = newStmt(mb, "mal","multiplex");
 				setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
@@ -1233,7 +1233,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
 				if (!special) {
-					q = multiplex2(mb,mod,convertOperator(fimp),l,r, s->op4.funcval->func->res.type->localtype);
+					q = multiplex2(mb,mod,convertOperator(fimp),l,r, s->op4.funcval->res.type->localtype);
 				} else {
 					mod= convertMultiplexMod(mod,fimp);
 					fimp= convertMultiplexFcn(fimp);
@@ -1302,7 +1302,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			char *mod = _strdup(s->op4.aggrval->aggr->mod);
 			char *aggrfunc = s->op4.aggrval->aggr->imp;
-			int restype = s->op4.aggrval->aggr->res.type->localtype;
+			int restype = s->op4.aggrval->res.type->localtype;
 			sql_subtype *tpe = tail_type(s->op1.stval);
 			int output_type_needed = 0;
 			
