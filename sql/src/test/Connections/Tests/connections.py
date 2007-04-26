@@ -41,9 +41,9 @@ def server_stop(srv):
 def client_load_file(clt, port, file):
     f = open(file, 'r')
     for line in f:
-	line = line.replace('port_num', str(port+1))
-	line = line.replace('port_num5', str(port+2))
-	clt.write(line)
+        line = line.replace('port_num', str(port+1))
+        line = line.replace('port_num5', str(port+2))
+        clt.write(line)
     f.close()
 
 

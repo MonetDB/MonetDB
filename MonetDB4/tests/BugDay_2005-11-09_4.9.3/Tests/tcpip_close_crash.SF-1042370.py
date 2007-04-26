@@ -53,10 +53,10 @@ def main():
 
     srv1.stdin.write(prelude_1)
     srv2.stdin.write(prelude_2)
-   
+
     srv1.stdin.write(script_1)
     srv2.stdin.write(script_2)
- 
+
     srv1.stdin.write("quit();\n")
     srv2.stdin.write("quit();\n")
 

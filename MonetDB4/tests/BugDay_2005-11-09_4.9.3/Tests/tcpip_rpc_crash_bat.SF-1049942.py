@@ -26,10 +26,10 @@ module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
 
 PROC g(): bat[void, dbl] {
-	var a := uniform(100000).[dbl]().copy();
-	printf("done...\n");
-	RETURN a;
-} 
+        var a := uniform(100000).[dbl]().copy();
+        printf("done...\n");
+        RETURN a;
+}
 
 fork(listen(int(mapiport)));
 '''
@@ -58,10 +58,10 @@ def main():
     srv1.stdin.write(prelude_1)
     time.sleep(1)                      # give server 1 time to start
     srv2.stdin.write(prelude_2)
-   
+
     srv2.stdin.write(script_2)
     srv1.stdin.write(script_1)
- 
+
     srv1.stdin.write("quit();\n")
     srv2.stdin.write("quit();\n")
 

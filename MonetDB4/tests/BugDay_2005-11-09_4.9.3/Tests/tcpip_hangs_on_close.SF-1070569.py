@@ -64,10 +64,10 @@ def main():
     srv2.stdin.write(prelude_2)
     i = 0
     while i < 4:
-    	srv1.stdin.write(script_1 % (i))
-    	srv2.stdin.write(script_2 % (i))
-	i += 1
- 
+        srv1.stdin.write(script_1 % (i))
+        srv2.stdin.write(script_2 % (i))
+        i += 1
+
     srv1.stdin.write("quit();\n")
     srv2.stdin.write("quit();\n")
 

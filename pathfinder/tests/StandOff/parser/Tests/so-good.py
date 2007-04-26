@@ -10,4 +10,3 @@ if os.name == "nt":
     os.system("%s & echo %ERRORLEVEL%" % CALL)
 else:
     os.system("%s ; echo $?" % CALL)
-        

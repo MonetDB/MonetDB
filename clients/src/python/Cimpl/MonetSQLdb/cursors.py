@@ -176,7 +176,7 @@ class CursorStoreResultMixIn:
             else: row = {}
             for i in range(self._result.get_field_count()):
                 val = converters.monet2python(self._result.fetch_field(i), self.description[i][1])
-                    
+
                 if self._fetch_type == 0: row = row + (val,)
                 else: row[self.description[i][0]] = val
             self._rows.append(row)

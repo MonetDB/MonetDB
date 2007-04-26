@@ -14,4 +14,3 @@ if os.name == "nt":
 else:
     os.system("Mlog '%s'" % CALL.replace('>','\\>'))
 os.system(CALL)
-        

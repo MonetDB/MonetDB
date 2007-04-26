@@ -848,7 +848,7 @@ def SkipTest(env, TST, EXT, REASON) :
     TSTDIR = env['TSTDIR']
     TEXT = "Skipping test %s%s %s" % (TST, EXT, REASON)
     if not env['QUIET']:
-    	Warn(TEXT)
+        Warn(TEXT)
     else:
         STDOUT.write("-");
     f = open("."+TST+".SKIPPED","w")
@@ -1523,9 +1523,9 @@ def RunTest(env, TST, BusyPorts, COND) :
                 SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
 
         if SERVER == "MAPI":
-            CheckSocket2(env, "MAPI")	#, SrvrErr)
+            CheckSocket2(env, "MAPI")   #, SrvrErr)
         if SERVER == "XQUERY":
-            CheckSocket2(env, "XRPC")	#, SrvrErr)
+            CheckSocket2(env, "XRPC")   #, SrvrErr)
 
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = open(TST+EXT+".src","r")
@@ -1901,7 +1901,7 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
         STDERR.flush()
 ### CheckSocket(env,SERVER,SrvrErr,LogLine) #
 
-def CheckSocket2(env,SERVER) :	#,SrvrErr) :
+def CheckSocket2(env,SERVER) :  #,SrvrErr) :
     host = 'localhost'
     port = int(env[SERVER+'PORT'])
     busy, Serrno, Serrstr = CheckPort(host,port)
@@ -1930,7 +1930,7 @@ def CheckSocket2(env,SERVER) :	#,SrvrErr) :
 #        STDERR.flush()
 #        SrvrErr.write(Smsg)
 #        SrvrErr.flush()
-### CheckSocket2(env,SERVER)	#,SrvrErr) #
+### CheckSocket2(env,SERVER)    #,SrvrErr) #
 
 def CheckSocket3(env,SERVER,ErrFileName) :
     host = 'localhost'
@@ -2014,11 +2014,11 @@ def mapi_ping(port,lang) :
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((host, port))
-	    flag = sock.recv(2);
-            unpacked = struct.unpack( '<H', flag )[0];	# little endian short
-            len = ( unpacked >> 1 );	# get length
-	    data = sock.recv(len);
-	    # we don't send 
+            flag = sock.recv(2);
+            unpacked = struct.unpack( '<H', flag )[0];  # little endian short
+            len = ( unpacked >> 1 );    # get length
+            data = sock.recv(len);
+            # we don't send
             return True
         except socket.error, (Serrno,Serrstr):
             pass
@@ -2452,7 +2452,7 @@ else:
     else:
         RELEASE = os.uname()[2].split("(", 1)[0]
 
-# this is for the wine/mingw setup 
+# this is for the wine/mingw setup
 if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     OS = 'WindowsNT'
     HOST = "WINE"
@@ -2568,11 +2568,11 @@ def main(argv) :
         dft['setXQUERY_LOGDIR']     = "'--set \"xquery_logdir='+env['XQUERY_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['XRPCPORT']       = "str(randomPort(40000,49999))"
-        dft['MAPICLIENT']     = "'MapiClient -lmil'" 
-        dft['SQLCLIENT']      = "'MapiClient -lsql'" 
-        dft['SQLDUMP']        = "'msqldump'" 
-        dft['XQUERYCLIENT']   = "'MapiClient -lxquery -oxml'" 
-        dft['X100CLIENT']     = "'x100run_mapi'" 
+        dft['MAPICLIENT']     = "'MapiClient -lmil'"
+        dft['SQLCLIENT']      = "'MapiClient -lsql'"
+        dft['SQLDUMP']        = "'msqldump'"
+        dft['XQUERYCLIENT']   = "'MapiClient -lxquery -oxml'"
+        dft['X100CLIENT']     = "'x100run_mapi'"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
 
@@ -2748,7 +2748,7 @@ def main(argv) :
     STDOUT.flush()
     #env['par'] = par
 
-    
+
     if par['M5']:
         env['VERSION'] = MonetDBVersion("monetdb5-config")
     else:
@@ -3126,7 +3126,7 @@ def main(argv) :
                 if am_init_sql.match(l) and not is_sql:
                     is_sql = True
         if is_sql:
-            MissingMods = CheckMods(env, '', 'SQL', '') 
+            MissingMods = CheckMods(env, '', 'SQL', '')
             if MissingMods:
                 ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
 
@@ -3140,7 +3140,7 @@ def main(argv) :
         if is_pf:
             if not CheckExec('pf'):
                 ErrXit('Stopping Pathfinder testing as XQuery compiler "pf" is not available!')
-            MissingMods = CheckMods(env, '', 'XQUERY', '') 
+            MissingMods = CheckMods(env, '', 'XQUERY', '')
             if MissingMods:
                 ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
 
