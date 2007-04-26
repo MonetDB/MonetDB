@@ -17,10 +17,9 @@ LIBS = {
 
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
-	LDFLAGS = -lm
 }
 
 lib__batstr = {
