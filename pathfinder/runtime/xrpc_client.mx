@@ -183,13 +183,13 @@ PROC get_rpc_res (
             var kind  := pre_kind.fetch(pre);
             var prop  := pre_prop.fetch(pre);
 
-            if ( and(level=seq_node_level, kind='\000') ) {
+            if ( and(level = seq_node_level, kind='\000') ){
                 var loc := qn_loc.fetch(prop);
                 var uri := qn_uri.fetch(prop);
                 if (and((loc = "sequence"), (uri = xrpc_ns))) {
                     itercnt :+= 1; # A new iteration starts
                 }
-            } else if ( and(level = tpe_node_level, kind = '\000') ) {
+            } else if ( and(level = tpe_node_level, kind='\000') ){
                 var tpe_node_ns := qn_uri.fetch(prop);
                 if (tpe_node_ns != xrpc_ns) {
                     ERROR("[get_rpc_res]: (pre=%d): " +
@@ -236,8 +236,8 @@ PROC get_rpc_res (
                     res_kind.append(k);
                 }
             } else if (level = val_node_level) {
-                # 'tpe' was set during the previous iteration
-                if ( and(tpe="element", kind='\000') ){
+                # 'tpe' was set during the previous iteration of 'batloop'
+                if ( and(tpe = "element", kind='\000') ){
                     res_iter.append(oid(itercnt));
                     res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);

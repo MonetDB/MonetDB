@@ -169,7 +169,6 @@ start_xq_server(void *arg)
 	snprintf(buf, sizeof(buf), "client(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
 	monet_exec("module(pathfinder);");
 	monet_exec("xquery_start_query_cache(16000000LL);");
-/*      monet_exec("mapi_register(xquery_frontend());"); */
 	monet_exec(buf);
 	return NULL;
 }
