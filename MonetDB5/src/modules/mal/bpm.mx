@@ -629,10 +629,9 @@ of BATs.
         if ((b = BATdescriptor(idx)) == NULL) 
                 throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
 	BATloop(b, p, q) {
-		Partition pn;
 		i = *(int *)BUNhead(b,p);
 		k = *(@2 *) BUNtail(b,p);
-		(pn=newPartition(i))->@1 = k;	
+		newPartition(i)->@1 = k;	
 	}
 	BBPunfix(b->batCacheid);
 
