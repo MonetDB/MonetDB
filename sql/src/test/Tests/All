@@ -67,6 +67,7 @@ create_in_schema
 
 null-byte-hang
 orderby_limit
+orderby_non_selection_column
 
 psm
 
