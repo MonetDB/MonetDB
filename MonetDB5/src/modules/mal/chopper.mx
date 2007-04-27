@@ -253,7 +253,7 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	if( b->htype == TYPE_void){
-		o= yy - BUNindex(b,BUNfirst(b))+  b->hseqbase;
+		o= (oid) (yy - BUNindex(b,BUNfirst(b))+  b->hseqbase);
 		VALinit(head, TYPE_oid, &o);
 	} else {
 		assert(b->htype == getArgType(mb,pci,1));
