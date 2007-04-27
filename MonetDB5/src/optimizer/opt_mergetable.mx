@@ -172,7 +172,7 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	old = mb->stmt;
 	oldtop= mb->stop;
-	size = (mb->stop *1.2 < mb->ssize)? mb->ssize: mb->stop *1.2;
+	size = (mb->stop *1.2 < mb->ssize)? mb->ssize: (int) (mb->stop *1.2);
 	mb->stmt = (InstrPtr *) GDKzalloc(size  * sizeof(InstrPtr));
 	mb->ssize = size ;
 	mb->stop = 0;
