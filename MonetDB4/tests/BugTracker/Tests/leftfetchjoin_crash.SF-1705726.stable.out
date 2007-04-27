@@ -11,7 +11,7 @@ stdout of test 'leftfetchjoin_crash.SF-1705726` in directory 'tests/BugTracker` 
 # Visit http://monetdb.cwi.nl/ for further information.
 module(malalgebra);
 debugmask(0);
-var a := new(void,oid).seqbase(0@0).append(500000@0).append(0@0).delete(1@0);
+var a := new(void,oid).seqbase(0@0).append(500000@0).append(500000@0);
 var b := new(void,oid).seqbase(0@0).append(1@0);
 a.leftfetchjoin(b).print();
 #-----------------#
