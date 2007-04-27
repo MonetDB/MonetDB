@@ -7855,6 +7855,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
              PFqname_eq(fnQname, PFqname (PFns_upd,"insertBefore")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"insertAfter")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"replaceValue")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_upd,"replaceNode")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"replaceElementContent")) == 0 ||
              PFqname_eq(fnQname, PFqname (PFns_upd,"rename")) == 0)
     {
@@ -7869,6 +7870,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             update_cmd = "UPDATE_INSERT_BEFORE";
         else if (strcmp(func, "insertAfter") == 0)
             update_cmd = "UPDATE_INSERT_AFTER";
+        else if (strcmp(func, "replaceNode") == 0)
+            update_cmd = "UPDATE_REPLACENODE";
         else if (strcmp(func, "replaceValue") == 0) {
             update_cmd = "UPDATE_REPLACE";
             arg = "str";

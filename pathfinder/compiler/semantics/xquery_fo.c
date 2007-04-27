@@ -1923,6 +1923,12 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t []) { PFty_xs_anyElement (),
                                     PFty_opt (PFty_text ()) },
             .ret_ty = PFty_stmt () } } }
+    , /* upd:replaceNode (node, node) as stmt */
+      { .ns = PFns_upd, .loc = "replaceNode",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t []) { PFty_node (),
+                                    PFty_star (PFty_node ()) },
+            .ret_ty = PFty_stmt () } } }
 
 
 #ifdef HAVE_PFTIJAH
