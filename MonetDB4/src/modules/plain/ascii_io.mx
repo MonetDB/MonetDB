@@ -636,7 +636,7 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
 		if (!s) {
-			GDKerror("quote '%c' expected but not found in \"%s\"\n", quote, s);
+			GDKerror("quote '%c' expected but not found in \"%s\" from line %d\n", quote, s, BATcount(fmt->c));
 			return -1;
 		}
 		s++;
@@ -653,7 +653,7 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	*end = bak;
 
 	if (!adt) {
-		GDKerror("value %s not inserted\n", s);
+		GDKerror("value %s from line %d not inserted\n", s, BATcount(fmt->c));
 		return -1;
 	}
 
@@ -712,8 +712,7 @@ insert_line(ascii * as, char *line)
 				line++;
 				line = skip_string(line, quote);
 				if (!line) {
-					GDKerror("End of string (%c) missing in %s\n", 
-						quote, s);
+					GDKerror("End of string (%c) missing in %s at line %d\n", quote, s, BATcount(fmt->c));
 					return -1;
 				}
 				first = 0;
@@ -899,7 +898,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 			if (as->nr != ~(size_t)0 && i < as->nr) {
 				res = 1; 
 				if (b->len > b->pos) {
-					GDKerror("ASCIIload_file: read error\n");
+					GDKerror("ASCIIload_file: read error (after loading %d records)\n", BATcount(as->format[0].c));
 					res = -1;
 				}
 			}
@@ -935,7 +934,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 						res = 1; 
 						if (b->len > b->pos &&
 						    insert_line(as, s) < 0) {
-							GDKerror("ASCIIload_file: read error\n");
+							GDKerror("ASCIIload_file: read error (after loading %d records)\n", BATcount(as->format[0].c));
 							res = -1;
 						}
 						break;

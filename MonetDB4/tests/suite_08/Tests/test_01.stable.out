@@ -251,6 +251,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "gdk_vm_minsize",	  "137438953472"																			  ]
 [ "gdk_alloc_map",	  "no"										  ]
 [ "gdk_mem_pagebits",	  "14"																			  ]
+[ "gdk_vmtrim",		  "yes"																																														  ]
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
