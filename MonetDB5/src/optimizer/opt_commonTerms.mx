@@ -101,7 +101,7 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int filter[1024];
 	int *mask,*alias,limit;
 	InstrPtr *old;
-	lng c;
+	int c;
 
 	(void) stk;
 	(void) pci;
