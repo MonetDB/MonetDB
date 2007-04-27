@@ -190,7 +190,7 @@ getFieldName(int k){
 void
 plottemplate(int * colind, int n){
 	FILE *pl,*pld;
-	float sz= 1.0/n;
+	double sz= 1.0/n;
 	int i;
 
 	pl= fopen("stet.gp","w");
