@@ -768,6 +768,25 @@ opt_complex (PFla_op_t *p)
             }
         }   break;
 
+        /* to get rid of the operator 'and' and to split up
+           different conditions we can introduce additional
+           select operators above comparisons whose required
+           value is true. */
+        case la_bool_and:
+            if (PFprop_reqval (p->prop, p->sem.binary.res) &&
+                PFprop_reqval_val (p->prop, p->sem.binary.res) &&
+                PFprop_set (p->prop)) {
+                *p = *PFla_attach (
+                          PFla_select (
+                              PFla_select (
+                                  L(p),
+                                  p->sem.binary.att1),
+                              p->sem.binary.att2),
+                          p->sem.binary.res,
+                          PFalg_lit_bln (true));
+            }
+            break;
+            
         case la_scjoin:
             if (R(p)->kind == la_project &&
                 RL(p)->kind == la_scjoin) {
@@ -816,6 +835,7 @@ PFalgopt_complex (PFla_op_t *root)
     PFprop_infer_dom (root);
     PFprop_infer_set (root);
     PFprop_infer_unq_names (root);
+    PFprop_infer_reqval (root);
 
     /* Optimize algebra tree */
     opt_complex (root);
