@@ -169,7 +169,8 @@ enforce a proper join type list.
 str
 ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *joins[MAXARG], *tmp[MAXARG], *b = 0;
+	BAT **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
+	BAT **tmp = (BAT**)alloca(pci->argc*sizeof(BAT*)), *b = 0;
 	size_t estimate, e;
 	int fnd, top, ttop, i, j, ret = 0, *bid;
 

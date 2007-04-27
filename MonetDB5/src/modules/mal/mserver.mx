@@ -424,13 +424,13 @@ static void generateChallenge(str buf, int min, int max) {
 }
 
 static void 
-doChallenge(str cmd, int msgsock) {
+doChallenge(str cmd, stream *in, stream *out) {
 	if (cmd == NULL) {
 		char *buf = (char *) GDKmalloc(BLOCK);
 		char *challenge;
 		char *algos;
-		stream *fdin = block_stream( socket_rastream(msgsock, "Server read"));
-		stream *fdout = block_stream( socket_wastream(msgsock, "Server write"));
+		stream *fdin = block_stream(in);
+		stream *fdout = block_stream(out);
 		bstream *bs;
 
 		if (!fdin || !fdout) {
@@ -470,7 +470,7 @@ doChallenge(str cmd, int msgsock) {
 		printf("mserver:Client accepted %s\n", name);
 		fflush(stdout);
 
-		THRprintf(GDKout, "#SERVERlisten:client accepted %d\n", msgsock);
+		THRprintf(GDKout, "#SERVERlisten:client accepted\n");
 		THRprintf(GDKout, "#SERVERlisten:client string %s\n", name);
 #endif
 		bs = bstream_create(fdin, 128 * BLOCK);
@@ -557,7 +557,9 @@ SERVERlistenThread(int *Sock)
 		printf("server:accepted\n");
 		fflush(stdout);
 #endif
-		doChallenge(cmd, msgsock);
+		doChallenge(cmd, 
+ 			socket_rastream(msgsock, "Server read"),
+ 			socket_wastream(msgsock, "Server write"));
 	} while (1);
 error:
 	throw(IO, "mserver.listen", msg);
@@ -993,7 +995,9 @@ Get the new information for the server socket and start listening.
 			break;
 		}
 
-		doChallenge(cmd, msgsock);
+		doChallenge(cmd, 
+ 			socket_rastream(msgsock, "Server read"),
+ 			socket_wastream(msgsock, "Server write"));
 end_loop:;
 	} while (1);
 	SSL_CTX_free(ctx);
@@ -1029,15 +1033,18 @@ be notified.
 str
 SERVERlisten_default(int *ret)
 {
-	int port = SERVERPORT;
-	str p;
-	int maxusers = SERVERMAXUSERS;
+	if (!GDKembedded) {
+		int port = SERVERPORT;
+		str p;
+		int maxusers = SERVERMAXUSERS;
 
-	(void) ret;
-	p = GDKgetenv("mapi_port");
-	if (p)
-		port = (int) strtol(p, NULL, 10);
-	return SERVERlisten(&port, 0, &maxusers, 0);
+		(void) ret;
+		p = GDKgetenv("mapi_port");
+		if (p)
+			port = (int) strtol(p, NULL, 10);
+		return SERVERlisten(&port, 0, &maxusers, 0);
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -1103,59 +1110,9 @@ SERVERresume(int *res)
 str
 SERVERclient(int *res, stream **In, stream **Out) 
 {
-	int i = 0;
-	char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
-	char *challenge;
-	int blocked = 0;
-	bstream *bs;
-	stream *fdin = *In, *fdout = *Out;
-
 	(void) res;
-	assert(name);
-	memset(name, 0, BLOCK);
-
-	/* is this routine used?  Where? */
-	assert(0);
-
-	/* write challenge string, the challenge is currently empty (disabled) */
-	challenge = "::mserver_mal:4\n";
-
-	/* temporarily misuse name */
-	snprintf(name, BLOCK, "%2u%s", (unsigned int) strlen(challenge), challenge);
-	stream_write(fdout, name, strlen(name), 1);
-	/* get user name */
-	*user = 0;
-	stream_read(fdin, user, 1, 1);
-	for (i = 0; !stream_errnr(fdin) && i < BLOCK && *user != '\n'; i++) {
-		user++;
-		stream_read(fdin, user, 1, 1);
-	}
-	if (stream_errnr(fdin)) {
-		throw(IO, "SERVERclient", "fdin write problems");
-	}
-	*user = 0;
 	/* in embedded mode we allow just one client */
-#ifdef DEBUG_SERVER
-	printf("mserver:Client accepted %s\n", name);
-	fflush(stdout);
-#endif
-	s = strrchr(name, ':');
-	blocked = s && strncmp(s, ":blocked", 8) == 0;
-	if (blocked) {
-		/* printf("mserver:use blocked mode\n");fflush(stdout); */
-		*s = 0;
-		fdin = block_stream(stream_rstream(fdin));
-		fdout = block_stream(stream_wstream(fdout));
-	}
-#ifdef DEBUG_SERVER
-	THRprintf(GDKout, "#SERVERlisten:client accepted %d\n", msgsock);
-	THRprintf(GDKout, "#SERVERlisten:client string %s\n", name);
-#endif
-	bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
-
-	if (blocked)
-		bs->eof = 1;
-	MSscheduleClient(name, challenge, bs, fdout);
+	doChallenge(NULL, *In, *Out);
 	return MAL_SUCCEED;
 }
 

@@ -35,9 +35,12 @@ gdk_dbname=demo			# default database to open
 # 1/2 of the physically available amount of main-memory
 # during start-up in src/tools/mserver.mx
 # memory chunks of size >= gdk_mem_bigsize (in bytes) will be mmaped anonymously
-#gdk_mem_bigsize=33554432
+#gdk_mem_bigsize=262144
 # memory chunks of size >= gdk_vm_minsize (in bytes) will be mmaped;
-#gdk_vm_minsize=134217728
+#gdk_vm_minsize=137438953472
+# for 32 bit systems try to claim 3G of (virtual) memory;
+#gdk_vmtrim=yes
+# set to "no" to disable the vmtrim thread.
 
 # valgrind issues:
 # for 32 bit systems it tries claim 3G of (virtual) memory
