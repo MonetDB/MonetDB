@@ -1187,15 +1187,49 @@ PROC ll_htordered_unique_thetajoin( int mode,
                                     bat[void,oid] lo, bat[void,oid] ro,
                                     any lx, any rx) : bat[any,any]
 {
+    if (not(reverse(lo).ordered()) or not(reverse(ro).ordered()))
+        ERROR("htordered_unique_thetajoin(): ordered left and right outer columns (iters) expected.\n");
+
+    # in case the equality predicate (between lo and ro) is restrictive enough
+    # (at most 3*3 hits) we apply it in one go and filter out the false positives
+    # using the second criterion (between l and r).
+    if ((lo.slice(0,1000).count() < 3 * lo.slice(0,1000).tunique().count())
+        and
+        (ro.slice(0,1000).count() < 3 * ro.slice(0,1000).tunique().count())) {
+        # join on the tails of lo and ro
+        var join_res := lo.tmark(0@0).leftjoin (ro.reverse().mark(0@0));
+        # select for all result tuples the tail values of l
+        var l_map := join_res.hmark(0@0).leftfetchjoin(l.tmark(0@0));
+        # select for all result tuples the tail values of r
+        var r_map := join_res.tmark(0@0).leftfetchjoin(r.tmark(0@0));
+        # compare on the second condition 'mode(l, r)'
+        var res;
+               if (mode = EQ) { res := [=](l_map, r_map); }
+        else { if (mode = GT) { res := [>](l_map, r_map); }
+        else { if (mode = GE) { res := [>=](l_map, r_map); }
+        else { if (mode = LT) { res := [<](l_map, r_map); }
+        else { if (mode = LE) { res := [<=](l_map, r_map); } }}}}
+        # select all matches
+        res := res.select(true);
+        # map back to the keys of l and lo
+        res := res.reverse()
+                  .leftfetchjoin(join_res.hmark(0@0))
+                  .reverse().mirror();
+        # attach lo
+        res := res.leftfetchjoin(lo.tmark(0@0)).reverse();
+        # attach the head of l
+        res := res.leftfetchjoin(l.hmark(0@0));
+        # remove duplicates and sort
+        res := res.sunique().sort();
+        return res;
+    }
+    
     var lo_histo := histogram(lo), lr_histo := reverse(lo_histo);
     var ro_histo := histogram(ro), rr_histo := reverse(ro_histo);
     var li := 0LL, lp := 0LL, lc := count(int(lo_histo));
     var ri := 0LL, rp := 0LL, rc := count(int(ro_histo));
     var b := new(void,bat,min(lc,rc));
     var tpe := ttype(l);
-
-    if (not(reverse(lo).ordered()) or not(reverse(ro).ordered()))
-        ERROR("htordered_unique_thetajoin(): ordered left and right outer columns (iters) expected.\n");
 
     # trivial case; not handled below as log2() cannot cope with max() of an empty BAT being NIL
     if ((lc = 0LL) or (rc = 0LL)) {
@@ -1241,6 +1275,107 @@ PROC ll_htordered_unique_thetajoin( int mode,
     var bn := bat(oid, oid, sum_lng([count]([int](b)))).access(BAT_WRITE);
     if (count(int(b)) > 0LL) [insert](const bn,b);
     return bn.access(BAT_READ);
+}
+
+# procedure that squeezes two node sequences # (encoded in 3 bats: pre,
+# frag, and attr) into two bats of type lng by using bit-shifting.
+# The procedure needs both node sequences to align the bit-shifting
+# and thus to guarantee that the lng values can be compared instead
+# of the node representation.
+PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
+                        any frag2, bat[void,oid] pre2, any attr2) : bat[void,bat]
+{
+    var flen, plen, alen, maxlen;
+    var res := bat (void, bat, 2).seqbase(0@0);
+
+    # nothing to do if we have no nodes
+    if (pre1.count() = 0) return res.append(pre1).append(pre1);
+    if (pre2.count() = 0) return res.append(pre2).append(pre2);
+
+    plen := max (log2 (lng (max(pre1))), log2 (lng (max(pre2))));
+    
+    if (type(frag1) = bat) {
+        if ((frag1.count() != pre1.count()) or 
+            (frag1.seqbase() != pre1.seqbase()))
+            ERROR("combine_node_info(): pre and frag (of the first input) are not aligned.\n");
+        flen := log2 (lng (max(frag1)));
+    } else {
+        if (type(frag1) = oid) {
+            flen := log2 (lng (frag1));
+        } else {
+            ERROR("combine_node_info(): frag value(s) expected.\n");
+        }
+    }
+    
+    if (type(attr1) = bat) {
+        if ((pre1.count() != attr1.count()) or
+            (pre1.seqbase() != attr1.seqbase()))
+            ERROR("combine_node_info(): pre and attr (of the first input) are not aligned.\n");
+        alen := log2 (lng (max(attr1)));
+    } else {
+        if (type(attr1) = oid) {
+            alen := log2 (lng (attr1));
+        } else {
+            alen := 0;
+        }
+    }
+    
+    if (type(frag2) = bat) {
+        if ((frag2.count() != pre2.count()) or
+             (frag2.seqbase() != pre2.seqbase()))
+            ERROR("combine_node_info(): pre and frag (of the second input) are not aligned.\n");
+        flen := max (flen, log2 (lng (max(frag2))));
+    } else {
+        if (type(frag2) = oid) {
+            flen := max (flen, log2 (lng (frag2)));
+        } else {
+            ERROR("combine_node_info(): frag value(s) expected.\n");
+        }
+    }
+    
+    if (type(attr2) = bat) {
+        if ((pre2.count() != attr2.count()) or
+            (pre2.seqbase() != attr2.seqbase()))
+            ERROR("combine_node_info(): pre and attr (of the second input) are not aligned.\n");
+        alen := max (alen, log2 (lng (max(attr2))));
+    } else {
+        if (type(attr2) = oid) {
+            alen := max (alen, log2 (lng (attr2)));
+        } else {
+            alen := max (alen, 0);
+        }
+    }
+    
+    maxlen := flen + plen + alen;
+    if (maxlen > 64)
+        ERROR("combine_node_info(): node compression failed.\n");
+    
+    var res1 := [<<]([lng](pre1), alen).access(BAT_WRITE);
+    var res2 := [<<]([lng](pre2), alen).access(BAT_WRITE);
+    if (alen > 0) {
+        if (type(attr1) = bat) {
+            [:+=](res1, [lng](attr1.tmark(0@0)));
+        } else {
+            [:+=](res1, const lng(attr1));
+        }
+        if (type(attr2) = bat) {
+            [:+=](res2, [lng](attr2.tmark(0@0)));
+        } else {
+            [:+=](res2, const lng(attr2));
+        }
+    }
+    if (type(frag1) = bat) {
+        [:+=](res1, [<<]([lng](frag1.tmark(0@0)), alen + plen));
+    } else {
+        [:+=](res1, const << (lng(frag1), alen + plen));
+    }
+    if (type(frag2) = bat) {
+        [:+=](res2, [<<]([lng](frag2.tmark(0@0)), alen + plen));
+    } else {
+        [:+=](res2, const << (lng(frag2), alen + plen));
+    }
+    return res.append (res1.access(BAT_READ))
+              .append (res2.access(BAT_READ));
 }
 
 @- loop-lifted staircase join
@@ -7081,6 +7216,13 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
                                 BAT[void,oid] pcont,
                                 BAT[void,BAT] ws) : BAT[void,oid]
 {
+    # nothing to do if our item sequences are all of length 1
+    if (iter.count() = iter.tunique().count())
+        return new (void, BAT).append (ws)
+                              .append (pre)
+                              .append (pcont)
+                              .seqbase (0@0);
+
     var map := pre.ord_uselect(oid_nil,oid_nil).hmark(0@0);
     iter := map.leftfetchjoin(iter);
     pre := map.leftfetchjoin(pre);
