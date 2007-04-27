@@ -710,10 +710,9 @@ BPMloadCatalog(){
 		throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
 	
 	BATloop(b, p, q) {
-		Partition pn;
 		i = *(int *)BUNhead(b,p);
 		nm = (str) BUNtail(b,p);
-		(pn=newPartition(i))->name = GDKstrdup(nm);	
+		newPartition(i)->name = GDKstrdup(nm);	
 
 	}
 	BBPunfix(b->batCacheid);
