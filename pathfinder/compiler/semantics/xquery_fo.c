@@ -1927,6 +1927,15 @@ PFfun_xquery_fo (void)
 
 #ifdef HAVE_PFTIJAH
 /* #4. PFTIJAH FUNCTIONS */
+    , /* tijah:ft-index-info () as element()* */
+      { .ns = PFns_tijah, .loc = "ft-index-info",
+        .arity = 0, .sig_count = 1, .sigs = { {
+            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
+    , /* tijah:ft-index-info (string*) as element()* */
+      { .ns = PFns_tijah, .loc = "ft-index-info",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string () },
+            .ret_ty = PFty_star( PFty_xs_anyElement ()) } } }
     ,  /* tijah:create-ft-index() as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",
         .arity = 0, .sig_count = 1, .sigs = { {

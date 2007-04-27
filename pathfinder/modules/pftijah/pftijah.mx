@@ -175,8 +175,9 @@ var scoreBase := 0;
 
 const ENTITY_NUM := 10000;
 
-var collName := "DFLT_FT_INDEX";
-var background_collName := "DFLT_FT_INDEX";
+# WARNING: this var is also used by nexi.c and milprint_summer.c
+var GLOBAL_COLLNAME := "DFLT_FT_INDEX";
+var background_GLOBAL_COLLNAME := "DFLT_FT_INDEX";
 var collHeight := 10;
 var retNum := 100;
 
@@ -201,6 +202,55 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 		tj_setCollName(name);
 	}
 }
+
+#####################################################################
+#                                                                   #
+# Start of the information functions                                #
+#                                                                   #
+#####################################################################
+
+# tijah:ft-index-info(), get all ft-index-information
+PROC ws_ft_index_info(BAT[void,BAT] ws, bit consistent) : BAT[void,oid]
+{
+    return ws_ft_index_info_base(ws,new(void,str),true);
+}
+
+# tijah:ft-index-info(str), get all ft-index-information
+PROC ws_ft_index_info(BAT[void,BAT] ws, BAT[any,str] ftiNames, bit consistent) : BAT[void,oid]
+{
+    return ws_ft_index_info_base(ws,ftiNames,false);
+}
+
+# tijah:ft-index-info(str), get all ft-index-information
+PROC ws_ft_index_info_base(BAT[void,BAT] ws, BAT[any,str] ftiNames, bit all) : BAT[void,oid]
+{
+    var chkbat;
+
+    if ( all )
+        chkbat := bat("tj_collName");
+    else 
+        chkbat := ftiNames;
+
+    var res := new(void,str).seqbase(0@0);
+    var stm := new(void,str).seqbase(0@0);
+    var tok := new(void,str).seqbase(0@0);
+    var frg := new(void,str).seqbase(0@0);
+    chkbat@batloop() {
+	if ( or(all,bat("tj_collName").reverse().exist($t)) ) {
+          res.append($t);
+          stm.append(bat("tj_" + $t + "_param").find("stemmer"));
+          tok.append(bat("tj_" + $t + "_param").find("tokenizer"));
+          frg.append(bat("tj_" + $t + "_param").find("fragmentSize"));
+    	}
+    }
+    return xmltab4(ws, "ftindex", res, "stemmer", stm, "tokenizer", tok, "fragmentSize", frg);
+}
+
+#####################################################################
+#                                                                   #
+# Start of the new implementation of the interfaces                 #
+#                                                                   #
+#####################################################################
 
 #####################################################################
 #                                                                   #
@@ -253,6 +303,24 @@ PROC tj_init_global(BAT[str,str] param) : void :=
     tj_init_global(param,true);
 }
 
+const GLOBAL_TTBAT := true;
+
+PROC _tj_TermBat(str ftiName) : str :=
+{
+    if ( GLOBAL_TTBAT )
+        return "tj_globalTerms";
+    else
+    	return "tj_" + ftiName + "_terms";
+}
+
+PROC _tj_TagBat(str ftiName) : str :=
+{
+    if ( GLOBAL_TTBAT )
+        return "tj_globalTags";
+    else
+    	return "tj_" + ftiName + "_tags";
+}
+
 PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
 {
     if (doLock) lock_set(tj_adm_lock);
@@ -268,14 +336,18 @@ PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
 	    ERROR("# tj_init_global() unkonwn parameter [%s].\n",$h);
 	}
       }
-      new(oid,str).persists(true).bbpname("tj_globalTerms");
-      new(oid,str).persists(true).bbpname("tj_globalTags");
+      if ( GLOBAL_TTBAT ) {
+          new(oid,str).persists(true).bbpname(_tj_TermBat(""));
+          new(oid,str).persists(true).bbpname(_tj_TagBat(""));
+      }
       new(oid,str).persists(true).bbpname("tj_collName");
       new(str,str).persists(true).bbpname("tj_pfc_fti_dep");
       new(str,str).persists(true).bbpname("tj_pfc_fti_dep_star");
       var globals := new(void,str).seqbase(0@0);
-      globals.append("tj_globalTerms");
-      globals.append("tj_globalTags");
+      if ( GLOBAL_TTBAT ) {
+          globals.append(_tj_TermBat(""));
+          globals.append(_tj_TagBat(""));
+      }
       globals.append("tj_collName");
       globals.append("tj_pfc_fti_dep");
       globals.append("tj_pfc_fti_dep_star");
@@ -304,14 +376,18 @@ PROC tj_delete_global() : void :=
       bat("tj_collName")@batloop(){
   	  tj_delete_collection($t,false);
       }
-      bat("tj_globalTerms").persists(false);
-      bat("tj_globalTags").persists(false);
+      if ( GLOBAL_TTBAT ) {
+          bat(_tj_TermBat("")).persists(false);
+          bat(_tj_TagBat("")).persists(false);
+      }
       bat("tj_collName").persists(false);
       bat("tj_pfc_fti_dep").persists(false);
       bat("tj_pfc_fti_dep_star").persists(false);
       var globals := new(void,str).seqbase(0@0);
-      globals.append("tj_globalTerms");
-      globals.append("tj_globalTags");
+      if ( GLOBAL_TTBAT ) {
+          globals.append(_tj_TermBat(""));
+          globals.append(_tj_TagBat(""));
+      }
       globals.append("tj_collName");
       globals.append("tj_pfc_fti_dep");
       globals.append("tj_pfc_fti_dep_star");
@@ -345,7 +421,7 @@ PROC tj_get_collection_lock(str colname) : lock
 
 ADDHELP("tj_init_collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
-- str collName: the name of the collection
+- str ftiName: the name of the collection
 - BAT[str,str] param: initialization parameter for collection.\n\
   possible values are:\n\
   tokenizer = { flex, fast }\n\
@@ -357,7 +433,7 @@ ADDHELP("tj_init_collection", "flokstra & rode", "Jan 2007",
 DESCRIPTION:\n\
 Create a new tijah collection.",
 "pftijah");
-PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) : void :=
+PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : void :=
 {
     var coll_lock;
 
@@ -366,13 +442,13 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
     #
     lock_set(tj_adm_lock);
     var err := CATCH({
-      if ( verbose ) printf("#TJ tj_init_collection(\"%s\") called.\n",collName);
+      if ( verbose ) printf("#TJ tj_init_collection(\"%s\") called.\n",ftiName);
 
       if (not(view_bbp_name().reverse().exist("tj_collName"))) {
     	tj_init_global(new(str,str),false); # just in case 
       }
-      if (bat("tj_collName").reverse().exist(collName)) {
-    	ERROR("tj_init_collection, pftijah collection already exists: %s\n",collName);
+      if (bat("tj_collName").reverse().exist(ftiName)) {
+    	ERROR("tj_init_collection, pftijah collection already exists: %s\n",ftiName);
       }
       #
       var coll_oid;
@@ -381,9 +457,9 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
       } else {
         coll_oid := oid(int(bat("tj_collName").reverse().max()) + 1);
       }
-      bat("tj_collName").insert(coll_oid, collName);
+      bat("tj_collName").insert(coll_oid, ftiName);
       #
-      coll_lock := tj_get_collection_lock(collName);
+      coll_lock := tj_get_collection_lock(ftiName);
     });
     lock_unset(tj_adm_lock);
     if (not(isnil(err))) ERROR(err);
@@ -392,17 +468,17 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
     #
     lock_set(coll_lock);
     var err := CATCH({
-      new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_name");
-      new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_firstpre");
-      new(str,str).persists(true).bbpname("tj_" + collName + "_param");
+      new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_name");
+      new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_firstpre");
+      new(str,str).persists(true).bbpname("tj_" + ftiName + "_param");
       
-      new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_tid1");
-      new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_size1");
+      new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_tid1");
+      new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_size1");
       # bat contains the start oid of every tid/size frag. Head is postfix
       # string to _tid/_size. Normally "", "2", "3"
-      new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_fragments");
-      bat("tj_" + collName + "_fragments").append(1@0);
-      new(oid,oid).persists(true).bbpname("tj_" + collName + "_pfpre");
+      new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_fragments");
+      bat("tj_" + ftiName + "_fragments").append(1@0);
+      new(oid,oid).persists(true).bbpname("tj_" + ftiName + "_pfpre");
          
       #
       # now read the param file
@@ -410,6 +486,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
       var stemmer    := "nostemming";
       var tokenizer  := "flex";
       var tagfilter  := "";
+      var fragsize   := "0";
   
       param@batloop() {
 	  if ( verbose ) printf("#TJ:tj_init_collection():param[%s]=\"%s\"\n",$h,$t);
@@ -418,9 +495,9 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
 	  } else if ( $h = "tokenizer" ) {
 	      tokenizer := $t;
 	  } else if ( $h = "pf_collection" ) {
-              bat("tj_" + collName + "_param").insert($h,$t);
+              bat("tj_" + ftiName + "_param").insert($h,$t);
 	  } else if ( $h = "fragmentSize" ) {
-              bat("tj_" + collName + "_param").insert($h,$t);
+	      fragsize := $t;
 	  } else if ( $h = "tagFilter" ) {
               tagfilter := $t;
 	  } else if ( $h = "ft-index" ) {
@@ -432,22 +509,23 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
       #
       # now set the parameters for this collection
       #
-      bat("tj_" + collName + "_param").insert("_version","1.01");
-      bat("tj_" + collName + "_param").insert("name",collName);
-      bat("tj_" + collName + "_param").insert("height","0");
-      bat("tj_" + collName + "_param").insert("tokenizer",tokenizer);
-      bat("tj_" + collName + "_param").insert("stemmer",stemmer);
-      bat("tj_" + collName + "_param").insert("tagFilter",tagfilter);
-      bat("tj_" + collName + "_param").insert("preExpansion","4");
-      bat("tj_" + collName + "_param").insert("status","building");
-      bat("tj_" + collName + "_param").insert("_last_tijahPre","1");
-      bat("tj_" + collName + "_param").insert("_last_finalizedPre","0");
+      bat("tj_" + ftiName + "_param").insert("_version","1.01");
+      bat("tj_" + ftiName + "_param").insert("name",ftiName);
+      bat("tj_" + ftiName + "_param").insert("height","0");
+      bat("tj_" + ftiName + "_param").insert("tokenizer",tokenizer);
+      bat("tj_" + ftiName + "_param").insert("stemmer",stemmer);
+      bat("tj_" + ftiName + "_param").insert("fragmentSize",fragsize);
+      bat("tj_" + ftiName + "_param").insert("tagFilter",tagfilter);
+      bat("tj_" + ftiName + "_param").insert("preExpansion","4");
+      bat("tj_" + ftiName + "_param").insert("status","building");
+      bat("tj_" + ftiName + "_param").insert("_last_tijahPre","1");
+      bat("tj_" + ftiName + "_param").insert("_last_finalizedPre","0");
       #
       # now modify the global fti pfc dependency administration. We may ignore
       # the return value because all dependencies for this collection are new.
-      modify_pfc_fti(collName,v_pfc);
+      modify_pfc_fti(ftiName,v_pfc);
     });
-    subcommit(_tj_collection_str(collName));
+    subcommit(_tj_collection_str(ftiName));
     lock_unset(coll_lock);
     #
     if (not(isnil(err))) ERROR(err);
@@ -459,7 +537,7 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
       # WARNING: this piece of code is not yet very safe but is requires
       # a very close cooperation with Pathfinder locks to make it safe.
       #
-      if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") checking collection to index.\n",collName);
+      if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") checking collection to index.\n",ftiName);
       if ( v_pfc.count() > 0 ) {
         var doclist;
         if ( v_pfc.uselect("*").count() > 0 ) {
@@ -470,38 +548,38 @@ PROC tj_init_collection(str collName, BAT[str,str] param, BAT[void,str] v_pfc) :
 	}
         if ( doclist.count() > 0 ) {
 
-            if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") indexing existing collections.\n",collName);
-	    tj_add2collection(collName,doclist,true);
-            if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finish indexing existing collections.\n",collName);
+            if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") indexing existing collections.\n",ftiName);
+	    tj_add2collection(ftiName,doclist,true);
+            if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finish indexing existing collections.\n",ftiName);
         }
       }
     }
-    if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finished.\n",collName);
+    if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finished.\n",ftiName);
 }
 
-PROC tj_init_collection(str collName, BAT[str,str] param) : void :=
+PROC tj_init_collection(str ftiName, BAT[str,str] param) : void :=
 {
-    tj_init_collection(collName,param,new(void,str));
+    tj_init_collection(ftiName,param,new(void,str));
 }
 
 #
 # The tj_extend_collection() adds new pf collection dependencies to an existing
 # collection.
 #
-PROC tj_extend_collection(str collName, BAT[void,str] v_pfc) : void :=
+PROC tj_extend_collection(str ftiName, BAT[void,str] v_pfc) : void :=
 {
-    if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") start.\n",collName);
-    var newdep := modify_pfc_fti(collName,v_pfc);
+    if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") start.\n",ftiName);
+    var newdep := modify_pfc_fti(ftiName,v_pfc);
 
     var doclist := bat("doc_name").reverse().join(bat("doc_collection").join(bat("collection_name").join(newdep.reverse())));
     doclist := doclist.project(str(nil)).reverse();
     if ( doclist.count() > 0 ) {
-        if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") indexing existing collections.\n",collName);
+        if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") indexing existing collections.\n",ftiName);
         if ( verbose ) doclist.print();
-	tj_add2collection(collName,doclist,true);
-        if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finish indexing existing collections.\n",collName);
+	tj_add2collection(ftiName,doclist,true);
+        if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finish indexing existing collections.\n",ftiName);
     }
-    if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finished.\n",collName);
+    if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finished.\n",ftiName);
 }
 
 
@@ -572,16 +650,16 @@ PROC delete_pfc_fti(str fti_name) :void :=
 
 ADDHELP("tj_delete_collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
-- str collName: the name of the collection to be deleted.\n
+- str ftiName: the name of the collection to be deleted.\n
 DESCRIPTION:\n\
-Delete the collection with name \"collName\".",
+Delete the collection with name \"ftiName\".",
 "pftijah");
-PROC tj_delete_collection(str collName) : void
+PROC tj_delete_collection(str ftiName) : void
 {
-    tj_delete_collection(collName,true);
+    tj_delete_collection(ftiName,true);
 }
 
-PROC tj_delete_collection(str collName, bit doAdmLock) : void
+PROC tj_delete_collection(str ftiName, bit doAdmLock) : void
 {
     var coll_lock;
 
@@ -590,19 +668,19 @@ PROC tj_delete_collection(str collName, bit doAdmLock) : void
     #
     if ( doAdmLock ) lock_set(tj_adm_lock);
     var err := CATCH({
-      if ( verbose ) printf("#TJ:tj_delete_collection(\"%s\") called.\n",collName);
+      if ( verbose ) printf("#TJ:tj_delete_collection(\"%s\") called.\n",ftiName);
 
       if (not(view_bbp_name().reverse().exist("tj_collName"))) {
     	qERROR("tj_delete_collection: pftijah not initialized.\n");
       }
-      if (not(bat("tj_collName").reverse().exist(collName))) {
-    	ERROR("tj_delete_collection, pftijah collection does not exist: %s\n",collName);
+      if (not(bat("tj_collName").reverse().exist(ftiName))) {
+    	ERROR("tj_delete_collection, pftijah collection does not exist: %s\n",ftiName);
       }
       #
-      var coll_oid := bat("tj_collName").reverse().find(collName);
+      var coll_oid := bat("tj_collName").reverse().find(ftiName);
       bat("tj_collName").delete(coll_oid);
       #
-      coll_lock := tj_get_collection_lock(collName);
+      coll_lock := tj_get_collection_lock(ftiName);
     });
     if ( doAdmLock ) lock_unset(tj_adm_lock);
     if (not(isnil(err))) ERROR(err);
@@ -611,24 +689,24 @@ PROC tj_delete_collection(str collName, bit doAdmLock) : void
     #
     lock_set(coll_lock);
     var err := CATCH({
-	bat("tj_" + collName + "_doc_name").persists(false);
-	bat("tj_" + collName + "_doc_firstpre").persists(false);
-	bat("tj_" + collName + "_param").persists(false);
-	bat("tj_" + collName + "_pfpre").persists(false);
-	bat("tj_" + collName + "_fragments")@batloop() {
+	bat("tj_" + ftiName + "_doc_name").persists(false);
+	bat("tj_" + ftiName + "_doc_firstpre").persists(false);
+	bat("tj_" + ftiName + "_param").persists(false);
+	bat("tj_" + ftiName + "_pfpre").persists(false);
+	bat("tj_" + ftiName + "_fragments")@batloop() {
 	    var fpfx := str(int($h));
-	    bat("tj_" + collName + "_tid"+fpfx).persists(false);
-	    bat("tj_" + collName + "_size"+fpfx).persists(false);
+	    bat("tj_" + ftiName + "_tid"+fpfx).persists(false);
+	    bat("tj_" + ftiName + "_size"+fpfx).persists(false);
 	}
-	bat("tj_" + collName + "_fragments").persists(false);
-	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) {
-		bat("tj_" + collName + "_TermIndex").persists(false);
-		bat("tj_" + collName + "_Terms").persists(false);
-		bat("tj_" + collName + "_TagIndex").persists(false);
-		bat("tj_" + collName + "_Tags").persists(false);
+	bat("tj_" + ftiName + "_fragments").persists(false);
+	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) {
+		bat("tj_" + ftiName + "_TermIndex").persists(false);
+		bat("tj_" + ftiName + "_Terms").persists(false);
+		bat("tj_" + ftiName + "_TagIndex").persists(false);
+		bat("tj_" + ftiName + "_Tags").persists(false);
 	}
-        delete_pfc_fti(collName);
-        subcommit(_tj_collection_str(collName));
+        delete_pfc_fti(ftiName);
+        subcommit(_tj_collection_str(ftiName));
     });
     lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
@@ -637,42 +715,42 @@ PROC tj_delete_collection(str collName, bit doAdmLock) : void
 
 # internal method which return all batnames of a collection in a
 # a [void,str] bat
-PROC _tj_collection_str(str collName) : BAT[void,bat]
+PROC _tj_collection_str(str ftiName) : BAT[void,bat]
 {
         var tjCollBat := new(void,str).seqbase(0@0);
 
-        tjCollBat.append("tj_globalTerms");
-        tjCollBat.append("tj_globalTags");
+        tjCollBat.append(_tj_TermBat(ftiName));
+        tjCollBat.append(_tj_TagBat(ftiName));
         tjCollBat.append("tj_collName");
-        tjCollBat.append("tj_" + collName + "_param");
-        tjCollBat.append("tj_" + collName + "_doc_name");
-        tjCollBat.append("tj_" + collName + "_doc_firstpre");
-        tjCollBat.append("tj_" + collName + "_pfpre");
-        tjCollBat.append("tj_" + collName + "_fragments");
-        bat("tj_" + collName + "_fragments")@batloop()
+        tjCollBat.append("tj_" + ftiName + "_param");
+        tjCollBat.append("tj_" + ftiName + "_doc_name");
+        tjCollBat.append("tj_" + ftiName + "_doc_firstpre");
+        tjCollBat.append("tj_" + ftiName + "_pfpre");
+        tjCollBat.append("tj_" + ftiName + "_fragments");
+        bat("tj_" + ftiName + "_fragments")@batloop()
         {       
-            tjCollBat.append("tj_" + collName + "_tid" + str(int($t)));
-            tjCollBat.append("tj_" + collName + "_size"+ str(int($t)));
+            tjCollBat.append("tj_" + ftiName + "_tid" + str(int($t)));
+            tjCollBat.append("tj_" + ftiName + "_size"+ str(int($t)));
         }       
-        if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) {
-            tjCollBat.append("tj_" + collName + "_Terms");
-            tjCollBat.append("tj_" + collName + "_Tags");
-            tjCollBat.append("tj_" + collName + "_TermIndex");
-            tjCollBat.append("tj_" + collName + "_TagIndex");
+        if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) {
+            tjCollBat.append("tj_" + ftiName + "_Terms");
+            tjCollBat.append("tj_" + ftiName + "_Tags");
+            tjCollBat.append("tj_" + ftiName + "_TermIndex");
+            tjCollBat.append("tj_" + ftiName + "_TagIndex");
         }       
         return tjCollBat;
 }
 
 # internal method which return all relevant data about a collection in a
 # a single [void,bat] bat
-PROC _tj_collection(str collName) : BAT[str, bat]
+PROC _tj_collection(str ftiName) : BAT[str, bat]
 {
-        if (not(view_bbp_name().reverse().exist("tj_" + collName + "_param"))) {
-	     ERROR("_tj_collection(): collection(\""+collName+"\") does not exist!\n");
+        if (not(view_bbp_name().reverse().exist("tj_" + ftiName + "_param"))) {
+	     ERROR("_tj_collection(): collection(\""+ftiName+"\") does not exist!\n");
 	}
 	var tjCollBat := new(str,bat);
 
-	var parbat := bat("tj_" + collName + "_param");
+	var parbat := bat("tj_" + ftiName + "_param");
 	var curversion;
 	if ( parbat.exist("_version") ) {
 	    curversion := parbat.find("_version");
@@ -682,23 +760,23 @@ PROC _tj_collection(str collName) : BAT[str, bat]
 	if ( curversion < "1.0" ) {
 	     ERROR("_tj_collection(): pftijah index structure changed, reindex collection!!");
 	}
-	tjCollBat.insert("_globalTerms", bat("tj_globalTerms"));
-	tjCollBat.insert("_globalTags", bat("tj_globalTags"));
-	tjCollBat.insert("_doc_name", bat("tj_" + collName + "_doc_name"));
-	tjCollBat.insert("_doc_firstpre", bat("tj_" + collName + "_doc_firstpre"));
+	tjCollBat.insert("_globalTerms", bat(_tj_TermBat(ftiName)));
+	tjCollBat.insert("_globalTags", bat(_tj_TagBat(ftiName)));
+	tjCollBat.insert("_doc_name", bat("tj_" + ftiName + "_doc_name"));
+	tjCollBat.insert("_doc_firstpre", bat("tj_" + ftiName + "_doc_firstpre"));
 	tjCollBat.insert("_param", parbat);
 	# only load the top [pre|term|size] fragments
-	var fpfx := str(bat("tj_" + collName + "_fragments").count());
-	tjCollBat.insert("_tid", bat("tj_" + collName + "_tid"+fpfx));
-	tjCollBat.insert("_size", bat("tj_" + collName + "_size"+fpfx));
-	tjCollBat.insert("_pfpre", bat("tj_" + collName + "_pfpre"));
-	tjCollBat.insert("_fragments", bat("tj_" + collName + "_fragments"));
+	var fpfx := str(bat("tj_" + ftiName + "_fragments").count());
+	tjCollBat.insert("_tid", bat("tj_" + ftiName + "_tid"+fpfx));
+	tjCollBat.insert("_size", bat("tj_" + ftiName + "_size"+fpfx));
+	tjCollBat.insert("_pfpre", bat("tj_" + ftiName + "_pfpre"));
+	tjCollBat.insert("_fragments", bat("tj_" + ftiName + "_fragments"));
 	
-	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) {
-            tjCollBat.insert("_Terms", bat("tj_" + collName + "_Terms"));
-	    tjCollBat.insert("_Tags", bat("tj_" + collName + "_Tags"));
-	    tjCollBat.insert("_TermIndex", bat("tj_" + collName + "_TermIndex"));
-	    tjCollBat.insert("_TagIndex", bat("tj_" + collName + "_TagIndex"));
+	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) {
+            tjCollBat.insert("_Terms", bat("tj_" + ftiName + "_Terms"));
+	    tjCollBat.insert("_Tags", bat("tj_" + ftiName + "_Tags"));
+	    tjCollBat.insert("_TermIndex", bat("tj_" + ftiName + "_TermIndex"));
+	    tjCollBat.insert("_TagIndex", bat("tj_" + ftiName + "_TagIndex"));
 	}
 	tjCollBat.insert("submitBats", new(void,str).seqbase(0@0));
 	tjCollBat.insert("replaceBats", new(str,str));
@@ -722,7 +800,7 @@ PROC _tj_commit(BAT[str,bat] collBat) : void
 
 ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
-- str collName: the name of the collection.\n
+- str ftiName: the name of the collection.\n
 - str uri_loc: the location of the xml document.\n
 - str uri_name: the name of the xml document (optional).\n
 - bit store: when true the doc is stored in pathfinder.\n\
@@ -733,22 +811,22 @@ not stored in Pathfinder it will be shredded on the fly when nodes from the\n\
 document are returned by the XQUERY pftijah-node() function.\n\
 The index is automatically finalized at the end of the method.",
 "pftijah");
-PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : void
+PROC tj_add2collection(str ftiName, str uri_loc, str uri_name, bit store) : void
 {
-    if ( verbose ) printf("#TJ:tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",collName,uri_loc,uri_name);
-    var coll_lock := tj_get_collection_lock(collName);
+    if ( verbose ) printf("#TJ:tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
+    var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
       var t_start := usec();
-      bat("tj_globalTerms").access(BAT_APPEND);
-      bat("tj_globalTags").access(BAT_APPEND);
-      var collBat := _tj_collection(collName);
-      _tj_add2collection(collName, collBat, uri_loc, uri_name, store);
-      _tj_finalize_collection(collName, collBat);
+      bat(_tj_TermBat(ftiName)).access(BAT_APPEND);
+      bat(_tj_TagBat(ftiName)).access(BAT_APPEND);
+      var collBat := _tj_collection(ftiName);
+      _tj_add2collection(ftiName, collBat, uri_loc, uri_name, store);
+      _tj_finalize_collection(ftiName, collBat);
       _tj_commit(collBat); 
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
-         printf("#C[%s]:tj_add2collection(): + aggregate time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
+         printf("#C[%s]:tj_add2collection(): + aggregate time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
        }
     });
     lock_unset(coll_lock);
@@ -757,7 +835,7 @@ PROC tj_add2collection(str collName, str uri_loc, str uri_name, bit store) : voi
 
 ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
-- str collName: the name of the collection.\n
+- str ftiName: the name of the collection.\n
 - BAT[str,str]: the bat containing the [location,name] pairs of the xml docs.\n\
 - bit store: when true the documents are stored in Pathfinder.\n\
 DESCRIPTION:\n\
@@ -767,23 +845,23 @@ in the head and the name in the tail.\n\
 The advantage of this method is that the collection is finalized after all\n\
 xml documents in the bat are added to the collection.",
 "pftijah");
-PROC tj_add2collection(str collName, BAT[str,str] uri, bit store) : void
+PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
 {
-    var coll_lock := tj_get_collection_lock(collName);
+    var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
       var t_start := usec();
-      bat("tj_globalTerms").access(BAT_APPEND);
-      bat("tj_globalTags").access(BAT_APPEND);
+      bat(_tj_TermBat(ftiName)).access(BAT_APPEND);
+      bat(_tj_TagBat(ftiName)).access(BAT_APPEND);
       var collBat;
-      collBat := _tj_collection(collName);
+      collBat := _tj_collection(ftiName);
       uri@batloop() {
-        _tj_add2collection(collName, collBat, $h, $t, store);
+        _tj_add2collection(ftiName, collBat, $h, $t, store);
       }
-      _tj_finalize_collection(collName, collBat);
+      _tj_finalize_collection(ftiName, collBat);
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
-         printf("#C[%s]:tj_add2collection(BAT): + aggregate time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
+         printf("#C[%s]:tj_add2collection(BAT): + aggregate time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
        }
       _tj_commit(collBat); 
     });
@@ -797,11 +875,11 @@ PROC _timestr(lng v) : str
 }
 
 # main internal add2collection() function.
-PROC _tj_add2collection(str collName, BAT[str,bat] collBat, str uri_loc, str uri_name, bit store) : void
+PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_name, bit store) : void
 { 
     var ms;
     var t_start := usec();
-    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",collName,uri_loc,uri_name);
+    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
 
     var selTagList := _tj_get_parameter(collBat, "tagFilter");
            
@@ -826,14 +904,14 @@ PROC _tj_add2collection(str collName, BAT[str,bat] collBat, str uri_loc, str uri
 	    }
             if ( timing ) {
 	      ms := (usec()-s_start)/1000;
-              printf("#C[%s]:add2coll(\"%s\"): shred time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
+              printf("#C[%s]:add2coll(\"%s\"): shred time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
             }
         } else {
-            if ( verbose ) printf("#TJ:_tj_add2collection(%s,..) doc(\"%s\") already shredded.\n",collName,uri_name);
+            if ( verbose ) printf("#TJ:_tj_add2collection(%s,..) doc(\"%s\") already shredded.\n",ftiName,uri_name);
 	}
         ws_opendoc(ws, bat(void,str,1).append(uri_name));
 	i_start := usec();
-        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",collName,uri_name);
+        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",ftiName,uri_name);
         _tj_throw2collection(collBat,ws,uri_name,selTagList);
         ws_destroy(ws);
     } else {
@@ -842,44 +920,43 @@ PROC _tj_add2collection(str collName, BAT[str,bat] collBat, str uri_loc, str uri
     }
     if ( timing ) {
 	ms := (usec()-i_start)/1000;
-        printf("#C[%s]:add2coll(\"%s\"): index time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
+        printf("#C[%s]:add2coll(\"%s\"): index time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
     }
            
     _tj_set_parameter(collBat, "status", "building");
-    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\") finish.\n",collName);
+    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\") finish.\n",ftiName);
     if ( timing ) {
 	ms := (usec()-t_start)/1000;
-        printf("#C[%s]:add2coll(\"%s\"): total time = %lld.%03llds.\n",collName,uri_name,/(ms,1000),%(ms,1000));
+        printf("#C[%s]:add2coll(\"%s\"): total time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
     }
 }
 
-
 ADDHELP("tj_finalize_collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
-- str collName: the name of the collection.\n
+- str ftiName: the name of the collection.\n
 DESCRIPTION:\n\
 Obsolete function which prepares the collection for usage of new documents\n\
 added to the collection. This is now done automagically",
 "pftijah");
-PROC tj_finalize_collection(str collName) : void
+PROC tj_finalize_collection(str ftiName) : void
 {
-    var coll_lock := tj_get_collection_lock(collName);
+    var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
       print("Warning: This function is obsolete.");
-      #_tj_finalize_collection(collName);
+      #_tj_finalize_collection(ftiName);
     });
     lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
 }
 
 # internal finalize function
-PROC _tj_finalize_collection(str collName, BAT[str,bat] collBat) : void
+PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat) : void
 {
     var t_start := usec();
-    if ( verbose ) printf("#TJ:_tj_finalize_collection(\"%s\") called.\n",collName);
+    if ( verbose ) printf("#TJ:_tj_finalize_collection(\"%s\") called.\n",ftiName);
     #
-    var mod_frags := _tj_chk_modified_fragments(collName, collBat); 
+    var mod_frags := _tj_chk_modified_fragments(ftiName, collBat); 
     # set all fragments except the last one to BAT_READ
     mod_frags@batloop()
     {
@@ -891,39 +968,39 @@ PROC _tj_finalize_collection(str collName, BAT[str,bat] collBat) : void
     collBat.find("_tid").access(BAT_APPEND).mmap(1);
     collBat.find("_pfpre").access(BAT_APPEND).mmap(1);
     var fpfx := str(collBat.find("_fragments").count());
-    collBat.find("submitBats").append("tj_" + collName + "_size" + fpfx);
-    collBat.find("submitBats").append("tj_" + collName + "_tid" + fpfx);
-    collBat.find("submitBats").append("tj_" + collName + "_pfpre");
-    collBat.find("submitBats").append("tj_" + collName + "_fragments");
-    collBat.find("submitBats").append("tj_" + collName + "_doc_name");
-    collBat.find("submitBats").append("tj_" + collName + "_doc_firstpre");
-    collBat.find("submitBats").append("tj_" + collName + "_param");
+    collBat.find("submitBats").append("tj_" + ftiName + "_size" + fpfx);
+    collBat.find("submitBats").append("tj_" + ftiName + "_tid" + fpfx);
+    collBat.find("submitBats").append("tj_" + ftiName + "_pfpre");
+    collBat.find("submitBats").append("tj_" + ftiName + "_fragments");
+    collBat.find("submitBats").append("tj_" + ftiName + "_doc_name");
+    collBat.find("submitBats").append("tj_" + ftiName + "_doc_firstpre");
+    collBat.find("submitBats").append("tj_" + ftiName + "_param");
     
-    _buildIRindex(collName, collBat);
+    _buildIRindex(ftiName, collBat);
     #
     _tj_set_parameter(collBat, "status", "finalized");
-    var lst_fpre := bat("tj_" + collName + "_param").find("_last_tijahPre");
+    var lst_fpre := bat("tj_" + ftiName + "_param").find("_last_tijahPre");
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
     #
-    var gterm_sort := bat("tj_globalTerms").reverse().sort().reverse();
+    var gterm_sort := bat(_tj_TermBat(ftiName)).reverse().sort().reverse();
     gterm_sort.access(BAT_APPEND);
     gterm_sort.mmap(1);
-    var gtag_sort := bat("tj_globalTags").reverse().sort().reverse();
+    var gtag_sort := bat(_tj_TagBat(ftiName)).reverse().sort().reverse();
     gtag_sort.access(BAT_APPEND);
     gtag_sort.mmap(1);
 
     collBat.replace("_globalTerms", gterm_sort);
     collBat.replace("_globalTags", gtag_sort);
     var replaceBats := collBat.find("replaceBats");
-    replaceBats.insert("_globalTerms", "tj_globalTerms");
-    replaceBats.insert("_globalTags", "tj_globalTags");
+    replaceBats.insert("_globalTerms", _tj_TermBat(ftiName));
+    replaceBats.insert("_globalTags", _tj_TagBat(ftiName));
     
-    collBat.find("submitBats").append("tj_globalTerms");
-    collBat.find("submitBats").append("tj_globalTags");
+    collBat.find("submitBats").append(_tj_TermBat(ftiName));
+    collBat.find("submitBats").append(_tj_TagBat(ftiName));
     
     if ( timing ) {
         var ms := (usec()-t_start)/1000;
-        printf("#C[%s]:finalize(): total time = %lld.%03llds.\n",collName,/(ms,1000),%(ms,1000));
+        printf("#C[%s]:finalize(): total time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
     }
 }
 
@@ -940,13 +1017,13 @@ PROC _tj_set_parameter(BAT[str,bat] collBat, str par, str val) : void
 }
 
 # set a collection parameter
-PROC tj_set_parameter(str collName, str par, str val) : void
+PROC tj_set_parameter(str ftiName, str par, str val) : void
 {
-    if ( verbose ) printf("#TJ:tj_set_parameterl(%s,%s,%s) called.\n",collName,par,val);
-    var coll_lock := tj_get_collection_lock(collName);
+    if ( verbose ) printf("#TJ:tj_set_parameterl(%s,%s,%s) called.\n",ftiName,par,val);
+    var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
-	var parbat := bat("tj_" + collName + "_param");
+	var parbat := bat("tj_" + ftiName + "_param");
 
 	if ( parbat.exist(par) ) {
 	    parbat.replace(par,val);
@@ -970,22 +1047,22 @@ PROC _tj_get_parameter(BAT[str,bat] collBat, str par) : str
 	}
 }
 
-PROC tj_dump_collection(str collName) : void
+PROC tj_dump_collection(str ftiName) : void
 {
-    var coll_lock := tj_get_collection_lock(collName);
+    var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
-	bat("tj_" + collName + "_param").print();
-	bat("tj_" + collName + "_doc_name").print();
-	bat("tj_" + collName + "_doc_firstpre").print();
-	# print(bat("tj_" + collName + "_doc_name"),bat("tj_" + collName + "_doc_firstpre"));
-	bat("tj_globalTerms").print();
-	bat("tj_globalTags").print();
-	print(bat("tj_" + collName + "_tid1"));
-	print(bat("tj_" + collName + "_size1"));
-	print(bat("tj_" + collName + "_pfpre"));
-	print(bat("tj_" + collName + "_fragments"));
-	# print(bat("tj_" + collName + "_height"));
+	bat("tj_" + ftiName + "_param").print();
+	bat("tj_" + ftiName + "_doc_name").print();
+	bat("tj_" + ftiName + "_doc_firstpre").print();
+	# print(bat("tj_" + ftiName + "_doc_name"),bat("tj_" + ftiName + "_doc_firstpre"));
+	bat(_tj_TermBat(ftiName)).print();
+	bat(_tj_TagBat(ftiName)).print();
+	print(bat("tj_" + ftiName + "_tid1"));
+	print(bat("tj_" + ftiName + "_size1"));
+	print(bat("tj_" + ftiName + "_pfpre"));
+	print(bat("tj_" + ftiName + "_fragments"));
+	# print(bat("tj_" + ftiName + "_height"));
     });
     lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
@@ -1013,11 +1090,11 @@ PROC tj_setCollName(str name) : void :=
 	if (not(bat("tj_collName").reverse().exist(name))) {
 		ERROR("collection \"%s\"does not exist",name);
 	}
-	collName := name;
-	background_collName := name;
-	collHeight := bat("tj_" + collName + "_param").find("height").int();
+	GLOBAL_COLLNAME := name;
+	background_GLOBAL_COLLNAME := name;
+	collHeight := bat("tj_" + GLOBAL_COLLNAME + "_param").find("height").int();
 	if ( DEBUG ) { 
-        	printf("Work collection is set to %s (with height %d)\n", collName, collHeight);
+        	printf("Work collection is set to %s (with height %d)\n", GLOBAL_COLLNAME, collHeight);
         	fflush(stdout());
         } 
 }
@@ -1031,9 +1108,9 @@ PROC tj_setBackgroundCollName(str name) : void :=
 	if (not(bat("tj_collName").reverse().exist(name))) {
 		ERROR("background collection \"%s\"does not exist",name);
 	}
-	background_collName := name;
+	background_GLOBAL_COLLNAME := name;
 	if ( DEBUG ) { 
-        	printf("Background collection is set to %s (with height %d)\n", collName, collHeight);
+        	printf("Background collection is set to %s (with height %d)\n", GLOBAL_COLLNAME, collHeight);
         	fflush(stdout());
         } 
 }
@@ -1219,7 +1296,7 @@ PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child ) : bat[oid,oid
     var candidates := child.sort().mark(0@0).reverse();
     
     # Load the pre-size table
-    var pre_size := load( "tj_" + collName + "_size1");
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");
     
     # Check the order of the items:
     items.chk_order();
@@ -1245,16 +1322,16 @@ PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child ) : bat[oid,oid
 #
 # Results are sorted on the document position (tail)
 ##
-PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
+PROC Qterms_to_tid_pre(str ftiName, bat[void,str] Qterms ): bat[oid,oid] :=
 {
-    var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
+    var stemmer := bat("tj_"+ ftiName +"_param").find("stemmer");
     var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
     
-    var tids    := bat("tj_globalTerms").join( stemmed.reverse() ).sort().hmark(oid(0));
+    var tids    := bat(_tj_TermBat(ftiName)).join( stemmed.reverse() ).sort().hmark(oid(0));
     
     var result := indexfetchjoin( tids,
-                                  bat("tj_" + collName + "_TermIndex"),
-                                  bat("tj_" + collName + "_Terms") );
+                                  bat("tj_" + ftiName + "_TermIndex"),
+                                  bat("tj_" + ftiName + "_Terms") );
     return result.tsort();
 }
 
@@ -1265,11 +1342,13 @@ PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
 # Stemming on the query terms is performed using the same stemmer
 # that was used for the collection.
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC Qterms_to_void_tid( bat[void,str] Qterms ): bat[void,oid] :=
 {
-    var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
+    var stemmer := bat("tj_"+ GLOBAL_COLLNAME +"_param").find("stemmer");
     var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
     
+    # INCOMPLETE-TT use _tj_TermBat here
     var tids := bat("tj_globalTerms").join( stemmed.reverse() ).sort().hmark(oid(0));
     return tids;
 }
@@ -1278,10 +1357,11 @@ PROC Qterms_to_void_tid( bat[void,str] Qterms ): bat[void,oid] :=
 ##
 # Return only the element nodes from region ctx
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC nodes( bat[oid,any] ctx ) : bat[oid,any] :=
 {
     # The pfpre table only stores element nodes, so we can use it as a filter:
-    var pfpre  := bat( "tj_" + collName + "_pfpre");
+    var pfpre  := bat( "tj_" + GLOBAL_COLLNAME + "_pfpre");
     var result := pfpre.mirror().join( ctx );
     return result;
 }
@@ -1363,10 +1443,11 @@ PROC new_select_startnodes(bat[void,oid] startNodes) : bat[oid,dbl] :=
     return res;
 }
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC new_select_startnodes_frag(bat[void,oid] startNodes) : bat[oid,bat] :=
 {
     var nodes := new_select_startnodes(startNodes);
-    var res := split2frag(nodes, bat("tj_" + collName + "_fragments"));
+    var res := split2frag(nodes, bat("tj_" + GLOBAL_COLLNAME + "_fragments"));
     return res;
 }
 
@@ -1376,10 +1457,11 @@ PROC new_select_startnodes_frag(bat[void,oid] startNodes) : bat[oid,bat] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scoreBase global variable.
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC select_node() : bat[oid,dbl] := 
 {
     # The table pfpre only stores element nodes, so we can use it as a filter:
-    var pfpre  := bat( "tj_" + collName + "_pfpre");
+    var pfpre  := bat( "tj_" + GLOBAL_COLLNAME + "_pfpre");
     
     return pfpre.project( dbl(scoreBase ) );
 }
@@ -1390,16 +1472,18 @@ PROC select_node() : bat[oid,dbl] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scoreBase global variable.
 ##
+#INCOMPLETE-TT function should have ftiName parameter
 PROC select_node(str name) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( sprintf("BEGIN select_node('%s')", name) );
 
+    #INCOMPLETE-TT should use _tj_TagBat here
     var tids := bat("tj_globalTags").select(name);
     if (tids.count() = 0) return new(oid,dbl);
     var tid := tids.reverse().fetch(0);
     var result := indexfetchjoin( new(void,oid).append(tid).seqbase(oid(0)),
-    				  bat("tj_" + collName + "_TagIndex"),
-    				  bat("tj_" + collName + "_Tags") );
+    				  bat("tj_" + GLOBAL_COLLNAME + "_TagIndex"),
+    				  bat("tj_" + GLOBAL_COLLNAME + "_Tags") );
     result := result.reverse().sort().project(dbl(scoreBase)); 
 
     if ( trace ) tj_trace( sprintf("END   select_node('%s')", name) );
@@ -1415,6 +1499,7 @@ PROC select_node(str name) : bat[oid,dbl] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scoreBase global variable.
 ##
+#INCOMPLETE-TT function should have ftiName parameter
 PROC select_node(str name, bit e_class) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( sprintf("BEGIN select_node('%s',%d)", name, e_class) );
@@ -1428,11 +1513,12 @@ PROC select_node(str name, bit e_class) : bat[oid,dbl] :=
             return select_node(name);
         }
         
+        #INCOMPLETE-TT should use _tj_TagBat here
         var tids := bat("tj_globalTags").join(names.reverse()).mark(0@0).sort().reverse();
         
         var result := indexfetchjoin( tids,
-                        bat("tj_" + collName + "_TagIndex"),
-                        bat("tj_" + collName + "_Tags") );
+                        bat("tj_" + GLOBAL_COLLNAME + "_TagIndex"),
+                        bat("tj_" + GLOBAL_COLLNAME + "_Tags") );
         result := result.reverse().sort().project(dbl(scoreBase)); 
 
         if ( trace ) tj_trace( sprintf("END   select_node('%s',%d)", name, e_class) );
@@ -1443,10 +1529,11 @@ PROC select_node(str name, bit e_class) : bat[oid,dbl] :=
     }
 }
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC select_node_frag(str name, bit e_class) : bat[oid,bat] := 
 {
     var nodes := select_node(name, e_class);
-    var res := split2frag(nodes, bat("tj_" + collName + "_fragments"));
+    var res := split2frag(nodes, bat("tj_" + GLOBAL_COLLNAME + "_fragments"));
    
     return res;
 }
@@ -1484,19 +1571,21 @@ PROC split2frag(bat[oid,any] nodes, bat[void,oid] frags) : bat[oid,bat] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scoreBase global variable.
 ##
+# INCOMPLETE-TT select_term should have ftiName parameter
 PROC select_term(str name) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( sprintf("BEGIN select_term('%s')", name) );
     # 
-    var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
+    var stemmer := bat("tj_"+ GLOBAL_COLLNAME +"_param").find("stemmer");
     var term    := tj_normalizeTerm( toLower(name), stemmer );
     
     # Select the term positions from the global term dictionary.
+    # INCOMPLETE-TT use tj_TermBat here
     var tids := bat("tj_globalTerms").select(term).mark(0@0).sort().reverse();
     
     var result := indexfetchjoin( tids,
-    				  bat("tj_" + collName + "_TermIndex"),
-    				  bat("tj_" + collName + "_Terms") );
+    				  bat("tj_" + GLOBAL_COLLNAME + "_TermIndex"),
+    				  bat("tj_" + GLOBAL_COLLNAME + "_Terms") );
     result := result.reverse().sort().project(dbl(scoreBase)); 
     
 
@@ -1504,10 +1593,11 @@ PROC select_term(str name) : bat[oid,dbl] :=
     return result;
 }
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC select_term_frag(str name) : bat[oid,bat] := 
 {
     var nodes := select_term(name);
-    var res := split2frag(nodes, bat("tj_" + collName + "_fragments"));
+    var res := split2frag(nodes, bat("tj_" + GLOBAL_COLLNAME + "_fragments"));
     return res;
 }
 
@@ -1533,6 +1623,7 @@ PROC select_term(str name, int stemming) : bat[oid,dbl] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scoreBase global variable.
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN select_phrase" );
@@ -1540,8 +1631,8 @@ PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
    
     var tid := terms.fetch(0);
     var tmp := indexfetchjoin( new(int,oid).insert(0,tid),
-    				  bat("tj_" + collName + "_TermIndex"),
-    				  bat("tj_" + collName + "_Terms") );
+    				  bat("tj_" + GLOBAL_COLLNAME + "_TermIndex"),
+    				  bat("tj_" + GLOBAL_COLLNAME + "_Terms") );
     var res := tmp.reverse();
     var j := terms.count();
     var i := 1; 
@@ -1549,8 +1640,8 @@ PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
     {
         tid := terms.fetch(i);
         tmp := indexfetchjoin( new(int,oid).insert(0,tid),
-    				  bat("tj_" + collName + "_TermIndex"),
-    				  bat("tj_" + collName + "_Terms") );
+    				  bat("tj_" + GLOBAL_COLLNAME + "_TermIndex"),
+    				  bat("tj_" + GLOBAL_COLLNAME + "_Terms") );
         res := res.semijoin(tmp.[int]().[-](i).[oid]().reverse());   
 	i :+= 1;
     }	
@@ -1594,10 +1685,11 @@ PROC contained_by_frag(bat[oid,bat] left, bat[oid,bat] right) : bat[oid,bat] :=
     return res;
 }
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right, str ind) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN contained_by_2" );
-    var pre_size := bat("tj_"+collName+"_size"+ind);
+    var pre_size := bat("tj_"+GLOBAL_COLLNAME+"_size"+ind);
     # Check for the virtual root
     if ( not( pre_size.exist(0@0) ) ) {
         # Exceptions for root in left or right argument. The case 
@@ -1627,10 +1719,11 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right, str ind) : bat[oid,dbl]
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scoreBase global variable.
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN contained_by_1" );
-    if ( not( bat("tj_"+collName+"_size1").exist(0@0) ) ) {
+    if ( not( bat("tj_"+GLOBAL_COLLNAME+"_size1").exist(0@0) ) ) {
         # Exceptions for root in argument. The case 
         # of region sets containing the root is not handled
         if ( count( region ) = 1 ) 
@@ -1640,7 +1733,7 @@ PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 
 
     var ctx      := region.sort();
-    var pre_size := load( "tj_" + collName + "_size1");    
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");    
     var desc     := scj_desc( pre_size, ctx, count(pre_size) );
     var result   := nodes( desc ).project( dbl(scoreBase) );
     
@@ -1663,12 +1756,13 @@ PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 # Returns: region from left if it contains a region in right
 #
 #####################################
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN containing_2" );
     
     # Check for the virtual root
-    if ( not( bat("tj_"+collName+"_size1").exist(0@0) ) ) {
+    if ( not( bat("tj_"+GLOBAL_COLLNAME+"_size1").exist(0@0) ) ) {
         # Exceptions for root in argument. The case 
         # of region sets containing the root is not handled
         if ( count( left ) = 1 )
@@ -1680,7 +1774,7 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
                 return new(oid,dbl);
     }
     # TODO: fragmentation
-    var pre_size := load( "tj_" + collName + "_size1");
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");
     var anc_desc := anc_desc( left, right, pre_size );
 
     # Attach the scores to the resulting nodes again:
@@ -1809,6 +1903,7 @@ PROC score_NLLR_mil(bat[oid,oid] elem_tid, bat[void,int] pre_size, bat[oid,int] 
      return res;
 }
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd) : bat[oid,bat] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR_frag" );
@@ -1817,24 +1912,24 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd)
      # get term ids and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms ).histogram();
      var q_cnt := Qterms.count();
-     var tid_frq := collTermCount(background_collName, terms);
+     var tid_frq := collTermCount(background_GLOBAL_COLLNAME, terms);
      var tid_cnt := terms.semijoin(tid_frq);
      terms := nil;
      if (tid_cnt.count() = 0) {return new(oid,bat);}
     
      # compute constant factor in score computation
      var _lmbd := dbl((1.0 - lmbd) / lmbd);
-     var collFrq := bat("tj_" + background_collName + "_Terms").count();
+     var collFrq := bat("tj_" + background_GLOBAL_COLLNAME + "_Terms").count();
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
      var pre_tid := indexfetchjoin(tid_cnt.hmark(0@0), 
-                                   bat("tj_" + collName + "_TermIndex"), 
-                                   bat("tj_" + collName + "_Terms") ).reverse();
+                                   bat("tj_" + GLOBAL_COLLNAME + "_TermIndex"), 
+                                   bat("tj_" + GLOBAL_COLLNAME + "_Terms") ).reverse();
      if (pre_tid.count() = 0) {return new(oid,dbl);}
      pre_tid := pre_tid.sort();
 
-    var pre_tids := split2frag(pre_tid, bat("tj_" + collName + "_fragments"));
+    var pre_tids := split2frag(pre_tid, bat("tj_" + GLOBAL_COLLNAME + "_fragments"));
 
     var res := new(oid,bat);
 
@@ -1852,9 +1947,10 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd)
     return res;
 }
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, dbl _lmbd, int q_cnt) : bat[oid,dbl] :=
 {
-     var pre_size := bat("tj_" + collName + "_size" + ind);
+     var pre_size := bat("tj_" + GLOBAL_COLLNAME + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
      var elem_tid := _containing_desc3(left.sort().mark(0@0), pre_tid, pre_size);
@@ -1872,28 +1968,29 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      return res;
 }
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
     var t1 := time();
-    var pre_size := bat("tj_" + collName + "_size" + ind);
+    var pre_size := bat("tj_" + GLOBAL_COLLNAME + "_size" + ind);
     
      # get term ids and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms ).histogram();
      var q_cnt := Qterms.count();
-     var tid_frq := collTermCount(background_collName, terms);
+     var tid_frq := collTermCount(background_GLOBAL_COLLNAME, terms);
      terms := terms.semijoin(tid_frq);
      if (terms.count() = 0) {return new(oid,dbl);}
     
      # compute constant factor in score computation
      var _lmbd := dbl((1.0 - lmbd) / lmbd);
-     var collFrq := bat("tj_" + background_collName + "_Terms").count();
+     var collFrq := bat("tj_" + background_GLOBAL_COLLNAME + "_Terms").count();
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
      var pre_tid := indexfetchjoin(terms.hmark(0@0), 
-                                   bat("tj_" + collName + "_TermIndex"), 
-                                   bat("tj_" + collName + "_Terms") ).reverse();
+                                   bat("tj_" + GLOBAL_COLLNAME + "_TermIndex"), 
+                                   bat("tj_" + GLOBAL_COLLNAME + "_Terms") ).reverse();
      if (pre_tid.count() = 0) {return new(oid,dbl);}
      var t1a := time();
      pre_tid := pre_tid.sort();
@@ -1919,28 +2016,29 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      return res;
 }
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
     var t1 := time();
-    var pre_size := bat("tj_" + collName + "_size" + ind);
+    var pre_size := bat("tj_" + GLOBAL_COLLNAME + "_size" + ind);
     
      # get term ids and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms ).histogram();
      var q_cnt := Qterms.count();
-     var tid_frq := collTermCount(background_collName, terms);
+     var tid_frq := collTermCount(background_GLOBAL_COLLNAME, terms);
      terms := terms.semijoin(tid_frq);
      if (terms.count() = 0) {return new(oid,dbl);}
     
      # compute constant factor in score computation
      var _lmbd := dbl((1.0 - lmbd) / lmbd);
-     var collFrq := bat("tj_" + background_collName + "_Terms").count();
+     var collFrq := bat("tj_" + background_GLOBAL_COLLNAME + "_Terms").count();
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
      var pre_tid := indexfetchjoin(terms.hmark(0@0), 
-                                   bat("tj_" + collName + "_TermIndex"), 
-                                   bat("tj_" + collName + "_Terms") ).reverse();
+                                   bat("tj_" + GLOBAL_COLLNAME + "_TermIndex"), 
+                                   bat("tj_" + GLOBAL_COLLNAME + "_Terms") ).reverse();
      if (pre_tid.count() = 0) {return new(oid,dbl);}
      var t1a := time();
      pre_tid := pre_tid.sort();
@@ -1989,6 +2087,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
 #  tc(tm_i, doc): term count of query term tm_i in doc
 #  len(doc)     : size of doc (term or element size)
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int size_type) : bat[oid,dbl] := 
 {
     if ( trace ) tj_trace( "BEGIN p_containing_t_LMs_ASPECT" );
@@ -2010,21 +2109,21 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
     # In this case, we know that count(right) = tc(tm,col)
     #
     # This constitutes P(t|C), or tc(tm,col)/len(col)
-    var col_len := bat("tj_" + background_collName + "_Terms").count();
+    var col_len := bat("tj_" + background_GLOBAL_COLLNAME + "_Terms").count();
     bckgnd_prob := dbl(count(right))/dbl(col_len);
 
     #if (size_type = SIZE_ENTITY) {
     #    # Compute right size / collection entity size
     #    
-    #    var pre_pfpre := bat("tj_" + collName + "_pfpre");
+    #    var pre_pfpre := bat("tj_" + GLOBAL_COLLNAME + "_pfpre");
     #    bckgnd_prob := dbl(count(right))/dbl(count(pre_pfpre));
     #
     #    pre_pfpre := nil;
     #} else if (size_type = SIZE_TERM) {
     #    # Compute right size / collection term size
     #    
-    #    var pre_tid  := bat("tj_" + collName + "_tid");
-    #    var pre_pfpre := bat("tj_" + collName + "_pfpre");
+    #    var pre_tid  := bat("tj_" + GLOBAL_COLLNAME + "_tid");
+    #    var pre_pfpre := bat("tj_" + GLOBAL_COLLNAME + "_pfpre");
     #    var terms := pre_tid.mirror().kdiff( pre_pfpre.mirror() );
     #
     #    bckgnd_prob := dbl(count(right))/dbl(count(terms));
@@ -2098,6 +2197,7 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 #  tc(tm_i, doc): term count of query term tm_i in doc
 #  len(doc)     : size of doc (term or element size)
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat[oid,dbl]
 {   
     if ( trace ) tj_trace( "BEGIN p_containing_t_LMs_COARSE" );
@@ -2113,10 +2213,10 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     # For each term: collection term frequency tc(tm_i, col):
     #var col_term_frq := tid_pre.reverse().histogram();
     #small hack to get LMs running again...
-    var col_term_frq := collTermCount(background_collName, terms.reverse().project(int(0)));
+    var col_term_frq := collTermCount(background_GLOBAL_COLLNAME, terms.reverse().project(int(0)));
 
     # Collection size len(col): int
-    var col_len := bat("tj_" + background_collName + "_Terms").count();
+    var col_len := bat("tj_" + background_GLOBAL_COLLNAME + "_Terms").count();
 
     # Take only the terms that occur in the collection
     terms := terms.reverse().semijoin(col_term_frq).hmark(0@0);
@@ -2128,20 +2228,20 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     ### Foreground probability: 
     # Find out the document positions of the terms for foreground probability
     var tid_pre := indexfetchjoin(terms, 
-                                   bat("tj_" + collName + "_TermIndex"), 
-                                   bat("tj_" + collName + "_Terms") );
+                                   bat("tj_" + GLOBAL_COLLNAME + "_TermIndex"), 
+                                   bat("tj_" + GLOBAL_COLLNAME + "_Terms") );
     
     if (tid_pre.count() = 0) { return new(oid,dbl); }
     tid_pre := tid_pre.tsort();
     
     # TODO: fragmentation
-    var pre_size := bat("tj_" + collName + "_size1");
+    var pre_size := bat("tj_" + GLOBAL_COLLNAME + "_size1");
     
     # See which document contain the query terms we create a bat of [doc, term-id]:
     var doc_tid := _containing_desc(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size);
     
     # len(doc): [doc, size]
-    var doc_len := [dbl](bat("tj_" + collName + "_size1").semijoin(doc_tid));
+    var doc_len := [dbl](bat("tj_" + GLOBAL_COLLNAME + "_size1").semijoin(doc_tid));
     
     ###
     
@@ -2201,11 +2301,13 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
 ##
 # Returns the collection frequency table (should be precomputed, but is calculated for now)
 ##
+# INCOMPLETE-TT colf_freq shoul have GLOBAL_COLLNAME parameter
 PROC col_freq() : bat[oid,dbl] :=
 {
     var start_time := time();
+    # INCOMPLETE-TT should use _tj_TermBat here
     var allterms := bat("tj_globalTerms").sort().mark(0@0).reverse();
-    var alltermpos := indexfetchjoin(allterms, bat("tj_"+collName+"_TermIndex"), bat("tj_"+collName+"_Terms"));
+    var alltermpos := indexfetchjoin(allterms, bat("tj_"+GLOBAL_COLLNAME+"_TermIndex"), bat("tj_"+GLOBAL_COLLNAME+"_Terms"));
     var col_freqs := [dbl]({count}(alltermpos));
 
     if (DEBUG) printf( "col_freq: \t\t%d ms\n", time() - start_time );
@@ -2215,10 +2317,11 @@ PROC col_freq() : bat[oid,dbl] :=
 ##
 # Returns the collection frequency of the term with the indicated tid
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC col_freq(oid tid) : dbl :=
 {
     var start_time := time();
-    var alltermpos := indexfetchjoin(new(int,oid).insert(0,tid), bat("tj_"+collName+"_TermIndex"), bat("tj_"+collName+"_Terms"));
+    var alltermpos := indexfetchjoin(new(int,oid).insert(0,tid), bat("tj_"+GLOBAL_COLLNAME+"_TermIndex"), bat("tj_"+GLOBAL_COLLNAME+"_Terms"));
     var col_freqs := {count}(alltermpos);
     var result := dbl(col_freqs.fetch(0));
     if (DEBUG) printf( "col_freq: \t\t%d ms\n", time() - start_time );
@@ -2228,6 +2331,7 @@ PROC col_freq(oid tid) : dbl :=
 ##
 # For each region in left, count the number of regions in right it contains.
 ##
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,dbl]    :=    
 {
     if ( trace ) tj_trace( "START reg_freq");
@@ -2237,7 +2341,7 @@ PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,db
     var ctx_tmp2 := new( oid, int, ENTITY_NUM );
    
     # TODO: fragmentation
-    var pre_size := load( "tj_" + collName + "_size1");
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");
     ctx_tmp2 := anc_desc( left, right, pre_size );
     
     # Containment count: for each region from left, count how many regions from right it contains
@@ -2266,6 +2370,7 @@ PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,db
 
 
 # Calculate the term size of the region: how many terms does it contain?
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC size_term( bat[oid,any] region ) : bat[oid,dbl] := 
 {
     if ( trace ) tj_trace( "BEGIN size_term" );
@@ -2275,17 +2380,17 @@ PROC size_term( bat[oid,any] region ) : bat[oid,dbl] :=
     var start_time := time();
     
     # all terms:
-    var pre_tid   := bat("tj_" + collName + "_tid1");
-    var pre_pfpre := bat("tj_" + collName + "_pfpre");
+    var pre_tid   := bat("tj_" + GLOBAL_COLLNAME + "_tid1");
+    var pre_pfpre := bat("tj_" + GLOBAL_COLLNAME + "_pfpre");
     var terms     := pre_tid.mirror().kdiff( pre_pfpre.mirror() );
     
     var items      := region.mirror().mark(0@0).reverse();
     var candidates := terms.mirror().mark(0@0).reverse();
     
     # Alternative:
-    #var candidates      := bat("tj_" + collName + "_Terms" ).reverse().sort().mark(0@0).reverse();
+    #var candidates      := bat("tj_" + GLOBAL_COLLNAME + "_Terms" ).reverse().sort().mark(0@0).reverse();
     
-    var pre_size := load( "tj_" + collName + "_size1");
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");
    
     # Check the order of the items:
     items.chk_order();
@@ -2301,6 +2406,7 @@ PROC size_term( bat[oid,any] region ) : bat[oid,dbl] :=
 }
 
 # Calculate the entity size of the region: how many entities (tags and terms) does it contain?
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC size_entity( bat[oid,any] region ) : bat[oid,dbl] :=
 {
     if ( trace ) {
@@ -2309,7 +2415,7 @@ PROC size_entity( bat[oid,any] region ) : bat[oid,dbl] :=
     }
     
     # Entity sizes:
-    var pre_size := load( "tj_" + collName + "_size1");
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");
     
     var result := [dbl](region.mirror().join( pre_size ));
 
@@ -2325,6 +2431,7 @@ PROC size_entity( bat[oid,any] region ) : bat[oid,dbl] :=
 # PROBABILISTIC CONTAINMENT
 ################################################################################
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_contained_by_sum(bat[oid,dbl] region) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_contained_by_sum_1" );
@@ -2332,7 +2439,7 @@ PROC p_contained_by_sum(bat[oid,dbl] region) : bat[oid,dbl] :=
     var candidates := select_node();
 
     # TODO: fragmentation
-    var pre_size := load( "tj_" + collName + "_size1");
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");
     var ctx_res := anc_desc( region, candidates, pre_size );
 
     var ctx := ctx_res.reverse().mirror();
@@ -2353,11 +2460,12 @@ PROC p_contained_by_sum(bat[oid,dbl] region) : bat[oid,dbl] :=
 }
 
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] := 
 {
     if ( trace ) tj_trace( "BEGIN p_contained_by_sum_2" );
     # TODO: fragmentation
-    var pre_size := load( "tj_" + collName + "_size1");
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");
     var ctx_res := anc_desc( right, left, pre_size );
     
     var reg_score;
@@ -2380,6 +2488,7 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 }
 
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_wsumd" );
@@ -2398,7 +2507,7 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : 
 
     # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
     # TODO: fragmentation
-    var pre_size := load( "tj_" + collName + "_size1");
+    var pre_size := load( "tj_" + GLOBAL_COLLNAME + "_size1");
     var ctx_res := anc_desc( left, right, pre_size );
 
     # Special case for empty ancestor-descendant relation:
@@ -2694,6 +2803,7 @@ PROC gt(bat ctx, int comp) : bat :=
 # PRIOR
 ################################################################################
 
+# INCOMPLETE-TT function should have a ftiName parameter
 PROC prior_ls(bat region, int size_type) : bat := 
 {
 
@@ -2719,7 +2829,7 @@ PROC prior_ls(bat region, int size_type) : bat :=
 	# var ref_reg := new(oid,dbl,ENTITY_NUM);
 	# var ref_size := new(oid,dbl,ENTITY_NUM);
 
-	# var entity_name := load(collName+"entity_name");
+	# var entity_name := load(GLOBAL_COLLNAME+"entity_name");
 
 	# var ref_name := entity_name.join(region.mirror().join(entity_name).reverse().mirror());
 	# ref_reg := ref_name.project(dbl(1));
@@ -2775,12 +2885,12 @@ PROC tj_global_init() : void
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_coll_init(str collName, str stemmer) : void
+PROC tj_coll_init(str ftiName, str stemmer) : void
 {
         printf("WARNING: the use of function tj_coll_init() is deprecated.\n");
 	var collpar := new(str,str);
 	collpar.insert("stemmer",stemmer);
-	tj_init_collection(collName,collpar);
+	tj_init_collection(ftiName,collpar);
 }
 
 # SUGAR, REMOVE IN FUTURE
@@ -2791,49 +2901,49 @@ PROC tj_global_remove() : void
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_coll_remove(str collName) : void
+PROC tj_coll_remove(str ftiName) : void
 {
         printf("WARNING: the use of function tj_coll_remove() is deprecated.\n");
-	tj_delete_collection(collName);
+	tj_delete_collection(ftiName);
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_collection(str collName) : BAT[void,bat]
+PROC tj_collection(str ftiName) : BAT[void,bat]
 {
         printf("WARNING: the use of function tj_collection() is deprecated.\n");
-	return _tj_collection(collName);
+	return _tj_collection(ftiName);
 }
 
 # SUGAR, REMOVE IN FUTURE
 PROC tj_url2Collection(str doc, str url, str selTagList) : void
 {
         printf("WARNING: the use of function tj_url2Collection() is deprecated.\n");
-	tj_url2Collection(collName, doc, url, selTagList);
+	tj_url2Collection(GLOBAL_COLLNAME, doc, url, selTagList);
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
+PROC tj_url2Collection(str ftiName, str doc, str url, str selTagList) : void
 { 
         printf("WARNING: the use of function tj_url2Collection() is deprecated.\n");
-	tj_set_parameter(collName,"tagFilter",selTagList);
-	_tj_add2collection(collName,_tj_collection(collName),url,doc,true);
+	tj_set_parameter(ftiName,"tagFilter",selTagList);
+	_tj_add2collection(ftiName,_tj_collection(ftiName),url,doc,true);
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_url2Collection_index(str collName, str url, str selTagList) : void
+PROC tj_url2Collection_index(str ftiName, str url, str selTagList) : void
 {
         printf("WARNING: the use of function tj_url2Collection_index() is deprecated.\n");
-	tj_set_parameter(collName,"tagFilter",selTagList);
-	_tj_add2collection(collName,_tj_collection(collName),url,url,false);
+	tj_set_parameter(ftiName,"tagFilter",selTagList);
+	_tj_add2collection(ftiName,_tj_collection(ftiName),url,url,false);
 }
 
 # SUGAR, REMOVE IN FUTURE
-PROC tj_finalize(str collName) : void
+PROC tj_finalize(str ftiName) : void
 {
         printf("WARNING: the use of function tj_finalize() is deprecated.\n");
 }
 
-PROC _tj_chk_modified_fragments(str collName, BAT[str,bat] collBat) : BAT[void,str] :=
+PROC _tj_chk_modified_fragments(str ftiName, BAT[str,bat] collBat) : BAT[void,str] :=
 {
 	var offset := oid(int(_tj_get_parameter(collBat, "_last_finalizedPre")) + 1);
         var fragments := collBat.find("_fragments");
@@ -2843,33 +2953,33 @@ PROC _tj_chk_modified_fragments(str collName, BAT[str,bat] collBat) : BAT[void,s
 	var mod_frags := new(void, str).seqbase(0@0);
 	while (frag_offset < frag_last)
 	{
-		mod_frags.append("tj_" + collName + "_tid" + str(frag_offset));
-		mod_frags.append("tj_" + collName + "_size" + str(frag_offset));
+		mod_frags.append("tj_" + ftiName + "_tid" + str(frag_offset));
+		mod_frags.append("tj_" + ftiName + "_size" + str(frag_offset));
 		frag_offset :+= 1;
 	}
 	
 	return mod_frags;
 }
 
-PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
+PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 {
 	var offset := oid(int(_tj_get_parameter(collBat, "_last_finalizedPre")) + 1);
         var fragments := collBat.find("_fragments");
 	var frag_offset := int(find_lower(fragments.reverse(), offset));
 	var frag_last := fragments.count();
 	
-	var pre_tid := bat("tj_" + collName + "_tid" + str(frag_offset));
+	var pre_tid := bat("tj_" + ftiName + "_tid" + str(frag_offset));
 	var tids := pre_tid.slice(int(offset) - int(pre_tid.seqbase()), pre_tid.count() - 1);
 	tids.access(BAT_WRITE);
 	frag_offset :+= 1;
 	while (frag_offset <= frag_last)
 	{
-	    	tids.append(bat("tj_" + collName + "_tid" + str(frag_offset)));
+	    	tids.append(bat("tj_" + ftiName + "_tid" + str(frag_offset)));
 		frag_offset :+= 1;
 	}
         
 	# incremental index merge
-	if (view_bbp_name().reverse().exist("tj_" + collName + "_TermIndex")) 
+	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) 
         {
     		var replaceBats := collBat.find("replaceBats");
 		var tmp := tids.kdiff(collBat.find("_pfpre"));
@@ -2881,14 +2991,14 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
                 collBat.replace("_Terms", i.fetch(1));
 	        i := nil;
 		tmp := nil;
-		replaceBats.insert("_TermIndex", "tj_" + collName + "_TermIndex");
-                replaceBats.insert("_Terms", "tj_" + collName + "_Terms");
+		replaceBats.insert("_TermIndex", "tj_" + ftiName + "_TermIndex");
+                replaceBats.insert("_Terms", "tj_" + ftiName + "_Terms");
 	        collBat.find("_TermIndex").access(BAT_READ).mmap(1);
 	        collBat.find("_Terms").access(BAT_READ).mmap(1);
-		collBat.find("submitBats").append("tj_" + collName + "_TermIndex");
-		collBat.find("submitBats").append("tj_" + collName + "_Terms");
+		collBat.find("submitBats").append("tj_" + ftiName + "_TermIndex");
+		collBat.find("submitBats").append("tj_" + ftiName + "_Terms");
 	        
-	        tmp := tids.semijoin(bat("tj_" + collName + "_pfpre"));
+	        tmp := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
                 tmp := tmp.reverse().ssort();
                 i := mergeindex(tmp, collBat.find("_TagIndex"),
                                      collBat.find("_Tags"),
@@ -2897,22 +3007,22 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
                 collBat.replace("_Tags", i.fetch(1));
 	        i := nil;
 		tmp := nil;
-		replaceBats.insert("_TagIndex", "tj_" + collName + "_TagIndex");
-                replaceBats.insert("_Tags", "tj_" + collName + "_Tags");
+		replaceBats.insert("_TagIndex", "tj_" + ftiName + "_TagIndex");
+                replaceBats.insert("_Tags", "tj_" + ftiName + "_Tags");
 	        collBat.find("_TagIndex").access(BAT_READ).mmap(1);
 	        collBat.find("_Tags").access(BAT_READ).mmap(1);
-		collBat.find("submitBats").append("tj_" + collName + "_TagIndex");
-		collBat.find("submitBats").append("tj_" + collName + "_Tags");
+		collBat.find("submitBats").append("tj_" + ftiName + "_TagIndex");
+		collBat.find("submitBats").append("tj_" + ftiName + "_Tags");
         }
         else # create new index
         {       
-	        var tmp := tids.kdiff(bat("tj_" + collName + "_pfpre"));
+	        var tmp := tids.kdiff(bat("tj_" + ftiName + "_pfpre"));
                 tmp := tmp.reverse().ssort();
-	        var termindex := tmp.hmark(0@0).offsetindex(bat("tj_globalTerms").count() + 1);
+	        var termindex := tmp.hmark(0@0).offsetindex(bat(_tj_TermBat(ftiName)).count() + 1);
 	        var terms := tmp.tmark(0@0);
 	        # create _TermIndex and _Terms here
-	        termindex.persists(true).bbpname("tj_" + collName + "_TermIndex");
-	        terms.persists(true).bbpname("tj_" + collName + "_Terms");
+	        termindex.persists(true).bbpname("tj_" + ftiName + "_TermIndex");
+	        terms.persists(true).bbpname("tj_" + ftiName + "_Terms");
 	        tmp := nil;
 	        termindex.access(BAT_READ);
 	        termindex.mmap(1);
@@ -2920,16 +3030,16 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
 	        terms.mmap(1);
 	        termindex := nil;
 	        terms := nil;
-		collBat.find("submitBats").append("tj_" + collName + "_TermIndex");
-		collBat.find("submitBats").append("tj_" + collName + "_Terms");
+		collBat.find("submitBats").append("tj_" + ftiName + "_TermIndex");
+		collBat.find("submitBats").append("tj_" + ftiName + "_Terms");
 	        
-	        tmp := tids.semijoin(bat("tj_" + collName + "_pfpre"));
+	        tmp := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
                 tmp := tmp.reverse().ssort();
-	        var tagindex := tmp.hmark(0@0).offsetindex(bat("tj_globalTags").count() + 1);
+	        var tagindex := tmp.hmark(0@0).offsetindex(bat(_tj_TagBat(ftiName)).count() + 1);
 	        var tags := tmp.tmark(0@0);
 	        # create _Tags and _Tagindex here
-	        tagindex.persists(true).bbpname("tj_" + collName + "_TagIndex");
-	        tags.persists(true).bbpname("tj_" + collName + "_Tags");
+	        tagindex.persists(true).bbpname("tj_" + ftiName + "_TagIndex");
+	        tags.persists(true).bbpname("tj_" + ftiName + "_Tags");
 	        tmp := nil;
 	        tagindex.access(BAT_READ);
 	        tagindex.mmap(1);
@@ -2937,8 +3047,8 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
 	        tags.mmap(1);
 	        tagindex := nil;
 	        tags := nil;
-		collBat.find("submitBats").append("tj_" + collName + "_TagIndex");
-		collBat.find("submitBats").append("tj_" + collName + "_Tags");
+		collBat.find("submitBats").append("tj_" + ftiName + "_TagIndex");
+		collBat.find("submitBats").append("tj_" + ftiName + "_Tags");
         }
 }
 
@@ -2946,25 +3056,6 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
 # PF interface functions
 #
 ######################################
-
-#PROC tijah2pf(BAT[oid,dbl] pre_score) : BAT :=
-#{
-#	var docpre := bat("tj_" + collName + "_doc_firstpre").[oid]();
-#	var pfpre :=  bat("tj_" + collName + "_pfpre");
-#	
-#	var item := pre_score.hmark(0@0);
-#	var score := pre_score.tmark(0@0);
-#	var iter := item.mirror();
-#	var frag := [find_lower](const docpre.reverse().mark(0@0), item);
-#	item := item.join(pfpre).sort().tmark(0@0);
-#	
-#	var res := new(void,bat);
-#	res.append(iter);
-#	res.append(item);
-#	res.append(frag);
-#	res.append(score);
-#	return res;
-#}
 
 # align_frag assumes the following variable to be global to its scope:
 # frag, kind, ipik, ws
@@ -2974,7 +3065,7 @@ PROC _buildIRindex(str collName, BAT[str,bat] collBat) : void :=
 # If so, it should be removed from the code base!
 PROC align_frag() : void :=
 {
-	var needed_docs := bat("tj_" + collName + "_doc_name").semijoin(frag.tunique());
+	var needed_docs := bat("tj_" + GLOBAL_COLLNAME + "_doc_name").semijoin(frag.tunique());
 	var loaded_docs := ws.fetch(DOC_LOADED).reverse();
 	var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);
 	ws_opendoc(ws, docs_to_load);

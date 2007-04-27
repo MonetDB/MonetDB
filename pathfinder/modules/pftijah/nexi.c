@@ -493,7 +493,7 @@ int old_main(BAT* optbat, char* startNodes_name)
 #if 0
     MILPRINTF(MILOUT, "retNum := %d;\n", retNum);
 #endif
-    MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ collName +\"_param\").find(\"stemmer\");\n");
+    MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ GLOBAL_COLLNAME +\"_param\").find(\"stemmer\");\n");
     if (strcmp(background_collection,""))
     { MILPRINTF(MILOUT, "tj_setBackgroundCollName(\"%s\");\n", background_collection); }
     

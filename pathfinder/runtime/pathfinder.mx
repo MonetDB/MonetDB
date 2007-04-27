@@ -3269,8 +3269,13 @@ PROC __shred_into_docBAT(BAT[str,bat] docBAT,
                                                   docBAT.fetch(PROP_VAL),
                                                   docBAT.fetch(PROP_TEXT),
                                                   docBAT.fetch(MAP_PID), pre, att, updatable);
-        if (not(isnil(commitbat))) docBAT.insert(commitbat + "_qn_nid", bat(commitbat + "_qn_nid"))
+        if (not(isnil(commitbat))) {
+		if ( not(view_bbp_name().reverse().exist(commitbat + "_qn_nid"))) {
+		    ERROR("__shred_into_docBAT:bat(%s) does not exist!!!!\n",commitbat + "_qn_nid");
+		}
+		docBAT.insert(commitbat + "_qn_nid", bat(commitbat + "_qn_nid"))
                                          .insert(commitbat + "_vx_hsh_nid", bat(commitbat + "_vx_hsh_nid")); 
+        }
     }
 }
 

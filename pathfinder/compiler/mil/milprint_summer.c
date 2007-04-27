@@ -8065,7 +8065,30 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return NORMAL;
     }
 #ifdef HAVE_PFTIJAH
-    else if (
+    else if (PFqname_eq(fnQname,PFqname (PFns_tijah,"ft-index-info")) == 0 ) {
+        char *consistent = rc?"false":"true";
+        if (fun->arity) {
+            rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+            item_ext = kind_str(rc);
+            milprintf(f, 
+                "{ # translate tijah:ft-index-info (string) as element*\n"
+                "  var ret := ws_ft_index_info(ws, iter.materialize(ipik).reverse().leftfetchjoin(item%s),%s);\n"
+                "  item := ret.tmark(0@0);\n"
+                "  iter := ret.hmark(0@0);\n", (rc)?item_ext:val_join(STR), consistent);
+        } else {
+            milprintf(f, 
+                "{ # translate tijah:ft-index-info () as element*\n"
+                "  var ret := reverse(loop%03u).cross(ws_ft_index_info(ws,%s));\n"
+                "  iter := ret.hmark(0@0);\n"
+                "  item := ret.tmark(0@0);\n", cur_level, consistent);
+        }
+        milprintf(f,
+                "  ipik := item;\n"
+                "  kind := set_kind(WS,ELEM);\n"
+                "  pos  := tmark_grp_unique(iter,ipik);\n" 
+                "} # end of translate tijah:ft-index-info (string?) as element*\n");
+        return NORMAL;
+    } else if (
           ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"create-ft-index"))) ||
           ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"extend-ft-index"))) ||
           ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"delete-ft-index")))
@@ -8320,12 +8343,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		, (ctx_counter?"true":"false"),item_ext, str_counter);
 	    /* translate tijah_pre to pf-pre */
 	    milprintf(f,
-                "    var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
-                "    var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
+                "    var docpre := bat(\"tj_\" + GLOBAL_COLLNAME + \"_doc_firstpre\").[oid]();\n"
+                "    var pfpre :=  bat(\"tj_\" + GLOBAL_COLLNAME + \"_pfpre\");\n"
                 "    item  := nexi_score.hmark(0@0);\n"
                 "    var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
                 "    item := item.join(pfpre).sort().tmark();\n"
-                "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
+                "    var needed_docs := bat(\"tj_\" + GLOBAL_COLLNAME + \"_doc_name\").semijoin(frag.tunique());\n"
 		"    lock_unset(tijah_lock); tijah_lock := lock_nil;\n"
                 "    var loaded_docs := ws.fetch(OPEN_NAME).reverse();\n"
                 "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
@@ -8590,12 +8613,18 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
  * @param c the Core node containing the rest of the subtree
  * @result the kind indicating, which result interface is chosen
  */
+
+static int logcnt = 0;
+
 static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 {
     char *descending;
     int rc=NORMAL, rcode;
 
+    int logid = logcnt++;
+
+    milprintf(f,"tj_log(\"+ mps(start-%d)\\n\",0);\n",logid);
     assert(c);
     switch (c->kind)
     {
@@ -9106,6 +9135,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     c->kind);
             break;
     }
+    milprintf(f,"tj_log(\"+ mps(finish-%d)\\n\",0);\n",logid);
     return rc;
 }
 
