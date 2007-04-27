@@ -1084,7 +1084,8 @@ GDKfree(void *blk)
 
 	/* check against duplicate free */
 	assert((size & 2) == 0);
-	s[-1] |= 2;
+
+	assert(size != 0);
 
 	if (size < 0) {
 		size_t maxsize = (size_t) s[-2];
@@ -1441,7 +1442,7 @@ GDKinit(char *dbname, char *dbfarm, int alloc_map)
 	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
 #ifndef WIN32
-	if (!GDKembedded) {
+	if (!GDKembedded && GDKgetenv_isyes("gdk_vmtrim")) {
 		MT_Id t;
 
 		MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize);

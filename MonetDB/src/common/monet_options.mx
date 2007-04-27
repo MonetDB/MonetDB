@@ -330,7 +330,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	28	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	29	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -395,6 +395,10 @@ mo_builtin_settings(opt **Set)
 #else
 	set[i].value = strdup("14");
 #endif
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_vmtrim");
+	set[i].value = strdup("yes");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_admin");
