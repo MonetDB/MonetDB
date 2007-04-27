@@ -35,24 +35,7 @@ between 25-50%.
 #ifndef _EMBEDDEDCLIENT_H_
 #define _EMBEDDEDCLIENT_H_
 
-#include "mal_config.h"
-#include "gdk.h"
-#ifdef HAVE_PTHREAD_H
-/* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
-#undef HAVE_CONFIG_H
-#ifdef pid_t
-#undef pid_t
-#endif
-#include <sched.h>
-#include <pthread.h>
-#endif
-
 #include "monet_options.h"
-#include "mal.h"
-#include "mal_session.h"
-#include "mal_import.h"
-#include "mal_client.h"
-#include "mal_function.h"
 
 #ifdef WIN32
 #ifndef LIBEMBEDDEDSQL5
@@ -73,7 +56,23 @@ embeddedclient_export Mapi embedded_sql(opt *set, int len);
 @c
 #include "sql_config.h"
 #include "embeddedclient.h"
-#include "mserver.h"
+
+#include "gdk.h"
+#ifdef HAVE_PTHREAD_H
+/* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
+#undef HAVE_CONFIG_H
+#ifdef pid_t
+#undef pid_t
+#endif
+#include <sched.h>
+#include <pthread.h>
+#endif
+
+#include "mal.h"
+#include "mal_session.h"
+#include "mal_import.h"
+#include "mal_client.h"
+#include "mal_function.h"
 
 static void
 Monet_init(opt *set, int setlen)
@@ -134,16 +133,12 @@ Monet_init(opt *set, int setlen)
 		GDK_mem_bigsize = strtol(p, NULL, 10);
 	if ((p = GDKgetenv("gdk_vm_minsize")) != NULL)
 		GDK_vm_minsize = strtol(p, NULL, 10);
-	if (GDKgetenv_isyes("gdk_embedded")) {
-		GDKembedded = 1;
-	}
-
 	if (GDKgetenv_isyes("monet_daemon"))
 		monet_daemon = 1;
-	if (GDKgetenv_isyes("monet_embedded")) {
-		monet_daemon = 1;
-		GDKembedded = 1;
-	}
+
+	GDKsetenv("gdk_embedded", "yes");
+	GDKsetenv("monet_embedded", "yes");
+	GDKembedded = 1;
 }
 
 static opt *embedded_set = NULL;
@@ -160,16 +155,35 @@ start_sql_server(void *arg)
 /* 		monet_singlethreaded = 1; */
 		if (embedded_set == NULL) {
 			int len = mo_builtin_settings(&embedded_set);
-
-			len = mo_add_option(&embedded_set, len, opt_config, "prefix", MONETDBPREFIX);
-			len = mo_add_option(&embedded_set, len, opt_config, "config", MONETDBCONFIG);
-
 			embedded_len = mo_system_config(&embedded_set, len);
 		}
 		Monet_init(embedded_set, embedded_len);
 		/* you don;t need the commandline arguments anymore */
 		mo_free_options(embedded_set, embedded_len);
 		if (mal_init())
+			return 0;
+		{
+			/* unlock the vault, first see if we can find the file which
+			 * holds the secret */
+			char* secret = alloca(sizeof(char) * 1024);
+			FILE* secretf;
+			size_t len;
+			
+			if (GDKgetenv("monet_vault_key") == NULL) {
+				/* use a default (hard coded, non safe) key */
+				secret = "Xas632jsi2whjds8";
+			} else {
+				if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) 
+					return 0;
+				len = fread(secret, 1, 1023, secretf);
+				secret[len] = '\0';
+				fclose(secretf);
+			}
+			if (AUTHunlockVault(&secret) != MAL_SUCCEED)
+				return 0;
+		}
+		/* make sure the authorisation BATs are loaded */
+		if (AUTHinitTables() != MAL_SUCCEED)
 			return 0;
 		MSinitClientPrg(mal_clients, "user","main");
 		initialized = 1;
@@ -180,9 +194,9 @@ start_sql_server(void *arg)
 	free(arg);
 	snprintf(buf, sizeof(buf), 
 		"include sql;\n"
-		"in  := \"" PTRFMT "\":stream;\n"
-		"out := \"" PTRFMT "\":stream;\n"
-		"mapi.malclient(in, out);\n", PTRFMTCAST in, PTRFMTCAST out);
+		"in  := \"" PTRFMT "\":streams;\n"
+		"out := \"" PTRFMT "\":streams;\n"
+		"mserver.malclient(in, out);\n", PTRFMTCAST in, PTRFMTCAST out);
 	callString(mal_clients, buf, 0);
 	return NULL;
 }

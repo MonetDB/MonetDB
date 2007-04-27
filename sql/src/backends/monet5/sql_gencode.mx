@@ -1523,6 +1523,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, file);
 				q = pushStr(mb, q, "UTF-8");
 				q = pushArgument(mb, q, codeset);
+				file = getDestVar(q);
 
 				q = newStmt(mb, "streams", "openRead");
 				q = pushArgument(mb, q, file);
@@ -1541,11 +1542,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, s->flag);
 				s->nr = getDestVar(q);
 
-				q = newStmt(mb, "streams", "close");
-				q = pushArgument(mb, q, file);
-
 				q = newStmt(mb, "bstream", "destroy");
 				q = pushArgument(mb, q, bs);
+
+				q = newStmt(mb, "streams", "close");
+				q = pushArgument(mb, q, file);
 			} else {
 				int io_stdin;
 				q = newStmt(mb, "io", "stdin");

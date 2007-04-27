@@ -70,7 +70,7 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 
 MAPI  = monetdb@localhost:39894
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t';
-ERROR = !ERROR: End of string (') missing in 'dwerg.net word volwassen, er is eindelijk content
+ERROR = !ERROR: End of string (') missing in 'dwerg.net word volwassen, er is eindelijk content at line 1
         !ERROR: importTable: failed to import table
         !ERROR: mvc_import_table_wrap: operation failed.
 MAPI  = monetdb@localhost:39894

@@ -150,6 +150,8 @@ SQLprelude(void)
 	/* s->optimizer = "SQLoptimizer";
 	 * s->tactics = .. */
 	s->engine = "SQLengine";
+	if (GDKembedded)
+		return MAL_SUCCEED;
 	tmp = SABAOTHmarchScenario(&res, &s->name);
 	if (tmp != MAL_SUCCEED)
 		return(tmp);
@@ -186,7 +188,9 @@ SQLepilogue(void)
 	}
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	return SABAOTHretreatScenario(&res, &s);
+	if (!GDKembedded)
+		return SABAOTHretreatScenario(&res, &s);
+	return MAL_SUCCEED;
 }
 
 str

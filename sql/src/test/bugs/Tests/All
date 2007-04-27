@@ -65,3 +65,4 @@ order_disjunctive_bug.SF-1338309
 default_with_cast.SF-1334486
 predicate_or-sf-1409824
 alter_view
+simple_view

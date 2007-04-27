@@ -37,6 +37,7 @@ Over..
 [ "gdk_vm_minsize"	]
 [ "gdk_alloc_map"	]
 [ "gdk_mem_pagebits"	]
+[ "gdk_vmtrim"	]
 [ "monet_admin"	]
 [ "monet_prompt"	]
 [ "monet_welcome"	]
