@@ -2101,9 +2101,13 @@ PFty_data_on (PFty_t t)
 PFty_t
 PFty_is2ns (PFty_t t)
 {
+    /* make sure that the empty sequence 
+       is not treated as an atomic value */
+    if (PFty_subtype (t, PFty_empty ()))
+        return t;
     /* ensure that every comination of atomic values
        returns only a single text node */
-    if (PFty_subtype (t, PFty_star (PFty_atomic ())))
+    else if (PFty_subtype (t, PFty_star (PFty_atomic ())))
         return PFty_text();
 
     switch (t.type) {
