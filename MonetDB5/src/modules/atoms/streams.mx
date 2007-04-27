@@ -119,8 +119,8 @@ typedef ptr Bstream;
 #include "mal_config.h"
 #include <mal.h>
 #include "streams.h"
-#include <stream_socket.h>
 #include <stdio.h>
+#include <stream_socket.h>
 
 /*
 int io_stdin (Stream *ret) { *(stream**)ret = GDKin;  return GDK_SUCCEED; }
