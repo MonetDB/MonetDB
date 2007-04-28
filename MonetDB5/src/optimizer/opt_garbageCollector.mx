@@ -161,6 +161,8 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
+	if( fndArgProperty(mb,mb->stmt[0],0,putName("inline",6)) )
+		return 0;
 	setLifespan(mb);
 
 	old= mb->stmt;

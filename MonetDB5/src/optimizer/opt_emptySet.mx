@@ -135,13 +135,16 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	int limit = mb->stop, ctop=0;
 	InstrPtr *old = mb->stmt, *constraints;
 
+	/* get query property */
+	runonce= fndArgProperty(mb,old[0],0,putName("runonce",7)) != NULL;
+	if( fndArgProperty(mb,old[0],0,putName("inline",6)) )
+		return 0;
+
 	newMalBlkStmt(mb, mb->stop); /* a new statement stack */
 	constraints= (InstrPtr *) alloca(sizeof(InstrPtr)*limit);
 	alias = (int*) alloca(sizeof(int)*mb->vtop);
 	for(i=0;i<mb->vtop; i++) alias[i]=i;
 
-	/* get query property */
-	runonce= fndArgProperty(mb,old[0],0,putName("runonce",7)) != NULL;
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
 	for (i = 0; i < limit; i++) {
@@ -246,7 +249,6 @@ If the target variable is empty and the function does not
 have a side-effect, we can replace it with a construction
 of the empty set. The dead-code optimizer will take care
 of removal of superflous constructions.
-@c
 				if( p->retc==1 && !hasSideEffects(p, FALSE) &&
 					!isUnsafeFunction(p) &&
 					isaBatType(getArgType(mb,p,0))){
@@ -264,6 +266,7 @@ of removal of superflous constructions.
 					actions++;
 					break;
 				}
+@c
 			}
 		}
 	}
