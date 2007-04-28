@@ -986,6 +986,7 @@ sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned
 	t->localtype = ATOMindex(t->base.name);
 	t->radix = radix;
 	t->eclass = eclass;
+	t->s = NULL;
 	if (!keyword_exists(t->sqlname))
 		keywords_insert(t->sqlname, KW_TYPE);
 	list_append(types, t);
@@ -1013,6 +1014,7 @@ sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res)
 	assert(res);
 	sql_init_subtype(&t->res, res, 0, 0);
 	t->nr = list_length(aggrs);
+	t->s = NULL;
 	list_append(aggrs, t);
 	return t;
 }
@@ -1118,6 +1120,8 @@ sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res)
 		t->res.type = NULL;
 	t->nr = list_length(funcs);
 	t->sql = 0;
+	t->aggr = 0;
+	t->s = NULL;
 	list_append(funcs, t);
 	return t;
 }
