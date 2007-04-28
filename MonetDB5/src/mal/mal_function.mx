@@ -669,39 +669,58 @@ debugLifespan(MalBlkPtr mb)
 void
 setLifespan(MalBlkPtr mb)
 {
-	int pc, j, k;
+	int pc, j, k, depth=0, blkId=0;
 	InstrPtr p;
 
 	for (k = 0; k < mb->vtop; k++) {
 		VarPtr v = getVar(mb, k);
-
 		v->lastUpdate = v->beginLifespan = v->endLifespan = 0;
 		v->isused= 0;
 	}
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
+		if( p->token == NOOPsymbol)
+			continue;
+
 		for (k = 0; k < p->argc; k++) {
 			VarPtr v = getVar(mb, p->argv[k]);
 
-			if (v->beginLifespan == 0)
+			if (v->beginLifespan == 0 )
 				v->beginLifespan = pc;
-			if (k < p->retc  && p->barrier != RETURNsymbol)
-				v->lastUpdate= pc;
-			if (pc > v->endLifespan) {
-				/* end only if the beginLifspan falls in the same blk */
-				/* otherwise it is the corresponding exit. */
+			if (k < p->retc && 
+				p->barrier != RETURNsymbol &&
+				p->barrier != YIELDsymbol)
+					v->lastUpdate= pc;
+			if (pc > v->endLifespan && v->depth == depth)
 				v->endLifespan = pc;
-			}
-		}
 @-
 For all variables we keep track if it is used, cq modified.
 This simplifies subsequent optimization.
 @c
-		if( p->token != NOOPsymbol)
-			for(j= p->retc; j<p->argc; j++)
-				setVarUsed(mb,getArg(p,j),!isTypeVar(mb,getArg(p,j)) );
-		if( blockCntrl(p) || blockStart(p) )
-			setVarUsed(mb,getDestVar(p),TRUE);
+			if( k >= p->retc)
+				v->isused= v->isused || !v->isatypevar;
+			else
+				v->isused= v->isused || blockCntrl(p) || blockStart(p);
+		}
+@-
+At a block exit we can finalize some variables.
+@c
+		if( blockExit(p)){
+			depth--;
+			for (j = 0; j < mb->vtop; j++) {
+				VarPtr v = getVar(mb, j);
+/*
+				printf("barrier pc %d var %d endLife %d scope %d blkId %d\n",
+						pc,p->argv[j], v->endLifespan, v->scope, blkId);
+*/
+				if( v->scope == blkId && v->endLifespan==0 )
+					v->endLifespan= pc;
+			}
+		}
+		if( blockStart(p)){
+			depth++;
+			blkId++;
+		}
 	}
 	/* debugLifespan(mb); */
 }
