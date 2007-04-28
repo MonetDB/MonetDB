@@ -80,3 +80,4 @@ zones
 coalesce
 round
 rank
+function_syntax
