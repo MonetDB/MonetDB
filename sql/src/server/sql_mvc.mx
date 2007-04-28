@@ -137,7 +137,8 @@ extern int mvc_release(mvc *c, char *name);
 extern sql_type *mvc_bind_type(mvc *sql, char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, char *name);
 extern sql_func *mvc_bind_func(mvc *sql, char *name);
-extern sql_func *schema_bind_func(mvc *sql, sql_schema * s, char *name);
+extern list *schema_bind_func(mvc *sql, sql_schema * s, char *name);
+extern sql_func *schema_bind_func_types(mvc *sql, sql_schema * s, char *name, list *typelist);
 
 extern sql_schema *mvc_bind_schema(mvc *c, char *sname);
 extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, char *tname);
@@ -150,17 +151,18 @@ extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
 
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, char *sqlname, int digits, int scale, int radix, char *impl);
 extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl);
-extern void mvc_drop_func(mvc *c, sql_schema *s, char *name, int cascade);
+extern void mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
+extern void mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
-extern void mvc_drop_schema(mvc *c, char *name, int drop_action);
+extern void mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
 extern sql_schema *mvc_create_schema(mvc *m, char *name, int auth_id, int owner);
 extern size_t mvc_clear_table(mvc *m, sql_table *t);
-extern void mvc_drop_table(mvc *c, sql_schema *s, char *name, int cascade);
+extern void mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, char *sql, bit system);
 extern sql_table *mvc_create_generated(mvc *c, sql_schema *s, char *name, char *sql, bit system);
 
-extern void mvc_drop_column(mvc *c, sql_table *t, char *name, int cascade);
+extern void mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
 extern sql_column *mvc_create_column(mvc *c, sql_table *t, char *name, sql_subtype *type);
 extern sql_column *mvc_create_column_(mvc *c, sql_table *t, char *name, char *type, int digits);
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
@@ -171,15 +173,15 @@ extern sql_fkey *mvc_create_fkey(mvc *m, sql_table *t, char *kname, key_type kt,
 extern sql_key *mvc_create_kc(mvc *m, sql_key *k, sql_column *c);
 extern sql_fkey *mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c);
 
-extern void mvc_drop_key(mvc *c, sql_schema *s, char *kname, int cascade);
+extern void mvc_drop_key(mvc *c, sql_schema *s, sql_key *key, int drop_action);
 
 extern sql_idx *mvc_create_idx(mvc *m, sql_table *t, char *iname, idx_type it);
 extern sql_idx *mvc_create_ic(mvc *m, sql_idx * i, sql_column *c);
-extern void mvc_drop_idx(mvc *c, sql_schema *s, char *iname);
+extern void mvc_drop_idx(mvc *c, sql_schema *s, sql_idx * i);
 
 extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement );
 extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
-extern void mvc_drop_trigger(mvc *m, sql_schema *s, char *name);
+extern void mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
 /*dependency control*/
 extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
@@ -718,17 +720,56 @@ mvc_bind_func(mvc *sql, char *name)
 	return t;
 }
 
-sql_func *
+list *
 schema_bind_func(mvc *sql, sql_schema * s, char *name)
 {
-	sql_func *t = find_sql_func(s, name);
+	list *func_list = find_all_sql_func(s, name);
 
 	(void) sql;
-	if (!t)
+	if (!func_list)
 		return NULL;
 	if (mvc_debug)
 		fprintf(stderr, "schema_bind_func %s\n", name);
-	return t;
+	return func_list;
+}
+
+sql_func *
+schema_bind_func_types(mvc *sql, sql_schema * s, char *name, list * typelist)
+{
+	list *func_list = find_all_sql_func(s, name);
+	sql_func * f = NULL;
+	sql_subtype arg_subtype;
+	node *npar = NULL, *narg = NULL;
+
+	(void) sql;
+	if (!func_list)
+		return NULL;
+	else {
+		f = (sql_func *) func_list->h->data;
+
+		if (f->ops->h)
+			narg = f->ops->h;
+
+		for (npar = typelist->h; npar; npar = npar->next) {
+			if (!narg)
+				return NULL;
+
+			arg_subtype = *(sql_subtype*) narg->data;
+
+			if (strcmp((char *) npar->data, arg_subtype.type->base.name) != 0)
+				return NULL;
+			
+			 narg = narg->next;
+		}
+		
+		if (npar || narg)
+			return NULL;
+	}
+	
+	if (mvc_debug)
+		fprintf(stderr, "schema_bind_func_types %s\n", name);
+	
+	return f;
 }
 
 sql_schema *
@@ -929,12 +970,22 @@ mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *r
 }
 
 void
-mvc_drop_func(mvc *m, sql_schema *s, char *name, int cascade)
+mvc_drop_func(mvc *m, sql_schema *s, sql_func *f, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_func %s %s\n", s->base.name, name);
+		fprintf(stderr, "mvc_drop_func %s %s\n", s->base.name, f->base.name);
 
-	sql_trans_drop_func(m->session->tr, s, name, -1, cascade);
+	sql_trans_drop_func(m->session->tr, s, f->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	m->type = Q_SCHEMA;
+}
+
+void
+mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
+{
+	if (mvc_debug)
+		fprintf(stderr, "mvc_drop_all_func %s %s\n", s->base.name, ((sql_func *) list_func->h->data)->base.name);
+
+	sql_trans_drop_all_func(m->session->tr, s, list_func, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	m->type = Q_SCHEMA;
 }
 
@@ -952,11 +1003,11 @@ mvc_create_schema(mvc *m, char *name, int auth_id, int owner)
 }
 
 void
-mvc_drop_schema(mvc *m, char *sname, int cascade)
+mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_schema %s\n", sname);
-	sql_trans_drop_schema(m->session->tr, sname, -1, cascade);
+		fprintf(stderr, "mvc_drop_schema %s\n", s->base.name);
+	sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	m->type = Q_SCHEMA;
 }
 
@@ -1001,11 +1052,11 @@ mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c /*, extra options such as tru
 }
 
 void
-mvc_drop_key(mvc *m, sql_schema *s, char *name, int cascade)
+mvc_drop_key(mvc *m, sql_schema *s, sql_key *k, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_key %s %s\n", s->base.name, name);
-	sql_trans_drop_key(m->session->tr, s, name, -1, cascade);
+		fprintf(stderr, "mvc_drop_key %s %s\n", s->base.name, k->base.name);
+	sql_trans_drop_key(m->session->tr, s, k->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 sql_idx *
@@ -1030,13 +1081,13 @@ mvc_create_ic(mvc *m, sql_idx * i, sql_column *c /*, extra options such as trunc
 }
 
 void
-mvc_drop_idx(mvc *m, sql_schema *s, char *name)
+mvc_drop_idx(mvc *m, sql_schema *s, sql_idx *i)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_idx %s %s\n", s->base.name, name);
+		fprintf(stderr, "mvc_drop_idx %s %s\n", s->base.name, i->base.name);
 
 	m->type = Q_SCHEMA;
-	sql_trans_drop_idx(m->session->tr, s, name, -1, 0);
+	sql_trans_drop_idx(m->session->tr, s, i->base.id, DROP_RESTRICT);
 }
 
 sql_trigger * 
@@ -1062,13 +1113,13 @@ mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as t
 }
 
 void
-mvc_drop_trigger(mvc *m, sql_schema *s, char *name)
+mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_trigger %s %s\n", s->base.name, name);
+		fprintf(stderr, "mvc_drop_trigger %s %s\n", s->base.name, tri->base.name);
 
 	m->type = Q_SCHEMA;
-	sql_trans_drop_trigger(m->session->tr, s, name, -1, 0);
+	sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
 
 
@@ -1117,12 +1168,12 @@ mvc_create_generated(mvc *m, sql_schema *s, char *name, char *sql, bit system)
 }
 
 void
-mvc_drop_table(mvc *m, sql_schema *s, char *name, int cascade)
+mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_table %s %s\n", s->base.name, name);
+		fprintf(stderr, "mvc_drop_table %s %s\n", s->base.name, t->base.name);
 
-	sql_trans_drop_table(m->session->tr, s, name, -1, cascade);
+	sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	m->type = Q_SCHEMA;
 }
 
@@ -1159,11 +1210,11 @@ mvc_create_column(mvc *m, sql_table *t, char *name, sql_subtype *tpe)
 }
 
 void
-mvc_drop_column(mvc *m, sql_table *t, char *name, int cascade)
+mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_column %s %s\n", t->base.name, name);
-	sql_trans_drop_column(m->session->tr, t, name, -1, cascade);
+		fprintf(stderr, "mvc_drop_column %s %s\n", t->base.name, col->base.name);
+	sql_trans_drop_column(m->session->tr, t, col->base.id,  drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	m->type = Q_SCHEMA;
 }
 

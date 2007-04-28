@@ -602,12 +602,13 @@ drop_trigger(mvc *sql, dlist *qname)
 {
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
+	sql_trigger *tri = NULL;
 
 	if (!schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	if (mvc_bind_trigger(sql, ss, tname ) == NULL)
+	if ((tri = mvc_bind_trigger(sql, ss, tname )) == NULL)
 		return sql_error(sql, 02, "DROP TRIGGER: unknown trigger %s\n", tname);
-	mvc_drop_trigger(sql, ss, tname);
+	mvc_drop_trigger(sql, ss, tri);
 	return stmt_none();
 }
 
@@ -807,7 +808,7 @@ drop_view(mvc *sql, dlist *qname, int drop_action)
 	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY)) {
 			return sql_error(sql, 02, "unable to drop view %s (there are database objects which depend on it)\n", t->base.name);
 	} else {
-		mvc_drop_table(sql, ss, t->base.name, drop_action);
+		mvc_drop_table(sql, ss, t, drop_action);
 		return stmt_none();
 	}
 }
@@ -866,7 +867,7 @@ drop_index(mvc *sql, dlist *qname)
 	if (!i) {
 		return sql_error(sql, 02, "DROP INDEX: no such index '%s'", iname);
 	} else {
-		mvc_drop_idx(sql, ss, i->base.name);
+		mvc_drop_idx(sql, ss, i);
 		res = stmt_none();
 	}
 	return res;
@@ -1498,7 +1499,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				}
 			}
 		}
-		mvc_drop_column(sql, t, cname, drop_action);
+		mvc_drop_column(sql, t, col, drop_action);
 		res = stmt_none();
 	} break;
 	case SQL_DROP_CONSTRAINT:
@@ -1506,10 +1507,11 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		dlist *l = s->data.lval;
 		char *kname = l->h->data.sval;
 		int drop_action = l->h->next->data.ival;
+		sql_key * key = NULL;
 
-		if (mvc_bind_key(sql, ss, kname ) == NULL)
+		if ((key = mvc_bind_key(sql, ss, kname )) == NULL)
 			return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
-		mvc_drop_key(sql, ss, kname, drop_action);
+		mvc_drop_key(sql, ss, key, drop_action);
 		res = stmt_none();
 	} break;
 	}
@@ -1668,7 +1670,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY))
 			return sql_error(sql, 02, "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 	
-	mvc_drop_table(sql, s, t->base.name, drop_action);
+	mvc_drop_table(sql, s, t, drop_action);
 	return stmt_none();
 }
 
@@ -1765,7 +1767,7 @@ drop_schema(mvc *sql, dlist *qname, int dropaction)
 	} else if (sql_schema_has_user(sql, s)) {
 		return sql_error(sql, 02, "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", name);
 	} else {
-		mvc_drop_schema(sql, name, dropaction);
+		mvc_drop_schema(sql, s, dropaction);
 		return stmt_none();
 	}
 }

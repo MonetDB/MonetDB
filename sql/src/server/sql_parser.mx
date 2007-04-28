@@ -448,6 +448,8 @@ int yydebug=1;
 	string_commalist
 	paramlist
 	opt_paramlist
+	opt_typelist
+	typelist
 	opt_seq_params
 	opt_alt_seq_params
 	serial_opt_params
@@ -2121,10 +2123,19 @@ drop_statement:
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
- | DROP FUNCTION qname drop_action
+ | DROP FUNCTION qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
-	  append_int(l, $4 );
+	  append_int(l, 0 );
+	  append_list(l, $4 );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP ALL FUNCTION qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_int(l, 1 );
+	  append_list(l, NULL );
+	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  |  DROP VIEW qname drop_action
 	{ dlist *l = L();
@@ -2135,6 +2146,20 @@ drop_statement:
  |  DROP USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  DROP INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
  |  DROP TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
+ ;
+
+opt_typelist:
+    /*empty*/		{$$ = NULL;}
+ |  '(' typelist ')'	{$$ = $2;}
+ |  '(' ')'		{$$ = L(); }
+ ;
+
+typelist:
+    data_type			{ dlist *l = L();
+				  append_type(l, &$1 );
+				  $$= l; }
+ |  data_type ',' typelist	{ append_type($3, &$1);
+				  $$ = $3; }
  ;
 
 drop_action:

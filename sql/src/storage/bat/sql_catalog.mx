@@ -285,6 +285,26 @@ find_sql_func(sql_schema * s, char *tname)
 	return NULL;
 }
 
+list *
+find_all_sql_func(sql_schema * s, char *name)
+{
+	list *l = s->funcs.set, *res = NULL;
+	node *n = NULL;
+
+        if (l)
+                for (n = l->h; n; n = n->next) {
+                        sql_base *b = n->data;
+
+                        /* check if names match */
+                        if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
+				if (!res)
+					res = list_create((fdestroy) NULL);
+				list_append(res, n->data);
+                        }
+                }
+        return res;
+}
+
 sql_func *
 sql_trans_bind_func(sql_trans *tr, char *name)
 {

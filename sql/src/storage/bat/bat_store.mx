@@ -3962,7 +3962,7 @@ conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {
-			sql_trans_drop_table(tr, ot->s, ot->base.name, ot->base.id, 0);
+			sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
 		}
 	}
 	return NULL;
@@ -4454,36 +4454,36 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 
 			switch (dep_type){
 				case SCHEMA_DEPENDENCY :
-							sql_trans_drop_schema(tr, s->base.name, dep_id, 1);
+							sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
 							break;
 				case TABLE_DEPENDENCY :
-							sql_trans_drop_table(tr, s, NULL,  dep_id, 1);
+							sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case COLUMN_DEPENDENCY :
 							t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY);
 							t_n = find_sql_table_node(s, NULL, t_id);
 							t = t_n->data;
-							sql_trans_drop_column(tr, t, NULL, dep_id, 1);
+							sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
 							t_n = NULL;
 							t = NULL;
 							break;
 				case VIEW_DEPENDENCY :
-							sql_trans_drop_table(tr, s, NULL, dep_id, 1);
+							sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE );
 							break;
 				case TRIGGER_DEPENDENCY :
-							sql_trans_drop_trigger(tr, s, NULL, dep_id, 1);
+							sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
 								break;
 				case KEY_DEPENDENCY :
-							sql_trans_drop_key(tr, s, NULL, dep_id, 1);
+							sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case FKEY_DEPENDENCY :
-							sql_trans_drop_key(tr, s, NULL, dep_id, 1);
+							sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case INDEX_DEPENDENCY :
-							sql_trans_drop_idx(tr, s, NULL, dep_id, 1);
+							sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case FUNC_DEPENDENCY :
-							sql_trans_drop_func(tr, s, NULL, dep_id, 1);
+							sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case USER_DEPENDENCY :  /*TODO schema and users dependencies*/
 							break;
@@ -4511,7 +4511,7 @@ sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc)
 }
 
 static void
-sys_drop_key(sql_trans *tr, sql_key *k, int cascade)
+sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 {
 	node *n;
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(k->t)?"sys":"tmp");
@@ -4539,7 +4539,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int cascade)
 
 	sql_trans_drop_dependencies(tr, k->base.id);
 
-	if (cascade) 
+	if (drop_action) 
 		sql_trans_drop_all_dependencies(tr, syss, k->base.id, (k->type == fkey) ? FKEY_DEPENDENCY : KEY_DEPENDENCY);
 
 }
@@ -4561,7 +4561,7 @@ sys_drop_ic(sql_trans *tr, sql_idx * i, sql_kc *kc)
 }
 
 static void
-sys_drop_idx(sql_trans *tr, sql_idx * i, int cascade)
+sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 {
 	node *n;
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(i->t)?"sys":"tmp");
@@ -4583,7 +4583,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int cascade)
 	if (isGlobalTable(i->t)) 
 		tr->schema_updates ++;
 
-	if (cascade)
+	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, syss, i->base.id, INDEX_DEPENDENCY);
 }
 
@@ -4625,7 +4625,7 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 }
 
 static void
-sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int cascade)
+sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sysseqs = find_sql_table(syss, "sequences");
@@ -4634,13 +4634,13 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int cascade)
 	assert(rid != -1);
 	table_delete(tr, sysseqs, rid);
 
-	if (cascade)
+	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, syss, seq->base.id, SEQ_DEPENDENCY);
 		
 }
 
 static void
-sys_drop_column(sql_trans *tr, sql_column *col, int cascade)
+sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(col->t)?"sys":"tmp"); 
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
@@ -4653,12 +4653,12 @@ sys_drop_column(sql_trans *tr, sql_column *col, int cascade)
 	if (isGlobalTable(col->t)) 
 		tr->schema_updates ++;
 
-	if (cascade)
+	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, syss, col->base.id, COLUMN_DEPENDENCY);
 }
 
 static void
-sys_drop_keys(sql_trans *tr, sql_table *t, int cascade)
+sys_drop_keys(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
 
@@ -4666,12 +4666,12 @@ sys_drop_keys(sql_trans *tr, sql_table *t, int cascade)
 		for (n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
 
-			sys_drop_key(tr, k, cascade);
+			sys_drop_key(tr, k, drop_action);
 		}
 }
 
 static void
-sys_drop_idxs(sql_trans *tr, sql_table *t, int cascade)
+sys_drop_idxs(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
 
@@ -4679,12 +4679,12 @@ sys_drop_idxs(sql_trans *tr, sql_table *t, int cascade)
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *k = n->data;
 
-			sys_drop_idx(tr, k, cascade);
+			sys_drop_idx(tr, k, drop_action);
 		}
 }
 
 static void
-sys_drop_columns(sql_trans *tr, sql_table *t, int cascade)
+sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
 
@@ -4692,12 +4692,12 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int cascade)
 		for (n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
 
-			sys_drop_column(tr, c, cascade);
+			sys_drop_column(tr, c, drop_action);
 		}
 }
 
 static void
-sys_drop_table(sql_trans *tr, sql_table *t, int cascade)
+sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
@@ -4706,23 +4706,23 @@ sys_drop_table(sql_trans *tr, sql_table *t, int cascade)
 
 	assert(rid != -1);
 	table_delete(tr, systable, rid);
-	sys_drop_keys(tr, t, cascade);
-	sys_drop_idxs(tr, t, cascade);
+	sys_drop_keys(tr, t, drop_action);
+	sys_drop_idxs(tr, t, drop_action);
 
 	sql_trans_drop_dependencies(tr, t->base.id);
 
 	if (isTable(t))
-		sys_drop_columns(tr, t, cascade);
+		sys_drop_columns(tr, t, drop_action);
 
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 
-	if (cascade) 
+	if (drop_action) 
 		sql_trans_drop_all_dependencies(tr, syss, t->base.id, isTable(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY);
 }
 
 static void
-sys_drop_type(sql_trans *tr, sql_type *type, int cascade)
+sys_drop_type(sql_trans *tr, sql_type *type, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sys_tab_type = find_sql_table(syss, "types");
@@ -4736,13 +4736,13 @@ sys_drop_type(sql_trans *tr, sql_type *type, int cascade)
 
 	tr->schema_updates ++;
 
-	if (cascade)
+	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, syss, type->base.id, TYPE_DEPENDENCY);
 }
 
 
 static void
-sys_drop_func(sql_trans *tr, sql_func *func, int cascade)
+sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sys_tab_func = find_sql_table(syss, "functions");
@@ -4761,12 +4761,12 @@ sys_drop_func(sql_trans *tr, sql_func *func, int cascade)
 
 	tr->schema_updates ++;
 
-	if (cascade)
+	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, syss, func->base.id, FUNC_DEPENDENCY);
 }
 
 static void
-sys_drop_types(sql_trans *tr, sql_schema *s, int cascade)
+sys_drop_types(sql_trans *tr, sql_schema *s, int drop_action)
 {
 	node *n;
 
@@ -4774,12 +4774,12 @@ sys_drop_types(sql_trans *tr, sql_schema *s, int cascade)
 		for (n = s->types.set->h; n; n = n->next) {
 			sql_type *t = n->data;
 
-			sys_drop_type(tr, t, cascade);
+			sys_drop_type(tr, t, drop_action);
 		}
 }
 
 static void
-sys_drop_tables(sql_trans *tr, sql_schema *s, int cascade)
+sys_drop_tables(sql_trans *tr, sql_schema *s, int drop_action)
 {
 	node *n;
 
@@ -4787,12 +4787,12 @@ sys_drop_tables(sql_trans *tr, sql_schema *s, int cascade)
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
 
-			sys_drop_table(tr, t, cascade);
+			sys_drop_table(tr, t, drop_action);
 		}
 }
 
 static void
-sys_drop_funcs(sql_trans *tr, sql_schema *s, int cascade)
+sys_drop_funcs(sql_trans *tr, sql_schema *s, int drop_action)
 {
 	node *n;
 
@@ -4800,12 +4800,12 @@ sys_drop_funcs(sql_trans *tr, sql_schema *s, int cascade)
 		for (n = s->funcs.set->h; n; n = n->next) {
 			sql_func *f = n->data;
 
-			sys_drop_func(tr, f, cascade);
+			sys_drop_func(tr, f, drop_action);
 		}
 }
 
 static void
-sys_drop_sequences(sql_trans *tr, sql_schema *s, int cascade)
+sys_drop_sequences(sql_trans *tr, sql_schema *s, int drop_action)
 {
 	node *n;
 
@@ -4813,7 +4813,7 @@ sys_drop_sequences(sql_trans *tr, sql_schema *s, int cascade)
 		for (n = s->seqs.set->h; n; n = n->next) {
 			sql_sequence *seq = n->data;
 
-			sys_drop_sequence(tr, seq, cascade);
+			sys_drop_sequence(tr, seq, drop_action);
 		}
 }
 
@@ -4898,27 +4898,53 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 }
 
 void
-sql_trans_drop_func(sql_trans *tr, sql_schema *s, char *name, int id, int cascade)
+sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = find_sql_func_node(s, name, id);
+	node *n = find_sql_func_node(s, NULL, id);
 	sql_func *func = n->data;
 	int *local_id = GDKmalloc(sizeof(int));
 	memcpy(local_id, &func->base.id, sizeof(int));
 
-	if (cascade) {
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) NULL);
 		
 		list_append(tr->dropped, local_id);
 	}
 
-	sys_drop_func(tr, func, cascade);
+	sys_drop_func(tr, func, DROP_CASCADE);
 
 	func->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
 	cs_del(&s->funcs, n, func->base.flag);
 	
-	if ( name && tr->dropped) {
+	if ( drop_action == DROP_CASCADE_START && tr->dropped) {
+		list_destroy(tr->dropped);
+		tr->dropped = NULL;
+	}
+	
+}
+
+void
+sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop_action)
+{
+	node *n = NULL;
+	sql_func *func = NULL;
+	tr->dropped = list_create((fdestroy) NULL);
+
+	for (n = list_func->h; n ; n = n->next ) {
+		int *local_id = GDKmalloc(sizeof(int));
+		func = (sql_func *) n->data;
+		memcpy(local_id, &func->base.id, sizeof(int));
+
+		if (! list_find_id(tr->dropped, *local_id)){ 
+			list_append(tr->dropped, local_id);
+			sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
+		}
+		
+	}
+	
+	if ( tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
@@ -4950,16 +4976,16 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 }
 
 void
-sql_trans_drop_schema(sql_trans *tr, char *sname, int id, int cascade)
+sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 {
-	node *n = find_sql_schema_node(tr, sname, id);
+	node *n = find_sql_schema_node(tr, NULL, id);
 	sql_schema *s = n->data;
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 	ssize_t rid = column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 	int *local_id = GDKmalloc(sizeof(int));
 	memcpy(local_id, &s->base.id, sizeof(int));
 
-	if (cascade) {
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) NULL);
 		
@@ -4969,16 +4995,16 @@ sql_trans_drop_schema(sql_trans *tr, char *sname, int id, int cascade)
 
 	assert(rid != -1);
 	table_delete(tr, sysschema, rid);
-	sys_drop_funcs(tr, s, cascade);
-	sys_drop_tables(tr, s, cascade);
-	sys_drop_types(tr, s, cascade);
-	sys_drop_sequences(tr, s, cascade);
+	sys_drop_funcs(tr, s, drop_action);
+	sys_drop_tables(tr, s, drop_action);
+	sys_drop_types(tr, s, drop_action);
+	sys_drop_sequences(tr, s, drop_action);
 
 	s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
 	cs_del(&tr->schemas, n, s->base.flag);
 	
-	if ( sname && tr->dropped) {
+	if (  drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
@@ -5099,14 +5125,14 @@ create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT
 }
 
 void
-sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int id, int cascade)
+sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = find_sql_table_node(s, name, id);
+	node *n = find_sql_table_node(s, NULL, id);
 	sql_table *t = n->data;
 	int *local_id = GDKmalloc(sizeof(int));
 	memcpy(local_id, &t->base.id, sizeof(int));
 
-	if (cascade) {
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) NULL);
 		
@@ -5114,14 +5140,14 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int id, int casca
 	}
 
 		
-	sys_drop_table(tr, t, cascade);
+	sys_drop_table(tr, t, drop_action);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 	cs_del(&s->tables, n, t->base.flag);
 	
-	if ( name && tr->dropped) {
+	if (  drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
@@ -5273,14 +5299,14 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 }
 
 void
-sql_trans_drop_column(sql_trans *tr, sql_table *t, char *name, int id, int cascade)
+sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 {
-	node *n = find_sql_column_node(t, name, id);
+	node *n = list_find_base_id(t->columns.set, id);
 	sql_column *col = n->data;
 	int *local_id = GDKmalloc(sizeof(int));
 	memcpy(local_id, &col->base.id, sizeof(int));
 
-	if (cascade) {
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) NULL);
 		
@@ -5288,14 +5314,14 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, char *name, int id, int casca
 	}
 	
 	if (isTable(t))
-		sys_drop_column(tr, col, cascade);
+		sys_drop_column(tr, col, drop_action);
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	cs_del(&t->columns, n, col->base.flag);
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 	
-	if ( name && tr->dropped) {
+	if (  drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
@@ -5497,14 +5523,14 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c /*, extra option
 }
 
 void
-sql_trans_drop_key(sql_trans *tr, sql_schema *s, char *name, int id, int cascade)
+sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = name ? list_find_name(s->keys, name) : list_find_base_id(s->keys, id);
+	node *n = list_find_base_id(s->keys, id);
 	sql_key *k = n->data;
 	int *local_id = GDKmalloc(sizeof(int));
 	memcpy(local_id, &k->base.id, sizeof(int));
 
-	if (cascade) {
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) NULL);
 		
@@ -5513,7 +5539,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, char *name, int id, int cascade
 	
 
 	if (!isTempTable(k->t))
-		sys_drop_key(tr, k, cascade);
+		sys_drop_key(tr, k, drop_action);
 
 	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(k->t)) 
@@ -5532,7 +5558,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, char *name, int id, int cascade
 			cs_del(&k->t->idxs, n, k->base.flag);
 	}
 	
-	if ( name && tr->dropped) {
+	if (  drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
@@ -5613,14 +5639,14 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options 
 }
 
 void
-sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name, int id, int cascade)
+sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = name  ? list_find_name(s->idxs, name) : list_find_base_id(s->idxs, id);
+	node *n = list_find_base_id(s->idxs, id);
 	sql_idx *i = n->data;
 	int *local_id = GDKmalloc(sizeof(int));
 	memcpy(local_id, &i->base.id, sizeof(int));
 	
-	if (cascade) {
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) NULL);
 		
@@ -5629,7 +5655,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name, int id, int cascade
 	
 
 	if (!isTempTable(i->t))
-		sys_drop_idx(tr, i, cascade);
+		sys_drop_idx(tr, i, drop_action);
 
 	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(i->t)) 
@@ -5638,7 +5664,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name, int id, int cascade
 	if (n)
 		cs_del(&i->t->idxs, n, i->base.flag);
 	
-	if ( name && tr->dropped) {
+	if (  drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
@@ -5701,14 +5727,14 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra opti
 }
 
 void
-sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name, int id, int cascade)
+sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
-	node *n = name ? list_find_name(s->triggers, name) : list_find_base_id(s->triggers, id);
+	node *n = list_find_base_id(s->triggers, id);
 	sql_trigger *i = n->data;
 	int *local_id = GDKmalloc(sizeof(int));
 	memcpy(local_id, &i->base.id, sizeof(int));
 	
-	if (cascade) {
+	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		list_append(tr->dropped, local_id);
 	}
 	
@@ -5722,7 +5748,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name, int id, int cas
 	if (n)
 		cs_del(&i->t->triggers, n, i->base.flag);
 	
-	if ( name && tr->dropped) {
+	if (  drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
@@ -5755,12 +5781,12 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, l
 }
 
 void
-sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name, int cascade)
+sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name, int drop_action)
 {
 	node *n = cs_find_name(&s->seqs, name);
 	sql_sequence *seq = n->data;
 
-	sys_drop_sequence(tr, seq, cascade);
+	sys_drop_sequence(tr, seq, drop_action);
 	seq->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	cs_del(&s->seqs, n, seq->base.flag);
 }
@@ -5879,7 +5905,7 @@ sql_session_reset(sql_session *s, int ac)
 			if (isGlobalTable(t))
 				sql_trans_clear_table(s->tr, t);
 			else if (!isGlobalTable(t)) /* remove local tmp*/
-				sql_trans_drop_table(s->tr, tmp, t->base.name, t->base.id, 0);
+				sql_trans_drop_table(s->tr, tmp, t->base.id, DROP_RESTRICT);
 		}
 	}
 	assert(s->active == 0);

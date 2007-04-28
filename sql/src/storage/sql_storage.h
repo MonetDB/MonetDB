@@ -65,22 +65,23 @@ extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqln
 
 extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit sql, bit aggr, char *mod, char *impl);
 
-extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, char *name, int id, int cascade);
+extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action);
+extern void sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
 
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner);
-extern void sql_trans_drop_schema(sql_trans *tr, char *sname, int id, int cascade);
+extern void sql_trans_drop_schema(sql_trans *tr, int id, int drop_action);
 
 extern sql_table *create_sql_table(char *name, sht type, bit system, int persistence, int commit_action);
 extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
 extern sql_table *sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system);
 extern sql_table *sql_trans_create_generated(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system);
 
-extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int id, int cascade);
+extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern size_t sql_trans_clear_table(sql_trans *tr, sql_table *t);
 
 extern sql_column *create_sql_column(sql_table *t, char *nme, sql_subtype *tpe);
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe);
-extern void sql_trans_drop_column(sql_trans *tr, sql_table *t, char *name, int id, int cascade);
+extern void sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action);
 extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 
@@ -88,18 +89,18 @@ extern sql_key *sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, k
 extern sql_fkey *sql_trans_create_fkey(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_key *rkey, int on_delete, int on_update);
 extern sql_key *sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c /*, extra options such as trunc */ );
 extern sql_fkey *sql_trans_create_fkc(sql_trans *tr, sql_fkey *k, sql_column *c /*, extra options such as trunc */ );
-extern void sql_trans_drop_key(sql_trans *tr, sql_schema *s, char *name, int id, int cascade);
+extern void sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action);
 
 extern sql_idx *sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it);
 extern sql_idx *sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options such as trunc */ );
-extern void sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name, int id, int cascade);
+extern void sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action);
 
 extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement );
 extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
-extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name, int id, int cascade);
+extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action);
 
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle );
-extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name, int cascade);
+extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name, int drop_action);
 extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle);
 extern lng sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 
