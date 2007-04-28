@@ -114,9 +114,9 @@ Dependencies between database objects
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	2,	8 # length
-[ ">",	"f2",	"DEP_FUNC"	]
 [ ">",	"f1",	"DEP_FUNC"	]
 [ "<",	"f2",	"DEP_FUNC"	]
+[ ">",	"f2",	"DEP_FUNC"	]
 [ "f1",	"f2",	"DEP_FUNC"	]
 % sys.f,	sys.tri,	. # table_name
 % name,	name,	single_value # name
