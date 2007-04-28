@@ -29,6 +29,11 @@
 #define ACT_SET_NULL 3
 #define ACT_SET_DEFAULT 4
 
+
+#define DROP_RESTRICT 0
+#define DROP_CASCADE 1
+#define DROP_CASCADE_START 2
+
 #define PRIV_SELECT 1
 #define PRIV_UPDATE 2
 #define PRIV_INSERT 4
@@ -510,6 +515,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
 
 extern node *find_sql_func_node(sql_schema * s, char *tname, int id);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);
+extern list *find_all_sql_func(sql_schema * s, char *tname);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
 
 #endif /* SQL_CATALOG_H */
