@@ -10,6 +10,6 @@ begin
 	end while;
 	return 0;
 end;
-select gen_insert(25);
+select gen_insert(17);	-- previous call was 25
 
 select count(*) from slow_count;
