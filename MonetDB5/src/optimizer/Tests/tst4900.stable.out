@@ -189,16 +189,11 @@ end f1;	# 84
 #	##f1();
 #
 #
-!TypeException:user.f1[86]:'t59' may not be used before being initialized
-
-!TypeException:user.f1[86]:'t48' may not be used before being initialized
-
-!TypeException:user.f1[110]:'t83' may not be used before being initialized
-
-!TypeException:user.f1[110]:'t82' may not be used before being initialized
-
-!TypeException:user.f1[114]:'t84' may not be used before being initialized
-
+!TypeException:user.f1[83]:'t59' may not be used before being initialized
+!TypeException:user.f1[83]:'t48' may not be used before being initialized
+!TypeException:user.f1[106]:'t83' may not be used before being initialized
+!TypeException:user.f1[106]:'t82' may not be used before being initialized
+!TypeException:user.f1[110]:'t84' may not be used before being initialized
 function user.main():void;	# 0  (main:void)
     mdb.list("user","f1");	# 1 MDBlist3 (_6:void)<-(_2:str)(_3:str)
 ##f1(); 	# 2  (_8:str)
@@ -215,7 +210,6 @@ factory user.f1(s:str):void;
     t6 := batcalc.oid(t5);
     t5 := nil;
     t7 := algebra.join(t6,t1);
-    t6 := bat.reduce(t6);
     t1:bat[:oid,:dbl]  := nil;
     t8 := calc.dbl(1);
     t9 := calc.dbl(2);
@@ -243,7 +237,6 @@ factory user.f1(s:str):void;
     t23 := nil;
     t25 := algebra.join(t24,t16);
     t24 := nil;
-    t16:bat[:oid,:dbl]  := bat.reduce(t16);
     t30 := batcalc.oid(t21);
     t21 := nil;
     t31 := array.grid(1,800,1,0);
@@ -282,7 +275,6 @@ factory user.f1(s:str):void;
     t57 := batcalc.oid(t54);
     t54 := nil;
     t58 := algebra.join(t57,t49);
-    t57 := bat.reduce(t57);
     t49:bat[:oid,:dbl]  := nil;
     t59 := batcalc.-(t59,t48,t58);
     t48 := nil;
@@ -307,7 +299,6 @@ factory user.f1(s:str):void;
     t81 := array.grid(1,1056000,1,0);
     t59 := nil;
     t80 := nil;
-    t81 := bat.reduce(t81);
     t83 := batcalc.*(t83,t41,t82);
     t82 := nil;
     t83 := nil;
@@ -341,7 +332,6 @@ factory user.f1(s:str):void;
     t98 := aggr.sum(t94,t96,t97);
     t94 := nil;
     t96 := nil;
-    t97 := bat.reduce(t97);
     top := t98;
     t98 := nil;
     io.table(t97,top);

@@ -121,7 +121,7 @@ OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= getInstrPtr(mb,i);
 		mb->stmt[k++]= p;
 		if( OPTisAlias(p)){
-			if( p->argc ==2 && getLastUpdate(mb,getArg(p,0)) == i  &&
+			if( getLastUpdate(mb,getArg(p,0)) == i  &&
 				getBeginLifespan(mb,getArg(p,0)) == i  &&
 				getLastUpdate(mb,getArg(p,1)) < i ){
 				alias[getArg(p,0)]= alias[getArg(p,1)];
