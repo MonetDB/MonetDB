@@ -1512,8 +1512,8 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "xqXp":
         elem = SkipTest(env, TST, EXT, "as multiple XQuery clients in parallel are currently not supported by "+THISFILE+".")
-    elif SERVER in BusyPorts:
-        elem = SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
+    elif SERVER in ["MAPI", "SQL", "XQUERY"] and "MAPI" in BusyPorts:
+        elem = SkipTest(env, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']))
     elif SERVER == "XQUERY" and "XRPC" in BusyPorts:
         elem = SkipTest(env, TST, EXT, "as XRPCPORT=%s is not available." % (env['XRPCPORT']))
     else:
@@ -1522,7 +1522,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             if test.match(f):
                 SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
 
-        if SERVER == "MAPI":
+        if SERVER in ["MAPI", "SQL", "XQUERY"]:
             CheckSocket2(env, "MAPI")   #, SrvrErr)
         if SERVER == "XQUERY":
             CheckSocket2(env, "XRPC")   #, SrvrErr)
@@ -1700,8 +1700,10 @@ def RunTest(env, TST, BusyPorts, COND) :
                         killed = 1
                     p.close()
 
-        if SERVER in ["MAPI", "XRPC"]:
-            CheckSocket3(env, SERVER, TestErrFile)
+        if SERVER in ["MAPI", "SQL", "XQUERY"]:
+            CheckSocket3(env, "MAPI", TestErrFile)
+        if SERVER == "XQUERY":
+            CheckSocket3(env, "XRPC", TestErrFile)
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -2133,6 +2135,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if ServerReady:
             port = int(env['MAPIPORT'])
             ServerReady = mapi_ping(port, lang)
+        #if ServerReady and SERVER = "XQUERY":
+        #    port = int(env['XRPCPORT'])
+        #    ServerReady = mapi_ping(port, lang)
 
     else:
         ClntOut = open(TestOutFile, 'a')
