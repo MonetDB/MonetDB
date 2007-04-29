@@ -505,7 +505,6 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	char *fname = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
-	sql_subfunc * sub_f = NULL;
 	sql_func *f;
 	dnode *n;
 	list *l = list_create((fdestroy) &arg_destroy), *type_list = NULL;
@@ -522,7 +521,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	if (params)
 		type_list = create_type_list(params, 1);
 	
-	if (!instantiate && (sub_f = sql_bind_func_(s, fname, type_list))) {
+	if (!instantiate && sql_bind_func_(s, fname, type_list)) {
 		if (params) {
 			char args[BUFSIZ], *arg_list = NULL;
 			node *n;
