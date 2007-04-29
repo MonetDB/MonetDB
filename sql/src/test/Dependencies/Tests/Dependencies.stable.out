@@ -131,6 +131,23 @@ Dependencies between database objects
 % 10,	13,	8 # length
 [ "t1_id_pkey",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 done
+Dependencies between functions with same name
+% sys.f1,	sys.f2,	. # table_name
+% name,	name,	single_value # name
+% varchar,	varchar,	char # type
+% 2,	2,	8 # length
+[ ">",	"f1",	"DEP_FUNC"	]
+[ "<",	"f2",	"DEP_FUNC"	]
+[ ">",	"f2",	"DEP_FUNC"	]
+[ "f1",	"f2",	"DEP_FUNC"	]
+[ "f1",	"f2",	"DEP_FUNC"	]
+[ "<",	"f3",	"DEP_FUNC"	]
+[ "f1",	"f3",	"DEP_FUNC"	]
+% sys.f1,	sys.f2,	. # table_name
+% name,	name,	single_value # name
+% varchar,	varchar,	char # type
+% 0,	0,	8 # length
+done
 Cleanup
 % sys.s,	sys.u,	. # table_name
 % name,	name,	single_value # name

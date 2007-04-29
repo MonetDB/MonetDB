@@ -35,6 +35,10 @@ echo Dependencies between database objects
 $SQL < ${RELSRCDIR}/../dependency_DBobjects.sql
 echo done
 
+echo Dependencies between functions with same name
+$SQL < ${RELSRCDIR}/../dependency_functions.sql
+echo done
+
 echo Cleanup
 $SQL < ${RELSRCDIR}/../dependency_owner_schema_3.sql
 echo done
