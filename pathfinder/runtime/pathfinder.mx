@@ -2053,6 +2053,10 @@ PROC __runtime_maintain(lng wsid,
     var vxd := runtime.fetch(RT_VX_HSH_NID_DEL);
     var vx_flush_deletes := ((count(vxd)*8) > count(vxm));
 
+    # nsloc index only contains qn-s from unq (ignore the rest)
+    ins_qn_nid := ins_qn_nid.kintersect(unq);
+    del_qn_nid := del_qn_nid.kintersect(unq);
+
     if (coast_clear) {
         # coast is clear, unite als ins, all del and apply them to the master
         ins.insert(ins_qn_nid);
@@ -2069,22 +2073,23 @@ PROC __runtime_maintain(lng wsid,
            # the length is often |N|/8, i.e. linear in #nodes (*really* long)
            # As the collision list is singly linked, deleting in the middle 
            # requires a traverse.
-           # Thus, we avoid deleting, rather kdiff it and replace the entire 
-           # bat in bulk.
-           var stay := reverse(reverse(idx).kdiff(reverse(del))); 
-           idx.delete().insert(stay);
+           idx.accdel("hash");
+           idx.deleteBuns(del);
            del.delete();
         }
         idx.accbuild("hash"); # the hash table on qn ensures fast nsloc lookup
 
         # do the same for value index
+        var ignores := vxm.uselect(oid_nil);
         vxi.insert(ins_vx);
+        vxd.insert(del_vx);
+        vxi.delete(ignores); # ignore hash-codes marked nil (too frequent)
+        vxd.delete(ignores); # idem
         vxm.insert(vxi);
         vxi.delete();
-        vxd.insert(del_vx);
         if (vx_flush_deletes) { 
-           var stay := reverse(reverse(vxm).kdiff(reverse(vxd))); 
-           vxi.delete().insert(stay);
+           vxm.accdel("hash");
+           vxm.deleteBuns(vxd);
            vxd.delete();
         }
         vxm.accbuild("hash"); # the hash table on (qn,str) code ensures fast value lookup
@@ -2511,7 +2516,12 @@ PROC ws_precommit(BAT[void,BAT] ws,
                   BAT[void,oid] modified_attr) : void
 {
     var wsid := ws_id(ws);
-    var overlap := reverse(ws_overlaps_ws).uselect(wsid).kunique().mirror();
+    lock_set(pf_short);
+    var overlap;
+    var err := CATCH(overlap := reverse(ws_overlaps_ws).uselect(wsid).kunique().mirror());
+    lock_unset(pf_short);
+    if (not(isnil(err)))
+        ERROR(err);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
     var page_ws := runtime.fetch(RT_PAGE_WS);
     var attr_ws := runtime.fetch(RT_ATTR_WS);
