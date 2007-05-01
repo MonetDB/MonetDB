@@ -51,6 +51,7 @@ typedef enum tokens {
 	SQL_DROP_USER,
 	SQL_DROP_TYPE,
 	SQL_DROP_FUNC,
+	SQL_DROP_PROC,
 	SQL_DROP_SEQ,
 	SQL_DROP_TRIGGER,
 	SQL_ALTER_TABLE,
@@ -1719,7 +1720,7 @@ func_def:
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
-				append_symbol(f, NULL);   /* no result */
+				append_symbol(f, NULL); /* no result */
 				append_string(f, NULL); /* no mil-impl */
 				append_list(f, $7);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
@@ -2130,6 +2131,13 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP PROCEDURE qname opt_typelist drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, 0 );
+	  append_list(l, $4 );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_DROP_PROC, l ); }
  | DROP ALL FUNCTION qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
@@ -2137,6 +2145,13 @@ drop_statement:
 	  append_list(l, NULL );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP ALL PROCEDURE qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_int(l, 1 );
+	  append_list(l, NULL );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_DROP_PROC, l ); }
  |  DROP VIEW qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
@@ -4293,6 +4308,7 @@ char *token2string(int token)
 	SQL(DROP_USER);
 	SQL(DROP_TYPE);
 	SQL(DROP_FUNC);
+	SQL(DROP_PROC);
 	SQL(DROP_SEQ);
 	SQL(DROP_TRIGGER);
 	SQL(ALTER_TABLE);

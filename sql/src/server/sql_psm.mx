@@ -607,7 +607,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 }
 
 stmt* 
-drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action)
+drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 {
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -616,8 +616,12 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action)
 	sql_subfunc *sub_func = NULL;
 	sql_func *func = NULL;
 
+	char *F = is_func?"FUNCTION":"PROCEDURE";
+	char *f = is_func?"function":"procedure";
+
+
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "DROP FUNCTION: no such schema '%s'", sname);
+		return sql_error(sql, 02, "DROP %s: no such schema '%s'", F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
@@ -631,11 +635,10 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action)
 		}
 		if (sub_func)
 			func = sub_func->func;
-	}
-	else {
+	} else {
 		list_func = schema_bind_func(sql,s,name);
 		if (list_func && list_func->cnt > 1)
-			return sql_error(sql, 02, "DROP FUNCTION: there are more than one function called '%s', please use the full signature", name);
+			return sql_error(sql, 02, "DROP %s: there are more than one function called '%s', please use the full signature", F, name);
 		if (list_func && list_func->cnt == 1)
 			func = (sql_func*) list_func->h->data;
 	}
@@ -660,25 +663,28 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action)
 				
 				list_destroy(type_list);
 				
-				return sql_error(sql, 02, "DROP FUNCTION: no such function '%s' (%s)", name, arg_list);
+				return sql_error(sql, 02, "DROP %s: no such %s '%s' (%s)", F, f, name, arg_list);
 			}
 				
-			return sql_error(sql, 02, "DROP FUNCTION: no such function '%s' ()", name);
+			return sql_error(sql, 02, "DROP %s: no such %s '%s' ()", F, f, name);
 
 		} else
-			return sql_error(sql, 02, "DROP FUNCTION: no such function '%s'", name);
-	} 
+			return sql_error(sql, 02, "DROP %s: no such %s '%s'", F, f, name);
+	} else if ((is_func && !func->res.type) || 
+		   (!is_func && func->res.type)) {
+		return sql_error(sql, 02, "DROP %s: cannot drop %s '%s'", F, is_func?"procedure":"function", name);
+	}
 	
 	list_destroy(type_list);
 
 	
 	if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP FUNCTION: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "DROP %s: access denied for %s to schema ;'%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 	}
 	
 	
 	if (!drop_action && mvc_check_dependency(sql, func->base.id, FUNC_DEPENDENCY))
-		return sql_error(sql, 02, "DROP FUNCTION: there are functions dependent on function %s;", func->base.name);
+		return sql_error(sql, 02, "DROP %s: there are functions dependent on %s %s;", F, f, func->base.name);
 	
 	mvc_drop_func(sql, s, func, drop_action);
 
@@ -686,7 +692,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action)
 }
 
 stmt* 
-drop_all_func(mvc *sql, dlist *qname, int drop_action)
+drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
 {
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -695,8 +701,11 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action)
 	sql_func *func = NULL;
 	node *n = NULL;
 
+	char *F = is_func?"FUNCTION":"PROCEDURE";
+	char *f = is_func?"function":"procedure";
+
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "DROP FUNCTION: no such schema '%s'", sname);
+		return sql_error(sql, 02, "DROP %s: no such schema '%s'", F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
@@ -704,11 +713,11 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action)
 	list_func = schema_bind_func(sql,s,name);
 	
 	if (!list_func) { 
-			return sql_error(sql, 02, "DROP ALL FUNCTION: no such functions '%s'", name);
+			return sql_error(sql, 02, "DROP ALL %s: no such %s '%s'", F, f, name);
 	} 
 	
 	if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP FUNCTION: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "DROP %s: access denied for %s to schema ;'%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 	}
 	
 	
@@ -716,7 +725,10 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action)
 		func = (sql_func *) n->data;
 
 		if (!drop_action && mvc_check_dependency(sql, func->base.id, FUNC_DEPENDENCY))
-			return sql_error(sql, 02, "DROP FUNCTION: there are functions dependent on function %s;", func->base.name);
+			return sql_error(sql, 02, "DROP %s: there are functions dependent on %s %s;", F, f, func->base.name);
+		if ((is_func && !func->res.type) || 
+		   (!is_func && func->res.type)) 
+			return sql_error(sql, 02, "DROP %s: cannot drop %s '%s'", F, is_func?"procedure":"function", name);
 	}
 		
 	mvc_drop_all_func(sql, s, list_func, drop_action);
@@ -741,13 +753,15 @@ psm(mvc *sql, symbol *s)
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:
+	case SQL_DROP_PROC:
 	{
 		dlist *l = s->data.lval;
+		int is_func = (s->token == SQL_DROP_FUNC);
 		
 		if (l->h->next->data.ival)
-	                ret = drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.ival);
+	                ret = drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.ival, is_func);
 		else
-	                ret = drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival);
+	                ret = drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival, is_func);
 		sql->type = Q_SCHEMA;
 	}	break;
 	case SQL_SET:

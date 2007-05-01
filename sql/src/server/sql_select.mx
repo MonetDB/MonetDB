@@ -179,7 +179,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 				temp_table = stack_find_view(sql, tname);
 			}
 		}
-		if (!t && !temp_table) {
+		if (!t && (!temp_table || temp_table->type != st_list)) {
 			(void) sql_error(sql, 02, "SELECT: no such table '%s'", tname);
 			return NULL;
 		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
@@ -204,6 +204,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 	default:
 		return query_exp_optname(sql, scp, tableref);
 	}
+	return NULL;
 }
 
 stmt *
