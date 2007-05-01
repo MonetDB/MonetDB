@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1019 ]
+[ 1021 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1019 ]
+[ 1021 ]
 
 var All:=0;
 
@@ -828,8 +828,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 90 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 92 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -840,6 +840,7 @@ Module: "bat"
 [ "[swizzle]",	  "COMMAND:   ",  "[swizzle](BAT[oid,oid], BAT[void,oid]) : BAT[oid,oid]",				  "swizzle re-mapped oids (translate from logical to physical using a page-id map)"																																																																																							  ]
 [ "[swizzle]",	  "COMMAND:   ",  "[swizzle](BAT[void,oid], BAT[void,oid]) : BAT[oid,oid]",				  "swizzle re-mapped oids (translate from logical to physical using a page-id map)"																																																																																							  ]
 [ "accbuild",	  "COMMAND:   ",  "accbuild(BAT[any,any], str) : void",									  "Build an accelerator on the head column of b. The builtin accelerator\n types index and hash will be created as transient accelerators. They\n will not be saved on disk. User-defined accelerators must always be\n persistent."									  ]
+[ "accdel",	  "COMMAND:   ",  "accdel(BAT[any,any], str) : void",							  "Delete an accelerator on the head column of b."																																													  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2]) : int",							  "Return the update access privilige of a BAT."																																																							  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2], int) : BAT[any::1,any::2]",					  "Try to change the update access priviliges to this BAT. Mode:\n BAT_READ   - allow only read access.\n BAT_APPEND - allow reads and insertions of new elements.\n BAT_WRITE  - allow reads, insertions, and updates.\n BATs are updateable by default. On making a BAT readonly, all\n subsequent updates fail with an error message.\n Returns the BAT itself."  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]",					  "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"																																																																										  ]
@@ -872,6 +873,7 @@ Module: "bat"
 [ "delete",	  "COMMAND:   ",  "delete(BAT[any::1,any::2], any::1) : BAT[any::1,any::2]",					  "Delete all BUNs with a certain head value.\n Returns the modified BAT."																												  ]
 [ "delete",	  "COMMAND:   ",  "delete(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Delete one specific BUN.\n Returns the modified BAT."																														  ]
 [ "deleteBuns",	  "COMMAND:   ",  "deleteBuns(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Delete from the first BAT all BUNs with a corresponding BUN in the second.\n Returns the modified BAT."																																																  ]
+[ "densebat",	  "COMMAND:   ",  "densebat(wrd) : BAT[void,void]",							  "Creates a new [void,void] BAT of size 'size'."																																													  ]
 [ "destroy",	  "COMMAND:   ",  "destroy(str) : bit",									  "Destroys the BAT."																																											  ]
 [ "hashloop",	  "ITERATOR:  ",  "hashloop(BAT[any::1,any], ptr, any::1) : void",					  "Iterators are special MIL constructs:\n  <bat-expression> @ <iterator>(<parameters>) <MIL-statement>\n 'b@hashloop(v)..' iterates over all BUNs [$h,$t] of BAT b where ($h = val)."																																							  ]
 [ "head",	  "COMMAND:   ",  "head(BAT[any,any]) : str",								  "Returns the type of the head column of a BAT, as a string."																																																								  ]
@@ -1164,7 +1166,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1019 ]
+[ 1021 ]
 
 quit();
 
