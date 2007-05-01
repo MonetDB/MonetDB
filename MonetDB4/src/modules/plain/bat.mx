@@ -60,6 +60,9 @@ can be found in this module.
 .COMMAND new(int ht, int tt, int size) : BAT[any,any] = CMDnew_int;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
+.COMMAND densebat(wrd size) : BAT[void,void] = CMDdensebat;
+"Creates a new [void,void] BAT of size 'size'."
+
 .COMMAND reverse(BAT[any::1,any::2]) : BAT[any::2,any::1] = CMDreverse;
 "Returns the reverse view of a BAT (head is tail and tail is head).
  BEWARE:  no copying is involved; input and output refer to the same object!"
@@ -509,6 +512,8 @@ documentation.
  types index and hash will be created as transient accelerators. They
  will not be saved on disk. User-defined accelerators must always be
  persistent."
+.COMMAND accdel(BAT[any,any] b, str acctype) = CMDaccdel;
+"Delete an accelerator on the head column of b."
 
 @- Synced BATs
 The binary model of Monet has important advantages when working in
@@ -677,6 +682,27 @@ CMDnew_default(BAT **ret, int *ht, int *tt)
 	wrd default_size = 0;
 
 	return CMDnew(ret, ht, tt, &default_size);
+}
+
+int
+CMDdensebat(BAT **ret, wrd *size)
+{
+	BAT *b, *bm;
+
+	if (*size < 0)
+		*size = 0;
+	*ret = b = BATnew(TYPE_void, TYPE_void, (size_t) *size);
+	if (b == NULL)
+		return GDK_FAIL;
+	bm = BBP_cache(-b->batCacheid);
+	b->batDirty = 1;
+	b->tseqbase = bm->hseqbase = 0;
+	b->hseqbase = bm->tseqbase = 0;
+	BATkey(b, TRUE);
+	BATkey(bm, TRUE);
+	b->batBuns->free += *size;
+	BATsetcount(b, (size_t) *size);
+	return GDK_SUCCEED;
 }
 
 int
@@ -1639,6 +1665,14 @@ CMDaccbuild(BAT *b, str acc )
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
+}
+
+int
+CMDaccdel(BAT *b, str acc)
+{
+	if (strcmp(acc, "hash") == 0)
+		HASHremove(b);
+	return GDK_SUCCEED;
 }
 
 @+ Iterators
