@@ -2800,8 +2800,6 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   # get containers in the order in which we must commit them ([COLL_ID,CONT])
   var cont_order := affected_conts.reverse().mirror().leftfetchjoin(ws.fetch(CONT_COLL)).reverse().sort();
 
-  ws.seqbase(oid_nil); # indicate that we are done reading our snapshot
-
   var ws_logstarttime := usec(); # this timer is used assuming a single collection per query
 
   # get the collection locks, re-read the master ancestor sizes, and check for conflicts (ws_precommit)
@@ -2851,6 +2849,8 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   if (ws_log_active)
     ws_log(ws, "===================== WAL RELEASED exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
+
+  ws.seqbase(oid_nil); # indicate that we are done reading our snapshot
 
   # upgrade locks, isolate the masters, apply deltas to them, maintain indices, and release all coll-lock(s)
   cont_order@batloop() {
