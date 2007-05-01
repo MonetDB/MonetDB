@@ -795,8 +795,12 @@ BAT@1union(BAT *l, BAT *r)
 	bn->hsorted = hdisjunct?GDK_SORTED:FALSE;
 	bn->tsorted = tdisjunct?GDK_SORTED:FALSE;
 	bn->talign = bn->halign = 0;
-	if (KEY@1 == FALSE && hdisjunct == FALSE)
+	if (!r->hkey)
 		BATkey(bn, FALSE);
+#if KEY@1 == KEYs
+	if (bn->hkey && hdisjunct == FALSE)
+		BATkey(bn, FALSE);
+#endif
 	BATkey(BATmirror(bn), tdisjunct?(l->tkey&&r->tkey):0);
 
 	return bn;
