@@ -11154,13 +11154,13 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             }
             nme = buf;
             if (strchr(tpe, ':') == NULL)  {
-                *buf++ = 'x'; 
-                *buf++ = 's'; 
-                *buf++ = ':'; 
+                *nme++ = 'x'; 
+                *nme++ = 's'; 
+                *nme++ = ':'; 
             }
-            strcpy(buf, tpe);
-            buf = strchr(nme, ' ');
-            if (buf) *buf = 0;
+            strcpy(nme, tpe);
+            nme = strchr(buf, ' ');
+            if (nme) *nme = 0;
 
             assert (L(args) && L(args)->kind == c_param);
             assert (LR(args) && LR(args)->kind == c_var);
@@ -11174,7 +11174,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
             if (first == 0) first = vid;
             strncat(sig, ",", 1024);
-            strncat(sig, nme, 1024);
+            strncat(sig, buf, 1024);
 
             args = R(args);
         }
