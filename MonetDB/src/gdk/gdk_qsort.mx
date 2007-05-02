@@ -170,6 +170,7 @@ typedef lng ptrdiff_t;
 #define any_GT(a,b)		((buf->cmp)(a,b) >  0)
 
 typedef chr any;
+
 @:qsort_L_or_G_direction(any)@
 
 #ifndef NOEXPAND_CHR
@@ -302,7 +303,7 @@ loop:
 	}
 
 	pn = (char *) a + MULT_WIDTH(n);
-	r = MIN(pa - (char *)a, pb - pa);
+	r = MIN(pa - (char *) a, pb - pa);
 	multi_SWAP(@3, a, pb - r, r);
 	r = MIN(pd - pc, (ptrdiff_t) (pn - pd - buf->width));
 	multi_SWAP(@3, pb, pn - r, r);
@@ -326,7 +327,7 @@ loop:
 
 @= call_iterate_or_register_swapmethod
 	/* factorization by array swap implementation */
-	if ((((size_t) a)&7) || width != 8) {
+	if ((((size_t) a) & 7) || width != 8) {
 		/* array is non-aligned or entries are not one 64-bit integer wide */
 		@:call_offset_or_direct_storage(@1,@2,iterate)@
 	} else {
@@ -352,7 +353,7 @@ GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
 	buf.shift = -1;
 	do {
 		int mask = 1 << i; 
-		if ((width&mask) && (width & ~mask) == 0) {
+		if ((width & mask) && (width & ~mask) == 0) {
 			buf.shift = i;
 			break;
 		}

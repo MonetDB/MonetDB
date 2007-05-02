@@ -246,12 +246,12 @@ BATundo(BAT *b)
 	bunlast = b->batFirst;
 	if (bunlast > b->batDeleted) {
 		size_t i = BUNindex(b, bunfirst);
-                BAT *bm = BBP_cache(-b->batCacheid);
+		BAT *bm = BBP_cache(-b->batCacheid);
 
 		/* elements are 'inserted' => zap properties */
-		if (b->hsorted & 1 || b->hsorted == (bit)GDK_SORTED_REV)
+		if (b->hsorted & 1 || b->hsorted == (bit) GDK_SORTED_REV)
 			b->hsorted = FALSE;
-		if (b->tsorted & 1 || b->tsorted == (bit)GDK_SORTED_REV)
+		if (b->tsorted & 1 || b->tsorted == (bit) GDK_SORTED_REV)
 			b->tsorted = FALSE;
 		if (b->hkey)
 			BATkey(b, FALSE);
@@ -271,7 +271,7 @@ BATundo(BAT *b)
 		}
 	}
 	b->batFirst = b->batDeleted;
-	BATsetcount(b, (BUNlast(b)-BUNfirst(b))/BUNsize(b) );
+	BATsetcount(b, (BUNlast(b) - BUNfirst(b)) / BUNsize(b));
 	return b;
 }
 
@@ -294,7 +294,7 @@ BATprev(BAT *b)
 		if (bn) {
 			bn->batBuns->free = bn->batInserted - bn->batBuns->base;
 			bn->batInserted = bn->batFirst = bn->batDeleted;
-			BATsetcount(bn, (BUNlast(bn)-BUNfirst(bn))/BUNsize(bn) );
+			BATsetcount(bn, (BUNlast(bn) - BUNfirst(bn)) / BUNsize(bn));
 		}
 		return bn;
 	}
@@ -322,7 +322,7 @@ BATalpha(BAT *b)
 		bn = VIEWcreate(b);
 		if (bn) {
 			bn->batDeleted = bn->batFirst = bn->batInserted;
-			BATsetcount(bn, (BUNlast(bn)-BUNfirst(bn))/BUNsize(bn) );
+			BATsetcount(bn, (BUNlast(bn) - BUNfirst(bn)) / BUNsize(bn));
 		}
 		return bn;
 	}
@@ -351,7 +351,7 @@ BATdelta(BAT *b)
 		if (bn) {
 			bn->batBuns->free = bn->batFirst - bn->batBuns->base;
 			bn->batFirst = bn->batInserted = bn->batDeleted;
-			BATsetcount(bn, (BUNlast(bn)-BUNfirst(bn))/BUNsize(bn) );
+			BATsetcount(bn, (BUNlast(bn) - BUNfirst(bn)) / BUNsize(bn));
 		}
 		return bn;
 	}

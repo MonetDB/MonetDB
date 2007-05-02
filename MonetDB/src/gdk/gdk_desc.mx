@@ -111,26 +111,25 @@ BATsavedesc(BAT *b, str nme)
 
 	DELTAsave(b);
 	if (b->GDKversion == GDKLIBRARY) {
-		char *hatm = (b->htype>=0)?ATOMname(b->htype):
-					ATOMunknown_name(b->htype);
-		char *tatm = (b->ttype>=0)?ATOMname(b->ttype):
-					ATOMunknown_name(b->ttype);
-		int hlen = (int) strlen(hatm) + 1; 
+		char *hatm = (b->htype >= 0) ? ATOMname(b->htype) : ATOMunknown_name(b->htype);
+		char *tatm = (b->ttype >= 0) ? ATOMname(b->ttype) : ATOMunknown_name(b->ttype);
+		int hlen = (int) strlen(hatm) + 1;
 		int tlen = (int) strlen(tatm) + 1;
 		int hvar = b->hvarsized && (b->htype != TYPE_void);
 		int tvar = b->tvarsized && (b->ttype != TYPE_void);
 
 		if ((fd = GDKfdlocate(nme, "wb", "desc")) < 0 ||
-		     write(fd, bs, sizeof(BATstore)) != sizeof(BATstore) ||
+		    write(fd, bs, sizeof(BATstore)) != sizeof(BATstore) ||
 		    (hvar && write(fd, b->hheap, sizeof(Heap)) != sizeof(Heap)) ||
 		    (tvar && write(fd, b->theap, sizeof(Heap)) != sizeof(Heap)) ||
-		    (write(fd, &hlen, sizeof(int)) != sizeof(int)) ||
-		    (write(fd, hatm, hlen ) != hlen) ||
-		    (write(fd, &tlen, sizeof(int)) != sizeof(int)) ||
-		    (write(fd, tatm, tlen ) != tlen)) {
+		    write(fd, &hlen, sizeof(int)) != sizeof(int) ||
+		    write(fd, hatm, hlen) != hlen ||
+		    write(fd, &tlen, sizeof(int)) != sizeof(int) ||
+		    write(fd, tatm, tlen) != tlen) {
 			ret = -1;
 		}
-		if (fd >= 0) close(fd);
+		if (fd >= 0)
+			close(fd);
 	}
 	/* a saved bat could still be used so reset the delta status */
 	DELTAload(b);
@@ -154,11 +153,11 @@ BATloaddesc(str nme)
 		return NULL;
 	}
 
- 	dst = (BATstore *) GDKzalloc(sizeof(BATstore));
+	dst = (BATstore *) GDKzalloc(sizeof(BATstore));
 	if (!dst)
 		return NULL;
 
-	if ((n = read(fd, dst, sizeof(BATstore)) != sizeof(BATstore)) ) {
+	if ((n = read(fd, dst, sizeof(BATstore)) != sizeof(BATstore))) {
 		GDKerror("BATloaddesc: read error: name=%s, n=%d\n", nme, n);
 		GDKfree(dst);
 		close(fd);
@@ -187,29 +186,34 @@ BATloaddesc(str nme)
 	hvar = b->hvarsized && (b->htype != TYPE_void);
 	tvar = b->tvarsized && (b->ttype != TYPE_void);
 
-	if (hvar && ((b->hheap = (Heap*)GDKzalloc(sizeof(Heap))) == NULL
-	  || (n = read(fd, b->hheap, sizeof(Heap))) != sizeof(Heap) )) {
+	if (hvar && ((b->hheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (n = read(fd, b->hheap, sizeof(Heap))) != sizeof(Heap))) {
 		GDKerror("BATloaddesc: read error: name=%s, n=%d\n", nme, n);
-		if (b->hheap) GDKfree(b->hheap);
+		if (b->hheap)
+			GDKfree(b->hheap);
 		GDKfree(dst);
 		close(fd);
 		return NULL;
 	}
-	if (tvar && ((b->theap = (Heap*)GDKzalloc(sizeof(Heap))) == NULL
-	  || (n = read(fd, b->theap, sizeof(Heap))) != sizeof(Heap) )) {
+	if (tvar &&((b->theap = (Heap *)GDKzalloc(sizeof(Heap))) == NULL || (n = read(fd, b->theap, sizeof(Heap))) != sizeof(Heap))) {
 		GDKerror("BATloaddesc: read error: name=%s, n=%d\n", nme, n);
-		if (b->hheap) GDKfree(b->hheap);
-		if (b->theap) GDKfree(b->theap);
+		if (b->hheap)
+			GDKfree(b->hheap);
+		if (b->theap)
+			GDKfree(b->theap);
 		GDKfree(dst);
 		close(fd);
 		return NULL;
 	}
-	if ( (read(fd, &ver, sizeof(int)) != sizeof(int)) || ver > BUFSIZ ||
-	     (read(fd, hatm, ver) != ver) || 
-	     (read(fd, &ver, sizeof(int)) != sizeof(int)) || ver > BUFSIZ ||
-	     (read(fd, tatm, ver) != ver) ) {
-		if (b->hheap) GDKfree(b->hheap);
-		if (b->theap) GDKfree(b->theap);
+	if (read(fd, &ver, sizeof(int)) != sizeof(int) ||
+	    ver > BUFSIZ ||
+	    read(fd, hatm, ver) != ver ||
+	    read(fd, &ver, sizeof(int)) != sizeof(int) ||
+	    ver > BUFSIZ ||
+	    read(fd, tatm, ver) != ver) {
+		if (b->hheap)
+			GDKfree(b->hheap);
+		if (b->theap)
+			GDKfree(b->theap);
 		GDKfree(dst);
 		close(fd);
 		return NULL;
@@ -276,21 +280,24 @@ batswap(BAT *b, int direction)
 	case TYPE_bte:
 		break;
 	case TYPE_sht:
-		DELloop(b, p, q, xx) @:swap(short_int,sht,BUNhloc(b,p))@
-		BATloopFast(b, p, q, xx) @:swap(short_int,sht,BUNhloc(b,p))@
-
+		DELloop(b, p, q, xx)
+			@:swap(short_int,sht,BUNhloc(b,p))@
+		BATloopFast(b, p, q, xx)
+			@:swap(short_int,sht,BUNhloc(b,p))@
 		break;
 	case TYPE_int:
 	case TYPE_flt:
-		DELloop(b, p, q, xx) @:swap(normal_int,int,BUNhloc(b,p))@
-		BATloopFast(b, p, q, xx) @:swap(normal_int,int,BUNhloc(b,p))@
-
+		DELloop(b, p, q, xx)
+			@:swap(normal_int,int,BUNhloc(b,p))@
+		BATloopFast(b, p, q, xx)
+			@:swap(normal_int,int,BUNhloc(b,p))@
 		break;
 	case TYPE_lng:
 	case TYPE_dbl:
-		DELloop(b, p, q, xx) @:swap(long_long,lng,BUNhloc(b,p))@
-		BATloopFast(b, p, q, xx) @:swap(long_long,lng,BUNhloc(b,p))@
-
+		DELloop(b, p, q, xx)
+			@:swap(long_long,lng,BUNhloc(b,p))@
+		BATloopFast(b, p, q, xx)
+			@:swap(long_long,lng,BUNhloc(b,p))@
 		break;
 	default:
 		ATOMheapConvert(b->htype, b->hheap, direction);

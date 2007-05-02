@@ -205,7 +205,7 @@ GDKlog(const char *format, ...)
 	int mustopen = GDKgetHome();
 	time_t tm = time(0);
 
-	if (!MT_initialized()) 
+	if (!MT_initialized())
 		return;
 
 	va_start(ap, format);
@@ -222,8 +222,7 @@ GDKlog(const char *format, ...)
 #ifndef HAVE_GETUID
 #define getuid() 0
 #endif
-	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%s \@ %s", 
-		(int) getuid(), (int) getpid(), ctime(&tm),buf);
+	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%s \@ %s", (int) getuid(), (int) getpid(), ctime(&tm), buf);
 	fflush(GDKlockFile);
 
 	if (mustopen)
@@ -239,7 +238,7 @@ received.
 @c
 #ifndef NATIVE_WIN32
 #include <signal.h>
-#if 0 /* these are unused */
+#if 0				/* these are unused */
 static RETSIGTYPE
 BATSIGignore(int nr)
 {
@@ -325,7 +324,7 @@ BATSIGinit(void)
 #endif
 	return 0;
 }
-#endif	/* NATIVE_WIN32 */
+#endif /* NATIVE_WIN32 */
 
 @}
 @+ Memory management
@@ -373,7 +372,7 @@ the memory consumption.
 #endif
 @c
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
-size_t GDK_mem_bigsize = 1<<20;
+size_t GDK_mem_bigsize = 1 << 20;
 size_t GDK_vm_minsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
@@ -498,11 +497,12 @@ GDKmem_heapcheck(int t)
 	/* correct heap estimate with the real thing */
 	if (mallinfo_ok) {
 		struct mallinfo m = MT_mallinfo();
+
 #if ((SIZEOF_VOID_P==8) && defined(HAVE_SIGNED_MALLINFO))
-		if (m.usmblks < 0 || m.uordblks < 0 || m.hblkhd < 0) 
-			mallinfo_ok = 0; /* incredible POSIX incompetence!! non-64-bit safe mallinfo */
-		else 
-#endif 
+		if (m.usmblks < 0 || m.uordblks < 0 || m.hblkhd < 0)
+			mallinfo_ok = 0;	/* incredible POSIX incompetence!! non-64-bit safe mallinfo */
+		else
+#endif
 			GDK_mallocedbytes_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
 	}
 	GDK_heapcheck_last = t;
@@ -517,13 +517,15 @@ GDKmem_heapcheck(int t)
 
 		if (mtrace) {
 			int _idx = add_stack(stackBat);
-			add_mem(memBat,_blk,_idx);
+
+			add_mem(memBat, _blk, _idx);
 		}
 #endif
 		GDK_mallocedbytes_estimate += _memdelta;
 #ifdef GDK_MEM_KEEPHISTO
 		{
 			int _idx;
+
 			GDKmallidx(_idx, _memdelta);
 			GDK_nmallocs[_idx]++;
 		}
@@ -550,6 +552,7 @@ GDKmem_heapcheck(int t)
 #ifdef GDK_MEM_KEEPHISTO
 		{
 			int _idx;
+
 			GDKmallidx(_idx, _memdelta);
 			GDK_nmallocs[_idx]--;
 		}
@@ -567,6 +570,7 @@ GDKmem_heapcheck(int t)
 #ifdef GDK_VM_KEEPHISTO
 		{
 			int _idx;
+
 			GDKmallidx(_idx, _vmdelta);
 			GDK_vm_nallocs[_idx]++;
 		}
@@ -586,6 +590,7 @@ GDKmem_heapcheck(int t)
 #ifdef GDK_VM_KEEPHISTO
 		{
 			int _idx;
+
 			GDKmallidx(_idx, _vmdelta);
 			GDK_vm_nallocs[_idx]--;
 		}
@@ -1067,8 +1072,9 @@ GDKzalloc(size_t size)
 {
 	size_t maxsize;
 	void *p = GDKmallocmax(size, &maxsize, 1);
+
 	if (p)
-		memset(p,0,size);
+		memset(p, 0, size);
 	return p;
 }
 
@@ -1110,7 +1116,7 @@ GDKfree(void *blk)
 		 * Disable at runtime via `Mserver --debug=33554432` or
 		 * `debugmask(or(debugmask(),33554432));` in MIL.
 		 */
-		DEADBEEFCHK memset(s,0xDB,size - (8 + (size & 1))); /* 0xDeadBeef */
+		DEADBEEFCHK memset(s, 0xDB, size - (8 + (size & 1)));	/* 0xDeadBeef */
 #endif
 #ifdef GDK_MEM_MISALIGN
 		if (size & 1)
@@ -1505,8 +1511,8 @@ int GDKdebug = 0;
 int GDKembedded = 0;
 int GDKprotected = 0;
 
-batlock_t GDKbatLock[BBP_BATMASK+1];
-bbplock_t GDKbbpLock[BBP_THREADMASK+1];
+batlock_t GDKbatLock[BBP_BATMASK + 1];
+bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 MT_Lock GDKnameLock;
 MT_Lock GDKthreadLock;
 MT_Lock GDKunloadLock;
@@ -1744,14 +1750,14 @@ GDKaddbuf(const char *message)
 	}
 }
 
-/*VARARGS*/ int
+ /*VARARGS*/ int
 GDKwarning(const char *format, ...)
 {
 	char message[GDKMAXERRLEN];
 	size_t len = strlen(GDKWARNING);
 	va_list ap;
 
-	if (!strncmp(format,GDKWARNING,len)) {
+	if (!strncmp(format, GDKWARNING, len)) {
 		len = 0;
 	} else {
 		strcpy(message, GDKWARNING);
@@ -1766,14 +1772,14 @@ GDKwarning(const char *format, ...)
 }
 
 
-/*VARARGS*/ int
+ /*VARARGS*/ int
 GDKerror(const char *format, ...)
 {
 	char message[GDKMAXERRLEN];
 	size_t len = strlen(GDKERROR);
 	va_list ap;
 
-	if (!strncmp(format,GDKERROR,len)) {
+	if (!strncmp(format, GDKERROR, len)) {
 		len = 0;
 	} else {
 		strcpy(message, GDKERROR);
@@ -1787,7 +1793,7 @@ GDKerror(const char *format, ...)
 	return 0;
 }
 
-/*VARARGS*/ int
+ /*VARARGS*/ int
 GDKsyserror(const char *format, ...)
 {
 	char message[GDKMAXERRLEN];
@@ -1796,7 +1802,7 @@ GDKsyserror(const char *format, ...)
 	int err = errno;
 	va_list ap;
 
-	if (!strncmp(format,GDKERROR,len)) {
+	if (!strncmp(format, GDKERROR, len)) {
 		len = 0;
 	} else {
 		strcpy(message, GDKERROR);
@@ -1823,7 +1829,7 @@ GDKsyserror(const char *format, ...)
 	return err;
 }
 
-/*VARARGS*/ int
+ /*VARARGS*/ int
 GDKfatal(const char *format, ...)
 {
 	char message[GDKMAXERRLEN];
@@ -1835,7 +1841,7 @@ GDKfatal(const char *format, ...)
 #ifndef NATIVE_WIN32
 	BATSIGinit();
 #endif
-	if (!strncmp(format,GDKFATAL,len)) {
+	if (!strncmp(format, GDKFATAL, len)) {
 		len = 0;
 	} else {
 		strcpy(message, GDKFATAL);
@@ -2023,6 +2029,7 @@ THRdel(Thread t)
 		(*t->cleanup) (t);
 	}
 	PARDEBUG THRprintf(GDKout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
+
 	t->pid = 0;
 	GDKnrofthreads--;
 	gdk_unset_lock(GDKthreadLock, "THRdel");
@@ -2115,7 +2122,7 @@ THRgettid(void)
 
 static char THRprintbuf[BUFSIZ];
 
-/*VARARGS*/ int
+ /*VARARGS*/ int
 THRprintf(stream *s, const char *format, ...)
 {
 	str bf = THRprintbuf, p = 0;
@@ -2144,13 +2151,13 @@ THRprintf(stream *s, const char *format, ...)
 		while (*p)
 			p++;
 	}
-	m = p-bf;
+	m = p - bf;
 	va_start(ap, format);
 	n = vsnprintf(p, bfsz-m, format, ap);
 	va_end(ap);
 @c
 	@:THRprintf_va_vsnprintf@
-	if (n < 0) 
+	if (n < 0)
 		goto cleanup;
 	if ((size_t) n >= bfsz - m) {
 		bfsz = m + n + 1;	/* precisely what is needed */
@@ -2165,7 +2172,7 @@ THRprintf(stream *s, const char *format, ...)
 	n = 0;
 	if (stream_write(s, bf, p - bf, 1) != 1)
 		n = -1;
-cleanup:
+      cleanup:
 	if (bf != THRprintbuf)
 		free(bf);
 	gdk_unset_lock(MT_system_lock, "THRprintf");

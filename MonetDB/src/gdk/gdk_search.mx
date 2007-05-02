@@ -288,7 +288,7 @@ HASHnew(Heap *hp, int tpe, size_t size, hash_t mask)
 	Hash *h = NULL;
 	if (HEAPalloc(hp, mask + size, sizeof(hash_t)) < 0)
 		return NULL;
-	h = (Hash*)GDKmalloc(sizeof(Hash));
+	h = (Hash *) GDKmalloc(sizeof(Hash));
 	if (!h)
 		return h;
 	h->lim = size;
@@ -363,7 +363,8 @@ BAThash(BAT *b, size_t masksize)
 			if (p > q)
 				p = q;
 		}
-                if (mask < 1024) mask = 1024;
+		if (mask < 1024)
+			mask = 1024;
 		do {
 			size_t nslots = mask >> 3;	/* 1/2 full is too full */
 
@@ -373,7 +374,7 @@ BAThash(BAT *b, size_t masksize)
 				HEAPfree(hp);
 				GDKfree(hp);
 			}
-			if (h) 
+			if (h)
 				GDKfree(h);
 			/* create the hash structures */
 			hp = (Heap *) GDKmalloc(sizeof(Heap));
@@ -560,23 +561,28 @@ HASHdestroy(BAT *b)
 		HASHremove(BATmirror(b));
 }
 
-int HASHgonebad(BAT *b, ptr v)
+int
+HASHgonebad(BAT *b, ptr v)
 {
-    Hash *h = b->hhash;
-    if (h == NULL) return 1; /* no hash is bad hash? */
+	Hash *h = b->hhash;
 
-    if (h->mask*2 < BATcount(b)) {
-        int (*cmp)(ptr, ptr) = BATatoms[b->htype].atomCmp;
-	hash_t cnt, hit, i = h->hash[HASHprobe(h, v)];
-        for(cnt=hit=1; i != HASH_MAX; i = h->link[i], cnt++) 
-	    hit += ((*cmp)(v,BUNhead(b,BUNptr(b,i))) == 0);
+	if (h == NULL)
+		return 1;	/* no hash is bad hash? */
 
-        if (cnt/hit > 4) return 1; /* linked list too long */
+	if (h->mask * 2 < BATcount(b)) {
+		int (*cmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
+		hash_t cnt, hit, i = h->hash[HASHprobe(h, v)];
 
-        /* in this case, linked lists are long but contain the desired values 
-         * such hash tables may be useful for locating all duplicates */
-    }
-    return 0;  /* a-ok */
+		for (cnt = hit = 1; i != HASH_MAX; i = h->link[i], cnt++)
+			hit += ((*cmp) (v, BUNhead(b, BUNptr(b, i))) == 0);
+
+		if (cnt / hit > 4)
+			return 1;	/* linked list too long */
+
+		/* in this case, linked lists are long but contain the desired values 
+		 * such hash tables may be useful for locating all duplicates */
+	}
+	return 0;		/* a-ok */
 }
 
 @}
@@ -660,7 +666,7 @@ BUN
 SORTfndfirst_@2(BAT *b, ptr v)
 {
 	BUN end = BUNfirst(b), cur = end;
-	size_t lo = BUNindex(b,end), hi = BUNindex(b,BUNlast(b));
+	size_t lo = BUNindex(b, end), hi = BUNindex(b, BUNlast(b));
 	int cmp = 1, bunsize = BUNsize(b);
 
         if (lo >= hi || @3_CMP(BUNt@1(b, cur), v, @4)>=0) {
@@ -669,7 +675,7 @@ SORTfndfirst_@2(BAT *b, ptr v)
 		return cur;
 	}
 	while (lo < hi) {
-		size_t mid = (lo+hi)>>1;
+		size_t mid = (lo + hi) >> 1;
 
 		cur = BUNptr(b, mid);
 		cmp = @3_CMP(BUNt@1(b, cur), v, @4);
@@ -683,8 +689,8 @@ SORTfndfirst_@2(BAT *b, ptr v)
 		}
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
-		while((cur-=bunsize) >= end) {
-			if (!@3_EQ(BUNt@1(b,cur),v,@4))
+		while((cur -= bunsize) >= end) {
+			if (!@3_EQ(BUNt@1(b, cur), v, @4))
 				break;
 		}
 		cur += bunsize;
@@ -696,18 +702,18 @@ BUN
 SORTfndlast_@2(BAT *b, ptr v)
 {
 	BUN end = BUNlast(b), cur = end;
-	size_t lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,end);
+	size_t lo = BUNindex(b, BUNfirst(b)), hi = BUNindex(b, end);
 	int cmp = 1, bunsize = BUNsize(b);
 
-        if (lo >= hi || @3_CMP(BUNt@1(b, cur-bunsize), v, @4)<=0) {
+        if (lo >= hi || @3_CMP(BUNt@1(b, cur - bunsize), v, @4)<=0) {
 		/* shortcut: if BAT is empty or last (and hence all) tail
 		 * value is <= v, we're done. */
 		return cur;
 	}
 	while (lo < hi) {
-		size_t mid = (lo+hi)>>1;
+		size_t mid = (lo + hi) >> 1;
 		cur = BUNptr(b, mid);
-		cmp = @3_CMP(BUNt@1(b,cur),v,@4);
+		cmp = @3_CMP(BUNt@1(b, cur), v, @4);
 		if (cmp < 0) {
 			lo = ++mid;
 			cur += bunsize;
@@ -718,8 +724,8 @@ SORTfndlast_@2(BAT *b, ptr v)
 		}
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
-		while((cur+=bunsize) < end) {
-			if (!@3_EQ(BUNt@1(b,cur),v,@4))
+		while((cur += bunsize) < end) {
+			if (!@3_EQ(BUNt@1(b, cur), v, @4))
 				break;
 		}
 	} else if (cmp == 0) {
@@ -732,14 +738,14 @@ BUN
 SORTfnd_@2(BAT *m, ptr v)
 {
 	BAT *b = BATmirror(m);
-	size_t lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,BUNlast(b));
+	size_t lo = BUNindex(b, BUNfirst(b)), hi = BUNindex(b, BUNlast(b));
 	int cmp = 1, bunsize = BUNsize(b);
 	BUN cur = NULL;
 
 	while (lo < hi) {
-		size_t mid = (lo+hi)>>1;
+		size_t mid = (lo + hi) >> 1;
 		cur = BUNptr(b, mid);
-		cmp = @3_CMP(BUNt@1(b,cur),v,@4);
+		cmp = @3_CMP(BUNt@1(b, cur), v, @4);
 		if (cmp < 0) {
 			lo = ++mid;
 			cur += bunsize;
@@ -756,41 +762,41 @@ SORTfnd_@2(BAT *m, ptr v)
 BUN
 SORTfnd@2(BAT *b, ptr v)
 {
-	if (b && b->@1sorted&1) {
+	if (b && b->@1sorted & 1) {
 		switch(ATOMstorage(b->@1type)) {
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
-			return SORTfnd@2_chr(b,v);
+			return SORTfnd@2_chr(b, v);
 #endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
-			return SORTfnd@2_bte(b,v);
+			return SORTfnd@2_bte(b, v);
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
-			return SORTfnd@2_sht(b,v);
+			return SORTfnd@2_sht(b, v);
 #endif
 #ifndef NOEXPAND_INT
 		case TYPE_int:
-			return SORTfnd@2_int(b,v);
+			return SORTfnd@2_int(b, v);
 #endif
 #ifndef NOEXPAND_FLT
 		case TYPE_flt:
-			return SORTfnd@2_flt(b,v);
+			return SORTfnd@2_flt(b, v);
 #endif
 #ifndef NOEXPAND_DBL
 		case TYPE_dbl:
-			return SORTfnd@2_dbl(b,v);
+			return SORTfnd@2_dbl(b, v);
 #endif
 #ifndef NOEXPAND_LNG
 		case TYPE_lng:
-			return SORTfnd@2_lng(b,v);
+			return SORTfnd@2_lng(b, v);
 #endif
 		default:
 			if (b->@1varsized) {
-				return SORTfnd@2_var(b,v);
+				return SORTfnd@2_var(b, v);
 			} else {
-				return SORTfnd@2_loc(b,v);
+				return SORTfnd@2_loc(b, v);
 			}
 		}
 	}

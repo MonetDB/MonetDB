@@ -476,7 +476,7 @@ below.  The global variables should not be modified directly.
 #define OLDLENGTH	32	/* old max  BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
 #define BATTINY_BITS 	8
-#define BATTINY		(1<<BATTINY_BITS) /* minimum allocation buncnt for a BAT */
+#define BATTINY		(1<<BATTINY_BITS)	/* minimum allocation buncnt for a BAT */
 
 #define TYPE_void	0
 #define TYPE_bit	1
@@ -498,6 +498,7 @@ typedef signed char bit;
 typedef signed char chr;
 typedef signed char bte;
 typedef short sht;
+
 #ifdef MONET_OID32
 #define SIZEOF_OID	SIZEOF_INT
 typedef unsigned int oid;
@@ -509,6 +510,7 @@ typedef size_t oid;
 typedef ssize_t wrd;
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
+
 #define SIZEOF_PTR	SIZEOF_VOID_P
 typedef float flt;
 typedef double dbl;
@@ -579,10 +581,11 @@ typedef __int64 gdk_int64;
 #endif
 
 typedef char *BUN;		/* pointer in some heap. */
-typedef char long_str[IDLENGTH]; /* standard GDK static string */
-typedef char short_str[OLDLENGTH]; /* old GDK small static string */
+typedef char long_str[IDLENGTH];	/* standard GDK static string */
+typedef char short_str[OLDLENGTH];	/* old GDK small static string */
 
 typedef oid hash_t;		/* type used for hash tables */
+
 #if SIZEOF_OID == SIZEOF_INT
 #define HASH_MAX INT_MAX
 #else
@@ -590,9 +593,10 @@ typedef oid hash_t;		/* type used for hash tables */
 #endif
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
+
 #if SIZEOF_OID == SIZEOF_INT	/* a type compatible with var_t */
 #define TYPE_var	TYPE_int
-#if SIZEOF_SIZE_T == SIZEOF_INT 
+#if SIZEOF_SIZE_T == SIZEOF_INT
 #define OIDFMT		SZFMT
 #else
 #define OIDFMT		"%u"
@@ -670,7 +674,7 @@ typedef struct {
 	hash_t mask;		/* number of hash buckets-1 (power of 2) */
 	hash_t *hash;		/* hash table */
 	hash_t *link;		/* collision list */
-	Heap   *heap;		/* heap where the hash is stored */
+	Heap *heap;		/* heap where the hash is stored */
 } Hash;
 
 @
@@ -746,7 +750,7 @@ typedef struct {
 		chr cval[4];
 		flt fval;
 		ptr pval;
-		struct BAT *Bval; /* this field is only used by mel */
+		struct BAT *Bval;	/* this field is only used by mel */
 		bat bval;
 		batrec br;	/* bval + stamp */
 		str sval;
@@ -772,6 +776,7 @@ gdk_export void VALempty(ValPtr v);
 gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, ptr p);
 gdk_export void *VALget(ValPtr v);
+
 @}
 
 @- The BAT record
@@ -856,7 +861,7 @@ typedef struct {
 	bit headvarsized;	/* varsized(>0) or fixedsized(0). */
 	bit tailvarsized;	/* varsized(>0) or fixedsized(0). */
 	chr bunshift;		/* log2 of bunwidth */
-	unsigned short bunwidth; /* byte-width of BUN array */
+	unsigned short bunwidth;	/* byte-width of BUN array */
 	oid hseq;		/* start of dense head sequence */
 	oid tseq;		/* start of dense tail sequence */
 } Dimensions;
@@ -865,13 +870,13 @@ typedef struct {
 	MT_Id tid;		/* which thread created it */
 	int stamp;		/* BAT recent creation stamp */
 	unsigned int
-	    copiedtodisk:1,	/* once written */
-	    dirty:2,		/* dirty wrt disk? */
-	    dirtyflushed:1,	/* was dirty before commt started? */
-	    descdirty:1,	/* bat descriptor dirty marker */
-	    bunsdirty:1,	/* bun heap dirty marker */
-	    lview:1,		/* bat is a *logical* view on parentid */
-	    unused:25;		/* value=0 for now */
+	 copiedtodisk:1,	/* once written */
+	 dirty:2,		/* dirty wrt disk? */
+	 dirtyflushed:1,	/* was dirty before commt started? */
+	 descdirty:1,		/* bat descriptor dirty marker */
+	 bunsdirty:1,		/* bun heap dirty marker */
+	 lview:1,		/* bat is a *logical* view on parentid */
+	 unused:25;		/* value=0 for now */
 	chr set;		/* real set semantics */
 	chr restricted;		/* access priviliges */
 	sht persistence;	/* should the BAT persist on disk? */
@@ -894,13 +899,13 @@ typedef struct {
 } BUNrec;
 
 typedef struct PROPrec {
-	int 	  id;
+	int id;
 	ValRecord v;
 	struct PROPrec *next;	/* simple chain of properties */
 } PROPrec;
 
 typedef struct {
-	str   id;		/* label for head/tail column */
+	str id;			/* label for head/tail column */
 	Heap *vheap;		/* space for the head/tail column. */
 	chr heapdirty;		/* specific heap dirty marker */
 	bit sorted;		/* 0=false, 1=true; */
@@ -913,8 +918,8 @@ typedef struct {
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
-#define GDKLIBRARY_OLD  050415  /* 64-bits BAT with old hash function */
-#define GDKLIBRARY      061021  /* 64-bits BAT */
+#define GDKLIBRARY_OLD  050415	/* 64-bits BAT with old hash function */
+#define GDKLIBRARY      061021	/* 64-bits BAT */
 
 typedef struct BAT {
 	/* static bat properties */
@@ -1056,6 +1061,7 @@ gdk_export size_t HEAPsubcopy(Heap *dst, Heap *src, size_t size, size_t offset);
 gdk_export int HEAPdelete(Heap *h, str o, str ext);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
+
 @}
 @- Internal HEAP Chunk Management
 Heaps are used in BATs to store data for variable-size atoms.
@@ -1098,18 +1104,18 @@ typedef struct {
 				 */
 } HeapRepair;
 
-gdk_export void HEAP_initialize(Heap *heap, /* nbytes -- Initial size of the heap. */
-				size_t nbytes, /* alignment -- for objects on the heap. */
-				size_t nprivate, /* nprivate -- Size of private space */
-				int alignment /* alignment restriction for allocated chunks */
-	);
+gdk_export void HEAP_initialize(Heap *heap,	/* nbytes -- Initial size of the heap. */
+				size_t nbytes,	/* alignment -- for objects on the heap. */
+				size_t nprivate,/* nprivate -- Size of private space */
+				int alignment	/* alignment restriction for allocated chunks */
+    );
 
-gdk_export void HEAP_initialize_compact(Heap *heap, /* nbytes -- Initial size of the heap. */
-					size_t nbytes, /* alignment -- for objects on the heap. */
-					size_t nprivate, /* nprivate -- Size of private space */
-					int alignment, /* alignment restriction for allocated chunks */
+gdk_export void HEAP_initialize_compact(Heap *heap,	/* nbytes -- Initial size of the heap. */
+					size_t nbytes,	/* alignment -- for objects on the heap. */
+					size_t nprivate,/* nprivate -- Size of private space */
+					int alignment,	/* alignment restriction for allocated chunks */
 					int (*sizefcn) (ptr) /* BATatoms[].atomLen function */
-	);
+    );
 
 gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
@@ -1157,6 +1163,7 @@ gdk_export int BATfree(BAT *b);
 gdk_export void BATdestroy(BAT *b);
 gdk_export int BATelmshift(BAT *b);
 gdk_export void BATsetdims(BAT *b);
+
 @
 @}
 
@@ -1505,6 +1512,7 @@ gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
 gdk_export BAT *BATnumber(BAT *b);
 gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
+
 @
 @}
 
@@ -1566,14 +1574,15 @@ expected usage pattern of the memory in a heap.
 #define STORE_MEM	0	/* load into GDKmalloced memory */
 #define STORE_MMAP	1	/* mmap() into virtual memory */
 #define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
-#define STORE_UNSET	((char)-1)/* no mode specified */
+#define STORE_UNSET	((char)-1)	/* no mode specified */
 
-gdk_export size_t    GDK_mem_pagebits; /* page size for non-linear mmaps */
+gdk_export size_t GDK_mem_pagebits;	/* page size for non-linear mmaps */
+
 #define REMAP_PAGE_BITS    GDK_mem_pagebits
 #define REMAP_PAGE_SIZE    (1 << REMAP_PAGE_BITS)
 #define REMAP_PAGE_MASK    (REMAP_PAGE_SIZE - 1)
 #define REMAP_PAGE_MAXBITS (REMAP_PAGE_BITS+3)
-#define REMAP_PAGE_MAXSIZE (1<<REMAP_PAGE_MAXBITS) /* max page bytesize of unary BUN heap (8-byte atom) */
+#define REMAP_PAGE_MAXSIZE (1<<REMAP_PAGE_MAXBITS)	/* max page bytesize of unary BUN heap (8-byte atom) */
 
 /* Buffer management advise for heaps */
 #define BUF_NORMAL	0	/* No further special treatment */
@@ -1585,10 +1594,10 @@ gdk_export size_t    GDK_mem_pagebits; /* page size for non-linear mmaps */
 gdk_export BAT *BATload(str nme);
 gdk_export BAT *BATload_intern(bat bid);
 gdk_export BAT *BATsave(BAT *b);
-gdk_export int BATmmap(BAT *b, int bn, int hh, int th );
+gdk_export int BATmmap(BAT *b, int bn, int hh, int th);
 gdk_export int BATmmap_pin(BAT *b);
 gdk_export int BATmmap_unpin(BAT *b);
-gdk_export int BATmadvise(BAT *b, int bn, int hh, int th );
+gdk_export int BATmadvise(BAT *b, int bn, int hh, int th);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATvmsize(BAT *b, int dirty);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
@@ -1603,6 +1612,7 @@ gdk_export char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode);
 gdk_export int GDKsave(str nme, str ext, void *buf, size_t size, int mode);
 gdk_export int GDKunlink(str dir, str nme, str extension);
 gdk_export int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2);
+
 @
 @}
 
@@ -1630,6 +1640,7 @@ over them, and prints the multi-column result on the file.
 gdk_export int BATprint(BAT *b);
 gdk_export int BATprintf(stream *f, BAT *b);
 gdk_export int BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
+
 @
 @}
 
@@ -1810,7 +1821,7 @@ typedef struct {
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	int lastused;		/* BBP LRU stamp */
 	volatile int status;	/* status mask used for spin locking */
-	/* MT_Id pid;		non-zero thread-id if this BAT is private */
+	/* MT_Id pid;           non-zero thread-id if this BAT is private */
 } BBPrec;
 
 gdk_export bat BBPmaxsize;
@@ -1859,6 +1870,7 @@ gdk_export str BBPphysical(bat b, str buf);
 gdk_export int BBP_curstamp;
 gdk_export BATstore *BBPgetdesc(bat i);
 gdk_export BAT *BBPquickdesc(bat b, int delaccess);
+
 @
 @}
 
@@ -2066,6 +2078,7 @@ gdk_export int ATOMprint(int id, ptr val, stream *fd);
 gdk_export int ATOMformat(int id, ptr val, char **buf);
 
 gdk_export ptr ATOMdup(int id, ptr val);
+
 @
 @}
 @- Unique OIDs
@@ -2097,6 +2110,7 @@ gdk_export oid OIDnew(size_t inc);
 gdk_export oid OIDread(str buf);
 gdk_export int OIDwrite(stream *fp);
 gdk_export int OIDdirty(void);
+
 @
 @}
 
@@ -2190,15 +2204,15 @@ gdk_export void GDKvminc(size_t len);
 gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
 gdk_export int GDKmunmap(void *addr, size_t len);
 
-gdk_export ptr GDK_mem_start;	/* sbrk(0) at start of the program */
-gdk_export size_t GDK_mem_bigsize; /* size after which we use VM rather than heap */
-gdk_export size_t GDK_mem_maxsize; /* max allowed size of committed memory */
-gdk_export size_t GDK_vm_minsize; /* smallest size allowed for a vm block */
-gdk_export size_t GDK_vm_maxsize; /* max allowed size of reserverd vm */
+gdk_export ptr GDK_mem_start;		/* sbrk(0) at start of the program */
+gdk_export size_t GDK_mem_bigsize;	/* size after which we use VM rather than heap */
+gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
+gdk_export size_t GDK_vm_minsize;	/* smallest size allowed for a vm block */
+gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserverd vm */
 
-gdk_export size_t GDKmem_inuse(void); /* RAM/swapmem that MonetDB is really using now */
+gdk_export size_t GDKmem_inuse(void);	/* RAM/swapmem that MonetDB is really using now */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
-gdk_export size_t GDKvm_cursize(void); /* current MonetDB VM address space usage */
+gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
 gdk_export size_t GDKvm_heapsize(void);
 gdk_export size_t GDKmem_heapsize(void);
 gdk_export size_t GDKmem_heapinuse(void);
@@ -2214,6 +2228,7 @@ gdk_export str GDKstrdup(const char *s);
 gdk_export void *GDKvmalloc(size_t size, size_t * maxsize, int emergency);
 gdk_export void *GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t * maxsize, int emergency);
 gdk_export void GDKvmfree(void *blk, size_t size, size_t maxsize);
+
 @
 @}
 
@@ -2283,6 +2298,7 @@ gdk_export int GDKerror(const char *format, ...);
 gdk_export int GDKsyserror(const char *format, ...);
 gdk_export int GDKfatal(const char *format, ...);
 gdk_export int GDKerrorCount(void);
+
 @
 @h
 #include "gdk_delta.h"
@@ -2303,18 +2319,18 @@ gdk_export int GDKerrorCount(void);
 #define strdup _strdup
 #endif
 
-#define BBP_BATMASK     511 
-#define BBP_THREADMASK   63 
+#define BBP_BATMASK     511
+#define BBP_THREADMASK   63
 
 typedef struct {
-    MT_Lock swap;
-    MT_Lock hash;
+	MT_Lock swap;
+	MT_Lock hash;
 } batlock_t;
 
 typedef struct {
-    MT_Lock alloc;
-    MT_Lock trim;
-    bat free;
+	MT_Lock alloc;
+	MT_Lock trim;
+	bat free;
 } bbplock_t;
 
 #define GDKswapLock(x)  GDKbatLock[x].swap
@@ -2323,8 +2339,8 @@ typedef struct {
 #define GDKcacheLock(y) GDKbbpLock[y].alloc
 #define BBP_free(y)     GDKbbpLock[y].free
 
-gdk_export batlock_t GDKbatLock[BBP_BATMASK+1];
-gdk_export bbplock_t GDKbbpLock[BBP_THREADMASK+1];
+gdk_export batlock_t GDKbatLock[BBP_BATMASK + 1];
+gdk_export bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 gdk_export MT_Lock GDKnameLock;
 gdk_export MT_Lock GDKthreadLock;
 gdk_export MT_Lock GDKunloadLock;
@@ -2384,6 +2400,7 @@ gdk_export int GDKnrofthreads;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;
 gdk_export void GDKprotect(void);
+
 @}
 @-
 The GDKembedded variable is a property set in the configuration file
@@ -2592,7 +2609,7 @@ rollback mechanism).
 @h
 gdk_export int TMcommit(void);
 gdk_export int TMabort(void);
-gdk_export int TMsubcommit(BAT* bl);
+gdk_export int TMsubcommit(BAT *bl);
 
 @
 @}

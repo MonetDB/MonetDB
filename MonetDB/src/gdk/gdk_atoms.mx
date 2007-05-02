@@ -616,7 +616,7 @@ ATOMproperty(str id, str property, GDKfcn arg)
 */
 		BATatoms[t].storage = t;	/* critical redefine: undo remapping */
 	}
-  out:
+      out:
 	gdk_unset_lock(GDKthreadLock, "ATOMproperty");
 }
 
@@ -740,8 +740,7 @@ The routine atomnil returns a pointer to the nil value representation.
 #define GDK_dbl_min (-GDK_dbl_max)
 /* GDK_oid_max see below */
 #define GDK_oid_min ((oid) 0)
-
-/* representation of the nil */ 
+/* representation of the nil */
 gdk_export const chr chr_nil;
 gdk_export const bte bte_nil;
 gdk_export const sht sht_nil;
@@ -963,9 +962,9 @@ the commit tremendously complicated.
 int
 ATOMlen(int t, ptr src)
 {
-	int (*l)(ptr) = BATatoms[t].atomLen;
+	int (*l) (ptr) = BATatoms[t].atomLen;
 
-	return l ? (*l)(src) : ATOMsize(t);
+	return l ? (*l) (src) : ATOMsize(t);
 }
 
 int
@@ -1174,7 +1173,7 @@ chrFromStr(char *src, int *len, chr **dst)
 		error = 1;	/* until proved otherwise */
 		if ((*p & 0x80) == 0) {
 			if (q && *p == '\\' && p[1] != 0) {
-				/* interpret backslash escape but only in a single-quoted string*/
+				/* interpret backslash escape but only in a single-quoted string */
 				p++;
 				switch (*p) {
 				case '0':
@@ -1356,8 +1355,7 @@ chrToStr(str *dst, int *len, chr *src)
 #endif
 		} else {
 			if (*src < ' ' || *src == 127) {
-				snprintf(p, chrStrlen - 3,
-					 "\\%03o", * (unsigned char *) src);
+				snprintf(p, chrStrlen - 3, "\\%03o", *(unsigned char *) src);
 				p += 4;
 			} else if (*src == '\\' || *src == '\'') {
 				*p++ = '\\';
@@ -1520,7 +1518,7 @@ batWrite(bat *a, stream *s, size_t cnt)
 
 @= numfromstr
 int
-@1FromStr(char* src, int * len, @1 **dst)
+@1FromStr(char *src, int *len, @1 **dst)
 {
 	int sign = 1, error = 0;
 	@1 base = 0;
@@ -1560,12 +1558,12 @@ int
 @= atom_io
  @1 *@1Read(@1 *a, stream *s, size_t cnt)
 {
-	stream_read@2Array(s, (@3*)a, cnt);
+	stream_read@2Array(s, (@3 *) a, cnt);
 	return stream_errnr(s) ? NULL : a;
 }
 int @1Write(@1 *a, stream *s, size_t cnt)
 {
-	return stream_write@2Array(s, (@3*)a, cnt) ? GDK_SUCCEED : GDK_FAIL;
+	return stream_write@2Array(s, (@3 *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 @c
 
@@ -1639,6 +1637,7 @@ ptrFromStr(char *src, int *len, ptr **dst)
 	**dst = error ? ((ptr) ptr_nil) : ((ptr) base);
 	return (int) (p - src);
 }
+
 @:atomtostr(ptr,SZFMT,size_t)@
 
 #if SIZEOF_VOID_P == SIZEOF_INT
@@ -1669,6 +1668,7 @@ dblFromStr(char *src, int *len, dbl **dst)
 	}
 	return (int) (p - src);
 }
+
 @:atomtostr(dbl,"%.17g",double)@
 @:atom_io(dbl,Lng,lng)@
 
@@ -1890,48 +1890,52 @@ hash_t
 strHash(str s)
 {
 	hash_t res;
+
 	GDK_STRHASH(s, res);
 	return res;
 }
 
 
-void strCleanHash(Heap *h, int rebuild) 
+void
+strCleanHash(Heap *h, int rebuild)
 {
-        if (!GDK_ELIMDOUBLES(h)) {
-                /* flush hash table for security */
-	        memset(h->base, 0, GDK_STRHASHSIZE);
+	if (!GDK_ELIMDOUBLES(h)) {
+		/* flush hash table for security */
+		memset(h->base, 0, GDK_STRHASHSIZE);
 	} else if (rebuild) {
-                var_t xx, cur=0, end=0;
+		var_t xx, cur = 0, end = 0;
 		str hash = (str) h->base;
-/* int cnt[GDK_STRHASHTABLE]; */ 
+
+/* int cnt[GDK_STRHASHTABLE]; */
 		/* collect all values in one big linked list */
-                for(xx=0; xx<GDK_STRHASHTABLE; xx++) {
-                        var_t yy = ((var_t*) hash)[xx];
+		for (xx = 0; xx < GDK_STRHASHTABLE; xx++) {
+			var_t yy = ((var_t *) hash)[xx];
 
 /* cnt[xx]=0; */
-		        ((var_t*) hash)[xx] = 0; /* clear hash table slot */ 
+			((var_t *) hash)[xx] = 0;	/* clear hash table slot */
 
-		        if (end) {
-                                *(var_t*) (hash + end) = yy;
-                        } else {
-                                cur = yy;
-                        }
-		        for(; yy; yy=*(var_t*) (hash + yy)) end = yy;
-                }
+			if (end) {
+				*(var_t *) (hash + end) = yy;
+			} else {
+				cur = yy;
+			}
+			for (; yy; yy = *(var_t *) (hash + yy))
+				end = yy;
+		}
 
 		/* process the linked list, inserting the values again */
-                for(; cur; cur=end) {
-                	str val = hash + cur;
-                	GDK_STRHASH(val + sizeof(var_t), xx);
-                	xx &= GDK_STRHASHMASK;
-                        end = *(var_t*) val;
-                        *(var_t*) val = ((var_t*) hash)[xx];
-                	((var_t*) hash)[xx] = cur;
+		for (; cur; cur = end) {
+			str val = hash + cur;
+			GDK_STRHASH(val + sizeof(var_t), xx);
+			xx &= GDK_STRHASHMASK;
+			end = *(var_t *) val;
+			*(var_t *) val = ((var_t *) hash)[xx];
+			((var_t *) hash)[xx] = cur;
 /* cnt[xx]++; */
-        	}
+		}
 /* for(xx=0; xx<GDK_STRHASHTABLE; xx++)
    if(cnt[xx]) stream_printf(GDKout, "%5d %6d", xx, cnt[xx]); */
-        } 
+	}
 }
 
 @- 
@@ -1945,8 +1949,9 @@ strLocate(Heap *h, str v)
 	var_t *htab = (var_t *) h->base;
 	var_t *l, *e;
 	hash_t idx;
-        GDK_STRHASH(v, idx);
-        e = htab + (idx & GDK_STRHASHMASK);
+
+	GDK_STRHASH(v, idx);
+	e = htab + (idx & GDK_STRHASHMASK);
 	if (*e) {
 		for (l = e; *l && *l < h->free; l = (var_t *) ((char *) h->base + *l)) {
 			str x = (str) ((char *) h->base + *l + sizeof(var_t));
@@ -1993,25 +1998,28 @@ strPut(Heap *h, var_t *dst, str v)
 	size_t elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
 
 	/* search hash-table, if double-elimination is still in place */
-	GDK_STRHASH(v,off);
+	GDK_STRHASH(v, off);
 	off &= GDK_STRHASHMASK;
 	for (l = ((var_t *) h->base) + off; *l && *l < h->free; l = (var_t *) (h->base + *l)) {
 		str x = (str) (h->base + *l + sizeof(var_t));
 
 		if (GDK_STRCMP(v, x) == 0) {
 			*dst = *l + (var_t) sizeof(var_t);	/* already in heap; do not insert! */
-        		if (GDK_ELIMDOUBLES(h) == 0 && GDK_STRHASHCREDIT(h)) GDK_STRHASHCREDIT(h) += 4;
+			if (GDK_ELIMDOUBLES(h) == 0 && GDK_STRHASHCREDIT(h))
+				GDK_STRHASHCREDIT(h) += 4;
 			return *dst;
 		}
 	}
 
 	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */
 	if (h->free + len >= elimlimit) {
-                /* if we are not hash-inserting anymore, h->free may no longer be var_t aligned */
-                int mask = h->free & (sizeof(var_t)-1); 
-                if (mask) h->free += sizeof(var_t) - mask; /* realign */
-	       	memset(h->base, 0, GDK_STRHASHSIZE); /* start over hash inserting in a pristine hash table */
-		GDK_STRHASHCREDIT(h) = 32; /* only tolerate limited misses in the future */
+		/* if we are not hash-inserting anymore, h->free may no longer be var_t aligned */
+		int mask = h->free & (sizeof(var_t) - 1);
+
+		if (mask)
+			h->free += sizeof(var_t) - mask;	/* realign */
+		memset(h->base, 0, GDK_STRHASHSIZE);	/* start over hash inserting in a pristine hash table */
+		GDK_STRHASHCREDIT(h) = 32;	/* only tolerate limited misses in the future */
 	}
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
@@ -2038,24 +2046,24 @@ strPut(Heap *h, var_t *dst, str v)
 			return 0;
 		}
 		/* fill should solve initialisation problems within valgrind */
-                memset(h->base+h->free, 0, h->size-h->free);
+		memset(h->base + h->free, 0, h->size - h->free);
 	}
 
-        if (!GDK_ELIMDOUBLES(h)) {
-                if (GDK_STRHASHCREDIT(h) == 0) { 
-                        /* if credits are gone, we do not hash insert at all */
+	if (!GDK_ELIMDOUBLES(h)) {
+		if (GDK_STRHASHCREDIT(h) == 0) {
+			/* if credits are gone, we do not hash insert at all */
 			memcpy(h->base + (*dst = h->free), v, i);
-	                h->free += i; /* in this case, we do not round to var_t either */ 
+			h->free += i;	/* in this case, we do not round to var_t either */
 			return *dst;
-                }
+		}
 		GDK_STRHASHCREDIT(h)--;
-	} 
+	}
 
 	/* insert string in hash table and copy into the heap */
 	l = (var_t *) (h->base + h->free);
 	*(l++) = ((var_t *) h->base)[off];
 	((var_t *) h->base)[off] = h->free;
-        *dst = h->free + sizeof(var_t);
+	*dst = h->free + sizeof(var_t);
 	h->free += len;
 	memcpy((char *) l, v, i);
 
@@ -2261,7 +2269,7 @@ strFromStr(char *src, int *len, char **dst)
 	if ((res = GDKstrFromStr((unsigned char *) *dst, start, cur - start)) >= 0)
 		return (int) res;
 
-  error:
+      error:
 	if (*dst && *dst != str_nil)
 		GDKfree(*dst);
 	*dst = GDKstrdup(str_nil);
@@ -2347,7 +2355,7 @@ strToStr(char **dst, int *len, char *src)
 				       0200 <= ((int) r[cur] & 0377) &&
 				       ((int) r[cur] & 0377) <= 0237)
 #endif
-				) {
+			    ) {
 				sprintf(s + l, "\\%03o", (unsigned char) r[cur]);
 				l += 4;
 			} else {
@@ -2577,19 +2585,20 @@ defining it is loaded, it should be removed from the unknown set using
 ATOMunknown_del. 
 
 @h
-extern int ATOMunknown_add( str nme );
-extern int ATOMunknown_del( int a );
-gdk_export int ATOMunknown_find( str nme );
-extern str ATOMunknown_name( int a );
+extern int ATOMunknown_add(str nme);
+extern int ATOMunknown_del(int a);
+gdk_export int ATOMunknown_find(str nme);
+extern str ATOMunknown_name(int a);
 
 @c
 static str unknown[MAXATOMS] = { NULL };
 
-int 
-ATOMunknown_add( str nme ) 
+int
+ATOMunknown_add(str nme)
 {
 	int i = 1;
-	for (;i<MAXATOMS; i++) {
+
+	for (; i < MAXATOMS; i++) {
 		if (!unknown[i]) {
 			unknown[i] = GDKstrdup(nme);
 			return -i;
@@ -2600,7 +2609,7 @@ ATOMunknown_add( str nme )
 }
 
 int
-ATOMunknown_del( int i) 
+ATOMunknown_del(int i)
 {
 	assert(unknown[-i]);
 	GDKfree(unknown[-i]);
@@ -2609,10 +2618,11 @@ ATOMunknown_del( int i)
 }
 
 int
-ATOMunknown_find( str nme ) 
+ATOMunknown_find(str nme)
 {
 	int i = 1;
-	for (;i<MAXATOMS; i++) {
+
+	for (; i < MAXATOMS; i++) {
 		if (unknown[i] && strcmp(unknown[i], nme) == 0) {
 			return -i;
 		}
@@ -2621,14 +2631,14 @@ ATOMunknown_find( str nme )
 }
 
 str
-ATOMunknown_name( int i )
+ATOMunknown_name(int i)
 {
 	assert(unknown[-i]);
 	return unknown[-i];
 }
+
 @
 @}
 
 @h
 #endif /* _GDK_ATOMS_H_ */
-

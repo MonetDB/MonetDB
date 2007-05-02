@@ -58,16 +58,21 @@ restart, so you get the recovered disk images.
 @{
 @c
 /* in the commit prelude, the delta status in the memory image of all bats is commited */
-static int prelude(int cnt, bat* subcommit) {
+static int
+prelude(int cnt, bat *subcommit)
+{
 	int i = 0;
-	while(++i < cnt) {
-		bat bid = subcommit?subcommit[i]:i;
+
+	while (++i < cnt) {
+		bat bid = subcommit ? subcommit[i] : i;
+
 		if (BBP_status(bid) & BBPPERSISTENT) {
 			BAT *b = BBP_cache(bid);
 
 			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
 				b = BBPquickdesc(bid, TRUE);
-				if (b == NULL) return -1;
+				if (b == NULL)
+					return -1;
 			}
 			if (b) {
 				BATcommit(b);
@@ -80,24 +85,28 @@ static int prelude(int cnt, bat* subcommit) {
 /* in the commit epilogue, the BBP-status of the bats is changed to reflect their presence in the succeeded checkpoint. 
  * Also bats from the previous checkpoint that were deleted now are physically destroyed.
  */
-static int epilogue(int cnt, bat* subcommit) {
+static int
+epilogue(int cnt, bat *subcommit)
+{
 	int i = 0;
-	while(++i < cnt) {
-		bat bid = subcommit?subcommit[i]:i;
+
+	while (++i < cnt) {
+		bat bid = subcommit ? subcommit[i] : i;
+
 		if (BBP_status(bid) & BBPPERSISTENT) {
-			BBP_status_on(bid, BBPEXISTING, subcommit?"TMsubcommit":"TMcommit");
+			BBP_status_on(bid, BBPEXISTING, subcommit ? "TMsubcommit" : "TMcommit");
 		} else if ((BBP_status(bid) & (BBPDELETED | BBPTMP)) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
 			BAT *b = BBPquickdesc(bid, TRUE);
 
 			/* the unloaded ones are deleted without loading delete disk images */
-			BATdelete(b);	
+			BATdelete(b);
 			if (BBP_cache(bid)) {
 				/* those that quickdesc decides to load => free memory */
 				BATfree(b);
 			}
 			BBPclear(bid);	/* clear with locking */
 		}
-		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW, subcommit?"TMsubcommit":"TMcommit");
+		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW, subcommit ? "TMsubcommit" : "TMcommit");
 	}
 	return 0;
 }
@@ -107,7 +116,8 @@ global commit without any multi-threaded access assumptions, thus taking all BBP
 It creates a new database checkpoint.
 @c
 int
-TMcommit(void) {
+TMcommit(void)
+{
 	int ret = -1;
 
 	/* commit with the BBP globally locked */
@@ -141,28 +151,32 @@ is exclusive), the concurrency impact of subcommit is also much lighter to
 ongoing concurrent query and update facilities than a real global TMcommit.
 @c
 int
-TMsubcommit(BAT* b) {
-	int xx, ret = -1, cnt = 1; /* BBP artifact: slot 0 in the array will be ignored */
-	bat *subcommit = (bat*) alloca((BATcount(b)+1)*sizeof(bat));
+TMsubcommit(BAT *b)
+{
+	int xx, ret = -1, cnt = 1;	/* BBP artifact: slot 0 in the array will be ignored */
+	bat *subcommit = (bat *) alloca((BATcount(b) + 1) * sizeof(bat));
 	BUN p, q;
 
 	/* collect the list and save the new bats outside any locking */
 	BATloopFast(b, p, q, xx) {
-		bat bid = BBPindex((str) BUNtail(b,p));
-		if (bid < 0) bid = -bid;
-		if (bid) subcommit[cnt++] = bid;
-	}
-	/* sort the list on BAT id */ 
-	GDKqsort(subcommit+1, NULL, cnt-1, sizeof(bat), TYPE_bat, 0);
+		bat bid = BBPindex((str) BUNtail(b, p));
 
-	if (prelude(cnt, subcommit) == 0) { /* save the new bats outside the lock */
+		if (bid < 0)
+			bid = -bid;
+		if (bid)
+			subcommit[cnt++] = bid;
+	}
+	/* sort the list on BAT id */
+	GDKqsort(subcommit + 1, NULL, cnt - 1, sizeof(bat), TYPE_bat, 0);
+
+	if (prelude(cnt, subcommit) == 0) {	/* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global (sub-)commits */
-                for(xx=0; xx <= BBP_THREADMASK; xx++)
+		for (xx = 0; xx <= BBP_THREADMASK; xx++)
 			gdk_set_lock(GDKtrimLock(xx), "TMsubcommit");
- 		if (BBPsync(cnt, subcommit) == 0) { /* write BBP.dir (++) */
+		if (BBPsync(cnt, subcommit) == 0) {	/* write BBP.dir (++) */
 			ret = epilogue(cnt, subcommit);
 		}
-                for(xx=BBP_THREADMASK; xx >= 0; xx--)
+		for (xx = BBP_THREADMASK; xx >= 0; xx--)
 			gdk_unset_lock(GDKtrimLock(xx), "TMsubcommit");
 	}
 	return ret;
@@ -233,4 +247,5 @@ TMabort(void)
 	BBPunlock("TMabort");
 	return 0;
 }
+
 @}

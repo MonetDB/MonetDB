@@ -448,6 +448,7 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ct
 				    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);
+
 		@4 {
 			@7@2_bunfastins_nocheck_noinc(bn, _p, (void *) (@8), @5);
 			_p += _bunsize;
@@ -455,9 +456,10 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ct
 		@9
 	}
 	bn->batBuns->free = _p - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/_bunsize);
+	BATsetcount(bn, bn->batBuns->free / _bunsize);
 	@:seqscanEpilogue@
 }
+
 static BAT *
 seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
 {

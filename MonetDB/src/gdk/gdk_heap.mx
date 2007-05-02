@@ -113,7 +113,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	h->free = 0;
 
 	/* check for overflow */
-	if (itemsize && nitems > (h->size/itemsize)) 
+	if (itemsize && nitems > (h->size / itemsize))
 		return -1;
 
 	/* when using anonymous vm we malloc we need 64K chunks, also we
@@ -125,7 +125,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (h->filename == NULL || (h->size < GDK_vm_minsize)) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 0);
-		if (h->base == 0) 
+		if (h->base == 0)
 			GDKerror("HEAPalloc: Insufficient space for HEAP.");
 	}
 	if (h->filename && h->base == NULL) {
@@ -188,6 +188,7 @@ HEAPextend(Heap *h, size_t size)
 		Heap bak = *h;
 		int can_mmap = (h->filename && size >= GDK_mem_bigsize);
 		int must_mmap = can_mmap && (size >= GDK_vm_minsize || (h->newstorage & STORE_MMAP));
+
 		h->size = size;
 
 		if (can_mmap) {
@@ -196,9 +197,9 @@ HEAPextend(Heap *h, size_t size)
 				h->maxsize = (size_t) ((double) size * BATMARGIN);
 			}
 			/* when using anonymous vm we malloc we need 64K chunks */
-			h->maxsize = (1 + ((h->maxsize-1) >> 16)) << 16;
+			h->maxsize = (1 + ((h->maxsize - 1) >> 16)) << 16;
 		} else {
-			h->maxsize = size; /* for normal GDKmalloc, maxsize = size */
+			h->maxsize = size;	/* for normal GDKmalloc, maxsize = size */
 		}
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
@@ -302,7 +303,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	int priv_storage = (h->storage == STORE_PRIV);
-	char priv[80]={0};
+	char priv[80] = { 0 };
 
 	h->maxsize = h->size;
 	h->filename = NULL;
@@ -380,25 +381,28 @@ we convert the mode passed to GDKsave to STORE_MEM.
 Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsave (implicit IO).
 
 After GDKsave returns successfully (>=0), we assume the heaps are safe on stable storage.
-@c
 @{
-int HEAPsave(Heap* h, str nme, str ext) {
+@c
+int
+HEAPsave(Heap *h, str nme, str ext)
+{
 	int store = h->storage;
 	char *p = h->filename;
 
 	if (h->base == NULL) {
 		return -1;
-	} 
+	}
 	if (p == NULL || store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
-		store = STORE_MEM; 
+		store = STORE_MEM;
 	}
 	IODEBUG {
-		THRprintf(GDKout, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", 
-			nme, ext, h->storage, h->free, h->size);
+		THRprintf(GDKout, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n",
+			  nme, ext, h->storage, h->free, h->size);
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
 }
+
 @}
 @- HEAPload
 Delete any saved heap file. For memory mapped files, also try to remove any remaining X.priv
@@ -410,7 +414,7 @@ HEAPdelete(Heap *h, str o, str ext)
 	char ext2[64];
 
 	if (h->size <= 0) {
-                return 0;
+		return 0;
 	}
 	if (h->base) {
 		if (h->copied == 0 && h->storage & STORE_MMAP) {
@@ -427,21 +431,24 @@ HEAPdelete(Heap *h, str o, str ext)
 		HEAPfree(h);
 	}
 	if (h->copied) {
-            return 0;
-        }
+		return 0;
+	}
 	strcpy(ext2, ext);
 	strcat(ext2, ".priv");
-	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0)?0:-1;
+	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0) ? 0 : -1;
 }
 
-int HEAPwarm(Heap *h) 
+int
+HEAPwarm(Heap *h)
 {
 	int bogus_result = 0;
+
 	if (h->storage & STORE_MMAP) {
 		/* touch the heap sequentially */
-                int *cur = (int*) h->base;
-                int *lim = (int*) (h->base + h->free) - 4096;
-		for(; cur<lim; cur+=4096) /* try to schedule 4 parallel memory accesses */
+		int *cur = (int *) h->base;
+		int *lim = (int *) (h->base + h->free) - 4096;
+
+		for (; cur < lim; cur += 4096)	/* try to schedule 4 parallel memory accesses */
 			bogus_result += cur[0] + cur[1024] + cur[2048] + cur[3072];
 	}
 	return bogus_result;

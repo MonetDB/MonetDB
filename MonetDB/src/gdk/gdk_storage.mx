@@ -269,7 +269,7 @@ bring in a backup mechanism, in which stable images of the BATs are created
 at commit-time.
 @{
 @c
-		if (size) 
+		if (size)
 			err = MT_msync(buf, size, MMAP_SYNC);
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", mode);
@@ -324,6 +324,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 	}
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(nme, "rb", ext);
+
 		if (fd >= 0) {
 			char *dst = ret = (char *) GDKmalloc(maxsize);
 			ssize_t n_expected, n = 0;
@@ -339,16 +340,16 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 						break;
 					dst += n;
 				}
-				if (n_expected > 0) { 
+				if (n_expected > 0) {
 					GDKfree(ret);
-					GDKsyserror("GDKload: cannot read: name=%s, ext=%s, " SZFMT " bytes missing.\n", nme, ext?ext:"", (size_t) n_expected);
-					ret = NULL; 
+					GDKsyserror("GDKload: cannot read: name=%s, ext=%s, " SZFMT " bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
+					ret = NULL;
 				}
 			}
 			close(fd);
 		} else {
-			GDKsyserror("GDKload: cannot open: name=%s, ext=%s\n", nme, ext?ext:"");
-                }
+			GDKsyserror("GDKload: cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
+		}
 	} else {
 		char path[PATHLENGTH];
 		struct stat st;
@@ -356,8 +357,8 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 
 		GDKfilepath(path, BATDIR, nme, ext);
 		if (stat(path, &st) >= 0 &&
-                    (maxsize < (size_t) st.st_size || 
-		    /* mmap storage is auto-extended here */
+		    (maxsize < (size_t) st.st_size ||
+		     /* mmap storage is auto-extended here */
 		     ((fp = fopen(path, "rb+")) != NULL &&
 #ifdef _WIN64
 		      _fseeki64(fp, (ssize_t) maxsize, SEEK_SET) >= 0 &&
@@ -366,13 +367,14 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 #endif
 		      fputc('\n', fp) >= 0 &&
 		      fflush(fp) >= 0 &&
-		      fclose(fp) >= 0)))
-		{
+		      fclose(fp) >= 0))) {
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
-			if (mode == STORE_PRIV) mod |= MMAP_COPY;
+
+			if (mode == STORE_PRIV)
+				mod |= MMAP_COPY;
 			ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize);
 			if (ret == (char *) -1L) {
-				GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
+				GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext ? ext : "");
 				ret = NULL;
 			}
 			IODEBUG THRprintf(GDKout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
@@ -407,7 +409,7 @@ DESCload(int i)
 	str s, nme = BBP_physical(i);
 	BATstore *bs;
 	BAT *b = NULL;
-	int ht, tt; 
+	int ht, tt;
 
 	IODEBUG {
 		THRprintf(GDKout, "#DESCload %s\n", nme);
@@ -420,8 +422,8 @@ DESCload(int i)
 
 	ht = b->htype;
 	tt = b->ttype;
-	if ((ht < 0 && (ht = ATOMindex(s = ATOMunknown_name(ht))) < 0 ) ||
-	    (tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0 )) {
+	if ((ht < 0 && (ht = ATOMindex(s = ATOMunknown_name(ht))) < 0) ||
+	    (tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
 		GDKerror("DESCload: atom '%s' unknown, in BAT '%s'.\n", s, nme);
 		return NULL;
 	}
@@ -451,11 +453,11 @@ DESCsetmodes(BAT *b, BAT *img)
 	}
 	if (img->hheap && b->batMaphheap != STORE_UNSET) {
 		/* elimdoubles string heaps (small, double-eliminated) cannot be memory mapped */
-		img->hheap->storage = GDK_ELIMDOUBLES(img->hheap)?STORE_MEM:b->batMaphheap;
+		img->hheap->storage = GDK_ELIMDOUBLES(img->hheap) ? STORE_MEM : b->batMaphheap;
 	}
 	if (img->theap && b->batMaptheap != STORE_UNSET) {
 		/* elimdoubles string heaps (small, double-eliminated) cannot be memory mapped */
-		img->theap->storage = GDK_ELIMDOUBLES(img->theap)?STORE_MEM:b->batMaptheap;
+		img->theap->storage = GDK_ELIMDOUBLES(img->theap) ? STORE_MEM : b->batMaptheap;
 	}
 
 	/* change modes in img into legal modes, and reset b's mapdity if something had to be corrected */
@@ -514,12 +516,12 @@ BATsave(BAT *bd)
 	b->batBuns = &b->U->buns;
 
 	if (b->hheap) {
-		b->hheap = (Heap*)GDKmalloc(sizeof(Heap));
-		*b->hheap = *bd->hheap; 
+		b->hheap = (Heap *) GDKmalloc(sizeof(Heap));
+		*b->hheap = *bd->hheap;
 	}
 	if (b->theap) {
-		b->theap = (Heap*)GDKmalloc(sizeof(Heap));
-		*b->theap = *bd->theap; 
+		b->theap = (Heap *) GDKmalloc(sizeof(Heap));
+		*b->theap = *bd->theap;
 	}
 
 	/* start saving data */
@@ -536,7 +538,7 @@ BATsave(BAT *bd)
 		}
 	if (b->theap && (b->batCopiedtodisk == 0 || b->batDirty || b->theapdirty))
 		if (b->ttype && b->tvarsized) {
-			if (err == 0) 
+			if (err == 0)
 				err = HEAPsave(b->theap, nme, "theap");
 		}
 	/* correct heap modes such that they are ACID respecting */
@@ -550,8 +552,10 @@ BATsave(BAT *bd)
 			IODEBUG THRprintf(GDKout, "#BATsavedesc(%s,free=" SZFMT ") = %d\n", nme, b->batBuns->free, err);
 		}
 
-	if (b->hheap) GDKfree(b->hheap);
-	if (b->theap) GDKfree(b->theap);
+	if (b->hheap)
+		GDKfree(b->hheap);
+	if (b->theap)
+		GDKfree(b->theap);
 
 	if (err == 0) {
 		bd->batCopiedtodisk = 1;
@@ -598,32 +602,33 @@ BATload_intern(bat i)
 		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->hheap, b->htype);
 		} else if (ATOMstorage(b->htype) == TYPE_str) {
-		        strCleanHash(b->hheap, (b->GDKversion != GDKLIBRARY)); /* ensure consistency */
-	        }
+			strCleanHash(b->hheap, (b->GDKversion != GDKLIBRARY));	/* ensure consistency */
+		}
 	}
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype) && ret >= 0) {
 		ret |= HEAPload(b->theap, nme, "theap", b->batRestricted == BAT_READ);
 		if (ret < 0) {
-			if (b->hheap) HEAPfree(b->hheap);
+			if (b->hheap)
+				HEAPfree(b->hheap);
 			HEAPfree(b->batBuns);
 			return NULL;
 		}
 		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->theap, b->ttype);
 		} else if (ATOMstorage(b->ttype) == TYPE_str) {
-		        strCleanHash(b->theap, (b->GDKversion != GDKLIBRARY)); /* ensure consistency */
-		} 
+			strCleanHash(b->theap, (b->GDKversion != GDKLIBRARY));	/* ensure consistency */
+		}
 	}
 
 	/* handle fatal errors */
 	if (ret < 0) {
 		if (!vv)
 			HEAPfree(b->batBuns);
-		if (b->hheap) 
+		if (b->hheap)
 			HEAPfree(b->hheap);
-		if (b->theap) 
+		if (b->theap)
 			HEAPfree(b->theap);
 		return NULL;
 	}
@@ -646,9 +651,11 @@ BATload_intern(bat i)
 		ALIGNcommit(b);
 	}
 	b->batDirtydesc |= b->batMapdirty;	/* if some heap mode changed, make desc dirty */
-	b->batMapbuns =  b->batBuns->storage;
-	if (b->hheap) b->batMaphheap = b->hheap->storage;
-	if (b->theap) b->batMaptheap = b->theap->storage;
+	b->batMapbuns = b->batBuns->storage;
+	if (b->hheap)
+		b->batMaphheap = b->hheap->storage;
+	if (b->theap)
+		b->batMaptheap = b->theap->storage;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
 		++b->batSharecnt;
@@ -884,7 +891,7 @@ print_line(stream *s, col_format_t **l)
 			return;
 	}
 	for (c = *l; *(++l); c = *l) {
-		if (!c->format) 
+		if (!c->format)
 			continue;
 		if (stream_write(s, c->buf, c->len, 1) != 1)
 			return;
@@ -914,12 +921,12 @@ print_format(col_format_t *c, ptr v)
 }
 
 @= print_head
-	str buf = @1?argv[@2].tpe:argv[@2].buf; /* contains column title */
+	str buf = @1 ? argv[@2].tpe : argv[@2].buf; /* contains column title */
 	int len = (int) strlen(buf);
 
 	if (stream_write(s, buf, len, 1) != 1)
 		return -1;
-	TABS(s, argv[@2].tabs-((@1+len-1)/8));
+	TABS(s, argv[@2].tabs - ((@1 + len - 1) / 8));
 	if (stream_errnr(s))
 		return -1;
 @= print_header
@@ -934,7 +941,7 @@ print_format(col_format_t *c, ptr v)
 		if (k++ >= argc)
 			break;
 	}
-	if(@1) {
+	if (@1) {
 		if (stream_printf(s, "  # type\n") < 0)
 			return -1;
 	} else {
@@ -982,7 +989,7 @@ BATmultiprintf(stream *s,	/* output stream */
 	       BAT *argv[],	/* the bats 2b printed */
 	       int printhead,	/* boolean: print the head column? */
 	       int order,	/* respect order of bat X (X=0 is none) */
-	       int printorder   /* boolean: print the orderby column? */
+	       int printorder	/* boolean: print the orderby column? */
     )
 {
 	col_format_t *c = (col_format_t *) alloca((unsigned) (argc * sizeof(col_format_t)));
@@ -1008,7 +1015,7 @@ Init the column descriptors of the tail columns.
 	}
 	for (j = 0; j < argc; j++, total += c[j].tabs) {
 		cp[j + 1] = c + (j + 1);
-		if (!printorder && order==j+1)
+		if (!printorder && order == j + 1)
 			c[j + 1].format = NULL;
 		else
 			c[j + 1].format = printfcn(argv[j]);

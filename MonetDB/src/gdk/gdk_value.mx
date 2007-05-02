@@ -647,10 +647,10 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 				}
 				break;
 			case TYPE_flt:
-				@:valfconvert(dst->val.fval,flt)@;
+				@:valfconvert(dst->val.fval,flt)@
 				break;
 			case TYPE_dbl:
-				@:valfconvert(dst->val.dval,dbl)@;
+				@:valfconvert(dst->val.dval,dbl)@
 				break;
 			}
 		}
@@ -663,9 +663,11 @@ ptr
 VALconvert2(int typ, ValPtr src, ValPtr dst)
 {
 	ptr p = VALconvert1(typ, src, dst);
+
 	if (typ == TYPE_bat && p != ILLEGALVALUE) {
-		p = BATdescriptor(dst->val.bval); /* fixes the bat */
-		if (p == NULL) p = ILLEGALVALUE;
+		p = BATdescriptor(dst->val.bval);	/* fixes the bat */
+		if (p == NULL)
+			p = ILLEGALVALUE;
 	}
 	return p;
 }
@@ -686,14 +688,13 @@ VALconvert(int typ, ValPtr t)
 	/* first convert into a new location */
 	p = VALconvert1(typ, t, &dst);
 	/* then maybe free the old */
-	if (src_tpe != dst_tpe && t->vtype != typ && dst_tpe != TYPE_void &&
-	    (src_tpe >= TYPE_str || dst_tpe >= TYPE_str))
+	if (src_tpe != dst_tpe && t->vtype != typ && dst_tpe != TYPE_void && (src_tpe >= TYPE_str || dst_tpe >= TYPE_str))
 		VALclear(t);
 	/* and finally copy the result */
 	*t = dst;
 	/* make sure we return the correct type (not the storage type) */
 	t->vtype = typ;
-	return p == ILLEGALVALUE ? p : 	VALptr(t);
+	return p == ILLEGALVALUE ? p : VALptr(t);
 }
 
 @}

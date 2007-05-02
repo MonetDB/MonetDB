@@ -103,6 +103,7 @@ int
 ALIGNsetH(BAT *b1, BAT *b2)
 {
 	ssize_t diff = BUNindex(b1, BUNfirst(b1)) - BUNindex(b2, BUNfirst(b2));
+
 	BATcheck(b1, "ALIGNsetH: bat 1 required");
 	BATcheck(b2, "ALIGNsetH: bat 2 required");
 
@@ -129,12 +130,12 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	b1->hsorted = BAThordered(b2);
 	b1->halign = b2->halign;
 	b1->batDirtydesc = TRUE;
-	b1->H->nosorted_rev = b2->H->nosorted_rev + diff; 
-	b1->H->nokey[0] = b2->H->nokey[0] + diff; 
-	b1->H->nokey[1] = b2->H->nokey[1] + diff; 
-	b1->H->nosorted = b2->H->nosorted + diff; 
-	b1->H->nodense = b2->H->nodense + diff; 
- 
+	b1->H->nosorted_rev = b2->H->nosorted_rev + diff;
+	b1->H->nokey[0] = b2->H->nokey[0] + diff;
+	b1->H->nokey[1] = b2->H->nokey[1] + diff;
+	b1->H->nosorted = b2->H->nosorted + diff;
+	b1->H->nodense = b2->H->nodense + diff;
+
 	return 0;
 }
 
@@ -229,10 +230,11 @@ because in case of a mark, we are going to override a column with
 a void. Take care to zero the accelerator data, though. 
 @c
 	bn->dims = b->dims;
-	if (recycled) recycled->dims = BATmirror(b)->dims;
+	if (recycled)
+		recycled->dims = BATmirror(b)->dims;
 	*bn->H = *b->H;
 	*bn->T = *b->T;
-	assert(bn->U->buns.base == (char*)1 || bn->U->buns.base == NULL);
+	assert(bn->U->buns.base == (char *) 1 || bn->U->buns.base == NULL);
 	*bn->U = *b->U;
 	/* note: batBuns points into U which was just overwritten with a copy from the parent.
 	   clear the copied flag since our heap was not copied from
@@ -267,7 +269,7 @@ use a copy.
 		}
 	}
 	if (recycled == NULL) {
-		BBPcacheit(bn); /* enter in BBP and create mirror */
+		BBPcacheit(bn);	/* enter in BBP and create mirror */
 	}
 	return bn;
 }
@@ -384,7 +386,7 @@ BATmaterialize(BAT *b, size_t size)
 			return NULL;
 		}
 		if (hh) {
-			b->hheap = (Heap*)GDKmalloc(sizeof(Heap));
+			b->hheap = (Heap *) GDKmalloc(sizeof(Heap));
 			*b->hheap = *hh;
 			b->hheap->filename = NULL;
 			if (ATOMheap(ht, b->hheap, cnt) < 0) {
@@ -395,7 +397,7 @@ BATmaterialize(BAT *b, size_t size)
 			}
 		}
 		if (th) {
-			b->theap = (Heap*)GDKmalloc(sizeof(Heap));
+			b->theap = (Heap *) GDKmalloc(sizeof(Heap));
 			*b->theap = *th;
 			b->theap->filename = NULL;
 			if (ATOMheap(tt, b->theap, cnt) < 0) {
@@ -436,9 +438,9 @@ BATmaterialize(BAT *b, size_t size)
 		bm->thash = b->hhash;
 
 		/* set the correct dense info */
-		if (vid & 1) 	
+		if (vid & 1)
 			b->hdense = TRUE;
-		if (vid & 2) 	
+		if (vid & 2)
 			b->tdense = TRUE;
 		if (vid == 1) {
 			oid h = b->hseqbase;
@@ -472,7 +474,7 @@ BATmaterialize(BAT *b, size_t size)
 				for (; p < q; p += bunwidth, t++, r += newbw)
 					bunfastins_nocheck(b, r, hbase + (*(var_t *) (p + hlc)), (ptr) &t, newbw);
 			}
-		} else { /* void, void case */
+		} else {	/* void, void case */
 			oid h = b->hseqbase;
 			oid t = b->tseqbase;
 			size_t f;
@@ -488,17 +490,17 @@ BATmaterialize(BAT *b, size_t size)
 		if (!vv)
 			HEAPfree(&buns);
 		if (committed && buns.storage != STORE_MEM)
-			GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns"); 
+			GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns");
 		if (hh) {
 			HEAPfree(hh);
 			if (committed && hh->storage != STORE_MEM)
-				GDKmove(BATDIR, nme, "hheap.priv", BATDIR, nme, "hheap"); 
+				GDKmove(BATDIR, nme, "hheap.priv", BATDIR, nme, "hheap");
 			GDKfree(hh);
 		}
 		if (th) {
 			HEAPfree(th);
 			if (committed && th->storage != STORE_MEM)
-				GDKmove(BATDIR, nme, "theap.priv", BATDIR, nme, "theap"); 
+				GDKmove(BATDIR, nme, "theap.priv", BATDIR, nme, "theap");
 			GDKfree(th);
 		}
 	}
@@ -542,7 +544,7 @@ BATmaterializeh(BAT *b, size_t size)
 		return NULL;
 	}
 	if (hh) {
-		b->hheap = (Heap*)GDKmalloc(sizeof(Heap));
+		b->hheap = (Heap *) GDKmalloc(sizeof(Heap));
 		*b->hheap = *hh;
 		b->hheap->filename = NULL;
 		if (ATOMheap(ht, b->hheap, cnt) < 0) {
@@ -553,7 +555,7 @@ BATmaterializeh(BAT *b, size_t size)
 		}
 	}
 	if (th) {
-		b->theap = (Heap*)GDKmalloc(sizeof(Heap));
+		b->theap = (Heap *) GDKmalloc(sizeof(Heap));
 		*b->theap = *th;
 		b->theap->filename = NULL;
 		if (ATOMheap(tt, b->theap, cnt) < 0) {
@@ -619,17 +621,17 @@ BATmaterializeh(BAT *b, size_t size)
 	if (!vv)
 		HEAPfree(&buns);
 	if (committed && buns.storage != STORE_MEM)
-		GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns"); 
+		GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns");
 	if (hh) {
 		HEAPfree(hh);
 		if (committed && hh->storage != STORE_MEM)
-			GDKmove(BATDIR, nme, "hheap.priv", BATDIR, nme, "hheap"); 
+			GDKmove(BATDIR, nme, "hheap.priv", BATDIR, nme, "hheap");
 		GDKfree(hh);
 	}
 	if (th) {
 		HEAPfree(th);
 		if (committed && th->storage != STORE_MEM)
-			GDKmove(BATDIR, nme, "theap.priv", BATDIR, nme, "theap"); 
+			GDKmove(BATDIR, nme, "theap.priv", BATDIR, nme, "theap");
 		GDKfree(th);
 	}
 	return ret;
@@ -657,26 +659,26 @@ VIEWunlink(BAT *b)
 			return;
 
 		/* unlink heaps shared with parent */
-		if (b->hheap && (b->hheap == p->hheap || b->hheap == p->theap)){
+		if (b->hheap && (b->hheap == p->hheap || b->hheap == p->theap)) {
 			b->hheap = m->theap = NULL;
 		}
-		if (b->theap && (b->theap == p->hheap || b->theap == p->theap)){
+		if (b->theap && (b->theap == p->hheap || b->theap == p->theap)) {
 			b->theap = m->hheap = NULL;
 		}
 
 		/* unlink properties shared with parent */
-		if (b->H->props && (b->H->props == p->H->props || b->H->props == p->T->props)){
+		if (b->H->props && (b->H->props == p->H->props || b->H->props == p->T->props)) {
 			b->H->props = m->T->props = NULL;
 		}
-		if (b->T->props && (b->T->props == p->H->props || b->T->props == p->T->props)){
+		if (b->T->props && (b->T->props == p->H->props || b->T->props == p->T->props)) {
 			b->T->props = m->H->props = NULL;
 		}
 
 		/* unlink hash accelerators shared with parent */
-		if (b->hhash && (b->hhash == p->hhash || b->hhash == p->thash)){
+		if (b->hhash && (b->hhash == p->hhash || b->hhash == p->thash)) {
 			b->hhash = m->thash = NULL;
 		}
-		if (b->thash && (b->thash == p->hhash || b->thash == p->thash)){
+		if (b->thash && (b->thash == p->hhash || b->thash == p->thash)) {
 			b->thash = m->hhash = NULL;
 		}
 	}
@@ -731,7 +733,7 @@ VIEWreset(BAT *b)
 				return NULL;
 			}
 		}
-	
+
 		v = VIEWcreate(b);
 
 		/* cut the link to your parents */
@@ -753,12 +755,12 @@ VIEWreset(BAT *b)
 		*n->batBuns = buns;
 
 		/* unshare from parents heap */
-		if (hh.base) { 
-			n->hheap = (Heap*)GDKmalloc(sizeof(Heap));
+		if (hh.base) {
+			n->hheap = (Heap *) GDKmalloc(sizeof(Heap));
 			*n->hheap = hh;
 		}
-		if (th.base) { 
-			n->theap = (Heap*)GDKmalloc(sizeof(Heap));
+		if (th.base) {
+			n->theap = (Heap *) GDKmalloc(sizeof(Heap));
 			*n->theap = th;
 		}
 
@@ -810,8 +812,8 @@ VIEWbounds(BAT *view, size_t l, size_t h)
 		l = BUNindex(b, BUNfirst(b));
 	view->batBuns->base = BUNptr(b, l);
 	view->batFirst = view->batDeleted = view->batInserted = view->batBuns->base;
-	if (BUNlast(b) < BUNptr(b, h + 1)) 
-		h = BUNindex(b, BUNlast(b))-1;
+	if (BUNlast(b) < BUNptr(b, h + 1))
+		h = BUNindex(b, BUNlast(b)) - 1;
 	view->batBuns->maxsize = view->batBuns->size = view->batBuns->free = BUNptr(b, h + 1) - view->batBuns->base;
 	BATsetcount(view, h + 1 - l);
 
@@ -841,4 +843,5 @@ VIEWdestroy(BAT *b)
 	b->theap = NULL;
 	BATfree(b);
 }
+
 @}
