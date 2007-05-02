@@ -266,7 +266,7 @@ blob_null(void)
 {
 	static blob nullval;
 
-	nullval.nitems = (size_t) 0;
+	nullval.nitems = ~(size_t) 0;
 	return (&nullval);
 }
 
