@@ -546,7 +546,7 @@ dnl available on the system. If not, we will define it ourselves
 dnl in burg/main.c
 AC_CHECK_HEADERS([string.h], [AC_CHECK_FUNCS([strdup strtok_r])])
 
-AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h sys/times.h)
+AC_CHECK_HEADERS(malloc.h time.h sys/time.h utime.h sys/utime.h sys/times.h)
 AC_HEADER_TIME()
 AC_STRUCT_TM()
 AC_STRUCT_TIMEZONE()
