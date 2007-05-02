@@ -1,0 +1,64 @@
+stdout of test 'GCexample01` in directory 'src/optimizer` itself:
+
+
+# 23:17:49 >  
+# 23:17:49 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=33385 --set xrpc_port=42531 --set monet_prompt= --trace --dbname=mTests_src_optimizer  GCexample01.mal
+# 23:17:49 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information
+#function qry();
+#b:= bat.new(:int,:int);
+#c:= bat.new(:int,:int);
+#bat.insert(b,1,1);
+#
+#barrier (x,y,z):= bat.newIterator(b);
+#	io.print(x);
+#exit (x,y,z);
+#
+#barrier (x,y,z):= bat.newIterator(c);
+#	io.print(x);
+#	redo (x,y,z):= bat.hasMoreElements(c);
+#exit (x,y,z);
+#end qry;
+function user.qry():void;	# 0  (qry:void)
+    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
+    c := bat.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-(_2:int)(_2:int)
+    bat.insert(b,1,1);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_5:int)
+barrier (x,y,z):= bat.newIterator(b);	# 4 CHPbunIterator (x:lng)(y:int)(z:int)<-(b:bat[:int,:int]) jump 6
+    io.print(x);	# 5 IOprint_val (_9:void)<-(x:lng)
+exit (x,y,z);	# 6  (x:lng)(y:int)(z:int)
+barrier (x,y,z):= bat.newIterator(c);	# 7 CHPbunIterator (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 10
+    io.print(x);	# 8 IOprint_val (_10:void)<-(x:lng)
+    redo (x,y,z):= bat.hasMoreElements(c);	# 9 CHPbunHasMoreElements (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 8
+exit (x,y,z);	# 10  (x:lng)(y:int)(z:int)
+end qry;	# 11  
+#
+#optimizer.garbageCollector("user","qry");
+#mdb.list("user","qry");
+#
+function user.main():void;	# 0  (main:void)
+    mdb.list("user","qry");	# 1 MDBlist3 (_4:void)<-(_2:str)(_3:str)
+end main;	# 2  
+function user.qry():void;
+    b := bat.new(:int,:int);
+    c := bat.new(:int,:int);
+    bat.insert(b,1,1);
+barrier (x,y,z):= bat.newIterator(b);
+    b := nil;
+    io.print(x);
+exit (x,y,z);
+barrier (x,y,z):= bat.newIterator(c);
+    io.print(x);
+    redo (x,y,z):= bat.hasMoreElements(c);
+    c := nil;
+exit (x,y,z);
+end qry;
+
+# 23:17:49 >  
+# 23:17:49 >  Done.
+# 23:17:49 >  
+
