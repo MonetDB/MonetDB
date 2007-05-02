@@ -301,7 +301,6 @@ concurrent updates.
 @:ws_@1(ATTR_OWN,          19, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(ATTR_QN,           20, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(ATTR_PROP,         21, void, bat, void,  oid, PRE_BASE)@
-
 @:ws_@1(QN_NID,            22, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(QN_NID_DEL,        23, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(QN_NID_INS,        24, void, bat, void,  oid, PRE_BASE)@
@@ -2461,8 +2460,10 @@ PROC _ws_coll_isolate(lng wsid,
 
     # it may be that the other thread has done _ws_open_coll (adding itself to 
     # ws_overlaps_ws, so we noticed it) but not yet __ws_open_coll(), which
-    # requires the coll_shortlock (possed by ws_isolate())
-    if (not(isnil(ws.seqbase())) and ws.fetch(CONT_NAME).texist(colname)) {
+    # requires the coll_shortlock (possessed by ws_isolate())
+    if (ws.fetch(CONT_NAME).texist(colname) and
+        not(isnil(ws.seqbase()))) # transactions set ws.seqbase nil when isolation is no longer required
+    {
         if (ws_log_active) { 
             ancestor_nid@batloop() 
                 ws_log(wsid, "ws_coll_isolate: ancestor_nid-" + str($t));
@@ -2493,18 +2494,18 @@ PROC _ws_coll_isolate(lng wsid,
         var modified_pid := modified_page.leftjoin(map_pid).tmark(0@0);
 
         # isolate the affected positions
+        nid_rid.isolate(modified_nid, false);
+        attr_own.isolate(modified_attr, false);
+        attr_qn.isolate(modified_attr, false);
+        attr_prop.isolate(modified_attr, false);
         pre_size.isolate(ancestor_pre, false);
+
+        # isolate full pages
         pre_size.isolate(modified_pid, true);
         pre_level.isolate(modified_pid,true);
         pre_prop.isolate(modified_pid, true);
         pre_kind.isolate(modified_pid, true);
-        if (map_pid.ttype() = oid) {
-            pre_nid.isolate(modified_pid, true);
-            nid_rid.isolate(modified_nid, false);
-        }
-        attr_own.isolate(modified_attr, false);
-        attr_qn.isolate(modified_attr, false);
-        attr_prop.isolate(modified_attr, false);
+        pre_nid.isolate(modified_pid, true);
     }
     if (ws_log_active) 
         ws_log(wsid, "ws_coll_isolate: exec-" + str(ws_logtime - usec()));
@@ -2516,16 +2517,15 @@ PROC ws_precommit(BAT[void,BAT] ws,
                   BAT[void,oid] modified_attr) : void
 {
     var wsid := ws_id(ws);
-    lock_set(pf_short);
-    var overlap;
-    var err := CATCH(overlap := reverse(ws_overlaps_ws).uselect(wsid).kunique().mirror());
-    lock_unset(pf_short);
-    if (not(isnil(err)))
-        ERROR(err);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
     var page_ws := runtime.fetch(RT_PAGE_WS);
     var attr_ws := runtime.fetch(RT_ATTR_WS);
     var ws_logtime;
+
+    lock_set(pf_short);
+    var overlap, err := CATCH(overlap := reverse(ws_overlaps_ws).uselect(wsid).kunique().mirror());
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
 
     if (ws_log_active) {
         ws_logtime := usec(); 
@@ -2545,18 +2545,18 @@ PROC ws_precommit(BAT[void,BAT] ws,
     # concurrency control: abort conflicting queries
     var conflict1 := join(modified_page,page_ws).join(overlap);
     if (bit(count(conflict1))) { 
-        var err := sprintf("conflicting update at page %s from ws %s (%d such errors in total)", 
-                           str(modified_page.find(reverse(conflict1).fetch(0))), 
-                           str(conflict1.fetch(0)), count(conflict1));
+        err := sprintf("conflicting update at page %s from ws %s (%d such errors in total)", 
+                       str(modified_page.find(reverse(conflict1).fetch(0))), 
+                       str(conflict1.fetch(0)), count(conflict1));
         if (ws_log_active) ws_log(wsid, err);
         ERROR(err);
     }
 
     var conflict2 := join(modified_attr,attr_ws).join(overlap);
     if (bit(count(conflict2))) { 
-        var err := sprintf("conflicting update at page %s from ws %s (%d such errors in total)", 
-                           str(modified_attr.find(reverse(conflict2).fetch(0))), 
-                           str(conflict2.fetch(0)), count(conflict2));
+        err := sprintf("conflicting update at page %s from ws %s (%d such errors in total)", 
+                       str(modified_attr.find(reverse(conflict2).fetch(0))), 
+                       str(conflict2.fetch(0)), count(conflict2));
         if (ws_log_active) ws_log(wsid, err);
         ERROR(err);
     }
@@ -3323,6 +3323,7 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
     }
 
     if (doCommit) {
+
       lock_set(pf_short);
 
       # possibly back off if auto-caching documents gets us into meta-data locking trouble
@@ -3417,11 +3418,18 @@ PROC shred_doc_base(bit cleanup,
         var percentage := pageFrees.find($h);
         var docBAT;
 
+        var pre := 0@0, att := 0@0, nid := 0@0, val := 0@0, txt := 0@0;
         if (isnil(coll_oid)) {
             docBAT := bat(str,bat,count(idx)); # new collection
         } else { # append to existing 
             docBAT := [bat]([+](str(int(coll_oid)), ws_dsk).reverse().mirror()).access(BAT_WRITE); 
+            pre := oid(count(docBAT.fetch(PRE_SIZE)));
+            nid := oid(count(docBAT.fetch(NID_RID)));
+            att := oid(count(docBAT.fetch(ATTR_QN)));
+            val := oid(count(docBAT.fetch(PROP_VAL)));
+            txt := oid(count(docBAT.fetch(PROP_TEXT)));
         }
+
         # now shred all documents for one collection
         shred_into_docBAT(docBAT, 
                           idx.leftfetchjoin(idx_locations),
@@ -3429,8 +3437,20 @@ PROC shred_doc_base(bit cleanup,
                           idx.project(timestamp_nil),
                           colname, coll_oid, runtime, oid_nil, percentage, true, s, wsid);
 
-	if (pf_commit_docmgt)
-	  [save](docBAT); # make persistent documents clean on disk outside the locks
+        if (pf_commit_docmgt) {
+            # make big mmap-heaps clean outside of the locks
+            docBAT.fetch(PRE_SIZE) .msync(pre, false);
+            docBAT.fetch(PRE_LEVEL).msync(pre, false);
+            docBAT.fetch(PRE_PROP) .msync(pre, false);
+            docBAT.fetch(PRE_KIND) .msync(pre, false);
+            docBAT.fetch(PRE_NID)  .msync(pre, false);
+            docBAT.fetch(NID_RID)  .msync(nid, false);
+            docBAT.fetch(ATTR_OWN) .msync(att, false);
+            docBAT.fetch(ATTR_QN)  .msync(att, false);
+            docBAT.fetch(ATTR_PROP).msync(att, false);
+            docBAT.fetch(PROP_TEXT).msync(txt, false);
+            docBAT.fetch(PROP_VAL) .msync(val, false);
+        }
 
 	if (isnil(coll_oid)) {
             # register new bats with the logger
