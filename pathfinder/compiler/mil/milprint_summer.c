@@ -11142,17 +11142,17 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* initialize function variables */
         /* ============================= */
         size_t maxbufsize = 0;
-        char *buf = NULL;
+        char *nme = NULL;
         while (args->kind != c_nil)
         {
             /* get the type name, and assure there *is* a namespace */ 
             char *tpe = PFty_str(TY(LR(args)));
-            char *nme;
+            char *buf;
             if (maxbufsize < strlen(tpe) + 4) {
                 maxbufsize = strlen(tpe) + 4;
-                buf = buf ? realloc(buf, maxbufsize) : malloc(maxbufsize);
+                nme = nme ? realloc(nme, maxbufsize) : malloc(maxbufsize);
             }
-            nme = buf;
+            buf = nme;
             if (strchr(tpe, ':') == NULL)  {
                 *nme++ = 'x'; 
                 *nme++ = 's'; 
@@ -11178,8 +11178,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
             args = R(args);
         }
-        if (buf)
-            free(buf);
+        if (nme)
+            free(nme);
         /* create the full signature that also is a valid MIL identifier */
         c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
 
