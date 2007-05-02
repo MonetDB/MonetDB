@@ -478,6 +478,9 @@ documentation.
  These buffer management modes are not persistent.
  Returns the BAT operated upon."
 
+.COMMAND msync(BAT[void,any::1] b, oid lo, oid hi, bit async) : BAT[void,any::1] = CMDmsync;
+"flush any mmapped heap data that corresponds to the [lo,hi] oids (void column) to disk". 
+
 .COMMAND remap(BAT[void,any::1] b, BAT[void,oid] map, bit force) : BAT[void,any::1] = CMDremap;
 "create a page-wise access(BAT_WRITE) copy of the first parameter input BAT[void,X]. 
 
@@ -566,6 +569,10 @@ these 'sync' OIDs with their own propagation rules.
 @mil
     CONST STORE_MEM   := 0;	# load into GDKmalloced memory
     CONST STORE_MMAP  := 1;	# mmap() into virtual memory
+
+    PROC msync(bat[void,any::1] b, oid lo, bit async) : bat[void,any::1] {
+        return msync(b, lo, oid(count(b)), async);
+    }
 
     PROC mmap(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
 	return mmap(b, memmode, memmode, memmode );
@@ -1620,6 +1627,38 @@ CMDsave(bit *res, str input)
 	return GDK_SUCCEED;
 }
 
+int
+CMDmsync(BAT **r, BAT *b, oid* lo, oid *hi, bit *async)
+{
+	if (b->hseqbase == oid_nil || BUNsize(b) != ATOMsize(b->ttype)) {
+            GDKerror("msync(%s, OIDFMT, OIDFMT): illegal head column.\n", BBP_logical(b->batCacheid), *lo, *hi);
+	    return GDK_FAIL;
+        }
+	if (*lo < b->hseqbase || *lo > *hi || (*hi - *lo) > BATcount(b)) {
+            GDKerror("msync(%s, OIDFMT, OIDFMT): illegal lo-hi head range.\n", BBP_logical(b->batCacheid), *lo, *hi);
+	    return GDK_FAIL;
+        }
+        if (*lo < *hi && (b->batBuns->storage == STORE_MMAP)) {
+            size_t lo_off = (*lo - b->hseqbase) * BUNsize(b);
+            size_t hi_off = (*hi - b->hseqbase) * BUNsize(b);
+            lo_off = (lo_off / MT_pagesize()) * MT_pagesize();
+            hi_off = (((hi_off - 1) / MT_pagesize()) + 1) * MT_pagesize();
+            if (MT_msync(b->batBuns->base, lo_off, hi_off - lo_off, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) {
+                GDKerror("msync(%s, OIDFMT, OIDFMT): buns sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
+                return GDK_FAIL;
+            }
+        }
+        if (b->theap && b->theap->storage == STORE_MMAP) {
+            /* flush tail heaps fully */
+            if (MT_msync(b->theap->base, 0, b->theap->free, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) { 
+                GDKerror("msync(%s, OIDFMT, OIDFMT): tail sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
+                return GDK_FAIL;
+            }
+        }
+	*r = b;
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
 
 @= change_heap
 {
