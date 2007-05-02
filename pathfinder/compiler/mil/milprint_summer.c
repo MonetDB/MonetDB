@@ -60,9 +60,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#ifdef HAVE_MALLOC_H
-# include <malloc.h>
-#endif
+#include <stdlib.h>
 
 #include "milprint_summer.h"
 #include "compile_interface.h"
