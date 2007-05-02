@@ -269,8 +269,8 @@ bring in a backup mechanism, in which stable images of the BATs are created
 at commit-time.
 @{
 @c
-		if (size)
-			err = MT_msync(buf, size, MMAP_SYNC);
+		if (size) 
+			err = MT_msync(buf, 0, size, MMAP_SYNC);
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", mode);
 		IODEBUG THRprintf(GDKout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);

@@ -202,7 +202,7 @@ gdk_export size_t MT_getrss(void);
 
 gdk_export void *MT_mmap(char *path, int mode, off_t off, size_t len);
 gdk_export int MT_munmap(void *p, size_t len);
-gdk_export int MT_msync(void *p, size_t len, int mode);
+gdk_export int MT_msync(void *p, size_t off, size_t len, int mode);
 gdk_export int MT_madvise(void *p, size_t len, int advise);
 
 typedef struct MT_mmap_hdl_t {
@@ -726,8 +726,8 @@ MT_mmap_save_tile(int i, size_t tile, stream *err)
 			      MT_mmap_tab[i].path, (unsigned int) (tile >> 20),
 			      (unsigned int) (MT_MMAP_TILE >> 20));
 	}
-	t = GDKms();
-	ret = MT_msync(MT_mmap_tab[i].base + tile, MT_MMAP_TILE, MMAP_SYNC);
+ 	t = GDKms();
+	ret = MT_msync(MT_mmap_tab[i].base, tile, MT_MMAP_TILE, MMAP_SYNC);
 	t = GDKms() - t;
 	if (err) {
 		stream_printf(err, "MT_mmap_save_tile: msync(%s,tile=%uM,%uM,SYNC) = %d (%dms)\n",
@@ -1098,9 +1098,9 @@ MT_munmap(void *p, size_t len)
 }
 
 int
-MT_msync(void *p, size_t len, int mode)
+MT_msync(void *p, size_t off, size_t len, int mode)
 {
-	int ret = msync(p, len, (mode & MMAP_SYNC) ? MS_SYNC : ((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
+	int ret = msync(((char*) p)+off, len, (mode & MMAP_SYNC) ? MS_SYNC : ((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
 
 #ifdef MMAP_DEBUG
 	stream_printf(GDKerr, "msync(" LLFMT "," LLFMT ",%s) = %d\n", (long long) p, (long long) len, (mode & MMAP_SYNC) ? "MS_SYNC" : ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"), ret);
@@ -1388,7 +1388,7 @@ MT_munmap(void *p, size_t dummy)
 }
 
 int
-MT_msync(void *p, size_t len, int mode)
+MT_msync(void *p, size_t off, size_t len, int mode)
 {
 	remap_t *map = remap_find(p, FALSE);
 	int ret = 0;
@@ -1397,16 +1397,12 @@ MT_msync(void *p, size_t len, int mode)
 	if (map) {
 		/* remapped region; has multiple bases on which we must invoke the Windows API */
 		size_t i;
-
-		for (i = 0; i < map->cnt; i++)
-			if (FlushViewOfFile(map->bases[i], 0) == 0)
-				ret = -1;
-		free(map);
+		for(i=0; i<map->cnt; i++) /* oops, have to flush all now.. */ 
+			if (FlushViewOfFile(map->bases[i], 0) == 0) ret = -1;
 	} else {
 		/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
-		 * while Unix's   munmap          returns success==0, error==-1. */
-		if (FlushViewOfFile(p, len) == 0)
-			ret = -1;
+	  	 * while Unix's   munmap          returns success==0, error==-1. */
+		if (FlushViewOfFile(((char*) p) + off, len) == 0) ret = -1;
 	}
 	return ret;
 }
