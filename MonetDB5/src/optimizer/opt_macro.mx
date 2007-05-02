@@ -243,8 +243,11 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	/* add all variables of the new block to the target environment */
 	for (n = 0; n < mc->vtop; n++) {
 		if(isExceptionVariable(mc->var[n]->name) ){
-			nv[n] = newVariable(mb,mc->var[n]->name,TYPE_str);
+			nv[n] = newVariable(mb,GDKstrdup(mc->var[n]->name),TYPE_str);
 		} else
+		if( isTypeVar(mc,n) )
+			nv[n] = newTypeVariable(mb,getVarType(mc,n));
+		else
 		if (mc->var[n]->isaconstant ){
 			nv[n] = cpyConstant(mb,getVar(mc,n));
 		} else
