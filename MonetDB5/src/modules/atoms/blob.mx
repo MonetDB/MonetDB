@@ -181,7 +181,7 @@ blob_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 blob_export blob * BLOBread(blob *a, stream *s, size_t cnt);
 blob_export void BLOBwrite(blob *a, stream *s, size_t cnt);
 
-blob_export str BLOBblob_blob(blob **d, blob *s);
+blob_export str BLOBblob_blob(blob **d, blob **s);
 blob_export str BLOBblob_fromstr(blob **b, str *d);
 
 blob_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
@@ -266,7 +266,7 @@ blob_null(void)
 {
 	static blob nullval;
 
-	nullval.nitems = ~(size_t) 0;
+	nullval.nitems = (size_t) 0;
 	return (&nullval);
 }
 
@@ -791,7 +791,9 @@ BLOBhash(blob *b)
 blob *
 BLOBnull()
 {
-	return blob_null();
+	blob *b= (blob*) GDKmalloc(sizeof(blob));
+	b->nitems = ~(size_t) 0;
+	return b;
 }
 
 blob *
@@ -909,13 +911,18 @@ SQLBLOBfromstr(char *s, int *l, blob **val)
 }
 
 str 
-BLOBblob_blob(blob **d, blob *s)
+BLOBblob_blob(blob **d, blob **s)
 {
-	int len = blobsize(s->nitems);
-	blob *b = *d = (blob *) GDKmalloc(len);
+	int len = blobsize((*s)->nitems);
+	blob *b;
 
-	b->nitems = len;
-	memcpy(b->data, s->data, len);
+	if( (*s)->nitems == ~(size_t) 0){
+		*d= BLOBnull();
+	} else {
+		*d= b= (blob *) GDKmalloc(len);
+		b->nitems = len;
+		memcpy(b->data, (*s)->data, len);
+	}
 	return MAL_SUCCEED;
 }
 
