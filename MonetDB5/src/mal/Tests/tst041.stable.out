@@ -111,7 +111,11 @@ function user.main():void;	# 0  (main:void)
     io.print(f);	# 62 IOprint_val (_61:void)<-(f:chr)
     f := calc.chr("X");	# 63 CALCstr2chr (f:chr)<-(_62:str)
     io.print(f);	# 64 IOprint_val (_63:void)<-(f:chr)
-end main;	# 65  
+    o := nil:blob;	# 65  (o:blob)<-(_65:blob)
+    io.print(o);	# 66 IOprint_val (_66:void)<-(o:blob)
+    o := calc.blob(nil:blob);	# 67 BLOBblob_blob (o:blob)<-(_65:blob)
+    io.print(o);	# 68 IOprint_val (_67:void)<-(o:blob)
+end main;	# 69  
 [ nil ]
 [ 23 ]
 [ nil ]
@@ -144,6 +148,8 @@ end main;	# 65
 [ 'Z' ]
 [ nil ]
 [ 'X' ]
+[ nil ]
+[ nil ]
 
 # 07:58:44 >  
 # 07:58:44 >  Done.
