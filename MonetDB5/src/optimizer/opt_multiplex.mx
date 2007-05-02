@@ -266,6 +266,7 @@ OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) pci;
+
 	old = mb->stmt;
 	limit = mb->stop;
 	newMalBlkStmt(mb, mb->stop);

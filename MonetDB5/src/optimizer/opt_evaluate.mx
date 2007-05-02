@@ -92,6 +92,9 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
+	if( fndArgProperty(mb,mb->stmt[0],0,putName("inline",6)) )
+		return 0;
+
 #ifdef DEBUG_OPT_CX
 	stream_printf(GDKout,"Constant expression optimizer started\n");
 #endif

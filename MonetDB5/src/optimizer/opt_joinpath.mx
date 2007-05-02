@@ -72,6 +72,9 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q,r;
 
 	(void) stk;
+	if( fndArgProperty(mb,mb->stmt[0],0,putName("inline",6)) )
+		return 0;
+
 	pc= (int*) alloca(sizeof(int)* mb->vtop); /* to find last assignment */
 	memset((char*) pc, 0, sizeof(int)* mb->vtop);
 	used= (int*) alloca(sizeof(int)* mb->vtop); /* to find last assignment */

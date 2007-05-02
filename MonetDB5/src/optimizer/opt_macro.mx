@@ -239,15 +239,16 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	q = getInstrPtr(mc, 0);
 	ns = GDKmalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
 	nv = alloca(mc->vtop * sizeof(int));
-	k = 0;
 
 	/* add all variables of the new block to the target environment */
 	for (n = 0; n < mc->vtop; n++) {
+		if(isExceptionVariable(mc->var[n]->name) ){
+			nv[n] = newVariable(mb,mc->var[n]->name,TYPE_str);
+		} else
 		if (mc->var[n]->isaconstant ){
 			nv[n] = cpyConstant(mb,getVar(mc,n));
 		} else
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
-		k++;
 	}
 
 	/* use an alias mapping to keep track of the actual arguments */
@@ -280,6 +281,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	/* copying stops at the first return statement */
 	for (i = 1; i < mc->stop - 1; i++) {
 		q = mc->stmt[i];
+		if( q->token == ENDsymbol)
+			break;
 
 		/* copy the instruction and fix variable references */
 		ns[k] = copyInstruction(q);
@@ -293,8 +296,9 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		k++;
 	} 
 	/* copy the remainder of the stable part */
-	for (i = pc + 1; i < mb->stop; i++)
+	for (i = pc + 1; i < mb->stop; i++){
 		ns[k++] = mb->stmt[i];
+	}
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 

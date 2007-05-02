@@ -1,0 +1,17 @@
+function qry();
+b:= bat.new(:int,:int);
+c:= bat.new(:int,:int);
+bat.insert(b,1,1);
+
+barrier (x,y,z):= bat.newIterator(b);
+	io.print(x);
+exit (x,y,z);
+
+barrier (x,y,z):= bat.newIterator(c);
+	io.print(x);
+	redo (x,y,z):= bat.hasMoreElements(c);
+exit (x,y,z);
+end qry;
+
+optimizer.garbageCollector("user","qry");
+mdb.list("user","qry");
