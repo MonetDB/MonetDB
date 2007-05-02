@@ -151,6 +151,7 @@ mal_export str	createException(enum malexception, str, str, ...);
 mal_export void	showException(enum malexception, str, str, ...);
 mal_export str	createScriptException(MalBlkPtr, int, enum malexception, str, str, ...);
 mal_export void	showScriptException(MalBlkPtr, int, enum malexception, str, ...);
+mal_export int isExceptionVariable(str nme);
 
 mal_export enum malexception	getExceptionType(str);
 mal_export str	getExceptionPlace(str);
@@ -181,6 +182,16 @@ static char *exceptionNames[] = {
 /*13 */	"SQLException",
 /*EOE*/	NULL
 };
+
+int
+isExceptionVariable(str nme){
+	int i;
+	if( nme)
+		for(i=0; exceptionNames[i]; i++)
+		if( strcmp(exceptionNames[i],nme)==0)
+			return 1;
+	return 0;
+}
 
 /**
  * Internal helper function for createException and

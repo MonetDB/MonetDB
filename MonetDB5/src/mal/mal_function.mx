@@ -691,7 +691,7 @@ setLifespan(MalBlkPtr mb)
 				p->barrier != RETURNsymbol &&
 				p->barrier != YIELDsymbol)
 					v->lastUpdate= pc;
-			if (pc > v->endLifespan && v->depth == depth)
+			if (pc > v->endLifespan )
 				v->endLifespan = pc;
 @-
 For all variables we keep track if it is used, cq modified.

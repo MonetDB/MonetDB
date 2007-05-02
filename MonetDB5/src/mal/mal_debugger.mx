@@ -1320,7 +1320,8 @@ signatures satisfying the pattern.
 					}
 					continue;
 				}
-				printFunction(out, m, lstng);
+				if( m) 
+					printFunction(out, m, lstng);
 			} else 
 				printFunction(out, mb, lstng);
 			continue;

@@ -957,7 +957,7 @@ the bind(namespace, batname, mode) operation. [todo]
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			bat bid = stk->stk[getArg(pci,i)].val.br.id;
-			BAT *b;
+			/* BAT *b;*/
 			if( backup[i] ){
 				if( backup[i]== bid){
 					/* target and source are identical, which means its
@@ -970,10 +970,16 @@ the bind(namespace, batname, mode) operation. [todo]
 				backup[i]=0;
 				sbackup[i]=0;
 			} 
+/*
+This property setting facility leads to a performance
+loss of a factor 4(?) on the micro benchmarks.
+It does not belong here, but should be propagated 
+to the operators.
 			if ((b = BATdescriptor(bid)) != NULL) {
 				BATsettrivprop(b);
 				BBPunfix(bid);
 			}
+*/
 		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){

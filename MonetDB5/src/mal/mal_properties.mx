@@ -324,6 +324,9 @@ mal_export int isPropertyDefined(PropertySet ps, str nme);
 #define setArgProperty(M,P,I,NME,OP,T,V) if(getProps(M,getArg(P,I))== 0) \
 		getProps(M,getArg(P,I))= newPropertySet();\
 		setProperty(getProps(M,getArg(P,I)),NME,OP,T,V)
+#define addProperty(M,V,NME) if(getProps(M,V)== 0) \
+			getProps(M,V)= newPropertySet();\
+		{ int v=1; setProperty(getProps(M,V),NME,"=",TYPE_bit,&v);}
 
 #endif
 @c
