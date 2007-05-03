@@ -18,7 +18,7 @@
 
 package nl.cwi.monetdb.client;
 
-import nl.cwi.monetdb.client.util.*;
+import nl.cwi.monetdb.util.*;
 import java.sql.*;
 import java.io.*;
 import java.util.*;

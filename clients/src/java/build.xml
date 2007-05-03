@@ -39,6 +39,7 @@ All Rights Reserved.
   <property name="xmldb-package"      value="nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"        value="nl/cwi/monetdb/mcl" />
   <property name="client-package"     value="nl/cwi/monetdb/client" />
+  <property name="util-package"       value="nl/cwi/monetdb/util" />
 
   <property file="build.local.properties" />
   <property file="build.properties" />
@@ -89,16 +90,18 @@ All Rights Reserved.
     </jar>
   </target>
 
-  <target name="jar_client" depends="compile_client">
+  <target name="jar_client" depends="compile_util,compile_client">
     <jar jarfile="${jardir}/monetdb-clients.jar">
       <fileset dir="${builddir}">
         <include name="${client-package}/**/*.class" />
+        <include name="${util-package}/**/*.class" />
       </fileset>
     </jar>
   </target>
 
   <!-- a convenience jar of JDBC plus the JdbcClient utililty -->
-  <target name="jar_jdbcclient" depends="compile_mcl,compile_jdbc,compile_client"
+  <target name="jar_jdbcclient"
+    depends="compile_mcl,compile_jdbc,compile_util,compile_client"
     unless="uptodate.jdbcclient-jar">
     <echo message="Building JDBC + JdbcClient convenience jar" />
     <jar jarfile="${jdbcclient-jar}">
@@ -106,6 +109,7 @@ All Rights Reserved.
         <include name="${jdbc-package}/**/*.class" />
         <include name="${mcl-package}/**/*.class" />
         <include name="${client-package}/**/*.class" />
+        <include name="${util-package}/**/*.class" />
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}" />
@@ -203,34 +207,19 @@ All Rights Reserved.
     </javac>
   </target>
 
-  <!-- distribution jar file -->
-  <target name="dist" depends="clean,prepare,driver">
-    <echo message="Building distribution jar (debug=off, optimise=on)" />
-    <echo message="Compiling JDBC, MCL and XML:DB drivers" />
+  <target name="compile_util" depends="prepare">
+    <echo message="Compiling Utilities" />
     <javac
-      classpath="${srcdir}:${libdir}/xmldb.jar"
+      classpath="${srcdir}"
       srcdir="${srcdir}"
       destdir="${builddir}"
-      debug="false"
-      optimize="true"
+      debug="${debug}"
+      optimize="${optimize}"
       target="${javac_version}"
       source="${javac_version}"
       >
-      <include name="${jdbc-package}/**/*.java" />
-      <include name="${xmldb-package}/**/*.java" />
-      <include name="${mcl-package}/**/*.java" />
-      <include name="${client-package}/**/*.java" />
+      <include name="${util-package}/**/*.java" />
     </javac>
-
-    <jar jarfile="${jardir}/monetdb.jar" manifest="${srcdir}/manifest">
-      <fileset dir="${builddir}">
-        <include name="*.class" />
-        <include name="${jdbc-package}/**/*.class" />
-        <include name="${xmldb-package}/**/*.class" />
-        <include name="${mcl-package}/**/*.class" />
-        <include name="${client-package}/**/*.class" />
-      </fileset>
-    </jar>
   </target>
 
   <!--
@@ -339,7 +328,7 @@ All Rights Reserved.
 
   <!-- documentation target -->
   <target name="doc"
-    depends="compile_mcl,compile_jdbc,compile_xmldb,compile_client">
+    depends="compile_mcl,compile_jdbc,compile_xmldb,compile_util,compile_client">
     <javadoc
       destdir="${docdir}"
       author="true"

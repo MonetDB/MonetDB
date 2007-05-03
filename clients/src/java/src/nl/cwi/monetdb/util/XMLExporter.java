@@ -16,7 +16,7 @@
  * All Rights Reserved.
  */
 
-package nl.cwi.monetdb.client.util;
+package nl.cwi.monetdb.util;
 
 import java.io.*;
 import java.sql.*;
