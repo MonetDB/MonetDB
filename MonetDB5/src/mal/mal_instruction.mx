@@ -405,6 +405,7 @@ typedef struct MALBLK {
 	int flowfixed;		/* all flow instructions are fixed */
 	ProfPtr profiler;
 	struct MALBLK *history;/* of optimizer actions */
+	int keephistory;	/* do we need the history at all */
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -638,6 +639,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->props = NULL;
 	mb->alternative = NULL;
 	mb->history = NULL;
+	mb->keephistory = 0;
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
 	mb->profiler = NULL;
@@ -709,6 +711,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->props = old->props;
 	mb->alternative = old->alternative;
 	mb->history = NULL;
+	mb->keephistory= old->keephistory;
 	mb->var = (VarPtr *) GDKmalloc(sizeof(VarPtr) * old->vsize);
 
 	if (mb->var == NULL)
@@ -748,10 +751,12 @@ copyMalBlk(MalBlkPtr old)
 void
 addtoMalBlkHistory(MalBlkPtr mb){
 	MalBlkPtr cpy;
-	cpy= copyMalBlk(mb);
-	cpy->alternative= NULL;
-	cpy->history= mb->history;
-	mb->history= cpy;
+	if( mb->keephistory){
+		cpy= copyMalBlk(mb);
+		cpy->alternative= NULL;
+		cpy->history= mb->history;
+		mb->history= cpy;
+	}
 }
 MalBlkPtr
 getMalBlkHistory(MalBlkPtr mb, int idx){

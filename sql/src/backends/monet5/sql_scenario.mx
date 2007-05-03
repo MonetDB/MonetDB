@@ -782,9 +782,11 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	if( onoff){
 		newStmt(c->curprg->def,"mdb","start");
 		c->debugOptimizer= TRUE;
+		c->curprg->def->keephistory= TRUE;
 	} else {
 		newStmt(c->curprg->def,"mdb","stop");
 		c->debugOptimizer= FALSE;
+		c->curprg->def->keephistory= FALSE;
 	}
 }
 
