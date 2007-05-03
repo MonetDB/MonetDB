@@ -822,13 +822,16 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 		sql_kc *c = o->data;
 		stmt *upd;
 
-		if (updates[c->c->colnr] && action == ACT_CASCADE) {
-			upd = stmt_dup(updates[c->c->colnr]->op2.stval);
-		} else {
+		if (updates[c->c->colnr]) {
+			if(action == ACT_CASCADE) 
+				upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 			if (action == ACT_SET_DEFAULT)
 				upd = stmt_atom(atom_general(&fc->c->type, fc->c->def, 0));
-			else
+			if(action == ACT_SET_NULL) 
 				upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
+		} else {
+                        upd = stmt_dup(updates[updcol]->op2.stval);
+                        upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 		}
 
 		if (!upd || (upd = check_types(sql, &fc->c->type, upd, type_equal)) == NULL) {
