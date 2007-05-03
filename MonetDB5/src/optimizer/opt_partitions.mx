@@ -222,38 +222,49 @@ to close the iterator nesting and produce a single result.
 This involves also insertion of an accumulator BAT at
 the beginning of the iterator block removed.
 
-Let's assume don't have more then 256 binds for the time being.
 @c
-static int
-OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static void
+OPTpartitionProperties(MalBlkPtr mb)
 {
-	int mat[256]; /* designate location of all nested sql.bind() calls */
-	int mtop=0;
-	int i,j,limit;
-	InstrPtr p, *old;
-	(void) stk;
-	(void) pci;
-	(void) mtop;
+	int i,j,k;
+	InstrPtr p;
 
-	old= mb->stmt;
-	limit= mb->stop;
-	newMalBlkStmt(mb,limit+256);
-
-	for(i=0;i< limit; i++){
-		p = old[i];
-		pushInstruction(mb,p);
+	for(i=0;i< mb->stop; i++){
+		p = getInstrPtr(mb,i);
 		if( getFunctionId(p)== bindRef && getModuleId(p)==sqlRef){
-			addProperty(mb,getArg(p,0),putName("partial",7));
-			mat[mtop++]= i;
+			addProperty(mb,getArg(p,0),"fragmented");
 			continue;
 		}
 		for(j=p->retc; j<p->argc; j++)
-		if( isPropertyDefined(getProps(mb,getArg(p,j)),"partial") ){
+		if( isPropertyDefined(getProps(mb,getArg(p,j)),"fragmented")){
+			if( isFragmentGroup(p) ){
+@-
+At this point we should inspect the target and set
+the result to fragmented as well.
+@c
+				for(k=0;k<p->retc; k++)
+				if( isaBatType(getVarType(mb, getArg(p,k))) ){
+					addProperty(mb,getArg(p,k),"fragmented");
+				}
+			} else {
+@-
+It is time to combine the pieces together again.
+@c
+				for(k=0;k<p->retc; k++)
+				if( isaBatType(getVarType(mb, getArg(p,k))) ){
+					addProperty(mb,getArg(p,k),"combine");
+				}
+			}
 		}
 	}
-	for( i=0; i< mtop; i++)
-		printf("binding %d\n",mat[i]);
-	return 0; /* optimizer administration alread handled */
+}
+static int
+OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) stk;
+	(void) pci;
+	OPTpartitionProperties(mb);
+	return 1;
 }
 
 @}

@@ -257,20 +257,7 @@ group them and check for them individually.
 At first we look for the first argument. Others are dealt with
 through the default case.
 @c
-		if(( (getModuleId(p)== algebraRef && getFunctionId(p)== selectRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)==uselectRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)==likeselectRef) ||
-			(getModuleId(p)== batRef && getFunctionId(p)==reverseRef) ||
-			(getModuleId(p)== batRef && getFunctionId(p)==mirrorRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)==markTRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)==kdifferenceRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)== joinRef) ||
-			(getModuleId(p)== algebraRef && getFunctionId(p)== semijoinRef) ||
-			(getModuleId(p)== batRef && getFunctionId(p)== setAccessRef) ||
-			(getModuleId(p)== batRef && getFunctionId(p)== appendRef)  ||
-			(getModuleId(p)== batRef && getFunctionId(p)== deleteRef)  ||
-			getModuleId(p)== calcRef 
-		)  && (m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
+		if( isFragmentGroup(p) && (m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
 			r = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(r,matRef);
 			setFunctionId(r,newRef);

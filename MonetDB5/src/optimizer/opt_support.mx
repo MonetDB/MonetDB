@@ -476,6 +476,7 @@ opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int hasSideEffects(InstrPtr p, int strict);
+opt_export int isFragmentGroup(InstrPtr q);
 opt_export int allArgumentsVisible(MalBlkPtr mb, int pc,int qc);
 opt_export int allTargetsVisible(MalBlkPtr mb, int pc, int qc);
 
@@ -635,7 +636,7 @@ MALoptimizer(Client c)
 
 	msg= optimizeMALBlock(c->curprg->def);
 	if( msg == MAL_SUCCEED)
-		OPTmultiplex(c->curprg->def,0,0);
+		OPTmultiplexSimple(c);
 	return msg;
 }
 
@@ -1070,4 +1071,20 @@ replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 	}
 }
 
+int isFragmentGroup(InstrPtr p){
+	return
+			(getModuleId(p)== algebraRef && getFunctionId(p)== selectRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)==uselectRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)==likeselectRef) ||
+			(getModuleId(p)== batRef && getFunctionId(p)==reverseRef) ||
+			(getModuleId(p)== batRef && getFunctionId(p)==mirrorRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)==markTRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)==kdifferenceRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)== joinRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)== semijoinRef) ||
+			(getModuleId(p)== batRef && getFunctionId(p)== setAccessRef) ||
+			(getModuleId(p)== batRef && getFunctionId(p)== appendRef)  ||
+			(getModuleId(p)== batRef && getFunctionId(p)== deleteRef)  ||
+			getModuleId(p)== calcRef ;
+}
 @}

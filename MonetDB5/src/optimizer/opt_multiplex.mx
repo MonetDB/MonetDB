@@ -256,7 +256,33 @@ This optimizer is directly called for the current routine.
 It is more a code generator then an optimizer per se.
 @h
 opt_export int OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str OPTmultiplexSimple(Client cntxt);
+@-
+The multiplexSimple is called by the MAL scenario. It bypasses
+the optimizer infrastructure, to avoid excessive space allocation
+and interpretation overhead.
 @c
+str
+OPTmultiplexSimple(Client cntxt)
+{
+	MalBlkPtr mb= cntxt->curprg->def;
+	int i, doit=0;
+	InstrPtr p;
+	if(mb)
+	for( i=0; i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if(getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
+			doit++;
+	}
+	if( doit) {
+		OPTmultiplexImplementation(mb, 0, 0);
+		chkTypes(cntxt->nspace, mb);
+		chkFlow(mb);
+		chkDeclarations(mb, TRUE);
+		setLifespan(mb);
+	}
+	return 0;
+}
 int
 OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
