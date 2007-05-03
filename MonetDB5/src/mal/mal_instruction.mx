@@ -1874,6 +1874,7 @@ setVarType(MalBlkPtr mb, int i, int tpe)
 @-
 Cleaning a variable type by setting it to TYPE_any
 possibly invalidates all other type derivations in the program.
+Beware of the exception variables. They are globally known.
 @c
 void
 clrAllTypes(MalBlkPtr mb)
@@ -1886,7 +1887,8 @@ clrAllTypes(MalBlkPtr mb)
 	for(i=p->argc; i<mb->vtop; i++)
 	if( !mb->var[i]->isudftype &&
 		mb->var[i]->isused &&
-		!mb->var[i]->isaconstant){
+		!mb->var[i]->isaconstant &&
+		!isExceptionVariable(mb->var[i]->name)){
 		setVarType(mb,i,TYPE_any);
 		setVarCleanup(mb,i) = FALSE;
 		mb->var[i]->gdktype= TYPE_void;
