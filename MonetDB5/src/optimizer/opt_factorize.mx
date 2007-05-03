@@ -164,7 +164,7 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* beware, none of the target variables may live
 		   before the cut point.  */
 		for (k = 0; k < p->retc; k++)
-			if (getVar(mb, p->argv[k])->beginLifespan < i || !OPTallowed(p))
+			if (getBeginLifespan(mb, p->argv[k])< i || !OPTallowed(p))
 				se = 0;
 		if (p->barrier == RETURNsymbol) {
 			se = 1;

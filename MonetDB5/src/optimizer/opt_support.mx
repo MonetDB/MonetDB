@@ -479,10 +479,9 @@ opt_export int hasSideEffects(InstrPtr p, int strict);
 opt_export int allArgumentsVisible(MalBlkPtr mb, int pc,int qc);
 opt_export int allTargetsVisible(MalBlkPtr mb, int pc, int qc);
 
-#define isAlife(M,I,X)          ( (M)->var[I]->beginLifespan<=X && \
-                                  (M)->var[I]->endLifespan>=X)
-#define isSinglepoint(M,I)  ( (M)->var[I]->beginLifespan== \
-                  (M)->var[I]->endLifespan)
+#define isAlife(M,I,X)          ( getBeginLifespan(M,I)<=X && \
+                                  getEndLifespan(M,I)>=X)
+#define isSinglepoint(M,I)  (getBeginLifespan(M,I)== getEndLifespan(M,I))
 @}
 @-
 @node Framework, Lifespan Analysis, Building Blocks, The MAL Optimizer
@@ -731,8 +730,8 @@ allArgumentsVisible(MalBlkPtr mb, int pc,int qc){
 		return FALSE;
 	p= getInstrPtr(mb,pc);
 	for(i=p->retc; i< p->argc; i++){
-		VarPtr v = getVar(mb, getArg(p,i));
-		if( v->lastUpdate > v->beginLifespan && qc > v->lastUpdate)
+		if( getLastUpdate(mb,getArg(p,i)) >  getBeginLifespan(mb,getArg(p,i)) &&
+			qc > getLastUpdate(mb,getArg(p,i)) )
 			return FALSE;
 	}
 	return TRUE;
@@ -746,8 +745,8 @@ allTargetsVisible(MalBlkPtr mb, int pc,int qc){
 		return FALSE;
 	p= getInstrPtr(mb,pc);
 	for(i=0; i < p->retc; i++){
-		VarPtr v = getVar(mb, getArg(p,i));
-		if( v->lastUpdate > v->beginLifespan && qc > v->lastUpdate)
+		if( getLastUpdate(mb,getArg(p,i))> getBeginLifespan(mb,getArg(p,i))  &&
+			qc > getLastUpdate(mb,getArg(p,i)) )
 			return FALSE;
 	}
 	return TRUE;
@@ -1058,17 +1057,15 @@ void
 replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 {
 	InstrPtr p;
-	VarPtr v;
 	int k;
 
-	v = getVar(mb, alias);
 	for (; pc < pcl; pc++) {
 		p = getInstrPtr(mb, pc);
 		for (k = p->retc; k < p->argc; k++)
 			if (p->argv[k] == src) {
 				p->argv[k] = alias;
-				if (pc > v->endLifespan)
-					v->endLifespan = pc;
+				if (pc > getEndLifespan(mb,alias))
+					getEndLifespan(mb,alias)= pc;
 			}
 	}
 }

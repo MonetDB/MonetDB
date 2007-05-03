@@ -211,8 +211,8 @@ Make sure the variables are not declared before the loop and used
 after the loop, because then you may not simple move an expression.
 @c
 		for (k = 0; k < p->retc; k++)
-			if ( getVar(mb, getArg(p, k))->beginLifespan <= blkbegin ||
-				 getVar(mb, getArg(p, k))->endLifespan >= blkexit) {
+			if ( getBeginLifespan(mb, getArg(p, k))<= blkbegin ||
+				 getEndLifespan(mb, getArg(p, k))>= blkexit) {
 				se = TRUE;
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
 				stream_printf(GDKout, "variable may not be used out %d\n", getArg(p, k));

@@ -111,7 +111,7 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (q && match(p, batRef, reverseRef) && 
 					match(q, batRef, reverseRef) && 
 					getArg(p, 0) == getArg(q, 1) && 
-					getVar(mb, getArg(p, 0))->endLifespan == i + 1) {
+					getEndLifespan(mb,getArg(p,0)) == i + 1) {
 #ifdef DEBUG_OPT_PEEPHOLE
 			printf("PEEPHOLE reverse-reverse\n");
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
