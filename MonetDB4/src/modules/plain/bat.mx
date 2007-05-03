@@ -1627,38 +1627,6 @@ CMDsave(bit *res, str input)
 	return GDK_SUCCEED;
 }
 
-int
-CMDmsync(BAT **r, BAT *b, oid* lo, oid *hi, bit *async)
-{
-	if (b->hseqbase == oid_nil || BUNsize(b) != ATOMsize(b->ttype)) {
-            GDKerror("msync(%s, OIDFMT, OIDFMT): illegal head column.\n", BBP_logical(b->batCacheid), *lo, *hi);
-	    return GDK_FAIL;
-        }
-	if (*lo < b->hseqbase || *lo > *hi || (*hi - *lo) > BATcount(b)) {
-            GDKerror("msync(%s, OIDFMT, OIDFMT): illegal lo-hi head range.\n", BBP_logical(b->batCacheid), *lo, *hi);
-	    return GDK_FAIL;
-        }
-        if (*lo < *hi && (b->batBuns->storage == STORE_MMAP)) {
-            size_t lo_off = (*lo - b->hseqbase) * BUNsize(b);
-            size_t hi_off = (*hi - b->hseqbase) * BUNsize(b);
-            lo_off = (lo_off / MT_pagesize()) * MT_pagesize();
-            hi_off = (((hi_off - 1) / MT_pagesize()) + 1) * MT_pagesize();
-            if (MT_msync(b->batBuns->base, lo_off, hi_off - lo_off, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) {
-                GDKerror("msync(%s, OIDFMT, OIDFMT): buns sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
-                return GDK_FAIL;
-            }
-        }
-        if (b->theap && b->theap->storage == STORE_MMAP) {
-            /* flush tail heaps fully */
-            if (MT_msync(b->theap->base, 0, b->theap->free, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) { 
-                GDKerror("msync(%s, OIDFMT, OIDFMT): tail sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
-                return GDK_FAIL;
-            }
-        }
-	*r = b;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
 
 @= change_heap
 {
@@ -1888,7 +1856,7 @@ other changes were:
   an error if a fetchjoin is performed with a key that is out-of-range. Everything *must* match!
 \item
   gdk_storage.mx: batload.  To preserve the integritry of string heaps with such forced updates, 
-  the kernel zaps the internal hash table of string heaps. Note that this is only allowd if 
+  the kernel zaps the internal hash table of string heaps. Note that this is only allowed if 
   double-elimination inside the string heap is disabled (in that case the hash table is not 
   required to be complete).  To prevent problems, the rcopy() does not do mmap-tricks for 
   double-eliminating heaps.
@@ -1905,7 +1873,7 @@ zero cost.
 
 @- Remapped Copy
 @T
-CMDremap makes a copy of a bat, putting the logical 'pages' (65536 tuples) in an 
+CMDremap makes a copy of a bat, putting the logical 'pages' (REMAP_PAGE_SIZE tuples) in an 
 alternative order, specified by a map. It is optimized to use copy-on-write memory 
 mappings to make cheap copies, when possible.
 
@@ -2327,6 +2295,38 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 		}
 		GDKfree(bitmask);
         }
+	return GDK_SUCCEED;
+}
+
+int
+CMDmsync(BAT **r, BAT *b, oid* lo, oid *hi, bit *async)
+{
+	if (b->hseqbase == oid_nil || BUNsize(b) > ATOMsize(ATOMtype(b->ttype))) {
+            GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): illegal head column.\n", BBP_logical(b->batCacheid), *lo, *hi);
+	    return GDK_FAIL;
+        }
+	if (*lo < b->hseqbase || *lo > *hi || (*hi - *lo) > BATcount(b)) {
+            GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): illegal lo-hi head range.\n", BBP_logical(b->batCacheid), *lo, *hi);
+	    return GDK_FAIL;
+        }
+        if (*lo < *hi && (b->batBuns->storage == STORE_MMAP)) {
+            size_t lo_off = (*lo - b->hseqbase) * BUNsize(b);
+            size_t hi_off = (*hi - b->hseqbase) * BUNsize(b);
+            lo_off = (lo_off / MT_pagesize()) * MT_pagesize();
+            hi_off = (((hi_off - 1) / MT_pagesize()) + 1) * MT_pagesize();
+            if (MT_msync(b->batBuns->base, lo_off, hi_off - lo_off, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) {
+                GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): buns sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
+                return GDK_FAIL;
+            }
+        }
+        if (b->theap && b->theap->storage == STORE_MMAP) { /* flush tail heaps fully */
+            if (MT_msync(b->theap->base, 0, b->theap->free, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) { 
+                GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): tail sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
+                return GDK_FAIL;
+            }
+        }
+	*r = b;
+	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 @}
