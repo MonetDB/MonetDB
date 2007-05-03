@@ -1,6 +1,8 @@
+#checking proper handling of scopes for the garbage collector
 function qry();
 b:= bat.new(:int,:int);
 c:= bat.new(:int,:int);
+d:= bat.new(:int,:int);
 bat.insert(b,1,1);
 
 barrier (x,y,z):= bat.newIterator(b);
@@ -11,6 +13,12 @@ barrier (x,y,z):= bat.newIterator(c);
 	io.print(x);
 	redo (x,y,z):= bat.hasMoreElements(c);
 exit (x,y,z);
+
+# do not close d, it may be reused
+barrier go:=true;
+	io.print(d);
+	redo go:=true;
+exit go;
 end qry;
 
 optimizer.garbageCollector("user","qry");

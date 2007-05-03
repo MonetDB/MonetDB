@@ -1,0 +1,92 @@
+stdout of test 'inline01` in directory 'src/optimizer` itself:
+
+
+# 00:18:07 >  
+# 00:18:07 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=31500 --set xrpc_port=46952 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline01.mal
+# 00:18:07 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information
+#function help{inline}();
+#b:= bat.new(:int,:int);
+#c:= bat.new(:int,:int);
+#bat.insert(b,1,1);
+#
+#barrier (x,y,z):= bat.newIterator(b);
+#	io.print(x);
+#catch MALException:str;
+#exit MALException;
+#exit (x,y,z);
+#
+#barrier (x,y,z):= bat.newIterator(c);
+#	io.print(x);
+#	redo (x,y,z):= bat.hasMoreElements(c);
+#catch MALException:str;
+#exit MALException;
+#exit (x,y,z);
+#end help;
+function user.help{inline}():void;	# 0  (help:void)
+    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
+    c := bat.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-(_2:int)(_2:int)
+    z:int  := 1;	# 3  (z:int)<-(_5:int)
+    bat.insert(b,1,1);	# 4 BKCinsert_bun (_6:void)<-(b:bat[:int,:int])(_5:int)(_5:int)
+barrier (x,y,z:int ):= bat.newIterator(b);	# 5 CHPbunIterator (x:lng)(y:int)(z:int)<-(b:bat[:int,:int]) jump 9
+    io.print(x);	# 6 IOprint_val (_9:void)<-(x:lng)
+catch MALException:str ;	# 7  (MALException:str) jump 8
+exit MALException:str ;	# 8  (MALException:str)
+exit (x,y,z:int );	# 9  (x:lng)(y:int)(z:int)
+barrier (x,y,z:int ):= bat.newIterator(c);	# 10 CHPbunIterator (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 15
+    io.print(x);	# 11 IOprint_val (_11:void)<-(x:lng)
+    redo (x,y,z:int ):= bat.hasMoreElements(c);	# 12 CHPbunHasMoreElements (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 11
+catch MALException:str ;	# 13  (MALException:str) jump 14
+exit MALException:str ;	# 14  (MALException:str)
+exit (x,y,z:int );	# 15  (x:lng)(y:int)(z:int)
+end help;	# 16  
+#
+#function user.qry1{inline}();
+#	user.help();
+#end qry1;
+function user.qry1{inline}():void;	# 0  (qry1:void)
+    user.help();	# 1  (_1:void)
+end qry1;	# 2  
+#
+#function user.qry();
+#	user.qry1();
+#end qry;
+function user.qry():void;	# 0  (qry:void)
+    user.qry1();	# 1  (_1:void)
+end qry;	# 2  
+#
+#optimizer.inline("user","qry");
+#mdb.list("user","qry");
+#
+function user.main():void;	# 0  (main:void)
+    mdb.list("user","qry");	# 1 MDBlist3 (_4:void)<-(_2:str)(_3:str)
+end main;	# 2  
+function user.qry():void;
+    nil:void;
+    nil:void;
+    _6 := bat.new(:int,:int);
+    _8 := bat.new(:int,:int);
+    _9:int  := 1;
+    bat.insert(_6,1,1);
+barrier (_12,_13,_9:int ):= bat.newIterator(_6);
+    io.print(_12);
+catch MALException:str ;
+exit MALException:str ;
+exit (_12,_13,_9:int );
+barrier (_12,_13,_9:int ):= bat.newIterator(_8);
+    io.print(_12);
+    redo (_12,_13,_9:int ):= bat.hasMoreElements(_8);
+catch MALException:str ;
+exit MALException:str ;
+exit (_12,_13,_9:int );
+end qry;
+
+# 00:18:07 >  
+# 00:18:07 >  Done.
+# 00:18:07 >  
+

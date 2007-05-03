@@ -1,6 +1,7 @@
 function help{inline}();
 b:= bat.new(:int,:int);
 c:= bat.new(:int,:int);
+z:int:= 1;
 bat.insert(b,1,1);
 
 barrier (x,y,z):= bat.newIterator(b);

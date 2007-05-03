@@ -27,35 +27,48 @@ stdout of test 'GCexample01` in directory 'src/optimizer` itself:
 function user.qry():void;	# 0  (qry:void)
     b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     c := bat.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.insert(b,1,1);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_5:int)
-barrier (x,y,z):= bat.newIterator(b);	# 4 CHPbunIterator (x:lng)(y:int)(z:int)<-(b:bat[:int,:int]) jump 6
-    io.print(x);	# 5 IOprint_val (_9:void)<-(x:lng)
-exit (x,y,z);	# 6  (x:lng)(y:int)(z:int)
-barrier (x,y,z):= bat.newIterator(c);	# 7 CHPbunIterator (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 10
-    io.print(x);	# 8 IOprint_val (_10:void)<-(x:lng)
-    redo (x,y,z):= bat.hasMoreElements(c);	# 9 CHPbunHasMoreElements (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 8
-exit (x,y,z);	# 10  (x:lng)(y:int)(z:int)
-end qry;	# 11  
+    d := bat.new(:int,:int);	# 3 CMDBATnew (d:bat[:int,:int])<-(_2:int)(_2:int)
+    bat.insert(b,1,1);	# 4 BKCinsert_bun (_5:void)<-(b:bat[:int,:int])(_6:int)(_6:int)
+barrier (x,y,z):= bat.newIterator(b);	# 5 CHPbunIterator (x:lng)(y:int)(z:int)<-(b:bat[:int,:int]) jump 7
+    io.print(x);	# 6 IOprint_val (_10:void)<-(x:lng)
+exit (x,y,z);	# 7  (x:lng)(y:int)(z:int)
+barrier (x,y,z):= bat.newIterator(c);	# 8 CHPbunIterator (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 11
+    io.print(x);	# 9 IOprint_val (_11:void)<-(x:lng)
+    redo (x,y,z):= bat.hasMoreElements(c);	# 10 CHPbunHasMoreElements (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 9
+exit (x,y,z);	# 11  (x:lng)(y:int)(z:int)
+# do not close d, it may be reused 	# 12  (_12:str)
+barrier go := true;	# 13  (go:bit)<-(_14:bit) jump 16
+    io.print(d);	# 14 IOprint_val (_15:void)<-(d:bat[:int,:int])
+    redo go := true;	# 15  (go:bit)<-(_14:bit) jump 14
+exit go;	# 16  (go:bit)
+end qry;	# 17  
 #
 #optimizer.garbageCollector("user","qry");
 #mdb.list("user","qry");
 #
 function user.main():void;	# 0  (main:void)
-    mdb.list("user","qry");	# 1 MDBlist3 (_4:void)<-(_2:str)(_3:str)
-end main;	# 2  
+#checking proper handling of scopes for the garbage collector 	# 1  (_1:str)
+    mdb.list("user","qry");	# 2 MDBlist3 (_5:void)<-(_3:str)(_4:str)
+end main;	# 3  
 function user.qry():void;
     b := bat.new(:int,:int);
     c := bat.new(:int,:int);
+    d := bat.new(:int,:int);
     bat.insert(b,1,1);
 barrier (x,y,z):= bat.newIterator(b);
     b := nil;
     io.print(x);
 exit (x,y,z);
 barrier (x,y,z):= bat.newIterator(c);
+    c := nil;
     io.print(x);
     redo (x,y,z):= bat.hasMoreElements(c);
-    c := nil;
 exit (x,y,z);
+# do not close d, it may be reused 
+barrier go := true;
+    io.print(d);
+    redo go := true;
+exit go;
 end qry;
 
 # 23:17:49 >  
