@@ -1,0 +1,78 @@
+stdout of test 'procedure_syntax` in directory 'src/test` itself:
+
+
+# 01:17:48 >  
+# 01:17:48 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=34904 --set xrpc_port=47266 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit=' include sql;' ; echo ; echo Over..
+# 01:17:48 >  
+
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+
+Over..
+
+# 01:17:48 >  
+# 01:17:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34904 
+# 01:17:48 >  
+
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "p1"	]
+[ "p1"	]
+[ "p2"	]
+[ "p3"	]
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "p1"	]
+[ "p1"	]
+[ "p2"	]
+[ "p3"	]
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "p1"	]
+[ "p2"	]
+[ "p3"	]
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "p1"	]
+[ "p2"	]
+[ "p3"	]
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "p1"	]
+[ "p3"	]
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "p1"	]
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "p1"	]
+
+# 01:17:48 >  
+# 01:17:48 >  Done.
+# 01:17:48 >  
+
