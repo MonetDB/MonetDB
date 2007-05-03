@@ -2013,10 +2013,8 @@ PROC myupdate(bat[any::1,any::2] oldbat, bat[any::1,any::2] newbat) : bat[any::1
     } else {
       x := oldbat.reverse().max().wrd();
     }
-    var n := cast(nil, oldbat.ttype());
-    while (x < mx) {
-      oldbat.append(n, true);
-      x :+= 1;
+    if (x < mx) {
+      oldbat.append(densebat(wrd(mx - x)).project(cast(nil, oldbat.ttype())), true);
     }
     oldbat := oldbat.replace(newbat, true);
   } else {
