@@ -313,6 +313,10 @@ monet_options.mx.in
 	return 1;
 }
 
+void emergencyBreakpoint(){
+	/* just a handle to break after system initialization for GDB */
+}
+
 int
 main(int argc, char **av)
 {
@@ -619,6 +623,7 @@ the configuration file.
 	if (GDKgetenv("mal_listing"))
 		sscanf(GDKgetenv("mal_listing"), "%d", &listing);
 
+	emergencyBreakpoint();
 	for (i = 0; monet_script[i]; i++) {
 		evalFile(mal_clients, monet_script[i], listing);
 		GDKfree(monet_script[i]);
