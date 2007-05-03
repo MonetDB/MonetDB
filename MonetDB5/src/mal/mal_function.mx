@@ -669,7 +669,7 @@ debugLifespan(MalBlkPtr mb)
 void
 setLifespan(MalBlkPtr mb)
 {
-	int pc, j, k, depth=0, blkId=0;
+	int pc, j, k, depth=0, blkId=1,scopes[256];
 	InstrPtr p;
 
 	for (k = 0; k < mb->vtop; k++) {
@@ -677,6 +677,7 @@ setLifespan(MalBlkPtr mb)
 		v->lastUpdate = v->beginLifespan = v->endLifespan = 0;
 		v->isused= 0;
 	}
+	scopes[depth]=blkId;
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
 		if( p->token == NOOPsymbol)
@@ -691,7 +692,7 @@ setLifespan(MalBlkPtr mb)
 				p->barrier != RETURNsymbol &&
 				p->barrier != YIELDsymbol)
 					v->lastUpdate= pc;
-			if (pc > v->endLifespan )
+			if (pc > v->endLifespan && v->scope== scopes[depth])
 				v->endLifespan = pc;
 @-
 For all variables we keep track if it is used, cq modified.
@@ -718,8 +719,12 @@ At a block exit we can finalize some variables.
 			}
 		}
 		if( blockStart(p)){
-			depth++;
-			blkId++;
+			if( depth== 255) {
+				mb->errors++;
+				GDKerror("too deeply nested scope");
+				return;
+			}
+			scopes[++depth]= ++blkId;
 		}
 	}
 	/* debugLifespan(mb); */
