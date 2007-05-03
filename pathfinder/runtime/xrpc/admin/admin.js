@@ -10,7 +10,7 @@ if (document.location.port != null && document.location.port != "")
 var href    = protocol + "//" + document.location.hostname + port; 
 var mod     = "http://monetdb.cwi.nl/XQuery/admin/";
 var modurl  = href + "/admin/admin.xq";
-var posturl = href + "/mxqadmin";
+var posturl = href + "/xrpc/admin";
 
 function myXRPC(method,call,callback) { XRPC(posturl,mod,modurl,method,call,callback); }
 

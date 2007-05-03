@@ -1687,11 +1687,11 @@ PROC _ws_opencoll(lng wsid,
             var page_ws := runtime.fetch(RT_PAGE_WS);
             var all_ws := reverse(kunique(ws_overlaps_ws).kunion(reverse(ws_overlaps_ws)));
             if (bit(count(page_ws))) {
-                page_ws.delete(tdiff(page_ws, all_ws));
+                page_ws.deleteBuns(tdiff(page_ws, all_ws));
             }
             var attr_ws := runtime.fetch(RT_ATTR_WS);
             if (bit(count(attr_ws))) {
-                attr_ws.delete(tdiff(attr_ws, all_ws));
+                attr_ws.deleteBuns(tdiff(attr_ws, all_ws));
             }
         }
 
@@ -2181,7 +2181,7 @@ PROC __runtime_newpage(BAT[lock,bat] runtime) : oid
 {
     var free_pages := runtime.fetch(RT_LOCK_FREELIST);
     var i := count(free_pages);
-    
+
     # re-use a page from the list; or -if empty- append a new page
     if (i > 0) {
         var last_pid := reverse(free_pages).fetch(i - 1);
@@ -2511,24 +2511,21 @@ PROC _ws_coll_isolate(lng wsid,
         ws_log(wsid, "ws_coll_isolate: exec-" + str(ws_logtime - usec()));
 }
 
-PROC ws_precommit(BAT[void,BAT] ws,
-                  oid cont,
-                  BAT[void,oid] modified_page,
-                  BAT[void,oid] modified_attr) : void
+PROC _ws_precommit(BAT[void,BAT] ws,
+                   oid cont,
+                   BAT[void,oid] modified_page,
+                   BAT[void,oid] modified_attr,
+                   bit map_pid_changed) : void
 {
     var wsid := ws_id(ws);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
     var page_ws := runtime.fetch(RT_PAGE_WS);
     var attr_ws := runtime.fetch(RT_ATTR_WS);
-    var ws_logtime;
-
-    lock_set(pf_short);
-    var overlap, err := CATCH(overlap := reverse(ws_overlaps_ws).uselect(wsid).kunique().mirror());
-    lock_unset(pf_short);
-    if (not(isnil(err))) ERROR(err);
-
+    var overlap := reverse(ws_overlaps_ws).uselect(wsid).kunique().mirror();
+    var ws_logtime := usec(); 
+    var err;
+    
     if (ws_log_active) {
-        ws_logtime := usec(); 
         ws_log(wsid, "ws_precommit");
         overlap@batloop() 
             ws_log(wsid, "ws_precommit: overlaps-" + str($t));
@@ -2540,6 +2537,16 @@ PROC ws_precommit(BAT[void,BAT] ws,
             ws_log(wsid, "ws_precommit: modified_page-" + str($t));
         page_ws@batloop() 
             ws_log(wsid, sprintf("ws_precommit: page_ws-%s,%s", str($h), str($t)));
+    }
+
+    # do not allow concurrent page inserts/deletes (simplictic and can be improved!!)
+    if (map_pid_changed) {
+        if (page_ws.exist(DOCID_MAX)) {
+            err := sprintf("conflicting update in map_pid from ws %s", str(page_ws.find(DOCID_MAX)));
+            if (ws_log_active) ws_log(wsid, err);
+            ERROR(err);
+        }
+        page_ws.insert(DOCID_MAX,wsid);
     }
 
     # concurrency control: abort conflicting queries
@@ -2566,7 +2573,7 @@ PROC ws_precommit(BAT[void,BAT] ws,
     attr_ws.insert(reverse(modified_attr).project(wsid));
 
     if (ws_log_active)
-        ws_log(wsid, "ws_precommit: exec=" + str(usec() - ws_logtime)); 
+        ws_log(wsid, "ws_precommit: exec=" + str(usec() - ws_logtime));
 }
 
 PROC __ws_isolate(BAT[void,BAT] ws,
@@ -2698,7 +2705,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
     # if there is a free page, then this is easy
     var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     lock_set(coll_shortlock);
-    var page_id := 0@0, err := CATCH(page_id := __runtime_newpage(runtime));
+    var page_id := 0@0; err := CATCH(page_id := __runtime_newpage(runtime));
     lock_unset(coll_shortlock);
 
     if (isnil(err) and isnil(page_id)) {
@@ -3392,12 +3399,6 @@ PROC shred_doc_base(bit cleanup,
     var selidx_colname := idx_colnames;
     if (count(selidx_colname) > 0)
         selidx_colname := reverse(reverse(idx_colnames).kunique().sort());
-
-    # we now want .xml document names (in order for the HTTP doc access to work always)
-    var illegal := [or]([endsWith](idx_names, ".xml"), [endsWith](idx_names, ".XML")).select(false);
-    if (bit(count(illegal)))
-        ERROR("add-doc(%s): document name must end in .xml (%d such errors)!\n", 
-                                 illegal.fetch(0), count(illegal));
 
     lock_set(pf_short);
     err := CATCH(pivot := _shred_doc_base(selidx_colname, idx_names, idx_colnames, wsid));

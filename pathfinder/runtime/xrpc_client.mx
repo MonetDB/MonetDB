@@ -1215,7 +1215,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             "Content-Type: text/html; charset=\"utf-8\"\r\n"
             "Content-Length: " SZFMT "\r\n\r\n"
             "%s",
-            XRPCD_CALLBACK, dst, b->pos, b->buf);
+            XRPC_REQ_CALLBACK, dst, b->pos, b->buf);
     if (bytes_sent < b->pos) {
         GDKerror("CMDhttp_post: failed to send XRPC request.");
         clean_up(sock, out, bs, b, argcnt, iterc);

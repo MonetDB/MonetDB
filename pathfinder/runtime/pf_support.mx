@@ -2839,9 +2839,11 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     if (ws_log_active)
       ws_log(ws, "commit-reread exec" + str(ws_logtime - usec())); 
 
-    # ws_precommit gives an ERROR if a conflicting transaction has committed already
-    ws_precommit(ws, cont, sel_modified_page, sel_modified_attr);
-#     ws_precommit(ws, cont, sel_modified_page, sel_modified_attr, map_pid_changed);
+    # _ws_precommit gives an ERROR if a conflicting transaction has committed already
+    lock_set(pf_short);
+    var err := CATCH(_ws_precommit(ws, cont, sel_modified_page, sel_modified_attr, map_pid_changed));
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
   }
 
   var ws_logtime := usec();

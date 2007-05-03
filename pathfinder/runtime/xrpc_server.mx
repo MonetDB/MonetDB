@@ -167,8 +167,9 @@ Start XPRC receiver using the default values as specified in \
 #include "serialize.h"
 #include "shttpd.h"
 
-#define XRPCD_CALLBACK          "/xrpc"
-#define MXQ_ADMIN_CALLBACK      "/mxqadmin"
+#define XRPC_REQ_CALLBACK       "/xrpc"
+#define XRPC_DOC_CALLBACK       "/xrpc/doc"
+#define XRPC_ADM_CALLBACK       "/xrpc/admin"
 #define ERR403                  "403 Verbidden"
 #define ERR404                  "404 Bad Request"
 #define ERR500                  "500 Internal Server Error"
@@ -1174,6 +1175,10 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     lng **argcnt = NULL;
 
     lng time_xrpcServDeSeria = GDKusec();
+
+    /* skip callback identifier that directed us here */
+    uri += strlen(XRPC_DOC_CALLBACK);
+
     /* we don't always have the second '/' */
     if(uri[0] == '/') uri++;
     if(uri[0] == '\0'){
@@ -1258,12 +1263,12 @@ xrpc_client_engine(mapi_client *mc)
     struct shttpd_callback_arg *arg = (struct shttpd_callback_arg *) mc->arg;
     char *uri = shttpd_get_uri(arg);
 
-    if(strncmp(uri, XRPCD_CALLBACK, 5) == 0) {
-        (void) xrpc_handle_request(mc, arg);
-    } else if (strncmp(uri, MXQ_ADMIN_CALLBACK, 9) == 0) {
+    if (strncmp(uri, XRPC_ADM_CALLBACK, strlen(XRPC_ADM_CALLBACK)) == 0) {
         (void) xrpc_handle_admin_request(mc, arg);
-    } else { /* GET/PUT/DELETE file request */
-        (void) xrpc_handle_file_request(mc, arg);
+    } else if (strncmp(uri, XRPC_DOC_CALLBACK, strlen(XRPC_DOC_CALLBACK)) == 0) {
+        (void) xrpc_handle_file_request(mc, arg); /* GET/PUT/DELETE file request */
+    } else if (strncmp(uri, XRPC_REQ_CALLBACK, strlen(XRPC_REQ_CALLBACK)) == 0) {
+        (void) xrpc_handle_request(mc, arg);
     }
 
     /* clean up */
@@ -1336,10 +1341,9 @@ CMDrpcd_start(int *port, bit *open, str option)
         timing = 1;
 
     /* Register call back function, for XRPC (admin) requests, and XML (get/put/delete) file handling */
-    shttpd_register_url(XRPCD_CALLBACK,     xrpc_fork_mapiclient, NULL);
-    shttpd_register_url(MXQ_ADMIN_CALLBACK, xrpc_fork_mapiclient, NULL);
-    shttpd_register_url(".xml",             xrpc_fork_mapiclient, NULL);
-    shttpd_register_url(".XML",             xrpc_fork_mapiclient, NULL);
+    shttpd_register_url(XRPC_REQ_CALLBACK,  xrpc_fork_mapiclient, NULL);
+    shttpd_register_url(XRPC_DOC_CALLBACK,  xrpc_fork_mapiclient, NULL);
+    shttpd_register_url(XRPC_ADM_CALLBACK, xrpc_fork_mapiclient, NULL);
 
     /* get admin bats */
     if (xrpc_trusted == NULL)
