@@ -655,15 +655,15 @@ debugLifespan(MalBlkPtr mb)
 	int i;
 
 	for (i = 0; i < mb->vtop; i++) {
-		VarPtr v = getVar(mb, i);
-
 		if (isTmpVar(mb, i))
-			printf("%c%d ", TMPMARKER, v->tmpindex); 
+			printf("%c%d ", TMPMARKER, getVar(mb,i)->tmpindex); 
 		else
-			printf("%8s ", v->name);
-		printf("%d - %d  update %d scope= %d,%d\n", 
-			v->beginLifespan, v->endLifespan, 
-			v->lastUpdate, v->scope, v->depth);
+			printf("%8s ", getVar(mb,i)->name);
+		printf("%d - %d  update %d scope= %d\n", 
+			getBeginLifespan(mb,i),
+			getEndLifespan(mb,i),
+			getLastUpdate(mb,i),
+			getScope(mb,i));
 	}
 }
 void
@@ -710,11 +710,7 @@ At a block exit we can finalize some variables.
 			depth--;
 			for (j = 0; j < mb->vtop; j++) {
 				VarPtr v = getVar(mb, j);
-/*
-				printf("barrier pc %d var %d endLife %d scope %d blkId %d\n",
-						pc,p->argv[j], v->endLifespan, v->scope, blkId);
-*/
-				if( v->scope == blkId && v->endLifespan==0 )
+				if( v->scope == scopes[depth] )
 					v->endLifespan= pc;
 			}
 		}

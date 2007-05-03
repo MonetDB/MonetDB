@@ -452,6 +452,7 @@ for separate name space management.
 #define getLastUpdate(M,I)	((M)->var[I]->lastUpdate)
 #define getEndLifespan(M,I)	((M)->var[I]->endLifespan)
 #define getBeginLifespan(M,I)	((M)->var[I]->beginLifespan)
+#define getScope(M,I)	((M)->var[I]->scope)
 
 #define getDestVar(P)   (P)->argv[0]
 #define setDestVar(P,X)   (P)->argv[0]  =X
