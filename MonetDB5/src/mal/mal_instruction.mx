@@ -327,7 +327,6 @@ typedef struct VARRECORD {
 	bit isused;		/* in-out argument to function */
 	int tmpindex;		/* temporary variable */
 	short scope;		/* block id where it is declared */
-	short depth;		/* ... depth in nesting */
 	short beginLifespan, endLifespan, lastUpdate;	/* for optimizers */
 	PropertySet props;	/* private list of (name,value) pairs */
 	ValRecord value;
@@ -437,7 +436,6 @@ for separate name space management.
 #define getVarScope(M,I)   ((M)->var[I]->scope)
 #define getVarProperties(M,I)   ((M)->var[I]->props)
 
-#define getVarDepth(M,I)   ((M)->var[I]->depth)
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
 #define freezeVarType(M,I) getVar(M,I)->isudftype = 1;
 #define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
@@ -1427,7 +1425,6 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	w->isaconstant = v->isaconstant;
 	w->isatypevar = v->isatypevar;
 	w->tmpindex = v->tmpindex;
-	w->depth = v->depth;
 	w->scope = v->scope;
 
 	VALcopy(&w->value, &v->value);
@@ -1487,7 +1484,6 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->isaconstant = 0;
 	v->isatypevar = 0;
 	v->tmpindex = 0;
-	v->depth = 0;
 	v->scope = 0;
 
 	/* the above version is faster memset((char*)v, 0, sizeof(VarRecord)); */

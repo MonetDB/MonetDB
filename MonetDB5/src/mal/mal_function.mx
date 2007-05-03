@@ -801,16 +801,19 @@ errors in the declarations as well.
 Since in interactive mode each statement is handled separately,
 we have to remember the scope assigned to a variable.
 @c
+#define getDeclarePoint(I) decl[I]
 void chkDeclarations(MalBlkPtr mb,int reset){
 	int pc,i, k,l;
 	InstrPtr p;
 	short s, blks[MAXDEPTH], top= 0, blkId=1;
+	int *decl =(int*) alloca(sizeof(int) * mb->vtop);
 
+	memset((char*) decl, 0, sizeof(int) * mb->vtop);
 	blks[top] = 1;
 	blks[++top]= 0;
 	if( reset) 
 	for(i=0; i<mb->vtop; i++){
-		getVarDepth(mb,i)=0;
+		getDeclarePoint(i)=0;
 		getVarScope(mb,i)=0;
 		if( mb->var[i]->name == 0 && !isTmpVar(mb,i)){
 			showScriptException(mb,0,TYPE,"Name missing in variable %d",i);
@@ -822,7 +825,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	p= getInstrPtr(mb,0);
 	for(k=p->retc;k<p->argc; k++){
 		getVarScope(mb,p->argv[k])= 1;
-	    getVarDepth(mb,p->argv[k])= 0;
+	    getDeclarePoint(p->argv[k])= 0;
 	}
 	/* and the function name as well */
 	if( getFunctionId(p) == NULL){
@@ -847,7 +850,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 						getVarName(mb,l));
 						mb->errors++;
 			} else 
-			if( getVarDepth(mb,l) >= top){
+			if( getDeclarePoint(l) >= top){
 						showScriptException(mb,pc,TYPE,
 							"'%s' may not be used before being set",
 							getVarName(mb,l));
@@ -870,7 +873,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 				}
 				/* declare its scope */
 			    getVarScope(mb, l) = blks[top-1];
-			    getVarDepth(mb, l) = top-1;
+			    getDeclarePoint(l) = top-1;
 			} else {
 			    /* is the block still active ? */
 			    s = getVarScope(mb,l);
@@ -883,9 +886,9 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			        mb->errors++;
 			    }
 				/* declare its new scope */
-				if( getVarDepth(mb,l) > top -1){
+				if( getDeclarePoint(l) > top -1){
 					getVarScope(mb, l) = blks[top-1];
-					getVarDepth(mb, l) = top-1;
+					getDeclarePoint(l) = top-1;
 				}
 			}
 		}
