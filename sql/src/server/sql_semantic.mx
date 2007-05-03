@@ -1089,6 +1089,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 		return selects(sql, scp, s);
 
 	case SQL_CREATE_FUNC:
+	case SQL_CREATE_PROC:
 	case SQL_DROP_FUNC:
 	case SQL_DROP_PROC:
 	case SQL_DECLARE:

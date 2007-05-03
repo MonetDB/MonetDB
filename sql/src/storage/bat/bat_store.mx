@@ -1310,6 +1310,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	t->sql = *(bit *) bun_find(func_sql, lid);
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
 	t->res.type = NULL;
+	t->is_func = 0;
 	t->s = s;
 
 	args = BATselect(arg_func_id, (ptr) &t->base.id, (ptr) &t->base.id);
@@ -1331,6 +1332,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 			first = 0;
 			if (strcmp(a->name, "result") == 0) {
 				t -> res = a->type;
+				t->is_func = 1;
 				arg_destroy(a);
 			} else {
 				list_append(t->ops, a);
@@ -3049,6 +3051,7 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	}
 
 	f->s = s;
+	f->is_func = of->is_func;
 	return f;
 }
 
@@ -4482,6 +4485,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 				case INDEX_DEPENDENCY :
 							sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
 							break;
+				case PROC_DEPENDENCY :
 				case FUNC_DEPENDENCY :
 							sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
 							break;
@@ -4746,23 +4750,25 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sys_tab_func = find_sql_table(syss, "functions");
-	sql_table *sys_tab_args = find_sql_table(syss, "args");
 	sql_column *sys_func_col = find_sql_column(sys_tab_func, "id");
-	sql_column *sys_args_col = find_sql_column(sys_tab_args, "func_id");
 	ssize_t rid_func = column_find_row(tr, sys_func_col, &func->base.id, NULL);
-	ssize_t rid_args = column_find_row(tr, sys_args_col, &func->base.id, NULL);
+	if (func->aggr) {
+		sql_table *sys_tab_args = find_sql_table(syss, "args");
+		sql_column *sys_args_col = find_sql_column(sys_tab_args, "func_id");
+		ssize_t rid_args = column_find_row(tr, sys_args_col, &func->base.id, NULL);
+		assert(rid_args != -1);
+		table_delete(tr, sys_tab_args, rid_args);
+	}
 
 	assert(rid_func != -1);
-	assert(rid_args != -1);
 	table_delete(tr, sys_tab_func, rid_func);
-	table_delete(tr, sys_tab_args, rid_args);
 
 	sql_trans_drop_dependencies(tr, func->base.id);
 
 	tr->schema_updates ++;
 
 	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, syss, func->base.id, FUNC_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, syss, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 }
 
 static void
@@ -4848,7 +4854,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 }
 
 sql_func *
-sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit sql, bit aggr, char *mod, char *impl)
+sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit sql, bit aggr, char *mod, char *impl, int is_func)
 {
 	sql_func *t = NEW(sql_func);
 	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions");
@@ -4864,6 +4870,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->aggr = aggr;
 	t->ops = list_dup(args, (fdup)&arg_dup);
 	t->res.type = NULL;
+	t->is_func = is_func;
 	if (res)
 		t->res = *res;
 	t->s = s;

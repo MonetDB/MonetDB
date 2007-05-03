@@ -40,6 +40,7 @@ typedef enum tokens {
 	SQL_CREATE_ROLE,
 	SQL_CREATE_USER,
 	SQL_CREATE_TYPE,
+	SQL_CREATE_PROC,
 	SQL_CREATE_FUNC,
 	SQL_CREATE_SEQ,
 	SQL_CREATE_TRIGGER,
@@ -1723,7 +1724,7 @@ func_def:
 				append_symbol(f, NULL); /* no result */
 				append_string(f, NULL); /* no mil-impl */
 				append_list(f, $7);
-			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+			  $$ = _symbol_create_list( SQL_CREATE_PROC, f ); }
  ;
 
 routine_body:

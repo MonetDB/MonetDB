@@ -53,7 +53,8 @@
 #define INDEX_DEPENDENCY 10
 #define FKEY_DEPENDENCY 11
 #define TYPE_DEPENDENCY 11
-#define SEQ_DEPENDENCY 11
+#define SEQ_DEPENDENCY 12
+#define PROC_DEPENDENCY 13
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
@@ -229,6 +230,7 @@ typedef struct sql_func {
 	   example string concat
 	 */
 	int nr;
+	int is_func;
 	int sql;		/* 0 native implementation
 				   1 sql 
 				   2 sql instantiated proc 
@@ -515,7 +517,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
 
 extern node *find_sql_func_node(sql_schema * s, char *tname, int id);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);
-extern list *find_all_sql_func(sql_schema * s, char *tname);
+extern list *find_all_sql_func(sql_schema * s, char *tname, int is_func);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
 
 #endif /* SQL_CATALOG_H */

@@ -137,8 +137,7 @@ extern int mvc_release(mvc *c, char *name);
 extern sql_type *mvc_bind_type(mvc *sql, char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, char *name);
 extern sql_func *mvc_bind_func(mvc *sql, char *name);
-extern list *schema_bind_func(mvc *sql, sql_schema * s, char *name);
-extern sql_func *schema_bind_func_types(mvc *sql, sql_schema * s, char *name, list *typelist);
+extern list *schema_bind_func(mvc *sql, sql_schema * s, char *name, int is_func);
 
 extern sql_schema *mvc_bind_schema(mvc *c, char *sname);
 extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, char *tname);
@@ -150,7 +149,7 @@ extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
 extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
 
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, char *sqlname, int digits, int scale, int radix, char *impl);
-extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl);
+extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl, int is_func);
 extern void mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern void mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
@@ -721,9 +720,9 @@ mvc_bind_func(mvc *sql, char *name)
 }
 
 list *
-schema_bind_func(mvc *sql, sql_schema * s, char *name)
+schema_bind_func(mvc *sql, sql_schema * s, char *name, int is_func)
 {
-	list *func_list = find_all_sql_func(s, name);
+	list *func_list = find_all_sql_func(s, name, is_func);
 
 	(void) sql;
 	if (!func_list)
@@ -731,45 +730,6 @@ schema_bind_func(mvc *sql, sql_schema * s, char *name)
 	if (mvc_debug)
 		fprintf(stderr, "schema_bind_func %s\n", name);
 	return func_list;
-}
-
-sql_func *
-schema_bind_func_types(mvc *sql, sql_schema * s, char *name, list * typelist)
-{
-	list *func_list = find_all_sql_func(s, name);
-	sql_func * f = NULL;
-	sql_subtype arg_subtype;
-	node *npar = NULL, *narg = NULL;
-
-	(void) sql;
-	if (!func_list)
-		return NULL;
-	else {
-		f = (sql_func *) func_list->h->data;
-
-		if (f->ops->h)
-			narg = f->ops->h;
-
-		for (npar = typelist->h; npar; npar = npar->next) {
-			if (!narg)
-				return NULL;
-
-			arg_subtype = *(sql_subtype*) narg->data;
-
-			if (strcmp((char *) npar->data, arg_subtype.type->base.name) != 0)
-				return NULL;
-			
-			 narg = narg->next;
-		}
-		
-		if (npar || narg)
-			return NULL;
-	}
-	
-	if (mvc_debug)
-		fprintf(stderr, "schema_bind_func_types %s\n", name);
-	
-	return f;
 }
 
 sql_schema *
@@ -957,14 +917,14 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl)
+mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl, int is_func)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_func %s\n", name);
 
-	f = sql_trans_create_func(sql->session->tr, s, name, args, res, issql, aggr, mod, impl);
+	f = sql_trans_create_func(sql->session->tr, s, name, args, res, issql, aggr, mod, impl, is_func);
 	sql->type = Q_SCHEMA;
 	return f;
 }
