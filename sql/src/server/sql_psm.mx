@@ -29,7 +29,7 @@
 
 extern stmt *psm(mvc *sql, symbol *sym);
 
-extern stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *blk, char *opt_name);
+extern stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *blk, char *opt_name, int is_func);
 
 
 #endif /* _SQL_PSM_H_ */
@@ -178,7 +178,7 @@ psm_declare_table(mvc *sql, scope *scp, dnode *n)
    support for LEAVE and ITERATE (sql multi-level break and continue)
  */
 static stmt * 
-psm_while_do( mvc *sql, scope *scp, sql_subtype *res, dnode *w )
+psm_while_do( mvc *sql, scope *scp, sql_subtype *res, dnode *w, int is_func )
 {
 	if (!w)
 		return NULL;
@@ -188,7 +188,7 @@ psm_while_do( mvc *sql, scope *scp, sql_subtype *res, dnode *w )
 
 		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
 		n = n->next;
-		whilestmts = sequential_block(sql, scp, res, n->data.lval, n->next->data.sval);
+		whilestmts = sequential_block(sql, scp, res, n->data.lval, n->next->data.sval, is_func);
 
 		if (sql->session->status || !cond || !whilestmts) {
 			cond_stmt_destroy(cond);
@@ -207,7 +207,7 @@ psm_while_do( mvc *sql, scope *scp, sql_subtype *res, dnode *w )
    end if
  */
 static stmt * 
-psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif )
+psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif, int is_func)
 {
 	if (!elseif)
 		return NULL;
@@ -217,9 +217,9 @@ psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif )
 
 		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
 		n = n->next;
-		ifstmts = sequential_block(sql, scp, res, n->data.lval, NULL);
+		ifstmts = sequential_block(sql, scp, res, n->data.lval, NULL, is_func);
 		n = n->next;
-		elsestmts = psm_if_then_else( sql, scp, res, n);
+		elsestmts = psm_if_then_else( sql, scp, res, n, is_func);
 
 		if (sql->session->status || !cond || !ifstmts) {
 			cond_stmt_destroy(cond);
@@ -233,7 +233,7 @@ psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif )
 
 		if (e==NULL || (e->token != SQL_ELSE))
 			return NULL;
-		return sequential_block( sql, scp, res, e->data.lval, NULL);
+		return sequential_block( sql, scp, res, e->data.lval, NULL, is_func);
 	}
 }
 
@@ -252,7 +252,7 @@ psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif )
 	END CASE
  */
 static stmt * 
-psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
+psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when, int is_func )
 {
 	exp_kind ek = {type_value, card_value, FALSE};
 
@@ -271,7 +271,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 		if (!v)
 			return NULL;
 		if (else_statements) {
-			else_stmt = sequential_block( sql, scp, res, else_statements, NULL);
+			else_stmt = sequential_block( sql, scp, res, else_statements, NULL, is_func);
 			if (!else_stmt) {
 				stmt_destroy(v);
 				return NULL;
@@ -286,7 +286,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 
 			if (!when_value || 
 			   (cond = sql_compare(sql, scp, stmt_dup(v), when_value, "=", sql_sel)) == NULL || 
-			   (if_stmts = sequential_block( sql, scp, res, m->next->data.lval, NULL)) == NULL ) {
+			   (if_stmts = sequential_block( sql, scp, res, m->next->data.lval, NULL, is_func)) == NULL ) {
 				stmt_destroy(v);
 				cond_stmt_destroy(else_stmt);
 				cond_stmt_destroy(cond);
@@ -311,7 +311,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 		stmt *else_stmt = NULL, *cur_if = NULL, *top = NULL;
 
 		if (else_statements) {
-			else_stmt = sequential_block( sql, scp, res, else_statements, NULL);
+			else_stmt = sequential_block( sql, scp, res, else_statements, NULL, is_func);
 			if (!else_stmt) 
 				return NULL;
 		}
@@ -323,7 +323,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 			stmt *case_stmt = NULL;
 
 			if (!cond || 
-			   (if_stmts = sequential_block( sql, scp, res, m->next->data.lval, NULL)) == NULL ) {
+			   (if_stmts = sequential_block( sql, scp, res, m->next->data.lval, NULL, is_func)) == NULL ) {
 				cond_stmt_destroy(else_stmt);
 				cond_stmt_destroy(cond);
 				return NULL;
@@ -360,7 +360,7 @@ psm_return( mvc *sql, scope *scp, sql_subtype *restype, symbol *return_sym )
 }
 
 stmt *
-sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *opt_label) 
+sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *opt_label, int is_func) 
 {
 	list *l=0;
 	dnode *n;
@@ -382,21 +382,27 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 			res = psm_declare_table(sql, scp, s->data.lval->h);
 			break;
 		case SQL_WHILE:
-			res = psm_while_do(sql, scp, restype, s->data.lval->h);
+			res = psm_while_do(sql, scp, restype, s->data.lval->h, is_func);
 			break;
 		case SQL_IF:
-			res = psm_if_then_else(sql, scp, restype, s->data.lval->h);
+			res = psm_if_then_else(sql, scp, restype, s->data.lval->h, is_func);
 			break;
 		case SQL_CASE:
-			res = psm_case(sql, scp, restype, s->data.lval->h);
+			res = psm_case(sql, scp, restype, s->data.lval->h, is_func);
 			break;
 		case SQL_RETURN:
-			/* should be last statement of a sequential_block */
-			if (n->next) { 
+			/*If it is not a function it cannot have a return statement*/
+			if (!is_func)
 				res = sql_error(sql, 01, 
-					"Statement after return");
-			} else {
-				res =psm_return(sql, scp, restype, s->data.sym);
+					"Return statement in the procedure body");
+			else {
+				/* should be last statement of a sequential_block */
+				if (n->next) { 
+					res = sql_error(sql, 01, 
+						"Statement after return");
+				} else {
+					res =psm_return(sql, scp, restype, s->data.sym);
+				}
 			}
 			break;
 		case SQL_SELECT: { /* row selections (into variables) */
@@ -500,7 +506,7 @@ create_type_list(dlist *params, int param)
 }
 
 static stmt *
-create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body)
+create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int is_func)
 {
 	char *fname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -509,14 +515,16 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	dnode *n;
 	list *l = list_create((fdestroy) &arg_destroy), *type_list = NULL;
 	list *id_func_l = NULL, *id_col_l = NULL, *view_id_l = NULL;
-	sql_subtype *restype;
+	sql_subtype *restype = NULL;
 	int instantiate = (sql->mode == m_execute);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE FUNCTION: no such schema '%s'", sname);
 	if(s == NULL)
 		s = cur_schema(sql);
-	restype = result_type(sql, fname, res);
+
+	if (res)
+		restype = result_type(sql, fname, res);
 
 	if (params)
 		type_list = create_type_list(params, 1);
@@ -566,13 +574,15 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				char *q = QUERY(sql->scanner);
 				stmt *b = NULL;
 	
-				if (!(b = sequential_block(sql, NULL, restype, body, NULL ))) {
+				if (!(b = sequential_block(sql, NULL, restype, body, NULL, is_func))) {
 					return NULL;
 				}
 			
 				/* check if we have a return statement */
-				if (restype && !has_return(b)) 
+				if (is_func && restype && !has_return(b)) 
 					return sql_error(sql, 01, "Missing return statement");
+				if (!is_func && !restype && has_return(b)) 
+					return sql_error(sql, 01, "It is a procedure so it cannot have a return statement!!");
 	
 				/* in execute mode we instantiate the function */
 				if (instantiate) {
@@ -580,26 +590,26 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				} else {
 					sql_destroy_params(sql);
 
-					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, "user", q);
+					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, "user", q, is_func);
 					if (b) {
 						id_col_l = stmt_list_dependencies(b, COLUMN_DEPENDENCY);
 						id_func_l = stmt_list_dependencies(b, FUNC_DEPENDENCY);
 						view_id_l = stmt_list_dependencies(b, VIEW_DEPENDENCY);
 						
-						mvc_create_dependencies(sql, id_col_l, f->base.id, FUNC_DEPENDENCY);
-						mvc_create_dependencies(sql, id_func_l, f->base.id, FUNC_DEPENDENCY);
-						mvc_create_dependencies(sql, view_id_l, f->base.id, FUNC_DEPENDENCY);
+						mvc_create_dependencies(sql, id_col_l, f->base.id, f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+						mvc_create_dependencies(sql, id_func_l, f->base.id, f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+						mvc_create_dependencies(sql, view_id_l, f->base.id, f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 	
 						list_destroy(id_col_l);
 						list_destroy(id_func_l);
 						list_destroy(view_id_l);
+						stmt_destroy(b);
 					}
-					stmt_destroy(b);
 				}
 			} else {
 				char *fmod = qname_module(ext_name);
 				char *fnme = qname_fname(ext_name);
-				mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, fmod, fnme );
+				mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, fmod, fnme, is_func );
 			}
 		}
 	}
@@ -633,12 +643,12 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 			s = tmp_schema(sql);
 			sub_func = sql_bind_func_(s, name, type_list);
 		}
-		if (sub_func)
+		if ( sub_func && sub_func->func->is_func == is_func)
 			func = sub_func->func;
 	} else {
-		list_func = schema_bind_func(sql,s,name);
+		list_func = schema_bind_func(sql,s,name, is_func);
 		if (list_func && list_func->cnt > 1)
-			return sql_error(sql, 02, "DROP %s: there are more than one function called '%s', please use the full signature", F, name);
+			return sql_error(sql, 02, "DROP %s: there are more than one %s called '%s', please use the full signature", F, f,name);
 		if (list_func && list_func->cnt == 1)
 			func = (sql_func*) list_func->h->data;
 	}
@@ -683,7 +693,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	}
 	
 	
-	if (!drop_action && mvc_check_dependency(sql, func->base.id, FUNC_DEPENDENCY))
+	if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY))
 		return sql_error(sql, 02, "DROP %s: there are functions dependent on %s %s;", F, f, func->base.name);
 	
 	mvc_drop_func(sql, s, func, drop_action);
@@ -710,7 +720,7 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
 	if (s == NULL) 
 		s =  cur_schema(sql);
 	
-	list_func = schema_bind_func(sql,s,name);
+	list_func = schema_bind_func(sql,s,name, is_func);
 	
 	if (!list_func) { 
 			return sql_error(sql, 02, "DROP ALL %s: no such %s '%s'", F, f, name);
@@ -724,11 +734,8 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
 	for( n = list_func->h ; n; n = n->next) {
 		func = (sql_func *) n->data;
 
-		if (!drop_action && mvc_check_dependency(sql, func->base.id, FUNC_DEPENDENCY))
+		if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY))
 			return sql_error(sql, 02, "DROP %s: there are functions dependent on %s %s;", F, f, func->base.name);
-		if ((is_func && !func->res.type) || 
-		   (!is_func && func->res.type)) 
-			return sql_error(sql, 02, "DROP %s: cannot drop %s '%s'", F, is_func?"procedure":"function", name);
 	}
 		
 	mvc_drop_all_func(sql, s, list_func, drop_action);
@@ -745,11 +752,13 @@ psm(mvc *sql, symbol *s)
 
 	switch (s->token) {
 
+	case SQL_CREATE_PROC:
 	case SQL_CREATE_FUNC:
 	{
 		dlist *l = s->data.lval;
+		int is_func = (s->token == SQL_CREATE_FUNC);
 
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval);
+		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, is_func);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:
@@ -757,11 +766,12 @@ psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		int is_func = (s->token == SQL_DROP_FUNC);
-		
+
 		if (l->h->next->data.ival)
-	                ret = drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.ival, is_func);
+			drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.ival, is_func);
 		else
-	                ret = drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival, is_func);
+			drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival, is_func);
+
 		sql->type = Q_SCHEMA;
 	}	break;
 	case SQL_SET:

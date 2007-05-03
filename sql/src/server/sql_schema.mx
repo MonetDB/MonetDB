@@ -570,7 +570,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		trigger = mvc_create_trigger(sql, t, tname, time, orientation, 
 			event, old_name, new_name, condition, q);
 	}
-	sq = sequential_block(sql, scp, NULL, stmts, NULL);
+	sq = sequential_block(sql, scp, NULL, stmts, NULL, 1);
 	
 	if (sq && !instantiate) {
 		col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
