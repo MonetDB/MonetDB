@@ -2794,6 +2794,8 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
 
   var ws_logstarttime := usec(); # this timer is used assuming a single collection per query
 
+  var map_pid_changed_bat := new(oid, bit); # record which MAP_PID bats were updated
+
   # get the collection locks, re-read the master ancestor sizes, and check for conflicts (ws_precommit)
   cont_order@batloop() {
     var cont := $t;
@@ -2820,11 +2822,26 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     # we change modified_nid + ancestor_nid here; this info is later needed by ws_isolate()
     reverse(ancestor_nid).deleteBuns(del_ancestor_nid.tunique().project(cont));
 
+    # figure out whether we added or deleted pages
+    var map_pid := ws.fetch(MAP_PID).find(cont);
+    var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
+    # if lengths differ, there was a difference (he, he)
+    var map_pid_changed := count(map_pid) != count(map_pid_update);
+    if (not(map_pid_changed)) {
+      # same length, calculate difference (using -1 for nil)
+      map_pid := [ifthenelse]([isnil](map_pid),-1,[int](map_pid));
+      map_pid_update := [ifthenelse]([isnil](map_pid_update),-1,[int](map_pid_update));
+      # if number of 0 results differs from length of original, there was a difference
+      map_pid_changed := count([-](map_pid, map_pid_update).uselect(0)) != count(map_pid);
+    }
+    map_pid_changed_bat.insert(cont, map_pid_changed);
+
     if (ws_log_active)
       ws_log(ws, "commit-reread exec" + str(ws_logtime - usec())); 
 
     # ws_precommit gives an ERROR if a conflicting transaction has committed already
     ws_precommit(ws, cont, sel_modified_page, sel_modified_attr);
+#     ws_precommit(ws, cont, sel_modified_page, sel_modified_attr, map_pid_changed);
   }
 
   var ws_logtime := usec();
@@ -2834,7 +2851,7 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   if (ws_log_active) 
     ws_log(ws, "===================== WAL LOCKED wal_lock" + str(ws_logtime - (ws_logtime := usec()))); 
   log_trans_start(pf_logger);
-  var err := CATCH(do_log_updates(ws, cont_order));
+  var err := CATCH(do_log_updates(ws, cont_order, map_pid_changed_bat));
   lock_unset(pf_wal);
   if (not(isnil(err))) ERROR(err);
 
@@ -2863,7 +2880,7 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
       ws_log(ws, "commit-isolate exec" + str(ws_logtime - (ws_logtime := usec()))); 
 
     # apply the logged changes to the masters
-    pf_assert(CATCH(do_commit_updates(ws, cont)), "master update failed (commit_updates)");
+    pf_assert(CATCH(do_commit_updates(ws, cont, map_pid_changed_bat.find(cont))), "master update failed (commit_updates)");
 
     if (ws_log_active)
       ws_log(ws, "commit-apply exec" + str(ws_logtime - (ws_logtime := usec()))); 
@@ -2886,9 +2903,10 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   }
 }
 
-PROC do_commit_updates(BAT[void,bat] ws, oid cont) : void
+PROC do_commit_updates(BAT[void,bat] ws, oid cont, bit map_pid_changed) : void
 {
-  ws.fetch(_MAP_PID).find(cont).myupdate(ws.fetch(MAP_PID_UPDATE).find(cont));
+  if (map_pid_changed)
+    ws.fetch(_MAP_PID).find(cont).myupdate(ws.fetch(MAP_PID_UPDATE).find(cont));
   ws.fetch(_RID_SIZE).find(cont).myupdate(ws.fetch(RID_SIZE_UPDATE).find(cont));
   ws.fetch(_RID_LEVEL).find(cont).myupdate(ws.fetch(RID_LEVEL_UPDATE).find(cont));
   ws.fetch(_RID_KIND).find(cont).myupdate(ws.fetch(RID_KIND_UPDATE).find(cont));
@@ -2906,7 +2924,7 @@ PROC mylog_delta(logger l, BAT[any,any] b, str nme) : void
 b.col_name(nme).print();
 }
 
-PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
+PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order, BAT[oid,bit] map_pid_changed_bat) : void
 {
   var ws_logtime := usec(); 
 
@@ -2918,7 +2936,8 @@ PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order) : void
     var rid_kind := ws.fetch(_RID_KIND).find(cont);
     var rid_prop := ws.fetch(_RID_PROP).find(cont);
     var rid_nid := ws.fetch(_RID_NID).find(cont);
-    log_delta(pf_logger, ws.fetch(MAP_PID_UPDATE).find(cont), ws.fetch(_MAP_PID).find(cont).bbpname());
+    if (map_pid_changed_bat.find(cont))
+      log_delta(pf_logger, ws.fetch(MAP_PID_UPDATE).find(cont), ws.fetch(_MAP_PID).find(cont).bbpname());
     log_delta(pf_logger, ws.fetch(RID_SIZE_UPDATE).find(cont), rid_size.bbpname());
     log_delta(pf_logger, ws.fetch(RID_LEVEL_UPDATE).find(cont), rid_level.bbpname());
     log_delta(pf_logger, ws.fetch(RID_KIND_UPDATE).find(cont), rid_kind.bbpname());
