@@ -2043,10 +2043,8 @@ PROC myupdate(bat[any::1,any::2] oldbat, any::1 key, any::2 val) : bat[any::1,an
         x := oldbat.reverse().max().wrd();
       }
       var xkey := wrd(key);
-      var n := cast(nil, oldbat.ttype());
-      while (x < xkey) {
-        oldbat.append(n, true);
-        x :+= 1;
+      if (x < xkey) {
+        oldbat.append(densebat(wrd(xkey - x)).project(cast(nil, oldbat.ttype())), true);
       }
     }
     oldbat.replace(key, val, true);
@@ -2417,12 +2415,8 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     # we're not actually using the tail value here...
     update_hole := rid_size.reverse().select(newholefirst, newholelast).reverse();
     if (update_hole.count() < delta) {
-      var i := update_hole.count();
       update_hole := update_hole.copy().access(BAT_WRITE).key(true);
-      while (i < delta) {
-        update_hole := update_hole.append(int_nil);
-        i :+= 1;
-      }
+      update_hole := update_hole.append(densebat(wrd(delta - update_hole.count())).project(int_nil));
     }
     update_hole := [nilor]([-](update_hole.project(int(newholelast)), [int](update_hole.mirror())), int_nil);
 
