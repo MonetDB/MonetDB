@@ -211,7 +211,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	l = list_create((fdestroy) &arg_destroy);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, s, "db_users", l, &tpe, FALSE, FALSE, "sql", "db_users");
+	mvc_create_func(m, s, "db_users", l, &tpe, FALSE, FALSE, "sql", "db_users", 1);
 
 	t = mvc_create_view(m, s, "users",
 			"SELECT u.\"name\" AS \"name\", "
