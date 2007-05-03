@@ -2734,10 +2734,10 @@ PROC ws_newpage(BAT[void,BAT] ws,
             coll_lock_unset(ws, cont, COLL_SHORTLOCK, "ws_newpage", ws_logtime); 
 
             var pages_free := reverse(runtime.fetch(RT_LOCK_FREELIST));
-            var newpids := bat(void,oid);
             page_id := oid(new_pid);
-            while((new_pid :+= 1) < last_pid) newpids.append(oid(new_pid)); 
-            revert(newpids); # put in reverse order to give the pages out in order 
+            new_pid :+= 1;
+            # create a new [nil,oid] bat with densely descending tail values, ending at new_pid
+            var newpids := densebat(wrd(last_pid - new_pid)).seqbase(oid(new_pid)).reverse().seqbase(oid(nil)).access(BAT_WRITE).revert(); # put in reverse order to give the pages out in order 
 
             lock_set(pf_short);
             err := CATCH(_shredlock_unset(colname, wsid));
