@@ -731,7 +731,7 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 	while (n) {
 		sql_func *f = n->data;
 
-		if (!f->res.type)
+		if (f->is_func && !f->res.type)
 			continue;
 		if (strcmp(f->base.name, name) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
@@ -773,7 +773,7 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
 			sql_func *f = n->data;
 
-			if (!f->res.type)
+			if (f->is_func && !f->res.type)
 				continue;
 			if (strcmp(f->base.name, name) == 0) {
 				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
@@ -790,9 +790,11 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 						if (a && a->scale > scale)
 							scale = a->scale;
 					}
-					sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
-					if (f->res.comp_type) 
-						fres->res.comp_type = f->res.comp_type;
+					if (f->is_func) {
+						sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+						if (f->res.comp_type) 
+							fres->res.comp_type = f->res.comp_type;
+					}
 					return fres;
 				}
 			}
@@ -1114,10 +1116,13 @@ sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res)
 	t->imp = _strdup(imp);
 	t->mod = _strdup(mod);
 	t->ops = ops;
-	if (res)	
+	if (res) {	
 		t->res = *res;
-	else
+		t->is_func = 1;
+	} else {
 		t->res.type = NULL;
+		t->is_func = 0;
+	}
 	t->nr = list_length(funcs);
 	t->sql = 0;
 	t->aggr = 0;
@@ -1138,10 +1143,13 @@ sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res)
 	t->imp = _strdup(imp);
 	t->mod = _strdup("SQL");
 	t->ops = ops;
-	if (res)	
+	if (res) {	
 		t->res = *res;
-	else
+		t->is_func = 1;
+	} else {
 		t->res.type = NULL;
+		t->is_func = 0;
+	}
 	t->nr = list_length(funcs);
 	t->sql = 1;
 	list_append(funcs, t);
