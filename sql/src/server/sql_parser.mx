@@ -63,6 +63,7 @@ typedef enum tokens {
 	SQL_DROP_DEFAULT,
 	SQL_DECLARE,
 	SQL_SET,
+	SQL_CALL,
 	SQL_PREP,
 	SQL_NAME,
 	SQL_USER,
@@ -296,6 +297,7 @@ int yydebug=1;
 	control_statement
 	select_statement_single_row
 	call_statement
+	call_procedure_statement
 	routine_invocation
 	return_statement
 	return_value
@@ -716,6 +718,7 @@ sql:
  |  alter_statement
  |  declare_statement
  |  set_statement
+ |  call_procedure_statement
  ;
 
 declare_statement:
@@ -1790,7 +1793,8 @@ trigger_procedure_statement:
     ;
 
 control_statement:
-	call_statement
+	call_procedure_statement
+    |	call_statement
     |   while_statement
     |   if_statement
     |   case_statement
@@ -1810,6 +1814,10 @@ call_statement:
 	CALL routine_invocation 	{ $$ = $2; }
     ;
 
+call_procedure_statement:
+	CALL func_ref		 	{$$ = _symbol_create_symbol(SQL_CALL, $2);}
+    ;
+
 routine_invocation: 
 	routine_name '(' argument_list ')'
 		{ dlist *l = L(); 
@@ -1822,7 +1830,8 @@ routine_invocation:
 routine_name: qname ;
 
 argument_list:
-    scalar_exp 		{ $$ = append_symbol( L(), $1); }
+ /*empty*/		{$$ = L();}
+ |  scalar_exp 		{ $$ = append_symbol( L(), $1); }
  |  argument_list ',' scalar_exp
 			{ $$ = append_symbol( $1, $3); }
  ;

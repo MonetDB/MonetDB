@@ -1093,6 +1093,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_DROP_FUNC:
 	case SQL_DROP_PROC:
 	case SQL_DECLARE:
+	case SQL_CALL:
 	case SQL_SET:
 		return psm(sql, s);
 

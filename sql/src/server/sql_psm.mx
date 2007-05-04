@@ -42,6 +42,16 @@ extern stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *b
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 
+
+stmt*
+psm_call(mvc * sql, scope *scp, symbol *se)
+{
+	stmt *res = NULL;
+	exp_kind ek = {type_value, card_value, FALSE};
+	res = sql_value_exp(sql, scp, se, NULL, NULL, sql_sel, ek);
+	return res;
+}
+
 /* SET variable = value */
 
 static stmt *
@@ -389,6 +399,9 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 			break;
 		case SQL_CASE:
 			res = psm_case(sql, scp, restype, s->data.lval->h, is_func);
+			break;
+		case SQL_CALL:
+			res = psm_call(sql, scp, s->data.sym);
 			break;
 		case SQL_RETURN:
 			/*If it is not a function it cannot have a return statement*/
@@ -780,6 +793,10 @@ psm(mvc *sql, symbol *s)
 		break;
 	case SQL_DECLARE:
 		ret = psm_declare(sql, NULL, s->data.lval->h);
+		sql->type = Q_UPDATE;
+		break;
+	case SQL_CALL:
+		ret = psm_call(sql, NULL, s->data.sym);
 		sql->type = Q_UPDATE;
 		break;
 	default:
