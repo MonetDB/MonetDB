@@ -1,0 +1,37 @@
+#testing the BAT partition manager
+include sql;
+sql.start2();
+R := bat.new(:oid,:int);
+bat.append(R,1);
+bat.append(R,3);
+bat.append(R,5);
+bat.append(R,7);
+bat.append(R,11);
+
+function user.pr(Ra:bat[:any_1,:any_2]):void;
+barrier Rp:= bpm.newIterator(Ra);
+	io.print(Rp);
+	redo Rp:= bpm.hasMoreElements(Ra);
+exit Rp;
+end pr;
+
+# add the stuff to the BPM and dump it
+Ra:= bpm.deposit("sys_voyages_captain",R);
+user.pr(Ra);
+
+bpm.partition(Ra,6);
+#bpm.dump(Ra);
+#user.pr(Ra);
+
+function user.query();
+    t1:bat[:oid,:int]:= sql.bind("sys","t","i",0);
+    t11:= algebra.markT(t1,0@0);
+    t12:= bat.reverse(t11);
+    t13:= algebra.join(t12,t1);
+    t14 := sql.resultSet(1,1,t13);
+    sql.rsColumn(t14,"sys.t","i","int",32,0,t13);
+    sql.exportResult(t14,"");
+end query;
+optimizer.partitions("user","query");
+
+bpm.discard(Ra);
