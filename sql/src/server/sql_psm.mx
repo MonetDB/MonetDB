@@ -768,9 +768,9 @@ psm(mvc *sql, symbol *s)
 		int is_func = (s->token == SQL_DROP_FUNC);
 
 		if (l->h->next->data.ival)
-			drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.ival, is_func);
+			ret = drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.ival, is_func);
 		else
-			drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival, is_func);
+			ret = drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival, is_func);
 
 		sql->type = Q_SCHEMA;
 	}	break;
