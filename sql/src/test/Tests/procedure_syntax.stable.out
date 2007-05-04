@@ -62,6 +62,12 @@ Over..
 % varchar # type
 % 2 # length
 [ "p1"	]
+[ 1	]
+% sys.t1 # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
 % sys.functions # table_name
 % name # name
 % varchar # type

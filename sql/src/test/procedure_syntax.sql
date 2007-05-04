@@ -1,3 +1,5 @@
+create table t1 (id int);
+
 create PROCEDURE p1()
 BEGIN
 	declare id int;
@@ -6,8 +8,7 @@ END;
 
 create PROCEDURE p1(id int)
 BEGIN
-	declare id int;
-	set id = 0;
+	insert into t1 values(id);
 END;
 
 
@@ -44,16 +45,24 @@ DROP PROCEDURE p3 (int, varchar(1024));
 
 select name from functions where name = 'p1' or name = 'p2' or name = 'p3';
 
---to test the dependencies
---create PROCEDURE p1()
---BEGIN
---	declare id int;
---	set id = p1(1);
---END;
+create PROCEDURE p1()
+BEGIN
+	declare id int;
+	set id = 1;
+	call p1(1);
+END;
 
---DROP ALL PROCEDURE p1;
+call p1();
+
+select * from t1;
+
+DROP table t1;
+
+DROP ALL PROCEDURE p1;
 
 DROP ALL PROCEDURE p1 CASCADE;
+
+DROP table t1;
 
 select name from functions where name = 'p1' or name = 'f1';
 
