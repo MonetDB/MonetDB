@@ -102,6 +102,13 @@ extern PFns_t PFns_lib;
  */ 
 extern PFns_t PFns_tijah;
 
+#ifdef HAVE_PROBXML
+/**
+ * Pathfinder's namespace for additional pxml support functions (pxmlsup:...)
+ */
+extern PFns_t PFns_pxmlsup;
+#endif
+
 /** 
  * Pathfinder's own internal NS (pf:...).
  */ 

@@ -161,6 +161,14 @@ PFns_t PFns_lib = { .prefix = "pf",
 PFns_t PFns_tijah = { .prefix = "tijah",  
                       .uri    = "http://dbappl.cs.utwente.nl/pftijah/" };
 
+#ifdef HAVE_PROBXML
+/**
+ * Pathfinder's namespace for additional pxml support functions (pxmlsup:...)
+ */
+PFns_t PFns_pxmlsup = { .prefix = "pxmlsup",
+                        .uri    = "http://dbappl.cs.utwente.nl/pxmlsup/" };
+#endif
+
 /** 
  * Pathfinder's own internal NS (pf:...).
  * Note that the prefix contains a character that cannot be entered in
@@ -1003,6 +1011,9 @@ PFns_resolve (PFpnode_t *root)
     ns_add (PFns_local);
     ns_add (PFns_lib);
     ns_add (PFns_tijah);
+#ifdef HAVE_PROBXML
+    ns_add (PFns_pxmlsup);
+#endif
 
     /* bring the function and operator NS into scope
      * and make fn:... the default function NS

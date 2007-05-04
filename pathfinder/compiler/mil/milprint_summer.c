@@ -8584,6 +8584,33 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return rc;
     }
 #endif /* PFTIJAH */
+#ifdef HAVE_PROBXML
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"newid")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (rc == NORMAL)
+        {
+            assert (fun->sig_count == 1);
+            rc = get_kind(fun->sigs[0].ret_ty);
+            milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
+        }
+
+        char *item_ext = kind_str(rc);
+        type_co t_co = kind_container(rc);
+        milprintf(f,
+                  "if (ipik.count() != 0) { # fn:newid\n"
+                  "var res := iter.mark(oid(newid_counter)).[lng]();\n"
+                  "newid_counter := newid_counter + res.count();\n"
+        );
+
+        if (code) milprintf(f, "item%s := res;\n", item_ext);
+        else addValues (f, t_co, "res", "item");
+
+        item_ext = (code)?item_ext:"";
+        milprintf(f, "} # end of fn:newid\n");
+        return rc;
+    }
+#endif /* HAVE_PROBXML */
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
     milprintf(f,
                 "# empty intermediate result "
@@ -11289,6 +11316,9 @@ const char* PFinitMIL(void) {
 	"var tijah_score := new(void,dbl).seqbase(0@0);\n"
 	"var tijah_resultsz := new(lng,lng);\n"
 	"var tijah_lock  := lock_nil; # pftijah collection lock\n"
+#endif
+#ifdef HAVE_PROBXML
+   "var newid_counter := 1LL;\n"
 #endif
         "\n"
         "# value containers for literal values\n"
