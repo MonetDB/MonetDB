@@ -246,6 +246,14 @@ command rangePartition(pb:bat[:any_1,:any_2], pv:bat[:oid,:any_2]):void
 address BPMrangeVector
 comment "Create the partitions based on a range vector";
 
+command rangePartitionSort(pb:bat[:any_1,:any_2], pv:bat[:oid,:any_2]):void
+address BPMrangeVectorSort
+comment "Create the partitions based on a range vector";
+
+command sortPartitions(b:bat[:any_1,:any_2]):void
+address BPMsortPartitions
+comment "Sort all partitions of alias b on the tail";
+
 command partition(pb:bat[:any_1,:any_2], val:any_2):void
 address BPMsplitpartition
 comment "Split all partitions that cover the split value";
@@ -407,6 +415,8 @@ The internal data structure is used as a cache for improved access.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
+
+
 /* #define _DEBUG_BPM_ */
 
 #ifdef WIN32
@@ -427,6 +437,9 @@ bpm_export str BPMdeposit(bat *ret, str *nme, bat *src);
 bpm_export str BPMrange(bat *ret, bat *bid, ptr low, ptr hgh);
 bpm_export str BPMsplitpartition(bat *ret, bat *bid, ptr val);
 bpm_export str BPMrangeVector(bat *ret, bat *bid, bat *pv);
+bpm_export str BPMrangeVectorSort(bat *ret, bat *bid, bat *pv);
+bpm_export str BPMsortPartitions(int *ret, bat *bid);
+
 bpm_export str BPMaddPartition(bat *ret, str *nme, bat *src);
 bpm_export str BPMaddPartitionDim(bat *ret, str *nme, bat *src, ptr hl, ptr hh, ptr tl, ptr th);
 bpm_export str BPMhash(bat *ret, bat *bid, int *slots);
@@ -608,6 +621,21 @@ static void insertPartition(Partition parent, Partition new){
 	bpmcat[parent->nxt]->prv= new->bid;
 	parent->nxt= new->bid;
 }
+
+/*
+static void replacePartition(Partition p, int newbat){
+	int r;
+
+	BKCsetTransient(&r,&p->bid);
+	BBPdecref(p->bid,TRUE);
+	bpmcat[p->bid]= NULL;
+	bpmcat[newbat]= p;
+	p->bid= newbat;
+	BBPincref(newbat,TRUE);
+	bpmcat[p->prv]->nxt= newbat;
+	bpmcat[p->nxt]->prv= newbat;
+}
+*/
 
 @- Box administration
 The box currently does not carry any client protection yet.
@@ -839,7 +867,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	/* get target bat */
 	@:getBATdescriptor(src,b,"bpm.deposit")@
 
-	if( getByNumber(b->batCacheid) != 0){
+	if( getByNumber(ABS(b->batCacheid)) != 0){
 		BBPunfix(b->batCacheid);
 		throw(MAL,"pbm.deposit","Duplicate partitioned BAT");
 	}
@@ -866,6 +894,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	p->alias= pa->bid;
 	@:defaultRange(p,bn)@
 	insertPartition(pa,p);
+	p->cnt= BATcount(bn);
 	BBPkeepref(ba->batCacheid);
 	BBPkeepref(bn->batCacheid);
 	BBPincref(ba->batCacheid,TRUE);
@@ -1040,6 +1069,66 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 	*ret= 0;
 	return MAL_SUCCEED;
 }
+
+
+str
+BPMsortPartitions(int *ret, bat *bid)
+{
+	int i,r,nx;
+	Partition a, p;
+	str msg = MAL_SUCCEED;
+	BAT *b, *bs, *bn;
+
+	BPMopen();
+	if( (a= getAlias(*bid)) == 0)
+		throw(MAL,"bpm.sort","Can not alias BAT");
+	/* replace each partition with its sorted version */
+	for(i= a->nxt ;
+		i!= a->alias;
+		i= nx){
+		nx= bpmcat[i]->nxt;
+		
+		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitPartition");
+		if (!BATtordered(b)) { 
+		bs= BATsort(BATmirror(b));
+		bs = BATmirror(bs);
+                if (!(bs->batDirty&2)) bs = BATsetaccess(bs, BAT_READ);
+		bn= BATcopy(bs, bs->htype,bs->ttype,1);
+
+		p= newPartition(ABS(bn->batCacheid));
+		memcpy((char*) p, (char*) bpmcat[i],sizeof(PartitionRec));
+		p->bid= bn->batCacheid;
+		BBPincref(bn->batCacheid,TRUE);
+		bpmcat[p->prv]->nxt= p->bid;
+		bpmcat[p->nxt]->prv= p->bid;
+
+		BKCsetTransient(&r,&bpmcat[i]->bid);
+/*		BBPdecref(bpmcat[i]->bid,TRUE);*/
+		GDKfree(bpmcat[i]);
+		bpmcat[i]= NULL;
+	
+		BBPunfix(ABS(bs->batCacheid));
+		BBPunfix(bn->batCacheid);
+		}
+		BBPunfix(b->batCacheid);
+
+	}
+	*ret=0;
+	return msg;
+}
+
+
+str
+BPMrangeVectorSort(bat *ret, bat *bid, bat *pv)
+{	
+	str msg;
+	msg=BPMrangeVector(ret,bid,pv);
+	if (msg == MAL_SUCCEED)
+		msg=BPMsortPartitions(ret,bid);	
+	return msg;
+}
+
+
 
 str
 BPMaddPartition(bat *ret, str *nme, bat *src)
