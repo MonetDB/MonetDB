@@ -3,17 +3,18 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               module,     /* module namespace (logical) URL. Must match XQuery module definition! */
               moduleurl,  /* module (physical) at-hint URL. Module file must be here! */
               method,     /* method name (matches function name in module) */
+              arity,      /* arity of the method */
               call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
               callback)   /* callback function to call with the XML response */
 {
-    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,call), callback);
+    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call), callback);
 }
 
 /**********************************************************************
           functions to construct valid XRPC soap requests
  ***********************************************************************/
 
-function XRPC_REQUEST(module, moduleurl, method, body) {
+function XRPC_REQUEST(module, moduleurl, method, arity, body) {
     var r = '<?xml version="1.0" encoding="utf-8"?>\n' +
            '<env:Envelope ' +
            'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
@@ -23,8 +24,9 @@ function XRPC_REQUEST(module, moduleurl, method, body) {
            'xmlns:xs="http://www.w3.org/2001/XMLSchema">' +
            '<env:Body>' +
                '<xrpc:request xrpc:module="' + module + '" ' +
-                'xrpc:location="' + moduleurl + '" '+
-                'xrpc:method="' + method + '">' + 
+                'xrpc:location="' + moduleurl + '" ' +
+                'xrpc:method="' + method + '" ' +
+                'xrpc:arity="' + arity + '">' + 
            body 
            + '</xrpc:request></env:Body></env:Envelope>';
     return r;

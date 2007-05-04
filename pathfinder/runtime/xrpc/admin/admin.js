@@ -12,7 +12,9 @@ var mod     = "http://monetdb.cwi.nl/XQuery/admin/";
 var modurl  = href + "/admin/admin.xq";
 var posturl = href + "/xrpc/admin";
 
-function myXRPC(method,call,callback) { XRPC(posturl,mod,modurl,method,call,callback); }
+function myXRPC(method,arity,call,callback) {
+    XRPC(posturl,mod,modurl,method,arity,call,callback);
+}
 
 /**********************************************************************
           Callback functions of the admin functions in admin.xq
@@ -92,7 +94,7 @@ function doAllDocumentsCallback(response) {
         dTableBody += '<td>'+url+'</td>\n';
         dTableBody +=
             '<td>'+
-            '<input type="button" name="viewDoc" value="view" onclick="open(\'/'+docName+'\',\'_blank\',\'scrollbars=yes,resizable=yes,directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
+            '<input type="button" name="viewDoc" value="view" onclick="open(\'/xrpc/doc'+docName+'\',\'_blank\',\'scrollbars=yes,resizable=yes,directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
             '</td>\n';
         dTableBody +=
             '<td>'+
@@ -230,7 +232,7 @@ function doDbEnvCallback(response){
 }
 
 function doCollections()  { 
-    XRPC(posturl, mod, modurl, 'collections',  XRPC_CALL(), doCollectionsCallback); 
+    XRPC(posturl, mod, modurl, 'collections',  0, XRPC_CALL(), doCollectionsCallback); 
 }
 
 /* methods expected to take 'long' (use popup window) */
@@ -258,11 +260,11 @@ function reportCallback(response, method) {
 ***********************************************************************/
 
 function doDocuments(colName) 
-                          { myXRPC('documents', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', colName))), doDocumentsCallback); }
-function doAllDocuments() { myXRPC('documents', XRPC_CALL(), doAllDocumentsCallback); }
-function doDbStats()      { myXRPC('db-stats',     XRPC_CALL(), doDbStatsCallback); }
-function doDbEnv()        { myXRPC('db-env',       XRPC_CALL(), doDbEnvCallback); }
-function doDbRestart()    { myXRPC('db-restart',   XRPC_CALL(), reportCallback);  }
+                          { myXRPC('documents',  1, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', colName))), doDocumentsCallback); }
+function doAllDocuments() { myXRPC('documents',  0, XRPC_CALL(), doAllDocumentsCallback); }
+function doDbStats()      { myXRPC('db-stats',   0, XRPC_CALL(), doDbStatsCallback); }
+function doDbEnv()        { myXRPC('db-env',     0, XRPC_CALL(), doDbEnvCallback); }
+function doDbRestart()    { myXRPC('db-restart', 0, XRPC_CALL(), reportCallback);  }
 
 function doBackupCol()    { alert("Sorry, function doBackupCol() not implemented yet"); }
 function doRestoreCol()   { alert("Sorry, function doRestoreCol() not implemented yet"); }
@@ -272,27 +274,27 @@ function doAddDoc() {
     var name =  top.content.document.getElementById("newName").value;
     var col =   top.content.document.getElementById("newCol").value;
     var perct = top.content.document.getElementById("newFree").value;
-    myXRPC('add-doc', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', url)) +
-                                XRPC_SEQ(XRPC_ATOM('string', name)) +
-                                XRPC_SEQ(XRPC_ATOM('string', col)) +
-                                XRPC_SEQ(XRPC_ATOM('integer', perct))), doAddDocCallback);
+    myXRPC('add-doc', 4, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', url)) +
+                                   XRPC_SEQ(XRPC_ATOM('string', name)) +
+                                   XRPC_SEQ(XRPC_ATOM('string', col)) +
+                                   XRPC_SEQ(XRPC_ATOM('integer', perct))), doAddDocCallback);
     var dTable = top.content.document.getElementById("div1");
     dTable.innerHTML = dTable.innerHTML + '<b>Started shredding '+ url + '...</b>';
 }
 
 function doDelDoc(docName) {
     if (!window.confirm('Are you sure you want to delete the document "' + docName + '"?')) return;
-    myXRPC('del-doc', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', docName))), doDelDocCallback);
+    myXRPC('del-doc', 1, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', docName))), doDelDocCallback);
 }
 
 function doDelCol(colName) {
     if (!window.confirm('Are you sure you want to delete the collection "' + colName + '" and all documents in it?')) return;
-    myXRPC('del-col', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', colName))), doDelColCallback);
+    myXRPC('del-col', 1, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', colName))), doDelColCallback);
 }
 
 function doBackup(){
     var id = top.content.document.getElementById("ID").value;
-    myXRPC('backup', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', id))), doBackupCallback);
+    myXRPC('backup', 1, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', id))), doBackupCallback);
     top.content.document.getElementById("div1").innerHTML = "Backup in progress..";
 }
 
@@ -300,7 +302,7 @@ function doRestore(){
     var id =    top.content.document.getElementById("ID").value;
     var perct = top.content.document.getElementById("dfltFree").value;
 
-    myXRPC('restore', XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', id)) + 
+    myXRPC('restore', 2, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', id)) + 
                                 XRPC_SEQ(XRPC_ATOM('integer', perct))), doRestoreCallback);
     top.content.document.getElementById("div1").innerHTML = "Restore in progress..";
 }
