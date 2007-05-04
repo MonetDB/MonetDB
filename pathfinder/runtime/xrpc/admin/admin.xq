@@ -89,7 +89,7 @@ declare function admin:db-stats()
 { pf:mil('lock_set(pf_short); var ret := bat(str,str); var tot := 0LL; colname_runtime@batloop() tot :+= sum([batsize]($t)); ret.insert("xquery_index_curMB", str(tot/1048576LL)); tot := doc_timestamp.select(timestamp_nil,timestamp_nil).reverse(); ret.insert("xquery_cache_curdocs", str(count(tot))); tot := tot.join(doc_collection).tunique().reverse().join(collection_size).sum(); ret.insert("xquery_cache_curMB", str(tot/1048576LL)); ret.insert("xquery_log_curMB", str((logger_changes(pf_logger) - logger_base)/131072)); ret.insert("gdk_vm_cursize", str(vm_cursize())); ret.insert("gdk_mem_cursize", str(mem_cursize())); lock_unset(pf_short); return ret;') };
 
 declare function admin:db-env() 
-{ pf:mil('return environment().access(BAT_WRITE).delete("exec_prefix").delete("prefix").delete("gdk_debug").delete("gdk_embedded").delete("gdk_vm_minsize").delete("mapi_debug").delete("mapi_noheaders").delete("monet_daemon").delete("monet_mod_path").delete("monet_pid").delete("monet_prompt").delete("monet_welcome").delete("sql_debug").delete("sql_logdir").insert("gdk_mem_maxsize", str(mem_maxsize())).sort();') };
+{ pf:mil('return environment().copy().delete("exec_prefix").delete("prefix").delete("gdk_debug").delete("gdk_embedded").delete("gdk_vm_minsize").delete("mapi_debug").delete("mapi_noheaders").delete("monet_daemon").delete("monet_mod_path").delete("monet_pid").delete("monet_prompt").delete("monet_welcome").delete("sql_debug").delete("sql_logdir").insert("gdk_mem_maxsize", str(mem_maxsize())).sort();') };
 
 declare function admin:db-restart() 
 { pf:mil('fork({ sleep(5); exit();}); return "Mserver will restart in 5 seconds..";') };
