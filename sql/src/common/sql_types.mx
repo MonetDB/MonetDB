@@ -594,10 +594,10 @@ func_cmp(sql_func *f, char *name, int nrargs)
 			int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
 
-			_DELETE(name);
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
-			sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+			if (f->res.type)
+				sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
 			if (f->res.comp_type) 
 				fres->res.comp_type = f->res.comp_type;
 			return fres;
@@ -619,8 +619,10 @@ sql_find_func(sql_schema *s, char *sqlfname, int nrargs)
 
 		if (!f->res.type)
 			continue;
-		if ((fres = func_cmp(f, name, nrargs )) != NULL) 
+		if ((fres = func_cmp(f, name, nrargs )) != NULL) {
+			_DELETE(name);
 			return fres;
+		}
 	}
 	if (s) {
 		node *n;
@@ -630,8 +632,10 @@ sql_find_func(sql_schema *s, char *sqlfname, int nrargs)
 
 			if (f->aggr)
 				continue;
-			if ((fres = func_cmp(f, name, nrargs )) != NULL) 
+			if ((fres = func_cmp(f, name, nrargs )) != NULL) {
+				_DELETE(name);
 				return fres;
+			}
 		}
 	}
 	_DELETE(name);
