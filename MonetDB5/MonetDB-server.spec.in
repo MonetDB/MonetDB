@@ -101,6 +101,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/mguardian
 %{prefix}/bin/monetdb
 %{prefix}/bin/mrecover
+%{prefix}/bin/stethoscope
 
 %{_libdir}/*.so.*
 %{_libdir}/MonetDB5/lib/*.so.* 
