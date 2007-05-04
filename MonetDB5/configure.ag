@@ -26,7 +26,10 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE
+dnl We have filenames larger than 99 chars, so use ustar to allow up to
+dnl 256 characters.  tar-pax is too young, and might result in problems
+dnl on anchient systems.
+AM_INIT_AUTOMAKE([tar-ustar])
 AC_CONFIG_SRCDIR([src/mal/mal.mx])
 AM_CONFIG_HEADER(mal_config.h:conf/config.h.in)
 CONFIG_H=mal_config.h
