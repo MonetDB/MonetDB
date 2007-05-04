@@ -820,7 +820,7 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
 		sql_kc *c = o->data;
-		stmt *upd;
+		stmt *upd = NULL;
 
 		if (updates[c->c->colnr]) {
 			if(action == ACT_CASCADE) 
