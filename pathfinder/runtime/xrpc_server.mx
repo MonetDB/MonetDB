@@ -460,6 +460,7 @@ get_elem_pre_by_name(char *node_name,
  */
 static char *
 get_attr_val(stream *out,
+             int    optional,
              char  *attr_name,
              char  *ns,
              oid    pre,
@@ -485,7 +486,9 @@ get_attr_val(stream *out,
     BAT *qns = BATselect(qn_loc, attr_name, attr_name);
     BAT *nss = BATselect(qn_uri, ns, ns);
     BAT *match = BATkintersect(qns, nss);
-    if(BATcount(match) > 1){
+
+    i = BATcount(match);
+    if(i > 1){
         snprintf(err, len, "Invalid XRPC request message: multiple "
                 "definitions of attribute %s:%s\n", ns, attr_name);
         send_err(out, 1, ERR404, "env:Sender", err);
@@ -493,27 +496,31 @@ get_attr_val(stream *out,
         BBPreclaim(nss);
         BBPreclaim(match);
         return NULL;
-    }
-    qn = *(oid*) BUNhead(match, BUNfirst(match));
+    } else if (i == 1) {
+        qn = *(oid*) BUNhead(match, BUNfirst(match));
 
-    BBPreclaim(qns);
-    BBPreclaim(nss);
-    BBPreclaim(match);
+        BBPreclaim(qns);
+        BBPreclaim(nss);
+        BBPreclaim(match);
 
-    /* try to find the attribute value */
-    for (i = 0; i < nattrs; i++) {
-        if (attr_own[i] > pre) break;
-        if (attr_own[i] == pre && attr_qn[i] == qn) {
+        /* try to find the attribute value */
+        for (i = 0; i < nattrs; i++) {
+            if (attr_own[i] > pre) break;
+            if (attr_own[i] == pre && attr_qn[i] == qn) {
                 first = BUNindex(prop_val, BUNfirst(prop_val)) +
-                            attr_prop[i];
+                    attr_prop[i];
                 return (char*) BUNtail(prop_val,
-                                BUNptr(prop_val, first));
+                        BUNptr(prop_val, first));
+            }
         }
     }
 
-    snprintf(err, len, "Could not find attribute \"%s:%s\"",
-            ns, attr_name);
-    send_err(out, 1, ERR404, "env:Sender", err);
+    if(!optional) {
+        snprintf(err, len,
+                "Could not find required attribute \"%s:%s\"",
+                ns, attr_name);
+        send_err(out, 1, ERR404, "env:Sender", err);
+    }
     return NULL;
 }
 
@@ -584,19 +591,19 @@ getFunctionInfo(stream *out,
                 str *_method) {
     char *module = NULL, *location = NULL, *method = NULL;
 
-    if (!(module = get_attr_val(out, "module", XRPC_NS, pre, nattrs,
+    if (!(module = get_attr_val(out, 0, "module", XRPC_NS, pre, nattrs,
                     attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri,
                     prop_val)))
         return GDK_FAIL;
 
-    if (!(method = get_attr_val(out, "method", XRPC_NS, pre, nattrs,
+    if (!(method = get_attr_val(out, 0, "method", XRPC_NS, pre, nattrs,
                     attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri,
                     prop_val)))
         return GDK_FAIL;
 
-    if (!(location = get_attr_val(out, "location", XRPC_NS, pre, nattrs,
-                    attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri,
-                    prop_val)))
+    if (!(location = get_attr_val(out, 0, "location", XRPC_NS, pre,
+                    nattrs, attr_ownT, attr_qnT, attr_propT, qn_loc,
+                    qn_uri, prop_val)))
         return GDK_FAIL;
 
     *_module = module;
@@ -735,26 +742,31 @@ getCallValues(stream *out,
         return GDK_FAIL;
 
     char *val_ptr = NULL;
-    val_ptr = get_attr_val(out, "iter-count", XRPC_NS, pre, nattrs,
+    val_ptr = get_attr_val(out, 1, "iter-count", XRPC_NS, pre, nattrs,
             attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri, prop_val);
-    if(!val_ptr)
-        return GDK_FAIL;
-    iterc = my_strtoll(out, val_ptr, "iter-count");
-    if(iterc < 0 )
-        return GDK_FAIL;
-    i = count_node("call", XRPC_NS, pre+1, last_pre, pre_propT,
-            pre_kindT, qn_loc);
-    if (iterc != i) {
-        snprintf(errstr, 1024, "The value (%lld) of the attribute "
-                "\"iter-count\" does not match the number of \"call\" "
-                "nodes (%lld) in the request message", iterc, i);
-        send_err(out, 1, ERR404, "env:Sender", errstr);
-        return GDK_FAIL;
+    if(!val_ptr) {
+        /* the optional attribute "iter-count" is not available, so just
+         * count the number of "call" node */
+        iterc = count_node("call", XRPC_NS, pre+1, last_pre, pre_propT,
+                pre_kindT, qn_loc);
+    } else {
+        iterc = my_strtoll(out, val_ptr, "iter-count");
+        if(iterc < 0 )
+            return GDK_FAIL;
+        i = count_node("call", XRPC_NS, pre+1, last_pre, pre_propT,
+                pre_kindT, qn_loc);
+        if (iterc != i) {
+            snprintf(errstr, 1024, "The value (%lld) of the attribute "
+                    "\"iter-count\" does not match the number of \"call\" "
+                    "nodes (%lld) in the request message", iterc, i);
+            send_err(out, 1, ERR404, "env:Sender", errstr);
+            return GDK_FAIL;
+        }
     }
 
-    val_ptr = get_attr_val(out, "arity", XRPC_NS, pre, nattrs,
-                    attr_ownT, attr_qnT, attr_propT, qn_loc, qn_uri,
-                    prop_val);
+    val_ptr = get_attr_val(out, 0, "arity", XRPC_NS, pre, nattrs,
+                           attr_ownT, attr_qnT, attr_propT, qn_loc,
+                           qn_uri, prop_val);
     if(!val_ptr)
         return GDK_FAIL;
     argc = my_strtoll(out, val_ptr, "arity");
@@ -844,7 +856,7 @@ getCallValues(stream *out,
                 if(strcmp(argtpe[nr_args], "xrpc:atomic-value") == 0) {
                     GDKfree(argtpe[nr_args]); /* find sub-type of the
                                                  atomic-value */
-                    char *tptr = get_attr_val(out, "type", XSI_NS,
+                    char *tptr = get_attr_val(out, 0, "type", XSI_NS,
                                     tpe_node_pre, nattrs, attr_ownT,
                                     attr_qnT, attr_propT, qn_loc,
                                     qn_uri, prop_val);
