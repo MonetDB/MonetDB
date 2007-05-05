@@ -293,9 +293,8 @@ mal_export void mal_exit(void);
  * also moving the implementation there...
  */
 
-#define MALprofiler 1       /* activate the profiler */
-/* #undef MALprofiler*/
 
+#define MALprofiler 1       /* activate the profiler */
 
 /* Listing modes are globally known */
 #define LIST_INPUT      1       /* echo original input */

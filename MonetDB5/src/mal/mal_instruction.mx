@@ -750,19 +750,25 @@ copyMalBlk(MalBlkPtr old)
 
 void
 addtoMalBlkHistory(MalBlkPtr mb){
-	MalBlkPtr cpy;
+	MalBlkPtr cpy,h;
 	if( mb->keephistory){
 		cpy= copyMalBlk(mb);
-		cpy->alternative= NULL;
-		cpy->history= mb->history;
-		mb->history= cpy;
+		cpy->history= NULL;
+		if( mb->history== NULL)
+			mb->history= cpy;
+		else{
+			for( h= mb; h->history; h= h->history)
+				;
+			h->history= cpy;
+		}
 	}
 }
 MalBlkPtr
 getMalBlkHistory(MalBlkPtr mb, int idx){
-	while( mb && idx-- > 0)
-		mb= mb->history;
-	return mb;
+	MalBlkPtr h=mb;
+	while( h && idx-- >= 0)
+		h= h->history;
+	return h?h:mb;
 }
 @-
 The MalBlk structures potentially consume a lot a of space, because it
@@ -843,7 +849,7 @@ Using a resetMALblock makes the instructions available.
 void
 prepareMalBlk(MalBlkPtr mb, str s)
 {
-	int cnt = 0;
+	int cnt = STMT_INCREMENT;
 
 	while(s){
 		s= strchr(s,'\n');
@@ -2598,6 +2604,11 @@ printSignature(stream *fd, Symbol s, int flg)
 	GDKfree(txt);
 }
 
+@-
+For clarity we show the last optimizer applied
+also as the last of the list, although it is
+linked with mb.
+@c
 void showMalBlkHistory(MalBlkPtr mb)
 {
 	MalBlkPtr m=mb;
@@ -2606,6 +2617,7 @@ void showMalBlkHistory(MalBlkPtr mb)
 	str msg;
 
 	sig = getInstrPtr(mb,0);
+	m= m->history;
 	while(m){
 		p= getInstrPtr(m,m->stop-1);
 		if( p->token == REMsymbol){
@@ -2613,11 +2625,15 @@ void showMalBlkHistory(MalBlkPtr mb)
 			stream_printf(GDKout,"%s.%s[%2d] %s\n", 
 				getModuleId(sig), getFunctionId(sig),j++,msg+3);
 			GDKfree(msg);
-		} else {
-			stream_printf(GDKout,"%s.%s[%2d]\n", 
-				getModuleId(sig), getFunctionId(sig),j++);
-		}
+		} 
 		m= m->history;
 	}
+	p=getInstrPtr(mb,mb->stop-1);
+	if( p->token == REMsymbol){
+		msg= instruction2str(mb,p, FALSE);
+		stream_printf(GDKout,"%s.%s[%2d] %s\n", 
+			getModuleId(sig), getFunctionId(sig),j++,msg+3);
+			GDKfree(msg);
+		} 
 }
 @}

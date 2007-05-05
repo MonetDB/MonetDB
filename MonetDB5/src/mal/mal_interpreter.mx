@@ -198,7 +198,7 @@ prepareMALstack(MalBlkPtr mb){
 str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, 
 	   MalStkPtr env, InstrPtr pcicaller){
 	MalStkPtr stk= NULL;
-	int i,stkpc=0;
+	int i;
 	ValPtr lhs,rhs;
 	InstrPtr pci=getInstrPtr(mb,0);
 	str ret;
@@ -338,7 +338,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	int i;
 	ValPtr lhs,rhs;
 	InstrPtr pci= getInstrPtr(mb,0);
-	int stkpc=0;
 	@:performanceVariables@
 
 #ifdef DEBUG_CALLMAL
@@ -397,7 +396,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
 	ValPtr lhs,rhs,v;
-	int stkpc,i,k; 
+	int i,k; 
 	InstrPtr pci=0; 
 	int exceptionVar, exceptionPC;
 	str ret=0;
@@ -563,7 +562,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
 	ValPtr lhs,rhs,v;
-	int stkpc,i,k,n; 
+	int i,k,n; 
 	InstrPtr pci=0; 
 	int exceptionVar, exceptionPC;
 	str ret=0;
@@ -1519,6 +1518,7 @@ See @url{The MAL Profiler} for more details.
 @= performanceVariables
 #ifdef MALprofiler
 	lng newclk=0;
+	int stkpc=0;
 	int ppc= -1;
 #endif
 @= beginProfile
@@ -1526,8 +1526,7 @@ See @url{The MAL Profiler} for more details.
 	if( malProfileMode == 0)
 		/* mostly true */;
 	else {
-		if( mb->profiler == NULL)
-			setFilterOnBlock(mb, 0, 0);
+		setFilterOnBlock(mb, 0, 0);
 		if( mb->profiler != NULL && mb->profiler[stkpc].trace)
 		{
 			ppc= stkpc;

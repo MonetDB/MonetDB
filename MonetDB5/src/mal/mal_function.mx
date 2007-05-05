@@ -856,12 +856,10 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 							getVarName(mb,l));
 						mb->errors++;
 			}
-			assert( isTmpVar(mb,l) < mb->vtop);
 		}
 		/* introduce new variables or propagate them to lower depth */
 		for(k=0; k<p->retc; k++){
 			l= getArg(p,k);
-			assert( isTmpVar(mb,l) < mb->vtop);
 			if( getVarScope(mb, l) == 0){
 				/* variable has not been defined yet */
 				if( (p->barrier== RETURNsymbol || p->barrier== YIELDsymbol) &&

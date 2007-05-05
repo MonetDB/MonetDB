@@ -690,6 +690,10 @@ and marking all non-temporary variables as being (potentially) used.
 	}
 	resetMalBlk(prg->def,1);
 	MSresetVariables(prg->def, c->glb, 0);
+	if( prg->def->profiler){
+		GDKfree(prg->def->profiler);
+		prg->def->profiler= NULL;
+	}
 	prg->def->errors = 0;
 	return msg;
 }
