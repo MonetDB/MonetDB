@@ -1,0 +1,796 @@
+stdout of test 'delete_from_persistent_dense_BAT.SF-1713584` in directory 'tests/BugTracker` itself:
+
+
+# 23:24:06 >  
+# 23:24:06 >  Mtimeout -timeout 60 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/xquery_logs" --set mapi_port=33056 --set xrpc_port=49988 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  
+# 23:24:06 >  
+
+# Monet Database Server V4.17.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+var b,pd,td,p_,t_;
+b:=new(oid,void).rename("PD").persists(true);
+pd:=bat("PD");
+b:=new(oid,void).rename("TD");
+td:=bat("TD");
+b:=new(oid,void).rename("P_").persists(true);
+p_:=bat("P_");
+b:=new(oid,void).rename("T_");
+t_:=bat("T_");
+
+pd.insert(0@0,nil);
+pd.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+pd.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+pd.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+pd.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+pd.seqbase().print();
+[ 0@0 ]
+
+td.insert(0@0,nil);
+td.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+td.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+td.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+td.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+td.seqbase().print();
+[ 0@0 ]
+
+p_.insert(0@0,nil);
+p_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+p_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+p_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+p_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+p_.seqbase().print();
+[ 0@0 ]
+
+t_.insert(0@0,nil);
+t_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+t_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+t_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+t_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+t_.seqbase().print();
+[ 0@0 ]
+
+pd.insert(1@0,nil);
+pd.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+pd.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+pd.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+pd.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+pd.seqbase().print();
+[ 0@0 ]
+
+td.insert(1@0,nil);
+td.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+td.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+td.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+td.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+td.seqbase().print();
+[ 0@0 ]
+
+p_.insert(2@0,nil);
+p_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+p_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+p_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "1",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+p_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+p_.seqbase().print();
+[ 0@0 ]
+
+t_.insert(2@0,nil);
+t_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+t_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+t_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "1",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+t_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+t_.seqbase().print();
+[ 0@0 ]
+
+pd.insert(2@0,nil);
+pd.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+pd.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+pd.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+pd.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+pd.seqbase().print();
+[ 0@0 ]
+
+td.insert(2@0,nil);
+td.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+td.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+td.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+td.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+td.seqbase().print();
+[ 0@0 ]
+
+p_.insert(4@0,nil);
+p_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+[ 4@0,	  nil	  ]
+p_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+p_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "1",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+p_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+p_.seqbase().print();
+[ 0@0 ]
+
+t_.insert(4@0,nil);
+t_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+[ 4@0,	  nil	  ]
+t_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+t_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "1",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+t_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+t_.seqbase().print();
+[ 0@0 ]
+
+commit();
+
+pd.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+pd.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+pd.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+pd.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+pd.seqbase().print();
+[ 0@0 ]
+
+td.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+td.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+td.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+td.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+td.seqbase().print();
+[ 0@0 ]
+
+p_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+[ 4@0,	  nil	  ]
+p_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+p_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "1",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+p_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+p_.seqbase().print();
+[ 0@0 ]
+
+t_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+[ 4@0,	  nil	  ]
+t_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+t_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "1",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+t_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+t_.seqbase().print();
+[ 0@0 ]
+
+pd.delete(2@0);
+pd.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 1@0,	  nil	  ]
+[ 0@0,	  nil	  ]
+pd.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "0",	  "hsorted"		  ]
+[ "2",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "2",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+pd.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+pd.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+pd.seqbase().print();
+[ 0@0 ]
+
+td.delete(2@0);
+td.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+td.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+td.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "1",	  "hdense"	  ]
+[ "0",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+td.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+td.seqbase().print();
+[ 0@0 ]
+
+p_.delete(4@0);
+p_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 2@0,	  nil	  ]
+[ 0@0,	  nil	  ]
+p_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "0",	  "hsorted"		  ]
+[ "2",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "2",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+p_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "1",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+p_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+p_.seqbase().print();
+[ 0@0 ]
+
+t_.delete(4@0);
+t_.print();
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+t_.info().reverse().like("sorted").print();
+#---------------------------------#
+# h	t			  # name
+# str	str			  # type
+#---------------------------------#
+[ "65",	  "hsorted"		  ]
+[ "0",	  "hnosorted"		  ]
+[ "0",	  "hnosorted_rev"	  ]
+[ "65",	  "tsorted"		  ]
+[ "0",	  "tnosorted"		  ]
+[ "0",	  "tnosorted_rev"	  ]
+t_.info().reverse().like("dense").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0",	  "hdense"	  ]
+[ "1",	  "hnodense"	  ]
+[ "0",	  "tdense"	  ]
+[ "0",	  "tnodense"	  ]
+t_.info().reverse().like("seqbase").print();
+#-------------------------#
+# h	t		  # name
+# str	str		  # type
+#-------------------------#
+[ "0@0",  "hseqbase"	  ]
+[ "nil",  "tseqbase"	  ]
+t_.seqbase().print();
+[ 0@0 ]
+
+pd.persists(false);
+td.persists(false);
+p_.persists(false);
+t_.persists(false);
+
+commit();
+
+quit();
+
+# 23:24:06 >  
+# 23:24:06 >  Done.
+# 23:24:06 >  
+
