@@ -884,10 +884,10 @@ tst400e		 0.361/0.320/0.036	1M incr fcn		 +9/  0/+12 ms
 
 tst901a		 0.532/0.369/0.160	[+] call		+62/-16/+80 ms
 tst901b		 1.853/1.580/0.268	[+] call   		+76/-12/+92 ms
-======================== 2 April May 2007 ===================
+======================== 2 April 2007 ===================
 Setup on Gio version 5.0-beta2 kernel, 
 Athlon 64 3000+ converted to X2 3800
-The compilation mode for V5 is --enable-optimize --disable-debug
+The compilation mode for V5 is ???
 
 command: time Mserver -c perf.conf TST </dev/null >/dev/null
 		gio( load 0)		 
@@ -901,3 +901,76 @@ tst400e		 0.361/0.320/0.036	1M incr fcn		 +9/  0/+12 ms
 
 tst901a		 0.532/0.369/0.160	[+] call		+62/-16/+80 ms
 tst901b		 1.853/1.580/0.268	[+] call   		+76/-12/+92 ms
+======================== 3 May 2007 ===================
+Setup on Gio version 5.0-beta2 kernel, 
+Athlon 64 3000+ converted to X2 3800
+The compilation mode for V5 is --disable-optimize --enable-debug
+Without the BATsettrv
+
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		gio( load 0)		 
+		MonetDB 5							
+base		 0.175/0.113/0.057					
+tst400a		 0.404/0.356/0.047	1M loop			
+tst400bHuge	 0.824/0.704/0.084	100k count (io)	
+tst400cHuge	 1.026/0.946/0.079	100k insert(io) 
+tst400d		 1.568/1.397/0.170	1M insert tuple 
+tst400e		 1.415/1.373/0.033	1M incr fcn	
+
+tst901a		 1.636/1.468/0.168	[+] call
+tst901b		 3.578/3.354/0.221	[+] call
+======================== 3 May 2007 ===================
+Setup on Gio version 5.0-beta2 kernel, 
+Athlon 64 3000+ converted to X2 3800
+The compilation mode for V5 is --disable-optimize --enable-debug
+After addition of the BATsettrv
+
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		gio( load 0)		 
+		MonetDB 5							
+base		 0.187/0.131/0.052					
+tst400a		 0.401/0.357/0.044	1M loop			
+tst400bHuge	 0.765/0.683/0.079	100k count (io)	
+tst400cHuge	 1.077/0.984/0.084	100k insert(io) 
+tst400d		 1.302/1.160/0.137	1M insert tuple 
+tst400e		 1.466/1.396/0.050	1M incr fcn	
+
+tst901a		 1.637/1.505/0.162	[+] call
+tst901b		 3.949/3.680/0.229	[+] call
+======================== 4 May 2007 ===================
+Setup on Gio version 5.0-beta2 kernel, 
+Athlon 64 3000+ converted to X2 3800
+The compilation mode for V5 is --enable-optimize --disable-debug
+After addition of the BATsettrv
+
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		gio( load 0)		 
+		MonetDB 5							
+base		 0.135/0.090/0.044					
+tst400a		 0.221/0.177/0.027	1M loop			
+tst400bHuge	 0.421/0.331/0.065	100k count (io)	
+tst400cHuge	 0.491/0.408/0.081	100k insert(io) 
+tst400d		 0.742/0.558/0.168	1M insert tuple 
+tst400e		 0.732/0.684/0.030	1M incr fcn	
+
+tst901a		 0.965/0.741/0.194	[+] call
+tst901b		 1.463/1.255/0.158	[+] call
+======================== 4 May 2007 ===================
+Setup on Gio version 5.0-beta2 kernel, 
+Athlon 64 3000+ converted to X2 3800
+The compilation mode for V5 is --enable-optimize --disable-debug
+After deletion of the BATsettrv
+
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		gio( load 0)		 
+		MonetDB 5							
+base		 0.135/0.090/0.044					
+tst400a		 0.221/0.177/0.027	1M loop			
+tst400bHuge	 0.440/0.347/0.073	100k count (io)	
+tst400cHuge	 0.540/0.440/0.091	100k insert(io) 
+tst400d		 0.779/0.558/0.189	1M insert tuple 
+tst400e		 0.732/0.681/0.037	1M incr fcn	
+
+tst901a		 0.912/0.710/0.222	[+] call
+tst901b		 2.518/2.212/0.265	[+] call
+Conclusion, so far no big difference wrt settrivial properties
