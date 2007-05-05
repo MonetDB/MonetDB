@@ -66,12 +66,12 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	} 
 	if( mb->errors )
 		return MAL_SUCCEED;
-	addtoMalBlkHistory(mb);
 	actions= OPT@1Implementation(mb,stk,p);
 #ifdef _DEBUG_OPTIMIZER_
 	stream_printf(GDKout,"finished @1 %d\n",actions);
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
     optimizerCheck(mb, "optimizer.@1", actions, GDKusec() - clk,@2);
+	addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;
 }
