@@ -56,6 +56,7 @@ EOF
 
 REQ_AM_VERSION="1.5"
 NEW_AM_VERSION="1.7"
+TAR_AM_VERSION="1.9"
 if [ ! "`type -p automake`" ]; then
 	echo "no automake found." >&2
 	echo "We require (at least) automake $REQ_AM_VERSION." >&2
@@ -66,6 +67,7 @@ AM_VERSION=`automake --version 2>/dev/null | sed -n -e '/^automake/{s/.* //g;s/-
 _AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _NEW_AM_VERSION=`echo $NEW_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+_TAR_AM_VERSION=`echo $TAR_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
 if [ "$_AM_VERSION" -ge "$_NEW_AM_VERSION" ]; then
 	echo "automake $AM_VERSION is $NEW_AM_VERSION or newer. Good."
@@ -177,7 +179,13 @@ fi
 
 aclocal -I . -I conf $LT_M4_DIR $PKG_M4_DIR $CONFDIR || exit 1
 
-# patch aclocal.m4 to "de-force" Uninx V7 tar format with `make dist`,
+if [ "$_AM_VERSION" -lt "$_TAR_AM_VERSION" ]; then
+	# automake < 1.9 does not yet support option "tar-ustar";
+	# hence, we omit it and rely on the patch below.
+	perl -i -p -e 's|tar-ustar||' configure.in
+fi
+# in case we do / can not (yet) use AM_INIT_AUTOMAKE([tar-ustar]):
+# patch aclocal.m4 to "de-force" Unix V7 tar format with `make dist`,
 # since we do have filenames/-paths longer than 99 characters.
 perl -i -p -e 's| chof | chf |g' aclocal.m4
 
