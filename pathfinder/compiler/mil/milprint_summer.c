@@ -2351,7 +2351,7 @@ castQName (opt_t *f, int rc)
             "var prop_name := ws.fetch(QN_PREFIX_URI_LOC).fetch(WS);\n"
 
             /* find all strings which are not in the qnames of the WS */
-            "var oid_str_ := [+](NS_ACCEL_SEP, oid_str);\n"
+            "var oid_str_ := [+](NS_ACCEL_SEP+NS_ACCEL_SEP, oid_str);\n"
             "oid_str_ := oid_str_.tdiff(prop_name);\n"
             "oid_str := oid_str.fetch(oid_str_).tmark(0@0);\n"
             "oid_str_ := nil;\n"
