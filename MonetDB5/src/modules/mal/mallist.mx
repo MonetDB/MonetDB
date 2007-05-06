@@ -29,6 +29,10 @@ pattern append(l:list,v:any_1):list
 address MALLISTappend
 comment "Append an element to a list";
 
+pattern glue(l:list):any_1
+address MALLISTglue
+comment "Drop the list elements";
+
 pattern drop(l:list):void
 address MALLISTdrop
 comment "Drop the list elements";
@@ -82,6 +86,14 @@ MALLISTappend(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 str 
 MALLISTdrop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+str 
+MALLISTglue(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;

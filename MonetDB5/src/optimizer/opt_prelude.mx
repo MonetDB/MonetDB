@@ -109,6 +109,7 @@ opt_export  str streamsRef;
 opt_export  str sumRef;
 opt_export  str sunionRef;
 opt_export  str unionRef;
+opt_export  str takeRef;
 opt_export  str tuniqueRef;
 opt_export  str uselectRef;
 opt_export  str unpackRef;
@@ -208,6 +209,7 @@ str streamsRef;
 str sumRef;
 str sunionRef;
 str unionRef;
+str takeRef;
 str tuniqueRef;
 str uselectRef;
 str unpackRef;
@@ -305,5 +307,6 @@ void optimizerInit(){
 		unsafeRef = putName("unsafe",6);
 		sunionRef= putName("sunion",6);
 		unionRef= putName("union",5);
+		takeRef= putName("take",5);
 	}
 }

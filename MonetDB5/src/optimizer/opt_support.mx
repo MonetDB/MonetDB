@@ -1085,6 +1085,6 @@ int isFragmentGroup(InstrPtr p){
 			(getModuleId(p)== batRef && getFunctionId(p)== setAccessRef) ||
 			(getModuleId(p)== batRef && getFunctionId(p)== appendRef)  ||
 			(getModuleId(p)== batRef && getFunctionId(p)== deleteRef)  ||
-			getModuleId(p)== calcRef ;
+			getModuleId(p) == batcalcRef ;
 }
 @}
