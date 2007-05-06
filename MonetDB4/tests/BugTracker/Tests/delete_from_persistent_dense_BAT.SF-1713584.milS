@@ -1,156 +1,191 @@
-var b,pd,td,p_,t_;
-b:=new(oid,void).rename("PD").persists(true);
-pd:=bat("PD");
-b:=new(oid,void).rename("TD");
-td:=bat("TD");
-b:=new(oid,void).rename("P_").persists(true);
-p_:=bat("P_");
-b:=new(oid,void).rename("T_");
-t_:=bat("T_");
+var b;
 
-pd.insert(0@0,nil);
-pd.print();
-pd.info().reverse().like("sorted").print();
-pd.info().reverse().like("dense").print();
-pd.info().reverse().like("seqbase").print();
-pd.seqbase().print();
+# FAILS: committed persistent dense BAT
 
-td.insert(0@0,nil);
-td.print();
-td.info().reverse().like("sorted").print();
-td.info().reverse().like("dense").print();
-td.info().reverse().like("seqbase").print();
-td.seqbase().print();
+var cpd;
+b:=new(oid,void).rename("CPD").persists(true);
+cpd:=bat("CPD");
+b := nil;
 
-p_.insert(0@0,nil);
-p_.print();
-p_.info().reverse().like("sorted").print();
-p_.info().reverse().like("dense").print();
-p_.info().reverse().like("seqbase").print();
-p_.seqbase().print();
+cpd.insert(0@0,nil);
+cpd.print();
+cpd.info().reverse().like("sorted").print();
+cpd.info().reverse().like("dense").print();
+cpd.info().reverse().like("seqbase").print();
+cpd.seqbase().print();
 
-t_.insert(0@0,nil);
-t_.print();
-t_.info().reverse().like("sorted").print();
-t_.info().reverse().like("dense").print();
-t_.info().reverse().like("seqbase").print();
-t_.seqbase().print();
+cpd.insert(1@0,nil);
+cpd.print();
+cpd.info().reverse().like("sorted").print();
+cpd.info().reverse().like("dense").print();
+cpd.info().reverse().like("seqbase").print();
+cpd.seqbase().print();
 
-pd.insert(1@0,nil);
-pd.print();
-pd.info().reverse().like("sorted").print();
-pd.info().reverse().like("dense").print();
-pd.info().reverse().like("seqbase").print();
-pd.seqbase().print();
-
-td.insert(1@0,nil);
-td.print();
-td.info().reverse().like("sorted").print();
-td.info().reverse().like("dense").print();
-td.info().reverse().like("seqbase").print();
-td.seqbase().print();
-
-p_.insert(2@0,nil);
-p_.print();
-p_.info().reverse().like("sorted").print();
-p_.info().reverse().like("dense").print();
-p_.info().reverse().like("seqbase").print();
-p_.seqbase().print();
-
-t_.insert(2@0,nil);
-t_.print();
-t_.info().reverse().like("sorted").print();
-t_.info().reverse().like("dense").print();
-t_.info().reverse().like("seqbase").print();
-t_.seqbase().print();
-
-pd.insert(2@0,nil);
-pd.print();
-pd.info().reverse().like("sorted").print();
-pd.info().reverse().like("dense").print();
-pd.info().reverse().like("seqbase").print();
-pd.seqbase().print();
-
-td.insert(2@0,nil);
-td.print();
-td.info().reverse().like("sorted").print();
-td.info().reverse().like("dense").print();
-td.info().reverse().like("seqbase").print();
-td.seqbase().print();
-
-p_.insert(4@0,nil);
-p_.print();
-p_.info().reverse().like("sorted").print();
-p_.info().reverse().like("dense").print();
-p_.info().reverse().like("seqbase").print();
-p_.seqbase().print();
-
-t_.insert(4@0,nil);
-t_.print();
-t_.info().reverse().like("sorted").print();
-t_.info().reverse().like("dense").print();
-t_.info().reverse().like("seqbase").print();
-t_.seqbase().print();
+cpd.insert(2@0,nil);
+cpd.print();
+cpd.info().reverse().like("sorted").print();
+cpd.info().reverse().like("dense").print();
+cpd.info().reverse().like("seqbase").print();
+cpd.seqbase().print();
 
 commit();
 
-pd.print();
-pd.info().reverse().like("sorted").print();
-pd.info().reverse().like("dense").print();
-pd.info().reverse().like("seqbase").print();
-pd.seqbase().print();
+cpd.print();
+cpd.info().reverse().like("sorted").print();
+cpd.info().reverse().like("dense").print();
+cpd.info().reverse().like("seqbase").print();
+cpd.seqbase().print();
 
-td.print();
-td.info().reverse().like("sorted").print();
-td.info().reverse().like("dense").print();
-td.info().reverse().like("seqbase").print();
-td.seqbase().print();
+cpd.delete(2@0);
+cpd.print();
+cpd.info().reverse().like("sorted").print();
+cpd.info().reverse().like("dense").print();
+cpd.info().reverse().like("seqbase").print();
+cpd.seqbase().print();
 
-p_.print();
-p_.info().reverse().like("sorted").print();
-p_.info().reverse().like("dense").print();
-p_.info().reverse().like("seqbase").print();
-p_.seqbase().print();
+cpd.persists(false);
+commit();
+cpd := nil;
 
-t_.print();
-t_.info().reverse().like("sorted").print();
-t_.info().reverse().like("dense").print();
-t_.info().reverse().like("seqbase").print();
-t_.seqbase().print();
+# works: non-committed persistent dense BAT
 
-pd.delete(2@0);
-pd.print();
-pd.info().reverse().like("sorted").print();
-pd.info().reverse().like("dense").print();
-pd.info().reverse().like("seqbase").print();
-pd.seqbase().print();
+var _pd;
+b:=new(oid,void).rename("_PD").persists(true);
+_pd:=bat("_PD");
+b := nil;
 
-td.delete(2@0);
-td.print();
-td.info().reverse().like("sorted").print();
-td.info().reverse().like("dense").print();
-td.info().reverse().like("seqbase").print();
-td.seqbase().print();
+_pd.insert(0@0,nil);
+_pd.print();
+_pd.info().reverse().like("sorted").print();
+_pd.info().reverse().like("dense").print();
+_pd.info().reverse().like("seqbase").print();
+_pd.seqbase().print();
 
-p_.delete(4@0);
-p_.print();
-p_.info().reverse().like("sorted").print();
-p_.info().reverse().like("dense").print();
-p_.info().reverse().like("seqbase").print();
-p_.seqbase().print();
+_pd.insert(1@0,nil);
+_pd.print();
+_pd.info().reverse().like("sorted").print();
+_pd.info().reverse().like("dense").print();
+_pd.info().reverse().like("seqbase").print();
+_pd.seqbase().print();
 
-t_.delete(4@0);
-t_.print();
-t_.info().reverse().like("sorted").print();
-t_.info().reverse().like("dense").print();
-t_.info().reverse().like("seqbase").print();
-t_.seqbase().print();
+_pd.insert(2@0,nil);
+_pd.print();
+_pd.info().reverse().like("sorted").print();
+_pd.info().reverse().like("dense").print();
+_pd.info().reverse().like("seqbase").print();
+_pd.seqbase().print();
 
-pd.persists(false);
-td.persists(false);
-p_.persists(false);
-t_.persists(false);
+#commit();
+
+_pd.print();
+_pd.info().reverse().like("sorted").print();
+_pd.info().reverse().like("dense").print();
+_pd.info().reverse().like("seqbase").print();
+_pd.seqbase().print();
+
+_pd.delete(2@0);
+_pd.print();
+_pd.info().reverse().like("sorted").print();
+_pd.info().reverse().like("dense").print();
+_pd.info().reverse().like("seqbase").print();
+_pd.seqbase().print();
+
+_pd.persists(false);
+commit();
+_pd := nil;
+
+# works: committed non-persistent dense BAT
+
+var c_d;
+b:=new(oid,void).rename("C_D"); #.persists(true);
+c_d:=bat("C_D");
+b := nil;
+
+c_d.insert(0@0,nil);
+c_d.print();
+c_d.info().reverse().like("sorted").print();
+c_d.info().reverse().like("dense").print();
+c_d.info().reverse().like("seqbase").print();
+c_d.seqbase().print();
+
+c_d.insert(1@0,nil);
+c_d.print();
+c_d.info().reverse().like("sorted").print();
+c_d.info().reverse().like("dense").print();
+c_d.info().reverse().like("seqbase").print();
+c_d.seqbase().print();
+
+c_d.insert(2@0,nil);
+c_d.print();
+c_d.info().reverse().like("sorted").print();
+c_d.info().reverse().like("dense").print();
+c_d.info().reverse().like("seqbase").print();
+c_d.seqbase().print();
 
 commit();
+
+c_d.print();
+c_d.info().reverse().like("sorted").print();
+c_d.info().reverse().like("dense").print();
+c_d.info().reverse().like("seqbase").print();
+c_d.seqbase().print();
+
+c_d.delete(2@0);
+c_d.print();
+c_d.info().reverse().like("sorted").print();
+c_d.info().reverse().like("dense").print();
+c_d.info().reverse().like("seqbase").print();
+c_d.seqbase().print();
+
+c_d.persists(false);
+commit();
+c_d := nil;
+
+# works: committed persistent non-dense BAT
+
+var cp_;
+b:=new(oid,void).rename("CP_").persists(true);
+cp_:=bat("CP_");
+b := nil;
+
+cp_.insert(0@0,nil);
+cp_.print();
+cp_.info().reverse().like("sorted").print();
+cp_.info().reverse().like("dense").print();
+cp_.info().reverse().like("seqbase").print();
+cp_.seqbase().print();
+
+cp_.insert(2@0,nil);
+cp_.print();
+cp_.info().reverse().like("sorted").print();
+cp_.info().reverse().like("dense").print();
+cp_.info().reverse().like("seqbase").print();
+cp_.seqbase().print();
+
+cp_.insert(4@0,nil);
+cp_.print();
+cp_.info().reverse().like("sorted").print();
+cp_.info().reverse().like("dense").print();
+cp_.info().reverse().like("seqbase").print();
+cp_.seqbase().print();
+
+commit();
+
+cp_.print();
+cp_.info().reverse().like("sorted").print();
+cp_.info().reverse().like("dense").print();
+cp_.info().reverse().like("seqbase").print();
+cp_.seqbase().print();
+
+cp_.delete(4@0);
+cp_.print();
+cp_.info().reverse().like("sorted").print();
+cp_.info().reverse().like("dense").print();
+cp_.info().reverse().like("seqbase").print();
+cp_.seqbase().print();
+
+cp_.persists(false);
+commit();
+cp_ := nil;
 
 quit();
