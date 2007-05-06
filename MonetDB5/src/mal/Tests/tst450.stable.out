@@ -71,8 +71,9 @@ end main;	# 14
 [ 26,	  "timezone"	  ]
 [ 27,	  "zrule"	  ]
 [ 28,	  "inet"	  ]
-[ 29,	  "mapentry"	  ]
-[ 30,	  "idxentry"	  ]
+[ 29,	  "list"	  ]
+[ 30,	  "mapentry"	  ]
+[ 31,	  "idxentry"	  ]
 #-------------------------#
 # t	h		  # name
 # oid	str		  # type
@@ -105,6 +106,7 @@ end main;	# 14
 [ "inspect",	  nil	  ]
 [ "io",		  nil	  ]
 [ "language",	  nil	  ]
+[ "list",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "mal",	  nil	  ]
 [ "manual",	  nil	  ]
