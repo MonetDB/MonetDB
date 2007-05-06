@@ -720,7 +720,7 @@ CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CMDbbpNames(int *ret)
 {
-	BAT *b;
+	BAT *b,*bn;
 	int i;
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
@@ -740,6 +740,9 @@ CMDbbpNames(int *ret)
 			}
 		}
 	BBPunlock("CMDbbpNames");
+	bn= BATmirror(BATsort(BATmirror(b)));
+	BBPunfix(b->batCacheid);
+	b= bn;
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo2(bbp,name)@
 	return MAL_SUCCEED;
