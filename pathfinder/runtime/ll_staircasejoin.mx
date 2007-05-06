@@ -562,6 +562,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
         size_t grow = ((stack[stack_top-1].last - stack[stack_top-1].first) / iter_bunsize) + 1;
         BUN dst = NULL;
         int bunsize = BUNsize(res);
+        oid prev_iter = oid_nil;
 
         /* check, if result buffer is big enough; otherwise extend it */
         PFll_check_BAT_capacity(res, grow);
@@ -572,9 +573,22 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
         for (cur_bun = stack[stack_top-1].first;
              cur_bun <= stack[stack_top-1].last;
              cur_bun += iter_bunsize) {
-            *(oid*)dst              = *(oid*)BUNtail(iter_bat,cur_bun);
-            *(oid*)(dst+SIZEOF_OID) = pre;
-            dst += bunsize;
+            oid next_iter = *(oid*)BUNtail(iter_bat,cur_bun);
+            if (next_iter != prev_iter) {
+                /* (Even) if the same context node (item)
+                 * occurs multiple times per iter,
+                 * we must not produce duplicate results;
+                 * let's hope, the iters are ordered per item (context node).
+                 * ToDo:
+                 * Can we do this more efficiently, e.g.,
+                 * by upfront ensuring that [iter,item] ([iter,ctx])
+                 * is a set, i.e., duplicate free??
+                 */
+                *(oid*)dst              = next_iter;
+                *(oid*)(dst+SIZEOF_OID) = pre;
+                dst += bunsize;
+                prev_iter = next_iter;
+            }
         }
         res->batBuns->free = dst - res->batBuns->base;
         BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/bunsize);
