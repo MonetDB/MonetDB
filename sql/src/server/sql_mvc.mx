@@ -1328,6 +1328,7 @@ stack_push_view(mvc *sql, char *name, stmt *var)
 	sql->vars[sql->topvars].name = _strdup(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].view = 1;
+	sql->vars[sql->topvars].type.comp_type = NULL;
 	sql->topvars++;
 }
 
@@ -1385,7 +1386,7 @@ stack_pop_until(mvc *sql, int top)
 			stmt_destroy(v->s);
 			v->value.vtype = 0;
 			VALclear(&v->value);
-			if (v->type.comp_type) 
+			if (v->type.comp_type && v->view) 
 				table_destroy(v->type.comp_type);
 		}
 	}
@@ -1401,7 +1402,7 @@ stack_pop_frame(mvc *sql)
 		_DELETE(v->name);
 		v->value.vtype = 0;
 		VALclear(&v->value);
-		if (v->type.comp_type) 
+		if (v->type.comp_type && v->view) 
 			table_destroy(v->type.comp_type);
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
