@@ -1,0 +1,32 @@
+stdout of test 'tst400a` in directory 'src/mal` itself:
+
+
+# 07:46:56 >  
+# 07:46:56 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=36666 --set xrpc_port=40130 --set monet_prompt= --trace --dbname=mTests_src_mal  tst400a.mal
+# 07:46:56 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information
+## simple iterator loop test
+#
+#barrier (b,v):= language.newRange(0:lng);
+#	redo (b,v):= language.nextElement(1:lng,1000000:lng);
+#exit	(b,v);
+#io.print("end of loop");
+#
+function user.main():void;	# 0  (main:void)
+# simple iterator loop test 	# 1  (_1:str)
+barrier (b,v):= language.newRange(0:lng);	# 2 RNGnewRange_lng (b:bit)(v:lng)<-(_4:lng) jump 4
+    redo (b,v):= language.nextElement(1:lng,1000000:lng);	# 3 RNGnextElement_lng (b:bit)(v:lng)<-(_5:lng)(_6:lng) jump 3
+exit (b,v);	# 4  (b:bit)(v:lng)
+    io.print("end of loop");	# 5 IOprint_val (_7:void)<-(_8:str)
+end main;	# 6  
+[ "end of loop" ]
+
+# 07:46:56 >  
+# 07:46:56 >  Done.
+# 07:46:56 >  
+

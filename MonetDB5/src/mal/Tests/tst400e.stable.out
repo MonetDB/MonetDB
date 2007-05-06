@@ -1,0 +1,47 @@
+stdout of test 'tst400e` in directory 'src/mal` itself:
+
+
+# 07:48:32 >  
+# 07:48:32 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=36666 --set xrpc_port=40130 --set monet_prompt= --trace --dbname=mTests_src_mal  tst400e.mal
+# 07:48:32 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information
+## simple test of a function call 
+## performance evaluation, how expensive are 100k calls?
+#
+#function simple(z:lng):lng;
+#	z:= z+1:lng;
+#	return z;
+#end simple;
+function user.simple(z:lng):lng;	# 0  (simple:lng)<-(z:lng)
+    z := calc.+(z,1:lng);	# 1 CALCbinaryADDlnglng (z:lng)<-(z:lng)(_2:lng)
+    return z;	# 2  (z:lng)
+end simple;	# 3  
+#
+#	k:= 0:lng;
+#barrier	v:= k<1000000:lng;
+#	k:= user.simple(k);
+#	redo v:= k<1000000:lng;
+#exit	v;
+#io.print(k);
+#
+function user.main():void;	# 0  (main:void)
+# simple test of a function call  	# 1  (_1:str)
+# performance evaluation, how expensive are 100k calls? 	# 2  (_2:str)
+    k := 0:lng;	# 3  (k:lng)<-(_4:lng)
+barrier v := calc.<(k,1000000:lng);	# 4 CALCcompLTlnglng (v:bit)<-(k:lng)(_6:lng) jump 7
+    k := user.simple(k);	# 5  (k:lng)<-(k:lng)
+    redo v := calc.<(k,1000000:lng);	# 6 CALCcompLTlnglng (v:bit)<-(k:lng)(_6:lng) jump 5
+exit v;	# 7  (v:bit)
+    io.print(k);	# 8 IOprint_val (_7:void)<-(k:lng)
+end main;	# 9  
+[ 1000000 ]
+
+# 07:48:33 >  
+# 07:48:33 >  Done.
+# 07:48:33 >  
+

@@ -1,0 +1,37 @@
+# what is the overhead of MAL in multiplex situations
+# using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
+#profiler.setAll();
+#profiler.setLogFile("/tmp/MonetProfile.xml");
+b:= bat.new(:oid,:lng);
+t0:= alarm.usec();
+barrier (v,i):= language.newRange(0:lng);
+	o:= calc.oid(i);
+	bat.insert(b,o,i);
+	redo (v,i):= language.nextElement(1:lng,1000000:lng);
+exit (v,i);
+t1:= alarm.usec();
+c:= algebra.copy(b);
+t2:= alarm.usec();
+d:= bat.new(:oid,:lng);
+barrier (mloop,h,t):= bat.newIterator(b);
+        zz:= algebra.find(b,h);
+        z:= algebra.find(c,h);
+	cr:= zz+z;
+	bat.insert(d,h,cr);
+catch GDKerror:str;
+	leave mloop;
+exit GDKerror;
+	redo (mloop,h,t):= bat.hasMoreElements(b);
+exit (mloop,h,t);
+t3:= alarm.usec();
+#CMD000(b,b);
+t4:= alarm.usec();
+d1:= t1-t0;
+d2:= t3-t2;
+d3:= t4-t3;
+cnt:= aggr.count(d);
+io.printf("#cnt %d ",cnt);
+io.printf("#make %d ",d1);
+io.printf("#multiplex %d\n",d2);
+io.printf("#compiled multiplex %d\n",d3);
+#profiler.stop();

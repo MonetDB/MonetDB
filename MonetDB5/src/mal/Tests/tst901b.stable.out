@@ -1,0 +1,96 @@
+stdout of test 'tst901b` in directory 'src/mal` itself:
+
+
+# 07:48:36 >  
+# 07:48:36 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=36666 --set xrpc_port=40130 --set monet_prompt= --trace --dbname=mTests_src_mal  tst901b.mal
+# 07:48:36 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information
+## what is the overhead of MAL in multiplex situations
+## using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
+##profiler.setAll();
+##profiler.setLogFile("/tmp/MonetProfile.xml");
+#b:= bat.new(:oid,:lng);
+#t0:= alarm.usec();
+#barrier (v,i):= language.newRange(0:lng);
+#	o:= calc.oid(i);
+#	bat.insert(b,o,i);
+#	redo (v,i):= language.nextElement(1:lng,1000000:lng);
+#exit (v,i);
+#t1:= alarm.usec();
+#c:= algebra.copy(b);
+#t2:= alarm.usec();
+#d:= bat.new(:oid,:lng);
+#barrier (mloop,h,t):= bat.newIterator(b);
+#        zz:= algebra.find(b,h);
+#        z:= algebra.find(c,h);
+#	cr:= zz+z;
+#	bat.insert(d,h,cr);
+#catch GDKerror:str;
+#	leave mloop;
+#exit GDKerror;
+#	redo (mloop,h,t):= bat.hasMoreElements(b);
+#exit (mloop,h,t);
+#t3:= alarm.usec();
+##CMD000(b,b);
+#t4:= alarm.usec();
+#d1:= t1-t0;
+#d2:= t3-t2;
+#d3:= t4-t3;
+#cnt:= aggr.count(d);
+#io.printf("cnt %d ",cnt);
+#io.printf("make %d ",d1);
+#io.printf("multiplex %d\n",d2);
+#io.printf("compiled multiplex %d\n",d3);
+##profiler.stop();
+#
+function user.main():void;	# 0  (main:void)
+# what is the overhead of MAL in multiplex situations 	# 1  (_1:str)
+# using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 	# 2  (_2:str)
+#profiler.setAll(); 	# 3  (_3:str)
+#profiler.setLogFile("/tmp/MonetProfile.xml"); 	# 4  (_4:str)
+    b := bat.new(:oid,:lng);	# 5 CMDBATnew (b:bat[:oid,:lng])<-(_6:oid)(_7:lng)
+    t0 := alarm.usec();	# 6 ALARMusec (t0:lng)
+barrier (v,i):= language.newRange(0:lng);	# 7 RNGnewRange_lng (v:bit)(i:lng)<-(_11:lng) jump 11
+    o := calc.oid(i);	# 8 CALClng2oid (o:oid)<-(i:lng)
+    bat.insert(b,o,i);	# 9 BKCinsert_bun (_13:void)<-(b:bat[:oid,:lng])(o:oid)(i:lng)
+    redo (v,i):= language.nextElement(1:lng,1000000:lng);	# 10 RNGnextElement_lng (v:bit)(i:lng)<-(_14:lng)(_15:lng) jump 8
+exit (v,i);	# 11  (v:bit)(i:lng)
+    t1 := alarm.usec();	# 12 ALARMusec (t1:lng)
+    c := algebra.copy(b);	# 13 ALGcopy (c:bat[:oid,:lng])<-(b:bat[:oid,:lng])
+    t2 := alarm.usec();	# 14 ALARMusec (t2:lng)
+    d := bat.new(:oid,:lng);	# 15 CMDBATnew (d:bat[:oid,:lng])<-(_6:oid)(_7:lng)
+barrier (mloop,h,t):= bat.newIterator(b);	# 16 CHPbunIterator (mloop:lng)(h:oid)(t:lng)<-(b:bat[:oid,:lng]) jump 25
+    zz := algebra.find(b,h);	# 17 ALGfind (zz:lng)<-(b:bat[:oid,:lng])(h:oid)
+    z := algebra.find(c,h);	# 18 ALGfind (z:lng)<-(c:bat[:oid,:lng])(h:oid)
+    cr := calc.+(zz,z);	# 19 CALCbinaryADDlnglng (cr:lng)<-(zz:lng)(z:lng)
+    bat.insert(d,h,cr);	# 20 BKCinsert_bun (_26:void)<-(d:bat[:oid,:lng])(h:oid)(cr:lng)
+catch GDKerror:str ;	# 21  (GDKerror:str) jump 23
+    leave mloop;	# 22  (mloop:lng) jump 25
+exit GDKerror:str ;	# 23  (GDKerror:str)
+    redo (mloop,h,t):= bat.hasMoreElements(b);	# 24 CHPbunHasMoreElements (mloop:lng)(h:oid)(t:lng)<-(b:bat[:oid,:lng]) jump 17
+exit (mloop,h,t);	# 25  (mloop:lng)(h:oid)(t:lng)
+    t3 := alarm.usec();	# 26 ALARMusec (t3:lng)
+#CMD000(b,b); 	# 27  (_29:str)
+    t4 := alarm.usec();	# 28 ALARMusec (t4:lng)
+    d1 := calc.-(t1,t0);	# 29 CALCbinarySUBlnglng (d1:lng)<-(t1:lng)(t0:lng)
+    d2 := calc.-(t3,t2);	# 30 CALCbinarySUBlnglng (d2:lng)<-(t3:lng)(t2:lng)
+    d3 := calc.-(t4,t3);	# 31 CALCbinarySUBlnglng (d3:lng)<-(t4:lng)(t3:lng)
+    cnt := aggr.count(d);	# 32 ALGcount_bat (cnt:int)<-(d:bat[:oid,:lng])
+    io.printf("#cnt %d ",cnt);	# 33 IOprint_formatted_int (_35:void)<-(_36:str)(cnt:int)
+    io.printf("#make %d ",d1);	# 34 IOprint_formatted_lng (_37:void)<-(_38:str)(d1:lng)
+    io.printf("#multiplex %d\n",d2);	# 35 IOprint_formatted_lng (_39:void)<-(_40:str)(d2:lng)
+    io.printf("#compiled multiplex %d\n",d3);	# 36 IOprint_formatted_lng (_41:void)<-(_42:str)(d3:lng)
+#profiler.stop(); 	# 37  (_43:str)
+end main;	# 38  
+#cnt 1000000 #make 782279 #multiplex 1936981
+#compiled multiplex 4
+
+# 07:48:39 >  
+# 07:48:39 >  Done.
+# 07:48:39 >  
+
