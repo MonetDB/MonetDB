@@ -337,6 +337,7 @@ int main(int argc, char **argv)
 
 	if ((s = udp_rastream(host, portnr, "profileStream")) == NULL)
 		perror("stream failed\n");
+	doQ("profiler.setNone();");
 
 	if(a== argc) {
 		doQ("profiler.setAll();");
