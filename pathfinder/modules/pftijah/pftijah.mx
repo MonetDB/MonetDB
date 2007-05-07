@@ -3092,9 +3092,11 @@ int CMDtj_setlog(str filename) {
 int CMDtj_log(str format, int* i) {
 	FILE* f;
 	
-	if ( (f = fopen(tj_log_fileName,"a")) ) {
-	    fprintf(f,(const char*)format,*i);
-	    fclose(f);
+	if ( tj_log_fileName != NULL ) {
+	    if ( (f = fopen(tj_log_fileName,"a")) ) {
+	        fprintf(f,(const char*)format,*i);
+	        fclose(f);
+	    }
 	}
 	return GDK_SUCCEED;
 }
