@@ -1370,12 +1370,20 @@ Deleting a (committed) bun the first and deleted swap position.
 				b->hsorted = FALSE;
 				b->H->nosorted_rev = idx1;
 			}
+			if (b->hdense) {
+				b->hdense = FALSE;
+				b->H->nodense = idx1;
+			}
 			if (b->tsorted & 1) {
 				b->tsorted = FALSE;
 				b->T->nosorted = idx1;
 			} else if (b->tsorted == (bit) GDK_SORTED_REV) {
 				b->tsorted = FALSE;
 				b->T->nosorted_rev = idx1;
+			}
+			if (b->tdense) {
+				b->tdense = FALSE;
+				b->T->nodense = idx1;
 			}
 		}
 		b->batFirst += bs;
