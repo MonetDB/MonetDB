@@ -8645,17 +8645,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
  * @result the kind indicating, which result interface is chosen
  */
 
-static int logcnt = 0;
-
 static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 {
     char *descending;
     int rc=NORMAL, rcode;
 
-    int logid = logcnt++;
-
-    milprintf(f,"tj_log(\"+ mps(start-%d)\\n\",0);\n",logid);
     assert(c);
     switch (c->kind)
     {
@@ -9166,7 +9161,6 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     c->kind);
             break;
     }
-    milprintf(f,"tj_log(\"+ mps(finish-%d)\\n\",0);\n",logid);
     return rc;
 }
 
