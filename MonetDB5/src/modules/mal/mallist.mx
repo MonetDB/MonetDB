@@ -43,10 +43,13 @@ comment "Open a new list iterator";
 pattern hasMoreElements(l:list):any_1
 address MALLISThasMore
 comment "Fetch next element";
+
+command prelude()
+address MALLISTprelude;
+#list.prelude();
 @h
 #ifndef _MALLIST_H
 #define _MALLIST_H
-
 
 #ifdef WIN32
 #ifndef LIBMALLIST
@@ -58,8 +61,6 @@ comment "Fetch next element";
 #define mallist extern
 #endif
 
-mallist str CemptySet(int *k, int *bid);
-
 #endif /* _MALLIST_H */
 
 @c
@@ -68,7 +69,12 @@ mallist str CemptySet(int *k, int *bid);
 #include "mal_exception.h"
 #include "mallist.h"
 
-
+str 
+MALLISTprelude(ptr *res)
+{
+	(void) res;
+	return MAL_SUCCEED;
+}
 str 
 MALLISTnew(ptr *res)
 {
