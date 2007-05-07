@@ -136,6 +136,21 @@
 /** leftjoin() operator */
 #define leftjoin(a,b) PFmil_leftjoin((a), (b))
 
+/** leftjoin() operator */
+#define leftjoin(a,b) PFmil_leftjoin((a), (b))
+
+/** thetajoin() operator */
+#define tjoin(a,b,c,d) PFmil_thetajoin((a), (b), (c), (d))
+
+/** htordered_unique_thetajoin PROC */
+#define unq2_tjoin(a,b,c) PFmil_unq2_thetajoin((a), (b), (c))
+
+/** ll_htordered_unique_thetajoin PROC */
+#define unq1_tjoin(a,b,c,d,e) PFmil_unq1_thetajoin ((a), (b), (c), (d), (e))
+
+/** combine_node_info PROC */
+#define zip_nodes(a,b,c,d,e,f) PFmil_zip_nodes ((a), (b), (c), (d), (e), (f))
+
 /** reverse() operator */
 #define reverse(a) PFmil_reverse(a)
 

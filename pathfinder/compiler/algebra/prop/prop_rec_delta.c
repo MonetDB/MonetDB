@@ -66,6 +66,7 @@ check_op (PFla_op_t *n)
         /* we assume the following operators do not appear
            in initial plans */
         case la_semijoin:
+        case la_thetajoin:
         case la_dup_scjoin:
         case la_docnode:
         case la_comment:

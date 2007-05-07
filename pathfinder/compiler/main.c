@@ -783,12 +783,12 @@ main (int argc, char *argv[])
                                             "the options)\n");
                 printf ("         (default is: "
                                   "'-o OIKDCG_VGO_[J]OKVCG"
-                                           "}IM_{_[J]OKVCG"
-                                           "}IM_{_[J]OKVCGCG"
-                                           "}IM_{_[J]OKVCG"
-                                           "}IMS{_[J]OKVCGCG"
-                                           "}IMS{_[J]OKVCG"
-                                           "}IMS{_[J]OKVCGCGP')\n");
+                                           "}IM__{_[J]OKVCG"
+                                           "}IM__{_[J]OKVCGCG"
+                                           "}IM__{_[J]OKVCG"
+                                           "}IMTS{_[J]OKVCGCG"
+                                           "}IMTS{_[J]OKVCG"
+                                           "}IMTS{_[J]OKVCGCGP')\n");
 
                 printf ("  -e[0|1]%s: dead code elimination:\n"
                         "         0 disable dead code elimination\n"

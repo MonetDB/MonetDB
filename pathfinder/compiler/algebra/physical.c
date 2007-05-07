@@ -57,7 +57,7 @@
 #define DEFAULT_COST INIT_COST
 #define AGGR_COST 50
 #define JOIN_COST 100
-#define SORT_COST 100
+#define SORT_COST 700
 
 /**
  * Create an algebra operator (leaf) node.
@@ -650,7 +650,7 @@ PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
     ret->orderings = PFord_set ();
 
     /* ---- EqJoin: costs ---- */
-    ret->cost = 1.5 * JOIN_COST + n1->cost + n2->cost;
+    ret->cost = 2.5 * JOIN_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -695,6 +695,160 @@ PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
        and it should be cheaper than a join plus a distinct operator
        --> dummy cost: + 10 */;
     ret->cost = JOIN_COST + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * ThetaJoin: Theta-Join. Does not provide any ordering guarantees.
+ */
+PFpa_op_t *
+PFpa_thetajoin (const PFpa_op_t *n1, const PFpa_op_t *n2,
+                unsigned int count, PFalg_sel_t *pred)
+{
+    unsigned int i;
+    PFpa_op_t  *ret;
+
+    /* verify that the join attributes are all available */
+    for (i = 0; i < count; i++)
+        if (!contains_att (n1->schema, pred[i].left) ||
+            !contains_att (n2->schema, pred[i].right))
+            break;
+
+    /* did we find all attributes? */
+    if (i < count)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in theta-join not found", 
+                contains_att (n2->schema, pred[i].right)
+                ? PFatt_str(pred[i].left) : PFatt_str(pred[i].right));
+    
+    ret = wire2 (pa_thetajoin, n1, n2);
+
+    ret->sem.thetajoin.count = count;
+    ret->sem.thetajoin.pred  = PFmalloc (count * sizeof (PFalg_sel_t));
+    for (i = 0; i < count; i++)
+        ret->sem.thetajoin.pred[i] = pred[i];
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n1->schema.count + n2->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n1 */
+    for (unsigned int i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    /* copy schema from n2 */
+    for (unsigned int i = 0; i < n2->schema.count; i++)
+        ret->schema.items[n1->schema.count + i] = n2->schema.items[i];
+
+    /* ---- ThetaJoin: orderings ---- */
+    ret->orderings = PFord_set ();
+
+    /* ---- ThetaJoin: costs ---- */
+
+    /* make it a little bit more expensive than the normal equi-join
+       and more expensive than the specialized variant that require
+       two sorted columns up front. */
+    ret->cost = 4 * JOIN_COST + 2 * SORT_COST + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * ThetaJoin: Theta-Join. Returns two columns (from n1 and n2)
+ *            with duplicates eliminated. Preserves the order 
+ *            of the left argument.
+ */
+PFpa_op_t *
+PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
+                     PFalg_att_t ldist, PFalg_att_t rdist,
+                     const PFpa_op_t *n1, const PFpa_op_t *n2)
+{
+    PFpa_op_t  *ret = wire2 (pa_unq2_thetajoin, n1, n2);
+
+    assert (contains_att (n1->schema, left) &&
+            contains_att (n2->schema, right) &&
+            contains_att (n1->schema, ldist) &&
+            contains_att (n2->schema, rdist));
+    
+    ret->sem.unq_thetajoin.comp  = comp;
+    ret->sem.unq_thetajoin.left  = left;
+    ret->sem.unq_thetajoin.right = right;
+    ret->sem.unq_thetajoin.ldist = ldist;
+    ret->sem.unq_thetajoin.rdist = rdist;
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 2;
+    ret->schema.items = PFmalloc (2 * sizeof (*(ret->schema.items)));
+    ret->schema.items[0].name = ldist;
+    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[1].name = rdist;
+    ret->schema.items[1].type = aat_nat;
+
+    /* ---- ThetaJoin: orderings ---- */
+
+    /* The result is ordered by first the left distinct column
+       and then by the right distinct column. */
+
+    ret->orderings = PFord_set ();
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFordering (),
+                                 ldist,
+                                 DIR_ASC));
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFord_refine (PFordering (),
+                                               ldist,
+                                               DIR_ASC),
+                                 rdist,
+                                 DIR_ASC));
+
+    /* ---- ThetaJoin: costs ---- */
+    ret->cost = 3 * JOIN_COST + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * ThetaJoin: Theta-Join. Returns a single column with duplicates
+ *            eliminated. Preserves the order of the left argument.
+ */
+PFpa_op_t *
+PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
+                     PFalg_att_t ldist, PFalg_att_t rdist,
+                     const PFpa_op_t *n1, const PFpa_op_t *n2)
+{
+    PFpa_op_t  *ret = wire2 (pa_unq1_thetajoin, n1, n2);
+
+    assert (contains_att (n1->schema, left) &&
+            contains_att (n2->schema, right) &&
+            contains_att (n1->schema, ldist) &&
+            contains_att (n2->schema, rdist));
+    
+    ret->sem.unq_thetajoin.comp  = comp;
+    ret->sem.unq_thetajoin.left  = left;
+    ret->sem.unq_thetajoin.right = right;
+    ret->sem.unq_thetajoin.ldist = ldist;
+    ret->sem.unq_thetajoin.rdist = rdist;
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 1;
+    ret->schema.items = PFmalloc (sizeof (*(ret->schema.items)));
+    ret->schema.items[0].name = ldist;
+    ret->schema.items[0].type = aat_nat;
+
+    /* ---- ThetaJoin: orderings ---- */
+
+    /* The result is ordered by the left distinct column */
+
+    ret->orderings = PFord_set ();
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFordering (),
+                                 ldist,
+                                 DIR_ASC));
+
+    /* ---- ThetaJoin: costs ---- */
+    ret->cost = 3 * JOIN_COST + n1->cost + n2->cost;
 
     return ret;
 }
@@ -1224,7 +1378,12 @@ PFpa_std_sort (const PFpa_op_t *n, PFord_ordering_t required)
     PFord_set_add (ret->orderings, required);
 
     /* ---- StandardSort: costs ---- */
-    ret->cost = PFord_count (required) * SORT_COST + n->cost;
+    ret->cost = 3 * SORT_COST /* (1) */
+              + PFord_count (required) * SORT_COST
+              + n->cost;
+    /* (1): make sorting more expensive as all path steps.
+            This ensures that path steps sort internally
+            which is probably more efficient. */
 
     for (unsigned int i = 0; i < PFord_count (required); i++)
         if (PFord_order_dir_at (required, i) == DIR_DESC)
@@ -1261,9 +1420,13 @@ PFpa_refine_sort (const PFpa_op_t *n,
     PFord_set_add (ret->orderings, required);
 
     /* ---- StandardSort: costs ---- */
-    ret->cost = PFord_count (required) * SORT_COST 
+    ret->cost = 3 * SORT_COST /* (1) */
+              + PFord_count (required) * SORT_COST 
               - PFord_count (existing) * SORT_COST
               + n->cost;
+    /* (1): make sorting more expensive as all path steps.
+            This ensures that path steps sort internally
+            which is probably more efficient. */
 
     for (unsigned int i = 0; i < PFord_count (required); i++)
         if (PFord_order_dir_at (required, i) == DIR_DESC)
@@ -1785,11 +1948,19 @@ PFpa_number (const PFpa_op_t *n,
     /* ---- MergeRowNum: orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+        
+        /* if we have already an ordering we can also add the new
+           generated column at the end. It won't break the ordering. */
+        PFord_set_add (ret->orderings, 
+                       PFord_refine (
+                           PFord_set_at (n->orderings, i),
+                           new_att, DIR_ASC));
+        
         /* get the direction of the partitioning column */
         if (part &&
             PFord_order_col_at (PFord_set_at (n->orderings, i), 0)
             == part) {
-            if (PFord_order_col_at (PFord_set_at (n->orderings, i), 0)
+            if (PFord_order_dir_at (PFord_set_at (n->orderings, i), 0)
                 == DIR_ASC)
                 dir_asc = true;
             else
@@ -2019,11 +2190,11 @@ llscj_cost (PFpa_op_t *n, unsigned long ctx_cost)
 
         if (PFord_implies (n->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            n->cost = 3 * SORT_COST + ctx_cost;
+            n->cost = 3 * SORT_COST;
         }
         else {
             /* output has item|iter ordering */
-            n->cost = 2 * SORT_COST + ctx_cost;
+            n->cost = 2 * SORT_COST;
         }
 
     }
@@ -2032,13 +2203,13 @@ llscj_cost (PFpa_op_t *n, unsigned long ctx_cost)
 
         if (PFord_implies (n->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            n->cost = 1 * SORT_COST + ctx_cost;
+            n->cost = 1 * SORT_COST;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            n->cost = 0 * SORT_COST + ctx_cost;
+            n->cost = 0 * SORT_COST;
         }
     }
 

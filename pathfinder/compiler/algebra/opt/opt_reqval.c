@@ -93,6 +93,12 @@ opt_reqvals (PFla_op_t *p)
             
     }
 
+    /* if we look for exactly one required value and 
+       a child of the current operator is a union operator
+       that produces two different constant values in
+       the required value column in its children then
+       we can directly link to the operator that produces
+       the required value. */
     if (count == 1) {
         if (p->kind == la_project)
             for (unsigned int i = 0; i < p->sem.proj.count; i++)

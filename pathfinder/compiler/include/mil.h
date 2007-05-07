@@ -65,16 +65,21 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_PROP_TEXT   18
 #define PF_MIL_VAR_PROP_COM    19
 #define PF_MIL_VAR_PROP_INS    20
-#define PF_MIL_VAR_TRACE_OUTER 21
-#define PF_MIL_VAR_TRACE_INNER 22
-#define PF_MIL_VAR_TRACE_ITER  23
-#define PF_MIL_VAR_TRACE_MSG   24
-#define PF_MIL_VAR_TRACE_ITEM  25
-#define PF_MIL_VAR_TRACE_TYPE  26
-#define PF_MIL_VAR_TRACE_REL   27
-#define PF_MIL_VAR_TIME_LOAD   28
-#define PF_MIL_VAR_TIME_QUERY  29
-#define PF_MIL_VAR_TIME_PRINT  30
+#define PF_MIL_VAR_LE          21
+#define PF_MIL_VAR_LT          22
+#define PF_MIL_VAR_EQ          23
+#define PF_MIL_VAR_GT          24
+#define PF_MIL_VAR_GE          25
+#define PF_MIL_VAR_TRACE_OUTER 26
+#define PF_MIL_VAR_TRACE_INNER 27
+#define PF_MIL_VAR_TRACE_ITER  28
+#define PF_MIL_VAR_TRACE_MSG   29
+#define PF_MIL_VAR_TRACE_ITEM  30
+#define PF_MIL_VAR_TRACE_TYPE  31
+#define PF_MIL_VAR_TRACE_REL   32
+#define PF_MIL_VAR_TIME_LOAD   33
+#define PF_MIL_VAR_TIME_QUERY  34
+#define PF_MIL_VAR_TIME_PRINT  35
 
 #define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_TIME_PRINT + 1)
 
@@ -124,6 +129,16 @@ enum PFmil_kind_t {
     , m_cross        /**< MIL join operator */
     , m_join         /**< MIL join operator */
     , m_leftjoin     /**< MIL leftjoin operator */
+    , m_thetajoin    /**< MIL thetajoin operator */
+    , m_unq2_tjoin   /**< MIL htordered_unique_thetajoin PROC
+                          applying a unique on both iter columns */
+    , m_unq1_tjoin   /**< MIL ll_htordered_unique_thetajoin PROC
+                          aligning the iter columns and evaluating
+                          a unique operation over the single resulting
+                          column. */
+    , m_zip_nodes    /**< MIL combine_node_info PROC that compresses
+                          the fragment, pre, and attribute ids into
+                          a single filed. */
 
     , m_reverse      /**< MIL reverse operator, swap head/tail */
     , m_mirror       /**< MIL mirror() operator, mirror head into tail */
@@ -166,8 +181,12 @@ enum PFmil_kind_t {
     , m_mround_up    /**< multiplexed operator round_up */
     
     , m_gt           /**< greater than */
-    , m_mgt          /**< multiplexed comparison (greater than) */
     , m_meq          /**< multiplexed comparison (equality) */
+    , m_mgt          /**< multiplexed comparison (greater than) */
+    , m_mge          /**< multiplexed comparison (greater equal) */
+    , m_mlt          /**< multiplexed comparison (less than) */
+    , m_mle          /**< multiplexed comparison (less equal) */
+    , m_mne          /**< multiplexed comparison (inequality) */
 
     , m_not          /**< boolean negation `not' */
     , m_mnot         /**< multiplexed boolean negation `[not]' */
@@ -520,6 +539,24 @@ PFmil_t * PFmil_join (const PFmil_t *, const PFmil_t *);
 /** MIL leftjoin() operator ensures ordering by left operand */
 PFmil_t * PFmil_leftjoin (const PFmil_t *, const PFmil_t *);
 
+/** MIL thetajoin() operator */
+PFmil_t * PFmil_thetajoin (const PFmil_t *, const PFmil_t *,
+                           const PFmil_t *, const PFmil_t *);
+
+/** MIL htordered_unique_thetajoin PROC */
+PFmil_t * PFmil_unq2_thetajoin (const PFmil_t *, const PFmil_t *,
+                                const PFmil_t *);
+
+/** MIL ll_htordered_unique_thetajoin PROC */
+PFmil_t * PFmil_unq1_thetajoin (const PFmil_t *, const PFmil_t *,
+                                const PFmil_t *, const PFmil_t *,
+                                const PFmil_t *);
+
+/** MIL combine_node_info PROC */
+PFmil_t * PFmil_zip_nodes (const PFmil_t *, const PFmil_t *,
+                           const PFmil_t *, const PFmil_t *,
+                           const PFmil_t *, const PFmil_t *);
+
 /** MIL reverse() function, swap head/tail */
 PFmil_t * PFmil_reverse (const PFmil_t *);
 
@@ -653,11 +690,23 @@ PFmil_t * PFmil_mround_up (const PFmil_t *);
 /** greater than */
 PFmil_t * PFmil_gt (const PFmil_t *, const PFmil_t *);
 
+/** Multiplexed comparison operator (equality) */
+PFmil_t * PFmil_meq (const PFmil_t *, const PFmil_t *);
+
 /** Multiplexed comparison operator (greater than) */
 PFmil_t * PFmil_mgt (const PFmil_t *, const PFmil_t *);
 
-/** Multiplexed comparison operator (equality) */
-PFmil_t * PFmil_meq (const PFmil_t *, const PFmil_t *);
+/** Multiplexed comparison operator (greater equal) */
+PFmil_t * PFmil_mge (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed comparison operator (less than) */
+PFmil_t * PFmil_mlt (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed comparison operator (less equal) */
+PFmil_t * PFmil_mle (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed comparison operator (inequality) */
+PFmil_t * PFmil_mne (const PFmil_t *, const PFmil_t *);
 
 /** MIL boolean negation */
 PFmil_t * PFmil_not (const PFmil_t *);

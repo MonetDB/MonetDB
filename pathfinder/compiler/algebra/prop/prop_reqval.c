@@ -180,6 +180,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
 
         case la_cross:
         case la_eqjoin:
+        case la_thetajoin:
         case la_disjunion:
         case la_intersect:
             prop_infer_reqvals (L(n), rv);

@@ -712,6 +712,98 @@ PFla_semijoin (const PFla_op_t *n1, const PFla_op_t *n2,
 }
 
 /**
+ * Theta-join between two operator nodes.
+ *
+ * Assert that all columns listed in the predicate list are
+ * available.  @a n1 and @a n2 must not have duplicate attribute names.
+ * The schema of the result is (schema(@a n1) + schema(@a n2)).
+ */
+PFla_op_t *
+PFla_thetajoin (const PFla_op_t *n1, const PFla_op_t *n2,
+                unsigned int count, PFalg_sel_t *pred)
+{
+    PFla_op_t     *ret;
+    unsigned int   i, j;
+
+    assert (n1); assert (n2);
+
+    /* verify that the join attributes are all available */
+    for (i = 0; i < count; i++)
+        if (!PFprop_ocol (n1, pred[i].left) ||
+            !PFprop_ocol (n2, pred[i].right))
+            break;
+
+    /* did we find all attributes? */
+    if (i < count)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in theta-join not found", 
+                PFprop_ocol (n2, pred[i].right)
+                ? PFatt_str(pred[i].left) : PFatt_str(pred[i].right));
+
+    /* build new theta-join node */
+    ret = la_op_wire2 (la_thetajoin, n1, n2);
+
+    /* insert semantic value (predicates) into the result */
+    ret->sem.thetajoin.count = count;
+    ret->sem.thetajoin.pred  = PFmalloc (count * sizeof (PFalg_sel_t));
+    for (i = 0; i < count; i++)
+        ret->sem.thetajoin.pred[i] = pred[i];
+
+    /* allocate memory for the result schema (schema(n1) + schema(n2)) */
+    ret->schema.count = n1->schema.count + n2->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from argument 'n1' */
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    /* copy schema from argument 'n2', check for duplicate attribute names */
+    for (j = 0; j < n2->schema.count; j++) {
+
+        ret->schema.items[n1->schema.count + j] = n2->schema.items[j];
+
+#ifndef NDEBUG
+        for (i = 0; i < n1->schema.count; i++)
+            if (n1->schema.items[i].name == n2->schema.items[j].name)
+                PFoops (OOPS_FATAL,
+                        "duplicate attribute `%s' in theta-join",
+                        PFatt_str (n2->schema.items[j].name));
+#endif
+    }
+    
+    return ret;
+}
+
+/**
+ * Theta-join between two operator nodes.
+ * Special internal variant used during thetajoin optimization.
+ * 
+ * The optimizer will fill check for consistency and
+ * fill in the correct schema (which requires internal knowledge
+ * of @a data).
+ */
+PFla_op_t *
+PFla_thetajoin_opt_internal (const PFla_op_t *n1,
+                             const PFla_op_t *n2,
+                             PFarray_t *data)
+{
+    PFla_op_t     *ret;
+
+    assert (n1); assert (n2);
+
+    /* build new theta-join node */
+    ret = la_op_wire2 (la_thetajoin, n1, n2);
+
+    /* insert semantic value (predicates) into the result */
+    ret->sem.thetajoin_opt.pred = PFarray_copy (data);
+
+    /* allocate no schema -- this will be done by the optimization */
+    
+    return ret;
+}
+
+/**
  * Logical algebra projection/renaming.
  *
  * @param n     Argument for the projection operator.

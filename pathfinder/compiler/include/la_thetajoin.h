@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Optimize relational algebra expression tree.
+ * Introduce thetajoin operators
  *
  * Copyright Notice:
  * -----------------
@@ -29,30 +29,13 @@
  * $Id$
  */
 
-#ifndef ALGOPT_H
-#define ALGOPT_H
+#ifndef LA_THETAJOIN_H
+#define LA_THETAJOIN_H
 
 #include "logical.h"
 
-PFla_op_t * PFalgopt (PFla_op_t *root, bool timing);
+PFla_op_t * PFintro_thetajoins (PFla_op_t *root);
 
-/**
- * Infer property for a DAG rooted in root
- * (The implementation is located in the
- *  corresponding opt/opt_*.[brg|c] file)
- */
-PFla_op_t * PFalgopt_complex (PFla_op_t *root);
-PFla_op_t * PFalgopt_const (PFla_op_t *root, bool no_attach);
-PFla_op_t * PFalgopt_dom (PFla_op_t *root);
-PFla_op_t * PFalgopt_general (PFla_op_t *root);
-PFla_op_t * PFalgopt_icol (PFla_op_t *root);
-PFla_op_t * PFalgopt_join_pd (PFla_op_t *root);
-PFla_op_t * PFalgopt_key (PFla_op_t *root);
-PFla_op_t * PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries);
-PFla_op_t * PFalgopt_reqval (PFla_op_t *root);
-PFla_op_t * PFalgopt_set (PFla_op_t *root);
-PFla_op_t * PFalgopt_thetajoin (PFla_op_t *root);
-
-#endif  /* ALGOPT_H */
+#endif  /* LA_THETAJOIN_H */
 
 /* vim:set shiftwidth=4 expandtab: */

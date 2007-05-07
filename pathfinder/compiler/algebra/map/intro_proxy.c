@@ -64,8 +64,81 @@
 #define pfIN(p)  ((p)->bit_in)
 #define pfOUT(p) ((p)->bit_out)
 
+/**
+ * worker for remove_semijoin_operators() that
+ * replaces semijoin operators by equi-joins and
+ * a distinct.
+ */
+static void
+remove_semijoin_worker (PFla_op_t *p)
+{
+    assert (p);
 
+    /* nothing to do if we already visited that node */
+    if (SEEN(p))
+        return;
 
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        remove_semijoin_worker (p->child[i]);
+
+    if (p->kind == la_semijoin) {
+        /* we need to additional projections:
+           top    to remove the right join argument from the result list
+           right  to avoid name conflicts with the left input columns
+                  and to ensure that distinct is applied only on the join
+                  column */
+        PFalg_proj_t *top   = PFmalloc (p->schema.count *
+                                        sizeof (PFalg_proj_t)),
+                     *right = PFmalloc (sizeof (PFalg_proj_t));
+        PFalg_att_t   used_cols = 0,
+                      new_col = p->sem.eqjoin.att2,
+                      cur_col;
+
+        /* fill the 'top' projection and collect all used columns
+           of the left input relation (equals the semijoin output
+           schema) */
+        for (unsigned int i = 0; i < p->schema.count; i++) {
+            cur_col = p->schema.items[i].name;
+            
+            top[i] = PFalg_proj (cur_col, cur_col);
+            used_cols |= cur_col;
+        }
+        /* rename the join argument in case a name conflict occurs */
+        if (used_cols & new_col)
+            new_col = PFalg_ori_name (
+                          PFalg_unq_name (new_col, 0),
+                          ~used_cols);
+        
+        /* project away all columns except for the join column */
+        right[0] = PFalg_proj (new_col, p->sem.eqjoin.att2);
+        
+        /* replace the semijoin */
+        *p = *PFla_project_ (
+                  PFla_eqjoin (L(p),
+                               PFla_distinct (
+                                   PFla_project_ (R(p), 1, right)),
+                               p->sem.eqjoin.att1,
+                               new_col),
+                  p->schema.count,
+                  top);
+    }
+
+    SEEN(p) = true;
+}
+
+/**
+ * This function removes all semijoin operators
+ * as the proxy introduction phases cannot cope
+ * with them.
+ */
+static void
+remove_semijoin_operators (PFla_op_t *root)
+{
+    assert (root->kind == la_serialize);
+
+    remove_semijoin_worker (root);
+    PFla_dag_reset (root);
+}
 
 /**
  *
@@ -277,9 +350,6 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
 
     p = proxy_entry;
 
-    /* FIXME: This code hasn't been tested on semijoin operators */
-    if (p->kind == la_semijoin) return CONFLICT; 
-    
     /* This check is more restrictive as required... */
     if (!PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
         !PFprop_key_right (p->prop, p->sem.eqjoin.att2))
@@ -352,6 +422,12 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
  *
  */
 
+#define check_base(p) (((p)->kind == la_project &&       \
+                        L((p))->kind == la_cross) ||     \
+                       ((p)->kind == la_project &&       \
+                        L((p))->kind == la_thetajoin) || \
+                       ((p)->kind == la_cross) ||        \
+                       ((p)->kind == la_thetajoin))
 /**
  * semijoin_entry checks the complete pattern
  * -- see function modify_semijoin_proxy() for
@@ -362,8 +438,7 @@ semijoin_entry (PFla_op_t *p)
 {
     PFla_op_t *lp, *rp;
 
-    if (p->kind != la_eqjoin &&
-        p->kind != la_semijoin)
+    if (p->kind != la_eqjoin)
         return false;
 
     lp = L(p);
@@ -375,27 +450,9 @@ semijoin_entry (PFla_op_t *p)
     if (rp->kind == la_project)
         rp = L(rp);
 
-    return ((p->kind == la_semijoin &&
-             /* here we do not need to ensure that a distinct
-                operator is present as duplicates are removed
-                anyway */
-             lp->kind == la_number &&
-             L(lp)->kind == la_cross &&
-             !lp->sem.number.part &&
-             PFprop_subdom (p->prop,
-                            PFprop_dom_right (p->prop,
-                                              p->sem.eqjoin.att2),
-                            PFprop_dom_left (p->prop,
-                                             p->sem.eqjoin.att1)) &&
-             PFprop_subdom (p->prop,
-                            PFprop_dom_left (p->prop,
-                                             p->sem.eqjoin.att1),
-                            PFprop_dom (lp->prop,
-                                        lp->sem.number.attname)))
-            ||
-            (lp->kind == la_distinct &&
+    return ((lp->kind == la_distinct &&
              rp->kind == la_number &&
-             L(rp)->kind == la_cross &&
+             check_base(L(rp)) &&
              L(p)->schema.count == 1 &&
              lp->schema.count == 1 &&
              !rp->sem.number.part &&
@@ -412,7 +469,7 @@ semijoin_entry (PFla_op_t *p)
             ||
             (rp->kind == la_distinct &&
              lp->kind == la_number &&
-             L(lp)->kind == la_cross &&
+             check_base(L(lp)) &&
              R(p)->schema.count == 1 &&
              rp->schema.count == 1 &&
              PFprop_subdom (p->prop,
@@ -436,7 +493,7 @@ semijoin_exit (PFla_op_t *p, PFla_op_t *entry)
 {
     PFla_op_t *lp, *rp;
 
-    if (p->kind != la_number || L(p)->kind != la_cross)
+    if (p->kind != la_number || !check_base (L(p)))
         return false;
 
     lp = L(entry);
@@ -667,9 +724,10 @@ modify_semijoin_proxy (PFla_op_t *root,
                 num_col_alias, num_col_alias1, num_col_alias2,
                 used_cols = 0;
     unsigned int i, j;
-    PFalg_proj_t *exit_proj, *proxy_proj, *dist_proj, *left_proj;
+    PFalg_proj_t *exit_proj, *proxy_proj, *dist_proj, *left_proj,
+                 *opt_base_proj = NULL;
     PFla_op_t *lp, *rp, *lproject = NULL, *rproject = NULL,
-              *num1, *num2, *number, *new_number;
+              *num1, *num2, *number, *new_number, *lexit, *op;
 
     /* do not introduce proxy if some conflicts remain */
     if (!(leaf_ref = join_resolve_conflicts (proxy_entry,
@@ -700,35 +758,23 @@ modify_semijoin_proxy (PFla_op_t *root,
         lp = L(lp);
     }
     /* look for an project operator in the right equi-join branch */
-    if (rp->kind == la_project &&
-        proxy_entry->kind != la_semijoin) {
+    if (rp->kind == la_project) {
         rproject = rp;
         rp = L(rp);
     }
 
     /* normalize the pattern such that the distinct
        operator always resides in the 'virtual' right side (rp). */
-    if (lp->kind == la_distinct &&
-        proxy_entry->kind != la_semijoin) {
+    if (lp->kind == la_distinct) {
         rp = lp; /* we do not need the old 'rp' reference anymore */
         lproject = rproject; /* we do not need the old 'rproject' anymore */
     }
 
-    /* in case our proxy entry is a semijoin
-       we need to link the arguments of the right
-       join argument differently. */
-    if (proxy_entry->kind == la_semijoin) {
-        assert (R(proxy_entry) == rp);
-
-        join_att2 = proxy_entry->sem.eqjoin.att2;
-        rp = rp;
-    } else {
-        assert (rp->kind == la_distinct);
-        
-        /* the name of the single distinct column */
-        join_att2 = rp->schema.items[0].name;
-        rp = L(rp);
-    }
+    assert (rp->kind == la_distinct);
+    
+    /* the name of the single distinct column */
+    join_att2 = rp->schema.items[0].name;
+    rp = L(rp);
 
     /* we have now checked the additional requirements (conflicts
        resolved or rewritable) and als have ensured that:
@@ -754,6 +800,17 @@ modify_semijoin_proxy (PFla_op_t *root,
         exit_proj[i] = PFalg_proj (
                            proxy_exit->schema.items[i].name,
                            proxy_exit->schema.items[i].name);
+    }
+
+    lexit = L(proxy_exit);
+    if (lexit->kind == la_project) {
+        for (i = 0; i < L(lexit)->schema.count; i++)
+            used_cols = used_cols | L(lexit)->schema.items[i].name;
+        opt_base_proj = PFmalloc ((lexit->schema.count + 2) *
+                                  sizeof (PFalg_proj_t));
+        for (i = 0; i < lexit->sem.proj.count; i++)
+            opt_base_proj[i+2] = lexit->sem.proj.items[i];
+        lexit = L(lexit);
     }
 
     /* We mark the right join column used.
@@ -818,12 +875,50 @@ modify_semijoin_proxy (PFla_op_t *root,
     }
 
     /* build the modified DAG */
-    num1 = PFla_number (L(L(proxy_exit)), num_col1, att_NULL);
-    num2 = PFla_number (R(L(proxy_exit)), num_col2, att_NULL);
+    num1 = PFla_number (L(lexit), num_col1, att_NULL);
+    num2 = PFla_number (R(lexit), num_col2, att_NULL);
 
-    number = PFla_number (
-                 PFla_cross (num1, num2),
-                 num_col, att_NULL);
+    if (lexit->kind == la_cross)
+        op = PFla_cross (num1, num2);
+    else if (lexit->kind == la_thetajoin)
+        op = PFla_thetajoin (
+                 num1,
+                 num2,
+                 lexit->sem.thetajoin.count,
+                 lexit->sem.thetajoin.pred);
+    else
+        return false;
+
+    if (opt_base_proj) {
+        unsigned int count;
+        PFalg_proj_t *proj;
+        
+        opt_base_proj[0] = PFalg_proj (num_col1, num_col1);
+        opt_base_proj[1] = PFalg_proj (num_col2, num_col2);
+        op = PFla_project_ (
+                 op,
+                 L(proxy_exit)->schema.count + 2,
+                 opt_base_proj);
+
+        count = 0;
+        proj = PFmalloc (op->schema.count * sizeof (PFalg_proj_t));
+        for (i = 0; i < op->schema.count; i++)
+            if (PFprop_ocol (num1, op->sem.proj.items[i].old))
+                proj[count++] = op->sem.proj.items[i];
+
+        num1 = PFla_project_ (num1, count, proj);
+                
+        count = 0;
+        proj = PFmalloc (op->schema.count * sizeof (PFalg_proj_t));
+        for (i = 0; i < op->schema.count; i++)
+            if (PFprop_ocol (num2, op->sem.proj.items[i].old))
+                proj[count++] = op->sem.proj.items[i];
+
+        num2 = PFla_project_ (num2, count, proj);
+                
+    }
+    
+    number = PFla_number (op, num_col, att_NULL);
 
     new_number = PFla_number (
                      PFla_eqjoin (
@@ -1950,6 +2045,24 @@ generate_join_proxy (PFla_op_t *root,
     }
     assert (count == proxy_entry->schema.count);
 
+    /* We are certain that this join is only a mapping join 
+       (see join_entry ()). Any input column (at the proxy base)
+       that is propagated along the left *and* the right side
+       of the equi-join and which is not modified contains 
+       the same values and can be pruned from the entry_proj
+       projection list. Here we can prune one of its occurrences
+       in the above renaming projection list. */       
+    for (i = 0; i < dist_count; i++)
+        for (j = i+1; j < dist_count; j++)
+            if (entry_proj[i].new == entry_proj[j].new) {
+                /* copy the last projection pair to the
+                   current column that appears twice */
+                dist_count--;
+                entry_proj[i] = entry_proj[dist_count];
+                proxy_proj[i] = proxy_proj[dist_count];
+                i--;
+                break;
+            }
 
     /* Create a proxy base with a projection that removes duplicate
        columns on top of the proxy exit. (If this number operator
@@ -2037,7 +2150,7 @@ generate_join_proxy (PFla_op_t *root,
 
 
 
-
+#if 0
 /**
  *
  * Functions specific to the nested proxies rewrite.
@@ -2681,7 +2794,7 @@ unnest_proxy (PFla_op_t *root,
 
     return true;
 }
-
+#endif
 
 
 
@@ -2931,6 +3044,11 @@ PFintro_proxies (PFla_op_t *root)
 {
     PFarray_t *checked_nodes = PFarray (sizeof (PFla_op_t *));
 
+    /* remove all semijoin operators as most of our
+       proxies cannot cope with semijoins and thus
+       would recognize less proxies. */
+    remove_semijoin_operators (root);
+
     /* find proxies and rewrite them in one go.
        They are based on semi-join - number/rownum pairs */
     if (intro_proxy_kind (root,
@@ -2988,6 +3106,10 @@ PFintro_proxies (PFla_op_t *root)
     /* We require the superfluous number operators to be pruned. */
     PFalgopt_icol (root);
 
+#if 0
+    /* We don't need the following rewrite anymore. All observed cases
+       are already handled by the thetajoin optimization. */
+
     /* rewrite (directly) following proxies that are independent
        of each other into an DAG that might evaluates both proxies
        in parallel */
@@ -2997,6 +3119,7 @@ PFintro_proxies (PFla_op_t *root)
                       proxy_unnest_exit,
                       unnest_proxy,
                       checked_nodes);
+#endif
 
     return root;
 }

@@ -115,6 +115,7 @@ infer_card (PFla_op_t *n)
         case la_eqjoin:
         case la_eqjoin_unq:
         case la_semijoin:
+        case la_thetajoin:
         case la_select:
         case la_intersect:
         case la_difference:

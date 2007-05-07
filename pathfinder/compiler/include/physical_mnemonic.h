@@ -61,7 +61,18 @@
 #define eqjoin(a,b,c,d)   PFpa_eqjoin ((a), (b), (c), (d))
 
 /** semijoin operator */
-#define semijoin(a,b,c,d)   PFpa_semijoin ((a), (b), (c), (d))
+#define semijoin(a,b,c,d) PFpa_semijoin ((a), (b), (c), (d))
+
+/** thetajoin operator */
+#define thetajoin(a,b,c,d)  PFpa_thetajoin ((a), (b), (c), (d))
+
+/** thetajoin operator */
+#define unq2_tjoin(a,b,c,d,e,f,g) PFpa_unq2_thetajoin((a), (b), (c), \
+                                                 (d), (e), (f), (g))
+
+/** thetajoin operator */
+#define unq1_tjoin(a,b,c,d,e,f,g) PFpa_unq1_thetajoin((a), (b), (c), \
+                                                 (d), (e), (f), (g))
 
 /** projection operator */
 #define project(a,b,c)    PFpa_project ((a), (b), (c))

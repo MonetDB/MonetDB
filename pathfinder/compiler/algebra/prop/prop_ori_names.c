@@ -253,6 +253,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
 
         case la_cross:
+        case la_thetajoin:
             /* only infer matching columns to the children */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
                 unq = L(n)->schema.items[i].name;

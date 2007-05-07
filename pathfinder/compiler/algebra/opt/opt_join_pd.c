@@ -270,7 +270,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                            PFprop_dom (rp->prop, ratt),
                            PFprop_dom (lp->prop, latt)) &&
             ratt == p->sem.eqjoin_unq.res) {
-            *p = *rp;
+            *p = *dummy (rp);
             return true;
         }
         
@@ -292,6 +292,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_eqjoin:
             case la_eqjoin_unq:
             case la_semijoin:
+            case la_thetajoin:
             case la_project:
             case la_select:
             case la_disjunion:
@@ -332,7 +333,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_proxy_base:
             case la_cross_mvd:
             case la_string_join:
-            case la_dummy:
                 /* nothing to do -- can't throw away lp */
                 break;
 
@@ -420,6 +420,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 /* textnodes */
                 if (L(lp)->kind == la_textnode &&
                     (modified = GEN(L(lp)->sem.textnode.res))) LP = LL(lp);
+                break;
+
+            case la_dummy:
+                LP = L(lp);
+                next_join = p;
                 break;
         }
         /* If a child of p was replaced ... */
@@ -915,6 +920,49 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
                 next_join = L(p);
                 *(PFla_op_t **) PFarray_add (clean_up_list) = R(p);
+                break;
+                
+            case la_thetajoin:
+                /* choose the correct operand of the theta-join
+                   (the one with the join argument) to push down
+                   the equi-join */
+                if (PFprop_ocol (L(lp), latt)) {
+                    PFalg_sel_t *pred = PFmalloc (lp->sem.thetajoin.count *
+                                                  sizeof (PFalg_sel_t));
+                    /* push join below the left side */
+                    for (unsigned int i = 0; i < lp->sem.thetajoin.count; i++) {
+                        pred[i] = lp->sem.thetajoin.pred[i];
+                        if (pred[i].left == latt)
+                            pred[i].left = p->sem.eqjoin_unq.res;
+                    }
+
+                    *p = *(thetajoin (eqjoin_unq (L(lp), rp, latt, ratt,
+                                                  p->sem.eqjoin_unq.res),
+                                      R(lp),
+                                      lp->sem.thetajoin.count,
+                                      pred));
+
+                    next_join = L(p);
+                    *(PFla_op_t **) PFarray_add (clean_up_list) = R(p);
+                } else {
+                    PFalg_sel_t *pred = PFmalloc (lp->sem.thetajoin.count *
+                                                  sizeof (PFalg_sel_t));
+                    /* push join below the right side */
+                    for (unsigned int i = 0; i < lp->sem.thetajoin.count; i++) {
+                        pred[i] = lp->sem.thetajoin.pred[i];
+                        if (pred[i].right == latt)
+                            pred[i].right = p->sem.eqjoin_unq.res;
+                    }
+
+                    *p = *(thetajoin (L(lp),
+                                      eqjoin_unq (R(lp), rp, latt, ratt,
+                                                  p->sem.eqjoin_unq.res),
+                                      lp->sem.thetajoin.count,
+                                      pred));
+
+                    next_join = R(p);
+                    *(PFla_op_t **) PFarray_add (clean_up_list) = L(p);
+                }
                 break;
                 
             case la_project:
@@ -1550,7 +1598,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 PFoops (OOPS_FATAL,
                         "cannot cope with proxy nodes");
                 break;
-
         }
         
         if (next_join)
@@ -1623,6 +1670,7 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_disjunion:
         case la_eqjoin_unq:
         case la_semijoin:
+        case la_thetajoin:
         case la_roots:
         case la_trace:
         case la_cond_err:

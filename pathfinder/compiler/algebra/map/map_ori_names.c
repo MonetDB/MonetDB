@@ -329,6 +329,20 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                                    p->sem.eqjoin.att2));
             break;
 
+        case la_thetajoin:
+        {
+            PFalg_sel_t *pred = PFmalloc (p->sem.thetajoin.count *
+                                          sizeof (PFalg_sel_t));
+
+            for (unsigned int i = 0; i < p->sem.thetajoin.count; i++)
+                pred[i] = PFalg_sel (p->sem.thetajoin.pred[i].comp,
+                                     ONAME (p, p->sem.thetajoin.pred[i].left),
+                                     ONAME (p, p->sem.thetajoin.pred[i].right));
+
+            res = thetajoin (PROJ(LEFT, p), PROJ(RIGHT, p),
+                             p->sem.thetajoin.count, pred);
+        }   break;
+
         case la_project:
         {
             PFla_op_t *left;

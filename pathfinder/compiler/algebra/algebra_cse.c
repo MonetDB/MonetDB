@@ -192,6 +192,22 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     && a->sem.eqjoin.att2 == b->sem.eqjoin.att2);
             break;
 
+        case la_thetajoin:
+            if (a->sem.thetajoin.count != b->sem.thetajoin.count)
+                return false;
+            
+            for (unsigned int i = 0; i < a->sem.thetajoin.count; i++)
+                if ((a->sem.thetajoin.pred[i].comp != 
+                     b->sem.thetajoin.pred[i].comp) ||
+                    (a->sem.thetajoin.pred[i].left != 
+                     b->sem.thetajoin.pred[i].left) ||
+                    (a->sem.thetajoin.pred[i].right != 
+                     b->sem.thetajoin.pred[i].right))
+                    return false;
+                    
+            return true;
+            break;
+
         case la_eqjoin_unq:
             return (a->sem.eqjoin_unq.att1 == b->sem.eqjoin_unq.att1
                     && a->sem.eqjoin_unq.att2 == b->sem.eqjoin_unq.att2

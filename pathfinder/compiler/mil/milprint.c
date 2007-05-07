@@ -40,6 +40,14 @@
                  | expression '.cross (' expression ')'     <m_cross>
                  | expression '.join (' expression ')'      <m_join>
                  | expression '.leftjoin (' expression ')'  <m_leftjoin>
+                 | 'thetajoin ('exp','exp','exp','exp')'    <m_thetajoin>
+                 | 'htordered_unique_thetajoin ('
+                      exp ',' exp ',' exp ', nil, nil)'     <m_unq2_tjoin>
+                 | 'll_htordered_unique_thetajoin ('
+                      exp ',' exp ',' exp ','
+                      exp ',' exp ', nil, nil)'             <m_unq1_tjoin>
+                 | 'combine_node_info(' exp ',' exp ','
+                      exp ',' exp ',' exp ',' exp ')'       <m_zip_nodes>
                  | expression '.kunion (' expression ')'    <m_kunion>
                  | expression '.kdiff (' expression ')'     <m_kdiff>
                  | expression '.kintersect (' expression ')'<m_kintersect>
@@ -90,8 +98,12 @@
                  | '[floor](' expression ')'                <m_mfloor>
                  | '[round_up](' expression ')'             <m_mround_up>
                  | '>(' expression ',' expression ')'       <m_gt>
-                 | '[>](' expression ',' expression ')'     <m_mgt>
                  | '[=](' expression ',' expression ')'     <m_meq>
+                 | '[>](' expression ',' expression ')'     <m_mgt>
+                 | '[>=](' expression ',' expression ')'    <m_mge>
+                 | '[<](' expression ',' expression ')'     <m_mlt>
+                 | '[<=](' expression ',' expression ')'    <m_mle>
+                 | '[!=](' expression ',' expression ')'    <m_mne>
                  | 'not(' expression ')'                    <m_not>
                  | '[not](' expression ')'                  <m_mnot>
                  | '[-](' expression ')'                    <m_mneg>
@@ -206,6 +218,10 @@ static char *ID[] = {
     , [m_cross]        = "cross"
     , [m_join]         = "join"
     , [m_leftjoin]     = "leftjoin"
+    , [m_thetajoin]    = "thetajoin"
+    , [m_unq2_tjoin]   = "htordered_unique_thetajoin"
+    , [m_unq1_tjoin]   = "ll_htordered_unique_thetajoin"
+    , [m_zip_nodes]    = "combine_node_info"
     , [m_reverse]      = "reverse"
     , [m_mirror]       = "mirror"
     , [m_copy]         = "copy"
@@ -241,8 +257,12 @@ static char *ID[] = {
     , [m_mfloor]       = "[floor]"
     , [m_mround_up]    = "[round_up]"
     , [m_gt]           = ">"
-    , [m_mgt]          = "[>]"
     , [m_meq]          = "[=]"
+    , [m_mgt]          = "[>]"
+    , [m_mge]          = "[>=]"
+    , [m_mlt]          = "[<]"
+    , [m_mle]          = "[<=]"
+    , [m_mne]          = "[!=]"
     , [m_not]          = "not"
     , [m_mnot]         = "[not]"
     , [m_mneg]         = "[-]"
@@ -831,10 +851,18 @@ print_expression (PFmil_t * n)
         case m_mmod:
         /* expression : '>(' expression ',' expression ')' */
         case m_gt:
-        /* expression : '[>](' expression ',' expression ')' */
-        case m_mgt:
         /* expression : '[=](' expression ',' expression ')' */
         case m_meq:
+        /* expression : '[>](' expression ',' expression ')' */
+        case m_mgt:
+        /* expression : '[>=](' expression ',' expression ')' */
+        case m_mge:
+        /* expression : '[<](' expression ',' expression ')' */
+        case m_mlt:
+        /* expression : '[<=](' expression ',' expression ')' */
+        case m_mle:
+        /* expression : '[!=](' expression ',' expression ')' */
+        case m_mne:
         /* expression : '[and](' expression ',' expression ')' */
         case m_mand:
         /* expression : '[or](' expression ',' expression ')' */
@@ -954,6 +982,8 @@ print_expression (PFmil_t * n)
         case m_add_qnames:
         /* expression : 'sc_desc (' expr ',' expr ',' expr ',' expr ')' */
         case m_sc_desc:
+        /* expression : 'thetajoin ('exp','exp','exp','exp')' */
+        case m_thetajoin:
             milprintf ("%s (", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -984,6 +1014,52 @@ print_expression (PFmil_t * n)
             print_expression (n->child[6]);
             milprintf (", ");
             print_expression (n->child[7]);
+            milprintf (")");
+            break;
+
+        /* expression : 'htordered_unique_thetajoin (' exp ',' exp ','
+                                                       exp ', nil, nil)' */
+        case m_unq2_tjoin:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[2]); /* mode */
+            milprintf (", ");
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", nil, nil)");
+            break;
+            
+        /* expression : 'll_htordered_unique_thetajoin ('
+                            exp ',' exp ',' exp ',' exp ',' exp ', nil, nil)' */
+        case m_unq1_tjoin:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[4]); /* mode */
+            milprintf (", ");
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", nil, nil)");
+            break;
+
+        /* expression : combine_node_info(' exp ',' exp ',' exp ','
+                                            exp ',' exp ',' exp ')' */
+        case m_zip_nodes:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
             milprintf (")");
             break;
 

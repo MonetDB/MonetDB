@@ -82,12 +82,13 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  cross          =   5
 %term  eqjoin         =   6
 %term  semijoin       =   7
-%term  project        =   8
-%term  select_        =   9
-%term  disjunion      =  10
-%term  intersect      =  11
-%term  difference     =  12
-%term  distinct       =  13
+%term  thetajoin      =   8
+%term  project        =   9
+%term  select_        =  10
+%term  disjunion      =  11
+%term  intersect      =  12
+%term  difference     =  13
+%term  distinct       =  14
 %term  fun_1to1       =  20
 %term  num_eq         =  25
 %term  num_gt         =  26
@@ -145,9 +146,11 @@ Rel:    cross (Rel, lit_tbl)                      =   5 (10);
 Rel:    cross (lit_tbl, Rel)                      =   6 (10);
 Rel:    eqjoin (Rel, Rel)                         =   8 (10);
 Rel:    semijoin (Rel, Rel)                       =   9 (10);
-Rel:    project (Rel)                             =  10 (10);
-Rel:    project (attach (Rel))                    =  11 (10);
-Rel:    project (project (Rel))                   =  13  (1);
+Rel:    semijoin (distinct (Rel), Rel)            =  10 (10);
+Rel:    thetajoin (Rel, Rel)                      =  11 (10);
+Rel:    project (Rel)                             =  12 (10);
+Rel:    project (attach (Rel))                    =  13 (10);
+Rel:    project (project (Rel))                   =  14  (1);
 Rel:    select_ (Rel)                             =  19 (10);
 Rel:    disjunion (Rel, Rel)                      =  20 (10);
 Rel:    disjunion (EmptyRel, Rel)                 =  21  (5);
@@ -436,8 +439,26 @@ reduce (PFla_op_t *p, int goalnt)
             } 
             break;
 
-        /* Rel:    project (Rel) */
+        /* Rel:    semijoin (distinct (Rel), Rel) */
         case 10:
+            /* push down semijoin operator 
+               underneath the distinct operator as 
+               the semijoin hopefully is more selective
+               than the distinct operator */
+            *p = *PFla_distinct (
+                      PFla_semijoin (
+                          LL(p), R(p),
+                          p->sem.eqjoin.att1,
+                          p->sem.eqjoin.att2));
+            SEEN(L(p)) = false;
+            SEEN(p) = false;
+            /* relabeling will be expensive 
+               if there is no real dummy node */
+            relabel (p, kids);
+            break;
+
+        /* Rel:    project (Rel) */
+        case 12:
         {   /**
              * we can skip every project operator that is not needed.
              * Therefore it has to fulfill two conditions:
@@ -465,7 +486,7 @@ reduce (PFla_op_t *p, int goalnt)
         }   break;
 
         /* Rel:    project (attach (Rel)) */
-        case 11:
+        case 13:
             /* only rewrite if there are more than one columns */
             if (p->schema.count > 1) {
                 bool found = false, rewrite = true;
@@ -501,7 +522,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
             
         /* Rel:    project (project (Rel)) */
-        case 13:
+        case 14:
         {   /* combine two projections */            
             PFalg_proj_t *proj = PFmalloc (p->schema.count *
 	                                       sizeof (PFalg_proj_t));
@@ -580,6 +601,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             PFalg_att_t sel = p->sem.select.att;
             PFalg_att_t item1, item2;
+            PFalg_comp_t comp;
             unsigned int i;
 
             node = L(p);
@@ -597,10 +619,14 @@ reduce (PFla_op_t *p, int goalnt)
             
             /* the selection column has to match the
                result column of the comparison operator */
-            if (node->kind != la_num_eq ||
+            if ((node->kind != la_num_eq && node->kind != la_num_gt) ||
                 node->sem.binary.res != sel)
                 break;
 
+            if (node->kind == la_num_eq)
+                comp = alg_comp_eq;
+            else
+                comp = alg_comp_gt;
             item1 = node->sem.binary.att1;
             item2 = node->sem.binary.att2;
             node = L(node);
@@ -645,8 +671,10 @@ reduce (PFla_op_t *p, int goalnt)
                can be replaced by an theta-join and an attach operator
                that adds the missing res column */
             if (!proj && !proj2) {
+                PFalg_sel_t *pred = PFmalloc (sizeof (PFalg_sel_t));
+                pred[0] = PFalg_sel (comp, item1, item2);
                 *p = *PFla_attach (
-                          PFla_eqjoin (left, right, item1, item2),
+                          PFla_thetajoin (left, right, 1, pred),
                           p->sem.select.att, PFalg_lit_bln (true));
                 SEEN(p) = false;
                 SEEN(L(p)) = false;
@@ -664,6 +692,8 @@ reduce (PFla_op_t *p, int goalnt)
                    and attach operator */
                 PFalg_proj_t *proj_list;
                 unsigned int j, count = 0;
+                PFalg_sel_t *pred = PFmalloc (sizeof (PFalg_sel_t));
+                pred[0] = PFalg_sel (comp, item1, item2);
                 
                 /* create projection list */
                 proj_list = PFmalloc ((p->schema.count - 1)*
@@ -700,7 +730,7 @@ reduce (PFla_op_t *p, int goalnt)
                                                    
                 *p = *PFla_attach (
                           PFla_project_ (
-                              PFla_eqjoin (left, right, item1, item2),
+                              PFla_thetajoin (left, right, 1, pred),
                               p->schema.count - 1, proj_list),
                           p->sem.select.att, PFalg_lit_bln (true));
                 SEEN(p) = false;

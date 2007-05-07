@@ -58,12 +58,14 @@ enum PFla_op_kind_t {
     , la_cross          =  5 /**< cross product (Cartesian product) */
     , la_eqjoin         =  6 /**< equi-join */
     , la_semijoin       =  7 /**< semi-join */
-    , la_project        =  8 /**< algebra projection and renaming operator */
-    , la_select         =  9 /**< selection of rows where column value != 0 */
-    , la_disjunion      = 10 /**< union two relations with same schema */
-    , la_intersect      = 11 /**< intersect two relations with same schema */
-    , la_difference     = 12 /**< difference of two relations w/ same schema */
-    , la_distinct       = 13 /**< duplicate elimination operator */
+    , la_thetajoin      =  8 /**< theta-join (with possibly multiple
+                                  predicates) */
+    , la_project        =  9 /**< algebra projection and renaming operator */
+    , la_select         = 10 /**< selection of rows where column value != 0 */
+    , la_disjunion      = 11 /**< union two relations with same schema */
+    , la_intersect      = 12 /**< intersect two relations with same schema */
+    , la_difference     = 13 /**< difference of two relations w/ same schema */
+    , la_distinct       = 14 /**< duplicate elimination operator */
     , la_fun_1to1       = 20 /**< generic operator that extends the schema with
                                   a new column where each value is determined 
                                   by the values of a single row (cardinality 
@@ -171,6 +173,20 @@ union PFla_op_sem_t {
         PFalg_att_t     att2;     /**< name of attribute from "right" rel */
         PFalg_att_t     res;      /**< name of result attribute */
     } eqjoin_unq;
+
+    /* semantic content for theta-join operator */
+    struct {
+        unsigned int    count;    /**< length of predicate list */
+        PFalg_sel_t    *pred;     /**< predicate list */
+    } thetajoin;
+
+    /* semantic content for theta-join operator 
+       (used during thetajoin optimization) */
+    struct {
+        PFarray_t      *pred;     /**< internal list of predicates
+                                       (an extended variant of the
+                                        normal semantic content) */
+    } thetajoin_opt;
 
     /* semantic content for projection operator */
     struct {
@@ -489,6 +505,22 @@ PFla_op_t * PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
  */
 PFla_op_t * PFla_semijoin (const PFla_op_t *n1, const PFla_op_t *n2,
                            PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Theta-join between two relations.
+ * No duplicate attribute names allowed.
+ */
+PFla_op_t * PFla_thetajoin (const PFla_op_t *n1, const PFla_op_t *n2,
+                            unsigned int count, PFalg_sel_t *sellist);
+
+/**
+ * Theta-join between two relations.
+ * No duplicate attribute names allowed.
+ * Special internal variant used during thetajoin optimization.
+ */
+PFla_op_t * PFla_thetajoin_opt_internal (const PFla_op_t *n1,
+                                         const PFla_op_t *n2,
+                                         PFarray_t *data);
 
 /**
  * Equi-join between two relations.

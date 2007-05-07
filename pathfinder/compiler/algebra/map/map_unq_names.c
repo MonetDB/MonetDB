@@ -168,6 +168,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_cross:
+        case la_thetajoin:
         {
             /* Add a projection for each operand to ensure
                that all columns are renamed. */
@@ -210,8 +211,23 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             left  = PFla_project_ (left, count1, projlist1);
             right = PFla_project_ (right, count2, projlist2);
                                 
-            res = cross (left, right);
+            if (p->kind == la_cross)
+                res = cross (left, right);
+            else { /* p->kind == la_thetajoin */
+                PFalg_sel_t *pred = PFmalloc (p->sem.thetajoin.count *
+                                              sizeof (PFalg_sel_t));
+
+                for (unsigned int i = 0; i < p->sem.thetajoin.count; i++)
+                    pred[i] = PFalg_sel (
+                                  p->sem.thetajoin.pred[i].comp,
+                                  UNAME (p, p->sem.thetajoin.pred[i].left),
+                                  UNAME (p, p->sem.thetajoin.pred[i].right));
+
+                res = thetajoin (left, right,
+                                 p->sem.thetajoin.count, pred);
+            }
         }   break;
+
 
         case la_cross_mvd:
             PFoops (OOPS_FATAL,

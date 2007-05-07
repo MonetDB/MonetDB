@@ -899,4 +899,13 @@ PFalg_fun_str (PFalg_fun_t fun)
     return NULL;
 }
 
+/**
+ * Construct a predicate.
+ */
+PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
+                       PFalg_att_t left,
+                       PFalg_att_t right) {
+    return (PFalg_sel_t) { .comp = comp, .left = left, .right = right };
+}
+
 /* vim:set shiftwidth=4 expandtab: */

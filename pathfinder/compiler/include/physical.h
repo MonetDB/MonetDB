@@ -60,15 +60,18 @@ enum PFpa_op_kind_t {
 #endif                       
     , pa_eqjoin         =  14 /**< Generic join implementation */
     , pa_semijoin       =  15 /**< Semijoin implementation */
-    , pa_project        =  16 /**< Project */
-    , pa_select         =  17 /**< Select: filter rows by value in given att */
-    , pa_append_union   =  20 /**< AppendUnion */
-    , pa_merge_union    =  21 /**< MergeUnion */
-    , pa_intersect      =  22 /**< Intersect */
-    , pa_difference     =  23 /**< Difference */
-    , pa_sort_distinct  =  24 /**< SortDistinct */
-    , pa_std_sort       =  25 /**< StdSort */
-    , pa_refine_sort    =  26 /**< RefineSort */
+    , pa_thetajoin      =  16 /**< Thetajoin implementation */
+    , pa_unq2_thetajoin =  17 /**< Thetajoin implementation */
+    , pa_unq1_thetajoin =  18 /**< Thetajoin implementation */
+    , pa_project        =  19 /**< Project */
+    , pa_select         =  20 /**< Select: filter rows by value in given att */
+    , pa_append_union   =  23 /**< AppendUnion */
+    , pa_merge_union    =  24 /**< MergeUnion */
+    , pa_intersect      =  25 /**< Intersect */
+    , pa_difference     =  26 /**< Difference */
+    , pa_sort_distinct  =  27 /**< SortDistinct */
+    , pa_std_sort       =  28 /**< StdSort */
+    , pa_refine_sort    =  29 /**< RefineSort */
     , pa_fun_1to1       =  30 /**< generic operator that extends the schema with
                                    a new column where each value is determined 
                                    by the values of a single row (cardinality 
@@ -162,6 +165,23 @@ union PFpa_op_sem_t {
         PFalg_att_t     att1;     /**< name of attribute from "left" rel */
         PFalg_att_t     att2;     /**< name of attribute from "right" rel */
     } eqjoin;
+
+    /* semantic content for theta-join operator */
+    struct {
+        unsigned int    count;    /**< length of predicate list */
+        PFalg_sel_t    *pred;     /**< predicate list */
+    } thetajoin;
+
+    /* semantic content for theta-join operator */
+    struct {
+        PFalg_comp_t    comp;     /**< comparison */
+        PFalg_att_t     left;     /**< name of attribute from "left" rel */
+        PFalg_att_t     right;    /**< name of attribute from "right" rel */
+        PFalg_att_t     ldist;    /**< name of distinct attribute
+                                       from "left" rel */
+        PFalg_att_t     rdist;    /**< name of distinct attribute
+                                       from "right" rel */
+    } unq_thetajoin;
 
     /* semantic content for projection operator */
     struct {
@@ -431,6 +451,32 @@ PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
 PFpa_op_t *
 PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
                const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * ThetaJoin: Theta-Join. Does not provide any ordering guarantees.
+ */
+PFpa_op_t *
+PFpa_thetajoin (const PFpa_op_t *n1, const PFpa_op_t *n2,
+                unsigned int count, PFalg_sel_t *pred);
+
+/**
+ * ThetaJoin: Theta-Join. Returns a two columns (from n1 and n2)
+ *            with duplicates eliminated. Preserves the order 
+ *            of the left argument.
+ */
+PFpa_op_t *
+PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
+                     PFalg_att_t ldist, PFalg_att_t rdist,
+                     const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * ThetaJoin: Theta-Join. Returns a single column with duplicates
+ *            eliminated. Preserves the order of the left argument.
+ */
+PFpa_op_t *
+PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
+                     PFalg_att_t ldist, PFalg_att_t rdist,
+                     const PFpa_op_t *n1, const PFpa_op_t *n2);
 
 /**
  * Project.

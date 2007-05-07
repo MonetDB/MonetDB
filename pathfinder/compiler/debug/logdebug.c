@@ -56,6 +56,7 @@ static char *a_id[]  = {
     , [la_eqjoin]           = "Join"              /* \"#00FF00\" */
     , [la_eqjoin_unq]       = "Join"              /* \"#00FF00\" */
     , [la_semijoin]         = "SemiJoin"          /* \"#00FF00\" */
+    , [la_thetajoin]        = "ThetaJoin"         /* \"#00FF00\" */
     , [la_project]          = "Project"
     , [la_select]           = "Select"
     , [la_disjunion]        = "UNION"
@@ -121,6 +122,7 @@ static char *xml_id[]  = {
     , [la_eqjoin]           = "eqjoin"
     , [la_eqjoin_unq]       = "eqjoin_unq"
     , [la_semijoin]         = "semijoin"
+    , [la_thetajoin]        = "thetajoin"
     , [la_project]          = "project"
     , [la_select]           = "select"
     , [la_disjunion]        = "union"
@@ -267,6 +269,20 @@ xml_literal (PFalg_atom_t a)
     return (char *) s->base;
 }
 
+static char *
+comp_str (PFalg_comp_t comp) {
+    switch (comp) {
+        case alg_comp_eq: return "eq";
+        case alg_comp_gt: return "gt";
+        case alg_comp_ge: return "ge";
+        case alg_comp_lt: return "lt";
+        case alg_comp_le: return "le";
+        case alg_comp_ne: return "ne";
+    }
+    assert (0);
+    return NULL;
+}
+
 /**
  * Print algebra tree in AT&T dot notation.
  * @param dot Array into which we print
@@ -287,6 +303,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
         , [la_eqjoin]         = "\"#00FF00\""
         , [la_eqjoin_unq]     = "\"#00CC00\""
         , [la_semijoin]       = "\"#009900\""
+        , [la_thetajoin]      = "\"#00AA00\""
         , [la_project]        = "\"#EEEEEE\""
         , [la_select]         = "\"#00DDDD\""
         , [la_disjunion]      = "\"#909090\""
@@ -405,6 +422,19 @@ la_dot (PFarray_t *dot, PFla_op_t *n)
                             PFatt_str (n->sem.eqjoin.att2));
             break;
 
+        case la_thetajoin:
+            /* overwrite standard node layout */
+            PFarray_printf (dot, "\", shape=polygon peripheries=2, label=\"");
+            
+            PFarray_printf (dot, "%s", a_id[n->kind]);
+
+            for (c = 0; c < n->sem.thetajoin.count; c++)
+                PFarray_printf (dot, "\\n(%s %s %s)",
+                                PFatt_str (n->sem.thetajoin.pred[c].left),
+                                comp_str (n->sem.thetajoin.pred[c].comp),
+                                PFatt_str (n->sem.thetajoin.pred[c].right));
+            break;
+            
         case la_eqjoin_unq:
             PFarray_printf (dot, "%s (%s:%s = %s)",
                             a_id[n->kind], 
@@ -1198,6 +1228,22 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                             "    </content>\n",
                             PFatt_str (n->sem.eqjoin.att1),
                             PFatt_str (n->sem.eqjoin.att2));
+            break;
+
+        case la_thetajoin:
+            PFarray_printf (xml, "    <content>\n");
+            for (c = 0; c < n->sem.thetajoin.count; c++)
+                PFarray_printf (xml,
+                                "      <comparison kind=\"%s\">\n"
+                                "        <column name=\"%s\" new=\"false\""
+                                               " position=\"1\"/>\n"
+                                "        <column name=\"%s\" new=\"false\""
+                                               " position=\"2\"/>\n"
+                                "      </comparison>\n",
+                                comp_str (n->sem.thetajoin.pred[c].comp),
+                                PFatt_str (n->sem.thetajoin.pred[c].left),
+                                PFatt_str (n->sem.thetajoin.pred[c].right));
+            PFarray_printf (xml, "    </content>\n");
             break;
 
         case la_eqjoin_unq:

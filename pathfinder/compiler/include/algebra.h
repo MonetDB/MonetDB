@@ -275,6 +275,25 @@ enum PFalg_doc_t {
 };
 typedef enum PFalg_doc_t PFalg_doc_t;
 
+/* ............ complex selection specification ............. */
+
+enum PFalg_comp_t {
+      alg_comp_eq      /**< == comparison > */
+    , alg_comp_gt      /**<  > comparison > */
+    , alg_comp_ge      /**< >= comparison > */
+    , alg_comp_lt      /**<  < comparison > */
+    , alg_comp_le      /**< =< comparison > */
+    , alg_comp_ne      /**< != comparison > */
+};
+typedef enum PFalg_comp_t PFalg_comp_t;
+
+struct PFalg_sel_t {
+    PFalg_comp_t comp;  /**< comparison > */
+    PFalg_att_t  left;  /**< left selection column > */
+    PFalg_att_t  right; /**< right selection column > */
+};
+typedef struct PFalg_sel_t PFalg_sel_t;
+
 /* ***************** Constructors ******************* */
 
 /** construct literal natural number (atom) */
@@ -369,6 +388,13 @@ char * PFalg_simple_type_str (PFalg_simple_type_t att);
  */
 char * PFalg_fun_str (PFalg_fun_t fun);
     
+/**
+ * Construct a predicate.
+ */
+PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
+                       PFalg_att_t left,
+                       PFalg_att_t right);
+
 #endif  /* ALGEBRA_H */
 
 /* vim:set shiftwidth=4 expandtab: */

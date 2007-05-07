@@ -149,6 +149,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list)
         case la_cross:
         case la_eqjoin:
         case la_semijoin:
+        case la_thetajoin:
         case la_select:
         case la_distinct:
         case la_disjunion:

@@ -86,15 +86,18 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term leftjoin       =  11
 %term eqjoin         =  14
 %term semijoin       =  15
-%term project        =  16
-%term select         =  17
-%term append_union   =  20
-%term merge_union    =  21
-%term intersect      =  22
-%term difference     =  23
-%term sort_distinct  =  24
-%term std_sort       =  25
-%term refine_sort    =  26
+%term thetajoin      =  16
+%term unq2_thetajoin =  17
+%term unq1_thetajoin =  18
+%term project        =  19
+%term select         =  20
+%term append_union   =  23
+%term merge_union    =  24
+%term intersect      =  25
+%term difference     =  26
+%term sort_distinct  =  27
+%term std_sort       =  28
+%term refine_sort    =  29
 %term fun_1to1       =  30
 %term eq             =  40
 %term eq_atom        =  41
@@ -163,6 +166,9 @@ Rel:      cross (Rel, Rel)                                         =  13 (10);
 Rel:      leftjoin (Rel, Rel)                                      =  14 (10);
 Rel:      eqjoin (Rel, Rel)                                        =  15 (10);
 Rel:      semijoin (Rel, Rel)                                      =  16 (10);
+Rel:      thetajoin (Rel, Rel)                                     =  17 (10);
+Rel:      unq2_thetajoin (Rel, Rel)                                =  18 (10);
+Rel:      unq1_thetajoin (Rel, Rel)                                =  19 (10);
 Rel:      project (Rel)                                            =  20 (10);
 Rel:      select (Rel)                                             =  21 (10);
 Rel:      append_union (Rel, Rel)                                  =  22 (10);
@@ -1973,6 +1979,442 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (res, 1);
         } break;
 
+        /* Rel:      thetajoin (Rel, Rel) */
+        case 17:
+        {
+            unsigned int shared_cols = 0;
+            bool match_found;
+            bool initialized = false;
+
+            PFalg_simple_type_t ltype = 0;
+            PFmil_t *args = NULL;
+            mvar_t  *res = new_var (1);
+            mvar_t  *lmap = new_var (1);
+            mvar_t  *rmap = new_var (1);
+
+            /* first try to match all equality predicates in one go 
+               (using a special multi-column MIL intersect proc) */
+            for (unsigned int i = 0; i < p->sem.thetajoin.count; i++)
+                if (p->sem.thetajoin.pred[i].comp == alg_comp_eq) {
+                    initialized = true;
+                    match_found = false;
+                    ltype = type_of (L(p), p->sem.thetajoin.pred[i].left);
+                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                        if (t & ltype) {
+                            mvar_t *l = env_mvar (
+                                            L(p)->env,
+                                            p->sem.thetajoin.pred[i].left,
+                                            t);
+                            mvar_t *r = env_mvar_unsafe (
+                                            R(p)->env,
+                                            p->sem.thetajoin.pred[i].right,
+                                            t);
+
+                            if (r) {
+                                if (!shared_cols)
+                                    args = arg (var (l->name), var (r->name));
+                                else
+                                    args = arg (args, arg (var (l->name), 
+                                                           var (r->name)));
+                                shared_cols++;
+                                match_found = true;
+                            }
+                        }
+                    if (!match_found) {
+                        /* If one join argument has no match we
+                           can return an empty result */
+                        shared_cols = 0;
+                        execute (assgn (var (res->name),
+                                        seqbase (new (type (mty_void), 
+                                                      type (mty_oid)),
+                                                 lit_oid (0))));
+                        break;
+                    }
+                }
+
+            /* apply the multi-column equi-join */
+            if (shared_cols) {
+                execute (assgn (var (res->name), 
+                                mc_intersect (args)),
+                         assgn (var (lmap->name),
+                                reverse (mark (var (res->name), lit_oid (0)))),
+                         assgn (var (rmap->name),
+                                reverse (mark (reverse (var (res->name)),
+                                               lit_oid (0)))));
+            }
+            
+            /* If there was no equality predicate apply a normal inequality
+               thetajoin to the first predicate.
+               For all remaining predicates (also the ones that appear in 
+               combination with equi-join predicates we apply a selection
+               (post) filter. */
+            for (unsigned int i = 0; i < p->sem.thetajoin.count; i++)
+                if (p->sem.thetajoin.pred[i].comp != alg_comp_eq) {
+                    mvar_t *l, *r;
+                    bool type_match = false;
+                    
+                    ltype = type_of (L(p), p->sem.thetajoin.pred[i].left);
+                    assert (monomorphic (ltype));
+                    
+                    if (ltype & aat_node) {
+                        /* FIXME */
+                        assert (!(ltype & aat_anode) &&
+                                "cope with attribute node inequality");
+
+                        mvar_t *lpre, *rpre, *lfrag, *rfrag;
+                        
+                        l = new_var (1);
+                        r = new_var (1);
+                        
+                        lpre = env_mvar (
+                                   L(p)->env,
+                                   p->sem.thetajoin.pred[i].left,
+                                   aat_pre);
+                        lfrag = env_mvar (
+                                    L(p)->env,
+                                    p->sem.thetajoin.pred[i].left,
+                                    aat_pfrag);
+                        
+                        rpre = env_mvar_unsafe (
+                                   R(p)->env,
+                                   p->sem.thetajoin.pred[i].right,
+                                   aat_pre);
+                        rfrag = env_mvar_unsafe (
+                                    R(p)->env,
+                                    p->sem.thetajoin.pred[i].right,
+                                    aat_pfrag);
+
+                        if (rpre && rfrag) {
+                            mvar_t *tmp_res = new_var (1);
+                            execute (assgn (var (tmp_res->name),
+                                            zip_nodes (
+                                                var (lfrag->name),
+                                                var (lpre->name),
+                                                nil (),
+                                                var (rfrag->name),
+                                                var (rpre->name),
+                                                nil ())),
+                                     assgn (var (l->name),
+                                            fetch (var (tmp_res->name),
+                                                   lit_int (0))),
+                                     assgn (var (r->name),
+                                            fetch (var (tmp_res->name),
+                                                   lit_int (1))));
+                            unpin (tmp_res, 1);
+                            type_match = true;
+                        }
+                    } else {
+                        l = env_mvar (
+                                L(p)->env,
+                                p->sem.thetajoin.pred[i].left,
+                                ltype);
+                        r = env_mvar_unsafe (
+                                R(p)->env,
+                                p->sem.thetajoin.pred[i].right,
+                                ltype);
+                        if (r) type_match = true;
+                    }
+
+                    if (type_match) {
+                        if (!initialized) {
+                            /* As there was no equi-join condition and 
+                               this is the first inequality predicate
+                               we evaluate a thetajoin */
+
+                            PFmil_t *comp;
+                            /* find the correct comparison */
+                            switch (p->sem.thetajoin.pred[i].comp) {
+                                case alg_comp_eq:
+                                    comp = var (PF_MIL_VAR_EQ); break; 
+                                case alg_comp_gt:
+                                    comp = var (PF_MIL_VAR_GT); break; 
+                                case alg_comp_ge:
+                                    comp = var (PF_MIL_VAR_GE); break; 
+                                case alg_comp_lt:
+                                    comp = var (PF_MIL_VAR_LT); break; 
+                                case alg_comp_le:
+                                    comp = var (PF_MIL_VAR_LE); break; 
+                                default:
+                                    PFoops (OOPS_FATAL, "incorrect comparison");
+                            }
+
+                            execute (assgn (var (res->name),
+                                            tjoin (
+                                                var (l->name),
+                                                reverse (var (r->name)),
+                                                comp,
+                                                PFmil_mmult (
+                                                    count (var (r->name)),
+                                                    lit_lng (64)))),
+                                     assgn (var (lmap->name),
+                                            reverse (mark (var (res->name),
+                                                           lit_oid (0)))),
+                                     assgn (var (rmap->name),
+                                            reverse (
+                                                mark (reverse (var (res->name)),
+                                                      lit_oid (0)))));
+                        } else {
+                            /* apply a (post) filter */
+                            
+                            PFmil_t * (*op) (const PFmil_t *, const PFmil_t *);
+                            /* find the correct comparison */
+                            switch (p->sem.thetajoin.pred[i].comp) {
+                                case alg_comp_eq:
+                                    op = PFmil_meq; break; 
+                                case alg_comp_gt:
+                                    op = PFmil_mgt; break; 
+                                case alg_comp_ge:
+                                    op = PFmil_mge; break; 
+                                case alg_comp_lt:
+                                    op = PFmil_mlt; break; 
+                                case alg_comp_le:
+                                    op = PFmil_mle; break; 
+                                case alg_comp_ne:
+                                    op = PFmil_mne; break; 
+                                default:
+                                    assert(0);
+                                    op = NULL;
+                            }
+
+                            /* apply filter and update the mapping
+                               relations lmap and rmap */
+                            execute (assgn (var (res->name), 
+                                            op (leftjoin (
+                                                    var (lmap->name),
+                                                    var (l->name)),
+                                                leftjoin (
+                                                    var (rmap->name),
+                                                    var (r->name)))),
+                                     assgn (var (res->name),
+                                            reverse (
+                                                mark (select_ (
+                                                          var (res->name),
+                                                          lit_bit (true)),
+                                                      lit_oid (0)))),
+                                     assgn (var (lmap->name),
+                                            leftjoin (
+                                                var (res->name),
+                                                var (lmap->name))),
+                                     assgn (var (rmap->name),
+                                            leftjoin (
+                                                var (res->name),
+                                                var (rmap->name))));
+                        }
+
+                        initialized = true;
+                    } else {
+                        /* If one join argument has no match we
+                           can return an empty result */
+                        execute (assgn (var (lmap->name),
+                                        seqbase (new (type (mty_void), 
+                                                      type (mty_oid)),
+                                                 lit_oid (0))),
+                                 assgn (var (rmap->name),
+                                        seqbase (new (type (mty_void), 
+                                                      type (mty_oid)),
+                                                 lit_oid (0))));
+                        break;
+                    }
+                    if (ltype & aat_node) {
+                        unpin (l, 1);
+                        unpin (r, 1);
+                    }
+                }
+            /* release temporary variable res */
+            unpin (res, 1);
+
+            /* map all matching tuples (of the left input relation) */
+            for (unsigned int col = 0; col < env_count (L(p)->env); col++) {
+                 mvar_t *a = new_var (p->refctr);
+
+                 execute (
+                      assgn (var (a->name),
+                             leftjoin (
+                                 var (lmap->name),
+                                 var (env_at (L(p)->env, col).mvar->name))));
+                      
+                 env_add (p->env,
+                          env_at (L(p)->env, col).att,
+                          env_at (L(p)->env, col).ty,
+                          a);
+            }
+            unpin (lmap, 1);
+
+            /* map all matching tuples (of the right input relation) */
+            for (unsigned int col = 0; col < env_count (R(p)->env); col++) {
+                 mvar_t *a = new_var (p->refctr);
+
+                 execute (
+                      assgn (var (a->name),
+                             leftjoin (
+                                 var (rmap->name),
+                                 var (env_at (R(p)->env, col).mvar->name))));
+                      
+                 env_add (p->env,
+                          env_at (R(p)->env, col).att,
+                          env_at (R(p)->env, col).ty,
+                          a);
+            }
+            unpin (rmap, 1);
+            
+        } break;
+
+        /* Rel:      unq2_thetajoin (Rel, Rel) */
+        case 18:
+        {
+            PFalg_simple_type_t lty = type_of (L(p),
+                                               p->sem.unq_thetajoin.left);
+            PFalg_simple_type_t rty = type_of (R(p),
+                                               p->sem.unq_thetajoin.right);
+            PFalg_simple_type_t t = 0;
+            mvar_t *l = NULL;
+            mvar_t *r = NULL;
+            mvar_t *ldist = NULL;
+            mvar_t *rdist = NULL;
+            mvar_t *res = new_var (1);
+            mvar_t *left, *right;
+            PFmil_t *comp;
+
+            assert (lty == rty);
+            assert (type_of (L(p), p->sem.unq_thetajoin.ldist) == aat_nat);
+            assert (type_of (R(p), p->sem.unq_thetajoin.rdist) == aat_nat);
+
+            /* find the variable names for the distinct attributes */
+            ldist = env_mvar_unsafe (L(p)->env,
+                                     p->sem.unq_thetajoin.ldist, aat_nat);
+            rdist = env_mvar_unsafe (R(p)->env,
+                                     p->sem.unq_thetajoin.rdist, aat_nat);
+
+            /* find the variable names for the join attributes */
+            for (t = 1; t; t <<= 1)
+                if (t & lty && t & rty) {
+                    l = env_mvar_unsafe (L(p)->env,
+                                         p->sem.unq_thetajoin.left, t);
+                    r = env_mvar_unsafe (R(p)->env,
+                                         p->sem.unq_thetajoin.right, t);
+                    break;
+                }
+            
+            /* check consistency */
+            if (t != lty || t != rty || !ldist || !rdist)
+                PFoops (OOPS_FATAL, 
+                        "multi-predicate thetajoins (with duplicate remvoval)"
+                        " are not supported");
+
+            if (!l || !r)
+                PFoops (OOPS_FATAL, "incompatible types in thetajoin");
+
+            /* find the correct comparison */
+            switch (p->sem.unq_thetajoin.comp) {
+                case alg_comp_eq: comp = var (PF_MIL_VAR_EQ); break; 
+                case alg_comp_gt: comp = var (PF_MIL_VAR_GT); break; 
+                case alg_comp_ge: comp = var (PF_MIL_VAR_GE); break; 
+                case alg_comp_lt: comp = var (PF_MIL_VAR_LT); break; 
+                case alg_comp_le: comp = var (PF_MIL_VAR_LE); break; 
+                default:
+                    PFoops (OOPS_FATAL, "incorrect comparison");
+            }
+
+            /* add the two result columns to the environment */
+            left = new_var (p->refctr);
+            right = new_var (p->refctr);
+            env_add (p->env, p->sem.unq_thetajoin.ldist, aat_nat, left);
+            env_add (p->env, p->sem.unq_thetajoin.rdist, aat_nat, right);
+
+            /* apply the duplicate removing thetajoin */
+            execute (
+                assgn (var (res->name),
+                       unq2_tjoin (leftjoin (reverse (var (ldist->name)),
+                                             var (l->name)),
+                                   leftjoin (reverse (var (rdist->name)),
+                                             var (r->name)),
+                                   comp)),
+                assgn (var (left->name),
+                       reverse (mark (var (res->name),
+                                      lit_oid (0)))),
+                assgn (var (left->name),
+                       assert_order (var (left->name))),
+                assgn (var (right->name),
+                       reverse (mark (reverse (var (res->name)),
+                                      lit_oid (0)))));
+
+            unpin (res, 1);
+        } break;
+
+        /* Rel:      unq1_thetajoin (Rel, Rel) */
+        case 19:
+        {
+            PFalg_simple_type_t lty = type_of (L(p),
+                                               p->sem.unq_thetajoin.left);
+            PFalg_simple_type_t rty = type_of (R(p),
+                                               p->sem.unq_thetajoin.right);
+            PFalg_simple_type_t t = 0;
+            mvar_t *l = NULL;
+            mvar_t *r = NULL;
+            mvar_t *ldist = NULL;
+            mvar_t *rdist = NULL;
+            mvar_t *res = new_var (p->refctr);
+            PFmil_t *comp;
+
+            assert (lty == rty);
+            assert (type_of (L(p), p->sem.unq_thetajoin.ldist) == aat_nat);
+            assert (type_of (R(p), p->sem.unq_thetajoin.rdist) == aat_nat);
+
+            /* find the variable names for the distinct attributes */
+            ldist = env_mvar_unsafe (L(p)->env,
+                                     p->sem.unq_thetajoin.ldist, aat_nat);
+            rdist = env_mvar_unsafe (R(p)->env,
+                                     p->sem.unq_thetajoin.rdist, aat_nat);
+
+            /* find the variable names for the join attributes */
+            for (t = 1; t; t <<= 1)
+                if (t & lty && t & rty) {
+                    l = env_mvar_unsafe (L(p)->env,
+                                         p->sem.unq_thetajoin.left, t);
+                    r = env_mvar_unsafe (R(p)->env,
+                                         p->sem.unq_thetajoin.right, t);
+                    break;
+                }
+            
+            /* check consistency */
+            if (t != lty || t != rty || !ldist || !rdist)
+                PFoops (OOPS_FATAL, 
+                        "multi-predicate thetajoins (with duplicate remvoval)"
+                        " are not supported");
+
+            if (!l || !r)
+                PFoops (OOPS_FATAL, "incompatible types in thetajoin");
+
+            /* find the correct comparison */
+            switch (p->sem.unq_thetajoin.comp) {
+                case alg_comp_eq: comp = var (PF_MIL_VAR_EQ); break; 
+                case alg_comp_gt: comp = var (PF_MIL_VAR_GT); break; 
+                case alg_comp_ge: comp = var (PF_MIL_VAR_GE); break; 
+                case alg_comp_lt: comp = var (PF_MIL_VAR_LT); break; 
+                case alg_comp_le: comp = var (PF_MIL_VAR_LE); break; 
+                default:
+                    PFoops (OOPS_FATAL, "incorrect comparison");
+            }
+
+            /* add the two result columns to the environment */
+            env_add (p->env, p->sem.unq_thetajoin.ldist, aat_nat, res);
+
+            /* apply the duplicate removing thetajoin */
+            execute (
+                assgn (var (res->name),
+                       reverse(
+                           mark (
+                               unq1_tjoin (
+                                   leftjoin (reverse (var (ldist->name)),
+                                             var (l->name)),
+                                   leftjoin (reverse (var (rdist->name)),
+                                             var (r->name)),
+                                   var (ldist->name),
+                                   var (rdist->name),
+                                   comp),
+                               lit_oid (0)))));
+        } break;
+
         /* Rel:      project (Rel) */
         case 20:
             /*
@@ -3216,6 +3658,17 @@ reduce (PFpa_op_t * p, int goalnt)
                                                 type_of (p, p->sem.number.part))
                                            )),
                                    lit_oid (1)))));
+            else if (env_at (L(p)->env, 0).ty == aat_pfrag)
+                /* As in many cases two adjacent path steps are separated
+                   by a number operator and the fragment is constant we
+                   try to avoid an additional dependency on the fragment
+                   to ease 'materialize' operator removal. */
+                execute (
+                    assgn (var (res->name),
+                           mark (VAR (L(p)->env,
+                                      env_at (L(p)->env, 0).att,
+                                      aat_pre),
+                                 lit_oid (1))));
             else
                 execute (
                     assgn (var (res->name),

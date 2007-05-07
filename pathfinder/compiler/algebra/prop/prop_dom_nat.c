@@ -235,15 +235,15 @@ add_dom (PFprop_t *prop, PFalg_att_t attr, dom_t dom)
 static void
 bulk_add_dom (PFprop_t *prop, PFla_op_t *child)
 {
+    dom_t cur_dom;
     assert (prop);
     assert (child);
     assert (child->prop);
 
-    for (unsigned int i = 0; i < child->schema.count; i++) {
-        add_dom (prop,
-                 child->schema.items[i].name,
-                 PFprop_dom (child->prop, child->schema.items[i].name));
-    }
+    for (unsigned int i = 0; i < child->schema.count; i++)
+        if ((cur_dom = PFprop_dom (child->prop,
+                                   child->schema.items[i].name)))
+            add_dom (prop, child->schema.items[i].name, cur_dom);
 }
 
 /**
@@ -278,28 +278,28 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_cross:
+        {
             /* we have to make sure to assign subdomains as otherwise
                dynamic empty relations might be ignored */
+            dom_t cur_dom;
 
             /* create new subdomains for all attributes */
-            for (unsigned int i = 0; i < L(n)->schema.count; i++) {
-                add_subdom (n->prop,
-                            PFprop_dom (L(n)->prop,
-                                        L(n)->schema.items[i].name),
-                            id);
-                add_dom (n->prop, L(n)->schema.items[i].name, id);
-                id++;
-            }
+            for (unsigned int i = 0; i < L(n)->schema.count; i++)
+                if ((cur_dom = PFprop_dom (L(n)->prop,
+                                           L(n)->schema.items[i].name))) {
+                    add_subdom (n->prop, cur_dom, id);
+                    add_dom (n->prop, L(n)->schema.items[i].name, id);
+                    id++;
+                }
             /* create new subdomains for all attributes */
-            for (unsigned int i = 0; i < R(n)->schema.count; i++) {
-                add_subdom (n->prop,
-                            PFprop_dom (R(n)->prop,
-                                        R(n)->schema.items[i].name),
-                            id);
-                add_dom (n->prop, R(n)->schema.items[i].name, id);
-                id++;
-            }
-            break;
+            for (unsigned int i = 0; i < R(n)->schema.count; i++)
+                if ((cur_dom = PFprop_dom (R(n)->prop,
+                                           R(n)->schema.items[i].name))) {
+                    add_subdom (n->prop, cur_dom, id);
+                    add_dom (n->prop, R(n)->schema.items[i].name, id);
+                    id++;
+                }
+        }   break;
 
         case la_eqjoin:
         case la_eqjoin_unq:
@@ -325,18 +325,8 @@ infer_dom (PFla_op_t *n, unsigned int id)
             else if (PFprop_subdom (n->prop, att2_dom, att1_dom))
                 join_dom = att2_dom;
             else {
-                PFalg_simple_type_t join_ty = 0;
-                /* find the join type */
-                for (unsigned int i = 0; i < L(n)->schema.count; i++)
-                    if (L(n)->schema.items[i].name == n->sem.eqjoin.att1) {
-                        join_ty = L(n)->schema.items[i].type;
-                        break;
-                    }
-                assert (join_ty);
-                        
                 join_dom = id++;
-
-                if (join_ty == aat_nat) {
+                if (att1_dom) {
                     add_subdom (n->prop, att1_dom, join_dom);
                     add_subdom (n->prop, att2_dom, join_dom);
                 }
@@ -397,18 +387,8 @@ infer_dom (PFla_op_t *n, unsigned int id)
             else if (PFprop_subdom (n->prop, att2_dom, att1_dom))
                 join_dom = att2_dom;
             else {
-                PFalg_simple_type_t join_ty = 0;
-                /* find the join type */
-                for (unsigned int i = 0; i < L(n)->schema.count; i++)
-                    if (L(n)->schema.items[i].name == n->sem.eqjoin.att1) {
-                        join_ty = L(n)->schema.items[i].type;
-                        break;
-                    }
-                assert (join_ty);
-                        
                 join_dom = id++;
-
-                if (join_ty == aat_nat) {
+                if (att1_dom) {
                     add_subdom (n->prop, att1_dom, join_dom);
                     add_subdom (n->prop, att2_dom, join_dom);
                 }
@@ -431,6 +411,85 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 }
         }   break;
 
+        case la_thetajoin:
+        {   /**
+             * Infering the domains of the equi-join attributes results
+             * in a common domain, that is either the more general
+             * domain if the are in a subdomain relationship or a
+             * new subdomain. A new subdomain is created for all other
+             * columns.
+             */
+            dom_t att1_dom, att2_dom, join_dom;
+            for (unsigned int i = 0; i < n->sem.thetajoin.count; i++)
+                if (n->sem.thetajoin.pred[i].comp == alg_comp_eq) {
+                    att1_dom = PFprop_dom (L(n)->prop,
+                                           n->sem.thetajoin.pred[i].left);
+                    att2_dom = PFprop_dom (R(n)->prop,
+                                           n->sem.thetajoin.pred[i].right);
+
+                    if (!att1_dom || !att2_dom)
+                        continue;
+
+                    if (att1_dom == att2_dom)
+                        join_dom = att1_dom;
+                    else if (PFprop_subdom (n->prop, att1_dom, att2_dom))
+                        join_dom = att1_dom;
+                    else if (PFprop_subdom (n->prop, att2_dom, att1_dom))
+                        join_dom = att2_dom;
+                    else {
+                        join_dom = id++;
+                        add_subdom (n->prop, att1_dom, join_dom);
+                        add_subdom (n->prop, att2_dom, join_dom);
+                    }
+                    add_dom (n->prop,
+                             n->sem.thetajoin.pred[i].left,
+                             join_dom);
+                    add_dom (n->prop,
+                             n->sem.thetajoin.pred[i].right,
+                             join_dom);
+                }
+            
+            /* copy domains and update domains of join arguments */
+            for (unsigned int i = 0; i < L(n)->schema.count; i++)
+                if (L(n)->schema.items[i].type == aat_nat) {
+                    unsigned int j;
+                    /* filter out the equi-join columns */
+                    for (j = 0; j < n->sem.thetajoin.count; j++)
+                        if (n->sem.thetajoin.pred[i].comp == alg_comp_eq &&
+                            L(n)->schema.items[i].name ==
+                            n->sem.thetajoin.pred[j].left)
+                            break;
+                    if (j == n->sem.thetajoin.count) {
+                        add_subdom (n->prop,
+                                    PFprop_dom (
+                                        L(n)->prop,
+                                        L(n)->schema.items[i].name),
+                                    id);
+                        add_dom (n->prop, L(n)->schema.items[i].name, id++);
+                    }
+                }
+
+            for (unsigned int i = 0; i < R(n)->schema.count; i++)
+                if (R(n)->schema.items[i].type == aat_nat) {
+                    unsigned int j;
+                    /* filter out the equi-join columns */
+                    for (j = 0; j < n->sem.thetajoin.count; j++)
+                        if (n->sem.thetajoin.pred[i].comp == alg_comp_eq &&
+                            R(n)->schema.items[i].name ==
+                            n->sem.thetajoin.pred[j].right)
+                            break;
+                    if (j == n->sem.thetajoin.count) {
+                        add_subdom (n->prop,
+                                    PFprop_dom (
+                                        R(n)->prop,
+                                        R(n)->schema.items[i].name),
+                                    id);
+                        add_dom (n->prop, R(n)->schema.items[i].name, id++);
+                    }
+                }
+
+        }   break;
+            
         case la_project:
             /* bind all existing domains to the possibly new names */
             for (unsigned int i = 0; i < n->schema.count; i++)

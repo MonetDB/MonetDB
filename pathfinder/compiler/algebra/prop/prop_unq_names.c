@@ -163,6 +163,9 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
 
         case la_cross:
+        case la_thetajoin: /* for theta-join operators we could find
+         a better solution that does not introduce renaming projections.
+         It is however unclear whether this would benefit any rewrites. */
         {
             /* To avoid name collisions that arise from applying
                a cross product on input relations with identical

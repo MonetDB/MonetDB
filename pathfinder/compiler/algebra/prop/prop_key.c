@@ -298,6 +298,32 @@ infer_key (PFla_op_t *n)
             copy (n->prop->keys, L(n)->prop->keys);
             break;
 
+        case la_thetajoin:
+        {
+            bool key_left = false,
+                 key_right = false;
+            
+            for (unsigned int i = 0; i < n->sem.thetajoin.count; i++)
+                if (n->sem.thetajoin.pred[i].comp == alg_comp_eq) {
+                    key_left = key_left ||
+                               PFprop_key (L(n)->prop,
+                                           n->sem.thetajoin.pred[i].left);
+                    key_right = key_right ||
+                                PFprop_key (L(n)->prop,
+                                            n->sem.thetajoin.pred[i].right);
+                }
+
+            /* only a key-join retains all key properties */
+            if (key_left && key_right) {
+                copy (n->prop->keys, L(n)->prop->keys);
+                union_list (n->prop->keys, R(n)->prop->keys);
+            }
+            else if (key_left)
+                copy (n->prop->keys, R(n)->prop->keys);
+            else if (key_right)
+                copy (n->prop->keys, L(n)->prop->keys);
+        }   break;
+            
         case la_project:
             /* rename keys columns from old to new */
             for (unsigned int i = 0; i < n->sem.proj.count; i++)

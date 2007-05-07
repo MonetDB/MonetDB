@@ -34,6 +34,7 @@
 /* always include pathfinder.h first! */
 #include "pathfinder.h"
 #include <assert.h>
+#include <stdio.h>
 
 #include "algopt.h"
 #include "map_names.h"
@@ -41,6 +42,7 @@
 #include "timer.h"
 #include "algebra_cse.h"
 #include "la_proxy.h"
+#include "la_thetajoin.h"
 
 #define MAP_ORI_NAMES(phase)                                                \
         if (unq_names) {                                                    \
@@ -94,7 +96,14 @@ PFalgopt (PFla_op_t *root, bool timing)
     bool proxies_involved = false;
     char *args = PFstate.opt_alg;
 
+#define DEBUG_OPT_STR 0
+#if DEBUG_OPT_STR
+    fprintf (stderr, "-o");
+#endif
     while (*args) {
+#if DEBUG_OPT_STR
+        fputc (*args, stderr);
+#endif
         switch (*args) {
             case 'A': /* disabled */
                 /*
@@ -242,6 +251,20 @@ PFalgopt (PFla_op_t *root, bool timing)
                            PFtimer_str (tm));
                 break;
 
+            case 'T':
+                MAP_ORI_NAMES("thetajoin optimization")
+                    
+                tm = PFtimer_start ();
+                
+                root = PFintro_thetajoins (root);
+                root = PFalgopt_thetajoin (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   thetajoin optimization:\t    %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'V':
                 MAP_ORI_NAMES("required value optimization")
                 REMOVE_PROXIES("required value optimization")
@@ -374,6 +397,9 @@ PFalgopt (PFla_op_t *root, bool timing)
         args++;
         root = PFla_cse (root);
     }
+#if DEBUG_OPT_STR
+    fputc ('\n', stderr);
+#endif
 
     if (unq_names)
         PFinfo (OOPS_WARNING,

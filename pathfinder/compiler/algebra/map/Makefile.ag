@@ -34,6 +34,7 @@ lib_map = {
         DIR = libdir
         SOURCES = \
                 intro_proxy.c \
+                intro_thetajoin.c \
                 map_unq_names.c \
                 map_ori_names.c \
                 resolve_proxy.c

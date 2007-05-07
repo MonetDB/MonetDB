@@ -60,6 +60,9 @@ static char *a_id[]  = {
     , [pa_leftjoin]        = "LEFTJOIN"         /* \"#00FF00\" */
     , [pa_eqjoin]          = "EQJOIN"           /* \"#00FF00\" */
     , [pa_semijoin]        = "SEMIJOIN"         /* \"#00FF00\" */
+    , [pa_thetajoin]       = "thetajoin"
+    , [pa_unq2_thetajoin]  = "unique_thetajoin"
+    , [pa_unq1_thetajoin]  = "dep_unique_thetajoin"
     , [pa_project]         = "¶ "
     , [pa_select]          = "SEL"
     , [pa_append_union]    = "APPEND_UNION"
@@ -136,6 +139,9 @@ static char *xml_id[]  = {
     , [pa_leftjoin]        = "leftjoin"
     , [pa_eqjoin]          = "eqjoin"
     , [pa_semijoin]        = "semijoin"
+    , [pa_thetajoin]       = "thetajoin"
+    , [pa_unq2_thetajoin]  = "unique_thetajoin"
+    , [pa_unq1_thetajoin]  = "dep_unique_thetajoin"
     , [pa_project]         = "project"
     , [pa_select]          = "select"
     , [pa_append_union]    = "append_union"
@@ -291,6 +297,20 @@ xml_literal (PFalg_atom_t a)
     return (char *) s->base;
 }
 
+static char *
+comp_str (PFalg_comp_t comp) {
+    switch (comp) {
+        case alg_comp_eq: return "eq";
+        case alg_comp_gt: return "gt";
+        case alg_comp_ge: return "ge";
+        case alg_comp_lt: return "lt";
+        case alg_comp_le: return "le";
+        case alg_comp_ne: return "ne";
+    }
+    assert (0);
+    return NULL;
+}
+
 /**
  * Print algebra tree in AT&T dot notation.
  * @param dot Array into which we print
@@ -312,6 +332,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_leftjoin]        = "\"#00FF00\""
         , [pa_eqjoin]          = "\"#00FF00\""
         , [pa_semijoin]        = "\"#00FF00\""
+        , [pa_thetajoin]       = "\"#00FF00\""
+        , [pa_unq2_thetajoin]  = "\"#00FF00\""
+        , [pa_unq1_thetajoin]  = "\"#00FF00\""
         , [pa_project]         = "\"#EEEEEE\""
         , [pa_select]          = "\"#00DDDD\""
         , [pa_append_union]    = "\"#909090\""
@@ -438,6 +461,38 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.eqjoin.att2));
             break;
             
+        case pa_thetajoin:
+            PFarray_printf (dot, "%s", a_id[n->kind]);
+
+            for (c = 0; c < n->sem.thetajoin.count; c++)
+                PFarray_printf (dot, "\\n(%s %s %s)",
+                                PFatt_str (n->sem.thetajoin.pred[c].left),
+                                comp_str (n->sem.thetajoin.pred[c].comp),
+                                PFatt_str (n->sem.thetajoin.pred[c].right));
+            break;
+            
+        case pa_unq2_thetajoin:
+            PFarray_printf (dot, "%s:\\n(%s %s %s)\\ndist (%s, %s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.unq_thetajoin.left),
+                            comp_str (n->sem.unq_thetajoin.comp),
+                            PFatt_str (n->sem.unq_thetajoin.right),
+                            PFatt_str (n->sem.unq_thetajoin.ldist),
+                            PFatt_str (n->sem.unq_thetajoin.ldist));
+            break;
+
+        case pa_unq1_thetajoin:
+            PFarray_printf (dot, "%s:\\n(%s = %s)\\n"
+                            "(%s %s %s)\\ndist (%s)",
+                            a_id[n->kind],
+                            PFatt_str (n->sem.unq_thetajoin.ldist),
+                            PFatt_str (n->sem.unq_thetajoin.rdist),
+                            PFatt_str (n->sem.unq_thetajoin.left),
+                            comp_str (n->sem.unq_thetajoin.comp),
+                            PFatt_str (n->sem.unq_thetajoin.right),
+                            PFatt_str (n->sem.unq_thetajoin.ldist));
+            break;
+            
         case pa_project:
             if (n->sem.proj.items[0].new != n->sem.proj.items[0].old)
                 PFarray_printf (dot, "%s (%s:%s", a_id[n->kind],
@@ -475,9 +530,15 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
             break;
 
         case pa_std_sort:
-        case pa_refine_sort:
             PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
                             PFord_str (n->sem.sortby.required));
+            break;
+
+        case pa_refine_sort:
+            PFarray_printf (dot, "%s: (%s)\\nprovided (%s)",
+                            a_id[n->kind],
+                            PFord_str (n->sem.sortby.required),
+                            PFord_str (n->sem.sortby.existing));
             break;
 
         case pa_fun_1to1:
@@ -908,6 +969,72 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.eqjoin.att2));
             break;
 
+        case pa_thetajoin:
+            PFarray_printf (xml, "    <content>\n");
+            for (c = 0; c < n->sem.thetajoin.count; c++)
+                PFarray_printf (xml,
+                                "      <comparison kind=\"%s\">\n"
+                                "        <column name=\"%s\" new=\"false\""
+                                               " position=\"1\"/>\n"
+                                "        <column name=\"%s\" new=\"false\""
+                                               " position=\"2\"/>\n"
+                                "      </comparison>\n",
+                                comp_str (n->sem.thetajoin.pred[c].comp),
+                                PFatt_str (n->sem.thetajoin.pred[c].left),
+                                PFatt_str (n->sem.thetajoin.pred[c].right));
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_unq2_thetajoin:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <comparison kind=\"%s\">\n"
+                            "        <column name=\"%s\" new=\"false\""
+                                           " position=\"1\"/>\n"
+                            "        <column name=\"%s\" new=\"false\""
+                                           " position=\"2\"/>\n"
+                            "      </comparison>\n"
+                            "      <distinct>\n"
+                            "        <column name=\"%s\" new=\"false\""
+                                           " position=\"1\"/>\n"
+                            "        <column name=\"%s\" new=\"false\""
+                                           " position=\"2\"/>\n"
+                            "      </distinct>\n"
+                            "    </content>\n",
+                            comp_str (n->sem.unq_thetajoin.comp),
+                            PFatt_str (n->sem.unq_thetajoin.left),
+                            PFatt_str (n->sem.unq_thetajoin.right),
+                            PFatt_str (n->sem.unq_thetajoin.ldist),
+                            PFatt_str (n->sem.unq_thetajoin.rdist));
+            break;
+
+        case pa_unq1_thetajoin:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <comparison kind=\"=\">\n"
+                            "        <column name=\"%s\" new=\"false\""
+                                           " position=\"1\"/>\n"
+                            "        <column name=\"%s\" new=\"false\""
+                                           " position=\"2\"/>\n"
+                            "      </comparison>\n"
+                            "      <comparison kind=\"%s\">\n"
+                            "        <column name=\"%s\" new=\"false\""
+                                           " position=\"1\"/>\n"
+                            "        <column name=\"%s\" new=\"false\""
+                                           " position=\"2\"/>\n"
+                            "      </comparison>\n"
+                            "      <distinct>\n"
+                            "        <column name=\"%s\" new=\"false\"/>\n"
+                            "      </distinct>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.unq_thetajoin.ldist),
+                            PFatt_str (n->sem.unq_thetajoin.rdist),
+                            comp_str (n->sem.unq_thetajoin.comp),
+                            PFatt_str (n->sem.unq_thetajoin.left),
+                            PFatt_str (n->sem.unq_thetajoin.right),
+                            PFatt_str (n->sem.unq_thetajoin.ldist));
+            break;
+
         case pa_project:
             PFarray_printf (xml, "    <content>\n");
             for (c = 0; c < n->sem.proj.count; c++)
@@ -950,7 +1077,7 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
             for (c = 0; c < PFord_count (n->sem.sortby.existing); c++)
                 PFarray_printf (xml, 
                                 "      <column name=\"%s\" direction=\"%s\""
-                                        "function=\"existing sort\""
+                                        " function=\"existing sort\""
                                         " position=\"%u\" new=\"false\">\n"
                                 "        <annotation>%u. existing sort "
                                         "criterion</annotation>\n"
@@ -969,7 +1096,7 @@ pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
             for (c = 0; c < PFord_count (n->sem.sortby.required); c++)
                 PFarray_printf (xml, 
                                 "      <column name=\"%s\" direction=\"%s\""
-                                        "function=\"new sort\""
+                                        " function=\"new sort\""
                                         " position=\"%u\" new=\"false\">\n"
                                 "        <annotation>%u. sort argument"
                                         "</annotation>\n"

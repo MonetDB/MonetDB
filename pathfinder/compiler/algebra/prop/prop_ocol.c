@@ -119,6 +119,7 @@ infer_ocol (PFla_op_t *n)
 
         case la_cross:
         case la_eqjoin:
+        case la_thetajoin:
             ocols (n) = copy_ocols (ocols (L(n)), 
                                     ocols_count (L(n)) +
                                     ocols_count (R(n)));

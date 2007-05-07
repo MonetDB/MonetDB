@@ -47,6 +47,7 @@ EXTRA_DIST = \
 	import.h \
         intro_rec_border.h \
 	la_proxy.h \
+	la_thetajoin.h \
 	logdebug.h \
 	logical.h \
 	logical_mnemonic.h \

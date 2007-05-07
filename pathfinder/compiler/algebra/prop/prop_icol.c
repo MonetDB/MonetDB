@@ -259,6 +259,19 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = n->sem.eqjoin.att2;
             break;
 
+        case la_thetajoin:
+            n->prop->l_icols = n->prop->icols;
+            n->prop->r_icols = n->prop->icols;
+
+            /* add all join columns to the inferred icols */
+            for (unsigned int i = 0; i < n->sem.thetajoin.count; i++) {
+                n->prop->l_icols = union_ (n->prop->l_icols,
+                                           n->sem.thetajoin.pred[i].left);
+                n->prop->r_icols = union_ (n->prop->r_icols,
+                                           n->sem.thetajoin.pred[i].right);
+            }
+            break;
+
         case la_project:
             n->prop->l_icols = 0;
             /* rename icols columns from new to old */

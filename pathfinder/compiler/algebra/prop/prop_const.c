@@ -243,6 +243,7 @@ infer_const (PFla_op_t *n)
         case la_attach:
         case la_cross:
         case la_eqjoin:
+        case la_thetajoin:
         case la_eqjoin_unq:
         case la_select:
         case la_distinct:
@@ -621,6 +622,7 @@ infer_const (PFla_op_t *n)
         case la_empty_tbl:
         case la_cross:
         case la_eqjoin:
+        case la_thetajoin:
         case la_eqjoin_unq:
         case la_distinct:
         /* we also might calculate some result constants.

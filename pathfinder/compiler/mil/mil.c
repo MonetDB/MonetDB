@@ -310,6 +310,11 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_PROP_TEXT:   return "PROP_TEXT";
         case PF_MIL_VAR_PROP_COM:    return "PROP_COM"; 
         case PF_MIL_VAR_PROP_INS:    return "PROP_INS";    
+        case PF_MIL_VAR_LE:          return "LE";
+        case PF_MIL_VAR_LT:          return "LT";
+        case PF_MIL_VAR_EQ:          return "EQ";
+        case PF_MIL_VAR_GT:          return "GT";
+        case PF_MIL_VAR_GE:          return "GE";
         case PF_MIL_VAR_TRACE_OUTER: return "trace_outer";
         case PF_MIL_VAR_TRACE_INNER: return "trace_inner";
         case PF_MIL_VAR_TRACE_ITER:  return "trace_iter";
@@ -610,6 +615,45 @@ PFmil_t *
 PFmil_leftjoin (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_leftjoin, a, b);
+}
+
+/**
+ * Monet thetajoin() operator
+ */
+PFmil_t *
+PFmil_thetajoin (const PFmil_t *a, const PFmil_t *b,
+                 const PFmil_t *comp, const PFmil_t *size)
+{
+    return wire4 (m_thetajoin, a, b, comp, size);
+}
+
+/**
+ * Monet htordered_unique_thetajoin PROC
+ */
+PFmil_t * PFmil_unq2_thetajoin (const PFmil_t *a, const PFmil_t *b,
+                                const PFmil_t *comp)
+{
+    return wire3 (m_unq2_tjoin, a, b, comp);
+}
+
+/**
+ * MIL ll_htordered_unique_thetajoin PROC
+ */
+PFmil_t * PFmil_unq1_thetajoin (const PFmil_t *a, const PFmil_t *b,
+                                const PFmil_t *c, const PFmil_t *d,
+                                const PFmil_t *comp)
+{
+    return wire5 (m_unq1_tjoin, a, b, c, d, comp);
+}
+
+/**
+ * MIL combine_node_info PROC
+ */
+PFmil_t * PFmil_zip_nodes (const PFmil_t *a, const PFmil_t *b,
+                           const PFmil_t *c, const PFmil_t *d,
+                           const PFmil_t *e, const PFmil_t *f)
+{
+    return wire6 (m_zip_nodes, a, b, c, d, e, f);
 }
 
 /**
@@ -1014,6 +1058,15 @@ PFmil_gt (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Multiplexed comparison operator (equality)
+ */
+PFmil_t *
+PFmil_meq (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_meq, a, b);
+}
+
+/**
  * Multiplexed comparison operator (greater than)
  */
 PFmil_t *
@@ -1023,12 +1076,39 @@ PFmil_mgt (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
- * Multiplexed comparison operator (equality)
+ * Multiplexed comparison operator (greater equal)
  */
 PFmil_t *
-PFmil_meq (const PFmil_t *a, const PFmil_t *b)
+PFmil_mge (const PFmil_t *a, const PFmil_t *b)
 {
-    return wire2 (m_meq, a, b);
+    return wire2 (m_mge, a, b);
+}
+
+/**
+ * Multiplexed comparison operator (less than)
+ */
+PFmil_t *
+PFmil_mlt (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mlt, a, b);
+}
+
+/**
+ * Multiplexed comparison operator (less equal)
+ */
+PFmil_t *
+PFmil_mle (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mle, a, b);
+}
+
+/**
+ * Multiplexed comparison operator (inequality)
+ */
+PFmil_t *
+PFmil_mne (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mne, a, b);
 }
 
 /**

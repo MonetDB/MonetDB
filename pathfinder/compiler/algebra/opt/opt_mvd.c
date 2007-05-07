@@ -423,6 +423,63 @@ opt_mvd (PFla_op_t *p)
         }
         break;
         
+    case la_thetajoin:
+        /* Move the independent expression (the one without any
+           join attributes) up the DAG. */
+        if (is_cross (L(p))) {
+            bool all_left = true,
+                 all_right = true;
+            
+            for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+                all_left  = all_left &&
+                            att_present (LL(p), p->sem.thetajoin.pred[i].left);
+                all_right = all_right &&
+                            att_present (LR(p), p->sem.thetajoin.pred[i].left);
+            }
+
+            if (all_left)
+                *p = *(cross_can (LR(p), thetajoin (LL(p), R(p), 
+                                                    p->sem.thetajoin.count,
+                                                    p->sem.thetajoin.pred)));
+            else if (all_right)
+                *p = *(cross_can (LL(p), thetajoin (LR(p), R(p),
+                                                    p->sem.thetajoin.count,
+                                                    p->sem.thetajoin.pred)));
+            else
+                /* do not rewrite */
+                break;
+
+            modified = true;
+            break;
+        }
+        if (is_cross (R(p))) {
+            bool all_left = true,
+                 all_right = true;
+            
+            for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+                all_left  = all_left &&
+                            att_present (RL(p), p->sem.thetajoin.pred[i].right);
+                all_right = all_right &&
+                            att_present (RR(p), p->sem.thetajoin.pred[i].right);
+            }
+
+            if (all_left)
+                *p = *(cross_can (RR(p), thetajoin (L(p), RL(p), 
+                                                    p->sem.thetajoin.count,
+                                                    p->sem.thetajoin.pred)));
+            else if (all_right)
+                *p = *(cross_can (RL(p), thetajoin (L(p), RR(p),
+                                                    p->sem.thetajoin.count,
+                                                    p->sem.thetajoin.pred)));
+            else
+                /* do not rewrite */
+                break;
+
+            modified = true;
+            break;
+        }
+        break;
+        
     case la_project:
         /* Split project operator and push it beyond the cross product. */
         if (is_cross (L(p))) {

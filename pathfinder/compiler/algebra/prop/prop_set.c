@@ -120,6 +120,7 @@ prop_infer_set (PFla_op_t *n, bool set)
 
         case la_cross:
         case la_eqjoin:
+        case la_thetajoin:
         case la_cross_mvd:
         case la_eqjoin_unq:
         case la_disjunion:
