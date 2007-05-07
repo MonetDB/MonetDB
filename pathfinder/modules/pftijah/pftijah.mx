@@ -193,7 +193,7 @@ var returnAllElements := true;
 if (view_bbp_name().reverse().exist("tj_collName")) {
 	if (bat("tj_collName").count() > 0) {
 		var name := bat("tj_collName").fetch(0);
-		tj_setCollName(name);
+		# tj_setCollName(name);
 	}
 }
 
@@ -2207,7 +2207,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     var pre_size := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
     
     # See which document contain the query terms we create a bat of [doc, term-id]:
-    var doc_tid := _containing_desc(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size,desc);
+    var doc_tid := _containing_desc(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size,qenv);
     
     # len(doc): [doc, size]
     var doc_len := [dbl](bat("tj_" + qenv.fetch(QENV_FTINAME) + "_size1").semijoin(doc_tid));
