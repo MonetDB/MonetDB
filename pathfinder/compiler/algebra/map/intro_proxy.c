@@ -2104,6 +2104,25 @@ generate_join_proxy (PFla_op_t *root,
     /* adjust the count */
     req_cols.count = count;
 
+    /* We are certain that this join is only a mapping join
+       (see join_entry ()). Any input column (at the proxy base)
+       that is propagated along the left *and* the right side
+       of the equi-join and which is not modified contains
+       the same values and can be pruned from the entry_proj
+       projection list. Here we can prune one of its occurrences
+       in the above renaming projection list. */
+    for (i = 0; i < dist_count; i++)
+        for (j = i+1; j < dist_count; j++)
+            if (entry_proj[i].new == entry_proj[j].new) {
+                /* copy the last projection pair to the
+                   current column that appears twice */
+                dist_count--;
+                entry_proj[i] = entry_proj[dist_count];
+                proxy_proj[i] = proxy_proj[dist_count];
+                i--;
+                break;
+            }
+        
     /* Rebuild the proxy entry operator and extend it with a projection
        that maps the resulting column names to the names of the proxy
        base. In addition map the old key column to the resulting relation
