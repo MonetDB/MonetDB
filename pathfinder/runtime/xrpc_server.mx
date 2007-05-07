@@ -353,7 +353,11 @@ static int
 isTrusted(stream *out, char *location)
 {
     if (!isAllowed(xrpc_trusted, location)) {
-        send_err(out, 1, ERR403, "env:Sender", "Called module not allowed.");
+        char * msg = "Called module not allowed:";
+        size_t len = strlen(msg) + strlen(location) + 5;
+        char * err = alloca(len);  assert(err);
+        snprintf(err, len, "%s '%s'.", msg, location);
+        send_err(out, 1, ERR403, "env:Sender", err);
         return 0;
     }
     return 1;
