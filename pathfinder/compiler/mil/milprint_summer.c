@@ -8309,8 +8309,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var optbat := new(str,str,32);\n");
 
 	milprintf(f,
-	        "    var coll := tj_get_ft_index(optbat,true);\n"
-	        "    tijah_lock := tj_get_collection_lock(coll);\n"
+	        "    var ftindex := tj_get_ft_index(optbat,true);\n"
+	        "    tijah_lock := tj_get_collection_lock(ftindex);\n"
 		"    lock_set(tijah_lock);\n"
 	  );
 	  if ( ctx_counter ) {
@@ -8325,9 +8325,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	        "    iter := iter.tmark(0@0);\n"
 	        "    item := item.tmark(0@0);\n"
 	        "    kind := kind.tmark(0@0);\n"
-		"    var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
-		"    var xdoc_firstpre := bat(\"tj_\" + coll + \"_doc_firstpre\");\n"
-		"    var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
+		"    var xdoc_name := bat(\"tj_\" + ftindex + \"_doc_name\");\n"
+		"    var xdoc_firstpre := bat(\"tj_\" + ftindex + \"_doc_firstpre\");\n"
+		"    var xpfpre := bat(\"tj_\" + ftindex + \"_pfpre\");\n"
 		"    var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
                 "    startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
 		, ctx_counter, ctx_counter, str_counter, ctx_counter, ctx_counter, ctx_counter, ctx_counter);
@@ -8347,12 +8347,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		, (ctx_counter?"true":"false"),item_ext, str_counter);
 	    /* translate tijah_pre to pf-pre */
 	    milprintf(f,
-                "    var docpre := bat(\"tj_\" + GLOBAL_COLLNAME + \"_doc_firstpre\").[oid]();\n"
-                "    var pfpre :=  bat(\"tj_\" + GLOBAL_COLLNAME + \"_pfpre\");\n"
+                "    var docpre := bat(\"tj_\" + ftindex + \"_doc_firstpre\").[oid]();\n"
+                "    var pfpre :=  bat(\"tj_\" + ftindex + \"_pfpre\");\n"
                 "    item  := nexi_score.hmark(0@0);\n"
                 "    var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
                 "    item := item.join(pfpre).sort().tmark();\n"
-                "    var needed_docs := bat(\"tj_\" + GLOBAL_COLLNAME + \"_doc_name\").semijoin(frag.tunique());\n"
+                "    var needed_docs := bat(\"tj_\" + ftindex + \"_doc_name\").semijoin(frag.tunique());\n"
 		"    lock_unset(tijah_lock); tijah_lock := lock_nil;\n"
                 "    var loaded_docs := ws.fetch(OPEN_NAME).reverse();\n"
                 "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"

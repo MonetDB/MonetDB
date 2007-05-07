@@ -434,11 +434,10 @@ int old_main(BAT* optbat, char* startNodes_name)
             
         } else if (strcmp(optName, "scoreBase") == 0) {
             if (strcasecmp(optVal, "ONE") == 0) {
-                MILPRINTF(MILOUT, "scoreBase := 1;\n");
+                MILPRINTF(MILOUT, "qenv := tj_setScoreBase(\"1\",qenv);\n");
             } else {
-                MILPRINTF(MILOUT, "scoreBase := 0;\n");
+                MILPRINTF(MILOUT, "qenv := tj_setScoreBase(\"0\",qenv);\n");
             }
-            
         } else if (strcmp(optName, "stem_stop_query") == 0) {
             if (strcasecmp(optVal, "TRUE") == 0) {
                 stem_stop_query = TRUE;
@@ -489,13 +488,15 @@ int old_main(BAT* optbat, char* startNodes_name)
         
     
     // Prepend some variables to the MIL code.
-    MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", parserCtx->collection);
+    if ( 0 ) { MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", parserCtx->collection); /* DELETE */ /* DELETE */ }
+    MILPRINTF(MILOUT, "var qenv := create_qenv(\"%s\",\"%s\",\"0\");\n",parserCtx->collection,parserCtx->collection);
+
 #if 0
     MILPRINTF(MILOUT, "retNum := %d;\n", retNum);
 #endif
-    MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ GLOBAL_COLLNAME +\"_param\").find(\"stemmer\");\n");
+    MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ qenv.fetch(QENV_FTINAME) +\"_param\").find(\"stemmer\");\n");
     if (strcmp(background_collection,""))
-    { MILPRINTF(MILOUT, "tj_setBackgroundCollName(\"%s\");\n", background_collection); }
+    { MILPRINTF(MILOUT, "qenv := tj_setBackgroundCollName(\"%s\",qenv);\n", background_collection); }
     
     if ( return_all ) {
         MILPRINTF(MILOUT, "returnAllElements := true;\n" );

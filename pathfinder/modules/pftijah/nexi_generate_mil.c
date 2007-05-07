@@ -236,7 +236,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
   p1_command = *p_com_array;
 
   /* default region score setup */
-  MILPRINTF(MILOUT, "var base := scoreBase;\n\n");
+  MILPRINTF(MILOUT, "var base := int(qenv.fetch(QENV_SCOREBASE));\n\n");
 
   /*   printf("%d\n",p_com_array); */
   /*   printf("%d\n",p1_command); */
@@ -301,13 +301,13 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
           if (!strcmp(p_com->argument,"\"Root\"")) {
 	    if ( use_startNodes ) {
-              MILPRINTF(MILOUT, "R%d := new_select_startnodes%s(startNodes);\n", com_num,parserCtx->ffPfx);
+              MILPRINTF(MILOUT, "R%d := select_startnodes%s(startNodes,qenv);\n", com_num,parserCtx->ffPfx);
 	    } else {
-              MILPRINTF(MILOUT, "R%d := new_select_root%s();\n", com_num,parserCtx->ffPfx);
+              MILPRINTF(MILOUT, "R%d := select_root%s(qenv);\n", com_num,parserCtx->ffPfx);
 	    }
           }
           else {
-            MILPRINTF(MILOUT, "R%d := select_node%s(%s,%s);\n", com_num, parserCtx->ffPfx,p_com->argument, txt_retr_model->e_class);
+            MILPRINTF(MILOUT, "R%d := select_node%s(%s,%s,qenv);\n", com_num, parserCtx->ffPfx,p_com->argument, txt_retr_model->e_class);
           }
 
         }
@@ -316,10 +316,10 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
           com_nr_left = p_com->left->number;
 
           if (!strcmp(p_com->argument,"")) {
-            MILPRINTF(MILOUT, "R%d := R%d.select_node%s(%d);\n", com_num, com_nr_left,parserCtx->ffPfx,0);
+            MILPRINTF(MILOUT, "R%d := R%d.select_node%s(%d,qenv);\n", com_num, com_nr_left,parserCtx->ffPfx,0);
           }
           else {
-            MILPRINTF(MILOUT, "R%d := R%d.select_node%s(%s,%s);\n", com_num, com_nr_left, parserCtx->ffPfx, p_com->argument, txt_retr_model->e_class);
+            MILPRINTF(MILOUT, "R%d := R%d.select_node%s(%s,%s,qenv);\n", com_num, com_nr_left, parserCtx->ffPfx, p_com->argument, txt_retr_model->e_class);
           }
 
         }
@@ -328,13 +328,13 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
       case SELECT_NODE_VAGUE:
 
-         MILPRINTF(MILOUT, "R%d := select_node_vague%s(%s,%s,\"%s\");\n", com_num, parserCtx->ffPfx, p_com->argument, txt_retr_model->e_class, txt_retr_model->exp_class);
+         MILPRINTF(MILOUT, "R%d := select_node_vague%s(%s,%s,\"%s\",qenv);\n", com_num, parserCtx->ffPfx, p_com->argument, txt_retr_model->e_class, txt_retr_model->exp_class);
 
          break;
 
       case P_SELECT_NODE_T:
 
-      MILPRINTF(MILOUT, "R%d := p_select_node_t%s(%s,%d,%d,%d,%d,%d,%s,\"%s\",%d,%d,%f,%f,%d,%d,%d,%d,%s,%s,%d);\n", com_num,parserCtx->ffPfx, p_com->argument, txt_retr_model->model, 	txt_retr_model->or_comb, txt_retr_model->and_comb, txt_retr_model->up_prop, txt_retr_model->down_prop, txt_retr_model->e_class, txt_retr_model->exp_class, 		txt_retr_model->stemming, txt_retr_model->size_type, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->param3, txt_retr_model->prior_type, txt_retr_model->prior_size, img_retr_model->model, img_retr_model->descriptor, img_retr_model->attr_name, img_retr_model->computation);
+      MILPRINTF(MILOUT, "R%d := p_select_node_t%s(%s,%d,%d,%d,%d,%d,%s,\"%s\",%d,%d,%f,%f,%d,%d,%d,%d,%s,%s,%d,qenv);\n", com_num,parserCtx->ffPfx, p_com->argument, txt_retr_model->model, 	txt_retr_model->or_comb, txt_retr_model->and_comb, txt_retr_model->up_prop, txt_retr_model->down_prop, txt_retr_model->e_class, txt_retr_model->exp_class, 		txt_retr_model->stemming, txt_retr_model->size_type, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->param3, txt_retr_model->prior_type, txt_retr_model->prior_size, img_retr_model->model, img_retr_model->descriptor, img_retr_model->attr_name, img_retr_model->computation);
 
          break;
 
@@ -344,7 +344,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
         if (p_com->left == NULL && p_com->right == NULL) {
           
-          MILPRINTF(MILOUT, "R%d := select_term(%s,%d);\n", com_num, p_com->argument, txt_retr_model->stemming);
+          MILPRINTF(MILOUT, "R%d := select_term(%s,%d,qenv);\n", com_num, p_com->argument, txt_retr_model->stemming);
 
         }
         else if (p_com->left != NULL) {
@@ -352,10 +352,10 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
           com_nr_left = p_com->left->number;
           
           if (!strcmp(p_com->argument,"")) {
-            MILPRINTF(MILOUT, "R%d := R%d.select_term();\n", com_num, com_nr_left);
+            MILPRINTF(MILOUT, "R%d := R%d.select_term(qenv);\n", com_num, com_nr_left);
           }
           else {
-            MILPRINTF(MILOUT, "R%d := R%d.select_term(%s,%d);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->stemming);  
+            MILPRINTF(MILOUT, "R%d := R%d.select_term(%s,%d,qenv);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->stemming);  
           }
           
         }
@@ -457,14 +457,14 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
           com_nr_left = p_com->left->number;
           com_nr_right = p_com->right->number;
 
-          MILPRINTF(MILOUT, "R%d := R%d.containing(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.containing(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
         }
         else {
 
           com_nr_left = p_com->left->number;
 
-          MILPRINTF(MILOUT, "R%d := R%d.containing();\n", com_num, com_nr_left);
+          MILPRINTF(MILOUT, "R%d := R%d.containing(qenv);\n", com_num, com_nr_left);
 
         }
 
@@ -477,14 +477,14 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
           com_nr_left = p_com->left->number;
           com_nr_right = p_com->right->number;
 
-          MILPRINTF(MILOUT, "R%d := R%d.contained_by%s(R%d%s);\n", com_num, com_nr_left, parserCtx->ffPfx, com_nr_right, parserCtx->flastPfx);
+          MILPRINTF(MILOUT, "R%d := R%d.contained_by%s(R%d%s,qenv);\n", com_num, com_nr_left, parserCtx->ffPfx, com_nr_right, parserCtx->flastPfx);
 
         }
         else {
 
           com_nr_right = p_com->right->number;
 
-          MILPRINTF(MILOUT, "R%d := R%d.contained_by();\n", com_num, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.contained_by(qenv);\n", com_num, com_nr_right);
 
         }
 
@@ -518,25 +518,25 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
         switch (txt_retr_model->up_prop) {
         case UP_SUM :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_sum(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
           
           break;
 
         case UP_AVG :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_avg(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
           
           break;
 
         case UP_WSUMD :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsumd(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsumd(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
           break;
 
         case UP_WSUMA :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsuma(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsuma(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
           break;
 
@@ -554,25 +554,25 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
           switch (txt_retr_model->down_prop) {
           case DOWN_SUM :
 
-            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
             break;
 
           case DOWN_AVG :
 
-            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
             break;
 
           case DOWN_WSUMD :
 
-            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
             break;
 
           case DOWN_WSUMA :
 
-            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
             break;
 
@@ -587,25 +587,25 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
           switch (txt_retr_model->down_prop) {
           case DOWN_SUM :
 
-            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum();\n", com_num, com_nr_right);
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum(qenv);\n", com_num, com_nr_right);
           
             break;
 
           case DOWN_AVG :
 
-            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg();\n", com_num, com_nr_right);
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg(qenv);\n", com_num, com_nr_right);
           
             break;
 
           case DOWN_WSUMD :
 
-            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(%d);\n", com_num, com_nr_right, txt_retr_model->size_type);
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(%d,qenv);\n", com_num, com_nr_right, txt_retr_model->size_type);
             
             break;
 
           case DOWN_WSUMA :
 
-            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(%d);\n", com_num, com_nr_right, txt_retr_model->size_type);
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(%d,qenv);\n", com_num, com_nr_right, txt_retr_model->size_type);
 
             break;
 
@@ -619,19 +619,19 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
         com_nr_left = p_com->left->number;
         
-        MILPRINTF(MILOUT, "R%d := R%d.prior_ls(%d);\n", com_num, com_nr_left, txt_retr_model->size_type);
+        MILPRINTF(MILOUT, "R%d := R%d.prior_ls(%d,qenv);\n", com_num, com_nr_left, txt_retr_model->size_type);
         
         break;   
 
       case MUST_CONTAIN_T:
 
-        MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+        MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
         break;
         
       case MUST_NOT_CONTAIN_T:
         
-        MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+        MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
         break;
 
@@ -643,43 +643,43 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
         switch (txt_retr_model->model) {
         case MODEL_BOOL :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
           break;
 
         case MODEL_LM :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LM(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LM(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
           break;
 
         case MODEL_LMS :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMs(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMs(R%d, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
 
           break;
 
         case MODEL_TFIDF :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
           break;
 
         case MODEL_OKAPI :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
 
           break;
 
         case MODEL_GPX :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_GPX(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
           break;
 
         case MODEL_LMA :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMA(R%d, \"%s\", %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMA(R%d, \"%s\", %f, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
 
           break;
 
@@ -697,49 +697,49 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
         switch (txt_retr_model->model) {
         case MODEL_BOOL :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
           break;
 
         case MODEL_LM :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LM(terms, modifiers, %d, %d);\n", com_num, com_nr_left, txt_retr_model->stemming, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LM(terms, modifiers, %d, %d,qenv);\n", com_num, com_nr_left, txt_retr_model->stemming, txt_retr_model->size_type);
 
           break;
 
         case MODEL_LMS :
          
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LMs(terms, modifiers, %f, %d, %d);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LMs(terms, modifiers, %f, %d, %d,qenv);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
 
           break;
         
         case MODEL_NLLR :
             
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR%s(terms, %f%s);\n", com_num, com_nr_left, parserCtx->ffPfx, txt_retr_model->param1, parserCtx->flastPfx);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR%s(terms, %f%s,qenv);\n", com_num, com_nr_left, parserCtx->ffPfx, txt_retr_model->param1, parserCtx->flastPfx);
         
           break;
         
         case MODEL_TFIDF :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
           break;
 
         case MODEL_OKAPI :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
 
           break;
 
         case MODEL_GPX :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_GPX(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
           break;
 
         case MODEL_LMA :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMA(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMA(R%d, %f, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
 
           break;
 
@@ -755,43 +755,43 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
         switch (txt_retr_model->model) {
         case MODEL_BOOL :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
           break;
 
         case MODEL_LM :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LM(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LM(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
           break;
 
         case MODEL_LMS :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMs(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMs(R%d, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
 
           break;
 
         case MODEL_TFIDF :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_tfidf(R%d, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
 
           break;
 
         case MODEL_OKAPI :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Okapi(R%d, %f, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
 
           break;
 
         case MODEL_GPX :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_GPX(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
           break;
 
         case MODEL_LMA :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMA(R%d, \"%s\", %f, %f, %d);\n", com_num, com_nr_left, com_nr_right,  txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMA(R%d, \"%s\", %f, %f, %d,qenv);\n", com_num, com_nr_left, com_nr_right,  txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
 
           break;
 
@@ -807,7 +807,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
         switch (img_retr_model->computation) {
         case IMAGE_AVG :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_i_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_i_avg(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
           break;
 
@@ -823,7 +823,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
         switch (img_retr_model->computation) {
         case IMAGE_AVG :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_i_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_i_avg(R%d,qenv);\n", com_num, com_nr_left, com_nr_right);
 
           break;
         
