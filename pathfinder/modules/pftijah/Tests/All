@@ -1,5 +1,6 @@
 load
 sigs
+procs
 loadthesis
 createcoll0
 createcoll1
