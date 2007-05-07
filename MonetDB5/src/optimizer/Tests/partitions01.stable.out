@@ -1,0 +1,117 @@
+stdout of test 'partitions01` in directory 'src/optimizer` itself:
+
+
+# 09:48:30 >  
+# 09:48:30 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=36708 --set xrpc_port=48585 --set monet_prompt= --trace --dbname=mTests_src_optimizer  partitions01.mal
+# 09:48:30 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information
+##testing the BAT partition manager
+##before the garbage collector steps in
+#include sql;
+#sql.start2();
+#
+#function user.query(A0:sht):void;
+#   x2:bat[:oid,:int]{bid=777,rows=1,notnil=true}  := sql.bind("sys","tmp","i",0);
+#    x11:bat[:oid,:int]{bid=313,rows=0,notnil=true}  := sql.bind("sys","tmp","i",1);
+#    constraints.emptySet(x11);
+#    x13:bat[:oid,:int]{bid=778,rows=0,notnil=true}  := sql.bind("sys","tmp","i",2);
+#    constraints.emptySet(x13);
+#    x19:bat[:oid,:int]{bid=779,rows=1,notnil=true}  := sql.bind("sys","tmp","j",0);
+#    x7 := calc.int(A0);
+#    x8{rows=1} := algebra.uselect(x2,nil:int,x7,false,false);
+#    x16{rows=1} := algebra.markT(x8,0@0);
+#    x17{rows=1} := bat.reverse(x16);
+#    x18{rows=1} := algebra.join(x17,x2);
+#    x21{rows=1} := algebra.join(x17,x19);
+#    x22 := sql.resultSet(2,1,x18);
+#    sql.rsColumn(x22,"sys.tmp","i","int",32,0,x18);
+#    sql.rsColumn(x22,"sys.tmp","j","int",32,0,x21);
+#    sql.exportResult(x22,"");
+#end query;
+function user.query(A0:sht):void;	# 0  (query:void)<-(A0:sht)
+    x2:bat[:oid,:int]{notnil=true,rows=1,bid=777}  := sql.bind("sys","tmp","i",0);	# 1 mvc_bind_wrap (x2:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_6:int)
+    x11:bat[:oid,:int]{notnil=true,rows=0,bid=313}  := sql.bind("sys","tmp","i",1);	# 2 mvc_bind_wrap (x11:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_8:int)
+    constraints.emptySet(x11);	# 3 CemptySet (_9:void)<-(x11:bat[:oid,:int])
+    x13:bat[:oid,:int]{notnil=true,rows=0,bid=778}  := sql.bind("sys","tmp","i",2);	# 4 mvc_bind_wrap (x13:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_11:int)
+    constraints.emptySet(x13);	# 5 CemptySet (_12:void)<-(x13:bat[:oid,:int])
+    x19:bat[:oid,:int]{notnil=true,rows=1,bid=779}  := sql.bind("sys","tmp","j",0);	# 6 mvc_bind_wrap (x19:bat[:oid,:int])<-(_3:str)(_4:str)(_14:str)(_6:int)
+    x7 := calc.int(A0);	# 7 sht_2_int (x7:int)<-(A0:sht)
+    x8{rows=1} := algebra.uselect(x2,nil:int,x7,false,false);	# 8 ALGuselectInclusive (x8:bat[:oid,:oid])<-(x2:bat[:oid,:int])(_17:int)(x7:int)(_18:bit)(_18:bit)
+    x16{rows=1} := algebra.markT(x8,0@0);	# 9 ALGtmark (x16:bat[:oid,:oid])<-(x8:bat[:oid,:oid])(_20:oid)
+    x17{rows=1} := bat.reverse(x16);	# 10 BKCreverse (x17:bat[:oid,:oid])<-(x16:bat[:oid,:oid])
+    x18{rows=1} := algebra.join(x17,x2);	# 11 ALGjoin (x18:bat[:oid,:int])<-(x17:bat[:oid,:oid])(x2:bat[:oid,:int])
+    x21{rows=1} := algebra.join(x17,x19);	# 12 ALGjoin (x21:bat[:oid,:int])<-(x17:bat[:oid,:oid])(x19:bat[:oid,:int])
+    x22 := sql.resultSet(2,1,x18);	# 13 mvc_result_table_wrap (x22:int)<-(_11:int)(_8:int)(x18:bat[:oid,:int])
+    sql.rsColumn(x22,"sys.tmp","i","int",32,0,x18);	# 14 mvc_result_column_wrap (_25:void)<-(x22:int)(_26:str)(_5:str)(_27:str)(_28:int)(_6:int)(x18:bat[:oid,:int])
+    sql.rsColumn(x22,"sys.tmp","j","int",32,0,x21);	# 15 mvc_result_column_wrap (_29:void)<-(x22:int)(_26:str)(_14:str)(_27:str)(_28:int)(_6:int)(x21:bat[:oid,:int])
+    sql.exportResult(x22,"");	# 16 mvc_export_result_wrap (_30:void)<-(x22:int)(_31:str)
+end query;	# 17  
+#optimizer.partitions("user","query");
+#
+#partition properties
+function user.query{segment=2}(A0:sht):void;
+    x2:bat[:oid,:int]{segment=2,notnil=true,rows=1,bid=777}  := sql.bind("sys","tmp","i",0);
+    x11:bat[:oid,:int]{segment=-1,notnil=true,rows=0,bid=313}  := sql.bind("sys","tmp","i",1);
+    constraints.emptySet(x11);
+    x13:bat[:oid,:int]{segment=-1,notnil=true,rows=0,bid=778}  := sql.bind("sys","tmp","i",2);
+    constraints.emptySet(x13);
+    x19:bat[:oid,:int]{segment=5,notnil=true,rows=1,bid=779}  := sql.bind("sys","tmp","j",0);
+    x7{segment=7} := calc.int(A0);
+    x8{segment=7,rows=1} := algebra.uselect(x2,nil:int,x7,false,false);
+    x16{segment=7,rows=1} := algebra.markT(x8,0@0);
+    x17{segment=7,rows=1} := bat.reverse(x16);
+    x18{segment=7,rows=1} := algebra.join(x17,x2);
+    x21{segment=7,rows=1} := algebra.join(x17,x19);
+    x22{segment=8} := sql.resultSet(2,1,x18);
+    sql.rsColumn(x22,"sys.tmp","i","int",32,0,x18);
+    sql.rsColumn(x22,"sys.tmp","j","int",32,0,x21);
+    sql.exportResult(x22,"");
+end query;
+LAST 8
+!TypeException:user.query[19]:'x18' may not be used before being set
+!TypeException:user.query[20]:'x18' may not be used before being set
+!TypeException:user.query[21]:'x21' may not be used before being set
+partition optimizer Strategy
+#function user.query{segment=2}(A0:sht):void;
+#    x2:bat[:oid,:int]  := sql.bind("sys","tmp","i",0);
+#    bpm2:bat[:oid,:int]  := bpm.take("sys_tmp_i");
+#    x11:bat[:oid,:int]  := sql.bind("sys","tmp","i",1);
+#    constraints.emptySet(x11);
+#    x13:bat[:oid,:int]  := sql.bind("sys","tmp","i",2);
+#    constraints.emptySet(x13);
+#    x19:bat[:oid,:int]  := sql.bind("sys","tmp","j",0);
+#    bpm13:bat[:oid,:int]  := bpm.take("sys_tmp_j");
+#    x7 := calc.int(A0);
+#    L16 := list.new();
+#barrier x2:bat[:oid,:int]  := bpm.newIterator(bpm2);
+#    x8 := algebra.uselect(x2,nil:int,x7,false,false);
+#    x16 := algebra.markT(x8,0@0);
+#    x17 := bat.reverse(x16);
+#    x18 := algebra.join(x17,x2);
+#    x21 := algebra.join(x17,x19);
+#    redo x2:bat[:oid,:int]  := bpm.hasMoreElements(bpm2);
+#exit x2:bat[:oid,:int] ;
+#    x22 := sql.resultSet(2,1,x18);
+#    sql.rsColumn(x22,"sys.tmp","i","int",32,0,x18);
+#    sql.rsColumn(x22,"sys.tmp","j","int",32,0,x21);
+#    sql.exportResult(x22,"");
+#end query;
+!TypeException:user.query[19]:'x18' may not be used before being set
+!TypeException:user.query[20]:'x18' may not be used before being set
+!TypeException:user.query[21]:'x21' may not be used before being set
+function user.main():void;	# 0  (main:void)
+#testing the BAT partition manager 	# 1  (_1:str)
+#before the garbage collector steps in 	# 2  (_2:str)
+    sql.prelude();	# 3 SQLprelude (_3:void)
+    sql.start2();	# 4 SQLsession2 (_4:void)
+end main;	# 5  
+
+# 09:48:30 >  
+# 09:48:30 >  Done.
+# 09:48:30 >  
+

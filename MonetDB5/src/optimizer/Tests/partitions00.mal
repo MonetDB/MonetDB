@@ -1,27 +1,7 @@
 #testing the BAT partition manager
 include sql;
+include mallist;
 sql.start2();
-R := bat.new(:oid,:int);
-bat.append(R,1);
-bat.append(R,3);
-bat.append(R,5);
-bat.append(R,7);
-bat.append(R,11);
-
-function user.pr(Ra:bat[:any_1,:any_2]):void;
-barrier Rp:= bpm.newIterator(Ra);
-	io.print(Rp);
-	redo Rp:= bpm.hasMoreElements(Ra);
-exit Rp;
-end pr;
-
-# add the stuff to the BPM and dump it
-Ra:= bpm.deposit("sys_voyages_captain",R);
-user.pr(Ra);
-
-bpm.partition(Ra,6);
-#bpm.dump(Ra);
-#user.pr(Ra);
 
 function user.query();
     t1:bat[:oid,:int]:= sql.bind("sys","t","i",0);
@@ -33,5 +13,3 @@ function user.query();
     sql.exportResult(t14,"");
 end query;
 optimizer.partitions("user","query");
-
-bpm.discard(Ra);

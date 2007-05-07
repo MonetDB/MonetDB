@@ -1,0 +1,24 @@
+#testing the BAT partition manager
+#before the garbage collector steps in
+include sql;
+sql.start2();
+
+function user.query(A0:sht):void;
+   x2:bat[:oid,:int]{bid=777,rows=1,notnil=true}  := sql.bind("sys","tmp","i",0);
+    x11:bat[:oid,:int]{bid=313,rows=0,notnil=true}  := sql.bind("sys","tmp","i",1);
+    constraints.emptySet(x11);
+    x13:bat[:oid,:int]{bid=778,rows=0,notnil=true}  := sql.bind("sys","tmp","i",2);
+    constraints.emptySet(x13);
+    x19:bat[:oid,:int]{bid=779,rows=1,notnil=true}  := sql.bind("sys","tmp","j",0);
+    x7 := calc.int(A0);
+    x8{rows=1} := algebra.uselect(x2,nil:int,x7,false,false);
+    x16{rows=1} := algebra.markT(x8,0@0);
+    x17{rows=1} := bat.reverse(x16);
+    x18{rows=1} := algebra.join(x17,x2);
+    x21{rows=1} := algebra.join(x17,x19);
+    x22 := sql.resultSet(2,1,x18);
+    sql.rsColumn(x22,"sys.tmp","i","int",32,0,x18);
+    sql.rsColumn(x22,"sys.tmp","j","int",32,0,x21);
+    sql.exportResult(x22,"");
+end query;
+optimizer.partitions("user","query");
