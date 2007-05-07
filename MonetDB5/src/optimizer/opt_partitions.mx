@@ -115,7 +115,7 @@ static int
 OPTpartitionProperties(MalBlkPtr mb)
 {
 	int i,j,k,done,limit, grp= 1;
-	InstrPtr *old,p, mat[256];
+	InstrPtr *old,p;
 	int tmp[256];
 	int lastsegment=0;
 
@@ -129,7 +129,6 @@ OPTpartitionProperties(MalBlkPtr mb)
 			/* test the BPM catalog */
 
 			setArgProperty(mb, p,0,"segment","=",TYPE_int,&grp);
-			mat[grp] = p;
 			tmp[grp] = getArg(p,0);
 			grp++;
 			pushInstruction(mb,p);
