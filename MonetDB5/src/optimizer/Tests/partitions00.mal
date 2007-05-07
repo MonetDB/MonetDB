@@ -13,3 +13,4 @@ function user.query();
     sql.exportResult(t14,"");
 end query;
 optimizer.partitions("user","query");
+mdb.list("user","query");

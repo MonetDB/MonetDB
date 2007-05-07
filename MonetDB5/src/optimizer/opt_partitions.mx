@@ -86,7 +86,7 @@ comment "Experiment with partitioned databases";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define DEBUG_OPT_PARTITIONED	/* show partial result */
+/*#define DEBUG_OPT_PARTITIONED	show partial result */
 #endif
 @c
 #include "mal_config.h"
@@ -258,7 +258,7 @@ that we do not re-use them
 Wrapup the last segment first
 @c
 		if(seg && *seg!=lastsegment && anchor){
-			if( *seg!= last)
+			if( anchor)
 			for(j=0; j< old[i-1]->retc; j++){
 				q = newStmt(mb,"list","append");
 				pushArgument(mb,q,list);
@@ -341,7 +341,6 @@ OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	last= OPTpartitionProperties(mb);
 	OPTpartitionStrategy(mb,last);
-printf("LAST %d\n",last);
 	optimizerCheck(mb,"partitions",1,GDKusec()-clk,OPT_CHECK_ALL);
 #ifdef DEBUG_OPT_PARTITIONED
 	stream_printf(GDKout,"partition optimizer Strategy\n");
