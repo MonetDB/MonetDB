@@ -54,6 +54,8 @@
 .COMMAND tj_log(str, int) : void = CMDtj_log;
  "DEBUGGING function for difficult IO areas"
 
+.COMMAND tj_setlog(str) : void = CMDtj_setlog;
+ "intialize outputfile for tj_log"
 
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
@@ -3070,15 +3072,27 @@ int executeMIL(char* str) {
     return monet_exec(str);
 }
 
-#define LOGGERFILE "/tmp/TIJAH_LOGGER"
-
 /*
  * the CMDtj_log is created to be able to print in very difficult IO areas
  */
+
+static char* tj_log_fileName = NULL; /* set by [CMD]tj_setlog(filename) */
+
+int CMDtj_setlog(str filename) {
+	FILE* f;
+	
+	if ( (f = fopen(filename,"w")) ) {
+	    fprintf(f,"# Start TIJAH logger:\n");
+	    fclose(f);
+	    tj_log_fileName = (char*)strdup(filename);
+	}
+	return GDK_SUCCEED;
+}
+
 int CMDtj_log(str format, int* i) {
 	FILE* f;
 	
-	if ( (f = fopen(LOGGERFILE,"a")) ) {
+	if ( (f = fopen(tj_log_fileName,"a")) ) {
 	    fprintf(f,(const char*)format,*i);
 	    fclose(f);
 	}

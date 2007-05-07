@@ -47,6 +47,7 @@ module 'pftijah'
 [ "tj_log(str, int) : void"																		  ]
 [ "tj_normalizeTerm(str, str) : str"																	  ]
 [ "tj_ping() : void"																			  ]
+[ "tj_setlog(str) : void"																		  ]
 [ "treemergejoin_sort(BAT[void,oid], BAT[void,int], BAT[void,oid]) : BAT[oid,oid]"											  ]
 
 quit();
