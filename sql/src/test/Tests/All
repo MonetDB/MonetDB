@@ -84,3 +84,4 @@ function_syntax
 procedure_syntax
 
 compoundselect
+alterdefault
