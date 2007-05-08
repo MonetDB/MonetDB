@@ -41,9 +41,11 @@
 #include "libxml/parserInternals.h"
 
 #define STACK_MAX 100
-#define PROPSIZE 32
+#define PROPSIZE 31999 
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+#define NAME_ID 0
 
 typedef long int nat;
 
@@ -57,6 +59,77 @@ enum kind_t {
 };
 typedef enum kind_t kind_t;
 
+/* definitions for our hashtable */
+
+/* code for no key */
+#define NO_KEY -1 
+
+/* returns true if no such key is found */
+#define NOKEY(k) (k == -1)
+
+
+/**
+ * Compression function
+ * We use a universal hash function
+ */
+#define MAD(key) (((123 * key + 593) % PRIME) % HASHTABLE_SIZE)
+
+/* size of the hashtable */
+#define HASHTABLE_SIZE 2000 
+
+/* prime number due to bertrands theorem:
+ * there exists a prime number p that satisfy,
+ * the following condition
+ *     HASHTABLE _SIZE < p <= 2 HASHTABLE
+ */
+#define PRIME 2011
+
+/* 33 has proved  to be a good choice
+ * for polynomial hash functions
+ */
+#define POLY_A 33
+
+/**
+ * Hashfunction
+ */
+int hashfunc(char *str); 
+
+#define HASHFUNCTION(str) MAD(hashfunc(strndup(str, MIN(strlen(str), 10))))
+
+/* We use a seperate chaining strategy to
+ * mantain out hash_table,
+ * So our bucket is a chained list itself,
+ * to handle possible collisions.
+ */
+typedef struct bucket_t bucket_t;
+struct bucket_t
+{
+    char *key;               /**< key as string */
+    int id;         /**< name_id */
+    bucket_t* next;          /**< next bucket in our list */
+};
+
+/* hash table */
+bucket_t **hash_table;
+
+/* find element in bucket */
+int find_bucket(bucket_t *bucket, char *key);
+
+/* find element in hashtable */
+int find_element(bucket_t **hash_table, char *key);
+
+/* add id and key to the bucket list */
+bucket_t *bucket_insert(bucket_t *bucket,  char *key, int id);
+
+/* insert key and id to hashtable */
+void hashtable_insert(bucket_t **hash_table, char *key, int id);
+
+/* free memory assigned to hash_table */
+void free_hash(bucket_t **hash_table);
+
+/* return a brand new name_id */
+int new_nameid();
+
 typedef struct node_t node_t;
 struct node_t {
     nat       pre;
@@ -65,6 +138,7 @@ struct node_t {
     nat       post_stretched;
     nat       size;
     int       level;
+    int       name_id;
     node_t   *parent;
     kind_t    kind;
     xmlChar  *prop;
@@ -78,7 +152,7 @@ static nat post;
 static nat rank;
 static nat att_id;
 
-static char *format = "%e, %o, %p, %k, %t";
+static char *format = "%e, %s, %l, %k, %t";
 FILE *out;
 FILE *out_attr;
 char  filename[FILENAME_MAX];
@@ -87,6 +161,7 @@ char  outfile[FILENAME_MAX];
 char  outfile_atts[FILENAME_MAX];
 bool  outfile_given = false;
 bool  suppress_attributes = false;
+bool  sql_atts = false;
 
 static void print_tuple (node_t tuple);
 static void flush_buffer (void);
@@ -154,6 +229,24 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     assert (level < STACK_MAX);
 
+    /* try to find the tagname in the
+     * hashtable */
+    int name_id = -1; 
+    if(sql_atts) { 
+	name_id = find_element(hash_table, (char*)tagname);
+
+	/* key not found */
+	if (NOKEY(name_id)) {
+
+	    /* create a new id */
+	    name_id = new_nameid();	
+
+	    hashtable_insert(hash_table, (char*)tagname, name_id);
+
+	    fprintf (out_attr, "%i, \"%s\"\n", name_id, strndup((char*)tagname,PROPSIZE));
+	}
+    }
+
     stack[level] = (node_t) {
         .pre            = pre,
         .post           = 0,
@@ -162,19 +255,53 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         .size           = 0,
         .level          = level,
         .parent         = stack + level - 1,
+	.name_id        = name_id, 
         .kind           = elem,
-        .prop           = strndup (tagname, PROPSIZE)
+        .prop           = NULL 
     };
+
 
     /*
      * FIXME: handle attributes here
      */
     if (!suppress_attributes && atts)
-        while (*atts) {
-            fprintf (out_attr, "%lu, %lu, \"%s\", \"%s\"\n", att_id++, pre,
-                     atts[0], atts[1]);
-            atts += 2;
-        }
+        if (!sql_atts)
+	    while (*atts) {
+		fprintf (out_attr, "%lu, %lu, \"%s\", \"%s\"\n", att_id++, pre,
+			 atts[0], atts[1]);
+		atts += 2;
+	    }
+	/* handle attributes as we need for sql generation */
+	else
+	   while (*atts) {
+		/* try to find the tagname in the
+		 * hashtable */
+		name_id = find_element(hash_table, (char*)tagname);
+
+		/* key not found */
+		if(NOKEY(name_id)) {
+
+		    /* create a new id */
+		    name_id = new_nameid();	
+
+		       printf("NOKEY, %i\n", name_id);
+		    hashtable_insert(hash_table, (char*)atts[0], name_id);
+		}
+
+		pre++;
+	   	print_tuple ((node_t) {
+			.pre = pre,
+			.post = 0,
+			.pre_stretched = 0,
+			.post_stretched = 0,
+			.size = 0,
+			.level = 1,
+			.parent = 0,
+			.name_id = name_id,
+			.kind = attr,
+			.prop = (char*)atts[1]});
+		atts += 2;
+	   }
 }
 
 static void
@@ -226,6 +353,7 @@ flush_buffer (void)
             .size           = 0,
             .level          = level,
             .parent         = stack + level - 1,
+	    .name_id        = -1,
             .kind           = text,
             .prop           = buf,
         };
@@ -275,18 +403,21 @@ static xmlSAXHandler saxhandler = {
 static void
 print_help (int argc, char **argv)
 {
-    printf ("%s - encode XML document in pre/post encoding\n"
+    printf ("%s - encode XML document in different encodings\n"
             "Usage: %s -h             print this help screen\n"
             "       %s -f <filename>  parse XML file <filename>\n"
             "       %s -o <filename>  output filename\n"
-            "       %s -a             suppress attributes\n",
-            argv[0], argv[0], argv[0], argv[0], argv[0]);
+            "       %s -a             suppress attributes\n"
+            "       %s -s             sql encoding supported by pathfinder\n"
+	    "                         \t\t(that is probably what you want)\n",
+            argv[0], argv[0], argv[0], argv[0], argv[0], argv[0]);
 }
 
 static void
 print_tuple (node_t tuple)
 {
-    for (unsigned int i = 0; format[i]; i++)
+    unsigned int i;
+    for (i = 0; format[i]; i++)
         if (format[i] == '%') {
             i++;
             switch (format[i]) {
@@ -319,22 +450,34 @@ print_tuple (node_t tuple)
                                default: assert (0);
                            }
                            break;
+		case 'n':
+		        if (tuple.name_id == -1)
+			    fprintf(out, "NULL");
+			else 
+			    fprintf(out, "%i", tuple.name_id); break;
                 case 't':
-                    putc ('"', out);
-                    for (unsigned int i = 0; i < PROPSIZE && tuple.prop[i]; i++)
-                        switch (tuple.prop[i]) {
-                            case '\n': putc (' ', out); break;
+		{
+		    if(tuple.prop) {
+			unsigned int i;
+			putc ('"', out);
+			for (i = 0; i < PROPSIZE && tuple.prop[i]; i++)
+			    switch (tuple.prop[i]) {
+				case '\n': putc (' ', out); break;
                             case '"':  putc ('"', out); putc ('"', out);
                                        break;
                             default:   putc (tuple.prop[i], out);
                         }
-                    putc ('"', out);
-                    break;
+			putc ('"', out);
+		    }
+		    else {
+		    	fprintf(out, "NULL");
+		    }
+		} break;    
 
                 default:   putc (format[i], out); break;
             }
-        }
-        else
+	    }
+	    else
             putc (format[i], out);
 
     putc ('\n', out);
@@ -348,9 +491,11 @@ main (int argc, char **argv)
     suppress_attributes = false;
     outfile_given = false;
 
+    
+
     /* parse command line using getopt library */
     while (true) {
-        int c = getopt (argc, argv, "F:af:ho:");
+        int c = getopt (argc, argv, "F:af:ho:s");
 
         if (c == -1)
             break;
@@ -375,12 +520,21 @@ main (int argc, char **argv)
                 outfile_given = true;
                 break;
 
+	    case 's':
+		sql_atts = true;
+		format = "%e, %s, %l, %k, %n, %t";
+		break;
+
             case 'h':
                 print_help (argc, argv);
                 exit (0);
 
         }
     }
+
+    /* if we need sql encoding we need to initialize the hashtable */
+    if(sql_atts)
+	hash_table = (bucket_t**) malloc (HASHTABLE_SIZE * sizeof(bucket_t));
 
     if (!outfile_given && !suppress_attributes) {
         fprintf (stderr, "Attribute generation requires output filename.\n");
@@ -409,6 +563,8 @@ main (int argc, char **argv)
         exit (EXIT_FAILURE);
     }
 
+
+
     /* start XML parsing */
     ctx = xmlCreateFileParserCtxt (filename);
     ctx->sax = &saxhandler;
@@ -417,10 +573,109 @@ main (int argc, char **argv)
 
     if (! ctx->wellFormed) {
         fprintf (stderr, "XML input not well-formed\n");
+	if (sql_atts)
+	    free_hash(hash_table);
         exit (EXIT_FAILURE);
     }
 
     fprintf (stderr, "tree height was %i\n", max_level);
+    if (sql_atts)
+        fprintf(stderr, "There are %i tagnames and attribute names in the document\n", --new_nameid());
 
+    if (sql_atts)
+	free_hash(hash_table);
     return 0;
+}
+
+/**
+ * Hashfunction
+ * You should use the macro #HASHFUNCTON 
+ * to apply the the function only to a
+ * fragment of the string
+ */
+int hashfunc(char *str)
+{
+    /* appliing horners rule */
+    int x;
+    int k = strlen(str);
+    k--; 
+
+    x = (int)str[k]-'a';
+    if(k == 0) {
+        return x % PRIME;
+    }
+    return (x + POLY_A * hashfunc(strndup(str, k))) % PRIME; 
+}
+
+
+
+/* find element in bucket */
+int find_bucket(bucket_t *bucket, char *key)
+{
+    bucket_t *actbucket = bucket;
+    while (actbucket)
+    {
+        if (strcmp(actbucket->key, key)==0)
+	{
+	   return actbucket->id;
+	}
+	else
+	    actbucket = actbucket->next;
+    }
+    return NO_KEY;
+}
+
+/* find element in hashtable */
+int find_element(bucket_t **hash_table, char *key)
+{
+    return find_bucket(hash_table[HASHFUNCTION(key)],key);
+}
+
+/* return a brand new name_id */
+int new_nameid()
+{
+    static unsigned int name = NAME_ID;
+    return name++;
+}
+
+/* add id and key to the bucket list */
+bucket_t *bucket_insert(bucket_t *bucket,  char *key, int id)
+{
+    int ident = find_bucket(bucket, key);
+    bucket_t *actbucket = NULL;
+    /* no key found */
+    if( ident == -1) {
+    	actbucket = (bucket_t*) malloc(sizeof(bucket_t));
+	actbucket->id = id;
+	actbucket->key = strndup(key,strlen(key));
+	/* add actbucket to the front of list */
+	actbucket->next = bucket;
+	return actbucket;
+    }
+    else {
+    	return bucket;
+    }
+    /* satisfy picky compilers */
+    return NULL;
+}
+
+/* insert key and id into hashtable*/
+void hashtable_insert(bucket_t **hash_table, char *key, int id)
+{
+     assert (hash_table != NULL);
+     int hashkey = HASHFUNCTION(key);
+     hash_table[hashkey] = bucket_insert(hash_table[hashkey], key, id); 
+     return;
+}
+
+/* free memory assigned to hash_table */
+void free_hash(bucket_t **hash_table)
+{
+   assert (hash_table != NULL);
+   int i = 0;
+   if(hash_table) return;
+
+   for(i = 0; i < HASHTABLE_SIZE; i++) {
+        free(hash_table[i]);
+   }
 }
