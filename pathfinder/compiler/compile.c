@@ -198,7 +198,7 @@ char *PFurlcache (char *uri, int keep)
     xmlParserInputBufferPtr  buf;
     char *ret, url[1024];  
 
-    /* support for the xrpc://x.y.z/URI naming scheme (maps to http://x.y.z:<xrpc_port>/URI) */
+    /* support for the xrpc://x.y.z/URI naming scheme (maps to http://x.y.z:<xrpc_port>/xrpc/URI) */
     if (strncmp(uri, "xrpc://", 7) == 0) {
         char *p = strchr(uri+7, '/');
         char *q = strchr(uri+7, ':');
@@ -208,7 +208,7 @@ char *PFurlcache (char *uri, int keep)
             *q = 0;
         }
         if (p) *p = 0;
-        snprintf(url, 1024, "http://%s:%d/%s", uri+7, port, p?(p+1):"");
+        snprintf(url, 1024, "http://%s:%d/xrpc/%s", uri+7, port, p?(p+1):"");
         if (p) *p = '/';
         if (q) *q = ':';
     } else {
