@@ -13,8 +13,6 @@ sintersect_on_void_bats.SF-1494263
 find_first_on_void_void.SF-1505232
 find_first_on_void_void.SF-1505232-b
 modulo.SF-1514452
-modulo.SF-1514452-b
-modulo.SF-1514452-c
 dense_multiplex.SF-1540019
 BATpropcheck-BATjoin.SF-1568652
 gold_crash.1411919
