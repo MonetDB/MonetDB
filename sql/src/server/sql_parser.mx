@@ -1614,7 +1614,7 @@ column_constraint_type:
 			  append_int(l, $6 );
 			  append_int(l, $7 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- | domain_constraint_type
+ /*TODO: Implemente domain_constraint_type*/
  ;
 
 table_constraint_type:
@@ -1632,8 +1632,7 @@ table_constraint_type:
 			  append_int(l, $7 );
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
-
- |  domain_constraint_type
+ /*TODO: Implemente domain_constraint_type*/
  ;
 
 domain_constraint_type:
