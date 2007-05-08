@@ -463,7 +463,16 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
     stack_top--;
 @
 @c
-
+    if (iter_bat->tkey || ctx_bat->tkey) {
+        /* avoid spending effort on duplicate avoidance
+         * in case we're sure there are no duplicates
+         */
+        @:outer_loop_child(,@:no_duplicates_body@)@
+    } else {
+        @:outer_loop_child(@:skip_duplicates_head@,@:skip_duplicates_body@)@
+    }
+@
+@= outer_loop_child
     /* iterate over all context nodes - evaluation is only done
        starting from the ctx (on the top of the stack) until
        the next ctx node (or the end of the stack top
@@ -486,7 +495,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
            until a descendant is reached. The descendant is then
            pushed on the stack and is the new active ctx */
         else if (stack[stack_top-1].eocs >= ctx) {
-            @:inner_loop_child(ctx)@
+            @:inner_loop_child(ctx,@1,@2)@
             stack[stack_top-1].next_child = pre;
             @:pushctx@
             @:getnextctx@
@@ -497,7 +506,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
            the same ctx node to first activate older nodes
            on the stack */
         else {
-            @:inner_loop_child(stack[stack_top-1].eocs)@
+            @:inner_loop_child(stack[stack_top-1].eocs,@1,@2)@
             @:popctx@
         }
     }
@@ -505,10 +514,10 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
        - only need to evaluate the inner loop and pop, because 
          there are no more new ctx nodes */
     while (stack_top) {
-        @:inner_loop_child(stack[stack_top-1].eocs)@
+        @:inner_loop_child(stack[stack_top-1].eocs,@1,@2)@
         @:popctx@
     }
-
+@
 @= inner_loop_child
     pre = stack[stack_top-1].next_child;
     /* iterates over all childs until the next limit is reached
@@ -536,7 +545,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
                 while (fst_pre <= cand_lst && *(oid*)fst_pre < pre)
                     fst_pre += BUNsize(cand_bat);
                 if (fst_pre <= cand_lst && *(oid*)fst_pre == pre) {
-                        @:inner_loop_child_body@
+                        @:inner_loop_child_body(@2,@3)@
                         fst_pre += BUNsize(cand_bat);
                 }
             }
@@ -547,32 +556,21 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
     } else if (kind) {
         for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
             if ((size[pre] & (1<<31)) == 0 && kind[pre] == kind_test) {
-                @:inner_loop_child_body@
+                @:inner_loop_child_body(@2,@3)@
             }
         }
     } else {
         for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
             if ((size[pre] & (1<<31)) == 0) {
-                @:inner_loop_child_body@
+                @:inner_loop_child_body(@2,@3)@
             }
         }
     }
 @
-@= inner_loop_child_body
-        size_t grow = ((stack[stack_top-1].last - stack[stack_top-1].first) / iter_bunsize) + 1;
-        BUN dst = NULL;
-        int bunsize = BUNsize(res);
+@= skip_duplicates_head
         oid prev_iter = oid_nil;
-
-        /* check, if result buffer is big enough; otherwise extend it */
-        PFll_check_BAT_capacity(res, grow);
-        /* creates a row for every iter, whose ctx node produced
-           a match */
-        dst = BUNlast(res);
-        assert(!res->hloc);
-        for (cur_bun = stack[stack_top-1].first;
-             cur_bun <= stack[stack_top-1].last;
-             cur_bun += iter_bunsize) {
+@
+@= skip_duplicates_body
             oid next_iter = *(oid*)BUNtail(iter_bat,cur_bun);
             if (next_iter != prev_iter) {
                 /* (Even) if the same context node (item)
@@ -589,6 +587,29 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
                 dst += bunsize;
                 prev_iter = next_iter;
             }
+@
+@= no_duplicates_body
+            oid next_iter = *(oid*)BUNtail(iter_bat,cur_bun);
+            *(oid*)dst              = next_iter;
+            *(oid*)(dst+SIZEOF_OID) = pre;
+            dst += bunsize;
+@
+@= inner_loop_child_body
+        @1
+        size_t grow = ((stack[stack_top-1].last - stack[stack_top-1].first) / iter_bunsize) + 1;
+        BUN dst = NULL;
+        int bunsize = BUNsize(res);
+
+        /* check, if result buffer is big enough; otherwise extend it */
+        PFll_check_BAT_capacity(res, grow);
+        /* creates a row for every iter, whose ctx node produced
+           a match */
+        dst = BUNlast(res);
+        assert(!res->hloc);
+        for (cur_bun = stack[stack_top-1].first;
+             cur_bun <= stack[stack_top-1].last;
+             cur_bun += iter_bunsize) {
+            @2
         }
         res->batBuns->free = dst - res->batBuns->base;
         BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/bunsize);
