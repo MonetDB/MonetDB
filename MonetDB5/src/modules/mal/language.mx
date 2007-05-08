@@ -84,6 +84,11 @@ pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
 address MALassertTriple
 comment "Assertion test";
 
+pattern assertSpace(depth:int)
+address safeguardStack
+comment "Ensures that the current call does not consume
+more then depth*vtop elements on the stack";
+
 pattern dataflow():int
 address MALstartDataflow
 comment "The current guarded block is executed using
