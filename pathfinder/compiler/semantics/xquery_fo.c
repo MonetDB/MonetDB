@@ -2090,21 +2090,21 @@ PFfun_xquery_fo (void)
 	     .par_ty = (PFty_t[]) { PFty_xs_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* tijah:query(item*, string) as node* */
+    , /* tijah:query(node*, string) as node* */
       { .ns = PFns_tijah, .loc = "query",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* tijah:query(string, item) as node* */
+    , /* tijah:query(string, node) as node* */
       { .ns = PFns_tijah, .loc = "query",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_string (),
 				    PFty_xs_anyNode () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* tijah:query(item*, string, item) as node* */
+    , /* tijah:query(node*, string, node) as node* */
       { .ns = PFns_tijah, .loc = "query",
         .arity = 3, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
