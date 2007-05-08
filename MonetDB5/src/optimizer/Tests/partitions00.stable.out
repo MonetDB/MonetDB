@@ -36,47 +36,37 @@ function user.query():void;	# 0  (query:void)
 end query;	# 8  
 #optimizer.partitions("user","query");
 #
-#partition properties
+function user.main():void;	# 0  (main:void)
+#testing the BAT partition manager 	# 1  (_1:str)
+    sql.prelude();	# 2 SQLprelude (_2:void)
+#list.prelude(); 	# 3  (_3:str)
+    sql.start2();	# 4 SQLsession2 (_4:void)
+    mdb.list("user","query");	# 5 MDBlist3 (_8:void)<-(_6:str)(_7:str)
+end main;	# 6  
 function user.query{segment=2}():void;
     t1:bat[:oid,:int]{segment=2}  := sql.bind("sys","t","i",0);
+    bpm1:bat[:oid,:int]  := bpm.take("sys_t_i");
+    L6 := list.new();
+barrier t1:bat[:oid,:int]{segment=2}  := bpm.newIterator(bpm1);
     t11{segment=2} := algebra.markT(t1,0@0);
     t12{segment=2} := bat.reverse(t11);
+    list.append(L6,t12);
+    redo t1:bat[:oid,:int]{segment=2}  := bpm.hasMoreElements(bpm1);
+exit t1:bat[:oid,:int]{segment=2} ;
+    L9 := list.new();
+barrier t12{segment=2} := list.newIterator(L6);
+barrier t1:bat[:oid,:int]{segment=2}  := bpm.newIterator(bpm1);
     t13{segment=3} := algebra.join(t12,t1);
+    list.append(L9,t13);
+    redo t1:bat[:oid,:int]{segment=2}  := bpm.hasMoreElements(bpm1);
+    redo t12{segment=2} := list.hasMoreElements(L6);
+exit t1:bat[:oid,:int]{segment=2} ;
+exit t12{segment=2};
+    t13{segment=3} := list.glue(L9);
     t14{segment=4} := sql.resultSet(1,1,t13);
     sql.rsColumn(t14,"sys.t","i","int",32,0,t13);
     sql.exportResult(t14,"");
 end query;
-LAST 4
-partition optimizer Strategy
-#function user.query{segment=2}():void;
-#    t1:bat[:oid,:int]  := sql.bind("sys","t","i",0);
-#    bpm1:bat[:oid,:int]  := bpm.take("sys_t_i");
-#    L6 := list.new();
-#barrier t1:bat[:oid,:int]  := bpm.newIterator(bpm1);
-#    t11 := algebra.markT(t1,0@0);
-#    t12 := bat.reverse(t11);
-#    list.append(L6,t12);
-#    redo t1:bat[:oid,:int]  := bpm.hasMoreElements(bpm1);
-#exit t1:bat[:oid,:int] ;
-#    L9 := list.new();
-#barrier t12 := list.newIterator(L6);
-#barrier t1:bat[:oid,:int]  := bpm.newIterator(bpm1);
-#    t13 := algebra.join(t12,t1);
-#    redo t1:bat[:oid,:int]  := bpm.hasMoreElements(bpm1);
-#    redo t12 := list.hasMoreElements(L6);
-#exit t1:bat[:oid,:int] ;
-#exit t12;
-#    t13 := list.glue(L9);
-#    t14 := sql.resultSet(1,1,t13);
-#    sql.rsColumn(t14,"sys.t","i","int",32,0,t13);
-#    sql.exportResult(t14,"");
-#end query;
-function user.main():void;	# 0  (main:void)
-#testing the BAT partition manager 	# 1  (_1:str)
-    sql.prelude();	# 2 SQLprelude (_2:void)
-    list.prelude();	# 3 MALLISTprelude (_3:void)
-    sql.start2();	# 4 SQLsession2 (_4:void)
-end main;	# 5  
 
 # 09:48:30 >  
 # 09:48:30 >  Done.

@@ -145,6 +145,7 @@ OPTpartitionProperties(MalBlkPtr mb)
 		/* find competing fragmentation groups */
 		done=0;
 		if( isFragmentGroup(p) ){
+			k= -1;
 			for(j=p->retc; j<p->argc; j++)
 			if( isPropertyDefined(getProps(mb,getArg(p,j)),"segment")){
 				k= *(int*) getPropertyValue(getProps(mb,getArg(p,j)),
@@ -158,12 +159,12 @@ OPTpartitionProperties(MalBlkPtr mb)
 				continue;
 			}
 			if( done>1 )
-				done= grp;
-			else done =k;
+				k= grp;
 			/* mark all result variables to belong to the same segment */
+			if( k>=0)
 			for(j=0; j<p->retc; j++){
 			if( isaBatType(getVarType(mb, getArg(p,j))) )
-				setArgProperty(mb, p,j,"segment","=",TYPE_int,&done);
+				setArgProperty(mb, p,j,"segment","=",TYPE_int,&k);
 			}
 			pushInstruction(mb,p);
 			lastsegment=0;
