@@ -56,3 +56,5 @@ variable_stack_crash_load.SF-1711251
 variable_stack_crash.SF-1711251
 variable_stack_crash.SF-1711251-2
 variable_stack_crash_drop.SF-1711251
+infinite_loop.SF-1714809
+view_creation_using_func.SF-1714814

@@ -6,5 +6,3 @@ alter table t1 add col int;
 select * from t1;
 
 drop table t1;
-
-
