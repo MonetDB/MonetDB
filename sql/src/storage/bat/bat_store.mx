@@ -212,8 +212,7 @@ bind_bat(sql_trans *tr, sql_column *c, int access)
 		bat_set_access(b, BAT_READ);
 		assert(access==RDONLY);
 	}
-	if(b ==0)
-		return NULL;
+	assert(b);
 	b->batDirty |= 2;
 	if (access == INS || access == UPD) {
 		bat_set_access(b, BAT_WRITE);
@@ -232,8 +231,7 @@ append_bat(sql_trans *tr, sql_column *c, int access, BAT *i)
 	if (isTemp(c) || access == INS || !c->bat.bid) {
 		assert(c->bat.ibid);
 		b = temp_descriptor(c->bat.ibid);
-		if(b ==0)
-			return NULL;
+		assert(b);
 		if (BATcount(b) == 0 && !VIEWparent(i) && i->htype == TYPE_void){
 			bat_destroy(b);
 			temp_destroy(c->bat.ibid);
@@ -260,10 +258,8 @@ bind_ubat(sql_trans *tr, sql_column *c, int access)
 	BAT *b;
 
 	b = temp_descriptor(c->bat.ubid);
-	if(b ==0)
-		return NULL;
-	b->batDirty |= 2;
 	assert(b);
+	b->batDirty |= 2;
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
 	if (access == INS || access == UPD) {
 		bat_set_access(b, BAT_WRITE);
@@ -278,8 +274,7 @@ append_ubat(sql_trans *tr, sql_column *c, int access, BAT *i)
 	BAT *b;
 
 	b = temp_descriptor(c->bat.ubid);
-	if(b ==0)
-		return NULL;
+	assert(b);
 	if (BATcount(b) == 0 && !VIEWparent(i)){ 
 		bat_destroy(b);
 		temp_destroy(c->bat.ubid);
@@ -288,7 +283,6 @@ append_ubat(sql_trans *tr, sql_column *c, int access, BAT *i)
 	} else {
 		BATappend(b, i, TRUE);
 	}
-	assert(b);
 	b->batDirty |= 2;
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
 	if (access == INS || access == UPD) 
@@ -302,8 +296,7 @@ bind_dbat(sql_trans *tr, sql_table *t, int access)
 	BAT *b;
 
 	b = temp_descriptor(t->dbid);
-	if(b ==0)
-		return NULL;
+	assert(b);
 	b->batDirty |= 2;
 	t->s->base.rtime = t->base.rtime = tr->stime;
 	assert(access!=RD_UPD && access != UPD);
@@ -311,7 +304,6 @@ bind_dbat(sql_trans *tr, sql_table *t, int access)
 		bat_set_access(b, BAT_WRITE);
 		t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	}
-	assert(b);
 	return b;
 }
 
@@ -328,15 +320,13 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 		bat_set_access(b, BAT_READ);
 		assert(access==RDONLY || access == RD_UPD);
 	}
-	if(b ==0)
-		return NULL;
+	assert(b);
 	b->batDirty |= 2;
 	if (access == INS || access == UPD) {
 		bat_set_access(b, BAT_WRITE);
 		i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	}
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	assert(b);
 	return b;
 }
 
@@ -348,8 +338,7 @@ append_idx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 	if (isTemp(i) || access == INS || !i->bat.bid) {
 		assert(i->bat.ibid);
 		b = temp_descriptor(i->bat.ibid);
-		if(b ==0)
-			return NULL;
+		assert(b);
 		if (BATcount(b) == 0 && !VIEWparent(ib) && ib->htype == TYPE_void){ 
 			bat_destroy(b);
 			temp_destroy(i->bat.ibid);
@@ -361,7 +350,6 @@ append_idx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 	} else {
 		assert(0); /* RDONLY appends ???? */
 	}
-	assert(b != NULL);
 	b->batDirty |= 2;
 	if (access == INS) 
 		i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
@@ -375,10 +363,8 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 	BAT *b;
 
 	b = temp_descriptor(i->bat.ubid);
-	if(b ==0)
-		return NULL;
-	b->batDirty |= 2;
 	assert(b);
+	b->batDirty |= 2;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (access == INS || access == UPD) {
 		bat_set_access(b, BAT_WRITE);
@@ -393,8 +379,7 @@ append_uidx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 	BAT *b;
 
 	b = temp_descriptor(i->bat.ubid);
-	if(b ==0)
-		return NULL;
+	assert(b);
 	if (BATcount(b) == 0 && !VIEWparent(ib)){ 
 		bat_destroy(b);
 		temp_destroy(i->bat.ubid);
@@ -403,7 +388,6 @@ append_uidx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 	} else {
 		BATappend(b, ib, TRUE);
 	}
-	assert(b);
 	b->batDirty |= 2;
 	if (access == INS || access == UPD) 
 		i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
