@@ -240,7 +240,7 @@ being called.
 		stk->cmd= cntxt->itrace; /* set debug mode */
 		if( env) {
 			stk->stkdepth= stk->stksize + env->stkdepth;
-			@:safeguardStack@
+			/*safeguardStack*/
 		}
 	} 
 
@@ -676,15 +676,19 @@ stack space.
 
 This situation can be detected by calling upon the GDK functionality
 of by limiting the depth of a function calls.
-@-
-@= safeguardStack
-/* Expensive? 70 msec for 1M calls another solution is needed.*/
-	if (stk->stkdepth > 50 * 1024 && THRhighwater()) {
-		showScriptException(mb,0,MAL,
-			"interpret: running out of physical stack space!\n");
-		return createScriptException(mb, 0, STKOF, "Interpreter", NULL,
-				"stack depth: %d", stk->stkdepth);
+Expensive? 70 msec for 1M calls. Use with care.
+@h
+mal_export str safeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+str
+safeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int depth = *(int*) getArgReference(stk,pci,1);
+	if (stk->stkdepth > depth * mb->vtop && THRhighwater()) {
+		throw(MAL, "mal.interpreter", 
+			"Interpret: running out of physical stack space!\n");
 	}
+	return MAL_SUCCEED;
+}
 
 @+ The interpreter loop
 The interpreter is geared towards execution a MAL procedure together
