@@ -1,0 +1,25 @@
+stderr of test 'check_constraint.SF-1714829` in directory 'src/test/BugConstraints` itself:
+
+
+# 18:38:29 >  
+# 18:38:29 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=33981 --set xrpc_port=46761 --set monet_prompt= --trace "--dbname=mTests_src_test_BugConstraints" --dbinit=' include sql;' ; echo ; echo Over..
+# 18:38:29 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf)
+
+# 18:38:29 >  
+# 18:38:29 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33981 
+# 18:38:29 >  
+
+MAPI  = monetdb@localhost:33981
+QUERY = create table t1 (id int CHECK (f1() = 1));
+ERROR = !syntax error, unexpected CHECK, expecting ',' or ')' in: "create table t1 (id int check"
+MAPI  = monetdb@localhost:33981
+QUERY = drop table t1;
+ERROR = !DROP TABLE: no such table 't1'
+
+# 18:38:29 >  
+# 18:38:29 >  Done.
+# 18:38:29 >  
+
