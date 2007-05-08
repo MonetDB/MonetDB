@@ -47,3 +47,18 @@ DROP FUNCTION f3;
 DROP ALL FUNCTION f1;
 
 SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
+
+create table t1(id int, name varchar(1024), age int);
+
+create function f1()
+returns int
+BEGIN
+        return 1;
+END;
+
+create view v1 as select * from t1 where id = f1();
+
+DROP function f1;
+DROP function f1 cascade;
+DROP table t1;
+

@@ -707,7 +707,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	
 	
 	if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY))
-		return sql_error(sql, 02, "DROP %s: there are functions dependent on %s %s;", F, f, func->base.name);
+		return sql_error(sql, 02, "DROP %s: there are database objects dependent on %s %s;", F, f, func->base.name);
 	
 	mvc_drop_func(sql, s, func, drop_action);
 
