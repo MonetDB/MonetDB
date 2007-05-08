@@ -136,7 +136,7 @@ AUTHrequireAdminOrUser(str *username) {
 	oid id = MCgetClient()->user;
 	char u[BUFSIZ]= "";
 	str user = u;
-	str tmp= MAL_SUCCEED;
+	str tmp = MAL_SUCCEED;
 
 	/* root?  then all is well */
 	if (id == 0) return(MAL_SUCCEED);

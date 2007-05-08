@@ -463,7 +463,8 @@ void MCinitClientThread(Client c)
 */
 		snprintf(cname, 11, SZFMT, (size_t)(c->user));
 		cname[11] = '\0';
-		c->mythread = t=  THRnew(c->mypid=MT_getpid(),cname);
+		c->mypid = MT_getpid();
+		c->mythread = t = THRnew(c->mypid,cname);
 	c->errbuf = GDKerrbuf;
 	if (c->errbuf == NULL) {
 		GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
@@ -588,8 +589,8 @@ void freeClient(Client c)
 The threads may not be removed, but should become dormant
 @c
 	THRdel(c->mythread);
-	c->mythread= 0;
-	c->mypid= 0;
+	c->mythread = 0;
+	c->mypid = 0;
 	/* THRsuspend(c->mythread); still unsafe */
 	c->user = oid_nil;
 	c->mode = FREECLIENT;

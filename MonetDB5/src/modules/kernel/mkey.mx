@@ -324,7 +324,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	int xx = BUNsize(b);
 	int yy = BUNsize(bn);
 
-	if (!ALIGNsynced(bn, b)) {
+	if (!ALIGNsynced(bn, b) && (BATcount(b) || BATcount(bn))) {
 		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", BATgetId(bn), *rotate, BATgetId(b));
 		return GDK_FAIL;
 	} else if (VIEWparent(bn) || bn->batRestricted) {
