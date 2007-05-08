@@ -211,14 +211,14 @@ allow for any type to be assigned.
 str
 io_stdin(bstream **ret)
 {
-	*ret = (bstream*)GDKin;
+	*ret = MCgetClient()->fdin;
 	return MAL_SUCCEED;
 }
 
 str
 io_stdout(stream **ret)
 {
-	*ret = GDKout;
+	*ret = MCgetClient()->fdout;
 	return MAL_SUCCEED;
 }
 
