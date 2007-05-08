@@ -62,15 +62,16 @@ comment "Generate an exception when b!=0";
 command assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
+@-
+@{
+command startQuery(s:str):void
+address SQLstartQuery
+comment "Initialize tracing query performance";
 
-#command startQuery(s:str):void
-#address SQLstartQuery
-#comment "Initialize tracing query performance";
-
-#command exitQuery(s:str):void
-#address SQLexitQuery
-#comment "Finalize tracing query performance";
-
+command exitQuery(s:str):void
+address SQLexitQuery
+comment "Finalize tracing query performance";
+@}
 @- The SQL multi-version catalog
 This module also contains the definitions for managing an SQL database schema in
 version 5.  It is an adaptation of the original V4.3 code base. 
@@ -307,17 +308,19 @@ command dec_round( v:@1, r:@1 ) :@1
 address @1_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
-#command dec_round( v:@1, r:dbl ) :@1 
-#address @1_dbl_dec_round_wrap
-#comment "round off the value v to nearests multiple of r";
-#command dec_round( v:@1, r:int ) :@1 
-#address @1_int_dec_round_wrap
-#comment "round off the value v to nearests multiple of r";
 
 command round( v:@1, d:int, s:int, r:sht) :@1
 address @1_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-
+@-
+@{
+command dec_round( v:@1, r:dbl ) :@1 
+address @1_dbl_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+command dec_round( v:@1, r:int ) :@1 
+address @1_int_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+@}
 @mal
 
 command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
@@ -334,28 +337,33 @@ comment "round off the value v to nearests multiple of r";
 command dec_round( v:dbl, r:dbl ) :dbl 
 address dbl_dbl_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
-
-#command dec_round( v:flt, r:int ) :flt 
-#address flt_int_dec_round_wrap
-#comment "round off the value v to nearests multiple of r";
-#command dec_round( v:dbl, r:int ) :dbl
-#address dbl_int_dec_round_wrap
-#comment "round off the value v to nearests multiple of r";
+@-
+@{
+command dec_round( v:flt, r:int ) :flt 
+address flt_int_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+command dec_round( v:dbl, r:int ) :dbl
+address dbl_int_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+@}
 
 @= mal_cast
 command calc.@1( v:str ) :@1 
 address str_2_@1
 comment "Cast to @1";
-#address CALCstr2@1
-#command calc.str( v:@1 ) :str
-#address CALC@12str
-#comment "Cast @1 to str";
 command calc.@1( v:str, digits:int ) :@1 
 address str_2num_@1
 comment "cast to @1 and check for overflow";
 command calc.@1( v:str, digits:int, scale:int ) :@1 
 address str_2dec_@1
 comment "cast to dec(@1) and check for overflow";
+@-
+@{
+address CALCstr2@1
+command calc.str( v:@1 ) :str
+address CALC@12str
+comment "Cast @1 to str";
+@}
 @mal
 @:mal_cast(sht)@
 @:mal_cast(int)@
@@ -394,7 +402,6 @@ command calc.lng( v:bit) :lng
 address CALCbit2lng
 comment "Cast bit to lng ";
 
-#command calc.str( v:any_1, digits:int ) :str 
 pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast
 comment "cast to string and check for overflow";
@@ -404,8 +411,9 @@ address STRsubstringTail;
 command calc.substring(s:str,offset:int,count:int):str
 address STRsubstring;
 
+@-
+command calc.str( v:any_1, digits:int ) :str 
 @= mal_cast_2dec
-#address CALC@22@1
 command calc.@1( v:@2) :@1 
 address @2_2_@1
 comment "cast @2 to @1";

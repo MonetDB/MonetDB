@@ -258,9 +258,11 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 	lng clk = GDKusec();
 	int n=1,rtop=0;
 	InstrPtr *rest= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->stop);
-	SQLbind *bind= (SQLbind*) alloca(sizeof(SQLbind)*mb->stop/2);
+	SQLbind *bind= (SQLbind*) alloca(sizeof(SQLbind)*mb->stop);
 	int j,k=0;
 
+	memset((char*) rest,0, sizeof(InstrPtr)*mb->stop);
+	memset((char*) bind,0, sizeof(SQLbind)*mb->stop);
 	for(i=1; i<mb->stop; i++){
 		InstrPtr p = getInstrPtr(mb,i);
 		char *f = getFunctionId(p);
@@ -353,7 +355,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				setProperty(getProps(mb,k),"bid", "=", TYPE_int, &b->batCacheid);
 				setProperty(getProps(mb,k),"rows", "=", TYPE_lng, &rows);
 				if (not_null)
-					setProperty(getProps(mb,k),"not_nil", "=", TYPE_bit, &t);
+					setProperty(getProps(mb,k),"notnil", "=", TYPE_bit, &t);
 				BBPunfix(b->batCacheid);
 				actions++;
 			}
@@ -404,10 +406,10 @@ tested extensively and should provide overall good performance.
 str defaultPlan=
 	"inline,"
 	"remap,"
-	/* "evaluate," */
+	"evaluate," 
 	"costModel,"
 	"coercions,"
-	/* "emptySet," */
+	"emptySet,"
 	/* "joinselect," */
 	"accessmode,"
 	"aliases,"
@@ -417,9 +419,8 @@ str defaultPlan=
 	"joinPath,"
 	"deadcode,"
 	"reduce,"
-	"garbageCollector,"
+	"garbageCollector," 
 	"multiplex";
-
 static str minimalPlan=
 	"multiplex";
 	
