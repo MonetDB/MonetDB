@@ -579,7 +579,7 @@ main (int argc, char **argv)
     if (outfile_given) {
 
         out = fopen (outfile, "w");
-        snprintf (outfile_atts, FILENAME_MAX, (!sql_atts)?"%s_atts":"%_names", outfile);
+        snprintf (outfile_atts, FILENAME_MAX, (!sql_atts)?"%s_atts":"%s_names", outfile);
         out_attr =  fopen (outfile_atts, "w");
 
         if (!out || !out_attr) {
