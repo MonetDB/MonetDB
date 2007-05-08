@@ -18,20 +18,59 @@ shred_doc(TSTSRCDIR+"/"+TST,TST,"",50LL);
 # shredding with holes: pagesize=65536, #fillsize=32768
 # Elapsed time = 001ms 194us [298us/node]
 # Shredded 1 XML document (inserting_multiple_elements.SF-1590583.xml), total time after commit=0.036s
+xquery("xml","doc(\""+TST+"\")").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><aap>
+Hello World
+</aap></XQueryResult>
+fflush(stdout());
+fflush(stderr());
+xquery("xml","doc(\""+TST+"\")/aap").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><aap>
+Hello World
+</aap></XQueryResult>
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","do insert <noot>Bes</noot> as first into exactly-one(doc(\""+TST+"\")/aap)").printf();
+fflush(stdout());
+fflush(stderr());
 xquery("xml","doc(\""+TST+"\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><aap><noot>Bes</noot>
 Hello World
 </aap></XQueryResult>
+fflush(stdout());
+fflush(stderr());
+xquery("xml","doc(\""+TST+"\")/aap").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><aap><noot>Bes</noot>
+Hello World
+</aap></XQueryResult>
+fflush(stdout());
+fflush(stderr());
+xquery("xml","doc(\""+TST+"\")/aap/noot").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><noot>Bes</noot></XQueryResult>
+fflush(stdout());
+fflush(stderr());
+xquery("xml","doc(\""+TST+"\")//noot").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><noot>Bes</noot></XQueryResult>
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","let $batch := (<beer/>,<mies/>) return do insert $batch after exactly-one(doc(\""+TST+"\")//noot)").printf();
+fflush(stdout());
+fflush(stderr());
 xquery("xml","doc(\""+TST+"\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><aap><noot>Bes</noot><beer/><mies/>
 Hello World
 </aap></XQueryResult>
+fflush(stdout());
+fflush(stderr());
 quit();
 
 # 18:58:08 >  

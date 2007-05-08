@@ -12,11 +12,155 @@ stdout of test 'Q4x` in directory 'tests/W3C_use_cases/XQUF/R` itself:
 module(unix);
 module(pathfinder);
 
+xquery("xml","doc(\"users.xml\")").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><users>
+  <user_tuple>
+    <userid>U01</userid>
+    <name>Tom Jones</name>
+    <rating>B</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U02</userid>
+    <name>Mary Doe</name>
+    <rating>A</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U03</userid>
+    <name>Dee Linquent</name>
+    <rating>D</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U04</userid>
+    <name>Roger Smith</name>
+    <rating>C</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U05</userid>
+    <name>Jack Sprat</name>
+    <rating>B</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U06</userid>
+    <name>Rip Van Winkle</name>
+    <rating>B</rating>
+  </user_tuple>
+<user_tuple><userid>U07</userid><name>Annabel Lee</name></user_tuple></users></XQueryResult>
+fflush(stdout());
+fflush(stderr());
+
+xquery("xml","
+for $user in
+doc(\"users.xml\")/users/user_tuple
+return ( $user , $user/rating )
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><user_tuple>
+    <userid>U01</userid>
+    <name>Tom Jones</name>
+    <rating>B</rating>
+  </user_tuple><rating>B</rating><user_tuple>
+    <userid>U02</userid>
+    <name>Mary Doe</name>
+    <rating>A</rating>
+  </user_tuple><rating>A</rating><user_tuple>
+    <userid>U03</userid>
+    <name>Dee Linquent</name>
+    <rating>D</rating>
+  </user_tuple><rating>D</rating><user_tuple>
+    <userid>U04</userid>
+    <name>Roger Smith</name>
+    <rating>C</rating>
+  </user_tuple><rating>C</rating><user_tuple>
+    <userid>U05</userid>
+    <name>Jack Sprat</name>
+    <rating>B</rating>
+  </user_tuple><rating>B</rating><user_tuple>
+    <userid>U06</userid>
+    <name>Rip Van Winkle</name>
+    <rating>B</rating>
+  </user_tuple><rating>B</rating><user_tuple><userid>U07</userid><name>Annabel Lee</name></user_tuple></XQueryResult>
+fflush(stderr());
+
 xquery("xml","
 do insert
     <rating> </rating>
 as last into exactly-one(for $ut in doc(\"users.xml\")/users/user_tuple where $ut/name = \"Annabel Lee\" return $ut)
 ").printf();
+fflush(stdout());
+fflush(stderr());
+
+xquery("xml","doc(\"users.xml\")").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><users>
+  <user_tuple>
+    <userid>U01</userid>
+    <name>Tom Jones</name>
+    <rating>B</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U02</userid>
+    <name>Mary Doe</name>
+    <rating>A</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U03</userid>
+    <name>Dee Linquent</name>
+    <rating>D</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U04</userid>
+    <name>Roger Smith</name>
+    <rating>C</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U05</userid>
+    <name>Jack Sprat</name>
+    <rating>B</rating>
+  </user_tuple>
+  <user_tuple>
+    <userid>U06</userid>
+    <name>Rip Van Winkle</name>
+    <rating>B</rating>
+  </user_tuple>
+<user_tuple><userid>U07</userid><name>Annabel Lee</name><rating/></user_tuple></users></XQueryResult>
+fflush(stdout());
+fflush(stderr());
+
+xquery("xml","
+for $user in
+doc(\"users.xml\")/users/user_tuple
+return ( $user , $user/rating )
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><user_tuple>
+    <userid>U01</userid>
+    <name>Tom Jones</name>
+    <rating>B</rating>
+  </user_tuple><rating>B</rating><user_tuple>
+    <userid>U02</userid>
+    <name>Mary Doe</name>
+    <rating>A</rating>
+  </user_tuple><rating>A</rating><user_tuple>
+    <userid>U03</userid>
+    <name>Dee Linquent</name>
+    <rating>D</rating>
+  </user_tuple><rating>D</rating><user_tuple>
+    <userid>U04</userid>
+    <name>Roger Smith</name>
+    <rating>C</rating>
+  </user_tuple><rating>C</rating><user_tuple>
+    <userid>U05</userid>
+    <name>Jack Sprat</name>
+    <rating>B</rating>
+  </user_tuple><rating>B</rating><user_tuple>
+    <userid>U06</userid>
+    <name>Rip Van Winkle</name>
+    <rating>B</rating>
+  </user_tuple><rating>B</rating><user_tuple><userid>U07</userid><name>Annabel Lee</name><rating/></user_tuple><rating/></XQueryResult>
+fflush(stderr());
 
 xquery("xml","
 let $user := 
@@ -24,6 +168,8 @@ doc(\"users.xml\")/users/user_tuple[name=\"Annabel Lee\"]
 return 
   do replace value of exactly-one($user/rating) with \"B\"
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","doc(\"users.xml\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
@@ -59,6 +205,8 @@ xquery("xml","doc(\"users.xml\")").printf();
     <rating>B</rating>
   </user_tuple>
 <user_tuple><userid>U07</userid><name>Annabel Lee</name><rating>B</rating></user_tuple></users></XQueryResult>
+fflush(stdout());
+fflush(stderr());
 quit();
 
 # 21:28:33 >  

@@ -4,9 +4,32 @@ var TST := getenv("TST")+".xml";
 var TSTSRCDIR := getenv("TSTSRCDIR");
 
 shred_doc(TSTSRCDIR+"/"+TST,TST,"",50LL);
+xquery("xml","doc(\""+TST+"\")").printf();
+fflush(stdout());
+fflush(stderr());
+xquery("xml","doc(\""+TST+"\")/aap").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","do insert <noot>Bes</noot> as first into exactly-one(doc(\""+TST+"\")/aap)").printf();
+fflush(stdout());
+fflush(stderr());
 xquery("xml","doc(\""+TST+"\")").printf();
+fflush(stdout());
+fflush(stderr());
+xquery("xml","doc(\""+TST+"\")/aap").printf();
+fflush(stdout());
+fflush(stderr());
+xquery("xml","doc(\""+TST+"\")/aap/noot").printf();
+fflush(stdout());
+fflush(stderr());
+xquery("xml","doc(\""+TST+"\")//noot").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","let $batch := (<beer/>,<mies/>) return do insert $batch after exactly-one(doc(\""+TST+"\")//noot)").printf();
+fflush(stdout());
+fflush(stderr());
 xquery("xml","doc(\""+TST+"\")").printf();
+fflush(stdout());
+fflush(stderr());
