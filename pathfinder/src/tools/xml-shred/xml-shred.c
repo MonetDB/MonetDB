@@ -41,7 +41,9 @@
 #include "libxml/parserInternals.h"
 
 #define STACK_MAX 100
-#define PROPSIZE 31999 
+#define PROPSIZE 32000
+#define TEXT_SIZE 32000
+#define TAG_SIZE 32 
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
@@ -218,6 +220,14 @@ end_document (void *ctx)
 static void
 start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 {
+    /* check if tagname is larger than TAG_SIZE characters */
+    if ( strlen((char*)tagname) > TAG_SIZE) {
+    	fprintf(stderr, "We support only tagnames with length <= %i\n", TAG_SIZE);
+
+	free_hash (hash_table);
+	exit(1);
+    }
+     
     flush_buffer ();
 
     pre++;
@@ -274,6 +284,21 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 	/* handle attributes as we need for sql generation */
 	else
 	   while (*atts) {
+		/* check if tagname is larger than TEXT_SIZE characters */
+		if ( strlen((char*)atts[1]) > TEXT_SIZE) {
+		    fprintf(stderr, "We support only attribute content with length <= %i\n", TEXT_SIZE);
+
+		    free_hash(hash_table);
+	            exit(1);
+		}
+	        /* check if tagname is larger than TAG_SIZE characters */
+		if ( strlen((char*)atts[0]) > TAG_SIZE) {
+                     fprintf(stderr, "We support only attributes with length <= %i\n", TAG_SIZE);
+
+		     free_hash(hash_table);
+	             exit(1);
+		}
+ 
 		/* try to find the tagname in the
 		 * hashtable */
 		name_id = find_element(hash_table, (char*)tagname);
@@ -286,6 +311,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
 		       printf("NOKEY, %i\n", name_id);
 		    hashtable_insert(hash_table, (char*)atts[0], name_id);
+		    fprintf (out_attr, "%i, \"%s\"\n", name_id, strndup((char*)tagname,PROPSIZE));
 		}
 
 		pre++;
@@ -301,7 +327,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 			.kind = attr,
 			.prop = (char*)atts[1]});
 		atts += 2;
-	   }
+	     }
 }
 
 static void
@@ -337,6 +363,14 @@ characters (void *ctx, const xmlChar *chars, int n)
 static void
 flush_buffer (void)
 {
+    /* check if tagname is larger than TEXT_SIZE characters */
+    if ( strlen((char*)buf) > TEXT_SIZE) {
+    	fprintf(stderr, "We support text with length <= %i\n", TEXT_SIZE);
+
+        free_hash(hash_table); 
+	exit(1);
+    }
+
     if (buf[0]) {
         pre++;
         rank += 2;
@@ -545,7 +579,7 @@ main (int argc, char **argv)
     if (outfile_given) {
 
         out = fopen (outfile, "w");
-        snprintf (outfile_atts, FILENAME_MAX, "%s_atts", outfile);
+        snprintf (outfile_atts, FILENAME_MAX, (!sql_atts)?"%s_atts":"%_names", outfile);
         out_attr =  fopen (outfile_atts, "w");
 
         if (!out || !out_attr) {
@@ -580,7 +614,7 @@ main (int argc, char **argv)
 
     fprintf (stderr, "tree height was %i\n", max_level);
     if (sql_atts)
-        fprintf(stderr, "There are %i tagnames and attribute names in the document\n", --new_nameid());
+        fprintf(stderr, "There are %i tagnames and attribute names in the document\n", new_nameid());
 
     if (sql_atts)
 	free_hash(hash_table);
