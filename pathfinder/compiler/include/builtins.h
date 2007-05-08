@@ -49,9 +49,34 @@
 
 /* 2. ACCESSORS */
 /* 2.3. fn:string */
+struct PFla_pair_t PFbui_fn_string_attr (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_string_text (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_string_pi (const PFla_op_t *loop,
+                                       bool ordering,
+                                       struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_string_comm (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_string_elem (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_string_elem_attr (const PFla_op_t *loop,
+                                              bool ordering,
+                                              struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_fn_string (const PFla_op_t *loop,
                                     bool ordering,
                                     struct PFla_pair_t *args);
+
 /* 2.4. fn:data */
 struct PFla_pair_t PFbui_fn_data_attr (const PFla_op_t *loop,
                                        bool ordering,

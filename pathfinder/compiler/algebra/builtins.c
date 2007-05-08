@@ -335,15 +335,18 @@ un_op (PFalg_simple_type_t t,
  * The fn:string function casts all values to string
  * It uses fn:data() for atomizing nodes.
  */
-struct PFla_pair_t
-PFbui_fn_string (const PFla_op_t *loop, bool ordering,
-                 struct PFla_pair_t *args)
+static struct PFla_pair_t
+fn_string (struct PFla_pair_t (*data) 
+             (const PFla_op_t *, bool, struct PFla_pair_t *),
+           const PFla_op_t *loop,
+           bool ordering,
+           struct PFla_pair_t *args)
 {
     /* as long as fn:data uses #pf:string-value()
        we can use it safely to convert the nodes */
     PFla_op_t *strings = project (
                              cast (
-                                 PFbui_fn_data (
+                                 data (
                                      loop,
                                      ordering,
                                      args).rel,
@@ -368,6 +371,83 @@ PFbui_fn_string (const PFla_op_t *loop, bool ordering,
                              att_item, lit_str ("")));
 
     return (struct PFla_pair_t) { .rel  = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:string'.
+ */
+struct PFla_pair_t
+PFbui_fn_string_attr (const PFla_op_t *loop,
+                      bool ordering,
+                      struct PFla_pair_t *args)
+{
+    return fn_string (PFbui_fn_data_attr, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:string'.
+ */
+struct PFla_pair_t
+PFbui_fn_string_text (const PFla_op_t *loop,
+                      bool ordering,
+                      struct PFla_pair_t *args)
+{
+    return fn_string (PFbui_fn_data_text, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:string'.
+ */
+struct PFla_pair_t
+PFbui_fn_string_pi (const PFla_op_t *loop,
+                    bool ordering,
+                    struct PFla_pair_t *args)
+{
+    return fn_string (PFbui_fn_data_pi, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:string'.
+ */
+struct PFla_pair_t
+PFbui_fn_string_comm (const PFla_op_t *loop,
+                      bool ordering,
+                      struct PFla_pair_t *args)
+{
+    return fn_string (PFbui_fn_data_comm, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:string'.
+ */
+struct PFla_pair_t
+PFbui_fn_string_elem (const PFla_op_t *loop,
+                      bool ordering,
+                      struct PFla_pair_t *args)
+{
+    return fn_string (PFbui_fn_data_elem, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:string'.
+ */
+struct PFla_pair_t
+PFbui_fn_string_elem_attr (const PFla_op_t *loop,
+                           bool ordering,
+                           struct PFla_pair_t *args)
+{
+    return fn_string (PFbui_fn_data_elem_attr, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:string'.
+ */
+struct PFla_pair_t
+PFbui_fn_string (const PFla_op_t *loop,
+                 bool ordering,
+                 struct PFla_pair_t *args)
+{
+    return fn_string (PFbui_fn_data, loop, ordering, args);
 }
 
 /* ------------ */

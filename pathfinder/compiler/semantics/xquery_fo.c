@@ -102,14 +102,86 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "string",
         .arity = 0, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_none () },
+            .ret_ty = PFty_xs_string () } } }
+      /* fn:string ((atomic|attribute)?) as string */
+      /* (F&O 2.3) */
+    , { .ns = PFns_fn, .loc = "string",
+        .arity = 1,
+        .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (
+                        PFty_choice (
+                            PFty_atomic (), PFty_xs_anyAttribute ())) },
             .ret_ty = PFty_xs_string () } },
-        .alg = PFbui_fn_string}
+        .alg = PFbui_fn_string_attr }
+    , /* fn:string ((atomic|text)?) as string */
+      /* (F&O 2.3) */
+      { .ns = PFns_fn, .loc = "string",
+        .arity = 1,
+        .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (
+                        PFty_choice (
+                            PFty_atomic (), PFty_text ())) },
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_string_text }
+    , /* fn:string ((atomic|processing-instruction)?) as string */
+      /* (F&O 2.3) */
+      { .ns = PFns_fn, .loc = "string",
+        .arity = 1,
+        .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (
+                        PFty_choice (
+                            PFty_atomic (), PFty_pi (NULL))) },
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_string_pi }
+    , /* fn:string ((atomic|comment)?) as string */
+      /* (F&O 2.3) */
+      { .ns = PFns_fn, .loc = "string",
+        .arity = 1,
+        .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (
+                        PFty_choice (
+                            PFty_atomic (), PFty_text ())) },
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_string_comm }
+    , /* fn:string ((element)?) as string */
+      /* (F&O 2.3) */
+      { .ns = PFns_fn, .loc = "string",
+        .arity = 1,
+        .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (
+                        PFty_choice (
+                            PFty_atomic (),
+                            PFty_choice (
+                                PFty_xs_anyElement (),
+                                PFty_choice (
+                                    PFty_text (),
+                                    PFty_doc (PFty_xs_anyType ()))))) },
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_string_elem }
+    , /* fn:string ((atomic|element|doc|text|attribute)?) as string */
+      /* (F&O 2.3) */
+      { .ns = PFns_fn, .loc = "string",
+        .arity = 1,
+        .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (
+                        PFty_choice (
+                            PFty_atomic (),
+                            PFty_choice (
+                                PFty_xs_anyElement (),
+                                PFty_choice (
+                                    PFty_doc (PFty_xs_anyType ()),
+                                    PFty_choice (
+                                        PFty_text (),
+                                        PFty_xs_anyAttribute ()))))) },
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_fn_string_elem_attr }
     , /* fn:string (item?) as string */
+      /* (F&O 2.3) */
       { .ns = PFns_fn, .loc = "string",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_item ()) },
             .ret_ty = PFty_xs_string () } },
-        .alg = PFbui_fn_string}
+        .alg = PFbui_fn_string }
     
 /* 2.4. fn:data */
       /* fn:data ((atomic|attribute)*) as atomic* */
