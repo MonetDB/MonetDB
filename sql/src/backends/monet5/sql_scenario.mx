@@ -86,6 +86,7 @@ we update its context descriptor to denote an SQL scenario.
 
 static int SQLinitialized = 0;
 static int SQLdebug = 0;
+static char *sql_prelude = NULL;
 
 static void
 monet5_freestack(backend_stack stk)
@@ -171,6 +172,7 @@ SQLprelude(void)
 	s->optimizer = "MALoptimizer";
 	/* s->tactics = .. */
 	s->engine = "MALengine";
+	sql_prelude = GDKgetenv("sql_prelude");
 	return SABAOTHmarchScenario(&res, &s->name);
 }
 
@@ -318,6 +320,16 @@ SQLinitClient(Client c)
 		return msg;
 	
 	if ((backend *) c->state[MAL_SCENARIO_PARSER] == 0) {
+		if (sql_prelude) { /* add prelude to the fdin stack */
+			buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
+			int len = strlen(sql_prelude);
+			bstream *fdin;
+
+			buffer_init(b, _strdup(sql_prelude), len);
+			fdin = bstream_create(buffer_rastream(b, "prelude"), b->len);
+			bstream_next(fdin);
+			MCpushClientInput(c, fdin, 0, "");
+		}
 		m = mvc_create((c-mal_clients), 0, SQLdebug, c->fdin, c->fdout);
 
 		global_variables(m, "monetdb", "sys");
@@ -581,7 +593,7 @@ SQLcompile(str *ret, str *expr){
 	*ret = NULL;
 	msg= SQLstatementIntern(expr, "SQLcompile", FALSE);
 	if( msg == MAL_SUCCEED)
-		*ret= GDKstrdup("SQLcompile");
+		*ret= _strdup("SQLcompile");
 	return msg;
 }
 
@@ -712,6 +724,7 @@ The former comes with readline functionality.
 #endif
 			MCpopClientInput(c);
 			in = c->fdin;
+			blocked = isa_block_stream(in->s);
 			m->scanner.rs = c->fdin;
 			c->fdin->pos += c->yycur;
 			c->yycur = 0;
@@ -1119,7 +1132,7 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 			GDKfree(argv);
 		if( pci->retc >= MAXARG)
 			GDKfree(argrec);
-		return GDKstrdup("wrong number of arguments for prepared statement\n");
+		return _strdup("wrong number of arguments for prepared statement\n");
 	} else {
 		for (i = 0; i<c->argc; i++){
 			atom *arg = c->args[i];

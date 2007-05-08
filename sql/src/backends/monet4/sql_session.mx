@@ -69,6 +69,7 @@ extern ptr sql_frontend(void);
 
 static int SQLdebug = 0;
 static int keep_trace = 0;
+static char *sql_prelude = NULL;
 
 int
 sql_trace()
@@ -866,6 +867,8 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	v->binding.val.pval = rs;
 
 	sql = backend_create(m, 1);
+	if (sql_prelude)
+		mvc_sql(m, sql_prelude);
 	ret = sqlclient(sql, rs, out);
 	bstream_destroy(rs);
 	res_tables_destroy(m->results);
@@ -969,6 +972,8 @@ sql_client_engine(mapi_client *fc )
 		buf[0] = '\0';
 		THRset_errbuf(fc->thread, buf);
 	}
+	if (sql_prelude)
+		mvc_sql(be->mvc, sql_prelude);
 	sqlclient(be, be->mvc->scanner.rs, be->mvc->scanner.ws);
 	bstream_destroy(be->mvc->scanner.rs);
 	res_tables_destroy(be->mvc->results);
@@ -1008,6 +1013,7 @@ sql_frontend(void)
 	f->f_free  = sql_client_free;
 	f->f_engine  = sql_client_engine; /* read/parse/execute loop */
 
+	sql_prelude = GDKgetenv("sql_prelude");
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
 	return (ptr)f;

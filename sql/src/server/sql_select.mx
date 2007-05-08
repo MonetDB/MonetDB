@@ -262,6 +262,12 @@ scope_subtable(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 
 	scp = scope_open(scp);
 	s = sql_subquery(sql, scp, sq, ek);
+	
+	if (!s) {
+		scp = scope_close(scp);
+		return NULL;
+	}
+
 	/* create a table from a single value subquery result */
 	if (s->key && s->nrcols == 0) {
 		list *l = create_stmt_list();
