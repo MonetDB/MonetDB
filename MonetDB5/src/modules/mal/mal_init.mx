@@ -154,8 +154,6 @@ include mal_io;
 include tablet;
 include factory;
 
-include bbp;
-
 # experimental
 include mat;
 # the real partition handler

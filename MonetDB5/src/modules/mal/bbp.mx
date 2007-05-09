@@ -128,46 +128,51 @@ They rely on knowledge of the runtime environment
 @+ BAT buffer pool
 The following list of operations permits inspection of the
 buffer pool
+Do not use the BBP index to align results. This may be influenced
+by parallel threads. Instead, just use a counter.
 @}
 @mal
-command getHeadType() :bat[:int,:str]		
+command getHeadType() :bat[:oid,:str]		
 address CMDbbpHeadType
 comment "Map a BAT into its head type";
-command getTailType() :bat[:int,:str]		
+command getTailType() :bat[:oid,:str]		
 address CMDbbpTailType
 comment "Map a BAT into its tail type";
-command getNames() :bat[:int,:str] 	
+command getNames() :bat[:oid,:str] 	
 address CMDbbpNames
 comment "Map BAT into its bbp name";
-command getRNames() :bat[:int,:str] 	
+command getRNames() :bat[:oid,:str] 	
 address CMDbbpRNames
 comment "Map a BAT into its bbp physical name";
+command getIndex() :bat[:oid,:int] 	
+address CMDbbpIndex
+comment "Map BAT into its batCacheid";
 
 command getName( b:bat[:any_1,:any_2]):str
 address CMDbbpName
 comment "Map a BAT into its internal name";
-command getCount() :bat[:int,:lng] 	
+command getCount() :bat[:oid,:lng] 	
 address CMDbbpCount
 comment "Create a BAT with the cardinalities of all known BATs";
-command getRefCount() :bat[:int,:int] 	
+command getRefCount() :bat[:oid,:int] 	
 address CMDbbpRefCount
 comment "Create a BAT with the (hard) reference counts";
-command getLRefCount() :bat[:int,:int] 	
+command getLRefCount() :bat[:oid,:int] 	
 address CMDbbpLRefCount
 comment "Create a BAT with the logical reference counts";
-command getLocation() :bat[:int,:str] 	
+command getLocation() :bat[:oid,:str] 	
 address CMDbbpLocation
 comment "Create a BAT with their disk locations";
-command getHeat() :bat[:int,:int] 	
+command getHeat() :bat[:oid,:int] 	
 address CMDbbpHeat
 comment "Create a BAT with the heat values";
-command getDirty() :bat[:int,:str] 	
+command getDirty() :bat[:oid,:str] 	
 address CMDbbpDirty
 comment "Create a BAT with the dirty/ diffs/clean status";
-command getStatus() :bat[:int,:str] 	
+command getStatus() :bat[:oid,:str] 	
 address CMDbbpStatus
 comment "Create a BAT with the disk/load status";
-command getKind():bat[:int,:str] 
+command getKind():bat[:oid,:str] 
 address CMDbbpKind
 comment "Create a BAT with the persistency status";
 command getRefCount(b:bat[:any_1,:any_2]) :int
@@ -226,6 +231,7 @@ bbp_export str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpDiskSpace(int *ret);
 bbp_export str CMDbbpNames(int *ret);
+bbp_export str CMDbbpIndex(int *ret);
 bbp_export str CMDbbpName(str *ret, int *bid);
 bbp_export str CMDbbpRNames(int *ret);
 bbp_export str CMDbbpCount(int *ret);
@@ -717,34 +723,64 @@ CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+@-
+Do not use the BBP index to align results. This may be influenced
+by parallel threads.
+@c
 str
 CMDbbpNames(int *ret)
 {
-	BAT *b,*bn;
+	BAT *b, *bn;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpNames", "failed to create BAT");
 
+	BATseqbase(b,0);
 	BBPlock("CMDbbpNames");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
-				BUNins(b, &i, BBP_logical(i), FALSE);
+				BUNappend(b, BBP_logical(i), FALSE);
 				if (BBP_logical(-i) && (BBP_refs(-i) || BBP_lrefs(-i))) {
-					int j = -i;
-
-					BUNins(b, &j, BBP_logical(j), FALSE);
+					int j= -i;
+					BUNappend(b, BBP_logical(j),FALSE);
 				}
 			}
 		}
 	BBPunlock("CMDbbpNames");
 	bn= BATmirror(BATsort(BATmirror(b)));
 	BBPunfix(b->batCacheid);
-	b= bn;
+	b=bn;
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo2(bbp,name)@
+	return MAL_SUCCEED;
+}
+str
+CMDbbpIndex(int *ret)
+{
+	BAT *b,*bn;
+	int i;
+
+	b = BATnew(TYPE_void, TYPE_int, BBPsize);
+	if (b == 0)
+		throw(MAL, "bbp.getIndex", "failed to create BAT");
+
+	BATseqbase(b,0);
+	BBPlock("CMDbbpIndex");
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid) {
+			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
+				BUNappend(b, BBP_logical(i), FALSE);
+			}
+		}
+	BBPunlock("CMDbbpIndex");
+	bn= BATmirror(BATmark(BATsort(BATmirror(b)),0));
+	BBPunfix(b->batCacheid);
+	b= bn;
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	@:Pseudo2(bbp,index)@
 	return MAL_SUCCEED;
 }
 str
@@ -767,17 +803,18 @@ CMDbbpRNames(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "bbp.getRNames", "failed to create BAT");
 
+	BATseqbase(b,0);
 	BBPlock("CMDbbpRNames");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			if (BBP_logical(-i)) {
-				BUNins(b, &i, BBP_logical(-i), FALSE);
+				BUNappend(b, BBP_logical(-i), FALSE);
 			} else
-				BUNins(b, &i, BBP_logical(i), FALSE);
+				BUNappend(b, BBP_logical(i), FALSE);
 		}
 	BBPunlock("CMDbbpRNames");
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -792,17 +829,18 @@ CMDbbpCount(int *ret)
 	int i;
 	lng l;
 
-	b = BATnew(TYPE_int, TYPE_lng, BBPsize);
+	b = BATnew(TYPE_void, TYPE_lng, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpCount", "failed to create BAT");
 
+	BATseqbase(b,0);
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				bn = BATdescriptor(i);
 				if (bn) {
 					l = BATcount(bn);
-					BUNins(b, &i, &l, FALSE);
+					BUNappend(b, &l, FALSE);
 					BBPunfix(bn->batCacheid);
 				}
 			}
@@ -821,15 +859,16 @@ CMDbbpLocation(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpLocation", "failed to create BAT");
 
+	BATseqbase(b,0);
 	BBPlock("CMDbbpLocation");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)))
-				BUNins(b, &i, BBP_physical(i), FALSE);
+				BUNappend(b, BBP_physical(i), FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLocation");
@@ -847,7 +886,7 @@ CMDbbpHeat(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	b = BATnew(TYPE_oid, TYPE_int, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpHeat", "failed to create BAT");
 
@@ -857,11 +896,11 @@ CMDbbpHeat(int *ret)
 			if (BBP_cache(i) && !monet_modulesilent) {
 				int heat = BBP_lastused(i);
 
-				BUNins(b, &i, &heat, FALSE);
+				BUNappend(b, &heat, FALSE);
 			} else if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				int zero = 0;
 
-				BUNins(b, &i, &zero, FALSE);
+				BUNappend(b, &zero, FALSE);
 			}
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -879,17 +918,18 @@ CMDbbpDirty(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpDirty", "failed to create BAT");
 
+	BATseqbase(b,0);
 	BBPlock("CMDbbpDirty");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				BAT *bn = BBP_cache(i);
 
-				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
+				BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpDirty");
@@ -906,17 +946,18 @@ CMDbbpStatus(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpStatus", "failed to create BAT");
 
+	BATseqbase(b,0);
 	BBPlock("CMDbbpStatus");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				char *loc = BBP_cache(i) ? "load" : "disk";
 
-				BUNins(b, &i, loc, FALSE);
+				BUNappend(b, loc, FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpStatus");
@@ -930,7 +971,7 @@ CMDbbpKind(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpKind", "failed to create BAT");
 
@@ -945,7 +986,7 @@ CMDbbpKind(int *ret)
 				else
 					mode = "persistent";
 				if (mode)
-					BUNins(b, &i, mode, FALSE);
+					BUNappend(b, mode, FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpKind");
@@ -959,16 +1000,17 @@ CMDbbpRefCount(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	b = BATnew(TYPE_void, TYPE_int, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpRefCount", "failed to create BAT");
 
+	BATseqbase(b,0);
 	BBPlock("CMDbbpRefCount");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_refs(i);
 
-			BUNins(b, &i, &refs, FALSE);
+			BUNappend(b, &refs, FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpRefCount");
@@ -982,16 +1024,17 @@ CMDbbpLRefCount(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	b = BATnew(TYPE_oid, TYPE_int, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpLRefCount", "failed to create BAT");
 
+	BATseqbase(b,0);
 	BBPlock("CMDbbpLRefCount");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_lrefs(i);
 
-			BUNins(b, &i, &refs, FALSE);
+			BUNappend(b, &refs, FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLRefCount");
@@ -1033,14 +1076,15 @@ str CMDbbp@2( int *ret){
 	BAT	*b,*bn;
 	int	i;
 
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
+	b= BATnew(TYPE_void,TYPE_str,BBPsize);
 	if (b == 0) 
 		throw(MAL, "catalog.bbp@2", "failed to create BAT");
 
+	BATseqbase(b,0);
 	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
 	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 		bn= BATdescriptor(i);
-		if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name, FALSE);
+		if(bn) BUNappend(b, BATatoms[BAT@1(bn)].name, FALSE);
 		BBPunfix(bn->batCacheid);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);

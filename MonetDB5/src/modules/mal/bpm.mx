@@ -46,11 +46,6 @@ Partitioning on the head simple calls for a reverse operation
 on the source BAT first. Beware that subsequent updates may
 materialize the header.
 
-The partitions are given an index number by which they can be
-more easily retrieved.
-This number remains stable until a new partitioning command
-is issued.
-
 The partition manager also supports hash-based partitioning.
 Its argument is the number of hash bucket bits.
 example
@@ -98,11 +93,13 @@ exit (idx,b);
 	bpm.close();
 @end example
 
-The partitioned BATs are particularly useful during query
+The properties of the partitioned BATs are particularly useful during query
 optimization. However, it only works if the BAT identifier
 can be determined at compile time. For SQL it can be simply looked up in
 the catalog as part of the preparatory optimizer step.
-The same problem handled by an optimizer produces the plan:
+
+The same problem handled by an optimizer that produces the plan
+based on a known number of partitions:
 @example
 	bpm.open();
 	R:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
@@ -113,14 +110,15 @@ is translated into to obtain the
 @example
 	bpm.open();
 	Ralias:= bpm.take("myversion",:bat[:oid,:int]);
-	R0:= bpm.take(Ralias, 0); #get first partition
-	R1:= bpm.take(Ralias, 1); #get second partition
-	R2:= bpm.take(Ralias, 2); #get third partition
+	R0:bat[:oid,:int]:= bpm.take(Ralias, 0); #get first partition
+	R1:bat[:oid,:int]:= bpm.take(Ralias, 1); #get second partition
+	R2:bat[:oid,:int]:= bpm.take(Ralias, 2); #get third partition
 	R:= mat.new(R0,R1,R2);
 	T:= algebra.select(R,0,100);
 	optimizer.multitable();
 @end example
-It is up to the @sc{mat} optimizer to decide about
+In this translation Ri also gets the properties of the BATs.
+It is now up to the @sc{mat} optimizer to decide about
 further plan expansion or an iterator approach.
 
 @- Partition updates
@@ -148,7 +146,7 @@ ensure that the boundery conditions are met.
 In many situations, you would like to keep the partial results
 as a partitioned BAT again.
 The easiest solution is to remember the partitions as temporary 
-variables during optimization, e.g. as properties of all fragment variables.
+variables in a list during execution.
 
 However, a persistent partitioned BAT can also be created first,
 whose partitions are empty. Subsequently, we insert the temporary results. 
@@ -159,7 +157,7 @@ buns to the correct bats.
 The previous plan for this becomes
 @example
 	bpm.open();
-	Tmp := bpm.take("tmp",:bat[:oid,:int]);
+	Tmp := bpm.deposit("tmp",:bat[:oid,:int]);
 	bpm.rangePartition(Tmp,nil,100);
 	bpm.rangePartition(Tmp,101,200);
 
@@ -198,7 +196,26 @@ be used to reduce the plan size.
 	T2:=algebra.select(R2,0,100);
 @end example
 
+@- Partition iterators
+The default strategy for an optimizer is to replace a
+reference to a partitioned BAT by an iterator.
+@example
+	l:= list.new();
+barrier Elm:bat[:oid,:int]:= bpm.newIterartor(Ralias);
+	t:= algebra.select(Elm,0,20);
+	list.append(l,t);
+	redo Elm:bat[:oid,:int]:= bpm.newIterartor(Ralias);
+exit Elm;
+@end example
+Variations on this theme are iterators that search for
+partitions overlapping a range or those that are not empty.
+
 @- Partition selection
+Partition aware relational operators further reduce the
+performance overhead and at the same time avoid cluttering
+the MAL plans with too much flow of control constructs.
+A few operators relevant for the SQL environment will be added.
+
 The select operation can be overloaded in the BPM to
 improve processing further. For example, the operation
 @example
