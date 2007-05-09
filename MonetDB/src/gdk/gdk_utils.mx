@@ -1070,7 +1070,8 @@ GDKmalloc(size_t size)
 void *
 GDKzalloc(size_t size)
 {
-	void *p = GDKmallocmax(size, &size, 1);
+	size_t maxsize = size;
+	void *p = GDKmallocmax(size, &maxsize, 1);
 	if (p) memset(p, 0, size);
 	return p;
 }
