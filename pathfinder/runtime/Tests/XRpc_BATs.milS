@@ -1,5 +1,0 @@
-module(pathfinder);
-
-print(bat("xrpc_user"));
-print(bat("xrpc_admin"));
-print(bat("xrpc_trusted"));
