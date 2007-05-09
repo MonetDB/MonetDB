@@ -170,7 +170,7 @@ Start XPRC receiver using the default values as specified in \
 #define XRPC_REQ_CALLBACK       "/xrpc"
 #define XRPC_DOC_CALLBACK       "/xrpc/doc"
 #define XRPC_ADM_CALLBACK       "/xrpc/admin"
-#define ERR403                  "403 Verbidden"
+#define ERR403                  "403 Forbidden"
 #define ERR404                  "404 Bad Request"
 #define ERR500                  "500 Internal Server Error"
 #define OUT_OF_MEM              "Internal Receiver Error: out-of memory"
