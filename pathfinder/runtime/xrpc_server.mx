@@ -337,7 +337,7 @@ isAllowed(BAT *allowed, char* key)
 {
     BUN p,q;
     BATloop(allowed, p, q) {
-        char* prefix = BUNtail(allowed,q);
+        char* prefix = BUNtail(allowed,p);
         if (strncmp(key, prefix, strlen(prefix)) == 0)  
             return 1;
     }
