@@ -197,7 +197,7 @@ cpd.info().reverse().like("dense").print();
 # str	str		  # type
 #-------------------------#
 [ "0",	  "hdense"	  ]
-[ "0",	  "hnodense"	  ]
+[ "2",	  "hnodense"	  ]
 [ "0",	  "tdense"	  ]
 [ "0",	  "tnodense"	  ]
 cpd.info().reverse().like("seqbase").print();
