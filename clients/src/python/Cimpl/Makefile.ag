@@ -30,7 +30,7 @@ lib_MapiLib = {
 	PREFIX =
 	NAME = _MapiLib
 	SOURCES = MapiLib.py.i
-	LIBS = ../../mapilib/libMapi $(PYTHON_LIBS)
+	LIBS = ../../mapilib/libMapi $(PYTHON_LIBS) $(MATH_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 

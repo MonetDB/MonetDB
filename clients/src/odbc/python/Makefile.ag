@@ -23,7 +23,7 @@ lib_odbc = {
 	PREFIX =
 	NAME = _odbc
 	SOURCES = odbc.py.i
-	LIBS = ../driver/libMonetODBC $(PYTHON_LIBS)
+	LIBS = ../driver/libMonetODBC $(PYTHON_LIBS) $(MATH_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
