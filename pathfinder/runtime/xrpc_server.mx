@@ -354,9 +354,33 @@ isTrusted(stream *out, char *location)
 {
     if (!isAllowed(xrpc_trusted, location)) {
         char * msg = "Called module not allowed:";
-        size_t len = strlen(msg) + strlen(location) + 5;
-        char * err = alloca(len);  assert(err);
-        snprintf(err, len, "%s '%s'.", msg, location);
+        size_t len = strlen(msg) + strlen(location) + 11;
+        size_t len_x = 0, pos = 0;
+        char * err;
+        BUN p,q;
+        BATloop(xrpc_trusted, p, q) {
+            char* prefix = BUNhead(xrpc_trusted, p);
+            len_x += strlen(prefix) + 4;
+        }
+        err = alloca(len + len_x);
+        if (err) {
+            len += len_x;
+        } else {
+            len_x = 0;
+            err = alloca(len);
+        }
+        assert(err);
+        pos += snprintf(err+pos, len-pos, "%s", msg);
+        if (!len_x) {
+            pos += snprintf(err+pos, len-pos, " '%s'.", location);
+        } else {
+            pos += snprintf(err+pos, len-pos, "\n'%s' not in", location);
+            BATloop(xrpc_trusted, p, q) {
+                char* prefix = BUNhead(xrpc_trusted, p);
+                pos += snprintf(err+pos, len-pos, "\n'%s',", prefix);
+            }
+            err[pos-1] = '.';
+        }
         send_err(out, 1, ERR403, "env:Sender", err);
         return 0;
     }
