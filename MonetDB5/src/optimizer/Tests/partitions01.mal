@@ -1,9 +1,16 @@
 #testing the BAT partition manager
-#before the garbage collector steps in
-include sql;
-sql.start2();
+# use a fake sql library
+module sql;
+pattern bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
+address MALLISTnew;
+pattern rsColumn(b:any...):void
+address MALLISTnew;
+pattern resultSet(b:any...):void
+address MALLISTnew;
+pattern exportResult(b:any...):void
+address MALLISTnew;
 
-function user.query(A0:sht):void;
+function query(A0:sht):void;
     x1:bat[:oid,:int]{bid=812,rows=1,notnil=true}  := sql.bind("sys","x","i",0);
     x6:bat[:oid,:int]{bid=808,rows=0,notnil=true}  := sql.bind("sys","x","i",1);
     constraints.emptySet(x6);
@@ -19,5 +26,5 @@ function user.query(A0:sht):void;
     sql.rsColumn(x29,"sys.x","j","int",32,0,x28);
     sql.exportResult(x29,"");
 end query;
-optimizer.partitions("user","query");
-mdb.list("user","query");
+optimizer.partitions("sql","query");
+mdb.list("sql","query");

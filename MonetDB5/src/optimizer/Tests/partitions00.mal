@@ -1,9 +1,16 @@
 #testing the BAT partition manager
-include sql;
-include mallist;
-sql.start2();
+# use a fake sql library
+module sql;
+pattern bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
+address MALLISTnew;
+pattern rsColumn(b:any...):void
+address MALLISTnew;
+pattern resultSet(b:any...):void
+address MALLISTnew;
+pattern exportResult(b:any...):void
+address MALLISTnew;
 
-function user.query();
+function query();
     t1:bat[:oid,:int]:= sql.bind("sys","t","i",0);
     t11:= algebra.markT(t1,0@0);
     t12:= bat.reverse(t11);
@@ -12,5 +19,5 @@ function user.query();
     sql.rsColumn(t14,"sys.t","i","int",32,0,t13);
     sql.exportResult(t14,"");
 end query;
-optimizer.partitions("user","query");
-mdb.list("user","query");
+optimizer.partitions("sql","query");
+mdb.list("sql","query");
