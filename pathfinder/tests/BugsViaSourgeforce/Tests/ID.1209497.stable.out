@@ -30,7 +30,7 @@ Over..
 ' '
 " &lt; &gt; &gt; &amp; " " ' ' "
 ' &lt; &gt; &gt; &amp; " " ' ' '
-<tag attr1=" &lt; &gt; &gt; &amp; &quot; &quot;      &apos; &apos; " attr2=" &lt; &gt; &gt; &amp; &quot; &quot; &apos; &apos;      "/></a></XQueryResult>
+<tag attr2=" &lt; &gt; &gt; &amp; &quot; &quot; &apos; &apos;      " attr1=" &lt; &gt; &gt; &amp; &quot; &quot;      &apos; &apos; "/></a></XQueryResult>
 
 # 00:50:10 >  
 # 00:50:10 >  Done.
