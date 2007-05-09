@@ -58,3 +58,9 @@ variable_stack_crash.SF-1711251-2
 variable_stack_crash_drop.SF-1711251
 infinite_loop.SF-1714809
 view_creation_using_func.SF-1714814
+create_table_with_data.SF-1715679
+set_default_value.SF-1715553
+temporary_tables.SF-1715669
+like_for_time_values.SF-1715659
+local_global_temporary_table.SF-1715672
+

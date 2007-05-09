@@ -1,3 +1,4 @@
+set optimizer='off';
 create table t1(id int, name varchar(1024), age int);
 create table t2(id int, age int);
 
