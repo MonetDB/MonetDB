@@ -166,6 +166,7 @@ extern sql_column *mvc_create_column(mvc *c, sql_table *t, char *name, sql_subty
 extern sql_column *mvc_create_column_(mvc *c, sql_table *t, char *name, char *type, int digits);
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
+extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 
 extern sql_key *mvc_create_ukey(mvc *m, sql_table *t, char *kname, key_type kt);
 extern sql_fkey *mvc_create_fkey(mvc *m, sql_table *t, char *kname, key_type kt, sql_key *rk, int on_delete, int on_update);
@@ -1299,6 +1300,16 @@ mvc_default(mvc *m, sql_column *col, char *val)
 
 	m->type = Q_SCHEMA;
 	return sql_trans_alter_default(m->session->tr, col, val);
+}
+
+sql_column *
+mvc_drop_default(mvc *m, sql_column *col)
+{
+	if (mvc_debug)
+		fprintf(stderr, "mvc_drop_default %s\n", col->base.name);
+
+	m->type = Q_SCHEMA;
+	return sql_trans_alter_default(m->session->tr, col, NULL);
 }
 
 /* variable management */
