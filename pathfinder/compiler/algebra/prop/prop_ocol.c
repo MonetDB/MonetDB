@@ -73,6 +73,24 @@ PFprop_ocol (const PFla_op_t *n, PFalg_att_t attr)
 }
 
 /**
+ * Return the type of @a attr in the list of ocol columns
+ */
+PFalg_type_t
+PFprop_type (const PFla_op_t *n, PFalg_att_t attr)
+{
+    assert (n);
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        if (attr == n->schema.items[i].name)
+            return n->schema.items[i].type; 
+
+    /* you should never get there */
+    PFoops (OOPS_FATAL,
+                 "Type of %u not found in schema", attr);
+
+    return aat_int; /* satisfy picky compilers */
+}
+
+/**
  * worker for ocol property inference;
  * Copies schema using size as array size
  */
@@ -543,8 +561,9 @@ infer_ocol (PFla_op_t *n)
                                         .type = aat_nat };
             ocol_at (n, 2)
                 = (PFalg_schm_item_t) { .name = n->sem.merge_adjacent.item_res,
-                                        .type = aat_node };
-            break;
+                                        .type = (PFprop_type(R(n), n->sem.merge_adjacent.item_res) & aat_anode)?
+                                                aat_node : aat_pnode};
+          break;
 
         case la_roots:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
