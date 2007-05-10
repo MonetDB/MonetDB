@@ -1143,6 +1143,10 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	default:
 		return sql_error(sql, 01, "sql_stmt symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
+	if (sql->called_triggers) 
+		list_destroy(sql->called_triggers);
+
+	sql->called_triggers = NULL;
 	return res;
 }
 
