@@ -452,12 +452,7 @@ sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 			/* add name for the 'inserted' to the scope */
 			if (!n) n = "new"; 
 	
-			if (sql->called_triggers) {
-				list_append(sql->called_triggers, trigger_id);
-			} else {
-				sql->called_triggers = list_create((fdestroy) GDKfree);
-				list_append(sql->called_triggers, trigger_id);
-			}
+			list_append(sql->called_triggers, trigger_id);
 	
 			scope_add_inserted(scp, inserts, t, n);
 			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);
@@ -1099,12 +1094,7 @@ sql_update_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 			if (!n) n = "new"; 
 			if (!o) o = "old"; 
 	
-			if (sql->called_triggers) {
-				list_append(sql->called_triggers, trigger_id);
-			} else {
-				sql->called_triggers = list_create((fdestroy) GDKfree);
-				list_append(sql->called_triggers, trigger_id);
-			}
+			list_append(sql->called_triggers, trigger_id);
 	
 			scope_add_updated(scp, inserts, t, o, n);
 			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);
@@ -1752,12 +1742,7 @@ sql_delete_triggers(mvc *sql, sql_table *t, stmt *deletes, list *l)
 		
 			if (!o) o = "old"; 
 		
-			if (sql->called_triggers) {
-				list_append(sql->called_triggers, trigger_id);
-			} else {
-				sql->called_triggers = list_create((fdestroy) GDKfree);
-				list_append(sql->called_triggers, trigger_id);
-			}
+			list_append(sql->called_triggers, trigger_id);
 
 			scope_add_deleted(scp, deletes, t, o);
 			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);

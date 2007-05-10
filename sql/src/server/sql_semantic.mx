@@ -1030,9 +1030,13 @@ stmt *
 semantic(mvc *sql, scope *scp, symbol *s)
 {
 	stmt *res = NULL;
-
+	int start = 0;
 	if (!s)
 		return NULL;
+	if( !sql->called_triggers) {
+		sql->called_triggers = list_create((fdestroy) GDKfree);
+		start = 1;
+	}
 
 	switch (s->token) {
 
@@ -1042,8 +1046,10 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case TR_ROLLBACK:
 	case TR_START:
 	case TR_MODE:
-		return transactions(sql, s);
-
+	{
+		res = transactions(sql, s);
+		break;
+	}
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:
 	case SQL_CREATE_TABLE:
@@ -1067,27 +1073,35 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_DROP_TRIGGER:
 	case SQL_CONNECT:
 	case SQL_DISCONNECT:
-		return schemas(sql, s);
-
+	{
+		res = schemas(sql, s);
+		break;
+	}
 	case SQL_CREATE_SEQ:
 	case SQL_ALTER_SEQ:
 	case SQL_DROP_SEQ:
-		return sequences(sql, s);
-
+	{
+		res = sequences(sql, s);
+		break;
+	}
 	case SQL_COPYFROM:
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
-		return updates(sql, scp, s);
-
+	{
+		res = updates(sql, scp, s);
+		break;
+	}
 	case SQL_SELECT:
 	case SQL_JOIN:
 	case SQL_CROSS:
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
-		return selects(sql, scp, s);
-
+	{
+		res = selects(sql, scp, s);
+		break;
+	}
 	case SQL_CREATE_FUNC:
 	case SQL_CREATE_PROC:
 	case SQL_DROP_FUNC:
@@ -1095,8 +1109,10 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:
-		return psm(sql, s);
-
+	{
+		res = psm(sql, s);
+		break;
+	}
 	case SQL_WITH:
 	{
 		dnode *d = s->data.lval->h;
@@ -1109,16 +1125,26 @@ semantic(mvc *sql, scope *scp, symbol *s)
 			dnode *dn = sym->data.lval->h;
 			char *name = qname_table(dn->data.lval);
 
-			if (frame_find_var(sql, name)) 
+			if (frame_find_var(sql, name)) {
+				if (start) {
+					list_destroy(sql->called_triggers);
+					sql->called_triggers = NULL;
+				}
 				return sql_error(sql, 01, "Variable '%s' allready declared", name);
-
+			}
 			st = semantic(sql, scp, sym);
-			if (!st) 
+			if (!st) { 
+				if (start) {
+					list_destroy(sql->called_triggers);
+					sql->called_triggers = NULL;
+				}
 				return NULL;
+			}
 			stack_push_view(sql, name, st);
 		}
 		st = semantic(sql, scp, select);
-		return st;
+		res = st;
+		break;
 	}
 
 	case SQL_PREP:
@@ -1133,20 +1159,27 @@ semantic(mvc *sql, scope *scp, symbol *s)
 
 			if (!st) {
 				list_destroy(l);
+				if (start) {
+					list_destroy(sql->called_triggers);
+					sql->called_triggers = NULL;
+				}
 				return NULL;
 			}
 			list_append(l, st);
 		}
-		return stmt_list(l);
+		res = stmt_list(l);
+		break;
 	}
 
 	default:
-		return sql_error(sql, 01, "sql_stmt symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		res = sql_error(sql, 01, "sql_stmt symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
-	if (sql->called_triggers) 
-		list_destroy(sql->called_triggers);
 
-	sql->called_triggers = NULL;
+	if (start) {
+		list_destroy(sql->called_triggers);
+		sql->called_triggers = NULL;
+	}
+
 	return res;
 }
 
