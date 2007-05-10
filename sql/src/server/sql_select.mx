@@ -308,9 +308,7 @@ flat_subquery(mvc *sql, symbol *sq)
 	exp_kind ek = {type_value, card_relation, TRUE};
 	stmt *s = sql_subquery(sql, scp, sq, ek);
 
-
 	scp = scope_close(scp);
-
 	if (s && s->type == st_ordered) {
 		list *l = create_stmt_list();
 		node *n;
