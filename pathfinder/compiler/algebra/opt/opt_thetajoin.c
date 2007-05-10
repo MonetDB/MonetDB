@@ -1041,10 +1041,12 @@ opt_mvd (PFla_op_t *p)
             modified = modify_binary_op (p, PFla_gt, true, alg_comp_gt);
             break;
         case la_bool_and:
-            modified = modify_binary_op (p, PFla_and, false, 0);
+            modified = modify_binary_op (p, PFla_and, false,
+                           alg_comp_eq /* pacify picky compiler */);
             break;
         case la_bool_or:
-            modified = modify_binary_op (p, PFla_or, false, 0);
+            modified = modify_binary_op (p, PFla_or, false,
+                           alg_comp_eq /* pacify picky compiler */);
             break;
 
         case la_bool_not:
@@ -1090,7 +1092,11 @@ opt_mvd (PFla_op_t *p)
                                 att = p->sem.unary.att;
                     PFarray_t  *pred;
                     unsigned int i;
-                    PFalg_comp_t comp = 0;
+                    PFalg_comp_t comp;
+                   
+                    /* pacify picky compilers: one does not like no value (gcc)
+                       and the other one does not like a dummy value (icc) */
+                    comp = alg_comp_eq;
                     
                     /* make sure that column res is not used as join argument */
                     resolve_name_conflicts (L(p), res);
