@@ -23,5 +23,6 @@ END;
 
 insert into t2 values(0, 24);
 
+select * from t2;
 DROP table t2 CASCADE;
 DROP Table t1;
