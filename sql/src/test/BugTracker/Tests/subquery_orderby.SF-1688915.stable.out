@@ -24,7 +24,7 @@ Over..
 % .x # table_name
 % name # name
 % varchar # type
-% 13 # length
+% 12 # length
 [ "schemas"	]
 [ "types"	]
 [ "functions"	]
@@ -52,13 +52,8 @@ Over..
 [ "auths"	]
 [ "privileges"	]
 [ "profile"	]
-[ "test1440214"	]
-[ "system"	]
-[ "target"	]
-[ "configuration"	]
-[ "test"	]
 
-# 10:11:41 >  
-# 10:11:41 >  Done.
-# 10:11:41 >  
+# 14:16:47 >  
+# 14:16:47 >  Done.
+# 14:16:47 >  
 

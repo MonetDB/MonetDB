@@ -5,56 +5,41 @@ stdout of test 'create_table_with_data.SF-1715679` in directory 'src/test/BugTra
 # 11:31:41 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=32335 --set xrpc_port=44303 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=' include sql;' ; echo ; echo Over..
 # 11:31:41 >  
 
-
-
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_test_BugTracker
-# Visit http://monetdb.cwi.nl/ for further information
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
-# 10:18:19 >  
-# 10:18:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38149 
-# 10:18:19 >  
+# 14:16:53 >  
+# 14:16:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=39662 
+# 14:16:53 >  
 
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 % sys.t1 # table_name
-% name # name
-% varchar # type
-% 12 # length
-[ "_columns"	]
-[ "_columns"	]
-[ "_tables"	]
-[ "_tables"	]
-[ "args"	]
-[ "auths"	]
-[ "columns"	]
-[ "connections"	]
-[ "db_user_info"	]
-[ "dependencies"	]
-[ "functions"	]
-[ "idxs"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "keys"	]
-[ "privileges"	]
-[ "profile"	]
-[ "schemas"	]
-[ "sequences"	]
-[ "t1"	]
-[ "tables"	]
-[ "triggers"	]
-[ "triggers"	]
-[ "types"	]
-[ "user_role"	]
-[ "users"	]
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
 
-# 11:31:41 >  
-# 11:31:41 >  Done.
-# 11:31:41 >  
+# 14:16:53 >  
+# 14:16:53 >  Done.
+# 14:16:53 >  
 
