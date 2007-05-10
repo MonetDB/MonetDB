@@ -1,6 +1,5 @@
 --this test only tests the sintax
 --the semantic should also be tested after the syntax test
-
 create table t1 (id int, name varchar(1024));
 
 insert into t1 values(10, 'monetdb');

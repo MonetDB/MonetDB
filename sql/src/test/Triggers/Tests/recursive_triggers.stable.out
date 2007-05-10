@@ -1,19 +1,19 @@
 stdout of test 'recursive_triggers` in directory 'src/test/Triggers` itself:
 
 
-# 15:06:05 >  
-# 15:06:05 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/monetdb4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/lib:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/sql_logs" --set "xquery_logdir=something" --set mapi_port=38417 --set monet_prompt= --trace "--dbname=mTests_src_test_Triggers" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 15:06:05 >  
+# 18:22:49 >  
+# 18:22:49 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=31273 --set xrpc_port=46173 --set monet_prompt= --trace "--dbname=mTests_src_test_Triggers" --dbinit=' include sql;' ; echo ; echo Over..
+# 18:22:49 >  
 
-# Monet Database Server V4.15.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_Triggers
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -35,7 +35,6 @@ Over..
 % 1,	1 # length
 [ 4	]
 [ 1	]
-[ 4	]
 [ 1	]
 % sys.t1,	sys.t1,	sys.t1 # table_name
 % id,	name,	age # name
@@ -53,14 +52,9 @@ Over..
 [ 1,	24	]
 [ 2,	26	]
 [ 1,	24	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
 [ 1	]
 [ 6	]
 [ 1	]
-[ 6	]
 [ 1	]
 % sys.t1,	sys.t1,	sys.t1 # table_name
 % id,	name,	age # name
@@ -80,17 +74,7 @@ Over..
 [ 1,	24	]
 [ 2,	26	]
 [ 1,	24	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
 [ 1,	23	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 3,	27	]
-[ 1,	24	]
 [ 1,	25	]
 [ 1,	24	]
 [ 2,	26	]
@@ -112,17 +96,7 @@ Over..
 [ 1,	24	]
 [ 2,	26	]
 [ 1,	24	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
 [ 1,	23	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 3,	27	]
-[ 1,	24	]
 [ 1,	25	]
 [ 1,	24	]
 [ 2,	26	]
@@ -144,17 +118,7 @@ Over..
 [ 1,	24	]
 [ 2,	26	]
 [ 1,	24	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
 [ 1,	23	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 3,	27	]
-[ 1,	24	]
 [ 1,	25	]
 [ 1,	24	]
 [ 2,	26	]
