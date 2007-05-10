@@ -8209,7 +8209,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (
           ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"query"))) ||
-          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"query-id")))
+          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"queryall"))) ||
+          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"query-id"))) ||
+          ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"queryall-id")))
 	)
     {
         int opt_counter  = 0;
@@ -8217,9 +8219,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	int ctx_counter  = 0;
         char *item_ext = kind_str(STR);
 	
-	int storeScore = !PFqname_eq(fnQname, PFqname (PFns_tijah,"query-id"));
+	int storeScore = (!PFqname_eq(fnQname, PFqname (PFns_tijah,"query-id")))
+			 ||
+			 (!PFqname_eq(fnQname, PFqname (PFns_tijah,"queryall-id")));
 	milprintf(f, 
-                "{ # translate tijah:query\n"
+                "{ # translate tijah:query[all][-id]\n"
 	);
         if (fun->arity == 3) {
 	  /* generate startnodes code */ 
@@ -8415,7 +8419,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, str_counter, STR);
 	if ( ctx_counter )
 	    deleteResult(f, ctx_counter);
-        milprintf(f, "} # end of translate pf:tijah_query\n");
+        milprintf(f, "} # end of translate tijah:query[all][-id]\n");
         return (code && storeScore)?INT:NORMAL;
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"nodes")) )

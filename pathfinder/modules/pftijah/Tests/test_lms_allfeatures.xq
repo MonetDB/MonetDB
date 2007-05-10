@@ -6,5 +6,5 @@ let $opt := <TijahOptions
 
 let $query := "//chapter[about(.//title,information) and about(.//title,retrieval)]//section[about(.,XML) or about(.,SGML)]"
 
-for $n at $r in tijah:query($query,$opt)
+for $n at $r in tijah:queryall($query,$opt)
 return <node rank="{$r}">{$n}</node>
