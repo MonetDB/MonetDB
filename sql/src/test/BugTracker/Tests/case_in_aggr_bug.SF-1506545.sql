@@ -29,3 +29,8 @@ CREATE TABLE configuration (
 
 select avg(target_id / case (system_id - 1) WHEN 0 THEN cast(null as int)
 ELSE system_id - 1 END) from configuration;
+
+DROP TABLE configuration;
+DROP TABLE system;
+DROP TABLE target;
+
