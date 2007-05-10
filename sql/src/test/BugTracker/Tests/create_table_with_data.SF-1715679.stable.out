@@ -1,19 +1,19 @@
 stdout of test 'create_table_with_data.SF-1715679` in directory 'src/test/BugTracker` itself:
 
 
-# 10:18:19 >  
-# 10:18:19 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=38149 --set xrpc_port=42500 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 10:18:19 >  
+# 11:31:41 >  
+# 11:31:41 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=32335 --set xrpc_port=44303 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=' include sql;' ; echo ; echo Over..
+# 11:31:41 >  
 
-# Monet Database Server V4.17.1
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_test_BugTracker
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -22,45 +22,39 @@ Over..
 # 10:18:19 >  
 
 % sys.t1 # table_name
-% id # name
-% int # type
-% 5 # length
-[ 845	]
-[ 850	]
-[ 859	]
-[ 867	]
-[ 875	]
-[ 885	]
-[ 893	]
-[ 903	]
-[ 910	]
-[ 915	]
-[ 926	]
-[ 931	]
-[ 935	]
-[ 945	]
-[ 953	]
-[ 963	]
-[ 970	]
-[ 975	]
-[ 986	]
-[ 3263	]
-[ 3272	]
-[ 3291	]
-[ 3296	]
-[ 3300	]
-[ 3303	]
-[ 3307	]
-[ 3313	]
-[ 8413	]
-[ 12108	]
-[ 12121	]
-[ 12132	]
-[ 13844	]
-[ 25744	]
-[ 30841	]
+% name # name
+% varchar # type
+% 12 # length
+[ "_columns"	]
+[ "_columns"	]
+[ "_tables"	]
+[ "_tables"	]
+[ "args"	]
+[ "auths"	]
+[ "columns"	]
+[ "connections"	]
+[ "db_user_info"	]
+[ "dependencies"	]
+[ "functions"	]
+[ "idxs"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "keycolumns"	]
+[ "keys"	]
+[ "keys"	]
+[ "privileges"	]
+[ "profile"	]
+[ "schemas"	]
+[ "sequences"	]
+[ "t1"	]
+[ "tables"	]
+[ "triggers"	]
+[ "triggers"	]
+[ "types"	]
+[ "user_role"	]
+[ "users"	]
 
-# 10:18:19 >  
-# 10:18:19 >  Done.
-# 10:18:19 >  
+# 11:31:41 >  
+# 11:31:41 >  Done.
+# 11:31:41 >  
 
