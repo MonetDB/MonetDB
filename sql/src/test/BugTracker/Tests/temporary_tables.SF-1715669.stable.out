@@ -1,0 +1,65 @@
+stdout of test 'temporary_tables.SF-1715669` in directory 'src/test/BugTracker` itself:
+
+
+# 09:35:56 >  
+# 09:35:56 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=32868 --set xrpc_port=47833 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 09:35:56 >  
+
+# Monet Database Server V4.17.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 09:35:56 >  
+# 09:35:56 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32868 
+# 09:35:56 >  
+
+% sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 5,	13,	3,	168,	1,	5,	1,	1 # length
+[ 845,	"schemas",	844,	NULL,	0,	true,	0,	0	]
+[ 850,	"types",	844,	NULL,	0,	true,	0,	0	]
+[ 859,	"functions",	844,	NULL,	0,	true,	0,	0	]
+[ 867,	"args",	844,	NULL,	0,	true,	0,	0	]
+[ 875,	"sequences",	844,	NULL,	0,	true,	0,	0	]
+[ 885,	"_tables",	844,	NULL,	0,	true,	0,	0	]
+[ 893,	"_columns",	844,	NULL,	0,	true,	0,	0	]
+[ 903,	"keys",	844,	NULL,	0,	true,	0,	0	]
+[ 910,	"idxs",	844,	NULL,	0,	true,	0,	0	]
+[ 915,	"triggers",	844,	NULL,	0,	true,	0,	0	]
+[ 926,	"keycolumns",	844,	NULL,	0,	true,	0,	0	]
+[ 931,	"dependencies",	844,	NULL,	0,	true,	0,	0	]
+[ 935,	"connections",	844,	NULL,	0,	true,	0,	0	]
+[ 945,	"_tables",	944,	NULL,	0,	true,	2,	0	]
+[ 953,	"_columns",	944,	NULL,	0,	true,	2,	0	]
+[ 963,	"keys",	944,	NULL,	0,	true,	2,	0	]
+[ 970,	"idxs",	944,	NULL,	0,	true,	2,	0	]
+[ 975,	"triggers",	944,	NULL,	0,	true,	2,	0	]
+[ 986,	"keycolumns",	944,	NULL,	0,	true,	2,	0	]
+[ 3263,	"tables",	844,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;",	1,	true,	0,	0	]
+[ 3272,	"columns",	844,	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	0	]
+[ 3291,	"db_users",	844,	NULL,	0,	true,	0,	0	]
+[ 3296,	"users",	844,	"SELECT \"name\", \"fullname\", \"default_schema\" FROM \"sys\".\"db_users\";",	1,	true,	0,	0	]
+[ 3300,	"user_role",	844,	NULL,	0,	true,	0,	0	]
+[ 3303,	"auths",	844,	NULL,	0,	true,	0,	0	]
+[ 3307,	"privileges",	844,	NULL,	0,	true,	0,	0	]
+[ 3313,	"profile",	944,	NULL,	0,	true,	2,	0	]
+[ 8413,	"test1440214",	844,	NULL,	0,	false,	0,	0	]
+[ 12108,	"system",	844,	NULL,	0,	false,	0,	0	]
+[ 12121,	"target",	844,	NULL,	0,	false,	0,	0	]
+[ 12132,	"configuration",	844,	NULL,	0,	false,	0,	0	]
+[ 13844,	"test",	844,	NULL,	0,	false,	0,	0	]
+[ 25744,	"xy",	844,	NULL,	0,	false,	0,	0	]
+
+# 09:35:56 >  
+# 09:35:56 >  Done.
+# 09:35:56 >  
+
