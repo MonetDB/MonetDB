@@ -3047,12 +3047,20 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			if (stmt_set_type_param(sql, st, a) == -1) {
 				stmt_destroy(ls);
 				stmt_destroy(a);
+				cond_stmt_destroy(e);
 				return sql_error(sql, 02, "LIKE: wrong type, should be string");
 			}
 		} else if ((a = check_types(sql, st, a, type_equal)) == NULL) {
 			stmt_destroy(ls);
+			cond_stmt_destroy(e);
 			return sql_error(sql, 02, "LIKE: wrong type, should be string");
 		}
+		if ((ls = check_types(sql, st, ls, type_equal)) == NULL) {
+			stmt_destroy(a);
+			cond_stmt_destroy(e);
+			return sql_error(sql, 02, "LIKE: wrong type, should be string");
+		}
+
 		/* predicate case ? */
 		if (ls->nrcols == 0 || f == sql_sel) {
 			sql_subtype *bt = sql_bind_localtype("bit");
