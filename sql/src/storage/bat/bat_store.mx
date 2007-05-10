@@ -3248,9 +3248,9 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 						cs_add(ts, r, TR_NEW);
 					else
 						ok = LOG_ERR;
+					fb->rtime = fb->wtime = 0;
+					fb->flag = TR_OLD;
 				}
-				fb->rtime = fb->wtime = 0;
-				fb->flag = TR_OLD;
 				n = nxt;
 			}
 			fs -> nelm = NULL;
@@ -4911,13 +4911,13 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = find_sql_func_node(s, NULL, id);
 	sql_func *func = n->data;
-	int *local_id = GDKmalloc(sizeof(int));
-	memcpy(local_id, &func->base.id, sizeof(int));
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		int *local_id = NEW(int);
+
 		if (! tr->dropped) 
-			tr->dropped = list_create((fdestroy) NULL);
-		
+			tr->dropped = list_create((fdestroy) GDKfree);
+		*local_id = func->base.id;
 		list_append(tr->dropped, local_id);
 	}
 
@@ -4939,18 +4939,19 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 {
 	node *n = NULL;
 	sql_func *func = NULL;
-	tr->dropped = list_create((fdestroy) NULL);
 
+	if (!tr->dropped)
+		tr->dropped = list_create((fdestroy) GDKfree);
 	for (n = list_func->h; n ; n = n->next ) {
-		int *local_id = GDKmalloc(sizeof(int));
 		func = (sql_func *) n->data;
-		memcpy(local_id, &func->base.id, sizeof(int));
 
-		if (! list_find_id(tr->dropped, *local_id)){ 
+		if (! list_find_id(tr->dropped, func->base.id)){ 
+			int *local_id = NEW(int);
+
+			*local_id = func->base.id;
 			list_append(tr->dropped, local_id);
 			sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
 		}
-		
 	}
 	
 	if ( tr->dropped) {
@@ -4991,16 +4992,15 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	sql_schema *s = n->data;
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 	ssize_t rid = column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
-	int *local_id = GDKmalloc(sizeof(int));
-	memcpy(local_id, &s->base.id, sizeof(int));
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		int *local_id = NEW(int);
+
 		if (! tr->dropped) 
-			tr->dropped = list_create((fdestroy) NULL);
-		
+			tr->dropped = list_create((fdestroy) GDKfree);
+		*local_id = s->base.id;
 		list_append(tr->dropped, local_id);
 	} 
-	
 
 	assert(rid != -1);
 	table_delete(tr, sysschema, rid);
@@ -5138,16 +5138,15 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = find_sql_table_node(s, NULL, id);
 	sql_table *t = n->data;
-	int *local_id = GDKmalloc(sizeof(int));
-	memcpy(local_id, &t->base.id, sizeof(int));
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		int *local_id = NEW(int);
+
 		if (! tr->dropped) 
-			tr->dropped = list_create((fdestroy) NULL);
-		
+			tr->dropped = list_create((fdestroy) GDKfree);
+		*local_id = t->base.id;
 		list_append(tr->dropped, local_id);
 	}
-
 		
 	sys_drop_table(tr, t, drop_action);
 
@@ -5312,13 +5311,13 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 {
 	node *n = list_find_base_id(t->columns.set, id);
 	sql_column *col = n->data;
-	int *local_id = GDKmalloc(sizeof(int));
-	memcpy(local_id, &col->base.id, sizeof(int));
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		int *local_id = NEW(int);
+
 		if (! tr->dropped) 
-			tr->dropped = list_create((fdestroy) NULL);
-		
+			tr->dropped = list_create((fdestroy) GDKfree);
+		*local_id = col->base.id;
 		list_append(tr->dropped, local_id);
 	}
 	
@@ -5536,13 +5535,13 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->keys, id);
 	sql_key *k = n->data;
-	int *local_id = GDKmalloc(sizeof(int));
-	memcpy(local_id, &k->base.id, sizeof(int));
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		int *local_id = NEW(int);
+
 		if (! tr->dropped) 
-			tr->dropped = list_create((fdestroy) NULL);
-		
+			tr->dropped = list_create((fdestroy) GDKfree);
+		*local_id = k->base.id;
 		list_append(tr->dropped, local_id);
 	}
 	
@@ -5652,13 +5651,13 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->idxs, id);
 	sql_idx *i = n->data;
-	int *local_id = GDKmalloc(sizeof(int));
-	memcpy(local_id, &i->base.id, sizeof(int));
 	
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		int *local_id = NEW(int);
+
 		if (! tr->dropped) 
-			tr->dropped = list_create((fdestroy) NULL);
-		
+			tr->dropped = list_create((fdestroy) GDKfree);
+		*local_id = i->base.id;
 		list_append(tr->dropped, local_id);
 	}
 	
@@ -5740,15 +5739,16 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->triggers, id);
 	sql_trigger *i = n->data;
-	int *local_id = GDKmalloc(sizeof(int));
-	memcpy(local_id, &i->base.id, sizeof(int));
 	
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		int *local_id = NEW(int);
+
+		if (! tr->dropped) 
+			tr->dropped = list_create((fdestroy) GDKfree);
+		*local_id = i->base.id;
 		list_append(tr->dropped, local_id);
 	}
 	
-
-
 	sys_drop_trigger(tr, i);
 	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(i->t)) 
