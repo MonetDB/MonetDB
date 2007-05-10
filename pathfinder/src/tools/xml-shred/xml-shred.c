@@ -135,6 +135,7 @@ int new_nameid();
 typedef struct node_t node_t;
 struct node_t {
     nat       pre;
+    nat       apre;
     nat       post;
     nat       pre_stretched;
     nat       post_stretched;
@@ -259,6 +260,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
     stack[level] = (node_t) {
         .pre            = pre,
+	.apre           = -1,
         .post           = 0,
         .pre_stretched  = rank,
         .post_stretched = 0,
@@ -267,7 +269,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         .parent         = stack + level - 1,
 	.name_id        = name_id, 
         .kind           = elem,
-        .prop           = NULL 
+        .prop           = (!sql_atts)?strndup((char*)tagname, TAG_SIZE):NULL 
     };
 
 
@@ -316,12 +318,13 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
 		pre++;
 	   	print_tuple ((node_t) {
-			.pre = pre,
+			.pre = -1,
+			.apre = pre,
 			.post = 0,
 			.pre_stretched = 0,
 			.post_stretched = 0,
 			.size = 0,
-			.level = 1,
+			.level = level + 1,
 			.parent = 0,
 			.name_id = name_id,
 			.kind = attr,
@@ -381,6 +384,7 @@ flush_buffer (void)
 
         stack[level] = (node_t) {
             .pre            = pre,
+	    .apre           = -1,
             .post           = post,
             .pre_stretched  = rank - 1,
             .post_stretched = rank,
@@ -455,7 +459,11 @@ print_tuple (node_t tuple)
         if (format[i] == '%') {
             i++;
             switch (format[i]) {
-                case 'e':  fprintf (out, "%lu", tuple.pre); break;
+                case 'e':  if(tuple.pre == -1)
+		               fprintf (out, "");
+		           else
+			       fprintf (out, "%lu", tuple.pre);
+			   break;
                 case 'o':  fprintf (out, "%lu", tuple.post); break;
                 case 'E':  fprintf (out, "%lu", tuple.pre_stretched); break;
                 case 'O':  fprintf (out, "%lu", tuple.post_stretched); break;
@@ -486,9 +494,14 @@ print_tuple (node_t tuple)
                            break;
 		case 'n':
 		        if (tuple.name_id == -1)
-			    fprintf(out, "NULL");
+			    fprintf(out, "");
 			else 
 			    fprintf(out, "%i", tuple.name_id); break;
+ 		case 'a':
+		        if (tuple.apre == -1)
+			    fprintf(out, "");
+			else
+			    fprintf(out, "%lu", tuple.apre); break;
                 case 't':
 		{
 		    if(tuple.prop) {
@@ -556,7 +569,7 @@ main (int argc, char **argv)
 
 	    case 's':
 		sql_atts = true;
-		format = "%e, %s, %l, %k, %n, %t";
+		format = "%e, %a, %s, %l, %k, %n, %t";
 		break;
 
             case 'h':
