@@ -443,12 +443,10 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
     iter_bun = BUNfirst(iter_bat);
     ctx_bun = BUNfirst(ctx_bat);
     ctx_last = BUNlast(ctx_bat);
-    ctx = *(oid*)BUNtail(ctx_bat,ctx_bun);
 
 @= getnextctx
     iter_bun += iter_bunsize;
     ctx_bun += ctx_bunsize;
-    ctx = *(oid*)BUNtail(ctx_bat,ctx_bun);
 @
 @= pushctx
     si_C new_stack_item;
@@ -478,6 +476,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
        the next ctx node (or the end of the stack top
        ctx node scope) is reached */
     while (ctx_bun < ctx_last && cand_cur <= cand_lst) {
+        ctx = *(oid*)BUNtail(ctx_bat,ctx_bun);
         /* if the stack is empty the next ctx node
            has to be pushed on the stack 
            and the next ctx node is called*/
