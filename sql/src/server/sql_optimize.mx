@@ -35,6 +35,7 @@ extern stmt *optimize(mvc *c, stmt *s);
 #include "sql_optimize.h"
 #include "sql_env.h"
 #include <stdio.h>
+#include "rel_semantic.h"
 
 #define create_stmt_list() list_create((fdestroy)&stmt_destroy)
 
@@ -786,10 +787,10 @@ push_selects_down(mvc *c, list *con)
 			assert(j->op2.stval->type==st_reverse);
 			if (!STMT_BAT(j->op2.stval->op1.stval->type))
 				continue;
-			if (j->t == join->h && j->type == st_join && j->flag == cmp_equal ) {
+			if (j->t == join->h && j->type == st_join) {
 				stmt *jh = stmt_dup(j->op2.stval->op1.stval);
 				stmt *jt = stmt_reverse(stmt_dup(j->op1.stval));
-				jn->data = stmt_join(jh, jt, (comp_type)j->flag);
+				jn->data = stmt_join(jh, jt, swap_compare((comp_type)j->flag));
 				stmt_destroy(j);
 			} else if (j->t == join->h && j->type == st_reljoin) {
 				list *l1 = list_dup(j->op1.lval, (fdup)&stmt_dup);
