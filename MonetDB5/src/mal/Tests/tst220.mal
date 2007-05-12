@@ -66,4 +66,6 @@ end createone;
 	z:= bbp.getRefCount();
 	zl:= bbp.getLRefCount();
 	zn:= bbp.getNames();
-	io.print(zn,z,zl);
+	zs:= algebra.sort(zn);
+	io.table(zs,zn,z,zl);
+

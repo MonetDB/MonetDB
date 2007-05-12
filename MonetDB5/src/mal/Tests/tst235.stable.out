@@ -22,11 +22,12 @@ stdout of test 'tst235` in directory 'src/mal` itself:
 #	io.print(dn,d,dl);
 #end dir;
 function user.dir():void;	# 0  (dir:void)
-    d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:oid,:int])
-    dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:oid,:int])
-    dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:oid,:str])
-    io.print(dn,d,dl);	# 4 IOtable (_4:void)<-(dn:bat[:oid,:str])(d:bat[:oid,:int])(dl:bat[:oid,:int])
-end dir;	# 5  
+    d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:int,:int])
+    dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:int,:int])
+    dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:int,:str])
+    ds := algebra.sort(dn);	# 4 ALGhsort (ds:bat[:int,:str])<-(dn:bat[:int,:str])
+    io.table(ds,d,dl);	# 5 IOttable (_5:void)<-(ds:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+end dir;	# 6  
 #
 #function createBAT(name:str):bat;
 #    res:= bat.new(:int,:int);
@@ -60,39 +61,39 @@ function user.main():void;	# 0  (main:void)
 # bat d should have 1 lref 	# 6  (_7:str)
     user.dir();	# 7  (_8:void)
 end main;	# 8  
-#---------------------------------------------------------#
-# bbp	name			refcnt	lrefcnt		  # name
-# int	str			int	int		  # type
-#---------------------------------------------------------#
-[ 0@0,	  "M5system_auth_user",	  1,	  1		  ]
-[ 1@0,	  "M5system_auth_passwd", 1,	  1		  ]
-[ 2@0,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 3@0,	  "monet_environment",	  1,	  0		  ]
-[ 4@0,	  "monet_unicode_case",	  1,	  0		  ]
-[ 5@0,	  "timezones",		  1,	  0		  ]
-#---------------------------------------------------------#
-# bbp	name			refcnt	lrefcnt		  # name
-# int	str			int	int		  # type
-#---------------------------------------------------------#
-[ 0@0,	  "M5system_auth_user",	  1,	  1		  ]
-[ 1@0,	  "M5system_auth_passwd", 1,	  1		  ]
-[ 2@0,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 3@0,	  "monet_environment",	  1,	  0		  ]
-[ 4@0,	  "monet_unicode_case",	  1,	  0		  ]
-[ 5@0,	  "timezones",		  1,	  0		  ]
-[ 6@0,	  "tmp_12",		  0,	  1		  ]
+#-------------------------------------------------#
+# t			refcnt	lrefcnt		  # name
+# str			int	int		  # type
+#-------------------------------------------------#
+[ "M5system_auth_user",	  1,	  1		  ]
+[ "M5system_auth_passwd", 1,	  1		  ]
+[ "M5system_auth_scen",	  1,	  1		  ]
+[ "monet_environment",	  1,	  0		  ]
+[ "monet_unicode_case",	  1,	  0		  ]
+[ "timezones",		  1,	  0		  ]
+#-------------------------------------------------#
+# t			refcnt	lrefcnt		  # name
+# str			int	int		  # type
+#-------------------------------------------------#
+[ "M5system_auth_user",	  1,	  1		  ]
+[ "M5system_auth_passwd", 1,	  1		  ]
+[ "M5system_auth_scen",	  1,	  1		  ]
+[ "monet_environment",	  1,	  0		  ]
+[ "monet_unicode_case",	  1,	  0		  ]
+[ "timezones",		  1,	  0		  ]
+[ "one",		  0,	  3		  ]
 [ <one> ]
-#---------------------------------------------------------#
-# bbp	name			refcnt	lrefcnt		  # name
-# int	str			int	int		  # type
-#---------------------------------------------------------#
-[ 0@0,	  "M5system_auth_user",	  1,	  1		  ]
-[ 1@0,	  "M5system_auth_passwd", 1,	  1		  ]
-[ 2@0,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 3@0,	  "monet_environment",	  1,	  0		  ]
-[ 4@0,	  "monet_unicode_case",	  1,	  0		  ]
-[ 5@0,	  "timezones",		  1,	  0		  ]
-[ 6@0,	  "tmp_12",		  0,	  1		  ]
+#-------------------------------------------------#
+# t			refcnt	lrefcnt		  # name
+# str			int	int		  # type
+#-------------------------------------------------#
+[ "M5system_auth_user",	  1,	  1		  ]
+[ "M5system_auth_passwd", 1,	  1		  ]
+[ "M5system_auth_scen",	  1,	  1		  ]
+[ "monet_environment",	  1,	  0		  ]
+[ "monet_unicode_case",	  1,	  0		  ]
+[ "timezones",		  1,	  0		  ]
+[ "one",		  0,	  1		  ]
 
 # 11:58:33 >  
 # 11:58:33 >  Done.

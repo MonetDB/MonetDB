@@ -131,11 +131,12 @@ function user.main():void;	# 0  (main:void)
     b := user.steal(b);	# 39  (b:bat[:int,:str])<-(b:bat[:int,:str])
     i := bbp.getLRefCount(b);	# 40 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("return from function refcount =%d[2]\n",i);	# 41 IOprint_formatted_int (_42:void)<-(_39:str)(i:int)
-    z := bbp.getRefCount();	# 42 CMDbbpRefCount (z:bat[:oid,:int])
-    zl := bbp.getLRefCount();	# 43 CMDbbpLRefCount (zl:bat[:oid,:int])
-    zn := bbp.getNames();	# 44 CMDbbpNames (zn:bat[:oid,:str])
-    io.print(zn,z,zl);	# 45 IOtable (_46:void)<-(zn:bat[:oid,:str])(z:bat[:oid,:int])(zl:bat[:oid,:int])
-end main;	# 46  
+    z := bbp.getRefCount();	# 42 CMDbbpRefCount (z:bat[:int,:int])
+    zl := bbp.getLRefCount();	# 43 CMDbbpLRefCount (zl:bat[:int,:int])
+    zn := bbp.getNames();	# 44 CMDbbpNames (zn:bat[:int,:str])
+    zs := algebra.sort(zn);	# 45 ALGhsort (zs:bat[:int,:str])<-(zn:bat[:int,:str])
+    io.table(zs,zn,z,zl);	# 46 IOttable (_47:void)<-(zs:bat[:int,:str])(zn:bat[:int,:str])(z:bat[:int,:int])(zl:bat[:int,:int])
+end main;	# 47  
 refcount =1[1]
 #-------------------------#
 # h	t		  # name
@@ -161,19 +162,19 @@ check self replacement, overrule refcount!
 enter function refcount =3[2,3]
 local in function refcount =4[3,4]
 return from function refcount =2[2]
-#---------------------------------------------------------#
-# bbp	name			refcnt	lrefcnt		  # name
-# int	str			int	int		  # type
-#---------------------------------------------------------#
-[ 0@0,	  "M5system_auth_user",	  1,	  1		  ]
-[ 1@0,	  "M5system_auth_passwd", 1,	  1		  ]
-[ 2@0,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 3@0,	  "monet_environment",	  1,	  0		  ]
-[ 4@0,	  "monet_unicode_case",	  1,	  0		  ]
-[ 5@0,	  "timezones",		  1,	  0		  ]
-[ 6@0,	  "tmp_12",		  0,	  2		  ]
-[ 7@0,	  "tmp_13",		  0,	  2		  ]
-[ 8@0,	  "tmp_14",		  0,	  1		  ]
+#-------------------------------------------------------------------------#
+# t			name			refcnt	lrefcnt		  # name
+# str			str			int	int		  # type
+#-------------------------------------------------------------------------#
+[ "M5system_auth_user",	  "M5system_auth_user",	  1,	  1		  ]
+[ "M5system_auth_passwd", "M5system_auth_passwd", 1,	  1		  ]
+[ "M5system_auth_scen",	  "M5system_auth_scen",	  1,	  1		  ]
+[ "monet_environment",	  "monet_environment",	  1,	  0		  ]
+[ "monet_unicode_case",	  "monet_unicode_case",	  1,	  0		  ]
+[ "timezones",		  "timezones",		  1,	  0		  ]
+[ "tmp_12",		  "tmp_12",		  0,	  2		  ]
+[ "tmp_13",		  "tmp_13",		  0,	  2		  ]
+[ "tmp_14",		  "tmp_14",		  0,	  1		  ]
 
 # 08:01:01 >  
 # 08:01:01 >  Done.

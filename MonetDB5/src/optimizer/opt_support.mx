@@ -279,6 +279,7 @@ The first implementation looks at calculator expressions such as they
 appear frequently in the RAM compiler.
 Impact: high
 Prerequisite: should be called after common term optimizer to avoid clashes.
+Status: Used in the SQL optimizer.
 
 @emph{Code Inliner }
 Goal: to reduce the calling depth of the interpreter and to obtain
@@ -287,8 +288,8 @@ Rationale: substitution of code blocks (or macro expansion) leads to
 longer linear code sequences. This provides opportunities for squeezing.
 Moreover, at runtime building and managing a stackframe is rather expensive.
 This should be avoided for functions called repeatedly.
-Approach: called explicity to inline a module (or symbol)
 Impact: medium
+Status: Used in the SQL optimizer to handle SQL functions.
 
 @emph{Code Outliner }
 Goal: to reduce the program size by replacing a group with a single
@@ -308,12 +309,15 @@ Approach: In cooperation with a resource scheduler we should identify those
 that can be released quickly. It requires a forced gargabe collection call
 at the end of the BAT's lifespan.
 Impact: large
+Status: Implemented. Algorithm based on end-of-life-span analysis.
 
 @emph{Foreign Key replacements }
 Goal: to improve multi-attribute joins over foreign key constraints
 Rationale: the code produced by the SQL frontend involves foreign key 
-constraints, which provides many opportunities for speedy code.
+constraints, which provides many opportunities for speedy code
+using a join index.
 Impact: large
+Status: Implemented in the SQL strategic optimizer.
 
 @node Dependencies, Building Blocks, Landscape, The MAL Optimizer
 @subsection Optimizer Dependencies
@@ -420,10 +424,6 @@ of the MAL program structures automatically.
 Alternatively, the trail may be pruned and re-optimized when appropriate
 from changes in the environment.
 
-Breaking up the optimizer into different components and
-grouping them together in arbitrary sequences calls for
-careful programming.
-
 The rule applied for all optimizers is to not-return
 before checking the state of the MAL program,
 and to assure the dataflow and variable scopes are properly set.
@@ -432,6 +432,36 @@ that arise from optimizer interference are very hard to debug.
 One of the easiest pitfalls is to derive an optimized
 version of a MAL function while it is already referenced by or
 when polymorphic typechecking is required afterwards.
+
+@- Building your optimizer
+Implementation of your own MAL-MAL optimizer can best be started
+from refinement of one of the examples included in the code base.
+Beware that only those used in the critical path of SQL execution
+are thorouhly tested. The others are developed up to the point that
+the concept and approach can be demonstrated.
+
+The general structure of most optimizers is to actively copy
+a MAL block into a new program structure. At each step we
+determine the action taken, e.g. replace the instruction or
+inject instructions to achieve the desired goal.
+
+A tally on major events should be retained, because it gives
+valuable insight in the effectiveness of your optimizer.
+The effects of all optimizers is collected in a system catalog.[todo]
+
+Each optimizer ends with a strong defense line, @code{optimizerCheck()}
+It performs a complete type and data flow analysis before returning.
+Moreover, if you are in debug mode, it will  keep a copy of the
+plan produced for inspection. Studying the differences between
+optimizer steps provide valuable information to improve your code.
+
+It really helps if you start with a few tiny examples to test
+your optimizer. They should be added to the Tests directory
+and administered in Tests/All.
+
+Breaking up the optimizer into different components and
+grouping them together in arbitrary sequences calls for
+careful programming.
 @{
 The optimizers defined here are registered to the optimizer module.
 @mal

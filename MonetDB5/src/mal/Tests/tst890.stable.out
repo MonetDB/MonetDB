@@ -43,28 +43,29 @@ function user.main():void;	# 0  (main:void)
     c := batcalc.+(b,7);	# 10 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_16:int)
     c := batcalc.+(b,8);	# 11 CMDbatADDcst_int_int_int (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_17:int)
     io.print(c);	# 12 IOprint_val (_18:void)<-(c:bat[:oid,:int])
-    d := bbp.getRefCount();	# 13 CMDbbpRefCount (d:bat[:oid,:int])
-    dl := bbp.getLRefCount();	# 14 CMDbbpLRefCount (dl:bat[:oid,:int])
-    dn := bbp.getNames();	# 15 CMDbbpNames (dn:bat[:oid,:str])
-    io.print(dn,d,dl);	# 16 IOtable (_22:void)<-(dn:bat[:oid,:str])(d:bat[:oid,:int])(dl:bat[:oid,:int])
-end main;	# 17  
+    d := bbp.getRefCount();	# 13 CMDbbpRefCount (d:bat[:int,:int])
+    dl := bbp.getLRefCount();	# 14 CMDbbpLRefCount (dl:bat[:int,:int])
+    dn := bbp.getNames();	# 15 CMDbbpNames (dn:bat[:int,:str])
+    ds := algebra.sort(dn);	# 16 ALGhsort (ds:bat[:int,:str])<-(dn:bat[:int,:str])
+    io.table(ds,d,dl);	# 17 IOttable (_23:void)<-(ds:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+end main;	# 18  
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
 [ 1@0,	  9	  ]
-#---------------------------------------------------------#
-# bbp	name			refcnt	lrefcnt		  # name
-# int	str			int	int		  # type
-#---------------------------------------------------------#
-[ 0@0,	  "M5system_auth_user",	  1,	  1		  ]
-[ 1@0,	  "M5system_auth_passwd", 1,	  1		  ]
-[ 2@0,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 3@0,	  "monet_environment",	  1,	  0		  ]
-[ 4@0,	  "monet_unicode_case",	  1,	  0		  ]
-[ 5@0,	  "timezones",		  1,	  0		  ]
-[ 6@0,	  "b",			  0,	  1		  ]
-[ 7@0,	  "tmp_13",		  0,	  1		  ]
+#-------------------------------------------------#
+# t			refcnt	lrefcnt		  # name
+# str			int	int		  # type
+#-------------------------------------------------#
+[ "M5system_auth_user",	  1,	  1		  ]
+[ "M5system_auth_passwd", 1,	  1		  ]
+[ "M5system_auth_scen",	  1,	  1		  ]
+[ "monet_environment",	  1,	  0		  ]
+[ "monet_unicode_case",	  1,	  0		  ]
+[ "timezones",		  1,	  0		  ]
+[ "b",			  0,	  1		  ]
+[ "tmp_13",		  0,	  1		  ]
 
 # 08:01:32 >  
 # 08:01:32 >  Done.

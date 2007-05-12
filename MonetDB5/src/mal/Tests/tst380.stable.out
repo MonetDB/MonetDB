@@ -141,13 +141,13 @@ end main;	# 12
 # bbp	h			htype	ttype		count	kind		refCount		  # name
 # int	str			str	str		lng	str		int		  # type
 #-------------------------------------------------------------------------------------------------#
+[ 4,	  "M5system_auth_user",	  "oid",  "str",	  1,	  "persistent",	  1		  ]
 [ 5,	  "M5system_auth_passwd", "oid",  "str",	  1,	  "persistent",	  1		  ]
 [ 6,	  "M5system_auth_scen",	  "oid",  "str",	  0,	  "persistent",	  1		  ]
-[ 4,	  "M5system_auth_user",	  "oid",  "str",	  1,	  "persistent",	  1		  ]
 [ 7,	  "monet_environment",	  "str",  "str",	  40,	  "transient",	  1		  ]
 [ 8,	  "monet_unicode_case",	  "int",  "int",	  732,	  "transient",	  1		  ]
-[ 10,	  "simplemind",		  "int",  "int",	  0,	  "transient",	  0		  ]
 [ 9,	  "timezones",		  "str",  "timezone",	  24,	  "transient",	  1		  ]
+[ 10,	  "simplemind",		  "int",  "int",	  0,	  "transient",	  0		  ]
 [ "Get second directory" ]
 #-------------------------#
 # h	t		  # name

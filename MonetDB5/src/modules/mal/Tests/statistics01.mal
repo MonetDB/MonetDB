@@ -31,5 +31,6 @@ statistics.epilogue();
 d:= bbp.getRefCount();
 dl:=bbp.getLRefCount();
 dn:= bbp.getNames();
-io.print(dn,d,dl);
+ds:= algebra.sort(dn);
+io.table(dn,d,dl);
 

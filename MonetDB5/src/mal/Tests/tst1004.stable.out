@@ -68,10 +68,7 @@ catch MALException:str ;	# 21  (MALException:str) jump 23
 exit MALException:str ;	# 23  (MALException:str)
     io.print("got myfirstbat?");	# 24 IOprint_val (_28:void)<-(_29:str)
     io.print(v);	# 25 IOprint_val (_30:void)<-(v:bat[:any,:any])
-    x := bbp.getNames();	# 26 CMDbbpNames (x:bat[:oid,:str])
-    io.print(x);	# 27 IOprint_val (_32:void)<-(x:bat[:oid,:str])
-    bbp.close();	# 28 CMDbbpclose (_33:void)
-end main;	# 29  
+end main;	# 26  
 [ "Start test" ]
 [ "FIRST ROUND" ]
 #-----------------#
@@ -91,18 +88,6 @@ end main;	# 29
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
-#---------------------------------#
-# bbp	name			  # name
-# int	str			  # type
-#---------------------------------#
-[ 1@0,	  "M5system_auth_passwd"  ]
-[ 2@0,	  "M5system_auth_scen"	  ]
-[ 0@0,	  "M5system_auth_user"	  ]
-[ 3@0,	  "monet_environment"	  ]
-[ 4@0,	  "monet_unicode_case"	  ]
-[ 5@0,	  "timezones"		  ]
-[ 6@0,	  "tmp_12"		  ]
-[ 7@0,	  "tmp_13"		  ]
 
 # 07:58:53 >  
 # 07:58:53 >  Done.

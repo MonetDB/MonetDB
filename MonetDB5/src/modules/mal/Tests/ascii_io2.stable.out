@@ -69,67 +69,15 @@ exit correct;	# 17  (correct:bit)
     datafile := calc.+(targetdir,"ascii_io2.load");	# 18 CALCstrConcat (datafile:str)<-(targetdir:str)(_26:str)
     io.printf("#source:%s\n",datafile);	# 19 IOprint_formatted_str (_27:void)<-(_28:str)(datafile:str)
     idxbat := tablet.load(namebat,sepbat,typebat,datafile,len);	# 20 CMDtablet_load (idxbat:bat[:str,:BAT])<-(namebat:bat[:oid,:str])(sepbat:bat[:oid,:str])(typebat:bat[:oid,:str])(datafile:str)(len:int)
-    io.print(idxbat);	# 21 IOprint_val (_30:void)<-(idxbat:bat[:str,:BAT])
+#io.print(idxbat); 	# 21  (_30:str)
     i1 := algebra.fetch(idxbat,0);	# 22 ALGfetchint (i1:BAT)<-(idxbat:bat[:str,:BAT])(_32:int)
     b1 := bbp.find(i1);	# 23 CMDbbpbindindex (b1:bat[:any,:any])<-(i1:BAT)
-    io.print(b1);	# 24 IOprint_val (_34:void)<-(b1:bat[:any,:any])
+#io.print(b1); 	# 24  (_34:str)
     i2 := algebra.fetch(idxbat,1);	# 25 ALGfetchint (i2:BAT)<-(idxbat:bat[:str,:BAT])(_36:int)
     b2 := bbp.find(i2);	# 26 CMDbbpbindindex (b2:bat[:any,:any])<-(i2:BAT)
-    io.print(b2);	# 27 IOprint_val (_38:void)<-(b2:bat[:any,:any])
+#io.print(b2); 	# 27  (_38:str)
 end main;	# 28  
 #source:/ufs/mk/monet5/Linux/mTests/src/modules/mal/ascii_io2.load
-#---------------------------------#
-# h		t		  # name
-# str		BAT		  # type
-#---------------------------------#
-[ "tmpdocs",	  <tmp_15>	  ]
-[ "tmpterms",	  <tmp_16>	  ]
-#-----------------------------------------#
-# h	t				  # name
-# void	str				  # type
-#-----------------------------------------#
-[ 0@0,	  "IA073-000474-B024-230"	  ]
-[ 1@0,	  "                     "	  ]
-[ 2@0,	  "IA073-000474-B024-231"	  ]
-[ 3@0,	  ""				  ]
-[ 4@0,	  "IA073-000474-B024-232"	  ]
-[ 5@0,	  "  "				  ]
-[ 6@0,	  "IA073-000474-B024-233"	  ]
-[ 7@0,	  ""				  ]
-[ 8@0,	  "IA073-000474-B024-234"	  ]
-[ 9@0,	  " "				  ]
-[ 10@0,	  "IA073-000474-B024-235"	  ]
-[ 11@0,	  ""				  ]
-[ 12@0,	  "IA073-000474-B024-236"	  ]
-[ 13@0,	  ""				  ]
-[ 14@0,	  "IA073-000474-B024-237"	  ]
-[ 15@0,	  ""				  ]
-[ 16@0,	  "IA073-000474-B024-238"	  ]
-[ 17@0,	  ""				  ]
-[ 18@0,	  "IA073-000474-B024-239"	  ]
-#-------------------------#
-# h	t		  # name
-# void	str		  # type
-#-------------------------#
-[ 0@0,	  "0-request"	  ]
-[ 1@0,	  "         "	  ]
-[ 2@0,	  "1-from"	  ]
-[ 3@0,	  ""		  ]
-[ 4@0,	  "2-library"	  ]
-[ 5@0,	  "  "		  ]
-[ 6@0,	  "3-subject"	  ]
-[ 7@0,	  ""		  ]
-[ 8@0,	  "4-listing"	  ]
-[ 9@0,	  " "		  ]
-[ 10@0,	  "5-up"	  ]
-[ 11@0,	  ""		  ]
-[ 12@0,	  "6-to"	  ]
-[ 13@0,	  ""		  ]
-[ 14@0,	  "7-index"	  ]
-[ 15@0,	  ""		  ]
-[ 16@0,	  "8-up"	  ]
-[ 17@0,	  ""		  ]
-[ 18@0,	  "9-to"	  ]
 
 # 21:10:47 >  
 # 21:10:47 >  Done.

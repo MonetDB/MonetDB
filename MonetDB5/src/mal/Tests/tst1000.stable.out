@@ -29,25 +29,12 @@ function user.main():void;	# 0  (main:void)
     bat.setName(b,"mybat");	# 4 BKCsetName (_7:void)<-(b:bat[:int,:int])(_8:str)
     c := bbp.bind("mybat");	# 5 CMDbbpbind (c:bat[:any,:any])<-(_8:str)
     io.print(c);	# 6 IOprint_val (_10:void)<-(c:bat[:any,:any])
-    x := bbp.getNames();	# 7 CMDbbpNames (x:bat[:oid,:str])
-    io.print(x);	# 8 IOprint_val (_12:void)<-(x:bat[:oid,:str])
-end main;	# 9  
+end main;	# 7  
 #-----------------#
 # h	mybat	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
-#---------------------------------#
-# bbp	name			  # name
-# int	str			  # type
-#---------------------------------#
-[ 1@0,	  "M5system_auth_passwd"  ]
-[ 2@0,	  "M5system_auth_scen"	  ]
-[ 0@0,	  "M5system_auth_user"	  ]
-[ 3@0,	  "monet_environment"	  ]
-[ 4@0,	  "monet_unicode_case"	  ]
-[ 6@0,	  "mybat"		  ]
-[ 5@0,	  "timezones"		  ]
 
 # 07:58:52 >  
 # 07:58:52 >  Done.

@@ -1,9 +1,10 @@
 # check reference counting and multiplex
 function dir():void;
-        d:= bbp.getRefCount();
-        dl:=bbp.getLRefCount();
-        dn:= bbp.getNames();
-        io.print(dn,d,dl);
+	d:= bbp.getRefCount();
+	dl:=bbp.getLRefCount();
+	dn:= bbp.getNames();
+	ds:= algebra.sort(dn);
+	io.table(ds,d,dl);
 end dir;
 
 function createBAT(name:str):bat;

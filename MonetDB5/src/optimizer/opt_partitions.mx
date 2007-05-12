@@ -145,7 +145,6 @@ OPTpartitionProperties(MalBlkPtr mb)
 		/* find competing fragmentation groups */
 		done=0;
 		if( isFragmentGroup(p) ){
-			k= -1;
 			for(j=p->retc; j<p->argc; j++)
 			if( isPropertyDefined(getProps(mb,getArg(p,j)),"segment")){
 				k= *(int*) getPropertyValue(getProps(mb,getArg(p,j)),

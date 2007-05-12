@@ -2,9 +2,10 @@
 #create a persistent bat and destroy it in test 612
 function refs():void;
     g:=bbp.getNames();
+	gs:= algebra.sort(g);
     gr:=bbp.getRefCount();
     gl:=bbp.getLRefCount();
-    io.print(g,gr,gl);
+    io.table(gs,gr,gl);
 end refs;
 
 b:= bat.new(:int,:int);

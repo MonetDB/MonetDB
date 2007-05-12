@@ -23,12 +23,12 @@ datafile := targetdir + "ascii_io2.load";
 io.printf("#source:%s\n",datafile);
 
 idxbat := tablet.load(namebat, sepbat, typebat, datafile, len);
-io.print(idxbat);
+#io.print(idxbat);
 
 i1 := algebra.fetch(idxbat,0);
 b1 := bbp.find(i1);
-io.print(b1);
+#io.print(b1);
 
 i2 := algebra.fetch(idxbat,1); 
 b2 := bbp.find(i2);
-io.print(b2);
+#io.print(b2);
