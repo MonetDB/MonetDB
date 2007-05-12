@@ -53,6 +53,7 @@ like_join.SF-1684798
 prepare_decimal_float.SF-1675795
 crash_on_fkey_update.SF-1703497
 variable_stack_crash_load.SF-1711251
+range_predicate.SF-1711242
 variable_stack_crash.SF-1711251
 variable_stack_crash.SF-1711251-2
 variable_stack_crash_drop.SF-1711251
