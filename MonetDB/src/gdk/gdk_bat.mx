@@ -1278,7 +1278,7 @@ BUNappend(BAT *b, ptr t, bit force)
 					}
 				} else if (b->tsorted == (bit) GDK_SORTED_REV) {
 					if (b->tseqbase + cnt < *(oid *) t) {
-						b->T->nosorted = 1;
+						b->T->nosorted_rev = 1;
 						b->tsorted = FALSE;
 
 						b->T->nokey[0] = cnt - 1;
