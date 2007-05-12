@@ -2788,7 +2788,7 @@ check if duplicated properties are equal
 			b->dims.headkey = bm->dims.tailkey = b->batDirty = TRUE;
 		}
 		if (BAThdense(b) && !b->hkey) {
-			GDKerror("BATpropcheck: BAT %s(%d) is dense but not key!?\n", BATgetId(b), b->batCacheid);
+			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples is dense but not key!?\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 		}
 	}
 	if (BAThdense(b) && !b->hkey)
@@ -2800,18 +2800,18 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 		return b;
 	}
 	if (yy > xx && BAThdense(b) && b->htype == TYPE_oid && *(oid *) BUNhloc(b, BUNfirst(b)) != b->hseqbase) {
-		GDKerror("BATpropcheck: BAT %s(%d) seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n",
-			 BATgetId(b), b->batCacheid, b->hseqbase, *(oid *) BUNhloc(b, BUNfirst(b)));
+		GDKerror("BATpropcheck: BAT %s(%d) with "SZFMT" tuples seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n",
+			 BATgetId(b), b->batCacheid, BATcount(b), b->hseqbase, *(oid *) BUNhloc(b, BUNfirst(b)));
 	}
 	if (yy + 1 >= xx) {	/* BATcount(b) <= 1 */
 		if (ATOMlinear(tpe) && !(b->hsorted & 1)) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) with %d tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, BATcount(b));
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 			b->batDirtydesc = TRUE;
 			b->hsorted = GDK_SORTED;
 		}
 		if (!b->hkey) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) with %d tuples is (h)key!\n", BATgetId(b), b->batCacheid, BATcount(b));
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples is (h)key!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 			BATkey(b, TRUE);
 		}
@@ -2824,7 +2824,7 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 				hsb = *(oid *) BUNhloc(b, BUNfirst(b));
 			}
 			if (hsb != oid_nil) {
-				XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d) with %d tuples is (h)dense!\n", BATgetId(b), b->batCacheid, BATcount(b));
+				XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "SZFMT" tuples is (h)dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 				b->hdense = b->batDirtydesc = TRUE;
 				BATseqbase(b, hsb);
@@ -2838,18 +2838,18 @@ first propagate already known properties. that will save some effort.
 	if (VIEWparentcol(b) && ALIGNsynced(parent = BBP_cache(VIEWparent(b)), b)) {
 		/* quickly propagate properties from parent to child */
 		if (((BAThordered(parent) & 1) && !(BAThordered(b) & 1)) && !b->batBuns->copied) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) inherits (h)sorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples inherits (h)sorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
 
 			b->batDirtydesc = TRUE;
 			b->hsorted = GDK_SORTED;
 		}
 		if (parent->hkey && !b->hkey) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) inherits (h)key from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples inherits (h)key from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
 
 			BATkey(b, TRUE);
 		}
 		if (BAThdense(parent) && tpe == TYPE_oid && !BAThdense(b)) {
-			XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d) inherits (h)dense from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "SZFMT" tuples inherits (h)dense from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
 
 			b->hdense = b->batDirtydesc = TRUE;
 			BATseqbase(b, *(oid *) BUNhloc(b, BUNfirst(b)));
@@ -3106,26 +3106,26 @@ failed to disprove on exhaustive check => succeeded to prove
       exit:
 	if (mode & BATPROPS_CHECK) {
 		if ((sorted_bak & 1) && !(BAThordered(b) & 1)) {
-			GDKwarning("BATpropcheck: BAT %s(%d) was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid);
+			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (BAThordered(b))
-				GDKwarning("BATpropcheck: BAT %s(%d) remains marked radix-clustered on %d bits; not checked!", BATgetId(b), b->batCacheid, BAThordered(b) >> 1);
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples remains marked radix-clustered on %d bits; not checked!", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BAThordered(b) >> 1);
 		}
 		if (key_bak && !b->hkey)
-			GDKwarning("BATpropcheck: BAT %s(%d) was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid);
+			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 		if (dense_bak && disprove_dense) {
 			if (!BAThdense(b))
-				GDKwarning("BATpropcheck: BAT %s(%d) was incorrectly marked dense!\n", BATgetId(b), b->batCacheid);
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (seq_bak != b->hseqbase)
-				GDKwarning("BATpropcheck: BAT %s(%d) had incorrect seqbase!\n", BATgetId(b), b->batCacheid);
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples had incorrect seqbase!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 		}
 		XPROPDEBUG {
 			if (!(sorted_bak & 1) && (BAThordered(b) & 1))	/* StM: GDK_SORTED_REV ? */
-				GDKwarning("BATpropcheck: BAT %s(%d) was not marked sorted!\n", BATgetId(b), b->batCacheid);
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was not marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (!key_bak && b->hkey)
-				GDKwarning("BATpropcheck: BAT %s(%d) was not marked keyed!\n", BATgetId(b), b->batCacheid);
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was not marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (!dense_bak && disprove_dense) {
 				if (BAThdense(b))
-					GDKwarning("BATpropcheck: BAT %s(%d) was not marked dense!\n", BATgetId(b), b->batCacheid);
+					GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was not marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			}
 		}
 	}
