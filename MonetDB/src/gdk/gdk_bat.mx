@@ -1014,6 +1014,10 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 					if (cmp < 0) {
 						b->H->nosorted = i;
 						b->hsorted = FALSE;
+						if (b->hdense & 1) {
+							b->hdense = FALSE;
+							b->H->nodense = i;
+						}
 					} else if (cmp && b->hdense && *(oid *) h != 1 + *(oid *) prv) {
 						b->H->nodense = i;
 						b->hdense = FALSE;
@@ -1028,6 +1032,10 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 						if (cmp == 0) {
 							b->H->nosorted = 1;
 							b->hsorted = FALSE;
+							if (b->hdense & 1) {
+								b->hdense = FALSE;
+								b->H->nodense = 1;
+							}
 						}
 					}
 				} else if (b->hsorted == (bit) GDK_SORTED_REV) {
@@ -1055,6 +1063,10 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 					if (cmp < 0) {
 						b->T->nosorted = i;
 						b->tsorted = FALSE;
+						if (b->tdense & 1) {
+							b->tdense = FALSE;
+							b->T->nodense = i;
+						}
 					} else if (cmp && b->tdense && *(oid *) t != 1 + *(oid *) prv) {
 						b->T->nodense = i;
 						b->tdense = FALSE;
@@ -1069,6 +1081,10 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 						if (cmp == 0) {
 							b->T->nosorted = 1;
 							b->tsorted = FALSE;
+							if (b->tdense & 1) {
+								b->tdense = FALSE;
+								b->T->nodense = 1;
+							}
 						}
 					}
 				} else if (b->tsorted == (bit) GDK_SORTED_REV) {
@@ -1201,6 +1217,10 @@ BUNappend(BAT *b, ptr t, bit force)
 				if (cmp < 0) {
 					b->T->nosorted = i;
 					b->tsorted = FALSE;
+					if (b->tdense & 1) {
+						b->tdense = FALSE;
+						b->T->nodense = i;
+					}
 				} else if (cmp && b->tdense && *(oid *) t != 1 + *(oid *) prv) {
 					b->T->nodense = i;
 					b->tdense = FALSE;
@@ -1215,6 +1235,10 @@ BUNappend(BAT *b, ptr t, bit force)
 					if (cmp == 0) {
 						b->T->nosorted = 1;
 						b->tsorted = FALSE;
+						if (b->tdense & 1) {
+							b->tdense = FALSE;
+							b->T->nodense = 1;
+						}
 					}
 				}
 			} else if (b->tsorted == (bit) GDK_SORTED_REV) {
@@ -1243,6 +1267,10 @@ BUNappend(BAT *b, ptr t, bit force)
 					if (b->tseqbase + cnt > *(oid *) t || *(oid *) t == oid_nil) {
 						b->T->nosorted = 1;
 						b->tsorted = FALSE;
+						if (b->tdense & 1) {
+							b->tdense = FALSE;
+							b->T->nodense = 1;
+						}
 
 						b->T->nokey[0] = cnt - 1;
 						b->T->nokey[1] = cnt;
