@@ -1474,10 +1474,6 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
         var unq_iters := nil;
 	var min_iter := oid_nil;
 	var max_iter := oid_nil;
-	var skip_self := 1;
-	if ( "@1" = "descendant_or_self" ) {
-		skip_self := 0;
-	}
 
 	# check consistency
 	if ( isnil(seqbase(iter)) or isnil(seqbase(item)) ) {
