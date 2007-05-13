@@ -653,7 +653,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
     int stack_size = 0, onstack_size = 0, iters_on_stack_size = 0, j = 0;
     int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0, bs_cnd = 0;
     oid pre = 0, ctx = 0, iter_idx = 0, cnd = 0, lst_cnd = GDK_oid_max;
-    BUN iter_bun = 0, ctx_bun = 0, ctx_last = 0, cnd_bun = 0;
+    BUN iter_bun = 0, ctx_bun = 0, ctx_last = 0, cnd_bun = 0, cnd_lst = 0;
     oid num_iters = (max_iter - min_iter) + 1, i;
     int OST_bytes = sizeof(OST);
     int OST_bits  = OST_bytes * 8;
@@ -664,7 +664,8 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
         bs_cnd  = BUNsize(cand_bat);
         cnd_bun = BUNtloc(cand_bat, BUNfirst(cand_bat));
         cnd     = *(oid*)cnd_bun;
-        lst_cnd = *(oid*)BUNtloc(cand_bat, BUNlast(cand_bat) - bs_cnd);
+        cnd_lst = BUNtloc(cand_bat, BUNlast(cand_bat) - bs_cnd);
+        lst_cnd = *(oid*)cnd_lst;
     }
 
     for (i=OST_mask; i; i>>=1) OST_shift++;
@@ -748,10 +749,18 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
         if (cand_bat) {
             if (pre <= lst_cnd) {
                 if (cnd_bun) {
-                    while (cnd < pre) {
+                    /* poor man's binary search / exploiting forward scan */
+                    while (cnd_bun+1048576 <= cnd_lst && *(oid*) (cnd_bun+1048576) < pre)
+                        cnd_bun += 1048576; /* this avoids mmapped I/O */
+                    while (cnd_bun+32768 <= cnd_lst && *(oid*) (cnd_bun+32768) < pre)
+                        cnd_bun += 32768;
+                    while (cnd_bun+1024 <= cnd_lst && *(oid*) (cnd_bun+1024) < pre)
+                        cnd_bun += 1024;
+                    while (cnd_bun+32 <= cnd_lst && *(oid*) (cnd_bun+32) < pre)
+                        cnd_bun += 32;
+                    while (*(oid*) cnd_bun < pre)
                         cnd_bun += bs_cnd;
-                        cnd = *(oid*)cnd_bun;
-                    }
+                    cnd = *(oid*)cnd_bun;
                 } else {
                     if (cnd < pre) {
                         cnd = pre;
