@@ -538,11 +538,7 @@ faster system start.
 
 	if (debug)
 		mo_print_options(set, setlen);
-#ifdef MONET_GLOBAL_DEBUG
-	else
-		mo_print_options(set, setlen);
-#endif
-	if (monet_init(set, setlen) == 0 || mal_init())
+	if (monet_init(set, setlen) == 0 )
 		return 0;
 	GDKdebug=debug;	/* overruled by command line */
 
@@ -605,6 +601,8 @@ faster system start.
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables()) != MAL_SUCCEED)
 		GDKfatal(err);
+	if (mal_init())
+		return 0;
 
 @-
 Time to execute the script files. 
