@@ -99,20 +99,17 @@ PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *upper
     @:init(following)@
 
     BATloopFast(doc_pre, p, q, xx) {
-        oid cur_following = INT_MAX;
         oid boundary = *(oid*) BUNtail(doc_pre,p);
-        boundary += size[boundary] + 1;
+        oid cur_following = boundary += size[boundary] + 1;
 
         /* within the fragment (boundary), go over all context nodes */
-        while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
+        while(ctx_cur < ctx_end && *ctx_cur < cur_following /*<= boundary*/) { 
             /* new following is the first following node of the current context node */
             oid new_following = *ctx_cur + size[*ctx_cur] + 1;
 
             if (new_following < cur_following) {
                 cur_following = new_following; /* keep setting cur_following back */
             }
-            /* if we overtake the cur_following, we cannot set it back anymore: generate results */
-            if (cur_following < *ctx_cur) break;
             ctx_cur += ctx_nxt;
         }
         while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
