@@ -112,7 +112,10 @@ static BAT *scen = NULL;
  */
 str
 AUTHrequireAdmin() {
-	oid id = MCgetClient()->user;
+	oid id;
+	if( MCgetClient()== NULL)
+			return(MAL_SUCCEED);
+	id = MCgetClient()->user;
 
 	if (id != 0) {
 		char u[BUFSIZ]="";

@@ -391,7 +391,6 @@ Client MCgetClient()
 
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
 		if( c->mythread) stream_printf(c->fdout,"client %d\n",c->mythread);
-	showException(MAL, "getClient", "unexpected call to getClient %d", tid);
 	return NULL;
 }
 
