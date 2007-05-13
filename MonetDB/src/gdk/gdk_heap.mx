@@ -187,7 +187,7 @@ HEAPextend(Heap *h, size_t size)
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
 		int can_mmap = (h->filename && size >= GDK_mem_bigsize);
-		int must_mmap = can_mmap && (size >= GDK_vm_minsize || (h->newstorage & STORE_MMAP));
+		int must_mmap = can_mmap && (size >= GDK_vm_minsize || (h->newstorage != STORE_MEM));
 
 		h->size = size;
 
