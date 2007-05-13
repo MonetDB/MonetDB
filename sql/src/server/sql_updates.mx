@@ -1028,8 +1028,12 @@ sql_update_idxs(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list
 			}
 
 		}
-		if (is) 
-			list_append(l, stmt_insert(stmt_idxbat(i, UPD), is));
+		if (is) {
+			if (i->base.flag == TR_NEW)
+				list_append(l, stmt_replace(stmt_idxbat(i, INS), is));
+			else
+				list_append(l, stmt_insert(stmt_idxbat(i, UPD), is));
+		}
 	}
 	return res;
 }
