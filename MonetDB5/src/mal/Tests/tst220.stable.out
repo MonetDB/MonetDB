@@ -172,9 +172,9 @@ return from function refcount =2[2]
 [ "monet_environment",	  "monet_environment",	  1,	  0		  ]
 [ "monet_unicode_case",	  "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  "timezones",		  1,	  0		  ]
-[ "tmp_12",		  "tmp_12",		  0,	  2		  ]
-[ "tmp_13",		  "tmp_13",		  0,	  2		  ]
-[ "tmp_14",		  "tmp_14",		  0,	  1		  ]
+[ "tmp_10",		  "tmp_10",		  0,	  2		  ]
+[ "tmp_11",		  "tmp_11",		  0,	  2		  ]
+[ "tmp_12",		  "tmp_12",		  0,	  1		  ]
 
 # 08:01:01 >  
 # 08:01:01 >  Done.

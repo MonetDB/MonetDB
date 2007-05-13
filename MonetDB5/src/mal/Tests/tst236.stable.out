@@ -74,7 +74,7 @@ end main;	# 18
 [ "monet_environment",	  1,	  0		  ]
 [ "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  1,	  0		  ]
-[ "tmp_12",		  0,	  1		  ]
+[ "tmp_10",		  0,	  1		  ]
 #-------------------------------------------------#
 # t			refcnt	lrefcnt		  # name
 # str			int	int		  # type
@@ -85,10 +85,10 @@ end main;	# 18
 [ "monet_environment",	  1,	  0		  ]
 [ "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  1,	  0		  ]
-[ "tmp_12",		  0,	  1		  ]
+[ "tmp_10",		  0,	  1		  ]
 [ "twenty",		  0,	  2		  ]
 [ "ten",		  0,	  2		  ]
-[ "tmp_16",		  0,	  2		  ]
+[ "tmp_14",		  0,	  2		  ]
 #-------------------------#
 # h	t		  # name
 # oid	BAT		  # type

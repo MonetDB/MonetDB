@@ -92,9 +92,9 @@ end main;	# 34
 # int	str											  # type
 #-------------------------------------------------------------------------------------------------#
 [ 1,	  "#    io.printf(_26=\"#monitor \\n\")"						  ]
-[ 2,	  "#    mx := aggr.max(b=<tmp_12>bat[:oid,:lng]{10000})"				  ]
-[ 3,	  "#    algebra.select(b=<tmp_12>bat[:oid,:lng]{10000}, _29=nil:lng, mx=2147469841)"	  ]
-[ 4,	  "#    algebra.select(b=<tmp_12>bat[:oid,:lng]{10000}, mx=2147469841, _29=nil:lng)"	  ]
+[ 2,	  "#    mx := aggr.max(b=<tmp_10>bat[:oid,:lng]{10000})"				  ]
+[ 3,	  "#    algebra.select(b=<tmp_10>bat[:oid,:lng]{10000}, _29=nil:lng, mx=2147469841)"	  ]
+[ 4,	  "#    algebra.select(b=<tmp_10>bat[:oid,:lng]{10000}, mx=2147469841, _29=nil:lng)"	  ]
 [ 5,	  "#    d := mmath.sin(_32=0.20000000298023224)"					  ]
 #-----------------#
 # h	t	  # name
@@ -110,9 +110,9 @@ end main;	# 34
 # int	int	int	str											  # type
 #-----------------------------------------------------------------------------------------------------------------#
 [ 1,	  0,	  0,	  "#    io.printf(_26=\"#monitor \\n\")"						  ]
-[ 2,	  0,	  160000, "#    mx := aggr.max(b=<tmp_12>bat[:oid,:lng]{10000})"				  ]
-[ 3,	  160000, 160000, "#    algebra.select(b=<tmp_12>bat[:oid,:lng]{10000}, _29=nil:lng, mx=2147469841)"	  ]
-[ 4,	  16,	  160000, "#    algebra.select(b=<tmp_12>bat[:oid,:lng]{10000}, mx=2147469841, _29=nil:lng)"	  ]
+[ 2,	  0,	  160000, "#    mx := aggr.max(b=<tmp_10>bat[:oid,:lng]{10000})"				  ]
+[ 3,	  160000, 160000, "#    algebra.select(b=<tmp_10>bat[:oid,:lng]{10000}, _29=nil:lng, mx=2147469841)"	  ]
+[ 4,	  16,	  160000, "#    algebra.select(b=<tmp_10>bat[:oid,:lng]{10000}, mx=2147469841, _29=nil:lng)"	  ]
 [ 5,	  0,	  0,	  "#    d := mmath.sin(_32=0.20000000298023224)"					  ]
 
 # 08:46:49 >  

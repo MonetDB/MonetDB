@@ -68,6 +68,31 @@ end main;	# 8
 [ "monet_environment",	  1,	  0		  ]
 [ "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  1,	  0		  ]
+[ "tmp_10",		  0,	  1		  ]
+[ "inside tmp1" ]
+#-------------------------------------------------#
+# t			refcnt	lrefcnt		  # name
+# str			int	int		  # type
+#-------------------------------------------------#
+[ "M5system_auth_user",	  1,	  1		  ]
+[ "M5system_auth_passwd", 1,	  1		  ]
+[ "M5system_auth_scen",	  1,	  1		  ]
+[ "monet_environment",	  1,	  0		  ]
+[ "monet_unicode_case",	  1,	  0		  ]
+[ "timezones",		  1,	  0		  ]
+[ "tmp_10",		  0,	  2		  ]
+[ "tmp_12",		  0,	  1		  ]
+#-------------------------------------------------#
+# t			refcnt	lrefcnt		  # name
+# str			int	int		  # type
+#-------------------------------------------------#
+[ "M5system_auth_user",	  1,	  1		  ]
+[ "M5system_auth_passwd", 1,	  1		  ]
+[ "M5system_auth_scen",	  1,	  1		  ]
+[ "monet_environment",	  1,	  0		  ]
+[ "monet_unicode_case",	  1,	  0		  ]
+[ "timezones",		  1,	  0		  ]
+[ "tmp_10",		  0,	  1		  ]
 [ "tmp_12",		  0,	  1		  ]
 [ "inside tmp1" ]
 #-------------------------------------------------#
@@ -80,8 +105,9 @@ end main;	# 8
 [ "monet_environment",	  1,	  0		  ]
 [ "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  1,	  0		  ]
+[ "tmp_10",		  0,	  1		  ]
+[ "tmp_11",		  0,	  1		  ]
 [ "tmp_12",		  0,	  2		  ]
-[ "tmp_14",		  0,	  1		  ]
 #-------------------------------------------------#
 # t			refcnt	lrefcnt		  # name
 # str			int	int		  # type
@@ -92,34 +118,8 @@ end main;	# 8
 [ "monet_environment",	  1,	  0		  ]
 [ "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  1,	  0		  ]
-[ "tmp_12",		  0,	  1		  ]
-[ "tmp_14",		  0,	  1		  ]
-[ "inside tmp1" ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_12",		  0,	  1		  ]
-[ "tmp_13",		  0,	  1		  ]
-[ "tmp_14",		  0,	  2		  ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_12",		  0,	  1		  ]
-[ "tmp_13",		  0,	  1		  ]
+[ "tmp_10",		  0,	  1		  ]
+[ "tmp_11",		  0,	  1		  ]
 
 # 09:11:11 >  
 # 09:11:11 >  Done.

@@ -62,11 +62,13 @@ function user.main():void;	# 0  (main:void)
     io.print("continue");	# 4 IOprint_val (_4:void)<-(_5:str)
     bbp.open();	# 5 CMDbbpopen (_6:void)
     x := bbp.getObjects();	# 6 CMDbbpGetObjects (x:bat[:int,:str])
-    io.print(x);	# 7 IOprint_val (_8:void)<-(x:bat[:int,:str])
-    v := bbp.take("myfirstbat");	# 8 CMDbbptake (v:bat[:any,:any])<-(_10:str)
-    io.print(v);	# 9 IOprint_val (_11:void)<-(v:bat[:any,:any])
-    bbp.close();	# 10 CMDbbpclose (_12:void)
-end main;	# 11  
+    xr := bat.reverse(x);	# 7 BKCreverse (xr:bat[:str,:int])<-(x:bat[:int,:str])
+    xp := algebra.project(xr);	# 8 ALGprojectNIL (xp:bat[:str,:oid])<-(xr:bat[:str,:int])
+    io.print(xp);	# 9 IOprint_val (_10:void)<-(xp:bat[:str,:oid])
+    v := bbp.take("myfirstbat");	# 10 CMDbbptake (v:bat[:any,:any])<-(_12:str)
+    io.print(v);	# 11 IOprint_val (_13:void)<-(v:bat[:any,:any])
+    bbp.close();	# 12 CMDbbpclose (_14:void)
+end main;	# 13  
 [ "test" ]
 #-------------------------#
 # bbp	objects		  # name
@@ -83,7 +85,7 @@ end main;	# 11
 # bbp	objects		  # name
 # int	str		  # type
 #-------------------------#
-[ 11,	  "myfirstbat"	  ]
+[ "myfirstbat",	  nil	  ]
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type

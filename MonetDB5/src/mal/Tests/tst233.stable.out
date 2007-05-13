@@ -58,7 +58,7 @@ end main;	# 7
 [ "monet_environment",	  1,	  0		  ]
 [ "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  1,	  0		  ]
-[ "tmp_12",		  0,	  1		  ]
+[ "tmp_10",		  0,	  1		  ]
 #-------------------------------------------------#
 # t			refcnt	lrefcnt		  # name
 # str			int	int		  # type
@@ -69,7 +69,7 @@ end main;	# 7
 [ "monet_environment",	  1,	  0		  ]
 [ "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  1,	  0		  ]
-[ "tmp_12",		  0,	  1		  ]
+[ "tmp_10",		  0,	  1		  ]
 
 # 09:04:28 >  
 # 09:04:28 >  Done.

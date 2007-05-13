@@ -65,7 +65,7 @@ end main;	# 18
 [ "monet_unicode_case",	  1,	  0		  ]
 [ "timezones",		  1,	  0		  ]
 [ "b",			  0,	  1		  ]
-[ "tmp_13",		  0,	  1		  ]
+[ "tmp_11",		  0,	  1		  ]
 
 # 08:01:32 >  
 # 08:01:32 >  Done.

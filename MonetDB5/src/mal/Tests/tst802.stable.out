@@ -36,8 +36,8 @@ function user.main():void;	# 0  (main:void)
     c := user.tst(b);	# 6  (c:BAT)<-(b:BAT)
     io.print(c);	# 7 IOprint_val (_8:void)<-(c:BAT)
 end main;	# 8  
-[ <tmp_12> ]
-[ <tmp_12> ]
+[ <tmp_10> ]
+[ <tmp_10> ]
 
 # 14:58:46 >  
 # 14:58:46 >  Done.

@@ -61,14 +61,16 @@ exit MALException:str ;	# 10  (MALException:str)
     bbp.open();	# 16 CMDbbpopen (_21:void)
     io.print("SECOND ROUND");	# 17 IOprint_val (_22:void)<-(_23:str)
     y := bbp.getObjects();	# 18 CMDbbpGetObjects (y:bat[:int,:str])
-    io.print(y);	# 19 IOprint_val (_25:void)<-(y:bat[:int,:str])
-    v := bbp.take("myfirstbat");	# 20 CMDbbptake (v:bat[:any,:any])<-(_11:str)
-catch MALException:str ;	# 21  (MALException:str) jump 23
-    io.print(MALException);	# 22 IOprint_val (_27:void)<-(MALException:str)
-exit MALException:str ;	# 23  (MALException:str)
-    io.print("got myfirstbat?");	# 24 IOprint_val (_28:void)<-(_29:str)
-    io.print(v);	# 25 IOprint_val (_30:void)<-(v:bat[:any,:any])
-end main;	# 26  
+    yr := bat.reverse(y);	# 19 BKCreverse (yr:bat[:str,:int])<-(y:bat[:int,:str])
+    yp := algebra.project(yr);	# 20 ALGprojectNIL (yp:bat[:str,:oid])<-(yr:bat[:str,:int])
+    io.print(yp);	# 21 IOprint_val (_27:void)<-(yp:bat[:str,:oid])
+    v := bbp.take("myfirstbat");	# 22 CMDbbptake (v:bat[:any,:any])<-(_11:str)
+catch MALException:str ;	# 23  (MALException:str) jump 25
+    io.print(MALException);	# 24 IOprint_val (_29:void)<-(MALException:str)
+exit MALException:str ;	# 25  (MALException:str)
+    io.print("got myfirstbat?");	# 26 IOprint_val (_30:void)<-(_31:str)
+    io.print(v);	# 27 IOprint_val (_32:void)<-(v:bat[:any,:any])
+end main;	# 28  
 [ "Start test" ]
 [ "FIRST ROUND" ]
 #-----------------#
@@ -81,7 +83,7 @@ end main;	# 26
 # bbp	objects		  # name
 # int	str		  # type
 #-------------------------#
-[ 10,	  "myfirstbat"	  ]
+[ "myfirstbat",	  nil	  ]
 [ "got myfirstbat?" ]
 #-----------------#
 # h	tmp_4	  # name
