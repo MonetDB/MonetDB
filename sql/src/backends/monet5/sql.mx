@@ -1087,6 +1087,8 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
+	if( i== 0 || i->bat.ubid == 0)
+		return 0;
 	if (access == UPD || access == RD_UPD)
 		b = bind_uidx(tr, i, access);
 	else
@@ -1102,6 +1104,8 @@ mvc_append_idxbat(BAT **b, mvc *m, char *sname, char *tname, char *iname, int *a
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
+	if( i== 0 || i->bat.ubid == 0)
+		return 0;
 	if (*access == UPD || *access == RD_UPD)
 		*b = append_uidx(tr, i, *access, ib);
 	else
@@ -1124,7 +1128,7 @@ mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
 		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(SQL, "mvc_bind", "error");
+	throw(SQL, "mvc_bind", "limitation in transaction scope");
 }
 
 str
@@ -1145,7 +1149,7 @@ mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *
 		BBPkeepref( *bid = B->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(SQL, "mvc_append", "error");
+	throw(SQL, "mvc_append", "limitation in transaction scope");
 }
 
 @-
