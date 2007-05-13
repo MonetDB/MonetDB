@@ -785,16 +785,17 @@ int str_2dec_@1( @1 *res, str val, int *d, int *sc )
 	if (scale < *sc) {
 		/* the current scale is too small, increase it by adding 0's */
 		int d = *sc - scale;	/* CANNOT be 0! */
-		value *= d * 10;
+
+		value *= scales[d];
 		scale += d;
 		digits += d;
 	} else if (scale > *sc) {
 		/* the current scale is too big, decrease it by correctly rounding */
 		int d = scale - *sc;	/* CANNOT be 0 */
-		value /= (d - 1) * 10;
-		if (value % 10 >= 5) 
-			value += 10;
-		value /= 10;
+		lng rnd = scales[d]>>1;
+
+		value += rnd;
+		value /= scales[d];
 		scale -= d;
 		digits -= d;
 	}

@@ -68,6 +68,8 @@ extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func
 extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern void sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
 
+extern void reset_functions(sql_trans *tr);
+
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner);
 extern void sql_trans_drop_schema(sql_trans *tr, int id, int drop_action);
 

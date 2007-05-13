@@ -1356,6 +1356,23 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	return t;
 }
 
+void
+reset_functions(sql_trans *tr) 
+{
+	node *n, *m;
+
+	for (n = tr->schemas.set->h; n; n = n->next) {
+		sql_schema *s = n->data; 
+
+		if (s->funcs.set) for (m = s->funcs.set->h; m; m = m->next) {
+			sql_func *f = m->data;
+
+			if (f->sql)
+				f->sql = 1; 
+		}
+	}
+}
+
 static sql_sequence *
 load_seq(sql_trans *tr, sql_schema * s, BAT *seqs, BUN j)
 {
