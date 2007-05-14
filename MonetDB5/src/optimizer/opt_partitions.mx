@@ -289,15 +289,22 @@ Wrapup the last segment first
 			anchor=NULL;
 		}
 		
-		if( seg && *seg==last)
-		for(j= p->retc; j<p->argc; j++)
-		if( alias[getArg(p,j)]!= getArg(p,j) && 
-			getVarType(mb,alias[getArg(p,j)]) == TYPE_list){
-			q = newStmt(mb,"list","glue");
-			q->argv[0]= getArg(p,j);
-			pushArgument(mb,q,alias[getArg(p,j)]);
-			alias[getArg(p,j)]= getArg(p,j);
-			anchor= NULL;
+		if( seg && *seg==last){
+			/* remap specific instructions to list versions */
+			if( getModuleId(p)==aggrRef ){
+				getModuleId(p)= listRef;
+				pushInstruction(mb,p);
+				continue;
+			}
+			for(j= p->retc; j<p->argc; j++)
+			if( alias[getArg(p,j)]!= getArg(p,j) && 
+				getVarType(mb,alias[getArg(p,j)]) == TYPE_list){
+				q = newStmt(mb,"list","glue");
+				q->argv[0]= getArg(p,j);
+				pushArgument(mb,q,alias[getArg(p,j)]);
+				alias[getArg(p,j)]= getArg(p,j);
+				anchor= NULL;
+			}
 		}
 		if( *seg <0 ){
 			pushInstruction(mb,p);
