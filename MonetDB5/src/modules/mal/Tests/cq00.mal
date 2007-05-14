@@ -1,0 +1,64 @@
+# a simple hand compiled continuous query.
+# it is not protected against concurrent access to the container
+
+# Each basket expression is turned into a factory
+# It returns deltas when at least one tuple is eligible
+factory user.basket0(x1:bat[:oid,:int],x6:bat[:oid,:int])
+		(:int, x1d:bat[:oid,:int], x6d:bat[:oid,:int]);
+barrier go:=true;
+    x1d := algebra.slice(x1,0,2);
+    x6d := algebra.slice(x6,0,2);
+	cnt:= aggr.count(x1d);
+	redo go:= cnt==0;
+	yield (cnt,x1d,x6d);
+	redo go:=true;
+exit go;
+	io.printf("factory terminated unexpectedly\n");
+end basket0;
+# note, this BE blocks the system until it finds an element
+# a better scheme would be to return for advice
+
+# A continuous query body is also a factory
+factory user.s0_0():void;
+# stream containers have a simplier structure then SQL tables.
+    x1:bat[:oid,:int]:= bbp.bind("sys_x_id");
+    x6:bat[:oid,:int]:= bbp.bind("sys_x_pl");
+barrier cquery:= true;
+	io.printf("Start xq\n");
+	(cnt,x1d,x6d):= user.basket0(x1,x6);
+	io.printf("Found elements");
+	io.print(cnt);
+	io.print(x1d);
+	io.print(x6d);
+#drop the tuples from the container
+    bat.delete(x1,x1d);
+    bat.delete(x6,x6d); 
+	yield s0_0:=nil:void;
+	redo cquery:= true;
+exit cquery;
+end user.s0_0;
+
+# the DataCell receptor containers
+id:= bat.new(:oid,:int);
+bat.setName(id,"sys_x_id");
+pl:= bat.new(:oid,:int);
+bat.setName(pl,"sys_x_pl");
+
+#The DataCell scheduler for this CQ
+barrier (go,i):= language.newRange(1);
+	io.printf("Cycle %d\n",i);
+	user.s0_0();
+	redo (go,i):= language.nextElement(1,10);
+exit go;
+
+#The system can be put to work by appending tuples
+#to the containers. Watch out for order.
+#also there are multiple threads active concurrently
+bat.insert(x6,0@0,1);
+bat.insert(x1,0@0,1);
+bat.insert(x6,1@0,3);
+bat.insert(x1,1@0,2);
+bat.insert(x6,2@0,4);
+bat.insert(x1,2@0,3);
+bat.insert(x6,4@0,4);
+bat.insert(x1,4@0,3);
