@@ -291,7 +291,9 @@ Wrapup the last segment first
 		
 		if( seg && *seg==last){
 			/* remap specific instructions to list versions */
-			if( getModuleId(p)==aggrRef ){
+			if( getModuleId(p)==aggrRef  &&
+				alias[getArg(p,1)]!= getArg(p,1) &&
+                getVarType(mb,alias[getArg(p,1)]) == TYPE_list){
 				getModuleId(p)= listRef;
 				pushInstruction(mb,p);
 				continue;
