@@ -36,7 +36,6 @@ exit i:int ;	# 8  (i:int)
     k := list.new();	# 10 MALLISTnew (k:list)
     k := list.append(k,b);	# 11 MALLISTappend (k:list)<-(k:list)(b:bat[:oid,:oid])
 end main;	# 12  
-!MALException:list.newList:NYI
 
 # 13:36:01 >  
 # 13:36:01 >  Done.
