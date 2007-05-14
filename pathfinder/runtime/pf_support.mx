@@ -1710,7 +1710,11 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
     var res := ll_@1(iter.chk_order(), ctx.chk_order(), pre_sizes, pre_levels);
-    return new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
+    var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
+
+    @:post_sort_output@
+    
+    return result;
 }
 @
 
