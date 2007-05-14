@@ -32,12 +32,10 @@ function user.main():void;	# 0  (main:void)
     z := bat.new(:int,:int);	# 2 CMDBATnew (z:bat[:int,:int])<-(_3:int)(_3:int)
     b := nil:BAT;	# 3  (b:BAT)<-(_5:BAT)
     b := z;	# 4  (b:BAT)<-(z:bat[:int,:int])
-    io.print(b);	# 5 IOprint_val (_6:void)<-(b:BAT)
+#io.print(b); 	# 5  (_6:str)
     c := user.tst(b);	# 6  (c:BAT)<-(b:BAT)
-    io.print(c);	# 7 IOprint_val (_8:void)<-(c:BAT)
+#io.print(c); 	# 7  (_8:str)
 end main;	# 8  
-[ <tmp_10> ]
-[ <tmp_10> ]
 
 # 14:58:46 >  
 # 14:58:46 >  Done.

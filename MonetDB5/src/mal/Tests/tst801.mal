@@ -12,8 +12,8 @@ bat.insert(b,1,z);
 io.print(z);
 
 x := algebra.find(b, 0);
-io.print(x);
+#io.print(x);
 x := algebra.find(b, 1);
-io.print(x);
+#io.print(x);
 x := algebra.find(b, 4);
 io.print(x);

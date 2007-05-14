@@ -19,7 +19,7 @@ bat.setPersistent(b,true);
 # it is committed 
 io.print("open box");
 bbp.open();
-user.refs();
+#user.refs();
 t:bat[:any_1,:any_2]:= bbp.bind("tasks");
 io.print(t);
 bbp.release(t);

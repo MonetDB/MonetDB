@@ -45,7 +45,7 @@ function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:BAT);	# 5 CMDBATnew (b:bat[:int,:BAT])<-(_3:int)(_9:BAT)
     zid := calc.getBATidentifier(z);	# 6 CALCbat2batid (zid:BAT)<-(z:bat[:int,:int])
     io.print("zid");	# 7 IOprint_val (_11:void)<-(_12:str)
-    io.print(zid);	# 8 IOprint_val (_13:void)<-(zid:BAT)
+#io.print(zid); 	# 8  (_13:str)
     za:bat[:int,:int]  := calc.getBAT(zid);	# 9 CALCbatid2bat (za:bat[:int,:int])<-(zid:BAT)
     io.print(za);	# 10 IOprint_val (_15:void)<-(za:bat[:int,:int])
     io.print("zid done");	# 11 IOprint_val (_16:void)<-(_17:str)
@@ -55,7 +55,7 @@ function user.main():void;	# 0  (main:void)
 #io.print(b); 	# 15  (_22:str)
     a := algebra.fetch(b,0);	# 16 ALGfetchint (a:BAT)<-(b:bat[:int,:BAT])(_21:int)
     io.print("fetch it");	# 17 IOprint_val (_24:void)<-(_25:str)
-    io.print(a);	# 18 IOprint_val (_26:void)<-(a:BAT)
+#io.print(a); 	# 18  (_26:str)
     aa:bat[:int,:int]  := calc.getBAT(a);	# 19 CALCbatid2bat (aa:bat[:int,:int])<-(a:BAT)
     io.print(aa);	# 20 IOprint_val (_28:void)<-(aa:bat[:int,:int])
     io.print("done");	# 21 IOprint_val (_29:void)<-(_30:str)
@@ -66,7 +66,6 @@ end main;	# 22
 #-----------------#
 [ 1,	  2	  ]
 [ "zid" ]
-[ <tmp_10> ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -79,7 +78,6 @@ end main;	# 22
 #-----------------#
 [ 1,	  2	  ]
 [ "fetch it" ]
-[ <tmp_10> ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
