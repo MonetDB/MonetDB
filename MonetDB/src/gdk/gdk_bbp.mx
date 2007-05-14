@@ -991,7 +991,7 @@ BBPinsert(BAT *b)
 	/* Keep the physical location around forever */
 	if (BBP_physical(i) == NULL) {
 		BBPgetsubdir(dirname, i);
-		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4 + 1);
+		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4 + 1 + 1 /* EOS + DIR_SEP */);
 		GDKfilepath(BBP_physical(i), dirname, BATgetId(b) + 4, NULL);
 
 		BATDEBUG THRprintf(GDKout, "#%d = new %s(%s,%s)\n", (int) i, BATgetId(b), ATOMname(b->htype), ATOMname(b->ttype));
