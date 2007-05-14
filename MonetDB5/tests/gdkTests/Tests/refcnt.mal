@@ -2,7 +2,7 @@ function tmp():void;
 	d:= bbp.getRefCount();
 	dl:=bbp.getLRefCount();
 	dn:= bbp.getNames();
-	io.print(dn,d,dl);
+	#io.print(dn,d,dl);
 end tmp;
 
 #NOTE: the reference counter of bat(name) is during insertion
