@@ -1,0 +1,495 @@
+kf@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Original Code has initially been developed by the Database &
+@' Information Systems Group at the University of Konstanz, Germany and
+@' is now maintained by the Database Systems Group at the Technische
+@' Universitaet Muenchen, Germany.  Portions created by the University of
+@' Konstanz and the Technische Universitaet Muenchen are Copyright (C)
+@' 2000-2005 University of Konstanz and (C) 2005-2007 Technische
+@' Universitaet Muenchen, respectively.  All Rights Reserved.
+@'
+@' $Id$
+
+@f ll_prec_foll
+@a Stefan Manegold, Peter Boncz, Jenni Zhang 
+@t ll_prec_foll
+
+@c
+
+/*******************************************
+* ll_prec_foll.c : axis step operators for loop-lifted preceding and following axis
+*
+*/
+#include "pf_config.h"
+#include <gdk.h>
+
+/**
+ * This file contains the axis step algoritms for following and
+ * preceding axis.
+ * 
+ * Both algorithms work similiar to the staircase-join approach:
+ * 
+ * - evaluation is done during a single sequential scan of the
+ *   size table and the context set
+ *   (we now use size rather than level to enable skipping)
+ * - context set pruning is performed on-the-fly
+ * 
+ * Unlike the staircasejoins for ancestor and desecendant steps
+ * we have to take care about the limitations of document fragments.
+ * Nodes on the following axis of x, are all nodes with
+ * pre(v) > pre(x) + size(x),
+ * but only that nodes qualify, that belong to the same document fragment
+ * as x itself.
+ */
+
+#define PFll_check_BAT_capacity(b,grow) \
+{\
+        size_t _oldcap = BATbuncount(b);\
+        size_t _reqcap = BATcount(b) + grow;\
+        size_t _bunsize = BUNsize(b);\
+        if (_oldcap < _reqcap) {\
+            size_t _newcap = MAX(_reqcap, BATgrows(b));\
+            if (BATextend((b), _newcap) == NULL) {\
+                GDKerror("%s: BATextend of BAT '%s' (#%d) failed "\
+                         "for " SZFMT " buns (" SZFMT " bytes).\n",\
+                         __func__, BATgetId(b), (b)->batCacheid,\
+                         _newcap, _newcap * _bunsize);\
+                BBPreclaim(b);\
+                return GDK_FAIL;\
+            }\
+            _newcap = BATbuncount(b);\
+            if (_newcap < _reqcap) {\
+                GDKerror("%s: BATextend of BAT '%s' (#%d) failed: "\
+                         "required " SZFMT " buns (" SZFMT " bytes), "\
+                         "got only " SZFMT " buns (" SZFMT " bytes).\n",\
+                         __func__, BATgetId(b), (b)->batCacheid,\
+                         _reqcap, _reqcap * _bunsize,\
+                         _newcap, _newcap * _bunsize);\
+                BBPreclaim(b);\
+                return GDK_FAIL;\
+            }\
+        }\
+}
+
+/* FOLLOWING STEP */
+int
+PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *doc_pre/*, int *upperbound*/)
+{
+@= init
+    char *name = "PFll_@1";
+    BUN p = 0, q = 0;
+    int xx = 0, *size = 0;
+
+    size_t res_size = 0, grow = 0;
+    BAT *res = 0;
+    oid *iter_cur = 0, *iter_end = 0, *ctx_cur = 0, *ctx_end = 0, *res_cur = 0;
+    int iter_nxt = 0, ctx_nxt = 0;
+    bit one_ctx = 0;
+    oid min_iter = 0, max_iter = 0, num_iter = 0;
+
+    /* --------------------------- checks ---------------------------------- */
+
+    BATcheck(iter_bat, name);
+    BATcheck(ctx_bat, name);
+    BATcheck(pre_size, name);
+    BATcheck(doc_pre, name);
+
+    iter_cur = (oid*) BUNtail(iter_bat, BUNfirst(iter_bat)); 
+    iter_end = (oid*) BUNtail(iter_bat, BUNlast(iter_bat));
+    iter_nxt = BUNsize(iter_bat)/sizeof(oid);
+
+    ctx_cur = (oid*) BUNtail(ctx_bat, BUNfirst(ctx_bat)); 
+    ctx_end = (oid*) BUNtail(ctx_bat, BUNlast(ctx_bat));
+    ctx_nxt = BUNsize(ctx_bat)/sizeof(oid);
+    one_ctx = *ctx_cur == *(ctx_end - ctx_nxt);
+
+    ALGODEBUG
+        THRprintf(GDKout, "%s: |iter_bat|="SZFMT", |ctx_bat|="SZFMT", |pre_size|="SZFMT", |doc_pre|="SZFMT", one_ctx=%d\n",
+                          name, BATcount(iter_bat), BATcount(ctx_bat), BATcount(pre_size), BATcount(doc_pre), (int)one_ctx);
+
+    if (!(BAThdense(iter_bat) && BAThdense(ctx_bat)))
+    {
+        GDKerror("%s: both iter_bat and ctx_bat must have a dense head.\n", name);
+        return GDK_FAIL;
+    }
+    if ((iter_bat->hseqbase != ctx_bat->hseqbase) || (BATcount(iter_bat) != BATcount(ctx_bat)))
+    {
+        GDKerror("%s: iter_bat and ctx_bat must be head-aligned, i.e., have equal head seqbases and length.\n", name);
+        return GDK_FAIL;
+    }
+    if (!(BATtordered(ctx_bat) & 1))
+    {
+        GDKerror("%s: ctx_bat must be ordered on tail.\n", name);
+        return GDK_FAIL;
+    }
+    if (one_ctx && !(BATtordered(iter_bat) & 1))
+    {
+        GDKerror("%s: iter_bat must be ordered on tail.\n", name);
+        return GDK_FAIL;
+    }
+
+    if (!BAThdense(pre_size))
+    {
+        GDKerror("%s: head of pre_size must be dense.\n", name);
+        return GDK_FAIL;
+    }
+    if (pre_size->ttype != TYPE_int)
+    {
+        GDKerror("%s: tail of pre_size must be type INT.\n", name);
+        return GDK_FAIL;
+    }
+    if (BUNsize(pre_size) != sizeof(int))
+    {
+        GDKerror("%s: head (oid) of pre_size must NOT be materialized.\n", name);
+        return GDK_FAIL;
+    }
+
+    if (!(BATtordered(doc_pre) & 1))
+    {
+        GDKerror("%s: doc_pre must be ordered on tail.\n", name);
+        return GDK_FAIL;
+    }
+
+    /* --------------------------- empty result ---------------------------- */
+
+    if (BATcount(ctx_bat) == 0 || BATcount(pre_size) == 0 || BATcount(doc_pre) == 0)
+    {
+        res = BATnew(TYPE_oid, TYPE_void, 0);
+        BATkey (res, TRUE);
+        res->hsorted = GDK_SORTED;
+        res->hdense = TRUE;
+        BATseqbase (res, (oid)0); /* does not really matter */
+        BATkey (BATmirror(res), TRUE);
+        res->tsorted = TRUE;
+        res->tdense = TRUE;
+        BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
+        BATset(res, TRUE);
+        *result = res;
+        return GDK_SUCCEED;
+    }
+
+    /* --------------------------- special cases --------------------------- */
+
+    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+
+    if (BATtordered(iter_bat) & 1)
+    {
+        min_iter = *iter_cur;
+        max_iter = *(iter_end - iter_nxt);
+    } else {
+        oid *cur_iter = iter_cur;
+        min_iter = GDK_oid_max;
+        max_iter = GDK_oid_min;
+        for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+            oid iter = *cur_iter;
+            if (iter < min_iter) min_iter = iter;
+            if (iter > max_iter) max_iter = iter;
+        }
+    }
+    assert(min_iter <= max_iter);
+    num_iter = (max_iter - min_iter) + 1;
+
+    ALGODEBUG
+        THRprintf(GDKout, "%s: min_iter="OIDFMT", max_iter="OIDFMT", num_iter="OIDFMT"\n",
+                          name, min_iter, max_iter, num_iter);
+
+    /* --- result bat allocation. for result size use res_size parameter --- */
+    res_size = num_iter * ((BATcount(pre_size) / 2) / BATcount(doc_pre));
+    res = BATnew(TYPE_oid, TYPE_oid, res_size);
+    if (res == NULL) 
+    { 
+        GDKerror("%s: could not allocate a result BAT of size "SZFMT".\n", name, res_size);
+        return GDK_FAIL;
+    }
+    assert(BUNsize(res) == 2 * sizeof(oid));
+    assert((res->hloc == 0) && (res->tloc == sizeof(oid)));
+    res_cur = (oid*) BUNhead(res, BUNfirst(res)); 
+@c
+    @:init(following)@
+
+    if (one_ctx) {
+        /* 1 ctx, 1/n iter */
+        p = SORTfndlast(doc_pre, ctx_cur);
+        if (p > BUNfirst(doc_pre)) {
+            oid boundary = *(oid*) BUNtail(doc_pre, p - BUNsize(doc_pre));
+            oid cur_following = *ctx_cur + size[*ctx_cur] + 1;
+
+            /* now, everything until the end of the fragment is a following node */
+            boundary += size[boundary] + 1;
+            if (cur_following < boundary) {
+                /* check, if result buffer is big enough; otherwise extend it */
+                grow = num_iter * (boundary - cur_following);
+                PFll_check_BAT_capacity(res, grow);
+                if (num_iter == 1) {
+                    ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, 1 iter\n", name);
+                    while(cur_following < boundary) {
+                        int sz = size[cur_following];
+                        if (sz >= 0) {
+                            *res_cur++ = min_iter;
+                            *res_cur++ = cur_following++;
+                        } else { 
+                            /* this node has been deleted! skip the hole */
+                            cur_following += 1 + (sz & ~(1<<31)); 
+                        }
+                    }
+                } else {
+                    /* num_iter > 1 */
+                    if (iter_bat->tkey) {
+                        ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, n iter (key)\n", name);
+                        while(cur_following < boundary) {
+                            int sz = size[cur_following];
+                            if (sz >= 0) {
+                                oid *cur_iter = iter_cur;
+                                for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+                                    *res_cur++ = *cur_iter;
+                                    *res_cur++ = cur_following;
+                                }
+                                cur_following++;
+                            } else { 
+                                /* this node has been deleted! skip the hole */
+                                cur_following += 1 + (sz & ~(1<<31)); 
+                            }
+                        }
+                    } else {
+                        /* !iter_bat->tkey */
+                        ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, n iter\n", name);
+                        while(cur_following < boundary) {
+                            int sz = size[cur_following];
+                            if (sz >= 0) {
+                                oid *cur_iter = iter_cur;
+                                oid prev_iter = oid_nil;
+                                for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+                                    if (*cur_iter != prev_iter) {
+                                        *res_cur++ = *cur_iter;
+                                        *res_cur++ = cur_following;
+                                        prev_iter = *cur_iter;
+                                    }
+                                }
+                                cur_following++;
+                            } else { 
+                                /* this node has been deleted! skip the hole */
+                                cur_following += 1 + (sz & ~(1<<31)); 
+                            }
+                        }
+                    }
+                }
+                /* mark the end point of the BUNs section in the BUNheap */
+                res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+                BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
+            }
+        }
+    } else
+    if (num_iter == 1) {
+        /* n ctx, 1 iter */
+        ALGODEBUG THRprintf(GDKout, "%s: n ctx, 1 iter\n", name);
+        BATloopFast(doc_pre, p, q, xx) {
+            oid boundary = *(oid*) BUNtail(doc_pre,p);
+            oid cur_following = boundary += size[boundary] + 1;
+
+            /* within the fragment (boundary), go over all context nodes */
+            while(ctx_cur < ctx_end && *ctx_cur < cur_following /*<= boundary*/) { 
+                /* new following is the first following node of the current context node */
+                oid new_following = *ctx_cur + size[*ctx_cur] + 1;
+
+                if (new_following < cur_following) {
+                    cur_following = new_following; /* keep setting cur_following back */
+                }
+                ctx_cur += ctx_nxt;
+            }
+            while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
+                ctx_cur += ctx_nxt; /* advance ctx pointer after breaking out early */
+            }
+            if (cur_following < boundary) {
+                /* now, everything until the end of the fragment is a following node */
+                /* check, if result buffer is big enough; otherwise extend it */
+                grow = boundary - cur_following;
+                PFll_check_BAT_capacity(res, grow);
+                while(cur_following < boundary) {
+                    int sz = size[cur_following];
+                    if (sz >= 0) {
+                        *res_cur++ = min_iter;
+                        *res_cur++ = cur_following++;
+                    } else { 
+                        /* this node has been deleted! skip the hole */
+                        cur_following += 1 + (sz & ~(1<<31)); 
+                    }
+                }
+                /* mark the end point of the BUNs section in the BUNheap */
+                res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+                BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
+            }
+        }
+    } else
+    {
+        /* n ctx, n iter */
+        ALGODEBUG THRprintf(GDKout, "%s: n ctx, n iter\n", name);
+        oid *min_following = GDKmalloc(num_iter * sizeof(oid));
+        if (min_following == NULL) 
+        { 
+            GDKerror("%s: could not allocate a stack of size "SZFMT".\n", name, (size_t)num_iter * sizeof(oid));
+            BBPreclaim(res);
+            return GDK_FAIL;
+        }
+        BATloopFast(doc_pre, p, q, xx) {
+            oid iter = 0, fst_iter = num_iter, lst_iter = 0;
+            oid boundary = *(oid*) BUNtail(doc_pre,p);
+            oid cur_following = boundary += size[boundary] + 1;
+            for (; iter < num_iter; iter++) {
+                min_following[iter] = cur_following;
+            }
+
+            /* within the fragment (boundary), go over all context nodes */
+            while(ctx_cur < ctx_end && *ctx_cur < /*cur_following <=*/ boundary) { 
+                /* new following is the first following node of the current context node */
+                oid new_following = *ctx_cur + size[*ctx_cur] + 1;
+                oid prev_ctx = *ctx_cur;
+
+                if (new_following < cur_following) {
+                    cur_following = new_following; /* keep setting cur_following back */
+                }
+                
+                while(ctx_cur < ctx_end && *ctx_cur == prev_ctx) {
+                    iter = *iter_cur - min_iter;
+                    if (new_following < min_following[iter]) {
+                        min_following[iter] = new_following;
+                        if (iter < fst_iter) fst_iter = iter;
+                        if (iter > lst_iter) lst_iter = iter;
+                    }
+                    ctx_cur += ctx_nxt;
+                    iter_cur += iter_nxt;
+                }
+            }
+@(
+            while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
+                ctx_cur += ctx_nxt; /* advance ctx pointer after breaking out early */
+                iter_cur += iter_nxt;
+            }
+@)
+            if (cur_following < boundary && fst_iter <= lst_iter) {
+                /* now, everything until the end of the fragment is a following node */
+                /* check, if result buffer is big enough; otherwise extend it */
+                grow = ((lst_iter - fst_iter) + 1) * (boundary - cur_following);
+                PFll_check_BAT_capacity(res, grow);
+                while(cur_following < boundary) {
+                    int sz = size[cur_following];
+                    if (sz >= 0) {
+                        for (iter = fst_iter; iter <= lst_iter; iter++) {
+                            if (min_following[iter] <= cur_following) {
+                                *res_cur++ = iter + min_iter;
+                                *res_cur++ = cur_following;
+                            }
+                        }
+                        cur_following++;
+                    } else { 
+                        /* this node has been deleted! skip the hole */
+                        cur_following += 1 + (sz & ~(1<<31)); 
+                    }
+                }
+                /* mark the end point of the BUNs section in the BUNheap */
+                res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+                BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
+            }
+        }
+        GDKfree(min_following);
+    }
+
+@= end
+    /* -------------------- set result properties ---------------------- */
+{
+    bit trivial  = (BATcount(res) < 2);
+    oid fst_item = *(oid*)BUNtail(res, BUNfirst(res));
+    oid lst_item = *(oid*)BUNtail(res, BUNlast(res) - BUNsize(res));
+    bit one_item = (fst_item == lst_item);
+    bit one_iter = (num_iter == 1);
+
+    res->batDirty = TRUE;
+    res->hdense = (trivial||(res->htype==TYPE_void)); /* might be TRUE in some more cases... */
+    if (res->hdense) {
+        if (BATcount(res) == 0) {
+            BATseqbase (res, (oid)0); /* does not really matter */
+        } else {
+            BATseqbase (res, *(oid*)BUNhead(res, BUNfirst(res)));
+        }
+    }
+    res->hsorted = ((one_iter||one_item) ? GDK_SORTED : 0); /* might be TRUE in some more cases... */
+    BATkey(res,(res->hdense||one_item)); /* might be TRUE in some more cases... */
+    res->tdense = (trivial||(res->ttype==TYPE_void)); /* might be TRUE in some more cases... */
+    if (res->tdense) {
+        if (BATcount(res) == 0) {
+            BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
+        } else {
+            BATseqbase (BATmirror(res), *(oid*)BUNtail(res, BUNfirst(res)));
+        }
+    }
+    res->tsorted = GDK_SORTED;
+    BATkey(BATmirror(res),(res->tdense||one_iter)); /* might be TRUE in some more cases... */
+    BATset(res, TRUE);
+}
+    *result = res;
+
+    return GDK_SUCCEED;
+@c
+    @:end@
+}
+
+
+@(
+/* PRECEDING STEP */
+int
+PFpreceding_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *upperbound)
+{
+    @:init(preceding)@
+
+    BATloopFast(doc_pre, p, q, xx) {
+        oid cur_preceding = *(oid*) BUNtail(doc_pre,p); /* first node of the fragment */
+        oid boundary = cur_preceding + size[cur_preceding] + 1; /* first of next fragment */
+        oid *ctx_start = ctx_cur;
+
+        /* within the fragment (boundary), go over all context nodes; and remember the last one */
+        while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
+            ctx_cur += ctx_nxt;
+        }
+       
+        if (ctx_start < ctx_cur) {
+            oid ctx_last = ctx_cur[-ctx_nxt]; /* the last context node in this fragment */  
+
+            /* cur_preceding is before ctx_last, so it contains its preceding *and* ancestor nodes */
+            while(cur_preceding < ctx_last) {
+                oid new_preceding = cur_preceding + 1 + size[cur_preceding];
+                if (new_preceding > ctx_last) {
+                    cur_preceding++; /* skip ancestor */
+                } else {
+                    /* cur_preceding and its descendants are not ancestors, so they must be preceding 
+                     * but: beware of holes!
+                     */
+                    while(cur_preceding < new_preceding) {
+                        while(cur_preceding < new_preceding && size[cur_preceding] >= 0) {    
+                            *res_cur++ = cur_preceding++;
+                        }
+                        if (cur_preceding < new_preceding) {
+                            /* we hit a deleted node: skip hole */
+                            cur_preceding = 1 + (size[cur_preceding] & ~(1<<31)); 
+                        }
+                    }
+                }
+            } 
+        }
+    }
+    @:end@
+}
+@)
+@c
+/* vim:set shiftwidth=4 expandtab: */

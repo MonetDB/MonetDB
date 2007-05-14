@@ -269,6 +269,24 @@ an overloaded insert).
 DESCRIPTION
 axis step evaluation on the @1 axis from the given context."
 @m
+@(
+@:ll_prec_foll_decl(following)@
+@:ll_prec_foll_decl(preceding)@
+@)
+
+@= ll_prec_foll_decl
+.COMMAND ll_@1(BAT[oid,oid] iter,
+               BAT[oid,oid] ctx,
+               BAT[oid,int] pre_size,
+               BAT[oid,oid] doc_pre): BAT[oid,oid] = PFll_@1;
+"PARAMETERS:
+BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
+BAT[void,oid] ctx (context set; sorted on tail)
+BAT[void,int] pre_size (from the working set)
+BAT[void,oid] table of document containers (doc id, preorder start value)
+DESCRIPTION:
+returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
+@m
 @:scj_cmd(descorself,descendant-or-self)@
 @:scj_cmd(desc,descendant)@
 @:scj_cmd(ancorself,ancestor-or-self)@
@@ -1416,6 +1434,11 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
 @:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
 @:step(preceding,preceding,preceding_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
 
+@(
+@:ll_prec_foll_impl(following)@
+@:ll_prec_foll_impl(preceding)@
+@)
+
 @= chk_order
 	if ( and(order,1) = @2 ) {
 		@3 := @3.chk_order(); # just in case...
@@ -1553,6 +1576,25 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 		          .access(BAT_READ);
 	}
 
+        @:post_sort_output@
+	
+	return result;
+}
+ADDHELP("@1", "tsheyar", "Sep 2004",
+"PARAMETERS:\n\
+BAT[void,oid] iter (grouping relation)\n\
+BAT[void,oid] item (context set)\n\
+oid cont (the current container of the ws)\n\
+BAT[void,bat] ws (working set)\n\
+int order (input & output order properties:\n\
+           bit 0: input is sorted on iter(0) or item(1)\n\
+           bit 1: output must be sorted on iter(0) or item(1))\n\
+BAT[oid,oid] cands (sorted list of result candidate OIDs in the tail)\n\
+DESCRIPTION:\n\
+returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
+"pf_support");
+@
+@= post_sort_output
 	# post-sort output
 	if ( (and(order,2) = 2) and not(ordered(reverse(result.fetch(1)))) ) {
 		iter := result.fetch(0);
@@ -1576,22 +1618,6 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 		          .append(ord.leftfetchjoin(item).chk_order())
 		          .access(BAT_READ);
 	}
-	
-	return result;
-}
-ADDHELP("@1", "tsheyar", "Sep 2004",
-"PARAMETERS:\n\
-BAT[void,oid] iter (grouping relation)\n\
-BAT[void,oid] item (context set)\n\
-oid cont (the current container of the ws)\n\
-BAT[void,bat] ws (working set)\n\
-int order (input & output order properties:\n\
-           bit 0: input is sorted on iter(0) or item(1)\n\
-           bit 1: output must be sorted on iter(0) or item(1))\n\
-BAT[oid,oid] cands (sorted list of result candidate OIDs in the tail)\n\
-DESCRIPTION:\n\
-returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
-"pf_support");
 @
 # use size concept
 @= sizes_code
@@ -1609,7 +1635,7 @@ pre_levels
     # find the document root-pre's for prec_foll
     var nid_rid := ws.fetch(NID_RID).fetch(cont);
     var map_pid := ws.fetch(MAP_PID).fetch(cont);
-    var doc_pre := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
+    var doc_pre := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).chk_order();
 @
 @= doc_pre
 doc_pre,
@@ -1680,6 +1706,21 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
     var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
     var res := ll_@1(iter.chk_order(), ctx.chk_order(), pre_sizes, pre_levels);
     return new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
+}
+@
+
+@= ll_prec_foll_impl
+PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order) : BAT[void,bat]
+{
+    # "order" is not (yet?) used, here.
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
+    @:foll_prec_code@
+    var res := ll_@1(iter.chk_order(), item.chk_order(), pre_sizes, doc_pre);
+    var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
+
+    @:post_sort_output@
+    
+    return result;
 }
 @
 
