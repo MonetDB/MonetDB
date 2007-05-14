@@ -163,10 +163,10 @@ static int mal_help(int a, int b){
     (void) a;
     (void) b;
 
-    c= rl_line_buffer+strlen(rl_line_buffer)-1;
-    while( c > rl_line_buffer && isspace(*c))
+    c = rl_line_buffer + strlen(rl_line_buffer);
+    while( c > (rl_line_buffer+1) && isspace(*c))
         c--;
-    while( c > rl_line_buffer && !isspace(*c))
+    while( c > (rl_line_buffer+1) && !isspace(*c))
         c--;
 	msg= getHelp(MCgetClient()->nspace,c,0);
 	stream_printf(GDKout,"\n");
@@ -192,18 +192,17 @@ mal_command_generator(const char *text, int state)
 	static int index, len, last;
 	static char **msg =0;
 	const char *name;
-    char buf[BUFSIZ];
+	char buf[BUFSIZ];
 	int i;
 
-    /* we pick our own portion of the linebuffer  */
-    text= rl_line_buffer+strlen(rl_line_buffer)-1;
-    while( text > rl_line_buffer && ! isspace((int) *text))
-        text--;
-	if( strlen(text)< BUFSIZ){
+	/* we pick our own portion of the linebuffer  */
+	text = rl_line_buffer + strlen(rl_line_buffer);
+	while( text > (rl_line_buffer+1) && ! isspace((int) *text))
+		text--;
+	if (strlen(text) < BUFSIZ) {
 		strcpy(buf,text);
 		text= buf;
 	}
-
 
 #ifdef _MAL_READLINE_DEBUG
 	printf("expand:%d [%d] %s \n",state,(int)strlen(text),text);

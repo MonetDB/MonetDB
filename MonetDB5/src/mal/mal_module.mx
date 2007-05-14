@@ -802,6 +802,9 @@ char **getHelp(Module m, str pat, int completion)
 	msg= (char **) GDKmalloc( 1000 * sizeof(str));
 	msg[top]=0;
 
+	if (!pat)
+		return msg;
+
 	t= strchr(pat,'\n');
 	if( t) *t=0;
 
@@ -923,6 +926,9 @@ char **getHelpMatch(char *pat){
 
 	msg= (char **) GDKmalloc( 2000 * sizeof(str));
 	msg[top]=0;
+
+	if (!pat)
+		return msg;
 
 	for(i=0; i< MAXSCOPE; i++)
 	for(k=0; k< MAXSCOPE; k++){
