@@ -85,6 +85,11 @@ PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *upper
         GDKerror("%s: context must be ordered on head.\n", name);
         return GDK_FAIL;
     }
+    if (!(BATtordered(doc_pre) & 1))
+    {
+        GDKerror("%s: doc_pre must be ordered on tail.\n", name);
+        return GDK_FAIL;
+    }
     if (BATcount(ctx) == 0 || BATcount(pre_size) == 0)
     {
         *result = BATnew(TYPE_oid, TYPE_void, 0);
