@@ -44,6 +44,17 @@ pattern hasMoreElements(l:list):any_1
 address MALLISThasMore
 comment "Fetch next element";
 
+@-
+A few aggregate functions are defined here
+to ease execution.
+@m
+command count(l:list):lng
+address MALLISTcount
+comment "Count the total tuples in the list";
+command sum(l:list):lng
+address MALLISTsum
+comment "Count the total tuples in the list";
+
 command prelude()
 address MALLISTprelude;
 #list.prelude();
@@ -66,8 +77,15 @@ address MALLISTprelude;
 @c
 #include "mal_config.h"
 #include "mal.h"
-#include "mal_exception.h"
+#include "mal_interpreter.h"
 #include "mallist.h"
+
+typedef struct MLIST{
+	ValRecord val;
+	struct MLIST *nxt, *lst;
+} MList, *MListElm;
+
+#define newElement() ((MListElm) GDKzalloc(sizeof(MList)))
 
 str 
 MALLISTprelude(ptr *res)
@@ -78,15 +96,21 @@ MALLISTprelude(ptr *res)
 str 
 MALLISTnew(ptr *res)
 {
-	(void) res;
+	*res= (ptr) newElement();
 	return MAL_SUCCEED;
 }
 str 
 MALLISTappend(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	MList *l= (MList*) getArgReference(stk,pci,1);
+	MListElm e= newElement();
 	(void) mb;
-	(void) stk;
-	(void) pci;
+
+	if( l->nxt)
+		l->lst->nxt= e;
+	else
+		l->nxt= l->lst= e;
+	VALcopy(&e->val, &stk->stk[getArg(pci,2)]);
 	return MAL_SUCCEED;
 }
 	
@@ -121,4 +145,18 @@ MALLISThasMore(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	throw(MAL,"list.hasMoreElements","NYI");
+}
+str 
+MALLISTcount(lng *ret, ptr *list)
+{
+	(void) ret;
+	(void) list;
+	throw(MAL,"list.count","NYI");
+}
+str 
+MALLISTsum(lng *ret, ptr *list)
+{
+	(void) ret;
+	(void) list;
+	throw(MAL,"list.sum","NYI");
 }

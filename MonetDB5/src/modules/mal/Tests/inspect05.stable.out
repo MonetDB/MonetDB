@@ -522,7 +522,6 @@ end main;	# 11
 [ "hasMoreElements",		  "pattern",	  "list",	  "(l:list):any_1 ",								  "MALLISThasMore;"			  ]
 [ "newIterator",		  "pattern",	  "list",	  "(l:list):any_1 ",								  "MALLISTnewIterator;"			  ]
 [ "new",			  "command",	  "list",	  "():list ",									  "MALLISTnew;"				  ]
-[ "prelude",			  "command",	  "list",	  "():void ",												  "MALLISTprelude;"			  ]
 [ "assertSpace",			  "pattern",	  "language",	  "(depth:int):void ",										  "safeguardStack;"				  ]
 [ "assert",				  "pattern",	  "language",	  "(v:any_1,pname:str,oper:str,val:any_2):void ",										  "MALassertTriple;"				  ]
 [ "assert",				  "command",	  "language",	  "(v:oid,term:str):void ",													  "MALassertOid;"				  ]
