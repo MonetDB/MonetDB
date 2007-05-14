@@ -23,7 +23,7 @@ user.refs();
 t:bat[:any_1,:any_2]:= bbp.bind("tasks");
 io.print(t);
 bbp.release(t);
-user.refs();
+#user.refs();
 io.print(t);
 catch MALException:str;
 io.print("BAT was released");
@@ -32,11 +32,11 @@ exit MALException;
 # marks it for deletion at the end of session or
 # when the reference counters drop to zero
 t:bat[:any_1,:any_2]:= bbp.bind("tasks");
-user.refs();
+#user.refs();
 # to really remove, we get rid of the current
 # references as well
 bbp.destroy(t,true);
-user.refs();
+#user.refs();
 io.print(t);
 catch MALException:str;
 io.print("BAT was destroyed");

@@ -23,8 +23,8 @@ algebra.select(b,mx,nil:lng);
 d:= mmath.sin(0.2:dbl);
 profiler.stop();
 
-stmt:= profiler.getTrace("statement");
-io.print(stmt);
+#stmt:= profiler.getTrace("statement");
+#io.print(stmt);
 ticks:= profiler.getTrace("ticks");
 #io.print(ticks);
 rdbytes:= profiler.getTrace("ibytes");
@@ -33,5 +33,5 @@ wrbytes:= profiler.getTrace("obytes");
 #io.print(wrbytes);
 diskspace:= profiler.getTrace("diskspace");
 #io.print(diskspace);
-io.print(rdbytes,wrbytes,stmt);
-#io.print(ticks,rdbytes,wrbytes,diskspace,stmt);
+io.print(rdbytes,wrbytes);
+#io.print(ticks,rdbytes,wrbytes,diskspace);

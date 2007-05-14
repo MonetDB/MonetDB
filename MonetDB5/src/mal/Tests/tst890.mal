@@ -10,9 +10,4 @@ c:=batcalc.+(b,6);
 c:=batcalc.+(b,7);
 c:=batcalc.+(b,8);
 io.print(c);
-d:= bbp.getRefCount();
-dl:=bbp.getLRefCount();
-dn:= bbp.getNames();
-ds:= algebra.sort(dn);
-io.table(ds,d,dl);
 

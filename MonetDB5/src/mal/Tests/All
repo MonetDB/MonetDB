@@ -149,8 +149,8 @@ tst3050
 tst3060
 tst307
 tst308
-HAVE_PCRE?tst350
-tst380
+#HAVE_PCRE?tst350
+#tst380
 tst400
 tst401
 tst450

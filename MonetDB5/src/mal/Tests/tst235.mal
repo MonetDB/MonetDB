@@ -14,11 +14,11 @@ function createBAT(name:str):bat;
     bat.setName(res,name);
     i:= calc.getBATidentifier(res);
 	j:= i; # now res should have 3 lrefs
-	dir();
+	z:= bbp.getLRefCount(res);
+	io.print(z);
     return i;
 end createBAT;
 
-dir();
 d:= user.createBAT("one");
-io.print(d); # bat d should have 1 lref
-dir();
+i:= bbp.getLRefCount(d);
+io.print(i); # bat d should have 1 lref

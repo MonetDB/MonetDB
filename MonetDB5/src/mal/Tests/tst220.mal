@@ -62,10 +62,3 @@ end createone;
 	b:= user.steal(b);
 	i:= bbp.getLRefCount(b);
 	io.printf("return from function refcount =%d[2]\n",i);
-
-	z:= bbp.getRefCount();
-	zl:= bbp.getLRefCount();
-	zn:= bbp.getNames();
-	zs:= algebra.sort(zn);
-	io.table(zs,zn,z,zl);
-

@@ -43,33 +43,11 @@ end tmp1;	# 1
 function user.main():void;	# 0  (main:void)
 # dealing with BAT references in functions 	# 1  (_1:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    user.dir();	# 3  (_4:void)
-    user.tmp1(b);	# 4  (_5:void)<-(b:bat[:int,:int])
-    user.dir();	# 5  (_6:void)
-#lrefcnt of b should be 1 	# 6  (_7:str)
-end main;	# 7  
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_10",		  0,	  1		  ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_10",		  0,	  1		  ]
+    i := bbp.getLRefCount(b);	# 3 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
+    io.print(i);	# 4 IOprint_val (_5:void)<-(i:int)
+#lrefcnt of b should be 1 	# 5  (_6:str)
+end main;	# 6  
+[ 1 ]
 
 # 09:04:28 >  
 # 09:04:28 >  Done.

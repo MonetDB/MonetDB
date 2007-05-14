@@ -27,7 +27,7 @@ function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:BAT);	# 6 CMDBATnew (b:bat[:int,:BAT])<-(_3:int)(_10:BAT)
     bat.insert(b,0,y);	# 7 BKCinsert_bun (_11:void)<-(b:bat[:int,:BAT])(_5:int)(y:bat[:int,:int])
     bat.insert(b,1,z);	# 8 BKCinsert_bun (_12:void)<-(b:bat[:int,:BAT])(_8:int)(z:bat[:int,:int])
-    io.print(b);	# 9 IOprint_val (_13:void)<-(b:bat[:int,:BAT])
+#io.print(b); 	# 9  (_13:str)
     io.print(z);	# 10 IOprint_val (_14:void)<-(z:bat[:int,:int])
     x := algebra.find(b,0);	# 11 ALGfind (x:BAT)<-(b:bat[:int,:BAT])(_5:int)
     io.print(x);	# 12 IOprint_val (_16:void)<-(x:BAT)
@@ -36,12 +36,6 @@ function user.main():void;	# 0  (main:void)
     x := algebra.find(b,4);	# 15 ALGfind (x:BAT)<-(b:bat[:int,:BAT])(_18:int)
     io.print(x);	# 16 IOprint_val (_19:void)<-(x:BAT)
 end main;	# 17  
-#-------------------------#
-# h	t		  # name
-# int	BAT		  # type
-#-------------------------#
-[ 0,	  <tmp_10>	  ]
-[ 1,	  <tmp_11>	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type

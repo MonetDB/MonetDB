@@ -43,9 +43,10 @@ function user.createBAT(name:str):BAT;	# 0  (createBAT:BAT)<-(name:str)
     i := calc.getBATidentifier(res);	# 3 CALCbat2batid (i:BAT)<-(res:bat[:int,:int])
     j := i;	# 4  (j:BAT)<-(i:BAT)
 # now res should have 3 lrefs 	# 5  (_7:str)
-    user.dir();	# 6  (_8:void)
-    return i;	# 7  (i:BAT)
-end createBAT;	# 8  
+    z := bbp.getLRefCount(res);	# 6 CMDgetBATlrefcnt (z:int)<-(res:bat[:int,:int])
+    io.print(z);	# 7 IOprint_val (_9:void)<-(z:int)
+    return i;	# 8  (i:BAT)
+end createBAT;	# 9  
 #
 #dir();
 #d:= user.createBAT("one");
@@ -55,45 +56,13 @@ end createBAT;	# 8
 function user.main():void;	# 0  (main:void)
 # BAT references are seens as BAT's and should be subject to the 	# 1  (_1:str)
 # same reference scheme. 	# 2  (_2:str)
-    user.dir();	# 3  (_3:void)
-    d := user.createBAT("one");	# 4  (d:BAT)<-(_5:str)
-    io.print(d);	# 5 IOprint_val (_6:void)<-(d:BAT)
+    d := user.createBAT("one");	# 3  (d:BAT)<-(_4:str)
+    i := bbp.getLRefCount(d);	# 4 CMDgetBATlrefcnt (i:int)<-(d:BAT)
+    io.print(i);	# 5 IOprint_val (_6:void)<-(i:int)
 # bat d should have 1 lref 	# 6  (_7:str)
-    user.dir();	# 7  (_8:void)
-end main;	# 8  
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "one",		  0,	  3		  ]
-[ <one> ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "one",		  0,	  1		  ]
+end main;	# 7  
+[ 3 ]
+[ 1 ]
 
 # 11:58:33 >  
 # 11:58:33 >  Done.

@@ -131,12 +131,7 @@ function user.main():void;	# 0  (main:void)
     b := user.steal(b);	# 39  (b:bat[:int,:str])<-(b:bat[:int,:str])
     i := bbp.getLRefCount(b);	# 40 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("return from function refcount =%d[2]\n",i);	# 41 IOprint_formatted_int (_42:void)<-(_39:str)(i:int)
-    z := bbp.getRefCount();	# 42 CMDbbpRefCount (z:bat[:int,:int])
-    zl := bbp.getLRefCount();	# 43 CMDbbpLRefCount (zl:bat[:int,:int])
-    zn := bbp.getNames();	# 44 CMDbbpNames (zn:bat[:int,:str])
-    zs := algebra.sort(zn);	# 45 ALGhsort (zs:bat[:int,:str])<-(zn:bat[:int,:str])
-    io.table(zs,zn,z,zl);	# 46 IOttable (_47:void)<-(zs:bat[:int,:str])(zn:bat[:int,:str])(z:bat[:int,:int])(zl:bat[:int,:int])
-end main;	# 47  
+end main;	# 42  
 refcount =1[1]
 #-------------------------#
 # h	t		  # name
@@ -162,19 +157,6 @@ check self replacement, overrule refcount!
 enter function refcount =3[2,3]
 local in function refcount =4[3,4]
 return from function refcount =2[2]
-#-------------------------------------------------------------------------#
-# t			name			refcnt	lrefcnt		  # name
-# str			str			int	int		  # type
-#-------------------------------------------------------------------------#
-[ "M5system_auth_user",	  "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  "timezones",		  1,	  0		  ]
-[ "tmp_10",		  "tmp_10",		  0,	  2		  ]
-[ "tmp_11",		  "tmp_11",		  0,	  2		  ]
-[ "tmp_12",		  "tmp_12",		  0,	  1		  ]
 
 # 08:01:01 >  
 # 08:01:01 >  Done.

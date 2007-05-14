@@ -14,7 +14,7 @@ i:= calc.getBAT(zid);
 io.print(i);
 
 bat.insert(b,0,zid);
-io.print(b);
+#io.print(b);
 
 a:= algebra.fetch(b,0);
 io.print("fetch it");

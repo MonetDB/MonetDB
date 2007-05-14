@@ -7,7 +7,7 @@ bat.insert(z,1,1);
 b:= bat.new(:int,:bat);
 bat.insert(b,0,y);
 bat.insert(b,1,z);
-io.print(b);
+#io.print(b);
 
 io.print(z);
 

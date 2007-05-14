@@ -38,9 +38,10 @@ end dir;	# 6
 function user.tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (tmp1:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
     tmp1 := algebra.copy(b);	# 1 ALGcopy (tmp1:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
     io.print("inside tmp1");	# 2 IOprint_val (_2:void)<-(_3:str)
-    user.dir();	# 3  (_4:void)
-    return tmp1;	# 4  (tmp1:bat[:any_1,:any_2])
-end tmp1;	# 5  
+    i := bbp.getLRefCount(b);	# 3 CMDgetBATlrefcnt (i:int)<-(b:bat[:any_1,:any_2])
+    io.print(i);	# 4 IOprint_val (_5:void)<-(i:int)
+    return tmp1;	# 5  (tmp1:bat[:any_1,:any_2])
+end tmp1;	# 6  
 #
 #b:= bat.new(:int,:int);
 #dir();
@@ -52,74 +53,19 @@ end tmp1;	# 5
 function user.main():void;	# 0  (main:void)
 # dealing with BAT references in functions 	# 1  (_1:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    user.dir();	# 3  (_4:void)
-    d := user.tmp1(b);	# 4  (d:bat[:int,:int])<-(b:bat[:int,:int])
-    user.dir();	# 5  (_6:void)
+    d := user.tmp1(b);	# 3  (d:bat[:int,:int])<-(b:bat[:int,:int])
+    i := bbp.getLRefCount(d);	# 4 CMDgetBATlrefcnt (i:int)<-(d:bat[:int,:int])
+    io.print(i);	# 5 IOprint_val (_6:void)<-(i:int)
     d := user.tmp1(d);	# 6  (d:bat[:int,:int])<-(d:bat[:int,:int])
-    user.dir();	# 7  (_7:void)
-end main;	# 8  
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_10",		  0,	  1		  ]
+    i := bbp.getLRefCount(d);	# 7 CMDgetBATlrefcnt (i:int)<-(d:bat[:int,:int])
+    io.print(i);	# 8 IOprint_val (_7:void)<-(i:int)
+end main;	# 9  
 [ "inside tmp1" ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_10",		  0,	  2		  ]
-[ "tmp_12",		  0,	  1		  ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_10",		  0,	  1		  ]
-[ "tmp_12",		  0,	  1		  ]
+[ 2 ]
+[ 1 ]
 [ "inside tmp1" ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_10",		  0,	  1		  ]
-[ "tmp_11",		  0,	  1		  ]
-[ "tmp_12",		  0,	  2		  ]
-#-------------------------------------------------#
-# t			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  1,	  0		  ]
-[ "tmp_10",		  0,	  1		  ]
-[ "tmp_11",		  0,	  1		  ]
+[ 2 ]
+[ 1 ]
 
 # 09:11:11 >  
 # 09:11:11 >  Done.

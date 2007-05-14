@@ -52,7 +52,7 @@ function user.main():void;	# 0  (main:void)
     i := calc.getBAT(zid);	# 12 CALCbatid2bat (i:bat[:any,:any])<-(zid:BAT)
     io.print(i);	# 13 IOprint_val (_19:void)<-(i:bat[:any,:any])
     bat.insert(b,0,zid);	# 14 BKCinsert_bun (_20:void)<-(b:bat[:int,:BAT])(_21:int)(zid:BAT)
-    io.print(b);	# 15 IOprint_val (_22:void)<-(b:bat[:int,:BAT])
+#io.print(b); 	# 15  (_22:str)
     a := algebra.fetch(b,0);	# 16 ALGfetchint (a:BAT)<-(b:bat[:int,:BAT])(_21:int)
     io.print("fetch it");	# 17 IOprint_val (_24:void)<-(_25:str)
     io.print(a);	# 18 IOprint_val (_26:void)<-(a:BAT)
@@ -78,11 +78,6 @@ end main;	# 22
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
-#-------------------------#
-# h	t		  # name
-# int	BAT		  # type
-#-------------------------#
-[ 0,	  <tmp_10>	  ]
 [ "fetch it" ]
 [ <tmp_10> ]
 #-----------------#

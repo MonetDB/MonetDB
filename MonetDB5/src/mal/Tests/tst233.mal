@@ -13,7 +13,6 @@ function tmp1(b:bat[:any_1,:any_2]):void;
 end tmp1;
 
 b:= bat.new(:int,:int);
-dir();
-user.tmp1(b);
-dir();
+i:= bbp.getLRefCount(b);
+io.print(i);
 #lrefcnt of b should be 1
