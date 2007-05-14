@@ -391,8 +391,7 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.bind", "failed to find object in box");
 	}
 
-	BBPincref(b->batCacheid, TRUE);
-	BBPunfix(i);
+	BBPkeepref(b->batCacheid);
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval = i;
 	return MAL_SUCCEED;

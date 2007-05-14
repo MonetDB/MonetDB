@@ -28,9 +28,9 @@ hc:= aggr.count(h);
 io.print(hc);
 statistics.discard("timezones");
 statistics.epilogue();
-d:= bbp.getRefCount();
-dl:=bbp.getLRefCount();
-dn:= bbp.getNames();
-ds:= algebra.sort(dn);
-io.table(dn,d,dl);
+#d:= bbp.getRefCount();
+#dl:=bbp.getLRefCount();
+#dn:= bbp.getNames();
+#ds:= algebra.sort(dn);
+#io.table(dn,d,dl);
 

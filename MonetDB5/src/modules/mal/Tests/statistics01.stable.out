@@ -81,11 +81,11 @@ exit MALException:str ;	# 24  (MALException:str)
     io.print(hc);	# 28 IOprint_val (_28:void)<-(hc:int)
     statistics.discard("timezones");	# 29 STATdiscard (_29:void)<-(_3:str)
     statistics.epilogue();	# 30 STATepilogue (_30:void)
-    d := bbp.getRefCount();	# 31 CMDbbpRefCount (d:bat[:int,:int])
-    dl := bbp.getLRefCount();	# 32 CMDbbpLRefCount (dl:bat[:int,:int])
-    dn := bbp.getNames();	# 33 CMDbbpNames (dn:bat[:int,:str])
-    ds := algebra.sort(dn);	# 34 ALGhsort (ds:bat[:int,:str])<-(dn:bat[:int,:str])
-    io.table(dn,d,dl);	# 35 IOttable (_35:void)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+#d:= bbp.getRefCount(); 	# 31  (_31:str)
+#dl:=bbp.getLRefCount(); 	# 32  (_32:str)
+#dn:= bbp.getNames(); 	# 33  (_33:str)
+#ds:= algebra.sort(dn); 	# 34  (_34:str)
+#io.table(dn,d,dl); 	# 35  (_35:str)
 end main;	# 36  
 #-------------------------#
 # h	t		  # name
@@ -124,18 +124,6 @@ end main;	# 36
 [ GMT-07:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
 [ GMT-09:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
 [ 24 ]
-#-------------------------------------------------#
-# name			refcnt	lrefcnt		  # name
-# str			int	int		  # type
-#-------------------------------------------------#
-[ "M5system_auth_user",	  1,	  1		  ]
-[ "M5system_auth_passwd", 1,	  1		  ]
-[ "M5system_auth_scen",	  1,	  1		  ]
-[ "monet_environment",	  1,	  0		  ]
-[ "monet_unicode_case",	  1,	  0		  ]
-[ "timezones",		  3,	  1		  ]
-[ "Htimezones",		  2,	  2		  ]
-[ "tmp_23",		  1,	  1		  ]
 
 # 08:19:58 >  
 # 08:19:58 >  Done.
