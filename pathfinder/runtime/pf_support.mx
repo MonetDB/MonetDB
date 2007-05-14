@@ -253,7 +253,9 @@ an overloaded insert).
 
 @- Path steps (staircase join) 
 @m
+@(
 @:prec_foll(following)@
+@)
 @:prec_foll(preceding)@
 
 @= prec_foll
@@ -269,8 +271,8 @@ an overloaded insert).
 DESCRIPTION
 axis step evaluation on the @1 axis from the given context."
 @m
-@(
 @:ll_prec_foll_decl(following)@
+@(
 @:ll_prec_foll_decl(preceding)@
 @)
 
@@ -1431,11 +1433,14 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
 
 @:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
 @:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
-@:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
-@:step(preceding,preceding,preceding_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
 
 @(
+@:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
+@)
+@:step(preceding,preceding,preceding_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
+
 @:ll_prec_foll_impl(following)@
+@(
 @:ll_prec_foll_impl(preceding)@
 @)
 
