@@ -1808,16 +1808,24 @@ if (postfilter) {
                 # determine a sel [qnid,qnid] of qualifying nslocs (i.e. prop IDs)
 		var sel := ws.fetch(@1).fetch(bat2constant(pre_cont)).ord_uselect(@2);
 
-                # first join on prop, getting some false hits for non ELEMENT nodes
+                # first join on prop, possibly getting some false hits for non ELEMENT nodes
                 tmp_res := result_part_item.leftfetchjoin(pre_prop).leftjoin(sel).hmark(0@0);
 
-                # remove false hits
-                tmp_res := tmp_res.leftfetchjoin(result_part_item).leftfetchjoin(pre_kind).ord_uselect(@3).hmark(0@0).leftfetchjoin(tmp_res);
+                if (isnil(kind_test)) {
+                    # remove false hits;
+                    # only necessary if we haven't done the kind-test as pushed-down pre-test
+                    tmp_res := tmp_res.leftfetchjoin(result_part_item).leftfetchjoin(pre_kind).ord_uselect(@3).hmark(0@0).leftfetchjoin(tmp_res);
+                }
         } else {
                 # the cont value refers back to multiple different containers (XPath step in transient doc container)
 
-                # first select the element nodes
-                var X := result_part_item.leftfetchjoin(pre_kind).ord_uselect(@3).hmark(0@0);
+                var X := result_part_item;
+                if (isnil(kind_test)) {
+                    # first select the element nodes;
+                    # only necessary if we haven't done the kind-test as pushed-down pre-test
+                    X := X.leftfetchjoin(pre_kind).ord_uselect(@3);
+                }
+                X := X.hmark(0@0);
 
                 # fetch cont and prop values
                 tmp_res := X.leftfetchjoin(result_part_item);
@@ -1924,10 +1932,10 @@ if (postfilter) {
 @= loop_lifted_scj_step1x
 @:loop_lifted_scj_step2(@1,,,,,                                                               @:params1@,)@
 @:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,,                   @:params1@,kind_test := kind;)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params1@,)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params1@,)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params1@,)@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params1@,)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params1@,kind_test := ELEMENT;)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params1@,kind_test := ELEMENT;)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params1@,kind_test := ELEMENT;)@
+@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params1@,kind_test := PI;)@
 @
 #==================================================================
 # actual definition of the scj proc
