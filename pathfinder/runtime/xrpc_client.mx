@@ -569,20 +569,34 @@ value2buf(buffer *b, BAT *fun_item, oid offset, int valueType, BAT *valueContain
  * Returns: a socket number if succeeded, -1 otherwise.
  */
 static int
-setup_connection(str dst)
+setup_connection(str dst, int *port)
 {
     struct in_addr      addr;
     struct sockaddr_in  sockaddr;
     struct hostent     *resolv = NULL;
-    int i, ret, sock, port = 0;
+    int i, ret, sock = -1, p = 0;
     str strptr = NULL;
-    
-    errno = 0;
+   
+    /* remove whitespace characters at the beginning and the end of the
+     * string */
+    while(dst[0] == ' '  || dst[0] == '\t' ||
+          dst[0] == '\r' || dst[0] == '\n')
+        dst++;
+    i = strlen(dst) -1;
+    while(dst[i] == ' '  || dst[i] == '\t' ||
+          dst[i] == '\r' || dst[i] == '\n')
+        i--;
+    dst[i + 1] = '\0';
+
+    strptr = strstr(dst, "://");
+    if (strptr) strptr += 3; 
+    else strptr = dst;
 
     /* 'dst' has the form 'URL[:port]' */
-    if ((strptr = strchr(dst, (int)':')) != NULL) {
+    errno = 0;
+    if ((strptr = strchr(strptr, (int)':')) != NULL) {
         strptr[0] = '\0'; strptr++;
-        port = strtol(strptr, (char **)NULL, 10);
+        p = strtol(strptr, (char **)NULL, 10);
         if (errno) {
             GDKerror("setup_connection: invalid port number: %s\n",
                     strerror(errno));
@@ -594,9 +608,9 @@ setup_connection(str dst)
                 GDKerror("setup_connection: could not find \"mapi_port\"\n");
                 return -1;
             }
-            port = atoi(strptr) + 1; 
+            p = atoi(strptr) + 1; 
         } else {
-            port = atoi(strptr);
+            p = atoi(strptr);
         }
     }
 
@@ -617,7 +631,7 @@ setup_connection(str dst)
     }
 
     sockaddr.sin_family = AF_INET;
-    sockaddr.sin_port   = htons(port);
+    sockaddr.sin_port   = htons(p);
     sockaddr.sin_addr.s_addr = addr.s_addr;
     memset(&(sockaddr.sin_zero), '\0', 8);
 
@@ -630,7 +644,7 @@ setup_connection(str dst)
     for (i = NR_RETRIES; i > 0 && ret < 0; i--) {
         if (ret < 0){
             GDKwarning("setup_connection: could not set up connection with %s:%d : %s\n",
-                    dst, port, errno?strerror(errno):".");
+                    dst, p, errno?strerror(errno):".");
             GDKwarning("setup_connection: %d tries left\n", i);
             errno = 0;
         }
@@ -640,10 +654,12 @@ setup_connection(str dst)
 
     if (ret < 0) {
         GDKerror("setup_connection: failed to setup connection with %s:%d : %s\n",
-                dst, port, errno?strerror(errno):".");
+                dst, p, errno?strerror(errno):".");
         close(sock);
         return -1;
     }
+
+    *port = p;
     return sock;
 }
 
@@ -739,6 +755,7 @@ handle_soap_fault_msg(char *errmsg)
         GDKerror("handle_soap_fault_msg: SOAP Fault message not "
                  "well-formed: could not find \"<env:Value\".\n%s\n",
                  errmsg);
+        return;
     }
     strptr = strchr(strptr, '>'); assert(strptr);
     strptr2 = strstr(++strptr, "</env:Value>");
@@ -776,12 +793,13 @@ handle_soap_fault_msg(char *errmsg)
  */
 static BAT *
 response2bat(int sock,
-             char *dst,
+             char *host,
+             int port,
              buffer *b,
              int updCall,
              lng *time_xrpcClntDeSeria)
 {
-    char *strptr = NULL;
+    char *strptr = NULL, respStatus[1024];
     int ret;
     stream *in;
     BAT *shredBAT;
@@ -791,25 +809,51 @@ response2bat(int sock,
         return NULL;
     }
 
-    b->pos = 0;
     errno = 0;
-    if( !(ret = stream_readline(in, b->buf, 1024)) ){
-        GDKerror("response2bat: failed to receive response from %s", dst);
+    if( !(ret = stream_readline(in, respStatus, 1024)) ){
+        GDKerror("response2bat: failed to receive response from %s:%d",
+                host, port);
         if(errno) GDKerror("response2bat: %s", strerror(errno));
         stream_close(in); stream_destroy(in);
         return NULL;
     }
 
-    if( !(strptr = strchr(b->buf, ' ')) ){
-        GDKerror("response2bat: invalid response from %s:\n%s\n",
-                dst, b->buf);
+    /* We only speak HTTP/1.1 */
+    if( ((strptr = strstr(respStatus, "HTTP/1.1 ")) != respStatus) ||
+        (respStatus[8] != ' ') || (respStatus[12] != ' ') ||
+        /* the '\n' is not returned by stream_readline() */
+        (respStatus[ret -1] != '\r') ) {
+        GDKerror("response2bat: invalid response from %s%d\n",
+                host, port);
+        /* read and print everything we can receive */
+        do{
+            respStatus[ret -1] = '\0'; /* overwrite '\r' */
+            GDKerror("%s\n", respStatus);
+            ret = stream_readline(in, respStatus, 1024);
+        } while (ret > 0);
+        stream_close(in); stream_destroy(in);
+        return NULL;
+    }
+    respStatus[ret -1] = '\0';
+
+    do{ /* read the HTTP header and throw it away */
+        errno = 0;
+        ret = stream_readline(in, b->buf, 1024);
+        if(ret == 1 && b->buf[0] == '\r')
+            ret = 0; /* end-of-HTTP-header found */
+    } while (ret > 0);
+    if (ret < 0) {
+        GDKerror("response2bat: failed to receive response from %s:%d",
+                host, port);
+        if(errno) GDKerror("response2bat: %s", strerror(errno));
         stream_close(in); stream_destroy(in);
         return NULL;
     }
 
+    /* Now, we can check the response status */
+    strptr = strchr(respStatus, ' '); assert(strptr);
     if (strncmp(++strptr, "200", 3) != 0) {
-        b->buf[ret] = '\0';
-        GDKerror("HTTP Error Code  : %s\n", b->buf + 9);
+        GDKerror("HTTP Error Code  : %s\n", strptr);
 
         b->pos = 0;
         do{ /* read the SOAP Fault message */
@@ -818,28 +862,13 @@ response2bat(int sock,
             if (ret > 0) b->pos += ret;
         } while (ret > 0);
         if (ret < 0) {
-            GDKerror("response2bat: failed to receive response from %s",
-                    dst);
+            GDKerror("response2bat: failed to receive response from %s:%d",
+                    host, port);
             if(errno) GDKerror("response2bat: %s", strerror(errno));
             return NULL;
         }
         b->buf[b->pos] = 0;
         handle_soap_fault_msg(b->buf);
-        stream_close(in); stream_destroy(in);
-        return NULL;
-    }
-
-    do{ /* read the HTTP header and throw it away */
-        errno = 0;
-        ret = stream_readline(in, b->buf, 1024);
-        b->buf[ret] = '\0';
-        if(ret == 1 && b->buf[0] == '\r')
-            ret = 0; /* end-of-HTTP-header found */
-    } while (ret > 0);
-    if (ret < 0) {
-        GDKerror("response2bat: failed to receive response from %s",
-                dst);
-        if(errno) GDKerror("response2bat: %s", strerror(errno));
         stream_close(in); stream_destroy(in);
         return NULL;
     }
@@ -892,7 +921,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         BAT *fun_item, BAT *fun_kind, BAT *int_values, BAT *dbl_values,
         BAT *dec_values, BAT *str_values)
 {
-    int sock = -1;
+    int sock = -1, port = -1;
     buffer *b = NULL;
     str str_val = NULL;
     stream *out = NULL, *bs = NULL;
@@ -915,14 +944,11 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     lng time_xrpcClntSeria = 0, time_xrpcClntDeSeria = 0;
     lng time_xrpcClnt2Serv = 0;
     size_t bytes_sent = 0;
-    char *protocol = strstr(dst, "://");
-    if (protocol) dst = protocol+3; 
 
     errCheck(iterc, argc, ws, fun_vid, fun_iter, fun_item, fun_kind,
             int_values, dbl_values, dec_values, str_values);
 
-
-    if ((sock = setup_connection(dst)) < 0) {
+    if ((sock = setup_connection(dst, &port)) < 0) {
         return GDK_FAIL;
     }
     if (!(out = socket_wastream(sock, "http_send"))) {
@@ -1209,13 +1235,13 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     time_xrpcClnt2Serv = GDKusec();
     bytes_sent = stream_printf(out,
             "POST %s HTTP/1.1\r\n"
-            "Host: %s\r\n"
+            "Host: %s:%d\r\n"
             "Accept: text/html, text/xml, application/soap+xml\r\n"
             "Accept-Language: en-uk en-us\r\n"
             "Content-Type: text/html; charset=\"utf-8\"\r\n"
             "Content-Length: " SZFMT "\r\n\r\n"
             "%s",
-            XRPC_REQ_CALLBACK, dst, b->pos, b->buf);
+            XRPC_REQ_CALLBACK, dst, port, b->pos, b->buf);
     if (bytes_sent < b->pos) {
         GDKerror("CMDhttp_post: failed to send XRPC request.");
         clean_up(sock, out, bs, b, argcnt, iterc);
@@ -1224,7 +1250,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     /* Stop timing Network Send Client2Server */
     time_xrpcClnt2Serv= GDKusec() - time_xrpcClnt2Serv;
 
-    shredBAT = response2bat(sock, dst, b, *updCall, &time_xrpcClntDeSeria);
+    shredBAT = response2bat(sock, dst, port, b, *updCall,
+                                &time_xrpcClntDeSeria);
     if(!shredBAT) {
         clean_up(sock, out, bs, b, argcnt, iterc);
         return GDK_FAIL;
