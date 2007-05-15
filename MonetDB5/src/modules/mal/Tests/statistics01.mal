@@ -5,7 +5,7 @@ statistics.prelude();
 statistics.deposit("timezones");
 #statistics.dump();		is size dependent
 b:= statistics.getHotset();
-io.print(b);
+#io.print(b);
 l:= statistics.getCount("timezones");
 io.print(l);
 catch MALException:str;

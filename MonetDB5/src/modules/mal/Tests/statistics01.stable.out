@@ -58,7 +58,7 @@ function user.main():void;	# 0  (main:void)
     statistics.deposit("timezones");	# 5 STATdepositStr (_6:void)<-(_3:str)
 #statistics.dump();		is size dependent 	# 6  (_5:str)
     b := statistics.getHotset();	# 7 STATgetHotset (b:bat[:int,:str])
-    io.print(b);	# 8 IOprint_val (_8:void)<-(b:bat[:int,:str])
+#io.print(b); 	# 8  (_8:str)
     l := statistics.getCount("timezones");	# 9 STATgetCount (l:lng)<-(_3:str)
     io.print(l);	# 10 IOprint_val (_10:void)<-(l:lng)
 catch MALException:str ;	# 11  (MALException:str) jump 13
@@ -87,11 +87,6 @@ exit MALException:str ;	# 24  (MALException:str)
 #ds:= algebra.sort(dn); 	# 34  (_34:str)
 #io.table(dn,d,dl); 	# 35  (_35:str)
 end main;	# 36  
-#-------------------------#
-# h	t		  # name
-# int	str		  # type
-#-------------------------#
-[ 7,	  "timezones"	  ]
 [ 24 ]
 [ nil ]
 [ "histogram" ]
