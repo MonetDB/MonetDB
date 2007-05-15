@@ -55,7 +55,7 @@ kf@' Copyright Notice:
  * as x itself.
  */
 
-#define PFll_check_BAT_capacity(b,grow) \
+#define PFll_check_BAT_capacity(b,grow,res_cur) \
 {\
         size_t _oldcap = BATbuncount(b);\
         size_t _reqcap = BATcount(b) + grow;\
@@ -81,6 +81,7 @@ kf@' Copyright Notice:
                 BBPreclaim(b);\
                 return GDK_FAIL;\
             }\
+            res_cur = (oid*) BUNhead(res, BUNlast(res));\
         }\
 }
 
@@ -216,7 +217,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *do
     }
     assert(BUNsize(res) == 2 * sizeof(oid));
     assert((res->hloc == 0) && (res->tloc == sizeof(oid)));
-    res_cur = (oid*) BUNhead(res, BUNfirst(res)); 
+    res_cur = (oid*) BUNhead(res, BUNlast(res));
 @c
     @:init(following)@
 
@@ -232,7 +233,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *do
             if (cur_following < boundary) {
                 /* check, if result buffer is big enough; otherwise extend it */
                 grow = num_iter * (boundary - cur_following);
-                PFll_check_BAT_capacity(res, grow);
+                PFll_check_BAT_capacity(res, grow, res_cur);
                 if (num_iter == 1) {
                     ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, 1 iter\n", name);
                     while(cur_following < boundary) {
@@ -316,7 +317,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *do
                 /* now, everything until the end of the fragment is a following node */
                 /* check, if result buffer is big enough; otherwise extend it */
                 grow = boundary - cur_following;
-                PFll_check_BAT_capacity(res, grow);
+                PFll_check_BAT_capacity(res, grow, res_cur);
                 while(cur_following < boundary) {
                     int sz = size[cur_following];
                     if (sz >= 0) {
@@ -382,7 +383,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *do
                 /* now, everything until the end of the fragment is a following node */
                 /* check, if result buffer is big enough; otherwise extend it */
                 grow = ((lst_iter - fst_iter) + 1) * (boundary - cur_following);
-                PFll_check_BAT_capacity(res, grow);
+                PFll_check_BAT_capacity(res, grow, res_cur);
                 while(cur_following < boundary) {
                     int sz = size[cur_following];
                     if (sz >= 0) {
