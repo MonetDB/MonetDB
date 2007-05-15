@@ -13,14 +13,14 @@ stdout of test 'partitions01` in directory 'src/optimizer` itself:
 ##testing the BAT partition manager
 ## use a fake sql library
 #module sql;
-#pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
-pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int] address MALLISTnew;	# 0  (bind:bat[:oid,:int])<-(s:str)(t:str)(i:str)(flag:int)
-#pattern sql.rsColumn(b:any...):void
-pattern sql.rsColumn(b:any...):void address MALLISTnew;	# 0  (rsColumn:void)<-(b:any)
-#pattern sql.resultSet(b:any...):void
-pattern sql.resultSet(b:any...):void address MALLISTnew;	# 0  (resultSet:void)<-(b:any)
-#pattern sql.exportResult(b:any...):void
-pattern sql.exportResult(b:any...):void address MALLISTnew;	# 0  (exportResult:void)<-(b:any)
+#pattern bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
+pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int] address MDBdummy;	# 0  (bind:bat[:oid,:int])<-(s:str)(t:str)(i:str)(flag:int)
+#pattern rsColumn(b:any...):void
+pattern sql.rsColumn(b:any...):void address MDBdummy;	# 0  (rsColumn:void)<-(b:any)
+#pattern resultSet(b:any...):void
+pattern sql.resultSet(b:any...):void address MDBdummy;	# 0  (resultSet:void)<-(b:any)
+#pattern exportResult(b:any...):void
+pattern sql.exportResult(b:any...):void address MDBdummy;	# 0  (exportResult:void)<-(b:any)
 #
 #function user.query(A0:sht):void;
 #   x2:bat[:oid,:int]{bid=777,rows=1,notnil=true}  := sql.bind("sys","tmp","i",0);
@@ -41,20 +41,20 @@ pattern sql.exportResult(b:any...):void address MALLISTnew;	# 0  (exportResult:v
 #    sql.exportResult(x22,"");
 #end query;
 function sql.query(A0:sht):void;	# 0  (query:void)<-(A0:sht)
-    x1:bat[:oid,:int]{notnil=true,rows=1,bid=812}  := sql.bind("sys","x","i",0);	# 1 MALLISTnew (x1:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_6:int)
-    x6:bat[:oid,:int]{notnil=true,rows=0,bid=808}  := sql.bind("sys","x","i",1);	# 2 MALLISTnew (x6:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_8:int)
+    x1:bat[:oid,:int]{notnil=true,rows=1,bid=812}  := sql.bind("sys","x","i",0);	# 1 MDBdummy (x1:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_6:int)
+    x6:bat[:oid,:int]{notnil=true,rows=0,bid=808}  := sql.bind("sys","x","i",1);	# 2 MDBdummy (x6:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_8:int)
     constraints.emptySet(x6);	# 3 CemptySet (_9:void)<-(x6:bat[:oid,:int])
-    x9:bat[:oid,:int]{notnil=true,rows=0,bid=814}  := sql.bind("sys","x","i",2);	# 4 MALLISTnew (x9:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_11:int)
+    x9:bat[:oid,:int]{notnil=true,rows=0,bid=814}  := sql.bind("sys","x","i",2);	# 4 MDBdummy (x9:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_11:int)
     constraints.emptySet(x9);	# 5 CemptySet (_12:void)<-(x9:bat[:oid,:int])
-    x21:bat[:oid,:int]{notnil=true,rows=1,bid=815}  := sql.bind("sys","x","j",0);	# 6 MALLISTnew (x21:bat[:oid,:int])<-(_3:str)(_4:str)(_14:str)(_6:int)
+    x21:bat[:oid,:int]{notnil=true,rows=1,bid=815}  := sql.bind("sys","x","j",0);	# 6 MDBdummy (x21:bat[:oid,:int])<-(_3:str)(_4:str)(_14:str)(_6:int)
     x18{rows=1} := algebra.markT(x1,0@0);	# 7 ALGtmark (x18:bat[:oid,:oid])<-(x1:bat[:oid,:int])(_16:oid)
     x19{rows=1} := bat.reverse(x18);	# 8 BKCreverse (x19:bat[:oid,:oid])<-(x18:bat[:oid,:oid])
     x20{rows=1} := algebra.join(x19,x1);	# 9 ALGjoin (x20:bat[:oid,:int])<-(x19:bat[:oid,:oid])(x1:bat[:oid,:int])
     x28{rows=1} := algebra.join(x19,x21);	# 10 ALGjoin (x28:bat[:oid,:int])<-(x19:bat[:oid,:oid])(x21:bat[:oid,:int])
-    x29 := sql.resultSet(2,1,x20);	# 11 MALLISTnew (x29:void)<-(_11:int)(_8:int)(x20:bat[:oid,:int])
-    sql.rsColumn(x29,"sys.x","i","int",32,0,x20);	# 12 MALLISTnew (_21:void)<-(x29:void)(_22:str)(_5:str)(_23:str)(_24:int)(_6:int)(x20:bat[:oid,:int])
-    sql.rsColumn(x29,"sys.x","j","int",32,0,x28);	# 13 MALLISTnew (_25:void)<-(x29:void)(_22:str)(_14:str)(_23:str)(_24:int)(_6:int)(x28:bat[:oid,:int])
-    sql.exportResult(x29,"");	# 14 MALLISTnew (_26:void)<-(x29:void)(_27:str)
+    x29 := sql.resultSet(2,1,x20);	# 11 MDBdummy (x29:void)<-(_11:int)(_8:int)(x20:bat[:oid,:int])
+    sql.rsColumn(x29,"sys.x","i","int",32,0,x20);	# 12 MDBdummy (_21:void)<-(x29:void)(_22:str)(_5:str)(_23:str)(_24:int)(_6:int)(x20:bat[:oid,:int])
+    sql.rsColumn(x29,"sys.x","j","int",32,0,x28);	# 13 MDBdummy (_25:void)<-(x29:void)(_22:str)(_14:str)(_23:str)(_24:int)(_6:int)(x28:bat[:oid,:int])
+    sql.exportResult(x29,"");	# 14 MDBdummy (_26:void)<-(x29:void)(_27:str)
 end query;	# 15  
 #optimizer.partitions("user","query");
 #
@@ -72,27 +72,27 @@ function sql.query{segment=2}(A0:sht):void;
     constraints.emptySet(x9);
     x21:bat[:oid,:int]{segment=5,notnil=true,rows=1,bid=815}  := sql.bind("sys","x","j",0);
     bpm13:bat[:oid,:int]  := bpm.take("sys_x_j");
-    L15 := list.new();
+    _34 := bpm.new(:oid,:oid);
 barrier x1:bat[:oid,:int]{segment=2,notnil=true,rows=1,bid=812}  := bpm.newIterator(bpm2);
     x18{segment=2,rows=1} := algebra.markT(x1,0@0);
     x19{segment=2,rows=1} := bat.reverse(x18);
-    list.append(L15,x19);
+    bpm.addPartition(_34,x19);
     redo x1:bat[:oid,:int]{segment=2,notnil=true,rows=1,bid=812}  := bpm.hasMoreElements(bpm2);
 exit x1:bat[:oid,:int]{segment=2,notnil=true,rows=1,bid=812} ;
-    L18 := list.new();
-barrier x19{segment=2,rows=1} := list.newIterator(L15);
+    _40 := bpm.new(:oid,:int);
+barrier x19{segment=2,rows=1} := bpm.newIterator(_34);
 barrier x1:bat[:oid,:int]{segment=2,notnil=true,rows=1,bid=812}  := bpm.newIterator(bpm2);
     x20{segment=6,rows=1} := algebra.join(x19,x1);
     x28{segment=6,rows=1} := algebra.join(x19,x21);
-    list.append(L18,x28);
+    bpm.addPartition(_40,x28);
     redo x1:bat[:oid,:int]{segment=2,notnil=true,rows=1,bid=812}  := bpm.hasMoreElements(bpm2);
-    redo x19{segment=2,rows=1} := list.hasMoreElements(L15);
+    redo x19{segment=2,rows=1} := bpm.hasMoreElements(_34);
 exit x1:bat[:oid,:int]{segment=2,notnil=true,rows=1,bid=812} ;
 exit x19{segment=2,rows=1};
-    x20{segment=6,rows=1} := list.glue(L18);
+    x20{segment=6,rows=1} := bpm.glue(_40);
     x29{segment=7} := sql.resultSet(2,1,x20);
     sql.rsColumn(x29,"sys.x","i","int",32,0,x20);
-    x28{segment=6,rows=1} := list.glue(L18);
+    x28{segment=6,rows=1} := bpm.glue(_40);
     sql.rsColumn(x29,"sys.x","j","int",32,0,x28);
     sql.exportResult(x29,"");
 end query;

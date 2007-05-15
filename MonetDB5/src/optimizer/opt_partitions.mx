@@ -91,7 +91,6 @@ comment "Experiment with partitioned databases";
 @c
 #include "mal_config.h"
 #include "opt_partitions.h"
-#include "mallist.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
 @-
@@ -199,14 +198,15 @@ to accumulate the result.
 static void
 OPTpartitionStrategy(MalBlkPtr mb, int last)
 {
-	int list=0,i,j,limit,lastsegment=0;
-	InstrPtr *old,p,q,anchor=NULL;
+	int i,j,limit,lastsegment=0;
+	InstrPtr *old,p,q,anchor=NULL, listanchor=NULL;
 	int *seg;
 	int *alias= (int*) alloca(sizeof(int)*mb->vtop*2);
+	int *bpm= (int*) alloca(sizeof(int)*mb->vtop*2);
 	char name[1024];
-	int TYPE_list= ATOMindex("list");
 
 	memset((char*) alias, 0, sizeof(int)*mb->vtop*2);
+	memset((char*) bpm, 0, sizeof(int)*mb->vtop*2);
 
 	limit= mb->stop;
 	old = mb->stmt;
@@ -237,6 +237,7 @@ Skip the instructions that are not affected by partitions
 				localVar(mb,"bpm",getArg(p,0), getVarType(mb, getArg(p,0)));
 			freezeVarType(mb,q->argv[0]);
 			alias[getArg(p,0)]= getArg(q,0);
+			bpm[getArg(p,0)] = 1;
 			snprintf(name,1024,"%s_%s_%s",
 				getVarConstant(mb, getArg(p,1)).val.sval,
 				getVarConstant(mb, getArg(p,2)).val.sval,
@@ -259,28 +260,26 @@ Wrapup the last segment first
 		if(seg && *seg!=lastsegment && anchor){
 			if( anchor)
 			for(j=0; j< old[i-1]->retc; j++){
-				q = newStmt(mb,"list","append");
-				pushArgument(mb,q,list);
+				int tpe;
+				q = newStmt(mb,"bpm","addPartition");
+				pushArgument(mb,q,getArg(listanchor,0));
 				pushArgument(mb,q,getArg(old[i-1],j));
-				alias[getArg(old[i-1],j)]=list;
+				alias[getArg(old[i-1],j)]=getArg(listanchor,0);
+				tpe= getArgType(mb,old[i-1],j);
+				pushArgument(mb,listanchor,newTypeVariable(mb,getHeadType(tpe)));
+				pushArgument(mb,listanchor,newTypeVariable(mb,getTailType(tpe)));
 			}
-			for(j=anchor->argc-1; j>=anchor->retc; j--){
-				int tpe= getVarType(mb,alias[getArg(anchor,j)]);
-				if( tpe != TYPE_list && !isaBatType(tpe))
-					continue;
-				if(getVarType(mb,alias[getArg(anchor,j)]) == TYPE_list)
-					q = newStmt(mb,"list","hasMoreElements");
-				else
-					q = newStmt(mb,"bpm","hasMoreElements");
+			for(j=anchor->argc-1; j>= anchor->retc; j--)
+			if( isaBatType(getArgType(mb,anchor,j)) ){
+				q = newStmt(mb, bpmRef, "hasMoreElements");
 				q->barrier= REDOsymbol;
 				q->argv[0]= getArg(anchor,j);
-				pushArgument(mb, q, alias[getArg(anchor,j)]);
+				pushArgument(mb, q, 
+					(alias[getArg(anchor,j)]?alias[getArg(anchor,j)]:getArg(anchor,j)) );
 			}
 
-			for(j=anchor->argc-1; j>=anchor->retc; j--){
-				int tpe= getVarType(mb,alias[getArg(anchor,j)]);
-				if( tpe != TYPE_list && !isaBatType(tpe))
-					continue;
+			for(j=anchor->argc-1; j>=anchor->retc; j--)
+			if( isaBatType(getArgType(mb,anchor,j)) ){
 				q = newInstruction(mb,EXITsymbol);
 				q->barrier= EXITsymbol;
 				q->argv[0]= getArg(anchor,j);
@@ -292,16 +291,15 @@ Wrapup the last segment first
 		if( seg && *seg==last){
 			/* remap specific instructions to list versions */
 			if( getModuleId(p)==aggrRef  &&
-				alias[getArg(p,1)]!= getArg(p,1) &&
-                getVarType(mb,alias[getArg(p,1)]) == TYPE_list){
-				getModuleId(p)= listRef;
+				alias[getArg(p,1)]!= getArg(p,1)  ){
+				getModuleId(p)= bpmRef;
 				pushInstruction(mb,p);
+				getArg(p,1)= alias[getArg(p,1)];
 				continue;
 			}
 			for(j= p->retc; j<p->argc; j++)
-			if( alias[getArg(p,j)]!= getArg(p,j) && 
-				getVarType(mb,alias[getArg(p,j)]) == TYPE_list){
-				q = newStmt(mb,"list","glue");
+			if(alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j) ){
+				q = newStmt(mb,"bpm","glue");
 				q->argv[0]= getArg(p,j);
 				pushArgument(mb,q,alias[getArg(p,j)]);
 				alias[getArg(p,j)]= getArg(p,j);
@@ -315,24 +313,20 @@ Wrapup the last segment first
 @-
 Create the lists needed for all target variables
 and generator the iterators.
+Currently assume a single one.
 @c
 		if(*seg!=lastsegment && *seg != last){
 			for(j=0; j<p->retc; j++){
-				q = newStmt(mb,"list","new");
-				list= q->argv[0]=localVar(mb,"L",getArg(p,j), TYPE_list);
+				listanchor= q = newStmt(mb,"bpm","new");
 				alias[getArg(p,j)]= getArg(q,0);
 			}
-			for(j=p->retc; j<p->argc; j++){
-				int tpe= getVarType(mb,alias[getArg(p,j)]);
-				if( tpe != TYPE_list && !isaBatType(tpe))
-					continue;
-				if(tpe == TYPE_list)
-					q = newStmt(mb,"list","newIterator");
-				else
-					q = newStmt(mb,"bpm","newIterator");
+			for(j=p->retc; j<p->argc; j++)
+			if( isaBatType(getArgType(mb,p,j)) ){
+				q = newStmt(mb, bpmRef, "newIterator");
 				q->barrier= BARRIERsymbol;
 				q->argv[0]= getArg(p,j);
-				pushArgument(mb, q, alias[getArg(p,j)]);
+				pushArgument(mb, q, 
+					(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
 			}
 			anchor=p;
 		}

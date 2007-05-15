@@ -2,13 +2,13 @@
 # use a fake sql library
 module sql;
 pattern bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
-address MALLISTnew;
+address MDBdummy;
 pattern rsColumn(b:any...):void
-address MALLISTnew;
+address MDBdummy;
 pattern resultSet(b:any...):void
-address MALLISTnew;
+address MDBdummy;
 pattern exportResult(b:any...):void
-address MALLISTnew;
+address MDBdummy;
 
 function query(A0:sht):void;
     x1:bat[:oid,:int]{bid=812,rows=1,notnil=true}  := sql.bind("sys","x","i",0);

@@ -13,14 +13,14 @@ stdout of test 'partitions00` in directory 'src/optimizer` itself:
 ##testing the BAT partition manager
 ## use a fake sql library
 #module sql;
-#pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
-pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int] address MALLISTnew;	# 0  (bind:bat[:oid,:int])<-(s:str)(t:str)(i:str)(flag:int)
-#pattern sql.rsColumn(b:any...):void
-pattern sql.rsColumn(b:any...):void address MALLISTnew;	# 0  (rsColumn:void)<-(b:any)
-#pattern sql.resultSet(b:any...):void
-pattern sql.resultSet(b:any...):void address MALLISTnew;	# 0  (resultSet:void)<-(b:any)
-#pattern sql.exportResult(b:any...):void
-pattern sql.exportResult(b:any...):void address MALLISTnew;	# 0  (exportResult:void)<-(b:any)
+#pattern bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
+pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int] address MDBdummy;	# 0  (bind:bat[:oid,:int])<-(s:str)(t:str)(i:str)(flag:int)
+#pattern rsColumn(b:any...):void
+pattern sql.rsColumn(b:any...):void address MDBdummy;	# 0  (rsColumn:void)<-(b:any)
+#pattern resultSet(b:any...):void
+pattern sql.resultSet(b:any...):void address MDBdummy;	# 0  (resultSet:void)<-(b:any)
+#pattern exportResult(b:any...):void
+pattern sql.exportResult(b:any...):void address MDBdummy;	# 0  (exportResult:void)<-(b:any)
 #
 #function user.query();
 #    t1:bat[:oid,:int]:= sql.bind("sys","t","i",0);
@@ -32,13 +32,13 @@ pattern sql.exportResult(b:any...):void address MALLISTnew;	# 0  (exportResult:v
 #    sql.exportResult(t14,"");
 #end query;
 function sql.query():void;	# 0  (query:void)
-    t1:bat[:oid,:int]  := sql.bind("sys","t","i",0);	# 1 MALLISTnew (t1:bat[:oid,:int])<-(_2:str)(_3:str)(_4:str)(_5:int)
+    t1:bat[:oid,:int]  := sql.bind("sys","t","i",0);	# 1 MDBdummy (t1:bat[:oid,:int])<-(_2:str)(_3:str)(_4:str)(_5:int)
     t11 := algebra.markT(t1,0@0);	# 2 ALGtmark (t11:bat[:oid,:oid])<-(t1:bat[:oid,:int])(_7:oid)
     t12 := bat.reverse(t11);	# 3 BKCreverse (t12:bat[:oid,:oid])<-(t11:bat[:oid,:oid])
     t13 := algebra.join(t12,t1);	# 4 ALGjoin (t13:bat[:oid,:int])<-(t12:bat[:oid,:oid])(t1:bat[:oid,:int])
-    t14 := sql.resultSet(1,1,t13);	# 5 MALLISTnew (t14:void)<-(_11:int)(_11:int)(t13:bat[:oid,:int])
-    sql.rsColumn(t14,"sys.t","i","int",32,0,t13);	# 6 MALLISTnew (_12:void)<-(t14:void)(_13:str)(_4:str)(_14:str)(_15:int)(_5:int)(t13:bat[:oid,:int])
-    sql.exportResult(t14,"");	# 7 MALLISTnew (_16:void)<-(t14:void)(_17:str)
+    t14 := sql.resultSet(1,1,t13);	# 5 MDBdummy (t14:void)<-(_11:int)(_11:int)(t13:bat[:oid,:int])
+    sql.rsColumn(t14,"sys.t","i","int",32,0,t13);	# 6 MDBdummy (_12:void)<-(t14:void)(_13:str)(_4:str)(_14:str)(_15:int)(_5:int)(t13:bat[:oid,:int])
+    sql.exportResult(t14,"");	# 7 MDBdummy (_16:void)<-(t14:void)(_17:str)
 end query;	# 8  
 #optimizer.partitions("user","query");
 #
@@ -50,23 +50,23 @@ end main;	# 4
 function sql.query{segment=2}():void;
     t1:bat[:oid,:int]{segment=2}  := sql.bind("sys","t","i",0);
     bpm1:bat[:oid,:int]  := bpm.take("sys_t_i");
-    L6 := list.new();
+    _21 := bpm.new(:oid,:oid);
 barrier t1:bat[:oid,:int]{segment=2}  := bpm.newIterator(bpm1);
     t11{segment=2} := algebra.markT(t1,0@0);
     t12{segment=2} := bat.reverse(t11);
-    list.append(L6,t12);
+    bpm.addPartition(_21,t12);
     redo t1:bat[:oid,:int]{segment=2}  := bpm.hasMoreElements(bpm1);
 exit t1:bat[:oid,:int]{segment=2} ;
-    L9 := list.new();
-barrier t12{segment=2} := list.newIterator(L6);
+    _27 := bpm.new(:oid,:int);
+barrier t12{segment=2} := bpm.newIterator(_21);
 barrier t1:bat[:oid,:int]{segment=2}  := bpm.newIterator(bpm1);
     t13{segment=3} := algebra.join(t12,t1);
-    list.append(L9,t13);
+    bpm.addPartition(_27,t13);
     redo t1:bat[:oid,:int]{segment=2}  := bpm.hasMoreElements(bpm1);
-    redo t12{segment=2} := list.hasMoreElements(L6);
+    redo t12{segment=2} := bpm.hasMoreElements(_21);
 exit t1:bat[:oid,:int]{segment=2} ;
 exit t12{segment=2};
-    t13{segment=3} := list.glue(L9);
+    t13{segment=3} := bpm.glue(_27);
     t14{segment=4} := sql.resultSet(1,1,t13);
     sql.rsColumn(t14,"sys.t","i","int",32,0,t13);
     sql.exportResult(t14,"");
