@@ -1,15 +1,1787 @@
-stdout of test 'casts` in directory 'tests/gdkTests` itself:
-
-
-# 14:56:01 >  
-# 14:56:01 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52524 --set sql_port=56156 --set monet_prompt= --trace --dbname=mTests_src_gdk  < casts.milM
-# 14:56:01 >  
-
-# Monet Database Server V4.3.13
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs dynamically linked
+# dbname:demo
+# Visit http://monetdb.cwi.nl/ for further information
+#io.printf("# casting to int\n");
+#
+#io.print(0);
+#io.print(1);
+#io.print(32767);
+#io.print(32768);
+#io.print(32769);
+#io.print(2147483647);
+#io.print(2147483648);
+#io.print(2147483649);
+#io.print(-2147483647);
+#io.print(-2147483648);
+#io.print(-2147483649);
+#
+#io.printf("# from bit\n");
+#bi:= true:int; io.print(bi);
+#bi:= false:int; io.print(bi);
+#
+#io.printf("# from chr\n");
+#io.print('a':int);
+#
+#io.printf("# from sht\n");
+#sh:= 1:sht; si:= calc.int(sh); io.print(si);
+#sh:= 32767:sht; si:= calc.int(sh); io.print(si);
+#
+#io.printf("# from int\n");
+#io.print(1:int);
+#io.print(32767:int);
+#io.print(32768:int);
+#io.print(2147483647:int);
+#io.print(-2147483647:int);
+#i:= 2147483647:int+1:int;
+#io.print(i);
+#
+#z:= -2147483647:int - 1:int;
+#io.print(z);
+#io.printf("# should this produce nil (overflow)?\n");
+#z:= 2147483647:int + 2:int;
+#io.print(z);
+#io.printf("# should this produce nil (overflow)?\n");
+#z:= -2147483647:int - 2:int;
+#io.print(z);
+#
+#io.printf("# from lng\n");
+#io.print(1LL:int);
+#io.print(2147483647LL:int);
+#io.print(2147483648LL:int);
+#io.print(2147483649LL:int);
+#io.print(-2147483647LL:int);
+#io.print(-2147483648LL:int);
+#io.print(-2147483649LL:int);
+#
+#io.printf("# from flt\n");
+#io.print(0.0:int);
+#io.print(0.1:int);
+#io.print(0.5:int);
+#io.print(0.9:int);
+#io.print(1.0:int);
+#io.print(-0.1:int);
+#io.print(-0.5:int);
+#io.print(-0.9:int);
+#io.print(-1.0:int);
+#io.print(2147483647.0:int);
+#io.print(2147483648.0:int);
+#io.print(2147483649.0:int);
+#io.print(-2147483647.0:int);
+#io.print(-2147483648.0:int);
+#io.print(-2147483649.0:int);
+#
+#io.printf("# from dbl\n");
+#io.print(0.0LL:int);
+#io.print(0.1LL:int);
+#io.print(0.5LL:int);
+#io.print(0.9LL:int);
+#io.print(1.0LL:int);
+#io.print(-0.1LL:int);
+#io.print(-0.5LL:int);
+#io.print(-0.9LL:int);
+#io.print(-1.0LL:int);
+#io.print(2147483647.0LL:int);
+#io.print(2147483648.0LL:int);
+#io.print(2147483649.0LL:int);
+#io.print(-2147483647.0LL:int);
+#io.print(-2147483648.0LL:int);
+#io.print(-2147483649.0LL:int);
+#
+#io.printf("# from oid\n");
+#io.print(2@0:int);
+#io.print(2@1:int);
+#io.print(2147483647@0:int);
+#io.print(2147483648@0:int);
+#io.print(2147483649@0:int);
+#
+#io.printf("# from str\n");
+#io.print("0":int);
+#io.print("32767":int);
+#io.print("2147483647":int);
+#io.print("2147483648":int);
+#io.print("2147483649":int);
+#io.print("-2147483647":int);
+#io.print("-2147483648":int);
+#io.print("-2147483649":int);
+#io.print("":int);
+#io.print("random string":int);
+#
+#io.printf("# to bit\n");
+#
+#io.printf("# from bit\n");
+#io.print(true:bit);
+#io.print(false:bit);
+#
+#io.printf("# from chr\n");
+#io.print('a':bit);
+#c:= 0:chr;
+#b:= calc.bit(c);
+#io.print(b);
+#
+#io.printf("# from sht\n");
+#j:= 0:sht; b:= calc.bit(j); io.print(b);
+#j:= 1:sht; b:= calc.bit(j); io.print(b);
+#j:= -1:sht; b:= calc.bit(j); io.print(b);
+#j:= 4096:sht; b:= calc.bit(j); io.print(b);
+#
+#io.printf("# from int\n");
+#io.print(0:bit);
+#io.print(1:bit);
+#io.print(-1:bit);
+#io.print(4096:bit);
+#
+#io.printf("# from lng\n");
+#io.print(0LL:bit);
+#io.print(1LL:bit);
+#io.print(-1LL:bit);
+#io.print(4096LL:bit);
+#
+#io.printf("# from flt\n");
+#io.print(0.0:bit);
+#io.print(0.1:bit);
+#io.print(1.0:bit);
+#io.print(-0.1:bit);
+#io.print(-1.0:bit);
+#io.print(4096.0:bit);
+#
+#io.printf("# from dbl\n");
+#io.print(0.0LL:bit);
+#io.print(0.1LL:bit);
+#io.print(1.0LL:bit);
+#io.print(-0.1LL:bit);
+#io.print(-1.0LL:bit);
+#io.print(4096.0LL:bit);
+#
+#io.printf("# from oid\n");
+#io.print(0@0:bit);
+#io.print(1@0:bit);
+#io.print(4096@0:bit);
+#io.print(1073741824@0:bit);
+#io.print(2147483647@0:bit);
+#
+#io.printf("# from str\n");
+#io.print("true":bit);
+#io.print("false":bit);
+#io.print("0":bit);
+#io.print("1":bit);
+#io.print("random string":bit);
+#io.print("":bit);
+#
+#io.printf("# to sht\n");
+#
+#io.printf("# from bit\n");
+#io.print(true:sht);
+#io.print(false:sht);
+#
+#io.printf("# from chr\n");
+#io.print('a':sht);
+#c:= 0:chr; cs:= calc.sht(c); io.print(cs);
+#
+#io.printf("# from int\n");
+#io.print(0:sht);
+#io.print(32767:sht);
+#io.print(32768:sht);
+#io.print(32769:sht);
+#io.print(-32767:sht);
+#io.print(-32768:sht);
+#io.print(-32769:sht);
+#io.print(2147483647:sht);
+#
+#io.printf("# from lng\n");
+#io.print(0LL:sht);
+#io.print(32767LL:sht);
+#io.print(32768LL:sht);
+#io.print(32769LL:sht);
+#io.print(-32767LL:sht);
+#io.print(-32768LL:sht);
+#io.print(-32769LL:sht);
+#io.print(2147483647LL:sht);
+#
+#io.printf("# from flt\n");
+#io.print(0.0:sht);
+#io.print(0.1:sht);
+#io.print(0.5:sht);
+#io.print(0.9:sht);
+#io.print(1.0:sht);
+#io.print(-0.1:sht);
+#io.print(-0.5:sht);
+#io.print(-0.9:sht);
+#io.print(-1.0:sht);
+#io.print(32767.0:sht);
+#io.print(32768.0:sht);
+#io.print(32769.0:sht);
+#io.print(-32767.0:sht);
+#io.print(-32768.0:sht);
+#io.print(-32769.0:sht);
+#
+#io.printf("# from dbl\n");
+#io.print(0.0LL:sht);
+#io.print(0.1LL:sht);
+#io.print(0.5LL:sht);
+#io.print(0.9LL:sht);
+#io.print(1.0LL:sht);
+#io.print(-0.1LL:sht);
+#io.print(-0.5LL:sht);
+#io.print(-0.9LL:sht);
+#io.print(-1.0LL:sht);
+#io.print(32767.0LL:sht);
+#io.print(32768.0LL:sht);
+#io.print(32769.0LL:sht);
+#io.print(-32767.0LL:sht);
+#io.print(-32768.0LL:sht);
+#io.print(-32769.0LL:sht);
+#
+#io.printf("# from oid\n");
+#io.print(0@0:sht);
+#io.print(1@0:sht);
+#io.print(4096@0:sht);
+#io.print(1073741824@0:sht);
+#io.print(2147483647@0:sht);
+#
+#io.printf("# from str\n");
+#io.print("0":sht);
+#io.print("32767":sht);
+#io.print("32768":sht);
+#io.print("32769":sht);
+#io.print("-32767":sht);
+#io.print("-32768":sht);
+#io.print("-32769":sht);
+#io.print("":sht);
+#io.print("random string":sht);
+#
+#io.printf("# to long\n");
+#
+#io.print(0LL);
+#io.print(1LL);
+#io.print(32767LL);
+#io.print(32768LL);
+#io.print(32769LL);
+#io.print(2147483647LL);
+#io.print(2147483648LL);
+#io.print(2147483649LL);
+#io.print(-2147483647LL);
+#io.print(-2147483648LL);
+#io.print(-2147483649LL);
+#io.print(9223372036854775807LL);
+#io.print(9223372036854775808LL);
+#io.print(9223372036854775809LL);
+#io.print(-9223372036854775807LL);
+#io.print(-9223372036854775808LL);
+#io.print(-9223372036854775809LL);
+#
+#io.printf("# from bit\n");
+#io.print(true:lng);
+#io.print(false:lng);
+#
+#io.printf("# from chr\n");
+#io.print('a':lng);
+#
+#io.printf("# from sht\n");
+#ls:= 1:sht; ll:= calc.lng(ls); io.print(ll);
+#lk:= 32767:sht; ll:= calc.lng(lk); io.print(ll);
+#
+#io.printf("# from int\n");
+#io.print(1:lng);
+#io.print(32767:lng);
+#io.print(32768:lng);
+#io.print(2147483647:lng);
+#io.print(-2147483647:lng);
+#lz:= 2147483647 +1;
+#l:= calc.lng(lz);
+#io.print(l);
+#lu:= -2147483647 -1;
+#l:= calc.lng(lu);
+#io.print(l);
+#io.printf("# should this produce nil (overflow)?\n");
+#la:= 2147483647 +2;
+#io.print(la);
+#io.printf("# should this produce nil (overflow)?\n");
+#lb:= -2147483647 -2;
+#io.print(lb);
+#
+#io.printf("# from lng\n");
+#io.printf("# from flt\n");
+#io.print(0.0:lng);
+#io.print(0.1:lng);
+#io.print(0.5:lng);
+#io.print(0.9:lng);
+#io.print(1.0:lng);
+#io.print(-0.1:lng);
+#io.print(-0.5:lng);
+#io.print(-0.9:lng);
+#io.print(-1.0:lng);
+#io.print(2147483647.0:lng);
+#io.print(2147483648.0:lng);
+#io.print(2147483649.0:lng);
+#io.print(-2147483647.0:lng);
+#io.print(-2147483648.0:lng);
+#io.print(-2147483649.0:lng);
+#io.print(9223372036854775807.0:lng);
+#io.print(9223372036854775808.0:lng);
+#io.print(9223372036854775809.0:lng);
+#io.print(-9223372036854775807.0:lng);
+#io.print(-9223372036854775808.0:lng);
+#io.print(-9223372036854775809.0:lng);
+#
+#io.printf("# from dbl\n");
+#io.print(0.0LL:lng);
+#io.print(0.1LL:lng);
+#io.print(0.5LL:lng);
+#io.print(0.9LL:lng);
+#io.print(1.0LL:lng);
+#io.print(-0.1LL:lng);
+#io.print(-0.5LL:lng);
+#io.print(-0.9LL:lng);
+#io.print(-1.0LL:lng);
+#io.print(2147483647.0LL:lng);
+#io.print(2147483648.0LL:lng);
+#io.print(2147483649.0LL:lng);
+#io.print(-2147483647.0LL:lng);
+#io.print(-2147483648.0LL:lng);
+#io.print(-2147483649.0LL:lng);
+#io.print(9223372036854775807.0LL:lng);
+#io.print(9223372036854775808.0LL:lng);
+#io.print(9223372036854775809.0LL:lng);
+#io.print(-9223372036854775807.0LL:lng);
+#io.print(-9223372036854775808.0LL:lng);
+#io.print(-9223372036854775809.0LL:lng);
+#
+#io.printf("# from oid\n");
+#io.print(2@0:lng);
+#io.print(2@1:lng);
+#io.print(2147483647@0:lng);
+#io.print(2147483648@0:lng);
+#io.print(2147483649@0:lng);
+#io.print(9223372036854775807@0:lng);
+#io.print(9223372036854775808@0:lng);
+#io.print(9223372036854775809@0:lng);
+#
+#io.printf("# from str\n");
+#io.print("0":lng);
+#io.print("32767":lng);
+#io.print("2147483647":lng);
+#io.print("2147483648":lng);
+#io.print("2147483649":lng);
+#io.print("-2147483647":lng);
+#io.print("-2147483648":lng);
+#io.print("-2147483649":lng);
+#io.print("":lng);
+#io.print("random string":lng);
+#io.print("9223372036854775807":lng);
+#io.print("9223372036854775808":lng);
+#io.print("9223372036854775809":lng);
+#io.print("-9223372036854775807":lng);
+#io.print("-9223372036854775808":lng);
+#io.print("-9223372036854775809":lng);
+#
+#io.printf("# to flt\n");
+#
+#io.printf("# from bit\n");
+#io.print(true:flt);
+#io.print(false:flt);
+#
+#io.printf("# from chr\n");
+#io.print('a':flt);
+#
+#io.printf("# from sht\n");
+#s1:= 1:sht; f1:= calc.flt(s1); io.print(f1);
+#s1:= 32767:sht; f1:= calc.flt(s1); io.print(f1);
+#
+#io.printf("# from int\n");
+#io.print(1:flt);
+#io.print(32767:flt);
+#io.print(32768:flt);
+#io.print(2147483647:flt);
+#io.print(-2147483647:flt);
+#fl:= 2147483647+1;
+#f:= calc.flt(fl);
+#io.print(f);
+#fi:= -2147483647-1;
+#f:= calc.flt(fi);
+#io.print(f);
+#io.printf("# should this produce nil (overflow)?\n");
+#ff:= 2147483647+1;
+#f:= calc.flt(ff);
+#io.print(f);
+#io.printf("# should this produce nil (overflow)?\n");
+#fg:= -2147483647 -2;
+#f:= calc.flt(fg);
+#io.print(f);
+#
+#io.printf("# from lng\n");
+#io.print(1LL:flt);
+#io.print(2147483647LL:flt);
+#io.print(2147483648LL:flt);
+#io.print(2147483649LL:flt);
+#io.print(-2147483647LL:flt);
+#io.print(-2147483648LL:flt);
+#io.print(-2147483649LL:flt);
+#io.print(9223372036854775807LL:flt);
+#io.print(9223372036854775808LL:flt);
+#io.print(9223372036854775809LL:flt);
+#io.print(-9223372036854775807LL:flt);
+#io.print(-9223372036854775808LL:flt);
+#io.print(-9223372036854775809LL:flt);
+#
+#io.printf("# from dbl\n");
+#io.print(0.0LL:flt);
+#io.print(0.1LL:flt);
+#io.print(0.5LL:flt);
+#io.print(0.9LL:flt);
+#io.print(1.0LL:flt);
+#io.print(-0.1LL:flt);
+#io.print(-0.5LL:flt);
+#io.print(-0.9LL:flt);
+#io.print(-1.0LL:flt);
+#io.print(2147483647.0LL:flt);
+#io.print(2147483648.0LL:flt);
+#io.print(2147483649.0LL:flt);
+#io.print(-2147483647.0LL:flt);
+#io.print(-2147483648.0LL:flt);
+#io.print(-2147483649.0LL:flt);
+#
+#io.printf("# from oid\n");
+#io.print(2@0:flt);
+#io.print(2@1:flt);
+#io.print(2147483647@0:flt);
+#io.print(2147483648@0:flt);
+#io.print(2147483649@0:flt);
+#
+#io.printf("# from str\n");
+#io.print("0":flt);
+#io.print("32767":flt);
+#io.print("2147483647":flt);
+#io.print("2147483648":flt);
+#io.print("2147483649":flt);
+#io.print("-2147483647":flt);
+#io.print("-2147483648":flt);
+#io.print("-2147483649":flt);
+#io.print("0.0":flt);
+#io.print("0.1":flt);
+#io.print("1.0":flt);
+#io.print("1e0":flt);
+#io.print("1e1":flt);
+#io.print("1e10":flt);
+#io.print("1e+10":flt);
+#io.print("1e-10":flt);
+#io.print("1.e0":flt);
+#io.print("1.e1":flt);
+#io.print("1.e10":flt);
+#io.print("1.e+10":flt);
+#io.print("1.e-10":flt);
+#io.print("1.0e0":flt);
+#io.print("1.0e1":flt);
+#io.print("1.0e10":flt);
+#io.print("1.0e+10":flt);
+#io.print("1.0e-10":flt);
+#io.print("-0.0":flt);
+#io.print("-0.1":flt);
+#io.print("-1.0":flt);
+#io.print("-1e0":flt);
+#io.print("-1e1":flt);
+#io.print("-1e10":flt);
+#io.print("-1e+10":flt);
+#io.print("-1e-10":flt);
+#io.print("-1.e0":flt);
+#io.print("-1.e1":flt);
+#io.print("-1.e10":flt);
+#io.print("-1.e+10":flt);
+#io.print("-1.e-10":flt);
+#io.print("-1.0e0":flt);
+#io.print("-1.0e1":flt);
+#io.print("-1.0e10":flt);
+#io.print("-1.0e+10":flt);
+#io.print("-1.0e-10":flt);
+#io.print("1E0":flt);
+#io.print("1E1":flt);
+#io.print("1E10":flt);
+#io.print("1E+10":flt);
+#io.print("1E-10":flt);
+#io.print("1.E0":flt);
+#io.print("1.E1":flt);
+#io.print("1.E10":flt);
+#io.print("1.E+10":flt);
+#io.print("1.E-10":flt);
+#io.print("1.0E0":flt);
+#io.print("1.0E1":flt);
+#io.print("1.0E10":flt);
+#io.print("1.0E+10":flt);
+#io.print("1.0E-10":flt);
+#io.print("-1E0":flt);
+#io.print("-1E1":flt);
+#io.print("-1E10":flt);
+#io.print("-1E+10":flt);
+#io.print("-1E-10":flt);
+#io.print("-1.E0":flt);
+#io.print("-1.E1":flt);
+#io.print("-1.E10":flt);
+#io.print("-1.E+10":flt);
+#io.print("-1.E-10":flt);
+#io.print("-1.0E0":flt);
+#io.print("-1.0E1":flt);
+#io.print("-1.0E10":flt);
+#io.print("-1.0E+10":flt);
+#io.print("-1.0E-10":flt);
+#io.printf("# flt range is -3.402823466E+38F to 3.402823466E+38F which is\n");
+#io.printf("# -3.4028234663852886e+38 to 3.4028234663852886e+38 in double\n");
+#io.printf("# precission\n");
+#io.print("340282347000000000000000000000000000000":flt);
+#io.print("340282346600000000000000000000000000000":flt);
+#io.print("340282346700000000000000000000000000000":flt);
+#io.print("-340282346600000000000000000000000000000":flt);
+#io.print("-340282346700000000000000000000000000000":flt);
+#io.print("3.402823466E+38":flt);
+#io.print("3.402823467E+38":flt);
+#io.print("0.3402823466E+39":flt);
+#io.print("34.02823466E+37":flt);
+#io.print("-3.402823466E+38":flt);
+#io.print("-3.402823467E+38":flt);
+#io.print("-0.3402823466E+39":flt);
+#io.print("-34.02823466E+37":flt);
+#io.print("":flt);
+#io.print("random string":flt);
+#
+#io.printf("# to dbl\n");
+#
+#io.printf("# from bit\n");
+#io.print(true:dbl);
+#io.print(false:dbl);
+#
+#io.printf("# from chr\n");
+#io.print('a':dbl);
+#
+#io.printf("# from sht\n");
+#a:= 1:sht;
+#d1:= calc.dbl(a);
+#io.print(d1);
+#a:= 32767:sht;
+#d1:= calc.dbl(a);
+#io.print(d1);
+#
+#io.printf("# from int\n");
+#io.print(1:dbl);
+#io.print(32767:dbl);
+#io.print(32768:dbl);
+#io.print(2147483647:dbl);
+#io.print(-2147483647:dbl);
+#zd:= 2147483647 + 1;
+#ze:= calc.dbl(zd);
+#io.print(zd);
+#zj:= -2147483647 - 1;
+#d:= calc.dbl(zj);
+#io.print(d);
+#io.printf("# should this produce nil (overflow)?\n");
+#zn:= 2147483647 + 2;
+#d:= calc.dbl(zn);
+#io.print(d);
+#io.printf("# should this produce nil (overflow)?\n");
+#zk:= -2147483647 - 2l;
+#d:= calc.dbl(zk);
+#io.print(d);
+#
+#io.printf("# from lng\n");
+#io.print(1LL:dbl);
+#io.print(2147483647LL:dbl);
+#io.print(2147483648LL:dbl);
+#io.print(2147483649LL:dbl);
+#io.print(-2147483647LL:dbl);
+#io.print(-2147483648LL:dbl);
+#io.print(-2147483649LL:dbl);
+#io.print(9223372036854775807LL:dbl);
+#io.print(9223372036854775808LL:dbl);
+#io.print(9223372036854775809LL:dbl);
+#io.print(-9223372036854775807LL:dbl);
+#io.print(-9223372036854775808LL:dbl);
+#io.print(-9223372036854775809LL:dbl);
+#
+#io.printf("# from flt\n");
+#io.print(0.0:dbl);
+#io.print(0.1:dbl);
+#io.print(0.5:dbl);
+#io.print(0.9:dbl);
+#io.print(1.0:dbl);
+#io.print(-0.1:dbl);
+#io.print(-0.5:dbl);
+#io.print(-0.9:dbl);
+#io.print(-1.0:dbl);
+#io.print(2147483647.0:dbl);
+#io.print(2147483648.0:dbl);
+#io.print(2147483649.0:dbl);
+#io.print(-2147483647.0:dbl);
+#io.print(-2147483648.0:dbl);
+#io.print(-2147483649.0:dbl);
+#
+#io.printf("# from oid\n");
+#io.print(2@0:dbl);
+#io.print(2@1:dbl);
+#io.print(2147483647@0:dbl);
+#io.print(2147483648@0:dbl);
+#io.print(2147483649@0:dbl);
+#
+#io.printf("# from str\n");
+#io.print("0":dbl);
+#io.print("32767":dbl);
+#io.print("2147483647":dbl);
+#io.print("2147483648":dbl);
+#io.print("2147483649":dbl);
+#io.print("-2147483647":dbl);
+#io.print("-2147483648":dbl);
+#io.print("-2147483649":dbl);
+#io.print("0.0":dbl);
+#io.print("0.1":dbl);
+#io.print("1.0":dbl);
+#io.print("1e0":dbl);
+#io.print("1e1":dbl);
+#io.print("1e10":dbl);
+#io.print("1e+10":dbl);
+#io.print("1e-10":dbl);
+#io.print("1.e0":dbl);
+#io.print("1.e1":dbl);
+#io.print("1.e10":dbl);
+#io.print("1.e+10":dbl);
+#io.print("1.e-10":dbl);
+#io.print("1.0e0":dbl);
+#io.print("1.0e1":dbl);
+#io.print("1.0e10":dbl);
+#io.print("1.0e+10":dbl);
+#io.print("1.0e-10":dbl);
+#io.print("-0.0":dbl);
+#io.print("-0.1":dbl);
+#io.print("-1.0":dbl);
+#io.print("-1e0":dbl);
+#io.print("-1e1":dbl);
+#io.print("-1e10":dbl);
+#io.print("-1e+10":dbl);
+#io.print("-1e-10":dbl);
+#io.print("-1.e0":dbl);
+#io.print("-1.e1":dbl);
+#io.print("-1.e10":dbl);
+#io.print("-1.e+10":dbl);
+#io.print("-1.e-10":dbl);
+#io.print("-1.0e0":dbl);
+#io.print("-1.0e1":dbl);
+#io.print("-1.0e10":dbl);
+#io.print("-1.0e+10":dbl);
+#io.print("-1.0e-10":dbl);
+#io.print("1E0":dbl);
+#io.print("1E1":dbl);
+#io.print("1E10":dbl);
+#io.print("1E+10":dbl);
+#io.print("1E-10":dbl);
+#io.print("1.E0":dbl);
+#io.print("1.E1":dbl);
+#io.print("1.E10":dbl);
+#io.print("1.E+10":dbl);
+#io.print("1.E-10":dbl);
+#io.print("1.0E0":dbl);
+#io.print("1.0E1":dbl);
+#io.print("1.0E10":dbl);
+#io.print("1.0E+10":dbl);
+#io.print("1.0E-10":dbl);
+#io.print("-1E0":dbl);
+#io.print("-1E1":dbl);
+#io.print("-1E10":dbl);
+#io.print("-1E+10":dbl);
+#io.print("-1E-10":dbl);
+#io.print("-1.E0":dbl);
+#io.print("-1.E1":dbl);
+#io.print("-1.E10":dbl);
+#io.print("-1.E+10":dbl);
+#io.print("-1.E-10":dbl);
+#io.print("-1.0E0":dbl);
+#io.print("-1.0E1":dbl);
+#io.print("-1.0E10":dbl);
+#io.print("-1.0E+10":dbl);
+#io.print("-1.0E-10":dbl);
+#io.print("340282346600000000000000000000000000000":dbl);
+#io.print("340282346700000000000000000000000000000":dbl);
+#io.print("-340282346600000000000000000000000000000":dbl);
+#io.print("-340282346700000000000000000000000000000":dbl);
+#io.print("3.402823466E+38":dbl);
+#io.print("3.402823467E+38":dbl);
+#io.print("0.3402823466E+39":dbl);
+#io.print("34.02823466E+37":dbl);
+#io.print("-3.402823466E+38":dbl);
+#io.print("-3.402823467E+38":dbl);
+#io.print("-0.3402823466E+39":dbl);
+#io.print("-34.02823466E+37":dbl);
+#io.printf("# dbl range is -1.7976931348623157E+308 to 1.7976931348623157E+308.\n");
+#io.print("179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000":dbl);
+#io.print("179769313486231580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000":dbl);
+#io.print("-179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000":dbl);
+#io.print("-179769313486231580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000":dbl);
+#io.print("1.7976931348623157E+308":dbl);
+#io.print("1.7976931348623158E+308":dbl);
+#io.print("0.17976931348623157E+309":dbl);
+#io.print("17.976931348623157E+307":dbl);
+#io.print("-1.7976931348623157E+308":dbl);
+#io.print("-1.7976931348623158E+308":dbl);
+#io.print("-0.17976931348623157E+309":dbl);
+#io.print("-17.976931348623157E+307":dbl);
+#io.print("":dbl);
+#io.print("random string":dbl);
+#
+#io.printf("# to oid\n");
+#
+#io.printf("# from bit\n");
+#io.print(true:oid);
+#io.print(false:oid);
+#
+#io.printf("# from chr\n");
+#io.print('a':oid);
+#
+#io.printf("# from sht\n");
+#o1:= 1:sht; o2:= calc.oid(o1); io.print(o2);
+#o1:= 32767:sht; o2:= calc.oid(o1); io.print(o2);
+#
+#io.printf("# from int\n");
+#io.print(1:oid);
+#io.print(32767:oid);
+#io.print(32768:oid);
+#io.print(2147483647:oid);
+#o9:= -2147483647; o:= calc.oid(o9); io.print(o);
+#o3:= 2147483647 +1; o:= calc.oid(o3); io.print(o);
+#o4:= -2147483647 -1; o:= calc.oid(o4); io.print(o);
+#io.printf("# should this produce nil (overflow)?\n");
+#o5:= 2147483647 +2; o:=calc.oid(o5); io.print(o);
+#io.printf("# should this produce nil (overflow)?\n");
+#o6:= -2147483647 -2; o:=calc.oid(o6); io.print(o);
+#
+#io.printf("# from lng\n");
+#io.print(1LL:oid);
+#io.print(2147483647LL:oid);
+#ol3:= 2147483647LL; o:= calc.oid(ol3); io.print(o);
+#io.print(2147483648LL:oid);
+#ol3:= 2147483648LL; o:= calc.oid(ol3); io.print(o);
+#io.print(2147483649LL:oid);
+#ol3:= 2147483649LL; o:= calc.oid(ol3); io.print(o);
+#io.print(-2147483647LL:oid);
+#io.print(-2147483648LL:oid);
+#io.print(-2147483649LL:oid);
+#
+#io.printf("# from flt\n");
+#io.print(0.0:oid);
+#io.print(0.1:oid);
+#io.print(0.5:oid);
+#io.print(0.9:oid);
+#io.print(1.0:oid);
+#io.print(-0.1:oid);
+#io.print(-0.5:oid);
+#io.print(-0.9:oid);
+#io.print(-1.0:oid);
+#io.print(2147483647.0:oid);
+#io.print(2147483648.0:oid);
+#io.print(2147483649.0:oid);
+#io.print(-2147483647.0:oid);
+#io.print(-2147483648.0:oid);
+#io.print(-2147483649.0:oid);
+#
+#io.printf("# from dbl\n");
+#io.print(0.0LL:oid);
+#io.print(0.1LL:oid);
+#io.print(0.5LL:oid);
+#io.print(0.9LL:oid);
+#io.print(1.0LL:oid);
+#io.print(-0.1LL:oid);
+#io.print(-0.5LL:oid);
+#io.print(-0.9LL:oid);
+#io.print(-1.0LL:oid);
+#io.print(2147483647.0LL:oid);
+#io.print(2147483648.0LL:oid);
+#io.print(2147483649.0LL:oid);
+#io.print(-2147483647.0LL:oid);
+#io.print(-2147483648.0LL:oid);
+#io.print(-2147483649.0LL:oid);
+#
+#io.printf("# from oid\n");
+#io.print(2@0:oid);
+#io.print(2@1:oid);
+#io.print(2147483647@0:oid);
+#io.print(2147483648@0:oid);
+#io.print(2147483649@0:oid);
+#
+#io.printf("# from str\n");
+#io.print("0":oid);
+#io.print("32767":oid);
+#io.print("2147483647":oid);
+#io.print("2147483648":oid);
+#io.print("2147483649":oid);
+#io.print("-2147483647":oid);
+#io.print("-2147483648":oid);
+#io.print("-2147483649":oid);
+#io.print("":oid);
+#io.print("random string":oid);
+#
+#
+#io.printf("# to str\n");
+#
+#io.printf("# from bit\n");
+#io.print(true:str);
+#io.print(false:str);
+#
+#io.printf("# from chr\n");
+#io.print('a':str);
+#
+#io.printf("# from sht\n");
+#s4:= 1:sht; s5:= calc.str(s4); io.print(s5);
+#s4:= 32767:sht; s5:= calc.str(s4); io.print(s5);
+#
+#io.printf("# from int\n");
+#io.print(1:str);
+#io.print(32767:str);
+#io.print(32768:str);
+#io.print(2147483647:str);
+#io.print(-2147483647:str);
+#wd:= 2147483647:int +1; sv:= calc.str(wd); io.print(sv);
+#wc:= -2147483647 -1; sv:= calc.str(wc); io.print(sv);
+#io.printf("# should this produce nil (overflow)?\n");
+#we:= 2147483647:int +2; sv:= calc.str(we); io.print(sv);
+#io.printf("# should this produce nil (overflow)?\n");
+#wb:= -2147483647 -2; sv:= calc.str(wb); io.print(sv);
+#
+#io.printf("# from lng\n");
+#io.print(1LL:str);
+#io.print(2147483647LL:str);
+#io.print(2147483648LL:str);
+#io.print(2147483649LL:str);
+#io.print(-2147483647LL:str);
+#io.print(-2147483648LL:str);
+#io.print(-2147483649LL:str);
+#
+#io.printf("# from flt\n");
+#io.print(0.0:str);
+#io.print(0.1:str);
+#io.print(0.5:str);
+#io.print(0.9:str);
+#io.print(1.0:str);
+#io.print(-0.1:str);
+#io.print(-0.5:str);
+#io.print(-0.9:str);
+#io.print(-1.0:str);
+#io.print(2147483647.0:str);
+#io.print(2147483648.0:str);
+#io.print(2147483649.0:str);
+#io.print(-2147483647.0:str);
+#io.print(-2147483648.0:str);
+#io.print(-2147483649.0:str);
+#
+#io.printf("# from dbl\n");
+#io.print(0.0LL:str);
+#io.print(0.1LL:str);
+#io.print(0.5LL:str);
+#io.print(0.9LL:str);
+#io.print(1.0LL:str);
+#io.print(-0.1LL:str);
+#io.print(-0.5LL:str);
+#io.print(-0.9LL:str);
+#io.print(-1.0LL:str);
+#io.print(2147483647.0LL:str);
+#io.print(2147483648.0LL:str);
+#io.print(2147483649.0LL:str);
+#io.print(-2147483647.0LL:str);
+#io.print(-2147483648.0LL:str);
+#io.print(-2147483649.0LL:str);
+#
+#io.printf("# from oid\n");
+#io.print(2@0:str);
+#io.print(2@1:str);
+#io.print(2147483647@0:str);
+#io.print(2147483648@0:str);
+#io.print(2147483649@0:str);
+#
+#io.printf("# from str\n");
+#io.print("0":str);
+#io.print("32767":str);
+#io.print("2147483647":str);
+#io.print("2147483648":str);
+#io.print("2147483649":str);
+#io.print("-2147483647":str);
+#io.print("-2147483648":str);
+#io.print("-2147483649":str);
+#io.print("":str);
+#io.print("random string":str);
+#
+function user.main():void;	# 0  (main:void)
+    io.printf("# casting to int\n");	# 1 IOprint_str (_1:void)<-(_2:str)
+    io.print(0:int);	# 2 IOprint_val (_3:void)<-(_4:int)
+    io.print(1:int);	# 3 IOprint_val (_5:void)<-(_6:int)
+    io.print(32767);	# 4 IOprint_val (_7:void)<-(_8:int)
+    io.print(32768);	# 5 IOprint_val (_9:void)<-(_10:int)
+    io.print(32769);	# 6 IOprint_val (_11:void)<-(_12:int)
+    io.print(2147483647);	# 7 IOprint_val (_13:void)<-(_14:int)
+    io.print(2147483648);	# 8 IOprint_val (_15:void)<-(_16:lng)
+    io.print(2147483649);	# 9 IOprint_val (_17:void)<-(_18:lng)
+    io.print(-2147483647:int);	# 10 IOprint_val (_19:void)<-(_20:int)
+    io.print(-2147483648);	# 11 IOprint_val (_21:void)<-(_22:lng)
+    io.print(-2147483649);	# 12 IOprint_val (_23:void)<-(_24:lng)
+    io.printf("# from bit\n");	# 13 IOprint_str (_25:void)<-(_26:str)
+    bi := 1:int;	# 14  (bi:int)<-(_6:int)
+    io.print(bi);	# 15 IOprint_val (_28:void)<-(bi:int)
+    bi := 0:int;	# 16  (bi:int)<-(_4:int)
+    io.print(bi);	# 17 IOprint_val (_29:void)<-(bi:int)
+    io.printf("# from chr\n");	# 18 IOprint_str (_30:void)<-(_31:str)
+    io.print(97:int);	# 19 IOprint_val (_32:void)<-(_33:int)
+    io.printf("# from sht\n");	# 20 IOprint_str (_34:void)<-(_35:str)
+    sh := 1:sht;	# 21  (sh:sht)<-(_37:sht)
+    si := calc.int(sh);	# 22 CALCsht2int (si:int)<-(sh:sht)
+    io.print(si);	# 23 IOprint_val (_39:void)<-(si:int)
+    sh := 32767:sht;	# 24  (sh:sht)<-(_40:sht)
+    si := calc.int(sh);	# 25 CALCsht2int (si:int)<-(sh:sht)
+    io.print(si);	# 26 IOprint_val (_41:void)<-(si:int)
+    io.printf("# from int\n");	# 27 IOprint_str (_42:void)<-(_43:str)
+    io.print(1:int);	# 28 IOprint_val (_44:void)<-(_45:int)
+    io.print(32767:int);	# 29 IOprint_val (_46:void)<-(_47:int)
+    io.print(32768:int);	# 30 IOprint_val (_48:void)<-(_49:int)
+    io.print(2147483647:int);	# 31 IOprint_val (_50:void)<-(_51:int)
+    io.print(-2147483647:int);	# 32 IOprint_val (_52:void)<-(_20:int)
+    i := calc.+(2147483647:int,1:int);	# 33 CALCbinaryADDintint (i:int)<-(_51:int)(_45:int)
+    io.print(i);	# 34 IOprint_val (_54:void)<-(i:int)
+    z := calc.-(-2147483647:int,1:int);	# 35 CALCbinarySUBintint (z:int)<-(_20:int)(_45:int)
+    io.print(z);	# 36 IOprint_val (_56:void)<-(z:int)
+    io.printf("# should this produce nil (overflow)?\n");	# 37 IOprint_str (_57:void)<-(_58:str)
+    z := calc.+(2147483647:int,2:int);	# 38 CALCbinaryADDintint (z:int)<-(_51:int)(_59:int)
+    io.print(z);	# 39 IOprint_val (_60:void)<-(z:int)
+    io.printf("# should this produce nil (overflow)?\n");	# 40 IOprint_str (_61:void)<-(_58:str)
+    z := calc.-(-2147483647:int,2:int);	# 41 CALCbinarySUBintint (z:int)<-(_62:int)(_59:int)
+    io.print(z);	# 42 IOprint_val (_63:void)<-(z:int)
+    io.printf("# from lng\n");	# 43 IOprint_str (_64:void)<-(_65:str)
+    io.print(1:int);	# 44 IOprint_val (_66:void)<-(_45:int)
+    io.print(2147483647:int);	# 45 IOprint_val (_67:void)<-(_51:int)
+    io.print(nil:int);	# 46 IOprint_val (_68:void)<-(_69:int)
+    io.print(nil:int);	# 47 IOprint_val (_70:void)<-(_69:int)
+    io.print(-2147483647:int);	# 48 IOprint_val (_71:void)<-(_62:int)
+    io.print(nil:int);	# 49 IOprint_val (_72:void)<-(_69:int)
+    io.print(nil:int);	# 50 IOprint_val (_73:void)<-(_69:int)
+    io.printf("# from flt\n");	# 51 IOprint_str (_74:void)<-(_75:str)
+    io.print(0:int);	# 52 IOprint_val (_76:void)<-(_77:int)
+    io.print(0:int);	# 53 IOprint_val (_78:void)<-(_77:int)
+    io.print(0:int);	# 54 IOprint_val (_79:void)<-(_77:int)
+    io.print(0:int);	# 55 IOprint_val (_80:void)<-(_77:int)
+    io.print(1:int);	# 56 IOprint_val (_81:void)<-(_82:int)
+    io.print(0:int);	# 57 IOprint_val (_83:void)<-(_77:int)
+    io.print(0:int);	# 58 IOprint_val (_84:void)<-(_77:int)
+    io.print(0:int);	# 59 IOprint_val (_85:void)<-(_77:int)
+    io.print(-1:int);	# 60 IOprint_val (_86:void)<-(_87:int)
+    io.print(nil:int);	# 61 IOprint_val (_88:void)<-(_69:int)
+    io.print(nil:int);	# 62 IOprint_val (_89:void)<-(_69:int)
+    io.print(nil:int);	# 63 IOprint_val (_90:void)<-(_69:int)
+    io.print(nil:int);	# 64 IOprint_val (_91:void)<-(_69:int)
+    io.print(nil:int);	# 65 IOprint_val (_92:void)<-(_69:int)
+    io.print(nil:int);	# 66 IOprint_val (_93:void)<-(_69:int)
+    io.printf("# from dbl\n");	# 67 IOprint_str (_94:void)<-(_95:str)
+    io.print(0:int);	# 68 IOprint_val (_96:void)<-(_77:int)
+    io.print(0:int);	# 69 IOprint_val (_97:void)<-(_77:int)
+    io.print(0:int);	# 70 IOprint_val (_98:void)<-(_77:int)
+    io.print(0:int);	# 71 IOprint_val (_99:void)<-(_77:int)
+    io.print(1:int);	# 72 IOprint_val (_100:void)<-(_82:int)
+    io.print(0:int);	# 73 IOprint_val (_101:void)<-(_77:int)
+    io.print(0:int);	# 74 IOprint_val (_102:void)<-(_77:int)
+    io.print(0:int);	# 75 IOprint_val (_103:void)<-(_77:int)
+    io.print(-1:int);	# 76 IOprint_val (_104:void)<-(_87:int)
+    io.print(2147483647:int);	# 77 IOprint_val (_105:void)<-(_106:int)
+    io.print(nil:int);	# 78 IOprint_val (_107:void)<-(_108:int)
+    io.print(nil:int);	# 79 IOprint_val (_109:void)<-(_108:int)
+    io.print(-2147483647:int);	# 80 IOprint_val (_110:void)<-(_111:int)
+    io.print(nil:int);	# 81 IOprint_val (_112:void)<-(_108:int)
+    io.print(nil:int);	# 82 IOprint_val (_113:void)<-(_108:int)
+    io.printf("# from oid\n");	# 83 IOprint_str (_114:void)<-(_115:str)
+    io.print(2:int);	# 84 IOprint_val (_116:void)<-(_117:int)
+    io.print(2:int);	# 85 IOprint_val (_118:void)<-(_117:int)
+    io.print(2147483647:int);	# 86 IOprint_val (_119:void)<-(_106:int)
+    io.print(nil:int);	# 87 IOprint_val (_120:void)<-(_108:int)
+    io.print(nil:int);	# 88 IOprint_val (_121:void)<-(_108:int)
+    io.printf("# from str\n");	# 89 IOprint_str (_122:void)<-(_123:str)
+    io.print(0:int);	# 90 IOprint_val (_124:void)<-(_125:int)
+    io.print(32767:int);	# 91 IOprint_val (_126:void)<-(_127:int)
+    io.print(2147483647:int);	# 92 IOprint_val (_128:void)<-(_106:int)
+    io.print(nil:int);	# 93 IOprint_val (_129:void)<-(_108:int)
+    io.print(nil:int);	# 94 IOprint_val (_130:void)<-(_108:int)
+    io.print(-2147483647:int);	# 95 IOprint_val (_131:void)<-(_111:int)
+    io.print(nil:int);	# 96 IOprint_val (_132:void)<-(_108:int)
+    io.print(nil:int);	# 97 IOprint_val (_133:void)<-(_108:int)
+    io.print(nil:int);	# 98 IOprint_val (_134:void)<-(_108:int)
+    io.print(nil:int);	# 99 IOprint_val (_135:void)<-(_108:int)
+    io.printf("# to bit\n");	# 100 IOprint_str (_136:void)<-(_137:str)
+    io.printf("# from bit\n");	# 101 IOprint_str (_138:void)<-(_139:str)
+    io.print(true:bit);	# 102 IOprint_val (_140:void)<-(_141:bit)
+    io.print(false:bit);	# 103 IOprint_val (_142:void)<-(_143:bit)
+    io.printf("# from chr\n");	# 104 IOprint_str (_144:void)<-(_145:str)
+    io.print(true:bit);	# 105 IOprint_val (_146:void)<-(_141:bit)
+    c := '\000':chr;	# 106  (c:chr)<-(_148:chr)
+    b := calc.bit(c);	# 107 CALCchr2bit (b:bit)<-(c:chr)
+    io.print(b);	# 108 IOprint_val (_150:void)<-(b:bit)
+    io.printf("# from sht\n");	# 109 IOprint_str (_151:void)<-(_152:str)
+    j := 0:sht;	# 110  (j:sht)<-(_154:sht)
+    b := calc.bit(j);	# 111 CALCsht2bit (b:bit)<-(j:sht)
+    io.print(b);	# 112 IOprint_val (_155:void)<-(b:bit)
+    j := 1:sht;	# 113  (j:sht)<-(_156:sht)
+    b := calc.bit(j);	# 114 CALCsht2bit (b:bit)<-(j:sht)
+    io.print(b);	# 115 IOprint_val (_157:void)<-(b:bit)
+    j := -1:sht;	# 116  (j:sht)<-(_158:sht)
+    b := calc.bit(j);	# 117 CALCsht2bit (b:bit)<-(j:sht)
+    io.print(b);	# 118 IOprint_val (_159:void)<-(b:bit)
+    j := 4096:sht;	# 119  (j:sht)<-(_160:sht)
+    b := calc.bit(j);	# 120 CALCsht2bit (b:bit)<-(j:sht)
+    io.print(b);	# 121 IOprint_val (_161:void)<-(b:bit)
+    io.printf("# from int\n");	# 122 IOprint_str (_162:void)<-(_163:str)
+    io.print(false:bit);	# 123 IOprint_val (_164:void)<-(_143:bit)
+    io.print(true:bit);	# 124 IOprint_val (_165:void)<-(_141:bit)
+    io.print(true:bit);	# 125 IOprint_val (_166:void)<-(_141:bit)
+    io.print(true:bit);	# 126 IOprint_val (_167:void)<-(_141:bit)
+    io.printf("# from lng\n");	# 127 IOprint_str (_168:void)<-(_169:str)
+    io.print(false:bit);	# 128 IOprint_val (_170:void)<-(_143:bit)
+    io.print(true:bit);	# 129 IOprint_val (_171:void)<-(_141:bit)
+    io.print(true:bit);	# 130 IOprint_val (_172:void)<-(_141:bit)
+    io.print(true:bit);	# 131 IOprint_val (_173:void)<-(_141:bit)
+    io.printf("# from flt\n");	# 132 IOprint_str (_174:void)<-(_175:str)
+    io.print(false:bit);	# 133 IOprint_val (_176:void)<-(_143:bit)
+    io.print(true:bit);	# 134 IOprint_val (_177:void)<-(_178:bit)
+    io.print(true:bit);	# 135 IOprint_val (_179:void)<-(_178:bit)
+    io.print(true:bit);	# 136 IOprint_val (_180:void)<-(_178:bit)
+    io.print(true:bit);	# 137 IOprint_val (_181:void)<-(_178:bit)
+    io.print(true:bit);	# 138 IOprint_val (_182:void)<-(_178:bit)
+    io.printf("# from dbl\n");	# 139 IOprint_str (_183:void)<-(_184:str)
+    io.print(false:bit);	# 140 IOprint_val (_185:void)<-(_186:bit)
+    io.print(true:bit);	# 141 IOprint_val (_187:void)<-(_178:bit)
+    io.print(true:bit);	# 142 IOprint_val (_188:void)<-(_178:bit)
+    io.print(true:bit);	# 143 IOprint_val (_189:void)<-(_178:bit)
+    io.print(true:bit);	# 144 IOprint_val (_190:void)<-(_178:bit)
+    io.print(true:bit);	# 145 IOprint_val (_191:void)<-(_178:bit)
+    io.printf("# from oid\n");	# 146 IOprint_str (_192:void)<-(_193:str)
+    io.print(false:bit);	# 147 IOprint_val (_194:void)<-(_186:bit)
+    io.print(true:bit);	# 148 IOprint_val (_195:void)<-(_178:bit)
+    io.print(true:bit);	# 149 IOprint_val (_196:void)<-(_178:bit)
+    io.print(true:bit);	# 150 IOprint_val (_197:void)<-(_178:bit)
+    io.print(true:bit);	# 151 IOprint_val (_198:void)<-(_178:bit)
+    io.printf("# from str\n");	# 152 IOprint_str (_199:void)<-(_200:str)
+    io.print(true:bit);	# 153 IOprint_val (_201:void)<-(_178:bit)
+    io.print(false:bit);	# 154 IOprint_val (_202:void)<-(_186:bit)
+    io.print(false:bit);	# 155 IOprint_val (_203:void)<-(_186:bit)
+    io.print(true:bit);	# 156 IOprint_val (_204:void)<-(_178:bit)
+    io.print(nil:bit);	# 157 IOprint_val (_205:void)<-(_206:bit)
+    io.print(nil:bit);	# 158 IOprint_val (_207:void)<-(_206:bit)
+    io.printf("# to sht\n");	# 159 IOprint_str (_208:void)<-(_209:str)
+    io.printf("# from bit\n");	# 160 IOprint_str (_210:void)<-(_211:str)
+    io.print(1:sht);	# 161 IOprint_val (_212:void)<-(_213:sht)
+    io.print(0:sht);	# 162 IOprint_val (_214:void)<-(_215:sht)
+    io.printf("# from chr\n");	# 163 IOprint_str (_216:void)<-(_217:str)
+    io.print(97:sht);	# 164 IOprint_val (_218:void)<-(_219:sht)
+    c := '\000':chr;	# 165  (c:chr)<-(_220:chr)
+    cs := calc.sht(c);	# 166 CALCchr2sht (cs:sht)<-(c:chr)
+    io.print(cs);	# 167 IOprint_val (_222:void)<-(cs:sht)
+    io.printf("# from int\n");	# 168 IOprint_str (_223:void)<-(_224:str)
+    io.print(0:sht);	# 169 IOprint_val (_225:void)<-(_215:sht)
+    io.print(32767:sht);	# 170 IOprint_val (_226:void)<-(_227:sht)
+    io.print(nil:sht);	# 171 IOprint_val (_228:void)<-(_229:sht)
+    io.print(nil:sht);	# 172 IOprint_val (_230:void)<-(_229:sht)
+    io.print(-32767:sht);	# 173 IOprint_val (_231:void)<-(_232:sht)
+    io.print(nil:sht);	# 174 IOprint_val (_233:void)<-(_229:sht)
+    io.print(nil:sht);	# 175 IOprint_val (_234:void)<-(_229:sht)
+    io.print(nil:sht);	# 176 IOprint_val (_235:void)<-(_229:sht)
+    io.printf("# from lng\n");	# 177 IOprint_str (_236:void)<-(_237:str)
+    io.print(0:sht);	# 178 IOprint_val (_238:void)<-(_215:sht)
+    io.print(32767:sht);	# 179 IOprint_val (_239:void)<-(_227:sht)
+    io.print(nil:sht);	# 180 IOprint_val (_240:void)<-(_229:sht)
+    io.print(nil:sht);	# 181 IOprint_val (_241:void)<-(_229:sht)
+    io.print(-32767:sht);	# 182 IOprint_val (_242:void)<-(_232:sht)
+    io.print(nil:sht);	# 183 IOprint_val (_243:void)<-(_229:sht)
+    io.print(nil:sht);	# 184 IOprint_val (_244:void)<-(_229:sht)
+    io.print(nil:sht);	# 185 IOprint_val (_245:void)<-(_229:sht)
+    io.printf("# from flt\n");	# 186 IOprint_str (_246:void)<-(_247:str)
+    io.print(0:sht);	# 187 IOprint_val (_248:void)<-(_215:sht)
+    io.print(0:sht);	# 188 IOprint_val (_249:void)<-(_215:sht)
+    io.print(0:sht);	# 189 IOprint_val (_250:void)<-(_215:sht)
+    io.print(0:sht);	# 190 IOprint_val (_251:void)<-(_252:sht)
+    io.print(1:sht);	# 191 IOprint_val (_253:void)<-(_254:sht)
+    io.print(0:sht);	# 192 IOprint_val (_255:void)<-(_252:sht)
+    io.print(0:sht);	# 193 IOprint_val (_256:void)<-(_252:sht)
+    io.print(0:sht);	# 194 IOprint_val (_257:void)<-(_252:sht)
+    io.print(-1:sht);	# 195 IOprint_val (_258:void)<-(_259:sht)
+    io.print(32767:sht);	# 196 IOprint_val (_260:void)<-(_227:sht)
+    io.print(nil:sht);	# 197 IOprint_val (_261:void)<-(_229:sht)
+    io.print(nil:sht);	# 198 IOprint_val (_262:void)<-(_229:sht)
+    io.print(-32767:sht);	# 199 IOprint_val (_263:void)<-(_232:sht)
+    io.print(nil:sht);	# 200 IOprint_val (_264:void)<-(_229:sht)
+    io.print(nil:sht);	# 201 IOprint_val (_265:void)<-(_266:sht)
+    io.printf("# from dbl\n");	# 202 IOprint_str (_267:void)<-(_268:str)
+    io.print(0:sht);	# 203 IOprint_val (_269:void)<-(_252:sht)
+    io.print(0:sht);	# 204 IOprint_val (_270:void)<-(_252:sht)
+    io.print(0:sht);	# 205 IOprint_val (_271:void)<-(_252:sht)
+    io.print(0:sht);	# 206 IOprint_val (_272:void)<-(_252:sht)
+    io.print(1:sht);	# 207 IOprint_val (_273:void)<-(_254:sht)
+    io.print(0:sht);	# 208 IOprint_val (_274:void)<-(_252:sht)
+    io.print(0:sht);	# 209 IOprint_val (_275:void)<-(_252:sht)
+    io.print(0:sht);	# 210 IOprint_val (_276:void)<-(_252:sht)
+    io.print(-1:sht);	# 211 IOprint_val (_277:void)<-(_259:sht)
+    io.print(32767:sht);	# 212 IOprint_val (_278:void)<-(_279:sht)
+    io.print(nil:sht);	# 213 IOprint_val (_280:void)<-(_266:sht)
+    io.print(nil:sht);	# 214 IOprint_val (_281:void)<-(_266:sht)
+    io.print(-32767:sht);	# 215 IOprint_val (_282:void)<-(_283:sht)
+    io.print(nil:sht);	# 216 IOprint_val (_284:void)<-(_266:sht)
+    io.print(nil:sht);	# 217 IOprint_val (_285:void)<-(_266:sht)
+    io.printf("# from oid\n");	# 218 IOprint_str (_286:void)<-(_287:str)
+    io.print(0:sht);	# 219 IOprint_val (_288:void)<-(_289:sht)
+    io.print(1:sht);	# 220 IOprint_val (_290:void)<-(_291:sht)
+    io.print(4096:sht);	# 221 IOprint_val (_292:void)<-(_293:sht)
+    io.print(nil:sht);	# 222 IOprint_val (_294:void)<-(_266:sht)
+    io.print(nil:sht);	# 223 IOprint_val (_295:void)<-(_266:sht)
+    io.printf("# from str\n");	# 224 IOprint_str (_296:void)<-(_297:str)
+    io.print(0:sht);	# 225 IOprint_val (_298:void)<-(_289:sht)
+    io.print(32767:sht);	# 226 IOprint_val (_299:void)<-(_279:sht)
+    io.print(nil:sht);	# 227 IOprint_val (_300:void)<-(_266:sht)
+    io.print(nil:sht);	# 228 IOprint_val (_301:void)<-(_266:sht)
+    io.print(-32767:sht);	# 229 IOprint_val (_302:void)<-(_283:sht)
+    io.print(nil:sht);	# 230 IOprint_val (_303:void)<-(_304:sht)
+    io.print(nil:sht);	# 231 IOprint_val (_305:void)<-(_304:sht)
+    io.print(nil:sht);	# 232 IOprint_val (_306:void)<-(_304:sht)
+    io.print(nil:sht);	# 233 IOprint_val (_307:void)<-(_304:sht)
+    io.printf("# to long\n");	# 234 IOprint_str (_308:void)<-(_309:str)
+    io.print(0:lng);	# 235 IOprint_val (_310:void)<-(_311:lng)
+    io.print(1:lng);	# 236 IOprint_val (_312:void)<-(_313:lng)
+    io.print(32767);	# 237 IOprint_val (_314:void)<-(_315:lng)
+    io.print(32768);	# 238 IOprint_val (_316:void)<-(_317:lng)
+    io.print(32769);	# 239 IOprint_val (_318:void)<-(_319:lng)
+    io.print(2147483647);	# 240 IOprint_val (_320:void)<-(_321:lng)
+    io.print(2147483648);	# 241 IOprint_val (_322:void)<-(_323:lng)
+    io.print(2147483649);	# 242 IOprint_val (_324:void)<-(_325:lng)
+    io.print(-2147483647);	# 243 IOprint_val (_326:void)<-(_327:lng)
+    io.print(-2147483648);	# 244 IOprint_val (_328:void)<-(_329:lng)
+    io.print(-2147483649);	# 245 IOprint_val (_330:void)<-(_331:lng)
+    io.print(9223372036854775807);	# 246 IOprint_val (_332:void)<-(_333:lng)
+    io.print(nil:lng);	# 247 IOprint_val (_334:void)<-(_335:lng)
+    io.print(nil:lng);	# 248 IOprint_val (_336:void)<-(_335:lng)
+    io.print(-9223372036854775807);	# 249 IOprint_val (_337:void)<-(_338:lng)
+    io.print(nil:lng);	# 250 IOprint_val (_339:void)<-(_335:lng)
+    io.print(nil:lng);	# 251 IOprint_val (_340:void)<-(_335:lng)
+    io.printf("# from bit\n");	# 252 IOprint_str (_341:void)<-(_342:str)
+    io.print(1:lng);	# 253 IOprint_val (_343:void)<-(_313:lng)
+    io.print(0:lng);	# 254 IOprint_val (_344:void)<-(_311:lng)
+    io.printf("# from chr\n");	# 255 IOprint_str (_345:void)<-(_346:str)
+    io.print(97:lng);	# 256 IOprint_val (_347:void)<-(_348:lng)
+    io.printf("# from sht\n");	# 257 IOprint_str (_349:void)<-(_350:str)
+    ls := 1:sht;	# 258  (ls:sht)<-(_352:sht)
+    ll := calc.lng(ls);	# 259 CALCsht2lng (ll:lng)<-(ls:sht)
+    io.print(ll);	# 260 IOprint_val (_354:void)<-(ll:lng)
+    lk := 32767:sht;	# 261  (lk:sht)<-(_356:sht)
+    ll := calc.lng(lk);	# 262 CALCsht2lng (ll:lng)<-(lk:sht)
+    io.print(ll);	# 263 IOprint_val (_357:void)<-(ll:lng)
+    io.printf("# from int\n");	# 264 IOprint_str (_358:void)<-(_359:str)
+    io.print(1:lng);	# 265 IOprint_val (_360:void)<-(_361:lng)
+    io.print(32767:lng);	# 266 IOprint_val (_362:void)<-(_363:lng)
+    io.print(32768:lng);	# 267 IOprint_val (_364:void)<-(_365:lng)
+    io.print(2147483647:lng);	# 268 IOprint_val (_366:void)<-(_367:lng)
+    io.print(-2147483647:lng);	# 269 IOprint_val (_368:void)<-(_369:lng)
+    lz := calc.+(2147483647,1);	# 270 CALCbinaryADDintint (lz:int)<-(_371:int)(_372:int)
+    l := calc.lng(lz);	# 271 CALCint2lng (l:lng)<-(lz:int)
+    io.print(l);	# 272 IOprint_val (_374:void)<-(l:lng)
+    lu := calc.-(-2147483647,1);	# 273 CALCbinarySUBintint (lu:int)<-(_376:int)(_372:int)
+    l := calc.lng(lu);	# 274 CALCint2lng (l:lng)<-(lu:int)
+    io.print(l);	# 275 IOprint_val (_377:void)<-(l:lng)
+    io.printf("# should this produce nil (overflow)?\n");	# 276 IOprint_str (_378:void)<-(_379:str)
+    la := calc.+(2147483647,2);	# 277 CALCbinaryADDintint (la:int)<-(_371:int)(_381:int)
+    io.print(la);	# 278 IOprint_val (_382:void)<-(la:int)
+    io.printf("# should this produce nil (overflow)?\n");	# 279 IOprint_str (_383:void)<-(_379:str)
+    lb := calc.-(-2147483647,2);	# 280 CALCbinarySUBintint (lb:int)<-(_376:int)(_381:int)
+    io.print(lb);	# 281 IOprint_val (_385:void)<-(lb:int)
+    io.printf("# from lng\n");	# 282 IOprint_str (_386:void)<-(_387:str)
+    io.printf("# from flt\n");	# 283 IOprint_str (_388:void)<-(_389:str)
+    io.print(0:lng);	# 284 IOprint_val (_390:void)<-(_391:lng)
+    io.print(0:lng);	# 285 IOprint_val (_392:void)<-(_391:lng)
+    io.print(0:lng);	# 286 IOprint_val (_393:void)<-(_391:lng)
+    io.print(0:lng);	# 287 IOprint_val (_394:void)<-(_391:lng)
+    io.print(1:lng);	# 288 IOprint_val (_395:void)<-(_361:lng)
+    io.print(0:lng);	# 289 IOprint_val (_396:void)<-(_391:lng)
+    io.print(0:lng);	# 290 IOprint_val (_397:void)<-(_391:lng)
+    io.print(0:lng);	# 291 IOprint_val (_398:void)<-(_391:lng)
+    io.print(-1:lng);	# 292 IOprint_val (_399:void)<-(_400:lng)
+    io.print(2147483648:lng);	# 293 IOprint_val (_401:void)<-(_402:lng)
+    io.print(2147483648:lng);	# 294 IOprint_val (_403:void)<-(_402:lng)
+    io.print(2147483648:lng);	# 295 IOprint_val (_404:void)<-(_402:lng)
+    io.print(-2147483648:lng);	# 296 IOprint_val (_405:void)<-(_406:lng)
+    io.print(-2147483648:lng);	# 297 IOprint_val (_407:void)<-(_406:lng)
+    io.print(-2147483648:lng);	# 298 IOprint_val (_408:void)<-(_406:lng)
+    io.print(nil:lng);	# 299 IOprint_val (_409:void)<-(_410:lng)
+    io.print(nil:lng);	# 300 IOprint_val (_411:void)<-(_410:lng)
+    io.print(nil:lng);	# 301 IOprint_val (_412:void)<-(_410:lng)
+    io.print(nil:lng);	# 302 IOprint_val (_413:void)<-(_410:lng)
+    io.print(nil:lng);	# 303 IOprint_val (_414:void)<-(_410:lng)
+    io.print(nil:lng);	# 304 IOprint_val (_415:void)<-(_410:lng)
+    io.printf("# from dbl\n");	# 305 IOprint_str (_416:void)<-(_417:str)
+    io.print(0:lng);	# 306 IOprint_val (_418:void)<-(_391:lng)
+    io.print(0:lng);	# 307 IOprint_val (_419:void)<-(_391:lng)
+    io.print(0:lng);	# 308 IOprint_val (_420:void)<-(_391:lng)
+    io.print(0:lng);	# 309 IOprint_val (_421:void)<-(_391:lng)
+    io.print(1:lng);	# 310 IOprint_val (_422:void)<-(_423:lng)
+    io.print(0:lng);	# 311 IOprint_val (_424:void)<-(_391:lng)
+    io.print(0:lng);	# 312 IOprint_val (_425:void)<-(_391:lng)
+    io.print(0:lng);	# 313 IOprint_val (_426:void)<-(_391:lng)
+    io.print(-1:lng);	# 314 IOprint_val (_427:void)<-(_400:lng)
+    io.print(2147483647:lng);	# 315 IOprint_val (_428:void)<-(_429:lng)
+    io.print(2147483648:lng);	# 316 IOprint_val (_430:void)<-(_402:lng)
+    io.print(2147483649:lng);	# 317 IOprint_val (_431:void)<-(_432:lng)
+    io.print(-2147483647:lng);	# 318 IOprint_val (_433:void)<-(_434:lng)
+    io.print(-2147483648:lng);	# 319 IOprint_val (_435:void)<-(_406:lng)
+    io.print(-2147483649:lng);	# 320 IOprint_val (_436:void)<-(_437:lng)
+    io.print(nil:lng);	# 321 IOprint_val (_438:void)<-(_410:lng)
+    io.print(nil:lng);	# 322 IOprint_val (_439:void)<-(_410:lng)
+    io.print(nil:lng);	# 323 IOprint_val (_440:void)<-(_410:lng)
+    io.print(nil:lng);	# 324 IOprint_val (_441:void)<-(_410:lng)
+    io.print(nil:lng);	# 325 IOprint_val (_442:void)<-(_410:lng)
+    io.print(nil:lng);	# 326 IOprint_val (_443:void)<-(_410:lng)
+    io.printf("# from oid\n");	# 327 IOprint_str (_444:void)<-(_445:str)
+    io.print(2:lng);	# 328 IOprint_val (_446:void)<-(_447:lng)
+    io.print(2:lng);	# 329 IOprint_val (_448:void)<-(_447:lng)
+    io.print(2147483647:lng);	# 330 IOprint_val (_449:void)<-(_429:lng)
+    io.print(nil:lng);	# 331 IOprint_val (_450:void)<-(_451:lng)
+    io.print(2147483649:lng);	# 332 IOprint_val (_452:void)<-(_432:lng)
+    io.print(4294967295:lng);	# 333 IOprint_val (_453:void)<-(_454:lng)
+    io.print(nil:lng);	# 334 IOprint_val (_455:void)<-(_451:lng)
+    io.print(nil:lng);	# 335 IOprint_val (_456:void)<-(_451:lng)
+    io.printf("# from str\n");	# 336 IOprint_str (_457:void)<-(_458:str)
+    io.print(0:lng);	# 337 IOprint_val (_459:void)<-(_460:lng)
+    io.print(32767:lng);	# 338 IOprint_val (_461:void)<-(_462:lng)
+    io.print(2147483647:lng);	# 339 IOprint_val (_463:void)<-(_429:lng)
+    io.print(2147483648:lng);	# 340 IOprint_val (_464:void)<-(_465:lng)
+    io.print(2147483649:lng);	# 341 IOprint_val (_466:void)<-(_432:lng)
+    io.print(-2147483647:lng);	# 342 IOprint_val (_467:void)<-(_434:lng)
+    io.print(-2147483648:lng);	# 343 IOprint_val (_468:void)<-(_469:lng)
+    io.print(-2147483649:lng);	# 344 IOprint_val (_470:void)<-(_437:lng)
+    io.print(nil:lng);	# 345 IOprint_val (_471:void)<-(_451:lng)
+    io.print(nil:lng);	# 346 IOprint_val (_472:void)<-(_451:lng)
+    io.print(9223372036854775807:lng);	# 347 IOprint_val (_473:void)<-(_474:lng)
+    io.print(nil:lng);	# 348 IOprint_val (_475:void)<-(_451:lng)
+    io.print(nil:lng);	# 349 IOprint_val (_476:void)<-(_451:lng)
+    io.print(-9223372036854775807:lng);	# 350 IOprint_val (_477:void)<-(_478:lng)
+    io.print(nil:lng);	# 351 IOprint_val (_479:void)<-(_451:lng)
+    io.print(nil:lng);	# 352 IOprint_val (_480:void)<-(_451:lng)
+    io.printf("# to flt\n");	# 353 IOprint_str (_481:void)<-(_482:str)
+    io.printf("# from bit\n");	# 354 IOprint_str (_483:void)<-(_484:str)
+    io.print(1:flt);	# 355 IOprint_val (_485:void)<-(_486:flt)
+    io.print(0:flt);	# 356 IOprint_val (_487:void)<-(_488:flt)
+    io.printf("# from chr\n");	# 357 IOprint_str (_489:void)<-(_490:str)
+    io.print(97:flt);	# 358 IOprint_val (_491:void)<-(_492:flt)
+    io.printf("# from sht\n");	# 359 IOprint_str (_493:void)<-(_494:str)
+    s1 := 1:sht;	# 360  (s1:sht)<-(_496:sht)
+    f1 := calc.flt(s1);	# 361 CALCsht2flt (f1:flt)<-(s1:sht)
+    io.print(f1);	# 362 IOprint_val (_498:void)<-(f1:flt)
+    s1 := 32767:sht;	# 363  (s1:sht)<-(_499:sht)
+    f1 := calc.flt(s1);	# 364 CALCsht2flt (f1:flt)<-(s1:sht)
+    io.print(f1);	# 365 IOprint_val (_500:void)<-(f1:flt)
+    io.printf("# from int\n");	# 366 IOprint_str (_501:void)<-(_502:str)
+    io.print(1:flt);	# 367 IOprint_val (_503:void)<-(_486:flt)
+    io.print(32767:flt);	# 368 IOprint_val (_504:void)<-(_505:flt)
+    io.print(32768:flt);	# 369 IOprint_val (_506:void)<-(_507:flt)
+    io.print(2.14748365e+09:flt);	# 370 IOprint_val (_508:void)<-(_509:flt)
+    io.print(-2.14748365e+09:flt);	# 371 IOprint_val (_510:void)<-(_511:flt)
+    fl := calc.+(2147483647,1);	# 372 CALCbinaryADDintint (fl:int)<-(_513:int)(_514:int)
+    f := calc.flt(fl);	# 373 CALCint2flt (f:flt)<-(fl:int)
+    io.print(f);	# 374 IOprint_val (_516:void)<-(f:flt)
+    fi := calc.-(-2147483647,1);	# 375 CALCbinarySUBintint (fi:int)<-(_518:int)(_514:int)
+    f := calc.flt(fi);	# 376 CALCint2flt (f:flt)<-(fi:int)
+    io.print(f);	# 377 IOprint_val (_519:void)<-(f:flt)
+    io.printf("# should this produce nil (overflow)?\n");	# 378 IOprint_str (_520:void)<-(_521:str)
+    ff := calc.+(2147483647,1);	# 379 CALCbinaryADDintint (ff:int)<-(_513:int)(_514:int)
+    f := calc.flt(ff);	# 380 CALCint2flt (f:flt)<-(ff:int)
+    io.print(f);	# 381 IOprint_val (_523:void)<-(f:flt)
+    io.printf("# should this produce nil (overflow)?\n");	# 382 IOprint_str (_524:void)<-(_521:str)
+    fg := calc.-(-2147483647,2);	# 383 CALCbinarySUBintint (fg:int)<-(_518:int)(_526:int)
+    f := calc.flt(fg);	# 384 CALCint2flt (f:flt)<-(fg:int)
+    io.print(f);	# 385 IOprint_val (_527:void)<-(f:flt)
+    io.printf("# from lng\n");	# 386 IOprint_str (_528:void)<-(_529:str)
+    io.print(1:flt);	# 387 IOprint_val (_530:void)<-(_531:flt)
+    io.print(2.14748365e+09:flt);	# 388 IOprint_val (_532:void)<-(_509:flt)
+    io.print(2.14748365e+09:flt);	# 389 IOprint_val (_533:void)<-(_509:flt)
+    io.print(2.14748365e+09:flt);	# 390 IOprint_val (_534:void)<-(_509:flt)
+    io.print(-2.14748365e+09:flt);	# 391 IOprint_val (_535:void)<-(_511:flt)
+    io.print(-2.14748365e+09:flt);	# 392 IOprint_val (_536:void)<-(_511:flt)
+    io.print(-2.14748365e+09:flt);	# 393 IOprint_val (_537:void)<-(_511:flt)
+    io.print(9.22337204e+18:flt);	# 394 IOprint_val (_538:void)<-(_539:flt)
+    io.print(nil:flt);	# 395 IOprint_val (_540:void)<-(_541:flt)
+    io.print(nil:flt);	# 396 IOprint_val (_542:void)<-(_541:flt)
+    io.print(-9.22337204e+18:flt);	# 397 IOprint_val (_543:void)<-(_544:flt)
+    io.print(nil:flt);	# 398 IOprint_val (_545:void)<-(_541:flt)
+    io.print(nil:flt);	# 399 IOprint_val (_546:void)<-(_541:flt)
+    io.printf("# from dbl\n");	# 400 IOprint_str (_547:void)<-(_548:str)
+    io.print(0:flt);	# 401 IOprint_val (_549:void)<-(_550:flt)
+    io.print(0.100000001:flt);	# 402 IOprint_val (_551:void)<-(_552:flt)
+    io.print(0.5:flt);	# 403 IOprint_val (_553:void)<-(_554:flt)
+    io.print(0.899999976:flt);	# 404 IOprint_val (_555:void)<-(_556:flt)
+    io.print(1:flt);	# 405 IOprint_val (_557:void)<-(_531:flt)
+    io.print(-0.100000001:flt);	# 406 IOprint_val (_558:void)<-(_559:flt)
+    io.print(-0.5:flt);	# 407 IOprint_val (_560:void)<-(_561:flt)
+    io.print(-0.899999976:flt);	# 408 IOprint_val (_562:void)<-(_563:flt)
+    io.print(-1:flt);	# 409 IOprint_val (_564:void)<-(_565:flt)
+    io.print(2.14748365e+09:flt);	# 410 IOprint_val (_566:void)<-(_567:flt)
+    io.print(2.14748365e+09:flt);	# 411 IOprint_val (_568:void)<-(_567:flt)
+    io.print(2.14748365e+09:flt);	# 412 IOprint_val (_569:void)<-(_567:flt)
+    io.print(-2.14748365e+09:flt);	# 413 IOprint_val (_570:void)<-(_571:flt)
+    io.print(-2.14748365e+09:flt);	# 414 IOprint_val (_572:void)<-(_571:flt)
+    io.print(-2.14748365e+09:flt);	# 415 IOprint_val (_573:void)<-(_571:flt)
+    io.printf("# from oid\n");	# 416 IOprint_str (_574:void)<-(_575:str)
+    io.print(2:flt);	# 417 IOprint_val (_576:void)<-(_577:flt)
+    io.print(2:flt);	# 418 IOprint_val (_578:void)<-(_577:flt)
+    io.print(2.14748365e+09:flt);	# 419 IOprint_val (_579:void)<-(_567:flt)
+    io.print(nil:flt);	# 420 IOprint_val (_580:void)<-(_581:flt)
+    io.print(2.14748365e+09:flt);	# 421 IOprint_val (_582:void)<-(_567:flt)
+    io.printf("# from str\n");	# 422 IOprint_str (_583:void)<-(_584:str)
+    io.print(0:flt);	# 423 IOprint_val (_585:void)<-(_550:flt)
+    io.print(32767:flt);	# 424 IOprint_val (_586:void)<-(_587:flt)
+    io.print(2.14748365e+09:flt);	# 425 IOprint_val (_588:void)<-(_567:flt)
+    io.print(2.14748365e+09:flt);	# 426 IOprint_val (_589:void)<-(_567:flt)
+    io.print(2.14748365e+09:flt);	# 427 IOprint_val (_590:void)<-(_567:flt)
+    io.print(-2.14748365e+09:flt);	# 428 IOprint_val (_591:void)<-(_571:flt)
+    io.print(-2.14748365e+09:flt);	# 429 IOprint_val (_592:void)<-(_571:flt)
+    io.print(-2.14748365e+09:flt);	# 430 IOprint_val (_593:void)<-(_571:flt)
+    io.print(0:flt);	# 431 IOprint_val (_594:void)<-(_595:flt)
+    io.print(0.100000001:flt);	# 432 IOprint_val (_596:void)<-(_597:flt)
+    io.print(1:flt);	# 433 IOprint_val (_598:void)<-(_599:flt)
+    io.print(1:flt);	# 434 IOprint_val (_600:void)<-(_599:flt)
+    io.print(10:flt);	# 435 IOprint_val (_601:void)<-(_602:flt)
+    io.print(1e+10:flt);	# 436 IOprint_val (_603:void)<-(_604:flt)
+    io.print(1e+10:flt);	# 437 IOprint_val (_605:void)<-(_604:flt)
+    io.print(1.00000001e-10:flt);	# 438 IOprint_val (_606:void)<-(_607:flt)
+    io.print(1:flt);	# 439 IOprint_val (_608:void)<-(_599:flt)
+    io.print(10:flt);	# 440 IOprint_val (_609:void)<-(_602:flt)
+    io.print(1e+10:flt);	# 441 IOprint_val (_610:void)<-(_604:flt)
+    io.print(1e+10:flt);	# 442 IOprint_val (_611:void)<-(_604:flt)
+    io.print(1.00000001e-10:flt);	# 443 IOprint_val (_612:void)<-(_607:flt)
+    io.print(1:flt);	# 444 IOprint_val (_613:void)<-(_599:flt)
+    io.print(10:flt);	# 445 IOprint_val (_614:void)<-(_602:flt)
+    io.print(1e+10:flt);	# 446 IOprint_val (_615:void)<-(_604:flt)
+    io.print(1e+10:flt);	# 447 IOprint_val (_616:void)<-(_604:flt)
+    io.print(1.00000001e-10:flt);	# 448 IOprint_val (_617:void)<-(_607:flt)
+    io.print(0:flt);	# 449 IOprint_val (_618:void)<-(_595:flt)
+    io.print(-0.100000001:flt);	# 450 IOprint_val (_619:void)<-(_620:flt)
+    io.print(-1:flt);	# 451 IOprint_val (_621:void)<-(_622:flt)
+    io.print(-1:flt);	# 452 IOprint_val (_623:void)<-(_622:flt)
+    io.print(-10:flt);	# 453 IOprint_val (_624:void)<-(_625:flt)
+    io.print(-1e+10:flt);	# 454 IOprint_val (_626:void)<-(_627:flt)
+    io.print(-1e+10:flt);	# 455 IOprint_val (_628:void)<-(_627:flt)
+    io.print(-1.00000001e-10:flt);	# 456 IOprint_val (_629:void)<-(_630:flt)
+    io.print(-1:flt);	# 457 IOprint_val (_631:void)<-(_622:flt)
+    io.print(-10:flt);	# 458 IOprint_val (_632:void)<-(_625:flt)
+    io.print(-1e+10:flt);	# 459 IOprint_val (_633:void)<-(_627:flt)
+    io.print(-1e+10:flt);	# 460 IOprint_val (_634:void)<-(_627:flt)
+    io.print(-1.00000001e-10:flt);	# 461 IOprint_val (_635:void)<-(_630:flt)
+    io.print(-1:flt);	# 462 IOprint_val (_636:void)<-(_622:flt)
+    io.print(-10:flt);	# 463 IOprint_val (_637:void)<-(_625:flt)
+    io.print(-1e+10:flt);	# 464 IOprint_val (_638:void)<-(_627:flt)
+    io.print(-1e+10:flt);	# 465 IOprint_val (_639:void)<-(_627:flt)
+    io.print(-1.00000001e-10:flt);	# 466 IOprint_val (_640:void)<-(_630:flt)
+    io.print(1:flt);	# 467 IOprint_val (_641:void)<-(_642:flt)
+    io.print(10:flt);	# 468 IOprint_val (_643:void)<-(_644:flt)
+    io.print(1e+10:flt);	# 469 IOprint_val (_645:void)<-(_646:flt)
+    io.print(1e+10:flt);	# 470 IOprint_val (_647:void)<-(_646:flt)
+    io.print(1.00000001e-10:flt);	# 471 IOprint_val (_648:void)<-(_649:flt)
+    io.print(1:flt);	# 472 IOprint_val (_650:void)<-(_642:flt)
+    io.print(10:flt);	# 473 IOprint_val (_651:void)<-(_644:flt)
+    io.print(1e+10:flt);	# 474 IOprint_val (_652:void)<-(_646:flt)
+    io.print(1e+10:flt);	# 475 IOprint_val (_653:void)<-(_646:flt)
+    io.print(1.00000001e-10:flt);	# 476 IOprint_val (_654:void)<-(_649:flt)
+    io.print(1:flt);	# 477 IOprint_val (_655:void)<-(_642:flt)
+    io.print(10:flt);	# 478 IOprint_val (_656:void)<-(_644:flt)
+    io.print(1e+10:flt);	# 479 IOprint_val (_657:void)<-(_646:flt)
+    io.print(1e+10:flt);	# 480 IOprint_val (_658:void)<-(_646:flt)
+    io.print(1.00000001e-10:flt);	# 481 IOprint_val (_659:void)<-(_649:flt)
+    io.print(-1:flt);	# 482 IOprint_val (_660:void)<-(_661:flt)
+    io.print(-10:flt);	# 483 IOprint_val (_662:void)<-(_663:flt)
+    io.print(-1e+10:flt);	# 484 IOprint_val (_664:void)<-(_665:flt)
+    io.print(-1e+10:flt);	# 485 IOprint_val (_666:void)<-(_665:flt)
+    io.print(-1.00000001e-10:flt);	# 486 IOprint_val (_667:void)<-(_668:flt)
+    io.print(-1:flt);	# 487 IOprint_val (_669:void)<-(_661:flt)
+    io.print(-10:flt);	# 488 IOprint_val (_670:void)<-(_663:flt)
+    io.print(-1e+10:flt);	# 489 IOprint_val (_671:void)<-(_665:flt)
+    io.print(-1e+10:flt);	# 490 IOprint_val (_672:void)<-(_665:flt)
+    io.print(-1.00000001e-10:flt);	# 491 IOprint_val (_673:void)<-(_668:flt)
+    io.print(-1:flt);	# 492 IOprint_val (_674:void)<-(_661:flt)
+    io.print(-10:flt);	# 493 IOprint_val (_675:void)<-(_663:flt)
+    io.print(-1e+10:flt);	# 494 IOprint_val (_676:void)<-(_665:flt)
+    io.print(-1e+10:flt);	# 495 IOprint_val (_677:void)<-(_665:flt)
+    io.print(-1.00000001e-10:flt);	# 496 IOprint_val (_678:void)<-(_668:flt)
+    io.printf("# flt range is -3.402823466E+38F to 3.402823466E+38F which is\n");	# 497 IOprint_str (_679:void)<-(_680:str)
+    io.printf("# -3.4028234663852886e+38 to 3.4028234663852886e+38 in double\n");	# 498 IOprint_str (_681:void)<-(_682:str)
+    io.printf("# precission\n");	# 499 IOprint_str (_683:void)<-(_684:str)
+    io.print(3.40282347e+38:flt);	# 500 IOprint_val (_685:void)<-(_686:flt)
+    io.print(3.40282347e+38:flt);	# 501 IOprint_val (_687:void)<-(_686:flt)
+    io.print(3.40282347e+38:flt);	# 502 IOprint_val (_688:void)<-(_686:flt)
+    io.print(nil:flt);	# 503 IOprint_val (_689:void)<-(_690:flt)
+    io.print(nil:flt);	# 504 IOprint_val (_691:void)<-(_690:flt)
+    io.print(3.40282347e+38:flt);	# 505 IOprint_val (_692:void)<-(_686:flt)
+    io.print(3.40282347e+38:flt);	# 506 IOprint_val (_693:void)<-(_686:flt)
+    io.print(3.40282347e+38:flt);	# 507 IOprint_val (_694:void)<-(_686:flt)
+    io.print(3.40282347e+38:flt);	# 508 IOprint_val (_695:void)<-(_686:flt)
+    io.print(nil:flt);	# 509 IOprint_val (_696:void)<-(_690:flt)
+    io.print(nil:flt);	# 510 IOprint_val (_697:void)<-(_690:flt)
+    io.print(nil:flt);	# 511 IOprint_val (_698:void)<-(_690:flt)
+    io.print(nil:flt);	# 512 IOprint_val (_699:void)<-(_690:flt)
+    io.print(nil:flt);	# 513 IOprint_val (_700:void)<-(_690:flt)
+    io.print(nil:flt);	# 514 IOprint_val (_701:void)<-(_690:flt)
+    io.printf("# to dbl\n");	# 515 IOprint_str (_702:void)<-(_703:str)
+    io.printf("# from bit\n");	# 516 IOprint_str (_704:void)<-(_705:str)
+    io.print(1:dbl);	# 517 IOprint_val (_706:void)<-(_707:dbl)
+    io.print(0:dbl);	# 518 IOprint_val (_708:void)<-(_709:dbl)
+    io.printf("# from chr\n");	# 519 IOprint_str (_710:void)<-(_711:str)
+    io.print(97:dbl);	# 520 IOprint_val (_712:void)<-(_713:dbl)
+    io.printf("# from sht\n");	# 521 IOprint_str (_714:void)<-(_715:str)
+    a := 1:sht;	# 522  (a:sht)<-(_717:sht)
+    d1 := calc.dbl(a);	# 523 CALCsht2dbl (d1:dbl)<-(a:sht)
+    io.print(d1);	# 524 IOprint_val (_719:void)<-(d1:dbl)
+    a := 32767:sht;	# 525  (a:sht)<-(_720:sht)
+    d1 := calc.dbl(a);	# 526 CALCsht2dbl (d1:dbl)<-(a:sht)
+    io.print(d1);	# 527 IOprint_val (_721:void)<-(d1:dbl)
+    io.printf("# from int\n");	# 528 IOprint_str (_722:void)<-(_723:str)
+    io.print(1:dbl);	# 529 IOprint_val (_724:void)<-(_707:dbl)
+    io.print(32767:dbl);	# 530 IOprint_val (_725:void)<-(_726:dbl)
+    io.print(32768:dbl);	# 531 IOprint_val (_727:void)<-(_728:dbl)
+    io.print(2147483647:dbl);	# 532 IOprint_val (_729:void)<-(_730:dbl)
+    io.print(-2147483647:dbl);	# 533 IOprint_val (_731:void)<-(_732:dbl)
+    zd := calc.+(2147483647,1);	# 534 CALCbinaryADDintint (zd:int)<-(_734:int)(_735:int)
+    ze := calc.dbl(zd);	# 535 CALCint2dbl (ze:dbl)<-(zd:int)
+    io.print(zd);	# 536 IOprint_val (_737:void)<-(zd:int)
+    zj := calc.-(-2147483647,1);	# 537 CALCbinarySUBintint (zj:int)<-(_739:int)(_735:int)
+    d := calc.dbl(zj);	# 538 CALCint2dbl (d:dbl)<-(zj:int)
+    io.print(d);	# 539 IOprint_val (_741:void)<-(d:dbl)
+    io.printf("# should this produce nil (overflow)?\n");	# 540 IOprint_str (_742:void)<-(_743:str)
+    zn := calc.+(2147483647,2);	# 541 CALCbinaryADDintint (zn:int)<-(_734:int)(_745:int)
+    d := calc.dbl(zn);	# 542 CALCint2dbl (d:dbl)<-(zn:int)
+    io.print(d);	# 543 IOprint_val (_746:void)<-(d:dbl)
+    io.printf("# should this produce nil (overflow)?\n");	# 544 IOprint_str (_747:void)<-(_743:str)
+    zk := calc.-(-2147483647,2);	# 545 CALCbinarySUBintint (zk:int)<-(_739:int)(_745:int)
+    d := calc.dbl(zk);	# 546 CALCint2dbl (d:dbl)<-(zk:int)
+    io.print(d);	# 547 IOprint_val (_749:void)<-(d:dbl)
+    io.printf("# from lng\n");	# 548 IOprint_str (_750:void)<-(_751:str)
+    io.print(1:dbl);	# 549 IOprint_val (_752:void)<-(_753:dbl)
+    io.print(2147483647:dbl);	# 550 IOprint_val (_754:void)<-(_730:dbl)
+    io.print(2147483648:dbl);	# 551 IOprint_val (_755:void)<-(_756:dbl)
+    io.print(2147483649:dbl);	# 552 IOprint_val (_757:void)<-(_758:dbl)
+    io.print(-2147483647:dbl);	# 553 IOprint_val (_759:void)<-(_732:dbl)
+    io.print(-2147483648:dbl);	# 554 IOprint_val (_760:void)<-(_761:dbl)
+    io.print(-2147483649:dbl);	# 555 IOprint_val (_762:void)<-(_763:dbl)
+    io.print(9.2233720368547758e+18:dbl);	# 556 IOprint_val (_764:void)<-(_765:dbl)
+    io.print(nil:dbl);	# 557 IOprint_val (_766:void)<-(_767:dbl)
+    io.print(nil:dbl);	# 558 IOprint_val (_768:void)<-(_767:dbl)
+    io.print(-9.2233720368547758e+18:dbl);	# 559 IOprint_val (_769:void)<-(_770:dbl)
+    io.print(nil:dbl);	# 560 IOprint_val (_771:void)<-(_767:dbl)
+    io.print(nil:dbl);	# 561 IOprint_val (_772:void)<-(_767:dbl)
+    io.printf("# from flt\n");	# 562 IOprint_str (_773:void)<-(_774:str)
+    io.print(0:dbl);	# 563 IOprint_val (_775:void)<-(_776:dbl)
+    io.print(0.10000000149011612:dbl);	# 564 IOprint_val (_777:void)<-(_778:dbl)
+    io.print(0.5:dbl);	# 565 IOprint_val (_779:void)<-(_780:dbl)
+    io.print(0.89999997615814209:dbl);	# 566 IOprint_val (_781:void)<-(_782:dbl)
+    io.print(1:dbl);	# 567 IOprint_val (_783:void)<-(_753:dbl)
+    io.print(-0.10000000149011612:dbl);	# 568 IOprint_val (_784:void)<-(_785:dbl)
+    io.print(-0.5:dbl);	# 569 IOprint_val (_786:void)<-(_787:dbl)
+    io.print(-0.89999997615814209:dbl);	# 570 IOprint_val (_788:void)<-(_789:dbl)
+    io.print(-1:dbl);	# 571 IOprint_val (_790:void)<-(_791:dbl)
+    io.print(2147483648:dbl);	# 572 IOprint_val (_792:void)<-(_793:dbl)
+    io.print(2147483648:dbl);	# 573 IOprint_val (_794:void)<-(_793:dbl)
+    io.print(2147483648:dbl);	# 574 IOprint_val (_795:void)<-(_793:dbl)
+    io.print(-2147483648:dbl);	# 575 IOprint_val (_796:void)<-(_761:dbl)
+    io.print(-2147483648:dbl);	# 576 IOprint_val (_797:void)<-(_798:dbl)
+    io.print(-2147483648:dbl);	# 577 IOprint_val (_799:void)<-(_798:dbl)
+    io.printf("# from oid\n");	# 578 IOprint_str (_800:void)<-(_801:str)
+    io.print(2:dbl);	# 579 IOprint_val (_802:void)<-(_803:dbl)
+    io.print(2:dbl);	# 580 IOprint_val (_804:void)<-(_803:dbl)
+    io.print(2147483647:dbl);	# 581 IOprint_val (_805:void)<-(_806:dbl)
+    io.print(nil:dbl);	# 582 IOprint_val (_807:void)<-(_808:dbl)
+    io.print(2147483649:dbl);	# 583 IOprint_val (_809:void)<-(_810:dbl)
+    io.printf("# from str\n");	# 584 IOprint_str (_811:void)<-(_812:str)
+    io.print(0:dbl);	# 585 IOprint_val (_813:void)<-(_814:dbl)
+    io.print(32767:dbl);	# 586 IOprint_val (_815:void)<-(_816:dbl)
+    io.print(2147483647:dbl);	# 587 IOprint_val (_817:void)<-(_806:dbl)
+    io.print(2147483648:dbl);	# 588 IOprint_val (_818:void)<-(_793:dbl)
+    io.print(2147483649:dbl);	# 589 IOprint_val (_819:void)<-(_810:dbl)
+    io.print(-2147483647:dbl);	# 590 IOprint_val (_820:void)<-(_821:dbl)
+    io.print(-2147483648:dbl);	# 591 IOprint_val (_822:void)<-(_798:dbl)
+    io.print(-2147483649:dbl);	# 592 IOprint_val (_823:void)<-(_824:dbl)
+    io.print(0:dbl);	# 593 IOprint_val (_825:void)<-(_814:dbl)
+    io.print(0.10000000000000001:dbl);	# 594 IOprint_val (_826:void)<-(_827:dbl)
+    io.print(1:dbl);	# 595 IOprint_val (_828:void)<-(_829:dbl)
+    io.print(1:dbl);	# 596 IOprint_val (_830:void)<-(_829:dbl)
+    io.print(10:dbl);	# 597 IOprint_val (_831:void)<-(_832:dbl)
+    io.print(10000000000:dbl);	# 598 IOprint_val (_833:void)<-(_834:dbl)
+    io.print(10000000000:dbl);	# 599 IOprint_val (_835:void)<-(_834:dbl)
+    io.print(1e-10:dbl);	# 600 IOprint_val (_836:void)<-(_837:dbl)
+    io.print(1:dbl);	# 601 IOprint_val (_838:void)<-(_829:dbl)
+    io.print(10:dbl);	# 602 IOprint_val (_839:void)<-(_832:dbl)
+    io.print(10000000000:dbl);	# 603 IOprint_val (_840:void)<-(_834:dbl)
+    io.print(10000000000:dbl);	# 604 IOprint_val (_841:void)<-(_834:dbl)
+    io.print(1e-10:dbl);	# 605 IOprint_val (_842:void)<-(_837:dbl)
+    io.print(1:dbl);	# 606 IOprint_val (_843:void)<-(_829:dbl)
+    io.print(10:dbl);	# 607 IOprint_val (_844:void)<-(_832:dbl)
+    io.print(10000000000:dbl);	# 608 IOprint_val (_845:void)<-(_834:dbl)
+    io.print(10000000000:dbl);	# 609 IOprint_val (_846:void)<-(_834:dbl)
+    io.print(1e-10:dbl);	# 610 IOprint_val (_847:void)<-(_837:dbl)
+    io.print(0:dbl);	# 611 IOprint_val (_848:void)<-(_814:dbl)
+    io.print(-0.10000000000000001:dbl);	# 612 IOprint_val (_849:void)<-(_850:dbl)
+    io.print(-1:dbl);	# 613 IOprint_val (_851:void)<-(_852:dbl)
+    io.print(-1:dbl);	# 614 IOprint_val (_853:void)<-(_852:dbl)
+    io.print(-10:dbl);	# 615 IOprint_val (_854:void)<-(_855:dbl)
+    io.print(-10000000000:dbl);	# 616 IOprint_val (_856:void)<-(_857:dbl)
+    io.print(-10000000000:dbl);	# 617 IOprint_val (_858:void)<-(_857:dbl)
+    io.print(-1e-10:dbl);	# 618 IOprint_val (_859:void)<-(_860:dbl)
+    io.print(-1:dbl);	# 619 IOprint_val (_861:void)<-(_852:dbl)
+    io.print(-10:dbl);	# 620 IOprint_val (_862:void)<-(_855:dbl)
+    io.print(-10000000000:dbl);	# 621 IOprint_val (_863:void)<-(_857:dbl)
+    io.print(-10000000000:dbl);	# 622 IOprint_val (_864:void)<-(_857:dbl)
+    io.print(-1e-10:dbl);	# 623 IOprint_val (_865:void)<-(_860:dbl)
+    io.print(-1:dbl);	# 624 IOprint_val (_866:void)<-(_852:dbl)
+    io.print(-10:dbl);	# 625 IOprint_val (_867:void)<-(_855:dbl)
+    io.print(-10000000000:dbl);	# 626 IOprint_val (_868:void)<-(_857:dbl)
+    io.print(-10000000000:dbl);	# 627 IOprint_val (_869:void)<-(_857:dbl)
+    io.print(-1e-10:dbl);	# 628 IOprint_val (_870:void)<-(_860:dbl)
+    io.print(1:dbl);	# 629 IOprint_val (_871:void)<-(_872:dbl)
+    io.print(10:dbl);	# 630 IOprint_val (_873:void)<-(_874:dbl)
+    io.print(10000000000:dbl);	# 631 IOprint_val (_875:void)<-(_876:dbl)
+    io.print(10000000000:dbl);	# 632 IOprint_val (_877:void)<-(_876:dbl)
+    io.print(1e-10:dbl);	# 633 IOprint_val (_878:void)<-(_879:dbl)
+    io.print(1:dbl);	# 634 IOprint_val (_880:void)<-(_872:dbl)
+    io.print(10:dbl);	# 635 IOprint_val (_881:void)<-(_874:dbl)
+    io.print(10000000000:dbl);	# 636 IOprint_val (_882:void)<-(_876:dbl)
+    io.print(10000000000:dbl);	# 637 IOprint_val (_883:void)<-(_876:dbl)
+    io.print(1e-10:dbl);	# 638 IOprint_val (_884:void)<-(_879:dbl)
+    io.print(1:dbl);	# 639 IOprint_val (_885:void)<-(_872:dbl)
+    io.print(10:dbl);	# 640 IOprint_val (_886:void)<-(_874:dbl)
+    io.print(10000000000:dbl);	# 641 IOprint_val (_887:void)<-(_876:dbl)
+    io.print(10000000000:dbl);	# 642 IOprint_val (_888:void)<-(_876:dbl)
+    io.print(1e-10:dbl);	# 643 IOprint_val (_889:void)<-(_879:dbl)
+    io.print(-1:dbl);	# 644 IOprint_val (_890:void)<-(_891:dbl)
+    io.print(-10:dbl);	# 645 IOprint_val (_892:void)<-(_893:dbl)
+    io.print(-10000000000:dbl);	# 646 IOprint_val (_894:void)<-(_895:dbl)
+    io.print(-10000000000:dbl);	# 647 IOprint_val (_896:void)<-(_895:dbl)
+    io.print(-1e-10:dbl);	# 648 IOprint_val (_897:void)<-(_898:dbl)
+    io.print(-1:dbl);	# 649 IOprint_val (_899:void)<-(_891:dbl)
+    io.print(-10:dbl);	# 650 IOprint_val (_900:void)<-(_893:dbl)
+    io.print(-10000000000:dbl);	# 651 IOprint_val (_901:void)<-(_895:dbl)
+    io.print(-10000000000:dbl);	# 652 IOprint_val (_902:void)<-(_895:dbl)
+    io.print(-1e-10:dbl);	# 653 IOprint_val (_903:void)<-(_898:dbl)
+    io.print(-1:dbl);	# 654 IOprint_val (_904:void)<-(_891:dbl)
+    io.print(-10:dbl);	# 655 IOprint_val (_905:void)<-(_893:dbl)
+    io.print(-10000000000:dbl);	# 656 IOprint_val (_906:void)<-(_895:dbl)
+    io.print(-10000000000:dbl);	# 657 IOprint_val (_907:void)<-(_895:dbl)
+    io.print(-1e-10:dbl);	# 658 IOprint_val (_908:void)<-(_898:dbl)
+    io.print(3.4028234660000002e+38:dbl);	# 659 IOprint_val (_909:void)<-(_910:dbl)
+    io.print(3.4028234670000002e+38:dbl);	# 660 IOprint_val (_911:void)<-(_912:dbl)
+    io.print(-3.4028234660000002e+38:dbl);	# 661 IOprint_val (_913:void)<-(_914:dbl)
+    io.print(-3.4028234670000002e+38:dbl);	# 662 IOprint_val (_915:void)<-(_916:dbl)
+    io.print(3.4028234660000002e+38:dbl);	# 663 IOprint_val (_917:void)<-(_910:dbl)
+    io.print(3.4028234670000002e+38:dbl);	# 664 IOprint_val (_918:void)<-(_912:dbl)
+    io.print(3.4028234660000002e+38:dbl);	# 665 IOprint_val (_919:void)<-(_910:dbl)
+    io.print(3.4028234660000002e+38:dbl);	# 666 IOprint_val (_920:void)<-(_910:dbl)
+    io.print(-3.4028234660000002e+38:dbl);	# 667 IOprint_val (_921:void)<-(_914:dbl)
+    io.print(-3.4028234670000002e+38:dbl);	# 668 IOprint_val (_922:void)<-(_916:dbl)
+    io.print(-3.4028234660000002e+38:dbl);	# 669 IOprint_val (_923:void)<-(_914:dbl)
+    io.print(-3.4028234660000002e+38:dbl);	# 670 IOprint_val (_924:void)<-(_914:dbl)
+    io.printf("# dbl range is -1.7976931348623157E+308 to 1.7976931348623157E+308.\n");	# 671 IOprint_str (_925:void)<-(_926:str)
+    io.print(1.7976931348623157e+308:dbl);	# 672 IOprint_val (_927:void)<-(_928:dbl)
+    io.print(1.7976931348623157e+308:dbl);	# 673 IOprint_val (_929:void)<-(_928:dbl)
+    io.print(nil:dbl);	# 674 IOprint_val (_930:void)<-(_931:dbl)
+    io.print(nil:dbl);	# 675 IOprint_val (_932:void)<-(_931:dbl)
+    io.print(1.7976931348623157e+308:dbl);	# 676 IOprint_val (_933:void)<-(_928:dbl)
+    io.print(1.7976931348623157e+308:dbl);	# 677 IOprint_val (_934:void)<-(_928:dbl)
+    io.print(1.7976931348623157e+308:dbl);	# 678 IOprint_val (_935:void)<-(_928:dbl)
+    io.print(1.7976931348623157e+308:dbl);	# 679 IOprint_val (_936:void)<-(_928:dbl)
+    io.print(nil:dbl);	# 680 IOprint_val (_937:void)<-(_931:dbl)
+    io.print(nil:dbl);	# 681 IOprint_val (_938:void)<-(_931:dbl)
+    io.print(nil:dbl);	# 682 IOprint_val (_939:void)<-(_931:dbl)
+    io.print(nil:dbl);	# 683 IOprint_val (_940:void)<-(_931:dbl)
+    io.print(nil:dbl);	# 684 IOprint_val (_941:void)<-(_931:dbl)
+    io.print(nil:dbl);	# 685 IOprint_val (_942:void)<-(_931:dbl)
+    io.printf("# to oid\n");	# 686 IOprint_str (_943:void)<-(_944:str)
+    io.printf("# from bit\n");	# 687 IOprint_str (_945:void)<-(_946:str)
+    io.print(1@0:oid);	# 688 IOprint_val (_947:void)<-(_948:oid)
+    io.print(0@0:oid);	# 689 IOprint_val (_949:void)<-(_950:oid)
+    io.printf("# from chr\n");	# 690 IOprint_str (_951:void)<-(_952:str)
+    io.print(97@0:oid);	# 691 IOprint_val (_953:void)<-(_954:oid)
+    io.printf("# from sht\n");	# 692 IOprint_str (_955:void)<-(_956:str)
+    o1 := 1:sht;	# 693  (o1:sht)<-(_958:sht)
+    o2 := calc.oid(o1);	# 694 CALCsht2oid (o2:oid)<-(o1:sht)
+    io.print(o2);	# 695 IOprint_val (_960:void)<-(o2:oid)
+    o1 := 32767:sht;	# 696  (o1:sht)<-(_961:sht)
+    o2 := calc.oid(o1);	# 697 CALCsht2oid (o2:oid)<-(o1:sht)
+    io.print(o2);	# 698 IOprint_val (_962:void)<-(o2:oid)
+    io.printf("# from int\n");	# 699 IOprint_str (_963:void)<-(_964:str)
+    io.print(1@0:oid);	# 700 IOprint_val (_965:void)<-(_948:oid)
+    io.print(32767@0:oid);	# 701 IOprint_val (_966:void)<-(_967:oid)
+    io.print(32768@0:oid);	# 702 IOprint_val (_968:void)<-(_969:oid)
+    io.print(2147483647@0:oid);	# 703 IOprint_val (_970:void)<-(_971:oid)
+    o9 := -2147483647;	# 704  (o9:int)<-(_973:int)
+    o := calc.oid(o9);	# 705 CALCint2oid (o:oid)<-(o9:int)
+    io.print(o);	# 706 IOprint_val (_975:void)<-(o:oid)
+    o3 := calc.+(2147483647,1);	# 707 CALCbinaryADDintint (o3:int)<-(_977:int)(_978:int)
+    o := calc.oid(o3);	# 708 CALCint2oid (o:oid)<-(o3:int)
+    io.print(o);	# 709 IOprint_val (_979:void)<-(o:oid)
+    o4 := calc.-(-2147483647,1);	# 710 CALCbinarySUBintint (o4:int)<-(_973:int)(_978:int)
+    o := calc.oid(o4);	# 711 CALCint2oid (o:oid)<-(o4:int)
+    io.print(o);	# 712 IOprint_val (_981:void)<-(o:oid)
+    io.printf("# should this produce nil (overflow)?\n");	# 713 IOprint_str (_982:void)<-(_983:str)
+    o5 := calc.+(2147483647,2);	# 714 CALCbinaryADDintint (o5:int)<-(_977:int)(_985:int)
+    o := calc.oid(o5);	# 715 CALCint2oid (o:oid)<-(o5:int)
+    io.print(o);	# 716 IOprint_val (_986:void)<-(o:oid)
+    io.printf("# should this produce nil (overflow)?\n");	# 717 IOprint_str (_987:void)<-(_983:str)
+    o6 := calc.-(-2147483647,2);	# 718 CALCbinarySUBintint (o6:int)<-(_973:int)(_985:int)
+    o := calc.oid(o6);	# 719 CALCint2oid (o:oid)<-(o6:int)
+    io.print(o);	# 720 IOprint_val (_989:void)<-(o:oid)
+    io.printf("# from lng\n");	# 721 IOprint_str (_990:void)<-(_991:str)
+    io.print(1@0:oid);	# 722 IOprint_val (_992:void)<-(_993:oid)
+    io.print(2147483647@0:oid);	# 723 IOprint_val (_994:void)<-(_971:oid)
+    ol3 := 2147483647;	# 724  (ol3:lng)<-(_996:lng)
+    o := calc.oid(ol3);	# 725 CALClng2oid (o:oid)<-(ol3:lng)
+    io.print(o);	# 726 IOprint_val (_997:void)<-(o:oid)
+    io.print(nil:oid);	# 727 IOprint_val (_998:void)<-(_999:oid)
+    ol3 := 2147483648;	# 728  (ol3:lng)<-(_1000:lng)
+    o := calc.oid(ol3);	# 729 CALClng2oid (o:oid)<-(ol3:lng)
+    io.print(o);	# 730 IOprint_val (_1001:void)<-(o:oid)
+    io.print(nil:oid);	# 731 IOprint_val (_1002:void)<-(_999:oid)
+    ol3 := 2147483649;	# 732  (ol3:lng)<-(_1003:lng)
+    o := calc.oid(ol3);	# 733 CALClng2oid (o:oid)<-(ol3:lng)
+    io.print(o);	# 734 IOprint_val (_1004:void)<-(o:oid)
+    io.print(nil:oid);	# 735 IOprint_val (_1005:void)<-(_999:oid)
+    io.print(nil:oid);	# 736 IOprint_val (_1006:void)<-(_999:oid)
+    io.print(nil:oid);	# 737 IOprint_val (_1007:void)<-(_999:oid)
+    io.printf("# from flt\n");	# 738 IOprint_str (_1008:void)<-(_1009:str)
+    io.print(0@0:oid);	# 739 IOprint_val (_1010:void)<-(_1011:oid)
+    io.print(0@0:oid);	# 740 IOprint_val (_1012:void)<-(_1011:oid)
+    io.print(0@0:oid);	# 741 IOprint_val (_1013:void)<-(_1011:oid)
+    io.print(0@0:oid);	# 742 IOprint_val (_1014:void)<-(_1011:oid)
+    io.print(1@0:oid);	# 743 IOprint_val (_1015:void)<-(_993:oid)
+    io.print(nil:oid);	# 744 IOprint_val (_1016:void)<-(_999:oid)
+    io.print(nil:oid);	# 745 IOprint_val (_1017:void)<-(_999:oid)
+    io.print(nil:oid);	# 746 IOprint_val (_1018:void)<-(_999:oid)
+    io.print(nil:oid);	# 747 IOprint_val (_1019:void)<-(_999:oid)
+    io.print(nil:oid);	# 748 IOprint_val (_1020:void)<-(_999:oid)
+    io.print(nil:oid);	# 749 IOprint_val (_1021:void)<-(_999:oid)
+    io.print(nil:oid);	# 750 IOprint_val (_1022:void)<-(_999:oid)
+    io.print(nil:oid);	# 751 IOprint_val (_1023:void)<-(_999:oid)
+    io.print(nil:oid);	# 752 IOprint_val (_1024:void)<-(_999:oid)
+    io.print(nil:oid);	# 753 IOprint_val (_1025:void)<-(_999:oid)
+    io.printf("# from dbl\n");	# 754 IOprint_str (_1026:void)<-(_1027:str)
+    io.print(0@0:oid);	# 755 IOprint_val (_1028:void)<-(_1011:oid)
+    io.print(0@0:oid);	# 756 IOprint_val (_1029:void)<-(_1011:oid)
+    io.print(0@0:oid);	# 757 IOprint_val (_1030:void)<-(_1011:oid)
+    io.print(0@0:oid);	# 758 IOprint_val (_1031:void)<-(_1011:oid)
+    io.print(1@0:oid);	# 759 IOprint_val (_1032:void)<-(_1033:oid)
+    io.print(nil:oid);	# 760 IOprint_val (_1034:void)<-(_999:oid)
+    io.print(nil:oid);	# 761 IOprint_val (_1035:void)<-(_1036:oid)
+    io.print(nil:oid);	# 762 IOprint_val (_1037:void)<-(_1036:oid)
+    io.print(nil:oid);	# 763 IOprint_val (_1038:void)<-(_1036:oid)
+    io.print(2147483647@0:oid);	# 764 IOprint_val (_1039:void)<-(_1040:oid)
+    io.print(nil:oid);	# 765 IOprint_val (_1041:void)<-(_1036:oid)
+    io.print(nil:oid);	# 766 IOprint_val (_1042:void)<-(_1036:oid)
+    io.print(nil:oid);	# 767 IOprint_val (_1043:void)<-(_1036:oid)
+    io.print(nil:oid);	# 768 IOprint_val (_1044:void)<-(_1036:oid)
+    io.print(nil:oid);	# 769 IOprint_val (_1045:void)<-(_1036:oid)
+    io.printf("# from oid\n");	# 770 IOprint_str (_1046:void)<-(_1047:str)
+    io.print(2@0:oid);	# 771 IOprint_val (_1048:void)<-(_1049:oid)
+    io.print(2@0:oid);	# 772 IOprint_val (_1050:void)<-(_1049:oid)
+    io.print(2147483647@0:oid);	# 773 IOprint_val (_1051:void)<-(_1040:oid)
+    io.print(nil:oid);	# 774 IOprint_val (_1052:void)<-(_1036:oid)
+    io.print(2147483649@0:oid);	# 775 IOprint_val (_1053:void)<-(_1054:oid)
+    io.printf("# from str\n");	# 776 IOprint_str (_1055:void)<-(_1056:str)
+    io.print(0@0:oid);	# 777 IOprint_val (_1057:void)<-(_1058:oid)
+    io.print(32767@0:oid);	# 778 IOprint_val (_1059:void)<-(_1060:oid)
+    io.print(2147483647@0:oid);	# 779 IOprint_val (_1061:void)<-(_1040:oid)
+    io.print(nil:oid);	# 780 IOprint_val (_1062:void)<-(_1036:oid)
+    io.print(nil:oid);	# 781 IOprint_val (_1063:void)<-(_1036:oid)
+    io.print(nil:oid);	# 782 IOprint_val (_1064:void)<-(_1036:oid)
+    io.print(nil:oid);	# 783 IOprint_val (_1065:void)<-(_1036:oid)
+    io.print(nil:oid);	# 784 IOprint_val (_1066:void)<-(_1036:oid)
+    io.print(nil:oid);	# 785 IOprint_val (_1067:void)<-(_1036:oid)
+    io.print(nil:oid);	# 786 IOprint_val (_1068:void)<-(_1036:oid)
+    io.printf("# to str\n");	# 787 IOprint_str (_1069:void)<-(_1070:str)
+    io.printf("# from bit\n");	# 788 IOprint_str (_1071:void)<-(_1072:str)
+    io.print("true":str);	# 789 IOprint_val (_1073:void)<-(_1074:str)
+    io.print("false":str);	# 790 IOprint_val (_1075:void)<-(_1076:str)
+    io.printf("# from chr\n");	# 791 IOprint_str (_1077:void)<-(_1078:str)
+    io.print("a":str);	# 792 IOprint_val (_1079:void)<-(_1080:str)
+    io.printf("# from sht\n");	# 793 IOprint_str (_1081:void)<-(_1082:str)
+    s4 := 1:sht;	# 794  (s4:sht)<-(_1084:sht)
+    s5 := calc.str(s4);	# 795 CALCsht2str (s5:str)<-(s4:sht)
+    io.print(s5);	# 796 IOprint_val (_1086:void)<-(s5:str)
+    s4 := 32767:sht;	# 797  (s4:sht)<-(_1087:sht)
+    s5 := calc.str(s4);	# 798 CALCsht2str (s5:str)<-(s4:sht)
+    io.print(s5);	# 799 IOprint_val (_1088:void)<-(s5:str)
+    io.printf("# from int\n");	# 800 IOprint_str (_1089:void)<-(_1090:str)
+    io.print("1":str);	# 801 IOprint_val (_1091:void)<-(_1092:str)
+    io.print("32767":str);	# 802 IOprint_val (_1093:void)<-(_1094:str)
+    io.print("32768":str);	# 803 IOprint_val (_1095:void)<-(_1096:str)
+    io.print("2147483647":str);	# 804 IOprint_val (_1097:void)<-(_1098:str)
+    io.print("-2147483647":str);	# 805 IOprint_val (_1099:void)<-(_1100:str)
+    wd := calc.+(2147483647:int,1);	# 806 CALCbinaryADDintint (wd:int)<-(_1102:int)(_1103:int)
+    sv := calc.str(wd);	# 807 CALCint2str (sv:str)<-(wd:int)
+    io.print(sv);	# 808 IOprint_val (_1105:void)<-(sv:str)
+    wc := calc.-(-2147483647,1);	# 809 CALCbinarySUBintint (wc:int)<-(_1107:int)(_1103:int)
+    sv := calc.str(wc);	# 810 CALCint2str (sv:str)<-(wc:int)
+    io.print(sv);	# 811 IOprint_val (_1108:void)<-(sv:str)
+    io.printf("# should this produce nil (overflow)?\n");	# 812 IOprint_str (_1109:void)<-(_1110:str)
+    we := calc.+(2147483647:int,2);	# 813 CALCbinaryADDintint (we:int)<-(_1102:int)(_1112:int)
+    sv := calc.str(we);	# 814 CALCint2str (sv:str)<-(we:int)
+    io.print(sv);	# 815 IOprint_val (_1113:void)<-(sv:str)
+    io.printf("# should this produce nil (overflow)?\n");	# 816 IOprint_str (_1114:void)<-(_1110:str)
+    wb := calc.-(-2147483647,2);	# 817 CALCbinarySUBintint (wb:int)<-(_1107:int)(_1112:int)
+    sv := calc.str(wb);	# 818 CALCint2str (sv:str)<-(wb:int)
+    io.print(sv);	# 819 IOprint_val (_1116:void)<-(sv:str)
+    io.printf("# from lng\n");	# 820 IOprint_str (_1117:void)<-(_1118:str)
+    io.print("1":str);	# 821 IOprint_val (_1119:void)<-(_1092:str)
+    io.print("2147483647":str);	# 822 IOprint_val (_1120:void)<-(_1098:str)
+    io.print("2147483648":str);	# 823 IOprint_val (_1121:void)<-(_1122:str)
+    io.print("2147483649":str);	# 824 IOprint_val (_1123:void)<-(_1124:str)
+    io.print("-2147483647":str);	# 825 IOprint_val (_1125:void)<-(_1100:str)
+    io.print("-2147483648":str);	# 826 IOprint_val (_1126:void)<-(_1127:str)
+    io.print("-2147483649":str);	# 827 IOprint_val (_1128:void)<-(_1129:str)
+    io.printf("# from flt\n");	# 828 IOprint_str (_1130:void)<-(_1131:str)
+    io.print("0":str);	# 829 IOprint_val (_1132:void)<-(_1133:str)
+    io.print("0.100000001":str);	# 830 IOprint_val (_1134:void)<-(_1135:str)
+    io.print("0.5":str);	# 831 IOprint_val (_1136:void)<-(_1137:str)
+    io.print("0.899999976":str);	# 832 IOprint_val (_1138:void)<-(_1139:str)
+    io.print("1":str);	# 833 IOprint_val (_1140:void)<-(_1141:str)
+    io.print("-0.100000001":str);	# 834 IOprint_val (_1142:void)<-(_1143:str)
+    io.print("-0.5":str);	# 835 IOprint_val (_1144:void)<-(_1145:str)
+    io.print("-0.899999976":str);	# 836 IOprint_val (_1146:void)<-(_1147:str)
+    io.print("-1":str);	# 837 IOprint_val (_1148:void)<-(_1149:str)
+    io.print("2.14748365e+09":str);	# 838 IOprint_val (_1150:void)<-(_1151:str)
+    io.print("2.14748365e+09":str);	# 839 IOprint_val (_1152:void)<-(_1151:str)
+    io.print("2.14748365e+09":str);	# 840 IOprint_val (_1153:void)<-(_1151:str)
+    io.print("-2.14748365e+09":str);	# 841 IOprint_val (_1154:void)<-(_1155:str)
+    io.print("-2.14748365e+09":str);	# 842 IOprint_val (_1156:void)<-(_1155:str)
+    io.print("-2.14748365e+09":str);	# 843 IOprint_val (_1157:void)<-(_1155:str)
+    io.printf("# from dbl\n");	# 844 IOprint_str (_1158:void)<-(_1159:str)
+    io.print("0":str);	# 845 IOprint_val (_1160:void)<-(_1133:str)
+    io.print("0.10000000000000001":str);	# 846 IOprint_val (_1161:void)<-(_1162:str)
+    io.print("0.5":str);	# 847 IOprint_val (_1163:void)<-(_1137:str)
+    io.print("0.90000000000000002":str);	# 848 IOprint_val (_1164:void)<-(_1165:str)
+    io.print("1":str);	# 849 IOprint_val (_1166:void)<-(_1141:str)
+    io.print("-0.10000000000000001":str);	# 850 IOprint_val (_1167:void)<-(_1168:str)
+    io.print("-0.5":str);	# 851 IOprint_val (_1169:void)<-(_1145:str)
+    io.print("-0.90000000000000002":str);	# 852 IOprint_val (_1170:void)<-(_1171:str)
+    io.print("-1":str);	# 853 IOprint_val (_1172:void)<-(_1149:str)
+    io.print("2147483647":str);	# 854 IOprint_val (_1173:void)<-(_1174:str)
+    io.print("2147483648":str);	# 855 IOprint_val (_1175:void)<-(_1176:str)
+    io.print("2147483649":str);	# 856 IOprint_val (_1177:void)<-(_1178:str)
+    io.print("-2147483647":str);	# 857 IOprint_val (_1179:void)<-(_1180:str)
+    io.print("-2147483648":str);	# 858 IOprint_val (_1181:void)<-(_1182:str)
+    io.print("-2147483649":str);	# 859 IOprint_val (_1183:void)<-(_1184:str)
+    io.printf("# from oid\n");	# 860 IOprint_str (_1185:void)<-(_1186:str)
+    io.print("2@0":str);	# 861 IOprint_val (_1187:void)<-(_1188:str)
+    io.print("2@0":str);	# 862 IOprint_val (_1189:void)<-(_1188:str)
+    io.print("2147483647@0":str);	# 863 IOprint_val (_1190:void)<-(_1191:str)
+    io.print("nil":str);	# 864 IOprint_val (_1192:void)<-(_1193:str)
+    io.print("2147483649@0":str);	# 865 IOprint_val (_1194:void)<-(_1195:str)
+    io.printf("# from str\n");	# 866 IOprint_str (_1196:void)<-(_1197:str)
+    io.print("0":str);	# 867 IOprint_val (_1198:void)<-(_1199:str)
+    io.print("32767":str);	# 868 IOprint_val (_1200:void)<-(_1201:str)
+    io.print("2147483647":str);	# 869 IOprint_val (_1202:void)<-(_1174:str)
+    io.print("2147483648":str);	# 870 IOprint_val (_1203:void)<-(_1176:str)
+    io.print("2147483649":str);	# 871 IOprint_val (_1204:void)<-(_1178:str)
+    io.print("-2147483647":str);	# 872 IOprint_val (_1205:void)<-(_1180:str)
+    io.print("-2147483648":str);	# 873 IOprint_val (_1206:void)<-(_1182:str)
+    io.print("-2147483649":str);	# 874 IOprint_val (_1207:void)<-(_1184:str)
+    io.print("":str);	# 875 IOprint_val (_1208:void)<-(_1209:str)
+    io.print("random string":str);	# 876 IOprint_val (_1210:void)<-(_1211:str)
+end main;	# 877  
 # casting to int
-
 [ 0 ]
 [ 1 ]
 [ 32767 ]
@@ -21,18 +1793,14 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -2147483647 ]
 [ -2147483648 ]
 [ -2147483649 ]
-
 # from bit
 [ 1 ]
 [ 0 ]
-
 # from chr
 [ 97 ]
-
 # from sht
 [ 1 ]
 [ 32767 ]
-
 # from int
 [ 1 ]
 [ 32767 ]
@@ -45,7 +1813,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-
 # from lng
 [ 1 ]
 [ 2147483647 ]
@@ -54,7 +1821,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -2147483647 ]
 [ nil ]
 [ nil ]
-
 # from flt
 [ 0 ]
 [ 0 ]
@@ -71,7 +1837,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # from dbl
 [ 0 ]
 [ 0 ]
@@ -88,14 +1853,12 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -2147483647 ]
 [ nil ]
 [ nil ]
-
 # from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
 [ nil ]
 [ nil ]
-
 # from str
 [ 0 ]
 [ 32767 ]
@@ -107,35 +1870,28 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # to bit
-
 # from bit
 [ true ]
 [ false ]
-
 # from chr
 [ true ]
 [ false ]
-
 # from sht
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-
 # from int
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-
 # from lng
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-
 # from flt
 [ false ]
 [ true ]
@@ -143,7 +1899,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ true ]
 [ true ]
 [ true ]
-
 # from dbl
 [ false ]
 [ true ]
@@ -151,14 +1906,12 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ true ]
 [ true ]
 [ true ]
-
 # from oid
 [ false ]
 [ true ]
 [ true ]
 [ true ]
 [ true ]
-
 # from str
 [ true ]
 [ false ]
@@ -166,17 +1919,13 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ true ]
 [ nil ]
 [ nil ]
-
 # to sht
-
 # from bit
 [ 1 ]
 [ 0 ]
-
 # from chr
 [ 97 ]
 [ 0 ]
-
 # from int
 [ 0 ]
 [ 32767 ]
@@ -186,7 +1935,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # from lng
 [ 0 ]
 [ 32767 ]
@@ -196,7 +1944,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # from flt
 [ 0 ]
 [ 0 ]
@@ -213,7 +1960,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -32767 ]
 [ nil ]
 [ nil ]
-
 # from dbl
 [ 0 ]
 [ 0 ]
@@ -230,14 +1976,12 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -32767 ]
 [ nil ]
 [ nil ]
-
 # from oid
 [ 0 ]
 [ 1 ]
 [ 4096 ]
 [ nil ]
 [ nil ]
-
 # from str
 [ 0 ]
 [ 32767 ]
@@ -248,9 +1992,7 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # to long
-
 [ 0 ]
 [ 1 ]
 [ 32767 ]
@@ -268,18 +2010,14 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -9223372036854775807 ]
 [ nil ]
 [ nil ]
-
 # from bit
 [ 1 ]
 [ 0 ]
-
 # from chr
 [ 97 ]
-
 # from sht
 [ 1 ]
 [ 32767 ]
-
 # from int
 [ 1 ]
 [ 32767 ]
@@ -292,7 +2030,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-
 # from lng
 # from flt
 [ 0 ]
@@ -316,7 +2053,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # from dbl
 [ 0 ]
 [ 0 ]
@@ -339,17 +2075,15 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
 [ nil ]
+[ 2147483649 ]
+[ 4294967295 ]
 [ nil ]
 [ nil ]
-[ nil ]
-[ nil ]
-
 # from str
 [ 0 ]
 [ 32767 ]
@@ -367,20 +2101,15 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -9223372036854775807 ]
 [ nil ]
 [ nil ]
-
 # to flt
-
 # from bit
 [ 1 ]
 [ 0 ]
-
 # from chr
 [ 97 ]
-
 # from sht
 [ 1 ]
 [ 32767 ]
-
 # from int
 [ 1 ]
 [ 32767 ]
@@ -390,10 +2119,9 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 # should this produce nil (overflow)?
-[ -2.14748365e+09 ]
+[ nil ]
 # should this produce nil (overflow)?
 [ 2.14748365e+09 ]
-
 # from lng
 [ 1 ]
 [ 2.14748365e+09 ]
@@ -408,7 +2136,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -9.22337204e+18 ]
 [ nil ]
 [ nil ]
-
 # from dbl
 [ 0 ]
 [ 0.100000001 ]
@@ -425,14 +2152,12 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -2.14748365e+09 ]
 [ -2.14748365e+09 ]
 [ -2.14748365e+09 ]
-
 # from oid
 [ 2 ]
 [ 2 ]
 [ 2.14748365e+09 ]
 [ nil ]
-[ nil ]
-
+[ 2.14748365e+09 ]
 # from str
 [ 0 ]
 [ 32767 ]
@@ -460,7 +2185,7 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ 1e+10 ]
 [ 1e+10 ]
 [ 1.00000001e-10 ]
-[ -0 ]
+[ 0 ]
 [ -0.100000001 ]
 [ -1 ]
 [ -1 ]
@@ -526,20 +2251,15 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # to dbl
-
 # from bit
 [ 1 ]
 [ 0 ]
-
 # from chr
 [ 97 ]
-
 # from sht
 [ 1 ]
 [ 32767 ]
-
 # from int
 [ 1 ]
 [ 32767 ]
@@ -552,7 +2272,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-
 # from lng
 [ 1 ]
 [ 2147483647 ]
@@ -567,7 +2286,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -9.2233720368547758e+18 ]
 [ nil ]
 [ nil ]
-
 # from flt
 [ 0 ]
 [ 0.10000000149011612 ]
@@ -584,14 +2302,12 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ -2147483648 ]
 [ -2147483648 ]
 [ -2147483648 ]
-
 # from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
 [ nil ]
-[ nil ]
-
+[ 2147483649 ]
 # from str
 [ 0 ]
 [ 32767 ]
@@ -619,7 +2335,7 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ 10000000000 ]
 [ 10000000000 ]
 [ 1e-10 ]
-[ -0 ]
+[ 0 ]
 [ -0.10000000000000001 ]
 [ -1 ]
 [ -1 ]
@@ -694,20 +2410,15 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # to oid
-
 # from bit
 [ 1@0 ]
 [ 0@0 ]
-
 # from chr
 [ 97@0 ]
-
 # from sht
 [ 1@0 ]
 [ 32767@0 ]
-
 # from int
 [ 1@0 ]
 [ 32767@0 ]
@@ -720,16 +2431,17 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 # should this produce nil (overflow)?
 [ 2147483647@0 ]
-
 # from lng
 [ 1@0 ]
+[ 2147483647@0 ]
 [ 2147483647@0 ]
 [ nil ]
 [ nil ]
 [ nil ]
+[ 2147483649@0 ]
 [ nil ]
 [ nil ]
-
+[ nil ]
 # from flt
 [ 0@0 ]
 [ 0@0 ]
@@ -746,7 +2458,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # from dbl
 [ 0@0 ]
 [ 0@0 ]
@@ -763,14 +2474,12 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
 # from oid
 [ 2@0 ]
 [ 2@0 ]
 [ 2147483647@0 ]
 [ nil ]
-[ nil ]
-
+[ 2147483649@0 ]
 # from str
 [ 0@0 ]
 [ 32767@0 ]
@@ -782,21 +2491,15 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ nil ]
 [ nil ]
 [ nil ]
-
-
 # to str
-
 # from bit
 [ "true" ]
 [ "false" ]
-
 # from chr
 [ "a" ]
-
 # from sht
 [ "1" ]
 [ "32767" ]
-
 # from int
 [ "1" ]
 [ "32767" ]
@@ -809,7 +2512,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ "-2147483647" ]
 # should this produce nil (overflow)?
 [ "2147483647" ]
-
 # from lng
 [ "1" ]
 [ "2147483647" ]
@@ -818,7 +2520,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ "-2147483647" ]
 [ "-2147483648" ]
 [ "-2147483649" ]
-
 # from flt
 [ "0" ]
 [ "0.100000001" ]
@@ -835,7 +2536,6 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ "-2.14748365e+09" ]
 [ "-2.14748365e+09" ]
 [ "-2.14748365e+09" ]
-
 # from dbl
 [ "0" ]
 [ "0.10000000000000001" ]
@@ -852,14 +2552,12 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ "-2147483647" ]
 [ "-2147483648" ]
 [ "-2147483649" ]
-
 # from oid
 [ "2@0" ]
 [ "2@0" ]
 [ "2147483647@0" ]
-[ nil ]
-[ nil ]
-
+[ "nil" ]
+[ "2147483649@0" ]
 # from str
 [ "0" ]
 [ "32767" ]
@@ -871,8 +2569,3 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 [ "-2147483649" ]
 [ "" ]
 [ "random string" ]
-
-# 14:56:01 >  
-# 14:56:01 >  Done.
-# 14:56:01 >  
-
