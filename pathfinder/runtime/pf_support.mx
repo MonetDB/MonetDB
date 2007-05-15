@@ -1801,8 +1801,11 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
 @
 @= postfilter
 if (postfilter) {
+	var pre_kind := nil;
+	if (isnil(kind_test)) {
+	    pre_kind := ws.fetch(PRE_KIND).fetch(contID);
+	}
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
-	var pre_kind := ws.fetch(PRE_KIND).fetch(contID);
 	var pre_prop := ws.fetch(PRE_PROP).fetch(contID);
 	if (is_constant(pre_cont)) {
                 # determine a sel [qnid,qnid] of qualifying nslocs (i.e. prop IDs)
@@ -1853,7 +1856,7 @@ if (postfilter) {
 @= target_post
         @:postfilter(PROP_TGT,tgt,PI)@
 @= kind_post
-        if (postfilter) {
+        if (postfilter and isnil(kind_test)) {
       		var pre_kind := ws.fetch(PRE_KIND).find(contID);
                	tmp_res := result_part_item.leftfetchjoin(pre_kind).ord_uselect(@1).hmark(0@0);
 	       	@:mapping_code@
@@ -1861,13 +1864,13 @@ if (postfilter) {
 @= no_pre
 	cands := ws.fetch(PRE_SIZE).fetch(contID).mirror(); # no selection: cands is everything
 @= kind_pre
-      { cands := ws.fetch(PRE_KIND).fetch(contID); kind_test := kind; }
+      { cands := ws.fetch(PRE_KIND).fetch(contID); kind_test := @1; }
 @= nsloc_pre
-      { var nsloc := ns + NS_ACCEL_SEP + loc; @:prefilter(nsloc,QN_URI_LOC)@ }
+      { var nsloc := ns + NS_ACCEL_SEP + loc; @:prefilter(nsloc,QN_URI_LOC,ELEMENT)@ }
 @= loc_pre
-      { @:prefilter(loc,QN_LOC)@ }
+      { @:prefilter(loc,QN_LOC,ELEMENT)@ }
 @= ns_pre
-      { @:prefilter(ns,QN_URI)@ }
+      { @:prefilter(ns,QN_URI,ELEMENT)@ }
 @= prefilter
 	       cands := ws.fetch(PRE_SIZE).fetch(contID).mirror();
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
@@ -1899,7 +1902,11 @@ if (postfilter) {
                         }
                 	postfilter := false; # we have a true candidate list
                 }
-       } # else we use postfilter (after SCJ)
+        } else {
+                # we use postfilter (after SCJ) for ns/loc/nsloc/target,
+                # but prefilter for kind
+                @:kind_pre(@3)@
+        }
 
 # expanding the scj for the different tests
 @= loop_lifted_scj_wrap1
