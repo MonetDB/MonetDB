@@ -50,7 +50,6 @@ library aggr;
 library array;
 library pqueue;
 library mkey;
-library mallist;
 
 library blob;
 library color;
@@ -161,7 +160,6 @@ include bpm;
 include inspect;
 include manual;
 include language;
-include mallist;
 include constraints;
 include mserver;
 

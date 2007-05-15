@@ -217,6 +217,7 @@ mdb_export str MDBgetStackFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBgetDefinition(MalBlkPtr m, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBgrabClient(int *ret, int *id);
+mdb_export str MDBdummy(int *ret);
 
 @-
 The primary debugger controls
@@ -798,5 +799,9 @@ MDBgrabClient(int *ret, int *id){
 	fprintf(stderr,"exchanged descriptors\n");
 	(void) ret;
 	return MAL_SUCCEED;
+}
+str MDBdummy(int *ret){
+	(void) ret;
+	throw(MAL, "mdb.dummy", "Dummy routine called");
 }
 @}

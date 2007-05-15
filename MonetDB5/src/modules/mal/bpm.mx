@@ -251,6 +251,21 @@ address BPMdeposit
 comment "Create a new partitioned BAT by name";
 
 @-
+Temporary results can be administered as partitioned tables as well.
+There is no a priori need to have the partitioned non-overlapping.
+@mal
+pattern new(ht:any_1,tt:any_2):bat[:any_1,:any_2]
+address BPMnew
+comment "Create a temporary partitioned table";
+
+command addPartition(b:bat[:any_1,:any_2],s:bat[:any_1,:any_2]):void
+address BPMaddSegment;
+command glue(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address BPMglue;
+
+command count(b:bat[:any_1,:any_2]):int
+address BPMcount;
+@-
 The partitioning is handled inside the module.
 If the alias BAT denotes an existing partition, it is
 further broken into pieces.
@@ -457,6 +472,10 @@ bpm_export str BPMrangeVector(bat *ret, bat *bid, bat *pv);
 bpm_export str BPMrangeVectorSort(bat *ret, bat *bid, bat *pv);
 bpm_export str BPMsortPartitions(int *ret, bat *bid);
 
+bpm_export str BPMcount(int *ret, bat *src);
+
+bpm_export str BPMglue(int *ret, bat *src);
+bpm_export str BPMaddSegment(int *ret, bat *dst, bat *src);
 bpm_export str BPMaddPartition(bat *ret, str *nme, bat *src);
 bpm_export str BPMaddPartitionDim(bat *ret, str *nme, bat *src, ptr hl, ptr hh, ptr tl, ptr th);
 bpm_export str BPMhash(bat *ret, bat *bid, int *slots);
@@ -473,6 +492,7 @@ bpm_export str BPMgetNames(bat *bid);
 bpm_export str BPMdiscard(int *ret, bat *bid);
 bpm_export str BPMdiscardAll(int *ret);
 
+bpm_export str BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMnewIteratorRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -879,7 +899,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	BPMopen();
 
 	/* test for duplicate names */
-	if( getByName(*nme) )
+	if(nme && getByName(*nme) )
 		throw(MAL,"pbm.deposit","Duplicate partitioned BAT");
 	/* get target bat */
 	@:getBATdescriptor(src,b,"bpm.deposit")@
@@ -897,7 +917,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	}
 	pa = newPartition(ba->batCacheid);
 	pa->alias= pa->bid;
-	pa->name= GDKstrdup(*nme);
+	pa->name= nme? GDKstrdup(*nme): GDKstrdup("tmp");
 	pa->nxt= pa->prv= pa->bid;
 	@:defaultRange(pa,ba)@
 
@@ -918,7 +938,8 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	*ret= ba->batCacheid;
 
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Enter the partition '%s' at %d\n",*nme,bn->batCacheid);
+	stream_printf(GDKout,"Enter the partition '%s' at %d\n",
+		(nme?*nme,"tmp"),bn->batCacheid);
 	BPMprintRecord(GDKout,p);
 #endif
 	BBPunfix(b->batCacheid);
@@ -1145,7 +1166,27 @@ BPMrangeVectorSort(bat *ret, bat *bid, bat *pv)
 	return msg;
 }
 
+str
+BPMcount(int *ret, bat *dst){
+	(void) ret;
+	(void) dst;
+	throw(MAL,"bpm.count","NYI");
+}
 
+str
+BPMglue(bat *ret, bat *dst){
+	(void) ret;
+	(void) dst;
+	throw(MAL,"bpm.glue","NYI");
+}
+
+str
+BPMaddSegment(bat *ret, bat *dst, bat *src){
+	(void) ret;
+	(void) dst;
+	(void) src;
+	throw(MAL,"bpm.addSegment","NYI");
+}
 
 str
 BPMaddPartition(bat *ret, str *nme, bat *src)
@@ -1417,6 +1458,32 @@ size.
 
 Iterations over partitioned BATs can be valued constrainted.
 @c
+str
+BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn;
+	bat *ret;
+	int ht, tt;
+	str msg;
+	(void) mb;
+
+	ret= (bat *)getArgReference(stk, pci, 0);
+	ht= getArgType(mb,pci, *(int *)getArgReference(stk, pci, 1));
+	tt= getArgType(mb,pci, *(int *)getArgReference(stk, pci, 2));
+	BPMopen();
+
+	bn= BATnew(ht,tt,0);
+	if( bn == 0)
+		throw(MAL,"bpm.new","Can not create BAT");
+	
+#ifdef _DEBUG_BPM_
+	stream_printf(GDKout,"new partitioned table: %d\n",*ret);
+#endif
+	msg= BPMdeposit(ret, 0, &bn->batCacheid);
+	BBPunfix(bn->batCacheid);
+	return msg;
+}
+
 str
 BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
