@@ -279,13 +279,17 @@ axis step evaluation on the @1 axis from the given context."
 @= ll_prec_foll_decl
 .COMMAND ll_@1(BAT[oid,oid] iter,
                BAT[oid,oid] ctx,
+               BAT[oid,oid] doc_pre,
                BAT[oid,int] pre_size,
-               BAT[oid,oid] doc_pre): BAT[oid,oid] = PFll_@1;
+               BAT[oid,chr] pre_kind,
+               chr kind_test): BAT[oid,oid] = PFll_@1;
 "PARAMETERS:
 BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
+BAT[void,oid] doc_pre (table of document containers; doc id, preorder start value)
 BAT[void,int] pre_size (from the working set)
-BAT[void,oid] table of document containers (doc id, preorder start value)
+BAT[void,chr] pre_kind (from the working set)
+chr kind_test (kind to test for; chr_nil if no kind test)
 DESCRIPTION:
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
 @m
@@ -1719,12 +1723,19 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
 @
 
 @= ll_prec_foll_impl
-PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order) : BAT[void,bat]
+PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, chr kind_test) : BAT[void,bat]
 {
     # "order" is not (yet?) used, here.
-    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     @:foll_prec_code@
-    var res := ll_@1(iter.chk_order(), item.chk_order(), pre_sizes, doc_pre);
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
+    var pre_kinds;
+    if (isnil(kind_test)) {
+        # no kind test
+        pre_kinds := new(void,chr,0).seqbase(0@0).access(BAT_READ);
+    } else {
+        pre_kinds := ws.fetch(PRE_KIND).fetch(cont);
+    }
+    var res := ll_@1(iter.chk_order(), item.chk_order(), doc_pre, pre_sizes, pre_kinds, kind_test);
     var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 
     @:post_sort_output@
@@ -1734,6 +1745,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
 @
 
 @mil
+@:loop_lifted_scj_step1(parent)@
 @:loop_lifted_scj_step1(ancestor)@
 @:loop_lifted_scj_step1(ancestor_or_self)@
 
@@ -1741,10 +1753,10 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
 @:loop_lifted_scj_wrap1(descendant)@
 @:loop_lifted_scj_wrap1(descendant_or_self)@
 
-@:loop_lifted_scj_step1(parent)@
-@:loop_lifted_scj_step1(following)@
-@:loop_lifted_scj_step1(following_sibling)@
+@:loop_lifted_scj_step1x(following)@
 @:loop_lifted_scj_step1(preceding)@
+
+@:loop_lifted_scj_step1(following_sibling)@
 @:loop_lifted_scj_step1(preceding_sibling)@
 @
 #==================================================================
@@ -1781,8 +1793,12 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
 @= nsloc_params
 , ns, loc
 @
+@= params1
+, kind_test
+@
 @= params2
 , cands, kind_test
+@
 @= postfilter
 if (postfilter) {
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
@@ -1904,6 +1920,14 @@ if (postfilter) {
 @:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@        ,,)@
 @:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@       ,,)@
 @:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@    ,,)@
+@
+@= loop_lifted_scj_step1x
+@:loop_lifted_scj_step2(@1,,,,,                                                               @:params1@,)@
+@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,,                   @:params1@,kind_test := kind;)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params1@,)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params1@,)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params1@,)@
+@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params1@,)@
 @
 #==================================================================
 # actual definition of the scj proc

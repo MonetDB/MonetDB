@@ -57,7 +57,7 @@ module 'pf_support'
 [ "ll_child(BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[void,any], bit, bit, oid, oid, bit, chr) : BAT[oid,oid]"					  ]
 [ "ll_descendant(BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[void,any], bit, bit, oid, oid, bit, chr) : BAT[oid,oid]"					  ]
 [ "ll_descendant_or_self(BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[void,any], bit, bit, oid, oid, bit, chr) : BAT[oid,oid]"				  ]
-[ "ll_following(BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,oid]) : BAT[oid,oid]"										  ]
+[ "ll_following(BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,chr], chr) : BAT[oid,oid]"							  ]
 [ "ll_parent(BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,chr]) : BAT[oid,oid]"									  ]
 [ "ll_tokenize(BAT[void,str], BAT[void,str]) : BAT[oid,str]"										  ]
 [ "merge_adjacent_text_nodes(BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,oid]"						  ]
