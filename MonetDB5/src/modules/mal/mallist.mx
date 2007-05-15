@@ -47,7 +47,7 @@ comment "Fetch next element";
 @-
 A few aggregate functions are defined here
 to ease execution.
-@m
+@mal
 command count(l:list):lng
 address MALLISTcount
 comment "Count the total tuples in the list";
