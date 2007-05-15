@@ -642,19 +642,14 @@ setup_connection(str dst, int *port)
 
     ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
     for (i = NR_RETRIES; i > 0 && ret < 0; i--) {
-        if (ret < 0){
-            GDKwarning("setup_connection: could not set up connection with %s:%d : %s\n",
-                    dst, p, errno?strerror(errno):".");
-            GDKwarning("setup_connection: %d tries left\n", i);
-            errno = 0;
-        }
-        sleep(1);
+        usleep(1);
         ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
     }
 
     if (ret < 0) {
-        GDKerror("setup_connection: failed to setup connection with %s:%d : %s\n",
-                dst, p, errno?strerror(errno):".");
+        GDKerror("setup_connection: failed to setup connection with "
+                 "%s:%d\n", dst, p);
+        if(errno) GDKerror("setup_connection: %s", strerror(errno));
         close(sock);
         return -1;
     }
@@ -746,21 +741,19 @@ getELEMkind(BAT *ws, int contID, oid item_index)
 }
 
 static void
-handle_soap_fault_msg(char *errmsg)
+handle_error_msg(char *errmsg)
 {
     char *strptr, *strptr2;
 
     strptr = strstr(errmsg, "<env:Value");
     if(!strptr) {
-        GDKerror("handle_soap_fault_msg: SOAP Fault message not "
-                 "well-formed: could not find \"<env:Value\".\n%s\n",
-                 errmsg);
+        GDKerror(errmsg);
         return;
     }
     strptr = strchr(strptr, '>'); assert(strptr);
     strptr2 = strstr(++strptr, "</env:Value>");
     if( (!strptr) || (!strptr2) ) {
-        GDKerror("handle_soap_fault_msg: SOAP Fault message not "
+        GDKerror("handle_error_msg: SOAP Fault message not "
                  "well-formed at \"<env:Value>.\n%s\n", errmsg);
         return;
     }
@@ -770,7 +763,7 @@ handle_soap_fault_msg(char *errmsg)
 
     strptr = strstr(strptr2+12, "<env:Text");
     if(!strptr) {
-        GDKerror("handle_soap_fault_msg: SOAP Fault message not "
+        GDKerror("handle_error_msg: SOAP Fault message not "
                  "well-formed: could not find \"<env:Text\".\n%s\n",
                  errmsg);
         return;
@@ -778,7 +771,7 @@ handle_soap_fault_msg(char *errmsg)
     strptr = strchr(strptr, '>') + 1;
     strptr2 = strstr(strptr, "</env:Text>");
     if( (!strptr) || (!strptr2) ) {
-        GDKerror("handle_soap_fault_msg: SOAP Fault message not "
+        GDKerror("handle_error_msg: SOAP Fault message not "
                  "well-formed at \"<env:Text>\".\n%s\n", errmsg);
         return;
     }
@@ -868,7 +861,7 @@ response2bat(int sock,
             return NULL;
         }
         b->buf[b->pos] = 0;
-        handle_soap_fault_msg(b->buf);
+        handle_error_msg(b->buf);
         stream_close(in); stream_destroy(in);
         return NULL;
     }
@@ -895,7 +888,7 @@ response2bat(int sock,
             *time_xrpcClntDeSeria = GDKusec() - *time_xrpcClntDeSeria;
             return shredBAT;
         } else {
-            handle_soap_fault_msg(b->buf);
+            handle_error_msg(b->buf);
             BBPreclaim(shredBAT);
             return NULL;
         }
