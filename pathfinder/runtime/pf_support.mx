@@ -699,7 +699,7 @@ PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
     }
     var absolute := [or](filepath.[startsWith]("/"), filepath.[startsWith]("\\")).uselect(true).mirror().leftfetchjoin(sel);
     if (count(absolute) > 0) {
-       ERROR("fn_put: file URI '%s' must be a relative path (%d such errors).", backwards.fetch(0), count(backwards));
+       ERROR("fn_put: file URI '%s' must be a relative path (%d such errors).", absolute.fetch(0), count(absolute));
     }
     var backwards := filepath.[search]("..").uselect(0,int_nil).mirror().leftfetchjoin(sel);
     if (count(backwards) > 0) {
@@ -7118,13 +7118,19 @@ int CMDpflock_free(bit *res, bit* doCommit) {
 int CMDws_bat(BAT **ret, lng* wsid)
 {
     bat bid = *wsid & 1073741823LL;
-    BAT *v = NULL;
     if (BBPfix(bid)) {
-        BAT *b = BBPdescriptor(bid);
+        BAT *v, *b = BBPdescriptor(bid);
         if (b) *ret = v = VIEWcreate(b);
         BBPunfix(bid);
+	if (v) {
+            /* give the view a name such that lng(bbname(v)) = lng(bbpname(b)) */
+	    long_str buf;
+            snprintf(buf, sizeof(buf), "%s-%d", BBP_logical(bid), ABS(b->batCacheid));
+	    BBPrename(v->batCacheid, buf);
+    	    return GDK_SUCCEED;
+        }
     }
-    return v?GDK_SUCCEED:GDK_FAIL;
+    return GDK_SUCCEED;
 }
 
 #include "serialize.h"
