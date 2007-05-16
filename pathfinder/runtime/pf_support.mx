@@ -7118,8 +7118,9 @@ int CMDpflock_free(bit *res, bit* doCommit) {
 int CMDws_bat(BAT **ret, lng* wsid)
 {
     bat bid = *wsid & 1073741823LL;
+    *ret = 0;
     if (BBPfix(bid)) {
-        BAT *v, *b = BBPdescriptor(bid);
+        BAT *v = 0, *b = BBPdescriptor(bid);
         if (b) *ret = v = VIEWcreate(b);
         BBPunfix(bid);
 	if (v) {
@@ -7128,9 +7129,16 @@ int CMDws_bat(BAT **ret, lng* wsid)
             snprintf(buf, sizeof(buf), "%s-%d", BBP_logical(bid), ABS(b->batCacheid));
 	    BBPrename(v->batCacheid, buf);
     	    return GDK_SUCCEED;
+        } else
+        if (b) {
+            GDKerror("CMDws_bat: VIEWcreate(%s(%d)) failed.\n", BATgetId(b), b->batCacheid);
+        } else {
+            GDKerror("CMDws_bat: BBPdescriptor(%d) failed.\n", (int)bid);
         }
+    } else {
+        GDKerror("CMDws_bat: BBPfix(%d) failed.\n", (int)bid);
     }
-    return GDK_SUCCEED;
+    return GDK_FAIL;
 }
 
 #include "serialize.h"
