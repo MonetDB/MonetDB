@@ -141,7 +141,7 @@ OPTpartitionProperties(MalBlkPtr mb)
 			pushInstruction(mb,p);
 			continue;
 		}
-		/* find competing fragmentation groups */
+		/* find plan segments, a linear trail of single target instructions */
 		done=0;
 		if( isFragmentGroup(p) ){
 			for(j=p->retc; j<p->argc; j++)
@@ -152,10 +152,10 @@ OPTpartitionProperties(MalBlkPtr mb)
 					tmp[k]= getArg(p,0);
 				done++;
 			}
-			if( done == 0) {
-				pushInstruction(mb,p);
-				continue;
-			}
+			if( done == 0) 
+				goto handleone;
+			if( old[i-1]->retc>1)
+				k= lastsegment= ++grp;
 			if( done>1 )
 				k= grp;
 			/* mark all result variables to belong to the same segment */
@@ -172,7 +172,8 @@ OPTpartitionProperties(MalBlkPtr mb)
 We have encountered a non-fragment statement. It is assigned to its
 own segment.
 @c
-		if( lastsegment==0)
+handleone:
+		if( lastsegment==0 )
 			lastsegment= ++grp;
 		/* mark all result variables to belong to the same segment */
 		for(j=0; j<p->retc; j++){
@@ -199,7 +200,8 @@ static void
 OPTpartitionStrategy(MalBlkPtr mb, int last)
 {
 	int i,j,limit,lastsegment=0;
-	InstrPtr *old,p,q,anchor=NULL, listanchor=NULL;
+	InstrPtr *old,p,q,anchor=NULL;
+	InstrPtr *listanchor= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->vtop);
 	int *seg;
 	int *alias= (int*) alloca(sizeof(int)*mb->vtop*2);
 	int *bpm= (int*) alloca(sizeof(int)*mb->vtop*2);
@@ -207,6 +209,7 @@ OPTpartitionStrategy(MalBlkPtr mb, int last)
 
 	memset((char*) alias, 0, sizeof(int)*mb->vtop*2);
 	memset((char*) bpm, 0, sizeof(int)*mb->vtop*2);
+	memset((char*) listanchor, 0, sizeof(InstrPtr)*mb->vtop);
 
 	limit= mb->stop;
 	old = mb->stmt;
@@ -262,12 +265,12 @@ Wrapup the last segment first
 			for(j=0; j< old[i-1]->retc; j++){
 				int tpe;
 				q = newStmt(mb,"bpm","addPartition");
-				pushArgument(mb,q,getArg(listanchor,0));
+				pushArgument(mb,q,getArg(listanchor[j],0));
 				pushArgument(mb,q,getArg(old[i-1],j));
-				alias[getArg(old[i-1],j)]=getArg(listanchor,0);
+				alias[getArg(old[i-1],j)]=getArg(listanchor[j],0);
 				tpe= getArgType(mb,old[i-1],j);
-				pushArgument(mb,listanchor,newTypeVariable(mb,getHeadType(tpe)));
-				pushArgument(mb,listanchor,newTypeVariable(mb,getTailType(tpe)));
+				pushArgument(mb,listanchor[j],newTypeVariable(mb,getHeadType(tpe)));
+				pushArgument(mb,listanchor[j],newTypeVariable(mb,getTailType(tpe)));
 			}
 			for(j=anchor->argc-1; j>= anchor->retc; j--)
 			if( isaBatType(getArgType(mb,anchor,j)) ){
@@ -306,7 +309,7 @@ Wrapup the last segment first
 				anchor= NULL;
 			}
 		}
-		if( *seg <0 ){
+		if( *seg <0){
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -317,7 +320,7 @@ Currently assume a single one.
 @c
 		if(*seg!=lastsegment && *seg != last){
 			for(j=0; j<p->retc; j++){
-				listanchor= q = newStmt(mb,"bpm","new");
+				listanchor[j]= q = newStmt(mb,"bpm","new");
 				alias[getArg(p,j)]= getArg(q,0);
 			}
 			for(j=p->retc; j<p->argc; j++)
