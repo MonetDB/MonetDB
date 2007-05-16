@@ -29,70 +29,70 @@ print(rangesplit(b,-1));
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 1,	  <tmp_40>	  ]
-[ 2,	  <tmp_41>	  ]
-[ 3,	  <tmp_42>	  ]
-[ 4,	  <tmp_43>	  ]
-[ 5,	  <tmp_44>	  ]
-[ 6,	  <tmp_45>	  ]
-[ 7,	  <tmp_46>	  ]
-[ 8,	  <tmp_47>	  ]
-[ 9,	  <tmp_50>	  ]
-[ nil,	  <tmp_51>	  ]
+[ 1,	  <tmp_71>	  ]
+[ 2,	  <tmp_72>	  ]
+[ 3,	  <tmp_73>	  ]
+[ 4,	  <tmp_74>	  ]
+[ 5,	  <tmp_75>	  ]
+[ 6,	  <tmp_76>	  ]
+[ 7,	  <tmp_77>	  ]
+[ 8,	  <tmp_100>	  ]
+[ 9,	  <tmp_101>	  ]
+[ nil,	  <tmp_102>	  ]
 print(rangesplit(b,1));
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ nil,	  <tmp_33>	  ]
+[ nil,	  <tmp_64>	  ]
 print(rangesplit(b,2));
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 5,	  <tmp_52>	  ]
-[ nil,	  <tmp_53>	  ]
+[ 5,	  <tmp_103>	  ]
+[ nil,	  <tmp_104>	  ]
 print(rangesplit(b,5));
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 2,	  <tmp_54>	  ]
-[ 4,	  <tmp_55>	  ]
-[ 6,	  <tmp_56>	  ]
-[ 8,	  <tmp_57>	  ]
-[ nil,	  <tmp_60>	  ]
+[ 2,	  <tmp_105>	  ]
+[ 4,	  <tmp_106>	  ]
+[ 6,	  <tmp_107>	  ]
+[ 8,	  <tmp_110>	  ]
+[ nil,	  <tmp_111>	  ]
 print(rangesplit(b,n));
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 1,	  <tmp_61>	  ]
-[ 2,	  <tmp_62>	  ]
-[ 3,	  <tmp_63>	  ]
-[ 4,	  <tmp_64>	  ]
-[ 5,	  <tmp_65>	  ]
-[ 6,	  <tmp_66>	  ]
-[ 7,	  <tmp_67>	  ]
-[ 8,	  <tmp_70>	  ]
-[ 9,	  <tmp_71>	  ]
-[ nil,	  <tmp_72>	  ]
+[ 1,	  <tmp_112>	  ]
+[ 2,	  <tmp_113>	  ]
+[ 3,	  <tmp_114>	  ]
+[ 4,	  <tmp_115>	  ]
+[ 5,	  <tmp_116>	  ]
+[ 6,	  <tmp_117>	  ]
+[ 7,	  <tmp_120>	  ]
+[ 8,	  <tmp_121>	  ]
+[ 9,	  <tmp_122>	  ]
+[ nil,	  <tmp_123>	  ]
 print(rangesplit(b,n + 1));
 !WARNING: BATrangesplit: reduced number of ranges (11) to number of tuples (10).
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 1,	  <tmp_73>	  ]
-[ 2,	  <tmp_74>	  ]
-[ 3,	  <tmp_75>	  ]
-[ 4,	  <tmp_76>	  ]
-[ 5,	  <tmp_77>	  ]
-[ 6,	  <tmp_100>	  ]
-[ 7,	  <tmp_101>	  ]
-[ 8,	  <tmp_102>	  ]
-[ 9,	  <tmp_103>	  ]
-[ nil,	  <tmp_104>	  ]
+[ 1,	  <tmp_124>	  ]
+[ 2,	  <tmp_125>	  ]
+[ 3,	  <tmp_126>	  ]
+[ 4,	  <tmp_127>	  ]
+[ 5,	  <tmp_130>	  ]
+[ 6,	  <tmp_131>	  ]
+[ 7,	  <tmp_132>	  ]
+[ 8,	  <tmp_133>	  ]
+[ 9,	  <tmp_134>	  ]
+[ nil,	  <tmp_135>	  ]
 
 print(hashsplit(b,0));
 !ERROR: BAThashsplit: number of ranges must not be less than 1!
@@ -104,70 +104,70 @@ print(hashsplit(b,-1));
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_36>	  ]
-[ 1,	  <tmp_37>	  ]
-[ 2,	  <tmp_105>	  ]
-[ 3,	  <tmp_106>	  ]
-[ 4,	  <tmp_107>	  ]
-[ 5,	  <tmp_110>	  ]
-[ 6,	  <tmp_111>	  ]
-[ 7,	  <tmp_112>	  ]
-[ 8,	  <tmp_113>	  ]
-[ 9,	  <tmp_114>	  ]
+[ 0,	  <tmp_67>	  ]
+[ 1,	  <tmp_70>	  ]
+[ 2,	  <tmp_136>	  ]
+[ 3,	  <tmp_137>	  ]
+[ 4,	  <tmp_140>	  ]
+[ 5,	  <tmp_141>	  ]
+[ 6,	  <tmp_142>	  ]
+[ 7,	  <tmp_143>	  ]
+[ 8,	  <tmp_144>	  ]
+[ 9,	  <tmp_145>	  ]
 print(hashsplit(b,2));
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_114>	  ]
-[ 1,	  <tmp_113>	  ]
+[ 0,	  <tmp_145>	  ]
+[ 1,	  <tmp_144>	  ]
 print(hashsplit(b,5));
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_113>	  ]
-[ 1,	  <tmp_114>	  ]
-[ 2,	  <tmp_112>	  ]
-[ 3,	  <tmp_111>	  ]
-[ 4,	  <tmp_110>	  ]
+[ 0,	  <tmp_144>	  ]
+[ 1,	  <tmp_145>	  ]
+[ 2,	  <tmp_143>	  ]
+[ 3,	  <tmp_142>	  ]
+[ 4,	  <tmp_141>	  ]
 print(hashsplit(b,1));
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_33>	  ]
+[ 0,	  <tmp_64>	  ]
 print(hashsplit(b,n));
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_110>	  ]
-[ 1,	  <tmp_111>	  ]
-[ 2,	  <tmp_112>	  ]
-[ 3,	  <tmp_114>	  ]
-[ 4,	  <tmp_113>	  ]
-[ 5,	  <tmp_107>	  ]
-[ 6,	  <tmp_106>	  ]
-[ 7,	  <tmp_105>	  ]
-[ 8,	  <tmp_37>	  ]
-[ 9,	  <tmp_36>	  ]
+[ 0,	  <tmp_141>	  ]
+[ 1,	  <tmp_142>	  ]
+[ 2,	  <tmp_143>	  ]
+[ 3,	  <tmp_145>	  ]
+[ 4,	  <tmp_144>	  ]
+[ 5,	  <tmp_140>	  ]
+[ 6,	  <tmp_137>	  ]
+[ 7,	  <tmp_136>	  ]
+[ 8,	  <tmp_70>	  ]
+[ 9,	  <tmp_67>	  ]
 print(hashsplit(b,n + 1));
 !WARNING: BAThashsplit: reduced number of ranges (11) to number of tuples (10).
 #-------------------------#
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_36>	  ]
-[ 1,	  <tmp_37>	  ]
-[ 2,	  <tmp_105>	  ]
-[ 3,	  <tmp_106>	  ]
-[ 4,	  <tmp_107>	  ]
-[ 5,	  <tmp_113>	  ]
-[ 6,	  <tmp_114>	  ]
-[ 7,	  <tmp_112>	  ]
-[ 8,	  <tmp_111>	  ]
-[ 9,	  <tmp_110>	  ]
+[ 0,	  <tmp_67>	  ]
+[ 1,	  <tmp_70>	  ]
+[ 2,	  <tmp_136>	  ]
+[ 3,	  <tmp_137>	  ]
+[ 4,	  <tmp_140>	  ]
+[ 5,	  <tmp_144>	  ]
+[ 6,	  <tmp_145>	  ]
+[ 7,	  <tmp_143>	  ]
+[ 8,	  <tmp_142>	  ]
+[ 9,	  <tmp_141>	  ]
 quit();
 
 # 22:21:26 >  
