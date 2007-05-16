@@ -258,8 +258,6 @@ pattern new(ht:any_1,tt:any_2):bat[:any_1,:any_2]
 address BPMnew
 comment "Create a temporary partitioned table";
 
-command addPartition(b:bat[:any_1,:any_2],s:bat[:any_1,:any_2]):void
-address BPMaddSegment;
 command glue(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMglue;
 
@@ -290,6 +288,9 @@ command partition(pb:bat[:any_1,:any_2], val:any_2):void
 address BPMsplitpartition
 comment "Split all partitions that cover the split value";
 
+command addPartition(b:bat[:any_1,:any_2],s:bat[:any_1,:any_2]):void
+address BPMaddSegment
+comment "Add a partition to a fragmented temporary table";
 command addPartition(nme:str,b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMaddPartition
 comment "Add a new partition to the chain for name";
@@ -1180,25 +1181,86 @@ BPMrangeVectorSort(bat *ret, bat *bid, bat *pv)
 }
 
 str
-BPMcount(int *ret, bat *dst){
-	(void) ret;
-	(void) dst;
-	throw(MAL,"bpm.count","NYI");
+BPMcount(int *ret, bat *bid)
+{
+	int i;
+	Partition ps;
+	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
+		throw(MAL,"pbm.count","Partitioned BAT not found");
+	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
+		*ret= *ret + bpmcat[i]->cnt;
+	}
+	return MAL_SUCCEED;
 }
 
 str
-BPMglue(bat *ret, bat *dst){
-	(void) ret;
-	(void) dst;
-	throw(MAL,"bpm.glue","NYI");
-}
+BPMglue(bat *ret, bat *bid){
+	int i,cnt;
+	Partition ps;
+	BAT *b,*bn;
 
+	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
+		throw(MAL,"pbm.glue","Partitioned BAT not found");
+	b= BATdescriptor(i);
+	if( b== NULL)
+		throw(MAL,"pbm.glue","Partitioned BAT not found");
+
+	BPMcount(&cnt,bid);
+	bn= BATnew(b->htype, b->ttype, cnt);
+	BBPunfix(b->batCacheid);
+
+	if( bn== NULL)
+		throw(MAL,"pbm.glue","Can not create BAT");
+	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
+		b= BATdescriptor(i);
+		if( b== NULL)
+			throw(MAL,"pbm.glue","Partitioned BAT not found");
+		BATappend(bn,b,FALSE);
+		BBPunfix(b->batCacheid);
+	}
+	BBPkeepref(*ret= bn->batCacheid);
+	return MAL_SUCCEED;
+}
+@-
+The partitioning scheme should become adaptive.
+@c
+
+static int 
+guessNewPartition(BAT *b){
+	if( BATcount(b) >BATTINY)
+		return 1;
+	return 0;
+}
 str
-BPMaddSegment(bat *ret, bat *dst, bat *src){
-	(void) ret;
-	(void) dst;
-	(void) src;
-	throw(MAL,"bpm.addSegment","NYI");
+BPMaddSegment(int *ret, bat *bid, bat *src){
+	int i,cnt;
+	Partition ps,p;
+	BAT *b,*bn;
+	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
+		throw(MAL,"pbm.addPartition","Partitioned BAT not found");
+	b= BATdescriptor(*src);
+	if( b== NULL)
+		throw(MAL,"pbm.addPartition","Partial partition BAT not found");
+	BPMcount(&cnt,bid);
+
+	/* it is the first one? */
+	if( ps->nxt== ps->prv){
+		p= newPartition(b->batCacheid);
+		insertPartition(ps,p);
+	} else
+	if( guessNewPartition(b)){
+		p= newPartition(b->batCacheid);
+		insertPartition(bpmcat[ps->prv],p);
+	} else {
+		/* add the content to the last partition */
+		bn= BATdescriptor(bpmcat[i]->prv);
+		if( bn== NULL)
+			throw(MAL,"pbm.addPartition","Last partition BAT not found");
+		BATappend(bn,b,FALSE);
+	}
+	*ret= 0;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
