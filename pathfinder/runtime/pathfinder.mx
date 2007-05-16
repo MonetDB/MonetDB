@@ -2058,18 +2058,23 @@ PROC __runtime_maintain(lng wsid,
     var vx_flush_deletes := ((count(vxd)*8) > count(vxm));
 
     # nsloc index only contains qn-s from unq (ignore the rest)
+    unq.append(new_qn, true);
     ins_qn_nid := ins_qn_nid.kintersect(reverse(unq));
     del_qn_nid := del_qn_nid.kintersect(reverse(unq));
 
+    # register the new deltas
+    ins.insert(ins_qn_nid);
+    del.insert(del_qn_nid);
+    vxi.insert(ins_vx);
+    vxd.insert(del_vx);
+
     if (coast_clear) {
         # coast is clear, unite als ins, all del and apply them to the master
-        ins.insert(ins_qn_nid);
         idx.insert(ins);
         ins.delete();
 
         # do not maintain the hash table on qn under deletes, rather
         # accumulate del-s until a full rebuild of the hash
-        del.insert(del_qn_nid);
         if (flush_deletes) { 
            # The problem is not so much finding the BUN to delete (by NID), but
            # maintaining the hash-table on qn. 
@@ -2085,8 +2090,6 @@ PROC __runtime_maintain(lng wsid,
 
         # do the same for value index
         var ignores := vxm.uselect(oid_nil);
-        vxi.insert(ins_vx);
-        vxd.insert(del_vx);
         vxi.delete(ignores); # ignore hash-codes marked nil (too frequent)
         vxd.delete(ignores); # idem
         vxm.insert(vxi);
@@ -2097,16 +2100,11 @@ PROC __runtime_maintain(lng wsid,
            vxd.delete();
         }
         vxm.accbuild("hash"); # the hash table on (qn,str) code ensures fast value lookup
-    } else {
-        ins.insert(ins_qn_nid);
-        del.insert(del_qn_nid);
-        vxi.insert(ins_vx);
-        vxd.insert(del_vx);
     }
     # store the new size in the UNQ seqbase
     var totsize := batsize(idx) + batsize(ins) + batsize(del) + 
                    batsize(vxm) + batsize(vxi) + batsize(vxd);
-    unq.append(new_qn, true).seqbase(oid(totsize));
+    unq.seqbase(oid(totsize));
 
     if (ws_log_active)
       ws_log(wsid, sprintf("maintain(idx-%d unq-%d ins-%d del-%d _unq-%d _ins-%d _del-%d) %s %s",
