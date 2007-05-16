@@ -1311,7 +1311,7 @@ We then have to also look into GDKerrbuf to see if there was
 an error raised deeply inside the system.
 
 The policy is to require all C-functions to return a string-pointer. 
-Upon a successfull call, this string function is NULL. Otherwise it contains an
+Upon a successfull call, it is a NULL string. Otherwise it contains an
 encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
 @{

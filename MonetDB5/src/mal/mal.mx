@@ -49,14 +49,14 @@ differences that can be experienced at each level. To illustrate,
 in D) and R) it makes a big difference whether the data is already in the
 cache or still on disk. With E) it makes a big difference whether you
 are comparing two integers, evaluation of a mathematical function,
-e.g. Gaussian, or a regular expression evaluation on a string.
+e.g., Gaussian, or a regular expression evaluation on a string.
 As a result, intense optimization in one area may become completely invisible
 due to being overshadowed by other cost factors.
 
 The Version 5 infrastructure is designed to ease addressing each
 of these cost factors in a well-defined way, while retaining the
 flexibility to combine the components needed for a particular situation.
-This results in an architecture to assemble the components
+It results in an architecture where you assemble the components
 for a particular application domain and hardware platform.
 
 The primary interface to the database kernel is still based on
@@ -85,19 +85,19 @@ introduced in @ref{Start and Stop}.
 The top layer consists of applications written in your favorite
 language.
 They provide both specific functionality
-for a particular product, e.g. @url{http://kdl.cs.umass.edu/software,Proximity},
-and generic functionality, e.g. 
+for a particular product, e.g., @url{http://kdl.cs.umass.edu/software,Proximity},
+and generic functionality, e.g.,
 the @url{http://www.aquafold.com,Aquabrowser} or @url{http://www.minq.se,Dbvisualizer}.
 The applications communicate with the server 
 using de-facto standard interface packaged,
-e.g. JDBC, ODBC, Perl, PHP, etc..
+i.e., JDBC, ODBC, Perl, PHP, etc.
 
 The middle layer consists of query language processors such as 
 SQL and XQuery. The former supports the core functionality
 of SQL'99 and extends into SQL'03. The latter is based on
 the W3C standard and includes the XUpdate functionality.
 The query language processors each manage their own private catalog structure.
-Software bridges, e.g. import/export routines, are used to
+Software bridges, e.g., import/export routines, are used to
 share data between language paradigms.
 
 @iftex
@@ -146,12 +146,12 @@ The design and implementation of MAL takes the functionality offered
 previously a significant step further. To name a few:
 @itemize @bullet
 @item All instructions are strongly typed before being executed. 
-@item Polymorphic functions are supported. 
+@item It supports polymorphic functions. 
 They act as templates that produce strongly typed instantiations when needed.
 @item Function style expressions where 
 each assignment instruction can receive multiple target results;
 it forms a point in the dataflow graph. 
-@item Co-routines (Factories) support building streaming applications.
+@item It supports co-routines (Factories) to build streaming applications.
 @item Properties are associated with the program code for
 ease of optimization and scheduling.
 @item It can be readily extended with user defined types and
@@ -161,7 +161,8 @@ function modules.
 @-
 @{
 @+ Critical sections and semaphores
-Monet V5 is implemented as a collection of threads. This calls for extreme
+MonetDB Version 5 is implemented as a collection of threads.
+This calls for extreme
 care in coding. At several places locks and semaphores are necessary
 to achieve predictable results. In particular, after they are created
 and when they are inspected or being modified to take decisions.
@@ -245,7 +246,7 @@ int monet_daemon=0;
 The execution engine comes in several flavors. The default is a
 simple, sequential MAL interpreter. For each MAL function call it creates
 a stack frame, which is initialized with all constants found in the
-function definition. During interpretation the garbage collector
+function body. During interpretation the garbage collector
 ensures freeing of space consumptive tables (BATs) and strings.
 Furthermore, all temporary structures are garbage collected before
 the funtion returns the result.

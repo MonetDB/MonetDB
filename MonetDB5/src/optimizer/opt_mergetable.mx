@@ -19,7 +19,7 @@
 @- Merge Tables 
 A merge association table (MAT) descriptor defines an ordered collection 
 of type compatible BATs, whose union represents a single (virtual) BAT.
-The MAT may relate to a partitioned BAT, but could also be an arbitrary
+The MAT may represent a partitioned BAT, but could also be an arbitrary
 collection of temporary BATs within a program fragment.
 
 The MAT definition lives within the scope of a single block.
@@ -41,7 +41,7 @@ to a single argument.
 This is changed at a later stage when a cost-based evaluation
 be decide differently.
 
-To illustrate, consider 
+To illustrate, consider:
 @example
 	m0:= bat.new(:oid,:int);
 	m1:= bat.new(:oid,:int);
@@ -58,7 +58,7 @@ To illustrate, consider
 	io.print(j);
 @end example
 
-The selection and aggregate operations can simply be rewritten using a MAT.
+The selection and aggregate operations can simply be rewritten using a MAT:
 @example
 	_33 := algebra.select(m0,1,3);
 	_34 := algebra.select(m1,1,3);

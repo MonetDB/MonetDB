@@ -26,10 +26,10 @@ The new code block is than built in one scan, discarding the
 superflous instructions.
 
 Instructions that produce side effects to the environment, 
-e.g. printing and BAT updates, should be taken into account. 
+e.g., printing and BAT updates, should be taken into account. 
 Such (possibly recursive) functions should be marked with a property 
-(@sc{unsafe}) For now we recognize a few important ones
-Likewise instructions marked as control flow instructions should be retained.
+(@sc{unsafe}). For now we recognize a few important ones
+Likewise, instructions marked as control flow instructions should be retained.
 
 An illustrative example is the following MAL snippet:
 @verbatim

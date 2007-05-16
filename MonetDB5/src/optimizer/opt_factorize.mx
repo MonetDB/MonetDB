@@ -68,10 +68,10 @@ to any of the possible available factories to deal with the request.
 For the time being we simple reorganize the plan for all
 parameters
 
-Caveats. The factorize operation interferes with 
+The factorize operation interferes with 
 @sc{optimizer.expressionAccumulation()}
 because that may overwrite the arguments.
-For the time being this is captured in a local routine.
+For the time being, this is captured in a local routine.
 @{
 @mal
 pattern optimizer.factorize():str

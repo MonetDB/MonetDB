@@ -18,8 +18,8 @@
 @a Martin Kersten
 @v 0.1
 @+ Constants
-The const module provides a box abstraction store for global constants.
-Between sessions the value of the constants is saved on disk 
+The @code{const} module provides a box abstraction store for global constants.
+Between sessions, the value of the constants is saved on disk 
 in the form of a simple MAL program, which is scanned and made 
 available by opening the box.  A future implementation should 
 provide transaction support over the box, which would permit 

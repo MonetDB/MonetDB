@@ -19,7 +19,7 @@
 @d 01/07/1996, 31/01/2002
 
 @+ Input/Output module
-The IO module provides simple ASCII-io rendering options.
+The IO module provides simple @sc{ascii-io} rendering options.
 It is modeled after the tuple formats, but does not
 attempt to outline the results. Instead, it is geared at speed,
 which also means that some functionality regarding the built-in

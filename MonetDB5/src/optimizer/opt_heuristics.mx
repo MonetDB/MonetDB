@@ -26,7 +26,7 @@ Therefore, many of the standard rewrite rules are already applied by the SQL
 front-end as part of its strategic optimization decisions.
 
 Finding rewrite opportunities within a linear MAL program may
-be more difficult. For, the pattern should respect the flow
+be more difficult. For example, the pattern should respect the flow
 of control that may already be introduced.
 The last resort for the optimizer builder is to write a
 C-function to look for a pattern of interest and transform it.

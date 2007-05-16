@@ -194,7 +194,7 @@ unless an absolute path is given.
 Loading further relies on the Linux policy to search for the module
 location in the following order: 1) the colon-separated list of
 directories in the user's LD_LIBRARY, 2) the libraries specified
-in /etc/ld.so.cache, and 3) /usr/lib followed by /lib
+in /etc/ld.so.cache and 3) /usr/lib followed by /lib.
 If the module contains a routine _init, then that code is executed
 before the loader returns. Likewise the routine _fini is called just
 before the module is unloaded.
@@ -347,10 +347,10 @@ unloadLibraries()
 }
 @}
 @- 
-To speedup restart and to simplify debugging, the Monet server can
+To speedup restart and to simplify debugging, the MonetDB server can
 be statically linked with some (or all) of the modules libraries. 
 A complicating factor is then to avoid users to initiate another load
-of the module file, because it would lead to a dlopen error.
+of the module file, because it would lead to a @code{dlopen()} error.
 
 The partial way out of this dilema is to administer somewhere
 the statically bound modules, or to enforce that each module

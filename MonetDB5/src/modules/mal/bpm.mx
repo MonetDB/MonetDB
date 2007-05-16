@@ -48,7 +48,7 @@ materialize the header.
 
 The partition manager also supports hash-based partitioning.
 Its argument is the number of hash bucket bits.
-example
+@example
 	bpm.open();
 	Rrev:= bat.reverse(R:bat[:oid,:int]);
 	Ralias:= bpm.deposit("myHashVersion",Rev);	# creates side effects
@@ -1279,6 +1279,9 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 	} else
 	if( guessNewPartition(b)){
 		p= newPartition(b->batCacheid);
+		/* set the sequence base based on the total received */
+		if( BAThvoid(b))
+			BATseqbase(b,(oid) cnt);
 		insertPartition(bpmcat[ps->prv],p);
 	} else {
 		/* add the content to the last partition */

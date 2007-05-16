@@ -56,7 +56,7 @@ is translated into the following code block:
     bat.setGarbage(t1);
 @end verbatim
 
-The current algorithm is straight forward. After each instruction
+The current algorithm is straight forward. After each instruction,
 we check whether its BAT arguments are needed in the future.
 If not, we inject a garbage collection statement to release them,
 provided there are no other reasons to retain it.

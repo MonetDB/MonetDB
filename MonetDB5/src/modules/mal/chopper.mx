@@ -72,7 +72,7 @@ comment "Produce the next bun for processing.";
 
 @-
 The head and tail values can also be extracted using the cursor.
-It point to the first bun in the chunk under consideration.
+It points to the first bun in the chunk under consideration.
 It is often more effective due to use the iterator with automatic
 extraction of head and tail value; the overhead involved is much less.
 @mal

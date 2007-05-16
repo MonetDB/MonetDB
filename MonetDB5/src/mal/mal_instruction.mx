@@ -83,7 +83,7 @@ and @sc{"1999-12-10":date} creates a @sc{date} literal.
 MonetDB comes with the hardwired types @sc{bit, bte, chr, wrd, sht, int, lng, oid, flt, 
 dbl, str} and @sc{bat}, the bat identifier.
 The kernel code has been optimized to deal with these types efficiently,
-i.e. without unnecessary function call overheads
+i.e. without unnecessary function call overheads.
 In addition,  the system supports
 temporal types @sc{date, daytime, time, timestamp, timezone},
 extensions to deal with IPv4 addresses and URLs using @sc{inet, url},
@@ -96,7 +96,7 @@ This list can be extended with user defined types.
 Variables are denoted by identifers and
 implicitly defined upon first use. They take
 on a type through a type classifier or inherit it from
-the context in which they are first used, see @xref{MAL Type System}. 
+the context in which they are first used, see @ref{MAL Type System}. 
 
 Variables are organized into two classes, starting with and without
 an underscore. The latter are reserved as MAL parser tempoaries, 
@@ -136,7 +136,7 @@ They are retained in the internal code representation to ease
 debugging of compiler generated MAL programs.
 
 The data structure to represent a MAL block is kept simple.
-It carries a sequence of MAL statements and a symbol table.
+It contains a sequence of MAL statements and a symbol table.
 The MAL instruction record is a code byte string overlaid with the
 instruction pattern, which contains references into the symbol tables
 and administrative data for the interpreter. 

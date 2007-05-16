@@ -74,7 +74,7 @@ equivalence of a function body as an occurrence in another one.
 
 The optimizer can be targeted to a function @sc{user.foo()}
 using the call @sc{optimizer.macro("user","foo","user","joinPath");
-@- Known issues. 
+@- Known issues
 The functions subject to expansion or contraction should be
 checked on 'proper' behavior.
 

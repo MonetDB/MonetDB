@@ -22,7 +22,7 @@ or through its server console.
 Access through the internet requires a client program at the
 source, which addresses the default port of a running server.
 The functionality of the server console is limited.
-It is a bare bone textual interface for expert use.
+It is a textual interface for expert use.
 
 @ifset M5manual
 At the server side, each client is represented by a session record with the

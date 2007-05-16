@@ -36,9 +36,9 @@ exit lim;
 end random;
 @end example
 
-The first time this factory is called, a factory plant
+The first time this factory is called, a @emph{plant}
 is created in the local system to handle the requests.
-The plant carries the stack frame and synchronizes access.
+The plant contains the stack frame and synchronizes access.
 
 In this case it initializes the generator. 
 The random number is generated and @sc{yield}  as
@@ -136,7 +136,7 @@ end random;
 @end example
 
 @- Complex Factories
-One interesting use of the factory scheme is to model
+The factory scheme can be used to model
 a volcano-style query processor. Each node in the query
 tree is an iterator that calls upon the operands to produce
 a chunk, which are combined into a new  chunk for consumption
@@ -197,7 +197,7 @@ end chunkStep;
 factory chunkStepR(L:bat[:any,:any]):bat[:any,:any];
 @end example
 
-So far we haven;t re-used the pattern that both legs are
+So far we haven't re-used the pattern that both legs are
 identical. This could be modeled by a generic chunk factory.
 Choosing a new factory for each query steps reduces the 
 administrative overhead.

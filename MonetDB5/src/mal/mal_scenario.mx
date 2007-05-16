@@ -44,7 +44,7 @@ we end up with a type correct program.
 The code block is subsequently sent to an MAL optimizer.
 In the default case the program is left untouched. For other languages, 
 the optimizer deploys language specific code transformations,
-e.g. foreign-key optimizations in joins and remote query execution.
+e.g., foreign-key optimizations in joins and remote query execution.
 All optimization information is statically derived from the
 code blocks and possible catalogues maintained for the query language
 at hand. Optimizers leave advice and their findings in properties
@@ -83,7 +83,7 @@ i.e. performing a symbolic optimization before scheduling decisions
 are taken.
 The routines associated with each state in
 the scenario may patch the code so as to assure that subsequent
-execution can use a different scenario, e.g. to handle dynamic
+execution can use a different scenario, e.g., to handle dynamic
 code fragments.
 
 @{
@@ -524,7 +524,7 @@ exitScenario(Client c)
 The building blocks of scenarios are routines obeying a strict
 name signature. They require exclusive access to the client
 record. Any specific information should be accessible from
-there, e.g. access to a scenario specific state descriptor.
+there, e.g., access to a scenario specific state descriptor.
 The client scenario initialization and finalization brackets
 are  @sc{xyzinitClient()} and @sc{xyzexitClient()}.
 
@@ -539,8 +539,8 @@ The @sc{xyzoptimizer(Client c)} contains language specific optimizations
 using the MAL intermediate code as a starting point.
 
 The @sc{xyztactics(Client c)} synchronizes the program execution with the
-state of the machine, e.g. claiming resources, the history of the client 
-or alignment of the request with concurrent actions (e.g. transaction
+state of the machine, e.g., claiming resources, the history of the client 
+or alignment of the request with concurrent actions (e.g., transaction
 coordination).
 
 The @sc{xyzengine(Client c)} contains the applicable back-end engine.

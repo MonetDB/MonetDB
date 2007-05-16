@@ -153,6 +153,7 @@ b:= algebra.select(a,0 1000); # some expensive operation
 (clk, memread, memwrite):= profiler.getEvent();
 ...
 profiler.stop();
+@end example
 @node Stethoscope The MAL Modules, Event Caching, The MAL Profiler
 @+ Stethoscope
 The performance data can be obtained from a running server

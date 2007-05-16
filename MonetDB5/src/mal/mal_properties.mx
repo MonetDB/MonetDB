@@ -51,7 +51,7 @@ The direct relationship between instructions and
 a target variable, make it possible to keep the instruction properties
 in the corresponding target variable. 
 
-@emph{Variables properties.}
+@emph{Variables properties}
 The variables can be extended at any time with a property set.
 Properties have a scope identical to the scope of the corresponding variable. 
 Ommision of the operator and value turns it into a boolean valued property,

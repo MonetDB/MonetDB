@@ -353,7 +353,7 @@ OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	return 1;
 }
-@}
+
 @-
 The translation of a MAL block into a multi-iterator only works if
 the network flow is simple, i.e there exists a 'single' sink, 

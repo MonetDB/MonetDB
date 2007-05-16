@@ -960,7 +960,7 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 
 @-
 At a later stage we could extend the flow details with the status
-of crucial properties, e.g. processing time, cost, size
+of crucial properties, e.g., processing time, cost, size
 @c
 static void
 showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)

@@ -54,7 +54,7 @@ However, it ensures that empty results are only tagged
 with @sc{rows=0} if the estimate is accurate, otherwise
 it assumes at least one result row. This property makes
 it possible to safely pass the result of the cost estimation
-to the @sc{emptySet} optimizer for code squeezing.
+to the @sc{emptySet} optimizer for code reduction.
 @{
 @+ Implementation section
 To work in conjunction with the emptySet optimizer, we should

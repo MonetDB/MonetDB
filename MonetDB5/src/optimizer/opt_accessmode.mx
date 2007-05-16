@@ -18,7 +18,8 @@
 @a M. Kersten
 @-
 @- Access mode optimization
-The routine @sc{optimizer.accessmode()} reduces the number of mode changes of
+The routine @sc{optimizer.accessmode()} reduces the number of read/write
+mode changes of
 variables to a minimum. Especially setting a BAT to write mode is expensive,
 because it often implies creation of a private copy first.
 

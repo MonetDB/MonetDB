@@ -21,7 +21,7 @@ Access to these global variables should be easy,
 but they should also provide protection against concurrent update
 when the client wishes to perform parallel processing.
 Likewise, databases, query languages, etc. may define constants and variables
-accessible, e.g. relational schemas, to a selected user group.
+accessible, e.g., relational schemas, to a selected user group.
 
 The approach taken is to rely on persistent object spaces
 as pioniered in Lynda and -later- JavaSpaces.
@@ -73,7 +73,7 @@ snapshot. For the time being we realize the managers as critical
 code sections, i.e. one client is permitted access to the box space
 at a time.
 
-Example: consider the client function:
+Fo example, consider the client function:
 @example
 function myfcn():void;
     b:bat[:oid,:int] := bbp.take("mytable");
@@ -93,10 +93,10 @@ of interest using two string properties. It illustrates that
 a box manager is free to extend/overload the predefined scheme, 
 which is geared towards storing MAL variables.
 
-The result bat 'c' is temporary and disappears upon garbage
-collection. The variable 'u' is looked up as the string object user.
+The result bat @sc{c} is temporary and disappears upon garbage
+collection. The variable @sc{u} is looked up as the string object user.
 
-Note that BATs b and c need be released at some point. In general
+Note that BATs @sc{b} and @sc{c} need be released at some point. In general
 this point in time does not coincide with a computational boundary
 like a function return. During a session, several bats may be taken
 out of the box, being processed, and only at the end of a session 
@@ -132,15 +132,15 @@ the arglist.
 
 The world of boxes has not been explored deeply yet.
 It is envisioned that it could play a role to import/export
-different objects, e.g.
+different objects, e.g.,
 introduce xml.take() which converts an XML document to a BAT,
 jpeg.take() similer for an image.
 
-Nesting boxes (like Russian dolls) is possible. It provides a simple
+Nesting boxes is possible. It provides a simple
 containment scheme between boxes, but in general will interfere with
 the semantics of each box. 
 
-Each box has [should] have an access control list, which names
+Each box has (should) have an access control list, which names
 the users having permission to read/write its content.
 The first one to create the box becomes the owner. He may grant/revoke
 access to the box to users on a selective basis.
@@ -163,7 +163,7 @@ end function;
 @end example
 @-
 In the namespace it is placed subordinate to any space introduced by the
-system administrator. It will contain global client data, e.g.
+system administrator. It will contain global client data, e.g.,
 user, language, database, port, and any other session parameter.
 The boxes are all collected in the context of the database directory,
 i.e. the directory <dbfarm>/box

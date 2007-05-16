@@ -19,7 +19,7 @@
 @- Emptyset Reduction
 One of the key decisions during MAL optimization is to estimate
 the size of the BATs produced and consumed. Two cases are of interest
-for symbolic processing. Namely when a BAT is known to contain no
+for symbolic processing. Namely, when a BAT is known to contain no
 tuples and those that have precisely one element.
 Such information may come from application domain knowledge or as a
 side effect from symbolic evaluation. It is associated with the
@@ -29,7 +29,7 @@ The empty set property is used by the reduction algorithm
 presented here. Any empty set is propagated through the program
 to arrive at a smaller and therefore faster evaluation.
 
-For example, consider the following MAL test 
+For example, consider the following MAL test:
 @example
     V1 := bat.new(:oid,:int);
     V7 := bat.new(:oid,:int);

@@ -62,7 +62,7 @@ runtime; they are part of the query plan.
 The query transformer list below is under consideration for development.
 For each we consider its goal, approach, and expected impact.
 Moreover, the minimal prerequisites identify the essential optimizers that 
-should have done their work already. For example, it doesn;t make sense
+should have done their work already. For example, it doesn't make sense
 to perform a static evaluation unless you have already propagated the
 constants using Alias Removal.
 
@@ -100,7 +100,7 @@ occurrence of V could be replaced by T, provided V is never assigned a new
 value.
 Approach: literal constants within a MAL block are already recognized and
 replaced by a single variable. 
-Impact: medium
+Impact: medium.
 
 
 @emph{Common Term Optimizer }
@@ -528,14 +528,14 @@ inspects a MAL block for their occurrences and activitates it.
 
 The optimizer routines have access to the client context, the MAL block,
 and the program counter where the optimizer call was found. Each optimizer
-should remove itself from the MAL block;
+should remove itself from the MAL block.
 
 The optimizer repeatedly runs through the program until
 no optimizer call is found.
 
 Note, all optimizer instructions are executed only once. This means that the
 instruction can be removed from further consideration. However, in the case
-that a designated function is selected for optimization (e.g. 
+that a designated function is selected for optimization (e.g.,
 commonTerms(user,qry)) the pc is assumed 0. The first instruction always
 denotes the signature and can not be removed.
 
@@ -565,8 +565,8 @@ In many cases, we have to determine if the lifespan interferes with
 a optimization decision being prepared.
 The lifespan is calculated once at the beginning of the optimizer sequence.
 It should either be maintained to reflect the most accurate situation while
-optimizing the code base. In particular it means that any move/remove/addition
-of an instruction calls for either a recalculation or delta propagation.
+optimizing the code base. In particular, it means that any move/remove/addition
+of a MAL instruction calls for either a recalculation or further propagation.
 Unclear what will be the best strategy. For the time being we just recalc.
 @{
 If one of the optimizers fails, we should not attempt others.
@@ -784,8 +784,8 @@ allTargetsVisible(MalBlkPtr mb, int pc,int qc){
 }
 @}
 @-
-For each function it should be relatively easy to determine its
-safety property. This calls for accessing the function MAL block
+The safety property should be relatively easy to determine for
+each MAL function. This calls for accessing the function MAL block
 and to inspect the arguments of the signature.
 @{
 @c
@@ -855,7 +855,7 @@ The instruction G1:=g(D,E,F) is blocking if G1 is an alias
 for @verb{ { }A,B,C@verb{ } }.
 Alternatively, function g() may be unsafe and @verb{ { }D,E,F@verb{ } }
 has a non-empty intersection with @verb{ { }A,B,C@verb{ } }. 
-An alias can only be used later on for readonly (and not be used for a function with sideeffects)
+An alias can only be used later on for readonly (and not be used for a function with side effects).
 @{
 @c
 int
@@ -969,7 +969,7 @@ you know there are no side-effect.
 
 Side-effect free evaluation is a property that should be known upfront.
 For the time being, we assume it for all operations known to the system.
-The property `unsafe` is reserved to identify cases where this does not hold.
+The property "unsafe" is reserved to identify cases where this does not hold.
 Typically, a bun-insert operation is unsafe, as it changes one of the parameters.
 @{
 @
@@ -988,7 +988,7 @@ It suffice to respect the flow graph.
 @-
 @node Optimizer Toolkit, Access Mode, Flow Analysis , The MAL Optimizer
 @+ Optimizer Toolkit
-In this section we introduce the collection of MAL optimizers 
+In this section, we introduce the collection of MAL optimizers 
 included in the code base. The tool kit is incrementally built, triggered
 by experimentation and curiousity. Several optimizers require
 further development to cope with the many features making up the MonetDB system.
