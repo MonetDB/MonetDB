@@ -255,8 +255,8 @@ an overloaded insert).
 @m
 @(
 @:prec_foll(following)@
-@)
 @:prec_foll(preceding)@
+@)
 
 @= prec_foll
 .COMMAND @1_void (BAT[void,int] pre_size,
@@ -272,9 +272,7 @@ DESCRIPTION
 axis step evaluation on the @1 axis from the given context."
 @m
 @:ll_prec_foll_decl(following)@
-@(
 @:ll_prec_foll_decl(preceding)@
-@)
 
 @= ll_prec_foll_decl
 .COMMAND ll_@1(BAT[oid,oid] iter,
@@ -1440,13 +1438,11 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
 
 @(
 @:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
-@)
 @:step(preceding,preceding,preceding_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
+@)
 
 @:ll_prec_foll_impl(following)@
-@(
 @:ll_prec_foll_impl(preceding)@
-@)
 
 @= chk_order
 	if ( and(order,1) = @2 ) {
@@ -1754,7 +1750,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
 @:loop_lifted_scj_wrap1(descendant_or_self)@
 
 @:loop_lifted_scj_step1x(following)@
-@:loop_lifted_scj_step1(preceding)@
+@:loop_lifted_scj_step1x(preceding)@
 
 @:loop_lifted_scj_step1(following_sibling)@
 @:loop_lifted_scj_step1(preceding_sibling)@

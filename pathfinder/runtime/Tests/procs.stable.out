@@ -479,6 +479,7 @@ procs();
 [ "play_doc_tape(BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,str]) : void"							  ]
 [ "play_update_tape(BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,str]) : void"							  ]
 [ "preceding(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"									  ]
+[ "preceding(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int, chr) : BAT[void,BAT]"																			  ]
 [ "preceding_sibling(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"								  ]
 [ "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : void"												  ]
 [ "prior_ls(BAT[any,any], int, BAT[void,str]) : BAT[any,any]"																							  ]

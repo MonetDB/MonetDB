@@ -55,6 +55,7 @@
  * as x itself.
  */
 
+/* check, if result buffer is big enough; otherwise extend it */
 #define PFll_check_BAT_capacity(b,grow,res_cur) \
 {\
         size_t _oldcap = BATbuncount(b);\
@@ -389,7 +390,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
     {
         /* n ctx, n iter */
         ALGODEBUG THRprintf(GDKout, "%s: n ctx, n iter\n", name);
-        oid *min_following = GDKmalloc(num_iter * sizeof(oid));
+        oid *min_following = (oid*) GDKmalloc(num_iter * sizeof(oid));
         if (min_following == NULL) 
         { 
             GDKerror("%s: could not allocate a stack of size "SZFMT".\n", name, (size_t)num_iter * sizeof(oid));
@@ -504,51 +505,218 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
 }
 
 
-@(
 /* PRECEDING STEP */
 int
-PFpreceding_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *upperbound)
+PFll_preceding(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre_size, BAT *pre_kind, chr *_kind_test)
 {
     @:init(preceding)@
 
-    BATloopFast(doc_pre, p, q, xx) {
-        oid cur_preceding = *(oid*) BUNtail(doc_pre,p); /* first node of the fragment */
-        oid boundary = cur_preceding + size[cur_preceding] + 1; /* first of next fragment */
-        oid *ctx_start = ctx_cur;
+    /* ------------------------- actual algorithm -------------------------- */
 
-        /* within the fragment (boundary), go over all context nodes; and remember the last one */
-        while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
-            ctx_cur += ctx_nxt;
-        }
-       
-        if (ctx_start < ctx_cur) {
-            oid ctx_last = ctx_cur[-ctx_nxt]; /* the last context node in this fragment */  
+    if (kind_test != chr_nil) {
+        @:ll_prec(if (kind[cur_preceding] == kind_test))@
+    } else {
+        @:ll_prec()@
+    }
+    
+@= ll_prec
+    if (one_ctx) {
+        /* 1 ctx, 1/n iter */
+        p = SORTfndlast(doc_pre, ctx_cur);
+        if (p > BUNfirst(doc_pre)) {
+            oid cur_preceding = *(oid*) BUNtail(doc_pre, p - BUNsize(doc_pre));
+            oid boundary = *ctx_cur;
 
-            /* cur_preceding is before ctx_last, so it contains its preceding *and* ancestor nodes */
-            while(cur_preceding < ctx_last) {
-                oid new_preceding = cur_preceding + 1 + size[cur_preceding];
-                if (new_preceding > ctx_last) {
-                    cur_preceding++; /* skip ancestor */
+            /* now, everything between the beginning of the fragment (cur_preceding) and
+             * the context node (boundary) is preceding --- unless it's hole or ancestor */
+            if (cur_preceding < boundary) {
+                /* check, if result buffer is big enough; otherwise extend it */
+                grow = num_iter * (boundary - cur_preceding);
+                PFll_check_BAT_capacity(res, grow, res_cur);
+                if (num_iter == 1) {
+                    ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, 1 iter\n", name);
+                    while(cur_preceding < boundary) {
+                        int sz = size[cur_preceding];
+                        oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                        if (sz < 0) {
+                            cur_preceding = new_preceding; /* skip hole */
+                        } else
+                        if (new_preceding > boundary) {
+                            cur_preceding++; /* skip ancestor */
+                        } else {
+                            @1 {
+                                *res_cur++ = min_iter;
+                                *res_cur++ = cur_preceding;
+                            }
+                            cur_preceding++;
+                        }
+                    } 
                 } else {
-                    /* cur_preceding and its descendants are not ancestors, so they must be preceding 
-                     * but: beware of holes!
-                     */
-                    while(cur_preceding < new_preceding) {
-                        while(cur_preceding < new_preceding && size[cur_preceding] >= 0) {    
-                            *res_cur++ = cur_preceding++;
-                        }
-                        if (cur_preceding < new_preceding) {
-                            /* we hit a deleted node: skip hole */
-                            cur_preceding = 1 + (size[cur_preceding] & ~(1<<31)); 
-                        }
+                    /* num_iter > 1 */
+                    if (iter_bat->tkey) {
+                        ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, n iter (key)\n", name);
+                        while(cur_preceding < boundary) {
+                            int sz = size[cur_preceding];
+                            oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                            if (sz < 0) {
+                                cur_preceding = new_preceding; /* skip hole */
+                            } else
+                            if (new_preceding > boundary) {
+                                cur_preceding++; /* skip ancestor */
+                            } else {
+                                @1 {
+                                    oid *cur_iter = iter_cur;
+                                    for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+                                        *res_cur++ = *cur_iter;
+                                        *res_cur++ = cur_preceding;
+                                    }
+                                }
+                                cur_preceding++;
+                            }
+                        } 
+                    } else {
+                        /* !iter_bat->tkey */
+                        ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, n iter\n", name);
+                        while(cur_preceding < boundary) {
+                            int sz = size[cur_preceding];
+                            oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                            if (sz < 0) {
+                                cur_preceding = new_preceding; /* skip hole */
+                            } else
+                            if (new_preceding > boundary) {
+                                cur_preceding++; /* skip ancestor */
+                            } else {
+                                @1 {
+                                    oid *cur_iter = iter_cur;
+                                    oid prev_iter = oid_nil;
+                                    for (; cur_iter < iter_end; cur_iter += iter_nxt) {
+                                        if (*cur_iter != prev_iter) {
+                                            *res_cur++ = *cur_iter;
+                                            *res_cur++ = cur_preceding;
+                                        }
+                                    }
+                                }
+                                cur_preceding++;
+                            }
+                        } 
                     }
                 }
-            } 
+                /* mark the end point of the BUNs section in the BUNheap */
+                res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+                BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
+            }
         }
-    }
+    } else
+    if (num_iter == 1) {
+        /* n ctx, 1 iter */
+        ALGODEBUG THRprintf(GDKout, "%s: n ctx, 1 iter\n", name);
+        BATloopFast(doc_pre, p, q, xx) {
+            oid *ctx_fst = ctx_cur;
+            oid cur_preceding = *(oid*) BUNtail(doc_pre,p); /* first node of the fragment */
+            oid boundary = cur_preceding + size[cur_preceding] + 1; /* first of next fragment */
 
+            /* within the fragment (boundary), go over all context nodes; and remember the last one */
+            while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
+                ctx_cur += ctx_nxt;
+            }
+            if (ctx_fst < ctx_cur) {
+                boundary = ctx_cur[-ctx_nxt]; /* the last context node in this fragment */
+            } else {
+                boundary = 0;
+            }
+            
+            /* now, everything between the beginning of the fragment (cur_preceding) and
+             * the context node (boundary) is preceding --- unless it's hole or ancestor */
+            if (cur_preceding < boundary) {
+                /* check, if result buffer is big enough; otherwise extend it */
+                grow = boundary - cur_preceding;
+                PFll_check_BAT_capacity(res, grow, res_cur);
+                while(cur_preceding < boundary) {
+                    int sz = size[cur_preceding];
+                    oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                    if (sz < 0) {
+                        cur_preceding = new_preceding; /* skip hole */
+                    } else
+                    if (new_preceding > boundary) {
+                        cur_preceding++; /* skip ancestor */
+                    } else {
+                        @1 {
+                            *res_cur++ = min_iter;
+                            *res_cur++ = cur_preceding;
+                        }
+                        cur_preceding++;
+                    }
+                } 
+                /* mark the end point of the BUNs section in the BUNheap */
+                res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+                BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
+            }
+        }
+    } else
+    {
+        /* n ctx, n iter */
+        ALGODEBUG THRprintf(GDKout, "%s: n ctx, n iter\n", name);
+        oid *max_preceding = (oid*) GDKmalloc(num_iter * sizeof(oid));
+        if (max_preceding == NULL) 
+        { 
+            GDKerror("%s: could not allocate a stack of size "SZFMT".\n", name, (size_t)num_iter * sizeof(oid));
+            BBPreclaim(res);
+            return GDK_FAIL;
+        }
+        BATloopFast(doc_pre, p, q, xx) {
+            oid iter = 0, fst_iter = num_iter, lst_iter = 0;
+            oid cur_preceding = *(oid*) BUNtail(doc_pre,p); /* first node of the fragment */
+            oid boundary = cur_preceding + size[cur_preceding] + 1; /* first of next fragment */
+            memset(max_preceding, 0, num_iter * sizeof(oid));
+
+            /* within the fragment (boundary), go over all context nodes; and remember the last one per iter */
+            while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
+                iter = *iter_cur - min_iter;
+                max_preceding[iter] = *ctx_cur;
+                if (iter < fst_iter) fst_iter = iter;
+                if (iter > lst_iter) lst_iter = iter;
+                ctx_cur += ctx_nxt;
+                iter_cur += iter_nxt;
+            }
+            boundary = max_preceding[iter]; /* the last context node in this fragment */
+            
+            if (cur_preceding < boundary && fst_iter <= lst_iter) {
+                /* now, everything between the beginning of the fragment (cur_preceding) and
+                 * the context node (boundary) is preceding --- unless it's hole or ancestor */
+                /* check, if result buffer is big enough; otherwise extend it */
+                grow = ((lst_iter - fst_iter) + 1) * (boundary - cur_preceding);
+                PFll_check_BAT_capacity(res, grow, res_cur);
+                while(cur_preceding < boundary) {
+                    int sz = size[cur_preceding];
+                    oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                    if (sz < 0) {
+                        cur_preceding = new_preceding; /* skip hole */
+                    } else
+                    if (new_preceding > boundary) {
+                        cur_preceding++; /* skip "global" ancestor */
+                    } else {
+                        @1 {
+                            for (iter = fst_iter; iter <= lst_iter; iter++) {
+                                if (new_preceding <= max_preceding[iter]) {
+                                    /* not "local" ancestor => preceding! */
+                                    *res_cur++ = iter + min_iter;
+                                    *res_cur++ = cur_preceding;
+                                }
+                            }
+                        }
+                        cur_preceding++;
+                    }
+                } 
+                /* mark the end point of the BUNs section in the BUNheap */
+                res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
+                BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
+            }
+        }
+        GDKfree(max_preceding);
+    }
+@
+@c
     @:end@
 }
-@)
-@c
+
 /* vim:set shiftwidth=4 expandtab: */
