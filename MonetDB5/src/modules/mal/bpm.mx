@@ -435,7 +435,7 @@ address findQuant
 comment "Returns a bat of quantiles for Partitioned based selection ";
 
 command splitquant(pb:bat[:any_1,:any_2], mb:int):void
-address BPMsplitquantiles
+address BPMsplithisto
 comment "Split all partitions to fit into a memory bound in MB";
 
 
@@ -539,6 +539,7 @@ bpm_export str BPMsaveCatalog(int *ret);
 
 bpm_export str findQuant(bat *ret, bat *idx, bat *qt);
 bpm_export str BPMsplitquantiles(bat *ret, bat *bid, int *mb);
+bpm_export str BPMsplithisto(bat *ret, bat *bid, int *mb);
 
 bpm_export str BPMprelude(int *ret);
 bpm_export str BPMepilogue(int *ret);
@@ -2392,6 +2393,146 @@ BPMsplitquantiles(bat *ret, bat *bid, int *mb)
 		VALinit(vp,b->ttype,nilptr);
 	
 		findQuant1(vp, b, space, msz);
+
+		if ((*cmp) ((ptr)vp, nilptr)!=0) {
+
+		val = (ptr) VALget(vp);
+		if( *bid > 0)
+			bn= BAT_select_(b, val, nilptr, TRUE, FALSE, TRUE, FALSE);
+		else{
+			bn= BAT_select_(BATmirror(b), val, nilptr, TRUE, FALSE, TRUE, FALSE);
+			bn= BATcopy(BATmirror(bn), bn->ttype,bn->htype,1);
+		}
+
+		if( bn == 0){
+			BBPunfix(b->batCacheid);
+			throw(MAL,"pbm.split","Can not create new partition");
+		}
+		BBPkeepref(ABS(bn->batCacheid));
+		p= newPartition(ABS(bn->batCacheid));
+		p->alias= bpmcat[i]->alias;
+		insertPartition(bpmcat[i],p);
+		p->cnt= BATcount(bn);
+
+		if( *bid> 0){
+			VALset(&p->hlow, rngType(b->htype), &bpmcat[i]->hlow );
+			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
+			VALset(&p->tlow, rngType(b->ttype), val );
+			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
+
+			VALset(& bpmcat[i]->thgh, rngType(b->ttype), val );
+		} else {
+			VALset(&p->hlow, rngType(b->htype), val );
+			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
+			VALset(&p->tlow, rngType(b->ttype), &bpmcat[i]->tlow );
+			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
+
+			VALset(& bpmcat[i]->hhgh, rngType(b->htype), val );
+		}
+
+		/* default hash */
+		p->hbits=  bpmcat[i]->hbits;
+		p->tbits=  bpmcat[i]->tbits;
+
+
+		BATdel(b,bn,FALSE); /* assume unique heads */
+		bpmcat[i]->cnt= BATcount(b);
+
+
+	#ifdef _DEBUG_BPM_
+		stream_printf(GDKout,"Broke partition '%d' at %d\n", bpmcat[i]->alias,i);
+		BPMprintRecord(GDKout, bpmcat[i]);
+		BPMprintRecord(GDKout,p);
+		stream_printf(GDKout,"Finished partition\n");
+	#endif
+		BBPunfix(b->batCacheid);
+	}
+	}
+	GDKfree(vp);
+	return MAL_SUCCEED;
+}
+
+
+void findQuantHisto(ValPtr vp, BAT * b, lng sp, int msz)
+{
+	BUN p, pprev, stop; 
+	int c, tpe, quan, pertpl, s=0, cn;
+	BAT *bh, *bs;
+
+	c = BATcount(b);
+	if ((c==0) || (msz>=sp)) return ;
+	pertpl = ceil((sp - sizeof(BATstore))/c);
+	quan = floor(msz/ pertpl);
+
+	tpe = b->ttype;
+	bh = BAThistogram(b);
+	bs = BATsort(bh);
+
+	/* iterate on the sorted histogram */
+	pprev = BUNfirst(bs);
+	BATloop(bs, p, stop) {
+		cn = * (int *) BUNtail(bs,p);
+		if (s + cn <quan) {
+			s+=cn;
+			pprev = p;
+		}
+		else {
+			VALset(vp,tpe, BUNhead(bs,pprev));
+			break;}
+	}
+
+	BBPunfix(bs->batCacheid);
+	BBPunfix(bh->batCacheid);
+	#ifdef _DEBUG_BPM_
+		stream_printf(GDKout," quantile %d found  %d\n", quan, s);
+	#endif
+}
+
+
+str
+BPMsplithisto(bat *ret, bat *bid, int *mb)
+{
+	BAT *b,*bn;
+	Partition ps, p;
+	ValPtr vp;
+	ptr nilptr, val;
+	int (*cmp) (ptr, ptr);
+	int i;
+	lng msz, space;
+	(void) ret;
+
+	BPMopen();
+
+	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
+		throw(MAL,"pbm.split","Partitioned BAT not found");
+	@:getBATdescriptor(bid,b,"bpm.splitPartition");
+	/* get the comparison function */
+	nilptr = ATOMnilptr(b->ttype);
+	BBPunfix(b->batCacheid);
+
+	msz = *mb * KB;
+	vp= VALnew();
+	cmp= BATatoms[b->ttype].atomCmp;
+
+	/* check the size of each segment and split if necessary */
+	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
+	/*	BKCgetSpaceUsed(&space, &i); */
+
+		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitquantile");
+		
+		space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+		if ((b->htype == TYPE_void) || (b->ttype == TYPE_void))
+			space += BATcount(b)* sizeof(oid);
+	#ifdef _DEBUG_BPM_
+		stream_printf(GDKout," partition '%d' size  %d\n", i, space);
+	#endif
+		if (space <= msz) {
+	 		BBPunfix(b->batCacheid);
+			continue;  
+		}
+		VALinit(vp,b->ttype,nilptr);
+	
+		findQuantHisto(vp, b, space, msz);
 
 		if ((*cmp) ((ptr)vp, nilptr)!=0) {
 
