@@ -2058,8 +2058,8 @@ PROC __runtime_maintain(lng wsid,
     var vx_flush_deletes := ((count(vxd)*8) > count(vxm));
 
     # nsloc index only contains qn-s from unq (ignore the rest)
-    ins_qn_nid := ins_qn_nid.kintersect(unq);
-    del_qn_nid := del_qn_nid.kintersect(unq);
+    ins_qn_nid := ins_qn_nid.kintersect(reverse(unq));
+    del_qn_nid := del_qn_nid.kintersect(reverse(unq));
 
     if (coast_clear) {
         # coast is clear, unite als ins, all del and apply them to the master
@@ -3561,7 +3561,7 @@ PROC del_doc_base(bit cachedOnly,
     if (pf_short_req) {
         # try to remove empty collections (non-critical)
         lock_set(pf_short);
-        var err := CATCH(commitBAT := _collection_cleanup());
+        var commitBAT, err := CATCH(commitBAT := _collection_cleanup());
         lock_unset(pf_short);
         if (isnil(err)) CATCH(collection_cleanup(commitBAT));
     }
