@@ -67,3 +67,4 @@ like_for_time_values.SF-1715659
 local_global_temporary_table.SF-1715672
 decimal.SF-1718253
 alter-default.SF-1695290
+with_only_once.SF-1720293
