@@ -44,25 +44,26 @@ function user.main():void;	# 0  (main:void)
     marg1 := 1000000;	# 4  (marg1:int)<-(_8:int)
     n := 35;	# 5  (n:int)<-(_10:int)
     s := 1;	# 6  (s:int)<-(_12:int)
-barrier (go,i):= (true,0);	# 7  (go:bit)(i:int)<-(_15:bit)(_16:int) jump 24
-barrier ifpart := calc.==(s,10);	# 8 CALCcompEQintint (ifpart:bit)<-(s:int)(_18:int) jump 16
-    low:int  := mmath.rand();	# 9 MATHrandint (low:int)
-    low:int  := calc.%(low,values);	# 10 CALCbinarycheckMODintint (low:int)<-(low:int)(values:int)
-    redo ifpart := calc.<(low,skewed);	# 11 CALCcompLTintint (ifpart:bit)<-(low:int)(skewed:int) jump 9
-    hgh := calc.+(low,sel);	# 12 CALCbinaryADDintint (hgh:int)<-(low:int)(sel:int)
-    redo ifpart := calc.>(hgh,values);	# 13 CALCcompGTintint (ifpart:bit)<-(hgh:int)(values:int) jump 9
-    io.print(low,hgh);	# 14 IOprint_val (_21:void)<-(low:int)(hgh:int)
-    s := 1;	# 15  (s:int)<-(_12:int)
-exit ifpart;	# 16  (ifpart:bit)
-    low:int  := mmath.rand();	# 17 MATHrandint (low:int)
-    low:int  := calc.%(low,marg1);	# 18 CALCbinarycheckMODintint (low:int)<-(low:int)(marg1:int)
-    hgh := calc.+(low,sel);	# 19 CALCbinaryADDintint (hgh:int)<-(low:int)(sel:int)
-    redo go := calc.>(hgh,skewed);	# 20 CALCcompGTintint (go:bit)<-(hgh:int)(skewed:int) jump 8
-    io.print(low,hgh);	# 21 IOprint_val (_22:void)<-(low:int)(hgh:int)
-    s := calc.+(s,1);	# 22 CALCbinaryADDintint (s:int)<-(s:int)(_12:int)
-    redo (go,i):= language.nextElement(1,n);	# 23 RNGnextElement_int (go:bit)(i:int)<-(_12:int)(n:int) jump 8
-exit (go,i);	# 24  (go:bit)(i:int)
-end main;	# 25  
+    mmath.srand(0);	# 7 MATHsrandint (_13:void)<-(_14:int)
+barrier (go,i):= (true,0);	# 8  (go:bit)(i:int)<-(_17:bit)(_14:int) jump 25
+barrier ifpart := calc.==(s,10);	# 9 CALCcompEQintint (ifpart:bit)<-(s:int)(_19:int) jump 17
+    low:int  := mmath.rand();	# 10 MATHrandint (low:int)
+    low:int  := calc.%(low,values);	# 11 CALCbinarycheckMODintint (low:int)<-(low:int)(values:int)
+    redo ifpart := calc.<(low,skewed);	# 12 CALCcompLTintint (ifpart:bit)<-(low:int)(skewed:int) jump 10
+    hgh := calc.+(low,sel);	# 13 CALCbinaryADDintint (hgh:int)<-(low:int)(sel:int)
+    redo ifpart := calc.>(hgh,values);	# 14 CALCcompGTintint (ifpart:bit)<-(hgh:int)(values:int) jump 10
+    io.print(low,hgh);	# 15 IOprint_val (_22:void)<-(low:int)(hgh:int)
+    s := 1;	# 16  (s:int)<-(_12:int)
+exit ifpart;	# 17  (ifpart:bit)
+    low:int  := mmath.rand();	# 18 MATHrandint (low:int)
+    low:int  := calc.%(low,marg1);	# 19 CALCbinarycheckMODintint (low:int)<-(low:int)(marg1:int)
+    hgh := calc.+(low,sel);	# 20 CALCbinaryADDintint (hgh:int)<-(low:int)(sel:int)
+    redo go := calc.>(hgh,skewed);	# 21 CALCcompGTintint (go:bit)<-(hgh:int)(skewed:int) jump 9
+    io.print(low,hgh);	# 22 IOprint_val (_23:void)<-(low:int)(hgh:int)
+    s := calc.+(s,1);	# 23 CALCbinaryADDintint (s:int)<-(s:int)(_12:int)
+    redo (go,i):= language.nextElement(1,n);	# 24 RNGnextElement_int (go:bit)(i:int)<-(_12:int)(n:int) jump 9
+exit (go,i);	# 25  (go:bit)(i:int)
+end main;	# 26  
 [ 289383, 2289383]
 [ 930886, 2930886]
 [ 692777, 2692777]
