@@ -126,6 +126,8 @@ checkpoint_dir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@chkpnt
 # Monet Application Interface Section
 #====================================
 mapi_port=0			#default port to address a mserver
+mapi_open=false		#should be set to 'true' to allow for 
+					#remote access to a server
 
 # SQL Interface Section
 #====================================
@@ -137,6 +139,11 @@ sql_debug=0
 # to protect the database against accidental hardware loss.
 # it should be different directory as used for xquery!
 sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@sql_logs
+
+# The sql_init is a comma separated list of sql files to be
+# executed upon system restart. It is primarily used to make
+# SQL library functions known to all users.
+sql_init=@libdir@@DIRSEP@@PACKAGE@/sql_init.sql
 
 # XQuery Interface Section
 #=========================
