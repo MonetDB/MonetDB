@@ -942,7 +942,7 @@ disconnect(struct conn *c, struct conn *prev)
 	elog(ERR_DEBUG, "disconnecting %p", c);
 
 	/* Remove connection from the connections list */
-	prev->next = c->next;
+	if (prev) prev->next = c->next;
 	if (c == c->ctx->connections)
 		c->ctx->connections = c->next;
 
@@ -2939,7 +2939,7 @@ void
 shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 {
 	struct usa	sa;
-	struct conn	*c, *pc, *nc;
+	struct conn	*c, *pc=NULL, *nc;
     int listen_socket = ctx->sock;
 	int		sock, maxfd = listen_socket;
 	struct timeval	tv;			/* Timeout for select() */
@@ -2968,7 +2968,7 @@ shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 			newconnection(ctx, sock, &sa);
 
 		/* Loop through all connections, handle if needed */
-		for (c = pc = ctx->connections; c != NULL; c = nc) {
+		for (c = ctx->connections; c != NULL; c = nc) {
 			nc = c->next;
 
 			/* Do not process threaded connection */
@@ -2980,7 +2980,7 @@ shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 			 * connection in chain (pc) unchanged.
 			 */
             if ( (c->flags & FLAG_FINISHED) || ((c->io != do_embedded) && c->expire < now) ) {
-                disconnect(c, pc); 
+                disconnect(c, pc);  
             } else
                 pc = c;
 		}
