@@ -1,0 +1,218 @@
+stdout of test 'accessing_renamed_inserted_deleted_node.SF-1718622-1718635-1718709` in directory 'tests/BugTracker` itself:
+
+
+# 11:38:07 >  
+# 11:38:07 >  Mtimeout -timeout 60 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/xquery_logs" --set mapi_port=39539 --set xrpc_port=44595 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  
+# 11:38:07 >  
+
+# Monet Database Server V4.17.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module(ascii_io);
+module(unix);
+module(pathfinder);
+# XRPC administrative console at http://localhost:44595/admin
+var TSTSRCDIR := getenv("TSTSRCDIR");
+shred_doc(TSTSRCDIR+"/hello.xml", "a.xml", "Hello", 9LL);
+# shredding with holes: pagesize=16384, #fillsize=14910
+# Elapsed time = 001ms 808us [226us/node]
+# Shredded 1 XML document (a.xml), total time after commit=0.036s
+
+xquery("xml","
+doc(\"a.xml\")
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><hello lang="en">
+<world/>
+<dlrow/>
+</hello></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/cwi
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/world
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><world/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/iwc
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/dlrow
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><dlrow/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+do rename doc(\"a.xml\")/hello/dlrow into \"iwc\"
+").printf();
+fflush(stdout());
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><hello lang="en">
+<world/>
+<iwc/>
+</hello></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/cwi
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/world
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><world/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/iwc
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><iwc/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/dlrow
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+do insert <cwi/> as first into doc(\"a.xml\")/hello
+").printf();
+fflush(stdout());
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><hello lang="en"><cwi/>
+<world/>
+<iwc/>
+</hello></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/cwi
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><cwi/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/world
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><world/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/iwc
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><iwc/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/dlrow
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+do delete doc(\"a.xml\")/hello/world
+").printf();
+fflush(stdout());
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><hello lang="en"><cwi/>
+
+<iwc/>
+</hello></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/cwi
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><cwi/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/world
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/iwc
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><iwc/></XQueryResult>
+fflush(stderr());
+
+xquery("xml","
+doc(\"a.xml\")/hello/dlrow
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+fflush(stderr());
+
+delete_doc("a.xml");
+quit();
+
+# 11:38:09 >  
+# 11:38:09 >  Done.
+# 11:38:09 >  
+
