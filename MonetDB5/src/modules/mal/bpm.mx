@@ -48,7 +48,7 @@ materialize the header.
 
 The partition manager also supports hash-based partitioning.
 Its argument is the number of hash bucket bits.
-@example
+example
 	bpm.open();
 	Rrev:= bat.reverse(R:bat[:oid,:int]);
 	Ralias:= bpm.deposit("myHashVersion",Rev);	# creates side effects
@@ -430,13 +430,9 @@ address BPMmapthghDbl;
 command saveCatalog() 
 address BPMsaveCatalog;
 
-command quantiles(b:bat[:any_1,:any_2], q:bat[:oid,:flt]):bat[:oid,:any_2]
-address findQuant
-comment "Returns a bat of quantiles for Partitioned based selection ";
-
 command splitquant(pb:bat[:any_1,:any_2], mb:int):void
-address BPMsplithisto
-comment "Split all partitions to fit into a memory bound in MB";
+address BPMsplitquant
+comment "Split all partitions to fit into a memory bound in KB";
 
 
 command prelude()
@@ -537,9 +533,7 @@ bpm_export str BPMmapThghDbl(int *ret);
 
 bpm_export str BPMsaveCatalog(int *ret);
 
-bpm_export str findQuant(bat *ret, bat *idx, bat *qt);
-bpm_export str BPMsplitquantiles(bat *ret, bat *bid, int *mb);
-bpm_export str BPMsplithisto(bat *ret, bat *bid, int *mb);
+bpm_export str BPMsplitquant(bat *ret, bat *bid, int *mb);
 
 bpm_export str BPMprelude(int *ret);
 bpm_export str BPMepilogue(int *ret);
@@ -1279,9 +1273,6 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 	} else
 	if( guessNewPartition(b)){
 		p= newPartition(b->batCacheid);
-		/* set the sequence base based on the total received */
-		if( BAThvoid(b))
-			BATseqbase(b,(oid) cnt);
 		insertPartition(bpmcat[ps->prv],p);
 	} else {
 		/* add the content to the last partition */
@@ -2045,427 +2036,19 @@ BPMsaveCatalog(int *r)
 	return MAL_SUCCEED;
 }
 
-typedef struct ITEM {
-	ValRecord value; /* value */
-	int cnt;	 /* count >= */
-	struct ITEM * nxt;
-} *Item, ItemRec;
 
 
-typedef struct LIST {
-	int tpe; 
-	int cnt;	 
-	Item first;
-	int quant, s1;
-	int maxlen;
-	int err;
-} *List, ListRec;
-
-
-List newList(int tp, int q, int len)
-{
-	List l;
-	
-	l = (List) GDKzalloc(sizeof(ListRec));
-	l->tpe = tp;
-	l->cnt = 0;
-	l->first = NULL;
-	l->quant = q;
-	l->s1 = 0;
-	l->maxlen = len;
-	l->err =0;
-	return l;
-}
-
-
-/* find last element with value <= vp*/ 
-Item find(List l, ptr vp)
-{
-	int (*cmp) (ptr, ptr);
-	Item x,y;
-
-	if (l->first==NULL) return NULL;
-	else {
-		x = l->first;
-		cmp= BATatoms[l->tpe].atomCmp;
-		if ((*cmp) (vp, (ptr)&x->value)<0) return NULL;
-		else 
-		   while (((y=x->nxt)!= NULL) &&
-			 ((*cmp) (vp,(ptr)&y->value)>0))
-			x=y;
-		return x;			
-	}
-}
-
-/* insert in incrementally ordered list */
-void insertFirst(List l, ptr vp)
-{
-	Item x;
-	
-	x = (Item) GDKzalloc(sizeof(ItemRec));
-	VALset(&x->value,l->tpe,vp);
-	x->cnt = 1;
-	x->nxt = l->first;
-	l->cnt++;
-	l->first = x;
-	l->s1++;
-}
-
-void insertAfter(List l, Item prv, ptr vp)
-{
-	Item x;
-	
-	x = (Item) GDKzalloc(sizeof(ItemRec));
-	VALset(&x->value,l->tpe,vp);
-	x->cnt = 1;
-	x->nxt = prv->nxt;
-	l->cnt++;
-	l->s1++;
-	prv->nxt = x;
-}
-
-
-/* delete first */
-void deleteFirst(List l)
-{
-	Item x;
-	
-	if (l->first!=NULL){
-		x = l->first;
-		l->cnt--;
-		l->s1 -= x->cnt;
-		l->first = x->nxt;
-		GDKfree(x);
-	}
-}
-
-void mergeLast2(List l)
-{
-	Item x,y;
-	
-	if (l->cnt >=2) {
-		x = l->first;	
-		y = x->nxt;
-		while (y->nxt!=NULL){
-			x = y; y = y->nxt;
-		}
-		x->cnt += y->cnt;
-		x->nxt = NULL;
-		l->cnt--;
-		GDKfree(y);
-	}
-}
-
-void freeList(List l)
-{
-	while (l->first != NULL) 
-		deleteFirst(l);
-	GDKfree(l);
-}
-
-
-void initCnt(List l)
-{
-	Item x;
-
-	x = l->first;	
-	while (x!=NULL) {
-		x->cnt =0;
-		x = x->nxt;
-	}
-	l->err = 0;
-	l->s1 = 0;
-}
-
-void printList(List l)
-{
-	stream_printf(GDKout,"List items %d\n",l->cnt);
-	if (l->first!=NULL) 
-		VALprint(GDKout, &l->first->value);
-
-}
-
-/* Process value ref by vp into list l 
-void procElorg(List l, ptr vp)
-{
-	Item x;
-	int (*cmp) (ptr, ptr);
-	int s1;
-	
-	x = find(l,vp);
-	cmp= BATatoms[l->tpe].atomCmp;
-
-	if (x == NULL) {
-		s1 = sum1(l);
-		if (s1 < l->quant) {
-			if (l->cnt== l->maxlen) mergeLast2(l);
-			insertFirst(l,vp);
-		}
-	}
-	else if ((*cmp) (vp,(ptr)&x->value)==0) x->cnt++;
-	else if (l->cnt== l->maxlen) x->cnt++;
-	     else insertAfter(l,x,vp);
-	
-	if (sum2(l) >= l->quant) deleteFirst(l);
-
-} */
-
-void procEl(List l, ptr vp)
-{
-	Item x;
-	int (*cmp) (ptr, ptr);
-	int s2;
-	
-	x = find(l,vp);
-	cmp= BATatoms[l->tpe].atomCmp;
-
-	if ((x!=NULL) && ((*cmp) (vp,(ptr)&x->value)==0)) 
-		{x->cnt++; l->s1++;}	
-	else if (l->cnt< l->maxlen){
-		if (x == NULL) 	insertFirst(l,vp);
-		else insertAfter(l,x,vp);}
-	else if (x == NULL) {
-		if (l->s1 < l->quant) {
-			mergeLast2(l);
-			insertFirst(l,vp);
-		}
-	}
-	else {x->cnt++; l->s1++;}
-
-	l->err++;	     	
-	s2 = l->s1 - l->first->cnt;
-	if (s2 >= l->quant) deleteFirst(l);
-/*	else if (l->err > l->quant/10 +1) 
-		{mergeLast2(l);
-		 l->err=0;
-	} */
-
-} 
-
-
-str
-findQuant(bat *ret, bat *idx, bat *qt)
-{	BAT *b, *q, *r;
-	BUN p, stop; 
-	List *la;
-	Item itm;
-	int c,i, tpe, cquan, cb;
-	float quan;
-	ptr vp;
-	
-        if ((b = BATdescriptor(*idx)) == NULL) 
-                throw(MAL, "bpm.findQuant", "Cannot access descriptor");
-	if ((q = BATdescriptor(*qt)) == NULL) 
-                throw(MAL, "bpm.findQuant", "Cannot access descriptor");
-
-	/* read qt and init the lists */
-	c = BATcount(q);
-	cb = BATcount(b);
-	tpe = b->ttype;
-	la = (List *) GDKzalloc(sizeof(List)*c);
-	i = 0;
-	BATloop(q, p, stop) {
-		quan = *(float *) BUNtail(q,p);
-		cquan = (int) (1 + cb * (100 - quan)/100.0);
-		la[i++] = newList(tpe,cquan,100);
-#ifdef _DEBUG_BPM_
-		stream_printf(GDKout,"quant %f= %d elements\n",quan,cquan);
-#endif
-	}
-	
-	/* iterate on b */
-	BATloop(b, p, stop) {
-		vp = (ptr) BUNtail(b,p);
-		for(i=0;i<c;i++){
-			procEl(la[i], vp);
-#ifdef _DEBUG_BPM_
-	/*		stream_printf(GDKout,"List %d \n",i);
-			printList(la[i]); */
-#endif
-	}}
-
-	/* create result and free resources */
-
-	r= BATnew(TYPE_void, b->ttype, c); 
-	BATseqbase(r,0);
-	for(i=0;i<c;i++) {
-		itm = la[i]->first;
-		if (itm!= NULL){
-			vp= (ptr) VALget(&itm->value);
-			BUNappend(r, vp, FALSE);
-		}
-	}
-	/* free lists */
-	for(i=0;i<c;i++) 
-		freeList(la[i]);
-	GDKfree(la);
-	BBPkeepref(*ret = r->batCacheid);
-
-	return MAL_SUCCEED;
-}
-
-
-void findQuant1(ValPtr vp, BAT * b, lng sp, int msz)
-{
-	BUN p, stop; 
-	List l;
-	ptr q;
-	Item itm;
-	int c, tpe, quan, pertpl, len=500;
-	BAT *bs;
-
-	c = BATcount(b);
-	if ((c==0) || (msz>=sp)) return ;
-	pertpl = ceil((sp - sizeof(BATstore))/c);
-	quan = floor(msz/ pertpl);
-
-	tpe = b->ttype;
-	quan = c - quan +1;
-	if (len < quan/100) len *= 2;
-	l = newList(tpe,quan,len);
-
-	bs = BATsample(b,len/3);
-
-	/* iterate on the sample - Milena heur. */
-	BATloop(bs, p, stop) {
-		q = (ptr) BUNtail(bs,p);
-		procEl(l, q);
-	}
-	initCnt(l); 
-
-	/* iterate on b */
-	BATloop(b, p, stop) {
-		q = (ptr) BUNtail(b,p);
-		procEl(l, q);
-	}
-
-	itm = l->first;
-	if (itm!= NULL)
-		vp= VALcopy(vp,&itm->value);
-	BBPunfix(bs->batCacheid);
-	#ifdef _DEBUG_BPM_
-		stream_printf(GDKout," quantile AtLeast-GEQ %d found  %d, list len %d\n", l->quant, l->s1, len);
-	#endif
-
-	freeList(l);
-
-}
-
-
-str
-BPMsplitquantiles(bat *ret, bat *bid, int *mb)
-{
-	BAT *b,*bn;
-	Partition ps, p;
-	ValPtr vp;
-	ptr nilptr, val;
-	int (*cmp) (ptr, ptr);
-	int i;
-	lng msz, space;
-	(void) ret;
-
-	BPMopen();
-
-	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
-		throw(MAL,"pbm.split","Partitioned BAT not found");
-	@:getBATdescriptor(bid,b,"bpm.splitPartition");
-	/* get the comparison function */
-	nilptr = ATOMnilptr(b->ttype);
-	BBPunfix(b->batCacheid);
-
-	msz = *mb * KB;
-	vp= VALnew();
-	cmp= BATatoms[b->ttype].atomCmp;
-
-	/* check the size of each segment and split if necessary */
-	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
-	/*	BKCgetSpaceUsed(&space, &i); */
-
-		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitquantile");
-		
-		space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
-		if ((b->htype == TYPE_void) || (b->ttype == TYPE_void))
-			space += BATcount(b)* sizeof(oid);
-	#ifdef _DEBUG_BPM_
-		stream_printf(GDKout," partition '%d' size  %d\n", i, space);
-	#endif
-		if (space <= msz) {
-	 		BBPunfix(b->batCacheid);
-			continue;  
-		}
-		VALinit(vp,b->ttype,nilptr);
-	
-		findQuant1(vp, b, space, msz);
-
-		if ((*cmp) ((ptr)vp, nilptr)!=0) {
-
-		val = (ptr) VALget(vp);
-		if( *bid > 0)
-			bn= BAT_select_(b, val, nilptr, TRUE, FALSE, TRUE, FALSE);
-		else{
-			bn= BAT_select_(BATmirror(b), val, nilptr, TRUE, FALSE, TRUE, FALSE);
-			bn= BATcopy(BATmirror(bn), bn->ttype,bn->htype,1);
-		}
-
-		if( bn == 0){
-			BBPunfix(b->batCacheid);
-			throw(MAL,"pbm.split","Can not create new partition");
-		}
-		BBPkeepref(ABS(bn->batCacheid));
-		p= newPartition(ABS(bn->batCacheid));
-		p->alias= bpmcat[i]->alias;
-		insertPartition(bpmcat[i],p);
-		p->cnt= BATcount(bn);
-
-		if( *bid> 0){
-			VALset(&p->hlow, rngType(b->htype), &bpmcat[i]->hlow );
-			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
-			VALset(&p->tlow, rngType(b->ttype), val );
-			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
-
-			VALset(& bpmcat[i]->thgh, rngType(b->ttype), val );
-		} else {
-			VALset(&p->hlow, rngType(b->htype), val );
-			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
-			VALset(&p->tlow, rngType(b->ttype), &bpmcat[i]->tlow );
-			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
-
-			VALset(& bpmcat[i]->hhgh, rngType(b->htype), val );
-		}
-
-		/* default hash */
-		p->hbits=  bpmcat[i]->hbits;
-		p->tbits=  bpmcat[i]->tbits;
-
-
-		BATdel(b,bn,FALSE); /* assume unique heads */
-		bpmcat[i]->cnt= BATcount(b);
-
-
-	#ifdef _DEBUG_BPM_
-		stream_printf(GDKout,"Broke partition '%d' at %d\n", bpmcat[i]->alias,i);
-		BPMprintRecord(GDKout, bpmcat[i]);
-		BPMprintRecord(GDKout,p);
-		stream_printf(GDKout,"Finished partition\n");
-	#endif
-		BBPunfix(b->batCacheid);
-	}
-	}
-	GDKfree(vp);
-	return MAL_SUCCEED;
-}
-
-
-void findQuantHisto(ValPtr vp, BAT * b, lng sp, int msz)
+void findQuantHisto(ValPtr vp, BAT * b, lng sp, int msz, int maxno)
 {
 	BUN p, pprev, stop; 
-	int c, tpe, quan, pertpl, s=0, cn;
+	int c, tpe, quan, pertpl, s=0, cn, it =0;
 	BAT *bh, *bs;
+	ValPtr v = vp;
 
 	c = BATcount(b);
 	if ((c==0) || (msz>=sp)) return ;
 	pertpl = ceil((sp - sizeof(BATstore))/c);
-	quan = floor(msz/ pertpl);
+	quan = floor((msz- sizeof(BATstore))/ pertpl);
 
 	tpe = b->ttype;
 	bh = BAThistogram(b);
@@ -2475,32 +2058,33 @@ void findQuantHisto(ValPtr vp, BAT * b, lng sp, int msz)
 	pprev = BUNfirst(bs);
 	BATloop(bs, p, stop) {
 		cn = * (int *) BUNtail(bs,p);
-		if (s + cn <quan) {
-			s+=cn;
-			pprev = p;
-		}
+		if (s + cn <quan) 
+			s += cn;
 		else {
-			VALset(vp,tpe, BUNhead(bs,pprev));
-			break;}
+			VALset(v,tpe, BUNhead(bs,pprev));
+			v++; it++;
+			s = cn;
+			if (it >= maxno) break;
+		}
+		pprev = p;
 	}
 
 	BBPunfix(bs->batCacheid);
 	BBPunfix(bh->batCacheid);
-	#ifdef _DEBUG_BPM_
-		stream_printf(GDKout," quantile %d found  %d\n", quan, s);
-	#endif
 }
 
 
+/* split all segments of alias *bid to fit into memory bound mb in KB.
+ Creates all sub-segments of a given segment at once */
 str
-BPMsplithisto(bat *ret, bat *bid, int *mb)
+BPMsplitquant(bat *ret, bat *bid, int *mb)
 {
 	BAT *b,*bn;
-	Partition ps, p;
-	ValPtr vp;
-	ptr nilptr, val;
+	Partition ps, p, pprev;
+	ValPtr vp, v;
+	ptr nilptr, val, hval;
 	int (*cmp) (ptr, ptr);
-	int i;
+	int i, sf, k;
 	lng msz, space;
 	(void) ret;
 
@@ -2514,7 +2098,7 @@ BPMsplithisto(bat *ret, bat *bid, int *mb)
 	BBPunfix(b->batCacheid);
 
 	msz = *mb * KB;
-	vp= VALnew();
+
 	cmp= BATatoms[b->ttype].atomCmp;
 
 	/* check the size of each segment and split if necessary */
@@ -2533,17 +2117,26 @@ BPMsplithisto(bat *ret, bat *bid, int *mb)
 	 		BBPunfix(b->batCacheid);
 			continue;  
 		}
-		VALinit(vp,b->ttype,nilptr);
+
+		sf = ceil(space/msz) + 2;
+		vp= (ValPtr) GDKzalloc( sizeof(ValRecord) * sf);
+		for (k=0; k<sf; k++)
+			VALinit(vp+k,b->ttype,nilptr);
 	
-		findQuantHisto(vp, b, space, msz);
+		findQuantHisto(vp, b, space, msz, sf-1);
 
-		if ((*cmp) ((ptr)vp, nilptr)!=0) {
+		/* loop on the quantiles found for a single segment*/
+		v =vp;
+		pprev = bpmcat[i];
 
-		val = (ptr) VALget(vp);
+		while ((*cmp) ((ptr)v, nilptr)!=0) {
+
+		val = (ptr) VALget(v);
+		hval = (ptr) VALget(v+1);
 		if( *bid > 0)
-			bn= BAT_select_(b, val, nilptr, TRUE, FALSE, TRUE, FALSE);
+			bn= BAT_select_(b, val, hval, TRUE, FALSE, TRUE, FALSE);
 		else{
-			bn= BAT_select_(BATmirror(b), val, nilptr, TRUE, FALSE, TRUE, FALSE);
+			bn= BAT_select_(BATmirror(b), val, hval, TRUE, FALSE, TRUE, FALSE);
 			bn= BATcopy(BATmirror(bn), bn->ttype,bn->htype,1);
 		}
 
@@ -2554,46 +2147,48 @@ BPMsplithisto(bat *ret, bat *bid, int *mb)
 		BBPkeepref(ABS(bn->batCacheid));
 		p= newPartition(ABS(bn->batCacheid));
 		p->alias= bpmcat[i]->alias;
-		insertPartition(bpmcat[i],p);
+		insertPartition(pprev,p);
 		p->cnt= BATcount(bn);
 
 		if( *bid> 0){
 			VALset(&p->hlow, rngType(b->htype), &bpmcat[i]->hlow );
 			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
 			VALset(&p->tlow, rngType(b->ttype), val );
-			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
-
-			VALset(& bpmcat[i]->thgh, rngType(b->ttype), val );
+			VALset(&p->thgh, rngType(b->ttype), hval );
 		} else {
 			VALset(&p->hlow, rngType(b->htype), val );
-			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
+			VALset(&p->hhgh, rngType(b->htype), hval  );
 			VALset(&p->tlow, rngType(b->ttype), &bpmcat[i]->tlow );
 			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
-
-			VALset(& bpmcat[i]->hhgh, rngType(b->htype), val );
 		}
 
 		/* default hash */
 		p->hbits=  bpmcat[i]->hbits;
 		p->tbits=  bpmcat[i]->tbits;
 
-
 		BATdel(b,bn,FALSE); /* assume unique heads */
-		bpmcat[i]->cnt= BATcount(b);
-
 
 	#ifdef _DEBUG_BPM_
-		stream_printf(GDKout,"Broke partition '%d' at %d\n", bpmcat[i]->alias,i);
-		BPMprintRecord(GDKout, bpmcat[i]);
 		BPMprintRecord(GDKout,p);
 		stream_printf(GDKout,"Finished partition\n");
 	#endif
+		pprev = p;
+		v++;
+		}
+
+		bpmcat[i]->cnt= BATcount(b);
+		if( *bid> 0)
+			VALset(& bpmcat[i]->thgh, rngType(b->ttype), (ptr) VALget(vp) );
+		else
+			VALset(& bpmcat[i]->hhgh, rngType(b->htype), (ptr) VALget(vp));
 		BBPunfix(b->batCacheid);
+		GDKfree(vp);
+	
 	}
-	}
-	GDKfree(vp);
+
 	return MAL_SUCCEED;
 }
+
 
 
 @c
