@@ -1167,6 +1167,7 @@ newconnection(shttpd_socket *ctx, int sock, struct usa *usa) {
 		(void) close(sock);
 		elog(ERR_INFO, "newconnection: calloc: %s", strerror(ERRNO));
 	} else {
+		memset(c, 0, sizeof(c));
 		c->next = ctx->connections;
 		ctx->connections = c;
         c->ctx = ctx;
