@@ -3105,7 +3105,7 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       var cont := $h;
       var list := aconts.ord_uselect(cont).mirror(); # [i,i] (attributes in current container)
       var aqn := list.leftjoin(update_rename); # [i,newQName]
-      var aqnid := find_qn_bulk(ws, cont, [+](NS_ACCEL_SEP + NS_ACCEL_SEP, aqn), bit_nil); # [i,newQNID]
+      var aqnid := find_qn_bulk(ws, cont, [+](NS_ACCEL_SEP + NS_ACCEL_SEP, aqn), true); # [i,newQNID]
       var attr_qn_updates := ws.fetch(ATTR_QN_UPDATE).find(cont);
       # list.leftjoin(aitem) [i,ATID]
       # list.leftjoin(aitem).reverse() [ATID,i]
@@ -3147,7 +3147,7 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       }
       if (eelem.count() > 0) {
         var eqn := eelem.leftjoin(update_rename); # [i,newQName]
-        var eqnid := find_qn_bulk(ws, cont, [+](NS_ACCEL_SEP + NS_ACCEL_SEP, eqn), bit_nil); # [i,newQNID]
+        var eqnid := find_qn_bulk(ws, cont, [+](NS_ACCEL_SEP + NS_ACCEL_SEP, eqn), true); # [i,newQNID]
         {
           var eelempre := eelem.leftjoin(epres); # [i,PRE]
           var eelemnid := eelempre.leftjoin(pre_nid); # [i,NID]
@@ -3309,7 +3309,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
       var aqns := mposjoin(taitems, taconts, ws.fetch(ATTR_QN)); # [j,ATTR_QNID]
       var aqncont := mposjoin(taitems, taconts, ws.fetch(ATTR_CONT)); # [j,ATTR_QN_CONT]
       var aprefuriloc := mposjoin(aqns, aqncont, ws.fetch(QN_PREFIX_URI_LOC)); # [j,ATTR_PREFIX_URI_LOC]
-      var aqnid := find_qn_bulk(ws, cont, aprefuriloc, bit_nil); # [j,DOC_QNID]
+      var aqnid := find_qn_bulk(ws, cont, aprefuriloc, true); # [j,DOC_QNID]
       aqnid := mapping.leftjoin(aqnid); # [i,DOC_QNID] map back to original numbering
 
       var aprops := mposjoin(taitems, taconts, ws.fetch(ATTR_PROP)); # [j,ATTR_PROPID]
@@ -3934,7 +3934,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               } else {
                 var a := attrattrs.tmark(0@0);
                 var prefurilocval := mposjoin(a.leftjoin(insert_attr_qn), a.leftjoin(insert_attr_cont), ws.fetch(QN_PREFIX_URI_LOC));
-                attrnqnids := a.reverse().leftjoin(find_qn_bulk(ws, doccont, prefurilocval, bit_nil));
+                attrnqnids := a.reverse().leftjoin(find_qn_bulk(ws, doccont, prefurilocval, true));
               }
               var attrnprops; # ATID-New PROPID
               if (sameattrdoc) {
@@ -3958,7 +3958,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               if (not(samedoc)) {
                 var e := elems.tmark(0@0);
                 var prefurilocval := mposjoin(e.leftjoin(insprop), e.leftjoin(insert_pre_cont), ws.fetch(QN_PREFIX_URI_LOC));
-                var elemids := e.reverse().leftjoin(find_qn_bulk(ws, doccont, prefurilocval, bit_nil));
+                var elemids := e.reverse().leftjoin(find_qn_bulk(ws, doccont, prefurilocval, true));
                 insprop.replace(elemids);
               }
               var newnidqn := elems.leftjoin(insnnids).reverse().join(insprop); # [newNID,newQNID]
@@ -4545,49 +4545,44 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
 {
   var qn_prefix_uri_loc := ws.fetch(_QN_PREFIX_URI_LOC).find(cont);
   var qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
-  var UPDATE := 0;
-  if (isnil(add)) { # update case
-    add := true; UPDATE := QN_HISTOGRAM_UPDATE - QN_HISTOGRAM;
-  }
-  if (add) {
-    var miss := qn_map.uselect(oid_nil);
-    if (miss.count() > 0) {
-      var qn_loc := ws.fetch(_QN_LOC).find(cont);
-      var qn_uri := ws.fetch(_QN_URI).find(cont);
-      var qn_prefix := ws.fetch(_QN_PREFIX).find(cont);
-      var qn_uri_loc := ws.fetch(_QN_URI_LOC).find(cont);
-      var qn_histogram := ws.fetch(_QN_HISTOGRAM).find(cont);
+  var miss := qn_map.uselect(oid_nil);
+  if (miss.count() > 0) {
+    var qn_loc := ws.fetch(_QN_LOC).find(cont);
+    var qn_uri := ws.fetch(_QN_URI).find(cont);
+    var qn_prefix := ws.fetch(_QN_PREFIX).find(cont);
+    var qn_uri_loc := ws.fetch(_QN_URI_LOC).find(cont);
+    var qn_histogram := ws.fetch(_QN_HISTOGRAM).find(cont);
 
-      # get the unique missing strings and append them
-      coll_lock_set(ws, cont, COLL_SHORTLOCK, "find_qn_bulk");
-      var ws_logtime := usec();
-      var _base := oid(count(qn_histogram));
-      var _delta := reverse(miss).join(pref_uri_loc).histogram();
-      var _pref_uri_loc := _delta.hmark(_base);
-      var _histogram := [lng](_delta.tmark(_base));
-      var _split := splitbat(_pref_uri_loc, NS_ACCEL_SEP);
-      var _pref  := _split.fetch(0);
-      var _uri   := _split.fetch(1);
-      var _loc   := _split.fetch(2);
-      var _uri_loc := [+]([+](_uri, NS_ACCEL_SEP), _loc);
-      pf_assert(CATCH({ qn_loc.append(_loc, true); 
-                        qn_uri.append(_uri, true); 
-                        qn_prefix.append(_pref, true);
-                        qn_uri_loc.append(_uri_loc, true);
-                        qn_prefix_uri_loc.append(_pref_uri_loc, true); 
-                        qn_histogram.append(_histogram, true); }), "master update failed (add_qn)");
+    # get the unique missing strings and append them
+    coll_lock_set(ws, cont, COLL_SHORTLOCK, "find_qn_bulk");
+    var ws_logtime := usec();
+    var _base := oid(count(qn_histogram));
+    var _delta := reverse(miss).join(pref_uri_loc).histogram();
+    var _pref_uri_loc := _delta.hmark(_base);
+    var _histogram := [lng](_delta.tmark(_base));
+    var _split := splitbat(_pref_uri_loc, NS_ACCEL_SEP);
+    var _pref  := _split.fetch(0);
+    var _uri   := _split.fetch(1);
+    var _loc   := _split.fetch(2);
+    var _uri_loc := [+]([+](_uri, NS_ACCEL_SEP), _loc);
+    pf_assert(CATCH({ qn_loc.append(_loc, true); 
+                      qn_uri.append(_uri, true); 
+                      qn_prefix.append(_pref, true);
+                      qn_uri_loc.append(_uri_loc, true);
+                      qn_prefix_uri_loc.append(_pref_uri_loc, true); 
+                      qn_histogram.append(_histogram, true); }), "master update failed (add_qn)");
 
-      # recalculate map now
-      qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
-      coll_lock_unset(ws, cont, COLL_SHORTLOCK, "find_qn_bulk", ws_logtime);
+    # recalculate map now
+    qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
+    coll_lock_unset(ws, cont, COLL_SHORTLOCK, "find_qn_bulk", ws_logtime);
 
-      # log new values
-      ws.fetch(QN_LOC + UPDATE).find(cont).insert(_loc);
-      ws.fetch(QN_URI + UPDATE).find(cont).insert(_uri);
-      ws.fetch(QN_PREFIX + UPDATE).find(cont).insert(_pref);
-      ws.fetch(QN_URI_LOC + UPDATE).find(cont).insert(_uri_loc);
-      ws.fetch(QN_PREFIX_URI_LOC + UPDATE).find(cont).insert(_pref_uri_loc);
-      ws.fetch(QN_HISTOGRAM + UPDATE).find(cont).insert(_histogram);
+    if (update) {
+      ws.fetch(QN_LOC_UPDATE).find(cont).insert(_loc);
+      ws.fetch(QN_URI_UPDATE).find(cont).insert(_uri);
+      ws.fetch(QN_PREFIX_UPDATE).find(cont).insert(_pref);
+      ws.fetch(QN_URI_LOC_UPDATE).find(cont).insert(_uri_loc);
+      ws.fetch(QN_PREFIX_URI_LOC_UPDATE).find(cont).insert(_pref_uri_loc);
+      ws.fetch(QN_HISTOGRAM_UPDATE).find(cont).insert(_histogram);
     }
   }
   return qn_map;
@@ -7443,7 +7438,7 @@ PROC add_qnames (BAT[void,str] prefix,
 {
     var pref_uri_loc := prefix.[+](NS_ACCEL_SEP).[+](uri).[+](NS_ACCEL_SEP).[+](local); # [void,str]
     pref_uri_loc := [isnil](local).ord_uselect(false).mirror().leftfetchjoin(pref_uri_loc); # [oid,str] (sorted subset)
-    return mirror(local).outerjoin(find_qn_bulk(ws, WS, pref_uri_loc, true)).tmark(seqbase(local)); # [void,oid]
+    return mirror(local).outerjoin(find_qn_bulk(ws, WS, pref_uri_loc, false)).tmark(seqbase(local)); # [void,oid]
 }
 ADDHELP("add_qnames", "tsheyar", "Oct 2005",
         "PARAMETERS:\n\
