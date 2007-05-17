@@ -155,10 +155,6 @@ b:= algebra.select(a,0 1000); # some expensive operation
 profiler.stop();
 @end example
 @node Stethoscope The MAL Modules, Event Caching, The MAL Profiler
-@+ Stethoscope
-The performance data can be obtained from a running server
-using the application @code{stethoscope}.
-For details on the calling convention use @code{--help}.
 @{
 The profiler is activated by defining MALprofiler in the source tree.
 This leads to securing space for the counters and for code
