@@ -5467,8 +5467,9 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
             "map := elem_kind.ord_uselect(ELEMENT).hmark(0@0);\n"
             "elem_kind := nil;\n"
             "elem := map.leftfetchjoin(elem);\n"
-            "elem_cont := map.leftfetchjoin(elem_cont);\n"
             "elem_oid  := map.leftfetchjoin(elem_oid);\n"
+            "elem_cont := map.leftfetchjoin(elem_cont);\n"
+            "var elem_cont_orig := mposjoin(elem, elem_cont, ws.fetch(PRE_CONT));\n"
             "map := nil;\n"
             /* gets the qname keys */
             "elem := mposjoin(elem, elem_cont, ws.fetch(PRE_PROP));\n"
@@ -5476,13 +5477,14 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
             /* looks up the attribute nodes */
             "map := kind.get_type(ATTR).hmark(0@0);\n"
             "var attr := map.leftfetchjoin(item);\n"
-            "var attr_cont := map.leftfetchjoin(kind.get_container());\n"
             "var attr_oid := map;\n"
+            "var attr_cont := map.leftfetchjoin(kind.get_container());\n"
+            "var attr_cont_orig := mposjoin(attr, attr_cont, ws.fetch(ATTR_CONT));\n"
             "map := nil;\n"
             /* gets the qname keys */
             "attr := mposjoin(attr, attr_cont, ws.fetch(ATTR_QN));\n"
             /* merges the qname keys of attributes and element nodes */
-            "var res_mu := merged_union(elem_oid, attr_oid, elem, attr, elem_cont, attr_cont);\n"
+            "var res_mu := merged_union(elem_oid, attr_oid, elem, attr, elem_cont_orig, attr_cont_orig);\n"
             "elem := nil;\n"
             "elem_cont := nil;\n"
             "elem_oid := nil;\n"
