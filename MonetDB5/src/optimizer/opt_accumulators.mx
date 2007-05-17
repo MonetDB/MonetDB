@@ -103,9 +103,9 @@ the replacement is aborted.
 		freeInstruction(q);
 		if(available[a]==0){
 			q= newFcnCall(mb,"algebra","reuse");
-			getArg(q,0)= getArg(p,1);
 			pushArgument(mb,q,a);
-			available[getArg(q,0)]=1;
+			available[getArg(p,1)]=1;
+			getArg(p,1)=getArg(q,0);
 		} else {
 			alias[getArg(p,1)]= a;
 			getArg(p,1)=a;

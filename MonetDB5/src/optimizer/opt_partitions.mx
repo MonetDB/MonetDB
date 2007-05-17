@@ -113,11 +113,16 @@ static int localVar(MalBlkPtr mb, char *prefix, int idx, int tpe){
 static int
 OPTpartitionProperties(MalBlkPtr mb)
 {
-	int i,j,k,done,limit, grp= 1;
+	int i,j,k,limit,done, lastsegment=0,grp= 1;
 	InstrPtr *old,p;
-	int tmp[256];
-	int lastsegment=0;
+	int *outflow= (int*) alloca(sizeof(int)*mb->vtop);
 
+	memset((char*) outflow, 0, sizeof(int)*mb->vtop);
+	for(i=0;i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for(j=p->retc; j<p->argc;j++)
+			outflow[getArg(p,j)]++;
+	}
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb,limit);
@@ -128,10 +133,8 @@ OPTpartitionProperties(MalBlkPtr mb)
 			/* test the BPM catalog */
 
 			setArgProperty(mb, p,0,"segment","=",TYPE_int,&grp);
-			tmp[grp] = getArg(p,0);
-			grp++;
 			pushInstruction(mb,p);
-			lastsegment=0;
+			grp++;
 			continue;
 		}
 		if( getModuleId(p)== constraintsRef){
@@ -139,48 +142,50 @@ OPTpartitionProperties(MalBlkPtr mb)
 			j= -1;
 			setArgProperty(mb, p,1,"segment","=",TYPE_int,&j);
 			pushInstruction(mb,p);
+			grp++;
 			continue;
 		}
 		/* find plan segments, a linear trail of single target instructions */
+		/* mark all result variables to belong to the same segment */
+		for(j=0; j<p->retc; j++){
+			setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
+		}
+		pushInstruction(mb,p);
+/* printInstruction(GDKout,mb,p,LIST_MAL_PROPS);*/
+
 		done=0;
-		if( isFragmentGroup(p) ){
+		if( isFragmentGroup(p) && !hasSideEffects(p,TRUE) ){
 			for(j=p->retc; j<p->argc; j++)
 			if( isPropertyDefined(getProps(mb,getArg(p,j)),"segment")){
 				k= *(int*) getPropertyValue(getProps(mb,getArg(p,j)),
 									"segment");
-				if( tmp[k] == getArg(p,j) )
-					tmp[k]= getArg(p,0);
-				done++;
+				if(done==0)
+					done=k;
+				if( done!= k)
+					goto newgroup;
+				if( outflow[getArg(p,j)]>1)
+					goto newgroup;
 			}
-			if( done == 0) 
-				goto handleone;
-			if( old[i-1]->retc>1)
-				k= lastsegment= ++grp;
-			if( done>1 )
-				k= grp;
-			/* mark all result variables to belong to the same segment */
-			if( k>=0)
+			if( p->retc==1)
+				goto nxtgroup;
+		newgroup:
+			++grp;
+/* printf("new segment start here %d \n",grp);*/
 			for(j=0; j<p->retc; j++){
-			if( isaBatType(getVarType(mb, getArg(p,j))) )
-				setArgProperty(mb, p,j,"segment","=",TYPE_int,&k);
+				setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
 			}
-			pushInstruction(mb,p);
 			lastsegment=0;
-			continue;
+		} else
+		if( !isFragmentGroup(p) ){
+			if( lastsegment==0 || getModuleId(p)== aggrRef)
+				lastsegment= ++grp;
+			for(j=0; j<p->retc; j++){
+				setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
+			}
 		} 
-@-
-We have encountered a non-fragment statement. It is assigned to its
-own segment.
-@c
-handleone:
-		if( lastsegment==0 )
-			lastsegment= ++grp;
-		/* mark all result variables to belong to the same segment */
-		for(j=0; j<p->retc; j++){
-			setArgProperty(mb, p,j,"segment","=",TYPE_int,&lastsegment);
-		}
-		pushInstruction(mb,p);
-	}
+nxtgroup:
+	;
+}
 #ifdef DEBUG_OPT_PARTITIONED
 	setLifespan(mb);
 	chkProgram(MCgetClient()->nspace,mb);
@@ -297,11 +302,13 @@ Wrapup the last segment first
 				alias[getArg(p,1)]!= getArg(p,1)  ){
 				getModuleId(p)= bpmRef;
 				pushInstruction(mb,p);
-				getArg(p,1)= alias[getArg(p,1)];
+				if( alias[getArg(p,1)])
+					getArg(p,1)= alias[getArg(p,1)];
 				continue;
 			}
 			for(j= p->retc; j<p->argc; j++)
-			if(alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j) ){
+			if( (alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j)) ||
+				strncmp(getFunctionId(p),"sort",4)==0){
 				q = newStmt(mb,"bpm","glue");
 				q->argv[0]= getArg(p,j);
 				pushArgument(mb,q,alias[getArg(p,j)]);
@@ -310,6 +317,9 @@ Wrapup the last segment first
 			}
 		}
 		if( *seg <0){
+			for(j= p->retc; j<p->argc; j++)
+			if( alias[getArg(p,j)] )
+				getArg(p,j)= alias[getArg(p,j)];
 			pushInstruction(mb,p);
 			continue;
 		}

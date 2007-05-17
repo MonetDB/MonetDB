@@ -189,11 +189,11 @@ end f1;	# 84
 #	##f1();
 #
 #
-!TypeException:user.f1[83]:'t59' may not be used before being initialized
-!TypeException:user.f1[83]:'t48' may not be used before being initialized
-!TypeException:user.f1[106]:'t83' may not be used before being initialized
-!TypeException:user.f1[106]:'t82' may not be used before being initialized
-!TypeException:user.f1[110]:'t84' may not be used before being initialized
+
+
+
+
+
 function user.main():void;	# 0  (main:void)
     mdb.list("user","f1");	# 1 MDBlist3 (_6:void)<-(_2:str)(_3:str)
 ##f1(); 	# 2  (_8:str)
@@ -203,8 +203,9 @@ factory user.f1(s:str):void;
     t2 := array.grid(132000,8,1,0);
     t3 := array.grid(1,100,10560,0);
     t4 := array.grid(1,100,10560,0,8);
-    t5 := algebra.reuse(t2);
-    t5 := batcalc.+(t5,t2,t4);
+    _116 := algebra.reuse(t2);
+    t5 := batcalc.+(_116,t2,t4);
+    _116 := nil;
     t2 := nil;
     t4 := nil;
     t6 := batcalc.oid(t5);
@@ -224,13 +225,15 @@ factory user.f1(s:str):void;
     t18 := array.grid(100,8,14,0);
     t19 := array.grid(1,100,112,0);
     t20 := array.grid(1,100,112,0,8);
-    t21 := algebra.reuse(t18);
-    t21 := batcalc.+(t21,t18,t20);
+    _117 := algebra.reuse(t18);
+    t21 := batcalc.+(_117,t18,t20);
+    _117 := nil;
     t18 := nil;
     t20 := nil;
     t22 := batcalc.*(14,t21);
-    t23 := algebra.reuse(t17);
-    t23 := batcalc.+(t23,t17,t22);
+    _118 := algebra.reuse(t17);
+    t23 := batcalc.+(_118,t17,t22);
+    _118 := nil;
     t17 := nil;
     t22 := nil;
     t24 := batcalc.oid(t23);
@@ -244,8 +247,9 @@ factory user.f1(s:str):void;
     t25 := nil;
     t30 := nil;
     t31 := nil;
-    t33 := algebra.reuse(t32);
-    t33 := batcalc.*(t33,t15,t32);
+    _119 := algebra.reuse(t32);
+    t33 := batcalc.*(_119,t15,t32);
+    _119 := nil;
     t32 := nil;
     t33 := batcalc./(t33,t8,t33);
     t40 := algebra.join(t6,t33);
@@ -255,8 +259,9 @@ factory user.f1(s:str):void;
     t43 := array.grid(1056000,14,1,0);
     t44 := array.grid(100,1320,112,0);
     t45 := array.grid(100,1320,112,0,14);
-    t46 := algebra.reuse(t45);
-    t46 := batcalc.+(t46,t43,t45);
+    _120 := algebra.reuse(t45);
+    t46 := batcalc.+(_120,t43,t45);
+    _120 := nil;
     t45 := nil;
     t47 := batcalc.oid(t46);
     t46 := nil;
@@ -266,8 +271,9 @@ factory user.f1(s:str):void;
     t51 := array.grid(132000,8,14,0);
     t52 := array.grid(1,100,147840,0);
     t53 := array.grid(1,100,147840,0,8);
-    t54 := algebra.reuse(t53);
-    t54 := batcalc.+(t54,t51,t53);
+    _121 := algebra.reuse(t53);
+    t54 := batcalc.+(_121,t51,t53);
+    _121 := nil;
     t53 := nil;
     t54 := batcalc.*(t54,14,t54);
     t54 := batcalc.+(t54,t43,t54);
@@ -276,7 +282,7 @@ factory user.f1(s:str):void;
     t54 := nil;
     t58 := algebra.join(t57,t49);
     t49:bat[:oid,:dbl]  := nil;
-    t59 := batcalc.-(t59,t48,t58);
+    _122 := nil;
     t48 := nil;
     t58 := nil;
 #t61 := batcalc.pow(t59,t9); 
@@ -286,8 +292,9 @@ factory user.f1(s:str):void;
     t16:bat[:oid,:dbl]  := nil;
     t59 := batcalc./(t59,t59,t71);
     t71 := nil;
-    t76 := algebra.reuse(t52);
-    t76 := batcalc.*(t76,1320,t52);
+    _123 := algebra.reuse(t52);
+    t76 := batcalc.*(_123,1320,t52);
+    _123 := nil;
     t52 := nil;
     t76 := batcalc.+(t76,t44,t76);
     t44 := nil;
@@ -299,11 +306,11 @@ factory user.f1(s:str):void;
     t81 := array.grid(1,1056000,1,0);
     t59 := nil;
     t80 := nil;
-    t83 := batcalc.*(t83,t41,t82);
+    _124 := nil;
     t82 := nil;
     t83 := nil;
-    t85 := algebra.reuse(t40);
-    t85 := batcalc.*(t85,t40,t84);
+    _125 := algebra.reuse(t40);
+    _125 := nil;
     t40 := nil;
     t84 := nil;
     t85 := batcalc.*(t85,t7,t85);
@@ -311,39 +318,43 @@ factory user.f1(s:str):void;
 #t87 := array.grid(100,1320,8,0); will save 30% by reuse 
     t87 := array.grid(t81,100,1320,8,0);
     t81 := nil;
-    t89 := algebra.reuse(t3);
-    t89 := batcalc.*(t89,1320,t3);
+    _126 := algebra.reuse(t3);
+    t89 := batcalc.*(_126,1320,t3);
+    _126 := nil;
     t3 := nil;
     t89 := batcalc.+(t89,t87,t89);
     t87 := nil;
     t91 := batcalc.oid(t89);
     t89 := nil;
     t92 := array.grid(1,132000,1,0);
-    t93 := aggr.sum(t85,t91,t92);
     t85 := nil;
     t91 := nil;
     t92 := nil;
-    t94 := batmath.log(t93);
     t93 := nil;
     t95 := array.grid(1,100,1320,0);
     t96 := batcalc.oid(t95);
     t95 := nil;
     t97 := array.grid(1,100,1,0);
-    t98 := aggr.sum(t94,t96,t97);
     t94 := nil;
     t96 := nil;
-    top := t98;
     t98 := nil;
-    io.table(t97,top);
     t97 := nil;
     top := nil;
 barrier always := true;
     t42:bat[:oid,:dbl]  := bbp.bind(s);
     t48 := algebra.join(t47,t42);
-    t59 := algebra.reuse(t48);
+    _122 := algebra.reuse(t48);
+    t59 := batcalc.-(_122,t48,t58);
     t82 := aggr.sum(t59,t80,t81);
-    t83 := algebra.reuse(t82);
+    _124 := algebra.reuse(t82);
+    t83 := batcalc.*(_124,t41,t82);
     t84 := batmath.exp(t83);
+    t85 := batcalc.*(_125,t40,t84);
+    t93 := aggr.sum(t85,t91,t92);
+    t94 := batmath.log(t93);
+    t98 := aggr.sum(t94,t96,t97);
+    top := t98;
+    io.table(t97,top);
     yield f1;
     redo always;
 exit always;

@@ -67,12 +67,12 @@ function sql.query{segment=2}(A0:sht):void;
     constraints.emptySet(x8);
     _27 := bpm.new(:oid,:oid);
 barrier x1:bat[:oid,:int]{segment=2,bid=765,rows=0,notnil=true}  := bpm.newIterator(bpm2);
-    x11{segment=2,rows=0} := algebra.markT(x1,0@0);
-    x12{segment=2,rows=0} := bat.reverse(x11);
+    x11{segment=7,rows=0} := algebra.markT(x1,0@0);
+    x12{segment=7,rows=0} := bat.reverse(x11);
     bpm.addPartition(_27,x12);
     redo x1:bat[:oid,:int]{segment=2,bid=765,rows=0,notnil=true}  := bpm.hasMoreElements(bpm2);
 exit x1:bat[:oid,:int]{segment=2,bid=765,rows=0,notnil=true} ;
-    x13{segment=6,rows=1} := bpm.count(_27);
+    x13{segment=8,rows=1} := bpm.count(_27);
     sql.exportValue(1,"sys.","countx","int",32,0,6,x13,"");
 end query;
 
