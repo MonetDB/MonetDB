@@ -17,11 +17,10 @@
 @f stethoscope
 @a Martin Kersten
 @v 1.0
-@+ The Stethoscope
-The MonetDB kernel carries a profiler infrastructure, which
-can be precisely controlled through a MAL program. 
-Often, however, inclusion of profiling statements in a proram
-is an afterthought.
+@- The Stethoscope
+The performance profiler infrastructure provides
+precisely control through a MAL program. 
+Often, however, inclusion of profiling statements is an afterthought.
 
 The program @code{stethoscope} addresses this situation by providing
 a simple application that can attach itself to a running
@@ -32,7 +31,7 @@ and the applicable filter expressions. For example,
 @example
 stethoscope -t bat.insert algebra.join
 @end example
-tracks the usec ticks of two specific MAL instructions.
+tracks the microsecond ticks of two specific MAL instructions.
 A synopsis of the calling conventions:
 @verbatim
 	stethoscope [options] +[aefoTtcmibds] {<mod>.<fcn>}
