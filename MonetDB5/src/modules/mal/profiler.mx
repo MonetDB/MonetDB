@@ -59,7 +59,7 @@ profiler.activate("statement");
 @-
 The profiler event can be handled in several ways.
 The default strategy is to ship the event record immediately over a stream
-to a performance monitor, eg. Mknife.
+to a performance monitor.
 An alternative strategy is preparation of off-line performance analysis.
 
 To reduce the  interference of performance measurement with

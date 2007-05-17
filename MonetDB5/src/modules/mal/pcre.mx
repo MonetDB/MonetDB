@@ -23,7 +23,7 @@ with  just  a  few  differences.  The  current  implementation of PCRE
 (release 4.x) corresponds approximately with Perl 5.8, including  support
 for  UTF-8  encoded  strings.   However,  this support has to be
 explicitly enabled; it is not the default.
-
+@{
 @mal
 atom pcre:ptr;
 command tostr()   address pcre_tostr;
@@ -100,11 +100,10 @@ address pcre_init
 comment "Initialize pcre";
 
 pcre.prelude();
-@{
 @-
-\begin{center}
+@verbatim
 ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
-\end{center}
+@end verbatim
 
 @+ Implementation
 @include prelude.mx

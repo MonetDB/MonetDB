@@ -17,7 +17,7 @@
 @f bpm
 @v 0.4
 @a M.L.Kersten, M. Ivanova
-@* BAT Partition Manager
+@+ BAT Partition Manager
 In real-life database applications the BATs tend to grow beyond
 the memory size. This leads to a heavy IO dominated behavior,
 which can partly be avoided by breaking up the query into a sequence
@@ -68,7 +68,7 @@ fragments on the same site.
 Assume a relation R(A,B) which is already partitioned on A
 the derived fragmentation on the head is enforced with
 @example
-bpm.derivePartition(B,A);
+	bpm.derivePartition(B,A);
 @end example
 @- Using partitions
 The partitioned BAT can be used in two ways. A query plan can be
