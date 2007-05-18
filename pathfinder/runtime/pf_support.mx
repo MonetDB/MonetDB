@@ -465,6 +465,14 @@ const timestamp_nil := timestamp(nil);
 
 PROC log2(any i) : int { return int(log(dbl(i))/M_LN2) + 1; }
 
+# sort on [head,tail] and make globally unique 
+PROC htordered_sunique(BAT[oid,any::1] b) : BAT[oid,any::1]
+{
+    b := b.sort(); # often a no-op
+    # get kunique CTrefine numbers, and fetch the corresponding source positions 
+    return b.fetch(reverse(reverse(CTrefine(b.hmark(0@0),b.tmark(0@0))).kunique()));
+}
+
 PROC addValues(bat[void,any::1] container, any::1 delta) : oid
 {
     container.append(delta);
@@ -1254,19 +1262,19 @@ PROC ll_htordered_unique_thetajoin( int mode,
     # in some cases, the (left_iter = right_iter) restriction is more selective than (left_val OP right_val)
     if ((count(int(lo)) < 3*lc) and (count(int(ro)) < 3*rc)) {
         # get cartesian product within each matching iter
-        var join_res := lo.tmark(0@0).leftjoin(reverse(ro.tmark(0@0)));
+        var join_res := lo.leftmergejoin(reverse(ro));
 
         # select only matching tuples according to (left_val OP right_val)
         var l_val := join_res.hmark(0@0).leftfetchjoin(l.tmark(0@0));
         var r_val := join_res.tmark(0@0).leftfetchjoin(r.tmark(0@0));
         join_res := join_res.fetch(join_test(mode,l_val,r_val).ord_uselect(true));
 
-        # map back to the keys of lo and ro
-        join_res := join_res.leftfetchjoin(ro.tmark(0@0));
-        join_res := reverse(reverse(join_res).leftfetchjoin(lo.tmark(0@0)));
+        # map back to the iter values of lo and ro [iter,iter]
+        join_res := join_res.leftfetchjoin(r.hmark(0@0));
+        join_res := reverse(reverse(join_res).leftfetchjoin(l.hmark(0@0)));
         
         # sort (should already be the case) and unique
-        join_res := join_res.access(BAT_WRITE).order().sunique();
+        join_res := htordered_sunique(join_res);
 
         # do not forget to apply any remaps 
         if (type(lx) = bat) join_res := reverse(leftfetchjoin(reverse(join_res),lx));
