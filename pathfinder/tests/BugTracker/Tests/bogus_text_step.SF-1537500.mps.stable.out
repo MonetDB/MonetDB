@@ -17,12 +17,14 @@ quit();
 
 Over..
 
-# 16:50:40 >  
-# 16:50:40 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30408 bogus_text_step.SF-1537500.mps.xq
-# 16:50:40 >  
+# 15:07:31 >  
+# 15:07:31 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31058 bogus_text_step.SF-1537500.mps.xq
+# 15:07:31 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
 
-# 16:50:40 >  
-# 16:50:40 >  Done.
-# 16:50:40 >  
+# 15:07:31 >  
+# 15:07:31 >  Done.
+# 15:07:31 >  
 

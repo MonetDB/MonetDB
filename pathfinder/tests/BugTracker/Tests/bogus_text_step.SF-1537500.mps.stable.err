@@ -63,9 +63,6 @@ stderr of test 'bogus_text_step.SF-1537500.mps` in directory 'tests/BugTracker` 
 # 16:50:40 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30408 bogus_text_step.SF-1537500.mps.xq
 # 16:50:40 >  
 
-MAPI  = monetdb@localhost:33675
-QUERY = <x/>/@a/text()
-ERROR = !ERROR: path steps are only supported starting from non-attribute nodes
 
 # 16:50:40 >  
 # 16:50:40 >  Done.
