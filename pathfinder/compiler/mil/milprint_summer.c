@@ -5511,7 +5511,7 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
                 "var true_oid := prefix_bool.ord_uselect(true).hmark(0@0);\n"
                 "var false_oid := prefix_bool.ord_uselect(false).hmark(0@0);\n"
                 "prefix_bool := nil;\n"
-                "prefixes := false_oid.leftfetchjoin(prefixes).[+](NS_ACCEL_SEP);\n"
+                "prefixes := false_oid.leftfetchjoin(prefixes).[+](\":\");\n"
                 "res_mu := merged_union(true_oid, false_oid, \"\", prefixes);\n"
                 "true_oid := nil;\n"
                 "false_oid := nil;\n"
