@@ -34,13 +34,13 @@ Too many bugs.
                     BAT[any::1,any::3] = CMDleft@1join;
   "Hook directly into the 'left@1join' implementation of the join.
    prefix 'left' means that left and right input are not swapped during processing,
-   and hence, the order of the left input's head is maintained in the result."
+   and hence, the order of the left input's head is maintained in the result. @2"
 @m
-@:join(fetch)@
+@:join(fetch,\nCAUTION: positional matches are assumed not to be out-of-bounds!!)@
 @:join(merge)@
 @:join(hash)@
 @:leftjoin()@
-@:leftjoin(fetch)@
+@:leftjoin(fetch,\nCAUTION: positional matches are assumed not to be out-of-bounds!!)@
 @:leftjoin(merge)@
 @:leftjoin(hash)@
 
