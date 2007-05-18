@@ -31,8 +31,8 @@ function user.main():void;	# 0  (main:void)
 end main;	# 2  
 function user.qry():void;	# 0  (qry:void)
     a := array.grid(1,2,4,1);	# 1 ARRAYgrid_int (a:bat[:oid,:int])<-(_2:int)(_3:int)(_4:int)(_2:int)
-    b := algebra.reuse(a);	# 2 ALGreuse (b:bat[:oid,:int])<-(a:bat[:oid,:int])
-    b := batcalc.+(b,a,1);	# 3 CMDbataccumADDcst_int_int_int (b:bat[:oid,:int])<-(b:bat[:oid,:int])(a:bat[:oid,:int])(_2:int)
+    _7 := algebra.reuse(a);	# 2 ALGreuse (_7:bat[:oid,:int])<-(a:bat[:oid,:int])
+    b := batcalc.+(_7,a,1);	# 3 CMDbataccumADDcst_int_int_int (b:bat[:oid,:int])<-(_7:bat[:oid,:int])(a:bat[:oid,:int])(_2:int)
     b := batcalc.*(b,b,4);	# 4 CMDbataccumMULcst_int_int_int (b:bat[:oid,:int])<-(b:bat[:oid,:int])(b:bat[:oid,:int])(_4:int)
 end qry;	# 5  
 
