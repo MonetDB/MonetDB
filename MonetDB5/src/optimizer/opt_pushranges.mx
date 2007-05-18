@@ -215,11 +215,11 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 				x= x && getVarConstant(mb,getArg(p,4)).val.cval[0];
 				x= x && getVarConstant(mb,getArg(p,5)).val.cval[0];
 				if( z > 0 || (z==0 && p->argc>4 && !x)) {
-					int zero= 0;
+					lng zero= 0;
 					if( mb->var[getArg(p,0)]->props== NULL)
 						mb->var[getArg(p,0)]->props= newPropertySet();
 					setProperty(mb->var[getArg(p,0)]->props,
-							"rows","=",TYPE_int,&zero);
+							"rows","=",TYPE_lng,&zero);
 					/* create an empty replacement */
 					x= getArgType(mb, p, 1);
 					p->argc=1;

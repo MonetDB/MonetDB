@@ -291,7 +291,7 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	char *empty;
 	int i;
-	int *rows;
+	lng *rows;
 	PropertySet ps;
 
 	empty = (char *) alloca(mb->vsize * sizeof(char));
@@ -304,7 +304,7 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	for (i = 0; i < mb->vtop; i++) {
 		ps = getVarProperties(mb, i);
-		if ( (rows= (int*) getPropertyValue(ps, "rows"))   && *rows == 0) {
+		if ( (rows= (lng*) getPropertyValue(ps, "rows"))   && *rows == 0) {
 #ifdef DEBUG_OPT_EMPTYSET
 		stream_printf(GDKout, "START emptyset optimizer %d", i);
 #endif
