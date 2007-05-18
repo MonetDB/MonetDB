@@ -4541,7 +4541,7 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
 }
 
 
-PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add) : bat[oid,oid]
+PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit update) : bat[oid,oid]
 {
   var qn_prefix_uri_loc := ws.fetch(_QN_PREFIX_URI_LOC).find(cont);
   var qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
