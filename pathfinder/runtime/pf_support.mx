@@ -1266,7 +1266,7 @@ PROC ll_htordered_unique_thetajoin( int mode,
         join_res := reverse(reverse(join_res).leftfetchjoin(lo.tmark(0@0)));
         
         # sort (should already be the case) and unique
-        join_res := join_res.sort().sunique();
+        join_res := join_res.access(BAT_WRITE).order().sunique();
 
         # do not forget to apply any remaps 
         if (type(lx) = bat) join_res := reverse(leftfetchjoin(reverse(join_res),lx));
