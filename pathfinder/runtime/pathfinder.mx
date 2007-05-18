@@ -5108,7 +5108,7 @@ xquery_client_reset(xquery_client *ctx, char *err)
     BATclear(ctx->dbl_values);
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
-    BUNappend(ctx->str_values, (ptr)str_nil, FALSE);
+    BUNappend(ctx->str_values, "", FALSE);
     *ctx->shredBAT = int_nil; 
 
 
