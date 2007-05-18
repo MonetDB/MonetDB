@@ -830,34 +830,39 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: VIEWcreate(l)\n");
 
 		return VIEWcreate(l);
-	} else if ((BATtordered(l) & 1) && !hitalways) {
+	} else if ((BATtordered(l) & 1)) {
 		/* optimization to be able to carry over more void head columns */
 		/* (only needed if neither operand is empty) */
 		oid r_lo = *(oid *) BUNhead(r, BUNfirst(r));
 		oid r_hi = *(oid *) BUNhead(r, BUNlast(r) - BUNsize(r));
 		oid l_lo = *(oid *) BUNtail(l, BUNfirst(l));
 		oid l_hi = *(oid *) BUNtail(l, BUNlast(l) - BUNsize(l));
+		int empty = (r_lo > l_hi || r_hi < l_lo);
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BATtordered(l)&1\n");
 		ALGODEBUG THRprintf(GDKout, "#r_lo=" OIDFMT ", r_hi=" OIDFMT ", l_lo=" OIDFMT ", l_hi=" OIDFMT ".\n", r_lo, r_hi, l_lo, l_hi);
 
-		if (r_lo > l_hi || r_hi < l_lo) {
-			@:return_empty_join_result(l_orig, r, BATfetchjoin: r_lo > l_hi || r_hi < l_lo,1)@
-		}
-		if (r_lo > l_lo || r_hi < l_hi) {
+		if (!empty && (r_lo > l_lo || r_hi < l_hi)) {
 			ALGODEBUG THRprintf(GDKout, "#shrinking!\n");
 			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
 
 			l = BATselect(l, &r_lo, &r_hi);	/* sorted, so it will be a slice */
 			if (l == NULL)
 				return NULL;
-			lcount = BATcount(l);
-			if (lcount == 0) {
+			if (BATcount(l) == 0) {
 				if (l != l_orig) {
 					BBPreclaim(l);	/* was created as a temporary (slice) select on l */
 				}
-				@:return_empty_join_result(l_orig, r, BATfetchjoin: |l|==0,1)@
+                                empty = 1;
 			}
 		}
+		if (hitalways && (empty?0:BATcount(l)) < lcount) {
+			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|=" SZFMT " != " SZFMT "=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), empty?0:BATcount(l), lcount);
+			return NULL;
+                }
+		if (empty) {
+			@:return_empty_join_result(l_orig, r, BATfetchjoin: empty,1)@
+		}
+		lcount = BATcount(l);
 	}
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: 1\n");
 
