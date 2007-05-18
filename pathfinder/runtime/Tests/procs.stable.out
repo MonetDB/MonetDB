@@ -247,6 +247,7 @@ procs();
 [ "join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]"											  ]
 [ "join(BAT[any::1,any::2], BAT[any::2,any::3], lng, str, ..any..) : BAT[any::1,any::3]"								  ]
 [ "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]"									  ]
+[ "join_test(int, BAT[void,any::1], BAT[void,any::2]) : BAT[void,bit]"																						  ]
 [ "ksymmdiff(BAT[any,any], BAT[any,any]) : BAT[any,any]"																					  ]
 [ "like(str, str) : bit"																  ]
 [ "like(str, str, str) : bit"																  ]
