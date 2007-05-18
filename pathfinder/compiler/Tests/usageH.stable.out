@@ -34,22 +34,23 @@ Usage: pf [OPTION] [FILE]
          2  after loading XQuery modules
          3  after parse/abstract syntax tree has been normalized
          4  after namespaces have been checked and resolved
-         5  after variable scoping has been checked
-         6  after XQuery built-in functions have been loaded
-         7  after valid function usage has been checked
-         8  after XML Schema predefined types have been loaded
-         9  after XML Schema document has been imported (if any)
-        10  after the abstract syntax tree has been mapped to Core
-        11  after the Core tree has been simplified/normalized
-        12  after type inference and checking
-        13  after XQuery Core optimization
-        14  after the Core tree has been translated to the logical algebra
-        15  after the logical algebra tree has been rewritten/optimized
-        16  after the CSE on the logical algebra tree
-        17  after compiling logical into the physical algebra
-        18  after introducing recursion boundaries
-        19  after compiling the physical algebra into MIL code
-        20  after the MIL program has been serialized
+         5  after option declarations have been extracted from the parse tree
+         6  after variable scoping has been checked
+         7  after XQuery built-in functions have been loaded
+         8  after valid function usage has been checked
+         9  after XML Schema predefined types have been loaded
+        10  after XML Schema document has been imported (if any)
+        11  after the abstract syntax tree has been mapped to Core
+        12  after the Core tree has been simplified/normalized
+        13  after type inference and checking
+        14  after XQuery Core optimization
+        15  after the Core tree has been translated to the logical algebra
+        16  after the logical algebra tree has been rewritten/optimized
+        17  after the CSE on the logical algebra tree
+        18  after compiling logical into the physical algebra
+        19  after introducing recursion boundaries
+        20  after compiling the physical algebra into MIL code
+        21  after the MIL program has been serialized
 = -g, --gensql: generate SQL code
 = -d TEST, --debug=TEST: call internall debugging function TEST
 = -a, --print-abstract-syntax-tree: print abstract syntax tree

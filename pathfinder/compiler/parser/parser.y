@@ -965,12 +965,12 @@ DefaultNamespaceDecl      : "declare default element" "namespace" URILiteral
 /* [13] */
 OptionDecl                : "declare option" QName StringLiteral
                             {
-                              /* FIXME:
-                                 What could we do with options, actually? */
-                              PFinfo (OOPS_NOTICE,
-                                      "option %s will be ignored",
-                                      PFqname_raw_str ($2));
-                              $$ = nil (@$);
+                              $$ = wire1 (p_option,
+                                          @$,
+                                          (c = leaf (p_lit_str, @3),
+                                           c->sem.str = $3,
+                                           c));
+                              $$->sem.qname_raw = $2;
                             }
                           ;
 
@@ -2137,8 +2137,13 @@ DirElemConstructor        : "<" QName DirAttributeList "/>"
                           | "<" QName DirAttributeList ">"
                             DirElementContents_
                             "</" QName OptS_ ">"
-                            { /* XML well-formedness check:
+                            { /*
+                               * XML well-formedness check:
                                * start and end tag must match
+                               *
+                               * Note: This is in line with the W3C specs.
+                               *       Tag names must exactly match, including
+                               *       their namespace prefixes.
                                */ 
                               if (PFqname_raw_eq ($2, $7)) {
                                 PFinfo_loc (OOPS_TAGMISMATCH, @$,

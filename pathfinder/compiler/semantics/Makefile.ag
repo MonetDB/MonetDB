@@ -33,6 +33,7 @@ lib_semantics = {
 		functions.c \
 		normalize.brg \
 		ns.c \
+		options.c \
 		subtyping.c \
 		typecheck.brg \
 		types.c \

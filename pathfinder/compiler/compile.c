@@ -52,6 +52,7 @@
 #include "qname.h"        /* Pathfinder's QName handling */
 #include "ns.h"           /* namespaces */
 #include "nsres.h"        /* namespace resolution */
+#include "options.h"      /* extract option declarations from parse tree */
 #include "xquery_fo.h"    /* built-in XQuery F&O */
 #include "func_chk.h"     /* function resolution */
 #include "prettyp.h"
@@ -99,22 +100,23 @@ static char *phases[] = {
     [ 2]  = "after loading XQuery modules",
     [ 3]  = "after parse/abstract syntax tree has been normalized",
     [ 4]  = "after namespaces have been checked and resolved",
-    [ 5]  = "after variable scoping has been checked",
-    [ 6]  = "after XQuery built-in functions have been loaded",
-    [ 7]  = "after valid function usage has been checked",
-    [ 8]  = "after XML Schema predefined types have been loaded",
-    [ 9]  = "after XML Schema document has been imported (if any)",
-    [10]  = "after the abstract syntax tree has been mapped to Core",
-    [11]  = "after the Core tree has been simplified/normalized",
-    [12]  = "after type inference and checking",
-    [13]  = "after XQuery Core optimization",
-    [14]  = "after the Core tree has been translated to the logical algebra",
-    [15]  = "after the logical algebra tree has been rewritten/optimized",
-    [16]  = "after the CSE on the logical algebra tree",
-    [17]  = "after compiling logical into the physical algebra",
-    [18]  = "after introducing recursion boundaries",
-    [19]  = "after compiling the physical algebra into MIL code",
-    [20]  = "after the MIL program has been serialized"
+    [ 5]  = "after option declarations have been extracted from the parse tree",
+    [ 6]  = "after variable scoping has been checked",
+    [ 7]  = "after XQuery built-in functions have been loaded",
+    [ 8]  = "after valid function usage has been checked",
+    [ 9]  = "after XML Schema predefined types have been loaded",
+    [10]  = "after XML Schema document has been imported (if any)",
+    [11]  = "after the abstract syntax tree has been mapped to Core",
+    [12]  = "after the Core tree has been simplified/normalized",
+    [13]  = "after type inference and checking",
+    [14]  = "after XQuery Core optimization",
+    [15]  = "after the Core tree has been translated to the logical algebra",
+    [16]  = "after the logical algebra tree has been rewritten/optimized",
+    [17]  = "after the CSE on the logical algebra tree",
+    [18]  = "after compiling logical into the physical algebra",
+    [19]  = "after introducing recursion boundaries",
+    [20]  = "after compiling the physical algebra into MIL code",
+    [21]  = "after the MIL program has been serialized"
 };
 
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
@@ -368,15 +370,25 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
      */
     STOP_POINT(4);
     
+    /*
+     * Extract option declarations from the abstract syntax tree
+     * and read them into a mapping table.  This table may then be
+     * consulted by further processing steps down the compilation
+     * chain.
+     */
+    PFextract_options (proot);
+
+    STOP_POINT(5);
+
     /* Check variable scoping and replace QNames by PFvar_t pointers */
     PFvarscope (proot);
   
-    STOP_POINT(5);
+    STOP_POINT(6);
 
     /* Load built-in XQuery F&O into function environment */
     PFfun_xquery_fo ();
 
-    STOP_POINT(6);
+    STOP_POINT(7);
 
     /* Resolve function usage 
      */
@@ -386,14 +398,14 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("semantical analysis:\t\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(7);
+    STOP_POINT(8);
 
     tm = PFtimer_start ();
 
     /* Load XML Schema/XQuery predefined types into the type environment */
     PFty_predefined ();
     
-    STOP_POINT(8);
+    STOP_POINT(9);
 
     /* XML Schema import */
     PFschema_import (proot);
@@ -411,7 +423,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFty_debug_subtyping ();
 #endif
 
-    STOP_POINT(9);
+    STOP_POINT(10);
 
     tm = PFtimer_start ();
 
@@ -423,7 +435,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("core mapping:\t\t\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(10);
+    STOP_POINT(11);
 
     /* Core simplification */
     tm = PFtimer_start ();
@@ -434,7 +446,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("core simplification:\t\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(11);
+    STOP_POINT(12);
 
     /* Type inference and check */
     tm = PFtimer_start ();
@@ -445,7 +457,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("type checking:\t\t\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(12);
+    STOP_POINT(13);
 
 
     /* Core tree optimization */
@@ -457,7 +469,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("core tree optimization:\t\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(13);
+    STOP_POINT(14);
 
     /*
      * generate temporary MIL Code (summer branch version)
@@ -489,7 +501,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("logical algebra tree generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(14);
+    STOP_POINT(15);
 
     /*
      * Rewrite/optimize algebra tree
@@ -505,7 +517,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFlog ("logical algebra optimization:\t\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(15);
+    STOP_POINT(16);
 
     /* 
      * common subexpression elimination in the algebra tree
@@ -519,7 +531,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFlog ("CSE in logical algebra tree:\t\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(16);
+    STOP_POINT(17);
 
     /* Compile algebra into physical algebra */
     tm = PFtimer_start ();
@@ -529,7 +541,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("compilation to physical algebra:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(17);
+    STOP_POINT(18);
 
     /* Extend the physical algebra with recursion boundaries
        whenever a recursion occurs */
@@ -540,7 +552,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("introduction of recursion boundaries:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(18);
+    STOP_POINT(19);
 
     /* Map physical algebra to MIL */
     tm = PFtimer_start ();
@@ -583,7 +595,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
             PFlog ("dead code elimination:\t\t\t %s", PFtimer_str (tm));
     }
 
-    STOP_POINT(19);
+    STOP_POINT(20);
 
     /* Render MIL program in Monet MIL syntax 
      */
@@ -597,7 +609,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("MIL code serialization:\t\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(20);
+    STOP_POINT(21);
 
     if (status->timing) {
         PFlog ("----------------------------------------------");
@@ -766,6 +778,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         proot = PFnormalize_abssyn (proot);
         PFqname_init ();
         PFns_resolve (proot);
+        PFextract_options (proot);
         PFvarscope (proot);
         PFfun_xquery_fo ();
         PFfun_check (proot);

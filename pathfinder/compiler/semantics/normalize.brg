@@ -140,66 +140,67 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    nil            =  67
 %term    node_ty        =  68
 %term    ns_decl        =  69
-%term    or             =  70
-%term    ord_ret        =  71
-%term    orderby        =  72
-%term    ordered        =  73
-%term    ordering_mode  =  74
-%term    orderspecs     =  75
-%term    param          =  76
-%term    params         =  77
-%term    pi             =  78
-%term    plus           =  79
-%term    pragma         =  80
-%term    pragmas        =  81
-%term    pred           =  82
-%term    range          =  83
-%term    req_name       =  84
-%term    req_ty         =  85
-%term    root_          =  86
-%term    schm_ats       =  87
-%term    schm_attr      =  88
-%term    schm_elem      =  89
-%term    schm_imp       =  90
-%term    seq_ty         =  91
-%term    some           =  92
-%term    step           =  93
-%term    tag            =  94
-%term    text           =  95
-%term    then_else      =  96
-%term    treat          =  97
-%term    typeswitch     =  98
-%term    uminus         =  99
-%term    union_         = 100
-%term    unordered      = 101
-%term    uplus          = 102
-%term    val_eq         = 103
-%term    val_ge         = 104
-%term    val_gt         = 105
-%term    val_le         = 106
-%term    val_lt         = 107
-%term    val_ne         = 108
-%term    validate       = 109
-/* %term var            = 110  introduced after var scoping */
-%term    var_decl       = 111
-%term    var_type       = 112
-%term    varref         = 113
-%term    vars           = 114
-%term    where          = 115
-%term    boundspc_decl  = 116
-%term    revalid        = 117
-%term    insert         = 118
-%term    delete         = 119
-%term    replace        = 120
-%term    rename         = 121
-%term    transform      = 122
-%term    modify         = 123
-%term    transbinds     = 124
-%term    stmt_ty        = 125
-%term    recursion      = 126
-%term    seed           = 127
-%term    xrpc           = 128
-%term    docmgmt_ty     = 129
+%term    option         =  70
+%term    or             =  71
+%term    ord_ret        =  72
+%term    orderby        =  73
+%term    ordered        =  74
+%term    ordering_mode  =  75
+%term    orderspecs     =  76
+%term    param          =  77
+%term    params         =  78
+%term    pi             =  79
+%term    plus           =  80
+%term    pragma         =  81
+%term    pragmas        =  82
+%term    pred           =  83
+%term    range          =  84
+%term    req_name       =  85
+%term    req_ty         =  86
+%term    root_          =  87
+%term    schm_ats       =  88
+%term    schm_attr      =  89
+%term    schm_elem      =  90
+%term    schm_imp       =  91
+%term    seq_ty         =  92
+%term    some           =  93
+%term    step           =  94
+%term    tag            =  95
+%term    text           =  96
+%term    then_else      =  97
+%term    treat          =  98
+%term    typeswitch     =  99
+%term    uminus         = 100
+%term    union_         = 101
+%term    unordered      = 102
+%term    uplus          = 103
+%term    val_eq         = 104
+%term    val_ge         = 105
+%term    val_gt         = 106
+%term    val_le         = 107
+%term    val_lt         = 108
+%term    val_ne         = 109
+%term    validate       = 110
+/* %term var            = 111  introduced after var scoping */
+%term    var_decl       = 112
+%term    var_type       = 113
+%term    varref         = 114
+%term    vars           = 115
+%term    where          = 116
+%term    boundspc_decl  = 117
+%term    revalid        = 118
+%term    insert         = 119
+%term    delete         = 120
+%term    replace        = 121
+%term    rename         = 122
+%term    transform      = 123
+%term    modify         = 124
+%term    transbinds     = 125
+%term    stmt_ty        = 126
+%term    recursion      = 127
+%term    seed           = 128
+%term    xrpc           = 129
+%term    docmgmt_ty     = 130
 
 %%
 
@@ -226,386 +227,389 @@ DeclImport:             OrderingModeDecl                            =  15 (10);
 DeclImport:             EmptyOrderingDecl                           =  16 (10);
 DeclImport:             CopyNamespacesDecl                          =  17 (10);
 DeclImport:             NamespaceDecl                               =  18 (10);
-DeclImport:             SchemaImport                                =  19 (10);
-DeclImport:             ModuleImport                                =  20 (10);
-DeclImport:             FunctionDeclaration                         =  21 (10);
-DeclImport:             VariableDeclaration                         =  22 (10);
-DeclImport:             LibraryModule                               =  23 (10);
+DeclImport:             OptionDecl                                  =  19 (10);
+DeclImport:             SchemaImport                                =  20 (10);
+DeclImport:             ModuleImport                                =  21 (10);
+DeclImport:             FunctionDeclaration                         =  22 (10);
+DeclImport:             VariableDeclaration                         =  23 (10);
+DeclImport:             LibraryModule                               =  24 (10);
 
-DefaultNamespaceDecl:   ens_decl (lit_str)                          =  24 (10);
-DefaultNamespaceDecl:   fns_decl (lit_str)                          =  25 (10);
+DefaultNamespaceDecl:   ens_decl (lit_str)                          =  25 (10);
+DefaultNamespaceDecl:   fns_decl (lit_str)                          =  26 (10);
 
-BoundarySpaceDecl:      boundspc_decl                               =  26 (10);
+BoundarySpaceDecl:      boundspc_decl                               =  27 (10);
 
-DefaultCollationDecl:   coll_decl (lit_str)                         =  27 (10);
+DefaultCollationDecl:   coll_decl (lit_str)                         =  28 (10);
 
-BaseURIDecl:            base_uri (lit_str)                          =  28 (10);
+BaseURIDecl:            base_uri (lit_str)                          =  29 (10);
 
-ConstructionDecl:       constr_decl                                 =  29 (10);
+ConstructionDecl:       constr_decl                                 =  30 (10);
 
-OrderingModeDecl:       ordering_mode                               =  30 (10);
+OptionDecl:             option (lit_str)                            =  31 (10);
 
-EmptyOrderingDecl:      def_order                                   =  31 (10);
+OrderingModeDecl:       ordering_mode                               =  32 (10);
 
-CopyNamespacesDecl:     copy_ns                                     =  32 (10);
+EmptyOrderingDecl:      def_order                                   =  33 (10);
 
-NamespaceDecl:          ns_decl (lit_str)                           =  33 (10);
+CopyNamespacesDecl:     copy_ns                                     =  34 (10);
 
-SchemaImport:           schm_imp (lit_str, OptImportLoc_)           =  34 (10);
+NamespaceDecl:          ns_decl (lit_str)                           =  35 (10);
 
-ModuleImport:           mod_imp (lit_str, OptImportLoc_)            =  35 (10);
+SchemaImport:           schm_imp (lit_str, OptImportLoc_)           =  36 (10);
 
-OptImportLoc_:          nil                                         =  36 (10);
-OptImportLoc_:          schm_ats (lit_str, OptImportLoc_)           =  37 (10);
+ModuleImport:           mod_imp (lit_str, OptImportLoc_)            =  37 (10);
+
+OptImportLoc_:          nil                                         =  38 (10);
+OptImportLoc_:          schm_ats (lit_str, OptImportLoc_)           =  39 (10);
 
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            SequenceType),
-                                  OptExpr)                          =  38 (10);
+                                  OptExpr)                          =  40 (10);
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            SequenceType),
-                                  external)                         =  39 (10);
+                                  external)                         =  41 (10);
 
-OptParamList_:          nil                                         =  40 (10);
-OptParamList_:          ParamList_                                  =  41 (10);
+OptParamList_:          nil                                         =  42 (10);
+OptParamList_:          ParamList_                                  =  43 (10);
 
-ParamList_:             nil                                         =  42 (10);
-ParamList_:             params (Param, ParamList_)                  =  43 (10);
+ParamList_:             nil                                         =  44 (10);
+ParamList_:             params (Param, ParamList_)                  =  45 (10);
 
-Param:                  param (OptSequenceType_, varref)            =  44 (10);
+Param:                  param (OptSequenceType_, varref)            =  46 (10);
 
-OptSequenceType_:       nil                                         =  45 (10);
-OptSequenceType_:       SequenceType                                =  46 (10);
+OptSequenceType_:       nil                                         =  47 (10);
+OptSequenceType_:       SequenceType                                =  48 (10);
 
 VariableDeclaration:    var_decl (var_type (varref,
                                             OptSequenceType_),
-                                  OptExpr)                          =  47 (10);
+                                  OptExpr)                          =  49 (10);
 VariableDeclaration:    var_decl (var_type (varref,
                                             OptSequenceType_),
-                                  external)                         =  48 (10);
+                                  external)                         =  50 (10);
 
-QueryBody:              OptExpr                                     =  49 (10);
+QueryBody:              OptExpr                                     =  51 (10);
 
-OptExpr:                empty_seq                                   =  50 (10);
-OptExpr:                Expr                                        =  51 (10);
+OptExpr:                empty_seq                                   =  52 (10);
+OptExpr:                Expr                                        =  53 (10);
 
-Expr:                   exprseq (Expr, OptExpr)                     =  52 (10);
-Expr:                   exprseq (empty_seq, OptExpr)                =  53 (10);
-Expr:                   exprseq (exprseq (Expr, OptExpr), OptExpr)  =  54 (1);
-Expr:                   ExprSingle                                  =  55 (10);
+Expr:                   exprseq (Expr, OptExpr)                     =  54 (10);
+Expr:                   exprseq (empty_seq, OptExpr)                =  55 (10);
+Expr:                   exprseq (exprseq (Expr, OptExpr), OptExpr)  =  56 (1);
+Expr:                   ExprSingle                                  =  57 (10);
 
-ExprSingle:             FLWORExpr                                   =  56 (10);
-ExprSingle:             QuantifiedExpr                              =  57 (10);
-ExprSingle:             TypeswitchExpr                              =  58 (10);
-ExprSingle:             IfExpr                                      =  59 (10);
-ExprSingle:             OrExpr                                      =  60 (10);
+ExprSingle:             FLWORExpr                                   =  58 (10);
+ExprSingle:             QuantifiedExpr                              =  59 (10);
+ExprSingle:             TypeswitchExpr                              =  60 (10);
+ExprSingle:             IfExpr                                      =  61 (10);
+ExprSingle:             OrExpr                                      =  62 (10);
 
 FLWORExpr:              flwr (binds (VarBinding, nil),
                               where (OptWhereClause_,
                                      ord_ret (OptOrderByClause_,
-                                              OptExpr)))            =  61 (10);
+                                              OptExpr)))            =  63 (10);
 FLWORExpr:              flwr (binds (VarBinding, VarBindings),
                               where (OptWhereClause_,
                                      ord_ret (OptOrderByClause_,
-                                              OptExpr)))            =  62 (10);
+                                              OptExpr)))            =  64 (10);
 
-VarBindings:            binds (VarBinding, nil)                     =  63 (10);
-VarBindings:            binds (VarBinding, VarBindings)             =  64 (10);
+VarBindings:            binds (VarBinding, nil)                     =  65 (10);
+VarBindings:            binds (VarBinding, VarBindings)             =  66 (10);
 
-VarBinding:             VarPosBinding                               =  65 (10);
-VarBinding:             LetClause                                   =  66 (10);
+VarBinding:             VarPosBinding                               =  67 (10);
+VarBinding:             LetClause                                   =  68 (10);
 
-LetClause:              LetBinding_                                 =  67 (10);
+LetClause:              LetBinding_                                 =  69 (10);
 
 VarPosBinding:          bind (vars (var_type (varref,
                                               OptTypeDeclaration_),
                                     OptPositionalVar_),
-                              OptExpr)                              =  68 (10);
+                              OptExpr)                              =  70 (10);
 
 LetBinding_:            let (var_type (varref, OptTypeDeclaration_),
-                             OptExpr)                               =  69 (10);
+                             OptExpr)                               =  71 (10);
 
-OptPositionalVar_:      nil                                         =  70 (10);
-OptPositionalVar_:      PositionalVar                               =  71 (10);
+OptPositionalVar_:      nil                                         =  72 (10);
+OptPositionalVar_:      PositionalVar                               =  73 (10);
 
-PositionalVar:          varref                                      =  72 (10);
+PositionalVar:          varref                                      =  74 (10);
 
-OptTypeDeclaration_:    nil                                         =  73 (10);
-OptTypeDeclaration_:    TypeDeclaration                             =  74 (10);
+OptTypeDeclaration_:    nil                                         =  75 (10);
+OptTypeDeclaration_:    TypeDeclaration                             =  76 (10);
 
-TypeDeclaration:        SequenceType                                =  75 (10);
+TypeDeclaration:        SequenceType                                =  77 (10);
 
-OptWhereClause_:        nil                                         =  76 (10);
-OptWhereClause_:        WhereClause                                 =  77 (10);
+OptWhereClause_:        nil                                         =  78 (10);
+OptWhereClause_:        WhereClause                                 =  79 (10);
 
-OptOrderByClause_:      nil                                         =  78 (10);
-OptOrderByClause_:      OrderByClause                               =  79 (10);
+OptOrderByClause_:      nil                                         =  80 (10);
+OptOrderByClause_:      OrderByClause                               =  81 (10);
 
-WhereClause:            OptExpr                                     =  80 (10);
+WhereClause:            OptExpr                                     =  82 (10);
 
-OrderByClause:          orderby (OrderSpecList)                     =  81 (10);
+OrderByClause:          orderby (OrderSpecList)                     =  83 (10);
 
-OrderSpecList:          orderspecs (OptExpr, nil)                   =  82 (10);
-OrderSpecList:          orderspecs (OptExpr, OrderSpecList)         =  83 (10);
+OrderSpecList:          orderspecs (OptExpr, nil)                   =  84 (10);
+OrderSpecList:          orderspecs (OptExpr, OrderSpecList)         =  85 (10);
 
-QuantifiedExpr:         some (VarBindings, OptExpr)                 =  84 (10);
+QuantifiedExpr:         some (VarBindings, OptExpr)                 =  86 (10);
 QuantifiedExpr:         some (binds (VarBinding, VarBindings),
-                              OptExpr)                              =  85 (10);
-QuantifiedExpr:         every (VarBindings, OptExpr)                =  86 (10);
+                              OptExpr)                              =  87 (10);
+QuantifiedExpr:         every (VarBindings, OptExpr)                =  88 (10);
 QuantifiedExpr:         every (binds (VarBinding, VarBindings),
-                               OptExpr)                             =  87 (10);
+                               OptExpr)                             =  89 (10);
 
 TypeswitchExpr:         typeswitch (OptExpr,
                                     cases (CaseClause,
                                            cases (DefaultClause_,
-                                                  nil)))            =  88 (10);
+                                                  nil)))            =  90 (10);
 TypeswitchExpr:         typeswitch (OptExpr,
                                     cases (CaseClause,
-                                           CaseClauses_))           =  89 (10);
+                                           CaseClauses_))           =  91 (10);
 
 CaseClauses_:           cases (CaseClause,
-                               cases (DefaultClause_, nil))         =  90 (10);
-CaseClauses_:           cases (CaseClause, CaseClauses_)            =  91 (10);
+                               cases (DefaultClause_, nil))         =  92 (10);
+CaseClauses_:           cases (CaseClause, CaseClauses_)            =  93 (10);
 
-DefaultClause_:         default_ (OptVarName_, OptExpr)             =  92 (10);
+DefaultClause_:         default_ (OptVarName_, OptExpr)             =  94 (10);
 
-OptVarName_:            nil                                         =  93 (10);
-OptVarName_:            varref                                      =  94 (10);
+OptVarName_:            nil                                         =  95 (10);
+OptVarName_:            varref                                      =  96 (10);
 
 CaseClause:             case_ (var_type (OptVarName_, SequenceType),
-                               OptExpr)                             =  95 (10);
+                               OptExpr)                             =  97 (10);
 
-SequenceType:           seq_ty (ItemType)                           =  96 (10);
-SequenceType:           seq_ty (empty_ty)                           =  97 (10);
+SequenceType:           seq_ty (ItemType)                           =  98 (10);
+SequenceType:           seq_ty (empty_ty)                           =  99 (10);
 
-SingleType:             seq_ty (atom_ty (nil))                      =  98 (10);
+SingleType:             seq_ty (atom_ty (nil))                      = 100 (10);
 
-ItemType:               NodeTest                                    =  99 (10);
-ItemType:               item_ty (nil)                               = 100 (10);
-ItemType:               atom_ty (nil)                               = 101 (10);
-ItemType:               schm_elem                                   = 102 (10);
-ItemType:               schm_attr                                   = 103 (10);
+ItemType:               NodeTest                                    = 101 (10);
+ItemType:               item_ty (nil)                               = 102 (10);
+ItemType:               atom_ty (nil)                               = 103 (10);
+ItemType:               schm_elem                                   = 104 (10);
+ItemType:               schm_attr                                   = 105 (10);
 
-NodeTest:               node_ty (OptElemOrAttrType_)                = 104 (10);
-NodeTest:               node_ty (lit_str)                           = 105 (10);
-NodeTest:               node_ty (node_ty (OptElemOrAttrType_))      = 106 (10);
+NodeTest:               node_ty (OptElemOrAttrType_)                = 106 (10);
+NodeTest:               node_ty (lit_str)                           = 107 (10);
+NodeTest:               node_ty (node_ty (OptElemOrAttrType_))      = 108 (10);
 
-OptElemOrAttrType_:     nil                                         = 107 (10);
-OptElemOrAttrType_:     ElemOrAttrType                              = 108 (10);
+OptElemOrAttrType_:     nil                                         = 109 (10);
+OptElemOrAttrType_:     ElemOrAttrType                              = 110 (10);
 
-ElemOrAttrType:         req_ty (nil, nil)                           = 109 (10);
-ElemOrAttrType:         req_ty (nil, named_ty)                      = 110 (10);
-ElemOrAttrType:         req_ty (req_name, nil)                      = 111 (10);
-ElemOrAttrType:         req_ty (req_name, named_ty)                 = 112 (10);
+ElemOrAttrType:         req_ty (nil, nil)                           = 111 (10);
+ElemOrAttrType:         req_ty (nil, named_ty)                      = 112 (10);
+ElemOrAttrType:         req_ty (req_name, nil)                      = 113 (10);
+ElemOrAttrType:         req_ty (req_name, named_ty)                 = 114 (10);
 
 IfExpr:                 if_ (OptExpr,
-                             then_else (OptExpr, OptExpr))          = 113 (10);
+                             then_else (OptExpr, OptExpr))          = 115 (10);
 
-OrExpr:                 AndExpr                                     = 114 (10);
-OrExpr:                 or (AndExpr, OrExpr)                        = 115 (10);
+OrExpr:                 AndExpr                                     = 116 (10);
+OrExpr:                 or (AndExpr, OrExpr)                        = 117 (10);
 
-AndExpr:                ComparisonExpr                              = 116 (10);
-AndExpr:                and (ComparisonExpr, AndExpr)               = 117 (10);
+AndExpr:                ComparisonExpr                              = 118 (10);
+AndExpr:                and (ComparisonExpr, AndExpr)               = 119 (10);
 
-ComparisonExpr:         RangeExpr                                   = 118 (10);
-ComparisonExpr:         eq (RangeExpr, RangeExpr)                   = 119 (10);
-ComparisonExpr:         ne (RangeExpr, RangeExpr)                   = 120 (10);
-ComparisonExpr:         lt (RangeExpr, RangeExpr)                   = 121 (10);
-ComparisonExpr:         le (RangeExpr, RangeExpr)                   = 122 (10);
-ComparisonExpr:         gt (RangeExpr, RangeExpr)                   = 123 (10);
-ComparisonExpr:         ge (RangeExpr, RangeExpr)                   = 124 (10);
-ComparisonExpr:         val_eq (RangeExpr, RangeExpr)               = 125 (10);
-ComparisonExpr:         val_ne (RangeExpr, RangeExpr)               = 126 (10);
-ComparisonExpr:         val_lt (RangeExpr, RangeExpr)               = 127 (10);
-ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 128 (10);
-ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 129 (10);
-ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 130 (10);
-ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 131 (10);
-ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 133 (10);
-ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 134 (10);
+ComparisonExpr:         RangeExpr                                   = 120 (10);
+ComparisonExpr:         eq (RangeExpr, RangeExpr)                   = 121 (10);
+ComparisonExpr:         ne (RangeExpr, RangeExpr)                   = 122 (10);
+ComparisonExpr:         lt (RangeExpr, RangeExpr)                   = 123 (10);
+ComparisonExpr:         le (RangeExpr, RangeExpr)                   = 124 (10);
+ComparisonExpr:         gt (RangeExpr, RangeExpr)                   = 125 (10);
+ComparisonExpr:         ge (RangeExpr, RangeExpr)                   = 126 (10);
+ComparisonExpr:         val_eq (RangeExpr, RangeExpr)               = 127 (10);
+ComparisonExpr:         val_ne (RangeExpr, RangeExpr)               = 128 (10);
+ComparisonExpr:         val_lt (RangeExpr, RangeExpr)               = 129 (10);
+ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 130 (10);
+ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 131 (10);
+ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 132 (10);
+ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 133 (10);
+ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 135 (10);
+ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 136 (10);
 
-RangeExpr:              AdditiveExpr                                = 135 (10);
-RangeExpr:              range (RangeExpr, RangeExpr)                = 136 (10);
+RangeExpr:              AdditiveExpr                                = 137 (10);
+RangeExpr:              range (RangeExpr, RangeExpr)                = 138 (10);
 
-AdditiveExpr:           MultiplicativeExpr                          = 137 (10);
-AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr)     = 138 (10);
-AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr)    = 139 (10);
+AdditiveExpr:           MultiplicativeExpr                          = 139 (10);
+AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr)     = 140 (10);
+AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr)    = 141 (10);
 
-MultiplicativeExpr:     UnionExpr                                   = 140 (10);
-MultiplicativeExpr:     mult (UnionExpr, MultiplicativeExpr)        = 141 (10);
-MultiplicativeExpr:     div (UnionExpr, MultiplicativeExpr)         = 142 (10);
-MultiplicativeExpr:     idiv (UnionExpr, MultiplicativeExpr)        = 143 (10);
-MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr)         = 144 (10);
+MultiplicativeExpr:     UnionExpr                                   = 142 (10);
+MultiplicativeExpr:     mult (UnionExpr, MultiplicativeExpr)        = 143 (10);
+MultiplicativeExpr:     div (UnionExpr, MultiplicativeExpr)         = 144 (10);
+MultiplicativeExpr:     idiv (UnionExpr, MultiplicativeExpr)        = 145 (10);
+MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr)         = 146 (10);
 
-UnionExpr:              IntersectExceptExpr                         = 145 (10);
-UnionExpr:              union_ (IntersectExceptExpr, UnionExpr)     = 146 (10);
+UnionExpr:              IntersectExceptExpr                         = 147 (10);
+UnionExpr:              union_ (IntersectExceptExpr, UnionExpr)     = 148 (10);
 
-IntersectExceptExpr:    InstanceofExpr                              = 147 (10);
+IntersectExceptExpr:    InstanceofExpr                              = 149 (10);
 IntersectExceptExpr:    intersect (InstanceofExpr,
-                                   IntersectExceptExpr)             = 148 (10);
+                                   IntersectExceptExpr)             = 150 (10);
 IntersectExceptExpr:    except (InstanceofExpr,
-                                IntersectExceptExpr)                = 149 (10);
+                                IntersectExceptExpr)                = 151 (10);
 
-InstanceofExpr:         TreatExpr                                   = 150 (10);
-InstanceofExpr:         instof (TreatExpr, SequenceType)            = 151 (10);
+InstanceofExpr:         TreatExpr                                   = 152 (10);
+InstanceofExpr:         instof (TreatExpr, SequenceType)            = 153 (10);
 
-TreatExpr:              CastableExpr                                = 152 (10);
-TreatExpr:              treat (CastableExpr, SequenceType)          = 153 (10);
+TreatExpr:              CastableExpr                                = 154 (10);
+TreatExpr:              treat (CastableExpr, SequenceType)          = 155 (10);
 
-CastableExpr:           CastExpr                                    = 154 (10);
-CastableExpr:           castable (CastExpr, SingleType)             = 155 (10);
+CastableExpr:           CastExpr                                    = 156 (10);
+CastableExpr:           castable (CastExpr, SingleType)             = 157 (10);
 
-CastExpr:               UnaryExpr                                   = 156 (10);
-CastExpr:               cast (UnaryExpr, SingleType)                = 157 (10);
+CastExpr:               UnaryExpr                                   = 158 (10);
+CastExpr:               cast (UnaryExpr, SingleType)                = 159 (10);
 
-UnaryExpr:              ValueExpr                                   = 158 (10);
-UnaryExpr:              uminus (ValueExpr)                          = 159 (10);
-UnaryExpr:              uplus (ValueExpr)                           = 160 (10);
+UnaryExpr:              ValueExpr                                   = 160 (10);
+UnaryExpr:              uminus (ValueExpr)                          = 161 (10);
+UnaryExpr:              uplus (ValueExpr)                           = 162 (10);
 
-ValueExpr:              ValidateExpr                                = 161 (10);
-ValueExpr:              PathExpr                                    = 162 (10);
-ValueExpr:              ExtensionExpr                               = 163 (10);
+ValueExpr:              ValidateExpr                                = 163 (10);
+ValueExpr:              PathExpr                                    = 164 (10);
+ValueExpr:              ExtensionExpr                               = 165 (10);
 
-ValidateExpr:           validate (OptExpr)                          = 164 (10);
+ValidateExpr:           validate (OptExpr)                          = 166 (10);
 
-PathExpr:               root_                                       = 165 (10);
-PathExpr:               RelativePathExpr                            = 166 (10);
+PathExpr:               root_                                       = 167 (10);
+PathExpr:               RelativePathExpr                            = 168 (10);
 
-RelativePathExpr:       StepExpr                                    = 167 (10);
-RelativePathExpr:       step (NodeTest)                             = 168 (1);
-RelativePathExpr:       locpath (StepExpr, RelativePathExpr)        = 169 (10);
+RelativePathExpr:       StepExpr                                    = 169 (10);
+RelativePathExpr:       step (NodeTest)                             = 170 (1);
+RelativePathExpr:       locpath (StepExpr, RelativePathExpr)        = 171 (10);
 
-StepExpr:               Step_                                       = 170 (10);
-StepExpr:               FilterExpr                                  = 171 (10);
+StepExpr:               Step_                                       = 172 (10);
+StepExpr:               FilterExpr                                  = 173 (10);
 
-FilterExpr:             PrimaryExpr                                 = 172 (10);
-FilterExpr:             pred (RelativePathExpr, OptExpr)            = 173 (10);
+FilterExpr:             PrimaryExpr                                 = 174 (10);
+FilterExpr:             pred (RelativePathExpr, OptExpr)            = 175 (10);
 
-Step_:                  step (NodeTest)                             = 174 (10);
+Step_:                  step (NodeTest)                             = 176 (10);
 
-PrimaryExpr:            Literal                                     = 175 (10);
-PrimaryExpr:            varref                                      = 176 (10);
-PrimaryExpr:            ParenthesizedExpr                           = 177 (10);
-PrimaryExpr:            ContextItemExpr                             = 178 (10);
-PrimaryExpr:            FunctionCall                                = 179 (10);
-PrimaryExpr:            Constructor                                 = 180 (10);
-PrimaryExpr:            OrderedExpr                                 = 181 (10);
-PrimaryExpr:            UnorderedExpr                               = 182 (10);
-PrimaryExpr:            XRPCCall                                    = 183 (10);
+PrimaryExpr:            Literal                                     = 177 (10);
+PrimaryExpr:            varref                                      = 178 (10);
+PrimaryExpr:            ParenthesizedExpr                           = 179 (10);
+PrimaryExpr:            ContextItemExpr                             = 180 (10);
+PrimaryExpr:            FunctionCall                                = 181 (10);
+PrimaryExpr:            Constructor                                 = 182 (10);
+PrimaryExpr:            OrderedExpr                                 = 183 (10);
+PrimaryExpr:            UnorderedExpr                               = 184 (10);
+PrimaryExpr:            XRPCCall                                    = 185 (10);
 
-Literal:                NumericLiteral                              = 184 (10);
-Literal:                StringLiteral                               = 185 (10);
+Literal:                NumericLiteral                              = 186 (10);
+Literal:                StringLiteral                               = 187 (10);
 
-NumericLiteral:         IntegerLiteral                              = 186 (10);
-NumericLiteral:         DecimalLiteral                              = 187 (10);
-NumericLiteral:         DoubleLiteral                               = 188 (10);
+NumericLiteral:         IntegerLiteral                              = 188 (10);
+NumericLiteral:         DecimalLiteral                              = 189 (10);
+NumericLiteral:         DoubleLiteral                               = 190 (10);
 
-IntegerLiteral:         lit_int                                     = 189 (10);
-DecimalLiteral:         lit_dec                                     = 190 (10);
-DoubleLiteral:          lit_dbl                                     = 191 (10);
+IntegerLiteral:         lit_int                                     = 191 (10);
+DecimalLiteral:         lit_dec                                     = 192 (10);
+DoubleLiteral:          lit_dbl                                     = 193 (10);
 
-StringLiteral:          lit_str                                     = 192 (10);
+StringLiteral:          lit_str                                     = 194 (10);
 
-ParenthesizedExpr:      OptExpr                                     = 193 (10);
+ParenthesizedExpr:      OptExpr                                     = 195 (10);
 
-ContextItemExpr:        dot                                         = 194 (10);
+ContextItemExpr:        dot                                         = 196 (10);
 
-FunctionCall:           fun_ref (OptFuncArgList_)                   = 195 (10);
+FunctionCall:           fun_ref (OptFuncArgList_)                   = 197 (10);
 
-OptFuncArgList_:        nil                                         = 196 (10);
-OptFuncArgList_:        FuncArgList_                                = 197 (10);
+OptFuncArgList_:        nil                                         = 198 (10);
+OptFuncArgList_:        FuncArgList_                                = 199 (10);
 
-FuncArgList_:           args (OptExpr, nil)                         = 198 (10);
-FuncArgList_:           args (OptExpr, FuncArgList_)                = 199 (10);
+FuncArgList_:           args (OptExpr, nil)                         = 200 (10);
+FuncArgList_:           args (OptExpr, FuncArgList_)                = 201 (10);
 
-OrderedExpr:            ordered (OptExpr)                           = 200 (10);
-UnorderedExpr:          unordered (OptExpr)                         = 201 (10);
+OrderedExpr:            ordered (OptExpr)                           = 202 (10);
+UnorderedExpr:          unordered (OptExpr)                         = 203 (10);
 
-Constructor:            ElementConstructor                          = 202 (10);
-Constructor:            AttributeConstructor                        = 203 (10);
-Constructor:            TextConstructor                             = 204 (10);
-Constructor:            CommentConstructor                          = 205 (10);
-Constructor:            PIConstructor                               = 206 (10);
-Constructor:            DocumentConstructor                         = 207 (10);
+Constructor:            ElementConstructor                          = 204 (10);
+Constructor:            AttributeConstructor                        = 205 (10);
+Constructor:            TextConstructor                             = 206 (10);
+Constructor:            CommentConstructor                          = 207 (10);
+Constructor:            PIConstructor                               = 208 (10);
+Constructor:            DocumentConstructor                         = 209 (10);
 
-ElementConstructor:     elem (TagName, OptContentExpr)              = 208 (10);
+ElementConstructor:     elem (TagName, OptContentExpr)              = 210 (10);
 
-AttributeConstructor:   attr (TagName, OptContentExpr)              = 209 (10);
+AttributeConstructor:   attr (TagName, OptContentExpr)              = 211 (10);
 
-TextConstructor:        text (OptContentExpr)                       = 210 (10);
+TextConstructor:        text (OptContentExpr)                       = 212 (10);
 
-CommentConstructor:     comment (OptContentExpr)                    = 211 (10);
+CommentConstructor:     comment (OptContentExpr)                    = 213 (10);
 
-PIConstructor:          pi (OptContentExpr)                         = 212 (10);
+PIConstructor:          pi (OptContentExpr)                         = 214 (10);
 
-DocumentConstructor:    doc (OptContentExpr)                        = 213 (10);
+DocumentConstructor:    doc (OptContentExpr)                        = 215 (10);
 
-TagName:                tag                                         = 214 (10);
-TagName:                OptExpr                                     = 215 (10);
+TagName:                tag                                         = 216 (10);
+TagName:                OptExpr                                     = 217 (10);
 
-OptContentExpr:         OptExpr                                     = 216 (10);
-OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 217 (10);
-OptContentExpr:         contseq (empty_seq, empty_seq)              = 218 (1);
+OptContentExpr:         OptExpr                                     = 218 (10);
+OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 219 (10);
+OptContentExpr:         contseq (empty_seq, empty_seq)              = 220 (1);
 OptContentExpr:         contseq (contseq (OptContentExpr,
                                           OptContentExpr),
-                                 OptContentExpr)                    = 219 (1);
+                                 OptContentExpr)                    = 221 (1);
 
-ExtensionExpr:          ext_expr (Pragmas, nil)                     = 220 (10);
-ExtensionExpr:          ext_expr (Pragmas, Expr)                    = 221 (10);
+ExtensionExpr:          ext_expr (Pragmas, nil)                     = 222 (10);
+ExtensionExpr:          ext_expr (Pragmas, Expr)                    = 223 (10);
 
-Pragmas:                nil                                         = 222 (10);
-Pragmas:                pragmas (pragma, Pragmas)                   = 223 (10);
+Pragmas:                nil                                         = 224 (10);
+Pragmas:                pragmas (pragma, Pragmas)                   = 225 (10);
 
-DeclImport:             RevalidationDecl                            = 224 (10);
+DeclImport:             RevalidationDecl                            = 226 (10);
 
-RevalidationDecl:       revalid                                     = 225 (10);
+RevalidationDecl:       revalid                                     = 227 (10);
 
-ExprSingle:             InsertExpr                                  = 226 (10);
-ExprSingle:             DeleteExpr                                  = 227 (10);
-ExprSingle:             RenameExpr                                  = 228 (10);
-ExprSingle:             ReplaceExpr                                 = 229 (10);
-ExprSingle:             TransformExpr                               = 230 (10);
+ExprSingle:             InsertExpr                                  = 228 (10);
+ExprSingle:             DeleteExpr                                  = 229 (10);
+ExprSingle:             RenameExpr                                  = 230 (10);
+ExprSingle:             ReplaceExpr                                 = 231 (10);
+ExprSingle:             TransformExpr                               = 232 (10);
 
-InsertExpr:             insert (SourceExpr, TargetExpr)             = 231 (10);
-DeleteExpr:             delete (SourceExpr)                         = 232 (10);
-ReplaceExpr:            replace (SourceExpr, TargetExpr)            = 233 (10);
-RenameExpr:             rename (SourceExpr, NewNameExpr)            = 234 (10);
+InsertExpr:             insert (SourceExpr, TargetExpr)             = 233 (10);
+DeleteExpr:             delete (SourceExpr)                         = 234 (10);
+ReplaceExpr:            replace (SourceExpr, TargetExpr)            = 235 (10);
+RenameExpr:             rename (SourceExpr, NewNameExpr)            = 236 (10);
 
 TransformExpr:          transform (TransformBindings,
-                                   modify (ExprSingle, ExprSingle)) = 235 (10);
+                                   modify (ExprSingle, ExprSingle)) = 237 (10);
 
-TransformBindings:      nil                                         = 236 (10);
+TransformBindings:      nil                                         = 238 (10);
 TransformBindings:      transbinds (TransformBinding,
-                                    TransformBindings)              = 237 (10);
+                                    TransformBindings)              = 239 (10);
 
-TransformBinding:       let (var_type (varref, nil), OptExpr)       = 238 (10);
+TransformBinding:       let (var_type (varref, nil), OptExpr)       = 240 (10);
 
-SourceExpr:             ExprSingle                                  = 239 (10);
-TargetExpr:             ExprSingle                                  = 240 (10);
-NewNameExpr:            ExprSingle                                  = 241 (10);
+SourceExpr:             ExprSingle                                  = 241 (10);
+TargetExpr:             ExprSingle                                  = 242 (10);
+NewNameExpr:            ExprSingle                                  = 243 (10);
 
 /* updating function declarations */
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            seq_ty (stmt_ty (nil))),
-                                  OptExpr)                          = 242 (10);
+                                  OptExpr)                          = 244 (10);
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            seq_ty (stmt_ty (nil))),
-                                  external)                         = 243 (10);
+                                  external)                         = 245 (10);
 
 /* Pathfinder extension: recursion */
-ExprSingle:             RecursiveExpr                               = 244 (10);
+ExprSingle:             RecursiveExpr                               = 246 (10);
 
 RecursiveExpr:          recursion (
                             var_type (varref, OptTypeDeclaration_),
-                            seed (ExprSingle, ExprSingle))          = 245 (10);
+                            seed (ExprSingle, ExprSingle))          = 247 (10);
 /* end of recursion extension */
 
 /* Pathfinder extension: XRPC */
-XRPCCall:               xrpc (Expr, FunctionCall)                   = 246 (10);
+XRPCCall:               xrpc (Expr, FunctionCall)                   = 248 (10);
 
 /* Pathfinder extension: document management function declarations */
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            seq_ty (docmgmt_ty (nil))),
-                                  OptExpr)                          = 247 (10);
+                                  OptExpr)                          = 249 (10);
 
 
 %%
@@ -763,13 +767,13 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
             break;
 
         /* Expr: exprseq (empty_seq, ExprSingle) */
-        case 53:
+        case 55:
             *p = *(R(p));
             rewritten = true;
             break;
 
         /* Expr: exprseq (exprseq (Expr, OptExpr), OptExpr) */
-        case 54:
+        case 56:
             c = wire2 (p_exprseq, p->loc,
                        LL(p),
                        wire2 (p_exprseq, p->loc, LR(p), R(p)));
@@ -780,12 +784,12 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
 
         /* QuantifiedExpr: some (binds (VarBinding, VarBindings),
                                  OptExpr) */
-        case 85:
+        case 87:
             /* fall through (treat some and every equivalently) */
 
         /* QuantifiedExpr: every (binds (VarBinding, VarBindings),
                                   OptExpr) */
-        case 87:
+        case 89:
             /*
              * Current parse tree situation: multi-bind some/every
              * (may bind any number n >= 2 variables):
@@ -841,7 +845,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
         /* TypeswitchExpr: typeswitch (OptExpr,
                                        cases (CaseClause,
                                               CaseClauses_)) */
-        case 89:
+        case 91:
         {
             /*
              * Unnest typeswitch expressions.
@@ -928,7 +932,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
 
 
         /* RelativePathExpr: step (NodeTest) */
-        case 168:
+        case 170:
             /*
              * Make sure any relative path expression starts from
              * the context node `.'
@@ -943,7 +947,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
             break;
 
         /* RelativePathExpr: locpath (StepExpr, RelativePathExpr) */
-        case 169:
+        case 171:
             if (L(p)->kind == p_pred && 
                 /* rule 168 introduces this always (check for sanity): */
                 LL(p)->kind == p_locpath && R(LL(p))->kind == p_dot && 
@@ -971,7 +975,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
             break;
 
         /* OptContentExpr: contseq (empty_seq, empty_seq) */
-        case 218:
+        case 220:
             *p = *R(p);
             rewritten = true;
             break;
@@ -979,7 +983,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
         /* OptContentExpr: contseq (contseq (OptContentExpr,
                                              OptContentExpr),
                                     OptContentExpr)              */
-        case 219:
+        case 221:
             c = wire2 (p_contseq, p->loc,
                        LL(p),
                        wire2 (p_contseq, p->loc, LR(p), R(p)));

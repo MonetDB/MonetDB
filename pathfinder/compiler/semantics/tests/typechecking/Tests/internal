@@ -7,4 +7,4 @@
 # compiler (only if --enable-assert) and invoke them with the
 # -d command line option.
 
-echo 42 | pf -d subtyping -s9
+echo 42 | pf -d subtyping -s10

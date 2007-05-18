@@ -156,6 +156,7 @@ char *p_id[]  = {
     , [p_boundspc_decl]     = "boundspc_decl"
     , [p_coll_decl]         = "coll_decl"
     , [p_ns_decl]           = "ns_decl"
+    , [p_option]            = "option"
     , [p_fun_decl]          = "fun_decl"
     , [p_fun]               = "fun"
     , [p_ens_decl]          = "ens_decl"                                   
@@ -338,6 +339,7 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node, bool qnames_resolved)
         case p_fun_ref:
         case p_fun_decl:
         case p_tag:
+        case p_option:
             L2 (p_id[n->kind], qnames_resolved
                                ? PFqname_str (n->sem.qname)
                                : PFqname_raw_str (n->sem.qname_raw), n->loc);
@@ -478,22 +480,15 @@ abssyn_pretty (PFpnode_t *n, bool qnames_resolved)
         case p_atom_ty:
         case p_named_ty:
         case p_req_name:
+        case p_fun_ref:
+        case p_tag:
+        case p_option:
             PFprettyprintf ("%s", qnames_resolved
                                   ? PFqname_str (n->sem.qname)
                                   : PFqname_raw_str (n->sem.qname_raw));
             break;
         case p_apply:
             PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
-            break;
-        case p_fun_ref:
-            PFprettyprintf ("%s", qnames_resolved
-                                  ? PFqname_str (n->sem.qname)
-                                  : PFqname_raw_str (n->sem.qname_raw));
-            break;
-        case p_tag:
-            PFprettyprintf ("%s", qnames_resolved
-                                  ? PFqname_str (n->sem.qname)
-                                  : PFqname_raw_str (n->sem.qname_raw));
             break;
         case p_pi:
             PFprettyprintf ("%s", n->sem.str);

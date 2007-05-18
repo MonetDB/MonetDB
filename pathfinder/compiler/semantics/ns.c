@@ -859,6 +859,32 @@ ns_resolve (PFpnode_t *n)
 
             break;
 
+        /* declare option ns:loc "option"; */
+        case p_option:
+
+            assert (n->sem.qname_raw.prefix);
+
+            /*
+             * The QName of an option MUST have a namespace.  There
+             * is no default namespace for options!  (W3C XQuery 4.16)
+             */
+            if (! *(n->sem.qname_raw.prefix))
+                PFoops_loc (OOPS_BADNS, n->loc,
+                            "no namespace prefix given for option `%s'",
+                            PFqname_raw_str (n->sem.qname_raw));
+            else {
+                PFns_t new_ns = { .prefix = n->sem.qname_raw.prefix,
+                                  .uri = ns_lookup (n->sem.qname_raw.prefix) };
+
+                if (! new_ns.uri)
+                    PFoops_loc (OOPS_BADNS, n->loc,
+                            "unknown namespace in qualified variable name $%s",
+                            PFqname_raw_str (n->sem.qname_raw));
+
+                n->sem.qname = PFqname (new_ns, n->sem.qname_raw.loc);
+            }
+            break;
+
         case p_elem:
         {   /* <ns:loc>c</ns:loc>          (element construction)
              *
