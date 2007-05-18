@@ -108,3 +108,4 @@ mposjoin_missing_matches.SF-1712595
 put_to_tmp.SF-1718066
 type_check.SF-1705898
 accessing_renamed_inserted_deleted_node.SF-1718622-1718635-1718709
+posjoin_null_BAT_2nd_run.SF-1678948

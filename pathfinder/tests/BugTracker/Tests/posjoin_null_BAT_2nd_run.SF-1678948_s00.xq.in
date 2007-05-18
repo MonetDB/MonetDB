@@ -1,0 +1,20 @@
+import module namespace pxml = "http://www.cs.utwente.nl/~keulen"
+   at "$TSTSRCDIR/posjoin_null_BAT_2nd_run.SF-1678948.probxml.xq";
+
+let $imovie1 := <movie>
+                   <title>King Kong</title>
+                   <year>2005</year>
+                </movie>
+   ,$imovie2 := <movie>
+                   <title>King Kong</title>
+                   <year>1933</year>
+                </movie>
+   ,$config := <config>
+                  <nonmultiple>title</nonmultiple>
+                  <nonmultiple>year</nonmultiple>
+               </config>
+return
+let $i := pxml:integrate_e($config,$imovie1,$imovie2)
+return 
+<a>{$i}
+</a>
