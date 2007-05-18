@@ -1203,6 +1203,14 @@ PROC htordered_unique_thetajoin( int mode,
 
 var lng_oid := ifthenelse(isnil(oid(LNG_MAX)),lng,oid);
 
+PROC join_test(int mode, bat[void,any::1] l, bat[void,any::2] r) : bat[void,bit] {
+    if (mode = GT) return [>](l,r);
+    if (mode = LT) return [<](l,r);
+    if (mode = GE) return [>=](l,r);
+    if (mode = LE) return [<=](l,r);
+    return [=](l,r);
+}
+
 # loop-lifted variant; lo and ro are the outer iteration numbers that should match
 PROC ll_htordered_unique_thetajoin( int mode,
                                     bat[oid,any::2] l, bat[oid,any::2] r,
@@ -1212,40 +1220,6 @@ PROC ll_htordered_unique_thetajoin( int mode,
     if (not(reverse(lo).ordered()) or not(reverse(ro).ordered()))
         ERROR("htordered_unique_thetajoin(): ordered left and right outer columns (iters) expected.\n");
 
-    # in case the equality predicate (between lo and ro) is restrictive enough
-    # (at most 3*3 hits) we apply it in one go and filter out the false positives
-    # using the second criterion (between l and r).
-    if ((lo.slice(0,1000).count() < 3 * lo.slice(0,1000).tunique().count())
-        and
-        (ro.slice(0,1000).count() < 3 * ro.slice(0,1000).tunique().count())) {
-        # join on the tails of lo and ro
-        var join_res := lo.tmark(0@0).leftjoin (ro.reverse().mark(0@0));
-        # select for all result tuples the tail values of l
-        var l_map := join_res.hmark(0@0).leftfetchjoin(l.tmark(0@0));
-        # select for all result tuples the tail values of r
-        var r_map := join_res.tmark(0@0).leftfetchjoin(r.tmark(0@0));
-        # compare on the second condition 'mode(l, r)'
-        var res;
-               if (mode = EQ) { res := [=](l_map, r_map); }
-        else { if (mode = GT) { res := [>](l_map, r_map); }
-        else { if (mode = GE) { res := [>=](l_map, r_map); }
-        else { if (mode = LT) { res := [<](l_map, r_map); }
-        else { if (mode = LE) { res := [<=](l_map, r_map); } }}}}
-        # select all matches
-        res := res.select(true);
-        # map back to the keys of l and lo
-        res := res.reverse()
-                  .leftfetchjoin(join_res.hmark(0@0))
-                  .reverse().mirror();
-        # attach lo
-        res := res.leftfetchjoin(lo.tmark(0@0)).reverse();
-        # attach the head of l
-        res := res.leftfetchjoin(l.hmark(0@0));
-        # remove duplicates and sort
-        res := res.sunique().sort();
-        return res;
-    }
-    
     var lo_histo := histogram(lo), lr_histo := reverse(lo_histo);
     var ro_histo := histogram(ro), rr_histo := reverse(ro_histo);
     var li := 0LL, lp := 0LL, lc := count(int(lo_histo));
@@ -1275,6 +1249,29 @@ PROC ll_htordered_unique_thetajoin( int mode,
 	    r := r.mark(0@0).leftfetchjoin(ro); 
             return htordered_unique_thetajoin(EQ, l, r, lx, rx);
         }
+    }
+
+    # in some cases, the (left_iter = right_iter) restriction is more selective than (left_val OP right_val)
+    if ((count(int(lo)) < 3*lc) and (count(int(ro)) < 3*rc)) {
+        # get cartesian product within each matching iter
+        var join_res := lo.tmark(0@0).leftjoin(reverse(ro.tmark(0@0)));
+
+        # select only matching tuples according to (left_val OP right_val)
+        var l_val := join_res.hmark(0@0).leftfetchjoin(l.tmark(0@0));
+        var r_val := join_res.tmark(0@0).leftfetchjoin(r.tmark(0@0));
+        join_res := join_res.fetch(join_test(mode,l_val,r_val).ord_uselect(true));
+
+        # map back to the keys of lo and ro
+        join_res := join_res.leftfetchjoin(ro.tmark(0@0));
+        join_res := reverse(reverse(join_res).leftfetchjoin(lo.tmark(0@0)));
+        
+        # sort (should already be the case) and unique
+        join_res := join_res.sort().sunique();
+
+        # do not forget to apply any remaps 
+        if (type(lx) = bat) join_res := reverse(leftfetchjoin(reverse(join_res),lx));
+        if (type(rx) = bat) join_res := leftfetchjoin(join_res,rx);
+        return join_res;
     }
 
     # otherwise iterate over the outer scopes; execute the join only for a single outer iter at a time
