@@ -103,6 +103,7 @@ char_escape_SF-1681921
 pf_add-doc_property_error.SF-1706438
 corrupt_after_update.SF-1706640
 nested_element_construction.SF-1712578
+nested_element_construction.SF-1712578_alg
 mposjoin_missing_matches.SF-1712595
 put_to_tmp.SF-1718066
 type_check.SF-1705898
