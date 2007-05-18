@@ -6821,8 +6821,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         rc = translate2MIL (f, code, cur_level, counter, L(args));
         milprintf(f,
-                "var cnt := iter.tunique().count();\n"
-                "if ((cnt != loop%03u.count()) or (cnt != ipik.count()))"
+                "if (iter.tunique().count() != ipik.count())"
                 "{ ERROR (\"err:FORG0005: function fn:exactly-one expects "
                 "exactly one value.\"); }\n",
                 cur_level);
