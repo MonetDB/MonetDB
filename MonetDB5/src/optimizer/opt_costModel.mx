@@ -144,8 +144,8 @@ row count becomes non-deterministic.
 static int
 OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k;
-	lng *c1, *c2;
+	int i;
+	lng k,*c1, *c2;
 	InstrPtr p;
 	str sortrevRef= putName("sortReverse",11);
 	str sortrevTailRef= putName("sortReverseTail",15);

@@ -11,7 +11,7 @@ end do;
 function tst();
     V1 := bat.new(:oid,:int);
     V7 := bat.new(:oid,:int);
-    V10{rows=0} := bat.new(:int,:oid);
+    V10{rows=0:lng} := bat.new(:int,:oid);
     V11 := bat.reverse(V10);
     V12 := algebra.kdifference(V7,V11);
     V16 := algebra.markT(V12);
