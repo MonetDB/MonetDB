@@ -315,7 +315,9 @@ mal_export Property fndPropertyIndexed(PropertySet ps, int first, int last, str 
 mal_export Property setProperty(PropertySet ps, str nme, str op, int tpe, ptr val);
 mal_export void delProperty(PropertySet ps, str nme);
 mal_export ptr getPropertyValue(PropertySet ps, str nme);
+mal_export ptr getPropertyTypedValue(PropertySet ps, str nme, int type);
 mal_export int getPropertyType(PropertySet ps, str nme);
+mal_export int setPropertyType(PropertySet ps, str nme, int type);
 mal_export str propertySet2str(PropertySet ps);
 mal_export int isPropertyDefined(PropertySet ps, str nme);
 
@@ -491,6 +493,22 @@ getPropertyValue(PropertySet ps, str nme)
 	return NULL;
 }
 
+ptr
+getPropertyTypedValue(PropertySet ps, str nme, int type)
+{
+	Property pr;
+
+	pr = fndProperty(ps, nme);
+	if (pr) {
+		if (pr->val.vtype != type)
+			VALconvert(type, &pr->val);
+		if (pr->val.vtype != type)
+			return NULL;
+		return VALptr(&pr->val);
+	}
+	return NULL;
+}
+
 int
 getPropertyType(PropertySet ps, str nme)
 {
@@ -499,6 +517,20 @@ getPropertyType(PropertySet ps, str nme)
 	pr = fndProperty(ps, nme);
 	if (pr)
 		return pr->val.vtype;
+	return TYPE_void;
+}
+
+int
+setPropertyType(PropertySet ps, str nme, int type)
+{
+	Property pr;
+
+	pr = fndProperty(ps, nme);
+	if (pr) {
+		if (pr->val.vtype != type)
+			VALconvert(type, &pr->val);
+		return pr->val.vtype;
+	}
 	return TYPE_void;
 }
 
