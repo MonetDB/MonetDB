@@ -2784,7 +2784,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                    working set, that a following (preceding) step can check
                    the fragment boundaries */
                 "# adding new fragments to the _FRAG_ROOT bat\n"
-                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(roots).project(oid_nil)));\n"
+                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(roots).project(0@0)));\n"
                );
     
                 /* return the root elements in iter|pos|item|kind representation */
@@ -2975,7 +2975,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                working set, that a following (preceding) step can check
                the fragment boundaries */
             "# adding new fragments to the _FRAG_ROOT bat\n"
-            "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(roots).project(oid_nil)));\n"
+            "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(roots).project(0@0)));\n"
 
             /* return the root elements in iter|pos|item|kind representation */
             /* should contain for each iter exactly 1 root element
@@ -3182,7 +3182,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "kind := ELEM;\n"
        
                 /* add the new constructed roots to the FRAG_ROOT bat of the working set, and adapt max height */ 
-                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(item).project(oid_nil)));\n",
+                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(reverse(item).project(0@0)));\n",
                 kind_str(rc));
     }
     milprintf(f,

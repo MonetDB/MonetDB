@@ -598,7 +598,8 @@ PROC get_root(BAT[oid,bat] ws, oid item, int kind, oid cont) : oid
         if (item = 0@0) return 0@0; # get_root() on collection super-root (0@0) returns self
         var nid_rid   := ws.fetch(NID_RID).fetch(cont);
         var map_pid   := ws.fetch(MAP_PID).fetch(cont);
-        var frag_root := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
+        var frag_root := ws.fetch(OPEN_DOCID).leftjoin(ws.fetch(FRAG_ROOT).fetch(cont));
+            frag_root := frag_root.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort().tmark(0@0);
 
         if (kind.is_type(ATTR)) { # convert attributes to a pre
                 item := ws.fetch(ATTR_OWN).fetch(cont).find(item);
@@ -620,7 +621,8 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, int kind, oid cont) : BAT[voi
         var seqbase := item.seqbase();
         var nid_rid   := ws.fetch(NID_RID).fetch(cont);
         var map_pid   := ws.fetch(MAP_PID).fetch(cont);
-        var frag_root := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
+        var frag_root := ws.fetch(OPEN_DOCID).leftjoin(ws.fetch(FRAG_ROOT).fetch(cont));
+            frag_root := frag_root.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort().tmark(0@0);
 
         if (kind.is_type(ATTR)) { # convert attributes to a pre
                 item := item.leftfetchjoin(ws.fetch(ATTR_OWN).fetch(cont));
@@ -640,17 +642,16 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
                 return get_root(ws, item, kind.fetch(0), cont.fetch(0));
         }
 
+        # look up root fragment
         var seqbase := item.seqbase();
         var result := item.copy().access(BAT_WRITE);
-
         var attr_cont := kind.get_type(ATTR).mirror().leftfetchjoin(cont);
-
-        # look up root fragment
         var conts := cont.tunique();
         conts@batloop() {
                 var nid_rid   := ws.fetch(NID_RID).fetch($h);
                 var map_pid   := ws.fetch(MAP_PID).fetch($h);
-                var frag_root := ws.fetch(FRAG_ROOT).fetch($h).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
+                var frag_root := ws.fetch(OPEN_DOCID).leftjoin(ws.fetch(FRAG_ROOT).fetch($h));
+                    frag_root := frag_root.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort().tmark(0@0);
                 var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
                 var attr_item := attr_cont.ord_select($h);
                 if (count(attr_item) > 0) {
@@ -1260,9 +1261,8 @@ PROC ll_htordered_unique_thetajoin( int mode,
     }
 
     # in some cases, the (left_iter = right_iter) restriction is more selective than (left_val OP right_val)
-    if ((count(int(lo)) < 3*lc) and (count(int(ro)) < 3*rc)) {
-        # get cartesian product within each matching iter
-        var join_res := lo.leftmergejoin(reverse(ro));
+    if (sum([*](lo_histo,ro_histo)) > 6*min(count(ro),count(lo))) {
+        var join_res := lo.leftmergejoin(reverse(ro)); # get cartesian product within each matching iter
 
         # select only matching tuples according to (left_val OP right_val)
         var l_val := join_res.hmark(0@0).leftfetchjoin(l.tmark(0@0));

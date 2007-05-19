@@ -1359,7 +1359,7 @@ PROC ws_create(int update) : BAT[void,bat]
     ws.fetch(PRE_PROP).fetch(WS).append(oid_nil);
     ws.fetch(PRE_KIND).fetch(WS).append(COLLECTION);
     ws.fetch(PRE_NID).fetch(WS).append(oid_nil);
-    ws.fetch(FRAG_ROOT).fetch(WS).insert(oid_nil,1@0); # first root is 1@0
+    ws.fetch(FRAG_ROOT).fetch(WS).insert(0@0,1@0); # first root is 1@0
 
     # add identical bat references as 'master' bats just to make the transient container complete  
     mirror(ws_rid).leftfetchjoin(ws).[insert](0@0, [fetch](ws_rid.leftfetchjoin(ws), 0));
@@ -2249,7 +2249,7 @@ PROC ws_lookup(BAT[void,bat] ws,
     if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
 
     # SCJ must catch error and use sequential post-filter instead.
-    return sort(res).hmark(oid_nil);
+    return ws_docfilter(ws, sort(res).hmark(oid_nil), cont);
 }
 
 # loop-lifted (attr/text) key lookup, with iteration dependent 'val': thus can also power joins!  
@@ -2370,9 +2370,53 @@ PROC vx_lookup(bat[void,bat] ws,
     id_cont.tunique().sort()@batloop() {
         var key_val := id_cont.ord_uselect($h).hmark(0@0).leftfetchjoin(id_iter).leftfetchjoin(iter_val.tmark(1@0));
         var key_pre := vx_lookup(ws, $h, key_val, uri, loc, gettext);
-        id_pre.insert(key_pre);
+        id_pre.insert(ws_docfilter(ws, key_pre, $h));
     }
     return id_pre; # sorted on pre 
+}
+
+# routine that filters out pre-s that belong to deleted collection documents 
+# also makes sure that documents from which surviving pre-s stem are added to OPEN_DOCID ws entry
+PROC ws_docfilter(bat[void,bat] ws,
+                  bat[any::1,oid] any_pre,
+                  oid cont) : bat[any::1,oid]
+{
+    # problem that collection may contain deleted documents is ony relevant for mult-doc collections
+    var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
+    if (count(frag_root) > 1) {
+        # find out via the root which documents were accessed; find the new docs among them
+        var open_cont := ws.fetch(OPEN_CONT);
+        var open_docid:= ws.fetch(OPEN_DOCID);
+        var open_name := ws.fetch(OPEN_NAME);
+        var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
+        var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
+        var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
+
+        # quickest way to get document nodes is ancestor-or-self, then getting first for each input ({min})
+        var res_docid := any_pre.tmark(0@0);
+            res_docid := ll_ancestor_or_self(mirror(res_docid), res_docid, pre_size, pre_level).{min}().tmark(0@0);
+            res_docid := res_docid.leftfetchjoin(pre_nid).leftjoin(reverse(frag_root)).tmark(0@0);
+        var new_docid := res_docid.tdiff(open_docid).tunique().hmark(0@0);
+
+        if (count(new_docid) > 0) {
+            # have to access the meta tables to check whether the doc still exists
+            lock_set(pf_short);
+            var new_name, err := CATCH(new_name := new_docid.outerjoin(doc_name));
+            lock_unset(pf_short);
+            if (not(isnil(err))) ERROR(err);
+
+            # keep only the any_pre entries that do not correspond to deleted documents
+            var del_docid := new_name.ord_uselect(str_nil).hmark(0@0).leftfetchjoin(new_docid);
+            if (count(del_docid) > 0) any_pre := any_pre.fetch(res_docid.tdiff(del_docid));
+
+            # add new documents as open in working set 
+            new_name := new_name.ord_select(str_nil,str_nil);
+            open_name.append(new_name.tmark(0@0));
+            open_cont.append(new_name.tmark(0@0).project(cont));
+            open_docid.append(new_name.hmark(0@0).leftfetchjoin(new_docid));
+        }
+    }
+    return any_pre;
 }
 
 
@@ -3272,7 +3316,7 @@ PROC __shred_into_docBAT(BAT[str,bat] docBAT,
 {
     # finish shred by setting the new (densely ascending doc_oids in FRAG_ROOT (in order)
     var root_frag := reverse(docBAT.fetch(FRAG_ROOT));
-    root_frag.replace(root_frag.ord_uselect(TEMP_DOC).mark(docid_base), true);
+    root_frag.replace(root_frag.ord_uselect(TEMP_DOC).mark(docid_base), true).assert_order();
 
     # index the new document(s)
     if (coll_oid >= DOCID_MIN) {
