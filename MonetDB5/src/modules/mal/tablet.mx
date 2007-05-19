@@ -427,6 +427,7 @@ typedef struct Table_t {
 	Column *format;		/* remove later */
 	stream *fd;
 	BAT *pivot;
+	str error;	/* last error */
 	unsigned int rowwidth;		/* sum of columns used for mallocs */
 	Column columns[1];
 } Tablet;
@@ -1212,18 +1213,20 @@ rfind_quote(char *s, char quote)
 }
 
 static INLINE int
-insert_val(Column * fmt, char *s, char *e, char quote)
+insert_val(Column * fmt, char *s, char *e, char quote, str *err)
 {
 	int res = 0;
 	char *end = e;
 	char bak = *e;
 	ptr *adt;
+	char buf[BUFSIZ];
 
 	if (quote) {
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
 		if (!s) {
-			GDKerror("quote '%c' expected but not found in \"%s\" from line %d\n", quote, s, BATcount(fmt->c));
+			snprintf(buf,BUFSIZ, "quote '%c' expected but not found in \"%s\" from line %d\n", quote, s, (int) BATcount(fmt->c));
+			*err= GDKstrdup(buf);
 			return -1;
 		}
 		s++;
@@ -1240,7 +1243,9 @@ insert_val(Column * fmt, char *s, char *e, char quote)
 	*end = bak;
 
 	if (!adt) {
-		GDKerror("value %s from line %d not inserted\n", s, BATcount(fmt->c));
+		snprintf(buf,BUFSIZ, "value %s from line %d not inserted\n", 
+				s, (int) BATcount(fmt->c));
+		*err= GDKstrdup(buf);
 		return -1;
 	}
 
@@ -1279,6 +1284,7 @@ insert_line(Tablet * as, char *line)
 	char *s, *e = 0, quote = 0;
 	size_t i;
 	int first = 0;
+	char errmsg[BUFSIZ];
 
 	for (i = 0; i < as->nr_attrs && res == 0; i++) {
 		first = 1;
@@ -1299,7 +1305,9 @@ insert_line(Tablet * as, char *line)
 				line++;
 				line = skip_string(line, quote);
 				if (!line) {
-					GDKerror("End of string (%c) missing in %s at line %d\n", quote, s, BATcount(fmt->c));
+					snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
+						"in %s at line %d\n", quote, s, (int) BATcount(fmt->c));
+					as->error= GDKstrdup(errmsg);
 					return -1;
 				}
 				first = 0;
@@ -1314,12 +1322,13 @@ insert_line(Tablet * as, char *line)
 		if (e) {
 			char *end = e;
 
-			res |= insert_val(&fmt[i], s, e, quote);
+			res |= insert_val(&fmt[i], s, e, quote, &as->error);
 			quote = 0;
 			line = end + fmt[i].seplen;
 		} else {
-			GDKerror("missing sep %s line %d field %d\n", 
-				fmt->sep, BATcount(fmt->c), i);
+			snprintf(errmsg,BUFSIZ, "missing sep %s line %d field %d\n", 
+				fmt->sep, (int) BATcount(fmt->c), (int)i);
+			as->error= GDKstrdup(errmsg);
 			return -1;
 		}
 		e = 0;
@@ -1501,6 +1510,8 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			if (e) {
 				*e = '\0';
 				if (insert_line(as, s) < 0) {
+					GDKerror(as->error);
+					as->error=0;
 					s = e + seplen;
 					b->pos = (s - b->buf);
 					res = -1;
@@ -1521,7 +1532,11 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 						res = 1; 
 						if (b->len > b->pos &&
 						    insert_line(as, s) < 0) {
-							GDKerror("TABLETload_file: read error (after loading %d records)\n", BATcount(as->format[0].c));
+								GDKerror(as->error);
+								as->error=0;
+								GDKerror("TABLETload_file: read error "
+										"(after loading %d records)\n", 
+											BATcount(as->format[0].c));
 							res = -1;
 						}
 						break;
