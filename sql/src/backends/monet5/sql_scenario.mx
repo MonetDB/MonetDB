@@ -86,7 +86,7 @@ we update its context descriptor to denote an SQL scenario.
 
 static int SQLinitialized = 0;
 static int SQLdebug = 0;
-static char *sql_prelude = NULL;
+static char *sqlinit = NULL;
 
 static void
 monet5_freestack(backend_stack stk)
@@ -172,7 +172,7 @@ SQLprelude(void)
 	s->optimizer = "MALoptimizer";
 	/* s->tactics = .. */
 	s->engine = "MALengine";
-	sql_prelude = GDKgetenv("sql_prelude");
+	sqlinit = GDKgetenv("sqlinit");
 	return SABAOTHmarchScenario(&res, &s->name);
 }
 
@@ -320,13 +320,13 @@ SQLinitClient(Client c)
 		return msg;
 	
 	if ((backend *) c->state[MAL_SCENARIO_PARSER] == 0) {
-		if (sql_prelude) { /* add prelude to the fdin stack */
+		if (sqlinit) { /* add sqlinit to the fdin stack */
 			buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
-			int len = strlen(sql_prelude);
+			int len = strlen(sqlinit);
 			bstream *fdin;
 
-			buffer_init(b, _strdup(sql_prelude), len);
-			fdin = bstream_create(buffer_rastream(b, "prelude"), b->len);
+			buffer_init(b, _strdup(sqlinit), len);
+			fdin = bstream_create(buffer_rastream(b, "si"), b->len);
 			bstream_next(fdin);
 			MCpushClientInput(c, fdin, 0, "");
 		}

@@ -806,12 +806,12 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		}
 	}
 	if (l) {
-		sql_type *ltpe = tail_type(l)->type;
+		sql_subtype *ltpe = tail_type(l);
 		l = check_types(sql, tpe, l, type_cast);
 		if (!l) {
 			/* we overwrite the error here */
 			sql->errstr[0] = 0;
-			return sql_error(sql, 02, "CAST: cannot cast type '%s' to type '%s'", ltpe->sqlname, tpe->type->sqlname );
+			return sql_error(sql, 02, "CAST: cannot cast type '%s' to type '%s'", ltpe?ltpe->type->sqlname:"unknown", tpe->type->sqlname );
 		}
 	}
 	return l;

@@ -27,8 +27,8 @@ if [ $# -eq 1 ]; then
 fi
 
 #$SQL < c.sql-dec
-#SF='sf-0.01'
-SF='sf-1'
+SF='sf-0.01'
+#SF='sf-1'
 #SF='sf-2'
 #SF='sf-5'
 

@@ -68,3 +68,4 @@ local_global_temporary_table.SF-1715672
 decimal.SF-1718253
 alter-default.SF-1695290
 with_only_once.SF-1720293
+bind_with_cast.SF-1720934
