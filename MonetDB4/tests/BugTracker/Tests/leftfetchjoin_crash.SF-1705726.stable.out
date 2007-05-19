@@ -14,10 +14,9 @@ debugmask(0);
 var a := new(void,oid).seqbase(0@0).append(500000@0).append(500000@0);
 var b := new(void,oid).seqbase(0@0).append(1@0);
 a.leftfetchjoin(b).print();
-#-----------------#
-# h	t	  # name
-# void	oid	  # type
-#-----------------#
+!ERROR: BATfetchjoin(tmp_32,tmp_34) does not hit always (|bn|=0 != 2=|l|) => can't use fetchjoin.
+!ERROR: CMDleftfetchjoin: operation failed.
+!ERROR: interpret_params: print(param 1): evaluation error.
 quit();
 
 # 12:22:15 >  
