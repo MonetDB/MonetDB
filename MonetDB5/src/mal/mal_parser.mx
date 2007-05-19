@@ -1173,8 +1173,13 @@ optimizers to make decisions. (See the section on properties).
 				opname= operatorCopy(cntxt,lo);
 			else opname= GDKstrdup("");
 			if((i= cstToken(cntxt,&cst))){
-				setVarProperty(curBlk,@1, pname, opname, &cst);
+				int csttpe;
 				advance(cntxt,i);
+				if( currChar(cntxt)==':') {
+					csttpe = simpleTypeId(cntxt);
+					convertConstant(csttpe,&cst);
+				} 
+				setVarProperty(curBlk,@1, pname, opname, &cst);
 			} else 
 				setVarProperty(curBlk,@1, pname, NULL, NULL);
 			GDKfree(pname); 

@@ -525,9 +525,18 @@ propertySet2str(PropertySet ps)
 			if (first++ )
 				*s++ = ',';
 			ATOMformat(pr->val.vtype, VALget(&pr->val), &t);
-			if (pr->operator && * pr->operator)
-				sprintf(s, "%s%s%s", pr->nme, pr->operator, t);
-			else
+			if (pr->operator && * pr->operator) {
+				switch(pr->val.vtype){
+				case TYPE_lng:
+					sprintf(s, "%s%s%s:lng", pr->nme, pr->operator, t);
+					break;
+				case TYPE_sht:
+					sprintf(s, "%s%s%s:sht", pr->nme, pr->operator, t);
+					break;
+				default:
+					sprintf(s, "%s%s%s", pr->nme, pr->operator, t);
+				}
+			} else
 				sprintf(s, "%s", pr->nme);
 			while (*s)
 				s++;
