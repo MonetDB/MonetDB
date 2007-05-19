@@ -1347,6 +1347,9 @@ PROC ws_create(int update) : BAT[void,bat]
     ws.fetch(CONT_COLL).seqbase(0@0).insert(0@0,oid_nil);
     ws.fetch(CONT_NAME).seqbase(0@0).insert(0@0,str_nil);
     ws.fetch(CONT_RUNTIME).seqbase(0@0).insert(0@0,runtime(lock_nil,lock_nil));
+    ws.fetch(OPEN_DOCID).append(WS);
+    ws.fetch(OPEN_CONT).append(WS);
+    ws.fetch(OPEN_NAME).append("");
 
     # add empty region index entries
     ws.fetch(REGION_PRE).append(empty_bat);
@@ -2485,7 +2488,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
             var pre   := $h;
             var limit := oid(lng(pre) + lng(pre_size.find(pre)));
             var ins   := id_pre.ord_select(pre,limit);
-                         # make ins [iter,pre] unique; exploiting pre_order
+            # make ins [iter,pre] unique; exploiting pre_order
             var unq   := kunique(reverse(CTrefine(ins.tmark(0@0), ins.hmark(0@0))));
             result.insert(ins.fetch(reverse(unq)));
         }

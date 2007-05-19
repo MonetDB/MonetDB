@@ -650,6 +650,7 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
         conts@batloop() {
                 var nid_rid   := ws.fetch(NID_RID).fetch($h);
                 var map_pid   := ws.fetch(MAP_PID).fetch($h);
+
                 var frag_root := ws.fetch(OPEN_DOCID).leftjoin(ws.fetch(FRAG_ROOT).fetch($h));
                     frag_root := frag_root.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort().tmark(0@0);
                 var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
