@@ -447,6 +447,7 @@ tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
 tablet_export ptr *TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
+tablet_export int insert_line(Tablet * as, char *line);
 
 #endif
 @c
@@ -1270,7 +1271,7 @@ skip_string(char *s, char quote)
 	return s;
 }
 
-static INLINE int
+INLINE int
 insert_line(Tablet * as, char *line)
 {
 	int res = 0;

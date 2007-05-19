@@ -602,6 +602,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	struct sockaddr_in server;
 	int sock = -1;
 	int *Sock = GDKmalloc(sizeof(int));
+	int accept_any=1;
+	char *env;
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -613,6 +615,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	int port;
 	int maxusers;
 	char msg[512], *cmd, *usockfile, host[512];
+
+	env = GDKgetenv("mapi_port");
+	if(env){
+		accept_any= (int) atol(env);
+	}
 
 	port = *Port;
 	if (Usockfile == NULL || *Usockfile == 0 || strcmp(*Usockfile, str_nil) == 0)
@@ -644,12 +651,19 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		/* FIXME: should be configurable via the config file */
 		if (*Port == 0)
 			port = SERVERPORT;
+@-
+Set server port and allow network connections from any workstation.
+Bind the socket to the server port.
+@c
+
 
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
 		server.sin_family = AF_INET;
-		/* FIXME: this should be configurable via the config file */
-		server.sin_addr.s_addr = INADDR_ANY;
+		if (accept_any)
+			server.sin_addr.s_addr = htonl(INADDR_ANY);
+		else
+			server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 		for (i = 0; i < 8; i++)
 			server.sin_zero[i] = 0;
 		length = (SOCKLEN) sizeof(server);
