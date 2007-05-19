@@ -97,10 +97,15 @@ fixPropertySet(MalBlkPtr mb, int dst)
 @-
 The cost formula are repetative
 @= newRows
-{		c1 = getVarRows(getArg(p,@1));
-		c2 = getVarRows(getArg(p,@2));
-		if( c1 == NULL) continue;
-		if( c2 == NULL) continue;
+{ 		Property ps;
+		ps= fndProperty(getProps(mb,getArg(p,@1)),"rows");
+		if(ps== NULL) continue;
+		VALconvert(TYPE_lng,&ps->val);
+		c1= VALptr(&ps->val);
+		ps= fndProperty(getProps(mb,getArg(p,@2)),"rows");
+		if(ps== NULL) continue;
+		VALconvert(TYPE_lng,&ps->val);
+		c2= VALptr(&ps->val);
 		k= (@3);
 		fixPropertySet(mb, getArg(p,@4));
 		setProperty(getProps(mb,getArg(p,@4)),"rows","=", TYPE_lng, &k);
@@ -121,13 +126,20 @@ static void
 OPTbackpropagate(MalBlkPtr mb, int i, int idx){
 	lng *rows;
 	InstrPtr p;
+	Property ps;
 
 	for( ; i > 0; i--){
 		p= getInstrPtr(mb,i);
 		if( getFunctionId(p) == setWriteModeRef){
-			rows= getVarRows(getArg(p,1));
-			if( rows == NULL  || *rows) continue;
-			*rows = *getVarRows(idx);
+			ps= fndProperty(getProps(mb,getArg(p,1)),"rows");
+			if(ps== NULL) continue;
+			VALconvert(TYPE_lng,&ps->val);
+			rows= VALptr(&ps->val);
+			if( *rows) continue;
+			ps= fndProperty(getProps(mb,getArg(p,idx)),"rows");
+			if(ps== NULL) continue;
+			VALconvert(TYPE_lng,&ps->val);
+			*rows = *(lng*)VALptr(&ps->val);
 		} 
 	}
 }
