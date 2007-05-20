@@ -36,19 +36,19 @@ comment "sleep X secs";
 command alarm(secs:int, action:str):void 
 address ALARMsetalarm 
 comment "execute action in X secs";
-command timers() :bat[:str,:str] 
+command timers{unsafe}() :bat[:str,:str] 
 address ALARMtimers
 comment "give a list of all active timers";
-command usec() :lng 
+command usec{unsafe}() :lng 
 address ALARMusec
 comment "return cpu microseconds info";
-command time() :int 
+command time{unsafe}() :int 
 address ALARMtime 
 comment "time in millisecs";
-command epoch() :int 
+command epoch{unsafe}() :int 
 address ALARMepoch 
 comment "current time as unix epoch";
-command ctime() :str 
+command ctime{unsafe}() :str 
 address ALARMctime 
 comment "current time as a string";
 command prelude():void

@@ -301,13 +301,14 @@ address timestamp_fromstr;
 
 command tostr():str 
 address timestamp_tostr;
-command unix_epoch():timestamp
+
+command unix_epoch{unsafe}():timestamp
 address MTIMEunix_epoch
 comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
-command epoch():timestamp
+command epoch{unsafe}():timestamp
 address MTIMEepoch
 comment "unix-time (epoch) support: seconds since the Unix epoch";
-command epoch(t:timestamp):lng 
+command epoch{unsafe}(t:timestamp):lng 
 address MTIMEepoch2lng
 comment "unix-time (epoch) support: seconds since epoch";
 
@@ -754,7 +755,7 @@ address MTIMEsql_minutes;
 command seconds(secs:lng):int
 address MTIMEsql_seconds;
 
-command msec():lng 
+command msec{unsafe}():lng 
 address MTIMEmsec
 comment "get time of day in msec since 1-1-1970.";
 

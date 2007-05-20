@@ -190,7 +190,7 @@ comment "The finite(x) function returns true if x is neither infinite
 
 @+ Random numbers
 @mal
-command rand () :int 
+command rand{unsafe} () :int 
 address MATHrandint
 comment "return a random number";
 command srand(seed:int) :void 
