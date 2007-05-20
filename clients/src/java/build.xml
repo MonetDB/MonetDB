@@ -26,20 +26,21 @@ All Rights Reserved.
 
 -->
 
-<project name="MonetDB_Java_Drivers" default="jar_jdbcclient" basedir=".">
+<project name="MonetDB_Java_Drivers" default="default" basedir=".">
 
   <!-- set global properties for this build -->
-  <property name="srcdir"             value="src" />
-  <property name="libdir"             value="lib" />
-  <property name="jardir"             value="jars" />
-  <property name="builddir"           value="build" />
-  <property name="docdir"             value="doc" />
-  <property name="scriptdir"          value="${builddir}/scripts" />
-  <property name="jdbc-package"       value="nl/cwi/monetdb/jdbc" />
-  <property name="xmldb-package"      value="nl/cwi/monetdb/xmldb" />
-  <property name="mcl-package"        value="nl/cwi/monetdb/mcl" />
-  <property name="client-package"     value="nl/cwi/monetdb/client" />
-  <property name="util-package"       value="nl/cwi/monetdb/util" />
+  <property name="srcdir"               value="src" />
+  <property name="libdir"               value="lib" />
+  <property name="jardir"               value="jars" />
+  <property name="builddir"             value="build" />
+  <property name="docdir"               value="doc" />
+  <property name="scriptdir"            value="${builddir}/scripts" />
+  <property name="jdbc-package"         value="nl/cwi/monetdb/jdbc" />
+  <property name="xmldb-package"        value="nl/cwi/monetdb/xmldb" />
+  <property name="mcl-package"          value="nl/cwi/monetdb/mcl" />
+  <property name="client-package"       value="nl/cwi/monetdb/client" />
+  <property name="xrpcwrapper-package"  value="nl/cwi/monetdb/xrpc/wrapper" />
+  <property name="util-package"         value="nl/cwi/monetdb/util" />
 
   <property file="build.local.properties" />
   <property file="build.properties" />
@@ -52,15 +53,24 @@ All Rights Reserved.
     value="${jardir}/monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar" />
   <property name="xmldb-jar"
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-xmldb.jar" />
+  <property name="xrpcwrapper-jar"
+    value="${jardir}/xrpcwrapper-${XRPC_WRAPPER_MAJOR}.${XRPC_WRAPPER_MINOR}.jar" />
 
   <!-- full target -->
   <target name="all">
     <antcall target="jar_jdbc" />
     <antcall target="jar_xmldb" />
     <antcall target="jar_mcl" />
+    <antcall target="jar_util" />
     <antcall target="jar_client" />
+    <antcall target="jar_xrpcwrapper" />
 
     <antcall target="doc" />
+  </target>
+
+  <target name="default">
+    <antcall target="jar_jdbcclient" />
+    <antcall target="jar_xrpcwrapper" />
   </target>
 
   <!-- jar targets -->
@@ -96,6 +106,47 @@ All Rights Reserved.
         <include name="${client-package}/**/*.class" />
         <include name="${util-package}/**/*.class" />
       </fileset>
+    </jar>
+  </target>
+
+  <target name="jar_xrpcwrapper"
+    depends="compile_util,compile_xrpcwrapper">
+    <copy file="${srcdir}/${xrpcwrapper-package}/wrapper_functions.xq"
+      overwrite="true"
+      tofile="${builddir}/${xrpcwrapper-package}/wrapper_functions.xq"
+      filtering="yes" />
+    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/auctions.xml"
+      overwrite="true"
+      tofile="${builddir}/${xrpcwrapper-package}/Tests/auctions.xml"
+      filtering="yes" />
+    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/bib.xml"
+      overwrite="true"
+      tofile="${builddir}/${xrpcwrapper-package}/Tests/bib.xml"
+      filtering="yes" />
+    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/persons.xml"
+      overwrite="true"
+      tofile="${builddir}/${xrpcwrapper-package}/Tests/persons.xml"
+      filtering="yes" />
+    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/functions.xq"
+      overwrite="true"
+      tofile="${builddir}/${xrpcwrapper-package}/Tests/functions.xq"
+      filtering="yes" />
+    <copy file="${srcdir}/${xrpcwrapper-package}/Tests/test.xq"
+      overwrite="true"
+      tofile="${builddir}/${xrpcwrapper-package}/Tests/test.xq"
+      filtering="yes" />
+    <jar jarfile="${xrpcwrapper-jar}">
+      <fileset dir="${builddir}">
+        <include name="${util-package}/**/*.class" />
+        <include name="${xrpcwrapper-package}/**/*.class" />
+        <include name="${xrpcwrapper-package}/wrapper_functions.xq" />
+        <include name="${xrpcwrapper-package}/Tests/bib.xml" />
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}" />
+        <attribute name="Main-Class"
+          value="nl.cwi.monetdb.xrpc.wrapper.XrpcWrapper" />
+      </manifest>
     </jar>
   </target>
 
@@ -222,6 +273,21 @@ All Rights Reserved.
     </javac>
   </target>
 
+  <target name="compile_xrpcwrapper" depends="prepare">
+    <echo message="Compiling XRPC Wrapper" />
+    <javac
+      classpath="${srcdir}"
+      srcdir="${srcdir}"
+      destdir="${builddir}"
+      debug="${debug}"
+      optimize="${optimize}"
+      target="${javac_version}"
+      source="${javac_version}"
+      >
+      <include name="${xrpcwrapper-package}/**/*.java" />
+    </javac>
+  </target>
+
   <!--
   This generates MonetDriver.java and MonetDBDatabase.java from their
   ".java.in" equivalents.  It's required for importing the driver
@@ -328,7 +394,7 @@ All Rights Reserved.
 
   <!-- documentation target -->
   <target name="doc"
-    depends="compile_mcl,compile_jdbc,compile_xmldb,compile_util,compile_client">
+    depends="compile_mcl,compile_jdbc,compile_xmldb,compile_util,compile_client,compile_xrpcwrapper">
     <javadoc
       destdir="${docdir}"
       author="true"

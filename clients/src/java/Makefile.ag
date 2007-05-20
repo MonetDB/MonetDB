@@ -38,6 +38,11 @@ ant_jar_jdbcclient = {
 	FILES = jdbcclient-1.5.jar
 }
 
+ant_jar_xrpcwrapper = {
+	DIR = datadir/MonetDB/lib
+	FILES = xrpcwrapper-0.1.jar
+}
+
 ant_create_mjclient = {
 	COND = NOT_WIN32
 	DIR = bindir
