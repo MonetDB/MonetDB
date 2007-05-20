@@ -65,6 +65,7 @@ EXTRA_DIST = \
 	ns.h \
 	nsres.h \
 	oops.h \
+	options.h \
 	ordering.h \
 	parser.h \
 	pathfinder.h \
