@@ -1,0 +1,1573 @@
+stdout of test 'tst1205` in directory 'src/mal` itself:
+
+
+# 23:52:41 >  
+# 23:52:41 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=30926 --set xrpc_port=47613 --set monet_prompt= --trace --dbname=mTests_src_mal  tst1205.mal
+# 23:52:41 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information
+## Mil compiler Version 1.0)
+## Copyright (c) 1993-2001, CWI. All rights reserved.
+#
+## Predefined code segment
+##
+###line 531 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+##module(monettime,alarm);
+##
+##
+##
+#lzone:= mtime.timezone("GMT+1");
+#mtime.timezone_local(lzone);
+###line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+### test the various ways to create rules
+#	rule_jan:= mtime.rule("1st MON from start of JAN@01:15");
+##var rule_jan := mtime.rule("1st MON from start of JAN@01:15");
+#	rule_mar:= mtime.rule("first WEDNE on or after march 10@01:15");
+##var rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");
+#	rule_apr:= mtime.rule("last THU on or before aPr 1@01:15");
+##var rule_apr := mtime.rule("last THU on or before aPr 1@01:15");
+#	rule_may:= mtime.rule("MAY 26@01:15");
+##var rule_may := mtime.rule("MAY 26@01:15");
+#	rule_jun:= mtime.rule("2nd TUE from end of june@01:15");
+##var rule_jun := mtime.rule("2nd TUE from end of june@01:15");
+#	rule_jul:= mtime.rule(7,1,1,75);
+##var rule_jul := mtime.rule(7,1,1,75);
+#	rule_aug:= mtime.rule(8,-1,1,75);
+##var rule_aug := mtime.rule(8,-1,1,75);
+#	rule_sep:= mtime.rule(9,-10,3,75);
+##var rule_sep := mtime.rule(9,-10,3,75);
+#	rule_oct:= mtime.rule(10,31,0,75);
+##var rule_oct := mtime.rule(10,31,0,75);
+#	rule_nov:= mtime.rule(11,-10,-4,75);
+##var rule_nov := mtime.rule(11,-10,-4,75);
+### nil rules
+#	rule_dec:= mtime.rule(12,-31,0,75);
+##var rule_dec := mtime.rule(12,-31,0,75);
+#	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
+##var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
+## 
+#	rule_bat:= bat.new(:str,:zrule,10);
+##var rule_bat := bat.new(str,rule,10);
+#	bat.insert(rule_bat,"jan",rule_jan);
+#	bat.insert(rule_bat,"feb",rule_feb);
+#	bat.insert(rule_bat,"mar",rule_mar);
+#	bat.insert(rule_bat,"apr",rule_apr);
+##rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr);
+#	bat.insert(rule_bat,"may",rule_may);
+#	bat.insert(rule_bat,"jun",rule_jun);
+#	bat.insert(rule_bat,"jul",rule_jul);
+#	bat.insert(rule_bat,"aug",rule_aug);
+##rule_bat.bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug);
+#	bat.insert(rule_bat,"sep",rule_sep);
+#	bat.insert(rule_bat,"oct",rule_oct);
+#	bat.insert(rule_bat,"nov",rule_nov);
+#	bat.insert(rule_bat,"dec",rule_dec);
+##rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec);
+##
+##
+###line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+### test the various ways to create timezones, using some of the above created rules
+#	tzone_00:= mtime.timezone("GMT");
+##var tzone_00 := mtime.timezone("GMT");
+#	tzone_01:= mtime.timezone("GMT+01:00");
+##var tzone_01 := mtime.timezone("GMT+01:00");
+#	tzone_02:= mtime.timezone("GMT+0100");
+##var tzone_02 := mtime.timezone("GMT+0100");
+#	tzone_03:= mtime.timezone(60,rule_oct,rule_mar);
+##var tzone_03 := mtime.timezone(60, rule_oct, rule_mar);
+#	tzone_04:= mtime.timezone(0,rule_jan,rule_aug);
+##var tzone_04 := mtime.timezone(0, rule_jan, rule_aug);
+#	tzone_05:= mtime.timezone(-97,rule_oct,rule_apr);
+##var tzone_05 := mtime.timezone(-97, rule_oct, rule_apr);
+#	tzone_06:= mtime.timezone(-97,rule_may,rule_sep);
+##var tzone_06 := mtime.timezone(-97, rule_may, rule_sep);
+#	mc_a := calc.*(23,60);
+#	tzone_07:= mtime.timezone(mc_a,rule_apr,rule_nov);
+##var tzone_07 := mtime.timezone(23*60, rule_apr, rule_nov);
+#	nc_a := calc.*(-23,59);
+#	oc_a := calc.-(nc_a,59);
+#	tzone_08:= mtime.timezone(oc_a);
+##var tzone_08 := mtime.timezone((-23*59) - 59);
+#	tzone_09:= mtime.timezone(0);
+##var tzone_09 := mtime.timezone(0);
+#	tzone_10:= mtime.timezone(-60);
+##var tzone_10 := mtime.timezone(-60);
+#	pc_a := calc.*(23,60);
+#	qc_a := calc.+(pc_a,59);
+#	tzone_11:= mtime.timezone(qc_a);
+##var tzone_11 := mtime.timezone((23*60)+59);
+#	tzone_12:= mtime.timezone(60);
+##var tzone_12 := mtime.timezone(60);
+### nil tzones
+#	tzone_13:= mtime.timezone(60,rule_feb,rule_dec);
+##var tzone_13 := mtime.timezone(60, rule_feb, rule_dec);
+#	rc_a := calc.*(24,60);
+#	tzone_15:= mtime.timezone(rc_a,rule_apr,rule_nov);
+##var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
+##
+##
+#	tzone_bat:= bat.new(:oid,:timezone);
+##var tzone_bat := bat.new(oid,tzone);
+#	bat.insert(tzone_bat,0@0,tzone_00);
+#	bat.insert(tzone_bat,1@0,tzone_01);
+#	bat.insert(tzone_bat,2@0,tzone_02);
+##tzone_bat.bat.insert(0@0, tzone_00).insert(1@0, tzone_01).insert(2@0, tzone_02);
+#	bat.insert(tzone_bat,3@0,tzone_03);
+#	bat.insert(tzone_bat,4@0,tzone_04);
+#	bat.insert(tzone_bat,5@0,tzone_05);
+##tzone_bat.bat.insert(3@0, tzone_03).insert(4@0, tzone_04).insert(5@0, tzone_05);
+#	bat.insert(tzone_bat,6@0,tzone_06);
+#	bat.insert(tzone_bat,7@0,tzone_07);
+#	bat.insert(tzone_bat,8@0,tzone_08);
+##tzone_bat.bat.insert(6@0, tzone_06).insert(7@0, tzone_07).insert(8@0, tzone_08);
+#	bat.insert(tzone_bat,9@0,tzone_09);
+#	bat.insert(tzone_bat,10@0,tzone_10);
+#	bat.insert(tzone_bat,11@0,tzone_11);
+##tzone_bat.bat.insert(9@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11);
+#	bat.insert(tzone_bat,12@0,tzone_12);
+#	bat.insert(tzone_bat,13@0,tzone_13);
+#	bat.insert(tzone_bat,15@0,tzone_15);
+##tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15);
+##
+### test dayofweek and weeknumber using more than two years as consecutive days
+#    date_seq:= bat.new(:int,:date);
+#    date_00:= mtime.date(2000,01,01);
+##var date_seq := bat.new(int, date);
+#    i:= -375;
+##var i := -375;
+#barrier lf_a:= true;
+#    i:= i+1;
+#    of_a := calc.<(i,375);
+#barrier mf_a:= of_a;
+##while ((i :+= 1) < 375) {
+#    pf_a := mtime.adddays(date_00,i);
+#    bat.insert(date_seq,i,pf_a);
+##   date_seq.bat.insert(i,adddays(date_00,i));
+#redo    lf_a;
+#exit    mf_a;
+#exit    lf_a;
+##}
+#    rf_a := bat.setColumn(date_seq,"date");
+#
+##
+#	rf_a := bat.setColumn(date_seq,"date");
+##io.print(date_seq.bat.setColumn("date"),
+#	sf_a:bat[:int,:int] := mal.multiplex("mtime","weekofyear",date_seq);
+#	tf_a := bat.setColumn(sf_a,"weekofyear");
+##      [weekofyear](date_seq).bat.setColumn("weekofyear"),
+#	uf_a:bat[:int,:int] := mal.multiplex("mtime","dayofweek",date_seq);
+#	vf_a:bat[:int,:str] := mal.multiplex("mtime","dayname",uf_a);
+#	wf_a := bat.setColumn(vf_a,"dayofweek");
+##      [dayname]([dayofweek](date_seq)).bat.setColumn("dayofweek"),
+#	xf_a:bat[:int,:int] := mal.multiplex("mtime","dayofweek",date_seq);
+#	yf_a:bat[:int,:str] := mal.multiplex("mtime","dayname",xf_a);
+#	ag_a:bat[:int,:int] := mal.multiplex("mtime","daynum",yf_a);
+#	bg_a := bat.setColumn(ag_a,"num");
+##      [daynum]([dayname]([dayofweek](date_seq))).bat.setColumn("num"),
+#	cg_a:bat[:int,:int] := mal.multiplex("mtime","dayofyear",date_seq);
+#	dg_a := bat.setColumn(cg_a,"dayofyear");
+#io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
+#	eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);
+##      [dayofyear](date_seq).bat.setColumn("dayofyear"));
+##
+##
+##
+###line 679 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+### test the various ways top create daytimes
+#	daytime_00:= mtime.daytime(23,59,59,999);
+##var daytime_00 := mtime.daytime(23,59,59,999);
+#	daytime_01:= mtime.daytime("23:59");
+##var daytime_01 := mtime.daytime("23:59");
+#	daytime_02:= mtime.daytime("00:00");
+##var daytime_02 := mtime.daytime("00:00");
+#	daytime_03:= mtime.daytime("23:59:59");
+##var daytime_03 := mtime.daytime("23:59:59");
+#	daytime_04:= mtime.daytime("00:00:00.000");
+##var daytime_04 := mtime.daytime("00:00:00.000");
+#	daytime_05:= mtime.daytime("00:00:00");
+##var daytime_05 := mtime.daytime("00:00:00");
+#	daytime_06:= mtime.daytime("00:00:00:001");
+##var daytime_06 := mtime.daytime("00:00:00:001");
+#	daytime_07:= mtime.daytime("03:49:02.999");
+##var daytime_07 := mtime.daytime("03:49:02.999");
+#	daytime_08:= mtime.daytime("20:48:42:999");
+##var daytime_08 := mtime.daytime("20:48:42:999");
+#	daytime_09:= mtime.daytime("17:53:38:999");
+##var daytime_09 := mtime.daytime("17:53:38:999");
+#	daytime_10:= mtime.daytime("13:15:34:999");
+##var daytime_10 := mtime.daytime("13:15:34:999");
+#	daytime_11:= mtime.daytime("07:34:27.999");
+##var daytime_11 := mtime.daytime("07:34:27.999");
+#	daytime_12:= mtime.daytime("23:59:59:999");
+##var daytime_12 := mtime.daytime("23:59:59:999");
+#	daytime_13:= mtime.daytime("01:00:03.999");
+##var daytime_13 := mtime.daytime("01:00:03.999");
+#	daytime_14:= mtime.daytime("23:59:59.999");
+##var daytime_14 := mtime.daytime("23:59:59.999");
+### nil daytimes
+#	daytime_15:= mtime.daytime(24,59,59,999);
+##var daytime_15 := mtime.daytime(24,59,59,999);
+#	daytime_16:= mtime.daytime(23,60,59,999);
+##var daytime_16 := mtime.daytime(23,60,59,999);
+#	daytime_17:= mtime.daytime(23,59,60,999);
+##var daytime_17 := mtime.daytime(23,59,60,999);
+#	daytime_18:= mtime.daytime(23,59,60,1000);
+##var daytime_18 := mtime.daytime(23,59,60,1000);
+#	daytime_19:= mtime.daytime("nil");
+##var daytime_19 := mtime.daytime("nil");
+##
+#	daytime_bat:= bat.new(:oid,:daytime);
+##var daytime_bat := bat.new(oid,daytime);
+#	bat.insert(daytime_bat,0@0,daytime_00);
+#	bat.insert(daytime_bat,1@0,daytime_01);
+#	bat.insert(daytime_bat,2@0,daytime_02);
+##daytime_bat.bat.insert(0@0, daytime_00).insert(1@0, daytime_01).insert(2@0, daytime_02);
+#	bat.insert(daytime_bat,3@0,daytime_03);
+#	bat.insert(daytime_bat,4@0,daytime_04);
+#	bat.insert(daytime_bat,5@0,daytime_05);
+##daytime_bat.bat.insert(3@0, daytime_03).insert(4@0, daytime_04).insert(5@0, daytime_05);
+#	bat.insert(daytime_bat,6@0,daytime_06);
+#	bat.insert(daytime_bat,7@0,daytime_07);
+#	bat.insert(daytime_bat,8@0,daytime_08);
+##daytime_bat.bat.insert(6@0, daytime_06).insert(7@0, daytime_07).insert(8@0, daytime_08);
+#	bat.insert(daytime_bat,9@0,daytime_09);
+#	bat.insert(daytime_bat,10@0,daytime_10);
+#	bat.insert(daytime_bat,11@0,daytime_11);
+##daytime_bat.bat.insert(9@0, daytime_09).insert(10@0, daytime_10).insert(11@0, daytime_11);
+#	bat.insert(daytime_bat,12@0,daytime_12);
+#	bat.insert(daytime_bat,13@0,daytime_13);
+#	bat.insert(daytime_bat,14@0,daytime_14);
+##daytime_bat.bat.insert(12@0, daytime_12).insert(13@0, daytime_13).insert(14@0, daytime_14);
+#	bat.insert(daytime_bat,15@0,daytime_15);
+#	bat.insert(daytime_bat,16@0,daytime_16);
+#	bat.insert(daytime_bat,17@0,daytime_17);
+##daytime_bat.bat.insert(15@0, daytime_15).insert(16@0, daytime_16).insert(17@0, daytime_17);
+#	bat.insert(daytime_bat,18@0,daytime_18);
+#	bat.insert(daytime_bat,19@0,daytime_19);
+##daytime_bat.bat.insert(18@0, daytime_18).insert(19@0, daytime_19);
+##
+#	bat.setColumn(daytime_bat,"daytime");
+##io.print(daytime_bat.bat.setColumn("daytime"),
+#	bh_a:bat[:oid,:int] := mal.multiplex("mtime","hours",daytime_bat);
+#	bat.setColumn(bh_a,"hours");
+##      [hours](daytime_bat).bat.setColumn("hours"),
+#	dh_a:bat[:oid,:int] := mal.multiplex("mtime","minutes",daytime_bat);
+#	bat.setColumn(dh_a,"minutes");
+##      [minutes](daytime_bat).bat.setColumn("minutes"),
+#	fh_a:bat[:oid,:int] := mal.multiplex("mtime","seconds",daytime_bat);
+#	bat.setColumn(fh_a,"seconds");
+##      [seconds](daytime_bat).bat.setColumn("seconds"),
+#	hh_a:bat[:oid,:int] := mal.multiplex("mtime","milliseconds",daytime_bat);
+#	bat.setColumn(hh_a,"milliseconds");
+#io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
+#	jh_a := io.print(daytime_bat,bh_a,dh_a,fh_a,hh_a);
+##      [milliseconds](daytime_bat).bat.setColumn("milliseconds"));
+##
+##
+#	date_00:= mtime.date(2000,01,01);
+##var date_00 := date(2000,01,01);
+#	date_01:= mtime.date("5000-JAN-01");
+##var date_01 := date("5000-JAN-01");
+#	date_02:= mtime.date("1968-FEBR-29");
+##var date_02 := date("1968-FEBR-29");
+#	date_03:= mtime.date("1-MARCH-01");
+##var date_03 := date("1-MARCH-01");
+#	date_04:= mtime.date("-5867411-JAN-1");
+##var date_04 := date("-5867411-JAN-1");
+#	date_05:= mtime.date("-768/octobe/01");
+##var date_05 := date("-768/octobe/01");
+#	date_06:= mtime.date("5000\\novembe\\01");
+##var date_06 := date("5000\\novembe\\01");
+#	date_07:= mtime.date("-1999/jun/01");
+##var date_07 := date("-1999/jun/01");
+#	date_08:= mtime.date("2000-jul-14");
+##var date_08 := date("2000-jul-14");
+#	date_09:= mtime.date("1999-sept-01");
+##var date_09 := date("1999-sept-01");
+#	date_10:= mtime.date("1998-decemBeR-01");
+##var date_10 := date("1998-decemBeR-01");
+#	date_11:= mtime.date("1953 may                01");
+##var date_11 := date("1953 may                01");
+#	date_12:= mtime.date("5867411-DEC-31");
+##var date_12 := date("5867411-DEC-31");
+### nil dates
+#	date_13:= mtime.date(1996,13,1);
+##var date_13 := date(1996,13,1);
+#	date_14:= mtime.date("999999999999999999999-01-01");
+##var date_14 := date("999999999999999999999-01-01");
+#	date_15:= mtime.date("1999-JANUARI-01");
+##var date_15 := date("1999-JANUARI-01");
+#	date_16:= mtime.date("1999-FEBR-29");
+##var date_16 := date("1999-FEBR-29");
+#	date_17:= mtime.date("-1-DECEMBER-0");
+##var date_17 := date("-1-DECEMBER-0");
+#	date_18:= mtime.date("5000\novembe\31");
+##var date_18 := date("5000\novembe\31");
+#	date_19:= mtime.date("nil");
+##var date_19 := date("nil");
+#	date_20:= mtime.date("1999-sept-31");
+##var date_20 := date("1999-sept-31");
+#	date_bat:= bat.new(:oid,:date);
+##var date_bat := bat.new(oid,date);
+#	bat.insert(date_bat,0@0,date_00);
+#	bat.insert(date_bat,1@0,date_01);
+#	bat.insert(date_bat,2@0,date_02);
+##date_bat.bat.insert(0@0, date_00).insert(1@0, date_01).insert(2@0, date_02);
+#	bat.insert(date_bat,3@0,date_03);
+#	bat.insert(date_bat,4@0,date_04);
+#	bat.insert(date_bat,5@0,date_05);
+##date_bat.bat.insert(3@0, date_03).insert(4@0, date_04).insert(5@0, date_05);
+#	bat.insert(date_bat,6@0,date_06);
+#	bat.insert(date_bat,7@0,date_07);
+#	bat.insert(date_bat,8@0,date_08);
+##date_bat.bat.insert(6@0, date_06).insert(7@0, date_07).insert(8@0, date_08);
+#	bat.insert(date_bat,9@0,date_09);
+#	bat.insert(date_bat,10@0,date_10);
+#	bat.insert(date_bat,11@0,date_11);
+##date_bat.bat.insert(9@0, date_09).insert(10@0, date_10).insert(11@0, date_11);
+#	bat.insert(date_bat,12@0,date_12);
+#	bat.insert(date_bat,13@0,date_13);
+#	bat.insert(date_bat,14@0,date_14);
+##date_bat.bat.insert(12@0, date_12).insert(13@0, date_13).insert(14@0, date_14);
+#	bat.insert(date_bat,15@0,date_15);
+#	bat.insert(date_bat,16@0,date_16);
+#	bat.insert(date_bat,17@0,date_17);
+##date_bat.bat.insert(15@0, date_15).insert(16@0, date_16).insert(17@0, date_17);
+#	bat.insert(date_bat,18@0,date_18);
+#	bat.insert(date_bat,19@0,date_19);
+#	bat.insert(date_bat,20@0,date_20);
+##date_bat.bat.insert(18@0, date_18).insert(19@0, date_19).insert(20@0, date_20);
+##
+### test the operations on dates
+#	ne_a := bat.setColumn(date_bat,"date");
+##
+###line 719 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+### create timestamps in bulk from the above bats with dates, daytimes and tzones
+## Skipped due to coercion implication
+#	kh_a:bat[:oid,:timestamp] := mal.multiplex("mtime","timestamp",date_bat,daytime_bat,tzone_bat);
+#	timestamp_bat:=kh_a; bat.setWriteMode(kh_a);
+##var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE);
+### KILL
+#
+function user.main():void;	# 0  (main:void)
+# Mil compiler Version 1.0) 	# 1  (_1:str)
+# Copyright (c) 1993-2001, CWI. All rights reserved. 	# 2  (_2:str)
+# Predefined code segment 	# 3  (_3:str)
+##line 531 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 	# 4  (_4:str)
+#module(monettime,alarm); 	# 5  (_5:str)
+    lzone := mtime.timezone("GMT+1");	# 6 MTIMEtzone_fromstr (lzone:timezone)<-(_7:str)
+    mtime.timezone_local(lzone);	# 7 MTIMEtzone_set_local (_8:void)<-(lzone:timezone)
+##line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 	# 8  (_9:str)
+## test the various ways to create rules 	# 9  (_10:str)
+    rule_jan := mtime.rule("1st MON from start of JAN@01:15");	# 10 MTIMErule_fromstr (rule_jan:zrule)<-(_12:str)
+#var rule_jan := mtime.rule("1st MON from start of JAN@01:15"); 	# 11  (_13:str)
+    rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");	# 12 MTIMErule_fromstr (rule_mar:zrule)<-(_15:str)
+#var rule_mar := mtime.rule("first WEDNE on or after march 10@01:15"); 	# 13  (_16:str)
+    rule_apr := mtime.rule("last THU on or before aPr 1@01:15");	# 14 MTIMErule_fromstr (rule_apr:zrule)<-(_18:str)
+#var rule_apr := mtime.rule("last THU on or before aPr 1@01:15"); 	# 15  (_19:str)
+    rule_may := mtime.rule("MAY 26@01:15");	# 16 MTIMErule_fromstr (rule_may:zrule)<-(_21:str)
+#var rule_may := mtime.rule("MAY 26@01:15"); 	# 17  (_22:str)
+    rule_jun := mtime.rule("2nd TUE from end of june@01:15");	# 18 MTIMErule_fromstr (rule_jun:zrule)<-(_24:str)
+#var rule_jun := mtime.rule("2nd TUE from end of june@01:15"); 	# 19  (_25:str)
+    rule_jul := mtime.rule(7,1,1,75);	# 20 MTIMErule_create (rule_jul:zrule)<-(_27:int)(_28:int)(_28:int)(_29:int)
+#var rule_jul := mtime.rule(7,1,1,75); 	# 21  (_30:str)
+    rule_aug := mtime.rule(8,-1,1,75);	# 22 MTIMErule_create (rule_aug:zrule)<-(_32:int)(_33:int)(_28:int)(_29:int)
+#var rule_aug := mtime.rule(8,-1,1,75); 	# 23  (_34:str)
+    rule_sep := mtime.rule(9,-10,3,75);	# 24 MTIMErule_create (rule_sep:zrule)<-(_36:int)(_37:int)(_38:int)(_29:int)
+#var rule_sep := mtime.rule(9,-10,3,75); 	# 25  (_39:str)
+    rule_oct := mtime.rule(10,31,0,75);	# 26 MTIMErule_create (rule_oct:zrule)<-(_41:int)(_42:int)(_43:int)(_29:int)
+#var rule_oct := mtime.rule(10,31,0,75); 	# 27  (_44:str)
+    rule_nov := mtime.rule(11,-10,-4,75);	# 28 MTIMErule_create (rule_nov:zrule)<-(_46:int)(_37:int)(_47:int)(_29:int)
+#var rule_nov := mtime.rule(11,-10,-4,75); 	# 29  (_48:str)
+## nil rules 	# 30  (_49:str)
+    rule_dec := mtime.rule(12,-31,0,75);	# 31 MTIMErule_create (rule_dec:zrule)<-(_51:int)(_52:int)(_43:int)(_29:int)
+#var rule_dec := mtime.rule(12,-31,0,75); 	# 32  (_53:str)
+    rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");	# 33 MTIMErule_fromstr (rule_feb:zrule)<-(_55:str)
+#var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15"); 	# 34  (_56:str)
+#  	# 35  (_57:str)
+    rule_bat := bat.new(:str,:zrule,10);	# 36 CMDBATnewint (rule_bat:bat[:str,:zrule])<-(_59:str)(_60:zrule)(_41:int)
+#var rule_bat := bat.new(str,rule,10); 	# 37  (_61:str)
+    bat.insert(rule_bat,"jan",rule_jan);	# 38 BKCinsert_bun (_62:void)<-(rule_bat:bat[:str,:zrule])(_63:str)(rule_jan:zrule)
+    bat.insert(rule_bat,"feb",rule_feb);	# 39 BKCinsert_bun (_64:void)<-(rule_bat:bat[:str,:zrule])(_65:str)(rule_feb:zrule)
+    bat.insert(rule_bat,"mar",rule_mar);	# 40 BKCinsert_bun (_66:void)<-(rule_bat:bat[:str,:zrule])(_67:str)(rule_mar:zrule)
+    bat.insert(rule_bat,"apr",rule_apr);	# 41 BKCinsert_bun (_68:void)<-(rule_bat:bat[:str,:zrule])(_69:str)(rule_apr:zrule)
+#rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr); 	# 42  (_70:str)
+    bat.insert(rule_bat,"may",rule_may);	# 43 BKCinsert_bun (_71:void)<-(rule_bat:bat[:str,:zrule])(_72:str)(rule_may:zrule)
+    bat.insert(rule_bat,"jun",rule_jun);	# 44 BKCinsert_bun (_73:void)<-(rule_bat:bat[:str,:zrule])(_74:str)(rule_jun:zrule)
+    bat.insert(rule_bat,"jul",rule_jul);	# 45 BKCinsert_bun (_75:void)<-(rule_bat:bat[:str,:zrule])(_76:str)(rule_jul:zrule)
+    bat.insert(rule_bat,"aug",rule_aug);	# 46 BKCinsert_bun (_77:void)<-(rule_bat:bat[:str,:zrule])(_78:str)(rule_aug:zrule)
+#rule_bat.bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug); 	# 47  (_79:str)
+    bat.insert(rule_bat,"sep",rule_sep);	# 48 BKCinsert_bun (_80:void)<-(rule_bat:bat[:str,:zrule])(_81:str)(rule_sep:zrule)
+    bat.insert(rule_bat,"oct",rule_oct);	# 49 BKCinsert_bun (_82:void)<-(rule_bat:bat[:str,:zrule])(_83:str)(rule_oct:zrule)
+    bat.insert(rule_bat,"nov",rule_nov);	# 50 BKCinsert_bun (_84:void)<-(rule_bat:bat[:str,:zrule])(_85:str)(rule_nov:zrule)
+    bat.insert(rule_bat,"dec",rule_dec);	# 51 BKCinsert_bun (_86:void)<-(rule_bat:bat[:str,:zrule])(_87:str)(rule_dec:zrule)
+#rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec); 	# 52  (_88:str)
+##line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 	# 53  (_89:str)
+## test the various ways to create timezones, using some of the above created rules 	# 54  (_90:str)
+    tzone_00 := mtime.timezone("GMT");	# 55 MTIMEtzone_fromstr (tzone_00:timezone)<-(_92:str)
+#var tzone_00 := mtime.timezone("GMT"); 	# 56  (_93:str)
+    tzone_01 := mtime.timezone("GMT+01:00");	# 57 MTIMEtzone_fromstr (tzone_01:timezone)<-(_95:str)
+#var tzone_01 := mtime.timezone("GMT+01:00"); 	# 58  (_96:str)
+    tzone_02 := mtime.timezone("GMT+0100");	# 59 MTIMEtzone_fromstr (tzone_02:timezone)<-(_98:str)
+#var tzone_02 := mtime.timezone("GMT+0100"); 	# 60  (_99:str)
+    tzone_03 := mtime.timezone(60,rule_oct,rule_mar);	# 61 MTIMEtzone_create_dst (tzone_03:timezone)<-(_101:int)(rule_oct:zrule)(rule_mar:zrule)
+#var tzone_03 := mtime.timezone(60, rule_oct, rule_mar); 	# 62  (_102:str)
+    tzone_04 := mtime.timezone(0,rule_jan,rule_aug);	# 63 MTIMEtzone_create_dst (tzone_04:timezone)<-(_104:int)(rule_jan:zrule)(rule_aug:zrule)
+#var tzone_04 := mtime.timezone(0, rule_jan, rule_aug); 	# 64  (_105:str)
+    tzone_05 := mtime.timezone(-97,rule_oct,rule_apr);	# 65 MTIMEtzone_create_dst (tzone_05:timezone)<-(_107:int)(rule_oct:zrule)(rule_apr:zrule)
+#var tzone_05 := mtime.timezone(-97, rule_oct, rule_apr); 	# 66  (_108:str)
+    tzone_06 := mtime.timezone(-97,rule_may,rule_sep);	# 67 MTIMEtzone_create_dst (tzone_06:timezone)<-(_107:int)(rule_may:zrule)(rule_sep:zrule)
+#var tzone_06 := mtime.timezone(-97, rule_may, rule_sep); 	# 68  (_110:str)
+    mc_a := calc.*(23,60);	# 69 CALCbinaryMULintint (mc_a:int)<-(_112:int)(_101:int)
+    tzone_07 := mtime.timezone(mc_a,rule_apr,rule_nov);	# 70 MTIMEtzone_create_dst (tzone_07:timezone)<-(mc_a:int)(rule_apr:zrule)(rule_nov:zrule)
+#var tzone_07 := mtime.timezone(23*60, rule_apr, rule_nov); 	# 71  (_114:str)
+    nc_a := calc.*(-23,59);	# 72 CALCbinaryMULintint (nc_a:int)<-(_116:int)(_117:int)
+    oc_a := calc.-(nc_a,59);	# 73 CALCbinarySUBintint (oc_a:int)<-(nc_a:int)(_117:int)
+    tzone_08 := mtime.timezone(oc_a);	# 74 MTIMEtzone_create (tzone_08:timezone)<-(oc_a:int)
+#var tzone_08 := mtime.timezone((-23*59) - 59); 	# 75  (_120:str)
+    tzone_09 := mtime.timezone(0);	# 76 MTIMEtzone_create (tzone_09:timezone)<-(_104:int)
+#var tzone_09 := mtime.timezone(0); 	# 77  (_122:str)
+    tzone_10 := mtime.timezone(-60);	# 78 MTIMEtzone_create (tzone_10:timezone)<-(_124:int)
+#var tzone_10 := mtime.timezone(-60); 	# 79  (_125:str)
+    pc_a := calc.*(23,60);	# 80 CALCbinaryMULintint (pc_a:int)<-(_112:int)(_101:int)
+    qc_a := calc.+(pc_a,59);	# 81 CALCbinaryADDintint (qc_a:int)<-(pc_a:int)(_117:int)
+    tzone_11 := mtime.timezone(qc_a);	# 82 MTIMEtzone_create (tzone_11:timezone)<-(qc_a:int)
+#var tzone_11 := mtime.timezone((23*60)+59); 	# 83  (_129:str)
+    tzone_12 := mtime.timezone(60);	# 84 MTIMEtzone_create (tzone_12:timezone)<-(_101:int)
+#var tzone_12 := mtime.timezone(60); 	# 85  (_131:str)
+## nil tzones 	# 86  (_132:str)
+    tzone_13 := mtime.timezone(60,rule_feb,rule_dec);	# 87 MTIMEtzone_create_dst (tzone_13:timezone)<-(_101:int)(rule_feb:zrule)(rule_dec:zrule)
+#var tzone_13 := mtime.timezone(60, rule_feb, rule_dec); 	# 88  (_134:str)
+    rc_a := calc.*(24,60);	# 89 CALCbinaryMULintint (rc_a:int)<-(_136:int)(_101:int)
+    tzone_15 := mtime.timezone(rc_a,rule_apr,rule_nov);	# 90 MTIMEtzone_create_dst (tzone_15:timezone)<-(rc_a:int)(rule_apr:zrule)(rule_nov:zrule)
+#var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov); 	# 91  (_138:str)
+    tzone_bat := bat.new(:oid,:timezone);	# 92 CMDBATnew (tzone_bat:bat[:oid,:timezone])<-(_140:oid)(_141:timezone)
+#var tzone_bat := bat.new(oid,tzone); 	# 93  (_142:str)
+    bat.insert(tzone_bat,0@0,tzone_00);	# 94 BKCinsert_bun (_143:void)<-(tzone_bat:bat[:oid,:timezone])(_144:oid)(tzone_00:timezone)
+    bat.insert(tzone_bat,1@0,tzone_01);	# 95 BKCinsert_bun (_145:void)<-(tzone_bat:bat[:oid,:timezone])(_146:oid)(tzone_01:timezone)
+    bat.insert(tzone_bat,2@0,tzone_02);	# 96 BKCinsert_bun (_147:void)<-(tzone_bat:bat[:oid,:timezone])(_148:oid)(tzone_02:timezone)
+#tzone_bat.bat.insert(0@0, tzone_00).insert(1@0, tzone_01).insert(2@0, tzone_02); 	# 97  (_149:str)
+    bat.insert(tzone_bat,3@0,tzone_03);	# 98 BKCinsert_bun (_150:void)<-(tzone_bat:bat[:oid,:timezone])(_151:oid)(tzone_03:timezone)
+    bat.insert(tzone_bat,4@0,tzone_04);	# 99 BKCinsert_bun (_152:void)<-(tzone_bat:bat[:oid,:timezone])(_153:oid)(tzone_04:timezone)
+    bat.insert(tzone_bat,5@0,tzone_05);	# 100 BKCinsert_bun (_154:void)<-(tzone_bat:bat[:oid,:timezone])(_155:oid)(tzone_05:timezone)
+#tzone_bat.bat.insert(3@0, tzone_03).insert(4@0, tzone_04).insert(5@0, tzone_05); 	# 101  (_156:str)
+    bat.insert(tzone_bat,6@0,tzone_06);	# 102 BKCinsert_bun (_157:void)<-(tzone_bat:bat[:oid,:timezone])(_158:oid)(tzone_06:timezone)
+    bat.insert(tzone_bat,7@0,tzone_07);	# 103 BKCinsert_bun (_159:void)<-(tzone_bat:bat[:oid,:timezone])(_160:oid)(tzone_07:timezone)
+    bat.insert(tzone_bat,8@0,tzone_08);	# 104 BKCinsert_bun (_161:void)<-(tzone_bat:bat[:oid,:timezone])(_162:oid)(tzone_08:timezone)
+#tzone_bat.bat.insert(6@0, tzone_06).insert(7@0, tzone_07).insert(8@0, tzone_08); 	# 105  (_163:str)
+    bat.insert(tzone_bat,9@0,tzone_09);	# 106 BKCinsert_bun (_164:void)<-(tzone_bat:bat[:oid,:timezone])(_165:oid)(tzone_09:timezone)
+    bat.insert(tzone_bat,10@0,tzone_10);	# 107 BKCinsert_bun (_166:void)<-(tzone_bat:bat[:oid,:timezone])(_167:oid)(tzone_10:timezone)
+    bat.insert(tzone_bat,11@0,tzone_11);	# 108 BKCinsert_bun (_168:void)<-(tzone_bat:bat[:oid,:timezone])(_169:oid)(tzone_11:timezone)
+#tzone_bat.bat.insert(9@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11); 	# 109  (_170:str)
+    bat.insert(tzone_bat,12@0,tzone_12);	# 110 BKCinsert_bun (_171:void)<-(tzone_bat:bat[:oid,:timezone])(_172:oid)(tzone_12:timezone)
+    bat.insert(tzone_bat,13@0,tzone_13);	# 111 BKCinsert_bun (_173:void)<-(tzone_bat:bat[:oid,:timezone])(_174:oid)(tzone_13:timezone)
+    bat.insert(tzone_bat,15@0,tzone_15);	# 112 BKCinsert_bun (_175:void)<-(tzone_bat:bat[:oid,:timezone])(_176:oid)(tzone_15:timezone)
+#tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15); 	# 113  (_177:str)
+## test dayofweek and weeknumber using more than two years as consecutive days 	# 114  (_178:str)
+    date_seq := bat.new(:int,:date);	# 115 CMDBATnew (date_seq:bat[:int,:date])<-(_180:int)(_181:date)
+    date_00 := mtime.date(2000,1,1);	# 116 MTIMEdate_create (date_00:date)<-(_183:int)(_184:int)(_184:int)
+#var date_seq := bat.new(int, date); 	# 117  (_185:str)
+    i := -375;	# 118  (i:int)<-(_187:int)
+#var i := -375; 	# 119  (_188:str)
+barrier lf_a := true;	# 120  (lf_a:bit)<-(_190:bit) jump 130
+    i := calc.+(i,1);	# 121 CALCbinaryADDintint (i:int)<-(i:int)(_184:int)
+    of_a := calc.<(i,375);	# 122 CALCcompLTintint (of_a:bit)<-(i:int)(_192:int)
+barrier mf_a := of_a;	# 123  (mf_a:bit)<-(of_a:bit) jump 129
+#while ((i :+= 1) < 375) { 	# 124  (_194:str)
+    pf_a := mtime.adddays(date_00,i);	# 125 MTIMEdate_adddays (pf_a:date)<-(date_00:date)(i:int)
+    bat.insert(date_seq,i,pf_a);	# 126 BKCinsert_bun (_196:void)<-(date_seq:bat[:int,:date])(i:int)(pf_a:date)
+#   date_seq.bat.insert(i,adddays(date_00,i)); 	# 127  (_197:str)
+    redo lf_a;	# 128  (lf_a:bit) jump 121
+exit mf_a;	# 129  (mf_a:bit)
+exit lf_a;	# 130  (lf_a:bit)
+#} 	# 131  (_198:str)
+    rf_a := bat.setColumn(date_seq,"date");	# 132 BKCsetColumn (rf_a:void)<-(date_seq:bat[:int,:date])(_200:str)
+    rf_a := bat.setColumn(date_seq,"date");	# 133 BKCsetColumn (rf_a:void)<-(date_seq:bat[:int,:date])(_200:str)
+#io.print(date_seq.bat.setColumn("date"), 	# 134  (_201:str)
+    _497 := bat.new(nil:int,nil:int);	# 135 CMDBATnew (_497:bat[:int,:int])<-(_498:int)(_498:int)
+barrier (_500,_501,_502):= bat.newIterator(date_seq);	# 136 CHPbunIterator (_500:lng)(_501:int)(_502:date)<-(date_seq:bat[:int,:date]) jump 143
+    _504 := mtime.weekofyear(_502);	# 137 MTIMEdate_extract_weekofyear (_504:int)<-(_502:date)
+    bat.insert(_497,_501,_504);	# 138 BKCinsert_bun (_505:void)<-(_497:bat[:int,:int])(_501:int)(_504:int)
+    redo (_500,_501,_502):= bat.hasMoreElements(date_seq);	# 139 CHPbunHasMoreElements (_500:lng)(_501:int)(_502:date)<-(date_seq:bat[:int,:date]) jump 137
+catch MALException:str ;	# 140  (MALException:str) jump 142
+    redo (_500,_501,_502):= bat.hasMoreElements(date_seq);	# 141 CHPbunHasMoreElements (_500:lng)(_501:int)(_502:date)<-(date_seq:bat[:int,:date]) jump 137
+exit MALException:str ;	# 142  (MALException:str)
+exit (_500,_501,_502);	# 143  (_500:lng)(_501:int)(_502:date)
+    sf_a:bat[:int,:int]  := _497;	# 144  (sf_a:bat[:int,:int])<-(_497:bat[:int,:int])
+    tf_a := bat.setColumn(sf_a,"weekofyear");	# 145 BKCsetColumn (tf_a:void)<-(sf_a:bat[:int,:int])(_204:str)
+#      [weekofyear](date_seq).bat.setColumn("weekofyear"), 	# 146  (_206:str)
+    _511 := bat.new(nil:int,nil:int);	# 147 CMDBATnew (_511:bat[:int,:int])<-(_498:int)(_498:int)
+barrier (_513,_514,_515):= bat.newIterator(date_seq);	# 148 CHPbunIterator (_513:lng)(_514:int)(_515:date)<-(date_seq:bat[:int,:date]) jump 155
+    _517 := mtime.dayofweek(_515);	# 149 MTIMEdate_extract_dayofweek (_517:int)<-(_515:date)
+    bat.insert(_511,_514,_517);	# 150 BKCinsert_bun (_518:void)<-(_511:bat[:int,:int])(_514:int)(_517:int)
+    redo (_513,_514,_515):= bat.hasMoreElements(date_seq);	# 151 CHPbunHasMoreElements (_513:lng)(_514:int)(_515:date)<-(date_seq:bat[:int,:date]) jump 149
+catch MALException:str ;	# 152  (MALException:str) jump 154
+    redo (_513,_514,_515):= bat.hasMoreElements(date_seq);	# 153 CHPbunHasMoreElements (_513:lng)(_514:int)(_515:date)<-(date_seq:bat[:int,:date]) jump 149
+exit MALException:str ;	# 154  (MALException:str)
+exit (_513,_514,_515);	# 155  (_513:lng)(_514:int)(_515:date)
+    uf_a:bat[:int,:int]  := _511;	# 156  (uf_a:bat[:int,:int])<-(_511:bat[:int,:int])
+    _524 := bat.new(nil:int,nil:str);	# 157 CMDBATnew (_524:bat[:int,:str])<-(_498:int)(_525:str)
+barrier (_527,_528,_529):= bat.newIterator(uf_a);	# 158 CHPbunIterator (_527:lng)(_528:int)(_529:int)<-(uf_a:bat[:int,:int]) jump 165
+    _531 := mtime.dayname(_529);	# 159 MTIMEday_to_str (_531:str)<-(_529:int)
+    bat.insert(_524,_528,_531);	# 160 BKCinsert_bun (_532:void)<-(_524:bat[:int,:str])(_528:int)(_531:str)
+    redo (_527,_528,_529):= bat.hasMoreElements(uf_a);	# 161 CHPbunHasMoreElements (_527:lng)(_528:int)(_529:int)<-(uf_a:bat[:int,:int]) jump 159
+catch MALException:str ;	# 162  (MALException:str) jump 164
+    redo (_527,_528,_529):= bat.hasMoreElements(uf_a);	# 163 CHPbunHasMoreElements (_527:lng)(_528:int)(_529:int)<-(uf_a:bat[:int,:int]) jump 159
+exit MALException:str ;	# 164  (MALException:str)
+exit (_527,_528,_529);	# 165  (_527:lng)(_528:int)(_529:int)
+    vf_a:bat[:int,:str]  := _524;	# 166  (vf_a:bat[:int,:str])<-(_524:bat[:int,:str])
+    wf_a := bat.setColumn(vf_a,"dayofweek");	# 167 BKCsetColumn (wf_a:void)<-(vf_a:bat[:int,:str])(_208:str)
+#      [dayname]([dayofweek](date_seq)).bat.setColumn("dayofweek"), 	# 168  (_212:str)
+    _538 := bat.new(nil:int,nil:int);	# 169 CMDBATnew (_538:bat[:int,:int])<-(_539:int)(_539:int)
+barrier (_541,_542,_543):= bat.newIterator(date_seq);	# 170 CHPbunIterator (_541:lng)(_542:int)(_543:date)<-(date_seq:bat[:int,:date]) jump 177
+    _545 := mtime.dayofweek(_543);	# 171 MTIMEdate_extract_dayofweek (_545:int)<-(_543:date)
+    bat.insert(_538,_542,_545);	# 172 BKCinsert_bun (_546:void)<-(_538:bat[:int,:int])(_542:int)(_545:int)
+    redo (_541,_542,_543):= bat.hasMoreElements(date_seq);	# 173 CHPbunHasMoreElements (_541:lng)(_542:int)(_543:date)<-(date_seq:bat[:int,:date]) jump 171
+catch MALException:str ;	# 174  (MALException:str) jump 176
+    redo (_541,_542,_543):= bat.hasMoreElements(date_seq);	# 175 CHPbunHasMoreElements (_541:lng)(_542:int)(_543:date)<-(date_seq:bat[:int,:date]) jump 171
+exit MALException:str ;	# 176  (MALException:str)
+exit (_541,_542,_543);	# 177  (_541:lng)(_542:int)(_543:date)
+    xf_a:bat[:int,:int]  := _538;	# 178  (xf_a:bat[:int,:int])<-(_538:bat[:int,:int])
+    _552 := bat.new(nil:int,nil:str);	# 179 CMDBATnew (_552:bat[:int,:str])<-(_539:int)(_525:str)
+barrier (_554,_555,_556):= bat.newIterator(xf_a);	# 180 CHPbunIterator (_554:lng)(_555:int)(_556:int)<-(xf_a:bat[:int,:int]) jump 187
+    _558 := mtime.dayname(_556);	# 181 MTIMEday_to_str (_558:str)<-(_556:int)
+    bat.insert(_552,_555,_558);	# 182 BKCinsert_bun (_559:void)<-(_552:bat[:int,:str])(_555:int)(_558:str)
+    redo (_554,_555,_556):= bat.hasMoreElements(xf_a);	# 183 CHPbunHasMoreElements (_554:lng)(_555:int)(_556:int)<-(xf_a:bat[:int,:int]) jump 181
+catch MALException:str ;	# 184  (MALException:str) jump 186
+    redo (_554,_555,_556):= bat.hasMoreElements(xf_a);	# 185 CHPbunHasMoreElements (_554:lng)(_555:int)(_556:int)<-(xf_a:bat[:int,:int]) jump 181
+exit MALException:str ;	# 186  (MALException:str)
+exit (_554,_555,_556);	# 187  (_554:lng)(_555:int)(_556:int)
+    yf_a:bat[:int,:str]  := _552;	# 188  (yf_a:bat[:int,:str])<-(_552:bat[:int,:str])
+    _565 := bat.new(nil:int,nil:int);	# 189 CMDBATnew (_565:bat[:int,:int])<-(_539:int)(_539:int)
+barrier (_567,_568,_569):= bat.newIterator(yf_a);	# 190 CHPbunIterator (_567:lng)(_568:int)(_569:str)<-(yf_a:bat[:int,:str]) jump 197
+    _571 := mtime.daynum(_569);	# 191 MTIMEday_from_str (_571:int)<-(_569:str)
+    bat.insert(_565,_568,_571);	# 192 BKCinsert_bun (_572:void)<-(_565:bat[:int,:int])(_568:int)(_571:int)
+    redo (_567,_568,_569):= bat.hasMoreElements(yf_a);	# 193 CHPbunHasMoreElements (_567:lng)(_568:int)(_569:str)<-(yf_a:bat[:int,:str]) jump 191
+catch MALException:str ;	# 194  (MALException:str) jump 196
+    redo (_567,_568,_569):= bat.hasMoreElements(yf_a);	# 195 CHPbunHasMoreElements (_567:lng)(_568:int)(_569:str)<-(yf_a:bat[:int,:str]) jump 191
+exit MALException:str ;	# 196  (MALException:str)
+exit (_567,_568,_569);	# 197  (_567:lng)(_568:int)(_569:str)
+    ag_a:bat[:int,:int]  := _565;	# 198  (ag_a:bat[:int,:int])<-(_565:bat[:int,:int])
+    bg_a := bat.setColumn(ag_a,"num");	# 199 BKCsetColumn (bg_a:void)<-(ag_a:bat[:int,:int])(_218:str)
+#      [daynum]([dayname]([dayofweek](date_seq))).bat.setColumn("num"), 	# 200  (_219:str)
+    _578 := bat.new(nil:int,nil:int);	# 201 CMDBATnew (_578:bat[:int,:int])<-(_579:int)(_579:int)
+barrier (_581,_582,_583):= bat.newIterator(date_seq);	# 202 CHPbunIterator (_581:lng)(_582:int)(_583:date)<-(date_seq:bat[:int,:date]) jump 209
+    _585 := mtime.dayofyear(_583);	# 203 MTIMEdate_extract_dayofyear (_585:int)<-(_583:date)
+    bat.insert(_578,_582,_585);	# 204 BKCinsert_bun (_586:void)<-(_578:bat[:int,:int])(_582:int)(_585:int)
+    redo (_581,_582,_583):= bat.hasMoreElements(date_seq);	# 205 CHPbunHasMoreElements (_581:lng)(_582:int)(_583:date)<-(date_seq:bat[:int,:date]) jump 203
+catch MALException:str ;	# 206  (MALException:str) jump 208
+    redo (_581,_582,_583):= bat.hasMoreElements(date_seq);	# 207 CHPbunHasMoreElements (_581:lng)(_582:int)(_583:date)<-(date_seq:bat[:int,:date]) jump 203
+exit MALException:str ;	# 208  (MALException:str)
+exit (_581,_582,_583);	# 209  (_581:lng)(_582:int)(_583:date)
+    cg_a:bat[:int,:int]  := _578;	# 210  (cg_a:bat[:int,:int])<-(_578:bat[:int,:int])
+    dg_a := bat.setColumn(cg_a,"dayofyear");	# 211 BKCsetColumn (dg_a:void)<-(cg_a:bat[:int,:int])(_221:str)
+    io.print("date_seq,sf_a,vf_a,ag_a,cg_a");	# 212 IOprint_val (_223:void)<-(_224:str)
+    eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);	# 213 IOtable (eg_a:void)<-(date_seq:bat[:int,:date])(sf_a:bat[:int,:int])(vf_a:bat[:int,:str])(ag_a:bat[:int,:int])(cg_a:bat[:int,:int])
+#      [dayofyear](date_seq).bat.setColumn("dayofyear")); 	# 214  (_226:str)
+##line 679 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 	# 215  (_227:str)
+## test the various ways top create daytimes 	# 216  (_228:str)
+    daytime_00 := mtime.daytime(23,59,59,999);	# 217 MTIMEdaytime_create (daytime_00:daytime)<-(_230:int)(_231:int)(_231:int)(_232:int)
+#var daytime_00 := mtime.daytime(23,59,59,999); 	# 218  (_233:str)
+    daytime_01 := mtime.daytime("23:59");	# 219 MTIMEdaytime_fromstr (daytime_01:daytime)<-(_235:str)
+#var daytime_01 := mtime.daytime("23:59"); 	# 220  (_236:str)
+    daytime_02 := mtime.daytime("00:00");	# 221 MTIMEdaytime_fromstr (daytime_02:daytime)<-(_238:str)
+#var daytime_02 := mtime.daytime("00:00"); 	# 222  (_239:str)
+    daytime_03 := mtime.daytime("23:59:59");	# 223 MTIMEdaytime_fromstr (daytime_03:daytime)<-(_241:str)
+#var daytime_03 := mtime.daytime("23:59:59"); 	# 224  (_242:str)
+    daytime_04 := mtime.daytime("00:00:00.000");	# 225 MTIMEdaytime_fromstr (daytime_04:daytime)<-(_244:str)
+#var daytime_04 := mtime.daytime("00:00:00.000"); 	# 226  (_245:str)
+    daytime_05 := mtime.daytime("00:00:00");	# 227 MTIMEdaytime_fromstr (daytime_05:daytime)<-(_247:str)
+#var daytime_05 := mtime.daytime("00:00:00"); 	# 228  (_248:str)
+    daytime_06 := mtime.daytime("00:00:00:001");	# 229 MTIMEdaytime_fromstr (daytime_06:daytime)<-(_250:str)
+#var daytime_06 := mtime.daytime("00:00:00:001"); 	# 230  (_251:str)
+    daytime_07 := mtime.daytime("03:49:02.999");	# 231 MTIMEdaytime_fromstr (daytime_07:daytime)<-(_253:str)
+#var daytime_07 := mtime.daytime("03:49:02.999"); 	# 232  (_254:str)
+    daytime_08 := mtime.daytime("20:48:42:999");	# 233 MTIMEdaytime_fromstr (daytime_08:daytime)<-(_256:str)
+#var daytime_08 := mtime.daytime("20:48:42:999"); 	# 234  (_257:str)
+    daytime_09 := mtime.daytime("17:53:38:999");	# 235 MTIMEdaytime_fromstr (daytime_09:daytime)<-(_259:str)
+#var daytime_09 := mtime.daytime("17:53:38:999"); 	# 236  (_260:str)
+    daytime_10 := mtime.daytime("13:15:34:999");	# 237 MTIMEdaytime_fromstr (daytime_10:daytime)<-(_262:str)
+#var daytime_10 := mtime.daytime("13:15:34:999"); 	# 238  (_263:str)
+    daytime_11 := mtime.daytime("07:34:27.999");	# 239 MTIMEdaytime_fromstr (daytime_11:daytime)<-(_265:str)
+#var daytime_11 := mtime.daytime("07:34:27.999"); 	# 240  (_266:str)
+    daytime_12 := mtime.daytime("23:59:59:999");	# 241 MTIMEdaytime_fromstr (daytime_12:daytime)<-(_268:str)
+#var daytime_12 := mtime.daytime("23:59:59:999"); 	# 242  (_269:str)
+    daytime_13 := mtime.daytime("01:00:03.999");	# 243 MTIMEdaytime_fromstr (daytime_13:daytime)<-(_271:str)
+#var daytime_13 := mtime.daytime("01:00:03.999"); 	# 244  (_272:str)
+    daytime_14 := mtime.daytime("23:59:59.999");	# 245 MTIMEdaytime_fromstr (daytime_14:daytime)<-(_274:str)
+#var daytime_14 := mtime.daytime("23:59:59.999"); 	# 246  (_275:str)
+## nil daytimes 	# 247  (_276:str)
+    daytime_15 := mtime.daytime(24,59,59,999);	# 248 MTIMEdaytime_create (daytime_15:daytime)<-(_278:int)(_279:int)(_279:int)(_280:int)
+#var daytime_15 := mtime.daytime(24,59,59,999); 	# 249  (_281:str)
+    daytime_16 := mtime.daytime(23,60,59,999);	# 250 MTIMEdaytime_create (daytime_16:daytime)<-(_283:int)(_284:int)(_279:int)(_280:int)
+#var daytime_16 := mtime.daytime(23,60,59,999); 	# 251  (_285:str)
+    daytime_17 := mtime.daytime(23,59,60,999);	# 252 MTIMEdaytime_create (daytime_17:daytime)<-(_283:int)(_279:int)(_284:int)(_280:int)
+#var daytime_17 := mtime.daytime(23,59,60,999); 	# 253  (_287:str)
+    daytime_18 := mtime.daytime(23,59,60,1000);	# 254 MTIMEdaytime_create (daytime_18:daytime)<-(_283:int)(_279:int)(_284:int)(_289:int)
+#var daytime_18 := mtime.daytime(23,59,60,1000); 	# 255  (_290:str)
+    daytime_19 := mtime.daytime("nil");	# 256 MTIMEdaytime_fromstr (daytime_19:daytime)<-(_292:str)
+#var daytime_19 := mtime.daytime("nil"); 	# 257  (_293:str)
+    daytime_bat := bat.new(:oid,:daytime);	# 258 CMDBATnew (daytime_bat:bat[:oid,:daytime])<-(_140:oid)(_295:daytime)
+#var daytime_bat := bat.new(oid,daytime); 	# 259  (_296:str)
+    bat.insert(daytime_bat,0@0,daytime_00);	# 260 BKCinsert_bun (_297:void)<-(daytime_bat:bat[:oid,:daytime])(_298:oid)(daytime_00:daytime)
+    bat.insert(daytime_bat,1@0,daytime_01);	# 261 BKCinsert_bun (_299:void)<-(daytime_bat:bat[:oid,:daytime])(_300:oid)(daytime_01:daytime)
+    bat.insert(daytime_bat,2@0,daytime_02);	# 262 BKCinsert_bun (_301:void)<-(daytime_bat:bat[:oid,:daytime])(_302:oid)(daytime_02:daytime)
+#daytime_bat.bat.insert(0@0, daytime_00).insert(1@0, daytime_01).insert(2@0, daytime_02); 	# 263  (_303:str)
+    bat.insert(daytime_bat,3@0,daytime_03);	# 264 BKCinsert_bun (_304:void)<-(daytime_bat:bat[:oid,:daytime])(_305:oid)(daytime_03:daytime)
+    bat.insert(daytime_bat,4@0,daytime_04);	# 265 BKCinsert_bun (_306:void)<-(daytime_bat:bat[:oid,:daytime])(_307:oid)(daytime_04:daytime)
+    bat.insert(daytime_bat,5@0,daytime_05);	# 266 BKCinsert_bun (_308:void)<-(daytime_bat:bat[:oid,:daytime])(_309:oid)(daytime_05:daytime)
+#daytime_bat.bat.insert(3@0, daytime_03).insert(4@0, daytime_04).insert(5@0, daytime_05); 	# 267  (_310:str)
+    bat.insert(daytime_bat,6@0,daytime_06);	# 268 BKCinsert_bun (_311:void)<-(daytime_bat:bat[:oid,:daytime])(_312:oid)(daytime_06:daytime)
+    bat.insert(daytime_bat,7@0,daytime_07);	# 269 BKCinsert_bun (_313:void)<-(daytime_bat:bat[:oid,:daytime])(_314:oid)(daytime_07:daytime)
+    bat.insert(daytime_bat,8@0,daytime_08);	# 270 BKCinsert_bun (_315:void)<-(daytime_bat:bat[:oid,:daytime])(_316:oid)(daytime_08:daytime)
+#daytime_bat.bat.insert(6@0, daytime_06).insert(7@0, daytime_07).insert(8@0, daytime_08); 	# 271  (_317:str)
+    bat.insert(daytime_bat,9@0,daytime_09);	# 272 BKCinsert_bun (_318:void)<-(daytime_bat:bat[:oid,:daytime])(_319:oid)(daytime_09:daytime)
+    bat.insert(daytime_bat,10@0,daytime_10);	# 273 BKCinsert_bun (_320:void)<-(daytime_bat:bat[:oid,:daytime])(_321:oid)(daytime_10:daytime)
+    bat.insert(daytime_bat,11@0,daytime_11);	# 274 BKCinsert_bun (_322:void)<-(daytime_bat:bat[:oid,:daytime])(_323:oid)(daytime_11:daytime)
+#daytime_bat.bat.insert(9@0, daytime_09).insert(10@0, daytime_10).insert(11@0, daytime_11); 	# 275  (_324:str)
+    bat.insert(daytime_bat,12@0,daytime_12);	# 276 BKCinsert_bun (_325:void)<-(daytime_bat:bat[:oid,:daytime])(_326:oid)(daytime_12:daytime)
+    bat.insert(daytime_bat,13@0,daytime_13);	# 277 BKCinsert_bun (_327:void)<-(daytime_bat:bat[:oid,:daytime])(_328:oid)(daytime_13:daytime)
+    bat.insert(daytime_bat,14@0,daytime_14);	# 278 BKCinsert_bun (_329:void)<-(daytime_bat:bat[:oid,:daytime])(_330:oid)(daytime_14:daytime)
+#daytime_bat.bat.insert(12@0, daytime_12).insert(13@0, daytime_13).insert(14@0, daytime_14); 	# 279  (_331:str)
+    bat.insert(daytime_bat,15@0,daytime_15);	# 280 BKCinsert_bun (_332:void)<-(daytime_bat:bat[:oid,:daytime])(_333:oid)(daytime_15:daytime)
+    bat.insert(daytime_bat,16@0,daytime_16);	# 281 BKCinsert_bun (_334:void)<-(daytime_bat:bat[:oid,:daytime])(_335:oid)(daytime_16:daytime)
+    bat.insert(daytime_bat,17@0,daytime_17);	# 282 BKCinsert_bun (_336:void)<-(daytime_bat:bat[:oid,:daytime])(_337:oid)(daytime_17:daytime)
+#daytime_bat.bat.insert(15@0, daytime_15).insert(16@0, daytime_16).insert(17@0, daytime_17); 	# 283  (_338:str)
+    bat.insert(daytime_bat,18@0,daytime_18);	# 284 BKCinsert_bun (_339:void)<-(daytime_bat:bat[:oid,:daytime])(_340:oid)(daytime_18:daytime)
+    bat.insert(daytime_bat,19@0,daytime_19);	# 285 BKCinsert_bun (_341:void)<-(daytime_bat:bat[:oid,:daytime])(_342:oid)(daytime_19:daytime)
+#daytime_bat.bat.insert(18@0, daytime_18).insert(19@0, daytime_19); 	# 286  (_343:str)
+    bat.setColumn(daytime_bat,"daytime");	# 287 BKCsetColumn (_344:void)<-(daytime_bat:bat[:oid,:daytime])(_345:str)
+#io.print(daytime_bat.bat.setColumn("daytime"), 	# 288  (_346:str)
+    _592 := bat.new(nil:oid,nil:int);	# 289 CMDBATnew (_592:bat[:oid,:int])<-(_593:oid)(_579:int)
+barrier (_595,_596,_597):= bat.newIterator(daytime_bat);	# 290 CHPbunIterator (_595:lng)(_596:oid)(_597:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 297
+    _599 := mtime.hours(_597);	# 291 MTIMEdaytime_extract_hours (_599:int)<-(_597:daytime)
+    bat.insert(_592,_596,_599);	# 292 BKCinsert_bun (_600:void)<-(_592:bat[:oid,:int])(_596:oid)(_599:int)
+    redo (_595,_596,_597):= bat.hasMoreElements(daytime_bat);	# 293 CHPbunHasMoreElements (_595:lng)(_596:oid)(_597:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 291
+catch MALException:str ;	# 294  (MALException:str) jump 296
+    redo (_595,_596,_597):= bat.hasMoreElements(daytime_bat);	# 295 CHPbunHasMoreElements (_595:lng)(_596:oid)(_597:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 291
+exit MALException:str ;	# 296  (MALException:str)
+exit (_595,_596,_597);	# 297  (_595:lng)(_596:oid)(_597:daytime)
+    bh_a:bat[:oid,:int]  := _592;	# 298  (bh_a:bat[:oid,:int])<-(_592:bat[:oid,:int])
+    bat.setColumn(bh_a,"hours");	# 299 BKCsetColumn (_350:void)<-(bh_a:bat[:oid,:int])(_349:str)
+#      [hours](daytime_bat).bat.setColumn("hours"), 	# 300  (_351:str)
+    _606 := bat.new(nil:oid,nil:int);	# 301 CMDBATnew (_606:bat[:oid,:int])<-(_593:oid)(_579:int)
+barrier (_608,_609,_610):= bat.newIterator(daytime_bat);	# 302 CHPbunIterator (_608:lng)(_609:oid)(_610:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 309
+    _612 := mtime.minutes(_610);	# 303 MTIMEdaytime_extract_minutes (_612:int)<-(_610:daytime)
+    bat.insert(_606,_609,_612);	# 304 BKCinsert_bun (_613:void)<-(_606:bat[:oid,:int])(_609:oid)(_612:int)
+    redo (_608,_609,_610):= bat.hasMoreElements(daytime_bat);	# 305 CHPbunHasMoreElements (_608:lng)(_609:oid)(_610:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 303
+catch MALException:str ;	# 306  (MALException:str) jump 308
+    redo (_608,_609,_610):= bat.hasMoreElements(daytime_bat);	# 307 CHPbunHasMoreElements (_608:lng)(_609:oid)(_610:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 303
+exit MALException:str ;	# 308  (MALException:str)
+exit (_608,_609,_610);	# 309  (_608:lng)(_609:oid)(_610:daytime)
+    dh_a:bat[:oid,:int]  := _606;	# 310  (dh_a:bat[:oid,:int])<-(_606:bat[:oid,:int])
+    bat.setColumn(dh_a,"minutes");	# 311 BKCsetColumn (_354:void)<-(dh_a:bat[:oid,:int])(_353:str)
+#      [minutes](daytime_bat).bat.setColumn("minutes"), 	# 312  (_355:str)
+    _619 := bat.new(nil:oid,nil:int);	# 313 CMDBATnew (_619:bat[:oid,:int])<-(_593:oid)(_620:int)
+barrier (_622,_623,_624):= bat.newIterator(daytime_bat);	# 314 CHPbunIterator (_622:lng)(_623:oid)(_624:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 321
+    _626 := mtime.seconds(_624);	# 315 MTIMEdaytime_extract_seconds (_626:int)<-(_624:daytime)
+    bat.insert(_619,_623,_626);	# 316 BKCinsert_bun (_627:void)<-(_619:bat[:oid,:int])(_623:oid)(_626:int)
+    redo (_622,_623,_624):= bat.hasMoreElements(daytime_bat);	# 317 CHPbunHasMoreElements (_622:lng)(_623:oid)(_624:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 315
+catch MALException:str ;	# 318  (MALException:str) jump 320
+    redo (_622,_623,_624):= bat.hasMoreElements(daytime_bat);	# 319 CHPbunHasMoreElements (_622:lng)(_623:oid)(_624:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 315
+exit MALException:str ;	# 320  (MALException:str)
+exit (_622,_623,_624);	# 321  (_622:lng)(_623:oid)(_624:daytime)
+    fh_a:bat[:oid,:int]  := _619;	# 322  (fh_a:bat[:oid,:int])<-(_619:bat[:oid,:int])
+    bat.setColumn(fh_a,"seconds");	# 323 BKCsetColumn (_358:void)<-(fh_a:bat[:oid,:int])(_357:str)
+#      [seconds](daytime_bat).bat.setColumn("seconds"), 	# 324  (_359:str)
+    _633 := bat.new(nil:oid,nil:int);	# 325 CMDBATnew (_633:bat[:oid,:int])<-(_634:oid)(_620:int)
+barrier (_636,_637,_638):= bat.newIterator(daytime_bat);	# 326 CHPbunIterator (_636:lng)(_637:oid)(_638:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 333
+    _640 := mtime.milliseconds(_638);	# 327 MTIMEdaytime_extract_milliseconds (_640:int)<-(_638:daytime)
+    bat.insert(_633,_637,_640);	# 328 BKCinsert_bun (_641:void)<-(_633:bat[:oid,:int])(_637:oid)(_640:int)
+    redo (_636,_637,_638):= bat.hasMoreElements(daytime_bat);	# 329 CHPbunHasMoreElements (_636:lng)(_637:oid)(_638:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 327
+catch MALException:str ;	# 330  (MALException:str) jump 332
+    redo (_636,_637,_638):= bat.hasMoreElements(daytime_bat);	# 331 CHPbunHasMoreElements (_636:lng)(_637:oid)(_638:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 327
+exit MALException:str ;	# 332  (MALException:str)
+exit (_636,_637,_638);	# 333  (_636:lng)(_637:oid)(_638:daytime)
+    hh_a:bat[:oid,:int]  := _633;	# 334  (hh_a:bat[:oid,:int])<-(_633:bat[:oid,:int])
+    bat.setColumn(hh_a,"milliseconds");	# 335 BKCsetColumn (_362:void)<-(hh_a:bat[:oid,:int])(_361:str)
+    io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");	# 336 IOprint_val (_363:void)<-(_364:str)
+    jh_a := io.print(daytime_bat,bh_a,dh_a,fh_a,hh_a);	# 337 IOtable (jh_a:void)<-(daytime_bat:bat[:oid,:daytime])(bh_a:bat[:oid,:int])(dh_a:bat[:oid,:int])(fh_a:bat[:oid,:int])(hh_a:bat[:oid,:int])
+#      [milliseconds](daytime_bat).bat.setColumn("milliseconds")); 	# 338  (_366:str)
+    date_00 := mtime.date(2000,1,1);	# 339 MTIMEdate_create (date_00:date)<-(_367:int)(_368:int)(_368:int)
+#var date_00 := date(2000,01,01); 	# 340  (_369:str)
+    date_01 := mtime.date("5000-JAN-01");	# 341 MTIMEdate_fromstr (date_01:date)<-(_371:str)
+#var date_01 := date("5000-JAN-01"); 	# 342  (_372:str)
+    date_02 := mtime.date("1968-FEBR-29");	# 343 MTIMEdate_fromstr (date_02:date)<-(_374:str)
+#var date_02 := date("1968-FEBR-29"); 	# 344  (_375:str)
+    date_03 := mtime.date("1-MARCH-01");	# 345 MTIMEdate_fromstr (date_03:date)<-(_377:str)
+#var date_03 := date("1-MARCH-01"); 	# 346  (_378:str)
+    date_04 := mtime.date("-5867411-JAN-1");	# 347 MTIMEdate_fromstr (date_04:date)<-(_380:str)
+#var date_04 := date("-5867411-JAN-1"); 	# 348  (_381:str)
+    date_05 := mtime.date("-768/octobe/01");	# 349 MTIMEdate_fromstr (date_05:date)<-(_383:str)
+#var date_05 := date("-768/octobe/01"); 	# 350  (_384:str)
+    date_06 := mtime.date("5000\\novembe\\01");	# 351 MTIMEdate_fromstr (date_06:date)<-(_386:str)
+#var date_06 := date("5000\\novembe\\01"); 	# 352  (_387:str)
+    date_07 := mtime.date("-1999/jun/01");	# 353 MTIMEdate_fromstr (date_07:date)<-(_389:str)
+#var date_07 := date("-1999/jun/01"); 	# 354  (_390:str)
+    date_08 := mtime.date("2000-jul-14");	# 355 MTIMEdate_fromstr (date_08:date)<-(_392:str)
+#var date_08 := date("2000-jul-14"); 	# 356  (_393:str)
+    date_09 := mtime.date("1999-sept-01");	# 357 MTIMEdate_fromstr (date_09:date)<-(_395:str)
+#var date_09 := date("1999-sept-01"); 	# 358  (_396:str)
+    date_10 := mtime.date("1998-decemBeR-01");	# 359 MTIMEdate_fromstr (date_10:date)<-(_398:str)
+#var date_10 := date("1998-decemBeR-01"); 	# 360  (_399:str)
+    date_11 := mtime.date("1953 may                01");	# 361 MTIMEdate_fromstr (date_11:date)<-(_401:str)
+#var date_11 := date("1953 may                01"); 	# 362  (_402:str)
+    date_12 := mtime.date("5867411-DEC-31");	# 363 MTIMEdate_fromstr (date_12:date)<-(_404:str)
+#var date_12 := date("5867411-DEC-31"); 	# 364  (_405:str)
+## nil dates 	# 365  (_406:str)
+    date_13 := mtime.date(1996,13,1);	# 366 MTIMEdate_create (date_13:date)<-(_408:int)(_409:int)(_410:int)
+#var date_13 := date(1996,13,1); 	# 367  (_411:str)
+    date_14 := mtime.date("999999999999999999999-01-01");	# 368 MTIMEdate_fromstr (date_14:date)<-(_413:str)
+#var date_14 := date("999999999999999999999-01-01"); 	# 369  (_414:str)
+    date_15 := mtime.date("1999-JANUARI-01");	# 370 MTIMEdate_fromstr (date_15:date)<-(_416:str)
+#var date_15 := date("1999-JANUARI-01"); 	# 371  (_417:str)
+    date_16 := mtime.date("1999-FEBR-29");	# 372 MTIMEdate_fromstr (date_16:date)<-(_419:str)
+#var date_16 := date("1999-FEBR-29"); 	# 373  (_420:str)
+    date_17 := mtime.date("-1-DECEMBER-0");	# 374 MTIMEdate_fromstr (date_17:date)<-(_422:str)
+#var date_17 := date("-1-DECEMBER-0"); 	# 375  (_423:str)
+    date_18 := mtime.date("5000\novembe31");	# 376 MTIMEdate_fromstr (date_18:date)<-(_425:str)
+#var date_18 := date("5000\novembe\31"); 	# 377  (_426:str)
+    date_19 := mtime.date("nil");	# 378 MTIMEdate_fromstr (date_19:date)<-(_428:str)
+#var date_19 := date("nil"); 	# 379  (_429:str)
+    date_20 := mtime.date("1999-sept-31");	# 380 MTIMEdate_fromstr (date_20:date)<-(_431:str)
+#var date_20 := date("1999-sept-31"); 	# 381  (_432:str)
+    date_bat := bat.new(:oid,:date);	# 382 CMDBATnew (date_bat:bat[:oid,:date])<-(_140:oid)(_181:date)
+#var date_bat := bat.new(oid,date); 	# 383  (_434:str)
+    bat.insert(date_bat,0@0,date_00);	# 384 BKCinsert_bun (_435:void)<-(date_bat:bat[:oid,:date])(_436:oid)(date_00:date)
+    bat.insert(date_bat,1@0,date_01);	# 385 BKCinsert_bun (_437:void)<-(date_bat:bat[:oid,:date])(_438:oid)(date_01:date)
+    bat.insert(date_bat,2@0,date_02);	# 386 BKCinsert_bun (_439:void)<-(date_bat:bat[:oid,:date])(_440:oid)(date_02:date)
+#date_bat.bat.insert(0@0, date_00).insert(1@0, date_01).insert(2@0, date_02); 	# 387  (_441:str)
+    bat.insert(date_bat,3@0,date_03);	# 388 BKCinsert_bun (_442:void)<-(date_bat:bat[:oid,:date])(_443:oid)(date_03:date)
+    bat.insert(date_bat,4@0,date_04);	# 389 BKCinsert_bun (_444:void)<-(date_bat:bat[:oid,:date])(_445:oid)(date_04:date)
+    bat.insert(date_bat,5@0,date_05);	# 390 BKCinsert_bun (_446:void)<-(date_bat:bat[:oid,:date])(_447:oid)(date_05:date)
+#date_bat.bat.insert(3@0, date_03).insert(4@0, date_04).insert(5@0, date_05); 	# 391  (_448:str)
+    bat.insert(date_bat,6@0,date_06);	# 392 BKCinsert_bun (_449:void)<-(date_bat:bat[:oid,:date])(_450:oid)(date_06:date)
+    bat.insert(date_bat,7@0,date_07);	# 393 BKCinsert_bun (_451:void)<-(date_bat:bat[:oid,:date])(_452:oid)(date_07:date)
+    bat.insert(date_bat,8@0,date_08);	# 394 BKCinsert_bun (_453:void)<-(date_bat:bat[:oid,:date])(_454:oid)(date_08:date)
+#date_bat.bat.insert(6@0, date_06).insert(7@0, date_07).insert(8@0, date_08); 	# 395  (_455:str)
+    bat.insert(date_bat,9@0,date_09);	# 396 BKCinsert_bun (_456:void)<-(date_bat:bat[:oid,:date])(_457:oid)(date_09:date)
+    bat.insert(date_bat,10@0,date_10);	# 397 BKCinsert_bun (_458:void)<-(date_bat:bat[:oid,:date])(_459:oid)(date_10:date)
+    bat.insert(date_bat,11@0,date_11);	# 398 BKCinsert_bun (_460:void)<-(date_bat:bat[:oid,:date])(_461:oid)(date_11:date)
+#date_bat.bat.insert(9@0, date_09).insert(10@0, date_10).insert(11@0, date_11); 	# 399  (_462:str)
+    bat.insert(date_bat,12@0,date_12);	# 400 BKCinsert_bun (_463:void)<-(date_bat:bat[:oid,:date])(_464:oid)(date_12:date)
+    bat.insert(date_bat,13@0,date_13);	# 401 BKCinsert_bun (_465:void)<-(date_bat:bat[:oid,:date])(_466:oid)(date_13:date)
+    bat.insert(date_bat,14@0,date_14);	# 402 BKCinsert_bun (_467:void)<-(date_bat:bat[:oid,:date])(_468:oid)(date_14:date)
+#date_bat.bat.insert(12@0, date_12).insert(13@0, date_13).insert(14@0, date_14); 	# 403  (_469:str)
+    bat.insert(date_bat,15@0,date_15);	# 404 BKCinsert_bun (_470:void)<-(date_bat:bat[:oid,:date])(_471:oid)(date_15:date)
+    bat.insert(date_bat,16@0,date_16);	# 405 BKCinsert_bun (_472:void)<-(date_bat:bat[:oid,:date])(_473:oid)(date_16:date)
+    bat.insert(date_bat,17@0,date_17);	# 406 BKCinsert_bun (_474:void)<-(date_bat:bat[:oid,:date])(_475:oid)(date_17:date)
+#date_bat.bat.insert(15@0, date_15).insert(16@0, date_16).insert(17@0, date_17); 	# 407  (_476:str)
+    bat.insert(date_bat,18@0,date_18);	# 408 BKCinsert_bun (_477:void)<-(date_bat:bat[:oid,:date])(_478:oid)(date_18:date)
+    bat.insert(date_bat,19@0,date_19);	# 409 BKCinsert_bun (_479:void)<-(date_bat:bat[:oid,:date])(_480:oid)(date_19:date)
+    bat.insert(date_bat,20@0,date_20);	# 410 BKCinsert_bun (_481:void)<-(date_bat:bat[:oid,:date])(_482:oid)(date_20:date)
+#date_bat.bat.insert(18@0, date_18).insert(19@0, date_19).insert(20@0, date_20); 	# 411  (_483:str)
+## test the operations on dates 	# 412  (_484:str)
+    ne_a := bat.setColumn(date_bat,"date");	# 413 BKCsetColumn (ne_a:void)<-(date_bat:bat[:oid,:date])(_486:str)
+##line 719 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 	# 414  (_487:str)
+## create timestamps in bulk from the above bats with dates, daytimes and tzones 	# 415  (_488:str)
+# Skipped due to coercion implication 	# 416  (_489:str)
+    _647 := bat.new(nil:oid,nil:timestamp);	# 417 CMDBATnew (_647:bat[:oid,:timestamp])<-(_634:oid)(_648:timestamp)
+barrier (_650,_651,_652):= bat.newIterator(date_bat);	# 418 CHPbunIterator (_650:lng)(_651:oid)(_652:date)<-(date_bat:bat[:oid,:date]) jump 427
+    _654 := algebra.find(daytime_bat,_651);	# 419 ALGfind (_654:daytime)<-(daytime_bat:bat[:oid,:daytime])(_651:oid)
+    _656 := algebra.find(tzone_bat,_651);	# 420 ALGfind (_656:timezone)<-(tzone_bat:bat[:oid,:timezone])(_651:oid)
+    _658 := mtime.timestamp(_652,_654,_656);	# 421 MTIMEtimestamp_create (_658:timestamp)<-(_652:date)(_654:daytime)(_656:timezone)
+    bat.insert(_647,_651,_658);	# 422 BKCinsert_bun (_659:void)<-(_647:bat[:oid,:timestamp])(_651:oid)(_658:timestamp)
+    redo (_650,_651,_652):= bat.hasMoreElements(date_bat);	# 423 CHPbunHasMoreElements (_650:lng)(_651:oid)(_652:date)<-(date_bat:bat[:oid,:date]) jump 419
+catch MALException:str ;	# 424  (MALException:str) jump 426
+    redo (_650,_651,_652):= bat.hasMoreElements(date_bat);	# 425 CHPbunHasMoreElements (_650:lng)(_651:oid)(_652:date)<-(date_bat:bat[:oid,:date]) jump 419
+exit MALException:str ;	# 426  (MALException:str)
+exit (_650,_651,_652);	# 427  (_650:lng)(_651:oid)(_652:date)
+    kh_a:bat[:oid,:timestamp]  := _647;	# 428  (kh_a:bat[:oid,:timestamp])<-(_647:bat[:oid,:timestamp])
+    timestamp_bat := kh_a;	# 429  (timestamp_bat:bat[:oid,:timestamp])<-(kh_a:bat[:oid,:timestamp])
+    bat.setWriteMode(kh_a);	# 430 BKCsetWriteMode (_494:bat[:oid,:timestamp])<-(kh_a:bat[:oid,:timestamp])
+#var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE); 	# 431  (_495:str)
+## KILL 	# 432  (_496:str)
+end main;	# 433  
+[ "date_seq,sf_a,vf_a,ag_a,cg_a" ]
+#---------------------------------------------------------------------------------#
+# лллл;	date		weekofyear	dayofweek	num	dayofyear	  # name
+# int	date		int		str		int	int		  # type
+#---------------------------------------------------------------------------------#
+[ -374,	  1998-12-23,	  51,		  "wednesday",	  4,	  357		  ]
+[ -373,	  1998-12-24,	  51,		  "thursday",	  5,	  358		  ]
+[ -372,	  1998-12-25,	  51,		  "friday",	  6,	  359		  ]
+[ -371,	  1998-12-26,	  51,		  "saturday",	  7,	  360		  ]
+[ -370,	  1998-12-27,	  52,		  "sunday",	  1,	  361		  ]
+[ -369,	  1998-12-28,	  52,		  "monday",	  2,	  362		  ]
+[ -368,	  1998-12-29,	  52,		  "tuesday",	  3,	  363		  ]
+[ -367,	  1998-12-30,	  52,		  "wednesday",	  4,	  364		  ]
+[ -366,	  1998-12-31,	  52,		  "thursday",	  5,	  365		  ]
+[ -365,	  1999-01-01,	  52,		  "friday",	  6,	  1		  ]
+[ -364,	  1999-01-02,	  52,		  "saturday",	  7,	  2		  ]
+[ -363,	  1999-01-03,	  1,		  "sunday",	  1,	  3		  ]
+[ -362,	  1999-01-04,	  1,		  "monday",	  2,	  4		  ]
+[ -361,	  1999-01-05,	  1,		  "tuesday",	  3,	  5		  ]
+[ -360,	  1999-01-06,	  1,		  "wednesday",	  4,	  6		  ]
+[ -359,	  1999-01-07,	  1,		  "thursday",	  5,	  7		  ]
+[ -358,	  1999-01-08,	  1,		  "friday",	  6,	  8		  ]
+[ -357,	  1999-01-09,	  1,		  "saturday",	  7,	  9		  ]
+[ -356,	  1999-01-10,	  2,		  "sunday",	  1,	  10		  ]
+[ -355,	  1999-01-11,	  2,		  "monday",	  2,	  11		  ]
+[ -354,	  1999-01-12,	  2,		  "tuesday",	  3,	  12		  ]
+[ -353,	  1999-01-13,	  2,		  "wednesday",	  4,	  13		  ]
+[ -352,	  1999-01-14,	  2,		  "thursday",	  5,	  14		  ]
+[ -351,	  1999-01-15,	  2,		  "friday",	  6,	  15		  ]
+[ -350,	  1999-01-16,	  2,		  "saturday",	  7,	  16		  ]
+[ -349,	  1999-01-17,	  3,		  "sunday",	  1,	  17		  ]
+[ -348,	  1999-01-18,	  3,		  "monday",	  2,	  18		  ]
+[ -347,	  1999-01-19,	  3,		  "tuesday",	  3,	  19		  ]
+[ -346,	  1999-01-20,	  3,		  "wednesday",	  4,	  20		  ]
+[ -345,	  1999-01-21,	  3,		  "thursday",	  5,	  21		  ]
+[ -344,	  1999-01-22,	  3,		  "friday",	  6,	  22		  ]
+[ -343,	  1999-01-23,	  3,		  "saturday",	  7,	  23		  ]
+[ -342,	  1999-01-24,	  4,		  "sunday",	  1,	  24		  ]
+[ -341,	  1999-01-25,	  4,		  "monday",	  2,	  25		  ]
+[ -340,	  1999-01-26,	  4,		  "tuesday",	  3,	  26		  ]
+[ -339,	  1999-01-27,	  4,		  "wednesday",	  4,	  27		  ]
+[ -338,	  1999-01-28,	  4,		  "thursday",	  5,	  28		  ]
+[ -337,	  1999-01-29,	  4,		  "friday",	  6,	  29		  ]
+[ -336,	  1999-01-30,	  4,		  "saturday",	  7,	  30		  ]
+[ -335,	  1999-01-31,	  5,		  "sunday",	  1,	  31		  ]
+[ -334,	  1999-02-01,	  5,		  "monday",	  2,	  32		  ]
+[ -333,	  1999-02-02,	  5,		  "tuesday",	  3,	  33		  ]
+[ -332,	  1999-02-03,	  5,		  "wednesday",	  4,	  34		  ]
+[ -331,	  1999-02-04,	  5,		  "thursday",	  5,	  35		  ]
+[ -330,	  1999-02-05,	  5,		  "friday",	  6,	  36		  ]
+[ -329,	  1999-02-06,	  5,		  "saturday",	  7,	  37		  ]
+[ -328,	  1999-02-07,	  6,		  "sunday",	  1,	  38		  ]
+[ -327,	  1999-02-08,	  6,		  "monday",	  2,	  39		  ]
+[ -326,	  1999-02-09,	  6,		  "tuesday",	  3,	  40		  ]
+[ -325,	  1999-02-10,	  6,		  "wednesday",	  4,	  41		  ]
+[ -324,	  1999-02-11,	  6,		  "thursday",	  5,	  42		  ]
+[ -323,	  1999-02-12,	  6,		  "friday",	  6,	  43		  ]
+[ -322,	  1999-02-13,	  6,		  "saturday",	  7,	  44		  ]
+[ -321,	  1999-02-14,	  7,		  "sunday",	  1,	  45		  ]
+[ -320,	  1999-02-15,	  7,		  "monday",	  2,	  46		  ]
+[ -319,	  1999-02-16,	  7,		  "tuesday",	  3,	  47		  ]
+[ -318,	  1999-02-17,	  7,		  "wednesday",	  4,	  48		  ]
+[ -317,	  1999-02-18,	  7,		  "thursday",	  5,	  49		  ]
+[ -316,	  1999-02-19,	  7,		  "friday",	  6,	  50		  ]
+[ -315,	  1999-02-20,	  7,		  "saturday",	  7,	  51		  ]
+[ -314,	  1999-02-21,	  8,		  "sunday",	  1,	  52		  ]
+[ -313,	  1999-02-22,	  8,		  "monday",	  2,	  53		  ]
+[ -312,	  1999-02-23,	  8,		  "tuesday",	  3,	  54		  ]
+[ -311,	  1999-02-24,	  8,		  "wednesday",	  4,	  55		  ]
+[ -310,	  1999-02-25,	  8,		  "thursday",	  5,	  56		  ]
+[ -309,	  1999-02-26,	  8,		  "friday",	  6,	  57		  ]
+[ -308,	  1999-02-27,	  8,		  "saturday",	  7,	  58		  ]
+[ -307,	  1999-02-28,	  9,		  "sunday",	  1,	  59		  ]
+[ -306,	  1999-03-01,	  9,		  "monday",	  2,	  60		  ]
+[ -305,	  1999-03-02,	  9,		  "tuesday",	  3,	  61		  ]
+[ -304,	  1999-03-03,	  9,		  "wednesday",	  4,	  62		  ]
+[ -303,	  1999-03-04,	  9,		  "thursday",	  5,	  63		  ]
+[ -302,	  1999-03-05,	  9,		  "friday",	  6,	  64		  ]
+[ -301,	  1999-03-06,	  9,		  "saturday",	  7,	  65		  ]
+[ -300,	  1999-03-07,	  10,		  "sunday",	  1,	  66		  ]
+[ -299,	  1999-03-08,	  10,		  "monday",	  2,	  67		  ]
+[ -298,	  1999-03-09,	  10,		  "tuesday",	  3,	  68		  ]
+[ -297,	  1999-03-10,	  10,		  "wednesday",	  4,	  69		  ]
+[ -296,	  1999-03-11,	  10,		  "thursday",	  5,	  70		  ]
+[ -295,	  1999-03-12,	  10,		  "friday",	  6,	  71		  ]
+[ -294,	  1999-03-13,	  10,		  "saturday",	  7,	  72		  ]
+[ -293,	  1999-03-14,	  11,		  "sunday",	  1,	  73		  ]
+[ -292,	  1999-03-15,	  11,		  "monday",	  2,	  74		  ]
+[ -291,	  1999-03-16,	  11,		  "tuesday",	  3,	  75		  ]
+[ -290,	  1999-03-17,	  11,		  "wednesday",	  4,	  76		  ]
+[ -289,	  1999-03-18,	  11,		  "thursday",	  5,	  77		  ]
+[ -288,	  1999-03-19,	  11,		  "friday",	  6,	  78		  ]
+[ -287,	  1999-03-20,	  11,		  "saturday",	  7,	  79		  ]
+[ -286,	  1999-03-21,	  12,		  "sunday",	  1,	  80		  ]
+[ -285,	  1999-03-22,	  12,		  "monday",	  2,	  81		  ]
+[ -284,	  1999-03-23,	  12,		  "tuesday",	  3,	  82		  ]
+[ -283,	  1999-03-24,	  12,		  "wednesday",	  4,	  83		  ]
+[ -282,	  1999-03-25,	  12,		  "thursday",	  5,	  84		  ]
+[ -281,	  1999-03-26,	  12,		  "friday",	  6,	  85		  ]
+[ -280,	  1999-03-27,	  12,		  "saturday",	  7,	  86		  ]
+[ -279,	  1999-03-28,	  13,		  "sunday",	  1,	  87		  ]
+[ -278,	  1999-03-29,	  13,		  "monday",	  2,	  88		  ]
+[ -277,	  1999-03-30,	  13,		  "tuesday",	  3,	  89		  ]
+[ -276,	  1999-03-31,	  13,		  "wednesday",	  4,	  90		  ]
+[ -275,	  1999-04-01,	  13,		  "thursday",	  5,	  91		  ]
+[ -274,	  1999-04-02,	  13,		  "friday",	  6,	  92		  ]
+[ -273,	  1999-04-03,	  13,		  "saturday",	  7,	  93		  ]
+[ -272,	  1999-04-04,	  14,		  "sunday",	  1,	  94		  ]
+[ -271,	  1999-04-05,	  14,		  "monday",	  2,	  95		  ]
+[ -270,	  1999-04-06,	  14,		  "tuesday",	  3,	  96		  ]
+[ -269,	  1999-04-07,	  14,		  "wednesday",	  4,	  97		  ]
+[ -268,	  1999-04-08,	  14,		  "thursday",	  5,	  98		  ]
+[ -267,	  1999-04-09,	  14,		  "friday",	  6,	  99		  ]
+[ -266,	  1999-04-10,	  14,		  "saturday",	  7,	  100		  ]
+[ -265,	  1999-04-11,	  15,		  "sunday",	  1,	  101		  ]
+[ -264,	  1999-04-12,	  15,		  "monday",	  2,	  102		  ]
+[ -263,	  1999-04-13,	  15,		  "tuesday",	  3,	  103		  ]
+[ -262,	  1999-04-14,	  15,		  "wednesday",	  4,	  104		  ]
+[ -261,	  1999-04-15,	  15,		  "thursday",	  5,	  105		  ]
+[ -260,	  1999-04-16,	  15,		  "friday",	  6,	  106		  ]
+[ -259,	  1999-04-17,	  15,		  "saturday",	  7,	  107		  ]
+[ -258,	  1999-04-18,	  16,		  "sunday",	  1,	  108		  ]
+[ -257,	  1999-04-19,	  16,		  "monday",	  2,	  109		  ]
+[ -256,	  1999-04-20,	  16,		  "tuesday",	  3,	  110		  ]
+[ -255,	  1999-04-21,	  16,		  "wednesday",	  4,	  111		  ]
+[ -254,	  1999-04-22,	  16,		  "thursday",	  5,	  112		  ]
+[ -253,	  1999-04-23,	  16,		  "friday",	  6,	  113		  ]
+[ -252,	  1999-04-24,	  16,		  "saturday",	  7,	  114		  ]
+[ -251,	  1999-04-25,	  17,		  "sunday",	  1,	  115		  ]
+[ -250,	  1999-04-26,	  17,		  "monday",	  2,	  116		  ]
+[ -249,	  1999-04-27,	  17,		  "tuesday",	  3,	  117		  ]
+[ -248,	  1999-04-28,	  17,		  "wednesday",	  4,	  118		  ]
+[ -247,	  1999-04-29,	  17,		  "thursday",	  5,	  119		  ]
+[ -246,	  1999-04-30,	  17,		  "friday",	  6,	  120		  ]
+[ -245,	  1999-05-01,	  17,		  "saturday",	  7,	  121		  ]
+[ -244,	  1999-05-02,	  18,		  "sunday",	  1,	  122		  ]
+[ -243,	  1999-05-03,	  18,		  "monday",	  2,	  123		  ]
+[ -242,	  1999-05-04,	  18,		  "tuesday",	  3,	  124		  ]
+[ -241,	  1999-05-05,	  18,		  "wednesday",	  4,	  125		  ]
+[ -240,	  1999-05-06,	  18,		  "thursday",	  5,	  126		  ]
+[ -239,	  1999-05-07,	  18,		  "friday",	  6,	  127		  ]
+[ -238,	  1999-05-08,	  18,		  "saturday",	  7,	  128		  ]
+[ -237,	  1999-05-09,	  19,		  "sunday",	  1,	  129		  ]
+[ -236,	  1999-05-10,	  19,		  "monday",	  2,	  130		  ]
+[ -235,	  1999-05-11,	  19,		  "tuesday",	  3,	  131		  ]
+[ -234,	  1999-05-12,	  19,		  "wednesday",	  4,	  132		  ]
+[ -233,	  1999-05-13,	  19,		  "thursday",	  5,	  133		  ]
+[ -232,	  1999-05-14,	  19,		  "friday",	  6,	  134		  ]
+[ -231,	  1999-05-15,	  19,		  "saturday",	  7,	  135		  ]
+[ -230,	  1999-05-16,	  20,		  "sunday",	  1,	  136		  ]
+[ -229,	  1999-05-17,	  20,		  "monday",	  2,	  137		  ]
+[ -228,	  1999-05-18,	  20,		  "tuesday",	  3,	  138		  ]
+[ -227,	  1999-05-19,	  20,		  "wednesday",	  4,	  139		  ]
+[ -226,	  1999-05-20,	  20,		  "thursday",	  5,	  140		  ]
+[ -225,	  1999-05-21,	  20,		  "friday",	  6,	  141		  ]
+[ -224,	  1999-05-22,	  20,		  "saturday",	  7,	  142		  ]
+[ -223,	  1999-05-23,	  21,		  "sunday",	  1,	  143		  ]
+[ -222,	  1999-05-24,	  21,		  "monday",	  2,	  144		  ]
+[ -221,	  1999-05-25,	  21,		  "tuesday",	  3,	  145		  ]
+[ -220,	  1999-05-26,	  21,		  "wednesday",	  4,	  146		  ]
+[ -219,	  1999-05-27,	  21,		  "thursday",	  5,	  147		  ]
+[ -218,	  1999-05-28,	  21,		  "friday",	  6,	  148		  ]
+[ -217,	  1999-05-29,	  21,		  "saturday",	  7,	  149		  ]
+[ -216,	  1999-05-30,	  22,		  "sunday",	  1,	  150		  ]
+[ -215,	  1999-05-31,	  22,		  "monday",	  2,	  151		  ]
+[ -214,	  1999-06-01,	  22,		  "tuesday",	  3,	  152		  ]
+[ -213,	  1999-06-02,	  22,		  "wednesday",	  4,	  153		  ]
+[ -212,	  1999-06-03,	  22,		  "thursday",	  5,	  154		  ]
+[ -211,	  1999-06-04,	  22,		  "friday",	  6,	  155		  ]
+[ -210,	  1999-06-05,	  22,		  "saturday",	  7,	  156		  ]
+[ -209,	  1999-06-06,	  23,		  "sunday",	  1,	  157		  ]
+[ -208,	  1999-06-07,	  23,		  "monday",	  2,	  158		  ]
+[ -207,	  1999-06-08,	  23,		  "tuesday",	  3,	  159		  ]
+[ -206,	  1999-06-09,	  23,		  "wednesday",	  4,	  160		  ]
+[ -205,	  1999-06-10,	  23,		  "thursday",	  5,	  161		  ]
+[ -204,	  1999-06-11,	  23,		  "friday",	  6,	  162		  ]
+[ -203,	  1999-06-12,	  23,		  "saturday",	  7,	  163		  ]
+[ -202,	  1999-06-13,	  24,		  "sunday",	  1,	  164		  ]
+[ -201,	  1999-06-14,	  24,		  "monday",	  2,	  165		  ]
+[ -200,	  1999-06-15,	  24,		  "tuesday",	  3,	  166		  ]
+[ -199,	  1999-06-16,	  24,		  "wednesday",	  4,	  167		  ]
+[ -198,	  1999-06-17,	  24,		  "thursday",	  5,	  168		  ]
+[ -197,	  1999-06-18,	  24,		  "friday",	  6,	  169		  ]
+[ -196,	  1999-06-19,	  24,		  "saturday",	  7,	  170		  ]
+[ -195,	  1999-06-20,	  25,		  "sunday",	  1,	  171		  ]
+[ -194,	  1999-06-21,	  25,		  "monday",	  2,	  172		  ]
+[ -193,	  1999-06-22,	  25,		  "tuesday",	  3,	  173		  ]
+[ -192,	  1999-06-23,	  25,		  "wednesday",	  4,	  174		  ]
+[ -191,	  1999-06-24,	  25,		  "thursday",	  5,	  175		  ]
+[ -190,	  1999-06-25,	  25,		  "friday",	  6,	  176		  ]
+[ -189,	  1999-06-26,	  25,		  "saturday",	  7,	  177		  ]
+[ -188,	  1999-06-27,	  26,		  "sunday",	  1,	  178		  ]
+[ -187,	  1999-06-28,	  26,		  "monday",	  2,	  179		  ]
+[ -186,	  1999-06-29,	  26,		  "tuesday",	  3,	  180		  ]
+[ -185,	  1999-06-30,	  26,		  "wednesday",	  4,	  181		  ]
+[ -184,	  1999-07-01,	  26,		  "thursday",	  5,	  182		  ]
+[ -183,	  1999-07-02,	  26,		  "friday",	  6,	  183		  ]
+[ -182,	  1999-07-03,	  26,		  "saturday",	  7,	  184		  ]
+[ -181,	  1999-07-04,	  27,		  "sunday",	  1,	  185		  ]
+[ -180,	  1999-07-05,	  27,		  "monday",	  2,	  186		  ]
+[ -179,	  1999-07-06,	  27,		  "tuesday",	  3,	  187		  ]
+[ -178,	  1999-07-07,	  27,		  "wednesday",	  4,	  188		  ]
+[ -177,	  1999-07-08,	  27,		  "thursday",	  5,	  189		  ]
+[ -176,	  1999-07-09,	  27,		  "friday",	  6,	  190		  ]
+[ -175,	  1999-07-10,	  27,		  "saturday",	  7,	  191		  ]
+[ -174,	  1999-07-11,	  28,		  "sunday",	  1,	  192		  ]
+[ -173,	  1999-07-12,	  28,		  "monday",	  2,	  193		  ]
+[ -172,	  1999-07-13,	  28,		  "tuesday",	  3,	  194		  ]
+[ -171,	  1999-07-14,	  28,		  "wednesday",	  4,	  195		  ]
+[ -170,	  1999-07-15,	  28,		  "thursday",	  5,	  196		  ]
+[ -169,	  1999-07-16,	  28,		  "friday",	  6,	  197		  ]
+[ -168,	  1999-07-17,	  28,		  "saturday",	  7,	  198		  ]
+[ -167,	  1999-07-18,	  29,		  "sunday",	  1,	  199		  ]
+[ -166,	  1999-07-19,	  29,		  "monday",	  2,	  200		  ]
+[ -165,	  1999-07-20,	  29,		  "tuesday",	  3,	  201		  ]
+[ -164,	  1999-07-21,	  29,		  "wednesday",	  4,	  202		  ]
+[ -163,	  1999-07-22,	  29,		  "thursday",	  5,	  203		  ]
+[ -162,	  1999-07-23,	  29,		  "friday",	  6,	  204		  ]
+[ -161,	  1999-07-24,	  29,		  "saturday",	  7,	  205		  ]
+[ -160,	  1999-07-25,	  30,		  "sunday",	  1,	  206		  ]
+[ -159,	  1999-07-26,	  30,		  "monday",	  2,	  207		  ]
+[ -158,	  1999-07-27,	  30,		  "tuesday",	  3,	  208		  ]
+[ -157,	  1999-07-28,	  30,		  "wednesday",	  4,	  209		  ]
+[ -156,	  1999-07-29,	  30,		  "thursday",	  5,	  210		  ]
+[ -155,	  1999-07-30,	  30,		  "friday",	  6,	  211		  ]
+[ -154,	  1999-07-31,	  30,		  "saturday",	  7,	  212		  ]
+[ -153,	  1999-08-01,	  31,		  "sunday",	  1,	  213		  ]
+[ -152,	  1999-08-02,	  31,		  "monday",	  2,	  214		  ]
+[ -151,	  1999-08-03,	  31,		  "tuesday",	  3,	  215		  ]
+[ -150,	  1999-08-04,	  31,		  "wednesday",	  4,	  216		  ]
+[ -149,	  1999-08-05,	  31,		  "thursday",	  5,	  217		  ]
+[ -148,	  1999-08-06,	  31,		  "friday",	  6,	  218		  ]
+[ -147,	  1999-08-07,	  31,		  "saturday",	  7,	  219		  ]
+[ -146,	  1999-08-08,	  32,		  "sunday",	  1,	  220		  ]
+[ -145,	  1999-08-09,	  32,		  "monday",	  2,	  221		  ]
+[ -144,	  1999-08-10,	  32,		  "tuesday",	  3,	  222		  ]
+[ -143,	  1999-08-11,	  32,		  "wednesday",	  4,	  223		  ]
+[ -142,	  1999-08-12,	  32,		  "thursday",	  5,	  224		  ]
+[ -141,	  1999-08-13,	  32,		  "friday",	  6,	  225		  ]
+[ -140,	  1999-08-14,	  32,		  "saturday",	  7,	  226		  ]
+[ -139,	  1999-08-15,	  33,		  "sunday",	  1,	  227		  ]
+[ -138,	  1999-08-16,	  33,		  "monday",	  2,	  228		  ]
+[ -137,	  1999-08-17,	  33,		  "tuesday",	  3,	  229		  ]
+[ -136,	  1999-08-18,	  33,		  "wednesday",	  4,	  230		  ]
+[ -135,	  1999-08-19,	  33,		  "thursday",	  5,	  231		  ]
+[ -134,	  1999-08-20,	  33,		  "friday",	  6,	  232		  ]
+[ -133,	  1999-08-21,	  33,		  "saturday",	  7,	  233		  ]
+[ -132,	  1999-08-22,	  34,		  "sunday",	  1,	  234		  ]
+[ -131,	  1999-08-23,	  34,		  "monday",	  2,	  235		  ]
+[ -130,	  1999-08-24,	  34,		  "tuesday",	  3,	  236		  ]
+[ -129,	  1999-08-25,	  34,		  "wednesday",	  4,	  237		  ]
+[ -128,	  1999-08-26,	  34,		  "thursday",	  5,	  238		  ]
+[ -127,	  1999-08-27,	  34,		  "friday",	  6,	  239		  ]
+[ -126,	  1999-08-28,	  34,		  "saturday",	  7,	  240		  ]
+[ -125,	  1999-08-29,	  35,		  "sunday",	  1,	  241		  ]
+[ -124,	  1999-08-30,	  35,		  "monday",	  2,	  242		  ]
+[ -123,	  1999-08-31,	  35,		  "tuesday",	  3,	  243		  ]
+[ -122,	  1999-09-01,	  35,		  "wednesday",	  4,	  244		  ]
+[ -121,	  1999-09-02,	  35,		  "thursday",	  5,	  245		  ]
+[ -120,	  1999-09-03,	  35,		  "friday",	  6,	  246		  ]
+[ -119,	  1999-09-04,	  35,		  "saturday",	  7,	  247		  ]
+[ -118,	  1999-09-05,	  36,		  "sunday",	  1,	  248		  ]
+[ -117,	  1999-09-06,	  36,		  "monday",	  2,	  249		  ]
+[ -116,	  1999-09-07,	  36,		  "tuesday",	  3,	  250		  ]
+[ -115,	  1999-09-08,	  36,		  "wednesday",	  4,	  251		  ]
+[ -114,	  1999-09-09,	  36,		  "thursday",	  5,	  252		  ]
+[ -113,	  1999-09-10,	  36,		  "friday",	  6,	  253		  ]
+[ -112,	  1999-09-11,	  36,		  "saturday",	  7,	  254		  ]
+[ -111,	  1999-09-12,	  37,		  "sunday",	  1,	  255		  ]
+[ -110,	  1999-09-13,	  37,		  "monday",	  2,	  256		  ]
+[ -109,	  1999-09-14,	  37,		  "tuesday",	  3,	  257		  ]
+[ -108,	  1999-09-15,	  37,		  "wednesday",	  4,	  258		  ]
+[ -107,	  1999-09-16,	  37,		  "thursday",	  5,	  259		  ]
+[ -106,	  1999-09-17,	  37,		  "friday",	  6,	  260		  ]
+[ -105,	  1999-09-18,	  37,		  "saturday",	  7,	  261		  ]
+[ -104,	  1999-09-19,	  38,		  "sunday",	  1,	  262		  ]
+[ -103,	  1999-09-20,	  38,		  "monday",	  2,	  263		  ]
+[ -102,	  1999-09-21,	  38,		  "tuesday",	  3,	  264		  ]
+[ -101,	  1999-09-22,	  38,		  "wednesday",	  4,	  265		  ]
+[ -100,	  1999-09-23,	  38,		  "thursday",	  5,	  266		  ]
+[ -99,	  1999-09-24,	  38,		  "friday",	  6,	  267		  ]
+[ -98,	  1999-09-25,	  38,		  "saturday",	  7,	  268		  ]
+[ -97,	  1999-09-26,	  39,		  "sunday",	  1,	  269		  ]
+[ -96,	  1999-09-27,	  39,		  "monday",	  2,	  270		  ]
+[ -95,	  1999-09-28,	  39,		  "tuesday",	  3,	  271		  ]
+[ -94,	  1999-09-29,	  39,		  "wednesday",	  4,	  272		  ]
+[ -93,	  1999-09-30,	  39,		  "thursday",	  5,	  273		  ]
+[ -92,	  1999-10-01,	  39,		  "friday",	  6,	  274		  ]
+[ -91,	  1999-10-02,	  39,		  "saturday",	  7,	  275		  ]
+[ -90,	  1999-10-03,	  40,		  "sunday",	  1,	  276		  ]
+[ -89,	  1999-10-04,	  40,		  "monday",	  2,	  277		  ]
+[ -88,	  1999-10-05,	  40,		  "tuesday",	  3,	  278		  ]
+[ -87,	  1999-10-06,	  40,		  "wednesday",	  4,	  279		  ]
+[ -86,	  1999-10-07,	  40,		  "thursday",	  5,	  280		  ]
+[ -85,	  1999-10-08,	  40,		  "friday",	  6,	  281		  ]
+[ -84,	  1999-10-09,	  40,		  "saturday",	  7,	  282		  ]
+[ -83,	  1999-10-10,	  41,		  "sunday",	  1,	  283		  ]
+[ -82,	  1999-10-11,	  41,		  "monday",	  2,	  284		  ]
+[ -81,	  1999-10-12,	  41,		  "tuesday",	  3,	  285		  ]
+[ -80,	  1999-10-13,	  41,		  "wednesday",	  4,	  286		  ]
+[ -79,	  1999-10-14,	  41,		  "thursday",	  5,	  287		  ]
+[ -78,	  1999-10-15,	  41,		  "friday",	  6,	  288		  ]
+[ -77,	  1999-10-16,	  41,		  "saturday",	  7,	  289		  ]
+[ -76,	  1999-10-17,	  42,		  "sunday",	  1,	  290		  ]
+[ -75,	  1999-10-18,	  42,		  "monday",	  2,	  291		  ]
+[ -74,	  1999-10-19,	  42,		  "tuesday",	  3,	  292		  ]
+[ -73,	  1999-10-20,	  42,		  "wednesday",	  4,	  293		  ]
+[ -72,	  1999-10-21,	  42,		  "thursday",	  5,	  294		  ]
+[ -71,	  1999-10-22,	  42,		  "friday",	  6,	  295		  ]
+[ -70,	  1999-10-23,	  42,		  "saturday",	  7,	  296		  ]
+[ -69,	  1999-10-24,	  43,		  "sunday",	  1,	  297		  ]
+[ -68,	  1999-10-25,	  43,		  "monday",	  2,	  298		  ]
+[ -67,	  1999-10-26,	  43,		  "tuesday",	  3,	  299		  ]
+[ -66,	  1999-10-27,	  43,		  "wednesday",	  4,	  300		  ]
+[ -65,	  1999-10-28,	  43,		  "thursday",	  5,	  301		  ]
+[ -64,	  1999-10-29,	  43,		  "friday",	  6,	  302		  ]
+[ -63,	  1999-10-30,	  43,		  "saturday",	  7,	  303		  ]
+[ -62,	  1999-10-31,	  44,		  "sunday",	  1,	  304		  ]
+[ -61,	  1999-11-01,	  44,		  "monday",	  2,	  305		  ]
+[ -60,	  1999-11-02,	  44,		  "tuesday",	  3,	  306		  ]
+[ -59,	  1999-11-03,	  44,		  "wednesday",	  4,	  307		  ]
+[ -58,	  1999-11-04,	  44,		  "thursday",	  5,	  308		  ]
+[ -57,	  1999-11-05,	  44,		  "friday",	  6,	  309		  ]
+[ -56,	  1999-11-06,	  44,		  "saturday",	  7,	  310		  ]
+[ -55,	  1999-11-07,	  45,		  "sunday",	  1,	  311		  ]
+[ -54,	  1999-11-08,	  45,		  "monday",	  2,	  312		  ]
+[ -53,	  1999-11-09,	  45,		  "tuesday",	  3,	  313		  ]
+[ -52,	  1999-11-10,	  45,		  "wednesday",	  4,	  314		  ]
+[ -51,	  1999-11-11,	  45,		  "thursday",	  5,	  315		  ]
+[ -50,	  1999-11-12,	  45,		  "friday",	  6,	  316		  ]
+[ -49,	  1999-11-13,	  45,		  "saturday",	  7,	  317		  ]
+[ -48,	  1999-11-14,	  46,		  "sunday",	  1,	  318		  ]
+[ -47,	  1999-11-15,	  46,		  "monday",	  2,	  319		  ]
+[ -46,	  1999-11-16,	  46,		  "tuesday",	  3,	  320		  ]
+[ -45,	  1999-11-17,	  46,		  "wednesday",	  4,	  321		  ]
+[ -44,	  1999-11-18,	  46,		  "thursday",	  5,	  322		  ]
+[ -43,	  1999-11-19,	  46,		  "friday",	  6,	  323		  ]
+[ -42,	  1999-11-20,	  46,		  "saturday",	  7,	  324		  ]
+[ -41,	  1999-11-21,	  47,		  "sunday",	  1,	  325		  ]
+[ -40,	  1999-11-22,	  47,		  "monday",	  2,	  326		  ]
+[ -39,	  1999-11-23,	  47,		  "tuesday",	  3,	  327		  ]
+[ -38,	  1999-11-24,	  47,		  "wednesday",	  4,	  328		  ]
+[ -37,	  1999-11-25,	  47,		  "thursday",	  5,	  329		  ]
+[ -36,	  1999-11-26,	  47,		  "friday",	  6,	  330		  ]
+[ -35,	  1999-11-27,	  47,		  "saturday",	  7,	  331		  ]
+[ -34,	  1999-11-28,	  48,		  "sunday",	  1,	  332		  ]
+[ -33,	  1999-11-29,	  48,		  "monday",	  2,	  333		  ]
+[ -32,	  1999-11-30,	  48,		  "tuesday",	  3,	  334		  ]
+[ -31,	  1999-12-01,	  48,		  "wednesday",	  4,	  335		  ]
+[ -30,	  1999-12-02,	  48,		  "thursday",	  5,	  336		  ]
+[ -29,	  1999-12-03,	  48,		  "friday",	  6,	  337		  ]
+[ -28,	  1999-12-04,	  48,		  "saturday",	  7,	  338		  ]
+[ -27,	  1999-12-05,	  49,		  "sunday",	  1,	  339		  ]
+[ -26,	  1999-12-06,	  49,		  "monday",	  2,	  340		  ]
+[ -25,	  1999-12-07,	  49,		  "tuesday",	  3,	  341		  ]
+[ -24,	  1999-12-08,	  49,		  "wednesday",	  4,	  342		  ]
+[ -23,	  1999-12-09,	  49,		  "thursday",	  5,	  343		  ]
+[ -22,	  1999-12-10,	  49,		  "friday",	  6,	  344		  ]
+[ -21,	  1999-12-11,	  49,		  "saturday",	  7,	  345		  ]
+[ -20,	  1999-12-12,	  50,		  "sunday",	  1,	  346		  ]
+[ -19,	  1999-12-13,	  50,		  "monday",	  2,	  347		  ]
+[ -18,	  1999-12-14,	  50,		  "tuesday",	  3,	  348		  ]
+[ -17,	  1999-12-15,	  50,		  "wednesday",	  4,	  349		  ]
+[ -16,	  1999-12-16,	  50,		  "thursday",	  5,	  350		  ]
+[ -15,	  1999-12-17,	  50,		  "friday",	  6,	  351		  ]
+[ -14,	  1999-12-18,	  50,		  "saturday",	  7,	  352		  ]
+[ -13,	  1999-12-19,	  51,		  "sunday",	  1,	  353		  ]
+[ -12,	  1999-12-20,	  51,		  "monday",	  2,	  354		  ]
+[ -11,	  1999-12-21,	  51,		  "tuesday",	  3,	  355		  ]
+[ -10,	  1999-12-22,	  51,		  "wednesday",	  4,	  356		  ]
+[ -9,	  1999-12-23,	  51,		  "thursday",	  5,	  357		  ]
+[ -8,	  1999-12-24,	  51,		  "friday",	  6,	  358		  ]
+[ -7,	  1999-12-25,	  51,		  "saturday",	  7,	  359		  ]
+[ -6,	  1999-12-26,	  52,		  "sunday",	  1,	  360		  ]
+[ -5,	  1999-12-27,	  52,		  "monday",	  2,	  361		  ]
+[ -4,	  1999-12-28,	  52,		  "tuesday",	  3,	  362		  ]
+[ -3,	  1999-12-29,	  52,		  "wednesday",	  4,	  363		  ]
+[ -2,	  1999-12-30,	  52,		  "thursday",	  5,	  364		  ]
+[ -1,	  1999-12-31,	  52,		  "friday",	  6,	  365		  ]
+[ 0,	  2000-01-01,	  52,		  "saturday",	  7,	  1		  ]
+[ 1,	  2000-01-02,	  1,		  "sunday",	  1,	  2		  ]
+[ 2,	  2000-01-03,	  1,		  "monday",	  2,	  3		  ]
+[ 3,	  2000-01-04,	  1,		  "tuesday",	  3,	  4		  ]
+[ 4,	  2000-01-05,	  1,		  "wednesday",	  4,	  5		  ]
+[ 5,	  2000-01-06,	  1,		  "thursday",	  5,	  6		  ]
+[ 6,	  2000-01-07,	  1,		  "friday",	  6,	  7		  ]
+[ 7,	  2000-01-08,	  1,		  "saturday",	  7,	  8		  ]
+[ 8,	  2000-01-09,	  2,		  "sunday",	  1,	  9		  ]
+[ 9,	  2000-01-10,	  2,		  "monday",	  2,	  10		  ]
+[ 10,	  2000-01-11,	  2,		  "tuesday",	  3,	  11		  ]
+[ 11,	  2000-01-12,	  2,		  "wednesday",	  4,	  12		  ]
+[ 12,	  2000-01-13,	  2,		  "thursday",	  5,	  13		  ]
+[ 13,	  2000-01-14,	  2,		  "friday",	  6,	  14		  ]
+[ 14,	  2000-01-15,	  2,		  "saturday",	  7,	  15		  ]
+[ 15,	  2000-01-16,	  3,		  "sunday",	  1,	  16		  ]
+[ 16,	  2000-01-17,	  3,		  "monday",	  2,	  17		  ]
+[ 17,	  2000-01-18,	  3,		  "tuesday",	  3,	  18		  ]
+[ 18,	  2000-01-19,	  3,		  "wednesday",	  4,	  19		  ]
+[ 19,	  2000-01-20,	  3,		  "thursday",	  5,	  20		  ]
+[ 20,	  2000-01-21,	  3,		  "friday",	  6,	  21		  ]
+[ 21,	  2000-01-22,	  3,		  "saturday",	  7,	  22		  ]
+[ 22,	  2000-01-23,	  4,		  "sunday",	  1,	  23		  ]
+[ 23,	  2000-01-24,	  4,		  "monday",	  2,	  24		  ]
+[ 24,	  2000-01-25,	  4,		  "tuesday",	  3,	  25		  ]
+[ 25,	  2000-01-26,	  4,		  "wednesday",	  4,	  26		  ]
+[ 26,	  2000-01-27,	  4,		  "thursday",	  5,	  27		  ]
+[ 27,	  2000-01-28,	  4,		  "friday",	  6,	  28		  ]
+[ 28,	  2000-01-29,	  4,		  "saturday",	  7,	  29		  ]
+[ 29,	  2000-01-30,	  5,		  "sunday",	  1,	  30		  ]
+[ 30,	  2000-01-31,	  5,		  "monday",	  2,	  31		  ]
+[ 31,	  2000-02-01,	  5,		  "tuesday",	  3,	  32		  ]
+[ 32,	  2000-02-02,	  5,		  "wednesday",	  4,	  33		  ]
+[ 33,	  2000-02-03,	  5,		  "thursday",	  5,	  34		  ]
+[ 34,	  2000-02-04,	  5,		  "friday",	  6,	  35		  ]
+[ 35,	  2000-02-05,	  5,		  "saturday",	  7,	  36		  ]
+[ 36,	  2000-02-06,	  6,		  "sunday",	  1,	  37		  ]
+[ 37,	  2000-02-07,	  6,		  "monday",	  2,	  38		  ]
+[ 38,	  2000-02-08,	  6,		  "tuesday",	  3,	  39		  ]
+[ 39,	  2000-02-09,	  6,		  "wednesday",	  4,	  40		  ]
+[ 40,	  2000-02-10,	  6,		  "thursday",	  5,	  41		  ]
+[ 41,	  2000-02-11,	  6,		  "friday",	  6,	  42		  ]
+[ 42,	  2000-02-12,	  6,		  "saturday",	  7,	  43		  ]
+[ 43,	  2000-02-13,	  7,		  "sunday",	  1,	  44		  ]
+[ 44,	  2000-02-14,	  7,		  "monday",	  2,	  45		  ]
+[ 45,	  2000-02-15,	  7,		  "tuesday",	  3,	  46		  ]
+[ 46,	  2000-02-16,	  7,		  "wednesday",	  4,	  47		  ]
+[ 47,	  2000-02-17,	  7,		  "thursday",	  5,	  48		  ]
+[ 48,	  2000-02-18,	  7,		  "friday",	  6,	  49		  ]
+[ 49,	  2000-02-19,	  7,		  "saturday",	  7,	  50		  ]
+[ 50,	  2000-02-20,	  8,		  "sunday",	  1,	  51		  ]
+[ 51,	  2000-02-21,	  8,		  "monday",	  2,	  52		  ]
+[ 52,	  2000-02-22,	  8,		  "tuesday",	  3,	  53		  ]
+[ 53,	  2000-02-23,	  8,		  "wednesday",	  4,	  54		  ]
+[ 54,	  2000-02-24,	  8,		  "thursday",	  5,	  55		  ]
+[ 55,	  2000-02-25,	  8,		  "friday",	  6,	  56		  ]
+[ 56,	  2000-02-26,	  8,		  "saturday",	  7,	  57		  ]
+[ 57,	  2000-02-27,	  9,		  "sunday",	  1,	  58		  ]
+[ 58,	  2000-02-28,	  9,		  "monday",	  2,	  59		  ]
+[ 59,	  2000-02-29,	  9,		  "tuesday",	  3,	  60		  ]
+[ 60,	  2000-03-01,	  9,		  "wednesday",	  4,	  61		  ]
+[ 61,	  2000-03-02,	  9,		  "thursday",	  5,	  62		  ]
+[ 62,	  2000-03-03,	  9,		  "friday",	  6,	  63		  ]
+[ 63,	  2000-03-04,	  9,		  "saturday",	  7,	  64		  ]
+[ 64,	  2000-03-05,	  10,		  "sunday",	  1,	  65		  ]
+[ 65,	  2000-03-06,	  10,		  "monday",	  2,	  66		  ]
+[ 66,	  2000-03-07,	  10,		  "tuesday",	  3,	  67		  ]
+[ 67,	  2000-03-08,	  10,		  "wednesday",	  4,	  68		  ]
+[ 68,	  2000-03-09,	  10,		  "thursday",	  5,	  69		  ]
+[ 69,	  2000-03-10,	  10,		  "friday",	  6,	  70		  ]
+[ 70,	  2000-03-11,	  10,		  "saturday",	  7,	  71		  ]
+[ 71,	  2000-03-12,	  11,		  "sunday",	  1,	  72		  ]
+[ 72,	  2000-03-13,	  11,		  "monday",	  2,	  73		  ]
+[ 73,	  2000-03-14,	  11,		  "tuesday",	  3,	  74		  ]
+[ 74,	  2000-03-15,	  11,		  "wednesday",	  4,	  75		  ]
+[ 75,	  2000-03-16,	  11,		  "thursday",	  5,	  76		  ]
+[ 76,	  2000-03-17,	  11,		  "friday",	  6,	  77		  ]
+[ 77,	  2000-03-18,	  11,		  "saturday",	  7,	  78		  ]
+[ 78,	  2000-03-19,	  12,		  "sunday",	  1,	  79		  ]
+[ 79,	  2000-03-20,	  12,		  "monday",	  2,	  80		  ]
+[ 80,	  2000-03-21,	  12,		  "tuesday",	  3,	  81		  ]
+[ 81,	  2000-03-22,	  12,		  "wednesday",	  4,	  82		  ]
+[ 82,	  2000-03-23,	  12,		  "thursday",	  5,	  83		  ]
+[ 83,	  2000-03-24,	  12,		  "friday",	  6,	  84		  ]
+[ 84,	  2000-03-25,	  12,		  "saturday",	  7,	  85		  ]
+[ 85,	  2000-03-26,	  13,		  "sunday",	  1,	  86		  ]
+[ 86,	  2000-03-27,	  13,		  "monday",	  2,	  87		  ]
+[ 87,	  2000-03-28,	  13,		  "tuesday",	  3,	  88		  ]
+[ 88,	  2000-03-29,	  13,		  "wednesday",	  4,	  89		  ]
+[ 89,	  2000-03-30,	  13,		  "thursday",	  5,	  90		  ]
+[ 90,	  2000-03-31,	  13,		  "friday",	  6,	  91		  ]
+[ 91,	  2000-04-01,	  13,		  "saturday",	  7,	  92		  ]
+[ 92,	  2000-04-02,	  14,		  "sunday",	  1,	  93		  ]
+[ 93,	  2000-04-03,	  14,		  "monday",	  2,	  94		  ]
+[ 94,	  2000-04-04,	  14,		  "tuesday",	  3,	  95		  ]
+[ 95,	  2000-04-05,	  14,		  "wednesday",	  4,	  96		  ]
+[ 96,	  2000-04-06,	  14,		  "thursday",	  5,	  97		  ]
+[ 97,	  2000-04-07,	  14,		  "friday",	  6,	  98		  ]
+[ 98,	  2000-04-08,	  14,		  "saturday",	  7,	  99		  ]
+[ 99,	  2000-04-09,	  15,		  "sunday",	  1,	  100		  ]
+[ 100,	  2000-04-10,	  15,		  "monday",	  2,	  101		  ]
+[ 101,	  2000-04-11,	  15,		  "tuesday",	  3,	  102		  ]
+[ 102,	  2000-04-12,	  15,		  "wednesday",	  4,	  103		  ]
+[ 103,	  2000-04-13,	  15,		  "thursday",	  5,	  104		  ]
+[ 104,	  2000-04-14,	  15,		  "friday",	  6,	  105		  ]
+[ 105,	  2000-04-15,	  15,		  "saturday",	  7,	  106		  ]
+[ 106,	  2000-04-16,	  16,		  "sunday",	  1,	  107		  ]
+[ 107,	  2000-04-17,	  16,		  "monday",	  2,	  108		  ]
+[ 108,	  2000-04-18,	  16,		  "tuesday",	  3,	  109		  ]
+[ 109,	  2000-04-19,	  16,		  "wednesday",	  4,	  110		  ]
+[ 110,	  2000-04-20,	  16,		  "thursday",	  5,	  111		  ]
+[ 111,	  2000-04-21,	  16,		  "friday",	  6,	  112		  ]
+[ 112,	  2000-04-22,	  16,		  "saturday",	  7,	  113		  ]
+[ 113,	  2000-04-23,	  17,		  "sunday",	  1,	  114		  ]
+[ 114,	  2000-04-24,	  17,		  "monday",	  2,	  115		  ]
+[ 115,	  2000-04-25,	  17,		  "tuesday",	  3,	  116		  ]
+[ 116,	  2000-04-26,	  17,		  "wednesday",	  4,	  117		  ]
+[ 117,	  2000-04-27,	  17,		  "thursday",	  5,	  118		  ]
+[ 118,	  2000-04-28,	  17,		  "friday",	  6,	  119		  ]
+[ 119,	  2000-04-29,	  17,		  "saturday",	  7,	  120		  ]
+[ 120,	  2000-04-30,	  18,		  "sunday",	  1,	  121		  ]
+[ 121,	  2000-05-01,	  18,		  "monday",	  2,	  122		  ]
+[ 122,	  2000-05-02,	  18,		  "tuesday",	  3,	  123		  ]
+[ 123,	  2000-05-03,	  18,		  "wednesday",	  4,	  124		  ]
+[ 124,	  2000-05-04,	  18,		  "thursday",	  5,	  125		  ]
+[ 125,	  2000-05-05,	  18,		  "friday",	  6,	  126		  ]
+[ 126,	  2000-05-06,	  18,		  "saturday",	  7,	  127		  ]
+[ 127,	  2000-05-07,	  19,		  "sunday",	  1,	  128		  ]
+[ 128,	  2000-05-08,	  19,		  "monday",	  2,	  129		  ]
+[ 129,	  2000-05-09,	  19,		  "tuesday",	  3,	  130		  ]
+[ 130,	  2000-05-10,	  19,		  "wednesday",	  4,	  131		  ]
+[ 131,	  2000-05-11,	  19,		  "thursday",	  5,	  132		  ]
+[ 132,	  2000-05-12,	  19,		  "friday",	  6,	  133		  ]
+[ 133,	  2000-05-13,	  19,		  "saturday",	  7,	  134		  ]
+[ 134,	  2000-05-14,	  20,		  "sunday",	  1,	  135		  ]
+[ 135,	  2000-05-15,	  20,		  "monday",	  2,	  136		  ]
+[ 136,	  2000-05-16,	  20,		  "tuesday",	  3,	  137		  ]
+[ 137,	  2000-05-17,	  20,		  "wednesday",	  4,	  138		  ]
+[ 138,	  2000-05-18,	  20,		  "thursday",	  5,	  139		  ]
+[ 139,	  2000-05-19,	  20,		  "friday",	  6,	  140		  ]
+[ 140,	  2000-05-20,	  20,		  "saturday",	  7,	  141		  ]
+[ 141,	  2000-05-21,	  21,		  "sunday",	  1,	  142		  ]
+[ 142,	  2000-05-22,	  21,		  "monday",	  2,	  143		  ]
+[ 143,	  2000-05-23,	  21,		  "tuesday",	  3,	  144		  ]
+[ 144,	  2000-05-24,	  21,		  "wednesday",	  4,	  145		  ]
+[ 145,	  2000-05-25,	  21,		  "thursday",	  5,	  146		  ]
+[ 146,	  2000-05-26,	  21,		  "friday",	  6,	  147		  ]
+[ 147,	  2000-05-27,	  21,		  "saturday",	  7,	  148		  ]
+[ 148,	  2000-05-28,	  22,		  "sunday",	  1,	  149		  ]
+[ 149,	  2000-05-29,	  22,		  "monday",	  2,	  150		  ]
+[ 150,	  2000-05-30,	  22,		  "tuesday",	  3,	  151		  ]
+[ 151,	  2000-05-31,	  22,		  "wednesday",	  4,	  152		  ]
+[ 152,	  2000-06-01,	  22,		  "thursday",	  5,	  153		  ]
+[ 153,	  2000-06-02,	  22,		  "friday",	  6,	  154		  ]
+[ 154,	  2000-06-03,	  22,		  "saturday",	  7,	  155		  ]
+[ 155,	  2000-06-04,	  23,		  "sunday",	  1,	  156		  ]
+[ 156,	  2000-06-05,	  23,		  "monday",	  2,	  157		  ]
+[ 157,	  2000-06-06,	  23,		  "tuesday",	  3,	  158		  ]
+[ 158,	  2000-06-07,	  23,		  "wednesday",	  4,	  159		  ]
+[ 159,	  2000-06-08,	  23,		  "thursday",	  5,	  160		  ]
+[ 160,	  2000-06-09,	  23,		  "friday",	  6,	  161		  ]
+[ 161,	  2000-06-10,	  23,		  "saturday",	  7,	  162		  ]
+[ 162,	  2000-06-11,	  24,		  "sunday",	  1,	  163		  ]
+[ 163,	  2000-06-12,	  24,		  "monday",	  2,	  164		  ]
+[ 164,	  2000-06-13,	  24,		  "tuesday",	  3,	  165		  ]
+[ 165,	  2000-06-14,	  24,		  "wednesday",	  4,	  166		  ]
+[ 166,	  2000-06-15,	  24,		  "thursday",	  5,	  167		  ]
+[ 167,	  2000-06-16,	  24,		  "friday",	  6,	  168		  ]
+[ 168,	  2000-06-17,	  24,		  "saturday",	  7,	  169		  ]
+[ 169,	  2000-06-18,	  25,		  "sunday",	  1,	  170		  ]
+[ 170,	  2000-06-19,	  25,		  "monday",	  2,	  171		  ]
+[ 171,	  2000-06-20,	  25,		  "tuesday",	  3,	  172		  ]
+[ 172,	  2000-06-21,	  25,		  "wednesday",	  4,	  173		  ]
+[ 173,	  2000-06-22,	  25,		  "thursday",	  5,	  174		  ]
+[ 174,	  2000-06-23,	  25,		  "friday",	  6,	  175		  ]
+[ 175,	  2000-06-24,	  25,		  "saturday",	  7,	  176		  ]
+[ 176,	  2000-06-25,	  26,		  "sunday",	  1,	  177		  ]
+[ 177,	  2000-06-26,	  26,		  "monday",	  2,	  178		  ]
+[ 178,	  2000-06-27,	  26,		  "tuesday",	  3,	  179		  ]
+[ 179,	  2000-06-28,	  26,		  "wednesday",	  4,	  180		  ]
+[ 180,	  2000-06-29,	  26,		  "thursday",	  5,	  181		  ]
+[ 181,	  2000-06-30,	  26,		  "friday",	  6,	  182		  ]
+[ 182,	  2000-07-01,	  26,		  "saturday",	  7,	  183		  ]
+[ 183,	  2000-07-02,	  27,		  "sunday",	  1,	  184		  ]
+[ 184,	  2000-07-03,	  27,		  "monday",	  2,	  185		  ]
+[ 185,	  2000-07-04,	  27,		  "tuesday",	  3,	  186		  ]
+[ 186,	  2000-07-05,	  27,		  "wednesday",	  4,	  187		  ]
+[ 187,	  2000-07-06,	  27,		  "thursday",	  5,	  188		  ]
+[ 188,	  2000-07-07,	  27,		  "friday",	  6,	  189		  ]
+[ 189,	  2000-07-08,	  27,		  "saturday",	  7,	  190		  ]
+[ 190,	  2000-07-09,	  28,		  "sunday",	  1,	  191		  ]
+[ 191,	  2000-07-10,	  28,		  "monday",	  2,	  192		  ]
+[ 192,	  2000-07-11,	  28,		  "tuesday",	  3,	  193		  ]
+[ 193,	  2000-07-12,	  28,		  "wednesday",	  4,	  194		  ]
+[ 194,	  2000-07-13,	  28,		  "thursday",	  5,	  195		  ]
+[ 195,	  2000-07-14,	  28,		  "friday",	  6,	  196		  ]
+[ 196,	  2000-07-15,	  28,		  "saturday",	  7,	  197		  ]
+[ 197,	  2000-07-16,	  29,		  "sunday",	  1,	  198		  ]
+[ 198,	  2000-07-17,	  29,		  "monday",	  2,	  199		  ]
+[ 199,	  2000-07-18,	  29,		  "tuesday",	  3,	  200		  ]
+[ 200,	  2000-07-19,	  29,		  "wednesday",	  4,	  201		  ]
+[ 201,	  2000-07-20,	  29,		  "thursday",	  5,	  202		  ]
+[ 202,	  2000-07-21,	  29,		  "friday",	  6,	  203		  ]
+[ 203,	  2000-07-22,	  29,		  "saturday",	  7,	  204		  ]
+[ 204,	  2000-07-23,	  30,		  "sunday",	  1,	  205		  ]
+[ 205,	  2000-07-24,	  30,		  "monday",	  2,	  206		  ]
+[ 206,	  2000-07-25,	  30,		  "tuesday",	  3,	  207		  ]
+[ 207,	  2000-07-26,	  30,		  "wednesday",	  4,	  208		  ]
+[ 208,	  2000-07-27,	  30,		  "thursday",	  5,	  209		  ]
+[ 209,	  2000-07-28,	  30,		  "friday",	  6,	  210		  ]
+[ 210,	  2000-07-29,	  30,		  "saturday",	  7,	  211		  ]
+[ 211,	  2000-07-30,	  31,		  "sunday",	  1,	  212		  ]
+[ 212,	  2000-07-31,	  31,		  "monday",	  2,	  213		  ]
+[ 213,	  2000-08-01,	  31,		  "tuesday",	  3,	  214		  ]
+[ 214,	  2000-08-02,	  31,		  "wednesday",	  4,	  215		  ]
+[ 215,	  2000-08-03,	  31,		  "thursday",	  5,	  216		  ]
+[ 216,	  2000-08-04,	  31,		  "friday",	  6,	  217		  ]
+[ 217,	  2000-08-05,	  31,		  "saturday",	  7,	  218		  ]
+[ 218,	  2000-08-06,	  32,		  "sunday",	  1,	  219		  ]
+[ 219,	  2000-08-07,	  32,		  "monday",	  2,	  220		  ]
+[ 220,	  2000-08-08,	  32,		  "tuesday",	  3,	  221		  ]
+[ 221,	  2000-08-09,	  32,		  "wednesday",	  4,	  222		  ]
+[ 222,	  2000-08-10,	  32,		  "thursday",	  5,	  223		  ]
+[ 223,	  2000-08-11,	  32,		  "friday",	  6,	  224		  ]
+[ 224,	  2000-08-12,	  32,		  "saturday",	  7,	  225		  ]
+[ 225,	  2000-08-13,	  33,		  "sunday",	  1,	  226		  ]
+[ 226,	  2000-08-14,	  33,		  "monday",	  2,	  227		  ]
+[ 227,	  2000-08-15,	  33,		  "tuesday",	  3,	  228		  ]
+[ 228,	  2000-08-16,	  33,		  "wednesday",	  4,	  229		  ]
+[ 229,	  2000-08-17,	  33,		  "thursday",	  5,	  230		  ]
+[ 230,	  2000-08-18,	  33,		  "friday",	  6,	  231		  ]
+[ 231,	  2000-08-19,	  33,		  "saturday",	  7,	  232		  ]
+[ 232,	  2000-08-20,	  34,		  "sunday",	  1,	  233		  ]
+[ 233,	  2000-08-21,	  34,		  "monday",	  2,	  234		  ]
+[ 234,	  2000-08-22,	  34,		  "tuesday",	  3,	  235		  ]
+[ 235,	  2000-08-23,	  34,		  "wednesday",	  4,	  236		  ]
+[ 236,	  2000-08-24,	  34,		  "thursday",	  5,	  237		  ]
+[ 237,	  2000-08-25,	  34,		  "friday",	  6,	  238		  ]
+[ 238,	  2000-08-26,	  34,		  "saturday",	  7,	  239		  ]
+[ 239,	  2000-08-27,	  35,		  "sunday",	  1,	  240		  ]
+[ 240,	  2000-08-28,	  35,		  "monday",	  2,	  241		  ]
+[ 241,	  2000-08-29,	  35,		  "tuesday",	  3,	  242		  ]
+[ 242,	  2000-08-30,	  35,		  "wednesday",	  4,	  243		  ]
+[ 243,	  2000-08-31,	  35,		  "thursday",	  5,	  244		  ]
+[ 244,	  2000-09-01,	  35,		  "friday",	  6,	  245		  ]
+[ 245,	  2000-09-02,	  35,		  "saturday",	  7,	  246		  ]
+[ 246,	  2000-09-03,	  36,		  "sunday",	  1,	  247		  ]
+[ 247,	  2000-09-04,	  36,		  "monday",	  2,	  248		  ]
+[ 248,	  2000-09-05,	  36,		  "tuesday",	  3,	  249		  ]
+[ 249,	  2000-09-06,	  36,		  "wednesday",	  4,	  250		  ]
+[ 250,	  2000-09-07,	  36,		  "thursday",	  5,	  251		  ]
+[ 251,	  2000-09-08,	  36,		  "friday",	  6,	  252		  ]
+[ 252,	  2000-09-09,	  36,		  "saturday",	  7,	  253		  ]
+[ 253,	  2000-09-10,	  37,		  "sunday",	  1,	  254		  ]
+[ 254,	  2000-09-11,	  37,		  "monday",	  2,	  255		  ]
+[ 255,	  2000-09-12,	  37,		  "tuesday",	  3,	  256		  ]
+[ 256,	  2000-09-13,	  37,		  "wednesday",	  4,	  257		  ]
+[ 257,	  2000-09-14,	  37,		  "thursday",	  5,	  258		  ]
+[ 258,	  2000-09-15,	  37,		  "friday",	  6,	  259		  ]
+[ 259,	  2000-09-16,	  37,		  "saturday",	  7,	  260		  ]
+[ 260,	  2000-09-17,	  38,		  "sunday",	  1,	  261		  ]
+[ 261,	  2000-09-18,	  38,		  "monday",	  2,	  262		  ]
+[ 262,	  2000-09-19,	  38,		  "tuesday",	  3,	  263		  ]
+[ 263,	  2000-09-20,	  38,		  "wednesday",	  4,	  264		  ]
+[ 264,	  2000-09-21,	  38,		  "thursday",	  5,	  265		  ]
+[ 265,	  2000-09-22,	  38,		  "friday",	  6,	  266		  ]
+[ 266,	  2000-09-23,	  38,		  "saturday",	  7,	  267		  ]
+[ 267,	  2000-09-24,	  39,		  "sunday",	  1,	  268		  ]
+[ 268,	  2000-09-25,	  39,		  "monday",	  2,	  269		  ]
+[ 269,	  2000-09-26,	  39,		  "tuesday",	  3,	  270		  ]
+[ 270,	  2000-09-27,	  39,		  "wednesday",	  4,	  271		  ]
+[ 271,	  2000-09-28,	  39,		  "thursday",	  5,	  272		  ]
+[ 272,	  2000-09-29,	  39,		  "friday",	  6,	  273		  ]
+[ 273,	  2000-09-30,	  39,		  "saturday",	  7,	  274		  ]
+[ 274,	  2000-10-01,	  40,		  "sunday",	  1,	  275		  ]
+[ 275,	  2000-10-02,	  40,		  "monday",	  2,	  276		  ]
+[ 276,	  2000-10-03,	  40,		  "tuesday",	  3,	  277		  ]
+[ 277,	  2000-10-04,	  40,		  "wednesday",	  4,	  278		  ]
+[ 278,	  2000-10-05,	  40,		  "thursday",	  5,	  279		  ]
+[ 279,	  2000-10-06,	  40,		  "friday",	  6,	  280		  ]
+[ 280,	  2000-10-07,	  40,		  "saturday",	  7,	  281		  ]
+[ 281,	  2000-10-08,	  41,		  "sunday",	  1,	  282		  ]
+[ 282,	  2000-10-09,	  41,		  "monday",	  2,	  283		  ]
+[ 283,	  2000-10-10,	  41,		  "tuesday",	  3,	  284		  ]
+[ 284,	  2000-10-11,	  41,		  "wednesday",	  4,	  285		  ]
+[ 285,	  2000-10-12,	  41,		  "thursday",	  5,	  286		  ]
+[ 286,	  2000-10-13,	  41,		  "friday",	  6,	  287		  ]
+[ 287,	  2000-10-14,	  41,		  "saturday",	  7,	  288		  ]
+[ 288,	  2000-10-15,	  42,		  "sunday",	  1,	  289		  ]
+[ 289,	  2000-10-16,	  42,		  "monday",	  2,	  290		  ]
+[ 290,	  2000-10-17,	  42,		  "tuesday",	  3,	  291		  ]
+[ 291,	  2000-10-18,	  42,		  "wednesday",	  4,	  292		  ]
+[ 292,	  2000-10-19,	  42,		  "thursday",	  5,	  293		  ]
+[ 293,	  2000-10-20,	  42,		  "friday",	  6,	  294		  ]
+[ 294,	  2000-10-21,	  42,		  "saturday",	  7,	  295		  ]
+[ 295,	  2000-10-22,	  43,		  "sunday",	  1,	  296		  ]
+[ 296,	  2000-10-23,	  43,		  "monday",	  2,	  297		  ]
+[ 297,	  2000-10-24,	  43,		  "tuesday",	  3,	  298		  ]
+[ 298,	  2000-10-25,	  43,		  "wednesday",	  4,	  299		  ]
+[ 299,	  2000-10-26,	  43,		  "thursday",	  5,	  300		  ]
+[ 300,	  2000-10-27,	  43,		  "friday",	  6,	  301		  ]
+[ 301,	  2000-10-28,	  43,		  "saturday",	  7,	  302		  ]
+[ 302,	  2000-10-29,	  44,		  "sunday",	  1,	  303		  ]
+[ 303,	  2000-10-30,	  44,		  "monday",	  2,	  304		  ]
+[ 304,	  2000-10-31,	  44,		  "tuesday",	  3,	  305		  ]
+[ 305,	  2000-11-01,	  44,		  "wednesday",	  4,	  306		  ]
+[ 306,	  2000-11-02,	  44,		  "thursday",	  5,	  307		  ]
+[ 307,	  2000-11-03,	  44,		  "friday",	  6,	  308		  ]
+[ 308,	  2000-11-04,	  44,		  "saturday",	  7,	  309		  ]
+[ 309,	  2000-11-05,	  45,		  "sunday",	  1,	  310		  ]
+[ 310,	  2000-11-06,	  45,		  "monday",	  2,	  311		  ]
+[ 311,	  2000-11-07,	  45,		  "tuesday",	  3,	  312		  ]
+[ 312,	  2000-11-08,	  45,		  "wednesday",	  4,	  313		  ]
+[ 313,	  2000-11-09,	  45,		  "thursday",	  5,	  314		  ]
+[ 314,	  2000-11-10,	  45,		  "friday",	  6,	  315		  ]
+[ 315,	  2000-11-11,	  45,		  "saturday",	  7,	  316		  ]
+[ 316,	  2000-11-12,	  46,		  "sunday",	  1,	  317		  ]
+[ 317,	  2000-11-13,	  46,		  "monday",	  2,	  318		  ]
+[ 318,	  2000-11-14,	  46,		  "tuesday",	  3,	  319		  ]
+[ 319,	  2000-11-15,	  46,		  "wednesday",	  4,	  320		  ]
+[ 320,	  2000-11-16,	  46,		  "thursday",	  5,	  321		  ]
+[ 321,	  2000-11-17,	  46,		  "friday",	  6,	  322		  ]
+[ 322,	  2000-11-18,	  46,		  "saturday",	  7,	  323		  ]
+[ 323,	  2000-11-19,	  47,		  "sunday",	  1,	  324		  ]
+[ 324,	  2000-11-20,	  47,		  "monday",	  2,	  325		  ]
+[ 325,	  2000-11-21,	  47,		  "tuesday",	  3,	  326		  ]
+[ 326,	  2000-11-22,	  47,		  "wednesday",	  4,	  327		  ]
+[ 327,	  2000-11-23,	  47,		  "thursday",	  5,	  328		  ]
+[ 328,	  2000-11-24,	  47,		  "friday",	  6,	  329		  ]
+[ 329,	  2000-11-25,	  47,		  "saturday",	  7,	  330		  ]
+[ 330,	  2000-11-26,	  48,		  "sunday",	  1,	  331		  ]
+[ 331,	  2000-11-27,	  48,		  "monday",	  2,	  332		  ]
+[ 332,	  2000-11-28,	  48,		  "tuesday",	  3,	  333		  ]
+[ 333,	  2000-11-29,	  48,		  "wednesday",	  4,	  334		  ]
+[ 334,	  2000-11-30,	  48,		  "thursday",	  5,	  335		  ]
+[ 335,	  2000-12-01,	  48,		  "friday",	  6,	  336		  ]
+[ 336,	  2000-12-02,	  48,		  "saturday",	  7,	  337		  ]
+[ 337,	  2000-12-03,	  49,		  "sunday",	  1,	  338		  ]
+[ 338,	  2000-12-04,	  49,		  "monday",	  2,	  339		  ]
+[ 339,	  2000-12-05,	  49,		  "tuesday",	  3,	  340		  ]
+[ 340,	  2000-12-06,	  49,		  "wednesday",	  4,	  341		  ]
+[ 341,	  2000-12-07,	  49,		  "thursday",	  5,	  342		  ]
+[ 342,	  2000-12-08,	  49,		  "friday",	  6,	  343		  ]
+[ 343,	  2000-12-09,	  49,		  "saturday",	  7,	  344		  ]
+[ 344,	  2000-12-10,	  50,		  "sunday",	  1,	  345		  ]
+[ 345,	  2000-12-11,	  50,		  "monday",	  2,	  346		  ]
+[ 346,	  2000-12-12,	  50,		  "tuesday",	  3,	  347		  ]
+[ 347,	  2000-12-13,	  50,		  "wednesday",	  4,	  348		  ]
+[ 348,	  2000-12-14,	  50,		  "thursday",	  5,	  349		  ]
+[ 349,	  2000-12-15,	  50,		  "friday",	  6,	  350		  ]
+[ 350,	  2000-12-16,	  50,		  "saturday",	  7,	  351		  ]
+[ 351,	  2000-12-17,	  51,		  "sunday",	  1,	  352		  ]
+[ 352,	  2000-12-18,	  51,		  "monday",	  2,	  353		  ]
+[ 353,	  2000-12-19,	  51,		  "tuesday",	  3,	  354		  ]
+[ 354,	  2000-12-20,	  51,		  "wednesday",	  4,	  355		  ]
+[ 355,	  2000-12-21,	  51,		  "thursday",	  5,	  356		  ]
+[ 356,	  2000-12-22,	  51,		  "friday",	  6,	  357		  ]
+[ 357,	  2000-12-23,	  51,		  "saturday",	  7,	  358		  ]
+[ 358,	  2000-12-24,	  52,		  "sunday",	  1,	  359		  ]
+[ 359,	  2000-12-25,	  52,		  "monday",	  2,	  360		  ]
+[ 360,	  2000-12-26,	  52,		  "tuesday",	  3,	  361		  ]
+[ 361,	  2000-12-27,	  52,		  "wednesday",	  4,	  362		  ]
+[ 362,	  2000-12-28,	  52,		  "thursday",	  5,	  363		  ]
+[ 363,	  2000-12-29,	  52,		  "friday",	  6,	  364		  ]
+[ 364,	  2000-12-30,	  52,		  "saturday",	  7,	  365		  ]
+[ 365,	  2000-12-31,	  53,		  "sunday",	  1,	  366		  ]
+[ 366,	  2001-01-01,	  1,		  "monday",	  2,	  1		  ]
+[ 367,	  2001-01-02,	  1,		  "tuesday",	  3,	  2		  ]
+[ 368,	  2001-01-03,	  1,		  "wednesday",	  4,	  3		  ]
+[ 369,	  2001-01-04,	  1,		  "thursday",	  5,	  4		  ]
+[ 370,	  2001-01-05,	  1,		  "friday",	  6,	  5		  ]
+[ 371,	  2001-01-06,	  1,		  "saturday",	  7,	  6		  ]
+[ 372,	  2001-01-07,	  2,		  "sunday",	  1,	  7		  ]
+[ 373,	  2001-01-08,	  2,		  "monday",	  2,	  8		  ]
+[ 374,	  2001-01-09,	  2,		  "tuesday",	  3,	  9		  ]
+[ "daytime_bat,bh_a,dh_a,fh_a,hh_a" ]
+#---------------------------------------------------------------------------------#
+# h	daytime		hours	minutes		seconds		milliseconds	  # name
+# void	daytime	int	int		int		int		  # type
+#---------------------------------------------------------------------------------#
+[ 0@0,	  23:59:59.999,	  23,	  59,		  59,		  999		  ]
+[ 1@0,	  23:59:00.000,	  23,	  59,		  0,		  0		  ]
+[ 2@0,	  00:00:00.000,	  0,	  0,		  0,		  0		  ]
+[ 3@0,	  23:59:59.000,	  23,	  59,		  59,		  0		  ]
+[ 4@0,	  00:00:00.000,	  0,	  0,		  0,		  0		  ]
+[ 5@0,	  00:00:00.000,	  0,	  0,		  0,		  0		  ]
+[ 6@0,	  00:00:00.001,	  0,	  0,		  0,		  1		  ]
+[ 7@0,	  03:49:02.999,	  3,	  49,		  2,		  999		  ]
+[ 8@0,	  20:48:42.999,	  20,	  48,		  42,		  999		  ]
+[ 9@0,	  17:53:38.999,	  17,	  53,		  38,		  999		  ]
+[ 10@0,	  13:15:34.999,	  13,	  15,		  34,		  999		  ]
+[ 11@0,	  07:34:27.999,	  7,	  34,		  27,		  999		  ]
+[ 12@0,	  23:59:59.999,	  23,	  59,		  59,		  999		  ]
+[ 13@0,	  01:00:03.999,	  1,	  0,		  3,		  999		  ]
+[ 14@0,	  23:59:59.999,	  23,	  59,		  59,		  999		  ]
+[ 15@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
+[ 16@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
+[ 17@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
+[ 18@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
+[ 19@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
+
+# 23:52:41 >  
+# 23:52:41 >  Done.
+# 23:52:41 >  
+

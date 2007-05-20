@@ -67,35 +67,28 @@ exit (go,i);	# 9  (go:bit)(i:lng)
     profiler.start();	# 15 CMDstartProfiler (_24:void)
     io.printf("#monitor \n");	# 16 IOprint_str (_25:void)<-(_26:str)
     mx := aggr.max(b);	# 17 ALGmax_lng (mx:lng)<-(b:bat[:oid,:lng])
-    algebra.select(b,nil:lng,mx);	# 18 ALGselect (_28:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_29:lng)(mx:lng)
-    algebra.select(b,mx,nil:lng);	# 19 ALGselect (_30:bat[:oid,:lng])<-(b:bat[:oid,:lng])(mx:lng)(_29:lng)
-    d := mmath.sin(0.20000000298023224:dbl);	# 20 MATHunary_SINdbl (d:dbl)<-(_32:dbl)
-    profiler.stop();	# 21 CMDstopProfiler (_33:void)
-#stmt:= profiler.getTrace("statement"); 	# 22  (_34:str)
-#io.print(stmt); 	# 23  (_35:str)
-    ticks := profiler.getTrace("ticks");	# 24 CMDgetTrace (ticks:bat[:int,:any])<-(_16:str)
-#io.print(ticks); 	# 25  (_37:str)
-    rdbytes := profiler.getTrace("ibytes");	# 26 CMDgetTrace (rdbytes:bat[:int,:any])<-(_39:str)
-    io.print(rdbytes);	# 27 IOprint_val (_40:void)<-(rdbytes:bat[:int,:any])
-    wrbytes := profiler.getTrace("obytes");	# 28 CMDgetTrace (wrbytes:bat[:int,:any])<-(_42:str)
-#io.print(wrbytes); 	# 29  (_43:str)
-    diskspace := profiler.getTrace("diskspace");	# 30 CMDgetTrace (diskspace:bat[:int,:any])<-(_45:str)
-#io.print(diskspace); 	# 31  (_46:str)
-    io.print(rdbytes,wrbytes);	# 32 IOtable (_47:void)<-(rdbytes:bat[:int,:any])(wrbytes:bat[:int,:any])
-#io.print(ticks,rdbytes,wrbytes,diskspace); 	# 33  (_48:str)
-end main;	# 34  
+    k1 := algebra.select(b,nil:lng,mx);	# 18 ALGselect (k1:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_29:lng)(mx:lng)
+    k2 := algebra.select(b,mx,nil:lng);	# 19 ALGselect (k2:bat[:oid,:lng])<-(b:bat[:oid,:lng])(mx:lng)(_29:lng)
+    info := bat.info(k2);	# 20 BKCinfo (info:bat[:str,:str])<-(k2:bat[:oid,:lng])
+    d := mmath.sin(0.20000000298023224:dbl);	# 21 MATHunary_SINdbl (d:dbl)<-(_33:dbl)
+    profiler.stop();	# 22 CMDstopProfiler (_34:void)
+#stmt:= profiler.getTrace("statement"); 	# 23  (_35:str)
+#io.print(stmt); 	# 24  (_36:str)
+    ticks := profiler.getTrace("ticks");	# 25 CMDgetTrace (ticks:bat[:int,:any])<-(_16:str)
+#io.print(ticks); 	# 26  (_38:str)
+    rdbytes := profiler.getTrace("ibytes");	# 27 CMDgetTrace (rdbytes:bat[:int,:any])<-(_40:str)
+#io.print(rdbytes); 	# 28  (_41:str)
+    wrbytes := profiler.getTrace("obytes");	# 29 CMDgetTrace (wrbytes:bat[:int,:any])<-(_43:str)
+#io.print(wrbytes); 	# 30  (_44:str)
+    diskspace := profiler.getTrace("diskspace");	# 31 CMDgetTrace (diskspace:bat[:int,:any])<-(_46:str)
+#io.print(diskspace); 	# 32  (_47:str)
+    io.print(rdbytes,wrbytes);	# 33 IOtable (_48:void)<-(rdbytes:bat[:int,:any])(wrbytes:bat[:int,:any])
+#io.print(ticks,rdbytes,wrbytes,diskspace); 	# 34  (_49:str)
+    io.print(info);	# 35 IOprint_val (_50:void)<-(info:bat[:str,:str])
+end main;	# 36  
 # Start performance profiling
 #monitor 
 # Performance profiling stopped
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  0	  ]
-[ 2,	  0	  ]
-[ 3,	  160000  ]
-[ 4,	  16	  ]
-[ 5,	  0	  ]
 #-------------------------#
 # h	t	t	  # name
 # int	int	int	  # type
@@ -104,7 +97,70 @@ end main;	# 34
 [ 2,	  0,	  160000  ]
 [ 3,	  160000, 160000  ]
 [ 4,	  16,	  160000  ]
-[ 5,	  0,	  0	  ]
+[ 5,	  928,	  16	  ]
+[ 6,	  0,	  0	  ]
+#-----------------------------------------#
+# h			t		  # name
+# str			str		  # type
+#-----------------------------------------#
+[ "version",		  "25105"	  ]
+[ "batId",		  "tmp_22"	  ]
+[ "batCacheid",		  "18"		  ]
+[ "batParentid",	  "0"		  ]
+[ "batSharecnt",	  "0"		  ]
+[ "head",		  "oid"		  ]
+[ "tail",		  "lng"		  ]
+[ "batPersistence",	  "transient"	  ]
+[ "batRestricted",	  "read-only"	  ]
+[ "batRefcnt",		  "1"		  ]
+[ "batLRefcnt",		  "1"		  ]
+[ "batDirty",		  "dirty"	  ]
+[ "batSet",		  "0"		  ]
+[ "void_tid",		  "-1"		  ]
+[ "void_cnt",		  "0"		  ]
+[ "hsorted",		  "65"		  ]
+[ "hident",		  "h"		  ]
+[ "hdense",		  "0"		  ]
+[ "hseqbase",		  "0@0"		  ]
+[ "hkey",		  "0"		  ]
+[ "hloc",		  "0"		  ]
+[ "hvarsized",		  "0"		  ]
+[ "halign",		  "1000204"	  ]
+[ "hnosorted",		  "0"		  ]
+[ "hnosorted_rev",	  "0"		  ]
+[ "hnodense",		  "0"		  ]
+[ "hnokey[0]",		  "0"		  ]
+[ "hnokey[1]",		  "0"		  ]
+[ "tident",		  "t"		  ]
+[ "tdense",		  "0"		  ]
+[ "tseqbase",		  "0@0"		  ]
+[ "tsorted",		  "0"		  ]
+[ "tkey",		  "0"		  ]
+[ "tloc",		  "8"		  ]
+[ "tvarsized",		  "0"		  ]
+[ "talign",		  "1000205"	  ]
+[ "tnosorted",		  "0"		  ]
+[ "tnosorted_rev",	  "0"		  ]
+[ "tnodense",		  "0"		  ]
+[ "tnokey[0]",		  "0"		  ]
+[ "tnokey[1]",		  "0"		  ]
+[ "batInserted",	  "0"		  ]
+[ "batDeleted",		  "0"		  ]
+[ "batFirst",		  "0"		  ]
+[ "top",		  "1"		  ]
+[ "batStamp",		  "14"		  ]
+[ "lastUsed",		  "226"		  ]
+[ "curStamp",		  "15"		  ]
+[ "batCopiedtodisk",	  "0"		  ]
+[ "batDirtydesc",	  "dirty"	  ]
+[ "batDirtybuns",	  "clean"	  ]
+[ "batBuns.free",	  "16"		  ]
+[ "batBuns.size",	  "80000"	  ]
+[ "batBuns.maxsize",	  "80000"	  ]
+[ "batBuns.storage",	  "malloced"	  ]
+[ "batBuns.filename",	  "22.buns"	  ]
+[ "hheapdirty",		  "clean"	  ]
+[ "theapdirty",		  "clean"	  ]
 
 # 08:46:49 >  
 # 08:46:49 >  Done.
