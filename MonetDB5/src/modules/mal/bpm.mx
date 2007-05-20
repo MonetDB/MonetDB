@@ -83,13 +83,13 @@ results in the accumulator BAT tu.
 	bpm.open();
 	Ralias:= bpm.take("myversion",:bat[:oid,:int]);
 	tu:= bat.new(:oid,:int);
-barrier (idx,Rp):= bpm.newIterator(Ralias);
+barrier Rp:= bpm.newIterator(Ralias);
 	...
 	t:= algebra.select(Rp,0,100);
 	tu:= algebra.union(tu,t);
 	...
-	redo (idx,Rp):= bpm.hasMoreElements(Ralias);
-exit (idx,b);
+	redo Rp:= bpm.hasMoreElements(Ralias);
+exit Rp;
 	bpm.close();
 @end example
 
@@ -201,10 +201,10 @@ The default strategy for an optimizer is to replace a
 reference to a partitioned BAT by an iterator.
 @example
 	l:= list.new();
-barrier Elm:bat[:oid,:int]:= bpm.newIterartor(Ralias);
+barrier Elm:bat[:oid,:int]:= bpm.newIterator(Ralias);
 	t:= algebra.select(Elm,0,20);
 	list.append(l,t);
-	redo Elm:bat[:oid,:int]:= bpm.newIterartor(Ralias);
+	redo Elm:bat[:oid,:int]:= bpm.newIterator(Ralias);
 exit Elm;
 @end example
 Variations on this theme are iterators that search for
@@ -347,6 +347,12 @@ the components of a single partitioned BAT.
 Wherever possible skipping elements that don't qualify
 the bounds given for the head.
 @mal
+pattern newIterator(grp:bat[:any_1,:any_2],b:bat[:any_1,:any_3], c:bat[:oid,:any_4])
+	(:bat[:any_1,:any_2], :bat[:any_1,:any_3], :bat[:any_1,:any_4])
+address BPMnewIterator3;
+pattern newIterator(grp:bat[:any_1,:any_2],b:bat[:any_1,:any_3])
+	(:bat[:any_1,:any_2], :bat[:any_1,:any_2])
+address BPMnewIterator2;
 pattern newIterator(grp:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMnewIterator
 comment "Create an iterator over the BAT partitions.";
@@ -361,6 +367,12 @@ pattern newIterator(pb:bat[:any_1,:any_2], first:any_1,last:any_1,
 address BPMnewIteratorRng4
 comment "Create an iterator over the BAT partitions.";
 
+pattern hasMoreElements(grp:bat[:any_1,:any_2],b:bat[:any_1,:any_3], c:bat[:oid,:any_4])
+	(:bat[:any_1,:any_2], :bat[:any_1,:any_3], :bat[:any_1,:any_4])
+address BPMhasMoreElements3;
+pattern hasMoreElements(grp:bat[:any_1,:any_2],b:bat[:any_1,:any_3])
+	(:bat[:any_1,:any_2], :bat[:any_1,:any_2])
+address BPMhasMoreElements2;
 pattern hasMoreElements(grp:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMhasMoreElements
 comment "Localize the next partition for processing.";
@@ -504,6 +516,8 @@ bpm_export str BPMdiscard(int *ret, bat *bid);
 bpm_export str BPMdiscardAll(int *ret);
 
 bpm_export str BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnewIterator2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnewIterator3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMnewIteratorRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1604,6 +1618,40 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	*ret = p->nxt;
 	BBPincref(p->nxt,TRUE);
+	return MAL_SUCCEED;
+}
+@-
+The pair and triple iterators should more consciously
+walk thru the partition lists. At each step making
+a minimal move to ensure alignment of the iterator
+values.
+@c
+str
+BPMnewIterator2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+str
+BPMnewIterator3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+str
+BPMhasMoreElements2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+str
+BPMhasMoreElements3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	return MAL_SUCCEED;
 }
 
