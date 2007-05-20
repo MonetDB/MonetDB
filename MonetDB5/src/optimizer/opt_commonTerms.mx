@@ -29,7 +29,7 @@ comment "Common sub-expression optimizer"
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_COMMONTERMS     show partial result */
+/* #define DEBUG_OPT_COMMONTERMS      show partial result */
 
 #endif
 @c
@@ -184,7 +184,12 @@ multiple occurrences of the same constant in the symbol table.
 					!hasSideEffects(q, TRUE));
 
 #endif
-				if (hasSameSignature(p, q) && 
+@-
+Simple assignments are not replaced either. They should be
+handled by the alias removal part
+@c
+				if (q->token != ASSIGNsymbol &&
+					hasSameSignature(p, q) && 
 					hasSameArguments(mb, p, q) && 
 					!isUpdated(mb, i) && 
 					!hasCommonResults(p, q) && 
