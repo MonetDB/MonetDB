@@ -1218,7 +1218,7 @@ BPMcount(int *ret, bat *bid)
 
 str
 BPMglue(bat *ret, bat *bid){
-	int i,cnt;
+	int i,cnt=0;
 	Partition ps;
 	BAT *b,*bn;
 
