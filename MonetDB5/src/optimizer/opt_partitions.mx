@@ -177,7 +177,9 @@ OPTpartitionProperties(MalBlkPtr mb)
 			lastsegment=0;
 		} else
 		if( !isFragmentGroup(p) ){
-			if( lastsegment==0 || getModuleId(p)== aggrRef)
+			if( lastsegment==0 || 
+				getModuleId(p)== batcalcRef ||
+				getModuleId(p)== aggrRef)
 				lastsegment= ++grp;
 			for(j=0; j<p->retc; j++){
 				setArgProperty(mb, p,j,"segment","=",TYPE_int,&grp);
@@ -295,20 +297,81 @@ Wrapup the last segment first
 			}
 			anchor=NULL;
 		}
-		
+@-
+Blocking operations, such as sorting, aggregation, and
+the aligned bat calculations require more care.
+@c
+		/* remap specific instructions to list versions */
+		if( getModuleId(p)==aggrRef  &&
+		    getFunctionId(p)== countRef &&
+			alias[getArg(p,1)]!= getArg(p,1)  ){
+			getModuleId(p)= bpmRef;
+			pushInstruction(mb,p);
+			if( alias[getArg(p,1)])
+				getArg(p,1)= alias[getArg(p,1)];
+			continue;
+		}
+		if( getFunctionId(p) == sortTailRef || 
+			getFunctionId(p) ==sortReverseTailRef ||
+			getModuleId(p) == aggrRef){
+			q = newStmt(mb,"bpm","glue");
+			pushArgument(mb,q,alias[getArg(p,1)]);
+			p->argv[1]= getArg(q,0);
+			alias[getArg(p,0)]= getArg(p,0);
+			pushInstruction(mb,p);
+			continue;
+		}
+@-
+Batcalc operations all work on the assumption that the
+heads are sorted on the heads(oid). If the operands come from
+different partitions sequences, we have to take special
+care in the iterator.
+@c
+		if( getModuleId(p)== batcalcRef){
+			InstrPtr qa;
+			int tpe = getArgType(mb,p,0);
+			listanchor[0]= q = newStmt(mb,"bpm","new");
+			pushArgument(mb,listanchor[0],newTypeVariable(mb,getHeadType(tpe)));
+			pushArgument(mb,listanchor[0],newTypeVariable(mb,getTailType(tpe)));
+			
+			q = newStmt(mb,"bpm","newIterator");
+			q->barrier= BARRIERsymbol;
+			for(j=p->retc+1; j<p->argc; j++)
+				pushReturn(mb,q,newTmpVariable(mb, TYPE_any));
+			for(j=p->retc; j<p->argc; j++)
+				pushArgument(mb,q, alias[getArg(p,j)]);
+
+			alias[getArg(p,0)]= getArg(listanchor[0],0);
+			for(j=p->retc; j<p->argc; j++)
+				getArg(p,j)= getArg(q,j- p->retc);
+			pushInstruction(mb,p);
+
+			qa = newStmt(mb,"bpm","addPartition");
+			pushArgument(mb,qa,getArg(listanchor[0],0));
+			pushArgument(mb,qa,getArg(p,0));
+
+			qa = newStmt(mb, bpmRef, "hasMoreElements");
+			qa->barrier= REDOsymbol;
+			getArg(qa,0)= getArg(q,0);
+			for(j=1;j<q->retc; j++)
+				pushReturn(mb,qa,getArg(q,j));
+			for(j=q->retc;j<q->argc; j++)
+				pushArgument(mb,qa,getArg(q,j));
+
+			qa= newInstruction(mb, EXITsymbol);
+			qa->barrier= EXITsymbol;
+			getArg(qa,0)= getArg(q,0);
+			for(j=1;j<q->retc; j++)
+				pushReturn(mb,qa,getArg(q,j));
+			pushInstruction(mb,qa);
+			continue;
+		}
+@-
+In the last segment we have to glue things together.
+@c
 		if( seg && *seg==last){
-			/* remap specific instructions to list versions */
-			if( getModuleId(p)==aggrRef  &&
-				alias[getArg(p,1)]!= getArg(p,1)  ){
-				getModuleId(p)= bpmRef;
-				pushInstruction(mb,p);
-				if( alias[getArg(p,1)])
-					getArg(p,1)= alias[getArg(p,1)];
-				continue;
-			}
 			for(j= p->retc; j<p->argc; j++)
-			if( (alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j)) ||
-				strncmp(getFunctionId(p),"sort",4)==0){
+			if( (alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j)) ){
 				q = newStmt(mb,"bpm","glue");
 				q->argv[0]= getArg(p,j);
 				pushArgument(mb,q,alias[getArg(p,j)]);

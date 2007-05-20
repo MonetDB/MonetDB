@@ -1,0 +1,136 @@
+stdout of test 'partitions07` in directory 'src/optimizer` itself:
+
+
+# 09:41:13 >  
+# 09:41:13 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=36568 --set xrpc_port=42864 --set monet_prompt= --trace --dbname=mTests_src_optimizer  partitions07.mal
+# 09:41:13 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information
+##testing the BAT partition manager
+## use a fake sql library
+## see how you handle an aggregation
+#module sql;
+#pattern bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
+pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int] address MDBdummy;	# 0  (bind:bat[:oid,:int])<-(s:str)(t:str)(i:str)(flag:int)
+#pattern rsColumn(b:any...):void
+pattern sql.rsColumn(b:any...):void address MDBdummy;	# 0  (rsColumn:void)<-(b:any)
+#pattern resultSet(b:any...):void
+pattern sql.resultSet(b:any...):void address MDBdummy;	# 0  (resultSet:void)<-(b:any)
+#pattern exportResult(b:any...):void
+pattern sql.exportResult(b:any...):void address MDBdummy;	# 0  (exportResult:void)<-(b:any)
+#pattern exportValue(b:any...):void
+pattern sql.exportValue(b:any...):void address MDBdummy;	# 0  (exportValue:void)<-(b:any)
+#
+##explain select sin(i) from t;
+#
+#function query(A0:sht):void;
+#    x1:bat[:oid,:int]{notnil=true,rows=1:lng,bid=769}  := sql.bind("sys","t","i",0);
+#    x6:bat[:oid,:int]{notnil=true,rows=0:lng,bid=1435}  := sql.bind("sys","t","i",1);
+#    constraints.emptySet(x6);
+#    x8:bat[:oid,:int]{notnil=true,rows=0:lng,bid=1436}  := sql.bind("sys","t","i",2);
+#    constraints.emptySet(x8);
+#    x11{rows=1:lng} := algebra.markT(x1,0@0);
+#    x12{rows=1:lng} := bat.reverse(x11);
+#    x13{rows=1:lng} := algebra.join(x12,x1);
+#    x14{rows=1:lng} := batcalc.flt(x13);
+#    x31 := bat.new(nil:oid,nil:flt);
+#barrier (x35,x36,x37):= bat.newIterator(x14);
+#    x39 := mmath.sin(x37);
+#    bat.insert(x31,x36,x39);
+#    redo (x35,x36,x37):= bat.hasMoreElements(x14);
+#catch MALException:str ;
+#    redo (x35,x36,x37):= bat.hasMoreElements(x14);
+#exit MALException:str ;
+#exit (x35,x36,x37);
+#    x15:bat[:oid,:flt]  := x31;
+#    x18 := sql.resultSet(1,1,x15);
+#    sql.rsColumn(x18,"sys.","sinxi","real",24,0,x15);
+#    sql.exportResult(x18,"");
+#end query;
+function sql.query(A0:sht):void;	# 0  (query:void)<-(A0:sht)
+    x1:bat[:oid,:int]{bid=769,rows=1:lng,notnil=true}  := sql.bind("sys","t","i",0);	# 1 MDBdummy (x1:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_6:int)
+    x6:bat[:oid,:int]{bid=1435,rows=0:lng,notnil=true}  := sql.bind("sys","t","i",1);	# 2 MDBdummy (x6:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_8:int)
+    constraints.emptySet(x6);	# 3 CemptySet (_9:void)<-(x6:bat[:oid,:int])
+    x8:bat[:oid,:int]{bid=1436,rows=0:lng,notnil=true}  := sql.bind("sys","t","i",2);	# 4 MDBdummy (x8:bat[:oid,:int])<-(_3:str)(_4:str)(_5:str)(_11:int)
+    constraints.emptySet(x8);	# 5 CemptySet (_12:void)<-(x8:bat[:oid,:int])
+    x11{rows=1:lng} := algebra.markT(x1,0@0);	# 6 ALGtmark (x11:bat[:oid,:oid])<-(x1:bat[:oid,:int])(_14:oid)
+    x12{rows=1:lng} := bat.reverse(x11);	# 7 BKCreverse (x12:bat[:oid,:oid])<-(x11:bat[:oid,:oid])
+    x13{rows=1:lng} := algebra.join(x12,x1);	# 8 ALGjoin (x13:bat[:oid,:int])<-(x12:bat[:oid,:oid])(x1:bat[:oid,:int])
+    x14{rows=1:lng} := batcalc.flt(x13);	# 9 CMDconvert_int_flt (x14:bat[:oid,:flt])<-(x13:bat[:oid,:int])
+    x31 := bat.new(nil:oid,nil:flt);	# 10 CMDBATnew (x31:bat[:oid,:flt])<-(_19:oid)(_20:flt)
+barrier (x35,x36,x37):= bat.newIterator(x14);	# 11 CHPbunIterator (x35:lng)(x36:oid)(x37:flt)<-(x14:bat[:oid,:flt]) jump 18
+    x39 := mmath.sin(x37);	# 12 MATHunary_SINflt (x39:flt)<-(x37:flt)
+    bat.insert(x31,x36,x39);	# 13 BKCinsert_bun (_25:void)<-(x31:bat[:oid,:flt])(x36:oid)(x39:flt)
+    redo (x35,x36,x37):= bat.hasMoreElements(x14);	# 14 CHPbunHasMoreElements (x35:lng)(x36:oid)(x37:flt)<-(x14:bat[:oid,:flt]) jump 12
+catch MALException:str ;	# 15  (MALException:str) jump 17
+    redo (x35,x36,x37):= bat.hasMoreElements(x14);	# 16 CHPbunHasMoreElements (x35:lng)(x36:oid)(x37:flt)<-(x14:bat[:oid,:flt]) jump 12
+exit MALException:str ;	# 17  (MALException:str)
+exit (x35,x36,x37);	# 18  (x35:lng)(x36:oid)(x37:flt)
+    x15:bat[:oid,:flt]  := x31;	# 19  (x15:bat[:oid,:flt])<-(x31:bat[:oid,:flt])
+    x18 := sql.resultSet(1,1,x15);	# 20 MDBdummy (x18:void)<-(_8:int)(_8:int)(x15:bat[:oid,:flt])
+    sql.rsColumn(x18,"sys.","sinxi","real",24,0,x15);	# 21 MDBdummy (_29:void)<-(x18:void)(_30:str)(_31:str)(_32:str)(_33:int)(_6:int)(x15:bat[:oid,:flt])
+    sql.exportResult(x18,"");	# 22 MDBdummy (_34:void)<-(x18:void)(_35:str)
+end query;	# 23  
+#optimizer.partitions("sql","query");
+#mdb.list("sql","query");
+#
+function user.main():void;	# 0  (main:void)
+#testing the BAT partition manager 	# 1  (_1:str)
+# use a fake sql library 	# 2  (_2:str)
+# see how you handle an aggregation 	# 3  (_3:str)
+#explain select sin(i) from t; 	# 4  (_4:str)
+    mdb.list("sql","query");	# 5 MDBlist3 (_8:void)<-(_6:str)(_7:str)
+end main;	# 6  
+function sql.query{segment=2}(A0:sht):void;
+    x1:bat[:oid,:int]{segment=2,bid=769,rows=1:lng,notnil=true}  := sql.bind("sys","t","i",0);
+    bpm2:bat[:oid,:int]  := bpm.take("sys_t_i");
+    x6:bat[:oid,:int]{segment=-1,bid=1435,rows=0:lng,notnil=true}  := sql.bind("sys","t","i",1);
+    constraints.emptySet(x6);
+    x8:bat[:oid,:int]{segment=-1,bid=1436,rows=0:lng,notnil=true}  := sql.bind("sys","t","i",2);
+    constraints.emptySet(x8);
+    _39 := bpm.new(:oid,:oid);
+barrier x1:bat[:oid,:int]{segment=2,bid=769,rows=1:lng,notnil=true}  := bpm.newIterator(bpm2);
+    x11{segment=8,rows=1:lng} := algebra.markT(x1,0@0);
+    x12{segment=8,rows=1:lng} := bat.reverse(x11);
+    bpm.addPartition(_39,x12);
+    redo x1:bat[:oid,:int]{segment=2,bid=769,rows=1:lng,notnil=true}  := bpm.hasMoreElements(bpm2);
+exit x1:bat[:oid,:int]{segment=2,bid=769,rows=1:lng,notnil=true} ;
+    _45 := bpm.new(:oid,:int);
+barrier x12{segment=8,rows=1:lng} := bpm.newIterator(_39);
+barrier x1:bat[:oid,:int]{segment=2,bid=769,rows=1:lng,notnil=true}  := bpm.newIterator(bpm2);
+    x13{segment=9,rows=1:lng} := algebra.join(x12,x1);
+    bpm.addPartition(_45,x13);
+    redo x1:bat[:oid,:int]{segment=2,bid=769,rows=1:lng,notnil=true}  := bpm.hasMoreElements(bpm2);
+    redo x12{segment=8,rows=1:lng} := bpm.hasMoreElements(_39);
+exit x1:bat[:oid,:int]{segment=2,bid=769,rows=1:lng,notnil=true} ;
+exit x12{segment=8,rows=1:lng};
+    _53 := bpm.new(:oid,:flt);
+barrier _56 := bpm.newIterator(_45);
+    x14{segment=10,rows=1:lng} := batcalc.flt(_56);
+    bpm.addPartition(_53,x14);
+    redo _56 := bpm.hasMoreElements(_45);
+exit _56;
+    x31{segment=10} := bat.new(nil:oid,nil:flt);
+    x14{segment=10,rows=1:lng} := bpm.glue(_53);
+barrier (x35{segment=10},x36{segment=10},x37{segment=10}):= bat.newIterator(x14);
+    x39{segment=10} := mmath.sin(x37);
+    bat.insert(x31,x36,x39);
+    redo (x35{segment=10},x36{segment=10},x37{segment=10}):= bat.hasMoreElements(x14);
+catch MALException:str{segment=10} ;
+    redo (x35{segment=10},x36{segment=10},x37{segment=10}):= bat.hasMoreElements(x14);
+exit MALException:str{segment=10} ;
+exit (x35{segment=10},x36{segment=10},x37{segment=10});
+    x15:bat[:oid,:flt]{segment=10}  := x31;
+    x18{segment=10} := sql.resultSet(1,1,x15);
+    sql.rsColumn(x18,"sys.","sinxi","real",24,0,x15);
+    sql.exportResult(x18,"");
+end query;
+
+# 09:41:13 >  
+# 09:41:13 >  Done.
+# 09:41:13 >  
+
