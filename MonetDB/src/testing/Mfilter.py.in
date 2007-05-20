@@ -84,6 +84,8 @@ test = (
                     r"^\[ .?\\000\\000\\000.?\\000\\000\\000.? \]$",
                 # ignore compile date/time in helps messages:
                     r"^COMPILED:  by adm on .*$",
+                # ignore varying BAT IDs in error message (test leftfetchjoin_crash.SF-1705726)
+                    r"^!ERROR: BATfetchjoin\(tmp_[0-9]+,tmp_[0-9]+\) does not hit always .* => can't use fetchjoin.$",
                 # `fuser` (in MkillUsers) triggers these errors on Gentoo with "hardened" kernel
                     r'^! Cannot open /proc/net/unix: Permission denied$',
                     r'^! Cannot stat file /proc/[0-9]+/fd/[0-9]+: (?:No such file or directory|Permission denied)$',
