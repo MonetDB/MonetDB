@@ -56,12 +56,12 @@
  * @return	   A SQL node annotaded with a correlation
  *			   name.
  */
-PFsql_t*
-PFsql_correlation_decorator (PFsql_t *op, PFsql_correlation_name_t crrl)
+PFsql_t *
+PFsql_correlation_decorator (PFsql_t * op, PFsql_correlation_name_t crrl)
 {
-    assert (op);
-    op->crrlname = crrl;
-    return op;
+  assert (op);
+  op->crrlname = crrl;
+  return op;
 }
 
 
@@ -76,12 +76,12 @@ PFsql_correlation_decorator (PFsql_t *op, PFsql_correlation_name_t crrl)
  *				fragment or not.
  * @return 		A table name, with mark @a frag.
  */
-PFsql_t*
-PFsql_table_decorator (PFsql_t *op, bool frag)
+PFsql_t *
+PFsql_table_decorator (PFsql_t * op, bool frag)
 {
-    assert (op);
-    op->frag = frag;
-    return op;
+  assert (op);
+  op->frag = frag;
+  return op;
 }
 
 
@@ -99,12 +99,12 @@ PFsql_table_decorator (PFsql_t *op, bool frag)
  *   Allocates memory and initialize fields of
  *   an sql operator. The node has the kind of @a kind.
  */
-static PFsql_t*
-wire1 (PFsql_kind_t k, const PFsql_t *n)
+static PFsql_t *
+wire1 (PFsql_kind_t k, const PFsql_t * n)
 {
-    PFsql_t *ret = PFsql_op_leaf (k);
-    ret->child[0] = (PFsql_t *) n;
-    return ret;
+  PFsql_t *ret = PFsql_op_leaf (k);
+  ret->child[0] = (PFsql_t *) n;
+  return ret;
 }
 
 
@@ -118,12 +118,12 @@ wire1 (PFsql_kind_t k, const PFsql_t *n)
  *             the first children set to @a n1 and @a n2,
  *             and all remaining children set to @c NULL.
  */
-static PFsql_t*
-wire2 (PFsql_kind_t k, const PFsql_t *n1, const PFsql_t *n2)
+static PFsql_t *
+wire2 (PFsql_kind_t k, const PFsql_t * n1, const PFsql_t * n2)
 {
-    PFsql_t *ret = wire1 (k, n1);
-    ret->child[1] = (PFsql_t *) n2;
-    return ret;
+  PFsql_t *ret = wire1 (k, n1);
+  ret->child[1] = (PFsql_t *) n2;
+  return ret;
 }
 
 
@@ -137,20 +137,20 @@ wire2 (PFsql_kind_t k, const PFsql_t *n1, const PFsql_t *n2)
  *    Allocates memory and initializes fields of an
  *    sql operator. The node has the kind @a kind.
  */
-PFsql_t*
+PFsql_t *
 PFsql_op_leaf (PFsql_kind_t kind)
 {
-    /* node we want to return */
-    PFsql_t *ret = (PFsql_t *) PFmalloc (sizeof (PFsql_t));
-    ret->kind = kind;
-    ret->crrlname = PF_SQL_CORRELATION_UNBOUNDED;
-    ret->frag = false;
+  /* node we want to return */
+  PFsql_t *ret = (PFsql_t *) PFmalloc (sizeof (PFsql_t));
+  ret->kind = kind;
+  ret->crrlname = PF_SQL_CORRELATION_UNBOUNDED;
+  ret->frag = false;
 
-    /* initialize childs */
-    for (unsigned int i = 0; i < PFSQL_OP_MAXCHILD; i++)
-        ret->child[i] = NULL;
+  /* initialize childs */
+  for (unsigned int i = 0; i < PFSQL_OP_MAXCHILD; i++)
+    ret->child[i] = NULL;
 
-    return ret;
+  return ret;
 }
 
 /*.....................Constructors................*/
@@ -169,29 +169,29 @@ PFsql_op_leaf (PFsql_kind_t kind)
  * @param   list  Array of exactly @a count expression nodes.
  * @return        A chain of expression nodes.
  */
-PFsql_t*
-PFsql_select_list_(unsigned int count, const PFsql_t **list)
+PFsql_t *
+PFsql_select_list_ (unsigned int count, const PFsql_t ** list)
 {
-    assert (count > 0);
+  assert (count > 0);
 
-    if (list[0] == NULL)
-        return PFsql_select_list_ (count - 1, list + 1);
-    else if (count == 1)
-        return (PFsql_t *) list[0];
-    else
-        return wire2 (sql_slct_list,
-            PFsql_select_list_ (count - 1, list + 1), list[0]);
-    return NULL;                 /* satisfy picky compilers */
+  if (list[0] == NULL)
+    return PFsql_select_list_ (count - 1, list + 1);
+  else if (count == 1)
+    return (PFsql_t *) list[0];
+  else
+    return wire2 (sql_slct_list,
+		  PFsql_select_list_ (count - 1, list + 1), list[0]);
+  return NULL;			/* satisfy picky compilers */
 }
 
 
 /**
  * Create an empty select_list.
  */
-PFsql_t*
-PFsql_select_list_empty(void)
+PFsql_t *
+PFsql_select_list_empty (void)
 {
-    return terminator ();
+  return terminator ();
 }
 
 
@@ -203,10 +203,10 @@ PFsql_select_list_empty(void)
  * @param   item  The item to append to the front
  *                of the @a list list.
  */
-PFsql_t*
-PFsql_select_list_add(const PFsql_t *list, const PFsql_t *item)
+PFsql_t *
+PFsql_select_list_add (const PFsql_t * list, const PFsql_t * item)
 {
-    return wire2 (sql_slct_list, item, list);
+  return wire2 (sql_slct_list, item, list);
 }
 
 
@@ -224,34 +224,34 @@ PFsql_select_list_add(const PFsql_t *list, const PFsql_t *item)
  * @param   list  Array of exactly @a count expression nodes.
  * @return        A chain of expression nodes.
  */
-PFsql_t*
-PFsql_from_list_(unsigned int count, const PFsql_t **list)
+PFsql_t *
+PFsql_from_list_ (unsigned int count, const PFsql_t ** list)
 {
-    assert (count > 0);
+  assert (count > 0);
 
 /*    else if (count == 0)
     {
 	return  
     }*/
 
-    if (list[0] == NULL)
-        return PFsql_from_list_ (count - 1, list + 1);
-    else if (count == 1)
-        return (PFsql_t *) list[0];
-    else
-        return wire2 (sql_frm_list,
-            PFsql_from_list_ (count - 1, list + 1), list[0]);
-    return NULL;                 /* satisfy picky compilers */
+  if (list[0] == NULL)
+    return PFsql_from_list_ (count - 1, list + 1);
+  else if (count == 1)
+    return (PFsql_t *) list[0];
+  else
+    return wire2 (sql_frm_list,
+		  PFsql_from_list_ (count - 1, list + 1), list[0]);
+  return NULL;			/* satisfy picky compilers */
 }
 
 
 /**
  * Create an empty from_list.
  */
-PFsql_t*
-PFsql_from_list_empty(void)
+PFsql_t *
+PFsql_from_list_empty (void)
 {
-    return terminator ();
+  return terminator ();
 }
 
 
@@ -263,10 +263,10 @@ PFsql_from_list_empty(void)
  * @param   item  The item to append to the front
  *                of the @a list list.
  */
-PFsql_t*
-PFsql_from_list_add(const PFsql_t *list, const PFsql_t *item)
+PFsql_t *
+PFsql_from_list_add (const PFsql_t * list, const PFsql_t * item)
 {
-    return wire2 (sql_frm_list, item, list);
+  return wire2 (sql_frm_list, item, list);
 }
 
 
@@ -284,28 +284,28 @@ PFsql_from_list_add(const PFsql_t *list, const PFsql_t *item)
  * @param   list  Array of exactly @a count expression nodes.
  * @return        A chain of expression nodes.
  */
-PFsql_t*
-PFsql_where_list_(unsigned int count, const PFsql_t **list)
+PFsql_t *
+PFsql_where_list_ (unsigned int count, const PFsql_t ** list)
 {
-    assert (count > 0);
+  assert (count > 0);
 
-    if (list[0] == NULL)
-        return PFsql_where_list_ (count - 1, list + 1);
-    else if (count == 1)
-        return (PFsql_t *) list[0];
-    else
-        return wire2 (sql_and, PFsql_where_list_ (count - 1, list + 1), list[0]);
-    return NULL;                 /* satisfy picky compilers */
+  if (list[0] == NULL)
+    return PFsql_where_list_ (count - 1, list + 1);
+  else if (count == 1)
+    return (PFsql_t *) list[0];
+  else
+    return wire2 (sql_and, PFsql_where_list_ (count - 1, list + 1), list[0]);
+  return NULL;			/* satisfy picky compilers */
 }
 
 
 /**
  * Create an empty where_list.
  */
-PFsql_t*
-PFsql_where_list_empty(void)
+PFsql_t *
+PFsql_where_list_empty (void)
 {
-    return terminator ();
+  return terminator ();
 }
 
 
@@ -317,10 +317,10 @@ PFsql_where_list_empty(void)
  * @param   item  The item to append to the front
  *                of the @a list list.
  */
-PFsql_t*
-PFsql_where_list_add(const PFsql_t *list, const PFsql_t *item)
+PFsql_t *
+PFsql_where_list_add (const PFsql_t * list, const PFsql_t * item)
 {
-    return and_ (item, list);
+  return and_ (item, list);
 }
 
 
@@ -338,28 +338,28 @@ PFsql_where_list_add(const PFsql_t *list, const PFsql_t *item)
  * @param   list  Array of exactly @a count column nodes.
  * @return        A chain of column nodes.
  */
-PFsql_t*
-PFsql_column_list_(unsigned int count, const PFsql_t **clmns)
+PFsql_t *
+PFsql_column_list_ (unsigned int count, const PFsql_t ** clmns)
 {
-    assert (count > 0);
-    if (clmns[0] == NULL)
-        return PFsql_column_list_ (count - 1, clmns + 1);
-    else if (count == 1)
-        return (PFsql_t *) clmns[0];
-    else
-        return wire2 (sql_clmn_list,
-            PFsql_column_list_ (count - 1, clmns + 1), clmns[0]);
-    return NULL;                 /* satisfy picky compilers */
+  assert (count > 0);
+  if (clmns[0] == NULL)
+    return PFsql_column_list_ (count - 1, clmns + 1);
+  else if (count == 1)
+    return (PFsql_t *) clmns[0];
+  else
+    return wire2 (sql_clmn_list,
+		  PFsql_column_list_ (count - 1, clmns + 1), clmns[0]);
+  return NULL;			/* satisfy picky compilers */
 }
 
 /**
  * Create a SQL tree node representing a terminator
  * object for all kind of lists.
  */
-PFsql_t*
-PFsql_list_terminator(void)
+PFsql_t *
+PFsql_list_terminator (void)
 {
-    return leaf(sql_list_terminator);
+  return leaf (sql_list_terminator);
 }
 
 
@@ -367,18 +367,18 @@ PFsql_list_terminator(void)
  * Construct a SQL tree node representing a SQL
  * `case' statement.
  */
-PFsql_t*
-PFsql_case_ (unsigned int count, const PFsql_t **list)
+PFsql_t *
+PFsql_case_ (unsigned int count, const PFsql_t ** list)
 {
-    assert (count > 0);
+  assert (count > 0);
 
-    if (list[0] == NULL)
-        return PFsql_case_ (count - 1, list + 1);
-    else if (count == 1)
-        return (PFsql_t *) list[0];
-    else
-        return wire2 (sql_case, PFsql_case_ (count - 1, list + 1), list[0]);
-    return NULL;                 /* satisfy picky compilers */
+  if (list[0] == NULL)
+    return PFsql_case_ (count - 1, list + 1);
+  else if (count == 1)
+    return (PFsql_t *) list[0];
+  else
+    return wire2 (sql_case, PFsql_case_ (count - 1, list + 1), list[0]);
+  return NULL;			/* satisfy picky compilers */
 }
 
 
@@ -386,13 +386,13 @@ PFsql_case_ (unsigned int count, const PFsql_t **list)
  * Construct a SQL tree node representing a
  * branch within a case-statement.
  */
-PFsql_t*
-PFsql_when (PFsql_t *boolexpr, PFsql_t *expr)
+PFsql_t *
+PFsql_when (PFsql_t * boolexpr, PFsql_t * expr)
 {
-    assert (boolexpr);
-    assert (expr);
+  assert (boolexpr);
+  assert (expr);
 
-    return wire2 (sql_when, boolexpr, expr);
+  return wire2 (sql_when, boolexpr, expr);
 }
 
 
@@ -400,11 +400,11 @@ PFsql_when (PFsql_t *boolexpr, PFsql_t *expr)
  * Construct a SQL tree node representing an
  * else-branch within a case-statement.
  */
-PFsql_t*
-PFsql_else (PFsql_t *expr)
+PFsql_t *
+PFsql_else (PFsql_t * expr)
 {
-    assert (expr);
-    return wire1 (sql_else, expr);
+  assert (expr);
+  return wire1 (sql_else, expr);
 }
 
 
@@ -412,17 +412,17 @@ PFsql_else (PFsql_t *expr)
  * Create a SQL tree node representing a SQL
  * `common table expression'.
  */
-PFsql_t*
-PFsql_common_table_expr_ (int count, const PFsql_t **stmts)
+PFsql_t *
+PFsql_common_table_expr_ (int count, const PFsql_t ** stmts)
 {
-    assert (count > 0);
+  assert (count > 0);
 
-    if (count == 1)
-        return (PFsql_t *) stmts[0];
-    else
-        return wire2 (sql_cmmn_tbl_expr, stmts[0],
-            PFsql_common_table_expr_ (count - 1, stmts + 1));
-    return NULL;                 /* satisfy picky compilers */
+  if (count == 1)
+    return (PFsql_t *) stmts[0];
+  else
+    return wire2 (sql_cmmn_tbl_expr, stmts[0],
+		  PFsql_common_table_expr_ (count - 1, stmts + 1));
+  return NULL;			/* satisfy picky compilers */
 }
 
 
@@ -430,10 +430,10 @@ PFsql_common_table_expr_ (int count, const PFsql_t **stmts)
  * Create a SQL tree node representing the SQL
  * wildcard `*'
  */
-PFsql_t*
+PFsql_t *
 PFsql_star (void)
 {
-    return leaf (sql_star);
+  return leaf (sql_star);
 }
 
 
@@ -444,21 +444,21 @@ PFsql_star (void)
  * @note
  *   Represents the SELECT ALL statement in SQL.
  */
-PFsql_t*
-PFsql_select (const PFsql_t *selectlist, const PFsql_t *fromlist,
-const PFsql_t *wherelist, const PFsql_t *grpbylist)
+PFsql_t *
+PFsql_select (const PFsql_t * selectlist, const PFsql_t * fromlist,
+	      const PFsql_t * wherelist, const PFsql_t * grpbylist)
 {
-    PFsql_t *ret = leaf (sql_select);
+  PFsql_t *ret = leaf (sql_select);
 
-    /* distinct flag is false */
-    ret->sem.select.distinct = false;
-    /* initialize select lists  */
-    ret->child[0] = (PFsql_t *) selectlist;
-    ret->child[1] = (PFsql_t *) fromlist;
-    ret->child[2] = (PFsql_t *) wherelist;
-    ret->child[3] = (PFsql_t *) grpbylist;
+  /* distinct flag is false */
+  ret->sem.select.distinct = false;
+  /* initialize select lists  */
+  ret->child[0] = (PFsql_t *) selectlist;
+  ret->child[1] = (PFsql_t *) fromlist;
+  ret->child[2] = (PFsql_t *) wherelist;
+  ret->child[3] = (PFsql_t *) grpbylist;
 
-    return ret;
+  return ret;
 }
 
 
@@ -467,15 +467,16 @@ const PFsql_t *wherelist, const PFsql_t *grpbylist)
  * `select' operator. The purpose of this
  * operator is to remove all equal tuples.
  */
-PFsql_t*
-PFsql_select_distinct (const PFsql_t *selectlist,
-const PFsql_t *fromlist, const PFsql_t *wherelist, PFsql_t *grpbylist)
+PFsql_t *
+PFsql_select_distinct (const PFsql_t * selectlist,
+		       const PFsql_t * fromlist, const PFsql_t * wherelist,
+		       PFsql_t * grpbylist)
 {
-    PFsql_t *ret = select (selectlist, fromlist, wherelist, grpbylist);
+  PFsql_t *ret = select (selectlist, fromlist, wherelist, grpbylist);
 
-    /* set the distinct flag within the semantic field of the select operator */
-    ret->sem.select.distinct = true;
-    return ret;
+  /* set the distinct flag within the semantic field of the select operator */
+  ret->sem.select.distinct = true;
+  return ret;
 }
 
 
@@ -483,10 +484,10 @@ const PFsql_t *fromlist, const PFsql_t *wherelist, PFsql_t *grpbylist)
  * Create a SQL tree node representing the SQL
  * `union' operator.
  */
-PFsql_t*
-PFsql_union (const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_union (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2 (sql_union, a, b);
+  return wire2 (sql_union, a, b);
 }
 
 
@@ -494,20 +495,20 @@ PFsql_union (const PFsql_t *a, const PFsql_t *b)
  * Create a SQL tree node representing the SQL
  * `difference' operator.
  */
-PFsql_t*
-PFsql_difference (const PFsql_t *a, const PFsql_t* b)
+PFsql_t *
+PFsql_difference (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2 (sql_diff, a, b);
+  return wire2 (sql_diff, a, b);
 }
 
 /**
  * Create a SQL tree node representing the SQL
  * `order by' clause.
  */
-PFsql_t*
-PFsql_order_by(const PFsql_t *a)
+PFsql_t *
+PFsql_order_by (const PFsql_t * a)
 {
-    return wire1 (sql_ordr_by, a);
+  return wire1 (sql_ordr_by, a);
 }
 
 
@@ -515,10 +516,10 @@ PFsql_order_by(const PFsql_t *a)
  * Used to order some attribute in an
  * ascending manner.
  */
-PFsql_t*
-PFsql_asc(void)
+PFsql_t *
+PFsql_asc (void)
 {
-    return leaf (sql_asc);
+  return leaf (sql_asc);
 }
 
 
@@ -526,10 +527,10 @@ PFsql_asc(void)
  * Used to order some attribute in a
  * descending manner.
  */
-PFsql_t*
-PFsql_desc(void)
+PFsql_t *
+PFsql_desc (void)
 {
-    return leaf (sql_desc);
+  return leaf (sql_desc);
 }
 
 
@@ -537,10 +538,10 @@ PFsql_desc(void)
  * Create a SQL tree node representing the SQL
  * `with' operator.
  */
-PFsql_t*
-PFsql_with (const PFsql_t *a )
+PFsql_t *
+PFsql_with (const PFsql_t * a)
 {
-    return wire1 (sql_with, a);
+  return wire1 (sql_with, a);
 }
 
 
@@ -551,24 +552,24 @@ PFsql_with (const PFsql_t *a )
  * @return  	  A comment formatted comment
  *				  string.
  */
-PFsql_t*
-PFsql_comment(const char *fmt, ...)
+PFsql_t *
+PFsql_comment (const char *fmt, ...)
 {
-    /* create a new comment tree node */
-    PFsql_t *ret = leaf (sql_comment);
+  /* create a new comment tree node */
+  PFsql_t *ret = leaf (sql_comment);
 
-    PFarray_t *a = PFarray (sizeof (char));
+  PFarray_t *a = PFarray (sizeof (char));
 
-    /* create the formatted string */
-    va_list args;
+  /* create the formatted string */
+  va_list args;
 
-    va_start (args, fmt);
-    PFarray_vprintf (a, fmt, args);
-    va_end (args);
+  va_start (args, fmt);
+  PFarray_vprintf (a, fmt, args);
+  va_end (args);
 
-    ret->sem.comment = PFarray_at (a, 0);
+  ret->sem.comment = PFarray_at (a, 0);
 
-    return ret;
+  return ret;
 }
 
 
@@ -579,12 +580,12 @@ PFsql_comment(const char *fmt, ...)
  *
  * @param   t  The type.
  */
-PFsql_t*
-PFsql_type(PFalg_simple_type_t t)
+PFsql_t *
+PFsql_type (PFalg_simple_type_t t)
 {
-    PFsql_t *ret = leaf (sql_type);
-    ret->sem.type.t = t;
-    return ret;
+  PFsql_t *ret = leaf (sql_type);
+  ret->sem.type.t = t;
+  return ret;
 }
 
 
@@ -595,10 +596,10 @@ PFsql_type(PFalg_simple_type_t t)
  * @param   expr  Expression.
  * @param   t     Type.
  */
-PFsql_t*
-PFsql_cast(const PFsql_t *expr, const PFsql_t *t)
+PFsql_t *
+PFsql_cast (const PFsql_t * expr, const PFsql_t * t)
 {
-    return wire2 (sql_cst, expr, t);
+  return wire2 (sql_cst, expr, t);
 }
 
 
@@ -606,10 +607,10 @@ PFsql_cast(const PFsql_t *expr, const PFsql_t *t)
  * This is used conflate the schema information with the
  * final query.
  */
-PFsql_t*
-PFsql_seq( const PFsql_t *schm_inf, const PFsql_t *cmtblexpr )
+PFsql_t *
+PFsql_seq (const PFsql_t * schm_inf, const PFsql_t * cmtblexpr)
 {
-    return wire2 (sql_seq, schm_inf, cmtblexpr);
+  return wire2 (sql_seq, schm_inf, cmtblexpr);
 }
 
 
@@ -617,10 +618,10 @@ PFsql_seq( const PFsql_t *schm_inf, const PFsql_t *cmtblexpr )
  * Create a tree node representing the SQL
  * `coalesce' function.
  */
-PFsql_t*
-PFsql_coalesce(PFsql_t* expr1, PFsql_t* expr2)
+PFsql_t *
+PFsql_coalesce (PFsql_t * expr1, PFsql_t * expr2)
 {
-    return wire2 (sql_clsc, expr1, expr2);
+  return wire2 (sql_clsc, expr1, expr2);
 }
 
 
@@ -629,10 +630,10 @@ PFsql_coalesce(PFsql_t* expr1, PFsql_t* expr2)
  * `like' statement to compare a string
  * with a certain pattern.
  */
-PFsql_t*
-PFsql_like(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_like (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2 (sql_like, a, b);
+  return wire2 (sql_like, a, b);
 }
 
 
@@ -642,10 +643,10 @@ PFsql_like(const PFsql_t *a, const PFsql_t *b)
  * Create a SQL tree node representing SQL
  * `rownumber()' function.
  */
-PFsql_t*
-PFsql_rownumber(void)
+PFsql_t *
+PFsql_rownumber (void)
 {
-    return leaf (sql_rownumber);
+  return leaf (sql_rownumber);
 }
 
 
@@ -653,10 +654,10 @@ PFsql_rownumber(void)
  * Create a SQL tree node representing the SQL
  * `over' keyword.
  */
-PFsql_t*
-PFsql_over(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_over (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2 (sql_over, a, b);
+  return wire2 (sql_over, a, b);
 }
 
 
@@ -664,10 +665,10 @@ PFsql_over(const PFsql_t *a, const PFsql_t *b)
  * We mainly use this to express the partition keyword
  * used by some OLAP-functions.
  */
-PFsql_t*
-PFsql_partition(const PFsql_t *a)
+PFsql_t *
+PFsql_partition (const PFsql_t * a)
 {
-    return wire1 (sql_prttn, a);
+  return wire1 (sql_prttn, a);
 }
 
 
@@ -675,21 +676,21 @@ PFsql_partition(const PFsql_t *a)
  * Construct a list of partition-expressions used by some
  * OLAP-functions.
  */
-PFsql_t*
-PFsql_part_expressions_(unsigned int count, const PFsql_t **list)
+PFsql_t *
+PFsql_part_expressions_ (unsigned int count, const PFsql_t ** list)
 {
-    assert (count > 0);
+  assert (count > 0);
 
-    if (count == 1)
+  if (count == 1)
     {
-        return wire2 (sql_prt_expr, list[0], terminator ());
+      return wire2 (sql_prt_expr, list[0], terminator ());
     }
-    else
+  else
     {
-        return wire2 (sql_prt_expr, list[0],
-            PFsql_part_expressions_ (count - 1, list + 1));
+      return wire2 (sql_prt_expr, list[0],
+		    PFsql_part_expressions_ (count - 1, list + 1));
     }
-    return NULL;
+  return NULL;
 }
 
 
@@ -697,26 +698,26 @@ PFsql_part_expressions_(unsigned int count, const PFsql_t **list)
  * The sortkey expressions are used in OLAP-functions
  * to provide an ordering among the tuples in a relation.
  */
-PFsql_t*
-PFsql_sortkey_expressions_(unsigned int count, const PFsql_t **list)
+PFsql_t *
+PFsql_sortkey_expressions_ (unsigned int count, const PFsql_t ** list)
 {
-    assert (count > 0);
+  assert (count > 0);
 
-    if (list[0] == NULL)
-        return PFsql_sortkey_expressions_ (count - 1, list + 1);
-    else if (count == 1)
-        return (PFsql_t *) list[0];
-    else
-        return wire2 (sql_srtky_expr,
-            PFsql_sortkey_expressions_ (count - 1, list + 1), list[0]);
-    return NULL;                 /* satisfy picky compilers */
+  if (list[0] == NULL)
+    return PFsql_sortkey_expressions_ (count - 1, list + 1);
+  else if (count == 1)
+    return (PFsql_t *) list[0];
+  else
+    return wire2 (sql_srtky_expr,
+		  PFsql_sortkey_expressions_ (count - 1, list + 1), list[0]);
+  return NULL;			/* satisfy picky compilers */
 }
 
 
-PFsql_t*
-PFsql_order(PFsql_t *a, PFsql_t *sort)
+PFsql_t *
+PFsql_order (PFsql_t * a, PFsql_t * sort)
 {
-    return wire2(sql_order, a, sort);
+  return wire2 (sql_order, a, sort);
 }
 
 
@@ -725,10 +726,10 @@ PFsql_order(PFsql_t *a, PFsql_t *sort)
  * The whole clause, consisting of sortkey- and
  * partition expressions is called window_clause.
  */
-PFsql_t*
-PFsql_window_clause(const PFsql_t *partcls, const PFsql_t *ordercls)
+PFsql_t *
+PFsql_window_clause (const PFsql_t * partcls, const PFsql_t * ordercls)
 {
-    return wire2 (sql_wnd_clause, partcls, ordercls);
+  return wire2 (sql_wnd_clause, partcls, ordercls);
 }
 
 
@@ -738,12 +739,12 @@ PFsql_window_clause(const PFsql_t *partcls, const PFsql_t *ordercls)
  * Construct a SQL tree node representing
  * the aggregat function `count'.
  */
-PFsql_t*
-PFsql_count(bool dist, const PFsql_t *expr)
+PFsql_t *
+PFsql_count (bool dist, const PFsql_t * expr)
 {
-    PFsql_t *ret = wire1 (sql_count, expr);
-    ret->sem.count.distinct = dist;
-    return ret;
+  PFsql_t *ret = wire1 (sql_count, expr);
+  ret->sem.count.distinct = dist;
+  return ret;
 }
 
 
@@ -751,10 +752,10 @@ PFsql_count(bool dist, const PFsql_t *expr)
  * Construct a SQL tree node representing
  * the aggregat function `max'.
  */
-PFsql_t*
-PFsql_max(const PFsql_t *clmn)
+PFsql_t *
+PFsql_max (const PFsql_t * clmn)
 {
-    return wire1 (sql_max, clmn);
+  return wire1 (sql_max, clmn);
 }
 
 
@@ -762,10 +763,10 @@ PFsql_max(const PFsql_t *clmn)
  * Construct a SQL tree node representing
  * the aggregat function `min'.
  */
-PFsql_t*
-PFsql_min(const PFsql_t *clmn)
+PFsql_t *
+PFsql_min (const PFsql_t * clmn)
 {
-    return wire1 (sql_min, clmn);
+  return wire1 (sql_min, clmn);
 }
 
 
@@ -773,10 +774,10 @@ PFsql_min(const PFsql_t *clmn)
  * Construct a SQL tree node representing
  * the aggregat function `avg'.
  */
-PFsql_t*
-PFsql_avg(const PFsql_t *clmn)
+PFsql_t *
+PFsql_avg (const PFsql_t * clmn)
 {
-    return wire1 (sql_avg, clmn);
+  return wire1 (sql_avg, clmn);
 }
 
 
@@ -784,10 +785,10 @@ PFsql_avg(const PFsql_t *clmn)
  * Construct a SQL tree node representing
  * the aggregat function `sum'.
  */
-PFsql_t*
-PFsql_sum(const PFsql_t *clmn)
+PFsql_t *
+PFsql_sum (const PFsql_t * clmn)
 {
-    return wire1 (sql_sum, clmn);
+  return wire1 (sql_sum, clmn);
 }
 
 
@@ -797,13 +798,13 @@ PFsql_sum(const PFsql_t *clmn)
  * Construct a SQL tree node representing a
  * reference to a relation.
  */
-PFsql_t*
-PFsql_table_name(PFsql_ident_t name, PFsql_t *clmnlist)
+PFsql_t *
+PFsql_table_name (PFsql_ident_t name, PFsql_t * clmnlist)
 {
-    PFsql_t *ret = leaf (sql_tbl_name);
-    ret->sem.tablename.ident = name;
-    ret->child[0] = clmnlist;
-    return ret;
+  PFsql_t *ret = leaf (sql_tbl_name);
+  ret->sem.tablename.ident = name;
+  ret->child[0] = clmnlist;
+  return ret;
 }
 
 
@@ -812,12 +813,12 @@ PFsql_table_name(PFsql_ident_t name, PFsql_t *clmnlist)
  * table is laying in a schema. We use this
  * constructor to create such schema.
  */
-PFsql_t*
-PFsql_schema(const char *schm)
+PFsql_t *
+PFsql_schema (const char *schm)
 {
-    PFsql_t *ret = leaf (sql_schm);
-    ret->sem.schema.str = (char *) schm;
-    return ret;
+  PFsql_t *ret = leaf (sql_schm);
+  ret->sem.schema.str = (char *) schm;
+  return ret;
 }
 
 
@@ -826,13 +827,13 @@ PFsql_schema(const char *schm)
  * name, so it can be referenced within
  * the whole statement.
  */
-PFsql_t*
-PFsql_bind(PFsql_t *a, PFsql_t *b)
+PFsql_t *
+PFsql_bind (PFsql_t * a, PFsql_t * b)
 {
-    assert( a );
-    assert( b );
-    assert( a->kind == sql_tbl_name );
-    return wire2( sql_bind, a, b );
+  assert (a);
+  assert (b);
+  assert (a->kind == sql_tbl_name);
+  return wire2 (sql_bind, a, b);
 }
 
 
@@ -840,20 +841,20 @@ PFsql_bind(PFsql_t *a, PFsql_t *b)
  * Collate a table_name and a schema, to identifying/reference
  * to a table in a database.
  */
-PFsql_t*
-PFsql_tab_name(const PFsql_t *schema, const PFsql_t *table_name)
+PFsql_t *
+PFsql_tab_name (const PFsql_t * schema, const PFsql_t * table_name)
 {
-    return wire2(sql_tb_name, schema, table_name);
+  return wire2 (sql_tb_name, schema, table_name);
 }
 
 
 /**
  * Bind a table to a correlation name.
  */
-PFsql_t*
-PFsql_alias(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_alias (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_alias, a, b);
+  return wire2 (sql_alias, a, b);
 }
 
 
@@ -861,12 +862,12 @@ PFsql_alias(const PFsql_t *a, const PFsql_t *b)
  * Construct a SQL tree node representing a SQL
  * `correlation name'.
  */
-PFsql_t*
-PFsql_correlation_name(PFsql_correlation_name_t name)
+PFsql_t *
+PFsql_correlation_name (PFsql_correlation_name_t name)
 {
-    PFsql_t *ret = leaf(sql_crrltn_name);
-    ret->sem.correlation.ident = name;
-    return ret;
+  PFsql_t *ret = leaf (sql_crrltn_name);
+  ret->sem.correlation.ident = name;
+  return ret;
 }
 
 
@@ -879,14 +880,14 @@ PFsql_correlation_name(PFsql_correlation_name_t name)
  * name. During the generation phase, transform
  * this identifier to a string.
  */
-PFsql_t*
-PFsql_column_name(PFsql_ident_t ident)
+PFsql_t *
+PFsql_column_name (PFsql_ident_t ident)
 {
-    PFsql_t *ret;
-    ret = leaf(sql_clmn_name);
-    ret->sem.column.ident = ident;
+  PFsql_t *ret;
+  ret = leaf (sql_clmn_name);
+  ret->sem.column.ident = ident;
 
-    return ret;
+  return ret;
 }
 
 
@@ -894,10 +895,10 @@ PFsql_column_name(PFsql_ident_t ident)
  * Create an SQL tree node representing the SQL
  * `AS' to bind SQL statements to attribute names.
  */
-PFsql_t*
-PFsql_column_assign(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_column_assign (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_clmn_assign, a, b);
+  return wire2 (sql_clmn_assign, a, b);
 }
 
 
@@ -908,43 +909,47 @@ PFsql_column_assign(const PFsql_t *a, const PFsql_t *b)
  *
  * @param name The identifier to convert.
  */
-char*
-PFsql_table_str(PFsql_ident_t name)
+char *
+PFsql_table_str (PFsql_ident_t name)
 {
-    switch( name )
+  switch (name)
     {
-        case PF_SQL_TABLE_SYSDUMMY1:
-        {
-            return "sysdummy1";
-        } break;
-        case PF_SQL_TABLE_FRAG:
-        {
-            return "test";
-        } break;
-        case PF_SQL_TABLE_RESULT:
-        {
-            return "result";
-        } break;
-        case PF_SQL_TABLE_DOC:
-        {
-            return "document";
-        } break;
-        default:
-        {
-            /* to express table names we use
-             * the following format:
-             *    a[0-9][0-9][0-9][0-9]
-             */
-            assert( name >= PF_SQL_RES_TABLE_COUNT);
-            name -= PF_SQL_RES_TABLE_COUNT;
-            assert( name < 10000 );
-            size_t len = sizeof("a0000");
-            char *res = (char*)PFmalloc( len );
-            snprintf( res, len, "a%04u", name);
-            return res;
-        }
+    case PF_SQL_TABLE_SYSDUMMY1:
+      {
+	return "sysdummy1";
+      }
+      break;
+    case PF_SQL_TABLE_FRAG:
+      {
+	return "test";
+      }
+      break;
+    case PF_SQL_TABLE_RESULT:
+      {
+	return "result";
+      }
+      break;
+    case PF_SQL_TABLE_DOC:
+      {
+	return "document";
+      }
+      break;
+    default:
+      {
+	/* to express table names we use
+	 * the following format:
+	 *    a[0-9][0-9][0-9][0-9]
+	 */
+	assert (name >= PF_SQL_RES_TABLE_COUNT);
+	name -= PF_SQL_RES_TABLE_COUNT;
+	assert (name < 10000);
+	size_t len = sizeof ("a0000");
+	char *res = (char *) PFmalloc (len);
+	snprintf (res, len, "a%04u", name);
+	return res;
+      }
     }
-    return NULL;                 /* satisfy picky compilers */
+  return NULL;			/* satisfy picky compilers */
 }
 
 
@@ -962,44 +967,59 @@ PFsql_table_str(PFsql_ident_t name)
  *  There are also some special names like
  *  kind or size.
  */
-char*
-PFsql_column_name_str(PFsql_ident_t ident)
+char *
+PFsql_column_name_str (PFsql_ident_t ident)
 {
-    char *attstr = NULL;
-    char *tystr = NULL;
-    char *res = NULL;
-    size_t len = 0;
+  char *attstr = NULL;
+  char *tystr = NULL;
+  char *res = NULL;
+  size_t len = 0;
 
-    /* check if special bits are set */
-    if( (ident >> (ATT_BITS + TYPE_BITS)) & 0x00000007 )
+  /* check if special bits are set */
+  if ((ident >> (ATT_BITS + TYPE_BITS)) & 0x0000000F)
     {
-        switch( (0x00000001) <<
-            ((ident >> (ATT_BITS + TYPE_BITS)) & 0x00000007) )
-        {
-            case sql_col_pre:    return "pre";
-            case sql_col_level:  return "level";
-            case sql_col_size:   return "size";
-            case sql_col_kind:   return "kind";
-            case sql_col_prop:   return "prop";
-            case sql_col_tag:    return "tag";
-            default: PFoops( OOPS_FATAL, "unknown special flag set" );
-        }
+      switch ((0x00000001) <<
+	      ((ident >> (ATT_BITS + TYPE_BITS)) & 0x0000000F))
+	{
+	case sql_col_pre:
+	  return "pre";
+	case sql_col_apre:
+	  return "apre";
+	case sql_col_level:
+	  return "level";
+	case sql_col_size:
+	  return "size";
+	case sql_col_kind:
+	  return "kind";
+	case sql_col_prop:
+	  return "prop";
+	case sql_col_tag:
+	  return "tag";
+	case sql_col_nameid:
+	  return "nameid";
+	case sql_col_value:
+	  return "value";
+	case sql_col_name:
+	  return "name";
+	default:
+	  PFoops (OOPS_FATAL, "unknown special flag set");
+	}
     }
-    PFalg_att_t att = ((0x0000001F & ident) <= 0)? 0x00000000:
-    (0x00000001 << (((0x0000001F) & ident)-1));
-    PFalg_simple_type_t ty = (0x00000001 << (((0x000001E0) & ident) >>
-        ATT_BITS));
+  PFalg_att_t att = ((0x0000001F & ident) <= 0) ? 0x00000000 :
+    (0x00000001 << (((0x0000001F) & ident) - 1));
+  PFalg_simple_type_t ty = (0x00000001 << (((0x000001E0) & ident) >>
+					   ATT_BITS));
 
-    attstr = PFatt_str(att);
-    tystr  = PFalg_simple_type_str(ty);
+  attstr = PFatt_str (att);
+  tystr = PFalg_simple_type_str (ty);
 
-    len = strlen(attstr);
-    len += strlen(tystr);
+  len = strlen (attstr);
+  len += strlen (tystr);
 
-    res = (char*)PFmalloc(len * sizeof(char));
-    snprintf(res, len+2, "%s_%s", attstr, tystr);
+  res = (char *) PFmalloc (len * sizeof (char));
+  snprintf (res, len + 2, "%s_%s", attstr, tystr);
 
-    return res;
+  return res;
 }
 
 
@@ -1008,20 +1028,29 @@ PFsql_column_name_str(PFsql_ident_t ident)
  *
  * @param type The type to convert.
  */
-char*
-PFsql_simple_type_str(PFalg_simple_type_t type)
+char *
+PFsql_simple_type_str (PFalg_simple_type_t type)
 {
-    switch( type )
+  switch (type)
     {
-        case aat_nat:
-        case aat_int: return "DECIMAL(20,10)";
-        case aat_uA:
-        case aat_str: return "VARCHAR(32000)";
-        case aat_dbl:
-        case aat_dec: return "DECIMAL(20,10)";
-        default:      return "unknown";
+
+    case aat_pre:
+    case aat_attr:
+    case aat_nat:
+    case aat_int:
+      return "INTEGER";		/*return "DECIMAL(20,10)"; */
+    case aat_uA:
+    case aat_str:
+      return "VARCHAR(32000)";
+    case aat_charseq:
+      return "CHAR(100)";
+    case aat_dbl:
+    case aat_dec:
+      return "DECIMAL(20,10)";
+    default:
+      return "unknown";
     }
-    return NULL;                 /* satisfy picky compiler */
+  return NULL;			/* satisfy picky compiler */
 }
 
 
@@ -1030,23 +1059,23 @@ PFsql_simple_type_str(PFalg_simple_type_t type)
  *
  * @param name The identifier to convert.
  */
-char*
-PFsql_correlation_name_str(PFsql_correlation_name_t name)
+char *
+PFsql_correlation_name_str (PFsql_correlation_name_t name)
 {
-    switch( name )
+  switch (name)
     {
-        default:
-        {
-            assert( name >= PF_SQL_RES_CORRELATION_COUNT);
-            name -= PF_SQL_RES_CORRELATION_COUNT;
-            assert( name < 10000 );
-            size_t len = sizeof("c0000");
-            char *res = (char*)PFmalloc( len );
-            snprintf( res, len, "c%04u", name);
-            return res;
-        }
+    default:
+      {
+	assert (name >= PF_SQL_RES_CORRELATION_COUNT);
+	name -= PF_SQL_RES_CORRELATION_COUNT;
+	assert (name < 10000);
+	size_t len = sizeof ("c0000");
+	char *res = (char *) PFmalloc (len);
+	snprintf (res, len, "c%04u", name);
+	return res;
+      }
     }
-    return NULL;                 /* satisfy picky compilers */
+  return NULL;			/* satisfy picky compilers */
 }
 
 
@@ -1055,12 +1084,12 @@ PFsql_correlation_name_str(PFsql_correlation_name_t name)
 /**
  * Create a SQL tree node representing a NULL.
  */
-PFsql_t*
-PFsql_null(void)
+PFsql_t *
+PFsql_null (void)
 {
-    PFsql_t *ret = leaf( sql_lit_null );
-    ret->sem.atom.null = true;
-    return ret;
+  PFsql_t *ret = leaf (sql_lit_null);
+  ret->sem.atom.null = true;
+  return ret;
 }
 
 
@@ -1069,12 +1098,12 @@ PFsql_null(void)
  *
  * @param   i     The integer value to represent in SQL.
  */
-PFsql_t*
-PFsql_lit_int(int i)
+PFsql_t *
+PFsql_lit_int (int i)
 {
-    PFsql_t *ret = leaf( sql_lit_int );
-    ret->sem.atom.val.i = i;
-    return ret;
+  PFsql_t *ret = leaf (sql_lit_int);
+  ret->sem.atom.val.i = i;
+  return ret;
 }
 
 
@@ -1083,12 +1112,12 @@ PFsql_lit_int(int i)
  *
  * @param   l  The integer value to represent in SQL.
  */
-PFsql_t*
-PFsql_lit_lng(long long int l)
+PFsql_t *
+PFsql_lit_lng (long long int l)
 {
-    PFsql_t *ret = leaf( sql_lit_lng );
-    ret->sem.atom.val.l = l;
-    return ret;
+  PFsql_t *ret = leaf (sql_lit_lng);
+  ret->sem.atom.val.l = l;
+  return ret;
 }
 
 
@@ -1097,16 +1126,16 @@ PFsql_lit_lng(long long int l)
  *
  * @param   s  The string value to represent in SQL.
  */
-PFsql_t*
-PFsql_lit_str(const char *s)
+PFsql_t *
+PFsql_lit_str (const char *s)
 {
-    PFsql_t *ret = leaf( sql_lit_str );
+  PFsql_t *ret = leaf (sql_lit_str);
 
-    /* check if string is defined */
-    assert( s );
+  /* check if string is defined */
+  assert (s);
 
-    ret->sem.atom.val.s = (char *)s;
-    return ret;
+  ret->sem.atom.val.s = (char *) s;
+  return ret;
 }
 
 
@@ -1115,13 +1144,13 @@ PFsql_lit_str(const char *s)
  *
  * @param   b  The boolean value to represent in SQL.
  */
-PFsql_t*
-PFsql_lit_bln(bool b)
+PFsql_t *
+PFsql_lit_bln (bool b)
 {
-    PFsql_t *ret = leaf(sql_lit_bln);
+  PFsql_t *ret = leaf (sql_lit_bln);
 
-    ret->sem.atom.val.b = b;
-    return ret;
+  ret->sem.atom.val.b = b;
+  return ret;
 }
 
 
@@ -1130,13 +1159,13 @@ PFsql_lit_bln(bool b)
  *
  * @param dec The decimal value to represent in SQL.
  */
-PFsql_t*
-PFsql_lit_dec(float dec)
+PFsql_t *
+PFsql_lit_dec (float dec)
 {
-    PFsql_t *ret = leaf(sql_lit_dec);
+  PFsql_t *ret = leaf (sql_lit_dec);
 
-    ret->sem.atom.val.dec = dec;
-    return ret;
+  ret->sem.atom.val.dec = dec;
+  return ret;
 }
 
 
@@ -1146,20 +1175,19 @@ PFsql_lit_dec(float dec)
 /**
  * A sequence of schema informations, used by the serializer.
  */
-PFsql_t*
-PFsql_schema_information_(unsigned int count, const PFsql_t **list)
+PFsql_t *
+PFsql_schema_information_ (unsigned int count, const PFsql_t ** list)
 {
-    assert( count > 0 );
+  assert (count > 0);
 
-    if( list[0] == NULL )
-        return PFsql_schema_information_( count-1, list+1);
-    else if( count == 1 )
-        return (PFsql_t*)list[0];
-    else
-        return wire2(sql_schm_inf,
-            PFsql_schema_information_(count-1, list+1),
-            list[0]);
-    return NULL;                 /* satisfy picky compilers */
+  if (list[0] == NULL)
+    return PFsql_schema_information_ (count - 1, list + 1);
+  else if (count == 1)
+    return (PFsql_t *) list[0];
+  else
+    return wire2 (sql_schm_inf,
+		  PFsql_schema_information_ (count - 1, list + 1), list[0]);
+  return NULL;			/* satisfy picky compilers */
 }
 
 
@@ -1170,38 +1198,38 @@ PFsql_schema_information_(unsigned int count, const PFsql_t **list)
  * Further we communicate some of the special attributes,
  * the serializer needs. 
  */
-PFsql_t*
-PFsql_schema_expression(PFsql_t *schm, PFsql_t *clmn)
+PFsql_t *
+PFsql_schema_expression (PFsql_t * schm, PFsql_t * clmn)
 {
-    assert( schm );
-    assert( clmn );
+  assert (schm);
+  assert (clmn);
 
-    return wire2(sql_schm_expr, schm, clmn);
+  return wire2 (sql_schm_expr, schm, clmn);
 }
 
 
-PFsql_t*
-PFsql_schema_document(void)
+PFsql_t *
+PFsql_schema_document (void)
 {
-    return leaf(sql_schm_doc);
+  return leaf (sql_schm_doc);
 }
 
 
-PFsql_t*
-PFsql_schema_result(void)
+PFsql_t *
+PFsql_schema_result (void)
 {
-    return leaf(sql_schm_res);
+  return leaf (sql_schm_res);
 }
 
 /**
  * Construct a comment in the schema information.
  */
-PFsql_t*
-PFsql_schema_comment(char *cmmnt)
+PFsql_t *
+PFsql_schema_comment (char *cmmnt)
 {
-    PFsql_t *ret = leaf(sql_schm_cmmnt);
-    ret->sem.comment = cmmnt;
-    return ret;
+  PFsql_t *ret = leaf (sql_schm_cmmnt);
+  ret->sem.comment = cmmnt;
+  return ret;
 }
 
 
@@ -1211,36 +1239,40 @@ PFsql_schema_comment(char *cmmnt)
  * Create the part of the join clause
  * where you can define the join predicate.
  */
-PFsql_t* PFsql_on(PFsql_t *join, PFsql_t *expr)
+PFsql_t *
+PFsql_on (PFsql_t * join, PFsql_t * expr)
 {
-    return wire2(sql_on, join, expr);
+  return wire2 (sql_on, join, expr);
 }
 
 
 /**
  * Join two relations with an `Inner Join'.
  */
-PFsql_t* PFsql_inner_join(PFsql_t *tblref1, PFsql_t *tblref2)
+PFsql_t *
+PFsql_inner_join (PFsql_t * tblref1, PFsql_t * tblref2)
 {
-    return wire2(sql_innr_join, tblref1, tblref2);
+  return wire2 (sql_innr_join, tblref1, tblref2);
 }
 
 
 /**
  * Join two relations with an `Outer Join'.
  */
-PFsql_t* PFsql_outer_join(PFsql_t *tblref1, PFsql_t *tblref2)
+PFsql_t *
+PFsql_outer_join (PFsql_t * tblref1, PFsql_t * tblref2)
 {
-    return wire2(sql_outr_join, tblref1, tblref2);
+  return wire2 (sql_outr_join, tblref1, tblref2);
 }
 
 
 /**
  * Join two relations with a `Right Outer Join'.
  */
-PFsql_t* PFsql_right_outer_join(PFsql_t *tblref1, PFsql_t *tblref2)
+PFsql_t *
+PFsql_right_outer_join (PFsql_t * tblref1, PFsql_t * tblref2)
 {
-    return wire2(sql_rght_outr_join, tblref1, tblref2);
+  return wire2 (sql_rght_outr_join, tblref1, tblref2);
 }
 
 
@@ -1253,10 +1285,10 @@ PFsql_t* PFsql_right_outer_join(PFsql_t *tblref1, PFsql_t *tblref2)
  * @param   a  First addend.
  * @param   b  Second addend.
  */
-PFsql_t*
-PFsql_add(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_add (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2( sql_add, a, b);
+  return wire2 (sql_add, a, b);
 }
 
 
@@ -1267,10 +1299,10 @@ PFsql_add(const PFsql_t *a, const PFsql_t *b)
  * @param   a  The minuend.
  * @param   b  The subtrahend.
  */
-PFsql_t*
-PFsql_sub(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_sub (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_sub, a, b);
+  return wire2 (sql_sub, a, b);
 }
 
 
@@ -1281,10 +1313,10 @@ PFsql_sub(const PFsql_t *a, const PFsql_t *b)
  * @param   a  The multiplicand.
  * @param   b  The multiplier.
  */
-PFsql_t*
-PFsql_mul(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_mul (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_mul, a, b);
+  return wire2 (sql_mul, a, b);
 }
 
 
@@ -1295,10 +1327,10 @@ PFsql_mul(const PFsql_t *a, const PFsql_t *b)
  * @param   a  The divident.
  * @param   b  The quotient.
  */
-PFsql_t*
-PFsql_div(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_div (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_div, a, b);
+  return wire2 (sql_div, a, b);
 }
 
 
@@ -1311,10 +1343,10 @@ PFsql_div(const PFsql_t *a, const PFsql_t *b)
  * @param   a
  * @param   b
  */
-PFsql_t*
-PFsql_gt(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_gt (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_gt, a, b);
+  return wire2 (sql_gt, a, b);
 }
 
 
@@ -1325,10 +1357,10 @@ PFsql_gt(const PFsql_t *a, const PFsql_t *b)
  * @param   a
  * @param   b
  */
-PFsql_t*
-PFsql_gteq(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_gteq (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_gteq, a, b);
+  return wire2 (sql_gteq, a, b);
 }
 
 
@@ -1339,10 +1371,10 @@ PFsql_gteq(const PFsql_t *a, const PFsql_t *b)
  * @param   a
  * @param   b
  */
-PFsql_t*
-PFsql_eq(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_eq (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_eq, a, b);
+  return wire2 (sql_eq, a, b);
 }
 
 
@@ -1352,10 +1384,10 @@ PFsql_eq(const PFsql_t *a, const PFsql_t *b)
  *
  * @param   a
  */
-PFsql_t*
-PFsql_not(const PFsql_t *a)
+PFsql_t *
+PFsql_not (const PFsql_t * a)
 {
-    return wire1(sql_not, a);
+  return wire1 (sql_not, a);
 }
 
 
@@ -1366,10 +1398,10 @@ PFsql_not(const PFsql_t *a)
  * @param   a
  * @param   b
  */
-PFsql_t*
-PFsql_and(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_and (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_and, a, b);
+  return wire2 (sql_and, a, b);
 }
 
 
@@ -1380,10 +1412,10 @@ PFsql_and(const PFsql_t *a, const PFsql_t *b)
  * @param   a
  * @param   b
  */
-PFsql_t*
-PFsql_or(const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_or (const PFsql_t * a, const PFsql_t * b)
 {
-    return wire2(sql_or, a, b);
+  return wire2 (sql_or, a, b);
 }
 
 /* vim:set shiftwidth=4 expandtab: */
