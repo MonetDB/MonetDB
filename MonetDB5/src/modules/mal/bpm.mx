@@ -648,7 +648,7 @@ static Partition getByNumber(int n){
 static Partition getAlias(bat i){
 	/* go to the anchor point */
 	Partition p;
-	p= bpmcat[ABS(i)];
+	p= getByNumber(ABS(i));
 	if( p == 0) return 0;
 	return bpmcat[p->alias];
 }
@@ -786,7 +786,7 @@ BPMloadCatalog(){
 	int i,k,tp,vi;
 	bat idx;
 	BAT *b, *pb;
-	BAT *nxt, *prv, *bld, *bll, *bhd, *bhl;
+	BAT *nxt, *prv, *cnt, *bld, *bll, *bhd, *bhl;
 	BUN p,q,r;
 	str nm;
 	ptr val;
@@ -795,24 +795,23 @@ BPMloadCatalog(){
 	dbl vd;
 	lng vl;
 
-	
-	idx= BBPindex("bpm_name");
+	newPartition(0);
 
+	idx= BBPindex("bpm_name");
 	if ((b = BATdescriptor(idx)) == NULL) 
 		throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
-	
 	BATloop(b, p, q) {
 		i = *(int *)BUNhead(b,p);
 		nm = (str) BUNtail(b,p);
 		newPartition(i)->name = GDKstrdup(nm);	
-
 	}
 	BBPunfix(b->batCacheid);
 
 	@:loadBPMbat(alias,int)@
-	@:loadBPMbat(bid,int)@
+/*	@:loadBPMbat(bid,int)@ */
 	@:openBPMbat(nxt,nxt)@
 	@:openBPMbat(prv,prv)@
+	@:openBPMbat(cnt,cnt)@
 	@:openBPMbat(bll,tlowlng)@
 	@:openBPMbat(bld,tlowdbl)@
 	@:openBPMbat(bhl,thghlng)@
@@ -839,6 +838,7 @@ BPMloadCatalog(){
 @c
 		@:getPartitionField(prv)@
 		@:getPartitionField(nxt)@
+		@:getPartitionField(cnt)@
 	
 		@:defaultRange(bpmcat[i],pb)@
 	
@@ -1222,7 +1222,7 @@ BPMcount(int *ret, bat *bid)
 {
 	int i;
 	Partition ps;
-	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
+	if( (ps= getAlias(*bid)) == 0)
 		throw(MAL,"pbm.count","Partitioned BAT not found");
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		*ret= *ret + bpmcat[i]->cnt;
@@ -1236,7 +1236,8 @@ BPMglue(bat *ret, bat *bid){
 	Partition ps;
 	BAT *b,*bn;
 
-	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
+	i=ABS(*bid);
+	if( (ps= getAlias(i)) == 0)
 		throw(MAL,"pbm.glue","Partitioned BAT not found");
 	b= BATdescriptor(i);
 	if( b== NULL)
@@ -1273,7 +1274,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 	int i,cnt;
 	Partition ps,p;
 	BAT *b,*bn;
-	if( (ps= bpmcat[ i=ABS(*bid)]) == 0)
+	if( (ps= getAlias(*bid)) == 0)
 		throw(MAL,"pbm.addPartition","Partitioned BAT not found");
 	b= BATdescriptor(*src);
 	if( b== NULL)
@@ -1284,6 +1285,9 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 	if( ps->nxt== ps->prv){
 		p= newPartition(b->batCacheid);
 		insertPartition(ps,p);
+		p->cnt = cnt;
+		p->alias = ps->alias;
+		@:defaultRange(p,b)@
 	} else
 	if( guessNewPartition(b)){
 		p= newPartition(b->batCacheid);
@@ -1294,6 +1298,8 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		if( bn== NULL)
 			throw(MAL,"pbm.addPartition","Last partition BAT not found");
 		BATappend(bn,b,FALSE);
+	/* 	bpmcat[bn->batCacheid] ->cnt = BATcount(bn);
+		BBPunfix(bn->batCacheid); */
 	}
 	*ret= 0;
 	BBPunfix(b->batCacheid);
@@ -1580,8 +1586,12 @@ BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
-	ht= getArgType(mb,pci, *(int *)getArgReference(stk, pci, 1));
+/*	ht= getArgType(mb,pci, *(int *)getArgReference(stk, pci, 1));
 	tt= getArgType(mb,pci, *(int *)getArgReference(stk, pci, 2));
+*/
+        ht = getArgType(mb, pci, 1);
+        tt = getArgType(mb, pci, 2);
+
 	BPMopen();
 
 	bn= BATnew(ht,tt,0);
@@ -1927,6 +1937,7 @@ BPMmap@1(int *ret)
 @:bpmView(alias,int)@
 @:bpmView(nxt,int)@
 @:bpmView(prv,int)@
+@:bpmView(cnt,int)@
 
 int nilval(ValPtr v)
 {
@@ -2068,6 +2079,8 @@ BPMsaveCatalog(int *r)
 	BPMmapnxt(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
 	BPMmapprv(&bt);
+	BUNappend(tr, BBPname(bt), FALSE);
+	BPMmapcnt(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
 	BPMmaptlowLng(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
