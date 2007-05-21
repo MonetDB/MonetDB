@@ -217,20 +217,20 @@ parse format: INT_YEAR SEP1 INT_MONTH SEP1 INT_DAY
 with:	INT_YEAR = integer between -5867411 and 5867411
 	INT_DAY = integer between 1 and 31
 	INT_MONTH = integer between 1 and 12
-	STR_MONTH = 'JANUARI' or 'FEBRUARI' or 'MARCH' or 'APRIL' or 'MAY'
-		    or 'JUNE' or 'JULI' or 'AUGUST' or 'SEPTEMBER' or 'OCTOBER' 
-	                or 'NOVEMBER' or 'DECEMBER' (lowercase characters, and/or 
-	                only the first three characters are also allowed)
-	        SEP1 = '-' or '/' or '\' or (' ')+
-	        SEP2 = SEP1 or ''
+	STR_MONTH = 'JANUARY' or 'FEBRUARY' or 'MARCH' or 'APRIL' or 'MAY'
+		   or 'JUNE' or 'JULI' or 'AUGUST' or 'SEPTEMBER' or 'OCTOBER'
+		   or 'NOVEMBER' or 'DECEMBER' (lowercase characters, and/or
+		   only the first three characters are also allowed)
+	    SEP1 = '-' or '/' or '\' or (' ')+
+	    SEP2 = SEP1 or ''
 \end{verbatim}
 }
 Printing a date uses the 1999-01-31 format, as this is both language neutral
-and the lexicografical string ordering of this representation respects the
+and the lexicographical string ordering of this representation respects the
 actual date ordering.
 
 Other print formats can be achieved by writing a customized MIL procedure
-that extract year, month and day from a date as integers and formats those
+that extracts year, month and day from a date as integers and formats those
 in a string.
 @mal
 atom date :int;
@@ -255,10 +255,10 @@ parse format: HOUR ':' MIN ':' SEC SEP MSEC
 	  or: HOUR ':' MIN
 
 with: HOUR = integer between 0 and 23
-	   MIN = integer between 0 and 59
-	   SEC = integer between 0 and 59 (default = 0)
-	  MSEC = integer between 0 and 999 (default = 0)
-	   SEP = '.' or ':'
+       MIN = integer between 0 and 59
+       SEC = integer between 0 and 59 (default = 0)
+      MSEC = integer between 0 and 999 (default = 0)
+       SEP = '.' or ':'
 \end{verbatim}
 }
 @mal
@@ -279,11 +279,11 @@ without hour jumps as in DST), so accurate time difference computations can be p
 {\small
 \begin{verbatim}
 print format: DATE ' ' DAYTIME
-parse format: DATE ' ' DAYTIME  ['GMT' ZONE ]
+parse format: DATE ' ' DAYTIME ['GMT' ZONE ]
 
-with:    DATE = a valid parse format of the date atom (as decribed earlier)
-	  DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
-	     ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
+with:	DATE = a valid parse format of the date atom (as decribed earlier)
+     DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
+	ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
 \end{verbatim}
 }
 Though internally timestamps are stored in GMT, the printing and parsing of
@@ -324,7 +324,7 @@ the same times occur twice. Hence two translations to a timestamp are possible f
 such date and time combinations. In those case, we act as if it was the first
 occurrence (still within DST).
 
-@+ Tzone
+@+ tzone
 @T
 A timezone determines a {\em time offset} from GMT with format
 [-] HOUR ':' MINUTES, with HOUR between [0:23] and MINUTES between [0:59].
@@ -511,7 +511,7 @@ address MTIMEtzone_create_dst
 comment "create a timezone as an hour difference 
 	from GMT and a DST.";
 
-@- Time/date decomposition
+@+ Time/date decomposition
 @T
 There are routines that decompose a date and routines that decompose a daytime.
 For decomposing a timestamp, there are routines that decompose it in a date
@@ -874,16 +874,15 @@ typedef union {
 #define set_rule(r,i) { (r).s.weekday = (i)&15;\
 			(r).s.day = ((i)&(63<<6))>>6;\
 			(r).s.minutes = ((i)&(2047<<10))>>10;\
-			(r).s.month = ((i)&(15<<21))>>21; \
-			(r).s.empty = 0; /* to please valgrind */ }
+			(r).s.month = ((i)&(15<<21))>>21; }
 
 /* phony zero values, used to get negative numbers from unsigned sub-integers in rule */
 #define WEEKDAY_ZERO	8
 #define DAY_ZERO	32
 #define OFFSET_ZERO	4096
 
-@- timezone
-A timezone consists of an offset and two DST rules, all crammed into one lng.
+@- tzone
+A tzone consists of an offset and two DST rules, all crammed into one lng.
 @h
 typedef struct {
 	/* we had this as bitfields in one unsigned long long, but native sun CC does not eat that.  */
@@ -1298,7 +1297,7 @@ compute_rule(rule *val, int y)
 	int dayofweek = date_dayofweek(d);
 	int w = ABS(val->s.weekday - WEEKDAY_ZERO);
 
-	if (val->s.weekday == WEEKDAY_ZERO) {
+	if (val->s.weekday == WEEKDAY_ZERO || w == WEEKDAY_ZERO) {
 		/* cnt-th of month */
 		d += cnt - 1;
 	} else if (val->s.day > DAY_ZERO) {
@@ -1308,7 +1307,7 @@ compute_rule(rule *val, int y)
 			cnt = 1;
 		}		/* ELSE cnt-th weekday of month */
 		while (dayofweek != w || --cnt > 0) {
-			if (++dayofweek == 8)
+			if (++dayofweek == WEEKDAY_ZERO)
 				dayofweek = 1;
 			d++;
 		}
@@ -2579,7 +2578,7 @@ int
 date_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 {
 	if (*sec > 0) {
-		int delta = (int)(-1 * *sec / 86400);
+		int delta = -(*sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
@@ -2590,7 +2589,7 @@ int
 date_sub_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
 	if (*sec > 0) {
-		int delta = -1 * *sec / 86400;
+		int delta = (int) -(*sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
