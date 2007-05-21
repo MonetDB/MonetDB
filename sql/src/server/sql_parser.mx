@@ -331,7 +331,7 @@ int yydebug=1;
 	column_constraint_type
 	generated_column
 	like_table
-	domain_constraint_type
+/*	domain_constraint_type */
 	opt_order_by_clause
 	default
 	default_value
@@ -1635,9 +1635,11 @@ table_constraint_type:
  /*TODO: Implemente domain_constraint_type*/
  ;
 
+/*
 domain_constraint_type:
     CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
+*/
 
 ident_commalist:
     ident
