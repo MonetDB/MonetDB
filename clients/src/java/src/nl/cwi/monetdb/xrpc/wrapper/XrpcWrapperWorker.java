@@ -22,7 +22,7 @@ import java.io.*;
 import java.net.*;
 import nl.cwi.monetdb.util.*;
 
-public class XrpcWrapperWorker extends Thread{
+public class XrpcWrapperWorker extends Thread {
     public static final String XRPCD_CALLBACK = "/xrpc";
     public static final String SOAP_NS =
         "http://www.w3.org/2003/05/soap-envelope";
@@ -62,6 +62,9 @@ public class XrpcWrapperWorker extends Thread{
         "HTTP/1.1 500 Internal Server Error\r\n" +
         "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n";
 
+	/** Simple counter for XRPC worker threads. */
+	private static int tid = 0;
+
     class SenderException extends Exception {
         public SenderException(String reason) {
             super(reason);
@@ -76,7 +79,6 @@ public class XrpcWrapperWorker extends Thread{
 
     private Socket sock;
     private CmdLineOpts opts;
-    private long tid;
     private String rootdir;
     private int contentLength;
     private boolean debug;
@@ -84,9 +86,9 @@ public class XrpcWrapperWorker extends Thread{
     XrpcWrapperWorker(Socket s, CmdLineOpts o)
         throws Exception
     {
+		super("XrpcWrapperWorkerThread-" + tid++);
         sock = s;
         opts = o;
-        tid = this.getId();
         rootdir = o.getOption("rootdir").getArgument();
         debug = o.getOption("debug").isPresent();
     }
@@ -102,7 +104,7 @@ public class XrpcWrapperWorker extends Thread{
                            InputStream errorStream,
                            String errMsg)
     {
-        String errHeader = "ERROR: (TID "+tid+") sendError(): ";
+        String errHeader = "ERROR: (TID "+getName()+") sendError(): ";
 
         try{
             DEBUG(errHeader + "SOAP Fault message to send:\n" +
@@ -155,8 +157,8 @@ public class XrpcWrapperWorker extends Thread{
     private void handleHttpReqHeader(BufferedReader sockIn)
         throws Exception
     {
-        String infoHeader = "INFO: (TID "+tid+") handleHttpReqHeader(): ";
-        String errHeader = "ERROR: (TID "+tid+") handleHttpReqHeader(): ";
+        String infoHeader = "INFO: (TID "+getName()+") handleHttpReqHeader(): ";
+        String errHeader = "ERROR: (TID "+getName()+") handleHttpReqHeader(): ";
 
         boolean foundPostHeader = false, foundClHeader = false;
 
@@ -206,8 +208,8 @@ public class XrpcWrapperWorker extends Thread{
                                           String filename)
         throws Exception
     {
-        String infoHeader = "INFO: (TID "+tid+") getXrpcRequest(): ";
-        String errHeader = "ERROR: (TID "+tid+") getXrpcRequest(): ";
+        String infoHeader = "INFO: (TID "+getName()+") getXrpcRequest(): ";
+        String errHeader = "ERROR: (TID "+getName()+") getXrpcRequest(): ";
 
         StringBuffer buf = new
             StringBuffer(XrpcWrapper.DEFAULT_BUFSIZE);
@@ -262,8 +264,8 @@ public class XrpcWrapperWorker extends Thread{
                                      String attribute)
         throws Exception
     {
-        String infoHeader = "INFO: (TID "+tid+") getAttributeValue(): ";
-        String errHeader = "ERROR: (TID "+tid+") getAttributeValue(): ";
+        String infoHeader = "INFO: (TID "+getName()+") getAttributeValue(): ";
+        String errHeader = "ERROR: (TID "+getName()+") getAttributeValue(): ";
 
         int start, end;
 
@@ -300,8 +302,8 @@ public class XrpcWrapperWorker extends Thread{
     private String getXrpcPrefix(StringBuffer request)
         throws Exception
     {
-        String infoHeader = "INFO: (TID "+tid+") getXrpcPrefix(): ";
-        String errHeader = "ERROR: (TID "+tid+") getXrpcPrefix(): ";
+        String infoHeader = "INFO: (TID "+getName()+") getXrpcPrefix(): ";
+        String errHeader = "ERROR: (TID "+getName()+") getXrpcPrefix(): ";
         int nsLen = XRPC_NS.length();
 
         int start = request.indexOf("Envelope");
@@ -355,8 +357,8 @@ public class XrpcWrapperWorker extends Thread{
                               StringBuffer requestHeader)
         throws Exception
     {
-        String infoHeader = "INFO: (TID "+tid+") generateQuery(): ";
-        String errHeader = "ERROR: (TID "+tid+") generateQuery(): ";
+        String infoHeader = "INFO: (TID "+getName()+") generateQuery(): ";
+        String errHeader = "ERROR: (TID "+getName()+") generateQuery(): ";
 
         String xrpcPrefix = getXrpcPrefix(requestHeader);
         String xqModule = getAttributeValue(requestHeader, xrpcPrefix+":module");
@@ -413,8 +415,8 @@ public class XrpcWrapperWorker extends Thread{
                              BufferedWriter sockOut)
         throws Exception
     {
-        String infoHeader = "INFO: (TID "+tid+") execAndSend(): ";
-        String errHeader = "ERROR: (TID "+tid+") execAndSend(): ";
+        String infoHeader = "INFO: (TID "+getName()+") execAndSend(): ";
+        String errHeader = "ERROR: (TID "+getName()+") execAndSend(): ";
         int ret = -1, len = -1;
         char[] cbuf = new char[XrpcWrapper.MIN_BUFSIZE];
         String command = null;
@@ -480,11 +482,11 @@ public class XrpcWrapperWorker extends Thread{
     private void handleXrpcReq(BufferedReader sockIn, BufferedWriter sockOut)
         throws Exception
     {
-        String infoHeader = "INFO: (TID "+tid+") handleXrpcReq(): ";
-        String warnHeader = "WARNING: (TID "+tid+") handleXrpcReq(): ";
+        String infoHeader = "INFO: (TID "+getName()+") handleXrpcReq(): ";
+        String warnHeader = "WARNING: (TID "+getName()+") handleXrpcReq(): ";
 
-        String requestFilename = rootdir+"xrpc_request_"+tid+".xml";
-        String queryFilename = rootdir+"xrpc_wrapper_query_"+tid+".xq";
+        String requestFilename = rootdir+"xrpc_request_"+getName()+".xml";
+        String queryFilename = rootdir+"xrpc_wrapper_query_"+getName()+".xq";
 
         StringBuffer requestHeader = storeXrpcRequest(sockIn, requestFilename);
         generateQuery(requestFilename, queryFilename, requestHeader);
@@ -515,8 +517,8 @@ public class XrpcWrapperWorker extends Thread{
 
     public void run()
     {
-        String warnHeader = "WARNING: (TID "+tid+") run(): ";
-        String errHeader = "ERROR: (TID "+tid+") run(): ";
+        String warnHeader = "WARNING: (TID "+getName()+") run(): ";
+        String errHeader = "ERROR: (TID "+getName()+") run(): ";
 
         BufferedReader sockIn = null;
         BufferedWriter sockOut = null;
