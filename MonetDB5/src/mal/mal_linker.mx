@@ -191,13 +191,17 @@ loaded files and try to resolve the functionname again.
 The default location to search for the module is in monet_mod_path
 unless an absolute path is given.
 
+Module loading relies on the operating system's abilities to load shared libraries dynamically at runtime.
+
+{@ - this is not entirely correct, and irrelevant, IMHO (fabian)
 Loading further relies on the Linux policy to search for the module
 location in the following order: 1) the colon-separated list of
-directories in the user's LD_LIBRARY, 2) the libraries specified
+directories in the user's LD_LIBRARY_PATH, 2) the libraries specified
 in /etc/ld.so.cache and 3) /usr/lib followed by /lib.
 If the module contains a routine _init, then that code is executed
 before the loader returns. Likewise the routine _fini is called just
 before the module is unloaded.
+@}
 
 A module loading conflict emerges if a function is redefined.
 A duplicate load is simply ignored by keeping track of modules
