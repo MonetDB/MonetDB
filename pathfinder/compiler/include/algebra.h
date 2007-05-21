@@ -74,6 +74,8 @@
                                all other nodes */ 
 #define aat_pre   0x0200 /**< a node is represented by a pre value... */
 #define aat_pfrag 0x0100 /**< ...and a node fragment */
+
+#define aat_charseq 0x1000  /**< this type represents the CHAR type in SQL */
 /** Simple atomic types in our algebra */
 typedef unsigned int PFalg_simple_type_t;
 

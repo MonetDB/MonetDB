@@ -56,7 +56,7 @@
 #define cast( a, b )                PFsql_cast( a, b )
 #define seq( si, ce )                 PFsql_seq( si, ce )
 
-/*............ SQL aggregat functions ............*/ 
+/*............ SQL aggregat functions ............*/
 #define coalesce(e1, e2)              PFsql_coalesce(e1, e2)
 #define count(b, e)                    PFsql_count(b, e)
 #define max( c )                       PFsql_max( c )
@@ -102,7 +102,7 @@
 #define column_name( i )          PFsql_column_name( i )
 #define column_assign( a, b )       PFsql_column_assign( a, b )
 
-/*........... literal constructors ............*/ 
+/*........... literal constructors ............*/
 
 /** Literal null construction */
 #define null( )               PFsql_null( )
@@ -161,7 +161,7 @@
 /*.......... Arithmetic operator constructors ........*/
 
 /** Construct arithmetic `add' operator. */
-#define add( a, b )                 PFsql_add( a, b )  
+#define add( a, b )                 PFsql_add( a, b )
 /** Construct arithmetic `subtraction' operator. */
 #define sub( a, b )                 PFsql_sub( a, b )
 /** Construct arithmetic `multiplicaton' operator. */
@@ -169,7 +169,7 @@
 /** Construct arithmetic `division' operator. */
 #define div( a, b )                 PFsql_div( a, b )
 /** Construct a like operator. */
-#define like( a, b )		    PFsql_like( a, b ) 
+#define like( a, b )		    PFsql_like( a, b )
 
 /*......... Boolean operator constructors .......*/
 
