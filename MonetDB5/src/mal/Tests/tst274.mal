@@ -1,4 +1,5 @@
 # the multiplex code blocks.
+#watch out, the random generator on SUN has a limited range.
 
 t0:= alarm.usec();
 b:= bat.new(:oid,:lng);
@@ -18,9 +19,9 @@ profiler.setAll();
 profiler.start();
 io.printf("#monitor \n");
 mx:= aggr.max(b); 
+mx:= mx+1;	#enforce an empty set later on
 k1:=algebra.select(b,nil:lng,mx); 
 k2:=algebra.select(b,mx,nil:lng); 
-info:= bat.info(k2);
 d:= mmath.sin(0.2:dbl);
 profiler.stop();
 
@@ -36,4 +37,3 @@ diskspace:= profiler.getTrace("diskspace");
 #io.print(diskspace);
 io.print(rdbytes,wrbytes);
 #io.print(ticks,rdbytes,wrbytes,diskspace);
-io.print(info);

@@ -51,41 +51,42 @@ stdout of test 'tst274` in directory 'src/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_1:str)
-    t0 := alarm.usec();	# 2 ALARMusec (t0:lng)
-    b := bat.new(:oid,:lng);	# 3 CMDBATnew (b:bat[:oid,:lng])<-(_4:oid)(_5:lng)
-barrier (go,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_8:lng) jump 9
-    k := mmath.rand();	# 5 MATHrandint (k:int)
-    l := calc.lng(k);	# 6 CALCint2lng (l:lng)<-(k:int)
-    bat.insert(b,nil:oid,l);	# 7 BKCinsert_bun (_11:void)<-(b:bat[:oid,:lng])(_12:oid)(l:lng)
-    redo (go,i):= language.nextElement(1:lng,10000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_13:lng)(_14:lng) jump 5
-exit (go,i);	# 9  (go:bit)(i:lng)
-    profiler.activate("ticks");	# 10 CMDactivateProfiler (_15:void)<-(_16:str)
-    profiler.activate("statement");	# 11 CMDactivateProfiler (_17:void)<-(_18:str)
-    profiler.activate("bytes");	# 12 CMDactivateProfiler (_19:void)<-(_20:str)
-    profiler.activate("disk");	# 13 CMDactivateProfiler (_21:void)<-(_22:str)
-    profiler.setAll();	# 14 CMDsetAllProfiler (_23:void)
-    profiler.start();	# 15 CMDstartProfiler (_24:void)
-    io.printf("#monitor \n");	# 16 IOprint_str (_25:void)<-(_26:str)
-    mx := aggr.max(b);	# 17 ALGmax_lng (mx:lng)<-(b:bat[:oid,:lng])
-    k1 := algebra.select(b,nil:lng,mx);	# 18 ALGselect (k1:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_29:lng)(mx:lng)
-    k2 := algebra.select(b,mx,nil:lng);	# 19 ALGselect (k2:bat[:oid,:lng])<-(b:bat[:oid,:lng])(mx:lng)(_29:lng)
-    info := bat.info(k2);	# 20 BKCinfo (info:bat[:str,:str])<-(k2:bat[:oid,:lng])
-    d := mmath.sin(0.20000000298023224:dbl);	# 21 MATHunary_SINdbl (d:dbl)<-(_33:dbl)
-    profiler.stop();	# 22 CMDstopProfiler (_34:void)
-#stmt:= profiler.getTrace("statement"); 	# 23  (_35:str)
-#io.print(stmt); 	# 24  (_36:str)
-    ticks := profiler.getTrace("ticks");	# 25 CMDgetTrace (ticks:bat[:int,:any])<-(_16:str)
-#io.print(ticks); 	# 26  (_38:str)
-    rdbytes := profiler.getTrace("ibytes");	# 27 CMDgetTrace (rdbytes:bat[:int,:any])<-(_40:str)
-#io.print(rdbytes); 	# 28  (_41:str)
-    wrbytes := profiler.getTrace("obytes");	# 29 CMDgetTrace (wrbytes:bat[:int,:any])<-(_43:str)
-#io.print(wrbytes); 	# 30  (_44:str)
-    diskspace := profiler.getTrace("diskspace");	# 31 CMDgetTrace (diskspace:bat[:int,:any])<-(_46:str)
-#io.print(diskspace); 	# 32  (_47:str)
-    io.print(rdbytes,wrbytes);	# 33 IOtable (_48:void)<-(rdbytes:bat[:int,:any])(wrbytes:bat[:int,:any])
-#io.print(ticks,rdbytes,wrbytes,diskspace); 	# 34  (_49:str)
-    io.print(info);	# 35 IOprint_val (_50:void)<-(info:bat[:str,:str])
-end main;	# 36  
+#watch out, the random generator on SUN has a limited range. 	# 2  (_2:str)
+    t0 := alarm.usec();	# 3 ALARMusec (t0:lng)
+    b := bat.new(:oid,:lng);	# 4 CMDBATnew (b:bat[:oid,:lng])<-(_5:oid)(_6:lng)
+barrier (go,i):= language.newRange(0:lng);	# 5 RNGnewRange_lng (go:bit)(i:lng)<-(_9:lng) jump 10
+    k := mmath.rand();	# 6 MATHrandint (k:int)
+    l := calc.lng(k);	# 7 CALCint2lng (l:lng)<-(k:int)
+    bat.insert(b,nil:oid,l);	# 8 BKCinsert_bun (_12:void)<-(b:bat[:oid,:lng])(_13:oid)(l:lng)
+    redo (go,i):= language.nextElement(1:lng,10000:lng);	# 9 RNGnextElement_lng (go:bit)(i:lng)<-(_14:lng)(_15:lng) jump 6
+exit (go,i);	# 10  (go:bit)(i:lng)
+    profiler.activate("ticks");	# 11 CMDactivateProfiler (_16:void)<-(_17:str)
+    profiler.activate("statement");	# 12 CMDactivateProfiler (_18:void)<-(_19:str)
+    profiler.activate("bytes");	# 13 CMDactivateProfiler (_20:void)<-(_21:str)
+    profiler.activate("disk");	# 14 CMDactivateProfiler (_22:void)<-(_23:str)
+    profiler.setAll();	# 15 CMDsetAllProfiler (_24:void)
+    profiler.start();	# 16 CMDstartProfiler (_25:void)
+    io.printf("#monitor \n");	# 17 IOprint_str (_26:void)<-(_27:str)
+    mx := aggr.max(b);	# 18 ALGmax_lng (mx:lng)<-(b:bat[:oid,:lng])
+    mx := calc.+(mx,1);	# 19 CALCbinaryADDlngint (mx:lng)<-(mx:lng)(_29:int)
+#enforce an empty set later on 	# 20  (_30:str)
+    k1 := algebra.select(b,nil:lng,mx);	# 21 ALGselect (k1:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_32:lng)(mx:lng)
+    k2 := algebra.select(b,mx,nil:lng);	# 22 ALGselect (k2:bat[:oid,:lng])<-(b:bat[:oid,:lng])(mx:lng)(_32:lng)
+    d := mmath.sin(0.20000000298023224:dbl);	# 23 MATHunary_SINdbl (d:dbl)<-(_35:dbl)
+    profiler.stop();	# 24 CMDstopProfiler (_36:void)
+#stmt:= profiler.getTrace("statement"); 	# 25  (_37:str)
+#io.print(stmt); 	# 26  (_38:str)
+    ticks := profiler.getTrace("ticks");	# 27 CMDgetTrace (ticks:bat[:int,:any])<-(_17:str)
+#io.print(ticks); 	# 28  (_40:str)
+    rdbytes := profiler.getTrace("ibytes");	# 29 CMDgetTrace (rdbytes:bat[:int,:any])<-(_42:str)
+#io.print(rdbytes); 	# 30  (_43:str)
+    wrbytes := profiler.getTrace("obytes");	# 31 CMDgetTrace (wrbytes:bat[:int,:any])<-(_45:str)
+#io.print(wrbytes); 	# 32  (_46:str)
+    diskspace := profiler.getTrace("diskspace");	# 33 CMDgetTrace (diskspace:bat[:int,:any])<-(_48:str)
+#io.print(diskspace); 	# 34  (_49:str)
+    io.print(rdbytes,wrbytes);	# 35 IOtable (_50:void)<-(rdbytes:bat[:int,:any])(wrbytes:bat[:int,:any])
+#io.print(ticks,rdbytes,wrbytes,diskspace); 	# 36  (_51:str)
+end main;	# 37  
 # Start performance profiling
 #monitor 
 # Performance profiling stopped
@@ -95,72 +96,11 @@ end main;	# 36
 #-------------------------#
 [ 1,	  0,	  0	  ]
 [ 2,	  0,	  160000  ]
-[ 3,	  160000, 160000  ]
-[ 4,	  16,	  160000  ]
-[ 5,	  928,	  16	  ]
-[ 6,	  0,	  0	  ]
-#-----------------------------------------#
-# h			t		  # name
-# str			str		  # type
-#-----------------------------------------#
-[ "version",		  "25105"	  ]
-[ "batId",		  "tmp_22"	  ]
-[ "batCacheid",		  "18"		  ]
-[ "batParentid",	  "0"		  ]
-[ "batSharecnt",	  "0"		  ]
-[ "head",		  "oid"		  ]
-[ "tail",		  "lng"		  ]
-[ "batPersistence",	  "transient"	  ]
-[ "batRestricted",	  "read-only"	  ]
-[ "batRefcnt",		  "1"		  ]
-[ "batLRefcnt",		  "1"		  ]
-[ "batDirty",		  "dirty"	  ]
-[ "batSet",		  "0"		  ]
-[ "void_tid",		  "-1"		  ]
-[ "void_cnt",		  "0"		  ]
-[ "hsorted",		  "65"		  ]
-[ "hident",		  "h"		  ]
-[ "hdense",		  "0"		  ]
-[ "hseqbase",		  "0@0"		  ]
-[ "hkey",		  "0"		  ]
-[ "hloc",		  "0"		  ]
-[ "hvarsized",		  "0"		  ]
-[ "halign",		  "1000204"	  ]
-[ "hnosorted",		  "0"		  ]
-[ "hnosorted_rev",	  "0"		  ]
-[ "hnodense",		  "0"		  ]
-[ "hnokey[0]",		  "0"		  ]
-[ "hnokey[1]",		  "0"		  ]
-[ "tident",		  "t"		  ]
-[ "tdense",		  "0"		  ]
-[ "tseqbase",		  "0@0"		  ]
-[ "tsorted",		  "0"		  ]
-[ "tkey",		  "0"		  ]
-[ "tloc",		  "8"		  ]
-[ "tvarsized",		  "0"		  ]
-[ "talign",		  "1000205"	  ]
-[ "tnosorted",		  "0"		  ]
-[ "tnosorted_rev",	  "0"		  ]
-[ "tnodense",		  "0"		  ]
-[ "tnokey[0]",		  "0"		  ]
-[ "tnokey[1]",		  "0"		  ]
-[ "batInserted",	  "0"		  ]
-[ "batDeleted",		  "0"		  ]
-[ "batFirst",		  "0"		  ]
-[ "top",		  "1"		  ]
-[ "batStamp",		  "14"		  ]
-[ "lastUsed",		  "226"		  ]
-[ "curStamp",		  "15"		  ]
-[ "batCopiedtodisk",	  "0"		  ]
-[ "batDirtydesc",	  "dirty"	  ]
-[ "batDirtybuns",	  "clean"	  ]
-[ "batBuns.free",	  "16"		  ]
-[ "batBuns.size",	  "80000"	  ]
-[ "batBuns.maxsize",	  "80000"	  ]
-[ "batBuns.storage",	  "malloced"	  ]
-[ "batBuns.filename",	  "22.buns"	  ]
-[ "hheapdirty",		  "clean"	  ]
-[ "theapdirty",		  "clean"	  ]
+[ 3,	  0,	  0	  ]
+[ 4,	  0,	  0	  ]
+[ 5,	  160000, 160000  ]
+[ 6,	  0,	  160000  ]
+[ 7,	  0,	  0	  ]
 
 # 08:46:49 >  
 # 08:46:49 >  Done.
