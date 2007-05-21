@@ -41,7 +41,7 @@
 #include "libxml/parserInternals.h"
 
 #define STACK_MAX 100
-#define PROPSIZE 32000
+#define PROPSIZE 32000 
 #define TEXT_SIZE 32000
 #define TAG_SIZE 32 
 
@@ -303,7 +303,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
  
 		/* try to find the tagname in the
 		 * hashtable */
-		name_id = find_element(hash_table, (char*)tagname);
+		name_id = find_element(hash_table, (char*)atts[0]);
 
 		/* key not found */
 		if(NOKEY(name_id)) {
@@ -311,15 +311,14 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 		    /* create a new id */
 		    name_id = new_nameid();	
 
-		       printf("NOKEY, %i\n", name_id);
 		    hashtable_insert(hash_table, (char*)atts[0], name_id);
-		    fprintf (out_attr, "%i, \"%s\"\n", name_id, strndup((char*)tagname,PROPSIZE));
+		    fprintf (out_attr, "%i, \"%s\"\n", name_id, strndup((char*)atts[0],PROPSIZE));
 		}
 
 		pre++;
 	   	print_tuple ((node_t) {
-			.pre = -1,
-			.apre = pre,
+			.pre = pre,
+			.apre = -1,
 			.post = 0,
 			.pre_stretched = 0,
 			.post_stretched = 0,
@@ -569,7 +568,7 @@ main (int argc, char **argv)
 
 	    case 's':
 		sql_atts = true;
-		format = "%e, %a, %s, %l, %k, %n, %t";
+		format = "%e, %s, %l, %k, %n, %t";
 		break;
 
             case 'h':
