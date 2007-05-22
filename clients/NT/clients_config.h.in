@@ -378,6 +378,9 @@
 /* #undef HAVE_SOCKLEN_T */
 #define socklen_t int
 
+/* Define to 1 if you have the `SQLGetPrivateProfileString' function. */
+#define HAVE_SQLGETPRIVATEPROFILESTRING 1
+
 /* Define to 1 if the system has the type `ssize_t'. */
 /* #undef HAVE_SSIZE_T */
 
