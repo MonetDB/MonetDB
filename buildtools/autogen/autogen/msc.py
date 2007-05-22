@@ -24,31 +24,6 @@ MAKEFILE_HEAD = '''
 
 # Nothing much configurable below
 
-# cl -help describes the options
-!IFDEF DEBUG
-CC = $(CC) -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
-!ELSE
-CC = $(CC) -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -Ox
-!ENDIF
-ARCHIVER = lib
-GENDLL =
-RC = rc
-
-MT = mt -nologo
-JAVAC = javac
-JAR = jar
-ANT = ant.bat
-
-CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
-
-# No general LDFLAGS needed
-INSTALL = copy
-# TODO
-# replace this hack by something like configure ...
-MKDIR = mkdir
-ECHO = echo
-CD = cd
-
 '''
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
