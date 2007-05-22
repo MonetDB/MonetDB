@@ -3973,10 +3973,8 @@ where_env_copy (PFarray_t * srcwheremap, PFarray_t * destwheremap)
 
 static void
 llscj_attr_axis (PFsql_correlation_name_t c1,
-		 PFsql_correlation_name_t c2,
-		 const PFla_op_t * frag, struct PFsql_alg_ann_t *ann)
+		 PFsql_correlation_name_t c2, struct PFsql_alg_ann_t *ann)
 {
-  assert (frag->sql_ann->fragment);
   sql_where_env_add (ann->wheremap,
 		     gt
 		     (crrl_deco
@@ -4451,11 +4449,8 @@ llscj_elem (PFalg_axis_t axis, PFsql_correlation_name_t c1,
 
 static void
 llscj_attr (PFsql_correlation_name_t c1,
-	    PFsql_correlation_name_t c2, const PFla_op_t * frag,
-	    struct PFsql_alg_ann_t *ann)
+	    PFsql_correlation_name_t c2, struct PFsql_alg_ann_t *ann)
 {
-  assert (frag->sql_ann->fragment);
-
   sql_where_env_add (ann->wheremap,
 		     eq
 		     (crrl_deco
@@ -4463,7 +4458,7 @@ llscj_attr (PFsql_correlation_name_t c1,
 		       (sql_special_name_new (sql_col_kind)->ident), c1),
 		      lit_int (ATTR)));
 
-  llscj_attr_axis (c1, c2, frag, ann);
+  llscj_attr_axis (c1, c2, ann);
 }
 
 
@@ -4521,15 +4516,12 @@ llscj_elem_loc (PFalg_axis_t axis, PFsql_t * loc, PFsql_correlation_name_t c1,
   llscj_elem (axis, c1, c2, frag, fromlist, ann);
 }
 
-#define llscj_attr_nsloc(ns, loc, c1, c2, frag, ann) \
-    llscj_attr_loc(loc, c1, c2, frag, ann)
+#define llscj_attr_nsloc(ns, loc, c1, c2, ann) \
+    llscj_attr_loc(loc, c1, c2, ann)
 static void
 llscj_attr_loc (PFsql_t * loc, PFsql_correlation_name_t c1,
-		PFsql_correlation_name_t c2, const PFla_op_t * frag,
-		struct PFsql_alg_ann_t *ann)
+		PFsql_correlation_name_t c2, struct PFsql_alg_ann_t *ann)
 {
-  assert (frag->sql_ann->fragment);
-
   sql_where_env_add (ann->wheremap,
 		     eq
 		     (crrl_deco
@@ -4537,7 +4529,7 @@ llscj_attr_loc (PFsql_t * loc, PFsql_correlation_name_t c1,
 		       (sql_special_name_new (sql_col_name)->ident), c1),
 		      loc));
 
-  llscj_attr (c1, c2, frag, ann);
+  llscj_attr (c1, c2, ann);
 }
 
 
@@ -4735,7 +4727,7 @@ llscj (PFalg_axis_t axis, const PFla_op_t * frag, const PFla_op_t * p)
 	  llscj_attr_nsloc (lit_str (""),
 			    lit_str (PFqname_loc
 				     (PFty_name (PFty_defn (ty)))),
-			    crrl1->name, crrl2->name, frag, ret);
+			    crrl1->name, crrl2->name, ret);
 	}
       /*
        * If we couldn't figure out what attribute test we got,
