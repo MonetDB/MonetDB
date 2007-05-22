@@ -1010,7 +1010,7 @@ the function definition in a particular module instead of the current one.
 		/* the last argument may be variable length */
 		if( MALkeyword(cntxt,"...",3) ){
 			curInstr->varargs |= VARARGS;
-			setPolymorphic(curInstr,TYPE_any,FALSE);
+			setPolymorphic(curInstr,TYPE_any,TRUE);
 			break;
 		}
 		if ((ch = currChar(cntxt)) != ',') {
