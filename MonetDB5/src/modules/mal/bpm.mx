@@ -1271,7 +1271,7 @@ guessNewPartition(BAT *b){
 }
 str
 BPMaddSegment(int *ret, bat *bid, bat *src){
-	int i,cnt;
+	int cnt;
 	Partition ps,p;
 	BAT *b,*bn;
 	if( (ps= getAlias(*bid)) == 0)
@@ -1294,7 +1294,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		insertPartition(bpmcat[ps->prv],p);
 	} else {
 		/* add the content to the last partition */
-		bn= BATdescriptor(bpmcat[i]->prv);
+		bn= BATdescriptor(bpmcat[ps->prv]->bid);
 		if( bn== NULL)
 			throw(MAL,"pbm.addPartition","Last partition BAT not found");
 		BATappend(bn,b,FALSE);
