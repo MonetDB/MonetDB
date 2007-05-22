@@ -14,12 +14,6 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-# install python, flex and bison on your systems 
-PYTHON=python
-YACC=bison -b y -y
-LEX=flex 
-SWIG=swig
-
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
@@ -35,7 +29,40 @@ PYTHON_INCS=-I$(PYTHONBASE)\include
 PYTHON_LIBS=$(PYTHONBASE)\libs\python25.lib
 PYTHON_LIBDIR=share\MonetDB\python
 
-# not need to edit beyond here..
+# some programs we use, probably no need to edit
+
+# install python, flex and bison on your systems 
+PYTHON = python
+YACC = bison -b y -y
+LEX = flex 
+SWIG = swig
+
+ARCHIVER = lib
+GENDLL =
+RC = rc
+
+MT = mt -nologo
+JAVAC = javac
+JAR = jar
+ANT = ant.bat
+
+# no need to edit beyond here..
+
+!IFDEF DEBUG
+CFLAGS = -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
+NO_INLINE_CFLAGS =
+!ELSE
+CFLAGS = -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -Ox -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
+NO_INLINE_CFLAGS = -Od -Ob0gysi-
+!ENDIF
+
+# No general LDFLAGS needed
+INSTALL = copy
+# TODO
+# replace this hack by something like configure ...
+MKDIR = mkdir
+ECHO = echo
+CD = cd
 
 exec_prefix = $(prefix)
 
@@ -83,6 +110,8 @@ CFLAGS = $(CFLAGS) -DNDEBUG
 # default in case neither NDEBUG nor DEBUG are defined
 CFLAGS = $(CFLAGS)
 !ENDIF
+!ELSE
+CFLAGS = $(CFLAGS) -Wp64 -Wcheck
 !ENDIF
 
 PHP_INCS = -I$(PHP_SRCDIR) -I$(PHP_SRCDIR)\main -I$(PHP_SRCDIR)\TSRM -I$(PHP_SRCDIR)\Zend -DPHP_WIN32 -DZEND_WIN32 -DZEND_DEBUG=0 -DZTS=1
