@@ -855,7 +855,7 @@ sql_bind_func_result_(sql_schema *s, char *sqlfname, list *ops, sql_subtype *res
 
 		if (!f->res.type)
 			continue;
-		if (strcmp(f->base.name, name) == 0 && is_subtype(&f->res, res) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+		if (strcmp(f->base.name, name) == 0 && (is_subtype(&f->res, res) || f->res.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 			unsigned int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
 
@@ -869,9 +869,22 @@ sql_bind_func_result_(sql_schema *s, char *sqlfname, list *ops, sql_subtype *res
 				if (a && a->scale > scale)
 					scale = a->scale;
 			}
-			sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
-			if (f->res.comp_type) 
-				fres->res.comp_type = f->res.comp_type;
+			/* same type as the first input */
+			if (f->res.type->eclass == EC_ANY) {
+				node *m;
+				sql_subtype *a = NULL;
+				for (n = ops->h, m = f->ops->h; n; n = n->next, m = m->next) {
+					sql_arg *s = m->data;
+					if (s->type.type->eclass == EC_ANY) {
+						a = n->data;
+					}
+				}
+				sql_init_subtype(&fres->res, a->type, f->res.digits, scale);
+			} else {
+				sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+				if (f->res.comp_type) 
+					fres->res.comp_type = f->res.comp_type;
+			}
 			return fres;
 		}
 		n = n->next;
