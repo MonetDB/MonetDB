@@ -1271,7 +1271,7 @@ guessNewPartition(BAT *b){
 }
 str
 BPMaddSegment(int *ret, bat *bid, bat *src){
-	int cnt;
+	int cnt=0;
 	Partition ps,p;
 	BAT *b,*bn;
 	if( (ps= getAlias(*bid)) == 0)
