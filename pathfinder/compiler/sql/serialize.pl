@@ -52,7 +52,8 @@ sub read_query {
                              document-pre|
                              document-size|
                              document-kind|
-                             document-prop|
+			     document-value|
+			     document-name|
                              document-tag|
                              result-relation|
                              result-pos_nat|
@@ -82,7 +83,8 @@ sub read_query {
     die "Schema information on document relation incomplete.\n"
         unless ($schema{'document-relation'} && $schema{'document-pre'}
                 && $schema{'document-size'} && $schema{'document-kind'}
-                && $schema{'document-prop'} && $schema{'document-tag'});
+                && $schema{'document-value'} && $schema{'document-tag'})
+		&& $schema{'document-name'};
 
     die "Schema information on result relation incomplete.\n"
         unless ($schema{'result-relation'} && $schema{'result-pos_nat'}
@@ -128,7 +130,8 @@ if (defined $schema{'result-item_pre'}
              d2.$schema{'document-pre'} AS pre,
              d2.$schema{'document-size'} AS size,
              d2.$schema{'document-kind'} AS kind,
-             d2.$schema{'document-prop'} AS prop,
+             d2.$schema{'document-value'} AS value,
+	     d2.$schema{'document-name'} AS name,
              d2.$schema{'document-tag'} AS tag
         FROM $schema{'result-relation'} AS r
              LEFT OUTER JOIN $schema{'document-relation'} AS d1
@@ -149,7 +152,8 @@ elsif (defined $schema{'result-item_pre'}) {
       SELECT d2.$schema{'document-pre'} AS pre,
              d2.$schema{'document-size'} AS size,
              d2.$schema{'document-kind'} AS kind,
-             d2.$schema{'document-prop'} AS prop,
+             d2.$schema{'document-value'} AS value,
+	     d2.$schema{'document-name'} AS name,
              d2.$schema{'document-tag'} AS tag
         FROM $schema{'result-relation'} AS r
              INNER JOIN $schema{'document-relation'} AS d1
@@ -200,7 +204,7 @@ my $sth = $dbh->prepare ($final_query)
 $sth->execute () or die "Could not execute query: " . DBI->errstr;
 
 # print XML header for result
-print "<?xml version='1.0'?>";
+print "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
 my @stack = ();       # stack to print all the closing tags
 my $last = 'ELEM';    # assume the last thing we printed was an element
@@ -211,6 +215,13 @@ while (my @data = $sth->fetchrow_array ()) {
     if ($query_type eq 'NODES_ONLY'
         || ($query_type eq 'ATOMIC_AND_NODES' && defined $data[$idx{'pre'}])) {
 
+        # print trailing > to close an element
+	if (($last eq 'ATTR') && ($data[$idx{'pre'} + 2] != 2)) {
+	    print '>';
+	    $last = 'ELEM';
+	}
+	    
+
         if ($data[$idx{'pre'} + 2] == 1) {           # kind == elem
 
             # newline between adjacent result elements
@@ -219,14 +230,18 @@ while (my @data = $sth->fetchrow_array ()) {
             }
 
             # remove trailing spaces as they are returned by DB2
-            $data[$idx{'pre'} + 4] =~ s/ +$//;
+            $data[$idx{'pre'} + 5] =~ s/ +$//;
 
-            print '<'.$data[$idx{'pre'} + 4].'>';    # print doc.tag
+            print '<'.$data[$idx{'pre'} + 5].'';    # print doc.tag
             push @stack, [ $data[$idx{'pre'}],       # pre
                            $data[$idx{'pre'} + 1],   # size
-                           $data[$idx{'pre'} + 4] ]; # tag
-            $last = 'ELEM';
+                           $data[$idx{'pre'} + 5] ]; # tag
+            $last = 'ATTR';
         }
+	elsif ($data[$idx{'pre'} + 2] == 2) {        #kind == attr
+	    print " ".$data[$idx{'pre'} + 4]."=\"".$data[$idx{'pre'} + 3]."\"";
+	    $last = 'ATTR';
+	}
         elsif ($data[$idx{'pre'} + 2] == 3) {        # kind == text
             # remove trailing spaces as they are returned by DB2
             $data[$idx{'pre'} + 3] =~ s/ +$//;
@@ -249,6 +264,7 @@ while (my @data = $sth->fetchrow_array ()) {
         # print closing tags if necessary
         while ($#stack >= 0
                 && ($stack[-1][0] + $stack[-1][1]) <= $data[$idx{'pre'}]) {
+           if ($last eq 'ATTR') { print '>'; $last = 'ELEM'; next; }
            print "</".$stack[-1][2].">";
            pop @stack;
            $last = 'ELEM'
@@ -270,6 +286,6 @@ while (my @data = $sth->fetchrow_array ()) {
         }
     }
 }
-
+print "\n";
 # close database connection
 $dbh->disconnect;
