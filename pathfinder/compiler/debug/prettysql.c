@@ -88,6 +88,7 @@ static char *ID[] = {
       [sql_max]      = "MAX",
       [sql_sum]      = "SUM",
       [sql_and]      = "AND",
+      [sql_or]       = "OR", 
       [sql_eq]       = "=",
       [sql_gt]       = ">",
       [sql_gteq]     = ">="
@@ -240,6 +241,7 @@ print_expr(PFsql_t *n)
             break;
             
         case sql_and:
+        case sql_or:
         case sql_eq:
         case sql_gt:
         case sql_gteq:
