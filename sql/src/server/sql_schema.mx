@@ -1274,7 +1274,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				   next value for, this should be called once
 				   foreach new value.
 				*/
-				res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), push_project(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), val));
+				res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), val));
 			}
 			if (!res) {
 				return sql_error(sql, 02, "ALTER TABLE: failed to create default value '%s'\n", cs->def ? cs->def : "NULL");

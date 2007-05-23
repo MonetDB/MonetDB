@@ -236,6 +236,7 @@ typedef struct sql_func {
 				   2 sql instantiated proc 
 				*/
 	int aggr;
+	int side_effect;
 	sql_schema *s;
 } sql_func;
 

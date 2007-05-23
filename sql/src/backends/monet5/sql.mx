@@ -497,6 +497,11 @@ function aggr.rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int];
 	return algebra.join(m, e);
 end aggr.rank_grp;
 
+function mmath.rand( v:int ) :int;
+	x := mmath.rand();
+	return x;
+end mmath.rand;
+
 @mal
 
 command prelude()

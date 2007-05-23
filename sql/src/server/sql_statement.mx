@@ -1171,8 +1171,8 @@ stmt_delta_table_idxbat(sql_idx * idx, int access)
 	return s;
 }
 
-stmt *
-stmt_const(stmt *s, stmt *val)
+static stmt *
+stmt_const_(stmt *s, stmt *val)
 {
 	stmt *ns = stmt_create(st_const);
 
@@ -1183,6 +1183,87 @@ stmt_const(stmt *s, stmt *val)
 	ns->aggr = s->aggr;
 	ns->h = stmt_dup(s->h);
 	return ns;
+}
+
+static stmt *
+push_project(stmt *rows, stmt *val) 
+{
+	switch (val->type) {
+	case st_convert:
+		val->op1.stval = push_project(rows, val->op1.stval);
+		break;
+	case st_binop:
+		if (val->op4.funcval->func->side_effect) {
+			val->op1.stval = stmt_const_(stmt_dup(rows), val->op1.stval);
+		} else {
+			val->op1.stval = push_project(rows, val->op1.stval);
+			val->op2.stval = push_project(rows, val->op2.stval);
+		}
+		break;
+	case st_unop:
+		if (val->op4.funcval->func->side_effect) {
+			val->op1.stval = stmt_const_(stmt_dup(rows), val->op1.stval);
+		} else {
+			val->op1.stval = push_project(rows, val->op1.stval);
+		}
+		break;
+	case st_op:
+		if (val->op4.funcval->func->side_effect) {
+			/* change into a st_unop */
+			val->type = st_unop;
+			val->op1.stval = stmt_const_(stmt_dup(rows), stmt_atom_int(0));
+		} else {
+			val = stmt_const_(stmt_dup(rows), val);
+		}
+		break;
+	default:
+		if (!val->nrcols)
+			val = stmt_const_(stmt_dup(rows), val);
+		return val;
+	}
+	val->nrcols = rows->nrcols;
+	return val;
+}
+
+static int
+has_side_effect(stmt *val)
+{
+	int se = 0;
+
+	switch (val->type) {
+	case st_convert:
+		se = has_side_effect(val->op1.stval);
+		break;
+	case st_binop:
+		se = val->op4.funcval->func->side_effect;
+		if (!se) 
+			se = has_side_effect(val->op1.stval) + 
+		     	     has_side_effect(val->op2.stval);
+		break;
+	case st_unop:
+		se = val->op4.funcval->func->side_effect;
+		if (!se) 
+			se = has_side_effect(val->op1.stval);
+		break;
+	case st_op:
+		se = val->op4.funcval->func->side_effect;
+		break;
+	default:
+		return se;
+	}
+	return se;
+}
+
+stmt *
+stmt_const(stmt *rows, stmt *val) 
+{
+	if (has_side_effect(val)) {
+		stmt *x = push_project(rows, val);
+		stmt_destroy(rows);
+		return x;
+	} else {
+		return stmt_const_(rows, val);
+	}
 }
 
 /* BEWARE stmt_mark marks the head, this while the mil mark is a mark tail

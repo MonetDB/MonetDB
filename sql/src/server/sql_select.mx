@@ -69,7 +69,6 @@ extern stmt *complex_find_subset(stmt *subset, stmt *t);
 extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
 extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3);
 
-
 #endif /*_SQL_SELECT_H_*/
 @c
 
@@ -1410,7 +1409,7 @@ query_orderby(mvc *sql, scope *scp, symbol *orderby, stmt *sel, stmt *subset, gr
 	dnode *o = orderby->data.lval->h;
 
 	/* first sort the groups */
-	if (grp) 
+	if (!sel && grp) 
 		cur = stmt_order(stmt_dup(grp->grp), 1);
 	while (o) {
 		symbol *order = o->data.sym;
@@ -1425,7 +1424,7 @@ query_orderby(mvc *sql, scope *scp, symbol *orderby, stmt *sel, stmt *subset, gr
 
 			/* fall back to column references, ie those not in
 			   the selection result */
-			if (!sc) {
+			if (!sc && !grp) {
 				/* reset error */
 				sql->errstr[0] = '\0';
 				sql->session->status = 0;
@@ -3972,7 +3971,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 	}
 
 	if (s && subset && sn->orderby) {
-		order = query_orderby(sql, scp, sn->orderby, s, subset, NULL);
+		order = query_orderby(sql, scp, sn->orderby, s, subset, grp);
 		if (!order) {
 			sql_select_cleanup(sql, s, subset, grp);
 			return sql_error(sql, 02, "SELECT: subquery result missing");

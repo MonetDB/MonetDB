@@ -66,8 +66,8 @@ extern BAT *temp_descriptor(log_bid b);
 #include "bat_bm.h"
 #include "bat_sequence.h"
 
-/* version 03.03.01 of catalog */
-#define CATALOG_VERSION 30301
+/* version 03.03.02 of catalog */
+#define CATALOG_VERSION 30302
 
 logger *sql_logger = NULL;
 static MT_Lock bs_lock;
@@ -1302,6 +1302,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	BAT *func_mod = get_bat("sys_functions_mod");
 	BAT *func_sql = get_bat("sys_functions_sql");
 	BAT *func_aggr = get_bat("sys_functions_aggr");
+	BAT *func_side_effect = get_bat("sys_functions_side_effect");
 	BAT *arg_func_id = get_bat("sys_args_func_id");
 	BAT *arg_number = get_bat("sys_args_number");
 	int first = 1;
@@ -1311,6 +1312,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	t->mod = _strdup((char *) bun_find(func_mod, lid));
 	t->sql = *(bit *) bun_find(func_sql, lid);
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
+	t->side_effect = *(bit *) bun_find(func_side_effect, lid);
 	t->res.type = NULL;
 	t->is_func = 0;
 	t->s = s;
@@ -1351,6 +1353,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	bat_destroy(func_mod);
 	bat_destroy(func_sql);
 	bat_destroy(func_aggr);
+	bat_destroy(func_side_effect);
 	bat_destroy(arg_func_id);
 	bat_destroy(arg_number);
 	return t;
@@ -2029,6 +2032,7 @@ bs_init_func(void)
 	BAT *func_mod = sys_bat(Ccc(istmp,"tmp","sys","functions_mod"), TYPE_str);
 	BAT *func_sql = sys_bat(Ccc(istmp,"tmp","sys","functions_sql"), TYPE_bit);
 	BAT *func_aggr = sys_bat(Ccc(istmp,"tmp","sys","functions_aggr"), TYPE_bit);
+	BAT *func_side_effect = sys_bat(Ccc(istmp,"tmp","sys","functions_side_effect"), TYPE_bit);
 	BAT *func_schema_id = sys_bat(Ccc(istmp,"tmp","sys","functions_schema_id"), TYPE_int);
 	BAT *U_func_id = sys_bat(Ucc(istmp,"tmp","sys","functions_id"), TYPE_int);
 	BAT *U_func_name = sys_bat(Ucc(istmp,"tmp","sys","functions_name"), TYPE_str);
@@ -2036,6 +2040,7 @@ bs_init_func(void)
 	BAT *U_func_mod = sys_bat(Ucc(istmp,"tmp","sys","functions_mod"), TYPE_str);
 	BAT *U_func_sql = sys_bat(Ucc(istmp,"tmp","sys","functions_sql"), TYPE_bit);
 	BAT *U_func_aggr = sys_bat(Ucc(istmp,"tmp","sys","functions_aggr"), TYPE_bit);
+	BAT *U_func_side_effect = sys_bat(Ucc(istmp,"tmp","sys","functions_side_effect"), TYPE_bit);
 	BAT *U_func_schema_id = sys_bat(Ucc(istmp,"tmp","sys","functions_schema_id"), TYPE_int);
 	BAT *D_func = sys_bat(Dcc(istmp,"tmp","sys","functions"), TYPE_oid);
 
@@ -2061,6 +2066,7 @@ bs_init_func(void)
 	update_table_bat(func_mod, U_func_mod, D_func);
 	update_table_bat(func_sql, U_func_sql, D_func);
 	update_table_bat(func_aggr, U_func_aggr, D_func);
+	update_table_bat(func_side_effect, U_func_side_effect, D_func);
 	update_table_bat(func_schema_id, U_func_schema_id, D_func);
 
 	update_table_bat(arg_id, U_arg_id, D_arg);
@@ -2077,6 +2083,7 @@ bs_init_func(void)
 	bat_destroy(func_mod);
 	bat_destroy(func_sql);
 	bat_destroy(func_aggr);
+	bat_destroy(func_side_effect);
 	bat_destroy(func_schema_id);
 	bat_destroy(U_func_id);
 	bat_destroy(U_func_name);
@@ -2084,6 +2091,7 @@ bs_init_func(void)
 	bat_destroy(U_func_mod);
 	bat_destroy(U_func_sql);
 	bat_destroy(U_func_aggr);
+	bat_destroy(U_func_side_effect);
 	bat_destroy(U_func_schema_id);
 	bat_destroy(D_func);
 
@@ -2132,13 +2140,14 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 	for (n = funcs->h; n; n = n->next) {
 		sql_func *f = n->data;
 		bit sql = f->sql;
+		bit se = f->side_effect;
 		int id, number = 0;
 		char arg_nme[] = "arg_0";
 
 		if (f->s)
-			table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &F, &f->s->base.id);
+			table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &F, &se, &f->s->base.id);
 		else
-			table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &F, &zero);
+			table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &F, &se, &zero);
 		
 		if (f->res.type) {
 			char *name = "result";
@@ -2175,9 +2184,9 @@ insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		int id, number = 0;
 
 		if (aggr->s)
-			table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &aggr->s->base.id);
+			table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &F, &aggr->s->base.id);
 		else
-			table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &zero);
+			table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &F, &zero);
 		
 		id = next_oid();
 		table_insert(tr, sysarg, &id, &aggr->base.id, name1, aggr->res.type->sqlname, &aggr->res.digits, &aggr->res.scale, &number);
@@ -2473,6 +2482,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "sql", "boolean", 1);
 		/* aggr or func */
 		bootstrap_create_column(tr, t, "aggr", "boolean", 1);
+		bootstrap_create_column(tr, t, "side_effect", "boolean", 1);
 		bootstrap_create_column(tr, t, "schema_id", "int", 32);
 
 		args = t = bootstrap_create_table(tr, s, "args");
@@ -3057,6 +3067,7 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	f->mod = _strdup(of->mod);
 	f->sql = of->sql;
 	f->aggr = of->aggr;
+	f->side_effect = of->side_effect;
 	f->ops = list_create(of->ops->destroy);
 	for(n=of->ops->h; n; n = n->next) 
 		list_append(f->ops, arg_dup(n->data));
@@ -4880,6 +4891,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0;
+	bit se = FALSE;
 
 	base_init(&t->base, next_oid(), TR_NEW, func);
 	assert(impl && mod);
@@ -4887,6 +4899,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->mod = _strdup(mod); 
 	t->sql = sql;
 	t->aggr = aggr;
+	t->side_effect = se;
 	t->ops = list_dup(args, (fdup)&arg_dup);
 	t->res.type = NULL;
 	t->is_func = is_func;
@@ -4895,7 +4908,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, t->mod, &sql, &aggr, &s->base.id);
+	table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, t->mod, &sql, &aggr, &se, &s->base.id);
 	if (t->res.type) {
 		char *name = "result";
 		oid id = next_oid();

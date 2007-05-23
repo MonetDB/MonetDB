@@ -1439,6 +1439,9 @@ proc rank_grp(BAT[oid,any::1] b) : BAT[oid,int] {
 	var e := [int](g.extend().mirror());
 	return join(m, e);
 }
+proc rand(int v) : int {
+	return rand();
+}
 
 tzone_local(TIMEZONE("GMT"));
 
