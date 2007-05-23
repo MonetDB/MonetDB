@@ -782,17 +782,16 @@ push_selects_down(mvc *c, list *con)
 		for(jn = ejoins->h; jn; jn = jn->next) {
 			stmt *j = jn->data;
 
-			if (!STMT_BAT(j->op1.stval->type))
-				continue;
 			assert(j->op2.stval->type==st_reverse);
-			if (!STMT_BAT(j->op2.stval->op1.stval->type))
-				continue;
 			if (j->t == join->h && j->type == st_join) {
 				stmt *jh = stmt_dup(j->op2.stval->op1.stval);
 				stmt *jt = stmt_reverse(stmt_dup(j->op1.stval));
 				jn->data = stmt_join(jh, jt, swap_compare((comp_type)j->flag));
 				stmt_destroy(j);
-			} else if (j->t == join->h && j->type == st_reljoin) {
+			} else if (STMT_BAT(j->op1.stval->type) && 
+				   STMT_BAT(j->op2.stval->op1.stval->type) &&
+				   j->t == join->h && 
+				   j->type == st_reljoin) {
 				list *l1 = list_dup(j->op1.lval, (fdup)&stmt_dup);
 				list *l2 = list_dup(j->op2.lval, (fdup)&stmt_dup);
 				jn->data = stmt_reljoin2(l2,l1);
