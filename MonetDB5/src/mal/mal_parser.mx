@@ -419,6 +419,7 @@ int cstToken(Client cntxt, ValPtr cst)
 	int hex=0;
 	str s = CURRENT(cntxt);
 
+	memset((char*)cst, 0, sizeof(ValRecord));
 	cst->vtype = TYPE_int;
 	switch(*s){
 	case '"':
@@ -734,6 +735,7 @@ charCst(Client cntxt, ValPtr cst)
 
 	if (*v != '\'')
 		return 0;
+	memset((char*)cst, 0, sizeof(ValRecord));
 	cst->vtype = TYPE_chr;
 	cst->val.cval[1]= 0;
 	cst->val.cval[2]= 0;
