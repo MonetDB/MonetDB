@@ -212,3 +212,22 @@ between them).
 Element node identifiers (and standard ID/IDREF support) are currently
 only available in Pathfinder's "milprint_summer" back-end.
 
+
+8. Missing math functions
+-------------------------
+
+The XQuery standard only defines a limited number of mathematical functions
+in its functions and operators. The functions below have been added in the
+"pf" namespace. They are currently only available in Pathfinder's
+"milprint_summer" backend.
+
+Natural logarithm
+   pf:log(xs:decimal) as xs:decimal
+   pf:log(xs:decimal?) as xs:decimal?
+   pf:log(xs:double) as xs:double
+   pf:log(xs:double?) as xs:double?
+Square root
+   pf:sqrt(xs:decimal) as xs:decimal
+   pf:sqrt(xs:decimal?) as xs:decimal?
+   pf:sqrt(xs:double) as xs:double
+   pf:sqrt(xs:double?) as xs:double?

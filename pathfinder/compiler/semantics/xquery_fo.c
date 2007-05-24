@@ -1900,6 +1900,46 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyNode () },
             .ret_ty = PFty_xs_string () } } }
+    , /* pf:log (decimal) as decimal */
+      { .ns = PFns_lib, .loc = "log",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_decimal () },
+            .ret_ty = PFty_xs_decimal () } } }
+    , /* pf:log (double) as double */
+      { .ns = PFns_lib, .loc = "log",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_double () },
+            .ret_ty = PFty_xs_double () } } }
+    , /* pf:log (decimal?) as decimal? */
+      { .ns = PFns_lib, .loc = "log",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()) },
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+    , /* pf:log (double?) as double? */
+      { .ns = PFns_lib, .loc = "log",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
+            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+    , /* pf:sqrt (decimal) as decimal */
+      { .ns = PFns_lib, .loc = "sqrt",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_decimal () },
+            .ret_ty = PFty_xs_decimal () } } }
+    , /* pf:sqrt (double) as double */
+      { .ns = PFns_lib, .loc = "sqrt",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_double () },
+            .ret_ty = PFty_xs_double () } } }
+    , /* pf:sqrt (decimal?) as decimal? */
+      { .ns = PFns_lib, .loc = "sqrt",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()) },
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+    , /* pf:sqrt (double?) as double? */
+      { .ns = PFns_lib, .loc = "sqrt",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
+            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
 
 
 /* #3. UPDATE FUNCTIONS */

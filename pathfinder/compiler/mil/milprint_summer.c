@@ -4684,7 +4684,7 @@ translateAggregates (opt_t *f, int code, int rc,
 
 /**
  * fn_abs translates the builtin functions fn:abs, fn:ceiling, fn:floor,
- * and fn:round
+ * fn:round, pf:log, and pf:sqrt.
  *
  * @param f the Stream the MIL code is printed to
  * @param code the number indicating, which result interface is preferred
@@ -7524,6 +7524,31 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         fn_abs (f, code, rc, "round_up");
         return rc;
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"log")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (rc == NORMAL)
+        {
+            assert (fun->sig_count == 1);
+            rc = get_kind(fun->sigs[0].ret_ty);
+            milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
+        }
+        fn_abs (f, code, rc, "log");
+        return rc;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"sqrt")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (rc == NORMAL)
+        {
+            assert (fun->sig_count == 1);
+            rc = get_kind(fun->sigs[0].ret_ty);
+            milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
+        }
+        fn_abs (f, code, rc, "sqrt");
+        return rc;
+    }
+
     /* calculation functions just call an extra function with
        their operator argument to avoid code duplication */
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"plus")))
