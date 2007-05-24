@@ -642,7 +642,7 @@ setup_connection(str dst, int *port)
 
     ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
     for (i = NR_RETRIES; i > 0 && ret < 0; i--) {
-        usleep(1);
+        MT_sleep_ms(1);
         ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
     }
 

@@ -145,7 +145,6 @@ Start XPRC receiver using the default values as specified in \
     #ifndef __MINGW32__
         #pragma comment(lib, "ws2_32")
     #endif
-    #define sleep(s) Sleep(1000*(s))
 #else           /* UNIX specific */
     #include <sys/select.h>
     #include <sys/types.h>	/* used by socket */
