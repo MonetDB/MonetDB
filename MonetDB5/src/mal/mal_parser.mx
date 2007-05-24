@@ -847,7 +847,7 @@ str parseLibrary(Client cntxt)
 		return parseError(cntxt, "<library path> expected\n");
 	}
 	libnme = putName(nxt, l);
-	s = loadLibrary(libnme);
+	s = loadLibrary(libnme,TRUE);
 	libnme = putName(nxt, l);
 	if (s)
 		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
@@ -926,7 +926,7 @@ parseInclude(Client cntxt)
 	}
 	skipToEnd(cntxt);
 
-	s = loadLibrary(modnme);
+	s = loadLibrary(modnme,FALSE);
 	if (s)
 		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
 	malInclude(cntxt, modnme, 0);

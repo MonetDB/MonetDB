@@ -64,7 +64,7 @@ For the time being we assume that all commands are statically linked.
 mal_export MALfcn getAddress(str filename, str modnme, str fcnname,int silent);
 mal_export char *MSP_locate_script(const char *mod_name);
 mal_export char *MSP_locate_file(const char *mod_name);
-mal_export str loadLibrary(str modulename);
+mal_export str loadLibrary(str modulename, int flag);
 mal_export void unloadLibraries(void);
 mal_export void initLibraries(void);
 mal_export int isPreloaded(str nme);
@@ -257,7 +257,7 @@ isLoaded(str modulename)
 #define MAXPATHLEN 1024
 #endif
 str
-loadLibrary(str filename)
+loadLibrary(str filename, int flag)
 {
 	int mode = RTLD_NOW | RTLD_GLOBAL;
 	char nme[MAXPATHLEN];
@@ -286,6 +286,8 @@ Use the search path provided in the configuration file
 #ifdef DEBUG_MAL_LINKER2
 		stream_printf(GDKout, "file not found %s\n", filename);
 #endif
+		if( flag)
+			throw(LOADER, "loadLibrary", "%s: file not found", filename);
 		return MAL_SUCCEED;
 	}
 
@@ -393,7 +395,7 @@ initLibraries()
 #ifdef DEBUG_MAL_LINKER
 	    stream_printf(GDKout,"loading %s\n",preloaded[i]);
 #endif
-	    loadLibrary(preloaded[i]);
+	    loadLibrary(preloaded[i],FALSE);
 	}
 }
 
