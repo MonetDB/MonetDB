@@ -284,7 +284,7 @@ main(int argc, char **argv)
 		/* Alternate fetching an even and an odd entry.  The
 		   end result should be that we get all entries in the
 		   correct order. */
-		ret = SQLFetch(stmt);
+		ret = SQLFetchScroll(stmt, SQL_FETCH_NEXT, 0);
 
 		if (ret == SQL_NO_DATA)
 			break;
