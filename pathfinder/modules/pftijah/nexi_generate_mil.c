@@ -207,11 +207,11 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
   /* memory allocation for string manipulation */
   argument1 = calloc(TERM_LENGTH, sizeof(char));
-  assert(argument1);
+  assert(argument1); /* FIXME: properly handle failing alloc() */
   term_cut = calloc(TERM_LENGTH, sizeof(char));
-  assert(term_cut);
+  assert(term_cut); /* FIXME: properly handle failing alloc() */
   unq_term = calloc(ADJ_TERM_MAX * TERM_LENGTH, sizeof(char));
-  assert(unq_term);
+  assert(unq_term); /* FIXME: properly handle failing alloc() */
 
   /* formating the mil header */
 

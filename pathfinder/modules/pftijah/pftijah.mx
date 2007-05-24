@@ -3183,7 +3183,7 @@ int CMDtijah_tokenize (str* res, str arg)
 {
 	int sz    = strlen(arg);
 	char* buf = GDKmalloc(sz + 1);
-	assert(buf);
+	assert(buf); /* FIXME: properly handle failing alloc() */
 
 	buf[0] = 0;
 	*res = tijah_tokenize_string(arg,sz,buf);
@@ -3196,7 +3196,7 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 
 	int nDocs = BATcount(doc_loaded);
 	BAT **rangeBAT = (BAT**)GDKmalloc(nDocs*sizeof(BAT*));
-	assert(rangeBAT);
+	assert(rangeBAT); /* FIXME: properly handle failing alloc() */
 	for(int i=0; i<nDocs; i++) {
 	    rangeBAT[i] = NULL;
         }
@@ -3652,11 +3652,11 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	BAT** bats = (BAT**) GDKmalloc(term_cnt * sizeof(BAT*)); 
         BUN* dsts = (BUN*) GDKmalloc(term_cnt * sizeof(BUN));
 	int* bfrees = (int*) GDKmalloc(term_cnt * sizeof(int));
-	assert(terms);
-	assert(facs);
-	assert(bats);
-	assert(dsts);
-	assert(bfrees);
+	assert(terms); /* FIXME: properly handle failing alloc() */
+	assert(facs); /* FIXME: properly handle failing alloc() */
+	assert(bats); /* FIXME: properly handle failing alloc() */
+	assert(dsts); /* FIXME: properly handle failing alloc() */
+	assert(bfrees); /* FIXME: properly handle failing alloc() */
 	
 	/* --------------------------- checks ---------------------------------- */
 	

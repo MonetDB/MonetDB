@@ -953,14 +953,14 @@ int CMDtj_normalizeTerm(char** res, str term, str stemmer) {
         } else {
             //if (*res) GDKfree(*res);
             *res = GDKmalloc( strlen(stemmed)+1 );
-            assert(*res);
+            assert(*res); /* FIXME: properly handle failing alloc() */
             strcpy( *res, stemmed );
         }
         //if ( stemCtx->clear ) stemCtx->clear( stemCtx );
     } else {
         //if (*res) GDKfree(*res);
         *res = GDKmalloc( strlen(term)+1 );
-        assert(*res);
+        assert(*res); /* FIXME: properly handle failing alloc() */
         strcpy( *res, term );
     }
     return GDK_SUCCEED;
