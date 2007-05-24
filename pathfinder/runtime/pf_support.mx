@@ -2821,57 +2821,92 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     }
 
     # then do text
-    var rid_prop_update := ws.fetch(RID_PROP_UPDATE).find(cont); # [RID,PROP] (updated properties)
-    if (rid_prop_update.count() > 0) {
-      var rids := rid_prop_update.hmark(0@0);  # [i,RID]
-      var map_pid := ws.fetch(MAP_PID).find(cont);
-      var oldpres := [swizzle](rids, map_pid);  # [i,PRE]
-      oldpres := oldpres.join(ws.fetch(PRE_KIND).find(cont)).uselect(TEXT).mirror().join(oldpres).tmark(0@0);  # [j,PRE] (original text nodes)
+    {
+      var newvx;
       var oldvx;
-      if (oldpres.count() > 0) {
-        var oldtext := oldpres.leftjoin(ws.fetch(PRE_PROP).find(cont)).leftjoin(ws.fetch(PROP_TEXT).find(cont)); # [j,str]
-        var oldnids := oldpres.leftjoin(ws.fetch(PRE_NID).find(cont));
-        oldvx := vx_maintain(oldnids, oldtext);
+      var rid_prop_update := ws.fetch(RID_PROP_UPDATE).find(cont); # [RID,PROP] (updated properties)
+      var map_pid := ws.fetch(MAP_PID).find(cont);
+      var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
+      var del_page := ws.fetch(DEL_PAGE).reverse().uselect(cont).hmark(0@0); # [i,PAGEID]
+      if ((rid_prop_update.count() > 0) or (del_page.count() > 0)) {
+        var rids := rid_prop_update.hmark(0@0);  # [i,RID]
+        # figure out RIDs of deleted pages
+        # we're only interested in deleted original pages (i.e. not
+        # pages that were allocated and deleted in the same
+        # transaction).
+        # just append the RID values to the list of RIDs to be considered.
+        if (del_page.count() > 0) {
+          rids.access(BAT_WRITE);
+          del_page@batloop() {
+            if (map_pid.exist($t)) {
+              if (not(isnil(map_pid.find($t)))) {
+                rids.append(densebat(wrd(REMAP_PAGE_SIZE)).seqbase(oid(lng($t) << REMAP_PAGE_BITS)).reverse());
+              }
+            }
+          }
+          # eliminate duplicates introduced by RIDs of deleted pages already being in RID_PROP_UPDATE
+          rids := rids.tunique().hmark(0@0);
+        }
+        var oldpres := [swizzle](rids, map_pid);  # [i,PRE]
+        oldpres := oldpres.join(ws.fetch(PRE_KIND).find(cont)).uselect(TEXT).mirror().join(oldpres).tmark(0@0);  # [j,PRE] (original text nodes)
+        if (oldpres.count() > 0) {
+          var oldtext := oldpres.leftjoin(ws.fetch(PRE_PROP).find(cont)).leftjoin(ws.fetch(PROP_TEXT).find(cont)); # [j,str]
+          var oldnids := oldpres.leftjoin(ws.fetch(PRE_NID).find(cont));
+          oldvx := vx_maintain(oldnids, oldtext);
+        } else {
+          oldvx := new(int,oid);
+        }
+        {
+          # figure out where to get new value
+          # rid is on old page and was modified
+          var b := rids.join(ws.fetch(RID_KIND_UPDATE).find(cont));
+          # rid is on old page and was unmodified
+          var c := rids.kdiff(b).[swizzle](map_pid).join(ws.fetch(PRE_KIND).find(cont));
+          # select text elements and combine
+          var t := b.access(BAT_WRITE).insert(c).uselect(TEXT).sort().mirror(); # [i,i] (text elems only)
+          rids := t.leftjoin(rids).tmark(0@0); # [i,RID] (only text elements, new numbering)
+        }
+        if (rids.count() > 0) {
+          # rid is on old page and was modified
+          var b := rids.join(ws.fetch(RID_NID_UPDATE).find(cont));
+          # rid is on old page and was unmodified
+          var c := rids.kdiff(b).[swizzle](map_pid).join(ws.fetch(PRE_NID).find(cont));
+          # select text elements and combine
+          var nids := b.access(BAT_WRITE).insert(c).order().tmark(0@0); # [i,NID]
+          # rid is on old page and was modified
+          b := rids.join(ws.fetch(RID_PROP_UPDATE).find(cont));
+          # rid is on old page and was unmodified
+          c := rids.kdiff(b).[swizzle](map_pid).join(ws.fetch(PRE_PROP).find(cont));
+          # select text elements and combine
+          var props := b.access(BAT_WRITE).insert(c).order().tmark(0@0); # [i,PROP]
+          var vals := props.leftjoin(ws.fetch(PROP_TEXT).find(cont));  # [i,TEXT]
+          newvx := vx_maintain(nids, vals);
+        } else {
+          newvx := new(int,oid);
+        }
       } else {
         oldvx := new(int,oid);
+        newvx := new(int,oid);
       }
-      var nids;
-      {
-        # figure out where to get new value
-        var isnewpage := [isnil](outerjoin([oid]([>>]([lng](rids), REMAP_PAGE_BITS)), map_pid)); # [i,bit]
-        # rid is on new page
-        var a := isnewpage.uselect(true).mirror().join(rids).join(ws.fetch(_RID_KIND).find(cont));
-        # rid is on old page and was modified
-        var b := isnewpage.uselect(false).mirror().join(rids).join(ws.fetch(RID_KIND_UPDATE).find(cont));
-        # rid is on old page and was unmodified
-        var c := isnewpage.uselect(false).kdiff(b).mirror().join(rids).[swizzle](map_pid).join(ws.fetch(PRE_KIND).find(cont));
-        # select text elements and combine
-        var t := a.access(BAT_WRITE).insert(b).insert(c).uselect(TEXT).sort().mirror(); # [i,i] (text elems only)
-        rids := t.leftjoin(rids).tmark(0@0); # [i,RID] (only text elements, new numbering)
-        isnewpage := t.leftjoin(isnewpage).tmark(0@0);	 # [i,bit] (only text elements, new numbering)
-        a := isnewpage.uselect(true).mirror().join(rids).join(ws.fetch(_RID_NID).find(cont));
-        # rid is on old page and was modified
-        b := isnewpage.uselect(false).mirror().join(rids).join(ws.fetch(RID_NID_UPDATE).find(cont));
-        # rid is on old page and was unmodified
-        c := isnewpage.uselect(false).kdiff(b).mirror().join(rids).[swizzle](map_pid).join(ws.fetch(PRE_NID).find(cont));
-        # select text elements and combine
-        nids := a.access(BAT_WRITE).insert(b).insert(c).order().tmark(0@0); # [i,NID]
+      # handle new pages separately
+      var npages := kdiff(map_pid_update.uselect(oid_nil, oid_nil), map_pid.uselect(oid_nil, oid_nil));
+      if (npages.count() > 0) {
+        newvx.access(BAT_WRITE);
+        var rid_kind := ws.fetch(_RID_KIND).find(cont);
+        var rid_prop := ws.fetch(_RID_PROP).find(cont);
+        var rid_nid := ws.fetch(_RID_NID).find(cont);
+        var prop_text := ws.fetch(_PROP_TEXT).find(cont);
+        npages@batloop() {
+          var f := oid(lng($h) << REMAP_PAGE_BITS);
+          var l := oid(lng(f) + REMAP_PAGE_MASK);
+          var r := rid_kind.reverse().ord_select(f, l).reverse().ord_uselect(TEXT).hmark(0@0); # [i,RID] (text elements)
+          var p := r.leftjoin(rid_prop).leftjoin(prop_text);
+          var n := r.leftjoin(rid_nid);
+          newvx.insert(vx_maintain(n, p));
+        }
       }
-      if (rids.count() > 0) {
-        var pres := [swizzle](rids, ws.fetch(MAP_PID_UPDATE).find(cont));  # [i,newPRE]
-        rids := rids.leftjoin(rid_prop_update);
-        var vals := rids.leftjoin(ws.fetch(PROP_TEXT).find(cont)).access(BAT_WRITE);
-        vals.insert(rids.leftjoin(ws.fetch(PROP_TEXT_UPDATE).find(cont))).order().tmark(0@0); 
-        var newvx := vx_maintain(nids, vals);
-        old_text.insert(cont, sdiff(oldvx, newvx));
-        new_text.insert(cont, sdiff(newvx, oldvx));
-      } else {
-        old_text.insert(cont, oldvx);
-        new_text.insert(cont, new(int,oid));
-      }
-    } else {
-      old_text.insert(cont, new(int,oid));
-      new_text.insert(cont, new(int,oid));
+      old_text.insert(cont, sdiff(oldvx, newvx));
+      new_text.insert(cont, sdiff(newvx, oldvx));
     }
     extend_unprotect(ws, cont);
   }
@@ -3532,9 +3567,34 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               holeatend := int(REMAP_PAGE_SIZE);
             }
           }
-
+          var holeatstart := 0;
           if (insertsize > holeatend) {
-            # not enough space on the current page
+            # not enough space on the current page, see if there is space at the
+            # start of the next
+            var nxtpgno := oid(lng(pageno) + 1);
+            if ((int(pageno) << REMAP_PAGE_BITS) <= docsize) {
+              var nxtpgid := map_pid_update.reverse().find(nxtpgno);
+              var nxtisoldpg := false;
+              if (map_pid.exist(nxtpgid)) {
+                nxtisoldpg := not(isnil(map_pid.find(nxtpgid)));
+              }
+              var sz;
+              if (nxtisoldpg) {
+                if (rid_size_update.exist(oid(lng(nxtpgid) << REMAP_PAGE_BITS))) {
+                  sz := rid_size_update.find(oid(lng(nxtpgid) << REMAP_PAGE_BITS));
+                } else {
+                  sz := pre_size.find(oid(lng(nxtpgno) << REMAP_PAGE_BITS));
+                }
+              } else {
+                sz := rid_size.find(oid(lng(nxtpgid) << REMAP_PAGE_BITS));
+              }
+              if (isnil(niland(sz, int_nil))) {
+                holeatstart := niland(sz, INT_MAX);
+              }
+            }
+          }
+          if (insertsize > holeatend + holeatstart) {
+            # not enough space on the current page and the start of the next page
 
             # datasize is the size of the data after the insertpoint and before the hole at the end
             var datasize := int((REMAP_PAGE_SIZE - (lng(docinsertbefore_newpre) and REMAP_PAGE_MASK)) - holeatend);
@@ -3556,7 +3616,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             }
             new_page.insert(newpages.reverse().project(doccont).reverse());
             var cpstart_rid, cpsize, cpwhere_rid, newholeatend;
-            if ((holeatend = 0) and (datasize > int(REMAP_PAGE_SIZE / 2))) {
+            if ((holeatend = 0) and (datasize > int(REMAP_PAGE_SIZE / 2)) and (pageno > 0@0)) {
               # insert new pages before current
               newpages := newpages.seqbase(pageno);
               map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid_nil, true, true)), npages)), true);
