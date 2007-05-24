@@ -7587,6 +7587,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             
         return rcode;
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"pow")))
+    {
+        return translateOperation (f, code, cur_level, counter, "pow", args, false);
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"eq")))
     {
         return translateComparison (f, cur_level, counter, "=", args);

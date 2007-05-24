@@ -231,3 +231,8 @@ Square root
    pf:sqrt(xs:decimal?) as xs:decimal?
    pf:sqrt(xs:double) as xs:double
    pf:sqrt(xs:double?) as xs:double?
+Power
+   pf:pow(xs:decimal,xs:decimal) as xs:decimal
+   pf:pow(xs:decimal?,xs:decimal?) as xs:decimal?
+   pf:pow(xs:double,xs:double) as xs:double
+   pf:pow(xs:double?,xs:double?) as xs:double?

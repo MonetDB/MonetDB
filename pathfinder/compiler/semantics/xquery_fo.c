@@ -1940,6 +1940,30 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
             .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+    , /* pf:pow (decimal, decimal) as decimal */
+      { .ns = PFns_lib, .loc = "pow",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_decimal (),
+                                PFty_xs_decimal () },
+            .ret_ty = PFty_xs_decimal () } } }
+    , /* pf:pow (decimal?, decimal?) as decimal? */
+      { .ns = PFns_lib, .loc = "pow",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()),
+                                   PFty_opt (PFty_xs_decimal ()) },
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+    , /* pf:pow (double, double) as double */
+      { .ns = PFns_lib, .loc = "pow",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_double (),
+                                   PFty_xs_double () },
+            .ret_ty = PFty_xs_double () } } }
+    , /* pf:pow (double?, double?) as double? */
+      { .ns = PFns_lib, .loc = "pow",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()),
+                                   PFty_opt (PFty_xs_double ()) },
+            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
 
 
 /* #3. UPDATE FUNCTIONS */
