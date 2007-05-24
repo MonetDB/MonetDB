@@ -1189,15 +1189,19 @@ reduce (PFcnode_t * p, int goalnt)
                     PFcnode_t *lseq = LLRL(p);
                     LLR(p) = LLRR(p);
                     *p = *seq (lseq, flwr (L(p), R(p)));
+
+                    relabel (p, kids);
+                    rewritten = true;
                 } else if (!PFty_subtype (PFty_opt (PFty_text ()),
                                           TY(LLRR(p)))) {
                     /* push #pf:matn into left sequence constructor input */
                     PFcnode_t *rseq = LLRR(p);
                     LLR(p) = LLRL(p);
                     *p = *seq (flwr (L(p), R(p)), rseq);
+
+                    relabel (p, kids);
+                    rewritten = true;
                 }
-                relabel (p, kids);
-                rewritten = true;
             }
             break;
             
