@@ -46,7 +46,7 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation, SQLLEN FetchOffset
 {
 	assert(stmt->hdl);
 
-	if ((stmt->cursorType == SQL_CURSOR_FORWARD_ONLY || stmt->cursorScrollable == SQL_NONSCROLLABLE) &&FetchOrientation != SQL_FETCH_NEXT) {
+	if ((stmt->cursorType == SQL_CURSOR_FORWARD_ONLY || stmt->cursorScrollable == SQL_NONSCROLLABLE) && FetchOrientation != SQL_FETCH_NEXT) {
 		/* Fetch type out of range */
 		addStmtError(stmt, "HY106", NULL, 0);
 		return SQL_ERROR;
@@ -63,6 +63,7 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation, SQLLEN FetchOffset
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
 		}
+		stmt->startRow = stmt->currentRow;
 		break;
 	case SQL_FETCH_FIRST:
 		stmt->startRow = 0;
