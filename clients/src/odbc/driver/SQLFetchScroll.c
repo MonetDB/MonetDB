@@ -90,10 +90,12 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation, SQLLEN FetchOffset
 			stmt->startRow = stmt->startRow - RowSetSize;
 		break;
 	case SQL_FETCH_RELATIVE:
-		if ((stmt->currentRow != 0 || FetchOffset <= 0) &&(stmt->currentRow != stmt->rowcount || FetchOffset >= 0)) {
-			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||(stmt->startRow == 0 && FetchOffset < 0) ||(stmt->startRow > 0 && (int)stmt->startRow + FetchOffset < 0 &&
-														      /* FetchOffset must be negative, so cast works */
-														      (unsigned int)-FetchOffset > RowSetSize)) {
+		if ((stmt->currentRow != 0 || FetchOffset <= 0) &&
+		    (stmt->currentRow != stmt->rowcount || FetchOffset >= 0)) {
+			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||
+			    (stmt->startRow == 0 && FetchOffset < 0) ||
+			    (stmt->startRow > 0 && (int) stmt->startRow + FetchOffset < 0 &&
+			     /* FetchOffset must be negative, so cast works */ (unsigned int) -FetchOffset > RowSetSize)) {
 				stmt->startRow = 0;
 				stmt->State = FETCHED;
 				return SQL_NO_DATA;
