@@ -178,8 +178,10 @@ command_tree **CAS_plan_gen(
 
   /* initialization for query plan trees */
   p_command_array = calloc(MAX_QUERIES, sizeof(command_tree*));
+  assert(p_command_array);
   p_command_start = p_command_array;
   p_command = calloc(MAX_QUERIES*OPERAND_MAX, sizeof(command_tree));
+  assert(p_command);
 
   /* printf("%d\n",p_command_array); */
   /* printf("%d\n",p_command); */

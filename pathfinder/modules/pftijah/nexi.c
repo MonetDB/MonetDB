@@ -198,8 +198,11 @@ int old_main(BAT* optbat, char* startNodes_name)
        This bug should be fixed now, with the cleanup of nexi_rewriter.c
     */
     txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
+    assert(txt_retr_model);
     img_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMI));
+    assert(img_retr_model);
     rel_feedback = calloc(MAX_QUERIES, sizeof(struct_RF));
+    assert(rel_feedback);
 
     /*** Set default configuration values here: ***/
     
@@ -670,6 +673,7 @@ int   tsl_init(TijahStringList* tsl, char* label, int max) {
 	tsl->cnt   = 0;
 	tsl->max   = max;
 	tsl->val   = GDKmalloc( tsl->max * sizeof(char*) );
+	assert(tsl->val);
 	return 1;
 }
 
@@ -699,6 +703,7 @@ char* tsl_append(TijahStringList* tsl, char* v) {
 	if ( tsl->cnt >= tsl->max) {
 		tsl->max *= 2;
 		tsl->val = GDKrealloc(tsl->val,(tsl->max * sizeof(char*)));
+		assert(tsl->val);
 	}
 #ifdef DEBUG_LIST
 	stream_printf(GDKout,"# appending \"%s\" to LIST[%s].\n",v,tsl->label);
@@ -721,6 +726,7 @@ int   tnl_init(TijahNumberList* tnl, char* label, int max) {
 	tnl->cnt   = 0;
 	tnl->max   = max;
 	tnl->val   = GDKmalloc( tnl->max * sizeof(int) );
+	assert(tnl->val);
 	return 1;
 }
 
@@ -744,6 +750,7 @@ int tnl_append(TijahNumberList* tnl, int v) {
 	if ( tnl->cnt >= tnl->max) {
 		tnl->max *= 2;
 		tnl->val = GDKrealloc(tnl->val,tnl->max * sizeof(int));
+		assert(tnl->val);
 	}
 #ifdef DEBUG_LIST
 	stream_printf(GDKout,"# appending (%d) to LIST[%s].\n",v,tnl->label);

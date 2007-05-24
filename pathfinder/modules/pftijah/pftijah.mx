@@ -3183,6 +3183,7 @@ int CMDtijah_tokenize (str* res, str arg)
 {
 	int sz    = strlen(arg);
 	char* buf = GDKmalloc(sz + 1);
+	assert(buf);
 
 	buf[0] = 0;
 	*res = tijah_tokenize_string(arg,sz,buf);
@@ -3195,6 +3196,7 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 
 	int nDocs = BATcount(doc_loaded);
 	BAT **rangeBAT = (BAT**)GDKmalloc(nDocs*sizeof(BAT*));
+	assert(rangeBAT);
 	for(int i=0; i<nDocs; i++) {
 	    rangeBAT[i] = NULL;
         }
@@ -3650,6 +3652,11 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	BAT** bats = (BAT**) GDKmalloc(term_cnt * sizeof(BAT*)); 
         BUN* dsts = (BUN*) GDKmalloc(term_cnt * sizeof(BUN));
 	int* bfrees = (int*) GDKmalloc(term_cnt * sizeof(int));
+	assert(terms);
+	assert(facs);
+	assert(bats);
+	assert(dsts);
+	assert(bfrees);
 	
 	/* --------------------------- checks ---------------------------------- */
 	

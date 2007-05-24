@@ -514,9 +514,11 @@ int tdb_splitBucket(termDbCtx* tdb, int frag) {
      *
      */
     tdb->hashbat= GDKrealloc(tdb->hashbat,1+(int)tdb->curFrag* sizeof(BAT*));
+    assert(tdb->hashbat);
     tdb->hashbat[new_fragIdx] = 0;
     if (tdb->hashbatSize) {
         tdb->hashbatSize = GDKrealloc(tdb->hashbatSize,1+(int)tdb->curFrag* sizeof(size_t));
+        assert(tdb->hashbatSize);
         tdb->hashbatSize[frag]        = 0;
         tdb->hashbatSize[new_fragIdx] = 0;
     }
