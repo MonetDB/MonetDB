@@ -352,22 +352,26 @@ doFile(Mapi mid, const char *file, int xquery)
 }
 
 static void
-showCommands(void)
+showCommands(int xquery)
 {
-	fprintf(toConsole, "?\t - show this message\n");
-	fprintf(toConsole, "?text\t - send help message\n");
-	fprintf(toConsole, "!\t - shell escape\n");
-	fprintf(toConsole, "<file\t - read input from file\n");
-	fprintf(toConsole, ">file\t - save response in file\n");
-	fprintf(toConsole, ">\t - response to terminal\n");
-	fprintf(toConsole, "cd\t - change directory\n");
-	fprintf(toConsole, "\\l\t- line is sent immediately\n");
+	fprintf(toConsole, "?\t- show this message\n");
+	if (!xquery) fprintf(toConsole, "?text\t- send help message\n");
+	fprintf(toConsole, "!\t- shell escape\n");
+	fprintf(toConsole, "%s<file\t- read input from file\n", xquery?"<":"");
+	fprintf(toConsole, ">file\t- save response in file\n");
+	fprintf(toConsole, ">\t- response to terminal\n");
+	fprintf(toConsole, "cd\t- change directory\n");
 	fprintf(toConsole, "\\q\t- terminate session\n");
 	fprintf(toConsole, "\\T\t- toggle timer\n");
-	fprintf(toConsole, "\\D\t- dump database\n");
-	fprintf(toConsole, "\\Dtable\t- dump table\n");
-	fprintf(toConsole, "\\A\t- enable auto commit\n");
-	fprintf(toConsole, "\\a\t- disable auto commit\n");
+        if (xquery) {
+		fprintf(toConsole, "<>\t- send query to server\n");
+        } else {
+		fprintf(toConsole, "\\l\t- line is sent immediately\n");
+		fprintf(toConsole, "\\D\t- dump database\n");
+		fprintf(toConsole, "\\Dtable\t- dump table\n");
+		fprintf(toConsole, "\\A\t- enable auto commit\n");
+		fprintf(toConsole, "\\a\t- disable auto commit\n");
+	}
 	fprintf(toConsole, "\\t\t- toggle interaction trace\n");
 }
 
@@ -461,20 +465,25 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					mapi_trace(mid, !mapi_get_trace(mid));
 					continue;
 				case 'l':
+                                        if (xquery) break;
 					linemode = 1;
 					line = "";
 					length = 0;
 					continue;
 				case 'b':
+                                        if (xquery) break;
 					linemode = 0;
 					continue;
 				case 'A':
+                                        if (xquery) break;
 					mapi_setAutocommit(mid, 1);
 					continue;
 				case 'a':
+                                        if (xquery) break;
 					mapi_setAutocommit(mid, 0);
 					continue;
 				case 'D':
+                                        if (xquery) break;
 					if (line[length - 1] == '\n')
 						line[--length] = 0;
 					if (line[length - 1] == '\r')
@@ -492,12 +501,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				}
 				break;
 			case '<':
+                                if (xquery && line[1] != '<') break;
+
 				/* read commands from file */
 				if (line[length - 1] == '\n')
 					line[--length] = 0;
 				if (line[length - 1] == '\r')
 					line[--length] = 0;
-				doFile(mid, line + 1, 0);
+				doFile(mid, line + 1 + xquery, 0);
 				continue;
 			case '>':
 				/* redirect output to file */
@@ -535,7 +546,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				if (!isspace((int)line[1]))
 					break;
 				else
-					showCommands();
+					showCommands(xquery);
 				continue;
 			}
 		}
