@@ -26,6 +26,8 @@ procs();
 [ "CTorderby_rev(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"												  ]
 [ "CTrefine(oid, BAT[oid,any]) : BAT[oid,oid]"														  ]
 [ "CTrefine(oid, any) : oid"																  ]
+[ "CTrefine_rev(oid, BAT[oid,any]) : BAT[oid,oid]"													  ]
+[ "CTrefine_rev(oid, any) : oid"															  ]
 [ "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"											  ]
 [ "NLLR_body(BAT[oid,dbl], BAT[oid,oid], str, BAT[oid,int], BAT[oid,int], dbl, int, BAT[void,str]) : BAT[oid,dbl]"																  ]
 [ "Qterms_to_tid_pre(BAT[void,str], BAT[void,str]) : BAT[oid,oid]"																						  ]
