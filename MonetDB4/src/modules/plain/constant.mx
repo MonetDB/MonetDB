@@ -105,6 +105,9 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 .COMMAND CTrefine ( BAT[oid,oid] ct, any::1 b) : BAT[oid,oid] = CMDconstFirstBat;
 "CTrefine(ct,b); where the second parameter is interpreted as a constant column"
 
+.COMMAND CTrefine_rev ( BAT[oid,oid] ct, any::1 b) : BAT[oid,oid] = CMDconstFirstBat;
+"CTrefine_rev(ct,b); where the second parameter is interpreted as a constant column"
+
 .COMMAND CTgroup ( any::1 b) : any::1 = CMDconstCopy;
 "CTgroup(b); where the first parameter is interpreted as a constant column"
 
@@ -165,9 +168,19 @@ proc CTrefine ( oid a, any b) : oid
     return a;
 }
 
+proc CTrefine_rev ( oid a, any b) : oid
+{
+    return a;
+}
+
 proc CTrefine ( oid a, BAT[oid,any] b) : BAT[oid,oid]
 {
     return tsort(b);
+}
+
+proc CTrefine_rev ( oid a, BAT[oid,any] b) : BAT[oid,oid]
+{
+    return tsort_rev(b);
 }
 
 proc {min} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] 
