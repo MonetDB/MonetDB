@@ -127,10 +127,11 @@ mem_alloc (PFmem_allocator *pa, size_t sz)
 }
 
 char *
-mem_realloc (PFmem_allocator *pa, char *p, size_t n) 
+mem_realloc (PFmem_allocator *pa, char *p, size_t old_n, size_t n) 
 {
         char *r = mem_alloc( pa, n);
-        memcpy(r, p, n);
+        size_t i;
+        for(i=0; i < old_n; i++) r[i] = p [i];
         return r;
 }
 
@@ -158,11 +159,11 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
  * Worker for #PFrealloc ().
  */
 void *
-PFrealloc_ (void *mem, size_t n,
+PFrealloc_ (void *mem, size_t old_n, size_t n,
 	    const char *file, const char *func, const int line) 
 {
     /* resize garbage collected heap memory to requested size */
-    mem = mem_realloc (pf_alloc, mem, n);
+    mem = mem_realloc (pf_alloc, mem, old_n, n);
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */

@@ -132,11 +132,12 @@ static void mps_error(const char *format, ...)
     j = vsnprintf(msg, i, format, ap);
     va_end (ap);
     while (j < 0 || j > i) {
+            int old_i = i;
             if (j > 0)      /* C99 */
                     i = j + 1;
             else            /* old C */
                     i *= 2;
-            msg = PFrealloc(msg, i);
+            msg = PFrealloc(msg, old_i, i);
             va_start(ap, format);
             j = vsnprintf(msg, i, format, ap);
             va_end (ap);

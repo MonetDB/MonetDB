@@ -38,12 +38,12 @@
 
 /* malloc to return result buffers with */
 #define EXTERN_MALLOC(n)	PFmalloc(n)
-#define EXTERN_REALLOC(p, n)	PFrealloc(p, n)
+#define EXTERN_REALLOC(p, o, n)	PFrealloc(p, o, n)
 #define EXTERN_FREE(p)		
 
 /* malloc for internal use in milopt structures */
 #define INTERN_MALLOC(n)	PFmalloc(n)
-#define INTERN_REALLOC(p, n)	PFrealloc(p, n)
+#define INTERN_REALLOC(p, o, n)	PFrealloc(p, o, n)
 #define INTERN_FREE(p)		
 
 opt_name_t name_if, name_else;
@@ -287,9 +287,10 @@ static int opt_move_useful(opt_t *o, unsigned int stmt) {
 #define APPEND_PUTC(o,sec,c,dst,end)						\
         if (((scope<0) | (c!='\n')) || (dst > o->buf[sec] && dst[-1]!='\n')) {	\
 	  if (dst >= end) { 							\
+                size_t oldlen = o->len[sec];                                    \
 		o->off[sec] = dst - o->buf[sec];				\
 		o->len[sec] += (o->len[sec]<1024)?1024:o->len[sec];		\
-		o->buf[sec] = (char*) EXTERN_REALLOC(o->buf[sec], o->len[sec]);	\
+		o->buf[sec] = (char*) EXTERN_REALLOC(o->buf[sec], oldlen, o->len[sec]);	\
 		APPEND_INIT(o,sec,dst,end);					\
 	  } *dst++ = c; }
 
@@ -901,12 +902,13 @@ int milprintf(opt_t *o, const char *format, ...)
         j = vsnprintf(milbuf, i, format, ap);
         va_end (ap);
         while (j < 0 || j > i) {
+                int old_i = i;
                 if (j > 0)      /* C99 */
                         i = j + 1;
                 else            /* old C */
                         i *= 2;
 
-                milbuf = INTERN_REALLOC(milbuf, i);
+                milbuf = INTERN_REALLOC(milbuf, old_i, i);
 		if (milbuf == NULL) return -1;
 
                 va_start(ap, format);
