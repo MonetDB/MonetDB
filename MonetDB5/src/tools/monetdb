@@ -44,10 +44,9 @@ function usage()
 ASCII=""
 DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
 # First perform some sanity checks
-if [ "$MONETDB5_PREFIX"  = "" ]
-then
+if [[ -z $MONETDB5_PREFIX ]] ; then
 	echo "The MONETDB5_PREFIX environment variable has not been set"
-	echo "It should point to where you have installed the build directory"
+	echo "It should point to the directory where you have installed MonetDB"
 	exit
 fi
 
