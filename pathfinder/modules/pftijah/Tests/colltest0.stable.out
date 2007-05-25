@@ -1,0 +1,35 @@
+stdout of test 'colltest0` in directory 'modules/pftijah` itself:
+
+
+# 16:06:31 >  
+# 16:06:31 >  Mtimeout -timeout 60 Mserver "--config=/usr/local/flokstra/etc/MonetDB.conf" --debug=0 --set "monet_mod_path=/usr/local/flokstra/lib/MonetDB4:/usr/local/flokstra/lib/MonetDB4/lib:/usr/local/flokstra/lib/MonetDB4/bin" --set "gdk_dbfarm=/usr/local/flokstra/var/MonetDB4/dbfarm" --set "sql_logdir=/usr/local/flokstra/var/MonetDB4/sql_logs" --set "xquery_logdir=/usr/local/flokstra/var/MonetDB4/xquery_logs" --set mapi_port=31150 --set xrpc_port=43225 --set monet_prompt= --trace --dbname=mTests_modules_pftijah  
+# 16:06:31 >  
+
+# Monet Database Server V4.17.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module(pathfinder);
+# XRPC administrative console at http://localhost:43225/admin
+module(unix);
+
+# should run if you set TSTTRGDIR to pwd
+var path:=getenv("TSTSRCDIR");
+
+# create the 3 document PFCOLL collection
+shred_doc(path+"/xml-docs/cdilbert1.xml","cdilbert1.xml","PFCOLL",0LL);
+# Elapsed time = 574us [009us/node]
+# Shredded 1 XML document (cdilbert1.xml), total time after commit=0.015s
+shred_doc(path+"/xml-docs/cdilbert2.xml","cdilbert2.xml","PFCOLL",0LL);
+# Elapsed time = 261us [004us/node]
+# Shredded 1 XML document (cdilbert2.xml), total time after commit=0.015s
+shred_doc(path+"/xml-docs/cdilbert3.xml","cdilbert3.xml","PFCOLL",0LL);
+# Elapsed time = 241us [004us/node]
+# Shredded 1 XML document (cdilbert3.xml), total time after commit=0.014s
+
+quit();
+
+# 16:06:32 >  
+# 16:06:32 >  Done.
+# 16:06:32 >  
+

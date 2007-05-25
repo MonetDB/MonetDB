@@ -1,0 +1,27 @@
+<strip>
+  <panel id="d1">
+    <dat>19930216</dat>
+    <speech>
+      <character>Puntharige baas</character>
+      <bubble>Snelheid is de sleutel tot succes.</bubble>
+    </speech>
+  </panel>
+  <panel id="d2">
+    <dat>19940216</dat>
+    <speech>
+      <character>Dilbert</character>
+      <bubble>Is het in orde om dingen fout te doen als we echt heel erg snel zijn?</bubble>
+    </speech>
+  </panel>
+  <panel id="d3">
+    <dat>19950631</dat>
+    <speech>
+      <character>Puntharige baas</character>
+      <bubble>Uhhh... Nee.</bubble>
+    </speech>
+    <speech>
+      <character>Wally</character>
+      <bubble>Nu ben ik helemaal in de was. Dank je wel, Baas.</bubble>
+    </speech>
+  </panel>
+</strip>

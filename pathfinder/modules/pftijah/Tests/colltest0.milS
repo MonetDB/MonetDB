@@ -1,0 +1,11 @@
+module(pathfinder);
+module(unix);
+
+# should run if you set TSTTRGDIR to pwd
+var path:=getenv("TSTSRCDIR");
+
+# create the 3 document PFCOLL collection
+shred_doc(path+"/xml-docs/cdilbert1.xml","cdilbert1.xml","PFCOLL",0LL);
+shred_doc(path+"/xml-docs/cdilbert2.xml","cdilbert2.xml","PFCOLL",0LL);
+shred_doc(path+"/xml-docs/cdilbert3.xml","cdilbert3.xml","PFCOLL",0LL);
+
