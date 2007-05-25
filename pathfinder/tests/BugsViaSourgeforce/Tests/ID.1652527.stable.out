@@ -33,14 +33,12 @@ quit();
 
 Over..
 
-# 10:13:54 >  
-# 10:13:54 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=36060 ID.1491723.xq
-# 10:13:54 >  
+# 11:55:20 >  
+# 11:55:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=30815 ID.1652527.xq
+# 11:55:20 >  
 
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><a><prob><integrate><config><nonmultiple>title</nonmultiple><nonmultiple>year</nonmultiple></config><one><movie><title>King Kong</title><year>2005</year></movie></one><two><movie><title>King Kong</title><year>1933</year></movie></two><mustbe><cand b="15" a="6"/><cand b="17" a="8"/></mustbe><impossible>6,17 8,15</impossible><sic><list><cand b="15" a="6"/><cand b="17" a="8"/></list></sic><list prob="0.48999999999999994"><cand b="15" a="6"/><cand b="17" a="8"/></list></integrate><poss prob="1"><movie><prob><integrate><config><nonmultiple>title</nonmultiple><nonmultiple>year</nonmultiple></config><one><title>King Kong</title></one><two><title>King Kong</title></two><mustbe><cand a="7" b="16"/></mustbe><impossible/><sic><list><cand b="16" a="7"/></list></sic><list prob="1"><cand a="7" b="16"/></list></integrate><poss prob="1"><title><prob><poss prob="1.0">King Kong</poss></prob></title></poss></prob><prob><integrate><config><nonmultiple>title</nonmultiple><nonmultiple>year</nonmultiple></config><one><year>2005</year></one><two><year>1933</year></two><mustbe><cand a="9" b="18"/></mustbe><impossible/><sic><list><cand b="18" a="9"/></list></sic><list prob="0.5"><cand a="9" b="18"/></list></integrate><poss prob="1"><year><prob><poss prob="0.5">2005</poss><poss prob="0.5">1933</poss></prob></year></poss></prob></movie></poss></prob></a></XQueryResult>
 
-# 10:13:54 >  
-# 10:13:54 >  Done.
-# 10:13:54 >  
+# 11:55:23 >  
+# 11:55:23 >  Done.
+# 11:55:23 >  
 
