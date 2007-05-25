@@ -63,10 +63,10 @@ stderr of test 'update_error.SF-1579510` in directory 'tests/BugTracker` itself:
 # 21:59:50 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32435 update_error.SF-1579510.xq
 # 21:59:50 >  
 
-MAPI  = monetdb@localhost:35180
+MAPI  = monetdb@localhost:36679
 QUERY = (1,2)/.
-ERROR = !type error: `/' operator only allows node sequence on its left-hand side (and not a sequence of integers).
-        !# halted in /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/compiler/semantics/typecheck.brg (reduce), line 434
+ERROR = !warning: query will always return an error
+        !ERROR: err:XP0019: Argument to location step must be a node sequence.
 
 # 21:59:50 >  
 # 21:59:50 >  Done.
