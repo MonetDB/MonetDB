@@ -3183,7 +3183,11 @@ int CMDtijah_tokenize (str* res, str arg)
 {
 	int sz    = strlen(arg);
 	char* buf = GDKmalloc(sz + 1);
-	assert(buf); /* FIXME: properly handle failing alloc() */
+
+	if (!buf) {
+            GDKerror("CMDtijah_tokenize: GDKmalloc() failed.\n");
+	    return GDK_FAIL;
+	}
 
 	buf[0] = 0;
 	*res = tijah_tokenize_string(arg,sz,buf);
@@ -3196,7 +3200,10 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 
 	int nDocs = BATcount(doc_loaded);
 	BAT **rangeBAT = (BAT**)GDKmalloc(nDocs*sizeof(BAT*));
-	assert(rangeBAT); /* FIXME: properly handle failing alloc() */
+	if (!rangeBAT) {
+            GDKerror("CMDpf2tijah_node: GDKmalloc() failed.\n");
+	    return GDK_FAIL;
+	}
 	for(int i=0; i<nDocs; i++) {
 	    rangeBAT[i] = NULL;
         }
@@ -3204,7 +3211,7 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 	*res = BATnew(TYPE_void, TYPE_oid, BATcount(item));
 
         if ( debug ) stream_printf(GDKout,"* Start of CMDpf2tijah_node():\n");
-	if ( 1 && debug ) {
+	if ( 0 && debug ) {
 	    BATprintf(GDKout,item);
 	    BATprintf(GDKout,kind);
 	    BATprintf(GDKout,doc_loaded);
@@ -3238,18 +3245,19 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 	    int myindex = container - 1;
 	    /* make it a switch */
 	    if ( rangeBAT[myindex] == NULL ) {
+
+	      BAT* docs_in_cont = BATselect(BATmirror(doc_loaded),&container,&container);
+	      int x_dic;
+	      BUN p_dic,q_dic;
+	      BATloopFast(docs_in_cont, p_dic, q_dic, x_dic) {
 	        oid doc_start;
 		oid doc_end;
 
-	        BUN xbun = BUNfnd(doc_loaded,&container);
-		if ( ! xbun ) {
-	    	    stream_printf(GDKout,"Cannot find cont %d.\n",container);
-		    return GDK_FAIL;
-		}
-		str docname = (str)BUNtail(doc_loaded,xbun);
+	        str docname = (str) BUNhead(docs_in_cont, p_dic);
 		BAT* b = BATmirror(doc_name);
 	        BUN yy = BUNfnd(b,docname);
 		if ( yy ) {
+		    if ( debug ) stream_printf(GDKout,"* pf2tijah_index: preparing doc(%s)[] nodes for translation\n",docname);	
 		    oid tj_docIndex = *(oid*)BUNtail(b,yy);
 
 		    BUN r;
@@ -3271,11 +3279,17 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 		    } else {
 	                doc_end = oid_nil;
 		    }
-		    rangeBAT[myindex] = BATselect(BATmirror(doc_pfpre),(ptr)&doc_start,(ptr)&doc_end);
-		    if ( 0 && debug ) BATprintf(GDKout,rangeBAT[myindex]);
+		    BAT* ds = BATselect(BATmirror(doc_pfpre),(ptr)&doc_start,(ptr)&doc_end);
+		    if ( rangeBAT[myindex] == NULL ) {
+		        rangeBAT[myindex] = BATsetaccess(ds, BAT_WRITE);
+		    } else {
+		        if ( !BATins(rangeBAT[myindex],ds,1) ) {
+	    	           stream_printf(GDKout,"CMDpf2tijah_node: BATins in rangeBAT fails.\n");
+			   return GDK_FAIL;
+		        }
+		    }
 		} {
-		    /* else skip */
-		} }
+		} } }
 	        if ( rangeBAT[myindex] ) {
 		    BUN range_bun = BUNfnd(rangeBAT[myindex],&pfpre);
 		    if ( range_bun ) {
@@ -3652,11 +3666,10 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	BAT** bats = (BAT**) GDKmalloc(term_cnt * sizeof(BAT*)); 
         BUN* dsts = (BUN*) GDKmalloc(term_cnt * sizeof(BUN));
 	int* bfrees = (int*) GDKmalloc(term_cnt * sizeof(int));
-	assert(terms); /* FIXME: properly handle failing alloc() */
-	assert(facs); /* FIXME: properly handle failing alloc() */
-	assert(bats); /* FIXME: properly handle failing alloc() */
-	assert(dsts); /* FIXME: properly handle failing alloc() */
-	assert(bfrees); /* FIXME: properly handle failing alloc() */
+	if (!terms || !facs || !bats || !dsts || !bfrees ) {
+            GDKerror("CMDscore_NLLR: GDKmalloc() failed.\n");
+	    return GDK_FAIL;
+	}
 	
 	/* --------------------------- checks ---------------------------------- */
 	

@@ -37,6 +37,7 @@
 #include <strings.h>
 #include <assert.h>
 
+#include <gdk.h>
 #include "pftijah.h"
 #include "nexi.h"
 #include "nexi_generate_mil.h"
@@ -206,12 +207,13 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
   bool set_reset;
 
   /* memory allocation for string manipulation */
-  argument1 = calloc(TERM_LENGTH, sizeof(char));
-  assert(argument1); /* FIXME: properly handle failing alloc() */
-  term_cut = calloc(TERM_LENGTH, sizeof(char));
-  assert(term_cut); /* FIXME: properly handle failing alloc() */
-  unq_term = calloc(ADJ_TERM_MAX * TERM_LENGTH, sizeof(char));
-  assert(unq_term); /* FIXME: properly handle failing alloc() */
+  argument1 = GDKmalloc(TERM_LENGTH * sizeof(char));
+  term_cut = GDKmalloc(TERM_LENGTH * sizeof(char));
+  unq_term = GDKmalloc(ADJ_TERM_MAX * TERM_LENGTH* sizeof(char));
+  if ( !argument1 || !term_cut || !unq_term ) {
+      stream_printf(GDKout,"SRA_to_MIL: GDKmalloc failed.\n");
+      return 0;
+  }
 
   /* formating the mil header */
 
@@ -439,7 +441,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
           /*printf("ZX1:%s\n",argument); */
           adj_arg++;
 
-          free(argument1);
+          GDKfree(argument1);
 
         }
         
@@ -1072,9 +1074,9 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
   }
 
-  free(term_cut);
-  free(unq_term);
-  free(argument1);
+  GDKfree(term_cut);
+  GDKfree(unq_term);
+  GDKfree(argument1);
   
   return 1;
 }

@@ -197,12 +197,14 @@ int old_main(BAT* optbat, char* startNodes_name)
        roel.van.os@humanitech.nl (2006-12-15):
        This bug should be fixed now, with the cleanup of nexi_rewriter.c
     */
-    txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
-    assert(txt_retr_model); /* FIXME: properly handle failing alloc() */
-    img_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMI));
-    assert(img_retr_model); /* FIXME: properly handle failing alloc() */
-    rel_feedback = calloc(MAX_QUERIES, sizeof(struct_RF));
-    assert(rel_feedback); /* FIXME: properly handle failing alloc() */
+    txt_retr_model = GDKmalloc(MAX_QUERIES*sizeof(struct_RMT));
+    img_retr_model = GDKmalloc(MAX_QUERIES*sizeof(struct_RMI));
+    rel_feedback   = GDKmalloc(MAX_QUERIES*sizeof(struct_RF));
+    if ( !txt_retr_model || !img_retr_model || !rel_feedback ) {
+        stream_printf(GDKout,"nexi.c:old_main: GDKmalloc failed.\n");
+        return 0;
+    }
+
 
     /*** Set default configuration values here: ***/
     
@@ -646,13 +648,13 @@ int old_main(BAT* optbat, char* startNodes_name)
 
     /* memory cleaning */
     p_command_array = NULL;
-    free(p_command_array); /* NONSENSE */
+    GDKfree(p_command_array); /* NONSENSE */
     txt_retr_model = NULL;
     img_retr_model = NULL;
-    free(txt_retr_model);
-    free(img_retr_model); /* NONSENSE */
+    GDKfree(txt_retr_model);
+    GDKfree(img_retr_model); /* NONSENSE */
     rel_feedback = NULL;
-    free(rel_feedback); /* NONSENSE */
+    GDKfree(rel_feedback); /* NONSENSE */
 
     return 1;
 }
@@ -673,7 +675,7 @@ int   tsl_init(TijahStringList* tsl, char* label, int max) {
 	tsl->cnt   = 0;
 	tsl->max   = max;
 	tsl->val   = GDKmalloc( tsl->max * sizeof(char*) );
-	assert(tsl->val); /* FIXME: properly handle failing alloc() */
+	assert(tsl->val);
 	return 1;
 }
 
@@ -703,7 +705,7 @@ char* tsl_append(TijahStringList* tsl, char* v) {
 	if ( tsl->cnt >= tsl->max) {
 		tsl->max *= 2;
 		tsl->val = GDKrealloc(tsl->val,(tsl->max * sizeof(char*)));
-		assert(tsl->val); /* FIXME: properly handle failing alloc() */
+		assert(tsl->val);
 	}
 #ifdef DEBUG_LIST
 	stream_printf(GDKout,"# appending \"%s\" to LIST[%s].\n",v,tsl->label);
@@ -726,7 +728,7 @@ int   tnl_init(TijahNumberList* tnl, char* label, int max) {
 	tnl->cnt   = 0;
 	tnl->max   = max;
 	tnl->val   = GDKmalloc( tnl->max * sizeof(int) );
-	assert(tnl->val); /* FIXME: properly handle failing alloc() */
+	assert(tnl->val);
 	return 1;
 }
 
@@ -750,7 +752,7 @@ int tnl_append(TijahNumberList* tnl, int v) {
 	if ( tnl->cnt >= tnl->max) {
 		tnl->max *= 2;
 		tnl->val = GDKrealloc(tnl->val,tnl->max * sizeof(int));
-		assert(tnl->val); /* FIXME: properly handle failing alloc() */
+		assert(tnl->val);
 	}
 #ifdef DEBUG_LIST
 	stream_printf(GDKout,"# appending (%d) to LIST[%s].\n",v,tnl->label);

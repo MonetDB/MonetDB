@@ -953,14 +953,20 @@ int CMDtj_normalizeTerm(char** res, str term, str stemmer) {
         } else {
             //if (*res) GDKfree(*res);
             *res = GDKmalloc( strlen(stemmed)+1 );
-            assert(*res); /* FIXME: properly handle failing alloc() */
+	    if ( !res ) {
+	        stream_printf(GDKout,"CMDtj_normalizeTerm: GDKmalloc() failed.\n");
+		return GDK_FAIL;
+	    }
             strcpy( *res, stemmed );
         }
         //if ( stemCtx->clear ) stemCtx->clear( stemCtx );
     } else {
         //if (*res) GDKfree(*res);
         *res = GDKmalloc( strlen(term)+1 );
-        assert(*res); /* FIXME: properly handle failing alloc() */
+	if ( !res ) {
+	    stream_printf(GDKout,"CMDtj_normalizeTerm: GDKmalloc() failed.\n");
+	    return GDK_FAIL;
+	}
         strcpy( *res, term );
     }
     return GDK_SUCCEED;

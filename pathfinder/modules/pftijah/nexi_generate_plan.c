@@ -35,6 +35,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
+
+#include <gdk.h>
+
 #include "nexi.h"
 #include "nexi_generate_plan.h"
 
@@ -177,11 +180,13 @@ command_tree **CAS_plan_gen(
 
 
   /* initialization for query plan trees */
-  p_command_array = calloc(MAX_QUERIES, sizeof(command_tree*));
-  assert(p_command_array); /* FIXME: properly handle failing alloc() */
+  p_command_array = GDKmalloc(MAX_QUERIES * sizeof(command_tree*));
   p_command_start = p_command_array;
-  p_command = calloc(MAX_QUERIES*OPERAND_MAX, sizeof(command_tree));
-  assert(p_command); /* FIXME: properly handle failing alloc() */
+  p_command = GDKmalloc(MAX_QUERIES*OPERAND_MAX * sizeof(command_tree));
+  if ( !p_command_array || !p_command ) {
+      stream_printf(GDKout,"CAS_plan_gen: GDKmalloc failed.\n");
+      return 0;
+  }
 
   /* printf("%d\n",p_command_array); */
   /* printf("%d\n",p_command); */
