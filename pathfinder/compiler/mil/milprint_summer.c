@@ -6820,8 +6820,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"exactly-one")))
     {
         rc = translate2MIL (f, code, cur_level, counter, L(args));
+
         milprintf(f,
-                "if (iter.tunique().count() != ipik.count())"
+                "var cnt := iter.tunique().count();\n"
+                "if ((cnt != loop%03u.count()) or (cnt != ipik.count()))" 
                 "{ ERROR (\"err:FORG0005: function fn:exactly-one expects "
                 "exactly one value.\"); }\n",
                 cur_level);
@@ -11506,9 +11508,9 @@ const char* PFstartMIL(int statement_type) {
            " ws_destroy(ws);\n"\
            "}}\n"\
 	   PF_STOP_PFTIJAH\
-           "time_print := usec() - time_print;\n"\
            "if (not(isnil(err))) ERROR(err);\n"\
            "else if (genType.startsWith(\"timing\")) {\n"\
+           "  time_print := usec() - time_print;\n"\
            "  printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
            "      dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, time_print/1000.0);\n}"
 const char* PFstopMIL(int statement_type) {
