@@ -597,7 +597,7 @@ pcre_match_with_flags(int *ret, str val, str pat, str flags)
 {
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
-    int options = PCRE_UTF8, i;
+	int options = PCRE_UTF8, i;
 	pcre *re;
 
 	for (i = 0; i < (int)strlen(flags); i++) {
