@@ -2785,7 +2785,7 @@ BKCsetColumn(int *r, int *bid, str *tname)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.setColumn", "column name missing");
 	}
-	BATroles(b, b->hident, *tname);
+	BATroles(b, GDKstrdup(b->hident), *tname);
 	BBPreleaseref(b->batCacheid);
 	*r =0;
 	return MAL_SUCCEED;
