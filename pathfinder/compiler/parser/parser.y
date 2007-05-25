@@ -2879,7 +2879,6 @@ PFparse (char *input, PFpnode_t **r)
 #if YYDEBUG
     pfdebug = 1;
 #endif
-
     /* initialize lexical scanner */
     PFscanner_init (input);
 

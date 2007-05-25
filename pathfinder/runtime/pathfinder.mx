@@ -4233,6 +4233,7 @@ static char* xquery_parse_string(char* p, char *buf, int len);
         err = (char*) alloca(strlen(_url)+80);\
         sprintf(err, "%s(%s): could not retrieve query\n", fcn, _url);\
 }    }
+extern char* PFmaxstack;
 static int
 xquery_compile_exec(xquery_client *ctx, 
                     char* url, 
@@ -4262,6 +4263,7 @@ xquery_compile_exec(xquery_client *ctx,
         if (is_mil && query == NULL) {
             *prologue = xquery; *epilogue = NULL;
         } else {
+            PFmaxstack = ((char*) &xquery) - 2*THREAD_STACK_SIZE;
             err = PFcompile_MonetDB(xquery, url, prologue, &del, epilogue, options);
             if (err == NULL && nsurl != NULL){
                 /* get the module namespace URL Y from pattern: "module namespace X = Y" */

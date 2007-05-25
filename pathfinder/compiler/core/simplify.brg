@@ -411,6 +411,8 @@ reduce (PFcnode_t *p, int goalnt)
 
     old_state_label = STATE_LABEL(p);
 
+    PFrecursion_fence();
+
     do {
         rewrite_again = false;
         manual = false;

@@ -86,6 +86,11 @@ static char *oops_msg[] = {
 char PFerrbuf[OOPS_SIZE] = { 0 };
 
 /**
+ * global stack threshold to guard against too deep recursions
+ */
+char *PFmaxstack = NULL;
+
+/**
  * Log message to compiler log file. This function actually does the
  * work for PFinfo() and PFlog().
  * @param msg printf style format string

@@ -39,6 +39,7 @@
  */
 #define OOPS_SIZE 4096
 extern char PFerrbuf[OOPS_SIZE];
+extern char* PFmaxstack;
 
 /**
  * exit compilation (not necessarily the entire process)
@@ -84,6 +85,11 @@ typedef enum {
 
 #define PFoops(rc,...) \
     PFoops_ ((rc), __FILE__, __func__, __LINE__, __VA_ARGS__)
+
+#define PFrecursion_fence() {\
+   char dummy = 0; (void) dummy;\
+   if (PFmaxstack && (&dummy > PFmaxstack)) PFoops(OOPS_FATAL, "aborted too deep recursion");\
+}
 
 void PFoops_ (PFrc_t, 
               const char*, const char*, const int,

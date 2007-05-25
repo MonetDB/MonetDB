@@ -406,6 +406,8 @@ reduce (PFcnode_t * p, int goalnt)
     bool          rewritten;
     short         old_state_label;
 
+    PFrecursion_fence();
+
     do {
         /* determine rule that matches for this non-terminal */
         rule = PFcoreopt_rule (STATE_LABEL (p), goalnt);

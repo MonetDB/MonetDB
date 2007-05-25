@@ -708,6 +708,8 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
     short         old_state_label;
     PFpnode_t *   c;
 
+    PFrecursion_fence();
+
     do {
         /* determine rule that matches for this non-terminal */
         rule = PFnormalize_rule (STATE_LABEL (p), goalnt);
