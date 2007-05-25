@@ -88,7 +88,7 @@ typedef enum {
 
 #define PFrecursion_fence() {\
    char dummy = 0; (void) dummy;\
-   if (PFmaxstack && (&dummy > PFmaxstack)) PFoops(OOPS_FATAL, "aborted too deep recursion");\
+   if (PFmaxstack && (&dummy < PFmaxstack)) PFoops(OOPS_FATAL, "aborted too deep recursion");\
 }
 
 void PFoops_ (PFrc_t, 
