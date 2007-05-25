@@ -2766,7 +2766,14 @@ PROC ws_newpage(BAT[void,BAT] ws,
         err := CATCH(_shredlock_set(colname, wsid));
         lock_unset(pf_short);
 
-        if (isnil(err)) {
+        page_id := 0@0; 
+
+        # inside the shredlock. try again. maybe another query added the desired pages
+        lock_set(coll_shortlock);
+        err := CATCH(page_id := __runtime_newpage(runtime));
+        lock_unset(coll_shortlock);
+
+        if (isnil(err) and isnil(page_id)) {
             var rid_size  := ws.fetch(_RID_SIZE).find(cont);
             var rid_level := ws.fetch(_RID_LEVEL).find(cont);
             var rid_prop  := ws.fetch(_RID_PROP).find(cont);
@@ -2795,16 +2802,17 @@ PROC ws_newpage(BAT[void,BAT] ws,
             # create a new [nil,oid] bat with densely descending tail values, ending at new_pid
             var newpids := densebat(wrd(last_pid - new_pid)).seqbase(oid(new_pid)).reverse().seqbase(oid(nil)).access(BAT_WRITE).revert(); # put in reverse order to give the pages out in order 
 
-            lock_set(pf_short);
-            err := CATCH(_shredlock_unset(colname, wsid));
-            lock_unset(pf_short);
-
             # add extra created pages to the freelist
             if (isnil(err)) {
                 lock_set(coll_shortlock);
                 err := CATCH(pages_free.insert(newpids));
                 lock_unset(coll_shortlock);
             }
+        }
+        if (isnil(err)) {
+            lock_set(pf_short);
+            err := CATCH(_shredlock_unset(colname, wsid));
+            lock_unset(pf_short);
         }
     }
     if (not(isnil(err))) ERROR("ws_newpage: " + err);
@@ -2853,31 +2861,41 @@ PROC ws_newnids(BAT[void, BAT] ws,
         err := CATCH(_shredlock_set(colname, wsid));
         lock_unset(pf_short);
 
+        var delta := empty_bat;
+ 
+        # inside the shredlock. try again. maybe another query added the desired nids
+        lock_set(coll_shortlock);
+        err := CATCH(delta := __runtime_newnids(runtime, cnt));
+        lock_unset(coll_shortlock);
+
         if (isnil(err)) {
-            var nid_rid := ws.fetch(_NID_RID).find(cont);
-            var nid_off := count(nid_rid);
-            var nid_cnt;
+            newnids.access(BAT_WRITE).append(delta);
+            if (bit(cnt :-= count(delta))) {
+                var nid_rid := ws.fetch(_NID_RID).find(cont);
+                var nid_off := count(nid_rid);
+                var nid_cnt;
 
-            coll_lock_set(ws, cont, COLL_SHORTLOCK, "ws_newnids"); 
-            var ws_logtime := usec(); 
-            pf_assert(CATCH(nid_cnt := __ws_newnids(nid_rid, cnt)), "master update failed (newnids)");
-            coll_lock_unset(ws, cont, COLL_SHORTLOCK, "ws_newnids", ws_logtime); 
+                coll_lock_set(ws, cont, COLL_SHORTLOCK, "ws_newnids"); 
+                var ws_logtime := usec(); 
+                pf_assert(CATCH(nid_cnt := __ws_newnids(nid_rid, cnt)), "master update failed (newnids)");
+                coll_lock_unset(ws, cont, COLL_SHORTLOCK, "ws_newnids", ws_logtime); 
 
-            # put nids in reverse order in the freelist, so they are given out in order
-            newnids.access(BAT_WRITE).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
-            var delta := reverse(nid_rid.slice(nid_off,nid_cnt - 1));
-            delta := delta.copy().access(BAT_WRITE).revert(); 
+                # put nids in reverse order in the freelist, so they are given out in order
+                newnids.append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
+                delta := reverse(nid_rid.slice(nid_off,nid_cnt - 1)).copy().access(BAT_WRITE).revert(); 
 
+                if (nid_cnt > nid_off) {
+                    # add extra created NIDs to the freelist
+                    lock_set(coll_shortlock);
+                    err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(delta));
+                    lock_unset(coll_shortlock);
+                }
+            }
+        }
+        if (isnil(err)) {
             lock_set(pf_short);
             err := CATCH(_shredlock_unset(colname, wsid));
             lock_unset(pf_short);
-
-            if (isnil(err) and (nid_cnt > nid_off)) {
-                # add extra created NIDs to the freelist
-                lock_set(coll_shortlock);
-                err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(delta));
-                lock_unset(coll_shortlock);
-            }
         }
     }
     if (not(isnil(err))) ERROR("ws_newpage: " + err);
