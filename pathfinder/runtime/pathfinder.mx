@@ -1984,10 +1984,10 @@ PROC __runtime_index(oid coll_oid,
                      BAT[void,oid] map_pid, 
                      oid pre, oid att, bit updatable) : BAT[void,bat] 
 {
-    # look if we have it already (readonly case)
+    # look if we have it already (persistent readonly case)
     var nme := str(lng(coll_oid)) + "_qn_nid";
     var vx_nme := str(lng(coll_oid)) + "_vx_hsh_nid";
-    if (not(updatable)) { 
+    if ((coll_oid >= DOCID_MIN) and not(updatable)) { 
         # hack: reverse/reverse to ensure it gets loaded
         var b, err := CATCH(b := reverse(reverse(bat(nme)))); 
         if (isnil(err)) return new(void,bat).insert(nil,b).insert(nil,reverse(reverse(bat(vx_nme))));
@@ -2021,10 +2021,10 @@ PROC __runtime_index(oid coll_oid,
         vxp := tmp.leftfetchjoin(attr_own); tmp := nil;
         tmp := vx_reduce(vxt, vxp); vxp := nil; vxt := nil;
 
-    if (updatable) { # hash-index, created here each time document is first used
+    if (updatable or (coll_oid < DOCID_MIN)) { # hash-index, created here each time document is first used
         (idx := bat(oid, oid, (count(idx)*8)/7).insert(idx)).accbuild("hash");
         (vxm := bat(int, oid, ((count(vxm)+count(tmp))*8)/7).insert(vxm).insert(tmp)).accbuild("hash");
-    } else { # read-only case. indices are sorted (binary search) and persistent
+    } else { # persistent read-only case. indices are sorted (binary search) 
         # idx [qn,pre] lexico-ordered (thanks to stable-sort)
         idx := idx.access(BAT_WRITE).sorder().access(BAT_READ).rename(nme).mmap(1).persists(true);
         tmp := merged_union(vxm.hmark(0@0), tmp.hmark(0@0), vxm.tmark(0@0), tmp.tmark(0@0)); vxm := nil; 

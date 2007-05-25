@@ -20,7 +20,7 @@ function XRPC_REQUEST(module, moduleurl, method, arity, body) {
            'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
            'xmlns:xrpc="http://monetdb.cwi.nl/XQuery" ' +
            'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
-           'xsi:schemaLocation="http://monetdb.cwi.nl/XQuery http://monetdb.cwi.nl/XQuery/XRPC.xs" ' +
+           'xsi:schemaLocation="http://monetdb.cwi.nl/XQuery http://monetdb.cwi.nl/XQuery/XRPC.xsd" ' +
            'xmlns:xs="http://www.w3.org/2001/XMLSchema">' +
            '<env:Body>' +
                '<xrpc:request xrpc:module="' + module + '" ' +
