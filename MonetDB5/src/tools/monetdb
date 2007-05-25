@@ -53,30 +53,35 @@ fi
 
 ACTION="--status"
 
-case "$1" in
- "--start" | "--stop" | "--status" ) 
+case $1 in
+	"--start" | "--stop" | "--status" ) 
 		ACTION=$1
-		shift ;;
- "--databases" )
+		shift
+	;;
+	"--databases")
 		ACTION=$1
-		shift ;;
- "--dump" )
+		shift
+	;;
+	"--dump")
 		ACTION=checkpoint
 		ASCII="--ascii=yes"
-		shift ;;
- "--checkpoint" )
+		shift
+	;;
+	"--checkpoint")
 		ACTION=$1
-		shift ;;
- "--recover" )
+		shift
+	;;
+	"--recover")
 		ACTION=$1;
-		shift ;;
- "--log" )
+		shift
+	;;
+	"--log")
 		ACTION=$1
-		shift ;;
- "--help" )
-	usage 
-	exit ;;
- * ) 
+		shift
+	;;
+	"--help")
+		usage 
+		exit 0
 	;;
 esac
 
