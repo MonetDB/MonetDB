@@ -56,44 +56,42 @@ ACTION="--status"
 case $1 in
 	"--start" | "--stop" | "--status" ) 
 		ACTION=$1
-		shift
 	;;
 	"--databases")
 		ACTION=$1
-		shift
 	;;
 	"--dump")
 		ACTION=checkpoint
 		ASCII="--ascii=yes"
-		shift
 	;;
 	"--checkpoint")
 		ACTION=$1
-		shift
 	;;
 	"--recover")
 		ACTION=$1;
-		shift
 	;;
 	"--log")
 		ACTION=$1
-		shift
 	;;
 	"--help")
 		usage 
 		exit 0
 	;;
 esac
+shift
+
+# emit a warning :)
+echo " * warning: This script is experimental"
 
 # massage the argument list to prepare for calling
 ARGS=""
 DBNAME=""
 STARTUP=""
 DELAY=""
-while [ $# -gt 0 ]
-do
+while [[ $# -gt 0 ]] ; do
 	case "$1" in
 	"--dump" )
+# interesting: --dump --dump seems to be a valid action
 		ASCII="--ascii=yes"
 		;;
 	"--ascii="* )
@@ -111,7 +109,7 @@ do
 		;;
 	"--dbinit="* )
 		tail="${1#--dbinit=}"
-		STARTUP=/tmp/mserver5.startup$$
+		STARTUP=${TMPDIR:-/var/tmp}/mserver5.startup$$
 		echo $tail > $STARTUP
 		;;
 	* )
