@@ -1373,7 +1373,7 @@ date_fromstr(str buf, int *len, date **d)
 	if (*len < (int) sizeof(date)) {
 		if (*d)
 			GDKfree(*d);
-		*d = (date *) GDKmalloc(*len = sizeof(date));
+		*d = (date *) GDKzalloc(*len = sizeof(date));
 	}
 	**d = date_nil;
 	if (yearneg == 0 && !GDKisdigit(buf[0])) {
@@ -1455,7 +1455,7 @@ date_tostr(str *buf, int *len, date *val)
 	if (*len < 15) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 15);
+		*buf = (str) GDKzalloc(*len = 15);
 	}
 	if (*val == date_nil || !DATE(day, month, year)) {
 		strcpy(*buf, "nil");
@@ -1475,7 +1475,7 @@ daytime_fromstr(str buf, int *len, daytime **ret)
 	if (*len < (int) sizeof(daytime)) {
 		if (*ret)
 			GDKfree(*ret);
-		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
+		*ret = (daytime *) GDKzalloc(*len = sizeof(daytime));
 	}
 	**ret = daytime_nil;
 	if (!GDKisdigit(buf[pos])) {
@@ -1558,7 +1558,7 @@ daytime_tostr(str *buf, int *len, daytime *val)
 	if (*len < 12) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 13);
+		*buf = (str) GDKzalloc(*len = 13);
 	}
 	if (*val == daytime_nil || !TIME(hour, min, sec, msec)) {
 		strcpy(*buf, "nil");
@@ -1581,7 +1581,7 @@ timestamp_fromstr(str buf, int *len, timestamp **ret)
 	if (*len < (int) sizeof(timestamp)) {
 		if (*ret)
 			GDKfree(*ret);
-		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
+		*ret = (timestamp *) GDKzalloc(*len = sizeof(timestamp));
 	}
 	d = &(*ret)->days;
 	t = &(*ret)->msecs;
@@ -1644,7 +1644,7 @@ timestamp_tostr(str *buf, int *len, timestamp *val)
 	if (*len < 2 + len1 + len2) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1 + len2 + 2);
+		*buf = (str) GDKzalloc(*len = len1 + len2 + 2);
 	}
 	s = *buf;
 	if (ts_isnil(tmp)) {
@@ -1692,7 +1692,7 @@ rule_tostr(str *buf, int *len, rule *r)
 	if (*len < 64) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 64);
+		*buf = (str) GDKzalloc(*len = 64);
 	}
 	if (r->asint == int_nil) {
 		strcpy(*buf, "nil");
@@ -1720,7 +1720,7 @@ rule_fromstr(str buf, int *len, rule **d)
 	if (*len < (int) sizeof(rule)) {
 		if (*d)
 			GDKfree(*d);
-		*d = (rule *) GDKmalloc(*len = sizeof(rule));
+		*d = (rule *) GDKzalloc(*len = sizeof(rule));
 	}
 	(*d)->asint = int_nil;
 
@@ -1810,7 +1810,7 @@ tzone_fromstr(str buf, int *len, tzone **d)
 	if (*len < (int) sizeof(tzone)) {
 		if (*d)
 			GDKfree(*d);
-		*d = (tzone *) GDKmalloc(*len = sizeof(tzone));
+		*d = (tzone *) GDKzalloc(*len = sizeof(tzone));
 	}
 	**d = *tz_nilptr;
 
@@ -1875,7 +1875,7 @@ tzone_tostr(str *buf, int *len, tzone *z)
 	if (*len < 160) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 160);
+		*buf = (str) GDKzalloc(*len = 160);
 	}
 	s = *buf;
 	if (tz_isnil(*z)) {
