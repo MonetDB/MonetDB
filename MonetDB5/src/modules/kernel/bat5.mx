@@ -1916,7 +1916,7 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 str
 BKCreplace_bat(int *r, int *bid, int *sid)
 {
-	BAT *b, *s;
+	BAT *b, *bn, *s;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1926,20 +1926,21 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.replace", "Cannot access descriptor");
 	}
-	if (BATreplace(b, s, 0) != NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(s->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
+	bn=BATreplace(b, s, 0);
 	BBPreleaseref(s->batCacheid);
-	throw(MAL, "bat.replace_bat", "GDKerror");
+	if(bn==NULL )
+		BBPreleaseref(b->batCacheid);
+	else
+		BBPreleaseref(bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.replace", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 str
 BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 {
-	BAT *b;
+	BAT *b, *bn;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1947,18 +1948,20 @@ BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	if (BUNreplace(b, h, t, *force) == NULL) {
+	bn= BUNreplace(b, h, t, *force);
+	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.replace", "BUNreplaceFailed");
-	}
-	BBPreleaseref(b->batCacheid);
+	else
+		BBPreleaseref(bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.replace", "GDKerror, different BAT returned");
 	return MAL_SUCCEED;
 }
 
 str
 BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
 {
-	BAT *b, *s;
+	BAT *b, *bn, *s;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1968,20 +1971,21 @@ BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.replace", "Cannot access descriptor");
 	}
-	if (BATreplace(b, s, *force) != NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(s->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
+	bn= BATreplace(b, s, *force);
 	BBPreleaseref(s->batCacheid);
-	throw(MAL, "bat.replace_bat", "GDKerror");
+	if(bn==NULL )
+		BBPreleaseref(b->batCacheid);
+	else
+		BBPreleaseref(bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.replace_bat", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 char *
 BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 {
-	BAT *b;
+	BAT *b, *bn;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1989,53 +1993,59 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	if (BUNdel(b, h, t,FALSE) != NULL) {
+	bn= BUNdel(b, h, t,FALSE);
+	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.delete_buns", "GDKerror");
+	else
+		BBPreleaseref(bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.delete_bun", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 char *
 BKCdelete(int *r, int *bid, ptr h)
 {
-	BAT *b;
+	BAT *b, *bn;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.delete", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,h)@
-	if (BUNdelHead(b, h,FALSE) != NULL) {
+	bn= BUNdelHead(b, h,FALSE);
+	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.delete", "GDKerror");
+	else
+		BBPreleaseref(bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.delete", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 str
 BKCdelete_all(int *r, int *bid)
 {
-	BAT *b;
+	BAT *b, *bn;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.delete", "Cannot access descriptor");
 	}
-	if (BATclear(b) != NULL) {
+	bn=BATclear(b);
+	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.delete", "GDKerror");
+	else
+		BBPreleaseref(bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.delete_all", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 str
 BKCdelete_bat_bun(int *r, int *bid, int *sid)
 {
-	BAT *b, *s;
+	BAT *b, *bn, *s;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -2045,14 +2055,15 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.delete", "Cannot access descriptor");
 	}
-	if (BATdel(b, s,FALSE) != NULL) {
+	bn=BATdel(b, s,FALSE);
+	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(s->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
+	else
+		BBPreleaseref(bn->batCacheid);
 	BBPreleaseref(s->batCacheid);
-	throw(MAL, "bat.delete_bat_buns", "GDKerror");
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.delete_bat_buns", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 str
@@ -2777,6 +2788,7 @@ str
 BKCsetColumn(int *r, int *bid, str *tname)
 {
 	BAT *b;
+	str dummy;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setColumn", "Cannot access descriptor");
@@ -2785,7 +2797,10 @@ BKCsetColumn(int *r, int *bid, str *tname)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.setColumn", "column name missing");
 	}
-	BATroles(b, GDKstrdup(b->hident), *tname);
+	/* watch out, hident is freed first */
+	dummy= GDKstrdup(b->hident);
+	BATroles(b, dummy, *tname);
+	GDKfree(dummy);
 	BBPreleaseref(b->batCacheid);
 	*r =0;
 	return MAL_SUCCEED;
