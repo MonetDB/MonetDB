@@ -1696,53 +1696,56 @@ BKCconvert(int *ret, int *bid)
 str
 BKCrevert(int *ret, int *bid)
 {
-	BAT *b;
+	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.revert", "Cannot access descriptor");
 	}
-	if (BATrevert(b) != NULL) {
-		*ret = b->batCacheid;
-		BBPkeepref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.revert", "GDKerror");
+	bn= BATrevert(b);
+	if(bn==NULL )
+		BBPkeepref(*ret= b->batCacheid);
+	else
+		BBPkeepref(*ret= bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.revert", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 str
 BKCorder(int *ret, int *bid)
 {
-	BAT *b;
+	BAT *b,*bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.order", "Cannot access descriptor");
 	}
-	if (BATorder(b) != NULL) {
-		*ret = b->batCacheid;
-		BBPkeepref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.order", "GDKerror");
+	bn= BATorder(b);
+	if(bn==NULL )
+		BBPkeepref(*ret= b->batCacheid);
+	else
+		BBPkeepref(*ret= bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.revert", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 str
 BKCorder_rev(int *ret, int *bid)
 {
-	BAT *b;
+	BAT *b,*bn;
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.order_rev", "Cannot access descriptor");
 	}
-	if (BATorder_rev(b) != NULL) {
-		*ret = b->batCacheid;
-		BBPkeepref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.order", "GDKerror");
+	bn= BATorder_rev(b);
+	if(bn==NULL )
+		BBPkeepref(*ret= b->batCacheid);
+	else
+		BBPkeepref(*ret= bn->batCacheid);
+	if(bn && bn->batCacheid != b->batCacheid)
+		throw(MAL, "bat.revert", "GDKerror, different BAT returned");
+	return MAL_SUCCEED;
 }
 
 @-
