@@ -45,10 +45,6 @@ facilities
 #include <stdlib.h>
 #include <stdarg.h>
 
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define putenv _putenv
-#endif
-
 /*----------------------------------------------------------------------------
  * The Basic UNIX commands.
  */
@@ -87,12 +83,6 @@ unix_setenv(bit *res, str varname, str valname)
 #endif
 	return GDK_SUCCEED;
 }
-
-/*
-Local Variables:
-c-basic-offset: 4
-End:
-*/
 @- Wrapping
 The remainder simply wraps the old code.
 @c
