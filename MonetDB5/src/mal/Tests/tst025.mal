@@ -6,6 +6,7 @@ bat.insert(b, 5442033,        846930886      );
 bat.insert(b, 5645862,        1681692777     );
 io.print(b);
 
+# it left one behind
 bat.delete(b,b);
 io.print(b);
 

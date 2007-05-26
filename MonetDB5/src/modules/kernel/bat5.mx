@@ -2048,6 +2048,8 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 	BAT *b, *bn, *s;
 
 	(void) r;
+	if( *bid == *sid)
+		return BKCdelete_all(r,bid);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.delete", "Cannot access descriptor");
 	}
@@ -2055,6 +2057,7 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.delete", "Cannot access descriptor");
 	}
+
 	bn=BATdel(b, s,FALSE);
 	if(bn==NULL )
 		BBPreleaseref(b->batCacheid);
