@@ -449,6 +449,17 @@ BBPtmpname(str s, int len, bat i)
 	return s + len;
 }
 
+static INLINE str
+BBPphysicalname(str s, int len, bat i)
+{
+	s[--len] = 0;
+	while (i > 0) {
+		s[--len] = '0' + (i & 7);
+		i >>= 3;
+	}
+	return s + len;
+}
+
 static int
 recover_dir(int direxists)
 {
@@ -990,9 +1001,13 @@ BBPinsert(BAT *b)
 
 	/* Keep the physical location around forever */
 	if (BBP_physical(i) == NULL) {
+		char name[64], *nme;
+
 		BBPgetsubdir(dirname, i);
-		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4 + 1 + 1 /* EOS + DIR_SEP */);
-		GDKfilepath(BBP_physical(i), dirname, BATgetId(b) + 4, NULL);
+		nme = BBPphysicalname(name, 64, i);
+		
+		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strlen(nme) + 1 + 1 /* EOS + DIR_SEP */);
+		GDKfilepath(BBP_physical(i), dirname, nme, NULL);
 
 		BATDEBUG THRprintf(GDKout, "#%d = new %s(%s,%s)\n", (int) i, BATgetId(b), ATOMname(b->htype), ATOMname(b->ttype));
 	}
@@ -2439,7 +2454,7 @@ BBPaddtobin(BAT *b)
 	/* only cache simple non-saved non-renamed transient bats */
 	if (m == NULL ||
 	    batcache_minsize == 0 ||
-	    b->batCopiedtodisk ||
+	    b->batCopiedtodisk || (b->batBuns->storage & STORE_MMAP) ||
 	    b->batLview ||
 	    BBPtmpcheck(s) == 0 ||
 	    b->htype > TYPE_str ||
