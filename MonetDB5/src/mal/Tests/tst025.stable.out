@@ -1,0 +1,61 @@
+stdout of test 'tst025` in directory 'src/mal` itself:
+
+
+# 15:29:54 >  
+# 15:29:54 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=30741 --set xrpc_port=46015 --set monet_prompt= --trace --dbname=mTests_src_mal  tst025.mal
+# 15:29:54 >  
+
+# MonetDB Server v5.0.0_beta2_1
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information
+## Wrong behavior of self-deletion, it works on M4
+#b:= bat.new(:int,:int);
+#
+#bat.insert(b, 5140046,        1804289383     );
+#bat.insert(b, 5442033,        846930886      );
+#bat.insert(b, 5645862,        1681692777     );
+#io.print(b);
+#
+## it left one behind
+#bat.delete(b,b);
+#io.print(b);
+#
+#bat.delete(b,b);
+#io.print(b);
+#
+#
+function user.main():void;	# 0  (main:void)
+# Wrong behavior of self-deletion, it works on M4 	# 1  (_1:str)
+    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
+    bat.insert(b,5140046,1804289383);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_6:int)
+    bat.insert(b,5442033,846930886);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:int,:int])(_8:int)(_9:int)
+    bat.insert(b,5645862,1681692777);	# 5 BKCinsert_bun (_10:void)<-(b:bat[:int,:int])(_11:int)(_12:int)
+    io.print(b);	# 6 IOprint_val (_13:void)<-(b:bat[:int,:int])
+# it left one behind 	# 7  (_14:str)
+    bat.delete(b,b);	# 8 BKCdelete_bat_bun (_15:void)<-(b:bat[:int,:int])(b:bat[:int,:int])
+    io.print(b);	# 9 IOprint_val (_16:void)<-(b:bat[:int,:int])
+    bat.delete(b,b);	# 10 BKCdelete_bat_bun (_17:void)<-(b:bat[:int,:int])(b:bat[:int,:int])
+    io.print(b);	# 11 IOprint_val (_18:void)<-(b:bat[:int,:int])
+end main;	# 12  
+#---------------------------------#
+# h		t		  # name
+# int		int		  # type
+#---------------------------------#
+[ 5140046,	  1804289383	  ]
+[ 5442033,	  846930886	  ]
+[ 5645862,	  1681692777	  ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+
+# 15:29:54 >  
+# 15:29:54 >  Done.
+# 15:29:54 >  
+
