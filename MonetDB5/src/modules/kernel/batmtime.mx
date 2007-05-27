@@ -113,53 +113,67 @@ batmtime_export str MTIME@1bat_@2cst(int *ret, int *l, @1 *cst);
 str MTIME@1bat_@3(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
 	BUN o,p,q;
-	bit *a;
 	size_t xx,yy;
 
 	prepareOperand2(left,l,right,r,"batcalc.@2");
 	@:chkSize(left,right,CMDcompare@1)@
 	prepareResult2(bn,left,right,TYPE_bit,"batcalc.@2");
 
-	o = BUNtail(left,BUNfirst(left));
-	p = BUNtail(right,BUNfirst(right));
-	q = BUNtail(right,BUNlast(right));
-	a = (bit*)BUNtail(bn, BUNfirst(bn));
+	o = BUNfirst(left);
+	p = BUNfirst(right);
+	q = BUNlast(right);
 	xx= BUNsize(left);
 	yy= BUNsize(right);
 
 	while(p<q) {
-		MTIME@1_@3(a++, (@1*)o, (@1*)p);
+		bit y = TRUE;
+		ptr h = BUNhead(left, o);
+		ptr tl = BUNtail(left, o);
+		ptr tr = BUNtail(right, p);
+
+		MTIME@1_@3(&y, (@1*)tl, (@1*)tr);
+		bunfastins(bn, h, &y);
 		o+= xx;
 		p+= yy;
 	}
-	BATsetcount(bn, BATcount(left));
- 	bn->batBuns->free = ((char *)a) - bn->batBuns->base;
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
+
+bunins_failed:
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
+	BBPunfix(*ret);
+	throw(MAL, "batcalc.@2", "bunins failed");
 }
 
 str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst)
 {   BAT *bn, *left;
 	BUN p,q;
-	bit *a;
 	size_t xx;
 
 	prepareOperand(left,l,"batcalc.@2");
 	prepareResult(bn,left,TYPE_bit,"batcalc.@2");
 
-	p = BUNtail(left,BUNfirst(left));
-	q = BUNtail(left,BUNlast(left));
-	a = (bit*)BUNtail(bn, BUNfirst(bn));
+	p = BUNfirst(left);
+	q = BUNlast(left);
 	xx= BUNsize(left);
 	while(p<q) {
-		MTIME@1_@3(a++, (@1*)p, cst);
+		bit y = TRUE;
+		ptr h = BUNhead(left, p);
+		ptr tl = BUNtail(left, p);
+
+		MTIME@1_@3(&y, (@1*)tl, cst);
+		bunfastins(bn, h, &y);
 		p+= xx;
 	}
-	BATsetcount(bn, BATcount(left));
- 	bn->batBuns->free = ((char *)a) - bn->batBuns->base;
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
+
+bunins_failed:
+	BBPreleaseref(left->batCacheid);
+	BBPunfix(*ret);
+	throw(MAL, "batcalc.@2", "bunins failed");
 }
 @-
 The implementation section.
