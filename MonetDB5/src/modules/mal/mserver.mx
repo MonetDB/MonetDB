@@ -616,7 +616,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	int maxusers;
 	char msg[512], *cmd, *usockfile, host[512];
 
-	env = GDKgetenv("mapi_port");
+	env = GDKgetenv("mapi_open");
 	if(env){
 		accept_any= (int) atol(env);
 	}
