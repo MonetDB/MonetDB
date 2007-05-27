@@ -1960,9 +1960,9 @@ str @2_2_@1( @1 *res, @2 *v )
 
 str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
-	int scale = *s1;
-	lng vdummy= *v;
-	@1 r, h = (vdummy <0)?-5:5; 
+	int scale = (int) *s1;
+	lng vdummy= (lng) *v;
+	@1 r, h = (vdummy <0)?(@1) -5: (@1) 5; 
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -1981,11 +1981,11 @@ str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 
 str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
-	int p = *d2, inlen = 1;
-	@2 cpyval = *v;
+	int p = (int) *d2, inlen = 1;
+	@2 cpyval = (@2) *v;
 	int s1 = *S1, s2 = *S2;
-	lng vdummy= *v;
-	@1 r, h = ( vdummy<0)?-5:5; 
+	lng vdummy= (lng) *v;
+	@1 r, h = ( vdummy<0)? (@1) -5: (@1) 5; 
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
