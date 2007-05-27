@@ -1,0 +1,21 @@
+
+x0 := mtime.daytime("10:00:00");
+x1 := mtime.daytime("10:00:20");
+x2 := mtime.daytime("10:00:50");
+
+b0 := bat.new(:oid,:daytime);
+bat.insert(b0, 0:oid, x0);
+bat.insert(b0, 2:oid, x1);
+bat.insert(b0, 1:oid, x2);
+b2 := algebra.sort(b0);
+
+b1 := bat.new(:oid,:daytime);
+bat.append(b1, x0);
+bat.append(b1, x1);
+bat.append(b1, x2);
+
+io.print(b2);
+io.print(b1);
+
+c := batcalc.==(b2, b1);
+io.print(c);
