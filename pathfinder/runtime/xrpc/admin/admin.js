@@ -94,7 +94,7 @@ function doAllDocumentsCallback(response) {
         dTableBody += '<td>'+url+'</td>\n';
         dTableBody +=
             '<td>'+
-            '<input type="button" name="viewDoc" value="view" onclick="open(\'/xrpc/doc'+docName+'\',\'_blank\',\'scrollbars=yes,resizable=yes,directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
+            '<input type="button" name="viewDoc" value="view" onclick="open(\'/xrpc/doc/'+docName+'\',\'_blank\',\'scrollbars=yes,resizable=yes,directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
             '</td>\n';
         dTableBody +=
             '<td>'+
@@ -141,7 +141,7 @@ function doDocumentsCallback(response) {
         dTableBody += '<td>'+url+'</td>\n';
         dTableBody +=
             '<td>'+
-            '<input type="button" name="viewDoc" value="view" onclick="open(\'/'+docName+'\',\'_blank\',\'scrollbars=yes,resizable=yes,directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
+            '<input type="button" name="viewDoc" value="view" onclick="open(\'/xrpc/doc/'+docName+'\',\'_blank\',\'scrollbars=yes,resizable=yes,directories=no,location=no,titlebar=no,toolbar=no\')"/>'+
             '</td>\n';
         dTableBody +=
             '<td>'+

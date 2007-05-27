@@ -4309,11 +4309,11 @@ xquery_compile_exec(xquery_client *ctx,
                     len++;
             }
             err = (char*) alloca(len+3);
-            *err = '!'; 
+            *err = strncmp(q, "warning", 7)?'!':'#'; 
             for (p = err + 1; *q; q++) {
                 *p++ = *q;
                 if (*q == '\n')
-                    *p++ = '!'; 
+                    *p++ = strncmp(q+1, "warning", 7)?'!':'#'; 
             }
             /* guard against errors that do not terminate in a newline */
             if (q > err && q[-1] != '\n')
