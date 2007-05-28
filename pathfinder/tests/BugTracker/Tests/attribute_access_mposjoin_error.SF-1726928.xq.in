@@ -1,0 +1,4 @@
+let $out :=
+	for $t in doc("$TSTSRCDIR/attribute_access_mposjoin_error.SF-1726928.xml")//thumbnail
+	return element copy { $t/@* }
+for $j in $out/@* return name($j)

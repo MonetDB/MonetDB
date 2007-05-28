@@ -114,3 +114,4 @@ NULL_BAT_in_serializer.SF-1694814b
 order-by_error.SF-1724774
 server-side_compilation_crash.SF-1607210
 collection_management.SF-1726599
+attribute_access_mposjoin_error.SF-1726928
