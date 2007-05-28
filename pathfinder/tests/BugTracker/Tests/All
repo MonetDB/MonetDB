@@ -112,3 +112,4 @@ posjoin_null_BAT_2nd_run.SF-1678948
 NULL_BAT_in_serializer.SF-1694814a
 NULL_BAT_in_serializer.SF-1694814b
 order-by_error.SF-1724774
+server-side_compilation_crash.SF-1607210

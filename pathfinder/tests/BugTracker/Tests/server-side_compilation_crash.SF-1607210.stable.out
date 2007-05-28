@@ -1,0 +1,42 @@
+stdout of test 'server-side_compilation_crash.SF-1607210` in directory 'tests/BugTracker` itself:
+
+
+# 12:16:07 >  
+# 12:16:07 >  Mtimeout -timeout 300 Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/xquery_logs" --set mapi_port=36638 --set xrpc_port=42408 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 12:16:07 >  
+
+# Monet Database Server V4.17.1
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# XRPC administrative console at http://localhost:42408/admin
+
+printf("\nReady.\n");
+
+Ready.
+
+Over..
+
+# 12:16:07 >  
+# 12:16:07 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36638 server-side_compilation_crash.SF-1607210_s00.xq
+# 12:16:07 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 12:16:07 >  
+# 12:16:07 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36638 server-side_compilation_crash.SF-1607210_s01.xq
+# 12:16:07 >  
+
+
+# 12:16:07 >  
+# 12:16:07 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=36638 server-side_compilation_crash.SF-1607210_s02.xq
+# 12:16:07 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 12:16:07 >  
+# 12:16:07 >  Done.
+# 12:16:07 >  
+
