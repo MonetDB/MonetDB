@@ -68,7 +68,15 @@ stderr of test 'xquery_crashtest.SF-1207048` in directory 'tests/BugDay_2005-11-
 # 14:58:44 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=57716 xquery_crashtest.SF-1207048.xq
 # 14:58:44 >  
 
-# 14:58:44 >  
-# 14:58:44 >  Done.
-# 14:58:44 >  
+MAPI  = monetdb@localhost:39248
+QUERY = string(string(string(string(string(string(string(string(string(string( string(string(string(string(string(string(string(string(string(string(
+        string(string(string(string(string(string(string(string(string(string( string(string(string(string(string(string(string(string(string(string(
+        string(string(string(string(string(string(string(string(string(string( string(string(string(string(string(string(string(string(string(string(
+        string(string(string(string(string(string(string(string(string(string( string(string(s
+ERROR = !fatal error: aborted too deep recursion
+        !# halted in /ufs/manegold/_/scratch0/Monet/Testing/Current/source/pathfinder/compiler/semantics/normalize.brg (reduce), line 711
+
+# 11:14:48 >  
+# 11:14:48 >  Done.
+# 11:14:48 >  
 
