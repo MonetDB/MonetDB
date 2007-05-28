@@ -1,0 +1,41 @@
+stderr of test 'collection_management.SF-1726599` in directory 'tests/BugTracker` itself:
+
+
+# 12:45:56 >  
+# 12:45:56 >  Mtimeout -timeout 300 Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/xquery_logs" --set mapi_port=39582 --set xrpc_port=49459 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 12:45:56 >  
+
+
+# 12:45:56 >  
+# 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s00.xq
+# 12:45:56 >  
+
+
+# 12:45:56 >  
+# 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s01.xq
+# 12:45:56 >  
+
+MAPI  = monetdb@localhost:39582
+QUERY = doc("collection_management.SF-1726599.xml")
+ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+        !ERROR: [shred_url]: first error was:
+        !ERROR: shred: cannot stat `collection_management.SF-1726599.xml': No such file or directory
+        !ERROR: CMDshred_url: operation failed.
+        !ERROR: interpret_params: leftfetchjoin(param 2): evaluation error.
+MAPI  = monetdb@localhost:39582
+QUERY = doc("collection_management.SF-1726599.xml")/aap
+ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+        !ERROR: [shred_url]: first error was:
+        !ERROR: shred: cannot stat `collection_management.SF-1726599.xml': No such file or directory
+        !ERROR: CMDshred_url: operation failed.
+        !ERROR: interpret_params: leftfetchjoin(param 2): evaluation error.
+
+# 12:45:56 >  
+# 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s02.xq
+# 12:45:56 >  
+
+
+# 12:45:56 >  
+# 12:45:56 >  Done.
+# 12:45:56 >  
+
