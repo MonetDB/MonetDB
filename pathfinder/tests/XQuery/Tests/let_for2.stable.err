@@ -63,9 +63,6 @@ stderr of test 'let_for2` in directory 'tests/XQuery` itself:
 # 11:44:13 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35613 let_for2.xq
 # 11:44:13 >  
 
-MAPI  = monetdb@localhost:35613
-QUERY = let $a := (1,2,3) return (let $a := (1,2) return $a, for $b in (4,5,$a) return $b)
-ERROR = !warning: variable reuse: at (1,32-1,33): $a
 
 # 11:44:13 >  
 # 11:44:13 >  Done.
