@@ -202,15 +202,26 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 const QENV_FTINAME   := 0@0;
 const QENV_FTIBGNAME := 1@0;
 const QENV_SCOREBASE := 2@0;
+const QENV_PROX      := 3@0;
+const QENV_FB_NUM    := 4@0;
 
 # create a query environment bat
-PROC create_qenv(str fti_name, str bg_fti_name, str scb) : BAT[void,str]
+PROC create_qenv(str fti_name, str bg_fti_name, str scb) : BAT[oid,str]
 {
-    var res := new(void,str).seqbase(0@0);
-    res.append(fti_name);
-    res.append(bg_fti_name);
-    res.append(scb);
+    var res := new(oid,str);
+    res.insert(QENV_FTINAME, fti_name);
+    res.insert(QENV_FTIBGNAME, bg_fti_name);
+    res.insert(QENV_SCOREBASE, scb);
     return res;
+}
+
+PROC modify_qenv(BAT[oid,str] qenv, oid key, str val) : void
+{
+    if (qenv.exists(key)) {
+       qenv.replace(key, val);
+    } else {
+       qenv.insert(key, val);
+    }
 }
 
 #####################################################################
@@ -1097,7 +1108,7 @@ PROC tj_dump_collection(str ftiName) : void
 #####################################################################
 
 # INCOMPLETE: henning, what should I do about this (no locking impl).
-PROC tj_setBackgroundCollName(str name, BAT[void,str] qenv) : BAT[void,str] := 
+PROC tj_setBackgroundCollName(str name, BAT[oid,str] qenv) : BAT[void,str] := 
 {
 	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
 		tj_global_init();
@@ -1105,13 +1116,13 @@ PROC tj_setBackgroundCollName(str name, BAT[void,str] qenv) : BAT[void,str] :=
 	if (not(bat("tj_collName").reverse().exist(name))) {
 		ERROR("background collection \"%s\"does not exist",name);
 	}
-	return create_qenv(qenv.fetch(QENV_FTINAME),name,qenv.fetch(QENV_SCOREBASE));
+	return create_qenv(qenv.find(QENV_FTINAME),name,qenv.find(QENV_SCOREBASE));
 }
 
 # INCOMPLETE: henning, what should I do about this.
-PROC tj_setScoreBase(int default, BAT[void,str] qenv) : BAT[void,str] :=
+PROC tj_setScoreBase(int default, BAT[oid,str] qenv) : BAT[void,str] :=
 {
-	return create_qenv(qenv.fetch(QENV_FTINAME),qenv.fetch(QENV_FTIBGNAME),default);
+	return create_qenv(qenv.find(QENV_FTINAME),qenv.find(QENV_FTIBGNAME),default);
 }
 
 
@@ -1262,7 +1273,7 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc, bat[void,int] pre_size
 # 
 # Forwards to parent_child_llscj: see below.
 ##
-PROC parent_child( bat[oid,any] parent, bat[oid,any] child, BAT[void,str] qenv) : bat[oid,oid] :=
+PROC parent_child( bat[oid,any] parent, bat[oid,any] child, BAT[oid,str] qenv) : bat[oid,oid] :=
 {
     return parent_child_llscj( parent, child, qenv );
 }
@@ -1276,7 +1287,7 @@ PROC parent_child( bat[oid,any] parent, bat[oid,any] child, BAT[void,str] qenv) 
 #
 # Returns a bat containing [parent,child] preorder index pairs
 ##
-PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child, BAT[void,str] qenv) : bat[oid,oid] :=
+PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child, BAT[oid,str] qenv) : bat[oid,oid] :=
 {
     # Items contains the context nodes for the descendant step: 
     # this is the right side argument to contained_by.
@@ -1290,7 +1301,7 @@ PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child, BAT[void,str] 
     var candidates := child.sort().mark(0@0).reverse();
     
     # Load the pre-size table
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
     
     # Check the order of the items:
     items.chk_order();
@@ -1316,9 +1327,9 @@ PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child, BAT[void,str] 
 #
 # Results are sorted on the document position (tail)
 ##
-PROC Qterms_to_tid_pre(bat[void,str] Qterms, BAT[void,str] qenv): bat[oid,oid] :=
+PROC Qterms_to_tid_pre(bat[void,str] Qterms, BAT[oid,str] qenv): bat[oid,oid] :=
 {
-    var ftiName := qenv.fetch(QENV_FTINAME);
+    var ftiName := qenv.find(QENV_FTINAME);
     var stemmer := bat("tj_"+ ftiName +"_param").find("stemmer");
     var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
     
@@ -1337,12 +1348,12 @@ PROC Qterms_to_tid_pre(bat[void,str] Qterms, BAT[void,str] qenv): bat[oid,oid] :
 # Stemming on the query terms is performed using the same stemmer
 # that was used for the collection.
 ##
-PROC Qterms_to_void_tid( bat[void,str] Qterms, BAT[void,str] qenv): bat[void,oid] :=
+PROC Qterms_to_void_tid( bat[void,str] Qterms, BAT[oid,str] qenv): bat[void,oid] :=
 {
-    var stemmer := bat("tj_"+ qenv.fetch(QENV_FTINAME) +"_param").find("stemmer");
+    var stemmer := bat("tj_"+ qenv.find(QENV_FTINAME) +"_param").find("stemmer");
     var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
     
-    var tids := bat(_tj_TermBat(qenv.fetch(QENV_FTINAME))).join( stemmed.reverse() ).sort().hmark(oid(0));
+    var tids := bat(_tj_TermBat(qenv.find(QENV_FTINAME))).join( stemmed.reverse() ).sort().hmark(oid(0));
     return tids;
 }
 
@@ -1350,10 +1361,10 @@ PROC Qterms_to_void_tid( bat[void,str] Qterms, BAT[void,str] qenv): bat[void,oid
 ##
 # Return only the element nodes from region ctx
 ##
-PROC nodes( bat[oid,any] ctx, BAT[void,str] qenv ) : bat[oid,any] :=
+PROC nodes( bat[oid,any] ctx, BAT[oid,str] qenv ) : bat[oid,any] :=
 {
     # The pfpre table only stores element nodes, so we can use it as a filter:
-    var pfpre  := bat( "tj_" + qenv.fetch(QENV_FTINAME) + "_pfpre");
+    var pfpre  := bat( "tj_" + qenv.find(QENV_FTINAME) + "_pfpre");
     var result := pfpre.mirror().join( ctx );
     return result;
 }
@@ -1362,7 +1373,7 @@ PROC nodes( bat[oid,any] ctx, BAT[void,str] qenv ) : bat[oid,any] :=
 ##
 # Return only the terms from region ctx
 ##
-PROC terms( bat[oid,any] ctx, BAT[void,str] qenv ) : bat[oid,any] :=
+PROC terms( bat[oid,any] ctx, BAT[oid,str] qenv ) : bat[oid,any] :=
 {
     # A term is everything that is not an element node
     var nodes  := nodes( ctx, qenv );
@@ -1381,18 +1392,18 @@ PROC terms( bat[oid,any] ctx, BAT[void,str] qenv ) : bat[oid,any] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scorebase environment variable
 ##
-PROC select_root(bat[void,oid] par_startNodes, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC select_root(bat[void,oid] par_startNodes, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( not( isnil( par_startNodes ) ) ) {
         # Start from a set of starting nodes if available. 
         # It is assumed that the startNodes are [any, pre]
         if ( count( par_startNodes ) > 0 ) {
-            var root_reg := par_startNodes.reverse().sort().project( dbl(qenv.fetch(QENV_SCOREBASE)) );
+            var root_reg := par_startNodes.reverse().sort().project( dbl(qenv.find(QENV_SCOREBASE)) );
             return root_reg;
         } else {
             var root_reg := new(oid,dbl,1);
             
-            root_reg.insert( virtRoot, dbl(qenv.fetch(QENV_SCOREBASE)) );
+            root_reg.insert( virtRoot, dbl(qenv.find(QENV_SCOREBASE)) );
             return root_reg;
         }
     } else {
@@ -1401,12 +1412,12 @@ PROC select_root(bat[void,oid] par_startNodes, BAT[void,str] qenv) : bat[oid,dbl
         # An element with preorder oid(0) will indicate that it is the collection root.
         var root_reg := new(oid,dbl,1);
         
-        root_reg.insert( virtRoot, dbl(qenv.fetch(QENV_SCOREBASE)) );
+        root_reg.insert( virtRoot, dbl(qenv.find(QENV_SCOREBASE)) );
         return root_reg;
     }
 }
 
-PROC select_root_frag(bat[void,oid] par_startNodes, BAT[void,str] qenv) : bat[oid,bat] := 
+PROC select_root_frag(bat[void,oid] par_startNodes, BAT[oid,str] qenv) : bat[oid,bat] := 
 {
     var res := new(oid,bat);
     
@@ -1414,31 +1425,31 @@ PROC select_root_frag(bat[void,oid] par_startNodes, BAT[void,str] qenv) : bat[oi
     return res;
 }
 
-PROC select_root(bat[void,str] qenv) : bat[oid,dbl] :=
+PROC select_root(BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     var res := new(oid,dbl,1);
-    res.insert(virtRoot, dbl(qenv.fetch(QENV_SCOREBASE)));
+    res.insert(virtRoot, dbl(qenv.find(QENV_SCOREBASE)));
     return res;
 }
 
-PROC select_root_frag(bat[void,str] qenv) : bat[oid,bat] :=
+PROC select_root_frag(BAT[oid,str] qenv) : bat[oid,bat] :=
 {
     var res := new(oid,bat,1);
     res.insert(virtRoot, select_root(qenv));
     return root;
 }
 
-PROC select_startnodes(bat[void,oid] startNodes, bat[void,str] qenv) : bat[oid,dbl] :=
+PROC select_startnodes(bat[void,oid] startNodes, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    var res := startNodes.reverse().sort().project(dbl(qenv.fetch(QENV_SCOREBASE)));
+    var res := startNodes.reverse().sort().project(dbl(qenv.find(QENV_SCOREBASE)));
     if (res.count() = 0) tj_trace(sprintf("WARNING: start nodeset is empty")); 
     return res;
 }
 
-PROC select_startnodes_frag(bat[void,oid] startNodes, bat[void,str] qenv) : bat[oid,bat] :=
+PROC select_startnodes_frag(bat[void,oid] startNodes, BAT[oid,str] qenv) : bat[oid,bat] :=
 {
     var nodes := select_startnodes(startNodes, qenv);
-    var res := split2frag(nodes, bat("tj_" + qenv.fetch(QENV_FTINAME) + "_fragments"));
+    var res := split2frag(nodes, bat("tj_" + qenv.find(QENV_FTINAME) + "_fragments"));
     return res;
 }
 
@@ -1448,12 +1459,12 @@ PROC select_startnodes_frag(bat[void,oid] startNodes, bat[void,str] qenv) : bat[
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scorebase environment variable
 ##
-PROC select_node(BAT[void,str] qenv) : bat[oid,dbl] := 
+PROC select_node(BAT[oid,str] qenv) : bat[oid,dbl] := 
 {
     # The table pfpre only stores element nodes, so we can use it as a filter:
-    var pfpre  := bat( "tj_" + qenv.fetch(QENV_FTINAME) + "_pfpre");
+    var pfpre  := bat( "tj_" + qenv.find(QENV_FTINAME) + "_pfpre");
     
-    return pfpre.project( dbl(qenv.fetch(QENV_SCOREBASE) ) );
+    return pfpre.project( dbl(qenv.find(QENV_SCOREBASE) ) );
 }
 
 ##
@@ -1462,17 +1473,17 @@ PROC select_node(BAT[void,str] qenv) : bat[oid,dbl] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scorebase environment variable
 ##
-PROC select_node(str name, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC select_node(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( sprintf("BEGIN select_node('%s')", name) );
 
-    var tids := bat(_tj_TagBat(qenv.fetch(QENV_FTINAME))).select(name);
+    var tids := bat(_tj_TagBat(qenv.find(QENV_FTINAME))).select(name);
     if (tids.count() = 0) return new(oid,dbl);
     var tid := tids.reverse().fetch(0);
     var result := indexfetchjoin( new(void,oid).append(tid).seqbase(oid(0)),
-    				  bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TagIndex"),
-    				  bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Tags") );
-    result := result.reverse().sort().project(dbl(qenv.fetch(QENV_SCOREBASE))); 
+    				  bat("tj_" + qenv.find(QENV_FTINAME) + "_TagIndex"),
+    				  bat("tj_" + qenv.find(QENV_FTINAME) + "_Tags") );
+    result := result.reverse().sort().project(dbl(qenv.find(QENV_SCOREBASE))); 
 
     if ( trace ) tj_trace( sprintf("END   select_node('%s')", name) );
     return result;
@@ -1486,7 +1497,7 @@ PROC select_node(str name, BAT[void,str] qenv) : bat[oid,dbl] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scorebase environment variable
 ##
-PROC select_node(str name, bit e_class, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC select_node(str name, bit e_class, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( sprintf("BEGIN select_node('%s',%d)", name, e_class) );
     
@@ -1499,12 +1510,12 @@ PROC select_node(str name, bit e_class, BAT[void,str] qenv) : bat[oid,dbl] :=
             return select_node(name,qenv);
         }
         
-        var tids := bat(_tj_TagBat(qenv.fetch(QENV_FTINAME))).join(names.reverse()).mark(0@0).sort().reverse();
+        var tids := bat(_tj_TagBat(qenv.find(QENV_FTINAME))).join(names.reverse()).mark(0@0).sort().reverse();
         
         var result := indexfetchjoin( tids,
-                        bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TagIndex"),
-                        bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Tags") );
-        result := result.reverse().sort().project(dbl(qenv.fetch(QENV_SCOREBASE))); 
+                        bat("tj_" + qenv.find(QENV_FTINAME) + "_TagIndex"),
+                        bat("tj_" + qenv.find(QENV_FTINAME) + "_Tags") );
+        result := result.reverse().sort().project(dbl(qenv.find(QENV_SCOREBASE))); 
 
         if ( trace ) tj_trace( sprintf("END   select_node('%s',%d)", name, e_class) );
         return result;
@@ -1514,10 +1525,10 @@ PROC select_node(str name, bit e_class, BAT[void,str] qenv) : bat[oid,dbl] :=
     }
 }
 
-PROC select_node_frag(str name, bit e_class, BAT[void,str] qenv) : bat[oid,bat] := 
+PROC select_node_frag(str name, bit e_class, BAT[oid,str] qenv) : bat[oid,bat] := 
 {
     var nodes := select_node(name, e_class, qenv);
-    var res := split2frag(nodes, bat("tj_" + qenv.fetch(QENV_FTINAME) + "_fragments"));
+    var res := split2frag(nodes, bat("tj_" + qenv.find(QENV_FTINAME) + "_fragments"));
    
     return res;
 }
@@ -1555,30 +1566,30 @@ PROC split2frag(bat[oid,any] nodes, bat[void,oid] frags) : bat[oid,bat] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scorebase environment variable
 ##
-PROC select_term(str name, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC select_term(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( sprintf("BEGIN select_term('%s')", name) );
     # 
-    var stemmer := bat("tj_"+ qenv.fetch(QENV_FTINAME) +"_param").find("stemmer");
+    var stemmer := bat("tj_"+ qenv.find(QENV_FTINAME) +"_param").find("stemmer");
     var term    := tj_normalizeTerm( toLower(name), stemmer );
     
     # Select the term positions from the global term dictionary.
-    var tids := bat(tj_TermBat(qenv.fetch(QENV_FTINAME))).select(term).mark(0@0).sort().reverse();
+    var tids := bat(tj_TermBat(qenv.find(QENV_FTINAME))).select(term).mark(0@0).sort().reverse();
     
     var result := indexfetchjoin( tids,
-    				  bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TermIndex"),
-    				  bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Terms") );
-    result := result.reverse().sort().project(dbl(qenv.fetch(QENV_SCOREBASE))); 
+    				  bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"),
+    				  bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
+    result := result.reverse().sort().project(dbl(qenv.find(QENV_SCOREBASE))); 
     
 
     if ( trace ) tj_trace( sprintf("END   select_term('%s')", name) );
     return result;
 }
 
-PROC select_term_frag(str name, BAT[void,str] qenv) : bat[oid,bat] := 
+PROC select_term_frag(str name, BAT[oid,str] qenv) : bat[oid,bat] := 
 {
     var nodes := select_term(name,qenv);
-    var res := split2frag(nodes, bat("tj_" + qenv.fetch(QENV_FTINAME) + "_fragments"));
+    var res := split2frag(nodes, bat("tj_" + qenv.find(QENV_FTINAME) + "_fragments"));
     return res;
 }
 
@@ -1592,7 +1603,7 @@ PROC select_term_frag(str name, BAT[void,str] qenv) : bat[oid,bat] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scorebase environment variable
 ##
-PROC select_term(str name, int stemming, BAT[void,str] qenv) : bat[oid,dbl] := 
+PROC select_term(str name, int stemming, BAT[oid,str] qenv) : bat[oid,dbl] := 
 {
     return select_term( name,qenv );
 }
@@ -1604,15 +1615,15 @@ PROC select_term(str name, int stemming, BAT[void,str] qenv) : bat[oid,dbl] :=
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scorebase environment variable
 ##
-PROC select_phrase(bat[void,oid] terms, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC select_phrase(bat[void,oid] terms, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN select_phrase" );
     # Select the term positions from the global term dictionary. 
    
     var tid := terms.fetch(0);
     var tmp := indexfetchjoin( new(int,oid).insert(0,tid),
-    				  bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TermIndex"),
-    				  bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Terms") );
+    				  bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"),
+    				  bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
     var res := tmp.reverse();
     var j := terms.count();
     var i := 1; 
@@ -1620,13 +1631,13 @@ PROC select_phrase(bat[void,oid] terms, BAT[void,str] qenv) : bat[oid,dbl] :=
     {
         tid := terms.fetch(i);
         tmp := indexfetchjoin( new(int,oid).insert(0,tid),
-    				  bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TermIndex"),
-    				  bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Terms") );
+    				  bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"),
+    				  bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
         res := res.semijoin(tmp.[int]().[-](i).[oid]().reverse());   
 	i :+= 1;
     }	
     
-    res := res.sort().project(dbl(qenv.fetch(QENV_SCOREBASE))); 
+    res := res.sort().project(dbl(qenv.find(QENV_SCOREBASE))); 
     
     if ( trace ) tj_trace( "END   select_phrase" );
     return res;
@@ -1652,7 +1663,7 @@ PROC select_phrase(bat[void,oid] terms, BAT[void,str] qenv) : bat[oid,dbl] :=
 # Returns: region from left if it is contained a region in right
 #
 #####################################
-PROC contained_by_frag(bat[oid,bat] left, bat[oid,bat] right, BAT[void,str] qenv) : bat[oid,bat] :=
+PROC contained_by_frag(bat[oid,bat] left, bat[oid,bat] right, BAT[oid,str] qenv) : bat[oid,bat] :=
 {
     var res        := new(oid,bat);
     #exception for root in right
@@ -1665,10 +1676,10 @@ PROC contained_by_frag(bat[oid,bat] left, bat[oid,bat] right, BAT[void,str] qenv
     return res;
 }
 
-PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right, str ind, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right, str ind, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN contained_by_2" );
-    var pre_size := bat("tj_"+qenv.fetch(QENV_FTINAME)+"_size"+ind);
+    var pre_size := bat("tj_"+qenv.find(QENV_FTINAME)+"_size"+ind);
     # Check for the virtual root
     if ( not( pre_size.exist(0@0) ) ) {
         # Exceptions for root in left or right argument. The case 
@@ -1698,10 +1709,10 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right, str ind, BAT[void,str] 
 # Returns a bat [preorder rank,score].
 # The score is initalized based on the scorebase environment variable
 ##
-PROC contained_by(bat[oid,dbl] region, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC contained_by(bat[oid,dbl] region, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN contained_by_1" );
-    if ( not( bat("tj_"+qenv.fetch(QENV_FTINAME)+"_size1").exist(0@0) ) ) {
+    if ( not( bat("tj_"+qenv.find(QENV_FTINAME)+"_size1").exist(0@0) ) ) {
         # Exceptions for root in argument. The case 
         # of region sets containing the root is not handled
         if ( count( region ) = 1 ) 
@@ -1711,9 +1722,9 @@ PROC contained_by(bat[oid,dbl] region, BAT[void,str] qenv) : bat[oid,dbl] :=
 
 
     var ctx      := region.sort();
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");    
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");    
     var desc     := scj_desc( pre_size, ctx, count(pre_size) );
-    var result   := nodes( desc, qenv ).project( dbl(qenv.fetch(QENV_SCOREBASE)) );
+    var result   := nodes( desc, qenv ).project( dbl(qenv.find(QENV_SCOREBASE)) );
     
     if ( trace ) tj_trace( "END  contained_by_1" );
     return result;
@@ -1734,12 +1745,12 @@ PROC contained_by(bat[oid,dbl] region, BAT[void,str] qenv) : bat[oid,dbl] :=
 # Returns: region from left if it contains a region in right
 #
 #####################################
-PROC containing(bat[oid,dbl] left, bat[oid,dbl] right,BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC containing(bat[oid,dbl] left, bat[oid,dbl] right,BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN containing_2" );
     
     # Check for the virtual root
-    if ( not( bat("tj_"+qenv.fetch(QENV_FTINAME)+"_size1").exist(0@0) ) ) {
+    if ( not( bat("tj_"+qenv.find(QENV_FTINAME)+"_size1").exist(0@0) ) ) {
         # Exceptions for root in argument. The case 
         # of region sets containing the root is not handled
         if ( count( left ) = 1 )
@@ -1751,7 +1762,7 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right,BAT[void,str] qenv) : bat[
                 return new(oid,dbl);
     }
     # TODO: fragmentation
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
     var anc_desc := anc_desc( left, right, pre_size );
 
     # Attach the scores to the resulting nodes again:
@@ -1766,7 +1777,7 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right,BAT[void,str] qenv) : bat[
 # PROBABILISTIC CONTAINMENT
 ################################################################################
 
-PROC _containing_desc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[void,str] qenv) : bat[oid,oid] :=
+PROC _containing_desc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[oid,str] qenv) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_desc" );    
      var elems := left.hmark(0@0);
@@ -1784,7 +1795,7 @@ PROC _containing_desc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pr
      return elem_tid;
 }
 
-PROC _containing_desc2(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[void,str] qenv) : bat[oid,oid] :=
+PROC _containing_desc2(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[oid,str] qenv) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_desc2" );    
      var elems := left.hmark(0@0);
@@ -1801,7 +1812,7 @@ PROC _containing_desc2(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] p
      return elem_tid;
 }
 
-PROC _containing_desc3(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[void,str] qenv) : bat[oid,oid] :=
+PROC _containing_desc3(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[oid,str] qenv) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_desc3" );    
      var elems := left.hmark(0@0);
@@ -1815,7 +1826,7 @@ PROC _containing_desc3(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] p
      return elem_tid;
 }
 
-PROC _containing_anc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[void,str] qenv) : bat[oid,oid] :=
+PROC _containing_anc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[oid,str] qenv) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_anc" );    
      var tmp_pre := pre_tid.hmark(0@0);
@@ -1880,7 +1891,7 @@ PROC score_NLLR_mil(bat[oid,oid] elem_tid, bat[void,int] pre_size, bat[oid,int] 
      return res;
 }
 
-PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd,BAT[void,str] qenv) : bat[oid,bat] :=
+PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd,BAT[oid,str] qenv) : bat[oid,bat] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR_frag" );
     var t1 := time();
@@ -1888,24 +1899,24 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd,
      # get term ids and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms, qenv ).histogram();
      var q_cnt := Qterms.count();
-     var tid_frq := collTermCount(qenv.fetch(QENV_FTIBGNAME), terms);
+     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
      var tid_cnt := terms.semijoin(tid_frq);
      terms := nil;
      if (tid_cnt.count() = 0) {return new(oid,bat);}
     
      # compute constant factor in score computation
      var _lmbd := dbl((1.0 - lmbd) / lmbd);
-     var collFrq := bat("tj_" + qenv.fetch(QENV_FTIBGNAME) + "_Terms").count();
+     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
      var pre_tid := indexfetchjoin(tid_cnt.hmark(0@0), 
-                                   bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TermIndex"), 
-                                   bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Terms") ).reverse();
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
      if (pre_tid.count() = 0) {return new(oid,dbl);}
      pre_tid := pre_tid.sort();
 
-    var pre_tids := split2frag(pre_tid, bat("tj_" + qenv.fetch(QENV_FTINAME) + "_fragments"));
+    var pre_tids := split2frag(pre_tid, bat("tj_" + qenv.find(QENV_FTINAME) + "_fragments"));
 
     var res := new(oid,bat);
 
@@ -1923,9 +1934,9 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd,
     return res;
 }
 
-PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, dbl _lmbd, int q_cnt, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, dbl _lmbd, int q_cnt, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-     var pre_size := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_size" + ind);
+     var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
      var elem_tid := _containing_desc3(left.sort().mark(0@0), pre_tid, pre_size,qenv);
@@ -1935,7 +1946,7 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      var res := score_NLLR(elem_tid, pre_size, tid_cnt, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
      
      # Obey SCOREBASE setting: 
-     if ( int(qenv.fetch(QENV_SCOREBASE)) = 0 ) {
+     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
         res := [+](left, res);
      } else {
         res := [*](left, res);
@@ -1943,28 +1954,28 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      return res;
 }
 
-PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
     var t1 := time();
-    var pre_size := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_size" + ind);
+    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
     
      # get term ids and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms, qenv ).histogram();
      var q_cnt := Qterms.count();
-     var tid_frq := collTermCount(qenv.fetch(QENV_FTIBGNAME), terms);
+     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
      terms := terms.semijoin(tid_frq);
      if (terms.count() = 0) {return new(oid,dbl);}
     
      # compute constant factor in score computation
      var _lmbd := dbl((1.0 - lmbd) / lmbd);
-     var collFrq := bat("tj_" + qenv.fetch(QENV_FTIBGNAME) + "_Terms").count();
+     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
      var pre_tid := indexfetchjoin(terms.hmark(0@0), 
-                                   bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TermIndex"), 
-                                   bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Terms") ).reverse();
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
      if (pre_tid.count() = 0) {return new(oid,dbl);}
      var t1a := time();
      pre_tid := pre_tid.sort();
@@ -1978,7 +1989,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      
      var res := score_NLLR(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
      # Obey SCOREBASE setting: 
-     if ( int(qenv.fetch(QENV_SCOREBASE)) = 0 ) {
+     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
         res := [+](left, res);
      } else {
         res := [*](left, res);
@@ -1990,28 +2001,28 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      return res;
 }
 
-PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
     var t1 := time();
-    var pre_size := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_size" + ind);
+    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
     
      # get term ids and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms, qenv ).histogram();
      var q_cnt := Qterms.count();
-     var tid_frq := collTermCount(qenv.fetch(QENV_FTIBGNAME), terms);
+     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
      terms := terms.semijoin(tid_frq);
      if (terms.count() = 0) {return new(oid,dbl);}
     
      # compute constant factor in score computation
      var _lmbd := dbl((1.0 - lmbd) / lmbd);
-     var collFrq := bat("tj_" + qenv.fetch(QENV_FTIBGNAME) + "_Terms").count();
+     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
      _lmbd :*= collFrq;
      
      # fetch term occurrences and sort them in preorder
      var pre_tid := indexfetchjoin(terms.hmark(0@0), 
-                                   bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TermIndex"), 
-                                   bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Terms") ).reverse();
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
      if (pre_tid.count() = 0) {return new(oid,dbl);}
      var t1a := time();
      pre_tid := pre_tid.sort();
@@ -2026,7 +2037,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
      var res := score_NLLR_mil(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
      
      # Obey SCOREBASE setting: 
-     if ( int(qenv.fetch(QENV_SCOREBASE)) = 0 ) {
+     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
         res := [+](left, res);
      } else {
         res := [*](left, res);
@@ -2060,7 +2071,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
 #  tc(tm_i, doc): term count of query term tm_i in doc
 #  len(doc)     : size of doc (term or element size)
 ##
-PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int size_type,BAT[void,str] qenv) : bat[oid,dbl] := 
+PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int size_type,BAT[oid,str] qenv) : bat[oid,dbl] := 
 {
     if ( trace ) tj_trace( "BEGIN p_containing_t_LMs_ASPECT" );
     
@@ -2081,21 +2092,21 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
     # In this case, we know that count(right) = tc(tm,col)
     #
     # This constitutes P(t|C), or tc(tm,col)/len(col)
-    var col_len := bat("tj_" + qenv.fetch(QENV_FTIBGNAME) + "_Terms").count();
+    var col_len := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
     bckgnd_prob := dbl(count(right))/dbl(col_len);
 
     #if (size_type = SIZE_ENTITY) {
     #    # Compute right size / collection entity size
     #    
-    #    var pre_pfpre := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_pfpre");
+    #    var pre_pfpre := bat("tj_" + qenv.find(QENV_FTINAME) + "_pfpre");
     #    bckgnd_prob := dbl(count(right))/dbl(count(pre_pfpre));
     #
     #    pre_pfpre := nil;
     #} else if (size_type = SIZE_TERM) {
     #    # Compute right size / collection term size
     #    
-    #    var pre_tid  := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_tid");
-    #    var pre_pfpre := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_pfpre");
+    #    var pre_tid  := bat("tj_" + qenv.find(QENV_FTINAME) + "_tid");
+    #    var pre_pfpre := bat("tj_" + qenv.find(QENV_FTINAME) + "_pfpre");
     #    var terms := pre_tid.mirror().kdiff( pre_pfpre.mirror() );
     #
     #    bckgnd_prob := dbl(count(right))/dbl(count(terms));
@@ -2116,9 +2127,9 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
     lambda := dbl(lmbd);
     m_lambda := dbl(1)-lambda;
 
-    if (int(qenv.fetch(QENV_SCOREBASE)) = 0)
+    if (int(qenv.find(QENV_SCOREBASE)) = 0)
         res_reg := [+](left, [+]([*](lambda,forgnd_prob),*(m_lambda,bckgnd_prob)));
-    else if (int(qenv.fetch(QENV_SCOREBASE)) = 1)
+    else if (int(qenv.find(QENV_SCOREBASE)) = 1)
         res_reg := [*](left, [+]([*](lambda,forgnd_prob),*(m_lambda,bckgnd_prob)));
 
     if ( trace ) tj_trace( "END   p_containing_t_LMs_ASPECT" );
@@ -2169,7 +2180,7 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 #  tc(tm_i, doc): term count of query term tm_i in doc
 #  len(doc)     : size of doc (term or element size)
 ##
-PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type,BAT[void,str] qenv) : bat[oid,dbl]
+PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type,BAT[oid,str] qenv) : bat[oid,dbl]
 {   
     if ( trace ) tj_trace( "BEGIN p_containing_t_LMs_COARSE" );
     # To follow the naming in the formula above, context regions are named "documents".
@@ -2184,10 +2195,10 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     # For each term: collection term frequency tc(tm_i, col):
     #var col_term_frq := tid_pre.reverse().histogram();
     #small hack to get LMs running again...
-    var col_term_frq := collTermCount(qenv.fetch(QENV_FTIBGNAME), terms.reverse().project(int(0)));
+    var col_term_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms.reverse().project(int(0)));
 
     # Collection size len(col): int
-    var col_len := bat("tj_" + qenv.fetch(QENV_FTIBGNAME) + "_Terms").count();
+    var col_len := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
 
     # Take only the terms that occur in the collection
     terms := terms.reverse().semijoin(col_term_frq).hmark(0@0);
@@ -2199,20 +2210,20 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     ### Foreground probability: 
     # Find out the document positions of the terms for foreground probability
     var tid_pre := indexfetchjoin(terms, 
-                                   bat("tj_" + qenv.fetch(QENV_FTINAME) + "_TermIndex"), 
-                                   bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Terms") );
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
     
     if (tid_pre.count() = 0) { return new(oid,dbl); }
     tid_pre := tid_pre.tsort();
     
     # TODO: fragmentation
-    var pre_size := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size1");
     
     # See which document contain the query terms we create a bat of [doc, term-id]:
     var doc_tid := _containing_desc(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size,qenv);
     
     # len(doc): [doc, size]
-    var doc_len := [dbl](bat("tj_" + qenv.fetch(QENV_FTINAME) + "_size1").semijoin(doc_tid));
+    var doc_len := [dbl](bat("tj_" + qenv.find(QENV_FTINAME) + "_size1").semijoin(doc_tid));
     
     ###
     
@@ -2258,7 +2269,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     # Now compute the final scores: multiply by the background score
     res := [*](res, (1.0 - lambda) * prod_background);
 
-    if ( int(qenv.fetch(QENV_SCOREBASE)) = 0 ) {
+    if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
         # Add the scores to the context set (this should have scores 0, so adding is OK)
         res := [+](ctx, res);
     } else {
@@ -2272,11 +2283,11 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
 ##
 # Returns the collection frequency table (should be precomputed, but is calculated for now)
 ##
-PROC col_freq(BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC col_freq(BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     var start_time := time();
-    var allterms := bat(tj_TermBat(qenv.fetch(QENV_FTINAME))).sort().mark(0@0).reverse();
-    var alltermpos := indexfetchjoin(allterms, bat("tj_"+qenv.fetch(QENV_FTINAME)+"_TermIndex"), bat("tj_"+qenv.fetch(QENV_FTINAME)+"_Terms"));
+    var allterms := bat(tj_TermBat(qenv.find(QENV_FTINAME))).sort().mark(0@0).reverse();
+    var alltermpos := indexfetchjoin(allterms, bat("tj_"+qenv.find(QENV_FTINAME)+"_TermIndex"), bat("tj_"+qenv.find(QENV_FTINAME)+"_Terms"));
     var col_freqs := [dbl]({count}(alltermpos));
 
     if (DEBUG) printf( "col_freq: \t\t%d ms\n", time() - start_time );
@@ -2287,10 +2298,10 @@ PROC col_freq(BAT[void,str] qenv) : bat[oid,dbl] :=
 # Returns the collection frequency of the term with the indicated tid
 ##
 # INCOMPLETE-TT function should have a ftiName parameter
-PROC col_freq(oid tid, BAT[void,str] qenv) : dbl :=
+PROC col_freq(oid tid, BAT[oid,str] qenv) : dbl :=
 {
     var start_time := time();
-    var alltermpos := indexfetchjoin(new(int,oid).insert(0,tid), bat("tj_"+qenv.fetch(QENV_FTINAME)+"_TermIndex"), bat("tj_"+qenv.fetch(QENV_FTINAME)+"_Terms"));
+    var alltermpos := indexfetchjoin(new(int,oid).insert(0,tid), bat("tj_"+qenv.find(QENV_FTINAME)+"_TermIndex"), bat("tj_"+qenv.find(QENV_FTINAME)+"_Terms"));
     var col_freqs := {count}(alltermpos);
     var result := dbl(col_freqs.fetch(0));
     if (DEBUG) printf( "col_freq: \t\t%d ms\n", time() - start_time );
@@ -2301,7 +2312,7 @@ PROC col_freq(oid tid, BAT[void,str] qenv) : dbl :=
 # For each region in left, count the number of regions in right it contains.
 ##
 # INCOMPLETE-TT function should have a ftiName parameter
-PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type, BAT[void,str] qenv) : bat[oid,dbl]    :=    
+PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type, BAT[oid,str] qenv) : bat[oid,dbl]    :=    
 {
     if ( trace ) tj_trace( "START reg_freq");
     
@@ -2310,7 +2321,7 @@ PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type, BAT[void,str
     var ctx_tmp2 := new( oid, int, ENTITY_NUM );
    
     # TODO: fragmentation
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
     ctx_tmp2 := anc_desc( left, right, pre_size );
     
     # Containment count: for each region from left, count how many regions from right it contains
@@ -2340,7 +2351,7 @@ PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type, BAT[void,str
 
 # Calculate the term size of the region: how many terms does it contain?
 # INCOMPLETE-TT function should have a ftiName parameter
-PROC size_term( bat[oid,any] region, BAT[void,str] qenv ) : bat[oid,dbl] := 
+PROC size_term( bat[oid,any] region, BAT[oid,str] qenv ) : bat[oid,dbl] := 
 {
     if ( trace ) tj_trace( "BEGIN size_term" );
     # For now, we use size_term = size_entity
@@ -2349,17 +2360,17 @@ PROC size_term( bat[oid,any] region, BAT[void,str] qenv ) : bat[oid,dbl] :=
     var start_time := time();
     
     # all terms:
-    var pre_tid   := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_tid1");
-    var pre_pfpre := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_pfpre");
+    var pre_tid   := bat("tj_" + qenv.find(QENV_FTINAME) + "_tid1");
+    var pre_pfpre := bat("tj_" + qenv.find(QENV_FTINAME) + "_pfpre");
     var terms     := pre_tid.mirror().kdiff( pre_pfpre.mirror() );
     
     var items      := region.mirror().mark(0@0).reverse();
     var candidates := terms.mirror().mark(0@0).reverse();
     
     # Alternative:
-    #var candidates      := bat("tj_" + qenv.fetch(QENV_FTINAME) + "_Terms" ).reverse().sort().mark(0@0).reverse();
+    #var candidates      := bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms" ).reverse().sort().mark(0@0).reverse();
     
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
    
     # Check the order of the items:
     items.chk_order();
@@ -2375,7 +2386,7 @@ PROC size_term( bat[oid,any] region, BAT[void,str] qenv ) : bat[oid,dbl] :=
 }
 
 # Calculate the entity size of the region: how many entities (tags and terms) does it contain?
-PROC size_entity( bat[oid,any] region, BAT[void,str] qenv ) : bat[oid,dbl] :=
+PROC size_entity( bat[oid,any] region, BAT[oid,str] qenv ) : bat[oid,dbl] :=
 {
     if ( trace ) {
         var trace_msg := sprintf("(receiving %d regions)", count(region));
@@ -2383,7 +2394,7 @@ PROC size_entity( bat[oid,any] region, BAT[void,str] qenv ) : bat[oid,dbl] :=
     }
     
     # Entity sizes:
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
     
     var result := [dbl](region.mirror().join( pre_size ));
 
@@ -2399,14 +2410,14 @@ PROC size_entity( bat[oid,any] region, BAT[void,str] qenv ) : bat[oid,dbl] :=
 # PROBABILISTIC CONTAINMENT
 ################################################################################
 
-PROC p_contained_by_sum(bat[oid,dbl] region, BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC p_contained_by_sum(bat[oid,dbl] region, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_contained_by_sum_1" );
     # Candidates: all nodes
     var candidates := select_node(qenv);
 
     # TODO: fragmentation
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
     var ctx_res := anc_desc( region, candidates, pre_size );
 
     var ctx := ctx_res.reverse().mirror();
@@ -2427,11 +2438,11 @@ PROC p_contained_by_sum(bat[oid,dbl] region, BAT[void,str] qenv) : bat[oid,dbl] 
 }
 
 
-PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right, BAT[void,str] qenv) : bat[oid,dbl] := 
+PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) : bat[oid,dbl] := 
 {
     if ( trace ) tj_trace( "BEGIN p_contained_by_sum_2" );
     # TODO: fragmentation
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
     var ctx_res := anc_desc( right, left, pre_size );
     
     var reg_score;
@@ -2444,9 +2455,9 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right, BAT[void,str] qen
     if ( returnAllElements )
         reg_score := kunion(reg_score, ctx);
 
-	if (int(qenv.fetch(QENV_SCOREBASE)) = 0)
+	if (int(qenv.find(QENV_SCOREBASE)) = 0)
 		res_reg := [+](reg_score, left);
-	else if (int(qenv.fetch(QENV_SCOREBASE)) = 1)
+	else if (int(qenv.find(QENV_SCOREBASE)) = 1)
 		res_reg := [*](left, reg_score);
     
     if ( trace ) tj_trace( "END   p_contained_by_sum_2" );
@@ -2455,7 +2466,7 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right, BAT[void,str] qen
 
 
 # INCOMPLETE-TT function should have a ftiName parameter
-PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type,BAT[void,str] qenv) : bat[oid,dbl] :=
+PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type,BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_wsumd" );
     var ctx := left.project(dbl(0));
@@ -2473,7 +2484,7 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type,BAT
 
     # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
     # TODO: fragmentation
-    var pre_size := load( "tj_" + qenv.fetch(QENV_FTINAME) + "_size1");
+    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
     var ctx_res := anc_desc( left, right, pre_size );
 
     # Special case for empty ancestor-descendant relation:
@@ -2497,9 +2508,9 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type,BAT
     if ( returnAllElements )
         reg_score := kunion(reg_score,ctx);
 
-    if (int(qenv.fetch(QENV_SCOREBASE)) = 0)
+    if (int(qenv.find(QENV_SCOREBASE)) = 0)
         res_reg := [+](left, reg_score);
-    else if (int(qenv.fetch(QENV_SCOREBASE)) = 1)
+    else if (int(qenv.find(QENV_SCOREBASE)) = 1)
         res_reg := [*](left, reg_score);
 
     if ( trace ) tj_trace( "END   p_containing_wsumd" );
@@ -2770,7 +2781,7 @@ PROC gt(bat ctx, int comp) : bat :=
 ################################################################################
 
 # INCOMPLETE-TT function should have a ftiName parameter
-PROC prior_ls(bat region, int size_type, BAT[void,str] qenv) : bat := 
+PROC prior_ls(bat region, int size_type, BAT[oid,str] qenv) : bat := 
 {
 
 	var ctx_size := new(oid,dbl,ENTITY_NUM);
@@ -2795,7 +2806,7 @@ PROC prior_ls(bat region, int size_type, BAT[void,str] qenv) : bat :=
 	# var ref_reg := new(oid,dbl,ENTITY_NUM);
 	# var ref_size := new(oid,dbl,ENTITY_NUM);
 
-	# var entity_name := load(qenv.fetch(QENV_FTINAME)+"entity_name");
+	# var entity_name := load(qenv.find(QENV_FTINAME)+"entity_name");
 
 	# var ref_name := entity_name.join(region.mirror().join(entity_name).reverse().mirror());
 	# ref_reg := ref_name.project(dbl(1));
@@ -2879,13 +2890,6 @@ PROC tj_collection(str ftiName) : BAT[void,bat]
         printf("WARNING: the use of function tj_collection() is deprecated.\n");
 	return _tj_collection(ftiName);
 }
-
-# SUGAR, REMOVE IN FUTURE
-#PROC tj_url2Collection(str doc, str url, str selTagList) : void
-#{
-#        printf("WARNING: the use of function tj_url2Collection() is deprecated.\n");
-#	tj_url2Collection(GQENV.fetch(QENV_FTINAME), doc, url, selTagList);
-#}
 
 # SUGAR, REMOVE IN FUTURE
 PROC tj_url2Collection(str ftiName, str doc, str url, str selTagList) : void

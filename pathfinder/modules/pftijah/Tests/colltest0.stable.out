@@ -24,7 +24,10 @@ shred_doc(path+"/xml-docs/cdilbert2.xml","cdilbert2.xml","PFCOLL",0LL);
 # Elapsed time = 261us [004us/node]
 # Shredded 1 XML document (cdilbert2.xml), total time after commit=0.015s
 shred_doc(path+"/xml-docs/cdilbert3.xml","cdilbert3.xml","PFCOLL",0LL);
-# Elapsed time = 241us [004us/node]
+# Elapsed time = 529us [009us/node]
+
+
+
 # Shredded 1 XML document (cdilbert3.xml), total time after commit=0.014s
 
 quit();
