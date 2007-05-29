@@ -374,11 +374,32 @@ This seemingly superflous action is necessary to simplify analyis of
 memory leakage problems later on.
 @c
 void mal_exit(void){
-	int t = 0;
+	int t = 0, activeClients, reruns=0;
 	str err;
-
-#if 0
 	Client cntxt = mal_clients;
+
+@-
+Before continuing we should make sure that all clients
+(except the console) have left the scene.
+@c
+	if( MCgetClient() != mal_clients){
+			stream_printf(mal_clients->fdout,"#MALexit: non-admin attempt\n");
+		return;
+	}
+	do{
+		activeClients=0;
+		for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
+		if( cntxt->mode != FREECLIENT)
+			activeClients++;
+		if( activeClients) {
+			stream_printf(mal_clients->fdout,"#MALexit: clients still active\n");
+			MT_sleep_ms(1000);
+		}
+	} while (activeClients && reruns++ < 3);
+	if( reruns== 3)
+		stream_printf(mal_clients->fdout,"#MALexit: server forced exit\n");
+@c
+#if 0
 	/* skip this to solve random crashes, needs work */
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
@@ -404,7 +425,6 @@ void mal_exit(void){
 		(void) stream_destroy(cntxt->fdout);
 	}
 #endif
-
 	/* deregister everything that was registered, ignore errors */
 	if ((err = SABAOTHwildRetreat(&t)) != MAL_SUCCEED) {
 		fprintf(stderr, "!%s", err);
