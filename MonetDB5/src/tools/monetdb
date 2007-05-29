@@ -1,4 +1,4 @@
-#!/bin/bash
+#!usr/bin/env bash
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -45,13 +45,14 @@ ASCII=""
 DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
 DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
 # First perform some sanity checks
-if [ "$MONETDB5_PREFIX"  = "" ]
-then
+if [[ -z "$MONETDB5_PREFIX"  = "" ]] ; then
 	echo "The MONETDB5_PREFIX environment variable has not been set"
-	echo "It should point to where you have installed the build directory"
+	echo "It should point to the directory where you have installed the build directory"
 	exit
 fi
 
+# emit a warning  
+> -echo " * warning: This script is experimental"
 
 ACTION="--status"
 
@@ -109,7 +110,7 @@ do
 		;;
 	"--dbinit="* )
 		tail="${1#--dbinit=}"
-		STARTUP=/tmp/mserver5.startup$$
+		STARTUP=${TMPDIR:-/var/tmp}/mserver5.startup$$
 		echo $tail > $STARTUP
 		;;
 	* )
@@ -129,12 +130,6 @@ fi
 if [ ! -d $DBFARM ]
 then
 	echo "Database storage area '$DBFARM' is in accessible"
-fi
-
-if [ ! -d $DBLOGS ]
-then
-	echo "Creation of missing database storage area '$DBFARM'"
-	mkdir -p $DBLOGS
 fi
 
 function getPID ()
@@ -176,7 +171,7 @@ function ping_mserver()
 function start_mserver()
 {
 	# make sure the configuration file is in place
-	if [ ! -f $DBFARM/$1/.monetdb.conf ]
+	if [ ! -f $1/.monetdb.conf ]
 	then
 			cp $MONETDB5_PREFIX/etc/monetdb5.conf $DBFARM/$1/.monetdb.conf
 	fi
@@ -194,7 +189,7 @@ function start_mserver()
 		fi
 		if [ "$ARGS" = "" ]
 		then
-			if [ -f $DBFARM/$1/.mserver5.args ]
+			if [ -f $1/.mserver5.args ]
 			then
 				ARGS=`cat $DBFARM/$1/.mserver5.args`
 			else
