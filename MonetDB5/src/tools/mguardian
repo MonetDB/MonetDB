@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -43,16 +43,9 @@ function get() {
 	done
 }
 
-tmp="$(get "--dbfarm" $*)"
-if [ ! -z "$tmp" ]
-then
-	DBFARM="$tmp"
-	DBLOGS=$DBFARM/../dblogs
-	echo "mguardian working on " $DBFARM
-else
-	DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
-	DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
-fi
+DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
+DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
+	
 DELAY=300
 ACTION=start
 
@@ -82,9 +75,6 @@ case "$1" in
 	;;
 esac
 
-# emit a warning
-echo " * warning: This script is experimental"
-
 cd $DBFARM
 if [ ! -z "$*" ]
 then
@@ -102,12 +92,12 @@ fi
 function getPID ()
 {
 	active=""
-	if [ -f $1/.gdk_lock ]
+	if [ -f $DBFARM/$1/.gdk_lock ]
 	then
-		pid=`sed -e "s/.*PID=//" -e "s/ .*//" -e 2q $1/.gdk_lock`
+		pid=`sed -e "s/.*PID=//" -e "s/ .*//" -e 2q $DBFARM/$1/.gdk_lock`
 		if [ "$pid" != "" ]
 		then
-			active=`ps --no-heading --format pid -p $pid`
+			active=`ps -o pid -p $pid | grep -v PID`
 		fi
 	fi
 	echo $active
@@ -134,7 +124,7 @@ function restart_server()
 	if [ "$full" -gt 90 ]
 	then
 		echo "Running out of disk space"
-		echo `date +"%F %T"` "WARNING disk use $full%" >>monetdb.log
+		echo `date +"%F %T"` "WARNING disk use $full%" >> $DBLOGS/monetdb.log
 		if [[ "$restartcount" > $mailtrigger  ]]
 		then
 mail -s "Notification: mserver5 encounters disk limits" $USER <<!EOF
@@ -183,26 +173,26 @@ server is left unattended.
 		fi
 		restartcount=`expr $restartcount + 1 `
 	fi
-	if [ -f $1/.mserver5.args ]
+	if [ -f $DBFARM/$1/.mserver5.args ]
 	then
 		started=`date +%s`
-		if [ -f $1/.mserver5.dbinit ]
+		if [ -f $DBFARM/$1/.mserver5.dbinit ]
         then
             STARTUP=$DBFARM/$1/.mserver5.dbinit
         fi
-		if [ -f $1/.mserver5.args ]
+		if [ -f $DBFARM/$1/.mserver5.args ]
 		then
-			ARGS=`cat $1/.mserver5.args`
+			ARGS=`cat $DBFARM/$1/.mserver5.args`
 		fi
         CONFIG="--config=$DBFARM/$1/.monetdb.conf"
-		(cd $1; mserver5 --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP)&
-		echo `date +"%F %T"` " RESTART $1 $args" >>monetdb.log
+		(cd $DBFARM/$1; mserver5 --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP)&
+		echo `date +"%F %T"` " RESTART $1 $args" >> $DBLOGS/monetdb.log
 	fi
 }
 
 function getDelay()
 {
- 	delay=`grep delay $1/.monetdb.conf| sed -e "s/\t.*//" -e "s/delay=//"`
+ 	delay=`grep delay $DBFARM/$1/.monetdb.conf | sed -e "s/#.*//" -e "s/delay=//"`
 	if [ "$delay" = "" ]
 	then
 		delay=11
@@ -215,11 +205,11 @@ function check_mserver()
 {
 	delay=`getDelay $1`
 	mypid=$!
-	echo "$delay" >$1/.mguardian.delay
-	echo "$!" >$1/.mguardian.pid
-	echo `date +"%F %T"` " GUARD $1 " >>monetdb.log
+	echo "$delay" > $DBFARM/$1/.mguardian.delay
+	echo "$!" > $DBFARM/$1/.mguardian.pid
+	echo `date +"%F %T"` " GUARD $1 " >> $DBLOGS/monetdb.log
 
-	while [ -f $1/.mguardian.pid ]
+	while [ -f $DBFARM/$1/.mguardian.pid ]
 	do
 		active=`getPID $1`
 		if  [ "$active" = "" ]
@@ -230,12 +220,12 @@ function check_mserver()
 		delay=`getDelay $1`
 		sleep $delay &
 		sid="$!"
-		echo "$sid" >$1/.mguardian.sleep
+		echo "$sid" > $DBFARM/$1/.mguardian.sleep
 		trap "kill $sid" 1
 		wait
 		trap 1
 	done
-	echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
+	echo `date +"%F %T"` " LEAVE $1 " >> $DBLOGS/monetdb.log
 	exit
 }
 
@@ -250,8 +240,8 @@ function stop_guardian()
 		echo -n "stop mguardian for " $DBFARM/$1 "..."
 		kill -TERM $pid
 		echo "ok"
-		echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
-		rm $1/.mguardian.pid
+		echo `date +"%F %T"` " LEAVE $1 " >> $DBLOGS/monetdb.log
+		rm $DBFARM/$1/.mguardian.pid
 	fi
 }
 
@@ -278,13 +268,13 @@ case $ACTION in
 		do
 			if [ -d $i ]
 			then
-				if [ -f $i/.mguardian.sleep ]
+				if [ -f $DBFARM/$i/.mguardian.sleep ]
 				then
 					#wakeup the mguardian process
-					pid=`cat $i/.mguardian.sleep`
+					pid=`cat $DBFARM/$i/.mguardian.sleep`
 					kill -HUP $pid
 				fi
-				echo "$DELAY" >$i/.mguardian.delay
+				echo "$DELAY" > $DBFARM/$i/.mguardian.delay
 			fi
 		done
 		;;

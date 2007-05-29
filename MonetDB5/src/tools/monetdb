@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -43,52 +43,52 @@ function usage()
 
 ASCII=""
 DBFARM=$MONETDB5_PREFIX/var/MonetDB5/dbfarm
+DBLOGS=$MONETDB5_PREFIX/var/MonetDB5/dblogs
 # First perform some sanity checks
-if [[ -z $MONETDB5_PREFIX ]] ; then
+if [ "$MONETDB5_PREFIX"  = "" ]
+then
 	echo "The MONETDB5_PREFIX environment variable has not been set"
-	echo "It should point to the directory where you have installed MonetDB"
+	echo "It should point to where you have installed the build directory"
 	exit
 fi
 
 
 ACTION="--status"
 
-case $1 in
-	"--start" | "--stop" | "--status" ) 
+case "$1" in
+ "--start" | "--stop" | "--status" ) 
 		ACTION=$1
-	;;
-	"--databases")
+		shift ;;
+ "--databases" )
 		ACTION=$1
-	;;
-	"--dump")
+		shift ;;
+ "--dump" )
 		ACTION=checkpoint
 		ASCII="--ascii=yes"
-	;;
-	"--checkpoint")
+		shift ;;
+ "--checkpoint" )
 		ACTION=$1
-	;;
-	"--recover")
+		shift ;;
+ "--recover" )
 		ACTION=$1;
-	;;
-	"--log")
+		shift ;;
+ "--log" )
 		ACTION=$1
-	;;
-	"--help")
-		usage 
-		exit 0
+		shift ;;
+ "--help" )
+	usage 
+	exit ;;
+ * ) 
 	;;
 esac
-shift
-
-# emit a warning :)
-echo " * warning: This script is experimental"
 
 # massage the argument list to prepare for calling
 ARGS=""
 DBNAME=""
 STARTUP=""
 DELAY=""
-while [[ $# -gt 0 ]] ; do
+while [ $# -gt 0 ]
+do
 	case "$1" in
 	"--dump" )
 # interesting: --dump --dump seems to be a valid action
@@ -109,7 +109,7 @@ while [[ $# -gt 0 ]] ; do
 		;;
 	"--dbinit="* )
 		tail="${1#--dbinit=}"
-		STARTUP=${TMPDIR:-/var/tmp}/mserver5.startup$$
+		STARTUP=/tmp/mserver5.startup$$
 		echo $tail > $STARTUP
 		;;
 	* )
@@ -131,6 +131,12 @@ then
 	echo "Database storage area '$DBFARM' is in accessible"
 fi
 
+if [ ! -d $DBLOGS ]
+then
+	echo "Creation of missing database storage area '$DBFARM'"
+	mkdir -p $DBLOGS
+fi
+
 function getPID ()
 {
 	active=""
@@ -139,7 +145,7 @@ function getPID ()
 		pid=`sed -e "s/.*PID=//" -e "s/ .*//" -e 2q $DBFARM/$1/.gdk_lock`
 		if [ "$pid" != "" ]
 		then
-			active=`ps --no-heading --format pid -p $pid`
+			active=`ps -o pid -p $pid | grep -v PID`
 		fi
 	fi
 	echo $active
@@ -170,29 +176,29 @@ function ping_mserver()
 function start_mserver()
 {
 	# make sure the configuration file is in place
-	if [ ! -f $1/.monetdb.conf ]
+	if [ ! -f $DBFARM/$1/.monetdb.conf ]
 	then
-			cp $MONETDB5_PREFIX/etc/monetdb5.conf $1/.monetdb.conf
+			cp $MONETDB5_PREFIX/etc/monetdb5.conf $DBFARM/$1/.monetdb.conf
 	fi
 	pid=`getPID $1`
-	#echo "start server $1 $pid"
+	echo "start server $1 $pid;"
 	if [ "$pid" = "" ]
 	then
 		if [ "$STARTUP" != "" ]
 		then
-			cp "$STARTUP" $1/.mserver5.dbinit
+			cp "$STARTUP" $DBFARM/$1/.mserver5.dbinit
 		fi
-		if [ -f $1/.mserver5.dbinit ]
+		if [ -f $DBFARM/$1/.mserver5.dbinit ]
 		then
 			STARTUP=$DBFARM/$1/.mserver5.dbinit
 		fi
 		if [ "$ARGS" = "" ]
 		then
-			if [ -f $1/.mserver5.args ]
+			if [ -f $DBFARM/$1/.mserver5.args ]
 			then
-				ARGS=`cat $1/.mserver5.args`
+				ARGS=`cat $DBFARM/$1/.mserver5.args`
 			else
-				echo > $1/.mserver5.args
+				echo > $DBFARM/$1/.mserver5.args
 			fi
 		fi
 
@@ -205,26 +211,26 @@ function start_mserver()
 		pid="$!"
 		if [ -z "$pid" ]
 		then
-			echo `date +"%F %T"` " FAILED $1 $ARGS" >>monetdb.log
+			echo `date +"%F %T"` " FAILED $1 $ARGS" >> $DBLOGS/monetdb.log
 			echo "FAILED"
 		else
-			echo `date +"%F %T"` " START $1 $ARGS" >>monetdb.log
+			echo `date +"%F %T"` " START $1 $ARGS" >> $DBLOGS/monetdb.log
 			echo "ok" 
 		fi
 		# start the guardian for this server as well
 		if [ -n "$DELAY" ]
 		then
-			echo $DELAY >$1/.mguardian.delay
+			echo $DELAY > $DBFARM/$1/.mguardian.delay
 		fi
 		$MONETDB5_PREFIX/bin/mguardian --start --dbfarm=$DBFARM --dbname=$1
 	else
 		if [ -n "$DELAY" ]
 		then
-			echo $DELAY >$1/.mguardian.delay
-			if [ -f $i/.mguardian.sleep ]
+			echo $DELAY > $DBFARM/$1/.mguardian.delay
+			if [ -f $DBFARM/$1/.mguardian.sleep ]
 			then
 				#wakeup the mguardian process
-				pid=`cat $i/.mguardian.sleep`
+				pid=`cat $DBFARM/$1/.mguardian.sleep`
 				kill -HUP $pid
 			fi
 			echo "mguardian delay for '$1' reset"
@@ -243,13 +249,13 @@ function stop_mserver()
 		echo "STOP " `date +"%F %T"` >>$DBFARM/$DBNAME/mserver5.log
 		$MONETDB5_PREFIX/bin/mguardian --stop $DBFARM/$1
 		kill -TERM $pid
-		echo `date +"%F %T"` " STOP  $1" >>monetdb.log
-		if [ "`ps -p $pid -o comm=`" == "mserver5" ];
+		echo `date +"%F %T"` " STOP  $1" >> $DBLOGS/monetdb.log
+		if [ "`ps c -o command -p $pid | grep -v PID`" == "mserver5" ];
 		then
 			# give it some time to wrap up
 			echo -n "Stopping database server '$DBFARM/$1'... "
 			sleep 5
-			if [ "`ps -p $pid -o comm=`" == "mserver5" ];
+			if [ "`ps c -o command -p $pid`" == "mserver5" ];
 			then
 				echo "FAILED"
 			else
@@ -267,7 +273,7 @@ function show_status_hdr()
 }
 function show_status()
 {
-	if [ -f $1/.gdk_lock ]
+	if [ -f $DBFARM/$1/.gdk_lock ]
 	then
 		pid=`getPID $1`
 		if  [ -n "$pid" ]
@@ -277,10 +283,10 @@ function show_status()
 				show_status_hdr
 				header=1
 			fi
-			if [ -f $1/.mguardian.pid ]
+			if [ -f $DBFARM/$1/.mguardian.pid ]
 			then
-				guard=`cat $1/.mguardian.pid`
-				active=`ps --no-heading --format pid -p $guard`
+				guard=`cat $DBFARM/$1/.mguardian.pid`
+				active=`ps -o pid -p $guard | grep -v PID`
 				if [ -z "$active" ]
 				then
 					guard="killed"
@@ -288,19 +294,19 @@ function show_status()
 			else
 				guard=missing
 			fi
-			if [ -f $1/.mserver5.dbinit ]
+			if [ -f $DBFARM/$1/.mserver5.dbinit ]
 			then
-				dbinit=`cat $1/.mserver5.dbinit`
+				dbinit=`cat $DBFARM/$1/.mserver5.dbinit`
 			fi
-			if [ -f $1/.mguardian.delay ]
+			if [ -f $DBFARM/$1/.mguardian.delay ]
 			then
-				delay=`cat $1/.mguardian.delay`
+				delay=`cat $DBFARM/$1/.mguardian.delay`
 			else
 				delay=unknown
 			fi
 			if [ -z "$delay" ]
 			then
-				delay=`grep delay $1/.monetdb.conf |sed -e "s/\t.*//" -e "s/delay=//"`
+				delay=`grep delay $DBFARM/$1/.monetdb.conf |sed -e "s/\t.*//" -e "s/delay=//"`
 			fi
 			start=`getTIME $1`
 			echo "$1	$pid	$guard	$delay	$start $dbinit"
@@ -320,17 +326,17 @@ function create_database ()
 		read -p "Do you want to create the database '$1' for SQL sessions ? [yes/no]" answer
 		if [ "$answer" = "yes" ]
 		then
-			mkdir $1
-			cp $MONETDB5_PREFIX/etc/monetdb5.conf $1/.monetdb.conf
-			echo "include sql;sql.start();" > $1/.mserver5.dbinit
+			mkdir $DBFARM/$1
+			cp $MONETDB5_PREFIX/etc/monetdb5.conf $DBFARM/$1/.monetdb.conf
+			echo "include sql;sql.start();" > $DBFARM/$1/.mserver5.dbinit
 			echo "Database '$1' initialized for SQL sessionsi."
 			return
 		fi
 		read -p "Do you want to create the database '$1' for MAL sessions ? [yes/no]" answer
 		if [ "$answer" = "yes" ]
 		then
-			mkdir $1
-			cp $MONETDB5_PREFIX/etc/monetdb5.conf $1/.monetdb.conf
+			mkdir $DBFARM/$1
+			cp $MONETDB5_PREFIX/etc/monetdb5.conf $DBFARM/$1/.monetdb.conf
 			echo "Database '$1' initialized"
 			echo ""
 			echo "To accept SQL sessions in the future start the server"
