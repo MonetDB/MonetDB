@@ -204,7 +204,7 @@ mapi_export int active_clients(char *lang);
 #define MAX_FRONTENDS 8
 static int nr_frontends = 0;
 static mapi_frontend *mapi_frontends[MAX_FRONTENDS] = { NULL };
-static mapi_client mapi_clients[MAXCLIENTS + 1];
+static mapi_client mapi_clients[THREADS + 1];
 static int nr_mapi_clients = 0;
 static MT_Lock mapi_cache_lock;
 
@@ -219,7 +219,7 @@ init_client_cache(void)
 		mapi_frontends[i] = 0;
 	nr_frontends = 0;
 	
-	for(i=0; i<=MAXCLIENTS; i++) { 
+	for(i=0; i<=THREADS; i++) { 
 		mapi_clients[i].frontend = MAX_FRONTENDS;
 		mapi_clients[i].inuse = 0;
 		mapi_clients[i].c = monet_clients+i;
@@ -235,7 +235,7 @@ exit_client_cache(void)
 	int i;
 
 	MT_set_lock(mapi_cache_lock, "exit_client_cache");
-	for(i=0; i<=MAXCLIENTS; i++) { 
+	for(i=0; i<=THREADS; i++) { 
 		if (mapi_clients[i].frontend != MAX_FRONTENDS) { 
 			/* no active client killing jet */
 			mapi_client *fc = mapi_clients+i;
@@ -419,7 +419,7 @@ mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *s)
 	Client c = NULL;
 	
 	MT_set_lock(mapi_cache_lock, "mapi_client_alloc");
-	if (nr_mapi_clients < MAXCLIENTS) 
+	if (nr_mapi_clients < THREADS) 
  		c = initClient("mapi", mp, FALSE);
 		if (c) {
 			f->clients ++;
@@ -450,7 +450,7 @@ mapi_client_find(mapi_frontend *f )
 	int i = 0;
 
 	MT_set_lock(mapi_cache_lock, "mapi_client_find");
-	for (i=1; i<MAXCLIENTS; i++) {
+	for (i=1; i<THREADS; i++) {
 		mapi_client *mc = mapi_clients+i;
 		
 		if (mc->inuse == 0 && mc->frontend == f->nr) {
@@ -491,7 +491,7 @@ mapi_client_engine(void *FC )
 	mapi_frontend *f = mapi_frontends[fc->frontend];
 
 	fc->thread = THRnew(MT_getpid(), "mapi_client_engine"); 
-	while(1) {
+	while(fc->thread) {
 		MT_down_sema(fc->s, "mapi_client_engine"); /* wait for work */
 		if (fc->inuse == 2)
 			break;
@@ -563,7 +563,7 @@ int active_clients(char *lang)
 	if (!f)
 		return 0;
 
-	for (i=1; i<MAXCLIENTS; i++) {
+	for (i=1; i<THREADS; i++) {
 		mapi_client *mc = mapi_clients+i;
 
 		if (mc->inuse == 1 && mc->frontend == f->nr) 
