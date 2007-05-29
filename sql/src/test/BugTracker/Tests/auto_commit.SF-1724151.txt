@@ -1,0 +1,31 @@
+start transaction;
+create table tbl_xy (x int , y int);
+insert into tbl_xy values (0,0);
+insert into tbl_xy values (1,1);
+commit;
+
+start transaction;
+insert into tbl_xy values (2,2);
+insert into tbl_xy values (3,3);
+insert into tbl_xy values (4,4);
+commit;
+
+start transaction;
+insert into tbl_xy values (5,5);
+insert into tbl_xy values (6,6);
+insert into tbl_xy values (7,7);
+commit;
+
+
+insert into tbl_xy values (-1, -100);
+
+
+start transaction;
+insert into tbl_xy values (8,8);
+insert into tbl_xy values (9,9);
+insert into tbl_xy values (10,10);
+commit;
+
+select * from tbl_xy;
+
+drop table tbl_xy;

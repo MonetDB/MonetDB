@@ -70,3 +70,4 @@ with_only_once.SF-1720293
 bind_with_cast.SF-1720934
 groupby_orderby_nonselected.SF-1723863
 rand_not_executed_for_every_row.SF-1723791
+auto_commit.SF-1724151
