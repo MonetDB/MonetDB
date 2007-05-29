@@ -2250,6 +2250,9 @@ PROC mil_ancestor(bat[void,bat] ws, oid cont, oid newpre) : bat[void,oid]
 
 # Move data starting at "from" of length "size" by "delta".  The
 # destination *must* be a hole (XXX check this).
+# size *must* be smaller than a page
+# from + size + delta (delta > 0) *must be on the same page as from
+# deom + size *must be on the same page as from + delta (delta < 0)
 # Delta can be positive (move data down) or negative (move data up).
 PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
 {
@@ -3568,7 +3571,10 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             }
           }
           var holeatstart := 0;
-          if (insertsize > holeatend) {
+          # if we're inserting at the position of the hole at the end
+          # of the page and there's not enough space, also look at any
+          # hole at the start of the next
+          if ((((int(docinsertbefore_rid) + holeatend) and REMAP_PAGE_BITS) = 0) and (insertsize > holeatend)) {
             # not enough space on the current page, see if there is space at the
             # start of the next
             var nxtpgno := oid(lng(pageno) + 1);
@@ -3589,7 +3595,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 sz := rid_size.find(oid(lng(nxtpgid) << REMAP_PAGE_BITS));
               }
               if (isnil(niland(sz, int_nil))) {
-                holeatstart := niland(sz, INT_MAX);
+                holeatstart := niland(sz, INT_MAX) + 1;
               }
             }
           }
@@ -3829,7 +3835,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 }
               }
             }
-            if (holesize < insertsize) {
+            # note: holeatstart = 0 if the insert point isn't at the start of the hole at the end of the page
+            if ((holesize + holeatstart) < insertsize) {
               # not enough space in the right place
               movedata(ws, doccont, oid(lng(docinsertbefore_newpre) + holesize), int(REMAP_PAGE_SIZE - ((lng(docinsertbefore_newpre) and REMAP_PAGE_MASK) + holesize + holeatend)), insertsize - holesize);
             }
