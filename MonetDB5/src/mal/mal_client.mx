@@ -539,6 +539,7 @@ also its children. Conversely, a child can not close a parent.
 @c
 void freeClient(Client c)
 {
+	Thread t= c->mythread;
 	c->mode = FINISHING;
 
 	/* epilogue actions have been done already */
@@ -587,12 +588,12 @@ void freeClient(Client c)
 @-
 The threads may not be removed, but should become dormant
 @c
-	THRdel(c->mythread);
-	c->mythread = 0;
-	c->mypid = 0;
-	/* THRsuspend(c->mythread); still unsafe */
 	c->user = oid_nil;
 	c->mode = FREECLIENT;
+	c->mythread = 0;
+	c->mypid = 0;
+	THRdel(t);	/* you may perform suicide */
+	/* THRsuspend(c->mythread); still unsafe */
 }
 
 @-
