@@ -374,30 +374,35 @@ This seemingly superflous action is necessary to simplify analyis of
 memory leakage problems later on.
 @c
 void mal_exit(void){
-	int t = 0, activeClients, reruns=0;
+	int t = 0, cnt[4], reruns=0;
 	str err;
 	Client cntxt = mal_clients;
+
+	cnt[FREECLIENT]=0;
+	cnt[FINISHING]=0;
+	cnt[CLAIMED]=0;
+	cnt[AWAITING]=0;
 
 @-
 Before continuing we should make sure that all clients
 (except the console) have left the scene.
 @c
 	if( MCgetClient() != mal_clients){
-			stream_printf(mal_clients->fdout,"#MALexit: non-admin attempt\n");
+		stream_printf(mal_clients->fdout,"#MALexit: non-admin attempt\n");
 		return;
 	}
 	do{
-		activeClients=0;
 		for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
-		if( cntxt->mode != FREECLIENT)
-			activeClients++;
-		if( activeClients) {
-			stream_printf(mal_clients->fdout,"#MALexit: clients still active\n");
+			cnt[cntxt->mode]++;
+		if( cnt[FINISHING]+cnt[CLAIMED]+cnt[AWAITING] ) 
 			MT_sleep_ms(1000);
-		}
-	} while (activeClients && reruns++ < 3);
+		if(reruns) 
+			stream_printf(mal_clients->fdout,"#MALexit: clients still active\n");
+	} while (cnt[FINISHING]+cnt[CLAIMED]+cnt[AWAITING] && ++reruns < 3);
 	if( reruns== 3)
-		stream_printf(mal_clients->fdout,"#MALexit: server forced exit\n");
+		stream_printf(mal_clients->fdout,"#MALexit: server forced exit"
+			" %d finishing %d claimed %d waiting\n", 
+			cnt[FINISHING],cnt[CLAIMED],cnt[AWAITING]);
 @c
 #if 0
 	/* skip this to solve random crashes, needs work */
