@@ -260,6 +260,10 @@ int old_main(BAT* optbat, char* startNodes_name)
     MILPRINTF(MILOUT, "var trace     := FALSE;\n" );
     MILPRINTF(MILOUT, "var tracefile := \"\";\n" );
     
+
+    char* qenv_prox_val = NULL;
+    char* qenv_fb_val   = NULL;
+
     BUN p, q;
     BATloop(optbat, p, q) {
         str optName = (str)BUNhead(optbat,p);
@@ -459,6 +463,10 @@ int old_main(BAT* optbat, char* startNodes_name)
             
         } else if (strcmp(optName, "returnNumber") == 0) {
 	    // ignore, is handled by milprint_summer
+        } else if (strcmp(optName, "term-proximity") == 0) {
+                qenv_prox_val = (char*)strdup(optVal);
+        } else if (strcmp(optName, "feedback-docs") == 0) {
+                qenv_fb_val = (char*)strdup(optVal);
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
@@ -493,13 +501,23 @@ int old_main(BAT* optbat, char* startNodes_name)
         
     
     // Prepend some variables to the MIL code.
-    if ( 0 ) { MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", parserCtx->collection); /* DELETE */ /* DELETE */ }
     MILPRINTF(MILOUT, "var qenv := create_qenv(\"%s\",\"%s\",\"0\");\n",parserCtx->collection,parserCtx->collection);
+
+    if ( qenv_prox_val ) { 
+        MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_TERM_PROXIMITY,\"%s\");\n",qenv_prox_val);
+	free(qenv_prox_val);
+	qenv_prox_val = NULL;
+    }
+    if ( qenv_fb_val ) { 
+        MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_FEEDBACK_DOCS,\"%s\");\n",qenv_fb_val);
+	free(qenv_fb_val);
+	qenv_fb_val = NULL;
+    }
 
 #if 0
     MILPRINTF(MILOUT, "retNum := %d;\n", retNum);
 #endif
-    MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ qenv.fetch(QENV_FTINAME) +\"_param\").find(\"stemmer\");\n");
+    MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ qenv.find(QENV_FTINAME) +\"_param\").find(\"stemmer\");\n");
     if (strcmp(background_collection,""))
     { MILPRINTF(MILOUT, "qenv := tj_setBackgroundCollName(\"%s\",qenv);\n", background_collection); }
     

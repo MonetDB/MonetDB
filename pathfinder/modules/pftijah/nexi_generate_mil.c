@@ -241,7 +241,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
   p1_command = *p_com_array;
 
   /* default region score setup */
-  MILPRINTF(MILOUT, "var base := int(qenv.fetch(QENV_SCOREBASE));\n\n");
+  MILPRINTF(MILOUT, "var base := int(qenv.find(QENV_SCOREBASE));\n\n");
 
   /*   printf("%d\n",p_com_array); */
   /*   printf("%d\n",p1_command); */

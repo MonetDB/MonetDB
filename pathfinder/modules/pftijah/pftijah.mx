@@ -199,11 +199,11 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 	}
 }
 
-const QENV_FTINAME   := 0@0;
-const QENV_FTIBGNAME := 1@0;
-const QENV_SCOREBASE := 2@0;
-const QENV_PROX      := 3@0;
-const QENV_FB_NUM    := 4@0;
+const QENV_FTINAME        := 0@0;
+const QENV_FTIBGNAME      := 1@0;
+const QENV_SCOREBASE      := 2@0;
+const QENV_TERM_PROXIMITY := 3@0;
+const QENV_FEEDBACK_DOCS  := 4@0;
 
 # create a query environment bat
 PROC create_qenv(str fti_name, str bg_fti_name, str scb) : BAT[oid,str]
@@ -217,7 +217,7 @@ PROC create_qenv(str fti_name, str bg_fti_name, str scb) : BAT[oid,str]
 
 PROC modify_qenv(BAT[oid,str] qenv, oid key, str val) : void
 {
-    if (qenv.exists(key)) {
+    if (qenv.exist(key)) {
        qenv.replace(key, val);
     } else {
        qenv.insert(key, val);
