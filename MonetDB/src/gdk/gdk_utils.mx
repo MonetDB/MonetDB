@@ -1993,7 +1993,8 @@ THRnew(MT_Id pid, str name)
 		}
 		if (s == t) {
 			gdk_unset_lock(GDKthreadLock, "THRnew");
-			GDKfatal("THRnew: too many threads\n");
+			GDKwarning("THRnew: too many threads\n");
+			return NULL;
 		}
 		tid = s->tid;
 		memset((char *) s, 0, sizeof(*s));
