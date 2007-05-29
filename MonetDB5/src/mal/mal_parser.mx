@@ -1443,6 +1443,11 @@ parseAssign(Client cntxt, int cntrl)
 				keyphrase1(cntxt,",");
 		}
 		advance(cntxt,1); /* skip ')' */
+		if( curInstr->retc == 0){
+				/* add dummy variable */
+				pushArgument(curBlk,curInstr, newTmpVariable(curBlk,TYPE_any));
+				curInstr->retc++;
+		}
 	} else { 
 		/* are we dealing with a simple assignment? */
 		l= idLength(cntxt);
