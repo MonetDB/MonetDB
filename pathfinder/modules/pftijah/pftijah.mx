@@ -3269,14 +3269,14 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 
 	            // 64bit ERROR?? doc_start = *(oid*)BUNtail(doc_firstpre,r);
 	            doc_start = (oid)*(int*)BUNtail(doc_firstpre,r);
-		    oid tj_nextIndex = tj_docIndex +  (oid)1;
+		    oid tj_nextIndex = tj_docIndex +  1;
 		    if ( BATcount(doc_firstpre) > tj_nextIndex ) {
 		        r = BUNfnd(doc_firstpre,&tj_nextIndex);
 			if ( !r ) {
 	    	            stream_printf(GDKout,"Cannot do range for tijah-firstpre @  %d.\n",tj_docIndex);
 			    return GDK_FAIL;
 			}
-	                doc_end = *(oid*)BUNtail(doc_firstpre,r) - (oid)1;
+	                doc_end = (oid)*(int*)BUNtail(doc_firstpre,r) - 1;
 		    } else {
 	                doc_end = oid_nil;
 		    }
