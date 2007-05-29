@@ -718,6 +718,18 @@ The former comes with readline functionality.
 @c
 	while(more) {
 		more = FALSE;
+
+		/* Different kinds of supported statements sequences
+			A;	-- single line			s
+			A \n B;	-- multi line			S
+			A; B;   -- compound single block	s
+			A;	-- many multi line 
+			B \n C; -- statements in one block	S
+		*/
+		/* auto_commit on end of statement */
+		if (m->scanner.mode == LINE_N) 
+			go = SQLautocommit(c,m);
+
 		if (go && in->pos >= in->len) {
 		ssize_t rd;
 
@@ -736,7 +748,7 @@ The former comes with readline functionality.
 			language = (be->console) ? 'S' : 0;
 
 			/* The rules of auto_commit require us to finish 
-			   and start a transaction on the start of a new statement */
+			   and start a transaction on the start of a new statement (s A;B; case) */
 			if( m->mode != m_debug )
 				go = SQLautocommit(c,m);
 

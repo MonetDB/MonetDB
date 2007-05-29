@@ -369,6 +369,24 @@ sqlclient(backend *sql, bstream *in, stream *out)
 	while (go) {
 		int pstatus = 0;
 
+		/* Different kinds of supported statements sequences
+			A;	-- single line			s
+			A \n B;	-- multi line			S
+			A; B;   -- compound single block	s
+			A;	-- many multi line 
+			B \n C; -- statements in one block	S
+		*/
+		/* auto_commit on end of statement */
+		if (m->scanner.mode == LINE_N && m->session->auto_commit && m->session->active) {
+			if (mvc_status(m) < 0) {
+				mvc_rollback(m, 0, NULL);
+			} else if (mvc_commit(m, 0, NULL) < 0) {
+				go = handle_error(m, out, pstatus);
+				if (!go)
+					break;
+			}
+		}
+
 		if (in->pos >= in->len) {
 			ssize_t rd;
 
@@ -377,7 +395,7 @@ sqlclient(backend *sql, bstream *in, stream *out)
 			if (in->eof) {
 				language = (sql->console) ? 'S' : 0;
 
-				/* auto_commit on end of statement */
+				/* auto_commit on end of statement (s A;B; case)*/
 				if (m->session->auto_commit && m->session->active) {
 					if (mvc_status(m) < 0) {
 						mvc_rollback(m, 0, NULL);
@@ -434,6 +452,9 @@ query string with "M".
 		}
 		if (language == 'X') {
 			int n, v, off, len;
+
+			if (m->scanner.log) 
+				stream_write(m->scanner.log, in->buf+in->pos, in->len - in->pos, 1);
 
 			n = sscanf(in->buf + in->pos, "export %d %d %d", &v, &off, &len);
 
