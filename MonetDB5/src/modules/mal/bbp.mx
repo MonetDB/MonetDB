@@ -283,6 +283,8 @@ CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
+	if (MCgetClient() != mal_clients)
+		throw(MAL, "bbp.close", "not allowed to close 'bbp' box");
 	if (closeBox("bbp", TRUE) == 0)
 		return MAL_SUCCEED;
 	throw(MAL, "bbp.close", "failed to close 'bbp' box");
