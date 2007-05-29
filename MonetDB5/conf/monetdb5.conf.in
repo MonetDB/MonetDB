@@ -126,7 +126,7 @@ checkpoint_dir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@chkpnt
 # Monet Application Interface Section
 #====================================
 mapi_port=0			#default port to address a mserver
-mapi_open=0 		#should be set to '1' to allow for 
+mapi_open=false 		#should be set to 'true' to allow for 
 					#remote access to a server
 
 # SQL Interface Section

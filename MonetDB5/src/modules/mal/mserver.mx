@@ -602,8 +602,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	struct sockaddr_in server;
 	int sock = -1;
 	int *Sock = GDKmalloc(sizeof(int));
-	int accept_any=1;
-	char *env;
+	int accept_any=0;
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -616,10 +615,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	int maxusers;
 	char msg[512], *cmd, *usockfile, host[512];
 
-	env = GDKgetenv("mapi_open");
-	if(env){
-		accept_any= (int) atol(env);
-	}
+	accept_any = GDKgetenv_istrue("mapi_open");
 
 	port = *Port;
 	if (Usockfile == NULL || *Usockfile == 0 || strcmp(*Usockfile, str_nil) == 0)
