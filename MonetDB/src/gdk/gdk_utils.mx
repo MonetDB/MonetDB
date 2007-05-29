@@ -156,6 +156,21 @@ GDKgetenv_isyes(const char *name)
 }
 
 @h
+gdk_export int GDKgetenv_istrue(const char *name);
+
+@c
+int
+GDKgetenv_istrue(const char *name)
+{
+	char *val = GDKgetenv(name);
+
+	if (val && strcasecmp(val, "true") == 0) {
+		return 1;
+	}
+	return 0;
+}
+
+@h
 gdk_export void GDKsetenv(str name, str value);
 
 @c
