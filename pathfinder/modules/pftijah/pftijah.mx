@@ -247,31 +247,40 @@ PROC ws_ft_index_info_base(BAT[void,BAT] ws, BAT[any,str] ftiNames, bit all) : B
 {
     var chkbat;
 
+    var tjc;
+
+    if (view_bbp_name().reverse().exist("tj_collName")) {
+        tjc := bat("tj_collName");
+    } else {
+        tjc := new(oid,str);
+    }
+
     if ( all )
-        chkbat := bat("tj_collName");
+        chkbat := tjc;
     else 
         chkbat := ftiNames;
 
     var res := new(void,str).seqbase(0@0);
     var stm := new(void,str).seqbase(0@0);
     var tok := new(void,str).seqbase(0@0);
-    var frg := new(void,str).seqbase(0@0);
+    var col := new(void,str).seqbase(0@0);
     chkbat@batloop() {
-	if ( or(all,bat("tj_collName").reverse().exist($t)) ) {
+	if ( or(all,tjc.reverse().exist($t)) ) {
           res.append($t);
           stm.append(bat("tj_" + $t + "_param").find("stemmer"));
           tok.append(bat("tj_" + $t + "_param").find("tokenizer"));
-          frg.append(bat("tj_" + $t + "_param").find("fragmentSize"));
+	  var as := "";
+	  bat("tj_pfc_fti_dep").reverse().select($t)@batloop() {
+	      if ( as = "" )
+	          as := $h;
+	      else 
+	          as := as + "," + $h;
+	  }
+          col.append(as);
     	}
     }
-    return xmltab4(ws, "ftindex", res, "stemmer", stm, "tokenizer", tok, "fragmentSize", frg);
+    return xmltab4(ws, "ftindex", res, "stemmer", stm, "tokenizer", tok, "collections", col);
 }
-
-#####################################################################
-#                                                                   #
-# Start of the new implementation of the interfaces                 #
-#                                                                   #
-#####################################################################
 
 #####################################################################
 #                                                                   #
