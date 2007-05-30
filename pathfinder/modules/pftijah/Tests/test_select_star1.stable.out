@@ -54,10 +54,10 @@ Over..
                   about TIJAH.</para></node><node rank="9"><para id="par3">It contains the words XML and databases many times, 
                   more than say information and retrieval. 
                   It should be more relevant to XML databases than 
-                  the next section.</para></node><node rank="10"><section id="sec5"><title>XML definitions</title>
+                  the next section.</para></node><node rank="10"><para id="par1">This chapter is about XML databases and retrieval systems.</para></node><node rank="11"><section id="sec5"><title>XML definitions</title>
             <para id="par9">This section contains definitions that are used in XML databases 
                   and XML information retrieval</para>
-        </section></node><node rank="11"><thesis>
+        </section></node><node rank="12"><thesis>
     <title>PF/Tijah</title>
     <chapter id="ch1">
         <title>Structured information storage and retrieval</title>
@@ -95,7 +95,7 @@ Over..
                   and XML information retrieval</para>
         </section>
     </appendix>
-</thesis></node><node rank="12"><thesis>
+</thesis></node><node rank="13"><thesis>
     <title>PF/Tijah</title>
     <chapter id="ch1">
         <title>Structured information storage and retrieval</title>
@@ -133,22 +133,22 @@ Over..
                   and XML information retrieval</para>
         </section>
     </appendix>
-</thesis></node><node rank="13"><appendix id="app1">
+</thesis></node><node rank="14"><appendix id="app1">
         <section id="sec5"><title>XML definitions</title>
             <para id="par9">This section contains definitions that are used in XML databases 
                   and XML information retrieval</para>
         </section>
-    </appendix></node><node rank="14"><section id="sec4"><title>TIJAH</title>
+    </appendix></node><node rank="15"><section id="sec4"><title>TIJAH</title>
             <para id="par8">This section is about the TIJAH XML information retrieval 
                   system. This section is more about TIJAH than any other section is 
                   about TIJAH.</para>
-        </section></node><node rank="15"><section id="sec1"><title>XML databases</title>
+        </section></node><node rank="16"><section id="sec1"><title>XML databases</title>
             <para id="par2">This section is about XML databases.</para>
             <para id="par3">It contains the words XML and databases many times, 
                   more than say information and retrieval. 
                   It should be more relevant to XML databases than 
                   the next section.</para>
-        </section></node><node rank="16"><para id="par1">This chapter is about XML databases and retrieval systems.</para></node><node rank="17"><chapter id="ch2"><title>Pathfinder and TIJAH</title>
+        </section></node><node rank="17"><chapter id="ch2"><title>Pathfinder and TIJAH</title>
         <para id="par6">This chapter is about Pathfinder and TIJAH.</para>
         <section id="sec3"><title>Pathfinder</title>
             <para id="par7">This section is about the Pathfinder XML database. This section is 

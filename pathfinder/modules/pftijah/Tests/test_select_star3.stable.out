@@ -22,11 +22,11 @@ Over..
 # 13:49:22 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><node rank="1"><title>XML definitions</title></node><node rank="2"><title>XML databases</title></node><node rank="3"><title>XML Information retrieval</title></node><node rank="4"><para id="par4">This section is about XML information retrieval.</para></node><node rank="5"><para id="par2">This section is about XML databases.</para></node><node rank="6"><para id="par5">It contains the words XML, information and retrieval many times, 
+<XQueryResult><node rank="1"><title>XML definitions</title></node><node rank="2"><title>XML databases</title></node><node rank="3"><title>XML Information retrieval</title></node><node rank="4"><para id="par2">This section is about XML databases.</para></node><node rank="5"><para id="par4">This section is about XML information retrieval.</para></node><node rank="6"><para id="par9">This section contains definitions that are used in XML databases 
+                  and XML information retrieval</para></node><node rank="7"><para id="par5">It contains the words XML, information and retrieval many times, 
                   more than say databases. 
                   It should be more relevant to XML information retrieval 
-                  than the previous section.</para></node><node rank="7"><para id="par9">This section contains definitions that are used in XML databases 
-                  and XML information retrieval</para></node><node rank="8"><para id="par3">It contains the words XML and databases many times, 
+                  than the previous section.</para></node><node rank="8"><para id="par3">It contains the words XML and databases many times, 
                   more than say information and retrieval. 
                   It should be more relevant to XML databases than 
                   the next section.</para></node><node rank="9"><para id="par8">This section is about the TIJAH XML information retrieval 

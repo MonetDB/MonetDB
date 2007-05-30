@@ -708,7 +708,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
         case MODEL_LM :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LM(terms, modifiers, %d, %d,qenv);\n", com_num, com_nr_left, txt_retr_model->stemming, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LM(terms, qenv);\n", com_num, com_nr_left);
 
           break;
 

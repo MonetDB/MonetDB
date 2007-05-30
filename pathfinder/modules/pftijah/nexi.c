@@ -368,14 +368,14 @@ int old_main(BAT* optbat, char* startNodes_name)
                 txt_retr_model->down_prop = DOWN_WSUMA;
             }
             
-        } else if ( strcmp(optName,"txtmodel_collectionLambda") == 0 || 
-                    strcmp(optName,"txtmodel_param1") == 0) {
+        } else if ( strcmp(optName,"collection-lambda") == 0 || 
+                    strcmp(optName,"ir-model-param1") == 0) {
             txt_retr_model->param1 = atof( optVal );
 
-        } else if ( strcmp(optName,"txtmodel_param2") == 0 ) {
+        } else if ( strcmp(optName,"ir-model-param2") == 0 ) {
             txt_retr_model->param2 = atof( optVal );
             
-        } else if ( strcmp(optName,"txtmodel_param3") == 0 ) {
+        } else if ( strcmp(optName,"ir-model-param3") == 0 ) {
             txt_retr_model->param3 = atof( optVal );
         
         } else if ( strcmp(optName,"txtmodel_returnall") == 0 ) {

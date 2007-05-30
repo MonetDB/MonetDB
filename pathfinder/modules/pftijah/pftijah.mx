@@ -2126,6 +2126,105 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 # var modifiers := new(void,int).seqbase(oid(0));
 # terms.append("information");
 # terms.append("retrieval");
+# var R2 := p_containing_t_LM(R1, terms, 1, SIZE_TERM);
+#
+# R2 now contains all regions in R1, however with scores attached according
+# to the occurrence of the terms "information" and "retrieval"
+#
+#
+# The score value for a single term and document is defined as follows:
+#                                                  
+#  S(doc|tm) = FG(tm) 
+#
+# where 
+#            tc(tm,doc)
+#  FG(tm) = ------------       (foreground statistics)
+#             len(doc)
+#
+# To compute score values for a set of terms at once, this function implements 
+# presence weighting (thanks to Thijs for pointing this out), using the following 
+# formula:
+#
+#                ___             
+# S(doc|q) =     | |     FG(tm_i)
+#             tm_i in q          
+#
+# where:                                                   
+#  q            : query: set of query terms
+#  tm_i         : query term
+#  doc          : search document or, in this case, context region
+#  tc(tm_i, doc): term count of query term tm_i in doc
+#  len(doc)     : size of doc (term or element size)
+##
+PROC p_containing_q_LM(bat[oid,dbl] ctx, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl]
+{   
+    if ( trace ) tj_trace( "BEGIN p_containing_t_LM_COARSE" );
+    # To follow the naming in the formula above, context regions are named "documents".
+    # For each term we need:
+    #  - foreground probability (first term). This depends on the context region
+    
+    # Convert the query terms from [void,str] to [void,tid]
+    var terms := Qterms_to_void_tid( Qterms, qenv );
+
+    ### Foreground probability: 
+    # Find out the document positions of the terms for foreground probability
+    var tid_pre := indexfetchjoin(terms, 
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
+    
+    if (tid_pre.count() = 0) { return new(oid,dbl); }
+    tid_pre := tid_pre.tsort();
+   
+    # TODO: fragmentation
+    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size1");
+    
+    # See which document contain the query terms we create a bat of [doc, term-id]:
+    var elems := ctx.sort().mark(0@0);
+    var doc_tid := _containing_desc3(elems, tid_pre.reverse(), pre_size,qenv);
+    
+    # len(doc): [doc, size]
+    var doc_len := [dbl](bat("tj_" + qenv.find(QENV_FTINAME) + "_size1").semijoin(elems));
+    
+    ###
+    
+    # Now, we need to compute the probability for each document->term pair
+    var res := elems.project(dbl(1.0));
+    
+    # Iterate over all terms.
+    terms@batloop() {
+        # Compute the first factor
+        # $t contains the term id 
+        var occurrences := doc_tid.select($t).sort();
+	
+        # Count the occurrence of the term in all documents: tc(tm_i, doc), 
+        # for all documents at once
+        var tc_tm_doc  := [dbl](occurrences.reverse().histogram());
+        var foreground := [/](tc_tm_doc, doc_len);
+
+        res := [*](res, foreground);
+    }
+    
+    if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
+        # Add the scores to the context set (this should have scores 0, so adding is OK)
+        res := [+](ctx, res);
+    } else {
+        # Add the scores to the context set (this should have scores 1, so multiplying is OK)
+        res := [*](ctx, res);
+    }
+    if ( trace ) tj_trace( "END   p_containing_t_LMs_COARSE" );
+    return res;
+}
+
+##
+# Implementation of the Language Modeling retrieval model.
+#
+# This function is meant for set-based score computation (COARSE2 algebra), e.g.:
+#
+# var R1 := select_node("article");
+# var terms := new(void,str).seqbase(oid(0));
+# var modifiers := new(void,int).seqbase(oid(0));
+# terms.append("information");
+# terms.append("retrieval");
 # var R2 := p_containing_t_LMs(R1, terms, modifiers, 0.5, 1, SIZE_TERM);
 #
 # R2 now contains all regions in R1, however with scores attached according
@@ -2134,7 +2233,7 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 #
 # The score value for a single term and document is defined as follows:
 #                                                  
-#  S(doc|tm) = lambda * FG(tm) + (1 - lambda) * BG(tm)
+#  S(doc|tm) = (1 - lambda) * FG(tm) + lambda * BG(tm)
 #
 # where 
 #            tc(tm,doc)
@@ -2149,9 +2248,9 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 # presence weighting (thanks to Thijs for pointing this out), using the following 
 # formula:
 #
-#            /    ___       lambda * FG(tm_i)         \        ___     
-# S(doc|q) = |    | |     ----------------------  + 1 |  *     | |    (1 - lambda) * BG(tm_i)
-#            \ tm_i in q  (1 - lambda) * BG(tm_i)     /     tm_i in q  
+#            /    ___     (1 - lambda) * FG(tm_i)     \        ___     
+# S(doc|q) = |    | |     ----------------------  + 1 |  *     | |    lambda * BG(tm_i)
+#            \ tm_i in q      lambda * BG(tm_i)       /     tm_i in q  
 #
 # where:                                                   
 #  q            : query: set of query terms
@@ -2228,7 +2327,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
         
         # Compute the first factor. This generates a [doc, term score] table for
         # each combination of doc and term
-        var total := [+]( [/]( [*](lambda, foreground), (1.0 - lambda) * background), dbl(1) );
+        var total := [+]( [/]( [*]((1.0 - lambda), foreground), lambda * background), dbl(1) );
         doc_termscore.insert( [dbl](total) );
         
         # Compute the second factor: product of background statistics over all terms
@@ -2237,7 +2336,6 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     
     # We now have a table that lists [doc, term score] pairs. These need to be aggregated
     # into [doc, score] pairs: (this is the first aggregate product in the formula)
-    #var res := {prod}(doc_termscore, ctx.mark(oid(0)));
     
     var elements := ctx.mark(0@0);
     
@@ -2247,7 +2345,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     var res := {prod}(doc_termscore.tmark(0@0), doc_termscore.hmark(0@0), elements );
     
     # Now compute the final scores: multiply by the background score
-    res := [*](res, (1.0 - lambda) * prod_background);
+    res := [*](res, lambda * prod_background);
 
     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
         # Add the scores to the context set (this should have scores 0, so adding is OK)
