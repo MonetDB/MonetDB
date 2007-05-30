@@ -82,7 +82,7 @@ extern int char_number;
 #define WRITE_COMMAND(COMMAND) tnl_append(&parserCtx->command_preLIST,COMMAND)
 #define WRITE_TOKEN(TOKEN)     tsl_append(&parserCtx->token_preLIST,TOKEN)
 
-/* This hack is to prevent problems with flex 2.5.33 and lower on Debian and
+/* This define is to prevent problems with flex 2.5.33 and lower on Debian and
  * Gentoo systems. When flex.2.5.4 and hiher is obligatory this define
  * may be removed
  */

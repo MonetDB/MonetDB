@@ -37,7 +37,7 @@
 
 static char *c, *e;
 
-/* This hack is to prevent problems with flex 2.5.33 and lower on Debian and
+/* This fix is to prevent problems with flex 2.5.33 and lower on Debian and
  * Gentoo systems. When flex.2.5.4 and higher is obligatory this define
  * may be removed
  */

@@ -189,14 +189,6 @@ int old_main(BAT* optbat, char* startNodes_name)
     struct_RF *rel_feedback;
 
     /* structure initialization */
-    /* 
-       r.aly@ewi.utwente.nl (2006-11-24): 
-       bad hack (2*) because of this function writes behind the allocated space 
-       and code ist not understood
-
-       roel.van.os@humanitech.nl (2006-12-15):
-       This bug should be fixed now, with the cleanup of nexi_rewriter.c
-    */
     txt_retr_model = GDKmalloc(MAX_QUERIES*sizeof(struct_RMT));
     img_retr_model = GDKmalloc(MAX_QUERIES*sizeof(struct_RMI));
     rel_feedback   = GDKmalloc(MAX_QUERIES*sizeof(struct_RF));

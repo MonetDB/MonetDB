@@ -72,7 +72,7 @@
 
 .COMMAND pf2tijah_node(
                       BAT[oid,str] doc_name,
-                      BAT[oid,int] doc_firstpre,
+                      BAT[oid,oid] doc_firstpre,
                       BAT[oid,oid] pfpre,
                       BAT[oid,oid] item,
 		      BAT[oid,int] kind,
@@ -159,18 +159,18 @@ var tj_dep_lock     := lock_create(); # tijah top dependency adm lock
 var tj_coll_lockbat := new(str,lock); # locks for all active collections
 
 # Comparisons
-const GREATER := 10;
-const LESS := 11;
-const EQUAL := 12;
-const GEQ := 13;
-const LEQ := 14;
+# const GREATER := 10;
+# const LESS := 11;
+# const EQUAL := 12;
+# const GEQ := 13;
+# const LEQ := 14;
 
 # Modifiers
-const NORMAL := 71;
-const PLUS := 72;
-const MINUS := 73;
-const MUST := 74;
-const MUST_NOT := 75;
+# const NORMAL := 71;
+# const PLUS := 72;
+# const MINUS := 73;
+# const MUST := 74;
+# const MUST_NOT := 75;
 
 const ENTITY_NUM := 10000;
 
@@ -498,7 +498,7 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
           new(oid,str).persists(true).bbpname(_tj_TagBat(ftiName));
       }
       new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_name");
-      new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_firstpre");
+      new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_firstpre");
       new(str,str).persists(true).bbpname("tj_" + ftiName + "_param");
       
       new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_tid1");
@@ -964,25 +964,6 @@ PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_
     }
 }
 
-ADDHELP("tj_finalize_collection", "flokstra & rode", "Jan 2007",
-"PARAMETERS:\n\
-- str ftiName: the name of the collection.\n
-DESCRIPTION:\n\
-Obsolete function which prepares the collection for usage of new documents\n\
-added to the collection. This is now done automagically",
-"pftijah");
-PROC tj_finalize_collection(str ftiName) : void
-{
-    var coll_lock := tj_get_collection_lock(ftiName);
-    lock_set(coll_lock);
-    var err := CATCH({
-      print("Warning: This function is obsolete.");
-      #_tj_finalize_collection(ftiName);
-    });
-    lock_unset(coll_lock);
-    if (not(isnil(err))) ERROR(err);
-}
-
 # internal finalize function
 PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat) : void
 {
@@ -1153,7 +1134,6 @@ PROC tj_trace( str s ) : void :=
         tracefile_handle.stream_flush();
     }
 }
-
 
 #
 #
@@ -2193,8 +2173,8 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
 
     ### Background probability:
     # For each term: collection term frequency tc(tm_i, col):
-    #var col_term_frq := tid_pre.reverse().histogram();
-    #small hack to get LMs running again...
+    # var col_term_frq := tid_pre.reverse().histogram();
+    # small fix to get LMs running again...
     var col_term_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms.reverse().project(int(0)));
 
     # Collection size len(col): int
@@ -2297,7 +2277,6 @@ PROC col_freq(BAT[oid,str] qenv) : bat[oid,dbl] :=
 ##
 # Returns the collection frequency of the term with the indicated tid
 ##
-# INCOMPLETE-TT function should have a ftiName parameter
 PROC col_freq(oid tid, BAT[oid,str] qenv) : dbl :=
 {
     var start_time := time();
@@ -2311,7 +2290,6 @@ PROC col_freq(oid tid, BAT[oid,str] qenv) : dbl :=
 ##
 # For each region in left, count the number of regions in right it contains.
 ##
-# INCOMPLETE-TT function should have a ftiName parameter
 PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type, BAT[oid,str] qenv) : bat[oid,dbl]    :=    
 {
     if ( trace ) tj_trace( "START reg_freq");
@@ -2350,7 +2328,6 @@ PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type, BAT[oid,str]
 
 
 # Calculate the term size of the region: how many terms does it contain?
-# INCOMPLETE-TT function should have a ftiName parameter
 PROC size_term( bat[oid,any] region, BAT[oid,str] qenv ) : bat[oid,dbl] := 
 {
     if ( trace ) tj_trace( "BEGIN size_term" );
@@ -2465,7 +2442,6 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv
 }
 
 
-# INCOMPLETE-TT function should have a ftiName parameter
 PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type,BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_wsumd" );
@@ -2676,51 +2652,6 @@ PROC and_prob(bat left, bat right) : bat :=
 
 }
 
-################################################################################
-# VALUE SELECTION
-################################################################################
-
-PROC near_val(bat region, int command, str value) : bat :=
-{
-    print( "Sorry, near_val is not yet supported" );
-    return region;
-
-    var r_value;
-    var reg_res := new(oid,dbl,ENTITY_NUM);
-    var reg_tmp := new(oid,oid,ENTITY_NUM);
-
-    var entity_pre := new(oid,oid,WORD_NUM);
-    entity_pre := load(col_name+"entity_pre");
-
-    # region:               [region-id, score]
-    # region.mirror():      [region-id, region-id]
-    # entity_pre:           [region-id, region pre-id]
-    # reg_tmp:              [region-id, region pre-id]
-    reg_tmp := region.mirror().join(entity_pre);
-
-    entity_pre := nil;
-
-    r_value := int(value);
-
-    if (command = GREATER)
-        reg_tmp := gt(reg_tmp, r_value);
-    else if (command = LESS)
-        reg_tmp := lt(reg_tmp, r_value);
-    else if (command = EQUAL)
-        reg_tmp := eq(reg_tmp, r_value);
-    else if (command = GEQ)
-        reg_tmp := gte(reg_tmp, r_value);
-    else if (command = LEQ)
-        reg_tmp := lte(reg_tmp, r_value);
-
-    reg_res := reg_tmp.mirror().join(region);
-
-    return reg_res;
-}
-#ADDHELP("near_val", "vojkan", "March 16, 2005",
-#"Selects regions that satisfy the inequality (integer) test.",
-#"TIJAH");
-
 ########################################################################################################
 # Procudures for executing value comparison:
 #       - eq            selects the regions with equal text content
@@ -2780,7 +2711,6 @@ PROC gt(bat ctx, int comp) : bat :=
 # PRIOR
 ################################################################################
 
-# INCOMPLETE-TT function should have a ftiName parameter
 PROC prior_ls(bat region, int size_type, BAT[oid,str] qenv) : bat := 
 {
 
@@ -3271,8 +3201,7 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 		        return GDK_FAIL;
 		    }
 
-	            // 64bit ERROR?? doc_start = *(oid*)BUNtail(doc_firstpre,r);
-	            doc_start = (oid)*(int*)BUNtail(doc_firstpre,r);
+	            doc_start = *(oid*)BUNtail(doc_firstpre,r);
 		    oid tj_nextIndex = tj_docIndex +  1;
 		    if ( BATcount(doc_firstpre) > tj_nextIndex ) {
 		        r = BUNfnd(doc_firstpre,&tj_nextIndex);
@@ -3280,7 +3209,7 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 	    	            stream_printf(GDKout,"Cannot do range for tijah-firstpre @  %d.\n",tj_docIndex);
 			    return GDK_FAIL;
 			}
-	                doc_end = (oid)*(int*)BUNtail(doc_firstpre,r) - 1;
+	                doc_end = *(oid*)BUNtail(doc_firstpre,r) - 1;
 		    } else {
 	                doc_end = oid_nil;
 		    }

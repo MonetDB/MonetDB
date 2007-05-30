@@ -605,7 +605,6 @@ procs();
 [ "tj_dump_collection(str) : void"																								  ]
 [ "tj_extend_collection(str, BAT[void,str]) : void"																						  ]
 [ "tj_finalize(str) : void"																									  ]
-[ "tj_finalize_collection(str) : void"																								  ]
 [ "tj_get_collection_lock(str) : lock"																								  ]
 [ "tj_get_ft_index(BAT[str,str], bit) : str"																							  ]
 [ "tj_global_init() : void"																									  ]
