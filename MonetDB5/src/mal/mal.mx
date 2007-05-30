@@ -374,14 +374,10 @@ This seemingly superflous action is necessary to simplify analyis of
 memory leakage problems later on.
 @c
 void mal_exit(void){
-	int t = 0, cnt[4], reruns=0;
+	int t = 0, reruns=0;
+	int freeclient=0, finishing=0, claimed=0, awaiting=0;
 	str err;
 	Client cntxt = mal_clients;
-
-	cnt[FREECLIENT]=0;
-	cnt[FINISHING]=0;
-	cnt[CLAIMED]=0;
-	cnt[AWAITING]=0;
 
 @-
 Before continuing we should make sure that all clients
@@ -392,17 +388,21 @@ Before continuing we should make sure that all clients
 		return;
 	}
 	do{
-		for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
-			cnt[cntxt->mode]++;
-		if( cnt[FINISHING]+cnt[CLAIMED]+cnt[AWAITING] ) 
+		for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
+			freeclient += cntxt->mode & FREECLIENT;
+			finishing += cntxt->mode & FINISHING;
+			claimed += cntxt->mode & CLAIMED;
+			awaiting += cntxt->mode & FREECLIENT;
+		}
+		if( finishing+claimed+awaiting)
 			MT_sleep_ms(1000);
 		if(reruns) 
 			stream_printf(mal_clients->fdout,"#MALexit: clients still active\n");
-	} while (cnt[FINISHING]+cnt[CLAIMED]+cnt[AWAITING] && ++reruns < 3);
+	} while (finishing+claimed+awaiting && ++reruns < 3);
 	if( reruns== 3)
 		stream_printf(mal_clients->fdout,"#MALexit: server forced exit"
 			" %d finishing %d claimed %d waiting\n", 
-			cnt[FINISHING],cnt[CLAIMED],cnt[AWAITING]);
+				finishing,claimed,awaiting);
 @c
 #if 0
 	/* skip this to solve random crashes, needs work */
