@@ -52,7 +52,7 @@ if [[ -z "$MONETDB5_PREFIX"  = "" ]] ; then
 fi
 
 # emit a warning  
-> -echo " * warning: This script is experimental"
+echo " * warning: This script is experimental"
 
 ACTION="--status"
 
@@ -121,16 +121,9 @@ do
 done
 #echo "ARGS $ARGS"
 
-# check if the database farm exists
-if [ ! -d $DBFARM ]
-then
-	echo "Creation of missing database storage area '$DBFARM'"
-	mkdir -p $DBFARM
-fi
-if [ ! -d $DBFARM ]
-then
-	echo "Database storage area '$DBFARM' is in accessible"
-fi
+# check if the database farm/logs exists
+[[ -d $DBFARM ]] || mkdir -p $DBFARM || echo "Failed to create $DBFARM!!!"
+[[ -d $DBLOGS ]] || mkdir -p $DBLOGS || echo "Failed to create $DBLOGS!!!"
 
 function getPID ()
 {
@@ -171,7 +164,7 @@ function ping_mserver()
 function start_mserver()
 {
 	# make sure the configuration file is in place
-	if [ ! -f $1/.monetdb.conf ]
+	if [ ! -f $DBFARM/$1/.monetdb.conf ]
 	then
 			cp $MONETDB5_PREFIX/etc/monetdb5.conf $DBFARM/$1/.monetdb.conf
 	fi
@@ -189,7 +182,7 @@ function start_mserver()
 		fi
 		if [ "$ARGS" = "" ]
 		then
-			if [ -f $1/.mserver5.args ]
+			if [ -f $DBFARM/$1/.mserver5.args ]
 			then
 				ARGS=`cat $DBFARM/$1/.mserver5.args`
 			else
