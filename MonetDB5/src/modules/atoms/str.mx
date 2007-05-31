@@ -1553,7 +1553,7 @@ strIconv(str *res, str org, str f, str t)
 	char *r;
 	ICONV_CONST char *from = org;
 
-	if (!cd) {
+	if (cd == (iconv_t)(-1)) {
 		GDKerror("strIconv: Cannot convert strings from (%s) to (%s)\n", f, t);
 		return GDK_FAIL;
 	}
