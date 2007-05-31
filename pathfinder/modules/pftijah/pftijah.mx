@@ -1451,8 +1451,11 @@ PROC select_startnodes_frag(bat[void,oid] startNodes, BAT[oid,str] qenv) : bat[o
 PROC select_node(BAT[oid,str] qenv) : bat[oid,dbl] := 
 {
     # The table pfpre only stores element nodes, so we can use it as a filter:
-    var pfpre  := bat( "tj_" + qenv.find(QENV_FTINAME) + "_pfpre");
+    var pfpre    := bat( "tj_" + qenv.find(QENV_FTINAME) + "_pfpre");
+    var firstpre := bat( "tj_" + qenv.find(QENV_FTINAME) + "_doc_firstpre");
     
+    # filter out the top document nodes which have no 'tag'
+    pfpre := pfpre.kdiff(firstpre.reverse());
     return pfpre.project( dbl(qenv.find(QENV_SCOREBASE) ) );
 }
 
