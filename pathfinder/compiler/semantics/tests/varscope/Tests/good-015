@@ -1,6 +1,0 @@
-#!/bin/bash
-
-NAME=$1
-
-pf -s6 < $NAME.xq
-echo $?

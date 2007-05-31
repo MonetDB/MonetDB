@@ -1,3 +1,0 @@
-{ 
-  ERROR ("this is an error enclosed in curly brackets");
-}

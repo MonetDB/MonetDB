@@ -1,7 +1,0 @@
-var x := new (oid, int);
-x.type().print();
-x.head().print();
-x.tail().print();
-x.htype().print();
-x.ttype().print();
-quit();

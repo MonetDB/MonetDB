@@ -1,3 +1,0 @@
-<!ELEMENT foo (bar)>
-<!ELEMENT bar    (#PCDATA)>
-<!ENTITY eacute  "&#233;" ><!-- small e, acute accent -->

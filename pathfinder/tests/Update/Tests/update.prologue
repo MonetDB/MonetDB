@@ -1,6 +1,0 @@
-module("unix");
-var TSTSRCDIR := getenv("TSTSRCDIR");
-shred_doc(TSTSRCDIR + "/" + "testdoc.xml", "testdoc.xml", "testdoc.xml", 10LL);
-
-# disable property checking on intermediate results (-d8)
-debugmask(and(debugmask(),xor(INT_MAX,8)));

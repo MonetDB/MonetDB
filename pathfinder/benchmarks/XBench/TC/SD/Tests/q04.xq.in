@@ -1,7 +1,0 @@
-let $ent := doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e[hwg/hw="you"]
-for $prevEnt in $ent/preceding::e[1]
-return
-    <Output>
-        <CurrentEntry>{$ent/hwg/hw/text()}</CurrentEntry>
-        <PreviousEntry>{$prevEnt/hwg/hw/text()}</PreviousEntry>
-    </Output>
