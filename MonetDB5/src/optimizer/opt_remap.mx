@@ -148,15 +148,19 @@ OPTremapSwitched(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	for(i=0;OperatorMap[i].src;i++)
 	if( strcmp(fcn,OperatorMap[i].src)==0){
 		/* found a candidate for a switch */
-		getConstant(mb, getArg(pci, 2)).val.sval= putName(OperatorMap[i].dst,OperatorMap[i].len);
-		getConstant(mb, getArg(pci, 2)).len= strlen(fcn);
+		getConstant(mb, getArg(pci, 2)).val.sval = putName(OperatorMap[i].dst,OperatorMap[i].len);
+		getConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
-		r=OPTremapDirect(mb, stk, pci, scope);
-		if( r) return 1;
-		/* restore the state */
-		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
+		r= OPTremapDirect(mb, stk, pci, scope);
+
+		/* always restore the allocated function name */
 		getConstant(mb, getArg(pci, 2)).val.sval= fcn;
 		getConstant(mb, getArg(pci, 2)).len= strlen(fcn);
+
+		if (r) return 1;
+
+		/* restore the arguments */
+		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
 	}
 	return 0;
 }
@@ -182,7 +186,7 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				OPTremapSwitched(mb, stk, p, scope)){
 				freeInstruction(p); 
 				doit++;
-			} else{
+			} else {
 				pushInstruction(mb, p);
 			}
 		} else
