@@ -573,11 +573,6 @@ runScenarioBody(Client c)
 {
 	str msg= MAL_SUCCEED;
 
-/* postponed
-	if( !isServerOwner(c) ){
-		c->mode = FINISHING;
-	}
-*/
 	while (c->mode > FINISHING) {
 		msg = MAL_SUCCEED;
 		@:runPhase(MAL_SCENARIO_READER)@

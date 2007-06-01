@@ -241,7 +241,6 @@ grp_new(BAT *b, BAT *h)
 {
 	if (h) {
 		BATkey(h, TRUE);
-		BATkey(BATmirror(h), FALSE);
 		h->tsorted = 0;
 		if ((h->hsorted = BAThordered(b)) & 1) {
 			if (BATcount(h) == BATcount(b)) {
@@ -249,7 +248,6 @@ grp_new(BAT *b, BAT *h)
 			}
 		} else if (BATorder(h) == NULL) {
 			BBPreclaim(h);
-			if (b) BBPreclaim(b);
 			return GDK_FAIL;
 		}
 		BBPkeepref(h->batCacheid);
@@ -276,7 +274,7 @@ In the unary group case, we optimized processing on 1-byte
 and 2-byte values by using direct mapping in an array instead of
 hashing.
 @c
-#define HASH_chr(p) ((hash_t) (*(unsigned char*) (p)))
+#define HASH_bte(p) ((hash_t) (*(unsigned char*) (p)))
 #define HASH_sht(p) ((hash_t) (*(unsigned short*) (p)))
 #define HASH_int(p) ((hash_t) *(unsigned int*) (p))
 #define HASH_lng(p) ((hash_t)(((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
@@ -437,35 +435,15 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 	BUN p, q, r;
 	BAT *map = NULL;
 	declare_@3
-#ifdef MKspeedup
-	size_t idx;
-#endif
 
 	map_init_@5(map,hash,mask,entry,mapsize);
 	if (map == NULL)
 		return NULL;
 
 	/* core hash grouping algorithm */
-#ifdef MKspeedup
-/* MK: Experimental code. Should be triggered when you attempt
-to consume a lot of your physical memory. First indication, a factor 2.
-*/
-		(void) q;
-
-        if( BATprepareHash(BATmirror(b))){
-            stream_printf(GDKout,"#M5 IO group join\n");
-            for( idx=0; idx< b->thash->mask; idx++)
-            for( xx=b->thash->hash[idx]; xx != HASH_MAX; xx= b->thash->link[xx]){
-		declare_@4
-		ptr tcur;
-		p= BUNptr(b,xx);
-		tcur = BUN@2(b,p);
-
-#else
 	BATloopFast(b, p, q, xx) {
 		declare_@4
 		ptr tcur = BUN@2(b,p);
-#endif
 
 		/* hash-lookup of 'tcur' in map */
 		hash_t c = HASH_@1(tcur);
@@ -496,10 +474,6 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 			*dst++ = *(oid*) BUNhead(b,p);
 		*dst++ = m?zz:e->gid;
 	}
-#ifdef MKspeedup
-	BATsort(BATmirror(bn));
-	}
-#endif
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
@@ -515,25 +489,29 @@ bunins_failed:
 	return NULL;
 }
 @c
-int
+static int
 tailtype(BAT *b, int str_trick)
 {
 	int tpe = ATOMstorage(b->ttype);	/* standard type remappings */
 
 	/* more daring remappings possible under simple equality */
-	if (tpe == TYPE_flt) {
+	switch (tpe) {
+	case TYPE_chr:
+		return TYPE_bte;
+	case TYPE_flt:
 		return TYPE_int;
-	} else if (tpe == TYPE_dbl) {
+	case TYPE_dbl:
 		return TYPE_lng;
-	} else if (tpe == TYPE_str && str_trick && GDK_ELIMDOUBLES((b->theap))) {
-		return TYPE_var;	/* string offsets are identifying integers */
+	case TYPE_str:
+		if (str_trick && GDK_ELIMDOUBLES((b->theap)))
+			return TYPE_var;	/* string offsets are identifying integers */
 	}
 	return tpe;
 }
 
 /* Generate both 'normal' CTgroup and clustered CTgroups */
 @= wrappedgroupinner
-@:groupAll(chr,tloc,simple,@1,@2)@
+@:groupAll(bte,tloc,simple,@1,@2)@
 @:groupAll(sht,tloc,simple,@1,@2)@
 @:groupAll(int,tloc,simple,@1,@2)@
 @:groupAll(lng,tloc,simple,@1,@2)@
@@ -632,8 +610,8 @@ bits(size_t i)
 @= choosegroupSTANDARD
 	/* Choose appropriate @4 CTgroup implementation */
 	switch(@1) {
-	case TYPE_chr:
-		@?@5:returnvalue(@5)@ CTgroup_chr_@4_STANDARD(b,@2,@3);
+	case TYPE_bte:
+		@?@5:returnvalue(@5)@ CTgroup_bte_@4_STANDARD(b,@2,@3);
 		break;
 	case TYPE_sht:
 		@?@5:returnvalue(@5)@ CTgroup_sht_@4_STANDARD(b,@2,@3);
@@ -652,8 +630,8 @@ bits(size_t i)
 @= choosegroupCUSTOM
 	/* Choose appropriate @4 CTgroup implementation */
 	switch(@1) {
-	case TYPE_chr:
-		@?@5:returnvalue(@5)@ CTgroup_chr_@4_CUSTOM(mask,*rng,b,@2,@3);
+	case TYPE_bte:
+		@?@5:returnvalue(@5)@ CTgroup_bte_@4_CUSTOM(mask,*rng,b,@2,@3);
 		break;
 	case TYPE_sht:
 		@?@5:returnvalue(@5)@ CTgroup_sht_@4_CUSTOM(mask,*rng,b,@2,@3);
@@ -670,7 +648,7 @@ bits(size_t i)
 	}
 
 @= derive
-BAT *
+static BAT *
 CTderive_@1_@2_@5(BAT* ct_histo, BAT *ct_map, BAT *b, BAT *bn, map_T *m)
 {
 	oid *dst = (oid*) BUNfirst(bn);
@@ -679,7 +657,7 @@ CTderive_@1_@2_@5(BAT* ct_histo, BAT *ct_map, BAT *b, BAT *bn, map_T *m)
 	BUN p, q, r, cp = BUNfirst(ct_map) - yy;
 	mapentry_t entry, *e;
 	BAT *map;
-	int n = bits(BATcount(ct_histo)),*N = &n;
+	int n = bits(BATcount(ct_histo)), *N = &n;
 	declare_@4
 	declare_mask_CUSTOM
 	int custom_rng = BATcount(ct_histo); /* expected number of groups */
@@ -719,7 +697,7 @@ CTderive_@1_@2_@5(BAT* ct_histo, BAT *ct_map, BAT *b, BAT *bn, map_T *m)
 			entry.gid = *(oid*) BUNhead(b,p);
 		}
 		entry.hcur = hcur;
-		entry.link =  hash[c];
+		entry.link = hash[c];
 		hash[c] = mapsize++;
 		bunfastins(map, &entry, tcur);
 		e = &entry;
@@ -746,12 +724,12 @@ bunins_failed:
 
 /* Generate both 'normal' CTderive and clustered CTderive */
 @= wrappedderive
-@:derive(sync,chr,tloc,simple,@1)@
+@:derive(sync,bte,tloc,simple,@1)@
 @:derive(sync,sht,tloc,simple,@1)@
 @:derive(sync,int,tloc,simple,@1)@
 @:derive(sync,lng,tloc,simple,@1)@
 @:derive(sync,any,tail,atom,@1)@
-@:derive(hash,chr,tloc,simple,@1)@
+@:derive(hash,bte,tloc,simple,@1)@
 @:derive(hash,sht,tloc,simple,@1)@
 @:derive(hash,int,tloc,simple,@1)@
 @:derive(hash,lng,tloc,simple,@1)@
@@ -763,8 +741,8 @@ bunins_failed:
 @= choosederive
 	/* Choose appropriate (@1 && @2) CTderive implementation */
 	switch(tt) {
-	case TYPE_chr:
-		histo = CTderive_@1_chr_@2(ct_histo,ct_map,b,bn,m);
+	case TYPE_bte:
+		histo = CTderive_@1_bte_@2(ct_histo,ct_map,b,bn,m);
 		break;
 	case TYPE_sht:
 		histo = CTderive_@1_sht_@2(ct_histo,ct_map,b,bn,m);

@@ -115,6 +115,51 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	return 1;
 }
 
+@-
+The comparison multiplex operations with a constant head may be supported
+by reverse of the operation.
+@c
+static struct{
+	char *src, *dst;
+	int len;
+}OperatorMap[]={
+{"<", ">",1},
+{">", "<",1},
+{">=", "<=",2},
+{"<=", ">=",2},
+{"==", "==",2},
+{"!=", "!=",2},
+{0,0,0}};
+
+static int
+OPTremapSwitched(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
+	char *fcn;
+	int r,i;
+	(void) stk;
+	(void) scope;
+
+	if( getModuleId(pci)!= malRef &&
+	    getFunctionId(pci) != multiplexRef &&
+	    !isConstant(mb,getArg(pci,1)) &&
+	    !isConstant(mb,getArg(pci,2)) &&
+	    !isConstant(mb,getArg(pci,4))) 
+			return 0;
+	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
+	for(i=0;OperatorMap[i].src;i++)
+	if( strcmp(fcn,OperatorMap[i].src)==0){
+		/* found a candidate for a switch */
+		getConstant(mb, getArg(pci, 2)).val.sval= putName(OperatorMap[i].dst,OperatorMap[i].len);
+		getConstant(mb, getArg(pci, 2)).len= strlen(fcn);
+		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
+		r=OPTremapDirect(mb, stk, pci, scope);
+		if( r) return 1;
+		/* restore the state */
+		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
+		getConstant(mb, getArg(pci, 2)).val.sval= fcn;
+		getConstant(mb, getArg(pci, 2)).len= strlen(fcn);
+	}
+	return 0;
+}
 static int
 OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -133,7 +178,8 @@ OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		if ( getModuleId(p) == malRef && 
 			getFunctionId(p) == multiplexRef) {
-			if(OPTremapDirect(mb, stk, p, scope)){
+			if(	OPTremapDirect(mb, stk, p, scope) ||
+				OPTremapSwitched(mb, stk, p, scope)){
 				freeInstruction(p); 
 				doit++;
 			} else{

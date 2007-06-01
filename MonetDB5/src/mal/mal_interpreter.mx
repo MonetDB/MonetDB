@@ -171,7 +171,7 @@ Copy the constant values onto the stack frame
 	for(i= @1; i< mb->vtop; i++)
 	if( isConstant(mb,i) > 0 ){
 		lhs = &stk->stk[i];
-		rhs = &getVarConstant(mb,i);
+		rhs = &getConstant(mb,i);
 		VALcopy2(lhs,rhs);
 	} else {
 		lhs = &stk->stk[i];

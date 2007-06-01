@@ -434,7 +434,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		for(i= psig->argc; i< mb->vtop; i++)
 		if( isConstant(mb,i) > 0 ){
 			lhs = &stk->stk[i];
-			rhs = &getVarConstant(mb,i);
+			rhs = &getConstant(mb,i);
 			VALcopy2(lhs,rhs);
 		} else {
 			lhs = &stk->stk[i];

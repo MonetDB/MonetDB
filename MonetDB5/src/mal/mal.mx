@@ -360,6 +360,7 @@ int mal_init(){
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
 
 	tstAligned();
+	memset((char*)mal_clients, 0, sizeof(ClientRec)*MAL_MAXCLIENTS);
 	initNamespace();
 	initParser();
 	if( malBootstrap() == 0) {
@@ -388,11 +389,14 @@ Before continuing we should make sure that all clients
 		return;
 	}
 	do{
+		freeclient=0; finishing=0; claimed=0; awaiting=0;
 		for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
 			freeclient += cntxt->mode & FREECLIENT;
 			finishing += cntxt->mode & FINISHING;
 			claimed += cntxt->mode & CLAIMED;
-			awaiting += cntxt->mode & FREECLIENT;
+			awaiting += cntxt->mode & AWAITING;
+			if( cntxt->mode & FINISHING)
+				printf("#CLient %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
 		}
 		if( finishing+claimed+awaiting)
 			MT_sleep_ms(1000);

@@ -236,8 +236,8 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str nme, fcn,msg=MAL_SUCCEED;
 
 	(void)stk;
-	nme= getVarConstant(mb, getArg(p,1)).val.sval;
-	fcn= getVarConstant(mb, getArg(p,2)).val.sval;
+	nme= getConstant(mb, getArg(p,1)).val.sval;
+	fcn= getConstant(mb, getArg(p,2)).val.sval;
 #ifdef DEBUG_OPT_MACRO
 	printf("@1optimizer: %s.%s\n",nme,fcn);
 #endif
@@ -272,7 +272,7 @@ str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	(void) stk; 
 	removeInstruction(mb,p);
-	fcn= getVarConstant(mb, getArg(p,1)).val.sval;
+	fcn= getConstant(mb, getArg(p,1)).val.sval;
 	s= findModule(MCgetClient()->nspace, putName(fcn,strlen(fcn)));
 #ifdef DEBUG_OPT_MACRO
 	printf("@1optimizer: %s\n",fcn);

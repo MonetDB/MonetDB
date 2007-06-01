@@ -1,6 +1,8 @@
 	b:= bat.new(:oid,:int);
 # a correct call
 	z:bat[:oid,:int]:= mal.multiplex("calc","+",b,1);
+	f:bat[:oid,:bit]:= mal.multiplex("calc","<",b,3);
+	f:bat[:oid,:bit]:= mal.multiplex("calc","<",3,b);
 
 	d:= bat.new(:oid,:str);
 	a:bat[:oid,:bit]:= mal.multiplex("calc","isnil",d);

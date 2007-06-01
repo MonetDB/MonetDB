@@ -193,7 +193,7 @@ their isolated runtime environment.
 	if( location[getArg(p,0)] == 0){
 		db = 0;
 		if( isConstant(mb,getArg(p,@1)) )
-			db= getVarConstant(mb, getArg(p,@1)).val.sval;
+			db= getConstant(mb, getArg(p,@1)).val.sval;
 		for(k=0; k<dbtop; k++)
 			if( strcmp(db, dbalias[k].dbname)== 0)
 				break;

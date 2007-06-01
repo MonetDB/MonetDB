@@ -130,7 +130,7 @@ a constant itself.
 @c
 					isConstant(mb,getArg(p,0))= TRUE;
 					setFixed(mb,getArg(p,0));
-					getVarConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
+					getConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
 					env->stk[getArg(p,0)].vtype= TYPE_int; /* no garbage */
 					freeInstruction(p);
 #ifdef DEBUG_OPT_CX

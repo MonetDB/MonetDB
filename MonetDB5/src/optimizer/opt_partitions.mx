@@ -249,9 +249,9 @@ Skip the instructions that are not affected by partitions
 			alias[getArg(p,0)]= getArg(q,0);
 			bpm[getArg(p,0)] = 1;
 			snprintf(name,1024,"%s_%s_%s",
-				getVarConstant(mb, getArg(p,1)).val.sval,
-				getVarConstant(mb, getArg(p,2)).val.sval,
-				getVarConstant(mb, getArg(p,3)).val.sval );
+				getConstant(mb, getArg(p,1)).val.sval,
+				getConstant(mb, getArg(p,2)).val.sval,
+				getConstant(mb, getArg(p,3)).val.sval );
 			pushStr(mb, q,name);
 			continue;
 		}

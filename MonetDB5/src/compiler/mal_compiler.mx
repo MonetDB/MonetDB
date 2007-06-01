@@ -168,7 +168,7 @@ mccValue(stream *f, MalBlkPtr mb, int i)
 	int sz = 0;
 	ValPtr val;
 
-	val = &getVarConstant(mb, i);
+	val = &getConstant(mb, i);
 	if (val->vtype == TYPE_str) {
 		stream_printf(f, "\"%s\"", val->val.sval);
 	} else {
@@ -393,7 +393,7 @@ mccMultiplex(stream *f, MalBlkPtr mb, InstrPtr p)
 	if (getModuleId(pn))
 		setModuleId(p,NULL);
 	setModuleId(pn, NULL);
-	setFunctionId(pn, GDKstrdup(getVarConstant(mb, pn->argv[pn->retc]).val.sval));
+	setFunctionId(pn, GDKstrdup(getConstant(mb, pn->argv[pn->retc]).val.sval));
 	delArgument(pn, pn->retc);
 	typeChecker(MCgetClient()->nspace, mb, pn, TRUE);
 

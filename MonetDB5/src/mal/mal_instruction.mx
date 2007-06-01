@@ -431,9 +431,10 @@ for separate name space management.
 
 #define getVar(M,I)     (M)->var[I]
 #define getVarTmp(M,I)      (M)->var[I]->tmpindex
-#define isConstant(M,I) ((M)->var[I]->isaconstant)
 #define isTypeVar(M,I)  ((M)->var[I]->isatypevar)
 #define isTmpVar(M,I)   (!(M)->var[I]->name || *(M)->var[I]->name == TMPMARKER)
+#define getVarType(M,I)     ((M)->var[I]->type)
+#define getVarGDKType(M,I)      ((M)->var[I]->gdktype)
 #define getVarScope(M,I)   ((M)->var[I]->scope)
 #define getVarProperties(M,I)   ((M)->var[I]->props)
 
@@ -444,9 +445,8 @@ for separate name space management.
 #define isVarGarbage(M,I)     ((M)->var[I]->cleanup)
 #define setVarUsed(M,I,V)		((M)->var[I]->isused= V)
 #define isVarUsed(M,I)		((M)->var[I]->isused)
-#define getVarConstant(M,I)     ((M)->var[I]->value)
-#define getVarType(M,I)     ((M)->var[I]->type)
-#define getVarGDKType(M,I)      ((M)->var[I]->gdktype)
+#define getConstant(M,I)     ((M)->var[I]->value)
+#define isConstant(M,I) ((M)->var[I]->isaconstant)
 
 #define getLastUpdate(M,I)	((M)->var[I]->lastUpdate)
 #define getEndLifespan(M,I)	((M)->var[I]->endLifespan)
@@ -1186,7 +1186,7 @@ getType(MalBlkPtr mb, str nme)
 str
 getArgDefault(MalBlkPtr mb, InstrPtr p, int idx)
 {
-	ValPtr v = &getVarConstant(mb, getArg(p, idx));
+	ValPtr v = &getConstant(mb, getArg(p, idx));
 
 	if (v->vtype == TYPE_str)
 		return v->val.sval;
@@ -1776,7 +1776,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	k = newTmpVariable(mb, type);
 	isConstant(mb, k) = 1;
 	setFixed(mb, k);
-	vr = &getVarConstant(mb, k);
+	vr = &getConstant(mb, k);
 	*vr = *cst;
 	/*memcpy((char *) vr, cst, sizeof(ValRecord));*/
 	return k;

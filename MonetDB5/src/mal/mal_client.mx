@@ -67,7 +67,7 @@ are located in mal\_startup.
 #define _MAL_CLIENT_H_
 #define bitset int
 
-/* #define MAL_CLIENT_DEBUG */
+/* #define MAL_CLIENT_DEBUG*/
 
 #include "mal_resolve.h"
 #include "mal_profiler.h"
@@ -262,7 +262,7 @@ control to simplify debugging with external debuggers.
 
 A new Client structure can only be requested if the 'adm'
 user is available, because it guarantees a way to deliver
-any error message.
+ny error message.
 Searching a free client record is encapsulated in
 a critical section to hand them out one-at-a-time.
 Marking them as being claimed avoids any interference from parallel
@@ -365,7 +365,7 @@ Client MCnewClient(){
 		return NULL;
 	c->idx= c - mal_clients;
 #ifdef MAL_CLIENT_DEBUG
-	printf("New client created %d\n",c-mal_clients);
+	printf("New client created %d\n", (int)(c-mal_clients));
 #endif
 	return c;
 }
@@ -589,9 +589,9 @@ void freeClient(Client c)
 The threads may not be removed, but should become dormant
 @c
 	c->user = oid_nil;
-	c->mode = FREECLIENT;
 	c->mythread = 0;
 	c->mypid = 0;
+	c->mode = FREECLIENT;
 	THRdel(t);	/* you may perform suicide */
 	/* THRsuspend(c->mythread); still unsafe */
 }
@@ -837,7 +837,7 @@ int MCreadClient(Client c){
 	bstream *in = c->fdin;
 
 #ifdef MAL_CLIENT_DEBUG
-	printf("# streamClient %d\n",c->user);
+	printf("# streamClient %d\n",(int)c->user);
 #endif
 
 	while (in->pos < in->len && 
