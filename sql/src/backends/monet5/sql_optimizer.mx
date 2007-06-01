@@ -269,8 +269,8 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 
 		if( getModuleId(p) == sqlRef && 
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
-			char *sname = getVarConstant(mb, getArg(p,1)).val.sval;
-			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
+			char *sname = getConstant(mb, getArg(p,1)).val.sval;
+			char *tname = getConstant(mb, getArg(p,2)).val.sval;
 			char *cname = NULL;
 			int not_null = 0;
 			BAT *b;
@@ -278,10 +278,10 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			int mode;
 
 			if (f == binddbatRef) {
-				mode = getVarConstant(mb, getArg(p,3)).val.ival;
+				mode = getConstant(mb, getArg(p,3)).val.ival;
 			} else {
-				cname = getVarConstant(mb, getArg(p,3)).val.sval;
-				mode = getVarConstant(mb, getArg(p,4)).val.ival;
+				cname = getConstant(mb, getArg(p,3)).val.sval;
+				mode = getConstant(mb, getArg(p,4)).val.ival;
 			}
 
 			/* Mark to be updated columns */
@@ -349,7 +349,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				bit t = TRUE;
 
 				rows += BATcount(b);
-				getVarConstant(mb, k).val.bval = b->batCacheid;
+				getConstant(mb, k).val.bval = b->batCacheid;
 				if (mb->var[k]->props == 0)
 					mb->var[k]->props = newPropertySet();
 				setProperty(getProps(mb,k),"bid", "=", TYPE_int, &b->batCacheid);
@@ -361,10 +361,10 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			}
 		} else if (getModuleId(p) == sqlRef && 
 				f == appendRef && p->argc == 6 ) {
-			char *sname = getVarConstant(mb, getArg(p,1)).val.sval;
-			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
-			char *cname = getVarConstant(mb, getArg(p,3)).val.sval;
-			int mode = getVarConstant(mb, getArg(p,4)).val.ival;
+			char *sname = getConstant(mb, getArg(p,1)).val.sval;
+			char *tname = getConstant(mb, getArg(p,2)).val.sval;
+			char *cname = getConstant(mb, getArg(p,3)).val.sval;
+			int mode = getConstant(mb, getArg(p,4)).val.ival;
 			for(j=0; j<k; j++) {
 				if( strcmp(sname,bind[j].schema)==0 &&
 			   	    strcmp(tname,bind[j].table)==0 &&
