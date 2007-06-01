@@ -57,6 +57,19 @@
 .COMMAND tj_setlog(str) : void = CMDtj_setlog;
  "intialize outputfile for tj_log"
 
+.COMMAND left_add(BAT[oid,dbl] l, BAT[oid,dbl] r) : BAT[oid,dbl] = CMDleft_add_dbl;
+"Fast in-bat implementation of 2 head sorted bat addition with synchronized oid"
+.COMMAND left_sub(BAT[oid,dbl] l, BAT[oid,dbl] r) : BAT[oid,dbl] = CMDleft_sub_dbl;
+"Fast in-bat implementation of 2 head sorted bat subtraction with synchronized oid"
+.COMMAND left_mul(BAT[oid,dbl] l, BAT[oid,dbl] r) : BAT[oid,dbl] = CMDleft_mul_dbl;
+"Fast in-bat implementation of 2 head sorted bat multiplication with synchronized oid"
+.COMMAND left_div(BAT[oid,dbl] l, BAT[oid,dbl] r) : BAT[oid,dbl] = CMDleft_div_dbl;
+"Fast in-bat implementation of 2 head sorted bat division with synchronized oid"
+.COMMAND left_div(BAT[oid,dbl] l, BAT[oid,int] r) : BAT[oid,dbl] = CMDleft_div_dbl_int;
+"Fast in-bat implementation of 2 head sorted bat division, right type int with synchronized oid"
+.COMMAND left_log(BAT[oid,dbl] l) : BAT[oid,dbl] = CMDleft_log_dbl;
+"Fast in-bat implementation of in bat log() with synchronized oid"
+
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
                       int	    niters,
@@ -3238,6 +3251,204 @@ int CMDtijah_tokenize (str* res, str arg)
 
 	return GDK_SUCCEED;
 }
+
+
+/**
+ * In-place synchronized oid computation experiment by Henning and Jan
+ *
+ */
+static int bat_oid_sort_chck(BAT* b) {
+	(void)b;
+        /* INCOMPLETE, ASSERTS HERE */
+	return 1;
+}
+
+int CMDleft_add_dbl(BAT** res, BAT*l, BAT*r) {
+	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
+	    return  GDK_FAIL;
+	/* make the left/res bat writable */
+	*res = BATsetaccess(l,BAT_WRITE);
+	(*res)->batDirty = TRUE;
+ 
+	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
+	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
+
+	while ( (lp < lq) && (rp < rq) ) {
+		oid lv = *(oid*)BUNhead(l,lp);
+		oid rv = *(oid*)BUNhead(r,rp);
+
+	        if ( lv == rv ) {
+		    dbl* dres = (dbl*)BUNtail(l,lp);
+		    *dres += *(dbl*)BUNtail(r,rp);
+		    lp += lx; rp += rx;
+		} else if ( lv < rv ) {
+		    do {
+		    	lp += lx;
+		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
+		} else /* lv > rv */ {
+		    do {
+		        rp += rx;
+		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
+		}
+	}
+	BBPfix(BBPcacheid(*res));
+	return GDK_SUCCEED;
+}
+
+int CMDleft_sub_dbl(BAT** res, BAT*l, BAT*r) {
+	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
+	    return  GDK_FAIL;
+	/* make the left/res bat writable */
+	*res = BATsetaccess(l,BAT_WRITE);
+	(*res)->batDirty = TRUE;
+ 
+	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
+	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
+
+	while ( (lp < lq) && (rp < rq) ) {
+		oid lv = *(oid*)BUNhead(l,lp);
+		oid rv = *(oid*)BUNhead(r,rp);
+
+	        if ( lv == rv ) {
+		    dbl* dres = (dbl*)BUNtail(l,lp);
+		    *dres -= *(dbl*)BUNtail(r,rp);
+		    lp += lx; rp += rx;
+		} else if ( lv < rv ) {
+		    do {
+		    	lp += lx;
+		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
+		} else /* lv > rv */ {
+		    do {
+		        rp += rx;
+		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
+		}
+	}
+	BBPfix(BBPcacheid(*res));
+	return GDK_SUCCEED;
+}
+
+
+int CMDleft_mul_dbl(BAT** res, BAT*l, BAT*r) {
+	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
+	    return  GDK_FAIL;
+	/* make the left/res bat writable */
+	*res = BATsetaccess(l,BAT_WRITE);
+	(*res)->batDirty = TRUE;
+ 
+	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
+	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
+
+	while ( (lp < lq) && (rp < rq) ) {
+		oid lv = *(oid*)BUNhead(l,lp);
+		oid rv = *(oid*)BUNhead(r,rp);
+
+	        if ( lv == rv ) {
+		    dbl* dres = (dbl*)BUNtail(l,lp);
+		    *dres *= *(dbl*)BUNtail(r,rp);
+		    lp += lx; rp += rx;
+		} else if ( lv < rv ) {
+		    do {
+		    	lp += lx;
+		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
+		} else /* lv > rv */ {
+		    do {
+		        rp += rx;
+		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
+		}
+	}
+	BBPfix(BBPcacheid(*res));
+	return GDK_SUCCEED;
+}
+
+int CMDleft_div_dbl(BAT** res, BAT*l, BAT*r) {
+	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
+	    return  GDK_FAIL;
+	/* make the left/res bat writable */
+	*res = BATsetaccess(l,BAT_WRITE);
+	(*res)->batDirty = TRUE;
+ 
+	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
+	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
+
+	while ( (lp < lq) && (rp < rq) ) {
+		oid lv = *(oid*)BUNhead(l,lp);
+		oid rv = *(oid*)BUNhead(r,rp);
+
+	        if ( lv == rv ) {
+		    dbl* dres = (dbl*)BUNtail(l,lp);
+		    *dres /= *(dbl*)BUNtail(r,rp);
+		    lp += lx; rp += rx;
+		} else if ( lv < rv ) {
+		    do {
+		    	lp += lx;
+		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
+		} else /* lv > rv */ {
+		    do {
+		        rp += rx;
+		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
+		}
+	}
+	BBPfix(BBPcacheid(*res));
+	return GDK_SUCCEED;
+}
+
+int CMDleft_div_dbl_int(BAT** res, BAT*l, BAT*r) {
+	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
+	    return  GDK_FAIL;
+	/* make the left/res bat writable */
+	*res = BATsetaccess(l,BAT_WRITE);
+	(*res)->batDirty = TRUE;
+ 
+	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
+	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
+
+	while ( (lp < lq) && (rp < rq) ) {
+		oid lv = *(oid*)BUNhead(l,lp);
+		oid rv = *(oid*)BUNhead(r,rp);
+
+	        if ( lv == rv ) {
+		    dbl* dres = (dbl*)BUNtail(l,lp);
+		    *dres /= (dbl)(*dres / *(int*)BUNtail(r,rp));
+		    lp += lx; rp += rx;
+		} else if ( lv < rv ) {
+		    do {
+		    	lp += lx;
+		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
+		} else /* lv > rv */ {
+		    do {
+		        rp += rx;
+		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
+		}
+	}
+	BBPfix(BBPcacheid(*res));
+	return GDK_SUCCEED;
+}
+
+int CMDleft_log_dbl(BAT** res, BAT*l) {
+	if ( !bat_oid_sort_chck(l) )
+	    return  GDK_FAIL;
+	/* make the left/res bat writable */
+	*res = BATsetaccess(l,BAT_WRITE);
+	(*res)->batDirty = TRUE;
+ 
+	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
+
+	while ( (lp < lq) ) {
+		dbl* dres = (dbl*)BUNtail(l,lp);
+		*dres = log(*dres);
+		lp += lx;
+	}
+	BBPfix(BBPcacheid(*res));
+	return GDK_SUCCEED;
+}
+
+
+/*
+ *
+ * END of experiment
+ *
+ *
+ */
 
 int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre, BAT* item, BAT* kind, BAT* doc_loaded ) {
         int debug = 0;
