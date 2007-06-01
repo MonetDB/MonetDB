@@ -1,0 +1,8 @@
+
+scripts_sql = {
+	EXT = sql
+	DIR = datadir/MonetDB/sql
+	SOURCES = geom.sql
+}
+
+EXTRA_DIST_DIR = Tests

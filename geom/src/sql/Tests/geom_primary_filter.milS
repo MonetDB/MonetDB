@@ -1,0 +1,47 @@
+module(geom);
+
+var minX := flt(0);
+var minY := flt(0);
+var maxX := flt(100);
+var maxY := flt(100);
+
+var line0 := LineFromText("LINESTRING(60 60, 80 60)");
+var line1 := LineFromText("LINESTRING(40 40, 60 40)");
+var line2 := LineFromText("LINESTRING(20 20, 40 20)");
+
+var lines := bat(void, geom_wkb);
+lines.seqbase(0@0);
+lines.append(line0);
+lines.append(line1);
+lines.append(line2);
+
+var cluster := geom_cluster("c", lines, geom_mbr(minX,minY, maxX,maxY));
+
+cluster.geom_cluster_print();
+
+print(geom_primary_filter(cluster, line0));
+
+print(geom_primary_filter(cluster, line1));
+
+print(geom_primary_filter(cluster, line2));
+
+
+var cluster2 := geom_cluster("c2", lines, geom_mbr(minX,minY, maxX,maxY));
+print(geom_primary_filter(cluster, cluster2));
+
+
+var pointCluster := geom_cluster("points");
+var lineCluster := geom_cluster("lines");
+var areaCluster := geom_cluster("areas");
+
+print(lineCluster.geoms().count());
+print(areaCluster.geoms().count());
+
+var j := geom_primary_filter(lineCluster, areaCluster);
+print(j.count());
+print(j);
+
+pointCluster.geom_cluster_persists(false);
+lineCluster.geom_cluster_persists(false);
+areaCluster.geom_cluster_persists(false);
+commit();

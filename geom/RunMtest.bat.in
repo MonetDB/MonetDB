@@ -1,0 +1,35 @@
+@echo off
+
+if not "%1"=="" goto skip
+call %0 -r
+goto end
+
+:skip
+
+setlocal
+
+set prefix=@MONETDB_PREFIX@
+set builddir=@XMONETDB_BUILD@
+set srcdir=@XMONETDB_SOURCE@
+
+set MOD_PATH=%prefix%\src\modules\plain\.libs;%prefix%\src\modules\plain;%prefix%\src\modules\contrib\.libs;%prefix%\src\modules\contrib;%prefix%\src\modules\calibrator\.libs;%prefix%\src\modules\calibrator;%prefix%\src\modules\mnetcdf\.libs;%prefix%\src\modules\mnetcdf;%prefix%\src\mapi\.libs;%prefix%\src\mapi
+
+rem to find the geom module
+set MOD_PATH=%builddir%\src\.libs;%MOD_PATH%
+
+set PATH=%prefix%\src\testing;%prefix%\src\tools;%prefix%\src\mapi\clients\C;%prefix%\src\mapi\clients\python;%PATH%
+set PYTHONPATH=%prefix%\src\testing;%srcdir%\src\testing;%prefix%\src\common;%srcdir%\src\mapi\clients\python
+set PATH=%MOD_PATH%;%prefix%\src\common;%prefix%\src\gdk;%prefix%\src\mapi\clients\C;%prefix%\src\modules\plain\stream;%prefix%\src\monet;%PATH%
+
+rem to find geos_c.dll
+set PATH=%builddir%;%PATH%
+
+REM execute Mtest.py in the source directory
+pushd %srcdir%
+
+call python "%prefix%\src\testing\Mtest.py" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--monet_mod_path=%MOD_PATH%" "--config=%prefix%\conf\MonetDB.conf" "--dbfarm=%prefix%\dbfarm" "--sql_logdir=%prefix%\log" %*
+
+popd
+endlocal
+
+:end
