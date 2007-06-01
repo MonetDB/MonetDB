@@ -526,7 +526,7 @@ copts.produceHelpMessage()
 			}
 		} catch (IOException e) {
 			// failed to open the url
-			throw new Exception("No such host: " + e.getMessage());
+			throw new Exception("No such host/file: " + e.getMessage());
 		} catch (Exception e) {
 			// this is an exception that comes from deep ...
 			throw new Exception("Invalid URL: " + e.getMessage());
