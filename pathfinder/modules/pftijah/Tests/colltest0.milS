@@ -23,4 +23,3 @@ shred_doc(bat(void,str)
 	      .append(0LL)
 	      .append(0LL).seqbase(0@0));
 
-

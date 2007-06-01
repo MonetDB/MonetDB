@@ -776,13 +776,15 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
 
         tjCollBat.append(_tj_TermBat(ftiName));
         tjCollBat.append(_tj_TagBat(ftiName));
+        tjCollBat.append("tj_pfc_fti_dep");
+        tjCollBat.append("tj_pfc_fti_dep_star");
         tjCollBat.append("tj_collName");
         tjCollBat.append("tj_" + ftiName + "_param");
         tjCollBat.append("tj_" + ftiName + "_doc_name");
         tjCollBat.append("tj_" + ftiName + "_doc_firstpre");
         tjCollBat.append("tj_" + ftiName + "_pfpre");
         tjCollBat.append("tj_" + ftiName + "_fragments");
-        bat("tj_" + ftiName + "_fragments")@batloop()
+	bat("tj_" + ftiName + "_fragments")@batloop()
         {       
             tjCollBat.append("tj_" + ftiName + "_tid" + str(int($t)));
             tjCollBat.append("tj_" + ftiName + "_size"+ str(int($t)));
@@ -792,7 +794,7 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
             tjCollBat.append("tj_" + ftiName + "_Tags");
             tjCollBat.append("tj_" + ftiName + "_TermIndex");
             tjCollBat.append("tj_" + ftiName + "_TagIndex");
-        }       
+        }      
         return tjCollBat;
 }
 
@@ -1350,7 +1352,7 @@ PROC Qterms_to_tid_pre(bat[void,str] Qterms, BAT[oid,str] qenv): bat[oid,oid] :=
 # Stemming on the query terms is performed using the same stemmer
 # that was used for the collection.
 ##
-PROC Qterms_to_void_tid( bat[void,str] Qterms, BAT[oid,str] qenv): bat[void,oid] :=
+PROC _terms2void_tid( bat[void,str] Qterms, BAT[oid,str] qenv): bat[void,oid] :=
 {
     var stemmer := bat("tj_"+ qenv.find(QENV_FTINAME) +"_param").find("stemmer");
     var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
@@ -1782,16 +1784,13 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right,BAT[oid,str] qenv) : bat[o
 # PROBABILISTIC CONTAINMENT
 ################################################################################
 
-PROC _containing_desc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[oid,str] qenv) : bat[oid,oid] :=
+PROC _containing_desc_scj(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size) : bat[oid,oid] :=
 {
-    if ( trace ) tj_trace( "BEGIN _containing_desc" );    
+    if ( trace ) tj_trace( "BEGIN _containing_desc_scj" );    
      var elems := left.hmark(0@0);
      var cands := pre_tid.hmark(0@0);
      var iter := elems.mirror();
-     var elem_termpre := ll_descendant(	iter, 
-     					elems, 
-					pre_size, 
-					cands, 
+     var elem_termpre := ll_descendant(	iter, elems, pre_size, cands, 
 					false, false, min(iter), max(iter), false, chr(nil));
      elem_termpre := elem_termpre.reverse().leftfetchjoin(elems).reverse();
      var elem_tid := elem_termpre.join(pre_tid);
@@ -1800,52 +1799,138 @@ PROC _containing_desc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pr
      return elem_tid;
 }
 
-PROC _containing_desc2(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[oid,str] qenv) : bat[oid,oid] :=
+PROC _containing_desc_tmj(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size) : bat[oid,oid] :=
 {
-    if ( trace ) tj_trace( "BEGIN _containing_desc2" );    
+    if ( trace ) tj_trace( "BEGIN _containing_desc_tmj" );    
      var elems := left.hmark(0@0);
      var cands := pre_tid.hmark(0@0);
-     var iter := elems.mirror();
-     var elem_termpre := ll_descendant2(iter, 
-     					elems, 
-					pre_size, 
-					cands, 
-					false, false, min(iter), max(iter), false, chr(nil));
+     var elem_termpre := treemergejoin_sort( elems, pre_size, cands);
      var elem_tid := elem_termpre.join(pre_tid);
      elem_termpre := nil;
-     if ( trace ) tj_trace( "END   _containing_desc" );    
+     if ( trace ) tj_trace( "END _containing_desc" );    
      return elem_tid;
 }
 
-PROC _containing_desc3(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[oid,str] qenv) : bat[oid,oid] :=
-{
-    if ( trace ) tj_trace( "BEGIN _containing_desc3" );    
-     var elems := left.hmark(0@0);
-     var cands := pre_tid.hmark(0@0);
-     var elem_termpre := treemergejoin_sort( elems, 
-					pre_size, 
-					cands);
-     var elem_tid := elem_termpre.join(pre_tid);
-     elem_termpre := nil;
-     if ( trace ) tj_trace( "END   _containing_desc" );    
-     return elem_tid;
+# returns the pre-order positions of the term t 
+# in the collection of the documents
+PROC _getTermPositions(oid tid, str cName) : bat[void,oid] := {
+     var index := bat("tj_" + cName + "_TermIndex");
+     var offset1 := int(index.fetch(int(tid)));
+     var offset2 := int(index.fetch(int(tid) + 1));
+     var res := bat("tj_" + cName + "_Terms").slice(offset1, offset2 - 1);
+     res := res.tsort().tmark(0@0);
+     return res;
 }
 
-PROC _containing_anc(bat[oid,void] left, bat[oid,oid] pre_tid, bat[void,int] pre_size,BAT[oid,str] qenv) : bat[oid,oid] :=
-{
-    if ( trace ) tj_trace( "BEGIN _containing_anc" );    
-     var tmp_pre := pre_tid.hmark(0@0);
-     var elems := ll_ancestor(tmp_pre, 
-                              tmp_pre, 
-                              pre_size, 
-                              collHeight).reverse(); 
-     tmp_pre := nil;
-     elems := elems.semijoin(left);
-     var elem_tid := elems.join(pre_tid);
-     var elems := nil;
+# returns the collection likelihood cLH(t) of term t
+# in the background collection
+# (the background collection can be different from collection
+# the documents are coming from) 
+PROC _getTermCollLH(oid tid, int cSize, str bg_cName) : dbl := {
+     var index := bat("tj_" + bg_cName + "_TermIndex");
+     var offset1 := int(index.fetch(int(tid)));
+     var offset2 := int(index.fetch(int(tid) + 1));
+     var term_cLH := dbl(offset2 - offset1) / dbl(cSize);
+     return term_cLH;
+}
+
+# returns the document likelihood dLH(t) of term t
+# in all given docs
+PROC _getTermDocLHs(oid tid, BAT[void,oid] docs, str cName) : bat[oid,dbl] := {
+     var pre_size := bat("tj_" + cName + "_size1");
+     # get term positions in the entire collection
+     var termPREs := _getTermPositions(tid, cName);
+     # get doc - term relation
+     var doc_termPRE := treemergejoin_sort(docs, pre_size, termPREs);
+     termPREs := nil;
+     var res := doc_termPRE.reverse().histogram().sort();
+     doc_termPRE := nil;
+     var doc_size := pre_size.semijoin(res).sort();
      
-     print( "END   _containing_anc" );
-     return elem_tid;
+     res := [dbl](res).access(BAT_WRITE);
+     res.left_div(doc_size);
+     doc_size := nil; 
+     return res.access(BAT_READ);
+}
+
+#               ___                 /  (1 - lambda) * dLH(t)       \  
+# NLLR(d|q) =   | |    qLH(t) * log |  ----------------------  + 1 |  
+#              t in q               \      lambda * cLH(t)         /  
+#
+# where qLH(t) = likelihood of term t in query q
+# where dLH(t) = likelihood of term t in doc d
+# where cLH(t) = likelihood of term t in (background) collection c
+#
+PROC _score_NLLR(dbl term_qLH, dbl term_cLH, BAT[oid,dbl] term_dLHs, flt cLambda) : bat[oid,dbl] := {
+    var tmp := (dbl(1) - cLambda) / (cLambda * term_cLH);
+    var term_dScores := [*](term_dLHs, tmp);
+    term_dScores := [+](term_dScores, dbl(1));
+    term_dScores := [log](term_dScores);
+    term_dScores := [*](term_dScores, term_qLH);
+    return term_dScores;
+}
+
+PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
+{
+    if ( trace ) tj_trace( "BEGIN p_containing_q" );
+
+    var t_total := 0;
+    var t_loop := 0;
+    var t_cLH := 0;
+    var t_dLHs := 0;
+    var t_score := 0;
+    var t_aggr := 0;
+    t_total :-= time();
+   
+    # get term ids and drop all terms with zero frq in background-col and calculate query LM
+    var terms := _terms2void_tid( Qterms, qenv );
+    var qSize := terms.count();
+    var qLM := [/]([dbl](terms.histogram()),dbl(qSize));
+    
+    # init variables
+    var cName := qenv.find(QENV_FTINAME);
+    var bg_cName := qenv.find(QENV_FTIBGNAME);
+    var cSize := bat("tj_" + bg_cName + "_Terms").count();
+    var cLambda := lmbd; 
+    var res := left.sort();
+    var dScores := res.project(dbl(qenv.find(QENV_SCOREBASE))).access(BAT_WRITE);
+    t_loop :-= time();
+    # loop over query terms
+    qLM@batloop()
+    {
+	# get collection likelihood of term
+	t_cLH :-= time();
+	var term_cLH := _getTermCollLH($h, cSize, bg_cName);
+	t_cLH :+= time();
+
+	# get document likelihoods of term
+	t_dLHs :-= time();
+	var term_dLHs := _getTermDocLHs($h, res.hmark(0@0), cName);
+	t_dLHs :+= time();
+	
+	# BEGIN RETRIEVAL MODEL DEPENDENT CODE
+	t_score :-= time();
+	var term_dScores := _score_NLLR($t, term_cLH, term_dLHs, cLambda);
+	t_score :+= time();
+	# END RETRIEVAL MODEL DEPENDENT CODE
+
+	# aggregate term scores
+	t_aggr :-= time();
+	dScores := dScores.left_add(term_dScores);
+	t_aggr :+= time();
+    } 
+    t_loop :+= time();
+    dScores.access(BAT_READ);
+    # delete all docs from the result list that do not match any query term
+    if ( not( returnAllElements ) and int(qenv.find(QENV_SCOREBASE)) = 0) 
+        dScores := dScores.select(dbl(0), dbl(nil), false, true);
+    
+    # combine new doc scores with prior ones 
+    res := [+](res, dScores);
+    
+    t_total :+= time();
+    if (timing) printf("# nllr timing: total: %d, loop: %d, cLH: %d, dLHs: %d, score: %d, aggr: %d\n", t_total, t_loop, t_cLH, t_dLHs, t_score, t_aggr);
+    return res;
 }
 
 PROC collTermCount(str col, bat[oid,int] terms) : bat[oid,int] :=
@@ -1902,7 +1987,7 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd,
     var t1 := time();
 
      # get term ids and drop all terms with zero frq in col or background-col
-     var terms := Qterms_to_void_tid( Qterms, qenv ).histogram();
+     var terms := _terms2void_tid( Qterms, qenv ).histogram();
      var q_cnt := Qterms.count();
      var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
      var tid_cnt := terms.semijoin(tid_frq);
@@ -1944,7 +2029,7 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
      
      # evaluate doc/term (anc/desc) relationship
-     var elem_tid := _containing_desc3(left.sort().mark(0@0), pre_tid, pre_size,qenv);
+     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
      
@@ -1966,7 +2051,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
     var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
     
      # get term ids and drop all terms with zero frq in col or background-col
-     var terms := Qterms_to_void_tid( Qterms, qenv ).histogram();
+     var terms := _terms2void_tid( Qterms, qenv ).histogram();
      var q_cnt := Qterms.count();
      var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
      terms := terms.semijoin(tid_frq);
@@ -1987,7 +2072,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str 
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc3(left.sort().mark(0@0), pre_tid, pre_size,qenv);
+     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
      var t3 := time();
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
@@ -2013,7 +2098,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
     var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
     
      # get term ids and drop all terms with zero frq in col or background-col
-     var terms := Qterms_to_void_tid( Qterms, qenv ).histogram();
+     var terms := _terms2void_tid( Qterms, qenv ).histogram();
      var q_cnt := Qterms.count();
      var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
      terms := terms.semijoin(tid_frq);
@@ -2034,7 +2119,7 @@ PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, 
      
      # evaluate doc/term (anc/desc) relationship
      var t2 := time();
-     var elem_tid := _containing_desc(left.sort().mark(0@0), pre_tid, pre_size,qenv);
+     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
      var t3 := time();
      pre_tid := nil;
      if (elem_tid.count() = 0) {return new(oid,dbl);}
@@ -2189,7 +2274,7 @@ PROC p_containing_q_LM(bat[oid,dbl] ctx, bat[void,str] Qterms, BAT[oid,str] qenv
     #  - foreground probability (first term). This depends on the context region
     
     # Convert the query terms from [void,str] to [void,tid]
-    var terms := Qterms_to_void_tid( Qterms, qenv );
+    var terms := _terms2void_tid( Qterms, qenv );
 
     ### Foreground probability: 
     # Find out the document positions of the terms for foreground probability
@@ -2205,7 +2290,7 @@ PROC p_containing_q_LM(bat[oid,dbl] ctx, bat[void,str] Qterms, BAT[oid,str] qenv
     
     # See which document contain the query terms we create a bat of [doc, term-id]:
     var elems := ctx.sort().mark(0@0);
-    var doc_tid := _containing_desc3(elems, tid_pre.reverse(), pre_size,qenv);
+    var doc_tid := _containing_desc_tmj(elems, tid_pre.reverse(), pre_size);
     
     # len(doc): [doc, size]
     var doc_len := [dbl](bat("tj_" + qenv.find(QENV_FTINAME) + "_size1").semijoin(elems));
@@ -2293,7 +2378,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     #  - background probability (second term). This is the same for every context region
     
     # Convert the query terms from [void,str] to [void,tid]
-    var terms := Qterms_to_void_tid( Qterms, qenv );
+    var terms := _terms2void_tid( Qterms, qenv );
 
     ### Background probability:
     # For each term: collection term frequency tc(tm_i, col):
@@ -2324,7 +2409,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size1");
     
     # See which document contain the query terms we create a bat of [doc, term-id]:
-    var doc_tid := _containing_desc(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size,qenv);
+    var doc_tid := _containing_desc_tmj(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size);
     
     # len(doc): [doc, size]
     var doc_len := [dbl](bat("tj_" + qenv.find(QENV_FTINAME) + "_size1").semijoin(doc_tid));
@@ -3274,7 +3359,6 @@ int CMDleft_add_dbl(BAT** res, BAT*l, BAT*r) {
 	    return  GDK_FAIL;
 	/* make the left/res bat writable */
 	*res = BATsetaccess(l,BAT_WRITE);
-	(*res)->batDirty = TRUE;
  
 	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
 	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
@@ -3298,6 +3382,8 @@ int CMDleft_add_dbl(BAT** res, BAT*l, BAT*r) {
 		}
 	}
 	BBPfix(BBPcacheid(*res));
+	(*res)->batDirty = TRUE;
+	(*res)->tsorted = FALSE;
 	return GDK_SUCCEED;
 }
 
@@ -3330,6 +3416,7 @@ int CMDleft_sub_dbl(BAT** res, BAT*l, BAT*r) {
 		}
 	}
 	BBPfix(BBPcacheid(*res));
+	(*res)->tsorted = FALSE;
 	return GDK_SUCCEED;
 }
 
@@ -3363,6 +3450,7 @@ int CMDleft_mul_dbl(BAT** res, BAT*l, BAT*r) {
 		}
 	}
 	BBPfix(BBPcacheid(*res));
+	(*res)->tsorted = FALSE;
 	return GDK_SUCCEED;
 }
 
@@ -3395,6 +3483,7 @@ int CMDleft_div_dbl(BAT** res, BAT*l, BAT*r) {
 		}
 	}
 	BBPfix(BBPcacheid(*res));
+	(*res)->tsorted = FALSE;
 	return GDK_SUCCEED;
 }
 
@@ -3414,7 +3503,7 @@ int CMDleft_div_dbl_int(BAT** res, BAT*l, BAT*r) {
 
 	        if ( lv == rv ) {
 		    dbl* dres = (dbl*)BUNtail(l,lp);
-		    *dres /= (dbl)(*dres / *(int*)BUNtail(r,rp));
+		    *dres = (dbl)(*dres / *(int*)BUNtail(r,rp));
 		    lp += lx; rp += rx;
 		} else if ( lv < rv ) {
 		    do {
@@ -3427,6 +3516,7 @@ int CMDleft_div_dbl_int(BAT** res, BAT*l, BAT*r) {
 		}
 	}
 	BBPfix(BBPcacheid(*res));
+	(*res)->tsorted = FALSE;
 	return GDK_SUCCEED;
 }
 
@@ -3445,6 +3535,7 @@ int CMDleft_log_dbl(BAT** res, BAT*l) {
 		lp += lx;
 	}
 	BBPfix(BBPcacheid(*res));
+	(*res)->tsorted = FALSE;
 	return GDK_SUCCEED;
 }
 

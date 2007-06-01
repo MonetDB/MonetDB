@@ -1083,6 +1083,10 @@ MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str
 		return GDK_FAIL;
 	if ( dbat_finalize(&tjctx->dbat_collSize, tjctx->tijahPre) < 0 )
 		return GDK_FAIL;
+        
+        tjctx->b_collPre->batDirty   = TRUE;
+        tjctx->b_collSize->batDirty  = TRUE;
+        tjctx->b_collPfPre->batDirty = TRUE;
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);
 #endif
