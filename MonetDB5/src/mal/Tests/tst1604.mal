@@ -1,6 +1,0 @@
-# handling of correct header printing
-
-t:= bat.new(:int,:str);
-bat.setColumn(t,"first");
-u:= bat.new(:int,:str);
-io.print(t,u);

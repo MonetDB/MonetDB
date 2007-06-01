@@ -1,8 +1,0 @@
-# demonstrate the QEP construction
-R:= bat.new(:void,:int);
-S:= bat.new(:void,:int);
-E1:= algebra.select(R,1,3);
-E2:= algebra.select(S,4,9);
-R2:= bat.reverse(E2);
-J1:= algebra.join(E1,R2);
-optimizer.dumpQEP();

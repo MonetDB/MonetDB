@@ -1,4 +1,0 @@
-stderr of test 'tst_priv` in directory 'tests/by_Peter` itself:
-
-#> Mtest:	milM tst_priv milM
-#> Mtest:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_priv.milM
