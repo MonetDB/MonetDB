@@ -775,6 +775,6 @@
 typedef unsigned char uint8_t;
 
 #define MILPRINT_SUMMER_IS_DEFAULT 1
-#define MONET4 1
+#define HAVE_MONETDB4 1
 
 #define HAVE_SOCKLEN_T 1

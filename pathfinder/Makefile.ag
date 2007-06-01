@@ -22,7 +22,7 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-SUBDIRS = conf compiler MONET4?runtime MONET5?runtime5 modules src
+SUBDIRS = conf compiler HAVE_MONETDB4?runtime HAVE_MONETDB5?runtime5 modules src
 
 EXTRA_DIST = extra.mk.in RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \

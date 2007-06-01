@@ -116,8 +116,8 @@ else
 
 fi
 
-AM_CONDITIONAL(MONET4, test "x$have_monetdb4" = xyes)
-AM_CONDITIONAL(MONET5, test "x$have_monetdb5" = xyes)
+AM_CONDITIONAL(HAVE_MONETDB4, test "x$have_monetdb4" = xyes)
+AM_CONDITIONAL(HAVE_MONETDB5, test "x$have_monetdb5" = xyes)
 
 PATHFINDER_BUILD=[`pwd`]
 AC_SUBST(PATHFINDER_BUILD)
