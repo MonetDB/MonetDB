@@ -3258,8 +3258,14 @@ int CMDtijah_tokenize (str* res, str arg)
  *
  */
 static int bat_oid_sort_chck(BAT* b) {
-	(void)b;
-        /* INCOMPLETE, ASSERTS HERE */
+	if ( !b->hsorted ) {
+	    GDKerror("bat_oid_sort_chck: BAT should be head sorted.\n");
+	    return 0;
+	}
+	if (BAThtype(b) != TYPE_oid ) {
+	    GDKerror("bat_oid_sort_chck: BAT shouled have oid head type.\n");
+	    return 0;
+	}
 	return 1;
 }
 
