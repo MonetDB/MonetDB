@@ -1,6 +1,0 @@
-INT_MAX := 2147483647;
-dbgmsk := mdb.getDebug();
-unset := 8+8388608;
-keep := calc.xor(INT_MAX,unset);
-set := calc.and(dbgmsk,keep);
-mdb.setDebug(set);

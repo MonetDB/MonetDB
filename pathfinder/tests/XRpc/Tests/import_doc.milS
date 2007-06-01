@@ -1,8 +1,0 @@
-module("pathfinder");
-module("unix");
-
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/XRpc/Tests";
-
-shred_doc(TSTSRCDIR + "/" + "hello.xml", "hello.xml", "xrpc-docs", 25LL);
-
-commit();

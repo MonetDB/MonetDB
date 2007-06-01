@@ -1,9 +1,0 @@
-include "mil_algebra_procs";
-include "mil_insert";
-include "mil_system_procs";
-var ab:=bat("ab");
-var ba:=bat("ba");
-ab.print();
-ba.print();
-ab.print();
-quit();

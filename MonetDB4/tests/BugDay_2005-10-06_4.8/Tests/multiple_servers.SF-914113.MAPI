@@ -1,1 +1,0 @@
-eval "$MSERVER --dbname=$TSTDB"

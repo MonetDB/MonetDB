@@ -1,4 +1,0 @@
-stderr of test 'test_31` in directory 'tests/suite_00` itself:
-
-#> Mtest (20:57:25):	milS test_31 milS
-#> Mtest (20:57:25):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_31.milS
