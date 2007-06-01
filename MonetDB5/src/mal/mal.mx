@@ -391,10 +391,10 @@ Before continuing we should make sure that all clients
 	do{
 		freeclient=0; finishing=0; claimed=0; awaiting=0;
 		for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-			freeclient += cntxt->mode & FREECLIENT;
-			finishing += cntxt->mode & FINISHING;
-			claimed += cntxt->mode & CLAIMED;
-			awaiting += cntxt->mode & AWAITING;
+			freeclient += (cntxt->mode == FREECLIENT);
+			finishing += (cntxt->mode == FINISHING);
+			claimed += (cntxt->mode == CLAIMED);
+			awaiting += (cntxt->mode == AWAITING);
 			if( cntxt->mode & FINISHING)
 				printf("#CLient %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
 		}
