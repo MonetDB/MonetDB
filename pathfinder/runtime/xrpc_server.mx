@@ -187,6 +187,7 @@ Start XPRC receiver using the default values as specified in \
 #define XRPC_HEADER "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"  \
                     "<env:Envelope xmlns:env=\"%s\""                \
                                  " xmlns:xrpc=\"%s\""               \
+                                 " xmlns:xdt=\"%s\" "               \
                                  " xmlns:xs=\"%s\""                 \
                                  " xmlns:xsi=\"%s\""                \
                                  " xsi:schemaLocation=\"%s %s\">"   \
@@ -219,7 +220,7 @@ Start XPRC receiver using the default values as specified in \
 
 #define XRPC_FOOTER     "</xrpc:request>"   \
                       "</env:Body>"         \
-                    "</env:Envelope>"
+                    "</env:Envelope>\n"
 
 #endif /* XRPC_SERVER_H */
 
@@ -280,7 +281,7 @@ send_err(stream *out,
             "<env:Reason>"
             "<env:Text xml:lang=\"en\">%s</env:Text>"
             "</env:Reason>"
-            "</env:Fault></env:Body></env:Envelope>",
+            "</env:Fault></env:Body></env:Envelope>\n",
             SOAP_NS, soap_err, err_reason);
 }
 
@@ -691,7 +692,7 @@ getCallValues(stream *out,
     str *argtpe = NULL, *argval = NULL;
 
     lng i = 0, j = 0, k = 0, nattrs = 0;
-    lng max_args = GDK_int_max;
+    lng max_args = MAX_NR_PARAMS;
     char errstr[1024];
 
     BAT *frag_root = NULL, *pre_size = NULL;
@@ -829,7 +830,7 @@ getCallValues(stream *out,
             argcnt[i][j] = 0;
     }
 
-    max_args = iterc * MAX_NR_PARAMS;
+    max_args = iterc * (argc>0?argc:1) * MAX_NR_PARAMS;
     argval = GDKmalloc(max_args * sizeof(char *));
     argtpe = GDKmalloc(max_args * sizeof(char *));
     if (!argval || !argtpe) {
@@ -865,11 +866,22 @@ getCallValues(stream *out,
                 tpe_node_size = pre_sizeT[tpe_node_pre];
 
                 if (nr_args == max_args) {
-                    snprintf(errstr, 1024, "XRPC request: too many "
-                            "parameters, maximum is %d", MAX_NR_PARAMS);
-                    send_err(out, 1, ERR404, "env:Sender", errstr);
-                    clean_up(argcnt,argtpe,argval,iterc,nr_args);
-                    return GDK_FAIL;
+                    max_args += 2048;
+                    char **bptr = GDKrealloc(argval, max_args * sizeof(char *));
+                    if (!bptr) {
+                        send_err(out, 1, ERR500, "env:Receiver",OUT_OF_MEM);
+                        clean_up(argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+                    argval = bptr;
+
+                    bptr = GDKrealloc(argtpe, max_args * sizeof(char *));
+                    if (!bptr) {
+                        send_err(out, 1, ERR500, "env:Receiver",OUT_OF_MEM);
+                        clean_up(argcnt,argtpe,argval,iterc,nr_args);
+                        return GDK_FAIL;
+                    }
+                    argtpe = bptr;
                 }
 
                 if (!(argtpe[nr_args] = get_type(tpe_node_pre,

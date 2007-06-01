@@ -925,7 +925,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     /* Pointers to the current BUNs of the BATs. */
     BUN p_vid, p_iter, p_item, p_kind;
 
-    lng i, a, nr_args = 0, max_args = 0, arg_offset = 0;
+    lng i, a, nr_args = 0, arg_offset = 0;
     lng argc = *arity, my_argc = 0;
     lng iterc = *itercnt, my_iter = 0;
     lng **argcnt = NULL; /* #items each [iter][param] contains */
@@ -962,7 +962,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     }
 
     b->pos = snprintf(b->buf, b->len, XRPC_HEADER,
-            SOAP_NS, XRPC_NS, XS_NS, XSI_NS, XRPC_NS, XRPC_LOC,
+            SOAP_NS, XRPC_NS, XDT_NS, XS_NS, XSI_NS, XRPC_NS, XRPC_LOC,
             rpc_module, rpc_uri, rpc_method, argc, iterc,
             updCall?"true":"false");
 
@@ -984,7 +984,6 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             argcnt[i][a] = 0;
         }
     }
-    max_args = iterc * MAX_NR_PARAMS;
 
     /* Calculate the number of values contained by every parameter of
      * every iteration. */
@@ -1004,32 +1003,11 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
         a = *(oid*) BUNtail(fun_vid,  p_vid);
         argcnt[i-1][a]++;
         nr_args++;
-        if (nr_args == max_args) {
-            GDKerror("CMDhttp_post: too many parameters.\n");
-            clean_up(sock, out, bs, b, argcnt, iterc);
-            return GDK_FAIL;
-        }
     }
-    max_args = nr_args; /* actual number of argval-s */
     nr_args = 0;
 
     /* TODO: reuse serialization code to generate the message */
     for (my_iter = 0; my_iter < iterc; my_iter++) {
-        /* Enlarge the buffer if it is filled more than 80%.
-         * FIXME: is this really necessary? Or should we just return an
-         * error?
-         */
-        if (b->pos > (b->len * 0.8)) {
-            b->len *= 2;
-            char *bptr = realloc(b->buf, b->len);
-            if (!bptr) {
-                GDKerror("CMDhttp_post: failed to allocate larger message buffer.\n");
-                clean_up(sock, out, bs, b, argcnt, iterc);
-                return GDK_FAIL;
-            }
-            b->buf = bptr;
-        }
-
         if (argc == 0) {
             str2buf(b, "<xrpc:call/>");
             continue;
@@ -1060,6 +1038,19 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                 int cmbn_cont_kind = 0, cur_kind = 0, contID = 0;
                 chr elem_kind = 0;
                 oid item;
+
+                /* Enlarge the buffer if it is filled more than 80%. */
+                if (b->pos > (b->len * 0.8)) {
+                    b->len *= 2;
+                    char *bptr = realloc(b->buf, b->len);
+                    if (!bptr) {
+                        GDKerror("CMDhttp_post: failed to allocate "
+                                 "larger message buffer.\n");
+                        clean_up(sock, out, bs, b, argcnt, iterc);
+                        return GDK_FAIL;
+                    }
+                    b->buf = bptr;
+                }
 
                 a = arg_offset + k; /* index into fun_item|fun_kind */
                 item= *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
@@ -1098,10 +1089,10 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                         i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
                         str_val = BUNtail(str_values, BUNptr(str_values, i));
                         b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
-                                        "<xrpc:atomic-value xmlns:xdt=\"%s\" "
-                                        "xsi:type=\"xdt:untypedAtomic\">"
+                                        "<xrpc:atomic-value "
+                                        "xsi:type=\"xs:string\">"
                                         "%s</xrpc:atomic-value>",
-                                        XDT_NS, str_val);
+                                        str_val);
                         break;
                     case ATTR:
                     {
