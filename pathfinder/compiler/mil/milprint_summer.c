@@ -6232,7 +6232,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 static void
 translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
-    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 1 ? 1 : 0;
+    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 0 ? 0 : 1;
     PFcnode_t *dsts = L(xrpc);
     PFcnode_t *funApp = R(xrpc);
     PFfun_t   *fun  = NULL;
@@ -6316,33 +6316,6 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
         i++;
     }
     milprintf(f, "  # end of add arg in XRPC function call\n");
-
-    /* map needed global variables into the function */
-    milprintf(f, "  var expOid;\n");
-    getExpanded (f,
-            /* we don't want to get the variables from
-               the surrounding scope like for but from the current */
-            cur_level+1, fun->fid);
-    milprintf(f,
-            "  var vid := expOid.leftfetchjoin(v_vid%03u);\n"
-            "  iter    := expOid.leftfetchjoin(v_iter%03u);\n"
-            "  item    := expOid.leftfetchjoin(v_item%03u);\n"
-            "  kind    := expOid.leftfetchjoin(v_kind%03u);\n"
-            "  ipik    := iter;\n"
-            "  fun_vid%03u := fun_vid%03u.append(vid);\n"
-            "  fun_iter%03u := fun_iter%03u.append(iter);\n"
-            "  fun_item%03u := fun_item%03u.append(item);\n"
-            "  fun_kind%03u := fun_kind%03u.append(kind);\n"
-            "  expOid := nil;\n"
-            "  vid := nil;\n"
-            "  ipik := nil;\n"
-            "  iter := nil;\n"
-            "  pos := nil;\n"
-            "  item := nil;\n"
-            "  kind := nil;\n",
-            cur_level, cur_level, cur_level, cur_level,
-            counter, counter, counter, counter,
-            counter, counter, counter, counter);
 
     milprintf(f,
             "  fun_vid%03u := fun_vid%03u.tmark(0@0);\n"
