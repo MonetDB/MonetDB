@@ -1,6 +1,0 @@
-# you can not insert against an arbitrary BAT identifier
-# because you don't know its type.
-z:= bat.new(:int,:int);
-b:= calc.getBATidentifier(z);
-bat.insert(b,1,2);
-io.print(b);

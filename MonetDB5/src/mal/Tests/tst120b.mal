@@ -1,3 +1,0 @@
-module bottom;
-function first(i:str):int; c:=1; return c; end first;
-function second(i:str):int; return second:=1; end second;
