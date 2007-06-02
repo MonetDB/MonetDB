@@ -827,7 +827,7 @@ The next statement block is to be read. Send a prompt to warn
 the front-end to issue the request.
 @= sendPrompt
 	if(c->promptlength>=0) { 
-		if (!isa_block_stream(c->fdout))
+		if (!isa_block_stream(c->fdout) && c->promptlength>0)
 			stream_write(c->fdout,c->prompt,c->promptlength,1); 
 		stream_flush(c->fdout);
 	}
