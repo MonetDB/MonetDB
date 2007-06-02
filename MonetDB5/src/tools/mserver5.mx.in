@@ -326,7 +326,7 @@ main(int argc, char **av)
 	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 
-	static struct option long_options[22] = {
+	static struct option long_options[] = {
 		{"config", 1, 0, 'c'},
 		{"dbname", 1, 0, 0},
 		{"dbfarm", 1, 0, 0},
@@ -334,7 +334,6 @@ main(int argc, char **av)
 		{"daemon", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
 		{"delay", 1, 0, 0},
-		{"help", 2, 0, 'h'},
 		{"help", 0, 0, '?'},
 		{"version", 0, 0, 0},
 		{"set", 1, 0, 's'},
@@ -410,7 +409,7 @@ faster system start.
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d:t:r:?:s:m:i:a:e:x",
+		int c = getopt_long(argc, av, "c:d::t:r:h?s:m:i:a:e:x",
 				    long_options, &option_index);
 
 		if (c == -1)
