@@ -1,7 +1,0 @@
-var i := new(void,int).seqbase(0@0).append(1).access(BAT_READ);
-var s := [str](i);
-print(i,s);
-print(i.[+](1));
-print(i.[+](i));
-print(s.[+]("1"));
-print(s.[+](s));

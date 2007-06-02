@@ -1,9 +1,0 @@
-	x := bat.new(:oid,:chr);
-	de_a := bat.insert(x,1@0,'a');
-	ee_a := bat.insert(x,2@0,'a');
-	y:= bat.new(:chr,:oid);
-	xr:= bat.reverse(x);
-	io.print(xr);
-	bat.insert(y,xr);
-	io.print("result?");
-	io.print(y);

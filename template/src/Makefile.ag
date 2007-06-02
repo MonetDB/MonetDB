@@ -1,2 +1,0 @@
-
-SUBDIRS = HAVE_MONETDB4?monetdb4 HAVE_MONETDB5?monetdb5
