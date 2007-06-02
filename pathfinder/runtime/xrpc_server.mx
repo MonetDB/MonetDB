@@ -400,12 +400,9 @@ count_node(char *node_name,
            oid   end_pre,
            oid  *pre_prop,
            char *pre_kind,
-           BAT  *qn_loc)
+           BAT  *qn_loc,
+           BAT  *qn_uri)
 {
-    /* TODO: check if the namespace of 'node_name' matches given
-     * namespace 'ns' */
-    (void)ns;
-
     lng nr = 0;
     oid i;
 
@@ -413,7 +410,10 @@ count_node(char *node_name,
         if (pre_kind[i] == ELEMENT) {
             char *qname = BUNtail(qn_loc,
                             BUNfnd(qn_loc, &(pre_prop[i])));
-            if(strcmp(qname, node_name) == 0)
+            char *qname_uri = BUNtail(qn_uri,
+                                BUNfnd(qn_uri, &(pre_prop[i])));
+            if(strcmp(qname, node_name) == 0 &&
+               strcmp(qname_uri, ns)== 0)
                 nr++;
         }
     }
@@ -457,19 +457,19 @@ get_elem_pre_by_name(char *node_name,
                      char  elem_kind,
                      oid  *pre_prop,
                      char *pre_kind,
-                     BAT  *qn_loc)
+                     BAT  *qn_loc,
+                     BAT  *qn_uri)
 {
-    /* TODO: check if the namespace of 'node_name' matches given
-     * namespace 'ns' */
-    (void)ns;
-
     oid i;
 
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == elem_kind) {
             char *qname = BUNtail(qn_loc,
                             BUNfnd(qn_loc, &(pre_prop[i])));
-            if(strcmp(qname, node_name) == 0)
+            char *qname_uri = BUNtail(qn_uri,
+                                BUNfnd(qn_uri, &(pre_prop[i])));
+            if(strcmp(qname, node_name) == 0 &&
+               strcmp(qname_uri, ns)== 0)
                 return i;
         }
     }
@@ -554,9 +554,7 @@ get_attr_val(stream *out,
 
 /**
  * Given the pre value of a type node, return the name of the type node
- * as a string in the form 'prefix:loc'.
- *
- * TODO: maybe we should return 'ns:loc' instead.
+ * as a string in the form 'ns_uri:loc'.
  *
  * NB: the return value of this function, if not NULL, should be freed.
  *
@@ -566,29 +564,19 @@ get_attr_val(stream *out,
 static char *
 get_type(oid  tpe_node_pre,
          oid *pre_prop,
-         BAT *qn_loc,
-         BAT *qn_prefix)
+         BAT *qn_loc)
 {
-    (void)qn_prefix;
-
-    char *loc = NULL, *prefix = NULL, *res = NULL;
-    int l_len = 0, p_len = 0;
-
-    loc = (char*)BUNtail(qn_loc,
+    char *loc = (char*)BUNtail(qn_loc,
                     BUNptr(qn_loc, pre_prop[tpe_node_pre]));
-
-    /* TODO: find the namespace of 'loc' */
+    char *prefix = "xs";
     if(strcmp(loc, "atomic-value") == 0){
         prefix = "xrpc";
-    } else {
-        prefix = "xs";
     }
 
-    l_len = strlen(loc);
-    p_len = strlen(prefix);
-
-    if(!(res = GDKmalloc(p_len + l_len + 2)))
-        return NULL;
+    int l_len = strlen(loc);
+    int p_len = strlen(prefix);
+    char *res = GDKmalloc(p_len + l_len + 2);
+    if(!res) return NULL;
 
     strncpy(res, prefix, p_len);
     res[p_len]=':';
@@ -756,7 +744,7 @@ getCallValues(stream *out,
      * node after "request", namely "sequence". */
     if (!(pre = get_elem_pre_by_name("request", XRPC_NS, 2,
                     (last_pre - 1), ELEMENT, pre_propT, pre_kindT,
-                    qn_loc))) {
+                    qn_loc, qn_uri))) {
         send_err(out, 1, ERR404, "env:Sender",
                 "\"request\" node not found");
         return GDK_FAIL;
@@ -776,13 +764,13 @@ getCallValues(stream *out,
         /* the optional attribute "iter-count" is not available, so just
          * count the number of "call" node */
         iterc = count_node("call", XRPC_NS, pre+1, last_pre, pre_propT,
-                pre_kindT, qn_loc);
+                pre_kindT, qn_loc, qn_uri);
     } else {
         iterc = my_strtoll(out, val_ptr, "iter-count");
         if(iterc < 0 )
             return GDK_FAIL;
         i = count_node("call", XRPC_NS, pre+1, last_pre, pre_propT,
-                pre_kindT, qn_loc);
+                pre_kindT, qn_loc, qn_uri);
         if (iterc != i) {
             snprintf(errstr, 1024, "The value (%lld) of the attribute "
                     "\"iter-count\" does not match the number of \"call\" "
@@ -801,7 +789,7 @@ getCallValues(stream *out,
     if(argc < 0 )
         return GDK_FAIL;
     i = count_node("sequence", XRPC_NS, pre+2, last_pre, pre_propT,
-            pre_kindT, qn_loc) / iterc;
+            pre_kindT, qn_loc, qn_uri) / iterc;
     if(argc != i){
         snprintf(errstr, 1024, "The value (%lld) of the attribute "
                 "\"arity\" does not match the number of \"sequence\" "
@@ -844,7 +832,7 @@ getCallValues(stream *out,
     for (i = 0; i < iterc; i++) {
         call_node_pre  = get_elem_pre_by_name("call", XRPC_NS,
                 (call_node_pre + call_node_size + 1), last_pre, ELEMENT,
-                pre_propT, pre_kindT, qn_loc);
+                pre_propT, pre_kindT, qn_loc, qn_uri);
         call_node_size = pre_sizeT[call_node_pre];
         if (call_node_size == 0) continue;
 
@@ -852,7 +840,7 @@ getCallValues(stream *out,
         for (j = 0; j < argc; j++) {
             seq_node_pre  = get_elem_pre_by_name("sequence", XRPC_NS,
                     seq_node_pre+1, (call_node_pre + call_node_size),
-                    ELEMENT, pre_propT, pre_kindT, qn_loc);
+                    ELEMENT, pre_propT, pre_kindT, qn_loc, qn_uri);
             if (seq_node_pre == 0) continue; /* This function call has
                                                 no parameters */
             seq_node_size = pre_sizeT[seq_node_pre];
@@ -885,13 +873,13 @@ getCallValues(stream *out,
                 }
 
                 if (!(argtpe[nr_args] = get_type(tpe_node_pre,
-                                            pre_propT, qn_loc,
-                                            qn_prefix))) {
+                                            pre_propT, qn_loc)))
+                {
                     send_err(out, 1, ERR500, "env:Receiver",OUT_OF_MEM);
                     clean_up(argcnt,argtpe,argval,iterc,nr_args);
                     return GDK_FAIL;
                 }
-
+                
                 if(strcmp(argtpe[nr_args], "xrpc:atomic-value") == 0) {
                     GDKfree(argtpe[nr_args]); /* find sub-type of the
                                                  atomic-value */
@@ -912,7 +900,8 @@ getCallValues(stream *out,
                     if( (tpe_node_size != 1) || 
                         (pre_kindT[val_node_pre] != TEXT) ) {
                         snprintf(errstr, 1024, "XRPC request: "
-                                "iteration" LLFMT "/parameter" LLFMT "/value" LLFMT " "
+                                "iteration" LLFMT "/parameter" LLFMT
+                                                  "/value" LLFMT " "
                                 "of type \"%s\" is expected to have a "
                                 "simple value",
                                 i+1, j+1, k, argtpe[nr_args]);
@@ -985,7 +974,8 @@ getCallValues(stream *out,
                         pre_propT[val_node_pre] = oid_nil;
                     } else {
                         snprintf(errstr, 1024, "XRPC request: "
-                                "iteration" LLFMT "/param" LLFMT "/value" LLFMT " "
+                                "iteration" LLFMT "/param" LLFMT
+                                                  "/value" LLFMT " "
                                 "contains unsupported type: %s\n",
                                 i+1, j+1, k, argtpe[nr_args]);
                         send_err(out, 1, ERR404, "env:Sender", errstr);
@@ -995,7 +985,8 @@ getCallValues(stream *out,
 
                     if (val_node_pre == 0) {
                         snprintf(errstr, 1024, "XRPC request: "
-                                "iteration" LLFMT "/param" LLFMT "/value" LLFMT " "
+                                "iteration" LLFMT "/param" LLFMT
+                                                  "/value" LLFMT " "
                                 "does not contain a *node* value",
                                 i+1, j+1, k);
                         send_err(out, 1, ERR404, "env:Sender", errstr);
