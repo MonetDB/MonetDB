@@ -1159,8 +1159,7 @@ GDKreallocmax(void *blk, size_t size, size_t * maxsize, int emergency)
 	if (size <= 0) {
 		GDKfatal("GDKreallocmax: called with size %u", size);
 	}
-	/* round up to a multiple of four */
-	size = (size + 3) & ~3;
+	size = (size + 7) & ~7;	/* round up to a multiple of eight */
 	oldsize = GDK_MEM_BLKSIZE(s);
 
 	/* check against duplicate free */
