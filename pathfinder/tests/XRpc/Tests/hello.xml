@@ -1,6 +1,0 @@
-<hello lang="en" x="y">
-  <foo>text of node foo<bar>text of node bar</bar></foo>
-  <!-- a comment node -->
-  <?pi action=beep?>
-  <world/>
-</hello>

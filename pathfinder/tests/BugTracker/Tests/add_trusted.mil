@@ -1,8 +1,0 @@
-module("pathfinder");
-module("unix");
-
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/BugTracker/Tests";
-
-add_xrpc_trusted(TSTSRCDIR);
-
-commit();

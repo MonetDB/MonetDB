@@ -1,3 +1,0 @@
-module("unix");
-var TSTSRCDIR := getenv("TSTSRCDIR");
-shred_doc(TSTSRCDIR + "/" + "replacevaluetest2.xml", "replacevaluetest2.xml", "replacevaluetest2.xml", 10LL);

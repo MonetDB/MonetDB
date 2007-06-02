@@ -1,9 +1,0 @@
-module(unix);
-module(pathfinder);
-var TSTTRGDIR := getenv("TSTTRGDIR");
-
-shred_doc(TSTTRGDIR+"/exponential2.xml","exponential2.xml");
-
-xquery("xml","count(doc(\"exponential2.xml\")//*)").printf();
-
-delete_doc("exponential2.xml");

@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-for i in $RELSRCDIR/../../benchmarks/XMark/Tests/*.xq; do
-	j=${i##*/}
-	test -L $j || ln -s $i $j
-	echo "\"pf -M $j >/dev/null\""
-	echo "\"pf -M $j >/dev/null\"" >&2
-	      pf -M $j >/dev/null
-done

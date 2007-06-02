@@ -1,5 +1,0 @@
-import module namespace xrpc = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
-
-let $integers := for $integer in 1 to 3000
-                 return $integer
-return execute at {"localhost:$XRPCPORT"} { xrpc:echoAll($integers)}
