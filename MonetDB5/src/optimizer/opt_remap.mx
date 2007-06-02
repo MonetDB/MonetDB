@@ -142,7 +142,8 @@ OPTremapSwitched(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	    getFunctionId(pci) != multiplexRef &&
 	    !isConstant(mb,getArg(pci,1)) &&
 	    !isConstant(mb,getArg(pci,2)) &&
-	    !isConstant(mb,getArg(pci,4))) 
+	    !isConstant(mb,getArg(pci,4)) &&
+		pci->argc != 5) 
 			return 0;
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
 	for(i=0;OperatorMap[i].src;i++)
