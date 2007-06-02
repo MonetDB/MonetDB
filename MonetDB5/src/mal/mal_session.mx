@@ -79,6 +79,7 @@ malBootstrap()
 	if (bf)
 		bootfile = bf;
 	MSinitClientPrg(c,"user", "main");
+	MCinitClientThread(c);
 	malInclude(c, bootfile, 0);
 	pushEndInstruction(c->curprg->def);
 	trimMalBlk(c->curprg->def);

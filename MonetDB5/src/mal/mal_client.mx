@@ -342,7 +342,7 @@ void MCpopClientInput(Client c)
 	GDKfree(x);
 }
 
-Client MCnewClient(){
+static Client MCnewClient(){
 	Client  c;
 	if( mal_clients[CONSOLE].user)
 		GDKprotect();
@@ -443,7 +443,6 @@ collect the buffer when in use.
 	prompt = !fin? GDKgetenv("monet_prompt"): PROMPT1;
 	c->prompt= GDKstrdup(prompt);
 	c->promptlength= strlen(prompt);
-	if( isAdministrator(c)) MCinitClientThread(c);
 	return c;
 }
 @-
@@ -460,10 +459,10 @@ void MCinitClientThread(Client c)
 		t= c->mythread;
 	} else
 */
-		snprintf(cname, 11, SZFMT, (size_t)(c->user));
-		cname[11] = '\0';
-		c->mypid = MT_getpid();
-		c->mythread = t = THRnew(c->mypid,cname);
+	snprintf(cname, 11, SZFMT, (size_t)(c->user));
+	cname[11] = '\0';
+	c->mypid = MT_getpid();
+	c->mythread = t = THRnew(c->mypid,cname);
 	c->errbuf = GDKerrbuf;
 	if (c->errbuf == NULL) {
 		GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
@@ -669,7 +668,9 @@ very long time, since we have access to the file descriptor it may
 work by closing them.
 @c 
 void MCkillClient(Client c, int timeout) {
+	size_t pid;
 	if (c && c->user != oid_nil ) {
+		mal_set_lock(mal_contextLock, "stopClient");
 
 #ifdef MAL_DEBUG_CLIENT
 		printf("killClient %d\n", c - mal_clients);
@@ -692,11 +693,18 @@ void MCkillClient(Client c, int timeout) {
 			c->fdin = NULL;
 			assert(c->bak == NULL);
 			/* GDKwarning("killClient:about to kill process ...\n");*/
+			pid= c->mythread->pid;
+			c->mythread->pid=0;
+			c->mode= FREECLIENT;
+			mal_unset_lock(mal_contextLock, "stopClient");
 			MT_sleep_ms(1000 * timeout);
-			MT_kill_thread(c->mythread->pid);
+			MT_kill_thread(pid);
 			MT_sleep_ms(1000 * timeout);
 			/*GDKwarning("killClient:process killed\n");*/
+			return;
 		}
+		c->mode= FREECLIENT;
+		mal_unset_lock(mal_contextLock, "stopClient");
 	}
 } 
 
@@ -748,11 +756,9 @@ str MCstopClient(Client c, oid which){
 	if( ! isAdministrator(c))
 		throw(PERMD, "stop","Only permitted from server console");
 
-	mal_set_lock(mal_contextLock, "stopClient");
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
 		if (c->mode > FREECLIENT && c->user == which) {
 			MCkillClient(c, PROCESSTIMEOUT);
-			mal_unset_lock(mal_contextLock, "stopClient");
 			return MAL_SUCCEED;
 		}
 	}
