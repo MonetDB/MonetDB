@@ -249,7 +249,6 @@ PROC get_rpc_res (
                         ERROR("get_rpc_res (batloop %d): a text node " +
                               "should have a single text value\n", pre);
                     }
-                    # FIXME: does this work?
                     res_iter.append(oid(itercnt));
                     res_item.append(pre);
                     var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
@@ -1006,7 +1005,6 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     }
     nr_args = 0;
 
-    /* TODO: reuse serialization code to generate the message */
     for (my_iter = 0; my_iter < iterc; my_iter++) {
         if (argc == 0) {
             str2buf(b, "<xrpc:call/>");
