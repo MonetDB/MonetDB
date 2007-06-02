@@ -1,4 +1,0 @@
-module(unix);module(pathfinder);
-var HelloWorld := getenv("TSTSRCDIR")+"/ID.1210173-0.xml";
-shred_doc(HelloWorld,"HelloWorld.xml");
-quit();

@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
-<!DOCTYPE foo SYSTEM "$TSTSRCDIR/entities_dtd.SF-1642665.dtd">
-<foo>
-    <bar>want to see a nice e with a acute accent:&eacute;</bar>
-</foo>

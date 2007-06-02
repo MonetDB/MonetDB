@@ -1,3 +1,0 @@
-module("unix");
-var TSTSRCDIR := getenv("TSTSRCDIR");
-shred_doc(TSTSRCDIR + "/" + "clear_attrs_on_delete.SF-1612739.xml", "clear_attrs_on_delete.SF-1612739.xml", "clear_attrs_on_delete.SF-1612739.xml", 10LL);

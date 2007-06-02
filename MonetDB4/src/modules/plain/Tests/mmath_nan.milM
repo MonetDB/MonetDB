@@ -1,5 +1,0 @@
-module("mmath");
-log(-1.0LL).print();
-(log(-1.0LL)=log(-1.0LL)).print();
-isnan(log(-1.0LL)).print();
-quit();
