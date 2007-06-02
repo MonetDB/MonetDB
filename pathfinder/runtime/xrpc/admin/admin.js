@@ -28,6 +28,10 @@ function doCollectionsCallback(response) {
     if(cols.length == 0){
         cTable.innerHTML = '<h3>No (documents) collections in the database</h3>\n';
         return;
+    } else if( (cols.length == 1) &&
+               (cols[0].getAttribute("numDocs") == null) ){
+        cTable.innerHTML = '<h3>No (documents) collections in the database</h3>\n';
+        return;
     }
 
     var i;
@@ -37,24 +41,25 @@ function doCollectionsCallback(response) {
         var size = cols[i].getAttribute("size");
         var numDocs = cols[i].getAttribute("numDocs");
 
-        if(updatable == null) updatable = "UNKNOWN";
-        if(size == null) size = "UNKNOWN";
-        if(numDocs == null) numDocs = "UNKNOWN";
+        if(numDocs != null) {
+            if(updatable == null) updatable = "UNKNOWN";
+            if(size == null) size = "UNKNOWN";
 
-        cTableBody += '<tr>\n';
-        cTableBody += '<td>'+colName+'</td>\n';
-        cTableBody += '<td>'+updatable+'</td>\n';
-        cTableBody += '<td>'+size+'</td>\n';
-        cTableBody += '<td>'+numDocs+'</td>\n';
-        cTableBody +=
-            '<td>'+
-            '<input type="button" name="viewCol" value="view" onclick="top.doDocuments(\''+ colName + '\')" />'+
-            '</td>\n';
-        cTableBody +=
-            '<td>'+
-            '<input type="button" name="delCol" value="delete" onclick="top.doDelCol(\'' + colName+ '\')" />'+
-            '</td>\n';
-        cTableBody += '</tr>\n';
+            cTableBody += '<tr>\n';
+            cTableBody += '<td>'+colName+'</td>\n';
+            cTableBody += '<td>'+updatable+'</td>\n';
+            cTableBody += '<td>'+size+'</td>\n';
+            cTableBody += '<td>'+numDocs+'</td>\n';
+            cTableBody +=
+                '<td>'+
+                '<input type="button" name="viewCol" value="view" onclick="top.doDocuments(\''+ colName + '\')" />'+
+                '</td>\n';
+            cTableBody +=
+                '<td>'+
+                '<input type="button" name="delCol" value="delete" onclick="top.doDelCol(\'' + colName+ '\')" />'+
+                '</td>\n';
+            cTableBody += '</tr>\n';
+        }
     }
 
     cTable.innerHTML = 
@@ -74,7 +79,13 @@ function doCollectionsCallback(response) {
 
 function doAllDocumentsCallback(response) {
     var docs = response.getElementsByTagName("document");
+    var dTable = top.content.document.getElementById("div1");
     var dTableBody = "";
+
+    if(docs == null || docs.length == 0){
+        dTable.innerHTML = '<h3>No documents in the database</h3>\n';
+        return;
+    }
 
     var i;
     for(i = 0; i < docs.length; i++){
@@ -103,7 +114,6 @@ function doAllDocumentsCallback(response) {
         dTableBody += '</tr>\n';
     }
 
-    var dTable = top.content.document.getElementById("div1");
     dTable.innerHTML = 
         '<h2>All documents in the database:</h2>\n' +
         '<table width="30%" border="1">\n' +
