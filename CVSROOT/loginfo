@@ -19,25 +19,26 @@
 #   s = file name
 #   V = old version number (pre-checkin)
 #   v = new version number (post-checkin)
+#   t = tag or branch name
 #
 # For example:
 #DEFAULT (echo ""; id; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
 # or
-#DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
+#DEFAULT (echo ""; id; echo %{stVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
 
 ALL $CVSROOT/CVSROOT/warn %s
 
-^CVSROOT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} sjoerd@users.sourceforge.net
+^CVSROOT $CVSROOT/CVSROOT/syncmail -q -u %{stVv} sjoerd@users.sourceforge.net
 
-^MonetDB $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforge.net
-^clients $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforge.net
-^pathfinder $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-checkins@lists.sourceforge.net
-^pf-haskell $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-haskell@lists.sourceforge.net
-^pf-tools $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-tools@lists.sourceforge.net
-^sql $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-sql-checkins@lists.sourceforge.net
-^template $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-templ-chkins@lists.sourceforge.net
-^xml $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-xml-checkins@lists.sourceforge.net
-^buildtools $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforge.net
+^MonetDB $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
+^clients $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
+^pathfinder $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-pf-checkins@lists.sourceforge.net
+^pf-haskell $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-pf-haskell@lists.sourceforge.net
+^pf-tools $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-pf-tools@lists.sourceforge.net
+^sql $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-sql-checkins@lists.sourceforge.net
+^template $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-templ-chkins@lists.sourceforge.net
+^xml $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-xml-checkins@lists.sourceforge.net
+^buildtools $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
 
 # catch all
-DEFAULT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} sjoerd@users.sourceforge.net
+DEFAULT $CVSROOT/CVSROOT/syncmail -q -u %{stVv} sjoerd@users.sourceforge.net
