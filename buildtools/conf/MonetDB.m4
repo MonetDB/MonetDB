@@ -17,11 +17,11 @@ dnl All Rights Reserved.
 dnl Defaults that differ between development trunk and release branch:
 AC_DEFUN([AM_MONETDB_DEFAULTS],
 [
-dft_strict=yes
-dft_assert=yes
-dft_optimi=no
+dft_strict=no
+dft_assert=no
+dft_optimi=yes
 dft_warning=no
-dft_netcdf=auto
+dft_netcdf=no
 
 dnl small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
 dnl set GCC=yes if we use icc.
