@@ -1175,7 +1175,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_0F3917FBB7DB4C7EA8CE15996B961C05"
             {
-            "SourcePath" = "8:..\\share\\doc\\MonetDB-SQL-2.16.2\\dump-restore.txt"
+            "SourcePath" = "8:..\\share\\doc\\MonetDB-SQL-2.19.0\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_876B289F659E4FE681DDAD9153E36616"
@@ -2975,7 +2975,7 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AFF9F6E61DBA4165985EDB4430F915A3"
             {
-            "SourcePath" = "8:..\\share\\doc\\MonetDB-SQL-2.16.2\\dump-restore.html"
+            "SourcePath" = "8:..\\share\\doc\\MonetDB-SQL-2.19.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_876B289F659E4FE681DDAD9153E36616"
@@ -4326,7 +4326,7 @@
                                 {
                                     "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_876B289F659E4FE681DDAD9153E36616"
                                     {
-                                    "Name" = "8:MonetDB-SQL-2.16.2"
+                                    "Name" = "8:MonetDB-SQL-2.19.0"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
@@ -4428,7 +4428,7 @@
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:4.17.0"
+        "ProductVersion" = "8:4.19.0"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"

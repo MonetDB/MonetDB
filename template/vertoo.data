@@ -1,4 +1,4 @@
-monetdb = major:1; minor:17; release:0; rc:x; build:1;
-monetdb4 = major:4; minor:17; release:0; rc:x; build:1;
-monetdb5 = major:5; minor:0; release:0; rc:_beta; build:2;
+monetdb = major:1; minor:19; release:0; rc:x; build:1;
+monetdb4 = major:4; minor:19; release:0; rc:x; build:1;
+monetdb5 = major:5; minor:1; release:0; rc:x; build:1;
 template = major:0; minor:1; release:3; rc:x; build:1;

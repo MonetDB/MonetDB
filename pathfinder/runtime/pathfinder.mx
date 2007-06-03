@@ -1,4 +1,4 @@
-@f pathfinder.mx
+@' pathfinder.mx
 @'
 @' XQuery runtime environment
 @'
@@ -3798,7 +3798,6 @@ The name of a cached document is the same as its location (URI). For explicitly\
 shredded documents (with 'shred_doc(location,name)'), the name is an 'alias' and\n\
 may differ from the URI. Explicitly shredded documents fall outside the XML document\n\
 cache; documents are only removed at explicit user request (with 'delete_doc(name)').";
-@mil
 
 PROC xmlcache_add_rule(str uri, 
                        any lifetime) : void 

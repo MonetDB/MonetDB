@@ -31,7 +31,7 @@ CONFIG_H=template_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
-req_monetdb_ver='1.17.0'
+req_monetdb_ver='1.19.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
 	if test "x$MONETDBVERS" = "x"; then
@@ -46,9 +46,9 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
-req_monetdb4_ver='4.17.0'
+req_monetdb4_ver='4.19.0'
 AM_MONETDB4($req_monetdb4_ver)
-req_monetdb5_ver='5.0.0_beta2'
+req_monetdb5_ver='5.1.0'
 AM_MONETDB5($req_monetdb5_ver)
 
 if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then

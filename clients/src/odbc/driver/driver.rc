@@ -3,8 +3,8 @@
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 1 VERSIONINFO
-  FILEVERSION 2,17,0,1
-  PRODUCTVERSION 2,17,0,1
+  FILEVERSION 2,19,0,1
+  PRODUCTVERSION 2,19,0,1
   FILEFLAGSMASK 0x3fL
   FILEFLAGS 0
   FILEOS VOS_NT_WINDOWS32
@@ -18,14 +18,14 @@ BEGIN
       VALUE "Comments", "\0"
       VALUE "CompanyName", "CWI\0"
       VALUE "FileDescription", "MonetDB ODBC Driver DLL\0"
-      VALUE "FileVersion", "2.17.0\0"
+      VALUE "FileVersion", "2.19.0\0"
       VALUE "InternalName", "libMonetODBC\0"
       VALUE "LegalCopyright", "Copyright © CWI 2004-2007\0"
       VALUE "LegalTrademarks", "\0"
       VALUE "OriginalFilename", "libMonetODBC.dll\0"
       VALUE "PrivateBuild", "\0"
       VALUE "ProductName", "MonetDB SQL Server\0"
-      VALUE "ProductVersion", "2.17.0\0"
+      VALUE "ProductVersion", "2.19.0\0"
       VALUE "SpecialBuild", "\0"
     END
   END

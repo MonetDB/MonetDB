@@ -16,7 +16,7 @@
 
 !INCLUDE $(TOPDIR)\..\..\MonetDB\conf\rules.msc
 
-VERSION=5.0.0_beta2_1
+VERSION=5.1.0
 
 pkg = MonetDB5
 CONFIG_H=mal_config.h

@@ -28,4 +28,4 @@ CLIENTS_LIBS=/libpath:"$(CLIENTS_PREFIX)\lib"
 
 pkg = MonetDB4
 CONFIG_H=monetdb4_config.h
-VERSION=4.17.1
+VERSION=4.19.0
