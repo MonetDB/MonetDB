@@ -19,7 +19,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([MonetDB Common], [1.18.0], [monet@cwi.nl], [MonetDB])
+AC_INIT([MonetDB Common], [1.19.0], [monet@cwi.nl], [MonetDB])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET

@@ -36,7 +36,7 @@ CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
-req_monetdb_ver='1.19.0'
+req_monetdb_ver='1.18.0'
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
     if test "x$MONETDBVERS" = x; then
@@ -53,7 +53,7 @@ if test "x$have_c99" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
 fi
 
-req_clients_ver='1.19.0'
+req_clients_ver='1.18.0'
 AM_MONETDB_CLIENTS($req_clients_ver)
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
@@ -70,10 +70,10 @@ dnl We may not call AM_MONETDB4 and AM_MONETDB5 conditionally,
 dnl since they use AM_CONDITIONAL.  So we do both tests, but
 dnl ignore their outcome if we haven't found MonetDB common before.
 
-req_monetdb4_ver='4.19.0'
+req_monetdb4_ver='4.18.0'
 AM_MONETDB4($req_monetdb4_ver)
 
-req_monetdb5_ver='5.1.0'
+req_monetdb5_ver='5.0.0'
 AM_MONETDB5($req_monetdb5_ver)
 
 if test "x$have_monetdb" = xyes; then

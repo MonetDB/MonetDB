@@ -27,6 +27,6 @@ modpath=${libdir}/MonetDB:${libdir}/MonetDB/lib:${libdir}/MonetDB/bin
 Name: ${pkg}
 Description: A SQL/ODBC/JDBC interface to MonetDB.
 Version: @VERSION@
-Requires: MonetDB >= 4.19.0
+Requires: MonetDB >= 4.18.0
 Cflags: -I${includedir}/sql
 Libs: -L${libdir} -lMonetODBC
