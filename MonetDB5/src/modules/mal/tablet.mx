@@ -1669,7 +1669,8 @@ estimator(char *datafile){
 		buf[nr] = 0;
 		nr = 0;
 		for(s = buf; *s; s++)
-			nr++;
+			if (*s == '\n')
+				nr++;
 	} else
 		nr = 0;
 	fseek(f,0L,SEEK_END);
