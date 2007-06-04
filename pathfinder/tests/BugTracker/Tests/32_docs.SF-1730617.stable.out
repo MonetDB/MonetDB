@@ -1,0 +1,45 @@
+stdout of test '32_docs.SF-1730617` in directory 'tests/BugTracker` itself:
+
+
+# 18:01:17 >  
+# 18:01:17 >  Mtimeout -timeout 240 Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug/var/xquery_logs" --set mapi_open=true --set mapi_port=36410 --set xrpc_port=49195 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 18:01:17 >  
+
+# Monet Database Server V4.18.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# XRPC administrative console at http://localhost:49195/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:01:19 >  
+# 18:01:19 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s00.xq
+# 18:01:19 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><result/></XQueryResult>
+
+# 18:01:20 >  
+# 18:01:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=36410 32_docs.SF-1730617_s01.xq
+# 18:01:20 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><result/></XQueryResult>
+
+# 18:03:20 >  
+# 18:03:20 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=36180 32_docs.SF-1730617_s02.xq
+# 18:03:20 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><result/></XQueryResult>
+
+# 18:03:29 >  
+# 18:03:29 >  Done.
+# 18:03:29 >  
+

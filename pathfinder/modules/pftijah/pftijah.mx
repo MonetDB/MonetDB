@@ -187,8 +187,8 @@ var tj_coll_lockbat := new(str,lock); # locks for all active collections
 
 const ENTITY_NUM := 10000;
 
-var collHeight := 10;
-var retNum := 100;
+#var collHeight := 10;
+#var retNum := 100;
 
 var trace := false;
 var timing := false;
@@ -215,16 +215,14 @@ if (view_bbp_name().reverse().exist("tj_collName")) {
 const QENV_FTINAME        := 0@0;
 const QENV_FTIBGNAME      := 1@0;
 const QENV_SCOREBASE      := 2@0;
-const QENV_TERM_PROXIMITY := 3@0;
-const QENV_FEEDBACK_DOCS  := 4@0;
+const QENV_C_LAMBDA       := 3@0;
+const QENV_TERM_PROXIMITY := 4@0;
+const QENV_FEEDBACK_DOCS  := 5@0;
 
 # create a query environment bat
-PROC create_qenv(str fti_name, str bg_fti_name, str scb) : BAT[oid,str]
+PROC create_qenv() : BAT[oid,str]
 {
     var res := new(oid,str);
-    res.insert(QENV_FTINAME, fti_name);
-    res.insert(QENV_FTIBGNAME, bg_fti_name);
-    res.insert(QENV_SCOREBASE, scb);
     return res;
 }
 
@@ -1125,13 +1123,6 @@ PROC tj_setBackgroundCollName(str name, BAT[oid,str] qenv) : BAT[void,str] :=
 }
 
 # INCOMPLETE: henning, what should I do about this.
-PROC tj_setScoreBase(int default, BAT[oid,str] qenv) : BAT[void,str] :=
-{
-	return create_qenv(qenv.find(QENV_FTINAME),qenv.find(QENV_FTIBGNAME),default);
-}
-
-
-# INCOMPLETE: henning, what should I do about this.
 var equivalences := new(str,str);
 PROC tj_initEquivalences() : void := 
 {
@@ -1277,12 +1268,12 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc, bat[void,int] pre_size
 # 
 # Forwards to parent_child_llscj: see below.
 ##
-PROC parent_child( bat[oid,any] parent, bat[oid,any] child, BAT[oid,str] qenv) : bat[oid,oid] :=
-{
-    return parent_child_llscj( parent, child, qenv );
-}
-
-
+#PROC parent_child( bat[oid,any] parent, bat[oid,any] child, BAT[oid,str] qenv) : bat[oid,oid] :=
+#{
+#    return parent_child_llscj( parent, child, qenv );
+#}
+#
+#
 ## 
 # Compute parent-child relation using the loop-lifted staircase join. 
 # 
@@ -1291,38 +1282,38 @@ PROC parent_child( bat[oid,any] parent, bat[oid,any] child, BAT[oid,str] qenv) :
 #
 # Returns a bat containing [parent,child] preorder index pairs
 ##
-PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child, BAT[oid,str] qenv) : bat[oid,oid] :=
-{
-    # Items contains the context nodes for the descendant step: 
-    # this is the right side argument to contained_by.
-    # The table must be [void,oid], so:
-    var items := parent.mark(0@0).reverse();
-    
-    # Suggestion from Thijs: make iters a [void,void], with the same length as anc
-    var iters := parent.hmark(oid(0)).mark(oid(0));
-    
-    # Candidates: all element nodes
-    var candidates := child.sort().mark(0@0).reverse();
-    
-    # Load the pre-size table
-    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
-    
-    # Check the order of the items:
-    items.chk_order();
-    
-    var void_chld := ll_child(iters, items, pre_size, candidates, collHeight, false, false, min(iters), max(iters), false);
-    
-    # Map back the ancestors
-    var par_desc  := parent.mark(oid(0)).join(void_chld);
-    
-    candidates := nil;
-    items := nil;
-    pre_size := nil;
-    
-    return par_chld;
-}
-
-
+#PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child, BAT[oid,str] qenv) : bat[oid,oid] :=
+#{
+#    # Items contains the context nodes for the descendant step: 
+#    # this is the right side argument to contained_by.
+#    # The table must be [void,oid], so:
+#    var items := parent.mark(0@0).reverse();
+#    
+#    # Suggestion from Thijs: make iters a [void,void], with the same length as anc
+#    var iters := parent.hmark(oid(0)).mark(oid(0));
+#    
+#    # Candidates: all element nodes
+#    var candidates := child.sort().mark(0@0).reverse();
+#    
+#    # Load the pre-size table
+#    var pre_size := load( "tj_" + qenv.find(QENV_FTINAME) + "_size1");
+#    
+#    # Check the order of the items:
+#    items.chk_order();
+#    
+#    var void_chld := ll_child(iters, items, pre_size, candidates, collHeight, false, false, min(iters), max(iters), false);
+#    
+#    # Map back the ancestors
+#    var par_desc  := parent.mark(oid(0)).join(void_chld);
+#    
+#    candidates := nil;
+#    items := nil;
+#    pre_size := nil;
+#    
+#    return par_chld;
+#}
+#
+#
 ##
 # Converts a list of query terms to a list of term id->document position mappings.
 #
@@ -1352,12 +1343,13 @@ PROC Qterms_to_tid_pre(bat[void,str] Qterms, BAT[oid,str] qenv): bat[oid,oid] :=
 # Stemming on the query terms is performed using the same stemmer
 # that was used for the collection.
 ##
-PROC _terms2void_tid( bat[void,str] Qterms, BAT[oid,str] qenv): bat[void,oid] :=
+PROC _terms2void_tid( bat[void,str] Qterms, str bg_cName): bat[void,oid] :=
 {
-    var stemmer := bat("tj_"+ qenv.find(QENV_FTINAME) +"_param").find("stemmer");
+    var stemmer := bat("tj_"+ bg_cName +"_param").find("stemmer");
     var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
-    
-    var tids := bat(_tj_TermBat(qenv.find(QENV_FTINAME))).join( stemmed.reverse() ).sort().hmark(oid(0));
+    var tids := bat(_tj_TermBat(bg_cName)).join( stemmed.reverse() ).sort().hmark(oid(0));
+    var stopwords := tids.uselect(0@0);
+    tids := tids.kdiff(stopwords);
     return tids;
 }
 
@@ -1835,8 +1827,8 @@ PROC _getTermCollLH(oid tid, int cSize, str bg_cName) : dbl := {
 }
 
 # returns the document likelihood dLH(t) of term t
-# in all given docs
-PROC _getTermDocLHs(oid tid, BAT[void,oid] docs, str cName) : bat[oid,dbl] := {
+# in all given docs that include the term
+PROC _getTermDocLHs0(oid tid, BAT[void,oid] docs, str cName) : bat[oid,dbl] := {
      var pre_size := bat("tj_" + cName + "_size1");
      # get term positions in the entire collection
      var termPREs := _getTermPositions(tid, cName);
@@ -1846,31 +1838,89 @@ PROC _getTermDocLHs(oid tid, BAT[void,oid] docs, str cName) : bat[oid,dbl] := {
      var res := doc_termPRE.reverse().histogram().sort();
      doc_termPRE := nil;
      var doc_size := pre_size.semijoin(res).sort();
-     
      res := [dbl](res).access(BAT_WRITE);
      res.left_div(doc_size);
      doc_size := nil; 
      return res.access(BAT_READ);
 }
 
-#               ___                 /  (1 - lambda) * dLH(t)       \  
-# NLLR(d|q) =   | |    qLH(t) * log |  ----------------------  + 1 |  
-#              t in q               \      lambda * cLH(t)         /  
+# returns the document likelihood dLH(t) of term t
+# in all given docs (not only those including t)
+PROC _getTermDocLHs1(oid tid, BAT[void,oid] docs, str cName) : bat[oid,dbl] := {
+     var pre_size := bat("tj_" + cName + "_size1");
+     # get term positions in the entire collection
+     var termPREs := _getTermPositions(tid, cName);
+     # get doc - term relation
+     var doc_termPRE := treemergejoin_sort(docs, pre_size, termPREs);
+     termPREs := nil;
+     var res := doc_termPRE.reverse().histogram().sort();
+     doc_termPRE := nil;
+     var doc_size := pre_size.semijoin(res).sort();
+     res := [dbl](res).access(BAT_WRITE);
+     res.left_div(doc_size);
+     doc_size := nil;
+     res.access(BAT_READ);
+     var extended := docs.reverse().project(dbl(0));
+     extended.access(BAT_WRITE);
+     extended.replace(res);
+     extended.access(BAT_READ);     
+     return extended.sort();
+}
+
+#             ___          
+# LM(d|q) =   | |    qCnt(t) * dLH(t)  
+#            t in q           
 #
-# where qLH(t) = likelihood of term t in query q
+# where qCnt(t) = count of term t in query q
+# where dLH(t) = likelihood of term t in doc d
+#
+PROC _score_LM(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs, dbl cLambda) : bat[oid,dbl] := {
+    var term_dScores := [*](term_dLHs, term_qCnt);
+    return term_dScores;
+}
+
+#              ___          
+# LMs(d|q) =   | |    qCnt(t) ( (1-lambda) dLH(t) + lambda cLH(t) ) 
+#             t in q           
+#
+# where qCnt(t) = count of term t in query q
 # where dLH(t) = likelihood of term t in doc d
 # where cLH(t) = likelihood of term t in (background) collection c
 #
-PROC _score_NLLR(dbl term_qLH, dbl term_cLH, BAT[oid,dbl] term_dLHs, flt cLambda) : bat[oid,dbl] := {
+PROC _score_LMs(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs, dbl cLambda) : bat[oid,dbl] := {
+    var tmp1 := dbl(term_qCnt) * cLambda * term_cLH;
+    var tmp2 := dbl(term_qCnt) * (dbl(1) - cLambda);
+    var term_dScores := [*](term_dLHs, tmp2);
+    term_dScores := [+](term_dScores, tmp1);
+    return term_dScores;
+}
+
+#               ___    qCnt(t)       /  (1 - lambda) * dLH(t)       \  
+# NLLR(d|q) =   | |    ------- * log |  ----------------------  + 1 |  
+#              t in q   qSize        \      lambda * cLH(t)         /  
+#
+# where qCnt(t) = count of term t in query q
+# where qSize = number of terms in query q
+# where dLH(t) = likelihood of term t in doc d
+# where cLH(t) = likelihood of term t in (background) collection c
+#
+PROC _score_NLLR(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs, dbl cLambda) : bat[oid,dbl] := {
     var tmp := (dbl(1) - cLambda) / (cLambda * term_cLH);
     var term_dScores := [*](term_dLHs, tmp);
     term_dScores := [+](term_dScores, dbl(1));
     term_dScores := [log](term_dScores);
+    var term_qLH := dbl(term_qCnt) / dbl(qSize);
     term_dScores := [*](term_dScores, term_qLH);
     return term_dScores;
 }
 
-PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
+# parameters: score_method, aggregation_method, base_score
+@:p_containing_q(NLLR,add,0,+,0)@
+@:p_containing_q(LMs,mul,1,*,cLambda * term_cLH)@
+@:p_containing_q(LM,mul,1,*,0)@
+
+@= p_containing_q
+PROC p_containing_q_@1(bat[oid,dbl] left, bat[void,str] Qterms, str ind, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q" );
 
@@ -1882,21 +1932,23 @@ PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str
     var t_aggr := 0;
     t_total :-= time();
    
-    # get term ids and drop all terms with zero frq in background-col and calculate query LM
-    var terms := _terms2void_tid( Qterms, qenv );
-    var qSize := terms.count();
-    var qLM := [/]([dbl](terms.histogram()),dbl(qSize));
-    
-    # init variables
     var cName := qenv.find(QENV_FTINAME);
     var bg_cName := qenv.find(QENV_FTIBGNAME);
+    
+    # get term ids and drop all terms with zero frq in background-col and calculate query LM
+    var terms := _terms2void_tid( Qterms, bg_cName );
+    var qSize := terms.count();
+    var t_qCnt := terms.histogram();
+    
+    # init further variables
+    var scoreBase := dbl(@3);
     var cSize := bat("tj_" + bg_cName + "_Terms").count();
-    var cLambda := lmbd; 
+    var cLambda := dbl(qenv.find(QENV_C_LAMBDA));
     var res := left.sort();
-    var dScores := res.project(dbl(qenv.find(QENV_SCOREBASE))).access(BAT_WRITE);
+    var dScores := res.project(scoreBase).access(BAT_WRITE);
     t_loop :-= time();
     # loop over query terms
-    qLM@batloop()
+    t_qCnt@batloop()
     {
 	# get collection likelihood of term
 	t_cLH :-= time();
@@ -1905,81 +1957,84 @@ PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str
 
 	# get document likelihoods of term
 	t_dLHs :-= time();
-	var term_dLHs := _getTermDocLHs($h, res.hmark(0@0), cName);
+	var term_dLHs := _getTermDocLHs@3($h, res.hmark(0@0), cName);
 	t_dLHs :+= time();
 	
 	# BEGIN RETRIEVAL MODEL DEPENDENT CODE
 	t_score :-= time();
-	var term_dScores := _score_NLLR($t, term_cLH, term_dLHs, cLambda);
+	var term_dScores := _score_@1($t, qSize, term_cLH, term_dLHs, cLambda);
+	# update base score of non-matching docs
+	scoreBase :@4= @5;  
 	t_score :+= time();
-	# END RETRIEVAL MODEL DEPENDENT CODE
-
 	# aggregate term scores
 	t_aggr :-= time();
-	dScores := dScores.left_add(term_dScores);
+	dScores := dScores.left_@2(term_dScores);
 	t_aggr :+= time();
+	# END RETRIEVAL MODEL DEPENDENT CODE
     } 
     t_loop :+= time();
     dScores.access(BAT_READ);
     # delete all docs from the result list that do not match any query term
-    if ( not( returnAllElements ) and int(qenv.find(QENV_SCOREBASE)) = 0) 
-        dScores := dScores.select(dbl(0), dbl(nil), false, true);
-    
+    if ( not( returnAllElements )) {
+        var unchanged := dScores.uselect(scoreBase);
+        dScores := dScores.kdiff(unchanged);
+    }
+   
     # combine new doc scores with prior ones 
-    res := [+](res, dScores);
-    
+    res := [@4](res, dScores);
     t_total :+= time();
     if (timing) printf("# nllr timing: total: %d, loop: %d, cLH: %d, dLHs: %d, score: %d, aggr: %d\n", t_total, t_loop, t_cLH, t_dLHs, t_score, t_aggr);
     return res;
 }
 
-PROC collTermCount(str col, bat[oid,int] terms) : bat[oid,int] :=
-{
-     var tids := terms.mirror();
-     var offsets1 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
-     tids := tids.[int]().[+](1).[oid]();
-     var offsets2 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
-     var res := [-](offsets2.[int](),offsets1.[int]()).select(1,int(nil));
-     return res;
-}
-
-PROC score_NLLR_mil(bat[oid,oid] elem_tid, bat[void,int] pre_size, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, bat[oid,oid] elems, dbl _lmbd, int q_cnt) : bat[oid,dbl] :=
-{
-     # compute collection terms frequencies 
-     var _tid_frq := [/](_lmbd, tid_frq);
-     tid_frq := nil;
-
-     # compute document sizes
-     var elem_size := pre_size.semijoin(elems);
-
-     # compute scores in batloop over terms
-     var doc_prob := new(oid,dbl);
-     _tid_frq@batloop()
-     {
-	  var tmp := elem_tid.select($h);
-	  var fac := dbl(tid_cnt.find($h)) / dbl(q_cnt);
-	  tmp := tmp.reverse().histogram();
-	  tmp := [dbl](tmp);
-	  tmp := [/](tmp, elem_size);
-	  tmp := [*](tmp, $t);
-	  tmp := [+](tmp, 1);
-	  tmp := [log](tmp);
-	  tmp := [*](tmp, fac);
-	  doc_prob.insert(tmp);
-     }
-    
-    var elements := left.mark(0@0);
-    
-    if ( not( returnAllElements ) ) 
-        elements := elements.semijoin(elem_tid);
-     
-     # aggregate doc scores
-     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
-    
-     #res := res.[/](_tid_frq.count());
-
-     return res;
-}
+@mil
+#PROC collTermCount(str col, bat[oid,int] terms) : bat[oid,int] :=
+#{
+#     var tids := terms.mirror();
+#     var offsets1 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
+#     tids := tids.[int]().[+](1).[oid]();
+#     var offsets2 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
+#     var res := [-](offsets2.[int](),offsets1.[int]()).select(1,int(nil));
+#     return res;
+#}
+#
+#PROC score_NLLR_mil(bat[oid,oid] elem_tid, bat[void,int] pre_size, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, bat[oid,oid] elems, dbl _lmbd, int q_cnt) : bat[oid,dbl] :=
+#{
+#     # compute collection terms frequencies 
+#     var _tid_frq := [/](_lmbd, tid_frq);
+#     tid_frq := nil;
+#
+#     # compute document sizes
+#     var elem_size := pre_size.semijoin(elems);
+#
+#     # compute scores in batloop over terms
+#     var doc_prob := new(oid,dbl);
+#     _tid_frq@batloop()
+#     {
+#	  var tmp := elem_tid.select($h);
+#	  var fac := dbl(tid_cnt.find($h)) / dbl(q_cnt);
+#	  tmp := tmp.reverse().histogram();
+#	  tmp := [dbl](tmp);
+#	  tmp := [/](tmp, elem_size);
+#	  tmp := [*](tmp, $t);
+#	  tmp := [+](tmp, 1);
+#	  tmp := [log](tmp);
+#	  tmp := [*](tmp, fac);
+#	  doc_prob.insert(tmp);
+#     }
+#    
+#    var elements := left.mark(0@0);
+#    
+#    if ( not( returnAllElements ) ) 
+#        elements := elements.semijoin(elem_tid);
+#     
+#     # aggregate doc scores
+#     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
+#    
+#     #res := res.[/](_tid_frq.count());
+#
+#     return res;
+#}
 
 PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd,BAT[oid,str] qenv) : bat[oid,bat] :=
 {
@@ -1987,7 +2042,8 @@ PROC p_containing_q_NLLR_frag(bat[oid,bat] left, bat[void,str] Qterms, flt lmbd,
     var t1 := time();
 
      # get term ids and drop all terms with zero frq in col or background-col
-     var terms := _terms2void_tid( Qterms, qenv ).histogram();
+    var bg_cName := qenv.find(QENV_FTIBGNAME);
+    var terms := _terms2void_tid( Qterms, bg_cName );
      var q_cnt := Qterms.count();
      var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
      var tid_cnt := terms.semijoin(tid_frq);
@@ -2044,99 +2100,99 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      return res;
 }
 
-PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
-{
-    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
-    var t1 := time();
-    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
-    
-     # get term ids and drop all terms with zero frq in col or background-col
-     var terms := _terms2void_tid( Qterms, qenv ).histogram();
-     var q_cnt := Qterms.count();
-     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
-     terms := terms.semijoin(tid_frq);
-     if (terms.count() = 0) {return new(oid,dbl);}
-    
-     # compute constant factor in score computation
-     var _lmbd := dbl((1.0 - lmbd) / lmbd);
-     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
-     _lmbd :*= collFrq;
-     
-     # fetch term occurrences and sort them in preorder
-     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
-                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
-                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
-     if (pre_tid.count() = 0) {return new(oid,dbl);}
-     var t1a := time();
-     pre_tid := pre_tid.sort();
-     
-     # evaluate doc/term (anc/desc) relationship
-     var t2 := time();
-     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
-     var t3 := time();
-     pre_tid := nil;
-     if (elem_tid.count() = 0) {return new(oid,dbl);}
-     
-     var res := score_NLLR(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
-     # Obey SCOREBASE setting: 
-     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
-        res := [+](left, res);
-     } else {
-        res := [*](left, res);
-     }
-     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
-     var t4 := time();
-
-     if (timing) printf("# p_containing_q_NLLR(): total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
-     return res;
-}
-
-PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
-{
-    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
-    var t1 := time();
-    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
-    
-     # get term ids and drop all terms with zero frq in col or background-col
-     var terms := _terms2void_tid( Qterms, qenv ).histogram();
-     var q_cnt := Qterms.count();
-     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
-     terms := terms.semijoin(tid_frq);
-     if (terms.count() = 0) {return new(oid,dbl);}
-    
-     # compute constant factor in score computation
-     var _lmbd := dbl((1.0 - lmbd) / lmbd);
-     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
-     _lmbd :*= collFrq;
-     
-     # fetch term occurrences and sort them in preorder
-     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
-                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
-                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
-     if (pre_tid.count() = 0) {return new(oid,dbl);}
-     var t1a := time();
-     pre_tid := pre_tid.sort();
-     
-     # evaluate doc/term (anc/desc) relationship
-     var t2 := time();
-     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
-     var t3 := time();
-     pre_tid := nil;
-     if (elem_tid.count() = 0) {return new(oid,dbl);}
-     
-     var res := score_NLLR_mil(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
-     
-     # Obey SCOREBASE setting: 
-     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
-        res := [+](left, res);
-     } else {
-        res := [*](left, res);
-     }
-     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
-     var t4 := time();
-     if (timing) printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
-     return res;
-}
+#PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
+#{
+#    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
+#    var t1 := time();
+#    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
+#    
+#     # get term ids and drop all terms with zero frq in col or background-col
+#     var terms := _terms2void_tid( Qterms, qenv ).histogram();
+#     var q_cnt := Qterms.count();
+#     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
+#     terms := terms.semijoin(tid_frq);
+#     if (terms.count() = 0) {return new(oid,dbl);}
+#    
+#     # compute constant factor in score computation
+#     var _lmbd := dbl((1.0 - lmbd) / lmbd);
+#     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
+#     _lmbd :*= collFrq;
+#     
+#     # fetch term occurrences and sort them in preorder
+#     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
+#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
+#     if (pre_tid.count() = 0) {return new(oid,dbl);}
+#     var t1a := time();
+#     pre_tid := pre_tid.sort();
+#     
+#     # evaluate doc/term (anc/desc) relationship
+#     var t2 := time();
+#     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
+#     var t3 := time();
+#     pre_tid := nil;
+#     if (elem_tid.count() = 0) {return new(oid,dbl);}
+#     
+#     var res := score_NLLR(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
+#     # Obey SCOREBASE setting: 
+#     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
+#        res := [+](left, res);
+#     } else {
+#        res := [*](left, res);
+#     }
+#     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
+#     var t4 := time();
+#
+#     if (timing) printf("# p_containing_q_NLLR(): total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
+#     return res;
+#}
+#
+#PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
+#{
+#    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
+#    var t1 := time();
+#    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
+#    
+#     # get term ids and drop all terms with zero frq in col or background-col
+#     var terms := _terms2void_tid( Qterms, qenv ).histogram();
+#     var q_cnt := Qterms.count();
+#     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
+#     terms := terms.semijoin(tid_frq);
+#     if (terms.count() = 0) {return new(oid,dbl);}
+#    
+#     # compute constant factor in score computation
+#     var _lmbd := dbl((1.0 - lmbd) / lmbd);
+#     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
+#     _lmbd :*= collFrq;
+#     
+#     # fetch term occurrences and sort them in preorder
+#     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
+#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
+#     if (pre_tid.count() = 0) {return new(oid,dbl);}
+#     var t1a := time();
+#     pre_tid := pre_tid.sort();
+#     
+#     # evaluate doc/term (anc/desc) relationship
+#     var t2 := time();
+#     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
+#     var t3 := time();
+#     pre_tid := nil;
+#     if (elem_tid.count() = 0) {return new(oid,dbl);}
+#     
+#     var res := score_NLLR_mil(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
+#     
+#     # Obey SCOREBASE setting: 
+#     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
+#        res := [+](left, res);
+#     } else {
+#        res := [*](left, res);
+#     }
+#     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
+#     var t4 := time();
+#     if (timing) printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
+#     return res;
+#}
 
 ##
 # Implementation of the Language Modeling retrieval model, with smoothing.
@@ -2266,64 +2322,65 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 #  tc(tm_i, doc): term count of query term tm_i in doc
 #  len(doc)     : size of doc (term or element size)
 ##
-PROC p_containing_q_LM(bat[oid,dbl] ctx, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl]
-{   
-    if ( trace ) tj_trace( "BEGIN p_containing_t_LM_COARSE" );
-    # To follow the naming in the formula above, context regions are named "documents".
-    # For each term we need:
-    #  - foreground probability (first term). This depends on the context region
-    
-    # Convert the query terms from [void,str] to [void,tid]
-    var terms := _terms2void_tid( Qterms, qenv );
-
-    ### Foreground probability: 
-    # Find out the document positions of the terms for foreground probability
-    var tid_pre := indexfetchjoin(terms, 
-                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
-                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
-    
-    if (tid_pre.count() = 0) { return new(oid,dbl); }
-    tid_pre := tid_pre.tsort();
-   
-    # TODO: fragmentation
-    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size1");
-    
-    # See which document contain the query terms we create a bat of [doc, term-id]:
-    var elems := ctx.sort().mark(0@0);
-    var doc_tid := _containing_desc_tmj(elems, tid_pre.reverse(), pre_size);
-    
-    # len(doc): [doc, size]
-    var doc_len := [dbl](bat("tj_" + qenv.find(QENV_FTINAME) + "_size1").semijoin(elems));
-    
-    ###
-    
-    # Now, we need to compute the probability for each document->term pair
-    var res := elems.project(dbl(1.0));
-    
-    # Iterate over all terms.
-    terms@batloop() {
-        # Compute the first factor
-        # $t contains the term id 
-        var occurrences := doc_tid.select($t).sort();
-	
-        # Count the occurrence of the term in all documents: tc(tm_i, doc), 
-        # for all documents at once
-        var tc_tm_doc  := [dbl](occurrences.reverse().histogram());
-        var foreground := [/](tc_tm_doc, doc_len);
-
-        res := [*](res, foreground);
-    }
-    
-    if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
-        # Add the scores to the context set (this should have scores 0, so adding is OK)
-        res := [+](ctx, res);
-    } else {
-        # Add the scores to the context set (this should have scores 1, so multiplying is OK)
-        res := [*](ctx, res);
-    }
-    if ( trace ) tj_trace( "END   p_containing_t_LMs_COARSE" );
-    return res;
-}
+#PROC p_containing_q_LM2(bat[oid,dbl] ctx, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl]
+#{   
+#    if ( trace ) tj_trace( "BEGIN p_containing_t_LM_COARSE" );
+#    # To follow the naming in the formula above, context regions are named "documents".
+#    # For each term we need:
+#    #  - foreground probability (first term). This depends on the context region
+#    
+#    # Convert the query terms from [void,str] to [void,tid]
+#    var bg_cName := qenv.find(QENV_FTIBGNAME);
+#    var terms := _terms2void_tid( Qterms, bg_cName );
+#
+#    ### Foreground probability: 
+#    # Find out the document positions of the terms for foreground probability
+#    var tid_pre := indexfetchjoin(terms, 
+#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
+#    
+#    if (tid_pre.count() = 0) { return new(oid,dbl); }
+#    tid_pre := tid_pre.tsort();
+#   
+#    # TODO: fragmentation
+#    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size1");
+#    
+#    # See which document contain the query terms we create a bat of [doc, term-id]:
+#    var elems := ctx.sort().mark(0@0);
+#    var doc_tid := _containing_desc_tmj(elems, tid_pre.reverse(), pre_size);
+#    
+#    # len(doc): [doc, size]
+#    var doc_len := [dbl](bat("tj_" + qenv.find(QENV_FTINAME) + "_size1").semijoin(elems));
+#    
+#    ###
+#    
+#    # Now, we need to compute the probability for each document->term pair
+#    var res := elems.project(dbl(1.0));
+#    
+#    # Iterate over all terms.
+#    terms@batloop() {
+#        # Compute the first factor
+#        # $t contains the term id 
+#        var occurrences := doc_tid.select($t).sort();
+#	
+#        # Count the occurrence of the term in all documents: tc(tm_i, doc), 
+#        # for all documents at once
+#        var tc_tm_doc  := [dbl](occurrences.reverse().histogram());
+#        var foreground := [/](tc_tm_doc, doc_len);
+#
+#        res := [*](res, foreground);
+#    }
+#    
+#    if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
+#        # Add the scores to the context set (this should have scores 0, so adding is OK)
+#        res := [+](ctx, res);
+#    } else {
+#        # Add the scores to the context set (this should have scores 1, so multiplying is OK)
+#        res := [*](ctx, res);
+#    }
+#    if ( trace ) tj_trace( "END   p_containing_t_LM_COARSE" );
+#    return res;
+#}
 
 ##
 # Implementation of the Language Modeling retrieval model.
@@ -2369,105 +2426,107 @@ PROC p_containing_q_LM(bat[oid,dbl] ctx, bat[void,str] Qterms, BAT[oid,str] qenv
 #  tc(tm_i, doc): term count of query term tm_i in doc
 #  len(doc)     : size of doc (term or element size)
 ##
-PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type,BAT[oid,str] qenv) : bat[oid,dbl]
-{   
-    if ( trace ) tj_trace( "BEGIN p_containing_t_LMs_COARSE" );
-    # To follow the naming in the formula above, context regions are named "documents".
-    # For each term we need:
-    #  - foreground probability (first term). This depends on the context region
-    #  - background probability (second term). This is the same for every context region
-    
-    # Convert the query terms from [void,str] to [void,tid]
-    var terms := _terms2void_tid( Qterms, qenv );
-
-    ### Background probability:
-    # For each term: collection term frequency tc(tm_i, col):
-    # var col_term_frq := tid_pre.reverse().histogram();
-    # small fix to get LMs running again...
-    var col_term_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms.reverse().project(int(0)));
-
-    # Collection size len(col): int
-    var col_len := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
-
-    # Take only the terms that occur in the collection
-    terms := terms.reverse().semijoin(col_term_frq).hmark(0@0);
-
-    if (terms.count() = 0) { return new(oid,dbl); }
-    
-    ###
-    
-    ### Foreground probability: 
-    # Find out the document positions of the terms for foreground probability
-    var tid_pre := indexfetchjoin(terms, 
-                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
-                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
-    
-    if (tid_pre.count() = 0) { return new(oid,dbl); }
-    tid_pre := tid_pre.tsort();
-    
-    # TODO: fragmentation
-    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size1");
-    
-    # See which document contain the query terms we create a bat of [doc, term-id]:
-    var doc_tid := _containing_desc_tmj(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size);
-    
-    # len(doc): [doc, size]
-    var doc_len := [dbl](bat("tj_" + qenv.find(QENV_FTINAME) + "_size1").semijoin(doc_tid));
-    
-    ###
-    
-    # Now, we need to compute the probability for each document->term pair
-    var doc_termscore   := new(oid,dbl);
-    var prod_background := dbl(1);
-    
-    # Iterate over all terms.
-    terms@batloop() {
-        # Compute the first factor
-        # $t contains the term id 
-        var occurrences := doc_tid.select($t).sort();
-        
-        # Count the occurrence of the term in all documents: tc(tm_i, doc), 
-        # for all documents at once
-        var tc_tm_doc  := [dbl](occurrences.reverse().histogram());
-        var foreground := [/](tc_tm_doc, doc_len);
-
-        # Compute the background probability: tc(tm_i,col)/len(col)
-        var tc_tm_col  := col_term_frq.find($t); 
-        var background := dbl(tc_tm_col) / dbl(col_len);
-        
-        # Compute the first factor. This generates a [doc, term score] table for
-        # each combination of doc and term
-        var total := [+]( [/]( [*]((1.0 - lambda), foreground), lambda * background), dbl(1) );
-        doc_termscore.insert( [dbl](total) );
-        
-        # Compute the second factor: product of background statistics over all terms
-        prod_background := prod_background * background;
-    }
-    
-    # We now have a table that lists [doc, term score] pairs. These need to be aggregated
-    # into [doc, score] pairs: (this is the first aggregate product in the formula)
-    
-    var elements := ctx.mark(0@0);
-    
-    if ( not( returnAllElements ) ) 
-        elements := elements.semijoin(doc_tid);
-        
-    var res := {prod}(doc_termscore.tmark(0@0), doc_termscore.hmark(0@0), elements );
-    
-    # Now compute the final scores: multiply by the background score
-    res := [*](res, lambda * prod_background);
-
-    if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
-        # Add the scores to the context set (this should have scores 0, so adding is OK)
-        res := [+](ctx, res);
-    } else {
-        # Add the scores to the context set (this should have scores 1, so multiplying is OK)
-        res := [*](ctx, res);
-    }
-    if ( trace ) tj_trace( "END   p_containing_t_LMs_COARSE" );
-    return res;
-}
-
+#PROC p_containing_q_LMs2(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type,BAT[oid,str] qenv) : bat[oid,dbl]
+#{   
+#    if ( trace ) tj_trace( "BEGIN p_containing_t_LMs_COARSE" );
+#    # To follow the naming in the formula above, context regions are named "documents".
+#    # For each term we need:
+#    #  - foreground probability (first term). This depends on the context region
+#    #  - background probability (second term). This is the same for every context region
+#    
+#    # Convert the query terms from [void,str] to [void,tid]
+#    var bg_cName := qenv.find(QENV_FTIBGNAME);
+#    var terms := _terms2void_tid( Qterms, bg_cName );
+#
+#    ### Background probability:
+#    # For each term: collection term frequency tc(tm_i, col):
+#    # var col_term_frq := tid_pre.reverse().histogram();
+#    # small fix to get LMs running again...
+#    var col_term_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms.reverse().project(int(0)));
+#
+#    # Collection size len(col): int
+#    var col_len := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
+#
+#    # Take only the terms that occur in the collection
+#    terms := terms.reverse().semijoin(col_term_frq).hmark(0@0);
+#
+#    if (terms.count() = 0) { return new(oid,dbl); }
+#    
+#    ###
+#    
+#    ### Foreground probability: 
+#    # Find out the document positions of the terms for foreground probability
+#    var tid_pre := indexfetchjoin(terms, 
+#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
+#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") );
+#    
+#    if (tid_pre.count() = 0) { return new(oid,dbl); }
+#    tid_pre := tid_pre.tsort();
+#    
+#    # TODO: fragmentation
+#    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size1");
+#    
+#    # See which document contain the query terms we create a bat of [doc, term-id]:
+#    var doc_tid := _containing_desc_tmj(ctx.sort().mark(0@0), tid_pre.reverse(), pre_size);
+#    
+#    # len(doc): [doc, size]
+#    var doc_len := [dbl](bat("tj_" + qenv.find(QENV_FTINAME) + "_size1").semijoin(doc_tid));
+#    
+#    ###
+#    
+#    # Now, we need to compute the probability for each document->term pair
+#    var doc_termscore   := new(oid,dbl);
+#    var prod_background := dbl(1);
+#    
+#    # Iterate over all terms.
+#    terms@batloop() {
+#        # Compute the first factor
+#        # $t contains the term id 
+#        var occurrences := doc_tid.select($t).sort();
+#        
+#        # Count the occurrence of the term in all documents: tc(tm_i, doc), 
+#        # for all documents at once
+#        var tc_tm_doc  := [dbl](occurrences.reverse().histogram());
+#        var foreground := [/](tc_tm_doc, doc_len);
+#
+#        # Compute the background probability: tc(tm_i,col)/len(col)
+#        var tc_tm_col  := col_term_frq.find($t); 
+#        var background := dbl(tc_tm_col) / dbl(col_len);
+#        
+#        # Compute the first factor. This generates a [doc, term score] table for
+#        # each combination of doc and term
+#        var total := [+]( [/]( [*]((1.0 - lambda), foreground), lambda * background), dbl(1) );
+#        doc_termscore.insert( [dbl](total) );
+#        
+#        # Compute the second factor: product of background statistics over all terms
+#        prod_background := prod_background * background;
+#    }
+#    
+#    # We now have a table that lists [doc, term score] pairs. These need to be aggregated
+#    # into [doc, score] pairs: (this is the first aggregate product in the formula)
+#    
+#    var elements := ctx.mark(0@0);
+#    
+#    if ( not( returnAllElements ) ) 
+#        elements := elements.semijoin(doc_tid);
+#        
+#    var res := {prod}(doc_termscore.tmark(0@0), doc_termscore.hmark(0@0), elements );
+#    
+#    # Now compute the final scores: multiply by the background score
+#    res := [*](res, lambda * prod_background);
+#    ctx.print();
+#    qenv.find(QENV_SCOREBASE).print();
+#    if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
+#        # Add the scores to the context set (this should have scores 0, so adding is OK)
+#        res := [+](ctx, res);
+#    } else {
+#        # Add the scores to the context set (this should have scores 1, so multiplying is OK)
+#        res := [*](ctx, res);
+#    }
+#    if ( trace ) tj_trace( "END   p_containing_t_LMs_COARSE" );
+#    return res;
+#}
+#
 ##
 # Returns the collection frequency table (should be precomputed, but is calculated for now)
 ##
