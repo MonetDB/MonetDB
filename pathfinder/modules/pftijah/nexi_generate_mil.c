@@ -708,19 +708,21 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 
         case MODEL_LM :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LM(terms, qenv);\n", com_num, com_nr_left);
+//          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LM(terms, qenv);\n", com_num, com_nr_left);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LMs%s(terms%s,qenv);\n", com_num, com_nr_left, parserCtx->ffPfx, parserCtx->flastPfx);
 
           break;
 
         case MODEL_LMS :
          
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LMs(terms, modifiers, %f, %d, %d,qenv);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
+//          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LMs(terms, modifiers, %f, %d, %d,qenv);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LMs%s(terms%s,qenv);\n", com_num, com_nr_left, parserCtx->ffPfx, parserCtx->flastPfx);
 
           break;
         
         case MODEL_NLLR :
             
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR%s(terms, %f%s,qenv);\n", com_num, com_nr_left, parserCtx->ffPfx, txt_retr_model->param1, parserCtx->flastPfx);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR%s(terms%s,qenv);\n", com_num, com_nr_left, parserCtx->ffPfx, parserCtx->flastPfx);
         
           break;
         

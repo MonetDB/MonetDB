@@ -234,9 +234,11 @@ int old_main(BAT* optbat, char* startNodes_name)
     return_all          = FALSE;
     stem_stop_query     = FALSE;
     bool eq_init        = FALSE;
-    
+   
+    /* set query environment */
+    MILPRINTF(MILOUT, "var qenv := create_qenv();\n");
+
     /* startup of argument options */
-    /* INCOMPLETE, select_root() should distinguish between card(0) and nil */
     if ( use_startNodes ) {
         MILPRINTF(MILOUT, "var startNodes := new(void,oid);\n");
         MILPRINTF(MILOUT, "if ( view_bbp_name().reverse().exist(\"%s\") ) {\n", startNodes_name );
@@ -253,8 +255,10 @@ int old_main(BAT* optbat, char* startNodes_name)
     MILPRINTF(MILOUT, "var tracefile := \"\";\n" );
     
 
-    char* qenv_prox_val = NULL;
-    char* qenv_fb_val   = NULL;
+    char* qenv_prox_val  = NULL;
+    char* qenv_fb_val    = NULL;
+    char* qenv_scorebase = "0"; //default setting
+    char* qenv_c_lambda = "0.8"; //default setting
 
     BUN p, q;
     BATloop(optbat, p, q) {
@@ -298,8 +302,10 @@ int old_main(BAT* optbat, char* startNodes_name)
                 txt_retr_model->model = MODEL_BOOL;
             } else if ( strcasecmp(optVal,"LM") == 0 ) {
                 txt_retr_model->model = MODEL_LM;
+                qenv_scorebase = "1";
             } else if ( strcasecmp(optVal,"LMS") == 0 ) {
                 txt_retr_model->model = MODEL_LMS;
+                qenv_scorebase = "1";
             } else if ( strcasecmp(optVal,"TFIDF") == 0 ) {
                 txt_retr_model->model = MODEL_TFIDF;
             } else if ( strcasecmp(optVal,"OKAPI") == 0 ) {
@@ -371,6 +377,7 @@ int old_main(BAT* optbat, char* startNodes_name)
         } else if ( strcmp(optName,"collection-lambda") == 0 || 
                     strcmp(optName,"ir-model-param1") == 0) {
             txt_retr_model->param1 = atof( optVal );
+	    qenv_c_lambda = optVal;
 
         } else if ( strcmp(optName,"ir-model-param2") == 0 ) {
             txt_retr_model->param2 = atof( optVal );
@@ -433,12 +440,12 @@ int old_main(BAT* optbat, char* startNodes_name)
             MILPRINTF(MILOUT, "trace     := TRUE;\n" );
             MILPRINTF(MILOUT, "tracefile := \"%s\";\n", optVal );
             
-        } else if (strcmp(optName, "scoreBase") == 0) {
+ /*       } else if (strcmp(optName, "scoreBase") == 0) {
             if (strcasecmp(optVal, "ONE") == 0) {
-                MILPRINTF(MILOUT, "qenv := tj_setScoreBase(\"1\",qenv);\n");
+                qenv_scorebase = "0";
             } else {
-                MILPRINTF(MILOUT, "qenv := tj_setScoreBase(\"0\",qenv);\n");
-            }
+                qenv_scorebase = "1";
+            } */
         } else if (strcmp(optName, "stem_stop_query") == 0) {
             if (strcasecmp(optVal, "TRUE") == 0) {
                 stem_stop_query = TRUE;
@@ -491,10 +498,11 @@ int old_main(BAT* optbat, char* startNodes_name)
         algebra_type = COARSE2;
     }
         
-    
+    MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_FTINAME,\"%s\");\n",parserCtx->collection);
+    MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_FTIBGNAME,\"%s\");\n",parserCtx->collection);
+    MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_SCOREBASE,\"%s\");\n",qenv_scorebase);
+    MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_C_LAMBDA,\"%s\");\n",qenv_c_lambda);
     // Prepend some variables to the MIL code.
-    MILPRINTF(MILOUT, "var qenv := create_qenv(\"%s\",\"%s\",\"0\");\n",parserCtx->collection,parserCtx->collection);
-
     if ( qenv_prox_val ) { 
         MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_TERM_PROXIMITY,\"%s\");\n",qenv_prox_val);
 	free(qenv_prox_val);
