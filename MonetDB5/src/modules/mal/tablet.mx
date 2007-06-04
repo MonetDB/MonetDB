@@ -1652,6 +1652,30 @@ output_file_ordered(Tablet * as, BAT *order, stream *fd, oid base)
 }
 
 #define SIZE 1*1024*1024
+@-
+Estimate the size of a BAT to avoid multiple extends.
+@c
+static size_t
+estimator(char *datafile){
+	long size;
+	char buf[BUFSIZ+1],*s=buf;
+	size_t nr=0;
+	FILE *f;
+	f= fopen(datafile,"R");
+	if(f == NULL) return 0;
+
+	fseek(f,0L,SEEK_END);
+	size= ftell(f);
+	buf[BUFSIZ]=0;
+	if( fread(buf, 0, BUFSIZ,f) >0){
+		for(; *s; s++)
+			if( *s=='\n') nr++;
+	}
+	fclose(f);
+	if( nr == 0) 
+		return size/BUFSIZ;
+	return size/BUFSIZ/nr;
+}
 
 BAT *
 TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr)
@@ -1667,6 +1691,8 @@ TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr)
 		}
 		return NULL;
 	}
+	if( nr== 0)
+		nr= estimator(datafile);
 	res = TABLETinput(names, seps, types, b = bstream_create(s, SIZE), NULL, nr);
 	bstream_destroy(b);
 	stream_close(s);
