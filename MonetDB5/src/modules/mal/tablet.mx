@@ -1661,16 +1661,19 @@ estimator(char *datafile){
 	char buf[BUFSIZ+1],*s=buf;
 	size_t nr=0;
 	FILE *f;
-	f= fopen(datafile,"R");
+	f= fopen(datafile,"r");
 	if(f == NULL) return 0;
 
+	buf[BUFSIZ]=0;
+	if( (nr = fread(buf, 0, BUFSIZ,f)) >0){
+		buf[nr] = 0;
+		nr = 0;
+		for(s = buf; *s; s++)
+			nr++;
+	} else
+		nr = 0;
 	fseek(f,0L,SEEK_END);
 	size= ftell(f);
-	buf[BUFSIZ]=0;
-	if( fread(buf, 0, BUFSIZ,f) >0){
-		for(; *s; s++)
-			if( *s=='\n') nr++;
-	}
 	fclose(f);
 	if( nr == 0) 
 		return size/BUFSIZ;
