@@ -1,0 +1,10 @@
+pf:add-doc("$TSTSRCDIR/insert_large_doc.SF-1726954-test.xml", "test.xml", "test", 10)
+<>
+pf:add-doc("$TSTSRCDIR/insert_large_doc.SF-1726954.xml.gz", "monetdb-sources.xml", "monetdb-sources", 0)
+<>
+count(doc("monetdb-sources.xml")//*)
+<>
+for $i in doc("monetdb-sources.xml")/XIRAF/*
+return do insert $i into doc("test.xml")/XIRAF/device[@name="pc01"]
+<>
+count(doc("test.xml")//*)
