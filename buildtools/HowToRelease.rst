@@ -46,9 +46,9 @@ Preparation of a Major Release
 - Create a new branch for the release on this tag (e.g. ``cvs tag -b
   MonetDB_1-16``).
 - Set version numbers in the current branch (e.g. ``vertoo.py -m
-  MonetDB set 1.17.1``)
+  MonetDB set 1.17.0``)
 - Create a tag on the head of the current branch for propagation
-  purposes (e.g. ``cvs tag MonetDB_1-17-1``).
+  purposes (e.g. ``cvs tag MonetDB_1-17_sync``).
 - Check out the new branch (e.g. ``cvs co -rMonetDB_1-16 MonetDB``).
 - Set version numbers in the new stable branch (e.g. ``vertoo.py -m
   MonetDB set 1.16.0``).
@@ -56,7 +56,7 @@ Preparation of a Major Release
   (``dft_strict=no``, ``dft_assert=no``, ``dft_optimi=yes``,
   ``dft_netcdf=no``).
 - Create a tag on the head of the new branch for propagation purposes
-  (e.g. ``cvs tag MonetDB_1-16-1``).
+  (e.g. ``cvs tag MonetDB_1-16_sync``).
 
 After this, it's **bug fixes only** on the new branch.
 
@@ -66,16 +66,17 @@ Preparation for a Minor Release
 - Propagate changes from the stable branch to the current branch.
 - Set version numbers in the stable branch (e.g. ``vertoo.py -m
   MonetDB incr release``).  This should set the release to an even
-  number.  (On MonetDB5 it's different: ``vertoo.py -m MonetDB5
-  set-part build 1_2``.)
+  number.
 - Update the propagation synchronization tags on the stable branch for
   the files that were changed in the previous step (e.g. ``cvs tag -F
-  MonetDB_1-16-1 vertoo.data``).
+  MonetDB_1-16_sync vertoo.data``).
 
 Releasing
 ---------
 
 - Wait for the next overnight test to get the daily builds.
+- Create a tag on the tested version of the release branches to mark the
+  released code base (e.g. ``cvs tag MonetDB_1-16-0``).
 - Build Windows installers, making sure they are all compiled with the
   correct options:
 
@@ -102,11 +103,10 @@ Post Release
 
 - Set version numbers in the stable branch (e.g. ``vertoo.py -m
   MonetDB incr release``).  This should set the release to an odd
-  number.  (On MonetDB5 it's different: ``vertoo.py -m MonetDB5
-  set-part build 1_3``.)
+  number.
 - Update the propagation synchronization tags on the stable branch for
   the files that were changed in the previous step (e.g. ``cvs tag -F
-  MonetDB_1-16-1 vertoo.data``).
+  MonetDB_1-16_sync vertoo.data``).
 
 
 Post Minor Release
