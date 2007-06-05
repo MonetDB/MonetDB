@@ -1162,7 +1162,7 @@ public class MonetConnection implements Connection {
 			isSet = new boolean[7];
 			this.parent = parent;
 			if (parent.cachesize == 0) {
-				cacheSize = MonetConnection.DEF_FETCHSIZE;
+				cacheSize = lang == LANG_SQL ? MonetConnection.DEF_FETCHSIZE : tuplecount;
 				cacheSizeSetExplicitly = false;
 			} else {
 				cacheSize = parent.cachesize;
