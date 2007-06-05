@@ -17,6 +17,10 @@ var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/BugDay_2005-10-06_0.9.3/Tests";
 shred_doc(TSTSRCDIR + "/" + "entities.xml", "entities.xml");
 # Shredded XML doc("entities.xml"), total time after commit=0.015s
 shred_doc(TSTSRCDIR + "/" + "entities-invalid.xml", "entities-invalid.xml");
+
+
+!ERROR: Entity 'mdash' not defined
+!ERROR: Entity 'mdash' not defined
 !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
 !ERROR: [shred_url]: first error was:
 !ERROR: shredder_parse: XML input not well-formed.
