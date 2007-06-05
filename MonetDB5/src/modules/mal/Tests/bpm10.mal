@@ -1,0 +1,21 @@
+function gen(n:int):bat[:oid,:int];
+	r:=bat.new(:oid,:int);
+	barrier (go,i):=language.newRange(0:int);
+                bat.append(r,i);
+                redo (go,i):= language.nextElement(1:int,n);
+        exit (go,i);
+	return r;
+end gen;
+
+r:=gen(600);
+
+s:=bat.getSpaceUsed(r);
+
+
+ra:= bpm.deposit("myr",r);
+bpm.dump();
+
+r1:=bpm.take(ra,1);
+rs:=algebra.uselect(r1,nil:int,250);
+bpm.adapt(r1,nil:int,250,rs);
+

@@ -312,6 +312,11 @@ command derivePartition(pb:bat[:any_1,:any_2],
 address BPMderived
 comment "Create a derived fragmentation over the head using src.";
 
+command adapt(s:bat[:any_1,:any_2], low:any_2, hgh:any_2, rs:bat[:any_1,:any_3]):void
+address BPMadapt
+comment "Re-organize segment s using the selection (val1,val2) stored in bat rs";
+
+
 command take(pb:str):bat[:any_1,:any_2]
 address BPMtake
 comment "Retrieve the alias given the name of a partitioned BAT";
@@ -471,7 +476,7 @@ The internal data structure is used as a cache for improved access.
 #include <math.h>
 
 
-/* #define _DEBUG_BPM_  */
+#define _DEBUG_BPM_  
 
 #ifdef WIN32
 #ifndef LIBBPM
@@ -503,6 +508,7 @@ bpm_export str BPMaddPartition(bat *ret, str *nme, bat *src);
 bpm_export str BPMaddPartitionDim(bat *ret, str *nme, bat *src, ptr hl, ptr hh, ptr tl, ptr th);
 bpm_export str BPMhash(bat *ret, bat *bid, int *slots);
 bpm_export str BPMderived(bat *ret, bat *bid, bat *src);
+bpm_export str BPMadapt(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs );
 
 bpm_export str BPMtake(bat *ret, str *nme);
 bpm_export str BPMtakePartition(bat *ret, bat *bid, int *idx);
@@ -558,6 +564,7 @@ bpm_export str BPMepilogue(int *ret);
 #include "bat5.h"
 #include "algebra.h"
 #define KB	1024
+#define Mmin	KB
 @-
 The partition manager uses its private memory mapped catalog 
 of persistent BATs.
@@ -1397,6 +1404,167 @@ BPMderived(bat *ret, bat *bid, bat *src)
 	*ret= 0;
 	throw(MAL, "bpm.derived","NYI");
 }
+
+str
+BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
+{
+	BAT *b,*bs, *bs1, *bs2;
+	Partition ps, p, p2;
+	int (*cmp) (ptr, ptr);
+	ptr nilptr;
+	int cs;
+	lng space, space1, space2;
+	(void) ret;
+
+	BPMopen();
+
+	if( (ps = getByNumber(*bid)) == 0)
+		throw(MAL,"pbm.split","BAT is not a segment: To Do");
+	@:getBATdescriptor(bid,b,"bpm.adapt");
+	/* get the comparison function */
+	cmp= BATatoms[b->ttype].atomCmp;
+	nilptr = ATOMnilptr(b->ttype);
+
+/* check size */
+	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	if (space < Mmin) { /* no re-org.*/
+		BBPunfix(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+/* check selection overlap and part sizes */
+	if((((*cmp)(low, nilptr)==0) || greater(*bid,tlow,low) ||
+	     equal(*bid,tlow,low)) && 
+	   (((*cmp)(hgh, nilptr)==0) || less(*bid,thgh,hgh) ||
+	     equal(*bid,thgh,hgh))) 
+	 { 
+		/* all segment selected - no reorg.*/
+		BBPunfix(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	@:getBATdescriptor(rs,bs,"bpm.adapt");
+	space1 = BATcount(bs)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+
+	if(((*cmp)(low, nilptr)==0) || greater(*bid,tlow,low)) { 
+		cs=1; space2 = space -space1;
+	}
+	else if (((*cmp)(hgh, nilptr)==0) || less(*bid,thgh,hgh)) {
+		cs=2; space2 = space -space1;
+	}
+	else {
+	 	cs=3; space2 = (space -space1)/2; /* rough estimate- ToDo */
+	}
+	if ((space1 < Mmin) || (space2 < Mmin)) { /* too little parts, no re-org.*/
+		BBPunfix(b->batCacheid);
+		BBPunfix(bs->batCacheid);
+		return MAL_SUCCEED;
+	}
+
+/* re-organize */
+	bs1= BATsemijoin(b,bs);
+	BBPunfix(bs->batCacheid);
+	if( bs1 == 0){
+		BBPunfix(b->batCacheid);
+		throw(MAL,"bpm.adapt","Can not create new segment");
+	}
+	p= newPartition(ABS(bs1->batCacheid));
+	p->alias= ps->alias;
+	@:defaultRange(p,bs1)@
+	p->cnt= BATcount(bs1);
+	if( *bid> 0){
+		VALset(&p->hlow, rngType(bs1->htype), &ps->hlow );
+		VALset(&p->hhgh, rngType(bs1->htype), &ps->hhgh);
+		switch (cs) {
+		case 1: VALset(&p->tlow, rngType(bs1->ttype), &ps->tlow );
+			VALset(&p->thgh, rngType(bs1->ttype), hgh);	
+			break;
+		case 2: VALset(&p->tlow, rngType(bs1->ttype), low );
+			VALset(&p->thgh, rngType(bs1->ttype), &ps->thgh);	
+			break;
+		case 3: VALset(&p->tlow, rngType(bs1->ttype), low );
+			VALset(&p->thgh, rngType(bs1->ttype), hgh);	
+	}
+	} else {
+		VALset(&p->tlow, rngType(bs1->ttype), &ps->tlow );
+		VALset(&p->thgh, rngType(bs1->ttype), &ps->thgh);
+		switch (cs) {
+		case 1: VALset(&p->hlow, rngType(bs1->htype), &ps->hlow );
+			VALset(&p->hhgh, rngType(bs1->htype), hgh);	
+			break;
+		case 2: VALset(&p->hlow, rngType(bs1->htype), low );
+			VALset(&p->hhgh, rngType(bs1->htype), &ps->hhgh);	
+			break;
+		case 3: VALset(&p->hlow, rngType(bs1->htype), low );
+			VALset(&p->hhgh, rngType(bs1->htype), hgh);	
+		}
+	}
+	p->hbits=  ps->hbits;
+	p->tbits=  ps->tbits;
+
+	
+#ifdef _DEBUG_BPM_
+	BPMprintRecord(GDKout,p);
+#endif
+
+	BATdel(b,bs1,FALSE);
+	BBPkeepref(bs1->batCacheid);
+
+	switch (cs) {
+		case 1: insertPartition(getByNumber(ps->prv),p);
+			ps->cnt= BATcount(b);
+			if( *bid> 0)
+				VALset(&ps->tlow, rngType(b->ttype), hgh);
+			else VALset(&ps->hlow, rngType(b->htype), hgh);
+			break;			
+
+		case 2: insertPartition(ps,p);
+			ps->cnt= BATcount(b);
+			if( *bid> 0)
+				VALset(&ps->thgh, rngType(b->ttype), low);
+			else VALset(&ps->hhgh, rngType(b->htype), low);
+			break;
+		
+		case 3: bs2 =  BAT_select_(b, hgh, nilptr, FALSE, FALSE, TRUE, FALSE);
+			if( bs2 == 0){
+				BBPunfix(b->batCacheid);
+				throw(MAL,"bpm.adapt","Can not create new segment");
+			}
+			p2= newPartition(ABS(bs2->batCacheid));
+			p2->alias= ps->alias;
+			p2->cnt= BATcount(bs2);
+			if( *bid> 0){
+				VALset(&p2->hlow, rngType(bs2->htype), &ps->hlow );
+				VALset(&p2->hhgh, rngType(bs2->htype), &ps->hhgh);
+				VALset(&p2->tlow, rngType(bs2->ttype), hgh );
+				VALset(&p2->thgh, rngType(bs2->ttype), &ps->thgh);	
+	
+			} else {
+				VALset(&p2->tlow, rngType(bs2->ttype), &ps->tlow );
+				VALset(&p2->thgh, rngType(bs2->ttype), &ps->thgh);
+				VALset(&p2->hlow, rngType(bs2->htype), hgh );
+				VALset(&p2->hhgh, rngType(bs2->htype), &ps->hhgh);	
+			}
+			p2->hbits=  ps->hbits;
+			p2->tbits=  ps->tbits;
+		#ifdef _DEBUG_BPM_
+			BPMprintRecord(GDKout,p2);
+		#endif
+
+			BATdel(b,bs2,FALSE);
+			ps->cnt= BATcount(b);
+			if( *bid> 0)
+				VALset(&ps->thgh, rngType(b->ttype), low);
+			else VALset(&ps->hhgh, rngType(b->htype), low);
+			BBPkeepref(bs2->batCacheid);
+			insertPartition(ps,p);
+			insertPartition(p,p2);
+	}
+
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+
+
 @-
 Takeing out partitions.
 @c
@@ -2164,8 +2332,6 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 
 	/* check the size of each segment and split if necessary */
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
-	/*	BKCgetSpaceUsed(&space, &i); */
-
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitquantile");
 		
 		space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
@@ -2192,49 +2358,51 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 
 		while ((*cmp) ((ptr)v, nilptr)!=0) {
 
-		val = (ptr) VALget(v);
-		hval = (ptr) VALget(v+1);
-		if( *bid > 0)
-			bn= BAT_select_(b, val, hval, TRUE, FALSE, TRUE, FALSE);
-		else{
-			bn= BAT_select_(BATmirror(b), val, hval, TRUE, FALSE, TRUE, FALSE);
-			bn= BATcopy(BATmirror(bn), bn->ttype,bn->htype,1);
-		}
+			val = (ptr) VALget(v);
+			hval = (ptr) VALget(v+1);
+			if( *bid > 0)
+				bn= BAT_select_(b, val, hval, TRUE, FALSE, TRUE, FALSE);
+			else{
+				bn= BAT_select_(BATmirror(b), val, hval, TRUE, FALSE, TRUE, FALSE);
+				bn= BATcopy(BATmirror(bn), bn->ttype,bn->htype,1);
+			}
 
-		if( bn == 0){
-			BBPunfix(b->batCacheid);
-			throw(MAL,"pbm.split","Can not create new partition");
-		}
-		BBPkeepref(ABS(bn->batCacheid));
-		p= newPartition(ABS(bn->batCacheid));
-		p->alias= bpmcat[i]->alias;
-		insertPartition(pprev,p);
-		p->cnt= BATcount(bn);
+			if( bn == 0){
+				BBPunfix(b->batCacheid);
+				throw(MAL,"pbm.split","Can not create new partition");
+			}
+		
+			p= newPartition(ABS(bn->batCacheid));
+			p->alias= bpmcat[i]->alias;
 
-		if( *bid> 0){
-			VALset(&p->hlow, rngType(b->htype), &bpmcat[i]->hlow );
-			VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
-			VALset(&p->tlow, rngType(b->ttype), val );
-			VALset(&p->thgh, rngType(b->ttype), hval );
-		} else {
-			VALset(&p->hlow, rngType(b->htype), val );
-			VALset(&p->hhgh, rngType(b->htype), hval  );
-			VALset(&p->tlow, rngType(b->ttype), &bpmcat[i]->tlow );
-			VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
-		}
+			insertPartition(pprev,p);
+			p->cnt= BATcount(bn);
 
-		/* default hash */
-		p->hbits=  bpmcat[i]->hbits;
-		p->tbits=  bpmcat[i]->tbits;
+			if( *bid> 0){
+				VALset(&p->hlow, rngType(b->htype), &bpmcat[i]->hlow );
+				VALset(&p->hhgh, rngType(b->htype), &bpmcat[i]->hhgh  );
+				VALset(&p->tlow, rngType(b->ttype), val );
+				VALset(&p->thgh, rngType(b->ttype), hval );
+			} else {
+				VALset(&p->hlow, rngType(b->htype), val );
+				VALset(&p->hhgh, rngType(b->htype), hval  );
+				VALset(&p->tlow, rngType(b->ttype), &bpmcat[i]->tlow );
+				VALset(&p->thgh, rngType(b->ttype), &bpmcat[i]->thgh );
+			}
 
-		BATdel(b,bn,FALSE); /* assume unique heads */
+			/* default hash */
+			p->hbits=  bpmcat[i]->hbits;
+			p->tbits=  bpmcat[i]->tbits;
 
-	#ifdef _DEBUG_BPM_
-		BPMprintRecord(GDKout,p);
-		stream_printf(GDKout,"Finished partition\n");
-	#endif
-		pprev = p;
-		v++;
+			BATdel(b,bn,FALSE); /* assume unique heads */
+			BBPkeepref(ABS(bn->batCacheid));
+
+		#ifdef _DEBUG_BPM_
+			BPMprintRecord(GDKout,p);
+			stream_printf(GDKout,"Finished partition\n");
+		#endif
+			pprev = p;
+			v++;
 		}
 
 		bpmcat[i]->cnt= BATcount(b);
