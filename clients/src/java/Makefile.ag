@@ -30,12 +30,12 @@ ant_jar_mcl = {
 
 ant_jar_jdbc = {
 	DIR = datadir/MonetDB/lib
-	FILES = monetdb-1.5-jdbc.jar
+	FILES = monetdb-1.6-jdbc.jar
 }
 
 ant_jar_jdbcclient = {
 	DIR = datadir/MonetDB/lib
-	FILES = jdbcclient-1.5.jar
+	FILES = jdbcclient-1.6.jar
 }
 
 ant_jar_xrpcwrapper = {

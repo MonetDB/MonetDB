@@ -17,7 +17,7 @@
 # All Rights Reserved.
 
 if [[ -z $1 ]] ; then
-	echo "Usage: $0 [-w] <(major|minor|suffix|mmajor|mminor)=newversion> [...]"
+	echo "Usage: $0 [-w] <(jdbc|mcl|xrpc)> <(major|minor|suffix)=newversion> [...]"
 	echo "where -w activates actual write of changes"
 	exit -1
 fi
@@ -33,25 +33,46 @@ escape_value() {
 	echo "$*" | sed -e 's/\+/\\\\+/g' | sed -e 's/\*/\\\\*/g' | sed -e 's/\./\\\\./g'
 }
 
-MCL_MAJOR=$(get_value 'MCL_MAJOR')
-MCL_MINOR=$(get_value 'MCL_MINOR')
+patch="cat"
 
-CUR_MAJOR=$(get_value 'JDBC_MAJOR')
-CUR_MINOR=$(get_value 'JDBC_MINOR')
-CUR_SUFFIX=$(get_value 'JDBC_VER_SUFFIX')
+# get rid of the script name
+case $1 in
+	-w)
+		patch="patch -p0";
+		shift
+		;;
+esac
+case $1 in
+	jdbc)
+		TYPE=JDBC
+		FILES="monetdb-XXX-jdbc.jar jdbcclient-XXX.jar monetdb-XXX-xmldb.jar"
+		;;
+	mcl)
+		TYPE=MCL
+		FILES="monetdb-XXX-mcl.jar"
+		;;
+	xrpc)
+		TYPE=XRPC_WRAPPER
+		FILES="xrpcwrapper-XXX.jar"
+		;;
+	*)
+		echo "invalid type: $1"
+		exit -1
+		;;
+esac
+shift
+
+CUR_MAJOR=$(eval "get_value '${TYPE}_MAJOR'")
+CUR_MINOR=$(eval "get_value '${TYPE}_MINOR'")
+CUR_SUFFIX=$(eval "get_value '${TYPE}_VER_SUFFIX'")
 
 NEW_MAJOR=${CUR_MAJOR}
 NEW_MINOR=${CUR_MINOR}
 NEW_SUFFIX=${CUR_SUFFIX}
 
-ESC_MMAJOR=$(escape_value ${MCL_MAJOR})
-ESC_MMINOR=$(escape_value ${MCL_MINOR})
-
 ESC_MAJOR=$(escape_value ${CUR_MAJOR})
 ESC_MINOR=$(escape_value ${CUR_MINOR})
 ESC_SUFFIX=$(escape_value ${CUR_SUFFIX})
-
-patch="cat"
 
 for param in $* ; do
 	arg=${param%%=*}
@@ -72,31 +93,11 @@ for param in $* ; do
 		fi
 		NEW_MINOR=${num}
 		;;
-	mmajor)
-		if [[ -z ${num} ]] ; then
-			echo "mmajor needs a numeric argument!";
-			exit -1
-		fi
-		MCL_MAJOR=${num}
-		;;
-	mminor)
-		if [[ -z ${num} ]] ; then
-			echo "mminor needs a numeric argument!";
-			exit -1
-		fi
-		MCL_MINOR=${num}
-		;;
 	suffix)
 		NEW_SUFFIX=${val}
 		;;
-	-w)
-		patch="patch -p0";
-		;;
 	esac
 done
-
-[[ ${NEW_SUFFIX} == ${CUR_SUFFIX} ]] && \
-	NEW_SUFFIX=${NEW_SUFFIX}/MCL-${MCL_MAJOR}.${MCL_MINOR}
 
 echo "Current version: ${CUR_MAJOR}.${CUR_MINOR} (${CUR_SUFFIX})"
 echo "New version:     ${NEW_MAJOR}.${NEW_MINOR} (${NEW_SUFFIX})"
@@ -110,17 +111,19 @@ sed \
 	${file} | ${diff} ${file} - | ${patch}
 
 file="Makefile.ag"
-sed \
-	-e "s|monetdb-${ESC_MMAJOR}\.${ESC_MMINOR}-jdbc\.jar|monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar|g" \
-	-e "s|monetdb-${ESC_MAJOR}\.${ESC_MINOR}-jdbc\.jar|monetdb-${NEW_MAJOR}.${NEW_MINOR}-jdbc.jar|g" \
-	-e "s|jdbcclient-${ESC_MAJOR}\.${ESC_MINOR}\.jar|jdbcclient-${NEW_MAJOR}.${NEW_MINOR}.jar|g" \
-	${file} | ${diff} ${file} - | ${patch}
+for f in $FILES ; do
+	fr=${f//XXX/${NEW_MAJOR}.${NEW_MINOR}}
+	fo=${f//XXX/${ESC_MAJOR}.${ESC_MINOR}}
+	fo=${fo//./\\.}
+	sed \
+	-e "s|${fo}|$fr|g" \
+		${file} | ${diff} ${file} - | ${patch}
+done
 
 file="build.properties"
 sed \
-	-e "s|MCL_MAJOR=${ESC_MMAJOR}|MCL_MAJOR=${MCL_MAJOR}|g" \
-	-e "s|MCL_MINOR=${ESC_MMINOR}|MCL_MINOR=${MCL_MINOR}|g" \
-	-e "s|JDBC_MAJOR=${ESC_MAJOR}|JDBC_MAJOR=${NEW_MAJOR}|g" \
-	-e "s|JDBC_MINOR=${ESC_MINOR}|JDBC_MINOR=${NEW_MINOR}|g" \
-	-e "s|JDBC_VER_SUFFIX=${ESC_SUFFIX}|JDBC_VER_SUFFIX=${NEW_SUFFIX}|g" \
+	-e "s|${TYPE}_MAJOR=${ESC_MAJOR}|${TYPE}_MAJOR=${NEW_MAJOR}|g" \
+	-e "s|${TYPE}_MINOR=${ESC_MINOR}|${TYPE}_MINOR=${NEW_MINOR}|g" \
+	-e "s|${TYPE}_VER_SUFFIX=${ESC_SUFFIX}|${TYPE}_VER_SUFFIX=${NEW_SUFFIX}|g" \
+	-e "s|${TYPE}-${ESC_MAJOR}\.${ESC_MINOR}|${TYPE}-${NEW_MAJOR}.${NEW_MINOR}|g" \
 	${file} | ${diff} ${file} - | ${patch}

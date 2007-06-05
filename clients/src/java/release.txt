@@ -2,7 +2,7 @@ RELEASE NOTES
 MonetDB JDBC driver version 1.5 (Steadfast/MCL-1.0)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2007-04-20
+Release date: 2007-06-05
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory
