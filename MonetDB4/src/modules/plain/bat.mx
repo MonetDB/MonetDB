@@ -1368,29 +1368,29 @@ CMDinfo(BAT **retval, BAT *b)
 		accessmode = "unknown";
 	}
 
-	BUNins(bn, "version", local_itoa(b->GDKversion),FALSE);
+	BUNins(bn, "version", local_itoa((ssize_t)(b->GDKversion)),FALSE);
 	BUNins(bn, "batId", BATgetId(b),FALSE);
-	BUNins(bn, "batCacheid", local_itoa(b->batCacheid),FALSE);
-	BUNins(bn, "batParentid", local_itoa(b->batParentid),FALSE);
-	BUNins(bn, "batSharecnt", local_itoa(b->batSharecnt),FALSE);
+	BUNins(bn, "batCacheid", local_itoa((ssize_t)(b->batCacheid)),FALSE);
+	BUNins(bn, "batParentid", local_itoa((ssize_t)(b->batParentid)),FALSE);
+	BUNins(bn, "batSharecnt", local_itoa((ssize_t)(b->batSharecnt)),FALSE);
 	BUNins(bn, "head", ATOMname(b->htype),FALSE);
 	BUNins(bn, "tail", ATOMname(b->ttype),FALSE);
 	BUNins(bn, "batPersistence", mode,FALSE);
 	BUNins(bn, "batRestricted", accessmode,FALSE);
-	BUNins(bn, "batRefcnt", local_itoa(BBP_refs(b->batCacheid)),FALSE);
-	BUNins(bn, "batLRefcnt", local_itoa(BBP_lrefs(b->batCacheid)),FALSE);
+	BUNins(bn, "batRefcnt", local_itoa((ssize_t)(BBP_refs(b->batCacheid))),FALSE);
+	BUNins(bn, "batLRefcnt", local_itoa((ssize_t)(BBP_lrefs(b->batCacheid))),FALSE);
 	BUNins(bn, "batDirty", BATdirty(b) ? "dirty" : "clean",FALSE);
-	BUNins(bn, "batSet", local_itoa(b->batSet),FALSE);
-	BUNins(bn, "void_tid", local_itoa(b->void_tid),FALSE);
-	BUNins(bn, "void_cnt", local_itoa(b->void_cnt),FALSE);
+	BUNins(bn, "batSet", local_itoa((ssize_t)(b->batSet)),FALSE);
+	BUNins(bn, "void_tid", local_itoa((ssize_t)(b->void_tid)),FALSE);
+	BUNins(bn, "void_cnt", local_itoa((ssize_t)(b->void_cnt)),FALSE);
 
-	BUNins(bn, "hsorted", local_itoa(BAThordered(b)),FALSE);
+	BUNins(bn, "hsorted", local_itoa((ssize_t)(BAThordered(b))),FALSE);
 	BUNins(bn, "hident", b->hident,FALSE);
-	BUNins(bn, "hdense", local_itoa(BAThdense(b)),FALSE);
+	BUNins(bn, "hdense", local_itoa((ssize_t)(BAThdense(b))),FALSE);
 	BUNins(bn, "hseqbase", oidtostr(b->hseqbase),FALSE);
-	BUNins(bn, "hkey", local_itoa(b->hkey),FALSE);
-	BUNins(bn, "hloc", local_itoa(b->hloc),FALSE);
-	BUNins(bn, "hvarsized", local_itoa(b->hvarsized),FALSE);
+	BUNins(bn, "hkey", local_itoa((ssize_t)(b->hkey)),FALSE);
+	BUNins(bn, "hloc", local_itoa((ssize_t)(b->hloc)),FALSE);
+	BUNins(bn, "hvarsized", local_itoa((ssize_t)(b->hvarsized)),FALSE);
 	BUNins(bn, "halign", local_utoa(b->halign),FALSE);
 	BUNins(bn, "hnosorted", local_utoa(b->H->nosorted),FALSE);
 	BUNins(bn, "hnosorted_rev", local_utoa(b->H->nosorted_rev),FALSE);
@@ -1399,12 +1399,12 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]),FALSE);
 
 	BUNins(bn, "tident", b->tident,FALSE);
-	BUNins(bn, "tdense", local_itoa(BATtdense(b)),FALSE);
+	BUNins(bn, "tdense", local_itoa((ssize_t)(BATtdense(b))),FALSE);
 	BUNins(bn, "tseqbase", oidtostr(b->tseqbase),FALSE);
-	BUNins(bn, "tsorted", local_itoa(BATtordered(b)),FALSE);
-	BUNins(bn, "tkey", local_itoa(b->tkey),FALSE);
-	BUNins(bn, "tloc", local_itoa(b->tloc),FALSE);
-	BUNins(bn, "tvarsized", local_itoa(b->tvarsized),FALSE);
+	BUNins(bn, "tsorted", local_itoa((ssize_t)(BATtordered(b))),FALSE);
+	BUNins(bn, "tkey", local_itoa((ssize_t)(b->tkey)),FALSE);
+	BUNins(bn, "tloc", local_itoa((ssize_t)(b->tloc)),FALSE);
+	BUNins(bn, "tvarsized", local_itoa((ssize_t)(b->tvarsized)),FALSE);
 	BUNins(bn, "talign", local_utoa(b->talign),FALSE);
 	BUNins(bn, "tnosorted", local_utoa(b->T->nosorted),FALSE);
 	BUNins(bn, "tnosorted_rev", local_utoa(b->T->nosorted_rev),FALSE);
@@ -1416,10 +1416,10 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)),FALSE);
 	BUNins(bn, "batFirst", local_utoa(BUNindex(b, b->batFirst)),FALSE);
 	BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))),FALSE);
-	BUNins(bn, "batStamp", local_itoa(b->batStamp),FALSE);
-	BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)),FALSE);
-	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()),FALSE);
-	BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk),FALSE);
+	BUNins(bn, "batStamp", local_itoa((ssize_t)(b->batStamp)),FALSE);
+	BUNins(bn, "lastUsed", local_itoa((ssize_t)(BBP_lastused(b->batCacheid))),FALSE);
+	BUNins(bn, "curStamp", local_itoa((ssize_t)(BBPcurstamp())),FALSE);
+	BUNins(bn, "batCopiedtodisk", local_itoa((ssize_t)(b->batCopiedtodisk)),FALSE);
 	BUNins(bn, "batDirtydesc", b->batDirtydesc ? "dirty" : "clean",FALSE);
 
 	BUNins(bn, "batDirtybuns", b->batDirtybuns ? "dirty" : "clean",FALSE);
