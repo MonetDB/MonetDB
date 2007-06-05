@@ -79,6 +79,7 @@ The server options have the following meaning:
 #include <stdio.h>
 #include <errno.h>
 #include <string.h> /* strerror */
+#include <locale.h>
 
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
@@ -383,11 +384,9 @@ faster system start.
 #if defined(_MSC_VER) && defined(__cplusplus)
 	set_terminate(mserver_abort);
 #endif
-/* should be looked into
-        if (setlocale(LC_CTYPE, "") == NULL){
-                GDKfatal( "cannot set locale\n");
+        if (setlocale(LC_CTYPE, "") == NULL) {
+                GDKfatal("cannot set locale\n");
         }
-*/
 
 #ifdef HAVE_MALLOPT
 	@:mallopt@
@@ -617,6 +616,7 @@ the configuration file.
 		callString(mal_clients, input, listing);
 		GDKfree(input);
 	}
+
 	if (GDKgetenv("mal_listing"))
 		sscanf(GDKgetenv("mal_listing"), "%d", &listing);
 
