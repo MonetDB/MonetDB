@@ -110,14 +110,31 @@ sed \
 	-e "s|Release date: 20[0-9][0-9]-[01][0-9]-[0-3][0-9]|Release date: `date +%F`|" \
 	${file} | ${diff} ${file} - | ${patch}
 
-file="Makefile.ag"
-for f in $FILES ; do
-	fr=${f//XXX/${NEW_MAJOR}.${NEW_MINOR}}
-	fo=${f//XXX/${ESC_MAJOR}.${ESC_MINOR}}
-	fo=${fo//./\\.}
-	sed \
-	-e "s|${fo}|$fr|g" \
-		${file} | ${diff} ${file} - | ${patch}
+for file in \
+	"Makefile.ag" \
+	"../../../sql/NT/MonetDB4-SQL/MonetDB4-Installer.vdproj" \
+	"../../../sql/NT/MonetDB5-SQL/MonetDB5-Installer.vdproj" \
+	"../../../sql/src/jdbc/tests/Tests/Test_JdbcClient.SQL.bat" \
+	"../../../sql/src/jdbc/tests/Tests/Test.SQL.bat" \
+	"../../../pathfinder/NT/MonetDB-XQuery/MonetDB-XQuery.vdproj" \
+	"../../../pathfinder/NT/MonetDB4-XQuery/MonetDB4-Installer.vdproj" \
+	"../../../pathfinder/tests/BugTracker/Tests/JDBC_250_results.SF-1730556.XQUERY.bat" \
+	; do
+	if [ -f ${file} ] ; then
+		for f in $FILES ; do
+			fr=${f//XXX/${NEW_MAJOR}.${NEW_MINOR}}
+			fo=${f//XXX/${ESC_MAJOR}.${ESC_MINOR}}
+			fo=${fo//./\\.}
+			sed \
+			-e "s|${fo}|$fr|g" \
+				${file} | ${diff} ${file} - | ${patch}
+		done
+	else
+		echo
+		echo "'${file}' not found."
+		echo "Please do not forget to replace '${fo}' by '${fr}' in '.../${file#*../}'."
+		echo
+	fi
 done
 
 file="build.properties"

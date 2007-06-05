@@ -1793,8 +1793,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1CF3981625D7433488FABAA49C317E0F"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\monetdb-1.5-jdbc.jar"
-            "TargetName" = "8:monetdb-1.5-jdbc.jar"
+            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\monetdb-1.6-jdbc.jar"
+            "TargetName" = "8:monetdb-1.6-jdbc.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
@@ -2293,8 +2293,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3BB3996E3E4D4A64B574C39D8398AB69"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\jdbcclient-1.5.jar"
-            "TargetName" = "8:jdbcclient-1.5.jar"
+            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\jdbcclient-1.6.jar"
+            "TargetName" = "8:jdbcclient-1.6.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"

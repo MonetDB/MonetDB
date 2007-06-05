@@ -1,6 +1,6 @@
 @echo off
 
-set JAR="%CLIENTS_PREFIX%\share\MonetDB\lib\jdbcclient-1.5.jar"
+set JAR="%CLIENTS_PREFIX%\share\MonetDB\lib\jdbcclient-1.6.jar"
 
 echo user=monetdb>      .monetdb
 echo password=monetdb>> .monetdb
