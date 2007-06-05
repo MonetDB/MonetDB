@@ -1,0 +1,105 @@
+stdout of test 'batcast.SF-1730987` in directory 'tests/BugTracker` itself:
+
+
+# 15:15:00 >  
+# 15:15:00 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/xquery_logs" --set mapi_open=true --set mapi_port=37469 --set xrpc_port=42832 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  batcast.SF-1730987.mal
+# 15:15:00 >  
+
+# MonetDB Server v5.0.0
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# dbname:mTests_tests_BugTracker
+# Visit http://monetdb.cwi.nl/ for further information
+#
+#v := bat.new(:oid,:bit);
+#bat.append(v,true);
+#bat.append(v,false);
+#bat.append(v,true);
+#bat.append(v,true);
+#bat.append(v,true);
+#bat.append(v,true);
+#bat.append(v,true);
+#bat.append(v,false);
+#bat.append(v,false);
+#bat.append(v,false);
+#bat.append(v,false);
+#
+#io.print(v);
+#
+#algebra.reuse(v);
+#v := batcalc.and(v,v,v);
+#
+#io.print(v);
+#v2 := batcalc.int(v);
+#io.print(v2);
+#
+function user.main():void;	# 0  (main:void)
+    v := bat.new(:oid,:bit);	# 1 CMDBATnew (v:bat[:oid,:bit])<-(_2:oid)(_3:bit)
+    bat.append(v,true);	# 2 BKCappend_val_wrap (_4:void)<-(v:bat[:oid,:bit])(_5:bit)
+    bat.append(v,false);	# 3 BKCappend_val_wrap (_6:void)<-(v:bat[:oid,:bit])(_7:bit)
+    bat.append(v,true);	# 4 BKCappend_val_wrap (_8:void)<-(v:bat[:oid,:bit])(_5:bit)
+    bat.append(v,true);	# 5 BKCappend_val_wrap (_9:void)<-(v:bat[:oid,:bit])(_5:bit)
+    bat.append(v,true);	# 6 BKCappend_val_wrap (_10:void)<-(v:bat[:oid,:bit])(_5:bit)
+    bat.append(v,true);	# 7 BKCappend_val_wrap (_11:void)<-(v:bat[:oid,:bit])(_5:bit)
+    bat.append(v,true);	# 8 BKCappend_val_wrap (_12:void)<-(v:bat[:oid,:bit])(_5:bit)
+    bat.append(v,false);	# 9 BKCappend_val_wrap (_13:void)<-(v:bat[:oid,:bit])(_7:bit)
+    bat.append(v,false);	# 10 BKCappend_val_wrap (_14:void)<-(v:bat[:oid,:bit])(_7:bit)
+    bat.append(v,false);	# 11 BKCappend_val_wrap (_15:void)<-(v:bat[:oid,:bit])(_7:bit)
+    bat.append(v,false);	# 12 BKCappend_val_wrap (_16:void)<-(v:bat[:oid,:bit])(_7:bit)
+    io.print(v);	# 13 IOprint_val (_17:void)<-(v:bat[:oid,:bit])
+    algebra.reuse(v);	# 14 ALGreuse (_18:bat[:oid,:bit])<-(v:bat[:oid,:bit])
+    v := batcalc.and(v,v,v);	# 15 CMDaccum_AND_bit (v:bat[:oid,:bit])<-(v:bat[:oid,:bit])(v:bat[:oid,:bit])(v:bat[:oid,:bit])
+    io.print(v);	# 16 IOprint_val (_19:void)<-(v:bat[:oid,:bit])
+    v2 := batcalc.int(v);	# 17 CMDconvert_bit_int (v2:bat[:oid,:int])<-(v:bat[:oid,:bit])
+    io.print(v2);	# 18 IOprint_val (_21:void)<-(v2:bat[:oid,:int])
+end main;	# 19  
+#-----------------#
+# h	t	  # name
+# void	bit	  # type
+#-----------------#
+[ 0@0,	  true	  ]
+[ 1@0,	  false	  ]
+[ 2@0,	  true	  ]
+[ 3@0,	  true	  ]
+[ 4@0,	  true	  ]
+[ 5@0,	  true	  ]
+[ 6@0,	  true	  ]
+[ 7@0,	  false	  ]
+[ 8@0,	  false	  ]
+[ 9@0,	  false	  ]
+[ 10@0,	  false	  ]
+#-----------------#
+# h	t	  # name
+# void	bit	  # type
+#-----------------#
+[ 0@0,	  true	  ]
+[ 1@0,	  false	  ]
+[ 2@0,	  true	  ]
+[ 3@0,	  true	  ]
+[ 4@0,	  true	  ]
+[ 5@0,	  true	  ]
+[ 6@0,	  true	  ]
+[ 7@0,	  false	  ]
+[ 8@0,	  false	  ]
+[ 9@0,	  false	  ]
+[ 10@0,	  false	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
+[ 1@0,	  0	  ]
+[ 2@0,	  1	  ]
+[ 3@0,	  1	  ]
+[ 4@0,	  1	  ]
+[ 5@0,	  1	  ]
+[ 6@0,	  1	  ]
+[ 7@0,	  0	  ]
+[ 8@0,	  0	  ]
+[ 9@0,	  0	  ]
+[ 10@0,	  0	  ]
+
+# 15:15:00 >  
+# 15:15:00 >  Done.
+# 15:15:00 >  
+
