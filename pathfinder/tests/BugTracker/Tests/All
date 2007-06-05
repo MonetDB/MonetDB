@@ -118,3 +118,4 @@ attribute_access_mposjoin_error.SF-1726928
 insert_large_doc.SF-1726954
 32_docs.SF-1730617
 JDBC_250_results.SF-1730556
+crash_on_concatenated_query.SF-1730547
