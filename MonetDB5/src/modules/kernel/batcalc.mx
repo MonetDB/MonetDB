@@ -1179,7 +1179,7 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 				*o++ = *(@3*)p @2 *(@3*)t;
 			p += xx; t += yy; 
 		}
-		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
+		(bn)->batBuns->free = BATcount(b)*sizeof(bit);
 		BATsetcount(bn, BATcount(b));
 	} else {
 		BUN p,q,t,h;
@@ -1236,7 +1236,7 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 				*o++ = (bit)( *(@3*) p @2 *(@3*)t);
 			p += xx; t += yy; 
 		}
-		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
+		(bn)->batBuns->free = BATcount(b)*sizeof(bit);
 		BATsetcount(bn, BATcount(b));
 	} else {
 		BUN o,p,q,t;
@@ -1286,7 +1286,7 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 				*o++ = *(@3*) p @2 *cst;
 			p += xx;
 		}
-		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
+		(bn)->batBuns->free = BATcount(b)*sizeof(bit);
 		BATsetcount(bn, BATcount(b));
 	} else {
 		BUN p,q,h;
@@ -1444,7 +1444,7 @@ CMDbitbatNOT(int *ret, int *bid)
 				*o++ = ! *(bit*)p;
 			p += xx;  
 		}
-		(bn)->batBuns->free += BATcount(b)*sizeof(bit);
+		(bn)->batBuns->free = BATcount(b)*sizeof(bit);
 		BATsetcount(bn, BATcount(b));
 	} else {
 		BUN p,q;
