@@ -120,7 +120,7 @@ GDKremovedir(str dirname)
 	closedir(dirp);
 	ret = rmdir(dirname);
 	if (ret < 0) {
-		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", DELDIR);
+		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirname);
 	}
 	IODEBUG THRprintf(GDKout, "#rmdir %s = %d\n", dirname, ret);
 
