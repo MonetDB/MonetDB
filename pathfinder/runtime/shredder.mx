@@ -1164,7 +1164,6 @@ shred_attribute_def(void *xmlCtx,
    (void)*defaultValue;
    (void)tree;
 
-    stream_printf(GDKout, "#XXXX\n");
     switch(type) {
         case XML_ATTRIBUTE_ID:
         case XML_ATTRIBUTE_IDREF:
