@@ -119,3 +119,4 @@ insert_large_doc.SF-1726954
 32_docs.SF-1730617
 JDBC_250_results.SF-1730556
 crash_on_concatenated_query.SF-1730547
+error_in_preceeding_axis.SF-1731850
