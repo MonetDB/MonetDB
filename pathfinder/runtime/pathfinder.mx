@@ -3467,6 +3467,10 @@ PROC shred_doc_base(bit cleanup,
     if (count(selidx_colname) > 0)
         selidx_colname := reverse(reverse(idx_colnames).kunique().sort());
 
+    var chk := select(idx_names.histogram(),2,int_nil);
+    if (count(chk) > 0) 
+        ERROR("A document named '%s' is added more than once (%d such errors).", reverse(chk).fetch(0), count(chk));
+
     lock_set(pf_short);
     err := CATCH(pivot := _shred_doc_base(selidx_colname, idx_names, idx_colnames, wsid));
     lock_unset(pf_short);

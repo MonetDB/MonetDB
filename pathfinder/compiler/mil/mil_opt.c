@@ -381,7 +381,7 @@ static int opt_emit_check_emptyblock(opt_t *o, unsigned int stmt) {
 
 	/* OK, delete the statements */
 	do {
-		o->stmts[stmt].deleted = 1; 
+		o->stmts[stmt].deleted = o->delete;
 		o->stmts[stmt].nilassign = 0; 
 		if (++stmt == OPT_STMTS) stmt = 0;
 	} while (stmt != until);
@@ -455,7 +455,7 @@ static void opt_emit(opt_t* o, unsigned int stmt) {
  */
 static void opt_elim(opt_t* o, unsigned int stmt, int kill_nilassign) {
 	unsigned int assigns_to = o->stmts[stmt].assigns_to;
-	if ((assigns_to < 32768) & (o->stmts[stmt].used == 0) & o->stmts[stmt].inactive & (o->curvar+1 < OPT_VARS)) { 
+	if ((assigns_to < 32768) & (o->stmts[stmt].used == 0) & o->stmts[stmt].inactive & (o->curvar+1 < OPT_VARS)) {
 		char *p = o->stmts[stmt].mil;
 
 		o->stmts[stmt].assigns_to |= 32768; /* this ensures we kill the statement only once */
@@ -472,7 +472,7 @@ static void opt_elim(opt_t* o, unsigned int stmt, int kill_nilassign) {
 			if (p[0] == ':' && p[1] == '=') {
 				*p++ = 0; /* special case: "var x := y" =>  "var x ;" */
 			} 
-			o->stmts[stmt].deleted = 1;
+			o->stmts[stmt].deleted = o->delete;
 		}
 		/* decrement the references (if any) and try to eliminate more */ 
 		while(o->stmts[stmt].refs > 0) {
@@ -527,7 +527,7 @@ static void opt_endscope(opt_t* o, unsigned int scope) {
 #endif
 		opt_elimvar(o, o->curvar = i, 0);
 		if (o->stmts[stmt].stmt_nr == o->vars[i].def_stmt_nr && o->stmts[stmt].used == 0) {
-			o->stmts[stmt].deleted = 1;
+			o->stmts[stmt].deleted = o->delete;
 		}
 	}
 }
@@ -578,7 +578,7 @@ static void opt_assign(opt_t *o, opt_name_t *name, unsigned int stmt) {
 		}
 	} else {
 		/* delete this statement */
-		o->stmts[stmt].deleted = 1;
+		o->stmts[stmt].deleted = o->delete;
 	}
 }
 
@@ -602,7 +602,7 @@ static void opt_usevar(opt_t *o, unsigned int var_nr, unsigned int stmt_nr) {
 					o->stmts[stmt_nr].refs++;
 				}
 				o->stmts[o->vars[var_nr].lastset[i]].used++;
-#ifdef OPT_COND
+#ifdef OPT_CODEMOTION
 				opt_move_kill(o, o->vars[var_nr].lastset[i]);
 #endif
 			}
@@ -747,7 +747,9 @@ static int opt_mil(opt_t *o, char* milbuf) {
 					o->condifelse[o->condlevel] = o->else_statement;
 					opt_start_cond(o, OPT_COND(o));
 					o->else_statement = o->if_statement = 0;
-				}
+				} else if (o->if_statement | o->else_statement) {
+                                        o->delete = 0; /* after if-nesting overflow we cannot guarantee correctness further on anymore */
+                                }
 				break; /* blocks are separate statements */
 			} else if (p[0]  == '}') {
 				char *q = opt_skip(p+1, 1); /* peek over whitespace & comment */
@@ -874,6 +876,7 @@ opt_t *opt_open(int optimize) {
 	if (o) {
 		memset(o, 0, sizeof(opt_t));
 		o->optimize = optimize;
+		o->delete = 1;
 		o->sec = OPT_SEC_IGNORE;
 		opt_setname("if", &name_if);
 		opt_setname("else", &name_else);

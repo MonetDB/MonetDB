@@ -648,7 +648,7 @@ emit_string(shredCtxStruct *shredCtx, char *s)
  * misc shredder helper functions
  * - handle_xml_chars()   buffered string reader
  * - handle_pfx_uri_loc() administer double-eliminated use of Q-Names 
- * - handle_ext_subset()  handle a DTD (external subset), needed to identify ID/IDREF attrs
+ * - handle_externalSubset()  handle a DTD (external subset), needed to identify ID/IDREF attrs
  * ==================================================================================== */
 
 static int 
@@ -720,9 +720,10 @@ handle_pfx_uri_loc(shredCtxStruct *shredCtx,
 }
 
 static int 
-handle_ext_subset(shredCtxStruct *shredCtx, 
+handle_externalSubset(shredCtxStruct *shredCtx, 
                   xmlDtdPtr dtd)
 {
+    xmlParserCtxtPtr ctx = shredCtx->xmlCtx;
     struct _xmlNode *p = dtd->children;
 
     while(p) {
@@ -740,12 +741,23 @@ handle_ext_subset(shredCtxStruct *shredCtx,
                 default:
                     break; /* ignore */
             }
-        }
+        } else if (p->type == XML_ENTITY_DECL) {
+            xmlEntityPtr ep =(xmlEntityPtr)p;
+	    if ( ! xmlAddDtdEntity(
+	    	ctx->myDoc,
+		ep->name,
+		ep->type,
+		ep->ExternalID,
+		ep->SystemID,
+		ep->content)
+	       ) {
+	            GDKerror("fail to install ENTITY(\"%s\")\n",ep->name);
+	    }
+	}
         p = p->next;
     }
     return GDK_SUCCEED;
 }
-
 
 /* ====================================================================================
  * SAX2 callback functions 
@@ -1168,22 +1180,29 @@ shred_external_subset(void *xmlCtx,
                       const xmlChar *ExternalID, 
                       const xmlChar *SystemID)
 {
-    shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
    (void)name;
+
+    shredCtxStruct *shredCtx = (shredCtxStruct*)xmlCtx;
+    xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
 #ifdef ADB_DEBUG
-    stream_printf(GDKout, "shred_external_subset(ctx, %s, %s, %s)\n", name, ExternalID, SystemID);
+    stream_printf(GDKerr, "shred_external_subset(ctx, %s, %s, %s)\n", name, ExternalID, SystemID);
 #endif
-    if (ExternalID || SystemID) {
-        /* INCOMPLETE, this part only works with absolute filenames or
-         * files located in the current working directory! A bit more
-         * inteligence could be applied here.
-         */
+    if (ExternalID || SystemID) { /* ignore dummy calls */
         xmlDtdPtr dtd;
 
         if ((dtd=xmlParseDTD(ExternalID, SystemID))) {
-            if (!handle_ext_subset(shredCtx, dtd))
+    	    if ( !ctx->myDoc ) {
+	        /* Mysteriously no myDoc is created by libxml2. For internal
+		 * subsets this is done automatically. For external subsets
+		 * it has to be done by hand. The parsed dtd is the external
+		 * subset for this doc
+		 */
+    	        ctx->myDoc = xmlNewDoc(ctx->version);
+		ctx->myDoc->extSubset = dtd;
+            }
+            if (!handle_externalSubset(shredCtx, dtd))
                 stream_printf(GDKout, "!WARNING: xmlParseDTD(\"%s\") failed, skipping ID/IDREF information.\n", SystemID);
-            xmlFreeDtd(dtd);
+            // xmlFreeDtd(dtd); should be done by freeer of myDoc 
         } else {
             GDKerror("shred_external_subset: WARNING: xmlParseDTD(\"%s\") FAILED, NO ID/IDREF QUERIES\n", SystemID);
             GDKerror("shred_external_subset: NOTE   : maybe using absolute filenames works, sorry!\n");
@@ -1205,39 +1224,29 @@ shred_getEntity(void *xmlCtx, const xmlChar *name)
 #endif
 	xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
 	/* lookup the entity in the document entity hash table */
-	return xmlGetDocEntity(ctx->myDoc,name);
+	/* maybe we should use xmlGetDtdEntity in case of failure */
+	xmlEntityPtr res = xmlGetDocEntity(ctx->myDoc,name);
+#if 0
+	if ( res ) {
+	    stream_printf(GDKout,"#!found ENTITY \"%s\"\n",name);
+	} else {
+	    stream_printf(GDKout,"#!cannot find ENTITY \"%s\"\n",name);
+	}
+#endif
 	/* QUESTION: xmlGetDtdEntity() and xmlGetParameterEntity() were also
 	 * possible, whats the diff between the doc/dtd versions, they both
 	 * seem to work. */
+	return res;
 }
 
-#if 0
-/* My first try at building an entity table but this one was not necessary
- * because the internal subset table was already build.
- */
-static void
-shred_entityDecl(void *xmlCtx,
-                 const xmlChar *name,
-                 int type,
-                 const xmlChar *publicId,
-                 const xmlChar *systemId,
-                 xmlChar *content)
-{
-	xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
-	if ( ! xmlAddDtdEntity(ctx->myDoc,name,type,publicId,systemId,content) )
-	   stream_printf(GDKerr,"shred_entityDecl(ctx,\"%s\") FAIL\n",name);
-}
-#endif
-
-
-/* ====================================================================================
+/* ====================================================================
  * the shredder and its data structures
  * - shredder_create()     create all data structures
  * - shredder_parse()      invoke the libxml2 SAX2 parser
  * - shredder_stats()      print some statistics (off by default)
  * - shredder_finalize()   finish the bats in case of a succesful parse
  * - shredder_free()       provides *atomic* cleanup
- * ==================================================================================== */
+ * ==================================================================== */
 
 /**
  * SAX callback table.
@@ -1258,7 +1267,7 @@ xmlSAXHandler shredder = {
   , .hasExternalSubset     = 0
   , .resolveEntity         = 0
   , .getEntity             = shred_getEntity
-  , .entityDecl            = 0
+  , .entityDecl            = 0 // shred_entityDecl
   , .notationDecl          = 0
   , .attributeDecl         = shred_attribute_def
   , .elementDecl           = 0
@@ -1330,6 +1339,7 @@ shredder_parse(shredCtxStruct *shredCtx,
 	 * TODO: how to prevent expansion of entities?
 	 */
         xmlCtx = xmlCreateURLParserCtxt(location,
+			XML_PARSE_DTDLOAD|
 			XML_PARSE_XINCLUDE|
 			XML_PARSE_NOXINCNODE);
     } 

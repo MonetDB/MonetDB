@@ -1,0 +1,31 @@
+stdout of test 'error_in_preceeding_axis.SF-1731850` in directory 'tests/BugTracker` itself:
+
+
+# 12:54:56 >  
+# 12:54:56 >  Mtimeout -timeout 180 Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/var/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/var/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize/var/xquery_logs" --set mapi_open=true --set mapi_port=34719 --set xrpc_port=47568 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
+# 12:54:56 >  
+
+# Monet Database Server V4.18.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# XRPC administrative console at http://localhost:47568/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 12:54:57 >  
+# 12:54:57 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=corona --port=34719 error_in_preceeding_axis.SF-1731850.xq
+# 12:54:57 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>0 0 0 2</XQueryResult>
+
+# 12:54:57 >  
+# 12:54:57 >  Done.
+# 12:54:57 >  
+

@@ -1564,15 +1564,7 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 	min_iter := min(iter);
 	max_iter := max(iter);
 
-	# pre-sort input
-	if ( and(order,1) = 0 ) {
-		var ord := item.tsort();
-		    ord := ord.CTrefine(iter).mark(0@0).reverse();
-		iter := ord.leftfetchjoin(iter);
-		item := ord.leftfetchjoin(item);
-		iter := iter.chk_order();
-		item := item.chk_order();
-	}
+	@:pre_sort_input@
 
 	# the actual location step
 	if ( isnil(result) ) {
@@ -1604,6 +1596,17 @@ BAT[oid,oid] cands (sorted list of result candidate OIDs in the tail)\n\
 DESCRIPTION:\n\
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
+@
+@= pre_sort_input
+	# pre-sort input
+	if ( and(order,1) = 0 ) {
+		var ord := item.tsort();
+		    ord := ord.CTrefine(iter).mark(0@0).reverse();
+		iter := ord.leftfetchjoin(iter);
+		item := ord.leftfetchjoin(item);
+		iter := iter.chk_order();
+		item := item.chk_order();
+	}
 @
 @= post_sort_output
 	# post-sort output
@@ -1712,9 +1715,11 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= upwards
 PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int order) : BAT[void,bat]
 {
-    # "order" is not (yet?) used, here.
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
+
+    # If ctx is not sorted on tail, ll_@1 will internally sort ctx and re-order iter accordingly.
+
     var res := ll_@1(iter.chk_order(), ctx.chk_order(), pre_sizes, pre_levels);
     var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 
@@ -1727,7 +1732,6 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
 @= ll_prec_foll_impl
 PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int order, chr kind_test) : BAT[void,bat]
 {
-    # "order" is not (yet?) used, here.
     @:foll_prec_code@
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     var pre_kinds;
@@ -1737,6 +1741,11 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
     } else {
         pre_kinds := ws.fetch(PRE_KIND).fetch(cont);
     }
+
+    iter := iter.chk_order();
+    item := item.chk_order();
+    @:pre_sort_input@
+
     var res := ll_@1(iter.chk_order(), item.chk_order(), doc_pre, pre_sizes, pre_kinds, kind_test);
     var result := new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 
