@@ -807,11 +807,12 @@ the standard mechanism.
 
 					if (asynchronous) {
 						int plen = (int) strlen(p);
-						char *tmp = (char *) alloca(plen + 256);
+						char *tmp = (char *) GDKmalloc(plen + 256);
 
 						p[plen - 1] = '\0';	/* remove trailing ';' */
 						sprintf(tmp, "export(%d,%s,\"%s\").enqueue.wakeup;", i, p, nm);
 						interpret_str(monetClient->stk, tmp, &res);
+						GDKfree(tmp);
 					} else {
 #define RETURN_PREFIX "return "
 						if (expect_return) {
