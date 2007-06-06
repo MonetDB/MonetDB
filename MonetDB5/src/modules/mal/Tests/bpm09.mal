@@ -1,38 +1,33 @@
 # Testing bpm.glue, bpm.new, and bpm.addPartition
 
-R := bat.new(:oid,:sht);
-bat.append(R,1:sht);
-bat.append(R,3:sht);
-bat.append(R,5:sht);
-bat.append(R,7:sht);
-bat.append(R,11:sht);
-Ra:= bpm.deposit("myR",R);
+function gen(n:sht):bat[:oid,:sht];
+	r:=bat.new(:oid,:sht);
+	barrier (go,i):=language.newRange(0:sht);
+                bat.append(r,i);
+                redo (go,i):= language.nextElement(1:sht,n);
+        exit (go,i);
+	return r;
+end gen;
 
-io.print("Range partition it ");
-pv:= bat.new(:oid,:sht);
-bat.append(pv,0:sht);
-bat.append(pv,5:sht);
+n:=bpm.new(:oid,:sht);
 
-bpm.rangePartition(Ra,pv);
-#bpm.dump();
+r1:=gen(100:sht);
+bpm.addPartition(n,r1);
+bpm.dump(n);
 
-function user.pr(Ra:bat[:any_1,:any_2]):void;
-barrier Rp:= bpm.newIterator(Ra);
-	io.print(Rp);
-	redo Rp:= bpm.hasMoreElements(Ra);
-exit Rp;
-end pr;
-user.pr(Ra);
+r2:=gen(20:sht);
+bpm.addPartition(n,r2);
+bpm.dump(n);
 
-g:=bpm.glue(Ra);
-io.print(g);
+r3:=gen(300:sht);
+bpm.addPartition(n,r3);
+bpm.dump(n);
 
-n:=bpm.new(:oid,:int);
-user.pr(n);
+r4:=gen(50:sht);
+bpm.addPartition(n,r4);
+bpm.dump(n);
 
-s:=bat.new(:oid,:int);
-bat.append(s,100);
-bat.append(s,200);
+g:=bpm.glue(n);
+c:=aggr.count(g);
+io.print(c);
 
-bpm.addPartition(n,s);
-user.pr(n);

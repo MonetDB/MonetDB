@@ -476,7 +476,7 @@ The internal data structure is used as a cache for improved access.
 #include <math.h>
 
 
-#define _DEBUG_BPM_  
+/*#define _DEBUG_BPM_ */
 
 #ifdef WIN32
 #ifndef LIBBPM
@@ -955,27 +955,29 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	pa->nxt= pa->prv= pa->bid;
 	@:defaultRange(pa,ba)@
 
-	bn= BATcopy(b, b->htype,b->ttype,TRUE);
-	if( bn == 0){
-		BBPunfix(b->batCacheid);
-		throw(MAL,"pbm.deposit","Can not create partitioned BAT");
-	}
+	if( BATcount(b)>0){
+		bn= BATcopy(b, b->htype,b->ttype,TRUE);
+		if( bn == 0){
+			BBPunfix(b->batCacheid);
+			throw(MAL,"pbm.deposit","Can not create partitioned BAT");
+		}
 
-	p = newPartition(bn->batCacheid);
-	p->alias= pa->bid;
-	@:defaultRange(p,bn)@
-	insertPartition(pa,p);
-	p->cnt= BATcount(bn);
+		p = newPartition(bn->batCacheid);
+		p->alias= pa->bid;
+		@:defaultRange(p,bn)@
+		insertPartition(pa,p);
+		p->cnt= BATcount(bn);
+	#ifdef _DEBUG_BPM_
+		stream_printf(GDKout,"Enter the partition '%s' at %d\n",
+			(nme?*nme:"tmp"),bn->batCacheid);
+		BPMprintRecord(GDKout,p);
+	#endif
+		BBPkeepref(bn->batCacheid);
+	}
 	BBPkeepref(ba->batCacheid);
-	BBPkeepref(bn->batCacheid);
 	BBPincref(ba->batCacheid,TRUE);
 	*ret= ba->batCacheid;
 
-#ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Enter the partition '%s' at %d\n",
-		(nme?*nme:"tmp"),bn->batCacheid);
-	BPMprintRecord(GDKout,p);
-#endif
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1276,37 +1278,62 @@ guessNewPartition(BAT *b){
 		return 1;
 	return 0;
 }
+
+static Partition 
+getAcceptor(bat ba, int maxcnt){
+	bat a;
+	int i;
+	a = getAlias(ba)->bid;
+	for(i=bpmcat[a]->nxt; i!= a && bpmcat[i]; i=bpmcat[i]->nxt)
+	if( (int)bpmcat[i]->cnt < maxcnt)
+		return bpmcat[i];
+	return 0;
+}
+
 str
 BPMaddSegment(int *ret, bat *bid, bat *src){
-	int cnt=0;
-	Partition ps,p;
-	BAT *b,*bn;
-	if( (ps= getAlias(*bid)) == 0)
-		throw(MAL,"pbm.addPartition","Partitioned BAT not found");
-	b= BATdescriptor(*src);
-	if( b== NULL)
-		throw(MAL,"pbm.addPartition","Partial partition BAT not found");
-	BPMcount(&cnt,bid);
+	int cnt=0, maxcnt;
+	Partition pa,p,px;
+	BAT *b,*bn, *ba;
 
-	/* it is the first one? */
-	if( ps->nxt== ps->prv){
+	if( (pa= getAlias(*bid)) == 0)
+		throw(MAL,"bpm.addSegment","Alias not found");
+	ba= BATdescriptor(pa->bid);
+	if( ba== NULL)
+		throw(MAL,"bpm.addSegment","Alias BAT not found");
+	b= BATdescriptor(*src);
+	if( b== NULL) {
+		BBPunfix(ba->batCacheid); 
+		throw(MAL,"bpm.addSegment","Partial partition BAT not found");
+	}
+	if ((rngType(b->htype) !=rngType(ba->htype)) ||
+		 (rngType(b->ttype) != rngType(ba->ttype))) {
+		#ifdef _DEBUG_BPM_
+			stream_printf(GDKout,"b: %d,%d alias: %d,%d\n", b->htype,b->ttype,ba->htype,ba->ttype);
+		#endif
+		BBPunfix(ba->batCacheid); 
+		BBPunfix(b->batCacheid); 
+		throw(MAL,"bpm.addSegment","Uncompatible BAT types");
+	}
+
+	cnt = BATcount(b);
+	maxcnt = 2*BATTINY / BUNsize(b) - cnt;
+	/* is it a big piece or no enough space in the existing? */
+	if( guessNewPartition(b) || 
+            ((px= getAcceptor(*bid,maxcnt))==0)) {
 		p= newPartition(b->batCacheid);
-		insertPartition(ps,p);
+		insertPartition(bpmcat[pa->prv],p);
 		p->cnt = cnt;
-		p->alias = ps->alias;
+		p->alias = pa->alias;
 		@:defaultRange(p,b)@
-	} else
-	if( guessNewPartition(b)){
-		p= newPartition(b->batCacheid);
-		insertPartition(bpmcat[ps->prv],p);
 	} else {
-		/* add the content to the last partition */
-		bn= BATdescriptor(bpmcat[ps->prv]->bid);
+		/* add the content to the acceptor segment */
+		bn= BATdescriptor(px->bid);
 		if( bn== NULL)
-			throw(MAL,"pbm.addPartition","Last partition BAT not found");
-		BATappend(bn,b,FALSE);
-	/* 	bpmcat[bn->batCacheid] ->cnt = BATcount(bn);
-		BBPunfix(bn->batCacheid); */
+			throw(MAL,"bpm.addSegment","Partition BAT not found");
+		BATappend(bn,b,TRUE);
+		px ->cnt = BATcount(bn);
+		BBPunfix(bn->batCacheid); 
 	}
 	*ret= 0;
 	BBPunfix(b->batCacheid);
@@ -1754,9 +1781,6 @@ BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
-/*	ht= getArgType(mb,pci, *(int *)getArgReference(stk, pci, 1));
-	tt= getArgType(mb,pci, *(int *)getArgReference(stk, pci, 2));
-*/
         ht = getArgType(mb, pci, 1);
         tt = getArgType(mb, pci, 2);
 
@@ -1766,10 +1790,10 @@ BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( bn == 0)
 		throw(MAL,"bpm.new","Can not create BAT");
 	
+	msg= BPMdeposit(ret, 0, &bn->batCacheid);
 #ifdef _DEBUG_BPM_
 	stream_printf(GDKout,"new partitioned table: %d\n",*ret);
 #endif
-	msg= BPMdeposit(ret, 0, &bn->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return msg;
 }
