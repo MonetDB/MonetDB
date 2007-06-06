@@ -41,13 +41,13 @@
  * - don't generate MIL statements with multiple (i.e. inline) assignments "x := (y := 1) + 1;"
  * - for better pruning: use assignment notation for update statements "x := x.insert(y);"
  * ----------------------------------------------------------------------------
- */
 #define OPT_CODEMOTION 1
+ */
 
 #define OPT_STMTS 32767 /* <65535 if first-use further out than this amount of stamements, dead codes survises anyhow */
 #define OPT_VARS 1024 /* don't try dead code elimintation above this amount of live variables */
 #define OPT_REFS 63 /* keep track of usage dependencies; may omit some, which results in surviving dead code */
-#define OPT_CONDS 32  /* maximum if-nesting */
+#define OPT_CONDS 32767  /* maximum if-nesting */
 
 #define OPT_SEC_PROLOGUE 0
 #define OPT_SEC_QUERY 1
@@ -115,6 +115,7 @@ typedef struct {
 
 typedef struct {
     unsigned int optimize; /* or not */
+    unsigned int delete;   /* used to bail out from further optimization after structures overflow */
 
     unsigned int curstmt;  /* number of detected MIL statements so far */
     unsigned int scope;    /* current scope depth */
