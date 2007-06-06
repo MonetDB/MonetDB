@@ -3578,9 +3578,7 @@ PROC _del_doc(bit cachedOnly,
         # check if a document-id = its collection-id
         # this detects del-doc()s on single-doc collections
 	var chk := mirror(del).leftjoin(doc_collection);
-chk.print();
         ret := [=](chk.hmark(0@0),chk.tmark(0@0)).texist(true);
-ret.print();
     } else if (cachedOnly) {
         del := del.uselect(timestamp_nil,timestamp_nil);
     } 
