@@ -42,7 +42,7 @@ if test "x$have_monetdb" != xyes; then
     if test "x$MONETDBVERS" = x; then
         AC_MSG_NOTICE([No MonetDB base installation found.  No runtime support for MonetDB4 and MonetDB5 will be compiled.])
     else
-        AC_MSG_WARN([Your MonetDB base installation is outdated (version $MONETDBVERS).  Pathfinder requires at least version $req_monetdb_ver).])
+        AC_MSG_WARN([Your MonetDB base installation is outdated (version $MONETDBVERS, required $req_monetdb_ver).  No runtime support for MonetDB4 and MonetDB5 will be compiled.])
     fi
 fi
 

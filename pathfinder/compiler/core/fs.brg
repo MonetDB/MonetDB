@@ -878,6 +878,9 @@ reduce (PFpnode_t * p, int goalnt)
     bool          topdown;        /* is this a top-down rule? */
     PFcnode_t    *c;              /* temporary helper variable */
 
+    /* guard against too dep recursion */
+    PFrecursion_fence();
+
     /* determine rule that matches for this non-terminal */
     rule = PFfs_rule (STATE_LABEL (p), goalnt);
 

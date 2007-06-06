@@ -16,7 +16,7 @@ shred_doc(TSTTRGDIR+"/entities_dtd.SF-1642663.xml", "entities_dtd.SF-1642663.xml
 # Elapsed time = 844us [120us/node]
 # Shredded 1 XML document (entities_dtd.SF-1642663.xml), total time after commit=0.024s
 xquery("doc(\"entities_dtd.SF-1642663.xml\")").print();
-[ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<XQueryResult><foo>\n    <bar>want to see a nice e with a acute accent:é</bar>\n</foo></XQueryResult>\n" ]
+[ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<XQueryResult><!-- small e, acute accent --><foo>\n  <bar>want to see a nice e with a acute accent:é</bar>\n</foo></XQueryResult>\n" ]
 
 quit();
 

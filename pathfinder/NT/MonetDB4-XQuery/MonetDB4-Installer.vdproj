@@ -1351,8 +1351,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_1CF3981625D7433488FABAA49C317E0F"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\monetdb-1.5-jdbc.jar"
-            "TargetName" = "8:monetdb-1.5-jdbc.jar"
+            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\monetdb-1.6-jdbc.jar"
+            "TargetName" = "8:monetdb-1.6-jdbc.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
@@ -1791,8 +1791,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3BB3996E3E4D4A64B574C39D8398AB69"
             {
-            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\jdbcclient-1.5.jar"
-            "TargetName" = "8:jdbcclient-1.5.jar"
+            "SourcePath" = "8:..\\..\\..\\clients\\NT\\share\\MonetDB\\lib\\jdbcclient-1.6.jar"
+            "TargetName" = "8:jdbcclient-1.6.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
@@ -4216,8 +4216,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
-        "ProductCode" = "8:{4D4DA46F-FBA7-4E70-8EC3-243DCE35C7A5}"
-        "PackageCode" = "8:{8E6E1CC7-41F6-48D8-B9D3-4896AA958F89}"
+        "ProductCode" = "8:{D43B1D38-E536-4A95-BE74-05D6E2AE08B1}"
+        "PackageCode" = "8:{41E5D27E-B190-45BF-BBA4-56D92E09A81B}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"

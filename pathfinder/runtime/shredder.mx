@@ -1103,6 +1103,35 @@ shred_error(void *ctx,
     stream_printf(GDKerr, "%s", buf);
 }
 
+static void 
+shred_warning(void *ctx, 
+            const char *msg, ...) 
+{
+    /* IMPORTANT this function may be called multiple times for one error
+     * message so it is not possible to use GDKerror() here.
+     * Instead, we "mis-use" the ctx pointer to remember whether a newline
+     * has occured in the error message, and thus be able to prefix each
+     *(line of an) error message with GDKERROR("!Error: "), which is
+     * required to properly get the error message through the MAPI
+     * protocol...
+     */
+    va_list args;
+    int *print_error_newline =(int*)ctx;
+    int len = 0;
+    char buf[PFSHRED_BUFLEN];
+
+    if (*print_error_newline) {
+        len += snprintf(buf+len, PFSHRED_BUFLEN-len-1, GDKERROR);
+    }
+
+    va_start(args, msg);
+    len += vsnprintf(buf+len, PFSHRED_BUFLEN-len-1, msg, args);
+    va_end(args);
+
+    *print_error_newline =(strchr(buf,(int)'\n') != NULL);
+    stream_printf(GDKerr, "!WARNING: %s", buf);
+}
+
 /** 
  * The shred_attribute_defAttributeDef() handles the DTD attribute definition callbacks
  * in the from the header of the XML file. This is used for the ID/IDREF
@@ -1163,6 +1192,44 @@ shred_external_subset(void *xmlCtx,
     }
 }
 
+static xmlEntityPtr
+shred_getEntity(void *xmlCtx, const xmlChar *name)
+{
+	/* the shredder is now able to handle ENTITY's from the internal
+	 * subset. I do not really understand yet why this had to be done
+	 * here and why it was not handled automagically
+	 * The functions used are defined in $LIBXML2INCLUDES/entities.h
+	 */
+#if 0
+	stream_printf(GDKerr,"shred_getEntity(ctx,\"%s\") CALLED\n",name);
+#endif
+	xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
+	/* lookup the entity in the document entity hash table */
+	return xmlGetDocEntity(ctx->myDoc,name);
+	/* QUESTION: xmlGetDtdEntity() and xmlGetParameterEntity() were also
+	 * possible, whats the diff between the doc/dtd versions, they both
+	 * seem to work. */
+}
+
+#if 0
+/* My first try at building an entity table but this one was not necessary
+ * because the internal subset table was already build.
+ */
+static void
+shred_entityDecl(void *xmlCtx,
+                 const xmlChar *name,
+                 int type,
+                 const xmlChar *publicId,
+                 const xmlChar *systemId,
+                 xmlChar *content)
+{
+	xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
+	if ( ! xmlAddDtdEntity(ctx->myDoc,name,type,publicId,systemId,content) )
+	   stream_printf(GDKerr,"shred_entityDecl(ctx,\"%s\") FAIL\n",name);
+}
+#endif
+
+
 /* ====================================================================================
  * the shredder and its data structures
  * - shredder_create()     create all data structures
@@ -1183,14 +1250,14 @@ xmlSAXHandler shredder = {
   , .characters            = shred_characters
   , .processingInstruction = shred_pi
   , .comment               = shred_comment
-  , .error                 = 0
+  , .error                 = shred_error
   , .cdataBlock            = shred_cdata
   , .internalSubset        = 0
   , .isStandalone          = 0
   , .hasInternalSubset     = 0
   , .hasExternalSubset     = 0
   , .resolveEntity         = 0
-  , .getEntity             = 0
+  , .getEntity             = shred_getEntity
   , .entityDecl            = 0
   , .notationDecl          = 0
   , .attributeDecl         = shred_attribute_def
@@ -1199,7 +1266,7 @@ xmlSAXHandler shredder = {
   , .setDocumentLocator    = 0
   , .reference             = 0
   , .ignorableWhitespace   = 0
-  , .warning               = 0
+  , .warning               = shred_warning
   , .fatalError            = 0
   , .getParameterEntity    = 0
   , .externalSubset        = shred_external_subset 
@@ -1229,6 +1296,10 @@ shredder_parse(shredCtxStruct *shredCtx,
     char buf[XMLCHUNK+1];
 
     /* reset libxml2 error handling */
+    /* note JF: this does not have any effect on SuSe9.3. No error messages
+     * are printed. I assigned the 'error' field in the xmlSAXHandler and
+     * this works fine.
+     */
     xmlSetGenericErrorFunc((void*)&print_error_newline, shred_error);
 
     /* parse XML input(receive SAX events) */
@@ -1237,7 +1308,30 @@ shredder_parse(shredCtxStruct *shredCtx,
     } else if (buffer) {
         xmlCtx = xmlCreateMemoryParserCtxt(buffer, shredCtx->fileSize);
     } else {
-        xmlCtx = xmlCreateURLParserCtxt(location, XML_PARSE_XINCLUDE|XML_PARSE_NOXINCNODE);
+       /* Possible options for the second arg are:
+        * XML_PARSE_RECOVER   = recover on errors 
+        * XML_PARSE_NOENT     = substitute entities 
+        * XML_PARSE_DTDLOAD   = load the external subset 
+        * XML_PARSE_DTDATTR   = default DTD attributes 
+        * XML_PARSE_DTDVALID  = validate with the DTD 
+        * XML_PARSE_NOERROR   = suppress error reports 
+        * XML_PARSE_NOWARNING = suppress warning reports 
+        * XML_PARSE_PEDANTIC  = pedantic error reporting 
+        * XML_PARSE_NOBLANKS  = remove blank nodes 
+        * XML_PARSE_SAX1      = use the SAX1 interface internally 
+        * XML_PARSE_XINCLUDE  = Implement XInclude substitition  
+        * XML_PARSE_NONET     = Forbid network access 
+        * XML_PARSE_NODICT    = Do not reuse the context dictionnary 
+        * XML_PARSE_NSCLEAN   = rm redundant namespaces declarations 
+        * XML_PARSE_NOCDATA   = merge CDATA as text nodes 
+        * XML_PARSE_NOXINCNODE= do not generate XINCLUDE START/END nodes 
+        */
+	/*
+	 * TODO: how to prevent expansion of entities?
+	 */
+        xmlCtx = xmlCreateURLParserCtxt(location,
+			XML_PARSE_XINCLUDE|
+			XML_PARSE_NOXINCNODE);
     } 
     if (!xmlCtx) {
         GDKerror("shredder_parse: libxml2 could not initialize a parser.\n");

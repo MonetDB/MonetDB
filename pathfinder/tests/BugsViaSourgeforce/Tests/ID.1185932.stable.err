@@ -1,0 +1,12 @@
+stderr of test 'ID.1185932` in directory 'tests/BugsViaSourgeforce` itself:
+
+
+# 10:21:13 >  
+# 10:21:13 >  Mtimeout -timeout 60 Mserver "--config=/usr/local/flokstra/etc/MonetDB.conf" --debug=0 --set "monet_mod_path=/usr/local/flokstra/lib/MonetDB4:/usr/local/flokstra/lib/MonetDB4/lib:/usr/local/flokstra/lib/MonetDB4/bin" --set "gdk_dbfarm=/usr/local/flokstra/var/MonetDB4/dbfarm" --set "sql_logdir=/usr/local/flokstra/var/MonetDB4/sql_logs" --set "xquery_logdir=/usr/local/flokstra/var/MonetDB4/xquery_logs" --set mapi_open=true --set mapi_port=36884 --set xrpc_port=40891 --set monet_prompt= --trace --dbname=mTests_tests_BugsViaSourgeforce  
+# 10:21:13 >  
+
+
+# 10:21:13 >  
+# 10:21:13 >  Done.
+# 10:21:13 >  
+
