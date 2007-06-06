@@ -602,7 +602,7 @@ static void opt_usevar(opt_t *o, unsigned int var_nr, unsigned int stmt_nr) {
 					o->stmts[stmt_nr].refs++;
 				}
 				o->stmts[o->vars[var_nr].lastset[i]].used++;
-#ifdef OPT_COND
+#ifdef OPT_CODEMOTION
 				opt_move_kill(o, o->vars[var_nr].lastset[i]);
 #endif
 			}
