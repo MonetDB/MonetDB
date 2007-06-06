@@ -37,6 +37,15 @@ quoted_print(FILE *f, const char *s)
 	putc('"', f);
 }
 
+static char *actions[] = {
+	0,
+	"CASCADE",
+	"RESTRICT",
+	"SET NULL",
+	"SET DEFAULT",
+};
+#define NR_ACTIONS	((int) (sizeof(actions) / sizeof(actions[0])))
+
 int
 dump_table(Mapi mid, char *tname, FILE *toConsole)
 {
@@ -302,7 +311,8 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 			"\"pkkc\".\"column\","		/* 1 */
 			"\"fkkc\".\"column\","		/* 2 */
 			"\"fkkc\".\"nr\","		/* 3 */
-			"\"fkk\".\"name\""		/* 4 */
+			"\"fkk\".\"name\","		/* 4 */
+			"\"fkk\".\"action\""		/* 5 */
 		 "FROM \"tables\" \"fkt\","
 		      "\"keycolumns\" \"fkkc\","
 		      "\"keys\" \"fkk\","
@@ -333,6 +343,7 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 		char *c_fcolumn = mapi_fetch_field(hdl, 2);
 		char *c_nr = mapi_fetch_field(hdl, 3);
 		char *c_fkname = mapi_fetch_field(hdl, 4);
+		char *c_faction = mapi_fetch_field(hdl, 5);
 		char **fkeys, **pkeys;
 		int nkeys = 0;
 
@@ -379,6 +390,16 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 		fprintf(toConsole, ")");
 		free(fkeys);
 		free(pkeys);
+		if (c_faction) {
+			int action = atoi(c_faction);
+			int on_update = (action >> 8) & 255;
+			int on_delete = action & 255;
+
+			if (0 < on_delete && on_delete < NR_ACTIONS)
+				fprintf(toConsole, " ON DELETE %s", actions[on_delete]);
+			if (0 < on_update && on_update < NR_ACTIONS)
+				fprintf(toConsole, " ON UPDATE %s", actions[on_update]);
+		}
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
