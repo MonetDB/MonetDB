@@ -947,7 +947,6 @@ PROC trace_items (BAT[void,any] ws,
                 type_str := "double";
             } else if (type_id = 32) {
                 type_str := "boolean";
-                item := (item = 1@0);
             } else if (type_id = 64) {
                 type_str := "QName";
             } else if (type_id = 128) {
@@ -1007,36 +1006,10 @@ PROC trace_items (BAT[void,any] ws,
                                       new (void,str).seqbase(0@0));
                     } else {
                         # attribute nodes
-                        var qn_id := ws.fetch(ATTR_QN)
-                                       .fetch(frag)
-                                       .reverse()
-                                       .select(node_id)
-                                       .reverse()
-                                       .fetch(0);
-                        var qn_frag := ws.fetch(ATTR_CONT)
-                                         .fetch(frag)
-                                         .reverse()
-                                         .select(node_id)
-                                         .reverse()
-                                         .fetch(0);
-                        var prop := ws.fetch(ATTR_PROP)
-                                      .fetch(frag)
-                                      .reverse()
-                                      .select(node_id)
-                                      .reverse()
-                                      .fetch(0);
-                        var cont := ws.fetch(ATTR_CONT)
-                                      .fetch(frag)
-                                      .reverse()
-                                      .select(node_id)
-                                      .reverse()
-                                      .fetch(0);
-                        var val := ws.fetch(PROP_VAL)
-                                     .fetch(cont)
-                                     .reverse()
-                                     .select(prop)
-                                     .reverse()
-                                     .fetch(0);
+                        var qn_id := mposjoin (node_id, frag, ws.fetch(ATTR_QN)).fetch(0);
+                        var qn_frag := mposjoin (node_id, frag, ws.fetch(ATTR_CONT)).fetch(0);
+                        var prop := mposjoin (node_id, frag, ws.fetch(ATTR_PROP)).fetch(0);
+                        var val := mposjoin (prop, qn_frag, ws.fetch(PROP_VAL)).fetch(0);
                         var name := trace_qname_uri (qn_id, qn_frag);
                         printf (" name=\"%s\" value=\"%s\">", name, val);
                     }
@@ -1057,24 +1030,9 @@ PROC trace_items (BAT[void,any] ws,
 # qname.
 PROC trace_qname_uri (oid item, oid frag) : str
 {
-    var local := ws.fetch(QN_LOC)
-                   .fetch(frag)
-                   .reverse()
-                   .select(item)
-                   .reverse()
-                   .fetch(0);
-    var prefix := ws.fetch(QN_PREFIX)
-                    .fetch(frag)
-                    .reverse()
-                    .select(item)
-                    .reverse()
-                    .fetch(0);
-    var uri := ws.fetch(QN_URI)
-                 .fetch(frag)
-                 .reverse()
-                 .select(item)
-                 .reverse()
-                 .fetch(0);
+    var local := mposjoin (item, frag, ws.fetch(QN_LOC)).fetch(0);
+    var prefix := mposjoin (item, frag, ws.fetch(QN_PREFIX)).fetch(0);
+    var uri := mposjoin (item, frag, ws.fetch(QN_URI)).fetch(0);
     if (and (prefix = "", uri = "")) {
         return local;
     } else if (prefix = "") {
