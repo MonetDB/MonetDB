@@ -32,9 +32,6 @@ against overflow.
 	command batcalc.@2(b:bat[:any_1,:@1]):bat[:any_1,:@2] 
 	address CMDconvert_@1_@2
 	comment "Coerce an @1 tail to a bat with @2 tail.";
-	command batcalc.@2(b:bat[:void,:@1]):bat[:void,:@2] 
-	address CMDconvert_void_@1_@2
-	comment "Coerce an @1 tail to a bat with @2 tail.";
 @mal
 	@:idempotent(bit)@
 	@:idempotent(chr)@
@@ -138,50 +135,39 @@ str CMDconvert_@1(int *ret, int *bid){
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 @-
-The void case is geared at speed.
-Test against overflow in a reduce situation.
-@= Mapping
-batcast_export str CMDconvert_void_@1_@2(int *ret, int *bid);
-str CMDconvert_void_@1_@2(int *ret, int *bid){
-	BAT *b,*bn;
-	@1 *p,*q;
-	@2 *o;
-	size_t xx;
-
-	@:getBATdescriptor(bid, b, "batcalc.@2")@
-	@:resultBAT(@2,"batcalc.@2")@
-	o= (@2*)BUNtail(bn,BUNfirst(bn));
-	p= (@1*)BUNtail(b,BUNfirst(b));
-	q= (@1*)BUNtail(b,BUNlast(b));
-	xx= BUNsize(b);
-	while(p<q){
-		*o = *p== @1_nil ?  @2_nil: (@2) *p;
-		p= (@1 *) ((char*)p+xx); o++;
-	}
-	(bn)->batBuns->free += BATcount(b)*sizeof(@2);
-	BATsetcount(bn, BATcount(b));
-	@:wrapup@
-}
 @= GeneralFixed
 batcast_export str CMDconvert_@1_@2(int *ret, int *bid);
 str CMDconvert_@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
 	size_t xx;
-	@2 y;
-	char *p, *q, *h;
+	char *p, *q;
 
 	@:getBATdescriptor(bid, b, "batcalc.@2")@
 	@:resultBAT(@2,"batcalc.@2")@
-	h= (char*) BUNhead(b,BUNfirst(b));
 	p= (char*) BUNfirst(b);
 	q= (char*) BUNlast(b);
 	xx= BUNsize(b);
 
-	while(p<q){
-		@1 *r = (@1*)BUNtail(b,p);
-		y= (*r == @1_nil) ? @2_nil: (@2)(*r);
-		bunfastins(bn, h, &y);
-		p+= xx; h+=xx;
+	if( b->htype == TYPE_void){
+		@2 *o = (@2*)BUNtail(bn,BUNfirst(bn));
+		@1 *p= (@1*) BUNtail(b, BUNfirst(b));
+		@1 *q= (@1*) BUNtail(b, BUNlast(b));
+
+		while(p<q) {
+			*o = *p== @1_nil ?  @2_nil: (@2) *p;
+			p= (@1 *) (((char*)p)+xx); o++;
+		}
+		(bn)->batBuns->free += BATcount(b)*sizeof(@2);
+		BATsetcount(bn, BATcount(b));
+	} else {
+		char *h= (char*) BUNhead(b,BUNfirst(b));
+		while(p<q){
+			@1 *r = (@1*)BUNtail(b,p);
+			@2 y = (*r == @1_nil) ? @2_nil: (@2)(*r);
+
+			bunfastins(bn, h, &y);
+			p+= xx; h+=xx;
+		}
 	}
 bunins_failed:
 	@:wrapup@
@@ -223,10 +209,6 @@ str CMDconvert_@1_str(int *ret, int *bid){
 bunins_failed:
 	@:wrapup@
 }
-batcast_export str CMDconvert_void_@1_str(int *ret, int *bid);
-str CMDconvert_void_@1_str(int *ret, int *bid){
-	return CMDconvert_@1_str(ret,bid);
-}
 
 batcast_export str CMDconvert_str_@1(int *ret, int *bid);
 str CMDconvert_str_@1(int *ret, int *bid){
@@ -249,10 +231,6 @@ str CMDconvert_str_@1(int *ret, int *bid){
 	}
 bunins_failed:
 	@:wrapup@
-}
-batcast_export str CMDconvert_void_str_@1(int *ret, int *bid);
-str CMDconvert_void_str_@1(int *ret, int *bid){
-	return CMDconvert_str_@1(ret,bid);
 }
 @-
 The lengthly list of coercions options could have been generated.
@@ -285,10 +263,8 @@ int	oidToStr(char **dst, int *len, oid *src  ){
 The reduction coding is still to be provided.
 @= CoercionEnlarge
 	@:GeneralFixed(@1,@2)@
-	@:Mapping(@1,@2)@
 @= CoercionReduce
 	@:GeneralFixed(@1,@2)@
-	@:Mapping(@1,@2)@
 @-
 Write out all combinations to ease subsequent
 code fine tuning

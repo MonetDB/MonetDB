@@ -375,9 +375,8 @@ This seemingly superflous action is necessary to simplify analyis of
 memory leakage problems later on.
 @c
 void mal_exit(void){
-	int t = 0, reruns=0;
+	int reruns=0;
 	int freeclient=0, finishing=0, claimed=0, awaiting=0;
-	str err;
 	Client cntxt = mal_clients;
 
 @-
@@ -434,6 +433,12 @@ Before continuing we should make sure that all clients
 		(void) stream_destroy(cntxt->fdout);
 	}
 #endif
+
+#ifndef NDEBUG
+{
+	int t = 0;
+	str err;
+
 	/* deregister everything that was registered, ignore errors */
 	if ((err = SABAOTHwildRetreat(&t)) != MAL_SUCCEED) {
 		fprintf(stderr, "!%s", err);
@@ -444,7 +449,8 @@ Before continuing we should make sure that all clients
 		fprintf(stderr, "!%s", err);
 		GDKfree(err);
 	}
-
+}
+#endif
 /*	GDKexit(0);  */
 	MT_global_exit(0);
 }
