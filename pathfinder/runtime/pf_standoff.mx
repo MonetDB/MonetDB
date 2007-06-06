@@ -1003,7 +1003,7 @@ if (postfilter) {
     result_part_item := tmp_res.leftfetchjoin(result_part_item);
     tmp_res := nil;
 @= nsloc_post
-      { var nsloc := ns + ":" + loc; @:postfilter(QN_URI_LOC,nsloc,ELEMENT)@ }
+      { var nsloc := ns + NS_ACCEL_SEP + loc; @:postfilter(QN_URI_LOC,nsloc,ELEMENT)@ }
 @= loc_post
     @:postfilter(QN_LOC,loc,ELEMENT)@
 @= ns_post
@@ -1021,7 +1021,7 @@ if (postfilter) {
 @= kind_pre
       { cands := ws.fetch(PRE_KIND).fetch(contID).mirror(); kind_test := kind; }
 @= nsloc_pre
-      { var nsloc := ns + ":" + loc; @:prefilter(nsloc,QN_URI_LOC)@ }
+      { var nsloc := ns + NS_ACCEL_SEP + loc; @:prefilter(nsloc,QN_URI_LOC)@ }
 @= loc_pre
       { @:prefilter(loc,QN_LOC)@ }
 @= ns_pre
