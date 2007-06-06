@@ -778,7 +778,6 @@ static void
 shred_start_document(void *xmlCtx)
 {
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
-    xmlParserCtxtPtr ctx = shredCtx->xmlCtx;
 #ifdef DEBUG
     stream_printf(GDKout, "start_document()\n");
 #endif
