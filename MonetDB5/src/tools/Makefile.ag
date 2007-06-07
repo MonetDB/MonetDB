@@ -25,12 +25,12 @@ bin_mserver5 = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-bin_merovingian = {
-	SOURCES = merovingian.mx
-	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lstream \
-		   $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		   $(MALLOC_LIBS)
-}
+#bin_merovingian = {
+#	SOURCES = merovingian.mx
+#	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lstream \
+#		   $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+#		   $(MALLOC_LIBS)
+#}
 
 bin_stethoscope = {
 	SOURCES = stethoscope.mx
