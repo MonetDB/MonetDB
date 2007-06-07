@@ -3184,8 +3184,10 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
         else # create new index
         {       
 	        var tmp := tids.kdiff(bat("tj_" + ftiName + "_pfpre"));
+		# BUG:1732596: possible cause(1) here:
+		# tmp is a BAT[oid,oid]
                 tmp := tmp.reverse().ssort();
-	        var termindex := tmp.hmark(0@0).offsetindex(bat(_tj_TermBat(ftiName)).count() + 1);
+	        var termindex := tmp.hmark(0@0).assert_order().offsetindex(bat(_tj_TermBat(ftiName)).count() + 1);
 	        var terms := tmp.tmark(0@0);
 	        # create _TermIndex and _Terms here
 	        termindex.persists(true).bbpname("tj_" + ftiName + "_TermIndex");
@@ -3201,8 +3203,10 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 		collBat.find("submitBats").append("tj_" + ftiName + "_Terms");
 	        
 	        tmp := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
+		# BUG:1732596: possible cause(2) here:
+		# tmp is a BAT[oid,oid]
                 tmp := tmp.reverse().ssort();
-	        var tagindex := tmp.hmark(0@0).offsetindex(bat(_tj_TagBat(ftiName)).count() + 1);
+	        var tagindex := tmp.hmark(0@0).assert_order().offsetindex(bat(_tj_TagBat(ftiName)).count() + 1);
 	        var tags := tmp.tmark(0@0);
 	        # create _Tags and _Tagindex here
 	        tagindex.persists(true).bbpname("tj_" + ftiName + "_TagIndex");
