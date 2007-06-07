@@ -341,7 +341,7 @@ CLTquit(int *ret, int *timeout)
 }
 str
 CLTquitDefault(int *ret){
-	int timeout = 0;
+	int timeout = PROCESSTIMEOUT;
 	return CLTquit(ret,&timeout);
 }
 

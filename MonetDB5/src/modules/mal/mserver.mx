@@ -426,12 +426,13 @@ static void generateChallenge(str buf, int min, int max) {
 static void 
 doChallenge(str cmd, stream *in, stream *out) {
 	if (cmd == NULL) {
-		char *buf = (char *) GDKmalloc(BLOCK);
+		char *buf = (char *) GDKmalloc(BLOCK + 1);
 		char *challenge;
 		char *algos;
 		stream *fdin = block_stream(in);
 		stream *fdout = block_stream(out);
 		bstream *bs;
+		int len = 0;
 
 		if (!fdin || !fdout) {
 			GDKsyserror("SERVERlisten:fdin or fdout problems");
@@ -456,16 +457,16 @@ doChallenge(str cmd, stream *in, stream *out) {
 				);
 		stream_flush(fdout);
 		/* get response */
-		stream_read_block(fdin, buf, BLOCK, 1);
-
-		/* in embedded mode we allow just one client */
-		if (GDKembedded && MCcountClients() > 1) {
+		if ((len = stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
+			/* in embedded mode we allow just one client */
+			(GDKembedded && MCcountClients() > 1)) {
 			stream_close(fdin);
 			stream_destroy(fdin);
 			stream_close(fdout);
 			stream_destroy(fdout);
 			return;
 		}
+		buf[len] = 0;
 #ifdef DEBUG_SERVER
 		printf("mserver:Client accepted %s\n", name);
 		fflush(stdout);
