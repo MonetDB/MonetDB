@@ -97,8 +97,8 @@ xquery_fo_initiaze(struct xquery_fo *xquery_fo)
     }
 }
 
-void
-PFfun_xquery_fo (void)
+static void
+PFfun_xquery_fo1 (void)
 {
     struct xquery_fo xquery_fo1[] =
     /**
@@ -956,7 +956,15 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_xs_double () } },
         .alg = PFbui_fn_floor_dbl }
     , { .loc = 0 }
-    },  xquery_fo2[] = {
+    };
+
+    xquery_fo_initiaze(xquery_fo1);
+}
+
+static void
+PFfun_xquery_fo2 (void)
+{
+    struct xquery_fo xquery_fo2[] = {
       /* fn:floor (integer?) as integer? */
       { .ns = PFns_fn, .loc = "floor",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1646,7 +1654,15 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())) } },
         .alg = PFbui_fn_doc }
     , { .loc = 0 }
-    }, xquery_fo3[] = {
+    };
+
+    xquery_fo_initiaze(xquery_fo2);
+}
+
+static void
+PFfun_xquery_fo3 (void)
+{
+    struct xquery_fo xquery_fo3[] = {
       /* fn:collection (string) as node* */
       { .ns = PFns_fn, .loc = "collection",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -2241,11 +2257,17 @@ PFfun_xquery_fo (void)
     , { .loc = 0 }
     };
 
+    xquery_fo_initiaze(xquery_fo3);
+}
+
+void
+PFfun_xquery_fo (void)
+{
     PFfun_env = PFenv ();
 
-    xquery_fo_initiaze(xquery_fo1);
-    xquery_fo_initiaze(xquery_fo2);
-    xquery_fo_initiaze(xquery_fo3);
+    PFfun_xquery_fo1 ();
+    PFfun_xquery_fo2 ();
+    PFfun_xquery_fo3 ();
 }
 
 /* vim:set shiftwidth=4 expandtab: */
