@@ -1065,8 +1065,13 @@ shred_comment(void* xmlCtx,
               const xmlChar *c)
 {
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
+    xmlParserCtxtPtr pctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
     node_t node;
 
+    if ( pctx->inSubset  ) {
+        /* handle a libxml2 peculiarity, comments in DTD are added to the doc */
+        return;
+    }
     if (!handle_xml_chars(shredCtx)) {
         BAILOUT(shredCtx);
     }
@@ -1198,8 +1203,13 @@ shred_external_subset(void *xmlCtx,
 		 * subset for this doc
 		 */
     	        ctx->myDoc = xmlNewDoc(ctx->version);
-		ctx->myDoc->extSubset = dtd;
             }
+	    if ( !ctx->myDoc->extSubset ) {
+		ctx->myDoc->extSubset = dtd;
+	    } else {
+                stream_printf(GDKout, "!WARNING: double external subset(\"%s\") may cause problems.\n", SystemID);
+                xmlFreeDtd(dtd);
+	    }
             if (!handle_externalSubset(shredCtx, dtd))
                 stream_printf(GDKout, "!WARNING: xmlParseDTD(\"%s\") failed, skipping ID/IDREF information.\n", SystemID);
             // xmlFreeDtd(dtd); should be done by freeer of myDoc 
