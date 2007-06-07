@@ -60,14 +60,17 @@ end main;	# 14
 # h		tmp_6		  # name
 # str		void		  # type
 #-------------------------#
-[ "hello",	  nil	  ]
-[ "world",	  nil	  ]
-#-----------------#
 # h	t	  # name
+# str		void	  # type
+#-------------------------#
+[ "hello",	  0@0	  ]
+[ "world",	  1@0	  ]
+#-------------------------#
+# t	h		  # name
 # void	str		  # type
 #-------------------------#
-[ nil,	  "hello"	  ]
-[ nil,	  "world"	  ]
+[ 0@0,	  "hello"	  ]
+[ 1@0,	  "world"	  ]
 
 # 11:28:42 >  
 # 11:28:42 >  Done.
