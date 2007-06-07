@@ -53,7 +53,7 @@ def client(x,s, c, dbinit, lang, file):
     sys.stdout.write('\nserver %d%d : "%s", client %d: %s\n' % (x,s,dbinit,c,lang))
     sys.stderr.write('\nserver %d%d : "%s", client %d: %s\n' % (x,s,dbinit,c,lang))
     sys.stderr.flush()
-    sys.stderr.write('\nclient%d: "%s"\n' % (x,cltcmd_))
+    #sys.stderr.write('\nclient%d: "%s"\n' % (x,cltcmd_))
     sys.stderr.write('#client%d: "%s"\n' % (x,cltcmd))
     sys.stdout.flush()
     sys.stderr.flush()
