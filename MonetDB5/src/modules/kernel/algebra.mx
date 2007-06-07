@@ -1194,7 +1194,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 {
 	return (*result = @2(b, *param))?GDK_SUCCEED:GDK_FAIL;
 }
-@c
+@h
 #define BATtdiff(l,r) BATmirror(BATkdiff(BATmirror(l),BATmirror(r)))
 #define BATtintersect(l,r) BATmirror(BATkintersect(BATmirror(l),BATmirror(r)))
 #define BATtsort(b) BATmirror(BATsort(BATmirror(b)))
@@ -1206,6 +1206,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 #define BATwcopy(b) BATcopy(b, b->htype, b->ttype, 1)
 #define BATrcopy(b) BATcopy(b, b->htype, b->ttype, 2)
 
+@c
 @:unary(histogram,BAThistogram)@
 @:unary(histogram_rev,BAThistogram_rev)@
 @:unary(sort,BATsort)@

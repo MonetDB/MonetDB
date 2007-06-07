@@ -1432,6 +1432,24 @@ BPMderived(bat *ret, bat *bid, bat *src)
 	throw(MAL, "bpm.derived","NYI");
 }
 
+void findMedian(ValPtr vp, BAT * b)
+{
+	BUN p; 
+	int c, tpe;
+	BAT *bh, *bs;
+
+	tpe = b->ttype;
+	bh = BATsample(b,100);
+	bs = BATtsort(bh);
+	c = BATcount(bh)/2;
+	p = BUNptr(bs,c);
+	VALset(vp,tpe, BUNtail(bs,p));
+
+	BBPunfix(bs->batCacheid);
+	BBPunfix(bh->batCacheid);
+}
+
+
 str
 BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 {
@@ -1439,6 +1457,7 @@ BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 	Partition ps, p, p2;
 	int (*cmp) (ptr, ptr);
 	ptr nilptr;
+	ValPtr vp;
 	int cs;
 	lng space, space1, space2;
 	(void) ret;
@@ -1480,14 +1499,38 @@ BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 	else {
 	 	cs=3; space2 = (space -space1)/2; /* rough estimate- ToDo */
 	}
-	if ((space1 < Mmin) || (space2 < Mmin)) { /* too little parts, no re-org.*/
-		BBPunfix(b->batCacheid);
-		BBPunfix(bs->batCacheid);
-		return MAL_SUCCEED;
+	if ((space1 < Mmin) || (space2 < Mmin)) {
+		if (space > 8*Mmin) { /* little parts in large segment- split in median*/
+			cs = 4;}
+		else { /* too little parts in little segment- no re-org.*/
+			BBPunfix(b->batCacheid);
+			BBPunfix(bs->batCacheid);
+			return MAL_SUCCEED;
+		}
+	}
+	
+/* re-organize */
+	if (cs<4) bs1= BATsemijoin(b,bs);
+	else {	
+		vp= (ValPtr) GDKzalloc(sizeof(ValRecord));
+		VALinit(vp,b->ttype,nilptr);
+		findMedian(vp,b);
+	#ifdef _DEBUG_BPM_
+		stream_printf(GDKout,"Found median ");
+		VALprint(GDKout,vp);
+		stream_printf(GDKout,"\n");
+	#endif
+		low = (ptr) VALget(vp);
+		if( *bid > 0)
+			bs1= BAT_select_(b, low, nilptr, TRUE, FALSE, TRUE, FALSE);
+		else{
+			bs1= BAT_select_(BATmirror(b), low, nilptr, TRUE, FALSE, TRUE, FALSE);
+			bs1= BATcopy(BATmirror(bs1), bs1->ttype,bs1->htype,1);
+		}
+		cs=2;
+
 	}
 
-/* re-organize */
-	bs1= BATsemijoin(b,bs);
 	BBPunfix(bs->batCacheid);
 	if( bs1 == 0){
 		BBPunfix(b->batCacheid);
@@ -1505,7 +1548,7 @@ BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 			VALset(&p->thgh, rngType(bs1->ttype), hgh);	
 			break;
 		case 2: VALset(&p->tlow, rngType(bs1->ttype), low );
-			VALset(&p->thgh, rngType(bs1->ttype), &ps->thgh);	
+			VALset(&p->thgh, rngType(bs1->ttype), &ps->thgh);
 			break;
 		case 3: VALset(&p->tlow, rngType(bs1->ttype), low );
 			VALset(&p->thgh, rngType(bs1->ttype), hgh);	
@@ -1548,6 +1591,7 @@ BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 			if( *bid> 0)
 				VALset(&ps->thgh, rngType(b->ttype), low);
 			else VALset(&ps->hhgh, rngType(b->htype), low);
+			if (vp)	GDKfree(vp);
 			break;
 		
 		case 3: bs2 =  BAT_select_(b, hgh, nilptr, FALSE, FALSE, TRUE, FALSE);
