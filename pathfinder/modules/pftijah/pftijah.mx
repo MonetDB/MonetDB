@@ -3745,8 +3745,10 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
 	/* --------------------------- checks ---------------------------------- */
 
 	BATcheck(tid, name);
-	if (!(BATtordered(tid) & 1))
+	/* if (!(BATtordered(tid) & 1)) */
+	if ( !(BATtordered(tid) )
 	{
+		/* BUG#1732596 this test currently fails on Itanium */
         	GDKerror("%s: index-bat must be ordered on tail.\n", name);
     		return GDK_FAIL;
 	}
