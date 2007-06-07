@@ -678,7 +678,7 @@ yes-*-*)
 	4.2.*-*)
 		dnl gcc 4.2 has a warning on inline functions in C99 mode being
 		dnl made for real in gcc 4.3.  We disable the warning and we
-		dnl want to get away for a little while with GNU98 inlining
+		dnl want to get away for a little while with GNU89 inlining
 		dnl semantics, until gcc 4.3 is within reach to get real ISO C99
 		dnl I think
 		CFLAGS="$CFLAGS -std=c99 -fgnu89-inline"
