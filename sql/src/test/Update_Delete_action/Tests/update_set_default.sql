@@ -1,6 +1,6 @@
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int DEFAULT 30, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id) ON UPDATE SET DEFAULT);
+create table t2 (id int DEFAULT 30, age int, PRIMARY KEY (id), FOREIGN KEY(id) REFERENCES t1(id) ON UPDATE SET DEFAULT);
 
 create table t3 (id int DEFAULT 30, num int, FOREIGN KEY(id) REFERENCES t2(id) ON UPDATE SET DEFAULT);
 
@@ -30,7 +30,6 @@ insert into t3 values(5, 7);
 update t1 set id = 10 where id =1;
 update t1 set id = 11 where id =2;
 update t1 set id = 12 where id =3;
-update t1 set id = 13 where id =4;
 
 select * from t1;
 select * from t2;

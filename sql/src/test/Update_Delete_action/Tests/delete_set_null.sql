@@ -33,7 +33,13 @@ select * from t1;
 select * from t2;
 select * from t3;
 
-delete from t1;
+delete from t1 where id = 1;
+
+select * from t1;
+select * from t2;
+select * from t3;
+
+delete from t2 where id = 4;
 
 select * from t1;
 select * from t2;
