@@ -4475,7 +4475,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 	short dep_type = 0;
 	sql_table *t = NULL;
 
-	list *dep = sql_trans_get_dependencies(tr, id, type);
+	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
 	node *n = dep->h, *t_n = NULL;
 
 

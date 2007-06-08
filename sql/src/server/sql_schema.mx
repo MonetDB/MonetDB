@@ -804,7 +804,7 @@ drop_view(mvc *sql, dlist *qname, int drop_action)
 		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
 	} else if (t->system) {
 		return sql_error(sql, 02, "DROP VIEW: cannot drop system view '%s'", tname);
-	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY)) {
+	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
 			return sql_error(sql, 02, "unable to drop view %s (there are database objects which depend on it)\n", t->base.name);
 	} else {
 		mvc_drop_table(sql, ss, t, drop_action);
@@ -901,7 +901,7 @@ static stmt *
 drop_user(mvc *sql, char *user)
 {
 	int user_id = sql_find_auth(sql, user);
-	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY))
+	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
 		return sql_error(sql, 02, "DROP USER: '%s' owns a schema", user);
 
 	if(sql_drop_user(sql, user) == FALSE)
@@ -1526,7 +1526,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return sql_error(sql, 02, "cannot drop column %s (table is a system table)\n", cname);
 		if (isView(t))
 			return sql_error(sql, 02, "cannot drop column %s (%s is a view)\n", cname, t->base.name);
-		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY))
+		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
 			return sql_error(sql, 02, "unable to drop column %s (there are database objects which depend on it)\n", cname);
 		if (!drop_action  && t->keys.set) {
 			node *n, *m;
@@ -1700,7 +1700,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 		}
 	}
 
-	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY))
+	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			return sql_error(sql, 02, "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 	
 	mvc_drop_table(sql, s, t, drop_action);
