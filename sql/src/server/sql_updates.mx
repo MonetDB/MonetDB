@@ -1759,11 +1759,15 @@ sql_delete_cascade_Fkeys(mvc *sql, sql_schema *schema, stmt *s, sql_key *fk, sql
 	sql_table *t = NULL;
 	scope *scp = scope_open(NULL);
 	tvar * tv = NULL;
+	stmt *res = NULL;
 	(void)k;
 	t = mvc_bind_table(sql, schema, fk->t->base.name);
 	
 	tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
-	return sql_delete(sql, tv, schema, t, s, 1, 0);
+
+	res = sql_delete(sql, tv, schema, t, s, 1, 0);
+	scope_close(scp);
+	return res;
 }
 
 static void 
@@ -1784,12 +1788,12 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 
 			s = stmt_idxbat(fk->idx, RDONLY);
 			s = stmt_semijoin(stmt_reverse(s), stmt_dup(deletes));
-			s = stmt_reverse(s);
 			switch (((sql_fkey*)fk)->on_delete) {
 				case ACT_NO_ACTION: 
 					break;
 				case ACT_SET_NULL: 
 				case ACT_SET_DEFAULT: 
+					s = stmt_reverse(s);
 					s = sql_delete_set_Fkeys(sql, schema, fk, s, ((sql_fkey*)fk)->on_delete);
             			        list_prepend(l, s);
 					break;
