@@ -2159,7 +2159,7 @@ PROC __runtime_addchunk(lng wsid,
         # first shred (readonly) automatically creates persistent sorted index
         var cnt := bat(str(lng(coll_oid)) + "_qn_histogram");
         unq := reverse(ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd))));
-    } else if (maintain) {
+    } else {
         # incremental readonly shred with existing indices: deactivate them
         var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
         var coll_longlock := reverse(runtime).fetch(RT_NID_FREELIST);
@@ -2169,8 +2169,6 @@ PROC __runtime_addchunk(lng wsid,
         commitbat := "old_" + commitbat;
         CATCH({ bat(qn_nid).persists(false).rename(commitbat + "_qn_nid");
                 bat(vx_hsh_nid).persists(false).rename(commitbat + "_vx_hsh_nid"); }); # delete idx in commit
-    } else {
-        commitbat := str_nil; # incremental readonly shred, but no index to delete
     }
     if (int(unq) != int(empty_bat)) {
         # compute a (partial) [qn,nid] inverted list, and insert in into the index
@@ -3517,10 +3515,9 @@ PROC shred_doc_base(bit cleanup,
         [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
         lock_unset(pf_wal);
     }
-
     # checkpoint the new bats
     if (pf_commit_docmgt)
-    if (pf_checkpoint(commitBAT)) {
+    if (pf_checkpoint(commitBAT) or cleanup) {
         # remove the in-memory undo log; and trim collection
         lock_set(pf_short);
         err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
@@ -3574,11 +3571,7 @@ PROC _del_doc(bit cachedOnly,
                                  count(reverse(del).uselect(oid_nil)));
         }
         del := kunique(del);
-
-        # check if a document-id = its collection-id
-        # this detects del-doc()s on single-doc collections
-	var chk := mirror(del).leftjoin(doc_collection);
-        ret := [=](chk.hmark(0@0),chk.tmark(0@0)).texist(true);
+        ret := true;
     } else if (cachedOnly) {
         del := del.uselect(timestamp_nil,timestamp_nil);
     } 
