@@ -8,3 +8,4 @@ mid:= mserver.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");
 #mserver.trace(mid,1);
 mserver.query(mid,"io.print(d);");
 io.print("done");
+mserver.disconnect(mid);

@@ -21,4 +21,5 @@ io.print("k2");
 i:=aggr.count(e);
 io.printf(" count %d\n",i);
 io.print(d);
+mserver.disconnect(mid);
 optimizer.remoteQueries();

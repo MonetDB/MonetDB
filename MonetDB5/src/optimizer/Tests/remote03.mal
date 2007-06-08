@@ -40,5 +40,6 @@ barrier Z99:= true;
 	redo Z99;
 exit Z99;
 end s0_0; 
+mserver.disconnect(mid);
 optimizer.remoteQueries("sql_cache","s0_0");
 mdb.List("sql_cache","s0_0");

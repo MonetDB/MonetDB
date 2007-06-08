@@ -33,4 +33,5 @@ i:lng:= mserver.rpc(mid,"io.print(i);");
 io.printf(" count %d\n",i);
 d:bat[:int,:int]:= mserver.rpc(mid,"io.print(d);");
 io.print(d);
+mserver.disconnect(mid);
 optimizer.remoteQueries();

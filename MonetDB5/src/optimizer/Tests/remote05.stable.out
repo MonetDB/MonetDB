@@ -33,7 +33,8 @@ function user.main():void;	# 0  (main:void)
 #mserver.trace(mid,1); 	# 7  (_12:str)
     mserver.query(mid,"io.print(d);");	# 8 SERVERquery (_13:int)<-(mid:int)(_14:str)
     io.print("done");	# 9 IOprint_val (_15:void)<-(_16:str)
-end main;	# 10  
+    mserver.disconnect(mid);	# 10 SERVERdisconnect (_17:void)<-(mid:int)
+end main;	# 11  
 !MALException:mserver.query:remote error: TypeException:user.main[1]:'d' may not be used before being initialized
 
 # 15:27:53 >  

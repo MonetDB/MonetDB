@@ -570,6 +570,7 @@ end main;	# 11
 [ "getAddress",				  "command",	  "inspect",	  "(mod:str,fcn:str):bat[:str,:str] ",											  "INSPECTgetAddress;"				  ]
 [ "getSignature",			  "command",	  "inspect",	  "(mod:str,fcn:str):bat[:str,:str] ",											  "INSPECTgetSignature;"			  ]
 [ "getDefinition",			  "command",	  "inspect",	  "(mod:str,fcn:str):bat[:str,:str] ",											  "INSPECTgetDefinition;"			  ]
+[ "adapt",			  "command",	  "bpm",	  "(s:bat[:any_1,:any_2],low:any_2,hgh:any_2,rs:bat[:any_1,:any_3]):void ",	  "BPMadapt;"					  ]
 [ "addPartition",			  "command",	  "bpm",	  "(nme:str,b:bat[:any_1,:any_2],hl:any_1,hh:any_1,tl:any_2,th:any_2):bat[:any_1,:any_2] ",				  "BPMaddPartitionDim;"				  ]
 [ "addPartition",			  "command",	  "bpm",	  "(nme:str,b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",									  "BPMaddPartition;"				  ]
 [ "addPartition",			  "command",	  "bpm",	  "(b:bat[:any_1,:any_2],s:bat[:any_1,:any_2]):void ",									  "BPMaddSegment;"				  ]
