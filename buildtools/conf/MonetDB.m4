@@ -35,6 +35,7 @@ case "$CC" in
 	case $icc_ver in
 	8.*)	CC="$CC -no-gcc";;
 	9.*)	CC="$CC -no-gcc";;
+	10.*)	CC="$CC -no-gcc";;
 	esac
 	;;
 esac
@@ -584,12 +585,16 @@ yes-*-*)
 	case $icc_ver in
 	8.1*)	CFLAGS="$CFLAGS -wd1418" ;;
 	9.*)	CFLAGS="$CFLAGS -wd1418" ;;
+	10.*)	CFLAGS="$CFLAGS -wd1418" 
+		dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
+		CC="$CC -fPIC"		 ;;
 	*)	;;
 	esac
 	dnl  Version 8.* doesn't find sigset_t when -ansi is set... !?
 	case $icc_ver in
 	8.*)	;;
 	9.*)	;;
+	10.*)	;;
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
@@ -604,6 +609,7 @@ yes-*-*)
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
 	9.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572,1599" ;;
+	10.*)		X_CFLAGS="$X_CFLAGS,1572,1599" ;;
 	esac
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
@@ -689,7 +695,10 @@ yes-*-*)
 	esac
 	;;
 -icc*-linux*|-ecc*-linux*)
-	CFLAGS="$CFLAGS -c99"
+      	case "$host-$icc_ver" in
+        *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
+      	*-*-*-)    	CFLAGS="$CFLAGS -c99" 		;;
+      	esac   
 	;;
 -pgcc*-linux*)
 	CFLAGS="$CFLAGS -c9x"
@@ -1489,10 +1498,13 @@ if test "x$enable_optim" = xyes; then
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
       x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       x86_64-*-*-9.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
+      x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
       ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
