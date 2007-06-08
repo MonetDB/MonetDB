@@ -1030,13 +1030,8 @@ stmt *
 semantic(mvc *sql, scope *scp, symbol *s)
 {
 	stmt *res = NULL;
-	int start = 0;
 	if (!s)
 		return NULL;
-	if( !sql->called_triggers) {
-		sql->called_triggers = list_create((fdestroy) GDKfree);
-		start = 1;
-	}
 
 	switch (s->token) {
 
@@ -1127,25 +1122,16 @@ semantic(mvc *sql, scope *scp, symbol *s)
 			char *name = qname_table(dn->data.lval);
 
 			if (frame_find_var(sql, name)) {
-				if (start) {
-					list_destroy(sql->called_triggers);
-					sql->called_triggers = NULL;
-				}
 				return sql_error(sql, 01, "Variable '%s' allready declared", name);
 			}
 			st = semantic(sql, scp, sym);
 			if (!st) { 
-				if (start) {
-					list_destroy(sql->called_triggers);
-					sql->called_triggers = NULL;
-				}
 				return NULL;
 			}
 			stack_push_view(sql, name, st);
 		}
-		st = semantic(sql, scp, select);
+		res = semantic(sql, scp, select);
 		stack_pop_frame(sql);
-		res = st;
 		break;
 	}
 
@@ -1161,10 +1147,6 @@ semantic(mvc *sql, scope *scp, symbol *s)
 
 			if (!st) {
 				list_destroy(l);
-				if (start) {
-					list_destroy(sql->called_triggers);
-					sql->called_triggers = NULL;
-				}
 				return NULL;
 			}
 			list_append(l, st);
@@ -1176,12 +1158,6 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	default:
 		res = sql_error(sql, 01, "sql_stmt symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
-
-	if (start) {
-		list_destroy(sql->called_triggers);
-		sql->called_triggers = NULL;
-	}
-
 	return res;
 }
 
