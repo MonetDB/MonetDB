@@ -919,7 +919,7 @@ def msc_libs(fd, var, libsmap, msc):
     msc_deps(fd, libsmap['DEPS'], ".obj", msc)
 
 def msc_includes(fd, var, values, msc):
-    incs = "-I$(SRCDIR)"
+    incs = r"-I$(TOPDIR)\..\..\buildtools\conf -I$(SRCDIR)"
     for i in values:
         # replace all occurrences of @XXX@ with $(XXX)
         i = re.sub('@([A-Z_]+)@', r'$(\1)', i)
