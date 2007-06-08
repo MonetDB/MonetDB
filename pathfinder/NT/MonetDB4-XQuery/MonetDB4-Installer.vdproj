@@ -4164,7 +4164,7 @@
                                     }
                                     "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_E28342766D8441D59F8C5304C53CCD02"
                                     {
-                                    "Name" = "8:xprc"
+                                    "Name" = "8:xrpc"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
