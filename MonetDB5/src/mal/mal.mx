@@ -401,7 +401,7 @@ Before continuing we should make sure that all clients
 			MT_sleep_ms(1000);
 		if(reruns) 
 			stream_printf(mal_clients->fdout,"#MALexit: clients still active\n");
-	} while (finishing+claimed+awaiting && ++reruns < 3);
+	} while (++reruns<3 && finishing+claimed+awaiting );
 	if( reruns== 3)
 		stream_printf(mal_clients->fdout,"#MALexit: server forced exit"
 			" %d finishing %d claimed %d waiting\n", 
