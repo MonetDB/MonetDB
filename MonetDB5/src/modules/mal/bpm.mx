@@ -473,7 +473,6 @@ The internal data structure is used as a cache for improved access.
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
-#include <math.h>
 
 
 /*#define _DEBUG_BPM_ */
@@ -563,6 +562,8 @@ bpm_export str BPMepilogue(int *ret);
 #include "bpm.h"
 #include "bat5.h"
 #include "algebra.h"
+#include <math.h>
+
 #define KB	1024
 #define Mmin	KB
 @-
@@ -1432,7 +1433,11 @@ BPMderived(bat *ret, bat *bid, bat *src)
 	throw(MAL, "bpm.derived","NYI");
 }
 
-void findMedian(ValPtr vp, BAT * b)
+@-
+Take a sample from a BAT and determine the median value.
+It is the candidate split value.
+@c
+static void findMedian(ValPtr vp, BAT * b)
 {
 	BUN p; 
 	int c, tpe;
@@ -1450,8 +1455,49 @@ void findMedian(ValPtr vp, BAT * b)
 }
 
 
-str
-BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
+@- Adaptive segmentation
+The adapt() routine breaks up a BAT into multiple pieces.
+Several policies will be implemented and explored.
+The SIZECPOLICY just looks at the absolute
+size of the pieces produced. They may not get too small.
+
+The ORACLEPOLICY implements a random decision based
+on the depth of the segementation sequence and relative sizes.
+@c
+#define SIZEPOLICY 1
+#define ORACLEPOLICY 2
+
+static int BPMsizePolicy( BAT *b, BAT *bs, int *bid, ptr low, ptr hgh)
+{
+	int cs=0;
+	lng space, space1, space2;
+	int (*cmp) (ptr, ptr);
+	ptr nilptr;
+
+	cmp= BATatoms[b->ttype].atomCmp;
+	nilptr = ATOMnilptr(b->ttype);
+
+	space1 = BATcount(bs)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+
+	if(((*cmp)(low, nilptr)==0) || greater(*bid,tlow,low)) { 
+		cs=1; space2 = space -space1;
+	}
+	else if (((*cmp)(hgh, nilptr)==0) || less(*bid,thgh,hgh)) {
+		cs=2; space2 = space -space1;
+	}
+	else {
+	 	cs=3; space2 = (space -space1)/2; /* rough estimate- ToDo */
+	}
+	if ((space1 < Mmin) || (space2 < Mmin)) {
+		if (space > 8*Mmin) { 
+			/* little parts in large segment- split on median*/
+			cs = 4;}
+	}
+	return cs;
+}
+
+static str
+BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 {
 	BAT *b,*bs, *bs1, *bs2;
 	Partition ps, p, p2;
@@ -1459,7 +1505,7 @@ BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 	ptr nilptr;
 	ValPtr vp;
 	int cs;
-	lng space, space1, space2;
+	lng space;
 	(void) ret;
 
 	BPMopen();
@@ -1471,7 +1517,7 @@ BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 	cmp= BATatoms[b->ttype].atomCmp;
 	nilptr = ATOMnilptr(b->ttype);
 
-/* check size */
+/* baseline size, too small BATs are never broken*/
 	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 	if (space < Mmin) { /* no re-org.*/
 		BBPunfix(b->batCacheid);
@@ -1488,25 +1534,12 @@ BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 		return MAL_SUCCEED;
 	}
 	@:getBATdescriptor(rs,bs,"bpm.adapt");
-	space1 = BATcount(bs)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
-
-	if(((*cmp)(low, nilptr)==0) || greater(*bid,tlow,low)) { 
-		cs=1; space2 = space -space1;
-	}
-	else if (((*cmp)(hgh, nilptr)==0) || less(*bid,thgh,hgh)) {
-		cs=2; space2 = space -space1;
-	}
-	else {
-	 	cs=3; space2 = (space -space1)/2; /* rough estimate- ToDo */
-	}
-	if ((space1 < Mmin) || (space2 < Mmin)) {
-		if (space > 8*Mmin) { /* little parts in large segment- split in median*/
-			cs = 4;}
-		else { /* too little parts in little segment- no re-org.*/
+	if( policy == SIZEPOLICY)
+		cs= BPMsizePolicy(b,bs,bid,low,hgh);
+	if( cs==0){
 			BBPunfix(b->batCacheid);
 			BBPunfix(bs->batCacheid);
 			return MAL_SUCCEED;
-		}
 	}
 	
 /* re-organize */
@@ -1634,7 +1667,15 @@ BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 	return MAL_SUCCEED;
 }
 
+str BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
+{
+	return BPMadaptImpl(ret,bid,low,hgh,rs,SIZEPOLICY);
+}
 
+str BPMoracle(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
+{
+	return BPMadaptImpl(ret,bid,low,hgh,rs,ORACLEPOLICY);
+}
 
 @-
 Takeing out partitions.
