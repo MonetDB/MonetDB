@@ -60,7 +60,10 @@
 /**
  * Load XQuery built-in function signatures into function environment.
  */
-struct xquery_fo {
+void
+PFfun_xquery_fo (void)
+{
+    struct {
         PFns_t ns;
         char *loc;
         unsigned int arity;
@@ -69,38 +72,7 @@ struct xquery_fo {
         struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                    bool,
                                    struct PFla_pair_t *);
-};
-
-static void
-xquery_fo_initiaze(struct xquery_fo *xquery_fo)
-{
-    PFqname_t    qn;
-    unsigned int n;
-
-    for (n = 0; xquery_fo[n].loc; n++) {
-        assert (xquery_fo[n].sig_count <= XQUERY_FO_MAX_SIGS);
-
-        /* construct function name */
-        qn = PFqname (xquery_fo[n].ns, xquery_fo[n].loc);
-
-        /* insert built-in XQuery F&O into function environment */
-        PFenv_bind (PFfun_env,
-                    qn,
-                    (void *) PFfun_new (qn,
-                                        xquery_fo[n].arity,
-                                        true,
-                                        xquery_fo[n].sig_count,
-                                        xquery_fo[n].sigs,
-                                        xquery_fo[n].alg,
-                                        NULL,
-                                        NULL));
-    }
-}
-
-static void
-PFfun_xquery_fo1 (void)
-{
-    struct xquery_fo xquery_fo1[] =
+    } xquery_fo[] =
     /**
      * List all XQuery built-in functions here.
      *
@@ -955,17 +927,7 @@ PFfun_xquery_fo1 (void)
             .par_ty = (PFty_t[]) { PFty_xs_double () },
             .ret_ty = PFty_xs_double () } },
         .alg = PFbui_fn_floor_dbl }
-    , { .loc = 0 }
-    };
-
-    xquery_fo_initiaze(xquery_fo1);
-}
-
-static void
-PFfun_xquery_fo2 (void)
-{
-    struct xquery_fo xquery_fo2[] = {
-      /* fn:floor (integer?) as integer? */
+    , /* fn:floor (integer?) as integer? */
       { .ns = PFns_fn, .loc = "floor",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_integer ()) },
@@ -1653,17 +1615,7 @@ PFfun_xquery_fo2 (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())) } },
         .alg = PFbui_fn_doc }
-    , { .loc = 0 }
-    };
-
-    xquery_fo_initiaze(xquery_fo2);
-}
-
-static void
-PFfun_xquery_fo3 (void)
-{
-    struct xquery_fo xquery_fo3[] = {
-      /* fn:collection (string) as node* */
+    , /* fn:collection (string) as node* */
       { .ns = PFns_fn, .loc = "collection",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
@@ -2257,17 +2209,29 @@ PFfun_xquery_fo3 (void)
     , { .loc = 0 }
     };
 
-    xquery_fo_initiaze(xquery_fo3);
-}
+    PFqname_t    qn;
+    unsigned int n;
 
-void
-PFfun_xquery_fo (void)
-{
     PFfun_env = PFenv ();
 
-    PFfun_xquery_fo1 ();
-    PFfun_xquery_fo2 ();
-    PFfun_xquery_fo3 ();
+    for (n = 0; xquery_fo[n].loc; n++) {
+        assert (xquery_fo[n].sig_count <= XQUERY_FO_MAX_SIGS);
+
+        /* construct function name */
+        qn = PFqname (xquery_fo[n].ns, xquery_fo[n].loc);
+
+        /* insert built-in XQuery F&O into function environment */
+        PFenv_bind (PFfun_env,
+                    qn,
+                    (void *) PFfun_new (qn,
+                                        xquery_fo[n].arity,
+                                        true,
+                                        xquery_fo[n].sig_count,
+                                        xquery_fo[n].sigs,
+                                        xquery_fo[n].alg,
+                                        NULL,
+                                        NULL));
+    }
 }
 
 /* vim:set shiftwidth=4 expandtab: */
