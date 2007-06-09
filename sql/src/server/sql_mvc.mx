@@ -632,6 +632,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->cache = 1;
 
 	m->label = 0;
+	m->cascade_action = NULL;
 	m->type = Q_PARSE;
 
 	for(i=0;i<MAXSTATS;i++)
