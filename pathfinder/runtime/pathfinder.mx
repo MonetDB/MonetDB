@@ -2243,11 +2243,11 @@ PROC ws_lookup(BAT[void,bat] ws,
             del := reverse(ws.fetch(QN_NID_DEL).fetch(cont)).join(qn_ids);
         }
     }
-    if (valid and bit(count(ins) + count(del))) {
+    if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
+    if (bit(count(ins) + count(del))) {
         # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
         res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
     }
-    if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
 
     # SCJ must catch error and use sequential post-filter instead.
     return ws_docfilter(ws, sort(res).hmark(oid_nil), cont);
@@ -3093,26 +3093,28 @@ PROC ws_opendoc(BAT[void,BAT] ws,
 }
 PROC ws_opendoc(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[oid,oid] 
 {   
-    return ws_opendoc(ws,idx_names, bat(void,str).seqbase(0@0),
-                                    bat(void,oid).seqbase(0@0),
-                                    bat(void,oid).seqbase(0@0), true); 
+    return ws_opendoc(ws,idx_names.seqbase(0@0), bat(void,str).seqbase(0@0),
+                                                 bat(void,oid).seqbase(0@0),
+                                                 bat(void,oid).seqbase(0@0), true); 
 }
 
 # pf:collection(), get 'collection root' as a single startpoint to query an entire collection
 PROC ws_collection_root(BAT[void,BAT] ws, BAT[void,str] colnames) : BAT[oid,oid]
 {
+    var colnames_unq := colnames.tdiff(ws.fetch(CONT_NAME)).tunique().mirror(); # [str,str]
     lock_set(pf_short);
-    var colname_coll, err := CATCH({ colname_coll := reverse(colnames).mirror().leftjoin(reverse(collection_name));
-                                     colname_pins.insert(colname_coll.kunique().project(ws_id(ws))); });
+    var colnames_coll, err := CATCH({ colnames_coll := colnames_unq.leftjoin(reverse(collection_name));
+                                      colname_pins.insert(colnames_coll.project(ws_id(ws))); });
     lock_unset(pf_short);
-    var notfound := colname_coll.kdiff(reverse(colnames));
+    var notfound := reverse(colnames_coll).tdiff(colnames);
     if (count(notfound) > 0) ERROR("pf:collection() %s not found (%d such errors).\n", notfound.fetch(0), count(notfound));
 
-    colname_coll@batloop() {
+    colnames_coll@batloop() {
         var docBAT := [bat]([+](str(int($t)), ws_dsk).reverse().mirror()); # get master bats
         ws_opencoll(ws, docBAT, $h, $t); # collections are loaded one-by-one
     }
-    return reverse(colname_coll.leftjoin(reverse(ws.fetch(CONT_COLL)))).project(0@0); # [CONT,PRE]
+    var ret := reverse(colnames.leftjoin(reverse(ws.fetch(CONT_NAME)))).project(0@0); # [CONT,PRE]
+    return ret;
 }
 
 # fn:collection(), get document nodes of all documents in a collection
