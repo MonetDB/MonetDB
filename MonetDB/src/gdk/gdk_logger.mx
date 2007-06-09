@@ -1401,6 +1401,9 @@ log_bat_clear(logger *lg, char *name)
 	    log_write_string(lg, name) == LOG_ERR)
 		return LOG_ERR;
 
+	if (lg->debug)
+		fprintf(stderr, "Logged clear %s\n", name);
+
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
 
