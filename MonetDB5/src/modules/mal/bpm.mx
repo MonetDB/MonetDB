@@ -630,6 +630,7 @@ is used for this purpose.
 @c
 static Partition *bpmcat= 0;
 static int bpmcatsize=0;
+static int BPMpiecesImpl(bat bid);
 
 static void BPMprintRecord(stream *f, Partition p){
 	stream_printf(f,"partition: %s alias %d bid %d ",
@@ -1244,17 +1245,20 @@ BPMcount(int *ret, bat *bid)
 	}
 	return MAL_SUCCEED;
 }
+int BPMpiecesImpl(bat bid){
+	int i,cnt=0;
+	Partition ps;
+	if( (ps= getAlias(bid)) == 0)
+		return 1;
+	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
+		cnt +=1;
+	}
+	return cnt;
+}
 str
 BPMpieces(int *ret, bat *bid)
 {
-	int i;
-	Partition ps;
-	*ret= 0;
-	if( (ps= getAlias(*bid)) == 0)
-		throw(MAL,"pbm.count","Partitioned BAT not found");
-	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
-		*ret +=1;
-	}
+	*ret= BPMpiecesImpl(*bid);
 	return MAL_SUCCEED;
 }
 
@@ -1526,20 +1530,18 @@ gaussian(double x, double sigma, double m){
 }
 
 static int
-BPMoraclePolicy(BAT *b, BAT *rs )
+BPMoraclePolicy(double x, double sigma)
 {
-	int pieces;
-	double rnd, threshold, g;
+	double rnd, g;
 
-	BPMpieces(&pieces,&b->batCacheid);
-	rnd= rand()/(double)RAND_MAX;
-	threshold= (double)BATcount(rs)/BATcount(b);
-	g= gaussian(rnd,1.0/pieces,0.5)/ gaussian(0.5,1.0/pieces,0.5);
+	rnd= (double)rand()/(double)RAND_MAX;
+	g= gaussian(x,sigma,0.5)/ gaussian(0.5,sigma,0.5);
 #ifdef _DEBUG_BPM_
-	streamm_printf(GDKout,"oracle pieces %d rnd %f threshold %f gaussian %f\n",
-		pieces,rnd,threshold,guassian);
+	printf("oracle pieces %d rnd %f x %f sigma %f gaussian %f\n",
+	pieces,rnd,x,sigma,g);
 #endif
-	return g*threshold >rnd;
+	/*return g * threshold >rnd; */
+	return g>rnd;
 }
 
 static str
@@ -1583,7 +1585,8 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	@:getBATdescriptor(rs,bs,"bpm.adapt");
 	if( policy == SIZEPOLICY)
 		cs= BPMsizePolicy(b,bs,bid,low,hgh);
-	if( policy == ORACLEPOLICY && BPMoraclePolicy(b,bs))
+	if( policy == ORACLEPOLICY && 
+		BPMoraclePolicy((double)BATcount(bs)/BATcount(b), 1.0/BPMpiecesImpl(b->batCacheid)))
 		cs= 4; /* to be refined */
 	if( cs==0){
 			BBPunfix(b->batCacheid);
