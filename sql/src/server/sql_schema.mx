@@ -526,20 +526,15 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
 	stmt *sq = NULL;
-	list *col_l = NULL, *func_l= NULL, *view_id_l = NULL;
-	scope *scp = scope_open(NULL);
+	scope *scp;
 	sql_trigger *trigger;
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->mode == m_execute);
 
-	int event = (trigger_event->token == SQL_INSERT)?0:
-			  (trigger_event->token == SQL_DELETE)?1:2;
 	dlist *columns = trigger_event->data.lval;
 	char *old_name = NULL, *new_name = NULL; 
-	int orientation = triggered_action->h->data.ival;
-	char *condition = triggered_action->h->next->data.sval;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	
 	if (opt_ref) {
@@ -566,16 +561,22 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	
 	
 	if (!instantiate) {
+		int event = (trigger_event->token == SQL_INSERT)?0:
+			    (trigger_event->token == SQL_DELETE)?1:2;
+		int orientation = triggered_action->h->data.ival;
+		char *condition = triggered_action->h->next->data.sval;
 		char *q = QUERY(sql->scanner);
+
 		trigger = mvc_create_trigger(sql, t, tname, time, orientation, 
 			event, old_name, new_name, condition, q);
 	}
+ 	scp = scope_open(NULL);
 	sq = sequential_block(sql, scp, NULL, stmts, NULL, 1);
 	
 	if (sq && !instantiate) {
-		col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
-		func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
-		view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
+		list *col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
+		list *func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
+		list *view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
 
 		mvc_create_dependencies(sql, col_l, trigger->base.id, TRIGGER_DEPENDENCY);
 		mvc_create_dependencies(sql, func_l, trigger->base.id, TRIGGER_DEPENDENCY);
@@ -592,7 +593,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	/* todo trigger_columns */
 	(void)columns;
 
-	if (instantiate)
+	if (instantiate || !sq)
 		return sq;
 	return stmt_none();
 }

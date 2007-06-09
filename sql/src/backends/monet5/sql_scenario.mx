@@ -449,8 +449,9 @@ static str
 SQLstatementIntern(str *expr, str nme, int execute)
 {
 	int err = 0;
-	mvc o, *m;
-	int ac;
+	mvc *o, *m;
+	int ac, sizevars, topvars;
+	sql_var *vars;
 	buffer *b;
 	char *n;
 	str msg = MAL_SUCCEED;
@@ -474,7 +475,12 @@ SQLstatementIntern(str *expr, str nme, int execute)
 	SQLcacheRefresh(m);
 	if (!m->sa)
 		m->sa = sa_create();
-	o = *m;
+
+	o = NEW(mvc);
+	if (!o)
+		throw(SQL, "SQLstatement", "Out of memory");
+	*o = *m;
+
 	m->type= Q_PARSE;
 	sql = backend_create(m, c);
 	m->qc = NULL;
@@ -577,7 +583,15 @@ endofcompile:
 	GDKfree(n);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	*m = o;
+	/* variable stack maybe resized, ie we need to keep the new stack */
+	sizevars = m->sizevars;
+	topvars = m->topvars;
+	vars = m->vars;
+	*m = *o;
+	_DELETE(o);
+	m->sizevars = sizevars;
+	m->topvars = topvars;
+	m->vars = vars;
 	m->session->auto_commit = ac;
 	return msg;
 }

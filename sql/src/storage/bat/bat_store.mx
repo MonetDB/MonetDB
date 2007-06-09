@@ -1313,6 +1313,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	t->sql = *(bit *) bun_find(func_sql, lid);
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
 	t->side_effect = *(bit *) bun_find(func_side_effect, lid);
+	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->is_func = 0;
 	t->s = s;
@@ -4901,6 +4902,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->aggr = aggr;
 	t->side_effect = se;
 	t->ops = list_dup(args, (fdup)&arg_dup);
+	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->is_func = is_func;
 	if (res)

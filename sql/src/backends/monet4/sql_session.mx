@@ -516,29 +516,35 @@ int
 mvc_sql(mvc *m, char *cmd)
 {
 	Cntxt stk = (Cntxt) m->session->stk;
-	mvc o = *m;
-	int ac = m->session->auto_commit;
+	mvc *o;
+	int ac = m->session->auto_commit, sizevars, topvars;
+	sql_var *vars;
 
 	int err = 0;
 	backend *sql;
-	Variable mvc, output;
+	Variable myc, output;
 	buffer *b;
 	char *n;
 	int len = _strlen(cmd);
 
+	o = NEW(mvc);
+	if (!o)
+		return GDK_FAIL;
+	*o = *m;
+
 	sql = backend_create(m, 1);
 
 	/* shouldn't be needed to reset the myc variable ! */ 
-        mvc = VARfind(&stk, "myc");
-        if (mvc == NULL) {
+        myc = VARfind(&stk, "myc");
+        if (myc == NULL) {
             GDKerror("sql_client_init: failed to lookup myc variable.\n"); 
 	    return GDK_FAIL;
 	}
-        if (mvc->binding.vtype != TYPE_mvc) {
+        if (myc->binding.vtype != TYPE_mvc) {
             GDKerror("sql_client_init: myc variable has wrong type != mvc.\n"); 
 	    return GDK_FAIL;
 	}
-        mvc->binding.val.pval = m; 
+        myc->binding.val.pval = m; 
 
         output = VARfind(&stk, "Output");
         if (output == NULL) {
@@ -582,7 +588,15 @@ mvc_sql(mvc *m, char *cmd)
 	bstream_destroy(m->scanner.rs);
 	assert(m->qc == NULL);
 
-	*m = o;
+	/* variable stack maybe resized, ie we need to keep the new stack */
+	sizevars = m->sizevars;
+	topvars = m->topvars;
+	vars = m->vars;
+	*m = *o;
+	_DELETE(o);
+	m->sizevars = sizevars;
+	m->topvars = topvars;
+	m->vars = vars;
 	m->session->auto_commit = ac;
         output->binding.val.pval = m->scanner.ws;
 	if (err)
