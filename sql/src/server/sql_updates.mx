@@ -911,11 +911,10 @@ sql_update_key(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, stmt *i
 		ckeys = update_check_ukey(sql, updates, k, idx_updates, updcol);
 		sql_update_ukey(sql, schema, updates, k, updcol, l);
 		list_prepend(l, ckeys);
-	} else 
-		if (((sql_fkey*)k)->on_update == ACT_RESTRICT) {		/* foreign keys */
-			ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
-			list_prepend(l, ckeys);
-		}
+	} else { /* foreign keys */
+		ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
+		list_prepend(l, ckeys);
+	}
 }
 
 static stmt *
@@ -1491,7 +1490,6 @@ copyfrom(mvc *sql, scope *scp, dlist *qname, dlist *files, dlist *seps, int nr)
 stmt *
 sql_update(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list *l)
 {
-	char buf[BUFSIZ];
 	node *n;
 	sql_subaggr *cnt;
 
@@ -1500,6 +1498,7 @@ sql_update(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list *l)
 		sql_column *c = n->data;
 
 		if (updates[c->colnr] && !c->null) {
+			char buf[BUFSIZ];
 			stmt *s = updates[c->colnr]->op2.stval;
 
 			if (!(s->key && s->nrcols == 0)) {
@@ -1777,11 +1776,11 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 	sql_ukey *uk = (sql_ukey*)k;
 
 	if (uk->keys && list_length(uk->keys) > 0) {
-		char buf[BUFSIZ];
 		sql_subtype *it = sql_bind_localtype("int");
 		sql_subtype *bt = sql_bind_localtype("bit");
 		node *n;
 		for(n = uk->keys->h; n; n = n->next) {
+			char buf[BUFSIZ];
 			sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
 			sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 			sql_key *fk = n->data;
