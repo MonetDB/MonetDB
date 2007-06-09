@@ -17,116 +17,12 @@ Ready.
 
 Over..
 
-# 15:06:05 >  
-# 15:06:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38417  < recursive_triggers.sql
-# 15:06:05 >  
+# 17:29:28 >  
+# 17:29:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=amelia --port=35946 
+# 17:29:28 >  
 
-[ 1	]
-[ 1	]
-% sys.t1,	sys.t1,	sys.t1 # table_name
-% id,	name,	age # name
-% int,	varchar,	int # type
-% 1,	7,	2 # length
-[ 1,	"mo",	25	]
-[ 1,	"monetdb",	24	]
-% sys.t2,	sys.t2 # table_name
-% id,	age # name
-% int,	int # type
-% 1,	1 # length
-[ 4	]
-[ 1	]
-[ 1	]
-% sys.t1,	sys.t1,	sys.t1 # table_name
-% id,	name,	age # name
-% int,	varchar,	int # type
-% 1,	7,	2 # length
-[ 1,	"mo",	25	]
-[ 1,	"monetdb",	24	]
-[ 2,	"mo",	26	]
-[ 1,	"monetdb",	24	]
-% sys.t2,	sys.t2 # table_name
-% id,	age # name
-% int,	int # type
-% 1,	2 # length
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 1	]
-[ 6	]
-[ 1	]
-[ 1	]
-% sys.t1,	sys.t1,	sys.t1 # table_name
-% id,	name,	age # name
-% int,	varchar,	int # type
-% 1,	7,	2 # length
-[ 1,	"mo",	25	]
-[ 1,	"monetdb",	24	]
-[ 2,	"mo",	26	]
-[ 1,	"monetdb",	24	]
-[ 3,	"mo",	27	]
-[ 1,	"monetdb",	24	]
-% sys.t2,	sys.t2 # table_name
-% id,	age # name
-% int,	int # type
-% 1,	2 # length
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 1,	23	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 3,	27	]
-[ 1,	24	]
-[ 1	]
-[ 4	]
-% sys.t1,	sys.t1,	sys.t1 # table_name
-% id,	name,	age # name
-% int,	varchar,	int # type
-% 1,	2,	2 # length
-[ 2,	"mo",	26	]
-% sys.t2,	sys.t2 # table_name
-% id,	age # name
-% int,	int # type
-% 1,	2 # length
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 1,	23	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 3,	27	]
-[ 1,	24	]
-[ 1	]
-[ 1	]
-% sys.t1,	sys.t1,	sys.t1 # table_name
-% id,	name,	age # name
-% int,	varchar,	int # type
-% 1,	5,	2 # length
-[ 2,	"monet",	27	]
-% sys.t2,	sys.t2 # table_name
-% id,	age # name
-% int,	int # type
-% 1,	2 # length
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 1,	23	]
-[ 1,	25	]
-[ 1,	24	]
-[ 2,	26	]
-[ 1,	24	]
-[ 3,	27	]
-[ 1,	24	]
 
-# 15:06:05 >  
-# 15:06:05 >  Done.
-# 15:06:05 >  
+# 17:29:28 >  
+# 17:29:28 >  Done.
+# 17:29:28 >  
 
