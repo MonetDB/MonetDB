@@ -32,7 +32,7 @@ select * from t1;
 select * from t2;
 select * from t3;
 
-update t2 set id = 6  where id =3;
+update t2 set id = 8  where id =3;
 
 select * from t1;
 select * from t2;
