@@ -2533,7 +2533,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 			bootstrap_create_column(tr, t, "type", "int", 32);
 			bootstrap_create_column(tr, t, "name", "varchar", 1024);
 			bootstrap_create_column(tr, t, "rkey", "int", 32);
-			bootstrap_create_column(tr, t, "action", "int", 16);
+			bootstrap_create_column(tr, t, "action", "int", 32);
 
 			t = bootstrap_create_table(tr, s, "idxs");
 			bootstrap_create_column(tr, t, "id", "int", 32);
@@ -3722,6 +3722,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		BAT *odb = temp_descriptor(tt->dbid);
 
 		bat_clear(odb);
+		BATcommit(odb);
 		bat_destroy(odb);
 		if (ttr == gtrans)
 			ok = log_bat_clear(sql_logger, tt->dname);
@@ -3768,6 +3769,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		cur = temp_descriptor(oc->bat.bid);
 		if (ft->cleared && ttr == gtrans) {
 			bat_clear(cur);
+			BATcommit(cur);
 			ok = log_bat_clear(sql_logger, oc->bat.name);
 			if (ok == LOG_OK) 
 				ok = log_bat_clear(sql_logger, oc->bat.uname);
@@ -3879,6 +3881,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			cur = temp_descriptor(oi->bat.bid);
 			if (ft->cleared && ttr == gtrans) {
 				bat_clear(cur);
+				BATcommit(cur);
 				ok = log_bat_clear(sql_logger, oi->bat.name);
 				if (ok == LOG_OK) 
 					ok = log_bat_clear(sql_logger, oi->bat.uname);
