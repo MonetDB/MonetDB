@@ -263,6 +263,9 @@ address BPMglue;
 
 command count(b:bat[:any_1,:any_2]):int
 address BPMcount;
+command pieces(b:bat[:any_1,:any_2]):int
+address BPMpieces
+comment "Count the number of partitions";
 @-
 The partitioning is handled inside the module.
 If the alias BAT denotes an existing partition, it is
@@ -500,6 +503,7 @@ bpm_export str BPMsortPartitions(int *ret, bat *bid);
 bpm_export str BPMhashPartitions(int *ret, bat *bid);
 
 bpm_export str BPMcount(int *ret, bat *src);
+bpm_export str BPMpieces(int *ret, bat *src);
 
 bpm_export str BPMglue(int *ret, bat *src);
 bpm_export str BPMaddSegment(int *ret, bat *dst, bat *src);
@@ -508,6 +512,7 @@ bpm_export str BPMaddPartitionDim(bat *ret, str *nme, bat *src, ptr hl, ptr hh, 
 bpm_export str BPMhash(bat *ret, bat *bid, int *slots);
 bpm_export str BPMderived(bat *ret, bat *bid, bat *src);
 bpm_export str BPMadapt(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs );
+bpm_export str BPMoracle(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs );
 
 bpm_export str BPMtake(bat *ret, str *nme);
 bpm_export str BPMtakePartition(bat *ret, bat *bid, int *idx);
@@ -1239,6 +1244,19 @@ BPMcount(int *ret, bat *bid)
 	}
 	return MAL_SUCCEED;
 }
+str
+BPMpieces(int *ret, bat *bid)
+{
+	int i;
+	Partition ps;
+	*ret= 0;
+	if( (ps= getAlias(*bid)) == 0)
+		throw(MAL,"pbm.count","Partitioned BAT not found");
+	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
+		*ret +=1;
+	}
+	return MAL_SUCCEED;
+}
 
 str
 BPMglue(bat *ret, bat *bid){
@@ -1462,12 +1480,14 @@ The SIZECPOLICY just looks at the absolute
 size of the pieces produced. They may not get too small.
 
 The ORACLEPOLICY implements a random decision based
-on the depth of the segementation sequence and relative sizes.
+on a Gaussian distribution, the total number of fragments
+and the relative size of the piece to be broken op.
 @c
 #define SIZEPOLICY 1
 #define ORACLEPOLICY 2
 
-static int BPMsizePolicy( BAT *b, BAT *bs, int *bid, ptr low, ptr hgh)
+static int 
+BPMsizePolicy( BAT *b, BAT *bs, int *bid, ptr low, ptr hgh)
 {
 	int cs=0;
 	lng space, space1, space2;
@@ -1494,6 +1514,31 @@ static int BPMsizePolicy( BAT *b, BAT *bs, int *bid, ptr low, ptr hgh)
 			cs = 4;}
 	}
 	return cs;
+}
+
+static double
+gaussian(double x, double sigma, double m){
+	double s2= sigma*sigma;
+	double f1= 1.0/(sigma *sqrt(2*M_PI));
+	double f2= f1 * exp(-(x-m)*(x-m)/(2*s2));
+	return f2;
+}
+
+static int
+BPMoraclePolicy(BAT *b, BAT *rs )
+{
+	int pieces;
+	double rnd, threshold, g;
+
+	BPMpieces(&pieces,&b->batCacheid);
+	rnd= rand()/(double)RAND_MAX;
+	threshold= (double)BATcount(rs)/BATcount(b);
+	g= gaussian(rnd,1.0/pieces,0.5)/ gaussian(0.5,1.0/pieces,0.5);
+#ifdef _DEBUG_BPM_
+	streamm_printf(GDKout,"oracle pieces %d rnd %f threshold %f gaussian %f\n",
+		pieces,rnd,threshold,guassian);
+#endif
+	return g*threshold >rnd;
 }
 
 static str
@@ -1533,9 +1578,12 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+
 	@:getBATdescriptor(rs,bs,"bpm.adapt");
 	if( policy == SIZEPOLICY)
 		cs= BPMsizePolicy(b,bs,bid,low,hgh);
+	if( policy == ORACLEPOLICY && BPMoraclePolicy(b,bs))
+		cs= 4; /* to be refined */
 	if( cs==0){
 			BBPunfix(b->batCacheid);
 			BBPunfix(bs->batCacheid);
@@ -1548,11 +1596,11 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		vp= (ValPtr) GDKzalloc(sizeof(ValRecord));
 		VALinit(vp,b->ttype,nilptr);
 		findMedian(vp,b);
-	#ifdef _DEBUG_BPM_
+#ifdef _DEBUG_BPM_
 		stream_printf(GDKout,"Found median ");
 		VALprint(GDKout,vp);
 		stream_printf(GDKout,"\n");
-	#endif
+#endif
 		low = (ptr) VALget(vp);
 		if( *bid > 0)
 			bs1= BAT_select_(b, low, nilptr, TRUE, FALSE, TRUE, FALSE);

@@ -615,6 +615,7 @@ end main;	# 11
 [ "open",				  "command",	  "bpm",	  "():void ",														  "BPMopen;"					  ]
 [ "prelude",				  "command",	  "bpm",	  "():void ",														  "BPMprelude;"					  ]
 [ "partition",				  "command",	  "bpm",	  "(pb:bat[:any_1,:any_2],val:any_2):void ",										  "BPMsplitpartition;"				  ]
+[ "pieces",			  "command",	  "bpm",	  "(b:bat[:any_1,:any_2]):int ",							  "BPMpieces;"					  ]
 [ "replace",				  "command",	  "bpm",	  "(pb:bat[:any_1,:any_2],old:bat[:any_1,:any_2],nwe:bat[:any_1,:any_2]):void ",					  "BPMreplace;"					  ]
 [ "rangePartitionSort",			  "command",	  "bpm",	  "(pb:bat[:any_1,:any_2],pv:bat[:oid,:any_2]):void ",									  "BPMrangeVectorSort;"				  ]
 [ "rangePartition",			  "command",	  "bpm",	  "(pb:bat[:any_1,:any_2],pv:bat[:oid,:any_2]):void ",									  "BPMrangeVector;"				  ]
