@@ -1497,6 +1497,7 @@ BPMsizePolicy( BAT *b, BAT *bs, int *bid, ptr low, ptr hgh)
 	cmp= BATatoms[b->ttype].atomCmp;
 	nilptr = ATOMnilptr(b->ttype);
 
+	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 	space1 = BATcount(bs)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 
 	if(((*cmp)(low, nilptr)==0) || greater(*bid,tlow,low)) { 
