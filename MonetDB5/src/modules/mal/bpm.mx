@@ -1540,7 +1540,6 @@ BPMoraclePolicy(double x, double sigma)
 	printf("oracle pieces %d rnd %f x %f sigma %f gaussian %f\n",
 	pieces,rnd,x,sigma,g);
 #endif
-	/*return g * threshold >rnd; */
 	return g>rnd;
 }
 
@@ -1626,8 +1625,6 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	@:defaultRange(p,bs1)@
 	p->cnt= BATcount(bs1);
 	if( *bid> 0){
-		VALset(&p->hlow, rngType(bs1->htype), &ps->hlow );
-		VALset(&p->hhgh, rngType(bs1->htype), &ps->hhgh);
 		switch (cs) {
 		case 1: VALset(&p->tlow, rngType(bs1->ttype), &ps->tlow );
 			VALset(&p->thgh, rngType(bs1->ttype), hgh);	
@@ -1637,10 +1634,12 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 			break;
 		case 3: VALset(&p->tlow, rngType(bs1->ttype), low );
 			VALset(&p->thgh, rngType(bs1->ttype), hgh);	
-	}
+			break;
+		default:
+			VALset(&p->hlow, rngType(bs1->htype), &ps->hlow );
+			VALset(&p->hhgh, rngType(bs1->htype), &ps->hhgh);
+		}
 	} else {
-		VALset(&p->tlow, rngType(bs1->ttype), &ps->tlow );
-		VALset(&p->thgh, rngType(bs1->ttype), &ps->thgh);
 		switch (cs) {
 		case 1: VALset(&p->hlow, rngType(bs1->htype), &ps->hlow );
 			VALset(&p->hhgh, rngType(bs1->htype), hgh);	
@@ -1650,6 +1649,10 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 			break;
 		case 3: VALset(&p->hlow, rngType(bs1->htype), low );
 			VALset(&p->hhgh, rngType(bs1->htype), hgh);	
+			break;
+		default:
+			VALset(&p->tlow, rngType(bs1->ttype), &ps->tlow );
+			VALset(&p->thgh, rngType(bs1->ttype), &ps->thgh);
 		}
 	}
 	p->hbits=  ps->hbits;
@@ -1718,6 +1721,149 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@-
+Split the implementation to have a second implementation
+scheme to also study effects of splitting itself.
+@c
+static str
+BPMoracleImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs)
+{
+	BAT *b,*bs, *bs1, *bs2;
+	Partition ps, p;
+	int (*cmp) (ptr, ptr);
+	ptr nilptr;
+	(void) ret;
+
+	BPMopen();
+
+	if( (ps = getByNumber(*bid)) == 0)
+		throw(MAL,"pbm.oracle","BAT is not a segment: To Do");
+	@:getBATdescriptor(bid,b,"bpm.oracle");
+	/* get the comparison function */
+	cmp= BATatoms[b->ttype].atomCmp;
+	nilptr = ATOMnilptr(b->ttype);
+
+@-
+We are only interested in partitions that partly overlap
+Complete segment require no reorganization.
+@c
+	if((((*cmp)(low, nilptr)==0) || greater(*bid,tlow,low) ||
+	     equal(*bid,tlow,low)) && 
+	   (((*cmp)(hgh, nilptr)==0) || less(*bid,thgh,hgh) ||
+	     equal(*bid,thgh,hgh))) 
+	 { 
+		BBPunfix(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+@-
+Call the oracle to determine if it makes sense to
+break the partition further
+@c
+	@:getBATdescriptor(rs,bs,"bpm.oracle");
+	if( BPMoraclePolicy((double)BATcount(bs)/BATcount(b), 
+				1.0/BPMpiecesImpl(b->batCacheid)) == 0) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(bs->batCacheid);
+			return MAL_SUCCEED;
+	}
+@- 
+The plan is to use the result table RS as a new partition
+and to correct B from which it is derived. BS1 is the new partition.
+We know that B and RS have the same signature, but it may be
+reversed. Let's prepare this partition and add it.
+@c
+#ifdef _DEBUG_BPM_
+	stream_printf(GDKout,"Oracle dictates split\n");
+#endif
+	if( *bid > 0)
+		bs1= BATcopy(bs, bs->htype, bs->ttype,1);
+	else
+		bs1= BATcopy(BATmirror(bs), bs->ttype, bs->htype,1);
+	if( bs1 == 0){
+		BBPunfix(bs->batCacheid);
+		BBPunfix(b->batCacheid);
+		throw(MAL,"bpm.adapt","Can not create new segment");
+	}
+	BBPkeepref(bs1->batCacheid);
+	/* and reduce the source partition */
+	BATdel(b,bs1,FALSE);
+@-
+Beware, now B contains elements <low and >=hgh.
+So we may have to split it further 
+@c
+	bs2 =  BAT_select_(b, hgh, nilptr, FALSE, FALSE, TRUE, FALSE);
+	if( BATcount(bs2) > 0){
+		BATdel(b,bs2,FALSE);
+		if( BATcount(bs1)==0){
+			BBPunfix(bs1->batCacheid);
+			bs1=NULL;
+		}
+	} else {
+		BBPunfix(bs2->batCacheid);
+		bs2= NULL;
+	}
+@-
+We have now at most three partitions. If there is 1, we are done.
+The  newbounds should be set and they should be added to the ring.
+@c
+	if( bs1== NULL && bs2==NULL){
+		return MAL_SUCCEED;
+	}
+	BBPkeepref(bs2->batCacheid);
+@-
+Add the new partition based on RS.
+@c
+	if( bs1){
+		p= newPartition(ABS(bs1->batCacheid));
+		insertPartition(ps,p);
+		p->alias= ps->alias;
+		p->hbits=  ps->hbits;
+		p->tbits=  ps->tbits;
+		p->cnt= BATcount(bs1);
+		if( *bid> 0){
+			VALset(&p->hlow, rngType(b->htype), &ps->hlow);
+			VALset(&p->hhgh, rngType(b->htype), &ps->hhgh);
+			VALset(&p->tlow, rngType(b->ttype), low );
+			VALset(&p->thgh, rngType(b->ttype), hgh );
+		} else {
+			VALset(&p->hlow, rngType(b->htype), low );
+			VALset(&p->hhgh, rngType(b->htype), hgh  );
+			VALset(&p->tlow, rngType(b->ttype), &ps->tlow );
+			VALset(&p->thgh, rngType(b->ttype), &ps->thgh );
+		}
+	}
+@-
+Add the left-over partition to the ring as well.
+@c
+	if( bs2){
+		p= newPartition(ABS(bs2->batCacheid));
+		insertPartition(ps,p);
+		p->alias= ps->alias;
+		p->hbits=  ps->hbits;
+		p->tbits=  ps->tbits;
+		p->cnt= BATcount(bs2);
+		@:defaultRange(p,bs2)@
+		if( *bid> 0){
+			VALset(&p->hlow, rngType(b->htype), &ps->hlow);
+			VALset(&p->hhgh, rngType(b->htype), &ps->hhgh);
+			VALset(&p->tlow, rngType(b->ttype), hgh );
+		} else {
+			VALset(&p->hlow, rngType(b->htype), hgh );
+			VALset(&p->tlow, rngType(b->ttype), &ps->tlow );
+			VALset(&p->thgh, rngType(b->ttype), &ps->thgh );
+		}
+	}
+@-
+And finally adjust the source partition.
+It only lost tuples.
+@c
+	if( *bid> 0)
+		VALset(&ps->thgh, rngType(b->ttype), low );
+	else
+		VALset(&ps->hhgh, rngType(b->ttype), low );
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
 
 str BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 {
@@ -1726,7 +1872,7 @@ str BPMadapt(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 
 str BPMoracle(int *ret, bat *bid, ptr low, ptr hgh, bat *rs )
 {
-	return BPMadaptImpl(ret,bid,low,hgh,rs,ORACLEPOLICY);
+	return BPMoracleImpl(ret,bid,low,hgh,rs);
 }
 
 @-
