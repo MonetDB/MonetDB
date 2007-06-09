@@ -597,9 +597,10 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		}
 		res = stmt_exception(s, _strdup(buf), 00001);
 	} else {		/* single column key */
+		stmt *ts = stmt_basetable(k->t, k->t->base.name);
 		sql_kc *c = k->columns->h->data;
 		stmt *h = stmt_dup(updates[c->c->colnr]->op2.stval);
-		stmt *o = stmt_diff(stmt_dup(updates[c->c->colnr]->op1.stval), stmt_dup(h));
+		stmt *o = stmt_diff(stmt_bat(c->c, ts, RDONLY), stmt_dup(h));
 		stmt *s = stmt_join(o, stmt_reverse(h), cmp_equal);
 
 		/* s should be empty */
