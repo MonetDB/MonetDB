@@ -3187,7 +3187,8 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	        var tmp := tids.kdiff(bat("tj_" + ftiName + "_pfpre"));
 		# BUG:1732596: possible cause(1) here:
 		# tmp is a BAT[oid,oid]
-                tmp := tmp.reverse().ssort();
+                # tmp := tmp.reverse().ssort(); ORIGINAL
+                tmp := tmp.reverse().sort();
 	        var termindex := tmp.hmark(0@0).offsetindex(bat(_tj_TermBat(ftiName)).count() + 1);
 	        var terms := tmp.tmark(0@0);
 	        # create _TermIndex and _Terms here
@@ -3206,7 +3207,8 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	        tmp := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
 		# BUG:1732596: possible cause(2) here:
 		# tmp is a BAT[oid,oid]
-                tmp := tmp.reverse().ssort();
+                # tmp := tmp.reverse().ssort(); ORIGINAL
+                tmp := tmp.reverse().sort();
 	        var tagindex := tmp.hmark(0@0).offsetindex(bat(_tj_TagBat(ftiName)).count() + 1);
 	        var tags := tmp.tmark(0@0);
 	        # create _Tags and _Tagindex here
