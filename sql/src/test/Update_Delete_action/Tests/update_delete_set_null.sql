@@ -1,6 +1,6 @@
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int DEFAULT 13, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id) ON UPDATE SET DEFAULT ON DELETE SET DEFAULT);
+create table t2 (id int DEFAULT 13, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id) ON UPDATE SET NULL ON DELETE SET NULL);
 
 create table t3 (id int, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE SET NULL ON UPDATE SET NULL);
 
