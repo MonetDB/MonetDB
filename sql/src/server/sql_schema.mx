@@ -586,16 +586,14 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		list_destroy(func_l);
 		list_destroy(view_id_l);
 		stmt_destroy(sq);
-		sq = NULL;
+		sq = stmt_none();
 	}
 	scope_close(scp);
 	
 	/* todo trigger_columns */
 	(void)columns;
 
-	if (instantiate || !sq)
-		return sq;
-	return stmt_none();
+	return sq;
 }
 
 static stmt *
