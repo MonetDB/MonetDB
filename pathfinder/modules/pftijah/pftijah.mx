@@ -93,7 +93,7 @@
 		       : BAT[void,oid] = CMDpf2tijah_node;
  "Translate Pathfinder node sequence to tijah node sequence"
 
-.COMMAND offsetindex( BAT[void,oid] offset_tid, int res_size)
+.COMMAND offsetindex( BAT[void,oid] offset_tid, int res_size,BAT[oid,oid] moat, BAT[str,str] moat_info)
 		: BAT[void,oid] = CMDoffsetindex;
 
 "PARAMETERS:
@@ -3187,9 +3187,8 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	        var tmp := tids.kdiff(bat("tj_" + ftiName + "_pfpre"));
 		# BUG:1732596: possible cause(1) here:
 		# tmp is a BAT[oid,oid]
-                # tmp := tmp.reverse().ssort(); ORIGINAL
-                tmp := tmp.reverse().sort();
-	        var termindex := tmp.hmark(0@0).offsetindex(bat(_tj_TermBat(ftiName)).count() + 1);
+                tmp := tmp.reverse().ssort();
+	        var termindex := tmp.hmark(0@0).offsetindex(bat(_tj_TermBat(ftiName)).count() + 1,tmp,tmp.info());
 	        var terms := tmp.tmark(0@0);
 	        # create _TermIndex and _Terms here
 	        termindex.persists(true).bbpname("tj_" + ftiName + "_TermIndex");
@@ -3207,9 +3206,8 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	        tmp := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
 		# BUG:1732596: possible cause(2) here:
 		# tmp is a BAT[oid,oid]
-                # tmp := tmp.reverse().ssort(); ORIGINAL
-                tmp := tmp.reverse().sort();
-	        var tagindex := tmp.hmark(0@0).offsetindex(bat(_tj_TagBat(ftiName)).count() + 1);
+                tmp := tmp.reverse().ssort();
+	        var tagindex := tmp.hmark(0@0).offsetindex(bat(_tj_TagBat(ftiName)).count() + 1,tmp,tmp.info());
 	        var tags := tmp.tmark(0@0);
 	        # create _Tags and _Tagindex here
 	        tagindex.persists(true).bbpname("tj_" + ftiName + "_TagIndex");
@@ -3742,7 +3740,7 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
         return GDK_SUCCEED;
 }
 
-int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
+int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size , BAT* moat, BAT* moat_info)
 {
 	char *name = "TJoffsetindex";
 	BAT *res = NULL;
@@ -3759,6 +3757,10 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
 		/* temporary  print a little bit extra output for debugging */
 		stream_printf(GDKerr,"!ERROR:%s: batordered()=%d\n",name,(int)BATtordered(tid));
 		BATprintf(GDKerr,tid);
+		stream_printf(GDKerr,"!ERROR:%s: MOAT =\n",name);
+		BATprintf(GDKerr,moat);
+		stream_printf(GDKerr,"!ERROR:%s: MOAT.info() =\n",name);
+		BATprintf(GDKerr,moat_info);
 		/* end of extra output */
         	GDKerror("%s: index-bat must be ordered on tail.\n", name);
     		return GDK_FAIL;
