@@ -1192,7 +1192,7 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 str
 BPMsortPartitions(int *ret, bat *bid)
 {
-	int i,r,nx;
+	int i,r,nx=0;
 	Partition a, p;
 	str msg = MAL_SUCCEED;
 	BAT *b, *bs, *bn;
