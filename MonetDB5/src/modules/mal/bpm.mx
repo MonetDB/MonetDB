@@ -723,6 +723,31 @@ static void replacePartition(Partition p, int newbat){
 }
 */
 
+@-
+Partitions marked as hidden should be materialized
+before they can be used.
+It may happen that a scan requires multiple hidden
+partitions, then we might safe time by performing
+one pass over the underlying source
+@c
+static str materializePartition(Partition p){
+	BAT *b,*bn;
+	if( p->hidden== 0)
+		return MAL_SUCCEED;
+	if( p->source == 0)
+		throw(MAL,"bpm.materialize","Hidden source not known");
+	b= BATdescriptor(p->bid);
+	bn= BAT_select_(b, VALptr(&p->tlow),VALptr(&p->thgh), 
+			TRUE, FALSE, TRUE, FALSE);
+	if( bn== NULL)
+		throw(MAL,"bpm.materialize","Could not create BAT");
+	BBPkeepref(bn->batCacheid);
+	p->bid= bn->batCacheid;
+	p->hidden = 0;
+	p->source = 0;
+	return MAL_SUCCEED;
+}
+
 @- Box administration
 The box currently does not carry any client protection yet.
 This should later be added or being provided by the BAT access.
@@ -2147,6 +2172,8 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( p->nxt == p->bid)
 		throw(MAL,"bpm.newIterator","Partitioned BAT is empty");
 
+	if(bpmcat[p->nxt]->hidden)
+		materializePartition(bpmcat[p->nxt]);
 	*ret = p->nxt;
 	BBPincref(p->nxt,TRUE);
 	return MAL_SUCCEED;
@@ -2214,10 +2241,9 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BBPunfix(b->batCacheid);	/* don't need it anymore */
 
-	for( i= bpmcat[p->alias]->nxt; i!= p->alias ; i= bpmcat[i]->nxt)
-	if( bpmcat[i]->hidden)
-		continue;
-	else{
+	for( i= bpmcat[p->alias]->nxt; i!= p->alias ; i= bpmcat[i]->nxt){
+		if(bpmcat[i]->hidden)
+			materializePartition(bpmcat[i]);
 		if( *bid > 0){
 			if( greater(i,tlow,hgh) || less(i,thgh,low) ){
 					/* this fragment need not needed */
@@ -2269,7 +2295,11 @@ BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"bpm.hasMoreElements","Can not access BAT");
 	if( bpmcat[idx]->nxt == bid)
 		*ret= 0;	/* end of sequence */
-	else BBPincref(*ret= bpmcat[idx]->nxt,TRUE);
+	else {
+		if(bpmcat[bpmcat[idx]->nxt]->hidden)
+			materializePartition(bpmcat[idx]);
+		BBPincref(*ret= bpmcat[idx]->nxt,TRUE);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -2317,6 +2347,8 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* this fragment need not needed */
 					continue;
 				}
+		if(bpmcat[i]->hidden)
+			materializePartition(bpmcat[i]);
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.range")@
 #ifdef _DEBUG_BPM_
 				stream_printf(GDKout, "got matching fragment %d\n",i);
