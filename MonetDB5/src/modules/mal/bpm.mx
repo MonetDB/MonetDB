@@ -727,7 +727,7 @@ static void replacePartition(Partition p, int newbat){
 Partitions marked as hidden should be materialized
 before they can be used.
 It may happen that a scan requires multiple hidden
-partitions, then we might safe time by performing
+partitions, then we might save time by performing
 one pass over the underlying source
 @c
 static str materializePartition(Partition p){
@@ -742,6 +742,7 @@ static str materializePartition(Partition p){
 	if( bn== NULL)
 		throw(MAL,"bpm.materialize","Could not create BAT");
 	BBPkeepref(bn->batCacheid);
+	BBPunfix(b->batCacheid);
 	p->bid= bn->batCacheid;
 	p->hidden = 0;
 	p->source = 0;
