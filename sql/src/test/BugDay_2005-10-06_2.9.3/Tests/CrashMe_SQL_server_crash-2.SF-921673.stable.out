@@ -58,7 +58,7 @@ Over..
 [ NULL,	"sys",	"keys",	"type",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keys",	"name",	"varchar",	1024,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	4,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keys",	"rkey",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	5,	NULL,	NULL,	NULL	]
-[ NULL,	"sys",	"keys",	"action",	"int",	16,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	6,	NULL,	NULL,	NULL	]
+[ NULL,	"sys",	"keys",	"action",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	6,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"sequences",	"id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"sequences",	"schema_id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	2,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"sequences",	"name",	"varchar",	256,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
@@ -77,7 +77,7 @@ Over..
 [ NULL,	"tmp",	"keys",	"type",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
 [ NULL,	"tmp",	"keys",	"name",	"varchar",	1024,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	4,	NULL,	NULL,	NULL	]
 [ NULL,	"tmp",	"keys",	"rkey",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	5,	NULL,	NULL,	NULL	]
-[ NULL,	"tmp",	"keys",	"action",	"int",	16,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	6,	NULL,	NULL,	NULL	]
+[ NULL,	"tmp",	"keys",	"action",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	6,	NULL,	NULL,	NULL	]
 
 # 16:24:19 >  
 # 16:24:19 >  Done.
