@@ -917,11 +917,11 @@ sql_update_key(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, stmt *i
 
 	if (k->type == pkey || k->type == ukey) {
 		ckeys = update_check_ukey(sql, updates, k, idx_updates, updcol);
+		list_prepend(l, ckeys);
 		sql_update_ukey(sql, schema, updates, k, updcol, l);
-		list_prepend(l, ckeys);
 	} else { /* foreign keys */
-		ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
-		list_prepend(l, ckeys);
+			ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
+			list_prepend(l, ckeys);
 	}
 }
 
