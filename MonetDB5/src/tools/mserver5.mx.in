@@ -335,7 +335,7 @@ main(int argc, char **av)
 		{"daemon", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
 		{"delay", 1, 0, 0},
-		{"help", 0, 0, '?'},
+		{"help", 0, 0, 'h'},
 		{"version", 0, 0, 0},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
