@@ -1584,7 +1584,7 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	Partition ps, p, p2;
 	int (*cmp) (ptr, ptr);
 	ptr nilptr;
-	ValPtr vp;
+	ValPtr vp = NULL;
 	int cs;
 	lng space;
 	(void) ret;
