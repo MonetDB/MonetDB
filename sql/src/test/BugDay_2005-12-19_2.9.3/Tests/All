@@ -15,7 +15,7 @@ subquery_syntax.SF-1296390
 delete_cascade.SF-1296395
 weird_reponse_on_limit.SF-1314643
 crash_on_incorrect_SQL.SF-1314904
-interval_milliseconds.SF-1357338
+#interval_milliseconds.SF-1357338
 timestamp_fraction.SF-1357342
 aggregate_functions_with_limit.SF-1367127
 bogus_prepare.SF-1377079
