@@ -376,7 +376,7 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 	dnode *n;
 
  	if (THRhighwater())
-		return sql_error(sql, 10, "too many nested operators");
+		return sql_error(sql, 10, "SELECT: too many nested operators");
 
 	if (blk->h)
  		l = create_stmt_list();
