@@ -2433,6 +2433,8 @@ PROC ws_findnodes(BAT[void,bat] ws,
 {
     var loc := str_nil, uri := ""; # nil loc/uri tells vx_lookup to look for *all* ID/IDREF attributes
 
+    if (count(id_iter) = 0) return bat(oid,oid); 
+
     # get root nids, which identify the XML fragment in which we must look
     var id_root := get_root(ws, id_item, id_kind, id_cont).mposjoin(id_cont, ws.fetch(PRE_NID));
 
