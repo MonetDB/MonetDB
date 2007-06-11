@@ -2163,7 +2163,7 @@ PROC __runtime_addchunk(lng wsid,
         # incremental readonly shred with existing indices: deactivate them
         var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
         var coll_longlock := reverse(runtime).fetch(RT_NID_FREELIST);
-        runtime.delete().insert(coll_shortlock,empty_bat).insert(coll_longlock,empty_bat);
+        runtime.delete().insert(runtime(coll_shortlock,coll_longlock));
         var qn_nid := commitbat + "_qn_nid";
         var vx_hsh_nid := commitbat + "_vx_hsh_nid";
         commitbat := "old_" + commitbat;
