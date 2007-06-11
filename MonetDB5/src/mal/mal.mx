@@ -228,7 +228,7 @@ mal_export int 				monet_daemon;
 #define GRPio (IOMASK | PERFMASK )
 #define GRPtransactions ( TMMASK | DELTAMASK | TEMMASK)
 #define GRPmodules (DLMASK | LOADMASK)
-#define GRPalgorithms (ALGOMASK | ESTIMASK )
+#define GRPalgorithms (ALGOMASK | ESTIMASK)
 #define GRPxproperties (XPROPMASK )
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 @c 
