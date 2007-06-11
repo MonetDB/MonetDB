@@ -3381,6 +3381,7 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
                        lng wsid) : oid
 {
     var verbose := >=(wsid, WS_MAXID);
+    var updatable := >(pageFree,0LL);
     var err := str_nil;
     var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     var pre := 0@0;
@@ -3413,11 +3414,13 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
     }
     if (isnil(coll_oid)) 
         coll_oid := docid_base; # new collection got oid of first doc in it 
+    else 
+        updatable := (ttype(docBAT.fetch(MAP_PID)) = oid);
 
     # finish the shred (set doc_oids in FRAG_ROOT, and maintain the nsloc index)
     var protect := not(isnil(coll_shortlock));
     if (protect) lock_set(coll_shortlock); # never lock a collection inside the short lock
-    err := CATCH(__shred_into_docBAT(docBAT, colname, coll_oid, docid_base, runtime, pre, att, >(pageFree,0LL), wsid));
+    err := CATCH(__shred_into_docBAT(docBAT, colname, coll_oid, docid_base, runtime, pre, att, updatable, wsid));
     if (protect) lock_unset(coll_shortlock);
     if (not(isnil(err))) ERROR(err);
 
