@@ -39,7 +39,7 @@ accellerators, SQL- and XQuery- frontends.
 %package devel
 Summary: MonetDB XQuery development package 
 Group: System 
-Requires: MonetDB4-server>=4.15<5.0
+Requires: MonetDB4-server >= 4.18
 
 %description devel
 Add the MonetDB devel description here
