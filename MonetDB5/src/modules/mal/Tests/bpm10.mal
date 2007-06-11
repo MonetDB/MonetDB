@@ -7,10 +7,10 @@ function gen(n:int):bat[:oid,:int];
 	return r;
 end gen;
 
-r:=gen(600);
+r:=gen(3000);
 
 s:=bat.getSpaceUsed(r);
-
+io.print(s);
 
 ra:= bpm.deposit("myr",r);
 bpm.dump();
@@ -19,3 +19,17 @@ r1:=bpm.take(ra,1);
 rs:=algebra.uselect(r1,nil:int,250);
 bpm.adapt(r1,nil:int,250,rs);
 
+
+function myselect(b:bat[:oid,:int],low:int,hgh:int):bat[:oid,:oid];
+barrier p:= bpm.newIterator(b,low,hgh);
+	rs:=algebra.uselect(p,low,hgh);
+	bpm.adapt(p,low,hgh,rs);
+	redo p:= bpm.hasMoreElements(b,low,hgh);
+exit p;
+return rs;	
+end myselect;
+
+bpm.partition(ra,450);
+
+myselect(ra,300,500);
+bpm.dump();

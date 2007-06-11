@@ -570,7 +570,7 @@ bpm_export str BPMepilogue(int *ret);
 #include <math.h>
 
 #define KB	1024
-#define Mmin	KB
+#define Mmin	2048*KB
 @-
 The partition manager uses its private memory mapped catalog 
 of persistent BATs.
@@ -1514,7 +1514,7 @@ static void findMedian(ValPtr vp, BAT * b)
 @- Adaptive segmentation
 The adapt() routine breaks up a BAT into multiple pieces.
 Several policies will be implemented and explored.
-The SIZECPOLICY just looks at the absolute
+The SIZEPOLICY just looks at the absolute
 size of the pieces produced. They may not get too small.
 
 The ORACLEPOLICY implements a random decision based
@@ -1708,7 +1708,7 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 			else VALset(&ps->hlow, rngType(b->htype), hgh);
 			break;			
 
-		case 2: insertPartition(ps,p);
+		case 2: insertPartition(getByNumber(ps->prv),p);
 			ps->cnt= BATcount(b);
 			if( *bid> 0)
 				VALset(&ps->thgh, rngType(b->ttype), low);
@@ -1748,7 +1748,7 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 				VALset(&ps->thgh, rngType(b->ttype), low);
 			else VALset(&ps->hhgh, rngType(b->htype), low);
 			BBPkeepref(bs2->batCacheid);
-			insertPartition(ps,p);
+			insertPartition(getByNumber(ps->prv),p);
 			insertPartition(p,p2);
 	}
 
