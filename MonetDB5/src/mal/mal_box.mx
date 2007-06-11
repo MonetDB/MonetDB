@@ -724,7 +724,7 @@ loadBox(str name)
 		if( child != MCgetClient()){
 			defaultScenario(child);
 			evalFile(child, boxfile, 0);
-			MCkillClient(child,0);
+			MCcloseClient(child);
 #ifdef DEBUG_MAL_BOX
 			stream_printf(GDKout, "loadBox:loaded the file %s\n", boxfile);
 #endif

@@ -219,7 +219,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("commit();"); 	# 99  (_141:str)
     xb_a := transaction.commit();	# 100 TRNglobal_commit (xb_a:bit)
 #	io.print("quit();"); 	# 101  (_143:str)
-    yb_a := clients.quit();	# 102 CLTquitDefault (yb_a:void)
+    yb_a := clients.quit();	# 102 CLTquit (yb_a:void)
 end main;	# 103  
 #-------------------------#
 # h		t	  # name

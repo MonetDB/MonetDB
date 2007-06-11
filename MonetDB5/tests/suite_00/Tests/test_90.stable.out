@@ -127,7 +127,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("print(d);"); 	# 53  (_78:str)
     va_a := io.print(d);	# 54 IOprint_val (va_a:void)<-(d:bat[:str,:int])
 #	io.print("quit();"); 	# 55  (_80:str)
-    wa_a := clients.quit();	# 56 CLTquitDefault (wa_a:void)
+    wa_a := clients.quit();	# 56 CLTquit (wa_a:void)
 end main;	# 57  
 #-------------------------#
 # h		t	  # name

@@ -97,7 +97,7 @@ function user.main():void;	# 0  (main:void)
     ma_a := io.print(z);	# 29 IOprint_val (ma_a:void)<-(z:bat[:oid,:int])
     z := batcalc./(t,t);	# 30 CMDbatDIV_int_int_int (z:bat[:oid,:int])<-(t:bat[:oid,:int])(t:bat[:oid,:int])
     na_a := io.print(z);	# 31 IOprint_val (na_a:void)<-(z:bat[:oid,:int])
-    oa_a := clients.quit();	# 32 CLTquitDefault (oa_a:void)
+    oa_a := clients.quit();	# 32 CLTquit (oa_a:void)
 end main;	# 33  
 #-----------------#
 # h	t	  # name

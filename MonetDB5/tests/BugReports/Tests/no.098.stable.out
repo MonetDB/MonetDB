@@ -137,7 +137,7 @@ function user.main():void;	# 0  (main:void)
     ja_a := algebra.select(b,ia_a);	# 58 ALGselect1 (ja_a:bat[:oid,:oid])<-(b:bat[:oid,:oid])(ia_a:oid)
     ka_a := io.print(ja_a);	# 59 IOprint_val (ka_a:void)<-(ja_a:bat[:oid,:oid])
 #	io.print("quit();"); 	# 60  (_58:str)
-    la_a := clients.quit();	# 61 CLTquitDefault (la_a:void)
+    la_a := clients.quit();	# 61 CLTquit (la_a:void)
 end main;	# 62  
 
 # 07:27:15 >  

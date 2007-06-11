@@ -87,7 +87,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("var ps:= str(1);"); 	# 33  (_38:str)
     ps := calc.str(1);	# 34 CALCint2str (ps:str)<-(_26:int)
 #	io.print("quit();"); 	# 35  (_40:str)
-    ha_a := clients.quit();	# 36 CLTquitDefault (ha_a:void)
+    ha_a := clients.quit();	# 36 CLTquit (ha_a:void)
 end main;	# 37  
 [ 21 ]
 #var pf:= flt(\"23\");

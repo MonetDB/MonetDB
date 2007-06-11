@@ -211,7 +211,7 @@ exit (_83,_84,_85);	# 57  (_83:lng)(_84:oid)(_85:str)
 # instead of the initial expected 1. 	# 73  (_76:str)
 #tmp(); 	# 74  (_62:str)
 #quit(); 	# 75  (_77:str)
-    clients.quit();	# 76 CLTquitDefault (_78:void)
+    clients.quit();	# 76 CLTquit (_78:void)
 end main;	# 77  
 [ "one droppped" ]
 [ "do multiplex" ]

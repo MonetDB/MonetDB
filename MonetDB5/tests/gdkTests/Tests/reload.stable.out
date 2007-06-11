@@ -74,7 +74,7 @@ function user.main():void;	# 0  (main:void)
     io.print(z);	# 22 IOprint_val (_31:void)<-(z:bit)
     bat.insert(b1,4@0:oid,"http://www.ibiblio.org/javafaq/");	# 23 BKCinsert_bun (_32:void)<-(b1:bat[:oid,:str])(_33:oid)(_34:str)
     io.print(b1);	# 24 IOprint_val (_35:void)<-(b1:bat[:oid,:str])
-    clients.quit();	# 25 CLTquitDefault (_36:void)
+    clients.quit();	# 25 CLTquit (_36:void)
 end main;	# 26  
 #-------------------------------------------------#
 # h	t					  # name

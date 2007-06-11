@@ -135,7 +135,7 @@ function user.main():void;	# 0  (main:void)
     bb_a := algebra.sortHT(s);	# 57 ALGhtsort (bb_a:bat[:int,:int])<-(s:bat[:int,:int])
     cb_a := io.print(bb_a);	# 58 IOprint_val (cb_a:void)<-(bb_a:bat[:int,:int])
 #	io.print("quit();"); 	# 59  (_62:str)
-    db_a := clients.quit();	# 60 CLTquitDefault (db_a:void)
+    db_a := clients.quit();	# 60 CLTquit (db_a:void)
 end main;	# 61  
 #~BeginVariableOutput~#
 #-----------------#

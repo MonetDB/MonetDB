@@ -165,7 +165,7 @@ function user.main():void;	# 0  (main:void)
     sa_a := algebra.thetajoin(a,a,GT,ra_a);	# 72 ALGthetajoinEstimate (sa_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(GT:int)(ra_a:lng)
     ta_a := io.print(sa_a);	# 73 IOprint_val (ta_a:void)<-(sa_a:bat[:int,:int])
 #	io.print("quit();"); 	# 74  (_83:str)
-    ua_a := clients.quit();	# 75 CLTquitDefault (ua_a:void)
+    ua_a := clients.quit();	# 75 CLTquit (ua_a:void)
 end main;	# 76  
 #-----------------#
 # h	t	  # name

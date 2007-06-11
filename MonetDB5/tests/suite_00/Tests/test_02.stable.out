@@ -137,7 +137,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("print(x);"); 	# 58  (_79:str)
     ya_a := io.print(x);	# 59 IOprint_val (ya_a:void)<-(x:bat[:str,:str])
 #	io.print("quit();"); 	# 60  (_81:str)
-    ab_a := clients.quit();	# 61 CLTquitDefault (ab_a:void)
+    ab_a := clients.quit();	# 61 CLTquit (ab_a:void)
 end main;	# 62  
 [ 1 ]
 #insert(s,\"bello\",2);
@@ -154,8 +154,8 @@ end main;	# 62
 # str			str		  # type
 #-----------------------------------------#
 [ "version",		  "25105"	  ]
-[ "batId",		  "tmp_7"	  ]
-[ "batCacheid",		  "7"		  ]
+[ "batId",		  "tmp_10"	  ]
+[ "batCacheid",		  "8"		  ]
 [ "batParentid",	  "0"		  ]
 [ "batSharecnt",	  "0"		  ]
 [ "head",		  "str"		  ]
@@ -208,13 +208,13 @@ end main;	# 62
 [ "batBuns.size",	  "4096"	  ]
 [ "batBuns.maxsize",	  "4096"	  ]
 [ "batBuns.storage",	  "malloced"	  ]
-[ "batBuns.filename",	  "7.buns"	  ]
+[ "batBuns.filename",	  "10.buns"	  ]
 [ "hheapdirty",		  "clean"	  ]
 [ "hheap.free",		  "8304"	  ]
 [ "hheap.size",		  "11272"	  ]
 [ "hheap.maxsize",	  "11272"	  ]
 [ "hheap.storage",	  "malloced"	  ]
-[ "hheap.filename",	  "7.hheap"	  ]
+[ "hheap.filename",	  "10.hheap"	  ]
 [ "theapdirty",		  "clean"	  ]
 #~EndVariableOutput~#
 #print(find(s,\"cello\"));

@@ -231,14 +231,10 @@ mal_export Client   MCinitClient(oid user, bstream *fin, stream *fout);
 mal_export void     MCinitClientThread(Client c);
 mal_export void     MCcloseClient    (Client c);
 mal_export Client   MCforkClient     (Client c);
-mal_export void     MCkillClient     (Client c, int timeout);
-mal_export int		MCcountClients(void);
+mal_export int	    MCcountClients(void);
 mal_export int      MCreadClient  (Client c);
-mal_export str      MCstopClient(Client c, oid which);
-mal_export str      MCstopClientIndex(Client c, int id);
-mal_export void 	MCshutdown(Client c, int timeout);
-mal_export str	 	MCsuspendClient(int id, int timeout);
-mal_export str	 	MCawakeClient(int id);
+mal_export str	    MCsuspendClient(int id, int timeout);
+mal_export str	    MCawakeClient(int id);
 mal_export void     MCcleanupClients(void);
 mal_export void     MCtraceAllClients(int flag);
 mal_export void     MCtraceClient(oid which, int flag);
@@ -591,7 +587,8 @@ The threads may not be removed, but should become dormant
 	c->mythread = 0;
 	c->mypid = 0;
 	c->mode = FREECLIENT;
-	THRdel(t);	/* you may perform suicide */
+	if (t) 
+		THRdel(t);	/* you may perform suicide */
 	/* THRsuspend(c->mythread); still unsafe */
 }
 
@@ -608,17 +605,10 @@ Furthermore, once we enter closeClient, the process in which it is
 raised has already lost its file descriptors.
 @c
 void MCcloseClient(Client c) {
-	Client k;
 
 #ifdef MAL_DEBUG_CLIENT
 	printf("closeClient %d %d\n",c-mal_clients,c->user);
 #endif
-	/* kill living background clients */
-	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
-		if ((k->mode > FINISHING) && (k->father == c)) 
-			MCkillClient(k, PROCESSTIMEOUT);
-	}
-
 	/* free resources of a single thread */
 	if( !isAdministrator(c)) {
 		freeClient(c);
@@ -627,86 +617,8 @@ void MCcloseClient(Client c) {
 
 	/* adm is set to disallow new clients entering */
 	mal_clients[CONSOLE].mode= FINISHING;
-
-	for (k = mal_clients+1; k < mal_clients+MAL_MAXCLIENTS; k++) 
-		if ((k->mode > FINISHING) ){
-			showException(MAL,"closeClient", "client '%d' is still active", k->user);
-			MCkillClient(k, PROCESSTIMEOUT);
-		}
-	MCkillClient(CONSOLE, PROCESSTIMEOUT);
 	mal_exit();
 }
-@-
-Shutting down a server should be limited to console operations
-and authorized remote admin calls.
-@c
-void MCshutdown(Client c, int timeout){
-	Client k;
-
-	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
-		if ((k->mode > FINISHING) && (k != c)) 
-			MCkillClient(k,timeout);
-	}
-	MCkillClient(c,timeout);
-}
-
-@-
-Killing a (child) client is a delicate action, because the state of
-the client is unknown. The current solution is to issue
-a soft-termination request first by setting its mode flag. 
-The client main interpreter loop should look at it upon each
-cycle and terminate.
-
-After the PROCESSTIMEOUT delay the thread is forcefully killed,
-assuming it was either waiting for a lock, or external
-event in any way.
-
-The current code is not correct. It should selectively kill
-a pthread, rather waiting for them to finish the request being
-handled.  Since they may be waiting for IO this can take a
-very long time, since we have access to the file descriptor it may
-work by closing them.
-@c 
-void MCkillClient(Client c, int timeout) {
-	size_t pid;
-	if (c && c->user != oid_nil ) {
-		mal_set_lock(mal_contextLock, "stopClient");
-
-#ifdef MAL_DEBUG_CLIENT
-		printf("killClient %d\n", c - mal_clients);
-#endif	/* MAL_DEBUG_CLIENT */
-
-		/* GDKwarning("killClient:forcing client to stop ...\n");*/
-		/* the process may hang upon gaining access to the file descriptors */ 
-		c->mode = FINISHING;
-		MPresetProfiler(c->fdout);
-		if (c == mal_clients) {
-			/* die the hard way */
-			c->curprg->def->stop = 0;
-		} else if (c->mythread) {
-			(void) stream_close(c->fdout);
-			(void) stream_destroy(c->fdout);
-			c->fdout = NULL;
-			(void) stream_close(c->fdin->s);
-			(void) stream_destroy(c->fdin->s);
-			(void) bstream_destroy(c->fdin);
-			c->fdin = NULL;
-			assert(c->bak == NULL);
-			/* GDKwarning("killClient:about to kill process ...\n");*/
-			pid= c->mythread->pid;
-			c->mythread->pid=0;
-			c->mode= FREECLIENT;
-			mal_unset_lock(mal_contextLock, "stopClient");
-			MT_sleep_ms(1000 * timeout);
-			MT_kill_thread(pid);
-			MT_sleep_ms(1000 * timeout);
-			/*GDKwarning("killClient:process killed\n");*/
-			return;
-		}
-		c->mode= FREECLIENT;
-		mal_unset_lock(mal_contextLock, "stopClient");
-	}
-} 
 
 @-
 At the end of the server session all remaining structured are
@@ -738,32 +650,6 @@ void MCcleanupClients(){
 			c->fdout= NULL;
 		}
 	}
-}
-@-
-An internet connection may be terminated from the server console.
-And killing the administrator this way is prohibited.
-@c
-str MCstopClientIndex(Client c, int id)
-{
-	if( ! isAdministrator(c))
-		throw(PERMD, "stop","Only permitted from server console");
-	if( id<=0 || id>=MAL_MAXCLIENTS || mal_clients[id].mode==FREECLIENT)
-		throw(MAL, "stop","Illegal client index");
-	MCkillClient(mal_clients+id, PROCESSTIMEOUT);
-	return MAL_SUCCEED;
-}
-str MCstopClient(Client c, oid which){
-	if( ! isAdministrator(c))
-		throw(PERMD, "stop","Only permitted from server console");
-
-	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
-		if (c->mode > FREECLIENT && c->user == which) {
-			MCkillClient(c, PROCESSTIMEOUT);
-			return MAL_SUCCEED;
-		}
-	}
-	mal_unset_lock(mal_contextLock, "stopClient");
-	throw(ILLARG, "stop","Illegal client name");
 }
 str
 MCsuspendClient(int id, int timeout){

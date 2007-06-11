@@ -191,7 +191,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("marcel.print();"); 	# 85  (_113:str)
     kb_a := io.print(marcel);	# 86 IOprint_val (kb_a:void)<-(marcel:bat[:int,:int])
 #	io.print("quit();"); 	# 87  (_115:str)
-    lb_a := clients.quit();	# 88 CLTquitDefault (lb_a:void)
+    lb_a := clients.quit();	# 88 CLTquit (lb_a:void)
 end main;	# 89  
 #-----------------#
 # h	t	  # name

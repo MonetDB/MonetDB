@@ -494,7 +494,9 @@ SERVERlistenThread(int *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
+	int sock = *Sock;
 
+	GDKfree(Sock);
 	if( lastlistener < 8 )
 		listener[lastlistener++] = MT_getpid();
 	(void)usock;
@@ -503,10 +505,9 @@ SERVERlistenThread(int *Sock)
 		struct timeval tv;
 		fd_set fds;
 		int msgsock;
-		int sock = *Sock;
 
 		FD_ZERO(&fds);
-		if (sock >= 0)
+		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
 #ifdef HAVE_SYS_UN_H
 		if (usock >= 0)
@@ -534,8 +535,8 @@ SERVERlistenThread(int *Sock)
 			}
 			continue;
 		}
-		if (sock >= 0 && FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
+			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR || serveractive==FALSE) {
 					msg = "accept failed\n";
 					goto error;
@@ -544,7 +545,7 @@ SERVERlistenThread(int *Sock)
 			}
 #ifdef HAVE_SYS_UN_H
 		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
-			if ((msgsock = accept(usock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+			if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR) {
 					msg = "accept failed\n";
 					goto error;
@@ -960,7 +961,7 @@ Get the new information for the server socket and start listening.
 			GDKsyserror("SERVERlistenSSL:select failed\n");
 			goto fail;
 		}
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 			if (MT_geterrno() != EINTR) {
 				msg = "Accept failed";
 				goto fail;
@@ -1007,8 +1008,8 @@ Get the new information for the server socket and start listening.
 		}
 
 		doChallenge(cmd, 
- 			socket_rastream(msgsock, "Server read"),
- 			socket_wastream(msgsock, "Server write"));
+ 			ssl_rastream(ssl, "Server read"),
+ 			ssl_wastream(SSL_dup(ssl), "Server write"));
 end_loop:;
 	} while (1);
 	SSL_CTX_free(ctx);
@@ -1094,6 +1095,8 @@ str
 SERVERstop(int *ret)
 {
 	int i;
+
+printf("SERVERstop\n");
 	for( i=0; i< lastlistener; i++)
 		MT_kill_thread(listener[i]);
 	lastlistener = 0;

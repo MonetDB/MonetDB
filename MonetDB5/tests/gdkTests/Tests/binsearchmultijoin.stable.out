@@ -136,7 +136,7 @@ exit (_66,_67,_68);	# 52  (_66:lng)(_67:oid)(_68:int)
     c := aggr.count(z);	# 54 ALGcount_bat (c:int)<-(z:bat[:oid,:int])
     io.print(c);	# 55 IOprint_val (_44:void)<-(c:int)
 #[+](Nseq(81).reverse().project(oid(0)).reverse(),r.sort()).count().print(); 	# 56  (_45:str)
-    clients.quit();	# 57 CLTquitDefault (_46:void)
+    clients.quit();	# 57 CLTquit (_46:void)
 end main;	# 58  
 #-----------------#
 # t	h	  # name
