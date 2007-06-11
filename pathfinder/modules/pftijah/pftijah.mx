@@ -70,6 +70,16 @@
 .COMMAND left_log(BAT[oid,dbl] l) : BAT[oid,dbl] = CMDleft_log_dbl;
 "Fast in-bat implementation of in bat log() with synchronized oid"
 
+.COMMAND union_add(BAT[oid,dbl] l, BAT[oid,dbl] r) : BAT[oid,dbl] = CMDunion_add_dbl;
+"Fast union implementation of 2 head sorted bat addition with synchronized oid"
+.COMMAND union_sub(BAT[oid,dbl] l, BAT[oid,dbl] r) : BAT[oid,dbl] = CMDunion_sub_dbl;
+"Fast union implementation of 2 head sorted bat addition with synchronized oid"
+.COMMAND union_mul(BAT[oid,dbl] l, BAT[oid,dbl] r) : BAT[oid,dbl] = CMDunion_mul_dbl;
+"Fast union implementation of 2 head sorted bat addition with synchronized oid"
+.COMMAND union_div(BAT[oid,dbl] l, BAT[oid,dbl] r) : BAT[oid,dbl] = CMDunion_div_dbl;
+"Fast union implementation of 2 head sorted bat addition with synchronized oid"
+
+
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
                       int	    niters,
@@ -3401,6 +3411,52 @@ int CMDtijah_tokenize (str* res, str arg)
  * In-place synchronized oid computation experiment by Henning and Jan
  *
  */
+#define FIND_OID(FOID,BBAT,BSIZE,BPTR,BTAIL) \
+        BPTR += BSIZE; \
+        try_maxbun = BTAIL; \
+        try_bun = BPTR + (((int)(try_maxbun-BPTR)/BSIZE)/2)*BSIZE; \
+        while ( (BPTR < try_maxbun) ) { \
+            try_oid = *(oid*)BUNhead(BBAT,try_bun); \
+            if ( try_oid == FOID ) { \
+                BPTR = try_bun; \
+                break; \
+            } else if ( try_oid < FOID ) { \
+                BPTR = try_bun; \
+                try_bun = BPTR + (((int)(try_maxbun-BPTR)/BSIZE)/2)*BSIZE; \
+            } else { \
+                try_maxbun = try_bun; \
+                try_bun = BPTR + (((int)(BPTR-try_bun)/BSIZE)/2)*BSIZE; \
+            } \
+        }
+
+#define INPLACE_OID_CALC_HEADER \
+        if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) ) \
+            return  GDK_FAIL; \
+        *res = BATsetaccess(l,BAT_WRITE); \
+        BUN lp = BUNfirst(l); BUN ll = BUNlast(l); int lbsz = BUNsize(l); \
+        BUN rp = BUNfirst(r); BUN rl = BUNlast(r); int rbsz = BUNsize(r); \
+        while ( (lp < ll) && (rp < rl) ) { \
+                BUN try_bun;    /* used by FIND_OID() define */ \
+                BUN try_maxbun; /* idem */ \
+                oid try_oid;    /* idem */ \
+                oid lv = *(oid*)BUNhead(l,lp); \
+                oid rv = *(oid*)BUNhead(r,rp); \
+                if ( lv == rv ) { \
+                    dbl* dres = (dbl*)BUNtail(l,lp);
+
+#define INPLACE_OID_CALC_FOOTER \
+                    lp += lbsz; rp += rbsz; \
+                } else if ( lv < rv ) { \
+                    FIND_OID(rv,l,lbsz,lp,ll); \
+                } else /* lv > rv */ { \
+                    FIND_OID(lv,r,rbsz,rp,rl); \
+                } \
+        } \
+        BBPfix(BBPcacheid(*res)); \
+        (*res)->batDirty = TRUE; \
+        (*res)->tsorted = FALSE; \
+        return GDK_SUCCEED;
+
 static int bat_oid_sort_chck(BAT* b) {
 	if ( !b->hsorted ) {
 	    GDKerror("bat_oid_sort_chck: BAT should be head sorted.\n");
@@ -3414,169 +3470,34 @@ static int bat_oid_sort_chck(BAT* b) {
 }
 
 int CMDleft_add_dbl(BAT** res, BAT*l, BAT*r) {
-	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
-	    return  GDK_FAIL;
-	/* make the left/res bat writable */
-	*res = BATsetaccess(l,BAT_WRITE);
- 
-	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
-	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
-
-	while ( (lp < lq) && (rp < rq) ) {
-		oid lv = *(oid*)BUNhead(l,lp);
-		oid rv = *(oid*)BUNhead(r,rp);
-
-	        if ( lv == rv ) {
-		    dbl* dres = (dbl*)BUNtail(l,lp);
-		    *dres += *(dbl*)BUNtail(r,rp);
-		    lp += lx; rp += rx;
-		} else if ( lv < rv ) {
-		    do {
-		    	lp += lx;
-		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
-		} else /* lv > rv */ {
-		    do {
-		        rp += rx;
-		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
-		}
-	}
-	BBPfix(BBPcacheid(*res));
-	(*res)->batDirty = TRUE;
-	(*res)->tsorted = FALSE;
-	return GDK_SUCCEED;
+        INPLACE_OID_CALC_HEADER;
+        *dres += *(dbl*)BUNtail(r,rp);
+        INPLACE_OID_CALC_FOOTER;
 }
 
 int CMDleft_sub_dbl(BAT** res, BAT*l, BAT*r) {
-	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
-	    return  GDK_FAIL;
-	/* make the left/res bat writable */
-	*res = BATsetaccess(l,BAT_WRITE);
-	(*res)->batDirty = TRUE;
- 
-	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
-	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
-
-	while ( (lp < lq) && (rp < rq) ) {
-		oid lv = *(oid*)BUNhead(l,lp);
-		oid rv = *(oid*)BUNhead(r,rp);
-
-	        if ( lv == rv ) {
-		    dbl* dres = (dbl*)BUNtail(l,lp);
-		    *dres -= *(dbl*)BUNtail(r,rp);
-		    lp += lx; rp += rx;
-		} else if ( lv < rv ) {
-		    do {
-		    	lp += lx;
-		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
-		} else /* lv > rv */ {
-		    do {
-		        rp += rx;
-		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
-		}
-	}
-	BBPfix(BBPcacheid(*res));
-	(*res)->tsorted = FALSE;
-	return GDK_SUCCEED;
+        INPLACE_OID_CALC_HEADER;
+	*dres -= *(dbl*)BUNtail(r,rp);
+        INPLACE_OID_CALC_FOOTER;
 }
 
 
 int CMDleft_mul_dbl(BAT** res, BAT*l, BAT*r) {
-	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
-	    return  GDK_FAIL;
-	/* make the left/res bat writable */
-	*res = BATsetaccess(l,BAT_WRITE);
-	(*res)->batDirty = TRUE;
- 
-	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
-	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
-
-	while ( (lp < lq) && (rp < rq) ) {
-		oid lv = *(oid*)BUNhead(l,lp);
-		oid rv = *(oid*)BUNhead(r,rp);
-
-	        if ( lv == rv ) {
-		    dbl* dres = (dbl*)BUNtail(l,lp);
-		    *dres *= *(dbl*)BUNtail(r,rp);
-		    lp += lx; rp += rx;
-		} else if ( lv < rv ) {
-		    do {
-		    	lp += lx;
-		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
-		} else /* lv > rv */ {
-		    do {
-		        rp += rx;
-		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
-		}
-	}
-	BBPfix(BBPcacheid(*res));
-	(*res)->tsorted = FALSE;
-	return GDK_SUCCEED;
+        INPLACE_OID_CALC_HEADER;
+	*dres *= *(dbl*)BUNtail(r,rp);
+        INPLACE_OID_CALC_FOOTER;
 }
 
 int CMDleft_div_dbl(BAT** res, BAT*l, BAT*r) {
-	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
-	    return  GDK_FAIL;
-	/* make the left/res bat writable */
-	*res = BATsetaccess(l,BAT_WRITE);
-	(*res)->batDirty = TRUE;
- 
-	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
-	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
-
-	while ( (lp < lq) && (rp < rq) ) {
-		oid lv = *(oid*)BUNhead(l,lp);
-		oid rv = *(oid*)BUNhead(r,rp);
-
-	        if ( lv == rv ) {
-		    dbl* dres = (dbl*)BUNtail(l,lp);
-		    *dres /= *(dbl*)BUNtail(r,rp);
-		    lp += lx; rp += rx;
-		} else if ( lv < rv ) {
-		    do {
-		    	lp += lx;
-		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
-		} else /* lv > rv */ {
-		    do {
-		        rp += rx;
-		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
-		}
-	}
-	BBPfix(BBPcacheid(*res));
-	(*res)->tsorted = FALSE;
-	return GDK_SUCCEED;
+        INPLACE_OID_CALC_HEADER;
+	*dres /= *(dbl*)BUNtail(r,rp);
+        INPLACE_OID_CALC_FOOTER;
 }
 
 int CMDleft_div_dbl_int(BAT** res, BAT*l, BAT*r) {
-	if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) )
-	    return  GDK_FAIL;
-	/* make the left/res bat writable */
-	*res = BATsetaccess(l,BAT_WRITE);
-	(*res)->batDirty = TRUE;
- 
-	BUN lp = BUNfirst(l); BUN lq = BUNlast(l); int lx = BUNsize(l);
-	BUN rp = BUNfirst(r); BUN rq = BUNlast(r); int rx = BUNsize(r);
-
-	while ( (lp < lq) && (rp < rq) ) {
-		oid lv = *(oid*)BUNhead(l,lp);
-		oid rv = *(oid*)BUNhead(r,rp);
-
-	        if ( lv == rv ) {
-		    dbl* dres = (dbl*)BUNtail(l,lp);
-		    *dres = (dbl)(*dres / *(int*)BUNtail(r,rp));
-		    lp += lx; rp += rx;
-		} else if ( lv < rv ) {
-		    do {
-		    	lp += lx;
-		    } while ( (lp < lq) && ( (*(oid *)BUNhead(l,lp)) < rv) );
-		} else /* lv > rv */ {
-		    do {
-		        rp += rx;
-		    } while ( (rp < rq) && ( (*(oid *)BUNhead(r,rp)) < lv) );
-		}
-	}
-	BBPfix(BBPcacheid(*res));
-	(*res)->tsorted = FALSE;
-	return GDK_SUCCEED;
+        INPLACE_OID_CALC_HEADER;
+	*dres = (dbl)(*dres / *(int*)BUNtail(r,rp));
+        INPLACE_OID_CALC_FOOTER;
 }
 
 int CMDleft_log_dbl(BAT** res, BAT*l) {
@@ -3598,6 +3519,70 @@ int CMDleft_log_dbl(BAT** res, BAT*l) {
 	return GDK_SUCCEED;
 }
 
+/*
+ *
+ * And now the union variant for Henning
+ *
+ */
+
+#define UNION_FIND_OID(FOID,BBAT,BSIZE,BPTR,BTAIL,RESBAT) \
+        do { \
+		if (!BUNins(RESBAT,(oid*)BUNhead(BBAT,BPTR),(dbl*)BUNtail(BBAT,BPTR), FALSE) ) \
+		    return GDK_FAIL; \
+                BPTR += BSIZE; \
+        } while ( (BPTR < BTAIL) && ((*(oid*)BUNhead(BBAT,BPTR))<FOID) );
+
+#define UNION_OID_CALC_HEADER \
+        if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) ) \
+            return  GDK_FAIL; \
+        *res = BATnew(TYPE_oid,TYPE_dbl,0); \
+        BUN lp = BUNfirst(l); BUN ll = BUNlast(l); int lbsz = BUNsize(l); \
+        BUN rp = BUNfirst(r); BUN rl = BUNlast(r); int rbsz = BUNsize(r); \
+        while ( (lp < ll) || (rp < rl) ) { \
+		oid lv, rv; \
+                lv = (lp < ll) ? *(oid*)BUNhead(l,lp) : oid_nil; \
+                rv = (rp < rl) ? *(oid*)BUNhead(r,rp) : oid_nil; \
+                if ( lv == rv ) { \
+                    dbl* dres = (dbl*)BUNtail(l,lp); \
+		    dbl  newdbl;
+
+#define UNION_OID_CALC_FOOTER \
+		    if ( !BUNins(*res, &lv, &newdbl, FALSE) ) \
+		        return GDK_FAIL; \
+                    lp += lbsz; rp += rbsz; \
+                } else if ( (rv==oid_nil) || (lv < rv) ) { \
+                    UNION_FIND_OID(rv,l,lbsz,lp,ll,*res); \
+                } else /* (lv==oid_nil) || (lv > rv) */ { \
+                    UNION_FIND_OID(lv,r,rbsz,rp,rl,*res); \
+                } \
+        } \
+        BBPfix(BBPcacheid(*res)); \
+        (*res)->batDirty = TRUE; \
+        (*res)->tsorted = FALSE; \
+        return GDK_SUCCEED;
+
+int CMDunion_add_dbl(BAT** res, BAT*l, BAT*r) {
+        UNION_OID_CALC_HEADER;
+        newdbl = *dres + *(dbl*)BUNtail(r,rp);
+        UNION_OID_CALC_FOOTER;
+}
+
+int CMDunion_sub_dbl(BAT** res, BAT*l, BAT*r) {
+        UNION_OID_CALC_HEADER;
+        newdbl = *dres - *(dbl*)BUNtail(r,rp);
+        UNION_OID_CALC_FOOTER;
+}
+
+int CMDunion_mul_dbl(BAT** res, BAT*l, BAT*r) {
+        UNION_OID_CALC_HEADER;
+        newdbl = *dres * *(dbl*)BUNtail(r,rp);
+        UNION_OID_CALC_FOOTER;
+}
+int CMDunion_div_dbl(BAT** res, BAT*l, BAT*r) {
+        UNION_OID_CALC_HEADER;
+        newdbl = *dres / *(dbl*)BUNtail(r,rp);
+        UNION_OID_CALC_FOOTER;
+}
 
 /*
  *
