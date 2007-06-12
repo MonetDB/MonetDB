@@ -614,28 +614,30 @@ drop_trigger(mvc *sql, dlist *qname)
 static stmt *
 connect_catalog(mvc *sql, dlist *qname)
 {
-	char *server = qname->h->data.sval;
+	char *server, * db, *db_alias, *user, *lang, *passwd; 
 	int *id = GDKmalloc(sizeof(int)), *port = GDKmalloc(sizeof(int));
-	char *db = qname->h->next->next->data.sval;
-	char *db_alias = qname->h->next->next->next->data.sval;
 	symbol *user_symb = qname->h->next->next->next->next->data.sym;
-	char *user = NULL, *passwd = NULL;
-	char *lang = qname->h->next->next->next->next->next->data.sval;
 	char default_dbalias[BUFSIZ], default_lang[BUFSIZ];
 	*port = (int) qname->h->next->data.ival;
 	*id = -1;
+	server = GDKstrdup(qname->h->data.sval);
+	db = GDKstrdup(qname->h->next->next->data.sval);
+	user = GDKstrdup(user_symb->data.lval->h->data.sval);
+	passwd = GDKstrdup(user_symb->data.lval->h->next->data.sval);
 
-	user = user_symb->data.lval->h->data.sval;
-	passwd = user_symb->data.lval->h->next->data.sval;
-	
-	if (db_alias == NULL){
+	if (qname->h->next->next->next->data.sval == NULL){
 		snprintf(default_dbalias, BUFSIZ, "%s_%s_%s", server, db, user);
 		db_alias = GDKstrdup(default_dbalias);
+	} else {
+		db_alias = GDKstrdup(qname->h->next->next->next->data.sval);
 	}
 
-	if (lang == NULL){
+	if (qname->h->next->next->next->next->next->data.sval == NULL){
 		snprintf(default_lang, BUFSIZ, "sql");
-		lang = default_lang;
+		lang = GDKstrdup(default_lang);
+	}
+	else {
+		lang = GDKstrdup(qname->h->next->next->next->next->next->data.sval);
 	}
 	
 	*id = mvc_connect_catalog(sql, server, *port, db, db_alias, user, passwd, lang);
@@ -654,7 +656,7 @@ disconnect_catalog(mvc *sql, dlist *qname)
 	*id = 0, *port = -1;
 	
 	if (qname->cnt != 0) {
-		db_alias = qname->h->data.sval;
+		db_alias = GDKstrdup(qname->h->data.sval);
 	
 		*id = mvc_disconnect_catalog(sql, db_alias);
 
