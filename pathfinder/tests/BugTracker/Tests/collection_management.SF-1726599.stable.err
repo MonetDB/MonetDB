@@ -15,14 +15,14 @@ stderr of test 'collection_management.SF-1726599` in directory 'tests/BugTracker
 # 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s01.xq
 # 12:45:56 >  
 
-MAPI  = monetdb@localhost:39582
+MAPI  = monetdb@localhost:33151
 QUERY = doc("collection_management.SF-1726599.xml")
 ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
         !ERROR: [shred_url]: first error was:
         !ERROR: shred: cannot stat `collection_management.SF-1726599.xml': No such file or directory
         !ERROR: CMDshred_url: operation failed.
         !ERROR: interpret_params: leftfetchjoin(param 2): evaluation error.
-MAPI  = monetdb@localhost:39582
+MAPI  = monetdb@localhost:33151
 QUERY = doc("collection_management.SF-1726599.xml")/aap
 ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
         !ERROR: [shred_url]: first error was:

@@ -1539,7 +1539,8 @@ xquery_print_doc_DRIVER (
 		        res = GDK_SUCCEED;
 		} else { /* the new container implementation */
                   getWsValue(p, ctx, docIndex, PRE_SIZE, start_oid);
-		  oid sz = *(int*) p;
+		  /* oid sz = *(int*) p; */
+		  oid sz = (*(int*) p) & ~(1<<31);
                   if (emitNodesInRange (ctx, start_oid,start_oid+sz, NULL, docIndex)) {
                     if (ctx->driverFun->handle_endDocument(ctx)) {
                         res = GDK_SUCCEED;

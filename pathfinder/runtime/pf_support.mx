@@ -2582,6 +2582,12 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     ERROR("updating transient container.\n");
   }
 
+  # we currently cannot update collections that have a pftijah text index
+  var conflict := [tj_is_indexed](affected_conts.leftjoin(ws.fetch(CONT_NAME)).reverse().mirror()).uselect(true);
+  if (count(conflict) > 0) {
+    ERROR("cannot update text-indexed collection %s (%s such errors).\n", reverse(conflict).fetch(0), count(confict));
+  }
+
   # check that all containers are updatable (i.e. that none are read-only)
   if ([ttype](affected_conts.join(ws.fetch(MAP_PID))).uselect(void).count() > 0) {
     ERROR("updating read-only document.\n");

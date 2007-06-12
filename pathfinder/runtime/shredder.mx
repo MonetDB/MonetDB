@@ -408,7 +408,10 @@ shredBAT_setcount(shredBAT *sb,
     BAT *b = sb->bat;
     b->batBuns->free = n*BUNsize(b);
     BATsetcount(b, n);
-    b->tsorted = 0;
+    if (b->ttype) {
+        b->tsorted = 0;
+        b->tdense = 0;
+    }
 }
 
 
@@ -1065,8 +1068,13 @@ shred_comment(void* xmlCtx,
               const xmlChar *c)
 {
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
+    xmlParserCtxtPtr pctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
     node_t node;
 
+    if ( pctx->inSubset  ) {
+        /* handle a libxml2 peculiarity, comments in DTD are added to the doc */
+        return;
+    }
     if (!handle_xml_chars(shredCtx)) {
         BAILOUT(shredCtx);
     }
@@ -1198,8 +1206,13 @@ shred_external_subset(void *xmlCtx,
 		 * subset for this doc
 		 */
     	        ctx->myDoc = xmlNewDoc(ctx->version);
-		ctx->myDoc->extSubset = dtd;
             }
+	    if ( !ctx->myDoc->extSubset ) {
+		ctx->myDoc->extSubset = dtd;
+	    } else {
+                stream_printf(GDKout, "!WARNING: double external subset(\"%s\") may cause problems.\n", SystemID);
+                xmlFreeDtd(dtd);
+	    }
             if (!handle_externalSubset(shredCtx, dtd))
                 stream_printf(GDKout, "!WARNING: xmlParseDTD(\"%s\") failed, skipping ID/IDREF information.\n", SystemID);
             // xmlFreeDtd(dtd); should be done by freeer of myDoc 
@@ -1760,9 +1773,13 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
          * whether it might still hold...)
          */
         if (shredCtx->dstBAT[PRE_SIZE].bat->tkey == TRUE) {
+        	shredCtx->dstBAT[PRE_SIZE].bat->tsorted = 0;
+        	shredCtx->dstBAT[PRE_SIZE].bat->tdense = 0;
         	BATkey(BATmirror(shredCtx->dstBAT[PRE_SIZE].bat), FALSE);
         }
         if (shredCtx->dstBAT[PRE_KIND].bat->tkey == TRUE) {
+        	shredCtx->dstBAT[PRE_KIND].bat->tsorted = 0;
+        	shredCtx->dstBAT[PRE_KIND].bat->tdense = 0;
         	BATkey(BATmirror(shredCtx->dstBAT[PRE_KIND].bat), FALSE);
         }
     }

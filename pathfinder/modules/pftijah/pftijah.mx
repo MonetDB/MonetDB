@@ -1164,6 +1164,20 @@ PROC tj_trace( str s ) : void :=
 #
 #
 
+PROC tj_is_indexed(str collName) : bit :=
+{
+    if (view_bbp_name().reverse().exist("tj_pfc_fti_dep")) {
+	if ( bat("tj_pfc_fti_dep_star").count() > 0 ) {
+	    # eg. all collections are indexed
+            return TRUE;
+	} else {
+	    return bat("tj_pfc_fti_dep").reverse().exist(collName);
+	}
+    } else {
+        return FALSE;
+    }
+}
+
 PROC tj_play_doc_tape(BAT[void,BAT] ws,
                       BAT[void,oid] item, 
                       BAT[void,int] kind, 
@@ -1219,9 +1233,7 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
     }
 }
 
-
 const virtRoot := 0@0;
-
 
 ##
 # Compute ancestor-descendant relation. 
@@ -3140,13 +3152,13 @@ PROC _tj_chk_modified_fragments(str ftiName, BAT[str,bat] collBat) : BAT[void,st
 
 PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 {
-	var offset := oid(int(_tj_get_parameter(collBat, "_last_finalizedPre")) + 1);
+	var offset := oid(lng(_tj_get_parameter(collBat, "_last_finalizedPre")) + 1);
         var fragments := collBat.find("_fragments");
 	var frag_offset := int(find_lower(fragments.reverse(), offset));
 	var frag_last := fragments.count();
 	
 	var pre_tid := bat("tj_" + ftiName + "_tid" + str(frag_offset));
-	var tids := pre_tid.slice(int(offset) - int(pre_tid.seqbase()), pre_tid.count() - 1);
+	var tids := pre_tid.slice(lng(offset) - lng(pre_tid.seqbase()), lng(pre_tid.count() - 1));
 	tids.access(BAT_WRITE);
 	frag_offset :+= 1;
 	while (frag_offset <= frag_last)
@@ -3154,6 +3166,7 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	    	tids.append(bat("tj_" + ftiName + "_tid" + str(frag_offset)));
 		frag_offset :+= 1;
 	}
+	tids.access(BAT_READ);
         
 	# incremental index merge
 	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) 
@@ -3458,6 +3471,7 @@ int CMDtijah_tokenize (str* res, str arg)
         return GDK_SUCCEED;
 
 static int bat_oid_sort_chck(BAT* b) {
+	/* incomplete, the head should also be key */
 	if ( !b->hsorted ) {
 	    GDKerror("bat_oid_sort_chck: BAT should be head sorted.\n");
 	    return 0;
@@ -3719,7 +3733,7 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
         return GDK_SUCCEED;
 }
 
-int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
+int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size)
 {
 	char *name = "TJoffsetindex";
 	BAT *res = NULL;
@@ -3732,6 +3746,7 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
 	BATcheck(tid, name);
 	if (!(BATtordered(tid) & 1))
 	{
+		/* BUG#1732596 this test currently fails on Itanium */
         	GDKerror("%s: index-bat must be ordered on tail.\n", name);
     		return GDK_FAIL;
 	}

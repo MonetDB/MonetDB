@@ -43,7 +43,6 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
 @c
 #include <pf_config.h>
 
-
 /* #define TJ_TRACE 1 */
 
 /*******************************************
@@ -681,6 +680,16 @@ freeTijahContext(tjCtx* tjctx) {
 	/* BATkey(BATmirror(tjctx->b_globalTag), TRUE); */
 	BATkey(BATmirror(tjctx->b_collPre), FALSE);
 	BATkey(BATmirror(tjctx->b_collSize), FALSE);
+	PROPDEBUG {
+		BATpropcheck(tjctx->b_globalTerm,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_globalTag,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_docName,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_docFirstPre,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_collParam,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_collPre,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_collSize,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_collPfPre,BATPROPS_ALL);
+	}
 	BBPunfix(BBPcacheid(tjctx->b_globalTerm));
 	BBPunfix(BBPcacheid(tjctx->b_globalTag));
 	BBPunfix(BBPcacheid(tjctx->b_docName));

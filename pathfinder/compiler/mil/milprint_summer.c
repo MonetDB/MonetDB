@@ -2879,6 +2879,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var attr_qn := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_QN)).seqbase(seqb);\n"
                 /* get old OID reference and copy it into the new attribute */
                 "var attr_oid := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_PROP)).seqbase(seqb);\n"
+                "attr_cont := mposjoin(attr_cont, attr_cont, ws.fetch(ATTR_CONT)).seqbase(seqb);\n"
                 /* get the iters and their corresponding new pre value (roots) and
                    multiply them for all the attributes */
                 "var attr_own := iter%03u.reverse().leftfetchjoin(roots);\n"

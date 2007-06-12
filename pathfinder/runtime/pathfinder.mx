@@ -72,6 +72,8 @@ const XQUERY_STATUS_GARBAGECOLL  := 2;
 const XQUERY_STATUS_READY        := 3; 
 var xquery_status := XQUERY_STATUS_INITIALIZING;
 
+proc tj_is_indexed(str name) : bit { return false; } # dummy function in case we have no tijah
+
 var CATCH_module_pftiah := CATCH(module("pftijah")); # load pftijah only if available
 if (not(isnil(CATCH_module_pftiah))) {
     if (trim(CATCH_module_pftiah) != "!ERROR: moduleClient: module(pftijah) load error.") {
@@ -2159,18 +2161,16 @@ PROC __runtime_addchunk(lng wsid,
         # first shred (readonly) automatically creates persistent sorted index
         var cnt := bat(str(lng(coll_oid)) + "_qn_histogram");
         unq := reverse(ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd))));
-    } else if (maintain) {
+    } else {
         # incremental readonly shred with existing indices: deactivate them
         var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
         var coll_longlock := reverse(runtime).fetch(RT_NID_FREELIST);
-        runtime.delete().insert(coll_shortlock,empty_bat).insert(coll_longlock,empty_bat);
+        runtime.delete().insert(runtime(coll_shortlock,coll_longlock));
         var qn_nid := commitbat + "_qn_nid";
         var vx_hsh_nid := commitbat + "_vx_hsh_nid";
         commitbat := "old_" + commitbat;
         CATCH({ bat(qn_nid).persists(false).rename(commitbat + "_qn_nid");
                 bat(vx_hsh_nid).persists(false).rename(commitbat + "_vx_hsh_nid"); }); # delete idx in commit
-    } else {
-        commitbat := str_nil; # incremental readonly shred, but no index to delete
     }
     if (int(unq) != int(empty_bat)) {
         # compute a (partial) [qn,nid] inverted list, and insert in into the index
@@ -2245,11 +2245,11 @@ PROC ws_lookup(BAT[void,bat] ws,
             del := reverse(ws.fetch(QN_NID_DEL).fetch(cont)).join(qn_ids);
         }
     }
-    if (valid and bit(count(ins) + count(del))) {
+    if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
+    if (bit(count(ins) + count(del))) {
         # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
         res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
     }
-    if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
 
     # SCJ must catch error and use sequential post-filter instead.
     return ws_docfilter(ws, sort(res).hmark(oid_nil), cont);
@@ -2434,6 +2434,8 @@ PROC ws_findnodes(BAT[void,bat] ws,
                   BAT[void,oid] id_iter, any id_item, any id_kind, any id_cont, any id_tokens, bit isid) : BAT[oid,oid] 
 {
     var loc := str_nil, uri := ""; # nil loc/uri tells vx_lookup to look for *all* ID/IDREF attributes
+
+    if (count(id_iter) = 0) return bat(oid,oid); 
 
     # get root nids, which identify the XML fragment in which we must look
     var id_root := get_root(ws, id_item, id_kind, id_cont).mposjoin(id_cont, ws.fetch(PRE_NID));
@@ -3095,26 +3097,28 @@ PROC ws_opendoc(BAT[void,BAT] ws,
 }
 PROC ws_opendoc(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[oid,oid] 
 {   
-    return ws_opendoc(ws,idx_names, bat(void,str).seqbase(0@0),
-                                    bat(void,oid).seqbase(0@0),
-                                    bat(void,oid).seqbase(0@0), true); 
+    return ws_opendoc(ws,idx_names.seqbase(0@0), bat(void,str).seqbase(0@0),
+                                                 bat(void,oid).seqbase(0@0),
+                                                 bat(void,oid).seqbase(0@0), true); 
 }
 
 # pf:collection(), get 'collection root' as a single startpoint to query an entire collection
 PROC ws_collection_root(BAT[void,BAT] ws, BAT[void,str] colnames) : BAT[oid,oid]
 {
+    var colnames_unq := colnames.tdiff(ws.fetch(CONT_NAME)).tunique().mirror(); # [str,str]
     lock_set(pf_short);
-    var colname_coll, err := CATCH({ colname_coll := reverse(colnames).mirror().leftjoin(reverse(collection_name));
-                                     colname_pins.insert(colname_coll.kunique().project(ws_id(ws))); });
+    var colnames_coll, err := CATCH({ colnames_coll := colnames_unq.leftjoin(reverse(collection_name));
+                                      colname_pins.insert(colnames_coll.project(ws_id(ws))); });
     lock_unset(pf_short);
-    var notfound := colname_coll.kdiff(reverse(colnames));
+    var notfound := reverse(colnames_coll).tdiff(colnames);
     if (count(notfound) > 0) ERROR("pf:collection() %s not found (%d such errors).\n", notfound.fetch(0), count(notfound));
 
-    colname_coll@batloop() {
+    colnames_coll@batloop() {
         var docBAT := [bat]([+](str(int($t)), ws_dsk).reverse().mirror()); # get master bats
         ws_opencoll(ws, docBAT, $h, $t); # collections are loaded one-by-one
     }
-    return reverse(colname_coll.leftjoin(reverse(ws.fetch(CONT_COLL)))).project(0@0); # [CONT,PRE]
+    var ret := reverse(colnames.leftjoin(reverse(ws.fetch(CONT_NAME)))).project(0@0); # [CONT,PRE]
+    return ret;
 }
 
 # fn:collection(), get document nodes of all documents in a collection
@@ -3379,6 +3383,7 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
                        lng wsid) : oid
 {
     var verbose := >=(wsid, WS_MAXID);
+    var updatable := >(pageFree,0LL);
     var err := str_nil;
     var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     var pre := 0@0;
@@ -3411,11 +3416,13 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
     }
     if (isnil(coll_oid)) 
         coll_oid := docid_base; # new collection got oid of first doc in it 
+    else 
+        updatable := (ttype(docBAT.fetch(MAP_PID)) = oid);
 
     # finish the shred (set doc_oids in FRAG_ROOT, and maintain the nsloc index)
     var protect := not(isnil(coll_shortlock));
     if (protect) lock_set(coll_shortlock); # never lock a collection inside the short lock
-    err := CATCH(__shred_into_docBAT(docBAT, colname, coll_oid, docid_base, runtime, pre, att, >(pageFree,0LL), wsid));
+    err := CATCH(__shred_into_docBAT(docBAT, colname, coll_oid, docid_base, runtime, pre, att, updatable, wsid));
     if (protect) lock_unset(coll_shortlock);
     if (not(isnil(err))) ERROR(err);
 
@@ -3517,10 +3524,9 @@ PROC shred_doc_base(bit cleanup,
         [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
         lock_unset(pf_wal);
     }
-
     # checkpoint the new bats
     if (pf_commit_docmgt)
-    if (pf_checkpoint(commitBAT)) {
+    if (pf_checkpoint(commitBAT) or cleanup) {
         # remove the in-memory undo log; and trim collection
         lock_set(pf_short);
         err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
@@ -3574,11 +3580,7 @@ PROC _del_doc(bit cachedOnly,
                                  count(reverse(del).uselect(oid_nil)));
         }
         del := kunique(del);
-
-        # check if a document-id = its collection-id
-        # this detects del-doc()s on single-doc collections
-	var chk := mirror(del).leftjoin(doc_collection);
-        ret := [=](chk.hmark(0@0),chk.tmark(0@0)).texist(true);
+        ret := true;
     } else if (cachedOnly) {
         del := del.uselect(timestamp_nil,timestamp_nil);
     } 

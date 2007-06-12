@@ -33,17 +33,19 @@ Over..
 # 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s01.xq
 # 12:45:56 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
 
 # 12:45:56 >  
 # 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s02.xq
 # 12:45:56 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><aap id="1"/><aap/></XQueryResult>
+<XQueryResult><aap id="1"/></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><aap/></XQueryResult>
+<XQueryResult><aap id="1"/></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><aap/></XQueryResult>
+<XQueryResult><aap id="1"/></XQueryResult>
 
 # 12:45:56 >  
 # 12:45:56 >  Done.

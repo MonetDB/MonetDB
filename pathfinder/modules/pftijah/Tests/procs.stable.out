@@ -615,6 +615,7 @@ procs();
 [ "tj_init_global() : void"																									  ]
 [ "tj_init_global(BAT[str,str]) : void"																								  ]
 [ "tj_init_global(BAT[str,str], bit) : void"																							  ]
+[ "tj_is_indexed(str) : bit"																  ]
 [ "tj_ping() : void"																										  ]
 [ "tj_play_doc_tape(BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,str]) : void"																  ]
 [ "tj_setBackgroundCollName(str, BAT[oid,str]) : BAT[void,str]"												  ]
