@@ -49,7 +49,7 @@ def client_load_file(clt, port, file):
 
 def client(x,s, c, dbinit, lang, file):
     cltcmd = '%s' % os.getenv('%s_CLIENT' % lang)
-    cltcmd_ = clean_ports(cltcmd,str(os.getenv('MAPIPORT')),os.getenv('XRPCPORT'))
+    cltcmd_ = clean_ports(cltcmd,os.getenv('MAPIPORT'),os.getenv('XRPCPORT'))
     sys.stdout.write('\nserver %d%d : "%s", client %d: %s\n' % (x,s,dbinit,c,lang))
     sys.stderr.write('\nserver %d%d : "%s", client %d: %s\n' % (x,s,dbinit,c,lang))
     sys.stderr.flush()
