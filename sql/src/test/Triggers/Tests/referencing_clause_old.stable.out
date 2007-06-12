@@ -5,6 +5,8 @@ stdout of test 'referencing_clause_old` in directory 'src/test/Triggers` itself:
 # 18:26:44 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=39986 --set xrpc_port=41666 --set monet_prompt= --trace "--dbname=mTests_src_test_Triggers" --dbinit=' include sql;' ; echo ; echo Over..
 # 18:26:44 >  
 
+
+
 # MonetDB Server v5.0.0_beta2_1
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -29,14 +31,19 @@ Over..
 % sys.t1,	sys.t1 # table_name
 % id,	name # name
 % int,	varchar # type
-% 2,	14 # length
+% 2,	5 # length
 [ 10,	"mo"	]
 [ 20,	"monet"	]
+% sys.t2,	sys.t2 # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	14 # length
 [ 0,	"update_old_row"	]
 [ 1,	"update_old_row"	]
 [ 2,	"update_old_row"	]
 [ 3,	"update_old_row"	]
-[ 6	]
+[ 2	]
+[ 4	]
 [ 1	]
 [ 1	]
 [ 1	]
@@ -45,6 +52,10 @@ Over..
 [ 1	]
 [ 2	]
 % sys.t1,	sys.t1 # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	0 # length
+% sys.t2,	sys.t2 # table_name
 % id,	name # name
 % int,	varchar # type
 % 1,	14 # length
@@ -62,14 +73,19 @@ Over..
 % sys.t1,	sys.t1 # table_name
 % id,	name # name
 % int,	varchar # type
-% 2,	14 # length
+% 2,	7 # length
 [ 10,	"monetdb"	]
 [ 20,	"monet"	]
+% sys.t2,	sys.t2 # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	14 # length
 [ 0,	"insert_old_row"	]
 [ 1,	"insert_old_row"	]
 [ 2,	"insert_old_row"	]
 [ 3,	"insert_old_row"	]
-[ 6	]
+[ 2	]
+[ 4	]
 [ 1	]
 [ 1	]
 [ 1	]
@@ -81,15 +97,20 @@ Over..
 % sys.t1,	sys.t1 # table_name
 % id,	name # name
 % int,	varchar # type
-% 2,	24 # length
+% 2,	5 # length
 [ 10,	"mo"	]
 [ 20,	"monet"	]
+% sys.t2,	sys.t2 # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	24 # length
 [ 0,	"insert_old_row_table"	]
 [ 1,	"insert_old_new_row"	]
 [ 2,	"insert_old__new_table"	]
 [ 3,	"insert_old_row_new_table"	]
-[ 3,	"insert_old_table_new_row"	]
-[ 7	]
+[ 4,	"insert_old_table_new_row"	]
+[ 2	]
+[ 5	]
 [ 1	]
 [ 1	]
 [ 1	]
@@ -97,45 +118,48 @@ Over..
 % sys.t1,	sys.t1 # table_name
 % id,	name # name
 % int,	varchar # type
-% 2,	24 # length
+% 2,	7 # length
 [ 10,	"monetdb"	]
 [ 20,	"monet"	]
+% sys.t2,	sys.t2 # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	24 # length
 [ 1,	"insert_old_new_row"	]
-[ 3,	"insert_old_table_new_row"	]
-[ 1	]
-[ 1	]
+[ 4,	"insert_old_table_new_row"	]
 [ 1	]
 [ 1	]
 % sys.t1,	sys.t1 # table_name
 % id,	name # name
 % int,	varchar # type
-% 2,	25 # length
+% 2,	5 # length
 [ 10,	"mo"	]
 [ 20,	"monet"	]
+% sys.t2,	sys.t2 # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	24 # length
 [ 1,	"insert_old_new_row"	]
-[ 3,	"insert_old_table_new_row"	]
-[ 0,	"update_old_row__new_table"	]
-[ 1,	"insert_old_new_row"	]
-[ 3,	"insert_old_table_new_row"	]
-[ 1	]
-[ 1	]
+[ 4,	"insert_old_table_new_row"	]
+[ 0,	"update_old_row_new_table"	]
 [ 1	]
 [ 1	]
 [ 2	]
 % sys.t1,	sys.t1 # table_name
 % id,	name # name
 % int,	varchar # type
-% 1,	25 # length
+% 1,	0 # length
+% sys.t2,	sys.t2 # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	24 # length
 [ 1,	"insert_old_new_row"	]
-[ 3,	"insert_old_table_new_row"	]
-[ 0,	"update_old_row__new_table"	]
-[ 1,	"insert_old_new_row"	]
-[ 3,	"insert_old_table_new_row"	]
-[ 1,	"delete_old_new_row"	]
-[ 1,	"insert_old_new_row"	]
-[ 3,	"insert_old_table_new_row"	]
+[ 4,	"insert_old_table_new_row"	]
+[ 0,	"update_old_row_new_table"	]
+[ 2,	"delete_old_new_row"	]
 [ 3,	"delete_old_row_new_table"	]
-[ 9	]
+[ 0	]
+[ 5	]
 
 # 13:12:17 >  
 # 13:12:17 >  Done.

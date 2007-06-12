@@ -439,17 +439,13 @@ sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 		int *trigger_id = NEW(int);
 		*trigger_id = trigger->base.id;
 
-		if (trigger->event == 0 && 
-		   (!sql->called_triggers || 
-		    !list_find_id(sql->called_triggers, *trigger_id))) {
+		if (trigger->event == 0) { 
 			scope *scp = scope_open(NULL);
 			stmt *s = NULL;
 			char *n = trigger->new_name;
 
 			/* add name for the 'inserted' to the scope */
 			if (!n) n = "new"; 
-	
-			list_append(sql->called_triggers, trigger_id);
 	
 			scope_add_inserted(scp, inserts, t, n);
 			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);
@@ -601,9 +597,10 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		}
 		res = stmt_exception(s, _strdup(buf), 00001);
 	} else {		/* single column key */
+		stmt *ts = stmt_basetable(k->t, k->t->base.name);
 		sql_kc *c = k->columns->h->data;
 		stmt *h = stmt_dup(updates[c->c->colnr]->op2.stval);
-		stmt *o = stmt_diff(stmt_dup(updates[c->c->colnr]->op1.stval), stmt_dup(h));
+		stmt *o = stmt_diff(stmt_bat(c->c, ts, RDONLY), stmt_dup(h));
 		stmt *s = stmt_join(o, stmt_reverse(h), cmp_equal);
 
 		/* s should be empty */
@@ -740,43 +737,55 @@ sql_delete_set_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, stmt *rows, int a
 	for (i = 0; i < len; i++)
 		new_updates[i] = NULL;
 
+	l = create_stmt_list();
 	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
 		stmt *upd = NULL;
 
-		if (action == ACT_SET_DEFAULT)
-			upd = stmt_atom(atom_general(&fc->c->type, fc->c->def, 0));
-		else
-			if(action == ACT_SET_NULL)
+		if (action == ACT_SET_DEFAULT) {
+			if (fc->c->def) {
+				stmt *sq;
+				char buf[BUFSIZ];
+                                                
+				snprintf(buf, BUFSIZ, "select %s;", fc->c->def);
+				sq = scope_sqlparse(sql, NULL, buf, sql->mode);
+                                                
+				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
+					cleanup_stmts(new_updates, len);
+					list_destroy(l);
+					return NULL;
+				}
+				upd = stmt_dup(sq->op1.lval->h->data);
+			}  else {
 				upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
+			}
+		} else {
+			upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
+		}
 		
-
 		if (!upd || (upd = check_types(sql, &fc->c->type, upd, type_equal)) == NULL) {
 			stmt_destroy(rows);
-			list_destroy(l);
 			cleanup_stmts(new_updates, len);
+			list_destroy(l);
 			return NULL;
 		}
 
 		if (upd->nrcols <= 0) 
-			upd = stmt_const(stmt_reverse(rows->type == st_ptable ? first_subset(rows) : stmt_bat(fc->c, stmt_dup(fts), RDONLY)), upd);
+			upd = stmt_const(stmt_dup(rows), upd);
 		
 		/* new bats need values replaced */
 		if (fc->c->base.flag == TR_NEW)
 			new_updates[fc->c->colnr] = stmt_replace(stmt_bat(fc->c, stmt_dup(fts), INS), stmt_dup(upd));
 		else
 			new_updates[fc->c->colnr] = stmt_insert(stmt_bat(fc->c, stmt_dup(fts), UPD), stmt_dup(upd));
+		list_append(l, stmt_dup(new_updates[fc->c->colnr]));
 	}
 
+	stmt_destroy(rows);
 	stmt_destroy(ts);
 	stmt_destroy(fts);
 	
-	l = create_stmt_list();
-	if ((s = sql_update(sql, schema, t, new_updates, l)) == NULL) {
-		list_destroy(l);
-		cleanup_stmts(new_updates, len);
-		return NULL;
-	}
+	s = sql_update(sql, schema, t, new_updates, l);
 	cleanup_stmts(new_updates, len);
 	return s;
 }
@@ -796,6 +805,7 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 
 	rows = stmt_idxbat(k->idx, RDONLY);
 	rows = stmt_semijoin(stmt_reverse(rows), stmt_dup(updates[updcol]));
+	rows = stmt_reverse(rows);
 		
 	len = list_length(t->columns.set);
 	new_updates = NEW_ARRAY(stmt *, len);
@@ -803,46 +813,62 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 	for (i = 0; i < len; i++)
 		new_updates[i] = NULL;
 
+	l = create_stmt_list();
 	for (m = k->idx->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
 		sql_kc *c = o->data;
 		stmt *upd = NULL;
 
-		if (updates[c->c->colnr]) {
-			if(action == ACT_CASCADE) 
-				upd = stmt_dup(updates[c->c->colnr]->op2.stval);
-			if (action == ACT_SET_DEFAULT)
-				upd = stmt_atom(atom_general(&fc->c->type, fc->c->def, 0));
-			if(action == ACT_SET_NULL) 
+		if (!updates[c->c->colnr]) {
+			continue;
+		} else if (action == ACT_CASCADE) {
+			upd = stmt_dup(updates[c->c->colnr]->op2.stval);
+		} else if (action == ACT_SET_DEFAULT) {
+			if (fc->c->def) {
+				stmt *sq;
+				char buf[BUFSIZ];
+       	                                       
+				snprintf(buf, BUFSIZ, "select %s;", fc->c->def);
+				sq = scope_sqlparse(sql, NULL, buf, sql->mode);
+       	                                         
+				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
+					cleanup_stmts(new_updates, len);
+					list_destroy(l);
+					return NULL;
+				}
+				upd = stmt_dup(sq->op1.lval->h->data);
+			} else {
 				upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
-		} else {
-                        upd = stmt_dup(updates[updcol]->op2.stval);
-                        upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
+			}
+		} else if (action == ACT_SET_NULL) {
+			upd = stmt_atom(atom_general(&fc->c->type, NULL, 0));
 		}
 
 		if (!upd || (upd = check_types(sql, &fc->c->type, upd, type_equal)) == NULL) {
 			stmt_destroy(rows);
-			list_destroy(l);
 			cleanup_stmts(new_updates, len);
+			l = create_stmt_list();
 			return NULL;
 		}
 
 		if (upd->nrcols <= 0) 
-			upd = stmt_const(stmt_reverse(rows->type == st_ptable ? first_subset(rows) : stmt_bat(fc->c, stmt_dup(fts), RDONLY)), upd);
+			upd = stmt_const(stmt_dup(rows), upd);
+		else
+			upd = stmt_join(stmt_dup(rows), upd, cmp_equal);
 		
 		/* new bats need values replaced */
 		if (fc->c->base.flag == TR_NEW)
 			new_updates[fc->c->colnr] = stmt_replace(stmt_bat(fc->c, stmt_dup(fts), INS), stmt_dup(upd));
 		else
 			new_updates[fc->c->colnr] = stmt_insert(stmt_bat(fc->c, stmt_dup(fts), UPD), stmt_dup(upd));
+		list_append(l, stmt_dup(new_updates[fc->c->colnr]));
 	}
 
+	stmt_destroy(rows);
 	stmt_destroy(ts);
 	stmt_destroy(fts);
 	
-	l = create_stmt_list();
 	if ((s = sql_update(sql, schema, t, new_updates, l)) == NULL) {
-		list_destroy(l);
 		cleanup_stmts(new_updates, len);
 		return NULL;
 	}
@@ -891,13 +917,12 @@ sql_update_key(mvc *sql, sql_schema *schema, stmt **updates, sql_key *k, stmt *i
 
 	if (k->type == pkey || k->type == ukey) {
 		ckeys = update_check_ukey(sql, updates, k, idx_updates, updcol);
-		sql_update_ukey(sql, schema, updates, k, updcol, l);
 		list_prepend(l, ckeys);
-	} else 
-		if (((sql_fkey*)k)->on_update == ACT_RESTRICT) {		/* foreign keys */
-			ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
-			list_prepend(l, ckeys);
-		}
+		sql_update_ukey(sql, schema, updates, k, updcol, l);
+	} else { /* foreign keys */
+		ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
+		list_prepend(l, ckeys);
+	}
 }
 
 static stmt *
@@ -1016,14 +1041,12 @@ sql_update_idxs(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list
 			if (!(sql->cascade_action && list_find_id(sql->cascade_action, i->key->base.id))) {
 				int *local_id = GDKmalloc(sizeof(int));
 				if (!sql->cascade_action) 
-					sql->cascade_action = list_create((fdestroy) NULL);
+					sql->cascade_action = list_create((fdestroy) GDKfree);
 				
-				memcpy(local_id, &i->key->base.id, sizeof(int));
-				list_append(sql->cascade_action, &local_id);
+				*local_id = i->key->base.id;
+				list_append(sql->cascade_action, local_id);
 				sql_update_key(sql, schema, updates, i->key, is, updcol, l);
-
 			}
-
 		}
 		if (is) {
 			if (i->base.flag == TR_NEW)
@@ -1082,9 +1105,7 @@ sql_update_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 		int *trigger_id = NEW(int);
 		*trigger_id = trigger->base.id;
 
-		if (trigger->event == 2 && 
-		   (!sql->called_triggers || 
-		    !list_find_id(sql->called_triggers, *trigger_id))) {
+		if (trigger->event == 2) {
 			scope *scp = scope_open(NULL);
 			stmt *s = NULL;
 	
@@ -1094,8 +1115,6 @@ sql_update_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 	
 			if (!n) n = "new"; 
 			if (!o) o = "old"; 
-	
-			list_append(sql->called_triggers, trigger_id);
 	
 			scope_add_updated(scp, inserts, t, o, n);
 			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);
@@ -1477,7 +1496,6 @@ copyfrom(mvc *sql, scope *scp, dlist *qname, dlist *files, dlist *seps, int nr)
 stmt *
 sql_update(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list *l)
 {
-	char buf[BUFSIZ];
 	node *n;
 	sql_subaggr *cnt;
 
@@ -1486,6 +1504,7 @@ sql_update(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates, list *l)
 		sql_column *c = n->data;
 
 		if (updates[c->colnr] && !c->null) {
+			char buf[BUFSIZ];
 			stmt *s = updates[c->colnr]->op2.stval;
 
 			if (!(s->key && s->nrcols == 0)) {
@@ -1642,15 +1661,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 		list_append(l, stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1)));
 		stmt_destroy(s);
 
-		if ((s = sql_update(sql, schema, t, updates, l)) == NULL) {
-			list_destroy(l);
-			if (sql->cascade_action) {
-				list_destroy(sql->cascade_action);
-				sql->cascade_action = NULL;
-			}
-			cleanup_stmts(updates, len);
-			return NULL;
-		}
+		s = sql_update(sql, schema, t, updates, l);
 		if (sql->cascade_action) {
 			list_destroy(sql->cascade_action);
 			sql->cascade_action = NULL;
@@ -1716,9 +1727,7 @@ sql_delete_triggers(mvc *sql, sql_table *t, stmt *deletes, list *l)
 		int *trigger_id = NEW(int);
 		*trigger_id = trigger->base.id;
 
-		if (trigger->event == 1 && 
-		   (!sql->called_triggers || 
-		    !list_find_id(sql->called_triggers, *trigger_id))) {
+		if (trigger->event == 1) {
 			scope *scp = scope_open(NULL);
 			stmt *s = NULL;
 	
@@ -1727,8 +1736,6 @@ sql_delete_triggers(mvc *sql, sql_table *t, stmt *deletes, list *l)
 		
 			if (!o) o = "old"; 
 		
-			list_append(sql->called_triggers, trigger_id);
-
 			scope_add_deleted(scp, deletes, t, o);
 			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);
 
@@ -1751,11 +1758,15 @@ sql_delete_cascade_Fkeys(mvc *sql, sql_schema *schema, stmt *s, sql_key *fk, sql
 	sql_table *t = NULL;
 	scope *scp = scope_open(NULL);
 	tvar * tv = NULL;
+	stmt *res = NULL;
 	(void)k;
 	t = mvc_bind_table(sql, schema, fk->t->base.name);
 	
 	tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
-	return sql_delete(sql, tv, schema, t, s, 1, 0);
+
+	res = sql_delete(sql, tv, schema, t, s, 1, 0);
+	scope_close(scp);
+	return res;
 }
 
 static void 
@@ -1764,11 +1775,11 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 	sql_ukey *uk = (sql_ukey*)k;
 
 	if (uk->keys && list_length(uk->keys) > 0) {
-		char buf[BUFSIZ];
 		sql_subtype *it = sql_bind_localtype("int");
 		sql_subtype *bt = sql_bind_localtype("bit");
 		node *n;
 		for(n = uk->keys->h; n; n = n->next) {
+			char buf[BUFSIZ];
 			sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
 			sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 			sql_key *fk = n->data;
@@ -1781,7 +1792,9 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 					break;
 				case ACT_SET_NULL: 
 				case ACT_SET_DEFAULT: 
+					s = stmt_reverse(s);
 					s = sql_delete_set_Fkeys(sql, schema, fk, s, ((sql_fkey*)fk)->on_delete);
+            			        list_prepend(l, s);
 					break;
 				case ACT_CASCADE: 
 					s = sql_delete_cascade_Fkeys(sql, schema, s, fk, k);
@@ -1793,7 +1806,6 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 					snprintf(buf, BUFSIZ, "DELETE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
 		                        s = stmt_exception(s, _strdup(buf), 00001);
             			        list_prepend(l, s);
-
 			}
 		}
 	}
@@ -1812,18 +1824,16 @@ sql_delete_keys(mvc *sql, sql_schema *schema, sql_table *t, stmt *deletes, list 
 		sql_key *k = n->data;
 
 		if (k->type == pkey || k->type == ukey) {
-			
 			if (!(sql->cascade_action && list_find_id(sql->cascade_action, k->base.id))) {
 				int *local_id = GDKmalloc(sizeof(int));
 				if (!sql->cascade_action) 
-					sql->cascade_action = list_create((fdestroy) NULL);
+					sql->cascade_action = list_create((fdestroy) GDKfree);
 				
-				memcpy(local_id, &k->base.id, sizeof(int));
-				list_append(sql->cascade_action, &local_id); 
+				*local_id = k->base.id;
+				list_append(sql->cascade_action, local_id); 
 				sql_delete_ukey(sql, schema, deletes, k, l);
 
 			}
-
 		}
 	}
 	return res;
@@ -1943,6 +1953,10 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 			stmt_destroy(subset);
 		} else {	/* delete all */
 			s = sql_delete(sql, tv, schema, t, NULL, 1, 1);
+		}
+		if (sql->cascade_action) {
+			list_destroy(sql->cascade_action);
+			sql->cascade_action = NULL;
 		}
 
 		assert(isbasetable(tv->s));

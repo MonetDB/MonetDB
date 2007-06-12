@@ -82,6 +82,9 @@ stderr of test 'delete_set_default` in directory 'src/test/Update_Delete_action`
 # 11:10:52 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37796 
 # 11:10:52 >  
 
+MAPI  = monetdb@amelia:35282
+QUERY = delete from t1 where id > 2 and id < 5;
+ERROR = !SQLException:assert:UPDATE: PRIMARY KEY constraint 't2.t2_id_pkey' violated
 
 # 11:10:52 >  
 # 11:10:52 >  Done.

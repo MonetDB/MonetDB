@@ -1,8 +1,8 @@
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int DEFAULT 30, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id) ON DELETE SET DEFAULT);
+create table t2 (id int DEFAULT 7, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id) ON DELETE SET DEFAULT);
 
-create table t3 (id int DEFAULT 30, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE SET DEFAULT);
+create table t3 (id int DEFAULT 5, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE SET DEFAULT);
 
 
 
@@ -32,7 +32,13 @@ select * from t1;
 select * from t2;
 select * from t3;
 
-delete from t1;
+delete from t1 where id = 1;
+
+select * from t1;
+select * from t2;
+select * from t3;
+
+delete from t2 where id = 3;
 
 select * from t1;
 select * from t2;

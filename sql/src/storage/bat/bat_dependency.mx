@@ -35,7 +35,18 @@ extern sql_column* create_column(sql_trans *tr, sql_table* t, char* table, char 
 #include "sql_config.h"
 #include "bat_dependency.h"
 
-
+int
+list_find_func_id(list *ids, int id) {
+	node *n = ids->h;
+	while(n) {
+		sql_func * f = n->data;
+		if (f->base.id == id)
+			return id;
+		else 
+			n = n->next;
+	}
+	return 0;
+}
 
 sql_column*
 create_column(sql_trans *tr, sql_table* t, char* table, char *type, int digits)
@@ -101,7 +112,7 @@ sql_trans_drop_dependencies(sql_trans* tr, int depend_id)
 }
 /*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/
 list*
-sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type)
+sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * ignore_ids)
 {
 	node *id_node, *type_node, *trig_node;
 	sql_schema *s;
@@ -125,9 +136,10 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type)
 
 	while (id_node && type_node)
 	{
-	
-		list_append(dep_list, id_node->data);
-		list_append(dep_list, (short *) type_node->data);
+		if (!(ignore_ids  && list_find_func_id(ignore_ids, *(int *) id_node->data))) {
+			list_append(dep_list, id_node->data);
+			list_append(dep_list, (short *) type_node->data);
+		}
 		id_node = id_node->next;
 		type_node = type_node->next;
 	}

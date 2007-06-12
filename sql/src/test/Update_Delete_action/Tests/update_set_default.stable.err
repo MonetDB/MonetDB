@@ -82,6 +82,15 @@ stderr of test 'update_set_default` in directory 'src/test/Update_Delete_action`
 # 11:13:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33372 
 # 11:13:36 >  
 
+MAPI  = monetdb@koala:33780
+QUERY = update t1 set id = 10 where id =3;
+ERROR = !ERROR: UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+MAPI  = monetdb@koala:33780
+QUERY = update t1 set id = 11 where id =4;
+ERROR = !ERROR: UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+MAPI  = monetdb@koala:33780
+QUERY = update t2 set id = 7 where id =5;
+ERROR = !ERROR: UPDATE: FOREIGN KEY constraint 't3.t3_id_fkey' violated
 
 # 11:13:36 >  
 # 11:13:36 >  Done.

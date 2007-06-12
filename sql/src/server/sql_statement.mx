@@ -1832,26 +1832,24 @@ stmt*
 stmt_connection(int *id, char *server, int *port, char *db, char * db_alias, char *user, char *passwd, char *lang)
 {
 	stmt *s = stmt_create(st_connection);
-	list *l = list_create((fdestroy) NULL);
+	s->op1.lval = list_create((fdestroy) GDKfree);
 
 	if (*id != 0)
-		list_append(l, id);
+		list_append(s->op1.lval, id);
 	if (server)
-		list_append(l, server);
+		list_append(s->op1.lval, server);
 	if (*port != -1)
-		list_append(l, port);
+		list_append(s->op1.lval, port);
 	if (db)
-		list_append(l, db);
+		list_append(s->op1.lval, db);
 	if (db_alias)
-		list_append(l, db_alias);
+		list_append(s->op1.lval, db_alias);
 	if (user)
-		list_append(l, user);
+		list_append(s->op1.lval, user);
 	if (passwd)
-		list_append(l, passwd);
+		list_append(s->op1.lval, passwd);
 	if (lang)
-		list_append(l, lang);
-
-	s->op1.lval = l;
+		list_append(s->op1.lval, lang);
 
 	return s;
 }

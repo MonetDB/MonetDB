@@ -71,3 +71,5 @@ bind_with_cast.SF-1720934
 groupby_orderby_nonselected.SF-1723863
 rand_not_executed_for_every_row.SF-1723791
 auto_commit.SF-1724151
+update_pkey_bug.SF-1733712
+update_fkey_with_value_not_in_the_pkey.SF-1734143

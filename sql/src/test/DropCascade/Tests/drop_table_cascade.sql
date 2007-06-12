@@ -2,7 +2,7 @@ create table t1 (id int, name varchar(1024), age int, PRIMARY KEY(id));
 
 create table t2 (id int, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id));
 
-create trigger test1 after insert on t1
+create trigger test1 after insert on t2
 	insert into t1 values(0, 'after', 23);
 
 create view v1 as select * from t1;

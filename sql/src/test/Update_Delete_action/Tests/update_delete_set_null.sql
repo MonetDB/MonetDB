@@ -1,8 +1,8 @@
 create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 
-create table t2 (id int, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id) ON UPDATE SET NULL ON DELETE SET NULL);
+create table t2 (id int DEFAULT 13, age int, PRIMARY KEY (ID), FOREIGN KEY(id) REFERENCES t1(id) ON UPDATE SET NULL ON DELETE SET NULL);
 
-create table t3 (id int DEFAULT 3, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE SET DEFAULT ON UPDATE SET NULL);
+create table t3 (id int, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE SET NULL ON UPDATE SET NULL);
 
 
 
@@ -26,16 +26,13 @@ insert into t3 values(3, 5);
 insert into t3 values(4, 6);
 insert into t3 values(5, 7);
 
-update t1 set id = 10 where id =1;
-update t1 set id = 11 where id =2;
-update t1 set id = 12 where id =3;
-update t1 set id = 13 where id =4;
+update t1 set id = 10 where id =3;
 
 select * from t1;
 select * from t2;
 select * from t3;
 
-delete from t1 where id = 5;
+delete from t1 where id = 4;
 
 select * from t1;
 select * from t2;

@@ -526,20 +526,15 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
 	stmt *sq = NULL;
-	list *col_l = NULL, *func_l= NULL, *view_id_l = NULL;
-	scope *scp = scope_open(NULL);
+	scope *scp;
 	sql_trigger *trigger;
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->mode == m_execute);
 
-	int event = (trigger_event->token == SQL_INSERT)?0:
-			  (trigger_event->token == SQL_DELETE)?1:2;
 	dlist *columns = trigger_event->data.lval;
 	char *old_name = NULL, *new_name = NULL; 
-	int orientation = triggered_action->h->data.ival;
-	char *condition = triggered_action->h->next->data.sval;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	
 	if (opt_ref) {
@@ -566,16 +561,22 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	
 	
 	if (!instantiate) {
+		int event = (trigger_event->token == SQL_INSERT)?0:
+			    (trigger_event->token == SQL_DELETE)?1:2;
+		int orientation = triggered_action->h->data.ival;
+		char *condition = triggered_action->h->next->data.sval;
 		char *q = QUERY(sql->scanner);
+
 		trigger = mvc_create_trigger(sql, t, tname, time, orientation, 
 			event, old_name, new_name, condition, q);
 	}
+ 	scp = scope_open(NULL);
 	sq = sequential_block(sql, scp, NULL, stmts, NULL, 1);
 	
 	if (sq && !instantiate) {
-		col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
-		func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
-		view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
+		list *col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
+		list *func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
+		list *view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
 
 		mvc_create_dependencies(sql, col_l, trigger->base.id, TRIGGER_DEPENDENCY);
 		mvc_create_dependencies(sql, func_l, trigger->base.id, TRIGGER_DEPENDENCY);
@@ -585,16 +586,14 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		list_destroy(func_l);
 		list_destroy(view_id_l);
 		stmt_destroy(sq);
-		sq = NULL;
+		sq = stmt_none();
 	}
 	scope_close(scp);
 	
 	/* todo trigger_columns */
 	(void)columns;
 
-	if (instantiate)
-		return sq;
-	return stmt_none();
+	return sq;
 }
 
 static stmt *
@@ -615,54 +614,59 @@ drop_trigger(mvc *sql, dlist *qname)
 static stmt *
 connect_catalog(mvc *sql, dlist *qname)
 {
-	char *server = qname->h->data.sval;
-	int id = -1, port = qname->h->next->data.ival;
-	char *db = qname->h->next->next->data.sval;
-	char *db_alias = qname->h->next->next->next->data.sval;
+	char *server, * db, *db_alias, *user, *lang, *passwd; 
+	int *id = GDKmalloc(sizeof(int)), *port = GDKmalloc(sizeof(int));
 	symbol *user_symb = qname->h->next->next->next->next->data.sym;
-	char *user = NULL, *passwd = NULL;
-	char *lang = qname->h->next->next->next->next->next->data.sval;
 	char default_dbalias[BUFSIZ], default_lang[BUFSIZ];
+	*port = (int) qname->h->next->data.ival;
+	*id = -1;
+	server = GDKstrdup(qname->h->data.sval);
+	db = GDKstrdup(qname->h->next->next->data.sval);
+	user = GDKstrdup(user_symb->data.lval->h->data.sval);
+	passwd = GDKstrdup(user_symb->data.lval->h->next->data.sval);
 
-	user = user_symb->data.lval->h->data.sval;
-	passwd = user_symb->data.lval->h->next->data.sval;
-	
-	if (db_alias == NULL){
+	if (qname->h->next->next->next->data.sval == NULL){
 		snprintf(default_dbalias, BUFSIZ, "%s_%s_%s", server, db, user);
 		db_alias = GDKstrdup(default_dbalias);
+	} else {
+		db_alias = GDKstrdup(qname->h->next->next->next->data.sval);
 	}
 
-	if (lang == NULL){
+	if (qname->h->next->next->next->next->next->data.sval == NULL){
 		snprintf(default_lang, BUFSIZ, "sql");
-		lang = default_lang;
+		lang = GDKstrdup(default_lang);
+	}
+	else {
+		lang = GDKstrdup(qname->h->next->next->next->next->next->data.sval);
 	}
 	
-	id = mvc_connect_catalog(sql, server, port, db, db_alias, user, passwd, lang);
+	*id = mvc_connect_catalog(sql, server, *port, db, db_alias, user, passwd, lang);
 	
-	if (id == 0)	
+	if (*id == 0)	
 		return sql_error(sql, 02, "CONNECT TO: this connection already exists or the db_alias '%s' was already used!", db_alias);
 	
-	return stmt_connection(&id, server, &port, db, db_alias, user, passwd, lang);	
+	return stmt_connection(id, server, port, db, db_alias, user, passwd, lang);	
 }
 
 static stmt *
 disconnect_catalog(mvc *sql, dlist *qname)
 {
-	int id = 0, port = -1;
+	int *id = GDKmalloc(sizeof(int)), *port = GDKmalloc(sizeof(int));
 	char *db_alias = NULL;
+	*id = 0, *port = -1;
 	
 	if (qname->cnt != 0) {
-		db_alias = qname->h->data.sval;
+		db_alias = GDKstrdup(qname->h->data.sval);
 	
-		id = mvc_disconnect_catalog(sql, db_alias);
+		*id = mvc_disconnect_catalog(sql, db_alias);
 
-		if (id == 0)	
+		if (*id == 0)	
 			return sql_error(sql, 02, "DISCONNECT CATALOG: no such db_alias '%s'", db_alias);
 		else
-			return stmt_connection(&id, NULL, &port, NULL, db_alias, NULL, NULL, NULL);	
+			return stmt_connection(id, NULL, port, NULL, db_alias, NULL, NULL, NULL);	
 	} else {
 		mvc_disconnect_catalog_ALL(sql);	
-		return stmt_connection(&id, NULL, &port, NULL, NULL, NULL, NULL, NULL);	
+		return stmt_connection(id, NULL, port, NULL, NULL, NULL, NULL, NULL);	
 	}
 }
 
@@ -752,11 +756,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
 		}
 
-		sql->depth++;
-		if (sql->depth > SQL_MAXDEPTH)
-			return sql_error(sql, 02, "CREATE VIEW: too many nested VIEWS");
 		sq = scope_subtable(sql, NULL, query, ek );
-		sql->depth--;
 		if (!sq)
 			return NULL;
 
@@ -808,7 +808,7 @@ drop_view(mvc *sql, dlist *qname, int drop_action)
 		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
 	} else if (t->system) {
 		return sql_error(sql, 02, "DROP VIEW: cannot drop system view '%s'", tname);
-	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY)) {
+	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
 			return sql_error(sql, 02, "unable to drop view %s (there are database objects which depend on it)\n", t->base.name);
 	} else {
 		mvc_drop_table(sql, ss, t, drop_action);
@@ -905,7 +905,7 @@ static stmt *
 drop_user(mvc *sql, char *user)
 {
 	int user_id = sql_find_auth(sql, user);
-	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY))
+	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
 		return sql_error(sql, 02, "DROP USER: '%s' owns a schema", user);
 
 	if(sql_drop_user(sql, user) == FALSE)
@@ -1530,7 +1530,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return sql_error(sql, 02, "cannot drop column %s (table is a system table)\n", cname);
 		if (isView(t))
 			return sql_error(sql, 02, "cannot drop column %s (%s is a view)\n", cname, t->base.name);
-		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY))
+		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
 			return sql_error(sql, 02, "unable to drop column %s (there are database objects which depend on it)\n", cname);
 		if (!drop_action  && t->keys.set) {
 			node *n, *m;
@@ -1704,7 +1704,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 		}
 	}
 
-	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY))
+	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			return sql_error(sql, 02, "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 	
 	mvc_drop_table(sql, s, t, drop_action);

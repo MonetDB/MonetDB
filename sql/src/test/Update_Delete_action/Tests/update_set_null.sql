@@ -27,9 +27,12 @@ insert into t3 values(4, 6);
 insert into t3 values(5, 7);
 
 update t1 set id = 10 where id =1;
-update t1 set id = 11 where id =2;
-update t1 set id = 12 where id =3;
-update t1 set id = 13 where id =4;
+
+select * from t1;
+select * from t2;
+select * from t3;
+
+update t2 set id = 7  where id =3;
 
 select * from t1;
 select * from t2;

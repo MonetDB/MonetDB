@@ -1061,14 +1061,8 @@ sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	sql_schema *s = sql->session->schema;
 	exp_kind ek = {type_value, card_column, FALSE};
 
-	sql->depth++;
-	if (sql->depth > SQL_MAXDEPTH)
-		return sql_error(sql, 02, "SELECT: too many nested operators");
-
  	ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, f, ek);
 	rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset, f, ek);
-	sql->depth --;
-
 	if (!ls || !rs) {
 		if (ls)
 			stmt_destroy(ls);
@@ -1661,6 +1655,11 @@ stmt_seq_next(mvc *sql, char *sname, char *seqname)
 stmt *
 sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind ek)
 {
+	if (!se)
+		return NULL;
+
+ 	if (THRhighwater())
+		return sql_error(sql, 10, "SELECT: too many nested operators");
 
 	switch (se->token) {
 	case SQL_NOP:
@@ -2997,6 +2996,10 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 	if (!sc)
 		return NULL;
+
+ 	if (THRhighwater())
+		return sql_error(sql, 10, "SELECT: too many nested operators");
+
 	switch (sc->token) {
 	case SQL_OR:
 	{

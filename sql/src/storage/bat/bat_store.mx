@@ -1313,6 +1313,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	t->sql = *(bit *) bun_find(func_sql, lid);
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
 	t->side_effect = *(bit *) bun_find(func_side_effect, lid);
+	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->is_func = 0;
 	t->s = s;
@@ -2532,7 +2533,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 			bootstrap_create_column(tr, t, "type", "int", 32);
 			bootstrap_create_column(tr, t, "name", "varchar", 1024);
 			bootstrap_create_column(tr, t, "rkey", "int", 32);
-			bootstrap_create_column(tr, t, "action", "int", 16);
+			bootstrap_create_column(tr, t, "action", "int", 32);
 
 			t = bootstrap_create_table(tr, s, "idxs");
 			bootstrap_create_column(tr, t, "id", "int", 32);
@@ -3721,6 +3722,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		BAT *odb = temp_descriptor(tt->dbid);
 
 		bat_clear(odb);
+		BATcommit(odb);
 		bat_destroy(odb);
 		if (ttr == gtrans)
 			ok = log_bat_clear(sql_logger, tt->dname);
@@ -3767,6 +3769,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		cur = temp_descriptor(oc->bat.bid);
 		if (ft->cleared && ttr == gtrans) {
 			bat_clear(cur);
+			BATcommit(cur);
 			ok = log_bat_clear(sql_logger, oc->bat.name);
 			if (ok == LOG_OK) 
 				ok = log_bat_clear(sql_logger, oc->bat.uname);
@@ -3878,6 +3881,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			cur = temp_descriptor(oi->bat.bid);
 			if (ft->cleared && ttr == gtrans) {
 				bat_clear(cur);
+				BATcommit(cur);
 				ok = log_bat_clear(sql_logger, oi->bat.name);
 				if (ok == LOG_OK) 
 					ok = log_bat_clear(sql_logger, oi->bat.uname);
@@ -4475,7 +4479,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 	short dep_type = 0;
 	sql_table *t = NULL;
 
-	list *dep = sql_trans_get_dependencies(tr, id, type);
+	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
 	node *n = dep->h, *t_n = NULL;
 
 
@@ -4901,6 +4905,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->aggr = aggr;
 	t->side_effect = se;
 	t->ops = list_dup(args, (fdup)&arg_dup);
+	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->is_func = is_func;
 	if (res)

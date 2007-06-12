@@ -2879,13 +2879,8 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = sql->session->schema;
 
-	sql->depth++;
-	if (sql->depth > SQLMAXDEPTH)
-		return sql_error(sql, 02, "SELECT: too many nested operators");
-
  	l = rel_value_exp(sql, rel, dl->next->data.sym, f);
 	r = rel_value_exp(sql, rel, dl->next->next->data.sym, f);
-	sql->depth --;
 
 	if (!l || !r) {
 		if (l)

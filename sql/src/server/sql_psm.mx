@@ -375,6 +375,9 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 	list *l=0;
 	dnode *n;
 
+ 	if (THRhighwater())
+		return sql_error(sql, 10, "SELECT: too many nested operators");
+
 	if (blk->h)
  		l = create_stmt_list();
 	stack_push_frame(sql, opt_label);
@@ -706,7 +709,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	}
 	
 	
-	if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY))
+	if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 		return sql_error(sql, 02, "DROP %s: there are database objects dependent on %s %s;", F, f, func->base.name);
 	
 	mvc_drop_func(sql, s, func, drop_action);
@@ -747,8 +750,8 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
 	for( n = list_func->h ; n; n = n->next) {
 		func = (sql_func *) n->data;
 
-		if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY))
-			return sql_error(sql, 02, "DROP %s: there are functions dependent on %s %s;", F, f, func->base.name);
+		if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func))
+			return sql_error(sql, 02, "DROP %s: there are database objects dependent on %s %s;", F, f, func->base.name);
 	}
 		
 	mvc_drop_all_func(sql, s, list_func, drop_action);

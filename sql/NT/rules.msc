@@ -14,7 +14,7 @@
 # Portions created by CWI are Copyright (C) 1997-2007 CWI.
 # All Rights Reserved.
 
-!INCLUDE $(TOPDIR)\..\..\MonetDB\conf\rules.msc
+!INCLUDE $(TOPDIR)\..\..\buildtools\conf\rules.msc
 
 VERSION = 2.19.0
 

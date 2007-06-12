@@ -36,8 +36,6 @@
 #include <sql_keyword.h>
 #include <sql_atom.h>
 
-#define SQL_MAXDEPTH ((THREAD_STACK_SIZE/4096)/4)
-
 #define ERRSIZE 8192
 
 typedef enum modes_t {
@@ -101,9 +99,7 @@ typedef struct mvc {
 
 	/* current stmt variables */
 	int type;		/* query type */
-	unsigned int depth;	/* depth of the current expression */
 	int label;		/* numbers for relational projection labels */
-	list *called_triggers;  /* protection against recursive triggers */
 	list *cascade_action;  /* protection against recursive cascade actions */
 
 	int opt_stats[MAXSTATS];/* keep statistics about optimizer rewrites */
@@ -186,7 +182,7 @@ extern void mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 /*dependency control*/
 extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
 extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
-extern int mvc_check_dependency(mvc * m, int id, int type);
+extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
 extern int mvc_connect_catalog(mvc *m, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lng);
 extern int mvc_disconnect_catalog(mvc *m, char *db_alias);
 extern int mvc_disconnect_catalog_ALL(mvc *m);
@@ -545,13 +541,13 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->sa = sa_create();
 
 	m->params = NULL;
-	m->vars = NEW_ARRAY(sql_var, MAXPARAMS);
-	m->topvars = 0;
 	m->sizevars = MAXPARAMS;
+	m->vars = NEW_ARRAY(sql_var, m->sizevars);
+	m->topvars = 0;
 	m->frame = 1;
-	m->args = NEW_ARRAY(atom*,MAXPARAMS);
-	m->argc = 0;
 	m->argmax = MAXPARAMS;
+	m->args = NEW_ARRAY(atom*,m->argmax);
+	m->argc = 0;
 	m->argfixed = 0;
 	m->sym = NULL;
 
@@ -565,9 +561,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->debug = debug;
 	m->cache = 1;
 
-	m->depth = 0;
 	m->label = 0;
-	m->called_triggers = NULL;
 	m->cascade_action = NULL;
 	for(i=0;i<MAXSTATS;i++)
 		m->opt_stats[i] = 0;
@@ -637,8 +631,8 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 		stack_set_number(m, "cache", 1);
 	m->cache = 1;
 
-	m->depth = 0;
 	m->label = 0;
+	m->cascade_action = NULL;
 	m->type = Q_PARSE;
 
 	for(i=0;i<MAXSTATS;i++)
@@ -1209,7 +1203,7 @@ mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type)
 }
 
 int
-mvc_check_dependency(mvc * m, int id, int type)
+mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 {
 	list *dep_list = NULL;
 	
@@ -1219,14 +1213,24 @@ mvc_check_dependency(mvc * m, int id, int type)
 
 
 	switch(type) {
-		case OWNER_DEPENDENCY : dep_list = sql_trans_owner_schema_dependencies(m->session->tr, id);
+		case OWNER_DEPENDENCY : 
+					dep_list = sql_trans_owner_schema_dependencies(m->session->tr, id);
 					break;
-		case SCHEMA_DEPENDENCY : dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
+		case SCHEMA_DEPENDENCY :
+					dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
 					break;
-		case TABLE_DEPENDENCY : dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY);
-		case VIEW_DEPENDENCY : dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY);
+		case TABLE_DEPENDENCY : 
+					dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 					break;
-		default: dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY);
+		case VIEW_DEPENDENCY : 
+					dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+					break;
+		case FUNC_DEPENDENCY : 
+		case PROC_DEPENDENCY :
+					dep_list = sql_trans_get_dependencies(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
+					break;
+		default: 
+					dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
 	
 	if ( list_length(dep_list) >= 2 ) {
