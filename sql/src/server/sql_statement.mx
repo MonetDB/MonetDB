@@ -602,8 +602,7 @@ stmt_destroy(stmt *s)
 			/* stmt_destroy  op1 */
 		case st_relselect:
 		case st_connection:
-			if (s->op1.lval)
-				list_destroy(s->op1.lval);
+			list_destroy(s->op1.lval);
 			break;
 		case st_reljoin:
 			list_destroy(s->op1.lval);
@@ -1833,7 +1832,7 @@ stmt*
 stmt_connection(int *id, char *server, int *port, char *db, char * db_alias, char *user, char *passwd, char *lang)
 {
 	stmt *s = stmt_create(st_connection);
-	s->op1.lval = list_create((fdestroy) &stmt_destroy);
+	s->op1.lval = list_create((fdestroy) GDKfree);
 
 	if (*id != 0)
 		list_append(s->op1.lval, id);
