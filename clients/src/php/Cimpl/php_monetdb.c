@@ -3573,7 +3573,7 @@ PHP_MONETDB_API int php_monetdb_convert(Mconn *m_link, const char *table_name, c
 			case PG_PATH:
 			case PG_POLYGON:
 			case PG_CIRCLE:
-				php_error_docref(NULL TSRMLS_CC, E_NOTICE, MonetDB/SQL '%s' type (%s) is not supported", Z_STRVAL_PP(type), field);
+				php_error_docref(NULL TSRMLS_CC, E_NOTICE, "MonetDB/SQL '%s' type (%s) is not supported", Z_STRVAL_PP(type), field);
 				err = 1;
 				break;
 				

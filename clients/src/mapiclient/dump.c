@@ -395,9 +395,9 @@ dump_table(Mapi mid, char *tname, FILE *toConsole)
 			int on_update = (action >> 8) & 255;
 			int on_delete = action & 255;
 
-			if (0 < on_delete && on_delete < NR_ACTIONS)
+			if (0 < on_delete && on_delete < NR_ACTIONS && on_delete != 2 /* RESTRICT -- default */)
 				fprintf(toConsole, " ON DELETE %s", actions[on_delete]);
-			if (0 < on_update && on_update < NR_ACTIONS)
+			if (0 < on_update && on_update < NR_ACTIONS && on_delete != 2 /* RESTRICT -- default */)
 				fprintf(toConsole, " ON UPDATE %s", actions[on_update]);
 		}
 	}
