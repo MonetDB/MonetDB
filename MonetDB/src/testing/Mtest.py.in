@@ -2649,6 +2649,8 @@ def main(argv) :
             ('X100CLIENT', None, 'X100CLIENT', '<x100-client program>',
              'default: %s' % dft['X100CLIENT']),
             ('at', None, 'use_at', None, 'Use at command as watchdog'),
+            ('dbg', None, 'dbg', '<debugger/valgrind>',
+             "debugger to start before each server"),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -2723,6 +2725,9 @@ def main(argv) :
         a = opts.get('use_at')
         if a is not None:
             env['USE_AT'] = a
+        a = opts.get('dbg')
+        if a is not None:
+            env['DBG'] = a
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -2815,6 +2820,10 @@ def main(argv) :
             env['setXQUERY_LOGDIR'] = eval(dft['setXQUERY_LOGDIR'])
         else:
             env['setXQUERY_LOGDIR'] = ''
+        if env.has_key('DBG'):
+            env['setDBG'] = env['DBG']
+        else:
+            env['setDBG'] = ''
 
     if THISFILE == "Mprofile.py"  and  not env['CMDLST']:
         try:
@@ -2972,11 +2981,11 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if env['VERSION'] >= 49900:
-            exe['Mserver']       = CheckExec('mserver5')     , 'mserver5 "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
-                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
+                                                               (env['setDBG'], opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
         else:
-            exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
-                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
+            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace' % \
+                                                               (env['setDBG'], opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
