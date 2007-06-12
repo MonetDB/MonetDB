@@ -72,6 +72,8 @@ const XQUERY_STATUS_GARBAGECOLL  := 2;
 const XQUERY_STATUS_READY        := 3; 
 var xquery_status := XQUERY_STATUS_INITIALIZING;
 
+proc tj_is_indexed(str name) : bit { return false; } # dummy function in case we have no tijah
+
 var CATCH_module_pftiah := CATCH(module("pftijah")); # load pftijah only if available
 if (not(isnil(CATCH_module_pftiah))) {
     if (trim(CATCH_module_pftiah) != "!ERROR: moduleClient: module(pftijah) load error.") {
