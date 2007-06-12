@@ -1154,6 +1154,20 @@ PROC tj_trace( str s ) : void :=
 #
 #
 
+PROC tj_is_indexed(str collName) : bit :=
+{
+    if (view_bbp_name().reverse().exist("tj_pfc_fti_dep")) {
+	if ( bat("tj_pfc_fti_dep_star").count() > 0 ) {
+	    # eg. all collections are indexed
+            return TRUE;
+	} else {
+	    return bat("tj_pfc_fti_dep").reverse().exist(collName);
+	}
+    } else {
+        return FALSE;
+    }
+}
+
 PROC tj_play_doc_tape(BAT[void,BAT] ws,
                       BAT[void,oid] item, 
                       BAT[void,int] kind, 
@@ -1209,9 +1223,7 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
     }
 }
 
-
 const virtRoot := 0@0;
-
 
 ##
 # Compute ancestor-descendant relation. 
