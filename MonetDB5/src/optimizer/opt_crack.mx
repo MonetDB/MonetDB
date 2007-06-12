@@ -33,8 +33,6 @@ comment "Replace algebra select with crackers select";
 /* #define DEBUG_OPT_CRACK */
 #include "opt_support.h"
 
-#endif
-
 @c  
 #include "mal_config.h"
 #include "opt_crack.h"
@@ -107,6 +105,7 @@ OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(crack)@
+#endif
 @c
 @:wrapOptimizer(crack,OPT_CHECK_ALL)@
 @}

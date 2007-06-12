@@ -77,10 +77,6 @@ comment "Push constant range selections through the program";
 #include "opt_prelude.h"
 
 /* #define DEBUG_OPT_RANGEPUSH */
-
-#endif
-
-
 @c  
 #include "mal_config.h"
 #include "opt_pushranges.h"
@@ -249,6 +245,7 @@ aliasRemoval, constantExpression, and pushranges.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(pushranges)@
+#endif
 @c
 @:wrapOptimizer(pushranges,OPT_CHECK_ALL)@
 @}

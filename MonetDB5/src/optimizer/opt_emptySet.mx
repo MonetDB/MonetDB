@@ -96,7 +96,6 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "opt_support.h"
 
 /* #define DEBUG_OPT_EMPTYSET	 show partial result */
-#endif
 @c
 #include "mal_config.h"
 #include "opt_emptySet.h"
@@ -320,6 +319,7 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(emptySet)@
+#endif
 @c
 @:wrapOptimizer(emptySet,OPT_CHECK_ALL)@
 @}

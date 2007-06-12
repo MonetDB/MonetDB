@@ -88,7 +88,6 @@ comment "Garbage collector optimizer";
 
 /* #define DEBUG_OPT_GARBAGE     show partial result */
 
-#endif
 @c
 #include "mal_config.h"
 #include "opt_garbageCollector.h"
@@ -206,6 +205,7 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(garbageCollector)@
+#endif
 @c
 @:wrapOptimizer(garbageCollector,OPT_CHECK_ALL)@
 @}

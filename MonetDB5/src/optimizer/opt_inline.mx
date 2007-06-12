@@ -41,7 +41,6 @@ comment "Expand inline functions";
 
 /* #define DEBUG_OPT_INLINE     show partial result */
 
-#endif
 @c
 #include "mal_config.h"
 #include "opt_inline.h"
@@ -86,6 +85,7 @@ OPTinlineImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(inline)@
+#endif
 @c
 @:wrapOptimizer(inline,OPT_CHECK_ALL)@
 @}

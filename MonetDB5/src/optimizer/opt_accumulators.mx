@@ -59,8 +59,6 @@ comment "Replace calculations with accumulator model";
 
 /* #define DEBUG_OPT_OPTIMIZER     show partial result */
 
-#endif
-
 @c
 #include "mal_config.h"
 #include "opt_accumulators.h"
@@ -204,6 +202,7 @@ sure it becomes one.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(accumulators)@
+#endif
 @c
 @:wrapOptimizer(accumulators,OPT_CHECK_ALL)@
 @}

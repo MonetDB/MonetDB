@@ -82,8 +82,6 @@ comment "Compiler for multiplexed instructions.";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#endif /* _OPT_MULTIPLEX_H_ */
-
 @+ Code generation
 The MAL block is replaced by a new one, with the multiplex
 code in place.
@@ -318,6 +316,7 @@ OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(multiplex)@
+#endif /* _OPT_MULTIPLEX_H_ */
 @c
 @:wrapOptimizer(multiplex,OPT_CHECK_ALL)@
 @}

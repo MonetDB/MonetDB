@@ -106,8 +106,6 @@ comment "Resolve the multi-table definitions";
 
 /* #define DEBUG_OPT_REMOTE     show partial result */
 
-#endif
-
 @c
 #include "mal_config.h"
 #include "opt_remoteQueries.h"
@@ -453,6 +451,7 @@ to be shipped should be simple.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(remoteQueries)@
+#endif
 @c
 @:wrapOptimizer(remoteQueries,OPT_CHECK_ALL)@
 @}

@@ -87,7 +87,6 @@ comment "Experiment with partitioned databases";
 #include "opt_support.h"
 
 /*#define DEBUG_OPT_PARTITIONED	show partial result */
-#endif
 @c
 #include "mal_config.h"
 #include "opt_partitions.h"
@@ -439,6 +438,7 @@ An assignment to the target is not allowed [to be checked separately]
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(partitions)@
+#endif
 @c
 @:wrapOptimizer(partitions,OPT_CHECK_ALL)@
 @}

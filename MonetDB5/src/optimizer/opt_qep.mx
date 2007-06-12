@@ -102,7 +102,6 @@ typedef struct QEPrecord {
 #define MAXPARENT 4
 #define MAXCHILD 8
 
-#endif /* _OPT_QEP_ */
 @c
 #include "mal_config.h"
 #include "opt_qep.h"
@@ -295,6 +294,7 @@ OPTdumpQEPImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(dumpQEP)@
+#endif /* _OPT_QEP_ */
 @c
 @:wrapOptimizer(dumpQEP,OPT_CHECK_ALL)@
 @}

@@ -67,7 +67,6 @@ the opportunity to perform the select push through.
 #include "mal_interpreter.h"
 #include "opt_support.h"
 
-#endif
 @c
 #include "mal_config.h"
 #include "opt_heuristics.h"
@@ -165,6 +164,7 @@ Should be done differently
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(heuristics)@
+#endif
 @c
 @:wrapOptimizer(heuristics,OPT_CHECK_ALL)@
 

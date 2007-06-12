@@ -125,7 +125,6 @@ comment "Inverse macro, find pattern and replace with a function call.";
 
 opt_export str MACROprocessor(MalBlkPtr mb, Symbol t);
 opt_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
-#endif /* _MAL_MACRO_H_ */
 @-
 @c
 #include "mal_config.h"
@@ -589,6 +588,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @:wrapOptimizer(macro)@
 @h
 @:exportOptimizer(orcam)@
+#endif /* _MAL_MACRO_H_ */
 @c
 @:wrapOptimizer(orcam,OPT_CHECK_ALL)@
 

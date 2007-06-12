@@ -48,7 +48,6 @@ They are marked as unsafe.
 
 /* #define DEBUG_OPT_REDUCE     show partial result */
 
-#endif
 @c
 #include "mal_config.h"
 #include "opt_coercion.h"
@@ -99,6 +98,7 @@ structure. A cheaper optimizer is sufficient.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(coercion)@
+#endif
 @c
 @:wrapOptimizer(coercion,OPT_CHECK_FLOW)@
 @}

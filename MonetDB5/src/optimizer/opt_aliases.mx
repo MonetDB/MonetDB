@@ -71,7 +71,6 @@ They are marked as unsafe.
 /* #define DEBUG_OPT_ALIASES      show partial result */
 
 opt_export int OPTaliasStep(MalBlkPtr mb, int pc);
-#endif
 @-
 When you propagate an alias through the program, the properties
 maintained should also be updated. In particular, the lifespan
@@ -141,6 +140,7 @@ OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(aliases)@
+#endif
 @c
 @:wrapOptimizer(aliases,OPT_CHECK_ALL)@
 @}

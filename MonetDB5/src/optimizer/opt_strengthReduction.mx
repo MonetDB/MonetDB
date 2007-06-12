@@ -72,8 +72,6 @@ comment "Move constant expressions out of the loop";
 #include "opt_support.h"
 
 /* #define DEBUG_OPT_STRENGTHREDUCTION     show partial result */
-
-#endif
 @c
 #include "mal_config.h"
 #include "opt_strengthReduction.h"
@@ -249,6 +247,7 @@ after the loop, because then you may not simple move an expression.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(strengthReduction)@
+#endif
 @c
 @:wrapOptimizer(strengthReduction,OPT_CHECK_ALL)@
 @}

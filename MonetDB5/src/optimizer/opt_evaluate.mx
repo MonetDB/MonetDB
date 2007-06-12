@@ -58,7 +58,6 @@ comment "Evaluate constant expressions once.";
 #include "opt_support.h"
 
 /* #define DEBUG_OPT_CX  */
-#endif
 @c  
 #include "mal_config.h"
 #include "opt_evaluate.h"
@@ -159,6 +158,7 @@ a constant itself.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(evaluate)@
+#endif
 @c
 @:wrapOptimizer(evaluate,OPT_CHECK_ALL)@
 @}
