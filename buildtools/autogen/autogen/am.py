@@ -265,7 +265,7 @@ def am_dep(fd, t, deplist, am, pref = ''):
             print("!WARNING: dropped absolute dependency " + d)
     # add dependency on library for mil modules
     if ext == 'mil': # a bit of a hack ....
-        fd.write(" $(%s_LTLIBRARIES)" % os.path.basename(f))
+        am['MILHACK'][n] = " $(%s_LTLIBRARIES)" % os.path.basename(f)
     fd.write("\n")
 
 def am_deps(fd, deps, objext, am):
@@ -349,7 +349,7 @@ def am_scripts(fd, var, scripts, am):
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         else:
-            fd.write("install-exec-local-%s: %s\n" % (script, script))
+            fd.write("install-exec-local-%s: %s%s\n" % (script, script, am['MILHACK'].get(script, '')))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, script))
             fd.write("\tchmod a+x $<\n")
@@ -1009,6 +1009,7 @@ endif
     am['DocList'] = []
     am['DocList'].append(am['CWD']+cond+"\n")
     am['OutList'] = [am['CWD'] + 'Makefile']
+    am['MILHACK'] = {}
 
     for i, v in tree.items():
         j = i

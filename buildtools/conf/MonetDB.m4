@@ -35,6 +35,7 @@ case "$CC" in
 	case $icc_ver in
 	8.*)	CC="$CC -no-gcc";;
 	9.*)	CC="$CC -no-gcc";;
+	10.*)	CC="$CC -no-gcc";;
 	esac
 	;;
 esac
@@ -411,7 +412,7 @@ case "$host_os" in
 	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc & TestTools/MdoServer !
 	if test -s /etc/fedora-release ; then
 		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
-			| sed 's|^.*\(Fedora\) Core.* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+			| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
 	elif test -s /etc/centos-release ; then
 		LINUX_DIST="`cat /etc/centos-release | head -n1 \
 			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
@@ -584,12 +585,16 @@ yes-*-*)
 	case $icc_ver in
 	8.1*)	CFLAGS="$CFLAGS -wd1418" ;;
 	9.*)	CFLAGS="$CFLAGS -wd1418" ;;
+	10.*)	CFLAGS="$CFLAGS -wd1418" 
+		dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
+		CC="$CC -fPIC"		 ;;
 	*)	;;
 	esac
 	dnl  Version 8.* doesn't find sigset_t when -ansi is set... !?
 	case $icc_ver in
 	8.*)	;;
 	9.*)	;;
+	10.*)	;;
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
@@ -604,6 +609,7 @@ yes-*-*)
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
 	9.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572,1599" ;;
+	10.*)		X_CFLAGS="$X_CFLAGS,1572,1599" ;;
 	esac
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
@@ -675,13 +681,24 @@ yes-*-*)
 		dnl  /usr/include/cygwin/signal.h ...
 		CFLAGS="$CFLAGS -std=gnu99"
 		;;
+	4.2.*-*)
+		dnl gcc 4.2 has a warning on inline functions in C99 mode being
+		dnl made for real in gcc 4.3.  We disable the warning and we
+		dnl want to get away for a little while with GNU89 inlining
+		dnl semantics, until gcc 4.3 is within reach to get real ISO C99
+		dnl I think
+		CFLAGS="$CFLAGS -std=c99 -fgnu89-inline"
+		;;
 	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
 		CFLAGS="$CFLAGS -std=c99"
 		;;
 	esac
 	;;
 -icc*-linux*|-ecc*-linux*)
-	CFLAGS="$CFLAGS -c99"
+      	case "$host-$icc_ver" in
+        *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
+      	*-*-*-)    	CFLAGS="$CFLAGS -c99" 		;;
+      	esac   
 	;;
 -pgcc*-linux*)
 	CFLAGS="$CFLAGS -c9x"
@@ -1481,10 +1498,13 @@ if test "x$enable_optim" = xyes; then
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
       x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       x86_64-*-*-9.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
+      x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
       ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64

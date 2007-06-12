@@ -202,7 +202,7 @@ extern Symtable *table;
 extern Symbol *root;
 extern FileInfo *fileinfo;
 extern List *dirs;
-extern char *config_h;
+extern const char *config_h;
 
 #endif
 
@@ -242,7 +242,7 @@ Symtable *table = NULL;
 Symbol *root = NULL;
 FileInfo *fileinfo = NULL;
 List *dirs = NULL;
-char *config_h = "monetdb4_config.h";
+const char *config_h = "monetdb4_config.h";
 
 language *l = NULL;
 
