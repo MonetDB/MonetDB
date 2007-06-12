@@ -215,7 +215,7 @@ MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 str 
 MALsafeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	return safeguardStack(mx, stk, p);
+	return safeguardStack(mb, stk, p);
 }
 
 
