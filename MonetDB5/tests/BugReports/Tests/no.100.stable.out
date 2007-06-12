@@ -171,7 +171,7 @@ function user.main():void;	# 0  (main:void)
     va_a := algebra.copy(ua_a);	# 74 ALGcopy (va_a:bat[:oid,:int])<-(ua_a:bat[:oid,:int])
     wa_a := io.print(va_a);	# 75 IOprint_val (wa_a:void)<-(va_a:bat[:oid,:int])
 #	io.print("quit();"); 	# 76  (_77:str)
-    xa_a := clients.quit();	# 77 CLTquitDefault (xa_a:void)
+    xa_a := clients.quit();	# 77 CLTquit (xa_a:void)
 end main;	# 78  
 #-------------------------#
 # h	t		  # name
@@ -182,27 +182,27 @@ end main;	# 78
 # h	t	  # name
 # int	void	  # type
 #-----------------#
-[ 1,	  nil	  ]
+[ 1,	  0@0	  ]
 #-----------------#
 # t	h	  # name
 # void	int	  # type
 #-----------------#
-[ nil,	  1	  ]
+[ 0@0,	  1	  ]
 #-----------------#
 # t	h	  # name
 # void	int	  # type
 #-----------------#
-[ nil,	  1	  ]
+[ 0@0,	  1	  ]
 #-----------------#
 # t	h	  # name
 # void	int	  # type
 #-----------------#
-[ nil,	  1	  ]
+[ 0@0,	  1	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ nil,	  1	  ]
+[ 0@0,	  1	  ]
 
 # 07:27:15 >  
 # 07:27:15 >  Done.

@@ -79,7 +79,6 @@ comment "Estimate the cost of a relational expression";
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-#endif /* _OPT_COSTMODEL_H_ */
 @-
 @c
 #include "mal_config.h"
@@ -269,6 +268,7 @@ an initially empty insertion BAT.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(costModel)@
+#endif /* _OPT_COSTMODEL_H_ */
 @-
 The costModel does not change the program properties,
 which means we can skip the expensive defensive tests.

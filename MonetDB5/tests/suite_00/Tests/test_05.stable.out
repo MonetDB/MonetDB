@@ -285,7 +285,7 @@ function user.main():void;	# 0  (main:void)
     vc_a := algebra.bandjoin(b,c,4.5,4.5);	# 132 ALGbandjoin (vc_a:bat[:flt,:flt])<-(b:bat[:flt,:flt])(c:bat[:flt,:flt])(_165:flt)(_165:flt)
     wc_a := io.print(vc_a);	# 133 IOprint_val (wc_a:void)<-(vc_a:bat[:flt,:flt])
 #	io.print("quit();"); 	# 134  (_167:str)
-    xc_a := clients.quit();	# 135 CLTquitDefault (xc_a:void)
+    xc_a := clients.quit();	# 135 CLTquit (xc_a:void)
 end main;	# 136  
 [ 3.14700007 ]
 #var b:= bbp.new(flt,flt);

@@ -257,7 +257,7 @@ function user.main():void;	# 0  (main:void)
     nc_a := algebra.kunion(b,c);	# 118 ALGkunion (nc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
     oc_a := io.print(nc_a);	# 119 IOprint_val (oc_a:void)<-(nc_a:bat[:int,:int])
 #	io.print("quit();"); 	# 120  (_128:str)
-    pc_a := clients.quit();	# 121 CLTquitDefault (pc_a:void)
+    pc_a := clients.quit();	# 121 CLTquit (pc_a:void)
 end main;	# 122  
 #-----------------#
 # h	t	  # name

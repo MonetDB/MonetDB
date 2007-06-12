@@ -123,8 +123,6 @@ comment "Resolve the multi-table definitions";
 #include "mal_builder.h"
 
 /* #define DEBUG_OPT_MERGETABLE     show partial result */
-
-#endif
 @c
 #include "mal_config.h"
 #include "opt_mergetable.h"
@@ -440,6 +438,7 @@ For the time being, they are no-ops.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(mergetable)@
+#endif
 @c
 @:wrapOptimizer(mergetable,OPT_CHECK_ALL)@
 @}

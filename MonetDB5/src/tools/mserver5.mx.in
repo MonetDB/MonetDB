@@ -153,7 +153,6 @@ usage2(char *prog)
 	fprintf(stderr,"     --transactions\n");
 	fprintf(stderr,"     --modules\n");
 	fprintf(stderr,"     --algorithms\n");
-	fprintf(stderr,"     --estimates\n");
 	fprintf(stderr,"     --xproperties\n");
 	fprintf(stderr,"     --debug=<bitmask>\n");
 
@@ -335,7 +334,7 @@ main(int argc, char **av)
 		{"daemon", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
 		{"delay", 1, 0, 0},
-		{"help", 0, 0, '?'},
+		{"help", 0, 0, 'h'},
 		{"version", 0, 0, 0},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
@@ -346,7 +345,6 @@ main(int argc, char **av)
 		{"transaction",0,0,0},
 		{"modules",0,0,0},
 		{"algorithms",0,0,0},
-		{"estimates",0,0,0},
 		{"xproperties",0,0,0},
 		{0, 0, 0, 0}
 	};

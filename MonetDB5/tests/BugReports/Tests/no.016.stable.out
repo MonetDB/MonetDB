@@ -89,7 +89,7 @@ function user.main():void;	# 0  (main:void)
     aa_a := algebra.sample(a,1);	# 33 ALGsample (aa_a:bat[:oid,:int])<-(a:bat[:oid,:int])(_36:int)
     ba_a := io.print(aa_a);	# 34 IOprint_val (ba_a:void)<-(aa_a:bat[:oid,:int])
 #	io.print("quit();"); 	# 35  (_38:str)
-    ca_a := clients.quit();	# 36 CLTquitDefault (ca_a:void)
+    ca_a := clients.quit();	# 36 CLTquit (ca_a:void)
 end main;	# 37  
 #-----------------#
 # h	t	  # name

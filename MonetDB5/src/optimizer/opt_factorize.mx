@@ -87,7 +87,6 @@ comment "Turn function into a factory";
 #include "opt_support.h"
 
 /* #define DEBUG_OPT_FACTORIZE     show partial result */
-#endif
 @c
 #include "mal_config.h"
 #include "opt_factorize.h"
@@ -246,6 +245,7 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(factorize)@
+#endif
 @c
 @:wrapOptimizer(factorize,OPT_CHECK_ALL)@
 @}

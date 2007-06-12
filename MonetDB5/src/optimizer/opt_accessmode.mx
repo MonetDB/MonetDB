@@ -40,7 +40,6 @@ comment "Reduce the number of mode changes.";
 
 /* #define DEBUG_OPT_MODES     show partial result */
 
-#endif
 @-
 The implementation strategy is currently quite simple.
 We make a scan to identify all setWriteModes and see if
@@ -112,6 +111,7 @@ OPTaccessmodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(accessmode)@
+#endif
 @c
 @:wrapOptimizer(accessmode,OPT_CHECK_ALL)@
 @}

@@ -61,7 +61,6 @@ comment "Perform singleton optimization";
 #include "opt_support.h"
 
 /* #define DEBUG_OPT_SINGLETON     show partial result */
-#endif
 @c
 #include "mal_config.h"
 #include "opt_singleton.h"
@@ -350,6 +349,7 @@ OPTsingletonImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(singleton)@
+#endif
 @c
 @:wrapOptimizer(singleton,OPT_CHECK_ALL)@
 @}

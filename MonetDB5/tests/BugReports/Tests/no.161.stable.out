@@ -163,7 +163,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("test_outer(\"chr\");"); 	# 59  (_52:str)
     ia_a := user.test_outer("chr");	# 60  (ia_a:void)<-(_54:str)
 #	io.print("quit();"); 	# 61  (_56:str)
-    ja_a := clients.quit();	# 62 CLTquitDefault (ja_a:void)
+    ja_a := clients.quit();	# 62 CLTquit (ja_a:void)
 end main;	# 63  
 test_outer.in: chr
 test_inner.in: chr

@@ -167,7 +167,7 @@ function user.main():void;	# 0  (main:void)
 #	io.print("z1.print();"); 	# 73  (_86:str)
     db_a := io.print(z1);	# 74 IOprint_val (db_a:void)<-(z1:bat[:oid,:str])
 #	io.print("quit();"); 	# 75  (_88:str)
-    eb_a := clients.quit();	# 76 CLTquitDefault (eb_a:void)
+    eb_a := clients.quit();	# 76 CLTquit (eb_a:void)
 end main;	# 77  
 #-----------------#
 # h	t	  # name

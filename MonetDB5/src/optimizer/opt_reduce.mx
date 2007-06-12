@@ -52,7 +52,6 @@ comment "Reduce the stack space claims";
 
 /* #define DEBUG_OPT_REDUCE     show partial result */
 
-#endif
 @c
 #include "mal_config.h"
 #include "opt_reduce.h"
@@ -153,6 +152,7 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(reduce)@
+#endif
 @c
 @:wrapOptimizer(reduce,OPT_CHECK_ALL)@
 @}

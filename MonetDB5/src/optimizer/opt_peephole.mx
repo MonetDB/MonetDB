@@ -42,8 +42,6 @@ comment "Perform local rewrites";
 
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
-#endif
-
 @c
 #include "mal_config.h"
 #include "opt_peephole.h"
@@ -146,6 +144,7 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(peephole)@
+#endif
 @c
 @:wrapOptimizer(peephole,OPT_CHECK_ALL)@
 @}

@@ -296,7 +296,7 @@ function user.main():void;	# 0  (main:void)
     ga_a := bat.insert(b1,0@0,1);	# 118 BKCinsert_bun (ga_a:void)<-(b1:bat[:oid,:int])(_84:oid)(_87:int)
     bn := user.tst(b1);	# 119  (bn:bat[:oid,:int])<-(b1:bat[:oid,:int])
     ha_a := io.print(bn);	# 120 IOprint_val (ha_a:void)<-(bn:bat[:oid,:int])
-    ia_a := clients.quit();	# 121 CLTquitDefault (ia_a:void)
+    ia_a := clients.quit();	# 121 CLTquit (ia_a:void)
 end main;	# 122  
 #-----------------#
 # h	t	  # name

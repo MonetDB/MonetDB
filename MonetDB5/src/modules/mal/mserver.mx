@@ -426,12 +426,13 @@ static void generateChallenge(str buf, int min, int max) {
 static void 
 doChallenge(str cmd, stream *in, stream *out) {
 	if (cmd == NULL) {
-		char *buf = (char *) GDKmalloc(BLOCK);
+		char *buf = (char *) GDKmalloc(BLOCK + 1);
 		char *challenge;
 		char *algos;
 		stream *fdin = block_stream(in);
 		stream *fdout = block_stream(out);
 		bstream *bs;
+		int len = 0;
 
 		if (!fdin || !fdout) {
 			GDKsyserror("SERVERlisten:fdin or fdout problems");
@@ -456,16 +457,16 @@ doChallenge(str cmd, stream *in, stream *out) {
 				);
 		stream_flush(fdout);
 		/* get response */
-		stream_read_block(fdin, buf, BLOCK, 1);
-
-		/* in embedded mode we allow just one client */
-		if (GDKembedded && MCcountClients() > 1) {
+		if ((len = stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
+			/* in embedded mode we allow just one client */
+			(GDKembedded && MCcountClients() > 1)) {
 			stream_close(fdin);
 			stream_destroy(fdin);
 			stream_close(fdout);
 			stream_destroy(fdout);
 			return;
 		}
+		buf[len] = 0;
 #ifdef DEBUG_SERVER
 		printf("mserver:Client accepted %s\n", name);
 		fflush(stdout);
@@ -493,7 +494,9 @@ SERVERlistenThread(int *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
+	int sock = *Sock;
 
+	GDKfree(Sock);
 	if( lastlistener < 8 )
 		listener[lastlistener++] = MT_getpid();
 	(void)usock;
@@ -502,10 +505,9 @@ SERVERlistenThread(int *Sock)
 		struct timeval tv;
 		fd_set fds;
 		int msgsock;
-		int sock = *Sock;
 
 		FD_ZERO(&fds);
-		if (sock >= 0)
+		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
 #ifdef HAVE_SYS_UN_H
 		if (usock >= 0)
@@ -533,8 +535,8 @@ SERVERlistenThread(int *Sock)
 			}
 			continue;
 		}
-		if (sock >= 0 && FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
+			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR || serveractive==FALSE) {
 					msg = "accept failed\n";
 					goto error;
@@ -543,7 +545,7 @@ SERVERlistenThread(int *Sock)
 			}
 #ifdef HAVE_SYS_UN_H
 		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
-			if ((msgsock = accept(usock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+			if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR) {
 					msg = "accept failed\n";
 					goto error;
@@ -959,7 +961,7 @@ Get the new information for the server socket and start listening.
 			GDKsyserror("SERVERlistenSSL:select failed\n");
 			goto fail;
 		}
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 			if (MT_geterrno() != EINTR) {
 				msg = "Accept failed";
 				goto fail;
@@ -1006,8 +1008,8 @@ Get the new information for the server socket and start listening.
 		}
 
 		doChallenge(cmd, 
- 			socket_rastream(msgsock, "Server read"),
- 			socket_wastream(msgsock, "Server write"));
+ 			ssl_rastream(ssl, "Server read"),
+ 			ssl_wastream(SSL_dup(ssl), "Server write"));
 end_loop:;
 	} while (1);
 	SSL_CTX_free(ctx);
@@ -1093,6 +1095,8 @@ str
 SERVERstop(int *ret)
 {
 	int i;
+
+printf("SERVERstop\n");
 	for( i=0; i< lastlistener; i++)
 		MT_kill_thread(listener[i]);
 	lastlistener = 0;

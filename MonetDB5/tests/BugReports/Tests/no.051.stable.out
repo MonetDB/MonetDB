@@ -179,7 +179,7 @@ function user.main():void;	# 0  (main:void)
     la_a := algebra.semijoin(b,c);	# 62 ALGsemijoin (la_a:bat[:oid,:flt])<-(b:bat[:oid,:flt])(c:bat[:oid,:flt])
     ma_a := io.print(la_a);	# 63 IOprint_val (ma_a:void)<-(la_a:bat[:oid,:flt])
 #	io.print("quit();"); 	# 64  (_67:str)
-    na_a := clients.quit();	# 65 CLTquitDefault (na_a:void)
+    na_a := clients.quit();	# 65 CLTquit (na_a:void)
 end main;	# 66  
 #-----------------#
 # h	t	  # name

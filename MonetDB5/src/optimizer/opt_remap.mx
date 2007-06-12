@@ -55,6 +55,7 @@ address OPTremapMultiplex;
 @h
 #ifndef _OPT_REMAP_
 #define _OPT_REMAP_
+
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
@@ -63,7 +64,9 @@ address OPTremapMultiplex;
 #include "mal_exception.h"
 
 /* #define DEBUG_OPT_REMAP       trace its behavior */
-#endif
+
+opt_export str OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
 @-
 The first attempt of the multiple optimizer is to locate
 a properly typed multi-plexed implementation.
@@ -208,6 +211,7 @@ OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(remap)@
+#endif
 @c
 @:wrapOptimizer(remap,OPT_CHECK_ALL)@
 @}

@@ -117,7 +117,7 @@ exit go;	# 30  (go:bit)
     user.check_cap(b);	# 32  (_23:void)<-(b:bat[:oid,:oid])
     bat.setPersistent(b,false);	# 33 BKCpersists (_24:void)<-(b:bat[:oid,:oid])(_25:bit)
     transaction.commit();	# 34 TRNglobal_commit (_26:bit)
-    clients.quit();	# 35 CLTquitDefault (_27:void)
+    clients.quit();	# 35 CLTquit (_27:void)
 end main;	# 36  
 
 # 20:34:11 >  

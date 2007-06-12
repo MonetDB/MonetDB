@@ -103,7 +103,7 @@ function user.main():void;	# 0  (main:void)
     ca_a := calc.str(nil:void);	# 41 CALCnil2str (ca_a:str)<-(_43:void)
     da_a := io.print(ca_a);	# 42 IOprint_val (da_a:void)<-(ca_a:str)
 #	io.print("quit();"); 	# 43  (_45:str)
-    ea_a := clients.quit();	# 44 CLTquitDefault (ea_a:void)
+    ea_a := clients.quit();	# 44 CLTquit (ea_a:void)
 end main;	# 45  
 [ nil ]
 

@@ -451,7 +451,7 @@ function user.main():void;	# 0  (main:void)
     wd_a := algebra.select(vd_a,5);	# 215 ALGselect1 (wd_a:bat[:int,:int])<-(vd_a:bat[:int,:int])(_219:int)
     xd_a := io.print(wd_a);	# 216 IOprint_val (xd_a:void)<-(wd_a:bat[:int,:int])
 #	io.print("quit();"); 	# 217  (_221:str)
-    yd_a := clients.quit();	# 218 CLTquitDefault (yd_a:void)
+    yd_a := clients.quit();	# 218 CLTquit (yd_a:void)
 end main;	# 219  
 #-----------------#
 # h	t	  # name

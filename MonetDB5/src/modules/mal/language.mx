@@ -85,7 +85,7 @@ address MALassertTriple
 comment "Assertion test";
 
 pattern assertSpace(depth:int)
-address safeguardStack
+address MALsafeguardStack
 comment "Ensures that the current call does not consume
 more then depth*vtop elements on the stack";
 
@@ -147,6 +147,7 @@ language_export str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDdebug(int *ret, int *flg);
 language_export str CMDsetCwd(str *ret, str *fnme);
 language_export str MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+language_export str MALsafeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* _LANGUAGE_H */
 @c
 
@@ -209,6 +210,12 @@ MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) stk;
 	(void) p;
 	throw(MAL, "mal.assert","Command not yet available");
+}
+
+str 
+MALsafeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	return safeguardStack(mb, stk, p);
 }
 
 

@@ -393,7 +393,7 @@ function user.main():void;	# 0  (main:void)
     qe_a := algebra.like(pe_a," fox");	# 186 ALGlike (qe_a:bat[:int,:str])<-(pe_a:bat[:int,:str])(_231:str)
     re_a := io.print(qe_a);	# 187 IOprint_val (re_a:void)<-(qe_a:bat[:int,:str])
 #	io.print("quit();"); 	# 188  (_233:str)
-    se_a := clients.quit();	# 189 CLTquitDefault (se_a:void)
+    se_a := clients.quit();	# 189 CLTquit (se_a:void)
 end main;	# 190  
 #-------------------------#
 # h		t	  # name

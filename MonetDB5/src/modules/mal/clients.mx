@@ -52,11 +52,9 @@ command setScenario(msg:str):str
 address CLTsetScenario
 comment "Switch to other scenario handler, return previous one.";
 
-command quit(timeout:int):void
-address CLTquit;
 command quit():void
-address CLTquitDefault
-comment "Terminate the server by (soft/hard) forcing all clients to terminate.
+address CLTquit
+comment "Terminate the server.
 	This command can only be initiated from the console.";
 
 command exit():void
@@ -110,12 +108,10 @@ clients_export str CLTchangeUsername(int *ret, str *old, str *new) ;
 clients_export str CLTusers(int *ret);
 clients_export str CLTsetHistory(int *ret, str *fname);
 clients_export str CLTexit(int *ret);
-clients_export str CLTquit(int *ret, int *timeout);
-clients_export str CLTquitDefault(int *ret);
+clients_export str CLTquit(int *ret);
 clients_export str CLTLogin(int *ret);
 clients_export str CLTInfo(int *ret);
 
-clients_export str CLTstop(int *ret, str *nme);
 clients_export str CLTsuspend(int *ret, int *id);
 clients_export str CLTwakeup(int *ret, int *id);
 
@@ -328,7 +324,7 @@ CLTexit(int *ret)
 	throw(MAL, "client.exit", "Exit session with soft error");
 }
 str
-CLTquit(int *ret, int *timeout)
+CLTquit(int *ret)
 {
 	Client c = MCgetClient();
 
@@ -336,23 +332,11 @@ CLTquit(int *ret, int *timeout)
 	if( c != mal_clients )
 		throw(MAL, "client.quit", 
 			"Server not stopped from console.");
-	MCshutdown(c, *timeout);
+	/* die the hard way */
+	c->curprg->def->stop = 0;
 	return MAL_SUCCEED;
-}
-str
-CLTquitDefault(int *ret){
-	int timeout = 0;
-	return CLTquit(ret,&timeout);
 }
 
-str
-CLTstop(int *ret, str *nme)
-{
-    (void) ret;     /* fool compiler */
-	(void) nme;
-/*    return stopClient(MCgetClient(), *nme);*/
-	return MAL_SUCCEED;
-}
 str
 CLTsuspend(int *ret, int *id)
 {

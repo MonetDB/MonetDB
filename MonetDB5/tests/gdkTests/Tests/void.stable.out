@@ -305,7 +305,7 @@ function user.main():void;	# 0  (main:void)
     bat.setKey(zn,true);	# 139 BKCsetkey (_193:bat[:oid,:int])<-(zn:bat[:oid,:int])(_194:bit)
     bat.insert(zn,y);	# 140 BKCinsert_bat (_195:void)<-(zn:bat[:oid,:int])(y:bat[:oid,:int])
     io.print(zn);	# 141 IOprint_val (_196:void)<-(zn:bat[:oid,:int])
-    clients.quit();	# 142 CLTquitDefault (_197:void)
+    clients.quit();	# 142 CLTquit (_197:void)
 end main;	# 143  
 [ "First keep void tests" ]
 #-----------------#

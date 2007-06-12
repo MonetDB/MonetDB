@@ -150,12 +150,21 @@ str CMDconvert_@1_@2(int *ret, int *bid){
 
 	if( b->htype == TYPE_void){
 		@2 *o = (@2*)BUNtail(bn,BUNfirst(bn));
-		@1 *p= (@1*) BUNtail(b, BUNfirst(b));
-		@1 *q= (@1*) BUNtail(b, BUNlast(b));
 
-		while(p<q) {
-			*o = *p== @1_nil ?  @2_nil: (@2) *p;
-			p= (@1 *) (((char*)p)+xx); o++;
+		if (b->ttype == TYPE_void) {
+			oid t = b->tseqbase;
+			size_t i, cnt = BATcount(b);
+
+			for(i=0; i<cnt; i++) 
+				*o++ = (@2)t++;
+		} else {
+			@1 *p= (@1*) BUNtail(b, BUNfirst(b));
+			@1 *q= (@1*) BUNtail(b, BUNlast(b));
+	
+			while(p<q) {
+				*o++ = *p== @1_nil ?  @2_nil: (@2) *p;
+				p= (@1 *) (((char*)p)+xx); 
+			}
 		}
 		(bn)->batBuns->free += BATcount(b)*sizeof(@2);
 		BATsetcount(bn, BATcount(b));

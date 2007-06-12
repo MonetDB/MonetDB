@@ -309,7 +309,7 @@ function user.main():void;	# 0  (main:void)
     ed_a := algebra.thetajoin(b,c,LT,dd_a);	# 143 ALGthetajoinEstimate (ed_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(LT:int)(dd_a:lng)
     fd_a := io.print(ed_a);	# 144 IOprint_val (fd_a:void)<-(ed_a:bat[:int,:int])
 #	io.print("quit();"); 	# 145  (_178:str)
-    gd_a := clients.quit();	# 146 CLTquitDefault (gd_a:void)
+    gd_a := clients.quit();	# 146 CLTquit (gd_a:void)
 end main;	# 147  
 #~BeginVariableOutput~#
 #-----------------------------------------#
@@ -335,7 +335,7 @@ end main;	# 147
 [ "hident",		  "h"		  ]
 [ "hdense",		  "0"		  ]
 [ "hseqbase",		  "0@0"		  ]
-[ "hkey",		  "1"		  ]
+[ "hkey",		  "0"		  ]
 [ "hloc",		  "0"		  ]
 [ "hvarsized",		  "0"		  ]
 [ "halign",		  "20000000"	  ]
@@ -348,7 +348,7 @@ end main;	# 147
 [ "tdense",		  "0"		  ]
 [ "tseqbase",		  "0@0"		  ]
 [ "tsorted",		  "65"		  ]
-[ "tkey",		  "1"		  ]
+[ "tkey",		  "0"		  ]
 [ "tloc",		  "4"		  ]
 [ "tvarsized",		  "0"		  ]
 [ "talign",		  "20000001"	  ]

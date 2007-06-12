@@ -2775,7 +2775,7 @@ algebra_export str ALGtmark_default(int *result, int *bid);
 str
 ALGtmark_default(int *result, int *bid)
 {
-	oid o = oid_nil;
+	oid o = 0;
 
 	return ALGtmark(result, bid, &o);
 }
@@ -2806,7 +2806,7 @@ algebra_export str ALGmarkHead_default(int *result, int *bid);
 str
 ALGmarkHead_default(int *result, int *bid)
 {
-	oid o = oid_nil;
+	oid o = 0;
 
 	return ALGmarkHead(result, bid, &o);
 }

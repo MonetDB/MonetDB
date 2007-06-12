@@ -439,13 +439,13 @@ address BPMmapnxt;
 command mapPrv() :bat[:int,:int] 
 address BPMmapprv;
 command mapTlowLng() :bat[:int,:lng] 
-address BPMmaptlowLng;
+address BPMmaptlowlng;
 command mapTlowDbl() :bat[:int,:dbl] 
-address BPMmaptlowDbl;
+address BPMmaptlowdbl;
 command mapThghLng() :bat[:int,:lng] 
-address BPMmapthghLng;
+address BPMmapthghlng;
 command mapThghDbl() :bat[:int,:dbl] 
-address BPMmapthghDbl;
+address BPMmapthghdbl;
 
 command saveCatalog() 
 address BPMsaveCatalog;
@@ -533,6 +533,8 @@ bpm_export str BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMnewIteratorRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 bpm_export str BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMhasMoreElements2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMhasMoreElements3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bpm_export str BPMhasMoreElementsRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -545,15 +547,15 @@ bpm_export str BPMgetDimension(ptr *first, ptr *last,
 bpm_export str BPMdump(int *ret);
 bpm_export str BPMdumpAlias(int *ret, bat *bid);
 
-bpm_export str BPMmapName(int *ret);
-bpm_export str BPMmapBid(int *ret);
-bpm_export str BPMmapAlias(int *ret);
-bpm_export str BPMmapNxt(int *ret);
-bpm_export str BPMmapPrv(int *ret);
-bpm_export str BPMmapTlowLng(int *ret);
-bpm_export str BPMmapTlowDbl(int *ret);
-bpm_export str BPMmapThghLng(int *ret);
-bpm_export str BPMmapThghDbl(int *ret);
+bpm_export str BPMmapname(int *ret);
+bpm_export str BPMmapbid(int *ret);
+bpm_export str BPMmapalias(int *ret);
+bpm_export str BPMmapnxt(int *ret);
+bpm_export str BPMmapprv(int *ret);
+bpm_export str BPMmaptlowlng(int *ret);
+bpm_export str BPMmaptlowdbl(int *ret);
+bpm_export str BPMmapthghlng(int *ret);
+bpm_export str BPMmapthghdbl(int *ret);
 
 bpm_export str BPMsaveCatalog(int *ret);
 
@@ -2495,7 +2497,7 @@ int nilval(ValPtr v)
 
 @= lowlng
 str
-BPMmap@1Lng(int *ret)
+BPMmap@1lng(int *ret)
 {
 	BAT *b;
 	int i,t,r;
@@ -2505,7 +2507,7 @@ BPMmap@1Lng(int *ret)
 	str msg = MAL_SUCCEED, nm="bpm_@1lng";
 
 	idx= BBPindex(nm);
-	@:getBPMbat(@1Lng,lng)@
+	@:getBPMbat(@1lng,lng)@
 
 	for(i=1; i< bpmcatsize; i++)
 		if( bpmcat[i]){
@@ -2535,7 +2537,7 @@ BPMmap@1Lng(int *ret)
 }
 
 str
-BPMmap@1Dbl(int *ret)
+BPMmap@1dbl(int *ret)
 {
 	BAT *b;
 	int i,t,r;
@@ -2545,7 +2547,7 @@ BPMmap@1Dbl(int *ret)
 	str msg = MAL_SUCCEED, nm="bpm_@1dbl";
 
 	idx= BBPindex(nm);
-	@:getBPMbat(@1Dbl,dbl)@	
+	@:getBPMbat(@1dbl,dbl)@	
 
 	for(i=1; i< bpmcatsize; i++)
 		if( bpmcat[i]){
@@ -2626,13 +2628,13 @@ BPMsaveCatalog(int *r)
 	BUNappend(tr, BBPname(bt), FALSE);
 	BPMmapcnt(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
-	BPMmaptlowLng(&bt);
+	BPMmaptlowlng(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
-	BPMmaptlowDbl(&bt);
+	BPMmaptlowdbl(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
-	BPMmapthghLng(&bt);
+	BPMmapthghlng(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
-	BPMmapthghDbl(&bt);
+	BPMmapthghdbl(&bt);
 	BUNappend(tr, BBPname(bt), FALSE);
 
 	TMsubcommit(tr);
