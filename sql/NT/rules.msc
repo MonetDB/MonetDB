@@ -16,7 +16,7 @@
 
 !INCLUDE $(TOPDIR)\..\..\buildtools\conf\rules.msc
 
-VERSION = 2.18.0
+VERSION = 2.18.1
 
 pkg = sql
 CONFIG_H=sql_config.h
