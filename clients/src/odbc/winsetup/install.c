@@ -401,7 +401,10 @@ Uninstall()
 int
 main(int argc, char **argv)
 {
+/* for some bizarre reason, the content of buf gets mangled in the
+ * call to Install().  For that reason we use a copy buf2. */
 	char *buf = malloc(strlen(argv[0]) + 30);
+	char *buf2;
 	char *p;
 
 	strcpy(buf, argv[0]);
@@ -415,18 +418,20 @@ main(int argc, char **argv)
 		MessageBox(NULL, "/Install or /Uninstall argument expected", argv[0], MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 		exit(1);
 	}
+	buf2 = malloc(strlen(buf) + 25);
+	strcpy(buf2, buf);
 	if (strcmp("/Install", argv[1]) == 0) {
 		if (!Install(buf)) {
 			MessageBox(NULL, "ODBC Install Failed", argv[0], MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 			exit(1);
 		}
 		/* create a file to indicate that we've installed the driver */
-		strcat(buf, "\\ODBCDriverInstalled.txt");
-		CloseHandle(CreateFile(buf, READ_CONTROL, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, NULL));
+		strcat(buf2, "\\ODBCDriverInstalled.txt");
+		CloseHandle(CreateFile(buf2, READ_CONTROL, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, NULL));
 	} else if (strcmp("/Uninstall", argv[1]) == 0) {
 		/* only uninstall the driver if the file exists */
-		strcat(buf, "\\ODBCDriverInstalled.txt");
-		if (!DeleteFile(buf)) {
+		strcat(buf2, "\\ODBCDriverInstalled.txt");
+		if (!DeleteFile(buf2)) {
 			if (GetLastError() == ERROR_FILE_NOT_FOUND) {
 				/* not installed, so don't uninstall */
 				return 0;
@@ -443,5 +448,6 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	free(buf);
+	free(buf2);
 	return 0;
 }
