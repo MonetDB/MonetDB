@@ -315,7 +315,7 @@ command derivePartition(pb:bat[:any_1,:any_2],
 address BPMderived
 comment "Create a derived fragmentation over the head using src.";
 
-command adapt(s:bat[:any_1,:any_2], low:any_2, hgh:any_2, rs:bat[:any_1,:any_3], pol:int):void
+command adapt(s:bat[:any_1,:any_2], low:any_2, hgh:any_2, rs:bat[:any_1,:any_3], pol:int) :bat[:any_1,:any_2]
 address BPMadapt
 comment "Re-organize segment s using the selection (val1,val2) stored in bat rs";
 
@@ -1670,7 +1670,7 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 @c
 
 static str
-BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
+BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 {
 	BAT *b,*bs, *bs1=NULL, *bs2=NULL;
 	Partition ps, p, p2;
@@ -1840,7 +1840,7 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	}
 
 	BBPkeepref(bs1->batCacheid);
-	BBPunfix(b->batCacheid);
+	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
