@@ -330,7 +330,7 @@ PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void
                 _tj_commit(collBat); 
 	    }
 	}
-	return run_tijah_query(opt,use_startnodes,nodes,q);
+	return _run_tijah_query(opt,use_startnodes,nodes,q);
 }
 
 PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str :=
