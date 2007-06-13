@@ -8347,7 +8347,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	}
 	/* execute tijah query */
 	milprintf(f,
-                "    var nexi_allscores := run_tijah_query(optbat,%s,startNodes,item%s%03u.fetch(int($h)));\n"
+                "    var nexi_allscores := run_tijah_query(ftindex,optbat,%s,startNodes,item%s%03u.fetch(int($h)));\n"
 		"    var nexi_score;\n"
 		"    if ( optbat.exist(\"returnNumber\") ) {\n"
 		"        var retNum := int(optbat.find(\"returnNumber\"));\n"

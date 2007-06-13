@@ -27,10 +27,7 @@
 @m
 .MODULE pftijah;
 
-.COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
- "INCOMPLETE"
-
-.COMMAND run_tijah_query(BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes, str q) : BAT[oid,dbl] = CMDtijah_query;
+.COMMAND _run_tijah_query(BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes, str q) : BAT[oid,dbl] = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
@@ -317,6 +314,25 @@ const dflt_score_base := "0";
 
 # var GQENV := create_qenv(dflt_ft_index,dflt_bg_index,dflt_score_base);
 
+PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes, str q) : BAT[oid,dbl] :=
+{
+	if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) called.\n",ftiName);
+	var parambat := bat("tj_" + ftiName + "_param");
+	var delfin   := lng(parambat.find("delay_finalize"));
+        if ( delfin > lng(0) ) {
+	    if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) checking delayed finalize.\n",ftiName);
+            var finlast  := lng(parambat.find("_last_finalizedPre"));
+            var prelast  := lng(parambat.find("_last_tijahPre"));
+	    if ( not(prelast=finlast) ) {
+	        if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) performing delayed finalize (%d != %d).\n",ftiName,int(finlast),int(prelast));
+                var collBat := _tj_collection(ftiName);
+                _tj_finalize_collection(ftiName, collBat, TRUE);
+                _tj_commit(collBat); 
+	    }
+	}
+	return run_tijah_query(opt,use_startnodes,nodes,q);
+}
+
 PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str :=
 {
     var res := dflt_ft_index;
@@ -542,10 +558,11 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
       #
       # now read the param file
       #
-      var stemmer    := "nostemming";
-      var tokenizer  := "flex";
-      var tagfilter  := "";
-      var fragsize   := "0";
+      var stemmer        := "nostemming";
+      var tokenizer      := "flex";
+      var tagfilter      := "";
+      var fragsize       := "0";
+      var delay_finalize := "0";
   
       param@batloop() {
 	  if ( verbose ) printf("#TJ:tj_init_collection():param[%s]=\"%s\"\n",$h,$t);
@@ -561,6 +578,9 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
               tagfilter := $t;
 	  } else if ( $h = "ft-index" ) {
 	      # ignore this one here
+	  } else if ( $h = "delay-finalize" ) {
+	      # the number of pre nodes to delay a finalize
+	      delay_finalize := $t;
 	  } else {
 	      ERROR("# tj_init_collection() unknown parameter [%s].\n",$h);
 	  }
@@ -579,6 +599,7 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
       bat("tj_" + ftiName + "_param").insert("status","building");
       bat("tj_" + ftiName + "_param").insert("_last_tijahPre","1");
       bat("tj_" + ftiName + "_param").insert("_last_finalizedPre","0");
+      bat("tj_" + ftiName + "_param").insert("delay_finalize",delay_finalize);
       #
       # now modify the global fti pfc dependency administration. We may ignore
       # the return value because all dependencies for this collection are new.
@@ -887,7 +908,7 @@ PROC tj_add2collection(str ftiName, str uri_loc, str uri_name, bit store) : void
       bat(_tj_TagBat(ftiName)).access(BAT_APPEND);
       var collBat := _tj_collection(ftiName);
       _tj_add2collection(ftiName, collBat, uri_loc, uri_name, store);
-      _tj_finalize_collection(ftiName, collBat);
+      _tj_finalize_collection(ftiName, collBat, FALSE);
       _tj_commit(collBat); 
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
@@ -923,7 +944,7 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
       uri@batloop() {
         _tj_add2collection(ftiName, collBat, $h, $t, store);
       }
-      _tj_finalize_collection(ftiName, collBat);
+      _tj_finalize_collection(ftiName, collBat, FALSE);
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
          printf("#C[%s]:tj_add2collection(BAT): + aggregate time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
@@ -997,10 +1018,25 @@ PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_
 }
 
 # internal finalize function
-PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat) : void
+PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : void
 {
     var t_start := usec();
     if ( verbose ) printf("#TJ:_tj_finalize_collection(\"%s\") called.\n",ftiName);
+    var parambat := bat("tj_" + ftiName + "_param");
+    if ( not(fforce) ) {
+        var delfin   := lng(parambat.find("delay_finalize"));
+        if ( delfin > lng(0) ) {
+            var finlast  := lng(parambat.find("_last_finalizedPre"));
+            var prelast  := lng(parambat.find("_last_tijahPre"));
+            var fdelta   := prelast - finlast;
+	    if ( (prelast - finlast) < delfin ) {
+                  if ( false ) printf("#TJ:_tj_finalize_collection(\"%s\") delaying finalization (%d < %d).\n",ftiName,int(fdelta),int(delfin));
+		  return;
+	    } else {
+                  if ( false ) printf("#TJ:_tj_finalize_collection(\"%s\") finalization treshhold reached (%d > %d).\n",ftiName,int(fdelta),int(delfin));
+	    }
+        }
+    }
     #
     var mod_frags := _tj_chk_modified_fragments(ftiName, collBat); 
     # set all fragments except the last one to BAT_READ
@@ -1025,7 +1061,7 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat) : void
     _buildIRindex(ftiName, collBat);
     #
     _tj_set_parameter(collBat, "status", "finalized");
-    var lst_fpre := bat("tj_" + ftiName + "_param").find("_last_tijahPre");
+    var lst_fpre := parambat.find("_last_tijahPre");
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
     #
     var gterm_sort := bat(_tj_TermBat(ftiName)).reverse().sort().reverse();
@@ -3322,12 +3358,6 @@ int CMDtj_log(str format, int* i) {
 	        fclose(f);
 	    }
 	}
-	return GDK_SUCCEED;
-}
-
-int CMDtijah_command(bit* res, str command) {
-	if ( 0 ) stream_printf(GDKout,"# tijah_command(%s)\n",(char*)command);
-	*res = executeMIL(command); /* OK */
 	return GDK_SUCCEED;
 }
 
