@@ -212,7 +212,7 @@ var timing := false;
 ##
 var returnAllElements := true;
 
-if (view_bbp_name().reverse().exist("tj_collName")) {
+if (isnil(CATCH(bat("tj_collName").count()))) {
 	if (bat("tj_collName").count() > 0) {
 		var name := bat("tj_collName").fetch(0);
 		# tj_setCollName(name);
@@ -267,7 +267,7 @@ PROC ws_ft_index_info_base(BAT[void,BAT] ws, BAT[any,str] ftiNames, bit all) : B
 
     var tjc;
 
-    if (view_bbp_name().reverse().exist("tj_collName")) {
+    if (isnil(CATCH(bat("tj_collName").count()))) {
         tjc := bat("tj_collName");
     } else {
         tjc := new(oid,str);
@@ -515,7 +515,7 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
     var err := CATCH({
       if ( verbose ) printf("#TJ tj_init_collection(\"%s\") called.\n",ftiName);
 
-      if (not(view_bbp_name().reverse().exist("tj_collName"))) {
+      if (not(isnil(CATCH(bat("tj_collName").count())))) {
     	tj_init_global(new(str,str),false); # just in case 
       }
       if (bat("tj_collName").reverse().exist(ftiName)) {
@@ -750,8 +750,8 @@ PROC tj_delete_collection(str ftiName, bit doAdmLock) : void
     var err := CATCH({
       if ( verbose ) printf("#TJ:tj_delete_collection(\"%s\") called.\n",ftiName);
 
-      if (not(view_bbp_name().reverse().exist("tj_collName"))) {
-    	qERROR("tj_delete_collection: pftijah not initialized.\n");
+      if (not(isnil(CATCH(bat("tj_collName").count())))) {
+    	ERROR("tj_delete_collection: pftijah not initialized.\n");
       }
       if (not(bat("tj_collName").reverse().exist(ftiName))) {
     	ERROR("tj_delete_collection, pftijah collection does not exist: %s\n",ftiName);
@@ -783,7 +783,7 @@ PROC tj_delete_collection(str ftiName, bit doAdmLock) : void
 	    bat("tj_" + ftiName + "_size"+fpfx).persists(false);
 	}
 	bat("tj_" + ftiName + "_fragments").persists(false);
-	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) {
+	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
 		bat("tj_" + ftiName + "_TermIndex").persists(false);
 		bat("tj_" + ftiName + "_Terms").persists(false);
 		bat("tj_" + ftiName + "_TagIndex").persists(false);
@@ -818,7 +818,7 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
             tjCollBat.append("tj_" + ftiName + "_tid" + str(int($t)));
             tjCollBat.append("tj_" + ftiName + "_size"+ str(int($t)));
         }       
-        if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) {
+        if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
             tjCollBat.append("tj_" + ftiName + "_Terms");
             tjCollBat.append("tj_" + ftiName + "_Tags");
             tjCollBat.append("tj_" + ftiName + "_TermIndex");
@@ -831,7 +831,7 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
 # a single [void,bat] bat
 PROC _tj_collection(str ftiName) : BAT[str, bat]
 {
-        if (not(view_bbp_name().reverse().exist("tj_" + ftiName + "_param"))) {
+        if (not(isnil(CATCH(bat("tj_" + ftiName + "_param").count())))) {
 	     ERROR("_tj_collection(): collection(\""+ftiName+"\") does not exist!\n");
 	}
 	var tjCollBat := new(str,bat);
@@ -858,7 +858,7 @@ PROC _tj_collection(str ftiName) : BAT[str, bat]
 	tjCollBat.insert("_pfpre", bat("tj_" + ftiName + "_pfpre"));
 	tjCollBat.insert("_fragments", bat("tj_" + ftiName + "_fragments"));
 	
-	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) {
+	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
             tjCollBat.insert("_Terms", bat("tj_" + ftiName + "_Terms"));
 	    tjCollBat.insert("_Tags", bat("tj_" + ftiName + "_Tags"));
 	    tjCollBat.insert("_TermIndex", bat("tj_" + ftiName + "_TermIndex"));
@@ -1159,7 +1159,7 @@ PROC tj_dump_collection(str ftiName) : void
 # INCOMPLETE: henning, what should I do about this (no locking impl).
 PROC tj_setBackgroundCollName(str name, BAT[oid,str] qenv) : BAT[void,str] := 
 {
-	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
+	if (not(isnil(CATCH(bat("tj_collName").count())))) {
 		tj_global_init();
 	}
 	if (not(bat("tj_collName").reverse().exist(name))) {
@@ -1202,7 +1202,7 @@ PROC tj_trace( str s ) : void :=
 
 PROC tj_is_indexed(str collName) : bit :=
 {
-    if (view_bbp_name().reverse().exist("tj_pfc_fti_dep")) {
+    if (isnil(CATCH(bat("tj_pfc_fti_dep").count()))) {
 	if ( bat("tj_pfc_fti_dep_star").count() > 0 ) {
 	    # eg. all collections are indexed
             return TRUE;
@@ -1220,7 +1220,7 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
                       BAT[void,lng] int_values, 
                       BAT[void,str] str_values) : void
 {
-    if (view_bbp_name().reverse().exist("tj_pfc_fti_dep")) {
+    if (isnil(CATCH(bat("tj_pfc_fti_dep").count()))) {
       if ( bat("tj_pfc_fti_dep").count() > 0 ) {
         if ( verbose ) printf("#TJ:tj_play_doc_tape() start.\n");
         var IDoid       := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).hmark(0@0);
@@ -3205,7 +3205,7 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	tids.access(BAT_READ);
         
 	# incremental index merge
-	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) 
+	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) 
         {
     		var replaceBats := collBat.find("replaceBats");
 		var tmp := tids.kdiff(collBat.find("_pfpre"));
