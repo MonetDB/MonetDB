@@ -478,7 +478,7 @@ The internal data structure is used as a cache for improved access.
 #include "mal_interpreter.h"
 
 
-/*#define _DEBUG_BPM_ */
+/*#define _DEBUG_BPM_*/
 
 #ifdef WIN32
 #ifndef LIBBPM
@@ -1579,7 +1579,7 @@ static int
 BPMsizePolicy( BAT *b, BAT *bs, int ov)
 {
 	int cs=0;
-	lng space, space1, space2;
+	lng space, space1, space2=0;
 
 	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 	space1 = BATcount(bs)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
@@ -1668,36 +1668,6 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 	@1->tbits= @3->tbits;
 
 @c
-static int 
-split3( BAT **r1, BAT **r2, BAT *b, BAT *bs,  ptr low)
-{	int xx;
-	BUN p,q,r;
-	BAT *bs1, *bs2;
-	ptr val;
-
-	int (*cmp) (ptr, ptr);
-	cmp= BATatoms[b->ttype].atomCmp;
-
-	bs1 = BATnew(b->htype, b->ttype, (size_t) BATcount(bs));
-	bs2 = BATnew(b->htype, b->ttype, (size_t) BATcount(b) - BATcount(bs));
-
-	BATloopFast(b, p, q, xx) {
-		r = BUNfnd(bs, BUNhloc(b,p));
-		val = BUNtloc(b, p);
-		if (r == NULL){
-			if( (*cmp)(val,low)<0)
-			BUNins(bs2, BUNhloc(b, p), val, TRUE);
-
-		} else {
-			BUNins(bs1, BUNhloc(b, p), val, TRUE);
-		}
-	}
-	BATdel(b,bs1,FALSE);
-	BATdel(b,bs2,FALSE);
-	*r1= bs1;
-	*r2= bs2;
-	return 0;
-}
 
 static str
 BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
@@ -1764,7 +1734,9 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 /* re-organize */
 	if (cs<3) bs1= BATsemijoin(b,bs);
 	else if (cs==3) {
-		split3(&bs1,&bs2,b,bs,low);
+		bs1= BATsemijoin(b,bs);
+		bs2 =  BAT_select_(b, nilptr, low,FALSE, FALSE, TRUE, FALSE);
+
 	} else {	
 		vp= (ValPtr) GDKzalloc(sizeof(ValRecord));
 		VALinit(vp,b->ttype,nilptr);
@@ -1857,6 +1829,8 @@ BPMadaptImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		#ifdef _DEBUG_BPM_
 			BPMprintRecord(GDKout,p2);
 		#endif
+			BATdel(b,bs1,FALSE);
+			BATdel(b,bs2,FALSE);
 			ps->cnt= BATcount(b);
 			if( *bid> 0)
 				VALset(&ps->tlow, rngType(b->ttype), hgh);
