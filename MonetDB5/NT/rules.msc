@@ -16,7 +16,7 @@
 
 !INCLUDE $(TOPDIR)\..\..\buildtools\conf\rules.msc
 
-VERSION=5.0.0
+VERSION=5.0.1
 
 pkg = MonetDB5
 CONFIG_H=mal_config.h
