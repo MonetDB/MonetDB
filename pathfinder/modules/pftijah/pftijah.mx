@@ -314,25 +314,6 @@ const dflt_score_base := "0";
 
 # var GQENV := create_qenv(dflt_ft_index,dflt_bg_index,dflt_score_base);
 
-PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes, str q) : BAT[oid,dbl] :=
-{
-	if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) called.\n",ftiName);
-	var parambat := bat("tj_" + ftiName + "_param");
-	var delfin   := lng(parambat.find("delay_finalize"));
-        if ( delfin > lng(0) ) {
-	    if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) checking delayed finalize.\n",ftiName);
-            var finlast  := lng(parambat.find("_last_finalizedPre"));
-            var prelast  := lng(parambat.find("_last_tijahPre"));
-	    if ( not(prelast=finlast) ) {
-	        if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) performing delayed finalize (%d != %d).\n",ftiName,int(finlast),int(prelast));
-                var collBat := _tj_collection(ftiName);
-                _tj_finalize_collection(ftiName, collBat, TRUE);
-                _tj_commit(collBat); 
-	    }
-	}
-	return _run_tijah_query(opt,use_startnodes,nodes,q);
-}
-
 PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str :=
 {
     var res := dflt_ft_index;
@@ -506,6 +487,22 @@ Create a new tijah collection.",
 "pftijah");
 PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : void :=
 {
+    _tj_init_collection(ftiName,param,v_pfc,FALSE);
+}
+
+PROC tj_init_collection(str ftiName, BAT[str,str] param) : void :=
+{
+    _tj_init_collection(ftiName,param,new(void,str),FALSE);
+}
+
+PROC tj_rebuild_collection(str ftiName) : void  
+{
+    # WARNING: not thoroughly tested yet
+    _tj_init_collection(ftiName,new(str,str),new(void,str),TRUE);
+}
+
+PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, bit rebuild) : void :=
+{
     var coll_lock;
 
     #
@@ -519,17 +516,24 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
     	tj_init_global(new(str,str),false); # just in case 
       }
       if (bat("tj_collName").reverse().exist(ftiName)) {
-    	ERROR("tj_init_collection, pftijah collection already exists: %s\n",ftiName);
-      }
-      #
-      var coll_oid;
-      if (bat("tj_collName").count() = 0) { 
-        coll_oid := 0@0;
+    	if ( not(rebuild) )
+	  ERROR("tj_init_collection, pftijah collection already exists: %s\n",ftiName);
       } else {
-        coll_oid := oid(int(bat("tj_collName").reverse().max()) + 1);
+        if (rebuild) {
+	  ERROR("tj_rebuild_collection, pftijah collection \"%s\" does not exists\n",ftiName);
+	}
       }
-      bat("tj_collName").insert(coll_oid, ftiName);
       #
+      if ( not(rebuild) ) {
+          var coll_oid;
+          if (bat("tj_collName").count() = 0) { 
+            coll_oid := 0@0;
+          } else {
+            coll_oid := oid(int(bat("tj_collName").reverse().max()) + 1);
+          }
+          bat("tj_collName").insert(coll_oid, ftiName);
+          #
+      }
       coll_lock := tj_get_collection_lock(ftiName);
     });
     lock_unset(tj_adm_lock);
@@ -537,34 +541,71 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
     #
     # now the collection stuff 
     #
+    var extra_del_bat;
     lock_set(coll_lock);
     var err := CATCH({
       if ( not(GLOBAL_TTBAT) ) {
-          new(oid,str).persists(true).bbpname(_tj_TermBat(ftiName));
-          new(oid,str).persists(true).bbpname(_tj_TagBat(ftiName));
+	  if ( rebuild ) {
+	      # INCOMPLETE, not throwing them away is much faster!!!
+              bat(_tj_TermBat(ftiName)).delete();
+              bat(_tj_TagBat(ftiName)).delete();
+	  } else {
+              new(oid,str).persists(true).bbpname(_tj_TermBat(ftiName));
+              new(oid,str).persists(true).bbpname(_tj_TagBat(ftiName));
+	  }
       }
-      new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_name");
-      new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_firstpre");
-      new(str,str).persists(true).bbpname("tj_" + ftiName + "_param");
-      
-      new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_tid1");
-      new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_size1");
-      # bat contains the start oid of every tid/size frag. Head is postfix
-      # string to _tid/_size. Normally "", "2", "3"
-      new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_fragments");
-      bat("tj_" + ftiName + "_fragments").append(1@0);
-      new(oid,oid).persists(true).bbpname("tj_" + ftiName + "_pfpre");
+      extra_del_bat := new(void,str).seqbase(0@0);
+      if ( rebuild ) {
+          bat("tj_" + ftiName + "_doc_name").delete();
+          bat("tj_" + ftiName + "_doc_firstpre").delete();
+	  # do not delete the param bat
+	  var frag_offset := int(2); # we delete all buns in existing 1 frag
+	  var frag_last := bat("tj_" + ftiName + "_fragments").count();
+	  while (frag_offset < frag_last)
+	  {
+		var bn := "tj_" + ftiName + "_tid" + str(frag_offset);
+		bat(bn).persists(FALSE);
+                extra_del_bat.append(bn);
+		bn := "tj_" + ftiName + "_size" + str(frag_offset);
+		bat(bn).persists(FALSE);
+                extra_del_bat.append(bn);
+		frag_offset :+= 1;
+	  }
+          bat("tj_" + ftiName + "_tid1").delete();
+          bat("tj_" + ftiName + "_size1").delete();
+          bat("tj_" + ftiName + "_fragments").delete();
+          bat("tj_" + ftiName + "_fragments").append(1@0);
+          bat("tj_" + ftiName + "_pfpre").delete();
+      } else {
+          new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_name");
+          new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_firstpre");
+          new(str,str).persists(true).bbpname("tj_" + ftiName + "_param");
+          
+          new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_tid1");
+          new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_size1");
+          # bat contains the start oid of every tid/size frag. Head is postfix
+          # string to _tid/_size. Normally "", "2", "3"
+          new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_fragments");
+          bat("tj_" + ftiName + "_fragments").append(1@0);
+          new(oid,oid).persists(true).bbpname("tj_" + ftiName + "_pfpre");
+      }
          
-      #
-      # now read the param file
-      #
-      var stemmer        := "nostemming";
-      var tokenizer      := "flex";
-      var tagfilter      := "";
-      var fragsize       := "0";
-      var delay_finalize := "0";
+      var parambat := bat("tj_" + ftiName + "_param");
+      if ( rebuild ) {
+	parambat.replace("status","building");
+	parambat.replace("_last_tijahPre","1");
+	parambat.replace("_last_finalizedPre","0");
+      } else {
+        #
+        # now read the param file
+        #
+        var stemmer        := "nostemming";
+        var tokenizer      := "flex";
+        var tagfilter      := "";
+        var fragsize       := "0";
+        var delay_finalize := "0";
   
-      param@batloop() {
+        param@batloop() {
 	  if ( verbose ) printf("#TJ:tj_init_collection():param[%s]=\"%s\"\n",$h,$t);
 	  if ( $h = "stemmer" ) {
 	      stemmer := $t;
@@ -584,27 +625,44 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
 	  } else {
 	      ERROR("# tj_init_collection() unknown parameter [%s].\n",$h);
 	  }
+        }
+        #
+        # now set the parameters for this collection
+        #
+        parambat.insert("_version","1.01");
+        parambat.insert("name",ftiName);
+        parambat.insert("height","0");
+        parambat.insert("tokenizer",tokenizer);
+        parambat.insert("stemmer",stemmer);
+        parambat.insert("fragmentSize",fragsize);
+        parambat.insert("tagFilter",tagfilter);
+        parambat.insert("preExpansion","4");
+        parambat.insert("status","building");
+        parambat.insert("_last_tijahPre","1");
+        parambat.insert("_last_finalizedPre","0");
+        parambat.insert("delay_finalize",delay_finalize);
       }
-      #
-      # now set the parameters for this collection
-      #
-      bat("tj_" + ftiName + "_param").insert("_version","1.01");
-      bat("tj_" + ftiName + "_param").insert("name",ftiName);
-      bat("tj_" + ftiName + "_param").insert("height","0");
-      bat("tj_" + ftiName + "_param").insert("tokenizer",tokenizer);
-      bat("tj_" + ftiName + "_param").insert("stemmer",stemmer);
-      bat("tj_" + ftiName + "_param").insert("fragmentSize",fragsize);
-      bat("tj_" + ftiName + "_param").insert("tagFilter",tagfilter);
-      bat("tj_" + ftiName + "_param").insert("preExpansion","4");
-      bat("tj_" + ftiName + "_param").insert("status","building");
-      bat("tj_" + ftiName + "_param").insert("_last_tijahPre","1");
-      bat("tj_" + ftiName + "_param").insert("_last_finalizedPre","0");
-      bat("tj_" + ftiName + "_param").insert("delay_finalize",delay_finalize);
-      #
-      # now modify the global fti pfc dependency administration. We may ignore
-      # the return value because all dependencies for this collection are new.
-      modify_pfc_fti(ftiName,v_pfc);
+      if ( rebuild  ) {
+        # reconstruct the original v_pfc
+	v_pfc := bat("tj_pfc_fti_dep").reverse().select(ftiName).reverse();
+      } else {
+        #
+        # now modify the global fti pfc dependency administration. We may ignore
+        # the return value because all dependencies for this collection are new.
+        modify_pfc_fti(ftiName,v_pfc);
+      }
+      if ( rebuild ) {
+	if (view_bbp_name().reverse().exist("tj_" + ftiName + "_TermIndex")) {
+		bat("tj_" + ftiName + "_TermIndex").persists(false);
+		bat("tj_" + ftiName + "_Terms").persists(false);
+		bat("tj_" + ftiName + "_TagIndex").persists(false);
+		bat("tj_" + ftiName + "_Tags").persists(false);
+	}
+      }
     });
+    if ( rebuild ) {
+        subcommit(extra_del_bat);
+    }
     subcommit(_tj_collection_str(ftiName));
     lock_unset(coll_lock);
     #
@@ -635,11 +693,6 @@ PROC tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc) : 
       }
     }
     if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finished.\n",ftiName);
-}
-
-PROC tj_init_collection(str ftiName, BAT[str,str] param) : void :=
-{
-    tj_init_collection(ftiName,param,new(void,str));
 }
 
 #
@@ -844,7 +897,7 @@ PROC _tj_collection(str ftiName) : BAT[str, bat]
 	    curversion := "0.0";
 	}
 	if ( curversion < "1.0" ) {
-	     ERROR("_tj_collection(): pftijah index structure changed, reindex collection!!");
+	     ERROR("_tj_collection():%s: pftijah index structure changed, reindex collection!!",curversion);
 	}
 	tjCollBat.insert("_globalTerms", bat(_tj_TermBat(ftiName)));
 	tjCollBat.insert("_globalTags", bat(_tj_TagBat(ftiName)));
@@ -1030,10 +1083,10 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
             var prelast  := lng(parambat.find("_last_tijahPre"));
             var fdelta   := prelast - finlast;
 	    if ( (prelast - finlast) < delfin ) {
-                  if ( false ) printf("#TJ:_tj_finalize_collection(\"%s\") delaying finalization (%d < %d).\n",ftiName,int(fdelta),int(delfin));
+                  if ( verbose ) printf("#TJ:_tj_finalize_collection(\"%s\") delaying finalization (%d < %d).\n",ftiName,int(fdelta),int(delfin));
 		  return;
 	    } else {
-                  if ( false ) printf("#TJ:_tj_finalize_collection(\"%s\") finalization treshhold reached (%d > %d).\n",ftiName,int(fdelta),int(delfin));
+                  if ( verbose ) printf("#TJ:_tj_finalize_collection(\"%s\") finalization treshhold reached (%d > %d).\n",ftiName,int(fdelta),int(delfin));
 	    }
         }
     }
@@ -1149,6 +1202,33 @@ PROC tj_dump_collection(str ftiName) : void
     lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
 }
+
+
+#####################################################################
+#                                                                   #
+# The query section				                    #
+#                                                                   #
+#####################################################################
+
+PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes, str q) : BAT[oid,dbl] :=
+{
+	if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) called.\n",ftiName);
+	var parambat := bat("tj_" + ftiName + "_param");
+	var delfin   := lng(parambat.find("delay_finalize"));
+        if ( delfin > lng(0) ) {
+	    if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) checking delayed finalize.\n",ftiName);
+            var finlast  := lng(parambat.find("_last_finalizedPre"));
+            var prelast  := lng(parambat.find("_last_tijahPre"));
+	    if ( not(prelast=finlast) ) {
+	        if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) performing delayed finalize (%d != %d).\n",ftiName,int(finlast),int(prelast));
+                var collBat := _tj_collection(ftiName);
+                _tj_finalize_collection(ftiName, collBat, TRUE);
+                _tj_commit(collBat); 
+	    }
+	}
+	return _run_tijah_query(opt,use_startnodes,nodes,q);
+}
+
 
 #####################################################################
 #                                                                   #
