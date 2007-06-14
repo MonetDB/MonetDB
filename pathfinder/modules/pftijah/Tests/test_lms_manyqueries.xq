@@ -1,6 +1,6 @@
 let $opt := <TijahOptions 
                 ft-index="thesis" 
-                ir-model="NLLR" 
+                ir-model="LMS" 
                 txtmodel_returnall="false"
                 debug="0"/>
 

@@ -3534,7 +3534,17 @@ int CMDtijah_tokenize (str* res, str arg)
  * In-place synchronized oid computation experiment by Henning and Jan
  *
  */
+
+
 #define FIND_OID(FOID,BBAT,BSIZE,BPTR,BTAIL) \
+        (void)try_bun; \
+        (void)try_maxbun; \
+        (void)try_oid; \
+        do { \
+                BPTR += BSIZE; \
+        } while ( (BPTR < BTAIL) && ((*(oid*)BUNhead(BBAT,BPTR))<FOID) );
+
+#define FIND_OID_BSEARCH(FOID,BBAT,BSIZE,BPTR,BTAIL) \
         BPTR += BSIZE; \
         try_maxbun = BTAIL; \
         try_bun = BPTR + (((int)(try_maxbun-BPTR)/BSIZE)/2)*BSIZE; \
