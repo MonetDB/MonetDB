@@ -193,7 +193,8 @@ unless an absolute path is given.
 
 Module loading relies on the operating system's abilities to load shared libraries dynamically at runtime.
 
-{@ - this is not entirely correct, and irrelevant, IMHO (fabian)
+@{
+- this is not entirely correct, and irrelevant, IMHO (fabian)
 Loading further relies on the Linux policy to search for the module
 location in the following order: 1) the colon-separated list of
 directories in the user's LD_LIBRARY_PATH, 2) the libraries specified
