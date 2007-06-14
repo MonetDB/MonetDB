@@ -34,7 +34,7 @@ stethoscope -t bat.insert algebra.join
 tracks the microsecond ticks of two specific MAL instructions.
 A synopsis of the calling conventions:
 @verbatim
-	stethoscope [options] +[aefoTtcmibds] {<mod>.<fcn>}
+	stethoscope [options] +[aefoTtcmibds] \verb{ { }<mod>.<fcn> \verb{ } }
 	-d | --dbname=<database_name>
 	-u | --user=<user>
 	-P | --password=<password>
