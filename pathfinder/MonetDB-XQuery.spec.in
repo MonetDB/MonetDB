@@ -81,7 +81,7 @@ rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/bin/pf
 %{_libdir}/MonetDB4/lib/lib_*
 %{_libdir}/MonetDB4/*.mil
@@ -93,5 +93,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/MonetDB/xrpc/export/*
 
 %files devel
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/include/pathfinder/*.h

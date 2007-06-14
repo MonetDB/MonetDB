@@ -92,7 +92,7 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb4-config.bat
 rm -fr $RPM_BUILD_ROOT
 
 %files
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/bin/Mserver 
 %{prefix}/bin/Mbeddedmil 
 
@@ -107,7 +107,7 @@ rm -fr $RPM_BUILD_ROOT
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
 
 %files devel
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/bin/monetdb4-config
 %{prefix}/bin/calibrator
 %{_libdir}/pkgconfig/MonetDB.pc
