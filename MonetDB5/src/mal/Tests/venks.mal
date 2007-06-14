@@ -1,55 +1,64 @@
-# test an expensive semijoin
+# test an expensive kintersect
 # it illustrates weakness of the kintersect routine.
 
 t0:= alarm.usec();
-b:= bat.new(:oid,:sht);
+large:= bat.new(:oid,:sht);
 barrier (go,i):= language.newRange(0:lng);
 	k:= mmath.rand();
 	l:= calc.sht(k);
-	bat.append(b,l);
+	bat.append(large,l);
 	redo (go,i):= language.nextElement(1:lng,1000000:lng);
 exit (go,i);
 
-b2:= bat.new(:oid,:sht);
+small:= bat.new(:oid,:sht);
 #m:= aggr.min(b);
 m:= mmath.rand();
 l:= calc.sht(m);
-bat.insert(b2,1@0,l);
+bat.insert(small,1@0,l);
 #m:= aggr.max(b);
 m:= mmath.rand();
 l:= calc.sht(m);
-bat.insert(b2,4@0,l);
+bat.insert(small,4@0,l);
 #disturb order
 m:= mmath.rand();
 l:= calc.sht(m);
-bat.insert(b2,3@0,l);
+bat.insert(small,3@0,l);
 
-br:= bat.reverse(b);
-b2r:= bat.reverse(b2);
+largeR:= bat.reverse(large);
+smallR:= bat.reverse(small);
+
 t0:= alarm.usec();
-sj:= algebra.semijoin(br,b2r);
+sj:= algebra.kintersect(largeR,smallR);
 t1:= alarm.usec();
 d0:= t1-t0;
-io.printf("#semijoin %d\n",d0);
+io.printf("#kintersect(largeRev,smallRev) %d\n",d0);
+v:= aggr.count(sj);
+io.printf("#count %d\n",v);
 #io.print(sj);
 
 t0:= alarm.usec();
-j:= algebra.join(b,b2r);
+j:= algebra.join(large,smallR);
 t1:= alarm.usec();
 d0:= t1-t0;
-io.printf("#join %d\n",d0);
+io.printf("#join(large,smallRev) %d\n",d0);
+v:= aggr.count(j);
+io.printf("#count %d\n",v);
 #io.print(j);
 
 t0:= alarm.usec();
-sj2:= algebra.semijoin(b2r,br);
+sj2:= algebra.kintersect(smallR,largeR);
 t1:= alarm.usec();
 d0:= t1-t0;
-io.printf("#semijoin %d\n",d0);
+io.printf("#kintersect(smallRev,largeRev) %d\n",d0);
+v:= aggr.count(sj2);
+io.printf("#count %d\n",v);
 #io.print(sj2);
 
 t0:= alarm.usec();
-j:= algebra.join(b2,b2r);
+j:= algebra.join(small,smallR);
 t1:= alarm.usec();
 d0:= t1-t0;
-io.printf("#join %d\n",d0);
+io.printf("#join(small,largeRev) %d\n",d0);
+v:= aggr.count(j);
+io.printf("#count %d\n",v);
 #io.print(j);
