@@ -1967,18 +1967,35 @@ PROC _getTermCollLH(oid tid, int cSize, str bg_cName) : dbl := {
 # returns the document likelihood dLH(t) of term t
 # in all given docs that include the term
 PROC _getTermDocLHs0(oid tid, BAT[void,oid] docs, str cName) : bat[oid,dbl] := {
+     var t_pos := 0;
+     var t_tmj := 0;
+     var t_hst := 0;
+     var t_dsz := 0;
+     var t_div := 0;
      var pre_size := bat("tj_" + cName + "_size1");
      # get term positions in the entire collection
+     t_pos := time();
      var termPREs := _getTermPositions(tid, cName);
+     t_pos := time() - t_pos;
      # get doc - term relation
+     t_tmj := time();
      var doc_termPRE := treemergejoin_sort(docs, pre_size, termPREs);
+     t_tmj := time() - t_tmj;
+     if (timing) printf("# tmj sizes: docs: %d, terms: %d, pre_size: %d, res: %d\n", docs.count(), termPREs.count(), pre_size.count(), doc_termPRE.count());
      termPREs := nil;
+     t_hst := time();
      var res := doc_termPRE.reverse().histogram().sort();
+     t_hst := time() - t_hst;
      doc_termPRE := nil;
+     t_dsz := time();
      var doc_size := pre_size.semijoin(res).sort();
+     t_dsz := time() - t_dsz;
+     t_div := time();
      res := [dbl](res).access(BAT_WRITE);
      res.left_div(doc_size);
      doc_size := nil; 
+     t_div := time() - t_div;
+     if (timing) printf("# dLHs timing: pos: %d, tmj:: %d, hst: %d, dsz: %d, div: %d\n", t_pos, t_tmj, t_hst, t_dsz, t_div);
      return res.access(BAT_READ);
 }
 
@@ -2053,11 +2070,11 @@ PROC _score_NLLR(int term_qCnt, int qSize, dbl term_cLH, BAT[oid,dbl] term_dLHs,
 }
 
 # parameters: score_method, aggregation_method, base_score
-@:p_containing_q(NLLR,add,0,+,0)@
-@:p_containing_q(LMs,mul,1,*,cLambda * term_cLH)@
-@:p_containing_q(LM,mul,1,*,0)@
+@:p_containing_q_all(NLLR,add,0,+,0)@
+@:p_containing_q_all(LMs,mul,1,*,cLambda * term_cLH)@
+@:p_containing_q_all(LM,mul,1,*,0)@
 
-@= p_containing_q
+@= p_containing_q_all
 PROC p_containing_q_@1(bat[oid,dbl] left, bat[void,str] Qterms, str ind, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q" );
@@ -2126,16 +2143,16 @@ PROC p_containing_q_@1(bat[oid,dbl] left, bat[void,str] Qterms, str ind, BAT[oid
 }
 
 @mil
-#PROC collTermCount(str col, bat[oid,int] terms) : bat[oid,int] :=
-#{
-#     var tids := terms.mirror();
-#     var offsets1 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
-#     tids := tids.[int]().[+](1).[oid]();
-#     var offsets2 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
-#     var res := [-](offsets2.[int](),offsets1.[int]()).select(1,int(nil));
-#     return res;
-#}
-#
+PROC collTermCount(str col, bat[oid,int] terms) : bat[oid,int] :=
+{
+     var tids := terms.mirror();
+     var offsets1 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
+     tids := tids.[int]().[+](1).[oid]();
+     var offsets2 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
+     var res := [-](offsets2.[int](),offsets1.[int]()).select(1,int(nil));
+     return res;
+}
+
 #PROC score_NLLR_mil(bat[oid,oid] elem_tid, bat[void,int] pre_size, bat[oid,int] tid_cnt, bat[oid,int] tid_frq, bat[oid,oid] elems, dbl _lmbd, int q_cnt) : bat[oid,dbl] :=
 #{
 #     # compute collection terms frequencies 
@@ -2238,99 +2255,51 @@ PROC NLLR_body(bat[oid,dbl] left, bat[oid,oid] pre_tid, str ind, bat[oid,int] ti
      return res;
 }
 
-#PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
-#{
-#    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
-#    var t1 := time();
-#    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
-#    
-#     # get term ids and drop all terms with zero frq in col or background-col
-#     var terms := _terms2void_tid( Qterms, qenv ).histogram();
-#     var q_cnt := Qterms.count();
-#     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
-#     terms := terms.semijoin(tid_frq);
-#     if (terms.count() = 0) {return new(oid,dbl);}
-#    
-#     # compute constant factor in score computation
-#     var _lmbd := dbl((1.0 - lmbd) / lmbd);
-#     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
-#     _lmbd :*= collFrq;
-#     
-#     # fetch term occurrences and sort them in preorder
-#     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
-#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
-#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
-#     if (pre_tid.count() = 0) {return new(oid,dbl);}
-#     var t1a := time();
-#     pre_tid := pre_tid.sort();
-#     
-#     # evaluate doc/term (anc/desc) relationship
-#     var t2 := time();
-#     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
-#     var t3 := time();
-#     pre_tid := nil;
-#     if (elem_tid.count() = 0) {return new(oid,dbl);}
-#     
-#     var res := score_NLLR(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
-#     # Obey SCOREBASE setting: 
-#     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
-#        res := [+](left, res);
-#     } else {
-#        res := [*](left, res);
-#     }
-#     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
-#     var t4 := time();
-#
-#     if (timing) printf("# p_containing_q_NLLR(): total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
-#     return res;
-#}
-#
-#PROC p_containing_q_NLLR_mil(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd, str ind,BAT[oid,str] qenv) : bat[oid,dbl] :=
-#{
-#    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
-#    var t1 := time();
-#    var pre_size := bat("tj_" + qenv.find(QENV_FTINAME) + "_size" + ind);
-#    
-#     # get term ids and drop all terms with zero frq in col or background-col
-#     var terms := _terms2void_tid( Qterms, qenv ).histogram();
-#     var q_cnt := Qterms.count();
-#     var tid_frq := collTermCount(qenv.find(QENV_FTIBGNAME), terms);
-#     terms := terms.semijoin(tid_frq);
-#     if (terms.count() = 0) {return new(oid,dbl);}
-#    
-#     # compute constant factor in score computation
-#     var _lmbd := dbl((1.0 - lmbd) / lmbd);
-#     var collFrq := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();
-#     _lmbd :*= collFrq;
-#     
-#     # fetch term occurrences and sort them in preorder
-#     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
-#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"), 
-#                                   bat("tj_" + qenv.find(QENV_FTINAME) + "_Terms") ).reverse();
-#     if (pre_tid.count() = 0) {return new(oid,dbl);}
-#     var t1a := time();
-#     pre_tid := pre_tid.sort();
-#     
-#     # evaluate doc/term (anc/desc) relationship
-#     var t2 := time();
-#     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
-#     var t3 := time();
-#     pre_tid := nil;
-#     if (elem_tid.count() = 0) {return new(oid,dbl);}
-#     
-#     var res := score_NLLR_mil(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
-#     
-#     # Obey SCOREBASE setting: 
-#     if ( int(qenv.find(QENV_SCOREBASE)) = 0 ) {
-#        res := [+](left, res);
-#     } else {
-#        res := [*](left, res);
-#     }
-#     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
-#     var t4 := time();
-#     if (timing) printf("total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
-#     return res;
-#}
+PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, str ind, BAT[oid,str] qenv) : bat[oid,dbl] :=
+{
+    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
+    var cName := qenv.find(QENV_FTINAME);
+    var bg_cName := qenv.find(QENV_FTIBGNAME);
+    var lmbd := dbl(qenv.find(QENV_C_LAMBDA));
+    
+    var t1 := time();
+    var pre_size := bat("tj_" + cName + "_size" + ind);
+    
+     # get term ids and drop all terms with zero frq in col or background-col
+     var terms := _terms2void_tid( Qterms, bg_cName ).histogram();
+     var q_cnt := Qterms.count();
+     var tid_frq := collTermCount(bg_cName, terms);
+     terms := terms.semijoin(tid_frq);
+     if (terms.count() = 0) {return new(oid,dbl);}
+    
+     # compute constant factor in score computation
+     var _lmbd := dbl((1.0 - lmbd) / lmbd);
+     var collFrq := bat("tj_" + bg_cName + "_Terms").count();
+     _lmbd :*= collFrq;
+     
+     # fetch term occurrences and sort them in preorder
+     var pre_tid := indexfetchjoin(terms.hmark(0@0), 
+                                   bat("tj_" + cName + "_TermIndex"), 
+                                   bat("tj_" + cName + "_Terms") ).reverse();
+     if (pre_tid.count() = 0) {return new(oid,dbl);}
+     var t1a := time();
+     pre_tid := pre_tid.sort();
+     
+     # evaluate doc/term (anc/desc) relationship
+     var t2 := time();
+     var elem_tid := _containing_desc_tmj(left.sort().mark(0@0), pre_tid, pre_size);
+     var t3 := time();
+     pre_tid := nil;
+     if (elem_tid.count() = 0) {return new(oid,dbl);}
+     
+     var res := score_NLLR(elem_tid, pre_size, terms, tid_frq, elem_tid.kunique(), _lmbd, q_cnt);
+     res := [+](left, res);
+     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
+     var t4 := time();
+
+     if (timing) printf("# p_containing_q_NLLR(): total time: %d, term selection: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t1a - t1, t3 - t2, t4 - t3);
+     return res;
+}
 
 ##
 # Implementation of the Language Modeling retrieval model, with smoothing.
@@ -3535,32 +3504,24 @@ int CMDtijah_tokenize (str* res, str arg)
  *
  */
 
-
 #define FIND_OID(FOID,BBAT,BSIZE,BPTR,BTAIL) \
-        (void)try_bun; \
-        (void)try_maxbun; \
-        (void)try_oid; \
+        /* use peter's poor mans binary search here */ \
+        while (BPTR+1048576 < BTAIL && (*(oid*)BUNhead(BBAT,BPTR+1048576)) < FOID) \
+            BPTR += 1048576; \
+        while (BPTR+32768 < BTAIL && (*(oid*)BUNhead(BBAT,BPTR+32768)) < FOID) \
+            BPTR += 32768; \
+        while (BPTR+1024 < BTAIL && (*(oid*)BUNhead(BBAT,BPTR+1024)) < FOID) \
+            BPTR += 1024; \
+        while (BPTR+32 < BTAIL && (*(oid*)BUNhead(BBAT,BPTR+32)) < FOID) \
+            BPTR += 32; \
         do { \
                 BPTR += BSIZE; \
         } while ( (BPTR < BTAIL) && ((*(oid*)BUNhead(BBAT,BPTR))<FOID) );
-
-#define FIND_OID_BSEARCH(FOID,BBAT,BSIZE,BPTR,BTAIL) \
-        BPTR += BSIZE; \
-        try_maxbun = BTAIL; \
-        try_bun = BPTR + (((int)(try_maxbun-BPTR)/BSIZE)/2)*BSIZE; \
-        while ( (BPTR < try_maxbun) ) { \
-            try_oid = *(oid*)BUNhead(BBAT,try_bun); \
-            if ( try_oid == FOID ) { \
-                BPTR = try_bun; \
-                break; \
-            } else if ( try_oid < FOID ) { \
-                BPTR = try_bun; \
-                try_bun = BPTR + (((int)(try_maxbun-BPTR)/BSIZE)/2)*BSIZE; \
-            } else { \
-                try_maxbun = try_bun; \
-                try_bun = BPTR + (((int)(BPTR-try_bun)/BSIZE)/2)*BSIZE; \
-            } \
-        }
+ 
+#define FIND_OID_SCAN(FOID,BBAT,BSIZE,BPTR,BTAIL) \
+        do { \
+                BPTR += BSIZE; \
+        } while ( (BPTR < BTAIL) && ((*(oid*)BUNhead(BBAT,BPTR))<FOID) );
 
 #define INPLACE_OID_CALC_HEADER \
         if ( !bat_oid_sort_chck(l) || !bat_oid_sort_chck(r) ) \
@@ -3569,9 +3530,6 @@ int CMDtijah_tokenize (str* res, str arg)
         BUN lp = BUNfirst(l); BUN ll = BUNlast(l); int lbsz = BUNsize(l); \
         BUN rp = BUNfirst(r); BUN rl = BUNlast(r); int rbsz = BUNsize(r); \
         while ( (lp < ll) && (rp < rl) ) { \
-                BUN try_bun;    /* used by FIND_OID() define */ \
-                BUN try_maxbun; /* idem */ \
-                oid try_oid;    /* idem */ \
                 oid lv = *(oid*)BUNhead(l,lp); \
                 oid rv = *(oid*)BUNhead(r,rp); \
                 if ( lv == rv ) { \
@@ -3614,7 +3572,6 @@ int CMDleft_sub_dbl(BAT** res, BAT*l, BAT*r) {
 	*dres -= *(dbl*)BUNtail(r,rp);
         INPLACE_OID_CALC_FOOTER;
 }
-
 
 int CMDleft_mul_dbl(BAT** res, BAT*l, BAT*r) {
         INPLACE_OID_CALC_HEADER;
@@ -4301,6 +4258,7 @@ int CMDscore_NLLR ( BAT** result, BAT* elem_tid, BAT* pre_size, BAT* tid_cnt, BA
 	return GDK_SUCCEED;
 }
 @
+
 @= push
     si new_stack_item;
     new_stack_item.ctx = *A_cur_start;
@@ -4435,6 +4393,101 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
      *result = res;    
      /* it is possible there are still ancestor candidates left on the stack, but we are out of descendants, so they starve... */
      return(GDK_SUCCEED);
+}
+@
+@= write
+      /* output everything that is on the stack (the ancestors) */
+      /* It has started before Dstart and since it's a tree, */
+      /* it has to end after Dend. */
+      *(oid*)dst              = A_out;
+      *(oid*)(dst+SIZEOF_OID) = *D_cur_start;
+      dst += SRs;
+@
+@c
+int CMDtreemergejoin_sort_flat(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) {
+
+    /* ---------------------------- declarations ------------------------------------ */
+    char *name = "TJ_treemergejoin_sort";
+    BAT *res = *result;
+    oid *D_cur_start, *D_last_start, 
+        *A_cur_start, *A_last_start;
+    oid A_out = 0;
+    int SAs;
+    int SDs;
+    int SRs;
+    int *size;
+    int free;	
+    BUN dst = NULL;
+    
+    /* ------------------------------- checks ---------------------------------------- */
+    if (!(BATtordered(Astart)&1)) { 
+        GDKerror("%s: Ancestor pre BAT not sorted (on start).\n",name); 
+        return(GDK_FAIL);
+    }
+    if (!(BATtordered(Dstart)&1)) { 
+        GDKerror("%s: Descendant BAT not sorted (on start).\n",name); 
+        return(GDK_FAIL);
+    }
+
+    /* ----------------------------- initialize -------------------------------------- */
+    // the size of the bat may not be correct (could be more, could be less)
+    free = BATcount(Dstart);
+    res = BATnew(TYPE_oid, TYPE_oid, free); 
+    if (res == NULL) 
+    { 
+       GDKerror("%s: could not allocate result BAT.\n", name);
+       return(GDK_FAIL);
+    }
+    
+    /* todo: what if size is not a multiple of sizeof(oid)  (BUNsize(...) % sizeof(oid) != 0) */
+    SAs = BUNsize(Astart) / SIZEOF_OID;
+    SDs = BUNsize(Dstart) / SIZEOF_OID;
+    SRs = BUNsize(res);
+    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
+    D_last_start = (oid *) BUNtail(Dstart, BUNlast(Dstart));  
+    A_cur_start = (oid *) BUNtail(Astart, BUNfirst(Astart));
+    A_last_start = (oid *) BUNtail(Astart, BUNlast(Astart));
+    dst = BUNlast(res);
+
+    /* -------------------------------- main ---------------------------------------- */
+    while(D_cur_start < D_last_start) {
+      A_out = 0;
+      
+      /* poor man's binary search / exploiting forward scan */
+      while (A_cur_start+1048576 < A_last_start && *(oid*)(A_cur_start+1048576) < *D_cur_start)
+          A_cur_start += 1048576; 
+      while (A_cur_start+32768 < A_last_start && *(oid*)(A_cur_start+32768) < *D_cur_start)
+          A_cur_start += 32768; 
+      while (A_cur_start+1024 < A_last_start && *(oid*)(A_cur_start+1024) < *D_cur_start)
+          A_cur_start += 1024; 
+      while (A_cur_start+32 < A_last_start && *(oid*)(A_cur_start+32) < *D_cur_start)
+          A_cur_start += 32; 
+      while (*A_cur_start < *D_cur_start && A_cur_start < A_last_start){		
+	if (*D_cur_start <= (*A_cur_start + size[*A_cur_start])) {
+	  A_out = *A_cur_start;
+	}  
+	A_cur_start += SAs;
+      }
+      
+      if (A_out) {
+	  @:write@
+      }
+    
+      D_cur_start += SDs;
+    }
+    
+    /* ----------------------------- tidy up -------------------------------------- */
+    res->batBuns->free = dst - res->batBuns->base;
+    BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/SRs);
+    res->batDirty = TRUE;
+    res->tsorted = GDK_SORTED;
+    res->hsorted = FALSE;
+    BATset(res, TRUE);
+    
+    *result = res;    
+    /* it is possible there are still ancestor candidates left on the stack, but we are out of descendants, so they starve... */
+    return(GDK_SUCCEED);
 }
 @
 @c

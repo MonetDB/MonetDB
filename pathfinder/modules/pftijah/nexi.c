@@ -272,6 +272,12 @@ int old_main(BAT* optbat, char* startNodes_name)
 	        SET_TDEBUG(v);
 	        if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting debug value to %d.\n",v);
 	    }
+	} else if ( strcmp(optName,"timing") == 0 ) {
+            if ( strcasecmp(optVal,"TRUE") == 0 ) {
+                MILPRINTF(MILOUT, "timing := TRUE;\n" );
+            } else {
+                MILPRINTF(MILOUT, "timing := FALSE;\n" );
+            }
 	} else if ( strcmp(optName,"milfile") == 0 ) {
 	    /* incomplete open file */
             parserCtx->milFILEname = optVal;
