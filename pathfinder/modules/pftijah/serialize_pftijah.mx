@@ -25,8 +25,6 @@
 @t serialize_pftijah
 
 @h
-#include <gdk.h>
-
 struct tijahContextStruct;
 
 extern int handleTijahTerm(struct tijahContextStruct *ctx, char* term);
@@ -38,7 +36,7 @@ extern char* flexScanOneTerm(char* buf);
 
 extern char* normalizeTerm(struct tijahContextStruct *ctx, char* term );
 
-extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
+extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 
 @c
 #include <pf_config.h>
@@ -57,6 +55,8 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
 #include "serialize_null.h"
 
 #include "serialize_pftijah.h"
+#include <gdk.h>
+
 #include "pftijah_stem.h"
 
 #include "pftijah_util.h"
@@ -999,7 +999,7 @@ char* normalizeTerm(struct tijahContextStruct *tjctx, char* term ) {
 	return res;
 }
 
-int CMDtj_normalizeTerm(char** res, str term, str stemmer) {
+int CMDtj_normalizeTerm(char** res, char *term, char *stemmer) {
     tjStemCtx* stemCtx = getStemmingContext( stemmer );
 
     if ( stemCtx->stem ) {

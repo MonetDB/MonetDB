@@ -45,9 +45,9 @@
  */
 
 #define OPT_STMTS 32767 /* <65535 if first-use further out than this amount of stamements, dead codes survises anyhow */
-#define OPT_VARS 1024 /* don't try dead code elimintation above this amount of live variables */
+#define OPT_VARS 256 /* don't try dead code elimintation above this amount of live variables */
 #define OPT_REFS 63 /* keep track of usage dependencies; may omit some, which results in surviving dead code */
-#define OPT_CONDS 32767  /* maximum if-nesting */
+#define OPT_CONDS 256  /* maximum if-nesting */
 
 #define OPT_SEC_PROLOGUE 0
 #define OPT_SEC_QUERY 1

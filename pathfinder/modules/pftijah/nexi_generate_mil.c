@@ -34,7 +34,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_STRINGS_H
 #include <strings.h>
+#endif
 #include <assert.h>
 
 #include <gdk.h>

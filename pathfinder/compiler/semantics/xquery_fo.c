@@ -2081,7 +2081,6 @@ PFfun_xquery_fo (void)
     ,  /* tijah:create-ft-index() as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",
         .arity = 0, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { },
             .ret_ty = PFty_docmgmt () } } }
     ,  /* tijah:create-ft-index(string*) as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",
@@ -2113,7 +2112,6 @@ PFfun_xquery_fo (void)
     ,  /* tijah:delete-ft-index() as docmgmt */
       { .ns = PFns_tijah, .loc = "delete-ft-index",
         .arity = 0, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { },
             .ret_ty = PFty_docmgmt () } } }
     ,  /* tijah:delete-ft-index(node) as docmgmt */
       { .ns = PFns_tijah, .loc = "delete-ft-index",

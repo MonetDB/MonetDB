@@ -50,3 +50,6 @@ typedef unsigned char uint8_t;
 #define MILPRINT_SUMMER_IS_DEFAULT 1
 
 #define HAVE_MONETDB4 1
+
+/* also see rules.msc */
+#define HAVE_PFTIJAH 1
