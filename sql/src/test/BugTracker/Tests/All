@@ -74,3 +74,4 @@ auto_commit.SF-1724151
 update_pkey_bug.SF-1733712
 update_fkey_with_value_not_in_the_pkey.SF-1734143
 alter_table_add_fkey.SF-1737668
+select_id_not_in_another_select.SF-1737777
