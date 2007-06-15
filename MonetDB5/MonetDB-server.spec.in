@@ -92,7 +92,7 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/bin/monetdb5-config.bat
 rm -fr $RPM_BUILD_ROOT
 
 %files
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/bin/mserver5 
 %{prefix}/bin/Mbeddedmal
 %{prefix}/bin/mchkpnt
@@ -111,7 +111,7 @@ rm -fr $RPM_BUILD_ROOT
 %config(noreplace) %{sysconfdir}/monetdb5.conf
 
 %files devel
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/bin/monetdb5-config
 %{prefix}/include/MonetDB5/*.h
 %{prefix}/include/MonetDB5/*/*.[hcm]
