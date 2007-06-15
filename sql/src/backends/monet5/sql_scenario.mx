@@ -490,9 +490,9 @@ SQLstatementIntern(str *expr, str nme, int execute)
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
 	strncpy(n, *expr, len);
-	if(n[len] != '\n') n[len++] = '\n';
-	n[len] = 0;
-
+	n[len] = '\n';
+	n[len+1] = 0;
+	len++;
 	buffer_init(b, n, len);
 	scanner_init( &m->scanner, 
 		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
