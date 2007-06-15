@@ -174,28 +174,28 @@ rm -fr $RPM_BUILD_ROOT
 
 %if %{?_with_php:1}%{!?_with_php:0}
 %files php
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{php_extensiondir}/*
 %{prefix}/share/MonetDB/php/*
 %endif
 
 %if %{?_with_python:1}%{!?_with_python:0}
 %files python
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/%{python_libdir}/*
 %{prefix}/share/MonetDB/python/Mapi.py
 %endif
 
 %if %{?_with_perl:1}%{!?_with_perl:0}
 %files perl
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/%{perl_libdir}/*
 %{prefix}/share/MonetDB/perl/* 
 %endif
 
 %if %{?_with_java:1}%{!?_with_java:0}
 %files java
-%defattr(-,monetdb,monetdb) 
+%defattr(-,root,root) 
 %{prefix}/bin/mjclient 
 %{prefix}/share/MonetDB/lib/*jar
 %endif
