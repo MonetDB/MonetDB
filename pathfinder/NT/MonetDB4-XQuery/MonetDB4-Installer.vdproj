@@ -375,6 +375,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_6A4BFE4EF4CE47A4B0E72F7196B2B328"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_6F1C6D04B737498BB5BA3F67E429B136"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -616,6 +622,12 @@
         "Entry"
         {
         "MsmKey" = "8:_B083E4A23A7240ED8F26627A1DCC7923"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B10E8F0FA76742D6B52F9D597843F3F3"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2249,6 +2261,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6A4BFE4EF4CE47A4B0E72F7196B2B328"
+            {
+            "SourcePath" = "8:..\\pf.bat"
+            "TargetName" = "8:pf.bat"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_6F1C6D04B737498BB5BA3F67E429B136"
             {
             "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\bitset.mil"
@@ -3055,6 +3087,26 @@
             "TargetName" = "8:lib_builtin.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B10E8F0FA76742D6B52F9D597843F3F3"
+            {
+            "SourcePath" = "8:..\\bin\\pf.exe"
+            "TargetName" = "8:pf.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4477,7 +4529,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
         "ProductCode" = "8:{D43B1D38-E536-4A95-BE74-05D6E2AE08B1}"
-        "PackageCode" = "8:{41E5D27E-B190-45BF-BBA4-56D92E09A81B}"
+        "PackageCode" = "8:{0EAB22B7-DFEA-4532-9A06-0160D545487A}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
