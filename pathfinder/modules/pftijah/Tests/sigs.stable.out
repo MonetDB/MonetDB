@@ -24,6 +24,7 @@ module 'pftijah'
 # signature	  # name
 # str		  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "_run_tijah_query(BAT[str,str], bit, BAT[void,oid], str) : BAT[oid,dbl]"												  ]
 [ "_tj_throw2collection(BAT[str,BAT], BAT[oid,BAT], str, str) : void"													  ]
 [ "_tj_throw2collection_index(BAT[str,BAT], str) : void"														  ]
 [ "indexfetchjoin(BAT[any,oid], BAT[void,oid], BAT[void,oid]) : BAT[void,oid]"												  ]
@@ -36,8 +37,6 @@ module 'pftijah'
 [ "mergeindex(BAT[oid,oid], BAT[void,oid], BAT[void,oid], int) : BAT[void,BAT]"												  ]
 [ "offsetindex(BAT[void,oid], int) : BAT[void,oid]"															  ]
 [ "pf2tijah_node(BAT[oid,str], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,str]) : BAT[void,oid]"							  ]
-[ "run_tijah_command(str) : bit"																	  ]
-[ "run_tijah_query(BAT[str,str], bit, BAT[void,oid], str) : BAT[oid,dbl]"												  ]
 [ "score_NLLR(BAT[oid,oid], BAT[void,int], BAT[oid,int], BAT[oid,int], BAT[oid,any], dbl, int) : BAT[oid,dbl]"								  ]
 [ "serialize_tijah_opt(BAT[void,BAT], int, BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[str,str]"	  ]
 [ "tijah_tokenize(str) : str"																		  ]
@@ -54,6 +53,11 @@ module 'pftijah'
 [ "tj_ping() : void"																			  ]
 [ "tj_setlog(str) : void"																		  ]
 [ "treemergejoin_sort(BAT[void,oid], BAT[void,int], BAT[void,oid]) : BAT[oid,oid]"											  ]
+[ "treemergejoin_sort_unnested(BAT[void,oid], BAT[void,int], BAT[void,oid]) : BAT[oid,oid]"										  ]
+[ "union_add(BAT[oid,dbl], BAT[oid,dbl]) : BAT[oid,dbl]"														  ]
+[ "union_div(BAT[oid,dbl], BAT[oid,dbl]) : BAT[oid,dbl]"														  ]
+[ "union_mul(BAT[oid,dbl], BAT[oid,dbl]) : BAT[oid,dbl]"														  ]
+[ "union_sub(BAT[oid,dbl], BAT[oid,dbl]) : BAT[oid,dbl]"														  ]
 
 quit();
 

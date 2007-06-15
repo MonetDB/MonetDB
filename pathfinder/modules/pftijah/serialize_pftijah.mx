@@ -197,6 +197,14 @@ typedef struct tijahContextStruct {
 	oid  n_globalTag;
 	BAT* b_globalTag;	/* global tag dictionary*/
 	BAT* hm_globalTag;	/* hashed mirrorred global tag dictionary*/
+
+	int   tagswitch_sz;	/* the size of the next buff */
+	char* tagswitch;	/* the recursive tag detector switch */
+				/* 0 means: tag is not in use */
+				/* 1 means: tag is in use */
+				/* 2 means: tag is recursive */
+	BAT* b_globalRTag;	/* recursive tag dictionary*/
+
 	BAT* b_docName;		/* BAT to store docnames in collection */
 	BAT* b_docFirstPre;	/* First tijah-pre-nr of document */
 	BAT* b_collParam;	/* Collection Parameters BAT */
@@ -242,14 +250,21 @@ tj_pushTag(tjCtx* tjctx, oid start, oid tagoid) {
 	     GDKerror("tj_pushTag: MAXTAGDEPTH exceeded.\n");
 	     return -1;
 	}
-	tjctx->tagOidStack[tjctx->tagStackPtr]     = (int)tagoid;
+	if ( tjctx->tagswitch[(int)tagoid] != 2 ) {
+	    tjctx->tagswitch[(int)tagoid]++;
+	}
+	tjctx->tagOidStack[tjctx->tagStackPtr] = (int)tagoid;
 	tjctx->tagStartStack[tjctx->tagStackPtr++] = start;
 	return 1;
 }
 
 INLINE static oid
 tj_popTag(tjCtx* tjctx) {
-	return tjctx->tagStartStack[--tjctx->tagStackPtr];
+	--tjctx->tagStackPtr;
+	if ( tjctx->tagswitch[tjctx->tagOidStack[tjctx->tagStackPtr]] != 2 ) {
+	    tjctx->tagswitch[tjctx->tagOidStack[tjctx->tagStackPtr]]--;
+	}
+	return tjctx->tagStartStack[tjctx->tagStackPtr];
 }
 
 /************************************************
@@ -259,6 +274,7 @@ tj_popTag(tjCtx* tjctx) {
 INLINE static oid
 tj_tagOid(tjCtx* tjctx, str t) {
 #ifdef USE_TERMDB
+    /* incomplete, also tag check here */
     return tdb_lookupTag(tjctx->tdb,t);
 #else
     BUN bun;
@@ -268,6 +284,14 @@ tj_tagOid(tjCtx* tjctx, str t) {
         return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
     } else {
     	if ( BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
+	    /* check if the recursive tagswitcher still is large enough */
+    	    if ( (int)tjctx->n_globalTag >= tjctx->tagswitch_sz ) {
+                int old = tjctx->tagswitch_sz;
+		tjctx->tagswitch_sz = 2*(int)tjctx->n_globalTag;
+		tjctx->tagswitch    = GDKrealloc(tjctx->tagswitch,tjctx->tagswitch_sz );
+		for(int i=old; i<tjctx->tagswitch_sz; i++)
+	            tjctx->tagswitch[i] = 0;
+            }
     	    return tjctx->n_globalTag++;
         } else {
     	    GDKerror("INSERT OF \"%s\" in globalTag fails.\n");
@@ -551,6 +575,14 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	res->n_globalTerm = (oid)BATcount(res->b_globalTerm);
 	if ( !(res->b_globalTag   = getBAT(tjCtx_BAT,"_globalTags")) ) return NULL;
 	res->n_globalTag = (oid)BATcount(res->b_globalTag);
+	if ( !(res->b_globalRTag   = getBAT(tjCtx_BAT,"_globalRTags")) ) return NULL;
+	res->tagswitch_sz = (int)res->n_globalTag;
+	if ( res->tagswitch_sz < 128 )
+		res->tagswitch_sz = 128;
+	res->tagswitch_sz *= 2;
+	res->tagswitch = GDKmalloc( res->tagswitch_sz );
+	for(int i=0; i<res->tagswitch_sz; i++)
+	    res->tagswitch[i] = 0;
 	/*
 	 *
 	 */
@@ -665,6 +697,7 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	         return NULL;
 	     }
 	}
+
 	if ( ! (res->hm_globalTerm->hhash && res->hm_globalTag->hhash) )
 	   stream_printf(GDKout,"# WARNING: MISSING HASH ON TAG/TERM DICTIONARY\n");
 	return res;
@@ -674,6 +707,18 @@ static int
 freeTijahContext(tjCtx* tjctx) {
         if ( !setPreSize(tjctx,tjctx->tijahPre) )
 	        return GDK_FAIL;
+	/* first store all new detected recursive tag oids */
+	for(int i=0; i<tjctx->tagswitch_sz; i++) {
+	    if ( tjctx->tagswitch[i] == 2) {
+		oid store = (oid)i;
+		if ( !BUNfnd(tjctx->b_globalRTag,&store) ) {
+		    if ( !BUNins(tjctx->b_globalRTag, &store,&store, 0)) {
+	    	        GDKerror("error writing recursive tagbat");
+		        return GDK_FAIL;
+		    }
+		}
+            }
+        }
 #ifdef USE_TERMDB
 	if ( ! tdb_close(tjctx->tdb) )
 		return GDK_FAIL;
@@ -694,12 +739,14 @@ freeTijahContext(tjCtx* tjctx) {
 	}
 	BBPunfix(BBPcacheid(tjctx->b_globalTerm));
 	BBPunfix(BBPcacheid(tjctx->b_globalTag));
+	BBPunfix(BBPcacheid(tjctx->b_globalRTag));
 	BBPunfix(BBPcacheid(tjctx->b_docName));
 	BBPunfix(BBPcacheid(tjctx->b_docFirstPre));
 	BBPunfix(BBPcacheid(tjctx->b_collParam));
 	BBPunfix(BBPcacheid(tjctx->b_collPre));
 	BBPunfix(BBPcacheid(tjctx->b_collSize));
 	BBPunfix(BBPcacheid(tjctx->b_collPfPre));
+	GDKfree(tjctx->tagswitch);
 	if ( tjctx->stemCtx->clear && !tjctx->stemCtx->clear(tjctx->stemCtx) )
 		return GDK_FAIL;
 	free(tjctx);
@@ -1110,6 +1157,7 @@ MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str
 		stream_printf(GDKout,"C[%s]:SIZES\n",tjctx->name);
 		stream_printf(GDKout,"C[%s]:size( b_globalTerm ) = %d\n",tjctx->name, BATcount(tjctx->b_globalTerm));
 		stream_printf(GDKout,"C[%s]:size( b_globalTag )  = %d\n",tjctx->name, BATcount(tjctx->b_globalTag));
+		stream_printf(GDKout,"C[%s]:size( b_globalRTag )  = %d\n",tjctx->name, BATcount(tjctx->b_globalRTag));
 		stream_printf(GDKout,"C[%s]:size( b_collPre )    = %d\n",tjctx->name, BATcount(tjctx->b_collPre));
 		stream_printf(GDKout,"C[%s]:size( b_collSize )   = %d\n",tjctx->name, BATcount(tjctx->b_collSize));
 		stream_printf(GDKout,"C[%s]:size( b_collPfPre )  = %d\n",tjctx->name, BATcount(tjctx->b_collPfPre));

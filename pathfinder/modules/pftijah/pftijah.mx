@@ -377,6 +377,14 @@ PROC _tj_TagBat(str ftiName) : str :=
     	return "tj_" + ftiName + "_tags";
 }
 
+PROC _tj_RTagBat(str ftiName) : str :=
+{
+    if ( GLOBAL_TTBAT )
+        return "tj_globalRTags";
+    else
+    	return "tj_" + ftiName + "_rtags";
+}
+
 PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
 {
     if (doLock) lock_set(tj_adm_lock);
@@ -395,6 +403,7 @@ PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
       if ( GLOBAL_TTBAT ) {
           new(oid,str).persists(true).bbpname(_tj_TermBat(""));
           new(oid,str).persists(true).bbpname(_tj_TagBat(""));
+          new(oid,oid).persists(true).bbpname(_tj_RTagBat(""));
       }
       new(oid,str).persists(true).bbpname("tj_collName");
       new(str,str).persists(true).bbpname("tj_pfc_fti_dep");
@@ -403,6 +412,7 @@ PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
       if ( GLOBAL_TTBAT ) {
           globals.append(_tj_TermBat(""));
           globals.append(_tj_TagBat(""));
+          globals.append(_tj_RTagBat(""));
       }
       globals.append("tj_collName");
       globals.append("tj_pfc_fti_dep");
@@ -435,6 +445,7 @@ PROC tj_delete_global() : void :=
       if ( GLOBAL_TTBAT ) {
           bat(_tj_TermBat("")).persists(false);
           bat(_tj_TagBat("")).persists(false);
+          bat(_tj_RTagBat("")).persists(false);
       }
       bat("tj_collName").persists(false);
       bat("tj_pfc_fti_dep").persists(false);
@@ -443,6 +454,7 @@ PROC tj_delete_global() : void :=
       if ( GLOBAL_TTBAT ) {
           globals.append(_tj_TermBat(""));
           globals.append(_tj_TagBat(""));
+          globals.append(_tj_RTagBat(""));
       }
       globals.append("tj_collName");
       globals.append("tj_pfc_fti_dep");
@@ -553,9 +565,11 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
 	      # INCOMPLETE, not throwing them away is much faster!!!
               bat(_tj_TermBat(ftiName)).delete();
               bat(_tj_TagBat(ftiName)).delete();
+              bat(_tj_RTagBat(ftiName)).delete();
 	  } else {
               new(oid,str).persists(true).bbpname(_tj_TermBat(ftiName));
               new(oid,str).persists(true).bbpname(_tj_TagBat(ftiName));
+              new(oid,oid).persists(true).bbpname(_tj_RTagBat(ftiName));
 	  }
       }
       extra_del_bat := new(void,str).seqbase(0@0);
@@ -829,6 +843,7 @@ PROC tj_delete_collection(str ftiName, bit doAdmLock) : void
         if ( not(GLOBAL_TTBAT) ) {
           bat(_tj_TermBat(ftiName)).persists(false);
           bat(_tj_TagBat(ftiName)).persists(false);
+          bat(_tj_RTagBat(ftiName)).persists(false);
         }
 	bat("tj_" + ftiName + "_doc_name").persists(false);
 	bat("tj_" + ftiName + "_doc_firstpre").persists(false);
@@ -862,6 +877,7 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
 
         tjCollBat.append(_tj_TermBat(ftiName));
         tjCollBat.append(_tj_TagBat(ftiName));
+        tjCollBat.append(_tj_RTagBat(ftiName));
         tjCollBat.append("tj_pfc_fti_dep");
         tjCollBat.append("tj_pfc_fti_dep_star");
         tjCollBat.append("tj_collName");
@@ -905,6 +921,7 @@ PROC _tj_collection(str ftiName) : BAT[str, bat]
 	}
 	tjCollBat.insert("_globalTerms", bat(_tj_TermBat(ftiName)));
 	tjCollBat.insert("_globalTags", bat(_tj_TagBat(ftiName)));
+	tjCollBat.insert("_globalRTags", bat(_tj_RTagBat(ftiName)));
 	tjCollBat.insert("_doc_name", bat("tj_" + ftiName + "_doc_name"));
 	tjCollBat.insert("_doc_firstpre", bat("tj_" + ftiName + "_doc_firstpre"));
 	tjCollBat.insert("_param", parbat);
@@ -963,6 +980,7 @@ PROC tj_add2collection(str ftiName, str uri_loc, str uri_name, bit store) : void
       var t_start := usec();
       bat(_tj_TermBat(ftiName)).access(BAT_APPEND);
       bat(_tj_TagBat(ftiName)).access(BAT_APPEND);
+      bat(_tj_RTagBat(ftiName)).access(BAT_APPEND);
       var collBat := _tj_collection(ftiName);
       _tj_add2collection(ftiName, collBat, uri_loc, uri_name, store);
       _tj_finalize_collection(ftiName, collBat, FALSE);
@@ -996,6 +1014,7 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
       var t_start := usec();
       bat(_tj_TermBat(ftiName)).access(BAT_APPEND);
       bat(_tj_TagBat(ftiName)).access(BAT_APPEND);
+      bat(_tj_RTagBat(ftiName)).access(BAT_APPEND);
       var collBat;
       collBat := _tj_collection(ftiName);
       uri@batloop() {
@@ -1530,6 +1549,10 @@ PROC select_node(BAT[oid,str] qenv) : bat[oid,dbl] :=
     
     # filter out the top document nodes which have no 'tag'
     pfpre := pfpre.kdiff(firstpre.reverse());
+
+    # set the recursive tag flag on "true" because all tags are selected
+    modify_qenv(qenv,QENV_RECURSIVE_TAGS,"1");
+
     return pfpre.project( dbl(qenv.find(QENV_SCOREBASE) ) );
 }
 
@@ -1546,6 +1569,12 @@ PROC select_node(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
     var tids := bat(_tj_TagBat(qenv.find(QENV_FTINAME))).select(name);
     if (tids.count() = 0) return new(oid,dbl);
     var tid := tids.reverse().fetch(0);
+
+    # set the recursive tag flag on "true" because all tags are selected
+    if ( bat(_tj_RTagBat(qenv.find(QENV_FTINAME))).exist(tid) ) {
+        modify_qenv(qenv,QENV_RECURSIVE_TAGS,"1");
+    }
+    modify_qenv(qenv,QENV_RECURSIVE_TAGS,"1"); # REMOVE
     var result := indexfetchjoin( new(void,oid).append(tid).seqbase(oid(0)),
     				  bat("tj_" + qenv.find(QENV_FTINAME) + "_TagIndex"),
     				  bat("tj_" + qenv.find(QENV_FTINAME) + "_Tags") );
