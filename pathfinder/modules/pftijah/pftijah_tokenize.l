@@ -34,6 +34,8 @@
 #include <pf_config.h>
 
 #include "serialize_pftijah.h"
+#include <ctype.h>
+#include <string.h>
 
 static char *c, *e;
 
