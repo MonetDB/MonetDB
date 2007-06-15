@@ -543,6 +543,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_A9FF91A8DA78489DA5DE7F3F3FBCBD8D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_AA8F9BF4CF8643099DCED10BE2B0E11A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -580,6 +586,12 @@
         "Entry"
         {
         "MsmKey" = "8:_B2629E518DCA4B46BB2BDBC35F24A99C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B2AA80D6C8994C80AF2D8F56C3B97A84"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2749,6 +2761,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A9FF91A8DA78489DA5DE7F3F3FBCBD8D"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB4\\lib_pftijah.dll"
+            "TargetName" = "8:lib_pftijah.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AA8F9BF4CF8643099DCED10BE2B0E11A"
             {
             "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\bin\\Mserver.exe"
@@ -2873,6 +2905,26 @@
             {
             "SourcePath" = "8:..\\..\\..\\MonetDB4\\NT\\lib\\MonetDB4\\lib_bitvector.dll"
             "TargetName" = "8:lib_bitvector.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B2AA80D6C8994C80AF2D8F56C3B97A84"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB4\\pftijah.mil"
+            "TargetName" = "8:pftijah.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"

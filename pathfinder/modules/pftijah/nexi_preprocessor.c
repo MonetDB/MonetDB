@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include <strings.h>
 #include "nexi.h"
 
 #include <pftijah_stem.h>
