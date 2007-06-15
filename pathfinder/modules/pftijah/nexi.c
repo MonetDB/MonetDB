@@ -508,6 +508,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_FTIBGNAME,\"%s\");\n",parserCtx->collection);
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_SCOREBASE,\"%s\");\n",qenv_scorebase);
     MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_C_LAMBDA,\"%s\");\n",qenv_c_lambda);
+    MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_RECURSIVE_TAGS,\"%s\");\n","0");
     // Prepend some variables to the MIL code.
     if ( qenv_prox_val ) { 
         MILPRINTF(MILOUT, "modify_qenv(qenv,QENV_TERM_PROXIMITY,\"%s\");\n",qenv_prox_val);

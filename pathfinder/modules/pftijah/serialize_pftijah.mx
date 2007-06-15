@@ -219,11 +219,12 @@ typedef struct tijahContextStruct {
 	 */
 	BAT* b_selectTags;	/* [void,str] BAT containing select tags */
 	int  selTagDepth;	/* current selection tag depth, 0 = skip */
-	/* The tagStack[] contains the starting Tijah oid of an element
+	/* The tagStartStack[] contains the starting Tijah oid of an element
 	 * and is used to compute the size of an element in the Tijah
 	 * pre-post-plane.
 	 */
-	oid  tagStack[MAXTAGDEPTH];
+	oid  tagStartStack[MAXTAGDEPTH];
+	int  tagOidStack[MAXTAGDEPTH];
 	int  tagStackPtr;
 	/* */
 	int preExpansion;	/* estimation for #TijahPre/PfPre */
@@ -236,18 +237,19 @@ typedef struct tijahContextStruct {
 #define DOEMIT(TJCTX)	((TJCTX)->selTagDepth)
 
 static INLINE int
-tj_pushTag(tjCtx* tjctx, oid start) {
+tj_pushTag(tjCtx* tjctx, oid start, oid tagoid) {
 	if ( tjctx->tagStackPtr > MAXTAGDEPTH ) {
 	     GDKerror("tj_pushTag: MAXTAGDEPTH exceeded.\n");
 	     return -1;
 	}
-	tjctx->tagStack[tjctx->tagStackPtr++] = start;
+	tjctx->tagOidStack[tjctx->tagStackPtr]     = (int)tagoid;
+	tjctx->tagStartStack[tjctx->tagStackPtr++] = start;
 	return 1;
 }
 
 INLINE static oid
 tj_popTag(tjCtx* tjctx) {
-	return tjctx->tagStack[--tjctx->tagStackPtr];
+	return tjctx->tagStartStack[--tjctx->tagStackPtr];
 }
 
 /************************************************
@@ -784,7 +786,7 @@ pftijah_handle_startDocument(XqueryCtx* ctx, oid pre) {
     if ( (tjPre = tj_newPre(tjctx) ) == oid_nil )
         return 0;
     dbat_set_oid(&tjctx->dbat_collPre, tjPre, termOid);
-    if ( tj_pushTag(tjctx,tjPre) < 0 ) return 0;
+    if ( tj_pushTag(tjctx,tjPre,termOid) < 0 ) return 0;
     if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre, FALSE) ) return 0;
 #else
     (void)  pre;
@@ -868,7 +870,7 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
         if ( (tjPre = tj_newPre(tjctx) ) == oid_nil )
     	    return 0;
         dbat_set_oid(&tjctx->dbat_collPre, tjPre, termOid);
-        if ( tj_pushTag(tjctx,tjPre) < 0 ) return 0;
+        if ( tj_pushTag(tjctx,tjPre,termOid) < 0 ) return 0;
 #ifdef TJ_TRACE
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif

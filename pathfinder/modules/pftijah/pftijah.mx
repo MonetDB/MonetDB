@@ -225,6 +225,7 @@ const QENV_SCOREBASE      := 2@0;
 const QENV_C_LAMBDA       := 3@0;
 const QENV_TERM_PROXIMITY := 4@0;
 const QENV_FEEDBACK_DOCS  := 5@0;
+const QENV_RECURSIVE_TAGS := 6@0;
 
 # create a query environment bat
 PROC create_qenv() : BAT[oid,str]
