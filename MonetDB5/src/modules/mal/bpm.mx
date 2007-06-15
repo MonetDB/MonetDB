@@ -1008,11 +1008,9 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 			(nme?*nme:"tmp"),bn->batCacheid);
 		BPMprintRecord(GDKout,p);
 	#endif
-		BBPkeepref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 	}
-	BBPkeepref(ba->batCacheid);
-	BBPincref(ba->batCacheid,TRUE);
-	*ret= ba->batCacheid;
+	BBPkeepref(*ret= ba->batCacheid);
 
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1678,8 +1676,9 @@ spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
 	int (*cmp) (ptr, ptr);
 	cmp= BATatoms[b->ttype].atomCmp;
 
-	for(i=0; i<=k; i++){
-		bs[i] = BATnew(b->htype, b->ttype, (size_t) BATcount(b)/k );
+	for(i=0; i<=k; i++)
+		if (i!=skip){
+			bs[i] = BATnew(b->htype, b->ttype, (size_t) BATcount(b)/k );
 	}
 
 	BATloopFast(b, p, q, xx) {
@@ -1695,10 +1694,14 @@ spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
 			BUNins(bs[k], BUNhloc(b, p), val, TRUE);
 	}		
 	
-	for(i=0; i<=k; i++){
-		ret[i]= bs[i]->batCacheid;
-		cnt[i]= BATcount(bs[i]);
-		BBPkeepref(bs[i]->batCacheid);
+	for(i=0; i<=k; i++)
+		if (i!=skip){
+			ret[i]= bs[i]->batCacheid;
+			cnt[i]= BATcount(bs[i]);
+			BBPkeepref(bs[i]->batCacheid);
+		#ifdef _DEBUG_BPM_
+			stream_printf(GDKout,"New bat %d\n",ret[i]);
+		#endif
 	}
 	return 0;
 }
@@ -1750,17 +1753,18 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		else or=BPMoraclePolicy((double)BATcount(bs)/bcnt, (double)bcnt/cnt);
 	
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Oracle %d bcnt %d cnt %d \n",or, bcnt,cnt);
+/*	stream_printf(GDKout,"Oracle %d bcnt %d cnt %d \n",or, bcnt,cnt);*/
 #endif
 		if (or) cs= ov; 
 	}
 	
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Case %d policy %d\n",cs, policy);
+/*	stream_printf(GDKout,"Case %d policy %d\n",cs, policy); */
 #endif
 
 	
 	if( cs==0){	/* no re-org. */
+		
 			BBPkeepref(*ret = b->batCacheid);
 			BBPunfix(bs->batCacheid);
 			return MAL_SUCCEED;
@@ -1790,7 +1794,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 #ifdef _DEBUG_BPM_
 		stream_printf(GDKout,"Found separators ");
 		for(i=0;i<n;i++)
-			VALprint(GDKout,sep[i]);
+			VALprint(GDKout,&sep[i]);
 			stream_printf(GDKout,"\n");
 #endif	
 
@@ -1799,6 +1803,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	spread(bb,cnts,b,sep,n,skip);
 	if ( (skip >-1) && (skip <n-1) ){
 		bb[skip]= bs->batCacheid;
+		BBPincref(bs->batCacheid,TRUE);
 		cnts[skip]= BATcount(bs);
 	}
 	BBPunfix(bs->batCacheid);
@@ -1820,7 +1825,9 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		
 		insertPartition(pprev,p);
 		#ifdef _DEBUG_BPM_
+			stream_printf(GDKout,"Inserted partition: \n ");
 			BPMprintRecord(GDKout,p);
+			stream_printf(GDKout,"Lrefs %d: refs \n ",BBP_lrefs(bb[i]),BBP_refs(bb[i]));
 		#endif
 	}
 
@@ -1828,6 +1835,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	GDKfree(sep);
 
 	BBPunfix(b->batCacheid);
+	BBPincref(bb[n-2],TRUE);
 	*ret=bb[n-2];
 	return MAL_SUCCEED;
 }
