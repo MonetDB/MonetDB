@@ -38,6 +38,9 @@ echo views
 $SQL1 < Skyserver_views.sql
 
 echo functions
+$SQL1 < ../../sql/math.sql
+$SQL1 < ../../sql/cache.sql
+$SQL1 < ../../sql/ms_functions.sql
 $SQL1 < Skyserver_functions.sql
 
 echo Cleanup

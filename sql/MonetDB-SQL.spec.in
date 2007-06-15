@@ -51,7 +51,7 @@ Group: System
 
 %description server5
 Add the MonetDB5 SQL server module description here
-Requires: MonetDB5-server > 5.0
+Requires: MonetDB5-server >= 5.0
 %endif
 
 %package devel

@@ -443,14 +443,30 @@ kc_destroy(sql_kc *kc)
 void
 key_destroy(sql_key *k)
 {
+	node *n;
+
 	/* remove key from schema */
 	list_remove_data(k->t->s->keys,k);
 	if (k->type == ukey || k->type == pkey) {
 		sql_ukey *uk = (sql_ukey *) k;
 		if (uk->keys) {
+			for (n = uk->keys->h; n; n= n->next) {
+	       	         	sql_fkey *fk = (sql_fkey *) n->data;
+				fk->rkey = NULL;
+			}
 			list_destroy(uk->keys);
 			uk->keys = NULL;
 		}
+	}
+	/* we need to be removed from the rkey list */
+	if (k->type == fkey) {
+		sql_fkey *fk = (sql_fkey *) k;
+
+		if (fk->rkey) {
+			n = list_find_name(fk->rkey->keys, fk->k.base.name);
+			list_remove_node(fk->rkey->keys, n);
+		}
+		fk->rkey = NULL;
 	}
 	list_destroy(k->columns);
 	base_destroy(&k->base);
@@ -3601,6 +3617,7 @@ rollforward_drop_key(sql_trans *tr, sql_key *k)
 			n = list_find_name(fk->rkey->keys, fk->k.base.name);
 			list_remove_node(fk->rkey->keys, n);
 		}
+		fk->rkey = NULL;
 	}
 	if (k->type == pkey) {	
 		sql_ukey *uk = (sql_ukey *) k;
@@ -4216,6 +4233,15 @@ reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 	return LOG_OK;
 }
 
+int
+reset_key(sql_trans *tr, sql_key *fk, sql_key *pfk)
+{
+	(void)tr;
+	(void)fk;
+	(void)pfk;
+	return LOG_OK;
+}
+
 static int
 reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 {
@@ -4314,7 +4340,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->idxs, &pft->idxs, &ft->base, (resetf) &reset_idx, (dupfunc) &idx_dup);
 		if (ok == LOG_OK)
-			ok = reset_changeset( tr, &ft->keys, &pft->keys, &ft->base, (resetf) NULL, (dupfunc) &key_dup);
+			ok = reset_changeset( tr, &ft->keys, &pft->keys, &ft->base, (resetf) &reset_key, (dupfunc) &key_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->triggers, &pft->triggers, &ft->base, (resetf) NULL, (dupfunc) &trigger_dup);
 
@@ -4568,10 +4594,14 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 	list_remove_data(k->t->s->keys, k);
 	if (k->type == fkey) {
 		sql_fkey *fk = (sql_fkey *) k;
-		node *n = list_find_name(fk->rkey->keys, fk->k.base.name);
-
-		list_remove_node(fk->rkey->keys, n);
+		
+		if (fk->rkey) {
+			n = list_find_name(fk->rkey->keys, fk->k.base.name);
+			list_remove_node(fk->rkey->keys, n);
+		}
+		fk->rkey = NULL;
 	}
+
 	if (isGlobalTable(k->t)) 
 		tr->schema_updates ++;
 
