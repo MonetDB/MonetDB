@@ -4554,8 +4554,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
-        "ProductCode" = "8:{D43B1D38-E536-4A95-BE74-05D6E2AE08B1}"
-        "PackageCode" = "8:{C9473E72-04E6-4B75-844D-B924AAF671B6}"
+        "ProductCode" = "8:{92CDDC9B-A034-4E86-B1E3-276217551B8C}"
+        "PackageCode" = "8:{0E54276D-04AE-44E5-B403-CFD3BBEF9180}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
