@@ -117,8 +117,7 @@ extern int chdir(const char *);
 #endif
 
 static FILE *toConsole;
-static char *language = NULL;
-static int start_with_help = 0;
+static char *language = "mil";
 
 char *command = NULL;
 
@@ -355,18 +354,8 @@ doFile(Mapi mid, const char *file, int xquery)
 static void
 showCommands(int xquery)
 {
-	if (xquery) {
-		fprintf(toConsole, "MapiClient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
-		fprintf(toConsole, "\nSupported document-management XQuery extensions:\n");
-		fprintf(toConsole, " pf:collections() as node()\n");
-		fprintf(toConsole, " pf:documents($collectionName as xs:string) as node()\n");
-		fprintf(toConsole, " pf:del-doc($documentName as xs:string)\n");
-		fprintf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
-		fprintf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
-		fprintf(toConsole, "\nSession commands:\n");
-        }
-        else fprintf(toConsole, "?text\t- send help message\n");
 	fprintf(toConsole, "?\t- show this message\n");
+	if (!xquery) fprintf(toConsole, "?text\t- send help message\n");
 	fprintf(toConsole, "!\t- shell escape\n");
 	fprintf(toConsole, "%s<file\t- read input from file\n", xquery?"<":"");
 	fprintf(toConsole, ">file\t- save response in file\n");
@@ -375,13 +364,7 @@ showCommands(int xquery)
 	fprintf(toConsole, "\\q\t- terminate session\n");
 	fprintf(toConsole, "\\T\t- toggle timer\n");
         if (xquery) {
-		fprintf(toConsole, "<>\t- send query to server (or %s)\n",
-#ifdef WIN32
-        "CTRL-Z"
-#else
-        "CTRL-D"
-#endif
-                );
+		fprintf(toConsole, "<>\t- send query to server\n");
         } else {
 		fprintf(toConsole, "\\l\t- line is sent immediately\n");
 		fprintf(toConsole, "\\D\t- dump database\n");
@@ -820,16 +803,11 @@ main(int argc, char **argv)
 			save_history = 1;
 			break;
 		case '?':
-			if (language) { 
-                                start_with_help = 1;
-                                break;
-                        }
+			usage(argv[0]);
 		default:
 			usage(argv[0]);
 		}
 	}
-        /* set default value */
-        if (language == NULL) language = "mil";
 
 	setlen = mo_system_config(&set, setlen);
 
@@ -910,13 +888,11 @@ main(int argc, char **argv)
 		char *prompt = NULL;
 		char promptbuf[16];
 		int interactive_stdin = 0;
-                int xquery = (strcmp(language, "xquery") == 0);
 
 		if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode)) {
 			interactive_stdin = 1;
 		}
 		if (interactive_stdin) { 
-                        if (start_with_help) showCommands(xquery);
 #ifdef HAVE_LIBREADLINE
 			init_readline(mid, language, save_history);
 #else
@@ -927,11 +903,11 @@ main(int argc, char **argv)
 			prompt = promptbuf;
 		}
 		/* stream xml document into the server */
-		if (input && xquery) {
+		if (input && strcmp(language, "xquery") == 0) {
 			mapi_stream_into(mid, input, colname);
-			c = doFile(mid, NULL, xquery);
+			c = doFile(mid, NULL, strcmp(language, "xquery") == 0);
 		} else {
-			c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error, xquery);
+			c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error, strcmp(language, "xquery") == 0);
 		}
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
