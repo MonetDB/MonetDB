@@ -16,7 +16,7 @@
 
 !INCLUDE $(TOPDIR)\..\..\buildtools\conf\rules.msc
 
-VERSION = 0.18.1
+VERSION = 0.18.2
 
 pkg = pathfinder
 CONFIG_H=pf_config.h

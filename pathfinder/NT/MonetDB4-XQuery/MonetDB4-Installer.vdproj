@@ -4560,7 +4560,7 @@
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:0.18.1"
+        "ProductVersion" = "8:0.18.2"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
