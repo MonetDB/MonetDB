@@ -759,6 +759,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_C93D24C0147F40C4AF2B416E616DAA89"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_C9F0BAC7F74D46F395826C5AA4E53821"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -3541,6 +3547,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C93D24C0147F40C4AF2B416E616DAA89"
+            {
+            "SourcePath" = "8:..\\MXQclient.bat"
+            "TargetName" = "8:MXQclient.bat"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_CB3C9EC9B4FF49E9815AC97E05BB8A46"
             {
             "SourcePath" = "8:..\\..\\..\\MonetDB\\NT\\lib\\libmutils.dll"
@@ -4529,7 +4555,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
         "ProductCode" = "8:{D43B1D38-E536-4A95-BE74-05D6E2AE08B1}"
-        "PackageCode" = "8:{0EAB22B7-DFEA-4532-9A06-0160D545487A}"
+        "PackageCode" = "8:{C9473E72-04E6-4B75-844D-B924AAF671B6}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
@@ -4674,12 +4700,12 @@
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_73308174ACE047B0B3312C68DF9CED4F"
             {
             "Name" = "8:MonetDB XQuery Client"
-            "Arguments" = "8:-lxquery -umonetdb -Pmonetdb"
+            "Arguments" = "8:-umonetdb -Pmonetdb"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_9A97A5686CAF49E5ABD3B0E42F9296D2"
+            "Target" = "8:_C93D24C0147F40C4AF2B416E616DAA89"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Icon" = "8:"
