@@ -1384,6 +1384,7 @@ BPMaddSegment(int *ret, bat *bid, bat *src){
 		throw(MAL,"bpm.addSegment","Uncompatible BAT types");
 	}
 
+	BBPunfix(ba->batCacheid); 
 	cnt = BATcount(b);
 	maxcnt = 2*BATTINY / BUNsize(b) - cnt;
 	/* is it a big piece or no enough space in the existing? */
