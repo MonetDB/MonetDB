@@ -9,7 +9,24 @@
 @set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\bin;%PATH%
 
 @rem provide some helpful information about usage
-@echo Type ? on a line by itself to get help
+@echo ^MapiClient interactive MonetDB/XQuery session: type an XQuery or XQUF update.
+@echo ^Supported document-management XQuery extensions:
+@echo ^ pf:collections() as node()
+@echo ^ pf:documents($collectionName as xs:string) as node()
+@echo ^ pf:del-doc($documentName as xs:string)
+@echo ^ pf:add-doc($uri as xs:string, $documentName as xs:string
+@echo ^     [,$collectionName as xs:string [,$freePercentage as xs:integer]])
+@echo ^Session commands:
+@echo ^?text   - send help message
+@echo ^?       - show this message
+@echo ^!       - shell escape
+@echo ^<^<file  - read input from file
+@echo ^>file   - save response in file
+@echo ^>       - response to terminal
+@echo ^cd      - change directory
+@echo ^\\q     - terminate session
+@echo ^\\T     - toggle timer
+@echo ^<^>      - send query to server (or CTRL-Z)
 
 @rem start the real client
 @"%MONETDB%\bin\MapiClient.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" -lxquery %*
