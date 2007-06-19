@@ -1495,7 +1495,7 @@ ssize_t
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	int res = 0, done = 0;
-	size_t i = 0;
+	size_t i = 0, tuples=0;
 	char *sep = as->format[as->nr_attrs - 1].sep;
 	int seplen = as->format[as->nr_attrs - 1].seplen;
 
@@ -1551,9 +1551,10 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 								as->error=0;
 								GDKerror("TABLETload_file: read error "
 										"(after loading %d records)\n", 
-											BATcount(as->format[0].c));
+											tuples);
 							res = -1;
 						}
+						tuples++;
 						break;
 					}
 					end = b->buf + b->len;
