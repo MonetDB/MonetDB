@@ -204,3 +204,5 @@ SUFFIXES-local: $(BUILT_SOURCES)
 distdir: check_dist
 check_dist:
 	@if [ "$(SWIG)" = "no" ]; then $(ECHO) "Cannot create distribution because one of the necessary programs or libraries is missing"; echo "swig	= $(SWIG)"; exit 1; fi
+dist-hook:
+	set X `find $(distdir) -name CVS`; shift; if test $$# -gt 0; then rm -rf "$$@"; else true; fi
