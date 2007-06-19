@@ -1574,7 +1574,6 @@ PROC select_node(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
     if ( bat(_tj_RTagBat(qenv.find(QENV_FTINAME))).exist(tid) ) {
         modify_qenv(qenv,QENV_RECURSIVE_TAGS,"1");
     }
-    modify_qenv(qenv,QENV_RECURSIVE_TAGS,"1"); # REMOVE
     var result := indexfetchjoin( new(void,oid).append(tid).seqbase(oid(0)),
     				  bat("tj_" + qenv.find(QENV_FTINAME) + "_TagIndex"),
     				  bat("tj_" + qenv.find(QENV_FTINAME) + "_Tags") );
@@ -3857,8 +3856,8 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
        return(GDK_FAIL);
     }
     
-    SAs = BUNsize(Astart);
-    SDs = BUNsize(Dstart);
+    SAs = BUNsize(Astart) / SIZEOF_OID;
+    SDs = BUNsize(Dstart) / SIZEOF_OID;
     SRs = BUNsize(res);
     size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
     D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
@@ -3970,8 +3969,8 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
        return(GDK_FAIL);
     }
     
-    SAs = BUNsize(Astart);
-    SDs = BUNsize(Dstart);
+    SAs = BUNsize(Astart) / SIZEOF_OID;
+    SDs = BUNsize(Dstart) / SIZEOF_OID;
     SRs = BUNsize(res);
     size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
     D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
@@ -3981,6 +3980,11 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
     dst = BUNlast(res);
 
     /* -------------------------------- main ---------------------------------------- */
+    
+    /* skip descendant candidates before the for ancestor candidate */
+    while(*D_cur_start <= *A_cur_start)
+      D_cur_start += SDs;
+    
     while(D_cur_start < D_last_start) {
       /* poor man's binary search / exploiting forward scan */
       while (A_cur_start+1048576 < A_last_start && *(oid*)(A_cur_start+1048576) < *D_cur_start)
