@@ -3834,6 +3834,12 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
         GDKerror("%s: Descendant BAT not sorted (on start).\n",name); 
         return(GDK_FAIL);
     }
+    if (BATcount(Astart) == 0 || BATcount(pre_size) == 0 || BATcount(Dstart) == 0)
+    {
+        res = BATnew(TYPE_oid, TYPE_oid, 0);
+        *result = res;    
+        return(GDK_SUCCEED);
+    }
 
     /* ----------------------------- initialize -------------------------------------- */
     // The maximum depth of the stack is the depth of the XML tree
@@ -3851,9 +3857,8 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
        return(GDK_FAIL);
     }
     
-    /* todo: what if size is not a multiple of sizeof(oid)  (BUNsize(...) % sizeof(oid) != 0) */
-    SAs = BUNsize(Astart) / SIZEOF_OID;
-    SDs = BUNsize(Dstart) / SIZEOF_OID;
+    SAs = BUNsize(Astart);
+    SDs = BUNsize(Dstart);
     SRs = BUNsize(res);
     size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
     D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
@@ -3924,14 +3929,6 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart)
      return(GDK_SUCCEED);
 }
 @
-@= write
-      /* output everything that is on the stack (the ancestors) */
-      /* It has started before Dstart and since it's a tree, */
-      /* it has to end after Dend. */
-      *(oid*)dst              = A_out;
-      *(oid*)(dst+SIZEOF_OID) = *D_cur_start;
-      dst += SRs;
-@
 @c
 int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) {
 
@@ -3940,7 +3937,6 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
     BAT *res = *result;
     oid *D_cur_start, *D_last_start, 
         *A_cur_start, *A_last_start;
-    oid A_out = 0;
     int SAs;
     int SDs;
     int SRs;
@@ -3957,6 +3953,12 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
         GDKerror("%s: Descendant BAT not sorted (on start).\n",name); 
         return(GDK_FAIL);
     }
+    if (BATcount(Astart) == 0 || BATcount(pre_size) == 0 || BATcount(Dstart) == 0)
+    {
+        res = BATnew(TYPE_oid, TYPE_oid, 0);
+        *result = res;    
+        return(GDK_SUCCEED);
+    }
 
     /* ----------------------------- initialize -------------------------------------- */
     // the size of the bat may not be correct (could be more, could be less)
@@ -3968,9 +3970,8 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
        return(GDK_FAIL);
     }
     
-    /* todo: what if size is not a multiple of sizeof(oid)  (BUNsize(...) % sizeof(oid) != 0) */
-    SAs = BUNsize(Astart) / SIZEOF_OID;
-    SDs = BUNsize(Dstart) / SIZEOF_OID;
+    SAs = BUNsize(Astart);
+    SDs = BUNsize(Dstart);
     SRs = BUNsize(res);
     size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
     D_cur_start = (oid *) BUNtail(Dstart, BUNfirst(Dstart));
@@ -3981,8 +3982,6 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
 
     /* -------------------------------- main ---------------------------------------- */
     while(D_cur_start < D_last_start) {
-      A_out = 0;
-      
       /* poor man's binary search / exploiting forward scan */
       while (A_cur_start+1048576 < A_last_start && *(oid*)(A_cur_start+1048576) < *D_cur_start)
           A_cur_start += 1048576; 
@@ -3992,17 +3991,13 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
           A_cur_start += 1024; 
       while (A_cur_start+32 < A_last_start && *(oid*)(A_cur_start+32) < *D_cur_start)
           A_cur_start += 32; 
-      while (*A_cur_start < *D_cur_start && A_cur_start < A_last_start){		
-	if (*D_cur_start <= (*A_cur_start + size[*A_cur_start])) {
-	  A_out = *A_cur_start;
-	}  
-	A_cur_start += SAs;
-      }
-      
-      if (A_out) {
-	  @:write@
-      }
-    
+      while (A_cur_start+SAs < A_last_start && *(oid*)(A_cur_start+SAs) < *D_cur_start)
+          A_cur_start += SAs; 
+      if (*D_cur_start <= (*A_cur_start + size[*A_cur_start])) {
+          *(oid*)dst              = *A_cur_start;
+          *(oid*)(dst+SIZEOF_OID) = *D_cur_start;
+          dst += SRs;
+      }  
       D_cur_start += SDs;
     }
     
@@ -4015,10 +4010,10 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *pre_size, BAT
     BATset(res, TRUE);
     
     *result = res;    
-    /* it is possible there are still ancestor candidates left on the stack, but we are out of descendants, so they starve... */
     return(GDK_SUCCEED);
 }
 @
+
 @c
 bat *
 pftijah_prelude(void)
