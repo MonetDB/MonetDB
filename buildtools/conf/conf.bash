@@ -273,7 +273,7 @@ if [ "${os}" = "Linux" ] ; then
 			;;
 		esac
 	fi
-	if [ "${COMP}" = "ntv" ] ; then
+	if [ "${COMP}" = "ntv"  -a  ! "`type -p icc 2>/dev/null`" ] ; then
 		d="`ls -d /soft/${BITS}/icc-* 2>/dev/null | tail -n1`"
 		if [ ! "$d" ] ; then
 			d="`ls -d /soft/${BITS}/IntelC* 2>/dev/null | tail -n1`"
