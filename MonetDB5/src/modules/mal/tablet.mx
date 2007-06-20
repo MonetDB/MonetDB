@@ -1140,7 +1140,8 @@ TABLETcreate_bats(Tablet * as)
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, nr);
 		if (!fmt[i].c) {
-			GDKerror("ASCIIcreate_bats: Failed to create bat of size %d\n", as->nr);
+			GDKerror("TABLETcreate_bats: Failed to create bat of size %d\n", as->nr);
+			as->nr_attrs = i;
 			return -1;
 		}
 	}
