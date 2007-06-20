@@ -123,7 +123,7 @@ def am_extra_dist_dir(fd, var, values, am):
     for i in values:
         fd.write("\tmkdir -p $(distdir)/%s\n" % i)
         fd.write("\tcp -R $(srcdir)/%s/* $(distdir)/%s\n" % (i, i))
-        fd.write("\trm -rf $(distdir)/%s/CVS\n" % i)
+        fd.write("\trm -rf `find $(distdir)/%s -name CVS -print`\n" % i)
 
 def am_extra_headers(fd, var, values, am):
     for i in values:
