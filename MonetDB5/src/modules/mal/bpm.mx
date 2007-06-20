@@ -572,7 +572,8 @@ bpm_export str BPMepilogue(int *ret);
 #include <math.h>
 
 #define KB	1024
-#define Mmin	KB
+#define Mmin	1024*KB
+#define Mmax	20480*KB
 @-
 The partition manager uses its private memory mapped catalog 
 of persistent BATs.
@@ -1582,6 +1583,7 @@ BPMsizePolicy( BAT *b, BAT *bs, int ov)
 	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 	space1 = BATcount(bs)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 
+/*	stream_printf(GDKout,"tuples %d size  %d selection %d \n", BATcount(b),space, space1); */
 	if(ov <3) {
 		space2 = space -space1;
 	}
@@ -1589,7 +1591,7 @@ BPMsizePolicy( BAT *b, BAT *bs, int ov)
 	 	space2 = (space -space1)/2; /* rough estimate of two remainders*/
 	}
 	if ((space1 < Mmin) || (space2 < Mmin)) {
-		if (space > 8*Mmin) { 
+		if (space > Mmax) { 
 			/* little parts in large segment- split on median*/
 			cs = 4;}
 		else cs = 0;
@@ -1730,7 +1732,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 /* baseline size, too small BATs are never broken*/
 	space = BATcount(b)* (BUNsize(b) + sizeof(hash_t)) + sizeof(BATstore);
 	if (space < Mmin) { /* no re-org.*/
-		BBPunfix(b->batCacheid);
+		BBPkeepref(*ret = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	ov = overlap(b,bid,low,hgh);
@@ -2022,6 +2024,7 @@ BPMtake(bat *ret, str *nme)
 	if( (p=getByName(*nme)) == 0)
 		throw(MAL,"pbm.take","Partitioned BAT does not exist");
 	*ret = p->alias;
+	BBPincref(p->alias,TRUE);
 	return MAL_SUCCEED;
 }
 str
