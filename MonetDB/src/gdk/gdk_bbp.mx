@@ -960,6 +960,10 @@ BBPinsert(BAT *b)
 		gdk_set_lock(GDKnameLock, "BBPinsert");
 		if (BBPsize++ >= BBPlimit) {
 			BBPextend(BATMARGIN, TRUE);
+			/* it seems BBPextend could return and still leaving
+			   BBP_free(idx) == 0 */
+			if (BBP_free(idx) == 0)
+				BBP_free(idx) = BBPsize - 1;
 		} else {
 			BBP_free(idx) = BBPsize - 1;
 		}
