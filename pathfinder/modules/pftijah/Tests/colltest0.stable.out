@@ -30,18 +30,46 @@ shred_doc(bat(void,str)
 	      .append("PFCOLL")
 	      .append("PFCOLL").seqbase(0@0),
 	  bat(void,lng)
-	      .append(0LL)
-	      .append(0LL)
-	      .append(0LL).seqbase(0@0));
+	      .append(10LL)
+	      .append(10LL)
+	      .append(10LL).seqbase(0@0));
+# shredding with holes: pagesize=16384, #fillsize=14746
 # Elapsed time = 583us [010us/node]
-# Elapsed time = 178us [003us/node]
-# Elapsed time = 142us [002us/node]
-# Shredded 3 XML documents, total time after commit=0.015s
-
-
-
-# Shredded 1 XML document (cdilbert3.xml), total time after commit=0.014s
-
+# shredding with holes: pagesize=16384, #fillsize=14746
+# Elapsed time = 145us [002us/node]
+# shredding with holes: pagesize=16384, #fillsize=14746
+# Elapsed time = 198us [003us/node]
+# Shredded 3 XML documents, total time after commit=0.012s
+var out := xquery("xml","fn:doc(\"cdilbert2.xml\")");
+printf("%s",out);
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><strip>
+  <panel id="d4">
+    <dat>19910216</dat>
+    <speech>
+      <character>Pointy-Haired Boss</character>
+      <bubble>Geschwindigkeit ist der Schluessel zum Erfolg.</bubble>
+    </speech>
+  </panel>
+  <panel id="d5">
+    <dat>19920216</dat>
+    <speech>
+      <character>Dilbert</character>
+      <bubble>Ist es in Ordnung, Fehler zu machen, wenn wir dafuer wirklich wirklich schnell sind?</bubble>
+    </speech>
+  </panel>
+  <panel id="d6">
+    <dat>19930216</dat>
+    <speech>
+      <character>Pointy-Haired Boss</character>
+      <bubble>Um... Nein.</bubble>
+    </speech>
+    <speech>
+      <character>Wally</character>
+      <bubble>Nun bin ich wirklich etwas verwirrt. Vielen Dank.</bubble>
+    </speech>
+  </panel>
+</strip></XQueryResult>
 quit();
 
 # 16:06:32 >  

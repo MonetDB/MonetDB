@@ -19,7 +19,8 @@ shred_doc(bat(void,str)
 	      .append("PFCOLL")
 	      .append("PFCOLL").seqbase(0@0),
 	  bat(void,lng)
-	      .append(0LL)
-	      .append(0LL)
-	      .append(0LL).seqbase(0@0));
-
+	      .append(10LL)
+	      .append(10LL)
+	      .append(10LL).seqbase(0@0));
+var out := xquery("xml","fn:doc(\"cdilbert2.xml\")");
+printf("%s",out);
