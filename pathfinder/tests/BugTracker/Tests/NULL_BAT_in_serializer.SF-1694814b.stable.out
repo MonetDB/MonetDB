@@ -32,11 +32,9 @@ Over..
 # 17:48:42 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-! expected/correct output needs to be provided by hand or approved once the bug is fixed !
-</XQueryResult>
+<XQueryResult><bug xid="5" xend="81964304895" xstart="81964302336" name="$AttrDef"/></XQueryResult>
 
-# 17:48:42 >  
-# 17:48:42 >  Done.
-# 17:48:42 >  
+# 02:47:21 >  
+# 02:47:21 >  Done.
+# 02:47:21 >  
 
