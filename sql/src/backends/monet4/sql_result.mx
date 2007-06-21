@@ -449,6 +449,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 			fmt[i].extra = fmt+i;
 			fmt[i].data = NULL;
 			fmt[i].len = 0;
+			fmt[i].c = NULL;
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
@@ -457,7 +458,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 		}
 		if (ASCIIcreate_bats(&as) >= 0) {
 			if (ASCIIload_file(&as, bs, out) >= 0)
-				 bats = ASCIIcollect_bats(&as);
+				bats = ASCIIcollect_bats(&as);
 		}
 		ASCIIdestroy_format(&as);
 	}
