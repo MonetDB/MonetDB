@@ -2825,7 +2825,32 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 	return NULL;
 }
 
-static void
+/*
+void
+subset_add_outer(stmt *ptable, stmt *s)
+{
+	while (ptable_parent(ptable))
+		ptable = ptable_parent(ptable);
+
+	if (!ptable_statements(ptable)) {
+		ptable_statements(ptable) = stmt_set(s);
+	} else {
+		stmt *ps = ptable_statements(ptable);
+
+		if (ps->type != st_set) {
+			ps = stmt_set(ps);
+			ptable_statements(ptable) = ps;
+		}
+
+		list_append(ps->op1.lval, s);
+		if (ps->nrcols < s->nrcols)
+			ps->nrcols = s->nrcols;
+		ps->key &= s->key;
+	}
+}
+*/
+
+void
 filter(stmt *ptable, stmt *s)
 {
 
@@ -2945,7 +2970,6 @@ sql_or(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f)
 		return rs;
 	}
 	/* todo keep both sets aligned */
-
 
 	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0))
 		return sql_binop_(sql, NULL, NULL, "or", ls, rs);
@@ -3172,7 +3196,6 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 		if (!ls)
 			return NULL;
-		/* TODO fix parsing, ie subquery seperate from values */
 		ek.card = card_set;
 		if (l->h->next->type == type_list) {
 			dnode *n = l->h->next->data.lval->h;
@@ -3188,7 +3211,47 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					stmt_destroy(temp);
 					return NULL;
 				}
-				temp = stmt_append(temp, check_types(sql, ct, v, type_equal));
+				if (v->type == st_list) {
+					stmt_destroy(temp);
+					if (n->next) {
+						stmt_destroy(ls);
+						return sql_error(sql, 02, "SELECT: multiple subqueries with outer references in IN is not supported");
+					}
+					if (list_length(v->op1.lval) > 2) {
+						stmt_destroy(v);
+						return sql_error(sql, 02, "SELECT: comparision between incompatible types");
+					}
+					temp = v;
+				} else {
+					temp = stmt_append(temp, check_types(sql, ct, v, type_equal));
+				}
+			}
+			/* outer references */
+			if (temp->type == st_list) {
+				//return sql_error(sql, 02, "IN: with outer references is not supported");
+				node *o = temp->op1.lval->h;
+				stmt *oref = stmt_dup(o->next->data);
+				stmt *sqa = stmt_dup(o->data);
+				stmt *cmp = NULL, *h;
+				char *comp = NULL;
+
+				cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
+				/* need to fix the cmp head */
+				h = stmt_dup(cmp->h->t);
+				stmt_destroy(cmp->h);
+				cmp->h = h;
+
+				if (sc->token == SQL_IN) 
+					comp = "=";
+				else
+					comp = "<>";
+
+				if (subset)
+					cmp = stmt_join(find_pivot(subset, cmp->h), cmp, cmp_equal);
+				else
+					cmp = stmt_join(scope_find_pivot(scp, cmp->h), cmp, cmp_equal);
+				cmp = sql_compare(sql, scp, ls, cmp, comp, f);
+				return cmp;
 			}
 			if (sc->token == SQL_IN) {
 				/* predicate case ? */
@@ -3234,100 +3297,6 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					return stmt_diff(stmt_dup(ls), stmt_join(ls, stmt_reverse(temp), cmp_equal));
 				}
 			}
-		} else if (l->h->next->type == type_symbol) {
-			symbol *ro = l->h->next->data.sym;
-			stmt *sq = scope_subquery(sql, scp, ro, ek);
-
-			if (!sq)
-				return NULL;
-
-			if (sq->type != st_list || list_length(sq->op1.lval) == 0) {
-				stmt_destroy(sq);
-				return sql_error(sql, 02, "SELECT: subquery result wrong");
-			}
-
-			if (list_length(sq->op1.lval) == 1) {
-				stmt *rs = stmt_dup(sq->op1.lval->h->data);
-
-				stmt_destroy(sq);
-				/* predicate case ? */
-				if (ls->nrcols == 0) {
-					sql_subtype *tp = tail_type(ls);
-					sql_subaggr *exist;
-
-					if (sc->token == SQL_IN) {
-						/* exist(rs,ls) */
-						exist = sql_bind_aggr(sql->session->schema, "exist", tp);
-					} else {
-						/* exist(rs,ls) */
-						exist = sql_bind_aggr(sql->session->schema, "not_exist", tp);
-					}
-					rs = stmt_reverse(rs);
-					return stmt_aggr2(rs, ls, exist);
-				} else if (f != sql_sel) {
-					if (sc->token == SQL_IN) {
-						if (rs->nrcols) {	/* set in (select set) */
-							return stmt_reverse(stmt_semijoin(stmt_reverse(ls), stmt_reverse(rs)));
-						} else {
-							/* v1 in (select v2)
-							 * and
-							 * set in (select value) 
-							 */
-							return sql_compare(sql, scp, ls, rs, "=", f);
-						}
-					} else {	/* SQL_NOT_IN */
-						if (rs->nrcols) {	/* set not in (select set) */
-							return stmt_reverse(stmt_diff(stmt_reverse(ls), stmt_reverse(rs)));
-						} else {
-							/* v1 not in (select v2) 
-							 * and
-							 * set not in (select v1) 
-							 */
-							return sql_compare(sql, scp, ls, rs, "<>", f);
-						}
-					}
-				} else 	if (ls->nrcols == 0) {
-					sql_subtype *tp = tail_type(ls);
-					sql_subaggr *exist;
-
-					if (sc->token == SQL_IN) {
-						/* exist(rs,ls) */
-						exist = sql_bind_aggr(sql->session->schema, "exist", tp);
-					} else {
-						/* [not_exist](temp,ls) */
-						/* not_exit needed to handle null correctly */
-						exist = sql_bind_aggr(sql->session->schema, "not_exist", tp);
-					}
-					rs = stmt_reverse(rs);
-					return stmt_aggr2(rs, ls, exist);
-						
-				} else if (rs->nrcols == 0) { 
-				/* SELECT name [not] in (select 'a') FROM tables */
-				/* single value */
-					if (sc->token == SQL_IN) {
-						return sql_compare(sql, scp, ls, rs, "=", f);
-					} else {
-						return sql_compare(sql, scp, ls, rs, "<>", f);
-					}
-					/* set of values */
-				} else {
-					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subtype *tp = tail_type(ls);
-					sql_subfunc *isnul;
-
-					isnul = sql_bind_func_result(sql->session->schema, "isnull", tp, NULL, bt);
-					if (sc->token == SQL_IN) {
-						sql_subfunc *not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
-						return stmt_unop(stmt_unop(stmt_outerjoin(ls, stmt_reverse(rs), cmp_equal), isnul), not);
-					} else {
-						return stmt_unop(stmt_outerjoin(ls, stmt_reverse(rs), cmp_equal), isnul);
-					}
-				}
-			} else {
-				/* TODO fix this broken impl ! */
-				return sql_error(sql, 03, "time to implement (NOT) IN with outer refs\n");
-			}
-			return NULL;
 		} else {
 			return sql_error(sql, 02, "IN: missing inner query");
 		}
@@ -3836,7 +3805,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 			}
 		}
 
-		if (s && list_length(scp->outers) > 0) {
+		if (s && ek.card != card_set && list_length(scp->outers) > 0) {
 			assert(!grp);
 			grp = query_groupby_outers(sql, scp, s);
 			if (!grp) {
@@ -3883,6 +3852,11 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 		dnode *n;
 		node *m;
 		int nrcols = 0, aggr = 0;
+		void *outer = NULL;
+
+
+		if (scp->outers->t)
+		 	outer = scp->outers->t->data; 
 
 		for (n = sn->selection->h; n; n = n->next) {
 			stmt *cs = sql_column_exp(sql, scp, n->data.sym, grp, subset, sql_sel);
@@ -3898,6 +3872,17 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 			if (nrcols < cs->nrcols)
 				nrcols = cs->nrcols;
 			aggr |= cs->aggr;
+
+			if (scp->outers->t && outer != scp->outers->t->data) {
+				/* new outer reference */
+				outer = scp->outers->t->data;
+				
+				list_destroy(sl);
+				list_destroy(rl);
+				sql_select_cleanup(sql, s, subset, grp);
+				return sql_error(sql, 02, "SELECT: outer reference in the selection part is not supported");
+				/*subset_add_outer(subset, outer);*/
+			}
 		}
 
 		for (m = sl->h, n = sn->selection->h; m && n; m = m->next, n = n->next) {
@@ -4029,7 +4014,10 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 				sql_select_cleanup(sql, s, subset, grp);
 				return sql_error(sql, 02, "SELECT: subquery result missing");
 			}
-			list_append(rl, stmt_join(stmt_dup(grp->ext), foundsubset, cmp_equal));
+			if (ek.card != card_set)
+				list_append(rl, stmt_join(stmt_dup(grp->ext), foundsubset, cmp_equal));
+			else
+				list_append(rl, foundsubset);
 		}
 	}
 	stmt_destroy(s);
