@@ -1496,31 +1496,31 @@ if test "x$enable_optim" = xyes; then
       dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
       dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
-      x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
-      x86_64-*-*-9.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
-      x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
-      i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      i*86-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
-      ia64-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
-      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
-      i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
-      ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
-                      dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
-                      dnl  (Mserver produces some incorrect BATpropcheck warnings);
-                      dnl  hence, we use only "-O2", here.
-                      ;;
-#      *irix*)        CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
-      *irix*)         CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
-                      LDFLAGS="$LDFLAGS -IPA"
-                      ;;
-      *-sun-solaris*) CFLAGS="$CFLAGS -xO5"
-                      CFLAGS_NO_OPT="-xO0"
-                      ;;
-      *aix*)          CFLAGS="$CFLAGS -O3"
-                      NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -qnooptimize"
-                      ;;
+      x86_64-*-*-8.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
+      x86_64-*-*-9.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
+      x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O0 -restrict -unroll                     -axWPT  ";;
+      i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O0 -restrict -unroll                     -axWPT  ";;
+      ia64-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+      ia64-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2";;
+      i*86-*-*)        CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
+      ia64-*-*)        CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
+                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
+                       dnl  (Mserver produces some incorrect BATpropcheck warnings);
+                       dnl  hence, we use only "-O2", here.
+                       ;;
+#      *irix*)         CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
+      *irix*)          CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
+                       LDFLAGS="$LDFLAGS -IPA"
+                       ;;
+      *-sun-solaris*)  CFLAGS="$CFLAGS -xO5"
+                       CFLAGS_NO_OPT="-xO0"
+                       ;;
+      *aix*)           CFLAGS="$CFLAGS -O3"
+                       NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -qnooptimize"
+                       ;;
       esac   
     fi
   fi

@@ -427,7 +427,7 @@ makeCostArray()
 
 	fprintf(outfile, "short %s_cost[][%d] = {\n", prefix, DELTAWIDTH);
 	for (i = 0; i <= max_erule_num; i++) {
-		makeCostVector(pVector[i], pVector[i] ? pVector[i]->rule->delta : 0);
+		makeCostVector(pVector[i] != NULL, pVector[i] ? pVector[i]->rule->delta : 0);
 		fprintf(outfile, ", /* ");
 		printRule(pVector[i], "(none)");
 		fprintf(outfile, " = %d */\n", i);
