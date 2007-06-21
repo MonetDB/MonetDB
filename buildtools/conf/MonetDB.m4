@@ -1498,10 +1498,10 @@ if test "x$enable_optim" = xyes; then
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
       x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       x86_64-*-*-9.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
-      x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll                    -axWPT  ";;
+      x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O0 -restrict -unroll                    -axWPT  ";;
       i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll                    -axKWNPBT";;
+      i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O0 -restrict -unroll                    -axWPT  ";;
       ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                    -mcpu=itanium2";;
