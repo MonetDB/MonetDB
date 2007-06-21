@@ -36,8 +36,10 @@ static void purgePlanks ARGS((List));
 static void inToEx ARGS((void));
 static void makePlankRuleMacros ARGS((void));
 static void makePlankRule ARGS((void));
+#if 0
 static void exceptionSwitch ARGS((List, char *, char *, char *, int, char *));
 static void doPlankLabel ARGS((Operator));
+#endif
 static void doPlankLabelSafely ARGS((Operator));
 static void doPlankLabelMacrosSafely ARGS((Operator));
 static void makePlankState ARGS((void));
@@ -604,6 +606,7 @@ makePlankRule()
 	fprintf(outfile, "}\n");
 }
 
+#if 0
 static void
 exceptionSwitch(es, sw, pre, post, offset, def) List es; char *sw; char *pre; char *post; int offset; char *def;
 {
@@ -689,6 +692,7 @@ doPlankLabel(op) Operator op;
 		assert(0);
 	}
 }
+#endif
 
 static void
 doPlankLabelMacrosSafely(op) Operator op;
