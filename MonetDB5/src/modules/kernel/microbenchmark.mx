@@ -25,11 +25,11 @@ activities.
 @mal
 module microbenchmark;
 
-command uniform(base:oid, size:int, domain:int):bat[:void,:int]
+command uniform(base:oid, size:int, domain:int):bat[:oid,:int]
 address MBMuniform
 comment "Create a BAT with uniform integer distribution";
 
-command normal(base:oid, size:int, domain:int, stddev:int, mean:int):bat[:void,:int]
+command normal(base:oid, size:int, domain:int, stddev:int, mean:int):bat[:oid,:int]
 address MBMnormal
 comment "Create a BAT with a normal integer distribution";
 @+ Experimentation Gimmicks
