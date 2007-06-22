@@ -569,6 +569,7 @@ bpm_export str BPMepilogue(int *ret);
 #include "bpm.h"
 #include "bat5.h"
 #include "algebra.h"
+#define _USE_MATH_DEFINES /* needed to get M_PI on Windows */
 #include <math.h>
 
 #define KB	1024
@@ -1673,7 +1674,7 @@ static int
 spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
 {	int xx, k=n-2, i;
 	BUN p,q;
-	BAT *bs[n-1];
+	BAT **bs = alloca(sizeof(*bs) * (n-1)); /* Visual Studio doesn't accept BAT *bs[n-1] */
 	ptr val;
 
 	int (*cmp) (ptr, ptr);
