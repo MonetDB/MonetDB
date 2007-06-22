@@ -458,6 +458,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 
 		as.nr_attrs = list_length(t->columns.set);
 		as.nr = sz;
+		as.error = NULL;
 		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
 
 		if (!isa_block_stream(bs->s))
@@ -468,7 +469,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 
 			fmt[i].name = col->base.name;
 			fmt[i].sep = (n->next) ? _strdup(sep) : _strdup(rsep);
-			fmt[i].seplen = (int) strlen(fmt[i].sep);
+			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].type = col->type.type->base.name;
 			fmt[i].adt = ATOMindex(fmt[i].type);
 			fmt[i].tostr = &_ASCIIadt_toStr;
@@ -476,6 +477,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 			fmt[i].extra = fmt+i;
 			fmt[i].data = NULL;
 			fmt[i].len = 0;
+			fmt[i].c = NULL;
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
@@ -484,7 +486,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 		}
 		if (TABLETcreate_bats(&as) >= 0) {
 			if (TABLETload_file(&as, bs, out) >= 0)
-				 bats = TABLETcollect_bats(&as);
+				bats = TABLETcollect_bats(&as);
 		}
 		TABLETdestroy_format(&as);
 	}
@@ -726,7 +728,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 
 	fmt[0].c = NULL;
 	fmt[0].sep = _strdup("[ ");
-	fmt[0].seplen = (int) strlen(fmt[0].sep);
+	fmt[0].seplen = _strlen(fmt[0].sep);
 
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
@@ -737,7 +739,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, siz
 		fmt[i].c = BATdescriptor(c->b);
 		fmt[i].name = NULL;
 		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? _strdup(sep) : _strdup(rsep);
-		fmt[i].seplen = (int) strlen(fmt[i].sep);
+		fmt[i].seplen = _strlen(fmt[i].sep);
 		fmt[i].type = ATOMname(fmt[i].c->ttype);
 		fmt[i].adt = fmt[i].c->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
