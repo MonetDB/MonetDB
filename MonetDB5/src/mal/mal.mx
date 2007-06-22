@@ -178,20 +178,6 @@ as well as in user defined module implementations.
 #ifndef _MAL_H
 #define _MAL_H
 
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef NATIVE_WIN32
-# include <winsock.h>
-#endif
-#ifdef HAVE_SYS_UN_H
-#include <sys/un.h>
-#endif
-#ifdef HAVE_NETDB_H
-# include <netdb.h>
-# include <netinet/in.h>
-#endif
-
 #include <gdk.h>
 #include <gdk_utils.h>
 
