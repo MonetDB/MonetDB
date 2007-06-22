@@ -502,6 +502,8 @@ mapi_client_engine(void *FC )
 		fc->c->mode = STARTING;
 	
 		mapi_client_end(fc);
+		fc->thread->data[0] = NULL;
+		fc->thread->data[1] = NULL;
 		/* possible race condition, but net result is limited */
 		if (f->clients > f->cache_limit) { 
 			break;
