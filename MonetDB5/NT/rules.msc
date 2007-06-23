@@ -1,3 +1,5 @@
+# -*- makefile -*-
+
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -23,7 +25,7 @@ CONFIG_H=mal_config.h
 
 MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include
 
-MONETDB_INCS=-I"$(MONETDB_INCLUDEDIR)" -I"$(MONETDB_INCLUDEDIR)\common" -I"$(MONETDB_INCLUDEDIR)\gdk" -I"$(MONETDB_INCLUDEDIR)\monet" -I"$(MONETDB_INCLUDEDIR)\plain" -I"$(MONETDB_INCLUDEDIR)\mapi"
+MONETDB_INCS=-I"$(MONETDB_INCLUDEDIR)" -I"$(MONETDB_INCLUDEDIR)\common" -I"$(MONETDB_INCLUDEDIR)\gdk"
 MONETDB_LIBS=/libpath:"$(MONETDB_PREFIX)\lib"
 MONETDB_MODS=/libpath:"$(MONETDB_PREFIX)\lib\MonetDB"
 
