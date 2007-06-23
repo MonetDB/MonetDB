@@ -685,7 +685,7 @@ getCallValues(stream *out,
 
     BAT *frag_root = NULL, *pre_size = NULL;
     BAT *pre_level = NULL, *pre_kind = NULL,  *pre_prop = NULL;
-    BAT *qn_loc   = NULL,  *qn_prefix = NULL, *qn_uri = NULL;
+    BAT *qn_loc   = NULL,  *qn_uri = NULL;
     BAT *prop_val = NULL,  *prop_text = NULL;
     BAT *attr_own = NULL,  *attr_qn = NULL, *attr_prop = NULL;
     /* Arrays holding the Tail values of some of the BATs above. */
@@ -718,7 +718,6 @@ getCallValues(stream *out,
     prop_val   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+PROP_VAL) ));
     qn_loc     = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_LOC)   ));
     qn_uri     = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_URI)   ));
-    qn_prefix  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+QN_PREFIX)));
     frag_root  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+FRAG_ROOT)));
     attr_own   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_OWN) ));
     attr_qn    = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,i+ATTR_QN)  ));
