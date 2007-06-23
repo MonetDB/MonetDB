@@ -77,6 +77,11 @@ command setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
 
+command setBigfoot(b:bit):void
+address MDBsetBigfoot
+comment "Turn on/off memory foot print for debugger";
+
+
 command setFlow(b:bit):void
 address MDBsetFlow
 comment "Turn on/off memory flow debugger";
@@ -198,6 +203,7 @@ mdb_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetDebugStr(int *ret, str *nme);
 mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTimer(int *ret, bit *flag);
+mdb_export str MDBsetBigfoot(int *ret, bit *flag);
 mdb_export str MDBsetFlow(int *ret, bit *flag);
 mdb_export str MDBsetMemory(int *ret, bit *flag);
 mdb_export str MDBsetIO(int *ret, bit *flag);
@@ -391,6 +397,19 @@ MDBsetTimer(int *ret, bit *flag)
 	else
 		cntxt->flags &= ~timerFlag;
 	cntxt->timer= GDKusec();
+	return MAL_SUCCEED;
+}
+
+str
+MDBsetBigfoot(int *ret, bit *flag)
+{
+	Client cntxt = MCgetClient();
+
+	(void) ret;
+	if( *flag)
+		cntxt->flags |= bigfootFlag;
+	else
+		cntxt->flags &= ~bigfootFlag;
 	return MAL_SUCCEED;
 }
 

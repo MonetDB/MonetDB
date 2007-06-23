@@ -91,7 +91,7 @@ mdb>help
 	down             -- go down the stack
 	up               -- go up the stack
 	trace <var>      -- trace assignment to variables
-	set @verb{ { }timer,flow,io,memory@verb{ } } -- set trace switches
+	set @verb{ { }timer,flow,io,memory,bigfoot@verb{ } } -- set trace switches
 	unset            -- turn off switches
 	help             -- this message
 mdb>
@@ -238,6 +238,9 @@ keeps track on growing memory needs.
 @item io
 keeps track on the amount of physical IO
 and is used to detect operators consuming excessive amounts of space.
+@item bigfoot
+keeps track of the current and maximum virtual memory footprint 
+of the BATs.[incomplete]
 @end table
 
 The snippet below shows setting the @sc{memory} and @sc{timer}
@@ -974,6 +977,10 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 									resource.ru_oublock);
 #endif
 				}
+				if( strncmp("bigfoot",b,7)==0){
+					/* calculate the virtual memory footprint */
+					cntxt->flags |= bigfootFlag;
+				}
 				continue;
 			}
 			stk->cmd = *b;
@@ -1260,13 +1267,15 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if( strncmp("unset",b,5)){
 				skipWord(cntxt, b);
 				skipBlanc(cntxt, b);
-				if( strncmp("flow",b,1) == 0)
+				if( strncmp("flow",b,4) == 0)
 					cntxt->flags &= ~flowFlag;
-				if( strncmp("memory",b,1) == 0)
+				if( strncmp("memory",b,6) == 0)
 					cntxt->flags &= ~memoryFlag;
-				if (strncmp("timer", b, 1) == 0)
+				if (strncmp("timer", b, 5) == 0)
 					cntxt->flags &= ~timerFlag;
-				if (strncmp("io", b, 1) == 0) 
+				if (strncmp("bigfoot", b, 7) == 0)
+					cntxt->flags &= ~bigfootFlag;
+				if (strncmp("io", b, 2) == 0) 
 					cntxt->flags &= ~ioFlag;
 				continue;
 			}

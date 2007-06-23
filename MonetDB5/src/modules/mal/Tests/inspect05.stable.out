@@ -3159,6 +3159,7 @@ end main;	# 11
 [ "setIO",				  "command",	  "mdb",	  "(b:bit):void ",													  "MDBsetIO;"					  ]
 [ "setMemory",				  "command",	  "mdb",	  "(b:bit):void ",													  "MDBsetMemory;"				  ]
 [ "setFlow",				  "command",	  "mdb",	  "(b:bit):void ",													  "MDBsetFlow;"					  ]
+[ "setBigfoot",			  "command",	  "mdb",	  "(b:bit):void ",									  "MDBsetBigfoot;"				  ]
 [ "setTimer",				  "command",	  "mdb",	  "(b:bit):void ",													  "MDBsetTimer;"				  ]
 [ "setCatch",				  "pattern",	  "mdb",	  "(b:bit):void ",													  "MDBsetCatch;"				  ]
 [ "setTrace",				  "pattern",	  "mdb",	  "(b:bit):void ",													  "MDBsetTrace;"				  ]
