@@ -195,6 +195,8 @@ SQLepilogue(void)
 	return MAL_SUCCEED;
 }
 
+MT_Id sqllogthread;
+
 str
 SQLinit(Client c)
 {
@@ -224,6 +226,10 @@ SQLinit(Client c)
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
 	SQLinitialized = TRUE;
+        if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {
+                throw(SQL, "SQLinit", "Starting log manager failed");
+
+        }
 	return MAL_SUCCEED;
 }
 
