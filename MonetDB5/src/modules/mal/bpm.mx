@@ -574,7 +574,7 @@ bpm_export str BPMepilogue(int *ret);
 
 #define KB	1024
 #define Mmin	1024*KB
-#define Mmax	20480*KB
+#define Mmax	10240*KB
 @-
 The partition manager uses its private memory mapped catalog 
 of persistent BATs.
@@ -1753,7 +1753,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	if(policy == ORACLEPOLICY ) {
 		BPMcount(&cnt,&b->batCacheid);
 		bcnt = BATcount(b);
-		if (cnt ==0) or =0;
+		if ( (cnt ==0) || (bcnt ==0) || (BATcount(bs) ==0) ) or =0;
 		else or=BPMoraclePolicy((double)BATcount(bs)/bcnt, (double)bcnt/cnt);
 	
 #ifdef _DEBUG_BPM_
