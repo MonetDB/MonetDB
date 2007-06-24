@@ -429,7 +429,7 @@ typedef struct Table_t {
 	BAT *pivot;
 	str error;	/* last error */
 	unsigned int rowwidth;		/* sum of columns used for mallocs */
-	Column columns[1];
+	Column *columns;
 } Tablet;
 
 tablet_export BAT *TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
@@ -1133,15 +1133,14 @@ TABLETcreate_bats(Tablet * as)
 {
 	Column *fmt = as->format;
 	size_t i;
-	size_t nr = 0; 
+	size_t nr = 0;
 
 	if (as->nr != ~(size_t)0)
 		nr = as->nr;
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, nr);
 		if (!fmt[i].c) {
-			GDKerror("TABLETcreate_bats: Failed to create bat of size %d\n", as->nr);
-			as->nr_attrs = i;
+			GDKerror("TABLETcreate_bats: Failed to create bat of size " SZFMT "\n", as->nr);
 			return -1;
 		}
 	}
