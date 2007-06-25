@@ -41,7 +41,7 @@ accellerators, SQL- and XML- frontends.
 
 %description devel
 Add the MonetDB devel description here
-Requires: %{name}
+Requires: %{name} = %{version}-%{release}
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -103,4 +103,8 @@ rm -fr $RPM_BUILD_ROOT
 
 %{prefix}/include/%{name}/*.h
 %{prefix}/include/%{name}/*/*.[hcm]
+
+%changelog
+* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
+- Built.
 

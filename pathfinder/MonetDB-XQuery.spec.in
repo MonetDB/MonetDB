@@ -16,8 +16,10 @@ License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 
 %{!?buildsystem: %define buildsystem 0}
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel libxml2-devel
+BuildRequires: MonetDB-devel = 1.18
+BuildRequires: MonetDB4-server-devel = 4.18
 %endif
+BuildRequires: libxml2-devel
 
 %define comp_cc @CC@
 
@@ -39,12 +41,13 @@ accellerators, SQL- and XQuery- frontends.
 %package devel
 Summary: MonetDB XQuery development package 
 Group: System 
-Requires: MonetDB4-server >= 4.18
+Requires: MonetDB4-server = 4.18
 
 %description devel
 Add the MonetDB devel description here
-Requires: %{name}-server
-Requires: MonetDB-devel
+Requires: %{name} = %{version}-%{release}
+Requires: MonetDB-devel = 1.18
+Requires: MonetDB4-server-devel = 4.18
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -95,3 +98,8 @@ rm -rf $RPM_BUILD_ROOT
 %files devel
 %defattr(-,root,root) 
 %{prefix}/include/pathfinder/*.h
+
+%changelog
+* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
+- Built.
+

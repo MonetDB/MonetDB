@@ -43,13 +43,19 @@ MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
-Requires: MonetDB-client
+Requires: MonetDB-client = 1.18
+%if !%{?buildsystem}
+BuildRequires: MonetDB-devel = 1.18
+BuildRequires: MonetDB-client-devel = 1.18
+%endif
 PreReq: /sbin/chkconfig, /sbin/service, sh-utils
 PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
 %description devel
 Add the MonetDB devel description here
-Requires: %{name}
+Requires: %{name} = %{version}-%{release}
+Requires: MonetDB-devel = 1.18
+Requires: MonetDB-client-devel = 1.18
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -124,4 +130,8 @@ umask 022
 
 #create monetdb init script
 #/sbin/chkconfig --add monetdb
+
+%changelog
+* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
+- Built.
 

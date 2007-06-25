@@ -1059,6 +1059,7 @@ have_python=auto
 PYTHON=python
 PYTHON_INCS=
 PYTHON_LIBS=
+PYTHON_VERSION=
 AC_ARG_WITH(python,
 	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
 	have_python="$withval")
@@ -1144,6 +1145,19 @@ if test "x$have_python" != xno; then
 		have_python_libdir=yes
 		;;
 	esac
+
+	if test $cross_compiling = xyes; then
+		case "$PYTHON_LIBS" in
+		*/python2.[0-9]/*)
+			PYTHON_VERSION=`expr "$PYTHON_LIBS" : '.*/python\(2\.[0-9]\)/.*'`
+			;;
+		*)
+			AC_MSG_ERROR([Cannot determine Python version])
+			;;
+		esac
+	else
+		PYTHON_VERSION=`"$PYTHON" -c 'import sys; print sys.version[[:3]]'`
+	fi
 else
 	# no Python implies no Python includes or libraries
 	have_python_incdir=no
@@ -1161,6 +1175,7 @@ AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
 AC_SUBST(PYTHON_INCS)
 AC_SUBST(PYTHON_LIBS)
 AC_SUBST(PYTHON_LIBDIR)
+AC_SUBST(PYTHON_VERSION)
 AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
 if test -f "$srcdir"/vertoo.data; then
 	AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno -a x"$SWIG" != xno)

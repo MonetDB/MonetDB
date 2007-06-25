@@ -32,8 +32,7 @@ rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
 
-rpm:	MonetDB-server.spec $(top_builddir)/$(distdir).tar.gz
-
+$(rpmtopdir)/rpmmacros:
 	mkdir -p $(rpmtopdir)/RPMS
 	mkdir -p $(rpmtopdir)/SRPMS
 	mkdir -p $(rpmtopdir)/SPECS
@@ -48,9 +47,16 @@ rpm:	MonetDB-server.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
+rpm:	MonetDB-server.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
 	$(RPMBUILD) -ta ${php} ${perl} ${python} ${java} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
 
 	rm -rf $(rpmtopdir)/BUILD
+
+srpm:	MonetDB-server.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
+	$(RPMBUILD) -ts ${php} ${perl} ${python} ${java} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc $(top_builddir)/$(distdir).tar.gz
+	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
+		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
+	done

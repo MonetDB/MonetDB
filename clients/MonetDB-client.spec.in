@@ -13,7 +13,7 @@ Source: clients-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-BuildRequires: python 
+BuildRequires: python
 
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
@@ -31,6 +31,14 @@ BuildRequires: python
 %else
 %define bits 64
 %endif
+
+%if !%{?buildsystem}
+BuildRequires: MonetDB-devel = 1.18
+%endif
+
+%package devel
+Summary: MonetDB Client development packate
+Group: System
 
 %package odbc
 Summary: MonetDB SQL odbc
@@ -50,7 +58,7 @@ BuildRequires: php
 Summary: MonetDB python interface
 Group: System
 %if !%{?buildsystem}
-BuildRequires: python swig
+BuildRequires: python, swig
 %endif
 %endif
 
@@ -59,7 +67,7 @@ BuildRequires: python swig
 Summary: MonetDB perl interface
 Group: System
 %if !%{?buildsystem}
-BuildRequires: perl swig 
+BuildRequires: perl, swig 
 %endif
 %endif
 
@@ -68,7 +76,7 @@ BuildRequires: perl swig
 Summary: MonetDB java interface
 Group: System
 %if !%{?buildsystem}
-BuildRequires: ant java 
+BuildRequires: ant, java 
 %endif
 %endif
 
@@ -77,16 +85,21 @@ MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
-Requires: MonetDB
+Requires: MonetDB = 1.18
+
+%description devel
+Add the MonetDB client devel description here
+Requires: %{name} = %{version}-%{release}
+Requires: MonetDB-devel = 1.18
 
 %description odbc
 Add the MonetDB SQL odbc description here
-Requires: %{name}
+Requires: %{name} = %{version}-%{release}
 
 %if %{?_with_php:1}%{!?_with_php:0}
 %description php
 Add the MonetDB php description here
-Requires: %{name}
+Requires: %{name} = %{version}-%{release}
 Requires: php
 %define php_extensiondir %(php-config --extension-dir)
 %endif
@@ -94,15 +107,15 @@ Requires: php
 %if %{?_with_python:1}%{!?_with_python:0}
 %description python
 Add the MonetDB python description here
-Requires: %{name}
-Requires: python
+Requires: %{name} = %{version}-%{release}
+Requires: python = @PYTHON_VERSION@
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
 %endif
 
 %if %{?_with_perl:1}%{!?_with_perl:0}
 %description perl
 Add the MonetDB perl description here
-Requires: %{name}
+Requires: %{name} = %{version}-%{release}
 Requires: perl
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 %endif
@@ -156,10 +169,15 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root) 
 %{prefix}/bin/MapiClient* 
 %{prefix}/bin/msqldump* 
-%{prefix}/bin/monetdb-clients-config
-%{_libdir}/libMapi.* 
-%{prefix}/include/MonetDB/mapilib/Mapi.h
+%{_libdir}/libMapi.so.*
 
+
+%files devel
+%defattr(-,root,root) 
+%{prefix}/bin/monetdb-clients-config
+%{_libdir}/libMapi.la
+%{_libdir}/libMapi.so
+%{prefix}/include/MonetDB/mapilib/Mapi.h
 
 # todo odbc-devel package ?
 %files odbc
@@ -199,3 +217,8 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/mjclient 
 %{prefix}/share/MonetDB/lib/*jar
 %endif
+
+%changelog
+* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
+- Built.
+
