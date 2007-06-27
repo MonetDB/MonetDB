@@ -428,6 +428,8 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		if ((f = fopen(buf, "r")) != NULL) {
 			sablist* np = NULL;
 			while (fgets(data, 8095, f) != NULL) {
+				if (*data != '\0' && data[strlen(data) - 1] == '\n')
+					data[strlen(data) - 1] = '\0';
 				if (sdb->scens == NULL) {
 					sdb->scens = malloc(sizeof(sablist));
 					sdb->scens->val = strdup(data);
@@ -448,6 +450,8 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		if ((f = fopen(buf, "r")) != NULL) {
 			sablist* np = NULL;
 			while (fgets(data, 8095, f) != NULL) {
+				if (*data != '\0' && data[strlen(data) - 1] == '\n')
+					data[strlen(data) - 1] = '\0';
 				if (sdb->conns == NULL) {
 					sdb->conns = malloc(sizeof(sablist));
 					sdb->conns->val = strdup(data);
