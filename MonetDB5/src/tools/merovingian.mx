@@ -25,7 +25,8 @@ Since some people appear to have troubles pronouncing or remembering its
 name, one can also refer to the Merovingian, as Mero, Merov or Nebula.
 While the latter one has nothing to do with the former, it is provided
 as convenience for those who keep on having technical problems with
-pronouncing the former.
+pronouncing the former.  In any case, people having difficulties here
+should watch the Matrix once more.
 
 Most of the Merovingian's decisions are based on information provided by
 Sabaoth.  Sabaoth is a file-system based administration shared between
@@ -48,18 +49,20 @@ period.  The Merovingian will log such refusals as well as return this
 as error to the connecting client.
 
 @h
-#define MEROV_VERSION "0.1 (pre-release)"
+#define MEROV_VERSION	"0.1"
+#define MEROV_PORT		50000
 
 @c
 #include "mal_config.h"
 #include "merovingian.h"
-/*#include "mal_sabaoth.h"*/
+#include "mal_sabaoth.h"
 #include <stdlib.h> /* exit */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h> /* strdup, strerror */
+#include <alloca.h>
 #include <errno.h>
 #ifdef _MSC_VER
 #include <process.h>
@@ -68,14 +71,13 @@ as error to the connecting client.
 #define vsnprintf _vsnprintf
 #endif
 
-typedef char* str;
 typedef char* err;
 
 #define freeErr(X) free(X)
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
-static size_t _merovingian_log_cnt = 0;
+static str _merovingian_mserver = NULL;
 
 /**
  * Tries to log the given string and formatting parameter stuff.  This
@@ -93,7 +95,8 @@ merlog(str fmt, ...)
 
 	va_start(ap, fmt);
 
-	len = snprintf(message, 4095, "[merovingian]:"LLFMT" ", (long long int)_merovingian_log_cnt++);
+	len = snprintf(message, 4095, "[merovingian]:" LLFMT " ",
+			(long long int)getpid());
 	len += vsnprintf(message + len, 4095 - len, fmt, ap);
 	message[len] = '\0';
 
@@ -106,6 +109,10 @@ merlog(str fmt, ...)
 	va_end(ap);
 }
 
+/**
+ * Creates a new error, allocated with malloc.  The error should be
+ * freed using freeErr().
+ */
 static str
 newErr(str fmt, ...)
 {
@@ -129,10 +136,12 @@ newErr(str fmt, ...)
 /**
  * Fork an Mserver and detach.  The forked Mserver is not a child of
  * this process any more after this function.  Hence, no client pid is
- * maintained or returned.
+ * maintained or returned.  Before forking off, Sabaoth is consulted to
+ * see if forking makes sense, or whether it is necessary at all, or
+ * forbidden by restart policy. (TODO)
  */
 static err
-forkMserver(str database)
+forkMserver(str database, sabdb** stats)
 {
 #ifdef NATIVE_WIN32
 	intptr_t rv = 0;
@@ -144,6 +153,39 @@ forkMserver(str database)
 	return(NO_ERR);
 #else
 	pid_t pid;
+	str er;
+
+	er = SABAOTHgetStatus(stats, database);
+	if (er != MAL_SUCCEED) {
+		err e = newErr("%s", er);
+		GDKfree(er);
+		*stats = NULL;
+		return(e);
+	}
+
+	if (*stats == NULL)
+		return(newErr("no such database: %s", database));
+
+	/* Since we ask for a specific database, it should be either there
+	 * or not there.  Since we checked the latter case above, it should
+	 * just be there, and be the right one.  There also shouldn't be
+	 * more than one entries in the list, so we assume we have the right
+	 * one here. */
+
+	switch ((*stats)->state) {
+		case SABdbRunning:
+			merlog("database %s already running", database);
+			return(NO_ERR);
+		break;
+		case SABdbCrashed:
+			merlog("database %s has crashed, attempting restart", database);
+		break;
+		case SABdbInactive:
+			merlog("starting database %s", database);
+		break;
+		default:
+			return(newErr("unknown state: %d", (*stats)->state));
+	}
 
 	pid = fork();
 	if (pid == 0) {
@@ -151,16 +193,24 @@ forkMserver(str database)
 		 * childchild becomes an orphan which init cares for */
 		pid = fork();
 		if (pid == 0) {
-			/* ok, now exec that Mserver we want */
-			/*execv(.... mserver --dbname=%s, databse);  FIXME */
-			merlog("todo: %s", database);
-			return(NO_ERR);
+			/* ok, now exec that mserver we want */
+			str e = alloca(sizeof(char) * 512);
+			snprintf(e, 511, "--dbname=%s", database);
+			merlog("executing: %s %s", _merovingian_mserver, e);
+			execl(_merovingian_mserver, _merovingian_mserver,
+					"--set", "daemon=yes",
+					e,
+					"--dbinit=include sql;",
+					(char *)NULL);
+			/* if the exec returns, it is because of a failure */
+			merlog("executing failed: %s", strerror(errno));
+			exit(1);
 		} else if (pid > 0) {
 			/* we are the parent of the childchild, so let's die */
 			exit(0);
 		} else {
 			/* bleh... forking failed :( nothing we can do but log */
-			merlog("Forking sub-child failed, no Mserver spawned!");
+			merlog("forking sub-child failed, no mserver spawned!");
 			exit(1);
 		}
 	} else if (pid > 0) {
@@ -172,12 +222,315 @@ forkMserver(str database)
 #endif
 }
 
-int main(int argc, char *argv[]) {
+err
+handleClient(int sock)
+{
+#if 0
+	stream *in, *out;
+	char *buf = (char *) malloc(sizeof(char) * 8096);
+	stream *fdin = block_stream(in);
+	stream *fdout = block_stream(out);
+	bstream *bs;
+
+	if (!fdin || !fdout) {
+		return(newErr("inputstream or outputstream problems"));
+	}
+
+	/* note that we claim to speak proto 8 here */
+	stream_printf(fdout, "%s:merovingian:8:%s:%s",
+			"void",  /* some bs */
+			"plain", /* FIXME: don't do difficult things for now */
+#ifdef WORDS_BIGENDIAN
+			"BIG"
+#else
+			"LIT"
+#endif
+			);
+	stream_flush(fdout);
+	/* get response */
+	stream_read_block(fdin, buf, BLOCK, 1);
+
+	bs = bstream_create(fdin, 128 * BLOCK);
+
+	bs->eof = 1;
+
+	char *user = buf, *algo = NULL, *passwd = NULL, *lang = NULL;
+	char *database = NULL, *s;
+	int key = 0;
+	bstream *fin = bs;
+	stream *fout = fdout;
+
+	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
+
+	/* byte order */
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		stream_set_byteorder(fin->s, strcmp(user, "BIG") == 0);
+		user = s + 1;
+	} else {
+		err e = merlog("client challenge error: %s", buf);
+		stream_printf(fout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fout);
+		free(buf);
+		return(e);
+	}
+
+	/* passwd */
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		passwd = s + 1;
+		/* decode algorithm, i.e. {plain}mypasswordchallenge */
+		if (*passwd != '{') {
+			err e = merlog("client challenge error: %s", buf);
+			stream_printf(fout, "!invalid password entry\n");
+			stream_flush(fout);
+			free(buf);
+			return(e);
+		}
+		algo = passwd + 1;
+		s = strchr(algo, '}');
+		if (!s) {
+			err e = merlog("client challenge error: %s", buf);
+			stream_printf(fout, "!invalid password entry\n");
+			stream_flush(fout);
+			free(buf);
+			return(e);
+		}
+		*s = 0;
+		passwd = s + 1;
+	} else {
+		err e = merlog("client challenge error: %s", buf);
+		stream_printf(fout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fout);
+		free(buf);
+		return(e);
+	}
+
+	/* lang */
+	s = strchr(passwd, ':');
+	if (s) {
+		*s = 0;
+		lang = s + 1;
+	} else {
+		err e = merlog("client challenge error: %s", buf);
+		stream_printf(fout, "!incomplete challenge, missing language\n");
+		stream_flush(fout);
+		free(buf);
+		return(e);
+	}
+
+	/* database */
+	s = strchr(lang, ':');
+	if (s) {
+		*s = 0;
+		database = s + 1;
+		/* we can have stuff following, make it void */
+		s = strchr(database, ':');
+		if (s)
+			*s = 0;
+	}
+
+	err e = forkMserver(database);
+	if (e != NO_ERR) {
+		stream_printf(fout, "!internal error while starting a new mserver\n");
+		stream_flush(fout);
+		return(e);
+	}
+
+	/* need to send a redirect */
+#endif
+	(void)sock;
+	return(NO_ERR);
+}
+
+err
+acceptConnections(unsigned short port)
+{
+	struct sockaddr_in server;
+	int sock = -1;
+
+	socklen_t length = 0;
+	int on = 1;
+	int i = 0;
+	unsigned short origport = port;
+	char host[512];
+	str msg;
+
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0)
+		return(newErr("creation of stream socket failed: %s",
+					strerror(errno)));
+
+	/* In auto-sensing mode, start at the default */
+	if (origport == 0)
+		port = MEROV_PORT;
+
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
+
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = htonl(INADDR_ANY);
+	for (i = 0; i < 8; i++)
+		server.sin_zero[i] = 0;
+	length = (socklen_t) sizeof(server);
+
+	do {
+		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
+		if (bind(sock, (struct sockaddr*) &server, length) < 0) {
+			if (
+#ifdef EADDRINUSE
+errno == EADDRINUSE &&
+#else 
+#ifdef WSAEADDRINUSE 
+errno == WSAEADDRINUSE &&
+#endif
+#endif
+				origport == 0 && port < 60000) {
+				port++;
+				continue;
+			}
+			return(newErr("binding to stream socket port %d failed: %s",
+					origport, strerror(errno)));
+		} else {
+			break;
+		}
+	} while (1);
+
+	if (getsockname(sock, (struct sockaddr*) &server, &length) < 0)
+		return(newErr("failed getting socket name: %s",
+				strerror(errno)));
+	/* keep queue of 5 */
+	listen(sock, 5);
+
+	gethostname(host, (int) 512);
+	merlog("listening for connections on %s:%d", host, port);
+
+	do {
+		int retval;
+		struct timeval tv;
+		fd_set fds;
+		int msgsock;
+		err e;
+
+		FD_ZERO(&fds);
+		if (sock >= 0)
+			FD_SET(sock, &fds);
+
+		/* Wait up to 0.5 seconds. */
+		tv.tv_sec = 0;
+		tv.tv_usec = 500;
+
+		retval = select(sock + 1, &fds, NULL, NULL, &tv);
+		if (retval == 0) {
+			/* nothing interesting has happened */
+			continue;
+		}
+		if (retval < 0) {
+			if (errno != EINTR) {
+				msg = "select failed";
+				goto error;
+			}
+			continue;
+		}
+		if (sock >= 0 && FD_ISSET(sock, &fds)) {
+			if ((msgsock = accept(sock, (struct sockaddr*) 0, (socklen_t *) 0)) < 0) {
+				if (errno != EINTR) {
+					msg = "accept failed";
+					goto error;
+				}
+				continue;
+			}
+		} else
+			continue;
+		/* TODO: maybe do this in a thread */
+		e = handleClient(msgsock);
+		if (e != NO_ERR) {
+			merlog("client error: %s", e);
+			freeErr(e);
+		}
+	} while (1);
+
+error:
+	return(newErr("accept connection: %s", msg));
+}
+
+int
+main(int argc, char *argv[])
+{
+	err e;
+	int argp;
+	str conf = MONETDBCONFIG;
+	str p;
+	FILE *cnf = NULL;
+	char buf[1024];
+	sabdb* stats = NULL;
+
 	merlog("Merovingian %s starting ...", MEROV_VERSION);
 
-	if (argc > 1) {
-		forkMserver(argv[1]);
+	snprintf(buf, 1023, "%s/bin/mserver5", MONETDBPREFIX);
+	_merovingian_mserver = strdup(buf);
+
+	snprintf(buf, 1023, "%s%s", MONETDBPREFIX, conf + 9);
+	cnf = fopen(buf, "r");
+	if (cnf == NULL) {
+		merlog("cannot open config file %s", buf);
+		exit(1);
 	}
+
+	conf = NULL;
+	while (fgets(buf, 1023, cnf) != 0) {
+		if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
+			p = strchr(buf, '=');
+			conf = strdup(++p);
+			break;
+		}
+	}
+
+	fclose(cnf);
+
+	if (conf == NULL) {
+		merlog("cannot find dbfarm via config file");
+		exit(1);
+	}
+
+	/* unfortunately we have to replace occurences of ${prefix} with
+	 * MONETDBPREFIX, which is medieval in this language */
+	p = strstr(conf, "${prefix}");
+	if (p != NULL) {
+		memcpy(buf, conf, p - conf);
+		memcpy(buf + (p - conf), MONETDBPREFIX, strlen(MONETDBPREFIX));
+		memcpy(buf + (p - conf) + strlen(MONETDBPREFIX), conf + (p - conf) + 9, strlen(conf) - 9 - (p - conf) + 1);
+		free(conf);
+		conf = strdup(buf);
+	}
+
+	merlog("monitoring dbfarm %s", conf);
+
+	SABAOTHinit(conf, NULL);
+	free(conf);
+
+	for (argp = 1; argp < argc; argp++) {
+		e = forkMserver(argv[argp], &stats);
+		if (e != NO_ERR) {
+			merlog("failed to fork mserver: %s", e);
+			freeErr(e);
+		}
+		if (stats != NULL)
+			SABAOTHfreeStatus(&stats);
+	}
+
+	/* main handle external connections loop */
+	e = acceptConnections(MEROV_PORT);
+
+	if (e != NO_ERR) {
+		merlog("%s", e);
+		freeErr(e);
+		return(1);
+	}
+
+	free(_merovingian_mserver);
+	return(0);
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */
